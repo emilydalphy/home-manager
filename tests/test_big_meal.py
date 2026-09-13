@@ -196,17 +196,32 @@ def test_a_guests_restriction_and_the_households_own_are_both_honoured(family, r
     assert any("shellfish" in r for r in proposer["context"]["dietary_restrictions"])
 
 
-def test_a_new_guest_note_on_a_standing_menu_flags_the_dishes_it_clashes_with(family, recipes, proposer):
+def test_a_new_guest_note_on_a_standing_menu_drops_the_clashing_dish_and_proposes_another(family, recipes, proposer):
     tg = _thanksgiving()
-    _week_with_dinner(tg, "Roast Chicken")
+    _week_with_dinner(tg, "Roast Chicken", approve=True)
     tools.answer_holiday(tg, "hosting", headcount=5)
+    assert "pumpkin puree" in _list()
     proposer["calls"] = 0
+    proposer["answer"]["dishes"] = [
+        {"name": "Apple Crumble", "role": "sweet", "covers": [],
+         "ingredients": [{"item": "apples", "qty": "8", "category": "produce"}],
+         "instructions": ["Bake."], "minutes": 15, "cook_minutes": 40, "oven": True, "ahead_days": 1},
+    ]
 
     result = tools.answer_holiday(tg, "hosting", guest_notes="no pumpkin")
 
-    assert result["big_meal"]["menu"] == "kept" and proposer["calls"] == 0, "the menu isn't thrown away for a note"
+    assert result["big_meal"]["menu"] == "refreshed", "the menu follows the note in place — never thrown away"
     assert result["headcount"] == 5, "the count is inherited within the same answer"
-    assert [c["dish"] for c in result["big_meal"]["conflicts"]] == ["Pumpkin Pie"]
+    assert result["big_meal"]["dropped"] == [{"name": "Pumpkin Pie", "restriction": "no pumpkin", "role": "sweet"}]
+    assert result["big_meal"]["replaced"] == ["Apple Crumble"]
+    assert result["big_meal_said"] == "Left off the pumpkin pie — no pumpkin. Added apple crumble instead."
+    assert proposer["calls"] == 1 and proposer["context"]["avoid"][0]["name"] == "Pumpkin Pie"
+    assert proposer["context"]["want_sweet"] is True and proposer["context"]["side_count"] == 0
+    assert "Sage and Onion Stuffing" in proposer["context"]["already_on_the_menu"]
+    names = [d["name"] for d in tools.get_big_meal(tg)["dishes"]]
+    assert "Apple Crumble" in names and "Pumpkin Pie" not in names
+    items = _list()
+    assert "apples" in items and "pumpkin puree" not in items, "the shopping followed"
 
 
 def test_the_planner_builds_the_menu_when_the_week_is_generated(family, recipes, proposer, stub_model):
@@ -294,6 +309,8 @@ def test_make_ahead_work_lands_on_the_days_before_through_today_moves(family, re
     tg = _thanksgiving()
     plan_id = _week_with_dinner(tg, "Roast Chicken")
     tools.answer_holiday(tg, "hosting", headcount=5)
+    assert _holiday_tasks() == [], "a draft is a proposal: nothing on Now until the week is approved"
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
 
     tasks = _holiday_tasks()
     by_day = {}
@@ -305,6 +322,7 @@ def test_make_ahead_work_lands_on_the_days_before_through_today_moves(family, re
         f"Bake the pumpkin pie — for the big meal on {weekday}.",
         "The fresh shop for Thanksgiving — produce, dairy, meat and fish.",
     ]
+    assert all(t["related_meal"] == "Shop" for t in tasks if "shop" in t["description"].lower())
     assert by_day[_shift(tg, -3)] == ["The keeps-well shop for Thanksgiving — pantry and freezer things, so the fresh trip stays short."]
     assert tg not in by_day, "the day itself is the timeline, not a prep task"
     entry = _entry(plan_id, tg)
@@ -313,7 +331,10 @@ def test_make_ahead_work_lands_on_the_days_before_through_today_moves(family, re
     # Now, the day before: the pieces are prep moves, tickable like any other.
     moves = tools.today_moves(_shift(tg, -1), now=datetime.combine(date.fromisoformat(_shift(tg, -1)), datetime.min.time()))
     prep = [m for m in moves["moves"] if m["kind"] == "prep"]
-    assert [m["title"] for m in prep] == ["Make the stuffing", "Bake the pumpkin pie", "The fresh shop for Thanksgiving"]
+    assert [m["title"] for m in prep] == ["Make the stuffing", "Bake the pumpkin pie"]
+    shop = [m for m in moves["moves"] if m["kind"] == "shop"]
+    assert [m["title"] for m in shop] == ["The fresh shop for Thanksgiving"], "the shop reads as a shop, not a prep"
+    assert shop[0]["tickable"] and shop[0]["id"].startswith("prep:")
     assert prep[0]["reason"] == f"for the big meal on {weekday}"
     assert prep[0]["tickable"] and prep[0]["action"]["target"]["kind"] == "check_prep"
     tools.set_move_done(prep[0]["id"], True)
@@ -325,7 +346,7 @@ def test_the_days_before_a_monday_holiday_belong_to_the_week_before_and_still_sh
     assert date.fromisoformat(tg).weekday() == 0
     previous = tools.create_weekly_plan(_shift(tg, -7))["weekly_plan_id"]
     tools.plan_meal(_shift(tg, -1), "Chili", slot="dinner", weekly_plan_id=previous)
-    plan_id = _week_with_dinner(tg, "Roast Chicken")
+    plan_id = _week_with_dinner(tg, "Roast Chicken", approve=True)
     tools.answer_holiday(tg, "hosting", headcount=5)
 
     sunday_tasks = [t for t in _holiday_tasks() if t["task_date"] == _shift(tg, -1)]
@@ -339,7 +360,7 @@ def test_a_standing_prep_day_in_the_window_takes_the_make_ahead_work(family, rec
     tg = _thanksgiving()
     saturday = _shift(tg, -2)
     tools.set_prep_days([{"weekday": date.fromisoformat(saturday).strftime("%A").lower(), "minutes": 90}])
-    _week_with_dinner(tg, "Roast Chicken")
+    _week_with_dinner(tg, "Roast Chicken", approve=True)
     tools.answer_holiday(tg, "hosting", headcount=5)
 
     by_day = {}
@@ -396,7 +417,7 @@ def test_an_oven_dish_that_does_not_fit_the_rest_goes_in_before_the_main(family,
     tools.answer_holiday(tg, "hosting", headcount=4, on_table_at="5pm")
 
     steps = [(s["say"], s["step"]) for s in tools.big_meal_timeline(tg)["steps"]]
-    assert ("3:45 pm", "Scalloped Potatoes into the oven (alongside the main)") in steps, "too long for the rest window: the second rack"
+    assert ("3:45 pm", "Scalloped Potatoes into the oven (with the main)") in steps, "too long for the rest window: the second rack"
     assert ("3:25 pm", "Prep the scalloped potatoes") in steps
     assert steps[-1] == ("5:00 pm", "On the table")
 
@@ -588,7 +609,7 @@ def test_a_dish_that_clashes_with_a_guests_note_is_refused(family, recipes, prop
 
 def test_make_the_stuffing_two_days_before_moves_its_prep(family, recipes, proposer):
     tg = _thanksgiving()
-    _week_with_dinner(tg, "Roast Chicken")
+    _week_with_dinner(tg, "Roast Chicken", approve=True)
     tools.answer_holiday(tg, "hosting", headcount=5)
 
     result = tools.set_big_meal_prep_day(tg, "Sage and Onion Stuffing", "two_days_before")
@@ -622,7 +643,7 @@ def test_swapping_the_main_keeps_the_sides(family, recipes, proposer):
     assert "ham" in items and "whole chicken" not in items and "bread" in items
     steps = [(s["say"], s["step"]) for s in tools.big_meal_timeline(tg)["steps"]]
     assert steps[0] == ("2:45 pm", "Start on the glazed ham"), "a ham with no rest: 120 minutes back from five, prep before"
-    assert ("4:35 pm", "Maple Roasted Carrots into the oven (alongside the main)") in steps, "no rest window, so the second rack"
+    assert ("4:35 pm", "Maple Roasted Carrots into the oven (with the main)") in steps, "no rest window, so the second rack"
 
 
 def test_propose_again_keeps_the_main_and_replaces_the_rest(family, recipes, proposer):
@@ -670,3 +691,328 @@ def test_the_copy_never_says_event_mode():
     for rel in ("app/tools/big_meal.py", "app/tools/holidays.py", "static/plan-week.html", "static/shell.js"):
         text = (repo / rel).read_text(encoding="utf-8").lower()
         assert "event mode" not in text.replace('never "event mode"', "").replace("never \\\"event mode\\\"", ""), rel
+
+
+# ---------- the verifier's catches (2026-09-13) ----------
+
+def test_a_trip_already_covering_the_day_builds_nothing(family, recipes, proposer):
+    """Slice 1's rule — the trip wins — is the menu's too: a hosting answer
+    on a night nobody is home records the count and builds NOTHING: no
+    turkey into an empty house, no shopping, no prep."""
+    tg = _thanksgiving()
+    plan_id = _week_with_dinner(tg, "Chili", approve=True)
+    tools.set_away_stretch(_shift(tg, -1), "dinner", _shift(tg, 1), "lunch")
+    row_before = dict(_entry(plan_id, tg))
+    need_before = tools.get_slot_need(tg, "dinner")
+    assert row_before["slot_state"] == "planned_empty" and need_before["away_stretch_id"]
+    list_before = _list()
+
+    result = tools.answer_holiday(tg, "hosting", headcount=4)
+
+    assert result["hosting"] == "already_out" and result["big_meal"]["menu"] == "trip"
+    assert proposer["calls"] == 0, "nothing was even proposed"
+    assert dict(_entry(plan_id, tg)) == row_before, "the away placeholder is untouched"
+    assert tools.get_slot_need(tg, "dinner") == need_before
+    assert _list() == list_before and _holiday_tasks() == []
+    assert tools.get_holiday_answer(tg)["headcount"] == 4, "the count is kept for when the trip changes"
+    assert "away over Thanksgiving" in result["big_meal_said"]
+    tools.answer_holiday(tg, "just_us")
+    assert tools.get_slot_need(tg, "dinner") == need_before
+
+
+def test_an_adopted_dinner_survives_leaving_hosting(family, recipes, proposer):
+    """Regression vs slice 1: the household's own Roast Chicken was adopted
+    as the main; leaving hosting gives it back as it was — sides off, the
+    sides' shopping off, the dinner and its own shopping kept."""
+    tg = _thanksgiving()
+    plan_id = tools.create_weekly_plan(tg)["weekly_plan_id"]
+    tools.plan_meal(tg, "Roast Chicken", slot="dinner", weekly_plan_id=plan_id, reasoning="Emily’s pick for a Monday.")
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+    tools.answer_holiday(tg, "hosting", headcount=5)
+    assert "bread" in _list() and _list()["whole chicken"] == "4"
+
+    tools.answer_holiday(tg, "just_us")
+
+    row = _entry(plan_id, tg)
+    assert row["recipe_name"] == "Roast Chicken" and row["slot_state"] == "planned", "their dinner, still theirs"
+    assert _sides(row) == [] and "holiday_menu" not in json.loads(row["derived_from_json"])
+    assert row["reasoning"] == "Emily’s pick for a Monday.", "its own reasoning back"
+    items = _list()
+    assert "whole chicken" in items and "bread" not in items and "pumpkin puree" not in items
+    assert items["whole chicken"] == "1", "re-bought for the household alone, the guests gone"
+    assert _holiday_tasks() == [] and json.loads(bm._answer_row(tg)["menu_json"]) == {}
+
+
+def test_a_proposed_main_is_still_handed_back_as_a_question(family, recipes, proposer):
+    tg = _thanksgiving()
+    plan_id = tools.create_weekly_plan(tg)["weekly_plan_id"]
+    tools.answer_holiday(tg, "hosting", headcount=5)
+    assert _entry(plan_id, tg)["recipe_name"] == "Herb Roast Turkey"
+    tools.answer_holiday(tg, "out")
+    assert _entry(plan_id, tg)["slot_state"] == "planned_empty"
+
+
+def test_a_bigger_table_rescales_the_whole_shop(family, recipes, proposer):
+    """7 → 22 at the table: every line follows, the main by attendance and
+    each dish by the count it was written for — through the answer AND
+    through a bare set_guest_count (the intake's steppers)."""
+    tg = _thanksgiving()
+    _week_with_dinner(tg, "Roast Chicken", approve=True)
+    tools.answer_holiday(tg, "hosting", headcount=5)
+    before = _list()
+    assert before["bread"] == "2 loaves" and before["whole chicken"] == "4"
+
+    result = tools.answer_holiday(tg, "hosting", headcount=20)
+    assert result["big_meal"]["menu"] == "refreshed" and result["big_meal"]["eaters"] == 22
+    items = _list()
+    assert items["bread"] == "7 loaves" and items["whole chicken"] == "11", items
+    sides = _sides(bm.menu_entry(tg))
+    assert all(s["servings"] == 7 for s in sides), "a dish keeps the count it was WRITTEN for; the table scales it"
+
+    tools.set_guest_count(tg, "dinner", 5)
+    items = _list()
+    assert items["bread"] == "2 loaves" and items["whole chicken"] == "4", "the steppers reach the shop too"
+
+
+def test_the_proposed_main_is_checked_against_the_table(family, recipes, proposer):
+    tg = _thanksgiving()
+    plan_id = tools.create_weekly_plan(tg)["weekly_plan_id"]
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+    tools.add_fact("household", "No shellfish — Emily is allergic", hard=True)
+    shrimp = {**MAIN, "name": "Shrimp Boil", "ingredients": [{"item": "shrimp", "qty": "5 lb", "category": "meat/seafood"}]}
+    proposer["answer"]["main"] = shrimp
+    calls = {"n": 0}
+    original = agent.generate_big_meal_llm
+
+    def _second_try(context):
+        calls["n"] += 1
+        if context.get("avoid"):
+            assert context["avoid"][0]["name"] == "Shrimp Boil"
+            return {"main": MAIN, "dishes": DISHES}
+        return original(context)
+    agent.generate_big_meal_llm = _second_try
+
+    result = tools.answer_holiday(tg, "hosting", headcount=5)
+
+    assert calls["n"] == 2, "one more try, with the clash named"
+    row = _entry(plan_id, tg)
+    assert row["recipe_name"] == "Herb Roast Turkey" and "shrimp" not in _list()
+    assert result["big_meal"]["dropped"][0]["name"] == "Shrimp Boil"
+    assert result["big_meal_said"].startswith("Left off the shrimp boil — ")
+
+
+def test_a_main_that_clashes_twice_leaves_the_night_open_with_the_reason(family, recipes, proposer):
+    tg = _thanksgiving()
+    plan_id = tools.create_weekly_plan(tg)["weekly_plan_id"]
+    proposer["answer"]["main"] = {**MAIN, "name": "Shrimp Boil", "ingredients": [{"item": "shrimp", "qty": "5 lb", "category": "meat/seafood"}]}
+    result = tools.answer_holiday(tg, "hosting", headcount=5, guest_notes="no shellfish")
+    assert result["big_meal"]["status"] == "none"
+    row = _entry(plan_id, tg)
+    assert row["slot_state"] == "open" and "clashed with no shellfish" in row["open_reason"]
+    assert "shrimp" not in _list()
+
+
+def test_an_adopted_main_that_clashes_is_said_not_touched(family, recipes, proposer):
+    tg = _thanksgiving()
+    plan_id = _week_with_dinner(tg, "Roast Chicken")
+    result = tools.answer_holiday(tg, "hosting", headcount=5, guest_notes="Priya can’t have chicken")
+    assert _entry(plan_id, tg)["recipe_name"] == "Roast Chicken"
+    assert result["big_meal"]["conflicts"][0]["dish"] == "Roast Chicken"
+    assert result["big_meal_said"] == "Heads up: Roast Chicken has Priya can’t have chicken in it — your call."
+
+
+def test_a_hand_swap_of_the_dinner_leaves_no_orphan_prep(family, recipes, proposer):
+    tg = _thanksgiving()
+    plan_id = _week_with_dinner(tg, "Roast Chicken", approve=True)
+    tools.answer_holiday(tg, "hosting", headcount=5)
+    assert len(_holiday_tasks()) == 4
+
+    tools.swap_meal_in_plan(plan_id, tg, "Chili")
+
+    sunday = tools.today_moves(_shift(tg, -1), now=datetime.combine(date.fromisoformat(_shift(tg, -1)), datetime.min.time()))
+    assert not [m for m in sunday["moves"] if "stuffing" in m["title"].lower()], "no reminder for a menu that no longer exists"
+    assert not [t for t in tools.get_prep_schedule(plan_id) if t["task_type"] == "holiday"]
+    assert bm.menu_entry(tg) is None and json.loads(bm._answer_row(tg)["menu_json"]) == {}
+    # And clear_plan_slot, which this module uses itself, cleans as it goes.
+    tools.answer_holiday(tg, "hosting", headcount=5)
+    tools.clear_plan_slot(plan_id, tg, "dinner")
+    assert _holiday_tasks() == []
+
+
+def test_a_retired_plans_prep_does_not_surface_in_the_plan_that_replaced_it(family, recipes):
+    tg = _thanksgiving()
+    old = tools.create_weekly_plan(tg)["weekly_plan_id"]
+    tools.plan_meal(tg, "Chili", slot="dinner", weekly_plan_id=old)
+    tools.save_prep_tasks(old, [{"task_date": tg, "description": "Chop the onions — for the chili.", "related_meal": "Chili"}])
+    new = tools.create_weekly_plan(tg)["weekly_plan_id"]
+    tools.retire_overlapping_plans(new, tg, 7)
+    tools.plan_meal(tg, "Roast Chicken", slot="dinner", weekly_plan_id=new)
+    assert tools.get_prep_schedule(new) == []
+    assert tools.get_cooker_view(new)["prep_total"] == 0
+
+
+def test_a_step_before_the_day_is_said_as_the_evening_before(family, recipes, proposer):
+    tg = _thanksgiving()
+    tools.create_weekly_plan(tg)
+    proposer["answer"]["main"] = {**MAIN, "name": "Slow Brisket", "prep_minutes": 30, "cook_minutes": 600, "rest_minutes": 30}
+    tools.answer_holiday(tg, "hosting", headcount=4, on_table_at="10am")
+    tl = tools.big_meal_timeline(tg)
+    first = tl["steps"][0]
+    assert first["say"] == "the evening before, 11:00 pm" and first["day_before"] is True
+    assert first["step"] == "Start on the slow brisket"
+    ats = [s["at"] for s in tl["steps"]]
+    assert ats == sorted(ats), "ordered by the real clock, not the printed one"
+    assert tl["steps"][-1]["say"] == "10:00 am"
+
+
+def test_a_bare_hour_on_a_dinner_reads_as_the_evening():
+    assert bm.normalise_on_table_at("6") == "18:00"
+    assert bm.normalise_on_table_at("12") == "12:00"
+    assert bm.normalise_on_table_at("6am") == "06:00"
+    assert bm.normalise_on_table_at("6:00") == "06:00", "a colon is taken as written"
+    assert bm.normalise_on_table_at("5 p.m.") == "17:00"
+
+
+def test_a_guest_note_is_kept_to_one_line(family):
+    tg = _thanksgiving()
+    with pytest.raises(ValueError, match="under 160"):
+        tools.answer_holiday(tg, "hosting", headcount=2, guest_notes="x" * 161)
+
+
+def test_chicken_and_thyme_with_no_section_are_fresh_and_saturdays_onions_go_early(family, proposer):
+    tg = _thanksgiving()
+    # A recipe that named no sections at all: everything lands in "other".
+    tools.add_recipe("Roast Chicken", ingredients=[{"item": "whole chicken", "qty": "1"}, {"item": "fresh thyme", "qty": "1 bunch"},
+                                                   {"item": "foil", "qty": "1 roll"}], default_servings=2)
+    tools.add_recipe("Onion Soup", ingredients=[{"item": "onions", "qty": "2", "category": "produce"}], default_servings=2)
+    plan_id = _week_with_dinner(tg, "Roast Chicken")
+    earlier = tools.create_weekly_plan(_shift(tg, -7))["weekly_plan_id"]
+    tools.plan_meal(_shift(tg, -2), "Onion Soup", slot="dinner", weekly_plan_id=earlier)  # the Saturday between the trips
+    tools.approve_weekly_plan(earlier, approved_by="Emily")
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+    tools.answer_holiday(tg, "hosting", headcount=5)
+
+    split = tools.big_meal_shop_split(today=date.fromisoformat(_shift(tg, -10)))
+    by_id = {i["id"]: i["item"] for i in tools.list_grocery_list()}
+    early = {by_id[i] for i in split["early"]["item_ids"]}
+    fresh = {by_id[i] for i in split["fresh"]["item_ids"]}
+    assert {"whole chicken", "fresh thyme"} <= fresh, "raw poultry and fresh herbs don't keep, whatever section they landed in"
+    assert "foil" in early
+    assert "onions" in early, "needed on Saturday, before the fresh trip — bought on the early one"
+    assert bm.keeps("candles", "other") and not bm.keeps("salmon fillets", "other") and bm.keeps("flour", "pantry")
+
+
+def test_now_asks_for_the_shop_once_on_the_day_of_the_fresh_trip(family, recipes, proposer):
+    tg = _thanksgiving()
+    plan_id = _week_with_dinner(tg, "Roast Chicken", approve=True)
+    tools.answer_holiday(tg, "hosting", headcount=5)
+    sunday = _shift(tg, -1)
+    now = datetime.combine(date.fromisoformat(sunday), datetime.min.time().replace(hour=9))
+    moves = tools.today_moves(sunday, now=now)["moves"]
+    shops = [m for m in moves if m["kind"] == "shop"]
+    assert len(shops) == 1, [m["title"] for m in shops]
+    assert shops[0]["title"] == "The fresh shop for Thanksgiving"
+    assert shops[0]["detail"].startswith(str(len(tools.list_grocery_list()))) and "item" in shops[0]["detail"]
+
+
+def test_a_reheat_night_buys_nothing_new_for_the_sides(family, recipes, proposer):
+    tg = _thanksgiving()
+    plan_id = _week_with_dinner(tg, "Roast Chicken")
+    tools.plan_meal(_shift(tg, 1), "Roast Chicken", slot="dinner", weekly_plan_id=plan_id, derived_from={"links_to": f"{tg}:dinner"})
+    tools.repair_leftover_chains(plan_id)
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+    tools.answer_holiday(tg, "hosting", headcount=5)
+    items = _list()
+    assert items["frozen pie shells"] == "2" and items["pumpkin puree"] == "2 cans" and items["bread"] == "2 loaves"
+    assert items["whole chicken"] == "5", "the MAIN still cooks for the reheat night (7 + 2 eaters, recipe for 2)"
+
+
+def test_a_guests_note_matches_food_not_people(family, recipes, proposer):
+    tg = _thanksgiving()
+    _week_with_dinner(tg, "Roast Chicken")
+    proposer["answer"]["dishes"] = DISHES + [
+        {"name": "Grandma’s Rolls", "role": "side", "covers": ["carb"],
+         "ingredients": [{"item": "flour", "qty": "1 bag", "category": "pantry"}],
+         "instructions": ["Bake."], "minutes": 20, "cook_minutes": 20, "oven": True, "ahead_days": 1},
+        {"name": "Walnut Salad", "role": "side", "covers": ["vegetable"],
+         "ingredients": [{"item": "walnuts", "qty": "1 cup", "category": "pantry"}],
+         "instructions": ["Toss."], "minutes": 5, "cook_minutes": 0, "oven": False, "ahead_days": 0},
+    ]
+    result = tools.answer_holiday(tg, "hosting", headcount=5, guest_notes="no nuts for Grandma; Priya’s vegetarian")
+    names = [d["name"] for d in tools.get_big_meal(tg)["dishes"]]
+    assert "Grandma’s Rolls" in names, "a person's name is never a match term"
+    assert "Walnut Salad" not in names
+    assert bm._people_words("no nuts for Grandma; Priya’s vegetarian") == {"grandma", "priya", "emily", "vineeth"}
+
+
+def test_a_dinner_moved_to_another_night_means_the_menu_is_gone_not_followed(family, recipes, proposer):
+    tg = _thanksgiving()
+    plan_id = _week_with_dinner(tg, "Roast Chicken", approve=True)
+    tools.plan_meal(_shift(tg, 2), "Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.answer_holiday(tg, "hosting", headcount=5)
+    assert len(_holiday_tasks()) == 4
+
+    tools.swap_dinner_nights(plan_id, tg, _shift(tg, 2))
+
+    assert bm.menu_entry(tg) is None and _holiday_tasks() == []
+    moved = _entry(plan_id, _shift(tg, 2))
+    assert moved["recipe_name"] == "Roast Chicken" and "holiday_menu" not in json.loads(moved["derived_from_json"])
+    # "out" now empties the HOLIDAY's dinner, never the moved one.
+    tools.answer_holiday(tg, "out")
+    assert _entry(plan_id, tg)["slot_state"] == "planned_empty"
+    assert _entry(plan_id, _shift(tg, 2))["recipe_name"] == "Roast Chicken" and _entry(plan_id, _shift(tg, 2))["slot_state"] == "planned"
+    # Re-hosting builds one fresh menu on the holiday, not a second one.
+    tools.answer_holiday(tg, "hosting", headcount=5)
+    assert _entry(plan_id, tg)["recipe_name"] == "Herb Roast Turkey"
+    assert len(_sides(_entry(plan_id, _shift(tg, 2)))) == 4, "the moved dinner keeps what it carried"
+
+
+def test_prep_waits_for_approval_and_lands_with_it(family, recipes, proposer):
+    tg = _thanksgiving()
+    plan_id = _week_with_dinner(tg, "Roast Chicken")
+    tools.answer_holiday(tg, "hosting", headcount=5)
+    assert _holiday_tasks() == [] and tools.get_big_meal(tg)["status"] == "full"
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+    assert len(_holiday_tasks()) == 4 and "bread" in _list()
+
+
+def test_the_days_screen_tap_records_and_the_save_builds(signed_in, family, recipes, proposer):
+    tg = _thanksgiving()
+    _week_with_dinner(tg, "Roast Chicken")
+    tap = signed_in.post("/api/holidays/answer", json={"date": tg, "answer": "hosting", "build_menu": False}).json()
+    assert tap["big_meal"]["menu"] == "deferred" and proposer["calls"] == 0
+    assert tools.get_holiday_answer(tg)["answer"] == "hosting", "the answer itself is a fact, recorded on the tap"
+    save = signed_in.post("/api/holidays/answer", json={"date": tg, "answer": "hosting", "headcount": 5,
+                                                        "on_table_at": "17:00", "guest_notes": "no pumpkin"}).json()
+    assert save["big_meal"]["menu"] == "built" and proposer["calls"] == 1
+    assert proposer["context"]["eaters"] == 7 and proposer["context"]["guest_notes"] == "no pumpkin"
+    assert save["big_meal_said"] == "Left off the pumpkin pie — no pumpkin."
+    from pathlib import Path
+    page = (Path(__file__).resolve().parents[1] / "static" / "plan-week.html").read_text(encoding="utf-8")
+    assert "body.build_menu = false" in page and "holiday-said" in page and "big_meal_said" in page
+
+
+def test_the_copy_has_no_raw_tokens(family, recipes, proposer):
+    tg = _thanksgiving()
+    _week_with_dinner(tg, "Roast Chicken")
+    tools.answer_holiday(tg, "hosting", headcount=5)
+    with pytest.raises(ValueError) as e:
+        tools.set_big_meal_prep_day(tg, "Sage and Onion Stuffing", "whenever")
+    assert "day_of" not in str(e.value) and "_" not in str(e.value)
+    with pytest.raises(ValueError) as e:
+        tools.remove_big_meal_dish(tg, "Roast Chicken")
+    assert "set_big_meal_dish" not in str(e.value) and "role" not in str(e.value)
+
+
+def test_a_misspelled_migration_table_still_fails_loudly():
+    import sqlite3
+    from app import db as db_mod
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    saved = db_mod._MIGRATIONS
+    try:
+        db_mod._MIGRATIONS = [("holiday_answerz", "on_table_at", "TEXT NOT NULL DEFAULT ''")]
+        with pytest.raises(RuntimeError, match="holiday_answerz"):
+            db_mod._run_migrations(conn)
+    finally:
+        db_mod._MIGRATIONS = saved

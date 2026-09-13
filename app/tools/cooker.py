@@ -552,12 +552,24 @@ def get_prep_schedule(weekly_plan_id: int | None = None) -> list[dict]:
         period = _week_intake.period_dates(start, days) if days > 0 else []
         if period:
             first, last = period[0], period[-1]
+    # Two guards on the wider read. A row dated into this period by ANOTHER
+    # plan counts only while that plan is live (draft or approved) — a
+    # retired plan's "chop onions" for a Chili that is no longer planned
+    # must not surface in the plan that replaced it. And a row whose entry
+    # is gone (a hand swap deleted the dinner; the row survived because the
+    # column carries no foreign key) is a reminder for a meal that no
+    # longer exists, so it is dropped on read — the one place that covers
+    # every delete path, past and future, rather than a fix per path.
     rows = conn.execute(
-        "SELECT id, task_date, description, related_meal, status, task_type, "
-        "inventory_item_id, meal_plan_entry_id, quantity FROM prep_tasks "
-        "WHERE household_id = ? AND (weekly_plan_id = ? OR (? IS NOT NULL AND task_date >= ? AND task_date <= ?) "
-        "OR meal_plan_entry_id IN (SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ?)) "
-        "ORDER BY task_date ASC, id ASC",
+        "SELECT t.id, t.task_date, t.description, t.related_meal, t.status, t.task_type, "
+        "t.inventory_item_id, t.meal_plan_entry_id, t.quantity FROM prep_tasks t "
+        "WHERE t.household_id = ? "
+        "AND (t.weekly_plan_id = ? "
+        "     OR (? IS NOT NULL AND t.task_date >= ? AND t.task_date <= ? "
+        "         AND t.weekly_plan_id IN (SELECT id FROM weekly_plans WHERE household_id = t.household_id AND status IN ('draft', 'approved'))) "
+        "     OR t.meal_plan_entry_id IN (SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ?)) "
+        "AND (t.meal_plan_entry_id IS NULL OR EXISTS (SELECT 1 FROM meal_plan_entries e WHERE e.id = t.meal_plan_entry_id)) "
+        "ORDER BY t.task_date ASC, t.id ASC",
         (household_id(), weekly_plan_id, first, first, last, weekly_plan_id),
     ).fetchall()
     conn.close()

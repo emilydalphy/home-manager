@@ -56,6 +56,21 @@ who wrote it.
 THE DAY-OF TIMELINE is data plus a chat readback (get_big_meal). Drawing
 it on the Cook tab is deferred until the Cook-D redesign merges — see the
 CLAUDE.md entry.
+
+THE RULES THAT HOLD IT TOGETHER (each one a verifier's catch, 2026-09-13):
+  - A trip already covering the day wins: nothing is built for a dinner
+    nobody is home for (slice 1's rule, now the menu's too).
+  - A dinner the household already had in the slot is ADOPTED, not
+    replaced, and leaving hosting gives it back as it was — sides off,
+    marks off, its own shopping re-bought for the household. Only a main
+    the menu itself PROPOSED is handed back as an open question.
+  - The menu follows the answer: a new count, time or guest note refreshes
+    it in place (rescale, re-check every dish including the main, drop
+    what clashes, propose replacements once) rather than rebuilding.
+  - Prep rows are written only once the week is approved — approval is
+    when a week becomes real — and are read only while their entry exists.
+  - A menu whose dinner was moved to another night (swap_dinner_nights) is
+    gone, not followed: its prep rows go, the moved dinner is left alone.
 """
 from __future__ import annotations
 
@@ -111,11 +126,71 @@ MAX_AHEAD_DAYS = 2
 # better number.
 DEFAULT_REHEAT_MINUTES = 30
 
+# The guests' note is one line in the host's words; the Days screen's box
+# holds this many characters and chat is held to the same.
+GUEST_NOTES_MAX = 160
+
+# ASSUMPTION — for a grocery line whose section is "other" (a recipe that
+# named no section), what reads as perishable and so goes on the fresh
+# trip: raw meat, poultry, fish and seafood, fresh herbs, salad greens,
+# berries, bread. Anything else in "other" (foil, drinks, candles) keeps.
+PERISHABLE_WORDS = frozenset({
+    "chicken", "turkey", "duck", "goose", "beef", "steak", "roast", "lamb", "pork", "ham", "veal",
+    "sausage", "sausages", "bacon", "mince", "ground",
+    "fish", "salmon", "trout", "cod", "halibut", "tuna", "shrimp", "prawns", "prawn", "scallops",
+    "mussels", "clams", "oysters", "lobster", "crab",
+    "thyme", "rosemary", "sage", "parsley", "cilantro", "coriander", "dill", "basil", "chives", "mint",
+    "tarragon", "oregano", "herbs",
+    "lettuce", "greens", "arugula", "rocket", "spinach", "kale", "romaine", "salad",
+    "berries", "strawberries", "raspberries", "blueberries", "blackberries",
+    "bread", "loaf", "loaves", "rolls", "buns", "baguette",
+    "milk", "cream", "yogurt", "yoghurt", "cheese", "eggs",
+})
+
 # When nothing says otherwise — no `oven`, no cook time — a side is
 # assumed to take this long on the day.
 DEFAULT_DISH_MINUTES = 20
 
 MENU_STATUSES = ("full", "main_only", "none")
+
+
+# While answer_holiday is mid-write, attendance changes it makes itself
+# (the count through the intake) must not refresh the menu half-way; it
+# refreshes once at the end. A plain module flag: one process, one write.
+_REFRESHING_SUPPRESSED = False
+
+
+class suppress_refresh:
+    """`with big_meal.suppress_refresh():` — attendance's hook stays quiet inside."""
+
+    def __enter__(self):
+        global _REFRESHING_SUPPRESSED
+        self._was = _REFRESHING_SUPPRESSED
+        _REFRESHING_SUPPRESSED = True
+
+    def __exit__(self, *exc):
+        global _REFRESHING_SUPPRESSED
+        _REFRESHING_SUPPRESSED = self._was
+        return False
+
+
+def on_attendance_changed(date_str: str, slot: str) -> None:
+    """
+    attendance.set_slot_attendance calls this after every write. A hosted
+    holiday's dinner whose count just changed refreshes its menu (the
+    shopping rescales, the prep re-spreads); everything else is a no-op.
+    Never raises — an attendance write must not fail over a menu.
+    """
+    if _REFRESHING_SUPPRESSED or slot != "dinner":
+        return
+    try:
+        row = _answer_row(date_str)
+        if row is None or row["answer"] != "hosting" or not _row_menu(row).get("entry_id"):
+            return
+        from . import holidays as _holidays
+        refresh_menu(_holidays.get_holiday_answer(date_str))
+    except Exception:
+        logger.exception("The big meal for %s could not follow the attendance change", date_str)
 
 
 def _row_menu(row) -> dict:
@@ -200,7 +275,14 @@ def _entry_by_id(entry_id: int):
 
 
 def menu_entry(date_str: str):
-    """The dinner entry the menu built (or adopted), if it is still there and still ours."""
+    """
+    The dinner entry the menu built (or adopted), looked up by the id the
+    menu recorded, if it is still there, still ours and still on the
+    holiday. A dinner moved to another night (swap_dinner_nights) is the
+    household's move: the menu is treated as gone — its prep rows deleted,
+    its mark taken off the moved dinner, the record cleared — never
+    followed to the other night.
+    """
     row = _answer_row(date_str)
     if row is None or row["answer"] != "hosting":
         return None
@@ -209,15 +291,62 @@ def menu_entry(date_str: str):
     if not entry_id:
         return None
     entry = _entry_by_id(int(entry_id))
-    if entry is None or entry["date"] != date_str or not _derived(entry).get("holiday_menu"):
+    if entry is None or not _derived(entry).get("holiday_menu"):
+        if menu:
+            _delete_prep(int(entry_id), date_str)
+            _save_menu(date_str, {})
+        return None
+    if entry["date"] != date_str:
+        _forget_moved(entry, date_str)
         return None
     return entry
 
 
-def _mark_entry(entry_id: int, holiday_name: str, reasoning: str | None = None) -> None:
+def _forget_moved(entry, date_str: str) -> None:
+    """The menu's dinner was moved off the holiday: clean up after it and leave the dinner where it went."""
+    _delete_prep(entry["id"], date_str)
+    conn = get_conn()
+    derived = _derived(entry)
+    for key in ("holiday_menu", "holiday", "menu_adopted"):
+        derived.pop(key, None)
+    conn.execute(
+        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps(derived), entry["id"], household_id()),
+    )
+    conn.commit()
+    conn.close()
+    _save_menu(date_str, {})
+
+
+def _mark_entry(entry_id: int, holiday_name: str, reasoning: str | None = None) -> str:
+    """Mark an ADOPTED dinner as the big meal's; returns the reasoning it had, so the unwind can put it back."""
     conn = get_conn()
     row = conn.execute(
         "SELECT derived_from_json, reasoning FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (entry_id, household_id()),
+    ).fetchone()
+    if row is None:
+        conn.close()
+        return ""
+    try:
+        derived = json.loads(row["derived_from_json"] or "{}")
+    except (TypeError, ValueError):
+        derived = {}
+    derived.update({"holiday": holiday_name, "holiday_menu": True, "menu_adopted": True})
+    conn.execute(
+        "UPDATE meal_plan_entries SET derived_from_json = ?, reasoning = ? WHERE id = ? AND household_id = ?",
+        (json.dumps(derived), reasoning if reasoning is not None else row["reasoning"], entry_id, household_id()),
+    )
+    conn.commit()
+    conn.close()
+    return row["reasoning"] or ""
+
+
+def _unmark_entry(entry_id: int, reasoning: str) -> None:
+    """Give an adopted dinner back: sides off, marks off, its own reasoning back."""
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
         (entry_id, household_id()),
     ).fetchone()
     if row is None:
@@ -227,10 +356,12 @@ def _mark_entry(entry_id: int, holiday_name: str, reasoning: str | None = None) 
         derived = json.loads(row["derived_from_json"] or "{}")
     except (TypeError, ValueError):
         derived = {}
-    derived.update({"holiday": holiday_name, "holiday_menu": True, "constraint": "hosting"})
+    for key in ("holiday_menu", "holiday", "menu_adopted"):
+        derived.pop(key, None)
     conn.execute(
-        "UPDATE meal_plan_entries SET derived_from_json = ?, reasoning = ? WHERE id = ? AND household_id = ?",
-        (json.dumps(derived), reasoning if reasoning is not None else row["reasoning"], entry_id, household_id()),
+        "UPDATE meal_plan_entries SET derived_from_json = ?, reasoning = ?, sides_json = '[]' "
+        "WHERE id = ? AND household_id = ?",
+        (json.dumps(derived), reasoning, entry_id, household_id()),
     )
     conn.commit()
     conn.close()
@@ -377,11 +508,36 @@ def guest_avoidances(guest_notes: str) -> list[dict]:
     text = (guest_notes or "").strip()
     if not text:
         return []
-    phrases, excepted = _coordination._fact_keywords(text, drop=set())
+    phrases, excepted = _coordination._fact_keywords(text, drop=_people_words(text))
     terms = _coordination._match_terms(phrases, excepted)
     if not terms:
         return []
     return [{"member": "a guest", "label": text, "source": "guest", "severity": "hard", "terms": terms}]
+
+
+def _people_words(text: str) -> set[str]:
+    """
+    The words in a guest note that name people, not food, so "no nuts for
+    Grandma" is a rule about nuts and never a match on a dish called
+    "Grandma's rolls": every household member's name, every possessive
+    ("Priya's"), and every capitalised word that isn't starting a sentence.
+    """
+    words: set[str] = set()
+    try:
+        for m in _household.list_members():
+            words |= _coordination._name_words(m.get("name") or "")
+    except Exception:
+        pass
+    sentence_start = True
+    for token in re.findall(r"[A-Za-z][A-Za-z'’]*|[.!?;]", text):
+        if token in ".!?;":
+            sentence_start = True
+            continue
+        bare = re.sub(r"[’']s?$", "", token)
+        if token.endswith(("’s", "'s")) or (token[0].isupper() and not sentence_start):
+            words.add(bare.lower())
+        sentence_start = False
+    return words
 
 
 def dish_conflicts(name: str, ingredients: list[dict], guest_notes: str) -> list[dict]:
@@ -393,7 +549,10 @@ def dish_conflicts(name: str, ingredients: list[dict], guest_notes: str) -> list
 
 # ---------- the proposal ----------
 
-def proposal_context(saved: dict, existing_main: dict | None, side_count: int = DEFAULT_SIDE_COUNT) -> dict:
+def proposal_context(
+    saved: dict, existing_main: dict | None, side_count: int = DEFAULT_SIDE_COUNT,
+    *, want_sweet: bool = True, avoid: list[dict] | None = None, keep: list[str] | None = None,
+) -> dict:
     eaters = eaters_for(saved["date"], saved["headcount"])
     ctx = {
         "holiday": saved["holiday_name"],
@@ -401,9 +560,15 @@ def proposal_context(saved: dict, existing_main: dict | None, side_count: int = 
         "eaters": eaters,
         "on_table_at": saved.get("on_table_at") or "",
         "side_count": side_count,
+        "want_sweet": want_sweet,
         "want_main": existing_main is None,
         **restrictions_context(saved.get("guest_notes") or ""),
     }
+    if avoid:
+        # Dishes already tried that clashed with the table — never again.
+        ctx["avoid"] = avoid
+    if keep:
+        ctx["already_on_the_menu"] = keep
     if existing_main is not None:
         ctx["main"] = existing_main
     memory = _memory.get_household_memory()
@@ -539,6 +704,13 @@ def build_menu(saved: dict, proposer=None, side_count: int = DEFAULT_SIDE_COUNT)
     from . import weekly_plan as _wp
 
     d, name = saved["date"], saved["holiday_name"]
+    notes = saved.get("guest_notes") or ""
+    att = _attendance.get_slot_attendance(d, "dinner")
+    if att["explicit"] and att["nobody_home"]:
+        # A trip already has this dinner as nobody-home (slice 1: the trip
+        # wins, the headcount is only recorded). Nothing to build around.
+        return {"menu": "trip", "status": "none",
+                "note": f"You’re away over {name} on the calendar — I’ve kept the count and planned nothing. Tell me if the trip’s changed."}
     plan_id = _wp.get_plan_id_for_date(d)
     if plan_id is None:
         return {"menu": "waiting_for_plan", "status": "none"}
@@ -554,11 +726,35 @@ def build_menu(saved: dict, proposer=None, side_count: int = DEFAULT_SIDE_COUNT)
     raw = _propose(proposal_context(saved, existing, side_count), proposer)
     main_raw = None if existing is not None else (raw or {}).get("main")
     main = _clean_main(main_raw, eaters) if main_raw else None
+    dropped: list[dict] = []
+    conflicts: list[dict] = []
+    if main is not None:
+        # The main is checked like every other dish. One more try with the
+        # clash named; then the slot is handed back rather than a shrimp
+        # boil landing on a shellfish-allergic table.
+        clashes = dish_conflicts(main["name"], main["ingredients"], notes)
+        if clashes:
+            dropped.append({"name": main["name"], "restriction": clashes[0]["restriction"], "role": "main"})
+            raw2 = _propose(proposal_context(saved, None, side_count, avoid=dropped), proposer)
+            main2 = _clean_main((raw2 or {}).get("main"), eaters) if raw2 else None
+            if main2 is not None and not dish_conflicts(main2["name"], main2["ingredients"], notes):
+                main, raw = main2, raw2
+            else:
+                if main2 is not None:
+                    dropped.append({"name": main2["name"], "restriction": dish_conflicts(main2["name"], main2["ingredients"], notes)[0]["restriction"], "role": "main"})
+                main = None
+    if existing is not None:
+        # An adopted dinner is the household's own choice: a clash with a
+        # guest's note is SAID, never acted on.
+        for hit in dish_conflicts(existing["name"], [{"item": i} for i in existing["ingredients"]], notes):
+            conflicts.append({"dish": existing["name"], "restriction": hit["restriction"], "member": hit.get("member")})
 
     # --- the main ---
-    if existing is not None:
+    adopted = existing is not None
+    prior_reasoning = ""
+    if adopted:
         entry_id = entry["id"]
-        _mark_entry(entry_id, name, reasoning=_main_reasoning(name, eaters))
+        prior_reasoning = _mark_entry(entry_id, name, reasoning=_main_reasoning(name, eaters))
         main_timing = _main_timing((raw or {}).get("main_timing") or {}, entry)
     elif main is not None:
         _recipe_for_main(main, name)
@@ -574,32 +770,25 @@ def build_menu(saved: dict, proposer=None, side_count: int = DEFAULT_SIDE_COUNT)
     else:
         # No main to be had: the slot is handed back as a question that
         # names why, never left blank. Nothing else to build around.
+        why = ""
+        if dropped:
+            why = f" The one I had in mind clashed with {dropped[-1]['restriction']}."
         if entry is None or entry["slot_state"] != "planned":
             _wp.clear_plan_slot(plan_id, d, "dinner")
             _wp.plan_slot_open(
                 weekly_plan_id=plan_id, meal_date=d, slot="dinner",
-                open_reason=f"You’re hosting {name} for {eaters} — what’s the main? Tell me and I’ll build the rest around it.",
+                open_reason=f"You’re hosting {name} for {eaters} — what’s the main?{why} Tell me and I’ll build the rest around it.",
                 derived_from={"holiday": name, "holiday_menu": True, "constraint": "hosting"},
             )
-        menu = {"entry_id": None, "status": "none", "eaters": eaters,
-                "note": "I couldn’t put the menu together just now. Tell me the main and I’ll build the rest around it."}
+        menu = {"entry_id": None, "status": "none", "eaters": eaters, "dropped": dropped,
+                "note": f"I couldn’t put the menu together just now.{why} Tell me the main and I’ll build the rest around it."}
         _save_menu(d, menu)
         return {"menu": "built", **menu}
 
     # --- the sides and the sweet ---
-    dishes, dropped = [], []
-    for raw_dish in (raw or {}).get("dishes") or []:
-        dish = clean_dish(raw_dish, servings=eaters)
-        if dish is None:
-            continue
-        clashes = dish_conflicts(dish["name"], dish["ingredients"], saved.get("guest_notes") or "")
-        if clashes:
-            dropped.append({"name": dish["name"], "restriction": clashes[0]["restriction"]})
-            continue
-        dishes.append(dish)
+    dishes = _usable_dishes((raw or {}).get("dishes") or [], eaters, notes, dropped)
     kept_sides = [dict(s, role=s.get("role") or "side") for s in _plates.get_sides(entry_id)]
-    all_dishes = kept_sides + dishes
-    _write_sides(entry_id, all_dishes)
+    _write_sides(entry_id, kept_sides + dishes)
 
     if approved:
         _buy(entry_id, plan_id)
@@ -610,11 +799,134 @@ def build_menu(saved: dict, proposer=None, side_count: int = DEFAULT_SIDE_COUNT)
         note = "I’ve got the main. I couldn’t put the sides together just now — tell me what you’d like alongside and I’ll add them."
     menu = {
         "entry_id": entry_id, "status": status, "eaters": eaters, "main": main_timing,
-        "dropped": dropped, "note": note,
+        "adopted": adopted, "prior_reasoning": prior_reasoning,
+        "dropped": dropped, "conflicts": conflicts, "note": note,
     }
     _save_menu(d, menu)
     spread_prep(d)
     return {"menu": "built", **menu}
+
+
+def _usable_dishes(raw_dishes: list, eaters: int, notes: str, dropped: list[dict]) -> list[dict]:
+    """Clean each proposed side/sweet and keep the ones that don't clash; the rest are recorded in `dropped`."""
+    dishes = []
+    for raw_dish in raw_dishes:
+        dish = clean_dish(raw_dish, servings=eaters)
+        if dish is None:
+            continue
+        clashes = dish_conflicts(dish["name"], dish["ingredients"], notes)
+        if clashes:
+            dropped.append({"name": dish["name"], "restriction": clashes[0]["restriction"], "role": dish["role"]})
+            continue
+        dishes.append(dish)
+    return dishes
+
+
+def refresh_menu(saved: dict, proposer=None) -> dict:
+    """
+    The answer changed under a standing menu — a new count, a new time, a
+    guest's note — so the menu follows, in place:
+      - every dish, the main included, is re-checked against the table's
+        restrictions and the guests' notes; a side or sweet that clashes
+        comes off, and one proposal is made for replacements (the roles
+        that were lost, avoiding what just clashed); a PROPOSED main that
+        clashes is proposed again once, else the slot is handed back with
+        the reason; an ADOPTED main that clashes is said, not touched;
+      - the shopping is re-bought for the new table (the main scales by
+        attendance, each dish by the count it was written for — see
+        weekly_plan._entry_side_ingredient_groups), for an approved week;
+      - the prep is spread again.
+    Returns {"menu": "refreshed", "dropped", "conflicts", "replaced", "eaters"}.
+    """
+    from . import weekly_plan as _wp
+
+    d, name = saved["date"], saved["holiday_name"]
+    notes = saved.get("guest_notes") or ""
+    entry = menu_entry(d)
+    if entry is None:
+        return {"menu": "none"}
+    menu = _row_menu(_answer_row(d))
+    plan_id = entry["weekly_plan_id"]
+    approved = _plan_approved(plan_id)
+    eaters = eaters_for(d, saved["headcount"])
+    dropped: list[dict] = []
+    conflicts: list[dict] = []
+    entry_id = entry["id"]
+
+    # The main.
+    main_name = entry["recipe_name"] or entry["freeform_meal"] or ""
+    try:
+        main_ingredients = json.loads(entry["ingredients_json"] or "[]") if entry["recipe_id"] else []
+    except (TypeError, ValueError):
+        main_ingredients = []
+    main_clashes = dish_conflicts(main_name, main_ingredients, notes) if main_name else []
+    if main_clashes and menu.get("adopted"):
+        conflicts.append({"dish": main_name, "restriction": main_clashes[0]["restriction"], "member": main_clashes[0].get("member")})
+    elif main_clashes:
+        dropped.append({"name": main_name, "restriction": main_clashes[0]["restriction"], "role": "main"})
+        raw = _propose(proposal_context(saved, None, 0, want_sweet=False, avoid=dropped), proposer)
+        main = _clean_main((raw or {}).get("main"), eaters) if raw else None
+        sides = _plates.get_sides(entry_id)
+        _delete_prep(entry_id, d)
+        if main is not None and not dish_conflicts(main["name"], main["ingredients"], notes):
+            _recipe_for_main(main, name)
+            _wp.clear_plan_slot(plan_id, d, "dinner")
+            planned = _meal_plans.plan_meal(
+                d, main["name"], slot="dinner", weekly_plan_id=plan_id,
+                add_ingredients_to_grocery_list=False, food_groups=main["food_groups"] or None,
+                reasoning=_main_reasoning(name, eaters),
+                derived_from={"holiday": name, "holiday_menu": True, "constraint": "hosting"},
+            )
+            entry_id = planned["entry_id"]
+            _write_sides(entry_id, sides)
+            menu["entry_id"] = entry_id
+            menu["main"] = _main_timing(main, _entry_by_id(entry_id))
+        else:
+            _wp.clear_plan_slot(plan_id, d, "dinner")
+            _wp.plan_slot_open(
+                weekly_plan_id=plan_id, meal_date=d, slot="dinner",
+                open_reason=f"You’re hosting {name} for {eaters} — what’s the main? {main_name} clashed with {main_clashes[0]['restriction']}. Tell me and I’ll build the rest around it.",
+                derived_from={"holiday": name, "holiday_menu": True, "constraint": "hosting"},
+            )
+            menu.update({"entry_id": None, "status": "none", "eaters": eaters, "dropped": dropped, "conflicts": conflicts,
+                         "note": f"I’ve taken {main_name} off — it clashed with {main_clashes[0]['restriction']}. Tell me the main and I’ll build the rest around it."})
+            _save_menu(d, menu)
+            return {"menu": "refreshed", "dropped": dropped, "conflicts": conflicts, "replaced": [], "eaters": eaters}
+
+    # The sides and the sweet.
+    current = [dict(s, role=s.get("role") or "side") for s in _plates.get_sides(entry_id)]
+    kept, lost_roles = [], []
+    for dish in current:
+        clashes = dish_conflicts(dish["name"], dish.get("ingredients") or [], notes)
+        if clashes:
+            dropped.append({"name": dish["name"], "restriction": clashes[0]["restriction"], "role": dish["role"]})
+            lost_roles.append(dish["role"])
+        else:
+            kept.append(dish)
+    replaced: list[str] = []
+    if lost_roles:
+        existing = _existing_main_summary(_entry_by_id(entry_id))
+        raw = _propose(proposal_context(
+            saved, existing or {"name": main_name, "ingredients": []},
+            lost_roles.count("side"), want_sweet="sweet" in lost_roles,
+            avoid=dropped, keep=[k["name"] for k in kept],
+        ), proposer)
+        for dish in _usable_dishes((raw or {}).get("dishes") or [], eaters, notes, dropped):
+            if dish["role"] in lost_roles:
+                lost_roles.remove(dish["role"])
+                kept.append(dish)
+                replaced.append(dish["name"])
+    _write_sides(entry_id, kept)
+    menu.update({
+        "eaters": eaters, "dropped": dropped, "conflicts": conflicts,
+        "status": "full" if kept else "main_only",
+        "note": "" if kept else "I’ve got the main. Tell me what you’d like alongside and I’ll add it.",
+    })
+    _save_menu(d, menu)
+    if approved:
+        _buy(entry_id, plan_id)
+    spread_prep(d)
+    return {"menu": "refreshed", "dropped": dropped, "conflicts": conflicts, "replaced": replaced, "eaters": eaters}
 
 
 def _buy(entry_id: int, plan_id: int) -> None:
@@ -643,15 +955,28 @@ def clear_menu(date_str: str, holiday_name: str) -> dict:
     menu = _row_menu(row) if row is not None else {}
     entry_id = menu.get("entry_id")
     removed_prep = _delete_prep(entry_id, date_str)
-    reopened = False
+    reopened = restored = False
     if entry_id:
         entry = _entry_by_id(int(entry_id))
-        if entry is not None and _derived(entry).get("holiday_menu"):
-            _holidays._reopen(entry["weekly_plan_id"], entry["date"], holiday_name)
-            reopened = True
+        if entry is not None and entry["date"] != date_str:
+            # Moved to another night by the household: theirs now.
+            _forget_moved(entry, date_str)
+        elif entry is not None and _derived(entry).get("holiday_menu"):
+            if menu.get("adopted") or _derived(entry).get("menu_adopted"):
+                # Their own dinner, given back as it was: sides off, marks
+                # off, and — for an approved week — its shopping re-bought
+                # for the household alone (the sides' lines come off with
+                # the reversal; the main's go back on).
+                _unmark_entry(entry["id"], menu.get("prior_reasoning") or "")
+                if _plan_approved(entry["weekly_plan_id"]):
+                    _buy(entry["id"], entry["weekly_plan_id"])
+                restored = True
+            else:
+                _holidays._reopen(entry["weekly_plan_id"], entry["date"], holiday_name)
+                reopened = True
     if row is not None and menu:
         _save_menu(date_str, {})
-    return {"prep_removed": removed_prep, "dinner_reopened": reopened}
+    return {"prep_removed": removed_prep, "dinner_reopened": reopened, "dinner_restored": restored}
 
 
 # ---------- the prep spread ----------
@@ -736,6 +1061,11 @@ def spread_prep(date_str: str, today: date | None = None) -> list[dict]:
         return []
     name = row["holiday_name"]
     _delete_prep(entry_id, date_str)
+    if not _plan_approved(entry["weekly_plan_id"]):
+        # A draft is a proposal. The prep goes on Now when the week is
+        # approved (approve_weekly_plan calls spread_prep_for_plan), the
+        # same moment its shopping does.
+        return []
     today = today or date.today()
     d = date.fromisoformat(date_str)
     anchor = _prep_anchor(date_str)
@@ -758,12 +1088,13 @@ def spread_prep(date_str: str, today: date | None = None) -> list[dict]:
         step = dish.get("ahead_step") or f"Make the {dish['name'].lower() if dish['role'] != 'main' else dish['name']}"
         _add(task_date, f"{step.rstrip('.')} — for the big meal on {weekday}.", dish["name"])
 
-    # The two shops.
+    # The two shops. related_meal SHOP_MARK is how moves.py knows to read
+    # these as a shop, not a prep.
     trips = shop_dates(date_str, today)
     if trips["early"]:
-        _add(trips["early"], f"The keeps-well shop for {name} — pantry and freezer things, so the fresh trip stays short.", "Shop")
+        _add(trips["early"], f"The keeps-well shop for {name} — pantry and freezer things, so the fresh trip stays short.", SHOP_MARK)
     if trips["fresh"] and trips["fresh"] != date_str:
-        _add(trips["fresh"], f"The fresh shop for {name} — produce, dairy, meat and fish.", "Shop")
+        _add(trips["fresh"], f"The fresh shop for {name} — produce, dairy, meat and fish.", SHOP_MARK)
 
     conn = get_conn()
     for t in tasks:
@@ -776,6 +1107,35 @@ def spread_prep(date_str: str, today: date | None = None) -> list[dict]:
     conn.commit()
     conn.close()
     return tasks
+
+
+# related_meal on a holiday shop row. moves.py renders such a row as a
+# shop (kind "shop") and lets it stand in for the week's own shop move on
+# that day, so Now never asks for the same trip twice.
+SHOP_MARK = "Shop"
+
+
+def spread_prep_for_plan(weekly_plan_id: int) -> list[str]:
+    """
+    approve_weekly_plan's hook: every hosted holiday whose menu lives on
+    this plan gets its prep spread now that the week is real. Never raises.
+    """
+    out = []
+    try:
+        conn = get_conn()
+        rows = conn.execute(
+            "SELECT date FROM holiday_answers WHERE household_id = ? AND answer = 'hosting' AND menu_json != '{}'",
+            (household_id(),),
+        ).fetchall()
+        conn.close()
+        for r in rows:
+            entry = menu_entry(r["date"])
+            if entry is not None and entry["weekly_plan_id"] == weekly_plan_id:
+                spread_prep(r["date"])
+                out.append(r["date"])
+    except Exception:
+        logger.exception("The big meal's prep could not be spread at approval of plan %s", weekly_plan_id)
+    return out
 
 
 def prep_rows(entry_id: int) -> list[dict]:
@@ -879,17 +1239,18 @@ def shop_split(today: date | None = None) -> dict | None:
             continue
         marks = ",".join("?" * len(ids))
         items = conn.execute(
-            f"SELECT id, category FROM grocery_items WHERE household_id = ? AND id IN ({marks}) AND status = 'needed'",
+            f"SELECT id, item, category FROM grocery_items WHERE household_id = ? AND id IN ({marks}) AND status = 'needed'",
             (household_id(), *ids),
         ).fetchall()
-        # A line another meal needs BEFORE the early trip is bought then.
+        # A line another meal needs BEFORE the fresh trip has to be bought
+        # on the early one — Saturday's onions can't wait for Sunday.
         needed_before = set()
         if trips["early"]:
             rows = conn.execute(
                 f"SELECT DISTINCT l.grocery_item_id FROM meal_plan_grocery_links l "
                 f"JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id "
                 f"WHERE l.household_id = ? AND l.grocery_item_id IN ({marks}) AND e.id != ? AND e.date < ?",
-                (household_id(), *ids, entry["id"], trips["early"]),
+                (household_id(), *ids, entry["id"], trips["fresh"]),
             ).fetchall()
             needed_before = {r["grocery_item_id"] for r in rows}
         conn.close()
@@ -897,11 +1258,9 @@ def shop_split(today: date | None = None) -> dict | None:
             continue
         early, fresh = [], []
         for it in items:
-            category = (it["category"] or "other").strip().lower()
-            category = _quantities._GROCERY_CATEGORY_ALIASES.get(category, category)
             if not trips["early"]:
                 fresh.append(it["id"])
-            elif it["id"] in needed_before or category in EARLY_CATEGORIES:
+            elif it["id"] in needed_before or keeps(it["item"], it["category"]):
                 early.append(it["id"])
             else:
                 fresh.append(it["id"])
@@ -922,6 +1281,21 @@ def shop_split(today: date | None = None) -> dict | None:
             },
         }
     return None
+
+
+def keeps(item: str, category: str | None) -> bool:
+    """
+    Does this grocery line keep until the early trip? By its store section
+    when the recipe named one; a line in "other" (no section named) is
+    read by PERISHABLE_WORDS — raw chicken and fresh thyme are fresh, foil
+    and candles keep.
+    """
+    category = (category or "other").strip().lower()
+    category = _quantities._GROCERY_CATEGORY_ALIASES.get(category, category)
+    if category == "other":
+        words = set(re.sub(r"[^a-z\s-]", " ", (item or "").lower()).replace("-", " ").split())
+        return not (words & PERISHABLE_WORDS)
+    return category in EARLY_CATEGORIES
 
 
 def _relative_day(date_str: str, today: date) -> str:
@@ -959,14 +1333,21 @@ def _say_time(t: time) -> str:
 
 
 def _parse_clock(value: str) -> time | None:
-    m = re.match(r"^\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*$", (value or "").lower())
+    """
+    "5pm", "17:30", "5:30 pm", "6" -> a time. A bare hour from 1 to 11 with
+    no am/pm reads as the evening ("6" is six o'clock dinner, not dawn);
+    "12" is noon; anything with a colon or an am/pm is taken as written.
+    """
+    m = re.match(r"^\s*(\d{1,2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)?\s*$", (value or "").lower())
     if not m:
         return None
-    hour, minute, ampm = int(m.group(1)), int(m.group(2) or 0), m.group(3)
+    hour, minute, ampm = int(m.group(1)), int(m.group(2) or 0), (m.group(3) or "").replace(".", "")
     if ampm == "pm" and hour < 12:
         hour += 12
     if ampm == "am" and hour == 12:
         hour = 0
+    if not ampm and m.group(2) is None and 1 <= hour <= 11:
+        hour += 12
     if not (0 <= hour <= 23 and 0 <= minute <= 59):
         return None
     return time(hour, minute)
@@ -1019,9 +1400,17 @@ def timeline(date_str: str) -> dict | None:
     steps: list[dict] = []
     oven_busy: list[tuple[datetime, datetime]] = []
 
+    holiday = date.fromisoformat(date_str)
+
     def _step(at: datetime, dish: str, what: str, oven: bool = False, ahead: bool = False) -> None:
-        steps.append({"time": at.strftime("%H:%M"), "say": _say_time(at.time()), "dish": dish, "step": what,
-                      "oven": oven, "made_ahead": ahead})
+        # A step that falls before the day itself is said as such — a
+        # brisket that goes in at ten the night before is "the evening
+        # before, 10:00 pm", never a clock that wrapped past midnight.
+        say = _say_time(at.time())
+        if at.date() < holiday:
+            say = ("the evening before, " if at.hour >= 17 else "the day before, ") + say
+        steps.append({"at": at.isoformat(), "time": at.strftime("%H:%M"), "say": say, "dish": dish,
+                      "step": what, "oven": oven, "made_ahead": ahead, "day_before": at.date() < holiday})
 
     main = next((x for x in dishes if x["role"] == "main"), None)
     oven_free_until = T  # the latest an oven dish that isn't the main can finish
@@ -1085,7 +1474,10 @@ def timeline(date_str: str) -> dict | None:
             at = T - timedelta(minutes=minutes)
         elif not alongside_used:
             at = T - timedelta(minutes=minutes)
-            note = " (alongside the main)"
+            # The second rack: it shares the oven from the moment the main
+            # is in — said as "with the main" when the main is already in,
+            # "the main joins it" when this goes in first.
+            note = " (with the main)" if main_in is not None and at >= main_in else " (the main joins it)"
             alongside_used = True
         else:
             at = before_main_cursor - timedelta(minutes=minutes)
@@ -1095,7 +1487,7 @@ def timeline(date_str: str) -> dict | None:
         if hands:
             _step(at - timedelta(minutes=hands), dish["name"], f"Prep the {lower}")
 
-    steps.sort(key=lambda s: (s["time"], s["dish"] != (main or {}).get("name")))
+    steps.sort(key=lambda s: (s["at"], s["dish"] != (main or {}).get("name")))
     first = steps[0] if steps else None
     return {
         "date": date_str,
@@ -1117,6 +1509,32 @@ def _spoken(steps: list[dict], on_table: time, said: bool) -> str:
         lead += " (your usual dinner time — tell me if the big meal’s different)"
     parts = [f"{s['say']} — {s['step']}" for s in steps]
     return lead + ": " + "; ".join(parts) + "."
+
+
+# ---------- what to tell the person ----------
+
+def said(result: dict | None) -> str:
+    """
+    One line, in kitchen-table words, about what building or refreshing
+    the menu did that the person should hear: what was left off and why,
+    what was swapped in, a clash with their own dinner. "" when there is
+    nothing worth saying — a menu that just built is its own news.
+    """
+    if not result:
+        return ""
+    bits = []
+    for d in result.get("dropped") or []:
+        bits.append(f"Left off the {d['name'].lower()} — {d['restriction']}.")
+    replaced = result.get("replaced") or []
+    if replaced:
+        bits.append(f"Added {_and([r.lower() for r in replaced])} instead.")
+    for c in result.get("conflicts") or []:
+        bits.append(f"Heads up: {c['dish']} has {c['restriction']} in it — your call.")
+    if result.get("menu") == "trip" and result.get("note"):
+        bits.append(result["note"])
+    elif result.get("note") and not bits:
+        bits.append(result["note"])
+    return " ".join(bits)
 
 
 # ---------- reading it all back ----------
@@ -1345,7 +1763,7 @@ def remove_big_meal_dish(date_str: str, name: str) -> dict:
     if len(kept) == len(current):
         main_name = (entry["recipe_name"] or entry["freeform_meal"] or "").lower()
         if main_name == target:
-            raise ValueError("The main can be swapped for another (set_big_meal_dish with role main), not taken off.")
+            raise ValueError(f"{name} is the main — name another main and I’ll swap it, but the table needs one.")
         raise ValueError(f"There’s no {name} on the menu.")
     _write_sides(entry["id"], kept)
     menu["status"] = "full" if kept else "main_only"
@@ -1374,9 +1792,9 @@ def set_big_meal_prep_day(date_str: str, dish: str, when: str) -> dict:
         try:
             ahead = (d - date.fromisoformat(key)).days
         except ValueError:
-            raise ValueError("Say day_of, day_before, two_days_before, or a date up to two days before.")
+            raise ValueError("Tell me the day — on the day, the day before, or two days before.")
     if not 0 <= ahead <= MAX_AHEAD_DAYS:
-        raise ValueError(f"I can spread the cooking over the {MAX_AHEAD_DAYS} days before, not further.")
+        raise ValueError(f"I can spread the cooking over the {MAX_AHEAD_DAYS} days before, not further out.")
     main_name = (entry["recipe_name"] or entry["freeform_meal"] or "").strip().lower()
     if target == main_name:
         menu["main"] = dict(menu.get("main") or {}, ahead_days=ahead)

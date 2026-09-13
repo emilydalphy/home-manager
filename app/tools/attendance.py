@@ -321,6 +321,12 @@ def set_slot_attendance(
     _write(date_str, slot, absent, guests, source or current["source"] or "", away_stretch_id)
     att = get_slot_attendance(date_str, slot)
     att["away_need"] = _sync_away_need(date_str, slot, att, away_stretch_id)
+    # A hosted holiday's dinner whose table just changed size follows it
+    # (the menu's shopping rescales, its prep re-spreads) — a no-op for
+    # every other meal, and never a failure of this write. Imported at
+    # call time: big_meal imports this module.
+    from . import big_meal as _big_meal
+    _big_meal.on_attendance_changed(date_str, slot)
     return att
 
 

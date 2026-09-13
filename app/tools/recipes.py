@@ -1680,7 +1680,7 @@ def _add_recipe_ingredients_to_grocery_list(
 def _add_recipe_ingredients_for_entries(
     entry_ids: list[int], recipe_ingredients: list[dict], weekly_plan_id: int | None,
     default_servings: int | None = None, buffer: "WeekGroceryBuffer | None" = None,
-    conn=None,
+    conn=None, chain_scale: bool = True,
 ) -> tuple[list[str], list[str]]:
     """
     Put ONE RECIPE's ingredients onto the grocery list for every meal in
@@ -1858,7 +1858,11 @@ def _add_recipe_ingredients_for_entries(
             if entry_id in chains["leftovers"]:
                 continue
             source = chains["sources"].get(entry_id)
-            if source:
+            # `chain_scale=False` is the sides' path (weekly_plan's two
+            # side ingests): a side belongs to the cook night's table
+            # alone — the batch that feeds Thursday is the dish, not the
+            # salad beside it, and a reheat night buys nothing new for it.
+            if source and chain_scale:
                 batch = _leftovers.batch_for_source(source, conn=entry_conn)
                 if batch["servings"] > 0 and batch["cook_eaters"] > 0:
                     scale *= batch["servings"] / batch["cook_eaters"]

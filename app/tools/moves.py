@@ -289,6 +289,10 @@ def _prep_moves(view: dict, day: date, now: datetime, dinner_clock: time) -> lis
         if task.get("task_date") != day_str:
             continue
         is_fridge = task.get("task_type") == "defrost"
+        # A holiday's shop row (big_meal.SHOP_MARK) is a shop, not a prep:
+        # it reads as one on the strip and opens the list, and still ticks
+        # like the prep_tasks row it is.
+        is_shop = task.get("task_type") == "holiday" and task.get("related_meal") == "Shop"
         description = (task.get("description") or "").strip()
         # defrost descriptions are written "<the move> — <what it's for>."
         # (defrost._describe). Split them so the title stays a title and the
@@ -304,9 +308,9 @@ def _prep_moves(view: dict, day: date, now: datetime, dinner_clock: time) -> lis
         when = "still to do" if overdue else "by tonight"
         moves.append({
             "id": ("fridge:" if is_fridge else "prep:") + str(task["id"]),
-            "kind": "fridge" if is_fridge else "prep",
+            "kind": "fridge" if is_fridge else ("shop" if is_shop else "prep"),
             "title": title or ("Fridge move" if is_fridge else "Prep"),
-            "detail": ("fridge move" if is_fridge else "prep") + f" · {when}",
+            "detail": ("fridge move" if is_fridge else ("shop" if is_shop else "prep")) + f" · {when}",
             "reason": reason or (task.get("related_meal") and f"for {task['related_meal']}") or "",
             "date": day_str,
             "slot": None,
@@ -416,11 +420,20 @@ def moves_for_day(
     dinner_clock = _dinner_clock()
     view = view if view is not None else _cooker.get_cooker_view()
 
-    moves = (
-        _cook_and_reheat_moves(view, target, dinner_clock)
-        + _prep_moves(view, target, now, dinner_clock)
-        + _shop_move(view, target, now, dinner_clock)
-    )
+    prep = _prep_moves(view, target, now, dinner_clock)
+    shop = _shop_move(view, target, now, dinner_clock)
+    if any(m["kind"] == "shop" for m in prep):
+        # A big meal's own shop is on this day (big_meal.spread_prep) —
+        # it names the trip and what it's for, so the week's generic "Shop
+        # before tomorrow" would be the same ask twice. Its count rides on
+        # the named one instead.
+        count = next((m["detail"] for m in shop), "")
+        for m in prep:
+            if m["kind"] == "shop" and count:
+                m["detail"] = count
+                m["time_label"] = next((x["time_label"] for x in shop), m["time_label"])
+        shop = []
+    moves = _cook_and_reheat_moves(view, target, dinner_clock) + prep + shop
     moves.sort(key=lambda m: (m["window_start"], -m["weight"], m["id"]))
     return moves
 

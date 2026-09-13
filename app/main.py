@@ -1574,6 +1574,9 @@ class HolidayAnswerRequest(BaseModel):
     # None keeps what's recorded.
     on_table_at: str | None = None
     guest_notes: str | None = None
+    # False records a hosting answer without building the big meal yet —
+    # the Days screen's tap; its Save (count, time, notes together) builds.
+    build_menu: bool = True
     answered_by: str = ""
 
 
@@ -1604,6 +1607,7 @@ def holiday_answer_route(req: HolidayAnswerRequest):
         return tools.answer_holiday(
             req.date, req.answer, headcount=req.headcount, bring_dish=req.bring_dish,
             answered_by=req.answered_by, on_table_at=req.on_table_at, guest_notes=req.guest_notes,
+            build_menu=req.build_menu,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -1,7 +1,11 @@
 """SQLite connection helper."""
 import json
+import logging
+import re
 import sqlite3
 import os
+
+logger = logging.getLogger("home_manager")
 
 # Overridable via env var so hosting platforms can point this at a
 # persistent volume (their default filesystem is often ephemeral and
@@ -10,6 +14,18 @@ DB_PATH = os.environ.get(
     "DB_PATH", os.path.join(os.path.dirname(__file__), "home_manager.db")
 )
 SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "schema.sql")
+
+
+def _schema_tables() -> frozenset[str]:
+    """Every table schema.sql creates — what _run_migrations may legitimately find missing."""
+    try:
+        with open(SCHEMA_PATH, encoding="utf-8") as f:
+            return frozenset(re.findall(r"CREATE TABLE IF NOT EXISTS\s+(\w+)", f.read()))
+    except OSError:
+        return frozenset()
+
+
+_SCHEMA_TABLES = _schema_tables()
 
 
 def misplaced_db_path_error(
@@ -788,9 +804,15 @@ def _run_migrations(conn):
     for table, column, coltype in _MIGRATIONS:
         existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
         if not existing:
-            # The table isn't there at all: schema.sql creates it (with the
-            # column) on the same startup, so there is nothing to add — and
-            # ALTER on a missing table would abort every migration after it.
+            if table not in _SCHEMA_TABLES:
+                # Not a table schema.sql knows: a misspelled entry, which
+                # has to fail loudly at startup rather than be skipped.
+                raise RuntimeError(f"_MIGRATIONS names a table schema.sql never creates: {table!r}")
+            # A real table that this database doesn't have yet: schema.sql
+            # creates it (column included) on the same startup, so there
+            # is nothing to add — and ALTER on a missing table would abort
+            # every migration after it. Said out loud, not silently.
+            logger.warning("Migration for %s.%s skipped: the table isn't there yet (schema.sql creates it)", table, column)
             continue
         if column not in existing:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {coltype}")

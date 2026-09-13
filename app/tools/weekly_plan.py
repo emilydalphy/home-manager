@@ -206,8 +206,17 @@ def clear_plan_slot(weekly_plan_id: int, meal_date: str, slot: str) -> int:
         _grocery._reverse_meal_grocery_contributions(row["id"])
     if rows:
         conn = get_conn()
+        marks = ",".join("?" * len(rows))
+        # Prep rows for a meal that no longer exists go with it — the same
+        # reasoning _replace_slot_entries applies. (get_prep_schedule also
+        # drops any dangling row on read, so a path that forgets this
+        # still shows nothing stale.)
         conn.execute(
-            "DELETE FROM meal_plan_entries WHERE id IN (%s)" % ",".join("?" * len(rows)),
+            f"DELETE FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id IN ({marks})",
+            (household_id(), *[r["id"] for r in rows]),
+        )
+        conn.execute(
+            f"DELETE FROM meal_plan_entries WHERE id IN ({marks})",
             tuple(r["id"] for r in rows),
         )
         conn.commit()
@@ -4250,7 +4259,8 @@ def _ingest_recipe_group_and_sides(
     for entry in entries:
         for servings, side_ingredients in _entry_side_ingredient_groups(entry):
             added, have = _recipes._add_recipe_ingredients_for_entries(
-                [entry["id"]], side_ingredients, weekly_plan_id, default_servings=servings, buffer=buffer
+                [entry["id"]], side_ingredients, weekly_plan_id, default_servings=servings, buffer=buffer,
+                chain_scale=False,
             )
             added_items.extend(added)
             already_have.extend(have)
@@ -4639,7 +4649,8 @@ def approve_weekly_plan(
     for entry in entries:
         for servings, side_ingredients in _entry_side_ingredient_groups(entry):
             added, have = _recipes._add_recipe_ingredients_for_entries(
-                [entry["id"]], side_ingredients, weekly_plan_id, default_servings=servings, buffer=buffer
+                [entry["id"]], side_ingredients, weekly_plan_id, default_servings=servings, buffer=buffer,
+                chain_scale=False,
             )
             added_items.extend(added)
             already_have.extend(have)
@@ -4660,6 +4671,11 @@ def approve_weekly_plan(
     )
     conn.commit()
     conn.close()
+
+    # A hosted holiday's big meal on this plan gets its prep spread now —
+    # approval is the moment the week becomes real (app/tools/big_meal.py).
+    from . import big_meal as _big_meal
+    _big_meal.spread_prep_for_plan(weekly_plan_id)
 
     return {
         "weekly_plan_id": weekly_plan_id,

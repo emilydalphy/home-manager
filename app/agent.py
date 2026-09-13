@@ -2178,7 +2178,7 @@ TOOL_DEFINITIONS = [
                 "headcount": {"type": "integer", "description": "EXTRA people beyond the household, when hosting. Omit to keep what's recorded."},
                 "bring_dish": {"type": "string", "description": "The dish they're bringing, when out. '' to say nothing after all. Omit to keep what's recorded."},
                 "on_table_at": {"type": "string", "description": "When hosting: the time they want the big meal on the table ('5pm', '17:30'). Omit to keep what's recorded; '' to fall back to their usual dinner time."},
-                "guest_notes": {"type": "string", "description": "When hosting: what the guests can't eat, in the host's words ('Sam's vegetarian; no nuts for the Wongs'). Omit to keep what's recorded; '' to clear."},
+                "guest_notes": {"type": "string", "description": "When hosting: what the guests can't eat, in the host's words ('Sam's vegetarian; no nuts for the Wongs'), under 160 characters. Omit to keep what's recorded; '' to clear."},
             },
             "required": ["date", "answer"],
         },
@@ -4658,6 +4658,10 @@ on the day, including warming through.
 `rest_minutes` when it rests before carving.
 - Spread the load: not every side in the oven at the same time as the main. One or two \
 stovetop or no-cook sides make the day possible.
+- When `avoid` is given, those dishes were already tried and clashed with the table for the \
+reason named — never propose them again, nor anything else carrying that ingredient. When \
+`already_on_the_menu` is given, those dishes stay; propose only the `side_count` sides (and a \
+sweet only when `want_sweet` is true) still missing, and make them go with what's there.
 
 Call submit_big_meal with the result."""
 

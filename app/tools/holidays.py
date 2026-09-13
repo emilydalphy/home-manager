@@ -488,6 +488,7 @@ def answer_holiday(
     answered_by: str = "",
     on_table_at: str | None = None,
     guest_notes: str | None = None,
+    build_menu: bool = True,
 ) -> dict:
     """
     Record how the household is spending the holiday on `date_str`, and
@@ -504,8 +505,12 @@ def answer_holiday(
     intake's guest steppers collect). `bring_dish` is the dish by name; ''
     clears it. `on_table_at` ("17:00", "5pm") is when the big meal should
     be on the table and `guest_notes` is what the guests can't eat, in
-    their words — both hosting-only, '' clears. Everything is kept only
-    with the answer it belongs to. The date has to be a holiday Pomona
+    their words — both hosting-only, '' clears. `build_menu=False` records
+    a hosting answer without building the big meal yet — the Days screen's
+    tap, which collects the count, the time and the notes first and builds
+    on its Save (a menu already there still follows the change; the week's
+    generation builds one regardless). Everything is kept only with the
+    answer it belongs to. The date has to be a holiday Pomona
     knows about (rule table or calendar) — an answer for an ordinary
     Tuesday would be a fact nothing reads.
     """
@@ -524,6 +529,11 @@ def answer_holiday(
         dish_name, dish_recipe_id = _recipe_named(bring_dish)
     table_at = _bm().normalise_on_table_at(on_table_at) if answer == "hosting" else ""
     notes = (guest_notes or "").strip() if answer == "hosting" else ""
+    if len(notes) > _bm().GUEST_NOTES_MAX:
+        raise ValueError(
+            f"That note’s a bit long for me — keep it under {_bm().GUEST_NOTES_MAX} characters, "
+            "just what they can’t eat."
+        )
 
     previous = get_holiday_answer(date_str)
     # A hosting answer given again keeps its menu — the details changing
@@ -544,10 +554,11 @@ def answer_holiday(
                 table_at = previous["on_table_at"]
             if guest_notes is None:
                 notes = previous["guest_notes"]
-        if same_hosting:
-            _clear_hosting(date_str)
-        else:
-            _undo_effects(previous)
+        with _bm().suppress_refresh():
+            if same_hosting:
+                _clear_hosting(date_str)
+            else:
+                _undo_effects(previous)
     headcount = headcount or 0
 
     conn = get_conn()
@@ -572,7 +583,8 @@ def answer_holiday(
     conn.close()
 
     saved = get_holiday_answer(date_str)
-    effects = _apply_effects(saved)
+    with _bm().suppress_refresh():
+        effects = _apply_effects(saved, build=build_menu)
     return {
         **saved,
         "holiday": {"date": holiday["date"], "name": holiday["name"], "source": holiday["source"]},
@@ -601,7 +613,7 @@ def _plan_for(date_str: str) -> int | None:
     return _weekly_plan.get_plan_id_for_date(date_str)
 
 
-def _apply_effects(saved: dict) -> dict:
+def _apply_effects(saved: dict, build: bool = True) -> dict:
     """Make the plan follow the answer. Returns what changed, for the caller's sentence."""
     from . import attendance as _attendance
     from . import slot_needs as _slot_needs
@@ -641,40 +653,26 @@ def _apply_effects(saved: dict) -> dict:
         changed["hosting"] = _set_hosting(d, saved["headcount"])
         # The big meal itself. Never raises: an answer that saved fine must
         # not fail over a menu — a proposal that can't be made degrades
-        # inside build_menu, and anything worse is logged and reported.
+        # inside build_menu, and anything worse is logged and reported. A
+        # trip already covering the day builds nothing (build_menu checks
+        # attendance itself, so every caller gets the same answer).
         try:
-            changed["big_meal"] = _bm().build_menu(saved)
+            if not build and _bm().menu_entry(d) is None:
+                changed["big_meal"] = {"menu": "deferred", "status": "none"}
+            else:
+                changed["big_meal"] = _bm().build_menu(saved)
+            if changed["big_meal"].get("menu") == "kept":
+                # The count, the time or a guest's note changed under a
+                # standing menu: it follows, in place (rescaled shopping,
+                # every dish re-checked, replacements proposed for what
+                # came off) rather than being thrown away and rebuilt.
+                changed["big_meal"] = _bm().refresh_menu(saved)
         except Exception:
             logger.exception("The big meal for %s could not be built", d)
             changed["big_meal"] = {"menu": "failed", "status": "none"}
-        if changed["big_meal"].get("menu") == "kept":
-            # Details changed under a standing menu: re-check the dishes
-            # against what the guests can't eat and re-spread the prep, so
-            # a new note or a new count is honoured without a rebuild.
-            changed["big_meal"]["conflicts"] = _menu_conflicts(saved)
-            _bm().spread_prep(d)
+        changed["big_meal_said"] = _bm().said(changed["big_meal"])
 
     return changed
-
-
-def _menu_conflicts(saved: dict) -> list[dict]:
-    """Which dishes on a standing menu clash with the table's restrictions, guests' notes included."""
-    entry = _bm().menu_entry(saved["date"])
-    if entry is None:
-        return []
-    out = []
-    for dish in _bm().dishes_of(entry, {}):
-        if dish["role"] == "main":
-            import json as _json
-            try:
-                ingredients = _json.loads(entry["ingredients_json"] or "[]") if entry["recipe_id"] else []
-            except (TypeError, ValueError):
-                ingredients = []
-        else:
-            ingredients = dish.get("ingredients") or []
-        for hit in _bm().dish_conflicts(dish["name"], ingredients, saved.get("guest_notes") or ""):
-            out.append({"dish": dish["name"], "restriction": hit["restriction"], "member": hit.get("member")})
-    return out
 
 
 def _undo_effects(previous: dict) -> None:
@@ -713,8 +711,10 @@ def _undo_effects(previous: dict) -> None:
         if entry is not None:
             _reopen(plan_id, d, name)
     elif previous["answer"] == "hosting":
-        _bm().clear_menu(d, name)
+        # The count comes off first, so a dinner the menu adopted is
+        # re-bought for the household alone when it is given back.
         _clear_hosting(d)
+        _bm().clear_menu(d, name)
 
 
 def _reopen(plan_id: int, d: str, name: str) -> None:
