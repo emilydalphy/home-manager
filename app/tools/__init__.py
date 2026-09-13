@@ -306,10 +306,14 @@ from .notifications import (  # noqa: F401
 # once it's sitting in this flat namespace (`missing_groups`, `is_complete`
 # and `get_sides` could each be about half a dozen things here).
 from .plates import (  # noqa: F401
+    ADDITIONS,
+    add_component,
     complete_plate,
     plate_rule,
+    remove_component,
     sides_label,
     side_ingredients,
+    suggest_additions,
 )
 from .plates import get_sides as get_plate_sides  # noqa: F401
 from .plates import has_food_groups as plate_has_food_groups  # noqa: F401

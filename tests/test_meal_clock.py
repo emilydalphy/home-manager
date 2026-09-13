@@ -79,7 +79,7 @@ _PURE = (
     + "".join(_extract(n) + "\n" for n in (
         "numberWord", "countInWords", "minutesInWords", "clockLabel", "spokenTime",
         "slotTableMinutes", "mealTotalMinutes", "mealStepMinutes", "stopTitleSplit",
-        "ingredientNamesLine", "mealClockStops", "mealClockEyebrow"))
+        "ingredientNamesLine", "mealClockSides", "mealClockTotal", "finishSideStop", "mealClockStops", "mealClockEyebrow"))
 )
 
 
@@ -342,13 +342,14 @@ def _screen(day: dict, slot: str, cook_meals: list, rhythm: dict | None = None, 
         + f"var TICKED = {json.dumps(ticked or [])};\n"
         + "function cookTicked(kind, key) { return TICKED.indexOf(kind + ':' + key) !== -1; }\n"
         + "function cookAheadHtml() { return ''; }\n"
+        + "var WK_ADD_ICON = '<svg/>'; function humanQtyText(t) { return String(t == null ? '' : t); }\n"
         + "function cookIngredientLabel(i) { return ((i.qty ? i.qty + ' ' : '') + i.item).trim(); }\n"
         + _PURE
         + "".join(_extract(n) + "\n" for n in (
             "daySlotEntry", "slotWord", "isRealCook", "mealDisplayName", "cookMealForEntry",
             "mealCookName", "mealCookUnderway", "mealClockFor", "mealHeroLine", "mealHeroHtml",
             "mealStopHtml", "mealClockHtml", "swapStateFor", "swapLineHtml", "slotEyebrowLabel",
-            "dishSizeClass", "mealDockHtml", "mealStepHtml"))
+            "dishSizeClass", "mealDockHtml", "mealWhatsInHtml", "mealStepHtml"))
         + f"console.log(JSON.stringify(mealStepHtml({json.dumps(day)}, {json.dumps(slot)})));\n"
     )
     res = nodeharness.run_node(harness, timeout=30)

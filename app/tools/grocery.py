@@ -412,7 +412,7 @@ def _restate_standing_want(
     ), False
 
 
-def _reverse_meal_grocery_contributions(entry_id: int, conn=None) -> dict:
+def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=None, only_link_ids=None) -> dict:
     """
     Undo whatever a meal_plan_entries row added to the grocery list, via the
     meal_plan_grocery_links ledger recorded at plan_meal() time — called
@@ -477,6 +477,15 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None) -> dict:
     it and neither commits nor closes: the caller owns both. Left unset,
     every other call site behaves exactly as before — its own connection,
     its own commit, its own close.
+
+    `only_link_ids` narrows the reversal to those ledger rows of the entry;
+    `only_items` to the rows whose item is one of these names (matched on
+    _merge_key). Both are plates.remove_component taking one added side
+    back off a meal without touching the dish's own shopping. Left unset,
+    every row the entry holds is reversed, as before. In every case
+    "every OTHER contribution" to a line means every ledger row not being
+    reversed here, by row id — so a side's lemon coming off leaves the
+    recipe's own lemon, on the same entry, counted.
     """
     own_conn = conn is None
     if own_conn:
@@ -486,6 +495,15 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None) -> dict:
         "WHERE household_id = ? AND meal_plan_entry_id = ?",
         (household_id(), entry_id),
     ).fetchall()
+    if only_link_ids is not None:
+        keep_ids = {int(i) for i in only_link_ids}
+        links = [link for link in links if link["id"] in keep_ids]
+    if only_items is not None:
+        wanted = {_merge_key(name) for name in only_items if name}
+        links = [link for link in links if _merge_key(link["item"] or "") in wanted]
+    narrowed = only_items is not None or only_link_ids is not None
+    reversing_ids = [link["id"] for link in links]
+    not_reversing = "(" + ",".join("?" * len(reversing_ids)) + ")" if reversing_ids else "(-1)"
     removed_items = []
     trimmed_items = []
     for link in links:
@@ -499,8 +517,8 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None) -> dict:
         if live and _quantities.package_unit(link["quantity"] or ""):
             still_wanted = conn.execute(
                 "SELECT COUNT(*) AS n FROM meal_plan_grocery_links "
-                "WHERE household_id = ? AND grocery_item_id = ? AND meal_plan_entry_id != ?",
-                (household_id(), link["grocery_item_id"], entry_id),
+                f"WHERE household_id = ? AND grocery_item_id = ? AND id NOT IN {not_reversing}",
+                (household_id(), link["grocery_item_id"], *reversing_ids),
             ).fetchone()["n"]
             if not still_wanted and grocery_row["source_weekly_plan_id"] is not None:
                 conn.execute("DELETE FROM grocery_items WHERE id = ?", (grocery_row["id"],))
@@ -509,8 +527,8 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None) -> dict:
             is_standing_want = grocery_row["source_weekly_plan_id"] is None
             other_rows = conn.execute(
                 "SELECT quantity FROM meal_plan_grocery_links "
-                "WHERE household_id = ? AND grocery_item_id = ? AND meal_plan_entry_id != ?",
-                (household_id(), link["grocery_item_id"], entry_id),
+                f"WHERE household_id = ? AND grocery_item_id = ? AND id NOT IN {not_reversing}",
+                (household_id(), link["grocery_item_id"], *reversing_ids),
             ).fetchall()
             other_qtys = [row["quantity"] or "" for row in other_rows]
             summed = None if is_standing_want else _quantities._sum_ledger_quantities(other_qtys)
@@ -560,7 +578,13 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None) -> dict:
             elif new_qty != (grocery_row["quantity"] or ""):
                 conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ?", (new_qty, grocery_row["id"]))
                 trimmed_items.append(grocery_row["item"])
-    conn.execute("DELETE FROM meal_plan_grocery_links WHERE household_id = ? AND meal_plan_entry_id = ?", (household_id(), entry_id))
+    if not narrowed:
+        conn.execute("DELETE FROM meal_plan_grocery_links WHERE household_id = ? AND meal_plan_entry_id = ?", (household_id(), entry_id))
+    elif reversing_ids:
+        conn.execute(
+            f"DELETE FROM meal_plan_grocery_links WHERE household_id = ? AND id IN {not_reversing}",
+            (household_id(), *reversing_ids),
+        )
     if own_conn:
         conn.commit()
         conn.close()

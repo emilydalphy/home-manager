@@ -12035,9 +12035,10 @@
 
   // ----- the clock itself -----
   // mealClockStops(meal, household) -> [{ time, minutes, title, line,
-  // estimated, kind }]. Pure: everything it says is read off `meal` (the
-  // cooker-view card, or anything with the same fields) and `household`
-  // ({ tableMinutes }: when this slot lands, minutes since midnight).
+  // estimated, kind, side, untimed }]. Pure: everything it says is read
+  // off `meal` (the cooker-view card, or anything with the same fields)
+  // and `household` ({ tableMinutes }: when this slot lands, minutes since
+  // midnight).
   //
   // The timing rule, in one place:
   //   start = table time − the recipe's total minutes (prep + cook — the
@@ -12051,28 +12052,56 @@
   //   minutes, and each stop marked `estimated` so the eyebrow can say
   //   "About". Never seconds.
   //   No total minutes, or no table time: the stops with no times at all.
+  //
+  // A SIDE on the card (meal.sides — the plate pass's, or one the
+  // household added with "Add something", 2026-09-13) has its steps on the
+  // end of `instructions` as "Alongside — <name>: …" (cooker._side_steps).
+  // Those are timed OFF THE SIDE'S OWN MINUTES, not spread with the dish:
+  //   a side that takes m minutes has its LAST step at table − m, so it
+  //   lands with the rest, and each earlier step five minutes before the
+  //   next (halve the potatoes at 6:00, into the oven at 6:05, out at
+  //   6:30). A side that needs longer than the dish moves the start
+  //   earlier (mealClockTotal) — the eyebrow and the hero's "Start at"
+  //   follow. A side with no minutes on record can't be timed safely: its
+  //   steps sit at the start, with everything else, and carry `untimed`
+  //   so the stop can say so. Stops then read in time order.
   function mealClockStops(meal, household) {
     var steps = (meal && meal.instructions) || [];
     var ings = (meal && meal.ingredients) || [];
+    var sides = mealClockSides(meal);
+    var sideStepCount = sides.reduce(function (n, sd) { return n + sd.steps.length; }, 0);
+    var mainSteps = steps.slice(0, Math.max(0, steps.length - sideStepCount));
     var stops = [];
     if (ings.length) {
       stops.push({ kind: 'out', title: 'Everything out', line: ingredientNamesLine(ings),
         time: null, minutes: null, estimated: false });
     }
-    steps.forEach(function (s) {
+    mainSteps.forEach(function (s) {
       var split = stopTitleSplit(s);
       stops.push({ kind: 'step', title: split.title, line: split.line,
         time: null, minutes: null, estimated: false });
     });
-    if (!stops.length) return stops;
+    var sideStops = [];
+    sides.forEach(function (sd) {
+      sd.steps.forEach(function (s, i) {
+        var split = stopTitleSplit(s);
+        sideStops.push({ kind: 'side', side: sd.name, title: split.title, line: split.line,
+          time: null, minutes: null, estimated: false, untimed: false,
+          _minutes: sd.minutes, _pos: i, _count: sd.steps.length });
+      });
+    });
+    if (!stops.length && !sideStops.length) return stops;
 
     var table = household && typeof household.tableMinutes === 'number' && isFinite(household.tableMinutes)
       ? household.tableMinutes : null;
     var perStep = mealStepMinutes(meal);
-    var total = perStep
+    var mainTotal = perStep
       ? perStep.reduce(function (a, b) { return a + b; }, 0)
       : mealTotalMinutes(meal);
-    if (table === null || !total) return stops;
+    var total = mealClockTotal(meal, mainTotal);
+    if (table === null || !total) {
+      return stops.concat(sideStops.map(finishSideStop));
+    }
 
     var start = table - total;
     if (perStep) {
@@ -12083,18 +12112,84 @@
         stop.time = clockLabel(at);
         if (stop.kind === 'step') { at += perStep[stepPos]; stepPos += 1; }
       });
-      return stops;
+    } else if (stops.length) {
+      // The dish's own stops keep their own spread — from the dish's
+      // start to the table — even when a longer side moved the clock's
+      // start earlier; only "Everything out" moves to the new start.
+      var mainStart = mainTotal ? table - mainTotal : start;
+      var n = stops.length;
+      stops.forEach(function (stop, i) {
+        var raw = n === 1 ? mainStart : mainStart + ((table - mainStart) * i) / (n - 1);
+        var mins = i === n - 1 && n > 1 ? table : Math.round(raw / 5) * 5;
+        stop.minutes = mins;
+        stop.time = clockLabel(mins);
+        stop.estimated = true;
+      });
+      if (stops[0].kind === 'out') {
+        stops[0].minutes = Math.round(start / 5) * 5;
+        stops[0].time = clockLabel(stops[0].minutes);
+      }
     }
-
-    var n = stops.length;
-    stops.forEach(function (stop, i) {
-      var raw = n === 1 ? start : start + (total * i) / (n - 1);
-      var mins = i === n - 1 && n > 1 ? table : Math.round(raw / 5) * 5;
-      stop.minutes = mins;
-      stop.time = clockLabel(mins);
+    sideStops.forEach(function (stop) {
+      if (stop._minutes === null) {
+        // Can't be timed safely: with everything else, at the start.
+        stop.minutes = Math.round(start / 5) * 5;
+        stop.untimed = true;
+      } else {
+        var last = table - stop._minutes;
+        var mins = last - 5 * (stop._count - 1 - stop._pos);
+        stop.minutes = Math.max(Math.round(start / 5) * 5, Math.round(mins / 5) * 5);
+      }
+      stop.time = clockLabel(stop.minutes);
       stop.estimated = true;
     });
-    return stops;
+    var all = stops.concat(sideStops.map(finishSideStop));
+    // Time order, stable: "Everything out" stays first at the start, and
+    // two stops at the same minute keep the order they were written in.
+    return all.map(function (stop, i) { return { stop: stop, i: i }; })
+      .sort(function (a, b) {
+        var am = a.stop.minutes === null ? -Infinity : a.stop.minutes;
+        var bm = b.stop.minutes === null ? -Infinity : b.stop.minutes;
+        if (a.stop.kind === 'out') return -1;
+        if (b.stop.kind === 'out') return 1;
+        return am === bm ? a.i - b.i : am - bm;
+      })
+      .map(function (x) { return x.stop; });
+  }
+  function finishSideStop(stop) {
+    delete stop._minutes; delete stop._pos; delete stop._count;
+    return stop;
+  }
+  // The card's sides with their steps as the clock wants them: the bare
+  // step text (the "Alongside — <name>:" / "Alongside:" prefix
+  // cooker._side_steps wrote is the stop's tag, not its title) and the
+  // side's minutes (null when it carries none).
+  function mealClockSides(meal) {
+    return ((meal && meal.sides) || []).map(function (sd) {
+      var mins = sd && sd.minutes !== null && sd.minutes !== undefined ? Number(sd.minutes) : null;
+      if (mins !== null && (!isFinite(mins) || mins < 0)) mins = null;
+      return {
+        name: (sd && sd.name) || '',
+        minutes: mins,
+        steps: ((sd && sd.instructions) || []).map(function (s) {
+          return String(s || '').replace(/^Alongside(?:\s*[–—-]\s*[^:]*)?:\s*/, '').trim();
+        }).filter(Boolean)
+      };
+    }).filter(function (sd) { return sd.steps.length; });
+  }
+  // What the clock has to fit: the dish's own minutes, or the longest
+  // side's when that is more (twenty-five-minute potatoes beside a
+  // fifteen-minute stir-fry start before the stir-fry does). `mainTotal`
+  // is passed by mealClockStops, which may have it from step_minutes;
+  // every other caller lets this read the recipe's prep + cook.
+  function mealClockTotal(meal, mainTotal) {
+    var main = mainTotal === undefined ? mealTotalMinutes(meal) : mainTotal;
+    var longest = 0;
+    mealClockSides(meal).forEach(function (sd) {
+      if (sd.minutes !== null && sd.minutes > longest) longest = sd.minutes;
+    });
+    var total = Math.max(main || 0, longest);
+    return total > 0 ? total : null;
   }
 
   // "Thirty minutes, six stops" / "About thirty minutes, six stops" (the
@@ -12274,7 +12369,7 @@
     var table = slotTableMinutes(times, slot);
     var isCook = !!(cookMeal && !cookMeal.is_leftovers && entry && entry.source !== 'leftovers');
     var stops = isCook ? mealClockStops(cookMeal, { tableMinutes: table }) : [];
-    var total = isCook ? mealTotalMinutes(cookMeal) || mealTotalMinutes(entry) : null;
+    var total = isCook ? mealClockTotal(cookMeal) || mealTotalMinutes(entry) : null;
     var start = stops.length && stops[0].minutes !== null ? stops[0].minutes
       : (isCook && total && table !== null ? table - total : null);
     var pending = !cookMeal && typeof planCookView === 'function' && !planCookView();
@@ -12347,12 +12442,76 @@
         '</button>' +
       '</li>';
     }
-    return '<li class="wk-stop' + (first ? ' is-first' : '') + '">' + time + spine +
+    // A side's stop (kind 'side' — the plate pass's, or one the household
+    // added with "Add something") wears the side's name as a tag, so
+    // "Halve the potatoes" between two shrimp steps says whose step it is.
+    // One with no minutes on record says plainly that it wasn't timed and
+    // sits at the start with everything else (mealClockStops).
+    var tag = stop.kind === 'side' && stop.side
+      ? ' <span class="wk-stop-tag">' + escapeHtml(stop.side) + '</span>'
+      : '';
+    var line = stop.line || '';
+    if (stop.untimed) line = (line ? line + ' ' : '') + 'No time on this one — start it with everything else.';
+    return '<li class="wk-stop' + (first ? ' is-first' : '') + (stop.kind === 'side' ? ' is-side' : '') + '">' + time + spine +
       '<div class="wk-stop-body">' +
-        '<span class="wk-stop-title">' + escapeHtml(stop.title) + '</span>' +
-        (stop.line ? '<span class="wk-stop-line">' + escapeHtml(stop.line) + '</span>' : '') +
+        '<span class="wk-stop-title">' + escapeHtml(stop.title) + tag + '</span>' +
+        (line ? '<span class="wk-stop-line">' + escapeHtml(line) + '</span>' : '') +
       '</div>' +
     '</li>';
+  }
+
+  // ----- what's in it -----
+  // The ingredient overview between the hero and the clock (Emily,
+  // 2026-09-13: "it would be helpful if I can easily see the overview of
+  // the ingredients for my review"): one eyebrow, then one ingredient per
+  // row — the thing on the left, its amount for tonight's table on the
+  // right (the cooker view has already scaled it to who is eating, and
+  // said so in default_servings / attendance) — and, under the rows, the
+  // one way to change the plate from here: "Add something" (a plain
+  // control, never the screen's apricot — the dock has that). "Everything
+  // out" on the clock stays as the mise-en-place cue; this is where the
+  // ingredients live.
+  //
+  // Nothing at all for a reheat night or a grab-and-go snack (no cook in
+  // them — mealClockHtml's own rule), and nothing while the cooker view
+  // is still on its way: the clock already says "Getting the recipe…" and
+  // a second line saying it would be fluff.
+  // A plus, drawn like every other icon here (rule 7: stroke SVG, round caps).
+  var WK_ADD_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+  function mealWhatsInHtml(day, slot, entry, clock) {
+    if (!clock.isCook || !clock.cookMeal) return '';
+    var cookMeal = clock.cookMeal;
+    var ings = cookMeal.ingredients || [];
+    var canAdd = !!(entry && entry.state === 'planned' && !day.isPast);
+    if (!ings.length && !canAdd) return '';
+    var eaters = (cookMeal.attendance && cookMeal.attendance.headcount) || cookMeal.default_servings || 0;
+    var eyebrow = 'What’s in it' + (eaters > 0 ? ' · for ' + (eaters <= 12 ? numberWord(eaters) : eaters) : '');
+    var rows = ings.map(function (ing) {
+      if (!ing || !ing.item) return '';
+      var tags = [];
+      if (ing.added) tags.push('added');
+      if (ing.at_home) tags.push('at home');
+      if (ing.made_ahead) tags.push(ing.made_ahead);
+      var sub = ing.substitute ? 'using ' + ing.substitute + ' instead' : '';
+      return '<li class="wk-ing' + (ing.added ? ' is-added' : '') + '">' +
+        '<span class="wk-ing-name">' + escapeHtml(ing.item) +
+          tags.map(function (t) { return ' <span class="wk-ing-tag">' + escapeHtml(t) + '</span>'; }).join('') +
+          (sub ? '<span class="wk-ing-sub">' + escapeHtml(sub) + '</span>' : '') +
+        '</span>' +
+        '<span class="wk-ing-qty">' + escapeHtml(ing.qty ? humanQtyText(ing.qty) : '') + '</span>' +
+      '</li>';
+    }).join('');
+    return '<section class="wk-whatsin" aria-label="What’s in it">' +
+      (ings.length
+        ? '<div class="wk-clock-eyebrow wk-whatsin-eyebrow">' + escapeHtml(eyebrow) + '</div>' +
+          '<ul class="wk-ing-list">' + rows + '</ul>'
+        : '') +
+      (canAdd
+        ? '<button type="button" class="wk-ing-add" data-wk-add="' + escapeHtml(slot) + '">' +
+            WK_ADD_ICON + '<span>Add something</span></button>'
+        : '') +
+    '</section>';
   }
 
   // The clock under the hero: one eyebrow, then the stops. Nothing for a
@@ -12413,6 +12572,7 @@
         escapeHtml(back === 'week' ? 'This week' : dayName(day.date, { weekday: 'long' })) + '</button>' +
       mealHeroHtml(day, slot, entry, clock) +
       '<div class="wk-meal-body">' +
+        mealWhatsInHtml(day, slot, entry, clock) +
         mealClockHtml(slot, clock) +
         // The cook-ahead picker stays — it is a real decision about other
         // nights (which ones this batch covers) with nowhere else to live
@@ -12974,6 +13134,15 @@
         btn.classList.toggle('is-open', !open);
       });
     });
+    // "Add something" — the plate's own picker (openMealAddSheet): a
+    // starch, a green, a sauce for this dish, or a line to type.
+    steps.querySelectorAll('[data-wk-add]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var day = mealsCurrentDay();
+        if (!day) return;
+        openMealAddSheet(panel, day, btn.getAttribute('data-wk-add'));
+      });
+    });
     steps.querySelectorAll('[data-wk-cook]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var day = mealsCurrentDay();
@@ -13292,6 +13461,178 @@
       console.warn('Swap failed:', err);
       swapState = { date: day.date, slot: slot, avoid: carried, message: SWAP_TROUBLE };
       renderMealsStep(panel);
+    }
+  }
+
+  // ---------- "Add something" (Emily, 2026-09-13) ----------
+  // Loop Board "Meal screen: add what's missing ('add potatoes') from the
+  // dish itself, not via chat". The same scrim/sheet shape as Now's
+  // "Something else" (#tonight-sheet): the question, then the rows — each
+  // row is the tap that adds — and one line to type what the rows don't
+  // have. The server owns the list (GET /api/week/{week}/additions:
+  // plates.suggest_additions, written for THIS dish) and the write (POST
+  // add-component: plates.add_component — the side goes on the meal, the
+  // list and the clock in one go). The draft-stage card ("Draft: add
+  // what's missing from the plate") opens this same sheet with its own
+  // day/slot; nothing here is the Meal step's alone.
+  var mealAddScrim = document.getElementById('wk-add-scrim');
+  var mealAddSheet = document.getElementById('wk-add-sheet');
+  var mealAddState = null;
+
+  function mealAddRowsHtml(offer) {
+    var options = (offer && offer.options) || [];
+    var rows = options.map(function (opt) {
+      return '<button type="button" class="wk-add-option" data-wk-add-key="' + escapeHtml(opt.key) + '">' +
+        '<span class="wk-add-option-text">' +
+          '<span class="wk-add-option-name">' + escapeHtml(opt.name) + '</span>' +
+          (opt.hint ? '<span class="wk-add-option-hint">' + escapeHtml(opt.hint) + '</span>' : '') +
+        '</span>' +
+        '<span class="wk-add-option-go">Add</span>' +
+      '</button>';
+    }).join('');
+    return '<div class="wk-add-options">' + rows + '</div>' +
+      '<form class="wk-add-free" id="wk-add-free">' +
+        '<input type="text" id="wk-add-text" class="wk-add-input" maxlength="80" autocomplete="off" ' +
+          'placeholder="Something else…" aria-label="Something else to add">' +
+        '<button type="submit" class="wk-add-option-go wk-add-free-go">Add</button>' +
+      '</form>';
+  }
+
+  async function openMealAddSheet(panel, day, slot) {
+    if (!mealAddSheet) return;
+    var entry = daySlotEntry(day, slot);
+    var weekStart = weekStartForSwap();
+    if (!entry || entry.entry_id === null || entry.entry_id === undefined || !weekStart) return;
+    closeAskSheet();
+    mealAddState = { panel: panel, date: day.date, slot: slot, entryId: entry.entry_id, weekStart: weekStart, busy: false };
+    var line = document.getElementById('wk-add-line');
+    if (line) {
+      line.textContent = dayName(day.date, { weekday: 'long' }) + '’s ' + slotWord(slot) + ' · ' + mealDisplayName(entry);
+    }
+    var rows = document.getElementById('wk-add-rows');
+    if (rows) rows.innerHTML = '<p class="wk-add-loading">One moment…</p>';
+    openSheet(mealAddSheet, mealAddScrim);
+    var offer = null;
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/additions?entry_id=' +
+        encodeURIComponent(entry.entry_id));
+      if (!res.ok) throw new Error('additions failed (' + res.status + ')');
+      offer = await res.json();
+    } catch (err) {
+      console.warn('Could not fetch additions:', err);
+      offer = { options: [] };
+    }
+    if (!mealAddState || mealAddState.entryId !== entry.entry_id || !rows) return;
+    rows.innerHTML = mealAddRowsHtml(offer);
+    rows.querySelectorAll('[data-wk-add-key]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        runMealAdd({ key: btn.getAttribute('data-wk-add-key') });
+      });
+    });
+    var form = rows.querySelector('#wk-add-free');
+    if (form) {
+      form.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var input = form.querySelector('#wk-add-text');
+        var text = input ? String(input.value || '').trim() : '';
+        if (!text) return;
+        runMealAdd({ text: text });
+      });
+    }
+  }
+
+  function closeMealAddSheet() {
+    if (!mealAddScrim) return;
+    closeSheet(mealAddSheet, mealAddScrim);
+  }
+  if (mealAddScrim) {
+    mealAddScrim.addEventListener('click', closeMealAddSheet);
+    document.getElementById('wk-add-handle').addEventListener('click', closeMealAddSheet);
+    document.getElementById('wk-add-close').addEventListener('click', closeMealAddSheet);
+  }
+
+  // The time the addition's first step lands at, worked out by the same
+  // clock the screen draws (mealClockStops), so the toast's "starts at
+  // 6:00" is the number the timeline shows. The plan's fresh cooker view
+  // may still be on its way when the toast is written, so the side the
+  // server just handed back is laid onto the card in hand if it isn't
+  // there yet — the arithmetic is the same either way. '' when the clock
+  // can't time it (no minutes on the side, no table time).
+  function mealAddStopTime(day, slot, side) {
+    var entry = daySlotEntry(day, slot);
+    var cookMeal = cookMealForEntry(entry && entry.entry_id);
+    if (!cookMeal || !side || !side.name) return '';
+    var card = cookMeal;
+    var there = (cookMeal.sides || []).some(function (sd) { return sd && sd.name === side.name; });
+    if (!there) {
+      card = Object.assign({}, cookMeal, {
+        sides: (cookMeal.sides || []).concat([side]),
+        instructions: (cookMeal.instructions || []).concat((side.instructions || []).map(function (st) {
+          return 'Alongside: ' + st;
+        }))
+      });
+    }
+    var clock = mealClockFor(day, slot, entry, card);
+    var mine = clock.stops.filter(function (st) { return st.kind === 'side' && st.side === side.name && !st.untimed; });
+    return mine.length && mine[0].time ? mine[0].time : '';
+  }
+
+  var MEAL_ADD_TROUBLE = 'That didn’t go on — try again.';
+
+  async function runMealAdd(pick) {
+    var st = mealAddState;
+    if (!st || st.busy) return;
+    st.busy = true;
+    var buttons = mealAddSheet ? mealAddSheet.querySelectorAll('button, input') : [];
+    buttons.forEach(function (b) { b.disabled = true; });
+    var panel = st.panel;
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/add-component', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_id: st.entryId, key: pick.key || null, text: pick.text || null })
+      });
+      if (!res.ok) throw new Error('add failed (' + res.status + ')');
+      var out = await res.json();
+      closeMealAddSheet();
+      if (out.status === 'already') {
+        showToast(out.name + ' is already on it.');
+        return;
+      }
+      // The plan changed under the meal (a new side on its entry): the
+      // week and its cooker view are read again, and the step re-draws
+      // with the addition on the overview, the list and the clock.
+      await loadWeekMenu(panel);
+      var day = mealsCurrentDay();
+      var when = day ? mealAddStopTime(day, st.slot, out.side) : '';
+      var said = 'Added ' + String(out.name || '').toLowerCase() + (when ? ' — starts at ' + when + '.' : '.');
+      if (out.note) said += ' ' + out.note;
+      showToast(said, {
+        label: 'Undo',
+        onClick: function () { return runMealAddUndo(panel, st, out.name); }
+      }, out.note ? 9000 : 6000);
+    } catch (err) {
+      console.warn('Adding to the meal failed:', err);
+      showToast(MEAL_ADD_TROUBLE);
+    } finally {
+      st.busy = false;
+      buttons.forEach(function (b) { b.disabled = false; });
+    }
+  }
+
+  async function runMealAddUndo(panel, st, name) {
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/remove-component', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_id: st.entryId, name: name })
+      });
+      if (!res.ok) throw new Error('undo failed (' + res.status + ')');
+      await loadWeekMenu(panel);
+      showToast('Taken back off.');
+    } catch (err) {
+      console.warn('Undoing the addition failed:', err);
+      showToast('Couldn’t take that off — try again.');
     }
   }
 

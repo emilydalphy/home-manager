@@ -4271,10 +4271,10 @@ def _ingest_recipe_group_and_sides(
         already_have.extend(have)
 
     for entry in entries:
-        side_ingredients = _entry_side_ingredients(entry)
-        if side_ingredients:
+        for side_ingredients, side_servings in _entry_side_groups(entry):
             added, have = _recipes._add_recipe_ingredients_for_entries(
-                [entry["id"]], side_ingredients, weekly_plan_id, buffer=buffer
+                [entry["id"]], side_ingredients, weekly_plan_id,
+                default_servings=side_servings, buffer=buffer,
             )
             added_items.extend(added)
             already_have.extend(have)
@@ -4332,12 +4332,27 @@ def _entry_shopping_ingredients(row) -> list[dict]:
 
 def _entry_side_ingredients(row) -> list[dict]:
     """Just the side's ingredients for one plan entry ('[]' when none)."""
+    return _plates.side_ingredients(_entry_sides(row))
+
+
+def _entry_sides(row) -> list[dict]:
     sides = row["sides_json"] if "sides_json" in row.keys() else "[]"
     try:
         parsed = json.loads(sides or "[]")
     except (TypeError, ValueError):
         parsed = []
-    return _plates.side_ingredients(parsed if isinstance(parsed, list) else [])
+    return parsed if isinstance(parsed, list) else []
+
+
+def _entry_side_groups(row) -> list[tuple[list[dict], int | None]]:
+    """
+    One entry's sides for the grocery ingest, grouped by the servings each
+    was written for (plates.side_ingest_groups): a side the household added
+    from the meal screen carries `servings` and scales to the night's
+    eaters like a recipe; a side the plate pass attached carries none and
+    rides on attendance alone, exactly as before.
+    """
+    return _plates.side_ingest_groups(_entry_sides(row))
 
 
 def preview_plan_grocery_impact(weekly_plan_id: int) -> dict:
@@ -4803,17 +4818,18 @@ def _settle_weekly_plan_approval(
             # ingredient with the night's own recipe (or another night's)
             # must round together with it, or the two independent roundings
             # can each tip up and buy more than either alone would have
-            # asked for — the same class of bug as the 17 peppers. No
-            # default_servings is passed here: sides carry no servings of
-            # their own (see plates.py's sides_json shape), so
-            # servings_scale_factor falls back to attendance alone — that
-            # entry's eaters relative to the household, not a
-            # recipe-servings anchor that doesn't exist for a side.
+            # asked for — the same class of bug as the 17 peppers. A side
+            # the app attached carries no servings of its own (see
+            # plates.py's sides_json shape), so servings_scale_factor falls
+            # back to attendance alone — that entry's eaters relative to
+            # the household; a side the household added from the meal
+            # screen is written for four and scales to the night's eaters
+            # the way a recipe does (_entry_side_groups).
             for entry in entries:
-                side_ingredients = _entry_side_ingredients(entry)
-                if side_ingredients:
+                for side_ingredients, side_servings in _entry_side_groups(entry):
                     added, have = _recipes._add_recipe_ingredients_for_entries(
-                        [entry["id"]], side_ingredients, weekly_plan_id, buffer=buffer, conn=conn
+                        [entry["id"]], side_ingredients, weekly_plan_id,
+                        default_servings=side_servings, buffer=buffer, conn=conn,
                     )
                     added_items.extend(added)
                     already_have.extend(have)

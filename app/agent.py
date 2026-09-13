@@ -4475,6 +4475,10 @@ household certainly has (salt, pepper, oil) — leave those out of the ingredien
 even though the steps use them.
 - Set `covers` to what the side genuinely supplies. If you're asked for a vegetable and a carb \
 and one side honestly does both (a grain salad), say so and send just the one.
+- If the meal JSON carries `requested`, the household typed that themselves on the meal screen \
+("cauliflower rice", "a salad"): make exactly that, as ONE side, named the way they said it. \
+The missing-group rule doesn't apply — they asked by name — but every restriction, dislike and \
+time rule still does. If what they asked for can't be made safely for this house, send nothing.
 
 Call submit_sides with the result."""
 

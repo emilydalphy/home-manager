@@ -1124,6 +1124,125 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   cursor: pointer;
 }
 
+/* The "Add something" sheet (#wk-add-sheet in shell.html): the geometry of
+   Now's "Something else" sheet, its rows the same .tonight-option shape. */
+#wk-add-scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  z-index: 40;
+  opacity: 0;
+  transition: opacity var(--motion-base) var(--motion-ease);
+}
+#wk-add-scrim.is-open { opacity: 1; }
+#wk-add-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 41;
+  max-height: 84%;
+  overflow-y: auto;
+  background: var(--surface);
+  border-radius: 26px 26px 0 0;
+  box-shadow: var(--shadow-sheet);
+  padding: 16px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  translate: 0 100%;
+  transition: translate var(--motion-base) var(--motion-ease);
+}
+#wk-add-sheet.is-open { translate: 0 0; }
+#wk-add-scrim[hidden], #wk-add-sheet[hidden] { display: none; }
+@media (min-width: 768px) {
+  #wk-add-sheet {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: 520px;
+    max-width: 100%;
+  }
+}
+.wk-add-options { display: flex; flex-direction: column; gap: 10px; padding: 8px 2px 0; }
+.wk-add-option {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 56px;
+  padding: 11px 16px;
+  background: var(--ground);
+  border: 1.5px solid var(--hairline);
+  border-radius: var(--radius-control);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+}
+.wk-add-option:hover { border-color: var(--hairline-strong); background: var(--sand); }
+.wk-add-option:disabled { opacity: .55; cursor: default; }
+.wk-add-option-text { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.wk-add-option-name {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+}
+.wk-add-option-hint {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+.wk-add-option-go {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink-strong);
+  flex-shrink: 0;
+}
+/* The one line to type: an input and its Add, the same row shape. */
+.wk-add-free {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 2px 0;
+}
+.wk-add-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1.5px solid var(--hairline);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+}
+.wk-add-input::placeholder { color: var(--ink-secondary); }
+.wk-add-input:focus { outline: none; border-color: var(--hairline-strong); }
+.wk-add-free-go {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.wk-add-free-go:disabled { opacity: .55; cursor: default; }
+.wk-add-loading {
+  margin: 8px 0 0;
+  padding: 0 18px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-secondary);
+}
+
 /* ---------- Toast (§6) ---------- */
 .toast {
   position: fixed;
@@ -8512,6 +8631,99 @@ span.cook-week-name { cursor: default; }
   color: var(--ink-secondary);
 }
 .wk-stop-amounts[hidden] { display: none; }
+/* A side's stop wears the side's name (mealStopHtml, kind 'side') — a small
+   sand chip after the title, so a potato step between two shrimp steps says
+   whose step it is. */
+.wk-stop-tag {
+  display: inline-block;
+  vertical-align: 2px;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: var(--radius-chip);
+  background: var(--sand);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  line-height: 16px;
+  color: var(--ink-secondary);
+}
+
+/* ---------- what's in it (Emily, 2026-09-13) ---------- */
+/* The ingredient overview between the hero and the clock (mealWhatsInHtml):
+   the clock's own eyebrow, then one row per ingredient — the thing on the
+   left, the amount for tonight's table on the right — and "Add something"
+   under the rows. A plain outline control, never apricot: the dock has the
+   screen's one primary (Rule 5). */
+.wk-whatsin { display: flex; flex-direction: column; gap: 10px; }
+.wk-ing-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.wk-ing {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--hairline);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.wk-ing:last-child { border-bottom: 0; }
+.wk-ing-name { min-width: 0; overflow-wrap: anywhere; }
+.wk-ing-qty {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  text-align: right;
+}
+.wk-ing-sub {
+  display: block;
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+/* "added" / "at home" beside the name: a celadon chip, the gentle,
+   non-urgent tile — it is information, not a warning. */
+.wk-ing-tag {
+  display: inline-block;
+  vertical-align: 1px;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: var(--radius-chip);
+  background: var(--celadon-tint);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  line-height: 16px;
+  color: var(--celadon-label);
+}
+.wk-ing-add {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px 0 12px;
+  border-radius: var(--radius-control);
+  border: 1.5px solid var(--hairline-strong);
+  background: var(--surface);
+  color: var(--ink-strong);
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+}
+.wk-ing-add svg { width: 18px; height: 18px; flex: 0 0 auto; }
+.wk-ing-add:hover { background: var(--sand); }
+
 .wk-act {
   min-height: 44px;
   padding: 0 16px;

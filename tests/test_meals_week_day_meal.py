@@ -618,6 +618,7 @@ def _meal_step_html(day: dict, slot: str) -> str:
         + "function cookMealKey(m) { return 'e' + m.entry_id; }\n"
         + "function cookTicked() { return false; }\n"
         + "function cookAheadHtml() { return ''; }\n"
+        + "var WK_ADD_ICON = '<svg/>'; function humanQtyText(t) { return String(t == null ? '' : t); }\n"
         + "function cookIngredientLabel(i) { return ((i.qty ? i.qty + ' ' : '') + i.item).trim(); }\n"
         + _var_line("NUMBER_WORDS", SHELL_JS) + "\n"
         + _var_line("TENS_WORDS", SHELL_JS) + "\n"
@@ -625,7 +626,7 @@ def _meal_step_html(day: dict, slot: str) -> str:
         + "".join(_extract(name, SHELL_JS) + "\n" for name in (
             "numberWord", "countInWords", "minutesInWords", "clockLabel", "spokenTime",
             "slotTableMinutes", "mealTotalMinutes", "mealStepMinutes", "stopTitleSplit",
-            "ingredientNamesLine", "mealClockStops", "mealClockEyebrow", "mealCookName",
+            "ingredientNamesLine", "mealClockSides", "mealClockTotal", "finishSideStop", "mealClockStops", "mealClockEyebrow", "mealCookName",
             "mealCookUnderway", "mealClockFor", "mealHeroLine", "mealHeroHtml",
             "mealStopHtml", "mealClockHtml"))
         + _extract("swapStateFor", SHELL_JS) + "\n"
@@ -635,6 +636,7 @@ def _meal_step_html(day: dict, slot: str) -> str:
         + _extract("slotEyebrowLabel", SHELL_JS) + "\n"
         + _extract("dishSizeClass", SHELL_JS) + "\n"
         + _extract("mealDockHtml", SHELL_JS) + "\n"
+        + _extract("mealWhatsInHtml", SHELL_JS) + "\n"
         + _extract("mealStepHtml", SHELL_JS) + "\n"
         + f"console.log(JSON.stringify(mealStepHtml({json.dumps(day)}, {json.dumps(slot)})));\n"
     )

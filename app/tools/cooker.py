@@ -670,10 +670,35 @@ def _scale_card_to_batch(card: dict, batch_servings: int) -> bool:
     if batch_servings <= 0 or not card.get("has_full_recipe") or not card.get("default_servings"):
         return False
     scaled = _recipes.scale_recipe(card["meal"], batch_servings)
-    card["ingredients"] = scaled["scaled_ingredients"]
+    card["ingredients"] = scaled["scaled_ingredients"] + _side_ingredients_for(card, batch_servings)
     card["default_servings"] = batch_servings
     card["servings"] = batch_servings
     return True
+
+
+def _side_ingredients_for(card: dict, servings: int | None) -> list[dict]:
+    """
+    The card's sides' ingredients, scaled to `servings` where a side says
+    what it was written for (a side the household added from the meal
+    screen — plates.ADDITION_SERVINGS) and as written otherwise. Every
+    rewrite of a card's ingredient list goes through this so the side is
+    never dropped: until 2026-09-13 scale_recipe's list REPLACED the
+    folded one, and a plain night with attendance on record lost its
+    side's ingredients from the card (the steps stayed, so "Alongside —
+    Green salad" had no romaine above it).
+    """
+    out = []
+    for side in card.get("sides") or []:
+        for ing in _plates.scale_side_ingredients(side, servings):
+            # Which side the row came from, so the meal screen's "What's in
+            # it" can say "added" beside the potatoes the household put
+            # there (added_by "household"); the app's own plate sides carry
+            # no such mark and read as part of the dish.
+            ing["from_side"] = side.get("name") or ""
+            if side.get("added_by") == "household":
+                ing["added"] = True
+            out.append(ing)
+    return out
 
 
 def _apply_leftover_chains(weekly_plan_id: int, meals: list[dict], recipes_by_name: dict) -> None:
@@ -1000,7 +1025,7 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
             # go on the END, which also keeps advance_prep_step_indices —
             # 1-based positions into `instructions` — pointing where they
             # always did.
-            "ingredients": (recipe["ingredients"] if recipe else []) + _plates.side_ingredients(sides),
+            "ingredients": (recipe["ingredients"] if recipe else []) + _side_ingredients_for({"sides": sides}, None),
             "instructions": (recipe["instructions"] if recipe else []) + _side_steps(sides),
             "sides": sides,
             "sides_label": _plates.sides_label(sides),
@@ -1127,13 +1152,21 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         for m in meals:
             if m["entry_id"] in chained_entry_ids:
                 continue
-            if not m.get("has_full_recipe") or not m.get("default_servings"):
+            scalable = bool(m.get("has_full_recipe") and m.get("default_servings"))
+            if not scalable and not m.get("sides"):
                 continue
             eaters = _leftovers.eaters_at(m["date"], m["slot"])
-            if eaters:
+            if not eaters:
+                continue
+            if scalable:
                 scaled = _recipes.scale_recipe(m["meal"], eaters)
-                m["ingredients"] = scaled["scaled_ingredients"]
+                m["ingredients"] = scaled["scaled_ingredients"] + _side_ingredients_for(m, eaters)
                 m["default_servings"] = eaters
+            elif m.get("sides"):
+                # No recipe to scale, but the side the household added is
+                # still for tonight's table, not the four it was written for.
+                recipe = recipes_by_name.get((m["meal"] or "").lower())
+                m["ingredients"] = (recipe["ingredients"] if recipe else []) + _side_ingredients_for(m, eaters)
 
     # Last, once every card's ingredients and servings are final (batch
     # scaling, leftover chains, attendance): rewrite the amounts into ones
@@ -1174,6 +1207,26 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     # oregano, and the card says what is actually going in. Matched on the
     # list's own merge key, so "Fresh oregano" and "fresh oregano, chopped"
     # both hear about it.
+    # Already at home, by the one rule the grocery ingest itself uses to
+    # skip buying a thing (recipes._add_recipe_ingredients_for_entries):
+    # an inventory row with a quantity on it. Read-only, and nothing new to
+    # keep up — inventory is deferred as policy, so this is a courtesy mark
+    # on the meal screen's "What's in it", never a thing to fill in.
+    inv_conn = get_conn()
+    at_home = {
+        (row["item"] or "").strip().lower()
+        for row in inv_conn.execute(
+            "SELECT item FROM inventory_items WHERE household_id = ? AND TRIM(quantity) != ''",
+            (household_id(),),
+        ).fetchall()
+    }
+    inv_conn.close()
+    if at_home:
+        for m in meals:
+            for ing in m["ingredients"]:
+                if isinstance(ing, dict) and (ing.get("item") or "").strip().lower() in at_home:
+                    ing["at_home"] = True
+
     swaps = {
         _grocery._merge_key(sw["original_item"]): sw
         for sw in _grocery.substitutions_for_plan(plan_id)
