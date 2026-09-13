@@ -371,6 +371,49 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — A way out of the Shop loop before every store is done.
+  Branch `worktree-shop-exit`, NOT merged at the time of writing.** Loop
+  Board "Shop: a way out of the Shop loop" (Bug, High, Beta). Emily, on
+  her phone: "unless you complete all the shops, you get stuck in the
+  Shop loop." Four things trapped her, all client-side in `static/shell.js`
+  (there is no server-side trip; `shopping_trips` is a per-stop log):
+  WHERE NEXT had no way to the root — its crumb reopens the stop just
+  finished (on purpose) and its one button, "I'm done shopping for
+  today", is what a shopper going home with a store still to do would
+  say, and it led into "How did it go?" asking about a store she had not
+  been to; TRIP and WRAP UP's "‹ Shop" crumb landed on a list identical
+  to one with no trip on; "Start the trip" over a paused trip resumed at
+  `tripIndex`, which still names the stop just FINISHED after "Done at
+  Costco" (WHERE NEXT never moves it), so coming back reopened Costco and
+  the only way on was to finish it again — the loop; and the trip was
+  page-view state, gone with every relaunch of the installed app, leaving
+  what had been ticked sitting `in_cart` on the server off every screen.
+  Now: "Finish later" as a `.dock-link` beside every trip screen's own
+  action (`groTripPauseLinkHtml`, `trip-pause`); WHERE NEXT's end button
+  reads "Skip the rest"; LIST over a paused trip says "Trip in progress ·
+  1 stop left" in the band and offers "Continue the trip" + "Finish the
+  trip" (`groTripPausedDockHtml`, `groResumeTrip`, `groFinishTrip` — one
+  finish function shared with WRAP UP); continuing lands on the current
+  stop if still open, else on WHERE NEXT; and the trip is mirrored into
+  localStorage per household (`groSaveTrip`/`groRestoreTrip`, read once
+  on the first list load, kept `GRO_TRIP_KEEP_MS` = 3 days).
+  - **Finishing from LIST is one tap and skips "How did it go?"** — the
+    ask was "the remaining stores aren't happening", and the wrap-up's
+    questions ("Couldn't find it" / "Somewhere else") are about stores
+    you visited. It commits any trolley (`groFinishAnyRemainingCarts`),
+    leaves everything needed as needed, and clears the snapshot.
+  - **The mirror is never cleared before it has been read.** `goGroceryStep`
+    saves on every step change, and an approval's "Open the list" or the
+    first sort landing runs before the list loads — with no trip in memory
+    yet, that save used to be a wipe. `groSaveTrip` refuses to remove the
+    key until `tripRestored` is true. Caught by the harness, not by review.
+  - The paused-trip helpers (`groTripPaused`, `groTripPausedLine`,
+    `groInCartCount`) live with the renderers, above the "Actions" marker:
+    `tests/test_stores_multiselect.py` slices the region there and calls
+    `groDockHtml`, which reads them.
+  - Tests: `tests/test_shop_trip_exit.py` (24, node harness), two copy
+    markers updated for the renamed button, one root-band marker for the
+    band's sub-line. 3369 on the branch.
 - **2026-09-13 — Skip, swap, or "not this week": a ··· on every chore row.
   Branch `overnight/chores-skip-hand-move`, NOT merged at the time of
   writing.** Loop Board "Chores v1: Skip, swap, or 'not this week'"

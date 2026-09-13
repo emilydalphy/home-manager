@@ -347,7 +347,13 @@ def test_finishing_a_stop_ends_that_stop_and_asks_where_next():
     _in("'Done at ' + (groTripStore()", SHELL_JS, "the stop's own button", "shell.js")
     _in("data-gro=\"stop-done\"", SHELL_JS, "its handler", "shell.js")
     _in("goGroceryStep(stillToGo.length ? 'next' : 'wrap');", SHELL_JS, "where it goes next", "shell.js")
-    _in("I&rsquo;m done shopping for today", SHELL_JS, "the way to end the trip", "shell.js")
+    # Reworded 2026-09-13 (Loop Board "Shop: a way out of the Shop loop"):
+    # it read "I'm done shopping for today", which is also what a shopper
+    # going home with a store still to do would say — and it walked them
+    # into the wrap-up. Going home is "Finish later" now (see
+    # tests/test_shop_trip_exit.py); this button says what it does.
+    _in("Skip the rest</button>", SHELL_JS, "the way to end the trip", "shell.js")
+    _not_in("done shopping for today", SHELL_JS, "the old, ambiguous end-the-trip label", "shell.js")
     _in("data-gro=\"next-stop\"", SHELL_JS, "picking the next stop", "shell.js")
 
 
