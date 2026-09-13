@@ -450,6 +450,15 @@ html, body {
   padding: 0 0 8px;
 }
 .today-content .today-dock { margin-top: auto; }
+/* Same FAB-clearance bug as .wk-foot (Loop Board
+   3da1f4c0-5231-81c9-8123-f230175d2310): #today-dock is a direct child of
+   .today-content, toggled [hidden] rather than added/removed — a day with
+   every move ticked off and no plan-week nudge hides it, leaving the last
+   card in #today-rest (or #today-empty) up against .today-content's own
+   flex:1 0 auto edge with nothing clearing the FAB. Padding only kicks in
+   once the day's own content is tall enough to need it — a short day still
+   has blank space below it either way. */
+.today-content:not(:has(> .today-dock:not([hidden]))) { padding-bottom: 70px; }
 
 /* The holiday, when today is one — name and answer in the neutral pill,
    under the root band at the top of Now's content (main, 2026-09-11,
@@ -3655,6 +3664,13 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 /* ---------- The foot: the step's one action ---------- */
 .gro-foot { padding-top: 16px; gap: 4px; }
 .gro-foot:empty { display: none; }
+/* Same FAB-clearance bug as .wk-foot (Loop Board
+   3da1f4c0-5231-81c9-8123-f230175d2310): groDockHtml's LIST step returns
+   '' (collapsing #gro-dock via :empty below) whenever the shops question is
+   still up with loose or spice items on the list — a list fresh off
+   approving a week lands here — leaving groFootHtml's "Add something" row
+   as .gro-foot's own last child with nothing after it to clear the FAB. */
+.gro-foot:not(:has(+ .gro-dock:not(:empty))) { padding-bottom: 70px; }
 /* Shop's step action, in the dock (rule 2). It used to sit at the foot of
    the list inside .gro-foot, which on a real week's groceries meant "Start
    the trip" was a hundred rows below the fold — the button the screen
@@ -4998,6 +5014,15 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 #kit-root-view[hidden], #kit-cook-view[hidden] { display: none; }
 
 .kit-body { padding: 16px 20px 0; display: flex; flex-direction: column; gap: 12px; }
+/* Same FAB-clearance bug as .wk-foot (Loop Board
+   3da1f4c0-5231-81c9-8123-f230175d2310): #kit-dock (the root's "Start
+   cooking"/"Mark eaten" dock) is a sibling of .kit-body, toggled [hidden]
+   rather than added/removed — so a load error, no plan yet, or tonight's
+   cook already done all leave cookMoreLinkHtml()'s "More ···" as
+   .kit-body's own last child with no dock to clear the FAB. When the dock
+   *is* showing it's sticky and already clears the FAB itself (see .dock's
+   84px right padding), so this only pads when there's no visible dock. */
+.kit-body:not(:has(+ .dock:not([hidden]))) { padding-bottom: 70px; }
 /* The quiet rows that replaced the tiles (2026-09-11). One card, one
    hairline between rows, one fact each. */
 .kit-rows {
@@ -8036,6 +8061,21 @@ span.cook-week-name { cursor: default; }
   gap: 10px;
   padding: 6px 20px 4px;
 }
+/* weekStepHtml's own wk-foot (weekDecideHtml always returns '') and both
+   wk-foot-solo variants (weekStepHtml's "none" state, reviewStepHtml's
+   draft/set-less root) are the panel's own last child, same problem
+   .wk-slots/.wk-meal-body/.gro-trip-body already had: #shell-scroll has no
+   bottom padding of its own, and the chat FAB floats over the scroll
+   area's last ~66px from the non-scrolling strip after it (#ask-bar-dock,
+   shell.html), so a trailing row with no clearance ends up under it —
+   "More ···" showed only its M on a 390px phone scrolled to the bottom
+   (Loop Board 3da1f4c0-5231-81c9-8123-f230175d2310). reviewStepHtml's
+   wk-foot-solo is the one case that DOES get a real .dock after it
+   (reviewDecideHtml, for a draft/approved week) — that dock is sticky and
+   already clears the FAB itself, so this skips it there rather than
+   double-padding. 70px = the FAB's 54px + 16px inset, same formula as
+   .wk-slots/.gro-trip-body below. */
+.wk-foot:not(:has(+ .dock)) { padding-bottom: 70px; }
 .wk-foot-link, .wk-foot-more {
   min-height: 44px;
   padding: 0 4px;
