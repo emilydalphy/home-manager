@@ -606,3 +606,11 @@ from .swap_in_place import (  # noqa: F401
     swap_meal_in_place,
     undo_meal_swap,
 )
+# Now's "Tonight: X. Still good?" card and its swap-from-the-plan sheet
+# (Emily, 2026-09-13). Not agent tools — a screen's own read and one
+# "Yes" write; the swap itself is swap_dinner_nights above.
+from .tonight import (  # noqa: F401
+    TONIGHT_ASK_HOUR,
+    tonight_check,
+    tonight_keep,
+)

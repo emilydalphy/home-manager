@@ -198,6 +198,22 @@
     <div id="cook-more-rows"></div>
   </div>
 
+  <!-- Now's "Something else" sheet (Emily, 2026-09-13): the 2–3 other
+       nights of this plan that can trade dinners with tonight, one tap
+       each (openTonightSheet / runTonightSwap in shell.js). Same shape as
+       Cook's More above. -->
+  <div id="tonight-scrim" hidden></div>
+  <div id="tonight-sheet" hidden role="dialog" aria-label="Something else tonight">
+    <div class="ask-sheet-handle" id="tonight-handle"></div>
+    <div class="kit-sheet-titlerow">
+      <span class="kit-sheet-title">What should tonight be instead?</span>
+      <span class="kit-sheet-hairline"></span>
+      <button type="button" class="kit-sheet-close" id="tonight-close" aria-label="Close">&times;</button>
+    </div>
+    <p class="tonight-sheet-line" id="tonight-sheet-line"></p>
+    <div id="tonight-rows"></div>
+  </div>
+
   <!-- Kitchen entry sheet (Stage 2 slice 3). The hub's tiles open What we
        know / Inventory / Stores as a sheet over the hub instead of a full
        page navigation that left the app shell — tab bar and all — with only

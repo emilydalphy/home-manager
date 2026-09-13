@@ -5186,13 +5186,21 @@ def _rewrite_chain_ref(ref, mapping: dict[str, str]):
     return mapping.get(ref.strip(), ref)
 
 
-def _apply_dinner_nights_swap(weekly_plan_id: int, date_a: str, date_b: str, *, undo: bool) -> dict:
+def _apply_dinner_nights_swap(
+    weekly_plan_id: int, date_a: str, date_b: str, *, undo: bool, dry_run: bool = False,
+) -> dict:
     """
     The one write behind swap_dinner_nights and undo_dinner_nights_swap.
     Validates, refuses in plain words, then re-dates both nights' dinner
     rows and everything keyed by their dates in ONE transaction. `undo`
     only changes what happens to the moved_from token: a move writes it,
     an undo requires it and clears it.
+
+    `dry_run` (tonight.py, 2026-09-13) runs every check — the same
+    ValueErrors, the same refusals — and then rolls back instead of
+    writing, answering `status` 'ok'. It is how Now's "Something else"
+    sheet offers only nights that would actually swap, without a second
+    copy of these rules that could drift.
     """
     for d in (date_a, date_b):
         try:
@@ -5308,6 +5316,10 @@ def _apply_dinner_nights_swap(weekly_plan_id: int, date_a: str, date_b: str, *, 
                     f"{dish} on {_weekday_of(now_date[source['id']])} feeds "
                     f"{_weekday_of(now_date[e['id']])}’s {e['slot']} — it can’t move past that night.",
                     date_a, date_b)
+
+        if dry_run:
+            conn.rollback()
+            return {"status": "ok", "date_a": date_a, "date_b": date_b}
 
         # ---- write: the rows, then what their dates were holding up ----
         for r in moving:
