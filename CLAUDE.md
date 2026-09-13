@@ -406,6 +406,23 @@ why*, not duplicating the diff.
     the bug being fixed (it needs a hard conflict AND a race, not just a
     race), so it's left open rather than pulling the conflict check inside
     the lock too.
+  - **An independent verifier's pass found one real stray connection,
+    fixed the same day.** `acting_member_id_for(approved_by)` was
+    evaluated as a bare argument to the UPDATE — i.e. AFTER `BEGIN
+    IMMEDIATE` — and it calls `current_member()`, which opens its own
+    connection via a LOCAL `from ..db import get_conn` inside
+    `_shared.py`, invisible to patching any module's own pre-bound
+    `get_conn` name (only patching `app.db.get_conn` itself catches a
+    local import, since it re-resolves fresh on every call). Harmless in
+    practice — a plain SELECT coexists with the write transaction's
+    RESERVED lock under SQLite's default rollback-journal mode, and the
+    same shape already existed on `main` elsewhere before this ticket —
+    but this fix's whole claim is a precise one connection, so
+    `approved_by_member_id` is now resolved in `approve_weekly_plan`
+    before the transaction opens, same as `approved_by` itself already
+    was. The connection-count test now patches `app.db.get_conn` directly
+    too, and was confirmed to fail (1 stray connection) against the
+    inline version before this and pass (0) after.
 
 - **2026-09-13 — "How did it go?": "Will grab elsewhere" picks the store,
   "Don't need anymore", and "Add a new store" that comes back. Branch
