@@ -16232,10 +16232,10 @@
   // leftovers stance and the snack count and nothing else, so telling
   // Pomona you love Thai food saved correctly and left the row word for
   // word as it was — which reads as "it didn't take". It now carries the
-  // four answers that are the household's own words about what they eat:
-  // the leftovers stance, how their meals lean, the cuisines and the
-  // protein leanings — plus the snack count, which was already here. The
-  // other four control groups in the section (rounding meals out, the
+  // five answers that are the household's own words about what they eat:
+  // the leftovers stance, how their meals lean, the cuisines, the protein
+  // leanings, and the snack count that was already here. The other four
+  // control groups in the section (rounding meals out, the
   // dinners/breakfasts/lunches steppers, the kitchen kit, and the section's
   // freeform notes) are deliberately NOT in it: they are settings for how
   // the app plans rather than a description of how the household eats, and
@@ -16243,20 +16243,25 @@
   // leaves this row where it was — a real remaining gap, written down here
   // rather than half-closed.
   //
-  // Order on screen is the order the section's own controls run, so the row
-  // and the screen it opens name things the same way round. Order under
-  // PRESSURE is different and is the `rank` below — see prefsClamp.
-  // Nothing is padded: a part the household has said nothing about
-  // contributes nothing, never a filler phrase.
+  // Each part offers prefsClamp a LIST of forms, longest first, so a part
+  // that is too long can shrink instead of being evicted — see prefsClamp
+  // for why that distinction is the whole correctness of this row. Order on
+  // screen is the order the section's own controls run, so the row and the
+  // screen it opens name things the same way round; order under pressure is
+  // the `rank`. Nothing is padded: a part the household has said nothing
+  // about contributes nothing, never a filler phrase.
   function prefsEatingLine(mem) {
     var parts = [];
-    function part(words, rank) { if (words) parts.push({ words: words, rank: rank }); }
+    function part(forms, rank) {
+      forms = (forms || []).filter(function (w) { return w; });
+      if (forms.length) parts.push({ forms: forms, rank: rank });
+    }
     var stance = ((mem && mem.rhythm) || {}).leftovers_stance || '';
-    part(PREFS_LEFTOVERS[stance] || '', 2);
-    part(prefsStyleWords(mem && mem.eating_style), 3);
-    part(prefsCuisineWords(mem), 0);
-    part(prefsProteinWords(mem), 1);
-    part(prefsSnackWords(mem), 4);
+    part([PREFS_LEFTOVERS[stance] || ''], 2);
+    part(prefsStyleForms(mem && mem.eating_style), 3);
+    part(prefsCuisineForms(mem), 0);
+    part(prefsProteinForms(mem), 1);
+    part([prefsSnackWords(mem)], 4);
     return parts.length ? prefsClamp(parts) : 'Not set yet';
   }
 
@@ -16279,59 +16284,86 @@
     return '';
   }
 
-  // A fully-answered household says more than fits, so something goes —
-  // and WHICH thing goes is the whole correctness of this row.
+  // A fully-answered household says more than fits, so something gives —
+  // and WHICH thing gives is the whole correctness of this row. Two rules,
+  // both learned by getting them wrong:
   //
-  // The first version took whole answers off the END of the line, which is
-  // exactly where the newest information sits (the cuisines, then the
-  // proteins), so a household on the middle leftovers answer with two
-  // ordinary cuisine names lost the cuisine clause outright and adding one
-  // still moved nothing — the reported bug, one layer down. What survives
-  // is decided by `rank` instead: the answers you keep adding to
-  // (cuisines, then proteins) are the last to go, because they are the
-  // ones somebody is checking took; the settled ones (leftovers, how meals
-  // lean, the snack count) give way first. The kept parts are then printed
-  // in the section's order, so what survives never reshuffles.
+  // 1. SHRINK BEFORE DROPPING. Each part hands over its forms longest
+  //    first ("more chicken, less fish", then "more chicken +1"), and the
+  //    fullest one that fits is taken. The first version had no shortening
+  //    for the protein clause, so tapping a second protein GREW it past
+  //    the room left and evicted it — the household tapped Shrimp and
+  //    watched "more chicken" disappear. A clause that can shrink never
+  //    has to be evicted.
+  // 2. STRICT, NOT FIRST-FIT. When a part cannot fit even at its shortest,
+  //    nothing of lower rank goes in behind it. First-fit backfilled: the
+  //    same Shrimp tap put "Whole foods" — an answer nobody had touched —
+  //    where the protein leaning had been, which says the tap did
+  //    something else entirely. The rank is a claim about what matters, so
+  //    it has to hold in both directions. The cost is real and is paid on
+  //    purpose: a line can end with room left over rather than fill it
+  //    with a settled answer in place of the one somebody just changed.
   //
   // Whole answers, never half of one: a line ending "· 2…" reads as
-  // something broken, where an ellipsis after a finished phrase reads as
-  // "there's more inside".
+  // something broken. And no second ellipsis — a part that already ends in
+  // one (a cut eating style) is not given another.
   //
-  // 55 characters, not 60: at 390px a 60-character line measured
-  // scrollWidth 336 against clientWidth 321 in .prefs-row-sub, so the
-  // household got CSS's own cut wherever it landed — the thing this
-  // function exists to avoid — and the What we know head, which wraps
-  // rather than clipping, went to two lines. A character count can never
-  // be a pixel guarantee in a proportional face (and the number was
-  // measured with a fallback typeface, since fonts.googleapis.com is
-  // unreachable from the sandbox), so the row's own text-overflow stays
-  // the backstop; this is the budget that keeps it from firing on
-  // ordinary text.
+  // 55 characters, PROVISIONAL, and measured against the Preferences ROW
+  // only. At 390px a 60-character line renders 3px past .prefs-row-sub's
+  // 321 and gets CSS's own cut wherever it lands; four realistic
+  // 55-character lines measure exactly 321. Two caveats, both real:
+  // that was measured in a FALLBACK TYPEFACE rather than Figtree
+  // (fonts.googleapis.com is unreachable from the sandbox), and a
+  // character count can never be a pixel guarantee in a proportional face
+  // anyway — 55 capital letters overflow by hundreds of pixels. So
+  // .prefs-row-sub's own text-overflow stays the backstop, and this number
+  // wants one measurement against the real face before it is trusted.
+  // The What we know head is NOT what this number protects: it wraps by
+  // design (.wwk-head .prefs-row-sub is white-space: normal) and its
+  // "Saved" tick takes 35px of the same row while it shows, so it goes to
+  // two lines for a couple of seconds after any save from about 46
+  // characters up, whatever the cap is. Wrapping is not clipping and
+  // nothing is lost there; a cap low enough to stop it would cost the row
+  // most of what it says.
   var PREFS_LINE_MAX = 55;
   function prefsClamp(parts) {
-    var whole = parts.map(function (p) { return p.words; }).join(' · ');
+    var whole = parts.map(function (p) { return p.forms[0]; }).join(' · ');
     if (whole.length <= PREFS_LINE_MAX) return whole;
-    var kept = [];
+    var byRank = parts.slice().sort(function (a, b) { return a.rank - b.rank; });
     var used = 0;
-    // One character held back for the ellipsis this is now certain to need.
-    parts.slice().sort(function (a, b) { return a.rank - b.rank; }).forEach(function (p) {
-      var cost = (kept.length ? 3 : 0) + p.words.length;
-      if (used + cost <= PREFS_LINE_MAX - 1) { kept.push(p); used += cost; }
-    });
-    // One answer longer than the whole row is the only case with nothing to
-    // keep; it is cut on a word rather than leaving the row saying "…".
-    if (!kept.length) return prefsCut(parts[0].words, PREFS_LINE_MAX - 1) + '…';
-    return parts.filter(function (p) { return kept.indexOf(p) !== -1; })
-      .map(function (p) { return p.words; }).join(' · ') + '…';
+    var dropped = false;
+    for (var i = 0; i < byRank.length; i++) {
+      var sep = used ? 3 : 0;
+      var pick = '';
+      for (var j = 0; j < byRank[i].forms.length; j++) {
+        // One character held back for the ellipsis this is now certain to
+        // need.
+        if (used + sep + byRank[i].forms[j].length <= PREFS_LINE_MAX - 1) { pick = byRank[i].forms[j]; break; }
+      }
+      if (!pick) { dropped = true; break; }
+      byRank[i].chosen = pick;
+      used += sep + pick.length;
+    }
+    // One answer longer than the whole row even at its shortest is the only
+    // case with nothing to keep; the highest-RANKED one is cut on a word,
+    // since a row reading just "…" would be worse.
+    if (!used) return prefsCut(byRank[0].forms[byRank[0].forms.length - 1], PREFS_LINE_MAX - 1) + '…';
+    var line = parts.filter(function (p) { return p.chosen; })
+      .map(function (p) { return p.chosen; }).join(' · ');
+    return dropped && line.charAt(line.length - 1) !== '…' ? line + '…' : line;
   }
 
   // Cut on a word where there is one to cut on, and never leave a dangling
   // separator behind — the ellipsis has to read as "more of this", not as
-  // a typo.
+  // a typo. The trailing-surrogate check is for the same reason: slicing a
+  // JS string by index splits an emoji in half, and half an emoji is a
+  // replacement glyph in the middle of somebody's own words.
   function prefsCut(text, max) {
     var cut = text.slice(0, max);
     var space = cut.lastIndexOf(' ');
     if (space > max / 2) cut = cut.slice(0, space);
+    var last = cut.charCodeAt(cut.length - 1);
+    if (last >= 0xd800 && last <= 0xdbff) cut = cut.slice(0, -1);
     return cut.replace(/[\s·,]+$/, '');
   }
 
@@ -16339,37 +16371,39 @@
   // ONE freeform value and onboarding joins every tapped preset and the
   // typed line into it with commas ("High-protein, Low-carb, no red meat
   // on weeknights"), so the row takes the first clause only — a reminder,
-  // not a transcript. It also gets a budget of its own: it is the one
-  // answer here with no natural length, and left unbounded a typed
-  // sentence ("Mostly plant-based with fish twice a week") fills the row
-  // on its own and takes the cuisine somebody just added down with it.
-  // 24 is comfortably past the longest preset onboarding offers
-  // ("Budget-friendly", 15) and under half the row. Cased as typed:
-  // re-casing somebody's answer is the app editing what they said.
+  // not a transcript. A long one also offers a cut second form, because it
+  // is the one answer here with no natural length and unbounded it fills
+  // the row and takes down whatever follows it. Only under pressure,
+  // though: a household whose ONE answer is a typed sentence reads it back
+  // whole, and 24 is a fallback rather than a haircut everybody gets.
+  // Cased as typed — re-casing somebody's answer is the app editing what
+  // they said — but a string only: /api/memory/edit stores what it is
+  // handed, and String()ing an object into this row would print
+  // "[object Object]" back as a fact about the household.
   var PREFS_STYLE_MAX = 24;
-  function prefsStyleWords(style) {
-    var first = String(style || '').split(',')[0].trim();
-    return first.length <= PREFS_STYLE_MAX ? first : prefsCut(first, PREFS_STYLE_MAX - 1) + '…';
+  function prefsStyleForms(style) {
+    var first = (typeof style === 'string' ? style : '').split(',')[0].trim();
+    if (!first) return [];
+    return first.length <= PREFS_STYLE_MAX ? [first] : [first, prefsCut(first, PREFS_STYLE_MAX - 1) + '…'];
   }
 
-  // The cuisines, newest last two named. Nothing in /api/memory is
-  // timestamped, so "what you just added" has to be read off the list's
-  // own order — wwkListAdd appends, so the tail IS the most recent thing
-  // said, which is exactly what somebody checking that a change took is
-  // looking for. Named in list order, so the row and the section's chips
-  // read left to right the same way; "+N" for the older ones, the same
-  // shape the people row uses for a second allergy.
+  // The cuisines, newest named. Nothing in /api/memory is timestamped, so
+  // "what you just added" has to be read off the list's own order —
+  // wwkListAdd appends, so the tail IS the most recent thing said, which is
+  // exactly what somebody checking that a change took is looking for.
+  // Named in list order, so the row and the section's chips read left to
+  // right the same way.
   // Array.isArray, not `|| []`: /api/memory/edit stores whatever it is
   // handed and answers 200 to a bare string (so does the chat tool
   // edit_preference), and a .filter on a string throws — which, from a
   // PREFS_ROWS line function, is every row in the sheet stuck on "Reading
   // it back…" rather than one section failing to draw.
   var PREFS_CUISINES_SHOWN = 2;
-  function prefsCuisineWords(mem) {
+  function prefsCuisineForms(mem) {
     var stored = mem && mem.cuisine_preferences;
-    var all = (Array.isArray(stored) ? stored : []).filter(function (c) { return c; });
-    var shown = all.slice(-PREFS_CUISINES_SHOWN).join(', ');
-    return all.length > PREFS_CUISINES_SHOWN ? shown + ' +' + (all.length - PREFS_CUISINES_SHOWN) : shown;
+    var all = (Array.isArray(stored) ? stored : [])
+      .filter(function (c) { return c && typeof c === 'string'; });
+    return prefsListForms(all, PREFS_CUISINES_SHOWN, true);
   }
 
   // Which proteins the household leans toward or away from, said the way
@@ -16384,7 +16418,7 @@
   // only half a recency signal, and the order the household sees when they
   // open the section is worth more than half a signal.
   var PREFS_PROTEINS_SHOWN = 2;
-  function prefsProteinWords(mem) {
+  function prefsProteinForms(mem) {
     var liked = [];
     var skipped = [];
     WWK_PROTEINS.forEach(function (label) {
@@ -16394,7 +16428,21 @@
     });
     // Favourites first: a household taps far more of them than skips, so
     // that is the half most likely to be the thing just changed.
-    return liked.concat(skipped).slice(0, PREFS_PROTEINS_SHOWN).join(', ');
+    return prefsListForms(liked.concat(skipped), PREFS_PROTEINS_SHOWN, false);
+  }
+
+  // The shortening both list-shaped answers share: as many named as fit,
+  // "+N" for the rest, longest form first so prefsClamp can take the
+  // fullest one there is room for. `keepLast` is which end is worth
+  // keeping — the newest cuisines, but the strongest protein leanings,
+  // which are in the chips' own order.
+  function prefsListForms(names, max, keepLast) {
+    var forms = [];
+    for (var n = Math.min(max, names.length); n >= 1; n--) {
+      var shown = (keepLast ? names.slice(-n) : names.slice(0, n)).join(', ');
+      forms.push(names.length > n ? shown + ' +' + (names.length - n) : shown);
+    }
+    return forms;
   }
 
   function prefsStoresLine(mem) {

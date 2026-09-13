@@ -134,7 +134,10 @@ def test_the_whole_section_reads_back_in_the_order_its_controls_run():
         ({"Fish / seafood": "less"}, "less fish"),
         ({"Chicken": "more"}, "more chicken"),
         # Favourites before skips, and at most two of them.
-        ({"beef": 5, "fish": 1, "chicken": 5}, "more chicken, more beef"),
+        # A third leaning is counted, not silently dropped — the same "+N"
+        # the cuisines use, and what lets the clause shrink under pressure
+        # instead of being evicted.
+        ({"beef": 5, "fish": 1, "chicken": 5}, "more chicken, more beef +1"),
     ],
 )
 def test_the_protein_leanings_are_read_the_way_the_chips_read_them(prefs, expected):
@@ -181,6 +184,44 @@ def test_what_gives_way_is_the_settled_answer_not_the_newest_one():
     assert line == "Vietnamese, Ethiopian +2 · more chicken…"
 
 
+def test_tapping_a_second_protein_shrinks_that_clause_instead_of_losing_it():
+    """The reported defect, one clause over. The protein clause had no way
+    to shorten, so tapping Shrimp GREW it past the room left and it was
+    evicted — the household changed one thing and watched a different thing
+    happen. It gets the "+N" the cuisines have now, so it can shrink."""
+    household = {
+        "eating_style": "Whole foods",
+        "cuisine_preferences": ["Middle Eastern", "Mediterranean"],
+        "protein_preferences": {"chicken": 5},
+    }
+    before = _line(household)
+    assert before == "Middle Eastern, Mediterranean · more chicken…"
+
+    after = _line(dict(household, protein_preferences={"chicken": 5, "shrimp": 5}))
+    assert after == "Middle Eastern, Mediterranean · more chicken +1…"
+    assert after != before, "the tap has to show"
+    assert "more chicken" in after, "the clause they changed is still there"
+    assert "Whole foods" not in after, "an answer nobody touched has appeared"
+
+
+def test_a_settled_answer_never_backfills_over_the_one_that_gave_way():
+    """Admission is strict, not first-fit: when a part cannot fit even at
+    its shortest, nothing of lower rank goes in behind it.
+
+    Here the protein clause cannot fit at 'more chicken +1' (15), and
+    'Keto' (4) can. First-fit puts the eating style in its place, which
+    says the protein tap did something else; strict leaves the room unused
+    and says nothing it cannot stand behind. Mutating the loop back to
+    first-fit reddens this test and nothing else."""
+    line = _line({
+        "eating_style": "Keto",
+        "cuisine_preferences": ["Thai", "Modern Australian", "Eastern European"],
+        "protein_preferences": {"chicken": 5, "fish": 1},
+    })
+    assert line == "Modern Australian, Eastern European +1…"
+    assert "Keto" not in line, "a rank-3 answer backfilled over a rank-1 one"
+
+
 def test_two_ordinary_cuisine_names_survive_the_middle_leftovers_answer():
     """"leftovers now and then" is 22 characters and one of three ordinary
     onboarding answers; "Middle Eastern, Caribbean" is 25. Together with a
@@ -212,14 +253,60 @@ def test_adding_a_cuisine_moves_the_line_when_it_has_to_compete_for_room(signed_
     assert after == "leftovers welcome · Mostly plant-based… · Thai"
 
 
-def test_a_typed_eating_style_gets_a_budget_of_its_own():
+def test_a_typed_eating_style_is_read_back_whole_when_there_is_room():
+    """The budget is a fallback, not a haircut everybody gets. A household
+    whose one answer is a typed sentence sees their own words: 41 characters
+    inside a 55-character row, so there is nothing to save room for."""
+    assert _line({"eating_style": "Mostly plant-based with fish twice a week"}) \
+        == "Mostly plant-based with fish twice a week"
+    assert _line({"eating_style": "Budget-friendly"}) == "Budget-friendly"
+
+
+def test_a_typed_eating_style_gets_a_budget_of_its_own_under_pressure():
     """It is the one answer here with no natural length. Left unbounded a
     typed sentence fills the row on its own and takes the cuisine somebody
-    just added down with it — so it is cut on a word, and says so."""
-    assert _line({"eating_style": "Mostly plant-based with fish twice a week"}) \
-        == "Mostly plant-based…"
-    # A preset, and anything else short, is left exactly as typed.
-    assert _line({"eating_style": "Budget-friendly"}) == "Budget-friendly"
+    just added down with it — so under pressure it is cut on a word, and
+    says so."""
+    assert _line({
+        "rhythm": {"leftovers_stance": "love_them"},
+        "eating_style": "Mostly plant-based with fish twice a week",
+        "cuisine_preferences": ["Thai"],
+    }) == "leftovers welcome · Mostly plant-based… · Thai"
+
+
+def test_a_cut_answer_is_never_given_a_second_ellipsis():
+    """A leftovers stance, a typed style over the budget and an answered
+    snacks question — a household straight out of onboarding who typed
+    rather than tapped — used to read "…plant-based……". prefsCut's own
+    rule is that an ellipsis reads as "more of this", and "……" reads as a
+    typo."""
+    line = _line({
+        "rhythm": {"leftovers_stance": "fine_sometimes"},
+        "eating_style": "Mostly plant-based with fish twice a week",
+        "snacks_per_day": 2, "snacks_per_day_set": True,
+    })
+    assert "……" not in line
+    assert line == "leftovers now and then · Mostly plant-based…"
+
+
+def test_an_eating_style_stored_as_an_object_is_not_read_back_as_a_fact():
+    """/api/memory/edit stores what it is handed. Not throwing is not the
+    same as not inventing: String()ing an object would print
+    "[object Object]" into the row as something the household said."""
+    assert _line({"eating_style": {"a": 1}, "cuisine_preferences": ["Thai"]}) == "Thai"
+
+
+def test_cutting_an_answer_never_splits_an_emoji_in_half():
+    """prefsCut slices by UTF-16 index, so half an emoji is a replacement
+    glyph in the middle of somebody's own words."""
+    script = _block() + "\n" + (
+        "const t = 'AAAAAAAAAAAAAAAAAAAA🥦🥦🥦🥦';\n"
+        "const lone = /[\\uD800-\\uDBFF](?![\\uDC00-\\uDFFF])/;\n"
+        "console.log(JSON.stringify(prefsStyleForms(t).map(f => lone.test(f))));\n"
+    )
+    res = nodeharness.run_node(script, timeout=30)
+    assert res.returncode == 0, f"node failed: {res.stderr}"
+    assert json.loads(res.stdout.strip()) == [False, False]
 
 
 def test_one_answer_longer_than_the_whole_row_is_cut_rather_than_dropped():
