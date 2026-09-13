@@ -466,6 +466,11 @@ class ChatAction(BaseModel):
     # still shows the week, just without selecting a day.
     date: str | None = None
     slot: str | None = None
+    # True for a write that REMEMBERED something about the household (a
+    # dislike, an allergy, a fact, a store) rather than changed a screen —
+    # the shell draws those as the Remembered chip with "Not quite"
+    # (2026-09-13), and everything else as the "View" card.
+    remembered: bool = False
 
 
 class ChatResponse(BaseModel):
@@ -4413,6 +4418,13 @@ _MEMORY_HREF_TOOLS = {
     "get_or_create_member_share_link", "revoke_member_share_link", "regenerate_member_share_link",
     "set_morning_text",
 }
+# The writes that are a fact ABOUT the household rather than a change to a
+# screen: what the chat shows as "Remembered · …" with a way to correct it.
+_REMEMBER_TOOLS = {
+    "add_fact", "add_food_dislikes", "set_member_dietary_restrictions",
+    "set_household_meal_preferences", "edit_preference", "add_usual_stores",
+    "add_store_typical_items", "remove_store_typical_item", "set_household_goals",
+}
 _CATEGORY_KICKERS = {
     "today": "Chores updated",
     "week": "Week updated",
@@ -4644,7 +4656,7 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
             day_date, day_slot = _changed_day(category, args)
             by_category[category] = ChatAction(
                 kicker=_CATEGORY_KICKERS[category], change=change, tab=tab, href=href,
-                date=day_date, slot=day_slot,
+                date=day_date, slot=day_slot, remembered=name in _REMEMBER_TOOLS,
             )
 
     return list(by_category.values())

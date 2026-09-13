@@ -18836,7 +18836,7 @@
       // as what it is — Remembered · Kids: no shrimp — with "Not quite"
       // opening What we know to correct it there (learning etiquette §7:
       // observe → infer → confirm → remember → correct, in one breath).
-      if (!action.tab && action.href === '/memory') {
+      if (action.remembered) {
         var chip = document.createElement('div');
         chip.className = 'ask-remembered';
         chip.innerHTML =
@@ -18878,9 +18878,17 @@
   // then the rows behind the sheet update and say Changed, and the pop-up
   // says "Changes saved · Undo" (S10). Another re-picks one row without
   // touching the others; "Leave the week as it was" closes the card.
-  function changeRowHtml(row, i, busyRow, settled) {
+  function changeRowHtml(row, i, busyRow, settled, refusedWhy) {
     var day = row.weekday ? row.weekday.slice(0, 3).toUpperCase() : '';
     var was = row.current ? escapeHtml(row.current.meal) : '';
+    if (refusedWhy) {
+      // Left as it was, and why — on the row, where it stays readable,
+      // rather than in a pop-up the next pop-up replaces.
+      return '<div class="ask-change-row is-quiet">' +
+        '<span class="ask-change-day">' + escapeHtml(day) + '</span>' +
+        '<span class="ask-change-what">' + was + ' stays — ' + escapeHtml(refusedWhy) + '</span>' +
+      '</div>';
+    }
     if (row.action === 'keep') {
       return '<div class="ask-change-row is-kept">' +
         '<span class="ask-change-day">' + escapeHtml(day) + '</span>' +
@@ -18926,16 +18934,23 @@
   function changeCardHtml(proposal, state) {
     // Once saved or left, the card is a record: no options, no Another.
     var settled = state.saved || state.left;
-    var rows = proposal.rows.map(function (r, i) { return changeRowHtml(r, i, state.busyRow, settled); }).join('');
+    var refusedBy = {};
+    (state.refused || []).forEach(function (r) { refusedBy[r.date + ':' + r.slot] = r.why; });
+    var rows = proposal.rows.map(function (r, i) {
+      return changeRowHtml(r, i, state.busyRow, settled, refusedBy[r.date + ':' + r.slot]);
+    }).join('');
     var foot;
     if (state.saved) {
       foot = '<div class="ask-change-foot"><span class="ask-change-done">Saved.</span></div>';
     } else if (state.left) {
-      foot = '<div class="ask-change-foot"><span class="ask-change-done">Left as it was.</span></div>';
+      foot = '<div class="ask-change-foot"><span class="ask-change-done">' + (state.putBack ? 'Put back.' : 'Left as it was.') + '</span></div>';
     } else {
       var canSave = proposal.rows.some(function (r) { return r.action === 'change' && r.candidates && r.candidates.length && !r.problem; });
+      // Not while Another is still finding: a save that races the re-pick
+      // would write one dish and show another.
+      var held = state.saving || state.busyRow !== null;
       foot = '<div class="ask-change-foot">' +
-        (canSave ? '<button type="button" class="ask-change-save" data-change-save' + (state.saving ? ' disabled' : '') + '>' +
+        (canSave ? '<button type="button" class="ask-change-save" data-change-save' + (held ? ' disabled' : '') + '>' +
           (state.saving ? 'Saving…' : 'Save changes') + '</button>' : '') +
         '<button type="button" class="ask-change-leave" data-change-leave>Leave the week as it was</button>' +
       '</div>';
@@ -19008,22 +19023,25 @@
         postJson('/api/chat/proposals/' + encodeURIComponent(pid) + '/apply', {})
           .then(function (out) {
             state.saving = false;
+            state.refused = (out && out.refused) || [];
             if (!out || out.status === 'nothing') {
               state.left = true;
               draw();
               showToast('Nothing to change — the week already says that.');
               return;
             }
+            if (out.status === 'refused') {
+              // Every row was stopped by a gate (an allergen, someone's
+              // veto): nothing written, and the rows say why.
+              state.left = true;
+              draw();
+              showToast('I left the week as it was — ' + state.refused[0].why + '.', null, 6000);
+              return;
+            }
             state.saved = true;
             state.proposal = out.proposal || state.proposal;
             draw();
             (out.proposal && out.proposal.applied || []).forEach(function (a) { markRecentlyChanged(a.date, a.slot); });
-            if (out.refused && out.refused.length) {
-              // Calm and plain, with the way out: the rest landed, this
-              // one didn't, and why.
-              var r = out.refused[0];
-              showToast(dayName(r.date, { weekday: 'long' }) + '’s ' + r.meal + ' — ' + r.why + ', so I left that one.', null, 6000);
-            }
             toastSaved({ label: 'Undo', onClick: function () { undoChangeCard(state); } }, SWAP_UNDO_MS);
             if (panels.week && panels.week.dataset.built) loadWeekMenu(panels.week);
             else refreshDishIndex();
@@ -19046,7 +19064,8 @@
       .then(function () {
         state.saved = false;
         state.left = true;
-        state.cards.forEach(function (card) { card.innerHTML = changeCardHtml(state.proposal, state).replace('Left as it was.', 'Put back.'); });
+        state.putBack = true;
+        state.cards.forEach(function (card) { card.innerHTML = changeCardHtml(state.proposal, state); });
         showToast('Put back.');
         if (panels.week && panels.week.dataset.built) loadWeekMenu(panels.week);
       })

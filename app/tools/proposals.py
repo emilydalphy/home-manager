@@ -42,6 +42,7 @@ import secrets
 import time
 
 from ._shared import household_id
+from . import recipes as _recipes
 from . import swap_in_place as _swap
 from . import weekly_plan as _weekly_plan
 
@@ -161,13 +162,28 @@ def propose_plan_changes(weekly_plan_id: int, rows: list[dict], line: str = "") 
         }
         if action == "change":
             cands = [c for c in (_clean_candidate(r) for r in (raw.get("candidates") or [])) if c]
-            row["candidates"] = cands[:_MAX_CANDIDATES]
+            # A dish with no ingredients and no saved recipe would land as a
+            # freeform entry — nothing to cook from, nothing for the list —
+            # which is the opposite of what the card promises. Dropped, and
+            # said so, so the model fills it in rather than the household
+            # finding out on approval.
+            shoppable = [c for c in cands if c["ingredients"] or _recipe_exists(c["meal_name"])]
+            dropped = [c["meal_name"] for c in cands if c not in shoppable]
+            row["candidates"] = shoppable[:_MAX_CANDIDATES]
+            # Everything this row has ever been offered, so Another can avoid
+            # all of it even once the visible list is capped.
+            row["offered"] = [c["meal_name"] for c in row["candidates"]]
             if not row["candidates"]:
-                row["problem"] = "no dish was offered for this slot"
+                row["problem"] = ("no dish was offered for this slot" if not dropped else
+                                  f"{', '.join(dropped)} came without ingredients — a new dish needs them to be cookable and shoppable")
+            elif dropped:
+                row["dropped"] = dropped
             elif entry is None:
                 row["problem"] = "nothing is planned on that slot to change — plan it with plan_meal instead"
         elif entry is None:
             row["problem"] = "nothing is planned on that slot"
+        if action == "change" and entry is None and row["candidates"]:
+            row["problem"] = "nothing is planned on that slot to change — plan it with plan_meal instead"
         out_rows.append(row)
     if not out_rows:
         return {"error": "No rows to propose."}
@@ -190,6 +206,14 @@ def propose_plan_changes(weekly_plan_id: int, rows: list[dict], line: str = "") 
     return public_view(proposal)
 
 
+def _recipe_exists(name: str) -> bool:
+    wanted = name.strip().lower()
+    try:
+        return any((r.get("name") or "").strip().lower() == wanted for r in _recipes.list_recipes())
+    except Exception:
+        return False
+
+
 def public_view(proposal: dict) -> dict:
     """What crosses the wire — the recipes stay server-side."""
     rows = []
@@ -203,6 +227,7 @@ def public_view(proposal: dict) -> dict:
             ],
             "chosen": r["chosen"],
             "problem": r["problem"],
+            "dropped": r.get("dropped") or [],
         })
     return {
         "proposal_id": proposal["proposal_id"],
@@ -248,7 +273,8 @@ def another_for_row(proposal_id: str, row_index: int, picker=None) -> dict:
     if entry is None:
         return {"status": "refused", "message": "Nothing is planned on that night any more."}
     pick_one = picker or _swap._pick_replacement
-    avoid = _swap._dedup([entry["meal"]] + [c["meal_name"] for c in row["candidates"]])
+    offered = row.setdefault("offered", [c["meal_name"] for c in row["candidates"]])
+    avoid = _swap._dedup([entry["meal"]] + offered + [c["meal_name"] for c in row["candidates"]])
     for attempt in range(1, _swap.MAX_PICK_ATTEMPTS + 1):
         context = _swap.build_swap_context(proposal["weekly_plan_id"], entry, avoid)
         pick = pick_one(context) or {}
@@ -256,6 +282,7 @@ def another_for_row(proposal_id: str, row_index: int, picker=None) -> dict:
         if not cand:
             logger.warning("proposal another came back with no dish (attempt %d)", attempt)
             break
+        offered.append(cand["meal_name"])
         why = _swap.pick_gate(cand, entry)
         if why is None:
             row["candidates"] = (row["candidates"] + [cand])[-_MAX_CANDIDATES:]
@@ -300,14 +327,25 @@ def apply_proposal(proposal_id: str) -> dict:
             refused.append({"date": row["date"], "slot": row["slot"], "meal": cand["meal_name"], "why": why})
             continue
         result = _swap.apply_pick(plan_id, entry, cand)
-        applied.append({
+        landed = {
             "date": row["date"], "slot": row["slot"], "entry_id": result["entry_id"],
-            "meal": result["meal"], "replaced": result["replaced"], "day": result.get("day"),
-        })
-    proposal["applied"] = [{k: v for k, v in a.items() if k != "day"} for a in applied]
-    proposal["status"] = "applied" if applied else proposal["status"]
+            "meal": result["meal"], "replaced": result["replaced"],
+        }
+        applied.append(dict(landed, day=result.get("day")))
+        # Recorded as each row lands, not after the loop: if a later row
+        # raises, the card's Undo can still put back the ones that did.
+        proposal["applied"].append(landed)
+        proposal["status"] = "applied"
+    if applied:
+        status = "applied"
+    elif refused:
+        # Every row was refused by a gate: nothing written, and the reason
+        # is the thing to say — not "the week already says that".
+        status = "refused"
+    else:
+        status = "nothing"
     return {
-        "status": "applied" if applied else "nothing",
+        "status": status,
         "proposal": public_view(proposal),
         "refused": refused,
         "days": [a["day"] for a in applied if a.get("day")],

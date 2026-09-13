@@ -6301,6 +6301,31 @@ CHANGE_CLAIM_RETRACTION = (
     "I couldn’t change that — nothing actually saved on my end, so your plan is exactly as it "
     "was. Want me to try again?"
 )
+# The proposal-turn version of the same guard: the model said it changed
+# the week when it only PROPOSED (the card under this line is the
+# proposal, and nothing is written until Save changes). Said plainly.
+PROPOSAL_CLAIM_LINE = "Nothing’s changed yet — here’s what I’d do. Save it if it looks right."
+
+
+def _turn_proposed(new_entries: list[dict]) -> bool:
+    """Whether this turn made a change card (a successful propose_plan_changes)."""
+    ids: set[str] = set()
+    for entry in new_entries:
+        if entry.get("role") != "assistant":
+            continue
+        for block in entry.get("content") or []:
+            block_type = getattr(block, "type", None) or (block.get("type") if isinstance(block, dict) else None)
+            name = getattr(block, "name", None) or (block.get("name") if isinstance(block, dict) else None)
+            if block_type == "tool_use" and name == "propose_plan_changes":
+                ids.add(getattr(block, "id", None) or (block.get("id") if isinstance(block, dict) else None))
+    for entry in new_entries:
+        if entry.get("role") != "user" or not isinstance(entry.get("content"), list):
+            continue
+        for block in entry["content"]:
+            if isinstance(block, dict) and block.get("type") == "tool_result" and not block.get("is_error") \
+                    and block.get("tool_use_id") in ids:
+                return True
+    return False
 
 
 def _claims_a_change(text: str) -> bool:
@@ -6331,7 +6356,9 @@ def _turn_wrote_anything(new_entries: list[dict]) -> bool:
             if not isinstance(block, dict) or block.get("type") != "tool_result" or block.get("is_error"):
                 continue
             name = names_by_id.get(block.get("tool_use_id")) or ""
-            if name and not name.startswith(_READ_ONLY_PREFIXES):
+            # A proposal writes nothing — it is a card for the household to
+            # save — so it does not back a claim that the week changed.
+            if name and not name.startswith(_READ_ONLY_PREFIXES) and name != "propose_plan_changes":
                 return True
     return False
 
@@ -6344,6 +6371,9 @@ def verify_change_claim(text: str, new_entries: list[dict]) -> str:
     """
     if not _claims_a_change(text) or _turn_wrote_anything(new_entries):
         return text
+    if _turn_proposed(new_entries):
+        logger.warning("Chat reply claimed a change on a turn that only proposed one — replacing the claim")
+        return PROPOSAL_CLAIM_LINE
     logger.warning(
         "Chat reply claimed a change but the turn wrote nothing — replacing the claim. "
         "Original reply: %d chars",

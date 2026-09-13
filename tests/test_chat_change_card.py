@@ -322,9 +322,14 @@ def test_the_chat_turn_carries_the_card_and_no_action_card_for_it(week):
     before, after = _turn_with_proposal(out)
     assert app_main.summarize_chat_actions(before, after) == []
     assert app_main._proposal_from_turn(before, after)["proposal_id"] == out["proposal_id"]
-    # ...and a proposal still counts as the turn having done something, so
-    # the reply's "here are two changes" is not retracted as an empty claim.
-    assert agent._turn_wrote_anything(after[len(before):]) is True
+    # A proposal is not a write: a reply that claims the week CHANGED on a
+    # turn that only proposed is replaced with the proposal line, and a
+    # reply that just offers is left alone.
+    new_entries = after[len(before):]
+    assert agent._turn_wrote_anything(new_entries) is False
+    assert agent._turn_proposed(new_entries) is True
+    assert agent.verify_change_claim("Two to look at.", new_entries) == "Two to look at."
+    assert agent.verify_change_claim("I've swapped Thursday to the pork chops.", new_entries) == agent.PROPOSAL_CLAIM_LINE
 
 
 def test_the_chat_context_model_accepts_a_week():
@@ -363,11 +368,97 @@ def test_the_card_is_drawn_under_the_reply_and_saves_with_the_pop_up():
 def test_a_remembered_fact_is_a_chip_with_a_way_to_correct_it():
     i = SHELL_JS.index("function buildAskMessageEl(")
     body = SHELL_JS[i:i + 3000]
-    assert "action.href === '/memory'" in body
+    assert "if (action.remembered) {" in body
     assert "ask-remembered" in body and "Not quite" in body
+    # Only the tools that remember a fact about the household are chips;
+    # the /memory catch-all for other writes stays a "View" card.
+    assert app_main._REMEMBER_TOOLS >= {"add_fact", "add_food_dislikes", "set_member_dietary_restrictions"}
+    assert "add_member" not in app_main._REMEMBER_TOOLS
     for cls in (".ask-change-card", ".ask-change-save", ".ask-change-another", ".ask-change-opt", ".ask-remembered", ".wk-changed"):
         assert cls in SHELL_CSS, cls
     # Tokens only — no literal hex in the new CSS (Rule 9).
     start = SHELL_CSS.index("The change card and the Remembered chip")
     end = SHELL_CSS.index(".ask-chips { display: flex;")
     assert "#" not in SHELL_CSS[start:end].replace("#ask", "")
+
+
+# ---------- after the verifier (round 2) ----------
+
+def test_every_row_refused_is_said_as_refused_not_as_nothing_to_change(week):
+    tools.set_member_dietary_restrictions("Emily", ["shellfish"])
+    out = tools.propose_plan_changes(week, [
+        {"date": THURSDAY, "slot": "dinner", "action": "change",
+         "candidates": [_cand("Shrimp Tacos", 20, "shrimp", ingredients=[{"item": "Shrimp", "qty": "1 lb", "category": "meat/seafood"}])]},
+    ])
+    applied = tools.apply_proposal(out["proposal_id"])
+    assert applied["status"] == "refused"
+    assert applied["refused"][0]["why"].startswith("clashes")
+    assert _dinner(week, THURSDAY)["title"] == "Chicken Tikka"
+
+
+def test_a_candidate_without_ingredients_is_dropped_unless_the_recipe_exists(week):
+    out = tools.propose_plan_changes(week, [
+        {"date": THURSDAY, "slot": "dinner", "action": "change",
+         "candidates": [_cand("Mystery Bowl", ingredients=[]), _cand("Pork Chops", ingredients=[])]},
+    ])
+    row = out["rows"][0]
+    assert [c["meal_name"] for c in row["candidates"]] == ["Pork Chops"]  # saved already
+    assert row["dropped"] == ["Mystery Bowl"]
+    only = tools.propose_plan_changes(week, [
+        {"date": THURSDAY, "slot": "dinner", "action": "change", "candidates": [_cand("Mystery Bowl", ingredients=[])]},
+    ])
+    assert "ingredients" in only["rows"][0]["problem"]
+
+
+def test_another_avoids_everything_ever_offered_even_past_the_visible_four(week):
+    out = tools.propose_plan_changes(week, [
+        {"date": THURSDAY, "slot": "dinner", "action": "change", "candidates": [_cand("Shrimp Tacos", 20, "shrimp")]},
+    ])
+    pid = out["proposal_id"]
+    seen = []
+    names = iter(["A Bowl", "B Bowl", "C Bowl", "D Bowl", "E Bowl"])
+
+    def picker(context):
+        seen.append(list(context["avoid"]))
+        return _cand(next(names), 20, "vegetarian")
+
+    for _ in range(5):
+        assert prop.another_for_row(pid, 0, picker=picker)["status"] == "picked"
+    row = tools.get_proposal(pid)["rows"][0]
+    assert len(row["candidates"]) == 4  # the visible cap
+    assert set(seen[-1]) >= {"Chicken Tikka", "Shrimp Tacos", "A Bowl", "B Bowl", "C Bowl", "D Bowl"}
+
+
+def test_a_row_that_landed_before_a_later_row_raised_can_still_be_undone(week, monkeypatch):
+    out = tools.propose_plan_changes(week, [
+        {"date": MONDAY, "slot": "dinner", "action": "change", "candidates": [_cand("Grilled Pork Chops", 25, "pork")]},
+        {"date": THURSDAY, "slot": "dinner", "action": "change", "candidates": [_cand("Shrimp Tacos", 20, "shrimp")]},
+    ])
+    pid = out["proposal_id"]
+    real = sip.apply_pick
+    calls = {"n": 0}
+
+    def flaky(plan_id, entry, pick):
+        calls["n"] += 1
+        if calls["n"] == 2:
+            raise ValueError("boom")
+        return real(plan_id, entry, pick)
+
+    monkeypatch.setattr(sip, "apply_pick", flaky)
+    with pytest.raises(ValueError):
+        tools.apply_proposal(pid)
+    assert _dinner(week, MONDAY)["title"] == "Grilled Pork Chops"
+    assert tools.undo_proposal(pid)["status"] == "restored"
+    assert _dinner(week, MONDAY)["title"] == "Pork Chops"
+
+
+def test_the_shell_says_why_a_row_was_left_and_holds_save_while_another_runs():
+    i = SHELL_JS.index("function changeRowHtml(")
+    body = SHELL_JS[i:SHELL_JS.index("function mountChangeCard(")]
+    assert "refusedWhy" in body and "stays — " in body
+    assert "var held = state.saving || state.busyRow !== null;" in body
+    j = SHELL_JS.index("function wireChangeCard(")
+    wire = SHELL_JS[j:SHELL_JS.index("function undoChangeCard(")]
+    assert "if (out.status === 'refused') {" in wire
+    assert "I left the week as it was — " in wire
+    assert ".replace('Left as it was.'" not in SHELL_JS
