@@ -16228,77 +16228,128 @@
   // (app/tools/memory.py). Without it a brand-new household was told it
   // eats three snacks a week, which nobody had ever said.
   //
-  // It reads the WHOLE section back, not just leftovers and snacks: those
-  // two were all it said until 2026-09-13, so telling Pomona you love Thai
-  // food saved correctly and changed nothing on the row — which reads as
-  // "it didn't take". The parts run in the order the section's own
-  // controls run (Leftovers, How meals lean, Excited about, Proteins, and
-  // the counts last), so the row and the screen it opens name things in
-  // the same order and a new answer never reshuffles the line under
-  // whoever just gave it. Nothing is padded: a part the household has said
-  // nothing about contributes nothing, never a filler phrase.
+  // WHAT IT READS BACK, and what it doesn't. Until 2026-09-13 it said the
+  // leftovers stance and the snack count and nothing else, so telling
+  // Pomona you love Thai food saved correctly and left the row word for
+  // word as it was — which reads as "it didn't take". It now carries the
+  // four answers that are the household's own words about what they eat:
+  // the leftovers stance, how their meals lean, the cuisines and the
+  // protein leanings — plus the snack count, which was already here. The
+  // other four control groups in the section (rounding meals out, the
+  // dinners/breakfasts/lunches steppers, the kitchen kit, and the section's
+  // freeform notes) are deliberately NOT in it: they are settings for how
+  // the app plans rather than a description of how the household eats, and
+  // five answers is already more than fits. Changing one of those still
+  // leaves this row where it was — a real remaining gap, written down here
+  // rather than half-closed.
+  //
+  // Order on screen is the order the section's own controls run, so the row
+  // and the screen it opens name things the same way round. Order under
+  // PRESSURE is different and is the `rank` below — see prefsClamp.
+  // Nothing is padded: a part the household has said nothing about
+  // contributes nothing, never a filler phrase.
   function prefsEatingLine(mem) {
-    var bits = [];
+    var parts = [];
+    function part(words, rank) { if (words) parts.push({ words: words, rank: rank }); }
     var stance = ((mem && mem.rhythm) || {}).leftovers_stance || '';
-    if (PREFS_LEFTOVERS[stance]) bits.push(PREFS_LEFTOVERS[stance]);
-    var style = prefsStyleWords(mem && mem.eating_style);
-    if (style) bits.push(style);
-    var cuisines = prefsCuisineWords(mem);
-    if (cuisines) bits.push(cuisines);
-    var proteins = prefsProteinWords(mem);
-    if (proteins) bits.push(proteins);
-    // Two snack numbers, two answered-flags, and this line reads back
-    // whichever question the household was actually asked. Onboarding asks
-    // per DAY since 2026-09-08 (Julia), so that one wins when both are on;
-    // a household whose only snacks answer predates that column still sees
-    // their own per-week number rather than a per-day default nobody said.
-    // "no snacks" is a real answer either way and gets real words rather
-    // than being dropped as a falsy number.
-    if (mem && mem.snacks_per_day_set) {
-      var perDay = mem.snacks_per_day || 0;
-      bits.push(perDay ? perDay + ' snack' + (perDay === 1 ? '' : 's') + ' a day' : 'no snacks');
-    } else if (mem && mem.snacks_per_week_set) {
-      var perWeek = mem.snacks_per_week || 0;
-      bits.push(perWeek ? perWeek + ' snack' + (perWeek === 1 ? '' : 's') + ' a week' : 'no snacks');
-    }
-    return bits.length ? prefsClamp(bits) : 'Not set yet';
+    part(PREFS_LEFTOVERS[stance] || '', 2);
+    part(prefsStyleWords(mem && mem.eating_style), 3);
+    part(prefsCuisineWords(mem), 0);
+    part(prefsProteinWords(mem), 1);
+    part(prefsSnackWords(mem), 4);
+    return parts.length ? prefsClamp(parts) : 'Not set yet';
   }
 
-  // A fully-answered household says more than fits. 60 characters is the
-  // cap here rather than in CSS because this line has two homes and they
-  // truncate differently: .prefs-row-sub is one nowrap line with an
-  // ellipsis, .wwk-head .prefs-row-sub wraps and would grow the section
-  // head instead. One length, both places.
-  var PREFS_LINE_MAX = 60;
-  function prefsClamp(bits) {
-    var line = bits.join(' · ');
-    if (line.length <= PREFS_LINE_MAX) return line;
-    // Whole answers come off the end, never half of one: a line ending
-    // "· 2…" reads as something broken, where an ellipsis after a finished
-    // phrase reads as "there's more inside".
-    var kept = bits.slice();
-    while (kept.length > 1 && (kept.join(' · ') + '…').length > PREFS_LINE_MAX) kept.pop();
-    line = kept.join(' · ');
-    // One answer longer than the whole line is the only case left; it is
-    // cut on a word.
-    if ((line + '…').length > PREFS_LINE_MAX) {
-      line = line.slice(0, PREFS_LINE_MAX - 1);
-      var space = line.lastIndexOf(' ');
-      if (space > PREFS_LINE_MAX / 2) line = line.slice(0, space);
-      line = line.replace(/[\s·,]+$/, '');
+  // Two snack numbers, two answered-flags, and this reads back whichever
+  // question the household was actually asked. Onboarding asks per DAY
+  // since 2026-09-08 (Julia), so that one wins when both are on; a
+  // household whose only snacks answer predates that column still sees
+  // their own per-week number rather than a per-day default nobody said.
+  // "no snacks" is a real answer either way and gets real words rather
+  // than being dropped as a falsy number.
+  function prefsSnackWords(mem) {
+    if (mem && mem.snacks_per_day_set) {
+      var perDay = mem.snacks_per_day || 0;
+      return perDay ? perDay + ' snack' + (perDay === 1 ? '' : 's') + ' a day' : 'no snacks';
     }
-    return line + '…';
+    if (mem && mem.snacks_per_week_set) {
+      var perWeek = mem.snacks_per_week || 0;
+      return perWeek ? perWeek + ' snack' + (perWeek === 1 ? '' : 's') + ' a week' : 'no snacks';
+    }
+    return '';
+  }
+
+  // A fully-answered household says more than fits, so something goes —
+  // and WHICH thing goes is the whole correctness of this row.
+  //
+  // The first version took whole answers off the END of the line, which is
+  // exactly where the newest information sits (the cuisines, then the
+  // proteins), so a household on the middle leftovers answer with two
+  // ordinary cuisine names lost the cuisine clause outright and adding one
+  // still moved nothing — the reported bug, one layer down. What survives
+  // is decided by `rank` instead: the answers you keep adding to
+  // (cuisines, then proteins) are the last to go, because they are the
+  // ones somebody is checking took; the settled ones (leftovers, how meals
+  // lean, the snack count) give way first. The kept parts are then printed
+  // in the section's order, so what survives never reshuffles.
+  //
+  // Whole answers, never half of one: a line ending "· 2…" reads as
+  // something broken, where an ellipsis after a finished phrase reads as
+  // "there's more inside".
+  //
+  // 55 characters, not 60: at 390px a 60-character line measured
+  // scrollWidth 336 against clientWidth 321 in .prefs-row-sub, so the
+  // household got CSS's own cut wherever it landed — the thing this
+  // function exists to avoid — and the What we know head, which wraps
+  // rather than clipping, went to two lines. A character count can never
+  // be a pixel guarantee in a proportional face (and the number was
+  // measured with a fallback typeface, since fonts.googleapis.com is
+  // unreachable from the sandbox), so the row's own text-overflow stays
+  // the backstop; this is the budget that keeps it from firing on
+  // ordinary text.
+  var PREFS_LINE_MAX = 55;
+  function prefsClamp(parts) {
+    var whole = parts.map(function (p) { return p.words; }).join(' · ');
+    if (whole.length <= PREFS_LINE_MAX) return whole;
+    var kept = [];
+    var used = 0;
+    // One character held back for the ellipsis this is now certain to need.
+    parts.slice().sort(function (a, b) { return a.rank - b.rank; }).forEach(function (p) {
+      var cost = (kept.length ? 3 : 0) + p.words.length;
+      if (used + cost <= PREFS_LINE_MAX - 1) { kept.push(p); used += cost; }
+    });
+    // One answer longer than the whole row is the only case with nothing to
+    // keep; it is cut on a word rather than leaving the row saying "…".
+    if (!kept.length) return prefsCut(parts[0].words, PREFS_LINE_MAX - 1) + '…';
+    return parts.filter(function (p) { return kept.indexOf(p) !== -1; })
+      .map(function (p) { return p.words; }).join(' · ') + '…';
+  }
+
+  // Cut on a word where there is one to cut on, and never leave a dangling
+  // separator behind — the ellipsis has to read as "more of this", not as
+  // a typo.
+  function prefsCut(text, max) {
+    var cut = text.slice(0, max);
+    var space = cut.lastIndexOf(' ');
+    if (space > max / 2) cut = cut.slice(0, space);
+    return cut.replace(/[\s·,]+$/, '');
   }
 
   // The household's own words for how their meals lean. eating_style is
   // ONE freeform value and onboarding joins every tapped preset and the
   // typed line into it with commas ("High-protein, Low-carb, no red meat
   // on weeknights"), so the row takes the first clause only — a reminder,
-  // not a transcript, and short enough that it can't crowd out the answers
-  // after it. Cased as typed: re-casing somebody's answer is the app
-  // editing what they said.
+  // not a transcript. It also gets a budget of its own: it is the one
+  // answer here with no natural length, and left unbounded a typed
+  // sentence ("Mostly plant-based with fish twice a week") fills the row
+  // on its own and takes the cuisine somebody just added down with it.
+  // 24 is comfortably past the longest preset onboarding offers
+  // ("Budget-friendly", 15) and under half the row. Cased as typed:
+  // re-casing somebody's answer is the app editing what they said.
+  var PREFS_STYLE_MAX = 24;
   function prefsStyleWords(style) {
-    return String(style || '').split(',')[0].trim();
+    var first = String(style || '').split(',')[0].trim();
+    return first.length <= PREFS_STYLE_MAX ? first : prefsCut(first, PREFS_STYLE_MAX - 1) + '…';
   }
 
   // The cuisines, newest last two named. Nothing in /api/memory is
@@ -16308,9 +16359,15 @@
   // looking for. Named in list order, so the row and the section's chips
   // read left to right the same way; "+N" for the older ones, the same
   // shape the people row uses for a second allergy.
+  // Array.isArray, not `|| []`: /api/memory/edit stores whatever it is
+  // handed and answers 200 to a bare string (so does the chat tool
+  // edit_preference), and a .filter on a string throws — which, from a
+  // PREFS_ROWS line function, is every row in the sheet stuck on "Reading
+  // it back…" rather than one section failing to draw.
   var PREFS_CUISINES_SHOWN = 2;
   function prefsCuisineWords(mem) {
-    var all = ((mem && mem.cuisine_preferences) || []).filter(function (c) { return c; });
+    var stored = mem && mem.cuisine_preferences;
+    var all = (Array.isArray(stored) ? stored : []).filter(function (c) { return c; });
     var shown = all.slice(-PREFS_CUISINES_SHOWN).join(', ');
     return all.length > PREFS_CUISINES_SHOWN ? shown + ' +' + (all.length - PREFS_CUISINES_SHOWN) : shown;
   }

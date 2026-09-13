@@ -117,9 +117,9 @@ def test_the_whole_section_reads_back_in_the_order_its_controls_run():
         "eating_style": "Keto",
         "cuisine_preferences": ["Thai"],
         "protein_preferences": {"fish": 1},
-        "snacks_per_day": 2, "snacks_per_day_set": True,
+        "snacks_per_day": 0, "snacks_per_day_set": True,
     })
-    assert line == "leftovers welcome · Keto · Thai · less fish · 2 snacks a day"
+    assert line == "leftovers welcome · Keto · Thai · less fish · no snacks"
 
 
 @pytest.mark.parametrize(
@@ -164,22 +164,104 @@ def test_a_snacks_answer_still_reads_back(signed_in):
 
 # --- it has to fit on the row --------------------------------------------
 
-def test_a_household_that_answered_everything_is_cut_at_sixty_with_an_ellipsis():
+def test_what_gives_way_is_the_settled_answer_not_the_newest_one():
+    """The first cut of this dropped whole answers off the END of the line,
+    which is where the newest ones sit — so a household with two ordinary
+    cuisine names lost the cuisine clause outright and adding one still
+    moved nothing, the reported bug one layer down. The cuisines and the
+    protein leanings are the last to go now; the settled answers give way."""
     line = _line({
         "rhythm": {"leftovers_stance": "fine_sometimes"},
         "eating_style": "Mediterranean",
-        "cuisine_preferences": ["Italian", "Greek", "Thai", "Mexican"],
-        "protein_preferences": {"chicken": 5, "fish": 1},
+        "cuisine_preferences": ["Italian", "Greek", "Vietnamese", "Ethiopian"],
+        "protein_preferences": {"chicken": 5},
         "snacks_per_day": 2, "snacks_per_day_set": True,
     })
-    assert len(line) <= 60, line
-    # Whole answers come off the end, never half of one — "· 2…" reads as
-    # something broken.
-    assert line == "leftovers now and then · Mediterranean · Thai, Mexican +2…"
+    assert len(line) <= 55, line
+    assert line == "Vietnamese, Ethiopian +2 · more chicken…"
+
+
+def test_two_ordinary_cuisine_names_survive_the_middle_leftovers_answer():
+    """"leftovers now and then" is 22 characters and one of three ordinary
+    onboarding answers; "Middle Eastern, Caribbean" is 25. Together with a
+    preset eating style that is over the row, and the cuisines were the
+    half that used to disappear."""
+    line = _line({
+        "rhythm": {"leftovers_stance": "fine_sometimes"},
+        "eating_style": "High-protein",
+        "cuisine_preferences": ["Middle Eastern", "Caribbean"],
+    })
+    assert line == "leftovers now and then · Middle Eastern, Caribbean…"
+
+
+def test_adding_a_cuisine_moves_the_line_when_it_has_to_compete_for_room(signed_in):
+    """The reviewer's own reproduction, driven through the real save path:
+    a household whose leftovers stance and typed eating style already fill
+    the row. test_adding_a_cuisine_changes_the_line starts from an empty
+    household and cannot see this."""
+    signed_in.post("/api/onboarding/rhythm", json={"leftovers_stance": "love_them"})
+    signed_in.post("/api/memory/edit", json={
+        "field": "eating_style", "value": "Mostly plant-based with fish twice a week",
+    })
+    before = _line(signed_in.get("/api/memory").json())
+
+    signed_in.post("/api/memory/edit", json={"field": "cuisine_preferences", "value": ["Thai"]})
+    after = _line(signed_in.get("/api/memory").json())
+    assert after != before, "the row said the same thing after the save"
+    assert "Thai" in after
+    assert after == "leftovers welcome · Mostly plant-based… · Thai"
+
+
+def test_a_typed_eating_style_gets_a_budget_of_its_own():
+    """It is the one answer here with no natural length. Left unbounded a
+    typed sentence fills the row on its own and takes the cuisine somebody
+    just added down with it — so it is cut on a word, and says so."""
+    assert _line({"eating_style": "Mostly plant-based with fish twice a week"}) \
+        == "Mostly plant-based…"
+    # A preset, and anything else short, is left exactly as typed.
+    assert _line({"eating_style": "Budget-friendly"}) == "Budget-friendly"
+
+
+def test_one_answer_longer_than_the_whole_row_is_cut_rather_than_dropped():
+    """The only case with nothing left to keep. A row reading just "…" would
+    be worse than a cut one."""
+    line = _line({"cuisine_preferences": ["A" * 90]})
+    assert len(line) == 55 and line.endswith("…")
 
 
 def test_a_short_answer_is_not_given_an_ellipsis_it_doesnt_need():
     assert _line({"cuisine_preferences": ["Thai"]}) == "Thai"
+
+
+# --- a wrong-typed answer may not brick the sheet -------------------------
+
+def test_a_cuisine_list_stored_as_a_bare_string_still_renders_every_row(signed_in):
+    """/api/memory/edit stores what it is handed and answers 200 to a bare
+    string (so does the chat tool edit_preference). This line is a
+    PREFS_ROWS line function, so a throw in it is not one section failing to
+    draw — it is every row in the Preferences sheet stuck on "Reading it
+    back…" forever."""
+    res = signed_in.post("/api/memory/edit", json={
+        "field": "cuisine_preferences", "value": "Thai",
+    })
+    assert res.status_code == 200, "the route's own behaviour, unchanged here"
+    memory = signed_in.get("/api/memory").json()
+    assert memory["cuisine_preferences"] == "Thai", "stored as the string it was given"
+
+    script = (
+        _block() + "\n"
+        + f"const MEM = {json.dumps(memory)};\n"
+        + "const out = {};\n"
+        + "PREFS_ROWS.forEach(function (r) { out[r.title] = r.line(MEM); });\n"
+        + "console.log(JSON.stringify(out));\n"
+    )
+    run = nodeharness.run_node(script, timeout=30)
+    assert run.returncode == 0, f"the Preferences sheet threw: {run.stderr}"
+    lines = json.loads(run.stdout.strip())
+    # Not a guess at what they meant: a shape this row cannot read is a
+    # shape it says nothing about.
+    assert lines["How you eat"] == "Not set yet"
+    assert lines["Who\u2019s here"] and lines["Stores"]
 
 
 # --- one helper, two places ----------------------------------------------
