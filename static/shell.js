@@ -10741,10 +10741,22 @@
   // week it is ever shown: it explains something about the week being
   // approved, and it used to live in the review band that this design
   // removes.
+  // A draft sitting over an approved week says what approving it costs
+  // that week — the same sentence the chat asks with, minus its question:
+  // the Approve button is the question (Emily, 2026-09-13: a draft
+  // changes nothing until it is approved). '' when nothing is replaced.
+  function weekReplacesNote(data) {
+    var replaces = data.replaces;
+    if (weekPlanState(data) !== 'draft' || !replaces || !replaces.note) return '';
+    return replaces.note.replace(/\s*Go ahead\?\s*$/, '');
+  }
+
   function weekNotesHtml(data) {
     var notes = [];
     if (data.plates_note) notes.push(data.plates_note);
     if (weekPlanState(data) === 'draft' && data.soft_note) notes.push(data.soft_note);
+    var replacesNote = weekReplacesNote(data);
+    if (replacesNote) notes.push(replacesNote);
     // Why the next stretch on offer is shorter than a week ("Sep 17–20 is
     // already planned."), said once, right above the link it is about.
     var next = data.next_period || {};
@@ -11409,6 +11421,13 @@
           ' data-rv-view="days">Which days</button>' +
       '</div>' +
       (eating ? reviewEatingHtml(days) : reviewDaysHtml(days)) +
+      // What approving this draft replaces of an approved week — under the
+      // meals, above the foot, where the page's own padding keeps it clear
+      // of the sticky dock (Emily, 2026-09-13: a draft changes nothing
+      // until it is approved, so the cost is said here, once).
+      (draft && weekReplacesNote(data)
+        ? '<div class="wk-notes"><div class="wk-note">' + escapeHtml(weekReplacesNote(data)) + '</div></div>'
+        : '') +
       // The draft's rare actions — "Try again", "Change my answers" — sit
       // behind the same "More ···" the week root carries (rule 2: rare
       // actions go behind a ···, never into a second dock button). When the

@@ -182,13 +182,19 @@ def test_the_carried_over_receipt_is_not_doubled_either():
     tools.add_recipe("Chicken curry", ingredients=[
         {"item": "chicken thighs", "qty": "2 lb"}, {"item": "onion", "qty": "2"},
     ])
-    week_a = _monday().isoformat()
+    # The earlier plan is LAST week's: since 2026-09-13 an approval takes
+    # over any other plan on its own days (a draft waits until approval),
+    # so a second plan on the SAME week would retire the first and reverse
+    # its lines rather than carry them. Carry-over is for a week that has
+    # gone by, which is what this pins.
+    week_a = (_monday() - datetime.timedelta(days=7)).isoformat()
     plan_a = tools.create_weekly_plan(week_a)["weekly_plan_id"]
     tools.plan_meal(week_a, "Chicken curry", slot="dinner", weekly_plan_id=plan_a)
     tools.approve_weekly_plan(plan_a, approved_by="Emily")
 
-    plan_b = tools.create_weekly_plan(week_a)["weekly_plan_id"]
-    day_b = tools._week_dates(week_a)[1]
+    week_b = _monday().isoformat()
+    plan_b = tools.create_weekly_plan(week_b)["weekly_plan_id"]
+    day_b = tools._week_dates(week_b)[1]
     tools.plan_meal(day_b, "Chicken curry", slot="dinner", weekly_plan_id=plan_b)
 
     results = _race(plan_b)
