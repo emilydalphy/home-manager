@@ -69,3 +69,33 @@ def test_the_bell_has_a_slot_beside_every_gear():
 def test_the_design_system_describes_the_icon_not_the_bar():
     assert "The chat is one icon on every screen" in DESIGN
     assert "not yet built" not in DESIGN
+
+
+# ---------- FAB clearance on a panel's own trailing row ----------
+# Loop Board 3da1f4c0-5231-81c9-8123-f230175d2310: "Plan week root: 'More
+# ···' is hidden under the floating chat button on phones." #shell-scroll
+# (the one scrolling panel every tab shares) has no bottom padding of its
+# own, and #ask-bar-dock — the non-scrolling, zero-height strip that holds
+# the FAB, positioned right after #shell-scroll and before #tab-bar in
+# shell.html — floats the 54px FAB (+16px inset) up over the scroll area's
+# own last ~66px, which a sticky .dock already clears (its own 84px right
+# padding) but a plain trailing row does not. Four screens' own last row
+# can be exactly that plain trailing row, each verified live in a browser
+# at 390px scrolled to the very bottom: Plan's week root/solo More row,
+# Cook's root "More ···" when its dock is empty, Shop's "Add something"
+# row when its dock is empty, and Now's own content when its dock is
+# hidden and the day is long enough to scroll.
+def test_wk_foot_clears_the_fab_when_no_dock_follows_it():
+    assert ".wk-foot:not(:has(+ .dock)) { padding-bottom: 70px; }" in SHELL_CSS
+
+
+def test_cook_roots_more_row_clears_the_fab_when_its_dock_is_empty():
+    assert ".kit-body:not(:has(+ .dock:not([hidden]))) { padding-bottom: 70px; }" in SHELL_CSS
+
+
+def test_shops_add_row_clears_the_fab_when_its_dock_is_empty():
+    assert ".gro-foot:not(:has(+ .gro-dock:not(:empty))) { padding-bottom: 70px; }" in SHELL_CSS
+
+
+def test_nows_content_clears_the_fab_when_its_dock_is_hidden():
+    assert ".today-content:not(:has(> .today-dock:not([hidden]))) { padding-bottom: 70px; }" in SHELL_CSS
