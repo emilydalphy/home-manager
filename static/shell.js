@@ -2491,6 +2491,15 @@
   // showToast's shorter default.
   var GRO_UNDO_MS = 8000;
 
+  // How long a paused trip is kept before it is quietly dropped. Three
+  // days covers "Costco on Saturday, Metro on Monday"; past that the list
+  // it was snapshotted from has very likely been rebuilt by a new week's
+  // approval, and resuming would hide this week's Costco behind last
+  // week's "Costco done". Nothing bought is ever at stake here — purchases
+  // are on the server the moment a stop is finished — only the snapshot.
+  var GRO_TRIP_KEEP_MS = 3 * 24 * 60 * 60 * 1000;
+  var GRO_TRIP_KEY = 'pomona.trip.h';
+
   function groStoreColor(name) {
     // "Any store" is the leftovers bucket, not a stop — it gets the quiet
     // sand fill rather than a store identity colour.
@@ -2582,8 +2591,26 @@
     // The trip, snapshotted at "Start the trip" so finishing a stop can't
     // renumber the ones behind it: an ordered list of store names, plus
     // where we are in it. Null between trips.
+    //
+    // A trip OUTLIVES the screen it was started on (Emily, 2026-09-13, on
+    // her phone: "unless you complete all the shops, you get stuck in the
+    // Shop loop"). Leaving any trip screen — the crumb, "Finish later" in
+    // the dock, or the tab bar — keeps all of this exactly as it stands,
+    // and LIST then shows the trip as in progress with "Continue the trip"
+    // and "Finish the trip" in its dock. It is mirrored into localStorage
+    // (groSaveTrip / groRestoreTrip) because on a phone "come back later"
+    // usually means the installed app was killed in between; the mirror
+    // is what makes the paused trip still be there when it relaunches.
     tripStops: null,
     tripIndex: 0,
+    // When the snapshot was taken (ms since epoch). A paused trip older
+    // than GRO_TRIP_KEEP_MS is dropped rather than resumed — see
+    // groDropStaleTrip.
+    tripStartedAt: null,
+    // Whether the localStorage mirror has been read this page view. Once:
+    // the mirror is a fallback for a relaunch, not a second source of truth
+    // while the page is up.
+    tripRestored: false,
     tripTotal: 0,           // things needed when the trip began
     tripBought: 0,          // things actually committed, this trip only
     // Stops finished on this trip, by name. Finishing a stop no longer
@@ -3196,6 +3223,12 @@
         groceryState.loadError = true;
       }
     }
+    // A trip paused before the app was put away comes back with the list
+    // (once), and one too old to still be true goes — see groRestoreTrip.
+    if (groceryState.data) {
+      groRestoreTrip();
+      groDropStaleTrip();
+    }
     groMaybeSortFirst();
     renderGrocery();
     if (!groceryState.loadError) groReplayQueue();
@@ -3259,6 +3292,8 @@
     if (!opts.first) groceryState.sortFirst = false;
     if (opts.tripIndex !== undefined && opts.tripIndex !== null) groceryState.tripIndex = opts.tripIndex;
     if (opts.push !== false) pushGroceryStepHistory();
+    // Every change to the trip arrives here (see groSaveTrip).
+    groSaveTrip();
     renderGrocery();
     // A step change is a screen change, so it starts at the top.
     if (scrollEl) scrollEl.scrollTop = 0;
@@ -3349,8 +3384,10 @@
     var onRoot = step === 'list';
     band.hidden = !onRoot;
     head.hidden = onRoot;
+    // The band's one line is the paused trip, when there is one — "Trip
+    // in progress · 1 stop left" — and nothing otherwise.
     if (onRoot) {
-      setRootBand(panel, 'gro-band', { eyebrow: groBandEyebrow(data), sub: '' });
+      setRootBand(panel, 'gro-band', { eyebrow: groBandEyebrow(data), sub: groTripPausedLine(data) });
       back.hidden = true;
     } else {
       var headFor = groHeadFor(data, step);
@@ -3539,6 +3576,12 @@
     }
 
     if (!stops.length && !loose.length) {
+      // Every last thing ticked at a stop that was never finished: not
+      // needed, not home yet. "Nothing to buy" would be a lie over a full
+      // trolley; the dock's "Finish the trip" is what brings it home.
+      if (groTripPaused() && groInCartCount(data)) {
+        return html + emptyMomentHtml('bag', 'Everything’s in the cart. Finish the trip to bring it home.') + groStaplesHtml();
+      }
       if (groceryState.justFinishedTrip) {
         if (groceryState.shopDoneHandoffDismissed) {
           return html +
@@ -4135,13 +4178,20 @@
         sec.items.forEach(function (it) { html += groTripRowHtml(it); });
       });
       html += '</div>';
-    } else {
-      html += '<p class="gro-empty">Everything here is in the cart.</p>';
     }
 
     // The trolley, collapsed, with the put-back this screen has always had
     // (groDoneRowHtml's row IS the put-back: status -> needed).
     var inCart = groTripInCart(data);
+    if (!sections.length) {
+      // Nothing left to tick: either it is all in the trolley, or there is
+      // nothing on this stop at all — a store the list no longer has (a
+      // trip paused across a new week's approval, reached by the back
+      // gesture), which used to read "everything is in the cart" over an
+      // empty trolley (found on review).
+      html += '<p class="gro-empty">' +
+        (inCart.length ? 'Everything here is in the cart.' : 'Nothing left on this stop.') + '</p>';
+    }
     if (inCart.length) {
       var open = groceryState.inCartOpen;
       html += '<div class="gro-done' + (open ? ' open' : '') + '">' +
@@ -4231,6 +4281,37 @@
     return html + '</div>';
   }
 
+  // ---------- A paused trip, as LIST sees it ----------
+  // Leaving any trip screen keeps the snapshot (see groceryState.tripStops);
+  // these three are what the root reads off it. They live here, with the
+  // other renderers, rather than with the trip's actions below.
+  // How many things are sitting in a trolley somewhere — ticked at a stop
+  // that was never finished. They are not on the list (not needed) and not
+  // home yet (not purchased), so LIST has to account for them by name
+  // while a trip is paused, or a list with everything ticked reads as
+  // "nothing to buy".
+  function groInCartCount(data) {
+    return Object.keys(data.stores).reduce(function (n, name) {
+      return n + data.stores[name].inCart.length;
+    }, 0);
+  }
+
+  // Whether LIST is standing over a paused trip: one is on, and the shops
+  // question is not the thing on screen instead of the stops.
+  function groTripPaused() {
+    return !!(groceryState.tripStops && groceryState.tripStops.length) && !groStoresPromptShouldShow();
+  }
+
+  // The root band's one line while a trip is paused. Counted from the
+  // stops still worth walking into (groRemainingStops), not from the
+  // snapshot's length: a shop whose things all came home some other way
+  // is not "left".
+  function groTripPausedLine(data) {
+    if (!groTripPaused()) return '';
+    var left = groRemainingStops(data).length;
+    return 'Trip in progress · ' + (left ? groPlural(left, 'stop', 'stops') + ' left' : 'every stop done');
+  }
+
   // ---------- WRAP UP ----------
   function groAllNeeded(data) {
     var out = [];
@@ -4314,6 +4395,31 @@
     '</div>';
   }
 
+  // ---------- LIST's dock over a paused trip ----------
+  // "Continue the trip" is the apricot (it is what the screen is for, the
+  // same way "Start the trip" is when no trip is on) and "Finish the trip"
+  // rides along as the quiet link, the shape Now's dock uses for "Let's
+  // plan the week" + "Not now". Finishing from here is one tap, because
+  // that is the whole ask: the remaining stores aren't happening. With
+  // nothing left to walk into, finishing IS the action and gets the fill.
+  // Kept out of groDockHtml so that function still reads as one fill per
+  // step; this is LIST's fill in one particular state.
+  function groTripPausedDockHtml(data) {
+    var left = groRemainingStops(data).length;
+    if (!left) {
+      return '<button type="button" class="gro-primary" data-gro="trip-finish-now">Finish the trip</button>';
+    }
+    return '<div class="dock-row">' +
+      '<button type="button" class="gro-primary" data-gro="trip-resume">Continue the trip</button>' +
+      '<button type="button" class="dock-link" data-gro="trip-finish-now">Finish the trip</button>' +
+    '</div>';
+  }
+
+  // The quiet way out of any trip screen, beside that screen's own action.
+  function groTripPauseLinkHtml() {
+    return '<button type="button" class="dock-link" data-gro="trip-pause">Finish later</button>';
+  }
+
   // ---------- The foot: what is NOT the screen's one action ----------
   // Only LIST has anything here now, and only the add row. The step's one
   // action moved to the dock below (rule 2) — at the foot of a real week's
@@ -4364,6 +4470,9 @@
   // the foot; what changed is that they stay on screen (rule 2).
   function groDockHtml(data, step) {
     if (step === 'list') {
+      // A paused trip is continued or finished, never started again over
+      // the top of itself — see groTripPausedDockHtml.
+      if (groTripPaused()) return groTripPausedDockHtml(data);
       var stops = groStoresWithNeeded(data);
       // Nothing to start while the shops question is up: LIST is showing
       // that card INSTEAD of the stops (groListHtml returns early), so the
@@ -4396,22 +4505,36 @@
     if (step === 'sortall') {
       return '<button type="button" class="gro-primary" data-gro="sortall-save">That&rsquo;s them sorted</button>';
     }
+    // Every trip screen's dock carries "Finish later" beside its own action
+    // (groTripPauseLinkHtml): the way out of the trip that keeps it.
     if (step === 'trip') {
       // The button no longer names the next stop, because the next stop is
       // no longer this screen's to decide — see the WHERE NEXT step.
-      return '<button type="button" class="gro-primary" data-gro="stop-done">' +
-        escapeHtml('Done at ' + (groTripStore() || 'this stop')) + '</button>';
+      return '<div class="dock-row">' +
+        '<button type="button" class="gro-primary" data-gro="stop-done">' +
+          escapeHtml('Done at ' + (groTripStore() || 'this stop')) + '</button>' +
+        groTripPauseLinkHtml() +
+      '</div>';
     }
     if (step === 'next') {
-      // Quiet, and deliberately the only button here: the stops above are
-      // the choice this screen is for, and an apricot on "I'm done" would
-      // put the tab's accent on ending the trip early. Rule 5 allows a
-      // screen with no primary; Kitchen's root is the precedent.
-      return '<button type="button" class="gro-secondary" data-gro="trip-end">' +
-        'I&rsquo;m done shopping for today</button>';
+      // Quiet, and deliberately not a fill: the stops above are the choice
+      // this screen is for, and an apricot on ending the trip early would
+      // put the tab's accent on it. Rule 5 allows a screen with no primary;
+      // Kitchen's root is the precedent. It used to read "I'm done shopping
+      // for today", which is also what a shopper going home with a store
+      // still to do would say — and it walked them into the wrap-up. Now
+      // it says what it does, and going home is "Finish later".
+      return '<div class="dock-row">' +
+        '<button type="button" class="gro-secondary" data-gro="trip-end">' +
+          'Skip the rest</button>' +
+        groTripPauseLinkHtml() +
+      '</div>';
     }
     if (step === 'wrap') {
-      return '<button type="button" class="gro-primary" data-gro="finish-trip">Finish the trip</button>';
+      return '<div class="dock-row">' +
+        '<button type="button" class="gro-primary" data-gro="finish-trip">Finish the trip</button>' +
+        groTripPauseLinkHtml() +
+      '</div>';
     }
     return '';
   }
@@ -4988,24 +5111,189 @@
     }
   }
 
+  // ---------- A trip that outlives its screen ----------
+  // The snapshot above is page-view state, and the phone is the device
+  // this runs on: an installed app that is put away at the car and opened
+  // again at home has usually been relaunched in between. So the trip is
+  // mirrored into localStorage, keyed per household the way the shops
+  // question is (storesPromptOpenKey), and read back once on the first
+  // list load (groRestoreTrip). Every read and write is wrapped for the
+  // same reason as there: Safari in private mode throws on localStorage,
+  // and a remembered trip must never take the Shop tab down with it.
+  function groTripKey() {
+    var id = (typeof coachState !== 'undefined' && coachState) ? coachState.householdId : null;
+    return GRO_TRIP_KEY + (id == null ? 'x' : id);
+  }
+
+  function groTripSnapshot() {
+    return {
+      stops: groceryState.tripStops,
+      index: groceryState.tripIndex,
+      total: groceryState.tripTotal,
+      bought: groceryState.tripBought,
+      done: groceryState.tripDone,
+      lastDone: groceryState.tripLastDone,
+      kept: groceryState.wrapKept,
+      startedAt: groceryState.tripStartedAt
+    };
+  }
+
+  // Called from goGroceryStep, which every change to the trip goes through
+  // (a stop finished, a next stop picked, a pause, the finish), plus the
+  // one wrap-up answer that only re-renders. With no trip on, it clears the
+  // mirror rather than writing an empty one.
+  function groSaveTrip() {
+    try {
+      if (groceryState.tripStops && groceryState.tripStops.length) {
+        window.localStorage.setItem(groTripKey(), JSON.stringify(groTripSnapshot()));
+        return;
+      }
+      // No trip on. Until the mirror has been read this page view, "no
+      // trip" only means "not yet" — a step change before the list loads
+      // (an approval's "Open the list", the first sort landing) must not
+      // wipe the trip a relaunch is about to restore.
+      if (!groceryState.tripRestored) return;
+      window.localStorage.removeItem(groTripKey());
+      window.localStorage.removeItem(GRO_TRIP_KEY + 'x');
+    } catch (err) { /* the trip just stays page-view only */ }
+  }
+
+  function groReadSavedTrip() {
+    try {
+      var raw = window.localStorage.getItem(groTripKey());
+      // A trip started in the moment before /api/coaching answered was
+      // saved under the household-less key. Adopt it once, under this
+      // household's own key, the way readStoresPromptOpen does.
+      if (!raw && groTripKey() !== GRO_TRIP_KEY + 'x') {
+        raw = window.localStorage.getItem(GRO_TRIP_KEY + 'x');
+        if (raw) {
+          window.localStorage.removeItem(GRO_TRIP_KEY + 'x');
+          window.localStorage.setItem(groTripKey(), raw);
+        }
+      }
+      if (!raw) return null;
+      var saved = JSON.parse(raw);
+      if (!saved || !Array.isArray(saved.stops) || !saved.stops.length) return null;
+      // No start time means no way to tell how old it is, so it is not
+      // resumed: the three-day rule has to be able to apply to everything
+      // this reads back. (Every writer sets one — this is a guard against
+      // a hand-edited or half-written value, found on review.)
+      if (!Number(saved.startedAt)) return null;
+      return saved;
+    } catch (err) { return null; }
+  }
+
+  // Once per page view, and only when no trip is already on: the mirror
+  // is a fallback for a relaunch, never a second source of truth.
+  function groRestoreTrip() {
+    if (groceryState.tripRestored) return;
+    groceryState.tripRestored = true;
+    if (groceryState.tripStops) return;
+    var saved = groReadSavedTrip();
+    if (!saved) return;
+    groceryState.tripStops = saved.stops;
+    groceryState.tripIndex = Math.min(Math.max(Number(saved.index) || 0, 0), saved.stops.length - 1);
+    groceryState.tripTotal = Number(saved.total) || 0;
+    groceryState.tripBought = Number(saved.bought) || 0;
+    groceryState.tripDone = saved.done || {};
+    groceryState.tripLastDone = saved.lastDone || null;
+    groceryState.wrapKept = saved.kept || {};
+    groceryState.tripStartedAt = Number(saved.startedAt) || null;
+  }
+
+  function groClearTrip() {
+    groceryState.tripStops = null;
+    groceryState.tripIndex = 0;
+    groceryState.tripStartedAt = null;
+    groceryState.wrapKept = {};
+    groceryState.tripDone = {};
+    groceryState.tripLastDone = null;
+    groSaveTrip();
+  }
+
+  // A trip older than GRO_TRIP_KEEP_MS is not resumed — see the constant.
+  // Run on every list load, so it applies to a trip restored from the
+  // mirror and to one left open in a tab for days alike. Returns whether
+  // one was dropped.
+  function groDropStaleTrip(now) {
+    if (!groceryState.tripStops || !groceryState.tripStartedAt) return false;
+    var at = now === undefined ? Date.now() : now;
+    if (at - groceryState.tripStartedAt <= GRO_TRIP_KEEP_MS) return false;
+    groClearTrip();
+    return true;
+  }
+
+  // Back into the trip where it makes sense to land, rather than where
+  // the index happens to point. The index still names the stop that was
+  // just FINISHED after "Done at Costco" (WHERE NEXT never moves it), so
+  // resuming blindly reopened a finished stop — "Costco, Stop 2 of 2,
+  // everything here is in the cart" — and the only way on was to finish it
+  // a second time. Now: the current stop if it is still open with
+  // something on it, otherwise the choice of what is left (WHERE NEXT,
+  // which renderGrocery turns into the wrap-up when nothing is).
+  function groResumeTrip() {
+    var data = groceryState.data;
+    if (!data || !groceryState.tripStops) return;
+    groceryState.inCartOpen = false;
+    var here = groTripStore();
+    if (here && !groceryState.tripDone[here] && groStopRemaining(data, here) > 0) {
+      goGroceryStep('trip');
+      return;
+    }
+    goGroceryStep('next');
+  }
+
   function groStartTrip() {
     var data = groceryState.data;
     if (!data) return;
+    // A paused trip is continued, never restarted over the top of itself
+    // — a second snapshot would forget which stops are already behind us.
+    // LIST's dock says "Continue the trip" in that state (groTripPausedDockHtml),
+    // so this is belt and braces for the one button reaching here.
+    if (groceryState.tripStops && groceryState.tripStops.length) {
+      groResumeTrip();
+      return;
+    }
     var stops = groStoresWithNeeded(data);
     if (!stops.length) return;
-    // Resuming a paused trip keeps its stops and its place; a new one is
-    // read off the list as it stands right now.
-    if (!groceryState.tripStops || !groceryState.tripStops.length) {
-      groceryState.tripStops = stops;
-      groceryState.tripIndex = 0;
-      groceryState.tripBought = 0;
-      groceryState.tripTotal = groTotals(data).needed;
-      groceryState.wrapKept = {};
-      groceryState.tripDone = {};
-      groceryState.tripLastDone = null;
-    }
+    groceryState.tripStops = stops;
+    groceryState.tripIndex = 0;
+    groceryState.tripBought = 0;
+    groceryState.tripTotal = groTotals(data).needed;
+    groceryState.wrapKept = {};
+    groceryState.tripDone = {};
+    groceryState.tripLastDone = null;
+    groceryState.tripStartedAt = Date.now();
     groceryState.inCartOpen = false;
     goGroceryStep('trip');
+  }
+
+  // The whole trip ends: whatever is still in a trolley comes home
+  // (groFinishAnyRemainingCarts), the snapshot is cleared, and LIST says
+  // how many things did. Reached from WRAP UP's "Finish the trip" and from
+  // LIST's own "Finish the trip" while a trip is paused — one function, so
+  // the two cannot drift. Anything still needed stays needed: finishing
+  // is about what was bought, not a verdict on what wasn't.
+  function groFinishTrip(el) {
+    if (el) el.disabled = true;
+    return groDo(function () {
+      return groFinishAnyRemainingCarts();
+    }, "Couldn't finish the trip — try again.").then(function (ok) {
+      if (!ok) { if (el) el.disabled = false; return false; }
+      groceryState.justFinishedTrip = true;
+      // The whole trip just ended, not one stop of it — "Stop saved" was
+      // the per-stop line, and saying it here undersold what happened.
+      // Count this trip's own purchases (tripBought), never
+      // groTotals().done, which sums every purchase the household has
+      // ever made.
+      var home = groceryState.tripBought;
+      groClearTrip();
+      goGroceryStep('list');
+      showToast(home
+        ? 'Trip finished — ' + groPlural(home, 'thing', 'things') + ' home.'
+        : 'Trip finished.');
+      return true;
+    });
   }
 
   // ---------- Sorting many things at once ----------
@@ -5604,6 +5892,7 @@
       // asking about it in this wrap-up.
       case 'wrap-keep':
         groceryState.wrapKept[id] = true;
+        groSaveTrip();
         renderGrocery();
         return;
 
@@ -5615,28 +5904,30 @@
         return;
 
       case 'finish-trip':
-        el.disabled = true;
-        groDo(function () {
-          return groFinishAnyRemainingCarts();
-        }, "Couldn't finish the trip — try again.").then(function (ok) {
-          if (!ok) { el.disabled = false; return; }
-          groceryState.justFinishedTrip = true;
-          // The whole trip just ended, not one stop of it — "Stop saved" was
-          // the per-stop line, and saying it here undersold what happened.
-          // Count this trip's own purchases (tripBought), never
-          // groTotals().done, which sums every purchase the household has
-          // ever made.
-          var home = groceryState.tripBought;
-          groceryState.tripStops = null;
-          groceryState.tripIndex = 0;
-          groceryState.wrapKept = {};
-          groceryState.tripDone = {};
-          groceryState.tripLastDone = null;
-          goGroceryStep('list');
-          showToast(home
-            ? 'Trip finished — ' + groPlural(home, 'thing', 'things') + ' home.'
-            : 'Trip finished.');
-        });
+        groFinishTrip(el);
+        return;
+
+      // ----- leaving and coming back -----
+      // "Finish later", in the dock of every trip screen: out to the list
+      // with the trip kept exactly as it stands — what is in the trolley
+      // stays in the trolley, what is behind us stays behind us — so the
+      // shopper who has done one store and is going home is not held in
+      // the trip until every store is done. The crumb on TRIP and WRAP UP
+      // already landed here; this is the same exit where the thumb is,
+      // named for what it does, and it is the one WHERE NEXT was missing
+      // (its crumb reopens the stop just finished, on purpose).
+      case 'trip-pause':
+        groceryState.inCartOpen = false;
+        goGroceryStep('list');
+        return;
+
+      // LIST's dock while a trip is paused (groTripPausedDockHtml).
+      case 'trip-resume':
+        groResumeTrip();
+        return;
+
+      case 'trip-finish-now':
+        groFinishTrip(el);
         return;
 
       case 'flag-toggle':

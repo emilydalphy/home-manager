@@ -424,6 +424,11 @@ html, body {
    "Not now", and the empty moment's "Just tonight"). */
 .dock-row { display: flex; align-items: center; gap: 14px; }
 .dock-row .dock-primary { flex: 1 1 auto; width: auto; min-width: 0; }
+/* Shop's trip screens put "Finish later" beside their own action the same
+   way (2026-09-13), and LIST puts "Finish the trip" beside "Continue the
+   trip" over a paused trip; .gro-primary / .gro-secondary are that tab's
+   older names for the same 52px button, so they take the same row rule. */
+.dock-row .gro-primary, .dock-row .gro-secondary { flex: 1 1 auto; width: auto; min-width: 0; }
 .dock-row .dock-link { flex: 0 0 auto; }
 
 /* =====================================================================
