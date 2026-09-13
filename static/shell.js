@@ -469,6 +469,19 @@
     // stop finished earlier in this same visit.
     if (key !== 'grocery') groceryState.justFinishedTrip = false;
 
+    // The All set screen is shown once, in the page view that approved the
+    // week (allSetStepHtml). Leaving Plan by any door — "Open the list", the
+    // tab bar — is the end of it: the tab shows the week when it is next
+    // opened, not the finished-planning screen again (Emily, 2026-09-13:
+    // "after you have the plan, make the loop easier to go and see the
+    // week"). The root is re-rendered in the same tick as the switch, so
+    // nothing moves under a thumb; the asks' late fetches land on the
+    // root's receipt row, which the approval already dismissed.
+    if (key !== 'week' && weekState && weekState.step === 'allset') {
+      weekState.step = 'week';
+      if (panels['week'] && panels['week'].dataset.built) renderMealsStep(panels['week']);
+    }
+
     // Cook mode's hands-free session belongs to the screen it was started
     // on — a mic still listening on a tab you have left is the worst
     // version of this feature. (A no-op while COOK_VOICE_ENABLED is off.)
@@ -4755,7 +4768,16 @@
       // which Rule 5 doesn't allow. No action, so no dock — the rule's own
       // "a screen with no single action has no dock" case.
       var canGo = stops.length > 0 && !groStoresPromptShouldShow();
-      if (canGo) return '<button type="button" class="gro-primary" data-gro="start-trip">Start the trip</button>';
+      // "See the week" rides beside the trip the way "Finish later" does on
+      // the trip screens: from the list the week is one tap, and from the
+      // week the list is (reviewDecideHtml) — neither goes back through All
+      // set (Emily, 2026-09-13). Quiet, not a second fill (Rule 5).
+      if (canGo) {
+        return '<div class="dock-row">' +
+          '<button type="button" class="gro-primary" data-gro="start-trip">Start the trip</button>' +
+          '<button type="button" class="dock-link" data-gro="see-week">See the week</button>' +
+        '</div>';
+      }
       // Nothing to buy at all: the empty moment's next step is the Plan
       // tab, where a week gets approved and this list gets built. Only
       // when the list is genuinely empty — never over the shops question,
@@ -5738,6 +5760,21 @@
       // first, and the queue is one of the three things they offer.
       case 'goto-plan':
         activateTab('week', true);
+        return;
+
+      // The week the list is for, on its seven tiles — the same landing as
+      // every other "See the week". With no approved week loaded (Plan not
+      // opened yet this visit, or a draft, or nothing planned) it is the
+      // Plan root, which shows whatever the week is once it has loaded;
+      // renderMealsStep would fold the tiles step to the root anyway, and
+      // pushing a step the screen then folds would leave Back pointing at
+      // a screen nobody saw.
+      case 'see-week':
+        activateTab('week', true);
+        if (weekState.data && weekPlanState(weekState.data) === 'set') {
+          reviewState.view = 'days';
+          goMealsStep('review');
+        }
         return;
 
       case 'goto-sort': {
@@ -10391,19 +10428,29 @@
   // a time (renderMealsStep replaces #week-steps outright), so the shared
   // id is never duplicated.
   function reviewDecideHtml(data) {
-    if (weekPlanState(data) !== 'draft') return '';
-    var openCount = countOpenSlots(data);
-    return '<div class="wk-decide dock">' +
-      '<button type="button" class="btn-gold week-approve-btn" id="week-approve-btn">' +
-        (openCount
-          ? escapeHtml(approveWithOpenLabel(data, openCount))
-          : 'Approve and build my shopping list') +
-      '</button>' +
-      // Empty and hidden until "Try again" is tapped in the More sheet —
-      // the rebuild is a ~30-second call, and the rotating waiting line
-      // (static/waiting-lines.js) has to be on the page you are looking at.
-      '<div class="week-redo-waiting waiting-line" id="week-redo-waiting" hidden></div>' +
-    '</div>';
+    var state = weekPlanState(data);
+    var inner = '';
+    if (state === 'set') {
+      // An APPROVED week's one next step is the list — the same dock, in
+      // the same place, that held "Approve and build my shopping list" a
+      // moment ago. "See the week" lands here, and from here the list is
+      // one tap, not a trip back through All set (Emily, 2026-09-13).
+      inner = '<button type="button" class="dock-primary" id="wk-review-go">' +
+        escapeHtml(openListLabel(data.receipt)) + '</button>';
+    } else if (state === 'draft') {
+      var openCount = countOpenSlots(data);
+      inner = '<button type="button" class="btn-gold week-approve-btn" id="week-approve-btn">' +
+          (openCount
+            ? escapeHtml(approveWithOpenLabel(data, openCount))
+            : 'Approve and build my shopping list') +
+        '</button>' +
+        // Empty and hidden until "Try again" is tapped in the More sheet —
+        // the rebuild is a ~30-second call, and the rotating waiting line
+        // (static/waiting-lines.js) has to be on the page you are looking at.
+        '<div class="week-redo-waiting waiting-line" id="week-redo-waiting" hidden></div>';
+    }
+    if (!inner) return '';
+    return '<div class="wk-decide dock">' + inner + '</div>';
   }
 
   // `root`: since 2026-09-11 a DRAFT opens here, as the Plan tab's root —
@@ -12091,6 +12138,12 @@
     if (approveBtn) approveBtn.addEventListener('click', function () {
       approveWeek(panel, weekState.data || {});
     });
+    // The approved week's dock: the same landing as All set's "Open the
+    // list" (Plan stops first, then the list).
+    var reviewGo = steps.querySelector('#wk-review-go');
+    if (reviewGo) reviewGo.addEventListener('click', function () {
+      activateTab('grocery', true, { groScreen: 'plan' });
+    });
     // (The italic tweak link and the check-the-week button handlers that sat here
     // went with the draft root becoming the review, 2026-09-11.)
   }
@@ -13360,9 +13413,14 @@
   function allSetStepHtml(data, days) {
     var receipt = data.receipt || {};
     var nums = [];
+    // MEALS · RECIPES · INGREDIENTS — the words a person would use (Emily,
+    // 2026-09-13: "'6 cooks' is confusing language" and "53 to buy feels
+    // intimidating"). `recipes` is the week's different dishes, not its
+    // cook nights (week_receipt keeps `cooks` for the week card's own
+    // "4 cooks, 3 made ahead"); `list_count` is the lines on the buy list.
     if (receipt.meals != null) nums.push({ n: receipt.meals, label: 'meals' });
-    if (receipt.cooks != null) nums.push({ n: receipt.cooks, label: 'cooks' });
-    if (receipt.list_count != null) nums.push({ n: receipt.list_count, label: 'to buy' });
+    if (receipt.recipes != null) nums.push({ n: receipt.recipes, label: 'recipes' });
+    if (receipt.list_count != null) nums.push({ n: receipt.list_count, label: 'ingredients' });
     var dayCount = data.day_count || days.length || 7;
     var range = data.week_label ||
       (data.week_start_date ? periodRangeLabel(data.week_start_date, dayCount) : 'The week');
@@ -13378,11 +13436,26 @@
           }).join('') + '</div>'
         : (receipt.title ? '<p class="wk-allset-line">' + escapeHtml(receipt.title) + '</p>' : '')) +
       (receipt.thaw_line ? '<p class="wk-allset-line is-quiet">' + escapeHtml(receipt.thaw_line) + '</p>' : '') +
+      // Two doors, one apricot (Rule 5). "See the week" is a real button,
+      // not a text link — going to look at the week you just made is a
+      // first-class path (Emily, 2026-09-13: "make the loop easier to go
+      // and see the week and not go straight to the list") — and the list
+      // keeps its pull with the number on it.
       '<div class="dock wk-allset-dock">' +
-        '<div class="dock-links"><button type="button" class="dock-link" id="wk-allset-see">See the week</button></div>' +
-        '<button type="button" class="dock-primary" id="wk-allset-go">Open the list</button>' +
+        '<button type="button" class="dock-secondary" id="wk-allset-see">See the week</button>' +
+        '<button type="button" class="dock-primary" id="wk-allset-go">' + escapeHtml(openListLabel(receipt)) + '</button>' +
       '</div>' +
     '</div>';
+  }
+
+  // "Open the list · 53 ingredients": the list's pull, said with the number
+  // the tiles just showed (Emily, 2026-09-13: "make the CTA to go to the
+  // list enticing"). Plain "Open the list" over an empty list — zero is
+  // not a pull, and the receipt's own line already says nothing is left.
+  function openListLabel(receipt) {
+    var n = receipt && receipt.list_count;
+    if (!n) return 'Open the list';
+    return 'Open the list · ' + n + (n === 1 ? ' ingredient' : ' ingredients');
   }
 
   // The defrost and cook-ahead asks, as the same two lines the receipt

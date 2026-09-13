@@ -3222,10 +3222,10 @@ def week_receipt(days: list[dict], weekly_plan_id: int) -> dict:
     """
     The approved week in one sentence plus one line.
 
-    Returns `meals`, `cooks`, `list_count`, `thaw_count` and the two strings
-    built out of them:
+    Returns `meals`, `recipes`, `cooks`, `list_count`, `thaw_count` and the
+    two strings built out of them:
 
-      title      "16 meals, five cooks, one list of 23 things."
+      title      "16 meals, 5 recipes, one list of 23 ingredients."
       thaw_line  "Two things to move to the fridge this week." when there is
                  something to thaw, else "Nothing to thaw before Wednesday."
                  — Wednesday being the next day of the plan somebody cooks,
@@ -3237,13 +3237,24 @@ def week_receipt(days: list[dict], weekly_plan_id: int) -> dict:
     nothing to cook", state planned_empty) and an open slot count as
     neither a meal nor a cook, and a reheat night counts as a meal only.
 
+    `recipes` is the number of DIFFERENT dishes somebody cooks — the word
+    the screen uses (Emily, 2026-09-13: "'6 cooks' is confusing language
+    ... say it's recipes instead"). A dish cooked on two nights is one
+    recipe and two cooks, so the two numbers are kept apart: `cooks` still
+    counts the week's work, the way the week card's "4 cooks, 3 made
+    ahead" does, and the receipt's tiles show `recipes`.
+
     `list_count` is what is still to buy — the same 'needed' view the
-    Grocery tab opens on, which is where "Open the list" lands. Zero is not
-    a failure (a household whose kitchen already had everything), so the
+    Grocery tab opens on, which is where "Open the list" lands. A spice
+    waiting unticked in "Spices this week" (status 'spice') and last
+    week's leftover waiting for keep-or-drop ('carried') are not on it;
+    a hand-added line and a staple's suggestion are. Zero is not a
+    failure (a household whose kitchen already had everything), so the
     sentence drops that clause instead of promising a list of nothing.
     """
     meals = 0
     cooks = 0
+    dishes: set[str] = set()
     for day in days:
         for slot in WEEK_SLOTS:
             entry = day.get(slot)
@@ -3252,6 +3263,8 @@ def week_receipt(days: list[dict], weekly_plan_id: int) -> dict:
             meals += 1
             if _is_cook(entry):
                 cooks += 1
+                dishes.add((entry.get("title") or "").strip().casefold())
+    recipes = len(dishes)
 
     list_count = len(_grocery.list_grocery_list("needed"))
     thaw_count = _pending_thaw_count(weekly_plan_id)
@@ -3259,12 +3272,12 @@ def week_receipt(days: list[dict], weekly_plan_id: int) -> dict:
     parts: list[str] = []
     if meals:
         parts.append(f"{_receipt_number(meals)} {'meal' if meals == 1 else 'meals'}")
-    if cooks:
-        parts.append(f"{_receipt_number(cooks)} {'cook' if cooks == 1 else 'cooks'}")
+    if recipes:
+        parts.append(f"{_receipt_number(recipes)} {'recipe' if recipes == 1 else 'recipes'}")
     if list_count:
         parts.append(
             f"one list of {_receipt_number(list_count)} "
-            f"{'thing' if list_count == 1 else 'things'}"
+            f"{'ingredient' if list_count == 1 else 'ingredients'}"
         )
     else:
         parts.append("nothing left to buy")
@@ -3289,7 +3302,7 @@ def week_receipt(days: list[dict], weekly_plan_id: int) -> dict:
         thaw_line = f"Nothing to thaw before {when}." if when else "Nothing to thaw this week."
 
     return {
-        "meals": meals, "cooks": cooks, "list_count": list_count,
+        "meals": meals, "recipes": recipes, "cooks": cooks, "list_count": list_count,
         "thaw_count": thaw_count, "title": title, "thaw_line": thaw_line,
     }
 

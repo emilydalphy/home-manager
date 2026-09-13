@@ -56,9 +56,10 @@ def test_the_questions_sit_above_the_counters():
     allset = _fn("allSetStepHtml")
     asks = allset.index('<div id="wk-allset-asks"></div>')
     nums = allset.index('<div class="wk-allset-nums">')
-    assert asks < nums, "the asks row must come before the MEALS / COOKS / TO BUY tiles"
-    # And the counters themselves are untouched (a separate card owns their wording).
-    assert "label: 'meals'" in allset and "label: 'cooks'" in allset and "label: 'to buy'" in allset
+    assert asks < nums, "the asks row must come before the MEALS / RECIPES / INGREDIENTS tiles"
+    # The counters' words are tests/test_allset_receipt_words.py's (Emily,
+    # 2026-09-13: recipes, not cooks; ingredients, not to buy).
+    assert "label: 'meals'" in allset and "label: 'recipes'" in allset and "label: 'ingredients'" in allset
 
 
 def test_the_heading_lost_its_apology():

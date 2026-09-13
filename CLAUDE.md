@@ -371,6 +371,55 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — After the plan, seeing the week is a first-class path;
+  the list keeps its pull. Branch `worktree-allset-week-path`, NOT merged
+  at the time of writing.** Two Loop Board cards on All set (Emily, on
+  her phone: "'6 cooks' is confusing language ... say it's recipes";
+  "53 to buy feels intimidating, can we say 53 ingredients"; "make the
+  loop easier to go and see the week and not go straight to the list.
+  but make the CTA to go to the list enticing").
+  - **"Recipes" is a different number, not a relabel.** A dish cooked
+    on two nights is one recipe and two cooks, so `week_receipt` counts
+    distinct cooked dishes as `recipes` (by title, casefolded) and keeps
+    `cooks` for the Plan band's "4 cooks, 3 made ahead" — the two words
+    now describe two things. The tiles and the root receipt's sentence
+    ("6 meals, 5 recipes, one list of 53 ingredients.") read `recipes`;
+    `list_count` is unchanged: the 'needed' lines "Open the list" opens
+    on, which leaves an unticked "Spices this week" line and a
+    keep-or-drop leftover off the number until they are ticked or kept.
+  - **All set outlived its own screen.** `submitWeekApproval` sets
+    `weekState.step = 'allset'` and nothing but "See the week" ever
+    moved it: "Open the list" is `activateTab('grocery')`, and the tab
+    bar is `activateTab` too, so coming back to Plan by either showed
+    the finished-planning screen again for the whole page view. Now
+    `activateTab` folds 'allset' to the root on the way OUT of Plan
+    (same shape as `groceryState.justFinishedTrip`), re-rendering the
+    panel in the same tick so nothing moves under a thumb; the asks' late fetches
+    land on the root's receipt row, which the approval already
+    dismissed. Deeper steps (a day, a meal) are left alone — the
+    refresh policy says nothing reloads on a tab switch.
+  - **A `.dock-secondary` above the apricot, not a `.dock-link`.** The
+    ticket asked for a real button; Rule 5 forbids a second APRICOT,
+    not a second button — Shop's "Skip the rest" (`.gro-secondary`) and
+    the old `.wk-check-btn` above Approve were the same sand button in
+    a dock. On All set's spruce dock it takes the counters' own
+    `--spruce-raised` fill, the `--apricot-rule` edge and `--ivory-ink`
+    (9.86/7.70 on the fill, 8.53/6.90 on hover, light/dark). Written
+    into DESIGN_SYSTEM §5 Dock in the same commit. Judgment calls, all
+    one line: the primary carries the count ("Open the list · 53
+    ingredients", plain over an empty list); the approved week's review
+    step docks "Open the list" where Approve was (`reviewDecideHtml`,
+    still the one `wk-decide dock`); Shop's LIST puts "See the week" as
+    the quiet link beside "Start the trip", landing on the tiles when an
+    approved week is loaded and on the Plan root otherwise (pushing a
+    step `renderMealsStep` would fold leaves Back pointing at a screen
+    nobody saw). A household with no named shop has no "Start the trip"
+    and so no dock — pre-existing, and the tab bar is still one tap.
+  - Not touched, for Emily: Cook's "4 cooks today", the Plan band's
+    "5 cooks, 1 made ahead", onboarding's "16 meals, 5 cooks", Shop's
+    band "10 things · 1 stop". Tests: `tests/test_allset_receipt_words.py`
+    (7) and `tests/test_allset_week_path.py` (15, node harness).
+
 - **2026-09-13 — Staples get sections, and the spice rack is one of them.
   Branch `worktree-staples-sections`, NOT merged at the time of writing.**
   Loop Board feature (Emily: "make one of the grouping 'spices' ... a good

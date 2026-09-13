@@ -267,7 +267,10 @@ def test_a_screen_with_no_single_action_has_no_dock():
     screen with nothing to say.
     """
     dock = _gro_dock_body()
-    assert "if (canGo) return '<button type=\"button\" class=\"gro-primary\" data-gro=\"start-trip\">" in dock
+    # Since 2026-09-13 the button rides in a .dock-row with the quiet
+    # "See the week" link beside it (tests/test_allset_week_path.py).
+    assert "if (canGo) {" in dock
+    assert "'<button type=\"button\" class=\"gro-primary\" data-gro=\"start-trip\">Start the trip</button>'" in dock
     # Over the shops question, and on the just-finished trip's own screen,
     # LIST renders no dock at all. (An empty list is the exception since
     # 2026-09-11: its empty moment's next step, "Go to Plan", is the dock.)

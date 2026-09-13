@@ -5978,6 +5978,28 @@ button.wwk-chip-text { cursor: pointer; min-height: 34px; }
 }
 .dock-primary:hover { background: var(--apricot-light); }
 .dock-primary:disabled { opacity: .6; cursor: default; box-shadow: none; }
+/* The dock's second door, when the second path is a real one and not a
+   rare action: a full-width secondary ABOVE the apricot, never a second
+   apricot (Rule 5). Same sand-and-hairline button .gro-secondary is on
+   Shop's WHERE NEXT and .wk-check-btn was above Approve — the fill is what
+   separates it from the ground, and its label is --ink on --sand (11.60:1
+   light / 11.28:1 dark, measured for .gro-secondary). All set's spruce
+   dock re-inks it below (.wk-allset-dock .dock-secondary). */
+.dock-secondary {
+  width: 100%;
+  min-height: 52px;
+  margin-bottom: 8px;
+  border-radius: var(--radius-action);
+  background: var(--sand);
+  border: 1.5px solid var(--hairline-strong);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+}
+.dock-secondary:hover { border-color: var(--ink-strong); }
 .today-dock[hidden] { display: none; }
 /* space-between with a single link leaves it at the start, which is
    where a lone back link belongs — no second rule needed. */
@@ -7341,7 +7363,17 @@ span.cook-week-name { cursor: default; }
 .wk-allset-dock { margin: auto -20px 0; background: var(--spruce); border-top-color: var(--spruce-hover); }
 .tab-panel.is-allset { background: var(--spruce); }
 .tab-panel.is-allset #week-steps { flex: 1 0 auto; display: flex; flex-direction: column; }
-.wk-allset-dock .dock-link { color: var(--apricot-light); }
+/* "See the week" on spruce: the counters' own tile fill (--spruce-raised)
+   with the on-spruce outline (.cook-serves-btn's --apricot-rule edge) and
+   the ivory label — a button, not a link, and not a second apricot.
+   --ivory-ink on --spruce-raised 9.86:1 light / 7.70:1 dark (the numbers
+   the asks card above it recorded), on --spruce-hover 8.53 / 6.90. */
+.wk-allset-dock .dock-secondary {
+  background: var(--spruce-raised);
+  border-color: var(--apricot-rule);
+  color: var(--ivory-ink);
+}
+.wk-allset-dock .dock-secondary:hover { background: var(--spruce-hover); border-color: var(--apricot-light); }
 
 /* ---------- REVIEW: one control, two ways to read one week ----------
    Emily's approved design, 2026-09-09. The segmented control is the only
