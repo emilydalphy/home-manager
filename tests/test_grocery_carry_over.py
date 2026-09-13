@@ -254,20 +254,43 @@ def test_undo_of_a_restored_keep_goes_back_to_waiting(curry):
 
 
 def test_undo_of_a_keep_that_cannot_come_back_off_does_not_reopen(curry):
-    """Verifier, 2026-09-13: a keep merged into a line that never
-    reconciled ("1 bag + 2 lbs"), or a line since bought, can't be
-    subtracted back — reopening the question would count it twice."""
+    """Verifier, 2026-09-13: a keep merged into a line it can't be
+    subtracted back out of, or a line since bought, can't be undone —
+    reopening the question would count it twice. The pair here is a bag
+    kept onto a bag of a stated size ("2 bags (2 lb)" has no plain bag to
+    take off); it used to be "1 bag + 2 lbs", which Keep no longer writes
+    — see test_grocery_unit_families.py."""
+    tools.add_recipe("Frozen thighs", ingredients=[
+        {"item": "Chicken thighs", "qty": "1 bag", "category": "frozen"}])
+    tools.add_recipe("Big bag of thighs", ingredients=[
+        {"item": "Chicken thighs", "qty": "2 lb bag", "category": "frozen"}])
+    _approve_week(0, meal="Frozen thighs")
+    _approve_week(1, meal="Big bag of thighs")
+    row = _carried("Chicken thighs")
+    tools.keep_carried_over_item(row["item_id"])
+    assert _needed("Chicken thighs") == "2 bags (2 lb)"
+    answer = tools.undo_carried_over_decision(row["item_id"])
+    assert answer["unchanged"] is True and answer["reason"] == "acted_on"
+    assert _needed("Chicken thighs") == "2 bags (2 lb)"
+    assert all(c["item"] != "Chicken thighs" for c in tools.list_carried_over_items()), "not asked again"
+
+
+def test_keep_never_glues_last_weeks_amount_onto_a_line_in_another_unit(curry):
+    """Last week's "2 lbs" beside this week's "1 bag": Keep used to write
+    "1 bag + 2 lbs", which nothing could take back apart. The old line
+    comes back on its own instead (the rule in test_grocery_unit_families.py)."""
     tools.add_recipe("Frozen thighs", ingredients=[
         {"item": "Chicken thighs", "qty": "1 bag", "category": "frozen"}])
     _approve_week(0)
     _approve_week(1, meal="Frozen thighs")
     row = _carried("Chicken thighs")
-    tools.keep_carried_over_item(row["item_id"])
-    assert _needed("Chicken thighs") == "1 bag + 2 lbs"
-    answer = tools.undo_carried_over_decision(row["item_id"])
-    assert answer["unchanged"] is True and answer["reason"] == "acted_on"
-    assert _needed("Chicken thighs") == "1 bag + 2 lbs"
-    assert all(c["item"] != "Chicken thighs" for c in tools.list_carried_over_items()), "not asked again"
+    assert row["this_week_quantity"] is None
+    result = tools.keep_carried_over_item(row["item_id"])
+    assert result["merged_into"] is None
+    assert [r["quantity"] for r in _rows()["Chicken thighs"] if r["status"] == "needed"] == ["2 lbs", "1 bag"]
+    tools.undo_carried_over_decision(row["item_id"])
+    assert _needed("Chicken thighs") == "1 bag"
+    assert _carried("Chicken thighs")["quantity"] == "2 lbs"
 
 
 def test_undo_of_a_keep_after_the_line_was_bought_does_not_reopen(curry):
