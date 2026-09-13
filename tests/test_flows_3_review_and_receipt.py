@@ -104,7 +104,8 @@ def test_a_reheat_night_is_a_meal_but_not_a_cook():
 
     assert receipt["meals"] == 2
     assert receipt["cooks"] == 1
-    assert receipt["title"].startswith("2 meals, 1 cook")
+    assert receipt["recipes"] == 1
+    assert receipt["title"].startswith("2 meals, 1 recipe")
 
 
 def test_an_away_night_is_neither_a_meal_nor_a_cook():
@@ -124,7 +125,7 @@ def test_an_away_night_is_neither_a_meal_nor_a_cook():
 
 def test_an_empty_list_says_so_instead_of_promising_a_list_of_nothing():
     """A household whose kitchen already had everything is not a failure —
-    "one list of 0 things" is."""
+    "one list of 0 ingredients" is."""
     tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
     plan_id = _plan()
     tools.plan_meal(ISO_TODAY, "Chili", slot="dinner", weekly_plan_id=plan_id)
@@ -132,7 +133,7 @@ def test_an_empty_list_says_so_instead_of_promising_a_list_of_nothing():
     receipt = _receipt(plan_id)
 
     assert receipt["list_count"] == 0
-    assert receipt["title"] == "1 meal, 1 cook, nothing left to buy."
+    assert receipt["title"] == "1 meal, 1 recipe, nothing left to buy."
 
 
 def test_the_list_size_is_what_is_still_to_buy():
@@ -145,12 +146,12 @@ def test_the_list_size_is_what_is_still_to_buy():
     receipt = _receipt(plan_id)
 
     assert receipt["list_count"] == 3
-    assert "one list of 3 things" in receipt["title"]
+    assert "one list of 3 ingredients" in receipt["title"]
 
 
 @pytest.mark.parametrize(
     "count,expected",
-    [(1, "one list of 1 thing"), (12, "one list of 12 things"), (13, "one list of 13 things")],
+    [(1, "one list of 1 ingredient"), (12, "one list of 12 ingredients"), (13, "one list of 13 ingredients")],
 )
 def test_counts_are_digits_like_the_week_card_subtitle(count, expected):
     """Emily, 2026-09-08: one to twelve as words, digits above."""
@@ -225,7 +226,7 @@ def test_an_approved_week_carries_its_receipt_and_a_draft_does_not():
     approved = tools.get_week_menu()
 
     assert approved["receipt"]["meals"] == 1
-    assert approved["receipt"]["title"].startswith("1 meal, 1 cook,")
+    assert approved["receipt"]["title"].startswith("1 meal, 1 recipe,")
 
 
 # ---------- the draft's two clash sentences ----------

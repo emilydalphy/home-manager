@@ -71,7 +71,7 @@ def test_approval_lands_on_an_all_set_screen_in_spruce():
     assert "weekState.step = 'allset';" in approve
     allset = _fn("allSetStepHtml")
     assert "All set." in allset and "is planned, and the list is built." in allset
-    assert "receipt.meals" in allset and "receipt.cooks" in allset and "receipt.list_count" in allset
+    assert "receipt.meals" in allset and "receipt.recipes" in allset and "receipt.list_count" in allset
     assert '<div class="dock wk-allset-dock">' in allset
     assert ".tab-panel.is-allset { background: var(--spruce); }" in SHELL_CSS
     # The two asks ride along as lines, and only there — the root's receipt

@@ -13333,9 +13333,14 @@
   function allSetStepHtml(data, days) {
     var receipt = data.receipt || {};
     var nums = [];
+    // MEALS · RECIPES · INGREDIENTS — the words a person would use (Emily,
+    // 2026-09-13: "'6 cooks' is confusing language" and "53 to buy feels
+    // intimidating"). `recipes` is the week's different dishes, not its
+    // cook nights (week_receipt keeps `cooks` for the week card's own
+    // "4 cooks, 3 made ahead"); `list_count` is the lines on the buy list.
     if (receipt.meals != null) nums.push({ n: receipt.meals, label: 'meals' });
-    if (receipt.cooks != null) nums.push({ n: receipt.cooks, label: 'cooks' });
-    if (receipt.list_count != null) nums.push({ n: receipt.list_count, label: 'to buy' });
+    if (receipt.recipes != null) nums.push({ n: receipt.recipes, label: 'recipes' });
+    if (receipt.list_count != null) nums.push({ n: receipt.list_count, label: 'ingredients' });
     var dayCount = data.day_count || days.length || 7;
     var range = data.week_label ||
       (data.week_start_date ? periodRangeLabel(data.week_start_date, dayCount) : 'The week');
