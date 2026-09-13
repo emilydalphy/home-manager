@@ -371,6 +371,59 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — A hand-added item in another unit than the recipe's no
+  longer grows a longer line every week. Branch
+  `worktree-grocery-unit-concat`, NOT merged at the time of writing.**
+  Loop Board bug (found 2026-09-13 fuzzing the line-to-zero work: 151 of
+  200 randomised runs, identical on `main`). A standing want ("Eggs · 1",
+  hand-added) and a recipe's "2 cups" can't be added up, so
+  `add_grocery_item` concatenated them onto the person's line ("1 + 2
+  cups", `keep_standing`), and the reversal — which reads a line as one
+  number in one unit — could never take the plan's share back off; the
+  next week added another "+ 2 cups", for as long as the eggs stayed
+  unbought (reproduced: "1 + 4 cups + 4 cups + 4 cups" after three
+  approvals, with or without the meals leaving in between).
+  - **Rule chosen: two lines, honest — never one line nobody can read.**
+    `grocery._merge_target`: an amount joins the first same-name line it
+    adds up with CLEANLY; failing that it may concatenate onto a line of
+    its OWN KIND (a person's add onto a person's line, a plan's onto a
+    plan's) and never across. So the person's want stays exactly as typed
+    and the plan's amount goes on a plan-owned line that recomputes from
+    its ledger, leaves with its week, is deleted by
+    `clear_stale_grocery_items`, and is set aside as a leftover by the
+    CARRY step like any other plan line — the reversal is correct by
+    construction, with no new arithmetic on the standing-want restate
+    path (see the line-to-zero entry below for why that path is not to
+    be touched lightly). The other option — one line, two clauses, a
+    clause-aware reversal — was rejected for exactly that reason. A plan's
+    two recipes disagreeing on a unit still share ONE plan line ("2 cups
+    + 3"), byte-identical to before, because its ledger fully describes
+    it; a person's two unrelated amounts still share the person's line
+    (no ledger to keep straight). Same-family standing wants merge and
+    restate exactly as before.
+  - **The one cross-kind join kept: a person's add onto a pending spice
+    line** (status 'spice', spices.py): that line is the plan's reminder,
+    not an amount, and the person's add is the answer to it — it ticks
+    the line onto the list, as the spices merge decided the same day.
+    The week after, the plan's cumin starts its own reminder rather than
+    a third clause.
+  - **CARRY step: Keep joins only a line it adds up with cleanly**
+    (`_this_weeks_line` now takes the amount); otherwise the carried line
+    comes back on its own as a standing want, and undo works. It used to
+    write "1 bag + 2 lbs" — the same bug wearing the leftovers hat.
+    `consolidate_grocery_list` likewise no longer glues the two kinds
+    together. One carry-over test was retargeted honestly: "a keep that
+    cannot come back off" is now the bag-onto-sized-bag pair ("2 bags (2
+    lb)"), since the unreconciled pair no longer merges at all.
+  - Scratch fuzz (different-family pairs only, 3 approve-and-clear weeks,
+    200 runs): **200/200 grew on `main`, 0/200 here**, two seeds. Tests:
+    `tests/test_grocery_unit_families.py` (13; 9 red on `main`, 3 guards
+    for what did not change, one 40-run randomised loop), plus one new
+    test in `tests/test_grocery_carry_over.py`. Not done: lines already
+    concatenated on Emily's real list stay as they are until bought —
+    `repair_grocery_quantities` is the assistant's tool for those and was
+    not run.
+
 - **2026-09-13 — "How did it go?": "Will grab elsewhere" picks the store,
   "Don't need anymore", and "Add a new store" that comes back. Branch
   `worktree-shop-store-screens`, NOT merged at the time of writing.** Loop
