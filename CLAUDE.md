@@ -371,6 +371,39 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — Four small defects from driving the app on a throwaway
+  DB, fixed one commit each. Branch `worktree-four-small-defects`, NOT
+  merged at the time of writing.** All four were real, independent, and
+  each got its own test that fails on `main`.
+  - **Chore status accepted any string.** `set_chore_instance_status`
+    (`app/tools/chores.py`) wrote whatever it was handed straight to
+    `chore_instances.status` — a typo landed a row in a status no
+    screen's WHERE clause looks for: not pending, not done, just gone.
+    Now validated against `CHORE_INSTANCE_STATUSES` before opening a
+    connection, raising the new `InvalidChoreStatus` (a `ValueError`
+    sibling of `ChoreRefused`, not a subclass, so it doesn't fall into
+    the existing 404 handler) — the `/status` route maps it to 422.
+  - **A chore could be moved into 2020.** `move_chore_instance` parsed
+    `to_date` and wrote it straight to `due_date` with no floor.
+    Judgment call: refuses a target **before today**, not before the
+    chore's creation — the latter would block pulling a genuinely
+    slipped old instance forward, which is the opposite of what a
+    household asking for that wants. Today itself stays valid.
+  - **Rhythm half-saved.** `/api/onboarding/rhythm` called the six-plus-one
+    individual setters one at a time, each on its own connection/commit —
+    an invalid field partway through left the fields ahead of it already
+    written. New `tools.save_rhythm_answers` (`app/tools/rhythm.py`)
+    validates every given field first, then writes all of them on one
+    connection with one commit. The individual setters are unchanged and
+    still right for a single chat correction.
+  - **New members had no avatar colour.** `members.color` was only ever
+    filled in by `db._backfill_member_colors`, a startup migration — an
+    adult added while the server kept running stayed colorless until the
+    next restart. `set_member_age_group` (`app/tools/household.py`) now
+    assigns the next unused `db._ADULT_COLORS` slot the moment someone
+    becomes an adult, same "only two, only if still blank" rule the
+    backfill uses.
+
 - **2026-09-13 — "How did it go?": "Will grab elsewhere" picks the store,
   "Don't need anymore", and "Add a new store" that comes back. Branch
   `worktree-shop-store-screens`, NOT merged at the time of writing.** Loop
