@@ -130,6 +130,35 @@ def _receipt_snapshot(conn, inventory_id: int) -> dict | None:
     return {k: row[k] for k in _RECEIPT_FIELDS} if row else None
 
 
+def _find_row_by_name(conn, item: str, location: str | None, columns: str):
+    """
+    The one inventory row a name-only write (add / set / use) lands on.
+    With a location, the row at that location. Without one, an item kept
+    in two places ("BBQ sauce" opened in the fridge and unopened in the
+    pantry, see get_cross_location_duplicates) used to come back in
+    whatever order SQLite happened to store the rows — an add could merge
+    into one row and the next "used some" subtract from the other
+    (2026-09-13). Now: the most recently written row, ties to the newer
+    one (updated_at DESC, id DESC). The argument: the row the household
+    last touched is the one in play, and every name-only path uses the
+    same rule, so add-then-use land on the same row. Nothing per-item
+    records a "usual" place — location comes from an explicit hint or the
+    category default at insert time — so there is nothing better to
+    prefer; the callers that know the place pass it and skip all this.
+    """
+    if location:
+        return conn.execute(
+            f"SELECT {columns} FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?) AND location = ? "
+            "ORDER BY updated_at DESC, id DESC LIMIT 1",
+            (household_id(), item, location),
+        ).fetchone()
+    return conn.execute(
+        f"SELECT {columns} FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?) "
+        "ORDER BY updated_at DESC, id DESC LIMIT 1",
+        (household_id(), item),
+    ).fetchone()
+
+
 def _add_to_inventory(
     item: str,
     quantity: str = "",
@@ -159,18 +188,9 @@ def _add_to_inventory(
     # SAME location — a "BBQ sauce" bought new for the pantry shouldn't
     # silently merge into an already-opened one sitting in the fridge; that
     # should become (and stay) a second, distinct row. Without a location
-    # hint, fall back to the old broad match-by-name-anywhere behavior.
-    if location:
-        existing = conn.execute(
-            "SELECT id, quantity, category, expiration_date, location FROM inventory_items "
-            "WHERE household_id = ? AND LOWER(item) = LOWER(?) AND location = ?",
-            (household_id(), item, location),
-        ).fetchone()
-    else:
-        existing = conn.execute(
-            "SELECT id, quantity, category, expiration_date, location FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
-            (household_id(), item),
-        ).fetchone()
+    # hint, match by name anywhere — the most recently written row when the
+    # item is kept in more than one place (see _find_row_by_name).
+    existing = _find_row_by_name(conn, item, location, "id, quantity, category, expiration_date, location")
     if existing:
         merged_qty, _ = _grocery._try_consolidate_quantity(existing["quantity"] or "", quantity)
         fields = "quantity = ?, source = ?, updated_at = datetime('now')"
@@ -252,16 +272,7 @@ def update_inventory(
 
     if action == "set":
         conn = get_conn()
-        if location:
-            existing = conn.execute(
-                "SELECT id, category, expiration_date, location FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?) AND location = ?",
-                (household_id(), item, location),
-            ).fetchone()
-        else:
-            existing = conn.execute(
-                "SELECT id, category, expiration_date, location FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
-                (household_id(), item),
-            ).fetchone()
+        existing = _find_row_by_name(conn, item, location, "id, category, expiration_date, location")
         if existing:
             fields = "quantity = ?, updated_at = datetime('now')"
             params = [quantity]
@@ -293,21 +304,11 @@ def update_inventory(
 
     if action in ("use", "remove"):
         conn = get_conn()
-        if location:
-            existing = conn.execute(
-                "SELECT id, quantity FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?) AND location = ?",
-                (household_id(), item, location),
-            ).fetchone()
-        else:
-            # No location given and this item might exist in more than one
-            # place at once (see get_cross_location_duplicates) — this picks
-            # whichever row the database returns first rather than asking,
-            # a known limitation; pass location when it's actually known to
-            # avoid the ambiguity.
-            existing = conn.execute(
-                "SELECT id, quantity FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
-                (household_id(), item),
-            ).fetchone()
+        # No location given and this item might exist in more than one
+        # place at once (see get_cross_location_duplicates): the most
+        # recently written row, the same rule "add" uses, so the two agree
+        # (see _find_row_by_name). Pass location when it's actually known.
+        existing = _find_row_by_name(conn, item, location, "id, quantity")
         if not existing:
             conn.close()
             return {"item": item, "found": False}
