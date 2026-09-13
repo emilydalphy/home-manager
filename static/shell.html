@@ -214,6 +214,23 @@
     <div id="tonight-rows"></div>
   </div>
 
+  <!-- The meal screen's "Add something" sheet (Emily, 2026-09-13): a
+       starch, a green, a sauce written for this dish, each row the tap
+       that adds it, and one line to type anything else
+       (openMealAddSheet / runMealAdd in shell.js). Same shape as the
+       "Something else" sheet above; the draft-stage card reuses it. -->
+  <div id="wk-add-scrim" hidden></div>
+  <div id="wk-add-sheet" hidden role="dialog" aria-label="Add something to this meal">
+    <div class="ask-sheet-handle" id="wk-add-handle"></div>
+    <div class="kit-sheet-titlerow">
+      <span class="kit-sheet-title">What should go with it?</span>
+      <span class="kit-sheet-hairline"></span>
+      <button type="button" class="kit-sheet-close" id="wk-add-close" aria-label="Close">&times;</button>
+    </div>
+    <p class="tonight-sheet-line" id="wk-add-line"></p>
+    <div id="wk-add-rows"></div>
+  </div>
+
   <!-- Kitchen entry sheet (Stage 2 slice 3). The hub's tiles open What we
        know / Inventory / Stores as a sheet over the hub instead of a full
        page navigation that left the app shell — tab bar and all — with only

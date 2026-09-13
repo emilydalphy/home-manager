@@ -393,6 +393,7 @@ def _meal_screen(back: str, cookable: bool) -> str:
         + "function cookMealKey(m) { return 'e' + m.entry_id; }\n"
         + "function cookTicked() { return false; }\n"
         + "function cookAheadHtml() { return ''; }\n"
+        + "var WK_ADD_ICON = '<svg/>'; function humanQtyText(t) { return String(t == null ? '' : t); }\n"
         + "function cookIngredientLabel(i) { return i.item; }\n"
         + f"function planCookView() {{ return {{ is_current_plan: {json.dumps(cookable)}, meals: [] }}; }}\n"
         + "var NUMBER_WORDS = ['zero','one','two','three','four','five','six'];\n"
@@ -403,10 +404,10 @@ def _meal_screen(back: str, cookable: bool) -> str:
             "chipsRowHtml", "cookTimeChip", "planCookableNow", "cookMealForEntry",
             "numberWord", "countInWords", "minutesInWords", "clockLabel", "spokenTime",
             "slotTableMinutes", "mealTotalMinutes", "mealStepMinutes", "stopTitleSplit",
-            "ingredientNamesLine", "mealClockStops", "mealClockEyebrow", "mealCookName",
+            "ingredientNamesLine", "mealClockSides", "mealClockTotal", "finishSideStop", "mealClockStops", "mealClockEyebrow", "mealCookName",
             "mealCookUnderway", "mealClockFor", "mealHeroLine", "mealHeroHtml",
             "mealStopHtml", "mealClockHtml", "swapStateFor", "swapLineHtml",
-            "slotEyebrowLabel", "dishSizeClass", "mealDockHtml", "mealStepHtml"))
+            "slotEyebrowLabel", "dishSizeClass", "mealDockHtml", "mealWhatsInHtml", "mealStepHtml"))
         + f"console.log(JSON.stringify(mealStepHtml({json.dumps(day)}, 'dinner')));\n"
     )
     return _run_node(harness)

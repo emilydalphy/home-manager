@@ -2727,6 +2727,94 @@ def week_add_dish_day(week_start: str, req: AddDishDayRequest):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+def _addition_context() -> dict:
+    """What the free-text side call should know about this house beyond
+    the meal itself — the same three facts _complete_plates_pass hands
+    generate_sides_llm. Empty when memory can't be read: a side written
+    without the dislikes is worse than none, so the caller treats an
+    empty dict as "add it as typed" rather than guessing."""
+    try:
+        memory = tools.get_household_memory()
+    except Exception:
+        logger.exception("Household memory could not be read for an addition")
+        return {}
+    return {
+        "dislikes": memory.get("dislikes") or [],
+        "dietary_restrictions": sorted({
+            r
+            for member in memory.get("members") or []
+            for r in (member.get("dietary_restrictions") or [])
+        }),
+        "eating_style": memory.get("eating_style") or "",
+    }
+
+
+@app.get("/api/week/{week_start}/additions")
+def week_additions(week_start: str, entry_id: int):
+    """
+    The meal screen's "Add something" sheet: the short list of things
+    that make sense beside THIS dish (plates.suggest_additions — a
+    starch, a green, a sauce; nothing the dish already has), for the
+    picker to draw. A read, no model call.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.suggest_additions(
+            entry_id, eating_style=_addition_context().get("eating_style"), weekly_plan_id=plan_id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+class AddComponentRequest(BaseModel):
+    """`key` is a row of the picker (plates.ADDITIONS); `text` is the
+    free-text line. One or the other."""
+    entry_id: int
+    key: str | None = None
+    text: str | None = None
+
+
+@app.post("/api/week/{week_start}/add-component")
+def week_add_component(week_start: str, req: AddComponentRequest):
+    """
+    "Add potatoes" from the dish itself (Emily, 2026-09-13). One small
+    write onto the entry (plates.add_component): the side goes on the
+    meal, on the grocery list if the week is approved, and on the cooking
+    timeline the next time the screen reads the cooker view. Free text is
+    the one path that spends a model call; a picker row spends none.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.add_component(
+            req.entry_id, key=req.key, text=req.text,
+            context=_addition_context() if req.text else None, weekly_plan_id=plan_id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Adding to a meal failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+class RemoveComponentRequest(BaseModel):
+    entry_id: int
+    name: str
+
+
+@app.post("/api/week/{week_start}/remove-component")
+def week_remove_component(week_start: str, req: RemoveComponentRequest):
+    """The Undo on an addition: the side comes off the meal and its own
+    lines come off the list, the dish's shopping untouched."""
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.remove_component(req.entry_id, req.name, weekly_plan_id=plan_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Removing an addition failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 class WeekSlotRequest(BaseModel):
     date: str
     slot: str = "dinner"

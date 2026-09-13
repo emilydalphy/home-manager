@@ -503,3 +503,530 @@ def complete_plate(entry_id: int, context: dict, side_generator=None) -> dict:
         "groups_added": covered,
         "still_missing": [g for g in missing if g not in covered],
     }
+
+
+# ---------- adding something yourself (Emily, 2026-09-13) ----------
+#
+# Loop Board "Meal screen: add what's missing ('add potatoes') from the dish
+# itself, not via chat". The plate-completion pass above attaches a side the
+# APP chose; this is the household choosing one on the meal screen — the
+# same side shape, the same column, the same readers (grocery, Cooker, the
+# card), so "add potatoes" is one feature wherever it is offered from. The
+# draft-stage card ("Draft: add what's missing from the plate (potatoes)
+# from the card") calls exactly these three functions and nothing else:
+# suggest_additions to fill its picker, add_component on a tap,
+# remove_component for its Undo.
+#
+# The picker's rows are a small written-down catalogue, not a model call:
+# the ticket asks for "a starch, a green, a sauce" and one tap for the
+# common case, and a list anyone can read and correct beats a judgement
+# nobody can see (the same stance is_low_carb takes). Typing something the
+# catalogue doesn't have ("cauliflower rice") is the one path that asks the
+# model — generate_sides_llm, the call that already writes sides — so the
+# amounts and the step come back real rather than invented here.
+
+# Every catalogue side is written for this many people. The grocery ingest
+# scales it to who is actually eating (eaters ÷ ADDITION_SERVINGS, the
+# same arithmetic a recipe's default_servings gets), and the Cooker card
+# scales it the same way — see scale_side_ingredients.
+ADDITION_SERVINGS = 4
+
+# `hint` is the picker row's one line: how long it adds, or that it cooks
+# nothing. `kind` orders the sheet (starch, green, sauce). Quantities are
+# written as bought at the store, the way generate_sides_llm is told to
+# write them, and salt, pepper and oil are left off — the spice-rack rule
+# (spices.py). `match` is the words that mean the dish already has this
+# (broccoli beside broccolini is not an addition); see suggest_additions.
+ADDITIONS = [
+    {
+        "key": "roasted-potatoes", "name": "Roasted potatoes", "kind": "starch",
+        "covers": ["carb"], "minutes": 25, "hint": "25 minutes in the oven",
+        "match": ["potato"],
+        "ingredients": [{"item": "Yukon Gold potatoes", "qty": "2 lb", "category": "produce"}],
+        "instructions": [
+            "Halve the potatoes, toss with oil and salt on a sheet pan.",
+            "Roast at 425° until golden, about 25 minutes.",
+        ],
+    },
+    {
+        "key": "rice", "name": "Rice", "kind": "starch",
+        "covers": ["carb"], "minutes": 20, "hint": "20 minutes on the stove",
+        "match": ["rice"],
+        "ingredients": [{"item": "Long grain rice", "qty": "2 cups", "category": "pantry"}],
+        "instructions": [
+            "Rinse the rice, add it to a pot with 3 cups water and a pinch of salt.",
+            "Bring to a boil, cover, simmer 15 minutes, then rest 5 off the heat.",
+        ],
+    },
+    {
+        "key": "crusty-bread", "name": "Crusty bread", "kind": "starch",
+        "covers": ["carb"], "minutes": 2, "hint": "nothing to cook",
+        "match": ["bread", "baguette", "naan", "pita", "tortilla"],
+        "ingredients": [{"item": "Baguette", "qty": "1", "category": "other"}],
+        "instructions": ["Slice the baguette and put it on the table."],
+    },
+    {
+        "key": "green-salad", "name": "Green salad", "kind": "green",
+        "covers": ["vegetable"], "minutes": 5, "hint": "5 minutes, no cooking",
+        "match": ["salad", "lettuce", "greens", "arugula", "romaine"],
+        "ingredients": [
+            {"item": "Mixed greens", "qty": "1 bag", "category": "produce"},
+            {"item": "Lemon", "qty": "1", "category": "produce"},
+        ],
+        "instructions": ["Toss the greens with oil, a squeeze of lemon and salt just before serving."],
+    },
+    {
+        "key": "green-beans", "name": "Green beans", "kind": "green",
+        "covers": ["vegetable"], "minutes": 10, "hint": "10 minutes on the stove",
+        "match": ["green bean", "haricot"],
+        "ingredients": [{"item": "Green beans", "qty": "1 lb", "category": "produce"}],
+        "instructions": [
+            "Trim the beans.",
+            "Steam or boil 5 minutes until bright and tender, then toss with butter and salt.",
+        ],
+    },
+    {
+        "key": "steamed-broccoli", "name": "Steamed broccoli", "kind": "green",
+        "covers": ["vegetable"], "minutes": 10, "hint": "10 minutes on the stove",
+        "match": ["broccoli"],
+        "ingredients": [{"item": "Broccoli", "qty": "1 head", "category": "produce"}],
+        "instructions": [
+            "Cut the broccoli into florets.",
+            "Steam 5 minutes, then toss with oil, salt and a squeeze of lemon.",
+        ],
+    },
+    {
+        "key": "garlic-yogurt-sauce", "name": "Garlic yogurt sauce", "kind": "sauce",
+        "covers": [], "minutes": 5, "hint": "5 minutes, no cooking",
+        "match": ["yogurt sauce", "tzatziki", "raita"],
+        "ingredients": [
+            {"item": "Plain Greek yogurt", "qty": "1 cup", "category": "dairy"},
+            {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+            {"item": "Lemon", "qty": "1", "category": "produce"},
+        ],
+        "instructions": ["Stir the yogurt with the garlic (grated), a squeeze of lemon and salt."],
+    },
+    {
+        "key": "chimichurri", "name": "Chimichurri", "kind": "sauce",
+        "covers": [], "minutes": 10, "hint": "10 minutes, no cooking",
+        "match": ["chimichurri", "salsa verde"],
+        "ingredients": [
+            {"item": "Fresh parsley", "qty": "1 bunch", "category": "produce"},
+            {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+            {"item": "Red wine vinegar", "qty": "1 bottle", "category": "pantry"},
+        ],
+        "instructions": ["Chop the parsley and garlic fine; stir with oil, a splash of vinegar, salt and chili flakes."],
+    },
+]
+
+MAX_ADDITIONS_OFFERED = 6
+
+_KIND_ORDER = {"starch": 0, "green": 1, "sauce": 2}
+_KIND_GROUP = {"starch": "carb", "green": "vegetable"}
+
+# Units that only come whole, for scaling a side's amounts — the same list
+# recipes._DISCRETE_UNITS keeps for scale_recipe, repeated here rather than
+# imported so this module stays free of the recipes import (recipes reaches
+# into plates already).
+_WHOLE_UNITS = {"clove", "head", "bunch", "stick", "slice", "sprig", "stalk"}
+
+
+def addition_by_key(key: str) -> dict | None:
+    for a in ADDITIONS:
+        if a["key"] == key:
+            return a
+    return None
+
+
+def _catalogue_side(addition: dict) -> dict:
+    """One catalogue row as a side ready for sides_json — the same shape
+    _clean_side stores, plus `servings` (what it was written for) and
+    `added_by: "household"` so a screen can tell it from one the app chose."""
+    return {
+        "name": addition["name"],
+        "covers": list(addition["covers"]),
+        "ingredients": [dict(i) for i in addition["ingredients"]],
+        "instructions": list(addition["instructions"]),
+        "minutes": addition["minutes"],
+        "servings": ADDITION_SERVINGS,
+        "added_by": "household",
+    }
+
+
+def scale_side_ingredients(side: dict, target_servings: int | None) -> list[dict]:
+    """
+    A side's ingredients scaled from the servings it was written for to
+    `target_servings`. A side with no `servings` of its own (every side the
+    plate pass attached before this existed) is left exactly as written,
+    and so is any quantity that doesn't parse ("a bunch", blank) — the
+    same rule scale_recipe follows. Whole things round to a whole, never
+    below one.
+    """
+    base = side.get("servings")
+    try:
+        base = int(base) if base else None
+    except (TypeError, ValueError):
+        base = None
+    out = []
+    for ing in side.get("ingredients") or []:
+        item = (ing.get("item") or "").strip()
+        if not item:
+            continue
+        row = {
+            "item": item,
+            "qty": (ing.get("qty") or "").strip(),
+            "category": (ing.get("category") or "other").strip() or "other",
+        }
+        if base and target_servings and target_servings > 0 and base != target_servings:
+            from . import quantities as _quantities
+            parsed = _quantities._parse_quantity(row["qty"])
+            if parsed:
+                amount, unit = parsed
+                scaled = amount * target_servings / base
+                if unit is None or unit in _WHOLE_UNITS:
+                    scaled = max(1.0, float(round(scaled)))
+                row["qty"] = _quantities._format_quantity(scaled, unit)
+        out.append(row)
+    return out
+
+
+def side_ingest_groups(sides: list[dict] | None) -> list[tuple[list[dict], int | None]]:
+    """
+    A list of sides as (ingredients, servings) groups for the grocery
+    ingest — one group per distinct `servings` value, so a household's
+    catalogue side (written for four) is scaled to the night's eaters the
+    way a recipe is, while the app's own sides (no servings) keep riding
+    on attendance alone as they always have. Order is preserved.
+    """
+    groups: dict[int | None, list[dict]] = {}
+    for side in sides or []:
+        servings = side.get("servings")
+        try:
+            servings = int(servings) if servings else None
+        except (TypeError, ValueError):
+            servings = None
+        groups.setdefault(servings, []).extend(side_ingredients([side]))
+    return [(ings, servings) for servings, ings in groups.items() if ings]
+
+
+def _entry_row(conn, entry_id: int, weekly_plan_id: int | None = None):
+    """The entry, household-scoped; with `weekly_plan_id` also plan-scoped
+    (the week routes name the week, so an id from another week is a 404)."""
+    row = conn.execute(
+        """
+        SELECT mpe.id, mpe.date, mpe.slot, mpe.weekly_plan_id, mpe.sides_json,
+               mpe.food_groups_json, wp.status AS plan_status,
+               COALESCE(r.name, mpe.freeform_meal) AS meal, r.ingredients_json
+        FROM meal_plan_entries mpe
+        LEFT JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id
+        LEFT JOIN recipes r ON r.id = mpe.recipe_id
+        WHERE mpe.id = ? AND mpe.household_id = ?
+        """,
+        (entry_id, household_id()),
+    ).fetchone()
+    if row and weekly_plan_id is not None and row["weekly_plan_id"] != weekly_plan_id:
+        return None
+    return row
+
+
+def _sides_of(row) -> list[dict]:
+    try:
+        sides = json.loads(row["sides_json"] or "[]")
+    except (TypeError, ValueError):
+        return []
+    return sides if isinstance(sides, list) else []
+
+
+def _name_key(name: str) -> str:
+    return " ".join((name or "").lower().replace("-", " ").split())
+
+
+def _dish_words(row, sides: list[dict]) -> str:
+    """Everything the dish already is, as one lowercase string to look
+    words up in: its name, its ingredients, and the sides already on it."""
+    parts = [row["meal"] or ""]
+    try:
+        for ing in json.loads(row["ingredients_json"] or "[]"):
+            if isinstance(ing, dict):
+                parts.append(ing.get("item") or "")
+    except (TypeError, ValueError):
+        pass
+    for side in sides:
+        parts.append(side.get("name") or "")
+        for ing in side.get("ingredients") or []:
+            parts.append(ing.get("item") or "")
+    return " ".join(parts).lower()
+
+
+def suggest_additions(entry_id: int, eating_style: str | None = None, weekly_plan_id: int | None = None) -> dict:
+    """
+    What the meal screen's "Add something" sheet offers for THIS dish:
+    the catalogue, minus anything the dish already has (a potato dish is
+    not offered potatoes; a side already added is not offered twice),
+    ordered so whatever the plate is short of comes first, and — for a
+    household whose eating_style reads low-carb — with the starches last
+    rather than hidden: they asked to add something, and the picker is
+    theirs to choose from.
+
+    Pure read. Returns {"entry_id", "meal", "options": [...], "added":
+    [names already on the dish]}.
+    """
+    conn = get_conn()
+    row = _entry_row(conn, entry_id, weekly_plan_id)
+    conn.close()
+    if not row:
+        raise ValueError(f"No meal plan entry {entry_id} in this household.")
+    sides = _sides_of(row)
+    already = {_name_key(s.get("name") or "") for s in sides}
+    words = _dish_words(row, sides)
+    try:
+        groups = json.loads(row["food_groups_json"] or "[]")
+    except (TypeError, ValueError):
+        groups = []
+    rule = plate_rule(eating_style)
+    missing = missing_groups({"slot": row["slot"], "food_groups": groups}, rule)
+    low_carb = is_low_carb(eating_style)
+
+    def rank(a):
+        group = _KIND_GROUP.get(a["kind"])
+        return (
+            0 if group and group in missing else 1,
+            3 if (low_carb and a["kind"] == "starch") else _KIND_ORDER.get(a["kind"], 9),
+        )
+
+    options = []
+    for a in sorted(ADDITIONS, key=rank):
+        if _name_key(a["name"]) in already:
+            continue
+        if any(w in words for w in a["match"]):
+            continue
+        options.append({
+            "key": a["key"], "name": a["name"], "kind": a["kind"],
+            "minutes": a["minutes"], "hint": a["hint"], "covers": list(a["covers"]),
+        })
+    # A short list (the ticket's words): the sheet shows the rows and the
+    # line to type without scrolling on a phone at six, not at eight.
+    options = options[:MAX_ADDITIONS_OFFERED]
+    return {
+        "entry_id": entry_id,
+        "meal": row["meal"],
+        "options": options,
+        "added": [s.get("name") for s in sides if s.get("added_by") == "household"],
+    }
+
+
+def _buy_side_now(row, side: dict) -> list[str]:
+    """
+    Put one just-added side on the grocery list, if the week it belongs to
+    is already approved — a draft's sides are bought at approval with
+    everything else (_entry_side_ingredients), so nothing to do there.
+    Recorded against the entry, like the app's own sides, so swapping the
+    dish away takes the addition's shopping with it
+    (_reverse_meal_grocery_contributions is keyed by entry). Scaled to who
+    is eating through the side's own `servings`, the recipe way.
+    """
+    if row["plan_status"] != "approved":
+        return []
+    from . import recipes as _recipes
+    before = _link_ids(row["id"])
+    added_all: list[str] = []
+    for ingredients, servings in side_ingest_groups([side]):
+        added, _have = _recipes._add_recipe_ingredients_for_entries(
+            [row["id"]], ingredients, row["weekly_plan_id"], default_servings=servings,
+        )
+        added_all.extend(added)
+    # Remember exactly which ledger rows this addition wrote, so Undo can
+    # take back those and only those — the dish's own lemon, on the same
+    # entry, is a different row and stays (remove_component).
+    new_ids = sorted(_link_ids(row["id"]) - before)
+    if new_ids:
+        _set_side_field(row["id"], side["name"], "grocery_link_ids", new_ids)
+    return added_all
+
+
+def _link_ids(entry_id: int) -> set[int]:
+    conn = get_conn()
+    ids = {
+        r["id"] for r in conn.execute(
+            "SELECT id FROM meal_plan_grocery_links WHERE household_id = ? AND meal_plan_entry_id = ?",
+            (household_id(), entry_id),
+        ).fetchall()
+    }
+    conn.close()
+    return ids
+
+
+def _set_side_field(entry_id: int, name: str, field: str, value) -> None:
+    """Write one field onto the named side of an entry's sides_json."""
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT sides_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (entry_id, household_id()),
+    ).fetchone()
+    if not row:
+        conn.close()
+        return
+    sides = _sides_of(row)
+    for side in sides:
+        if _name_key(side.get("name") or "") == _name_key(name):
+            side[field] = value
+    conn.execute(
+        "UPDATE meal_plan_entries SET sides_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps(sides), entry_id, household_id()),
+    )
+    conn.commit()
+    conn.close()
+
+
+def _free_text_side(text: str, context: dict, side_generator) -> tuple[dict, str]:
+    """
+    A side for something typed rather than tapped. One small model call
+    (generate_sides_llm, told what was asked for by name); if it can't
+    answer, a bare side named as typed — one line on the list with no
+    amount, no step on the clock — and a sentence saying so, rather than
+    an invented recipe. Returns (side, note).
+    """
+    if side_generator is None:
+        from .. import agent as _agent
+        side_generator = _agent.generate_sides_llm
+    raw_sides = []
+    try:
+        raw_sides = side_generator({**context, "missing": [], "requested": text}) or []
+    except Exception:
+        logger.exception("Writing a side for %r failed; adding it as typed", text)
+    side = None
+    for raw in raw_sides[:1]:
+        side = _clean_side(raw, ALL_GROUPS)
+    if side is not None:
+        side["servings"] = ADDITION_SERVINGS
+        side["added_by"] = "household"
+        return side, ""
+    name = text.strip()
+    name = name[:1].upper() + name[1:]
+    return ({
+        "name": name, "covers": [],
+        "ingredients": [{"item": name, "qty": "", "category": "other"}],
+        "instructions": [], "minutes": None,
+        "servings": None, "added_by": "household",
+    }, "I couldn’t work out amounts or a step for that, so it’s on the list as written.")
+
+
+def add_component(
+    entry_id: int, key: str | None = None, text: str | None = None,
+    context: dict | None = None, side_generator=None, weekly_plan_id: int | None = None,
+) -> dict:
+    """
+    Add one thing to a planned meal from its own screen — "add potatoes"
+    without opening the chat. `key` names a catalogue row (ADDITIONS);
+    `text` is the free-text line. Exactly one of them.
+
+    Writes the side onto the entry (attach_sides — the same column and
+    shape as a side the plate pass chose, so every reader already knows
+    it), then buys it if the week is approved (_buy_side_now). The Cooker
+    card picks it up on the next read: its ingredients fold into the
+    dish's list, its steps land as "Alongside — <name>: …" and the meal
+    screen's clock times them off `minutes` (mealClockStops, shell.js).
+
+    The same thing twice is a no-op with status "already", never a second
+    row and never a second buy.
+
+    `context` is what the free-text model call should know beyond the
+    meal itself (dislikes, dietary_restrictions, eating_style) — the
+    caller assembles it from household memory, as _complete_plates_pass
+    does; `side_generator` is injectable for tests, as in complete_plate.
+
+    Returns {"status": "added" | "already", "entry_id", "name", "side",
+    "grocery_added": [items], "note": "" | one sentence}.
+    """
+    key = (key or "").strip()
+    text = (text or "").strip()
+    if bool(key) == bool(text):
+        raise ValueError("Say which addition, or what to add — one or the other.")
+    conn = get_conn()
+    row = _entry_row(conn, entry_id, weekly_plan_id)
+    conn.close()
+    if not row:
+        raise ValueError(f"No meal plan entry {entry_id} in this household.")
+    sides = _sides_of(row)
+    note = ""
+    if key:
+        addition = addition_by_key(key)
+        if addition is None:
+            raise ValueError(f"No addition called {key!r}.")
+        side = _catalogue_side(addition)
+    else:
+        if len(text) > 80:
+            raise ValueError("That’s a bit long for one addition — a few words is plenty.")
+        ctx = {
+            "meal": row["meal"], "slot": row["slot"], "date": row["date"],
+            **(context or {}),
+        }
+        side, note = _free_text_side(text, ctx, side_generator)
+
+    if _name_key(side["name"]) in {_name_key(s.get("name") or "") for s in sides}:
+        return {
+            "status": "already", "entry_id": entry_id, "name": side["name"],
+            "side": side, "grocery_added": [], "note": "",
+        }
+
+    attach_sides(entry_id, [side], list(side.get("covers") or []))
+    grocery_added: list[str] = []
+    try:
+        grocery_added = _buy_side_now(row, side)
+    except Exception:
+        logger.exception("Buying the addition %r for entry %s failed", side["name"], entry_id)
+        note = (note + " " if note else "") + "It’s on the meal, but I couldn’t put it on the list — add it there by hand."
+    return {
+        "status": "added", "entry_id": entry_id, "name": side["name"], "side": side,
+        "grocery_added": grocery_added, "note": note.strip(),
+    }
+
+
+def remove_component(entry_id: int, name: str, weekly_plan_id: int | None = None) -> dict:
+    """
+    Take one added side back off a meal — the Undo on "Added roasted
+    potatoes". Removes it from sides_json and takes just ITS lines back
+    off the grocery list, leaving the dish's own shopping alone
+    (_reverse_meal_grocery_contributions, narrowed): by the exact ledger
+    rows the addition wrote when it was bought on an approved week
+    (grocery_link_ids), or — for a side added to a draft and bought at
+    approval, where its shares were rounded in with the recipe's — by
+    item name, skipping any item the dish or another side also lists, so
+    the worst case is a lemon left on the list rather than one taken off
+    the shrimp. Removing something that isn't there is a no-op with
+    status "gone".
+    """
+    from . import grocery as _grocery
+    conn = get_conn()
+    row = _entry_row(conn, entry_id, weekly_plan_id)
+    if not row:
+        conn.close()
+        raise ValueError(f"No meal plan entry {entry_id} in this household.")
+    sides = _sides_of(row)
+    wanted = _name_key(name)
+    keep = [s for s in sides if _name_key(s.get("name") or "") != wanted]
+    gone = [s for s in sides if _name_key(s.get("name") or "") == wanted]
+    if not gone:
+        conn.close()
+        return {"status": "gone", "entry_id": entry_id, "name": name, "grocery_removed": []}
+    conn.execute(
+        "UPDATE meal_plan_entries SET sides_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps(keep), entry_id, household_id()),
+    )
+    conn.commit()
+    conn.close()
+    link_ids = [i for s in gone for i in (s.get("grocery_link_ids") or [])]
+    if link_ids:
+        reversal = _grocery._reverse_meal_grocery_contributions(entry_id, only_link_ids=link_ids)
+    else:
+        still_there = _dish_words(row, keep)
+        items = {
+            (i.get("item") or "").strip()
+            for s in gone for i in (s.get("ingredients") or [])
+            if (i.get("item") or "").strip() and (i.get("item") or "").strip().lower() not in still_there
+        }
+        reversal = _grocery._reverse_meal_grocery_contributions(entry_id, only_items=items)
+    return {
+        "status": "removed", "entry_id": entry_id, "name": gone[0].get("name") or name,
+        "grocery_removed": reversal["removed_items"] + reversal["trimmed_items"],
+    }

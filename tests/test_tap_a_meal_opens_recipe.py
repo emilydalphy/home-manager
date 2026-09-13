@@ -346,7 +346,7 @@ def _clock_html(cook_meal, slot: str) -> str:
         + _extract("isSnackSlot") + "\n"
         + "".join(_extract(n) + "\n" for n in (
             "numberWord", "countInWords", "minutesInWords", "clockLabel", "slotTableMinutes",
-            "mealTotalMinutes", "mealStepMinutes", "ingredientNamesLine", "mealClockStops",
+            "mealTotalMinutes", "mealStepMinutes", "ingredientNamesLine", "mealClockSides", "mealClockTotal", "finishSideStop", "mealClockStops",
             "mealClockEyebrow", "mealClockFor", "mealStopHtml", "mealClockHtml"))
         + "var STOP_TITLE_TAIL = /^(a|the|in|on|of|to|and|or|with|for)$/i;\n"
         + _extract("stopTitleSplit") + "\n"
@@ -400,7 +400,7 @@ def test_while_the_plans_view_is_on_its_way_the_clock_says_so():
         + _extract("isSnackSlot") + "\n"
         + "".join(_extract(n) + "\n" for n in (
             "numberWord", "countInWords", "minutesInWords", "clockLabel", "slotTableMinutes",
-            "mealTotalMinutes", "mealStepMinutes", "ingredientNamesLine", "mealClockStops",
+            "mealTotalMinutes", "mealStepMinutes", "ingredientNamesLine", "mealClockSides", "mealClockTotal", "finishSideStop", "mealClockStops",
             "mealClockEyebrow", "mealClockFor", "mealStopHtml", "mealClockHtml"))
         + "var STOP_TITLE_TAIL = /^(a|the)$/i;\n"
         + _extract("stopTitleSplit") + "\n"
