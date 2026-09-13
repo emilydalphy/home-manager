@@ -285,6 +285,90 @@ def _subtract_quantity(current_qty: str, remove_qty: str) -> tuple[str, bool]:
     return current_qty, False
 
 
+def _restate_standing_want(
+    current_qty: str, total_before: float, total_after: float, unit: str | None,
+) -> tuple[str, bool] | None:
+    """
+    Write a household's own standing want back out with the plan's share
+    changed — "what is on this line now, less what the plan's meals rounded
+    to, plus what the ones still planned round to."
+
+    Returns (quantity, fully_removed) or None when the line itself can't be
+    read as a number, or its unit can't be reconciled with the plan's, in
+    which case the caller falls back to _subtract_quantity.
+
+    Three things make it work, and every one of them was learned by
+    measuring drift that survived the version before it.
+
+    ONE STEP, not a running subtraction. Taking a share off and
+    re-humanizing the whole line at every removal snaps the result to a
+    quantum each time, and the residue accumulates instead of cancelling.
+
+    THE PLAN'S SHARE IS ROUNDED THE WAY THE INGEST ROUNDED IT
+    (_shopping_round on the ledger's own unit, rolled up exactly as
+    recipes._week_bought_amount does, and only then converted into the
+    line's unit). Rounding it in the LINE's unit instead looks tidier and
+    is wrong whenever the line's display unit rolls mid-sequence: the first
+    removal is then rounded at a quarter-POUND, over-crediting the plan,
+    the line rolls to ounces, and the later removals — now on a quarter-
+    ounce quantum — never give the over-credit back. Measured: a hand-added
+    "2 oz" under three dinners came back BLANK, and a "500 ml" staple came
+    back as 416.75 ml and kept falling.
+
+    THE HOUSEHOLD'S OWN AMOUNT IS SNAPPED BACK ONTO THE LINE'S QUANTUM
+    (_snap_to_unit_quantum). It is re-derived out of the displayed line
+    every time, and the line has been re-rounded for display in between, so
+    without this the derived value drifts a little further each removal.
+    Snapping is skipped when it would annihilate a genuinely positive
+    amount — a 2 oz want on a line reading in pounds is smaller than half
+    that line's quantum, and the household's own two ounces must not
+    disappear because of the unit its line happens to be shown in.
+
+    WHAT IS NOT PROMISED. An exact restate is not reachable across a
+    rolling display unit: the line is a rounded string, and what the add
+    rounded away is not recoverable from it — 15 oz of plan on a
+    household's own 8 oz is stored as "1.5 lbs" and the 1.75 oz difference
+    is gone before any reversal runs. "Never below the household's own
+    amount" is therefore NOT the promise, and is not a bar the code this
+    replaces clears either. What IS held to: a line somebody typed is never
+    blanked; nothing compounds week to week; and there are strictly fewer
+    below-own outcomes than before, at comparable worst case. The tail that
+    remains is the snap below — putting a display-drifted number back on a
+    quantum can be half a quantum out, which at a quarter-POUND is three
+    ounces. One-shot, never cumulative, and measured better in aggregate
+    than what it replaces. The numbers are in CLAUDE.md's entry for this
+    change. The bias is upward wherever the arithmetic has any freedom,
+    which is this module's whole stance (an extra pepper costs a pepper; a
+    missing one costs the dinner).
+
+    The household's own amount is also floored at nothing, which is load-
+    bearing rather than defensive: hand-edit an 8 down to 2 mid-week and
+    the plan's share is bigger than the whole line, so without the floor
+    the next removal blanks something the household typed.
+    """
+    note = _quantities._quantity_note(current_qty or "")
+    parsed = _quantities._parse_quantity(current_qty or "")
+    if not parsed:
+        return None
+    current_amount, line_unit = parsed
+    rounded_before, before_unit = _quantities._shopping_round(total_before, unit)
+    rounded_after, after_unit = _quantities._shopping_round(total_after, unit)
+    plan_before = _quantities._convert_to_unit(rounded_before, before_unit, line_unit)
+    plan_after = _quantities._convert_to_unit(rounded_after, after_unit, line_unit)
+    if plan_before is None or plan_after is None:
+        return None
+    households_own = max(0.0, current_amount - plan_before)
+    snapped = _quantities._snap_to_unit_quantum(households_own, line_unit)
+    if snapped > 0 or households_own <= 0:
+        households_own = snapped
+    total = households_own + plan_after
+    if total <= 0:
+        return "", True
+    return _quantities._with_note(
+        _quantities._humanize_grocery_quantity(total, line_unit), note,
+    ), False
+
+
 def _reverse_meal_grocery_contributions(entry_id: int, conn=None) -> dict:
     """
     Undo whatever a meal_plan_entries row added to the grocery list, via the
@@ -377,7 +461,7 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None) -> dict:
                 removed_items.append(grocery_row["item"])
         elif grocery_row and grocery_row["status"] == "needed":
             is_standing_want = grocery_row["source_weekly_plan_id"] is None
-            other_rows = [] if is_standing_want else conn.execute(
+            other_rows = conn.execute(
                 "SELECT quantity FROM meal_plan_grocery_links "
                 "WHERE household_id = ? AND grocery_item_id = ? AND meal_plan_entry_id != ?",
                 (household_id(), link["grocery_item_id"], entry_id),
@@ -391,10 +475,34 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None) -> dict:
                 new_qty = _quantities._with_note(summed, current_note) if summed else ""
                 fully_removed = not other_qtys
             else:
-                # A standing want (or a line the ledger can't fully account
-                # for) — fall back to subtracting this one contribution out
-                # of the current display.
-                new_qty, fully_removed = _subtract_quantity(grocery_row["quantity"] or "", link["quantity"] or "")
+                # A standing want, or a line the ledger can't fully account
+                # for — the person's own amount is in this line and no
+                # recompute can see it, so this contribution has to be
+                # subtracted out of the current display instead.
+                #
+                # WHAT to subtract is the whole difficulty, and it is not
+                # this meal's own share. The ingest adds ONE rounded week
+                # total to the line, so taking back each meal's unrounded
+                # share leaves a remainder that rounds straight back up and
+                # the line ratchets a little higher every week for ever.
+                # _ledger_totals + _restate_standing_want put the same
+                # single rounding on both sides, in the line's own unit,
+                # and restate the line in one step; either declines (None)
+                # for the rows it can't read, and then the one contribution
+                # in front of us is still the best available answer.
+                totals = _quantities._ledger_totals(
+                    other_qtys + [link["quantity"] or ""], other_qtys,
+                )
+                restated = (
+                    None if totals is None
+                    else _restate_standing_want(grocery_row["quantity"] or "", *totals)
+                )
+                if restated is None:
+                    new_qty, fully_removed = _subtract_quantity(
+                        grocery_row["quantity"] or "", link["quantity"] or "",
+                    )
+                else:
+                    new_qty, fully_removed = restated
             if fully_removed:
                 if is_standing_want:
                     if new_qty != (grocery_row["quantity"] or ""):

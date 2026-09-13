@@ -810,7 +810,12 @@ CREATE TABLE IF NOT EXISTS meal_plan_grocery_links (
     meal_plan_entry_id INTEGER NOT NULL REFERENCES meal_plan_entries(id) ON DELETE CASCADE,
     grocery_item_id INTEGER NOT NULL REFERENCES grocery_items(id) ON DELETE CASCADE,
     item TEXT NOT NULL, -- item name at the time of add, for logging/debugging
-    quantity TEXT NOT NULL DEFAULT '', -- exactly what THIS meal contributed, pre-merge
+    -- Exactly what THIS meal contributed, pre-merge, and UNROUNDED: the
+    -- line is rounded once for the whole week, and reversal re-rounds
+    -- whichever meals are left. A rounded share here makes that recompute
+    -- lossy — see recipes._ledger_share. Rows written before 2026-09-13
+    -- carry an apportioned rounded share instead.
+    quantity TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
