@@ -2002,7 +2002,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "mark_grocery_item",
-        "description": "Update a grocery item's status, given its item_id.",
+        "description": "Update a grocery item's status, given its item_id. 'purchased' puts the line into kitchen inventory once per line (a re-tick after an un-tick does not add it again); moving a purchased line back off 'purchased' takes it back out of the kitchen only when nothing there has changed since. Read inventory_added / inventory_restored in the result before telling the household what happened to the kitchen — False means the shelf was left as it was.",
         "input_schema": {
             "type": "object",
             "properties": {

@@ -277,6 +277,17 @@ _MIGRATIONS = [
     # schema.sql's comment on grocery_items.already_have_inventory_id) so
     # undo can safely delete that exact row without risking real stock.
     ("grocery_items", "already_have_inventory_id", "INTEGER"),
+    # "Un-tick and re-tick a bought grocery item and it goes into the kitchen
+    # twice" (2026-09-13): when the purchased tick wrote this line into
+    # inventory, and the receipt an untick can reverse it from. Both NULL on
+    # every existing row — nothing is backfilled, so a line already bought
+    # before this deploy is "nothing proven": an untick leaves the kitchen
+    # alone and a re-tick adds once more, then never again. See schema.sql.
+    ("grocery_items", "inventory_added_at", "TEXT"),
+    ("grocery_items", "inventory_receipt_json", "TEXT"),
+    # ...and the per-row write counter that receipt compares against. 0 on
+    # every existing row; the trigger in schema.sql bumps it from here on.
+    ("inventory_items", "rev", "INTEGER NOT NULL DEFAULT 0"),
     # Staples (2026-09-11): the line Pomona added because a staple is due.
     ("grocery_items", "staple_id", "INTEGER"),
     # Loop Board "First-class 'defrost' prep step" — see schema.sql's
