@@ -14,20 +14,25 @@ Root cause, and it is one step behind the obvious one:
 resolve_needs_you_dinner writes the entry with weekly_plan_id = NULL when
 the current plan's period doesn't cover the date, which is CORRECT and is
 the deliberate 2026-09-11 fix for a 500 on that same tap. What was wrong is
-that get_cooker_view — the read every cooking surface is built on (moves.py,
-cook mode, digest.build_morning_text) — was strictly plan-scoped, so an
-unlinked entry was invisible to all of them at once.
+that get_cooker_view — the read Now's moves, cook mode and the Kitchen list
+are all built on — was strictly plan-scoped, so an unlinked entry was
+invisible to all of them at once, and to the morning text behind them
+(digest.build_morning_text reads today_moves, not this view).
 
 The 2026-09-11 entry's own claim, "the unlinked meal is visible tonight, so
 this isn't a 500 traded for a silent loss", was true of get_meal_plan and
 false of every screen. Its two tests only asked get_meal_plan, which is
 exactly how it survived; they are widened in test_tools.py alongside this.
 
-Every test here that names a screen fails on 0d359e5.
+Thirteen of the twenty tests here fail on 0d359e5. The other seven are
+no-regression guards and each says so in its own docstring — three of them
+name a screen and are green on main deliberately, because their whole claim
+is that something does NOT change (a plan-covered day, a named plan, and
+the component branch, which this fix leaves broken on purpose). An earlier
+draft of this docstring said "every test here that names a screen fails on
+0d359e5", which was not true of those three.
 """
 import datetime
-
-import pytest
 
 from app import households, tools
 from app.tools import digest
@@ -238,12 +243,36 @@ class TestAPlanThatDoesCoverToday:
 
 
 class TestWhichLooseMealsCountAsThisWeeksCooking:
-    def test_the_window_is_today_through_six_days_out(self):
-        for offset, name in ((-2, "Yesterdays"), (0, "Tonights"), (6, "Fridays"), (7, "NextWeeks")):
+    def test_the_window_runs_from_today_to_the_horizon_and_not_backwards(self):
+        for offset, name in ((-2, "Yesterdays"), (0, "Tonights"), (7, "Lasts"), (8, "TooFar")):
             _a_recipe(name)
             tools.plan_meal(_d(offset), name, slot="dinner")
 
-        assert [m["meal"] for m in tools.get_cooker_view()["meals"]] == ["Tonights", "Fridays"]
+        assert [m["meal"] for m in tools.get_cooker_view()["meals"]] == ["Tonights", "Lasts"]
+
+    def test_the_horizon_matches_what_the_assistant_can_talk_about(self):
+        """
+        The two numbers agree by maintenance, not by construction, so pin the
+        PROPERTY rather than the number: nothing the assistant can name off
+        get_meal_plan may be absent from every screen — that sliver is the
+        bug this file exists about, one day wide.
+
+        get_meal_plan's default is today..+7 INCLUSIVE (it computes
+        today + days_ahead and filters `<=`), which is eight days, not seven.
+        The first cut of UNPLANNED_HORIZON_DAYS was 6 on the belief that they
+        already matched, and this test is what would have caught it.
+        """
+        for offset in range(0, 9):
+            name = f"Day{offset}"
+            _a_recipe(name)
+            tools.plan_meal(_d(offset), name, slot="dinner")
+
+        talked_about = {e["meal"] for e in tools.get_meal_plan()}
+        on_screen = {m["meal"] for m in tools.get_cooker_view()["meals"]}
+
+        assert talked_about - on_screen == set()
+        # And the horizon is a real edge, not "everything forever".
+        assert "Day8" not in on_screen
 
     def test_naming_a_plan_asks_about_that_plan_and_nothing_else(self):
         """
@@ -268,6 +297,36 @@ class TestWhichLooseMealsCountAsThisWeeksCooking:
 
         with tools.use_household(beta):
             assert tools.get_cooker_view()["meals"] == []
+
+
+def test_a_component_household_still_has_this_bug():
+    """
+    CHARACTERISATION, not a passing feature: the whole original bug survives
+    for a component-based household whose current plan doesn't cover today.
+    Reproduced 2026-09-13 with the identical symptom — the meal saves, and
+    the cook view and Now show nothing.
+
+    Deliberately not fixed here. get_cooker_view's component branch groups by
+    dish name and batch-collapses repeats into one card; a dated one-off
+    dropped into it would be folded into an undated component or scaled to a
+    batch nobody planned. That is a rebuild of that branch, not a carve-out,
+    and this is a NARROWING of an existing bug rather than a regression —
+    component mode is not the default and needs an approved plan on file to
+    reach at all.
+
+    INVERT THIS TEST when the component branch learns to carry a dated row.
+    """
+    tools.set_planning_mode("component_based")
+    plan_id = tools.create_weekly_plan(_d(-21))["weekly_plan_id"]
+    tools.approve_weekly_plan(plan_id)
+    assert tools.get_weekly_plan()["planning_mode"] == "component_based"
+    _a_recipe()
+
+    tools.resolve_needs_you_dinner(_d(), "Chili")
+
+    assert [e["meal"] for e in tools.get_meal_plan(days_ahead=1)] == ["Chili"]
+    assert tools.get_cooker_view()["meals"] == []
+    assert _cooks_today() == []
 
 
 class TestTheRouteTheCardActuallyPosts:

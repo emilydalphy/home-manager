@@ -532,7 +532,8 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     at all (weekly_plan.unplanned_meals_ahead) — a dinner answered on Now
     when no plan covers today, and every one-off chat plan_meal. Naming a
     weekly_plan_id asks about that plan and nothing else. See the comment
-    at the top of the body for what that does and doesn't change.
+    at the top of the body for what that does and doesn't change, and
+    UNPLANNED_HORIZON_DAYS for how far ahead it looks.
 
     Only slots there is something to COOK are included. A slot is one of
     three states (see meal_plan_entries.slot_state) and two of them have no
@@ -581,20 +582,31 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     # weekly_plan.unplanned_meals_ahead): resolve_needs_you_dinner writes one
     # whenever the current plan's period doesn't reach the date, and every
     # one-off chat plan_meal writes one always. This view is what the cook
-    # actually sees — Now's moves, cook mode and the morning text are all
+    # actually sees — Now's moves, cook mode and the Kitchen list are all
     # built off it — so leaving them out meant a meal that was saved and
     # then invisible on every screen (2026-09-13).
     #
     # Considered and NOT done: adding a second source to moves.py. It would
-    # have put the move on Now and left cook mode, the Kitchen list and the
-    # morning text still empty, and made "the day's meals" a question with
-    # two answers. Also NOT done: making get_weekly_plan return unplanned
-    # entries — its name IS its scope, and four other readers depend on it.
+    # have put the move on Now and left cook mode and the Kitchen list still
+    # empty, and made "the day's meals" a question with two answers that can
+    # drift. (It WOULD have fixed the morning text: digest.build_morning_text
+    # reads today_moves and nothing else — an earlier draft of this comment
+    # named it as a third empty surface and was wrong.) Also NOT done: making
+    # get_weekly_plan return unplanned entries — its name IS its scope, and
+    # 15 call sites across nine modules read it as "that plan's rows".
     #
-    # Only for the "what am I cooking now" question. A caller naming a
-    # weekly_plan_id is asking about THAT plan and gets exactly it, and a
-    # component-based plan has no real per-day slots to sit these beside
-    # (its dates are placeholders — see get_weekly_plan).
+    # Only for the "what am I cooking now" question: a caller naming a
+    # weekly_plan_id is asking about THAT plan and gets exactly it.
+    #
+    # Component-based plans are carved out on MECHANICS, not on dates. The
+    # loose rows carry perfectly real dates; it is the branch below that
+    # can't take them — it groups by dish name and batch-collapses repeats
+    # into one card, which would fold a dated one-off into an undated
+    # component or scale it to a batch nobody planned. KNOWN RESIDUE, not
+    # fixed here: a component household whose current plan doesn't cover
+    # today still has the whole original bug (reproduced 2026-09-13; see
+    # test_a_component_household_still_has_this_bug, which characterises it
+    # so the next session finds it written down). Its own card.
     loose_meals = (
         _weekly_plan.unplanned_meals_ahead(plan)
         if weekly_plan_id is None and plan.get("planning_mode") != "component_based"

@@ -2931,11 +2931,24 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     return result
 
 
-# How far ahead an unplanned meal still counts as "this week's cooking".
-# Seven days inclusive, the same horizon get_meal_plan defaults to, so the
-# Cook screen's "rest of the week" and the assistant's own read of the plan
-# stop at the same place.
-UNPLANNED_HORIZON_DAYS = 6
+# How far ahead an unplanned meal still counts as "this week's cooking",
+# as an offset from today, inclusive at both ends.
+#
+# It is 7 and not 6 to MATCH get_meal_plan's default, which is what the
+# assistant reads: that one computes `today + days_ahead` and filters `<=`,
+# so `days_ahead=7` is today..+7 — eight days, not seven. Measured, because
+# the first version of this constant was 6 with a comment claiming the two
+# already agreed, and they did not: loose dinners at +0/+6/+7/+8 gave
+# get_meal_plan [+0, +6, +7] and the Cook view [+0, +6]. That one-day sliver
+# is a thin band of the very bug this exists to fix — a meal the assistant
+# can name and no screen will show — so the number that closes it wins over
+# the tidier-sounding "a week is seven days". The cost is one extra day in
+# the Cook screen's "rest of the week", which is a real meal on a real day.
+#
+# The two are one number apart by coincidence, not by construction: if
+# get_meal_plan's window ever moves, this has to move with it, and
+# test_the_horizon_matches_what_the_assistant_can_talk_about is what says so.
+UNPLANNED_HORIZON_DAYS = 7
 
 
 def unplanned_meals_ahead(plan: dict | None = None) -> list[dict]:
@@ -2960,10 +2973,11 @@ def unplanned_meals_ahead(plan: dict | None = None) -> list[dict]:
     and this changes nothing. Only a day no plan covers falls back to its
     own rows.
 
-    Bounded at UNPLANNED_HORIZON_DAYS from today and never looking back:
-    this answers "what is there to cook from here on", not "what has this
-    household ever eaten". A loose meal in the past is still readable
-    through get_meal_plan and get_recent_meal_history.
+    Bounded at UNPLANNED_HORIZON_DAYS from today (see it for why that
+    number) and never looking back: this answers "what is there to cook
+    from here on", not "what has this household ever eaten". A loose meal
+    in the past is still readable through get_meal_plan and
+    get_recent_meal_history.
     """
     today = date.today()
     start = today.isoformat()

@@ -370,14 +370,20 @@ why*, not duplicating the diff.
     date — that is the deliberate fix for a 500 on the same tap, and undoing
     it would bring the 500 back. What was wrong is that
     `cooker.get_cooker_view` is strictly plan-scoped, and Now's moves
-    (`moves.py`), cook mode, the Kitchen list and `digest.build_morning_text`
-    are ALL built on it. One plan-scoped read, four blind screens.
+    (`moves.py`), cook mode and the Kitchen list are ALL built on it — and
+    the morning text is built on Now's moves, so it went dark with them.
+    One plan-scoped read, three blind screens and the text behind them.
   - **Fixed in `get_cooker_view`, not in `moves.py`.** A second source in
-    moves would have put the move on Now and left cook mode, Kitchen and the
-    morning text still empty, and made "the day's meals" a question with two
-    answers that can drift. Also decided against: widening
-    `get_weekly_plan` — its name IS its scope, and four other readers depend
-    on that. New `weekly_plan.unplanned_meals_ahead(plan)` returns loose
+    moves would have put the move on Now and left cook mode and Kitchen
+    still empty, and made "the day's meals" a question with two answers that
+    can drift. **It WOULD have fixed the morning text** —
+    `digest.build_morning_text` reads `today_moves` and nothing else, and an
+    earlier draft of this entry and of the code comment both named it as a
+    third surface a moves fix would miss. Wrong, corrected in the same pass
+    the reviewer caught it; the decision stands on the two surfaces that are
+    real. Also decided against: widening `get_weekly_plan` — its name IS its
+    scope, and **15 call sites across nine modules** read it as "that plan's
+    rows". New `weekly_plan.unplanned_meals_ahead(plan)` returns loose
     entries (`weekly_plan_id IS NULL`) in exactly the shape `get_weekly_plan`
     puts its own `meals` in, and `get_cooker_view` concatenates the two
     through its one existing card-building pass.
@@ -387,13 +393,38 @@ why*, not duplicating the diff.
     because loose rows on covered dates are never read. Only a day no plan
     covers falls back to its own rows, which is exactly the past-week,
     future-week and no-plan-at-all cases.
-  - **Bounded today .. +6 days** (`UNPLANNED_HORIZON_DAYS`, the horizon
-    `get_meal_plan` already defaults to) and never backwards: this answers
-    "what is there to cook from here on". And **only** for the no-argument
+  - **Bounded today .. +7 days inclusive** (`UNPLANNED_HORIZON_DAYS`) and
+    never backwards: this answers "what is there to cook from here on".
+    **It is 7 and not 6, and the first cut got this wrong in a way worth
+    recording:** it was 6, under a comment claiming it already matched
+    `get_meal_plan`'s default — which it did not. That function computes
+    `today + days_ahead` and filters `<=`, so its default window is eight
+    days, not seven. Measured with loose dinners at +0/+6/+7/+8:
+    `get_meal_plan()` gave [+0, +6, +7] and the Cook view [+0, +6]. The
+    residue was a one-day sliver where a meal is something the assistant can
+    name and no screen shows — a thin band of this very bug — so the number
+    that closes it beats the tidier-sounding "a week is seven days". The two
+    agree by maintenance, not construction, and
+    `test_the_horizon_matches_what_the_assistant_can_talk_about` pins the
+    property rather than the number. And **only** for the no-argument
     call — `get_cooker_view(plan_id)` is a question about ONE plan (the
     share view, `/api/cooker-view?weekly_plan_id=`) and gets exactly it.
-    Component-based plans are skipped: their dates are placeholders, so
-    there is no per-day slot for a dated row to sit beside.
+  - **Component-based plans are carved out on MECHANICS, and the bug is
+    fully intact for them — say so out loud.** The reason is NOT "their
+    dates are placeholders" (an earlier draft said that; it is a fact about
+    the plan's rows, not about the loose rows, which carry real dates). It
+    is that `get_cooker_view`'s component branch groups by dish name and
+    batch-collapses repeats into one card, so a dated one-off dropped into
+    it would be folded into an undated component or scaled to a batch
+    nobody planned — a rebuild of that branch, not a carve-out.
+    **Reproduced 2026-09-13 with the identical symptom:** a component
+    household whose current plan doesn't cover today saves the meal and
+    shows nothing. A narrowing of an existing bug rather than a regression
+    (component mode is not the default, and it needs an approved plan on
+    file to reach at all), characterised by
+    `test_a_component_household_still_has_this_bug` so the next session
+    finds it written down instead of rediscovering it. **Invert that test
+    when the component branch learns to carry a dated row.** Its own card.
   - **The two lists are MERGED in eating order, not appended.**
     `kitchenTodayRows` and `cookRestOfWeekHtml` (shell.js) walk this list
     unsorted — see the 2026-09-10 "a day printed dinner before lunch" entry
@@ -403,22 +434,41 @@ why*, not duplicating the diff.
     week-state badge still reads "none" and every plan-scoped pass (leftover
     chains, cook-ahead, prep tasks, prep sessions) is skipped rather than
     handed a None id.
-  - **Still invisible, deliberately and flagged for Emily:** a one-off chat
-    `plan_meal` on a day the plan DOES cover. The chat tool never passes a
-    `weekly_plan_id`, so every chat-planned meal is a loose row, and on a
-    covered day this fix leaves it exactly as it was. Showing it beside the
-    plan's own row for that slot is a product decision nobody has made, and
-    "a covered day behaves exactly as before" was this ticket's own
-    acceptance criterion.
-  - `tests/test_needs_you_dinner_visible.py` (18 tests, **12 red on
-    `0d359e5`**; the six green are the empty state, the meal-really-saved
-    check the old tests already made, the covered-day no-duplicate promises
-    and household isolation). The two 2026-09-11 tests in `tests/test_tools.py`
-    were **widened, not replaced** — they asserted only `get_meal_plan`,
-    which is not a screen, and that is precisely how this survived; both are
-    red on `0d359e5` now. Suite 3182 -> 3200 (2 pre-existing Sunday failures
-    in `test_onboarding_reveal_stream.py`, red on `0d359e5` too, untouched).
-    Verified over HTTP against a real uvicorn on a throwaway DB.
+  - **Two things for Emily, both about where a loose meal now is and isn't.**
+    (1) A one-off chat `plan_meal` on a day the plan DOES cover is still
+    invisible here. The chat tool never passes a `weekly_plan_id`, so every
+    chat-planned meal is a loose row, and on a covered day this fix leaves
+    it exactly as it was — showing it beside the plan's own row for that
+    slot is a product decision nobody has made, and "a covered day behaves
+    exactly as before" was this ticket's own acceptance criterion.
+    (2) **A loose meal is now visible on four surfaces and editable on
+    none.** It reads on Now, in cook mode, on the Kitchen list and in the
+    morning text — and the Meals tab still doesn't draw it
+    (`get_week_menu` is plan-scoped), while every control that could change
+    or remove it (`clear_plan_slot`, `drop_dish_from_day`, the swap paths,
+    the Review stepper) takes a `weekly_plan_id`. So a mis-tapped dinner is
+    now visible-and-unremovable except by asking in chat. Net better than
+    saved-and-invisible, and within this ticket's intent — but it is a new
+    state, and Emily should see it before the tester does. The honest fix
+    is a way to take a loose meal off a day, which is its own card.
+  - `tests/test_needs_you_dinner_visible.py` (20 tests, **13 red on
+    `0d359e5`**). The seven green are no-regression guards and each says so
+    in its own docstring: the empty state, the meal-really-saved check the
+    old tests already made, the two covered-day no-duplicate promises, the
+    named-plan scope, household isolation, and the component
+    characterisation. **Two of those seven name a screen and are green on
+    purpose** — an earlier draft of that file's docstring claimed "every
+    test here that names a screen fails on `0d359e5`", which overstated it
+    in exactly the way the ask-sheet entry warns about. The two 2026-09-11
+    tests in `tests/test_tools.py` were **widened, not replaced** — they
+    asserted only `get_meal_plan`, which is not a screen, and that is
+    precisely how this survived; both are red on `0d359e5` now. Suite
+    3182 -> 3202 (2 pre-existing Sunday failures in
+    `test_onboarding_reveal_stream.py`, red on `0d359e5` too, untouched).
+    Verified over HTTP against a real uvicorn on a throwaway DB. **Not
+    verified in a browser** — the Playwright browsers are on this machine
+    but the Python package is not installed, so the payloads and
+    `todayIsEmpty`'s own predicate are what was checked, not the pixels.
 
 - **2026-09-12 — Chores v1: add or change anything by saying so. Branch
   `chores-chat-tools`, NOT merged at the time of writing.** Re-verified the
@@ -895,8 +945,8 @@ why*, not duplicating the diff.
   whose period guard (`app/tools/meal_plans.py` ~120) rightly refuses to
   file a meal where no screen would show it. Fix: pass the plan id only
   when its period actually covers the picked date, otherwise `None` — the
-  same unlinked shape a one-off chat-planned meal already has, which
-  `get_meal_plan` and the grocery buffer treat as first-class. Two
+  same unlinked shape a one-off chat-planned meal already has, which Now,
+  `get_meal_plan` and the grocery buffer all treat as first-class. Two
   tests (tool + HTTP route) fail on main with the exact error. Verifier
   checked the four neighbours: no plan / old + current (attaches to the
   current) / future-only / downstream grocery — all fine. Suite 2704.
@@ -904,13 +954,16 @@ why*, not duplicating the diff.
   is visible tonight, so this isn't a 500 traded for a silent loss", and
   that sentence was FALSE.** It was true of `get_meal_plan` and of no
   screen: `get_cooker_view` is strictly plan-scoped, and Now's moves, cook
-  mode and the morning text are all built on it, so the answered dinner
-  was saved and then invisible everywhere a person looks — a 500 traded
-  for exactly the silent loss the sentence denied. The claim survived
-  because the two tests above only ever asked `get_meal_plan`, which is
-  not a screen. Fixed and widened on `overnight/needs-you-dinner-invisible`
-  — see the 2026-09-13 entry at the top. The rest of this entry stands:
-  the `weekly_plan_id = None` write is correct and unchanged.
+  mode and the Kitchen list are all built on it, so the answered dinner was
+  saved and then invisible everywhere a person looks — a 500 traded for
+  exactly the silent loss the sentence denied. The claim survived because
+  the two tests above only ever asked `get_meal_plan`, which is not a
+  screen. Fixed and widened on `overnight/needs-you-dinner-invisible` — see
+  the 2026-09-13 entry at the top. The rest of this entry stands: the
+  `weekly_plan_id = None` write is correct and unchanged. **The clause
+  above saying Now treats the unlinked shape as first-class is left exactly
+  as written, and it is the thing that was wrong** — it was an intention,
+  not a measurement; deleting it would hide how the belief got here.
 - **2026-09-11 — The morning text: anticipation OUT of the app. Branch
   `worktree-reach-me`, NOT merged at the time of writing.** Loop Board
   "Reach me before the moment" (Emily: "prioritize the push
