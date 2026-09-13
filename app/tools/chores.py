@@ -1842,10 +1842,25 @@ def move_chore_instance(instance_id: int, to_date: str) -> dict:
     about the day and nothing else. Only a PENDING occurrence moves; one
     already done is history rather than a date to rearrange. Refuses
     rather than doubling the chore up on a day it is already on.
+
+    Also refuses a target before today — "move Hoover to 2020" typed the
+    wrong year, not a real request, and a chore due yesterday should be
+    settled (done/skipped) or left where it is, never rescheduled into a
+    past that already happened. Today itself is a real target: a chore
+    due next week can be pulled in to today. The line is "before today",
+    not "before the chore's creation" — a chore added last month with a
+    slipped instance from three weeks ago is exactly the case skip_chore's
+    sweep exists for, and this refusal would otherwise block moving that
+    old instance forward to a sane date, which is the opposite of what
+    the household wants.
     """
     conn = get_conn()
     try:
         target = _a_date(to_date)
+        if target < date.today():
+            raise ChoreRefused(
+                f"{target.isoformat()} has already happened — pick a day from today onward."
+            )
         require_household_row(conn, "chore_instances", instance_id, label="chore instance")
         row = conn.execute(
             "SELECT ci.chore_id, ci.status, c.name FROM chore_instances ci "
