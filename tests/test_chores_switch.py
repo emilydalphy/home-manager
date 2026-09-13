@@ -482,6 +482,7 @@ var CALLS = [];
 var FETCHED = [];
 function loadPlanWeekNudge(p) { CALLS.push('nudge'); return Promise.resolve(); }
 function loadNeedsYou(p) { CALLS.push('needsyou'); return Promise.resolve(); }
+function loadTonightAsk(p) { CALLS.push('tonight'); return Promise.resolve(); }
 function loadTodayMoves(p) { CALLS.push('moves'); return Promise.resolve(); }
 function renderCoachCard() { CALLS.push('coach'); }
 function fetch(url) { FETCHED.push(url); return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ chores: [], chores_set_up: true, enabled: true }); } }); }
@@ -519,7 +520,7 @@ buildTodayPanel(panel).then(function () {
     assert not any("/api/chores" in u for u in out["fetched"]), "an off house must make no chores request"
     # The rest of Now is untouched.
     assert 'id="today-band"' in out["html"] and 'id="today-rest"' in out["html"] and 'id="needs-you-band"' in out["html"]
-    assert out["calls"] == ["nudge", "needsyou", "moves", "coach"]
+    assert out["calls"] == ["nudge", "needsyou", "tonight", "moves", "coach"]
 
 
 @_needs_node

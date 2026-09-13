@@ -2115,6 +2115,39 @@ def today_move_done(move_id: str, req: MoveDoneRequest, date: str | None = None)
     return payload
 
 
+@app.get("/api/today/tonight")
+def today_tonight():
+    """
+    Now's top card from mid-afternoon: "Tonight: X. Still good?" — whether
+    to ask, tonight's dish, and the 2–3 other nights of this plan that
+    "Something else" may trade it with. See tools/tonight.py for every
+    rule; the swap itself is POST /api/week/{week_start}/swap-nights.
+    """
+    try:
+        return tools.tonight_check()
+    except Exception as e:
+        logger.exception("Tonight's check failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+class TonightKeepRequest(BaseModel):
+    """"Yes" on Now's tonight card. `date` is the household's local day the
+    screen was showing; omitted, the server uses its own reading of it."""
+    date: str | None = None
+
+
+@app.post("/api/today/tonight/keep")
+def today_tonight_keep(req: TonightKeepRequest):
+    """Remember "Yes, still good" for the rest of the day — the plan is untouched."""
+    try:
+        return tools.tonight_keep(req.date)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Tonight's keep failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.get("/api/week-menu")
 def week_menu(weekly_plan_id: int | None = None):
     """

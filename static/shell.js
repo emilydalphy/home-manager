@@ -762,6 +762,13 @@
         // the gutter (#today-next-up, gone now), then the strip. Its action
         // lives in the dock at the foot of the screen either way.
         '<div class="today-body">' +
+          // The top card from mid-afternoon on a day with a planned
+          // dinner (Emily, 2026-09-13): "Tonight: X. Still good?" — Yes
+          // keeps it for the day, Something else swaps it with another
+          // night of the plan (renderTonightAsk). Empty — and so
+          // display:none — every other hour, and on a day whose dinner
+          // is still open (the needs-you band's own card leads then).
+          '<div id="tonight-ask" class="today-area-tonight"></div>' +
           // Tonight's open dinner (or a question about another day) stays
           // above the strip: when tonight's dinner is undecided, deciding
           // it IS what's next (renderNeedsYou), so it stands where the
@@ -814,6 +821,7 @@
     await Promise.all([
       loadPlanWeekNudge(panel),
       loadNeedsYou(panel),
+      loadTonightAsk(panel),
       loadTodayMoves(panel),
       // The Chores switch again: skip the call, not just the render — no
       // chores card means no reason to hit /api/chores/today.
@@ -1775,6 +1783,240 @@
         if (move) openRecipeFor(moveRecipeTarget(move), { label: 'Now', tab: 'today' });
       });
     });
+  }
+
+  // ---------- Tonight: still good? ----------
+  // Loop Board "Tonight's dinner, mid-day: walk me to sorting it out
+  // instead of the day-editor workaround" (Emily, 2026-09-13). From
+  // mid-afternoon (TONIGHT_ASK_HOUR in app/tools/tonight.py) on a day
+  // whose dinner is planned, Now's top card asks the plain question and
+  // takes one of two answers: Yes (remembered for the day, server-side,
+  // so a reload or the other phone doesn't ask again) or Something else
+  // (a sheet of 2–3 other nights of this plan — one tap trades tonight
+  // with that night through the same swap Plan's drag uses). The server
+  // decides whether to ask at all (tonight_check); this only draws it.
+  //
+  // Rule 5: Now's one apricot is the dock, so Yes is spruce and Something
+  // else an outline — the .ny-actions pair the needs-you band already
+  // scopes that way. §8 rule 7: the question, then the buttons, nothing
+  // between them.
+  var TONIGHT_SWAP_TROUBLE = 'That didn’t work — the plan is as it was.';
+
+  async function loadTonightAsk(panel) {
+    try {
+      var res = await fetch('/api/today/tonight');
+      if (!res.ok) throw new Error('tonight lookup failed');
+      renderTonightAsk(panel, await res.json());
+    } catch (err) {
+      // No card is the safe failure: the day strip and the needs-you band
+      // still say what tonight is.
+      console.warn('Tonight lookup failed:', err);
+      renderTonightAsk(panel, null);
+    }
+  }
+
+  // "Chettinad-Style Pepper Chicken" the way the plan names it; a
+  // leftovers night says so in the same breath, since "still good?" about
+  // a reheat is a different question from one about a cook.
+  function tonightDishName(dish) {
+    if (!dish) return '';
+    var name = dish.meal || '';
+    if (dish.is_leftovers) name += ' leftovers';
+    return name;
+  }
+
+  function renderTonightAsk(panel, data) {
+    var slot = panel.querySelector('#tonight-ask');
+    if (!slot) return;
+    panel._tonight = data;
+    if (!data || !data.ask || !data.dinner) { slot.innerHTML = ''; return; }
+    slot.innerHTML =
+      '<div class="shell-card needs-you-card tonight-card" data-card-type="tonight_ask">' +
+        '<div class="ny-kicker">Dinner</div>' +
+        '<div class="ny-title">' + escapeHtml('Tonight: ' + tonightDishName(data.dinner) + '. Still good?') + '</div>' +
+        '<div class="ny-actions">' +
+          '<button type="button" class="btn-gold" id="tonight-yes">Yes</button>' +
+          '<button type="button" class="btn-sand" id="tonight-else">Something else</button>' +
+        '</div>' +
+      '</div>';
+    slot.querySelector('#tonight-yes').addEventListener('click', function () { keepTonight(panel); });
+    slot.querySelector('#tonight-else').addEventListener('click', function () { openTonightSheet(panel); });
+  }
+
+  // Yes: the card goes at once (§6, the common case never waits) and the
+  // day is remembered on the server; if that write fails the card comes
+  // back, because "asked and answered" would otherwise be a lie the next
+  // reload tells.
+  async function keepTonight(panel) {
+    var data = panel._tonight;
+    if (!data) return;
+    var card = panel.querySelector('#tonight-ask .tonight-card');
+    if (card) card.classList.add('pop-out');
+    try {
+      var res = await fetch('/api/today/tonight/keep', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: data.date })
+      });
+      if (!res.ok) throw new Error('keep failed (' + res.status + ')');
+      data.ask = false;
+      data.answered = true;
+      renderTonightAsk(panel, data);
+    } catch (err) {
+      console.warn('Could not remember tonight’s yes:', err);
+      renderTonightAsk(panel, data);
+      showToast('That didn’t save — try again.');
+    }
+  }
+
+  // ---------- the "Something else" sheet ----------
+  // Same scrim/sheet pattern as Cook's More (#cook-more-sheet): slides up
+  // over Now, dismisses down. The question, then the nights — each row is
+  // the tap that commits (Emily: "one tap to swap"), and the toast that
+  // follows carries Undo (the existing swap-nights-undo).
+  var tonightScrim = document.getElementById('tonight-scrim');
+  var tonightSheet = document.getElementById('tonight-sheet');
+
+  function tonightOptionRowsHtml(data) {
+    var options = (data && data.options) || [];
+    if (!options.length) {
+      // The honest limit: nothing later on this plan can trade with
+      // tonight (a one-night plan, every later night away or cooked, or
+      // tonight's cook feeding tomorrow's leftovers). Say so, and hand
+      // over to the plan — the day itself is where the rest of the
+      // choices live.
+      return '<p class="tonight-none">Nothing else on this week’s plan can move to tonight.</p>' +
+        '<button type="button" class="tonight-plan-link" id="tonight-open-plan">Open today in the plan</button>';
+    }
+    return '<div class="tonight-options">' + options.map(function (opt) {
+      var when = opt.weekday || dayName(opt.date, { weekday: 'long' });
+      var sub = opt.is_leftovers && opt.leftovers_from
+        ? when + ' · ' + 'leftovers from ' + opt.leftovers_from
+        : when;
+      return '<button type="button" class="tonight-option" data-tonight-date="' + escapeHtml(opt.date) + '">' +
+        '<span class="tonight-option-text">' +
+          '<span class="tonight-option-dish">' + escapeHtml(opt.meal) + '</span>' +
+          '<span class="tonight-option-when">' + escapeHtml(sub) + '</span>' +
+        '</span>' +
+        '<span class="tonight-option-go">Swap</span>' +
+      '</button>';
+    }).join('') + '</div>';
+  }
+
+  function openTonightSheet(panel) {
+    if (!tonightSheet) return;
+    var data = panel._tonight;
+    if (!data || !data.dinner) return;
+    closeAskSheet();
+    closeWeekSheet();
+    var rows = document.getElementById('tonight-rows');
+    if (rows) rows.innerHTML = tonightOptionRowsHtml(data);
+    var line = document.getElementById('tonight-sheet-line');
+    if (line) {
+      // What the swap does, in one breath — so the row's "Swap" is never
+      // a mystery: the dish they pick moves to tonight, tonight's moves
+      // to that night.
+      line.textContent = tonightDishName(data.dinner) + ' moves to that night.';
+    }
+    openSheet(tonightSheet, tonightScrim);
+    tonightSheet.querySelectorAll('[data-tonight-date]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        runTonightSwap(panel, btn.getAttribute('data-tonight-date'));
+      });
+    });
+    var openPlan = tonightSheet.querySelector('#tonight-open-plan');
+    if (openPlan) {
+      openPlan.addEventListener('click', function () {
+        closeTonightSheet();
+        focusChangedWeekDay(data.date, 'dinner');
+      });
+    }
+  }
+
+  function closeTonightSheet() {
+    if (!tonightScrim) return;
+    closeSheet(tonightSheet, tonightScrim);
+  }
+  if (tonightScrim) {
+    tonightScrim.addEventListener('click', closeTonightSheet);
+    document.getElementById('tonight-handle').addEventListener('click', closeTonightSheet);
+    document.getElementById('tonight-close').addEventListener('click', closeTonightSheet);
+  }
+
+  // One tap: tonight and the chosen night trade dinners (POST
+  // /api/week/{week}/swap-nights — the rows are re-dated, groceries and
+  // defrost reminders ride along, the list is untouched). Then every
+  // surface that reads the plan by date is told: Now's own strip and this
+  // card, Plan, and Cook.
+  async function runTonightSwap(panel, otherDate) {
+    var data = panel._tonight;
+    if (!data || !data.week_start || !otherDate || panel._tonightSwapping) return;
+    panel._tonightSwapping = true;
+    var tonightDate = data.date;
+    var buttons = tonightSheet ? tonightSheet.querySelectorAll('.tonight-option') : [];
+    buttons.forEach(function (b) { b.disabled = true; });
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start) + '/swap-nights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date_a: tonightDate, date_b: otherDate })
+      });
+      if (!res.ok) throw new Error('swap failed (' + res.status + ')');
+      var out = await res.json();
+      if (out.status !== 'swapped') {
+        // A 200 that says no — the sentence is the server's.
+        showToast(out.message || TONIGHT_SWAP_TROUBLE, null, 6000);
+        return;
+      }
+      closeTonightSheet();
+      // Both halves of the trade, in one breath each: what tonight is
+      // now, and where tonight's old dish went.
+      var toTonight = (out.moved || []).filter(function (m) { return m.to === tonightDate; })[0];
+      var away = (out.moved || []).filter(function (m) { return m.to === otherDate; })[0];
+      var said = toTonight && toTonight.meal ? toTonight.meal + ' tonight.' : 'Swapped.';
+      if (away && away.meal) said += ' ' + away.meal + ' on ' + dayName(otherDate, { weekday: 'long' }) + '.';
+      showToast(said, {
+        label: 'Undo',
+        onClick: function () { return undoTonightSwap(panel, tonightDate, otherDate); }
+      }, 6000);
+      afterTonightSwap(panel);
+    } catch (err) {
+      console.warn('Swapping tonight failed:', err);
+      showToast(TONIGHT_SWAP_TROUBLE);
+    } finally {
+      panel._tonightSwapping = false;
+      buttons.forEach(function (b) { b.disabled = false; });
+    }
+  }
+
+  async function undoTonightSwap(panel, tonightDate, otherDate) {
+    var data = panel._tonight;
+    if (!data || !data.week_start) return;
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start) + '/swap-nights-undo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date_a: tonightDate, date_b: otherDate })
+      });
+      if (!res.ok) throw new Error('undo failed (' + res.status + ')');
+      showToast('Put back.');
+      afterTonightSwap(panel);
+    } catch (err) {
+      console.warn('Undoing tonight’s swap failed:', err);
+      showToast(TONIGHT_SWAP_TROUBLE);
+    }
+  }
+
+  // The plan changed by date: re-read this card (it now asks about the
+  // new tonight), the strip (a different cook, a different window), and
+  // the tabs that read the same nights — Plan (loadWeekMenu, which also
+  // refreshes Cook's reading) and Kitchen. The grocery list is untouched
+  // by a nights swap, so Shop is left alone.
+  function afterTonightSwap(panel) {
+    loadTonightAsk(panel);
+    loadNeedsYou(panel);
+    // The kitchen branch re-reads Today's moves as well (see that function).
+    refreshStaleTabsFromActions([{ tab: 'week' }, { tab: 'kitchen' }]);
   }
 
   function renderTodayMovesError(panel) {
