@@ -494,6 +494,33 @@ def test_an_opaque_error_stays_a_404_and_never_reaches_the_household(signed_in):
     assert "status" not in res.json()
 
 
+def test_an_unknown_status_is_refused_not_written(signed_in):
+    """
+    Defect hunt, 2026-09-13: set_chore_instance_status wrote any string
+    it was handed straight to the column — a typo (or a hand-typed
+    request) landed a row in a status no screen's WHERE clause was
+    written to find: not 'pending', not 'done', just gone. The tool call
+    itself must refuse before the route is even involved.
+    """
+    _house_on()
+    tools.add_chore("Bins", frequency="weekly", owner_name="Emily")
+    inst = tools.schedule_chore_instance("Bins", _d(0))["instance_id"]
+
+    with pytest.raises(tools.InvalidChoreStatus, match="isn't a chore status"):
+        tools.set_chore_instance_status(inst, "banana")
+    assert _row(inst)["status"] == "pending", "the bad write must not land"
+
+
+def test_the_status_route_answers_422_for_an_unknown_status(signed_in):
+    _house_on()
+    tools.add_chore("Bins", frequency="weekly", owner_name="Emily")
+    inst = tools.schedule_chore_instance("Bins", _d(0))["instance_id"]
+
+    res = signed_in.post(f"/api/chores/{inst}/status", json={"status": "banana"})
+    assert res.status_code == 422
+    assert _row(inst)["status"] == "pending"
+
+
 def test_all_three_routes_refuse_while_the_switch_is_off(signed_in):
     _adult("Emily")
     tools.add_chore("Bins", frequency="weekly", owner_name="Emily")

@@ -44,8 +44,10 @@ from .attention import (  # noqa: F401
 from .chores import (  # noqa: F401
     _FREQUENCY_DAYS,
     CHORES_OFF_MESSAGE,
+    CHORE_INSTANCE_STATUSES,
     FREQUENCY_WORDS,
     ChoreRefused,
+    InvalidChoreStatus,
     add_chore,
     chores_enabled,
     complete_chore,

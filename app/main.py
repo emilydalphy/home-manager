@@ -1962,6 +1962,12 @@ def set_chore_status(instance_id: int, req: ChoreStatusRequest):
         raise HTTPException(status_code=403, detail=tools.CHORES_OFF_MESSAGE)
     try:
         result = tools.set_chore_instance_status(instance_id, req.status)
+    except tools.InvalidChoreStatus as e:
+        # A status outside CHORE_INSTANCE_STATUSES is a bad request, not a
+        # missing row — 422, not the 404 below (require_household_row's
+        # ValueError, which InvalidChoreStatus is a sibling of, not a
+        # subclass — this except must come first).
+        raise HTTPException(status_code=422, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
