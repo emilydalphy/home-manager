@@ -4143,7 +4143,10 @@ def get_needs_you_items() -> list[dict]:
         "FROM meal_plan_entries mpe LEFT JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
         "WHERE mpe.household_id = ? AND mpe.slot = 'dinner' AND mpe.date >= ? AND mpe.date < ? "
         "AND (wp.id IS NULL OR wp.status != 'retired') "
-        f"ORDER BY (wp.status = 'approved') ASC, mpe.id ASC",
+        # COALESCE: a row with no plan at all (a dinner planned on its own)
+        # compares as NULL, which would sort ahead of everything; it ties
+        # with a draft instead and the newer row wins, as it always did.
+        f"ORDER BY COALESCE(wp.status = 'approved', 0) ASC, mpe.id ASC",
         (household_id(), today.isoformat(), horizon_end.isoformat()),
     ).fetchall()
     dinner_by_date = {r["date"]: r for r in dinner_rows}
