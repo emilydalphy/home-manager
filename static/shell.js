@@ -61,34 +61,69 @@
 (function () {
   'use strict';
 
+  // One stroke width for the whole icon set: 2.2px (Emily, 2026-09-13,
+  // Identity Round Q4 — "B · 2.2px everywhere"). Until then the app drew
+  // its icons at seven weights (2, 2.1, 2.2, 2.4, 2.6, 2.8, 3) and at 24px
+  // the eye read that as "not quite the same set". Every inline stroke
+  // SVG in shell.js, shell.html and the standalone pages carries
+  // stroke-width="2.2" now, written out on each tag (so a grep finds it;
+  // tests/test_design_hygiene.py holds the line). The ONE exception is the
+  // mark (MARK_PATHS below): it is a logo, not an icon, and keeps the
+  // weight it was drawn at (1.8 in the band and on the chat button; 1.7 on
+  // the sign-in plaque and the desktop field mark).
+
+  // The Pomona mark — the apricot fruit-and-leaf glyph from the sign-in
+  // plaque (login.html, shell.html's #shell-field-mark), the same four
+  // paths. Since 2026-09-13 (Identity Round Q1 = C, Q2 = B) it also opens
+  // every root band beside the wordmark and is the chat button's icon.
+  // The size is the caller's (CSS on the wrapping element); the stroke is
+  // the logo's own 1.8, never the icon set's 2.2 — see the note above.
+  var MARK_PATHS =
+    '<path d="M12 20.4c-3.1 0-5.6-2.6-5.6-5.9 0-3.2 2.5-5.7 5.6-5.7s5.6 2.5 5.6 5.7c0 3.3-2.5 5.9-5.6 5.9z"/>' +
+    '<path d="M12 9V6.2"/>' +
+    '<path d="M12.5 7.1c.9-2.2 3.2-3.1 5.3-2.7.4 2.2-.7 4.3-2.8 4.7-1.4.3-2.5-.6-2.5-2z"/>' +
+    '<path d="M12 10.2c-1.1 1.6-1.1 6.3 0 8.2"/>';
+
+  function markSvg() {
+    return '<svg class="pomona-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + MARK_PATHS + '</svg>';
+  }
+
   var ICONS = {
     // Nav bar set, exact match to the InnToday.dc.html mockup (design-system
     // canvas, brand-canvas/InnToday.dc.html) per the "nav bar icons don't
-    // match the design mockup" ticket — same drawing style, stroke weight,
-    // and 24x24 grid as the mock, so don't restyle these independently of it.
+    // match the design mockup" ticket — same drawing style and 24x24 grid
+    // as the mock, so don't restyle these independently of it. (The stroke
+    // is the set-wide 2.2 since 2026-09-13; the mock's 2/2.1 are history.)
     sunrise:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15a8 8 0 0 1 16 0"/><path d="M2.5 19h19"/><path d="M12 3.5v2"/><path d="M5 7l1.5 1.5"/><path d="M19 7l-1.5 1.5"/></svg>',
-    plate:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="3"/></svg>',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15a8 8 0 0 1 16 0"/><path d="M2.5 19h19"/><path d="M12 3.5v2"/><path d="M5 7l1.5 1.5"/><path d="M19 7l-1.5 1.5"/></svg>',
+    // Plan's glyph: the week as a row (Emily, 2026-09-13, Identity Round
+    // Q3 = B) — five dots between two rules, the seven day-tiles in
+    // miniature. It replaced the bullseye (two concentric circles, meant
+    // as a plate seen from above; nobody read it that way). The dots are
+    // filled, not stroked, so they carry fill="currentColor" stroke="none"
+    // of their own — the sweep's "one stroke width" is about strokes.
+    week:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="8" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="20" cy="12" r="1.4" fill="currentColor" stroke="none"/><path d="M3 6.5h18"/><path d="M3 17.5h18"/></svg>',
     pot:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9.5h13V16a4.5 4.5 0 0 1-4.5 4.5h-4A4.5 4.5 0 0 1 5.5 16z"/><path d="M3.5 9.5h17"/><path d="M12 3.5v3"/></svg>',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9.5h13V16a4.5 4.5 0 0 1-4.5 4.5h-4A4.5 4.5 0 0 1 5.5 16z"/><path d="M3.5 9.5h17"/><path d="M12 3.5v3"/></svg>',
     // Pomona (InnToday/InnMeals): the hero's flame tile, the prep tile's
     // clock, the grocery tile's bag, and the arrow that ends a primary
-    // action. Line icons, 2px, round caps — the brand guide's one icon
-    // style; they inherit currentColor so the same markup works on spruce
-    // and on ivory.
+    // action. Line icons, round caps — the brand guide's one icon style;
+    // they inherit currentColor so the same markup works on spruce and on
+    // ivory.
     flame:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3.2 2.8 5 5.4 5 8.4a5 5 0 0 1-10 0c0-1.6.8-3 2-4.2 0 1.6.8 2.4 1.6 2.4 1 0 1.6-.9 1.6-2.4 0-1.4-.4-2.8-.2-4.2z"/><path d="M6 21h12"/></svg>',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3.2 2.8 5 5.4 5 8.4a5 5 0 0 1-10 0c0-1.6.8-3 2-4.2 0 1.6.8 2.4 1.6 2.4 1 0 1.6-.9 1.6-2.4 0-1.4-.4-2.8-.2-4.2z"/><path d="M6 21h12"/></svg>',
     clock:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 1.6"/><path d="M9 2.5h6"/></svg>',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 1.6"/><path d="M9 2.5h6"/></svg>',
     bag:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 8.5h15l-1.3 10.7a2 2 0 0 1-2 1.8H7.8a2 2 0 0 1-2-1.8z"/><path d="M9.2 8.5V6.6a2.8 2.8 0 0 1 5.6 0v1.9"/></svg>',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 8.5h15l-1.3 10.7a2 2 0 0 1-2 1.8H7.8a2 2 0 0 1-2-1.8z"/><path d="M9.2 8.5V6.6a2.8 2.8 0 0 1 5.6 0v1.9"/></svg>',
     arrow:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M12.5 6l6 6-6 6"/></svg>',
     // The desktop week grid's "Why this?" toggle (InnMeals redesign) — same
     // small info-circle the mock draws next to it.
     info:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5v.01"/></svg>'
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5v.01"/></svg>'
   };
 
   // A leftovers night is a reheat, not a cook (Emily, 2026-09-04) — so its
@@ -174,7 +209,7 @@
 
   var TABS = [
     { key: 'today', path: '/', label: 'Now', icon: ICONS.sunrise, real: true },
-    { key: 'week', path: '/week', label: 'Plan', icon: ICONS.plate, week: true },
+    { key: 'week', path: '/week', label: 'Plan', icon: ICONS.week, week: true },
     // Stage 2 slice 2: Grocery is a real shell screen now, not an embedded
     // page. static/grocery.html still exists and still works standalone, but
     // nothing links to it — it is the fallback, the same way
@@ -633,12 +668,60 @@
   // 5). The ids let each root update the parts that change (the sub-line
   // after a load, the badge after an approval) without rebuilding the
   // header and throwing the bell out of its slot.
+  //
+  // Where the mark lives after sign-in (Emily, 2026-09-13, Identity Round
+  // Q1). She chose C — "Mark + wordmark, date moves down" — and kept B in
+  // reserve. The three values, each rendered by the same builder:
+  //   'wordmark' — C (the default): the apricot mark and "Pomona" open the
+  //                band top-left where the date eyebrow was; the eyebrow's
+  //                text (the date, or the context) joins the sub-line
+  //                instead, " · " before whatever the line already says:
+  //                "Sunday, Sep 13 · 2 of 5 done".
+  //   'mark'     — B (in the back pocket): the mark before the date
+  //                eyebrow; the eyebrow keeps the date.
+  //   'none'     — the band as it was before 2026-09-13.
+  // Flipping this one constant is the whole switch.
+  var BAND_IDENTITY = 'wordmark';
+  var BAND_WORDMARK = 'Pomona';
+
+  // "Sunday, Sep 13" — the date the band folds into its sub-line under
+  // 'wordmark' (Now's eyebrow has always been this; Shop and Cook adopt it
+  // there, see groBandEyebrow / buildKitchenPanel). Local, not UTC, same
+  // as dayName.
+  function bandDateLabel(iso) {
+    var d = iso ? new Date(iso + 'T00:00:00') : new Date();
+    return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  }
+
+  // The band's identity lead — mark alone, mark + wordmark, or nothing.
+  function bandIdentityHtml() {
+    if (BAND_IDENTITY === 'none') return '';
+    return '<span class="root-band-brand' + (BAND_IDENTITY === 'wordmark' ? ' is-wordmark' : '') + '">' +
+      markSvg() +
+      (BAND_IDENTITY === 'wordmark' ? '<span class="root-band-wordmark">' + escapeHtml(BAND_WORDMARK) + '</span>' : '') +
+    '</span>';
+  }
+
+  // The sub-line's words: under 'wordmark' the eyebrow's text leads it;
+  // otherwise the line is what the root said.
+  function bandSubText(eyebrow, sub) {
+    if (BAND_IDENTITY !== 'wordmark') return sub || '';
+    return [eyebrow || '', sub || ''].filter(Boolean).join(' \u00b7 ');
+  }
+
   function rootBandHtml(opts) {
     var id = opts.id;
-    return '<header class="root-band" id="' + id + '">' +
+    var eyebrow = opts.eyebrow || '';
+    var sub = bandSubText(eyebrow, opts.sub);
+    // Under 'wordmark' the eyebrow span stays in the markup, hidden: it
+    // still holds the date so setRootBand can re-fold it into the
+    // sub-line when either half changes.
+    var eyebrowHidden = BAND_IDENTITY === 'wordmark' || !eyebrow;
+    return '<header class="root-band" id="' + id + '" data-identity="' + BAND_IDENTITY + '">' +
       '<div class="root-band-top">' +
         '<div class="root-band-lead">' +
-          '<span class="root-band-eyebrow" id="' + id + '-eyebrow">' + escapeHtml(opts.eyebrow || '') + '</span>' +
+          bandIdentityHtml() +
+          '<span class="root-band-eyebrow" id="' + id + '-eyebrow"' + (eyebrowHidden ? ' hidden' : '') + '>' + escapeHtml(eyebrow) + '</span>' +
           '<span class="root-band-badge" id="' + id + '-badge"' + (opts.badge ? '' : ' hidden') + '>' +
             escapeHtml(opts.badge || '') + '</span>' +
         '</div>' +
@@ -647,21 +730,35 @@
         '<div class="root-band-tools">' + prefsGearHtml() + '</div>' +
       '</div>' +
       '<h1 class="root-band-title" id="' + id + '-title">' + escapeHtml(opts.title || '') + '</h1>' +
-      '<p class="root-band-sub" id="' + id + '-sub"' + (opts.sub ? '' : ' hidden') + '>' + escapeHtml(opts.sub || '') + '</p>' +
+      '<p class="root-band-sub" id="' + id + '-sub" data-sub="' + escapeHtml(opts.sub || '') + '"' + (sub ? '' : ' hidden') + '>' + escapeHtml(sub) + '</p>' +
     '</header>';
   }
 
   // Update the parts of a band that change after a load. Any key left
   // undefined is left alone; an empty string hides the sub-line or badge.
+  // The sub-line keeps the root's own words on data-sub and shows them
+  // composed with the eyebrow under 'wordmark' (bandSubText), so a root
+  // that only changes its eyebrow, or only its line, never loses the
+  // other half.
   function setRootBand(panel, id, parts) {
     if (!panel) return;
-    ['eyebrow', 'title', 'sub', 'badge'].forEach(function (key) {
+    ['eyebrow', 'title', 'badge'].forEach(function (key) {
       if (parts[key] === undefined) return;
       var el = panel.querySelector('#' + id + '-' + key);
       if (!el) return;
       el.textContent = parts[key] || '';
-      if (key === 'sub' || key === 'badge') el.hidden = !parts[key];
+      if (key === 'badge') el.hidden = !parts[key];
+      if (key === 'eyebrow') el.hidden = BAND_IDENTITY === 'wordmark' || !parts[key];
     });
+    if (parts.sub === undefined && parts.eyebrow === undefined) return;
+    var subEl = panel.querySelector('#' + id + '-sub');
+    if (!subEl) return;
+    var raw = parts.sub !== undefined ? (parts.sub || '') : (subEl.dataset && subEl.dataset.sub) || '';
+    if (subEl.dataset) subEl.dataset.sub = raw;
+    var eyebrowEl = panel.querySelector('#' + id + '-eyebrow');
+    var text = bandSubText(eyebrowEl ? eyebrowEl.textContent : '', raw);
+    subEl.textContent = text;
+    subEl.hidden = !text;
   }
 
   // ---------- Empty states as designed moments ----------
@@ -735,7 +832,7 @@
         // has no deeper step, so the gear is never hidden here.
         rootBandHtml({
           id: 'today-band',
-          eyebrow: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }),
+          eyebrow: bandDateLabel(),
           title: 'Now'
         }) +
         // The holiday, when today is one — name and answer in the neutral
@@ -1362,14 +1459,14 @@
 
   // 20px of visual inside a 44px tap target (DESIGN_SYSTEM.md rule 6).
   var TICK_ICON =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>';
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>';
 
   // The ⋯ that opens a row's rare actions (§6). Byte-identical to the
   // Grocery region's GRO_ICONS.dots — declared here rather than reached
   // for across the file, because a chore row must not depend on the
   // grocery tab's icon table being built first.
   var DOTS_ICON =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5.5" r="0.6"/><circle cx="12" cy="12" r="0.6"/><circle cx="12" cy="18.5" r="0.6"/></svg>';
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5.5" r="0.6"/><circle cx="12" cy="12" r="0.6"/><circle cx="12" cy="18.5" r="0.6"/></svg>';
 
   // ---------- Now: the day as a strip ----------
   // Emily, 2026-09-12, from the "Beyond lists" canvas ("Now · A · The day
@@ -1384,7 +1481,7 @@
   // the sand next-up card plus "The rest of today" / "Done today" lists.
   //
   // The move's icon, by kind. Same drawing style as ICONS/KITCHEN_ICONS
-  // (2px stroke, round caps, 24 grid); declared here rather than reached
+  // (2.2px stroke, round caps, 24 grid); declared here rather than reached
   // for across the file, for the reason DOTS_ICON gives above.
   var MOVE_ICONS = {
     cook:
@@ -2726,14 +2823,14 @@
   ];
 
   var GRO_ICONS = {
-    refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5A8 8 0 1 0 18.4 17"/><path d="M20 5.5V11h-5.5"/></svg>',
+    refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5A8 8 0 1 0 18.4 17"/><path d="M20 5.5V11h-5.5"/></svg>',
     mic: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.07A7 7 0 0 0 19 11z"/></svg>',
     chevDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9.5l6 6 6-6"/></svg>',
     chevRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></svg>',
-    tick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
-    basket: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9.5h14V19a1.8 1.8 0 0 1-1.8 1.8H6.8A1.8 1.8 0 0 1 5 19z"/><path d="M3.5 5.5h17v4h-17z"/><path d="M12 9.5v11"/></svg>',
-    dots: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5.5" r="0.6"/><circle cx="12" cy="12" r="0.6"/><circle cx="12" cy="18.5" r="0.6"/></svg>',
-    camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5h4l1.5-2.5h6L16.5 8.5h4V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19z"/><circle cx="12" cy="13.5" r="3.4"/></svg>'
+    tick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+    basket: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9.5h14V19a1.8 1.8 0 0 1-1.8 1.8H6.8A1.8 1.8 0 0 1 5 19z"/><path d="M3.5 5.5h17v4h-17z"/><path d="M12 9.5v11"/></svg>',
+    dots: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5.5" r="0.6"/><circle cx="12" cy="12" r="0.6"/><circle cx="12" cy="18.5" r="0.6"/></svg>',
+    camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5h4l1.5-2.5h6L16.5 8.5h4V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19z"/><circle cx="12" cy="13.5" r="3.4"/></svg>'
   };
 
   // Above this many things to sort, the tab offers the fast paths first
@@ -3906,13 +4003,14 @@
   // would leave the title sitting in a hole).
   function groBandEyebrow(data) {
     var t = data ? groTotals(data) : { needed: 0 };
-    if (!t.needed) {
-      return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-    }
+    if (!t.needed) return bandDateLabel();
     var stopCount = groStoresWithNeeded(data).length;
     var eyebrow = groPlural(t.needed, 'thing', 'things');
     if (stopCount) eyebrow += ' · ' + groPlural(stopCount, 'stop', 'stops');
-    return eyebrow;
+    // Under the wordmark band (BAND_IDENTITY, 2026-09-13) this text is the
+    // sub-line's lead rather than the eyebrow, and there it carries the
+    // day too: "Sunday, Sep 13 · 60 things · 1 stop".
+    return BAND_IDENTITY === 'wordmark' ? bandDateLabel() + ' · ' + eyebrow : eyebrow;
   }
 
   // ---------- LIST ----------
@@ -7232,17 +7330,17 @@
 
   var KITCHEN_ICONS = {
     person:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20.5a7.2 7.2 0 0 1 14.4 0"/></svg>',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20.5a7.2 7.2 0 0 1 14.4 0"/></svg>',
     fridge:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="2.8" width="13" height="18.4" rx="2.6"/><path d="M5.5 10h13"/><path d="M9 6.4v1.8"/><path d="M9 12.6v2.2"/></svg>',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="2.8" width="13" height="18.4" rx="2.6"/><path d="M5.5 10h13"/><path d="M9 6.4v1.8"/><path d="M9 12.6v2.2"/></svg>',
     book:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H18v15.5H6.5A1.5 1.5 0 0 0 5 20z"/><path d="M5 20a1.5 1.5 0 0 1 1.5-1.5H18V21H6.5A1.5 1.5 0 0 1 5 20z"/><path d="M9 7.5h5.5"/></svg>',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H18v15.5H6.5A1.5 1.5 0 0 0 5 20z"/><path d="M5 20a1.5 1.5 0 0 1 1.5-1.5H18V21H6.5A1.5 1.5 0 0 1 5 20z"/><path d="M9 7.5h5.5"/></svg>',
     storefront:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9.5h14V19a1.8 1.8 0 0 1-1.8 1.8H6.8A1.8 1.8 0 0 1 5 19z"/><path d="M3.5 5.5h17v4h-17z"/></svg>',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9.5h14V19a1.8 1.8 0 0 1-1.8 1.8H6.8A1.8 1.8 0 0 1 5 19z"/><path d="M3.5 5.5h17v4h-17z"/></svg>',
     camera:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5h4l1.5-2.5h6L16.5 8.5h4V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19z"/><circle cx="12" cy="13.5" r="3.4"/></svg>',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5h4l1.5-2.5h6L16.5 8.5h4V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19z"/><circle cx="12" cy="13.5" r="3.4"/></svg>',
     link:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13.5a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.2 1.2"/><path d="M14 10.5a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.2-1.2"/></svg>'
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13.5a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.2 1.2"/><path d="M14 10.5a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.2-1.2"/></svg>'
   };
 
   function kitchenPanel() { return panels['kitchen']; }
@@ -7258,7 +7356,7 @@
           // The root band: the day as its eyebrow, "1 cook tonight" as its
           // one line (renderKitchen), the gear in it. Cook mode replaces
           // this whole view, so the band never shows over a step.
-          rootBandHtml({ id: 'kit-band', eyebrow: dayName(todayLocalStr(), { weekday: 'long' }), title: 'Cook' }) +
+          rootBandHtml({ id: 'kit-band', eyebrow: cookBandEyebrow(todayLocalStr()), title: 'Cook' }) +
           '<div class="kit-body" id="kit-body"></div>' +
           // The root's dock (nav rule 2): "Start cooking" for tonight's
           // cook, "Mark eaten" for a reheat night, nothing at all when
@@ -7449,6 +7547,15 @@
   // A day with nothing on it at all returns nothing: the empty moment
   // under the band says "nothing to cook tonight", and the band must not
   // say it too (Emily, 2026-09-11 — the two used to say it twice).
+  // Cook's eyebrow is the day — "Sunday". Under the wordmark band
+  // (BAND_IDENTITY, 2026-09-13) it leads the sub-line instead, and there
+  // it is the whole date: "Sunday, Sep 13 · 1 cook tonight".
+  function cookBandEyebrow(todayIso) {
+    return BAND_IDENTITY === 'wordmark'
+      ? bandDateLabel(todayIso)
+      : dayName(todayIso, { weekday: 'long' });
+  }
+
   function kitchenSubtitle(rows, meals, todayIso) {
     var cooks = rows.filter(function (r) { return !r.isReheat && !r.done; });
     var anyDone = rows.some(function (r) { return r.done; });
@@ -7962,7 +8069,7 @@
     var dock = panel.querySelector('#kit-dock');
     var content = panel.querySelector('.kitchen-content');
     var todayIso = todayLocalStr();
-    setRootBand(panel, 'kit-band', { eyebrow: dayName(todayIso, { weekday: 'long' }) });
+    setRootBand(panel, 'kit-band', { eyebrow: cookBandEyebrow(todayIso) });
 
     function setDock(html) {
       if (!dock) return;
@@ -10081,7 +10188,7 @@
   // carry no `need` at all and render exactly as they always have.
   var NEED_LABELS = { quick: 'Quick', ready_made: 'Ready-made' };
   var READY_CHECK =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" ' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
     'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
 
   function needBadgeHtml(entry) {
@@ -10557,10 +10664,10 @@
   };
 
   var RV_MINUS_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" ' +
-    'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">' +
+    'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
     '<path d="M6 12h12"/></svg>';
   var RV_PLUS_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" ' +
-    'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">' +
+    'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
     '<path d="M6 12h12"/><path d="M12 6v12"/></svg>';
   var RV_CHEVRON_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" ' +
     'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" ' +
@@ -11018,7 +11125,7 @@
 
   // Two short strokes: the grip. Stroke SVG, never a glyph (rule 7).
   var RV_GRIP_SVG = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" ' +
-    'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">' +
+    'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
     '<path d="M5 9.5h14"/><path d="M5 14.5h14"/></svg>';
 
   function reviewDayTileHtml(day, i) {
@@ -15247,9 +15354,9 @@
 
   var COOK_ICONS = {
     list:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5.5h14"/><path d="M5 12h14"/><path d="M5 18.5h9"/></svg>',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5.5h14"/><path d="M5 12h14"/><path d="M5 18.5h9"/></svg>',
     check:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
     mic:
       '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.07A7 7 0 0 0 19 11z"/></svg>'
   };
@@ -18133,10 +18240,52 @@
     });
   }
 
-  // ---------- Docked ask bar ----------
+  // ---------- The chat button ----------
+  // Its icon is the Pomona mark (Emily, 2026-09-13, Identity Round Q2 =
+  // B). Her worry, choosing it: "it's not obvious that's where they go
+  // for the chat" — so for a viewer's first FAB_LABEL_VISITS page loads
+  // on this device a 9px "ASK" sits under the mark inside the button (the
+  // mark shrinks from 26px to 22px while the label shows; both inside the
+  // same 54px, nothing outside it moves — .chat-fab.has-label, shell.css).
+  // After that, the mark alone. 0 = never show the label; Infinity =
+  // always. The counter is localStorage on its own key — the same
+  // per-device mechanism the coaching examples use (coachCountVisit), but
+  // not the same key: that one is per tab and per household, this one is
+  // per device, because the button is the same on every tab and the
+  // lesson is about the device's owner, not the house.
+  var FAB_LABEL_VISITS = 3;
+  var FAB_LABEL_KEY = 'pomona.fabLabelVisits';
+
+  // Which visit this is, 1-based. Stops WRITING past the limit (the only
+  // question is "have the three been spent") but keeps RETURNING the
+  // incremented value, so the fourth visit reads 4 and shows nothing.
+  // Every read and write is wrapped: Safari in private mode throws on
+  // localStorage, and a thrown label must not take the shell down.
+  function fabLabelCountVisit() {
+    var n = 1;
+    try {
+      n = (Number(window.localStorage.getItem(FAB_LABEL_KEY)) || 0) + 1;
+      if (n <= FAB_LABEL_VISITS) window.localStorage.setItem(FAB_LABEL_KEY, String(n));
+    } catch (err) { /* see above */ }
+    return n;
+  }
+
+  function fabLabelShouldShow(visit) {
+    return visit <= FAB_LABEL_VISITS;
+  }
+
+  function placeFabLabel(fab) {
+    var label = fab.querySelector('#chat-fab-label');
+    if (!label) return;
+    var show = fabLabelShouldShow(fabLabelCountVisit());
+    label.hidden = !show;
+    fab.classList.toggle('has-label', show);
+  }
+
   var askBar = document.getElementById('chat-fab');
   if (askBar) {
     askBar.addEventListener('click', function () { openAskSheet(); });
+    placeFabLabel(askBar);
   }
 
   // ---------- Share meal plan (week sheet's "Share") ----------
@@ -19596,7 +19745,7 @@
   // something writes to it (prefsInvalidate, called from the chat action
   // refresher for exactly the tools that change these answers).
   var PREFS_GEAR_ICON =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
     '<circle cx="12" cy="12" r="3.1"/>' +
     '<path d="M19.2 14.2a1.5 1.5 0 0 0 .3 1.65l.05.05a1.8 1.8 0 1 1-2.55 2.55l-.05-.05a1.5 1.5 0 0 0-1.65-.3 1.5 1.5 0 0 0-.9 1.37v.13a1.8 1.8 0 1 1-3.6 0v-.07a1.5 1.5 0 0 0-.98-1.37 1.5 1.5 0 0 0-1.65.3l-.05.05A1.8 1.8 0 1 1 5.57 15.9l.05-.05a1.5 1.5 0 0 0 .3-1.65 1.5 1.5 0 0 0-1.37-.9h-.13a1.8 1.8 0 1 1 0-3.6h.07a1.5 1.5 0 0 0 1.37-.98 1.5 1.5 0 0 0-.3-1.65l-.05-.05A1.8 1.8 0 1 1 8.06 4.47l.05.05a1.5 1.5 0 0 0 1.65.3h.07a1.5 1.5 0 0 0 .9-1.37v-.13a1.8 1.8 0 1 1 3.6 0v.07a1.5 1.5 0 0 0 .9 1.37 1.5 1.5 0 0 0 1.65-.3l.05-.05a1.8 1.8 0 1 1 2.55 2.55l-.05.05a1.5 1.5 0 0 0-.3 1.65v.07a1.5 1.5 0 0 0 1.37.9h.13a1.8 1.8 0 1 1 0 3.6h-.07a1.5 1.5 0 0 0-1.37.9z"/>' +
     '</svg>';
@@ -20069,7 +20218,7 @@
   }
 
   var PREFS_SIGNOUT_ICON =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4.5H18a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5h-3.5"/><path d="M10 8.5 6.5 12l3.5 3.5"/><path d="M6.5 12H15"/></svg>';
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4.5H18a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5h-3.5"/><path d="M10 8.5 6.5 12l3.5 3.5"/><path d="M6.5 12H15"/></svg>';
 
   // One read per open, cached. The rows render immediately off the cache
   // (or with a placeholder line) rather than waiting on the network — a
@@ -20706,7 +20855,7 @@
   // The server re-checks both anyway; the browser is the untrusted end.
 
   var SNW_ICON =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12.2a7.7 7.7 0 0 1-8.3 7.7L5 20.8l1-6.4a7.7 7.7 0 1 1 14.5-2.2z"/><path d="M12 8.6v3.6"/><path d="M12 15.4h.01"/></svg>';
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12.2a7.7 7.7 0 0 1-8.3 7.7L5 20.8l1-6.4a7.7 7.7 0 1 1 14.5-2.2z"/><path d="M12 8.6v3.6"/><path d="M12 15.4h.01"/></svg>';
 
   var SNW_SHAPE_RE = /^[A-Za-z][A-Za-z0-9_]{0,38}(Error|Exception)$/;
   var snwShapes = [];

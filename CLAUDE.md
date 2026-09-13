@@ -371,6 +371,72 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — The Identity Round, built: the mark and "Pomona" open
+  every root band, the chat button is the mark, Plan's glyph is the week
+  as a row, one 2.2px stroke for the icon set. Branch
+  `worktree-identity-build`, NOT merged at the time of writing.** Emily's
+  four picks from the Identity Round canvas (Tier 3 on the "where does the
+  mark live" question, Tier 2 on rule 7 and the §5/§6 rows — DESIGN_SYSTEM
+  updated in the same commit). **Q1 = C, B in reserve:** `BAND_IDENTITY`
+  in `shell.js` (`'wordmark'` default | `'mark'` | `'none'`), one
+  `rootBandHtml` for all three. Under `'wordmark'` the band's top-left is
+  `markSvg()` (20px, stroke 1.8, `--apricot-light`) + "Pomona"
+  (`.root-band-wordmark`, display 15/700/‑0.02em, `--ivory-ink-muted`);
+  the eyebrow span stays in the DOM hidden, holding the date, and
+  `bandSubText` folds it into the sub-line with " · " — the sub-line's own
+  words live on `data-sub` so `setRootBand` can change either half
+  without losing the other. Shop's eyebrow (`groBandEyebrow`) and Cook's
+  (`cookBandEyebrow`, new) carry the whole date under `'wordmark'` only
+  ("Sunday, Sep 13 · 60 things · 1 stop", "Sunday, Sep 13 · 1 cook
+  tonight"); under `'mark'`/`'none'` they are what they were ("60 things ·
+  1 stop", "Sunday"). Now's date format moved into one `bandDateLabel`.
+  **Q2 = B + a label:** `shell.html`'s `#chat-fab` holds the mark (26px,
+  1.8, `--apricot-light` on spruce) and a hidden `#chat-fab-label` "Ask";
+  `placeFabLabel` shows it (mark drops to 22px, `.has-label`) for the
+  first `FAB_LABEL_VISITS = 3` page loads on the device, counted on
+  localStorage key `pomona.fabLabelVisits` — the coaching counter's
+  mechanism, its own key (per device, not per household or tab; 0 =
+  never, `Infinity` = always). `aria-label`/`title` unchanged. **Q3 =
+  B:** `ICONS.week` (five `fill="currentColor" stroke="none"` dots on
+  `cy=12` between two rules); `ICONS.plate` deleted — `TABS` was its only
+  reader. **Q4 = B:** every inline stroke SVG in `shell.js`, `shell.html`,
+  `login.html`, `onboarding.html`, `plan-week.html`, `inventory.html` is
+  `stroke-width="2.2"` (the other four listed pages draw no SVG). Before:
+  76 stroke SVGs — 4 marks and 72 icons, of which 27 were already 2.2;
+  43 were re-weighted (from 1.9, 2, 2.1, 2.3, 2.4, 2.6, 2.8 and 3), the
+  chat bubble (2.1) was replaced by the mark and the bullseye (2) retired,
+  and 3 gained the missing `stroke-linejoin` (the review tiles' +/−/grip).
+  After: 77 stroke SVGs — 71 icons all at 2.2, and 6 drawings of the
+  mark left at 1.6/1.7/1.8 as drawn. No glyph's geometry broke at 2.2 — the two
+  near-zero paths that draw a dot with their round caps (`info`'s
+  `M12 7.5v.01`, `SNW_ICON`'s `M12 15.4h.01`) and the ⋯ circles
+  (`r="0.6"`) just get a hair smaller. Guards: `tests/test_design_hygiene.py`
+  (d) fails any stroke SVG in those files that is not 2.2 unless it draws
+  the mark (`M12 20.4c-3.1`, or `MARK_PATHS` for the shell.js builder),
+  and checks round caps/joins; `tests/test_identity_build.py` (17) runs
+  the band under all three constants, the date-in-the-line for each root,
+  `setRootBand` keeping the date across partial updates, the FAB counter
+  (visits 1–3 show, 4 doesn't, 0/`Infinity`, a throwing localStorage),
+  Plan's paths, and the sweep's numbers. Full suite 4255. Sandbox-verified
+  on a copy of the pre-reset backup DB (a loose dinner added for today so
+  Cook had a cook): all four roots at 375 light and dark and at 1280, the
+  FAB with "Ask" on visit 1 and bare on visit 4 (same 54px box, nothing
+  around it moved), Cook › Before you start with a ticked row.
+  - **Judgment calls, for Emily.** (1) Under `'wordmark'` a root's line
+    is never empty — Now on a quiet day reads just "Sunday, Sep 13" where
+    it used to have no line; the band grows by that one line on those
+    days. (2) Now's error line becomes "Sunday, Sep 13 · Couldn't check
+    just now — pull to refresh." (3) Plan | Chores keeps the chores'
+    week label as its line ("Sep 14–20"); Plan's custom-period band reads
+    "5 days · a draft, your turn" under its date-range title. (4) The
+    FAB visit is one per page load of the shell (the coaching counter
+    counts per tab activation); switching tabs never flips the label
+    mid-session. (5) The "Ask" label is `aria-hidden` — the button's
+    accessible name stays "Chat with Pomona". (6) The welcome screens'
+    two large marks (1.6) were treated as the logo too, not swept.
+    (7) The dots' fill="currentColor" shapes were left with
+    `stroke="none"`, so the sweep never fattened a filled dot.
+
 - **2026-09-13 — One wrong-typed stored answer stops a What we know
   section from opening. Branch `worktree-kitchen-fallback-and-memory-types`,
   NOT merged at the time of writing.** Loop Board bug: `POST

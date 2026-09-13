@@ -275,6 +275,30 @@ html, body {
   gap: 8px 10px;
   min-width: 0;
 }
+/* The mark, and the wordmark beside it (Emily, 2026-09-13, Identity Round
+   Q1 = C; BAND_IDENTITY in shell.js — 'mark' renders the glyph alone
+   before the eyebrow, 'none' renders neither). The mark is 20px of
+   --apricot-light at its own 1.8 stroke (a logo, not an icon — the set's
+   2.2 does not apply); "Pomona" is the display face at 15px/700/-0.02em
+   in the muted ivory, so it reads as the app's name, not as a headline
+   competing with the title under it. Under 'wordmark' the date leaves
+   the eyebrow for the sub-line (rootBandHtml). */
+.root-band-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--apricot-light);
+  min-height: 24px;
+}
+.root-band-brand .pomona-mark { width: 20px; height: 20px; flex: 0 0 auto; }
+.root-band-wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--ivory-ink-muted);
+}
 .root-band-eyebrow {
   font-family: var(--font-body);
   font-weight: 800;
@@ -283,6 +307,7 @@ html, body {
   text-transform: uppercase;
   color: var(--apricot-light);
 }
+.root-band-eyebrow[hidden] { display: none; }
 /* The status chip — "Draft", "Approved", "Week set" — in one style on
    every root: small caps on the raised spruce with the muted ivory,
    never a pink pill and never a fill of its own. */
@@ -1545,6 +1570,13 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   overflow: visible;
   z-index: 3;
 }
+/* The icon is the Pomona mark in --apricot-light on the spruce (Emily,
+   2026-09-13, Identity Round Q2 = B): 26px at the logo's own 1.8 stroke.
+   For the first three visits on a device (FAB_LABEL_VISITS, shell.js)
+   .has-label stacks a 9px "ASK" under it and the mark drops to 22px so
+   the pair still centres inside the same 54px — the button's box never
+   changes, so nothing around it shifts. Apricot-light on spruce measures
+   7.81:1 light / 6.41:1 dark (the band's own figures, above). */
 .chat-fab {
   position: absolute;
   right: 16px;
@@ -1554,15 +1586,28 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   border-radius: var(--radius-ask);
   border: none;
   background: var(--spruce);
-  color: var(--ivory-ink);
+  color: var(--apricot-light);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 1px;
   cursor: pointer;
   box-shadow: var(--shadow-hero);
   padding: 0;
 }
-.chat-fab svg { width: 24px; height: 24px; }
+.chat-fab .pomona-mark { width: 26px; height: 26px; flex: 0 0 auto; }
+.chat-fab.has-label .pomona-mark { width: 22px; height: 22px; }
+.chat-fab-label {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--apricot-light);
+}
+.chat-fab-label[hidden] { display: none; }
 .chat-fab:hover { background: var(--spruce-hover); }
 /* Rule 6 tap target is the full 54px; the ring below is the focus state. */
 .chat-fab:focus-visible { outline: 2px solid var(--apricot); outline-offset: 3px; }

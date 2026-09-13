@@ -486,7 +486,16 @@ function loadTonightAsk(p) { CALLS.push('tonight'); return Promise.resolve(); }
 function loadTodayMoves(p) { CALLS.push('moves'); return Promise.resolve(); }
 function renderCoachCard() { CALLS.push('coach'); }
 function fetch(url) { FETCHED.push(url); return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ chores: [], chores_set_up: true, enabled: true }); } }); }
-""" + _function("prefsGearHtml") + _function("rootBandHtml") + _function("choresEnabled") + _function("buildTodayPanel")
+function markSvg() { return '<svg class="pomona-mark"></svg>'; }
+""" + _band_identity_js() + _function("prefsGearHtml") + _function("rootBandHtml") + _function("choresEnabled") + _function("buildTodayPanel")
+
+
+def _band_identity_js() -> str:
+    """BAND_IDENTITY, bandDateLabel, bandIdentityHtml and bandSubText — the
+    band's identity lead (2026-09-13), which rootBandHtml reads."""
+    start = SHELL_JS.index("  var BAND_IDENTITY = ")
+    end = SHELL_JS.index("  function rootBandHtml(", start)
+    return SHELL_JS[start:end]
 
 
 def _panel_js():

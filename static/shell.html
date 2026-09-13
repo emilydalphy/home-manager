@@ -55,10 +55,19 @@
            bar, the example-prompt chips and the "?" tips button that used to
            live here moved into the ask sheet below: they help the moment
            you're about to type, not all day. The bell moved into each root's
-           header beside the gear (placeNotifBell, shell.js). -->
+           header beside the gear (placeNotifBell, shell.js).
+           The icon is the Pomona mark in apricot (Emily, 2026-09-13, Identity
+           Round Q2 = B) — the sign-in plaque's glyph, shrunk — rather than
+           the speech bubble it was: "talk to Pomona" is, literally, the fruit.
+           The mark is a logo, not an icon, so it keeps its own 1.8 stroke
+           (the icon set is 2.2). Because the fruit doesn't say "chat" on its
+           own, a small ASK label sits under it for a viewer's first three
+           visits (fabLabelCountVisit, shell.js — FAB_LABEL_VISITS); after
+           that the mark alone. -->
       <div id="ask-bar-dock">
         <button type="button" id="chat-fab" class="chat-fab" aria-label="Chat with Pomona" title="Chat with Pomona">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 9h8"/><path d="M8 12h5"/></svg>
+          <svg class="pomona-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.4c-3.1 0-5.6-2.6-5.6-5.9 0-3.2 2.5-5.7 5.6-5.7s5.6 2.5 5.6 5.7c0 3.3-2.5 5.9-5.6 5.9z"/><path d="M12 9V6.2"/><path d="M12.5 7.1c.9-2.2 3.2-3.1 5.3-2.7.4 2.2-.7 4.3-2.8 4.7-1.4.3-2.5-.6-2.5-2z"/><path d="M12 10.2c-1.1 1.6-1.1 6.3 0 8.2"/></svg>
+          <span class="chat-fab-label" id="chat-fab-label" aria-hidden="true" hidden>Ask</span>
         </button>
       </div>
       <div id="tab-bar"></div>
@@ -85,7 +94,7 @@
        placeNotifBell() in shell.js moves this one element into that slot.
        Parked here in the markup; it is never displayed from here. -->
   <button type="button" id="notif-bell" class="notif-bell" hidden aria-label="Notifications">
-    <span class="notif-bell-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 6 2 7H4c.5-1 2-3 2-7Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span>
+    <span class="notif-bell-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 6 2 7H4c.5-1 2-3 2-7Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span>
     <span class="notif-badge" id="notif-badge" hidden></span>
   </button>
   <div id="notif-scrim" hidden></div>
