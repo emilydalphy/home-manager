@@ -371,6 +371,58 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — Swap says who picks: "Swap · I'll pick". Branch
+  `worktree-meal-open-and-swap`, NOT merged at the time of writing.**
+  Loop Board improvement (Emily: "when you click the 'swap' button, it
+  goes with something totally different ... it should make that clear").
+  One constant, `SWAP_LABEL` in `static/shell.js`, at both sites the
+  in-place swap is offered (the Day card, the Meal dock), against "Tell me
+  what instead" beside it. Considered and not built: "Surprise me" (loses
+  the word Swap the clash card and the undo flow use, and over-promises
+  whimsy for a pick that works around the table's exclusions and the
+  week's other dishes) and a hint line under the pair (restates the
+  labels — §8's every-word rule). "Random" is deliberately not in the
+  label for the same reason. The post-swap state is unchanged: reason +
+  Undo + the chat link for `SWAP_UNDO_MS` (8 s), the swap itself still
+  there to go again. A persistent Undo would need `swapped_from` on the
+  week menu's entries; not done, since the reason is saved on the meal
+  and the line is not meant to be furniture.
+- **2026-09-13 — Tapping a meal in the draft always opens that meal.
+  Branch `worktree-meal-open-and-swap`, NOT merged at the time of
+  writing.** Loop Board bug (Emily, on her phone: "sometimes it brings me
+  to the recipe, and sometimes it brings me to this other page with the
+  full cook list"; after a chat swap, "I can't go to the screen where I
+  can see the instructions for it"). Two causes, both in `static/shell.js`:
+  a dish name on the draft's "What we're eating" list went through
+  `openRecipeFor` into COOK MODE while the tiles' way in (tile → Day →
+  card) went to Plan's own Meal step — two destinations for one tap; and
+  both screens read the recipe off Cook's OWN cooker view (`/api/cooker-
+  view` with no id = the plan whose period contains today,
+  `_current_weekly_plan_row`), fetched once and never again. On a Sunday
+  with Plan pinned to the week just drafted, nothing on the draft is in
+  that view, so `cookResolveFocusIndex` found nothing and cook mode fell
+  back to its root ("Cook · 4 cooks today"); the Meal step drew a hero
+  with no steps. A dish swapped in had the same problem by a different
+  route: a new entry id, and a cached view fetched before it existed.
+  - **Fix: one door, and the plan's own view.** Every tap on a meal in
+    Plan opens the Meal step (the crumb remembers whether it came from
+    the list or the Day step — `weekState.mealBack`). The Meal step reads
+    `/api/cooker-view?weekly_plan_id=<the plan on screen>` into
+    `weekState.cookView` — never into `cookState.data`, which is Cook's
+    reading of its own week — and re-reads it after anything that reloads
+    the week (`loadWeekMenu` marks it stale). While it is on its way the
+    clock says "Getting the recipe…"; a failed read is held and says so
+    rather than retrying on every render.
+  - **`is_current_plan` on the cooker view** (`cooker.get_cooker_view`):
+    whether the named plan is the one the no-id view resolves to — the
+    only plan cook mode can open a meal from. "Cook this" / "Start at …"
+    are offered only when it is true; on a week Cook doesn't hold yet the
+    Day card's row is the swap alone and the Meal dock is swap + "Tell me
+    what instead", since deciding is that week's job. Answered by the
+    same query rather than by dates: on a day no plan covers, the fallback
+    current plan IS next week's draft, so "its period has started" would
+    be the wrong test. Emily can override the dock's shape for that case.
+
 - **2026-09-13 — After the plan, seeing the week is a first-class path;
   the list keeps its pull. Branch `worktree-allset-week-path`, NOT merged
   at the time of writing.** Two Loop Board cards on All set (Emily, on

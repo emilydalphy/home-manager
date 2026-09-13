@@ -39,5 +39,5 @@ def test_the_clock_and_cook_ahead_follow_and_the_action_is_docked():
     dock = _fn("mealDockHtml")
     assert '<div class="wk-decide dock wk-meal-dock">' in dock
     assert "day.isPast) return '';" in dock  # no dock on a past day
-    assert "Swap this meal" in dock
+    assert "SWAP_LABEL" in dock
     assert "#week-steps .wk-decide.dock { margin-top: auto; }" in SHELL_CSS

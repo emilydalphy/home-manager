@@ -830,7 +830,7 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     )
 
     if plan.get("weekly_plan_id") is None and not loose_meals:
-        return {"weekly_plan_id": None, "meals": [], "prep_tasks": [], "prep_sessions": [], "prep_days_set": False, "meals_done": 0, "meals_total": 0, "prep_done": 0, "prep_total": 0, "all_away": False,
+        return {"weekly_plan_id": None, "is_current_plan": False, "meals": [], "prep_tasks": [], "prep_sessions": [], "prep_days_set": False, "meals_done": 0, "meals_total": 0, "prep_done": 0, "prep_total": 0, "all_away": False,
                 "period_start_date": None, "day_count": 0, "cook_name": _cook_name()}
 
     if plan.get("weekly_plan_id") is None:
@@ -843,6 +843,26 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         plan = {**plan, "week_start_date": None, "planning_mode": "day_based",
                 "status": None, "day_count": 0, "meals": []}
     plan_id = plan["weekly_plan_id"]
+
+    # Whether this is the plan the Cook tab itself shows — the one a call
+    # with NO weekly_plan_id resolves to (_current_weekly_plan_row: the
+    # plan whose period contains today, else the newest that hasn't
+    # expired). The Plan tab asks for a specific plan's view so a meal on
+    # next week's draft can show its recipe (2026-09-13, "tapping a meal
+    # sometimes lands on the full cook list"), and this is how it knows
+    # whether cook mode — which only ever holds the no-id view — can open
+    # that meal, or whether offering "Cook this" would land the household
+    # on Cook's root looking at a different week. Read from the same query
+    # rather than inferred from dates: on a Sunday with no plan covering
+    # today the fallback IS next week's draft, so "its period has started"
+    # would be the wrong test.
+    if weekly_plan_id is None or plan_id is None:
+        is_current_plan = plan_id is not None
+    else:
+        conn = get_conn()
+        current = _weekly_plan._current_weekly_plan_row(conn)
+        conn.close()
+        is_current_plan = bool(current) and current["id"] == plan_id
 
     # A week where every dinner was deliberately marked planned_empty
     # (see _NOT_COOKABLE_SLOT_STATES above) — "core loop handoffs, slice 2"
@@ -1075,6 +1095,7 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     prep_tasks = get_prep_schedule(plan_id) if plan_id is not None else []
     return {
         "weekly_plan_id": plan_id,
+        "is_current_plan": is_current_plan,
         "week_start_date": plan["week_start_date"],
         "planning_mode": plan["planning_mode"],
         "status": plan["status"],
