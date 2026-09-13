@@ -156,6 +156,16 @@ def test_cats_get_litter_and_several_dogs_are_the_dogs():
     assert "Wash the dogs' beds and bowls" in names
 
 
+def test_a_count_that_is_not_a_number_reads_as_unknown_and_a_number_in_the_rotation_is_nobody():
+    """Verifier's catch: the pure function is reached from chat and /known with whatever was saved."""
+    rows = tools.starter_chore_list({**CONDO, "bathrooms": "three", "bedrooms": None, "rotation_members": ["Jamie", 123, None, {"name": "x"}, " "]})
+    names = _names(rows)
+    assert [n for n in names if "athroom" in n] == ["Bathroom"], "not a number: the one row an unknown home gets"
+    assert all(r["mode"] == "owned" and r["owner_name"] == "Jamie" for r in rows)
+    rows = tools.starter_chore_list({**CONDO, "rotation_members": "Jamie"})
+    assert all(r["mode"] == "whoever" for r in rows), "a bare string is not a list of people"
+
+
 def test_the_standard_moves_only_the_cleaning_rows():
     relaxed = _by_name(tools.starter_chore_list({**HOUSE, "standard": "relaxed"}))
     meticulous = _by_name(tools.starter_chore_list({**HOUSE, "standard": "meticulous"}))
@@ -252,6 +262,18 @@ def test_the_lawn_people_take_the_yard_only():
     assert by["Mow the lawn"]["mode"] == "outsourced" and by["Mow the lawn"]["outsourced_to"] == "the lawn people"
     assert by["Weed and tidy the garden beds"]["mode"] == "outsourced"
     assert by["Main bathroom"]["mode"] == "owned"
+
+
+def test_the_lawn_people_come_every_two_weeks_so_the_lawn_is_mown_every_two_weeks():
+    """Verifier's catch: the help's rhythm applied only to the cleaning rows."""
+    by = _by_name(tools.starter_chore_list({
+        **HOUSE, "existing_help": "the lawn people", "existing_help_frequency": "every two weeks",
+    }))
+    assert by["Mow the lawn"]["mode"] == "outsourced" and by["Mow the lawn"]["frequency"] == "biweekly"
+    assert by["Mow the lawn"]["frequency_label"] == "Every two weeks"
+    assert by["Weed and tidy the garden beds"]["frequency"] == "biweekly"
+    # The rows the help doesn't cover keep their own rhythm.
+    assert by["Vacuum"]["frequency"] == "weekly" and by["Vacuum"]["mode"] == "owned"
 
 
 def test_no_help_means_nothing_is_tagged():

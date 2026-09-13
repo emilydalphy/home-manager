@@ -433,10 +433,19 @@ why*, not duplicating the diff.
     TODAY (`_next_due_date`'s "never scheduled → today"), so keeping 28
     rows puts 28 on Now on day one, the yearly vet visit included.
     Pre-existing; staggering the first fortnight is a product call.
-  - Tests: `tests/test_chore_starter_list.py` (36, one section per
-    acceptance criterion); three older tests re-pinned to the new
+  - **Verifier's two catches, fixed:** the help's "How often?" answer now
+    re-rhythms EVERY row the help is tagged onto (the lawn people's
+    fortnight is when the lawn is mown), not just the cleaning rows — one
+    question was asked, so one answer applies, and review corrects the
+    odd row. And the pure function no longer crashes on what a saved
+    profile or the chat can hand it: a non-numeric room count reads as
+    "not known" (`_count` → 0, the same one row an unknown home gets)
+    and a non-string in the rotation is nobody.
+  - Tests: `tests/test_chore_starter_list.py` (37, one section per
+    acceptance criterion) plus one parametrize case in
+    `test_chores_switch.py`; three older tests re-pinned to the new
     contract (recommend returns baseline + adds; save's body gained
-    `scheduled`; the gated-tool set). 3381 passed.
+    `scheduled`; the gated-tool set). 3383 passed.
 
 - **2026-09-13 — Skip, swap, or "not this week": a ··· on every chore row.
   Branch `overnight/chores-skip-hand-move`, NOT merged at the time of

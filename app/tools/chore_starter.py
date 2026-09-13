@@ -87,7 +87,21 @@ _ORDINALS = ("Main", "Second", "Third", "Fourth", "Fifth")
 
 
 def _norm(text) -> str:
-    return (text or "").strip().lower()
+    return str(text or "").strip().lower()
+
+
+def _count(value) -> int:
+    """
+    A room count as an int, or 0 when it isn't one. "three", None, a
+    list — anything that isn't a number reads as "not known", which gets
+    the same one row an unknown home gets; never a crash from the pure
+    function (the HTTP routes 422 first, but the chat and /known paths
+    reach here with whatever was saved).
+    """
+    try:
+        return max(int(value), 0)
+    except (TypeError, ValueError):
+        return 0
 
 
 def _is_house(home_type: str) -> bool:
@@ -209,7 +223,7 @@ def _pet_rows(pets: list[dict]) -> list[dict]:
 
 def _bathroom_rows(bathrooms: int) -> list[dict]:
     """One row per bathroom while the names stay sayable, else one row for all of them."""
-    n = max(int(bathrooms or 0), 0)
+    n = _count(bathrooms)
     if n <= 1:
         return [_row("Bathroom", "weekly", "cleaning", "rooms", group="cleaning_visit", scales=True)]
     if n <= len(_ORDINALS):
@@ -276,7 +290,10 @@ def starter_chore_list(profile: dict) -> list[dict]:
     owner_name, assignee_names, outsourced_to, basis.
     """
     standard = _norm(profile.get("standard")) or "standard"
-    people = [str(n).strip() for n in (profile.get("rotation_members") or []) if str(n or "").strip()]
+    # Only names: a number or a dict in the rotation is not a person to
+    # deal chores to.
+    members = profile.get("rotation_members")
+    people = [n.strip() for n in (members if isinstance(members, list) else []) if isinstance(n, str) and n.strip()]
     help_text = str(profile.get("existing_help") or "").strip()
     covered = _help_groups(help_text)
     help_frequency = _help_frequency(str(profile.get("existing_help_frequency") or ""))
@@ -300,10 +317,16 @@ def starter_chore_list(profile: dict) -> list[dict]:
             # The help the household already told us about does this one.
             # It stays on the list — knowing Thursday is cleaner day is
             # the point — tagged in their words, and nobody here is dealt it.
+            # "How often?" was asked about that help, so its answer is the
+            # rhythm of every row the help covers — the lawn people's
+            # fortnight is when the lawn gets mown. One answer for all of
+            # it, since one question was asked; a household with a cleaner
+            # weekly AND a groomer every six weeks corrects the odd row in
+            # review, and the model's adjust pass reads the same sentence.
             row["mode"] = "outsourced"
             row["outsourced_to"] = help_text
             row["basis"] = "help"
-            if help_frequency and raw["_group"] == "cleaning_visit":
+            if help_frequency:
                 row["frequency"] = help_frequency
                 row["frequency_label"] = FREQUENCY_WORDS.get(help_frequency, help_frequency)
         elif people:
