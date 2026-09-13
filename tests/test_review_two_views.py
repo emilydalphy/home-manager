@@ -697,6 +697,7 @@ def _step_html(data: dict, days: list) -> str:
         + _extract("countOpenSlots", SHELL_JS) + "\n"
         + _extract("approveWithOpenLabel", SHELL_JS) + "\n"
         + _extract("openListLabel", SHELL_JS) + "\n"  # the approved week's dock label (2026-09-13)
+        + _extract("weekReplacesNote", SHELL_JS) + "\n"  # what approving a draft replaces (2026-09-13)
         + _extract("reviewDecideHtml", SHELL_JS) + "\n"
         + _extract("reviewStepHtml", SHELL_JS) + "\n"
         + f"reviewState.view = {json.dumps(data.pop('_view', 'eating'))};\n"

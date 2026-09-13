@@ -2440,10 +2440,11 @@ def generate_week(week_start: str, req: WeekGenerateRequest):
     {week_start} unless the body says otherwise. Adds NOTHING to the grocery
     list — a draft is not a yes; approving is (see approve_week).
 
-    A period that overlaps an existing plan takes those days over (Emily's
-    one-plan-per-day rule); the response's `took_over` says what that cost
-    the shopping list, including which lines were left alone because
-    somebody had already bought them.
+    A period that overlaps another DRAFT replaces it on those days now;
+    one that overlaps an APPROVED week leaves it whole until this draft is
+    approved (Emily, 2026-09-13) — approve_week's `took_over` says what
+    that cost the shopping list, including which lines were left alone
+    because somebody had already bought them.
     """
     period_start, day_count = _validated_period(week_start, req)
     try:
@@ -2905,6 +2906,13 @@ class WeekSlotRequest(BaseModel):
     date: str
     slot: str = "dinner"
     choice: str
+    # The plan the slot belongs to, when the caller knows it. Now's
+    # open-dinner card sends it (weekly_plan.get_needs_you_items): the week
+    # key alone resolves to the newest plan filed under it, which is a
+    # DRAFT when one sits over the approved week (2026-09-13), and the
+    # card is about the approved week. Left unset by the Plan tab, whose
+    # week key names the plan it is showing.
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/slot")
@@ -2914,7 +2922,7 @@ def resolve_week_slot(week_start: str, req: WeekSlotRequest):
     draft this leaves the shopping list alone; in an approved week it keeps
     the list in step, same rule as a swap.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = req.weekly_plan_id if req.weekly_plan_id is not None else _plan_id_for_week(week_start)
     if req.slot not in tools.WEEK_SLOTS:
         raise HTTPException(status_code=400, detail=f"slot must be one of {', '.join(tools.WEEK_SLOTS)}.")
     try:

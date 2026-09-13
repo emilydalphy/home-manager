@@ -96,10 +96,16 @@ def _plan_id_for_date(conn, meal_date: str, slot: str) -> int | None:
     normal case for a need declared ahead of generation (this is meant to
     be usable at intake time, exactly like week_intake.night_tags today).
     """
+    # Approved plan first (2026-09-13): a draft may sit over the approved
+    # week until it is approved, and "we're away Monday" has to empty the
+    # week the household is actually cooking from — not a draft they may
+    # walk away from.
     row = conn.execute(
-        "SELECT weekly_plan_id FROM meal_plan_entries "
-        "WHERE household_id = ? AND date = ? AND slot = ? AND component_category IS NULL "
-        "AND weekly_plan_id IS NOT NULL ORDER BY id DESC LIMIT 1",
+        "SELECT mpe.weekly_plan_id FROM meal_plan_entries mpe "
+        "JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
+        "WHERE mpe.household_id = ? AND mpe.date = ? AND mpe.slot = ? AND mpe.component_category IS NULL "
+        "AND wp.status != 'retired' "
+        "ORDER BY (wp.status = 'approved') DESC, mpe.id DESC LIMIT 1",
         (household_id(), meal_date, slot),
     ).fetchone()
     if row and row["weekly_plan_id"]:
@@ -208,10 +214,13 @@ def _reopen_away_slot(date_str: str, slot: str, attendance: dict) -> bool:
     declared before the week was generated.
     """
     conn = get_conn()
+    # Same tiebreak as _plan_id_for_date: the approved plan's row.
     row = conn.execute(
-        "SELECT id, weekly_plan_id, slot_state FROM meal_plan_entries "
-        "WHERE household_id = ? AND date = ? AND slot = ? AND component_category IS NULL "
-        "ORDER BY id DESC LIMIT 1",
+        "SELECT mpe.id, mpe.weekly_plan_id, mpe.slot_state FROM meal_plan_entries mpe "
+        "LEFT JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
+        "WHERE mpe.household_id = ? AND mpe.date = ? AND mpe.slot = ? AND mpe.component_category IS NULL "
+        "AND (wp.id IS NULL OR wp.status != 'retired') "
+        "ORDER BY (wp.status = 'approved') DESC, mpe.id DESC LIMIT 1",
         (household_id(), date_str, slot),
     ).fetchone()
     conn.close()

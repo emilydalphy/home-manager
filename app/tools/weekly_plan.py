@@ -2295,8 +2295,9 @@ def _takeover_question(
     this is about losing something — so no exclamation marks and no
     softening before the fact.
 
-      "I'd replace Thursday to Sunday's dinners — Bean Chili, Salmon — and
-       11 things on your shopping list would change. Go ahead?"
+      "Once it's approved, I'd replace Thursday to Sunday's dinners — Bean
+       Chili, Salmon — and 11 things on your shopping list would change.
+       Go ahead?"
 
     Dinners are what a household remembers a day by, so those are named
     (each once, in the order they come); the rest of the day's meals go too
@@ -4132,9 +4133,17 @@ def get_needs_you_items() -> list[dict]:
         logger.exception("Holiday ask could not be built for the needs-you band")
 
     # ---- Rule 1: dinner decision ----
+    # Ordered so the APPROVED plan's row is the last one seen for a date
+    # and wins the dict below: a draft may sit over the approved week until
+    # it is approved (2026-09-13), and Now follows the real week, not the
+    # draft — a draft's open Thursday is not tonight's decision, and the
+    # approved week's open Thursday still is.
     dinner_rows = conn.execute(
-        "SELECT date, slot_state, open_reason, derived_from_json, weekly_plan_id "
-        "FROM meal_plan_entries WHERE household_id = ? AND slot = 'dinner' AND date >= ? AND date < ?",
+        "SELECT mpe.date, mpe.slot_state, mpe.open_reason, mpe.derived_from_json, mpe.weekly_plan_id "
+        "FROM meal_plan_entries mpe LEFT JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
+        "WHERE mpe.household_id = ? AND mpe.slot = 'dinner' AND mpe.date >= ? AND mpe.date < ? "
+        "AND (wp.id IS NULL OR wp.status != 'retired') "
+        f"ORDER BY (wp.status = 'approved') ASC, mpe.id ASC",
         (household_id(), today.isoformat(), horizon_end.isoformat()),
     ).fetchall()
     dinner_by_date = {r["date"]: r for r in dinner_rows}
@@ -4161,6 +4170,11 @@ def get_needs_you_items() -> list[dict]:
                 "body": row["open_reason"] or "",
                 "options": derived.get("options") or [],
                 "week_start": week_start,
+                # The plan this card is about, by id: a week key alone
+                # resolves to the newest plan filed under it, which is the
+                # DRAFT when one sits over this week (2026-09-13). The pick
+                # has to land on the row the card was built from.
+                "weekly_plan_id": row["weekly_plan_id"],
             })
             break  # only the soonest unsettled dinner becomes a card
 

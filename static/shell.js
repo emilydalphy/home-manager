@@ -1152,6 +1152,7 @@
                   return (
                     '<div class="ny-option" data-date="' + escapeHtml(item.date) + '" ' +
                       'data-week-start="' + escapeHtml(item.week_start || '') + '" ' +
+                      'data-plan-id="' + escapeHtml(item.weekly_plan_id != null ? String(item.weekly_plan_id) : '') + '" ' +
                       'data-choice="' + escapeHtml(opt.label) + '" data-index="' + i + '">' +
                       '<span class="ny-option-dish">' + escapeHtml(opt.label) + (opt.meta ? ' &middot; ' + escapeHtml(opt.meta) : '') + '</span>' +
                       '<span class="ny-option-pick">Pick</span>' +
@@ -1222,7 +1223,7 @@
     });
     band.querySelectorAll('[data-card-type="dinner_open"] .ny-option').forEach(function (row) {
       row.addEventListener('click', function () {
-        resolveOpenDinner(panel, row.dataset.weekStart, row.dataset.date, row.dataset.choice, row.closest('.needs-you-card'));
+        resolveOpenDinner(panel, row.dataset.weekStart, row.dataset.date, row.dataset.choice, row.closest('.needs-you-card'), row.dataset.planId);
       });
     });
     band.querySelectorAll('[data-card-type="dinner_open"] .ny-open-talk').forEach(function (btn) {
@@ -1307,16 +1308,21 @@
   // endpoint the Plan screen's own open-slot cards use (resolveOpenSlot),
   // since that one replaces the existing open row instead of inserting a
   // second entry alongside it the way /api/needs-you/dinner would.
-  async function resolveOpenDinner(panel, weekStart, mealDate, choice, cardEl) {
+  async function resolveOpenDinner(panel, weekStart, mealDate, choice, cardEl, planId) {
     if (!weekStart) {
       alert('Could not save that pick right now — try again in a moment.');
       return;
     }
     try {
+      // The card's own plan id rides along: the week key resolves to the
+      // newest plan filed under it, which is a draft when one sits over
+      // this week (2026-09-13), and the pick belongs to the approved one.
+      var body = { date: mealDate, slot: 'dinner', choice: choice };
+      if (planId) body.weekly_plan_id = Number(planId);
       var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/slot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: mealDate, slot: 'dinner', choice: choice })
+        body: JSON.stringify(body)
       });
       if (!res.ok) throw new Error('open dinner resolve failed');
       await res.json();
@@ -10755,8 +10761,6 @@
     var notes = [];
     if (data.plates_note) notes.push(data.plates_note);
     if (weekPlanState(data) === 'draft' && data.soft_note) notes.push(data.soft_note);
-    var replacesNote = weekReplacesNote(data);
-    if (replacesNote) notes.push(replacesNote);
     // Why the next stretch on offer is shorter than a week ("Sep 17–20 is
     // already planned."), said once, right above the link it is about.
     var next = data.next_period || {};

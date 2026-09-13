@@ -225,3 +225,75 @@ class TestTonight:
         out = _tonight.tonight_check(now=friday_six)
         assert out["dinner"] is not None
         assert out["dinner"]["meal"] == "Chili"
+
+
+class TestNowAndAwayFollowTheApprovedWeek:
+    """Found by the verification pass on the first build: three surfaces
+    read meal_plan_entries by date with no plan filter, and picked the
+    draft's row (newest) over the approved week's."""
+
+    def _today_over(self, stub_model):
+        # An approved week that covers TODAY, and a draft over today too —
+        # the case Now, "away" and the chat's upcoming list all have to get
+        # right. Generated on the real date so get_needs_you_items (which
+        # reads the clock itself) sees them.
+        today = datetime.date.today()
+        start = (today - datetime.timedelta(days=1)).isoformat()
+        stub_model(_full_period(start, 4, meal="Chili"))
+        approved = agent.generate_weekly_plan(start, day_count=4, period_start=start)["weekly_plan_id"]
+        tools.approve_weekly_plan(approved, approved_by="Emily")
+        draft = _draft_over(stub_model, today.isoformat(), 3)["weekly_plan_id"]
+        return today.isoformat(), approved, draft
+
+    @staticmethod
+    def _open(plan_id, day, reason):
+        # plan_slot_open is a raw insert (drop_dish_from_day clears first);
+        # do the same, so the slot has one row.
+        tools.clear_plan_slot(plan_id, day, "dinner")
+        tools.plan_slot_open(plan_id, day, "dinner", reason)
+
+    def test_nows_dinner_card_is_the_approved_weeks_not_the_drafts(self, recipes, stub_model):
+        today, approved, draft = self._today_over(stub_model)
+        # The approved week's tonight is open; the draft's tonight is planned.
+        self._open(approved, today, "Deciding nearer the time.")
+        cards = [i for i in tools.get_needs_you_items() if i["type"] == "dinner_open"]
+        assert len(cards) == 1 and cards[0]["date"] == today
+        assert cards[0]["weekly_plan_id"] == approved
+
+        # And the other way round: an open night on the DRAFT is not
+        # tonight's decision.
+        tools.resolve_open_slot(approved, today, "dinner", "Chili")
+        self._open(draft, today, "Still thinking.")
+        assert [i for i in tools.get_needs_you_items() if i["type"] == "dinner_open"] == []
+
+    def test_the_pick_from_now_lands_on_the_approved_week(self, recipes, stub_model, signed_in):
+        today, approved, draft = self._today_over(stub_model)
+        self._open(approved, today, "Deciding nearer the time.")
+        card = next(i for i in tools.get_needs_you_items() if i["type"] == "dinner_open")
+        res = signed_in.post(
+            f"/api/week/{card['week_start']}/slot",
+            json={"date": today, "slot": "dinner", "choice": "Tacos", "weekly_plan_id": card["weekly_plan_id"]},
+        )
+        assert res.status_code == 200, res.text
+        approved_tonight = [m for m in tools.get_weekly_plan(approved)["meals"] if m["date"] == today and m["slot"] == "dinner"]
+        draft_tonight = [m for m in tools.get_weekly_plan(draft)["meals"] if m["date"] == today and m["slot"] == "dinner"]
+        assert [m["meal"] for m in approved_tonight] == ["Tacos"]
+        assert [m["meal"] for m in draft_tonight] == ["Katsu"]
+
+    def test_away_empties_the_approved_week_not_the_draft(self, recipes, stub_model):
+        today, approved, draft = self._today_over(stub_model)
+        tomorrow = (datetime.date.fromisoformat(today) + datetime.timedelta(days=1)).isoformat()
+        tools.set_away_stretch(tomorrow, "breakfast", tomorrow, "dinner", reason="trip")
+        approved_rows = [m for m in tools.get_weekly_plan(approved)["meals"] if m["date"] == tomorrow]
+        draft_rows = [m for m in tools.get_weekly_plan(draft)["meals"] if m["date"] == tomorrow]
+        assert approved_rows and all(m["slot_state"] == "planned_empty" for m in approved_rows)
+        assert draft_rows and all(m["slot_state"] == "planned" for m in draft_rows)
+
+    def test_the_chats_upcoming_list_shows_one_plans_meals_per_day(self, recipes, stub_model):
+        today, approved, draft = self._today_over(stub_model)
+        upcoming = tools.get_meal_plan(days_ahead=3)
+        by_day = {}
+        for m in upcoming:
+            by_day.setdefault(m["date"], set()).add(m["meal"])
+        assert by_day[today] == {"Chili"}
+        assert all(meals == {"Chili"} for meals in by_day.values())

@@ -123,6 +123,7 @@ def _review_root_html(status: str, root: bool) -> str:
         "function reviewDaysHtml(){ return '<div class=\"rv-body rv-days\"></div>'; }\n"
         "function reviewDecideHtml(d){ return d.status === 'draft' ? '<div class=\"wk-decide dock\">approve</div>' : ''; }\n"
         + _extract("weekPlanState", SHELL_JS) + "\n"
+        + _extract("weekReplacesNote", SHELL_JS) + "\n"
         + _extract("reviewStepHtml", SHELL_JS) + "\n"
         + "console.log(JSON.stringify(reviewStepHtml(%s, [{date:'2026-09-14'}], %s)));\n"
         % (json.dumps({"weekly_plan_id": 3, "status": status, "days": [{"date": "2026-09-14"}]}),
