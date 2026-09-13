@@ -9164,7 +9164,13 @@
   // draw, only to fold in changes quietly (§6 refresh policy).
   var weekState = {
     selectedIndex: null, days: [], data: null, pendingDayFocus: null,
-    step: 'week', mealSlot: 'dinner', chores: null, choresTrouble: false
+    step: 'week', mealSlot: 'dinner', chores: null, choresTrouble: false,
+    // The cooker view of THE PLAN ON SCREEN — see ensureCookDataForMeals.
+    // { planId, data, stale, loading }; null until a meal is opened.
+    cookView: null,
+    // Where the Meal step's crumb goes: 'day' (Week → Day → Meal, the
+    // tiles' way in) or 'week' (a dish name tapped on the root's list).
+    mealBack: 'day'
   };
 
   async function buildWeekPanel(panel) {
@@ -9296,6 +9302,10 @@
         planningPeriodDefault = data.suggested_period;
         planningPeriodFetchedOn = todayLocalStr();
       }
+      // The plan changed under the Meal step's recipe (a swap writes a new
+      // entry), so its cooker view is read again the next time a meal is
+      // drawn — see ensureCookDataForMeals.
+      if (weekState.cookView) weekState.cookView.stale = true;
       renderWeekMenu(panel, data);
       // Meals and Kitchen are two readings of one week, so anything that
       // reloads the plan reloads the cook's tab with it — a swap, an
@@ -10768,11 +10778,16 @@
       // A snack without a real recipe is grab-and-go — "Cook this" would be
       // asking the household to cook nothing, so it gets the same primary
       // a reheat night gets: tap it once it's eaten.
-      var label = entry.source === 'leftovers'
-        ? REHEAT_ACTION_LABEL
-        : (isSnackSlot(slot) && !isRealCook(entry))
-          ? REHEAT_ACTION_LABEL
-          : 'Cook this' + (time ? ' · ' + time : '');
+      var eaten = entry.source === 'leftovers' || (isSnackSlot(slot) && !isRealCook(entry));
+      var label = eaten ? REHEAT_ACTION_LABEL : 'Cook this' + (time ? ' · ' + time : '');
+      // "Cook this" only where cook mode can open it (see mealDockHtml);
+      // on a week Cook doesn't hold yet the swap takes the row on its own.
+      var cookable = eaten || typeof planCookableNow !== 'function' || planCookableNow();
+      if (!cookable) {
+        return '<div class="wk-acts">' +
+          '<button type="button" class="wk-act wk-act-primary" data-wk-swap="' + slot + '">Swap</button>' +
+        '</div>' + swapLine;
+      }
       return '<div class="wk-acts">' +
         '<button type="button" class="' + primaryCls + '" data-wk-cook="' + slot + '">' +
           escapeHtml(label) + '</button>' + swap +
@@ -11131,37 +11146,113 @@
     }
   }
 
-  // The cook card this entry is on, in the Cook view's own data. The
-  // cook-ahead picker is that view's control, reused here verbatim
-  // (cookAheadHtml) rather than rebuilt — one picker, one POST, one set of
-  // rules about which days a batch may cover.
+  // The cook card this entry is on. The cook-ahead picker is the Cook
+  // view's control, reused here verbatim (cookAheadHtml) rather than
+  // rebuilt — one picker, one POST, one set of rules about which days a
+  // batch may cover.
+  //
+  // Read off the plan ON SCREEN's own cooker view first (weekState.cookView,
+  // see ensureCookDataForMeals), then Cook's (cookState.data). Until
+  // 2026-09-13 only Cook's was read, and Cook's view is the plan whose
+  // period contains today — so a meal on next week's draft (the Sunday
+  // case: Plan pinned to the week just drafted, Cook still on this one)
+  // was never found, and the Meal step drew a hero with no steps under
+  // it. Same for a dish just swapped in: its entry id is new, and the
+  // cached view was fetched before it existed.
   function cookMealForEntry(entryId) {
     if (entryId === null || entryId === undefined) return null;
-    var meals = (cookState.data && cookState.data.meals) || [];
-    for (var i = 0; i < meals.length; i++) {
-      if (meals[i].entry_id === entryId) return meals[i];
-      if (meals[i].entry_ids && meals[i].entry_ids.indexOf(entryId) !== -1) return meals[i];
+    // (typeof guard: the tests run this lookup alone under node.)
+    var views = [typeof planCookView === 'function' ? planCookView() : null, cookState.data];
+    for (var v = 0; v < views.length; v++) {
+      var meals = (views[v] && views[v].meals) || [];
+      for (var i = 0; i < meals.length; i++) {
+        if (meals[i].entry_id === entryId) return meals[i];
+        if (meals[i].entry_ids && meals[i].entry_ids.indexOf(entryId) !== -1) return meals[i];
+      }
     }
     return null;
   }
 
-  // Fetched once and cached on cookState, so opening a meal never costs a
-  // round trip twice and the Cook view finds it already loaded. Silent on
-  // failure: the picker is an offer, and a meal that renders without one is
-  // still a correct meal.
+  // The cooker view of the plan Plan is showing, once it has landed for
+  // THAT plan — null before then, and null when the screen has moved on to
+  // another week (a stale answer about a different plan is worse than none).
+  function planCookView() {
+    var view = weekState.cookView;
+    var data = weekState.data;
+    if (!view || !view.data || !data || view.planId !== data.weekly_plan_id) return null;
+    return view.data;
+  }
+
+  // Whether the read of the plan on screen's view failed — the one case
+  // the clock must not keep saying "Getting the recipe…" for. A view for
+  // another plan is not this plan's failure.
+  function planCookViewFailed() {
+    var view = weekState.cookView;
+    var data = weekState.data;
+    return !!(view && view.failed && data && view.planId === data.weekly_plan_id);
+  }
+
+  // Whether the plan on screen is the one the Cook tab holds — the no-id
+  // cooker view, the only one cook mode can open a meal from. Answered by
+  // the server on the plan's own view (is_current_plan) rather than
+  // guessed from dates here; see get_cooker_view for why dates would be
+  // wrong on a Sunday. Unknown until the view lands, and unknown reads as
+  // "yes": the primary is drawn as it always was and taken off only once
+  // the server has said so.
+  function planCookableNow() {
+    var view = planCookView();
+    return !view || view.is_current_plan !== false;
+  }
+
+  // The plan on screen's cooker view — fetched for ITS id, never for "the
+  // current plan", and refetched after anything that reloads the week
+  // (loadWeekMenu marks it stale) so a swap's new dish is found by its new
+  // entry id. Kept on weekState rather than written into cookState.data:
+  // that is Cook's own reading of its own week, and a draft for next week
+  // written over it would have Cook's root counting next Tuesday's cooks
+  // as tonight's. Silent on failure: the meal still renders, saying it is
+  // still getting the recipe rather than pretending there is none.
   async function ensureCookDataForMeals(panel) {
-    if (cookState.data || cookState.mealsCookFetch) return;
-    cookState.mealsCookFetch = true;
+    var data = weekState.data;
+    var planId = data && data.weekly_plan_id;
+    if (!planId) return;
+    var view = weekState.cookView;
+    // Already on its way, already here, or already failed and not marked
+    // stale since: nothing to do. A failed read is held rather than retried
+    // on every render (the render this call ends with would otherwise ask
+    // again, and again); goMealsStep drops it, so opening the meal afresh
+    // is the retry, and so is anything that reloads the week.
+    if (view && view.planId === planId && !view.stale && (view.loading || view.data || view.failed)) return;
+    // Each read carries its own number, and only the LATEST read for a
+    // plan may land. A week marked stale while a read is still out (a
+    // swap answering before the first read has) starts a second read on
+    // purpose — the newer answer is the one wanted — and without this the
+    // two raced for the same slot, and the slower, older one could land
+    // last and stand as settled (found by the verifying pass, 2026-09-13).
+    var seq = (weekState.cookViewSeq || 0) + 1;
+    weekState.cookViewSeq = seq;
+    weekState.cookView = {
+      planId: planId, seq: seq, loading: true, stale: false, failed: false,
+      // The old answer stays readable while the new one is on its way, so
+      // a meal that didn't change doesn't lose its steps for a beat.
+      data: view && view.planId === planId ? view.data : null
+    };
+    var mine = function () {
+      return weekState.cookView && weekState.cookView.planId === planId && weekState.cookView.seq === seq;
+    };
     try {
-      var res = await fetch('/api/cooker-view');
+      var res = await fetch('/api/cooker-view?weekly_plan_id=' + encodeURIComponent(planId));
       if (!res.ok) throw new Error('cooker-view failed');
-      cookState.data = await res.json();
-      if (weekState.step === 'meal') renderMealsStep(panel);
+      var fresh = await res.json();
+      if (!mine()) return;
+      weekState.cookView = { planId: planId, seq: seq, data: fresh, loading: false, stale: false, failed: false };
     } catch (err) {
-      console.warn('Cook-ahead lookup failed:', err);
-    } finally {
-      cookState.mealsCookFetch = false;
+      console.warn('Recipe lookup for the plan failed:', err);
+      if (!mine()) return;
+      weekState.cookView.loading = false;
+      weekState.cookView.failed = !weekState.cookView.data;
     }
+    if (weekState.step === 'meal' || weekState.step === 'day') renderMealsStep(panel);
   }
 
   // A cook that has been started and not finished: at least one step
@@ -11182,6 +11273,11 @@
   // the stops, the start, the table time. `cookMeal` is null until the
   // cooker view has loaded (ensureCookDataForMeals re-renders when it has)
   // and for a reheat night, which has no cook in it.
+  //
+  // `pending`: no card, and the plan's own cooker view hasn't landed yet
+  // (or is being read again after a change) — the clock says the recipe
+  // is on its way rather than that there isn't one. planCookView is
+  // guarded with typeof for the tests that run these renderers alone.
   function mealClockFor(day, slot, entry, cookMeal) {
     var times = (weekState.data && weekState.data.slot_times) || {};
     var table = slotTableMinutes(times, slot);
@@ -11190,7 +11286,10 @@
     var total = isCook ? mealTotalMinutes(cookMeal) || mealTotalMinutes(entry) : null;
     var start = stops.length && stops[0].minutes !== null ? stops[0].minutes
       : (isCook && total && table !== null ? table - total : null);
-    return { cookMeal: cookMeal, isCook: isCook, stops: stops, total: total, table: table, start: start };
+    var pending = !cookMeal && typeof planCookView === 'function' && !planCookView();
+    var failed = pending && typeof planCookViewFailed === 'function' && planCookViewFailed();
+    return { cookMeal: cookMeal, isCook: isCook, stops: stops, total: total, table: table, start: start,
+      entry: entry || null, pending: pending && !failed, failed: failed };
   }
 
   // The hero's one plain line: the thaw the plan wrote for this meal (the
@@ -11272,7 +11371,26 @@
   // information (2026-09-10: "Apple slices" is not a recipe somebody
   // forgot to write).
   function mealClockHtml(slot, clock) {
-    if (!clock.isCook) return '';
+    if (!clock.isCook) {
+      // No cook card yet for a real cook. Either the plan's cooker view is
+      // still on its way — say so, rather than drawing a hero over nothing
+      // (Emily, 2026-09-13: "I can't go to the screen where I can see the
+      // instructions") — or it has landed without this entry, which is the
+      // no-recipe case in different clothes. A reheat night and a
+      // grab-and-go snack have no cook in them and get nothing, as before.
+      if (!clock.entry || clock.entry.source === 'leftovers' ||
+          (clock.cookMeal && clock.cookMeal.is_leftovers) ||
+          (isSnackSlot(slot) && !isRealCook(clock.entry))) return '';
+      if (clock.pending) {
+        return '<div class="wk-clock"><p class="cook-norecipe">Getting the recipe…</p></div>';
+      }
+      // Calm and plain, with its way out (DESIGN_SYSTEM §8): the read
+      // failed, and opening the meal again is the retry (goMealsStep).
+      if (clock.failed) {
+        return '<div class="wk-clock"><p class="cook-norecipe">Couldn’t get the recipe just now — go back and open it again.</p></div>';
+      }
+      return '<div class="wk-clock"><p class="cook-norecipe">No saved recipe for this one — ask me for it in the chat.</p></div>';
+    }
     var cookMeal = clock.cookMeal;
     if (!cookMeal.has_full_recipe && !clock.stops.length) {
       if (isSnackSlot(slot)) return '';
@@ -11289,13 +11407,19 @@
     '</div>';
   }
 
+  //
+  // The crumb goes up one level BY NAME to wherever this meal was opened
+  // from (weekState.mealBack): "‹ Monday" when it was the Day step's card,
+  // "‹ This week" when it was a dish name on the root's list — the same
+  // words the Day step's own crumb uses for the same destination.
   function mealStepHtml(day, slot) {
     var entry = daySlotEntry(day, slot);
     var cookMeal = cookMealForEntry(entry.entry_id);
     var clock = mealClockFor(day, slot, entry, cookMeal);
     var aheadHtml = cookMeal ? cookAheadHtml(cookMeal) : '';
-    return '<button type="button" class="crumb" data-wk-back="day">‹ ' +
-        escapeHtml(dayName(day.date, { weekday: 'long' })) + '</button>' +
+    var back = weekState.mealBack === 'week' ? 'week' : 'day';
+    return '<button type="button" class="crumb" data-wk-back="' + back + '">‹ ' +
+        escapeHtml(back === 'week' ? 'This week' : dayName(day.date, { weekday: 'long' })) + '</button>' +
       mealHeroHtml(day, slot, entry, clock) +
       '<div class="wk-meal-body">' +
         mealClockHtml(slot, clock) +
@@ -11316,21 +11440,32 @@
   // quiet link into the swap-in-place flow. A reheat night or a grab-and-go
   // snack keeps "Mark eaten". Empty (no dock) when the slot has nothing to
   // do — a past day, an away night.
+  //
+  // A meal on a plan Cook doesn't hold yet (next week's draft, on a Sunday
+  // — see planCookableNow) gets no way into cook mode: cook mode only ever
+  // opens the no-id view, so "Start cooking" there landed on Cook's root
+  // with this week's list (Emily, 2026-09-13: "this other page with the
+  // full cook list"). The recipe is on this screen already; the dock
+  // offers the two ways to change the meal instead — swap as the primary,
+  // the chat as the quiet link — since deciding is that week's job.
   function mealDockHtml(day, slot, clock) {
     var entry = daySlotEntry(day, slot);
     if (!entry || entry.state !== 'planned' || day.isPast) return '';
     var eaten = entry.source === 'leftovers' || (isSnackSlot(slot) && !isRealCook(entry));
+    var cookable = typeof planCookableNow !== 'function' || planCookableNow();
     var label;
     if (eaten) label = REHEAT_ACTION_LABEL;
     else if (clock && mealCookUnderway(clock.cookMeal)) label = 'Keep cooking';
     else if (clock && clock.start !== null) label = 'Start at ' + clockLabel(clock.start);
     else label = 'Start cooking';
-    return '<div class="wk-decide dock wk-meal-dock">' +
-      '<div class="dock-row">' +
-        '<button type="button" class="dock-primary" data-wk-cook="' + slot + '">' +
+    var row = cookable || eaten
+      ? '<button type="button" class="dock-primary" data-wk-cook="' + slot + '">' +
           escapeHtml(label) + '</button>' +
-        '<button type="button" class="dock-link wk-act-swap" data-wk-swap="' + slot + '">Swap this meal</button>' +
-      '</div>' +
+        '<button type="button" class="dock-link wk-act-swap" data-wk-swap="' + slot + '">Swap this meal</button>'
+      : '<button type="button" class="dock-primary wk-act-swap" data-wk-swap="' + slot + '">Swap this meal</button>' +
+        '<button type="button" class="dock-link wk-swap-tell" data-wk-tell="' + slot + '">Tell me what instead</button>';
+    return '<div class="wk-decide dock wk-meal-dock">' +
+      '<div class="dock-row">' + row + '</div>' +
       // The swap line only once there is something on it — the call going
       // out, the reason and its Undo. Its idle state ("Tell me what
       // instead") stays on the Day step's cards; here the dock is the one
@@ -11641,7 +11776,8 @@
       tab: 'week',
       mealsStep: weekState.step === 'meal' ? 'meal' : 'day',
       mealsDay: weekState.selectedIndex,
-      mealsSlot: slot || weekState.mealSlot
+      mealsSlot: slot || weekState.mealSlot,
+      mealsBack: weekState.mealBack
     };
   }
 
@@ -11653,7 +11789,8 @@
       tab: 'week',
       mealsStep: weekState.step,
       mealsDay: weekState.selectedIndex,
-      mealsSlot: weekState.mealSlot
+      mealsSlot: weekState.mealSlot,
+      mealsBack: weekState.mealBack
     };
   }
 
@@ -11672,6 +11809,15 @@
     weekState.step = step;
     if (opts.dayIndex !== undefined && opts.dayIndex !== null) weekState.selectedIndex = opts.dayIndex;
     if (opts.slot) weekState.mealSlot = opts.slot;
+    // Which way the Meal step's crumb goes (mealStepHtml): the root's list
+    // says 'week'; a Day step card says nothing and gets 'day'.
+    if (step === 'meal') weekState.mealBack = opts.back === 'week' ? 'week' : 'day';
+    // Opening a meal or a day afresh is the retry for a recipe read that
+    // failed (ensureCookDataForMeals holds a failure rather than asking on
+    // every render).
+    if ((step === 'meal' || step === 'day') && weekState.cookView && weekState.cookView.failed) {
+      weekState.cookView = null;
+    }
     if (opts.replace) replaceMealsStepHistory();
     else if (opts.push !== false) pushMealsStepHistory();
     var panel = panels['week'];
@@ -11697,6 +11843,7 @@
       weekState.selectedIndex = state.mealsDay;
     }
     if (state && state.mealsSlot) weekState.mealSlot = state.mealsSlot;
+    if (state && state.mealsBack) weekState.mealBack = state.mealsBack;
     weekState.step = step;
     renderMealsStep(panel);
     if (weekState.step === 'chores') loadPlanChores(panel);
@@ -11785,6 +11932,9 @@
       ensureRhythmForMeals(panel);
     } else if (weekState.step === 'day') {
       steps.innerHTML = dayStepHtml(day);
+      // The cards' "Cook this" is offered off the plan's own cooker view
+      // (planCookableNow), so the Day step asks for it as the Meal step does.
+      ensureCookDataForMeals(panel);
     } else if (weekState.step === 'review') {
       steps.innerHTML = reviewStepHtml(data, weekState.days, false);
     } else if (weekState.step === 'allset') {
@@ -12009,31 +12159,28 @@
         renderMealsStep(panel);
       });
     });
-    // Into the recipe from either view, and straight back: the cook screen's
-    // crumb names this view and returns to this tab, which is still on
-    // this step (cookExitFocus → activateTab('week')).
-    function reviewOrigin() {
-      return { label: reviewState.view === 'days' ? 'Which days' : 'What we’re eating', tab: 'week' };
-    }
+    // A dish name on the list opens the Meal step — the same screen the
+    // Day step's card opens, with the crumb going straight back here.
+    //
+    // Until 2026-09-13 this went through openRecipeFor into cook mode,
+    // while the tiles' way in (tile → Day → card) went to the Meal step:
+    // two destinations for one tap. And cook mode can only open a meal
+    // that is in Cook's own view — the plan whose period contains today —
+    // so on a Sunday, with Plan pinned to the week just drafted, every
+    // name on the draft landed on Cook's root with THIS week's list
+    // (Emily: "sometimes it brings me to the recipe, and sometimes it
+    // brings me to this other page with the full cook list"). The Meal
+    // step reads the plan's own cooker view now (ensureCookDataForMeals),
+    // so it has the recipe whichever week is on screen.
     steps.querySelectorAll('[data-rv-recipe]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var dish = (reviewState.dishes || [])[Number(btn.getAttribute('data-rv-recipe'))];
         if (!dish || !dish.days.length) return;
         var first = dish.days[0];
-        var day = weekState.days.filter(function (d) { return d.date === first.date; })[0];
-        if (!day) return;
-        var slot = reviewMealSlotKey(day, first.entryId, dish.slot);
-        openRecipeFor(recipeTargetForEntry(daySlotEntry(day, slot), day.date, slot), reviewOrigin());
-      });
-    });
-    steps.querySelectorAll('[data-rv-recipe-date]').forEach(function (btn) {
-      btn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        var date = btn.getAttribute('data-rv-recipe-date');
-        var slot = btn.getAttribute('data-rv-recipe-slot');
-        var day = weekState.days.filter(function (d) { return d.date === date; })[0];
-        if (!day) return;
-        openRecipeFor(recipeTargetForEntry(daySlotEntry(day, slot), date, slot), reviewOrigin());
+        var idx = weekState.days.findIndex(function (d) { return d.date === first.date; });
+        if (idx === -1) return;
+        var slot = reviewMealSlotKey(weekState.days[idx], first.entryId, dish.slot);
+        goMealsStep('meal', { dayIndex: idx, slot: slot, back: 'week' });
       });
     });
     steps.querySelectorAll('[data-rv-settle-swap]').forEach(function (btn) {
@@ -12054,7 +12201,9 @@
         var first = dish.days[0];
         var idx = weekState.days.findIndex(function (d) { return d.date === first.date; });
         if (idx === -1) return;
-        goMealsStep('meal', { dayIndex: idx, slot: reviewMealSlotKey(weekState.days[idx], first.entryId, dish.slot) });
+        goMealsStep('meal', {
+          dayIndex: idx, slot: reviewMealSlotKey(weekState.days[idx], first.entryId, dish.slot), back: 'week'
+        });
       });
     });
     // The draft's decision, now that it lives under the card rather than in
@@ -15328,7 +15477,7 @@
     // Day -> Meal, and "‹ Monday" has to mean Monday.
     if (origin.tab === 'week' && origin.mealsDay !== undefined && origin.mealsDay !== null) {
       goMealsStep(origin.mealsStep || 'meal', {
-        dayIndex: origin.mealsDay, slot: origin.mealsSlot, replace: true
+        dayIndex: origin.mealsDay, slot: origin.mealsSlot, back: origin.mealsBack, replace: true
       });
     }
   }

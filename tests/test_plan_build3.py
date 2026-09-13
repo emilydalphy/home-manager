@@ -48,12 +48,14 @@ def test_the_clash_sits_on_its_dish_and_is_a_word_on_its_day():
     assert "if (approve) approve.hidden = !onRoot || draft;" in SHELL_JS
 
 
-def test_a_dish_name_opens_the_recipe_and_names_this_view_on_the_way_back():
+def test_a_dish_name_opens_the_meal_step_with_a_crumb_back_to_the_week():
+    # Since 2026-09-13 the name opens the Meal step (the same screen the
+    # Day step's card opens), not cook mode — see
+    # tests/test_meal_opens_the_same_way_everywhere.py for why.
     assert 'class="rv-dish-name dish-link" data-rv-recipe="' in SHELL_JS
-    assert "data-rv-recipe-date" in SHELL_JS
-    wiring = SHELL_JS[SHELL_JS.index("function reviewOrigin()"):]
-    assert "reviewState.view === 'days' ? 'Which days' : 'What we’re eating'" in wiring[:300]
-    assert "tab: 'week'" in wiring[:300]
+    wiring = SHELL_JS[SHELL_JS.index("[data-rv-recipe]"):]
+    assert "goMealsStep('meal', { dayIndex: idx, slot: slot, back: 'week' });" in wiring[:1200]
+    assert "openRecipeFor" not in wiring[:1200]
 
 
 def test_which_days_carries_the_cook_time_on_every_night():

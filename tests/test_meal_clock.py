@@ -427,9 +427,14 @@ def test_the_thaw_note_is_the_heros_one_line():
 
 
 @_needs_node
-def test_before_the_cook_view_loads_the_dock_says_start_cooking_and_there_is_no_clock():
+def test_before_the_cook_view_loads_the_dock_says_start_cooking_and_the_clock_waits():
+    # This harness has no planCookView, so the screen reads as "the view has
+    # answered and this entry is not on it" — the no-recipe line. The
+    # waiting line ("Getting the recipe…") is covered in
+    # tests/test_tap_a_meal_opens_recipe.py.
     html = _screen(_monday(_DINNER), "dinner", [])
-    assert "wk-clock" not in html
+    assert "wk-stops" not in html
+    assert "No saved recipe for this one" in html
     assert 'data-wk-cook="dinner">Start cooking<' in html
     # The hero still knows the table time — that is the week's own fact.
     assert "On the table by half six" in html

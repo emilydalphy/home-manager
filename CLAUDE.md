@@ -371,6 +371,41 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — Tapping a meal in the draft always opens that meal.
+  Branch `worktree-meal-open-and-swap`, NOT merged at the time of
+  writing.** Loop Board bug (Emily, on her phone: "sometimes it brings me
+  to the recipe, and sometimes it brings me to this other page with the
+  full cook list"; after a chat swap, "I can't go to the screen where I
+  can see the instructions for it"). Two causes, both in `static/shell.js`:
+  a dish name on the draft's "What we're eating" list went through
+  `openRecipeFor` into COOK MODE while the tiles' way in (tile → Day →
+  card) went to Plan's own Meal step — two destinations for one tap; and
+  both screens read the recipe off Cook's OWN cooker view (`/api/cooker-
+  view` with no id = the plan whose period contains today,
+  `_current_weekly_plan_row`), fetched once and never again. On a Sunday
+  with Plan pinned to the week just drafted, nothing on the draft is in
+  that view, so `cookResolveFocusIndex` found nothing and cook mode fell
+  back to its root ("Cook · 4 cooks today"); the Meal step drew a hero
+  with no steps. A dish swapped in had the same problem by a different
+  route: a new entry id, and a cached view fetched before it existed.
+  - **Fix: one door, and the plan's own view.** Every tap on a meal in
+    Plan opens the Meal step (the crumb remembers whether it came from
+    the list or the Day step — `weekState.mealBack`). The Meal step reads
+    `/api/cooker-view?weekly_plan_id=<the plan on screen>` into
+    `weekState.cookView` — never into `cookState.data`, which is Cook's
+    reading of its own week — and re-reads it after anything that reloads
+    the week (`loadWeekMenu` marks it stale). While it is on its way the
+    clock says "Getting the recipe…"; a failed read is held and says so
+    rather than retrying on every render.
+  - **`is_current_plan` on the cooker view** (`cooker.get_cooker_view`):
+    whether the named plan is the one the no-id view resolves to — the
+    only plan cook mode can open a meal from. "Cook this" / "Start at …"
+    are offered only when it is true; on a week Cook doesn't hold yet the
+    Day card's row is the swap alone and the Meal dock is swap + "Tell me
+    what instead", since deciding is that week's job. Answered by the
+    same query rather than by dates: on a day no plan covers, the fallback
+    current plan IS next week's draft, so "its period has started" would
+    be the wrong test. Emily can override the dock's shape for that case.
 - **2026-09-13 — Sorting the list: "Have it" and "Use something else" on
   every item. Branch `worktree-grocery-sorting-round`, NOT merged at the
   time of writing.** Loop Board feature (Emily: "there should also be the
