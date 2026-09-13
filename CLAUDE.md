@@ -1509,6 +1509,103 @@ why*, not duplicating the diff.
     a one-line addition if Emily wants one. Variety naming (Persian vs
     English cucumber) and grocery merging are separate cards.
 
+- **2026-09-13 — Un-ticking a bought staple un-teaches it, and an item
+  kept in two places lands on one stated kitchen row. Branch
+  `worktree-grocery-followups`, NOT merged at the time of writing.** Two
+  Loop Board follow-ups to the grocery re-tick fix below: "Un-ticking a
+  bought staple doesn't un-teach it" (Bug, Medium, Phase 0 — the one that
+  entry reported and did not fix) and "An item kept in two places merges
+  into whichever row the database returns first" (Bug, Low, Phase 1).
+  - **The bought event remembers which grocery line created it, and what
+    the rhythm read on either side.** `staples.record_staple_purchase` ran
+    on every line turning 'purchased' and wrote one `bought` event per
+    staple per day; the untick reversed the kitchen and never touched the
+    staple, so an un-bought staple still believed it was bought today (last
+    bought today, next due a whole cadence out, and a cadence could turn
+    "learned" from a date nobody bought on). Now two nullable columns on
+    `staple_events` (schema.sql + `_MIGRATIONS`, NOT backfilled):
+    `grocery_item_id` — the line whose tick created the event — and
+    `receipt_json` — `cadence_days / cadence_source / last_bought_at /
+    next_due_at / skip_streak / paused` before and after the tick, the
+    same recorded-not-derived shape as `inventory_receipt_json`. New
+    `staples.unrecord_staple_purchase`, called from `mark_grocery_item` on
+    every line LEAVING 'purchased' (after the commit, own connection, the
+    mirror of the record call): removes TODAY's event only when it stands
+    on this very line, then puts the recorded "before" back if the staple
+    still reads exactly the recorded "after"; if something changed the
+    staple in between (a told cadence, a pause) the event still goes and
+    the rhythm is re-learned from the dates that remain, with
+    `last_bought_at` cleared first so the un-bought date cannot anchor
+    next_due. Re-ticking records it again — still one per day. Earlier
+    days are never touched.
+  - **Attribution — the one-per-day rule means one event can have two
+    parents, and the event goes to nobody when it does.** A second same-day
+    source (another list line, or any caller with no line — a receipt-scan
+    hook, chat) that finds the day already bought sets the event's
+    `grocery_item_id` to NULL: it now stands on more than one thing, and no
+    untick removes it. Chosen over a parents table because nothing but the
+    tick calls `record_staple_purchase` today (checked: receipt scans go to
+    inventory, not staples — the card's receipt case is a contract for the
+    hook that does not yet exist, tested by calling
+    `record_staple_purchase(source="receipt")` directly). The known cost:
+    two separate lines for one staple ticked the same day (possible only
+    when the first was already purchased when the second was added, since
+    the add path merges needed lines) and then BOTH un-ticked leaves one
+    phantom bought date. Recorded in the test file as the accepted corner.
+    Why `receipt_json` and not recompute-only: `_relearn` keeps whatever
+    cadence it finds when intervals drop below two, so a cadence that
+    became "learned" on the un-bought date would have stayed learned; a
+    "not this trip" push of next_due would have been replaced by
+    last_bought + cadence. Both reproduced in the tests.
+  - **Events from before the columns are never removed** — NULL
+    `grocery_item_id` reads as "not this line's", which is the truth since
+    nothing recorded which line wrote them. A purchased line REMOVED (⋯ →
+    Remove) rather than un-ticked still leaves the event, same as it leaves
+    the kitchen — the untick is the only reversal, as before.
+  - **`tests/test_chores_switch.py::test_the_migration_adds_the_column_to_
+    an_existing_database` now runs schema.sql over the snapshot before
+    `_MIGRATIONS`, the way `init_db` does.** It ran `_MIGRATIONS` alone
+    over the pre-chores snapshot, which predates `staple_events`; this is
+    the first migration on a table newer than that snapshot, so the ALTER
+    hit "no such table". No real database takes that path — `init_db`
+    always creates tables first. The drift guard
+    (`test_schema_migration_drift.py`) already did it the right way.
+  - **Two places, one row: the most recently written, ties to the newer
+    (`updated_at DESC, id DESC`), on add, set AND use.** `_add_to_inventory`
+    matched by `LOWER(item)` with `fetchone()` and no `ORDER BY` when no
+    location was given; "set" and "use" had the same shape ("use" already
+    called it a known limitation). With BBQ sauce open in the fridge and
+    unopened in the pantry, SQLite returned whichever it liked — an add
+    could merge into one row and the next "used some" subtract from the
+    other. Now one helper, `inventory._find_row_by_name`, used by all
+    three. The argument: the row the household last touched is the one in
+    play; every name-only path agrees, so add-then-use land on the same
+    row; and the rule is stated, so a wrong pick is explainable. The
+    card's first preference — the item's usual location — does not exist:
+    checked staples (no location column, by design), grocery lines (none)
+    and inventory (location is an explicit hint or the category default
+    at insert, `_resolve_location`); nothing per-item remembers a place.
+    Category default was considered for the ADD side (a new bottle goes
+    where an unopened one lives) and rejected as the shared rule because
+    it is actively wrong on the USE side ("used the last of the BBQ
+    sauce" would delete the unopened pantry bottle) and the card asked for
+    one rule. Not queue-don't-guess: no case where the recent-row pick is
+    worse than arbitrary, and inventory is deferred (Emily 2026-09-01) —
+    no new screen. A location hint still wins outright, as before. The
+    grocery untick restores by the receipt's `inventory_id`, never by
+    name — confirmed and tested with the other row edited (and made the
+    newest) between tick and untick.
+  - `tests/test_staple_untick_unteaches.py` (14, all red on the merge
+    base) and `tests/test_inventory_two_places_pick.py` (10, 5 red on the
+    merge base — the 5 where the arbitrary pick happened to coincide with
+    id order were green by luck). Suite 3514 -> **3538 passed**. Also
+    driven over a real uvicorn on a throwaway DB: Coffee tick -> event 2
+    (grocery_item_id 1, receipt) -> untick -> no bought event, kitchen
+    empty -> re-tick -> event 3, one bag.
+  - **Separate card, maybe:** a per-item "usual place" (or the category
+    default on the add side only) is the thing that would make the add
+    side smarter than "most recent"; and the two-lines-both-unticked
+    phantom date above if it ever shows up in real use.
 - **2026-09-13 — A starter chore list from what Pomona already knows.
   Branch `worktree-chores-starter-list`, NOT merged at the time of
   writing.** Loop Board "Chores v1: A starter list from what Pomona

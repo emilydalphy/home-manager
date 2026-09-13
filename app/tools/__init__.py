@@ -506,6 +506,7 @@ from .staples import (  # noqa: F401
     remove_staple_by_id,
     sync_due_staples,
     undo_staple_decision,
+    unrecord_staple_purchase,
 )
 from .stores import (  # noqa: F401
     _DEFAULT_AISLE_ORDER,

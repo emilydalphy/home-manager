@@ -132,6 +132,14 @@ def test_the_migration_adds_the_column_to_an_existing_database(tmp_path):
         conn.execute("INSERT OR IGNORE INTO households (id, name) VALUES (1, 'Old house')")
         cols = {r["name"] for r in conn.execute("PRAGMA table_info(households)")}
         assert "chores_enabled" not in cols
+        # The way db.init_db does it: schema.sql first (CREATE TABLE IF NOT
+        # EXISTS — creates the tables newer than the snapshot and cannot
+        # touch households' columns), then _MIGRATIONS. Since 2026-09-13 a
+        # migration targets a table the snapshot predates (staple_events),
+        # so running _MIGRATIONS alone over the snapshot is not an upgrade
+        # any real database goes through.
+        conn.executescript((REPO / "app" / "schema.sql").read_text(encoding="utf-8"))
+        assert "chores_enabled" not in {r["name"] for r in conn.execute("PRAGMA table_info(households)")}
         _run_migrations(conn)
         conn.commit()
         cols = {r["name"] for r in conn.execute("PRAGMA table_info(households)")}
