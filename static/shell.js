@@ -8502,7 +8502,12 @@
           '<button type="button" class="wk-foot-more" id="wk-more" aria-haspopup="dialog">More ···</button>' +
         '</div>';
     }
-    var dayCount = data.day_count || days.length || 7;
+    // The link's span is the SERVER's next_period, not this plan's length
+    // — a two-day plan on screen was offering "the 2 after" (Emily, Sunday
+    // 2026-09-13) while Now asked about the whole week. See
+    // weekly_plan.next_period_after; nextPeriodFor keeps the old arithmetic
+    // only as the fallback for a payload without it.
+    var next = nextPeriodFor(data, days);
     return weekSuggestedNoteHtml(data) +
       '<div class="shell-card wk-week-card">' +
         days.map(weekRowHtml).join('') +
@@ -8517,10 +8522,27 @@
       // they were never candidates to ride along inside it.
       '<div class="wk-foot">' +
         '<button type="button" class="wk-foot-link" id="wk-plan-next">' +
-          escapeHtml(planEntryLabel(dayCount, 'next', false)) + ' ›</button>' +
+          escapeHtml(planEntryLabel(next.day_count, next.is_current_period ? 'current' : 'next', next.is_planned)) + ' ›</button>' +
         '<button type="button" class="wk-foot-more" id="wk-more" aria-haspopup="dialog">More ···</button>' +
       '</div>' +
       weekDecideHtml(data);
+  }
+
+  // The stretch "Plan next week ›" offers under a plan: the server's
+  // next_period (its start, its length, and — when it is shorter than the
+  // household's usual — the one-line reason why). The arithmetic fallback
+  // is the pre-2026-09-13 behaviour, kept only so a stale cached payload
+  // still gets a working link.
+  function nextPeriodFor(data, days) {
+    if (data.next_period && data.next_period.start_date) return data.next_period;
+    var dayCount = data.day_count || (days || []).length ||
+      (planningPeriodDefault && planningPeriodDefault.day_count) || 7;
+    var start = data.period_start_date || data.week_start_date ||
+      (planningPeriodDefault && planningPeriodDefault.start_date) || thisWeekStartLocal();
+    return {
+      start_date: addDaysLocal(start, dayCount), day_count: dayCount,
+      is_current_period: false, is_planned: false, shortened_reason: null
+    };
   }
 
   // The quiet lines under the card. A SOFT conflict — somebody at the table
@@ -8534,6 +8556,12 @@
     var notes = [];
     if (data.plates_note) notes.push(data.plates_note);
     if (weekPlanState(data) === 'draft' && data.soft_note) notes.push(data.soft_note);
+    // Why the next stretch on offer is shorter than a week ("Sep 17–20 is
+    // already planned."), said once, right above the link it is about.
+    var next = data.next_period || {};
+    if (next.shortened_reason) {
+      notes.push(next.shortened_reason + ' Next up is ' + next.label + '.');
+    }
     if (!notes.length) return '';
     return '<div class="wk-notes">' + notes.map(function (n) {
       return '<div class="wk-note">' + escapeHtml(n) + '</div>';
@@ -10348,11 +10376,10 @@
     });
     var next = steps.querySelector('#wk-plan-next');
     if (next) next.addEventListener('click', function () {
-      var dayCount = (weekState.data && weekState.data.day_count) ||
-        (planningPeriodDefault && planningPeriodDefault.day_count) || 7;
-      var start = (weekState.data && (weekState.data.period_start_date || weekState.data.week_start_date)) ||
-        (planningPeriodDefault && planningPeriodDefault.start_date) || thisWeekStartLocal();
-      startPlanningWeek(addDaysLocal(start, dayCount), dayCount);
+      // The same span the link's label was built from (weekStepHtml), so
+      // what it says and what it opens can't drift apart.
+      var period = nextPeriodFor(weekState.data || {}, (weekState.data || {}).days);
+      startPlanningWeek(period.start_date, period.day_count);
     });
     var more = steps.querySelector('#wk-more');
     if (more) more.addEventListener('click', function () { openMealsMoreSheet(); });

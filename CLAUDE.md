@@ -371,6 +371,50 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — "Plan next week ›" under a two-day plan offered two more
+  days. Branch `worktree-sunday-week-span`, NOT merged at the time of
+  writing.** Loop Board "Planning on a Sunday offered only the next 2
+  days instead of the week" (Bug, High). Emily, Sunday 2026-09-13 on her
+  phone: the default offered Mon–Tue, and her All set screen read "Sep
+  14–15 is planned … 6 meals · 6 cooks".
+  - **Root cause: the link was sized by the plan on screen, on the
+    client.** `#wk-plan-next` (shell.js) computed "period_start +
+    day_count, for day_count days" from the week-menu payload. Her plan on
+    screen was a TWO-day one — a Saturday sign-up's "this week" is Sat–Sun
+    (`main._first_plan_window`, pinned in the new test; a custom range or
+    a takeover remnant does the same) — so the week after it was two days.
+    Now's nudge, which reads the rhythm, asked about Sep 14–20 at the same
+    moment: the two-screens-two-weeks class the 2026-09-11 "one source of
+    which week" rule was written for, and this was the one link still
+    deriving its own. Reproduced with the date pinned to that Sunday.
+  - **Fixed on the server.** New `weekly_plan.next_period_after(plan)`,
+    carried on `get_week_menu` as `next_period`: the day after the plan's
+    last day, for the RHYTHM's length (`suggest_planning_period`'s
+    day_count — seven, or three as-we-go), which is exactly what the nudge
+    offers from Friday. A plan whose days have already passed (the
+    approved-week fallback) gets the standing suggestion instead, with
+    `is_current_period` so the link can say "this week". The client reads
+    it through one `nextPeriodFor` for both the label and the tap, with
+    the old arithmetic kept only as the fallback for a payload without it
+    — deliberately small, because the seven-tiles picker is being rebuilt
+    on `worktree-week-tiles`.
+  - **A shorter span says why, in one line — and that is the only time it
+    is shorter.** If another live plan already holds a day inside the
+    stretch, the offer stops the day before it and `shortened_reason`
+    ("Sep 17–20 is already planned.") rides into `weekNotesHtml`'s quiet
+    lines above the link. Before, "Plan next week" over such a week would
+    have generated the whole seven and taken those days over — and the
+    question screen's warning would not have fired, since
+    `get_week_intake_prefill` looks a plan up by filing key only. A
+    stretch held from its FIRST day is offered whole as a re-plan
+    (`is_planned`, so the link says "Re-plan next week"). **Not shortened
+    for a trip** (judgment call): a night away is a `planned_empty` slot
+    inside the week, not a reason to plan a shorter one.
+  - Nudge untouched: from Friday it still says nothing when the following
+    period is held at all, so Plan may offer a shortened stretch Now is
+    quiet about — quiet is not a contradiction. `tests/
+    test_sunday_next_week_span.py`, 18 tests (17 red on `eaf334f`; the
+    green one characterises the Saturday two-day part-week as intended).
 - **2026-09-13 — Skip, swap, or "not this week": a ··· on every chore row.
   Branch `overnight/chores-skip-hand-move`, NOT merged at the time of
   writing.** Loop Board "Chores v1: Skip, swap, or 'not this week'"

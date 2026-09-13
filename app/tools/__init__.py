@@ -517,6 +517,7 @@ from .weekly_plan import (  # noqa: F401
     retire_overlapping_plans,
     preview_approved_takeover,
     suggest_planning_period,
+    next_period_after,
     retire_expired_drafts,
     MAX_PERIOD_DAYS,
     PLAN_AHEAD_FROM_WEEKDAY,
