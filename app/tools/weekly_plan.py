@@ -3440,7 +3440,9 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
                COALESCE(r.name, mpe.freeform_meal) AS meal,
                mpe.slot_state, mpe.open_reason, mpe.reasoning, mpe.derived_from_json,
                mpe.food_groups_json, mpe.sides_json, mpe.cooked_status,
-               r.prep_time_minutes, r.cook_time_minutes
+               r.prep_time_minutes, r.cook_time_minutes,
+               r.source_url, r.source_book, r.source_author, r.source_page,
+               (SELECT COUNT(*) FROM recipe_photos rp WHERE rp.recipe_id = r.id) AS photo_count
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ?
@@ -3537,6 +3539,13 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             # endpoint for what it needs to describe one meal.
             "food_groups": json.loads(row["food_groups_json"] or "[]"),
             "defrost": defrost_by_entry.get(row["id"]),
+            # Where the dish's recipe came from, said the one way every
+            # screen says it (recipes.recipe_citation); None for a generated
+            # or typed dish. The Day step's card prints it under the name.
+            "citation": _recipes.recipe_citation(
+                row["source_url"] or "", row["source_book"] or "", row["source_author"] or "",
+                row["source_page"] or "", has_photo=bool(row["photo_count"]),
+            ) if row["recipe_id"] else None,
             # Somebody has cooked and eaten this one. Additive, and the
             # Review screen's "+" is the first reader: a day already cooked
             # is not a day to plan into, because replacing the row would

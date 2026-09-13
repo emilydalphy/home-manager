@@ -378,6 +378,7 @@ from .recipes import (  # noqa: F401
     log_cooking_deviation,
     log_recipe_note,
     mark_recipe_feedback,
+    recipe_citation,
     save_cooking_quantities,
     scale_recipe,
     update_recipe_details,

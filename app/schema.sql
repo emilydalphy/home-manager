@@ -288,7 +288,32 @@ CREATE TABLE IF NOT EXISTS recipes (
     -- Where a recipe came from when it was brought in from a link (recipe
     -- import, 2026-09-11); '' for anything generated or typed in.
     source_url TEXT NOT NULL DEFAULT '',
+    -- The cookbook a recipe was photographed from (recipe photo import,
+    -- 2026-09-13): title, author and the page as printed ("212", "212–213").
+    -- Whatever the photo showed and the household confirmed; all optional,
+    -- '' when unknown. The photos themselves are rows in recipe_photos.
+    source_book TEXT NOT NULL DEFAULT '',
+    source_author TEXT NOT NULL DEFAULT '',
+    source_page TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- The photographs a recipe was read from (recipe photo import, 2026-09-13):
+-- one row per kept photo, in page order. The file itself lives on disk
+-- under app/recipe_photos.py's directory (beside the database, so it is on
+-- the same persistent volume), named by household and recipe; this row is
+-- the only thing that says which file belongs to which recipe, and the
+-- serving route reads it under the session's household_id, never by path.
+CREATE TABLE IF NOT EXISTS recipe_photos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL DEFAULT 1,      -- 1 = first page photographed
+    filename TEXT NOT NULL,                   -- relative to the household's photo directory
+    media_type TEXT NOT NULL,                 -- image/jpeg | image/png | image/webp
+    byte_size INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE (recipe_id, position)
 );
 
 -- One-off notes tied to a specific recipe, distinct from the recipe's
@@ -1403,7 +1428,7 @@ CREATE INDEX IF NOT EXISTS idx_error_events_household_created
 --
 -- call_site is the `label` passed to agent._create_with_retry -- the one
 -- function every Anthropic call in the app actually goes through. That is
--- also why recording lives there instead of at each of the ten call
+-- also why recording lives there instead of at each of the eleven call
 -- sites separately: one instrumentation point covers all of them, and a
 -- call site added later is covered automatically instead of needing this
 -- table kept in sync by hand.

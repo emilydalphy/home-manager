@@ -907,6 +907,13 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
             "advance_prep_notes": recipe["advance_prep_notes"] if recipe else "",
             "advance_prep_step_indices": recipe["advance_prep_step_indices"] if recipe else [],
             "has_full_recipe": recipe is not None,
+            # Where the recipe came from, ready to say (recipes.recipe_citation)
+            # and the cookbook page photo(s) it was read from, if any —
+            # None / [] for a generated or typed dish (recipe photo import,
+            # 2026-09-13). The meal screen and cook mode print `citation`
+            # as it comes rather than re-deriving it.
+            "citation": recipe.get("citation") if recipe else None,
+            "photo_urls": recipe.get("photo_urls", []) if recipe else [],
             # Set for real by _apply_leftover_chains below. Present on
             # every meal (not only the ones it applies to) so a screen can
             # branch on it without first checking whether the field exists.
