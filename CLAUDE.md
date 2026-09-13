@@ -354,6 +354,237 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — Skip, swap, or "not this week": a ··· on every chore row.
+  Branch `overnight/chores-skip-hand-move`, NOT merged at the time of
+  writing.** Loop Board "Chores v1: Skip, swap, or 'not this week'"
+  (Phase 2). Real life bends the plan for a day without anybody re-doing
+  the setup: **Skip this time**, **Hand to [the other person]**, **Move
+  to another day**, behind a `···` on a chore row and never a second dock
+  button (§6), inline under the row rather than in a sheet, following
+  Grocery's per-row `···` (`groRowMenuHtml`/`.gro-rowmore`) rather than
+  inventing a second kind. It lands on BOTH surfaces at once because it
+  is in `choreRowHtml`, the one row builder Now's card and Plan | Chores
+  already share.
+  - **Which half is shared, and why it is this half — the decision the
+    ticket asked for in writing.** Each verb is two jobs: work out WHICH
+    occurrence, then change it. Only the first is hard, only the first is
+    chat's problem (a household says a chore name, not a row id), and it
+    was already solved once (`_due_or_next_pending_id`). So the WRITE is
+    what got lifted out, id-keyed — `skip_chore_instance`,
+    `move_chore_instance`, `hand_chore_instance` — and the by-name tools
+    resolve and then call in. `move_chore` and `skip_chore` are now
+    resolution plus one call; their behaviour is unchanged and two tests
+    that are GREEN on main say so. The alternative, an optional
+    `instance_id` on the chat tools, would have put two resolution paths
+    inside one function and handed the model a parameter it can never
+    fill.
+  - **A skip from the UI sweeps the backlog, and that is not optional.**
+    The row on screen IS `_collapse_outstanding`'s representative, so
+    skipping only it would put the chore straight back as due on the next
+    read — the guilt pile in a different hat. Skipping still does NOT move
+    the rhythm: nobody did the work, so there is no day for the next
+    occurrence to count from, and the next one stays exactly where it was.
+    Nothing is credited to anybody (`completed_by_member_id` untouched),
+    so the later fairness view has honest data.
+    **The bound is TODAY, not `_mark_done`'s "later of the row's day and
+    today" — an earlier draft of this branch copied that and it was wrong,
+    caught on review.** A tick means the work happened, so everything owed
+    up to it is settled; a skip settles nothing. With the copied bound,
+    skipping the occurrence three weeks out skipped the two before it as
+    well — three weeks of bins from one call, reproduced. Now: a target
+    that is itself due settles every other pending occurrence due on or
+    before today (which keeps a stale id off the card twice, the care
+    `_mark_done` takes), and a target ahead of today sweeps nothing at
+    all. `skip_chore`'s own behaviour is unchanged **in every state the
+    app can reach through ordinary use**, because `_due_or_next_pending_id`
+    resolves to the latest row due on or before today whenever anything
+    has slipped, so a future row never arrives with a pile behind it.
+    **That is not an absolute, and the exception is reachable** (found on
+    re-review): `schedule_chore_instance` does not dedupe, so saying
+    "put the bins on the 19th" twice in chat leaves TWO pending rows on
+    one future day, and `skip_chore` then resolves to one of them and
+    (now) sweeps nothing — where before it swept the other. So "skip the
+    bins" can leave a bins still due that day. Degenerate, and the new
+    behaviour is the more defensible of the two — nobody did any work, so
+    nothing is settled — but do not read the parity claim as covering
+    every state. Worth knowing while you are here: `move_chore_instance`
+    refuses to make such a duplicate and `schedule_chore_instance` never
+    has, which is pre-existing and its own card if it ever bites.
+  - **"Hand to" is one occurrence and never the chore.** New
+    `chore_instances.assignee_id` write only; nothing touches
+    `chores.default_assignee_id`, `rotation_member_ids_json` or
+    `_reassign_pending`, so next week is still whoever's it always was.
+    Changing the OWNER later still reassigns pending instances over it,
+    which is right — that is the household saying the standing answer
+    changed. On a shared chore the rotation reads the instances as they
+    stand, so a handed turn simply continues after whoever ends up with
+    it, the same stance `_reassign_pending` already takes towards whoever
+    actually DID the last one. **Naming somebody never creates them** —
+    `_member_named`, the same exact-then-unique-first-name-else-a-question
+    resolution `add_chore`/`update_chore` use, which is what the "Vinneth"
+    failure on the owner card bought.
+  - **Three routes, not verbs folded into `/status`.** `POST
+    /api/chores/{id}/skip` · `/hand` · `/move`, each 403 while the
+    household's switch is off exactly as `/status` does. A skip is not a
+    status the tick can be flipped to (it sweeps, and it leaves the
+    rhythm alone) and the other two write different columns; `/status`
+    stays the tick's route, untouched.
+  - **`people` rides on the two chore reads** (`chore_people()` =
+    `_people_pool`, the module's existing answer to "who does chores
+    here"), and rows gained `assignee_id`. The `···` must not cost a
+    request to open, and it cannot leave whoever already has it off its
+    own menu from a first name alone. Only on the ENABLED payload — the
+    switched-off answer still says nothing about the household, and a
+    test pins that.
+  - **Optimistic on both surfaces, one implementation.** `runChoreAction`
+    applies the change, redraws, posts, and on failure puts the row back
+    in its own place (not appended) with "That didn't save. Try it again
+    in a moment." On success BOTH surfaces re-read, because grouping and
+    order are the server's answer. Now's card drops a row moved off today;
+    Plan keeps it and re-heads it via `choreGroupFor`, a deliberate client
+    twin of `_chore_group` used only for the beat between the tap and the
+    read. **A skip re-dates rather than removes on Plan** (`choreAfterSkip`,
+    by the chore's own rhythm, a placeholder the read overwrites): Plan is
+    one row per chore by construction — `_top_up_unscheduled` writes the
+    next occurrence on the very next read precisely so a chore never falls
+    off that list — so dropping the row would break that invariant for a
+    beat and then have the chore reappear under a different heading.
+    **It marks the row skipped; it does NOT guess a date, and an earlier
+    version of this branch did** (found on re-review). That version
+    re-dated to today plus the chore's own rhythm, a client twin of
+    `_FREQUENCY_DAYS` — but after a skip the server's answer is usually an
+    occurrence ALREADY on the calendar, whose date has nothing to do with
+    today: measured 25 days wrong for a monthly chore that also had a row
+    five days out. Worse, the guess could stand as FACT, because
+    `planChoresStepHtml` shows its trouble line only when there is no list
+    at all and after this runs there is one — so a failed refresh left an
+    invented date on screen with nothing saying so, until some later read
+    happened to succeed. "Skipped" is a thing this screen knows; the date
+    is the server's to say, and if the read never lands the row goes on
+    reading Skipped, which is what actually happened. The rhythm table is
+    gone with it. A `once` chore needs no special case now — the server
+    simply has no next occurrence for it, so the read drops it.
+  - **A refresh behind an in-flight read starts its own** (re-review).
+    `loadPlanChores` coalesces on `planChoresFetching`, so a
+    `ctx.refresh()` fired by the ··· while a read that PREDATES the tap
+    was still out got handed that read and started no new one — Plan
+    settling back onto the pre-action list. It queues one instead.
+    `loadChores` has no such guard and needs none for this; its own
+    unlikely hazard is two overlapping reads landing out of order, which
+    is a different thing and is not fixed here.
+  - **Every action says what it did, with an Undo where the undo is
+    exact.** On Now a skip or a move-off-today makes the row vanish, and a
+    row that disappears in silence is indistinguishable from a mis-tap.
+    Undo re-dates a move back to the day it came from, hands a chore back
+    to whoever had it (offered only when there WAS somebody — a `whoever`
+    chore has no name to send), and for a skip restores the ROW rather
+    than the pile it swept: the same choice `_mark_done`'s docstring
+    already makes about un-ticking, for the same reason.
+  - **A skipped occurrence is not a done one, in all three refusals.**
+    `hand_chore_instance` told you a skipped row was "already done" —
+    nobody did it — which `move_chore_instance` eighty lines above already
+    got right, with a comment saying why. Reachable in exactly the case
+    `ChoreRefused` exists for, and now that these sentences are shown word
+    for word a wrong one costs more than it did when everything read
+    "That didn't save." `skip_chore_instance` was checked and is
+    deliberately left with ONE sentence for both states: "isn't waiting to
+    be done" is exactly true of a done occurrence and of a skipped one,
+    and naming which would tell the household something they didn't ask.
+  - **A refusal prints the server's own sentence** (`tools.ChoreRefused`,
+    `weekly_plan.SlotRefused`'s shape and its reason — the 2026-09-11
+    entry, "an app that did exactly the right thing must not report itself
+    broken"): 200 `{status: 'refused', message}`, the row goes back and the
+    screen re-reads. Reachable, and this is the case it is for: the `···`
+    is open on one phone while the other adult ticks the row. Everything
+    else — including `require_household_row`'s deliberately opaque "No
+    chore instance with id 7." — stays a 404 and takes the plain line.
+  - **"Move to" offers a week around THE ROW'S OWN DAY, not around today
+    — corrected on review, and it was the branch's blocker.** The first
+    version built `today … today+6`, and the `···` is on every pending
+    row including Plan's "Coming up" group, which is exactly where Emily
+    put the monthly and quarterly chores. So a "Gutters · every few months
+    · Dec 1" row got seven chips reading Today…Sat, every one of which
+    dragged it eleven weeks forward — and once moved, the same control
+    offered only that week again, so **there was no way back to December
+    from any screen**. The window now starts three days before the row's
+    own day (never earlier than today — a chore cannot be due in the
+    past), so both directions are reachable and the original day is one
+    tap back; the Undo chip above is the second way. A chip beyond the
+    coming week carries its date ("Sat Nov 28") rather than a bare
+    weekday, because "Fri" on a December row is a question. Anything
+    outside that window is the ask sheet's job — `move_chore` takes any
+    date. **My own Chromium pass missed this**: I opened a `week`-group
+    row and never a `later` one.
+  - **Two small residuals, looked at and left, so nobody re-finds them as
+    new.** The move window is clamped at today, so a row due TODAY moved
+    to +4/+5/+6 loses `Today` from its own chips — six cases, at most six
+    days out of reach, and the Undo chip covers it while the toast is up.
+    And `_a_date`'s "I couldn't read … as a date" is a plain `ValueError`,
+    so it takes the 404 door and the screen's plain line rather than being
+    printed: the ··· only ever sends dates it generated itself, so the
+    only way to see that sentence is a hand-made request.
+  - **`also_cleared` is deliberately not in the toast.** A skip that
+    settles three slipped weeks still says "Skipped Bins this time." and
+    nothing more. Not an oversight: the no-guilt-pile rule is that a
+    slipped chore is ONE job and the household never learns there were
+    three — the tool description for `skip_chore` says the number is there
+    so the assistant doesn't double-report, "never to be read back as a
+    count of what was missed". A toast saying "and 3 more" would print
+    exactly the pile the card exists to hide, and there is no shorter
+    non-numeric wording that adds anything true.
+  - **Two judgement calls, flagged rather than decided:** (1) an
+    OUTSOURCED row gets no `···` at all, per this card's own acceptance
+    criteria — but `skip_chore_instance` still permits it and chat still
+    offers it, because "the cleaner isn't coming this week" is a real
+    Thursday. If Emily wants the menu on those rows it is one condition.
+    (2) A DONE row gets no `···` either: all three verbs act on an
+    occurrence still waiting, and the server refuses each of them on a
+    done row, so a control that can only fail is worse than none.
+  - **Pre-existing and untouched:** a tick still credits the SESSION's
+    adult, not the assignee, so Emily ticking a chore she handed to
+    Vineeth is recorded as Emily's. That is arguably right (she ticked
+    it) and is `_doer_id`'s existing rule; chat's `done_by` is the way to
+    say otherwise. Worth Emily's eyes before the fairness view lands.
+  - **Said precisely, because an earlier draft of this entry over-claimed
+    twice.** There is not "one write per verb": `skip_chore`'s named-date
+    branch deliberately still goes through `set_chore_instance_status`,
+    because a date the household picked out must settle that occurrence
+    and nothing else. And a handed turn does not simply "continue after
+    whoever ends up with it" — `_next_in_turn` reads the LATEST instance
+    by due date, so handing over the latest-dated occurrence moves who
+    comes next and handing over an earlier one does not. Neither is
+    wrong; no rule forces either.
+  - **The owner-safety test could not see the leak it is named after
+    (review).** `test_hand_changes_this_occurrence_only_...` asserted the
+    reported `owner`, which `_rotation_ids` derives from
+    `rotation_member_ids_json` first and only falls back to
+    `default_assignee_id` for — and `add_chore(owner_name=...)` never
+    leaves that JSON empty. A mutation writing `default_assignee_id` from
+    `hand_chore_instance` passed the whole suite. It reads the raw columns
+    now; the mutation fails it.
+  - `tests/test_chore_row_actions.py`, 60 tests, **39 of the original 41
+    red on `0d359e5`**;
+    the 2 green say so in their docstrings (the by-name tools surviving
+    the write being lifted out; the switched-off read not growing a
+    field). `test_chores_switch.py`'s gate-completeness list and its
+    declines-while-off parametrize grew to twelve tools. The 14 added on
+    the review pass each pin one of its findings, and three mutations were
+    run to check they bite: the old sweep bound, the today-anchored move
+    window, and the owner write. Three existing
+    node harnesses were widened for the new region and one assertion in
+    `test_plan_chores.py` moved from counting a name in the whole string
+    to counting it among the rendered NAMES — the `···`'s aria-label
+    carries the chore's name and is not a second row. Suite 3224 (was
+    3182). Verified live in Chromium at 390×844, light and dark, on a
+    throwaway DB: all three verbs on both surfaces, the cross-surface
+    refresh, the optimistic state observable mid-flight under a delayed
+    failure, the revert and its toast with the server confirmed
+    unchanged, `···`/verb/chip all 44px, no apricot anywhere in the menu,
+    no sideways scroll. Contrast measured off computed styles and
+    recorded in `shell.css`. Re-driven after the review pass with a
+    quarterly chore months out actually opened — the case the first pass
+    never reached.
+
 - **2026-09-12 — Chores v1: add or change anything by saying so. Branch
   `chores-chat-tools`, NOT merged at the time of writing.** Re-verified the
   chat tools against the Chores screen for the whole user story (add,

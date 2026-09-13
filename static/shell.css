@@ -1095,6 +1095,109 @@ html, body {
    --faded (--ink-inactive, 3.21:1) is the token for unselected navigation.
    Sharing it left a 7.2:1 tick sitting beside a 3.2:1 name on one row. */
 .chore-row.done .chore-name { color: var(--ink-done); text-decoration: line-through; }
+/* ---------- the row's ⋯ (Loop Board "Chores v1: Skip, swap, or 'not this
+   week'", Phase 2) ----------
+   Skip this time / Hand to / Move to another day. Rare actions go behind a
+   ⋯, never into a second dock button (§6), and the menu opens INLINE as a
+   second line of the row it is about — a sheet would cover the list you are
+   deciding against, and a menu that is a sibling of the row can end up
+   describing a different chore than the name above it. This is Grocery's
+   per-row ⋯ (.gro-rowmore / .gro-rowmenu) at chore scale, not a second
+   pattern. Quiet all the way through: no apricot anywhere in it. Now's
+   card has none at all, and Plan | Chores spends its only one on "Set up
+   chores" in the empty state (Rule 5).
+   Contrast, measured off computed styles in Chromium at 390x812,
+   2026-09-13, in both schemes. Now's card puts these rows straight on
+   --ground and Plan's .pc-list puts them in a --surface card, so the two
+   grounds are given where they differ:
+     .chore-more   --ink-inactive  3.21:1 light on --ground / 3.40 on
+                   --surface; 5.62 / 4.87 dark. A UI component, so WCAG
+                   1.4.11's 3:1 — and the same value .gro-rowmore, the ⋯
+                   this follows, already carries.
+     .chore-act    --ink-secondary 4.44 light on --ground / 4.70 on
+                   --surface; 8.48 dark. The app-wide supporting-copy
+                   pair, 0.06 under AA in light exactly as .chore-who
+                   beside it and every other --ink-secondary line in this
+                   app — moving it is a token change, i.e. Emily's.
+     .chore-act-label --ink-muted 4.33 / 4.58 light, 8.48 dark, the value
+                   the other 10px/800 eyebrows here already run at.
+     .chore-chip   --ink 13.52 light / 12.49 dark on its own --surface
+                   fill. Its --hairline-strong border is 1.37:1 on
+                   --surface, under 1.4.11 — inherited, not introduced:
+                   this is .gro-pill's own recipe, and the label carries
+                   the control. */
+.chore-row { flex-wrap: wrap; }
+.chore-more {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--ink-inactive);
+  cursor: pointer;
+}
+.chore-more svg { width: 20px; height: 20px; }
+.chore-more:hover { color: var(--ink-secondary); }
+.chore-more[aria-expanded="true"] { color: var(--ink-strong); }
+/* The hairline is .gro-rowmenu's: it reads as "this row, and its actions"
+   rather than as a block floating between two chores. Measured at 390px
+   with the menu open on the middle row of Now's card, which is where the
+   ambiguity actually shows. */
+.chore-menu {
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+  padding: 8px 0 10px;
+  border-top: 1.5px solid var(--hairline);
+}
+/* A verb on its own line: 44px of row, body face, no fill. */
+.chore-act {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink-secondary);
+  text-align: left;
+  cursor: pointer;
+}
+.chore-act:hover { color: var(--ink-strong); }
+.chore-act-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.chore-act-label {
+  flex: 0 0 auto;
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+/* The day chips (and the names, where there is more than one person to
+   hand to). The 44px is Rule 6 and it is the whole reason these wrap onto
+   two rows at 390px rather than being squeezed. */
+.chore-chip {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1.5px solid var(--hairline-strong);
+  border-radius: 999px;   /* .gro-pill's shape — the app's choice chip */
+  background: var(--surface);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.chore-chip:hover { border-color: var(--ink-strong); }
 /* The way into /chores-setup, for a house that has never been through it.
    .week-setup-link's own inset is for the Meals tab; here the card's
    padding already places it, so it sits flush with the names. */

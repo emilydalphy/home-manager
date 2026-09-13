@@ -35,6 +35,22 @@ _FREQUENCY_DAYS = {"daily": 1, "weekly": 7, "biweekly": 14, "monthly": 30, "quar
 # fourth answer instead of a blank. It keeps its frequency and still shows
 # on its day (we know Thursday is cleaner day); it carries no tick, and it
 # counts for nobody.
+class ChoreRefused(ValueError):
+    """
+    A refusal written for a PERSON, not a machine — "Mop is already on
+    2026-09-20", "the cleaner's is nobody here's to hand over".
+
+    The same marker weekly_plan.SlotRefused is (CLAUDE.md, 2026-09-11):
+    the routes answer these as `{status: 'refused', message}` at 200 so a
+    screen prints the sentence, while everything else stays a 404 and
+    takes the plain "that didn't save" line. An app that did exactly the
+    right thing must not report itself broken — and the opposite hazard is
+    just as real, which is why this is a marker type and not "surface
+    every ValueError": require_household_row's "No chore instance with id
+    7." is deliberately opaque and is not for reading.
+    """
+
+
 MODES = ("owned", "shared", "whoever", "outsourced")
 DEFAULT_MODE = "owned"
 
@@ -1102,6 +1118,10 @@ def _instance_dicts(conn, rows) -> list[dict]:
             "due_date": r["due_date"],
             "status": r["status"],
             "assignee": r["assignee"],
+            # Who it is FOR, by id — what the ··· 's "Hand to" list needs
+            # to leave whoever already has it off its own menu. The name
+            # can't do that job: two people can share one.
+            "assignee_id": r["assignee_id"],
             "mode": row_mode,
             "who_label": who,
             "completed_by": r["completed_by"],
@@ -1560,28 +1580,18 @@ def skip_chore(chore_name: str, when: str | None = None) -> dict:
                 raise ValueError(f"There's no {chore_name} due {target.isoformat()} to skip.")
             instance_id = row["id"]
 
-        also_cleared = 0
-        if is_the_due_one:
-            # Same bound as _mark_done's sweep: the later of this row's
-            # due date and today, so skipping a FUTURE "due one" (nothing
-            # slipped yet) still only reaches backwards, never forwards
-            # into occurrences that haven't happened yet.
-            due_date = conn.execute(
-                "SELECT due_date FROM chore_instances WHERE id = ? AND household_id = ?",
-                (instance_id, household_id()),
-            ).fetchone()["due_date"]
-            sweep_through = max(due_date, date.today().isoformat())
-            also_cleared = conn.execute(
-                "UPDATE chore_instances SET status = 'skipped' WHERE household_id = ? AND chore_id = ? "
-                "AND status = 'pending' AND due_date <= ? AND id != ?",
-                (household_id(), chore["id"], sweep_through, instance_id),
-            ).rowcount or 0
-            conn.commit()
     finally:
         conn.close()
-    result = set_chore_instance_status(instance_id, "skipped")
+    if is_the_due_one:
+        # The sweep lives in the id-keyed twin below, because the ··· on a
+        # chore row needs exactly this and reaches it with an id in hand.
+        result = skip_chore_instance(instance_id)
+    else:
+        # A named future date has no pile behind it, so no sweep — just
+        # the one occurrence.
+        result = set_chore_instance_status(instance_id, "skipped")
+        result["also_cleared"] = 0
     result["chore"] = chore_name
-    result["also_cleared"] = also_cleared
     return result
 
 
@@ -1649,34 +1659,348 @@ def move_chore(chore_name: str, to_date: str, from_date: str | None = None) -> d
                     f"There's no {chore_name} coming up to move — say which date, "
                     "or generate the schedule first."
                 )
+    finally:
+        conn.close()
+    # The write itself is the id-keyed twin below, so the ··· on a chore
+    # row and "push it to Saturday" cannot disagree about what a move does.
+    return move_chore_instance(instance_id, target.isoformat())
 
+
+# --- the same three changes, by instance id -----------------------------------
+#
+# Loop Board "Chores v1: Skip, swap, or 'not this week'" (Phase 2). The ···
+# on a chore row does what chat already could — skip it, hand it over,
+# move it — and it has the row's own instance id in hand, so it never has
+# a "which occurrence did they mean?" problem to solve.
+#
+# **Which half is shared, and why it is this half.** Every one of these
+# actions is two jobs: work out WHICH occurrence, then change it. Only the
+# first is hard, only the first is chat's problem (a household says a chore
+# name, not a row id), and it is already solved once — _due_or_next_pending_id.
+# So the WRITE is what lives here, id-keyed, and the by-name tools above
+# resolve and then call in. The alternative — an optional instance_id on
+# skip_chore/move_chore — would have put two resolution paths inside one
+# function and left the model a parameter it can never fill.
+#
+# ONE EXCEPTION, and it is deliberate: skip_chore's named-date branch
+# ("skip the 20th's bathrooms") still writes through
+# set_chore_instance_status rather than skip_chore_instance, because a
+# date the household picked out must settle that one occurrence and
+# nothing else — skip_chore_instance sweeps whatever has slipped behind a
+# row that is due, which is right for the row on screen and wrong for a
+# named date. Two writes for skip, then, not one; move and hand have one
+# each.
+
+
+def skip_chore_instance(instance_id: int) -> dict:
+    """
+    Skip ONE occurrence by id — "not this week" from the ··· on a chore row.
+
+    Not done and not missed: nothing is credited to anybody and the
+    chore's rhythm does not move, because nobody did the work (see
+    skip_chore, which is this same write reached by name).
+
+    **It sweeps the backlog behind it — and ONLY what has actually
+    slipped.** The row on screen IS _collapse_outstanding's
+    representative, so skipping just that row would leave the rest of the
+    pile to surface as a fresh due row on the very next read: the chore
+    would read as still due the moment after being skipped, which is the
+    guilt pile wearing a different hat. So a target that is itself DUE
+    (on or before today) settles every other pending occurrence due on or
+    before today with it — including any dated between it and today,
+    which is what keeps a stale id off the card twice, the same care
+    _mark_done takes.
+
+    A target that is genuinely AHEAD of today sweeps nothing at all.
+    _mark_done deliberately bounds its sweep at the later of the row's
+    day and today, because a tick means the work happened and everything
+    owed up to it is settled; **copying that here was wrong**, and it made
+    "skip the occurrence three weeks out" skip the two before it as well —
+    three weeks of bins from one call. Nobody did any work, so nothing
+    ahead of today is settled by this.
+
+    An outsourced occurrence can be skipped here as anywhere else — the
+    cleaner not coming is a real thing that happens to a real Thursday —
+    which is why this never calls _refuse_if_outsourced. The ··· doesn't
+    offer it on an outsourced row (see choreRowHtml); the write doesn't
+    refuse it.
+
+    One connection and one commit: the sweep and the row's own status are
+    one decision, and a failure between two commits would leave the pile
+    swept with the row the household tapped still sitting there due.
+    """
+    conn = get_conn()
+    try:
+        require_household_row(conn, "chore_instances", instance_id, label="chore instance")
+        row = conn.execute(
+            "SELECT ci.chore_id, ci.due_date, ci.status, c.name FROM chore_instances ci "
+            "JOIN chores c ON c.id = ci.chore_id WHERE ci.id = ? AND ci.household_id = ?",
+            (instance_id, household_id()),
+        ).fetchone()
+        if row["status"] != "pending":
+            # One sentence for both settled states, deliberately, unlike
+            # the other two: "isn't waiting to be done" is exactly true of
+            # a done occurrence AND of one already skipped, and naming
+            # which would tell the household something they didn't ask.
+            raise ChoreRefused(f"{row['name']} isn't waiting to be done — there's nothing to skip.")
+        today_iso = date.today().isoformat()
+        also_cleared = 0
+        if row["due_date"] <= today_iso:
+            also_cleared = conn.execute(
+                "UPDATE chore_instances SET status = 'skipped' WHERE household_id = ? AND chore_id = ? "
+                "AND status = 'pending' AND due_date <= ? AND id != ?",
+                (household_id(), row["chore_id"], today_iso, instance_id),
+            ).rowcount or 0
+        # The row itself, on the same connection rather than through
+        # set_chore_instance_status — the sweep above has a write open, so
+        # a second connection would be a second transaction (and, on
+        # SQLite's one writer, would sit behind this one's lock).
+        conn.execute(
+            "UPDATE chore_instances SET status = 'skipped', completed_at = NULL, done_on = NULL, "
+            "completed_by_member_id = NULL WHERE id = ? AND household_id = ?",
+            (instance_id, household_id()),
+        )
+        chore_name = row["name"]
+        conn.commit()
+    finally:
+        conn.close()
+    return {
+        "instance_id": instance_id,
+        "status": "skipped",
+        "chore": chore_name,
+        "also_cleared": also_cleared,
+    }
+
+
+def move_chore_instance(instance_id: int, to_date: str) -> dict:
+    """
+    Re-date ONE occurrence by id — "move it to another day" from the ···.
+
+    In place, keeping the row's id and whoever already had it: a move is
+    about the day and nothing else. Only a PENDING occurrence moves; one
+    already done is history rather than a date to rearrange. Refuses
+    rather than doubling the chore up on a day it is already on.
+    """
+    conn = get_conn()
+    try:
+        target = _a_date(to_date)
+        require_household_row(conn, "chore_instances", instance_id, label="chore instance")
+        row = conn.execute(
+            "SELECT ci.chore_id, ci.status, c.name FROM chore_instances ci "
+            "JOIN chores c ON c.id = ci.chore_id WHERE ci.id = ? AND ci.household_id = ?",
+            (instance_id, household_id()),
+        ).fetchone()
+        if row["status"] != "pending":
+            # Say which of the two it is: a done occurrence is history, a
+            # skipped one is a day the household already said no to, and
+            # "already done" over a skip would be plainly wrong.
+            raise ChoreRefused(
+                f"{row['name']} is already done that day — nothing to move."
+                if row["status"] == "done"
+                else f"{row['name']} is already off for that day — nothing to move."
+            )
         dup = conn.execute(
             "SELECT id FROM chore_instances WHERE chore_id = ? AND household_id = ? "
             "AND status = 'pending' AND due_date = ? AND id != ?",
-            (chore["id"], household_id(), target.isoformat(), instance_id),
+            (row["chore_id"], household_id(), target.isoformat(), instance_id),
         ).fetchone()
         if dup:
-            raise ValueError(
-                f"{chore_name} is already on {target.isoformat()} — pick a different day, "
+            raise ChoreRefused(
+                f"{row['name']} is already on {target.isoformat()} — pick a different day, "
                 "or settle that one first."
             )
-
         conn.execute(
             "UPDATE chore_instances SET due_date = ? WHERE id = ? AND household_id = ?",
             (target.isoformat(), instance_id, household_id()),
         )
         conn.commit()
-        row = conn.execute(
-            _INSTANCE_SELECT + " WHERE ci.id = ? AND ci.household_id = ?", (instance_id, household_id())
-        ).fetchone()
-        described = _instance_dicts(conn, [row])[0]
-    except Exception:
-        conn.rollback()
+        described = _described_instance(conn, instance_id)
+    finally:
+        # try/finally and no explicit rollback, the shape complete_chore
+        # uses: require_household_row closes the connection itself on the
+        # way out, so a rollback here would be operating on a closed one —
+        # and closing an uncommitted transaction discards it anyway.
         conn.close()
-        raise
-    conn.close()
-    described["instance_id"] = described.pop("id")
     return {**described, "moved": True}
+
+
+def hand_chore_instance(instance_id: int, person_name: str) -> dict:
+    """
+    Hand ONE occurrence to somebody else — "can you take the bins
+    tonight?" — without touching whose chore it is.
+
+    **The chore's own owner is deliberately not changed.** That is the
+    whole difference between this and update_chore(owner_name=...): one
+    is real life bending for a day, the other is the household deciding
+    something. Nothing here writes chores.default_assignee_id or
+    rotation_member_ids_json, and nothing calls _reassign_pending — so
+    next week's occurrence is still whoever's it always was. (Changing
+    the OWNER later still reassigns pending instances over this, which is
+    right: that is the household saying the standing answer changed.)
+
+    On a shared chore the rotation is left to read the instances as they
+    stand, which is the same stance _reassign_pending already takes
+    towards whoever actually DID the last one. Be precise about what that
+    means, though: _next_in_turn reads the LATEST instance by due date, so
+    handing over the latest-dated occurrence does move who comes next,
+    and handing over an earlier one does not. Neither is wrong and no
+    rule here forces either — it is simply not the flat "the turn
+    continues after whoever ends up with it" an earlier draft of this
+    claimed. Fairness is counted off completed_by_member_id, which a
+    hand-over never touches: it records who it is FOR, and the tick
+    records who did it.
+
+    Naming somebody never creates them (_member_named — exact, then a
+    unique first name, else a plain question back). An outsourced chore
+    is refused: nobody in the house does it, so there is nobody here to
+    hand it to, and quietly making it somebody's would be update_chore's
+    job done behind the household's back. A done occurrence is refused
+    too — it is history.
+    """
+    conn = get_conn()
+    try:
+        require_household_row(conn, "chore_instances", instance_id, label="chore instance")
+        row = conn.execute(
+            "SELECT ci.status, c.name, c.mode, c.outsourced_to, c.rotation_member_ids_json, "
+            "c.default_assignee_id FROM chore_instances ci JOIN chores c ON c.id = ci.chore_id "
+            "WHERE ci.id = ? AND ci.household_id = ?",
+            (instance_id, household_id()),
+        ).fetchone()
+        if is_outsourced(row):
+            who = (row["outsourced_to"] or "").strip()
+            raise ChoreRefused(
+                f"{row['name']} is {who}'s, not ours — there's nobody here to hand it to."
+                if who
+                else f"{row['name']} is somebody else's — there's nobody here to hand it to."
+            )
+        if row["status"] != "pending":
+            # Which of the two, same as move_chore_instance above: nobody
+            # did a skipped one, and "already done" over a skip is plainly
+            # wrong — and these sentences are shown to the household word
+            # for word now, so a wrong one costs more than it used to.
+            raise ChoreRefused(
+                f"{row['name']} is already done — there's nothing to hand over."
+                if row["status"] == "done"
+                else f"{row['name']} is already off this time — there's nothing to hand over."
+            )
+        try:
+            member = _member_named(conn, person_name, what="who should take it")
+        except ValueError as e:
+            # _member_named's misses are questions written for a person
+            # ("I don't know anyone called Vinneth here — who should take
+            # it?"), so they get the same door as the refusals above.
+            raise ChoreRefused(str(e))
+        if member is None:
+            raise ChoreRefused("Who should take it?")
+        conn.execute(
+            "UPDATE chore_instances SET assignee_id = ? WHERE id = ? AND household_id = ?",
+            (member, instance_id, household_id()),
+        )
+        conn.commit()
+        described = _described_instance(conn, instance_id)
+    finally:
+        conn.close()   # see move_chore_instance on why there is no rollback
+    return {**described, "handed_over": True}
+
+
+def hand_chore(chore_name: str, to_person: str, when: str | None = None) -> dict:
+    """
+    Hand one occurrence of a chore to somebody else — "can you take the
+    bins tonight?", "Vineeth's doing the bathrooms this week".
+
+    Just this once: the chore's owner is unchanged, so next time it is
+    back to whoever it always was. Say "the bathrooms are Vineeth's now"
+    and that is update_chore(owner_name=...) instead — a standing answer,
+    not a favour.
+
+    `when` picks which occurrence: left out (or "this week"/"today") is
+    the one due right now, the same representative complete_chore and
+    skip_chore resolve to; a YYYY-MM-DD picks a specific dated one.
+    """
+    conn = get_conn()
+    try:
+        chore = _chore_named(conn, chore_name)
+        instance_id = _occurrence_for(conn, chore, chore_name, when, verb="hand over")
+    finally:
+        conn.close()
+    result = hand_chore_instance(instance_id, to_person)
+    result["chore"] = chore_name
+    return result
+
+
+def chore_people() -> list[dict]:
+    """
+    Who a chore can be handed to in this house: the setup rotation if
+    there is one, else the adults, else everybody (_people_pool — the
+    module's one answer to "who does chores here", so the ··· offers the
+    same people the schedule already deals turns to).
+
+    First names as well as full ones, because a row prints a first name
+    (_first_name) and the two must agree; the id is what a hand-over
+    matches on, so two people called Sam are still two rows here.
+    """
+    conn = get_conn()
+    try:
+        names = _names_by_id(conn)
+        return [
+            {"id": i, "name": names.get(i, ""), "first_name": _first_name(names.get(i))}
+            for i in _people_pool(conn)
+            if i in names
+        ]
+    finally:
+        conn.close()
+
+
+def _a_date(value: str | None, *, said: str | None = None, hint: str = "") -> date:
+    """
+    A YYYY-MM-DD, or a plain question back. `said` is what the household
+    actually typed, when the caller has lowercased or trimmed it on the
+    way in — quoting our own normalisation back at somebody is a small
+    way of sounding like a machine.
+    """
+    try:
+        return date.fromisoformat((value or "").strip())
+    except ValueError:
+        shown = said if said is not None else value
+        raise ValueError(f"I couldn't read {shown!r} as a date — it wants YYYY-MM-DD{hint}.")
+
+
+def _described_instance(conn, instance_id: int) -> dict:
+    """One instance read back the way every screen reads it, keyed
+    `instance_id` for a caller that acted on one row rather than listed
+    many."""
+    row = conn.execute(
+        _INSTANCE_SELECT + " WHERE ci.id = ? AND ci.household_id = ?", (instance_id, household_id())
+    ).fetchone()
+    described = _instance_dicts(conn, [row])[0]
+    described["instance_id"] = described.pop("id")
+    return described
+
+
+def _occurrence_for(conn, chore, chore_name: str, when: str | None, *, verb: str) -> int:
+    """
+    Which occurrence a by-name tool means: the one due right now unless a
+    date was named. The same resolution skip_chore does inline, factored
+    out when hand_chore became the third tool needing it.
+    """
+    key = (when or "").strip().lower()
+    if not key or key in ("this week", "this time", "today"):
+        instance_id = _due_or_next_pending_id(conn, chore["id"], date.today())
+        if instance_id is None:
+            raise ValueError(f"There's no {chore_name} coming up to {verb}.")
+        return instance_id
+    # "or say 'this week'" because this branch accepts that too, and the
+    # household's own spelling rather than our lowercased copy of it.
+    target = _a_date(key, said=when, hint=", or say 'this week'")
+    row = conn.execute(
+        "SELECT id FROM chore_instances WHERE chore_id = ? AND household_id = ? "
+        "AND status = 'pending' AND due_date = ?",
+        (chore["id"], household_id(), target.isoformat()),
+    ).fetchone()
+    if not row:
+        raise ValueError(f"There's no {chore_name} due {target.isoformat()} to {verb}.")
+    return row["id"]
+
 
 # ---------------------------------------------------------------------------
 # Plan | Chores — the whole list, grouped

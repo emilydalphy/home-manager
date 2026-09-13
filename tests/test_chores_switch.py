@@ -14,8 +14,8 @@ what the first is for:
   /chores-setup, the two chores routes answer empty / 403, and every
   chores chat tool declines with one plain sentence instead of
   half-working (nine at the time this file was written; skip_chore and
-  move_chore joined the same gate on 2026-09-12 — see
-  test_the_chores_tools_are_the_gated_set below). set_chores_enabled.py
+  move_chore joined the same gate on 2026-09-12, hand_chore on
+  2026-09-13 — see test_the_chores_tools_are_the_gated_set below). set_chores_enabled.py
   flips it — no admin UI.
 
   "Chores v1: Turn the 'Your chores' card on Now back on — and make it
@@ -278,6 +278,7 @@ _CHORES_TOOL_CALLS = [
     ("complete_chore", {"instance_id": 1}),
     ("skip_chore", {"chore_name": "Bins"}),
     ("move_chore", {"chore_name": "Bins", "to_date": TODAY}),
+    ("hand_chore", {"chore_name": "Bins", "to_person": "Emily"}),
 ]
 
 
@@ -522,7 +523,9 @@ buildTodayPanel(panel).then(function () {
 
 @_needs_node
 def test_on_builds_the_card_and_loads_it():
-    out = _node(_today_prelude() + _panel_js() + _function("loadChores") + """
+    out = _node(_today_prelude() + _panel_js() + _function("loadChores")
+                + _function("choreSetPeople") + """
+var chorePeople = [];
 var RENDERED = [];
 function renderChores(panel, chores, setUp) { RENDERED.push([chores, setUp]); }
 shellWho.chores_enabled = true;
@@ -551,7 +554,9 @@ buildTodayPanel(panel).then(function () {
 def test_the_whole_card_goes_if_the_server_says_off_under_an_open_page():
     """The boot read and the load read can disagree if the switch is flipped
     under an open page — the server's word wins, and the card leaves."""
-    out = _node(_today_prelude() + _panel_js() + _function("loadChores") + """
+    out = _node(_today_prelude() + _panel_js() + _function("loadChores")
+                + _function("choreSetPeople") + """
+var chorePeople = [];
 function renderChores() { throw new Error('should not render'); }
 fetch = function () { return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ chores: [], chores_set_up: false, enabled: false }); } }); };
 shellWho.chores_enabled = true;
@@ -562,6 +567,16 @@ buildTodayPanel(panel).then(function () {
 """)
     assert out["removed"] == ".today-area-chores"
 
+
+# The row's ⋯ — its open state, its builders and its three actions — as
+# one slice: shell.js keeps them together, after toggleChore (Loop Board
+# "Chores v1: Skip, swap, or 'not this week'", 2026-09-13). choreRowHtml
+# reads choreMenuOpenId, so every harness that renders a row needs it.
+def _chore_menu() -> str:
+    start = SHELL_JS.index("  // The ⋯ and what is behind it")
+    end = SHELL_JS.index("  // ==========================================================================\n  // Grocery")
+    return (SHELL_JS[start:end] + _function("todayLocalStr") + _function("addDaysLocal")
+            + _function("dayNameShort") + _function("dayName"))
 
 # renderChores/toggleChore under node, with a list element that can read
 # its own rows back and remember the tick handlers it was given.
@@ -576,9 +591,31 @@ function fetch(url, opts) {
   if (FAIL_NEXT) { FAIL_NEXT = false; return Promise.resolve({ ok: false }); }
   return Promise.resolve({ ok: true });
 }
+
+// Every <button> the ⋯ region wires (data-chore-act), with its attributes
+// readable and its handler remembered under "<act>:<id>" — plus the date
+// or person that tells two chips of one act apart.
+function choreActButtons(html, store) {
+  var out = [], re = /<button[^>]*data-chore-act="[^"]*"[^>]*>/g, m;
+  while ((m = re.exec(html)) !== null) {
+    (function (tag) {
+      var a = {}, ar = /([a-z-]+)="([^"]*)"/g, x;
+      while ((x = ar.exec(tag)) !== null) a[x[1]] = x[2];
+      var key = a['data-chore-act'] + ':' + a['data-id'] +
+        (a['data-date'] ? ':' + a['data-date'] : '') +
+        (a['data-person'] ? ':' + a['data-person'] : '');
+      out.push({
+        getAttribute: function (n) { return a[n] === undefined ? null : a[n]; },
+        addEventListener: function (_e, fn) { store[key] = fn; }
+      });
+    })(m[0]);
+  }
+  return out;
+}
 function makeList() {
-  var el = { innerHTML: '', handlers: {} };
+  var el = { innerHTML: '', handlers: {}, acts: {} };
   el.querySelectorAll = function (sel) {
+    if (sel === '[data-chore-act]') return choreActButtons(el.innerHTML, el.acts);
     var out = [], re = /<div class="chore-row(?! is-outsourced)[^"]*" data-id="(\\d+)">/g, m;
     while ((m = re.exec(el.innerHTML)) !== null) {
       (function (id) {
@@ -602,7 +639,8 @@ function makePanel() {
 // tick here (loadPlanChores) — stubbed, since this file is about Now.
 var panels = {};
 function loadPlanChores() {}
-""" + _function("choreRowHtml") + _function("renderChores") + _function("toggleChore")
+""" + _chore_menu() + _function("choreRowHtml") + _function("renderChores") \
+        + _function("nowChoreCtx") + _function("toggleChore")
 
 
 _ROWS = [

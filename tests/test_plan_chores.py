@@ -314,6 +314,16 @@ def _node(script: str):
     return json.loads(res.stdout.strip().splitlines()[-1])
 
 
+# The row's ⋯ — its open state, its builders and its three actions — as
+# one slice: shell.js keeps them together, after toggleChore (Loop Board
+# "Chores v1: Skip, swap, or 'not this week'", 2026-09-13). choreRowHtml
+# reads choreMenuOpenId, so every harness that renders a row needs it.
+def _chore_menu() -> str:
+    start = SHELL_JS.index("  // The ⋯ and what is behind it")
+    end = SHELL_JS.index("  // ==========================================================================\n  // Grocery")
+    return (SHELL_JS[start:end] + _function("todayLocalStr") + _function("addDaysLocal")
+            + _function("dayNameShort") + _function("dayName"))
+
 # Everything the Chores state's builders lean on, real where the claim is
 # about them and stubbed where it is about the rest of the Plan tab.
 def _prelude() -> str:
@@ -344,8 +354,9 @@ function dayStepHtml() { return ''; }
 function allSetStepHtml() { return ''; }
 function renderAllSetAsks() {}
 function ensureCookDataForMeals() {}
-""" + _var("TICK_ICON", ";\n") + _var("EMPTY_ICONS") + _var("weekState") + labels + \
-        _function("choresEnabled") + _function("emptyMomentHtml") + _function("choreRowHtml") + \
+""" + _var("TICK_ICON", ";\n") + _var("DOTS_ICON", ";\n") + _var("EMPTY_ICONS") + _var("weekState") + labels + \
+        _function("choresEnabled") + _function("emptyMomentHtml") + _chore_menu() + \
+        _function("choreRowHtml") + _function("planChoreCtx") + \
         _function("planChoresBandParts") + _function("planModeSegHtml") + _function("renderPlanModeSeg") + \
         _function("planChoreWhen") + _function("planChoresStepHtml") + _function("planChoresByRhythmHtml") + \
         _function("wirePlanChores") + _function("togglePlanChore") + _function("renderMealsStep") + \
@@ -362,8 +373,29 @@ var window = { history: {
   pushState: function (s, t, u) { HISTORY.push(['push', s.mealsStep]); },
   replaceState: function (s, t, u) { HISTORY.push(['replace', s.mealsStep]); }
 }, location: { href: '' } };
+
+// Every <button> the ⋯ region wires (data-chore-act), with its attributes
+// readable and its handler remembered under "<act>:<id>" — plus the date
+// or person that tells two chips of one act apart.
+function choreActButtons(html, store) {
+  var out = [], re = /<button[^>]*data-chore-act="[^"]*"[^>]*>/g, m;
+  while ((m = re.exec(html)) !== null) {
+    (function (tag) {
+      var a = {}, ar = /([a-z-]+)="([^"]*)"/g, x;
+      while ((x = ar.exec(tag)) !== null) a[x[1]] = x[2];
+      var key = a['data-chore-act'] + ':' + a['data-id'] +
+        (a['data-date'] ? ':' + a['data-date'] : '') +
+        (a['data-person'] ? ':' + a['data-person'] : '');
+      out.push({
+        getAttribute: function (n) { return a[n] === undefined ? null : a[n]; },
+        addEventListener: function (_e, fn) { store[key] = fn; }
+      });
+    })(m[0]);
+  }
+  return out;
+}
 function el() {
-  var e = { innerHTML: '', hidden: false, dataset: {}, textContent: '', handlers: {}, clicks: {} };
+  var e = { innerHTML: '', hidden: false, dataset: {}, textContent: '', handlers: {}, clicks: {}, acts: {} };
   e.querySelector = function (sel) {
     if (sel === '#pc-setup' && e.innerHTML.indexOf('id="pc-setup"') !== -1) {
       return { addEventListener: function (_t, fn) { e.clicks.setup = fn; } };
@@ -372,6 +404,7 @@ function el() {
   };
   e.querySelectorAll = function (sel) {
     var out = [];
+    if (sel === '[data-chore-act]') return choreActButtons(e.innerHTML, e.acts);
     if (sel === '[data-plan-mode]') {
       var re = /data-plan-mode="(\\w+)"/g, m;
       while ((m = re.exec(e.innerHTML)) !== null) {
@@ -545,8 +578,12 @@ console.log(JSON.stringify({ html: planChoresStepHtml() }));
     assert '<span class="chore-who">Emily · Oct 2</span>' in html
     assert '<span class="chore-who">Vineeth · Dec 1</span>' in html
     # A slipped chore is one row, and its stands_for is never printed.
+    # Counted off the NAMES, not the whole string: since the ⋯ landed
+    # (2026-09-13) a chore's name is also in its More button's aria-label,
+    # which is not a second row and is never read out as one.
     text = re.sub(r"<[^>]+>", " ", html)
-    assert html.count("Bins") == 1 and "stands_for" not in html and " 3 " not in text and "3 " not in text.strip()
+    assert names.count("Bins") == 1, "one row, however many weeks slipped"
+    assert "stands_for" not in html and " 3 " not in text and "3 " not in text.strip()
     # Done today is drawn done, in place.
     assert re.search(r'chore-row done" data-id="12"', html)
     # The rows are Now's rows: same classes, same tick, same tag.
@@ -698,7 +735,8 @@ function makePanel() {
   var list = { innerHTML: '', querySelectorAll: function () { return []; } };
   return { querySelector: function (sel) { return sel === '#chores-list' ? list : sel === '#chores-count' ? { textContent: '', className: '' } : null; } };
 }
-""" + render + _function("choreRowHtml") + _function("renderChores") + _function("toggleChore") + """
+""" + render + _chore_menu() + _function("choreRowHtml") + _function("renderChores") \
+        + _function("nowChoreCtx") + _function("toggleChore") + """
 var rows = [{ id: 11, chore: 'Bins', status: 'pending', who_label: 'Emily' }];
 var panel = makePanel();
 toggleChore(panel, { dataset: { id: '11' } }, rows);
@@ -711,7 +749,7 @@ Promise.resolve().then(function () { return Promise.resolve(); }).then(function 
 
 @_needs_node
 def test_the_read_updates_the_cache_and_redraws_only_on_chores():
-    out = _node(_prelude() + _dom() + "var planChoresFetching = null;\n" + _function("loadPlanChores") + """
+    out = _node(_prelude() + _dom() + "var planChoresFetching = null;\nvar planChoresWanted = false;\n" + _function("loadPlanChores") + """
 var RENDERS = [];
 var realRender = renderMealsStep;
 renderMealsStep = function (p) { RENDERS.push(weekState.step); };

@@ -1340,6 +1340,13 @@
   var TICK_ICON =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>';
 
+  // The ⋯ that opens a row's rare actions (§6). Byte-identical to the
+  // Grocery region's GRO_ICONS.dots — declared here rather than reached
+  // for across the file, because a chore row must not depend on the
+  // grocery tab's icon table being built first.
+  var DOTS_ICON =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5.5" r="0.6"/><circle cx="12" cy="12" r="0.6"/><circle cx="12" cy="18.5" r="0.6"/></svg>';
+
   function moveTickHtml(move) {
     // Not every move has a tick behind it — a shop move's "done" dispatch is
     // a no-op (moves.set_move_done's own `kind == "shop"` branch), so
@@ -1820,6 +1827,7 @@
         if (area) area.remove();
         return;
       }
+      choreSetPeople(data.people);
       renderChores(panel, data.chores || [], !!data.chores_set_up);
     } catch (err) {
       console.warn('Chores lookup failed:', err);
@@ -1866,10 +1874,27 @@
     listEl.innerHTML = chores.map(function (c) { return choreRowHtml(c); }).join('');
 
     listEl.querySelectorAll('.chore-row:not(.is-outsourced)').forEach(function (row) {
-      row.querySelector('.chore-tick').addEventListener('click', function () {
-        toggleChore(panel, row, chores);
-      });
+      var tick = row.querySelector('.chore-tick');
+      if (tick) tick.addEventListener('click', function () { toggleChore(panel, row, chores); });
     });
+    wireChoreMenu(listEl, nowChoreCtx(panel, chores));
+  }
+
+  // What the shared ⋯ actions need to know about Now's card: the rows it
+  // is holding, that they are all today's, and how to redraw this card and
+  // reach Plan's list (built once per page load — CLAUDE.md's stale-panel
+  // gotcha, the same reason toggleChore calls loadPlanChores).
+  function nowChoreCtx(panel, chores) {
+    return {
+      rows: chores,
+      today: true,
+      weekEnd: null,
+      redraw: function () { renderChores(panel, chores); },
+      refresh: function () {
+        loadChores(panel);
+        if (panels.week && panels.week.dataset.built) loadPlanChores(panels.week);
+      }
+    };
   }
 
   // One chore as a row — the ONE builder behind Now's "Your chores" card
@@ -1914,17 +1939,36 @@
       (outsourced ? '<span class="pill pill-neutral chore-tag">Not us</span>' : '') +
       who +
     '</span>';
-    if (outsourced) {
-      return '<div class="chore-row is-outsourced" data-id="' + c.id + '">' + main +
+    // 'skipped' never arrives from the server — get_chores_due_today and
+    // get_chores_pending both read pending-or-done-today only — so it is
+    // this screen's own word for "just skipped, waiting on the read"
+    // (choreAfterSkip). Settled either way: no tick, no ⋯, the same empty
+    // spacer an outsourced row uses so the names stay lined up.
+    if (outsourced || c.status === 'skipped') {
+      return '<div class="chore-row ' + (outsourced ? 'is-outsourced' : 'is-skipped') +
+        '" data-id="' + c.id + '">' + main +
         '<span class="tick tick-empty" aria-hidden="true"></span>' +
       '</div>';
     }
-    return '<div class="chore-row' + (isDone ? ' done' : '') + '" data-id="' + c.id + '">' + main +
+    // No ⋯ on a row that is already ticked: all three verbs act on an
+    // occurrence still waiting to be done, and the server refuses each of
+    // them on a done row. A control that can only fail is worse than none.
+    // (An outsourced row returns above with none either — skipping one is
+    // deliberately not offered here, per this card's own acceptance
+    // criteria; chat can still do it, which is where "the cleaner isn't
+    // coming" is served today.)
+    var open = choreMenuOpenId === c.id;
+    var more = isDone ? '' :
+      '<button type="button" class="chore-more" data-chore-act="menu" data-id="' + c.id + '" ' +
+        'aria-expanded="' + (open ? 'true' : 'false') + '" ' +
+        'aria-label="More for ' + escapeHtml(c.chore) + '">' + DOTS_ICON + '</button>';
+    return '<div class="chore-row' + (isDone ? ' done' : '') + '" data-id="' + c.id + '">' + main + more +
       '<button type="button" class="tick chore-tick' + (isDone ? ' is-done' : '') + '" ' +
         'aria-pressed="' + (isDone ? 'true' : 'false') + '" ' +
         'aria-label="' + (isDone ? 'Put it back on the list' : 'Tick it off') + '">' +
         '<span class="tick-box">' + TICK_ICON + '</span>' +
       '</button>' +
+      (open ? choreMenuHtml(c) : '') +
     '</div>';
   }
 
@@ -1954,6 +1998,319 @@
       console.warn('Chore toggle failed, rolling back:', err);
       chore.status = prevStatus;
       renderChores(panel, chores);
+    }
+  }
+
+  // The ⋯ and what is behind it (Loop Board "Chores v1: Skip, swap, or
+  // 'not this week'", Phase 2). Real life bends the plan for a day
+  // without anybody re-doing the setup: skip this time, hand it to the
+  // other person, move it to another day. Rare actions behind a ⋯ and
+  // never a second dock button (DESIGN_SYSTEM §6), inline under the row
+  // rather than in a sheet, following Grocery's per-row ⋯
+  // (groRowMenuHtml) rather than inventing a second kind.
+  //
+  // One open at a time, app-wide: Now's card and Plan | Chores draw the
+  // same rows from the same builder, and two open menus about one chore
+  // is two answers to "which row am I looking at?".
+  var choreMenuOpenId = null;
+
+  // Who a chore can be handed to. Household-level, off whichever chores
+  // read ran last (/api/chores/today and /api/chores/pending both carry
+  // it), so opening the ⋯ costs no request.
+  var chorePeople = [];
+
+  function choreSetPeople(list) { chorePeople = list || []; }
+
+  // Everybody but whoever already has it, matched by id — two people can
+  // share a first name, so a name match would drop the wrong one.
+  //
+  // And when two candidates DO share a first name, both chips fall back
+  // to the full name: a menu offering "Sam" and "Sam" asks the household
+  // to guess, which is the one thing a chooser must never do.
+  function choreHandCandidates(c) {
+    var others = chorePeople.filter(function (p) { return p.id !== c.assignee_id; });
+    return others.map(function (p) {
+      var first = p.first_name || p.name;
+      var shared = others.filter(function (q) { return (q.first_name || q.name) === first; }).length > 1;
+      return { id: p.id, name: p.name, first_name: first, label: shared ? p.name : first };
+    });
+  }
+
+  // A week of days AROUND THE DAY IT IS ALREADY ON, not around today.
+  //
+  // Anchoring on today was wrong and shipped: Plan | Chores' "Coming up"
+  // group is where the monthly and quarterly chores live, so a "Gutters ·
+  // every few months · Dec 1" row got seven chips reading Today…Sat, i.e.
+  // every option dragged it eleven weeks forward — and once moved, the
+  // same control only offered that week again, so there was no way back
+  // to December from any screen. A window that follows the row makes both
+  // directions available and makes the mistake one tap to undo.
+  //
+  // Never earlier than today (a chore cannot be due in the past), and
+  // three days back so "a bit earlier" is reachable, not only "later".
+  // Seven days, not a calendar: "another day" is a nudge, and a date
+  // picker is a bigger claim than this control makes. Anything further is
+  // the ask sheet's job — move_chore takes any date.
+  var CHORE_MOVE_BACK = 3;
+  var CHORE_MOVE_DAYS = 7;
+
+  function choreMoveDays(c) {
+    var today = todayLocalStr();
+    var start = c.due_date ? addDaysLocal(c.due_date, -CHORE_MOVE_BACK) : today;
+    if (start < today) start = today;
+    var out = [];
+    for (var i = 0; i < CHORE_MOVE_DAYS; i++) {
+      var iso = addDaysLocal(start, i);
+      if (iso === c.due_date) continue;
+      out.push({ iso: iso, label: choreDayLabel(iso, today) });
+    }
+    return out;
+  }
+
+  // Which day a chip means, said so a household can tell. Inside the
+  // coming week a bare weekday is unambiguous — there is only one Friday
+  // in it — and beyond that it has to carry the date, or "Fri" on a
+  // December row is a question rather than an answer. Same two registers
+  // Plan's own day word uses (planChoreWhen).
+  function choreDayLabel(iso, today) {
+    if (iso === today) return 'Today';
+    if (iso === addDaysLocal(today, 1)) return 'Tomorrow';
+    if (iso <= addDaysLocal(today, 6)) return dayNameShort(iso);
+    return dayNameShort(iso) + ' ' + dayName(iso, { month: 'short', day: 'numeric' });
+  }
+
+  // The client twin of the server's _chore_group, used for one thing
+  // only: keeping a just-moved row under the right heading in the moment
+  // between the tap and the read that follows it. The server's answer
+  // lands a beat later and is the one that stands.
+  function choreGroupFor(c, weekEnd) {
+    var today = todayLocalStr();
+    if (c.status === 'done' || c.due_date <= today) return 'today';
+    if (weekEnd && c.due_date <= weekEnd) return 'week';
+    return 'later';
+  }
+
+  function choreMenuHtml(c) {
+    var id = c.id;
+    var hand = choreHandCandidates(c);
+    var handHtml = '';
+    if (hand.length === 1) {
+      // The two-adult house, which is the story this is for: one line
+      // that says the whole thing.
+      handHtml = choreActHtml(id, 'hand', hand[0], 'Hand to ' + hand[0].label);
+    } else if (hand.length > 1) {
+      handHtml = '<div class="chore-act-row"><span class="chore-act-label">Hand to</span>' +
+        hand.map(function (p) {
+          return choreChipHtml(id, 'hand', p, p.label);
+        }).join('') + '</div>';
+    }
+    return '<div class="chore-menu" data-menu-for="' + id + '">' +
+      '<button type="button" class="chore-act" data-chore-act="skip" data-id="' + id + '">' +
+        'Skip this time</button>' +
+      handHtml +
+      '<div class="chore-act-row"><span class="chore-act-label">Move to</span>' +
+        choreMoveDays(c).map(function (d) {
+          return '<button type="button" class="chore-chip" data-chore-act="move" ' +
+            'data-id="' + id + '" data-date="' + d.iso + '">' + escapeHtml(d.label) + '</button>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  }
+
+  function chorePersonAttrs(p) {
+    return ' data-person="' + p.id + '" data-name="' + escapeHtml(p.name) + '"' +
+      ' data-first="' + escapeHtml(p.first_name || p.name) + '"';
+  }
+  function choreActHtml(id, act, person, label) {
+    return '<button type="button" class="chore-act" data-chore-act="' + act + '" data-id="' + id + '"' +
+      chorePersonAttrs(person) + '>' + escapeHtml(label) + '</button>';
+  }
+  function choreChipHtml(id, act, person, label) {
+    return '<button type="button" class="chore-chip" data-chore-act="' + act + '" data-id="' + id + '"' +
+      chorePersonAttrs(person) + '>' + escapeHtml(label) + '</button>';
+  }
+
+  // The ⋯'s three verbs, once, for both surfaces. Each passes how to
+  // redraw itself and how to reach the other one; everything else — which
+  // row, the optimistic change, the revert, the toast — is the same on
+  // both, because it is the same row.
+  function wireChoreMenu(scope, ctx) {
+    scope.querySelectorAll('[data-chore-act]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = Number(btn.getAttribute('data-id'));
+        var act = btn.getAttribute('data-chore-act');
+        if (act === 'menu') {
+          choreMenuOpenId = choreMenuOpenId === id ? null : id;
+          ctx.redraw();
+          return;
+        }
+        if (act === 'hand') {
+          runChoreAction(ctx, id, 'hand', {
+            id: Number(btn.getAttribute('data-person')),
+            name: btn.getAttribute('data-name'),
+            first_name: btn.getAttribute('data-first')
+          });
+          return;
+        }
+        if (act === 'move') {
+          runChoreAction(ctx, id, 'move', btn.getAttribute('data-date'));
+          return;
+        }
+        runChoreAction(ctx, id, 'skip');
+      });
+    });
+  }
+
+  // What a skip leaves behind on each surface, and why they differ.
+  //
+  // Now's card holds only what is due TODAY, so a skipped chore is simply
+  // not on it any more: the row goes. Plan | Chores is one row per chore,
+  // always — the server's own _top_up_unscheduled writes the next
+  // occurrence on the very next read precisely so a chore never falls off
+  // that list — so removing the row there would break the list's own
+  // invariant for a beat and then have the chore reappear somewhere else.
+  // The row stays, marked skipped, until the read replaces it with the
+  // real next occurrence.
+  //
+  // **It does not guess a date, and an earlier version of this did.** It
+  // re-dated the row to today plus the chore's own rhythm, a client twin
+  // of _FREQUENCY_DAYS — and after a skip the server's answer is usually
+  // an occurrence ALREADY on the calendar, whose date has nothing to do
+  // with today: a monthly chore also pending in five days came back 25
+  // days wrong. Worse, that guess could stand as fact, because
+  // planChoresStepHtml only shows its trouble line when there is no list
+  // at all, and after this runs there is one — so a failed refresh left
+  // an invented date on screen with nothing saying so, until some later
+  // read happened to succeed. "Skipped" is a thing this screen KNOWS; the
+  // date is the server's to say. If the read never lands, the row goes on
+  // reading Skipped, which is exactly what happened.
+  function choreAfterSkip(ctx, chore, at) {
+    if (ctx.today) { ctx.rows.splice(at, 1); return; }
+    chore.status = 'skipped';
+    chore.stands_for = 1;
+  }
+
+  // Done in place, before the server answers (§6: the common case never
+  // waits); a failed save puts the row back exactly as it was and says
+  // so. On success both surfaces re-read, because grouping and order are
+  // the server's answer and a moved row's place in the list is not
+  // something this screen should be guessing at for long.
+  //
+  // Every one of the three then SAYS what it did, with an Undo where the
+  // undo is exact. Two reasons, and the second is the important one: on
+  // Now a skip or a move-off-today makes the row vanish, and a row that
+  // disappears in silence is indistinguishable from a mis-tap; and a move
+  // is the one action here that is easy to aim wrong, so the way back has
+  // to be on the screen that made it rather than only in the ask sheet.
+  //
+  // Undo for a skip restores the ROW, not the pile it swept — the same
+  // choice, for the same reason, that _mark_done's docstring already
+  // makes about un-ticking: which occurrences were swept is not recorded,
+  // and resurrecting three weeks of dates on a mis-tap is the thing the
+  // no-guilt-pile card exists to stop. The toast says "this time", which
+  // is what was undone.
+  async function runChoreAction(ctx, id, act, arg) {
+    var rows = ctx.rows;
+    var at = -1;
+    for (var i = 0; i < rows.length; i++) if (rows[i].id === id) at = i;
+    if (at < 0) return;
+    var chore = rows[at];
+    var before = {};
+    for (var k in chore) before[k] = chore[k];
+    choreMenuOpenId = null;
+
+    var url = '/api/chores/' + id + '/' + act;
+    var body = {};
+    var said = '';
+    var undo = null;
+    if (act === 'skip') {
+      choreAfterSkip(ctx, chore, at);
+      said = 'Skipped ' + chore.chore + ' this time.';
+      undo = function () { runChoreUndo(ctx, id, 'status', { status: 'pending' }); };
+    } else if (act === 'hand') {
+      chore.assignee_id = arg.id;
+      chore.who_label = arg.first_name || arg.name;
+      body = { name: arg.name };
+      said = (arg.first_name || arg.name) + ' has ' + chore.chore + ' this time.';
+      // Only when there was somebody to hand it back to: a 'whoever'
+      // chore had no assignee, and hand-back has no name to send.
+      if (before.assignee_id && before.who_label) {
+        undo = function () { runChoreUndo(ctx, id, 'hand', { name: before.who_label }); };
+      }
+    } else {
+      chore.due_date = arg;
+      // Now's card only holds what is due today, so a move off today
+      // takes the row off it; Plan holds the whole list, so the row stays
+      // and changes heading.
+      if (ctx.today && arg !== todayLocalStr()) rows.splice(at, 1);
+      else chore.group = choreGroupFor(chore, ctx.weekEnd);
+      body = { due_date: arg };
+      said = chore.chore + ' moved to ' + choreDayLabel(arg, todayLocalStr()) + '.';
+      if (before.due_date) {
+        undo = function () { runChoreUndo(ctx, id, 'move', { due_date: before.due_date }); };
+      }
+    }
+    ctx.redraw();
+
+    try {
+      var res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) throw new Error('chore action failed');
+      var answer = await res.json().catch(function () { return null; });
+      // A refusal is a 200 carrying a sentence written for a person (see
+      // app/main.py on tools.ChoreRefused). The screen was right to try
+      // and the app was right to say no — most often because the row went
+      // stale under an open ⋯, somebody else having ticked it — so it
+      // puts the row back and prints what the server actually said,
+      // rather than reporting itself broken.
+      if (answer && answer.status === 'refused') {
+        choreRevert(ctx, chore, before, at);
+        showToast(answer.message || 'That didn’t save. Try it again in a moment.');
+        ctx.refresh();
+        return;
+      }
+      ctx.refresh();
+      showToast(said, undo ? { label: 'Undo', onClick: undo } : null);
+    } catch (err) {
+      console.warn('Chore action failed, rolling back:', err);
+      choreRevert(ctx, chore, before, at);
+      ctx.redraw();
+      showToast('That didn’t save. Try it again in a moment.');
+    }
+  }
+
+  // Back exactly as it was, in its own place — appending would move a row
+  // the household never asked to move.
+  function choreRevert(ctx, chore, before, at) {
+    var now = ctx.rows.indexOf(chore);
+    if (now === -1) ctx.rows.splice(at, 0, before);
+    else ctx.rows[now] = before;
+    ctx.redraw();
+  }
+
+  // The Undo chip. Deliberately NOT optimistic and deliberately not a
+  // fourth branch of runChoreAction: by the time it is tapped the row on
+  // screen came from the refresh, so there is nothing local left to put
+  // back — it posts, re-reads, and says so if it could not.
+  async function runChoreUndo(ctx, id, act, body) {
+    try {
+      var res = await fetch('/api/chores/' + id + '/' + act, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) throw new Error('undo failed');
+      var answer = await res.json().catch(function () { return null; });
+      if (answer && answer.status === 'refused') {
+        showToast(answer.message || 'That didn’t save. Try it again in a moment.');
+      }
+      ctx.refresh();
+    } catch (err) {
+      console.warn('Chore undo failed:', err);
+      showToast('Couldn’t undo that — try it again in a moment.');
     }
   }
 
@@ -9501,6 +9858,9 @@
   // week ("Tuesday"), the date beyond it ("Oct 2"). Today's rows carry
   // none — the heading says it.
   function planChoreWhen(c) {
+    // A row this screen has just skipped: the word for what happened,
+    // never a date — see choreAfterSkip on why there is no date to give.
+    if (c.status === 'skipped') return 'Skipped';
     if (c.group === 'today' || !c.due_date) return '';
     if (c.group === 'week') return dayName(c.due_date, { weekday: 'long' });
     return dayName(c.due_date, { month: 'short', day: 'numeric' });
@@ -9576,6 +9936,24 @@
         togglePlanChore(panel, Number(row.dataset.id));
       });
     });
+    wireChoreMenu(steps, planChoreCtx(panel));
+  }
+
+  // The same for Plan | Chores. weekEnd is the list's own week (the read
+  // carries it), so a moved row lands under the right heading until the
+  // server's answer arrives.
+  function planChoreCtx(panel) {
+    var data = weekState.chores;
+    return {
+      rows: (data && data.chores) || [],
+      today: false,
+      weekEnd: data && data.week_end,
+      redraw: function () { if (weekState.step === 'chores') renderMealsStep(panel); },
+      refresh: function () {
+        loadPlanChores(panel);
+        if (panels.today && panels.today.dataset.built) loadChores(panels.today);
+      }
+    };
   }
 
   // The read behind the Chores state. Safe to call from anywhere and at
@@ -9583,10 +9961,15 @@
   // is actually looking at Chores — a chat turn that changes chores
   // (refreshStaleTabsFromActions) or a tick on Now lands here whether Plan
   // is on Meals, a day, or a meal.
+  // Coalesced, but never at the cost of an answer that predates the ask:
+  // a ctx.refresh() fired by the ⋯ while a read started before the tap is
+  // still in flight used to be handed that read and start no new one, so
+  // Plan settled back onto the pre-action list. It queues one instead.
   var planChoresFetching = null;
+  var planChoresWanted = false;
   async function loadPlanChores(panel) {
     if (!choresEnabled()) return;
-    if (planChoresFetching) return planChoresFetching;
+    if (planChoresFetching) { planChoresWanted = true; return planChoresFetching; }
     planChoresFetching = (async function () {
       try {
         var res = await fetch('/api/chores/pending');
@@ -9602,6 +9985,7 @@
           return;
         }
         weekState.chores = data;
+        choreSetPeople(data.people);
         weekState.choresTrouble = false;
       } catch (err) {
         console.warn('Chores list lookup failed:', err);
@@ -9610,6 +9994,12 @@
         planChoresFetching = null;
       }
       if (weekState.step === 'chores') renderMealsStep(panel);
+      if (planChoresWanted) {
+        // planChoresFetching is already null (the finally above), so this
+        // starts a real second read rather than returning this one again.
+        planChoresWanted = false;
+        await loadPlanChores(panel);
+      }
     })();
     return planChoresFetching;
   }

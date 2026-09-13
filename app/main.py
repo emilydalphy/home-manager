@@ -535,6 +535,14 @@ class ChoreStatusRequest(BaseModel):
     status: str = "done"  # 'done' | 'pending'
 
 
+class ChoreHandRequest(BaseModel):
+    name: str
+
+
+class ChoreMoveRequest(BaseModel):
+    due_date: str
+
+
 class ResolveDinnerRequest(BaseModel):
     date: str
     meal: str
@@ -1797,10 +1805,15 @@ def chores_today():
         profile = tools.get_chores_profile()
         household = tools.get_household_setup_status()
         chores_set_up = bool(profile.get("has_profile")) or bool(household.get("has_chores"))
+        # Who a row's ··· can hand it to. On the payload rather than read
+        # per row: it is one answer for the whole house, and the ··· must
+        # not cost a request to open. Only on the enabled answer — the
+        # switched-off one says nothing about the household at all.
+        people = tools.chore_people()
     except Exception as e:
         logger.exception("Today's-chores lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return {"chores": chores, "chores_set_up": chores_set_up, "enabled": True}
+    return {"chores": chores, "chores_set_up": chores_set_up, "people": people, "enabled": True}
 
 
 @app.get("/api/chores/pending")
@@ -1828,10 +1841,11 @@ def chores_pending():
         profile = tools.get_chores_profile()
         household = tools.get_household_setup_status()
         chores_set_up = bool(profile.get("has_profile")) or bool(household.get("has_chores"))
+        people = tools.chore_people()   # see /api/chores/today
     except Exception as e:
         logger.exception("Chores list lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    listed.update({"chores_set_up": chores_set_up, "enabled": True})
+    listed.update({"chores_set_up": chores_set_up, "people": people, "enabled": True})
     return listed
 
 
@@ -1857,6 +1871,80 @@ def set_chore_status(instance_id: int, req: ChoreStatusRequest):
         logger.exception("Chore status update failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return result
+
+
+# The ··· on a chore row: skip this time / hand it over / move it to
+# another day (Loop Board "Chores v1: Skip, swap, or 'not this week'").
+# Three small writes beside the tick's, rather than verbs folded into
+# /status: a skip is not a status the tick can be flipped to — it sweeps
+# the backlog behind it and leaves the rhythm alone — and the other two
+# change a different column each. All three refuse while the switch is
+# off for the same reason /status does: nothing on screen can send this,
+# so a request that arrives anyway is not the shell's.
+#
+# They take an INSTANCE id, and that is the point of them existing beside
+# the by-name chat tools: the row is on screen, so there is no "which
+# occurrence did they mean?" to solve. The write underneath is the same
+# one skip_chore / move_chore / hand_chore reach by name.
+#
+# A tools.ChoreRefused comes back as 200 {"status": "refused", "message"}
+# rather than a 4xx — weekly_plan.SlotRefused's own shape and for its
+# reason (CLAUDE.md, 2026-09-11): those sentences are written for a person
+# ("Mop is already on 2026-09-20"), and a screen that turned them into
+# "that didn't save" would report the app as broken for doing exactly the
+# right thing. Everything else — including require_household_row's
+# deliberately opaque "No chore instance with id 7." — stays a 404 and
+# gets the plain line.
+
+
+def _chore_refusal(e: "tools.ChoreRefused") -> dict:
+    return {"status": "refused", "message": str(e)}
+@app.post("/api/chores/{instance_id}/skip")
+def skip_chore_occurrence(instance_id: int):
+    """Not this time — not done, not missed, and the rhythm doesn't move."""
+    if not tools.chores_enabled():
+        raise HTTPException(status_code=403, detail=tools.CHORES_OFF_MESSAGE)
+    try:
+        return tools.skip_chore_instance(instance_id)
+    except tools.ChoreRefused as e:
+        return _chore_refusal(e)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Chore skip failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/chores/{instance_id}/hand")
+def hand_chore_occurrence(instance_id: int, req: ChoreHandRequest):
+    """This one occurrence to somebody else. The chore's owner is unchanged."""
+    if not tools.chores_enabled():
+        raise HTTPException(status_code=403, detail=tools.CHORES_OFF_MESSAGE)
+    try:
+        return tools.hand_chore_instance(instance_id, req.name)
+    except tools.ChoreRefused as e:
+        return _chore_refusal(e)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Chore hand-over failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/chores/{instance_id}/move")
+def move_chore_occurrence(instance_id: int, req: ChoreMoveRequest):
+    """This one occurrence to another day. Nothing else about it changes."""
+    if not tools.chores_enabled():
+        raise HTTPException(status_code=403, detail=tools.CHORES_OFF_MESSAGE)
+    try:
+        return tools.move_chore_instance(instance_id, req.due_date)
+    except tools.ChoreRefused as e:
+        return _chore_refusal(e)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Chore move failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
 @app.get("/api/prep/defrost-today")
@@ -3908,7 +3996,7 @@ def add_member_share_note(token: str, req: MemberNoteRequest):
 # tool we haven't explicitly categorized is still something that changed.
 _CHORE_TOOLS = {
     "add_chore", "update_chore", "generate_chore_schedule", "schedule_chore_instance", "complete_chore",
-    "skip_chore", "move_chore",
+    "skip_chore", "move_chore", "hand_chore",
 }
 _WEEK_TOOLS = {"plan_meal", "generate_weekly_plan", "set_week_constraints", "swap_meal_in_plan", "swap_component_in_plan", "approve_weekly_plan"}
 _KITCHEN_TOOLS = {
@@ -3957,6 +4045,7 @@ _VERB_PREFIXES = [
     ("generate_", "Generated"), ("approve_", "Approved"), ("exclude_", "Excluded"), ("include_", "Added back"),
     ("clear_", "Cleared"), ("consolidate_", "Consolidated"), ("resolve_", "Resolved"), ("flag_", "Flagged"),
     ("log_", "Logged"), ("plan_", "Planned"), ("schedule_", "Scheduled"), ("skip_", "Skipped"), ("move_", "Moved"),
+    ("hand_", "Handed over"),
 ]
 # "items"/"restrictions"/"new_meal"/"goals" are listed ahead of the older,
 # more generic fields: set_member_dietary_restrictions(name, restrictions)

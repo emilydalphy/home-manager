@@ -820,16 +820,21 @@ def test_the_now_card_draws_the_tag_and_no_tick():
     # is decided; renderChores only maps the list through it.
     body = _slice(SHELL_JS, "function choreRowHtml(", "\n  function ")
     assert "choreRowHtml(c)" in _slice(SHELL_JS, "function renderChores(", "\n  function ")
-    outsourced_branch = _slice(body, "if (outsourced) {", "return '<div class=\"chore-row' + (isDone")
+    # The branch grew a second occupant on 2026-09-13 ("Chores v1: Skip,
+    # swap, or 'not this week'"): a row this screen has just skipped is
+    # settled too, and takes the same no-tick shape. What this test claims
+    # about an OUTSOURCED row is unchanged — only the marker moved.
+    outsourced_branch = _slice(body, "if (outsourced || c.status === 'skipped') {",
+                               "return '<div class=\"chore-row' + (isDone")
     assert "chore-tick" not in outsourced_branch, "no tick on a chore nobody here does"
     assert "tick-empty" in outsourced_branch, "a spacer keeps the names lined up with the ticked rows"
-    assert "pill pill-neutral" in body[:body.index("if (outsourced) {")], "a quiet label, never apricot (Rule 5)"
+    assert "pill pill-neutral" in body[:body.index("if (outsourced || c.status === 'skipped') {")], "a quiet label, never apricot (Rule 5)"
     assert "outsourced ? '<span class=\"pill pill-neutral chore-tag\">Not us</span>'" in body
     # Who does it — the same `who` span every row prints, built from the
     # server's who_label above the branch since the rows were re-cut
     # against the shared tick (2026-09-12).
-    assert "who_label" in body[:body.index("if (outsourced) {")]
-    assert "main +" in outsourced_branch and "who +" in body[:body.index("if (outsourced) {")]
+    assert "who_label" in body[:body.index("if (outsourced || c.status === 'skipped') {")]
+    assert "main +" in outsourced_branch and "who +" in body[:body.index("if (outsourced || c.status === 'skipped') {")]
     # The tick handler is wired to the rows that have one.
     assert ".chore-row:not(.is-outsourced)" in _slice(SHELL_JS, "function renderChores(", "\n  function ")
 
