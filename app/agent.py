@@ -615,19 +615,24 @@ get_chores_profile silently. The onboarding wizard's chores step may have alread
 context there (home type, bed/bath count, yard, cleanliness standard, who's in the \
 rotation, existing help like a cleaning service, notes on what to include/exclude) even \
 though no actual chores were created yet. If has_profile is true, use that context instead \
-of re-asking those questions — jump straight to proposing a chore list based on it, and let \
-the user adjust. If has_profile is false, walk through chores one or two questions at a \
-time (don't dump a giant form):
-  1. What cleaning and maintenance chores do you want tracked? Offer common examples \
-(trash, dishes, vacuuming, bathrooms, laundry, mopping, changing HVAC filters, lawn care, \
-smoke detector batteries — and if there are pets, things like litter box or walks) but let \
-them customize. For each, get: how often (daily/weekly/biweekly/monthly/quarterly/once), \
-category (cleaning vs maintenance), and whose it is — one person owns it (the default: the \
-noticing and the doing sit with the same person), the named people take turns, or it's \
-nobody's in particular. Propose an owner for each from the rotation, let them change it, \
-then use add_chore.
-  2. Once members and chores exist, call generate_chore_schedule to populate the upcoming \
-schedule, then show them what's on deck for the next couple weeks.
+of re-asking those questions — go straight to get_starter_chore_list and let the household \
+adjust. If has_profile is false, ask only what isn't already known, one or two questions at a \
+time (don't dump a giant form). The people and any pets are already on file from \
+get_household_setup_status — never ask for them again. Home type, bedrooms, bathrooms and yard \
+are only known once a chores profile exists, so ask those if it doesn't; then the genuinely new \
+ones — how they'd describe the upkeep they want (relaxed / standard / meticulous), whether \
+anyone comes in to help and how often, anything they specifically want tracked or left out. \
+Then:
+  1. Save the answers with set_chores_profile, call get_starter_chore_list, and read the list \
+back grouped (the rooms, the laundry and bins, the yard, the pets, the seasonal things) with \
+each row's proposed owner and its rhythm in the household's words (frequency_label — say \
+'every two weeks', never 'biweekly'). Never type out a list of your own instead: the starter \
+list is built from their facts and is the same one the setup screen shows. Let them drop rows, \
+change who or how often, or say their cleaner does one (mode 'outsourced'). Nothing is saved \
+until they say they're happy with it.
+  2. Then add_chore each row they kept — with its mode, owner_name (or outsourced_to), \
+frequency and category as agreed — and call generate_chore_schedule so the next two weeks are \
+on Now and Plan | Chores straight away. Tell them what's on deck.
 - If onboarding_complete is true, skip straight to helping with whatever they asked.
 - If chores_enabled (from get_household_setup_status) is false, Chores isn't switched on \
 for this house: never offer to set up or track chores, never call the chores tools, and \
@@ -738,6 +743,9 @@ saved recipe detail, ask in chat" — the user gave you the idea once and should
 again just to get the actual recipe.
 - To change just one day of an already-generated plan ("swap Tuesday for something with \
 chicken"), use swap_meal_in_plan rather than regenerating the whole week.
+- To move a dinner to a DIFFERENT NIGHT ("move Thursday's dinner to Friday", "do the chili \
+on Saturday instead"), use swap_dinner_nights with the two dates — the two nights' dinners \
+trade places and nothing is re-bought. Never re-plan both nights with plan_meal to do this.
 - Every meal in a plan carries a slot_state, and it decides how you may talk about that slot:
   * 'planned' — a real meal. Normal.
   * 'planned_empty' — DELIBERATELY empty, and its reasoning says why (nobody is home that \
@@ -1212,13 +1220,18 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "get_starter_chore_list",
+        "description": "The starter chore list Pomona proposes from what it already knows — the saved chores profile (home type, bed/bath count, yard, standard, rotation, existing help), the pets on file and the household's adults. Rule-based: cleaning by room, laundry, garbage/recycling/green bin, yard if there is one, pet care if there are pets, a few seasonal and deep items at their real rhythm, a monthly tidy-and-donate — every row with a proposed owner, a rhythm (frequency, and frequency_label in plain words) and a category. Calling it saves NOTHING. Use it instead of inventing a list when a household is setting up chores: save any new answers with set_chores_profile first, call this, read the rows back grouped and in the household's words (say 'every two weeks', never 'biweekly'), take their changes — drop a row, change who or how often, mark one as done by their cleaner (mode 'outsourced') — then add_chore each row they keep and generate_chore_schedule. Never re-ask for anything `profile` already shows.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
         "name": "add_chore",
         "description": "Create a new recurring chore definition (e.g. 'Take out trash', weekly, cleaning). Every chore has a chosen owner — mode 'owned' (one person, always; the default), 'shared' (the named people take turns), 'whoever' (nobody in particular, first to do it) or 'outsourced' (somebody outside the house does it — a cleaner, a lawn service, a laundry pickup). Pass owner_name for an owned chore, or outsourced_to for an outsourced one. owner_name/assignee_names must be people already in the household (add_member first if they're new — this tool never creates one); outsourced_to is NOT a household member and is never looked up as one. If nobody's named, the only adult owns it; with two or more adults and no name given it falls back to shared across the setup rotation — so when the household hasn't said whose it is, ask.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "name": {"type": "string"},
-                "frequency": {"type": "string", "enum": ["daily", "weekly", "biweekly", "monthly", "quarterly", "once"]},
+                "frequency": {"type": "string", "enum": ["daily", "weekly", "biweekly", "monthly", "quarterly", "semiannual", "yearly", "once"]},
                 "category": {"type": "string", "enum": ["cleaning", "maintenance", "other"]},
                 "mode": {
                     "type": "string",
@@ -1254,7 +1267,7 @@ TOOL_DEFINITIONS = [
             "type": "object",
             "properties": {
                 "chore_id": {"type": "integer"},
-                "frequency": {"type": "string", "enum": ["daily", "weekly", "biweekly", "monthly", "quarterly", "once"]},
+                "frequency": {"type": "string", "enum": ["daily", "weekly", "biweekly", "monthly", "quarterly", "semiannual", "yearly", "once"]},
                 "category": {"type": "string", "enum": ["cleaning", "maintenance", "other"]},
                 "mode": {"type": "string", "enum": ["owned", "shared", "whoever", "outsourced"]},
                 "owner_name": {"type": "string", "description": "The new owner (implies mode 'owned' if mode is omitted)."},
@@ -1599,6 +1612,19 @@ TOOL_DEFINITIONS = [
                 "old_meal": {"type": "string", "description": "The exact name of the entry being replaced. Only needed when the slot holds more than one — a day's two snacks — and required in spirit there: without it both are replaced. Get the exact name from get_weekly_plan/get_week_menu rather than guessing."},
             },
             "required": ["weekly_plan_id", "meal_date", "new_meal"],
+        },
+    },
+    {
+        "name": "swap_dinner_nights",
+        "description": "Move a dinner to another night of an already-generated plan by trading it with whatever dinner is on that night (\"move Thursday's dinner to Friday\" swaps Thursday's and Friday's dinners). Only the two DINNERS trade places; breakfasts, lunches and snacks stay put. Each dish keeps its groceries, its cooked tick and its leftover chain, and its defrost reminders move with it — the grocery list itself is untouched. A status of 'refused' means nothing changed and `message` says why (a night nobody is home, a dinner already cooked, or a leftover chain that would end up running backwards): say that sentence back rather than retrying. Not for changing WHAT is eaten — that is swap_meal_in_plan.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "weekly_plan_id": {"type": "integer"},
+                "date_a": {"type": "string", "description": "YYYY-MM-DD — one of the two nights."},
+                "date_b": {"type": "string", "description": "YYYY-MM-DD — the other night."},
+            },
+            "required": ["weekly_plan_id", "date_a", "date_b"],
         },
     },
     {
@@ -1992,7 +2018,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "mark_grocery_item",
-        "description": "Update a grocery item's status, given its item_id.",
+        "description": "Update a grocery item's status, given its item_id. 'purchased' puts the line into kitchen inventory once per line (a re-tick after an un-tick does not add it again); moving a purchased line back off 'purchased' takes it back out of the kitchen only when nothing there has changed since. Read inventory_added / inventory_restored in the result before telling the household what happened to the kitchen — False means the shelf was left as it was.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -5045,7 +5071,7 @@ _COOKING_QUANTITIES_PROPERTY = {
         "type": "object",
         "properties": {
             "item": {"type": "string"},
-            "cook_qty": {"type": "string", "description": "Amount at default_servings — 2 tbsp, 1.5 cups, 400 g, 3 cloves, or a count. Never a package word (bottle/jar/bag/box/tub); a sized can is fine."},
+            "cook_qty": {"type": "string", "description": "Amount at default_servings — 2 tbsp, 1.5 cups, 400 g, 3 cloves, or a count — and sensible for that many people (a soup for two takes 1-2 tbsp of butter, not a stick). Never a package word (bottle/jar/bag/box/tub); a sized can is fine."},
         },
         "required": ["item", "cook_qty"],
     },
@@ -5583,9 +5609,9 @@ Call submit_read_recipe with the result."""
 # Add or change anything by saying so", 2026-09-12) joined the original
 # nine the same way: any new chores tool belongs in this set, full stop.
 CHORES_TOOLS = frozenset({
-    "get_chores_profile", "set_chores_profile", "add_chore", "list_chore_definitions",
-    "update_chore", "generate_chore_schedule", "schedule_chore_instance", "list_chores",
-    "complete_chore", "skip_chore", "move_chore", "hand_chore",
+    "get_chores_profile", "set_chores_profile", "get_starter_chore_list", "add_chore",
+    "list_chore_definitions", "update_chore", "generate_chore_schedule", "schedule_chore_instance",
+    "list_chores", "complete_chore", "skip_chore", "move_chore", "hand_chore",
 })
 
 
@@ -5628,6 +5654,7 @@ TOOL_FUNCTIONS = {
     "remove_store_typical_item": tools.remove_store_typical_item,
     "get_chores_profile": tools.get_chores_profile,
     "set_chores_profile": tools.set_chores_profile,
+    "get_starter_chore_list": tools.get_starter_chore_list,
     "add_chore": tools.add_chore,
     "list_chore_definitions": tools.list_chore_definitions,
     "update_chore": tools.update_chore,
@@ -5656,6 +5683,7 @@ TOOL_FUNCTIONS = {
     "get_weekly_plan": tools.get_weekly_plan,
     "swap_meal_in_plan": tools.swap_meal_in_plan,
     "swap_component_in_plan": tools.swap_component_in_plan,
+    "swap_dinner_nights": tools.swap_dinner_nights,
     "approve_weekly_plan": tools.approve_weekly_plan,
     "generate_prep_schedule": generate_prep_schedule,
     "get_prep_schedule": tools.get_prep_schedule,
@@ -5750,18 +5778,23 @@ def _client() -> Anthropic:
 
 _RECOMMEND_CHORES_TOOL = {
     "name": "submit_chore_recommendations",
-    "description": "Submit the recommended chore list.",
+    "description": (
+        "Submit adjustments to the household's starter chore list: rows to ADD (chores), "
+        "rows to DROP by name (drop) and rows to CHANGE by name (change). The starter list "
+        "itself is already built from the household's facts — do not resubmit it."
+    ),
     "input_schema": {
         "type": "object",
         "properties": {
             "chores": {
+                "description": "Chores to ADD to the starter list. Only what the starter list is missing.",
                 "type": "array",
                 "items": {
                     "type": "object",
                     "properties": {
                         "name": {"type": "string"},
                         "category": {"type": "string", "enum": ["cleaning", "maintenance", "other"]},
-                        "frequency": {"type": "string", "enum": ["daily", "weekly", "biweekly", "monthly", "quarterly", "once"]},
+                        "frequency": {"type": "string", "enum": ["daily", "weekly", "biweekly", "monthly", "quarterly", "semiannual", "yearly", "once"]},
                         "mode": {
                             "type": "string",
                             "enum": ["owned", "shared", "whoever", "outsourced"],
@@ -5769,7 +5802,7 @@ _RECOMMEND_CHORES_TOOL = {
                         },
                         "owner_name": {
                             "type": "string",
-                            "description": "For owned: who owns it. One of rotation_members.",
+                            "description": "For owned: who owns it. One of rotation_members. Leave it out to have it dealt round the rotation like the rest.",
                         },
                         "assignee_names": {
                             "type": "array",
@@ -5784,13 +5817,34 @@ _RECOMMEND_CHORES_TOOL = {
                     "required": ["name", "category", "frequency", "mode"],
                 },
             },
+            "drop": {
+                "description": "Names of starter rows to leave off, exactly as they appear in the starter list — only for something exclude_notes says, or that plainly doesn't apply. Laundry and the garbage can never be dropped here; the household removes those by hand.",
+                "type": "array",
+                "items": {"type": "string"},
+            },
+            "change": {
+                "description": "Starter rows to adjust, by their exact name: a different rhythm, or a different owner kind — most often mode 'outsourced' with outsourced_to for what existing_help covers. Leave owners alone otherwise; they are dealt round the rotation on purpose.",
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string", "description": "The starter row's name, exactly."},
+                        "frequency": {"type": "string", "enum": ["daily", "weekly", "biweekly", "monthly", "quarterly", "semiannual", "yearly", "once"]},
+                        "mode": {"type": "string", "enum": ["owned", "shared", "whoever", "outsourced"]},
+                        "owner_name": {"type": "string"},
+                        "assignee_names": {"type": "array", "items": {"type": "string"}},
+                        "outsourced_to": {"type": "string"},
+                    },
+                    "required": ["name"],
+                },
+            },
         },
         "required": ["chores"],
     },
 }
 
 
-def _normalize_chore_recommendations(chores: list, rotation_members: list[str]) -> list[dict]:
+def _normalize_chore_recommendations(chores: list, rotation_members: list[str], deal_from: int = 0) -> list[dict]:
     """
     Every proposed chore leaves here with a mode and, when owned, an owner
     — the household changes it per row before saving, but the starter list
@@ -5814,7 +5868,10 @@ def _normalize_chore_recommendations(chores: list, rotation_members: list[str]) 
     lower = {n.lower(): n for n in people}
     lower.update({n.split(" ")[0].lower(): n for n in people if n.split(" ")[0].lower() not in lower})
     out = []
-    deal = 0
+    # deal_from: how many owned rows the caller has already dealt (the
+    # starter list's), so additions continue round the rotation rather
+    # than every one landing on the first person named.
+    deal = deal_from
     for raw in chores or []:
         if not isinstance(raw, dict):
             continue
@@ -5865,61 +5922,154 @@ def _normalize_chore_recommendations(chores: list, rotation_members: list[str]) 
     return out
 
 
+def _merge_chore_adjustments(baseline: list[dict], adjustments: dict, rotation_members: list[str]) -> list[dict]:
+    """
+    Apply the model's adjustments to the starter list — and only
+    adjustments. The baseline is the household's from their facts; the
+    model may add to it, re-rhythm a row, re-tag one as outsourced (or
+    back), or leave one off that exclude_notes ruled out. It may NOT drop
+    the laundry or the garbage (tools.NEVER_DROPPED): those are the
+    household's to remove by hand in review, where the removal is theirs.
+    Names are matched casefolded and exactly; a change or drop naming a
+    row that isn't there is ignored rather than guessed at, and an "add"
+    whose name is already on the list is treated as a change to that row.
+    """
+    people = [n for n in (rotation_members or []) if isinstance(n, str) and n.strip()]
+    rows = [dict(r) for r in baseline]
+    by_name = {r["name"].strip().lower(): r for r in rows}
+
+    def _as_change(row: dict, change: dict) -> None:
+        if change.get("frequency") in tools._FREQUENCY_DAYS:
+            row["frequency"] = change["frequency"]
+        wants_people = any(change.get(k) for k in ("mode", "owner_name", "assignee_names", "outsourced_to"))
+        if wants_people:
+            probe = {
+                "name": row["name"],
+                "mode": change.get("mode") or ("outsourced" if change.get("outsourced_to") else row["mode"]),
+                "owner_name": change.get("owner_name") or row.get("owner_name", ""),
+                "assignee_names": change.get("assignee_names") or row.get("assignee_names") or [],
+                "outsourced_to": change.get("outsourced_to") or row.get("outsourced_to", ""),
+            }
+            fixed = _normalize_chore_recommendations([probe], people)[0]
+            row.update({k: fixed[k] for k in ("mode", "owner_name", "assignee_names", "outsourced_to")})
+            if row["mode"] == "outsourced":
+                row["basis"] = "help"
+        tools.with_frequency_label(row)
+
+    for change in adjustments.get("change") or []:
+        if not isinstance(change, dict):
+            continue
+        row = by_name.get(str(change.get("name") or "").strip().lower())
+        if row is not None:
+            _as_change(row, change)
+
+    dropped = {
+        str(n).strip().lower() for n in (adjustments.get("drop") or [])
+        if isinstance(n, str) and n.strip().lower() not in tools.NEVER_DROPPED
+    }
+    rows = [r for r in rows if r["name"].strip().lower() not in dropped]
+    by_name = {r["name"].strip().lower(): r for r in rows}
+
+    additions = []
+    for raw in adjustments.get("chores") or []:
+        if not isinstance(raw, dict) or not str(raw.get("name") or "").strip():
+            continue
+        existing = by_name.get(str(raw["name"]).strip().lower())
+        if existing is not None:
+            _as_change(existing, raw)
+            continue
+        additions.append(raw)
+    dealt = sum(1 for r in rows if r["mode"] == "owned")
+    for row in _normalize_chore_recommendations(additions, people, deal_from=dealt):
+        row.setdefault("category", "cleaning")
+        row.setdefault("basis", "notes")
+        rows.append(tools.with_frequency_label(row))
+    return rows
+
+
 def generate_chore_recommendations(profile: dict) -> list[dict]:
     """
-    Given a household chores profile (home type, bedroom/bathroom count,
-    yard, cleanliness standard, rotation members, pets, existing help,
-    include/exclude notes), ask Claude for a recommended starting chore
-    list. Uses a forced tool call so the result is always structured JSON,
-    no free-text parsing needed. Used by the onboarding wizard's chores
-    step — not part of the regular chat tool loop.
+    The starter chore list for a household — proposed, never saved.
+
+    Loop Board "Chores v1: A starter list from what Pomona already knows":
+    the list is built in code from the household's facts
+    (tools.starter_chore_list — rooms from the bathroom count, laundry, the
+    bins, yard if there is one, pet care if there are pets, the seasonal
+    and deep items at their real rhythm, an owner dealt onto every row),
+    so it is the same every time and never missing the basics. Claude is
+    then asked, in one forced tool call, only to ADJUST it from what the
+    rules cannot read: the free text — include_notes, exclude_notes, what
+    existing_help actually covers, the goals — and it may add, re-rhythm,
+    re-tag or leave off, but never drop the laundry or the garbage
+    (_merge_chore_adjustments). Before this card the whole list came from
+    the model, which meant a house could be proposed a list with no
+    laundry on it.
+
+    If the model call fails — unavailable, or any other API error — the
+    household still gets the list: the baseline is returned as it is, with
+    the failure in the log. A starter list should not fail because an API
+    call did. Used by the setup
+    route, not the chat loop — the chat has get_starter_chore_list, which
+    is the same baseline read back by the model in conversation.
     """
-    client = _client()
+    baseline = tools.starter_chore_list(profile)
+    starter_summary = [
+        {"name": r["name"], "frequency": r["frequency"], "mode": r["mode"], "outsourced_to": r["outsourced_to"]}
+        for r in baseline
+    ]
+    facts = {k: v for k, v in profile.items() if k not in ("goals",)}
     prompt = f"""Household profile (JSON):
-{json.dumps(profile, indent=2)}
+{json.dumps(facts, indent=2)}
 
-Recommend a starting cleaning/maintenance chore list for this household. Guidelines:
-- Every chore has a chosen owner. Default to mode 'owned' with an owner_name drawn from \
-rotation_members, spreading the load fairly across them rather than piling onto one person. \
-Use 'shared' (with assignee_names, two or more of rotation_members, in turn order) only for \
-things that genuinely suit taking turns, and 'whoever' sparingly, for small things anyone \
-grabs. Only ever use names from rotation_members. If rotation_members is empty, use 'whoever'.
-- Scale frequency to the stated standard: 'relaxed' = less frequent, 'standard' = \
-typical/moderate, 'meticulous' = more frequent.
-- Scale bathroom-related chores to the bathroom count if it's more than 1-2.
-- Only include yard-related chores if has_yard is true.
-- Only include pet-related chores (litter box, pet area cleanup, etc.) if pets is non-empty \
-— match the chore to the actual pet type(s) listed.
-- If existing_help describes outside help (e.g. a cleaning service, a lawn service, a \
-laundry pickup), the household has already told you about it — do not ask again. Keep the \
-chores that help covers on the list and mark each of them mode 'outsourced', with \
-outsourced_to set to how the household described them ('the cleaner', 'the lawn people'). \
-Scale their frequency to existing_help_frequency when it says one. They still belong on the \
-week — knowing Thursday is cleaner day is the point — they are just nobody in the house's to \
-do. Only tag what the described help actually covers; everything else stays ours.
-- Fold in anything from include_notes as its own chore or two. Do not include anything \
-described in exclude_notes.
-- Aim for a practical, non-exhaustive list — roughly 8 to 14 chores covering both routine \
-cleaning and periodic maintenance (e.g. HVAC filters, smoke detector batteries), not every \
-conceivable task.
+Household goals: {json.dumps(profile.get("goals") or "")}
 
-Call submit_chore_recommendations with the result."""
+Pomona has already built this household a starter chore list from those facts — rooms from the \
+bathroom count, laundry, the bins, the yard if they have one, care for the pets on file, the \
+seasonal and deep items, each with an owner dealt round rotation_members:
+{json.dumps(starter_summary, indent=2)}
 
-    response = _create_with_retry(client,
-        label="generate_chore_recommendations",
-        model=MODEL,
-        max_tokens=2048,
-        tools=[_RECOMMEND_CHORES_TOOL],
-        tool_choice={"type": "tool", "name": "submit_chore_recommendations"},
-        messages=[{"role": "user", "content": prompt}],
-        output_config=_effort_config("utility"),
-    )
+Your job is only to ADJUST that list from what the rules could not read — the household's own \
+words. Call submit_chore_recommendations with:
+- chores: rows to ADD. Anything include_notes asks for, as its own chore or two, and anything \
+the pets on file need that isn't there yet. Not admin, errands or appointments — this list is \
+about keeping the home running. Do not resubmit rows already on the list. Leave owner_name out \
+unless the notes say whose it is; owners are dealt round the rotation on purpose.
+- drop: names (exactly as listed) of starter rows exclude_notes rules out, or that plainly do \
+not apply to this home. Laundry and Garbage out can never be dropped here — if the household \
+wants them gone they remove them by hand.
+- change: starter rows to adjust by exact name. Most often: if existing_help describes outside \
+help (a cleaning service, a lawn service, a laundry pickup, a dog walker), the household has \
+already told you about it — do not ask again. Mark each row that help covers mode 'outsourced', \
+with outsourced_to set to how the household described them ('the cleaner', 'the lawn people'), \
+and scale its frequency to existing_help_frequency when it says one. Only tag what the described \
+help actually covers; everything else stays ours. A row already tagged outsourced that the help \
+does not in fact cover goes back to mode 'owned' with no owner_name.
+Rhythms: 'relaxed' means less often, 'meticulous' more often — the list is already scaled; change \
+one only if the notes say to. Keep additions few and practical."""
+
+    try:
+        client = _client()
+        response = _create_with_retry(client,
+            label="generate_chore_recommendations",
+            model=MODEL,
+            max_tokens=2048,
+            tools=[_RECOMMEND_CHORES_TOOL],
+            tool_choice={"type": "tool", "name": "submit_chore_recommendations"},
+            messages=[{"role": "user", "content": prompt}],
+            output_config=_effort_config("utility"),
+        )
+    except AssistantUnavailableError as e:
+        logger.warning("Chore starter list: Claude unavailable, returning the rule-based list as it is: %s", e)
+        return baseline
+    except Exception:
+        # A 4xx is our bug, not the household's problem; they still get
+        # their list, and the traceback goes where somebody will read it.
+        logger.exception("Chore starter list: the adjust call failed; returning the rule-based list as it is")
+        return baseline
     for block in response.content:
         if block.type == "tool_use":
-            return _normalize_chore_recommendations(
-                block.input.get("chores", []), profile.get("rotation_members") or []
-            )
-    return []
+            return _merge_chore_adjustments(baseline, block.input or {}, profile.get("rotation_members") or [])
+    return baseline
 
 
 # The two prefills the shell puts in the composer when the household taps
@@ -5977,6 +6127,107 @@ _TWEAK_REPLY_BLOCK = {
         "If they asked a question rather than asking for a change, answer it just as briefly."
     ),
 }
+
+
+# ---------- "Tell me what instead" knows which meal ----------
+# Loop Board "'Tell me what instead' knows which meal you tapped it on, and
+# acts on one yes" (Emily, 2026-09-13, on the Tuesday burgers: "when I
+# clicked it to tell it what I wanted it to do, it didn't have the context
+# that I was talking about that recipe ... and then it asked me too many
+# times to confirm that too"). The link used to put a sentence in the
+# composer and nothing else — the chat request had no context field at all
+# (see TWEAK_CONTEXT_PREFIXES, which sniffs the prefill for the same
+# reason) — so the model had to ask which meal, then propose, then, on an
+# approved week, ask about the grocery list as well. Three questions for
+# one change.
+#
+# Now the shell sends a structured `context` on the turn ({kind:
+# "planned_meal", entry_id, date, slot}), the server resolves it against
+# the live plan, and this block tells the model what the household is
+# looking at and the one-confirmation rule. Like _TWEAK_REPLY_BLOCK it is
+# an appended, per-turn block rather than an edit to the frozen, cached
+# SYSTEM_PROMPT — and per-turn on purpose: the shell keeps sending it while
+# the chip is in the composer, so "yes" one message later still carries
+# the subject, and drops it the moment the chip is gone.
+#
+# `kind` is the seam for other "open chat about X" entry points; only the
+# meal kind is wired.
+CHAT_CONTEXT_KINDS = ("planned_meal",)
+
+
+def _format_context_ingredients(ingredients: list[dict]) -> str:
+    parts = []
+    for ing in ingredients[:30]:
+        item = (ing.get("item") or "").strip()
+        qty = (ing.get("qty") or "").strip()
+        if item:
+            parts.append(f"{qty} {item}".strip())
+    return "; ".join(parts)
+
+
+def _build_chat_context_block(context: dict | None) -> dict | None:
+    """
+    The system block for a turn sent from a meal card, or None when the
+    context is missing, malformed, or names a meal that is no longer on
+    the plan — in which case the turn is simply an ordinary one.
+    """
+    if not isinstance(context, dict) or context.get("kind") not in CHAT_CONTEXT_KINDS:
+        return None
+    try:
+        meal = tools.describe_planned_meal(
+            entry_id=context.get("entry_id"),
+            meal_date=context.get("date"),
+            slot=context.get("slot"),
+        )
+    except Exception:
+        logger.exception("Resolving chat context failed; running the turn without it")
+        return None
+    if not meal:
+        logger.info("Chat context named a meal that isn't on the plan any more; running without it")
+        return None
+    day_word = meal["weekday"] or meal["date"]
+    when = f"{day_word}'s {meal['slot']}"
+    ingredients = _format_context_ingredients(meal.get("ingredients") or [])
+    list_line = (
+        "The week is APPROVED, so this meal's ingredients are already on the grocery list; "
+        "swap_meal_in_plan takes the old dish's off and puts the new dish's on by itself."
+        if meal["approved"] else
+        "The week is still a draft, so nothing is on the grocery list yet and nothing changes "
+        "there until they approve the week."
+    )
+    text = (
+        f"This message was sent from the meal card for {when}: \"{meal['meal']}\" "
+        f"(date {meal['date']}, slot '{meal['slot']}', weekly_plan_id {meal['weekly_plan_id']}). "
+        "That meal is the subject of this message. \"It\", \"this\", \"the burgers\", a "
+        "protein, an ingredient, or a bare instruction like \"make it beef, not turkey\" all "
+        "mean this meal unless they clearly name a different day or dish. Do not ask which "
+        "meal they mean, and do not call get_weekly_plan or get_week_menu just to find it — "
+        "you already have it.\n"
+        + (f"Its ingredients as saved: {ingredients}.\n" if ingredients else "")
+        + f"{list_line}\n"
+        "Confirm ONCE, then act:\n"
+        "- If what they want is clear enough to do, say the exact change back as a "
+        "one-line proposal and stop there — \"Ground beef instead of turkey for "
+        f"{day_word}'s burgers — do it?\" That is the only question. If it is genuinely "
+        "unclear which of two things they mean, fold the choice into that same one line; "
+        "never a second question after it.\n"
+        "- When they answer yes in any form (\"yes\", \"do it\", \"sure\", \"go ahead\", "
+        "\"please\"), make the change in that turn. No \"are you sure\", no asking again "
+        "whether to update the grocery list, no re-checking the plan first. If an earlier "
+        "assistant message in this conversation already asked and this message is the yes, "
+        "act now.\n"
+        "- Keeping the same dish with something changed (a different protein, one "
+        "ingredient in or out, a different cut): save the variant with add_recipe under a "
+        "name that says what changed (keep the rest of the name and the recipe as they are, "
+        "and update main_protein), then swap_meal_in_plan with weekly_plan_id "
+        f"{meal['weekly_plan_id']}, meal_date '{meal['date']}', slot '{meal['slot']}', "
+        f"old_meal \"{meal['meal']}\" and new_meal set to the variant. The meal stays in its "
+        "slot; the grocery list follows on its own.\n"
+        "- A different dish altogether: swap_meal_in_plan straight to it (add_recipe first "
+        "when it is their own idea, as usual).\n"
+        "- Then one line saying what changed. The card under your reply carries the rest."
+    )
+    return {"type": "text", "text": text}
 
 
 def _build_proactive_check_block() -> dict | None:
@@ -6142,7 +6393,10 @@ def verify_change_claim(text: str, new_entries: list[dict]) -> str:
     return CHANGE_CLAIM_RETRACTION
 
 
-def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_check: bool = False) -> tuple[str, list[dict]]:
+def run_agent_turn(
+    conversation: list[dict], user_message: str, *, proactive_check: bool = False,
+    context: dict | None = None,
+) -> tuple[str, list[dict]]:
     """
     Run one user turn through Claude, executing any tool calls it makes,
     looping until it produces a final text response.
@@ -6154,6 +6408,11 @@ def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_che
     a new sitting at the app — see _build_proactive_check_block. False for
     an ordinary mid-conversation turn, so this doesn't re-run on every
     single message.
+
+    `context`: what the household is looking at as they send this — the
+    shell's structured {kind, ...} for a turn opened from a meal card (see
+    _build_chat_context_block). None for an ordinary turn, which keeps the
+    request byte-for-byte what it always was.
     """
     client = _client()
     conversation = conversation + [{"role": "user", "content": user_message}]
@@ -6193,6 +6452,12 @@ def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_che
     # kind of turn keeps the ordinary reply length and the plate nudge.
     if _is_tweak_context(user_message):
         system_blocks.append(_TWEAK_REPLY_BLOCK)
+
+    # The meal a "Tell me what instead" turn is about, and the confirm-once
+    # rule for changing it. Resolved fresh each turn against the live plan.
+    context_block = _build_chat_context_block(context)
+    if context_block:
+        system_blocks.append(context_block)
 
     # Safety cap on tool-calling rounds within a single turn. Without this,
     # a model that keeps calling tools (e.g. retrying a tool that keeps

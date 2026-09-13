@@ -121,7 +121,7 @@
   // in development" — beta testers were putting effort into keeping it up
   // to date, which nothing else in the app depends on). This one constant
   // gates a small neutral "In development" pill at its entry point — the
-  // Kitchen tile in kitchenTilesHtml() below — plus the matching note at
+  // Inventory row in Cook's More sheet (cookMoreRowsHtml) — plus the matching note at
   // the top of the inventory sheet itself, gated by the same-named
   // constant declared in
   // static/inventory.html (a separate document loaded in an iframe, so it
@@ -692,11 +692,13 @@
   // depending on which one exists at the moment.
   // ---------- Today: one timeline of moves ----------
   // Emily's approved Today design, 2026-09-08. The screen answers "what's
-  // next for us?" with two blocks and nothing else: ONE compact spruce
-  // "Next up" card carrying a single action, and "The rest of today" — a
-  // plain list of every other move, each with a round tick.
+  // next for us?" with the day's moves and nothing else. Until 2026-09-13
+  // that was two blocks — ONE "Next up" card carrying a single action, and
+  // "The rest of today", a plain list of every other move with a round
+  // tick; it is one strip down the day now (see "Now: the day as a strip"
+  // below), with the next-up move as the strip's one tinted node.
   //
-  // Both come from one fetch, /api/today/moves (app/tools/moves.py), which
+  // Everything comes from one fetch, /api/today/moves (app/tools/moves.py), which
   // ranks the day's cooks, reheats, fridge moves, prep and shopping against
   // each other. The ranking lives on the server precisely so this screen
   // never has to decide what matters, only how to say it — and so the rule
@@ -734,22 +736,23 @@
         // how to talk to me" card. Outside .today-body for the same reason
         // the nudge above it is — see that comment. Empty (and so
         // display:none) on every load but the one it is shown on.
-        // The hero, and the only one on this screen — a direct child of
-        // .today-content rather than of .today-body, because it bleeds the
-        // full width of the panel while everything else sits inside the
-        // 20px gutter, and a grid child cannot escape its parent's padding.
-        // The next-up card. Until 2026-09-11 this was the spruce hero
-        // (.dinner-hero .nextup-hero) bleeding the panel's full width;
-        // Emily, reviewing the screen-by-screen canvas: "the next-up card
-        // pulls too much attention… making the screen more even, but a bit
-        // called out". DESIGN_SYSTEM §2b S3. It is a card in the gutter now
-        // — sand fill, apricot eyebrow, same width as its neighbours — and
-        // its action lives in the dock at the foot of the screen, not
-        // inside it. (The one-time "how to talk to me" sheet that used to
-        // be a card under here is body-level now — see #coach-card-slot in
-        // shell.html.)
-        '<div id="today-next-up" class="today-area-nextup shell-card nextup-card" hidden></div>' +
+        // (The one-time "how to talk to me" sheet that used to be a card
+        // here is body-level now — see #coach-card-slot in shell.html.)
+        //
+        // The day itself is ONE strip (renderTodayMoves → .day-strip in
+        // #today-rest, 2026-09-13): the next-up move is the strip's one
+        // tinted node, in its place on the day, rather than a card above
+        // it. Until 2026-09-11 that card was the spruce hero bleeding the
+        // panel's full width; Emily, reviewing the screen-by-screen canvas:
+        // "the next-up card pulls too much attention… making the screen
+        // more even, but a bit called out" (§2b S3) — first a sand card in
+        // the gutter (#today-next-up, gone now), then the strip. Its action
+        // lives in the dock at the foot of the screen either way.
         '<div class="today-body">' +
+          // Tonight's open dinner (or a question about another day) stays
+          // above the strip: when tonight's dinner is undecided, deciding
+          // it IS what's next (renderNeedsYou), so it stands where the
+          // day starts.
           '<div id="needs-you-band" class="today-area-needsyou"></div>' +
           '<div id="today-rest" class="today-area-rest"></div>' +
           // The household's Chores switch (choresEnabled, off /api/whoami):
@@ -1347,21 +1350,157 @@
   var DOTS_ICON =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5.5" r="0.6"/><circle cx="12" cy="12" r="0.6"/><circle cx="12" cy="18.5" r="0.6"/></svg>';
 
+  // ---------- Now: the day as a strip ----------
+  // Emily, 2026-09-12, from the "Beyond lists" canvas ("Now · A · The day
+  // as a strip"). Now's content is ONE vertical strip down the day: every
+  // move is a node on a two-column grid — the time, a round dot and a
+  // hairline running down to the next node on the left; the title and one
+  // meta line on the right. The dot says the state (done = celadon with a
+  // tick; now = apricot with the move's icon; later = surface with a
+  // hairline) and is the move's tick (44px of tap around 28px of dot, Rule
+  // 6). The next-up move is the ONE tinted node (celadon-tint tile, a NOW
+  // eyebrow — §2b S3/S6), and its action stays in the dock. This replaced
+  // the sand next-up card plus "The rest of today" / "Done today" lists.
+  //
+  // The move's icon, by kind. Same drawing style as ICONS/KITCHEN_ICONS
+  // (2px stroke, round caps, 24 grid); declared here rather than reached
+  // for across the file, for the reason DOTS_ICON gives above.
+  var MOVE_ICONS = {
+    cook:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 9.5h13V16a4.5 4.5 0 0 1-4.5 4.5h-4A4.5 4.5 0 0 1 5.5 16z"/><path d="M3.5 9.5h17"/><path d="M12 3.5v3"/></svg>',
+    // A reheat: the plate, not the pot — made-ahead food is warmed, not cooked.
+    reheat:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="7.5"/><path d="M9 4.5c0 1.2 1 1.4 1 2.6"/><path d="M12.5 4.5c0 1.2 1 1.4 1 2.6"/></svg>',
+    fridge:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5.5" y="2.8" width="13" height="18.4" rx="2.6"/><path d="M5.5 10h13"/><path d="M9 6.4v1.8"/><path d="M9 12.6v2.2"/></svg>',
+    // Prep: the knife.
+    prep:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l9.5-9.5"/><path d="M11 8l5.5-5.5c1.6 1.6 2.4 4.2 1.2 6.4L15 11.5z"/></svg>',
+    shop:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 8.5h15l-1.3 10.7a2 2 0 0 1-2 1.8H7.8a2 2 0 0 1-2-1.8z"/><path d="M9.2 8.5V6.6a2.8 2.8 0 0 1 5.6 0v1.9"/></svg>'
+  };
+
+  // The node's dot — and, for a move with a tick behind it, the tick
+  // itself. Both icons are always in the dot (the kind's, and the tick),
+  // and the node's state class picks which one shows: that is what lets a
+  // tick SETTLE from apricot-with-a-pot to celadon-with-a-tick (animation
+  // 3, see todayAnimateNodeSettle) instead of snapping between two
+  // different elements.
   function moveTickHtml(move) {
+    var dot = '<span class="day-dot">' +
+        '<span class="day-dot-icon">' + (MOVE_ICONS[move.kind] || MOVE_ICONS.prep) + '</span>' +
+        '<span class="day-dot-tick">' + TICK_ICON + '</span>' +
+      '</span>';
     // Not every move has a tick behind it — a shop move's "done" dispatch is
     // a no-op (moves.set_move_done's own `kind == "shop"` branch), so
     // ticking it used to fill the circle in and have it silently snap back,
     // with a toast that lied about it. `tickable` (from moves.py) says
     // whether the done dispatch actually flips anything; when it doesn't,
-    // render an empty same-size spacer so the row's height (and the tick
-    // column other rows share) doesn't jump around.
-    if (!move.tickable) return '<span class="tick tick-empty" aria-hidden="true"></span>';
-    return '<button type="button" class="tick' + (move.done ? ' is-done' : '') + '" ' +
+    // the dot is a plain mark on the rail, not a button.
+    if (!move.tickable) return '<span class="day-tick" aria-hidden="true">' + dot + '</span>';
+    return '<button type="button" class="day-tick' + (move.done ? ' is-done' : '') + '" ' +
       'data-move-tick="' + escapeHtml(move.id) + '" ' +
       'aria-pressed="' + (move.done ? 'true' : 'false') + '" ' +
       'aria-label="' + (move.done ? 'Put it back on the list' : 'Tick it off') + '">' +
-      '<span class="tick-box">' + TICK_ICON + '</span>' +
+      dot +
     '</button>';
+  }
+
+  // When a move sits on the day. A cook's window_start is its meal time
+  // minus the cooking (moves.py), so the meal is window_start + duration;
+  // a reheat's window opens AT the meal. An all-day move has no clock of
+  // its own: a shop is "any time today" and sits at the top of the day,
+  // a fridge or prep move is "by tonight" and sits at the foot (the old
+  // "Before bed" tile's slot) — sorted by the end of its window, since
+  // the deadline is the only real time it has.
+  function moveStripAt(move) {
+    var iso = (move.kind === 'fridge' || move.kind === 'prep') ? move.window_end : move.window_start;
+    var at = new Date(iso || '');
+    if (isNaN(at.getTime())) return null;
+    if (move.kind === 'cook') at.setMinutes(at.getMinutes() + (move.duration_min || 0));
+    return at;
+  }
+
+  // The rail's eyebrow: the clock the way a person reads it off a wall
+  // ("8:00", "6:30", "Noon"), never "18:30"; "Tonight" / "Today" for a
+  // move with no clock (see moveStripAt). The meta line beside it says
+  // which half of the day ("6:30 tonight" — moves.py's time_label).
+  function moveStripTime(move) {
+    if (move.kind === 'shop') return 'Today';
+    if (move.kind === 'fridge' || move.kind === 'prep') return 'Tonight';
+    var at = moveStripAt(move);
+    if (!at) return move.time_label || '';
+    var h = at.getHours(), m = at.getMinutes();
+    if (h === 12 && m === 0) return 'Noon';
+    return ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m;
+  }
+
+  // Top to bottom down the day. The server's order (moves.py, by
+  // window_start) puts every all-day move first, which read as "Tonight"
+  // above breakfast; the strip orders by where each move sits on the day
+  // instead, and keeps the server's order between two moves at the same
+  // time (the shop before the cook it is for).
+  function dayStripOrder(moves) {
+    return moves.map(function (m, i) { return { m: m, i: i, at: moveStripAt(m) }; })
+      .sort(function (a, b) {
+        var ta = a.at ? a.at.getTime() : 0, tb = b.at ? b.at.getTime() : 0;
+        return (ta - tb) || (a.i - b.i);
+      })
+      .map(function (x) { return x.m; });
+  }
+
+  // One node. `state` is 'done', 'now' (the next-up move — exactly one node
+  // ever, §2b S3) or 'later'. The node's body is the tap target for "open
+  // this move" (52px+, Rule 6): a pending node runs the move's action (a
+  // cook opens its recipe in cook mode, a reheat or fridge move ticks —
+  // runTodayMoveAction); a done node has nothing left to do, so only its
+  // dish name stays a link (Emily, 2026-09-09) and the dot undoes.
+  function dayStripNodeHtml(move, state) {
+    var id = escapeHtml(move.id);
+    var meta = move.detail ? '<span class="day-node-meta">' + escapeHtml(move.detail) + '</span>' : '';
+    var body;
+    if (state === 'now') {
+      // The one tinted node: a celadon-tint tile with the word for it
+      // (S6). What the move is FOR — a fridge move's "for Thursday's
+      // skewers", a batch's "covers Thursday" — rides under the meta
+      // line here only, the way the old card's accent line did.
+      body = '<button type="button" class="day-node-tile" data-move-action="' + id + '">' +
+        '<span class="day-node-eyebrow">Now</span>' +
+        '<span class="day-node-title">' + escapeHtml(move.title) + '</span>' +
+        meta +
+        (move.reason ? '<span class="day-node-meta day-node-why">' + escapeHtml(move.reason) + '</span>' : '') +
+      '</button>';
+    } else if (state === 'done') {
+      body = '<span class="day-node-text">' + moveDishHtml(move, 'day-node-title') + meta + '</span>';
+    } else {
+      body = '<button type="button" class="day-node-text day-node-open" data-move-action="' + id + '">' +
+        '<span class="day-node-title">' + escapeHtml(move.title) + '</span>' + meta +
+      '</button>';
+    }
+    return '<div class="day-node is-' + state + '" data-move-id="' + id + '">' +
+      '<div class="day-node-rail">' +
+        '<span class="day-node-time">' + escapeHtml(moveStripTime(move)) + '</span>' +
+        moveTickHtml(move) +
+        '<span class="day-node-line" aria-hidden="true"></span>' +
+      '</div>' +
+      '<div class="day-node-body">' + body + '</div>' +
+    '</div>';
+  }
+
+  // A ticked node settles rather than snapping (animation 3 — the same
+  // transitions the grocery trip row plays, on a second surface; see
+  // shell.css's Motion section and groAnimateRowSettle for the trick).
+  // toggleTodayMove re-renders the whole strip, so by the time this runs
+  // the node is a brand-new element already at its final state; this
+  // forces the earlier frame — the state it was in before the tap —
+  // reflows, then lets the class change play the CSS transition.
+  function todayAnimateNodeSettle(panel, id, fromState) {
+    var node = panel.querySelector('.day-node[data-move-id="' + id + '"]');
+    if (!node) return;
+    var real = node.className;
+    node.className = real.replace(/\bis-(done|now|later)\b/, 'is-' + fromState);
+    void node.offsetHeight; // force the reflow openSheet's comment explains
+    node.className = real;
   }
 
   // The cookFocus payload that opens this move's recipe, or null when
@@ -1393,56 +1532,6 @@
     if (!moveRecipeTarget(move)) return '<span class="' + cls + '">' + name + '</span>';
     return '<button type="button" class="' + cls + ' dish-link" data-move-dish="' +
       escapeHtml(move.id) + '">' + name + '</button>';
-  }
-
-  function nextUpCardHtml(move) {
-    var chips = move.chips || [];
-    return '<div class="hero-top">' +
-        '<span class="hero-eyebrow">NEXT UP</span>' +
-        '<span class="hero-rule"></span>' +
-        (move.time_label ? '<span class="nextup-when">' + escapeHtml(move.time_label) + '</span>' : '') +
-      '</div>' +
-      moveDishHtml(move, 'hero-dish nextup-dish' + dishSizeClass(move.title)) +
-      // A plain line, only when the move carries a fact of its own — what a
-      // fridge move is for, which nights a batch covers, how to reheat.
-      // moves.py no longer passes the planner's reasoning here (copy
-      // cleanse, 2026-09-11): it read as noise, not as a person talking.
-      (move.reason ? '<div class="hero-accent">' + escapeHtml(move.reason) + '</div>' : '') +
-      // Chips and the tick share the last row. The action button that used
-      // to sit here is the dock's now (renderTodayDock) — one place for the
-      // one thing to press, on every screen.
-      '<div class="nextup-foot">' +
-        (chips.length
-          ? '<div class="hero-chips">' + chips.map(function (c) {
-              return '<span class="hero-chip">' + escapeHtml(c) + '</span>';
-            }).join('') + '</div>'
-          : '<span class="hero-chips-spacer"></span>') +
-        moveTickHtml(move) +
-      '</div>';
-  }
-
-  function moveRowHtml(move) {
-    var detail = move.detail
-      ? '<span class="rest-row-detail">' + escapeHtml(move.detail) + '</span>'
-      : '';
-    var text = '<span class="rest-row-title">' + escapeHtml(move.title) + '</span>' + detail;
-    // A done row has nothing left to DO, so the whole row stops being the
-    // move's own button — the tick is the only control on it, and it
-    // undoes. The dish still has a recipe, though, and a cooked dinner is
-    // exactly the name someone taps wanting to see what went into it
-    // (Emily, 2026-09-09), so the NAME goes on being a link even here.
-    var doneText = moveRecipeTarget(move)
-      ? '<span class="rest-row-text">' +
-          '<button type="button" class="rest-row-title dish-link" data-move-dish="' +
-            escapeHtml(move.id) + '">' + escapeHtml(move.title) + '</button>' + detail +
-        '</span>'
-      : '<span class="rest-row-text">' + text + '</span>';
-    return '<div class="rest-row' + (move.done ? ' is-done' : '') + '">' +
-      (move.done
-        ? doneText
-        : '<button type="button" class="rest-row-text rest-row-open" data-move-action="' + escapeHtml(move.id) + '">' + text + '</button>') +
-      moveTickHtml(move) +
-    '</div>';
   }
 
   function tomorrowCardHtml(move) {
@@ -1486,39 +1575,25 @@
       featured = moves.filter(function (m) { return m.id === data.featured; })[0] || null;
     }
 
-    var nextUp = panel.querySelector('#today-next-up');
-    if (nextUp) {
-      nextUp.hidden = !featured;
-      nextUp.innerHTML = featured ? nextUpCardHtml(featured) : '';
-    }
     panel._featured = featured;
     renderTodayDock(panel);
 
-    var rest = moves.filter(function (m) { return !featured || m.id !== featured.id; });
-    var pending = rest.filter(function (m) { return !m.done; });
-    var settled = rest.filter(function (m) { return m.done; });
-
+    // The strip: every move, done ones included, in the order they sit on
+    // the day (dayStripOrder) — the featured move is the one 'now' node,
+    // in its own place on the day rather than lifted out above the rest.
     var restEl = panel.querySelector('#today-rest');
     if (!restEl) return;
     var html = '';
-    if (pending.length || settled.length) {
-      html += '<div class="shell-card rest-card">' +
-        (pending.length
-          ? '<h2 class="rest-title">The rest of today</h2>' +
-            '<div class="rest-list">' + pending.map(moveRowHtml).join('') + '</div>'
-          : '') +
-        (settled.length
-          ? '<div class="rest-done">' +
-              '<div class="rest-done-head">Done today</div>' +
-              '<div class="rest-list">' + settled.map(moveRowHtml).join('') + '</div>' +
-            '</div>'
-          : '') +
-      '</div>';
+    if (moves.length) {
+      html += '<div class="day-strip">' + dayStripOrder(moves).map(function (m) {
+        return dayStripNodeHtml(m, m.done ? 'done' : (featured && m.id === featured.id ? 'now' : 'later'));
+      }).join('') + '</div>';
     }
+    var pending = moves.filter(function (m) { return !m.done; });
     // Nothing left to do today. Say so, and — when there is one — name
-    // tomorrow's first move rather than leaving a blank screen. A day with
-    // no moves AT ALL is the empty moment's (renderTodayEmpty), not a
-    // card's.
+    // tomorrow's first move rather than leaving a blank screen, after the
+    // strip. A day with no moves AT ALL is the empty moment's
+    // (renderTodayEmpty), not a card's.
     if (!featured && !pending.length && !panel._openDinnerCard && moves.length) {
       html += data.tomorrow
         ? tomorrowCardHtml(data.tomorrow)
@@ -1539,8 +1614,8 @@
         runTodayMoveAction(panel, btn.getAttribute('data-move-action'));
       });
     });
-    // The dish name itself, wherever Today prints one — the Next up card's
-    // headline, a done row, tomorrow's first move. Straight to the recipe,
+    // The dish name itself, wherever Today prints one — a done node,
+    // tomorrow's first move. Straight to the recipe,
     // never to the row's own action: tapping a name is "show me this", not
     // "do this to it".
     panel.querySelectorAll('[data-move-dish]').forEach(function (btn) {
@@ -1690,8 +1765,6 @@
   }
 
   function renderTodayMovesError(panel) {
-    var nextUp = panel.querySelector('#today-next-up');
-    if (nextUp) { nextUp.hidden = true; nextUp.innerHTML = ''; }
     panel._featured = null;
     panel._moves = null;
     renderTodayDock(panel);
@@ -1728,11 +1801,14 @@
     var move = ((data && data.moves) || []).filter(function (m) { return m.id === moveId; })[0];
     if (!move) return;
     var was = move.done;
-    // Optimistic: the row drops into (or climbs out of) "Done today" on the
-    // tap, before the server confirms — §6, "the common case never waits".
+    // The node's state before the tap — what the settle starts from.
+    var fromState = was ? 'done' : (panel._featured && panel._featured.id === moveId ? 'now' : 'later');
+    // Optimistic: the node settles into (or out of) done on the tap, before
+    // the server confirms — §6, "the common case never waits".
     move.done = done;
     data.done = (data.moves || []).filter(function (m) { return m.done; }).length;
     renderTodayMoves(panel, data);
+    todayAnimateNodeSettle(panel, moveId, fromState);
     try {
       var res = await fetch('/api/today/moves/' + encodeURIComponent(moveId) + '/done', {
         method: 'POST',
@@ -3427,8 +3503,8 @@
   // The way into SORT: a row at the top of the list, only while something
   // has no store. It was an apricot "3 TO SORT" badge in the head until
   // 2026-09-11; the root band carries no button, so the control moved
-  // into the list it is about, in the same row shape Cook's root uses
-  // (.kit-row). groUnsorted already answers "is sorting even a question
+  // into the list it is about, in the same row shape Cook's More sheet
+  // uses (.kit-row). groUnsorted already answers "is sorting even a question
   // here" (groCanSort), so a household with one shop or none gets no row.
   // Not while the shops question itself is still on screen underneath.
   function groSortRowHtml(data) {
@@ -5790,19 +5866,21 @@
   // ---------- Kitchen: the cook's tab ----------
   //
   // Emily's approved design, 2026-09-08. Kitchen answers "what's cooking,
-  // and what's in the house?" and nothing else. Its root, top to bottom:
-  // the day and how many cooks are in it, "Cooking today" (one line per
-  // cook or reheat, with the start-by time the moves engine already
-  // works out), "Prep sessions" (the same rows the Cook overview carried,
-  // moved here unchanged), "The rest of the week", and two quiet tiles.
+  // and what's in the house?" and nothing else. Its root, top to bottom
+  // (the shelf design, Emily 2026-09-13 — see "Cook's root" below): the
+  // band with the day and how many cooks are in it, the shelf (one tile
+  // per night of the period), ONE spruce card for tonight (start-by and
+  // on-the-table off the moves engine, the thaw/prep fact), at most two
+  // quiet get-ready rows, and a "More" link to the three entry points.
   //
   // Three things follow from that and are deliberate:
   //
-  //   - There is still NO apricot on this ROOT. The nav blueprint's rule
-  //     was "Kitchen has no primary action at all"; that rule changes with
-  //     this slice, but only one step deeper: cook mode's "Mark it cooked"
-  //     is the tab's apricot, and the root stays quiet. A screen that
-  //     lists what is coming is not a screen with something urgent on it.
+  //   - ONE apricot on this ROOT, in the dock: "Start cooking" for
+  //     tonight's cook (cookRootDockHtml). Until 2026-09-13 the rule was
+  //     "Kitchen has no primary action at all" and only cook mode's "Mark
+  //     it cooked", one step deeper, was apricot; the shelf design gave
+  //     the root the one thing it is for. A night with nothing to cook
+  //     still has no dock.
   //   - Cooking IS here now. Cook mode is a STEP of this tab (see
   //     renderCook below) rather than a state of Meals — the tab you cook
   //     from should not be the tab you plan from, and the cook OVERVIEW
@@ -5825,8 +5903,6 @@
     // payload Today already asks for answers this too.
     moves: [],
     loading: false,
-    // "+ 3 more cooks" — the rest of the week is three lines until asked.
-    restExpanded: false,
     // Set by a caller that wants the root's prep to be the thing you land
     // on rather than the top of the tab — the rating toast's "Show me
     // tomorrow" when tomorrow has prep but no cook. Cleared by the render
@@ -5864,6 +5940,13 @@
           // this whole view, so the band never shows over a step.
           rootBandHtml({ id: 'kit-band', eyebrow: dayName(todayLocalStr(), { weekday: 'long' }), title: 'Cook' }) +
           '<div class="kit-body" id="kit-body"></div>' +
+          // The root's dock (nav rule 2): "Start cooking" for tonight's
+          // cook, "Mark eaten" for a reheat night, nothing at all when
+          // tonight has no cook. Last in the markup because that is where
+          // a sticky footer's flow position has to be (same as Shop's).
+          // Until 2026-09-13 Cook's root had no dock by rule — see the
+          // decision-log entry and DESIGN_SYSTEM §6 for the change.
+          '<div class="dock cook-root-dock" id="kit-dock" hidden></div>' +
         '</div>' +
         '<div id="kit-cook-view" hidden></div>' +
       '</div>';
@@ -5954,7 +6037,9 @@
     } catch (err) {
       kitchenState.inventory = null;
     }
-    var sub = kitchenPanel() && kitchenPanel().querySelector('#kit-inv-sub');
+    // The Inventory row is in the More sheet (cookMoreSheet), not on the
+    // panel; when the sheet is open its line updates in place.
+    var sub = document.getElementById('kit-inv-sub');
     if (sub) sub.textContent = kitchenInventoryLine();
   }
 
@@ -5992,6 +6077,10 @@
         entryId: meal.entry_id,
         isReheat: isReheat,
         done: done,
+        // The move itself rides along: the Tonight card reads its "Start
+        // by" chip and its time label, which is the same arithmetic the
+        // line below is built from.
+        move: move,
         title: isReheat ? (meal.leftovers_headline || 'Leftovers') : (meal.meal || 'Dinner'),
         line: kitchenTodayLine(meal, move, isReheat, done),
         // "Cook" / "Reheat" while it is still ahead of you, and the past
@@ -6055,20 +6144,6 @@
       (allDinner ? ' tonight' : ' today');
   }
 
-  function kitchenCookingTodayHtml(rows, meals, todayIso) {
-    // Empty means empty (§2b S4): the empty moment (emptyMomentHtml), and
-    // the next cook by name as its second line when there is one. No
-    // section head over it — the moment is the section.
-    if (!rows.length) return emptyMomentHtml('pot', 'Nothing to cook tonight.', kitchenNextCookLine(meals, todayIso));
-    return '<section class="cook-section">' +
-      '<div class="cook-sectionhead">' +
-        '<span class="cook-eyebrow cook-eyebrow-warm">Cooking today</span>' +
-        '<span class="cook-rule"></span>' +
-      '</div>' +
-      '<div class="cook-week">' + rows.map(kitchenTodayRowHtml).join('') + '</div>' +
-    '</section>';
-  }
-
   // "Next: Saturday, pancakes." — the first real cook after today, so a
   // quiet day still says what is coming. Plain text (the empty moment
   // escapes it); empty when there is no real fact to state.
@@ -6107,7 +6182,7 @@
   // Prep that nothing else on this tab shows.
   //
   // Three places a prep_tasks row can surface: its prep day's session
-  // (cookPrepSessionsHtml, which only picks up rows dated ON a prep day),
+  // (cookSessionHtml, which only picks up rows dated ON a prep day),
   // the focused cook screen of the meal it feeds (cookFocusPrepTasks,
   // which needs either a meal_plan_entry_id or a related_meal that matches
   // a dish by name), and Today's timeline, which only ever shows today.
@@ -6115,7 +6190,8 @@
   // beans", two days out — fell through all three and rendered NOWHERE.
   // A task the app wrote and then hid is worse than one it never wrote, so
   // the root collects the leftovers: every pending row no session and no
-  // cook screen already carries, dated, with a tick.
+  // cook screen already carries. Since 2026-09-13 the soonest of them is
+  // one of the root's get-ready rows (cookGetReadyMoves), with its tick.
   //
   // Done rows are left out on purpose: this is the "nothing is invisible"
   // net, not a second progress list, and a finished task is not lost.
@@ -6136,68 +6212,422 @@
     });
   }
 
-  function kitchenPrepTodoHtml(tasks) {
-    if (!tasks.length) return '';
-    return '<section class="cook-section" id="kit-prep-todo">' +
-      '<div class="cook-sectionhead">' +
-        '<span class="cook-eyebrow">Prep to do</span>' +
-        '<span class="cook-rule"></span>' +
-      '</div>' +
-      '<div class="cook-week">' +
-        tasks.map(function (t) {
-          var day = t.task_date ? dayNameShort(t.task_date).toUpperCase() : '';
-          return '<div class="cook-week-item">' +
-            '<div class="cook-week-row">' +
-              '<button type="button" class="cook-box" data-cook="check-prep" ' +
-                'data-prep-id="' + t.id + '" data-next="done" aria-label="Mark done">' +
-                COOK_ICONS.check +
-              '</button>' +
-              (day ? '<span class="cook-week-day">' + escapeHtml(day) + '</span>' : '') +
-              '<span class="cook-week-name">' + escapeHtml(t.description) + '</span>' +
-            '</div>' +
-          '</div>';
-        }).join('') +
-      '</div>' +
+  // ---------- Cook's root: the shelf, tonight, and what's next ----------
+  // Emily picked "Cook · D · The shelf" from the Beyond-lists canvas on
+  // 2026-09-13. The root is three things under the band, in this order:
+  //   1. The shelf — a sideways strip, one tile per night of the planning
+  //      period, tonight tinted celadon, a one-word dish on each (see
+  //      dishShortWord). A tile opens that night's meal screen (S8).
+  //   2. Tonight — ONE spruce card (rule 4: the root's one hero moment):
+  //      the dish, when to start and when it is on the table, and the
+  //      thaw/prep fact for it.
+  //   3. Under it, at most two quiet rows: the next get-ready move (a
+  //      thaw for a later night, the next prep session).
+  // The dock carries "Start cooking" (nav rule 2 — until this design
+  // Cook's root had no dock by rule; DESIGN_SYSTEM §6 says why it does
+  // now). Recipes / Add from a link / Inventory are behind one "More"
+  // link at the foot (cookMoreSheet). The lists this replaced — "Cooking
+  // today" rows, "Prep sessions", "Prep to do", "The rest of the week" —
+  // are gone; nothing they showed is lost (see cookGetReadyMoves for the
+  // prep, the shelf for the week).
+
+  // One word for a dish, for a 74px tile: the recipe's own short name when
+  // it has one, else the word that names the KIND of dish ("Stir-fry",
+  // "Tikka", "Tacos" — COOK_DISH_WORDS), else the last real word of the
+  // name ("Herb-Roasted Chicken" → "Chicken"; "Roast" would be too
+  // clever), else the first word. What comes after "with" is the side,
+  // not the dish ("Baked Lemon Herb Salmon with Roasted Asparagus" is
+  // "Salmon", never "Asparagus"). Joining words never win ("Beef and
+  // Broccoli" is never "and"). Capitalised once, the rest lowercased, so
+  // "Stir-Fry" reads "Stir-fry" on the tile.
+  var COOK_DISH_WORDS = [
+    'stir-fry', 'stirfry', 'tikka', 'curry', 'tacos', 'taco', 'burritos', 'burrito', 'fajitas',
+    'enchiladas', 'quesadillas', 'nachos', 'pizza', 'pasta', 'spaghetti', 'lasagna', 'lasagne',
+    'risotto', 'gnocchi', 'ramen', 'pho', 'noodles', 'soup', 'stew', 'chili', 'chilli', 'salad',
+    'wraps', 'wrap', 'burgers', 'burger', 'sliders', 'skewers', 'kebabs', 'casserole', 'bake',
+    'pie', 'quiche', 'frittata', 'omelette', 'pancakes', 'waffles', 'sandwiches', 'sandwich',
+    'paella', 'biryani', 'dal', 'dhal', 'katsu', 'teriyaki', 'bolognese', 'carbonara',
+    'meatballs', 'meatloaf', 'dumplings', 'gyoza', 'sushi', 'poke', 'shakshuka', 'goulash',
+    'jambalaya', 'gumbo', 'tagine', 'schnitzel', 'stroganoff', 'chowder', 'bibimbap', 'bulgogi',
+    'satay', 'souvlaki', 'gyros', 'falafel', 'hummus', 'tortellini', 'ravioli', 'mac'
+  ];
+  var COOK_JOIN_WORDS = ['and', 'with', 'of', 'the', 'a', 'in', 'on', 'for', 'or', '&', 'n', "'n'"];
+
+  function dishShortWord(name, shortName) {
+    if (shortName && String(shortName).trim()) return dishTitleCase(String(shortName).trim());
+    var main = String(name || '').split(/\s+with\s+/i)[0];
+    var words = main.trim().split(/\s+/).filter(function (w) {
+      return w && COOK_JOIN_WORDS.indexOf(w.toLowerCase().replace(/[^\w'&-]/g, '')) === -1;
+    });
+    if (!words.length) return '';
+    var clean = words.map(function (w) { return w.replace(/[^\w'-]/g, ''); });
+    for (var i = 0; i < clean.length; i++) {
+      var w = clean[i].toLowerCase();
+      // A whole word, or the last piece of a hyphenated one ("Sheet-Pan
+      // Fajitas" is Fajitas; "Beef Stir-Fry" is Stir-fry, whole).
+      if (COOK_DISH_WORDS.indexOf(w) !== -1) return dishTitleCase(clean[i]);
+      var tail = w.split('-').pop();
+      if (tail !== w && COOK_DISH_WORDS.indexOf(tail) !== -1) return dishTitleCase(tail);
+    }
+    // The last word that starts with a capital, else the first word.
+    for (var j = clean.length - 1; j >= 0; j--) {
+      if (/^[A-Z]/.test(clean[j])) return dishTitleCase(clean[j]);
+    }
+    return dishTitleCase(clean[0]);
+  }
+
+  function dishTitleCase(word) {
+    var w = String(word || '');
+    return w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '';
+  }
+
+  // The nights the shelf shows: the plan's own period when there is one
+  // (period_start_date + day_count, from get_cooker_view), else a week
+  // from today. Each night carries its dinner — the meal that IS the
+  // night — or nothing.
+  function cookShelfNights(meals, data, todayIso) {
+    var start = data && data.period_start_date;
+    var count = (data && data.day_count) || 0;
+    if (!start || count < 1) { start = todayIso; count = 7; }
+    var byDate = {};
+    (meals || []).forEach(function (m, i) {
+      if (!m.date || m.component_category) return;
+      var slot = byDate[m.date] || (byDate[m.date] = { dinner: null, other: null });
+      if (m.slot === 'dinner') { if (!slot.dinner) slot.dinner = { meal: m, idx: i }; }
+      else if (!slot.other) slot.other = { meal: m, idx: i };
+    });
+    var nights = [];
+    for (var d = 0; d < count; d++) {
+      var iso = addDaysLocal(start, d);
+      var slot = byDate[iso];
+      var pick = slot ? (slot.dinner || slot.other) : null;
+      nights.push({
+        iso: iso,
+        isTonight: iso === todayIso,
+        meal: pick ? pick.meal : null,
+        idx: pick ? pick.idx : null
+      });
+    }
+    return nights;
+  }
+
+  function cookShelfHtml(meals, data, todayIso) {
+    var nights = cookShelfNights(meals, data, todayIso);
+    return '<div class="cook-shelf" id="kit-shelf">' +
+      nights.map(cookShelfTileHtml).join('') +
+    '</div>';
+  }
+
+  // A night with a meal is a way into that night's screen — the recipe for
+  // a cook, the leftovers card for a reheat (cookReheatFocusHtml, the same
+  // screen Now's hero opens). A night with nothing planned is a tile with
+  // a dash, and not a button: there is nothing behind it to open.
+  function cookShelfTileHtml(night) {
+    var m = night.meal;
+    var word = m
+      ? (m.is_leftovers ? 'Leftovers' : dishShortWord(m.meal, m.short_name))
+      : '—';
+    var cls = 'shelf-tile' + (night.isTonight ? ' is-tonight' : '') + (m ? '' : ' is-empty') +
+      (m && m.cooked_status === 'done' ? ' is-done' : '');
+    var label = dayName(night.iso, { weekday: 'long', month: 'long', day: 'numeric' }) +
+      (night.isTonight ? ', tonight' : '') + (m ? ': ' + (m.is_leftovers ? (m.leftovers_headline || 'Leftovers') : m.meal) : ': nothing planned');
+    var inner =
+      '<span class="shelf-day">' + escapeHtml(dayNameShort(night.iso).toUpperCase()) + '</span>' +
+      '<span class="shelf-num">' + escapeHtml(String(parseInt(night.iso.slice(8, 10), 10))) + '</span>' +
+      '<span class="shelf-dish">' + escapeHtml(word) + '</span>';
+    if (!m) return '<div class="' + cls + '" aria-label="' + escapeHtml(label) + '">' + inner + '</div>';
+    return '<button type="button" class="' + cls + '" data-cook="focus" data-idx="' + night.idx + '" data-at="steps" aria-label="' + escapeHtml(label) + '">' +
+      inner + '</button>';
+  }
+
+  // The strip opens with tonight in view (and the nights either side of
+  // it) rather than at the period's first day, which on a Thursday is
+  // three tiles of history. Measured after the render; the scroller's own
+  // scrollLeft, never scrollIntoView, which would also scroll the page.
+  function cookShelfScrollToTonight(body) {
+    var shelf = body && body.querySelector('#kit-shelf');
+    var tile = shelf && shelf.querySelector('.shelf-tile.is-tonight');
+    if (!shelf || !tile) return;
+    var left = tile.offsetLeft - shelf.offsetLeft - (shelf.clientWidth - tile.offsetWidth) / 2;
+    shelf.scrollLeft = Math.max(0, left);
+  }
+
+  // Which of today's rows is the card. cookState.tonightIdx is the meal
+  // the tab already calls tonight (pinned on load — cookTonightIndex
+  // prefers the current slot's uncooked meal); the card follows it when
+  // it is one of today's rows, else the first row still to do, else the
+  // last one.
+  function cookTonightRow(rows) {
+    if (!rows.length) return null;
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].idx === cookState.tonightIdx) return rows[i];
+    }
+    var todo = rows.filter(function (r) { return !r.done; });
+    return todo.length ? todo[0] : rows[rows.length - 1];
+  }
+
+  // "MONDAY · TONIGHT · EMILY" — the day, the meal of the day said the way
+  // the band says it (a lunch at eleven is not tonight), and the cook by
+  // name only when the household said one person cooks (cook_name).
+  function cookTonightEyebrow(meal, todayIso, cookName) {
+    var when = meal.slot === 'dinner' ? 'Tonight' : (meal.slot === 'breakfast' ? 'This morning' : 'Today');
+    var bits = [dayName(todayIso, { weekday: 'long' }), when];
+    if (cookName) bits.push(cookName);
+    return bits.join(' · ').toUpperCase();
+  }
+
+  // The card's one line: the thaw or prep fact for THIS meal, from the
+  // prep tasks that belong to it (cookFocusPrepTasks — the same rows the
+  // meal's own screen ticks), then the recipe's own advance-prep note,
+  // else the plain truth that there is nothing to do ahead.
+  function cookTonightNote(data, meal) {
+    if (meal.is_leftovers) {
+      var src = meal.leftovers_from || {};
+      return src.date ? 'Reheat — cooked on ' + dayName(src.date, { weekday: 'long' }) + '.' : 'Reheat.';
+    }
+    var tasks = cookFocusPrepTasks(data, meal);
+    var pending = function (t) { return t.status !== 'done' && t.status !== 'skipped'; };
+    var thaws = tasks.filter(function (t) { return t.task_type === 'defrost'; });
+    var thawToDo = thaws.filter(pending)[0];
+    if (thawToDo) return cookThawTitle(thawToDo) + ' — still to do.';
+    var prepToDo = tasks.filter(function (t) { return t.task_type !== 'defrost' && pending(t); });
+    if (prepToDo.length === 1) return 'Still to do: ' + prepToDo[0].description.replace(/\.$/, '') + '.';
+    if (prepToDo.length > 1) return prepToDo.length + ' prep steps still to do.';
+    if (thaws.length) return cookThawDoneLine(thaws[0]);
+    if (tasks.length) return 'Prep’s done — the rest is tonight.';
+    if (meal.advance_prep_notes) return meal.advance_prep_notes;
+    return 'Nothing to thaw or prep ahead.';
+  }
+
+  // defrost._describe writes "Move the chicken thighs to the fridge — for
+  // Thursday's skewers." — the head is the move, the tail is what it is
+  // for. Same split moves.py makes for Now's card.
+  function cookThawTitle(task) {
+    var d = String(task.description || '');
+    return (d.split(' — ')[0] || d).replace(/\.$/, '').trim() || 'Fridge move';
+  }
+  function cookThawFor(task) {
+    var d = String(task.description || '');
+    var i = d.indexOf(' — ');
+    return i === -1 ? '' : d.slice(i + 3).replace(/\.$/, '').trim();
+  }
+  function cookThawDoneLine(task) {
+    var m = /^Move the (.+) to the fridge$/i.exec(cookThawTitle(task));
+    return m ? 'The ' + m[1] + ' are in the fridge already.' : 'Out of the freezer already.';
+  }
+
+  // Start / on the table, off the move the server worked out for this
+  // meal (app/tools/moves.py: dinner_window minus the recipe's minutes —
+  // the same numbers Now shows, so the two screens cannot disagree). No
+  // move, or a recipe with no timing: the one honest tile left is how
+  // long it takes; nothing at all when even that is unknown.
+  function cookTonightTimes(row, meal) {
+    var move = row.move;
+    var start = '', table = '';
+    ((move && move.chips) || []).forEach(function (chip) {
+      if (/^Start by /.test(chip)) start = chip.slice('Start by '.length);
+    });
+    if (move && move.time_label) table = String(move.time_label).split(' ')[0];
+    var tiles = [];
+    if (start && !row.done) tiles.push({ label: 'Start', value: start });
+    if (table) tiles.push({ label: 'On the table', value: table });
+    if (!tiles.length) {
+      var mins = (meal.prep_time_minutes || 0) + (meal.cook_time_minutes || 0);
+      if (mins) tiles.push({ label: 'Takes', value: mins + ' min' });
+    }
+    return tiles;
+  }
+
+  function cookTonightCardHtml(row, meals, todayIso, data) {
+    var meal = meals[row.idx] || {};
+    var cookName = data && data.cook_name;
+    var tiles = row.done ? [] : cookTonightTimes(row, meal);
+    var note = row.done
+      ? (row.isReheat ? 'Eaten.' : 'Cooked.')
+      : cookTonightNote(data, meal);
+    return '<section class="cook-tonight' + (row.done ? ' is-done' : '') + (row.isReheat ? ' is-reheat' : '') + '" aria-label="Tonight">' +
+      '<span class="cook-tonight-eyebrow">' + escapeHtml(cookTonightEyebrow(meal, todayIso, cookName)) + '</span>' +
+      '<h2 class="cook-tonight-dish">' + escapeHtml(row.title) + '</h2>' +
+      (tiles.length
+        ? '<div class="cook-tonight-times">' + tiles.map(function (t) {
+            return '<div class="cook-tonight-tile">' +
+              '<span class="cook-tonight-tile-label">' + escapeHtml(t.label) + '</span>' +
+              '<span class="cook-tonight-tile-value">' + escapeHtml(t.value) + '</span>' +
+            '</div>';
+          }).join('') + '</div>'
+        : '') +
+      '<p class="cook-tonight-note">' + escapeHtml(note) + '</p>' +
     '</section>';
   }
 
-  // The two quiet ways out of the cook's tab and into the house's
-  // cupboards. Both are quiet by policy — inventory is background work the
-  // core loop never asks anyone to keep up, and there is no apricot on
-  // this root.
-  // Three quiet rows in one card, above the fold (2026-09-11; they were
-  // tiles below it), each with one fact. Same entry points as before.
-  function kitchenTilesHtml() {
-    // Order changed 2026-09-11 (design-tidy pass, item 8): Recipes and Add
-    // from a link are the two things this tab's own core loop touches
-    // (what's saved, what's cooking); Inventory is the in-development beta
-    // feature (see INVENTORY_IN_DEVELOPMENT) and goes last. Same three
-    // rows, same stroke-icon treatment, only the order moved.
-    return '<div class="kit-rows">' +
-      // There is no recipe browser in this app, and this row does not
-      // pretend there is one: it opens the chat on the question, which
-      // the assistant answers off list_recipes (app/tools/recipes.py).
-      '<button type="button" class="kit-row" data-kit="recipes">' +
-        '<span class="kit-row-icon">' + KITCHEN_ICONS.book + '</span>' +
-        '<span class="kit-row-text"><span class="kit-row-title">Recipes</span></span>' +
-        '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
-      '</button>' +
-      // Bring in a recipe the household already makes, from a web page —
-      // the review-before-save sheet (recipe import, 2026-09-11).
-      '<button type="button" class="kit-row" data-kit="recipe-link">' +
-        '<span class="kit-row-icon">' + KITCHEN_ICONS.link + '</span>' +
-        '<span class="kit-row-text"><span class="kit-row-title">Add from a link</span></span>' +
-        '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
-      '</button>' +
-      '<button type="button" class="kit-row" data-kit="sheet" data-sheet="inventory">' +
-        '<span class="kit-row-icon">' + KITCHEN_ICONS.fridge + '</span>' +
-        '<span class="kit-row-text"><span class="kit-row-title">Inventory' +
-        (INVENTORY_IN_DEVELOPMENT ?
-          ' <span class="pill pill-neutral kit-row-pill">In development</span>' : '') +
-        '</span>' +
-        '<span class="kit-row-sub" id="kit-inv-sub">' + escapeHtml(kitchenInventoryLine()) + '</span></span>' +
-        '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
-      '</button>' +
+  // Tonight, as the root shows it. Empty means empty (§2b S4): the empty
+  // moment (emptyMomentHtml), and the next cook by name as its second
+  // line when there is one. Otherwise the spruce card for the meal the
+  // tab calls tonight, and — on a day with more than one meal to make (a
+  // 21-slot plan's breakfast and lunch) — the rest of today's rows under
+  // it in their old shape, tick and all, so nothing today is hidden.
+  function kitchenCookingTodayHtml(rows, meals, todayIso, data) {
+    if (!rows.length) return emptyMomentHtml('pot', 'Nothing to cook tonight.', kitchenNextCookLine(meals, todayIso));
+    var card = cookTonightRow(rows);
+    var others = rows.filter(function (r) { return r !== card; });
+    return cookTonightCardHtml(card, meals, todayIso, data || {}) +
+      (others.length
+        ? '<div class="cook-week cook-also-today">' + others.map(kitchenTodayRowHtml).join('') + '</div>'
+        : '');
+  }
+
+  // The get-ready moves: the next thaw for a later night, the next prep
+  // session, and — so no prep task the app wrote is ever invisible (see
+  // kitchenLoosePrepTasks) — the next loose task. One of each kind at
+  // most, the two soonest shown. Tonight's own thaw is not here: it is
+  // the card's line.
+  function cookGetReadyMoves(data, meals, todayIso, tonightIdx) {
+    var tonight = meals[tonightIdx] || null;
+    var tonightIds = tonight ? (tonight.entry_ids || [tonight.entry_id]) : [];
+    var tonightName = tonight ? (tonight.meal || '').trim().toLowerCase() : '';
+    var pending = function (t) { return t.status !== 'done' && t.status !== 'skipped'; };
+    var moves = [];
+
+    var thaws = ((data && data.prep_tasks) || []).filter(function (t) {
+      if (t.task_type !== 'defrost' || !pending(t)) return false;
+      if (t.meal_plan_entry_id != null && tonightIds.indexOf(t.meal_plan_entry_id) !== -1) return false;
+      if (t.meal_plan_entry_id == null && tonightName && (t.related_meal || '').trim().toLowerCase() === tonightName) return false;
+      return true;
+    }).sort(cookByTaskDate);
+    if (thaws.length) {
+      var t = thaws[0];
+      var forWhat = cookThawFor(t);
+      moves.push({
+        kind: 'thaw', date: t.task_date || '',
+        title: cookThawTitle(t),
+        line: [cookWhenLabel(t.task_date, todayIso), forWhat].filter(Boolean).join(' · '),
+        idx: cookMealIndexForTask(meals, t),
+        task: t
+      });
+    }
+
+    var sessions = ((data && data.prep_sessions) || []).filter(function (s) {
+      return s.date >= todayIso && !(s.items_total > 0 && s.items_done === s.items_total);
+    }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    if (sessions.length) {
+      var s = sessions[0];
+      moves.push({
+        kind: 'session', date: s.date,
+        title: s.weekday + ' prep',
+        line: [cookWhenLabel(s.date, todayIso), cookMinutesLabel(s.total_minutes_estimate), cookCoversLabel(s.covers),
+          s.items_total ? s.items_done + ' of ' + s.items_total + ' done' : '']
+          .filter(Boolean).join(' · '),
+        session: s
+      });
+    }
+
+    var loose = kitchenLoosePrepTasks(data).filter(function (t) { return t.task_type !== 'defrost'; }).sort(cookByTaskDate);
+    if (loose.length) {
+      var l = loose[0];
+      moves.push({
+        kind: 'task', date: l.task_date || '',
+        title: l.description,
+        line: l.task_date ? cookWhenLabel(l.task_date, todayIso) : 'Sometime this week',
+        task: l
+      });
+    }
+    moves.sort(function (a, b) {
+      if (!a.date && b.date) return 1;
+      if (a.date && !b.date) return -1;
+      return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
+    });
+    return moves.slice(0, 2);
+  }
+
+  function cookByTaskDate(a, b) {
+    var da = a.task_date || '', db = b.task_date || '';
+    return da < db ? -1 : da > db ? 1 : 0;
+  }
+
+  // "Still to do" for a date already past, "By tonight", "Tomorrow", else
+  // the weekday — the words Now uses for the same moves.
+  function cookWhenLabel(iso, todayIso) {
+    if (!iso) return '';
+    if (iso < todayIso) return 'Still to do';
+    if (iso === todayIso) return 'By tonight';
+    if (iso === addDaysLocal(todayIso, 1)) return 'Tomorrow';
+    return dayName(iso, { weekday: 'long' });
+  }
+
+  // The meal a prep task feeds, by entry id first, else by the dish's name
+  // (the same two links cookFocusPrepTasks reads). null when neither
+  // resolves — the row then has nowhere to open.
+  function cookMealIndexForTask(meals, task) {
+    for (var i = 0; i < meals.length; i++) {
+      var m = meals[i];
+      if (m.is_leftovers) continue;
+      if (task.meal_plan_entry_id != null) {
+        if ((m.entry_ids || [m.entry_id]).indexOf(task.meal_plan_entry_id) !== -1) return i;
+      } else if (task.related_meal && (m.meal || '').trim().toLowerCase() === task.related_meal.trim().toLowerCase()) {
+        return i;
+      }
+    }
+    return null;
+  }
+
+  var COOK_READY_ICONS = {
+    thaw:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M4.2 7.5l15.6 9"/><path d="M4.2 16.5l15.6-9"/><path d="M9.5 4.5L12 7l2.5-2.5"/><path d="M9.5 19.5L12 17l2.5 2.5"/></svg>',
+    prep:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><path d="M8 10h8"/><path d="M8 14h5"/></svg>'
+  };
+
+  // One quiet row each: no card border, a 32px icon tile (celadon for a
+  // thaw, sand for prep), the title in the display face, one line, and a
+  // chevron when the row opens somewhere. A loose task has nowhere to go
+  // and carries its tick instead — ticking is the only way to finish it.
+  function cookGetReadyRowsHtml(moves) {
+    if (!moves.length) return '';
+    return '<div class="cook-ready" id="kit-get-ready">' + moves.map(function (mv) {
+      var isThaw = mv.kind === 'thaw';
+      var text = '<span class="cook-ready-text">' +
+        '<span class="cook-ready-title">' + escapeHtml(mv.title) + '</span>' +
+        (mv.line ? '<span class="cook-ready-line">' + escapeHtml(mv.line) + '</span>' : '') +
+      '</span>';
+      var icon = '<span class="cook-ready-icon">' + (isThaw ? COOK_READY_ICONS.thaw : COOK_READY_ICONS.prep) + '</span>';
+      var cls = 'cook-ready-row' + (isThaw ? ' is-thaw' : '');
+      if (mv.kind === 'session') {
+        return '<button type="button" class="' + cls + '" data-cook="session" data-date="' + escapeHtml(mv.session.date) + '">' +
+          icon + text + '<span class="cook-ready-chev">' + GRO_ICONS.chevRight + '</span></button>';
+      }
+      if (mv.kind === 'thaw' && mv.idx !== null && mv.idx !== undefined) {
+        return '<button type="button" class="' + cls + '" data-cook="focus" data-idx="' + mv.idx + '" data-at="steps">' +
+          icon + text + '<span class="cook-ready-chev">' + GRO_ICONS.chevRight + '</span></button>';
+      }
+      return '<div class="' + cls + '">' + icon + text +
+        '<button type="button" class="cook-box" data-cook="check-prep" data-prep-id="' + mv.task.id + '" data-next="done" aria-label="Mark done">' +
+          COOK_ICONS.check + '</button>' +
+      '</div>';
+    }).join('') + '</div>';
+  }
+
+  // The dock. "Start cooking" opens tonight's cook on Before you start
+  // (cookEnterFocus — every way in lands there); a reheat night's one
+  // action is "Mark eaten" (the same write the reheat screen makes). A
+  // finished night, or a day with nothing to cook, has no dock at all —
+  // and a cooked dish is un-cooked from its own screen (tile → "Mark not
+  // cooked"), never from here.
+  function cookRootDockHtml(row) {
+    if (!row || row.done) return '';
+    if (row.isReheat) {
+      return '<button type="button" class="dock-primary" data-cook="check-meal" data-entry-id="' + row.entryId + '" data-next="done">' +
+        escapeHtml(REHEAT_ACTION_LABEL) + '</button>';
+    }
+    return '<button type="button" class="dock-primary" data-cook="start-tonight" data-idx="' + row.idx + '">Start cooking</button>';
+  }
+
+  // The quiet way to the tab's three rare entry points — Recipes, Add
+  // from a link, Inventory — one tap off the root (cookMoreSheet) rather
+  // than three rows on it. Kept reachable from Cook rather than moved into
+  // Preferences: they are things the cook does, not settings.
+  function cookMoreLinkHtml() {
+    return '<div class="cook-more-foot">' +
+      '<button type="button" class="cook-empty-link cook-more-link" data-kit="more">More ···</button>' +
     '</div>';
   }
 
@@ -6209,15 +6639,25 @@
     if (!panel) return;
     var body = panel.querySelector('#kit-body');
     if (!body) return;
+    var dock = panel.querySelector('#kit-dock');
+    var content = panel.querySelector('.kitchen-content');
     var todayIso = todayLocalStr();
     setRootBand(panel, 'kit-band', { eyebrow: dayName(todayIso, { weekday: 'long' }) });
+
+    function setDock(html) {
+      if (!dock) return;
+      dock.innerHTML = html || '';
+      dock.hidden = !html;
+      if (content) content.classList.toggle('has-dock', !!html);
+    }
 
     if (cookState.loadError || !cookState.data) {
       setRootBand(panel, 'kit-band', { sub: '' });
       body.classList.remove('is-empty');
       body.innerHTML =
         '<p class="cook-error">Couldn’t load the kitchen right now — switch tabs and back to try again.' + snwLink() + '</p>' +
-        kitchenTilesHtml();
+        cookMoreLinkHtml();
+      setDock('');
       return;
     }
 
@@ -6229,30 +6669,28 @@
     // the body has to be told it is carrying one.
     body.classList.toggle('is-empty', !rows.length);
 
-    if (!data.weekly_plan_id) {
+    if (!data.weekly_plan_id && !meals.length) {
       // No plan at all: the same empty moment, with the way to a plan as
-      // its second line — Cook's root has no dock to put it in (nav rule
-      // 2), and the in-prose link keeps its own 44px row.
+      // its second line, and no shelf — there are no nights to shelve.
+      // The in-prose link keeps its own 44px row.
       body.innerHTML =
         emptyMomentHtml('pot', 'Nothing to cook tonight.') +
         '<p class="cook-empty">No plan yet this week &mdash; ' +
           '<button type="button" class="cook-empty-link" data-cook="goto-plan">plan one on the Plan tab first</button>.</p>' +
-        kitchenTilesHtml();
+        cookMoreLinkHtml();
+      setDock('');
       return;
     }
 
+    var tonight = cookTonightRow(rows);
     body.innerHTML =
+      cookShelfHtml(meals, data, todayIso) +
       cookAttentionHtml() +
-      kitchenCookingTodayHtml(rows, meals, todayIso) +
-      cookPrepSessionsHtml(data) +
-      kitchenPrepTodoHtml(kitchenLoosePrepTasks(data)) +
-      cookRestOfWeekHtml(meals, data, todayIso, kitchenState.restExpanded) +
-      // The italic "Something in the freezer?" / "Cooking ahead?" re-ask
-      // links left this screen on 2026-09-11 (Emily, decision E: empty
-      // headings with nothing under them). The questions are asked on the
-      // All set screen after approval, and the chat answers either any
-      // time ("What do I need to defrost?" is one of its own chips).
-      kitchenTilesHtml();
+      kitchenCookingTodayHtml(rows, meals, todayIso, data) +
+      cookGetReadyRowsHtml(cookGetReadyMoves(data, meals, todayIso, tonight ? tonight.idx : null)) +
+      cookMoreLinkHtml();
+    setDock(cookRootDockHtml(tonight));
+    cookShelfScrollToTonight(body);
   }
 
   function onKitchenClick(e) {
@@ -6269,7 +6707,75 @@
     }
     if (what === 'recipe-link') {
       openRecipeLinkSheet();
+      return;
     }
+    if (what === 'more') openCookMoreSheet();
+  }
+
+  // ---------- Cook's "More" sheet ----------
+  // Same scrim/sheet pattern as Meals' More (#meals-more-sheet): slides up
+  // over the tab, dismisses down, one open at a time. Three rows, the
+  // same three entry points the root carried until 2026-09-13, in the
+  // same .kit-row shape, and the same handlers (onKitchenClick, delegated
+  // from the sheet as well as the panel).
+  var cookMoreScrim = document.getElementById('cook-more-scrim');
+  var cookMoreSheet = document.getElementById('cook-more-sheet');
+
+  function cookMoreRowsHtml() {
+    return '<div class="kit-rows">' +
+      // There is no recipe browser in this app, and this row does not
+      // pretend there is one: it opens the chat on the question, which
+      // the assistant answers off list_recipes (app/tools/recipes.py).
+      '<button type="button" class="kit-row" data-kit="recipes">' +
+        '<span class="kit-row-icon">' + KITCHEN_ICONS.book + '</span>' +
+        '<span class="kit-row-text"><span class="kit-row-title">Recipes</span></span>' +
+        '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
+      '</button>' +
+      // Bring in a recipe the household already makes, from a web page —
+      // the review-before-save sheet (recipe import, 2026-09-11).
+      '<button type="button" class="kit-row" data-kit="recipe-link">' +
+        '<span class="kit-row-icon">' + KITCHEN_ICONS.link + '</span>' +
+        '<span class="kit-row-text"><span class="kit-row-title">Add from a link</span></span>' +
+        '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
+      '</button>' +
+      // Inventory last: the in-development beta feature (see
+      // INVENTORY_IN_DEVELOPMENT), quiet by policy.
+      '<button type="button" class="kit-row" data-kit="sheet" data-sheet="inventory">' +
+        '<span class="kit-row-icon">' + KITCHEN_ICONS.fridge + '</span>' +
+        '<span class="kit-row-text"><span class="kit-row-title">Inventory' +
+        (INVENTORY_IN_DEVELOPMENT ?
+          ' <span class="pill pill-neutral kit-row-pill">In development</span>' : '') +
+        '</span>' +
+        '<span class="kit-row-sub" id="kit-inv-sub">' + escapeHtml(kitchenInventoryLine()) + '</span></span>' +
+        '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
+      '</button>' +
+    '</div>';
+  }
+
+  function openCookMoreSheet() {
+    if (!cookMoreSheet) return;
+    closeAskSheet();
+    closeWeekSheet();
+    var rows = document.getElementById('cook-more-rows');
+    if (rows) rows.innerHTML = cookMoreRowsHtml();
+    openSheet(cookMoreSheet, cookMoreScrim);
+  }
+  function closeCookMoreSheet() {
+    if (!cookMoreScrim) return;
+    closeSheet(cookMoreSheet, cookMoreScrim);
+  }
+  if (cookMoreScrim) {
+    cookMoreScrim.addEventListener('click', closeCookMoreSheet);
+    document.getElementById('cook-more-handle').addEventListener('click', closeCookMoreSheet);
+    document.getElementById('cook-more-close').addEventListener('click', closeCookMoreSheet);
+    // A row's own action opens another sheet (the ask, the recipe link,
+    // Inventory) over this one's place — close this first so only one is
+    // ever up.
+    cookMoreSheet.addEventListener('click', function (e) {
+      if (!e.target.closest('[data-kit]')) return;
+      closeCookMoreSheet();
+      onKitchenClick(e);
+    });
   }
   // ---------- Kitchen entry sheets ----------
   // Same scrim/sheet pattern as the ask and week sheets, and the same
@@ -8533,7 +9039,12 @@
           '<button type="button" class="wk-foot-more" id="wk-more" aria-haspopup="dialog">More ···</button>' +
         '</div>';
     }
-    var dayCount = data.day_count || days.length || 7;
+    // The link's span is the SERVER's next_period, not this plan's length
+    // — a two-day plan on screen was offering "the 2 after" (Emily, Sunday
+    // 2026-09-13) while Now asked about the whole week. See
+    // weekly_plan.next_period_after; nextPeriodFor keeps the old arithmetic
+    // only as the fallback for a payload without it.
+    var next = nextPeriodFor(data, days);
     return weekSuggestedNoteHtml(data) +
       '<div class="shell-card wk-week-card">' +
         days.map(weekRowHtml).join('') +
@@ -8548,10 +9059,27 @@
       // they were never candidates to ride along inside it.
       '<div class="wk-foot">' +
         '<button type="button" class="wk-foot-link" id="wk-plan-next">' +
-          escapeHtml(planEntryLabel(dayCount, 'next', false)) + ' ›</button>' +
+          escapeHtml(planEntryLabel(next.day_count, next.is_current_period ? 'current' : 'next', next.is_planned)) + ' ›</button>' +
         '<button type="button" class="wk-foot-more" id="wk-more" aria-haspopup="dialog">More ···</button>' +
       '</div>' +
       weekDecideHtml(data);
+  }
+
+  // The stretch "Plan next week ›" offers under a plan: the server's
+  // next_period (its start, its length, and — when it is shorter than the
+  // household's usual — the one-line reason why). The arithmetic fallback
+  // is the pre-2026-09-13 behaviour, kept only so a stale cached payload
+  // still gets a working link.
+  function nextPeriodFor(data, days) {
+    if (data.next_period && data.next_period.start_date) return data.next_period;
+    var dayCount = data.day_count || (days || []).length ||
+      (planningPeriodDefault && planningPeriodDefault.day_count) || 7;
+    var start = data.period_start_date || data.week_start_date ||
+      (planningPeriodDefault && planningPeriodDefault.start_date) || thisWeekStartLocal();
+    return {
+      start_date: addDaysLocal(start, dayCount), day_count: dayCount,
+      is_current_period: false, is_planned: false, shortened_reason: null
+    };
   }
 
   // The quiet lines under the card. A SOFT conflict — somebody at the table
@@ -8565,6 +9093,12 @@
     var notes = [];
     if (data.plates_note) notes.push(data.plates_note);
     if (weekPlanState(data) === 'draft' && data.soft_note) notes.push(data.soft_note);
+    // Why the next stretch on offer is shorter than a week ("Sep 17–20 is
+    // already planned."), said once, right above the link it is about.
+    var next = data.next_period || {};
+    if (next.shortened_reason) {
+      notes.push(next.shortened_reason + ' Next up is ' + next.label + '.');
+    }
     if (!notes.length) return '';
     return '<div class="wk-notes">' + notes.map(function (n) {
       return '<div class="wk-note">' + escapeHtml(n) + '</div>';
@@ -8615,8 +9149,10 @@
     dinner: ['night', 'nights'],
     snack: ['day', 'days']
   };
-  // view: which of the two is showing. openDays: which day cards in the
-  // second view are expanded, keyed by date so a re-render keeps them open.
+  // view: which of the two is showing. nightMove: the one night move in
+  // flight on the Which days tiles ({a, b} dates) or null; focusHandle:
+  // the night whose handle should take focus after the next render, so a
+  // keyboard move keeps hold of the dish it moved (see wireReviewTiles).
   // busy/trouble: the stepper's one in-flight call, exactly one at a time
   // for the same reason swapState is (see it) — a person is tapping one
   // stepper, not three. picking: which dish row (by its index into
@@ -8638,7 +9174,7 @@
   // Both are questions about how long an answer should live on this
   // screen, which is a decision rather than a bug fix.
   var reviewState = {
-    view: 'eating', openDays: {}, busy: null, trouble: '', troubleFor: null, picking: null,
+    view: 'eating', nightMove: null, focusHandle: null, busy: null, trouble: '', troubleFor: null, picking: null,
   };
 
   var RV_MINUS_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" ' +
@@ -8961,7 +9497,7 @@
   // deliberately empty, which is either "nobody is home" or "you asked for
   // none of these". READ, never inferred from a missing row: a day with no
   // rows at all is an unplanned day, a different thing, and it gets the
-  // ordinary card.
+  // ordinary tile.
   //
   // The three MEALS and not the snacks, deliberately. Both places that mark
   // a day away — the `out` night pass and the slot_needs pass in
@@ -8977,19 +9513,6 @@
     return meals.every(function (e) { return e.state === 'planned_empty'; });
   }
 
-  // Whether anything under the face is worth opening. A closed day usually
-  // has nothing — but since nothing marks a SNACK away, a day nobody is
-  // home can still carry two of them, and hiding real rows behind "nobody's
-  // home" would be this screen deciding they don't count. A deliberately
-  // empty slot is still never offered as a decision: it is a line, and the
-  // line says what it is.
-  function reviewDayHasMore(day) {
-    return daySlotKeys(day).some(function (slot) {
-      var e = daySlotEntry(day, slot);
-      return !!e && (e.state === 'planned' || e.state === 'open');
-    });
-  }
-
   // What a closed day says for itself. awayLineFor gives the away sentence
   // the rest of Meals already uses; anything else falls back to the slot's
   // own recorded words rather than a line this screen made up. Dinner
@@ -9000,57 +9523,10 @@
     return awayLineFor(first) || (first && first.title) || 'Nothing planned.';
   }
 
-  function reviewSlotLineHtml(day, slot) {
-    var entry = daySlotEntry(day, slot);
-    var name, quiet = ' is-quiet';
-    if (entry && entry.state === 'planned') { name = mealDisplayName(entry); quiet = ''; }
-    else if (entry && entry.state === 'open') name = 'Your call';
-    else if (entry && entry.state === 'planned_empty') {
-      name = awayLineFor(entry) || entry.title || 'Nothing planned';
-    } else name = day.isPast ? 'Not planned' : 'Nothing yet';
-    // The cook time (or "reheat") beside the name — Emily, 2026-09-11:
-    // "add the cook times for the which days view". The entry's own meta
-    // string (get_week_menu), never computed here.
-    var meta = entry && entry.state === 'planned' && entry.meta ? entry.meta : '';
-    var target = entry && entry.state === 'planned' && typeof recipeTargetForEntry === 'function'
-      ? recipeTargetForEntry(entry, day.date, slot) : null;
-    // The clash as one red word on the line it is about (any slot, not only
-    // dinner — an allergen can be in a snack).
-    var settle = typeof weekState !== 'undefined' && weekState.data ? weekState.data.settle : null;
-    var clash = settle && settle.note && settle.date === day.date && entry && entry.state === 'planned' &&
-      String(settle.meal || '').trim().toLowerCase() === String(name || '').trim().toLowerCase();
-    // "not for Emily": the word that says why the line is red (§2b S6),
-    // short enough to sit beside a two-line dish name.
-    var clashHtml = clash
-      ? '<span class="rv-day-clash">' + escapeHtml(settle.member ? 'not for ' + settle.member : 'clash') + '</span>'
-      : '';
-    return '<span class="rv-slot' + quiet + '">' +
-      '<span class="rv-slot-label">' + escapeHtml(slotEyebrowLabel(day, slot)) + '</span>' +
-      (target
-        ? '<button type="button" class="rv-slot-name dish-link is-inline" data-rv-recipe-date="' +
-            escapeHtml(day.date) + '" data-rv-recipe-slot="' + escapeHtml(slot) + '">' + escapeHtml(name) + '</button>'
-        : '<span class="rv-slot-name">' + escapeHtml(name) + '</span>') +
-      (meta ? '<span class="rv-slot-meta">' + escapeHtml(meta) + '</span>' : '') +
-      clashHtml +
-    '</span>';
-  }
-
-  function reviewDayTitle(day) {
-    return dayName(day.date, { weekday: 'long' }) + ' ' + dayName(day.date, { day: 'numeric' });
-  }
-
-  // The holiday's quiet pill on its day card — same label the week card
-  // and the Day step carry, so the three views agree.
-  function reviewDayHolidayHtml(day) {
-    return day.holiday
-      ? '<span class="rv-day-holiday wk-holiday pill pill-neutral">' + escapeHtml(day.holiday.label) + '</span>'
-      : '';
-  }
-
-  // The face of a day card: the day, and the one line that answers "what
-  // are we eating". Dinner, because that is the meal people actually check
-  // — unless nobody is home, in which case the day's own away sentence is
-  // the whole answer and dinner is not a thing to name.
+  // The face of a day tile: the one line that answers "what are we eating".
+  // Dinner, because that is the meal people actually check — unless nobody
+  // is home, in which case the day's own away sentence is the whole answer
+  // and dinner is not a thing to name.
   //
   // `note` is the one thing the dish name cannot say for itself: that
   // tonight costs no cooking. Without it, a chain reads as the same dinner
@@ -9084,57 +9560,119 @@
     return { line: day.isPast ? 'Not planned' : 'Nothing yet', quiet: ' is-quiet', note: '' };
   }
 
-  function reviewDayNoteHtml(note, clash) {
-    return (note ? '<span class="rv-day-note">' + escapeHtml(note) + '</span>' : '') +
-      // The clash, as one red word on its day, so the two views agree.
-      (clash ? '<span class="rv-day-clash">' + escapeHtml(clash) + '</span>' : '');
+  // ---------- Which days: seven tiles ----------
+  // Emily picked this on 2026-09-12 from the "Beyond lists" canvas
+  // (artboard "Week · A · Seven tiles"). One tile per night of the period:
+  // the date, the dinner, a bar for how long it takes, and a handle to
+  // drag a night onto another — which trades the two DINNERS (one small
+  // POST to /api/week/{week}/swap-nights, see runSwapNights; nothing else
+  // on either day moves, and the grocery list is untouched). The rest of
+  // a day is one tap in and one tap back (§2b S8): the tile's body opens
+  // the Day step. The expanding card this replaced showed all five slots
+  // in place; that reading is the Day step's now.
+
+  // Minutes as a number, off the entry's own "N min" meta (get_week_menu
+  // builds it from the recipe's prep + cook times). The bar's width is
+  // arithmetic on it, so it is parsed here and nowhere else.
+  function reviewDinnerMinutes(entry) {
+    var m = entry && entry.state === 'planned' && typeof entry.meta === 'string'
+      ? /^(\d+)\s*min/.exec(entry.meta) : null;
+    return m ? Number(m[1]) : 0;
   }
 
-  function reviewDayCardHtml(day, i) {
-    var title = reviewDayTitle(day);
+  // The bar: its width is minutes over 95, floored at 18% and capped at
+  // 150px (the artboard's own numbers), and it is apricot from 50 minutes
+  // and celadon under — so the bar answers "is this a long one" before
+  // the number beside it does. A night with no minutes (a reheat, takeout,
+  // a made-ahead day) gets the word instead of a bar; nothing is cooked,
+  // so there is no length to show.
+  var RV_BAR_FULL_MIN = 95;
+  var RV_BAR_LONG_MIN = 50;
+  function reviewTileTimeHtml(entry, face) {
+    var minutes = reviewDinnerMinutes(entry);
+    if (!minutes) {
+      var word = face.note || (entry && entry.state === 'planned' &&
+        (entry.meta === 'reheat' || entry.meta === 'takeout') ? entry.meta : '');
+      return word
+        ? '<span class="rv-tile-time"><span class="rv-tile-min">' + escapeHtml(word) + '</span></span>'
+        : '';
+    }
+    var pct = Math.round(minutes / RV_BAR_FULL_MIN * 100);
+    return '<span class="rv-tile-time">' +
+      '<span class="rv-tile-bar' + (minutes >= RV_BAR_LONG_MIN ? ' is-long' : '') + '"' +
+        ' style="width:min(150px, max(18%, ' + pct + '%))" aria-hidden="true"></span>' +
+      '<span class="rv-tile-min">' + minutes + ' min</span>' +
+    '</span>';
+  }
+
+  // The one real-life word that says why a night is different (§2b S6,
+  // S7): who is out, how many are at the table, the holiday, a rush
+  // night. Read off what the intake and attendance already store on the
+  // dinner (get_week_menu's _decorate_with_needs), never guessed from the
+  // roster. "Hosting · 5" is the headcount at the table, guests included
+  // — the number Emily said out loud ("I am hosting 5 people").
+  function reviewTileTags(day) {
+    var tags = [];
+    var entry = day.dinner || {};
+    var away = entry.away_names || [];
+    var present = entry.present_names || [];
+    if (entry.need === 'away' || (away.length && !present.length)) tags.push('Away');
+    else if (away.length) tags.push(joinList(away) + ' out');
+    if (entry.guest_count) tags.push('Hosting · ' + (entry.serves || entry.guest_count));
+    if (day.holiday && day.holiday.name) tags.push(day.holiday.name);
+    if (entry.need === 'quick') tags.push('Quick');
+    return tags;
+  }
+
+  // Whether a night can trade dinners: not a night nobody is home (moving
+  // a dinner onto it would plan food for an empty table — the server
+  // refuses too), and not a dinner somebody has already cooked (a tick is
+  // a record of something that happened). Everything else, an unplanned
+  // night included, can.
+  function reviewTileIsMovable(day) {
+    if (reviewDayIsClosed(day)) return false;
+    var dinner = day.dinner;
+    if (dinner && dinner.state === 'planned_empty') return false;
+    if (dinner && dinner.cooked) return false;
+    return true;
+  }
+
+  // Two short strokes: the grip. Stroke SVG, never a glyph (rule 7).
+  var RV_GRIP_SVG = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" ' +
+    'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">' +
+    '<path d="M5 9.5h14"/><path d="M5 14.5h14"/></svg>';
+
+  function reviewDayTileHtml(day, i) {
     var closed = reviewDayIsClosed(day);
     var face = reviewDayFaceLine(day);
-    // Nothing under it worth opening — a day nobody is home and nothing
-    // else on it. Flat rather than an expander that opens onto three
-    // repetitions of the line already on its face.
-    if (!reviewDayHasMore(day)) {
-      return '<div class="shell-card rv-day' + (closed ? ' is-closed' : '') + '">' +
-        '<div class="rv-day-head is-flat">' +
-          '<span class="rv-day-col">' +
-            '<span class="rv-day-title">' + escapeHtml(title) + '</span>' +
-            reviewDayHolidayHtml(day) +
-            '<span class="rv-day-dinner' + face.quiet + '">' + escapeHtml(face.line) + '</span>' +
-            reviewDayNoteHtml(face.note, face.clash) +
-          '</span>' +
-        '</div>' +
-      '</div>';
-    }
-    var open = !!reviewState.openDays[day.date];
-    var line = face.line, quiet = face.quiet;
-    return '<div class="shell-card rv-day' + (open ? ' is-open' : '') +
-        (closed ? ' is-closed' : '') + (day.isToday ? ' is-today' : '') + '">' +
-      '<button type="button" class="rv-day-head" data-rv-day="' + escapeHtml(day.date) + '"' +
-          ' aria-expanded="' + (open ? 'true' : 'false') + '">' +
-        '<span class="rv-day-col">' +
-          '<span class="rv-day-title">' + escapeHtml(title) + '</span>' +
-          reviewDayHolidayHtml(day) +
-          '<span class="rv-day-dinner' + quiet + '">' + escapeHtml(line) + '</span>' +
-          reviewDayNoteHtml(face.note, face.clash) +
-        '</span>' +
-        '<span class="rv-day-chev">' + RV_CHEVRON_SVG + '</span>' +
+    var entry = day.dinner;
+    var movable = reviewTileIsMovable(day);
+    var weekday = dayName(day.date, { weekday: 'long' });
+    var eyebrow = (day.isToday ? '<span class="rv-tile-today">Today</span>' : '') +
+      reviewTileTags(day).map(function (t) {
+        return '<span class="rv-tile-tag">' + escapeHtml(t) + '</span>';
+      }).join('') +
+      // The clash, as one red word on its night, so the two views agree.
+      (face.clash ? '<span class="rv-day-clash">' + escapeHtml(face.clash) + '</span>' : '');
+    return '<div class="rv-tile' + (day.isToday ? ' is-today' : '') + (closed ? ' is-closed' : '') + '"' +
+        ' role="listitem" data-rv-tile="' + escapeHtml(day.date) + '">' +
+      '<span class="rv-tile-date">' +
+        '<span class="rv-tile-dow">' + escapeHtml(dayName(day.date, { weekday: 'short' })) + '</span>' +
+        '<span class="rv-tile-num">' + escapeHtml(dayName(day.date, { day: 'numeric' })) + '</span>' +
+      '</span>' +
+      // Through to the Day step, which is where a slot is actually acted
+      // on. The tile reads; it does not grow a second copy of every
+      // per-slot control.
+      '<button type="button" class="rv-tile-body" data-rv-open="' + i + '">' +
+        (eyebrow ? '<span class="rv-tile-eyebrow">' + eyebrow + '</span>' : '') +
+        '<span class="rv-tile-name' + face.quiet + '">' + escapeHtml(face.line) + '</span>' +
+        reviewTileTimeHtml(entry, face) +
       '</button>' +
-      (open
-        ? '<div class="rv-day-slots">' +
-            daySlotKeys(day).map(function (slot) {
-              return reviewSlotLineHtml(day, slot);
-            }).join('') +
-            // Through to the Day step, which is where a slot is actually
-            // acted on. Review reads and counts; it does not grow a second
-            // copy of every per-slot control.
-            '<button type="button" class="rv-day-open" data-rv-open="' + i + '">' +
-              'Open ' + escapeHtml(dayName(day.date, { weekday: 'long' })) + ' ›</button>' +
-          '</div>'
-        : '') +
+      (movable
+        ? '<button type="button" class="rv-tile-handle" data-rv-handle="' + escapeHtml(day.date) + '"' +
+            ' aria-label="Move ' + escapeHtml(weekday) + '’s dinner — arrow up or down">' +
+            RV_GRIP_SVG + '</button>'
+        : '<span class="rv-tile-handle is-off" aria-hidden="true"></span>') +
     '</div>';
   }
 
@@ -9143,9 +9681,16 @@
       return '<div class="rv-body"><div class="rv-empty">Nothing planned yet.</div></div>';
     }
     return '<div class="rv-body rv-days">' +
-      days.map(reviewDayCardHtml).join('') +
+      '<div class="rv-tiles-head">' +
+        '<span class="rv-tiles-eyebrow">Dinners · drag to move a night</span>' +
+        '<span class="rv-tiles-key">Bar = how long</span>' +
+      '</div>' +
+      '<div class="rv-tiles' + (reviewState.nightMove ? ' is-busy' : '') + '" role="list">' +
+        days.map(reviewDayTileHtml).join('') +
+      '</div>' +
     '</div>';
   }
+
 
   // The screen's one apricot (Rule 5), and deliberately the same .wk-decide
   // shell and #week-approve-btn id the Week root uses — approveWeek and
@@ -9508,7 +10053,7 @@
   // an Undo chip. One line that changes is why the card doesn't jump.
   function swapLineHtml(day, slot) {
     var state = swapStateFor(day.date, slot);
-    var tell = '<button type="button" class="wk-swap-tell" data-wk-tell="' + slotWord(slot) + '">' +
+    var tell = '<button type="button" class="wk-swap-tell" data-wk-tell="' + slot + '">' +
       'Tell me what instead</button>';
     if (state && state.busy) {
       return '<div class="wk-swap-line"><span class="wk-swap-working">Finding something else…</span></div>';
@@ -9639,39 +10184,273 @@
   }
 
   // ---------- MEAL ----------
+  // Emily picked "Meal · B · The clock" from the Beyond-lists canvas on
+  // 2026-09-12: the meal screen is a spruce hero (the dish, when it's on
+  // the table, when to start, who's cooking) and then the cook as a clock —
+  // one stop per step, each with the time it lands at, "Everything out"
+  // first. The chips card ("The plate") and the bullet-list recipe card
+  // that sat under the hero until then are gone; the thaw note moved into
+  // the hero's one line.
+  //
+  // The stops here and cook mode's steps are the SAME list — both read
+  // cookMeal.instructions off the cooker view (cookStepStageHtml walks the
+  // same array one step at a time), and "Everything out" is cook mode's
+  // own Before-you-start ticklist (cookGetOutHtml) said in one line. That
+  // is why the stops are built from the Cook view's card rather than from
+  // the week entry: a step list that differed from the one you cook by
+  // would be the app contradicting itself one tap apart.
 
-  var PLATE_GROUP_LABELS = { protein: 'protein', carb: 'carb', vegetable: 'veg' };
-
-  // Chips for the food groups and sides, then one line for the thaw. Both
-  // are read, never guessed: the groups are the ones the entry recorded
-  // (plates.py never invents them either), and the thaw line is the plan's
-  // own defrost task — the same prep_tasks row Today's fridge move ticks.
-  // The line used to open by restating the chips ("Protein, veg, carb.");
-  // that half was cut on 2026-09-11 (copy cleanse) — the chips already say it.
-  // A grab-and-go snack has nothing to say here — no food groups recorded,
-  // no added sides, no thaw task — and "Nothing to thaw." on its own isn't
-  // information, it's an empty card wearing a caption. Hide rather than
-  // show it; a real meal (which always carries at least a food-group read)
-  // never trips this.
-  function plateCardIsEmpty(entry) {
-    return !((entry.food_groups && entry.food_groups.length) ||
-      (entry.sides && entry.sides.length) ||
-      (entry.defrost && entry.defrost.note));
+  // ----- words for numbers, time as a person says it -----
+  var NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven',
+    'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen',
+    'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+  var TENS_WORDS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+  // 0–99 in words ("forty-five"); anything bigger stays a numeral.
+  function numberWord(n) {
+    n = Math.round(Number(n));
+    if (!isFinite(n) || n < 0 || n > 99) return String(n);
+    if (n < 20) return NUMBER_WORDS[n];
+    var tens = Math.floor(n / 10), ones = n % 10;
+    return TENS_WORDS[tens] + (ones ? '-' + NUMBER_WORDS[ones] : '');
+  }
+  // "six stops", "one stop", "14 stops" — words up to twelve, digits past
+  // that (the design's rule; nobody reads "fourteen stops" faster).
+  function countInWords(n, noun) {
+    n = Math.round(Number(n)) || 0;
+    var word = n <= 12 ? numberWord(n) : String(n);
+    return word + ' ' + noun + (n === 1 ? '' : 's');
+  }
+  // "thirty minutes", "an hour", "an hour and a half", "two hours and ten
+  // minutes" — the eyebrow's number, said aloud. Never seconds.
+  function minutesInWords(total) {
+    total = Math.round(Number(total)) || 0;
+    if (total < 60) return numberWord(total) + ' minute' + (total === 1 ? '' : 's');
+    var h = Math.floor(total / 60), m = total % 60;
+    var hours = h === 1 ? 'an hour' : numberWord(h) + ' hours';
+    if (!m) return hours;
+    if (m === 30) return h === 1 ? 'an hour and a half' : numberWord(h) + ' and a half hours';
+    if (m === 15) return hours + ' and a quarter';
+    return hours + ' and ' + numberWord(m) + ' minute' + (m === 1 ? '' : 's');
+  }
+  // Minutes since midnight -> "6:05", the same shape as get_week_menu's
+  // slot_times and moves.py's _clock (no am/pm — the slot already says).
+  function clockLabel(mins) {
+    if (mins === null || mins === undefined || !isFinite(mins)) return '';
+    mins = ((Math.round(mins) % 1440) + 1440) % 1440;
+    var h = Math.floor(mins / 60) % 12 || 12;
+    var m = mins % 60;
+    return h + ':' + (m < 10 ? '0' : '') + m;
+  }
+  // "half six", "a quarter past seven", "seven", "twenty to seven" — the
+  // hero's "On the table by …" (DESIGN_SYSTEM §8: time as a person says
+  // it, not a timestamp). Off the five-minute grid it falls back to the
+  // clock ("6:07"), since "seven past six" is not something anyone says.
+  function spokenTime(mins) {
+    if (mins === null || mins === undefined || !isFinite(mins)) return '';
+    mins = ((Math.round(mins) % 1440) + 1440) % 1440;
+    var h = Math.floor(mins / 60), m = mins % 60;
+    var hourWord = function (hh) { return numberWord(hh % 12 || 12); };
+    if (m === 0) return h % 24 === 12 ? 'noon' : hourWord(h);
+    if (m % 5) return clockLabel(mins);
+    if (m === 15) return 'a quarter past ' + hourWord(h);
+    if (m === 30) return 'half ' + hourWord(h);
+    if (m === 45) return 'a quarter to ' + hourWord(h + 1);
+    if (m < 30) return numberWord(m) + ' past ' + hourWord(h);
+    return numberWord(60 - m) + ' to ' + hourWord(h + 1);
+  }
+  // get_week_menu's slot_times ("8:00", "12:30", "6:30", or "noon") back
+  // into minutes since midnight. The label carries no am/pm on purpose —
+  // moves.py's _clock says the time the way a person does — so the slot
+  // supplies it: breakfast is the morning, everything else the afternoon
+  // or evening. Null when the label is missing or unreadable.
+  function slotTableMinutes(times, slot) {
+    var label = times && times[slot];
+    if (isSnackSlot(slot)) label = times && times.snack;
+    if (!label) return null;
+    if (label === 'noon') return 12 * 60;
+    var m = /^(\d{1,2}):(\d{2})$/.exec(String(label).trim());
+    if (!m) return null;
+    var h = parseInt(m[1], 10), mm = parseInt(m[2], 10);
+    if (h === 12) h = slot === 'breakfast' ? 0 : 12;
+    else if (slot !== 'breakfast' && h < 12) h += 12;
+    return h * 60 + mm;
   }
 
-  function plateCardHtml(entry) {
-    var groups = (entry.food_groups || [])
-      .map(function (g) { return PLATE_GROUP_LABELS[g] || g; });
-    var chips = groups.map(capitalizeFirst)
-      .concat(((entry.sides) || []).map(function (s) { return s.name; }));
-    var line = entry.defrost && entry.defrost.note
-      ? entry.defrost.note.replace(/\.?$/, '.')
-      : 'Nothing to thaw.';
-    return '<div class="shell-card wk-card">' +
-      '<div class="wk-card-title">The plate</div>' +
-      chipsRowHtml(chips) +
-      '<div class="wk-card-line">' + escapeHtml(line) + '</div>' +
-    '</div>';
+  // ----- the recipe's own numbers -----
+  // Total minutes for the cook: prep + cook off the cooker-view card (the
+  // same two fields moves.py adds up for "Start by 5:35"), a plain
+  // `minutes`, or the week entry's "35 min" meta. Null when nothing says.
+  function mealTotalMinutes(meal) {
+    if (!meal) return null;
+    var total = (Number(meal.prep_time_minutes) || 0) + (Number(meal.cook_time_minutes) || 0);
+    if (!total && meal.minutes) total = Number(meal.minutes) || 0;
+    if (!total && typeof meal.meta === 'string') {
+      var m = /^(\d+)\s*min/.exec(meal.meta);
+      if (m) total = parseInt(m[1], 10);
+    }
+    return total > 0 ? total : null;
+  }
+  // Per-step minutes, when a recipe ever carries them (`step_minutes`, one
+  // number per instruction). No recipe does today — recipes.instructions_
+  // json is a list of strings and nothing else — so this is the rule
+  // written down for the day one does, not a path that runs.
+  function mealStepMinutes(meal) {
+    var steps = (meal && meal.instructions) || [];
+    var mins = meal && meal.step_minutes;
+    if (!Array.isArray(mins) || mins.length !== steps.length || !steps.length) return null;
+    var out = mins.map(function (x) { return Number(x); });
+    if (out.some(function (x) { return !isFinite(x) || x < 0; })) return null;
+    if (!out.some(function (x) { return x > 0; })) return null;
+    return out;
+  }
+
+  // ----- a step as a stop -----
+  // Words a title should not end on: "Heat the oil in" is not a stop.
+  var STOP_TITLE_TAIL = /^(a|an|the|in|on|of|to|and|or|with|for|at|until|over|into|then|but|from|onto|under|about|by|as|so|if|while|till|through)$/i;
+  // The step's first verb phrase as the stop's title — the words up to its
+  // first comma or full stop when that is four words or fewer (and the
+  // rest of the step as its one line), else its first three words, fewer
+  // if that would end on a joining word (and the whole step as the line).
+  // Sentence case for both; nothing lowercased, since "Parmesan" is a name.
+  function stopTitleSplit(step) {
+    var text = String(step || '').replace(/\s+/g, ' ').trim();
+    if (!text) return { title: '', line: '' };
+    // A full stop inside a number ("1.5 cups") is not the end of a phrase.
+    var cut = text.search(/[,;:!?]|\.(?!\d)|\s[–—-]\s/);
+    var head = cut === -1 ? text : text.slice(0, cut);
+    var headWords = head.trim().split(' ');
+    var title, rest;
+    if (headWords.length <= 4 && cut !== -1) {
+      title = head.trim();
+      rest = text.slice(cut).replace(/^[\s,.;:!?–—-]+/, '');
+    } else if (headWords.length <= 4) {
+      title = head.trim();
+      rest = '';
+    } else {
+      // A long opening clause: the title is its first three words (two
+      // when the third is a joining word — "Stir-fry broccoli and" is not
+      // a stop) and the line is the WHOLE step. Cutting the clause in two
+      // would leave a line beginning mid-phrase ("and carrots, cook until
+      // tender") — the few repeated words read better than that.
+      var n = 3;
+      while (n > 2 && STOP_TITLE_TAIL.test(headWords[n - 1])) n -= 1;
+      title = headWords.slice(0, n).join(' ');
+      rest = text;
+    }
+    title = title.replace(/[.,;:!?]+$/, '');
+    return { title: capitalizeFirst(title), line: capitalizeFirst(rest.trim()) };
+  }
+  // "steak · broccoli · carrots" — the ingredients as names only, each
+  // shorn of its prep note ("Baby spinach, chopped" -> "Baby spinach").
+  // The amounts live one tap in (mealStopOutHtml), in a person's units.
+  function ingredientNamesLine(ings) {
+    return (ings || []).map(function (ing) {
+      return String((ing && ing.item) || '').split(',')[0].trim();
+    }).filter(Boolean).join(' · ');
+  }
+
+  // ----- the clock itself -----
+  // mealClockStops(meal, household) -> [{ time, minutes, title, line,
+  // estimated, kind }]. Pure: everything it says is read off `meal` (the
+  // cooker-view card, or anything with the same fields) and `household`
+  // ({ tableMinutes }: when this slot lands, minutes since midnight).
+  //
+  // The timing rule, in one place:
+  //   start = table time − the recipe's total minutes (prep + cook — the
+  //           arithmetic moves.py's "Start by 5:35" already does).
+  //   The first stop is "Everything out", at the start.
+  //   Then one stop per instruction. A recipe that says how long each step
+  //   takes (step_minutes) gets exact times, each stop at the start plus
+  //   the steps before it, nothing rounded. No recipe does today, so the
+  //   stops are SPREAD evenly from the start to the table time — the last
+  //   one landing on the table — every time rounded to the nearest five
+  //   minutes, and each stop marked `estimated` so the eyebrow can say
+  //   "About". Never seconds.
+  //   No total minutes, or no table time: the stops with no times at all.
+  function mealClockStops(meal, household) {
+    var steps = (meal && meal.instructions) || [];
+    var ings = (meal && meal.ingredients) || [];
+    var stops = [];
+    if (ings.length) {
+      stops.push({ kind: 'out', title: 'Everything out', line: ingredientNamesLine(ings),
+        time: null, minutes: null, estimated: false });
+    }
+    steps.forEach(function (s) {
+      var split = stopTitleSplit(s);
+      stops.push({ kind: 'step', title: split.title, line: split.line,
+        time: null, minutes: null, estimated: false });
+    });
+    if (!stops.length) return stops;
+
+    var table = household && typeof household.tableMinutes === 'number' && isFinite(household.tableMinutes)
+      ? household.tableMinutes : null;
+    var perStep = mealStepMinutes(meal);
+    var total = perStep
+      ? perStep.reduce(function (a, b) { return a + b; }, 0)
+      : mealTotalMinutes(meal);
+    if (table === null || !total) return stops;
+
+    var start = table - total;
+    if (perStep) {
+      var at = start;
+      var stepPos = 0;
+      stops.forEach(function (stop) {
+        stop.minutes = at;
+        stop.time = clockLabel(at);
+        if (stop.kind === 'step') { at += perStep[stepPos]; stepPos += 1; }
+      });
+      return stops;
+    }
+
+    var n = stops.length;
+    stops.forEach(function (stop, i) {
+      var raw = n === 1 ? start : start + (total * i) / (n - 1);
+      var mins = i === n - 1 && n > 1 ? table : Math.round(raw / 5) * 5;
+      stop.minutes = mins;
+      stop.time = clockLabel(mins);
+      stop.estimated = true;
+    });
+    return stops;
+  }
+
+  // "Thirty minutes, six stops" / "About thirty minutes, six stops" (the
+  // times are spread, not the recipe's own) / "Six stops" (no minutes on
+  // record). Words, not digits, up to twelve.
+  function mealClockEyebrow(stops, total) {
+    if (!stops.length) return '';
+    var count = countInWords(stops.length, 'stop');
+    if (!total) return capitalizeFirst(count);
+    var estimated = stops.some(function (s) { return s.estimated; });
+    return capitalizeFirst((estimated ? 'about ' : '') + minutesInWords(total) + ', ' + count);
+  }
+
+  // ----- who's cooking -----
+  // The one household fact that names a cook: cooking_role = one person,
+  // with a name (rhythm.py's set_cooking_role). Turns, whoever's free, or
+  // unanswered all mean nobody in particular, and then the chip is left
+  // off rather than guessed. Read off /api/memory's rhythm, fetched once
+  // for the Plan tab the first time a meal opens (ensureRhythmForMeals).
+  function mealCookName() {
+    var rhythm = weekState.rhythm;
+    var role = rhythm && rhythm.cooking_role;
+    return role && role.value === 'one_person' && role.who ? String(role.who).trim() : '';
+  }
+
+  async function ensureRhythmForMeals(panel) {
+    if (weekState.rhythm !== undefined || weekState.rhythmFetch) return;
+    weekState.rhythmFetch = true;
+    try {
+      var res = await fetch('/api/memory');
+      if (!res.ok) throw new Error('memory failed');
+      var memory = await res.json();
+      weekState.rhythm = (memory && memory.rhythm) || null;
+      if (weekState.step === 'meal') renderMealsStep(panel);
+    } catch (err) {
+      // No chip, and the screen is still right without it.
+      weekState.rhythm = null;
+    } finally {
+      weekState.rhythmFetch = false;
+    }
   }
 
   // The cook card this entry is on, in the Cook view's own data. The
@@ -9707,85 +10486,178 @@
     }
   }
 
-  function mealStepHtml(day, slot) {
-    var entry = daySlotEntry(day, slot);
-    var chips = [
-      cookTimeChip(entry),
-      entry.serves ? 'Serves ' + entry.serves : '',
-      entry.plate_note
-    ];
-    var cookMeal = cookMealForEntry(entry.entry_id);
-    var aheadHtml = cookMeal ? cookAheadHtml(cookMeal) : '';
-    // Emily, 2026-09-11: the meal screen "looks weak for content". One
-    // spruce hero carries the name and the three facts; the plate, the
-    // recipe and cook-ahead follow as cards; the one action is in the dock.
-    // The plan's recorded reasoning used to sit under the name as an italic
-    // line and was cut the same day (copy cleanse): it was the planner
-    // explaining itself, not something a person would say.
-    return '<button type="button" class="crumb" data-wk-back="day">‹ ' +
-        escapeHtml(dayName(day.date, { weekday: 'long' })) + '</button>' +
-      '<div class="dinner-hero wk-meal-hero">' +
-        '<div class="hero-top">' +
-          '<span class="hero-eyebrow">' + escapeHtml(slotEyebrow(day, slot)) + '</span>' +
-          '<span class="hero-rule"></span>' +
-          '<span class="nextup-when">' + escapeHtml(dayName(day.date, { weekday: 'long' })) + '</span>' +
-        '</div>' +
-        '<div class="hero-dish' + dishSizeClass(mealDisplayName(entry)) + '">' + escapeHtml(mealDisplayName(entry)) + '</div>' +
-        (chips.filter(Boolean).length
-          ? '<div class="hero-chips">' + chips.filter(Boolean).map(function (c) {
-              return '<span class="hero-chip">' + escapeHtml(c) + '</span>';
-            }).join('') + '</div>'
+  // A cook that has been started and not finished: at least one step
+  // ticked in cook mode's own store (the same ticks cookStepStageHtml
+  // resumes from) and the meal not yet marked cooked. The dock then says
+  // "Keep cooking" rather than offering a start time that has passed.
+  function mealCookUnderway(cookMeal) {
+    if (!cookMeal || cookMeal.cooked_status === 'done') return false;
+    var steps = cookMeal.instructions || [];
+    var key = cookMealKey(cookMeal);
+    for (var i = 0; i < steps.length; i++) {
+      if (cookTicked('steps', key + ':' + i)) return true;
+    }
+    return false;
+  }
+
+  // Everything the clock needs about this slot, in one place: the card,
+  // the stops, the start, the table time. `cookMeal` is null until the
+  // cooker view has loaded (ensureCookDataForMeals re-renders when it has)
+  // and for a reheat night, which has no cook in it.
+  function mealClockFor(day, slot, entry, cookMeal) {
+    var times = (weekState.data && weekState.data.slot_times) || {};
+    var table = slotTableMinutes(times, slot);
+    var isCook = !!(cookMeal && !cookMeal.is_leftovers && entry && entry.source !== 'leftovers');
+    var stops = isCook ? mealClockStops(cookMeal, { tableMinutes: table }) : [];
+    var total = isCook ? mealTotalMinutes(cookMeal) || mealTotalMinutes(entry) : null;
+    var start = stops.length && stops[0].minutes !== null ? stops[0].minutes
+      : (isCook && total && table !== null ? table - total : null);
+    return { cookMeal: cookMeal, isCook: isCook, stops: stops, total: total, table: table, start: start };
+  }
+
+  // The hero's one plain line: the thaw the plan wrote for this meal (the
+  // same prep_tasks row Today's fridge move ticks), or where a reheat
+  // night's food came from. Nothing when there is nothing to say — the
+  // old "Nothing to thaw." was an empty line wearing a caption.
+  function mealHeroLine(entry) {
+    if (!entry) return '';
+    if (entry.defrost && entry.defrost.note) return entry.defrost.note.replace(/\.?$/, '.');
+    if (entry.leftover_from) {
+      var when = dayName(entry.leftover_from.date, { weekday: 'long' });
+      return entry.leftover_from.cook_ahead ? 'Made ahead ' + when + '.' : 'Leftovers from ' + when + '.';
+    }
+    // A reheat with no chain to point at ("leftovers", written in words)
+    // already says so in the dish name; a line saying it again is fluff.
+    return '';
+  }
+
+  function mealHeroHtml(day, slot, entry, clock) {
+    var weekday = dayName(day.date, { weekday: 'long' });
+    var chips = [];
+    if (clock.isCook && clock.start !== null) chips.push('Start at ' + clockLabel(clock.start));
+    var cook = clock.isCook ? mealCookName() : '';
+    if (cook) chips.push(cook + '’s cooking');
+    var line = mealHeroLine(entry);
+    return '<div class="dinner-hero wk-meal-hero">' +
+      '<div class="hero-top">' +
+        '<span class="hero-eyebrow">' + escapeHtml(slotEyebrowLabel(day, slot) + ' · ' + weekday) + '</span>' +
+        '<span class="hero-rule"></span>' +
+        (clock.table !== null
+          ? '<span class="wk-meal-by">On the table by ' + escapeHtml(spokenTime(clock.table)) + '</span>'
           : '') +
       '</div>' +
+      '<div class="hero-dish wk-meal-dish' + dishSizeClass(mealDisplayName(entry)) + '">' + escapeHtml(mealDisplayName(entry)) + '</div>' +
+      (chips.length
+        ? '<div class="hero-chips">' + chips.map(function (c) {
+            return '<span class="hero-chip">' + escapeHtml(c) + '</span>';
+          }).join('') + '</div>'
+        : '') +
+      (line ? '<p class="hero-accent wk-meal-line">' + escapeHtml(line) + '</p>' : '') +
+    '</div>';
+  }
+
+  // One stop. The first ("Everything out") is a button: its line is the
+  // names, and a tap opens the amounts in a person's units (humanQtyText
+  // by way of cookIngredientLabel — the same words cook mode's own
+  // ticklist uses).
+  function mealStopHtml(stop, i, cookMeal) {
+    var first = i === 0;
+    var time = stop.time
+      ? '<span class="wk-stop-time">' + escapeHtml(stop.time) + '</span>'
+      : '<span class="wk-stop-time is-blank"></span>';
+    var spine = '<span class="wk-stop-spine" aria-hidden="true"><span class="wk-stop-dot"></span></span>';
+    if (stop.kind === 'out') {
+      var ings = (cookMeal && cookMeal.ingredients) || [];
+      return '<li class="wk-stop is-first is-out">' + time + spine +
+        '<button type="button" class="wk-stop-body wk-stop-toggle" data-wk-stop-toggle aria-expanded="false" ' +
+          'aria-label="' + escapeHtml(stop.title + ' — show the amounts') + '">' +
+          '<span class="wk-stop-title">' + escapeHtml(stop.title) + GRO_ICONS.chevRight + '</span>' +
+          '<span class="wk-stop-line">' + escapeHtml(stop.line) + '</span>' +
+          '<ul class="wk-stop-amounts" hidden>' +
+            ings.map(function (ing) { return '<li>' + escapeHtml(cookIngredientLabel(ing)) + '</li>'; }).join('') +
+          '</ul>' +
+        '</button>' +
+      '</li>';
+    }
+    return '<li class="wk-stop' + (first ? ' is-first' : '') + '">' + time + spine +
+      '<div class="wk-stop-body">' +
+        '<span class="wk-stop-title">' + escapeHtml(stop.title) + '</span>' +
+        (stop.line ? '<span class="wk-stop-line">' + escapeHtml(stop.line) + '</span>' : '') +
+      '</div>' +
+    '</li>';
+  }
+
+  // The clock under the hero: one eyebrow, then the stops. Nothing for a
+  // reheat night (no cook in it) or while the cooker view is still on its
+  // way; a dish with no saved recipe says so, in the words cook mode
+  // uses — except a grab-and-go snack, where "no saved recipe" is not
+  // information (2026-09-10: "Apple slices" is not a recipe somebody
+  // forgot to write).
+  function mealClockHtml(slot, clock) {
+    if (!clock.isCook) return '';
+    var cookMeal = clock.cookMeal;
+    if (!cookMeal.has_full_recipe && !clock.stops.length) {
+      if (isSnackSlot(slot)) return '';
+      return '<div class="wk-clock"><p class="cook-norecipe">No saved recipe for this one — ask me for it in the chat.</p></div>';
+    }
+    if (!clock.stops.length) {
+      return '<div class="wk-clock"><p class="cook-norecipe">No steps saved yet — ask me for the recipe in the chat.</p></div>';
+    }
+    return '<div class="wk-clock">' +
+      '<div class="wk-clock-eyebrow">' + escapeHtml(mealClockEyebrow(clock.stops, clock.total)) + '</div>' +
+      '<ol class="wk-stops">' +
+        clock.stops.map(function (s, i) { return mealStopHtml(s, i, cookMeal); }).join('') +
+      '</ol>' +
+    '</div>';
+  }
+
+  function mealStepHtml(day, slot) {
+    var entry = daySlotEntry(day, slot);
+    var cookMeal = cookMealForEntry(entry.entry_id);
+    var clock = mealClockFor(day, slot, entry, cookMeal);
+    var aheadHtml = cookMeal ? cookAheadHtml(cookMeal) : '';
+    return '<button type="button" class="crumb" data-wk-back="day">‹ ' +
+        escapeHtml(dayName(day.date, { weekday: 'long' })) + '</button>' +
+      mealHeroHtml(day, slot, entry, clock) +
       '<div class="wk-meal-body">' +
-      // A real meal always carries at least a food-group read, so this only
-      // ever actually hides the card for a grab-and-go snack — the plate
-      // card stays exactly as it was for breakfast/lunch/dinner.
-      ((isSnackSlot(slot) && plateCardIsEmpty(entry)) ? '' : plateCardHtml(entry)) +
-      // The recipe itself. Emily, 2026-09-09: tapping a dish should bring
-      // you to the screen with the recipe on it — and inside Meals the
-      // dish's screen is this one, so the recipe belongs here rather than
-      // two taps further on. The panel is the cook screen's own
-      // (cookDetailHtml), rendered `plain`: same words, same order, no
-      // working controls. cookAheadHtml is reused from that screen in
-      // exactly the same way, and for the same reason.
-      mealRecipeCardHtml(cookMeal, slot) +
-      (aheadHtml ? '<div class="shell-card wk-card">' + aheadHtml + '</div>' : '') +
+        mealClockHtml(slot, clock) +
+        // The cook-ahead picker stays — it is a real decision about other
+        // nights (which ones this batch covers) with nowhere else to live
+        // on Plan, borrowed whole from the cook screen as before.
+        (aheadHtml ? '<div class="shell-card wk-card">' + aheadHtml + '</div>' : '') +
       '</div>' +
       // The screen's one apricot primary (Rule 5), in the dock like every
-      // other screen's (nav v2 rule 2) — the Day step's own segments are
-      // quiet for exactly this reason.
-      mealDockHtml(day, slot);
+      // other screen's (nav v2 rule 2).
+      mealDockHtml(day, slot, clock);
   }
 
-  // The Meal step's actions, docked. Empty (no dock) when the slot has
-  // nothing to do — a past day, an away night.
-  function mealDockHtml(day, slot) {
-    var acts = slotActionsHtml(day, slot, true);
-    if (!acts) return '';
-    return '<div class="wk-decide dock wk-meal-dock">' + acts + '</div>';
-  }
-
-  // Nothing at all when the Cook view has no card for this entry: either
-  // it hasn't loaded yet (ensureCookDataForMeals re-renders when it does)
-  // or this slot is a reheat night, which is a line and never a way into a
-  // recipe — the rule Kitchen's own rows already follow. A card that IS
-  // here with no saved recipe still renders, because cookDetailHtml says
-  // so plainly ("Freeform meal — no saved recipe detail"), and a name that
-  // says nothing is what this ticket exists to fix.
-  function mealRecipeCardHtml(cookMeal, slot) {
-    if (!cookMeal || cookMeal.is_leftovers) return '';
-    // ...and nothing for a grab-and-go snack with no recipe behind it
-    // either (2026-09-10). "Apple slices" is not a freeform meal somebody
-    // forgot to write up, so a card whose whole content is "no saved
-    // recipe detail" is an empty card — exactly what this screen already
-    // takes the plate card away for on the same slot. A breakfast, lunch
-    // or dinner with no recipe keeps the line: there, the absence is worth
-    // saying, and it names the way to fill it in.
-    if (isSnackSlot(slot || '') && !cookMeal.has_full_recipe) return '';
-    return '<div class="shell-card wk-card wk-recipe-card">' +
-      '<div class="wk-card-title">The recipe</div>' +
-      cookDetailHtml(cookMeal, 'meal', false, true) +
+  // The Meal step's dock: "Start at 6:00" (the clock's own start), "Start
+  // cooking" when there is no time to name, "Keep cooking" once a cook is
+  // under way — all the same door into cook mode (data-wk-cook, through
+  // openRecipeFor) that "Cook this" was — with "Swap this meal" as the
+  // quiet link into the swap-in-place flow. A reheat night or a grab-and-go
+  // snack keeps "Mark eaten". Empty (no dock) when the slot has nothing to
+  // do — a past day, an away night.
+  function mealDockHtml(day, slot, clock) {
+    var entry = daySlotEntry(day, slot);
+    if (!entry || entry.state !== 'planned' || day.isPast) return '';
+    var eaten = entry.source === 'leftovers' || (isSnackSlot(slot) && !isRealCook(entry));
+    var label;
+    if (eaten) label = REHEAT_ACTION_LABEL;
+    else if (clock && mealCookUnderway(clock.cookMeal)) label = 'Keep cooking';
+    else if (clock && clock.start !== null) label = 'Start at ' + clockLabel(clock.start);
+    else label = 'Start cooking';
+    return '<div class="wk-decide dock wk-meal-dock">' +
+      '<div class="dock-row">' +
+        '<button type="button" class="dock-primary" data-wk-cook="' + slot + '">' +
+          escapeHtml(label) + '</button>' +
+        '<button type="button" class="dock-link wk-act-swap" data-wk-swap="' + slot + '">Swap this meal</button>' +
+      '</div>' +
+      // The swap line only once there is something on it — the call going
+      // out, the reason and its Undo. Its idle state ("Tell me what
+      // instead") stays on the Day step's cards; here the dock is the one
+      // action and its one quiet link, and the chat is a tap away anyway.
+      (swapStateFor(day.date, slot) ? swapLineHtml(day, slot) : '') +
     '</div>';
   }
 
@@ -9830,9 +10702,11 @@
     biweekly: 'Every two weeks',
     monthly: 'Every month',
     quarterly: 'Every few months',
+    semiannual: 'Twice a year',
+    yearly: 'Once a year',
     once: 'Just once'
   };
-  var CHORE_RHYTHM_ORDER = ['daily', 'weekly', 'biweekly', 'monthly', 'quarterly', 'once'];
+  var CHORE_RHYTHM_ORDER = ['daily', 'weekly', 'biweekly', 'monthly', 'quarterly', 'semiannual', 'yearly', 'once'];
 
   // The band on the Chores state: the same frame as Meals — the week's
   // dates and "This week" — minus the meal plan's chip and line, which
@@ -10230,6 +11104,7 @@
     if (weekState.step === 'meal') {
       steps.innerHTML = mealStepHtml(day, weekState.mealSlot);
       ensureCookDataForMeals(panel);
+      ensureRhythmForMeals(panel);
     } else if (weekState.step === 'day') {
       steps.innerHTML = dayStepHtml(day);
     } else if (weekState.step === 'review') {
@@ -10266,6 +11141,17 @@
     steps.querySelectorAll('[data-wk-meal]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         goMealsStep('meal', { slot: btn.getAttribute('data-wk-meal') });
+      });
+    });
+    // "Everything out" opens to the amounts, in a person's units, and
+    // closes again — a read, never a write, so it stays on this screen.
+    steps.querySelectorAll('[data-wk-stop-toggle]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var open = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+        var list = btn.querySelector('.wk-stop-amounts');
+        if (list) list.hidden = open;
+        btn.classList.toggle('is-open', !open);
       });
     });
     steps.querySelectorAll('[data-wk-cook]').forEach(function (btn) {
@@ -10308,14 +11194,23 @@
         runSwapUndo(panel, day, btn.getAttribute('data-wk-undo'));
       });
     });
-    // The wordier way, kept: the same sentence Swap used to send, opening
-    // the same sheet the same way. openAskSheet itself is untouched.
+    // The wordier way, kept — and since 2026-09-13 it opens chat ABOUT this
+    // meal rather than with a sentence to edit. Emily tapped it beside the
+    // Tuesday burgers, deleted "Swap Tuesday's dinner for something else",
+    // typed what she actually wanted, and chat had no idea which meal she
+    // meant. The composer is empty now, the meal rides along as the turn's
+    // subject (askContext, sent with every message while the chip shows),
+    // and a plain "make it beef, not turkey" is enough. The old sentence is
+    // kept only for a slot with no real meal to be about.
     steps.querySelectorAll('[data-wk-tell]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var day = mealsCurrentDay();
         if (!day) return;
-        openAskSheet('Swap ' + dayName(day.date, { weekday: 'long' }) + '’s ' +
-          btn.getAttribute('data-wk-tell') + ' for something else');
+        var slot = btn.getAttribute('data-wk-tell');
+        var context = mealAskContext(day, slot);
+        if (context) openAskSheet('', context);
+        else openAskSheet('Swap ' + dayName(day.date, { weekday: 'long' }) + '’s ' +
+          slotWord(slot) + ' for something else');
       });
     });
     steps.querySelectorAll('[data-wk-ask]').forEach(function (btn) {
@@ -10379,11 +11274,10 @@
     });
     var next = steps.querySelector('#wk-plan-next');
     if (next) next.addEventListener('click', function () {
-      var dayCount = (weekState.data && weekState.data.day_count) ||
-        (planningPeriodDefault && planningPeriodDefault.day_count) || 7;
-      var start = (weekState.data && (weekState.data.period_start_date || weekState.data.week_start_date)) ||
-        (planningPeriodDefault && planningPeriodDefault.start_date) || thisWeekStartLocal();
-      startPlanningWeek(addDaysLocal(start, dayCount), dayCount);
+      // The same span the link's label was built from (weekStepHtml), so
+      // what it says and what it opens can't drift apart.
+      var period = nextPeriodFor(weekState.data || {}, (weekState.data || {}).days);
+      startPlanningWeek(period.start_date, period.day_count);
     });
     var more = steps.querySelector('#wk-more');
     if (more) more.addEventListener('click', function () { openMealsMoreSheet(); });
@@ -10400,14 +11294,8 @@
         renderMealsStep(panel);
       });
     });
-    steps.querySelectorAll('[data-rv-day]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var date = btn.getAttribute('data-rv-day');
-        if (reviewState.openDays[date]) delete reviewState.openDays[date];
-        else reviewState.openDays[date] = true;
-        renderMealsStep(panel);
-      });
-    });
+    // The Which days tiles: drag and keyboard moves (wireReviewTiles).
+    wireReviewTiles(panel, steps);
     steps.querySelectorAll('[data-rv-open]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         goMealsStep('day', { dayIndex: Number(btn.getAttribute('data-rv-open')) });
@@ -10601,6 +11489,264 @@
       console.warn('Undo failed:', err);
       swapState = { date: day.date, slot: slot, avoid: [], message: SWAP_TROUBLE };
       renderMealsStep(panel);
+    }
+  }
+
+  // ---------- Which days: moving a night ----------
+  // Drag a tile onto another and the two nights' DINNERS trade places.
+  // Pointer events, one implementation for mouse and touch: a mouse lifts
+  // on press, a finger lifts after a 250ms hold (a quick swipe on the
+  // handle is not a move). The lifted tile follows the finger; the night
+  // under it slides into the lifted night's home — a swap previewed as a
+  // swap, so only the two trade and nothing in between moves. Motion is
+  // the tab crossfade's own tokens (shell.css .rv-tile), no new kind.
+  //
+  // Optimistic, per §6: the tiles trade on the drop, then the server is
+  // told. A refusal or a failure puts them back and says so, calmly; a
+  // success offers Undo in the toast for the same eight seconds the
+  // in-place swap does. One move at a time (reviewState.nightMove), for
+  // the reason swapState is one at a time: a person is moving one night.
+  var RV_LIFT_MS = 250;
+  var RV_LIFT_SLOP = 8;
+
+  // The live region is in shell.html, outside #week-steps — a region
+  // re-rendered with the tiles would be replaced before it was read.
+  function reviewTileAnnounce(text) {
+    var live = document.getElementById('rv-tiles-live');
+    if (live) live.textContent = text || '';
+  }
+
+  function wireReviewTiles(panel, steps) {
+    var list = steps.querySelector('.rv-tiles');
+    if (!list) return;
+    list.querySelectorAll('[data-rv-tile]').forEach(function (tile) {
+      var handle = tile.querySelector('[data-rv-handle]');
+      if (!handle) return;
+      handle.addEventListener('pointerdown', function (e) {
+        reviewTilePointerDown(panel, list, tile, handle, e);
+      });
+      handle.addEventListener('keydown', function (e) {
+        reviewTileKeydown(panel, list, tile, e);
+      });
+    });
+    // After a keyboard move the focus follows the dish to its new night,
+    // so the next arrow press keeps moving the same dinner. Re-applied on
+    // every render while the move is settling (the optimistic one, the
+    // server's, then loadWeekMenu's) — runSwapNights clears it at the end.
+    if (reviewState.focusHandle) {
+      var next = list.querySelector('[data-rv-handle="' + reviewState.focusHandle + '"]');
+      if (next && document.activeElement !== next) next.focus();
+    }
+  }
+
+  function reviewTilePointerDown(panel, list, tile, handle, e) {
+    if (reviewState.nightMove) return;
+    if (e.button !== undefined && e.button !== 0) return;
+    var drag = {
+      startY: e.clientY, pointerId: e.pointerId, lifted: false, timer: null, target: null,
+      rects: [], home: null
+    };
+    try { handle.setPointerCapture(e.pointerId); } catch (err) { /* not every pointer can be captured */ }
+
+    function lift() {
+      drag.lifted = true;
+      tile.classList.add('is-lifted');
+      list.classList.add('is-moving');
+      drag.home = { top: tile.offsetTop, height: tile.offsetHeight };
+      drag.rects = Array.prototype.slice.call(list.querySelectorAll('[data-rv-tile]'))
+        .filter(function (t) { return t !== tile; })
+        .map(function (t) {
+          return { el: t, top: t.offsetTop, height: t.offsetHeight, ok: !!t.querySelector('[data-rv-handle]') };
+        });
+    }
+    function onMove(ev) {
+      var dy = ev.clientY - drag.startY;
+      if (!drag.lifted) {
+        // Moved before the hold finished: a scroll or a slip, not a lift.
+        if (drag.timer && Math.abs(dy) > RV_LIFT_SLOP) cleanup();
+        return;
+      }
+      ev.preventDefault();
+      tile.style.transform = 'translateY(' + dy + 'px)';
+      var centre = drag.home.top + drag.home.height / 2 + dy;
+      var over = null;
+      drag.rects.forEach(function (r) {
+        if (r.ok && centre >= r.top && centre < r.top + r.height) over = r;
+      });
+      if (over !== drag.target) {
+        if (drag.target) drag.target.el.style.transform = '';
+        drag.target = over;
+        if (over) over.el.style.transform = 'translateY(' + (drag.home.top - over.top) + 'px)';
+      }
+    }
+    function settle() {
+      tile.style.transform = '';
+      tile.classList.remove('is-lifted');
+      list.classList.remove('is-moving');
+      if (drag.target) drag.target.el.style.transform = '';
+    }
+    function cleanup() {
+      if (drag.timer) { clearTimeout(drag.timer); drag.timer = null; }
+      handle.removeEventListener('pointermove', onMove);
+      handle.removeEventListener('pointerup', onUp);
+      handle.removeEventListener('pointercancel', onCancel);
+      try { handle.releasePointerCapture(drag.pointerId); } catch (err) { /* already released */ }
+    }
+    function onUp() {
+      cleanup();
+      if (!drag.lifted) return;
+      var target = drag.target;
+      settle();
+      if (target) runSwapNights(panel, tile.getAttribute('data-rv-tile'), target.el.getAttribute('data-rv-tile'));
+    }
+    function onCancel() {
+      cleanup();
+      if (drag.lifted) settle();
+    }
+    handle.addEventListener('pointermove', onMove);
+    handle.addEventListener('pointerup', onUp);
+    handle.addEventListener('pointercancel', onCancel);
+    if (e.pointerType === 'touch') {
+      drag.timer = setTimeout(function () { drag.timer = null; lift(); }, RV_LIFT_MS);
+    } else {
+      lift();
+    }
+  }
+
+  // ArrowUp / ArrowDown trade this night's dinner with the one above or
+  // below. Said out loud through the live region once the server answers
+  // (runSwapNights), and the focus follows the dish (wireReviewTiles).
+  function reviewTileKeydown(panel, list, tile, e) {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    e.preventDefault();
+    if (reviewState.nightMove) return;
+    var tiles = Array.prototype.slice.call(list.querySelectorAll('[data-rv-tile]'));
+    var i = tiles.indexOf(tile);
+    var other = tiles[e.key === 'ArrowUp' ? i - 1 : i + 1];
+    if (!other) return;
+    if (!other.querySelector('[data-rv-handle]')) {
+      reviewTileAnnounce(dayName(other.getAttribute('data-rv-tile'), { weekday: 'long' }) + ' can’t take a dinner.');
+      return;
+    }
+    var from = tile.getAttribute('data-rv-tile'), to = other.getAttribute('data-rv-tile');
+    reviewState.focusHandle = to;
+    runSwapNights(panel, from, to, from);
+  }
+
+  function reviewDayByDate(date) {
+    return (weekState.days || []).filter(function (d) { return d.date === date; })[0] || null;
+  }
+
+  // The two nights trade dinners in the week the screen is holding — the
+  // optimistic half of the move, and its own undo when the server says
+  // no (a swap is its own inverse). classifyDay again, because whether a
+  // day has an open decision on it can change when its dinner does.
+  function reviewSwapDaysInState(dateA, dateB) {
+    var a = reviewDayByDate(dateA), b = reviewDayByDate(dateB);
+    if (!a || !b) return false;
+    var tmp = a.dinner; a.dinner = b.dinner; b.dinner = tmp;
+    var todayStr = todayLocalStr();
+    Object.assign(a, classifyDay(a, todayStr));
+    Object.assign(b, classifyDay(b, todayStr));
+    return true;
+  }
+
+  // "Bean Chili is on Friday now, and Chicken Traybake on Tuesday." —
+  // built from what the server says moved, so it never names a dish the
+  // move did not touch.
+  function reviewNightMoveSentence(out) {
+    var parts = (out.moved || []).filter(function (m) { return m.meal; }).map(function (m) {
+      return { meal: m.meal, day: dayName(m.to, { weekday: 'long' }) };
+    });
+    if (!parts.length) return 'Moved.';
+    var said = parts[0].meal + ' is on ' + parts[0].day + ' now';
+    if (parts[1]) said += ', and ' + parts[1].meal + ' on ' + parts[1].day;
+    return said + '.';
+  }
+
+  // `focusBack`: for a keyboard move, the night whose handle had focus —
+  // where focus returns if the move is refused or fails.
+  async function runSwapNights(panel, dateA, dateB, focusBack) {
+    var weekStart = weekStartForSwap();
+    if (!weekStart || !dateA || !dateB || dateA === dateB || reviewState.nightMove) return;
+    if (!reviewSwapDaysInState(dateA, dateB)) return;
+    reviewState.nightMove = { a: dateA, b: dateB };
+    renderMealsStep(panel);
+    function putBack() {
+      reviewState.nightMove = null;
+      reviewSwapDaysInState(dateA, dateB);
+      if (focusBack) reviewState.focusHandle = focusBack;
+      renderMealsStep(panel);
+      reviewState.focusHandle = null;
+    }
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-nights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date_a: dateA, date_b: dateB })
+      });
+      if (!res.ok) throw new Error('move failed (' + res.status + ')');
+      var out = await res.json();
+      reviewState.nightMove = null;
+      if (out.status !== 'swapped') {
+        // A 200 that says no — a night nobody is home, a dinner already
+        // cooked, a chain that would run backwards. The sentence is the
+        // server's, and the tiles go back where they were.
+        putBack();
+        reviewTileAnnounce(out.message || SWAP_TROUBLE);
+        showToast(out.message || SWAP_TROUBLE, null, 6000);
+        return;
+      }
+      (out.days || []).forEach(spliceSwappedDay);
+      renderMealsStep(panel);
+      var said = reviewNightMoveSentence(out);
+      reviewTileAnnounce(said);
+      showToast(said, {
+        label: 'Undo',
+        onClick: function () { return runSwapNightsUndo(panel, dateA, dateB); }
+      }, SWAP_UNDO_MS);
+      // Then the rest of the week, quietly — the badge, the receipt, and
+      // Kitchen's reading of the same nights. And Now: today's dinner may
+      // have just become a different one, and the moves read the plan by
+      // date. The grocery list is untouched, so nothing there to refresh.
+      await loadWeekMenu(panel);
+      reviewState.focusHandle = null;
+      refreshTodayMoves();
+    } catch (err) {
+      console.warn('Moving a night failed:', err);
+      putBack();
+      reviewTileAnnounce(SWAP_TROUBLE);
+      showToast(SWAP_TROUBLE);
+    }
+  }
+
+  async function runSwapNightsUndo(panel, dateA, dateB) {
+    var weekStart = weekStartForSwap();
+    if (!weekStart || reviewState.nightMove) return;
+    if (!reviewSwapDaysInState(dateA, dateB)) return;
+    reviewState.nightMove = { a: dateA, b: dateB };
+    renderMealsStep(panel);
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-nights-undo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date_a: dateA, date_b: dateB })
+      });
+      if (!res.ok) throw new Error('undo failed (' + res.status + ')');
+      var out = await res.json();
+      reviewState.nightMove = null;
+      (out.days || []).forEach(spliceSwappedDay);
+      renderMealsStep(panel);
+      reviewTileAnnounce('Put back.');
+      showToast('Put back.');
+      await loadWeekMenu(panel);
+      refreshTodayMoves();
+    } catch (err) {
+      console.warn('Undoing a night move failed:', err);
+      reviewState.nightMove = null;
+      reviewSwapDaysInState(dateA, dateB);
+      renderMealsStep(panel);
+      showToast(SWAP_TROUBLE);
     }
   }
 
@@ -10821,12 +11967,14 @@
   // that "Anything in the freezer?" expands in place — so the chips and the
   // two answers are what is left, and the question is the line above it
   // (Emily's approved design, 2026-09-08). Same id, so wireDefrostAskCard
-  // and submitDefrostAsk find it exactly as before.
-  function defrostAskCardHtml() {
+  // and submitDefrostAsk find it exactly as before. `open` is the caller's
+  // call: the root's receipt folds it behind "Ask", the All set screen
+  // never does (Emily, 2026-09-13 — see renderWeekReceipt).
+  function defrostAskCardHtml(open) {
     var items = defrostAskState.items || [];
     return (
       '<div class="wk-quick-body defrost-ask-card" id="defrost-ask-card"' +
-          (weekQuickOpen.defrost ? '' : ' hidden') + '>' +
+          (open ? '' : ' hidden') + '>' +
         '<div class="wk-quick-body-line">Tap what’s frozen and I’ll tell you when to move it to the fridge.</div>' +
         '<div class="defrost-ask-chips">' + items.map(defrostAskChipHtml).join('') + '</div>' +
         '<div class="ny-actions">' +
@@ -10901,6 +12049,7 @@
       // answer, but a re-ask can offer the same items again.
       defrostAskState.items = null;
       defrostAskState.selected = {};
+      setWeekQuickDone(data.weekly_plan_id, 'defrost', defrostDoneLine(items, body.created || [], body.notes || []));
       var notes = (body.notes || []).map(function (n) { return n.note; });
       if (notes.length) {
         // Calm and plain (DESIGN_SYSTEM §8) — the note already IS the fact
@@ -10931,7 +12080,13 @@
     // been sent away with "See the week" this session), expand this line,
     // and come back out to the ROOT, since the band above the week card is
     // hidden on the Day and Meal steps (renderMealsStep).
-    if (weekState.data) setWeekReceiptDismissed(weekState.data.weekly_plan_id, false);
+    if (weekState.data) {
+      setWeekReceiptDismissed(weekState.data.weekly_plan_id, false);
+      // A re-ask is the question again, not its old answer: drop the
+      // confirmation line, or it would stand in for the ask while the
+      // items are refetched (found by the 2026-09-13 verifier).
+      setWeekQuickDone(weekState.data.weekly_plan_id, 'defrost', '');
+    }
     weekQuickOpen.defrost = true;
     weekState.step = 'week';
     activateTab('week', true);
@@ -10959,7 +12114,14 @@
     return picks;
   }
 
-  function cookAheadAskBlockHtml(item) {
+  // `named` is whether the block needs its own sentence: with one repeated
+  // dish the line above the body already IS that sentence
+  // (cookAheadAskQuestion), and Emily's 2026-09-13 screenshot showed the
+  // two stacked — "Roasted Chickpeas on 2 nights. Cook ahead?" over
+  // "Roasted Chickpeas is on 2 nights. Cook ahead?" — so a lone block says
+  // it once. Two or more dishes share a heading ("Cook anything ahead?")
+  // and each block still names its own.
+  function cookAheadAskBlockHtml(item, named) {
     var later = item.later || [];
     var picks = cookAheadAskPicks(item);
     var ticked = later.filter(function (d) { return !!picks[d.entry_id]; });
@@ -10972,9 +12134,11 @@
     if (eaters) ticked.forEach(function (d) { eaters += d.eaters || 0; });
     var total = later.length + 1;
     return '<div class="ca-ask-block">' +
-      '<div class="ca-ask-line">' +
-        escapeHtml(item.dish + ' is on ' + total + ' ' + cookSlotWord(item.slot, total) + '. Cook ahead?') +
-      '</div>' +
+      (named
+        ? '<div class="ca-ask-line">' +
+            escapeHtml(item.dish + ' is on ' + total + ' ' + cookSlotWord(item.slot, total) + '. Cook ahead?') +
+          '</div>'
+        : '') +
       '<div class="ca-ask-days">' +
         later.map(function (d) {
           var on = !!picks[d.entry_id];
@@ -10993,13 +12157,13 @@
   // answers, expanded in place by the "… Cook ahead?" line rather than
   // stacked as a second full card under the receipt. Same id, so
   // wireCookAheadAskCard and submitCookAheadAsk are untouched.
-  function cookAheadAskCardHtml() {
+  function cookAheadAskCardHtml(open) {
     var items = cookAheadAskState.items || [];
     return (
       '<div class="wk-quick-body cook-ahead-ask-card" id="cook-ahead-ask-card"' +
-          (weekQuickOpen.cookAhead ? '' : ' hidden') + '>' +
+          (open ? '' : ' hidden') + '>' +
         '<div class="wk-quick-body-line">Tick the days a batch should cover and they become one cook.</div>' +
-        items.map(cookAheadAskBlockHtml).join('') +
+        items.map(function (item) { return cookAheadAskBlockHtml(item, items.length > 1); }).join('') +
         // One answer for the whole ask, and no second apricot: the receipt
         // above already spent this screen's one apricot primary on "Open
         // the list" (Rule 5), and .ny-actions .btn-gold is spruce here for
@@ -11083,10 +12247,12 @@
       });
       if (!res.ok) throw new Error('cook-ahead confirm failed');
       var body = await res.json();
-      cookAheadAskState.items = null;
-      cookAheadAskState.picks = {};
       var refused = (body.refused || []);
       var applied = (body.applied || []);
+      setWeekQuickDone(data.weekly_plan_id, 'cookAhead',
+        cookAheadDoneLine(cookAheadAskState.items || [], applied, refused));
+      cookAheadAskState.items = null;
+      cookAheadAskState.picks = {};
       if (refused.length) {
         // The refusal already IS the fact plus its way out (see
         // set_cook_ahead), so it's shown as-is and held long enough to read.
@@ -11115,7 +12281,10 @@
     // Same three things as openDefrostAskFromCook just above: un-dismiss
     // the receipt this line lives in, expand the line, and come back out to
     // the ROOT, where the band above the week card is shown.
-    if (weekState.data) setWeekReceiptDismissed(weekState.data.weekly_plan_id, false);
+    if (weekState.data) {
+      setWeekReceiptDismissed(weekState.data.weekly_plan_id, false);
+      setWeekQuickDone(weekState.data.weekly_plan_id, 'cookAhead', ''); // same as openDefrostAskFromCook
+    }
     weekQuickOpen.cookAhead = true;
     weekState.step = 'week';
     activateTab('week', true);
@@ -11251,8 +12420,67 @@
   // Which of the two asks is expanded, page-view only. Held outside the
   // render because the cook-ahead chips re-render this whole row on every
   // tap (the count line under them has to change with the chip), and a
-  // question that collapsed under your thumb would be unusable.
+  // question that collapsed under your thumb would be unusable. Only the
+  // root's receipt card reads this: on the All set screen both asks are
+  // always open (Emily, 2026-09-13: "not a subtle piece to skip").
   var weekQuickOpen = { defrost: false, cookAhead: false };
+
+  // What each ask was answered with, as the one line it collapses to
+  // ("Chicken breast: move to the fridge Monday night"). Page-view only,
+  // like weekQuickOpen: the server already knows the answer (it is a prep
+  // task, a cook-ahead chain), this is just the screen keeping its word
+  // that the tap landed. Keyed to the plan so a re-plan starts clean.
+  var weekQuickDone = { planId: null, defrost: '', cookAhead: '' };
+
+  function setWeekQuickDone(planId, key, line) {
+    if (weekQuickDone.planId !== planId) weekQuickDone = { planId: planId, defrost: '', cookAhead: '' };
+    weekQuickDone[key] = line || '';
+  }
+
+  // "Chicken breast: move to the fridge Monday night · Salmon: Wednesday
+  // night" — one clause per move the server actually booked (its `created`
+  // rows carry the task date), in the voice's own "the night before" frame.
+  // "None — all fresh" is a real answer too, and says so.
+  function defrostDoneLine(chosen, created, notes) {
+    if (!chosen.length) return 'Nothing in the freezer — all fresh.';
+    if (!created.length) {
+      // Every tapped item was for a meal happening today; the note itself
+      // (already shown as a toast) says what to do instead.
+      return notes.length ? 'Freezer: too late to thaw for tonight.' : 'Freezer: nothing to move this week.';
+    }
+    // One clause per item, its move nights together ("Chicken breast: move
+    // to the fridge Monday night and Thursday night") — created is one row
+    // per (item, cook night), so an item feeding two nights comes twice.
+    var order = [], nights = {};
+    created.forEach(function (c) {
+      if (!nights[c.item]) { nights[c.item] = []; order.push(c.item); }
+      var when = dayName(c.task_date, { weekday: 'long' }) + ' night';
+      if (nights[c.item].indexOf(when) < 0) nights[c.item].push(when);
+    });
+    return order.map(function (item, i) {
+      return item + ': ' + (i === 0 ? 'move to the fridge ' : '') + nights[item].join(' and ');
+    }).join(' · ');
+  }
+
+  // "Roasted Chickpeas: one batch Tuesday covers Thursday" — read back from
+  // the items the card was drawn with (they still hold the dish names and
+  // days) and the server's `applied` list (which chains it actually wrote).
+  function cookAheadDoneLine(items, applied, refused) {
+    if (!applied.length) {
+      return refused.length ? 'Cook ahead: not this time — see the note.' : 'Cooking each on its own.';
+    }
+    var byId = {};
+    items.forEach(function (item) { byId[item.first.entry_id] = item; });
+    return applied.map(function (a) {
+      var item = byId[a.source_entry_id];
+      if (!item) return '';
+      var days = (item.later || [])
+        .filter(function (d) { return (a.covered_entry_ids || []).indexOf(d.entry_id) >= 0; })
+        .map(function (d) { return dayName(d.date, { weekday: 'long' }); });
+      return item.dish + ': one batch ' + dayName(item.first.date, { weekday: 'long' }) +
+        ' covers ' + days.join(' and ');
+    }).filter(Boolean).join(' · ');
+  }
 
   function spellSmallNumber(n) {
     var words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven',
@@ -11263,8 +12491,19 @@
   // One ask, folded to a line: the question, what it is about, and "Ask".
   // The ask's own UI is still exactly the one it always had — it is just
   // hidden until this line is tapped, rather than being a card of its own.
+  // On the All set screen (`line.fixed`) there is nothing to fold: the
+  // question is a heading, its chips and answers sit right under it, and
+  // the summary line goes — the chips it summarised are already showing.
   function weekQuickLineHtml(line) {
     var open = !!line.open;
+    if (line.fixed) {
+      return '<div class="wk-quick-line">' +
+        '<div class="wk-quick-head is-fixed">' +
+          '<span class="wk-quick-text"><span class="wk-quick-q">' + escapeHtml(line.q) + '</span></span>' +
+        '</div>' +
+        line.body +
+      '</div>';
+    }
     return '<div class="wk-quick-line">' +
       '<button type="button" class="wk-quick-head" data-quick="' + line.key + '" ' +
           'aria-expanded="' + open + '">' +
@@ -11275,6 +12514,16 @@
         '<span class="wk-quick-ask">' + (open ? 'Close' : 'Ask') + '</span>' +
       '</button>' +
       line.body +
+    '</div>';
+  }
+
+  // An answered ask, folded to its confirmation: a celadon tick and the
+  // one line the answer comes to. Takes the question's place in the card
+  // so the step reads as done rather than as gone.
+  function weekQuickDoneHtml(text) {
+    return '<div class="wk-quick-line wk-quick-done">' +
+      '<span class="wk-quick-done-tick">' + TICK_ICON + '</span>' +
+      '<span class="wk-quick-done-text">' + escapeHtml(text) + '</span>' +
     '</div>';
   }
 
@@ -11293,7 +12542,7 @@
         // render — the first pass often just starts the fetch, and the
         // re-render it triggers must still see the override.
         defrostAskState.forceShow = false;
-        if (defrostAskState.items.length) defrostHtml = defrostAskCardHtml();
+        if (defrostAskState.items.length) defrostHtml = defrostAskCardHtml(asksOnly || weekQuickOpen.defrost);
       } else {
         ensureDefrostAskItems(panel, data); // re-renders this row once it resolves
       }
@@ -11303,26 +12552,42 @@
     if (!data.cook_ahead_asked_at || forceCookAheadShow) {
       if (cookAheadAskState.planId === data.weekly_plan_id && cookAheadAskState.items !== null) {
         cookAheadAskState.forceShow = false;
-        if (cookAheadAskState.items.length) cookAheadAskHtml = cookAheadAskCardHtml();
+        if (cookAheadAskState.items.length) cookAheadAskHtml = cookAheadAskCardHtml(asksOnly || weekQuickOpen.cookAhead);
       } else {
         ensureCookAheadAskItems(panel, data); // re-renders this row once it resolves
       }
     }
 
+    // On the All set screen each ask is a step, not a footnote (Emily,
+    // 2026-09-13: "something they should be able to give a quick response
+    // to"): open from the start, so the freezer check is one tap ("None —
+    // all fresh") or two (a chip, then "Add to the schedule"), and skipping
+    // is the deliberate tap on the dock rather than the default of never
+    // noticing. The root's receipt keeps the fold — there the week card is
+    // the point and the asks are its footnote.
+    // An ask already answered this page view collapses to its one-line
+    // confirmation, in the place the question had — only where the live
+    // ask is not showing (the Cook view's re-ask forces it back open, and
+    // then the question wins).
+    var answered = weekQuickDone.planId === data.weekly_plan_id ? weekQuickDone : {};
     var lines = [];
     if (defrostHtml) {
       lines.push({
-        key: 'defrost', open: weekQuickOpen.defrost, body: defrostHtml,
+        key: 'defrost', open: asksOnly || weekQuickOpen.defrost, fixed: asksOnly, body: defrostHtml,
         q: 'Anything in the freezer?',
         sub: defrostAskSummary()
       });
+    } else if (answered.defrost) {
+      lines.push({ done: answered.defrost });
     }
     if (cookAheadAskHtml) {
       lines.push({
-        key: 'cookAhead', open: weekQuickOpen.cookAhead, body: cookAheadAskHtml,
+        key: 'cookAhead', open: asksOnly || weekQuickOpen.cookAhead, fixed: asksOnly, body: cookAheadAskHtml,
         q: cookAheadAskQuestion(),
         sub: cookAheadAskSummary()
       });
+    } else if (answered.cookAhead) {
+      lines.push({ done: answered.cookAhead });
     }
 
     var receipt = data.receipt || {};
@@ -11340,12 +12605,18 @@
           '<button type="button" class="week-receipt-see" id="week-receipt-see">See the week</button>' +
         '</div>' +
       '</div>') +
+      // The heading counts the questions asked, answered ones included, so
+      // it does not change under a thumb that just answered the first.
+      // "Before you go", not "if you like" (Emily, 2026-09-13): still
+      // optional, no longer apologetic.
       (lines.length
         ? '<div class="shell-card wk-quick-card' + (asksOnly ? ' on-spruce' : '') + '">' +
             '<div class="wk-quick-title">' +
-              (lines.length === 1 ? 'One quick one, if you like' : 'Two quick ones, if you like') +
+              (lines.length === 1 ? 'One quick one before you go' : 'Two quick ones before you go') +
             '</div>' +
-            lines.map(weekQuickLineHtml).join('') +
+            lines.map(function (line) {
+              return line.done ? weekQuickDoneHtml(line.done) : weekQuickLineHtml(line);
+            }).join('') +
           '</div>'
         : '');
 
@@ -11367,16 +12638,20 @@
     });
     row.querySelector('#week-receipt-see').addEventListener('click', function () {
       setWeekReceiptDismissed(data.weekly_plan_id, true);
-      renderWeekApproval(panel, data);
-      if (scrollEl) scrollEl.scrollTop = 0;
+      // Straight to the seven tiles (Which days) — the week view since
+      // 2026-09-13 — rather than the root list under the receipt.
+      reviewState.view = 'days';
+      goMealsStep('review');
     });
   }
 
   // ---------- SET: the All set screen ----------
-  // Spruce, one tick, the receipt's own numbers, the two quick asks as
-  // lines, and one next step. Shown once, in the page view that approved
-  // the week (approveWeek sets weekState.step). Everything on it is the
-  // receipt card's data and the asks' own UI; only the screen is new.
+  // Spruce, one tick, the two quick asks open as a step of their own, then
+  // the receipt's own numbers, and one next step. Shown once, in the page
+  // view that approved the week (approveWeek sets weekState.step).
+  // Everything on it is the receipt card's data and the asks' own UI; only
+  // the screen is new. The asks sit ABOVE the counters (Emily, 2026-09-13):
+  // the numbers are a receipt, the questions are the one thing left to do.
   function allSetStepHtml(data, days) {
     var receipt = data.receipt || {};
     var nums = [];
@@ -11390,6 +12665,7 @@
       '<div class="wk-allset-tick">' + READY_CHECK + '</div>' +
       '<h1 class="wk-allset-title">All set.</h1>' +
       '<p class="wk-allset-line">' + escapeHtml(range) + ' is planned, and the list is built.</p>' +
+      '<div id="wk-allset-asks"></div>' +
       (nums.length
         ? '<div class="wk-allset-nums">' + nums.map(function (x) {
             return '<div class="wk-allset-num"><span class="wk-allset-n">' + escapeHtml(String(x.n)) + '</span>' +
@@ -11397,7 +12673,6 @@
           }).join('') + '</div>'
         : (receipt.title ? '<p class="wk-allset-line">' + escapeHtml(receipt.title) + '</p>' : '')) +
       (receipt.thaw_line ? '<p class="wk-allset-line is-quiet">' + escapeHtml(receipt.thaw_line) + '</p>' : '') +
-      '<div id="wk-allset-asks"></div>' +
       '<div class="dock wk-allset-dock">' +
         '<div class="dock-links"><button type="button" class="dock-link" id="wk-allset-see">See the week</button></div>' +
         '<button type="button" class="dock-primary" id="wk-allset-go">Open the list</button>' +
@@ -11424,7 +12699,10 @@
     var see = panel.querySelector('#wk-allset-see');
     if (see && !see.dataset.wired) {
       see.dataset.wired = '1';
-      see.addEventListener('click', function () { goMealsStep('week'); });
+      // "See the week" lands on the seven tiles (Which days), not the plain
+      // list — since 2026-09-13 the tiles ARE the week view (Emily's pick,
+      // Beyond lists · Week-A); the plain root list is the draft's home.
+      see.addEventListener('click', function () { reviewState.view = 'days'; goMealsStep('review'); });
     }
   }
 
@@ -11645,7 +12923,9 @@
     // "the 3 after", not "the 3 days after" — the dates line right under it
     // says which three, so the second "days" is a word that isn't earning
     // its place.
-    return verb + (which === 'current' ? 'the next ' + unit : 'the ' + dayCount + ' after');
+    // A one-day stretch (a next_period shortened to one day by a plan
+    // already holding the rest) is "the day after", not "the 1 after".
+    return verb + (which === 'current' ? 'the next ' + unit : 'the ' + (dayCount === 1 ? 'day' : dayCount) + ' after');
   }
 
   // The custom-range picker: ONE strip of days, inline in the card that
@@ -12337,8 +13617,8 @@
 
   // Entering cook mode on ONE meal. Every entry point comes through here
   // (activateTab's opts.cookFocus): Today's Next up card and its move
-  // lines, Meals' "Cook this", Grocery's shop-done handoff, and Kitchen's
-  // own "Cooking today" lines. `focusTarget` is `{entryId, date, slot,
+  // lines, Meals' "Cook this", Grocery's shop-done handoff, and Cook's
+  // own shelf tiles and dock. `focusTarget` is `{entryId, date, slot,
   // title}` when the caller knows the meal, or the legacy `true` for a
   // caller that only means "tonight, whatever that turns out to be" — a
   // generic flag with no meal identity, which is how this used to land on
@@ -12607,11 +13887,11 @@
     // ...and the one thing that overrides both, after the restore rather
     // than before it: someone was promised prep and sent here to see it
     // (the rating toast's "Show me tomorrow", with no cook to focus).
-    // Whichever section actually holds it — the loose "Prep to do" list if
-    // there is one, the prep sessions otherwise.
+    // The get-ready rows under the Tonight card (cookGetReadyRowsHtml)
+    // are where tomorrow's prep shows on the root.
     if (onRoot && kitchenState.scrollToPrep) {
       kitchenState.scrollToPrep = false;
-      var prepEl = rootView.querySelector('#kit-prep-todo') || rootView.querySelector('#kit-prep-sessions');
+      var prepEl = rootView.querySelector('#kit-get-ready');
       if (prepEl && prepEl.scrollIntoView) prepEl.scrollIntoView({ behavior: 'auto', block: 'start' });
     }
   }
@@ -12799,40 +14079,6 @@
     return null;
   }
 
-  function cookPrepSessionsHtml(data) {
-    var sessions = data.prep_sessions || [];
-    // No sessions, nothing here. The "Prep days" offer that used to stand
-    // in for them on a household that had never said its days left the
-    // root on 2026-09-11 (Emily's root-band decision): it is a setting,
-    // and Preferences already has a "Prep days" row (PREFS_ROWS) — a
-    // settings card on the cook's screen was the setting in two places.
-    if (!sessions.length) return '';
-    return '<section class="cook-section" id="kit-prep-sessions">' +
-      '<div class="cook-sectionhead">' +
-        '<span class="cook-eyebrow">Prep sessions</span>' +
-        '<span class="cook-rule"></span>' +
-      '</div>' +
-      '<div class="cook-week">' +
-        sessions.map(function (s) {
-          var allDone = s.items_total > 0 && s.items_done === s.items_total;
-          var line = [s.weekday + ' prep', cookMinutesLabel(s.total_minutes_estimate), cookCoversLabel(s.covers)]
-            .filter(Boolean).join(' · ');
-          return '<div class="cook-week-item' + (allDone ? ' is-done' : '') + '">' +
-            '<div class="cook-week-row">' +
-              '<span class="cook-week-day">' + escapeHtml(dayNameShort(s.date).toUpperCase()) + '</span>' +
-              '<button type="button" class="cook-week-name" data-cook="session" data-date="' + escapeHtml(s.date) + '">' +
-                escapeHtml(line) +
-              '</button>' +
-              '<span class="cook-badge' + (allDone ? '' : ' cook-badge-warm') + '">' +
-                s.items_done + ' of ' + s.items_total + ' done' +
-              '</span>' +
-            '</div>' +
-          '</div>';
-        }).join('') +
-      '</div>' +
-    '</section>';
-  }
-
   // The session's own screen: the same shape the focused cook screen takes
   // (one hero, a back link, then the list) because it is the same kind of
   // thing — one job on screen while your hands are busy. No apricot
@@ -12994,104 +14240,14 @@
   // with the overview on 2026-09-08. Nothing it showed is lost: a fridge
   // move or a prep task due today is a line on Today's timeline
   // (app/tools/moves.py), the rows that belong to a prep day are in that
-  // day's session (cookPrepSessionsHtml), and the ones that belong to the
+  // day's session (cookSessionHtml), and the ones that belong to the
   // meal you are cooking are on the focused screen (cookFocusPrepHtml,
   // which inherited this rail's done-count note and its hands-free mic).
 
-  // Everything that is not today, subordinate: one dense row each — "Tue ·
-  // Sesame Salmon Bowls · 25 min". Tapping a name opens the same focused
-  // screen today's lines do. Three rows, then "+ N more cooks", because
-  // this is the shape of the week ahead and not a second week screen: the
-  // Meals tab is where a week is read in full.
-  var KITCHEN_REST_VISIBLE = 3;
-
-  function cookRestOfWeekHtml(meals, data, todayIso, expanded) {
-    var rest = (meals || [])
-      .map(function (m, i) { return { m: m, i: i }; })
-      // The days AHEAD — "the rest of the week" is not a place a Monday
-      // that already happened belongs. A component-based plan carries a
-      // placeholder date (week_start, see get_weekly_plan) rather than a
-      // real day, so those are kept on their own terms rather than being
-      // filtered out as "past".
-      .filter(function (x) {
-        return !x.m.date || x.m.component_category || x.m.date > todayIso;
-      });
-    if (!rest.length) {
-      if ((meals || []).length) return '';
-      // Every dinner this period was deliberately marked away (cooker.py's
-      // all_away flag) — say that, rather than the generic "nothing
-      // planned" line, which would read as though the week was simply
-      // forgotten.
-      return data && data.all_away
-        ? '<p class="cook-empty">Nothing to cook this week — you’re away.</p>'
-        : '<p class="cook-empty">No meals on this plan yet.</p>';
-    }
-    // One line per DAY, not per meal (Emily, 2026-09-04: "the scrolling for
-    // the cook view is too long"; Build 8, 2026-09-11): three meals across
-    // seven days is 21 rows, and a list of 21 is the problem. Grouped in
-    // the plan's own order; a component plan (no dates) keeps its category
-    // as the "day".
-    var groups = [];
-    var byKey = {};
-    rest.forEach(function (x) {
-      var key = x.m.component_category || x.m.date || '';
-      if (!byKey[key]) { byKey[key] = { key: key, items: [] }; groups.push(byKey[key]); }
-      byKey[key].items.push(x);
-    });
-    var shown = expanded ? groups : groups.slice(0, KITCHEN_REST_VISIBLE);
-    var hidden = groups.slice(shown.length);
-    var moreLabel = '';
-    if (hidden.length) {
-      var first = hidden[0].items[0].m, last = hidden[hidden.length - 1].items[0].m;
-      moreLabel = first.date && last.date && !first.component_category
-        ? 'Show ' + dayNameShort(first.date) + (hidden.length > 1 ? '–' + dayNameShort(last.date) : '')
-        : 'Show ' + hidden.length + ' more';
-    }
-    return '<section class="cook-section">' +
-      '<div class="cook-sectionhead">' +
-        '<span class="cook-eyebrow">The rest of the week</span>' +
-        '<span class="cook-rule"></span>' +
-      '</div>' +
-      '<div class="cook-week">' +
-        shown.map(cookRestDayRowHtml).join('') +
-      '</div>' +
-      (hidden.length
-        ? '<button type="button" class="cook-empty-link cook-more-link" data-cook="rest-more">' + escapeHtml(moreLabel) + '</button>'
-        : '') +
-    '</section>';
-  }
-
-  // A day's line: the day, then its cooks by name (each a way into its
-  // recipe) with the time beside each, or "nothing to cook" when the day
-  // is all reheats. Ticking happens on the meal's own screen, not here —
-  // a row for a day has no one box to tick.
-  function cookRestDayRowHtml(group) {
-    var first = group.items[0].m;
-    var dayLabel = first.component_category
-      ? first.component_category
-      : (first.date ? dayName(first.date, { weekday: 'short' }).slice(0, 3).toUpperCase() : '');
-    var cooks = group.items.filter(function (x) { return !x.m.is_leftovers; });
-    var allDone = cooks.length && cooks.every(function (x) { return x.m.cooked_status === 'done'; });
-    var parts = cooks.map(function (x) {
-      var m = x.m;
-      var minutes = (m.prep_time_minutes || 0) + (m.cook_time_minutes || 0);
-      return '<button type="button" class="cook-week-name cook-day-dish" data-cook="focus" data-idx="' + x.i + '" data-at="steps">' +
-        escapeHtml(m.meal || '') + (minutes ? '<span class="cook-day-min"> · ' + minutes + ' min</span>' : '') +
-      '</button>';
-    });
-    var reheats = group.items.length - cooks.length;
-    return '<div class="cook-week-item cook-day-item' + (allDone ? ' is-done' : '') + '">' +
-      '<div class="cook-week-row cook-day-row">' +
-        '<span class="cook-week-day">' + escapeHtml(dayLabel) + '</span>' +
-        '<span class="cook-day-dishes">' +
-          (parts.length ? parts.join('') : '<span class="cook-week-name is-quiet">Nothing to cook</span>') +
-          (reheats ? '<span class="cook-day-min">' + reheats + (reheats === 1 ? ' reheat' : ' reheats') + '</span>' : '') +
-        '</span>' +
-      '</div>' +
-    '</div>';
-  }
-
-
+  // The rest of the week used to be a list here (cookRestOfWeekHtml, one
+  // line per day, three days then "Show Fri–Sun"). The shelf on the root
+  // is the week now (cookShelfHtml, 2026-09-13) — every night of the
+  // period, a tap into each.
 
   // ---------- What the recipe's own words say you'll need ----------
   // Nothing in this app records a recipe's EQUIPMENT: no column, no field
@@ -13555,7 +14711,7 @@
     var entryIds = meal.entry_ids || [meal.entry_id];
     var mealName = (meal.meal || '').trim().toLowerCase();
     return all.filter(function (t) {
-      // prep_cut rows belong to their prep session (cookPrepSessionsHtml),
+      // prep_cut rows belong to their prep session (cookSessionHtml),
       // and a prep_cut carries the entry it feeds — so without this it
       // would be listed here as well as there. The overview's prep rail
       // carried the identical exclusion for the identical reason; it moved
@@ -13939,8 +15095,9 @@
 
   // ---------- The dock ----------
   // Each cooking stage's one apricot, plus the quiet ways sideways. Rule 5
-  // is untouched by it: Kitchen's ROOT still has no primary action at all,
-  // and this is a step of the tab one level down, exactly as cook mode's
+  // holds one screen at a time: the root's one apricot is its own dock's
+  // "Start cooking" (cookRootDockHtml, 2026-09-13), and this is a step of
+  // the tab one level down with one of its own, exactly as cook mode's
   // "Mark it cooked" already was. Sticky rather than in flow, because the
   // phone is across the counter and the next thing to do must not be a
   // scroll away.
@@ -14185,9 +15342,11 @@
     }
     if (what === 'prep-cut-go') return cookAddPrepCuts(el);
     if (what === 'goto-plan') return activateTab('week', true);
-    if (what === 'rest-more') {
-      kitchenState.restExpanded = true;
-      renderKitchen();
+    if (what === 'start-tonight') {
+      // The root's dock: tonight's cook, opened on Before you start like
+      // every other way in. From the root, so the crumb says Cook.
+      cookState.focusOrigin = null;
+      cookEnterFocus(parseInt(el.getAttribute('data-idx'), 10));
       return;
     }
     if (what === 'focus-check') return cookFocusCheckMeal(el);
@@ -15206,6 +16365,62 @@
   var askBuilt = false;
   var askSending = false;
   var askConversationStarted = false;
+  // ---------- What this conversation is about ----------
+  // Set when chat is opened FROM something — a meal card's "Tell me what
+  // instead" (Loop Board, Emily 2026-09-13) — and sent with every message
+  // as the request's `context` (app/main.py ChatContext) until the sheet
+  // closes or the household taps the chip's ×. Sent every turn rather
+  // than once so "yes" one message later still carries the subject and
+  // the server's confirm-once rule with it; the server re-reads the meal
+  // each time by entry id, then by date+slot, so a swap that replaced the
+  // row doesn't lose the thread. `label` is the chip's own words; the
+  // server never trusts it, only the pointer.
+  var askContext = null;
+  var askContextEl = document.getElementById('ask-context');
+
+  // The one kind wired today. Other "open chat about X" entry points pass
+  // their own {kind, ..., label} through openAskSheet's second argument.
+  function mealAskContext(day, slot) {
+    var entry = daySlotEntry(day, slot);
+    if (!day || !entry || entry.state !== 'planned' ||
+        entry.entry_id === null || entry.entry_id === undefined) return null;
+    var name = mealDisplayName(entry);
+    if (!name) return null;
+    return {
+      kind: 'planned_meal',
+      entry_id: entry.entry_id,
+      date: day.date,
+      slot: slotWord(slot),
+      label: dayName(day.date, { weekday: 'long' }) + '’s ' + slotWord(slot) + ' · ' + name
+    };
+  }
+
+  function setAskContext(context) {
+    askContext = context || null;
+    renderAskContext();
+  }
+
+  // The small line above the composer that says what chat understood —
+  // "About Tuesday's dinner · Turkey Burgers" — with a way out of it.
+  function renderAskContext() {
+    if (!askContextEl) return;
+    if (!askContext) { askContextEl.innerHTML = ''; askContextEl.hidden = true; return; }
+    askContextEl.innerHTML =
+      '<span class="ask-context-label">About</span>' +
+      '<span class="ask-context-text">' + escapeHtml(askContext.label || '') + '</span>' +
+      '<button type="button" class="ask-context-clear" aria-label="Not about this any more">×</button>';
+    askContextEl.hidden = false;
+    askContextEl.querySelector('.ask-context-clear').addEventListener('click', function () {
+      setAskContext(null);
+      if (askInput) askInput.focus();
+    });
+  }
+
+  // What goes over the wire: the pointer, never the label.
+  function askContextPayload() {
+    if (!askContext) return undefined;
+    return { kind: askContext.kind, entry_id: askContext.entry_id, date: askContext.date, slot: askContext.slot };
+  }
 
   // Once the household has actually said something, the "tap a suggestion"
   // chips no longer make sense sitting above an ongoing conversation —
@@ -15784,6 +16999,9 @@
       if (action.tab === 'week' && panels.week && panels.week.dataset.built) {
         // loadWeekMenu refreshes the Cook state too — see its tail, and
         // the dish index the chat's own dish links read (setDishIndex).
+        // It re-renders whichever review view is showing, so the Which
+        // days tiles follow a chat "move Thursday's dinner to Friday"
+        // (swap_dinner_nights, tagged `week` in app/main.py) as well.
         loadWeekMenu(panels.week);
       } else if (action.tab === 'week') {
         // The same week changed, but Meals has never been opened in this
@@ -15934,7 +17152,7 @@
       // instead of sitting frozen on its opening phrase the whole time.
       var plannedCount = 0;
       var data = await streamChatMessage(
-        { session_id: askSessionId, message: message },
+        { session_id: askSessionId, message: message, context: askContextPayload() },
         function (eventName, body) {
           var bubbleText = null;
           if (eventName === 'status') {
@@ -16019,10 +17237,14 @@
   // already open.
   var askSheetHistoryPushed = false;
 
-  function openAskSheet(prefill) {
+  // `context` is the subject the sheet is being opened about (see
+  // askContext above); left out, whatever subject the open sheet already
+  // had stays — a re-open after a "View" hop is not a change of topic.
+  function openAskSheet(prefill, context) {
     ensureAskSheetBuilt();
     closeWeekSheet();
     closeMealsMoreSheet();
+    if (context) setAskContext(context);
     openSheet(askSheet, askScrim);
     if (!askSheetHistoryPushed) {
       window.history.pushState({ tab: currentTabKey(), askSheet: true }, '', window.location.pathname);
@@ -16050,6 +17272,9 @@
   function closeAskSheet() {
     closeSheet(askSheet, askScrim);
     askSheetHistoryPushed = false;
+    // Closing the sheet ends the topic: the next open is about whatever
+    // opened it, or nothing.
+    setAskContext(null);
   }
 
   askScrim.addEventListener('click', closeAskSheet);

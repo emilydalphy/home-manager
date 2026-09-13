@@ -143,10 +143,7 @@
     cursor: pointer;
   }
   .tag:hover { border-color: var(--ink-strong); }
-  /* color: #fff has no exact token twin — --ivory-ink is #F6EEE1 in
-     light, not byte-identical, so it stays literal here (design hygiene
-     pass, 2026-09-12; flagged for Emily in the report). */
-  .tag.on { background: var(--spruce); border-color: var(--spruce); color: #fff; }
+  .tag.on { background: var(--spruce); border-color: var(--spruce); color: var(--on-spruce-ink); }
 
   /* ---- The holiday (Loop Board "Holidays: Pomona knows 12 October is
      coming and asks how you're spending it", 2026-09-11). One quiet card
@@ -215,10 +212,7 @@
     cursor: pointer;
   }
   .chip:hover { border-color: var(--ink-strong); }
-  /* color: #fff has no exact token twin — --ivory-ink is #F6EEE1 in
-     light, not byte-identical, so it stays literal here (design hygiene
-     pass, 2026-09-12; flagged for Emily in the report). */
-  .chip.on { background: var(--spruce); border-color: var(--spruce); color: #fff; }
+  .chip.on { background: var(--spruce); border-color: var(--spruce); color: var(--on-spruce-ink); }
 
   .card {
     background: var(--surface-raised); border: 1px solid var(--hairline);

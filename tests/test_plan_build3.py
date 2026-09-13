@@ -56,9 +56,12 @@ def test_a_dish_name_opens_the_recipe_and_names_this_view_on_the_way_back():
     assert "tab: 'week'" in wiring[:300]
 
 
-def test_which_days_carries_the_cook_time_on_every_line():
-    line = _fn("reviewSlotLineHtml")
-    assert "entry.meta" in line and 'class="rv-slot-meta"' in line
+def test_which_days_carries_the_cook_time_on_every_night():
+    # Since the seven tiles (2026-09-12) the time is a bar plus "N min" on
+    # each night's tile, read off the entry's own meta — same source, new
+    # shape (see tests/test_week_seven_tiles.py for the bar itself).
+    time = _fn("reviewTileTimeHtml")
+    assert "reviewDinnerMinutes(entry)" in time and 'class="rv-tile-min"' in time
     face = _fn("reviewDayFaceLine")
     assert "else if (dinner.meta) note = dinner.meta;" in face
 

@@ -59,13 +59,9 @@ HEX_RE = re.compile(r"(?<!&)#[0-9a-fA-F]{3,8}\b")
 # value is the set of hex strings (as they appear in source, case as
 # written) allowed to remain literal in that file.
 NO_TOKEN_TWIN = {
-    "shell.css": {"#fff", "#D9C9AF"},
-    "login.html": {"#2E5240"},
-    "plan-week.html": {"#fff"},
-    "meal-setup.html": {"#fff"},
-    "member-share.html": {"#fff"},
-    "chores-setup.html": {"#fff"},
-    "share.html": {"#fff"},
+    # Emptied 2026-09-13: the "#fff on spruce", trip-checkbox rim and sign-in
+    # field rim literals became --on-spruce-ink, --hairline-deep and
+    # --on-spruce-edge (Emily's call on the hygiene card).
     # #inv-toast's color: #FFFDF8 predates this pass and already carries its
     # own "literal on purpose... correct in BOTH modes" comment.
     "inventory.html": {"#FFFDF8"},

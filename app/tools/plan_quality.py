@@ -69,6 +69,7 @@ row already scoped to one plan):
         "links_to": "2026-09-02:dinner" | None,
         "ingredients": [{"item": "Bell peppers", "category": "produce"}, ...],
         "instructions": ["Preheat the oven to 400F...", ...],
+        "default_servings": 4 | None,     # what the ingredient amounts are written for
     }
 
 context shape (what check_week expects -- distinct from the larger
@@ -570,6 +571,40 @@ def _steps_match_ingredients(entries: list[dict], context: dict) -> list[Violati
     return violations
 
 
+def _quantities_plausible(entries: list[dict], context: dict) -> list[Violation]:
+    """
+    The amounts have to make sense for the number of people.
+
+    Emily, 2026-09-13, Turkish-Style Lentil Soup for two: "One stick of
+    butter is a crazy amount for this whole recipe." The cook view now
+    corrects a line like that on its own (recipes.plausible_cooking_
+    quantity — a stick in a two-person soup shows as 1 tbsp), so this is
+    the flag half of that fix: it reports the line as the model WROTE it
+    (as_written — the saved cook_qty is the correction, not the
+    complaint) and what the cook view shows instead. "info", like
+    _steps_match_ingredients: a soft signal about a recipe, logged and
+    put in the morning report, never a change to the week.
+    """
+    violations = []
+    for entry in entries:
+        if not _is_planned(entry) or not entry.get("ingredients"):
+            continue
+        servings = entry.get("default_servings")
+        lines = _recipes._implausible_lines(entry["ingredients"], servings, as_written=True)
+        if not lines:
+            continue
+        violations.append(Violation(
+            rule="quantities_plausible",
+            severity="info",
+            date=entry["date"],
+            slot=entry["slot"],
+            message=f"{entry['meal_name']}: " + "; ".join(
+                _recipes.implausible_quantity_message(line, servings) for line in lines
+            ) + ".",
+        ))
+    return violations
+
+
 def _by_date(entries: list[dict]) -> dict[str, dict[str, list[dict]]]:
     """Planned entries grouped as {date: {"snacks": [...], "meals": [...]}}."""
     days: dict[str, dict[str, list[dict]]] = {}
@@ -851,6 +886,7 @@ def check_week(plan_entries: list[dict], context: dict) -> list[Violation]:
     violations += _full_plate(plan_entries, context)
     violations += _ingredient_repeat(plan_entries, context)
     violations += _steps_match_ingredients(plan_entries, context)
+    violations += _quantities_plausible(plan_entries, context)
     violations += _snack_variety(plan_entries, context)
     # The food-quality floor (route 4). Same contract as everything above:
     # independent, additive, and one firing never suppresses another.
@@ -880,7 +916,7 @@ def _load_plan_entries(plan_id: int) -> list[dict]:
         SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.reasoning, mpe.food_groups_json,
                mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal_name,
                r.main_protein, r.prep_time_minutes, r.cook_time_minutes, r.times_cooked,
-               r.ingredients_json, r.instructions_json
+               r.ingredients_json, r.instructions_json, r.default_servings
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.component_category IS NULL
@@ -922,6 +958,9 @@ def _load_plan_entries(plan_id: int) -> list[dict]:
             # row and so no steps — nothing to check rather than a clean
             # recipe, same as its empty ingredient list above.
             "instructions": json.loads(r["instructions_json"] or "[]"),
+            # For _quantities_plausible: the table the amounts are written
+            # for. None for a freeform meal, which has no amounts either.
+            "default_servings": r["default_servings"],
         })
     return entries
 

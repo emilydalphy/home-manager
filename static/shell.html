@@ -67,6 +67,11 @@
   </div>
 
   <div id="toast" class="toast" hidden></div>
+  <!-- Where Plan › Which days says a keyboard move (or a refusal) out loud
+       (reviewTileAnnounce, shell.js). Lives here, outside the panel that
+       re-renders on every move, so the region persists and the sentence
+       is actually announced. -->
+  <div id="rv-tiles-live" class="rv-tiles-live" aria-live="polite"></div>
 
   <!-- Notifications bell (design_handoff_home_manager Phase 5 /
        NOTIFICATIONS.md) — a live in-app feed, not real scheduled push
@@ -123,6 +128,10 @@
          examples yield to them. -->
     <div class="ask-chips ask-examples" id="ask-examples" hidden></div>
     <div class="ask-chips" id="ask-chips"></div>
+    <!-- What this conversation is about, when chat was opened from a meal
+         card ("About Tuesday's dinner · Turkey Burgers"). Filled by
+         renderAskContext() in shell.js; empty and hidden otherwise. -->
+    <div class="ask-context" id="ask-context" hidden></div>
     <form id="ask-composer" class="ask-composer-bar">
       <textarea id="ask-input" class="ask-composer-input" rows="1" placeholder="What&rsquo;s on your mind?" autocomplete="off"></textarea>
       <button type="button" id="ask-mic-btn" class="ask-composer-mic" aria-label="Dictate message" title="Dictate message">
@@ -172,6 +181,21 @@
       <button type="button" class="kit-sheet-close" id="meals-more-close" aria-label="Close">&times;</button>
     </div>
     <div class="wk-more-rows" id="meals-more-rows"></div>
+  </div>
+
+  <!-- Cook's "More" sheet (the shelf design, 2026-09-13). The three quiet
+       entry points that sat on Cook's root as rows — Recipes, Add from a
+       link, Inventory — one tap off it instead (cookMoreRowsHtml in
+       shell.js). Same shape as Meals' More above. -->
+  <div id="cook-more-scrim" hidden></div>
+  <div id="cook-more-sheet" hidden role="dialog" aria-label="More">
+    <div class="ask-sheet-handle" id="cook-more-handle"></div>
+    <div class="kit-sheet-titlerow">
+      <span class="kit-sheet-title">More</span>
+      <span class="kit-sheet-hairline"></span>
+      <button type="button" class="kit-sheet-close" id="cook-more-close" aria-label="Close">&times;</button>
+    </div>
+    <div id="cook-more-rows"></div>
   </div>
 
   <!-- Kitchen entry sheet (Stage 2 slice 3). The hub's tiles open What we

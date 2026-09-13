@@ -4,6 +4,10 @@ One card for next-up (sand, in the gutter, no action inside it), the action
 in a dock at the foot, the plan offer as a question with nothing under it,
 the coaching card turned into a one-time sheet, and the dinner suggestions
 folded behind one Pick.
+
+Since 2026-09-13 the next-up card is the day strip's one tinted node
+(tests/test_now_day_strip.py); what this file still guards is that the
+action stayed in the dock and never came back into the content.
 """
 from pathlib import Path
 
@@ -20,20 +24,18 @@ def _fn(name):
     return SHELL_JS[start:end]
 
 
-def test_next_up_is_a_card_in_the_gutter_not_the_hero():
-    assert '<div id="today-next-up" class="today-area-nextup shell-card nextup-card" hidden></div>' in SHELL_JS
+def test_next_up_is_not_the_hero_and_not_a_card_above_the_day():
     assert 'class="dinner-hero nextup-hero"' not in SHELL_JS
-    card = SHELL_CSS[SHELL_CSS.index(".nextup-card {"):]
-    card = card[:card.index("}")]
-    assert "background: var(--sand);" in card
-    assert ".today-area-nextup { margin: 0 20px 14px; }" in SHELL_CSS
+    assert 'id="today-next-up"' not in SHELL_JS
+    assert ".nextup-card {" not in SHELL_CSS and ".today-area-nextup" not in SHELL_CSS
+    # The next-up move is the strip's one tinted node now.
+    assert "dayStripNodeHtml(m, m.done ? 'done' : (featured && m.id === featured.id ? 'now' : 'later'))" in _fn("renderTodayMoves")
 
 
-def test_the_card_carries_no_action_the_dock_does():
-    html = _fn("nextUpCardHtml")
-    assert "hero-action" not in html
-    assert "data-move-action" not in html
-    assert "moveTickHtml(move)" in html  # the tick stays on the card
+def test_the_node_carries_no_apricot_button_the_dock_does():
+    html = _fn("dayStripNodeHtml")
+    assert "hero-action" not in html and "dock-primary" not in html
+    assert "moveTickHtml(move)" in html  # the tick stays on the node
     dock = _fn("renderTodayDock")
     assert 'data-move-action="' in dock
     assert "Let’s plan the week" in dock and ">Not now<" in dock

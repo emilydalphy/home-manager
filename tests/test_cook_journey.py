@@ -693,14 +693,19 @@ def test_prep_ticks_are_still_the_servers_and_nothing_here_touches_them():
 
 
 @_needs_node
-def test_cook_keeps_no_primary_action_on_its_root():
-    """DESIGN_SYSTEM Rule 5. The dock is a step of the tab, one level down,
-    exactly where "Mark it cooked" already lived — so the apricot appears
-    only inside the focused screen's own renderers."""
-    for name in ("renderKitchen", "kitchenTilesHtml", "kitchenCookingTodayHtml"):
+def test_cook_root_has_one_apricot_and_it_is_the_docks():
+    """DESIGN_SYSTEM Rule 5, one screen at a time. Since the shelf design
+    (2026-09-13) the root's one apricot is "Start cooking" in its own dock
+    (cookRootDockHtml); nothing else on the root is a primary, and the
+    cook step one level down keeps its own dock exactly where "Mark it
+    cooked" already lived."""
+    for name in ("renderKitchen", "cookMoreRowsHtml", "kitchenCookingTodayHtml", "cookTonightCardHtml",
+                 "cookShelfTileHtml", "cookGetReadyRowsHtml"):
         body = _extract(name)
         assert "cook-hero-action" not in body, f"{name} put a primary on the root"
-        assert "cook-dock" not in body, f"{name} put the dock on the root"
+        assert "dock-primary" not in body, f"{name} put a second primary on the root"
+    root_dock = _extract("cookRootDockHtml")
+    assert root_dock.count("dock-primary") == 2, "one per branch: Start cooking, or Mark eaten"
     assert "cookFocusDockHtml(meal)" in _extract("cookFocusHtml")
     assert "cook-dock" in _extract("cookDockHtml")
 

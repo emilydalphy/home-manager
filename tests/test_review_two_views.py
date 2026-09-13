@@ -9,8 +9,9 @@ week is too much to take in: three meals and two snacks across seven days is
 
   * WHAT WE'RE EATING  grouped by meal type, each dish ONCE with the number
     of days it covers, a stepper per row and a Change button.
-  * WHICH DAYS         one card per day carrying dinner, expanding to all
-    five, and a day nobody is home saying so and offering nothing.
+  * WHICH DAYS         one tile per night carrying dinner (seven tiles
+    since 2026-09-12, see tests/test_week_seven_tiles.py), and a night
+    nobody is home saying so and offering nothing.
 
 Two kinds of test, and the split is the one tests/test_meals_week_day_meal.py
 already draws:
@@ -370,32 +371,34 @@ def _eating_prelude() -> str:
 def _days_prelude() -> str:
     return (
         _ESCAPE + _WEEK_SLOTS + _SLOT_LABELS + _DAYNAME_STUB
-        + _extract_var("RV_CHEVRON_SVG", SHELL_JS) + "\n"
-        + "var reviewState = { view: 'days', openDays: {}, busy: null, trouble: '',"
-        " troubleFor: null, picking: null };\n"
+        + "var reviewState = { view: 'days', nightMove: null, focusHandle: null, busy: null,"
+        " trouble: '', troubleFor: null, picking: null };\n"
         + _extract("mealDisplayName", SHELL_JS) + "\n"
         + _extract("awayLineFor", SHELL_JS) + "\n"
+        + _extract("joinList", SHELL_JS) + "\n"
         + _extract("isSnackSlot", SHELL_JS) + "\n"
         + _extract("snackSlotKey", SHELL_JS) + "\n"
         + _extract("daySlotEntry", SHELL_JS) + "\n"
         + _extract("slotEyebrowLabel", SHELL_JS) + "\n"
         + _extract("reviewDayIsClosed", SHELL_JS) + "\n"
         + _extract("reviewClosedLine", SHELL_JS) + "\n"
-        + _extract("reviewDayHasMore", SHELL_JS) + "\n"
         + _extract("reviewDayFaceLine", SHELL_JS) + "\n"
-        + _extract("reviewDayNoteHtml", SHELL_JS) + "\n"
-        # The holiday pill on a day card (2026-09-11) — one more helper the
-        # card reaches for, lifted the same way as the rest.
-        + _extract("reviewDayHolidayHtml", SHELL_JS) + "\n"
-        + _extract("reviewSlotLineHtml", SHELL_JS) + "\n"
+        # The seven tiles (Emily, 2026-09-12) — the card and its expander
+        # went; a night is one tile, and the Day step is one tap in.
+        + _extract_var("RV_BAR_FULL_MIN", SHELL_JS) + "\n"
+        + _extract_var("RV_BAR_LONG_MIN", SHELL_JS) + "\n"
+        + _extract_var("RV_GRIP_SVG", SHELL_JS) + "\n"
+        + _extract("reviewDinnerMinutes", SHELL_JS) + "\n"
+        + _extract("reviewTileTimeHtml", SHELL_JS) + "\n"
+        + _extract("reviewTileTags", SHELL_JS) + "\n"
+        + _extract("reviewTileIsMovable", SHELL_JS) + "\n"
         # Was reviewDaySlotKeys, and it is the same function: it moved up
         # beside daySlotEntry and lost the review- prefix when the Approve
         # button's own open-slot count started asking it what a day is
         # actually made of (Emily, 2026-09-10 — an open snack is something
         # left to decide). Nothing about what it returns changed.
         + _extract("daySlotKeys", SHELL_JS) + "\n"
-        + _extract("reviewDayTitle", SHELL_JS) + "\n"
-        + _extract("reviewDayCardHtml", SHELL_JS) + "\n"
+        + _extract("reviewDayTileHtml", SHELL_JS) + "\n"
         + _extract("reviewDaysHtml", SHELL_JS) + "\n"
     )
 
@@ -416,10 +419,8 @@ def _eating_html(days: list) -> str:
     return _run_node(harness)
 
 
-def _day_card(day: dict, open_days: dict | None = None) -> str:
-    harness = _days_prelude().replace(
-        "openDays: {}", "openDays: " + json.dumps(open_days or {})
-    ) + f"console.log(JSON.stringify(reviewDayCardHtml({json.dumps(day)}, 0)));\n"
+def _day_card(day: dict) -> str:
+    harness = _days_prelude() + f"console.log(JSON.stringify(reviewDayTileHtml({json.dumps(day)}, 0)));\n"
     return _run_node(harness)
 
 
@@ -592,36 +593,17 @@ def test_a_week_with_nothing_planned_says_so_rather_than_rendering_empty_groups(
 # ---------------------- which days: dinner, then the rest ----------------------
 
 @_needs_node
-def test_a_collapsed_day_card_carries_that_days_dinner():
+def test_a_day_tile_carries_that_days_dinner_and_nothing_else():
+    """One tile a night, and it says dinner (Emily, 2026-09-12). The other
+    four meals are one tap in — the tile's body opens the Day step — rather
+    than expanded in place."""
     html = _day_card(_day("2026-09-07",
                           breakfast=_cooked("Oatmeal", entry_id=111),
                           dinner=_cooked("Beef Chili", entry_id=112)))
     assert "Beef Chili" in html
-    # Collapsed: the other four are not on screen yet.
     assert "Oatmeal" not in html
-    assert 'aria-expanded="false"' in html
-
-
-@_needs_node
-def test_an_opened_day_card_shows_all_five():
-    day = _day(
-        "2026-09-07",
-        breakfast=_cooked("Oatmeal", entry_id=121),
-        lunch=_cooked("Chicken Wrap", entry_id=122),
-        dinner=_cooked("Beef Chili", entry_id=123),
-        snacks=[
-            {"state": "planned", "title": "Apple slices", "source": "plan",
-             "meta": None, "entry_id": 124},
-            {"state": "planned", "title": "Hummus and carrots", "source": "plan",
-             "meta": None, "entry_id": 125},
-        ],
-    )
-    html = _day_card(day, {"2026-09-07": True})
-    for name in ("Oatmeal", "Chicken Wrap", "Beef Chili", "Apple slices", "Hummus and carrots"):
-        assert name in html, name
-    # Two snacks are numbered, so a day with more than one can be told apart.
-    assert "Snack 1" in html and "Snack 2" in html
-    assert 'aria-expanded="true"' in html
+    assert 'data-rv-open="0"' in html
+    assert "data-rv-handle=" in html
 
 
 @_needs_node
@@ -636,7 +618,7 @@ def test_a_day_nobody_is_home_says_so_and_offers_nothing_to_open():
     day = _day("2026-09-07", breakfast=dict(away), lunch=dict(away), dinner=dict(away))
     html = _day_card(day)
     assert "Away — nothing planned, nothing bought." in html
-    assert "data-rv-day=" not in html, "an away day has nothing to expand"
+    assert "data-rv-handle=" not in html, "an away night cannot take a dinner"
     assert "is-closed" in html
 
 
@@ -648,9 +630,8 @@ def test_a_day_with_no_rows_at_all_is_not_an_away_day():
     assert "is-closed" not in html
     assert "Nothing yet" in html
     assert "Away" not in html
-    # Flat, like a closed day, but for the opposite reason: there is nothing
-    # under it rather than nothing to do.
-    assert "data-rv-day=" not in html
+    # An unplanned night can still take a dinner from another night.
+    assert "data-rv-handle=" in html
 
 
 @_needs_node
@@ -671,8 +652,8 @@ def test_a_day_nobody_is_home_is_read_off_its_three_meals_not_its_snacks():
     html = _day_card(day)
     assert "is-closed" in html
     assert "Away — nothing planned, nothing bought." in html
-    # ...and the snack is not hidden behind it: a real row still opens.
-    assert "data-rv-day=" in html
+    # ...and the snack is not hidden behind it: the day still opens.
+    assert "data-rv-open=" in html
 
 
 @_needs_node
@@ -750,8 +731,8 @@ def test_both_views_render_the_same_week_and_only_one_at_a_time():
     days = [_day("2026-09-07", dinner=_cooked("Beef Chili"))]
     eating = _step_html(dict(_DRAFT, _view="eating"), days)
     which = _step_html(dict(_DRAFT, _view="days"), days)
-    assert "data-rv-less=" in eating and "data-rv-day=" not in eating
-    assert "data-rv-day=" in which and "data-rv-less=" not in which
+    assert "data-rv-less=" in eating and "data-rv-tile=" not in eating
+    assert "data-rv-tile=" in which and "data-rv-less=" not in which
     assert "Beef Chili" in eating and "Beef Chili" in which
 
 

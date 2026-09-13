@@ -537,9 +537,11 @@ def test_one_households_moves_are_never_another_households(client):
 
 # ---------- Today's structure (source markers) ----------
 # shell.js has no JS test harness in this repo, so these guard the SHAPE of
-# the rebuilt screen: the two blocks, the ticks, and the things Emily's
-# design removed. A marker that is present but mis-wired is still a far
-# better failure mode than a marker that is gone.
+# the rebuilt screen: the strip, the ticks, and the things Emily's design
+# removed. A marker that is present but mis-wired is still a far better
+# failure mode than a marker that is gone. (The two-block shape — a Next
+# up card and "The rest of today" — became one strip down the day on
+# 2026-09-13; tests/test_now_day_strip.py covers the strip itself.)
 
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
@@ -547,24 +549,28 @@ SHELL_CSS = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize("marker", [
-    "id=\"today-next-up\"",          # the Next up card
-    "function nextUpCardHtml(",
-    "NEXT UP",                        # its eyebrow, verbatim
-    "id=\"today-rest\"",             # the rest-of-today list
-    "The rest of today",
-    "Done today",                     # the done group
-    "function moveRowHtml(",
-    "data-move-tick",                 # the tick control
+    "id=\"today-rest\"",             # where the strip renders
+    "function dayStripNodeHtml(",     # one node of it
+    "class=\"day-strip\"",
+    "data-move-tick",                 # the tick control (the node's dot)
     "function toggleTodayMove(",
     "/api/today/moves",               # one fetch, not four
     "WEEK_STATE_LABELS[data.week_state]",  # Week set / Draft — the band's chip since 2026-09-11
     "' of ' + moves.length + ' done'",
 ])
-def test_today_renders_the_two_blocks_and_their_ticks(marker):
+def test_today_renders_the_strip_and_its_ticks(marker):
     assert marker in SHELL_JS, f"Today is missing {marker!r} from static/shell.js"
 
 
-@pytest.mark.parametrize("style", [".tick", ".tick.is-done", ".nextup-hero", ".rest-row", ".tomorrow-card"])
+@pytest.mark.parametrize("dead", [
+    "id=\"today-next-up\"", "function nextUpCardHtml(", ">NEXT UP<",
+    "<h2 class=\"rest-title\">", "rest-done-head", "function moveRowHtml(",
+])
+def test_the_two_blocks_are_gone(dead):
+    assert dead not in SHELL_JS, f"{dead!r} is back — the day strip replaced it (2026-09-13)"
+
+
+@pytest.mark.parametrize("style", [".tick", ".tick.is-done", ".day-node", ".day-dot", ".tomorrow-card"])
 def test_today_carries_the_styles_for_them(style):
     assert style in SHELL_CSS, f"static/shell.css is missing {style}"
 
@@ -572,11 +578,11 @@ def test_today_carries_the_styles_for_them(style):
 def test_move_tick_html_is_guarded_by_tickable():
     """
     Source-level guard for the shop-tick bug: moveTickHtml has to check
-    move.tickable and render nothing (a same-size, non-interactive spacer)
-    rather than a live tick for a move whose done dispatch is a no-op — see
-    moves.py's `tickable` field and set_move_done's "shop" branch.
+    move.tickable and render a plain, non-interactive dot rather than a
+    live tick for a move whose done dispatch is a no-op — see moves.py's
+    `tickable` field and set_move_done's "shop" branch.
     """
-    body = SHELL_JS[SHELL_JS.index("function moveTickHtml("):SHELL_JS.index("function nextUpCardHtml(")]
+    body = SHELL_JS[SHELL_JS.index("function moveTickHtml("):SHELL_JS.index("function moveStripAt(")]
     assert "move.tickable" in body, "moveTickHtml doesn't consult move.tickable"
     assert "data-move-tick" not in body.split("if (!move.tickable)")[0], (
         "the tickable guard must come before the live tick markup, not after it"

@@ -473,6 +473,614 @@ why*, not duplicating the diff.
   `tests/test_big_meal.py`; suite 3345 → 3377; verified live on a
   throwaway DB with the model stubbed (answer → menu → two-trip list →
   Sunday prep on Now → timeline readback → going-out unwinds all of it).
+- **2026-09-13 — Prep questions are a step of All set, not a footnote.
+  Branch `worktree-prep-questions-step`, NOT merged at the time of
+  writing.** Loop Board "Prep questions are a clear step, not a footnote"
+  (Phase 1) plus the Bug card "All set screen: dark text on the dark
+  background is hard to read". Emily, on her phone: the freezer and
+  cook-ahead questions were "a subtle piece to skip". On the All set
+  screen they now sit ABOVE the counters, under a 21px display headline
+  ("Two quick ones before you go" — "if you like" was an apology), and
+  both are OPEN from the start with no "Ask" fold (`fixed` lines in
+  `weekQuickLineHtml`; `defrostAskCardHtml`/`cookAheadAskCardHtml` take
+  `open` from the caller). One tap answers "None — all fresh", two answer
+  with a chip. Skipping is the dock: leaving by "Open the list" / "See
+  the week" is the deliberate tap, and the questions still come back on
+  the root's receipt next session and from Cook's re-ask. The ROOT's
+  receipt keeps its fold — there the week card is the point.
+  - **An answered question collapses to its confirmation, in place**
+    ("Chicken breast: move to the fridge Monday night · Salmon fillets:
+    Thursday night"; "Roasted Chickpeas: one batch Tuesday covers
+    Thursday"). Page-view state (`weekQuickDone`, keyed to the plan),
+    same reasoning as `weekQuickOpen`: the server already holds the
+    answer as a prep task / a chain, this is the screen keeping its word
+    that the tap landed. Built from the confirm responses' own rows
+    (`created`, `applied`), never from a second fetch. A Cook re-ask
+    clears the line first, or the old answer would stand in for the
+    question while items refetch (verifier).
+  - **The contrast bug was the ivory card's inks on spruce.** The asks'
+    bodies were written for the ivory receipt card; on `--spruce-raised`
+    their `--ink-secondary` helper lines measured 2.37:1 and the
+    cook-ahead sentence in `--ink` 1.21:1 (light). Re-inked on spruce
+    only: `--ivory-ink` 9.86/7.70, `--ivory-ink-muted` 8.62/6.52
+    (light/dark, in the CSS comment and in
+    `tests/test_prep_questions_step.py`, which measures theme.css). A
+    ticked chip is solid `--celadon` + `--on-accent-ink` there (the cook
+    hero's own recipe) — the tint it used to take is 1.38:1 against the
+    card in dark. The quiet answer button takes the cook hero's outline
+    (`--apricot-rule` edge, `--ivory-ink` label). Nothing on the ivory
+    card changed.
+  - **The doubled title was the single-dish case.** With one repeated
+    dish the fold's heading already IS "X on 2 nights. Cook ahead?", and
+    the block under it said "X is on 2 nights. Cook ahead?" again —
+    `cookAheadAskBlockHtml(item, named)` names the block only when two or
+    more dishes share the heading "Cook anything ahead?". Same fix on the
+    root's receipt, which had the same duplicate behind "Ask".
+
+- **2026-09-13 — "Tell me what instead" knows which meal it was tapped on,
+  and the chat request has a `context` field now. Branch
+  `worktree-tell-me-instead-context`, NOT merged at the time of writing.**
+  Loop Board "'Tell me what instead' knows which meal you tapped it on,
+  and acts on one yes" (Emily, on the Tuesday burgers: she tapped the link
+  beside the recipe, chat had no idea which meal she meant, then asked her
+  to confirm too many times).
+  - **Root cause, both halves.** The link put a sentence in the composer
+    ("Swap Tuesday's dinner for something else", shell.js's `[data-wk-tell]`
+    handler) and nothing else: `ChatRequest` was `{session_id, message}`,
+    and the only "context" the agent ever had was `_is_tweak_context`
+    sniffing a prefill prefix (agent.py, `TWEAK_CONTEXT_PREFIXES` — its own
+    comment says "the chat endpoint carries no context field of its
+    own"). Delete the sentence, type what you want, and the model is
+    starting from zero. The repeated confirmations then follow from three
+    standing prompt rules stacking on one change: "Clarifying questions"
+    (which meal?), the propose-then-confirm rule in the same paragraph,
+    and the grocery-list rule ("nothing reaches the list without the
+    household saying so"), which the model applies again after a swap on
+    an approved week even though `swap_meal_in_plan` already moved the
+    lines. That's from the prompt, not a transcript — the conversation
+    itself isn't stored.
+  - **The mechanism is structured, server-resolved, per-turn.**
+    `ChatRequest.context` is a pointer (`{kind, entry_id, date, slot}`),
+    never a description: `tools.describe_planned_meal` re-reads the meal
+    from the household's own live plan each turn, by id first and then by
+    date+slot, because a swap deletes and re-inserts the row and "actually,
+    chicken" one message later must still land. `_build_chat_context_block`
+    appends a system block (like `_TWEAK_REPLY_BLOCK`, never an edit to the
+    frozen cached prompt) naming the meal, its ingredients, whether the
+    week is approved, and the rule: confirm ONCE in one line, act on any
+    yes, no second question, no grocery-list question. The shell sends the
+    context with every message while the "About Tuesday's dinner · …" line
+    is above the composer, and drops it when the sheet closes or the × is
+    tapped — sent every turn, not once, so the yes carries the subject and
+    the rule with it. `kind` is the seam for other "open chat about X"
+    entry points; only `planned_meal` is wired.
+  - **Anything unresolvable is an ordinary turn, never an error**: a
+    planned_empty or open slot, a component plan, another household's id,
+    a bad date — all None, all logged, block omitted. A same-dish change
+    (turkey → beef) is add_recipe of a named variant then
+    swap_meal_in_plan with old_meal, which is what keeps the slot and moves
+    the grocery lines by itself; the block says so in those words so the
+    model doesn't invent a third path. `context` is only passed to
+    run_agent_turn when present, so every existing test fake with the old
+    signature still fits.
+
+- **2026-09-13 — "Plan next week ›" under a two-day plan offered two more
+  days. Branch `worktree-sunday-week-span`, NOT merged at the time of
+  writing.** Loop Board "Planning on a Sunday offered only the next 2
+  days instead of the week" (Bug, High). Emily, Sunday 2026-09-13 on her
+  phone: the default offered Mon–Tue, and her All set screen read "Sep
+  14–15 is planned … 6 meals · 6 cooks".
+  - **Root cause: the link was sized by the plan on screen, on the
+    client.** `#wk-plan-next` (shell.js) computed "period_start +
+    day_count, for day_count days" from the week-menu payload. Her plan on
+    screen was a TWO-day one — a Saturday sign-up's "this week" is Sat–Sun
+    (`main._first_plan_window`, pinned in the new test; a custom range or
+    a takeover remnant does the same) — so the week after it was two days.
+    Now's nudge, which reads the rhythm, asked about Sep 14–20 at the same
+    moment: the two-screens-two-weeks class the 2026-09-11 "one source of
+    which week" rule was written for, and this was the one link still
+    deriving its own. Reproduced with the date pinned to that Sunday.
+  - **Fixed on the server.** New `weekly_plan.next_period_after(plan)`,
+    carried on `get_week_menu` as `next_period`: the day after the plan's
+    last day, for the RHYTHM's length (`suggest_planning_period`'s
+    day_count — seven, or three as-we-go), which is exactly what the nudge
+    offers from Friday. A plan whose days have already passed (the
+    approved-week fallback) gets the standing suggestion instead, with
+    `is_current_period` so the link can say "this week". The client reads
+    it through one `nextPeriodFor` for both the label and the tap, with
+    the old arithmetic kept only as the fallback for a payload without it
+    — deliberately small, because the seven-tiles picker is being rebuilt
+    on `worktree-week-tiles`.
+  - **A shorter span says why, in one line — and that is the only time it
+    is shorter.** If another live plan already holds a day inside the
+    stretch, the offer stops the day before it and `shortened_reason`
+    ("Sep 17–20 is already planned.") rides into `weekNotesHtml`'s quiet
+    lines above the link. Before, "Plan next week" over such a week would
+    have generated the whole seven and taken those days over — and the
+    question screen's warning would not have fired, since
+    `get_week_intake_prefill` looks a plan up by filing key only. A
+    stretch held from its FIRST day is offered whole as a re-plan
+    (`is_planned`, so the link says "Re-plan next week"). **Not shortened
+    for a trip** (judgment call): a night away is a `planned_empty` slot
+    inside the week, not a reason to plan a shorter one.
+  - Nudge untouched: from Friday it still says nothing when the following
+    period is held at all, so Plan may offer a shortened stretch Now is
+    quiet about — quiet is not a contradiction. `tests/
+    test_sunday_next_week_span.py`, 18 tests (17 red on `eaf334f`; the
+    green one characterises the Saturday two-day part-week as intended).
+
+- **2026-09-13 — Recipe quantities pass a sanity check (no stick of
+  butter in a 2-serving soup). Branch `worktree-recipe-quantity-sanity`,
+  NOT merged at the time of writing.** Emily, on her phone, Turkish-Style
+  Lentil Soup, Serves 2: "½ cups Red lentils · 1 lb Carrots · 1 stick
+  Butter · 1 bunch Mint". "One stick of butter is a crazy amount for this
+  whole recipe."
+  - **Root cause, reproduced with the recipe saved exactly as the prompt
+    asks for it.** It was NOT the serves scaler and NOT a recipe for four
+    scaled down: the card matches a recipe generated for the household's
+    own table of two, where every `qty` is the SHOPPING line
+    (`generate_weekly_plan_llm`'s "how it's actually bought" bullet —
+    butter is bought by the stick, carrots by the pound). The cook view
+    keeps a shopping qty whenever it measures something
+    (`recipes.cooking_ingredients`), and "stick" is in
+    `_EXTRA_MEASURED_UNITS` as a real kitchen unit, so `_quantity_problem`
+    passed it through; `scale_recipe` then kept it whole because a stick is
+    in `_DISCRETE_UNITS` (`max(1, round(0.5))`). Nothing anywhere asked
+    whether the AMOUNT made sense for the number of people. "½ cups" is
+    `quantities._format_quantity` pluralising everything but exactly 1;
+    shell.js's `humanQtyText` only rewrites the number.
+  - **The guard is deterministic and there is no new model call.**
+    `recipes._PLAUSIBLE_PER_SERVING`: seven ingredient classes (fat, salt,
+    sugar, aromatic, spice, protein, grain) with a per-serving ceiling
+    each; `implausible_quantity` judges a cooking amount against it and
+    `plausible_cooking_quantity` replaces one that is over with the app's
+    own figure for the item (`COOKING_QUANTITIES_PER_4`, scaled — the same
+    table that already turns "1 bottle" into "2 tbsp", so the two
+    corrections cannot disagree) or, for an item the table has never met,
+    the ceiling in the line's own unit. It runs in `cooking_ingredients`
+    (so every recipe already saved is covered at read time) and before a
+    save (`add_recipe` and `save_cooking_quantities` write the corrected
+    `cook_qty`; the shopping qty is never touched — one stick is still
+    what you buy). Rescales SILENTLY for the cook and FLAGS separately:
+    `plan_quality._quantities_plausible` is an "info" rule that reports
+    the line as the model wrote it and what the cook view shows, into the
+    morning report like `_steps_match_ingredients`. A repair call was
+    rejected on cost ($1/household/month) and because the table answers
+    the same question for free; the fill path's `validate_measured_
+    quantities` is deliberately still called WITHOUT `servings` so an
+    out-of-range amount never turns into a paid repair round.
+  - **The ranges are ceilings, generous, and per serving** (fat 2 tbsp,
+    salt 1.5 tsp, sugar ¼ cup, dried spice 2 tsp, aromatics 4 cloves /
+    1 tbsp ginger — no bare-count ceiling, because "12 garlic knots" and
+    "24 onion rings" are counted dishes wearing an aromatic's name, found
+    on review; protein 1 lb, grain 2 cups or 8 oz dry). Every floor is
+    zero: nobody has complained of too little, and 2 oz of bacon
+    flavouring a soup is not a mistake. A stick of butter for FOUR is
+    exactly 2 tbsp a head and passes; the same stick for two does not. A
+    baking recipe that says "serves 4" with a cup of butter would be
+    shown 2 tbsp — accepted, this is a dinner planner, and the import path
+    carries the recipe's own yield ("24 cookies" → 24). Names that borrow
+    a class word ("sugar snap peas", "green beans", "low-fat yogurt",
+    "garlic bread") are listed in `_NOT_THIS_CLASS` and not judged; the
+    pre-save pass keys its fixes by line position, so two lines that
+    share a name are each judged on their own (also found on review).
+  - **A stick cut to a fraction is written in tablespoons** (`scale_recipe`,
+    `_STICK_TBSP = 8`): four-person stick halved is "4 tbsp", not rounded
+    back up to a stick; a whole number of sticks stays sticks.
+  - **One or less is singular** in `_format_quantity` ("0.5 cup", "0.75
+    lb"), which is what reads "½ cup" once the front end has done the
+    fraction. Two ledger tests that pinned "0.6 lbs" were updated;
+    parsing reads either form so nothing stored needs rewriting.
+  - **Left out on purpose:** "1 lb Carrots" for two is at the top of what
+    a produce ceiling would allow and there is no vegetable class — a
+    carrot-heavy soup for two really can use a pound; a vegetable class is
+    a one-line addition if Emily wants one. Variety naming (Persian vs
+    English cucumber) and grocery merging are separate cards.
+
+- **2026-09-13 — A starter chore list from what Pomona already knows.
+  Branch `worktree-chores-starter-list`, NOT merged at the time of
+  writing.** Loop Board "Chores v1: A starter list from what Pomona
+  already knows" (Phase 2). Setup proposes the list; the household keeps,
+  tweaks and drops instead of typing housework out, and nobody becomes
+  the administrator.
+  - **The list is rules, not the model — and the model can only adjust
+    it.** Before: `generate_chore_recommendations` was one forced tool
+    call with nothing underneath, so a house could be proposed a list
+    with no laundry, no bins and nothing seasonal, and the route only knew
+    what the page posted. Now `app/tools/chore_starter.py` builds the
+    baseline from facts (bathrooms → one row each while sayable; laundry;
+    garbage / recycling / green bin; yard rows iff `has_yard`; pet CARE
+    per kind — daily walks or litter, monthly flea/tick, yearly vet,
+    grooming — iff pets; furnace filter / gutters / winter tires iff a
+    house; patio furniture iff a yard; closet swap, smoke detectors,
+    windows, oven, monthly tidy-and-donate for everyone) and deals an
+    owner onto every row. Claude is then asked ONLY for `chores` (adds),
+    `drop` and `change` over that list (`_merge_chore_adjustments`);
+    `NEVER_DROPPED` = Laundry + Garbage out, which the model cannot
+    remove — the household does, by hand. **Any API failure returns the
+    baseline** (found in live verification: a 401 is not an
+    `AssistantUnavailableError`, and a 500 from the starter list would
+    have been the wrong answer to "show me a list").
+  - **Owner rule, stated:** dealt round `rotation_members` in the order
+    setup named them, top to bottom, one row each; a row the described
+    help covers is tagged outsourced and skips the deal; nobody named →
+    every row `whoever`. No `shared` proposals — owned is the default the
+    owner card chose, and a proposal is one tap to change.
+  - **Two new rhythms: `semiannual` (182) and `yearly` (365)** in
+    `_FREQUENCY_DAYS`, the three tool enums, `CHORE_RHYTHM_LABELS`/`ORDER`
+    in shell.js ("Twice a year", "Once a year") and the schema comment.
+    Twice-a-year things squeezed into "quarterly" would have been asked
+    for at the wrong time. `FREQUENCY_WORDS` (chores.py) is the Python
+    twin of the JS labels and a test pins the two dicts equal. Words are
+    the shell's existing ones ("Every two weeks" — the card's "every
+    couple of weeks" was NOT adopted, flagged for Emily).
+  - **Setup never asks again.** `GET /api/onboarding/chores/known` (people,
+    adults, pets, `home.known` + facts, saved profile, rhythm picker).
+    `ChoreProfileRequest` fields are now `Optional`, None = "not asked this
+    call": `/recommend` merges answers over the saved profile
+    (`profile_for_starter`), pets from the table, adults when nobody was
+    named; `/chores-profile` treats None as the old defaults so the skip
+    path saves exactly what it always did. `/recommend` writes nothing —
+    not even the profile; the keep and the skip both save it.
+    `/chores/save` now refuses a rhythm it can't keep (reported in
+    `skipped`, like a stray name) and returns `scheduled`.
+  - **The chat path is the same list.** `get_starter_chore_list` (gated
+    chores tool) = saved profile + pets + adults → the rules; the system
+    prompt's chores walk-through now asks only what isn't on file, saves
+    with `set_chores_profile`, reads this list back in words, then
+    `add_chore` per kept row + `generate_chore_schedule`. "Never type out
+    a list of your own instead."
+  - **chores-setup.html got the smallest review that exposes the
+    contract** (prefill from `/known`, pets shown not asked, per-row
+    owner/rhythm/"Someone else does it"/drop, "Keep these" vs "Not now").
+    The sibling card "Setup becomes a step under Chores" builds the real
+    screen; this page and `GET /chores-setup` were deliberately kept.
+  - **Left alone, and a card:** every new chore's first occurrence is
+    TODAY (`_next_due_date`'s "never scheduled → today"), so keeping 28
+    rows puts 28 on Now on day one, the yearly vet visit included.
+    Pre-existing; staggering the first fortnight is a product call.
+  - **Verifier's two catches, fixed:** the help's "How often?" answer now
+    re-rhythms EVERY row the help is tagged onto (the lawn people's
+    fortnight is when the lawn is mown), not just the cleaning rows — one
+    question was asked, so one answer applies, and review corrects the
+    odd row. And the pure function no longer crashes on what a saved
+    profile or the chat can hand it: a non-numeric room count reads as
+    "not known" (`_count` → 0, the same one row an unknown home gets)
+    and a non-string in the rotation is nobody.
+  - Tests: `tests/test_chore_starter_list.py` (37, one section per
+    acceptance criterion) plus one parametrize case in
+    `test_chores_switch.py`; three older tests re-pinned to the new
+    contract (recommend returns baseline + adds; save's body gained
+    `scheduled`; the gated-tool set). 3383 passed.
+- **2026-09-13 — Un-tick and re-tick a bought grocery line and the kitchen
+  holds ONE of it. Branch `worktree-grocery-retick`, NOT merged at the time
+  of writing.** Loop Board "Un-tick and re-tick a bought grocery item and
+  it goes into the kitchen twice" (Bug, Phase 0). `grocery.mark_grocery_item`
+  added a purchased line to inventory on every transition INTO 'purchased';
+  its 2026-09-11 no-op guard (`app/tools/grocery.py`, the
+  `row["status"] == status` early return) compares statuses, so it catches
+  the offline replay it was written for and nothing else — purchased ->
+  needed -> purchased changes the status each time. Reproduced in-process
+  and over the real route: Eggs 12 -> 12 -> 24. The sibling of the cook
+  tick entry below, found and reported by it.
+  - **Memory is its own column, `grocery_items.inventory_added_at`**
+    (schema.sql + `_MIGRATIONS`, nullable, NOT backfilled), same reasoning
+    as `inventory_depleted_at`: status forgets. The add runs only while the
+    stamp is NULL. **Claimed inside the same `BEGIN IMMEDIATE` that flips
+    the status** — the status route is a sync def in a threadpool, and two
+    'purchased' posts for one line at the same instant doubled on **20/20**
+    trials before (the old guard had the same race; it read the status on
+    one connection and wrote on another). `_add_to_inventory` grew a `conn`
+    parameter so the inventory write, the stamp and the receipt land in
+    one transaction or not at all. 0/20 after.
+  - **UN-TICKING PUTS IT BACK — when it can prove exactly what it added,
+    and only then. The opposite call from the cook tick, deliberately, and
+    from the code rather than by analogy.** What a purchase writes is
+    KNOWN at the moment it writes it: `_add_to_inventory` either inserts a
+    fresh row (the line's own quantity, category, an estimated expiry) or
+    merges into a same-name row via `_try_consolidate_quantity` and
+    overwrites its `source` and `category`. A depletion has no ledger and
+    deletes rows at zero; a purchase can write down what it did. So the
+    tick records a receipt, `grocery_items.inventory_receipt_json`: which
+    inventory row, `fresh` or merge, and the row's quantity / source /
+    category / expiration_date / updated_at / rev on BOTH sides of the
+    write. The untick reverses ONLY when the row still reads exactly the
+    "after", **proven by a new `inventory_items.rev`** — a per-row write
+    counter bumped by a trigger (`inventory_items_bump_rev`, schema.sql)
+    on EVERY update of any column — and then does the exact inverse:
+    deletes a fresh row (the call
+    `undo_pre_shop_drop` already makes on `already_have_inventory_id`, the
+    precedent this extends), or puts a merged row back to its recorded
+    "before" — never "now minus what we added", nothing computed. Row
+    gone, row touched, no receipt: the kitchen is left alone, the result
+    says `inventory_restored: False`, and **the stamp STAYS**, so the
+    re-tick adds nothing on top of what is already there (`inventory_added:
+    False`). The answers to the card's questions: after the add the
+    quantity is recoverable because it is recorded, not derived; if the
+    household used some in between, the 8 they have is their number now
+    and stays, and the re-tick does not put 12 more on it; if the row was
+    merged, the before-state is restored exactly, category included (the
+    tick's 'other' overwriting a 'pantry' row comes back 'pantry'). A row
+    is never reduced or deleted on anything less than "this is the row and
+    it is exactly as we left it". **Emily's to overrule** in either
+    direction: never restoring (the cook-tick stance) would leave phantom
+    eggs the next list is shopped against; restoring on quantity alone
+    would occasionally undo a hand-set number.
+  - **The first cut used `updated_at` as the proof and an independent
+    verifier broke it the same day — recorded here because the mistake is
+    easy to make again.** `datetime('now')` is whole-second, so "set to 8,
+    set back to 12" inside the tick's own second read as the tick's own
+    write, and the untick reverted (or deleted) a row that had been
+    touched twice; a location-only edit in that second slipped through the
+    same way. Worse, the first test file sidestepped it by forcing
+    `updated_at` into the past. Now: `rev`, a trigger rather than a
+    `rev = rev + 1` in each of the eight writers, so a ninth writer that
+    forgets still counts — the proof is the database's, not every future
+    caller's; two writes in one millisecond are two bumps. The trigger is
+    declared in schema.sql and the column it bumps is added by
+    `_MIGRATIONS` in the same `init_db` call (SQLite does not resolve a
+    trigger body's columns until it runs — checked). The tests now run the
+    real sequences with no sleep and no timestamp poking, plus one that
+    walks every writer and asserts the bump.
+  - **Row GONE between tick and untick clears the stamp; row TOUCHED keeps
+    it — two different certainties, decided separately.** The verifier
+    flagged that a deleted row left the stamp in place, so that grocery
+    line could never re-enter the kitchen by re-tick, permanently and
+    silently — the moment somebody tidies the kitchen by hand before
+    fixing the list (a coherent thing to do), the line is locked out for
+    good. A gone row also has nothing left to double onto, which is the
+    whole reason the stamp exists. So `_restore_inventory_from_receipt`
+    returns `RESTORED` / `ROW_GONE` / `LEFT_ALONE`; the first two clear
+    the stamp, only the first says `inventory_restored: True`. The cost:
+    one contrived sequence (eat all twelve, THEN untick, then re-tick)
+    puts twelve back. A merged row used down to zero (which deletes) is
+    gone in the same sense and treated the same.
+  - **Not backfilled**, so a line already 'purchased' before this deploys
+    has a NULL stamp and no receipt: an untick there leaves the kitchen
+    alone, and the re-tick adds ONCE more, then never again. Same bounded
+    one-off the sibling column accepted, for the same reason — a startup
+    backfill would stamp rows whose inventory may long since be eaten.
+  - The agent's `mark_grocery_item` tool description now says to read
+    `inventory_added` / `inventory_restored` before telling the household
+    what happened to the kitchen. `update_inventory(action="add")` still
+    returns `{"item_id", "item"}` — the receipt fields are stripped there.
+  - `tests/test_grocery_retick_double_adds.py`, 28 tests, 21 of the
+    original 22 red against the merge base (the 22nd is the replay guard,
+    kept green on purpose) and the same-second trio red against the first
+    cut; tick/untick/retick, purchased -> in_cart -> purchased, fresh and
+    merge reversals with source/category/expiry, set-down-and-back /
+    location-only / expiry-nudge / stepped / cook-depleted rows left
+    alone with no sleep anywhere, every writer bumps `rev`, the gone row
+    (deleted, and used-to-zero) clearing the stamp, the pre-column line,
+    20 concurrent pairs, the route, and a migration test on a DB derived
+    from today's schema minus the three columns (the
+    `test_chore_owner_mode` pattern; the trigger exists on that old file
+    before its column does and bumps once the column lands). Suite
+    3345 -> **3373 passed**. Also driven over a real uvicorn on a
+    throwaway DB: Eggs 12 -> gone -> 12 -> unchanged; Butter 6 -> 12 -> 6
+    -> 12 (merge); Yogurt 12 -> 8 (stepper) -> untick leaves 8 -> retick
+    leaves 8.
+  - **Reported, not fixed:** `staples.record_staple_purchase` writes a
+    'bought' event on the tick and nothing takes it back on an untick, so
+    a staple un-bought today still believes it was bought today and learns
+    its rhythm from that date (one event per day, so a re-tick teaches
+    nothing twice — the untick is the gap). Its own card.
+- **2026-09-13 — Now is one strip down the day. Branch
+  `worktree-now-strip`, NOT merged at the time of writing.** Emily picked
+  it on 2026-09-12 from the "Beyond lists" canvas (artboard "Now · A · The
+  day as a strip"). Now's content — the sand next-up card plus "The rest
+  of today" / "Done today" — is ONE vertical strip now: every move is a
+  node on a `44px | 1fr` grid (`dayStripNodeHtml` / `.day-strip` in
+  `static/shell.js` / `shell.css`, "NOW — the day as a strip" section).
+  Left: the time as a 10px/800 eyebrow ("8:00", "NOON", "6:30"; "TODAY"
+  for a shop, "TONIGHT" for a fridge or prep move), a 28px dot, a 1.5px
+  `--hairline` down to the next node. The dot is the state AND the tick
+  (44px of tap around it, Rule 6): done = `--celadon` + a tick, now =
+  `--apricot` + the move's icon, later = `--surface` + `--hairline-strong`
+  + the icon, all glyphs in `--on-accent-ink` on a fill (Rule 1). Right:
+  title + one meta line (`move.detail`); the next-up move is the ONE
+  tinted node — a `--celadon-tint` tile with a NOW eyebrow (§2b S3, S6) —
+  and its action stays in the dock, unchanged. The whole body is the tap
+  target for "open this move" (52px+); a done node's dish name stays a
+  link, as before. Ticking settles with the grocery row's transitions
+  (`todayAnimateNodeSettle`, the same opposite-state-then-reflow trick as
+  `groAnimateRowSettle`; the strip's selectors ride animation 3's rules in
+  the Motion section — not a fourth animation). The tomorrow card and the
+  empty moment are untouched and sit after the strip. `/api/today/moves`
+  already carried everything; nothing added to `app/`. Old card/row CSS
+  retired (`.nextup-card`, `.rest-*`); `.nextup-when` stays because Plan's
+  Meal step hero still uses it, and the shared `.tick` stays for the
+  chores rows. Verified in the browser at 375×812 light and dark and at
+  1280 against a throwaway copy of the pre-reset backup with a seeded day
+  (a made-ahead breakfast, lunch, dinner, a fridge move, 60 needed
+  groceries). `tests/test_now_day_strip.py` (15). Judgment calls for
+  Emily: (1) **order** — moves.py sorts by `window_start`, which put every
+  all-day move first and would have read "TONIGHT" above breakfast; the
+  strip sorts by where a move sits on the day (`dayStripOrder`: a shop
+  at the top as "TODAY", a fridge/prep move at the foot as "TONIGHT" —
+  the old "Before bed" slot), server order kept between ties; (2) **the
+  tile's meta ink** — the mockup said `--ink-secondary`, which measures
+  3.98:1 on `--celadon-tint` (under AA at 14px); it is `--celadon-label`
+  (4.87:1 light / 5.92:1 dark, the token for text inside a celadon tile,
+  what the tomorrow card already uses); (3) **two apricot fills** — the
+  now dot and the dock's button are both apricot, as the picked mockup
+  draws them (Rule 5 says one per screen; the dot is 28px, but it is a
+  second one); (4) the NOW tile carries `move.reason` as a second small
+  line when there is one ("for Thursday's skewers") — the old card's
+  accent line, kept so a fridge move still says what it is for; (5) the
+  eyebrow tracks at .06em rather than the .13em eyebrow norm so "TONIGHT"
+  fits the 44px rail (it still overflows ~3px each side); (6) the
+  needs-you band (tonight's open dinner, "Tomorrow needs a dinner") stays
+  ABOVE the strip, since an undecided dinner is what's next and suppresses
+  the tinted node, as before. Not done: `move.detail` still repeats the
+  clock the rail shows ("dinner · 25 min · 6:30"); dropping it is a
+  moves.py change left for a follow-up.
+- **2026-09-13 — The meal screen is a clock. Branch `worktree-meal-clock`,
+  NOT merged at the time of writing.** Emily picked "Meal · B · The clock"
+  from the Beyond-lists canvas on 2026-09-12. Plan › a day › a meal is now
+  a spruce hero in the gutter ("DINNER · MONDAY", "On the table by half
+  six", the dish, "Start at 6:00" and — only when `cooking_role` is one
+  named person — "Emily's cooking"; the thaw note as its one line), one
+  eyebrow ("About thirty minutes, seven stops"), and the cook as stops on a
+  spine: "Everything out" first (names on the line, amounts one tap in via
+  `humanQtyText`), then one stop per instruction with the time it lands at.
+  The dock is "Start at 6:00" / "Start cooking" / "Keep cooking" (a step
+  already ticked in cook mode's store) with "Swap this meal" as the quiet
+  link. "The plate" chips card and the bullet-list "The recipe" card are
+  gone (`plateCardHtml`, `mealRecipeCardHtml`, `.wk-recipe-card` deleted);
+  the cook-ahead picker keeps its card under the stops. **The timing rule**
+  (`mealClockStops`, pure, unit-tested under node in
+  `tests/test_meal_clock.py`): start = the slot's table time
+  (`get_week_menu`'s `slot_times`, read back into minutes by
+  `slotTableMinutes` — the label has no am/pm, the slot supplies it) minus
+  the recipe's prep + cook minutes off the cooker-view card (moves.py's own
+  "Start by" arithmetic). No recipe carries per-step minutes
+  (`instructions_json` is a list of strings), so the stops are SPREAD
+  evenly from the start to the table time, the last one landing on the
+  table, each rounded to the nearest five minutes and marked `estimated` —
+  which is what makes the eyebrow say "About". A `step_minutes` array, if a
+  recipe ever carries one, gets exact unrounded times and no "About". No
+  total minutes: stops with no times and the eyebrow "Six stops". Never
+  seconds. **The stops and cook mode's steps are one list** — both read
+  `cookMeal.instructions` off `/api/cooker-view`, which is why the screen
+  builds off the Cook view's card (`cookMealForEntry`) and not the week
+  entry; verified in the browser (7 stops ↔ "Step 1 of 6" + Everything
+  out). Judgment calls: (1) a stop's title is the step's opening clause
+  when it is ≤4 words, else its first three words (fewer if that ends on a
+  joining word) with the WHOLE step as the line — a line starting
+  mid-phrase read worse than a few repeated words; (2) the swap line's idle
+  "Tell me what instead" is not rendered in this dock (it stays on the Day
+  step's cards) — the dock is one action and one quiet link; (3) the
+  "Serves N" and plate-note chips are gone with the design's two chips;
+  (4) a recipe with no ingredients gets no "Everything out" stop rather
+  than an empty one; (5) the cook's name comes from `/api/memory`'s
+  rhythm, fetched once per page for the Plan tab (`ensureRhythmForMeals`),
+  and the chip is omitted for "turns"/"whoever's free"/unanswered rather
+  than guessed. The chevron on "Everything out" turns without a transition
+  (§4: three animations, all spoken for).
+- **2026-09-13 — Plan › Which days is seven tiles, and a night can be
+  moved. Branch `worktree-week-tiles`, NOT merged at the time of writing.**
+  Emily picked "Week · A · Seven tiles" from the Beyond lists canvas
+  (2026-09-12). One tile a night — date | dinner + a 5px bar for how long
+  (minutes/95, floor 18%, cap 150px; apricot from 50 min, celadon under) |
+  a 44px drag handle — replacing the expanding day card (`reviewDayCardHtml`
+  and the `.rv-day-*` rules are gone; `reviewDayTileHtml`/`reviewDaysHtml`
+  and `.rv-tile*` in their place). The five slots a card used to expand
+  into are the Day step's now: the tile's body opens it (§2b S8).
+  - **Moving a night trades the two DINNERS and nothing else.** New
+    `tools.swap_dinner_nights(plan_id, date_a, date_b)` (weekly_plan.py)
+    re-dates the dinner rows IN PLACE — ids kept, so grocery links, the
+    cooked tick and the plate sides ride along and **the grocery list is
+    never touched** (same dishes, same lines). What is keyed by DATE moves
+    by hand: leftover-chain `links_to`/`make_double_for` references are
+    rewritten to the new nights, and defrost `prep_tasks` naming a moved
+    entry shift by the same number of days (status kept, weekday re-said).
+    Prep-cut rows stay on the prep DAY (a rhythm fact); 'general' LLM prep
+    tasks carry no entry id and are left for `generate_prep_schedule`.
+    slot_needs/attendance stay with the day — "Emily is out Thursday" is
+    about Thursday, not the dish.
+  - **Refusals are answers (`status: 'refused'`), never writes:** a night
+    nobody is home (`planned_empty`), a dinner already cooked, or a chain
+    that would run backwards (the reheat before its cook) — checked in
+    memory before the transaction writes. A night off the period, the same
+    night twice, or a malformed date is a ValueError → 400.
+  - **Undo is one token** (`derived_from.moved_from = {date, at}` on each
+    moved row, the shape swap_in_place's `swapped_from` takes).
+    `undo_dinner_nights_swap` requires both nights to still point at each
+    other, then clears it — so Undo is the LAST move, which is what an
+    eight-second toast can honestly offer. Routes:
+    `POST /api/week/{week}/swap-nights` and `/swap-nights-undo`. Chat:
+    `swap_dinner_nights` is a tool beside `swap_meal_in_plan`, tagged
+    `week` in `_WEEK_TOOLS` so the panel refreshes.
+  - **Front end is optimistic (§6):** the tiles trade on the drop, then
+    POST; a refusal or failure puts them back and says the server's
+    sentence in a calm toast (a toast rather than the in-card trouble line
+    the stepper uses, per the design brief); success offers Undo. Drag is
+    pointer events: a mouse lifts on press, a finger after a 250ms hold
+    (a quick swipe on the handle never lifts); the lifted tile carries
+    `--shadow-hero` and follows the finger, the night under it slides into
+    the lifted night's home — a swap previewed as a swap, nothing in
+    between moves — on the tab crossfade's own `--motion-fast`/`--motion-ease`.
+    Keyboard: the handle is a button; ArrowUp/Down trades with the
+    neighbour, focus follows the dish (and returns on a refusal), and the
+    result is announced through `#rv-tiles-live` — which lives in
+    shell.html, NOT in the re-rendered panel: a region rebuilt with the
+    tiles was replaced before it was read (found in the browser walk).
+  - **Judgment calls for Emily:** (1) "Hosting · 5" is the headcount at
+    the table (`serves`), guests included — her own phrasing. (2) The head
+    row's eyebrow and "Bar = how long" use `--ink-strong`, not
+    `--ink-muted`/`--ink-secondary` as drawn: on the ground those measure
+    4.33 and 4.44, short of AA (rule 8). (3) A plain tile is 60px, not 56:
+    the body is a 44px tap target (rule 6) inside 7px padding and a 1.5px
+    edge. (4) "All seven fit above the dock at 375×812 with no tags" holds
+    only once the root band scrolls away (tiles + head ≈ 460px against
+    643px above the dock); with the band, control and dock on screen
+    nothing seven-tall could. (5) Away nights and cooked nights render no
+    handle and refuse to be a drop target; an unplanned night can take a
+    dinner (one row moves, the other night stays empty).
+  - The browser walk ran headless Chrome through Playwright in a scratch
+    venv — neither the Browser pane nor the Chrome extension was reachable
+    from this session.
+- **2026-09-13 — Cook's root is the shelf: one strip of nights, one spruce
+  card for tonight, "Start cooking" in the dock. Branch
+  `worktree-cook-shelf`, NOT merged at the time of writing.** Emily picked
+  "Cook · D · The shelf" from the Beyond-lists canvas. `renderKitchen`
+  renders, in order: `cookShelfHtml` (one 74px tile per night of the
+  planning period, tonight celadon, one word per dish via
+  `dishShortWord`; a tile opens that night's meal screen with the
+  "‹ Cook" crumb), the attention fold, `kitchenCookingTodayHtml` (now
+  ONE spruce `.cook-tonight` card: eyebrow with the day / the meal of the
+  day / the cook's name, the dish at 26px, START + ON THE TABLE off the
+  move the server already computed, the thaw/prep fact for this meal),
+  `cookGetReadyRowsHtml` (at most two quiet rows — the next thaw for a
+  later night, the next prep session, the next loose prep task; the two
+  soonest), and one "More ···" link to `#cook-more-sheet` with Recipes /
+  Add from a link / Inventory in their old `.kit-row` shape. The dock
+  (`#kit-dock`, `.cook-root-dock`) reads "Start cooking" →
+  `cookEnterFocus(tonightIdx)`, "Mark eaten" on a reheat night, and is
+  hidden when tonight has no cook or it's done. **Tier 2, decided by the
+  pick:** DESIGN_SYSTEM §6's "Cook's root has no primary action" and rule
+  2's "Cook's root is the live example" of a dockless screen were changed
+  in the same commit (plus §2 rules 4/5 and the §5 rows for the empty
+  moment and the dock; two new §5 rows for the shelf and the Tonight
+  card). Retired: `cookRestOfWeekHtml`/`cookRestDayRowHtml`/
+  `KITCHEN_REST_VISIBLE`, `cookPrepSessionsHtml`, `kitchenPrepTodoHtml`,
+  `kitchenTilesHtml`, `kitchenState.restExpanded`, the `rest-more`
+  handler, the `.cook-day-*` CSS. Kept: `kitchenTodayRows`/`Line`/
+  `Subtitle` (the band's line is unchanged), `kitchenTodayRowHtml` (a
+  multi-slot day's other meals still render as tick rows under the
+  card), `kitchenLoosePrepTasks` (feeds the get-ready rows so no prep
+  task is invisible). Backend: `/api/cooker-view` grew three additive
+  keys — `period_start_date`, `day_count` (from `get_weekly_plan`'s
+  period, so the shelf can show an unplanned night as one) and
+  `cook_name` (the `cooking_role` rhythm fact when it is `one_person`;
+  the first code that reads that answer, which §2b S4 had flagged as
+  never acted on).
+  - **Judgment calls, for Emily.** (1) The card's no-thaw line is
+    "Nothing to thaw or prep ahead." rather than the artboard's
+    "Everything's in. Nothing to thaw." — "everything's in" claims the
+    groceries are home, which nothing in the app can verify (§8: never
+    promise what isn't true). (2) A reheat night's tile IS tappable: it
+    opens the reheat's own card (`cookReheatFocusHtml`, the screen Now's
+    hero already opens), which carries "Mark eaten"/"Mark not eaten" —
+    a tile that does nothing among tiles that do would read as broken.
+    The 2026-09-04 rule ("a reheat is never a way into a recipe") still
+    holds: there is no recipe on that screen. (3) The no-plan state
+    shows no shelf (seven dashes say nothing); the shelf appears once a
+    plan or a loose meal exists, including on a night with no cook. (4)
+    Recipes / Add from a link / Inventory stayed reachable from Cook
+    behind "More ···" rather than moving into Preferences: they are
+    things the cook does, not settings. (5) On a day with more than one
+    meal to make, the card is the meal `cookTonightIndex` already
+    picked and the others keep their old tick rows under it — the
+    design shows the dinner-only case, and a 21-slot plan's breakfast
+    must not vanish. (6) The get-ready rows cap at two by design; when a
+    thaw, a session AND a loose task all exist, the loose task waits
+    until one of the others is done. (7) "Start" and "on the table" are
+    the move's own clocks ("6:00", no am/pm — the same words Now uses);
+    with no move for the meal the card shows "TAKES · 30 min" instead
+    of inventing a start time. Tests: `tests/test_cook_shelf.py` (22)
+    plus the eight Cook-root files updated to the new shape.
 - **2026-09-13 — Skip, swap, or "not this week": a ··· on every chore row.
   Branch `overnight/chores-skip-hand-move`, NOT merged at the time of
   writing.** Loop Board "Chores v1: Skip, swap, or 'not this week'"

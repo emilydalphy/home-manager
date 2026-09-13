@@ -44,6 +44,7 @@ from .attention import (  # noqa: F401
 from .chores import (  # noqa: F401
     _FREQUENCY_DAYS,
     CHORES_OFF_MESSAGE,
+    FREQUENCY_WORDS,
     ChoreRefused,
     add_chore,
     chores_enabled,
@@ -67,6 +68,19 @@ from .chores import (  # noqa: F401
 # above rather than in it, so a change to the nine chat tools' exports
 # and this one don't land on the same lines.
 from .chores import get_chores_pending  # noqa: F401
+# The starter list (Loop Board "Chores v1: A starter list from what Pomona
+# already knows"): rule-based rows from the household's facts, read by the
+# recommend route (starter_chore_list, profile_for_starter), by the setup
+# screen (known_for_chores) and by the chat (get_starter_chore_list).
+from .chore_starter import (  # noqa: F401
+    NEVER_DROPPED,
+    frequency_choices,
+    get_starter_chore_list,
+    known_for_chores,
+    profile_for_starter,
+    starter_chore_list,
+    with_frequency_label,
+)
 # The ··· on a chore row (Loop Board "Chores v1: Skip, swap, or 'not this
 # week'"): the same three changes by INSTANCE id, plus who a row can be
 # handed to. Route-only, like set_chore_instance_status above them — the
@@ -372,13 +386,16 @@ from .recipes import (  # noqa: F401
     flag_recipe_temporary,
     get_member_taste,
     get_recipe,
+    implausible_quantity,
     list_recipes,
     list_recipes_for_planning,
     log_cooking_deviation,
     log_recipe_note,
     mark_recipe_feedback,
+    plausible_cooking_quantity,
     save_cooking_quantities,
     scale_recipe,
+    settle_cooking_quantities,
     update_recipe_details,
     validate_measured_quantities,
 )
@@ -530,6 +547,7 @@ from .weekly_plan import (  # noqa: F401
     retire_overlapping_plans,
     preview_approved_takeover,
     suggest_planning_period,
+    next_period_after,
     retire_expired_drafts,
     MAX_PERIOD_DAYS,
     PLAN_AHEAD_FROM_WEEKDAY,
@@ -543,6 +561,7 @@ from .weekly_plan import (  # noqa: F401
     attach_intake_to_plan,
     audit_plan_slots,
     clear_plan_slot,
+    describe_planned_meal,
     drop_dish_from_day,
     _dedupe_duplicate_slots,
     repair_leftover_chains,
@@ -562,7 +581,9 @@ from .weekly_plan import (  # noqa: F401
     set_planning_mode,
     set_week_constraints,
     swap_component_in_plan,
+    swap_dinner_nights,
     swap_meal_in_plan,
+    undo_dinner_nights_swap,
     week_receipt,
 )
 # One meal, replaced on the spot for one small model call — the Meals

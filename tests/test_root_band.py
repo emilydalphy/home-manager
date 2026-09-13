@@ -247,10 +247,13 @@ def test_now_shop_and_cook_each_have_their_moment_and_its_next_step():
     gro_dock = SHELL_JS[SHELL_JS.index("function groDockHtml("):SHELL_JS.index('// ---------- "Maybe already home" ----------')]
     assert '<button type="button" class="dock-primary" data-gro="goto-plan">Go to Plan</button>' in gro_dock
     assert "case 'goto-plan':\n        activateTab('week', true);" in SHELL_JS
-    # Cook: the sentence and the next cook; no dock (nav rule: Cook's root has none).
+    # Cook: the sentence and the next cook, and no dock on an empty night
+    # (since the shelf design, 2026-09-13, the root's dock carries "Start
+    # cooking" only when tonight has a cook — cookRootDockHtml is empty
+    # for no row at all).
     assert "emptyMomentHtml('pot', 'Nothing to cook tonight.', kitchenNextCookLine(meals, todayIso))" in _function("kitchenCookingTodayHtml")
-    kitchen = re.sub(r"//[^\n]*", "", _function("renderKitchen"))
-    assert "dock" not in kitchen and "dock-primary" not in _function("kitchenCookingTodayHtml")
+    assert "if (!row || row.done) return '';" in _function("cookRootDockHtml")
+    assert "dock-primary" not in _function("kitchenCookingTodayHtml")
 
 
 def test_the_moment_sits_in_the_middle_of_the_content_area():
@@ -267,7 +270,7 @@ def test_the_moment_sits_in_the_middle_of_the_content_area():
 
 def test_the_prep_days_card_left_the_cook_root():
     assert 'data-cook="prep-days"' not in SHELL_JS
-    assert "if (!sessions.length) return '';" in _function("cookPrepSessionsHtml")
+    assert "Tell me which days you prep" not in SHELL_JS
 
 
 # --------------------------------------------------------------------------

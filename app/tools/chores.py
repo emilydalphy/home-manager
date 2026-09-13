@@ -12,7 +12,35 @@ from ._shared import household_id, require_household_row, current_member
 from . import weekly_plan as _weekly_plan
 
 
-_FREQUENCY_DAYS = {"daily": 1, "weekly": 7, "biweekly": 14, "monthly": 30, "quarterly": 91, "once": None}
+# The rhythms a chore can have, and the storage behind each. semiannual
+# (twice a year) and yearly arrived with Loop Board "Chores v1: A starter
+# list from what Pomona already knows": the seasonal transitions that list
+# proposes — winter tires on / off, patio furniture out / in, the closet
+# swap — happen twice a year, and a pet's vet checkup once, and squeezing
+# either into "quarterly" would have asked for them at the wrong time. 182
+# and 365 days; the schedule's arithmetic (_fill_schedule) needed nothing
+# new to take them.
+_FREQUENCY_DAYS = {
+    "daily": 1, "weekly": 7, "biweekly": 14, "monthly": 30, "quarterly": 91,
+    "semiannual": 182, "yearly": 365, "once": None,
+}
+
+# The same rhythms in the household's words — what a screen or the chat
+# prints, never the key. One copy here for every Python reader
+# (chore_starter.py's rows carry them as frequency_label; the /known route
+# hands them to a picker); static/shell.js's CHORE_RHYTHM_LABELS is the
+# JS twin for Plan | Chores, and tests/test_chore_starter_list.py pins the
+# two to the same words so they cannot drift apart.
+FREQUENCY_WORDS = {
+    "daily": "Every day",
+    "weekly": "Every week",
+    "biweekly": "Every two weeks",
+    "monthly": "Every month",
+    "quarterly": "Every few months",
+    "semiannual": "Twice a year",
+    "yearly": "Once a year",
+    "once": "Just once",
+}
 
 # Who a chore belongs to — Loop Board "Chores v1: every chore has a chosen
 # owner" (Emily, 2026-09-11). See schema.sql's comment on chores.mode.

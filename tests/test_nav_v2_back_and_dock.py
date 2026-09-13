@@ -256,8 +256,10 @@ def test_the_dock_is_the_last_thing_in_its_container():
 
 def test_a_screen_with_no_single_action_has_no_dock():
     """The other half of rule 2, and the half that is easy to lose: Emily's
-    line is "a screen with no single action has NO dock — Cook's root stays
-    that way", not "every screen grows one".
+    line is "a screen with no single action has NO dock", not "every screen
+    grows one". (Cook's root was the standing example until the shelf
+    design gave it "Start cooking" on 2026-09-13; a Cook night with nothing
+    to cook still has none — see tests/test_cook_shelf.py.)
 
     Shop's LIST returns the empty string while the shops question is up,
     because the card owns the screen's one apricot then; and an empty dock

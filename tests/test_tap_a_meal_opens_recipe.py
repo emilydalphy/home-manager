@@ -201,8 +201,8 @@ def test_todays_dish_names_are_links_and_only_a_cook_has_a_recipe():
         + _extract("moveDishHtml") + "\n"
         + "console.log(JSON.stringify({\n"
         + f"  cook: moveDishHtml({json.dumps(cook)}, 'hero-dish'),\n"
-        + f"  reheat: moveDishHtml({json.dumps(reheat)}, 'rest-row-title'),\n"
-        + f"  shop: moveDishHtml({json.dumps(shop)}, 'rest-row-title'),\n"
+        + f"  reheat: moveDishHtml({json.dumps(reheat)}, 'day-node-title'),\n"
+        + f"  shop: moveDishHtml({json.dumps(shop)}, 'day-node-title'),\n"
         + f"  old: moveRecipeTarget({json.dumps(old_cook)})\n"
         + "}));\n"
     )
@@ -217,22 +217,23 @@ def test_todays_dish_names_are_links_and_only_a_cook_has_a_recipe():
     }
 
 
-def test_a_done_row_keeps_its_dish_name_tappable():
+def test_a_done_node_keeps_its_dish_name_tappable():
     """A cooked dinner is exactly the name someone taps wanting to see what
-    went into it. The ROW stops being the move's button (the tick is the
+    went into it. The NODE stops being the move's button (the dot is the
     only control left); the NAME goes on being a link."""
-    fn = _extract("moveRowHtml")
-    assert "moveRecipeTarget(move)" in fn
-    assert 'rest-row-title dish-link' in fn
+    fn = _extract("dayStripNodeHtml")
+    done = fn.split("state === 'done'", 1)[1].split("} else {", 1)[0]
+    assert "moveDishHtml(move, 'day-node-title')" in done
+    assert "data-move-action" not in done
     # And a tap on the name must never run the row's own action — a reheat's
     # action IS the tick, and tapping a name is "show me this", not "do it".
     wiring = SHELL_JS.split("data-move-dish]", 1)[1][:600]
     assert "openRecipeFor" in wiring and "runTodayMoveAction" not in wiring
 
 
-def test_todays_three_plain_dish_names_now_go_through_the_link_helper():
+def test_todays_plain_dish_names_go_through_the_link_helper():
     for site in (
-        "moveDishHtml(move, 'hero-dish nextup-dish' + dishSizeClass(move.title))",
+        "moveDishHtml(move, 'day-node-title')",
         "moveDishHtml(move, 'tomorrow-title')",
     ):
         assert site in SHELL_JS, f"{site} — a Today dish name is still plain text"
@@ -298,13 +299,9 @@ def test_the_meal_step_shows_the_recipe_and_none_of_its_controls():
         + _extract("cookInstructionsHtml") + "\n"
         + _extract("cookDetailHtml") + "\n"
         + _extract("isSnackSlot") + "\n"
-        + _extract("mealRecipeCardHtml") + "\n"
         + "console.log(JSON.stringify({\n"
         + f"  plain: cookDetailHtml({json.dumps(meal)}, 'meal', false, true),\n"
-        + f"  cooking: cookDetailHtml({json.dumps(meal)}, 3, false, false),\n"
-        + f"  card: mealRecipeCardHtml({json.dumps(meal)}, 'dinner'),\n"
-        + "  reheat: mealRecipeCardHtml({ meal: 'Bulgogi', is_leftovers: true }, 'dinner'),\n"
-        + "  none: mealRecipeCardHtml(null, 'dinner')\n"
+        + f"  cooking: cookDetailHtml({json.dumps(meal)}, 3, false, false)\n"
         + "}));\n"
     )
     got = _run_node(harness)
@@ -329,48 +326,67 @@ def test_the_meal_step_shows_the_recipe_and_none_of_its_controls():
                     "cook-focus-end"):
         assert control in cooking, f"cook mode lost {control!r}"
 
-    # The card wraps it, and says nothing at all where there is nothing to
-    # say: a reheat night is a line, and an entry the Cook view has no card
-    # for hasn't loaded (or isn't cookable).
-    assert "The recipe" in got["card"] and "wk-recipe-card" in got["card"]
-    assert got["reheat"] == "" and got["none"] == ""
+    # (The Meal step stopped rendering this plain frame on 2026-09-12 — the
+    # recipe card became the clock, tests/test_meal_clock.py — but the
+    # frame is still the one renderer cook mode's whole method reads, so
+    # its two-frames contract stays tested here.)
+
+
+def _clock_html(cook_meal, slot: str) -> str:
+    """mealClockHtml for one cooker-view card on one slot — the part of the
+    Meal step under the hero (2026-09-12)."""
+    harness = (
+        _ESCAPE
+        + "var weekState = { data: { slot_times: { dinner: '6:30' } } };\n"
+        + "var GRO_ICONS = { chevRight: '<svg/>' };\n"
+        + "function capitalizeFirst(s) { return String(s).charAt(0).toUpperCase() + String(s).slice(1); }\n"
+        + "function cookIngredientLabel(i) { return ((i.qty ? i.qty + ' ' : '') + i.item).trim(); }\n"
+        + _var_block("NUMBER_WORDS") + "\n"
+        + _var_block("TENS_WORDS") + "\n"
+        + _extract("isSnackSlot") + "\n"
+        + "".join(_extract(n) + "\n" for n in (
+            "numberWord", "countInWords", "minutesInWords", "clockLabel", "slotTableMinutes",
+            "mealTotalMinutes", "mealStepMinutes", "ingredientNamesLine", "mealClockStops",
+            "mealClockEyebrow", "mealClockFor", "mealStopHtml", "mealClockHtml"))
+        + "var STOP_TITLE_TAIL = /^(a|the|in|on|of|to|and|or|with|for)$/i;\n"
+        + _extract("stopTitleSplit") + "\n"
+        + f"var meal = {json.dumps(cook_meal)};\n"
+        + "var entry = meal ? { source: 'plan', entry_id: meal.entry_id } : null;\n"
+        + f"console.log(JSON.stringify(mealClockHtml({json.dumps(slot)}, "
+        + f"mealClockFor({{ date: '2026-09-10' }}, {json.dumps(slot)}, entry, meal))));\n"
+    )
+    return _run_node(harness)
 
 
 @_needs_node
 def test_a_dish_with_no_saved_recipe_says_so_rather_than_pretending():
-    harness = (
-        _ESCAPE
-        + "var COOK_VOICE_ENABLED = false;\n"
-        + "var cookState = { focusStepsChecked: {} };\n"
-        + _extract("cookStepLi") + "\n"
-        + _extract("cookInstructionsHtml") + "\n"
-        + _extract("cookDetailHtml") + "\n"
-        + _extract("isSnackSlot") + "\n"
-        + _extract("mealRecipeCardHtml") + "\n"
-        + "console.log(JSON.stringify({\n"
-        + "  dinner: mealRecipeCardHtml({ meal: 'Takeaway', has_full_recipe: false }, 'dinner'),\n"
-        + "  snack: mealRecipeCardHtml({ meal: 'Apple slices', has_full_recipe: false }, 'snack'),\n"
-        + "  snack2: mealRecipeCardHtml({ meal: 'Apple slices', has_full_recipe: false }, 'snack2'),\n"
-        + "  realsnack: mealRecipeCardHtml("
-        + "{ meal: 'Energy Balls', has_full_recipe: true, ingredients: [], instructions: [] }, 'snack')\n"
-        + "}));\n"
-    )
-    got = _run_node(harness)
     # A meal with nothing written up says so, and names the way to fill it in.
-    assert "No saved recipe for this one" in got["dinner"]
+    assert "No saved recipe for this one" in _clock_html({"meal": "Takeaway", "has_full_recipe": False}, "dinner")
     # A grab-and-go snack does not: "Apple slices" is not a recipe somebody
-    # forgot to write, so a card whose whole content is "there isn't one" is
-    # an empty card — the same reason the plate card is already hidden here.
-    assert got["snack"] == "" and got["snack2"] == ""
-    # ...and a snack that IS a recipe keeps it.
-    assert "The recipe" in got["realsnack"]
+    # forgot to write, so a block whose whole content is "there isn't one"
+    # is an empty block.
+    assert _clock_html({"meal": "Apple slices", "has_full_recipe": False}, "snack") == ""
+    assert _clock_html({"meal": "Apple slices", "has_full_recipe": False}, "snack2") == ""
+    # ...and a snack that IS a recipe, with nothing in it yet, says that.
+    assert "No steps saved yet" in _clock_html(
+        {"meal": "Energy Balls", "has_full_recipe": True, "ingredients": [], "instructions": []}, "snack")
+    # A reheat night has no cook in it, so it has no clock.
+    assert _clock_html({"meal": "Bulgogi", "is_leftovers": True}, "dinner") == ""
+    assert _clock_html(None, "dinner") == ""
 
 
-def test_the_meal_step_renders_the_recipe_card():
-    assert "mealRecipeCardHtml(cookMeal, slot)" in _extract("mealStepHtml")
-    # And the picker above it is borrowed from the same screen in the same
-    # way — this is the established pattern here, not a new one.
-    assert "cookAheadHtml(cookMeal)" in _extract("mealStepHtml")
+def test_the_meal_step_renders_the_clock_off_the_cook_views_own_card():
+    """The stops and cook mode's steps are one list: both read the cooker
+    view's `instructions`, so the Meal step builds its clock off the same
+    card cook mode focuses (cookMealForEntry), not off the week entry."""
+    step = _extract("mealStepHtml")
+    assert "cookMealForEntry(entry.entry_id)" in step
+    assert "mealClockFor(day, slot, entry, cookMeal)" in step
+    assert "mealClockHtml(slot, clock)" in step
+    assert "(meal && meal.instructions) || []" in _extract("mealClockStops")
+    # And the picker above it is borrowed from the cook screen the same
+    # way it always was — this is the established pattern here, not a new one.
+    assert "cookAheadHtml(cookMeal)" in step
 
 
 # ------------------------------------------------ dish names in chat prose
@@ -935,7 +951,7 @@ def test_the_dish_link_class_only_removes_button_furniture():
     assert "font: inherit" in rule
     # Declared before the classes it rides with, since those set their own
     # family/size/weight and win an equal-specificity tie by being later.
-    for later in (".rest-row-title {", ".tomorrow-title {", ".hero-dish {"):
+    for later in (".day-node-title {", ".tomorrow-title {", ".hero-dish {"):
         assert SHELL_CSS.index(".dish-link {") < SHELL_CSS.index(later), (
             f"{later} must come after .dish-link or it loses its own type"
         )

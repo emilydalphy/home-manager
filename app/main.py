@@ -402,9 +402,39 @@ def _has_bound_household(request: Request) -> bool:
     return not security.is_public_path(request.scope["path"])
 
 
+class ChatContext(BaseModel):
+    """
+    What the household is looking at as they send a message — the subject
+    of the turn, sent by the shell when chat is opened FROM something
+    rather than from the ask bar. Today one kind: `planned_meal`, from a
+    meal card's "Tell me what instead" (Loop Board, Emily 2026-09-13).
+    entry_id is the card's row; date and slot let the server find the meal
+    again after a swap has replaced that row. The server resolves all of
+    it against the household's own live plan (tools.describe_planned_meal)
+    — nothing here is trusted as a description, only as a pointer.
+    """
+    kind: str
+    entry_id: int | None = None
+    date: str | None = None
+    slot: str | None = None
+
+
 class ChatRequest(BaseModel):
     session_id: str = "default"
     message: str
+    context: ChatContext | None = None
+
+
+def _chat_turn_kwargs(*, proactive_check: bool, context: ChatContext | None) -> dict:
+    """
+    run_agent_turn's keyword arguments for one turn. `context` is only
+    passed when there is one, so a turn from the ask bar is the exact call
+    it has always been.
+    """
+    kwargs = {"proactive_check": proactive_check}
+    if context is not None:
+        kwargs["context"] = context.model_dump()
+    return kwargs
 
 
 class ChatAction(BaseModel):
@@ -500,16 +530,29 @@ class OnboardingRhythmRequest(BaseModel):
 
 
 class ChoreProfileRequest(BaseModel):
-    home_type: str = ""
-    bedrooms: int = 0
-    bathrooms: int = 0
-    has_yard: bool = False
-    standard: str = "standard"  # relaxed | standard | meticulous
-    rotation_members: list[str] = []
-    existing_help: str = ""
-    existing_help_frequency: str = ""
-    include_notes: str = ""
-    exclude_notes: str = ""
+    """
+    The chores questionnaire. Every field is optional and None means "not
+    answered on this call" (Loop Board "Chores v1: A starter list from
+    what Pomona already knows"): the recommend route fills a None from
+    the saved chores profile, so a screen that only asked the genuinely
+    new questions — standard, help, notes — never has to send the home
+    facts back, and never re-asks them. The profile-save route reads a
+    None as the old defaults, so it saves exactly what it always did.
+    """
+    home_type: str | None = None
+    bedrooms: int | None = None
+    bathrooms: int | None = None
+    has_yard: bool | None = None
+    standard: str | None = None  # relaxed | standard | meticulous
+    rotation_members: list[str] | None = None
+    existing_help: str | None = None
+    existing_help_frequency: str | None = None
+    include_notes: str | None = None
+    exclude_notes: str | None = None
+
+    def answered(self) -> dict:
+        """Only the fields this call actually sent."""
+        return {k: v for k, v in self.dict().items() if v is not None}
 
 
 class ChoreItemInput(BaseModel):
@@ -1179,26 +1222,46 @@ def onboarding_generate_first_plan_stream(req: FirstPlanRequest | None = None):
     )
 
 
+@app.get("/api/onboarding/chores/known")
+def onboarding_chores_known():
+    """
+    What Pomona already knows before a chores setup asks anything (Loop
+    Board "Chores v1: A starter list from what Pomona already knows"):
+    the people and the adults, the pets on file, the home facts if a
+    chores profile was ever saved (home.known says whether), the saved
+    profile itself, and every rhythm with its words for a picker. The
+    setup step reads this first and asks only for what is missing —
+    never again for home type, bedrooms, bathrooms, yard, pets or who
+    lives here. Read-only.
+    """
+    try:
+        return tools.known_for_chores()
+    except Exception as e:
+        logger.exception("Chores known-facts lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.post("/api/onboarding/chores/recommend")
 def onboarding_chores_recommend(req: ChoreProfileRequest):
     """
-    Turn a household chores profile into a recommended chore list via a
-    single forced tool-call to Claude. Pets and household goals are pulled
-    in automatically from what's already saved. Returns suggestions only —
-    nothing is created yet; the wizard shows these as an editable checklist
-    and the user's final choices go to /api/onboarding/chores/save.
+    Propose the household's starter chore list. Suggestions only — nothing
+    is created or saved here; the household keeps, tweaks or drops each
+    row and the result goes to /api/onboarding/chores/save (or they skip,
+    and /api/onboarding/chores-profile keeps just their answers).
+
+    The profile the list is built from is the saved chores profile with
+    whatever THIS call answered on top (None = not asked this time), the
+    pets from the pets table, the household's goals, and — when setup
+    named nobody for the rotation — the adults, so no row arrives
+    nobody's. The list itself is rule-based (tools.starter_chore_list);
+    Claude only adjusts it from the free-text notes, and if Claude is
+    unavailable the rule-based list is returned as it is rather than a
+    503 (agent.generate_chore_recommendations). Each row carries name,
+    category, frequency (the stored key), frequency_label (the household's
+    words), mode, owner_name, assignee_names, outsourced_to and basis.
     """
     try:
-        pets = tools.list_pets()
-        household = tools.get_household_setup_status()
-        profile = req.dict()
-        profile["pets"] = pets
-        profile["goals"] = household.get("goals", "")
-        # Every proposed chore gets an owner, drawn from the rotation named
-        # in setup. A questionnaire that named nobody still has adults to
-        # draw on — use them rather than proposing a list that's nobody's.
-        if not [n for n in profile.get("rotation_members") or [] if n and n.strip()]:
-            profile["rotation_members"] = [a["name"] for a in tools.household_adults() if a["name"]]
+        profile = tools.profile_for_starter(req.answered())
         chores = generate_chore_recommendations(profile)
     except AssistantUnavailableError as e:
         logger.warning("Chore recommendation hit a transient Claude API failure: %s", e)
@@ -1206,7 +1269,11 @@ def onboarding_chores_recommend(req: ChoreProfileRequest):
     except Exception as e:
         logger.exception("Chore recommendation failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return {"chores": chores}
+    return {
+        "chores": chores,
+        "profile": {k: v for k, v in profile.items() if k != "goals"},
+        "frequencies": tools.frequency_choices(),
+    }
 
 
 @app.post("/api/onboarding/chores-profile")
@@ -1215,20 +1282,22 @@ def onboarding_chores_profile(req: ChoreProfileRequest):
     Save the chores questionnaire answers directly as context — no LLM call,
     no chores created yet. Used when skipping the recommendation/review
     step; the chat assistant can read this later via get_chores_profile
-    instead of re-asking these questions.
+    instead of re-asking these questions. A field this call didn't send
+    (None) saves as its old default, exactly as before the fields became
+    optional.
     """
     try:
         tools.set_chores_profile(
-            home_type=req.home_type,
-            bedrooms=req.bedrooms,
-            bathrooms=req.bathrooms,
-            has_yard=req.has_yard,
-            standard=req.standard,
-            rotation_members=req.rotation_members,
-            existing_help=req.existing_help,
-            existing_help_frequency=req.existing_help_frequency,
-            include_notes=req.include_notes,
-            exclude_notes=req.exclude_notes,
+            home_type=req.home_type or "",
+            bedrooms=req.bedrooms or 0,
+            bathrooms=req.bathrooms or 0,
+            has_yard=bool(req.has_yard),
+            standard=req.standard if req.standard is not None else "standard",
+            rotation_members=req.rotation_members or [],
+            existing_help=req.existing_help or "",
+            existing_help_frequency=req.existing_help_frequency or "",
+            include_notes=req.include_notes or "",
+            exclude_notes=req.exclude_notes or "",
         )
     except Exception as e:
         logger.exception("Chores profile save failed")
@@ -1253,6 +1322,11 @@ def onboarding_chores_save(req: ChoreSaveRequest):
         for c in req.chores:
             if not c.name.strip():
                 continue
+            if c.frequency not in tools._FREQUENCY_DAYS:
+                # A rhythm the schedule can't keep is a question too, not
+                # a row silently stored as weekly.
+                skipped.append({"name": c.name.strip(), "reason": f"'{c.frequency}' isn't a rhythm I can keep."})
+                continue
             try:
                 tools.add_chore(
                     name=c.name.strip(),
@@ -1267,11 +1341,13 @@ def onboarding_chores_save(req: ChoreSaveRequest):
                 skipped.append({"name": c.name.strip(), "reason": str(e)})
                 continue
             created += 1
-        tools.generate_chore_schedule(days_ahead=14)
+        # The next two weeks, so Now and Plan | Chores are populated the
+        # moment the household comes back from setup.
+        generated = tools.generate_chore_schedule(days_ahead=14)
     except Exception as e:
         logger.exception("Chore save failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return {"saved": True, "created": created, "skipped": skipped}
+    return {"saved": True, "created": created, "skipped": skipped, "scheduled": len(generated)}
 
 
 @app.get("/api/coaching")
@@ -2487,6 +2563,47 @@ def week_swap_undo(week_start: str, req: SwapUndoRequest):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Swap undo failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+class SwapNightsRequest(BaseModel):
+    """Two nights of the plan whose DINNERS trade places — Plan › Which
+    days' drag (Emily, 2026-09-12) and its Undo both send this."""
+    date_a: str
+    date_b: str
+
+
+@app.post("/api/week/{week_start}/swap-nights")
+def week_swap_nights(week_start: str, req: SwapNightsRequest):
+    """
+    Move a dinner to another night by trading it with what is there. No
+    model call: the rows are re-dated in place (see
+    tools.swap_dinner_nights for exactly what follows them and what does
+    not), and the grocery list is left alone. A 200 can still say no —
+    `status` 'refused' carries the sentence to show and nothing was
+    written. A night that isn't on this plan, the same night twice, or a
+    malformed date is a 400.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.swap_dinner_nights(plan_id, req.date_a, req.date_b)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Moving a night failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/week/{week_start}/swap-nights-undo")
+def week_swap_nights_undo(week_start: str, req: SwapNightsRequest):
+    """Put the two nights' dinners back where the last move found them."""
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.undo_dinner_nights_swap(plan_id, req.date_a, req.date_b)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Undoing a night move failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
@@ -4025,13 +4142,11 @@ _CHORE_TOOLS = {
     "add_chore", "update_chore", "generate_chore_schedule", "schedule_chore_instance", "complete_chore",
     "skip_chore", "move_chore", "hand_chore",
 }
-_WEEK_TOOLS = {
-    "plan_meal", "generate_weekly_plan", "set_week_constraints", "swap_meal_in_plan", "swap_component_in_plan", "approve_weekly_plan",
-    # A holiday answer changes that day's dinner (out empties it, hosting
-    # builds the big meal into it), and the big-meal tools change the
-    # dishes on it — so Plan is the screen that goes stale.
-    "answer_holiday", "set_big_meal_dish", "remove_big_meal_dish", "set_big_meal_prep_day", "propose_big_meal",
-}
+# answer_holiday and the big-meal tools are here too: a holiday answer
+# changes that day's dinner (out empties it, hosting builds the big meal
+# into it) and the big-meal tools change the dishes on it, so Plan is the
+# screen that goes stale. One line, by test_week_seven_tiles's source check.
+_WEEK_TOOLS = {"plan_meal", "generate_weekly_plan", "set_week_constraints", "swap_meal_in_plan", "swap_component_in_plan", "swap_dinner_nights", "approve_weekly_plan", "answer_holiday", "set_big_meal_dish", "remove_big_meal_dish", "set_big_meal_prep_day", "propose_big_meal"}
 _KITCHEN_TOOLS = {
     "add_recipe", "update_recipe_details", "mark_recipe_feedback", "log_recipe_note", "log_cooking_deviation",
     "flag_recipe_temporary", "generate_prep_schedule", "check_off_prep_step", "check_off_meal",
@@ -4335,7 +4450,10 @@ def chat(req: ChatRequest, request: Request):
     history = SESSIONS.get(session_id, [])
     is_new_sitting = time.time() - SESSION_TOUCHED.get(session_id, 0) > _NEW_SITTING_GAP
     try:
-        reply, updated_history = run_agent_turn(history, req.message, proactive_check=is_new_sitting)
+        reply, updated_history = run_agent_turn(
+            history, req.message,
+            **_chat_turn_kwargs(proactive_check=is_new_sitting, context=req.context),
+        )
     except AssistantUnavailableError as e:
         # Claude's API itself was down/overloaded even after retrying inside
         # run_agent_turn — str(e) is already a warm, customer-facing
@@ -4357,7 +4475,8 @@ def chat(req: ChatRequest, request: Request):
     return ChatResponse(**result)
 
 
-def _stream_chat_turn(*, session_id: str, message: str, history: list, proactive_check: bool):
+def _stream_chat_turn(*, session_id: str, message: str, history: list, proactive_check: bool,
+                      context: ChatContext | None = None):
     """
     Run run_agent_turn on a background thread and yield its progress as
     Server-Sent Events, the chat-loop twin of _stream_week_generation
@@ -4382,7 +4501,10 @@ def _stream_chat_turn(*, session_id: str, message: str, history: list, proactive
     def run():
         token = agent._WEEK_GEN_PROGRESS.set(on_item)
         try:
-            reply, updated_history = run_agent_turn(history, message, proactive_check=proactive_check)
+            reply, updated_history = run_agent_turn(
+                history, message,
+                **_chat_turn_kwargs(proactive_check=proactive_check, context=context),
+            )
             events.put(("done", _finish_chat_turn(session_id, history, reply, updated_history)))
         except AssistantUnavailableError as e:
             logger.warning("Chat turn hit a transient Claude API failure: %s", e)
@@ -4420,6 +4542,7 @@ def chat_stream(req: ChatRequest, request: Request):
     return StreamingResponse(
         _stream_chat_turn(
             session_id=session_id, message=req.message, history=history, proactive_check=is_new_sitting,
+            context=req.context,
         ),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},

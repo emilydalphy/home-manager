@@ -158,7 +158,10 @@ def test_no_desktop_ask_column_short_circuit_remains():
         "only ask surface at every width."
     )
     open_fn = re.search(
-        r"function openAskSheet\(prefill\) \{(.*?)\n  \}\n",
+        # (prefill, context) since 2026-09-13 — the second argument is the
+        # subject a meal card opens chat about; the history plumbing is
+        # unchanged by it.
+        r"function openAskSheet\(prefill, context\) \{(.*?)\n  \}\n",
         SHELL_JS,
         re.S,
     )

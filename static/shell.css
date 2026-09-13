@@ -469,42 +469,10 @@ html, body {
    under the band for no reason a reader could see. */
 .today-area-needsyou:empty, .today-area-rest:empty { display: none; }
 
-/* ---------- Next up (Today, 2026-09-08) ----------
-   The compact form of .dinner-hero: about a third of the screen rather than
-   the tall panel that used to sit here, because it is one move out of a
-   day's worth rather than the answer to the whole screen. Same spruce, same
-   one apricot action, smaller type and tighter padding. */
-.nextup-hero { padding: 18px 20px 16px; gap: 11px; }
-/* 2026-09-11 (Emily; §2b S3): the next-up is a CARD now, not the spruce
-   hero — same width and family as its neighbours, sand fill and an apricot
-   eyebrow to call it out, and no action inside it (the dock has that).
-   The hero's inner classes are reused with their ink swapped for ivory. */
-.today-area-nextup { margin: 0 20px 14px; }
-.nextup-card {
-  background: var(--sand);
-  border-color: transparent;
-  padding: 14px 16px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
-.nextup-card[hidden] { display: none; }
-.nextup-card .hero-eyebrow { color: var(--apricot-label); }
-.nextup-card .hero-rule { background: var(--hairline-strong); }
-.nextup-card .nextup-when { color: var(--ink-secondary); }
-.nextup-card .hero-dish, .nextup-card .nextup-dish { color: var(--ink); font-size: 22px; letter-spacing: -0.028em; line-height: 1.12; }
-.nextup-card .hero-dish-sm, .nextup-card .hero-dish-xs { font-size: 20px; }
-.nextup-card .hero-accent { color: var(--ink-secondary); font-size: 15px; margin-top: -4px; }
-.nextup-card .hero-chip { background: var(--surface); color: var(--ink); border: 1.5px solid var(--hairline-strong); height: 30px; }
-.nextup-card .nextup-foot { justify-content: space-between; }
-/* A move with no chips and nothing to tick (a shop, say) has an empty foot;
-   don't leave a blank row where the action used to be. */
-.nextup-card .nextup-foot:not(:has(.hero-chip)):has(.tick-empty) { display: none; }
-.nextup-card .tick-box { border-color: var(--hairline-strong); }
-.nextup-card .tick:hover .tick-box { border-color: var(--celadon); }
-/* The dish name is a link to the recipe here too; .dish-link inherits the
-   card's ink from .hero-dish above. */
-.nextup-dish { font-size: 26px; letter-spacing: -0.032em; line-height: 1.08; }
+/* ---------- .nextup-when ----------
+   The only survivor of the Next up card (retired 2026-09-13 for the day
+   strip below): Plan's Meal step hero still prints the day's name with it
+   (.wk-meal-hero .nextup-when, mealStepHtml in shell.js). */
 .nextup-when {
   flex: 0 0 auto;
   font-family: var(--font-body);
@@ -513,14 +481,12 @@ html, body {
   color: var(--ivory-ink-muted);
   white-space: nowrap;
 }
-/* The action and the tick share the last row: one thing to tap to DO it,
-   one to say it's already handled. */
-.nextup-foot { display: flex; align-items: center; gap: 10px; }
-.nextup-foot .hero-action { flex: 1 1 auto; height: 48px; }
 
 /* ---------- The tick ----------
    44x44 of tap target (Rule 6), 20px of visual inside it. Empty is a ring;
-   filled is celadon — the accent that reassures, "already true". */
+   filled is celadon — the accent that reassures, "already true". Now's
+   own moves tick through the day strip's dot since 2026-09-13 (.day-tick
+   below); this is the chores rows' tick (choreRowHtml, .chore-tick). */
 .tick {
   flex: 0 0 auto;
   width: 44px;
@@ -555,34 +521,12 @@ html, body {
   border-color: var(--celadon);
   color: var(--on-accent-ink); /* RULE ONE: dark ink on a light accent fill */
 }
-/* On spruce the ring has to lift off the panel rather than off the ground. */
-.nextup-foot .tick-box { border-color: var(--apricot-rule); }
-.nextup-foot .tick:hover .tick-box { border-color: var(--apricot-light); }
 
-/* ---------- The rest of today ---------- */
-.rest-card { padding: 4px 14px 6px; }
-.rest-title {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 17px;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  margin: 14px 0 2px;
-}
-.rest-list { display: flex; flex-direction: column; }
-.rest-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 52px;
-  border-top: 1.5px solid var(--hairline);
-}
-.rest-list .rest-row:first-child { border-top: none; }
 /* ---------- A dish name is a link to its recipe ----------
    Emily, 2026-09-09: "if you click the meal anywhere throughout the app,
    it should bring you to the screen with the recipe on it." The name keeps
    the type it already had — this class only takes the browser's button
-   furniture off, so it is deliberately declared BEFORE .rest-row-title,
+   furniture off, so it is deliberately declared BEFORE .day-node-title,
    .tomorrow-title and .hero-dish: those set their own family, size, weight
    and colour, and on an equal-specificity tie the later rule wins.
    Nothing here is a colour change; a dish name that suddenly went apricot
@@ -626,45 +570,207 @@ html, body {
   width: auto;
   text-align: inherit;
 }
-.rest-row-text {
-  flex: 1 1 auto;
-  min-width: 0;
+
+/* =====================================================================
+   NOW — the day as a strip (Emily, 2026-09-12, "Beyond lists" canvas;
+   built 2026-09-13). renderTodayMoves / dayStripNodeHtml in shell.js.
+   One vertical strip: each move is a node on a 44px | 1fr grid — the
+   time, a 28px dot and a hairline down to the next node on the rail,
+   the title and one meta line beside it. The dot is the tick (44px of
+   tap around it, Rule 6) and says the state: done = celadon + tick,
+   now = apricot + the move's icon, later = surface + hairline + icon.
+   Exactly ONE node is tinted — the next-up move, a celadon-tint tile
+   with a NOW eyebrow (§2b S3, S6). Every colour is a token (Rule 9).
+   Dark: same tokens — celadon and apricot are unchanged there, and the
+   later dot lifts off --ground by --hairline-strong.
+   ===================================================================== */
+.day-strip {
+  display: flex;
+  flex-direction: column;
+  /* Room for the first node's time eyebrow under the band's curve. */
+  padding-top: 2px;
+}
+.day-node {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 0 10px;
+  align-items: start;
+}
+
+/* ---- The rail: time, dot, line ---- */
+.day-node-rail {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-self: stretch;
+}
+.day-node-time {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  line-height: 12px;
+  /* Tighter than the 0.13em eyebrow norm so "TONIGHT" sits inside the
+     44px rail; still the eyebrow face, size, weight and ink. */
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  padding-top: 2px;
+  /* The dot's 44px tap box has 8px of air above its 28px of visual;
+     pull the eyebrow into it so eyebrow and dot read as one mark. */
+  margin-bottom: -4px;
+}
+/* The tick: 44x44 of tap target around a 28px dot. A move with nothing
+   behind its tick (a shop — moves.py's `tickable`) is a plain span. */
+.day-tick {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+span.day-tick { cursor: default; }
+.day-dot {
+  position: relative;
+  box-sizing: border-box; /* 28px INCLUDING the hairline, as drawn */
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1.5px solid var(--hairline-strong);
+  background: var(--surface);
+  color: var(--ink-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.day-dot-icon, .day-dot-tick {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.day-dot-icon svg { display: block; width: 18px; height: 18px; }
+.day-dot-tick svg { display: block; width: 16px; height: 16px; }
+.day-dot-tick { opacity: 0; }
+/* now: apricot, the move's icon in dark ink (Rule 1). */
+.day-node.is-now .day-dot {
+  background: var(--apricot);
+  border-color: var(--apricot);
+  color: var(--on-accent-ink);
+}
+/* done: celadon, the tick in dark ink (Rule 1); the kind's icon gives way. */
+.day-node.is-done .day-dot {
+  background: var(--celadon);
+  border-color: var(--celadon);
+  color: var(--on-accent-ink);
+}
+.day-node.is-done .day-dot-icon { opacity: 0; }
+.day-node.is-done .day-dot-tick { opacity: 1; }
+button.day-tick:hover .day-dot { border-color: var(--celadon); }
+.day-node.is-now button.day-tick:hover .day-dot { border-color: var(--apricot-deep); }
+/* The line from under the dot down to the next node's time. */
+.day-node-line {
+  position: absolute;
+  left: 50%;
+  top: 52px;
+  bottom: 0;
+  width: 1.5px;
+  margin-left: -0.75px;
+  background: var(--hairline);
+}
+.day-node:last-child .day-node-line { display: none; }
+
+/* ---- The body: title + meta, or the one tinted tile ---- */
+.day-node-body { min-width: 0; }
+/* Later / done: no tile. 6px above, 14px below; the row is the tap target
+   for "open this move" — 52px+ tall (Rule 6). */
+.day-node-text {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 8px 0;
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 0 14px;
+  margin: 0;
   text-align: left;
   background: none;
   border: none;
   font: inherit;
+  color: inherit;
 }
-.rest-row-open { cursor: pointer; }
-.rest-row-title {
+.day-node-open { cursor: pointer; }
+.day-node-title {
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 15px;
+  line-height: 1.3;
   color: var(--ink);
 }
-.rest-row-detail {
+.day-node-meta {
   font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 12px;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.3;
   color: var(--ink-secondary);
 }
-/* Done items fade rather than vanish — a day's work should still be
-   visible at the end of it, and the tick has to stay tappable to undo. */
-.rest-row.is-done .rest-row-title { color: var(--ink-done); text-decoration: line-through; }
-.rest-row.is-done .rest-row-detail { color: var(--ink-done); }
-.rest-done { margin-top: 10px; }
-.rest-done-head {
+/* Done fades rather than vanishes — a day's work should still be visible
+   at the end of it, and the dot stays tappable to undo. The strike is a
+   text-decoration whose colour transitions (see Motion, animation 3). */
+.day-node.is-done .day-node-title { color: var(--ink-done); }
+.day-node.is-done .day-node-meta { color: var(--ink-done); }
+/* The one tinted node: a celadon-tint tile, the word for it, and the
+   move's title in the display face. It runs the move's action on tap
+   (the same thing the dock's button does). */
+.day-node-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  min-height: 52px;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  text-align: left;
+  background: var(--celadon-tint);
+  border: 1.5px solid var(--celadon-edge);
+  border-radius: var(--radius-tile);
+  font: inherit;
+  color: var(--ink-on-celadon);
+  cursor: pointer;
+}
+.day-node-eyebrow {
   font-family: var(--font-body);
   font-weight: 800;
   font-size: 10px;
   letter-spacing: .14em;
   text-transform: uppercase;
-  color: var(--ink-muted);
-  padding: 8px 0 4px;
+  color: var(--celadon-label);
 }
+.day-node-tile .day-node-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--ink-on-celadon);
+}
+/* The mockup set the tile's meta in --ink-secondary, which measures
+   3.98:1 on --celadon-tint (light) — under AA for 14px text. This is
+   --celadon-label instead, the token for text inside a celadon tile
+   (4.87:1 light, 5.92:1 dark; the tomorrow card's detail line already
+   uses it). Contrast, measured 2026-09-13; the swap is flagged for
+   Emily in that day's log entry. */
+.day-node-tile .day-node-meta { color: var(--celadon-label); }
+/* Give the last node's bottom padding back to the tomorrow card. */
+.day-strip + .tomorrow-card { margin-top: -2px; }
 
 /* Nothing left today: name tomorrow's first move rather than showing a
    blank screen. Celadon-tint — the settled, non-urgent tile. */
@@ -984,7 +1090,6 @@ html, body {
 }
 
 .hero-chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.hero-chips-spacer { flex: 1 1 auto; }
 .hero-chip {
   height: 32px;
   padding: 0 12px;
@@ -1417,10 +1522,7 @@ html, body {
   max-width: 88%;
   white-space: pre-wrap;
 }
-/* color: #fff has no exact token twin — --ivory-ink is #F6EEE1 in light,
-   not byte-identical, so this stays literal (design hygiene pass,
-   2026-09-12; flagged for Emily in the report, not fixed here). */
-.ask-msg.user .ask-bubble { background: var(--spruce); color: #fff; border-radius: 16px 16px 4px 16px; }
+.ask-msg.user .ask-bubble { background: var(--spruce); color: var(--on-spruce-ink); border-radius: 16px 16px 4px 16px; }
 .ask-msg.assistant .ask-bubble { background: var(--ground); color: var(--ink); border-radius: 16px 16px 16px 4px; }
 .ask-bubble.loading { font-style: italic; color: var(--ink-secondary); background: var(--ground); animation: loading-pulse 1.3s ease-in-out infinite; }
 @keyframes loading-pulse { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
@@ -1507,6 +1609,52 @@ html, body {
   min-height: 44px;
 }
 .ask-chip:hover { background: var(--sand); }
+
+/* The subject line above the composer — "About Tuesday's dinner · Turkey
+   Burgers" — for a chat opened from a meal card (Emily, 2026-09-13). One
+   quiet line, not a chip row: it is a fact about the conversation, not a
+   suggestion to tap, so it sits in --ink-secondary with the dish in
+   --ink-strong and the one tappable thing (the ×) at 44px. */
+.ask-context {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  /* The text lines up with the composer's own (its 2px border + 16px
+     padding); the row's height is the ×'s 44px, so it pulls itself back
+     into the sheet's 12px gaps rather than opening a band of air. */
+  padding: 0 0 0 18px;
+  margin: -6px 0 -10px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink-secondary);
+  flex-shrink: 0;
+}
+.ask-context[hidden] { display: none; }
+.ask-context-label { flex-shrink: 0; }
+.ask-context-text {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink-strong);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ask-context-clear {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  color: var(--ink-secondary);
+  font-family: var(--font-body);
+  font-size: 22px;
+  line-height: 1;
+  border-radius: var(--radius-chip);
+  cursor: pointer;
+}
+.ask-context-clear:hover { background: var(--sand); }
 
 .ask-composer-bar {
   background: var(--ground);
@@ -1598,11 +1746,7 @@ html, body {
 .ask-composer-mic:hover { background: var(--celadon-tint); }
 .ask-composer-mic.active {
   background: var(--urgent);
-  /* color: #fff has no exact token twin in light (--urgent-ink is #F6EEE1,
-     not byte-identical) — left literal, flagged for Emily. Dark mode
-     already overrides this correctly to var(--urgent-ink), see the
-     "Accent fills whose ink flips" rule further down this file. */
-  color: #fff;
+  color: var(--on-spruce-ink);
   animation: askMicPulse 1.4s ease-in-out infinite;
 }
 .ask-composer-mic:disabled { opacity: .5; cursor: default; animation: none; }
@@ -4197,13 +4341,7 @@ html, body {
   height: 26px;
   flex: 0 0 auto;
   border-radius: 9px;
-  /* #D9C9AF has no token twin — the closest values (--hairline-strong/
-     --sand-deep #E6D9C4, --ink-done-soft #C6BCA9) are visibly off, not a
-     hair. Left literal, flagged for Emily (design hygiene pass,
-     2026-09-12). The dark-mode override already exists further down this
-     file, under "Literals with no token twin": .gro-box { border-color:
-     var(--hairline-strong); }. */
-  border: 1.5px solid #D9C9AF;
+  border: 1.5px solid var(--hairline-deep);
   background: var(--ground);
   padding: 0;
   cursor: pointer;
@@ -4685,28 +4823,33 @@ html, body {
 /* =====================================================================
    KITCHEN — the native hub (Stage 2 slice 3, built to InnKitchen)
    =====================================================================
-   The quiet screen. Nothing here is urgent, which is why there is no
-   apricot fill anywhere below: the blueprint's one-primary-action rule
-   says Kitchen has none, and giving it one would be a lie about what the
-   screen is for. Every action here is spruce, celadon, or plain.
+   The cook's tab. Its root is "Cook · D · The shelf" (Emily, 2026-09-13):
+   the shelf (a sideways strip of the period's nights), ONE spruce card for
+   tonight (the root's one hero, rule 4), at most two quiet get-ready rows,
+   and "Start cooking" in the dock — the root's one apricot (rule 5; until
+   this design the root had none by rule, see DESIGN_SYSTEM §6). Everything
+   else on it is spruce, celadon, sand or plain.
    ===================================================================== */
 .kitchen-content {
   max-width: 640px;
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
-  /* Cook's root has no dock (nav rule 2), so nothing reserves room for the
-     chat button the way .dock's right padding does elsewhere — the foot
-     clears the FAB's 54px + its 16px lift itself, or the last row's
-     corner sits under it on a short screen. */
+  /* With no dock (nothing to cook tonight, or it's done) the foot clears
+     the chat button itself (54px + its 16px lift); with one, the dock is
+     the foot (.has-dock, set by renderKitchen). */
   padding: 0 0 84px;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  /* Fills the panel so the empty moment can centre itself in it. */
+  /* Fills the panel: the empty moment centres in it, the dock
+     (margin-top: auto) sits at its foot. */
   flex: 1 0 auto;
 }
+.kitchen-content.has-dock { padding-bottom: 0; }
 #kit-root-view { display: flex; flex-direction: column; flex: 1 0 auto; }
+#kit-root-view .cook-root-dock { margin-top: auto; }
+#kit-dock[hidden] { display: none; }
 
 /* The "what we know" hero and its four count chips (.kit-hero*, .kit-chip*)
    left this screen on 2026-09-08: everything the app knows about the
@@ -4749,12 +4892,219 @@ html, body {
 .kit-row-sub { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); line-height: 1.35; }
 .kit-row-chev { flex: 0 0 auto; color: var(--ink-inactive); display: flex; }
 .kit-row-chev svg { width: 16px; height: 16px; }
-/* The rest of the week, one line per day. */
-.cook-day-row { align-items: flex-start; }
-.cook-day-dishes { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.cook-day-dish { text-align: left; }
-.cook-day-min { font-weight: 600; color: var(--ink-secondary); font-size: 13px; }
-.cook-week-name.is-quiet { color: var(--ink-secondary); font-weight: 500; }
+/* The rest-of-week day rows (.cook-day-*) went with that list on
+   2026-09-13; the shelf below is the week now. */
+
+/* ---------- The shelf ----------
+   One tile per night of the planning period, in a strip that scrolls
+   sideways inside the 20px gutter (it bleeds to the screen edges so tiles
+   slide under them, and rests aligned to the gutter). 74px tiles, 6px
+   apart, the day as an eyebrow, the date in the display face (tonight's
+   bigger and bolder — the same 19/800 vs 16/700 step Plan's day tiles
+   take), and one word for the dish. Tonight is the celadon tint with its
+   edge and label (§1: the gentle, non-urgent tile). Nothing under 44px. */
+.cook-shelf {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  margin: 0 -20px;
+  padding: 2px 20px 6px;
+  scroll-padding: 0 20px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.cook-shelf::-webkit-scrollbar { display: none; }
+.shelf-tile {
+  flex: 0 0 74px;
+  min-height: 44px;
+  box-sizing: border-box;
+  border-radius: var(--radius-tile);
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font: inherit;
+  color: var(--ink);
+  text-align: center;
+  cursor: default;
+}
+button.shelf-tile { cursor: pointer; }
+button.shelf-tile:hover { background: var(--surface-raised); }
+.shelf-day {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.shelf-num {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1.1;
+}
+.shelf-dish {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--ink-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.shelf-tile.is-tonight { background: var(--celadon-tint); border-color: var(--celadon-edge); }
+.shelf-tile.is-tonight .shelf-day { color: var(--celadon-label); }
+.shelf-tile.is-tonight .shelf-num { font-size: 19px; font-weight: 800; color: var(--ink-on-celadon); }
+.shelf-tile.is-tonight .shelf-dish { color: var(--ink-on-celadon); }
+.shelf-tile.is-empty .shelf-dish { color: var(--ink-muted); }
+.shelf-tile.is-done .shelf-dish { color: var(--ink-done); text-decoration: line-through; }
+
+/* ---------- Tonight: the root's one spruce card ----------
+   20px radius, 18px padding, the hero's shadow (§4: shadow belongs to the
+   hero) — and the same --spruce-edge hairline the root band wears, because
+   on the dark ground the shadow reads as nothing and the edge is the lift.
+   Under a third of the screen at 375×812 (§2b S3). No button in it: the
+   dock carries the action, the shelf's tonight tile opens the meal. */
+.cook-tonight {
+  background: var(--spruce);
+  color: var(--ivory-ink);
+  border-radius: var(--radius-card);
+  border: 1.5px solid var(--spruce-edge);
+  padding: 18px;
+  box-shadow: var(--shadow-hero);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cook-tonight-eyebrow {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--apricot-light);
+}
+.cook-tonight-dish {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -.034em;
+  line-height: 1.08;
+  color: var(--ivory-ink);
+  overflow-wrap: anywhere;
+}
+.cook-tonight.is-done .cook-tonight-dish { color: var(--ivory-ink-muted); }
+/* Start / on the table: two raised tiles (--spruce-raised is the chip fill
+   on spruce, never on ivory). One tile when only one fact is known. */
+.cook-tonight-times {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.cook-tonight-times:has(> :only-child) { grid-template-columns: 1fr; }
+.cook-tonight-tile {
+  background: var(--spruce-raised);
+  border-radius: var(--radius-tile);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.cook-tonight-tile-label {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ivory-ink-muted);
+}
+.cook-tonight-tile-value {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1.1;
+  color: var(--ivory-ink);
+}
+.cook-tonight-note {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ivory-ink-muted);
+}
+/* Today's other meals on a multi-slot day (a 21-slot plan's breakfast and
+   lunch), in the ticklist shape the root used to be. */
+.cook-also-today { margin-top: -2px; }
+
+/* ---------- The get-ready rows ----------
+   At most two, under the card, and quiet: no card border, 52px min, a
+   32px icon tile — celadon for a thaw (the fridge move is the nudge, not
+   the task), sand for prep — the title in the display face, one line,
+   and a chevron when the row opens somewhere. A loose prep task carries
+   its tick instead (it has nowhere to open). */
+.cook-ready { display: flex; flex-direction: column; }
+.cook-ready-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  color: var(--ink);
+  font: inherit;
+  cursor: default;
+}
+button.cook-ready-row { cursor: pointer; }
+.cook-ready-icon {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: var(--radius-badge);
+  background: var(--sand);
+  color: var(--ink-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cook-ready-icon svg { width: 18px; height: 18px; }
+.cook-ready-row.is-thaw .cook-ready-icon { background: var(--celadon-tint); color: var(--celadon-label); }
+.cook-ready-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cook-ready-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1.2;
+}
+.cook-ready-line {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--ink-secondary);
+}
+.cook-ready-chev { flex: 0 0 auto; color: var(--ink-inactive); display: flex; }
+.cook-ready-chev svg { width: 16px; height: 16px; }
+.cook-ready-row .cook-box { flex: 0 0 auto; }
+
+/* "More ···" — the foot's one quiet link to the three rare entry points
+   (the Cook More sheet). Its own 44px row (rule 6). */
+.cook-more-foot { display: flex; padding: 2px 0 0; }
 /* Inventory is background by policy — the quietest row on the quietest
    screen, a neutral stroke and (until INVENTORY_IN_DEVELOPMENT, see
    shell.js) no badge of any kind. Its one badge now is the neutral
@@ -4859,13 +5209,12 @@ html, body {
 /* The head is a .prefs-row; the section's own rule replaces the row's. */
 .wwk-section .wwk-head { border-bottom: none; }
 .wwk-head .prefs-row-sub { white-space: normal; }
-/* The chevron points down closed and up open — the same collapse the
-   Review step's day rows use (.rv-day-chev), without its transition. */
+/* The chevron points down closed and up open, without a transition. */
 .wwk-chev { flex: 0 0 auto; display: inline-flex; color: var(--ink-inactive); }
 .wwk-chev svg { width: 18px; height: 18px; }
 .wwk-head[aria-expanded="true"] .wwk-chev { transform: rotate(180deg); }
 /* The quiet tick. --celadon-label is the token for "handled": 5.76:1 on
-   ground in light, 7.14:1 in dark (measured for .rv-day-note). */
+   ground in light, 7.14:1 in dark (measured). */
 .wwk-saved {
   flex: 0 0 auto;
   font-family: var(--font-body);
@@ -5526,7 +5875,8 @@ button.wwk-chip-text { cursor: pointer; min-height: 34px; }
    in a fixed strip above the tab bar, the same place on every screen,
    labelled for what it does — "Approve and build my shopping list", "Done
    at Loblaws", "Start cooking" — and it does not scroll away. A screen with
-   no single action has no dock; Cook's root is the standing example.
+   no single action has no dock; Cook's root was the standing example until
+   the shelf design (2026-09-13) gave it "Start cooking" (.cook-root-dock).
 
    Sticky rather than in flow: the phone is across the counter and the next
    thing to do must not be a scroll away. It is in the page's own scroller,
@@ -5712,7 +6062,7 @@ button.wwk-chip-text { cursor: pointer; min-height: 34px; }
 .cook-week-row .cook-box { border-color: var(--sand-deep); background: var(--ground); }
 .cook-week-row .cook-box.checked { background: var(--celadon); border-color: var(--celadon); }
 
-/* The second line of a "Cooking today" row: "start by 5:35 · 55 min",
+/* The second line of a today row (.cook-also-today): "start by 5:35 · 55 min",
    read off the same moves payload Today's timeline uses. Indented past the
    tick so it lines up under the dish rather than under the box. */
 .cook-week-sub {
@@ -5724,7 +6074,7 @@ button.wwk-chip-text { cursor: pointer; min-height: 34px; }
   color: var(--ink-inactive);
 }
 .cook-week-item.is-done .cook-week-sub { color: var(--ink-done-soft); }
-/* "+ 3 more cooks" — the rest of the week is three lines until asked. */
+/* The foot's "More ···" link (cookMoreLinkHtml). */
 .cook-more-link { padding-left: 2px; }
 
 /* ---------- The rest of the week: subordinate, dense on purpose ---------- */
@@ -6207,9 +6557,9 @@ span.cook-week-name { cursor: default; }
    A quiet tile at the bottom of Kitchen, a small in-prose link on the
    error states, and the sheet both open. Every colour is a token; the
    sheet reuses the existing scrim/sheet geometry (#kit-sheet) rather than
-   inventing a second one. Nothing here is apricot-filled: Kitchen has zero
-   primary actions by design (Rule 5), and a "tell me what broke" box is
-   not the exception that earns the screen's first one. */
+   inventing a second one. Nothing here is apricot-filled: Cook's one
+   apricot is "Start cooking" in the dock (Rule 5), and a "tell me what
+   broke" box is not a second one. */
 
 /* =====================================================================
    PREFERENCES — the gear, and the sheet behind it
@@ -6403,7 +6753,7 @@ span.cook-week-name { cursor: default; }
 /* The one error paragraph that lives inside a spruce hero (Kitchen's).
    --apricot-label is tuned for a light ground; on spruce the lifted
    apricot is the one that reads. */
-/* On Kitchen's spruce hero the link stays ivory: Kitchen carries no apricot by design (nothing there is urgent). */
+/* On Kitchen's spruce hero the link stays ivory: the root's one apricot is the dock's, and a link in an error line is not it. */
 .snw-link-hero { color: var(--ivory-ink-muted); text-decoration: underline; text-decoration-color: var(--apricot-rule); }
 .snw-link-hero:hover { color: var(--ivory-ink); }
 
@@ -6666,7 +7016,6 @@ span.cook-week-name { cursor: default; }
 .wk-day-meals { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 /* The quiet label on a holiday's row (S6: the word for the day). Same
    neutral pill as everywhere else, sized to sit above the three lines. */
-.rv-day-holiday { margin: 2px 0 4px; }
 .wk-holiday { align-self: flex-start; margin-bottom: 2px; font-size: 11px; padding: 2px 8px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 .wk-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
 /* The whole legend, in three dots: apricot cooks, celadon is already made,
@@ -6763,16 +7112,7 @@ span.cook-week-name { cursor: default; }
   line-height: 1.4;
   color: var(--urgent-label);
 }
-/* The cook time beside a slot's name, and the clash as one red word on
-   a day's face. */
-.rv-slot-meta {
-  flex: 0 0 auto;
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--ink-secondary);
-  white-space: nowrap;
-}
+/* The clash as one red word on a night's tile (S6: the word says why). */
 .rv-day-clash {
   font-family: var(--font-body);
   font-size: 12px;
@@ -6856,12 +7196,97 @@ span.cook-week-name { cursor: default; }
   text-transform: uppercase;
   color: var(--apricot-light);
 }
-.wk-allset .wk-quick-card.on-spruce { background: var(--spruce-raised); border-color: var(--spruce-raised); color: var(--ivory-ink); }
-.wk-allset .wk-quick-card.on-spruce .wk-quick-title,
-.wk-allset .wk-quick-card.on-spruce .wk-quick-q { color: var(--ivory-ink); }
+/* The two quick asks as a step of their own (Emily, 2026-09-13: "not a
+   subtle piece to skip"): above the counters, a card headline rather than
+   an eyebrow, each question a heading with its chips and answers open
+   under it. Everything inside sits on --spruce-raised, and the ask bodies
+   were written for an ivory card — their --ink-secondary helper lines
+   measured 2.37:1 here in light (Emily: "the dark font on the 'all set'
+   screen is hard to read"), the cook-ahead sentence in --ink 1.21:1. Every
+   text colour below is re-inked to the on-spruce tokens and measured on
+   --spruce-raised, light / dark:
+     .wk-quick-title, .wk-quick-q, .ca-ask-line   --ivory-ink        9.86 / 7.70
+     .wk-quick-body-line, .ca-ask-count           --ivory-ink-muted  8.62 / 6.52
+     .btn-sand label                              --ivory-ink        9.86 / 7.70
+     .wk-quick-done-tick                          --celadon          6.06 / 4.74
+     a ticked chip: --on-accent-ink on --celadon                     7.23 / 8.46
+   A ticked chip is solid celadon, the cook hero's own .cook-ahead-day.is-on
+   recipe — the tint it used to take is 1.38:1 against this card in dark. */
+.wk-allset .wk-quick-card.on-spruce {
+  background: var(--spruce-raised);
+  border-color: var(--spruce-raised);
+  color: var(--ivory-ink);
+  padding: 16px 16px 10px;
+  margin-top: 6px;
+}
+.wk-allset .wk-quick-card.on-spruce .wk-quick-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -0.028em;
+  line-height: 1.15;
+  text-transform: none;
+  color: var(--ivory-ink);
+}
+.wk-allset .wk-quick-card.on-spruce .wk-quick-head.is-fixed {
+  min-height: 0;
+  padding: 14px 0 6px;
+  cursor: default;
+}
+.wk-allset .wk-quick-card.on-spruce .wk-quick-q {
+  font-family: var(--font-display);
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  color: var(--ivory-ink);
+}
 .wk-allset .wk-quick-card.on-spruce .wk-quick-sub { color: var(--ivory-ink-muted); }
 .wk-allset .wk-quick-card.on-spruce .wk-quick-line + .wk-quick-line { border-top-color: var(--spruce-hover); }
 .wk-allset .wk-quick-card.on-spruce .wk-quick-ask { color: var(--apricot-light); }
+.wk-allset .wk-quick-card.on-spruce .wk-quick-body-line,
+.wk-allset .wk-quick-card.on-spruce .ca-ask-count { color: var(--ivory-ink-muted); }
+.wk-allset .wk-quick-card.on-spruce .ca-ask-line { color: var(--ivory-ink); }
+.wk-allset .wk-quick-card.on-spruce .ca-ask-block + .ca-ask-block { border-top-color: var(--spruce-hover); }
+.wk-allset .wk-quick-card.on-spruce .defrost-chip.is-selected,
+.wk-allset .wk-quick-card.on-spruce .ca-ask-day.is-on {
+  background: var(--celadon);
+  border-color: var(--celadon);
+  color: var(--on-accent-ink);
+}
+/* The quiet answer, in the cook hero's outline recipe (.cook-serves-btn):
+   the ivory-card version's --hairline-strong edge and --ink-secondary
+   label both vanish on spruce. */
+.wk-allset .wk-quick-card.on-spruce .ny-actions .btn-sand {
+  border-color: var(--apricot-rule);
+  color: var(--ivory-ink);
+}
+.wk-allset .wk-quick-card.on-spruce .ny-actions .btn-sand:hover { background: var(--spruce-hover); }
+.wk-allset .wk-quick-card.on-spruce .ny-actions .btn-gold { border: 1.5px solid var(--apricot-rule); }
+.wk-allset .wk-quick-card.on-spruce .ny-actions .btn-gold:hover { background: var(--spruce-hover); }
+/* An answered ask: the tick and the line it came to. Inked for the ivory
+   receipt card first (the Cook view's re-ask can land an answer there),
+   then re-inked on spruce. */
+.wk-quick-done {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 0;
+}
+.wk-quick-done-tick {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  color: var(--celadon-label);
+}
+.wk-quick-done-tick svg { width: 22px; height: 22px; display: block; }
+.wk-quick-done-text {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.wk-allset .wk-quick-card.on-spruce .wk-quick-done-tick { color: var(--celadon); }
+.wk-allset .wk-quick-card.on-spruce .wk-quick-done-text { color: var(--ivory-ink); }
 .wk-allset-dock { margin: auto -20px 0; background: var(--spruce); border-top-color: var(--spruce-hover); }
 .tab-panel.is-allset { background: var(--spruce); }
 .tab-panel.is-allset #week-steps { flex: 1 0 auto; display: flex; flex-direction: column; }
@@ -6878,13 +7303,8 @@ span.cook-week-name { cursor: default; }
      .rv-dish-name       --ink on --surface               13.52 light / 12.49 dark
      .rv-dish-cooks      --ink-secondary on --surface      4.70 light /  7.36 dark
      .rv-step-count      --ink-strong on --sand           11.43 light / 11.28 dark
-     .rv-day-title       --ink-secondary on --surface      4.70 light /  7.36 dark
-     .rv-day-dinner      --ink on --surface               13.52 light / 12.49 dark
-     .rv-slot-label      --ink-muted on --surface          4.58 light /  7.36 dark
-     .rv-slot-name       --ink on --surface               13.52 light / 12.49 dark
-     .rv-day-open        --apricot-label on --surface      5.20 light /  8.53 dark
+     (the Which days tiles carry their own table — see "which days" below)
      .rv-empty/.rv-trouble  --ink on --ground             12.78 light / 14.40 dark
-     .rv-day-note        --celadon-label on --surface       5.76 light /  7.14 dark
    The one exception is .rv-step-btn:disabled (--ink-inactive on --sand,
    2.92:1) — a disabled control, which WCAG 1.4.3 exempts, and the low
    contrast IS the signal that it is off. Nothing else here leans on that
@@ -7189,116 +7609,205 @@ span.cook-week-name { cursor: default; }
 /* The one inside a row needs the separation the foot got for free. */
 .rv-dish > .rv-trouble { margin-top: 2px; }
 
-/* ---------- REVIEW: which days ---------- */
+/* ---------- REVIEW: which days — seven tiles ----------
+   Emily's pick, 2026-09-12 ("Week · A · Seven tiles"). One tile a night:
+   date | dinner + bar | drag handle, on a 52px | 1fr | 44px grid. Every
+   tile is a --surface card with a --hairline edge; today's is the
+   celadon tint with its own edge (§1). The lifted tile is the one thing
+   here that carries a shadow, and only while it is off the list — it is
+   floating over the screen, which is what --shadow-hero's family is for.
+   Motion is the tab crossfade's own tokens: --motion-fast + --motion-ease
+   on transform, nothing new. All seven fit above the dock at 375×812 when
+   no tile carries a tag (56px min-height, 6px apart).
+   Contrast, measured in Chromium at 375px, both schemes (rule 8):
+     .rv-tiles-eyebrow / .rv-tiles-key  --ink-strong on --ground  12.59 light / 14.40 dark
+       (the head sits on the ground, where --ink-muted is 4.33 and
+       --ink-secondary 4.44 — both short of AA for 10–12px text, so the
+       head takes the token .rv-group-label already uses on this ground)
+     .rv-tile-dow                      --ink-muted on --surface   4.58 light /  7.36 dark
+     .rv-tile-num / .rv-tile-name      --ink on --surface        13.52 light / 12.49 dark
+     .rv-tile-min                      --ink-secondary on --surface  4.70 light / 7.36 dark
+     .rv-tile-today                    --celadon-label on --celadon-tint  4.87 light / 5.92 dark
+     .rv-tile.is-today .rv-tile-name   --ink-on-celadon on --celadon-tint  10.65 light / 10.37 dark
+     .rv-tile-tag                      --apricot-label on --surface  5.20 light / 8.53 dark
+     .rv-tile-handle                   --ink-muted, an icon (3:1 applies): 4.58 on --surface,
+                                       3.88 on --celadon-tint light / 6.11 dark */
 .rv-days { gap: 10px; }
-.rv-day { padding: 0; overflow: hidden; }
-.rv-day-head {
-  width: 100%;
-  box-sizing: border-box;
-  min-height: 64px;
+.rv-tiles-head {
   display: flex;
-  /* flex-start, not center: a wrapped two-line dish name grows the row, and
-     a centered chevron would drift into the middle of that text instead of
-     sitting at the row's top-right corner. */
-  align-items: flex-start;
+  align-items: baseline;
+  justify-content: space-between;
   gap: 12px;
-  padding: 12px 14px;
+  padding: 0 2px;
+}
+.rv-tiles-eyebrow {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-strong);
+}
+.rv-tiles-key {
+  flex: 0 0 auto;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-strong);
+}
+.rv-tiles {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rv-tile {
+  position: relative;
+  box-sizing: border-box;
+  min-height: 56px;
+  display: grid;
+  grid-template-columns: 52px 1fr 44px;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 12px 7px 10px;
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
+  border-radius: var(--radius-tile);
+  color: var(--ink);
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+.rv-tile.is-today {
+  background: var(--celadon-tint);
+  border-color: var(--celadon-edge);
+}
+.rv-tile.is-lifted {
+  transition: none;
+  z-index: 2;
+  box-shadow: var(--shadow-hero);
+}
+/* While a move is out, the list is read-only: nothing here changes shape
+   (the swap is optimistic and the tiles already traded), the handles
+   just go inert until the answer lands. */
+.rv-tiles.is-busy .rv-tile-handle { pointer-events: none; }
+.rv-tile-date {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  line-height: 1;
+}
+.rv-tile-dow {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.rv-tile-num {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: var(--ink);
+}
+.rv-tile.is-today .rv-tile-num { font-size: 19px; font-weight: 800; }
+.rv-tile-body {
+  min-width: 0;
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+  padding: 0;
   border: 0;
   background: none;
   text-align: left;
   cursor: pointer;
   font: inherit;
+  color: inherit;
 }
-.rv-day-head.is-flat { cursor: default; }
-.rv-day-col { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1 1 auto; }
-.rv-day-title {
+.rv-tile-eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
   font-family: var(--font-body);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: .06em;
+  letter-spacing: .13em;
   text-transform: uppercase;
-  color: var(--ink-secondary);
+  line-height: 1.3;
 }
-.rv-day-dinner {
+.rv-tile-today { color: var(--celadon-label); }
+.rv-tile-tag { color: var(--apricot-label); }
+.rv-tile-name {
   font-family: var(--font-display);
   font-size: 16px;
   font-weight: 700;
   letter-spacing: -.02em;
-  line-height: 1.25;
+  line-height: 1.2;
   color: var(--ink);
-  /* Wraps to two lines rather than truncating with an ellipsis — a
-     component-based household's dinner name is a real, readable sentence
-     ("Herb-Roasted Chicken with Roasted Root Vegetables"), and cutting it
-     off mid-word hid the actual answer to "what's Thursday". The chevron
-     (.rv-day-chev) sits top-right of the row so a wrapped two-line name
-     doesn't push it into the middle of the text. */
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  overflow: hidden;
+  /* Wraps, never truncates: the dish name is the answer to "what's
+     Thursday", and a cut-off answer is no answer. */
+  overflow-wrap: anywhere;
 }
-.rv-day-dinner.is-quiet { color: var(--ink-secondary); font-weight: 500; }
-/* "made ahead" / "leftovers" under the dish. --celadon-label because that is
-   the token for something already handled, and it clears AA on a card:
-   5.76:1 light / 7.14:1 dark. */
-.rv-day-note {
+.rv-tile-name.is-quiet { color: var(--ink-secondary); font-weight: 500; }
+.rv-tile.is-today .rv-tile-name { color: var(--ink-on-celadon); }
+.rv-tile-time {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rv-tile-bar {
+  flex: 0 0 auto;
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--celadon);
+}
+.rv-tile-bar.is-long { background: var(--apricot); }
+.rv-tile-min {
+  flex: 0 0 auto;
   font-family: var(--font-body);
   font-size: 12px;
   font-weight: 700;
-  color: var(--celadon-label);
+  color: var(--ink-secondary);
+  white-space: nowrap;
 }
-.rv-day-chev {
-  flex: 0 0 auto;
+.rv-tile-handle {
+  width: 44px;
+  height: 44px;
   display: inline-flex;
-  /* Pinned to the row's top edge (align-items: flex-start above), lined up
-     with the uppercase day title rather than drifting to the middle of a
-     wrapped two-line dish name. */
-  margin-top: 2px;
-  color: var(--ink-inactive);
-  transition: transform .16s ease;
-}
-.rv-day.is-open .rv-day-chev { transform: rotate(180deg); }
-.rv-day.is-today { box-shadow: inset 3px 0 0 var(--celadon); }
-.rv-day-slots {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 2px 14px 12px;
-}
-.rv-slot { display: flex; align-items: baseline; gap: 10px; }
-.rv-slot-label {
-  flex: 0 0 74px;
-  font-family: var(--font-body);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .11em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-}
-.rv-slot-name {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.35;
-  color: var(--ink);
-}
-.rv-slot.is-quiet .rv-slot-name { color: var(--ink-secondary); font-weight: 500; }
-.rv-day-open {
-  align-self: flex-start;
-  min-height: 44px;
-  padding: 0 4px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border: 0;
+  border-radius: var(--radius-tile);
   background: none;
-  cursor: pointer;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--apricot-label);
+  color: var(--ink-muted);
+  cursor: grab;
+  /* The handle is the drag: a finger on it is moving a night, not the
+     page, so the browser is told not to pan from here. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
-.rv-day-open:hover { color: var(--apricot-label-hover); }
+.rv-tile.is-lifted .rv-tile-handle { cursor: grabbing; }
+.rv-tile-handle:focus-visible { outline: 2px solid var(--apricot-deep); outline-offset: 2px; }
+.rv-tile-handle.is-off { cursor: default; }
+/* The live region: read by assistive tech, never seen. */
+.rv-tiles-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
 
 /* ---------- "One thing to settle": a hard allergen clash ---------- */
 /* Urgent TINT, not the urgent fill — a clash needs a decision, and Rule 3
@@ -7440,22 +7949,157 @@ span.cook-week-name { cursor: default; }
 
 /* ---------- the two-segment control ---------- */
 .wk-acts { display: flex; gap: 8px; }
-/* The Meal step (2026-09-11): a spruce hero for the dish, then cards in
-   the gutter, then the actions in the dock. */
-.wk-meal-hero { margin-top: 6px; }
-.wk-meal-hero .nextup-when { color: var(--ivory-ink-muted); }
-.wk-meal-body { padding: 14px 20px 0; display: flex; flex-direction: column; gap: 12px; }
+/* The Meal step (Emily, 2026-09-12 — "Meal · B · The clock"): a spruce hero
+   card in the gutter (the dish, when it's on the table, when to start, who's
+   cooking), then the cook as a clock — one stop per step with the time it
+   lands at down the left, "Everything out" first — and the one action in the
+   dock. The hero is this screen's one spruce panel (Rule 4: the root band is
+   roots-only, so a step may still have its hero). */
+.wk-meal-hero {
+  margin: 6px 20px 0;
+  padding: 18px;
+  gap: 12px;
+  border-radius: var(--radius-card) var(--radius-card) var(--radius-hero) var(--radius-hero);
+  border: 1.5px solid var(--spruce-edge);
+}
+/* "On the table by half six" — the hero-top's right end, in words. */
+.wk-meal-by {
+  margin-left: auto;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: right;
+  color: var(--ivory-ink-muted);
+}
+.wk-meal-dish { font-size: 28px; letter-spacing: -.036em; }
+.wk-meal-dish.hero-dish-sm { font-size: 24px; letter-spacing: -.03em; }
+.wk-meal-dish.hero-dish-xs { font-size: 21px; letter-spacing: -.026em; }
+/* The thaw note (or a reheat's provenance) under the chips. */
+.wk-meal-line { margin: 0; }
+.wk-meal-body { padding: 16px 20px 0; display: flex; flex-direction: column; gap: 16px; }
 /* The Meal step's dock (mealDockHtml) is empty for a day with nothing to
-   do — a past day, an away night — which leaves this card exposed to the
-   same floating-FAB overlap the Day step always has (see .wk-slots above).
-   70px = the FAB's 54px + 16px clearance; harmless extra whitespace on the
-   common case where a real dock already provides it (item 13, design-tidy
-   pass 2026-09-11). */
-.wk-meal-body:not(:has(+ .dock)) { padding-bottom: 70px; }
+   do — a past day, an away night — which leaves the last stop under the
+   floating chat icon. 84px = the FAB's 54px + its 16px inset + clearance
+   (the Cook root's own fix, 2026-09-11); a real dock provides it otherwise. */
+.wk-meal-body:not(:has(+ .dock)) { padding-bottom: 84px; }
 .wk-meal-body .wk-card, .wk-meal-body .shell-card { margin: 0; }
-.wk-meal-dock .wk-acts { align-items: center; }
-.wk-meal-dock .wk-act-swap { background: none; border: none; color: var(--apricot-label); padding: 0 8px; }
-.wk-meal-dock .wk-act-swap:hover { background: none; color: var(--apricot-label-hover); }
+
+/* ---------- the clock ---------- */
+.wk-clock { display: flex; flex-direction: column; gap: 12px; }
+/* "ABOUT THIRTY MINUTES, SIX STOPS" — the one eyebrow under the hero. */
+.wk-clock-eyebrow {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.wk-clock .cook-norecipe { margin: 0; }
+.wk-stops { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+/* time | spine | the stop */
+.wk-stop {
+  display: grid;
+  grid-template-columns: 48px 20px minmax(0, 1fr);
+  column-gap: 10px;
+  align-items: start;
+}
+.wk-stop-time {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 20px;
+  color: var(--ink-secondary);
+}
+.wk-stop.is-first .wk-stop-time { color: var(--ink); }
+.wk-stop-spine { position: relative; display: flex; justify-content: center; align-self: stretch; }
+.wk-stop-dot {
+  width: 12px;
+  height: 12px;
+  margin-top: 4px;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  border: 2px solid var(--hairline-strong);
+  position: relative;
+  z-index: 1;
+}
+.wk-stop.is-first .wk-stop-dot { background: var(--apricot); border-color: var(--apricot); }
+.wk-stop-spine::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  bottom: -2px;
+  left: 50%;
+  width: 1.5px;
+  margin-left: -.75px;
+  background: var(--hairline);
+}
+.wk-stop:last-child .wk-stop-spine::after { display: none; }
+.wk-stop-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 0 0 18px; }
+.wk-stop:last-child .wk-stop-body { padding-bottom: 0; }
+.wk-stop-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 20px;
+  color: var(--ink);
+}
+.wk-stop-line {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+  overflow-wrap: anywhere;
+}
+/* "Everything out" is a button: names on the line, a tap opens the amounts.
+   The whole stop is the target, 44px at least (Rule 6). */
+.wk-stop-toggle {
+  background: none;
+  border: none;
+  text-align: left;
+  min-height: 44px;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.wk-stop-toggle .wk-stop-title { display: flex; align-items: center; gap: 6px; }
+.wk-stop-toggle .wk-stop-title svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  color: var(--ink-secondary);
+  transform: rotate(90deg);
+  /* It turns, it does not animate — the app's three motions are spoken for (§4). */
+}
+.wk-stop-toggle.is-open .wk-stop-title svg { transform: rotate(-90deg); }
+.wk-stop-toggle .wk-stop-line {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+.wk-stop-toggle.is-open .wk-stop-line { display: none; }
+.wk-stop-amounts {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+}
+.wk-stop-amounts[hidden] { display: none; }
 .wk-act {
   min-height: 44px;
   padding: 0 16px;
@@ -7564,23 +8208,17 @@ span.cook-week-name { cursor: default; }
   color: var(--ink-strong);
 }
 .wk-card .cook-ahead-go:hover { background: var(--sand); }
-/* The recipe itself on the Meal step, borrowed whole from the cook screen
-   (cookDetailHtml's `plain` mode) exactly as the picker above it is. No
-   re-inking needed here: the non-spruce .cook-detail rules already read
-   --ink / --ink-muted / --ink-secondary, which is what an ivory card
-   wants. The only adjustment is the first eyebrow's top margin, written
-   for a spruce hero that has no card title above it. */
-.wk-recipe-card .cook-detail > .cook-detail-head:first-child { margin-top: 0; }
 
 /* ---------- the "More" sheet ---------- */
-#meals-more-scrim {
+/* Cook's More (#cook-more-*) is the same sheet — one geometry, two ids. */
+#meals-more-scrim, #cook-more-scrim {
   position: fixed;
   inset: 0;
   background: var(--scrim);
   animation: fadeIn .18s ease;
   z-index: 40;
 }
-#meals-more-sheet {
+#meals-more-sheet, #cook-more-sheet {
   position: fixed;
   left: 0;
   right: 0;
@@ -7597,7 +8235,11 @@ span.cook-week-name { cursor: default; }
   gap: 8px;
   animation: sheetUp .24s cubic-bezier(.2,.8,.2,1);
 }
-#meals-more-scrim[hidden], #meals-more-sheet[hidden] { display: none; }
+#meals-more-scrim[hidden], #meals-more-sheet[hidden],
+#cook-more-scrim[hidden], #cook-more-sheet[hidden] { display: none; }
+/* The rows in Cook's More are .kit-rows — the card border is the sheet's,
+   so the card drops its own. */
+#cook-more-rows .kit-rows { border: 0; background: none; padding: 0 2px; }
 .wk-more-rows { display: flex; flex-direction: column; }
 .wk-more-row {
   width: 100%;
@@ -7914,7 +8556,9 @@ span.cook-week-name { cursor: default; }
      1. Sheets slide up over a scrim that fades in; centred
         dialogs fade + scale instead of sliding.
      2. Tab panels crossfade with a 6px rise (activateTab, shell.js).
-     3. A ticked grocery row settles (buildGroceryPanel's trip list).
+     3. A ticked grocery row settles (buildGroceryPanel's trip list) —
+        and, since 2026-09-13, a ticked node on Now's day strip: the
+        same transitions on a second surface, not a fourth animation.
    Tokens (--motion-fast/--motion-base/--motion-ease/--motion-ease-in)
    live in theme.css and collapse to 0ms under prefers-reduced-motion,
    so nothing in this section needs its own reduced-motion branch.
@@ -7926,18 +8570,18 @@ span.cook-week-name { cursor: default; }
    transitions. `animation: none` cancels each sheet's old
    entrance-only keyframe (defined at its own rule earlier in this
    file) without touching that rule's resting appearance. */
-#ask-sheet, #week-sheet, #kit-sheet, #meals-more-sheet, #gro-scan-sheet,
+#ask-sheet, #week-sheet, #kit-sheet, #meals-more-sheet, #cook-more-sheet, #gro-scan-sheet,
 #prefs-sheet, #notif-panel {
   animation: none;
   translate: 0 100%;
   transition: translate var(--motion-base) var(--motion-ease);
 }
 #ask-sheet.is-open, #week-sheet.is-open, #kit-sheet.is-open,
-#meals-more-sheet.is-open, #gro-scan-sheet.is-open, #prefs-sheet.is-open,
+#meals-more-sheet.is-open, #cook-more-sheet.is-open, #gro-scan-sheet.is-open, #prefs-sheet.is-open,
 #notif-panel.is-open {
   translate: 0 0;
 }
-#ask-scrim, #week-sheet-scrim, #kit-sheet-scrim, #meals-more-scrim,
+#ask-scrim, #week-sheet-scrim, #kit-sheet-scrim, #meals-more-scrim, #cook-more-scrim,
 #gro-scan-scrim, #prefs-scrim, #notif-scrim,
 #reset-scrim, #dinner-confirm-scrim, #approve-who-scrim {
   animation: none;
@@ -7945,7 +8589,7 @@ span.cook-week-name { cursor: default; }
   transition: opacity var(--motion-base) var(--motion-ease);
 }
 #ask-scrim.is-open, #week-sheet-scrim.is-open, #kit-sheet-scrim.is-open,
-#meals-more-scrim.is-open, #gro-scan-scrim.is-open, #prefs-scrim.is-open,
+#meals-more-scrim.is-open, #cook-more-scrim.is-open, #gro-scan-scrim.is-open, #prefs-scrim.is-open,
 #notif-scrim.is-open,
 #reset-scrim.is-open, #dinner-confirm-scrim.is-open, #approve-who-scrim.is-open {
   opacity: 1;
@@ -7995,14 +8639,34 @@ span.cook-week-name { cursor: default; }
    so groAnimateRowSettle (shell.js) does the same "start from the opposite
    state, force a reflow, settle to the real one" trick openSheet() uses for
    sheets — these transitions are what it settles into. */
-.gro-row .gro-box {
+.gro-row .gro-box, .day-dot {
   transition: background var(--motion-base) var(--motion-ease),
-              border-color var(--motion-base) var(--motion-ease);
+              border-color var(--motion-base) var(--motion-ease),
+              color var(--motion-base) var(--motion-ease);
 }
 .gro-row .gro-name {
   position: relative;
   transition: color var(--motion-base) var(--motion-ease);
 }
+/* Now's day strip (todayAnimateNodeSettle, shell.js — the same
+   opposite-state-then-reflow trick as groAnimateRowSettle). The dot's
+   two icons crossfade, the ink eases, and the strike is a line-through
+   whose COLOUR eases in — text-decoration-color rather than the ::after
+   scale above, because a move's title can wrap to two lines and one
+   ::after through the block would strike the gap between them. */
+.day-dot-icon, .day-dot-tick {
+  transition: opacity var(--motion-base) var(--motion-ease);
+}
+.day-node-title, .day-node-meta {
+  transition: color var(--motion-base) var(--motion-ease);
+}
+.day-node-title {
+  text-decoration: line-through;
+  text-decoration-color: transparent;
+  transition: color var(--motion-base) var(--motion-ease),
+              text-decoration-color var(--motion-base) var(--motion-ease);
+}
+.day-node.is-done .day-node-title { text-decoration-color: currentColor; }
 .gro-row .gro-name::after {
   content: '';
   position: absolute;
@@ -8034,7 +8698,7 @@ span.cook-week-name { cursor: default; }
    reads fine inside a 520px column, and Julia's readability cap on it
    predates and is independent of this ticket). */
 @media (min-width: 768px) {
-  #week-sheet, #kit-sheet, #meals-more-sheet, #gro-scan-sheet, #rli-sheet,
+  #week-sheet, #kit-sheet, #meals-more-sheet, #cook-more-sheet, #gro-scan-sheet, #rli-sheet,
   #coach-sheet, #prefs-sheet, #tips-sheet, #morning-sheet, #snw-sheet {
     left: 50%;
     right: auto;

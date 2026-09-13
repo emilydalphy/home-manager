@@ -140,12 +140,7 @@
     box-sizing: border-box;
     border-radius: 18px;
     background: var(--spruce-raised);
-    /* #2E5240 has no token twin — it happens to equal --celadon-edge's DARK
-       value, but this rule isn't inside a dark-mode block and the field's
-       border never changes between modes, so var(--celadon-edge) would be
-       wrong in light (it resolves to #C7DACD there). Left literal, flagged
-       for Emily (design hygiene pass, 2026-09-12). */
-    border: 1.5px solid #2E5240;
+    border: 1.5px solid var(--on-spruce-edge);
     display: flex;
     align-items: center;
     gap: 11px;

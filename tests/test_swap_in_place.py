@@ -488,9 +488,12 @@ class TestTheDayAndMealMarkup:
 
     def test_the_wordier_path_is_kept_as_a_quiet_link(self):
         assert "Tell me what instead" in SHELL_JS
-        # Prefilled exactly as it was, and openAskSheet itself untouched.
-        assert "openAskSheet('Swap ' + dayName(day.date, { weekday: 'long' }) + '’s ' +\n" \
-               "          btn.getAttribute('data-wk-tell') + ' for something else');" in SHELL_JS
+        # Since 2026-09-13 the link opens chat ABOUT the meal (see
+        # tests/test_tell_me_instead_context.py); the old prefilled
+        # sentence is kept only for a slot with no real meal to be about.
+        assert "if (context) openAskSheet('', context);" in SHELL_JS
+        assert "else openAskSheet('Swap ' + dayName(day.date, { weekday: 'long' }) + '’s ' +\n" \
+               "          slotWord(slot) + ' for something else');" in SHELL_JS
 
     def test_the_swap_line_carries_no_second_apricot_fill(self):
         """
