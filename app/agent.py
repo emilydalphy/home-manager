@@ -2775,6 +2775,11 @@ not everything you were shown.
 snacks_per_week (0-7) are counts of DISTINCT meals, not counts of days to plan. Every day still \
 gets all four. "4 breakfasts" means four different breakfast ideas spread across the seven \
 mornings, repeating as needed to fill the week — it does NOT mean three mornings with nothing. \
+Each count is a CEILING on distinct dishes, not a suggestion: with dinners_per_week 4, count the \
+different dinner dishes you have written before you submit, and if there are five, replace one \
+with a second night of another. Every dish over the count will be swapped for a repeat of a kept \
+one after you answer, so a fifth dish is work thrown away. A reheat night counts as the dish it \
+reheats, not as a new one. \
 This is what the setup screen promises the household in so many words: "I'd rather plan four \
 things you cook than seven you don't," and "one breakfast a week is a perfectly good answer" — \
 one idea, eaten all week, not one morning fed and six ignored. snacks_per_week follows the \
@@ -4329,6 +4334,23 @@ def _finish_week_slots(
     # does: a slot this reopens must be seen as present, not questioned a
     # second time as missing. See tools.repair_leftover_chains.
     tools.repair_leftover_chains(plan_id)
+
+    # "Four dinners a week" means four dishes, and the model is only ASKED
+    # for that (Emily, 2026-09-13: "it's giving me 5 types of dinners when I
+    # asked for 4"). This makes it true: any dish over the count goes, and
+    # a kept dish takes its nights. household_memory here is the effective
+    # memory, so a part-week's prorated count is the one enforced. AFTER
+    # repair_leftover_chains, so a reheat night is filed under the dish it
+    # reheats and the chains it reads are real; BEFORE the plates pass, so
+    # sides land on the dishes the week actually keeps. See
+    # tools.meal_variety for what goes, what stays and when it stands down.
+    tools.enforce_distinct_meal_count(
+        plan_id, household_memory.get("dinners_per_week"), slot="dinner",
+        asks=(
+            (context or {}).get("constraints_notes"),
+            ((context or {}).get("intake") or {}).get("freeform"),
+        ),
+    )
 
     # "Every meal is a full plate" (Emily, 2026-09-05) — any planned meal
     # whose own food_groups fall short of the household's plate rule gets a

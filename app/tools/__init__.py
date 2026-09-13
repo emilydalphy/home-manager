@@ -264,6 +264,9 @@ from .leftovers import (  # noqa: F401
     plan_leftover_chains,
 )
 from .leftovers import covers_note as leftovers_covers_note  # noqa: F401
+# "Four dinners a week" enforced after generation (Emily, 2026-09-13) —
+# see meal_variety.py. Not an agent tool: the week's finishing passes call it.
+from .meal_variety import enforce_distinct_count as enforce_distinct_meal_count  # noqa: F401
 from .meal_plans import (  # noqa: F401
     create_weekly_plan,
     discard_failed_plan,
