@@ -4481,6 +4481,15 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    LIST row's ⋯ menu, which both mean the same thing on the same route. */
 .gro-pill-else { background: var(--sand); color: var(--ink-secondary); }
 .gro-pill-else:hover { border-color: var(--hairline-strong); }
+/* "Add a new store" — a way to a setting, sitting among the answers on
+   every store picker (SORT, SORT ALL, WRAP UP's "Will grab elsewhere").
+   Link-coloured on no fill so it reads as the door rather than as one
+   more store or a second primary. --apricot-label is the token for links
+   and micro-labels; measured on --ground (the pill's own background)
+   4.91:1 light / 9.83:1 dark, and on --surface, where WRAP UP's picker
+   sits, 5.20:1 / 8.53:1. */
+.gro-pill-add { background: none; color: var(--apricot-label); }
+.gro-pill-add:hover { color: var(--apricot-label-hover); border-color: var(--apricot); }
 .gro-linkbtn {
   background: none;
   border: none;
@@ -4842,9 +4851,10 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .gro-voice-note { display: block; margin-top: 8px; color: var(--ink-muted); font-size: 12px; }
 
 /* ---------- WRAP UP ----------
-   What didn't make it into the cart, two answers each, and the trip's own
-   count. The two answers are equal weight on purpose — neither "couldn't
-   find it" nor "getting it somewhere else" is the expected one. */
+   What didn't make it into the cart, three answers each, and the trip's
+   own count. The answers are equal weight on purpose — none of "couldn't
+   find it", "will grab elsewhere" and "don't need anymore" is the expected
+   one. Three don't fit one line at 375px, so the row wraps them. */
 .gro-wrap-list { padding-bottom: 6px; }
 .gro-wrap-row {
   display: flex;
@@ -4858,6 +4868,12 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .gro-wrap-row:first-of-type { border-top: none; }
 .gro-wrap-name {
   flex: 1 1 100%;
+  /* A row of its own so the quantity chip (.gro-qty is display:flex)
+     sits beside the name rather than stretching under it as a bar —
+     found on 2026-09-13 while the third answer went in. */
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-family: var(--font-body);
   font-weight: 600;
   font-size: 15px;
@@ -4865,7 +4881,7 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   min-width: 0;
 }
 .gro-wrap-row.kept .gro-wrap-name { color: var(--ink-secondary); }
-.gro-wrap-seg { display: flex; gap: 8px; margin-left: auto; }
+.gro-wrap-seg { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
 .gro-wrap-btn {
   min-height: 44px;
   padding: 0 12px;
@@ -4881,6 +4897,17 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 }
 .gro-wrap-btn:hover { border-color: var(--apricot); }
 .gro-wrap-btn:disabled { opacity: .6; cursor: default; }
+/* "Will grab elsewhere" while its store picker is open under the row —
+   the same "picked" mark the sort chips use (.gro-pill-on): celadon tint,
+   and the border carrying the state in --ink-strong. Measured there:
+   border 9.73:1 light / 8.43:1 dark against the unpicked edge; label
+   --ink-on-celadon on the tint 10.65:1 / 10.37:1. */
+.gro-wrap-btn-on { background: var(--celadon-tint); color: var(--ink-on-celadon); border-color: var(--ink-strong); }
+.gro-wrap-btn-on:hover { border-color: var(--ink-strong); }
+/* The other stores, under the row that asked. The pills are .gro-pill,
+   the app's choice chip, so a store here looks like a store on SORT. */
+.gro-wrap-pick { flex: 1 1 100%; padding-top: 4px; }
+.gro-wrap-pick .gro-pills { padding-bottom: 6px; }
 .gro-wrap-kept {
   margin-left: auto;
   font-family: var(--font-body);
