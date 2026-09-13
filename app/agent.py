@@ -1924,7 +1924,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "list_staples",
-        "description": "The household's staples — what they buy on a rhythm, each with its cadence in words, when it was last bought, when it's probably due, and whether it's paused. Use for 'what are our staples?', 'when are we due for coffee?', and before add_staple to avoid a duplicate.",
+        "description": "The household's staples — what they buy on a rhythm, each with its section (Spices, Pantry basics, Fridge basics, Household supplies, Other — worked out from the name, never chosen), its cadence in words, when it was last bought, when it's probably due, and whether it's paused. The Spices section is the spice rack: every spice they've bought through the list, so 'do we have cumin?' / 'what spices are we low on?' is answered here — never from inventory, never by asking them to count jars. Use for 'what are our staples?', 'when are we due for coffee?', and before add_staple to avoid a duplicate.",
         "input_schema": {"type": "object", "properties": {}},
     },
     {

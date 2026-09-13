@@ -157,8 +157,10 @@ def test_a_hand_added_spice_with_no_plan_is_simply_on_the_list():
 
 
 def test_bought_lately_is_not_offered_again(curry_week):
-    """Light memory across weeks, borrowed from staples: a purchased line's
-    created_at stands in for when it was bought."""
+    """Memory across weeks is the spice rack — the Spices section of staples
+    (2026-09-13): buying a spice makes it a staple, and a jar bought within
+    its cadence is at home. Once the cadence has run out it is offered
+    again — pre-ticked, since the rack says it's probably running low."""
     tools.add_grocery_item("Ground cumin", "1 jar", category="pantry")
     cumin_id = next(i["id"] for i in tools.list_grocery_list() if i["item"] == "Ground cumin")
     tools.mark_grocery_item(cumin_id, "purchased")
@@ -175,14 +177,115 @@ def test_bought_lately_is_not_offered_again(curry_week):
     got = tools.list_spices_this_week()
     assert "Ground cumin" not in {sp["item"] for sp in got["items"]}
     assert got["recently_bought"] == ["Ground cumin"]
-    # Long enough ago, and it is offered again.
+    # Long enough ago — the staple's own clock, one source of truth — and
+    # it is offered again, ticked, as probably running low.
     conn = get_conn()
-    conn.execute("UPDATE grocery_items SET created_at = '2026-01-01 10:00:00' WHERE status = 'purchased'")
+    conn.execute("UPDATE staples SET last_bought_at = '2026-01-01', next_due_at = '2026-02-26'")
     conn.commit()
     conn.close()
     got = tools.list_spices_this_week()
-    assert "Ground cumin" in {sp["item"] for sp in got["items"]}
+    cumin = next(sp for sp in got["items"] if sp["item"] == "Ground cumin")
+    assert cumin["ticked"] is True and cumin["due"] is True
     assert got["recently_bought"] == []
+
+
+# ---------- the spice rack (Spices section of staples, 2026-09-13) ----------
+
+def _rack_says(item: str, last_bought: str, next_due: str) -> None:
+    """Move a spice staple's clock by hand — the staple is the one source
+    of truth for 'at home' / 'running low', so the tests set it there."""
+    conn = get_conn()
+    conn.execute("UPDATE staples SET last_bought_at = ?, next_due_at = ? WHERE item = ?", (last_bought, next_due, item))
+    conn.commit()
+    conn.close()
+
+
+def _days_ago(n: int) -> str:
+    return (datetime.date.today() - datetime.timedelta(days=n)).isoformat()
+
+
+def test_a_ticked_spice_that_came_home_is_a_spices_staple(curry_week):
+    tools.tick_spice(_section()["Ground cumin"]["id"], True)
+    cumin_id = next(i["id"] for i in tools.list_grocery_list() if i["item"] == "Ground cumin")
+    tools.mark_grocery_item(cumin_id, "purchased")
+    grouped = tools.list_staples_by_section()
+    assert [g["label"] for g in grouped] == ["Spices"]
+    (cumin,) = grouped[0]["staples"]
+    assert cumin["item"] == "Ground cumin" and cumin["cadence_days"] == spices.RECENTLY_BOUGHT_DAYS
+    assert cumin["last_bought_at"] == datetime.date.today().isoformat()
+    assert cumin["due"] is False
+
+
+def test_a_spice_whose_cadence_has_run_out_is_pre_ticked(curry_week):
+    tools.add_staple("Ground cumin", category="pantry")
+    _rack_says("Ground cumin", _days_ago(70), _days_ago(14))
+    cumin = _section()["Ground cumin"]
+    assert cumin["ticked"] is True and cumin["due"] is True
+    # Made the way a due staple's line is made: an ordinary needed line
+    # carrying the staple, so the list's own two answers work on it.
+    row = next(i for i in tools.list_grocery_list() if i["item"] == "Ground cumin")
+    assert row["staple_id"] == tools.list_staples()[0]["id"]
+    # The rest of the card is untouched: paprika has no history, so it
+    # waits unticked as before, and nothing is "bought lately".
+    paprika = _section()["Smoked paprika"]
+    assert paprika["ticked"] is False and paprika["due"] is False
+    assert tools.list_spices_this_week()["recently_bought"] == []
+
+
+def test_the_card_reads_the_staples_cadence_not_a_second_clock(curry_week):
+    """A jar the household has shown it buys every three months is 'bought
+    lately' for three months, not eight weeks — the learned cadence is
+    the window."""
+    tools.add_staple("Ground cumin", category="pantry")
+    conn = get_conn()
+    conn.execute("UPDATE staples SET cadence_days = 90, cadence_source = 'learned' WHERE item = 'Ground cumin'")
+    conn.commit()
+    conn.close()
+    _rack_says("Ground cumin", _days_ago(70), (datetime.date.today() + datetime.timedelta(days=20)).isoformat())
+    got = tools.list_spices_this_week()
+    assert got["recently_bought"] == ["Ground cumin"]
+    assert "Ground cumin" not in {sp["item"] for sp in got["items"]}
+
+
+def test_unticking_a_pre_ticked_jar_is_we_have_plenty_and_a_retick_takes_it_back(curry_week):
+    tools.add_staple("Ground cumin", category="pantry")
+    _rack_says("Ground cumin", _days_ago(70), _days_ago(14))
+    cumin = _section()["Ground cumin"]
+    assert cumin["ticked"] is True
+    tools.tick_spice(cumin["id"], False)
+    # Back in the card, unticked, and the staple is a whole cadence out —
+    # so a re-read does not tick it again.
+    after = _section()["Ground cumin"]
+    assert after["ticked"] is False and after["due"] is False
+    (staple,) = tools.list_staples()
+    assert staple["due"] is False
+    assert staple["next_due_at"] == (datetime.date.today() + datetime.timedelta(days=56)).isoformat()
+    assert "Ground cumin" not in _needed()
+    # "Actually, I need it": the plenty is taken back, the jar is due again.
+    tools.tick_spice(cumin["id"], True)
+    again = _section()["Ground cumin"]
+    assert again["ticked"] is True and again["due"] is True
+    assert tools.list_staples()[0]["due"] is True
+    conn = get_conn()
+    kinds = [r["kind"] for r in conn.execute("SELECT kind FROM staple_events ORDER BY id").fetchall()]
+    conn.close()
+    assert "plenty" not in kinds
+
+
+def test_a_hand_ticked_jar_is_not_probably_running_low(curry_week):
+    """No staple, no claim: a person's own tick is just a thing to buy."""
+    tools.tick_spice(_section()["Smoked paprika"]["id"], True)
+    assert _section()["Smoked paprika"]["due"] is False
+
+
+def test_nothing_in_the_rack_is_inventory(curry_week):
+    tools.add_staple("Ground cumin", category="pantry")
+    _rack_says("Ground cumin", _days_ago(70), _days_ago(14))
+    tools.list_spices_this_week()
+    conn = get_conn()
+    n = conn.execute("SELECT COUNT(*) FROM inventory_items").fetchone()[0]
+    conn.close()
+    assert n == 0
 
 
 def test_the_sort_queue_and_the_trip_never_see_an_unticked_spice(curry_week):
@@ -351,6 +454,47 @@ console.log(JSON.stringify({ body: groListHtml(groceryState.data), dock: groDock
     assert "Nothing to buy" not in out["body"]
     assert "Spices this week" in out["body"]
     assert out["dock"] == "", "nothing to start a trip for, and nowhere to send anyone"
+
+
+@_needs_node
+def test_a_pre_ticked_jar_says_why():
+    out = _node("""
+setUp([], { items: [
+  { id: 7, item: 'Ground cumin', quantity: '1 tbsp', category: 'pantry', store: '', ticked: true, due: true },
+  { id: 8, item: 'Salt', quantity: 'to taste', category: 'pantry', store: '', ticked: true, due: false }
+], recently_bought: [] });
+groceryState.spicesOpen = true;
+console.log(JSON.stringify(groListHtml(groceryState.data)));
+""")
+    assert out.count("Probably running low") == 1
+    assert out.index("Ground cumin") < out.index("Probably running low") < out.index("Salt")
+    assert 'data-id="7" data-ticked="1"' in out, "still the same box — unticking it is the answer"
+
+
+@_needs_node
+def test_the_staples_card_groups_under_section_headings():
+    out = _node("""
+setUp([], { items: [], recently_bought: [] });
+groceryState.staples = [
+  { id: 1, item: 'Ground cumin', section: 'spices', section_label: 'Spices', cadence_words: 'about every 2 months', due_words: '', paused: false },
+  { id: 2, item: 'Coffee', section: 'pantry', section_label: 'Pantry basics', cadence_words: 'about every 3 weeks', due_words: 'due next week', paused: false },
+  { id: 3, item: 'Dish soap', section: 'household', section_label: 'Household supplies', cadence_words: 'about every month', due_words: '', paused: true }
+];
+groceryState.stapleSections = [
+  { section: 'spices', label: 'Spices', staples: [groceryState.staples[0]] },
+  { section: 'pantry', label: 'Pantry basics', staples: [groceryState.staples[1]] },
+  { section: 'household', label: 'Household supplies', staples: [groceryState.staples[2]] }
+];
+groceryState.staplesOpen = true;
+console.log(JSON.stringify(groListHtml(groceryState.data)));
+""")
+    assert out.count('class="gro-staple-sec"') == 3
+    for label in ("Spices", "Pantry basics", "Household supplies"):
+        assert '<span class="gro-eyebrow">' + label + '</span>' in out, label
+    assert out.index("Spices</span>") < out.index("Ground cumin") < out.index("Pantry basics") < out.index("Coffee") \
+        < out.index("Household supplies") < out.index("Dish soap")
+    assert "3 things you buy on a rhythm" in out
+    assert out.count('data-gro="staple-pause"') == 2 and out.count('data-gro="staple-resume"') == 1
 
 
 @_needs_node

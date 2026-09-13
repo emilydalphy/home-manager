@@ -4583,6 +4583,16 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   color: var(--ink-secondary);
   margin: 10px 0 4px;
 }
+/* The rack's own "probably running low" under a pre-ticked jar — the
+   staple line's words (.gro-staple-text), at the row's meta size. */
+.gro-spice-due {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-secondary);
+  line-height: 1.3;
+}
 .gro-spices-recent {
   font-family: var(--font-body);
   font-size: 12px;
@@ -8546,6 +8556,13 @@ span.cook-week-name { cursor: default; }
 .gro-staples .gro-ps-head svg { stroke: var(--ink-secondary); }
 .gro-staples .gro-ps-sub { color: var(--ink-secondary); }
 .gro-staples-body { border-top: 1.5px solid var(--hairline); padding: 2px 0 8px; }
+/* A section of the card — Spices, Pantry basics, Fridge basics, Household
+   supplies, Other — under the aisle eyebrow (.gro-eyebrow), so the card
+   reads the way the list does. The first row under a heading has no
+   hairline: the eyebrow is the divider. */
+.gro-staple-sec { padding-top: 14px; }
+.gro-staple-sec + .gro-staple-sec { border-top: 1.5px solid var(--hairline); }
+.gro-staple-sec .gro-eyebrow { display: block; margin: 0 0 4px; }
 .gro-staple-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;

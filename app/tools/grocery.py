@@ -1555,12 +1555,16 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
     if status == "purchased":
         # A bought staple teaches its rhythm, whoever put the line there —
         # a hand-added "coffee" counts the same as the suggestion Pomona
-        # made. No-op for anything that isn't a staple, and one bought date
-        # per day per staple, so a re-tick teaches nothing twice. Imported
-        # here, not at the top: staples.py imports this module for the
-        # merge key. After the commit above, on its own connection.
+        # made. No-op for anything that isn't a staple — except a spice,
+        # which becomes one (the spice rack, kept from purchases; see
+        # staples.py's note on sections) — and one bought date per day per
+        # staple, so a re-tick teaches nothing twice. Imported here, not at
+        # the top: staples.py imports this module for the merge key. After
+        # the commit above, on its own connection.
         from . import staples as _staples
-        _staples.record_staple_purchase(row["item"], source="grocery", staple_id=row["staple_id"])
+        _staples.record_staple_purchase(
+            row["item"], source="grocery", staple_id=row["staple_id"], item_id=item_id, category=row["category"]
+        )
     return result
 
 
