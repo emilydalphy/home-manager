@@ -371,6 +371,108 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — Hosting a holiday is THE BIG MEAL now: a menu, the shop
+  in two trips, the prep on the days before, a day-of timeline. Branch
+  `worktree-holiday-hosting`, slice 2 of Loop Board "Holidays: Pomona
+  knows 12 October is coming and asks how you're spending it".** Slice 1
+  (below, 2026-09-11) made "Hosting" the intake's guests tag + headcount
+  and asked the planner for a generous dinner; this makes it a menu.
+  **Where it lives — nothing new invented.** A dinner is ONE
+  `meal_plan_entries` row per (date, slot) — `audit_plan_slots`, the
+  leftover chain and both screens depend on it — so the big meal is one
+  dinner entry: the MAIN is its recipe (written for the whole table,
+  `default_servings` = eaters, so the ingest's `servings_scale_factor`
+  is 1), the SIDES and the SWEET ride in `sides_json` — plates.py's
+  "this dish, on this night" column — each with a `role` and the day-of
+  timing (`minutes`, `cook_minutes`, `oven`, `ahead_days`, `servings`).
+  Every reader of `sides_json` already treats a side as part of the
+  entry: approval buys it under the same entry id, the Cook view lists
+  its steps "Alongside", `check_meal_conflicts` reads its ingredients,
+  `plate_note` says "with X, Y and Z" on the Plan card. The alternative
+  — one entry per dish under non-canonical slot names — was rejected: it
+  hides from the duplicate audit rather than passing it, and every
+  per-slot reader (attendance, needs, moves' clocks, the week menu)
+  would have met a slot it doesn't know. **The menu's own record** is
+  `holiday_answers.menu_json` (entry it built, the main's timing,
+  status) beside two new hosting-only columns, `on_table_at` and
+  `guest_notes` — the smallest honest capture of guest restrictions,
+  which existed nowhere (guest_counts is two integers): free text in the
+  host's words, read verbatim by the proposal and parsed by the SAME
+  allergy matcher a hard What-we-know fact goes through
+  (`big_meal.guest_avoidances` → `coordination._fact_keywords`), so "no
+  nuts" drops a walnut salad before it lands; "Sam's vegetarian" is
+  honoured by the model, which the matcher can't do. Asked on the Days
+  screen (a time and a text box under the Hosting answer) and in chat.
+  **The proposal** is one model call, `agent.generate_big_meal_llm`
+  (`utility` effort, forced `submit_big_meal`), injected at call time
+  like `complete_plate`'s side generator so tests stub it. It builds
+  AROUND the dinner already in the slot (the planner's pick at
+  generation via `apply_to_plan`, or whatever the household planned) and
+  proposes a main only for an empty/open slot. It degrades, never
+  crashes: main-only with a note when the sides can't be had; an open
+  slot whose reason names hosting and the count when nothing can. A
+  hosting answer given again (new count, new time, a note) KEEPS the
+  menu and re-checks it — a rebuild would throw away dishes changed by
+  hand; `propose_big_meal` is the deliberate do-over. **The shop
+  split** is read-time, not stored: `big_meal.shop_split` joins the
+  entry's `meal_plan_grocery_links` and labels a `needed` line early if
+  its section keeps (pantry / frozen / other) or another meal needs it
+  before the early trip, fresh otherwise; the two grocery routes stamp
+  `shop_timing` per line and a `shop_split` with the trips' labels, and
+  the Shop screen's store cards read their aisles in groups under one
+  quiet heading each ("For Thanksgiving — buy by Friday"). Read-time
+  means nothing to sync at approval/swap/reversal and nothing to unwind.
+  **The prep spread** is `prep_tasks` rows with `task_type='holiday'`
+  (its own producer, deleting only its own rows, the contract the table
+  already sets for defrost/prep_cut): one per make-ahead dish on
+  holiday − `ahead_days`, pulled onto the household's standing prep day
+  when one falls in the three days before, plus the two shops as moves
+  — so each lands on Now through `today_moves` and under the dinner's
+  card on Cook with no new rendering. Each row is dated into the plan
+  whose period holds THAT day (a Monday holiday's Sunday belongs to the
+  week before) and `cooker.get_prep_schedule` now also returns rows
+  dated into the plan's period by another plan, and its own entries'
+  rows wherever dated — that was the gap that would have hidden every
+  Sunday prep for a Monday holiday (and, unnoticed, every Sunday
+  defrost for one). **The timeline** (`big_meal.timeline`, chat
+  `get_big_meal`) works back from `on_table_at` (the household's dinner
+  clock when unsaid, and it says so): the main rests, goes in and starts
+  before that; one oven, two racks — a day-of oven dish fits the rest
+  window, else shares the oven with the main once, else goes in before
+  and is kept warm; made-ahead dishes warm through in the last half hour
+  or come out of the fridge; nothing is more precise than the recipe
+  times it was given. **Drawing it on the Cook tab is deferred** until
+  Cook-D ("the shelf", `worktree-cook-shelf`) merges — that session owns
+  the Cook tab's rendering and the meal screen, and a timeline card
+  built against today's Cook would be rebuilt the week after. **Unwind:**
+  leaving hosting deletes the holiday prep rows, hands the dinner back
+  as an open question (slice 1's `_reopen`, which reverses the
+  groceries once) only when the entry carries `holiday_menu` — a dinner
+  the household re-planned by hand is left alone — and clears
+  `menu_json`; the split, being read-time, is simply gone. **Also
+  fixed:** `_entry_side_ingredient_groups` — a side carrying `servings`
+  anchors the ingest on it, so a stuffing written for seven isn't bought
+  3.5× over (plate sides carry none and behave as before);
+  `_run_migrations` skips a table schema.sql hasn't created yet (an
+  ALTER on a missing table aborted every migration after it — caught by
+  the chores snapshot test); `answer_holiday` and the big-meal tools
+  are `_WEEK_TOOLS`, so Plan refreshes (slice 1 pointed them at
+  /memory). **ASSUMPTIONS (constants at the top of big_meal.py):** one
+  main + 3 sides + 1 sweet; early trip 3 days out, fresh trip the day
+  before; pantry/frozen/other keep; a dish can be made up to 2 days
+  ahead; the make-ahead fallback is a word table (sauces, stuffings,
+  casseroles, pies, rolls keep; salads/roasts don't; a sweet keeps);
+  default on-the-table time = the household's dinner clock; a standing
+  prep day in the window takes the make-ahead work; 30 min to warm a
+  made-ahead dish through. **Not done, own cards:** a leftover chain
+  whose SOURCE night is emptied (out, holiday change, a cleared slot)
+  leaves the reheat night as an orphan "cook" that buys nothing —
+  pre-existing (slice 1's out did the same), seen while verifying;
+  per-line override of early/fresh; a Now card for the hosting details
+  (the Now tap still points at chat for count/time/notes). 32 tests in
+  `tests/test_big_meal.py`; suite 3345 → 3377; verified live on a
+  throwaway DB with the model stubbed (answer → menu → two-trip list →
+  Sunday prep on Now → timeline readback → going-out unwinds all of it).
 - **2026-09-13 — Skip, swap, or "not this week": a ··· on every chore row.
   Branch `overnight/chores-skip-hand-move`, NOT merged at the time of
   writing.** Loop Board "Chores v1: Skip, swap, or 'not this week'"

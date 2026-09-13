@@ -4162,10 +4162,9 @@ def _ingest_recipe_group_and_sides(
         already_have.extend(have)
 
     for entry in entries:
-        side_ingredients = _entry_side_ingredients(entry)
-        if side_ingredients:
+        for servings, side_ingredients in _entry_side_ingredient_groups(entry):
             added, have = _recipes._add_recipe_ingredients_for_entries(
-                [entry["id"]], side_ingredients, weekly_plan_id, buffer=buffer
+                [entry["id"]], side_ingredients, weekly_plan_id, default_servings=servings, buffer=buffer
             )
             added_items.extend(added)
             already_have.extend(have)
@@ -4229,6 +4228,32 @@ def _entry_side_ingredients(row) -> list[dict]:
     except (TypeError, ValueError):
         parsed = []
     return _plates.side_ingredients(parsed if isinstance(parsed, list) else [])
+
+
+def _entry_side_ingredient_groups(row) -> list[tuple[int | None, list[dict]]]:
+    """
+    The entry's side ingredients grouped by the servings they were written
+    for: (None, [...]) for plate sides, which carry none, and one
+    (servings, [...]) group per table size a big-meal dish names. Empty
+    groups are dropped, so an entry with no sides yields [].
+    """
+    sides = row["sides_json"] if "sides_json" in row.keys() else "[]"
+    try:
+        parsed = json.loads(sides or "[]")
+    except (TypeError, ValueError):
+        parsed = []
+    groups: dict[int | None, list[dict]] = {}
+    for side in parsed if isinstance(parsed, list) else []:
+        if not isinstance(side, dict):
+            continue
+        try:
+            servings = int(side.get("servings")) if side.get("servings") else None
+        except (TypeError, ValueError):
+            servings = None
+        if servings is not None and servings <= 0:
+            servings = None
+        groups.setdefault(servings, []).extend(_plates.side_ingredients([side]))
+    return [(k, v) for k, v in groups.items() if v]
 
 
 def preview_plan_grocery_impact(weekly_plan_id: int) -> dict:
@@ -4518,16 +4543,17 @@ def approve_weekly_plan(
     # with the night's own recipe (or another night's) must round together
     # with it, or the two independent roundings can each tip up and buy more
     # than either alone would have asked for — the same class of bug as the
-    # 17 peppers. No default_servings is passed here: sides carry no
-    # servings of their own (see plates.py's sides_json shape), so
-    # servings_scale_factor falls back to attendance alone — that entry's
-    # eaters relative to the household, not a recipe-servings anchor that
-    # doesn't exist for a side.
+    # 17 peppers. A plate side carries no servings of its own (see
+    # plates.py's sides_json shape), so servings_scale_factor falls back to
+    # attendance alone — that entry's eaters relative to the household. A
+    # dish on a hosted holiday's big meal DOES carry `servings` (it was
+    # written for the whole table, app/tools/big_meal.py), and that anchors
+    # it exactly the way a recipe's default_servings would — so a stuffing
+    # written for seven isn't bought three and a half times over.
     for entry in entries:
-        side_ingredients = _entry_side_ingredients(entry)
-        if side_ingredients:
+        for servings, side_ingredients in _entry_side_ingredient_groups(entry):
             added, have = _recipes._add_recipe_ingredients_for_entries(
-                [entry["id"]], side_ingredients, weekly_plan_id, buffer=buffer
+                [entry["id"]], side_ingredients, weekly_plan_id, default_servings=servings, buffer=buffer
             )
             added_items.extend(added)
             already_have.extend(have)

@@ -237,6 +237,10 @@ def test_the_shopping_reads_in_two_trips_keeps_well_first(family, recipes, propo
     items = _list()
     for name in ("whole chicken", "bread", "onions", "carrots", "maple syrup", "green beans", "pumpkin puree", "frozen pie shells"):
         assert name in items, f"{name} should be on the list"
+    # Each dish was written for the table of seven, so it's bought ONCE for
+    # seven — not scaled up again by the guests attendance already counts.
+    assert items["bread"] == "2 loaves" and items["pumpkin puree"] == "2 cans" and items["onions"] == "3", items
+    assert items["whole chicken"] == "4", "the main recipe was written for 2, so 7 eaters buys 3.5 → 4 — the usual scaling"
     split = tools.big_meal_shop_split(today=date.fromisoformat(_shift(tg, -10)))
     by_id = {i["id"]: i["item"] for i in tools.list_grocery_list()}
     early = {by_id[i] for i in split["early"]["item_ids"]}

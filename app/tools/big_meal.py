@@ -267,7 +267,7 @@ def _int_or(value, default=None, floor: int = 0, ceiling: int | None = None):
     return n
 
 
-def clean_dish(raw: dict, role: str | None = None) -> dict | None:
+def clean_dish(raw: dict, role: str | None = None, servings: int | None = None) -> dict | None:
     """
     One side or sweet as proposed (by the model or in chat), reduced to
     the shape sides_json holds plus what the day-of needs. Defensive for
@@ -315,6 +315,11 @@ def clean_dish(raw: dict, role: str | None = None) -> dict | None:
         "oven": bool(raw.get("oven")),
         "ahead_days": ahead_days,
         "ahead_step": (raw.get("ahead_step") or "").strip(),
+        # Written for the whole table: the grocery ingest anchors on this
+        # the way it anchors on a recipe's default_servings, so the dish is
+        # bought once for the table rather than scaled up again by the
+        # guests attendance already counts (weekly_plan._entry_side_ingredient_groups).
+        "servings": int(servings) if servings else _int_or(raw.get("servings"), None, floor=1),
     }
 
 
@@ -584,7 +589,7 @@ def build_menu(saved: dict, proposer=None, side_count: int = DEFAULT_SIDE_COUNT)
     # --- the sides and the sweet ---
     dishes, dropped = [], []
     for raw_dish in (raw or {}).get("dishes") or []:
-        dish = clean_dish(raw_dish)
+        dish = clean_dish(raw_dish, servings=eaters)
         if dish is None:
             continue
         clashes = dish_conflicts(dish["name"], dish["ingredients"], saved.get("guest_notes") or "")
@@ -1298,7 +1303,7 @@ def set_big_meal_dish(
         "name": name, "role": role, "ingredients": ingredients, "instructions": instructions or [],
         "minutes": minutes, "cook_minutes": cook_minutes, "oven": bool(oven),
         "ahead_days": ahead_days,
-    }, role)
+    }, role, servings=eaters_for(date_str, int(row["headcount"] or 0)))
     if dish is None:
         raise ValueError(f"{name} needs at least one ingredient so I can shop for it.")
     clashes = dish_conflicts(dish["name"], dish["ingredients"], guest_notes)
@@ -1407,7 +1412,7 @@ def propose_big_meal(date_str: str, keep_main: bool = True, proposer=None) -> di
         raw = _propose(proposal_context(saved, existing), proposer)
         dishes, dropped = [], []
         for raw_dish in (raw or {}).get("dishes") or []:
-            dish = clean_dish(raw_dish)
+            dish = clean_dish(raw_dish, servings=eaters)
             if dish is None:
                 continue
             clashes = dish_conflicts(dish["name"], dish["ingredients"], saved.get("guest_notes") or "")
