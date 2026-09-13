@@ -346,7 +346,7 @@ def _screen(day: dict, slot: str, cook_meals: list, rhythm: dict | None = None, 
             "daySlotEntry", "slotWord", "isRealCook", "mealDisplayName", "cookMealForEntry",
             "mealCookName", "mealCookUnderway", "mealClockFor", "mealHeroLine", "mealHeroHtml",
             "mealStopHtml", "mealClockHtml", "swapStateFor", "swapLineHtml", "slotEyebrowLabel",
-            "dishSizeClass", "mealDockHtml", "mealStepHtml"))
+            "dishSizeClass", "mealDockHtml", "recipeCitationHtml", "mealStepHtml"))
         + f"console.log(JSON.stringify(mealStepHtml({json.dumps(day)}, {json.dumps(slot)})));\n"
     )
     res = nodeharness.run_node(harness, timeout=30)

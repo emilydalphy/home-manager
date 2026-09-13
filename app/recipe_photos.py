@@ -182,6 +182,14 @@ def attach_pending(recipe_id: int, tokens: list[str]) -> list[dict]:
     return kept
 
 
+def remove_household_photos(hid: int) -> None:
+    """Delete every photo file a household has (reset_household.py, after
+    it has wiped the rows). The rows are the index; without them the files
+    would only be orphans on the volume."""
+    import shutil
+    shutil.rmtree(_household_dir(hid), ignore_errors=True)
+
+
 def photo_url(recipe_id: int, position: int) -> str:
     return f"/api/recipes/{int(recipe_id)}/photos/{int(position)}"
 

@@ -6678,6 +6678,10 @@
       openRecipeLinkSheet();
       return;
     }
+    if (what === 'recipe-photo') {
+      openRecipePhotoSheet();
+      return;
+    }
     if (what === 'more') openCookMoreSheet();
   }
 
@@ -6705,6 +6709,14 @@
       '<button type="button" class="kit-row" data-kit="recipe-link">' +
         '<span class="kit-row-icon">' + KITCHEN_ICONS.link + '</span>' +
         '<span class="kit-row-text"><span class="kit-row-title">Add from a link</span></span>' +
+        '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
+      '</button>' +
+      // ...or from a photograph of a cookbook page — the same sheet, the
+      // same review-before-save, and the book gets its credit (recipe
+      // photo import, 2026-09-13).
+      '<button type="button" class="kit-row" data-kit="recipe-photo">' +
+        '<span class="kit-row-icon">' + GRO_ICONS.camera + '</span>' +
+        '<span class="kit-row-text"><span class="kit-row-title">Add from a cookbook</span></span>' +
         '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
       '</button>' +
       // Inventory last: the in-development beta feature (see
@@ -8117,11 +8129,19 @@
     closeWeekSheet();
     closeKitchenSheet();
     rliDraft = null;
+    rliPhotos = [];
+    rliHint = '';
+    rliSetTitle('Add from a link');
     renderRecipeLinkAsk('');
     rliScrimEl.hidden = false;
     rliSheetEl.hidden = false;
     var input = rliSheetEl.querySelector('#rli-url');
     if (input) input.focus();
+  }
+
+  function rliSetTitle(text) {
+    var title = rliSheetEl && rliSheetEl.querySelector('#rli-title');
+    if (title) title.textContent = text;
   }
 
   function closeRecipeLinkSheet() {
@@ -8146,7 +8166,9 @@
       (problem
         ? '<p class="rli-problem" role="alert">' + escapeHtml(problem) + '</p>' + rliAskInsteadHtml()
         : '') +
-      '<button type="button" class="rli-read" id="rli-read" data-rli="read"' + (url ? '' : ' disabled') + '>Read the recipe</button>';
+      '<button type="button" class="rli-read" id="rli-read" data-rli="read"' + (url ? '' : ' disabled') + '>Read the recipe</button>' +
+      // The other way in: a photograph of a cookbook page (below).
+      '<button type="button" class="rli-link" data-rli="photo">Or photograph a cookbook page</button>';
     var input = body.querySelector('#rli-url');
     var read = body.querySelector('#rli-read');
     input.addEventListener('input', function () { read.disabled = !input.value.trim(); });
@@ -8204,15 +8226,24 @@
     var body = rliSheetEl.querySelector('#rli-body');
     var host = rliHost(draft.source_url);
     var ings = (draft.ingredients || []).map(rliIngredientRowHtml).join('');
+    var fromPhoto = draft.read_by === 'photo';
     body.innerHTML =
       // Where it came from and how it was read. A model-read draft says so,
       // because it is a reading of the page rather than a copy of it.
       '<p class="rli-source">' +
         (host ? 'From ' + escapeHtml(host) + '. ' : '') +
-        (draft.read_by === 'model'
+        (draft.read_by === 'model' || fromPhoto
           ? 'Read off the page — check it over before saving.'
           : 'Check it over, then save.') +
       '</p>' +
+      // A page with more than one recipe on it: which one? (the first is
+      // already in the fields below; a tap swaps the whole draft).
+      rliCandidatesHtml(draft) +
+      // The credit, as a sentence with the blanks in it — whatever the
+      // photo showed is filled in; the rest is one tap away, never a form
+      // (DESIGN_SYSTEM §7). Only for a photographed page: a link keeps its
+      // host, a typed recipe has nothing to credit.
+      (fromPhoto ? rliCitationRowHtml(draft.citation || {}) : '') +
       '<label class="rli-label" for="rli-name">Name</label>' +
       '<input id="rli-name" class="rli-input" type="text" value="' + escapeHtml(draft.name || '') + '">' +
       '<div class="rli-numbers">' +
@@ -8260,8 +8291,18 @@
       cook_time_minutes: num('#rli-cook'),
       cuisine: (rliDraft && rliDraft.cuisine) || '',
       main_protein: (rliDraft && rliDraft.main_protein) || '',
-      source_url: (rliDraft && rliDraft.source_url) || ''
+      source_url: (rliDraft && rliDraft.source_url) || '',
+      // The cookbook credit as the household left it, and the page
+      // photo(s) the draft was read from (recipe photo import).
+      source_book: text('#rli-cite-book'),
+      source_author: text('#rli-cite-author'),
+      source_page: text('#rli-cite-page'),
+      photo_tokens: (rliDraft && rliDraft.photo_tokens) || []
     };
+    function text(id) {
+      var el = body.querySelector(id);
+      return el ? (el.value || '').trim() : '';
+    }
   }
 
   function saveRecipeLink() {
@@ -8319,7 +8360,280 @@
       closeRecipeLinkSheet();
       openAskSheet('Save this recipe for me: ');
     }
+    else if (what === 'photo') rliPickPhoto();
+    else if (what === 'photo-read') readRecipePhotos();
+    else if (what === 'photo-remove') {
+      rliPhotos.splice(Number(target.getAttribute('data-idx')) || 0, 1);
+      renderRecipePhotoAsk('');
+    }
+    else if (what === 'candidate') {
+      var pick = rliDraft && rliDraft.candidates && rliDraft.candidates[Number(target.getAttribute('data-idx')) || 0];
+      if (pick) {
+        rliDraft = Object.assign({}, pick, { candidates: rliDraft.candidates, chosen: Number(target.getAttribute('data-idx')) || 0 });
+        renderRecipeLinkReview(rliDraft);
+      }
+    }
   }
+
+  // ---------- "Add from a cookbook" (recipe photo import, 2026-09-13) ----------
+  // Loop Board: "Add a recipe by photographing the page of a cookbook — and
+  // the book is cited." The same sheet as the link import with a photo in
+  // front of it instead of a URL: take or choose one photo of the page (two
+  // when the recipe runs across the spread) → the page is shrunk here on
+  // the phone → POST /api/recipes/import-photo reads it and proposes the
+  // credit → the same review step, with the credit as a sentence to finish
+  // → Save keeps the photo with the recipe. Nothing is stored until Save.
+  var rliPhotos = [];        // [{ blob, url, name }] in page order, at most two
+  var rliHint = '';          // what the household typed alongside, from the chat
+  var rliPhotoInputEl = null;
+  var RLI_MAX_PHOTOS = 2;
+  var RLI_PHOTO_MAX_EDGE = 1600;   // px — plenty to read 9pt print; keeps a page under ~500 KB
+
+  // Open the sheet in photo mode: from Cook's More sheet, or from the chat
+  // composer's camera with whatever was typed as the hint. Straight to the
+  // camera/library picker — the sheet itself is the review.
+  function openRecipePhotoSheet(opts) {
+    opts = opts || {};
+    buildRecipeLinkSheet();
+    closeAskSheet();
+    closeWeekSheet();
+    closeKitchenSheet();
+    rliDraft = null;
+    rliPhotos = [];
+    rliHint = (opts.hint || '').trim();
+    rliSetTitle('Add from a cookbook');
+    renderRecipePhotoAsk('');
+    rliScrimEl.hidden = false;
+    rliSheetEl.hidden = false;
+    if (opts.files && opts.files.length) rliAddPhotos(opts.files);
+    else rliPickPhoto();
+  }
+
+  // One hidden file input, made on demand. capture="environment" opens the
+  // back camera directly on a phone while still allowing a library pick —
+  // the same input the grocery and inventory scans use (shell.html's
+  // #gro-scan-input).
+  function rliPhotoInput() {
+    if (rliPhotoInputEl) return rliPhotoInputEl;
+    rliPhotoInputEl = document.createElement('input');
+    rliPhotoInputEl.type = 'file';
+    rliPhotoInputEl.accept = 'image/*';
+    rliPhotoInputEl.setAttribute('capture', 'environment');
+    rliPhotoInputEl.id = 'rli-photo-input';
+    rliPhotoInputEl.hidden = true;
+    document.body.appendChild(rliPhotoInputEl);
+    rliPhotoInputEl.addEventListener('change', function () {
+      var files = rliPhotoInputEl.files;
+      if (files && files.length) rliAddPhotos(files);
+      rliPhotoInputEl.value = '';
+    });
+    return rliPhotoInputEl;
+  }
+
+  function rliPickPhoto() {
+    if (rliPhotos.length >= RLI_MAX_PHOTOS) return;
+    rliSetTitle('Add from a cookbook');
+    if (!rliPhotos.length) renderRecipePhotoAsk('');
+    rliPhotoInput().click();
+  }
+
+  function rliAddPhotos(files) {
+    var todo = [];
+    for (var i = 0; i < files.length && rliPhotos.length + todo.length < RLI_MAX_PHOTOS; i++) todo.push(files[i]);
+    if (!todo.length) return;
+    renderRecipePhotoAsk('', true);
+    Promise.all(todo.map(shrinkPhotoForUpload)).then(function (blobs) {
+      blobs.forEach(function (blob, i) {
+        if (!blob) return;
+        rliPhotos.push({ blob: blob, url: URL.createObjectURL(blob), name: todo[i].name || 'page' });
+      });
+      renderRecipePhotoAsk(blobs.some(function (b) { return !b; })
+        ? 'I couldn\u2019t open that photo \u2014 try another.' : '');
+    });
+  }
+
+  // Shrink a camera photo before it leaves the phone: long edge capped at
+  // RLI_PHOTO_MAX_EDGE, re-encoded as JPEG. A 12-megapixel page is 3-8 MB
+  // as shot and ~400 KB like this, which is what makes the upload quick
+  // on a kitchen's wifi and keeps the kept photo small on the server
+  // (there is no imaging library there — see app/recipe_photos.py). A
+  // photo that won't decode resolves null. Anything already small enough
+  // that isn't a HEIC passes through untouched.
+  function shrinkPhotoForUpload(file) {
+    return new Promise(function (resolve) {
+      if (!file || !/^image\//.test(file.type || '') && !/\.(heic|heif|jpe?g|png|webp)$/i.test(file.name || '')) { resolve(null); return; }
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        var w = img.naturalWidth, h = img.naturalHeight;
+        var scale = Math.min(1, RLI_PHOTO_MAX_EDGE / Math.max(w, h));
+        var smallEnough = scale === 1 && file.size <= 1.5 * 1024 * 1024 && /^image\/(jpeg|png|webp)$/.test(file.type);
+        if (smallEnough) { URL.revokeObjectURL(url); resolve(file); return; }
+        var canvas = document.createElement('canvas');
+        canvas.width = Math.round(w * scale);
+        canvas.height = Math.round(h * scale);
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        if (!canvas.toBlob) { resolve(file); return; }
+        canvas.toBlob(function (blob) { resolve(blob || file); }, 'image/jpeg', 0.86);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); resolve(null); };
+      img.src = url;
+    });
+  }
+
+  // The photo step: what's been taken so far, the second-page offer, and
+  // the read button. Trouble is a sentence paired with its way out, same
+  // as the link step.
+  function renderRecipePhotoAsk(problem, busy) {
+    var body = rliSheetEl.querySelector('#rli-body');
+    var shots = rliPhotos.map(function (p, i) {
+      return '<div class="rli-shot">' +
+        '<img src="' + escapeHtml(p.url) + '" alt="' + (i === 0 ? 'The page' : 'The second page') + '">' +
+        '<button type="button" class="rli-shot-remove" data-rli="photo-remove" data-idx="' + i + '" aria-label="Remove this photo">&times;</button>' +
+      '</div>';
+    }).join('');
+    body.innerHTML =
+      '<p class="rli-source">' + (rliPhotos.length
+        ? (rliPhotos.length > 1 ? 'Both pages, ready to read.' : 'One page. Add the other if the recipe carries on.')
+        : 'Take a photo of the page, or pick one from your library.') + '</p>' +
+      (shots ? '<div class="rli-shots">' + shots + '</div>' : '') +
+      (busy ? '<p class="rli-source">Getting the photo ready\u2026</p>' : '') +
+      (problem
+        ? '<p class="rli-problem" role="alert">' + escapeHtml(problem) + '</p>' + rliAskInsteadHtml()
+        : '') +
+      (rliPhotos.length < RLI_MAX_PHOTOS
+        ? '<button type="button" class="rli-link" data-rli="photo">' +
+            (rliPhotos.length ? 'Add the other page' : 'Take or choose a photo') + '</button>'
+        : '') +
+      '<button type="button" class="rli-read" id="rli-photo-read" data-rli="photo-read"' +
+        (rliPhotos.length && !busy ? '' : ' disabled') + '>Read the page</button>';
+  }
+
+  function readRecipePhotos() {
+    if (!rliPhotos.length) return;
+    var body = rliSheetEl.querySelector('#rli-body');
+    var read = body.querySelector('#rli-photo-read');
+    if (read) { read.disabled = true; read.textContent = 'Reading\u2026'; }
+    var form = new FormData();
+    form.append('photo', rliPhotos[0].blob, 'page-1.jpg');
+    if (rliPhotos[1]) form.append('photo2', rliPhotos[1].blob, 'page-2.jpg');
+    if (rliHint) form.append('hint', rliHint);
+    fetch('/api/recipes/import-photo', { method: 'POST', body: form }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        if (!res.ok) {
+          var detail = data && typeof data.detail === 'string' ? data.detail : '';
+          if (res.status === 429) detail = 'That\u2019s a few pages in a row \u2014 give it a minute and try again.';
+          if (!detail) detail = 'I couldn\u2019t read a recipe in that photo \u2014 try a straighter, closer shot.';
+          throw new Error(detail);
+        }
+        return data.draft;
+      });
+    }).then(function (draft) {
+      rliDraft = draft;
+      renderRecipeLinkReview(draft);
+    }).catch(function (err) {
+      renderRecipePhotoAsk((err && err.message) || 'I couldn\u2019t read a recipe in that photo \u2014 try a straighter, closer shot.');
+    });
+  }
+
+  // "This page has two recipes — which one?" One button per recipe; the
+  // chosen one is marked. Nothing when the page had one recipe.
+  function rliCandidatesHtml(draft) {
+    var cands = draft.candidates || [];
+    if (cands.length < 2) return '';
+    var chosen = draft.chosen || 0;
+    return '<div class="rli-cands">' +
+      '<div class="rli-label">This page has ' + escapeHtml(countInWords(cands.length, 'recipe')) + ' \u2014 which one?</div>' +
+      cands.map(function (c, i) {
+        return '<button type="button" class="rli-cand' + (i === chosen ? ' is-chosen' : '') + '" data-rli="candidate" data-idx="' + i + '">' +
+          escapeHtml(c.name || 'Untitled') + '</button>';
+      }).join('') +
+    '</div>';
+  }
+
+  // The credit as a sentence with blanks: "From [book], [author], p. [page]".
+  // Each blank is an input styled as a word, prefilled with what the page
+  // showed; all optional. Plain-words rule (DESIGN_SYSTEM §8): a sentence,
+  // never a dashboard label in front of it.
+  function rliCitationRowHtml(cite) {
+    return '<div class="rli-cite" role="group" aria-label="Where it came from">' +
+      '<span class="rli-cite-word">From</span>' +
+      '<input id="rli-cite-book" class="rli-cite-input" type="text" placeholder="which book" aria-label="Book" value="' + escapeHtml(cite.book || '') + '">' +
+      '<span class="rli-cite-word">,</span>' +
+      '<input id="rli-cite-author" class="rli-cite-input" type="text" placeholder="who wrote it" aria-label="Author" value="' + escapeHtml(cite.author || '') + '">' +
+      '<span class="rli-cite-word">, p.</span>' +
+      '<input id="rli-cite-page" class="rli-cite-input is-short" type="text" inputmode="numeric" placeholder="page" aria-label="Page" value="' + escapeHtml(cite.page || '') + '">' +
+    '</div>';
+  }
+
+  // ---------- where a recipe came from, on every screen ----------
+  // One renderer for the credit line (app/tools/recipes.py's
+  // recipe_citation shape): a book in italics with its author and page, a
+  // link as its host. With a kept page photo the line is a button that
+  // opens the photo. Nothing at all for a generated or typed recipe.
+  function recipeCitationHtml(citation, photoUrls, extraClass) {
+    if (!citation || !citation.text) return '';
+    var inner;
+    if (citation.kind === 'book') {
+      inner = 'From <i>' + escapeHtml(citation.book || 'a cookbook') + '</i>' +
+        (citation.author ? ', ' + escapeHtml(citation.author) : '') +
+        (citation.page ? ', ' + escapeHtml((/[\u2013-]/.test(citation.page) ? 'pp. ' : 'p. ') + citation.page) : '');
+    } else {
+      inner = escapeHtml(citation.text);
+    }
+    var cls = 'recipe-cite' + (extraClass ? ' ' + extraClass : '');
+    if (photoUrls && photoUrls.length) {
+      return '<button type="button" class="' + cls + ' is-photo" data-recipe-photos="' + escapeHtml(photoUrls.join(' ')) + '">' +
+        inner + ' <span class="recipe-cite-open">See the page</span></button>';
+    }
+    return '<p class="' + cls + '">' + inner + '</p>';
+  }
+
+  // The kept page photo(s), full width, in a sheet over whatever is open.
+  var rphSheetEl = null;
+  var rphScrimEl = null;
+  function openRecipePhotoViewer(urls) {
+    if (!rphSheetEl) {
+      rphScrimEl = document.createElement('div');
+      rphScrimEl.id = 'rph-scrim';
+      rphSheetEl = document.createElement('div');
+      rphSheetEl.id = 'rph-sheet';
+      rphSheetEl.setAttribute('role', 'dialog');
+      rphSheetEl.setAttribute('aria-label', 'The page');
+      document.body.appendChild(rphScrimEl);
+      document.body.appendChild(rphSheetEl);
+      var close = function () { rphScrimEl.hidden = true; rphSheetEl.hidden = true; };
+      rphScrimEl.addEventListener('click', close);
+      rphSheetEl.addEventListener('click', function (e) {
+        if (e.target.closest('[data-rph="close"], .ask-sheet-handle')) close();
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && rphSheetEl && !rphSheetEl.hidden) close();
+      });
+    }
+    rphSheetEl.innerHTML =
+      '<div class="ask-sheet-handle"></div>' +
+      '<div class="kit-sheet-titlerow">' +
+        '<span class="kit-sheet-title">The page</span>' +
+        '<span class="kit-sheet-hairline"></span>' +
+        '<button type="button" class="kit-sheet-close" data-rph="close" aria-label="Close">&times;</button>' +
+      '</div>' +
+      '<div class="rph-body">' +
+        urls.map(function (u, i) {
+          return '<img class="rph-img" src="' + escapeHtml(u) + '" alt="' + (i ? 'The second page' : 'The page') + '">';
+        }).join('') +
+      '</div>';
+    rphScrimEl.hidden = false;
+    rphSheetEl.hidden = false;
+  }
+  document.addEventListener('click', function (e) {
+    var btn = e.target && e.target.closest && e.target.closest('[data-recipe-photos]');
+    if (!btn) return;
+    e.preventDefault();
+    openRecipePhotoViewer((btn.getAttribute('data-recipe-photos') || '').split(' ').filter(Boolean));
+  });
 
   // Where an action card or a notification says "View" and names an href
   // rather than a tab.
@@ -10077,7 +10391,12 @@
       '<span class="wk-slot-eyebrow">' + escapeHtml(slotEyebrow(day, slot)) + '</span>' +
       '<span class="wk-slot-name' + quiet + '">' + escapeHtml(name) + '</span>' +
       (entry && entry.need ? '<span class="wk-slot-need">' + needBadgeHtml(entry) + '</span>' : '') +
-      chipsRowHtml(plateChips(entry));
+      chipsRowHtml(plateChips(entry)) +
+      // The book or site the recipe came from, in a quiet line (recipe
+      // photo import, 2026-09-13). Text only here — the card is already a
+      // button; the photo opens from the Meal step.
+      (entry && entry.state === 'planned' && entry.citation
+        ? '<span class="recipe-cite wk-slot-cite">' + escapeHtml(entry.citation.text) + '</span>' : '');
 
     return '<div class="shell-card wk-slot-card" data-wk-slot="' + slot + '">' +
       (openable
@@ -10562,6 +10881,9 @@
       mealHeroHtml(day, slot, entry, clock) +
       '<div class="wk-meal-body">' +
         mealClockHtml(slot, clock) +
+        // Where the recipe came from — the book and page, or the site —
+        // and the kept page photo behind it (recipe photo import).
+        (cookMeal ? recipeCitationHtml(cookMeal.citation, cookMeal.photo_urls, 'wk-meal-cite') : '') +
         // The cook-ahead picker stays — it is a real decision about other
         // nights (which ones this batch covers) with nowhere else to live
         // on Plan, borrowed whole from the cook screen as before.
@@ -14842,6 +15164,10 @@
   function cookPrepStageHtml(data, meal, idx) {
     var prepTasks = cookFocusPrepTasks(data, meal);
     var body = cookFocusPrepHtml(prepTasks) + cookGetOutHtml(meal, idx) + cookKitHtml(meal);
+    // Where the recipe came from, with the page photo a tap away (recipe
+    // photo import) — at the foot of Before you start, quiet.
+    var cite = recipeCitationHtml(meal.citation, meal.photo_urls, 'cook-cite');
+    if (body) body += cite;
     if (!body) {
       // Two different absences, and they have different ways out. A SAVED
       // recipe with nothing in it gets "Fill in this recipe" on the whole
@@ -17135,6 +17461,15 @@
     }
   }
   setupDictation(askInput, document.getElementById('ask-mic-btn'));
+  // The composer's camera: a cookbook page photographed from the chat goes
+  // to the recipe review sheet with the typed words as the note (recipe
+  // photo import, 2026-09-13) — never straight to a save.
+  var askPhotoBtn = document.getElementById('ask-photo-btn');
+  if (askPhotoBtn) {
+    askPhotoBtn.addEventListener('click', function () {
+      openRecipePhotoSheet({ hint: askInput ? askInput.value : '' });
+    });
+  }
   autoGrowAskInput(askInput); // sets its correct one-line height immediately, in case the browser rendered rows="1" differently before this ran
 
   // ---------- Notifications (Phase 5 / NOTIFICATIONS.md) ----------
