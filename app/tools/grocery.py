@@ -957,51 +957,70 @@ def clear_grocery_list(status: str = "needed") -> dict:
     return {"removed_count": count}
 
 
-def _restore_inventory_from_receipt(conn, receipt_json: str | None) -> bool:
+RESTORED, ROW_GONE, LEFT_ALONE = "restored", "gone", "left"
+
+
+def _restore_inventory_from_receipt(conn, receipt_json: str | None) -> str:
     """
     Reverse exactly the inventory write a purchased tick recorded, on the
-    caller's connection. True if the kitchen was put back; False if there
-    was nothing safe to do — and "safe" is the whole of it:
+    caller's connection. Returns one of three answers, because the caller
+    treats them differently:
 
-    The receipt (grocery_items.inventory_receipt_json) says which row the
-    tick wrote, whether it created that row or merged into stock already
-    there, and what the row read on either side of the write. The row is
-    reversed ONLY if it still reads exactly what the write left it at,
-    quantity and updated_at both — every writer of inventory_items bumps
-    updated_at, so a row used from, edited, nudged or re-set since the tick
-    fails the check even when its number happens to read the same. Then:
-    a row the tick created is deleted (it exists only because of the tick,
-    the same call undo_pre_shop_drop makes on already_have_inventory_id);
-    a merged row gets its quantity, source, category and expiry put back to
-    the recorded before-state, not to "now minus what we added" — the
-    before-state is known, so nothing is computed. Anything else (row gone,
-    row touched, no receipt at all — a line bought before the column
-    existed) leaves inventory alone. Never subtracts, never deletes on a
-    guess: the household's later edits are the truer record of the shelf.
+    RESTORED — the kitchen was put back. The receipt
+    (grocery_items.inventory_receipt_json) says which row the tick wrote,
+    whether it created that row or merged into stock already there, and
+    what the row read on either side of the write. The row is reversed
+    ONLY if it still reads exactly what the write left it at — proven by
+    inventory_items.rev, the per-row write counter its trigger bumps on
+    every update. Not updated_at: datetime('now') is whole-second, so "set
+    to 8, set back to 12" inside the tick's own second read as untouched
+    (reproduced 2026-09-13); rev counts both. Then: a row the tick created
+    is deleted (it exists only because of the tick, the same call
+    undo_pre_shop_drop makes on already_have_inventory_id); a merged row
+    gets its quantity, source, category and expiry put back to the
+    recorded before-state, not to "now minus what we added" — the
+    before-state is known, so nothing is computed.
+
+    ROW_GONE — the row the tick wrote no longer exists (deleted from the
+    Kitchen screen, or used down to zero, which deletes). Nothing to put
+    back, and nothing left to double onto either, so the caller clears the
+    stamp: a re-tick is a first tick again. The alternative — keeping the
+    stamp — locks a line out of the kitchen for good, silently, the moment
+    somebody tidies the kitchen by hand before fixing the list; the cost of
+    clearing is one contrived sequence (eat all twelve, THEN untick, then
+    re-tick) that puts twelve back. Certainty about a row that is gone is a
+    different thing from certainty about a row that was merely edited.
+
+    LEFT_ALONE — the row is there but has been written since (used from,
+    edited, nudged, moved, re-set), or there is no receipt at all (a line
+    bought before the column existed). Nothing is guessed: the row stays,
+    and so does the stamp, so the re-tick adds nothing on top of what is
+    already there. Never subtracts, never deletes on a guess: the
+    household's later edits are the truer record of the shelf.
     """
     if not receipt_json:
-        return False
+        return LEFT_ALONE
     try:
         receipt = json.loads(receipt_json)
     except (TypeError, ValueError):
-        return False
+        return LEFT_ALONE
     inventory_id = receipt.get("inventory_id")
     after = receipt.get("after") or {}
     if not inventory_id or not after:
-        return False
+        return LEFT_ALONE
     current = _inventory._receipt_snapshot(conn, inventory_id)
     if current is None:
-        return False
-    if current.get("quantity") != after.get("quantity") or current.get("updated_at") != after.get("updated_at"):
-        return False
+        return ROW_GONE
+    if current.get("rev") != after.get("rev") or current.get("quantity") != after.get("quantity"):
+        return LEFT_ALONE
     if receipt.get("fresh"):
         conn.execute(
             "DELETE FROM inventory_items WHERE id = ? AND household_id = ?", (inventory_id, household_id())
         )
-        return True
+        return RESTORED
     before = receipt.get("before") or {}
     if not before:
-        return False
+        return LEFT_ALONE
     conn.execute(
         "UPDATE inventory_items SET quantity = ?, source = ?, category = ?, expiration_date = ?, "
         "updated_at = datetime('now') WHERE id = ? AND household_id = ?",
@@ -1014,7 +1033,7 @@ def _restore_inventory_from_receipt(conn, receipt_json: str | None) -> bool:
             household_id(),
         ),
     )
-    return True
+    return RESTORED
 
 
 def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
@@ -1086,11 +1105,14 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
             # restore): try the exact reversal. The stamp clears only when
             # the shelf really was put back, so a later re-tick is a first
             # tick again; when it was not, the stamp stays and the re-tick
-            # adds nothing on top of what is already there. A line bought
-            # before the stamp existed has no receipt, so this reports
-            # inventory_restored: False rather than staying quiet.
-            restored = _restore_inventory_from_receipt(conn, row["inventory_receipt_json"])
-            if restored:
+            # adds nothing on top of what is already there. A row that is
+            # GONE also clears the stamp (nothing left to double onto — see
+            # the helper). A line bought before the stamp existed has no
+            # receipt, so this reports inventory_restored: False rather than
+            # staying quiet.
+            outcome = _restore_inventory_from_receipt(conn, row["inventory_receipt_json"])
+            restored = outcome == RESTORED
+            if outcome in (RESTORED, ROW_GONE):
                 fields += ", inventory_added_at = NULL, inventory_receipt_json = NULL"
         conn.execute(
             f"UPDATE grocery_items SET {fields} WHERE id = ? AND household_id = ?",

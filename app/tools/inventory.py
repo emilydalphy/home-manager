@@ -116,7 +116,7 @@ def _try_subtract_quantity(existing_qty: str, minus_qty: str) -> tuple[str | Non
     return existing_qty, False
 
 
-_RECEIPT_FIELDS = ("quantity", "source", "category", "expiration_date", "updated_at")
+_RECEIPT_FIELDS = ("quantity", "source", "category", "expiration_date", "updated_at", "rev")
 
 
 def _receipt_snapshot(conn, inventory_id: int) -> dict | None:

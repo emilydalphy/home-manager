@@ -769,9 +769,10 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     -- inventory on every re-tick (Eggs 12 -> 12 -> 24). Written inside the
     -- same BEGIN IMMEDIATE transaction that flips the status, so two
     -- 'purchased' posts landing together cannot both add. Cleared only by
-    -- an untick whose restore below actually put the kitchen back; when
-    -- the row has been touched since, the stamp STAYS, so the re-tick adds
-    -- nothing on top of what is already there. NULL means nothing has gone
+    -- an untick that either put the kitchen back or found the row gone —
+    -- see the receipt below. When the row has been touched since, the
+    -- stamp STAYS, so the re-tick adds nothing on top of what is already
+    -- there. NULL means nothing has gone
     -- in for this line yet — including every row that predates the column,
     -- which is not backfilled. Sibling of meal_plan_entries.
     -- inventory_depleted_at, with the opposite reversal decision, because a
@@ -779,16 +780,24 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     inventory_added_at TEXT,
     -- The receipt for that write, JSON: {"inventory_id", "fresh" (a row the
     -- tick created, vs a merge into stock already there), "before" and
-    -- "after" (quantity, source, category, expiration_date, updated_at as
-    -- the row read on either side of the write; "before" is null for a
-    -- fresh row)}. An untick may reverse the write ONLY when the row still
-    -- reads exactly "after" (quantity and updated_at — every inventory
-    -- writer bumps updated_at), and then does the exact inverse: deletes a
-    -- fresh row, or puts a merged row's fields back to "before". Nothing is
-    -- ever subtracted or guessed from the current quantity. NULL alongside
-    -- a NULL stamp; NULL with a set stamp can only mean a row from before
-    -- the column, or a write this build could not describe — both leave
-    -- the kitchen alone on untick.
+    -- "after" (quantity, source, category, expiration_date, updated_at,
+    -- rev as the row read on either side of the write; "before" is null
+    -- for a fresh row)}. An untick may reverse the write ONLY when the row
+    -- still reads exactly "after" — the proof is inventory_items.rev, the
+    -- per-row write counter its trigger bumps on every update (NOT
+    -- updated_at, which is whole-second and let two edits inside the
+    -- tick's second pass as untouched) — and then does the exact inverse:
+    -- deletes a fresh row, or puts a merged row's fields back to "before".
+    -- Nothing is ever subtracted or guessed from the current quantity.
+    -- Row touched since: kitchen left alone, stamp stays, re-tick adds
+    -- nothing. Row GONE since (deleted, or used down to zero): kitchen
+    -- left alone too, but the stamp is CLEARED — there is no stock left to
+    -- double onto, and a line whose row was deleted by hand would
+    -- otherwise be locked out of the kitchen for good, silently; so the
+    -- re-tick adds once, as a first tick. NULL alongside a NULL stamp;
+    -- NULL with a set stamp can only mean a row from before the column, or
+    -- a write this build could not describe — both leave the kitchen
+    -- alone on untick.
     inventory_receipt_json TEXT,
     -- Phase 4, §4.5: hide this item from the normal shown/shopped list
     -- without deleting it — for something the Shopper will get elsewhere
@@ -1222,8 +1231,32 @@ CREATE TABLE IF NOT EXISTS inventory_items (
     -- guess when not stated explicitly (see _DEFAULT_LOCATION_BY_CATEGORY).
     location TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    -- How many times this row has been written since it was created —
+    -- bumped by the trigger below on EVERY update, whatever column and
+    -- whoever the writer. This is what a grocery untick's receipt compares
+    -- (grocery_items.inventory_receipt_json) to prove "nobody has touched
+    -- this row since the tick": updated_at cannot carry that proof, because
+    -- datetime('now') is whole-second and "set to 8, set back to 12" inside
+    -- the tick's own second reads as the tick's own write (reproduced,
+    -- 2026-09-13). Two writes in one millisecond are still two bumps. Never
+    -- written by application code; 0 on every row that predates the column.
+    rev INTEGER NOT NULL DEFAULT 0
 );
+
+-- The bump. A trigger rather than a `rev = rev + 1` in each of the eight
+-- writers, so a ninth writer that forgets still counts: the proof the
+-- untick relies on is the database's, not every future caller's. AFTER
+-- UPDATE on any column (a location-only edit is a touch). SQLite's
+-- recursive_triggers is off by default, so the inner UPDATE does not
+-- re-fire this. Declared here, and the column it needs is added by
+-- db._MIGRATIONS in the same init_db call on a database from before it —
+-- SQLite does not resolve a trigger body's columns until it runs.
+CREATE TRIGGER IF NOT EXISTS inventory_items_bump_rev
+AFTER UPDATE ON inventory_items
+BEGIN
+    UPDATE inventory_items SET rev = OLD.rev + 1 WHERE id = NEW.id;
+END;
 
 -- Phase 6: append-only log of preference writes (create/update/delete) —
 -- not a value store, meal_preferences/members already hold current state.

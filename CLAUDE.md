@@ -402,11 +402,12 @@ why*, not duplicating the diff.
     deletes rows at zero; a purchase can write down what it did. So the
     tick records a receipt, `grocery_items.inventory_receipt_json`: which
     inventory row, `fresh` or merge, and the row's quantity / source /
-    category / expiration_date / updated_at on BOTH sides of the write.
-    The untick reverses ONLY when the row still reads exactly the "after"
-    (quantity AND `updated_at` — every writer of `inventory_items` bumps
-    `updated_at`, so "used 6, set back to 12" still reads as touched),
-    and then does the exact inverse: deletes a fresh row (the call
+    category / expiration_date / updated_at / rev on BOTH sides of the
+    write. The untick reverses ONLY when the row still reads exactly the
+    "after", **proven by a new `inventory_items.rev`** — a per-row write
+    counter bumped by a trigger (`inventory_items_bump_rev`, schema.sql)
+    on EVERY update of any column — and then does the exact inverse:
+    deletes a fresh row (the call
     `undo_pre_shop_drop` already makes on `already_have_inventory_id`, the
     precedent this extends), or puts a merged row back to its recorded
     "before" — never "now minus what we added", nothing computed. Row
@@ -424,6 +425,35 @@ why*, not duplicating the diff.
     direction: never restoring (the cook-tick stance) would leave phantom
     eggs the next list is shopped against; restoring on quantity alone
     would occasionally undo a hand-set number.
+  - **The first cut used `updated_at` as the proof and an independent
+    verifier broke it the same day — recorded here because the mistake is
+    easy to make again.** `datetime('now')` is whole-second, so "set to 8,
+    set back to 12" inside the tick's own second read as the tick's own
+    write, and the untick reverted (or deleted) a row that had been
+    touched twice; a location-only edit in that second slipped through the
+    same way. Worse, the first test file sidestepped it by forcing
+    `updated_at` into the past. Now: `rev`, a trigger rather than a
+    `rev = rev + 1` in each of the eight writers, so a ninth writer that
+    forgets still counts — the proof is the database's, not every future
+    caller's; two writes in one millisecond are two bumps. The trigger is
+    declared in schema.sql and the column it bumps is added by
+    `_MIGRATIONS` in the same `init_db` call (SQLite does not resolve a
+    trigger body's columns until it runs — checked). The tests now run the
+    real sequences with no sleep and no timestamp poking, plus one that
+    walks every writer and asserts the bump.
+  - **Row GONE between tick and untick clears the stamp; row TOUCHED keeps
+    it — two different certainties, decided separately.** The verifier
+    flagged that a deleted row left the stamp in place, so that grocery
+    line could never re-enter the kitchen by re-tick, permanently and
+    silently — the moment somebody tidies the kitchen by hand before
+    fixing the list (a coherent thing to do), the line is locked out for
+    good. A gone row also has nothing left to double onto, which is the
+    whole reason the stamp exists. So `_restore_inventory_from_receipt`
+    returns `RESTORED` / `ROW_GONE` / `LEFT_ALONE`; the first two clear
+    the stamp, only the first says `inventory_restored: True`. The cost:
+    one contrived sequence (eat all twelve, THEN untick, then re-tick)
+    puts twelve back. A merged row used down to zero (which deletes) is
+    gone in the same sense and treated the same.
   - **Not backfilled**, so a line already 'purchased' before this deploys
     has a NULL stamp and no receipt: an untick there leaves the kitchen
     alone, and the re-tick adds ONCE more, then never again. Same bounded
@@ -433,14 +463,19 @@ why*, not duplicating the diff.
     `inventory_added` / `inventory_restored` before telling the household
     what happened to the kitchen. `update_inventory(action="add")` still
     returns `{"item_id", "item"}` — the receipt fields are stripped there.
-  - `tests/test_grocery_retick_double_adds.py`, 22 tests, **21 red against
-    the merge base** (the 22nd is the replay guard, kept green on purpose);
-    tick/untick/retick, purchased -> in_cart -> purchased, fresh and merge
-    reversals with source/category/expiry, used-some / stepped / removed /
-    hand-reset rows left alone, the pre-column line, 20 concurrent pairs,
-    the route, and a migration test on a DB derived from today's schema
-    minus the two columns (the `test_chore_owner_mode` pattern). Suite
-    3345 -> **3367 passed**. Also driven over a real uvicorn on a
+  - `tests/test_grocery_retick_double_adds.py`, 28 tests, 21 of the
+    original 22 red against the merge base (the 22nd is the replay guard,
+    kept green on purpose) and the same-second trio red against the first
+    cut; tick/untick/retick, purchased -> in_cart -> purchased, fresh and
+    merge reversals with source/category/expiry, set-down-and-back /
+    location-only / expiry-nudge / stepped / cook-depleted rows left
+    alone with no sleep anywhere, every writer bumps `rev`, the gone row
+    (deleted, and used-to-zero) clearing the stamp, the pre-column line,
+    20 concurrent pairs, the route, and a migration test on a DB derived
+    from today's schema minus the three columns (the
+    `test_chore_owner_mode` pattern; the trigger exists on that old file
+    before its column does and bumps once the column lands). Suite
+    3345 -> **3373 passed**. Also driven over a real uvicorn on a
     throwaway DB: Eggs 12 -> gone -> 12 -> unchanged; Butter 6 -> 12 -> 6
     -> 12 (merge); Yogurt 12 -> 8 (stepper) -> untick leaves 8 -> retick
     leaves 8.

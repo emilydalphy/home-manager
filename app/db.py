@@ -285,6 +285,9 @@ _MIGRATIONS = [
     # alone and a re-tick adds once more, then never again. See schema.sql.
     ("grocery_items", "inventory_added_at", "TEXT"),
     ("grocery_items", "inventory_receipt_json", "TEXT"),
+    # ...and the per-row write counter that receipt compares against. 0 on
+    # every existing row; the trigger in schema.sql bumps it from here on.
+    ("inventory_items", "rev", "INTEGER NOT NULL DEFAULT 0"),
     # Staples (2026-09-11): the line Pomona added because a staple is due.
     ("grocery_items", "staple_id", "INTEGER"),
     # Loop Board "First-class 'defrost' prep step" — see schema.sql's

@@ -25,14 +25,27 @@ tick, and deliberately: a purchase KNOWS what it wrote. The tick records a
 receipt (grocery_items.inventory_receipt_json — which inventory row, whether
 it was a fresh row or a merge into stock already there, and the row's
 fields before and after the write). An untick checks the row still reads
-what the receipt says the write left it at (quantity and updated_at both;
-every inventory writer bumps updated_at) and then does the exact inverse:
-deletes a row the tick created, or puts a merged row's quantity, category,
-source and expiry back to what they were. If the household has touched the
-row since — used some, edited it, removed it — nothing is guessed: the row
-is left alone, the result says inventory_restored: False, and the stamp
-STAYS so a later re-tick does not add a second helping on top of what is
-already there. Either way the kitchen never holds two of one purchase.
+what the receipt says the write left it at — proven by inventory_items.rev,
+a per-row write counter a trigger bumps on EVERY update — and then does the
+exact inverse: deletes a row the tick created, or puts a merged row's
+quantity, category, source and expiry back to what they were.
+
+NOT updated_at. The first cut of this compared updated_at, and an
+independent verifier broke it the same day: datetime('now') is
+whole-second, so "set to 8, set back to 12" inside the tick's own second
+read as the tick's own write and the untick reverted a row that had been
+touched twice. The tests below run those sequences for real — no sleep, no
+timestamp poking — which is what the earlier version of this file failed
+to do.
+
+If the household has touched the row since — used some, edited it, moved
+it — nothing is guessed: the row is left alone, the result says
+inventory_restored: False, and the stamp STAYS so a later re-tick does not
+add a second helping on top of what is already there. If the row is GONE
+(deleted, or used to zero), nothing is put back either, but the stamp is
+cleared: there is nothing left to double onto, and a line whose row was
+tidied away by hand must not be locked out of the kitchen for good. Either
+way the kitchen never holds two of one purchase.
 """
 from __future__ import annotations
 
@@ -76,12 +89,11 @@ def _bought_eggs(quantity="12"):
     return item["item_id"]
 
 
-def _touch_updated_at(inventory_id, when="2000-01-01 00:00:00"):
-    """Move a row's updated_at so a same-second edit still reads as 'touched'."""
+def _rev(inventory_id):
     conn = get_conn()
-    conn.execute("UPDATE inventory_items SET updated_at = ? WHERE id = ?", (when, inventory_id))
-    conn.commit()
+    row = conn.execute("SELECT rev FROM inventory_items WHERE id = ?", (inventory_id,)).fetchone()
     conn.close()
+    return row["rev"] if row else None
 
 
 # ---------- the reproduction ----------
@@ -224,6 +236,7 @@ def test_the_receipt_is_written_with_the_stamp_and_cleared_with_it():
     assert receipt["fresh"] is True
     assert receipt["inventory_id"] == _eggs()["id"]
     assert receipt["after"]["quantity"] == "12"
+    assert receipt["after"]["rev"] == _rev(_eggs()["id"])
     tools.mark_grocery_item(item_id, "needed")
     line = _line(item_id)
     assert line["inventory_added_at"] is None
@@ -247,17 +260,40 @@ def test_untick_after_some_were_used_leaves_the_row_and_says_not_restored():
     assert _qty() == "8"
 
 
-def test_untick_after_the_row_was_removed_restores_nothing_and_retick_adds_nothing():
-    """"We're out of eggs" deleted the row. The eggs the tick put in have
-    been eaten, so an untick has nothing to take back and a re-tick would
-    be a second helping of the same purchase."""
+def test_untick_after_the_row_was_removed_restores_nothing_and_clears_the_stamp():
+    """THE ROW-GONE DECISION. The kitchen row the tick wrote was deleted
+    by hand before the untick. Nothing to put back (inventory_restored:
+    False), but there is nothing left to double onto either, so the stamp
+    clears and a re-tick is a first tick again: one row, once. Keeping the
+    stamp would have locked this line out of the kitchen for good the
+    moment somebody tidied the kitchen before fixing the list."""
     item_id = _bought_eggs()
     tools.remove_inventory_item(_eggs()["id"])
     res = tools.mark_grocery_item(item_id, "needed")
     assert res["inventory_restored"] is False
     assert _eggs() is None
-    tools.mark_grocery_item(item_id, "purchased")
+    assert _line(item_id)["inventory_added_at"] is None
+    assert _line(item_id)["inventory_receipt_json"] is None
+    res = tools.mark_grocery_item(item_id, "purchased")
+    assert res["inventory_added"] is True
+    assert _qty() == "12"
+    tools.mark_grocery_item(item_id, "purchased")  # replay: still one
+    assert _qty() == "12"
+
+
+def test_a_merged_row_used_down_to_zero_is_gone_too_and_the_retick_readds_once():
+    """Six in the kitchen, buy twelve (18), "used the eggs" with no
+    amount deletes the row. Same certainty as a hand delete: gone."""
+    tools.update_inventory("Eggs", "add", quantity="6", category="dairy")
+    item_id = _bought_eggs()
+    assert _qty() == "18"
+    tools.update_inventory("Eggs", "use")
     assert _eggs() is None
+    res = tools.mark_grocery_item(item_id, "needed")
+    assert res["inventory_restored"] is False
+    assert _line(item_id)["inventory_added_at"] is None
+    tools.mark_grocery_item(item_id, "purchased")
+    assert _qty() == "12"
 
 
 def test_untick_after_a_stepper_nudge_leaves_the_row_alone():
@@ -269,16 +305,95 @@ def test_untick_after_a_stepper_nudge_leaves_the_row_alone():
     assert _qty() == "11"
 
 
-def test_a_same_number_written_by_hand_is_not_mistaken_for_ours():
-    """Bought 12, set to 6, set back to 12 — the quantity reads what the
-    tick left, but updated_at says somebody has been here. Leave it."""
+# ---------- the verifier's hole: two edits inside the tick's own second ----------
+# No sleep and no timestamp manipulation anywhere below. These run in well
+# under a second, which is exactly the window updated_at could not see.
+
+def test_set_to_8_and_back_to_12_in_the_ticks_second_is_still_touched():
+    """Bought 12, set to 8, set back to 12 — the quantity reads what the
+    tick left and updated_at is the same second. rev says two writes
+    happened. Leave it; the stamp stays; the re-tick adds nothing."""
     item_id = _bought_eggs()
-    tools.update_inventory("Eggs", "set", quantity="6")
+    tools.update_inventory("Eggs", "set", quantity="8")
     tools.update_inventory("Eggs", "set", quantity="12")
-    _touch_updated_at(_eggs()["id"])  # the two sets above may land in the tick's own second
     res = tools.mark_grocery_item(item_id, "needed")
     assert res["inventory_restored"] is False
     assert _qty() == "12"
+    assert _line(item_id)["inventory_added_at"] is not None
+    tools.mark_grocery_item(item_id, "purchased")
+    assert _qty() == "12"
+
+
+def test_a_merge_set_down_and_back_in_the_ticks_second_is_still_touched():
+    tools.update_inventory("Butter", "add", quantity="6", category="dairy")
+    item = tools.add_grocery_item("Butter", quantity="6", category="dairy")
+    tools.mark_grocery_item(item["item_id"], "purchased")
+    tools.update_inventory("Butter", "set", quantity="8")
+    tools.update_inventory("Butter", "set", quantity="12")
+    res = tools.mark_grocery_item(item["item_id"], "needed")
+    assert res["inventory_restored"] is False
+    butter = next(r for r in tools.get_inventory() if r["item"] == "Butter")
+    assert butter["quantity"] == "12"
+
+
+def test_a_location_only_edit_in_the_ticks_second_is_a_touch():
+    """Moving the eggs to the pantry changes no quantity and lands in the
+    same second. It is still the household handling the row."""
+    item_id = _bought_eggs()
+    tools.set_inventory_location(_eggs()["id"], "pantry")
+    res = tools.mark_grocery_item(item_id, "needed")
+    assert res["inventory_restored"] is False
+    assert _qty() == "12" and _eggs()["location"] == "pantry"
+
+
+def test_an_expiry_nudge_in_the_ticks_second_is_a_touch():
+    item_id = _bought_eggs()
+    tools.step_inventory_expiration(_eggs()["id"], 3)
+    res = tools.mark_grocery_item(item_id, "needed")
+    assert res["inventory_restored"] is False
+    assert _qty() == "12"
+
+
+def test_every_inventory_writer_bumps_rev():
+    """The trigger, exercised through each application writer that
+    updates a row (app/tools/inventory.py's four, chat use, and the two
+    depletion paths in cooker.py and attention.py write the same UPDATE
+    shape). A raw single-column UPDATE is included so a future writer that
+    forgets updated_at is still counted."""
+    tools.update_inventory("Eggs", "add", quantity="12", category="dairy")
+    row = _eggs()
+    rev = _rev(row["id"])
+    assert rev == 0
+    steps = [
+        lambda: tools.step_inventory_quantity(row["id"], 1),
+        lambda: tools.set_inventory_location(row["id"], "pantry"),
+        lambda: tools.step_inventory_expiration(row["id"], 1),
+        lambda: tools.update_inventory("Eggs", "set", quantity="20"),
+        lambda: tools.update_inventory("Eggs", "use", quantity="1"),
+        lambda: tools.update_inventory("Eggs", "add", quantity="1"),
+    ]
+    for step in steps:
+        step()
+        assert _rev(row["id"]) == rev + 1, step
+        rev += 1
+    conn = get_conn()
+    conn.execute("UPDATE inventory_items SET category = 'other' WHERE id = ?", (row["id"],))
+    conn.commit()
+    conn.close()
+    assert _rev(row["id"]) == rev + 1
+
+
+def test_a_cook_depletion_between_tick_and_untick_is_a_touch():
+    """The other tab's writer: a cooked meal took some of the eggs."""
+    import datetime
+    tools.add_recipe("Omelette", ingredients=[{"item": "Eggs", "qty": "3"}], default_servings=1)
+    item_id = _bought_eggs()
+    entry = tools.plan_meal(datetime.date.today().isoformat(), "Omelette", slot="dinner")["entry_id"]
+    tools.check_off_meal(entry, "done")
+    assert _qty() == "9"
+    res = tools.mark_grocery_item(item_id, "needed")
+    assert res["inventory_restored"] is False
+    assert _qty() == "9"
 
 
 def test_untick_of_a_merge_the_household_has_used_from_leaves_it():
@@ -379,14 +494,29 @@ def test_a_no_op_retick_says_it_added_nothing():
 
 # ---------- the upgrade path ----------
 
-ADDED_HERE = [("grocery_items", "inventory_added_at"), ("grocery_items", "inventory_receipt_json")]
+ADDED_HERE = [
+    ("grocery_items", "inventory_added_at"),
+    ("grocery_items", "inventory_receipt_json"),
+    ("inventory_items", "rev"),
+]
 
 
 def _without_column(schema: str, table: str, column: str) -> tuple[str, int]:
     start = schema.index(f"CREATE TABLE IF NOT EXISTS {table} (")
-    end = schema.index(");", start)
+    # The terminator is the ");" on its own line — a comment inside the
+    # block can (and in grocery_items does) end in ");".
+    end = start + re.search(r"^\);", schema[start:], flags=re.M).start()
     block = schema[start:end]
     stripped, count = re.subn(rf"^\s*{re.escape(column)}\s+[^\n]*\n", "", block, flags=re.M)
+    # rev is the table's last column, so the last remaining column line
+    # (comment lines follow it) now carries a trailing comma the old schema
+    # never had.
+    lines = stripped.split("\n")
+    for i in range(len(lines) - 1, -1, -1):
+        if lines[i].strip() and not lines[i].strip().startswith("--"):
+            lines[i] = re.sub(r",\s*$", "", lines[i])
+            break
+    stripped = "\n".join(lines)
     return schema[:start] + stripped + schema[end:], count
 
 
@@ -406,9 +536,15 @@ def test_a_database_made_before_these_columns_migrates_cleanly_twice(tmp_path):
     conn = sqlite3.connect(tmp_path / "old.db")
     conn.row_factory = sqlite3.Row
     conn.executescript(schema)
+    assert "rev" not in {r["name"] for r in conn.execute("PRAGMA table_info(inventory_items)")}
+    # The trigger is declared in schema.sql, so the old file has it BEFORE
+    # the column it bumps exists — SQLite allows that, and the column
+    # arrives in the same init_db call. The first write proves it.
+    assert conn.execute("SELECT name FROM sqlite_master WHERE type = 'trigger' AND name = 'inventory_items_bump_rev'").fetchone()
     conn.execute(
         "INSERT INTO grocery_items (household_id, item, quantity, category, status) VALUES (1, 'Eggs', '12', 'dairy', 'purchased')"
     )
+    conn.execute("INSERT INTO inventory_items (household_id, item, quantity) VALUES (1, 'Eggs', '12')")
     conn.commit()
     _run_migrations(conn)
     _run_migrations(conn)
@@ -416,5 +552,10 @@ def test_a_database_made_before_these_columns_migrates_cleanly_twice(tmp_path):
     cols = {r["name"] for r in conn.execute("PRAGMA table_info(grocery_items)")}
     assert {"inventory_added_at", "inventory_receipt_json"} <= cols
     row = conn.execute("SELECT status, inventory_added_at, inventory_receipt_json FROM grocery_items").fetchone()
-    conn.close()
     assert (row["status"], row["inventory_added_at"], row["inventory_receipt_json"]) == ("purchased", None, None)
+    assert conn.execute("SELECT rev FROM inventory_items").fetchone()["rev"] == 0
+    conn.execute("UPDATE inventory_items SET quantity = '8'")
+    conn.execute("UPDATE inventory_items SET quantity = '12'")
+    conn.commit()
+    assert conn.execute("SELECT rev FROM inventory_items").fetchone()["rev"] == 2
+    conn.close()
