@@ -41,6 +41,7 @@ safe for that format. "Today" comes from _today() so tests can pin it.
 
 from __future__ import annotations
 
+import json
 import statistics
 from datetime import date, timedelta
 
@@ -198,11 +199,25 @@ def _shape(r) -> dict:
     }
 
 
-def _event(conn, staple_id: int, kind: str, source: str, on_date: str | None = None) -> None:
-    conn.execute(
-        "INSERT INTO staple_events (household_id, staple_id, kind, source, on_date) VALUES (?, ?, ?, ?, ?)",
-        (household_id(), staple_id, kind, source, on_date or _iso(_today())),
+def _event(
+    conn, staple_id: int, kind: str, source: str, on_date: str | None = None, grocery_item_id: int | None = None
+) -> int:
+    cur = conn.execute(
+        "INSERT INTO staple_events (household_id, staple_id, kind, source, on_date, grocery_item_id) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (household_id(), staple_id, kind, source, on_date or _iso(_today()), grocery_item_id),
     )
+    return cur.lastrowid
+
+
+# The rhythm fields a purchase rewrites, recorded on the 'bought' event on
+# either side of the write (staple_events.receipt_json) so an untick can
+# put them back exactly — see unrecord_staple_purchase.
+_RHYTHM_FIELDS = ("cadence_days", "cadence_source", "last_bought_at", "next_due_at", "skip_streak", "paused")
+
+
+def _rhythm_snapshot(r) -> dict:
+    return {k: r[k] for k in _RHYTHM_FIELDS}
 
 
 def _relearn(conn, staple_id: int) -> None:
@@ -617,13 +632,24 @@ def remove_staple_by_id(staple_id: int) -> dict:
     return remove_staple(name)
 
 
-def record_staple_purchase(item: str, source: str = "grocery", staple_id: int | None = None) -> dict | None:
+def record_staple_purchase(
+    item: str, source: str = "grocery", staple_id: int | None = None, grocery_item_id: int | None = None
+) -> dict | None:
     """
     Something got bought. Called from mark_grocery_item on every line that
     turns 'purchased', whatever put it there — so a staple a person added
     by hand still teaches the rhythm. No-op for anything that isn't a
     staple. One bought date per day per staple: a receipt and a tick for the
     same thing on the same day are one purchase.
+
+    grocery_item_id is the list line whose tick this is, when it is one.
+    The day's event remembers the line that CREATED it
+    (staple_events.grocery_item_id) and what the rhythm read before and
+    after (receipt_json), so that line's untick can take exactly this event
+    back — see unrecord_staple_purchase. A second source the same day (another
+    line, or a caller with no line) makes the event nobody's in particular:
+    grocery_item_id goes NULL and no untick removes it, because something
+    else also bought it.
     """
     conn = get_conn()
     r = _row(conn, staple_id) if staple_id else None
@@ -634,19 +660,93 @@ def record_staple_purchase(item: str, source: str = "grocery", staple_id: int | 
         return None
     today = _iso(_today())
     already = conn.execute(
-        "SELECT 1 FROM staple_events WHERE household_id = ? AND staple_id = ? AND kind = 'bought' AND on_date = ?",
+        "SELECT id, grocery_item_id FROM staple_events WHERE household_id = ? AND staple_id = ? "
+        "AND kind = 'bought' AND on_date = ?",
         (household_id(), r["id"], today),
     ).fetchone()
+    event_id = None
+    before = _rhythm_snapshot(r)
     if not already:
-        _event(conn, r["id"], "bought", source, today)
+        event_id = _event(conn, r["id"], "bought", source, today, grocery_item_id=grocery_item_id)
+    elif already["grocery_item_id"] is not None and already["grocery_item_id"] != grocery_item_id:
+        conn.execute("UPDATE staple_events SET grocery_item_id = NULL WHERE id = ?", (already["id"],))
     conn.execute(
         "UPDATE staples SET last_bought_at = ?, skip_streak = 0, updated_at = datetime('now') WHERE id = ?",
         (today, r["id"]),
     )
     _relearn(conn, r["id"])
+    after_row = _row(conn, r["id"])
+    if event_id is not None:
+        conn.execute(
+            "UPDATE staple_events SET receipt_json = ? WHERE id = ?",
+            (json.dumps({"before": before, "after": _rhythm_snapshot(after_row)}), event_id),
+        )
+    conn.commit()
+    out = _shape(after_row)
+    conn.close()
+    return out
+
+
+def unrecord_staple_purchase(item: str, staple_id: int | None = None, grocery_item_id: int | None = None) -> dict | None:
+    """
+    A line that had been ticked is un-ticked: the purchase did not happen.
+    Called from mark_grocery_item on every line that leaves 'purchased'.
+    Removes TODAY's 'bought' event for the staple, and only when that event
+    stands on this very line (staple_events.grocery_item_id) — an event
+    another line or another source created, or one a second source joined
+    (grocery_item_id NULL), or one from an earlier day, is left exactly as
+    it is. Then the rhythm: if the staple still reads what the tick left it
+    at (the event's recorded "after"), the recorded "before" is put back —
+    cadence, its source, last bought, next due, skip streak — so a cadence
+    that became "learned" on this one date is un-learned and a due date the
+    tick pushed out comes back. If something else has changed the staple
+    since (a told cadence, a pause), nothing recorded is trusted over that:
+    the event goes and the rhythm is re-learned from the dates that remain.
+    Returns the staple's shape with "unrecorded": True/False, or None for a
+    non-staple.
+    """
+    if grocery_item_id is None:
+        return None
+    conn = get_conn()
+    r = _row(conn, staple_id) if staple_id else None
+    if r is None:
+        r = _find_by_name(conn, item)
+    if r is None:
+        conn.close()
+        return None
+    ev = conn.execute(
+        "SELECT id, receipt_json FROM staple_events WHERE household_id = ? AND staple_id = ? AND kind = 'bought' "
+        "AND on_date = ? AND grocery_item_id = ?",
+        (household_id(), r["id"], _iso(_today()), grocery_item_id),
+    ).fetchone()
+    if ev is None:
+        out = _shape(r)
+        conn.close()
+        out["unrecorded"] = False
+        return out
+    conn.execute("DELETE FROM staple_events WHERE id = ?", (ev["id"],))
+    try:
+        receipt = json.loads(ev["receipt_json"] or "{}")
+    except (TypeError, ValueError):
+        receipt = {}
+    before, after = receipt.get("before") or {}, receipt.get("after") or {}
+    if before and after and _rhythm_snapshot(r) == after:
+        conn.execute(
+            f"UPDATE staples SET {', '.join(f'{k} = ?' for k in _RHYTHM_FIELDS)}, updated_at = datetime('now') "
+            "WHERE id = ?",
+            (*(before[k] for k in _RHYTHM_FIELDS), r["id"]),
+        )
+    else:
+        # last_bought_at was set to today by the tick; _relearn takes the
+        # latest date still on record when there is one, and otherwise
+        # keeps what it finds — so clear it first rather than let a date
+        # that did not happen anchor next_due.
+        conn.execute("UPDATE staples SET last_bought_at = NULL, updated_at = datetime('now') WHERE id = ?", (r["id"],))
+        _relearn(conn, r["id"])
     conn.commit()
     out = _shape(_row(conn, r["id"]))
     conn.close()
+    out["unrecorded"] = True
     return out
 
 

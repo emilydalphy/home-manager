@@ -290,6 +290,14 @@ _MIGRATIONS = [
     ("inventory_items", "rev", "INTEGER NOT NULL DEFAULT 0"),
     # Staples (2026-09-11): the line Pomona added because a staple is due.
     ("grocery_items", "staple_id", "INTEGER"),
+    # "Un-ticking a bought staple doesn't un-teach it" (2026-09-13): which
+    # grocery line a 'bought' event stands on, and the staple's rhythm
+    # fields before/after that tick, so the line's untick can take exactly
+    # that event back. NULL on every existing row — nothing is backfilled,
+    # so an event from before this deploy is never removed by an untick.
+    # See schema.sql's comment on staple_events.
+    ("staple_events", "grocery_item_id", "INTEGER"),
+    ("staple_events", "receipt_json", "TEXT"),
     # Loop Board "First-class 'defrost' prep step" — see schema.sql's
     # comment on prep_tasks for what each of these four columns is for.
     ("prep_tasks", "task_type", "TEXT NOT NULL DEFAULT 'general'"),

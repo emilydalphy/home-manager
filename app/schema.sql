@@ -946,7 +946,23 @@ CREATE TABLE IF NOT EXISTS staple_events (
     kind TEXT NOT NULL, -- added | bought | plenty | skipped | paused | resumed
     source TEXT NOT NULL DEFAULT '',
     on_date TEXT NOT NULL, -- ISO date the fact is about
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    -- "Un-ticking a bought staple doesn't un-teach it" (2026-09-13). For a
+    -- 'bought' row: the grocery line whose tick wrote it, so that line's
+    -- untick can take back exactly this row and no other. NULL when the
+    -- row stands on more than one parent (a second line, or a non-list
+    -- source such as a future receipt scan, bought the same thing the same
+    -- day) or on no line at all — then no untick removes it. NULL on every
+    -- row from before this column; those are never removed either.
+    grocery_item_id INTEGER,
+    -- ...and what the staple's rhythm fields read on either side of that
+    -- tick (cadence_days, cadence_source, last_bought_at, next_due_at,
+    -- skip_streak, paused), {"before": {...}, "after": {...}}. The untick
+    -- puts back "before" when the staple still reads exactly "after";
+    -- otherwise it deletes the event and re-learns from the dates left.
+    -- Same recorded-not-derived reasoning as grocery_items.inventory_
+    -- receipt_json: a purchase knows what it changed.
+    receipt_json TEXT
 );
 
 -- design_handoff_home_manager Phase 4: freeform household facts for the

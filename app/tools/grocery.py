@@ -1129,15 +1129,27 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
         result["inventory_added"] = added
     if restored is not None:
         result["inventory_restored"] = restored
+    # Imported here, not at the top: staples.py imports this module for the
+    # merge key. Both calls run after the commit above, on their own
+    # connection.
+    from . import staples as _staples
+
     if status == "purchased":
         # A bought staple teaches its rhythm, whoever put the line there —
         # a hand-added "coffee" counts the same as the suggestion Pomona
         # made. No-op for anything that isn't a staple, and one bought date
-        # per day per staple, so a re-tick teaches nothing twice. Imported
-        # here, not at the top: staples.py imports this module for the
-        # merge key. After the commit above, on its own connection.
-        from . import staples as _staples
-        _staples.record_staple_purchase(row["item"], source="grocery", staple_id=row["staple_id"])
+        # per day per staple, so a re-tick teaches nothing twice. The event
+        # remembers this line as its creator, so the untick below can take
+        # it back.
+        _staples.record_staple_purchase(
+            row["item"], source="grocery", staple_id=row["staple_id"], grocery_item_id=item_id
+        )
+    elif row["status"] == "purchased":
+        # Un-ticked: the purchase this line taught did not happen. Takes
+        # back today's bought event only when this line created it and
+        # nothing else bought the same thing today — see
+        # staples.unrecord_staple_purchase. Earlier days are never touched.
+        _staples.unrecord_staple_purchase(row["item"], staple_id=row["staple_id"], grocery_item_id=item_id)
     return result
 
 
