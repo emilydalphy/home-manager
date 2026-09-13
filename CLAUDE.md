@@ -371,6 +371,50 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — One wrong-typed stored answer stops a What we know
+  section from opening. Branch `worktree-kitchen-fallback-and-memory-types`,
+  NOT merged at the time of writing.** Loop Board bug: `POST
+  /api/memory/edit` and the `edit_preference` chat tool (same Python
+  function, `app/tools/memory.py`'s `edit_preference`) accepted a bare
+  string for a list-valued field (`cuisine_preferences`, `dislikes`,
+  `usual_stores`, `kitchen_kit`) with no validation and stored it raw;
+  `GET /api/memory` then handed the string straight back instead of a
+  list, and any frontend reader doing `.filter`/`.join`/`.map` on it threw
+  (one spot, `prefsCuisineForms`, had already worked around this on its
+  own — the rest hadn't). Fixed on both sides of the same file: the write
+  side (`_coerce_str_list`) comma-splits a bare string into a list
+  (`"Thai"` -> `["Thai"]`, `"Thai, Mexican"` -> two items — decision:
+  comma-split, not always-one-item, since a model is more likely to send a
+  plain list that way than as real JSON) and refuses anything that isn't a
+  string or list-of-strings; `protein_preferences` (dict-valued) gets its
+  own "must be a dict" guard. The read side (`_as_str_list`, wired into
+  `get_household_memory`) normalises the same four fields so a row that
+  was ALREADY bad on disk before this fix doesn't crash `/api/memory`
+  either — `delete_preference`'s own reads of the same three list fields
+  got the identical guard, since a bare string there doesn't throw, it
+  silently iterates as characters and rewrites the row into single-letter
+  garbage the next time anything was removed. Found during verification,
+  same day, three more of the same shape: (1) `_coerce_str_list`'s list
+  branch returned an already-a-list value untouched while its string
+  branch already trimmed/dropped blanks — so `["Thai", "", "  "]` stored
+  blanks as-is and What We Know rendered one empty chip per blank entry;
+  both branches (and `_as_str_list`'s) now trim the same way. (2)
+  `edit_preference`'s `usual_stores` branch diffs the OLD list against
+  the new one to prune `store_typical_items_json` for a dropped store,
+  and read that old value with a raw `json.loads` instead of
+  `_as_str_list` — a legacy bare-string row iterated as characters, so
+  the diff never matched a real store name and a stale entry silently
+  survived. (3) `delete_preference`'s `protein_preferences` branch had
+  the matching gap for a legacy bare-string row — `dict(json.loads(...))`
+  with no isinstance guard, so a bad row made `dict()` itself throw
+  (surfaced as a confusing 400 on an ordinary "forget this protein"
+  click) instead of the character-explosion the list fields had; given
+  the same dict-or-empty-dict guard `get_household_memory` already uses.
+  Tests: `tests/test_memory_field_types.py` (new — both write paths, both read
+  paths, `delete_preference`); `tests/test_prefs_eating_line.py`'s
+  bare-string test rewritten to construct the bad shape by hand now that
+  the live route no longer produces one.
+
 - **2026-09-13 — With only a past week on file, Kitchen shows last month's
   meals as "the rest of the week". Branch
   `worktree-kitchen-fallback-and-memory-types`, NOT merged at the time of
