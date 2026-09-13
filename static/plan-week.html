@@ -164,21 +164,24 @@
   }
   .holiday-q { font-family: var(--font-display); font-weight: 700; font-size: 0.98rem; color: var(--ink-strong); margin: 0 0 9px; }
   .holiday .ack { margin-top: 8px; }
-  .holiday-dish { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
-  .holiday-dish input {
+  .holiday-dish, .holiday-host { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+  .holiday-host { flex-wrap: wrap; }
+  .holiday-host input[type="time"] { flex: 0 0 auto; width: 128px; }
+  .holiday-host input[type="text"] { flex: 1 1 160px; }
+  .holiday-dish input, .holiday-host input {
     flex: 1 1 auto; min-width: 0; min-height: 44px; padding: 0 12px;
     border-radius: var(--radius-control); border: 1px solid var(--hairline);
     font-family: var(--font-body); font-size: 0.9rem;
     background: var(--surface-raised); color: var(--ink);
   }
-  .holiday-dish input:focus { border-color: var(--ink-strong); outline: none; }
-  .holiday-dish button {
+  .holiday-dish input:focus, .holiday-host input:focus { border-color: var(--ink-strong); outline: none; }
+  .holiday-dish button, .holiday-host button {
     min-height: 44px; padding: 0 14px; flex: 0 0 auto;
     border-radius: var(--radius-control); border: 1px solid var(--ink-strong);
     background: var(--surface-raised); color: var(--ink-strong);
     font-family: var(--font-body); font-size: 0.85rem; font-weight: 600; cursor: pointer;
   }
-  .holiday-dish button:disabled { opacity: .45; cursor: default; }
+  .holiday-dish button:disabled, .holiday-host button:disabled { opacity: .45; cursor: default; }
 
   /* ---- Guest follow-up ---- */
   .guests {
@@ -664,7 +667,7 @@
   // ANSWER_ACKS on the server — same words). Never assumed: "not sure
   // yet" is a real answer, and Now asks again three days out.
   var HOLIDAY_ANSWERS = [
-    { key: 'hosting', label: 'Hosting', ack: 'plan a dinner you host that day — tell me how many and I’ll shop for the bigger table.' },
+    { key: 'hosting', label: 'Hosting', ack: 'plan the big meal — tell me how many, when you want it on the table, and anything your guests can’t eat.' },
     { key: 'out',     label: 'Going to someone’s', ack: 'plan nothing for that dinner. If you’re bringing a dish, name it and I’ll add it to the week.' },
     { key: 'just_us', label: 'Just us', ack: 'plan that day like any other.' },
     { key: 'unsure',  label: 'Not sure yet', ack: 'leave it for now and ask again closer to the day.' }
@@ -1204,6 +1207,14 @@
         '<input type="text" maxlength="80" placeholder="Bringing something? Name it" aria-label="The dish you’re bringing">' +
         '<button type="button">Add it</button>' +
       '</div>' +
+      // Hosting (slice 2, the big meal): when it's on the table, and what
+      // the guests can't eat, in their words. The count is the day's own
+      // guest steppers, one tap away through the Hosting tag.
+      '<div class="holiday-host" hidden>' +
+        '<input type="time" aria-label="On the table by">' +
+        '<input type="text" maxlength="160" placeholder="Anything your guests can’t eat?" aria-label="What your guests can’t eat">' +
+        '<button type="button">Save</button>' +
+      '</div>' +
     '</div>';
   }
 
@@ -1224,6 +1235,14 @@
       var add = dish.querySelector('button');
       add.addEventListener('click', function () { answerHoliday(block.dataset.holiday, 'out', input.value); });
       input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); add.click(); } });
+      var host = block.querySelector('.holiday-host');
+      var hostTime = host.querySelector('input[type="time"]');
+      var hostNotes = host.querySelector('input[type="text"]');
+      var hostSave = host.querySelector('button');
+      hostSave.addEventListener('click', function () {
+        answerHoliday(block.dataset.holiday, 'hosting', null, { on_table_at: hostTime.value, guest_notes: hostNotes.value });
+      });
+      hostNotes.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); hostSave.click(); } });
       paintHolidayBlock(block);
     });
   }
@@ -1244,6 +1263,14 @@
     dish.hidden = current !== 'out';
     var input = dish.querySelector('input');
     if (current === 'out' && document.activeElement !== input) input.value = h.answer.bring_dish || '';
+    var host = block.querySelector('.holiday-host');
+    host.hidden = current !== 'hosting';
+    if (current === 'hosting') {
+      var t = host.querySelector('input[type="time"]');
+      var n = host.querySelector('input[type="text"]');
+      if (document.activeElement !== t) t.value = h.answer.on_table_at || '';
+      if (document.activeElement !== n) n.value = h.answer.guest_notes || '';
+    }
   }
 
   // Everything that shows this holiday — the block under the tiles, the
@@ -1253,14 +1280,17 @@
     paintTiles();
   }
 
-  async function answerHoliday(date, answer, dish) {
+  async function answerHoliday(date, answer, dish, hosting) {
     var h = holidayFor(date);
     if (!h) return;
     var previous = h.answer ? JSON.parse(JSON.stringify(h.answer)) : null;
+    var same = previous && previous.answer === answer;
     // Paint on tap, before the server confirms; a failed save puts the
     // old answer back and says so.
-    h.answer = { answer: answer, headcount: previous && previous.answer === answer ? previous.headcount : 0,
-                 bring_dish: dish != null ? dish.trim() : (previous && previous.answer === answer ? previous.bring_dish : '') };
+    h.answer = { answer: answer, headcount: same ? previous.headcount : 0,
+                 bring_dish: dish != null ? dish.trim() : (same ? previous.bring_dish : ''),
+                 on_table_at: hosting ? (hosting.on_table_at || '') : (same ? previous.on_table_at : ''),
+                 guest_notes: hosting ? (hosting.guest_notes || '').trim() : (same ? previous.guest_notes : '') };
     // "Hosting" is the intake's own Hosting-guests tag with the count —
     // turn it on here so the day's guest steppers are one tap away, the
     // way the tag itself would open them.
@@ -1274,6 +1304,7 @@
     paintCta();
     var body = { date: date, answer: answer };
     if (dish != null) body.bring_dish = dish.trim();
+    if (hosting) { body.on_table_at = hosting.on_table_at || ''; body.guest_notes = (hosting.guest_notes || '').trim(); }
     try {
       var res = await fetch('/api/holidays/answer', {
         method: 'POST',
@@ -1282,7 +1313,8 @@
       });
       if (!res.ok) throw new Error('holiday answer failed');
       var saved = await res.json();
-      h.answer = { answer: saved.answer, headcount: saved.headcount, bring_dish: saved.bring_dish };
+      h.answer = { answer: saved.answer, headcount: saved.headcount, bring_dish: saved.bring_dish,
+                   on_table_at: saved.on_table_at || '', guest_notes: saved.guest_notes || '' };
       // "Out" is nobody-home for that dinner on the server; read
       // attendance back so the sheet's avatars say the same thing.
       await loadAttendance();

@@ -2779,7 +2779,11 @@
     }
     fold(purchasedView, 'purchased');
     fold(inCartView, 'inCart');
-    return { stores: stores };
+    // The big meal's two trips, when a hosted holiday is ahead (Holidays
+    // slice 2, app/tools/big_meal.py): each of its lines carries
+    // shop_timing 'early' | 'fresh', and this names the trips. Null on an
+    // ordinary week, and the list reads exactly as it always has.
+    return { stores: stores, shopSplit: byStore.shop_split || null };
   }
 
   function groNeededCount(storeData) {
@@ -3623,6 +3627,33 @@
       sec.items.map(function (it) { return groListRowHtml(it, data); }).join('');
   }
 
+  // A card's aisles. On an ordinary week: every aisle, as it always was. In
+  // the week of a big meal the household is hosting (data.shopSplit), the
+  // same aisles read in groups instead — the rest of the week first, then
+  // "For Thanksgiving — buy by Friday" (the keeps-well things) and "For
+  // Thanksgiving — buy fresh on Sunday" — each group its own run of aisles
+  // under one quiet heading, so the list reads as two trips without a
+  // single row appearing twice. The grouping key is the row's shop_timing,
+  // stamped by the server; nothing here decides what keeps.
+  function groAislesHtml(sections, data) {
+    var split = data && data.shopSplit;
+    var tagged = split && (sections || []).some(function (sec) {
+      return sec.items.some(function (it) { return !!it.shop_timing; });
+    });
+    if (!tagged) {
+      return (sections || []).map(function (sec) { return groAisleGroupHtml(sec, data); }).join('');
+    }
+    function pass(predicate, label) {
+      var subset = groSectionsFiltered(sections, predicate);
+      if (!subset.length) return '';
+      return (label ? '<div class="gro-trip"><span class="gro-trip-label">' + escapeHtml(label) + '</span></div>' : '') +
+        subset.map(function (sec) { return groAisleGroupHtml(sec, data); }).join('');
+    }
+    return pass(function (it) { return !it.shop_timing; }, '') +
+      pass(function (it) { return it.shop_timing === 'early'; }, split.early && split.early.label) +
+      pass(function (it) { return it.shop_timing === 'fresh'; }, split.fresh && split.fresh.label);
+  }
+
   // A store's card minus the head — no avatar, no name, because there is no
   // store to name. Rows still go through groListRowHtml, so the menu, the
   // quantity and the tick behave exactly as they do under a stop; the only
@@ -3631,7 +3662,7 @@
     var any = data.stores['Unassigned'];
     var sections = groFoldSectionLists([any && any.sections]);
     return '<div class="gro-store">' +
-      sections.map(function (sec) { return groAisleGroupHtml(sec, data); }).join('') +
+      groAislesHtml(sections, data) +
     '</div>';
   }
 
@@ -3657,7 +3688,7 @@
           GRO_ICONS.basket + '</span>' +
         '<span class="gro-store-name">Anywhere &middot; ' + items.length + '</span>' +
       '</div>' +
-      sections.map(function (sec) { return groAisleGroupHtml(sec, data); }).join('') +
+      groAislesHtml(sections, data) +
     '</div>';
   }
 
@@ -3677,7 +3708,7 @@
           escapeHtml(groStoreInitial(name)) + '</span>' +
         '<span class="gro-store-name">' + escapeHtml(name) + ' · ' + items.length + '</span>' +
       '</div>' +
-      sections.map(function (sec) { return groAisleGroupHtml(sec, data); }).join('') +
+      groAislesHtml(sections, data) +
     '</div>';
   }
 
