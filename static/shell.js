@@ -9716,6 +9716,20 @@
           ' data-rv-view="days">Which days</button>' +
       '</div>' +
       (eating ? reviewEatingHtml(days) : reviewDaysHtml(days)) +
+      // The draft's rare actions — "Try again", "Change my answers" — sit
+      // behind the same "More ···" the week root carries (rule 2: rare
+      // actions go behind a ···, never into a second dock button). When the
+      // draft became the root (Build 3, 2026-09-11) this foot was left off
+      // it, so the More sheet's own rows for a draft (renderMealsMoreSheet)
+      // could not be reached from a draft at all, and the only control on
+      // the screen was Approve — Loop Board "Planning: a way out of the
+      // draft that isn't approving it" (Emily, 2026-09-13). The deeper,
+      // approved-week form has its crumb and needs no foot.
+      (root
+        ? '<div class="wk-foot wk-foot-solo">' +
+            '<button type="button" class="wk-foot-more" id="wk-more" aria-haspopup="dialog">More ···</button>' +
+          '</div>'
+        : '') +
       reviewDecideHtml(data);
   }
 

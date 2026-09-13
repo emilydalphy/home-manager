@@ -371,6 +371,47 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — Planning has a door that isn't Approve. Branch
+  `worktree-planning-exit`, NOT merged at the time of writing.** Loop
+  Board "Planning: a way out of the draft that isn't approving it" (Bug,
+  High; Emily on her phone: "you can only exit the process by approving
+  the week"). Two traps, both real, neither a modal or a route loop:
+  - **`/plan-week` had no way out.** It is a standalone page with no tab
+    bar by design (see its own header comment and `plan_week_page` in
+    main.py), reached by `window.location.href` — and on an installed PWA
+    there is no browser chrome either. Its first screen hid the stepper's
+    "‹ Back" (`showStep`), the drafting screen hid it too, and nothing on
+    any screen led anywhere but "Draft my week". It now carries ONE
+    "‹ Plan" crumb above the eyebrow, outside the step sections so it is
+    on every screen including the drafting one (`leaveFlow`). A plain
+    navigation to `/week`, never `history.back()` (nav v2 rule 1).
+    Leaving writes the current screen's answers as a revision — keepalive,
+    never awaited, and only if something changed since the screen opened
+    (`answersAtLoad`) — so coming back carries on, and a screen left
+    untouched does not make the next visit narrate "carried on from your
+    answers" about nothing. Leaving mid-draft saves nothing: the answers
+    went with the tap, and `_stream_week_generation` runs on its own
+    daemon thread, so the draft still lands, as a draft. The drafting
+    screen says so in one line.
+  - **The draft on Plan had no "More ···".** Since Build 3 (2026-09-11,
+    `da12386`) a draft's root is the Review, and `reviewStepHtml`'s root
+    form rendered the two views and Approve and nothing else — the More
+    sheet's own "Try again" and "Change my answers" rows for a draft
+    (`renderMealsMoreSheet`) existed but no button on a draft opened the
+    sheet. The tab bar never hid, so this was not a trap in the strict
+    sense, but "continue or start again" needs the sheet. The week root's
+    `.wk-foot` with `#wk-more` is on the draft root now, above the dock;
+    `wireMealsStep` already wired it. The deeper approved-week form keeps
+    its crumb and gets no foot (one way back per screen).
+  - What leaving does NOT do is pinned by `tests/test_planning_exit.py`:
+    no approved plan, no grocery lines, no prep tasks, from either door,
+    and "Try again"/"Change my answers" leave exactly one live draft.
+  - **Known, left alone:** a draft for a week other than the one
+    containing today is only shown when `?drafted=` hands it over; after
+    any reload Plan shows today's week, and a next-week draft is behind
+    "Plan next week ›" ("already has a draft"). Pre-existing, same after
+    approving from chat; its own card if it bites.
+
 - **2026-09-13 — Prep questions are a step of All set, not a footnote.
   Branch `worktree-prep-questions-step`, NOT merged at the time of
   writing.** Loop Board "Prep questions are a clear step, not a footnote"
