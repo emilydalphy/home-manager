@@ -3610,9 +3610,13 @@ def decide_staple_line_view(item_id: int, req: StapleDecisionRequest):
 
 @app.get("/api/staples")
 def list_staples_view():
-    """The household's staples with cadence, last bought, next due, paused."""
+    """The household's staples with cadence, last bought, next due, paused —
+    flat in `staples`, and grouped under their derived section (Spices,
+    Pantry basics, Fridge basics, Household supplies, Other) in `sections`,
+    which is what the Staples card renders."""
     try:
-        return {"staples": tools.list_staples()}
+        staples = tools.list_staples()
+        return {"staples": staples, "sections": tools.group_by_section(staples)}
     except Exception as e:
         logger.exception("Staples lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")

@@ -2574,8 +2574,13 @@
     // Loaded with the list, shown as one quiet card at the foot of LIST when
     // there are any, closed by default. A due one is not in here twice — it
     // is an ordinary line in its section carrying staple_id, rendered as a
-    // suggestion by groListRowHtml.
+    // suggestion by groListRowHtml. stapleSections is the same staples
+    // grouped under their derived section — Spices, Pantry basics, Fridge
+    // basics, Household supplies, Other (Emily, 2026-09-13) — in the
+    // order the card shows them; the server decides the section, never
+    // a person.
     staples: [],
+    stapleSections: [],
     staplesOpen: false,
     // "Spices this week" (app/tools/spices.py): every spice the week's
     // recipes call for, waiting UNTICKED in one section rather than spread
@@ -3219,9 +3224,11 @@
   async function groLoadStaples() {
     try {
       var res = await fetch('/api/staples');
-      if (!res.ok) { groceryState.staples = []; return; }
-      groceryState.staples = (await res.json()).staples || [];
-    } catch (err) { groceryState.staples = []; }
+      if (!res.ok) { groceryState.staples = []; groceryState.stapleSections = []; return; }
+      var got = await res.json();
+      groceryState.staples = got.staples || [];
+      groceryState.stapleSections = got.sections || [];
+    } catch (err) { groceryState.staples = []; groceryState.stapleSections = []; }
   }
 
   // WRAP UP's confirmation section — this week's "already have" decisions
@@ -3817,7 +3824,12 @@
               'data-ticked="' + (sp.ticked ? '1' : '0') + '" ' +
               'aria-label="' + escapeHtml((sp.ticked ? 'Don’t need to buy ' : 'Need to buy ') + sp.item) + '">' +
               (sp.ticked ? GRO_ICONS.tick : '') + '</button>' +
-            '<p class="gro-name">' + escapeHtml(sp.item) + '</p>' +
+            '<p class="gro-name">' + escapeHtml(sp.item) +
+              // The rack's own "still got cumin?": Pomona ticked this one
+              // because the jar's cadence has run out. Unticking it is
+              // the answer ("we have plenty") — no second button.
+              (sp.due ? '<span class="gro-spice-due">Probably running low</span>' : '') +
+            '</p>' +
             (sp.quantity ? '<span class="gro-qty">' + escapeHtml(sp.quantity) + '</span>' : '') +
           '</div>';
         }).join('') +
@@ -4087,13 +4099,21 @@
 
   // ---------- Staples ----------
   // One quiet card at the foot of LIST, closed by default: what the
-  // household buys on a rhythm, each with when Pomona thinks it is next due.
-  // Nothing here is a question — a due staple is already on the list above
-  // as a line. Pause and Remove are the only verbs; Resume undoes a pause.
+  // household buys on a rhythm, each with when Pomona thinks it is next due,
+  // under its section — Spices, Pantry basics, Fridge basics, Household
+  // supplies, Other — as an eyebrow, the same one the aisles wear
+  // (Emily, 2026-09-13: "sections under it, and the spices is one
+  // section so it's easy to organize"). Nothing here is a question — a due
+  // staple is already on the list above as a line (a due spice waits for
+  // a recipe and is pre-ticked in Spices this week instead). Pause and
+  // Remove are the only verbs; Resume undoes a pause.
   function groStaplesHtml() {
     var staples = groceryState.staples;
     if (!staples.length) return '';
     var open = groceryState.staplesOpen;
+    var sections = groceryState.stapleSections.length
+      ? groceryState.stapleSections
+      : [{ section: 'other', label: '', staples: staples }];
     var html = '<div class="gro-staples">' +
       '<button type="button" class="gro-ps-head" data-gro="staples-toggle" aria-expanded="' + open + '">' +
         GRO_ICONS.basket +
@@ -4105,22 +4125,29 @@
       '</button>';
     if (open) {
       html += '<div class="gro-staples-body">' +
-        staples.map(function (st) {
-          var meta = st.paused
-            ? 'Paused'
-            : st.cadence_words + (st.due_words ? ' · ' + st.due_words : '');
-          return '<div class="gro-staple-row' + (st.paused ? ' paused' : '') + '">' +
-            '<span class="gro-staple-name">' + escapeHtml(st.item) + '</span>' +
-            '<span class="gro-staple-meta">' + escapeHtml(meta) + '</span>' +
-            '<button type="button" class="gro-staple-act" data-gro="' + (st.paused ? 'staple-resume' : 'staple-pause') + '" ' +
-              'data-id="' + st.id + '" data-name="' + escapeHtml(st.item) + '">' + (st.paused ? 'Resume' : 'Pause') + '</button>' +
-            '<button type="button" class="gro-staple-act" data-gro="staple-remove" data-id="' + st.id + '" ' +
-              'data-name="' + escapeHtml(st.item) + '">Remove</button>' +
+        sections.map(function (sec) {
+          return '<div class="gro-staple-sec" data-section="' + escapeHtml(sec.section) + '">' +
+            (sec.label ? '<span class="gro-eyebrow">' + escapeHtml(sec.label) + '</span>' : '') +
+            sec.staples.map(groStapleRowHtml).join('') +
           '</div>';
         }).join('') +
       '</div>';
     }
     return html + '</div>';
+  }
+
+  function groStapleRowHtml(st) {
+    var meta = st.paused
+      ? 'Paused'
+      : st.cadence_words + (st.due_words ? ' · ' + st.due_words : '');
+    return '<div class="gro-staple-row' + (st.paused ? ' paused' : '') + '">' +
+      '<span class="gro-staple-name">' + escapeHtml(st.item) + '</span>' +
+      '<span class="gro-staple-meta">' + escapeHtml(meta) + '</span>' +
+      '<button type="button" class="gro-staple-act" data-gro="' + (st.paused ? 'staple-resume' : 'staple-pause') + '" ' +
+        'data-id="' + st.id + '" data-name="' + escapeHtml(st.item) + '">' + (st.paused ? 'Resume' : 'Pause') + '</button>' +
+      '<button type="button" class="gro-staple-act" data-gro="staple-remove" data-id="' + st.id + '" ' +
+        'data-name="' + escapeHtml(st.item) + '">Remove</button>' +
+    '</div>';
   }
 
   // Every store already on the list, plus the household's usual stores — so

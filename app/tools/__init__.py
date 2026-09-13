@@ -473,9 +473,15 @@ from .slot_needs import (  # noqa: F401
     set_slot_recommendation,
 )
 from .staples import (  # noqa: F401
+    SECTION_LABELS,
+    SECTION_ORDER,
     add_staple,
     decide_staple_line,
+    group_by_section,
     list_staples,
+    list_staples_by_section,
+    section_for,
+    seed_spice_staples,
     mark_staple_plenty,
     pause_staple,
     record_staple_purchase,

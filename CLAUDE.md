@@ -371,6 +371,60 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — Staples get sections, and the spice rack is one of them.
+  Branch `worktree-staples-sections`, NOT merged at the time of writing.**
+  Loop Board feature (Emily: "make one of the grouping 'spices' ... a good
+  starting point to introduce the inventory management without doing the
+  full thing" → offered the staples framing: "Yes ... I want to make sure
+  there are sections under it, and then the spices is one section so it's
+  easy to organize"). Staples-style, NOT inventory: no counts, no
+  locations, no data entry; nothing here reads or writes `inventory_items`.
+  - **A section is DERIVED, never stored or typed.** `staples.section_for
+    (item, category)` → Spices / Pantry basics / Fridge basics / Household
+    supplies / Other (`SECTION_ORDER` / `SECTION_LABELS`, the assumed set):
+    a spice by `spices.is_spice` first; then a household word or phrase in
+    the name (beats a category — "dish soap" under pantry is a category
+    mistake); then the grocery category (household; produce / dairy /
+    meat-seafood / FROZEN → fridge, the same appliance; pantry → pantry);
+    then a food word in the name (phrase first, then the last word — the
+    thing itself, so "chicken stock" is pantry and "peanut butter" is a
+    listed phrase — then any word, every word singularised); else Other.
+    No schema change: `_shape` works it out on every read, so a better
+    classifier fixes every staple at once. `/api/staples` now returns
+    `sections` beside the flat `staples`; the Staples card on Shop renders
+    each under a `.gro-eyebrow` heading (`groStapleRowHtml` /
+    `.gro-staple-sec`).
+  - **The Spices section IS the spice rack, kept from purchases.** A bought
+    line whose name is a spice becomes a staple on its own
+    (`record_staple_purchase` → `_create_spice_staple`; `seed_spice_staples`
+    does the same for every spice already in the purchased history, run on
+    every read of the staples or the card, idempotent). Its cadence starts
+    at `spices.RECENTLY_BOUGHT_DAYS` (56) — one number for "a jar lasts
+    about this long" — and is learned like any staple. `_seed_history`
+    takes `except_line_id` so the line being ticked today is one purchase,
+    not a bought-when-listed plus a bought-when-ticked a few days apart
+    (which would teach a phantom interval).
+  - **The card reads the staple; the old 56-day scan is gone.**
+    `list_spices_this_week`: bought within its cadence → left out under
+    "Bought lately, so not listed" (the wording stays true — a "plenty"
+    answer moves the due date, not last-bought); cadence run out (staple
+    due) → the pending row is ticked there and then, as a needed line
+    carrying `staple_id` and `due: true` ("Probably running low" under the
+    name), so the list's own We-have-plenty / Not-this-trip work on it
+    too; an untick on that row is "we have plenty" (`note_line_removed`),
+    a re-tick takes it back (`reverse_last_answer`). Test
+    `test_bought_lately_is_not_offered_again` now moves the staple's clock
+    instead of the purchased line's created_at.
+  - **Judgment call: a spice staple is never pushed onto the list by
+    `sync_due_staples`.** A jar is used when a recipe calls for it, not on
+    a rhythm; "probably running low: cumin" in a week nobody cooks with
+    cumin is the third jar Emily wants to stop buying. It waits for the
+    card. The one exception keeps the chat promise: `add_staple(...,
+    running_low=True)` on a spice puts the line on today (`_put_on_list`,
+    shared with sync). Also: a household thing filed as "other" by a chat
+    add ("toilet paper") now starts on the household default cadence (30)
+    rather than the catch-all 21, via the section.
+
 - **2026-09-13 — "6 cucumbers": the kind goes in the name when the count
   depends on it. Branch `worktree-ingredient-variety`, NOT merged at the
   time of writing.** Loop Board improvement (Emily, on the list: "does it
@@ -429,7 +483,6 @@ why*, not duplicating the diff.
   match, and reversed two-pot phrasing ("simmer the sauce in one pot while
   the pasta boils in another") isn't caught either — both real but
   low-frequency compared to the reported bug.
-
 - **2026-09-13 — Sorting the list: "Have it" and "Use something else" on
   every item. Branch `worktree-grocery-sorting-round`, NOT merged at the
   time of writing.** Loop Board feature (Emily: "there should also be the
