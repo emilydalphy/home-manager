@@ -654,6 +654,10 @@ class CheckOffMealRequest(BaseModel):
     status: str = "done"  # pending | done
 
 
+class StartCookingRequest(BaseModel):
+    entry_id: int
+
+
 class CookAheadRequest(BaseModel):
     source_entry_id: int
     # The days this batch should cover, as they stand after the tap —
@@ -1784,6 +1788,26 @@ def cooker_check_meal(req: CheckOffMealRequest):
         logger.exception("Cooker check-meal failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return view
+
+
+@app.post("/api/cooker/start")
+def cooker_start(req: StartCookingRequest):
+    """
+    "Start cooking" was tapped in cook mode: record the real start on the
+    entry (Loop Board "Cook: the real start time moves the clock", Emily
+    2026-09-13) and hand back the refreshed cooker view with the receipt on
+    top — started_at, on_the_table, planned_start, already_started; see
+    tools.start_cooking. First tap wins; a second answers with the first
+    time. An entry that isn't this household's is a 404, like every other
+    cooker write.
+    """
+    try:
+        return tools.start_cooking(req.entry_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Cooker start failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
 @app.post("/api/cooker/cook-ahead")

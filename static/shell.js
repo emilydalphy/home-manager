@@ -8009,6 +8009,16 @@
   // move, or a recipe with no timing: the one honest tile left is how
   // long it takes; nothing at all when even that is unknown.
   function cookTonightTimes(row, meal) {
+    // The real start first (cook_started_at on the card, which the start
+    // POST itself refreshes — the moves list may still be the morning's):
+    // STARTED, and the on-the-table time that follows from it (typeof
+    // guard: the tests run this card alone under node).
+    var live = !row.done && typeof cookRealClock === 'function' ? cookRealClock(meal) : null;
+    if (live) {
+      var liveTiles = [{ label: 'Started', value: clockLabel(live.start) }];
+      if (live.table !== null) liveTiles.push({ label: 'On the table', value: clockLabel(live.table) });
+      return liveTiles;
+    }
     var move = row.move;
     var start = '', table = '';
     ((move && move.chips) || []).forEach(function (chip) {
@@ -8025,13 +8035,39 @@
     return tiles;
   }
 
+  // "Started 17 minutes late — the clock's moved with you." — the card's
+  // one line once the cook has really begun and the plan was off by two
+  // minutes or more (cookStartOffsetLabel); '' otherwise, so the thaw or
+  // prep line takes its usual place. The plan's start comes off the move
+  // (planned_start, or its "Start by" chip when the list predates that
+  // field); no move, no comparison, no sentence.
+  function cookStartedLine(row, meal) {
+    if (row.done || typeof cookStartedMinutes !== 'function') return '';
+    var started = cookStartedMinutes(meal);
+    if (started === null) return '';
+    var move = row.move;
+    var planned = move ? isoClockMinutes(move.planned_start) : null;
+    if (planned === null && move) {
+      (move.chips || []).forEach(function (chip) {
+        if (/^Start by /.test(chip)) {
+          var times = {}, slot = meal.slot || 'dinner';
+          times[slot] = chip.slice('Start by '.length);
+          times.snack = times[slot];
+          planned = slotTableMinutes(times, slot);
+        }
+      });
+    }
+    var offset = cookStartOffsetLabel(started, planned);
+    return offset ? 'Started ' + offset + ' — the clock’s moved with you.' : '';
+  }
+
   function cookTonightCardHtml(row, meals, todayIso, data) {
     var meal = meals[row.idx] || {};
     var cookName = data && data.cook_name;
     var tiles = row.done ? [] : cookTonightTimes(row, meal);
     var note = row.done
       ? (row.isReheat ? 'Eaten.' : 'Cooked.')
-      : cookTonightNote(data, meal);
+      : ((typeof cookStartedLine === 'function' && cookStartedLine(row, meal)) || cookTonightNote(data, meal));
     return '<section class="cook-tonight' + (row.done ? ' is-done' : '') + (row.isReheat ? ' is-reheat' : '') + '" aria-label="Tonight">' +
       '<span class="cook-tonight-eyebrow">' + escapeHtml(cookTonightEyebrow(meal, todayIso, cookName)) + '</span>' +
       '<h2 class="cook-tonight-dish">' + escapeHtml(row.title) + '</h2>' +
@@ -12105,11 +12141,21 @@
       ? perStep.reduce(function (a, b) { return a + b; }, 0)
       : mealTotalMinutes(meal);
     var total = mealClockTotal(meal, mainTotal);
+    // The real start, once the cook has begun (household.startMinutes —
+    // mealClockFor reads it off the card's cook_started_at, 2026-09-13):
+    // every stop is rebased from it, so the table time is start + total
+    // rather than the plan's hour, and "Everything out" is the minute it
+    // really happened rather than the nearest five — the plan's start is
+    // an estimate to round; the real one is a fact.
+    var live = household && typeof household.startMinutes === 'number' && isFinite(household.startMinutes)
+      ? household.startMinutes : null;
+    if (live !== null && total) table = live + total;
     if (table === null || !total) {
       return stops.concat(sideStops.map(finishSideStop));
     }
 
     var start = table - total;
+    var atStart = live !== null ? Math.round(start) : Math.round(start / 5) * 5;
     if (perStep) {
       var at = start;
       var stepPos = 0;
@@ -12127,24 +12173,27 @@
       stops.forEach(function (stop, i) {
         var raw = n === 1 ? mainStart : mainStart + ((table - mainStart) * i) / (n - 1);
         var mins = i === n - 1 && n > 1 ? table : Math.round(raw / 5) * 5;
+        // Rounding must never put a step before the real start: begun at
+        // 6:02, the first step is 6:02, not the 6:00 the grid would say.
+        if (live !== null) mins = Math.max(mins, atStart);
         stop.minutes = mins;
         stop.time = clockLabel(mins);
         stop.estimated = true;
       });
       if (stops[0].kind === 'out') {
-        stops[0].minutes = Math.round(start / 5) * 5;
+        stops[0].minutes = atStart;
         stops[0].time = clockLabel(stops[0].minutes);
       }
     }
     sideStops.forEach(function (stop) {
       if (stop._minutes === null) {
         // Can't be timed safely: with everything else, at the start.
-        stop.minutes = Math.round(start / 5) * 5;
+        stop.minutes = atStart;
         stop.untimed = true;
       } else {
         var last = table - stop._minutes;
         var mins = last - 5 * (stop._count - 1 - stop._pos);
-        stop.minutes = Math.max(Math.round(start / 5) * 5, Math.round(mins / 5) * 5);
+        stop.minutes = Math.max(atStart, Math.round(mins / 5) * 5);
       }
       stop.time = clockLabel(stop.minutes);
       stop.estimated = true;
@@ -12196,6 +12245,52 @@
     });
     var total = Math.max(main || 0, longest);
     return total > 0 ? total : null;
+  }
+
+  // ----- the real start -----
+  // Loop Board "Cook: the real start time moves the clock (and says so
+  // once)" — Emily, 2026-09-13: "if the user ends up starting at a
+  // different time it should auto connect to whatever time it is for them
+  // and update the done time accordingly too." cook_started_at on the
+  // cooker-view card is when "Start cooking" was really tapped, on the
+  // household's clock ("2026-09-13T18:02:00" — cooker.start_cooking).
+  // Every reader of a start or an on-the-table time (the Meal step's hero
+  // and stops, Cook's Tonight card and hero) asks these first and falls
+  // back to the plan's arithmetic when there is nothing here. Now's own
+  // move already carries the rebased times from moves.py.
+  //
+  // The clock part of a local ISO stamp as minutes since midnight — null
+  // for nothing, or anything unreadable (a stored time must never break a
+  // screen).
+  function isoClockMinutes(iso) {
+    var m = /T(\d{2}):(\d{2})/.exec(String(iso || ''));
+    if (!m) return null;
+    return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+  }
+  function cookStartedMinutes(meal) {
+    return meal && meal.cook_started_at ? isoClockMinutes(meal.cook_started_at) : null;
+  }
+  // { start, table } off the real start — the table time is the start
+  // plus the same total the stops are spread over (mealClockTotal), null
+  // when the card has no minutes to add. Null altogether until the cook
+  // has begun.
+  function cookRealClock(meal) {
+    var start = cookStartedMinutes(meal);
+    if (start === null) return null;
+    var total = mealClockTotal(meal);
+    return { start: start, table: total ? start + total : null };
+  }
+  // "17 minutes late" / "5 minutes early" / '' inside two minutes of the
+  // plan — the same two minutes the start pop-up keeps quiet under. No
+  // nagging over a minute, ever (the ticket's own words).
+  var START_SLACK_MINUTES = 2;
+  function cookStartOffsetLabel(startedMins, plannedMins) {
+    if (startedMins === null || plannedMins === null) return '';
+    var diff = Math.round(startedMins - plannedMins);
+    if (Math.abs(diff) < START_SLACK_MINUTES) return '';
+    var n = Math.abs(diff);
+    var span = n < 60 ? n + ' minute' + (n === 1 ? '' : 's') : minutesInWords(n);
+    return span + (diff > 0 ? ' late' : ' early');
   }
 
   // "Thirty minutes, six stops" / "About thirty minutes, six stops" (the
@@ -12374,14 +12469,21 @@
     var times = (weekState.data && weekState.data.slot_times) || {};
     var table = slotTableMinutes(times, slot);
     var isCook = !!(cookMeal && !cookMeal.is_leftovers && entry && entry.source !== 'leftovers');
-    var stops = isCook ? mealClockStops(cookMeal, { tableMinutes: table }) : [];
+    // The real start, once the cook has begun (cook_started_at on the
+    // card, 2026-09-13): the stops are rebased from it and the table time
+    // follows — see mealClockStops. (typeof guard: the tests run these
+    // renderers alone under node.)
+    var started = isCook && typeof cookStartedMinutes === 'function' ? cookStartedMinutes(cookMeal) : null;
+    var stops = isCook ? mealClockStops(cookMeal, { tableMinutes: table, startMinutes: started }) : [];
     var total = isCook ? mealClockTotal(cookMeal) || mealTotalMinutes(entry) : null;
-    var start = stops.length && stops[0].minutes !== null ? stops[0].minutes
-      : (isCook && total && table !== null ? table - total : null);
+    if (started !== null && total) table = started + total;
+    var start = started !== null ? started
+      : (stops.length && stops[0].minutes !== null ? stops[0].minutes
+        : (isCook && total && table !== null ? table - total : null));
     var pending = !cookMeal && typeof planCookView === 'function' && !planCookView();
     var failed = pending && typeof planCookViewFailed === 'function' && planCookViewFailed();
     return { cookMeal: cookMeal, isCook: isCook, stops: stops, total: total, table: table, start: start,
-      entry: entry || null, pending: pending && !failed, failed: failed };
+      started: started, entry: entry || null, pending: pending && !failed, failed: failed };
   }
 
   // The hero's one plain line: the thaw the plan wrote for this meal (the
@@ -12403,7 +12505,10 @@
   function mealHeroHtml(day, slot, entry, clock) {
     var weekday = dayName(day.date, { weekday: 'long' });
     var chips = [];
-    if (clock.isCook && clock.start !== null) chips.push('Start at ' + clockLabel(clock.start));
+    // Once the cook has begun the chip says what happened, not what was
+    // planned; "On the table by" above it is already the rebased time.
+    if (clock.isCook && clock.started !== null && clock.started !== undefined) chips.push('Started ' + clockLabel(clock.started));
+    else if (clock.isCook && clock.start !== null) chips.push('Start at ' + clockLabel(clock.start));
     var cook = clock.isCook ? mealCookName() : '';
     if (cook) chips.push(cook + '’s cooking');
     var line = mealHeroLine(entry);
@@ -12612,7 +12717,10 @@
     var cookable = typeof planCookableNow !== 'function' || planCookableNow();
     var label;
     if (eaten) label = REHEAT_ACTION_LABEL;
-    else if (clock && mealCookUnderway(clock.cookMeal)) label = 'Keep cooking';
+    // Under way by its ticks, or by the real start being on record — a
+    // cook begun at 6:02 is not offered "Start at 6:02" (mealCookUnderway
+    // itself stays keyed to ticks, which is what the ticklist resumes from).
+    else if (clock && (mealCookUnderway(clock.cookMeal) || (clock.started !== null && clock.started !== undefined))) label = 'Keep cooking';
     else if (clock && clock.start !== null) label = 'Start at ' + clockLabel(clock.start);
     else label = 'Start cooking';
     var row = cookable || eaten
@@ -17287,10 +17395,48 @@
     renderCook();
   }
 
+  // "Start cooking": into the steps at once, and the real start written
+  // down in the background (Loop Board "Cook: the real start time moves
+  // the clock", Emily 2026-09-13). Optimistic on purpose — the step stage
+  // must never wait on a round trip with a pan already on. Once per cook:
+  // a card that already carries cook_started_at (an earlier tap's, or the
+  // other adult's) posts nothing again, and the server keeps the first
+  // time anyway.
   function cookStartCooking() {
     var meal = cookFocusMeal();
     cookState.stepIdx = meal ? cookFirstUndoneStep(meal) : 0;
     cookGoStage('step');
+    // (typeof guard: tests/test_cook_journey.py runs the stages alone.)
+    if (meal && !meal.is_leftovers && !meal.cook_started_at && meal.entry_id != null &&
+        meal.cooked_status !== 'done' && typeof cookRecordStart === 'function') cookRecordStart(meal);
+  }
+
+  var START_MOVED_TROUBLE = 'Couldn’t note the start time — the plan’s clock stands.';
+
+  // The one pop-up, once: when the real start is two minutes or more off
+  // the plan's, "You started at 6:02, so the clock moved. On the table by
+  // 6:47." Within two minutes, nothing — the tiles already say when and
+  // there is nothing to explain; and never a second time for the same
+  // cook (already_started). The refreshed view lands on the screen either
+  // way, which is what turns the hero's chip to "Started 6:02", and Now's
+  // and the root's moves are re-read so their lines follow. On failure a
+  // calm line and nothing else: the steps are already open, and the
+  // plan's clock is still a true clock.
+  async function cookRecordStart(meal) {
+    try {
+      var out = await cookPost('/api/cooker/start', { entry_id: meal.entry_id });
+      renderCookFrom(out);
+      refreshPlanSurfacesAfterCook();
+      if (out.already_started) return;
+      var started = isoClockMinutes(out.started_at);
+      var table = isoClockMinutes(out.on_the_table);
+      var planned = isoClockMinutes(out.planned_start);
+      if (started === null || table === null || !cookStartOffsetLabel(started, planned)) return;
+      showToast('You started at ' + clockLabel(started) + ', so the clock moved. On the table by ' +
+        clockLabel(table) + '.', null, 6000);
+    } catch (err) {
+      showToast(START_MOVED_TROUBLE);
+    }
   }
 
   // Moving on is what marks a step done. The whole point of one step at a
@@ -17356,6 +17502,17 @@
       var attChip = cookAttendanceChip(meal);
       if (attChip) chips.push(attChip);
     }
+    // Once the cook has really begun (cook_started_at — cookStartCooking
+    // records it), the hero says so on every stage: "Started 6:02" as the
+    // celadon live chip, and the on-the-table time that follows from it.
+    // The rest of the chips stay Before-you-start's; these two are the
+    // facts a person mid-step looks up at the hero for. (typeof guard:
+    // the tests run this hero alone under node.)
+    var live = !isDone && typeof cookRealClock === 'function' ? cookRealClock(meal) : null;
+    if (live) {
+      chips.push({ text: 'Started ' + clockLabel(live.start), live: true });
+      if (live.table !== null) chips.push('On the table ' + clockLabel(live.table));
+    }
 
     // One plain line, only on Before you start, and only when it carries a
     // real fact about the cook — the batch first, because it explains the
@@ -17379,7 +17536,8 @@
       '</div>' +
       (chips.length
         ? '<div class="cook-hero-chips">' + chips.map(function (c) {
-            return '<span class="cook-meta-chip">' + escapeHtml(c) + '</span>';
+            var text = typeof c === 'string' ? c : c.text;
+            return '<span class="cook-meta-chip' + (c && c.live ? ' is-live' : '') + '">' + escapeHtml(text) + '</span>';
           }).join('') + '</div>'
         : '') +
       // Both pickers are setup decisions about days other than this one,

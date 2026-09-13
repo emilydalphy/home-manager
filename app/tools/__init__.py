@@ -117,6 +117,8 @@ from .cooker import (  # noqa: F401
     check_off_prep_step,
     deplete_inventory_for_meal,
     get_cooker_view,
+    start_cooking,
+    cook_total_minutes,
     get_plan_progress,
     get_prep_schedule,
     save_prep_tasks,

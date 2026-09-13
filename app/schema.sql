@@ -622,6 +622,20 @@ CREATE TABLE IF NOT EXISTS meal_plan_entries (
     -- recipe is shared across weeks; a side belongs to one night).
     -- '[]' for the overwhelming majority of entries.
     sides_json TEXT NOT NULL DEFAULT '[]',
+    -- When the cook actually began, on the household's own clock
+    -- ("2026-09-13T18:02:00", no zone — the same naive local time the
+    -- plan's slot times are in, so the two can be subtracted). Loop Board
+    -- "Cook: the real start time moves the clock" (Emily, 2026-09-13: "if
+    -- the user ends up starting at a different time it should auto
+    -- connect to whatever time it is for them and update the done time
+    -- accordingly too"). Written ONCE by cooker.start_cooking when "Start
+    -- cooking" is tapped — a second tap keeps the first time. Every reader
+    -- of a start or an on-the-table time (Now's cook move, Cook's Tonight
+    -- card and hero, the Meal step's clock) uses this when it is set and
+    -- the plan's arithmetic when it is not. Cleared by "Mark not cooked"
+    -- (check_off_meal, status pending), so a night put back reads from
+    -- the plan again. NULL on every row that predates the column.
+    cook_started_at TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

@@ -331,6 +331,12 @@ _MIGRATIONS = [
     # "nothing was added here," which is the truth for every meal planned
     # before this existed, so nothing is backfilled.
     ("meal_plan_entries", "sides_json", "TEXT NOT NULL DEFAULT '[]'"),
+    # Loop Board "Cook: the real start time moves the clock" (Emily,
+    # 2026-09-13): when "Start cooking" was actually tapped, on the
+    # household's clock — see schema.sql. NULL on every existing row:
+    # nothing before this recorded a start, and cooked_at (the finish) is
+    # not a start to back one out of.
+    ("meal_plan_entries", "cook_started_at", "TEXT"),
     # The household's own say over that behaviour. Default ON, per Emily:
     # the app fills out a plate because it is thinking about their health,
     # says so once, and takes "don't" for an answer. Off = the pass only
