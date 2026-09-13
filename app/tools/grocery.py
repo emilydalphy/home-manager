@@ -1331,11 +1331,23 @@ def undo_substitution(item_id: int) -> dict:
 
 
 def substitutions_for_plan(plan_id: int | None) -> list[dict]:
-    """This week's swaps, for the cook view: [{original_item, alternative, at_home}]."""
+    """
+    This week's swaps, for the cook view: [{original_item, alternative,
+    at_home}]. Only swaps made against THIS plan, and only while the
+    grocery line they were made on still exists — a line the ledger
+    deleted (both meals that wanted it swapped out, the week cleared) takes
+    its swap with it, so a fresh need for the same thing later in the week
+    is not told it was substituted (verifier, 2026-09-13 — reproduced). A
+    swap made with no plan at all annotates nothing: there is no card for
+    it, and matching every later week would make it permanent.
+    """
+    if plan_id is None:
+        return []
     conn = get_conn()
     rows = conn.execute(
-        "SELECT original_item, alternative, at_home FROM grocery_substitutions "
-        "WHERE household_id = ? AND (weekly_plan_id IS NULL OR weekly_plan_id = ?) ORDER BY id",
+        "SELECT s.original_item, s.alternative, s.at_home FROM grocery_substitutions s "
+        "WHERE s.household_id = ? AND s.weekly_plan_id = ? "
+        "AND EXISTS (SELECT 1 FROM grocery_items g WHERE g.id = s.grocery_item_id) ORDER BY s.id",
         (household_id(), plan_id),
     ).fetchall()
     conn.close()

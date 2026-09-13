@@ -148,6 +148,36 @@ def test_a_pending_spice_swapped_for_something_goes_on_the_list(week):
     assert "cumin seeds" in _needed(), "choosing what to buy instead is choosing to buy it"
 
 
+def test_a_swap_dies_with_the_line_it_was_made_on(week):
+    """Verifier, 2026-09-13: both meals that wanted the oregano swapped out
+    → the ledger deletes the line; a third meal wanting fresh oregano
+    later in the week must not be told it was substituted."""
+    oregano = _needed()["Fresh oregano"]
+    tools.substitute_grocery_item(oregano["id"], "dry oregano")
+    days = tools._week_dates(_monday())
+    tools.add_recipe("Plain rice", ingredients=[{"item": "Rice", "qty": "2 cups", "category": "pantry"}])
+    tools.swap_meal_in_plan(week, days[0], "Plain rice", slot="dinner")
+    tools.swap_meal_in_plan(week, days[1], "Plain rice", slot="dinner")
+    assert "dry oregano" not in _needed() and "Fresh oregano" not in _needed()
+    tools.plan_meal(days[2], "Greek salad", slot="dinner", weekly_plan_id=week, add_ingredients_to_grocery_list=True)
+    assert _needed()["Fresh oregano"]["quantity"] == "2 tbsp"
+    line = next(i for i in _cook_ingredients(week)["Greek salad"] if i["item"] == "Fresh oregano")
+    assert "substitute" not in line
+
+
+def test_a_swap_with_no_plan_annotates_nothing_later():
+    tools.add_grocery_item("Fresh oregano", "1 bunch", category="produce")
+    row = _needed()["Fresh oregano"]
+    tools.substitute_grocery_item(row["id"], "dry oregano")
+    assert _needed()["dry oregano"]["quantity"] == "1 bunch"
+    tools.add_recipe("Greek salad", ingredients=[{"item": "Fresh oregano", "qty": "2 tbsp", "category": "produce"}])
+    plan_id = tools.create_weekly_plan(_monday())["weekly_plan_id"]
+    tools.plan_meal(tools._week_dates(_monday())[0], "Greek salad", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+    line = next(i for i in _cook_ingredients(plan_id)["Greek salad"] if i["item"] == "Fresh oregano")
+    assert "substitute" not in line, "a swap made with no week is not every week's"
+
+
 # ---------- have it already: no inventory ----------
 
 def test_have_it_is_the_pre_shop_drop_and_never_an_inventory_write(week):
