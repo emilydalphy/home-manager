@@ -62,7 +62,13 @@ def test_six_english_cucumbers_are_caught_too_but_not_asked_which_kind():
     ("Cucumber", "3", 2),
     ("Cucumber (fresh)", "6", 2),   # a "(fresh)" tag is not a kind
     ("Cucumbers", "6 each", 2),
-    ("Cucumbers", "6 large", 2),    # "large" is the ordinary kind, said twice
+    ("Cucumbers", "6 large", 2),    # "large" describes; it names no kind
+    ("Cucumbers", "1 dozen", 2),    # a dozen is a count of twelve
+    ("Cucumbers", "6 ct", 2),
+    ("Cucumbers", "6 pcs", 2),
+    ("Cucumbers, sliced", "6", 2),  # a prep descriptor names no kind either
+    ("Cucumbers (English)", "6", 2),
+    ("Tomatoes, on the vine", "12", 4),
     ("Tomatoes", "12", 4),
     ("Vine tomatoes", "12", 4),
     ("Potatoes", "12", 4),
@@ -82,6 +88,10 @@ def test_a_bare_count_too_high_for_the_ordinary_kind_is_flagged(item, qty, servi
     # A named kind is never second-guessed: the model said what it meant.
     ("Persian cucumbers", "6", 2),
     ("Mini cucumbers", "6", 2),
+    ("Cucumbers (Persian)", "6", 2),    # ...wherever in the name it is said
+    ("Cucumbers, Persian", "6", 2),
+    ("Tomatoes (cherry)", "12", 4),
+    ("Potatoes (baby)", "1 dozen", 4),
     ("Cherry tomatoes", "20", 4),
     ("Grape tomatoes", "30", 4),
     ("Roma tomatoes", "12", 4),
@@ -152,6 +162,16 @@ def test_every_ordinary_word_in_the_table_is_lowercase_and_single():
         assert high > 0
         for word in ordinary:
             assert word == word.lower() and " " not in word, word
+            assert word not in recipes._PRODUCE_GENERIC_WORDS, word
+
+
+def test_a_dozen_counts_as_twelve():
+    assert _problem("Cucumbers", "1 dozen", 2)["per_serving"] == pytest.approx(6)
+    assert _problem("Apples", "1 dozen", 12) is None
+
+
+def test_the_message_trims_the_line_it_quotes():
+    assert _message("  Cucumbers ", " 6 ", 2).startswith("Cucumbers '6' would be")
 
 
 def test_the_rule_is_exposed_on_the_tools_package():

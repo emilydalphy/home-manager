@@ -392,8 +392,10 @@ why*, not duplicating the diff.
     reported by `plan_quality._produce_variety_named` ("info", morning
     report, like `_quantities_plausible`); the list and the cook view show
     the line as written. A named kind ("Persian", "cherry", "baby", "green"
-    on an onion) is never second-guessed; "English cucumbers '6'" is still
-    caught but only as "a lot", not asked which kind.
+    on an onion) is never second-guessed, wherever in the name it is said
+    ("Cucumbers (Persian)", "Cucumbers, Persian" — the verifier's catch);
+    "English cucumbers '6'" is still caught but only as "a lot", not asked
+    which kind. "1 dozen" / "6 ct" count as counts.
   - **Not annotating the list line ("6 cucumbers — small ones?")**, on
     purpose: no field to carry it without a schema change, the row's name
     is the merge key and a store-preference key, and at the list the
