@@ -1330,6 +1330,13 @@
   // takes an item off the list and has to offer a way back. A toast carrying
   // an action stays up longer, because it is now something to read AND decide
   // rather than something to notice.
+  // The words every decision ends on (DESIGN_SYSTEM.md §2b S10, Emily
+  // 2026-09-13: "a little pop up should show up saying changes saved").
+  // One constant so the sentence is the same on every screen, and so a
+  // test can ask "did this save say so" without knowing the wording.
+  var CHANGES_SAVED = 'Changes saved';
+  function toastSaved(action, holdMs) { showToast(CHANGES_SAVED, action || null, holdMs); }
+
   function showToast(message, action, holdMs) {
     // holdMs: for the rare toast that is a sentence rather than a
     // confirmation — an allergy warning after approval — 2.2 seconds is not
@@ -2325,10 +2332,15 @@
       // page load (CLAUDE.md's stale-panel gotcha): a tick here has to
       // show there without a reload. A no-op until Plan has been opened.
       if (panels.week && panels.week.dataset.built) loadPlanChores(panels.week);
+      // S10: the tick settled on the tap; this is the line that says the
+      // server agrees. Until 2026-09-13 a chore tick said nothing either
+      // way — not even when it failed.
+      toastSaved();
     } catch (err) {
       console.warn('Chore toggle failed, rolling back:', err);
       chore.status = prevStatus;
       renderChores(panel, chores);
+      showToast('That didn’t save. Try it again in a moment.');
     }
   }
 
@@ -2637,6 +2649,10 @@
       var answer = await res.json().catch(function () { return null; });
       if (answer && answer.status === 'refused') {
         showToast(answer.message || 'That didn’t save. Try it again in a moment.');
+      } else {
+        // An undo is a decision too (S10): it says it took, in the words
+        // the grocery undo already uses.
+        showToast('Put back.');
       }
       ctx.refresh();
     } catch (err) {
@@ -8591,6 +8607,10 @@
       if (seq === wwkState.seq) redraw(sectionKey);
       if (prefsState.open) renderPrefsRows();
       wwkFlashSaved(sectionKey);
+      // The section's own "Saved" flash stays (it names WHICH section);
+      // the pop-up is the app-wide word for it (S10). Every What we know
+      // edit lands here — preferences, rhythm, eating style, facts, stores.
+      toastSaved();
       return true;
     } catch (err) {
       console.warn('What we know save failed:', err);
@@ -12475,6 +12495,7 @@
       // Now's "Your chores" card shows the same row (built once per page
       // load) — tell it, so a tick here is a tick there without a reload.
       if (panels.today && panels.today.dataset.built) loadChores(panels.today);
+      toastSaved();
     } catch (err) {
       console.warn('Chore toggle failed, rolling back:', err);
       chore.status = prevStatus;
@@ -13004,6 +13025,10 @@
       };
       spliceSwappedDay(data.day);
       renderMealsStep(panel);
+      // S10 (Emily, 2026-09-13): the card's own line says what changed;
+      // this says it was saved, and offers the same Undo the line does —
+      // two doors to one undo, the same eight seconds.
+      toastSaved({ label: 'Undo', onClick: function () { runSwapUndo(panel, day, slot); } }, SWAP_UNDO_MS);
       // Then the rest of the week, quietly: a swap can change the badge,
       // the subtitle, the draft's clash line and Kitchen's reading of the
       // same week. loadWeekMenu is the one place that keeps all of those
@@ -13041,6 +13066,7 @@
       swapState = null;
       spliceSwappedDay(data.day);
       renderMealsStep(panel);
+      showToast('Put back.');
       await loadWeekMenu(panel);
     } catch (err) {
       console.warn('Undo failed:', err);
@@ -17261,7 +17287,10 @@
       // moves the week's "N of M cooked" everywhere else that counts it.
       refreshCookAttention();
       refreshPlanSurfacesAfterCook();
+      // The same two lines the focused screen's tick uses (cookFocusCheckMeal):
+      // a cook gets "Logged…", an un-cook says it saved (S10).
       if (justCooked) toastMealLogged();
+      else toastSaved();
     } catch (err) {
       el.disabled = false;
       showToast('That didn’t save — try again.');
@@ -17291,7 +17320,10 @@
       renderCookFrom(view);
       refreshCookAttention();
       refreshPlanSurfacesAfterCook();
+      // "Mark it cooked" has its own line ("Logged — that'll steer next
+      // week"); "Mark not cooked" had none until S10.
       if (next === 'done') toastMealLogged();
+      else toastSaved();
     } catch (err) {
       el.disabled = false;
       showToast('That didn’t save — try again.');
@@ -17331,6 +17363,7 @@
         status: el.getAttribute('data-next')
       }));
       refreshPlanSurfacesAfterCook();
+      toastSaved();
     } catch (err) {
       el.disabled = false;
       showToast('That didn’t save — try again.');
@@ -17546,6 +17579,7 @@
       });
       cookState.attention = data.items || [];
       renderCook();
+      toastSaved();
     } catch (err) {
       el.disabled = false;
       showToast('That didn’t save — try again.');
@@ -17562,6 +17596,7 @@
       });
       cookState.attention = data.items || [];
       renderCook();
+      toastSaved();
     } catch (err) {
       el.disabled = false;
       showToast('Couldn’t log that — try again.');
@@ -19002,6 +19037,11 @@
       addAskMessage('assistant', data.reply, data.actions);
       refreshStaleTabsFromActions(data.actions);
       offerNextStepChips(data.actions);
+      // S10 (Emily, 2026-09-13): a change made through the chat is a
+      // decision like any other. The action cards under the reply say
+      // what changed; this is the one line that says it saved. Only when
+      // the turn actually wrote something — a plain answer stays plain.
+      if (data.actions && data.actions.length) toastSaved();
     } catch (err) {
       loadingWraps.forEach(function (w) { w.remove(); });
       // Asking needs Claude, and Claude needs a connection. With no signal

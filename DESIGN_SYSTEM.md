@@ -175,6 +175,21 @@ run rather than a vibe. They apply to every screen, mockup or built.*
   If a line sounds like it wants you to like it, cut it. *Why: "this cringy trying-too-hard
   way of writing"; "it's just fluff."* **Test:** would you say it across the kitchen table
   without wincing?
+- **S10 · A decision is saved on purpose, and the app says so.** *(Emily, 2026-09-13,
+  Tier 2 — her instruction: "if there is a decision that the user makes, it needs to make
+  it saved, and then a little pop up should show up saying changes saved.")* Where you
+  choose between options, there is a Save (or Done) — the choice is not made by the tap
+  that highlights it. When it is saved, the pop-up says **"Changes saved"** (`CHANGES_SAVED`
+  / `toastSaved()` in `shell.js`; the same words on `plan-week.html`), with Undo on it when
+  the change can be undone. A single tick (a grocery line, a thaw move, a chore) is its own
+  decision and still gets the pop-up; an undo says "Put back." A failed save keeps saying so
+  in the calm-in-trouble voice (§8). **Test:** after any decision, can you point at the
+  button you pressed to make it, and the line that told you it took? First pass landed
+  2026-09-13 on branch `worktree-changes-saved` (Swap · I'll pick, chat changes, What we
+  know, chore ticks and undo, Cook's prep/attention/usage/un-cook, Plan the week's
+  attendance, holiday and away saves). Still open: a Save button under the open-slot
+  options (they apply on tap today), and Start cooking, which records nothing yet (its own
+  card: "Cook: the real start time moves the clock").
 
 ---
 
