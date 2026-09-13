@@ -138,6 +138,22 @@
   .two-col { display: flex; gap: 10px; }
   .two-col > div { flex: 1; }
   .loading-note { color: var(--ink-secondary); font-size: 0.85rem; margin-top: 10px; }
+  /* The review of the starter list (Loop Board "Chores v1: A starter list
+     from what Pomona already knows"). Deliberately plain — the sibling card
+     "Setup becomes a step under Chores" builds the real screen; this is the
+     smallest thing that lets a household keep, tweak and drop each row. */
+  .text-link {
+    background: none; border: none; padding: 10px 0; min-height: 44px; cursor: pointer;
+    font-family: var(--font-body); font-size: 0.85rem; font-weight: 700; color: var(--ink-secondary);
+  }
+  .text-link:hover { color: var(--ink-strong); }
+  .known-line { color: var(--ink-secondary); font-size: 0.95rem; margin: 0; }
+  .starter-row { display: grid; grid-template-columns: 1fr auto; gap: 6px 8px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--hairline); }
+  .starter-row .chore-name { font-weight: 600; color: var(--ink-strong); }
+  .starter-row .controls { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
+  .starter-row select { flex: 1; min-width: 140px; width: auto; }
+  .starter-row .remove-btn { width: 44px; }
+  .starter-row.is-outsourced .chore-name { color: var(--ink-secondary); }
 </style>
 <script src="/static/error-reporter.js"></script>
 </head>
@@ -146,9 +162,11 @@
 <a class="back-link" href="/">&larr; Back to Today</a>
 
 <h1>Let&rsquo;s set up chores</h1>
-<p class="subtitle">Pets, what you&rsquo;re hoping I can help with, and a couple of quick questions about your home. Come back and change any of this whenever you like.</p>
+<div id="questions">
+<p class="subtitle">A few quick questions about your home, then I&rsquo;ll suggest a list you can keep or tweak. Come back and change any of this whenever you like.</p>
 
 <label class="field-label">Any pets?</label>
+<p class="known-line" id="pets-known" style="display:none"></p>
 <div class="chip-row" id="has-pets-chips"></div>
 <div id="pets-detail" style="display:none; margin-top:10px">
   <div id="pets"></div>
@@ -198,8 +216,26 @@
 <label class="field-label">Anything to leave out?</label>
 <textarea id="exclude-notes" rows="2" placeholder="e.g. we have a dishwasher, skip dish reminders"></textarea>
 
-<div><button class="next-btn" id="chores-save-btn" type="button">Save chores</button></div>
+<div>
+  <button class="next-btn" id="chores-suggest-btn" type="button">Show me a starter list</button>
+  <button class="text-link" id="chores-save-btn" type="button">Just save these answers for now</button>
+</div>
 <p class="loading-note" id="chores-loading" style="display:none">Saving&hellip;</p>
+</div>
+
+<!-- The starter list, proposed from what Pomona already knows. Nothing is
+     created until "Keep these"; every row's owner, rhythm and "someone else
+     does it" can change here, and any row can go. -->
+<div id="review" style="display:none">
+  <h2 style="font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; color: var(--ink-strong); margin: 1.5rem 0 4px;">Here&rsquo;s a starter list</h2>
+  <p class="subtitle">Built from what I know about your home. Keep what fits &mdash; change who or how often, or drop a row.</p>
+  <div id="starter-rows"></div>
+  <div>
+    <button class="next-btn" id="chores-keep-btn" type="button">Keep these</button>
+    <button class="text-link" id="chores-not-now-btn" type="button">Not now &mdash; just save my answers</button>
+  </div>
+  <p class="loading-note" id="review-loading" style="display:none">Saving&hellip;</p>
+</div>
 
 <script>
 const HOME_TYPES = ['House', 'Apartment / condo'];
@@ -326,22 +362,160 @@ async function saveChoresProfile() {
   if (!res.ok) throw new Error('Could not save');
 }
 
-document.getElementById('chores-save-btn').onclick = async () => {
-  const btn = document.getElementById('chores-save-btn');
-  btn.disabled = true;
-  document.getElementById('chores-loading').style.display = 'block';
+// ---------- What Pomona already knows ----------
+// Loop Board "Chores v1: A starter list from what Pomona already knows":
+// setup never asks again for what is on file. Pets already saved are
+// shown, not asked; home facts from an earlier visit come back filled in.
+// The words for each rhythm come from the server, so this page and Plan |
+// Chores can't disagree.
+let KNOWN = { people: [], adults: [], pets: [], home: { known: false }, frequencies: [] };
+function petLine(pets) {
+  const parts = pets.map(p => p.pet_type ? `${p.name} the ${p.pet_type}` : p.name);
+  return parts.length === 1 ? parts[0] : parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
+}
+function setChip(container, value) {
+  container.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.value === value));
+}
+async function loadKnown() {
   try {
-    await saveHouseholdExtras();
-    await saveChoresProfile();
-    window.location.href = '/';
+    const res = await fetch('/api/onboarding/chores/known');
+    if (!res.ok) return;
+    KNOWN = await res.json();
+    if (KNOWN.pets.length) {
+      document.getElementById('pets-known').textContent = `You've got ${petLine(KNOWN.pets)} — I've got them already.`;
+      document.getElementById('pets-known').style.display = 'block';
+      hasPetsChips.style.display = 'none';
+    }
+    if (KNOWN.home.known) {
+      setChip(document.getElementById('home-type-chips'), KNOWN.home.home_type);
+      document.getElementById('bedrooms').value = KNOWN.home.bedrooms;
+      document.getElementById('bathrooms').value = KNOWN.home.bathrooms;
+      setChip(document.getElementById('yard-chips'), KNOWN.home.has_yard ? 'Yes' : 'No');
+    }
+    const p = KNOWN.profile || {};
+    if (p.has_profile) {
+      if (p.standard) setChip(standardChips, p.standard.charAt(0).toUpperCase() + p.standard.slice(1));
+      document.getElementById('existing-help').value = p.existing_help || '';
+      document.getElementById('existing-help-freq').value = p.existing_help_frequency || '';
+      document.getElementById('include-notes').value = p.include_notes || '';
+      document.getElementById('exclude-notes').value = p.exclude_notes || '';
+    }
   } catch (err) {
-    console.error('Chores setup save failed:', err);
-    alert("Couldn't save your chores — try again in a moment.");
+    console.warn('Could not load what is already known for chores:', err);
+  }
+}
+loadKnown();
+
+// ---------- The starter list ----------
+let STARTER = [];
+function esc(text) {
+  return String(text).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+}
+function ownerOptions(row) {
+  const people = KNOWN.adults.length ? KNOWN.adults : (buildChoreProfile().rotation_members || []);
+  const opts = people.map(n => ({ value: 'owned:' + n, label: n }));
+  opts.push({ value: 'whoever', label: people.length > 1 ? 'Either of you' : 'Whoever gets to it' });
+  opts.push({ value: 'outsourced', label: 'Someone else does it' });
+  const current = row.mode === 'owned' ? 'owned:' + row.owner_name : row.mode === 'shared' ? 'whoever' : row.mode;
+  return opts.map(o => `<option value="${esc(o.value)}"${o.value === current ? ' selected' : ''}>${esc(o.label)}</option>`).join('');
+}
+function rhythmOptions(row) {
+  return KNOWN.frequencies.filter(f => f.value !== 'once')
+    .map(f => `<option value="${esc(f.value)}"${f.value === row.frequency ? ' selected' : ''}>${esc(f.label)}</option>`).join('');
+}
+function renderStarter() {
+  const box = document.getElementById('starter-rows');
+  box.innerHTML = '';
+  STARTER.forEach((row, i) => {
+    const el = document.createElement('div');
+    el.className = 'starter-row' + (row.mode === 'outsourced' ? ' is-outsourced' : '');
+    el.innerHTML = `
+      <span class="chore-name"></span>
+      <button class="remove-btn" type="button" aria-label="Drop this one">&times;</button>
+      <div class="controls">
+        <select class="owner" aria-label="Whose it is">${ownerOptions(row)}</select>
+        <select class="rhythm" aria-label="How often">${rhythmOptions(row)}</select>
+      </div>`;
+    el.querySelector('.chore-name').textContent = row.name;
+    el.querySelector('.remove-btn').onclick = () => { STARTER.splice(i, 1); renderStarter(); };
+    el.querySelector('.owner').onchange = (e) => {
+      const v = e.target.value;
+      if (v.startsWith('owned:')) { row.mode = 'owned'; row.owner_name = v.slice(6); row.outsourced_to = ''; }
+      else if (v === 'outsourced') { row.mode = 'outsourced'; row.owner_name = ''; row.outsourced_to = row.outsourced_to || document.getElementById('existing-help').value.trim(); }
+      else { row.mode = 'whoever'; row.owner_name = ''; row.outsourced_to = ''; }
+      el.classList.toggle('is-outsourced', row.mode === 'outsourced');
+    };
+    el.querySelector('.rhythm').onchange = (e) => { row.frequency = e.target.value; };
+    box.appendChild(el);
+  });
+}
+
+async function suggestList() {
+  const res = await fetch('/api/onboarding/chores/recommend', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(buildChoreProfile()),
+  });
+  if (!res.ok) throw new Error('Could not build the list');
+  const data = await res.json();
+  KNOWN.frequencies = data.frequencies || KNOWN.frequencies;
+  STARTER = data.chores || [];
+}
+
+async function saveStarterList() {
+  const rows = STARTER.map(r => ({
+    name: r.name, category: r.category, frequency: r.frequency, mode: r.mode,
+    owner_name: r.mode === 'owned' ? r.owner_name : '',
+    assignee_names: r.mode === 'owned' ? [r.owner_name] : [],
+    outsourced_to: r.mode === 'outsourced' ? (r.outsourced_to || '') : '',
+  }));
+  const res = await fetch('/api/onboarding/chores/save', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chores: rows }),
+  });
+  if (!res.ok) throw new Error('Could not save');
+}
+
+async function busy(btnId, noteId, work) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = true;
+  document.getElementById(noteId).style.display = 'block';
+  try {
+    await work();
+  } catch (err) {
+    console.error('Chores setup failed:', err);
+    alert("That didn't save. Try it again in a moment.");
   } finally {
     btn.disabled = false;
-    document.getElementById('chores-loading').style.display = 'none';
+    document.getElementById(noteId).style.display = 'none';
   }
-};
+}
+
+// Skip the list: the answers are kept (the chat can build the list later), no chores are made.
+document.getElementById('chores-save-btn').onclick = () => busy('chores-save-btn', 'chores-loading', async () => {
+  await saveHouseholdExtras();
+  await saveChoresProfile();
+  window.location.href = '/';
+});
+
+// See the list: the pets and goals typed here are saved as facts; the chores are not, yet.
+document.getElementById('chores-suggest-btn').onclick = () => busy('chores-suggest-btn', 'chores-loading', async () => {
+  document.getElementById('chores-loading').textContent = 'Putting a list together…';
+  await saveHouseholdExtras();
+  await suggestList();
+  renderStarter();
+  document.getElementById('questions').style.display = 'none';
+  document.getElementById('review').style.display = 'block';
+  window.scrollTo(0, 0);
+});
+
+document.getElementById('chores-keep-btn').onclick = () => busy('chores-keep-btn', 'review-loading', async () => {
+  await saveChoresProfile();
+  await saveStarterList();
+  window.location.href = '/';
+});
+
+document.getElementById('chores-not-now-btn').onclick = () => busy('chores-not-now-btn', 'review-loading', async () => {
+  await saveChoresProfile();
+  window.location.href = '/';
+});
 </script>
 </body>
 </html>
