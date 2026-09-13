@@ -8972,14 +8972,16 @@ span.cook-week-name { cursor: default; }
 .gro-staple-row .gro-staple-act:nth-of-type(2) { grid-area: remove; }
 
 /* ===========================================================
-   Motion (Emily, 2026-09-11). Exactly three animations in the
-   whole app — see DESIGN_SYSTEM.md §4 "Motion":
+   Motion (Emily, 2026-09-11). Four animations in the whole app —
+   see DESIGN_SYSTEM.md §4 "Motion":
      1. Sheets slide up over a scrim that fades in; centred
         dialogs fade + scale instead of sliding.
      2. Tab panels crossfade with a 6px rise (activateTab, shell.js).
      3. A ticked grocery row settles (buildGroceryPanel's trip list) —
         and, since 2026-09-13, a ticked node on Now's day strip: the
         same transitions on a second surface, not a fourth animation.
+     4. A sorted row leaves SORT ALL (groSortAllLeave, shell.js; the
+        2026-09-13 "row leaves the moment I sort it" ticket).
    Tokens (--motion-fast/--motion-base/--motion-ease/--motion-ease-in)
    live in theme.css and collapse to 0ms under prefers-reduced-motion,
    so nothing in this section needs its own reduced-motion branch.
@@ -9102,6 +9104,32 @@ span.cook-week-name { cursor: default; }
 }
 .gro-row.done .gro-name::after {
   transform: scaleX(1);
+}
+
+/* ---- 4. A sorted row leaves SORT ALL (groSortAllLeave, shell.js) ----
+   The row's height is pinned inline, then .is-gone collapses it to
+   nothing over --motion-fast on the ease-in curve (the "anything
+   leaving" one), fading as it goes — so the rows below slide up under
+   the thumb rather than jumping. Height animates rather than the row
+   being removed outright because the next row must not arrive under a
+   finger that is still lifting. --motion-fast is 0ms under
+   prefers-reduced-motion, and groSortAllLeave removes the node at once
+   there rather than waiting on a transition that never runs. */
+.gro-sortall-row.is-leaving {
+  overflow: hidden;
+  pointer-events: none;
+  box-sizing: border-box;
+  transition: height var(--motion-fast) var(--motion-ease-in),
+              padding var(--motion-fast) var(--motion-ease-in),
+              border-top-width var(--motion-fast) var(--motion-ease-in),
+              opacity var(--motion-fast) var(--motion-ease-in);
+}
+.gro-sortall-row.is-leaving.is-gone {
+  height: 0 !important;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-top-width: 0;
+  opacity: 0;
 }
 
 /* ---------- Desktop/tablet shell: body-level sheet widths ----------

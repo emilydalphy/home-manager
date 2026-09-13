@@ -1090,7 +1090,8 @@ tick().then(function () {
   });
 });
 """ % (json.dumps(_rows()), _d(3))))
-    assert out["toasts"] == ["Bins moved to " + _label(_d(3)) + "."]
+    # The move says what it did; the undo says it took (S10, 2026-09-13).
+    assert out["toasts"] == ["Bins moved to " + _label(_d(3)) + ".", "Put back."]
     assert out["undoOffered"] == "yes"
     # The undo posts the day it came from — the exact way back.
     assert out["posts"][-1] == {"url": "/api/chores/11/move", "body": {"due_date": _d(0)}}
@@ -1109,7 +1110,7 @@ tick().then(function () {
   tick().then(function () { console.log(JSON.stringify({ toasts: TOASTS, posts: POSTS })); });
 });
 """ % json.dumps(_rows())))
-    assert out["toasts"] == ["Skipped Bins this time."]
+    assert out["toasts"] == ["Skipped Bins this time.", "Put back."]
     assert out["posts"][-1] == {"url": "/api/chores/11/status", "body": {"status": "pending"}}
 
 

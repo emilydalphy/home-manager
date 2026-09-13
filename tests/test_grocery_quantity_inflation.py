@@ -80,8 +80,9 @@ def test_a_breakfast_eaten_six_mornings_buys_one_bag_and_one_bottle(week):
     assert _qty("Baby spinach") == "1 bag"
     assert _qty("Honey") == "1 bottle"
     # And the control in the same recipe: eggs are a per-portion count and
-    # six breakfasts really do want two dozen.
-    assert _qty("Eggs") == "24"
+    # six breakfasts really do want two dozen — written as the carton it is
+    # since 2026-09-13 (test_grocery_counted_packs.py).
+    assert _qty("Eggs") == "2 dozen"
 
 
 def test_oatmeal_four_mornings_buys_one_bottle_of_honey(week):

@@ -175,6 +175,21 @@ run rather than a vibe. They apply to every screen, mockup or built.*
   If a line sounds like it wants you to like it, cut it. *Why: "this cringy trying-too-hard
   way of writing"; "it's just fluff."* **Test:** would you say it across the kitchen table
   without wincing?
+- **S10 · A decision is saved on purpose, and the app says so.** *(Emily, 2026-09-13,
+  Tier 2 — her instruction: "if there is a decision that the user makes, it needs to make
+  it saved, and then a little pop up should show up saying changes saved.")* Where you
+  choose between options, there is a Save (or Done) — the choice is not made by the tap
+  that highlights it. When it is saved, the pop-up says **"Changes saved"** (`CHANGES_SAVED`
+  / `toastSaved()` in `shell.js`; the same words on `plan-week.html`), with Undo on it when
+  the change can be undone. A single tick (a grocery line, a thaw move, a chore) is its own
+  decision and still gets the pop-up; an undo says "Put back." A failed save keeps saying so
+  in the calm-in-trouble voice (§8). **Test:** after any decision, can you point at the
+  button you pressed to make it, and the line that told you it took? First pass landed
+  2026-09-13 on branch `worktree-changes-saved` (Swap · I'll pick, chat changes, What we
+  know, chore ticks and undo, Cook's prep/attention/usage/un-cook, Plan the week's
+  attendance, holiday and away saves). Still open: a Save button under the open-slot
+  options (they apply on tap today), and Start cooking, which records nothing yet (its own
+  card: "Cook: the real start time moves the clock").
 
 ---
 
@@ -211,7 +226,7 @@ Scale reference (size / weight / tracking → where):
 - **The joined/notched tile motif**: a tile that touches another surface is *square on that shared edge, round everywhere else* — never both round. Example: on Meals, the selected day tile drops its bottom radius exactly where the spruce hero panel drops its top radius, so the two read as one poured shape. This is the system's signature move; don't round every corner of everything "for consistency."
 - **Spacing rhythm**: 20px screen gutter (the one true constant — full-bleed panels break it deliberately, which is what makes them read as architecture rather than as cards) · 24/22px top padding above the first line · 12px between cards/grid cells · 14px card padding · 8–10px between chips/buttons · 4px between navigation cells.
 - **Elevation**: within a screen's normal content, shadow belongs to the hero panel and the apricot primary action *only* — a card, tile, or row never gets one; it separates via a `--hairline` instead. Shadow is also used, separately, by things that float over the *whole screen* rather than sit within it — `--shadow-sheet` (bottom sheets), `--shadow-dialog` (centered dialogs), `--shadow-panel` (the notification panel), `--shadow-toast` — because those need to read as detached from everything beneath them. Don't add a shadow to ordinary in-page content; do reach for the matching token if you're building a new full-screen overlay. In dark mode the hero's shadow all but disappears against the dark ground, so its lift comes from a **lighter fill plus a hairline edge** (`--spruce-edge`) instead — a shadow reads as nothing on a dark ground, don't try to keep using one there.
-- **Motion** (Emily, 2026-09-11 — "I like the idea of adding in motion into the app"): exactly three animations in the whole app, each under 250ms, each off under `prefers-reduced-motion: reduce`. Tokens in `theme.css`: `--motion-fast` (180ms), `--motion-base` (240ms), `--motion-ease` (`cubic-bezier(.2,.7,.2,1)`, ease-out — the standard for anything settling into place), `--motion-ease-in` (`cubic-bezier(.4,0,1,1)`, for anything leaving). A `@media (prefers-reduced-motion: reduce)` block collapses the duration tokens to 0ms, on top of the blanket `transition-duration`/`animation-duration` override this file already carried. The three: (1) every bottom sheet and centered dialog slides up / scales in over a scrim that fades in, and reverses on close (`shell.js`'s `openSheet()`/`closeSheet()` helper, routed through by every sheet and dialog in §5's Sheets/Toast row); (2) tab panels crossfade with a 6px rise when a tab becomes active (`activateTab`, `shell.js`); (3) a ticked grocery row on the shopping trip settles — its checkbox fill, strike-through and ink all ease to the done state, and reverse on untick. **Nothing else animates** — no decorative motion, no attention-getting movement, anywhere else in the app.
+- **Motion** (Emily, 2026-09-11 — "I like the idea of adding in motion into the app"): four animations in the whole app (three approved 2026-09-11; a fourth added with the 2026-09-13 "Sort them all: a row leaves the moment I sort it" ticket — pending Emily's merge), each under 250ms, each off under `prefers-reduced-motion: reduce`. Tokens in `theme.css`: `--motion-fast` (180ms), `--motion-base` (240ms), `--motion-ease` (`cubic-bezier(.2,.7,.2,1)`, ease-out — the standard for anything settling into place), `--motion-ease-in` (`cubic-bezier(.4,0,1,1)`, for anything leaving). A `@media (prefers-reduced-motion: reduce)` block collapses the duration tokens to 0ms, on top of the blanket `transition-duration`/`animation-duration` override this file already carried. The four: (1) every bottom sheet and centered dialog slides up / scales in over a scrim that fades in, and reverses on close (`shell.js`'s `openSheet()`/`closeSheet()` helper, routed through by every sheet and dialog in §5's Sheets/Toast row); (2) tab panels crossfade with a 6px rise when a tab becomes active (`activateTab`, `shell.js`); (3) a ticked grocery row on the shopping trip settles — its checkbox fill, strike-through and ink all ease to the done state, and reverse on untick; (4) a row on Shop's "Sort them all" screen collapses out (`--motion-fast`, `--motion-ease-in`) the moment it is given a store, so the rows below slide up rather than jump (`groSortAllLeave`, `shell.js`). **Nothing else animates** — no decorative motion, no attention-getting movement, anywhere else in the app.
 
 ---
 

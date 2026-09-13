@@ -456,6 +456,34 @@
     font-size: 13.5px; font-weight: 600; color: var(--ink-secondary); cursor: pointer;
   }
   [hidden] { display: none !important; }
+/* The shell's .toast (shell.css), copied here for the same reason .crumb
+   was: this page loads theme.css only. Same tokens, same size, same
+   place. It exists so the taps that save on this screen — who's at the
+   table, a holiday answer, an away stretch — can say "Changes saved"
+   (DESIGN_SYSTEM §2b S10, Emily 2026-09-13); until then they saved in
+   silence and only spoke up when a save failed. */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  background: var(--toast-bg);
+  color: var(--toast-ink);
+  border-radius: 14px;
+  padding: 14px 17px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: var(--shadow-toast);
+  /* Above this page's sheets (the day sheet and the away sheet sit at 60):
+     most of the saves it reports are made from inside one. */
+  z-index: 70;
+  max-width: calc(100vw - 40px);
+  text-align: center;
+}
+.toast[hidden] { display: none; }
+.toast.pop-in { animation: pw-pop-in .2s ease; }
+@keyframes pw-pop-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
 </style>
 <script src="/static/error-reporter.js"></script>
 <script src="/static/waiting-lines.js"></script>
@@ -547,6 +575,8 @@
   </section>
 </main>
 
+<div id="toast" class="toast" hidden></div>
+
 <div class="footer" id="footer" hidden>
   <div class="footer-inner">
     <div class="footer-links">
@@ -633,6 +663,25 @@
 <script>
 (function () {
   'use strict';
+
+  // ---------- the pop-up ----------
+  // shell.js's showToast, without the action button (nothing on this
+  // screen offers an undo yet). One sentence for every save that lands
+  // (S10): the same words the shell uses, so the app has one voice for it.
+  var CHANGES_SAVED = 'Changes saved';
+  var toastEl = document.getElementById('toast');
+  var toastTimer = null;
+  function showToast(message) {
+    if (!toastEl) return;
+    toastEl.textContent = message;
+    toastEl.hidden = false;
+    toastEl.classList.remove('pop-in');
+    void toastEl.offsetWidth;
+    toastEl.classList.add('pop-in');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.hidden = true; }, 2200);
+  }
+  function toastSaved() { showToast(CHANGES_SAVED); }
 
   // ---------- state ----------
   var weekStart = new URLSearchParams(location.search).get('week') || '';
@@ -957,6 +1006,7 @@
       attendance.byDate[d] = attendance.byDate[d] || {};
       attendance.byDate[d][slot] = saved;
       paintSlotBlock(dayEl, slot);
+      toastSaved();
     } catch (err) {
       console.warn('Guest count save failed:', err);
       attendance.byDate[d] = previous;
@@ -1074,6 +1124,7 @@
       attendance.byDate[d] = attendance.byDate[d] || {};
       attendance.byDate[d][slot] = saved;
       paintPresence(dayEl, slot);
+      toastSaved();
     } catch (err) {
       console.warn('Attendance save failed:', err);
       if (previous) attendance.byDate[d] = previous; else delete attendance.byDate[d];
@@ -1307,6 +1358,7 @@
       await loadAttendance();
       paintHoliday(date);
       if (open) paintDay(open);
+      toastSaved();
     } catch (err) {
       console.warn('Holiday answer failed:', err);
       h.answer = previous;
@@ -1556,6 +1608,7 @@
       renderAwaySet();
       $('away-another').hidden = false;
       closeAwaySheet();
+      toastSaved();
     } catch (err) {
       console.warn('Away range save failed:', err);
       $('away-covers-text').textContent = 'I couldn’t save that just now — try again in a moment.';

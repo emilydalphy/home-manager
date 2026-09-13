@@ -575,16 +575,72 @@ def _item_matches(text: str, word: str) -> bool:
     return re.search(rf"(?<![a-z]){re.escape(word)}e?s?(?![a-z])", text) is not None
 
 
-def _table_lookup(item: str) -> str | None:
-    """The table's per-4-servings amount for an ingredient name, longest
-    matching key first ("black pepper" before "pepper")."""
+def _table_key(item: str) -> str | None:
+    """The table key an ingredient name matches, longest key first ("black
+    pepper" before "pepper", "garlic powder" before "garlic"), or None."""
     clean = _clean_item(item)
     if not clean:
         return None
     for key in _COOKING_KEYS_LONGEST_FIRST:
         if _item_matches(clean, key):
-            return COOKING_QUANTITIES_PER_4[key]
+            return key
     return None
+
+
+def _table_lookup(item: str) -> str | None:
+    """The table's per-4-servings amount for an ingredient name."""
+    key = _table_key(item)
+    return COOKING_QUANTITIES_PER_4[key] if key else None
+
+
+# Counted packs — Loop Board 2026-09-13, "Eggs · 4 dozen". Which table
+# entries are bought by the pack and used by the piece, and which pack
+# family (quantities._PACK_CONVERSION_GROUPS) each one is. Keyed by the
+# TABLE key rather than a unit word so "garlic powder" (its own key) and
+# "egg whites" (its own key, measured in cups) are never read as these.
+_COUNTED_PACK_ITEMS = {"eggs": _quantities._EGGS_TO_EACH, "garlic": _quantities._GARLIC_TO_CLOVE}
+
+
+def _counted_pack_share(item: str, core_qty: str, default_servings: int | None) -> tuple[float, str] | None:
+    """
+    What ONE meal of this recipe, at the recipe's own table, uses of a
+    counted-pack ingredient — (amount, the pack's small unit) — or None
+    when the ingredient isn't one, or its quantity isn't a count.
+
+    A recipe that writes the piece ("4" eggs, "3 cloves") is taken at its
+    word. A recipe that writes the PACK ("1 dozen", "1 head") is saying how
+    the thing is bought, not how much of it the dish uses — every recipe
+    the app wrote before 2026-09-13 says "1 dozen" for eggs, however many
+    go in the pan — so the share is what the Cook screen already tells the
+    cook to use: COOKING_QUANTITIES_PER_4's amount, scaled to the recipe's
+    default_servings (the same derivation as cooking_quantity). The
+    caller's per-meal attendance factor is applied on top, as for any
+    per-portion amount. Only when the table has no count for it does the
+    pack's own size stand ("1 dozen" = 12).
+
+    A measured amount ("1 cup", "2 tbsp minced") is not a count of the
+    thing and is left to the ordinary path.
+    """
+    key = _table_key(item)
+    group = _COUNTED_PACK_ITEMS.get(key)
+    if not group:
+        return None
+    parsed = _quantities._parse_quantity(core_qty)
+    if not parsed:
+        return None
+    amount, unit = parsed
+    small_unit, pack_unit = _quantities._pack_units(group)
+    if unit is None and key == "eggs":
+        unit = small_unit  # "4" of Eggs is four eggs
+    if unit == small_unit:
+        return amount, small_unit
+    if unit != pack_unit:
+        return None
+    used = _quantities._parse_quantity(COOKING_QUANTITIES_PER_4[key])
+    if used and (used[1] or small_unit) == small_unit:
+        table = default_servings or COOKING_BASE_SERVINGS
+        return used[0] * table / COOKING_BASE_SERVINGS, small_unit
+    return amount * group[pack_unit], small_unit
 
 
 def _needs_measure(item: str) -> bool:
@@ -1796,6 +1852,11 @@ class WeekGroceryBuffer:
                     entry_id, line["item"], add_result["item_id"],
                     _ledger_share(share, line["unit"], unit), conn=self.conn,
                 )
+            # A counted pack that landed on a line the plan already had is
+            # re-read from the whole ledger, so two passes' cartons don't
+            # add as cartons — see grocery._recompute_plan_line_from_ledger.
+            if add_result["merged"] and _quantities._pack_group(unit):
+                _grocery._recompute_plan_line_from_ledger(add_result["item_id"], conn=self.conn)
         self._lines.clear()
 
 
@@ -1850,6 +1911,12 @@ def _add_recipe_ingredients_for_entries(
       right far more often than it is wrong, and a household that truly
       needs a second one can bump the line. Under-buying a staple costs a
       trip; the old behaviour cost trust in the whole list.
+
+    - A COUNTED PACK (eggs by the dozen, garlic by the head — see
+      _counted_pack_share) is bought by the pack and used by the piece.
+      Each meal contributes the pieces it uses, the week's pieces add up,
+      and the line is written in whole packs, rounded up once. Four meals
+      that each say "1 dozen" buy one carton (Loop Board, 2026-09-13).
 
     - Everything else is a PER-PORTION amount — 4 cups of beans, 3 bell
       peppers, a bunch of cilantro — and still adds up across every meal
@@ -2052,7 +2119,26 @@ def _add_recipe_ingredients_for_entries(
         # unscaled quantity keeps the classification stable across meals.
         raw_qty = ing.get("qty", "") or ""
         category = ing.get("category", "other")
-        if _quantities.package_unit(raw_qty):
+        # Split exactly the way _normalize_grocery_quantity does, so the
+        # amount and the note that rides with it ("1 bag (2 lb), frozen")
+        # come apart the same on both sides of the list. _parse_quantity
+        # strips a prep descriptor ("3, diced") itself.
+        core, note = _quantities._split_quantity_note(raw_qty.strip())
+        pack_share = _counted_pack_share(ing["item"], core, default_servings)
+        if pack_share:
+            # A COUNTED PACK — eggs, garlic. Whether the recipe wrote the
+            # piece or the pack, what goes in the buffer is the pieces this
+            # meal uses; the week's pieces add up and the line is written
+            # in whole packs once (see _counted_pack_share and
+            # quantities._PACK_CONVERSION_GROUPS). This is how four meals
+            # that each said "1 dozen" buy one carton, not four.
+            share, small_unit = pack_share
+            for entry_id in contributing_ids:
+                buffer.add(
+                    entry_id, ing["item"], category,
+                    share * scale_for_entry[entry_id], small_unit, note,
+                )
+        elif _quantities.package_unit(raw_qty):
             add_result = _grocery.add_grocery_item(
                 ing["item"], quantity=raw_qty, category=category, added_by="ai",
                 source_weekly_plan_id=weekly_plan_id, quantity_mode="max", conn=conn,
@@ -2060,11 +2146,6 @@ def _add_recipe_ingredients_for_entries(
             for entry_id in contributing_ids:
                 _record_grocery_link(entry_id, ing["item"], add_result["item_id"], raw_qty, conn=conn)
         else:
-            # Split exactly the way _normalize_grocery_quantity does, so
-            # the amount and the note that rides with it ("1 bag (2 lb),
-            # frozen") come apart the same on both sides of the list.
-            # _parse_quantity strips a prep descriptor ("3, diced") itself.
-            core, note = _quantities._split_quantity_note(raw_qty.strip())
             parsed = _quantities._parse_quantity(core)
             if parsed:
                 # Into the buffer unrounded, one share per meal. Nothing
