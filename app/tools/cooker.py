@@ -507,6 +507,17 @@ def _apply_leftover_chains(weekly_plan_id: int, meals: list[dict], recipes_by_na
         card["default_servings"] = None
 
 
+def _slot_rank(slot: str | None) -> int:
+    """Eating order, the Python twin of weekly_plan.slot_order_sql. An
+    unknown slot sorts LAST rather than disappearing, exactly as that one
+    does."""
+    slots = _weekly_plan.DAY_SLOTS
+    try:
+        return slots.index(slot)
+    except ValueError:
+        return len(slots)
+
+
 def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     """
     Everything the person actually cooking needs for the current (or given)
@@ -516,6 +527,13 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     rather than requiring separate get_weekly_plan/get_recipe/
     get_prep_schedule calls. Omit weekly_plan_id for the household's
     current plan.
+
+    Omitting it also folds in the days-ahead meals that belong to no plan
+    at all (weekly_plan.unplanned_meals_ahead) — a dinner answered on Now
+    when no plan covers today, and every one-off chat plan_meal. Naming a
+    weekly_plan_id asks about that plan and nothing else. See the comment
+    at the top of the body for what that does and doesn't change, and
+    UNPLANNED_HORIZON_DAYS for how far ahead it looks.
 
     Only slots there is something to COOK are included. A slot is one of
     three states (see meal_plan_entries.slot_state) and two of them have no
@@ -558,8 +576,56 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     it feeds). See _apply_leftover_chains.
     """
     plan = _weekly_plan.get_weekly_plan(weekly_plan_id)
-    if plan.get("weekly_plan_id") is None:
+
+    # ...plus the meals for days ahead that no plan covers. An entry with no
+    # weekly_plan_id is a real, first-class shape (see
+    # weekly_plan.unplanned_meals_ahead): resolve_needs_you_dinner writes one
+    # whenever the current plan's period doesn't reach the date, and every
+    # one-off chat plan_meal writes one always. This view is what the cook
+    # actually sees — Now's moves, cook mode and the Kitchen list are all
+    # built off it — so leaving them out meant a meal that was saved and
+    # then invisible on every screen (2026-09-13).
+    #
+    # Considered and NOT done: adding a second source to moves.py. It would
+    # have put the move on Now and left cook mode and the Kitchen list still
+    # empty, and made "the day's meals" a question with two answers that can
+    # drift. (It WOULD have fixed the morning text: digest.build_morning_text
+    # reads today_moves and nothing else — an earlier draft of this comment
+    # named it as a third empty surface and was wrong.) Also NOT done: making
+    # get_weekly_plan return unplanned entries — its name IS its scope, and
+    # 15 call sites across nine modules read it as "that plan's rows".
+    #
+    # Only for the "what am I cooking now" question: a caller naming a
+    # weekly_plan_id is asking about THAT plan and gets exactly it.
+    #
+    # Component-based plans are carved out on MECHANICS, not on dates. The
+    # loose rows carry perfectly real dates; it is the branch below that
+    # can't take them — it groups by dish name and batch-collapses repeats
+    # into one card, which would fold a dated one-off into an undated
+    # component or scale it to a batch nobody planned. KNOWN RESIDUE, not
+    # fixed here: a component household whose current plan doesn't cover
+    # today still has the whole original bug (reproduced 2026-09-13; see
+    # test_a_component_household_still_has_this_bug, which characterises it
+    # so the next session finds it written down). Its own card.
+    loose_meals = (
+        _weekly_plan.unplanned_meals_ahead(plan)
+        if weekly_plan_id is None and plan.get("planning_mode") != "component_based"
+        else []
+    )
+
+    if plan.get("weekly_plan_id") is None and not loose_meals:
         return {"weekly_plan_id": None, "meals": [], "prep_tasks": [], "prep_sessions": [], "prep_days_set": False, "meals_done": 0, "meals_total": 0, "prep_done": 0, "prep_total": 0, "all_away": False}
+
+    if plan.get("weekly_plan_id") is None:
+        # Loose meals with no plan behind them at all — a brand-new
+        # household's first dinner. Stand in an empty day-based shell so the
+        # one card-building pass below serves both cases; every plan-scoped
+        # pass after it is skipped on plan_id being None, and weekly_plan_id
+        # stays None all the way out to the payload, so Today's week-state
+        # badge still reads "none".
+        plan = {**plan, "week_start_date": None, "planning_mode": "day_based",
+                "status": None, "day_count": 0, "meals": []}
+    plan_id = plan["weekly_plan_id"]
 
     # A week where every dinner was deliberately marked planned_empty
     # (see _NOT_COOKABLE_SLOT_STATES above) — "core loop handoffs, slice 2"
@@ -584,7 +650,16 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
 
     recipes_by_name = {r["name"].lower(): r for r in _recipes.list_recipes()}
     meals = []
-    for m in plan["meals"]:
+    # Eating order across BOTH sources, not "the plan's days and then the
+    # loose ones". kitchenTodayRows and cookRestOfWeekHtml (shell.js) walk
+    # this list unsorted — see the 2026-09-10 "a day printed dinner before
+    # lunch" entry — so appending would have printed tonight's answered
+    # dinner after next Friday. A no-op when loose_meals is empty:
+    # get_weekly_plan already hands its meals over in this exact order.
+    for m in sorted(
+        plan["meals"] + loose_meals,
+        key=lambda r: (r["date"], _slot_rank(r["slot"]), r["entry_id"]),
+    ):
         if m.get("slot_state") in _NOT_COOKABLE_SLOT_STATES:
             continue
         recipe = recipes_by_name.get((m["meal"] or "").lower())
@@ -695,12 +770,20 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     else:
         # The day-based equivalent of the merge above: a night whose batch
         # also feeds a later night's leftovers cooks once, for everyone.
-        _apply_leftover_chains(plan["weekly_plan_id"], meals, recipes_by_name)
-        # ...and the offer to make one: the later days each card could
-        # cook its portions for now (Emily, 2026-09-07, on a plan with the
-        # same breakfast every morning). Runs after the chains so the days
-        # already ticked and the reheat cards they produced agree.
-        _cook_ahead.attach_cook_ahead(plan["weekly_plan_id"], meals)
+        # Every plan-scoped pass here is skipped when there is no plan: a
+        # loose meal can be in no chain, cover no other night and carry no
+        # cook-ahead offer, because all three are recorded against a plan.
+        if plan_id is not None:
+            _apply_leftover_chains(plan_id, meals, recipes_by_name)
+            # ...and the offer to make one: the later days each card could
+            # cook its portions for now (Emily, 2026-09-07, on a plan with
+            # the same breakfast every morning). Runs after the chains so
+            # the days already ticked and the reheat cards they produced
+            # agree.
+            _cook_ahead.attach_cook_ahead(plan_id, meals)
+        else:
+            for card in meals:
+                card["cook_ahead"] = {"days": []}
 
         # A plain night — no chain, no reheat — was left at the recipe's
         # own default_servings even when the table it's actually for is a
@@ -720,7 +803,7 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         # card, not just batch nights. default_servings is what the
         # stepper (cookDetailHtml, shell.js) actually reads, so correcting
         # it alone is enough to make the two numbers agree.
-        chains = _leftovers.plan_leftover_chains(plan["weekly_plan_id"])
+        chains = _leftovers.plan_leftover_chains(plan_id) if plan_id is not None else {"sources": {}, "leftovers": {}}
         chained_entry_ids = set(chains["sources"].keys()) | set(chains["leftovers"].keys())
         for m in meals:
             if m["entry_id"] in chained_entry_ids:
@@ -753,9 +836,9 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
             m["ingredients"], servings=m.get("default_servings") or m.get("servings"),
         )
 
-    prep_tasks = get_prep_schedule(plan["weekly_plan_id"])
+    prep_tasks = get_prep_schedule(plan_id) if plan_id is not None else []
     return {
-        "weekly_plan_id": plan["weekly_plan_id"],
+        "weekly_plan_id": plan_id,
         "week_start_date": plan["week_start_date"],
         "planning_mode": plan["planning_mode"],
         "status": plan["status"],
@@ -781,7 +864,7 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         # the whole refreshed view, so ticking an item in a session
         # re-renders its "N of M done" without a round trip of its own.
         # Additive — nothing already on this payload changed shape.
-        "prep_sessions": _prep_sessions.prep_sessions_for_plan(plan["weekly_plan_id"]),
+        "prep_sessions": _prep_sessions.prep_sessions_for_plan(plan_id) if plan_id is not None else [],
         # "No sessions" means two different things — never asked, or asked
         # and answered with a day that happens to be quiet. Only the first
         # gets the Cook screen's offer to say which days you prep.
