@@ -445,6 +445,54 @@ def test_a_stale_or_made_up_photo_token_is_skipped_and_the_recipe_still_saves(si
     assert _kept_files(photos_dir) == []
 
 
+def test_a_second_save_of_the_same_draft_gets_no_photo_and_no_500(signed_in, monkeypatch, photos_dir):
+    """Two saves racing on one pending token (verifier, 2026-09-13): the
+    first takes the file; the second finds it gone between the check and
+    the move. It must still be a 200 — its recipe row is already in — with
+    no photo, and no filesystem path anywhere in the answer."""
+    _stub_reader(monkeypatch)
+    draft = _post_photo(signed_in, JPEG).json()["draft"]
+    token = draft["photo_tokens"][0]
+    real_replace = os.replace
+
+    def consumed(src, dst):
+        # The other save wins the race: the pending file is gone when this
+        # one reaches for it.
+        os.remove(src)
+        real_replace(src, dst)
+
+    monkeypatch.setattr(recipe_photos.os, "replace", consumed)
+    res = signed_in.post("/api/recipes/add", json={
+        "name": "Roast chicken, second tap", "ingredients": draft["ingredients"], "instructions": draft["instructions"],
+        "source_book": "Salt Fat Acid Heat", "photo_tokens": [token],
+    })
+    assert res.status_code == 200, res.text
+    assert res.json()["photo_urls"] == []
+    assert res.json()["citation"]["text"] == "From Salt Fat Acid Heat"
+    assert str(photos_dir) not in res.text and "pending" not in res.text
+    assert tools.get_recipe("Roast chicken, second tap")["photo_urls"] == []
+    conn = get_conn()
+    assert conn.execute("SELECT COUNT(*) AS c FROM recipe_photos").fetchone()["c"] == 0
+    conn.close()
+
+
+def test_a_filesystem_failure_while_attaching_never_reaches_the_response(signed_in, monkeypatch, photos_dir):
+    _stub_reader(monkeypatch)
+    draft = _post_photo(signed_in, JPEG).json()["draft"]
+
+    def boom(*a, **k):
+        raise RuntimeError(f"disk said no at {photos_dir}/1/pending/secret.jpg")
+
+    monkeypatch.setattr(recipe_photos, "attach_pending", boom)
+    res = signed_in.post("/api/recipes/add", json={
+        "name": "Roast chicken", "ingredients": draft["ingredients"], "instructions": draft["instructions"],
+        "photo_tokens": draft["photo_tokens"],
+    })
+    assert res.status_code == 200, res.text
+    assert res.json()["photo_urls"] == []
+    assert "secret.jpg" not in res.text and str(photos_dir) not in res.text
+
+
 def test_a_link_recipe_keeps_its_link_credit_and_a_typed_one_has_none(signed_in):
     linked = signed_in.post("/api/recipes/add", json={
         "name": "Chili", "ingredients": [{"item": "beans", "qty": "1 can"}], "instructions": ["Heat."],
@@ -464,11 +512,47 @@ def test_a_link_recipe_keeps_its_link_credit_and_a_typed_one_has_none(signed_in)
     (("", "", "", "12-13"), "From a cookbook, pp. 12-13"),
     (("https://example.org/x", "Salt Fat Acid Heat", "", ""), "From Salt Fat Acid Heat"),
     (("http://cooking.nytimes.com/recipes/1", "", "", ""), "From cooking.nytimes.com"),
+    # The host is parsed, not regexed: case, userinfo, port and path all go.
+    (("HTTPS://WWW.Foo.com/", "", "", ""), "From foo.com"),
+    (("https://evil.com@seriouseats.com/x", "", "", ""), "From seriouseats.com"),
+    (("https://user:pw@www.seriouseats.com:8443/x?y=1", "", "", ""), "From seriouseats.com"),
+    (("http://[::1/", "", "", ""), "From a link"),
 ])
 def test_the_credit_is_worded_one_way_and_never_says_source(args, text):
     cite = tools.recipe_citation(*args)
     assert cite["text"] == text
     assert "Source" not in cite["text"]
+
+
+@pytest.mark.parametrize("raw, normalised, parsed", [
+    ("1 ½ cups", "1 1/2 cups", (1.5, "cup")),
+    ("½ cup", "1/2 cup", (0.5, "cup")),
+    ("500 g / 1 lb", "500 g", (500.0, "g")),
+    ("400 g / 14 oz", "400 g", (400.0, "g")),
+    ("2–3 cloves", "3 cloves", (3.0, "clove")),
+    ("2-3 tbsp", "3 tbsp", (3.0, "tbsp")),
+    ("1 (3 1/2 to 4 lb)", "1 (3 1/2 to 4 lb)", (1.0, None)),
+    ("1 can (14 oz)", "1 can (14 oz)", (1.0, "can (14 oz)")),
+    ("to taste", "to taste", None),
+    ("", "", None),
+])
+def test_amounts_copied_off_a_page_read_back_as_numbers(raw, normalised, parsed):
+    """The three shapes the verifier found _parse_quantity blind to (a
+    unicode fraction, a metric/imperial pair, a range) — normalised as
+    spelling, never interpreted, on every model-copied amount."""
+    assert ri.normalise_amount(raw) == normalised
+    assert tools._parse_quantity(normalised) == parsed
+
+
+def test_the_photo_draft_normalises_its_amounts_through_the_same_path():
+    detail = _reader()
+    detail["recipes"][0]["ingredients"] = [
+        {"item": "flour", "qty": "1 ½ cups", "category": "pantry"},
+        {"item": "chickpeas", "qty": "400 g / 14 oz", "category": "pantry"},
+        {"item": "garlic", "qty": "2–3 cloves", "category": "produce"},
+    ]
+    qtys = {i["item"]: i["qty"] for i in ri.draft_from_photo_read(detail)["ingredients"]}
+    assert qtys == {"flour": "1 1/2 cups", "chickpeas": "400 g", "garlic": "3 cloves"}
 
 
 def test_recipe_citation_is_none_with_nothing_to_credit():
@@ -668,6 +752,18 @@ def test_the_review_asks_for_the_credit_as_a_sentence_and_which_recipe_on_a_two_
     for needle in ('id="rli-cite-book"', 'id="rli-cite-author"', 'id="rli-cite-page"', "which book", "who wrote it", ">From<"):
         assert needle in cite, needle
     assert "Source" not in cite
+    # The row reads the way the stored sentence does — "From book, author,
+    # p. N" — and the page blank takes a spread: text, "pp." by its value.
+    assert '<span class="rli-cite-word">,</span>' in cite and ">by<" not in cite
+    assert 'inputmode="numeric"' not in cite and "pageWord(cite.page)" in cite
+    assert "e.target.id === 'rli-cite-page'" in _fn("buildRecipeLinkSheet")
+    # One sentence for a photo that won't read, the server's — the shell's
+    # copy differs only in its typographic apostrophe (the house style
+    # everywhere in shell.js).
+    js_line = next(l for l in SHELL_JS.splitlines() if "var RLI_PHOTO_UNREADABLE" in l)
+    js_text = js_line.split("= '", 1)[1].rsplit("';", 1)[0].encode().decode("unicode_escape")
+    assert js_text == ri.MSG_NO_RECIPE_PHOTO.replace("'", "\u2019")
+    assert SHELL_JS.count("closer shot") == 1
     collect = _fn("collectRecipeLinkDraft")
     for key in ("source_book", "source_author", "source_page", "photo_tokens"):
         assert key in collect, key

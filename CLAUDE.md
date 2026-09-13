@@ -444,8 +444,24 @@ why*, not duplicating the diff.
     stubbed (no API key on this machine): row → picker → shrink → read →
     candidates → credit → save → the credit on the day card, the Meal
     step and Before you start → "See the page" opens the served photo;
-    the composer camera passes the typed note through. 54 tests in
+    the composer camera passes the typed note through. 71 tests in
     `tests/test_recipe_photo_import.py`; conftest wipes `recipe_photos`.
+  - **Verifier round (same day):** two saves racing on one pending token
+    used to 500 the loser with the filesystem path in `detail` and leave
+    its recipe row behind — `attach_pending` now skips a token whose file
+    vanished between the check and the move (never raises; a path never
+    reaches a response), and the save route wraps the attach the same
+    way. The link host is parsed with `urlsplit` (lowercase, no userinfo,
+    no port — `https://evil.com@seriouseats.com/x` is seriouseats.com),
+    not regexed. The review row reads the stored comma form, its page
+    blank is text with "p."/"pp." following the value, and the
+    unreadable-photo sentence is the server's in both places.
+    `recipe_import.normalise_amount` fixes the three spellings
+    `_parse_quantity` was blind to on model-copied amounts — "1 ½ cups",
+    "400 g / 14 oz" (first printed wins), "2–3 cloves" (top end, as
+    `split_ingredient_line` already did) — for the photo draft AND the
+    model-read half of the link import; markup-read links were already
+    going through the line splitter and are unchanged.
 - **2026-09-13 — A starter chore list from what Pomona already knows.
   Branch `worktree-chores-starter-list`, NOT merged at the time of
   writing.** Loop Board "Chores v1: A starter list from what Pomona

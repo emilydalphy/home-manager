@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import re
+from urllib.parse import urlsplit
 from ..db import get_conn
 from ._shared import household_id
 from . import grocery as _grocery
@@ -119,7 +120,14 @@ def recipe_citation(source_url: str = "", source_book: str = "", source_author: 
             parts.append(("pp. " if re.search(r"[–\-]", page) else "p. ") + page)
         return {"kind": "book", "book": book, "author": author, "page": page, "text": "From " + ", ".join(parts)}
     if url:
-        host = re.sub(r"^https?://(www\.)?", "", url).split("/", 1)[0].split("?", 1)[0]
+        # The registered host only: lowercase, no scheme, no userinfo
+        # ("https://evil.com@seriouseats.com/x" is seriouseats.com), no
+        # port, no path, no leading www.
+        try:
+            host = (urlsplit(url).hostname or "").lower()
+        except ValueError:
+            host = ""
+        host = re.sub(r"^www\.", "", host)
         return {"kind": "link", "url": url, "host": host, "text": f"From {host}" if host else "From a link"}
     return None
 

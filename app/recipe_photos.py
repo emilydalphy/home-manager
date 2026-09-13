@@ -30,6 +30,7 @@ the smallest one that is safe:
 """
 from __future__ import annotations
 
+import logging
 import os
 import re
 import secrets
@@ -37,6 +38,8 @@ import time
 
 from .db import DB_PATH, get_conn
 from .tools._shared import household_id
+
+logger = logging.getLogger("home_manager")
 
 # Hard limits. MAX_PHOTO_BYTES is well above what a shrunk page photo
 # weighs (see the module docstring) and well below anything that would
@@ -164,12 +167,23 @@ def attach_pending(recipe_id: int, tokens: list[str]) -> list[dict]:
             src = _pending_file(hid, token)
             if not src:
                 continue
-            position += 1
             ext = src.rsplit(".", 1)[-1]
             media_type = next(m for m, e in _EXTENSIONS.items() if e == ext)
-            filename = f"{int(recipe_id)}-{position}.{ext}"
-            os.replace(src, os.path.join(_household_dir(hid), filename))
-            size = os.path.getsize(os.path.join(_household_dir(hid), filename))
+            filename = f"{int(recipe_id)}-{position + 1}.{ext}"
+            dest = os.path.join(_household_dir(hid), filename)
+            try:
+                os.replace(src, dest)
+                size = os.path.getsize(dest)
+            except OSError:
+                # The token was consumed between the check and the move —
+                # two saves of the same draft racing (found by the
+                # verifier, 2026-09-13) — or the disk said no. The recipe
+                # row already exists and is the thing being saved; this
+                # photo is simply not on it. Never raised: an OSError
+                # carries the path, and a path must never reach a response.
+                logger.warning("Recipe photo token could not be attached; skipping it")
+                continue
+            position += 1
             conn.execute(
                 "INSERT OR REPLACE INTO recipe_photos (household_id, recipe_id, position, filename, media_type, byte_size) "
                 "VALUES (?, ?, ?, ?, ?, ?)",

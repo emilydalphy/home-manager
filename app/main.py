@@ -1784,7 +1784,15 @@ def add_recipe_endpoint(req: AddRecipeRequest):
         # The page photo(s) the draft was read from, kept with the recipe
         # (recipe photo import). Only this household's pending tokens
         # resolve; a stale or foreign token is skipped, never an error.
-        photos = recipe_photos.attach_pending(result["recipe_id"], req.photo_tokens) if req.photo_tokens else []
+        photos = []
+        if req.photo_tokens:
+            try:
+                photos = recipe_photos.attach_pending(result["recipe_id"], req.photo_tokens)
+            except Exception:
+                # The recipe is saved; the photo isn't on it. Logged, never
+                # surfaced — a filesystem error names a path, and a path
+                # is not a sentence for the household.
+                logger.exception("Attaching the recipe photo failed")
         result["photo_urls"] = [p["url"] for p in photos]
         if photos and not result.get("citation"):
             result["citation"] = tools.recipe_citation(has_photo=True)

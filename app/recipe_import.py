@@ -582,6 +582,31 @@ def _normalise_fractions(text: str) -> str:
     return text
 
 
+_RANGE_QTY_RE = re.compile(rf"^(?P<lo>{_NUMBER})\s*(?:–|-|to)\s*(?P<hi>{_NUMBER})(?P<rest>\s.*|$)")
+_DUAL_UNIT_RE = re.compile(r"^(?P<first>.+?\S)\s+/\s+\S.*$")
+
+
+def normalise_amount(qty: str) -> str:
+    """
+    An amount a model copied off a page, made readable by
+    quantities._parse_quantity: "1 ½ cups" → "1 1/2 cups"; "400 g / 14 oz"
+    → "400 g" (the one printed first, as the reader was asked); "2–3
+    cloves" → "3 cloves" (a range buys its top end, as split_ingredient_line
+    already does for a whole line). Anything else passes through untouched
+    — this is spelling, not interpretation.
+    """
+    text = _clean_text(_normalise_fractions(qty or ""))
+    if not text:
+        return ""
+    dual = _DUAL_UNIT_RE.match(text)
+    if dual:
+        text = dual.group("first")
+    span = _RANGE_QTY_RE.match(text)
+    if span:
+        text = (span.group("hi") + span.group("rest")).strip()
+    return text
+
+
 def split_ingredient_line(line: str) -> dict:
     """
     "2 cups all-purpose flour, sifted" -> {"item": "all-purpose flour, sifted", "qty": "2 cups"}
@@ -785,7 +810,7 @@ def draft_from_model(detail: dict | None, source_url: str, fallback_name: str = 
         if isinstance(raw, str):
             parsed = split_ingredient_line(raw)
         elif isinstance(raw, dict):
-            parsed = {"item": _clean_text(raw.get("item") or ""), "qty": _clean_text(raw.get("qty") or "")}
+            parsed = {"item": _clean_text(raw.get("item") or ""), "qty": normalise_amount(raw.get("qty") or "")}
             if parsed["item"] and not parsed["qty"]:
                 parsed = split_ingredient_line(parsed["item"])
         else:

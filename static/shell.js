@@ -8121,6 +8121,12 @@
       if (e.key === 'Escape' && rliSheetEl && !rliSheetEl.hidden) closeRecipeLinkSheet();
     });
     rliSheetEl.addEventListener('click', onRecipeLinkClick);
+    rliSheetEl.addEventListener('input', function (e) {
+      if (e.target && e.target.id === 'rli-cite-page') {
+        var word = rliSheetEl.querySelector('#rli-cite-pp');
+        if (word) word.textContent = ', ' + pageWord(e.target.value);
+      }
+    });
   }
 
   function openRecipeLinkSheet() {
@@ -8388,6 +8394,9 @@
   var rliPhotoInputEl = null;
   var RLI_MAX_PHOTOS = 2;
   var RLI_PHOTO_MAX_EDGE = 1600;   // px — plenty to read 9pt print; keeps a page under ~500 KB
+  // The server's own sentence (recipe_import.MSG_NO_RECIPE_PHOTO), for when
+  // the answer didn't carry one — the same words either way.
+  var RLI_PHOTO_UNREADABLE = 'I couldn\u2019t read a recipe in that photo \u2014 try a straighter, closer shot of the page.';
 
   // Open the sheet in photo mode: from Cook's More sheet, or from the chat
   // composer's camera with whatever was typed as the hint. Straight to the
@@ -8525,7 +8534,7 @@
         if (!res.ok) {
           var detail = data && typeof data.detail === 'string' ? data.detail : '';
           if (res.status === 429) detail = 'That\u2019s a few pages in a row \u2014 give it a minute and try again.';
-          if (!detail) detail = 'I couldn\u2019t read a recipe in that photo \u2014 try a straighter, closer shot.';
+          if (!detail) detail = RLI_PHOTO_UNREADABLE;
           throw new Error(detail);
         }
         return data.draft;
@@ -8534,7 +8543,7 @@
       rliDraft = draft;
       renderRecipeLinkReview(draft);
     }).catch(function (err) {
-      renderRecipePhotoAsk((err && err.message) || 'I couldn\u2019t read a recipe in that photo \u2014 try a straighter, closer shot.');
+      renderRecipePhotoAsk((err && err.message) || RLI_PHOTO_UNREADABLE);
     });
   }
 
@@ -8563,11 +8572,18 @@
     return '<div class="rli-cite" role="group" aria-label="Where it came from">' +
       '<span class="rli-cite-part is-book"><span class="rli-cite-word">From</span>' +
         '<input id="rli-cite-book" class="rli-cite-input" type="text" placeholder="which book" aria-label="Book" value="' + escapeHtml(cite.book || '') + '"></span>' +
-      '<span class="rli-cite-part"><span class="rli-cite-word">by</span>' +
+      '<span class="rli-cite-part"><span class="rli-cite-word">,</span>' +
         '<input id="rli-cite-author" class="rli-cite-input" type="text" placeholder="who wrote it" aria-label="Author" value="' + escapeHtml(cite.author || '') + '"></span>' +
-      '<span class="rli-cite-part is-short"><span class="rli-cite-word">, p.</span>' +
-        '<input id="rli-cite-page" class="rli-cite-input is-short" type="text" inputmode="numeric" placeholder="page" aria-label="Page" value="' + escapeHtml(cite.page || '') + '"></span>' +
+      // "p." or "pp." follows the value (a spread is "212–213"), the same
+      // rule recipes.recipe_citation applies to the stored sentence.
+      '<span class="rli-cite-part is-short"><span class="rli-cite-word" id="rli-cite-pp">, ' + pageWord(cite.page) + '</span>' +
+        '<input id="rli-cite-page" class="rli-cite-input is-short" type="text" placeholder="page" aria-label="Page or pages" value="' + escapeHtml(cite.page || '') + '"></span>' +
     '</div>';
+  }
+
+  // "p." for one page, "pp." for a spread ("212–213", "212-213").
+  function pageWord(page) {
+    return /[\u2013-]/.test(page || '') ? 'pp.' : 'p.';
   }
 
   // ---------- where a recipe came from, on every screen ----------
