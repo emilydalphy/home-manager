@@ -262,7 +262,6 @@ function setUp(n, shops) {
   groceryState.data = { stores: { Unassigned: { sections: [{ section: 'other', items: rows }], purchased: [], inCart: [] } } };
   groceryState.usualStores = shops === undefined ? ['Loblaws', 'Costco'] : shops;
   groceryState.storesPromptDismissed = true;
-  groceryState.sortAllPicks = {};
   groceryState.carried = [];
   groceryState.spices = { items: [], recently_bought: [] };
   return groceryState.data;

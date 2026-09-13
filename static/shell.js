@@ -2623,12 +2623,13 @@
     // How many things SORT set out to sort, so the progress line can say
     // "2 of 3" rather than counting down from a number nobody saw.
     sortTotal: 0,
-    // SORT ALL's staged answers: item id -> store name, '' meaning "no
-    // particular shop". Staged rather than written per tap, so changing a
-    // row on a forty-row screen costs no request and cannot move anything
-    // under the thumb — see groSortAllHtml. Nothing is saved until the
-    // button at the foot, which sends all forty in one call.
-    sortAllPicks: {},
+    // SORT ALL reached zero by sorting (Emily, 2026-09-13: "then I get
+    // the satisfaction of going through the whole list and finishing it").
+    // renderGrocery normally folds a sort step with nothing left to sort
+    // back to the list; this keeps SORT ALL up long enough to show its
+    // one-line finish and the way back. Cleared by any step change, and by
+    // a row coming back (an undo) — see groSortAllRender.
+    sortAllDone: false,
     // What the last bulk assign overwrote: [{item_id, store, decided}] as
     // the rows were BEFORE it ran, so Undo restores each one exactly rather
     // than dumping the lot back into the to-sort queue. Cleared by the undo
@@ -3384,6 +3385,8 @@
     // A row's ⋯ belongs to the LIST you opened it on, not to the next step.
     groceryState.openRowId = null;
     groceryState.wrapElseId = null;
+    // The finish belongs to the SORT ALL screen that reached it.
+    groceryState.sortAllDone = false;
     // Arriving at SORT fixes how many things it set out to sort, so the
     // progress line can say "2 of 3" instead of counting down from a number
     // nobody was shown.
@@ -3470,7 +3473,8 @@
     // A step that stopped making sense under its own feet falls back to the
     // root rather than rendering a screen about nothing: SORT with nothing
     // left to sort, a trip whose stops were never snapshotted.
-    if (GRO_SORT_STEPS.indexOf(groceryState.step) !== -1 && !groUnsorted(data).length) {
+    if (GRO_SORT_STEPS.indexOf(groceryState.step) !== -1 && !groUnsorted(data).length &&
+        !(groceryState.step === 'sortall' && groceryState.sortAllDone)) {
       groceryState.step = 'list';
     }
     if (groceryState.step === 'carry' && !groceryState.carried.length) groceryState.step = 'list';
@@ -3512,7 +3516,7 @@
     if (step === 'carry') body.innerHTML = groCarryHtml(data);
     else if (step === 'sort') body.innerHTML = groSortHtml(data);
     else if (step === 'sorthow') body.innerHTML = groSortHowHtml(data);
-    else if (step === 'sortall') body.innerHTML = groSortAllHtml(data);
+    else if (step === 'sortall') groSortAllRender(body, data);
     else if (step === 'headed') body.innerHTML = groHeadedHtml(data);
     else if (step === 'next') body.innerHTML = groNextHtml(data);
     else if (step === 'trip') body.innerHTML = groTripHtml(data);
@@ -3616,7 +3620,8 @@
       };
     }
     if (step === 'sortall') {
-      return { back: '‹ Shop', title: 'Sort them all', sub: groUnsorted(data).length + ' to sort' };
+      var allLeft = groUnsorted(data).length;
+      return { back: '‹ Shop', title: 'Sort them all', sub: allLeft ? allLeft + ' to sort' : '' };
     }
     if (step === 'headed') {
       var headedStops = groStoresWithNeeded(data);
@@ -4248,7 +4253,7 @@
         '<button type="button" class="gro-howrow" data-gro="goto-sortall">' +
           '<span class="gro-howrow-text">' +
             '<span class="gro-howrow-title">Sort them all on one screen</span>' +
-            '<span class="gro-howrow-sub">Tap only the exceptions.</span>' +
+            '<span class="gro-howrow-sub">One tap each.</span>' +
           '</span>' +
           '<span class="gro-chev">' + GRO_ICONS.chevRight + '</span>' +
         '</button>' +
@@ -4264,49 +4269,191 @@
   }
 
   // ---------- SORT ALL: the whole list, one row each ----------
-  // Every unsorted thing with a shop chip on it, everything starting at the
-  // most-used shop, and nothing written until the button at the foot. Staged
-  // rather than saved per tap for two reasons that are really one: a tap
-  // must not cost a request on a screen where forty of them are expected,
-  // and it must not re-render the list under the thumb that is working down
-  // it. The tap handler edits the one row's chips in the DOM and nothing
-  // else moves — see 'sortall-pick'.
-  function groSortAllPick(it, fallback) {
-    var staged = groceryState.sortAllPicks[String(it.id)];
-    return staged === undefined ? (fallback || '') : staged;
+  // Every unsorted thing with a shop chip on it. A tap WRITES (the same
+  // /store route the one-at-a-time queue uses) and the row leaves the
+  // screen, so the list shrinks as the person works down it and reaching
+  // the bottom is a finish (Emily, 2026-09-13: "if I put it into a
+  // category it should no longer be on that screen").
+  //
+  // This screen used to stage every pick and save them all from a button
+  // at the foot, for one reason: writing per tap re-rendered forty rows
+  // and moved the list under the thumb. That is solved here without the
+  // staging — groSortAllRender never rebuilds the card once it is up. It
+  // takes away the one row that left (a short collapse, .is-leaving), puts
+  // back a row that returned (an undo), and leaves every other node where
+  // it was. The whole card is drawn from scratch only the first time, and
+  // when the list reaches zero and becomes the finish line.
+  function groSortAllRowHtml(it, pillStores) {
+    var id = String(it.id);
+    var chips = pillStores.map(function (n) {
+      return groSortAllChip(id, it.item, n, n, false);
+    }).join('') + groSortAllChip(id, it.item, '', 'Any', false) +
+      // A store that isn't set up yet: the sheet, and the new store
+      // comes back as this row's answer (groUsualStoreAdded).
+      groAddStorePillHtml('sortall', it);
+    // "Have it" and "Use something else" ride on the same row and take it
+    // off the screen the same way a store chip does.
+    return '<div class="gro-sortall-row" data-row-for="' + id + '" data-sig="' +
+        escapeHtml(groSortAllRowSig(it, pillStores)) + '">' +
+        '<div class="gro-sortall-head">' +
+          '<span class="gro-sortall-name">' + escapeHtml(it.item) + '</span>' +
+          (it.quantity ? '<span class="gro-qty">' + escapeHtml(it.quantity) + '</span>' : '') +
+        '</div>' +
+        '<div class="gro-pills open gro-sortall-pills">' + chips +
+          groHaveItPillHtml(it) + groSubstPillHtml(it) +
+        '</div>' +
+        (groceryState.substOpenId === id ? groSubstFieldHtml(it) : '') +
+      '</div>';
+  }
+
+  // What a row looks like, as a string: if it hasn't changed, the node
+  // stays exactly as it is (a redraw would be invisible, and a redraw of
+  // a row somebody is typing into is not).
+  function groSortAllRowSig(it, pillStores) {
+    return [it.item, it.quantity || '', groceryState.substOpenId === String(it.id) ? 'subst' : '',
+      pillStores.join('|')].join('||');
   }
 
   function groSortAllHtml(data) {
     var unsorted = groUnsorted(data);
-    if (!unsorted.length) return '<p class="gro-empty">Nothing left to sort.</p>';
+    if (!unsorted.length) {
+      // The finish: one line, and the way back is the dock's "Back to the
+      // list" (groDockHtml). Only after sorting got here — arriving with
+      // nothing to sort never shows this screen at all (renderGrocery).
+      return groceryState.sortAllDone
+        ? emptyMomentHtml('bag', 'All sorted.')
+        : '<p class="gro-empty">Nothing left to sort.</p>';
+    }
     var pillStores = groPillStores(data);
-    var fallback = groMostUsedStore(data);
     return '<div class="shell-card gro-sortall">' +
-      unsorted.map(function (it) {
-        var id = String(it.id);
-        var picked = groSortAllPick(it, fallback);
-        var chips = pillStores.map(function (n) {
-          return groSortAllChip(id, it.item, n, n, picked === n);
-        }).join('') + groSortAllChip(id, it.item, '', 'Any', picked === '') +
-          // A store that isn't set up yet: the sheet, and the new store
-          // comes back staged on this row (groUsualStoreAdded).
-          groAddStorePillHtml('sortall', it);
-        // "Have it" and "Use something else" ride on the same row. Neither
-        // is staged: both take the row off this screen (or rename it), so
-        // they write at once and the picks made so far stay in
-        // groceryState.sortAllPicks across the re-render.
-        return '<div class="gro-sortall-row" data-row-for="' + id + '">' +
-            '<div class="gro-sortall-head">' +
-              '<span class="gro-sortall-name">' + escapeHtml(it.item) + '</span>' +
-              (it.quantity ? '<span class="gro-qty">' + escapeHtml(it.quantity) + '</span>' : '') +
-            '</div>' +
-            '<div class="gro-pills open gro-sortall-pills">' + chips +
-              groHaveItPillHtml(it) + groSubstPillHtml(it) +
-            '</div>' +
-            (groceryState.substOpenId === id ? groSubstFieldHtml(it) : '') +
-          '</div>';
-      }).join('') +
+      unsorted.map(function (it) { return groSortAllRowHtml(it, pillStores); }).join('') +
     '</div>';
+  }
+
+  // Draw SORT ALL into `body` — from scratch the first time and at the
+  // finish, and by touching only the rows that changed every other time.
+  function groSortAllRender(body, data) {
+    var card = body.querySelector('.gro-sortall');
+    var unsorted = groUnsorted(data);
+    if (unsorted.length) groceryState.sortAllDone = false;
+    if (!card || !unsorted.length) {
+      body.innerHTML = groSortAllHtml(data);
+      return;
+    }
+    var pillStores = groPillStores(data);
+    var want = {};
+    unsorted.forEach(function (it) { want[String(it.id)] = it; });
+    // Rows that are no longer waiting leave; the rest stay put.
+    var rows = card.querySelectorAll('.gro-sortall-row');
+    var keep = {};
+    for (var i = 0; i < rows.length; i++) {
+      var rid = rows[i].getAttribute('data-row-for');
+      if (!want[rid]) { groSortAllLeave(rows[i]); continue; }
+      // Wanted again while still collapsing — a write that failed fast,
+      // or an undo inside the 180ms. The same node comes back rather than
+      // a second one being drawn beside it.
+      if (rows[i].classList.contains('is-leaving')) groSortAllStay(rows[i]);
+      keep[rid] = rows[i];
+      var sig = groSortAllRowSig(want[rid], pillStores);
+      if (rows[i].getAttribute('data-sig') !== sig) {
+        rows[i].outerHTML = groSortAllRowHtml(want[rid], pillStores);
+        keep[rid] = card.querySelector('.gro-sortall-row[data-row-for="' + rid + '"]');
+      }
+    }
+    // A row that came back (Undo) goes where it was: before the next row
+    // that is still on the screen, in the list's own order.
+    var next = null;
+    for (var j = unsorted.length - 1; j >= 0; j--) {
+      var id = String(unsorted[j].id);
+      if (keep[id]) { next = keep[id]; continue; }
+      var tmp = document.createElement('div');
+      tmp.innerHTML = groSortAllRowHtml(unsorted[j], pillStores);
+      var node = tmp.firstChild;
+      card.insertBefore(node, next);
+      keep[id] = node;
+      next = node;
+    }
+  }
+
+  // One row leaves: a short collapse (--motion-fast, ease-in — the
+  // "anything leaving" curve), then the node goes. Under
+  // prefers-reduced-motion the tokens are 0ms, so the same code removes it
+  // at once. The height is pinned first because `auto` cannot transition.
+  // The card's own top border rule (.gro-sortall-row:first-child) keeps
+  // the seams right whichever row goes.
+  function groSortAllLeave(row) {
+    if (!row || row.classList.contains('is-leaving')) return;
+    row.classList.add('is-leaving');
+    row.setAttribute('aria-hidden', 'true');
+    var reduce = typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce || !row.offsetHeight) { row.remove(); return; }
+    row.style.height = row.offsetHeight + 'px';
+    void row.offsetHeight; // commit the pinned height before collapsing it
+    row.classList.add('is-gone');
+    // The removal belongs to THIS leaving. groSortAllStay bumps the
+    // counter, so a leaving that was called off (and any later one on the
+    // same node) is not finished by this one's timer.
+    var mine = (row._groLeaving || 0) + 1;
+    row._groLeaving = mine;
+    var finish = function () {
+      if (row._groLeaving !== mine || !row.classList.contains('is-leaving')) return;
+      row.remove();
+    };
+    row.addEventListener('transitionend', finish);
+    setTimeout(finish, 260); // a fallback if the transition never fires
+  }
+
+  // A leaving called off: the row is wanted again before it has gone. The
+  // classes come off and the pinned height with them (it is back at full
+  // height at once — a recovery, not a second animation), and the pending
+  // removal is disowned.
+  function groSortAllStay(row) {
+    row._groLeaving = (row._groLeaving || 0) + 1;
+    row.classList.remove('is-gone');
+    row.classList.remove('is-leaving');
+    row.style.height = '';
+    row.removeAttribute('aria-hidden');
+    // The chip lit by the tap goes dark again: nothing was written.
+    var lit = row.querySelectorAll('.gro-pill-on');
+    for (var i = 0; i < lit.length; i++) {
+      lit[i].classList.remove('gro-pill-on');
+      lit[i].setAttribute('aria-pressed', 'false');
+    }
+  }
+
+  // One SORT ALL answer. The row goes first — marked answered in the
+  // screen's own copy of the list, then one render, which is the collapse
+  // and the count going down — and the write follows. A failed write
+  // re-reads the list (groDo) and the row comes back through
+  // groSortAllRender, with the toast saying why.
+  //
+  // The undo toast is the LATEST tap's, always. Two quick taps are two
+  // requests in flight, and the first one's answer can land second; the
+  // sequence number keeps an older pick from putting its toast (and its
+  // undo) over a newer one's.
+  var groSortAllSeq = 0;
+  function groSortAllAssign(id, store) {
+    var data = groceryState.data;
+    if (!data) return;
+    var item = null;
+    groUnsorted(data).forEach(function (it) { if (String(it.id) === String(id)) item = it; });
+    if (!item) return; // already left (a second tap on a row that is going)
+    var previous = groPreviousStores([item]);
+    var seq = ++groSortAllSeq;
+    item.store_decided = 1;
+    if (!groUnsorted(data).length) groceryState.sortAllDone = true;
+    renderGrocery();
+    groDo(function () {
+      return groPost('/api/grocery-list/' + id + '/store', { store: store, remember: false });
+    }, "Couldn't sort that — try again.").then(function (ok) {
+      if (!ok || seq !== groSortAllSeq) return;
+      // The undo is the bulk undo with one row in it: it restores the row
+      // exactly (store and never-answered), so an undone row is back in
+      // the queue rather than sitting at "Any".
+      groceryState.bulkUndo = previous;
+      groOfferBulkUndo(item.item + ' → ' + (store || 'any store'));
+    });
   }
 
   function groSortAllChip(id, itemName, store, label, on) {
@@ -4952,8 +5099,12 @@
         'data-store="' + escapeHtml(most) + '">Put all ' + groUnsorted(data).length +
         ' at ' + escapeHtml(most) + '</button>';
     }
+    // SORT ALL writes every answer as it is tapped, so there is nothing
+    // to save and no button while rows are left — the crumb is the way
+    // out. At the finish the one action is the way back.
     if (step === 'sortall') {
-      return '<button type="button" class="gro-primary" data-gro="sortall-save">That&rsquo;s them sorted</button>';
+      if (!groceryState.sortAllDone || groUnsorted(data).length) return '';
+      return '<button type="button" class="gro-primary" data-gro="sortall-done">Back to the list</button>';
     }
     // Every trip screen's dock carries "Finish later" beside its own action
     // (groTripPauseLinkHtml): the way out of the trip that keeps it.
@@ -5785,7 +5936,6 @@
       return groPost('/api/grocery-list/store-bulk', { assignments: assignments, remember: false });
     }, "Couldn't sort those — try again.").then(function (ok) {
       if (!ok) return;
-      groceryState.sortAllPicks = {};
       groceryState.bulkUndo = previous;
       groOfferBulkUndo(doneMessage);
     });
@@ -5814,7 +5964,7 @@
         // for the rest of its window otherwise, contradicting the list it is
         // sitting on. The chip is already inert by then, so it is the words
         // that mislead.
-        showToast('Put back where they were.', null, GRO_UNDO_MS);
+        showToast(undo.length === 1 ? 'Put back.' : 'Put back where they were.', null, GRO_UNDO_MS);
         return;
       }
       groOfferBulkUndo('Couldn’t undo that — tap Undo to try again.');
@@ -5956,7 +6106,6 @@
       }
 
       case 'goto-sortall':
-        groceryState.sortAllPicks = {};
         goGroceryStep('sortall');
         return;
 
@@ -5981,37 +6130,22 @@
         return;
       }
 
-      // One row of SORT ALL. Staged in memory and repainted in place — no
-      // request, no re-render, so the list cannot move under the thumb of
-      // someone working down forty rows.
+      // One row of SORT ALL: the chip lights, the row leaves, the answer
+      // is written — see groSortAllAssign. The chip is lit by hand because
+      // the row is about to collapse rather than be redrawn.
       case 'sortall-pick': {
-        groceryState.sortAllPicks[id] = el.dataset.store || '';
-        var row = el.closest('.gro-sortall-row');
-        if (row) {
-          var chips = row.querySelectorAll('.gro-pill');
-          for (var ci = 0; ci < chips.length; ci++) {
-            var on = chips[ci] === el;
-            chips[ci].classList.toggle('gro-pill-on', on);
-            chips[ci].setAttribute('aria-pressed', String(on));
-          }
-        }
+        var pickRow = el.closest('.gro-sortall-row');
+        if (pickRow && pickRow.classList.contains('is-leaving')) return;
+        el.classList.add('gro-pill-on');
+        el.setAttribute('aria-pressed', 'true');
+        groSortAllAssign(id, el.dataset.store || '');
         return;
       }
 
-      case 'sortall-save': {
-        if (!groceryState.data) return;
-        var allItems = groUnsorted(groceryState.data);
-        var allFallback = groMostUsedStore(groceryState.data);
-        el.disabled = true;
-        groBulkAssign(
-          allItems.map(function (it) {
-            return { item_id: it.id, store: groSortAllPick(it, allFallback), decided: true };
-          }),
-          groPreviousStores(allItems),
-          groPlural(allItems.length, 'thing', 'things') + ' sorted.'
-        );
+      // The finish line's way back.
+      case 'sortall-done':
+        goGroceryStep('list');
         return;
-      }
 
       case 'start-trip':
         groStartTrip();
@@ -6684,6 +6818,13 @@
       renderGrocery();
       return;
     }
+    // SORT ALL has a finish of its own ("All sorted." and the way back,
+    // groSortAllHtml); the queue's finish is the list and a toast.
+    if (groceryState.step === 'sortall') {
+      groceryState.sortAllDone = true;
+      renderGrocery();
+      return;
+    }
     goGroceryStep('list');
     showToast('All sorted.');
   }
@@ -6759,8 +6900,8 @@
   // Called by What we know when a store is saved there (wwkAddStore). The
   // list's own copy of the shops learns it either way; with a return
   // armed, the sheet closes and the new store is the answer on the screen
-  // it was opened from: the SORT queue's row is assigned to it, SORT ALL's
-  // row is staged with it, WRAP UP's line moves to it.
+  // it was opened from: the SORT queue's row and SORT ALL's row are
+  // assigned to it, WRAP UP's line moves to it.
   function groUsualStoreAdded(name) {
     if (!groIsBuilt() || !name) return;
     if (groceryState.usualStores.indexOf(name) === -1) {
@@ -6771,8 +6912,7 @@
     if (!back || back.step !== groceryState.step) { renderGrocery(); return; }
     if (typeof closeKitchenSheet === 'function') closeKitchenSheet();
     if (back.kind === 'sortall') {
-      groceryState.sortAllPicks[back.id] = name;
-      renderGrocery();
+      groSortAllAssign(back.id, name);
       return;
     }
     if (back.kind === 'sort') {

@@ -289,19 +289,23 @@ settle(function () {
 
 
 @_needs_node
-def test_a_store_saved_in_the_sheet_is_staged_on_sort_all_and_writes_nothing():
+def test_a_store_saved_in_the_sheet_is_the_answer_on_sort_all_and_writes_at_once():
+    """Since 2026-09-13 SORT ALL writes each answer as it is given (the row
+    leaves the screen), so a store arriving from the sheet is written the
+    same way a tapped chip is — this week only, like the rest of that
+    screen (remember: false)."""
     out = _node("""
 twoShops();
 groceryState.data.stores.Unassigned.sections = [{ section: 'other', items: [{ id: 9, item: 'Tahini', store: '' }] }];
 groceryState.step = 'sortall';
-groceryState.sortAllPicks = {};
 click({ gro: 'store-add', kind: 'sortall', id: '9', name: 'Tahini', from: '' });
 groUsualStoreAdded('Farm Boy');
-console.log(JSON.stringify({ sheet: SHEET, picks: groceryState.sortAllPicks, posts: POSTS.length, renders: RENDERS }));
+settle(function () {
+  console.log(JSON.stringify({ sheet: SHEET, assigns: posts('/api/grocery-list/9/store').map(function (p) { return p.body; }), renders: RENDERS }));
+});
 """)
     assert out["sheet"][-1] == "close"
-    assert out["picks"] == {"9": "Farm Boy"}, "staged like any SORT ALL chip — the button at the foot saves"
-    assert out["posts"] == 0
+    assert out["assigns"] == [{"store": "Farm Boy", "remember": False}], "written at once, like a tapped chip"
     assert out["renders"] >= 1
 
 
