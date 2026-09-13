@@ -530,7 +530,7 @@ def test_the_block_counts_recipes_in_the_question_and_meals_under_the_chips():
     js = pathlib.Path(__file__).resolve().parents[1].joinpath("static", "shell.js").read_text()
     assert "function cookAheadComponentRecipeCount(comp)" in js
     assert "var n = cookAheadComponentRecipeCount(comp);" in js
-    assert "' in ' + n + ' recipes this week. Make '" in js
+    assert "' in ' + n + ' recipes this week.'" in js
     assert "' for ' + ticked.length + ' meals'" in js
     assert "': one cook ' + day + ' for ' + n + ' meals'" in js
     assert "comp.label + ' in ' + cookAheadComponentRecipeCount(comp) + ' recipes'" in js
