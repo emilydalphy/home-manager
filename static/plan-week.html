@@ -20,7 +20,9 @@
     A standalone page rather than a tab in the shell, for the same reason
     onboarding.html is one: this is a focused sequence with a beginning and
     an end, and tab chrome invites leaving it half-answered. It hands back
-    to /week when it's done.
+    to /week when it's done — and, since 2026-09-13, whenever the household
+    taps the "‹ Plan" crumb at the top (see leaveFlow), because a focused
+    sequence still needs a door that isn't finishing it.
 
     Two devices carry the voice on every screen here, and both are load-
     bearing rather than decorative (VOICE.md):
@@ -78,6 +80,21 @@
   .back.skip { color: var(--apricot-label, var(--ink-secondary)); font-weight: 700; margin-left: auto; }
   .dot { height: 4px; flex: 1; border-radius: 2px; background: var(--hairline); }
   .dot.done { background: var(--spruce); }
+  /* The way out (Loop Board "Planning: a way out of the draft that isn't
+     approving it", 2026-09-13): shell.css's .crumb, copied here because this
+     page loads theme.css only. Same 44px target, 14px, 700, secondary ink;
+     the negative margins pull it into the body's 20px gutter so it sits
+     where a crumb sits in the shell. */
+  .crumb {
+    display: inline-flex; align-items: center;
+    min-height: 44px; margin: -8px 0 4px -8px; padding: 0 8px;
+    border: 0; background: none; cursor: pointer;
+    font-family: var(--font-body); font-size: 14px; font-weight: 700;
+    color: var(--ink-secondary);
+  }
+  .crumb:hover { color: var(--ink-strong); }
+  /* The one line under the spinner that says leaving is allowed. */
+  .draft-leave-note { font-size: 0.88rem; line-height: 1.5; color: var(--ink-secondary); margin: 0 0 16px; }
 
   .why {
     background: var(--plum-panel);
@@ -455,6 +472,10 @@
 <div id="failed" class="failed" hidden>I couldn&rsquo;t load your week just now. Try again in a moment.</div>
 
 <main id="flow" hidden>
+  <!-- One way back, named for its parent (nav v2 rule 1). Outside the
+       step sections so it is there on every screen, the drafting one
+       included; leaveFlow says what leaving does and doesn't do. -->
+  <button type="button" class="crumb" id="leave">&lsaquo; Plan</button>
   <div class="eyebrow" id="eyebrow"></div>
   <div class="progress"><div class="dot" id="dot-1"></div><div class="dot" id="dot-2"></div><div class="dot" id="dot-3"></div><div class="dot" id="dot-4"></div></div>
 
@@ -527,6 +548,7 @@
            as soon as drafting starts; this text is the fallback. -->
       <span class="waiting-line" id="draft-status-text">Getting started&hellip;</span>
     </div>
+    <p class="draft-leave-note">No need to wait here &mdash; I&rsquo;ll keep going, and the draft will be on Plan once it&rsquo;s done. Nothing is approved until you say so.</p>
     <div class="draft-days" id="draft-days"></div>
   </section>
 </main>
@@ -744,6 +766,9 @@
     }
 
     await loadAttendance();
+    // What the screen opened with, so leaving without changing anything
+    // saves nothing (leavePayload).
+    answersAtLoad = answersSnapshot();
 
     $('loading').hidden = true;
     $('flow').hidden = false;
@@ -1721,10 +1746,14 @@
     return null;
   }
 
-  async function saveIntake(payload) {
+  // `keepalive` is for the one caller that navigates away in the same
+  // breath (leaveFlow): a plain fetch can be dropped with the page, and
+  // a keepalive one outlives it. Every other save awaits its answer.
+  async function saveIntake(payload, keepalive) {
     var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/intake', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      keepalive: !!keepalive,
       // day_count rides on every save so the server's in-range check
       // knows how long this period is, not just where it starts.
       body: JSON.stringify(Object.assign({ created_by: who, day_count: dayCount }, payload))
@@ -1846,6 +1875,59 @@
     return plan;
   }
 
+  // ---------- the way out ----------
+  // Loop Board "Planning: a way out of the draft that isn't approving it"
+  // (Emily, 2026-09-13, on her phone: "there's no 'back option out of the
+  // plan' — you can only exit the process by approving the week"). This
+  // page has no tab bar by design (see the note at the top), and on an
+  // installed PWA there is no browser chrome either, so until now the only
+  // door on it was "Draft my week". The "‹ Plan" crumb is that door: one,
+  // named for its parent (nav v2 rule 1), on every screen here including
+  // the drafting one — a plain navigation to the Plan tab, never
+  // history.back().
+  //
+  // Leaving is not cancelling, and it approves nothing. The answers given
+  // so far stay: every screen's Next already writes its own revision, and
+  // this writes the current screen's on the way out (keepalive, so the
+  // request outlives the page), so coming back carries on from here — the
+  // same join the second adult gets. A week already drafting keeps
+  // drafting on the server (the generation runs on its own thread, see
+  // main._stream_week_generation) and lands as a DRAFT, on the Plan tab,
+  // with nothing bought and nothing scheduled until it is approved there.
+  var answersAtLoad = '';
+  function answersSnapshot() {
+    return JSON.stringify(answers) + '\n' + $('freeform').value.trim();
+  }
+
+  function leavePayload() {
+    if (!$('draft-progress').hidden) return null;   // already saved, already drafting
+    // Nothing changed since the screen opened — including a prefilled set
+    // from a joined intake or an earlier draft — so there is nothing to
+    // write, and no new revision to make the next visit narrate.
+    if (answersSnapshot() === answersAtLoad) return null;
+    if (step === 1) {
+      var noted = Object.keys(answers.night_tags).length || Object.keys(answers.guest_counts).length;
+      return noted ? { night_tags: answers.night_tags, guest_counts: answers.guest_counts } : null;
+    }
+    if (step === 2) return answers.packed_lunch_days.length ? { packed_lunch_days: answers.packed_lunch_days } : null;
+    if (step === 3) {
+      return (answers.moods.length || answers.cuisines.length)
+        ? { moods: answers.moods, cuisines: answers.cuisines } : null;
+    }
+    var freeform = $('freeform').value.trim();
+    return freeform ? { moods: answers.moods, cuisines: answers.cuisines, freeform: freeform } : null;
+  }
+
+  function leaveFlow() {
+    var payload = leavePayload();
+    // Best effort, never awaited: a save that fails must not keep the
+    // household on the screen they are trying to leave. An empty screen
+    // saves nothing — a revision with no answers in it would only make the
+    // next visit say "I've carried on from your answers" about nothing.
+    if (payload) saveIntake(payload, true).catch(function () { /* the answers already saved still stand */ });
+    location.href = '/week';
+  }
+
   async function advance() {
     var btn = $('cta');
     btn.disabled = true;
@@ -1900,6 +1982,7 @@
   $('cta').addEventListener('click', advance);
   $('skip').addEventListener('click', advance);
   $('back').addEventListener('click', function () { if (step > 1) showStep(step - 1); });
+  $('leave').addEventListener('click', leaveFlow);
   $('freeform').addEventListener('input', paintCta);
   $('day-close').addEventListener('click', closeDaySheet);
   $('day-done').addEventListener('click', closeDaySheet);
