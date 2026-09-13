@@ -464,6 +464,10 @@ def test_every_llm_call_site_passes_the_shared_model_constant():
         # markup gets its visible text read by the model. See
         # agent.read_recipe_from_page_llm and app/recipe_import.py.
         "read_recipe_from_page_llm",
+        # A hosted holiday's big meal — the menu (main when asked for, sides,
+        # something sweet) in one call. See agent.generate_big_meal_llm and
+        # app/tools/big_meal.py.
+        "generate_big_meal_llm",
     ]
     # generate_weekly_plan_llm and generate_component_plan_llm route through
     # _stream_forced_tool_call instead of _create_with_retry directly (added

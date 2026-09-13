@@ -870,7 +870,13 @@ they're spending one. When they say — "we're at my mom's for Thanksgiving", "w
 Christmas, ten of us", "just us this year", "not sure yet" — record it with answer_holiday \
 (hosting / out / just_us / unsure), and the dish they're bringing when they name one. Say what \
 that means in one line ("I'll leave Monday's dinner off and add the casserole to the week"). \
-Say "the holiday" or its name, never "event mode"; a big day is "a big meal".
+Say "the holiday" or its name, never "event mode"; a big day is "a big meal". When they're \
+HOSTING, also record when they want it on the table (on_table_at) and anything their guests \
+can't eat (guest_notes) as they say it — ask for both if they haven't said, one question, not a \
+form. Pomona then builds the big meal into that dinner: a menu (main, sides, something sweet), \
+the shop in two trips, the make-ahead work on the days before, and a day-of timeline. Read it \
+back with get_big_meal; change it with set_big_meal_dish / remove_big_meal_dish / \
+set_big_meal_prep_day / propose_big_meal. Times the way a person says them ("4:15 — turkey in").
 - Staples are the things a household buys on a rhythm, food or not ("we always get coffee", \
 "we go through dish soap about every month", "keep cat litter stocked"): add_staple, and Pomona puts \
 it on the list just before it's probably due — no counting, no inventory. "We've got plenty" is \
@@ -2145,8 +2151,66 @@ TOOL_DEFINITIONS = [
                 "answer": {"type": "string", "enum": ["hosting", "out", "just_us", "unsure"]},
                 "headcount": {"type": "integer", "description": "EXTRA people beyond the household, when hosting. Omit to keep what's recorded."},
                 "bring_dish": {"type": "string", "description": "The dish they're bringing, when out. '' to say nothing after all. Omit to keep what's recorded."},
+                "on_table_at": {"type": "string", "description": "When hosting: the time they want the big meal on the table ('5pm', '17:30'). Omit to keep what's recorded; '' to fall back to their usual dinner time."},
+                "guest_notes": {"type": "string", "description": "When hosting: what the guests can't eat, in the host's words ('Sam's vegetarian; no nuts for the Wongs'). Omit to keep what's recorded; '' to clear."},
             },
             "required": ["date", "answer"],
+        },
+    },
+    {
+        "name": "get_big_meal",
+        "description": "The big meal for a holiday the household is hosting: the menu (main, sides, something sweet), what's made ahead on which day, the shop in two trips, the prep already on the days before, and the day-of timeline working back from the time it's on the table — with `spoken`, the whole thing in plain sentences. Use for 'what's the plan for Thanksgiving', 'what am I making ahead', 'when do I start on the day', 'read me the timeline'. Read `timeline.steps` back as times a person says ('4:15 — turkey into the oven'), never as a table.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"date": {"type": "string", "description": "The holiday's ISO date."}},
+            "required": ["date"],
+        },
+    },
+    {
+        "name": "set_big_meal_dish",
+        "description": "Add a dish to the big meal or swap one out: 'swap the dessert for a pumpkin pie', 'add roasted carrots', 'make the main a ham instead'. role is side | sweet | main. A sweet with no `replaces` takes the place of the current sweet; a side is added unless `replaces` names the one it replaces; a main replaces the main (a saved recipe by that name is used, else give ingredients). Ingredients are required for anything new, written for the whole table. Refuses a dish that clashes with the household's restrictions or the guests' notes. Shopping and the prep days follow.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "date": {"type": "string"},
+                "name": {"type": "string"},
+                "role": {"type": "string", "enum": ["main", "side", "sweet"]},
+                "ingredients": {"type": "array", "items": {"type": "object", "properties": {"item": {"type": "string"}, "qty": {"type": "string"}, "category": {"type": "string", "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"]}}, "required": ["item", "qty"]}},
+                "instructions": {"type": "array", "items": {"type": "string"}},
+                "minutes": {"type": "integer", "description": "Hands-on minutes."},
+                "cook_minutes": {"type": "integer"},
+                "oven": {"type": "boolean"},
+                "ahead_days": {"type": "integer", "description": "0 = the day, 1 = the day before, 2 = two days before."},
+                "replaces": {"type": "string", "description": "The dish this takes the place of, by name."},
+            },
+            "required": ["date", "name", "role"],
+        },
+    },
+    {
+        "name": "remove_big_meal_dish",
+        "description": "Take a side or the sweet off the big meal ('drop the brussels sprouts'), its shopping and prep with it. The main is swapped with set_big_meal_dish, never removed.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"date": {"type": "string"}, "name": {"type": "string"}},
+            "required": ["date", "name"],
+        },
+    },
+    {
+        "name": "set_big_meal_prep_day",
+        "description": "When a dish on the big meal gets made: 'make the stuffing the day before', 'do the pie two days out', 'the potatoes on the day'. `when` is day_of, day_before, two_days_before or an ISO date up to two days before. The prep on Now and the Cook screen moves with it.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"date": {"type": "string"}, "dish": {"type": "string"}, "when": {"type": "string"}},
+            "required": ["date", "dish", "when"],
+        },
+    },
+    {
+        "name": "propose_big_meal",
+        "description": "Propose the big meal's menu again — 'start the sides over', 'give me a different menu'. Keeps the main unless keep_main is false. Only for a hosted holiday whose week is planned.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"date": {"type": "string"}, "keep_main": {"type": "boolean", "description": "Default true."}},
+            "required": ["date"],
         },
     },
     {
@@ -2691,9 +2755,11 @@ it has nothing on.
 country and province, or from their calendar) with how the household said they're spending \
 each one and what that means for the day (`plan`). Follow it exactly: `out` means they eat \
 dinner elsewhere — send NO dinner entry for that date (the app handles it, and a dish they're \
-bringing is already planned into that slot); `hosting` means a dinner they host for the table \
-in `extra_guests` beyond the household — a real, generous dinner that fits the day, not a \
-weeknight one, and name the holiday in the reasoning; `just_us` is an ordinary day at home, \
+bringing is already planned into that slot); `hosting` means the big meal they host for the \
+table in `extra_guests` beyond the household — send the MAIN for that dinner, a real, generous \
+centrepiece that fits the day and honours `guest_notes`, not a weeknight dish, and name the \
+holiday in the reasoning; the sides and something sweet are built around it afterwards, so send \
+no separate entries for them; `just_us` is an ordinary day at home, \
 a little nicer is fine; `unsure` and `not_asked` mean plan a normal dinner and keep it easy \
 to change. Never assume a big meal: the household said what the day is. Call it "the \
 holiday" or by its name — never "event mode".
@@ -4478,6 +4544,134 @@ def generate_sides_llm(context: dict) -> list[dict]:
     return []
 
 
+_DISH_PROPERTIES = {
+    "name": {"type": "string", "description": "What it is, as you'd say it out loud: 'Maple-roasted carrots', 'Sage and onion stuffing', 'Pumpkin pie'."},
+    "role": {"type": "string", "enum": ["side", "sweet"]},
+    "covers": {"type": "array", "items": {"type": "string", "enum": ["protein", "vegetable", "carb"]}},
+    "ingredients": {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "item": {"type": "string", "description": "The ingredient name with no prep descriptor."},
+                "qty": {"type": "string", "description": "As bought at the store, for THIS table ('2 lb', '1 bunch', '2 cans')."},
+                "category": {"type": "string", "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"]},
+            },
+            "required": ["item", "qty", "category"],
+        },
+    },
+    "instructions": {"type": "array", "items": {"type": "string"}, "description": "Three to six steps."},
+    "minutes": {"type": "integer", "description": "Hands-on minutes."},
+    "cook_minutes": {"type": "integer", "description": "Unattended cooking minutes (oven or stovetop); 0 for no-cook."},
+    "oven": {"type": "boolean", "description": "True when it needs the oven on the day (or to warm through)."},
+    "ahead_days": {"type": "integer", "description": "How many days before the meal it can honestly be made: 0 (the day), 1 (the day before), 2. Sauces, stuffings, pies keep; salads and greens don't."},
+    "ahead_step": {"type": "string", "description": "When ahead_days > 0, the make-ahead step as one line: 'Make the cranberry sauce'."},
+}
+
+_GENERATE_BIG_MEAL_TOOL = {
+    "name": "submit_big_meal",
+    "description": "Submit the menu for a hosted holiday dinner.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "main": {
+                "type": "object",
+                "description": "Only when want_main is true. The centrepiece, written for `eaters` people.",
+                "properties": {
+                    **{k: v for k, v in _DISH_PROPERTIES.items() if k not in ("role", "covers", "minutes", "cook_minutes")},
+                    "food_groups": {"type": "array", "items": {"type": "string", "enum": ["protein", "vegetable", "carb"]}},
+                    "cuisine": {"type": "string"},
+                    "main_protein": {"type": "string"},
+                    "prep_minutes": {"type": "integer"},
+                    "cook_minutes": {"type": "integer"},
+                    "rest_minutes": {"type": "integer", "description": "Resting time out of the oven before carving; 0 if none."},
+                },
+                "required": ["name", "ingredients", "instructions", "prep_minutes", "cook_minutes", "oven"],
+            },
+            "main_timing": {
+                "type": "object",
+                "description": "Only when a `main` was GIVEN in the context: its day-of timing as best you can tell.",
+                "properties": {
+                    "prep_minutes": {"type": "integer"}, "cook_minutes": {"type": "integer"},
+                    "rest_minutes": {"type": "integer"}, "oven": {"type": "boolean"},
+                    "ahead_days": {"type": "integer"}, "ahead_step": {"type": "string"},
+                },
+            },
+            "dishes": {
+                "type": "array",
+                "description": "`side_count` sides and exactly one sweet, in the order they'd be listed on a menu.",
+                "items": {"type": "object", "properties": _DISH_PROPERTIES,
+                          "required": ["name", "role", "ingredients", "instructions", "minutes", "cook_minutes", "oven", "ahead_days"]},
+            },
+        },
+        "required": ["dishes"],
+    },
+}
+
+_BIG_MEAL_INSTRUCTIONS = """You are planning the menu for a holiday dinner a household is hosting — \
+the one big meal of their year that this day is. The context tells you the holiday, the date, how \
+many are eating (`eaters`, the whole table), the household's restrictions and dislikes, what their \
+guests can't eat (`guest_notes`, in the host's own words), and how many sides to propose.
+
+Rules:
+- A MENU, not a dish: the main (only when want_main is true — otherwise `main` in the context is \
+already decided and you build around it), `side_count` sides that belong with it, and exactly one \
+sweet. It should feel like the day — a Thanksgiving table, a Christmas table, an Easter lunch — \
+in the household's own register, not a restaurant's.
+- Every quantity is for `eaters` people, written as it's bought at the store. Don't re-buy salt, \
+pepper or oil.
+- Honour every dietary restriction and every guest note exactly, for every dish. "Sam's \
+vegetarian" means at least the sides and the sweet are vegetarian and hearty enough to be his \
+dinner; "no nuts" means no nuts anywhere, including the sweet. A restriction is never traded \
+away to make a dish work — pick a different dish.
+- Be honest about make-ahead: `ahead_days` is what a home cook would really do the day before \
+(sauces, stuffing, a pie, mashed potatoes to reheat), and 0 for anything that has to be fresh \
+(a salad, roast vegetables, gravy from the pan). `oven` is true when it competes for the oven \
+on the day, including warming through.
+- Give real timings. `minutes` is hands-on, `cook_minutes` is unattended; a main gets \
+`rest_minutes` when it rests before carving.
+- Spread the load: not every side in the oven at the same time as the main. One or two \
+stovetop or no-cook sides make the day possible.
+
+Call submit_big_meal with the result."""
+
+
+def generate_big_meal_llm(context: dict) -> dict:
+    """
+    One model call: the menu for a hosted holiday dinner — the main (when
+    asked for), the sides and something sweet, each with the timing the
+    day-of needs. Priced in the api_calls ledger as 'generate_big_meal_llm'.
+    Called by app/tools/big_meal.build_menu (injected at call time, so a
+    test can monkeypatch this name), which validates, drops any dish that
+    clashes with the table's restrictions, and stores what's left. Nothing
+    here writes anything, and an unreachable API raises — build_menu is
+    what degrades.
+    """
+    client = _client()
+    response = _create_with_retry(
+        client,
+        label="generate_big_meal_llm",
+        model=MODEL,
+        max_tokens=6000,
+        tools=[_GENERATE_BIG_MEAL_TOOL],
+        tool_choice={"type": "tool", "name": "submit_big_meal"},
+        messages=[{
+            "role": "user",
+            "content": [
+                {"type": "text", "text": _BIG_MEAL_INSTRUCTIONS, "cache_control": {"type": "ephemeral"}},
+                {"type": "text", "text": f"The dinner (JSON):\n{json.dumps(context, indent=2)}"},
+            ],
+        }],
+        output_config=_effort_config("utility"),
+    )
+    if response.stop_reason == "max_tokens":
+        logger.warning("generate_big_meal_llm hit max_tokens; the menu may be incomplete")
+    for block in response.content:
+        if block.type == "tool_use":
+            return dict(block.input or {})
+    return {}
+
+
 # At most this many side calls per generated week. Six is roughly "the
 # worst ordinary week" — a model that mostly follows the prompt leaves one
 # or two meals short, and a week needing more than six is a generation
@@ -5521,6 +5715,11 @@ TOOL_FUNCTIONS = {
     "answer_holiday": tools.answer_holiday,
     "get_upcoming_holidays": tools.get_upcoming_holidays,
     "set_holiday_region": tools.set_holiday_region,
+    "get_big_meal": tools.get_big_meal,
+    "set_big_meal_dish": tools.set_big_meal_dish,
+    "remove_big_meal_dish": tools.remove_big_meal_dish,
+    "set_big_meal_prep_day": tools.set_big_meal_prep_day,
+    "propose_big_meal": tools.propose_big_meal,
     "set_away_stretch": tools.set_away_stretch,
     "set_member_attendance": tools.set_member_attendance,
     "set_guest_count": tools.set_guest_count,

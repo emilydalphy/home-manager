@@ -286,16 +286,20 @@ def _task_items(tasks: list[dict], prep_date: str, entries: dict[int, dict]) -> 
             continue
         entry = entries.get(task["meal_plan_entry_id"]) if task["meal_plan_entry_id"] else None
         is_cut = task["task_type"] == PREP_CUT_TASK_TYPE
+        # A holiday's big meal spreads its make-ahead work onto the days
+        # before (app/tools/big_meal.py, task_type='holiday'); when one of
+        # those days is a prep day, the work is part of the session.
+        is_big_meal = task["task_type"] == "holiday"
         covers = [entry["date"]] if entry else [task["task_date"]]
         items.append({
-            "kind": "prep_cut" if is_cut else "fridge_move",
+            "kind": "prep_cut" if is_cut else ("big_meal" if is_big_meal else "fridge_move"),
             "prep_task_id": task["id"],
             "entry_id": task["meal_plan_entry_id"],
             "title": task["description"],
             "feeds": task["related_meal"] or (entry["meal"] if entry else ""),
             "done": task["status"] == "done",
             "covers": sorted(set(covers)),
-            "minutes": PREP_CUT_MINUTES if is_cut else FRIDGE_MOVE_MINUTES,
+            "minutes": PREP_CUT_MINUTES if is_cut else (COOK_AHEAD_FALLBACK_MINUTES if is_big_meal else FRIDGE_MOVE_MINUTES),
         })
     return items
 

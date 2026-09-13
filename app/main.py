@@ -1493,6 +1493,11 @@ class HolidayAnswerRequest(BaseModel):
     headcount: int | None = None
     # The dish they're bringing, when out. '' clears it; None keeps it.
     bring_dish: str | None = None
+    # Hosting, slice 2: when the big meal should be on the table ("17:00",
+    # "5pm") and what the guests can't eat, in the host's words. '' clears;
+    # None keeps what's recorded.
+    on_table_at: str | None = None
+    guest_notes: str | None = None
     answered_by: str = ""
 
 
@@ -1522,7 +1527,7 @@ def holiday_answer_route(req: HolidayAnswerRequest):
     try:
         return tools.answer_holiday(
             req.date, req.answer, headcount=req.headcount, bring_dish=req.bring_dish,
-            answered_by=req.answered_by,
+            answered_by=req.answered_by, on_table_at=req.on_table_at, guest_notes=req.guest_notes,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -3376,6 +3381,21 @@ def dismiss_notification_view(req: NotificationDismissRequest):
     return result
 
 
+def _stamp_shop_split(items: list[dict]) -> dict | None:
+    """
+    The big meal's two trips (Holidays slice 2, app/tools/big_meal.py):
+    each needed line the menu buys gets `shop_timing` 'early' | 'fresh' and
+    the payload gets the trips' dates and labels, so the Shop screen can
+    read the list in two groups for that week. None — and nothing stamped
+    — when no hosted holiday is ahead. Never fails the list over it.
+    """
+    try:
+        return tools.annotate_big_meal_shop_split(items)
+    except Exception:
+        logger.exception("The big meal's shop split could not be read; the list is unchanged")
+        return None
+
+
 @app.get("/api/grocery-list")
 def get_grocery_list_view(status: str = "needed"):
     """
@@ -3399,6 +3419,8 @@ def get_grocery_list_view(status: str = "needed"):
                 }
                 result["sections"] = [s for s in result["sections"] if s["items"]]
         result["multi_store"] = tools.is_multi_store_household()
+        if status == "needed":
+            result["shop_split"] = _stamp_shop_split([it for s in result["sections"] for it in s["items"]])
     except Exception as e:
         logger.exception("Grocery list lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -3428,6 +3450,9 @@ def get_grocery_list_by_store_view(status: str = "needed"):
                     if sections:
                         stores.append({"store": store["store"], "sections": sections})
                 result = {"stores": stores}
+            result["shop_split"] = _stamp_shop_split(
+                [it for store in result["stores"] for s in store["sections"] for it in s["items"]]
+            )
     except Exception as e:
         logger.exception("Grocery list by-store lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -4000,7 +4025,13 @@ _CHORE_TOOLS = {
     "add_chore", "update_chore", "generate_chore_schedule", "schedule_chore_instance", "complete_chore",
     "skip_chore", "move_chore", "hand_chore",
 }
-_WEEK_TOOLS = {"plan_meal", "generate_weekly_plan", "set_week_constraints", "swap_meal_in_plan", "swap_component_in_plan", "approve_weekly_plan"}
+_WEEK_TOOLS = {
+    "plan_meal", "generate_weekly_plan", "set_week_constraints", "swap_meal_in_plan", "swap_component_in_plan", "approve_weekly_plan",
+    # A holiday answer changes that day's dinner (out empties it, hosting
+    # builds the big meal into it), and the big-meal tools change the
+    # dishes on it — so Plan is the screen that goes stale.
+    "answer_holiday", "set_big_meal_dish", "remove_big_meal_dish", "set_big_meal_prep_day", "propose_big_meal",
+}
 _KITCHEN_TOOLS = {
     "add_recipe", "update_recipe_details", "mark_recipe_feedback", "log_recipe_note", "log_cooking_deviation",
     "flag_recipe_temporary", "generate_prep_schedule", "check_off_prep_step", "check_off_meal",

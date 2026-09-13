@@ -34,10 +34,13 @@ parts:
    - hosting       -> the intake's own "Hosting guests" tag and headcount
                       (week_intake.save_week_intake, which pushes the
                       number into attendance), or attendance directly when
-                      no intake exists yet. The planner plans a normal
-                      dinner they host. The big-meal path — menu, split
-                      shop, spread prep, day-of timeline — is slice 2 and
-                      reads the stored answer + headcount from here.
+                      no intake exists yet — and then THE BIG MEAL
+                      (big_meal.py, slice 2): a menu built into that
+                      dinner's plan entry, the shop in two trips, the
+                      make-ahead work on the days before, and a day-of
+                      timeline working back from `on_table_at`. The
+                      guests' restrictions live on the answer as
+                      `guest_notes`, in their words.
    - just_us       -> an ordinary day. Nothing.
    - unsure        -> nothing yet; asked again closer to the day.
    The planner is told the holiday and the answer for every day of the
@@ -58,6 +61,12 @@ from ._shared import acting_name, household_id
 from . import week_intake as _week_intake
 
 logger = logging.getLogger(__name__)
+
+
+def _bm():
+    """big_meal, at call time: it imports attendance and weekly_plan, which import this module's importers."""
+    from . import big_meal
+    return big_meal
 
 
 # ---------- the answers ----------
@@ -352,6 +361,8 @@ def _answer_dict(row) -> dict:
         "headcount": headcount,
         "bring_dish": row["bring_dish"] or "",
         "bring_dish_recipe_id": row["bring_dish_recipe_id"],
+        "on_table_at": row["on_table_at"] or "",
+        "guest_notes": row["guest_notes"] or "",
         "answered_by": row["answered_by"] or "",
         "updated_at": row["updated_at"],
     }
@@ -449,7 +460,7 @@ def holiday_on(date_str: str) -> dict | None:
 # What each answer means to the planner, in the sentence the household
 # sees when they tap it (COPY.md's acknowledgement shape: a bare "I'll…").
 ANSWER_ACKS = {
-    "hosting": "plan a dinner you host that day — tell me how many and I’ll shop for the bigger table.",
+    "hosting": "plan the big meal — tell me how many, when you want it on the table, and anything your guests can’t eat.",
     "out": "plan nothing for that dinner. If you’re bringing a dish, name it and I’ll add it to the week.",
     "just_us": "plan that day like any other.",
     "unsure": "leave it for now and ask again closer to the day.",
@@ -475,21 +486,28 @@ def answer_holiday(
     headcount: int | None = None,
     bring_dish: str | None = None,
     answered_by: str = "",
+    on_table_at: str | None = None,
+    guest_notes: str | None = None,
 ) -> dict:
     """
     Record how the household is spending the holiday on `date_str`, and
     make the plan follow: 'out' takes that dinner off the week (and plans
     the dish they're bringing into it, if they named one), 'hosting' turns
-    on the week's Hosting-guests tag with the headcount, 'just_us' and
-    'unsure' leave the day ordinary. Answering again replaces the answer
-    and undoes what the previous one did, so "actually we're staying home"
-    puts the dinner back as a question rather than leaving it blank.
+    on the week's Hosting-guests tag with the headcount and builds the big
+    meal into the plan that covers the day (big_meal.build_menu), 'just_us'
+    and 'unsure' leave the day ordinary. Answering again replaces the
+    answer and undoes what the previous one did, so "actually we're
+    staying home" puts the dinner back as a question rather than leaving
+    it blank.
 
     `headcount` is EXTRA people beyond the household (the same number the
     intake's guest steppers collect). `bring_dish` is the dish by name; ''
-    clears it. Both are kept only with the answer they belong to. The date
-    has to be a holiday Pomona knows about (rule table or calendar) — an
-    answer for an ordinary Tuesday would be a fact nothing reads.
+    clears it. `on_table_at` ("17:00", "5pm") is when the big meal should
+    be on the table and `guest_notes` is what the guests can't eat, in
+    their words — both hosting-only, '' clears. Everything is kept only
+    with the answer it belongs to. The date has to be a holiday Pomona
+    knows about (rule table or calendar) — an answer for an ordinary
+    Tuesday would be a fact nothing reads.
     """
     date.fromisoformat(date_str)
     if answer not in ANSWERS:
@@ -504,8 +522,15 @@ def answer_holiday(
     dish_name, dish_recipe_id = "", None
     if answer == "out" and bring_dish is not None and bring_dish.strip():
         dish_name, dish_recipe_id = _recipe_named(bring_dish)
+    table_at = _bm().normalise_on_table_at(on_table_at) if answer == "hosting" else ""
+    notes = (guest_notes or "").strip() if answer == "hosting" else ""
 
     previous = get_holiday_answer(date_str)
+    # A hosting answer given again keeps its menu — the details changing
+    # underneath it (the count, the time, a guest's note) don't throw away
+    # dishes the household may have changed by hand. Anything else undoes
+    # the previous answer's work first.
+    same_hosting = previous is not None and previous["answer"] == "hosting" and answer == "hosting"
     if previous is not None:
         # Fields not passed are inherited within the same answer, so chat
         # can say "we're bringing the casserole" after "we're going out"
@@ -515,23 +540,33 @@ def answer_holiday(
                 headcount = previous["headcount"]
             if bring_dish is None:
                 dish_name, dish_recipe_id = previous["bring_dish"], previous["bring_dish_recipe_id"]
-        _undo_effects(previous)
+            if on_table_at is None:
+                table_at = previous["on_table_at"]
+            if guest_notes is None:
+                notes = previous["guest_notes"]
+        if same_hosting:
+            _clear_hosting(date_str)
+        else:
+            _undo_effects(previous)
     headcount = headcount or 0
 
     conn = get_conn()
     conn.execute(
         """
         INSERT INTO holiday_answers
-            (household_id, date, holiday_name, answer, headcount, bring_dish, bring_dish_recipe_id, answered_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            (household_id, date, holiday_name, answer, headcount, bring_dish, bring_dish_recipe_id,
+             on_table_at, guest_notes, answered_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(household_id, date) DO UPDATE SET
             holiday_name = excluded.holiday_name, answer = excluded.answer,
             headcount = excluded.headcount, bring_dish = excluded.bring_dish,
             bring_dish_recipe_id = excluded.bring_dish_recipe_id,
+            on_table_at = excluded.on_table_at, guest_notes = excluded.guest_notes,
+            menu_json = CASE WHEN excluded.answer = 'hosting' THEN holiday_answers.menu_json ELSE '{}' END,
             answered_by = excluded.answered_by, updated_at = datetime('now')
         """,
         (household_id(), date_str, holiday["name"], answer, headcount, dish_name, dish_recipe_id,
-         acting_name(answered_by)),
+         table_at, notes, acting_name(answered_by)),
     )
     conn.commit()
     conn.close()
@@ -604,8 +639,42 @@ def _apply_effects(saved: dict) -> dict:
     elif answer == "hosting":
         changed["dinner"] = "hosting"
         changed["hosting"] = _set_hosting(d, saved["headcount"])
+        # The big meal itself. Never raises: an answer that saved fine must
+        # not fail over a menu — a proposal that can't be made degrades
+        # inside build_menu, and anything worse is logged and reported.
+        try:
+            changed["big_meal"] = _bm().build_menu(saved)
+        except Exception:
+            logger.exception("The big meal for %s could not be built", d)
+            changed["big_meal"] = {"menu": "failed", "status": "none"}
+        if changed["big_meal"].get("menu") == "kept":
+            # Details changed under a standing menu: re-check the dishes
+            # against what the guests can't eat and re-spread the prep, so
+            # a new note or a new count is honoured without a rebuild.
+            changed["big_meal"]["conflicts"] = _menu_conflicts(saved)
+            _bm().spread_prep(d)
 
     return changed
+
+
+def _menu_conflicts(saved: dict) -> list[dict]:
+    """Which dishes on a standing menu clash with the table's restrictions, guests' notes included."""
+    entry = _bm().menu_entry(saved["date"])
+    if entry is None:
+        return []
+    out = []
+    for dish in _bm().dishes_of(entry, {}):
+        if dish["role"] == "main":
+            import json as _json
+            try:
+                ingredients = _json.loads(entry["ingredients_json"] or "[]") if entry["recipe_id"] else []
+            except (TypeError, ValueError):
+                ingredients = []
+        else:
+            ingredients = dish.get("ingredients") or []
+        for hit in _bm().dish_conflicts(dish["name"], ingredients, saved.get("guest_notes") or ""):
+            out.append({"dish": dish["name"], "restriction": hit["restriction"], "member": hit.get("member")})
+    return out
 
 
 def _undo_effects(previous: dict) -> None:
@@ -644,6 +713,7 @@ def _undo_effects(previous: dict) -> None:
         if entry is not None:
             _reopen(plan_id, d, name)
     elif previous["answer"] == "hosting":
+        _bm().clear_menu(d, name)
         _clear_hosting(d)
 
 
@@ -778,22 +848,34 @@ def _intake_covering(d: str) -> tuple[dict | None, str, int]:
 
 def apply_to_plan(plan_id: int, start_date: str, day_count: int = 7) -> dict:
     """
-    Land the answers on a just-generated plan — the one consequence that
-    needs a plan to exist: the dish they're bringing goes into that day's
-    dinner. Everything else was written when they answered (attendance,
-    the intake tag) and is enforced by the passes that already run
-    (apply_slot_needs_to_plan). Never raises: a week that generated fine
-    must not fail over a casserole.
+    Land the answers on a just-generated plan — the consequences that need
+    a plan to exist: the dish they're bringing goes into that day's
+    dinner, and a hosted holiday's big meal is built around the dinner the
+    planner chose. Everything else was written when they answered
+    (attendance, the intake tag) and is enforced by the passes that
+    already run (apply_slot_needs_to_plan). Never raises: a week that
+    generated fine must not fail over a casserole.
     """
     planned = []
+    menus = []
     try:
         for h in holidays_for_period(start_date, day_count):
             a = h.get("answer")
             if a and a["answer"] == "out" and a["bring_dish"] and _plan_dish(a):
                 planned.append({"date": h["date"], "dish": a["bring_dish"]})
+            elif a and a["answer"] == "hosting":
+                # The big meal, built around the dinner the planner chose
+                # for the day (see big_meal.build_menu). Its own failure
+                # degrades inside; a crash here is logged, not raised.
+                try:
+                    result = _bm().build_menu(a)
+                except Exception:
+                    logger.exception("The big meal for %s could not be built at generation", h["date"])
+                    result = {"menu": "failed", "status": "none"}
+                menus.append({"date": h["date"], **result})
     except Exception:
         logger.exception("Holiday answers could not be applied to plan %s", plan_id)
-    return {"plan_id": plan_id, "dishes_planned": planned}
+    return {"plan_id": plan_id, "dishes_planned": planned, "big_meals": menus}
 
 
 # ---------- what the planner and the screens read ----------
@@ -811,7 +893,15 @@ def generation_context(start_date: str, day_count: int = 7) -> list[dict]:
         line = {"date": h["date"], "name": h["name"], "answer": answer}
         if answer == "hosting":
             line["extra_guests"] = a["headcount"]
-            line["plan"] = "a dinner they host, scaled to the bigger table; make it feel like the day"
+            line["plan"] = (
+                "the big meal they host: send the MAIN for that dinner, generous and fitting the day, "
+                "for the whole table — the sides and something sweet are added around it afterwards, "
+                "so don't send those as separate entries"
+            )
+            if a.get("guest_notes"):
+                line["guest_notes"] = a["guest_notes"]
+            if a.get("on_table_at"):
+                line["on_table_at"] = a["on_table_at"]
         elif answer == "out" and a["bring_dish"]:
             line["bring_dish"] = a["bring_dish"]
             line["plan"] = "they eat dinner elsewhere; the dish they're bringing is already planned into that dinner, so send no dinner entry for this date"

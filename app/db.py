@@ -424,6 +424,13 @@ _MIGRATIONS = [
     # (set_holiday_region) — there is no screen for it.
     ("households", "country", "TEXT NOT NULL DEFAULT 'CA'"),
     ("households", "province", "TEXT NOT NULL DEFAULT 'ON'"),
+    # Holidays, slice 2 — hosting the big meal (app/tools/big_meal.py). The
+    # time they want it on the table, what the guests can't eat, and the
+    # menu's own record; '' / '{}' on every existing answer = not given
+    # yet, which is the truth for an answer recorded before slice 2.
+    ("holiday_answers", "on_table_at", "TEXT NOT NULL DEFAULT ''"),
+    ("holiday_answers", "guest_notes", "TEXT NOT NULL DEFAULT ''"),
+    ("holiday_answers", "menu_json", "TEXT NOT NULL DEFAULT '{}'"),
     # Loop Board "Chores v1: every chore has a chosen owner" (Emily,
     # 2026-09-11). '' on every existing chore = "not decided yet";
     # _migrate_chore_modes below turns that into owned/shared/whoever from
@@ -769,6 +776,11 @@ def _backfill_snacks_per_week_set(conn):
 def _run_migrations(conn):
     for table, column, coltype in _MIGRATIONS:
         existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+        if not existing:
+            # The table isn't there at all: schema.sql creates it (with the
+            # column) on the same startup, so there is nothing to add — and
+            # ALTER on a missing table would abort every migration after it.
+            continue
         if column not in existing:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {coltype}")
     # Run every startup, not just when the column is first added — a

@@ -182,6 +182,19 @@ from .holidays import (  # noqa: F401
     rule_holidays,
     set_holiday_region,
 )
+# The big meal a hosted holiday becomes (slice 2, 2026-09-13): the menu on
+# that dinner's entry, the shop in two trips, the prep spread over the days
+# before, the day-of timeline. See big_meal.py.
+from .big_meal import (  # noqa: F401
+    annotate_shop_split as annotate_big_meal_shop_split,
+    get_big_meal,
+    propose_big_meal,
+    remove_big_meal_dish,
+    set_big_meal_dish,
+    set_big_meal_prep_day,
+    shop_split as big_meal_shop_split,
+    timeline as big_meal_timeline,
+)
 from .household import (  # noqa: F401
     _NON_RESTRICTION_VALUES,
     _get_or_create_member,

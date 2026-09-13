@@ -1342,7 +1342,7 @@ CREATE INDEX IF NOT EXISTS idx_error_events_household_created
 --
 -- call_site is the `label` passed to agent._create_with_retry -- the one
 -- function every Anthropic call in the app actually goes through. That is
--- also why recording lives there instead of at each of the ten call
+-- also why recording lives there instead of at each of the eleven call
 -- sites separately: one instrumentation point covers all of them, and a
 -- call site added later is covered automatically instead of needing this
 -- table kept in sync by hand.
@@ -1450,6 +1450,17 @@ CREATE TABLE IF NOT EXISTS holiday_answers (
     headcount INTEGER NOT NULL DEFAULT 0,     -- extra guests beyond the household, when hosting
     bring_dish TEXT NOT NULL DEFAULT '',      -- the dish they're taking, when out ('' = nothing)
     bring_dish_recipe_id INTEGER,             -- the saved recipe it matched, if one did
+    -- Slice 2 (hosting the big meal, app/tools/big_meal.py). All three
+    -- belong to a 'hosting' answer and are cleared with it.
+    on_table_at TEXT NOT NULL DEFAULT '',     -- "17:00" — when they want it on the table; '' = the household's dinner clock
+    guest_notes TEXT NOT NULL DEFAULT '',     -- what the guests can't eat, in their words ("Sam's vegetarian; no nuts")
+    -- The big meal's own record: {"entry_id", "status": full|main_only|none,
+    -- "main": {...timing}, "note"}. The dishes themselves live on the
+    -- dinner's meal_plan_entries row (the main as its recipe, the sides
+    -- and the sweet in sides_json) so shopping, cooking and leftovers
+    -- treat them as one dinner; this is only what the menu needs to know
+    -- about itself — the entry it built and the main's timing for the day-of.
+    menu_json TEXT NOT NULL DEFAULT '{}',
     answered_by TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),

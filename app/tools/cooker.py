@@ -536,11 +536,28 @@ def get_prep_schedule(weekly_plan_id: int | None = None) -> list[dict]:
             conn.close()
             return []
         weekly_plan_id = row["id"]
+    # This plan's own rows, plus any row another plan dated INTO this
+    # plan's period. A holiday's big meal (app/tools/big_meal.py) spreads
+    # its make-ahead work over the days before, and for a Monday holiday
+    # those days belong to the week before — a row dated there but written
+    # by the holiday's own plan has to show up where Now and the Cook
+    # screen actually look, which is the plan covering today — and the
+    # holiday's plan still sees its own dinner's rows, wherever dated.
+    plan_row = conn.execute("SELECT * FROM weekly_plans WHERE id = ?", (weekly_plan_id,)).fetchone()
+    first = last = None
+    if plan_row is not None:
+        from . import week_intake as _week_intake
+        start, days = _weekly_plan.plan_period(plan_row)
+        period = _week_intake.period_dates(start, days) if days > 0 else []
+        if period:
+            first, last = period[0], period[-1]
     rows = conn.execute(
         "SELECT id, task_date, description, related_meal, status, task_type, "
         "inventory_item_id, meal_plan_entry_id, quantity FROM prep_tasks "
-        "WHERE weekly_plan_id = ? AND household_id = ? ORDER BY task_date ASC, id ASC",
-        (weekly_plan_id, household_id()),
+        "WHERE household_id = ? AND (weekly_plan_id = ? OR (? IS NOT NULL AND task_date >= ? AND task_date <= ?) "
+        "OR meal_plan_entry_id IN (SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ?)) "
+        "ORDER BY task_date ASC, id ASC",
+        (household_id(), weekly_plan_id, first, first, last, weekly_plan_id),
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
