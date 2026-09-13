@@ -5311,13 +5311,23 @@
           showToast(carryDecision === 'keep' ? carryName + ' kept' : carryName + ' off the list', {
             label: 'Undo',
             onClick: function () {
+              var undoAnswer = null;
               groDo(function () {
-                return groPostEmpty('/api/grocery-list/' + carryId + '/carried-over-undo');
+                return groPostEmpty('/api/grocery-list/' + carryId + '/carried-over-undo')
+                  .then(function (r) { undoAnswer = r; return r; });
               }, "Couldn't undo that — try again.").then(function (undone) {
+                if (!undone) return;
+                // A kept amount that can't come back off this week's line
+                // (bought since, or two amounts that never reconciled) is
+                // not reopened — saying so beats asking twice.
+                if (undoAnswer && undoAnswer.unchanged) {
+                  showToast('Too late to undo that one — the line has moved on.');
+                  return;
+                }
                 // The question is back; if the screen had moved on, so
                 // does the household — the row at the top of the list is
                 // the way back in.
-                if (undone && groceryState.step === 'list') renderGrocery();
+                if (groceryState.step === 'list') renderGrocery();
               });
             }
           });

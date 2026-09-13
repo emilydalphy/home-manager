@@ -253,6 +253,35 @@ def test_undo_of_a_restored_keep_goes_back_to_waiting(curry):
     assert back["status"] == "carried" and back["source_weekly_plan_id"] == week_a
 
 
+def test_undo_of_a_keep_that_cannot_come_back_off_does_not_reopen(curry):
+    """Verifier, 2026-09-13: a keep merged into a line that never
+    reconciled ("1 bag + 2 lbs"), or a line since bought, can't be
+    subtracted back — reopening the question would count it twice."""
+    tools.add_recipe("Frozen thighs", ingredients=[
+        {"item": "Chicken thighs", "qty": "1 bag", "category": "frozen"}])
+    _approve_week(0)
+    _approve_week(1, meal="Frozen thighs")
+    row = _carried("Chicken thighs")
+    tools.keep_carried_over_item(row["item_id"])
+    assert _needed("Chicken thighs") == "1 bag + 2 lbs"
+    answer = tools.undo_carried_over_decision(row["item_id"])
+    assert answer["unchanged"] is True and answer["reason"] == "acted_on"
+    assert _needed("Chicken thighs") == "1 bag + 2 lbs"
+    assert all(c["item"] != "Chicken thighs" for c in tools.list_carried_over_items()), "not asked again"
+
+
+def test_undo_of_a_keep_after_the_line_was_bought_does_not_reopen(curry):
+    _approve_week(0)
+    _approve_week(1)
+    row = _carried("Chicken thighs")
+    tools.keep_carried_over_item(row["item_id"])
+    bought = next(i for i in tools.list_grocery_list() if i["item"] == "Chicken thighs")
+    tools.mark_grocery_item(bought["id"], "purchased")
+    answer = tools.undo_carried_over_decision(row["item_id"])
+    assert answer["unchanged"] is True
+    assert all(c["item"] != "Chicken thighs" for c in tools.list_carried_over_items())
+
+
 def test_answers_are_idempotent_and_undo_leaves_a_never_carried_row_alone(curry):
     _approve_week(0)
     _approve_week(1)

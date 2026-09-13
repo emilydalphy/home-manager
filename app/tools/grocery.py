@@ -1187,16 +1187,27 @@ def undo_carried_over_decision(item_id: int) -> dict:
         conn.close()
         return {"item_id": item_id, "item": row["item"], "unchanged": True}
     if row["status"] == "removed" and row["removed_by"] == _CARRIED_KEPT:
+        # The kept amount has to come back OFF this week's line before the
+        # question can be asked again — otherwise a second Keep counts it
+        # twice. Two cases where it can't: the line has gone (bought, in a
+        # cart, removed), or the two amounts never reconciled ("1 bag +
+        # 2 lbs" — _subtract_quantity can't read that back apart). Then
+        # the honest answer is "too late", not a reopened question
+        # (verifier, 2026-09-13 — reproduced both).
         target = _this_weeks_line(conn, row["item"])
-        if target is not None:
-            new_qty, fully_removed = _subtract_quantity(target["quantity"] or "", row["quantity"] or "")
-            # Only ever trims. If the subtraction would empty the line, the
-            # line was edited since and the honest move is to leave it.
-            if not fully_removed and new_qty != (target["quantity"] or ""):
-                conn.execute(
-                    "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
-                    (new_qty, target["id"], household_id()),
-                )
+        if target is None or target["status"] != "needed":
+            conn.close()
+            return {"item_id": item_id, "item": row["item"], "unchanged": True, "reason": "acted_on"}
+        new_qty, fully_removed = _subtract_quantity(target["quantity"] or "", row["quantity"] or "")
+        if not fully_removed and new_qty == (target["quantity"] or ""):
+            conn.close()
+            return {"item_id": item_id, "item": row["item"], "unchanged": True, "reason": "acted_on"}
+        # Fully removed means the line held nothing but the kept amount
+        # (this week's line was blank), so blank is what it goes back to.
+        conn.execute(
+            "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
+            ("" if fully_removed else new_qty, target["id"], household_id()),
+        )
     elif row["status"] not in ("removed", "needed"):
         # Bought or in a cart since: the decision has been acted on.
         conn.close()
