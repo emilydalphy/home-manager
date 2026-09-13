@@ -402,9 +402,39 @@ def _has_bound_household(request: Request) -> bool:
     return not security.is_public_path(request.scope["path"])
 
 
+class ChatContext(BaseModel):
+    """
+    What the household is looking at as they send a message — the subject
+    of the turn, sent by the shell when chat is opened FROM something
+    rather than from the ask bar. Today one kind: `planned_meal`, from a
+    meal card's "Tell me what instead" (Loop Board, Emily 2026-09-13).
+    entry_id is the card's row; date and slot let the server find the meal
+    again after a swap has replaced that row. The server resolves all of
+    it against the household's own live plan (tools.describe_planned_meal)
+    — nothing here is trusted as a description, only as a pointer.
+    """
+    kind: str
+    entry_id: int | None = None
+    date: str | None = None
+    slot: str | None = None
+
+
 class ChatRequest(BaseModel):
     session_id: str = "default"
     message: str
+    context: ChatContext | None = None
+
+
+def _chat_turn_kwargs(*, proactive_check: bool, context: ChatContext | None) -> dict:
+    """
+    run_agent_turn's keyword arguments for one turn. `context` is only
+    passed when there is one, so a turn from the ask bar is the exact call
+    it has always been.
+    """
+    kwargs = {"proactive_check": proactive_check}
+    if context is not None:
+        kwargs["context"] = context.model_dump()
+    return kwargs
 
 
 class ChatAction(BaseModel):
@@ -737,6 +767,20 @@ class ConfirmScanRequest(BaseModel):
 
 class StapleDecisionRequest(BaseModel):
     decision: str  # plenty | skip
+
+
+class CarriedOverDecisionRequest(BaseModel):
+    decision: str  # keep | drop
+
+
+class SpiceTickRequest(BaseModel):
+    ticked: bool = True
+
+
+class SubstituteRequest(BaseModel):
+    alternative: str
+    at_home: bool = False
+    author: str = ""
 
 
 class StapleAddRequest(BaseModel):
@@ -3761,6 +3805,113 @@ def undo_pre_shop_flag(item_id: int):
     return result
 
 
+@app.get("/api/grocery-list/carried-over")
+def get_carried_over_items_view():
+    """
+    What is still on the list from an earlier week and waiting for a keep
+    or drop (see grocery.set_aside_carried_over_items) — the Shop tab's
+    "Still on the list from last week" step, shown before sorting starts.
+    Each row carries this week's own amount for the same thing, when the
+    week's recipes want it too, so the two are never shown as one number.
+    """
+    try:
+        items = tools.list_carried_over_items()
+    except Exception as e:
+        logger.exception("Carried-over list lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"items": items}
+
+
+@app.post("/api/grocery-list/{item_id}/carried-over")
+def decide_carried_over_item_view(item_id: int, req: CarriedOverDecisionRequest):
+    """One answer on the carry-over step: 'keep' (still want it) or 'drop' (don't need it). Both undo via /carried-over-undo."""
+    if req.decision not in ("keep", "drop"):
+        raise HTTPException(status_code=400, detail="decision must be 'keep' or 'drop'")
+    try:
+        if req.decision == "keep":
+            result = tools.keep_carried_over_item(item_id)
+        else:
+            result = tools.drop_carried_over_item(item_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Carried-over decision failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/{item_id}/carried-over-undo")
+def undo_carried_over_item_view(item_id: int):
+    """Undo a keep or drop on the carry-over step — the line goes back to waiting for an answer."""
+    try:
+        result = tools.undo_carried_over_decision(item_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Carried-over undo failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.get("/api/grocery-list/spices")
+def get_spices_this_week_view():
+    """
+    The "Spices this week" section (spices.py): every spice the week's
+    recipes call for, unticked by default and off the to-buy count until
+    ticked, plus any already ticked onto the list. `recently_bought` names
+    the ones left out because a line for them was bought lately.
+    """
+    try:
+        result = tools.list_spices_this_week()
+    except Exception as e:
+        logger.exception("Spices lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/{item_id}/spice")
+def tick_spice_view(item_id: int, req: SpiceTickRequest):
+    """Tick a spice onto the list (an ordinary needed line, in its store) or untick it back into the section."""
+    try:
+        result = tools.tick_spice(item_id, ticked=req.ticked)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Spice tick failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/{item_id}/substitute")
+def substitute_grocery_item_view(item_id: int, req: SubstituteRequest):
+    """
+    "I'll use something else instead" while sorting the list: the line
+    becomes the alternative (or comes off, with at_home), and the recipe's
+    ingredient line says so when cooking. Undo via /substitute-undo.
+    """
+    try:
+        result = tools.substitute_grocery_item(item_id, req.alternative, at_home=req.at_home, author=req.author)
+    except ValueError as e:
+        if "No grocery list item" in str(e):
+            raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Grocery substitution failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/{item_id}/substitute-undo")
+def undo_substitute_grocery_item_view(item_id: int):
+    """Undo a substitution — the line goes back to its original name, and back on the list if the swap took it off."""
+    try:
+        result = tools.undo_substitution(item_id)
+    except Exception as e:
+        logger.exception("Grocery substitution undo failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
 @app.post("/api/grocery-list/pre-shop/keep-all")
 def keep_all_pre_shop_flags_view():
     """'Keep all {n}' — resolves every currently flagged pre-shop item as keep, in one write."""
@@ -4492,7 +4643,10 @@ def chat(req: ChatRequest, request: Request):
     history = SESSIONS.get(session_id, [])
     is_new_sitting = time.time() - SESSION_TOUCHED.get(session_id, 0) > _NEW_SITTING_GAP
     try:
-        reply, updated_history = run_agent_turn(history, req.message, proactive_check=is_new_sitting)
+        reply, updated_history = run_agent_turn(
+            history, req.message,
+            **_chat_turn_kwargs(proactive_check=is_new_sitting, context=req.context),
+        )
     except AssistantUnavailableError as e:
         # Claude's API itself was down/overloaded even after retrying inside
         # run_agent_turn — str(e) is already a warm, customer-facing
@@ -4514,7 +4668,8 @@ def chat(req: ChatRequest, request: Request):
     return ChatResponse(**result)
 
 
-def _stream_chat_turn(*, session_id: str, message: str, history: list, proactive_check: bool):
+def _stream_chat_turn(*, session_id: str, message: str, history: list, proactive_check: bool,
+                      context: ChatContext | None = None):
     """
     Run run_agent_turn on a background thread and yield its progress as
     Server-Sent Events, the chat-loop twin of _stream_week_generation
@@ -4539,7 +4694,10 @@ def _stream_chat_turn(*, session_id: str, message: str, history: list, proactive
     def run():
         token = agent._WEEK_GEN_PROGRESS.set(on_item)
         try:
-            reply, updated_history = run_agent_turn(history, message, proactive_check=proactive_check)
+            reply, updated_history = run_agent_turn(
+                history, message,
+                **_chat_turn_kwargs(proactive_check=proactive_check, context=context),
+            )
             events.put(("done", _finish_chat_turn(session_id, history, reply, updated_history)))
         except AssistantUnavailableError as e:
             logger.warning("Chat turn hit a transient Claude API failure: %s", e)
@@ -4577,6 +4735,7 @@ def chat_stream(req: ChatRequest, request: Request):
     return StreamingResponse(
         _stream_chat_turn(
             session_id=session_id, message=req.message, history=history, proactive_check=is_new_sitting,
+            context=req.context,
         ),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},

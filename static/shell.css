@@ -424,6 +424,11 @@ html, body {
    "Not now", and the empty moment's "Just tonight"). */
 .dock-row { display: flex; align-items: center; gap: 14px; }
 .dock-row .dock-primary { flex: 1 1 auto; width: auto; min-width: 0; }
+/* Shop's trip screens put "Finish later" beside their own action the same
+   way (2026-09-13), and LIST puts "Finish the trip" beside "Continue the
+   trip" over a paused trip; .gro-primary / .gro-secondary are that tab's
+   older names for the same 52px button, so they take the same row rule. */
+.dock-row .gro-primary, .dock-row .gro-secondary { flex: 1 1 auto; width: auto; min-width: 0; }
 .dock-row .dock-link { flex: 0 0 auto; }
 
 /* =====================================================================
@@ -1609,6 +1614,52 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   min-height: 44px;
 }
 .ask-chip:hover { background: var(--sand); }
+
+/* The subject line above the composer — "About Tuesday's dinner · Turkey
+   Burgers" — for a chat opened from a meal card (Emily, 2026-09-13). One
+   quiet line, not a chip row: it is a fact about the conversation, not a
+   suggestion to tap, so it sits in --ink-secondary with the dish in
+   --ink-strong and the one tappable thing (the ×) at 44px. */
+.ask-context {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  /* The text lines up with the composer's own (its 2px border + 16px
+     padding); the row's height is the ×'s 44px, so it pulls itself back
+     into the sheet's 12px gaps rather than opening a band of air. */
+  padding: 0 0 0 18px;
+  margin: -6px 0 -10px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink-secondary);
+  flex-shrink: 0;
+}
+.ask-context[hidden] { display: none; }
+.ask-context-label { flex-shrink: 0; }
+.ask-context-text {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink-strong);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ask-context-clear {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  color: var(--ink-secondary);
+  font-family: var(--font-body);
+  font-size: 22px;
+  line-height: 1;
+  border-radius: var(--radius-chip);
+  cursor: pointer;
+}
+.ask-context-clear:hover { background: var(--sand); }
 
 .ask-composer-bar {
   background: var(--ground);
@@ -4508,6 +4559,58 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    side of the label narrows. */
 .gro-sortall-pills .gro-pill { padding: 10px 13px; font-size: 13px; }
 
+/* ---------- "Have it" / "Use something else" ----------
+   The two answers sorting offers on every item. The pills are the sort
+   chips (.gro-pill-have / .gro-pill-else); the field that opens under
+   "Use something else" borrows the ⋯ menu's input and the pre-shop pair
+   of buttons, so nothing here is a new kind of control. */
+.gro-subst { padding: 4px 0 10px; }
+.gro-subst .gro-subst-input { width: 100%; box-sizing: border-box; margin-bottom: 8px; }
+.gro-subst-actions { display: flex; gap: 8px; }
+.gro-subst-actions .gro-ps-btn-drop { border-color: var(--hairline-strong); }
+.gro-sortcard .gro-subst { padding: 0 0 12px; }
+.gro-rowmenu-answers { padding-top: 0; }
+
+/* ---------- Spices this week ----------
+   The Staples card's shape (below), holding trip-style tick rows (.gro-row
+   / .gro-box) so a tick here looks like a tick anywhere in the tab. No
+   .done strike — the row is not bought, it is on the list now. */
+.gro-spices .gro-spice-row { cursor: pointer; }
+.gro-spices-line {
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-secondary);
+  margin: 10px 0 4px;
+}
+.gro-spices-recent {
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-secondary);
+  margin: 6px 0 4px;
+}
+
+/* ---------- CARRY: last week's leftovers, keep or drop ----------
+   One row per line an earlier week left unbought, in the pre-shop check's
+   row shape (.gro-ps-row / .gro-ps-btn) — the same keep-or-drop question,
+   asked as a step rather than a banner, so the rows sit on the card's
+   hairline instead of the banner's celadon edge. This week's own amount
+   gets its own line under the name: two numbers, never one. */
+.gro-carry { padding: 0 14px; }
+.gro-carry .gro-carry-row { border-top: 1.5px solid var(--hairline); }
+.gro-carry .gro-carry-row:first-of-type { border-top: none; }
+.gro-carry .gro-ps-name { display: flex; align-items: baseline; gap: 10px; }
+.gro-carry-thisweek {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+  margin: 0 0 10px;
+}
+.gro-carry .gro-ps-actions { margin-top: 8px; }
+.gro-carry .gro-ps-btn-drop { border-color: var(--hairline-strong); }
+
 /* ---------- WHERE NEXT: the stops that are left ---------- */
 .gro-nextstops { padding: 0 14px; }
 .gro-nextrow {
@@ -7279,12 +7382,97 @@ span.cook-week-name { cursor: default; }
   text-transform: uppercase;
   color: var(--apricot-light);
 }
-.wk-allset .wk-quick-card.on-spruce { background: var(--spruce-raised); border-color: var(--spruce-raised); color: var(--ivory-ink); }
-.wk-allset .wk-quick-card.on-spruce .wk-quick-title,
-.wk-allset .wk-quick-card.on-spruce .wk-quick-q { color: var(--ivory-ink); }
+/* The two quick asks as a step of their own (Emily, 2026-09-13: "not a
+   subtle piece to skip"): above the counters, a card headline rather than
+   an eyebrow, each question a heading with its chips and answers open
+   under it. Everything inside sits on --spruce-raised, and the ask bodies
+   were written for an ivory card — their --ink-secondary helper lines
+   measured 2.37:1 here in light (Emily: "the dark font on the 'all set'
+   screen is hard to read"), the cook-ahead sentence in --ink 1.21:1. Every
+   text colour below is re-inked to the on-spruce tokens and measured on
+   --spruce-raised, light / dark:
+     .wk-quick-title, .wk-quick-q, .ca-ask-line   --ivory-ink        9.86 / 7.70
+     .wk-quick-body-line, .ca-ask-count           --ivory-ink-muted  8.62 / 6.52
+     .btn-sand label                              --ivory-ink        9.86 / 7.70
+     .wk-quick-done-tick                          --celadon          6.06 / 4.74
+     a ticked chip: --on-accent-ink on --celadon                     7.23 / 8.46
+   A ticked chip is solid celadon, the cook hero's own .cook-ahead-day.is-on
+   recipe — the tint it used to take is 1.38:1 against this card in dark. */
+.wk-allset .wk-quick-card.on-spruce {
+  background: var(--spruce-raised);
+  border-color: var(--spruce-raised);
+  color: var(--ivory-ink);
+  padding: 16px 16px 10px;
+  margin-top: 6px;
+}
+.wk-allset .wk-quick-card.on-spruce .wk-quick-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -0.028em;
+  line-height: 1.15;
+  text-transform: none;
+  color: var(--ivory-ink);
+}
+.wk-allset .wk-quick-card.on-spruce .wk-quick-head.is-fixed {
+  min-height: 0;
+  padding: 14px 0 6px;
+  cursor: default;
+}
+.wk-allset .wk-quick-card.on-spruce .wk-quick-q {
+  font-family: var(--font-display);
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  color: var(--ivory-ink);
+}
 .wk-allset .wk-quick-card.on-spruce .wk-quick-sub { color: var(--ivory-ink-muted); }
 .wk-allset .wk-quick-card.on-spruce .wk-quick-line + .wk-quick-line { border-top-color: var(--spruce-hover); }
 .wk-allset .wk-quick-card.on-spruce .wk-quick-ask { color: var(--apricot-light); }
+.wk-allset .wk-quick-card.on-spruce .wk-quick-body-line,
+.wk-allset .wk-quick-card.on-spruce .ca-ask-count { color: var(--ivory-ink-muted); }
+.wk-allset .wk-quick-card.on-spruce .ca-ask-line { color: var(--ivory-ink); }
+.wk-allset .wk-quick-card.on-spruce .ca-ask-block + .ca-ask-block { border-top-color: var(--spruce-hover); }
+.wk-allset .wk-quick-card.on-spruce .defrost-chip.is-selected,
+.wk-allset .wk-quick-card.on-spruce .ca-ask-day.is-on {
+  background: var(--celadon);
+  border-color: var(--celadon);
+  color: var(--on-accent-ink);
+}
+/* The quiet answer, in the cook hero's outline recipe (.cook-serves-btn):
+   the ivory-card version's --hairline-strong edge and --ink-secondary
+   label both vanish on spruce. */
+.wk-allset .wk-quick-card.on-spruce .ny-actions .btn-sand {
+  border-color: var(--apricot-rule);
+  color: var(--ivory-ink);
+}
+.wk-allset .wk-quick-card.on-spruce .ny-actions .btn-sand:hover { background: var(--spruce-hover); }
+.wk-allset .wk-quick-card.on-spruce .ny-actions .btn-gold { border: 1.5px solid var(--apricot-rule); }
+.wk-allset .wk-quick-card.on-spruce .ny-actions .btn-gold:hover { background: var(--spruce-hover); }
+/* An answered ask: the tick and the line it came to. Inked for the ivory
+   receipt card first (the Cook view's re-ask can land an answer there),
+   then re-inked on spruce. */
+.wk-quick-done {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 0;
+}
+.wk-quick-done-tick {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  color: var(--celadon-label);
+}
+.wk-quick-done-tick svg { width: 22px; height: 22px; display: block; }
+.wk-quick-done-text {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.wk-allset .wk-quick-card.on-spruce .wk-quick-done-tick { color: var(--celadon); }
+.wk-allset .wk-quick-card.on-spruce .wk-quick-done-text { color: var(--ivory-ink); }
 .wk-allset-dock { margin: auto -20px 0; background: var(--spruce); border-top-color: var(--spruce-hover); }
 .tab-panel.is-allset { background: var(--spruce); }
 .tab-panel.is-allset #week-steps { flex: 1 0 auto; display: flex; flex-direction: column; }

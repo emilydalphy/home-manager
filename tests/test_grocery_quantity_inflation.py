@@ -41,8 +41,13 @@ def _days() -> list[str]:
     return tools._week_dates(_week_start())
 
 
+# Spices (2026-09-13, spices.py): a recipe's olive oil / salt now waits
+# UNTICKED in the "Spices this week" section (status 'spice') rather than
+# sitting on the to-buy list, so "the shop" here reads both — the amounts
+# these tests pin are unchanged, only where the line waits moved.
 def _qty(item: str) -> str | None:
-    return next((i["quantity"] for i in tools.list_grocery_list() if i["item"] == item), None)
+    rows = tools.list_grocery_list() + tools.list_grocery_list(status="spice")
+    return next((i["quantity"] for i in rows if i["item"] == item), None)
 
 
 def _plan(plan_id: int, dates: list[str], meal: str, slot: str) -> None:
@@ -289,7 +294,10 @@ def test_a_package_already_in_the_cart_is_never_yanked_out(week):
         {"item": "Olive oil", "qty": "1 bottle", "category": "pantry"}])
     _plan(week, _days()[:2], "Stir fry", "dinner")
     tools.approve_weekly_plan(week, approved_by="Emily")
-    oil = next(i for i in tools.list_grocery_list() if i["item"] == "Olive oil")
+    # Ticked out of the spices section first — a spice in a cart went
+    # through the same tick as anything else (spices.py).
+    oil = next(i for i in tools.list_grocery_list(status="spice") if i["item"] == "Olive oil")
+    tools.tick_spice(oil["id"])
     tools.mark_grocery_item(oil["id"], "in_cart")
 
     tools.clear_weekly_plan(week)

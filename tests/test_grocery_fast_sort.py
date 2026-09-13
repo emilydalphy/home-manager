@@ -18,7 +18,8 @@ Three more things ride along, each because the sorting step touched them:
   * a household with one shop, or none, never sees a sorting step at all,
     and a one-shop household can now start a trip without tagging anything.
   * finishing a stop asks where next instead of assuming the snapshot's
-    order, and offers "I'm done shopping for today".
+    order, and offers a way to end the trip early ("Skip the rest"
+    since 2026-09-13; it was "I'm done shopping for today").
 
 Most of this runs shell.js's own functions under node against a small stub,
 the way tests/test_stores_multiselect.py does — every bug this fixes is a
@@ -497,7 +498,10 @@ groceryState.tripDone = { Costco: true };
 console.log(JSON.stringify(groDockHtml(groceryState.data, 'next')));
 """)
     assert "trip-end" in out
-    assert "done shopping for today" in out
+    # "Skip the rest" since 2026-09-13 — it was "I'm done shopping
+    # for today", which is what a shopper going home with a store still to
+    # do would say too; see tests/test_shop_trip_exit.py.
+    assert ">Skip the rest<" in out
     assert "gro-primary" not in out, "the stops above are the choice; ending early is not the accent"
 
 

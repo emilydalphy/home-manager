@@ -462,6 +462,397 @@ why*, not duplicating the diff.
     `split_ingredient_line` already did) — for the photo draft AND the
     model-read half of the link import; markup-read links were already
     going through the line splitter and are unchanged.
+- **2026-09-13 — Sorting the list: "Have it" and "Use something else" on
+  every item. Branch `worktree-grocery-sorting-round`, NOT merged at the
+  time of writing.** Loop Board feature (Emily: "there should also be the
+  'have this already' option ... instead of fresh oregano I'll use dry
+  oregano"). Both verbs sit wherever an item is being sorted — the
+  one-at-a-time queue, the one-screen sort, and a LIST row's `⋯` (the
+  only place for a one-shop household, which never sees a sorting step).
+  - **"Have it" is the pre-shop drop, not the inventory route — and the
+    queue's existing "Have it" pill was moved off `/already-have` to say
+    so.** That route (`move_grocery_item_to_inventory`) writes a row to
+    `inventory_items`, and the ticket's own rule is policy 2026-09-01:
+    "have it already" is a per-week answer, never inventory work.
+    `drop_grocery_item_pre_shop` already was exactly that — soft-remove,
+    undo, listed on the wrap-up under "Already have", and a staple's line
+    dropped this way tells the staple "we have plenty". The
+    `/already-have` route and its handler stay for anything else.
+  - **"Use something else" is a per-WEEK record** (`grocery_substitutions`,
+    `grocery.substitute_grocery_item`): the line is renamed to the
+    alternative — quantity kept as written, since nobody can convert fresh
+    oregano into dry, so the number stays for the person to adjust — or
+    soft-removed when the alternative is at home; `get_cooker_view`
+    annotates every matching ingredient in that week's meals with
+    `substitute`, and `cookIngredientLabel` (the one place a cook-screen
+    ingredient is worded) appends "— using dry oregano instead". Not a
+    recipe edit: next week the recipe asks for fresh again. The existing
+    `log_cooking_deviation` / `recipe_notes` is a permanent note on the
+    recipe and was left alone for that reason.
+- **2026-09-13 — Spices this week: one opt-in section, the list assumes
+  a spice rack. Branch `worktree-grocery-sorting-round`, NOT merged at
+  the time of writing.** Loop Board improvement (Emily: "put all the
+  spices together under one section ... select the ones you want to add
+  to the list to buy ... it also takes up a lot of space and scrolling").
+  New `app/tools/spices.py`: `is_spice(name)` is a MAINTAINED LIST of
+  names (spices, dried herbs, salt/pepper, cooking oils) tried from the
+  most specific reading down — whole name, descriptors stripped, form
+  word dropped ("cumin seeds"), last word alone — and never a heuristic
+  on the word "spice". Fresh herbs stay in produce: basil, cilantro,
+  parsley, mint, dill, chives, rosemary, thyme, sage, tarragon count only
+  when written "dried", and "fresh" anything never counts. `_NOT_ALONE`
+  is what keeps a bell pepper, a garlic clove and a fresh chili out.
+  - **The model is a STATUS, not a flag.** A plan's spice is inserted by
+    `add_grocery_item` with `status = 'spice'`; a tick makes it
+    'needed'; an untick puts it back. So every reader of "to buy" —
+    counts, the sort queue, the trip, pre-shop flags, the wrap-up — is
+    right without knowing spices exist, and the merge (`add_grocery_item`
+    now matches 'spice' rows too) keeps two recipes' cumin on one line.
+    A PERSON adding a spice by name ticks the pending line: their add is
+    a want. `_reverse_meal_grocery_contributions` and
+    `clear_stale_grocery_items` treat 'spice' like 'needed'; a new
+    week's approval deletes the previous week's still-unticked spices
+    (never wanted) while a ticked one goes through keep-or-drop like any
+    line, and keeping it ticks this week's twin.
+  - **Judgment calls, all one line to change:** salt, pepper and oils
+    are spice-rack things (Emily's ticket left it open); a spice with a
+    purchased line made within `RECENTLY_BOUGHT_DAYS` (56) is not offered
+    again — the same "created_at stands in for bought" reasoning as
+    `staples._seed_history` — and the section names what it left out so
+    "all the spices the recipes need" stays true; the section is closed
+    by default on LIST (less scrolling was half the ask), with its line
+    "All the spices the recipes need. Tick the ones you need to buy."
+    Six existing tests that read a recipe's olive oil / salt off the
+    needed list now read the section as well — the amounts they pin are
+    unchanged, only where the line waits moved.
+- **2026-09-13 — Last week's leftovers: asked before they add onto this
+  week. Branch `worktree-grocery-sorting-round`, NOT merged at the time of
+  writing.** Loop Board bug (Emily: "some of the quantities are so high
+  but I think it might be because it was adding on from last week's").
+  Root cause, reproduced in `tests/test_grocery_carry_over.py`:
+  `approve_weekly_plan` ingests through `add_grocery_item`, whose merge
+  finds ANY still-'needed' line with the same name — including last
+  week's unbought "2 lbs chicken thighs" — sums this week's 2 lbs into it
+  and stamps the NEW plan's id on the row (`keep_standing` is only for
+  hand adds). So the list said 4 lbs, nothing said why, and
+  `clear_stale_grocery_items` could never take the old share off because
+  the row now belonged to the new week. It fires every time a week is
+  approved while the previous one still has a day left — any Sunday —
+  because `_live_plan_ids` keeps a plan alive through its last day, so
+  generation's cleanup pass leaves those lines in place. Same code path
+  as the open "hand-added unit vs plan unit concatenates" card
+  (`_try_consolidate_quantity` → `_repeat_or_concatenate`): that card is
+  the same merge failing to reconcile units; this one is the merge
+  succeeding on the wrong two weeks. Not fixed here.
+  - **Fix: set aside, then ask.** On the transition into 'approved',
+    `grocery.set_aside_carried_over_items` moves every 'needed' line from
+    an earlier plan whose period has STARTED to `status = 'carried'`
+    (`carried_from_plan_id` remembers whose), before a single ingredient
+    lands — so this week's amounts go on clean lines. The Shop tab asks
+    one screen before sorting: "Still on the list from last week — keep
+    or drop?" (Emily's option (a), 2026-09-13), showing this week's own
+    amount on its own line. Keep adds the old amount onto this week's
+    line out loud (or restores the line as a standing want, source NULL,
+    so no later cleanup deletes something asked for); Don't need
+    soft-removes; both undo, and the wrap-up's already-have list skips
+    both (`removed_by` carried_kept / carried_dropped).
+  - **What is NOT a leftover, on purpose:** a hand-added line (a standing
+    want — merges exactly as before), a staple's suggestion, an excluded
+    line, anything already in a cart, and — the judgment call — a plan
+    that has not started yet: approving two weeks ahead is building next
+    week's list, and nobody has had a chance to buy it, so those still
+    merge the old way. Unanswered 'carried' rows are cleared with the
+    rest by `clear_stale_grocery_items` once their plan has gone by.
+
+- **2026-09-13 — A way out of the Shop loop before every store is done.
+  Branch `worktree-shop-exit`, NOT merged at the time of writing.** Loop
+  Board "Shop: a way out of the Shop loop" (Bug, High, Beta). Emily, on
+  her phone: "unless you complete all the shops, you get stuck in the
+  Shop loop." Four things trapped her, all client-side in `static/shell.js`
+  (there is no server-side trip; `shopping_trips` is a per-stop log):
+  WHERE NEXT had no way to the root — its crumb reopens the stop just
+  finished (on purpose) and its one button, "I'm done shopping for
+  today", is what a shopper going home with a store still to do would
+  say, and it led into "How did it go?" asking about a store she had not
+  been to; TRIP and WRAP UP's "‹ Shop" crumb landed on a list identical
+  to one with no trip on; "Start the trip" over a paused trip resumed at
+  `tripIndex`, which still names the stop just FINISHED after "Done at
+  Costco" (WHERE NEXT never moves it), so coming back reopened Costco and
+  the only way on was to finish it again — the loop; and the trip was
+  page-view state, gone with every relaunch of the installed app, leaving
+  what had been ticked sitting `in_cart` on the server off every screen.
+  Now: "Finish later" as a `.dock-link` beside every trip screen's own
+  action (`groTripPauseLinkHtml`, `trip-pause`); WHERE NEXT's end button
+  reads "Skip the rest"; LIST over a paused trip says "Trip in progress ·
+  1 stop left" in the band and offers "Continue the trip" + "Finish the
+  trip" (`groTripPausedDockHtml`, `groResumeTrip`, `groFinishTrip` — one
+  finish function shared with WRAP UP); continuing lands on the current
+  stop if still open, else on WHERE NEXT; and the trip is mirrored into
+  localStorage per household (`groSaveTrip`/`groRestoreTrip`, read once
+  on the first list load, kept `GRO_TRIP_KEEP_MS` = 3 days).
+  - **Finishing from LIST is one tap and skips "How did it go?"** — the
+    ask was "the remaining stores aren't happening", and the wrap-up's
+    questions ("Couldn't find it" / "Somewhere else") are about stores
+    you visited. It commits any trolley (`groFinishAnyRemainingCarts`),
+    leaves everything needed as needed, and clears the snapshot.
+  - **The mirror is never cleared before it has been read.** `goGroceryStep`
+    saves on every step change, and an approval's "Open the list" or the
+    first sort landing runs before the list loads — with no trip in memory
+    yet, that save used to be a wipe. `groSaveTrip` refuses to remove the
+    key until `tripRestored` is true. Caught by the harness, not by review.
+  - The paused-trip helpers (`groTripPaused`, `groTripPausedLine`,
+    `groInCartCount`) live with the renderers, above the "Actions" marker:
+    `tests/test_stores_multiselect.py` slices the region there and calls
+    `groDockHtml`, which reads them.
+  - Tests: `tests/test_shop_trip_exit.py` (25, node harness), two copy
+    markers updated for the renamed button, one root-band marker for the
+    band's sub-line. 3370 on the branch.
+
+- **2026-09-13 — Planning has a door that isn't Approve. Branch
+  `worktree-planning-exit`, NOT merged at the time of writing.** Loop
+  Board "Planning: a way out of the draft that isn't approving it" (Bug,
+  High; Emily on her phone: "you can only exit the process by approving
+  the week"). Two traps, both real, neither a modal or a route loop:
+  - **`/plan-week` had no way out.** It is a standalone page with no tab
+    bar by design (see its own header comment and `plan_week_page` in
+    main.py), reached by `window.location.href` — and on an installed PWA
+    there is no browser chrome either. Its first screen hid the stepper's
+    "‹ Back" (`showStep`), the drafting screen hid it too, and nothing on
+    any screen led anywhere but "Draft my week". It now carries ONE
+    "‹ Plan" crumb above the eyebrow, outside the step sections so it is
+    on every screen including the drafting one (`leaveFlow`). A plain
+    navigation to `/week`, never `history.back()` (nav v2 rule 1).
+    Leaving writes the current screen's answers as a revision — keepalive,
+    never awaited, and only if something changed since the screen opened
+    (`answersAtLoad`) — so coming back carries on, and a screen left
+    untouched does not make the next visit narrate "carried on from your
+    answers" about nothing. Leaving mid-draft saves nothing: the answers
+    went with the tap, and `_stream_week_generation` runs on its own
+    daemon thread, so the draft still lands, as a draft. The drafting
+    screen says so in one line.
+  - **The draft on Plan had no "More ···".** Since Build 3 (2026-09-11,
+    `da12386`) a draft's root is the Review, and `reviewStepHtml`'s root
+    form rendered the two views and Approve and nothing else — the More
+    sheet's own "Try again" and "Change my answers" rows for a draft
+    (`renderMealsMoreSheet`) existed but no button on a draft opened the
+    sheet. The tab bar never hid, so this was not a trap in the strict
+    sense, but "continue or start again" needs the sheet. The week root's
+    `.wk-foot` with `#wk-more` is on the draft root now, above the dock;
+    `wireMealsStep` already wired it. The deeper approved-week form keeps
+    its crumb and gets no foot (one way back per screen).
+  - What leaving does NOT do is pinned by `tests/test_planning_exit.py`:
+    no approved plan, no grocery lines, no prep tasks, from either door,
+    and "Try again"/"Change my answers" leave exactly one live draft.
+  - **Known, left alone:** a draft for a week other than the one
+    containing today is only shown when `?drafted=` hands it over; after
+    any reload Plan shows today's week, and a next-week draft is behind
+    "Plan next week ›" ("already has a draft"). Pre-existing, same after
+    approving from chat; its own card if it bites.
+
+- **2026-09-13 — Prep questions are a step of All set, not a footnote.
+  Branch `worktree-prep-questions-step`, NOT merged at the time of
+  writing.** Loop Board "Prep questions are a clear step, not a footnote"
+  (Phase 1) plus the Bug card "All set screen: dark text on the dark
+  background is hard to read". Emily, on her phone: the freezer and
+  cook-ahead questions were "a subtle piece to skip". On the All set
+  screen they now sit ABOVE the counters, under a 21px display headline
+  ("Two quick ones before you go" — "if you like" was an apology), and
+  both are OPEN from the start with no "Ask" fold (`fixed` lines in
+  `weekQuickLineHtml`; `defrostAskCardHtml`/`cookAheadAskCardHtml` take
+  `open` from the caller). One tap answers "None — all fresh", two answer
+  with a chip. Skipping is the dock: leaving by "Open the list" / "See
+  the week" is the deliberate tap, and the questions still come back on
+  the root's receipt next session and from Cook's re-ask. The ROOT's
+  receipt keeps its fold — there the week card is the point.
+  - **An answered question collapses to its confirmation, in place**
+    ("Chicken breast: move to the fridge Monday night · Salmon fillets:
+    Thursday night"; "Roasted Chickpeas: one batch Tuesday covers
+    Thursday"). Page-view state (`weekQuickDone`, keyed to the plan),
+    same reasoning as `weekQuickOpen`: the server already holds the
+    answer as a prep task / a chain, this is the screen keeping its word
+    that the tap landed. Built from the confirm responses' own rows
+    (`created`, `applied`), never from a second fetch. A Cook re-ask
+    clears the line first, or the old answer would stand in for the
+    question while items refetch (verifier).
+  - **The contrast bug was the ivory card's inks on spruce.** The asks'
+    bodies were written for the ivory receipt card; on `--spruce-raised`
+    their `--ink-secondary` helper lines measured 2.37:1 and the
+    cook-ahead sentence in `--ink` 1.21:1 (light). Re-inked on spruce
+    only: `--ivory-ink` 9.86/7.70, `--ivory-ink-muted` 8.62/6.52
+    (light/dark, in the CSS comment and in
+    `tests/test_prep_questions_step.py`, which measures theme.css). A
+    ticked chip is solid `--celadon` + `--on-accent-ink` there (the cook
+    hero's own recipe) — the tint it used to take is 1.38:1 against the
+    card in dark. The quiet answer button takes the cook hero's outline
+    (`--apricot-rule` edge, `--ivory-ink` label). Nothing on the ivory
+    card changed.
+  - **The doubled title was the single-dish case.** With one repeated
+    dish the fold's heading already IS "X on 2 nights. Cook ahead?", and
+    the block under it said "X is on 2 nights. Cook ahead?" again —
+    `cookAheadAskBlockHtml(item, named)` names the block only when two or
+    more dishes share the heading "Cook anything ahead?". Same fix on the
+    root's receipt, which had the same duplicate behind "Ask".
+
+- **2026-09-13 — "Tell me what instead" knows which meal it was tapped on,
+  and the chat request has a `context` field now. Branch
+  `worktree-tell-me-instead-context`, NOT merged at the time of writing.**
+  Loop Board "'Tell me what instead' knows which meal you tapped it on,
+  and acts on one yes" (Emily, on the Tuesday burgers: she tapped the link
+  beside the recipe, chat had no idea which meal she meant, then asked her
+  to confirm too many times).
+  - **Root cause, both halves.** The link put a sentence in the composer
+    ("Swap Tuesday's dinner for something else", shell.js's `[data-wk-tell]`
+    handler) and nothing else: `ChatRequest` was `{session_id, message}`,
+    and the only "context" the agent ever had was `_is_tweak_context`
+    sniffing a prefill prefix (agent.py, `TWEAK_CONTEXT_PREFIXES` — its own
+    comment says "the chat endpoint carries no context field of its
+    own"). Delete the sentence, type what you want, and the model is
+    starting from zero. The repeated confirmations then follow from three
+    standing prompt rules stacking on one change: "Clarifying questions"
+    (which meal?), the propose-then-confirm rule in the same paragraph,
+    and the grocery-list rule ("nothing reaches the list without the
+    household saying so"), which the model applies again after a swap on
+    an approved week even though `swap_meal_in_plan` already moved the
+    lines. That's from the prompt, not a transcript — the conversation
+    itself isn't stored.
+  - **The mechanism is structured, server-resolved, per-turn.**
+    `ChatRequest.context` is a pointer (`{kind, entry_id, date, slot}`),
+    never a description: `tools.describe_planned_meal` re-reads the meal
+    from the household's own live plan each turn, by id first and then by
+    date+slot, because a swap deletes and re-inserts the row and "actually,
+    chicken" one message later must still land. `_build_chat_context_block`
+    appends a system block (like `_TWEAK_REPLY_BLOCK`, never an edit to the
+    frozen cached prompt) naming the meal, its ingredients, whether the
+    week is approved, and the rule: confirm ONCE in one line, act on any
+    yes, no second question, no grocery-list question. The shell sends the
+    context with every message while the "About Tuesday's dinner · …" line
+    is above the composer, and drops it when the sheet closes or the × is
+    tapped — sent every turn, not once, so the yes carries the subject and
+    the rule with it. `kind` is the seam for other "open chat about X"
+    entry points; only `planned_meal` is wired.
+  - **Anything unresolvable is an ordinary turn, never an error**: a
+    planned_empty or open slot, a component plan, another household's id,
+    a bad date — all None, all logged, block omitted. A same-dish change
+    (turkey → beef) is add_recipe of a named variant then
+    swap_meal_in_plan with old_meal, which is what keeps the slot and moves
+    the grocery lines by itself; the block says so in those words so the
+    model doesn't invent a third path. `context` is only passed to
+    run_agent_turn when present, so every existing test fake with the old
+    signature still fits.
+
+- **2026-09-13 — "Plan next week ›" under a two-day plan offered two more
+  days. Branch `worktree-sunday-week-span`, NOT merged at the time of
+  writing.** Loop Board "Planning on a Sunday offered only the next 2
+  days instead of the week" (Bug, High). Emily, Sunday 2026-09-13 on her
+  phone: the default offered Mon–Tue, and her All set screen read "Sep
+  14–15 is planned … 6 meals · 6 cooks".
+  - **Root cause: the link was sized by the plan on screen, on the
+    client.** `#wk-plan-next` (shell.js) computed "period_start +
+    day_count, for day_count days" from the week-menu payload. Her plan on
+    screen was a TWO-day one — a Saturday sign-up's "this week" is Sat–Sun
+    (`main._first_plan_window`, pinned in the new test; a custom range or
+    a takeover remnant does the same) — so the week after it was two days.
+    Now's nudge, which reads the rhythm, asked about Sep 14–20 at the same
+    moment: the two-screens-two-weeks class the 2026-09-11 "one source of
+    which week" rule was written for, and this was the one link still
+    deriving its own. Reproduced with the date pinned to that Sunday.
+  - **Fixed on the server.** New `weekly_plan.next_period_after(plan)`,
+    carried on `get_week_menu` as `next_period`: the day after the plan's
+    last day, for the RHYTHM's length (`suggest_planning_period`'s
+    day_count — seven, or three as-we-go), which is exactly what the nudge
+    offers from Friday. A plan whose days have already passed (the
+    approved-week fallback) gets the standing suggestion instead, with
+    `is_current_period` so the link can say "this week". The client reads
+    it through one `nextPeriodFor` for both the label and the tap, with
+    the old arithmetic kept only as the fallback for a payload without it
+    — deliberately small, because the seven-tiles picker is being rebuilt
+    on `worktree-week-tiles`.
+  - **A shorter span says why, in one line — and that is the only time it
+    is shorter.** If another live plan already holds a day inside the
+    stretch, the offer stops the day before it and `shortened_reason`
+    ("Sep 17–20 is already planned.") rides into `weekNotesHtml`'s quiet
+    lines above the link. Before, "Plan next week" over such a week would
+    have generated the whole seven and taken those days over — and the
+    question screen's warning would not have fired, since
+    `get_week_intake_prefill` looks a plan up by filing key only. A
+    stretch held from its FIRST day is offered whole as a re-plan
+    (`is_planned`, so the link says "Re-plan next week"). **Not shortened
+    for a trip** (judgment call): a night away is a `planned_empty` slot
+    inside the week, not a reason to plan a shorter one.
+  - Nudge untouched: from Friday it still says nothing when the following
+    period is held at all, so Plan may offer a shortened stretch Now is
+    quiet about — quiet is not a contradiction. `tests/
+    test_sunday_next_week_span.py`, 18 tests (17 red on `eaf334f`; the
+    green one characterises the Saturday two-day part-week as intended).
+
+- **2026-09-13 — Recipe quantities pass a sanity check (no stick of
+  butter in a 2-serving soup). Branch `worktree-recipe-quantity-sanity`,
+  NOT merged at the time of writing.** Emily, on her phone, Turkish-Style
+  Lentil Soup, Serves 2: "½ cups Red lentils · 1 lb Carrots · 1 stick
+  Butter · 1 bunch Mint". "One stick of butter is a crazy amount for this
+  whole recipe."
+  - **Root cause, reproduced with the recipe saved exactly as the prompt
+    asks for it.** It was NOT the serves scaler and NOT a recipe for four
+    scaled down: the card matches a recipe generated for the household's
+    own table of two, where every `qty` is the SHOPPING line
+    (`generate_weekly_plan_llm`'s "how it's actually bought" bullet —
+    butter is bought by the stick, carrots by the pound). The cook view
+    keeps a shopping qty whenever it measures something
+    (`recipes.cooking_ingredients`), and "stick" is in
+    `_EXTRA_MEASURED_UNITS` as a real kitchen unit, so `_quantity_problem`
+    passed it through; `scale_recipe` then kept it whole because a stick is
+    in `_DISCRETE_UNITS` (`max(1, round(0.5))`). Nothing anywhere asked
+    whether the AMOUNT made sense for the number of people. "½ cups" is
+    `quantities._format_quantity` pluralising everything but exactly 1;
+    shell.js's `humanQtyText` only rewrites the number.
+  - **The guard is deterministic and there is no new model call.**
+    `recipes._PLAUSIBLE_PER_SERVING`: seven ingredient classes (fat, salt,
+    sugar, aromatic, spice, protein, grain) with a per-serving ceiling
+    each; `implausible_quantity` judges a cooking amount against it and
+    `plausible_cooking_quantity` replaces one that is over with the app's
+    own figure for the item (`COOKING_QUANTITIES_PER_4`, scaled — the same
+    table that already turns "1 bottle" into "2 tbsp", so the two
+    corrections cannot disagree) or, for an item the table has never met,
+    the ceiling in the line's own unit. It runs in `cooking_ingredients`
+    (so every recipe already saved is covered at read time) and before a
+    save (`add_recipe` and `save_cooking_quantities` write the corrected
+    `cook_qty`; the shopping qty is never touched — one stick is still
+    what you buy). Rescales SILENTLY for the cook and FLAGS separately:
+    `plan_quality._quantities_plausible` is an "info" rule that reports
+    the line as the model wrote it and what the cook view shows, into the
+    morning report like `_steps_match_ingredients`. A repair call was
+    rejected on cost ($1/household/month) and because the table answers
+    the same question for free; the fill path's `validate_measured_
+    quantities` is deliberately still called WITHOUT `servings` so an
+    out-of-range amount never turns into a paid repair round.
+  - **The ranges are ceilings, generous, and per serving** (fat 2 tbsp,
+    salt 1.5 tsp, sugar ¼ cup, dried spice 2 tsp, aromatics 4 cloves /
+    1 tbsp ginger — no bare-count ceiling, because "12 garlic knots" and
+    "24 onion rings" are counted dishes wearing an aromatic's name, found
+    on review; protein 1 lb, grain 2 cups or 8 oz dry). Every floor is
+    zero: nobody has complained of too little, and 2 oz of bacon
+    flavouring a soup is not a mistake. A stick of butter for FOUR is
+    exactly 2 tbsp a head and passes; the same stick for two does not. A
+    baking recipe that says "serves 4" with a cup of butter would be
+    shown 2 tbsp — accepted, this is a dinner planner, and the import path
+    carries the recipe's own yield ("24 cookies" → 24). Names that borrow
+    a class word ("sugar snap peas", "green beans", "low-fat yogurt",
+    "garlic bread") are listed in `_NOT_THIS_CLASS` and not judged; the
+    pre-save pass keys its fixes by line position, so two lines that
+    share a name are each judged on their own (also found on review).
+  - **A stick cut to a fraction is written in tablespoons** (`scale_recipe`,
+    `_STICK_TBSP = 8`): four-person stick halved is "4 tbsp", not rounded
+    back up to a stick; a whole number of sticks stays sticks.
+  - **One or less is singular** in `_format_quantity` ("0.5 cup", "0.75
+    lb"), which is what reads "½ cup" once the front end has done the
+    fraction. Two ledger tests that pinned "0.6 lbs" were updated;
+    parsing reads either form so nothing stored needs rewriting.
+  - **Left out on purpose:** "1 lb Carrots" for two is at the top of what
+    a produce ceiling would allow and there is no vegetable class — a
+    carrot-heavy soup for two really can use a pound; a vegetable class is
+    a one-line addition if Emily wants one. Variety naming (Persian vs
+    English cucumber) and grocery merging are separate cards.
+
 - **2026-09-13 — A starter chore list from what Pomona already knows.
   Branch `worktree-chores-starter-list`, NOT merged at the time of
   writing.** Loop Board "Chores v1: A starter list from what Pomona
@@ -866,7 +1257,6 @@ why*, not duplicating the diff.
     with no move for the meal the card shows "TAKES · 30 min" instead
     of inventing a start time. Tests: `tests/test_cook_shelf.py` (22)
     plus the eight Cook-root files updated to the new shape.
-
 - **2026-09-13 — Skip, swap, or "not this week": a ··· on every chore row.
   Branch `overnight/chores-skip-hand-move`, NOT merged at the time of
   writing.** Loop Board "Chores v1: Skip, swap, or 'not this week'"

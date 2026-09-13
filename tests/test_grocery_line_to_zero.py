@@ -205,7 +205,7 @@ def test_a_measurable_share_is_recorded_in_the_lines_own_unit(family_of_three):
         3, [MON, TUE],
     )
     assert _qty("Ground beef") == "1.25 lbs"
-    assert _links("Ground beef") == ["0.6 lbs", "0.6 lbs"]
+    assert _links("Ground beef") == ["0.6 lb", "0.6 lb"]
 
     grocery._reverse_meal_grocery_contributions(entries[0])
 
@@ -459,7 +459,7 @@ def test_a_vanishingly_small_share_cannot_delete_a_line_other_meals_want():
     """
     assert quantities._plain_number(0.00001) == "0.00001"
     assert quantities._plain_number(1e6) == "1000000"
-    assert quantities._format_quantity(0.00001, "cup") == "0.00001 cups"
+    assert quantities._format_quantity(0.00001, "cup") == "0.00001 cup"
     assert quantities._parse_quantity(quantities._format_quantity(0.00001, "cup")) is not None
     assert quantities._sum_ledger_quantities(["0.00001 cup", "0.00001 cup"]) is not None
 

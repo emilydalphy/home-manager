@@ -4880,7 +4880,7 @@ _COOKING_QUANTITIES_PROPERTY = {
         "type": "object",
         "properties": {
             "item": {"type": "string"},
-            "cook_qty": {"type": "string", "description": "Amount at default_servings — 2 tbsp, 1.5 cups, 400 g, 3 cloves, or a count. Never a package word (bottle/jar/bag/box/tub); a sized can is fine."},
+            "cook_qty": {"type": "string", "description": "Amount at default_servings — 2 tbsp, 1.5 cups, 400 g, 3 cloves, or a count — and sensible for that many people (a soup for two takes 1-2 tbsp of butter, not a stick). Never a package word (bottle/jar/bag/box/tub); a sized can is fine."},
         },
         "required": ["item", "cook_qty"],
     },
@@ -6044,6 +6044,107 @@ _TWEAK_REPLY_BLOCK = {
 }
 
 
+# ---------- "Tell me what instead" knows which meal ----------
+# Loop Board "'Tell me what instead' knows which meal you tapped it on, and
+# acts on one yes" (Emily, 2026-09-13, on the Tuesday burgers: "when I
+# clicked it to tell it what I wanted it to do, it didn't have the context
+# that I was talking about that recipe ... and then it asked me too many
+# times to confirm that too"). The link used to put a sentence in the
+# composer and nothing else — the chat request had no context field at all
+# (see TWEAK_CONTEXT_PREFIXES, which sniffs the prefill for the same
+# reason) — so the model had to ask which meal, then propose, then, on an
+# approved week, ask about the grocery list as well. Three questions for
+# one change.
+#
+# Now the shell sends a structured `context` on the turn ({kind:
+# "planned_meal", entry_id, date, slot}), the server resolves it against
+# the live plan, and this block tells the model what the household is
+# looking at and the one-confirmation rule. Like _TWEAK_REPLY_BLOCK it is
+# an appended, per-turn block rather than an edit to the frozen, cached
+# SYSTEM_PROMPT — and per-turn on purpose: the shell keeps sending it while
+# the chip is in the composer, so "yes" one message later still carries
+# the subject, and drops it the moment the chip is gone.
+#
+# `kind` is the seam for other "open chat about X" entry points; only the
+# meal kind is wired.
+CHAT_CONTEXT_KINDS = ("planned_meal",)
+
+
+def _format_context_ingredients(ingredients: list[dict]) -> str:
+    parts = []
+    for ing in ingredients[:30]:
+        item = (ing.get("item") or "").strip()
+        qty = (ing.get("qty") or "").strip()
+        if item:
+            parts.append(f"{qty} {item}".strip())
+    return "; ".join(parts)
+
+
+def _build_chat_context_block(context: dict | None) -> dict | None:
+    """
+    The system block for a turn sent from a meal card, or None when the
+    context is missing, malformed, or names a meal that is no longer on
+    the plan — in which case the turn is simply an ordinary one.
+    """
+    if not isinstance(context, dict) or context.get("kind") not in CHAT_CONTEXT_KINDS:
+        return None
+    try:
+        meal = tools.describe_planned_meal(
+            entry_id=context.get("entry_id"),
+            meal_date=context.get("date"),
+            slot=context.get("slot"),
+        )
+    except Exception:
+        logger.exception("Resolving chat context failed; running the turn without it")
+        return None
+    if not meal:
+        logger.info("Chat context named a meal that isn't on the plan any more; running without it")
+        return None
+    day_word = meal["weekday"] or meal["date"]
+    when = f"{day_word}'s {meal['slot']}"
+    ingredients = _format_context_ingredients(meal.get("ingredients") or [])
+    list_line = (
+        "The week is APPROVED, so this meal's ingredients are already on the grocery list; "
+        "swap_meal_in_plan takes the old dish's off and puts the new dish's on by itself."
+        if meal["approved"] else
+        "The week is still a draft, so nothing is on the grocery list yet and nothing changes "
+        "there until they approve the week."
+    )
+    text = (
+        f"This message was sent from the meal card for {when}: \"{meal['meal']}\" "
+        f"(date {meal['date']}, slot '{meal['slot']}', weekly_plan_id {meal['weekly_plan_id']}). "
+        "That meal is the subject of this message. \"It\", \"this\", \"the burgers\", a "
+        "protein, an ingredient, or a bare instruction like \"make it beef, not turkey\" all "
+        "mean this meal unless they clearly name a different day or dish. Do not ask which "
+        "meal they mean, and do not call get_weekly_plan or get_week_menu just to find it — "
+        "you already have it.\n"
+        + (f"Its ingredients as saved: {ingredients}.\n" if ingredients else "")
+        + f"{list_line}\n"
+        "Confirm ONCE, then act:\n"
+        "- If what they want is clear enough to do, say the exact change back as a "
+        "one-line proposal and stop there — \"Ground beef instead of turkey for "
+        f"{day_word}'s burgers — do it?\" That is the only question. If it is genuinely "
+        "unclear which of two things they mean, fold the choice into that same one line; "
+        "never a second question after it.\n"
+        "- When they answer yes in any form (\"yes\", \"do it\", \"sure\", \"go ahead\", "
+        "\"please\"), make the change in that turn. No \"are you sure\", no asking again "
+        "whether to update the grocery list, no re-checking the plan first. If an earlier "
+        "assistant message in this conversation already asked and this message is the yes, "
+        "act now.\n"
+        "- Keeping the same dish with something changed (a different protein, one "
+        "ingredient in or out, a different cut): save the variant with add_recipe under a "
+        "name that says what changed (keep the rest of the name and the recipe as they are, "
+        "and update main_protein), then swap_meal_in_plan with weekly_plan_id "
+        f"{meal['weekly_plan_id']}, meal_date '{meal['date']}', slot '{meal['slot']}', "
+        f"old_meal \"{meal['meal']}\" and new_meal set to the variant. The meal stays in its "
+        "slot; the grocery list follows on its own.\n"
+        "- A different dish altogether: swap_meal_in_plan straight to it (add_recipe first "
+        "when it is their own idea, as usual).\n"
+        "- Then one line saying what changed. The card under your reply carries the rest."
+    )
+    return {"type": "text", "text": text}
+
+
 def _build_proactive_check_block() -> dict | None:
     """
     Run the household's highest-value "worth a heads-up" checks in code and
@@ -6207,7 +6308,10 @@ def verify_change_claim(text: str, new_entries: list[dict]) -> str:
     return CHANGE_CLAIM_RETRACTION
 
 
-def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_check: bool = False) -> tuple[str, list[dict]]:
+def run_agent_turn(
+    conversation: list[dict], user_message: str, *, proactive_check: bool = False,
+    context: dict | None = None,
+) -> tuple[str, list[dict]]:
     """
     Run one user turn through Claude, executing any tool calls it makes,
     looping until it produces a final text response.
@@ -6219,6 +6323,11 @@ def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_che
     a new sitting at the app — see _build_proactive_check_block. False for
     an ordinary mid-conversation turn, so this doesn't re-run on every
     single message.
+
+    `context`: what the household is looking at as they send this — the
+    shell's structured {kind, ...} for a turn opened from a meal card (see
+    _build_chat_context_block). None for an ordinary turn, which keeps the
+    request byte-for-byte what it always was.
     """
     client = _client()
     conversation = conversation + [{"role": "user", "content": user_message}]
@@ -6258,6 +6367,12 @@ def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_che
     # kind of turn keeps the ordinary reply length and the plate nudge.
     if _is_tweak_context(user_message):
         system_blocks.append(_TWEAK_REPLY_BLOCK)
+
+    # The meal a "Tell me what instead" turn is about, and the confirm-once
+    # rule for changing it. Resolved fresh each turn against the live plan.
+    context_block = _build_chat_context_block(context)
+    if context_block:
+        system_blocks.append(context_block)
 
     # Safety cap on tool-calling rounds within a single turn. Without this,
     # a model that keeps calling tools (e.g. retrying a tool that keeps

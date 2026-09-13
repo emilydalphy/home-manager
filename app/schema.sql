@@ -333,6 +333,26 @@ CREATE TABLE IF NOT EXISTS recipe_notes (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- "I'll use something else instead" on the grocery list (Loop Board,
+-- Emily, 2026-09-13: "instead of fresh oregano I'll use dry oregano"). One
+-- row per swap made while sorting the week's list: the line is renamed to
+-- the alternative (or taken off, when the alternative is already at home),
+-- and the recipe's ingredient line says so when cooking (get_cooker_view
+-- annotates matching ingredients with `substitute`). Per WEEK, not a
+-- recipe edit — next week the recipe asks for fresh oregano again. The
+-- original name is kept so an undo can put the line back exactly. See
+-- tools/grocery.py substitute_grocery_item.
+CREATE TABLE IF NOT EXISTS grocery_substitutions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    grocery_item_id INTEGER NOT NULL,
+    weekly_plan_id INTEGER,            -- the week it applies to; NULL = whatever week is current
+    original_item TEXT NOT NULL,
+    alternative TEXT NOT NULL,
+    at_home INTEGER NOT NULL DEFAULT 0, -- 1: the alternative is already in the house, so the line came off
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Loop Board: "Per-person taste learning + solo-night personalization".
 -- ADDITIVE on top of recipes.rating/feedback_notes, which stay exactly as
 -- they are — the household-level rating, and the fallback default for
@@ -740,7 +760,7 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     quantity TEXT,
     category TEXT DEFAULT 'other', -- produce | dairy | meat | pantry | household | other
     added_by TEXT DEFAULT 'ai', -- 'ai' if auto-added from meal plan, else the adult's name (the session's picked adult since 2026-09-11 — see tools/_shared.py acting_name)
-    status TEXT NOT NULL DEFAULT 'needed', -- needed | in_cart | purchased | removed (soft, see removed_by)
+    status TEXT NOT NULL DEFAULT 'needed', -- needed | in_cart | purchased | removed (soft, see removed_by) | carried (see carried_from_plan_id)
     -- Which generated weekly_plan this item's ingredients came from, if any.
     -- NULL means it's a standing item (added directly by a person, or from
     -- an ad hoc one-off meal) and should never be auto-cleared. Lets
@@ -847,6 +867,17 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     -- one-tap answers; buying it is what teaches the staple's rhythm. NULL
     -- for every line a person or a plan added. Cleared by remove_staple.
     staple_id INTEGER,
+    -- Set when approving a NEW week found this line still unbought from an
+    -- EARLIER plan (Loop Board, 2026-09-13: "Last week's leftover items:
+    -- ask before they add onto this week"). The line is set aside with
+    -- status 'carried' — off every count, merge and trip — and the Shop
+    -- tab asks "Still on the list from last week — keep or drop?" before
+    -- sorting starts. Holds the plan the line came from (its
+    -- source_weekly_plan_id at the time), so an undo can put it back
+    -- exactly. Stays set after the answer as the record that it was asked;
+    -- NULL for every line that was never carried over. See
+    -- tools/grocery.py set_aside_carried_over_items.
+    carried_from_plan_id INTEGER,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

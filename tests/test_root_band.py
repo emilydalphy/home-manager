@@ -133,7 +133,10 @@ def test_shop_shows_the_band_on_the_root_and_the_crumb_and_head_on_steps():
     render = _function("renderGrocery")
     assert "var onRoot = step === 'list';" in render
     assert "band.hidden = !onRoot;" in render and "head.hidden = onRoot;" in render
-    assert "setRootBand(panel, 'gro-band', { eyebrow: groBandEyebrow(data), sub: '' });" in render
+    # The sub-line is the paused trip when there is one ("Trip in progress ·
+    # 1 stop left", 2026-09-13 — see tests/test_shop_trip_exit.py) and
+    # empty otherwise; groTripPausedLine returns '' with no trip on.
+    assert "setRootBand(panel, 'gro-band', { eyebrow: groBandEyebrow(data), sub: groTripPausedLine(data) });" in render
 
 
 @_needs_node
