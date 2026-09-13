@@ -371,6 +371,70 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — Plan › Which days is seven tiles, and a night can be
+  moved. Branch `worktree-week-tiles`, NOT merged at the time of writing.**
+  Emily picked "Week · A · Seven tiles" from the Beyond lists canvas
+  (2026-09-12). One tile a night — date | dinner + a 5px bar for how long
+  (minutes/95, floor 18%, cap 150px; apricot from 50 min, celadon under) |
+  a 44px drag handle — replacing the expanding day card (`reviewDayCardHtml`
+  and the `.rv-day-*` rules are gone; `reviewDayTileHtml`/`reviewDaysHtml`
+  and `.rv-tile*` in their place). The five slots a card used to expand
+  into are the Day step's now: the tile's body opens it (§2b S8).
+  - **Moving a night trades the two DINNERS and nothing else.** New
+    `tools.swap_dinner_nights(plan_id, date_a, date_b)` (weekly_plan.py)
+    re-dates the dinner rows IN PLACE — ids kept, so grocery links, the
+    cooked tick and the plate sides ride along and **the grocery list is
+    never touched** (same dishes, same lines). What is keyed by DATE moves
+    by hand: leftover-chain `links_to`/`make_double_for` references are
+    rewritten to the new nights, and defrost `prep_tasks` naming a moved
+    entry shift by the same number of days (status kept, weekday re-said).
+    Prep-cut rows stay on the prep DAY (a rhythm fact); 'general' LLM prep
+    tasks carry no entry id and are left for `generate_prep_schedule`.
+    slot_needs/attendance stay with the day — "Emily is out Thursday" is
+    about Thursday, not the dish.
+  - **Refusals are answers (`status: 'refused'`), never writes:** a night
+    nobody is home (`planned_empty`), a dinner already cooked, or a chain
+    that would run backwards (the reheat before its cook) — checked in
+    memory before the transaction writes. A night off the period, the same
+    night twice, or a malformed date is a ValueError → 400.
+  - **Undo is one token** (`derived_from.moved_from = {date, at}` on each
+    moved row, the shape swap_in_place's `swapped_from` takes).
+    `undo_dinner_nights_swap` requires both nights to still point at each
+    other, then clears it — so Undo is the LAST move, which is what an
+    eight-second toast can honestly offer. Routes:
+    `POST /api/week/{week}/swap-nights` and `/swap-nights-undo`. Chat:
+    `swap_dinner_nights` is a tool beside `swap_meal_in_plan`, tagged
+    `week` in `_WEEK_TOOLS` so the panel refreshes.
+  - **Front end is optimistic (§6):** the tiles trade on the drop, then
+    POST; a refusal or failure puts them back and says the server's
+    sentence in a calm toast (a toast rather than the in-card trouble line
+    the stepper uses, per the design brief); success offers Undo. Drag is
+    pointer events: a mouse lifts on press, a finger after a 250ms hold
+    (a quick swipe on the handle never lifts); the lifted tile carries
+    `--shadow-hero` and follows the finger, the night under it slides into
+    the lifted night's home — a swap previewed as a swap, nothing in
+    between moves — on the tab crossfade's own `--motion-fast`/`--motion-ease`.
+    Keyboard: the handle is a button; ArrowUp/Down trades with the
+    neighbour, focus follows the dish (and returns on a refusal), and the
+    result is announced through `#rv-tiles-live` — which lives in
+    shell.html, NOT in the re-rendered panel: a region rebuilt with the
+    tiles was replaced before it was read (found in the browser walk).
+  - **Judgment calls for Emily:** (1) "Hosting · 5" is the headcount at
+    the table (`serves`), guests included — her own phrasing. (2) The head
+    row's eyebrow and "Bar = how long" use `--ink-strong`, not
+    `--ink-muted`/`--ink-secondary` as drawn: on the ground those measure
+    4.33 and 4.44, short of AA (rule 8). (3) A plain tile is 60px, not 56:
+    the body is a 44px tap target (rule 6) inside 7px padding and a 1.5px
+    edge. (4) "All seven fit above the dock at 375×812 with no tags" holds
+    only once the root band scrolls away (tiles + head ≈ 460px against
+    643px above the dock); with the band, control and dock on screen
+    nothing seven-tall could. (5) Away nights and cooked nights render no
+    handle and refuse to be a drop target; an unplanned night can take a
+    dinner (one row moves, the other night stays empty).
+  - The browser walk ran headless Chrome through Playwright in a scratch
+    venv — neither the Browser pane nor the Chrome extension was reachable
+    from this session.
+
 - **2026-09-13 — Skip, swap, or "not this week": a ··· on every chore row.
   Branch `overnight/chores-skip-hand-move`, NOT merged at the time of
   writing.** Loop Board "Chores v1: Skip, swap, or 'not this week'"

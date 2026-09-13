@@ -67,6 +67,11 @@
   </div>
 
   <div id="toast" class="toast" hidden></div>
+  <!-- Where Plan › Which days says a keyboard move (or a refusal) out loud
+       (reviewTileAnnounce, shell.js). Lives here, outside the panel that
+       re-renders on every move, so the region persists and the sentence
+       is actually announced. -->
+  <div id="rv-tiles-live" class="rv-tiles-live" aria-live="polite"></div>
 
   <!-- Notifications bell (design_handoff_home_manager Phase 5 /
        NOTIFICATIONS.md) — a live in-app feed, not real scheduled push

@@ -4818,6 +4818,308 @@ def _taste_verdict_for_slot(meal: str, meal_date: str, slot: str) -> dict | None
         return None
 
 
+# ---------- Moving a dinner between nights ----------
+# Plan › Which days, seven tiles (Emily, 2026-09-12, "Week · A · Seven
+# tiles"): drag one night onto another and the two DINNERS trade places.
+# Chat reaches the same write through the swap_dinner_nights tool
+# ("move Thursday's dinner to Friday").
+#
+# This is a MOVE, not a swap-out. swap_meal_in_plan replaces a dish — it
+# deletes the row, reverses its groceries and plans a new one. Here the
+# same dish is still on the week, cooked for the same table one night
+# later or earlier, so the rows are re-dated in place and keep their ids.
+# Everything keyed by entry id rides along for free: the grocery links
+# (meal_plan_grocery_links.meal_plan_entry_id), the cooked tick, the
+# inventory-depletion stamp, the plate sides. What is keyed by DATE has to
+# be moved by hand, and this is the list — anything added later that keys
+# off a dinner's date belongs here too:
+#
+#   * derived_from.links_to / make_double_for — a leftover chain names its
+#     other half as "YYYY-MM-DD:slot" (leftovers.py). Every reference to
+#     either night's dinner is rewritten to the night it now sits on, so
+#     the pairing survives the move. A chain that would run BACKWARDS
+#     afterwards (a reheat before its cook) is refused, nothing written —
+#     the same 'refused' answer drop_dish_from_day gives for a source.
+#   * prep_tasks of task_type 'defrost' that name one of the moved entries
+#     (both the freezer-matched kind, defrost.sync_defrost_tasks, and the
+#     household-confirmed kind, defrost.confirm_frozen_items). A defrost
+#     date is the cook date minus a lead time, so it moves by exactly the
+#     number of days the dinner moved, status untouched; its sentence
+#     names the weekday and is re-said.
+#   * prep-cut rows (prep_sessions.add_prep_cut) are NOT re-dated: a prep
+#     session sits on the household's prep DAY, a rhythm fact, and what it
+#     feeds is read off the entry's own date, which has just moved. The
+#     LLM-written 'general' prep tasks carry no entry id at all and are
+#     left alone too — they are regenerated wholesale by
+#     generate_prep_schedule.
+#   * slot_needs / slot_attendance / away_stretches stay where they are:
+#     "Emily is out Thursday" is a fact about Thursday, not about the dish
+#     that was going to be cooked on it. That is also why an away night
+#     (slot_state 'planned_empty') refuses to take part — moving a dinner
+#     onto a night nobody is home would plan food for an empty table.
+#
+# The GROCERY LIST is deliberately untouched. Same dishes, same
+# quantities, same lines — only the day they are cooked has changed, and
+# the links are by entry id, so nothing needs reversing or re-buying.
+#
+# Undo is one token, written on each moved row as derived_from.moved_from
+# = {"date": <where it was>, "at": <when>}. undo_dinner_nights_swap checks
+# both nights still carry tokens pointing at each other before moving
+# anything back, then clears them — the same "written once, read once"
+# shape swap_in_place's swapped_from takes. A second move of the same tile
+# overwrites the token: Undo is the LAST move, which is what a toast can
+# honestly offer.
+
+NIGHTS_MOVED_KEY = "moved_from"
+
+
+def _weekday_of(date_str: str) -> str:
+    return date.fromisoformat(date_str).strftime("%A")
+
+
+def _nights_swap_refusal(message: str, date_a: str, date_b: str) -> dict:
+    return {"status": "refused", "date_a": date_a, "date_b": date_b, "message": message}
+
+
+def _rewrite_chain_ref(ref, mapping: dict[str, str]):
+    """One links_to / make_double_for value, re-pointed if it names a moved
+    dinner; anything else (an entry_id form, another slot) unchanged."""
+    if not isinstance(ref, str):
+        return ref
+    return mapping.get(ref.strip(), ref)
+
+
+def _apply_dinner_nights_swap(weekly_plan_id: int, date_a: str, date_b: str, *, undo: bool) -> dict:
+    """
+    The one write behind swap_dinner_nights and undo_dinner_nights_swap.
+    Validates, refuses in plain words, then re-dates both nights' dinner
+    rows and everything keyed by their dates in ONE transaction. `undo`
+    only changes what happens to the moved_from token: a move writes it,
+    an undo requires it and clears it.
+    """
+    for d in (date_a, date_b):
+        try:
+            date.fromisoformat(d)
+        except (TypeError, ValueError):
+            raise ValueError("Both nights must be ISO dates (YYYY-MM-DD).")
+    if date_a == date_b:
+        raise ValueError("Those are the same night — nothing to move.")
+
+    conn = get_conn()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        plan = conn.execute(
+            "SELECT id, week_start_date, content_start_date, day_count, planning_mode, status "
+            "FROM weekly_plans WHERE id = ? AND household_id = ?",
+            (weekly_plan_id, household_id()),
+        ).fetchone()
+        if plan is None:
+            raise ValueError(f"No weekly plan with id {weekly_plan_id}.")
+        if plan["planning_mode"] == "component_based":
+            raise ValueError("That plan is built from components, not nights — there's nothing to move.")
+        start, day_count = plan_period(plan)
+        end = period_end_date(start, day_count)
+        for d in (date_a, date_b):
+            if not (start <= d <= end):
+                raise ValueError(f"{_weekday_of(d)} ({d}) isn't on this plan.")
+
+        rows = conn.execute(
+            """
+            SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.cooked_status,
+                   mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal
+            FROM meal_plan_entries mpe
+            LEFT JOIN recipes r ON r.id = mpe.recipe_id
+            WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.component_category IS NULL
+            ORDER BY mpe.date ASC, mpe.id ASC
+            """,
+            (weekly_plan_id, household_id()),
+        ).fetchall()
+        moving = [r for r in rows if r["slot"] == "dinner" and r["date"] in (date_a, date_b)]
+        if not moving:
+            raise ValueError("Neither of those nights has a dinner on it yet.")
+
+        # ---- refusals: answers, not errors, and nothing is written ----
+        for r in moving:
+            wd = _weekday_of(r["date"])
+            if r["slot_state"] == "planned_empty":
+                return _nights_swap_refusal(
+                    f"Nobody’s cooking {wd} — I’ve left it as it is.", date_a, date_b)
+            if (r["cooked_status"] or "") == "done":
+                return _nights_swap_refusal(
+                    f"{r['meal']} on {wd} has already been cooked — I’ll leave that one where it is.",
+                    date_a, date_b)
+        if undo:
+            # Both halves have to still say they came from each other; a
+            # night that has been moved again since, or never was, has
+            # nothing to put back.
+            for r in moving:
+                token = (json.loads(r["derived_from_json"] or "{}").get(NIGHTS_MOVED_KEY) or {})
+                other = date_b if r["date"] == date_a else date_a
+                if token.get("date") != other:
+                    raise ValueError("Those nights haven’t just been moved, so there’s nothing to put back.")
+
+        # ---- the new picture, in memory first, so a backwards chain is
+        # caught before anything is written ----
+        new_date = {r["id"]: (date_b if r["date"] == date_a else date_a) for r in moving}
+        now_date = {r["id"]: r["date"] for r in rows}
+        mapping = {f"{date_a}:dinner": f"{date_b}:dinner", f"{date_b}:dinner": f"{date_a}:dinner"}
+        after: list[dict] = []
+        for r in rows:
+            derived = json.loads(r["derived_from_json"] or "{}")
+            changed = False
+            if "links_to" in derived:
+                new_ref = _rewrite_chain_ref(derived["links_to"], mapping)
+                changed = changed or new_ref != derived["links_to"]
+                derived["links_to"] = new_ref
+            fed = derived.get("make_double_for")
+            if fed:
+                fed_list = [fed] if isinstance(fed, str) else list(fed)
+                new_fed = [_rewrite_chain_ref(t, mapping) for t in fed_list]
+                changed = changed or new_fed != fed_list
+                derived["make_double_for"] = new_fed
+            if r["id"] in new_date:
+                if undo:
+                    derived.pop(NIGHTS_MOVED_KEY, None)
+                else:
+                    derived[NIGHTS_MOVED_KEY] = {
+                        "date": r["date"],
+                        "at": datetime.now().isoformat(timespec="seconds"),
+                    }
+                changed = True
+            after.append({
+                "id": r["id"], "date": new_date.get(r["id"], r["date"]), "slot": r["slot"],
+                "slot_state": r["slot_state"], "meal": r["meal"], "derived": derived,
+                "changed": changed,
+            })
+        by_date_slot = {(e["date"], e["slot"]): e for e in after}
+        by_id = {e["id"]: e for e in after}
+        for e in after:
+            if e["slot_state"] != "planned":
+                continue
+            links_to = (e["derived"].get("links_to") or "").strip()
+            if not links_to:
+                continue
+            source = _resolve_leftover_source(links_to, by_date_slot, by_id)
+            if source is None or source["id"] == e["id"]:
+                continue
+            if source["date"] >= e["date"]:
+                # Named by where things ARE, not where the move would have
+                # put them — the household is looking at the week as it
+                # stands, and nothing has moved.
+                dish = source["meal"] or e["meal"] or "That one"
+                return _nights_swap_refusal(
+                    f"{dish} on {_weekday_of(now_date[source['id']])} feeds "
+                    f"{_weekday_of(now_date[e['id']])}’s {e['slot']} — it can’t move past that night.",
+                    date_a, date_b)
+
+        # ---- write: the rows, then what their dates were holding up ----
+        for r in moving:
+            conn.execute(
+                "UPDATE meal_plan_entries SET date = ? WHERE id = ? AND household_id = ?",
+                (new_date[r["id"]], r["id"], household_id()),
+            )
+        for e in after:
+            if e["changed"]:
+                conn.execute(
+                    "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+                    (json.dumps(e["derived"]), e["id"], household_id()),
+                )
+        prep_moved = 0
+        for r in moving:
+            delta = (date.fromisoformat(new_date[r["id"]]) - date.fromisoformat(r["date"])).days
+            old_wd, new_wd = _weekday_of(r["date"]), _weekday_of(new_date[r["id"]])
+            tasks = conn.execute(
+                "SELECT id, task_date, description FROM prep_tasks "
+                "WHERE household_id = ? AND weekly_plan_id = ? AND task_type = 'defrost' "
+                "AND meal_plan_entry_id = ?",
+                (household_id(), weekly_plan_id, r["id"]),
+            ).fetchall()
+            for t in tasks:
+                moved_to = (date.fromisoformat(t["task_date"]) + timedelta(days=delta)).isoformat()
+                # defrost._describe: "… — for Thursday's skewers." Only the
+                # weekday changes, so only the weekday is re-said.
+                said = (t["description"] or "").replace(f"for {old_wd}’s", f"for {new_wd}’s") \
+                    .replace(f"for {old_wd}'s", f"for {new_wd}'s")
+                conn.execute(
+                    "UPDATE prep_tasks SET task_date = ?, description = ? WHERE id = ?",
+                    (moved_to, said, t["id"]),
+                )
+                prep_moved += 1
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+    moved = [
+        {"entry_id": r["id"], "meal": r["meal"], "from": r["date"], "to": new_date[r["id"]]}
+        for r in moving
+    ]
+    out = {
+        "status": "restored" if undo else "swapped",
+        "date_a": date_a,
+        "date_b": date_b,
+        "moved": moved,
+        "prep_tasks_moved": prep_moved,
+        "can_undo": not undo,
+        # Both changed days in get_week_menu's own shape, so the screen
+        # splices them in exactly as it does after an in-place swap.
+        "days": _menu_days_for(weekly_plan_id, [date_a, date_b]),
+    }
+    # Reported, never enforced — the same advisory a chat swap carries:
+    # the dish is now in front of whoever is home THAT night.
+    verdicts = []
+    for m in moved:
+        if not m["meal"]:
+            continue
+        verdict = _taste_verdict_for_slot(m["meal"], m["to"], "dinner")
+        if verdict:
+            verdicts.append({"date": m["to"], "meal": m["meal"], **verdict})
+    if verdicts:
+        out["taste_verdicts"] = verdicts
+    return out
+
+
+def _menu_days_for(weekly_plan_id: int, dates: list[str]) -> list[dict]:
+    try:
+        menu = get_week_menu(weekly_plan_id)
+    except Exception:
+        logger.exception("Could not re-read the week after moving a night")
+        return []
+    wanted = set(dates)
+    return [d for d in (menu.get("days") or []) if d.get("date") in wanted]
+
+
+def swap_dinner_nights(weekly_plan_id: int, date_a: str, date_b: str) -> dict:
+    """
+    Trade the dinners on two nights of a plan — "move Thursday's dinner to
+    Friday" — keeping each dish's groceries, cooked tick and leftover
+    chain with it, and moving its defrost reminders by the same number of
+    days. The grocery list is not touched: same dishes, same lines.
+
+    Returns `status` 'swapped' with `moved` (each entry's id, dish, from
+    and to), `prep_tasks_moved`, both changed `days` in get_week_menu's
+    shape, and `can_undo`; or `status` 'refused' with a plain `message`
+    and nothing written — a night nobody is home, a dinner already cooked,
+    or a leftover chain that would end up running backwards. Raises
+    ValueError for a night that isn't on this plan, two identical nights,
+    a component-based plan, or nights with no dinner at all.
+    """
+    return _apply_dinner_nights_swap(weekly_plan_id, date_a, date_b, undo=False)
+
+
+def undo_dinner_nights_swap(weekly_plan_id: int, date_a: str, date_b: str) -> dict:
+    """
+    Put two nights' dinners back where they were before the last
+    swap_dinner_nights of them. Only works while both nights still carry
+    the token that swap wrote (derived_from.moved_from naming the other
+    night); raises ValueError otherwise, so an Undo tapped after a second
+    move can never quietly move the wrong dish.
+    """
+    return _apply_dinner_nights_swap(weekly_plan_id, date_a, date_b, undo=True)
+
+
 def swap_component_in_plan(
     weekly_plan_id: int,
     component_category: str,

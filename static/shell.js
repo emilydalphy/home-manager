@@ -8584,8 +8584,10 @@
     dinner: ['night', 'nights'],
     snack: ['day', 'days']
   };
-  // view: which of the two is showing. openDays: which day cards in the
-  // second view are expanded, keyed by date so a re-render keeps them open.
+  // view: which of the two is showing. nightMove: the one night move in
+  // flight on the Which days tiles ({a, b} dates) or null; focusHandle:
+  // the night whose handle should take focus after the next render, so a
+  // keyboard move keeps hold of the dish it moved (see wireReviewTiles).
   // busy/trouble: the stepper's one in-flight call, exactly one at a time
   // for the same reason swapState is (see it) — a person is tapping one
   // stepper, not three. picking: which dish row (by its index into
@@ -8607,7 +8609,7 @@
   // Both are questions about how long an answer should live on this
   // screen, which is a decision rather than a bug fix.
   var reviewState = {
-    view: 'eating', openDays: {}, busy: null, trouble: '', troubleFor: null, picking: null,
+    view: 'eating', nightMove: null, focusHandle: null, busy: null, trouble: '', troubleFor: null, picking: null,
   };
 
   var RV_MINUS_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" ' +
@@ -8930,7 +8932,7 @@
   // deliberately empty, which is either "nobody is home" or "you asked for
   // none of these". READ, never inferred from a missing row: a day with no
   // rows at all is an unplanned day, a different thing, and it gets the
-  // ordinary card.
+  // ordinary tile.
   //
   // The three MEALS and not the snacks, deliberately. Both places that mark
   // a day away — the `out` night pass and the slot_needs pass in
@@ -8946,19 +8948,6 @@
     return meals.every(function (e) { return e.state === 'planned_empty'; });
   }
 
-  // Whether anything under the face is worth opening. A closed day usually
-  // has nothing — but since nothing marks a SNACK away, a day nobody is
-  // home can still carry two of them, and hiding real rows behind "nobody's
-  // home" would be this screen deciding they don't count. A deliberately
-  // empty slot is still never offered as a decision: it is a line, and the
-  // line says what it is.
-  function reviewDayHasMore(day) {
-    return daySlotKeys(day).some(function (slot) {
-      var e = daySlotEntry(day, slot);
-      return !!e && (e.state === 'planned' || e.state === 'open');
-    });
-  }
-
   // What a closed day says for itself. awayLineFor gives the away sentence
   // the rest of Meals already uses; anything else falls back to the slot's
   // own recorded words rather than a line this screen made up. Dinner
@@ -8969,57 +8958,10 @@
     return awayLineFor(first) || (first && first.title) || 'Nothing planned.';
   }
 
-  function reviewSlotLineHtml(day, slot) {
-    var entry = daySlotEntry(day, slot);
-    var name, quiet = ' is-quiet';
-    if (entry && entry.state === 'planned') { name = mealDisplayName(entry); quiet = ''; }
-    else if (entry && entry.state === 'open') name = 'Your call';
-    else if (entry && entry.state === 'planned_empty') {
-      name = awayLineFor(entry) || entry.title || 'Nothing planned';
-    } else name = day.isPast ? 'Not planned' : 'Nothing yet';
-    // The cook time (or "reheat") beside the name — Emily, 2026-09-11:
-    // "add the cook times for the which days view". The entry's own meta
-    // string (get_week_menu), never computed here.
-    var meta = entry && entry.state === 'planned' && entry.meta ? entry.meta : '';
-    var target = entry && entry.state === 'planned' && typeof recipeTargetForEntry === 'function'
-      ? recipeTargetForEntry(entry, day.date, slot) : null;
-    // The clash as one red word on the line it is about (any slot, not only
-    // dinner — an allergen can be in a snack).
-    var settle = typeof weekState !== 'undefined' && weekState.data ? weekState.data.settle : null;
-    var clash = settle && settle.note && settle.date === day.date && entry && entry.state === 'planned' &&
-      String(settle.meal || '').trim().toLowerCase() === String(name || '').trim().toLowerCase();
-    // "not for Emily": the word that says why the line is red (§2b S6),
-    // short enough to sit beside a two-line dish name.
-    var clashHtml = clash
-      ? '<span class="rv-day-clash">' + escapeHtml(settle.member ? 'not for ' + settle.member : 'clash') + '</span>'
-      : '';
-    return '<span class="rv-slot' + quiet + '">' +
-      '<span class="rv-slot-label">' + escapeHtml(slotEyebrowLabel(day, slot)) + '</span>' +
-      (target
-        ? '<button type="button" class="rv-slot-name dish-link is-inline" data-rv-recipe-date="' +
-            escapeHtml(day.date) + '" data-rv-recipe-slot="' + escapeHtml(slot) + '">' + escapeHtml(name) + '</button>'
-        : '<span class="rv-slot-name">' + escapeHtml(name) + '</span>') +
-      (meta ? '<span class="rv-slot-meta">' + escapeHtml(meta) + '</span>' : '') +
-      clashHtml +
-    '</span>';
-  }
-
-  function reviewDayTitle(day) {
-    return dayName(day.date, { weekday: 'long' }) + ' ' + dayName(day.date, { day: 'numeric' });
-  }
-
-  // The holiday's quiet pill on its day card — same label the week card
-  // and the Day step carry, so the three views agree.
-  function reviewDayHolidayHtml(day) {
-    return day.holiday
-      ? '<span class="rv-day-holiday wk-holiday pill pill-neutral">' + escapeHtml(day.holiday.label) + '</span>'
-      : '';
-  }
-
-  // The face of a day card: the day, and the one line that answers "what
-  // are we eating". Dinner, because that is the meal people actually check
-  // — unless nobody is home, in which case the day's own away sentence is
-  // the whole answer and dinner is not a thing to name.
+  // The face of a day tile: the one line that answers "what are we eating".
+  // Dinner, because that is the meal people actually check — unless nobody
+  // is home, in which case the day's own away sentence is the whole answer
+  // and dinner is not a thing to name.
   //
   // `note` is the one thing the dish name cannot say for itself: that
   // tonight costs no cooking. Without it, a chain reads as the same dinner
@@ -9053,57 +8995,119 @@
     return { line: day.isPast ? 'Not planned' : 'Nothing yet', quiet: ' is-quiet', note: '' };
   }
 
-  function reviewDayNoteHtml(note, clash) {
-    return (note ? '<span class="rv-day-note">' + escapeHtml(note) + '</span>' : '') +
-      // The clash, as one red word on its day, so the two views agree.
-      (clash ? '<span class="rv-day-clash">' + escapeHtml(clash) + '</span>' : '');
+  // ---------- Which days: seven tiles ----------
+  // Emily picked this on 2026-09-12 from the "Beyond lists" canvas
+  // (artboard "Week · A · Seven tiles"). One tile per night of the period:
+  // the date, the dinner, a bar for how long it takes, and a handle to
+  // drag a night onto another — which trades the two DINNERS (one small
+  // POST to /api/week/{week}/swap-nights, see runSwapNights; nothing else
+  // on either day moves, and the grocery list is untouched). The rest of
+  // a day is one tap in and one tap back (§2b S8): the tile's body opens
+  // the Day step. The expanding card this replaced showed all five slots
+  // in place; that reading is the Day step's now.
+
+  // Minutes as a number, off the entry's own "N min" meta (get_week_menu
+  // builds it from the recipe's prep + cook times). The bar's width is
+  // arithmetic on it, so it is parsed here and nowhere else.
+  function reviewDinnerMinutes(entry) {
+    var m = entry && entry.state === 'planned' && typeof entry.meta === 'string'
+      ? /^(\d+)\s*min/.exec(entry.meta) : null;
+    return m ? Number(m[1]) : 0;
   }
 
-  function reviewDayCardHtml(day, i) {
-    var title = reviewDayTitle(day);
+  // The bar: its width is minutes over 95, floored at 18% and capped at
+  // 150px (the artboard's own numbers), and it is apricot from 50 minutes
+  // and celadon under — so the bar answers "is this a long one" before
+  // the number beside it does. A night with no minutes (a reheat, takeout,
+  // a made-ahead day) gets the word instead of a bar; nothing is cooked,
+  // so there is no length to show.
+  var RV_BAR_FULL_MIN = 95;
+  var RV_BAR_LONG_MIN = 50;
+  function reviewTileTimeHtml(entry, face) {
+    var minutes = reviewDinnerMinutes(entry);
+    if (!minutes) {
+      var word = face.note || (entry && entry.state === 'planned' &&
+        (entry.meta === 'reheat' || entry.meta === 'takeout') ? entry.meta : '');
+      return word
+        ? '<span class="rv-tile-time"><span class="rv-tile-min">' + escapeHtml(word) + '</span></span>'
+        : '';
+    }
+    var pct = Math.round(minutes / RV_BAR_FULL_MIN * 100);
+    return '<span class="rv-tile-time">' +
+      '<span class="rv-tile-bar' + (minutes >= RV_BAR_LONG_MIN ? ' is-long' : '') + '"' +
+        ' style="width:min(150px, max(18%, ' + pct + '%))" aria-hidden="true"></span>' +
+      '<span class="rv-tile-min">' + minutes + ' min</span>' +
+    '</span>';
+  }
+
+  // The one real-life word that says why a night is different (§2b S6,
+  // S7): who is out, how many are at the table, the holiday, a rush
+  // night. Read off what the intake and attendance already store on the
+  // dinner (get_week_menu's _decorate_with_needs), never guessed from the
+  // roster. "Hosting · 5" is the headcount at the table, guests included
+  // — the number Emily said out loud ("I am hosting 5 people").
+  function reviewTileTags(day) {
+    var tags = [];
+    var entry = day.dinner || {};
+    var away = entry.away_names || [];
+    var present = entry.present_names || [];
+    if (entry.need === 'away' || (away.length && !present.length)) tags.push('Away');
+    else if (away.length) tags.push(joinList(away) + ' out');
+    if (entry.guest_count) tags.push('Hosting · ' + (entry.serves || entry.guest_count));
+    if (day.holiday && day.holiday.name) tags.push(day.holiday.name);
+    if (entry.need === 'quick') tags.push('Quick');
+    return tags;
+  }
+
+  // Whether a night can trade dinners: not a night nobody is home (moving
+  // a dinner onto it would plan food for an empty table — the server
+  // refuses too), and not a dinner somebody has already cooked (a tick is
+  // a record of something that happened). Everything else, an unplanned
+  // night included, can.
+  function reviewTileIsMovable(day) {
+    if (reviewDayIsClosed(day)) return false;
+    var dinner = day.dinner;
+    if (dinner && dinner.state === 'planned_empty') return false;
+    if (dinner && dinner.cooked) return false;
+    return true;
+  }
+
+  // Two short strokes: the grip. Stroke SVG, never a glyph (rule 7).
+  var RV_GRIP_SVG = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" ' +
+    'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">' +
+    '<path d="M5 9.5h14"/><path d="M5 14.5h14"/></svg>';
+
+  function reviewDayTileHtml(day, i) {
     var closed = reviewDayIsClosed(day);
     var face = reviewDayFaceLine(day);
-    // Nothing under it worth opening — a day nobody is home and nothing
-    // else on it. Flat rather than an expander that opens onto three
-    // repetitions of the line already on its face.
-    if (!reviewDayHasMore(day)) {
-      return '<div class="shell-card rv-day' + (closed ? ' is-closed' : '') + '">' +
-        '<div class="rv-day-head is-flat">' +
-          '<span class="rv-day-col">' +
-            '<span class="rv-day-title">' + escapeHtml(title) + '</span>' +
-            reviewDayHolidayHtml(day) +
-            '<span class="rv-day-dinner' + face.quiet + '">' + escapeHtml(face.line) + '</span>' +
-            reviewDayNoteHtml(face.note, face.clash) +
-          '</span>' +
-        '</div>' +
-      '</div>';
-    }
-    var open = !!reviewState.openDays[day.date];
-    var line = face.line, quiet = face.quiet;
-    return '<div class="shell-card rv-day' + (open ? ' is-open' : '') +
-        (closed ? ' is-closed' : '') + (day.isToday ? ' is-today' : '') + '">' +
-      '<button type="button" class="rv-day-head" data-rv-day="' + escapeHtml(day.date) + '"' +
-          ' aria-expanded="' + (open ? 'true' : 'false') + '">' +
-        '<span class="rv-day-col">' +
-          '<span class="rv-day-title">' + escapeHtml(title) + '</span>' +
-          reviewDayHolidayHtml(day) +
-          '<span class="rv-day-dinner' + quiet + '">' + escapeHtml(line) + '</span>' +
-          reviewDayNoteHtml(face.note, face.clash) +
-        '</span>' +
-        '<span class="rv-day-chev">' + RV_CHEVRON_SVG + '</span>' +
+    var entry = day.dinner;
+    var movable = reviewTileIsMovable(day);
+    var weekday = dayName(day.date, { weekday: 'long' });
+    var eyebrow = (day.isToday ? '<span class="rv-tile-today">Today</span>' : '') +
+      reviewTileTags(day).map(function (t) {
+        return '<span class="rv-tile-tag">' + escapeHtml(t) + '</span>';
+      }).join('') +
+      // The clash, as one red word on its night, so the two views agree.
+      (face.clash ? '<span class="rv-day-clash">' + escapeHtml(face.clash) + '</span>' : '');
+    return '<div class="rv-tile' + (day.isToday ? ' is-today' : '') + (closed ? ' is-closed' : '') + '"' +
+        ' role="listitem" data-rv-tile="' + escapeHtml(day.date) + '">' +
+      '<span class="rv-tile-date">' +
+        '<span class="rv-tile-dow">' + escapeHtml(dayName(day.date, { weekday: 'short' })) + '</span>' +
+        '<span class="rv-tile-num">' + escapeHtml(dayName(day.date, { day: 'numeric' })) + '</span>' +
+      '</span>' +
+      // Through to the Day step, which is where a slot is actually acted
+      // on. The tile reads; it does not grow a second copy of every
+      // per-slot control.
+      '<button type="button" class="rv-tile-body" data-rv-open="' + i + '">' +
+        (eyebrow ? '<span class="rv-tile-eyebrow">' + eyebrow + '</span>' : '') +
+        '<span class="rv-tile-name' + face.quiet + '">' + escapeHtml(face.line) + '</span>' +
+        reviewTileTimeHtml(entry, face) +
       '</button>' +
-      (open
-        ? '<div class="rv-day-slots">' +
-            daySlotKeys(day).map(function (slot) {
-              return reviewSlotLineHtml(day, slot);
-            }).join('') +
-            // Through to the Day step, which is where a slot is actually
-            // acted on. Review reads and counts; it does not grow a second
-            // copy of every per-slot control.
-            '<button type="button" class="rv-day-open" data-rv-open="' + i + '">' +
-              'Open ' + escapeHtml(dayName(day.date, { weekday: 'long' })) + ' ›</button>' +
-          '</div>'
-        : '') +
+      (movable
+        ? '<button type="button" class="rv-tile-handle" data-rv-handle="' + escapeHtml(day.date) + '"' +
+            ' aria-label="Move ' + escapeHtml(weekday) + '’s dinner — arrow up or down">' +
+            RV_GRIP_SVG + '</button>'
+        : '<span class="rv-tile-handle is-off" aria-hidden="true"></span>') +
     '</div>';
   }
 
@@ -9112,9 +9116,16 @@
       return '<div class="rv-body"><div class="rv-empty">Nothing planned yet.</div></div>';
     }
     return '<div class="rv-body rv-days">' +
-      days.map(reviewDayCardHtml).join('') +
+      '<div class="rv-tiles-head">' +
+        '<span class="rv-tiles-eyebrow">Dinners · drag to move a night</span>' +
+        '<span class="rv-tiles-key">Bar = how long</span>' +
+      '</div>' +
+      '<div class="rv-tiles' + (reviewState.nightMove ? ' is-busy' : '') + '" role="list">' +
+        days.map(reviewDayTileHtml).join('') +
+      '</div>' +
     '</div>';
   }
+
 
   // The screen's one apricot (Rule 5), and deliberately the same .wk-decide
   // shell and #week-approve-btn id the Week root uses — approveWeek and
@@ -10369,14 +10380,8 @@
         renderMealsStep(panel);
       });
     });
-    steps.querySelectorAll('[data-rv-day]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var date = btn.getAttribute('data-rv-day');
-        if (reviewState.openDays[date]) delete reviewState.openDays[date];
-        else reviewState.openDays[date] = true;
-        renderMealsStep(panel);
-      });
-    });
+    // The Which days tiles: drag and keyboard moves (wireReviewTiles).
+    wireReviewTiles(panel, steps);
     steps.querySelectorAll('[data-rv-open]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         goMealsStep('day', { dayIndex: Number(btn.getAttribute('data-rv-open')) });
@@ -10570,6 +10575,264 @@
       console.warn('Undo failed:', err);
       swapState = { date: day.date, slot: slot, avoid: [], message: SWAP_TROUBLE };
       renderMealsStep(panel);
+    }
+  }
+
+  // ---------- Which days: moving a night ----------
+  // Drag a tile onto another and the two nights' DINNERS trade places.
+  // Pointer events, one implementation for mouse and touch: a mouse lifts
+  // on press, a finger lifts after a 250ms hold (a quick swipe on the
+  // handle is not a move). The lifted tile follows the finger; the night
+  // under it slides into the lifted night's home — a swap previewed as a
+  // swap, so only the two trade and nothing in between moves. Motion is
+  // the tab crossfade's own tokens (shell.css .rv-tile), no new kind.
+  //
+  // Optimistic, per §6: the tiles trade on the drop, then the server is
+  // told. A refusal or a failure puts them back and says so, calmly; a
+  // success offers Undo in the toast for the same eight seconds the
+  // in-place swap does. One move at a time (reviewState.nightMove), for
+  // the reason swapState is one at a time: a person is moving one night.
+  var RV_LIFT_MS = 250;
+  var RV_LIFT_SLOP = 8;
+
+  // The live region is in shell.html, outside #week-steps — a region
+  // re-rendered with the tiles would be replaced before it was read.
+  function reviewTileAnnounce(text) {
+    var live = document.getElementById('rv-tiles-live');
+    if (live) live.textContent = text || '';
+  }
+
+  function wireReviewTiles(panel, steps) {
+    var list = steps.querySelector('.rv-tiles');
+    if (!list) return;
+    list.querySelectorAll('[data-rv-tile]').forEach(function (tile) {
+      var handle = tile.querySelector('[data-rv-handle]');
+      if (!handle) return;
+      handle.addEventListener('pointerdown', function (e) {
+        reviewTilePointerDown(panel, list, tile, handle, e);
+      });
+      handle.addEventListener('keydown', function (e) {
+        reviewTileKeydown(panel, list, tile, e);
+      });
+    });
+    // After a keyboard move the focus follows the dish to its new night,
+    // so the next arrow press keeps moving the same dinner. Re-applied on
+    // every render while the move is settling (the optimistic one, the
+    // server's, then loadWeekMenu's) — runSwapNights clears it at the end.
+    if (reviewState.focusHandle) {
+      var next = list.querySelector('[data-rv-handle="' + reviewState.focusHandle + '"]');
+      if (next && document.activeElement !== next) next.focus();
+    }
+  }
+
+  function reviewTilePointerDown(panel, list, tile, handle, e) {
+    if (reviewState.nightMove) return;
+    if (e.button !== undefined && e.button !== 0) return;
+    var drag = {
+      startY: e.clientY, pointerId: e.pointerId, lifted: false, timer: null, target: null,
+      rects: [], home: null
+    };
+    try { handle.setPointerCapture(e.pointerId); } catch (err) { /* not every pointer can be captured */ }
+
+    function lift() {
+      drag.lifted = true;
+      tile.classList.add('is-lifted');
+      list.classList.add('is-moving');
+      drag.home = { top: tile.offsetTop, height: tile.offsetHeight };
+      drag.rects = Array.prototype.slice.call(list.querySelectorAll('[data-rv-tile]'))
+        .filter(function (t) { return t !== tile; })
+        .map(function (t) {
+          return { el: t, top: t.offsetTop, height: t.offsetHeight, ok: !!t.querySelector('[data-rv-handle]') };
+        });
+    }
+    function onMove(ev) {
+      var dy = ev.clientY - drag.startY;
+      if (!drag.lifted) {
+        // Moved before the hold finished: a scroll or a slip, not a lift.
+        if (drag.timer && Math.abs(dy) > RV_LIFT_SLOP) cleanup();
+        return;
+      }
+      ev.preventDefault();
+      tile.style.transform = 'translateY(' + dy + 'px)';
+      var centre = drag.home.top + drag.home.height / 2 + dy;
+      var over = null;
+      drag.rects.forEach(function (r) {
+        if (r.ok && centre >= r.top && centre < r.top + r.height) over = r;
+      });
+      if (over !== drag.target) {
+        if (drag.target) drag.target.el.style.transform = '';
+        drag.target = over;
+        if (over) over.el.style.transform = 'translateY(' + (drag.home.top - over.top) + 'px)';
+      }
+    }
+    function settle() {
+      tile.style.transform = '';
+      tile.classList.remove('is-lifted');
+      list.classList.remove('is-moving');
+      if (drag.target) drag.target.el.style.transform = '';
+    }
+    function cleanup() {
+      if (drag.timer) { clearTimeout(drag.timer); drag.timer = null; }
+      handle.removeEventListener('pointermove', onMove);
+      handle.removeEventListener('pointerup', onUp);
+      handle.removeEventListener('pointercancel', onCancel);
+      try { handle.releasePointerCapture(drag.pointerId); } catch (err) { /* already released */ }
+    }
+    function onUp() {
+      cleanup();
+      if (!drag.lifted) return;
+      var target = drag.target;
+      settle();
+      if (target) runSwapNights(panel, tile.getAttribute('data-rv-tile'), target.el.getAttribute('data-rv-tile'));
+    }
+    function onCancel() {
+      cleanup();
+      if (drag.lifted) settle();
+    }
+    handle.addEventListener('pointermove', onMove);
+    handle.addEventListener('pointerup', onUp);
+    handle.addEventListener('pointercancel', onCancel);
+    if (e.pointerType === 'touch') {
+      drag.timer = setTimeout(function () { drag.timer = null; lift(); }, RV_LIFT_MS);
+    } else {
+      lift();
+    }
+  }
+
+  // ArrowUp / ArrowDown trade this night's dinner with the one above or
+  // below. Said out loud through the live region once the server answers
+  // (runSwapNights), and the focus follows the dish (wireReviewTiles).
+  function reviewTileKeydown(panel, list, tile, e) {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    e.preventDefault();
+    if (reviewState.nightMove) return;
+    var tiles = Array.prototype.slice.call(list.querySelectorAll('[data-rv-tile]'));
+    var i = tiles.indexOf(tile);
+    var other = tiles[e.key === 'ArrowUp' ? i - 1 : i + 1];
+    if (!other) return;
+    if (!other.querySelector('[data-rv-handle]')) {
+      reviewTileAnnounce(dayName(other.getAttribute('data-rv-tile'), { weekday: 'long' }) + ' can’t take a dinner.');
+      return;
+    }
+    var from = tile.getAttribute('data-rv-tile'), to = other.getAttribute('data-rv-tile');
+    reviewState.focusHandle = to;
+    runSwapNights(panel, from, to, from);
+  }
+
+  function reviewDayByDate(date) {
+    return (weekState.days || []).filter(function (d) { return d.date === date; })[0] || null;
+  }
+
+  // The two nights trade dinners in the week the screen is holding — the
+  // optimistic half of the move, and its own undo when the server says
+  // no (a swap is its own inverse). classifyDay again, because whether a
+  // day has an open decision on it can change when its dinner does.
+  function reviewSwapDaysInState(dateA, dateB) {
+    var a = reviewDayByDate(dateA), b = reviewDayByDate(dateB);
+    if (!a || !b) return false;
+    var tmp = a.dinner; a.dinner = b.dinner; b.dinner = tmp;
+    var todayStr = todayLocalStr();
+    Object.assign(a, classifyDay(a, todayStr));
+    Object.assign(b, classifyDay(b, todayStr));
+    return true;
+  }
+
+  // "Bean Chili is on Friday now, and Chicken Traybake on Tuesday." —
+  // built from what the server says moved, so it never names a dish the
+  // move did not touch.
+  function reviewNightMoveSentence(out) {
+    var parts = (out.moved || []).filter(function (m) { return m.meal; }).map(function (m) {
+      return { meal: m.meal, day: dayName(m.to, { weekday: 'long' }) };
+    });
+    if (!parts.length) return 'Moved.';
+    var said = parts[0].meal + ' is on ' + parts[0].day + ' now';
+    if (parts[1]) said += ', and ' + parts[1].meal + ' on ' + parts[1].day;
+    return said + '.';
+  }
+
+  // `focusBack`: for a keyboard move, the night whose handle had focus —
+  // where focus returns if the move is refused or fails.
+  async function runSwapNights(panel, dateA, dateB, focusBack) {
+    var weekStart = weekStartForSwap();
+    if (!weekStart || !dateA || !dateB || dateA === dateB || reviewState.nightMove) return;
+    if (!reviewSwapDaysInState(dateA, dateB)) return;
+    reviewState.nightMove = { a: dateA, b: dateB };
+    renderMealsStep(panel);
+    function putBack() {
+      reviewState.nightMove = null;
+      reviewSwapDaysInState(dateA, dateB);
+      if (focusBack) reviewState.focusHandle = focusBack;
+      renderMealsStep(panel);
+      reviewState.focusHandle = null;
+    }
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-nights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date_a: dateA, date_b: dateB })
+      });
+      if (!res.ok) throw new Error('move failed (' + res.status + ')');
+      var out = await res.json();
+      reviewState.nightMove = null;
+      if (out.status !== 'swapped') {
+        // A 200 that says no — a night nobody is home, a dinner already
+        // cooked, a chain that would run backwards. The sentence is the
+        // server's, and the tiles go back where they were.
+        putBack();
+        reviewTileAnnounce(out.message || SWAP_TROUBLE);
+        showToast(out.message || SWAP_TROUBLE, null, 6000);
+        return;
+      }
+      (out.days || []).forEach(spliceSwappedDay);
+      renderMealsStep(panel);
+      var said = reviewNightMoveSentence(out);
+      reviewTileAnnounce(said);
+      showToast(said, {
+        label: 'Undo',
+        onClick: function () { return runSwapNightsUndo(panel, dateA, dateB); }
+      }, SWAP_UNDO_MS);
+      // Then the rest of the week, quietly — the badge, the receipt, and
+      // Kitchen's reading of the same nights. And Now: today's dinner may
+      // have just become a different one, and the moves read the plan by
+      // date. The grocery list is untouched, so nothing there to refresh.
+      await loadWeekMenu(panel);
+      reviewState.focusHandle = null;
+      refreshTodayMoves();
+    } catch (err) {
+      console.warn('Moving a night failed:', err);
+      putBack();
+      reviewTileAnnounce(SWAP_TROUBLE);
+      showToast(SWAP_TROUBLE);
+    }
+  }
+
+  async function runSwapNightsUndo(panel, dateA, dateB) {
+    var weekStart = weekStartForSwap();
+    if (!weekStart || reviewState.nightMove) return;
+    if (!reviewSwapDaysInState(dateA, dateB)) return;
+    reviewState.nightMove = { a: dateA, b: dateB };
+    renderMealsStep(panel);
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-nights-undo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date_a: dateA, date_b: dateB })
+      });
+      if (!res.ok) throw new Error('undo failed (' + res.status + ')');
+      var out = await res.json();
+      reviewState.nightMove = null;
+      (out.days || []).forEach(spliceSwappedDay);
+      renderMealsStep(panel);
+      reviewTileAnnounce('Put back.');
+      showToast('Put back.');
+      await loadWeekMenu(panel);
+      refreshTodayMoves();
+    } catch (err) {
+      console.warn('Undoing a night move failed:', err);
+      reviewState.nightMove = null;
+      reviewSwapDaysInState(dateA, dateB);
+      renderMealsStep(panel);
+      showToast(SWAP_TROUBLE);
     }
   }
 
@@ -15753,6 +16016,9 @@
       if (action.tab === 'week' && panels.week && panels.week.dataset.built) {
         // loadWeekMenu refreshes the Cook state too — see its tail, and
         // the dish index the chat's own dish links read (setDishIndex).
+        // It re-renders whichever review view is showing, so the Which
+        // days tiles follow a chat "move Thursday's dinner to Friday"
+        // (swap_dinner_nights, tagged `week` in app/main.py) as well.
         loadWeekMenu(panels.week);
       } else if (action.tab === 'week') {
         // The same week changed, but Meals has never been opened in this
