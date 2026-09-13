@@ -5,8 +5,11 @@ Emily's approved design, 2026-09-08 (branch
 `flows-4-kitchen-and-preferences`). Two moves, and this file guards both:
 
 1. **Kitchen answers "what's cooking, and what's in the house?"** Its root
-   is Cooking today / Prep sessions / The rest of the week, plus two quiet
-   tiles (Inventory, Recipes). Cook mode — the focused single-meal screen,
+   was Cooking today / Prep sessions / The rest of the week, plus two quiet
+   tiles (Inventory, Recipes); since the shelf design (Emily, 2026-09-13)
+   it is the shelf / the Tonight card / at most two get-ready rows, with
+   Recipes, Add from a link and Inventory behind one "More" link
+   (tests/test_cook_shelf.py covers the new shape). Cook mode — the focused single-meal screen,
    its steps, its cook-ahead picker and its "Mark it cooked" — is a STEP of
    this tab now rather than a state of the Meals tab, so Meals lost its
    Plan | Cook segmented control and every entry point into cooking aims at
@@ -69,14 +72,17 @@ def _function(name: str, source: str = SHELL_JS) -> str:
 # --- 1. the Kitchen root --------------------------------------------------
 
 def test_the_kitchen_root_is_the_cooks_tab():
-    """Three sections, in this order, and the day above them."""
+    """The shelf, tonight, the get-ready rows and the More link, in this
+    order, under the band (the shelf design, 2026-09-13). The three
+    eyebrowed lists this used to pin are gone."""
     root = _function("renderKitchen")
-    for call in ("kitchenCookingTodayHtml(rows, meals, todayIso)", "cookPrepSessionsHtml(data)",
-                 "cookRestOfWeekHtml(", "kitchenTilesHtml()"):
+    for call in ("cookShelfHtml(meals, data, todayIso)", "kitchenCookingTodayHtml(rows, meals, todayIso, data)",
+                 "cookGetReadyRowsHtml(cookGetReadyMoves(data, meals, todayIso,", "cookMoreLinkHtml()"):
         assert call in root, f"the Kitchen root no longer renders {call}"
-    _assert_in("Cooking today", SHELL_JS, "the Cooking today eyebrow", "shell.js")
-    _assert_in("Prep sessions", SHELL_JS, "the Prep sessions eyebrow", "shell.js")
-    _assert_in("The rest of the week", SHELL_JS, "the rest-of-week eyebrow", "shell.js")
+    tail = root[root.index("cookShelfHtml("):]
+    assert tail.index("kitchenCookingTodayHtml(") < tail.index("cookGetReadyRowsHtml(") < tail.index("cookMoreLinkHtml()")
+    for gone in ("Cooking today", "Prep sessions</span>", "The rest of the week</span>", "Prep to do</span>"):
+        assert gone not in SHELL_JS, f"the old root's {gone!r} eyebrow is back"
 
 
 def test_the_kitchen_root_says_the_day_and_the_count():
@@ -103,20 +109,20 @@ def test_a_cooking_today_line_carries_the_start_by_and_the_badge():
     )
 
 
-def test_the_rest_of_the_week_collapses_after_three():
-    fn = _function("cookRestOfWeekHtml")
-    _assert_in("var KITCHEN_REST_VISIBLE = 3;", SHELL_JS, "the collapse point", "shell.js")
-    # One line per day since 2026-09-11 (Build 8): the expand names the
-    # days it hides ("Show Fri–Sun"), and three DAYS show before it.
-    assert "'Show ' + dayNameShort(first.date)" in fn, "the 'Show Fri–Sun' link is gone"
-    assert "groups.slice(0, KITCHEN_REST_VISIBLE)" in fn
-    _assert_in('data-cook="rest-more"', SHELL_JS, "the expand control", "shell.js")
+def test_the_rest_of_the_week_is_the_shelf():
+    """The three-days-then-"Show Fri–Sun" list (cookRestOfWeekHtml, Build
+    8) went with the shelf design: every night of the period is a tile."""
+    for gone in ("function cookRestOfWeekHtml(", "KITCHEN_REST_VISIBLE", 'data-cook="rest-more"',
+                 "function cookRestDayRowHtml(", "restExpanded"):
+        assert gone not in SHELL_JS, f"{gone} is back"
+    shelf = _function("cookShelfHtml")
+    assert "cookShelfNights(meals, data, todayIso)" in shelf and "cookShelfTileHtml" in shelf
 
 
 def test_the_two_quiet_tiles_are_inventory_and_recipes():
-    """Rows in one card since 2026-09-11 (Build 8), above the fold, one fact
-    each — still quiet, still no apricot."""
-    tiles = _function("kitchenTilesHtml")
+    """Rows in one card since 2026-09-11 (Build 8); in the More sheet, one
+    tap off the root, since 2026-09-13 — still quiet, still no apricot."""
+    tiles = _function("cookMoreRowsHtml")
     # Inventory's title is followed by the "In development" pill (Loop
     # Board: mark inventory as still being built) rather than closing
     # straight away — see tests/test_inventory_in_development_marker.py
@@ -124,7 +130,7 @@ def test_the_two_quiet_tiles_are_inventory_and_recipes():
     assert 'kit-row-title">Inventory' in tiles and ">Recipes<" in tiles
     assert 'class="kit-row"' in tiles, "Kitchen's entry points are quiet rows"
     assert "btn-primary" not in tiles and "apricot" not in tiles, (
-        "Kitchen's root has no primary action and no apricot (DESIGN_SYSTEM Rule 5)"
+        "the entry points are quiet — the root's one apricot is the dock's (DESIGN_SYSTEM Rule 5)"
     )
 
 
@@ -567,15 +573,29 @@ def test_onboarding_counts_as_answering_the_snacks_question(signed_in):
 _PREP_JS = (
     _JS_PRELUDE
     + "function dayNameShort(d){ return 'Wed'; }\n"
+    + "function dayName(d, o){ return 'Wednesday'; }\n"
+    + "const GRO_ICONS = { chevRight: '<svg data-icon=\"chev\"></svg>' };\n"
+    + _function("addDaysLocal") + "\n"
+    + _function("cookMinutesLabel") + "\n"
+    + _function("cookCoversLabel") + "\n"
     + _function("cookFocusPrepTasks") + "\n"
     + _function("kitchenLoosePrepTasks") + "\n"
-    + _function("kitchenPrepTodoHtml") + "\n"
+    # The get-ready rows (the shelf design, 2026-09-13) are where a loose
+    # task surfaces on the root now — the soonest one, with its tick.
+    + SHELL_JS[SHELL_JS.index("  var COOK_READY_ICONS = {"):SHELL_JS.index("  function cookGetReadyRowsHtml(")]
+    + _function("cookGetReadyMoves") + "\n"
+    + _function("cookByTaskDate") + "\n"
+    + _function("cookWhenLabel") + "\n"
+    + _function("cookMealIndexForTask") + "\n"
+    + _function("cookThawTitle") + "\n"
+    + _function("cookThawFor") + "\n"
+    + _function("cookGetReadyRowsHtml") + "\n"
 )
 
 
 def _prep_todo(data: dict) -> dict:
-    """What the Kitchen root's "Prep to do" list is given, and what it
-    renders — plus, for the "nowhere twice" half, which task ids the cook
+    """What the Kitchen root's get-ready rows are given, and what they
+    render — plus, for the "nowhere twice" half, which task ids the cook
     screens already carry."""
     script = (
         _PREP_JS
@@ -587,7 +607,7 @@ def _prep_todo(data: dict) -> dict:
         + "});\n"
         + "console.log(JSON.stringify({\n"
         + "  loose: loose.map(function (t) { return t.id; }),\n"
-        + "  html: kitchenPrepTodoHtml(loose),\n"
+        + "  html: cookGetReadyRowsHtml(cookGetReadyMoves(data, data.meals || [], '2026-09-09', null)),\n"
         + "  onCookScreens: onCookScreens\n"
         + "}));\n"
     )
@@ -636,11 +656,10 @@ def test_an_orphan_prep_task_is_collected_by_prep_to_do():
     today. A task the app wrote and then hid is worse than one it never
     wrote."""
     out = _prep_todo(_ORPHAN_DATA)
-    assert out["loose"] == [11], "only the orphan belongs in Prep to do"
+    assert out["loose"] == [11], "only the orphan belongs in the get-ready rows"
     assert "Soak the beans" in out["html"]
-    assert "Prep to do" in out["html"]
     assert 'data-cook="check-prep" data-prep-id="11"' in out["html"], "it has to be tickable"
-    assert "WED" in out["html"], "and dated"
+    assert "Wednesday" in out["html"], "and dated"
 
 
 @_needs_node
@@ -669,16 +688,17 @@ def test_prep_to_do_is_nothing_at_all_when_nothing_is_orphaned():
     ])
     out = _prep_todo(data)
     assert out["loose"] == []
-    assert out["html"] == "", "an empty net is not a section"
+    assert "Soak the beans" not in out["html"]
+    # Sunday's session is still the next get-ready move.
+    assert "Sunday prep" in out["html"] and 'data-cook="session" data-date="2026-09-13"' in out["html"]
 
 
-def test_the_kitchen_root_renders_the_net_under_the_sessions():
+def test_the_kitchen_root_renders_the_net_in_its_get_ready_rows():
     root = _function("renderKitchen")
-    assert (
-        "cookPrepSessionsHtml(data) +\n"
-        "      kitchenPrepTodoHtml(kitchenLoosePrepTasks(data)) +" in root
-    ), "Prep to do belongs directly under Prep sessions"
-    _assert_in("Prep to do", SHELL_JS, "the Prep to do eyebrow", "shell.js")
+    assert "cookGetReadyRowsHtml(cookGetReadyMoves(data, meals, todayIso," in root
+    moves = _function("cookGetReadyMoves")
+    assert "kitchenLoosePrepTasks(data)" in moves, "the net feeds the get-ready rows"
+    assert "moves.slice(0, 2)" in moves, "at most two rows"
 
 
 # --- 5c. "Show me tomorrow" lands on tomorrow -----------------------------
@@ -755,7 +775,7 @@ def test_show_me_tomorrow_falls_back_to_the_prep_it_promised():
     assert "kitchenState.scrollToPrep = true;" in fn
     render = _function("renderCook")
     assert "kitchenState.scrollToPrep" in render, "nothing consumes the flag"
-    assert "'#kit-prep-todo'" in render and "'#kit-prep-sessions'" in render
+    assert "'#kit-get-ready'" in render
     _assert_in("onClick: cookShowTomorrow", SHELL_JS, "the toast's action", "shell.js")
 
 

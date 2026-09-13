@@ -174,6 +174,21 @@
     <div class="wk-more-rows" id="meals-more-rows"></div>
   </div>
 
+  <!-- Cook's "More" sheet (the shelf design, 2026-09-13). The three quiet
+       entry points that sat on Cook's root as rows — Recipes, Add from a
+       link, Inventory — one tap off it instead (cookMoreRowsHtml in
+       shell.js). Same shape as Meals' More above. -->
+  <div id="cook-more-scrim" hidden></div>
+  <div id="cook-more-sheet" hidden role="dialog" aria-label="More">
+    <div class="ask-sheet-handle" id="cook-more-handle"></div>
+    <div class="kit-sheet-titlerow">
+      <span class="kit-sheet-title">More</span>
+      <span class="kit-sheet-hairline"></span>
+      <button type="button" class="kit-sheet-close" id="cook-more-close" aria-label="Close">&times;</button>
+    </div>
+    <div id="cook-more-rows"></div>
+  </div>
+
   <!-- Kitchen entry sheet (Stage 2 slice 3). The hub's tiles open What we
        know / Inventory / Stores as a sheet over the hub instead of a full
        page navigation that left the app shell — tab bar and all — with only

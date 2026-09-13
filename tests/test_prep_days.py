@@ -526,12 +526,19 @@ def test_the_cook_view_renders_the_sessions_card_from_the_payload():
     screen shows (see tests/test_kitchen_and_preferences.py). The ordering
     this pins is unchanged; the new section is inside it.
     """
-    assert "function cookPrepSessionsHtml(data)" in SHELL_JS
-    assert "data.prep_sessions || []" in SHELL_JS
+    # UPDATED 2026-09-13 (the shelf design): the sessions card is gone from
+    # the root; the NEXT session is one of the get-ready rows under the
+    # Tonight card (cookGetReadyMoves reads prep_sessions), and the row
+    # still opens the session's own screen. The ordering pinned here is
+    # tonight, then what gets you ready for what's next.
+    assert "function cookPrepSessionsHtml(data)" not in SHELL_JS
+    moves = SHELL_JS[SHELL_JS.index("function cookGetReadyMoves("):SHELL_JS.index("function cookByTaskDate(")]
+    assert "data.prep_sessions) || []" in moves
+    rows = SHELL_JS[SHELL_JS.index("function cookGetReadyRowsHtml("):SHELL_JS.index("function cookRootDockHtml(")]
+    assert 'data-cook="session" data-date="' in rows
     assert (
-        "kitchenCookingTodayHtml(rows, meals, todayIso) +\n      cookPrepSessionsHtml(data) +\n"
-        "      kitchenPrepTodoHtml(kitchenLoosePrepTasks(data)) +\n"
-        "      cookRestOfWeekHtml(" in SHELL_JS
+        "kitchenCookingTodayHtml(rows, meals, todayIso, data) +\n"
+        "      cookGetReadyRowsHtml(cookGetReadyMoves(data, meals, todayIso," in SHELL_JS
     )
 
 
@@ -542,7 +549,7 @@ def test_no_prep_days_offer_on_the_cook_root():
     # nothing here.
     assert "Tell me which days you prep" not in SHELL_JS
     assert 'data-cook="prep-days"' not in SHELL_JS
-    assert "if (!sessions.length) return '';" in SHELL_JS
+    assert "Prep days</span>" not in SHELL_JS
     # (Rows name a SECTION of the native What we know sheet since
     # 2026-09-12; they named a tab of static/memory.html before that.)
     assert "{ title: 'Prep days', section: 'prep-days', line: prefsPrepLine }" in SHELL_JS

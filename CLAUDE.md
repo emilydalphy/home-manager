@@ -371,6 +371,67 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — Cook's root is the shelf: one strip of nights, one spruce
+  card for tonight, "Start cooking" in the dock. Branch
+  `worktree-cook-shelf`, NOT merged at the time of writing.** Emily picked
+  "Cook · D · The shelf" from the Beyond-lists canvas. `renderKitchen`
+  renders, in order: `cookShelfHtml` (one 74px tile per night of the
+  planning period, tonight celadon, one word per dish via
+  `dishShortWord`; a tile opens that night's meal screen with the
+  "‹ Cook" crumb), the attention fold, `kitchenCookingTodayHtml` (now
+  ONE spruce `.cook-tonight` card: eyebrow with the day / the meal of the
+  day / the cook's name, the dish at 26px, START + ON THE TABLE off the
+  move the server already computed, the thaw/prep fact for this meal),
+  `cookGetReadyRowsHtml` (at most two quiet rows — the next thaw for a
+  later night, the next prep session, the next loose prep task; the two
+  soonest), and one "More ···" link to `#cook-more-sheet` with Recipes /
+  Add from a link / Inventory in their old `.kit-row` shape. The dock
+  (`#kit-dock`, `.cook-root-dock`) reads "Start cooking" →
+  `cookEnterFocus(tonightIdx)`, "Mark eaten" on a reheat night, and is
+  hidden when tonight has no cook or it's done. **Tier 2, decided by the
+  pick:** DESIGN_SYSTEM §6's "Cook's root has no primary action" and rule
+  2's "Cook's root is the live example" of a dockless screen were changed
+  in the same commit (plus §2 rules 4/5 and the §5 rows for the empty
+  moment and the dock; two new §5 rows for the shelf and the Tonight
+  card). Retired: `cookRestOfWeekHtml`/`cookRestDayRowHtml`/
+  `KITCHEN_REST_VISIBLE`, `cookPrepSessionsHtml`, `kitchenPrepTodoHtml`,
+  `kitchenTilesHtml`, `kitchenState.restExpanded`, the `rest-more`
+  handler, the `.cook-day-*` CSS. Kept: `kitchenTodayRows`/`Line`/
+  `Subtitle` (the band's line is unchanged), `kitchenTodayRowHtml` (a
+  multi-slot day's other meals still render as tick rows under the
+  card), `kitchenLoosePrepTasks` (feeds the get-ready rows so no prep
+  task is invisible). Backend: `/api/cooker-view` grew three additive
+  keys — `period_start_date`, `day_count` (from `get_weekly_plan`'s
+  period, so the shelf can show an unplanned night as one) and
+  `cook_name` (the `cooking_role` rhythm fact when it is `one_person`;
+  the first code that reads that answer, which §2b S4 had flagged as
+  never acted on).
+  - **Judgment calls, for Emily.** (1) The card's no-thaw line is
+    "Nothing to thaw or prep ahead." rather than the artboard's
+    "Everything's in. Nothing to thaw." — "everything's in" claims the
+    groceries are home, which nothing in the app can verify (§8: never
+    promise what isn't true). (2) A reheat night's tile IS tappable: it
+    opens the reheat's own card (`cookReheatFocusHtml`, the screen Now's
+    hero already opens), which carries "Mark eaten"/"Mark not eaten" —
+    a tile that does nothing among tiles that do would read as broken.
+    The 2026-09-04 rule ("a reheat is never a way into a recipe") still
+    holds: there is no recipe on that screen. (3) The no-plan state
+    shows no shelf (seven dashes say nothing); the shelf appears once a
+    plan or a loose meal exists, including on a night with no cook. (4)
+    Recipes / Add from a link / Inventory stayed reachable from Cook
+    behind "More ···" rather than moving into Preferences: they are
+    things the cook does, not settings. (5) On a day with more than one
+    meal to make, the card is the meal `cookTonightIndex` already
+    picked and the others keep their old tick rows under it — the
+    design shows the dinner-only case, and a 21-slot plan's breakfast
+    must not vanish. (6) The get-ready rows cap at two by design; when a
+    thaw, a session AND a loose task all exist, the loose task waits
+    until one of the others is done. (7) "Start" and "on the table" are
+    the move's own clocks ("6:00", no am/pm — the same words Now uses);
+    with no move for the meal the card shows "TAKES · 30 min" instead
+    of inventing a start time. Tests: `tests/test_cook_shelf.py` (22)
+    plus the eight Cook-root files updated to the new shape.
+
 - **2026-09-13 — Skip, swap, or "not this week": a ··· on every chore row.
   Branch `overnight/chores-skip-hand-move`, NOT merged at the time of
   writing.** Loop Board "Chores v1: Skip, swap, or 'not this week'"
