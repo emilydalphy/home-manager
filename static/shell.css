@@ -4416,6 +4416,26 @@ html, body {
    side of the label narrows. */
 .gro-sortall-pills .gro-pill { padding: 10px 13px; font-size: 13px; }
 
+/* ---------- CARRY: last week's leftovers, keep or drop ----------
+   One row per line an earlier week left unbought, in the pre-shop check's
+   row shape (.gro-ps-row / .gro-ps-btn) — the same keep-or-drop question,
+   asked as a step rather than a banner, so the rows sit on the card's
+   hairline instead of the banner's celadon edge. This week's own amount
+   gets its own line under the name: two numbers, never one. */
+.gro-carry { padding: 0 14px; }
+.gro-carry .gro-carry-row { border-top: 1.5px solid var(--hairline); }
+.gro-carry .gro-carry-row:first-of-type { border-top: none; }
+.gro-carry .gro-ps-name { display: flex; align-items: baseline; gap: 10px; }
+.gro-carry-thisweek {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+  margin: 0 0 10px;
+}
+.gro-carry .gro-ps-actions { margin-top: 8px; }
+.gro-carry .gro-ps-btn-drop { border-color: var(--hairline-strong); }
+
 /* ---------- WHERE NEXT: the stops that are left ---------- */
 .gro-nextstops { padding: 0 14px; }
 .gro-nextrow {

@@ -2322,6 +2322,12 @@
   //   LIST     the root: one card per store, the needed things under it, a
   //            "N TO SORT" badge when anything has no store yet, and the
   //            screen's one apricot action — "Start the trip".
+  //   CARRY    "Still on the list from last week — keep or drop?" (Emily,
+  //            2026-09-13). What an earlier week left unbought, set aside by
+  //            the new approval (app/tools/grocery.py
+  //            set_aside_carried_over_items) rather than summed into this
+  //            week's amounts. One screen, per-item Keep / Don't need, and
+  //            it comes BEFORE sorting. Exists only while something waits.
   //   SORT     one unsorted item at a time: its name, its quantity, and the
   //            store pills (plus Any / Have it / Somewhere else). Exists only
   //            while something is unsorted.
@@ -2451,6 +2457,12 @@
     // from then on until the next approval refills the list.
     sortDeferred: false,
     sortFirst: false,
+    // Last week's leftovers waiting for a keep or drop (/api/grocery-list/
+    // carried-over), and whether the household said "later" to them this
+    // page view. Same shape as the sort pair above, and cleared the same
+    // way — the next approval refills the list and asks again.
+    carried: [],
+    carryDeferred: false,
     data: null,
     loadError: false,
     usualStores: [],        // household's saved stores, offered as sort pills
@@ -3063,6 +3075,16 @@
     } catch (err) { groceryState.preShopFlags = []; }
   }
 
+  // What an earlier week left unbought, set aside at approval. A failure
+  // here means no question this time, never a broken list.
+  async function groLoadCarried() {
+    try {
+      var res = await fetch('/api/grocery-list/carried-over');
+      if (!res.ok) { groceryState.carried = []; return; }
+      groceryState.carried = (await res.json()).items || [];
+    } catch (err) { groceryState.carried = []; }
+  }
+
   async function groLoadStaples() {
     try {
       var res = await fetch('/api/staples');
@@ -3087,7 +3109,7 @@
     var panel = groPanel();
     if (!panel || !panel.dataset.built) return;
     try {
-      var pair = await Promise.all([groLoadAllData(), groLoadPreShopFlags(), groLoadAlreadyHaveSummary(), groLoadStaples()]);
+      var pair = await Promise.all([groLoadAllData(), groLoadPreShopFlags(), groLoadAlreadyHaveSummary(), groLoadStaples(), groLoadCarried()]);
       // The server's answer is the copy; what the screen shows is that plus
       // any ticks still waiting to be sent, so a tick made a moment ago in
       // a dead zone doesn't vanish the instant one bar comes back.
@@ -3130,6 +3152,7 @@
   // refill (an approval builds the list) is a new list, so sorting comes
   // first again.
   function refreshGroceryPanel() {
+    groceryState.carryDeferred = false;
     groceryState.sortDeferred = false;
     if (groIsBuilt()) loadGrocery();
   }
@@ -3143,6 +3166,15 @@
     if (!data || groceryState.loadError) return;
     if (groceryState.step !== 'list' || groceryState.sortDeferred) return;
     if (groStoresPromptShouldShow()) return;
+    // Last week's leftovers first, before the sort queue: they are the
+    // amounts that used to add themselves onto this week's, and sorting a
+    // line whose quantity is still in question is sorting the wrong
+    // number. Emily's call (2026-09-13, option a): one screen before
+    // sorting starts.
+    if (groceryState.carried.length && !groceryState.carryDeferred) {
+      goGroceryStep('carry', { push: false, first: true });
+      return;
+    }
     var toSort = groUnsorted(data).length;
     if (!toSort) { groceryState.sortFirst = false; return; }
     goGroceryStep(toSort >= GRO_FAST_SORT_MIN ? 'sorthow' : 'sort', { push: false, first: true });
@@ -3258,6 +3290,7 @@
     if (GRO_SORT_STEPS.indexOf(groceryState.step) !== -1 && !groUnsorted(data).length) {
       groceryState.step = 'list';
     }
+    if (groceryState.step === 'carry' && !groceryState.carried.length) groceryState.step = 'list';
     if ((groceryState.step === 'trip' || groceryState.step === 'wrap' || groceryState.step === 'next') &&
         !groceryState.tripStops) {
       groceryState.step = 'list';
@@ -3290,7 +3323,8 @@
     // straight away, an unrelated re-render is no longer a rare event. Same
     // rule as the foot's add row below.
     var storesTyped = groCaptureStoresPromptInput(body);
-    if (step === 'sort') body.innerHTML = groSortHtml(data);
+    if (step === 'carry') body.innerHTML = groCarryHtml(data);
+    else if (step === 'sort') body.innerHTML = groSortHtml(data);
     else if (step === 'sorthow') body.innerHTML = groSortHowHtml(data);
     else if (step === 'sortall') body.innerHTML = groSortAllHtml(data);
     else if (step === 'next') body.innerHTML = groNextHtml(data);
@@ -3349,6 +3383,13 @@
   // copy is readable as a set rather than scattered through four builders.
   // The root has no head: it opens with the band (rootBandHtml).
   function groHeadFor(data, step) {
+    if (step === 'carry') {
+      return {
+        back: '‹ Shop',
+        title: 'Still on the list from last week',
+        sub: groPlural(groceryState.carried.length, 'thing', 'things') + ' · keep or drop?'
+      };
+    }
     if (step === 'sort') {
       return {
         back: '‹ Shop',
@@ -3427,6 +3468,51 @@
   // (.kit-row). groUnsorted already answers "is sorting even a question
   // here" (groCanSort), so a household with one shop or none gets no row.
   // Not while the shops question itself is still on screen underneath.
+  // The way back into CARRY once "Later" was said: the same row shape as
+  // the sort row below, above it, only while something still waits.
+  function groCarryRowHtml(data) {
+    var waiting = groceryState.carried.length;
+    if (!waiting || groStoresPromptShouldShow()) return '';
+    return '<div class="kit-rows gro-sortrow"><button type="button" class="kit-row" data-gro="goto-carry" ' +
+        'aria-label="' + escapeHtml(groPlural(waiting, 'thing', 'things') + ' still on the list from last week') + '">' +
+      '<span class="kit-row-text"><span class="kit-row-title">' + escapeHtml(groPlural(waiting, 'thing', 'things') + ' from last week') + '</span>' +
+      '<span class="kit-row-sub">Keep or drop?</span></span>' +
+      '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
+    '</button></div>';
+  }
+
+  // ---------- CARRY: last week's leftovers, keep or drop ----------
+  // One row per line an earlier week left unbought: its name, the old
+  // amount, and — when this week's recipes want the same thing — this
+  // week's own amount on its own line, so the two are never read as one
+  // number (that silent sum is the bug this screen replaces). Keep adds the
+  // old amount onto this week's line; Don't need takes it off. Both undo
+  // from the toast. Quiet throughout: no apricot, and no dock — there is
+  // no single action, the rows are the actions.
+  function groCarryHtml(data) {
+    var carried = groceryState.carried;
+    if (!carried.length) return '<p class="gro-empty">Nothing left from last week.</p>';
+    return '<div class="shell-card gro-carry">' +
+      carried.map(function (c) {
+        var id = String(c.item_id);
+        return '<div class="gro-ps-row gro-carry-row">' +
+          '<p class="gro-ps-name">' + escapeHtml(c.item) +
+            (c.quantity ? ' <span class="gro-qty">' + escapeHtml(c.quantity) + '</span>' : '') + '</p>' +
+          (c.this_week_quantity
+            ? '<p class="gro-carry-thisweek">This week&rsquo;s recipes: ' + escapeHtml(c.this_week_quantity) + '</p>'
+            : '') +
+          '<div class="gro-ps-actions">' +
+            '<button type="button" class="gro-ps-btn gro-ps-btn-keep" data-gro="carry-decide" data-decision="keep" ' +
+              'data-id="' + id + '" data-name="' + escapeHtml(c.item) + '">Keep</button>' +
+            '<button type="button" class="gro-ps-btn gro-ps-btn-drop" data-gro="carry-decide" data-decision="drop" ' +
+              'data-id="' + id + '" data-name="' + escapeHtml(c.item) + '">Don&rsquo;t need</button>' +
+          '</div>' +
+        '</div>';
+      }).join('') +
+    '</div>' +
+    '<button type="button" class="gro-sort-later" data-gro="carry-later">Decide later</button>';
+  }
+
   function groSortRowHtml(data) {
     var unsorted = groUnsorted(data).length;
     if (!unsorted || groStoresPromptShouldShow()) return '';
@@ -3479,6 +3565,7 @@
       return html + emptyMomentHtml('bag', 'Nothing to buy. Approve a week and I’ll build the list.') + groStaplesHtml();
     }
 
+    html += groCarryRowHtml(data);
     html += groSortRowHtml(data);
     html += groDuplicatesHtml(data);
 
@@ -5029,10 +5116,50 @@
           return;
         }
         // Leaving a sort screen for the list is "later" — the list must not
-        // bounce straight back into the queue.
+        // bounce straight back into the queue. Same for the leftovers.
         if (GRO_SORT_STEPS.indexOf(groceryState.step) !== -1) groceryState.sortDeferred = true;
+        if (groceryState.step === 'carry') groceryState.carryDeferred = true;
         goGroceryStep('list');
         return;
+
+      // ----- CARRY: last week's leftovers -----
+      case 'goto-carry':
+        goGroceryStep('carry');
+        return;
+
+      case 'carry-later':
+        groceryState.carryDeferred = true;
+        goGroceryStep('list');
+        return;
+
+      case 'carry-decide': {
+        var carryDecision = el.dataset.decision;
+        var carryName = el.dataset.name || 'That';
+        var carryId = id;
+        var carryRow = el.closest('.gro-carry-row');
+        if (carryRow) carryRow.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+        el.disabled = true;
+        groDo(function () {
+          return groPost('/api/grocery-list/' + carryId + '/carried-over', { decision: carryDecision });
+        }, "Couldn't save that — try again.").then(function (ok) {
+          if (!ok) return;
+          groAdvanceCarry();
+          showToast(carryDecision === 'keep' ? carryName + ' kept' : carryName + ' off the list', {
+            label: 'Undo',
+            onClick: function () {
+              groDo(function () {
+                return groPostEmpty('/api/grocery-list/' + carryId + '/carried-over-undo');
+              }, "Couldn't undo that — try again.").then(function (undone) {
+                // The question is back; if the screen had moved on, so
+                // does the household — the row at the top of the list is
+                // the way back in.
+                if (undone && groceryState.step === 'list') renderGrocery();
+              });
+            }
+          });
+        });
+        return;
+      }
 
       case 'sort-later':
         groceryState.sortDeferred = true;
@@ -5611,6 +5738,20 @@
   // over and the shopper lands back on the list with the good news. The
   // auto-return is what makes SORT a queue rather than a screen you have to
   // remember to leave.
+  // The last answer on CARRY hands over to whatever comes next — the sort
+  // queue when something has no store, the list otherwise — exactly as the
+  // first landing would have, had there been nothing from last week.
+  function groAdvanceCarry() {
+    if (groceryState.carried.length) {
+      renderGrocery();
+      return;
+    }
+    groceryState.step = 'list';
+    groceryState.carryDeferred = false;
+    groMaybeSortFirst();
+    renderGrocery();
+  }
+
   function groAdvanceSort() {
     var left = groceryState.data ? groUnsorted(groceryState.data).length : 0;
     if (left) {
