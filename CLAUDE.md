@@ -371,6 +371,49 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — Prep questions are a step of All set, not a footnote.
+  Branch `worktree-prep-questions-step`, NOT merged at the time of
+  writing.** Loop Board "Prep questions are a clear step, not a footnote"
+  (Phase 1) plus the Bug card "All set screen: dark text on the dark
+  background is hard to read". Emily, on her phone: the freezer and
+  cook-ahead questions were "a subtle piece to skip". On the All set
+  screen they now sit ABOVE the counters, under a 21px display headline
+  ("Two quick ones before you go" — "if you like" was an apology), and
+  both are OPEN from the start with no "Ask" fold (`fixed` lines in
+  `weekQuickLineHtml`; `defrostAskCardHtml`/`cookAheadAskCardHtml` take
+  `open` from the caller). One tap answers "None — all fresh", two answer
+  with a chip. Skipping is the dock: leaving by "Open the list" / "See
+  the week" is the deliberate tap, and the questions still come back on
+  the root's receipt next session and from Cook's re-ask. The ROOT's
+  receipt keeps its fold — there the week card is the point.
+  - **An answered question collapses to its confirmation, in place**
+    ("Chicken breast: move to the fridge Monday night · Salmon fillets:
+    Thursday night"; "Roasted Chickpeas: one batch Tuesday covers
+    Thursday"). Page-view state (`weekQuickDone`, keyed to the plan),
+    same reasoning as `weekQuickOpen`: the server already holds the
+    answer as a prep task / a chain, this is the screen keeping its word
+    that the tap landed. Built from the confirm responses' own rows
+    (`created`, `applied`), never from a second fetch. A Cook re-ask
+    clears the line first, or the old answer would stand in for the
+    question while items refetch (verifier).
+  - **The contrast bug was the ivory card's inks on spruce.** The asks'
+    bodies were written for the ivory receipt card; on `--spruce-raised`
+    their `--ink-secondary` helper lines measured 2.37:1 and the
+    cook-ahead sentence in `--ink` 1.21:1 (light). Re-inked on spruce
+    only: `--ivory-ink` 9.86/7.70, `--ivory-ink-muted` 8.62/6.52
+    (light/dark, in the CSS comment and in
+    `tests/test_prep_questions_step.py`, which measures theme.css). A
+    ticked chip is solid `--celadon` + `--on-accent-ink` there (the cook
+    hero's own recipe) — the tint it used to take is 1.38:1 against the
+    card in dark. The quiet answer button takes the cook hero's outline
+    (`--apricot-rule` edge, `--ivory-ink` label). Nothing on the ivory
+    card changed.
+  - **The doubled title was the single-dish case.** With one repeated
+    dish the fold's heading already IS "X on 2 nights. Cook ahead?", and
+    the block under it said "X is on 2 nights. Cook ahead?" again —
+    `cookAheadAskBlockHtml(item, named)` names the block only when two or
+    more dishes share the heading "Cook anything ahead?". Same fix on the
+    root's receipt, which had the same duplicate behind "Ask".
 - **2026-09-13 — Skip, swap, or "not this week": a ··· on every chore row.
   Branch `overnight/chores-skip-hand-move`, NOT merged at the time of
   writing.** Loop Board "Chores v1: Skip, swap, or 'not this week'"
