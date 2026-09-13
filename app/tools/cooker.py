@@ -400,7 +400,33 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
             result["inventory_queued_for_review"] = []
             result["inventory_already_depleted"] = True
         else:
-            depletion = deplete_inventory_for_meal(entry_id)
+            # The CANONICAL entry_id for this batch, not whichever sibling
+            # was tapped THIS time (found 2026-09-13, adversarial review of
+            # the attention-reopen fix above: deplete_inventory_for_meal
+            # queues its "how much did you use?" attention item keyed on
+            # entry_id+ingredient — see attention.add_attention_item — so
+            # that reopen only works if the batch always hands it the SAME
+            # entry_id. A component batch's own claim already gets released
+            # when nothing was actually reconciled (a no-qty ingredient goes
+            # to queued_for_review, not depleted — see
+            # _changed_any_inventory_row), which is exactly the shape an
+            # untick/re-tick of a batch with such an ingredient takes: the
+            # SAME batch is depleted again on every re-tick, same as a
+            # single-entry meal. But unlike a single-entry meal, a
+            # component-based re-tick can arrive through a DIFFERENT sibling
+            # checkbox than the one originally tapped (Today/Kitchen both
+            # dispatch here, and shell.js's toggle can land on any sibling in
+            # the merged card) — passing that sibling's own entry_id straight
+            # through would queue a brand-new attention item instead of
+            # reopening the first, and answering it would re-deplete the
+            # same shelf a second time, the very bug this file exists to
+            # fix. linked_ids names the same full sibling set regardless of
+            # which one was tapped (the siblings query above keys off
+            # weekly_plan_id + meal name, not entry_id), so its minimum is a
+            # stable stand-in for "the batch" across every tap — ids only
+            # grow as new siblings are planned, so a later-added sibling
+            # never changes it.
+            depletion = deplete_inventory_for_meal(min(linked_ids))
             result["inventory_depleted"] = depletion["depleted"]
             result["inventory_queued_for_review"] = depletion["queued_for_review"]
             if not _changed_any_inventory_row(depletion["depleted"]):

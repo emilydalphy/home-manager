@@ -371,6 +371,73 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — Answering "how much did you use?" twice takes the food out
+  once, however many times the box is toggled. Branch
+  `worktree-attention-twice`, NOT merged at the time of writing.** Loop
+  Board bug, found while fixing check_off_meal's own double depletion (see
+  that entry below, "Two things left alone," item 2) and left out of that
+  branch on purpose. `attention.add_attention_item` deduped a queued
+  "how much X did you use?" question against `status = 'pending'` rows
+  only — so once the household answered it (`record_attention_item_usage`)
+  and then untucked/re-ticked the same meal (an ordinary toggle,
+  `check_off_meal`'s own claim is released whenever nothing was actually
+  reconciled — exactly what a no-stated-quantity ingredient does every
+  time), `deplete_inventory_for_meal` found the same confident match again
+  and queued a BRAND NEW item with no memory of the first answer.
+  Answering that one subtracted the person's amount from whatever the
+  shelf currently read — already reduced by the first answer — so one real
+  use took the ingredient out twice. Reproduced: Lettuce 2 heads -> answer
+  "1" -> 1 head -> untick -> re-tick -> answer "1" again -> row deleted.
+  - **Same shape as check_off_meal's and grocery.mark_grocery_item's
+    re-tick fixes, without a schema change** — `attention_items.detail_json`
+    is already a free-form blob, so there was somewhere to put the memory
+    without a migration. `add_attention_item` now dedupes/reopens on
+    `(kind, entry_id, ingredient)` pulled out of `detail` whenever both are
+    present, not `kind + summary + pending`: a match that is `pending` is
+    the old no-op; a match that is `resolved` or `dismissed` is REOPENED in
+    place (status back to `pending`, `detail_json` merged so a prior
+    answer's receipt survives) instead of a second row being inserted.
+    Callers without both keys (none today) fall back to the old
+    pending-only dedupe.
+  - **A repeat answer REPLACES the first rather than compounding onto it.**
+    `record_attention_item_usage` writes its own receipt into
+    `detail_json.applied` (`{before, after, rev_after}` — `before` is the
+    quantity BEFORE THE VERY FIRST answer, carried forward unchanged across
+    every reopen) after every successful answer. The next answer recomputes
+    from that `before`, not from the shelf's current reading, but ONLY when
+    `inventory_items.rev` still matches `rev_after` — proof nothing has
+    touched the row since (a manual edit, another depletion). When it
+    doesn't match, the original can't be trusted any more and this answers
+    fresh against the current quantity, same as the very first time.
+  - **Found by review, and fixed in the same branch: a component batch
+    re-ticked through a DIFFERENT sibling checkbox dodged the reopen.**
+    `check_off_meal` was calling `deplete_inventory_for_meal(entry_id)`
+    with whichever entry THIS tap named — fine for a single-entry meal,
+    where every tap names the same id, but a merged component card's
+    re-tick can land on any sibling, and a different sibling's `entry_id`
+    is a different dedupe key, so the same bug reappeared one door over
+    ("how much Jello did you use?" asked and answered twice for one real
+    box). Fixed by calling `deplete_inventory_for_meal(min(linked_ids))` —
+    the batch's own siblings query keys off weekly_plan_id + meal name, not
+    entry_id, so the lowest linked id is a stable stand-in for "the batch"
+    regardless of which checkbox is tapped, and only grows as new siblings
+    are planned, never shrinks.
+  - `tests/test_attention_answered_twice.py` (12): the reproduction
+    end-to-end through `check_off_meal`, several toggle rounds, a second
+    answer that differs from the first (replaces, does not add), the
+    sibling-batch case above, direct `add_attention_item` reopen/dedupe
+    unit tests, and the rev-mismatch fallback (household hand-edits the
+    shelf between two answers). 9 of the first 11 red against `b322c99`
+    (checked by `git stash`, not by overlaying an older commit). Suite
+    4064 -> 4076, no new failures.
+  - **Left alone on purpose:** a true concurrent (same-instant, two-thread)
+    double-submit of `record_attention_item_usage` on one still-pending
+    item has no claim/lock and could in principle double-apply — the same
+    class of race `check_off_meal` and `mark_grocery_item` both guard
+    against for THEIR writes, but this path has no UI double-tap route
+    driving it the way a checkbox toggle does, and the reported bug is the
+    untick/re-tick shape, not concurrency. Its own card if it turns out to
+    matter.
 - **2026-09-13 — "How did it go?": "Will grab elsewhere" picks the store,
   "Don't need anymore", and "Add a new store" that comes back. Branch
   `worktree-shop-store-screens`, NOT merged at the time of writing.** Loop
