@@ -182,6 +182,13 @@ def test_what_gives_way_is_the_settled_answer_not_the_newest_one():
     })
     assert len(line) <= 55, line
     assert line == "Vietnamese, Ethiopian +2 · more chicken…"
+    # The part that blocks here is the LEFTOVERS stance, not the style:
+    # cuisines (24) + proteins (12) is 39 used, and "leftovers now and then"
+    # costs 25 more against a 54 working limit, so admission stops there and
+    # the style is never reached. Fitting the style would mean shrinking the
+    # cuisines to "Ethiopian +3" — trading the newest answer for a settled
+    # one, which is the rule these two passes exist to enforce. 40 of 55 is
+    # the deliberate price.
 
 
 def test_tapping_a_second_protein_shrinks_that_clause_instead_of_losing_it():
@@ -314,6 +321,24 @@ def test_one_answer_longer_than_the_whole_row_is_cut_rather_than_dropped():
     be worse than a cut one."""
     line = _line({"cuisine_preferences": ["A" * 90]})
     assert len(line) == 55 and line.endswith("…")
+
+
+def test_the_answer_that_gets_cut_there_is_the_highest_RANKED_one():
+    """...and telling which one that is needs a household with something
+    else in it, or the branch reads the same either way.
+
+    The parts are built in the section's order, so parts[0] is the leftovers
+    stance while the rank-first part is the cuisine — cutting parts[0] would
+    print a settled answer nobody asked about and drop the one that is
+    actually too long. Reachable only with a single cuisine name over 54
+    characters, which is why it went unnoticed; a test that cannot fail is
+    worse than no test."""
+    line = _line({
+        "rhythm": {"leftovers_stance": "fine_sometimes"},
+        "cuisine_preferences": ["Modern Australian and Pacific Rim with a Mediterranean lean"],
+    })
+    assert line == "Modern Australian and Pacific Rim with a…"
+    assert "leftovers" not in line, "the section-order-first answer was cut, not the ranked one"
 
 
 def test_a_short_answer_is_not_given_an_ellipsis_it_doesnt_need():
