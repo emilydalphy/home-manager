@@ -362,16 +362,17 @@ def test_cook_this_still_passes_the_exact_meal():
     _assert_in("function cookResolveFocusIndex(", SHELL_JS, "the focus resolver", "shell.js")
 
 
-def test_the_meal_step_carries_the_plate_and_the_two_actions():
+def test_the_meal_step_carries_the_clock_the_thaw_and_the_two_actions():
+    # 2026-09-12 ("Meal · B · The clock"): the plate card is gone; the thaw
+    # is the hero's one line, and the cook is a list of timed stops.
     _assert_in("function mealStepHtml(", SHELL_JS, "the Meal step", "shell.js")
-    _assert_in("function plateCardHtml(", SHELL_JS, "'The plate' card", "shell.js")
-    _assert_in("The plate", SHELL_JS, "'The plate' title", "shell.js")
-    _assert_in("Nothing to thaw.", SHELL_JS, "the no-thaw line", "shell.js")
-    _assert_in("entry.food_groups", SHELL_JS, "the plate components", "shell.js")
+    _assert_in("function mealClockStops(", SHELL_JS, "the clock", "shell.js")
+    _assert_in("function mealHeroLine(", SHELL_JS, "the hero's one line", "shell.js")
     _assert_in("entry.defrost", SHELL_JS, "the thaw fact", "shell.js")
-    _assert_in("Why this night", SHELL_JS, "the reason card", "shell.js")
-    _assert_in(".wk-act.is-apricot", SHELL_CSS,
-               "the Meal step's one apricot action", "shell.css")
+    assert "function plateCardHtml(" not in SHELL_JS
+    assert "'Nothing to thaw.'" not in SHELL_JS, "an empty line wearing a caption"
+    _assert_in("Swap this meal", SHELL_JS, "the quiet swap link", "shell.js")
+    _assert_in("wk-decide dock wk-meal-dock", SHELL_JS, "the Meal step's dock", "shell.js")
 
 
 def test_the_meal_step_reuses_the_cook_ahead_picker():
@@ -432,6 +433,13 @@ import nodeharness
 _needs_node = pytest.mark.skipif(
     shutil.which("node") is None, reason="node is needed to execute the screen's own functions"
 )
+
+
+def _var_line(name: str, source: str) -> str:
+    """Lift one `var NAME = ...;` literal (one or a few lines) out of shell.js."""
+    start = source.index(f"var {name} = ")
+    end = source.index(";\n", start) + 1
+    return source[start:end]
 
 
 def _extract(name: str, source: str) -> str:
@@ -600,27 +608,29 @@ def _meal_step_html(day: dict, slot: str) -> str:
         + _extract("mealDisplayName", SHELL_JS) + "\n"
         + _extract("chipsRowHtml", SHELL_JS) + "\n"
         + _extract("cookTimeChip", SHELL_JS) + "\n"
-        + _extract("plateCardIsEmpty", SHELL_JS) + "\n"
         + "function capitalizeFirst(s) { return String(s).charAt(0).toUpperCase() + String(s).slice(1); }\n"
-        + "var PLATE_GROUP_LABELS = { protein: 'protein', carb: 'carb', vegetable: 'veg' };\n"
-        + _extract("plateChips", SHELL_JS) + "\n"
-        + _extract("plateCardHtml", SHELL_JS) + "\n"
         + _extract("cookMealForEntry", SHELL_JS) + "\n"
-        # The recipe panel the Meal step borrows from the cook screen
-        # (2026-09-09, overnight/tap-a-meal-opens-recipe) — rendered plain,
-        # so none of its interactive branches is reached, but it still has
-        # to be defined for the step to render at all.
-        + _extract("cookStepLi", SHELL_JS) + "\n"
-        + _extract("cookInstructionsHtml", SHELL_JS) + "\n"
-        + _extract("cookDetailHtml", SHELL_JS) + "\n"
-        + _extract("mealRecipeCardHtml", SHELL_JS) + "\n"
+        # The clock (2026-09-12): the stops the Meal step renders, and the
+        # cook-mode helpers they read (the tick store, the ingredient label).
+        + "var GRO_ICONS = { chevRight: '<svg></svg>' };\n"
+        + "function cookMealKey(m) { return 'e' + m.entry_id; }\n"
+        + "function cookTicked() { return false; }\n"
+        + "function cookAheadHtml() { return ''; }\n"
+        + "function cookIngredientLabel(i) { return ((i.qty ? i.qty + ' ' : '') + i.item).trim(); }\n"
+        + _var_line("NUMBER_WORDS", SHELL_JS) + "\n"
+        + _var_line("TENS_WORDS", SHELL_JS) + "\n"
+        + _var_line("STOP_TITLE_TAIL", SHELL_JS) + "\n"
+        + "".join(_extract(name, SHELL_JS) + "\n" for name in (
+            "numberWord", "countInWords", "minutesInWords", "clockLabel", "spokenTime",
+            "slotTableMinutes", "mealTotalMinutes", "mealStepMinutes", "stopTitleSplit",
+            "ingredientNamesLine", "mealClockStops", "mealClockEyebrow", "mealCookName",
+            "mealCookUnderway", "mealClockFor", "mealHeroLine", "mealHeroHtml",
+            "mealStopHtml", "mealClockHtml"))
         + _extract("swapStateFor", SHELL_JS) + "\n"
         + _extract("swapLineHtml", SHELL_JS) + "\n"
-        + _extract("slotActionsHtml", SHELL_JS) + "\n"
         # The hero head (2026-09-11) names the slot and sizes the dish name.
         + "var SLOT_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };\n"
         + _extract("slotEyebrowLabel", SHELL_JS) + "\n"
-        + _extract("slotEyebrow", SHELL_JS) + "\n"
         + _extract("dishSizeClass", SHELL_JS) + "\n"
         + _extract("mealDockHtml", SHELL_JS) + "\n"
         + _extract("mealStepHtml", SHELL_JS) + "\n"
@@ -630,27 +640,30 @@ def _meal_step_html(day: dict, slot: str) -> str:
 
 
 @_needs_node
-def test_a_snack_renders_on_the_meal_step_without_a_plate_card():
-    """A grab-and-go snack has no food groups, no added sides and no thaw
-    task — "Nothing to thaw." on its own is an empty card wearing a
-    caption, so it's hidden rather than shown (Emily's approved design)."""
+def test_a_snack_renders_on_the_meal_step_as_a_hero_and_mark_eaten():
+    """A grab-and-go snack has no recipe, no thaw and nothing to time —
+    so it is the hero with the dish's name and "Mark eaten" in the dock,
+    and no clock (the 2026-09-12 meal screen has no plate card to hide any
+    more; the "Nothing to thaw." caption went with it)."""
     entry = dict(_GRAB_AND_GO_SNACK, entry_id=101, sides=[], food_groups=[], defrost=None, plate_note="")
     day = _plain_day([entry])
     html = _meal_step_html(day, "snack")
-    assert "The plate" not in html
+    assert "The plate" not in html and "Nothing to thaw" not in html
     assert "Apple slices" in html
     assert "Mark eaten" in html
+    assert "wk-clock" not in html
 
 
 @_needs_node
-def test_a_real_cook_snack_still_shows_its_plate_card():
-    """The hide is specific to an actually-empty plate — a snack that
-    carries real food groups keeps the card exactly as any other slot
-    would."""
+def test_a_real_cook_snack_docks_a_start_and_the_swap_link():
+    """A snack with a real recipe behind it is a cook like any other slot:
+    the dock offers the way into cook mode and the quiet swap."""
     entry = dict(_REAL_COOK_SNACK, entry_id=102, sides=[], food_groups=["carb"], defrost=None, plate_note="")
     day = _plain_day([entry])
     html = _meal_step_html(day, "snack")
-    assert "The plate" in html
+    assert 'data-wk-cook="snack"' in html
+    assert "Start cooking" in html  # the cooker view is not loaded in this harness
+    assert "Swap this meal" in html
 
 
 def _ring_target_slots(pending_slot: str) -> list[str]:
