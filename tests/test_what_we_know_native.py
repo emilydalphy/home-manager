@@ -291,9 +291,19 @@ def test_the_freeform_facts_live_in_the_section_that_owns_their_category():
 # --- 5. the lines, run for real -----------------------------------------------
 
 def _prefs_block() -> str:
+    # WWK_PROTEINS and wwkProteinState ride along: the "How you eat" line
+    # reads the household's protein leanings through them (2026-09-13), so
+    # the row and this section's chips can never disagree.
     start = SHELL_JS.index("function prefsPeopleLine(mem) {")
     end = SHELL_JS.index("];", SHELL_JS.index("var PREFS_ROWS = [")) + 2
-    return SHELL_JS[start:end]
+    proteins = SHELL_JS.index("var WWK_PROTEINS = [")
+    return (
+        SHELL_JS[proteins : SHELL_JS.index("\n", proteins)]
+        + "\n"
+        + _function("wwkProteinState")
+        + "\n"
+        + SHELL_JS[start:end]
+    )
 
 
 def _run(script: str):
