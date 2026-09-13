@@ -102,6 +102,12 @@
   --ink-on-celadon:   #24362D;  /* body inside celadon tiles */
   --ivory-ink:        #F6EEE1;  /* text on spruce */
   --ivory-ink-muted:  rgba(246, 238, 225, .92); /* chip labels on spruce */
+  /* Pure white, on purpose: the selected chip / the household's own chat
+     bubble / the active mic sit on a saturated fill (spruce, urgent) and
+     read one notch brighter than ivory there. Emily, 2026-09-13: token it
+     rather than let it drift warmer. Same in dark — the fills it sits on
+     are the lighter dark-mode spruce/urgent, where white still reads. */
+  --on-spruce-ink:    #fff;
   --ink-secondary:    #7C7161;  /* supporting copy, outline-button labels */
   --ink-muted:        #7E7360;  /* 10px/800 uppercase eyebrows only */
   /* Darkened 2026-09-03 from #8E8370 (3.47:1 on ground) to clear WCAG AA
@@ -161,6 +167,8 @@
   /* --- Lines & edges (1.5px, always — this is what makes a card a card) --- */
   --hairline:        #EEE3D0;  /* card borders, nav divider, header rule */
   --hairline-strong: #E6D9C4;  /* ask bar, outline buttons, italic underline */
+  --hairline-deep:   #D9C9AF;  /* the trip checkbox's rim — one step past strong so an unticked box reads as a box */
+  --on-spruce-edge:  #2E5240;  /* a field's rim ON spruce (sign-in); mode-independent because the page is spruce in both */
 
   /* --- Warm neutrals ---
      Soft sand fills that sit between the ground and a hairline: secondary
@@ -678,6 +686,7 @@ summary:focus-visible,
     /* --- Lines & edges (guide) --- */
     --hairline:        #26382E;
     --hairline-strong: #33473B;
+    --hairline-deep:   #33473B;   /* folds into strong: on the dark ground the extra step is invisible */
 
     /* (derived) The warm-neutral fills. On dark they stop being "warm sand"
        and become the two steps between --surface and --hairline-strong;

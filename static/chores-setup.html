@@ -113,10 +113,7 @@
     color: var(--ink);
     cursor: pointer;
   }
-  /* color: #fff has no exact token twin — --ivory-ink is #F6EEE1 in
-     light, not byte-identical, so it stays literal here (design hygiene
-     pass, 2026-09-12; flagged for Emily in the report). */
-  .chip.active { background: var(--spruce); border-color: var(--spruce); color: #fff; }
+  .chip.active { background: var(--spruce); border-color: var(--spruce); color: var(--on-spruce-ink); }
   .chip.small { padding: 6px 12px; min-height: 32px; font-size: 0.75rem; }
   .next-btn {
     font-family: var(--font-body);

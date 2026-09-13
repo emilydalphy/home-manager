@@ -98,10 +98,7 @@
     background: var(--surface-raised); color: var(--ink); cursor: pointer;
   }
   .chip:hover { border-color: var(--ink-strong); }
-  /* color: #fff has no exact token twin — --ivory-ink is #F6EEE1 in
-     light, not byte-identical, so it stays literal here (design hygiene
-     pass, 2026-09-12; flagged for Emily in the report). */
-  .chip.on { background: var(--spruce); border-color: var(--spruce); color: #fff; }
+  .chip.on { background: var(--spruce); border-color: var(--spruce); color: var(--on-spruce-ink); }
 
   .stack { display: flex; flex-direction: column; gap: 8px; padding: 12px 0; }
   .option {
@@ -167,10 +164,7 @@
   .chat-form button {
     flex-shrink: 0; padding: 0 18px; min-height: 46px;
     border-radius: var(--radius-control); border: none;
-    /* color: #fff has no exact token twin — --ivory-ink is #F6EEE1 in
-       light, not byte-identical, so it stays literal (design hygiene pass,
-       2026-09-12; flagged for Emily in the report). */
-    background: var(--spruce); color: #fff;
+    background: var(--spruce); color: var(--on-spruce-ink);
     font-family: var(--font-body); font-weight: 700; font-size: 0.9rem; cursor: pointer;
   }
   .chat-form button:disabled { opacity: .6; cursor: default; }

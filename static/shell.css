@@ -1417,10 +1417,7 @@ html, body {
   max-width: 88%;
   white-space: pre-wrap;
 }
-/* color: #fff has no exact token twin — --ivory-ink is #F6EEE1 in light,
-   not byte-identical, so this stays literal (design hygiene pass,
-   2026-09-12; flagged for Emily in the report, not fixed here). */
-.ask-msg.user .ask-bubble { background: var(--spruce); color: #fff; border-radius: 16px 16px 4px 16px; }
+.ask-msg.user .ask-bubble { background: var(--spruce); color: var(--on-spruce-ink); border-radius: 16px 16px 4px 16px; }
 .ask-msg.assistant .ask-bubble { background: var(--ground); color: var(--ink); border-radius: 16px 16px 16px 4px; }
 .ask-bubble.loading { font-style: italic; color: var(--ink-secondary); background: var(--ground); animation: loading-pulse 1.3s ease-in-out infinite; }
 @keyframes loading-pulse { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
@@ -1598,11 +1595,7 @@ html, body {
 .ask-composer-mic:hover { background: var(--celadon-tint); }
 .ask-composer-mic.active {
   background: var(--urgent);
-  /* color: #fff has no exact token twin in light (--urgent-ink is #F6EEE1,
-     not byte-identical) — left literal, flagged for Emily. Dark mode
-     already overrides this correctly to var(--urgent-ink), see the
-     "Accent fills whose ink flips" rule further down this file. */
-  color: #fff;
+  color: var(--on-spruce-ink);
   animation: askMicPulse 1.4s ease-in-out infinite;
 }
 .ask-composer-mic:disabled { opacity: .5; cursor: default; animation: none; }
@@ -4181,13 +4174,7 @@ html, body {
   height: 26px;
   flex: 0 0 auto;
   border-radius: 9px;
-  /* #D9C9AF has no token twin — the closest values (--hairline-strong/
-     --sand-deep #E6D9C4, --ink-done-soft #C6BCA9) are visibly off, not a
-     hair. Left literal, flagged for Emily (design hygiene pass,
-     2026-09-12). The dark-mode override already exists further down this
-     file, under "Literals with no token twin": .gro-box { border-color:
-     var(--hairline-strong); }. */
-  border: 1.5px solid #D9C9AF;
+  border: 1.5px solid var(--hairline-deep);
   background: var(--ground);
   padding: 0;
   cursor: pointer;

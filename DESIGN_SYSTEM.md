@@ -51,6 +51,7 @@ the app follows the OS.
 | `--ink-on-celadon` | `#24362D` | `#F3EBDD` | Body inside celadon tiles. |
 | `--ivory-ink` | `#F6EEE1` | `#F3EBDD` | Text on spruce (hero headlines, dark-button labels). |
 | `--ivory-ink-muted` | `rgba(246,238,225,.92)` | `#E4DCCE` (solid) | Chip labels on spruce only. |
+| `--on-spruce-ink` | `#fff` | `#fff` | Pure white, on purpose, for a selected chip, the household's own chat bubble and the active mic — things that sit on a saturated fill and read one notch brighter than ivory. Added 2026-09-13 (Emily) so the last literals could go. |
 | `--ink-secondary` | `#7C7161` | `#BFB6A5` | Supporting copy, outline-button labels. |
 | `--ink-muted` | `#7E7360` | `#BFB6A5` | 10px/800 uppercase eyebrows **only**. |
 | `--ink-placeholder` | `#797060` | `#9C9384` | Ask-bar placeholder. Darkened 2026-09-03 (from `#8E8370`, 3.47:1) to clear WCAG AA for normal text — now 4.54:1 on ground. |
@@ -89,6 +90,8 @@ the app follows the OS.
 |---|---|---|---|
 | `--hairline` | `#EEE3D0` | `#26382E` | Card borders, nav divider, header rule. 1.5px, always. |
 | `--hairline-strong` | `#E6D9C4` | `#33473B` | Ask bar, outline buttons, italic underline — an edge that's also a tap target. |
+| `--hairline-deep` | `#D9C9AF` | `#33473B` | The trip checkbox's rim — one step past strong so an unticked box reads as a box. Folds into strong in dark. |
+| `--on-spruce-edge` | `#2E5240` | `#2E5240` | A field's rim on spruce (sign-in). Mode-independent because that page is spruce in both. |
 | `--sand` | `#F3EBDC` | `#223328` | Soft secondary-button / soft-card fill. |
 | `--sand-deep` | `#E6D9C4` (= `--hairline-strong`) | `#33473B` | Deeper warm-neutral step. |
 

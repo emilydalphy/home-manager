@@ -151,10 +151,7 @@
   }
   .meal-badge.breakfast { background: var(--hairline-strong); color: var(--spruce); transform: rotate(-2deg); }
   .meal-badge.lunch { background: var(--celadon); color: var(--on-accent-ink); transform: rotate(2deg); }
-  /* color: #fff has no exact token twin here — --urgent-ink is #F6EEE1 in
-     light, not byte-identical, so this is left literal (design hygiene
-     pass, 2026-09-12; flagged for Emily in the report, not fixed here). */
-  .meal-badge.dinner { background: var(--urgent); color: #fff; transform: rotate(-2deg); }
+  .meal-badge.dinner { background: var(--urgent); color: var(--on-spruce-ink); transform: rotate(-2deg); }
   .meal-badge.snack { background: var(--apricot); color: var(--on-accent-ink); transform: rotate(2deg); }
   .meal-name { font-family: "Bricolage Grotesque", sans-serif; font-weight: 600; font-size: 14.5px; color: var(--ink); line-height: 1.4; }
   .meal-divider { height: 1px; background: var(--urgent); opacity: 0.2; width: 36px; margin: 0 auto 16px; }
