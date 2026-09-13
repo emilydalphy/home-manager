@@ -9477,7 +9477,7 @@
   // an Undo chip. One line that changes is why the card doesn't jump.
   function swapLineHtml(day, slot) {
     var state = swapStateFor(day.date, slot);
-    var tell = '<button type="button" class="wk-swap-tell" data-wk-tell="' + slotWord(slot) + '">' +
+    var tell = '<button type="button" class="wk-swap-tell" data-wk-tell="' + slot + '">' +
       'Tell me what instead</button>';
     if (state && state.busy) {
       return '<div class="wk-swap-line"><span class="wk-swap-working">Finding something else…</span></div>';
@@ -10277,14 +10277,23 @@
         runSwapUndo(panel, day, btn.getAttribute('data-wk-undo'));
       });
     });
-    // The wordier way, kept: the same sentence Swap used to send, opening
-    // the same sheet the same way. openAskSheet itself is untouched.
+    // The wordier way, kept — and since 2026-09-13 it opens chat ABOUT this
+    // meal rather than with a sentence to edit. Emily tapped it beside the
+    // Tuesday burgers, deleted "Swap Tuesday's dinner for something else",
+    // typed what she actually wanted, and chat had no idea which meal she
+    // meant. The composer is empty now, the meal rides along as the turn's
+    // subject (askContext, sent with every message while the chip shows),
+    // and a plain "make it beef, not turkey" is enough. The old sentence is
+    // kept only for a slot with no real meal to be about.
     steps.querySelectorAll('[data-wk-tell]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var day = mealsCurrentDay();
         if (!day) return;
-        openAskSheet('Swap ' + dayName(day.date, { weekday: 'long' }) + '’s ' +
-          btn.getAttribute('data-wk-tell') + ' for something else');
+        var slot = btn.getAttribute('data-wk-tell');
+        var context = mealAskContext(day, slot);
+        if (context) openAskSheet('', context);
+        else openAskSheet('Swap ' + dayName(day.date, { weekday: 'long' }) + '’s ' +
+          slotWord(slot) + ' for something else');
       });
     });
     steps.querySelectorAll('[data-wk-ask]').forEach(function (btn) {
@@ -15175,6 +15184,62 @@
   var askBuilt = false;
   var askSending = false;
   var askConversationStarted = false;
+  // ---------- What this conversation is about ----------
+  // Set when chat is opened FROM something — a meal card's "Tell me what
+  // instead" (Loop Board, Emily 2026-09-13) — and sent with every message
+  // as the request's `context` (app/main.py ChatContext) until the sheet
+  // closes or the household taps the chip's ×. Sent every turn rather
+  // than once so "yes" one message later still carries the subject and
+  // the server's confirm-once rule with it; the server re-reads the meal
+  // each time by entry id, then by date+slot, so a swap that replaced the
+  // row doesn't lose the thread. `label` is the chip's own words; the
+  // server never trusts it, only the pointer.
+  var askContext = null;
+  var askContextEl = document.getElementById('ask-context');
+
+  // The one kind wired today. Other "open chat about X" entry points pass
+  // their own {kind, ..., label} through openAskSheet's second argument.
+  function mealAskContext(day, slot) {
+    var entry = daySlotEntry(day, slot);
+    if (!day || !entry || entry.state !== 'planned' ||
+        entry.entry_id === null || entry.entry_id === undefined) return null;
+    var name = mealDisplayName(entry);
+    if (!name) return null;
+    return {
+      kind: 'planned_meal',
+      entry_id: entry.entry_id,
+      date: day.date,
+      slot: slotWord(slot),
+      label: dayName(day.date, { weekday: 'long' }) + '’s ' + slotWord(slot) + ' · ' + name
+    };
+  }
+
+  function setAskContext(context) {
+    askContext = context || null;
+    renderAskContext();
+  }
+
+  // The small line above the composer that says what chat understood —
+  // "About Tuesday's dinner · Turkey Burgers" — with a way out of it.
+  function renderAskContext() {
+    if (!askContextEl) return;
+    if (!askContext) { askContextEl.innerHTML = ''; askContextEl.hidden = true; return; }
+    askContextEl.innerHTML =
+      '<span class="ask-context-label">About</span>' +
+      '<span class="ask-context-text">' + escapeHtml(askContext.label || '') + '</span>' +
+      '<button type="button" class="ask-context-clear" aria-label="Not about this any more">×</button>';
+    askContextEl.hidden = false;
+    askContextEl.querySelector('.ask-context-clear').addEventListener('click', function () {
+      setAskContext(null);
+      if (askInput) askInput.focus();
+    });
+  }
+
+  // What goes over the wire: the pointer, never the label.
+  function askContextPayload() {
+    if (!askContext) return undefined;
+    return { kind: askContext.kind, entry_id: askContext.entry_id, date: askContext.date, slot: askContext.slot };
+  }
 
   // Once the household has actually said something, the "tap a suggestion"
   // chips no longer make sense sitting above an ongoing conversation —
@@ -15903,7 +15968,7 @@
       // instead of sitting frozen on its opening phrase the whole time.
       var plannedCount = 0;
       var data = await streamChatMessage(
-        { session_id: askSessionId, message: message },
+        { session_id: askSessionId, message: message, context: askContextPayload() },
         function (eventName, body) {
           var bubbleText = null;
           if (eventName === 'status') {
@@ -15988,10 +16053,14 @@
   // already open.
   var askSheetHistoryPushed = false;
 
-  function openAskSheet(prefill) {
+  // `context` is the subject the sheet is being opened about (see
+  // askContext above); left out, whatever subject the open sheet already
+  // had stays — a re-open after a "View" hop is not a change of topic.
+  function openAskSheet(prefill, context) {
     ensureAskSheetBuilt();
     closeWeekSheet();
     closeMealsMoreSheet();
+    if (context) setAskContext(context);
     openSheet(askSheet, askScrim);
     if (!askSheetHistoryPushed) {
       window.history.pushState({ tab: currentTabKey(), askSheet: true }, '', window.location.pathname);
@@ -16019,6 +16088,9 @@
   function closeAskSheet() {
     closeSheet(askSheet, askScrim);
     askSheetHistoryPushed = false;
+    // Closing the sheet ends the topic: the next open is about whatever
+    // opened it, or nothing.
+    setAskContext(null);
   }
 
   askScrim.addEventListener('click', closeAskSheet);

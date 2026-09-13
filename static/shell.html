@@ -123,6 +123,10 @@
          examples yield to them. -->
     <div class="ask-chips ask-examples" id="ask-examples" hidden></div>
     <div class="ask-chips" id="ask-chips"></div>
+    <!-- What this conversation is about, when chat was opened from a meal
+         card ("About Tuesday's dinner · Turkey Burgers"). Filled by
+         renderAskContext() in shell.js; empty and hidden otherwise. -->
+    <div class="ask-context" id="ask-context" hidden></div>
     <form id="ask-composer" class="ask-composer-bar">
       <textarea id="ask-input" class="ask-composer-input" rows="1" placeholder="What&rsquo;s on your mind?" autocomplete="off"></textarea>
       <button type="button" id="ask-mic-btn" class="ask-composer-mic" aria-label="Dictate message" title="Dictate message">

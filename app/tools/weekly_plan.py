@@ -4800,6 +4800,90 @@ def swap_meal_in_plan(
     return result
 
 
+def describe_planned_meal(entry_id: int | None = None, meal_date: str | None = None,
+                          slot: str | None = None) -> dict | None:
+    """
+    The one planned meal a chat turn is ABOUT, for "Tell me what instead"
+    on a meal card (Emily, 2026-09-13: she tapped the link beside the
+    burgers and chat had no idea which meal she meant). Household-scoped,
+    read-only, and None rather than an error for anything it can't find —
+    a missing subject makes the turn an ordinary one, never a failed one.
+
+    Looked up by entry id first, then by the slot: a swap deletes the row
+    and inserts a new one (see _replace_slot_entries), so the id the card
+    was drawn with goes stale the moment the household changes the meal
+    — and "actually, make it chicken" one message later is exactly the
+    follow-up this exists for. The slot fallback resolves against the live
+    plan covering that day, so it says what is there NOW.
+
+    Only a real meal is a subject: a planned_empty row is a night nobody
+    is home (never offered as a decision — see CLAUDE.md) and an open one
+    has no dish to talk about yet, so both come back None. Ingredients
+    ride along so "swap the turkey for beef" can be proposed without a
+    get_recipe round first.
+    """
+    hh = household_id()
+    conn = get_conn()
+    try:
+        select = (
+            "SELECT mpe.id, mpe.weekly_plan_id, mpe.date, mpe.slot, mpe.slot_state, "
+            "mpe.component_category, mpe.recipe_id, "
+            "COALESCE(r.name, mpe.freeform_meal) AS meal, r.ingredients_json, "
+            "r.main_protein, wp.status "
+            "FROM meal_plan_entries mpe "
+            "LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+            "JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
+        )
+        row = None
+        if entry_id is not None:
+            row = conn.execute(
+                select + "WHERE mpe.id = ? AND mpe.household_id = ? AND wp.status != 'retired'",
+                (entry_id, hh),
+            ).fetchone()
+        if row is None and meal_date and slot in DAY_SLOTS:
+            try:
+                plan_id = get_plan_id_for_date(meal_date)
+            except ValueError:
+                plan_id = None
+            if plan_id is not None:
+                # A day's two snacks share one slot; without the id there is
+                # no honest way to pick between them, so the first is taken
+                # only when it is the only one.
+                rows = conn.execute(
+                    select + "WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? "
+                    "AND mpe.date = ? AND mpe.slot = ? ORDER BY mpe.id",
+                    (plan_id, hh, meal_date, slot),
+                ).fetchall()
+                if len(rows) == 1:
+                    row = rows[0]
+    finally:
+        conn.close()
+    if row is None or row["component_category"] or (row["slot_state"] or "planned") != "planned":
+        return None
+    meal = (row["meal"] or "").strip()
+    if not meal:
+        return None
+    try:
+        ingredients = json.loads(row["ingredients_json"] or "[]")
+    except (TypeError, ValueError):
+        ingredients = []
+    return {
+        "entry_id": row["id"],
+        "weekly_plan_id": row["weekly_plan_id"],
+        "date": row["date"],
+        "weekday": _weekday_label(row["date"]),
+        "slot": row["slot"] or "dinner",
+        "meal": meal,
+        "recipe_id": row["recipe_id"],
+        "main_protein": row["main_protein"] or "",
+        "ingredients": [
+            {"item": i.get("item", ""), "qty": i.get("qty", "")}
+            for i in ingredients if isinstance(i, dict) and i.get("item")
+        ],
+        "approved": row["status"] == "approved",
+    }
+
+
 def _taste_verdict_for_slot(meal: str, meal_date: str, slot: str) -> dict | None:
     """
     dish_verdict for one planned slot, or None when there's nothing worth
