@@ -347,18 +347,21 @@ def test_a_short_answer_is_not_given_an_ellipsis_it_doesnt_need():
 
 # --- a wrong-typed answer may not brick the sheet -------------------------
 
-def test_a_cuisine_list_stored_as_a_bare_string_still_renders_every_row(signed_in):
-    """/api/memory/edit stores what it is handed and answers 200 to a bare
-    string (so does the chat tool edit_preference). This line is a
-    PREFS_ROWS line function, so a throw in it is not one section failing to
-    draw — it is every row in the Preferences sheet stuck on "Reading it
-    back…" forever."""
-    res = signed_in.post("/api/memory/edit", json={
-        "field": "cuisine_preferences", "value": "Thai",
-    })
-    assert res.status_code == 200, "the route's own behaviour, unchanged here"
-    memory = signed_in.get("/api/memory").json()
-    assert memory["cuisine_preferences"] == "Thai", "stored as the string it was given"
+def test_a_cuisine_field_stored_as_a_bare_string_still_renders_every_row():
+    """Defense in depth, now that both write paths (`/api/memory/edit` and
+    the chat tool of the same name) refuse or coerce a bare string instead
+    of storing one, and `/api/memory` itself normalises one on the way out
+    (see app/tools/memory.py's _coerce_str_list/_as_str_list, Loop Board
+    2026-09-13 — this test used to hit that bug end to end through the live
+    route; it's fixed there now, see tests/test_memory_field_types.py).
+
+    A row written before either guard existed can still reach this sheet
+    with cuisine_preferences (or any list-valued field) as a bare string,
+    so the frontend's own tolerance stays worth pinning on its own: this
+    line is a PREFS_ROWS line function, and a throw in it is not one
+    section failing to draw — it is every row in the Preferences sheet
+    stuck on "Reading it back…" forever."""
+    memory = {"cuisine_preferences": "Thai"}  # what a pre-fix row can still hold
 
     script = (
         _block() + "\n"

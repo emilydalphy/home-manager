@@ -12,6 +12,76 @@ from . import preferences as _preferences
 from . import rhythm as _rhythm
 
 
+# List-valued preference fields — see _coerce_str_list and get_household_memory's
+# read-side guard below, both added for the same bug (Loop Board, 2026-09-13):
+# POST /api/memory/edit {"field": "cuisine_preferences", "value": "Thai"} used
+# to answer 200 and store the bare string, and /api/memory handed it straight
+# back — a bare string, not a one-item list. Any reader that assumes a list
+# (a .filter or .join, see static/shell.js's prefsCuisineForms comment, which
+# had already worked around this in one spot) throws the moment that field
+# comes up, which is what actually surfaced this: not the write, the read.
+_LIST_PREFERENCE_FIELDS = ("cuisine_preferences", "dislikes", "usual_stores", "kitchen_kit")
+
+
+def _coerce_str_list(field: str, value) -> list[str]:
+    """
+    Turn a preference write's value into the list of strings a list-valued
+    field actually stores, or refuse it outright.
+
+    A bare string is read the way someone typing a quick answer means it —
+    comma-separated ("Thai, Mexican" -> two cuisines) — rather than kept as
+    one (probably wrong) single item; a single word with no comma still
+    becomes its own one-item list, which is exactly the card's repro
+    ("Thai" -> ["Thai"]). Decision recorded here rather than silently
+    picked: the alternative (always a one-item list, never split) would
+    have thrown away real multi-value answers a model is more likely to
+    send as a plain comma list than as actual JSON.
+
+    Anything that isn't a string or a list of strings is refused with a
+    clear message instead of being stored raw — a dict, a number or a
+    bool has no sane reading as "some cuisines/dislikes/stores/kit items."
+
+    A list is trimmed the same way the comma-split above already is: each
+    item stripped, and a blank one dropped rather than kept. Without this,
+    a caller that hands over ["", "  ", "olives"] (a stray blank chip, a
+    model that pads a list with whitespace) would store those blanks
+    as-is — the write itself doesn't throw, but What We Know then renders
+    one empty chip per blank entry (wwkWontEatHtml/wwkFactChip map every
+    item in the list with no blank-check of their own). Caught while
+    adversarially testing this exact fix, 2026-09-13.
+    """
+    if isinstance(value, str):
+        return [v.strip() for v in value.split(",") if v.strip()]
+    if isinstance(value, list) and all(isinstance(v, str) for v in value):
+        return [v.strip() for v in value if v.strip()]
+    raise ValueError(
+        f"{field} must be a list of text (or one comma-separated string), not {value!r}."
+    )
+
+
+def _as_str_list(value) -> list[str]:
+    """
+    The read-side twin of _coerce_str_list: tolerate a row that was
+    written before that guard existed (or written some other way — a
+    direct DB edit, an import) so a bare string already on file normalises
+    into a list instead of reaching the What We Know screen as one and
+    breaking the first .filter/.join a reader does on it. Same
+    comma-split reading as the write side, so a bad row and a bad write
+    land on the same answer either way.
+
+    A list is cleaned the same way _coerce_str_list's list branch is:
+    stripped, blanks dropped, and any non-string item dropped too (this
+    side must never throw, so an odd item is quietly discarded rather than
+    trusted) — a row written before that write-side trim existed doesn't
+    keep handing back empty chips forever.
+    """
+    if isinstance(value, str):
+        return [v.strip() for v in value.split(",") if v.strip()]
+    if isinstance(value, list):
+        return [v.strip() for v in value if isinstance(v, str) and v.strip()]
+    return []
+
+
 # See schema.sql's comment on the `facts` table for why this is a separate
 # layer from the structured meal_preferences/members fields.
 def get_facts(category: str | None = None) -> list[dict]:
@@ -164,11 +234,15 @@ def get_household_memory() -> dict:
         }
         for m in members
     ]
-    protein_prefs = json.loads(prefs["protein_preferences_json"]) if prefs else {}
-    cuisine_prefs = json.loads(prefs["cuisine_preferences_json"]) if prefs else []
-    dislikes = json.loads(prefs["dislikes_json"]) if prefs else []
+    # dict/list guards: a bad row (see _LIST_PREFERENCE_FIELDS above)
+    # written before the edit_preference guard existed must not throw here
+    # — this IS the read the What We Know screen throws from.
+    raw_protein_prefs = json.loads(prefs["protein_preferences_json"]) if prefs else {}
+    protein_prefs = raw_protein_prefs if isinstance(raw_protein_prefs, dict) else {}
+    cuisine_prefs = _as_str_list(json.loads(prefs["cuisine_preferences_json"])) if prefs else []
+    dislikes = _as_str_list(json.loads(prefs["dislikes_json"])) if prefs else []
     cooking_time_pref = prefs["cooking_time_preference"] if prefs else ""
-    usual_stores = json.loads(prefs["usual_stores_json"]) if prefs else []
+    usual_stores = _as_str_list(json.loads(prefs["usual_stores_json"])) if prefs else []
     stores_prompt_dismissed = bool(prefs and prefs["stores_prompt_dismissed_at"])
     eating_style = prefs["eating_style"] if prefs else ""
     goals = household["goals"] if household else ""
@@ -234,7 +308,7 @@ def get_household_memory() -> dict:
         # repeats_tolerance changes the structure of every week built:
         # whether to cook once and stretch it, or give seven different
         # dinners.
-        "kitchen_kit": json.loads(prefs["kitchen_kit_json"]) if prefs else [],
+        "kitchen_kit": _as_str_list(json.loads(prefs["kitchen_kit_json"])) if prefs else [],
         "repeats_tolerance": prefs["repeats_tolerance"] if prefs else "",
         "weeknight_max_minutes": prefs["weeknight_max_minutes"] if prefs else 0,
         "table_style": prefs["table_style"] if prefs else "",
@@ -384,8 +458,11 @@ def edit_preference(field: str, value) -> dict:
     correcting something the app got wrong, whether from the "what we
     know" view or conversationally ("actually make cooking time preference
     quick"). Valid fields: 'notes' (str), 'cooking_time_preference' (str),
-    'cuisine_preferences' (list of str — replaces the whole list),
-    'dislikes' (list of str — replaces the whole list; for adding just one
+    'cuisine_preferences' (list of str — replaces the whole list; a bare
+    string is read as comma-separated and turned into one, e.g. "Thai,
+    Mexican" -> two items, "Thai" -> one — see _coerce_str_list),
+    'dislikes' (list of str, same bare-string reading as cuisine_preferences
+    — replaces the whole list; for adding just one
     new dislike in conversation, prefer add_food_dislikes instead so it
     merges rather than requiring you to pass the full existing list),
     'protein_preferences' (dict of protein -> 1-5 like rating, e.g. {"chicken":
@@ -489,6 +566,21 @@ def edit_preference(field: str, value) -> dict:
             else:
                 raise ValueError("complete_plates must be true or false.")
         value = 1 if value else 0
+    # cuisine_preferences/dislikes/usual_stores/kitchen_kit: the bug this
+    # guards (Loop Board, 2026-09-13) — see _coerce_str_list and
+    # _LIST_PREFERENCE_FIELDS above for the why. Coerces a bare string
+    # into the list it's stored as, and refuses anything else outright
+    # rather than writing it raw.
+    if field in _LIST_PREFERENCE_FIELDS:
+        value = _coerce_str_list(field, value)
+    # protein_preferences merges into an existing dict (see
+    # set_household_meal_preferences) — a string or list there doesn't
+    # silently corrupt it, it throws inside dict.update with a confusing
+    # message, so check it here with a clear one instead.
+    if field == "protein_preferences" and not isinstance(value, dict):
+        raise ValueError(
+            f'protein_preferences must be a dict of protein -> rating, e.g. {{"chicken": 5}}, not {value!r}.'
+        )
 
     _household._log_preference_event(field, "write")
     if field in simple_text_columns or field in ("kitchen_kit", "weeknight_max_minutes", "complete_plates"):
@@ -554,7 +646,14 @@ def edit_preference(field: str, value) -> dict:
         # taught in chat for somewhere that was never picked here is not
         # this write's to throw away.
         kept = {str(s).strip().lower() for s in (value or [])}
-        was = {str(s).strip().lower() for s in json.loads(before["usual_stores_json"])} if before else set()
+        # _as_str_list, not a raw json.loads: "before" can still be a
+        # legacy bad row (a bare string, written before edit_preference's
+        # own write-side coercion existed) — without this guard, iterating
+        # a string yields its CHARACTERS, and `was` ends up a set of single
+        # letters that never matches a real store name, so the pruning
+        # below silently no-ops instead of dropping the stale
+        # store_typical_items entry. Caught adversarially, 2026-09-13.
+        was = {str(s).strip().lower() for s in _as_str_list(json.loads(before["usual_stores_json"]))} if before else set()
         dropped = was - kept
         if dropped and before:
             store_items = json.loads(before["store_typical_items_json"])
@@ -615,19 +714,25 @@ def delete_preference(field: str, item: str | None = None) -> dict:
         raise ValueError("No saved preferences yet.")
 
     if field == "dislikes":
-        updated = [d for d in json.loads(existing["dislikes_json"]) if d.lower() != (item or "").lower()]
+        # _as_str_list guards a row that was already bad before
+        # edit_preference's write-side coercion existed — same read-side
+        # guard as get_household_memory, and load-bearing here specifically:
+        # without it, a bare string iterates as CHARACTERS ('c','i','l',...)
+        # rather than throwing, so a bad row would silently get rewritten
+        # into character-list garbage the next time anything was removed.
+        updated = [d for d in _as_str_list(json.loads(existing["dislikes_json"])) if d.lower() != (item or "").lower()]
         conn.execute(
             "UPDATE meal_preferences SET dislikes_json = ?, updated_at = datetime('now') WHERE household_id = ?",
             (json.dumps(updated), household_id()),
         )
     elif field == "cuisine_preferences":
-        updated = [c for c in json.loads(existing["cuisine_preferences_json"]) if c.lower() != (item or "").lower()]
+        updated = [c for c in _as_str_list(json.loads(existing["cuisine_preferences_json"])) if c.lower() != (item or "").lower()]
         conn.execute(
             "UPDATE meal_preferences SET cuisine_preferences_json = ?, updated_at = datetime('now') WHERE household_id = ?",
             (json.dumps(updated), household_id()),
         )
     elif field == "usual_stores":
-        updated = [s for s in json.loads(existing["usual_stores_json"]) if s.lower() != (item or "").lower()]
+        updated = [s for s in _as_str_list(json.loads(existing["usual_stores_json"])) if s.lower() != (item or "").lower()]
         # Drop that store's typical-items list along with it — an orphaned
         # entry would keep surfacing "usually get here" suggestions in the
         # grocery list for a store the household no longer shops at.
@@ -638,7 +743,17 @@ def delete_preference(field: str, item: str | None = None) -> dict:
             (json.dumps(updated), json.dumps(store_items), household_id()),
         )
     elif field == "protein_preferences":
-        current = dict(json.loads(existing["protein_preferences_json"]))
+        # Same reasoning as the _as_str_list guards just above: a legacy
+        # row can hold a bare string here too (there was no write-side
+        # dict check at all before this same fix added one) — dict() on
+        # a string doesn't silently misbehave the way iterating one does,
+        # it throws ("dictionary update sequence element #0 has length 1;
+        # 2 is required"), which reached the household as a confusing 400
+        # on an ordinary "forget this protein" click. Caught adversarially,
+        # 2026-09-13, alongside the read-side get_household_memory guard
+        # for the same column.
+        raw_current = json.loads(existing["protein_preferences_json"])
+        current = dict(raw_current) if isinstance(raw_current, dict) else {}
         current.pop(item, None)
         conn.execute(
             "UPDATE meal_preferences SET protein_preferences_json = ?, updated_at = datetime('now') WHERE household_id = ?",
