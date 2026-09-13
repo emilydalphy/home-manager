@@ -469,42 +469,10 @@ html, body {
    under the band for no reason a reader could see. */
 .today-area-needsyou:empty, .today-area-rest:empty { display: none; }
 
-/* ---------- Next up (Today, 2026-09-08) ----------
-   The compact form of .dinner-hero: about a third of the screen rather than
-   the tall panel that used to sit here, because it is one move out of a
-   day's worth rather than the answer to the whole screen. Same spruce, same
-   one apricot action, smaller type and tighter padding. */
-.nextup-hero { padding: 18px 20px 16px; gap: 11px; }
-/* 2026-09-11 (Emily; §2b S3): the next-up is a CARD now, not the spruce
-   hero — same width and family as its neighbours, sand fill and an apricot
-   eyebrow to call it out, and no action inside it (the dock has that).
-   The hero's inner classes are reused with their ink swapped for ivory. */
-.today-area-nextup { margin: 0 20px 14px; }
-.nextup-card {
-  background: var(--sand);
-  border-color: transparent;
-  padding: 14px 16px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
-.nextup-card[hidden] { display: none; }
-.nextup-card .hero-eyebrow { color: var(--apricot-label); }
-.nextup-card .hero-rule { background: var(--hairline-strong); }
-.nextup-card .nextup-when { color: var(--ink-secondary); }
-.nextup-card .hero-dish, .nextup-card .nextup-dish { color: var(--ink); font-size: 22px; letter-spacing: -0.028em; line-height: 1.12; }
-.nextup-card .hero-dish-sm, .nextup-card .hero-dish-xs { font-size: 20px; }
-.nextup-card .hero-accent { color: var(--ink-secondary); font-size: 15px; margin-top: -4px; }
-.nextup-card .hero-chip { background: var(--surface); color: var(--ink); border: 1.5px solid var(--hairline-strong); height: 30px; }
-.nextup-card .nextup-foot { justify-content: space-between; }
-/* A move with no chips and nothing to tick (a shop, say) has an empty foot;
-   don't leave a blank row where the action used to be. */
-.nextup-card .nextup-foot:not(:has(.hero-chip)):has(.tick-empty) { display: none; }
-.nextup-card .tick-box { border-color: var(--hairline-strong); }
-.nextup-card .tick:hover .tick-box { border-color: var(--celadon); }
-/* The dish name is a link to the recipe here too; .dish-link inherits the
-   card's ink from .hero-dish above. */
-.nextup-dish { font-size: 26px; letter-spacing: -0.032em; line-height: 1.08; }
+/* ---------- .nextup-when ----------
+   The only survivor of the Next up card (retired 2026-09-13 for the day
+   strip below): Plan's Meal step hero still prints the day's name with it
+   (.wk-meal-hero .nextup-when, mealStepHtml in shell.js). */
 .nextup-when {
   flex: 0 0 auto;
   font-family: var(--font-body);
@@ -513,14 +481,12 @@ html, body {
   color: var(--ivory-ink-muted);
   white-space: nowrap;
 }
-/* The action and the tick share the last row: one thing to tap to DO it,
-   one to say it's already handled. */
-.nextup-foot { display: flex; align-items: center; gap: 10px; }
-.nextup-foot .hero-action { flex: 1 1 auto; height: 48px; }
 
 /* ---------- The tick ----------
    44x44 of tap target (Rule 6), 20px of visual inside it. Empty is a ring;
-   filled is celadon — the accent that reassures, "already true". */
+   filled is celadon — the accent that reassures, "already true". Now's
+   own moves tick through the day strip's dot since 2026-09-13 (.day-tick
+   below); this is the chores rows' tick (choreRowHtml, .chore-tick). */
 .tick {
   flex: 0 0 auto;
   width: 44px;
@@ -555,34 +521,12 @@ html, body {
   border-color: var(--celadon);
   color: var(--on-accent-ink); /* RULE ONE: dark ink on a light accent fill */
 }
-/* On spruce the ring has to lift off the panel rather than off the ground. */
-.nextup-foot .tick-box { border-color: var(--apricot-rule); }
-.nextup-foot .tick:hover .tick-box { border-color: var(--apricot-light); }
 
-/* ---------- The rest of today ---------- */
-.rest-card { padding: 4px 14px 6px; }
-.rest-title {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 17px;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  margin: 14px 0 2px;
-}
-.rest-list { display: flex; flex-direction: column; }
-.rest-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 52px;
-  border-top: 1.5px solid var(--hairline);
-}
-.rest-list .rest-row:first-child { border-top: none; }
 /* ---------- A dish name is a link to its recipe ----------
    Emily, 2026-09-09: "if you click the meal anywhere throughout the app,
    it should bring you to the screen with the recipe on it." The name keeps
    the type it already had — this class only takes the browser's button
-   furniture off, so it is deliberately declared BEFORE .rest-row-title,
+   furniture off, so it is deliberately declared BEFORE .day-node-title,
    .tomorrow-title and .hero-dish: those set their own family, size, weight
    and colour, and on an equal-specificity tie the later rule wins.
    Nothing here is a colour change; a dish name that suddenly went apricot
@@ -626,45 +570,207 @@ html, body {
   width: auto;
   text-align: inherit;
 }
-.rest-row-text {
-  flex: 1 1 auto;
-  min-width: 0;
+
+/* =====================================================================
+   NOW — the day as a strip (Emily, 2026-09-12, "Beyond lists" canvas;
+   built 2026-09-13). renderTodayMoves / dayStripNodeHtml in shell.js.
+   One vertical strip: each move is a node on a 44px | 1fr grid — the
+   time, a 28px dot and a hairline down to the next node on the rail,
+   the title and one meta line beside it. The dot is the tick (44px of
+   tap around it, Rule 6) and says the state: done = celadon + tick,
+   now = apricot + the move's icon, later = surface + hairline + icon.
+   Exactly ONE node is tinted — the next-up move, a celadon-tint tile
+   with a NOW eyebrow (§2b S3, S6). Every colour is a token (Rule 9).
+   Dark: same tokens — celadon and apricot are unchanged there, and the
+   later dot lifts off --ground by --hairline-strong.
+   ===================================================================== */
+.day-strip {
+  display: flex;
+  flex-direction: column;
+  /* Room for the first node's time eyebrow under the band's curve. */
+  padding-top: 2px;
+}
+.day-node {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 0 10px;
+  align-items: start;
+}
+
+/* ---- The rail: time, dot, line ---- */
+.day-node-rail {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-self: stretch;
+}
+.day-node-time {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  line-height: 12px;
+  /* Tighter than the 0.13em eyebrow norm so "TONIGHT" sits inside the
+     44px rail; still the eyebrow face, size, weight and ink. */
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  padding-top: 2px;
+  /* The dot's 44px tap box has 8px of air above its 28px of visual;
+     pull the eyebrow into it so eyebrow and dot read as one mark. */
+  margin-bottom: -4px;
+}
+/* The tick: 44x44 of tap target around a 28px dot. A move with nothing
+   behind its tick (a shop — moves.py's `tickable`) is a plain span. */
+.day-tick {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+span.day-tick { cursor: default; }
+.day-dot {
+  position: relative;
+  box-sizing: border-box; /* 28px INCLUDING the hairline, as drawn */
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1.5px solid var(--hairline-strong);
+  background: var(--surface);
+  color: var(--ink-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.day-dot-icon, .day-dot-tick {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.day-dot-icon svg { display: block; width: 18px; height: 18px; }
+.day-dot-tick svg { display: block; width: 16px; height: 16px; }
+.day-dot-tick { opacity: 0; }
+/* now: apricot, the move's icon in dark ink (Rule 1). */
+.day-node.is-now .day-dot {
+  background: var(--apricot);
+  border-color: var(--apricot);
+  color: var(--on-accent-ink);
+}
+/* done: celadon, the tick in dark ink (Rule 1); the kind's icon gives way. */
+.day-node.is-done .day-dot {
+  background: var(--celadon);
+  border-color: var(--celadon);
+  color: var(--on-accent-ink);
+}
+.day-node.is-done .day-dot-icon { opacity: 0; }
+.day-node.is-done .day-dot-tick { opacity: 1; }
+button.day-tick:hover .day-dot { border-color: var(--celadon); }
+.day-node.is-now button.day-tick:hover .day-dot { border-color: var(--apricot-deep); }
+/* The line from under the dot down to the next node's time. */
+.day-node-line {
+  position: absolute;
+  left: 50%;
+  top: 52px;
+  bottom: 0;
+  width: 1.5px;
+  margin-left: -0.75px;
+  background: var(--hairline);
+}
+.day-node:last-child .day-node-line { display: none; }
+
+/* ---- The body: title + meta, or the one tinted tile ---- */
+.day-node-body { min-width: 0; }
+/* Later / done: no tile. 6px above, 14px below; the row is the tap target
+   for "open this move" — 52px+ tall (Rule 6). */
+.day-node-text {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 8px 0;
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 0 14px;
+  margin: 0;
   text-align: left;
   background: none;
   border: none;
   font: inherit;
+  color: inherit;
 }
-.rest-row-open { cursor: pointer; }
-.rest-row-title {
+.day-node-open { cursor: pointer; }
+.day-node-title {
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 15px;
+  line-height: 1.3;
   color: var(--ink);
 }
-.rest-row-detail {
+.day-node-meta {
   font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 12px;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.3;
   color: var(--ink-secondary);
 }
-/* Done items fade rather than vanish — a day's work should still be
-   visible at the end of it, and the tick has to stay tappable to undo. */
-.rest-row.is-done .rest-row-title { color: var(--ink-done); text-decoration: line-through; }
-.rest-row.is-done .rest-row-detail { color: var(--ink-done); }
-.rest-done { margin-top: 10px; }
-.rest-done-head {
+/* Done fades rather than vanishes — a day's work should still be visible
+   at the end of it, and the dot stays tappable to undo. The strike is a
+   text-decoration whose colour transitions (see Motion, animation 3). */
+.day-node.is-done .day-node-title { color: var(--ink-done); }
+.day-node.is-done .day-node-meta { color: var(--ink-done); }
+/* The one tinted node: a celadon-tint tile, the word for it, and the
+   move's title in the display face. It runs the move's action on tap
+   (the same thing the dock's button does). */
+.day-node-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  min-height: 52px;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  text-align: left;
+  background: var(--celadon-tint);
+  border: 1.5px solid var(--celadon-edge);
+  border-radius: var(--radius-tile);
+  font: inherit;
+  color: var(--ink-on-celadon);
+  cursor: pointer;
+}
+.day-node-eyebrow {
   font-family: var(--font-body);
   font-weight: 800;
   font-size: 10px;
   letter-spacing: .14em;
   text-transform: uppercase;
-  color: var(--ink-muted);
-  padding: 8px 0 4px;
+  color: var(--celadon-label);
 }
+.day-node-tile .day-node-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--ink-on-celadon);
+}
+/* The mockup set the tile's meta in --ink-secondary, which measures
+   3.98:1 on --celadon-tint (light) — under AA for 14px text. This is
+   --celadon-label instead, the token for text inside a celadon tile
+   (4.87:1 light, 5.92:1 dark; the tomorrow card's detail line already
+   uses it). Contrast, measured 2026-09-13; the swap is flagged for
+   Emily in that day's log entry. */
+.day-node-tile .day-node-meta { color: var(--celadon-label); }
+/* Give the last node's bottom padding back to the tomorrow card. */
+.day-strip + .tomorrow-card { margin-top: -2px; }
 
 /* Nothing left today: name tomorrow's first move rather than showing a
    blank screen. Celadon-tint — the settled, non-urgent tile. */
@@ -984,7 +1090,6 @@ html, body {
 }
 
 .hero-chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.hero-chips-spacer { flex: 1 1 auto; }
 .hero-chip {
   height: 32px;
   padding: 0 12px;
@@ -7898,7 +8003,9 @@ span.cook-week-name { cursor: default; }
      1. Sheets slide up over a scrim that fades in; centred
         dialogs fade + scale instead of sliding.
      2. Tab panels crossfade with a 6px rise (activateTab, shell.js).
-     3. A ticked grocery row settles (buildGroceryPanel's trip list).
+     3. A ticked grocery row settles (buildGroceryPanel's trip list) —
+        and, since 2026-09-13, a ticked node on Now's day strip: the
+        same transitions on a second surface, not a fourth animation.
    Tokens (--motion-fast/--motion-base/--motion-ease/--motion-ease-in)
    live in theme.css and collapse to 0ms under prefers-reduced-motion,
    so nothing in this section needs its own reduced-motion branch.
@@ -7979,14 +8086,34 @@ span.cook-week-name { cursor: default; }
    so groAnimateRowSettle (shell.js) does the same "start from the opposite
    state, force a reflow, settle to the real one" trick openSheet() uses for
    sheets — these transitions are what it settles into. */
-.gro-row .gro-box {
+.gro-row .gro-box, .day-dot {
   transition: background var(--motion-base) var(--motion-ease),
-              border-color var(--motion-base) var(--motion-ease);
+              border-color var(--motion-base) var(--motion-ease),
+              color var(--motion-base) var(--motion-ease);
 }
 .gro-row .gro-name {
   position: relative;
   transition: color var(--motion-base) var(--motion-ease);
 }
+/* Now's day strip (todayAnimateNodeSettle, shell.js — the same
+   opposite-state-then-reflow trick as groAnimateRowSettle). The dot's
+   two icons crossfade, the ink eases, and the strike is a line-through
+   whose COLOUR eases in — text-decoration-color rather than the ::after
+   scale above, because a move's title can wrap to two lines and one
+   ::after through the block would strike the gap between them. */
+.day-dot-icon, .day-dot-tick {
+  transition: opacity var(--motion-base) var(--motion-ease);
+}
+.day-node-title, .day-node-meta {
+  transition: color var(--motion-base) var(--motion-ease);
+}
+.day-node-title {
+  text-decoration: line-through;
+  text-decoration-color: transparent;
+  transition: color var(--motion-base) var(--motion-ease),
+              text-decoration-color var(--motion-base) var(--motion-ease);
+}
+.day-node.is-done .day-node-title { text-decoration-color: currentColor; }
 .gro-row .gro-name::after {
   content: '';
   position: absolute;

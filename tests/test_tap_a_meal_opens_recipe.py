@@ -201,8 +201,8 @@ def test_todays_dish_names_are_links_and_only_a_cook_has_a_recipe():
         + _extract("moveDishHtml") + "\n"
         + "console.log(JSON.stringify({\n"
         + f"  cook: moveDishHtml({json.dumps(cook)}, 'hero-dish'),\n"
-        + f"  reheat: moveDishHtml({json.dumps(reheat)}, 'rest-row-title'),\n"
-        + f"  shop: moveDishHtml({json.dumps(shop)}, 'rest-row-title'),\n"
+        + f"  reheat: moveDishHtml({json.dumps(reheat)}, 'day-node-title'),\n"
+        + f"  shop: moveDishHtml({json.dumps(shop)}, 'day-node-title'),\n"
         + f"  old: moveRecipeTarget({json.dumps(old_cook)})\n"
         + "}));\n"
     )
@@ -217,22 +217,23 @@ def test_todays_dish_names_are_links_and_only_a_cook_has_a_recipe():
     }
 
 
-def test_a_done_row_keeps_its_dish_name_tappable():
+def test_a_done_node_keeps_its_dish_name_tappable():
     """A cooked dinner is exactly the name someone taps wanting to see what
-    went into it. The ROW stops being the move's button (the tick is the
+    went into it. The NODE stops being the move's button (the dot is the
     only control left); the NAME goes on being a link."""
-    fn = _extract("moveRowHtml")
-    assert "moveRecipeTarget(move)" in fn
-    assert 'rest-row-title dish-link' in fn
+    fn = _extract("dayStripNodeHtml")
+    done = fn.split("state === 'done'", 1)[1].split("} else {", 1)[0]
+    assert "moveDishHtml(move, 'day-node-title')" in done
+    assert "data-move-action" not in done
     # And a tap on the name must never run the row's own action — a reheat's
     # action IS the tick, and tapping a name is "show me this", not "do it".
     wiring = SHELL_JS.split("data-move-dish]", 1)[1][:600]
     assert "openRecipeFor" in wiring and "runTodayMoveAction" not in wiring
 
 
-def test_todays_three_plain_dish_names_now_go_through_the_link_helper():
+def test_todays_plain_dish_names_go_through_the_link_helper():
     for site in (
-        "moveDishHtml(move, 'hero-dish nextup-dish' + dishSizeClass(move.title))",
+        "moveDishHtml(move, 'day-node-title')",
         "moveDishHtml(move, 'tomorrow-title')",
     ):
         assert site in SHELL_JS, f"{site} — a Today dish name is still plain text"
@@ -935,7 +936,7 @@ def test_the_dish_link_class_only_removes_button_furniture():
     assert "font: inherit" in rule
     # Declared before the classes it rides with, since those set their own
     # family/size/weight and win an equal-specificity tie by being later.
-    for later in (".rest-row-title {", ".tomorrow-title {", ".hero-dish {"):
+    for later in (".day-node-title {", ".tomorrow-title {", ".hero-dish {"):
         assert SHELL_CSS.index(".dish-link {") < SHELL_CSS.index(later), (
             f"{later} must come after .dish-link or it loses its own type"
         )
