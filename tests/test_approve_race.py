@@ -36,7 +36,7 @@ import pytest
 
 from app import tools
 from app.db import get_conn
-from app.tools import grocery, meal_plans, recipes, weekly_plan
+from app.tools import attendance, grocery, leftovers, meal_plans, recipes, weekly_plan
 
 
 def _monday() -> datetime.date:
@@ -227,7 +227,263 @@ def test_a_plain_re_approval_still_adds_nothing_and_keeps_the_receipt():
     assert _grocery_row(onions)[0]["quantity"] == "2"
 
 
-_MODULES = (("weekly_plan", weekly_plan), ("grocery", grocery), ("recipes", recipes), ("meal_plans", meal_plans))
+# ---------------------------------------------------------- harder adversarial cases
+
+
+def test_three_way_race_still_has_exactly_one_winner():
+    """
+    Not just two callers — three, on the same plan, released together.
+    The conditional UPDATE is a row-level guard, not a two-caller special
+    case, so this should generalize with no extra work: exactly one
+    winner, the other two honest no-ops, and the grocery lines still add
+    up once each.
+    """
+    plan_id, beans, onions = _new_plan(0)
+    barrier = threading.Barrier(3)
+    results: list[dict | Exception] = [None, None, None]
+
+    def go(i: int, name: str):
+        try:
+            barrier.wait(timeout=5)
+            results[i] = tools.approve_weekly_plan(plan_id, approved_by=name)
+        except Exception as e:  # pragma: no cover - surfaced below
+            results[i] = e
+
+    names = ["Emily", "Marcus", "Jordan"]
+    threads = [threading.Thread(target=go, args=(i, n)) for i, n in enumerate(names)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=10)
+    for r in results:
+        if isinstance(r, Exception):
+            raise r
+
+    winners = [r for r in results if r["was_already_approved"] is False]
+    losers = [r for r in results if r["was_already_approved"] is True]
+    assert len(winners) == 1, results
+    assert len(losers) == 2, results
+    beans_rows = _grocery_row(beans)
+    onions_rows = _grocery_row(onions)
+    assert len(beans_rows) == 1 and beans_rows[0]["quantity"] == "1 tin", beans_rows
+    assert len(onions_rows) == 1 and onions_rows[0]["quantity"] == "2", onions_rows
+    assert _ledger_count(plan_id) == 2
+
+
+def test_a_hard_conflict_race_never_runs_the_ingest_twice(monkeypatch):
+    """
+    One caller has already tapped "approve anyway" past a hard allergy
+    clash, the other has not — the two are racing with different
+    `confirm_hard_conflicts`. Whichever call the actual conditional UPDATE
+    lets through, the ingest must run at most once: the un-confirmed
+    caller's gate (run before the lock, off the un-locked read) either
+    catches the clash and bails with needs_confirmation before ever
+    reaching the transaction, or — in the one-in-a-million case its own
+    docstring names — loses the UPDATE race after having confirmed
+    nothing, which the guard still turns into a clean no-op.
+    """
+    plan_id, beans, onions = _new_plan(0)
+    from app.tools import coordination as _coordination
+
+    fake_conflict = [{
+        "severity": "hard", "member": "Kid", "meal": beans, "restriction": "peanuts",
+        "source": "dietary", "matched": beans, "date": _future_week_start(0),
+        "component_category": "main",
+    }]
+    monkeypatch.setattr(
+        _coordination, "check_plan_conflicts",
+        lambda *a, **k: {"conflicts": fake_conflict, "note": "hard conflict", "settle": None, "soft_note": None},
+    )
+
+    barrier = threading.Barrier(2)
+    results: list[dict | Exception] = [None, None]
+
+    def go(i: int, name: str, confirm: bool):
+        try:
+            barrier.wait(timeout=5)
+            results[i] = tools.approve_weekly_plan(plan_id, approved_by=name, confirm_hard_conflicts=confirm)
+        except Exception as e:  # pragma: no cover - surfaced below
+            results[i] = e
+
+    t1 = threading.Thread(target=go, args=(0, "Emily", True))
+    t2 = threading.Thread(target=go, args=(1, "Marcus", False))
+    t1.start(); t2.start()
+    t1.join(timeout=10); t2.join(timeout=10)
+    for r in results:
+        if isinstance(r, Exception):
+            raise r
+
+    # Never doubled, regardless of which caller the DB let through.
+    beans_rows = _grocery_row(beans)
+    onions_rows = _grocery_row(onions)
+    assert len(beans_rows) <= 1 and (not beans_rows or beans_rows[0]["quantity"] == "1 tin"), beans_rows
+    assert len(onions_rows) <= 1 and (not onions_rows or onions_rows[0]["quantity"] == "2"), onions_rows
+    approved = [r for r in results if r.get("status") == "approved" and r["was_already_approved"] is False]
+    assert len(approved) <= 1, results
+
+
+def test_a_failure_inside_the_carry_over_step_rolls_back_the_whole_approval(monkeypatch):
+    """
+    Same check tests/test_swap_atomic.py and tests/test_drop_dish_atomic.py
+    make for their own atomic transactions: an exception raised partway
+    through must undo everything the transaction had written so far, not
+    just skip the rest. `set_aside_carried_over_items` runs first inside
+    _settle_weekly_plan_approval, so a failure there should leave the
+    status flip itself rolled back too.
+    """
+    plan_id, beans, onions = _new_plan(0)
+
+    def boom(*_a, **_kw):
+        raise RuntimeError("injected failure")
+
+    monkeypatch.setattr(grocery, "set_aside_carried_over_items", boom)
+    with pytest.raises(RuntimeError):
+        tools.approve_weekly_plan(plan_id, approved_by="Emily")
+
+    plan = tools.get_weekly_plan(plan_id)
+    assert plan["status"] != "approved"
+    assert _grocery_row(beans) == []
+    assert _grocery_row(onions) == []
+
+
+def test_a_failure_inside_the_grocery_ingest_rolls_back_the_whole_approval(monkeypatch):
+    """
+    Same as above, but the injected failure comes AFTER
+    _add_recipe_ingredients_for_entries has already written its grocery
+    lines and ledger rows for one recipe group — the rollback has to undo
+    those writes too, not just the status flip that came before them.
+    """
+    plan_id, beans, onions = _new_plan(0)
+    real = recipes._add_recipe_ingredients_for_entries
+
+    def flaky(*args, **kwargs):
+        real(*args, **kwargs)
+        raise RuntimeError("injected failure")
+
+    monkeypatch.setattr(recipes, "_add_recipe_ingredients_for_entries", flaky)
+    with pytest.raises(RuntimeError):
+        tools.approve_weekly_plan(plan_id, approved_by="Emily")
+
+    plan = tools.get_weekly_plan(plan_id)
+    assert plan["status"] != "approved"
+    assert _grocery_row(beans) == []
+    assert _grocery_row(onions) == []
+
+
+def test_reopen_racing_approve_leaves_no_torn_state():
+    """
+    approve_weekly_plan racing reopen_weekly_plan on the same plan — a
+    different write than another approval, but still one competing for
+    the same row's write lock. Neither call is guarded against the other
+    (reopen has no conditional UPDATE of its own), so this isn't pinning
+    one specific winner — only that SQLite's single-writer lock serializes
+    the two instead of interleaving them: no exception escapes, the
+    grocery lines from whichever approval actually ran are never doubled,
+    and the plan ends up in one of the two states a serialized run could
+    produce, not something in between.
+    """
+    plan_id, beans, onions = _new_plan(0)
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+
+    barrier = threading.Barrier(2)
+    results: list[dict | Exception] = [None, None]
+
+    def go_reopen():
+        try:
+            barrier.wait(timeout=5)
+            results[0] = tools.reopen_weekly_plan(plan_id)
+        except Exception as e:  # pragma: no cover - surfaced below
+            results[0] = e
+
+    def go_approve():
+        try:
+            barrier.wait(timeout=5)
+            results[1] = tools.approve_weekly_plan(plan_id, approved_by="Marcus")
+        except Exception as e:  # pragma: no cover - surfaced below
+            results[1] = e
+
+    t1 = threading.Thread(target=go_reopen)
+    t2 = threading.Thread(target=go_approve)
+    t1.start(); t2.start()
+    t1.join(timeout=10); t2.join(timeout=10)
+    for r in results:
+        if isinstance(r, Exception):
+            raise r
+
+    beans_rows = _grocery_row(beans)
+    onions_rows = _grocery_row(onions)
+    assert len(beans_rows) == 1 and beans_rows[0]["quantity"] == "1 tin", beans_rows
+    assert len(onions_rows) == 1 and onions_rows[0]["quantity"] == "2", onions_rows
+    plan = tools.get_weekly_plan(plan_id)
+    assert plan["status"] in ("draft", "approved"), plan["status"]
+
+
+def test_swap_racing_approve_leaves_no_duplicate_entry():
+    """
+    approve_weekly_plan racing swap_meal_in_plan on an entry inside the
+    very plan being approved — two already-atomic transactions (this
+    fix's, and swap-atomic's own) competing for the same row's lock.
+    SQLite's single-writer model serializes them either order; the point
+    here is that neither order leaves a torn read behind: exactly one
+    meal_plan_entries row for the slot survives, and every grocery line
+    from whichever meal actually ended up on the plan lands exactly once.
+    """
+    plan_id, beans, onions = _new_plan(0)
+    week = _future_week_start(0)
+    tools.add_recipe("Tacos race", ingredients=[
+        {"item": "tortillas race", "qty": "1 pkg"}, {"item": "salsa race", "qty": "1 jar"},
+    ])
+
+    barrier = threading.Barrier(2)
+    results: list[dict | Exception] = [None, None]
+
+    def go_approve():
+        try:
+            barrier.wait(timeout=5)
+            results[0] = tools.approve_weekly_plan(plan_id, approved_by="Emily")
+        except Exception as e:  # pragma: no cover - surfaced below
+            results[0] = e
+
+    def go_swap():
+        try:
+            barrier.wait(timeout=5)
+            results[1] = tools.swap_meal_in_plan(
+                plan_id, week, "Tacos race", slot="dinner", old_meal="Chili 0",
+            )
+        except Exception as e:  # pragma: no cover - surfaced below
+            results[1] = e
+
+    t1 = threading.Thread(target=go_approve)
+    t2 = threading.Thread(target=go_swap)
+    t1.start(); t2.start()
+    t1.join(timeout=10); t2.join(timeout=10)
+    for r in results:
+        if isinstance(r, Exception):
+            raise r
+
+    conn = get_conn()
+    entries = conn.execute(
+        "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ?", (plan_id,)
+    ).fetchall()
+    conn.close()
+    assert len(entries) == 1, entries  # no duplicate/torn entry row for the slot
+
+    conn = get_conn()
+    rows = {r["item"]: r["quantity"] for r in conn.execute(
+        "SELECT item, quantity FROM grocery_items WHERE item IN (?, ?, 'tortillas race', 'salsa race')",
+        (beans, onions),
+    ).fetchall()}
+    conn.close()
+    assert rows.get(beans, "1 tin") == "1 tin", rows
+    assert rows.get(onions, "2") == "2", rows
+    assert rows.get("tortillas race", "1 pkg") == "1 pkg", rows
+    assert rows.get("salsa race", "1 jar") == "1 jar", rows
+
+
+_MODULES = (
+    ("weekly_plan", weekly_plan), ("grocery", grocery), ("recipes", recipes),
+    ("meal_plans", meal_plans), ("leftovers", leftovers), ("attendance", attendance),
+)
 
 
 def test_the_transaction_opens_exactly_one_connection(monkeypatch):
@@ -240,8 +496,12 @@ def test_the_transaction_opens_exactly_one_connection(monkeypatch):
     tests/test_swap_atomic.py pins _replace_slot_entries: from entering
     _settle_weekly_plan_approval (the transaction) to leaving it, count
     every module-level get_conn() and require exactly one — the
-    transaction's own. (approve_weekly_plan's own separate, pre-lock status
-    read is deliberately not in scope here — see its docstring.)
+    transaction's own. `leftovers`/`attendance` are watched too, not just
+    the modules the ingest calls directly — servings_scale_factor and
+    plan_leftover_chains/batch_for_source sit one level further down the
+    same tree (an independent verifier's adversarial pass checked this).
+    (approve_weekly_plan's own separate, pre-lock status read is
+    deliberately not in scope here — see its docstring.)
     """
     plan_id, beans, onions = _new_plan(0)
 
@@ -269,7 +529,7 @@ def test_the_transaction_opens_exactly_one_connection(monkeypatch):
 
     assert set(marks) == {"start", "end"}, "the transaction never ran"
     delta = {k: marks["end"][k] - marks["start"][k] for k in opened}
-    assert delta == {"weekly_plan": 1, "grocery": 0, "recipes": 0, "meal_plans": 0}, (
-        f"something inside the transaction opened its own connection: {delta}"
-    )
+    assert delta == {
+        "weekly_plan": 1, "grocery": 0, "recipes": 0, "meal_plans": 0, "leftovers": 0, "attendance": 0,
+    }, f"something inside the transaction opened its own connection: {delta}"
     assert _grocery_row(beans)[0]["quantity"] == "1 tin"
