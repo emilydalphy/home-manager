@@ -2895,6 +2895,12 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   color: var(--ink);
 }
 .ca-ask-days { display: flex; flex-wrap: wrap; gap: 8px; }
+/* A component block's chips are dishes, not days ("Tue · Hard-Boiled Eggs
+   and Avocado Toast"), so each takes the row it needs and reads left to
+   right; the weekday inside is the quiet half. Same chip otherwise. */
+.ca-comp-dish { text-align: left; }
+.ca-comp-day { font-weight: 700; opacity: 0.75; }
+.ca-comp-day::after { content: " ·"; }
 .ca-ask-count {
   font-family: var(--font-body);
   font-size: 12px;
@@ -7405,6 +7411,7 @@ span.cook-week-name { cursor: default; }
 .wk-allset .wk-quick-card.on-spruce .wk-quick-body-line,
 .wk-allset .wk-quick-card.on-spruce .ca-ask-count { color: var(--ivory-ink-muted); }
 .wk-allset .wk-quick-card.on-spruce .ca-ask-line { color: var(--ivory-ink); }
+.wk-allset .wk-quick-card.on-spruce .ca-comp-day { opacity: 0.85; }
 .wk-allset .wk-quick-card.on-spruce .ca-ask-block + .ca-ask-block { border-top-color: var(--spruce-hover); }
 .wk-allset .wk-quick-card.on-spruce .defrost-chip.is-selected,
 .wk-allset .wk-quick-card.on-spruce .ca-ask-day.is-on {

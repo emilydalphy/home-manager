@@ -2984,10 +2984,23 @@ class CookAheadChoiceRequest(BaseModel):
     covered_entry_ids: list[int] = []
 
 
+class BatchComponentChoiceRequest(BaseModel):
+    """One shared component's answer: which of the dishes that make it
+    should be made in one go (Loop Board "Batch cook: when the same
+    component is in several recipes", Emily 2026-09-13). The earliest
+    entry cooks; see tools.batch_components.set_batch_component."""
+    key: str
+    entry_ids: list[int] = []
+
+
 class WeekCookAheadConfirmRequest(BaseModel):
-    # Empty list is a real, complete answer ("Cook each on its own") — see
+    # Empty lists are a real, complete answer ("Cook each on its own") — see
     # confirm_week_cook_ahead below.
     choices: list[CookAheadChoiceRequest] = []
+    # The component blocks' answers, in the same fold as the per-dish ones
+    # (Emily: "if there is something that is repeated it should be in the
+    # same group"). Absent or empty means "leave every component alone".
+    components: list[BatchComponentChoiceRequest] = []
 
 
 @app.get("/api/week/{week_start}/cook-ahead-items")
@@ -3002,10 +3015,14 @@ def week_cook_ahead_items(week_start: str):
     plan_id = _plan_id_for_week(week_start)
     try:
         items = tools.cook_ahead_repeats(plan_id)
+        # The same fold's other kind of block: one component several
+        # different dishes each cook (tools.batch_components). Only the
+        # ones not yet answered — a batch already filed is the Cook view's.
+        components = [c for c in tools.shared_components(plan_id) if not c["batched"]]
     except Exception as e:
         logger.exception("Cook-ahead repeat lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return {"weekly_plan_id": plan_id, "items": items}
+    return {"weekly_plan_id": plan_id, "items": items, "components": components}
 
 
 @app.post("/api/week/{week_start}/cook-ahead-confirm")
@@ -3028,6 +3045,7 @@ def confirm_week_cook_ahead(week_start: str, req: WeekCookAheadConfirmRequest):
     plan_id = _plan_id_for_week(week_start)
     applied: list[dict] = []
     refused: list[dict] = []
+    components_applied: list[dict] = []
     try:
         for choice in req.choices:
             result = tools.set_cook_ahead(choice.source_entry_id, choice.covered_entry_ids)
@@ -3035,11 +3053,24 @@ def confirm_week_cook_ahead(week_start: str, req: WeekCookAheadConfirmRequest):
                 refused.append({"source_entry_id": choice.source_entry_id, "note": result})
             else:
                 applied.append(result)
+        # The component blocks, same not-all-or-nothing rule: a refusal
+        # is a sentence for that block, and the others still land.
+        for comp in req.components:
+            result = tools.set_batch_component(plan_id, comp.key, comp.entry_ids)
+            if isinstance(result, str):
+                refused.append({"key": comp.key, "note": result})
+            else:
+                components_applied.append(result)
         tools.mark_cook_ahead_asked(plan_id)
     except Exception as e:
         logger.exception("Cook-ahead confirmation failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return {"weekly_plan_id": plan_id, "applied": applied, "refused": refused}
+    return {
+        "weekly_plan_id": plan_id,
+        "applied": applied,
+        "components_applied": components_applied,
+        "refused": refused,
+    }
 
 
 @app.get("/api/week/{week_start}/prep-sessions")

@@ -196,6 +196,8 @@ _FUNCTIONS = [
     "cookFocusPrepTasks",
     "cookFocusPrepHtml",
     "cookAttendanceChip",
+    # A dish whose eggs an earlier cook boiled (batch_components.py).
+    "cookMadeAheadLinesHtml",
     "cookServesShown",
     "cookApplyServesOverride",
     "cookStepServings",

@@ -140,7 +140,10 @@ def test_the_cook_ahead_sentence_is_not_said_twice():
     block = _fn("cookAheadAskBlockHtml")
     assert "(named\n        ? '<div class=\"ca-ask-line\">'" in block
     card = _fn("cookAheadAskCardHtml")
-    assert "cookAheadAskBlockHtml(item, items.length > 1)" in card
+    # A component block in the same fold makes every dish block name itself
+    # (batch_components, 2026-09-13): the flag is computed once, above.
+    assert "var named = items.length > 1 || cookAheadComponents().length > 0;" in card
+    assert "cookAheadAskBlockHtml(item, named)" in card
 
 
 def _rule(selector: str) -> str:

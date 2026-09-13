@@ -103,6 +103,12 @@ from .cook_ahead import (  # noqa: F401
     mark_cook_ahead_asked,
     set_cook_ahead,
 )
+# One component in several dishes, cooked once (see batch_components.py):
+# the eggs a breakfast and a salad both hard-boil.
+from .batch_components import (  # noqa: F401
+    set_batch_component,
+    shared_components,
+)
 from .cooker import (  # noqa: F401
     _find_inventory_match,
     _singularize,

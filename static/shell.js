@@ -13468,17 +13468,141 @@
     '</div>';
   }
 
+  // ---------- One component in several dishes, in the same fold ----------
+  // Emily, 2026-09-13, on her phone: "if there is something that is
+  // repeated it should be in the same group. For example, I'm seeing
+  // boiled eggs in two different recipes, ask me if I want them all in the
+  // same bulk cook." The server finds the component from the recipes' own
+  // steps (tools/batch_components.py) and hands it over on the same fetch
+  // as the per-dish repeats (`components` beside `items`). One block per
+  // component, under the per-dish blocks, in the same fold, answered by
+  // the same two buttons. Everything starts ticked — the question is
+  // "make them all at once?", and the chips are for leaving one out.
+  // (Loop Board "Batch cook: when the same component is in several
+  // recipes".)
+  var cookAheadComponentState = { components: [], picks: {} };
+
+  function cookAheadComponents() {
+    return cookAheadComponentState.components || [];
+  }
+
+  function cookAheadComponentPicks(comp) {
+    var picks = cookAheadComponentState.picks[comp.key];
+    if (!picks) {
+      picks = cookAheadComponentState.picks[comp.key] = {};
+      (comp.uses || []).forEach(function (u) { picks[u.entry_id] = true; });
+    }
+    return picks;
+  }
+
+  // "Boiled eggs are in 2 recipes this week. Make them all at once?" —
+  // the plain question first (DESIGN_SYSTEM §8 rule 7), then the chips
+  // that answer it, then the shared buttons below. The count line says
+  // what the ticks add up to, in eggs, not in feature words.
+  function cookAheadComponentQuestion(comp) {
+    var dishes = {};
+    (comp.uses || []).forEach(function (u) { dishes[(u.dish || '').toLowerCase()] = true; });
+    var n = Object.keys(dishes).length;
+    var plural = /s$/i.test(comp.ingredient || comp.label || '');
+    return comp.label + (plural ? ' are' : ' is') + ' in ' + n + ' recipes this week. Make ' +
+      (plural ? 'them' : 'it') + ' all at once?';
+  }
+
+  function cookAheadComponentBlockHtml(comp) {
+    var uses = comp.uses || [];
+    var picks = cookAheadComponentPicks(comp);
+    var ticked = uses.filter(function (u) { return !!picks[u.entry_id]; });
+    var count;
+    if (ticked.length < 2) {
+      count = 'Each recipe makes its own.';
+    } else {
+      count = 'One cook on ' + dayName(ticked[0].date, { weekday: 'long' }) + ' for ' + ticked.length + ' recipes' +
+        (comp.quantity ? ' · ' + comp.quantity + ' ' + comp.ingredient : '');
+    }
+    return '<div class="ca-ask-block ca-comp-block">' +
+      '<div class="ca-ask-line">' + escapeHtml(cookAheadComponentQuestion(comp)) + '</div>' +
+      '<div class="ca-ask-days ca-comp-dishes">' +
+        uses.map(function (u) {
+          var on = !!picks[u.entry_id];
+          return '<button type="button" class="ca-ask-day ca-comp-dish' + (on ? ' is-on' : '') + '" ' +
+            'data-ca-comp="' + escapeHtml(comp.key) + '" data-ca-use="' + u.entry_id + '" ' +
+            'aria-pressed="' + on + '">' +
+            '<span class="ca-comp-day">' + escapeHtml(dayNameShort(u.date)) + '</span> ' +
+            escapeHtml(u.dish) +
+          '</button>';
+        }).join('') +
+      '</div>' +
+      '<div class="ca-ask-count">' + escapeHtml(count) + '</div>' +
+    '</div>';
+  }
+
+  function cookAheadComponentBlocksHtml() {
+    return cookAheadComponents().map(cookAheadComponentBlockHtml).join('');
+  }
+
+  function wireCookAheadComponentChips(card, panel, data) {
+    card.querySelectorAll('[data-ca-use]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var comp = cookAheadComponents().filter(function (c) { return c.key === chip.getAttribute('data-ca-comp'); })[0];
+        if (!comp) return;
+        var picks = cookAheadComponentPicks(comp);
+        var useId = chip.getAttribute('data-ca-use');
+        if (picks[useId]) delete picks[useId]; else picks[useId] = true;
+        renderWeekApproval(panel, data); // the count line under the chips changes with them
+      });
+    });
+  }
+
+  // What the confirm button sends for the components: every block with two
+  // or more recipes still ticked. One ticked is not a batch, and is left
+  // alone exactly like a per-dish block nobody ticked.
+  function cookAheadComponentChoices() {
+    var out = [];
+    cookAheadComponents().forEach(function (comp) {
+      var picks = cookAheadComponentPicks(comp);
+      var ids = (comp.uses || []).filter(function (u) { return !!picks[u.entry_id]; }).map(function (u) { return u.entry_id; });
+      if (ids.length >= 2) out.push({ key: comp.key, entry_ids: ids });
+    });
+    return out;
+  }
+
+  function cookAheadComponentReset(components) {
+    cookAheadComponentState.components = components || [];
+    cookAheadComponentState.picks = {};
+  }
+
+  // "Boiled eggs: one cook Tuesday for 2 recipes" — the components' half
+  // of the folded confirmation line, joined onto cookAheadDoneLine's.
+  function cookAheadAllDoneLine(items, applied, componentsApplied, refused) {
+    var parts = [];
+    if (applied.length) parts.push(cookAheadDoneLine(items, applied, refused));
+    (componentsApplied || []).forEach(function (a) {
+      var comp = cookAheadComponents().filter(function (c) { return c.key === a.key; })[0];
+      var day = comp ? dayName(comp.first.date, { weekday: 'long' }) : '';
+      var source = comp && (comp.uses || []).filter(function (u) { return u.entry_id === a.source_entry_id; })[0];
+      if (source) day = dayName(source.date, { weekday: 'long' });
+      var n = 1 + (a.covered_entry_ids || []).length;
+      parts.push((a.label || (comp && comp.label) || 'Batch') + ': one cook ' + day + ' for ' + n + ' recipes');
+    });
+    if (!parts.length) return cookAheadDoneLine(items, applied, refused);
+    return parts.join(' · ');
+  }
+
   // Same fold as the freezer check just above: the blocks and the two
   // answers, expanded in place by the "… Cook ahead?" line rather than
   // stacked as a second full card under the receipt. Same id, so
   // wireCookAheadAskCard and submitCookAheadAsk are untouched.
   function cookAheadAskCardHtml(open) {
     var items = cookAheadAskState.items || [];
+    // A component block sits under the per-dish ones (Emily: "the same
+    // group"), so with any present every dish block names itself.
+    var named = items.length > 1 || cookAheadComponents().length > 0;
     return (
       '<div class="wk-quick-body cook-ahead-ask-card" id="cook-ahead-ask-card"' +
           (open ? '' : ' hidden') + '>' +
-        '<div class="wk-quick-body-line">Tick the days a batch should cover and they become one cook.</div>' +
-        items.map(function (item) { return cookAheadAskBlockHtml(item, items.length > 1); }).join('') +
+        (items.length ? '<div class="wk-quick-body-line">Tick the days a batch should cover and they become one cook.</div>' : '') +
+        items.map(function (item) { return cookAheadAskBlockHtml(item, named); }).join('') +
+        cookAheadComponentBlocksHtml() +
         // One answer for the whole ask, and no second apricot: the receipt
         // above already spent this screen's one apricot primary on "Open
         // the list" (Rule 5), and .ny-actions .btn-gold is spruce here for
@@ -13494,6 +13618,7 @@
   function wireCookAheadAskCard(row, panel, data) {
     var card = row.querySelector('#cook-ahead-ask-card');
     if (!card) return;
+    wireCookAheadComponentChips(card, panel, data);
     card.querySelectorAll('[data-ca-day]').forEach(function (chip) {
       chip.addEventListener('click', function () {
         var picks = cookAheadAskState.picks[chip.getAttribute('data-ca-source')] ||
@@ -13521,11 +13646,11 @@
             choices.push({ source_entry_id: item.first.entry_id, covered_entry_ids: covered });
           }
         });
-        submitCookAheadAsk(panel, data, choices);
+        submitCookAheadAsk(panel, data, choices, cookAheadComponentChoices());
       });
     }
     var noneBtn = card.querySelector('#cook-ahead-ask-none');
-    if (noneBtn) noneBtn.addEventListener('click', function () { submitCookAheadAsk(panel, data, []); });
+    if (noneBtn) noneBtn.addEventListener('click', function () { submitCookAheadAsk(panel, data, [], []); });
   }
 
   // Fetched once per plan and then cached, exactly as the defrost items
@@ -13543,6 +13668,7 @@
       var body = await res.json();
       if (cookAheadAskState.planId !== data.weekly_plan_id) return; // a newer plan loaded while this was in flight
       cookAheadAskState.items = body.items || [];
+      cookAheadComponentReset(body.components);
       renderWeekApproval(panel, data);
     } catch (err) {
       console.warn('Cook-ahead item lookup failed:', err);
@@ -13550,7 +13676,7 @@
     }
   }
 
-  async function submitCookAheadAsk(panel, data, choices) {
+  async function submitCookAheadAsk(panel, data, choices, components) {
     var card = panel.querySelector('#cook-ahead-ask-card');
     var buttons = card ? card.querySelectorAll('button') : [];
     buttons.forEach(function (b) { b.disabled = true; });
@@ -13558,22 +13684,26 @@
       var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/cook-ahead-confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ choices: choices }),
+        body: JSON.stringify({ choices: choices, components: components || [] }),
       });
       if (!res.ok) throw new Error('cook-ahead confirm failed');
       var body = await res.json();
       var refused = (body.refused || []);
       var applied = (body.applied || []);
+      var componentsApplied = (body.components_applied || []);
       setWeekQuickDone(data.weekly_plan_id, 'cookAhead',
-        cookAheadDoneLine(cookAheadAskState.items || [], applied, refused));
+        cookAheadAllDoneLine(cookAheadAskState.items || [], applied, componentsApplied, refused));
       cookAheadAskState.items = null;
       cookAheadAskState.picks = {};
+      cookAheadComponentReset([]);
       if (refused.length) {
         // The refusal already IS the fact plus its way out (see
         // set_cook_ahead), so it's shown as-is and held long enough to read.
         showToast(refused[0].note, null, 9000);
       } else if (applied.length) {
         showToast('Got it — one batch covers those days now.');
+      } else if (componentsApplied.length) {
+        showToast('Got it — one cook for the lot.');
       }
       await loadWeekMenu(panel); // refetches cook_ahead_asked_at so the card hides itself
       refreshKitchenPanel(); // Kitchen, if it's built, now has fewer cooks and some made-ahead days
@@ -13592,6 +13722,7 @@
   function openCookAheadAskFromCook() {
     cookAheadAskState.items = null;
     cookAheadAskState.picks = {};
+    cookAheadComponentReset([]);
     cookAheadAskState.forceShow = true;
     // Same three things as openDefrostAskFromCook just above: un-dismiss
     // the receipt this line lives in, expand the line, and come back out to
@@ -13867,7 +13998,7 @@
     if (!data.cook_ahead_asked_at || forceCookAheadShow) {
       if (cookAheadAskState.planId === data.weekly_plan_id && cookAheadAskState.items !== null) {
         cookAheadAskState.forceShow = false;
-        if (cookAheadAskState.items.length) cookAheadAskHtml = cookAheadAskCardHtml(asksOnly || weekQuickOpen.cookAhead);
+        if (cookAheadAskState.items.length || cookAheadComponents().length) cookAheadAskHtml = cookAheadAskCardHtml(asksOnly || weekQuickOpen.cookAhead);
       } else {
         ensureCookAheadAskItems(panel, data); // re-renders this row once it resolves
       }
@@ -14053,7 +14184,7 @@
 
   function cookAheadAskQuestion() {
     var items = cookAheadAskState.items || [];
-    if (items.length !== 1) return 'Cook anything ahead?';
+    if (items.length !== 1 || cookAheadComponents().length) return 'Cook anything ahead?';
     var item = items[0];
     var total = (item.later || []).length + 1;
     return item.dish + ' on ' + total + ' ' + cookSlotWord(item.slot, total) + '. Cook ahead?';
@@ -14061,11 +14192,14 @@
 
   function cookAheadAskSummary() {
     var items = cookAheadAskState.items || [];
-    if (items.length < 2) return '';
+    var comps = cookAheadComponents();
+    if (items.length + comps.length < 2) return '';
     return items.map(function (item) {
       var total = (item.later || []).length + 1;
       return item.dish + ' on ' + total + ' ' + cookSlotWord(item.slot, total);
-    }).join(' · ');
+    }).concat(comps.map(function (comp) {
+      return comp.label + ' in ' + (comp.uses || []).length + ' recipes';
+    })).join(' · ');
   }
 
   // All FOUR meal types, not the three of WEEK_SLOTS (Emily, 2026-09-10).
@@ -15732,6 +15866,9 @@
     // list (Shop) — the recipe still asks for fresh oregano, and this is
     // where the cook hears that dry is what's going in.
     if (ing && ing.substitute) label += ' — using ' + ing.substitute + ' instead';
+    // ...and, on a dish whose eggs were boiled with Tuesday's batch
+    // (batch_components.py), that they are already done.
+    if (ing && ing.made_ahead) label += ' · ' + ing.made_ahead;
     return label;
   }
 
@@ -16108,6 +16245,24 @@
     '</section>';
   }
 
+  // "Boiled eggs — done Tuesday." / "Boiled eggs — Tuesday's batch, with
+  // Hard-Boiled Eggs and Avocado Toast." One line per component this dish
+  // gets from an earlier cook (batch_components.py), under the headline,
+  // so the cook knows before reading the steps that the boiling is not
+  // theirs tonight. The cook day's own card carries the batch as a prep
+  // row instead (cookFocusPrepTasks) — a tickable thing, not a note.
+  function cookMadeAheadLinesHtml(meal) {
+    var lines = (meal && meal.components_made_ahead) || [];
+    if (!lines.length) return '';
+    return lines.map(function (c) {
+      var day = dayName(c.source_date, { weekday: 'long' });
+      var text = c.done
+        ? c.label + ' — done ' + day + '.'
+        : c.label + ' — ' + day + '’s batch, with ' + c.source_meal + '.';
+      return '<p class="cook-hero-note cook-made-ahead">' + escapeHtml(text) + '</p>';
+    }).join('');
+  }
+
   // "for 2 + 1 guest" — headcount plus who's extra, since portions matter
   // mid-cook. attendance is null for a component-based meal's placeholder
   // date (see get_cooker_view) — no real day to answer "who's home" about.
@@ -16274,6 +16429,7 @@
         '<h2 class="cook-hero-headline' + (isDone ? ' is-done' : '') + '">' +
           escapeHtml(meal.meal || 'Dinner') + '</h2>' +
         (note ? '<p class="cook-hero-note">' + escapeHtml(note) + '</p>' : '') +
+        (onPrep ? cookMadeAheadLinesHtml(meal) : '') +
       '</div>' +
       (chips.length
         ? '<div class="cook-hero-chips">' + chips.map(function (c) {
