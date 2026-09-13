@@ -333,6 +333,58 @@ def test_move_by_id_is_scoped_to_its_own_household():
     assert _row(theirs)["due_date"] == _d(0)
 
 
+def test_move_refuses_a_date_before_today():
+    """
+    Defect hunt, 2026-09-13: nothing stopped "move Hoover to 2020" (a
+    fat-fingered year, not a real request) from writing a due_date in
+    the past. Refuses with a plain sentence, the same ChoreRefused shape
+    as the duplicate-day refusal above, and changes nothing.
+    """
+    _house_on()
+    tools.add_chore("Hoover", frequency="weekly", owner_name="Emily")
+    inst = tools.schedule_chore_instance("Hoover", _d(0))["instance_id"]
+
+    with pytest.raises(tools.ChoreRefused, match="already happened"):
+        tools.move_chore_instance(inst, "2020-01-01")
+    assert _row(inst)["due_date"] == _d(0)
+
+
+def test_move_to_today_still_works():
+    """Today itself is not "the past" — pulling a future chore in to
+    today must keep working."""
+    _house_on()
+    tools.add_chore("Hoover", frequency="weekly", owner_name="Emily")
+    inst = tools.schedule_chore_instance("Hoover", _d(5))["instance_id"]
+
+    result = tools.move_chore_instance(inst, _d(0))
+    assert result["moved"] is True
+    assert _row(inst)["due_date"] == _d(0)
+
+
+def test_move_by_name_also_refuses_a_past_date():
+    """move_chore (the chat, by-name tool) writes through
+    move_chore_instance, so the guard covers "push it to next month" (kept
+    working) and a past date (refused) from the same call site."""
+    _house_on()
+    tools.add_chore("Hoover", frequency="weekly", owner_name="Emily")
+    tools.schedule_chore_instance("Hoover", _d(0))
+
+    with pytest.raises(tools.ChoreRefused, match="already happened"):
+        tools.move_chore("Hoover", "2020-06-01")
+
+
+def test_the_move_route_refuses_a_past_date_as_a_sentence(signed_in):
+    _house_on()
+    tools.add_chore("Hoover", frequency="weekly", owner_name="Emily")
+    inst = tools.schedule_chore_instance("Hoover", _d(0))["instance_id"]
+
+    res = signed_in.post(f"/api/chores/{inst}/move", json={"due_date": "2020-01-01"})
+    assert res.status_code == 200
+    assert res.json()["status"] == "refused"
+    assert "already happened" in res.json()["message"]
+    assert _row(inst)["due_date"] == _d(0)
+
+
 def test_the_by_name_tools_are_the_same_write_reached_by_name():
     """
     Resolution is the by-name tools' half; the write is one function per
@@ -492,6 +544,33 @@ def test_an_opaque_error_stays_a_404_and_never_reaches_the_household(signed_in):
     res = signed_in.post("/api/chores/999/skip")
     assert res.status_code == 404
     assert "status" not in res.json()
+
+
+def test_an_unknown_status_is_refused_not_written(signed_in):
+    """
+    Defect hunt, 2026-09-13: set_chore_instance_status wrote any string
+    it was handed straight to the column — a typo (or a hand-typed
+    request) landed a row in a status no screen's WHERE clause was
+    written to find: not 'pending', not 'done', just gone. The tool call
+    itself must refuse before the route is even involved.
+    """
+    _house_on()
+    tools.add_chore("Bins", frequency="weekly", owner_name="Emily")
+    inst = tools.schedule_chore_instance("Bins", _d(0))["instance_id"]
+
+    with pytest.raises(tools.InvalidChoreStatus, match="isn't a chore status"):
+        tools.set_chore_instance_status(inst, "banana")
+    assert _row(inst)["status"] == "pending", "the bad write must not land"
+
+
+def test_the_status_route_answers_422_for_an_unknown_status(signed_in):
+    _house_on()
+    tools.add_chore("Bins", frequency="weekly", owner_name="Emily")
+    inst = tools.schedule_chore_instance("Bins", _d(0))["instance_id"]
+
+    res = signed_in.post(f"/api/chores/{inst}/status", json={"status": "banana"})
+    assert res.status_code == 422
+    assert _row(inst)["status"] == "pending"
 
 
 def test_all_three_routes_refuse_while_the_switch_is_off(signed_in):

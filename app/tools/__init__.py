@@ -44,8 +44,10 @@ from .attention import (  # noqa: F401
 from .chores import (  # noqa: F401
     _FREQUENCY_DAYS,
     CHORES_OFF_MESSAGE,
+    CHORE_INSTANCE_STATUSES,
     FREQUENCY_WORDS,
     ChoreRefused,
+    InvalidChoreStatus,
     add_chore,
     chores_enabled,
     complete_chore,
@@ -425,6 +427,7 @@ from .rhythm import (  # noqa: F401
     prep_days_summary,
     prep_minutes_label,
     rhythm_completeness_signals,
+    save_rhythm_answers,
     set_cooking_role,
     set_dinner_window,
     set_leftovers_stance,
