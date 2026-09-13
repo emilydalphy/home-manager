@@ -738,6 +738,9 @@ saved recipe detail, ask in chat" — the user gave you the idea once and should
 again just to get the actual recipe.
 - To change just one day of an already-generated plan ("swap Tuesday for something with \
 chicken"), use swap_meal_in_plan rather than regenerating the whole week.
+- To move a dinner to a DIFFERENT NIGHT ("move Thursday's dinner to Friday", "do the chili \
+on Saturday instead"), use swap_dinner_nights with the two dates — the two nights' dinners \
+trade places and nothing is re-bought. Never re-plan both nights with plan_meal to do this.
 - Every meal in a plan carries a slot_state, and it decides how you may talk about that slot:
   * 'planned' — a real meal. Normal.
   * 'planned_empty' — DELIBERATELY empty, and its reasoning says why (nobody is home that \
@@ -1593,6 +1596,19 @@ TOOL_DEFINITIONS = [
                 "old_meal": {"type": "string", "description": "The exact name of the entry being replaced. Only needed when the slot holds more than one — a day's two snacks — and required in spirit there: without it both are replaced. Get the exact name from get_weekly_plan/get_week_menu rather than guessing."},
             },
             "required": ["weekly_plan_id", "meal_date", "new_meal"],
+        },
+    },
+    {
+        "name": "swap_dinner_nights",
+        "description": "Move a dinner to another night of an already-generated plan by trading it with whatever dinner is on that night (\"move Thursday's dinner to Friday\" swaps Thursday's and Friday's dinners). Only the two DINNERS trade places; breakfasts, lunches and snacks stay put. Each dish keeps its groceries, its cooked tick and its leftover chain, and its defrost reminders move with it — the grocery list itself is untouched. A status of 'refused' means nothing changed and `message` says why (a night nobody is home, a dinner already cooked, or a leftover chain that would end up running backwards): say that sentence back rather than retrying. Not for changing WHAT is eaten — that is swap_meal_in_plan.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "weekly_plan_id": {"type": "integer"},
+                "date_a": {"type": "string", "description": "YYYY-MM-DD — one of the two nights."},
+                "date_b": {"type": "string", "description": "YYYY-MM-DD — the other night."},
+            },
+            "required": ["weekly_plan_id", "date_a", "date_b"],
         },
     },
     {
@@ -5462,6 +5478,7 @@ TOOL_FUNCTIONS = {
     "get_weekly_plan": tools.get_weekly_plan,
     "swap_meal_in_plan": tools.swap_meal_in_plan,
     "swap_component_in_plan": tools.swap_component_in_plan,
+    "swap_dinner_nights": tools.swap_dinner_nights,
     "approve_weekly_plan": tools.approve_weekly_plan,
     "generate_prep_schedule": generate_prep_schedule,
     "get_prep_schedule": tools.get_prep_schedule,

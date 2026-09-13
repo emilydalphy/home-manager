@@ -549,7 +549,9 @@ from .weekly_plan import (  # noqa: F401
     set_planning_mode,
     set_week_constraints,
     swap_component_in_plan,
+    swap_dinner_nights,
     swap_meal_in_plan,
+    undo_dinner_nights_swap,
     week_receipt,
 )
 # One meal, replaced on the spot for one small model call — the Meals

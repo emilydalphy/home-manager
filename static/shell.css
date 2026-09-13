@@ -4935,13 +4935,12 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 /* The head is a .prefs-row; the section's own rule replaces the row's. */
 .wwk-section .wwk-head { border-bottom: none; }
 .wwk-head .prefs-row-sub { white-space: normal; }
-/* The chevron points down closed and up open — the same collapse the
-   Review step's day rows use (.rv-day-chev), without its transition. */
+/* The chevron points down closed and up open, without a transition. */
 .wwk-chev { flex: 0 0 auto; display: inline-flex; color: var(--ink-inactive); }
 .wwk-chev svg { width: 18px; height: 18px; }
 .wwk-head[aria-expanded="true"] .wwk-chev { transform: rotate(180deg); }
 /* The quiet tick. --celadon-label is the token for "handled": 5.76:1 on
-   ground in light, 7.14:1 in dark (measured for .rv-day-note). */
+   ground in light, 7.14:1 in dark (measured). */
 .wwk-saved {
   flex: 0 0 auto;
   font-family: var(--font-body);
@@ -6742,7 +6741,6 @@ span.cook-week-name { cursor: default; }
 .wk-day-meals { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 /* The quiet label on a holiday's row (S6: the word for the day). Same
    neutral pill as everywhere else, sized to sit above the three lines. */
-.rv-day-holiday { margin: 2px 0 4px; }
 .wk-holiday { align-self: flex-start; margin-bottom: 2px; font-size: 11px; padding: 2px 8px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 .wk-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
 /* The whole legend, in three dots: apricot cooks, celadon is already made,
@@ -6839,16 +6837,7 @@ span.cook-week-name { cursor: default; }
   line-height: 1.4;
   color: var(--urgent-label);
 }
-/* The cook time beside a slot's name, and the clash as one red word on
-   a day's face. */
-.rv-slot-meta {
-  flex: 0 0 auto;
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--ink-secondary);
-  white-space: nowrap;
-}
+/* The clash as one red word on a night's tile (S6: the word says why). */
 .rv-day-clash {
   font-family: var(--font-body);
   font-size: 12px;
@@ -6954,13 +6943,8 @@ span.cook-week-name { cursor: default; }
      .rv-dish-name       --ink on --surface               13.52 light / 12.49 dark
      .rv-dish-cooks      --ink-secondary on --surface      4.70 light /  7.36 dark
      .rv-step-count      --ink-strong on --sand           11.43 light / 11.28 dark
-     .rv-day-title       --ink-secondary on --surface      4.70 light /  7.36 dark
-     .rv-day-dinner      --ink on --surface               13.52 light / 12.49 dark
-     .rv-slot-label      --ink-muted on --surface          4.58 light /  7.36 dark
-     .rv-slot-name       --ink on --surface               13.52 light / 12.49 dark
-     .rv-day-open        --apricot-label on --surface      5.20 light /  8.53 dark
+     (the Which days tiles carry their own table — see "which days" below)
      .rv-empty/.rv-trouble  --ink on --ground             12.78 light / 14.40 dark
-     .rv-day-note        --celadon-label on --surface       5.76 light /  7.14 dark
    The one exception is .rv-step-btn:disabled (--ink-inactive on --sand,
    2.92:1) — a disabled control, which WCAG 1.4.3 exempts, and the low
    contrast IS the signal that it is off. Nothing else here leans on that
@@ -7265,116 +7249,205 @@ span.cook-week-name { cursor: default; }
 /* The one inside a row needs the separation the foot got for free. */
 .rv-dish > .rv-trouble { margin-top: 2px; }
 
-/* ---------- REVIEW: which days ---------- */
+/* ---------- REVIEW: which days — seven tiles ----------
+   Emily's pick, 2026-09-12 ("Week · A · Seven tiles"). One tile a night:
+   date | dinner + bar | drag handle, on a 52px | 1fr | 44px grid. Every
+   tile is a --surface card with a --hairline edge; today's is the
+   celadon tint with its own edge (§1). The lifted tile is the one thing
+   here that carries a shadow, and only while it is off the list — it is
+   floating over the screen, which is what --shadow-hero's family is for.
+   Motion is the tab crossfade's own tokens: --motion-fast + --motion-ease
+   on transform, nothing new. All seven fit above the dock at 375×812 when
+   no tile carries a tag (56px min-height, 6px apart).
+   Contrast, measured in Chromium at 375px, both schemes (rule 8):
+     .rv-tiles-eyebrow / .rv-tiles-key  --ink-strong on --ground  12.59 light / 14.40 dark
+       (the head sits on the ground, where --ink-muted is 4.33 and
+       --ink-secondary 4.44 — both short of AA for 10–12px text, so the
+       head takes the token .rv-group-label already uses on this ground)
+     .rv-tile-dow                      --ink-muted on --surface   4.58 light /  7.36 dark
+     .rv-tile-num / .rv-tile-name      --ink on --surface        13.52 light / 12.49 dark
+     .rv-tile-min                      --ink-secondary on --surface  4.70 light / 7.36 dark
+     .rv-tile-today                    --celadon-label on --celadon-tint  4.87 light / 5.92 dark
+     .rv-tile.is-today .rv-tile-name   --ink-on-celadon on --celadon-tint  10.65 light / 10.37 dark
+     .rv-tile-tag                      --apricot-label on --surface  5.20 light / 8.53 dark
+     .rv-tile-handle                   --ink-muted, an icon (3:1 applies): 4.58 on --surface,
+                                       3.88 on --celadon-tint light / 6.11 dark */
 .rv-days { gap: 10px; }
-.rv-day { padding: 0; overflow: hidden; }
-.rv-day-head {
-  width: 100%;
-  box-sizing: border-box;
-  min-height: 64px;
+.rv-tiles-head {
   display: flex;
-  /* flex-start, not center: a wrapped two-line dish name grows the row, and
-     a centered chevron would drift into the middle of that text instead of
-     sitting at the row's top-right corner. */
-  align-items: flex-start;
+  align-items: baseline;
+  justify-content: space-between;
   gap: 12px;
-  padding: 12px 14px;
+  padding: 0 2px;
+}
+.rv-tiles-eyebrow {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-strong);
+}
+.rv-tiles-key {
+  flex: 0 0 auto;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-strong);
+}
+.rv-tiles {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rv-tile {
+  position: relative;
+  box-sizing: border-box;
+  min-height: 56px;
+  display: grid;
+  grid-template-columns: 52px 1fr 44px;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 12px 7px 10px;
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
+  border-radius: var(--radius-tile);
+  color: var(--ink);
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+.rv-tile.is-today {
+  background: var(--celadon-tint);
+  border-color: var(--celadon-edge);
+}
+.rv-tile.is-lifted {
+  transition: none;
+  z-index: 2;
+  box-shadow: var(--shadow-hero);
+}
+/* While a move is out, the list is read-only: nothing here changes shape
+   (the swap is optimistic and the tiles already traded), the handles
+   just go inert until the answer lands. */
+.rv-tiles.is-busy .rv-tile-handle { pointer-events: none; }
+.rv-tile-date {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  line-height: 1;
+}
+.rv-tile-dow {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.rv-tile-num {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: var(--ink);
+}
+.rv-tile.is-today .rv-tile-num { font-size: 19px; font-weight: 800; }
+.rv-tile-body {
+  min-width: 0;
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+  padding: 0;
   border: 0;
   background: none;
   text-align: left;
   cursor: pointer;
   font: inherit;
+  color: inherit;
 }
-.rv-day-head.is-flat { cursor: default; }
-.rv-day-col { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1 1 auto; }
-.rv-day-title {
+.rv-tile-eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
   font-family: var(--font-body);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: .06em;
+  letter-spacing: .13em;
   text-transform: uppercase;
-  color: var(--ink-secondary);
+  line-height: 1.3;
 }
-.rv-day-dinner {
+.rv-tile-today { color: var(--celadon-label); }
+.rv-tile-tag { color: var(--apricot-label); }
+.rv-tile-name {
   font-family: var(--font-display);
   font-size: 16px;
   font-weight: 700;
   letter-spacing: -.02em;
-  line-height: 1.25;
+  line-height: 1.2;
   color: var(--ink);
-  /* Wraps to two lines rather than truncating with an ellipsis — a
-     component-based household's dinner name is a real, readable sentence
-     ("Herb-Roasted Chicken with Roasted Root Vegetables"), and cutting it
-     off mid-word hid the actual answer to "what's Thursday". The chevron
-     (.rv-day-chev) sits top-right of the row so a wrapped two-line name
-     doesn't push it into the middle of the text. */
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  overflow: hidden;
+  /* Wraps, never truncates: the dish name is the answer to "what's
+     Thursday", and a cut-off answer is no answer. */
+  overflow-wrap: anywhere;
 }
-.rv-day-dinner.is-quiet { color: var(--ink-secondary); font-weight: 500; }
-/* "made ahead" / "leftovers" under the dish. --celadon-label because that is
-   the token for something already handled, and it clears AA on a card:
-   5.76:1 light / 7.14:1 dark. */
-.rv-day-note {
+.rv-tile-name.is-quiet { color: var(--ink-secondary); font-weight: 500; }
+.rv-tile.is-today .rv-tile-name { color: var(--ink-on-celadon); }
+.rv-tile-time {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rv-tile-bar {
+  flex: 0 0 auto;
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--celadon);
+}
+.rv-tile-bar.is-long { background: var(--apricot); }
+.rv-tile-min {
+  flex: 0 0 auto;
   font-family: var(--font-body);
   font-size: 12px;
   font-weight: 700;
-  color: var(--celadon-label);
+  color: var(--ink-secondary);
+  white-space: nowrap;
 }
-.rv-day-chev {
-  flex: 0 0 auto;
+.rv-tile-handle {
+  width: 44px;
+  height: 44px;
   display: inline-flex;
-  /* Pinned to the row's top edge (align-items: flex-start above), lined up
-     with the uppercase day title rather than drifting to the middle of a
-     wrapped two-line dish name. */
-  margin-top: 2px;
-  color: var(--ink-inactive);
-  transition: transform .16s ease;
-}
-.rv-day.is-open .rv-day-chev { transform: rotate(180deg); }
-.rv-day.is-today { box-shadow: inset 3px 0 0 var(--celadon); }
-.rv-day-slots {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 2px 14px 12px;
-}
-.rv-slot { display: flex; align-items: baseline; gap: 10px; }
-.rv-slot-label {
-  flex: 0 0 74px;
-  font-family: var(--font-body);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .11em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-}
-.rv-slot-name {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.35;
-  color: var(--ink);
-}
-.rv-slot.is-quiet .rv-slot-name { color: var(--ink-secondary); font-weight: 500; }
-.rv-day-open {
-  align-self: flex-start;
-  min-height: 44px;
-  padding: 0 4px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border: 0;
+  border-radius: var(--radius-tile);
   background: none;
-  cursor: pointer;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--apricot-label);
+  color: var(--ink-muted);
+  cursor: grab;
+  /* The handle is the drag: a finger on it is moving a night, not the
+     page, so the browser is told not to pan from here. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
-.rv-day-open:hover { color: var(--apricot-label-hover); }
+.rv-tile.is-lifted .rv-tile-handle { cursor: grabbing; }
+.rv-tile-handle:focus-visible { outline: 2px solid var(--apricot-deep); outline-offset: 2px; }
+.rv-tile-handle.is-off { cursor: default; }
+/* The live region: read by assistive tech, never seen. */
+.rv-tiles-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
 
 /* ---------- "One thing to settle": a hard allergen clash ---------- */
 /* Urgent TINT, not the urgent fill — a clash needs a decision, and Rule 3

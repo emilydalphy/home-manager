@@ -2485,6 +2485,47 @@ def week_swap_undo(week_start: str, req: SwapUndoRequest):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+class SwapNightsRequest(BaseModel):
+    """Two nights of the plan whose DINNERS trade places — Plan › Which
+    days' drag (Emily, 2026-09-12) and its Undo both send this."""
+    date_a: str
+    date_b: str
+
+
+@app.post("/api/week/{week_start}/swap-nights")
+def week_swap_nights(week_start: str, req: SwapNightsRequest):
+    """
+    Move a dinner to another night by trading it with what is there. No
+    model call: the rows are re-dated in place (see
+    tools.swap_dinner_nights for exactly what follows them and what does
+    not), and the grocery list is left alone. A 200 can still say no —
+    `status` 'refused' carries the sentence to show and nothing was
+    written. A night that isn't on this plan, the same night twice, or a
+    malformed date is a 400.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.swap_dinner_nights(plan_id, req.date_a, req.date_b)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Moving a night failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/week/{week_start}/swap-nights-undo")
+def week_swap_nights_undo(week_start: str, req: SwapNightsRequest):
+    """Put the two nights' dinners back where the last move found them."""
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.undo_dinner_nights_swap(plan_id, req.date_a, req.date_b)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Undoing a night move failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 class DropDishDayRequest(BaseModel):
     entry_id: int
 
@@ -4000,7 +4041,7 @@ _CHORE_TOOLS = {
     "add_chore", "update_chore", "generate_chore_schedule", "schedule_chore_instance", "complete_chore",
     "skip_chore", "move_chore", "hand_chore",
 }
-_WEEK_TOOLS = {"plan_meal", "generate_weekly_plan", "set_week_constraints", "swap_meal_in_plan", "swap_component_in_plan", "approve_weekly_plan"}
+_WEEK_TOOLS = {"plan_meal", "generate_weekly_plan", "set_week_constraints", "swap_meal_in_plan", "swap_component_in_plan", "swap_dinner_nights", "approve_weekly_plan"}
 _KITCHEN_TOOLS = {
     "add_recipe", "update_recipe_details", "mark_recipe_feedback", "log_recipe_note", "log_cooking_deviation",
     "flag_recipe_temporary", "generate_prep_schedule", "check_off_prep_step", "check_off_meal",
