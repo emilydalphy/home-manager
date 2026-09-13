@@ -517,7 +517,7 @@ buildTodayPanel(panel).then(function () {
     assert "Your chores" not in out["html"]
     assert not any("/api/chores" in u for u in out["fetched"]), "an off house must make no chores request"
     # The rest of Now is untouched.
-    assert 'id="today-band"' in out["html"] and 'id="today-next-up"' in out["html"] and 'id="needs-you-band"' in out["html"]
+    assert 'id="today-band"' in out["html"] and 'id="today-rest"' in out["html"] and 'id="needs-you-band"' in out["html"]
     assert out["calls"] == ["nudge", "needsyou", "moves", "coach"]
 
 
@@ -540,10 +540,10 @@ buildTodayPanel(panel).then(function () {
     assert 'id="chores-list"' in html and 'id="chores-count"' in html
     assert out["fetched"] == ["/api/chores/today"]
     assert out["rendered"] == [[[], True]]
-    # Where it sits: after the needs-you band and the rest of today, inside
-    # the body — never above tonight's dinner (#today-next-up), never the
+    # Where it sits: after the needs-you band and the day strip
+    # (#today-rest), inside the body — never above the day, never the
     # dock, and no apricot of its own.
-    assert html.index('id="today-next-up"') < html.index('id="needs-you-band"') < html.index('id="today-rest"') < html.index("chores-card")
+    assert html.index('id="needs-you-band"') < html.index('id="today-rest"') < html.index("chores-card")
     assert html.index("chores-card") < html.index('id="today-dock"')
     card = html[html.index("chores-card"):html.index('id="today-empty"')]
     assert "dock" not in card and "apricot" not in card and "btn-primary" not in card

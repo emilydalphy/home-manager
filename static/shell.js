@@ -692,11 +692,13 @@
   // depending on which one exists at the moment.
   // ---------- Today: one timeline of moves ----------
   // Emily's approved Today design, 2026-09-08. The screen answers "what's
-  // next for us?" with two blocks and nothing else: ONE compact spruce
-  // "Next up" card carrying a single action, and "The rest of today" — a
-  // plain list of every other move, each with a round tick.
+  // next for us?" with the day's moves and nothing else. Until 2026-09-13
+  // that was two blocks — ONE "Next up" card carrying a single action, and
+  // "The rest of today", a plain list of every other move with a round
+  // tick; it is one strip down the day now (see "Now: the day as a strip"
+  // below), with the next-up move as the strip's one tinted node.
   //
-  // Both come from one fetch, /api/today/moves (app/tools/moves.py), which
+  // Everything comes from one fetch, /api/today/moves (app/tools/moves.py), which
   // ranks the day's cooks, reheats, fridge moves, prep and shopping against
   // each other. The ranking lives on the server precisely so this screen
   // never has to decide what matters, only how to say it — and so the rule
@@ -734,22 +736,23 @@
         // how to talk to me" card. Outside .today-body for the same reason
         // the nudge above it is — see that comment. Empty (and so
         // display:none) on every load but the one it is shown on.
-        // The hero, and the only one on this screen — a direct child of
-        // .today-content rather than of .today-body, because it bleeds the
-        // full width of the panel while everything else sits inside the
-        // 20px gutter, and a grid child cannot escape its parent's padding.
-        // The next-up card. Until 2026-09-11 this was the spruce hero
-        // (.dinner-hero .nextup-hero) bleeding the panel's full width;
-        // Emily, reviewing the screen-by-screen canvas: "the next-up card
-        // pulls too much attention… making the screen more even, but a bit
-        // called out". DESIGN_SYSTEM §2b S3. It is a card in the gutter now
-        // — sand fill, apricot eyebrow, same width as its neighbours — and
-        // its action lives in the dock at the foot of the screen, not
-        // inside it. (The one-time "how to talk to me" sheet that used to
-        // be a card under here is body-level now — see #coach-card-slot in
-        // shell.html.)
-        '<div id="today-next-up" class="today-area-nextup shell-card nextup-card" hidden></div>' +
+        // (The one-time "how to talk to me" sheet that used to be a card
+        // here is body-level now — see #coach-card-slot in shell.html.)
+        //
+        // The day itself is ONE strip (renderTodayMoves → .day-strip in
+        // #today-rest, 2026-09-13): the next-up move is the strip's one
+        // tinted node, in its place on the day, rather than a card above
+        // it. Until 2026-09-11 that card was the spruce hero bleeding the
+        // panel's full width; Emily, reviewing the screen-by-screen canvas:
+        // "the next-up card pulls too much attention… making the screen
+        // more even, but a bit called out" (§2b S3) — first a sand card in
+        // the gutter (#today-next-up, gone now), then the strip. Its action
+        // lives in the dock at the foot of the screen either way.
         '<div class="today-body">' +
+          // Tonight's open dinner (or a question about another day) stays
+          // above the strip: when tonight's dinner is undecided, deciding
+          // it IS what's next (renderNeedsYou), so it stands where the
+          // day starts.
           '<div id="needs-you-band" class="today-area-needsyou"></div>' +
           '<div id="today-rest" class="today-area-rest"></div>' +
           // The household's Chores switch (choresEnabled, off /api/whoami):
@@ -1347,21 +1350,157 @@
   var DOTS_ICON =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5.5" r="0.6"/><circle cx="12" cy="12" r="0.6"/><circle cx="12" cy="18.5" r="0.6"/></svg>';
 
+  // ---------- Now: the day as a strip ----------
+  // Emily, 2026-09-12, from the "Beyond lists" canvas ("Now · A · The day
+  // as a strip"). Now's content is ONE vertical strip down the day: every
+  // move is a node on a two-column grid — the time, a round dot and a
+  // hairline running down to the next node on the left; the title and one
+  // meta line on the right. The dot says the state (done = celadon with a
+  // tick; now = apricot with the move's icon; later = surface with a
+  // hairline) and is the move's tick (44px of tap around 28px of dot, Rule
+  // 6). The next-up move is the ONE tinted node (celadon-tint tile, a NOW
+  // eyebrow — §2b S3/S6), and its action stays in the dock. This replaced
+  // the sand next-up card plus "The rest of today" / "Done today" lists.
+  //
+  // The move's icon, by kind. Same drawing style as ICONS/KITCHEN_ICONS
+  // (2px stroke, round caps, 24 grid); declared here rather than reached
+  // for across the file, for the reason DOTS_ICON gives above.
+  var MOVE_ICONS = {
+    cook:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 9.5h13V16a4.5 4.5 0 0 1-4.5 4.5h-4A4.5 4.5 0 0 1 5.5 16z"/><path d="M3.5 9.5h17"/><path d="M12 3.5v3"/></svg>',
+    // A reheat: the plate, not the pot — made-ahead food is warmed, not cooked.
+    reheat:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="7.5"/><path d="M9 4.5c0 1.2 1 1.4 1 2.6"/><path d="M12.5 4.5c0 1.2 1 1.4 1 2.6"/></svg>',
+    fridge:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5.5" y="2.8" width="13" height="18.4" rx="2.6"/><path d="M5.5 10h13"/><path d="M9 6.4v1.8"/><path d="M9 12.6v2.2"/></svg>',
+    // Prep: the knife.
+    prep:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l9.5-9.5"/><path d="M11 8l5.5-5.5c1.6 1.6 2.4 4.2 1.2 6.4L15 11.5z"/></svg>',
+    shop:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 8.5h15l-1.3 10.7a2 2 0 0 1-2 1.8H7.8a2 2 0 0 1-2-1.8z"/><path d="M9.2 8.5V6.6a2.8 2.8 0 0 1 5.6 0v1.9"/></svg>'
+  };
+
+  // The node's dot — and, for a move with a tick behind it, the tick
+  // itself. Both icons are always in the dot (the kind's, and the tick),
+  // and the node's state class picks which one shows: that is what lets a
+  // tick SETTLE from apricot-with-a-pot to celadon-with-a-tick (animation
+  // 3, see todayAnimateNodeSettle) instead of snapping between two
+  // different elements.
   function moveTickHtml(move) {
+    var dot = '<span class="day-dot">' +
+        '<span class="day-dot-icon">' + (MOVE_ICONS[move.kind] || MOVE_ICONS.prep) + '</span>' +
+        '<span class="day-dot-tick">' + TICK_ICON + '</span>' +
+      '</span>';
     // Not every move has a tick behind it — a shop move's "done" dispatch is
     // a no-op (moves.set_move_done's own `kind == "shop"` branch), so
     // ticking it used to fill the circle in and have it silently snap back,
     // with a toast that lied about it. `tickable` (from moves.py) says
     // whether the done dispatch actually flips anything; when it doesn't,
-    // render an empty same-size spacer so the row's height (and the tick
-    // column other rows share) doesn't jump around.
-    if (!move.tickable) return '<span class="tick tick-empty" aria-hidden="true"></span>';
-    return '<button type="button" class="tick' + (move.done ? ' is-done' : '') + '" ' +
+    // the dot is a plain mark on the rail, not a button.
+    if (!move.tickable) return '<span class="day-tick" aria-hidden="true">' + dot + '</span>';
+    return '<button type="button" class="day-tick' + (move.done ? ' is-done' : '') + '" ' +
       'data-move-tick="' + escapeHtml(move.id) + '" ' +
       'aria-pressed="' + (move.done ? 'true' : 'false') + '" ' +
       'aria-label="' + (move.done ? 'Put it back on the list' : 'Tick it off') + '">' +
-      '<span class="tick-box">' + TICK_ICON + '</span>' +
+      dot +
     '</button>';
+  }
+
+  // When a move sits on the day. A cook's window_start is its meal time
+  // minus the cooking (moves.py), so the meal is window_start + duration;
+  // a reheat's window opens AT the meal. An all-day move has no clock of
+  // its own: a shop is "any time today" and sits at the top of the day,
+  // a fridge or prep move is "by tonight" and sits at the foot (the old
+  // "Before bed" tile's slot) — sorted by the end of its window, since
+  // the deadline is the only real time it has.
+  function moveStripAt(move) {
+    var iso = (move.kind === 'fridge' || move.kind === 'prep') ? move.window_end : move.window_start;
+    var at = new Date(iso || '');
+    if (isNaN(at.getTime())) return null;
+    if (move.kind === 'cook') at.setMinutes(at.getMinutes() + (move.duration_min || 0));
+    return at;
+  }
+
+  // The rail's eyebrow: the clock the way a person reads it off a wall
+  // ("8:00", "6:30", "Noon"), never "18:30"; "Tonight" / "Today" for a
+  // move with no clock (see moveStripAt). The meta line beside it says
+  // which half of the day ("6:30 tonight" — moves.py's time_label).
+  function moveStripTime(move) {
+    if (move.kind === 'shop') return 'Today';
+    if (move.kind === 'fridge' || move.kind === 'prep') return 'Tonight';
+    var at = moveStripAt(move);
+    if (!at) return move.time_label || '';
+    var h = at.getHours(), m = at.getMinutes();
+    if (h === 12 && m === 0) return 'Noon';
+    return ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m;
+  }
+
+  // Top to bottom down the day. The server's order (moves.py, by
+  // window_start) puts every all-day move first, which read as "Tonight"
+  // above breakfast; the strip orders by where each move sits on the day
+  // instead, and keeps the server's order between two moves at the same
+  // time (the shop before the cook it is for).
+  function dayStripOrder(moves) {
+    return moves.map(function (m, i) { return { m: m, i: i, at: moveStripAt(m) }; })
+      .sort(function (a, b) {
+        var ta = a.at ? a.at.getTime() : 0, tb = b.at ? b.at.getTime() : 0;
+        return (ta - tb) || (a.i - b.i);
+      })
+      .map(function (x) { return x.m; });
+  }
+
+  // One node. `state` is 'done', 'now' (the next-up move — exactly one node
+  // ever, §2b S3) or 'later'. The node's body is the tap target for "open
+  // this move" (52px+, Rule 6): a pending node runs the move's action (a
+  // cook opens its recipe in cook mode, a reheat or fridge move ticks —
+  // runTodayMoveAction); a done node has nothing left to do, so only its
+  // dish name stays a link (Emily, 2026-09-09) and the dot undoes.
+  function dayStripNodeHtml(move, state) {
+    var id = escapeHtml(move.id);
+    var meta = move.detail ? '<span class="day-node-meta">' + escapeHtml(move.detail) + '</span>' : '';
+    var body;
+    if (state === 'now') {
+      // The one tinted node: a celadon-tint tile with the word for it
+      // (S6). What the move is FOR — a fridge move's "for Thursday's
+      // skewers", a batch's "covers Thursday" — rides under the meta
+      // line here only, the way the old card's accent line did.
+      body = '<button type="button" class="day-node-tile" data-move-action="' + id + '">' +
+        '<span class="day-node-eyebrow">Now</span>' +
+        '<span class="day-node-title">' + escapeHtml(move.title) + '</span>' +
+        meta +
+        (move.reason ? '<span class="day-node-meta day-node-why">' + escapeHtml(move.reason) + '</span>' : '') +
+      '</button>';
+    } else if (state === 'done') {
+      body = '<span class="day-node-text">' + moveDishHtml(move, 'day-node-title') + meta + '</span>';
+    } else {
+      body = '<button type="button" class="day-node-text day-node-open" data-move-action="' + id + '">' +
+        '<span class="day-node-title">' + escapeHtml(move.title) + '</span>' + meta +
+      '</button>';
+    }
+    return '<div class="day-node is-' + state + '" data-move-id="' + id + '">' +
+      '<div class="day-node-rail">' +
+        '<span class="day-node-time">' + escapeHtml(moveStripTime(move)) + '</span>' +
+        moveTickHtml(move) +
+        '<span class="day-node-line" aria-hidden="true"></span>' +
+      '</div>' +
+      '<div class="day-node-body">' + body + '</div>' +
+    '</div>';
+  }
+
+  // A ticked node settles rather than snapping (animation 3 — the same
+  // transitions the grocery trip row plays, on a second surface; see
+  // shell.css's Motion section and groAnimateRowSettle for the trick).
+  // toggleTodayMove re-renders the whole strip, so by the time this runs
+  // the node is a brand-new element already at its final state; this
+  // forces the earlier frame — the state it was in before the tap —
+  // reflows, then lets the class change play the CSS transition.
+  function todayAnimateNodeSettle(panel, id, fromState) {
+    var node = panel.querySelector('.day-node[data-move-id="' + id + '"]');
+    if (!node) return;
+    var real = node.className;
+    node.className = real.replace(/\bis-(done|now|later)\b/, 'is-' + fromState);
+    void node.offsetHeight; // force the reflow openSheet's comment explains
+    node.className = real;
   }
 
   // The cookFocus payload that opens this move's recipe, or null when
@@ -1393,56 +1532,6 @@
     if (!moveRecipeTarget(move)) return '<span class="' + cls + '">' + name + '</span>';
     return '<button type="button" class="' + cls + ' dish-link" data-move-dish="' +
       escapeHtml(move.id) + '">' + name + '</button>';
-  }
-
-  function nextUpCardHtml(move) {
-    var chips = move.chips || [];
-    return '<div class="hero-top">' +
-        '<span class="hero-eyebrow">NEXT UP</span>' +
-        '<span class="hero-rule"></span>' +
-        (move.time_label ? '<span class="nextup-when">' + escapeHtml(move.time_label) + '</span>' : '') +
-      '</div>' +
-      moveDishHtml(move, 'hero-dish nextup-dish' + dishSizeClass(move.title)) +
-      // A plain line, only when the move carries a fact of its own — what a
-      // fridge move is for, which nights a batch covers, how to reheat.
-      // moves.py no longer passes the planner's reasoning here (copy
-      // cleanse, 2026-09-11): it read as noise, not as a person talking.
-      (move.reason ? '<div class="hero-accent">' + escapeHtml(move.reason) + '</div>' : '') +
-      // Chips and the tick share the last row. The action button that used
-      // to sit here is the dock's now (renderTodayDock) — one place for the
-      // one thing to press, on every screen.
-      '<div class="nextup-foot">' +
-        (chips.length
-          ? '<div class="hero-chips">' + chips.map(function (c) {
-              return '<span class="hero-chip">' + escapeHtml(c) + '</span>';
-            }).join('') + '</div>'
-          : '<span class="hero-chips-spacer"></span>') +
-        moveTickHtml(move) +
-      '</div>';
-  }
-
-  function moveRowHtml(move) {
-    var detail = move.detail
-      ? '<span class="rest-row-detail">' + escapeHtml(move.detail) + '</span>'
-      : '';
-    var text = '<span class="rest-row-title">' + escapeHtml(move.title) + '</span>' + detail;
-    // A done row has nothing left to DO, so the whole row stops being the
-    // move's own button — the tick is the only control on it, and it
-    // undoes. The dish still has a recipe, though, and a cooked dinner is
-    // exactly the name someone taps wanting to see what went into it
-    // (Emily, 2026-09-09), so the NAME goes on being a link even here.
-    var doneText = moveRecipeTarget(move)
-      ? '<span class="rest-row-text">' +
-          '<button type="button" class="rest-row-title dish-link" data-move-dish="' +
-            escapeHtml(move.id) + '">' + escapeHtml(move.title) + '</button>' + detail +
-        '</span>'
-      : '<span class="rest-row-text">' + text + '</span>';
-    return '<div class="rest-row' + (move.done ? ' is-done' : '') + '">' +
-      (move.done
-        ? doneText
-        : '<button type="button" class="rest-row-text rest-row-open" data-move-action="' + escapeHtml(move.id) + '">' + text + '</button>') +
-      moveTickHtml(move) +
-    '</div>';
   }
 
   function tomorrowCardHtml(move) {
@@ -1486,39 +1575,25 @@
       featured = moves.filter(function (m) { return m.id === data.featured; })[0] || null;
     }
 
-    var nextUp = panel.querySelector('#today-next-up');
-    if (nextUp) {
-      nextUp.hidden = !featured;
-      nextUp.innerHTML = featured ? nextUpCardHtml(featured) : '';
-    }
     panel._featured = featured;
     renderTodayDock(panel);
 
-    var rest = moves.filter(function (m) { return !featured || m.id !== featured.id; });
-    var pending = rest.filter(function (m) { return !m.done; });
-    var settled = rest.filter(function (m) { return m.done; });
-
+    // The strip: every move, done ones included, in the order they sit on
+    // the day (dayStripOrder) — the featured move is the one 'now' node,
+    // in its own place on the day rather than lifted out above the rest.
     var restEl = panel.querySelector('#today-rest');
     if (!restEl) return;
     var html = '';
-    if (pending.length || settled.length) {
-      html += '<div class="shell-card rest-card">' +
-        (pending.length
-          ? '<h2 class="rest-title">The rest of today</h2>' +
-            '<div class="rest-list">' + pending.map(moveRowHtml).join('') + '</div>'
-          : '') +
-        (settled.length
-          ? '<div class="rest-done">' +
-              '<div class="rest-done-head">Done today</div>' +
-              '<div class="rest-list">' + settled.map(moveRowHtml).join('') + '</div>' +
-            '</div>'
-          : '') +
-      '</div>';
+    if (moves.length) {
+      html += '<div class="day-strip">' + dayStripOrder(moves).map(function (m) {
+        return dayStripNodeHtml(m, m.done ? 'done' : (featured && m.id === featured.id ? 'now' : 'later'));
+      }).join('') + '</div>';
     }
+    var pending = moves.filter(function (m) { return !m.done; });
     // Nothing left to do today. Say so, and — when there is one — name
-    // tomorrow's first move rather than leaving a blank screen. A day with
-    // no moves AT ALL is the empty moment's (renderTodayEmpty), not a
-    // card's.
+    // tomorrow's first move rather than leaving a blank screen, after the
+    // strip. A day with no moves AT ALL is the empty moment's
+    // (renderTodayEmpty), not a card's.
     if (!featured && !pending.length && !panel._openDinnerCard && moves.length) {
       html += data.tomorrow
         ? tomorrowCardHtml(data.tomorrow)
@@ -1539,8 +1614,8 @@
         runTodayMoveAction(panel, btn.getAttribute('data-move-action'));
       });
     });
-    // The dish name itself, wherever Today prints one — the Next up card's
-    // headline, a done row, tomorrow's first move. Straight to the recipe,
+    // The dish name itself, wherever Today prints one — a done node,
+    // tomorrow's first move. Straight to the recipe,
     // never to the row's own action: tapping a name is "show me this", not
     // "do this to it".
     panel.querySelectorAll('[data-move-dish]').forEach(function (btn) {
@@ -1690,8 +1765,6 @@
   }
 
   function renderTodayMovesError(panel) {
-    var nextUp = panel.querySelector('#today-next-up');
-    if (nextUp) { nextUp.hidden = true; nextUp.innerHTML = ''; }
     panel._featured = null;
     panel._moves = null;
     renderTodayDock(panel);
@@ -1728,11 +1801,14 @@
     var move = ((data && data.moves) || []).filter(function (m) { return m.id === moveId; })[0];
     if (!move) return;
     var was = move.done;
-    // Optimistic: the row drops into (or climbs out of) "Done today" on the
-    // tap, before the server confirms — §6, "the common case never waits".
+    // The node's state before the tap — what the settle starts from.
+    var fromState = was ? 'done' : (panel._featured && panel._featured.id === moveId ? 'now' : 'later');
+    // Optimistic: the node settles into (or out of) done on the tap, before
+    // the server confirms — §6, "the common case never waits".
     move.done = done;
     data.done = (data.moves || []).filter(function (m) { return m.done; }).length;
     renderTodayMoves(panel, data);
+    todayAnimateNodeSettle(panel, moveId, fromState);
     try {
       var res = await fetch('/api/today/moves/' + encodeURIComponent(moveId) + '/done', {
         method: 'POST',

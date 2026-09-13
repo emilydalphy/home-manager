@@ -371,6 +371,57 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — Now is one strip down the day. Branch
+  `worktree-now-strip`, NOT merged at the time of writing.** Emily picked
+  it on 2026-09-12 from the "Beyond lists" canvas (artboard "Now · A · The
+  day as a strip"). Now's content — the sand next-up card plus "The rest
+  of today" / "Done today" — is ONE vertical strip now: every move is a
+  node on a `44px | 1fr` grid (`dayStripNodeHtml` / `.day-strip` in
+  `static/shell.js` / `shell.css`, "NOW — the day as a strip" section).
+  Left: the time as a 10px/800 eyebrow ("8:00", "NOON", "6:30"; "TODAY"
+  for a shop, "TONIGHT" for a fridge or prep move), a 28px dot, a 1.5px
+  `--hairline` down to the next node. The dot is the state AND the tick
+  (44px of tap around it, Rule 6): done = `--celadon` + a tick, now =
+  `--apricot` + the move's icon, later = `--surface` + `--hairline-strong`
+  + the icon, all glyphs in `--on-accent-ink` on a fill (Rule 1). Right:
+  title + one meta line (`move.detail`); the next-up move is the ONE
+  tinted node — a `--celadon-tint` tile with a NOW eyebrow (§2b S3, S6) —
+  and its action stays in the dock, unchanged. The whole body is the tap
+  target for "open this move" (52px+); a done node's dish name stays a
+  link, as before. Ticking settles with the grocery row's transitions
+  (`todayAnimateNodeSettle`, the same opposite-state-then-reflow trick as
+  `groAnimateRowSettle`; the strip's selectors ride animation 3's rules in
+  the Motion section — not a fourth animation). The tomorrow card and the
+  empty moment are untouched and sit after the strip. `/api/today/moves`
+  already carried everything; nothing added to `app/`. Old card/row CSS
+  retired (`.nextup-card`, `.rest-*`); `.nextup-when` stays because Plan's
+  Meal step hero still uses it, and the shared `.tick` stays for the
+  chores rows. Verified in the browser at 375×812 light and dark and at
+  1280 against a throwaway copy of the pre-reset backup with a seeded day
+  (a made-ahead breakfast, lunch, dinner, a fridge move, 60 needed
+  groceries). `tests/test_now_day_strip.py` (15). Judgment calls for
+  Emily: (1) **order** — moves.py sorts by `window_start`, which put every
+  all-day move first and would have read "TONIGHT" above breakfast; the
+  strip sorts by where a move sits on the day (`dayStripOrder`: a shop
+  at the top as "TODAY", a fridge/prep move at the foot as "TONIGHT" —
+  the old "Before bed" slot), server order kept between ties; (2) **the
+  tile's meta ink** — the mockup said `--ink-secondary`, which measures
+  3.98:1 on `--celadon-tint` (under AA at 14px); it is `--celadon-label`
+  (4.87:1 light / 5.92:1 dark, the token for text inside a celadon tile,
+  what the tomorrow card already uses); (3) **two apricot fills** — the
+  now dot and the dock's button are both apricot, as the picked mockup
+  draws them (Rule 5 says one per screen; the dot is 28px, but it is a
+  second one); (4) the NOW tile carries `move.reason` as a second small
+  line when there is one ("for Thursday's skewers") — the old card's
+  accent line, kept so a fridge move still says what it is for; (5) the
+  eyebrow tracks at .06em rather than the .13em eyebrow norm so "TONIGHT"
+  fits the 44px rail (it still overflows ~3px each side); (6) the
+  needs-you band (tonight's open dinner, "Tomorrow needs a dinner") stays
+  ABOVE the strip, since an undecided dinner is what's next and suppresses
+  the tinted node, as before. Not done: `move.detail` still repeats the
+  clock the rail shows ("dinner · 25 min · 6:30"); dropping it is a
+  moves.py change left for a follow-up.
+
 - **2026-09-13 — Skip, swap, or "not this week": a ··· on every chore row.
   Branch `overnight/chores-skip-hand-move`, NOT merged at the time of
   writing.** Loop Board "Chores v1: Skip, swap, or 'not this week'"
