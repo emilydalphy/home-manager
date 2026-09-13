@@ -761,6 +761,20 @@ class StapleDecisionRequest(BaseModel):
     decision: str  # plenty | skip
 
 
+class CarriedOverDecisionRequest(BaseModel):
+    decision: str  # keep | drop
+
+
+class SpiceTickRequest(BaseModel):
+    ticked: bool = True
+
+
+class SubstituteRequest(BaseModel):
+    alternative: str
+    at_home: bool = False
+    author: str = ""
+
+
 class StapleAddRequest(BaseModel):
     item: str
     quantity: str = ""
@@ -3715,6 +3729,113 @@ def undo_pre_shop_flag(item_id: int):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Pre-shop undo failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.get("/api/grocery-list/carried-over")
+def get_carried_over_items_view():
+    """
+    What is still on the list from an earlier week and waiting for a keep
+    or drop (see grocery.set_aside_carried_over_items) — the Shop tab's
+    "Still on the list from last week" step, shown before sorting starts.
+    Each row carries this week's own amount for the same thing, when the
+    week's recipes want it too, so the two are never shown as one number.
+    """
+    try:
+        items = tools.list_carried_over_items()
+    except Exception as e:
+        logger.exception("Carried-over list lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"items": items}
+
+
+@app.post("/api/grocery-list/{item_id}/carried-over")
+def decide_carried_over_item_view(item_id: int, req: CarriedOverDecisionRequest):
+    """One answer on the carry-over step: 'keep' (still want it) or 'drop' (don't need it). Both undo via /carried-over-undo."""
+    if req.decision not in ("keep", "drop"):
+        raise HTTPException(status_code=400, detail="decision must be 'keep' or 'drop'")
+    try:
+        if req.decision == "keep":
+            result = tools.keep_carried_over_item(item_id)
+        else:
+            result = tools.drop_carried_over_item(item_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Carried-over decision failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/{item_id}/carried-over-undo")
+def undo_carried_over_item_view(item_id: int):
+    """Undo a keep or drop on the carry-over step — the line goes back to waiting for an answer."""
+    try:
+        result = tools.undo_carried_over_decision(item_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Carried-over undo failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.get("/api/grocery-list/spices")
+def get_spices_this_week_view():
+    """
+    The "Spices this week" section (spices.py): every spice the week's
+    recipes call for, unticked by default and off the to-buy count until
+    ticked, plus any already ticked onto the list. `recently_bought` names
+    the ones left out because a line for them was bought lately.
+    """
+    try:
+        result = tools.list_spices_this_week()
+    except Exception as e:
+        logger.exception("Spices lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/{item_id}/spice")
+def tick_spice_view(item_id: int, req: SpiceTickRequest):
+    """Tick a spice onto the list (an ordinary needed line, in its store) or untick it back into the section."""
+    try:
+        result = tools.tick_spice(item_id, ticked=req.ticked)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Spice tick failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/{item_id}/substitute")
+def substitute_grocery_item_view(item_id: int, req: SubstituteRequest):
+    """
+    "I'll use something else instead" while sorting the list: the line
+    becomes the alternative (or comes off, with at_home), and the recipe's
+    ingredient line says so when cooking. Undo via /substitute-undo.
+    """
+    try:
+        result = tools.substitute_grocery_item(item_id, req.alternative, at_home=req.at_home, author=req.author)
+    except ValueError as e:
+        if "No grocery list item" in str(e):
+            raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Grocery substitution failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/{item_id}/substitute-undo")
+def undo_substitute_grocery_item_view(item_id: int):
+    """Undo a substitution — the line goes back to its original name, and back on the list if the swap took it off."""
+    try:
+        result = tools.undo_substitution(item_id)
+    except Exception as e:
+        logger.exception("Grocery substitution undo failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return result
 

@@ -167,19 +167,33 @@ from .grocery import (  # noqa: F401
     clear_grocery_list,
     clear_stale_grocery_items,
     consolidate_grocery_list,
+    drop_carried_over_item,
     exclude_grocery_item,
     get_grocery_list_by_section,
     include_grocery_item,
+    keep_carried_over_item,
+    list_carried_over_items,
     list_grocery_list,
     mark_grocery_item,
     move_grocery_item_to_inventory,
     remove_grocery_item,
     repair_grocery_quantities,
+    set_aside_carried_over_items,
+    substitute_grocery_item,
+    substitutions_for_plan,
+    undo_carried_over_decision,
+    undo_substitution,
     update_grocery_item,
 )
 # Holidays (Loop Board "Holidays: Pomona knows 12 October is coming...",
 # 2026-09-11): computed by rule for the household's country/province, read
 # off its calendar feed, asked about once, answered here. See holidays.py.
+# Spices (2026-09-13): one opt-in section on the list — see spices.py.
+from .spices import (  # noqa: F401
+    is_spice,
+    list_spices_this_week,
+    tick_spice,
+)
 from .holidays import (  # noqa: F401
     ANSWER_LABELS as HOLIDAY_ANSWER_LABELS,
     ANSWERS as HOLIDAY_ANSWERS,

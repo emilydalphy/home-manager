@@ -451,7 +451,10 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None) -> dict:
             "SELECT id, item, quantity, status, source_weekly_plan_id FROM grocery_items WHERE id = ? AND household_id = ?",
             (link["grocery_item_id"], household_id()),
         ).fetchone()
-        if grocery_row and grocery_row["status"] == "needed" and _quantities.package_unit(link["quantity"] or ""):
+        # A pending spice ('spice', see spices.py) is a needed line the
+        # shopper hasn't ticked; it recomputes and clears like one.
+        live = bool(grocery_row) and grocery_row["status"] in ("needed", "spice")
+        if live and _quantities.package_unit(link["quantity"] or ""):
             still_wanted = conn.execute(
                 "SELECT COUNT(*) AS n FROM meal_plan_grocery_links "
                 "WHERE household_id = ? AND grocery_item_id = ? AND meal_plan_entry_id != ?",
@@ -460,7 +463,7 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None) -> dict:
             if not still_wanted and grocery_row["source_weekly_plan_id"] is not None:
                 conn.execute("DELETE FROM grocery_items WHERE id = ?", (grocery_row["id"],))
                 removed_items.append(grocery_row["item"])
-        elif grocery_row and grocery_row["status"] == "needed":
+        elif live:
             is_standing_want = grocery_row["source_weekly_plan_id"] is None
             other_rows = conn.execute(
                 "SELECT quantity FROM meal_plan_grocery_links "
@@ -571,9 +574,13 @@ def add_grocery_item(
     # normalised key, not a column value. The 'needed' list is a shopping
     # list -- tens of rows -- so reading it to find one match is cheaper
     # than it looks and far clearer than encoding the rule in SQL.
+    # 'spice' as well as 'needed': a spice the week's recipes put in the
+    # "Spices this week" section, still unticked (see spices.py). A second
+    # recipe's cumin joins that line rather than starting another, and a
+    # person asking for cumin ticks it — below.
     candidates = conn.execute(
-        "SELECT id, item, quantity, source_weekly_plan_id FROM grocery_items "
-        "WHERE household_id = ? AND status = 'needed' ORDER BY id",
+        "SELECT id, item, quantity, source_weekly_plan_id, status FROM grocery_items "
+        "WHERE household_id = ? AND status IN ('needed', 'spice') ORDER BY id",
         (household_id(),),
     ).fetchall()
     wanted = _merge_key(item)
@@ -607,6 +614,11 @@ def add_grocery_item(
             (merged_qty, category, 1 if keep_standing else 0, source_weekly_plan_id,
              preferred_store, existing["id"]),
         )
+        # A person asking for a spice by name wants it bought: their add
+        # ticks the pending line onto the list. A plan's add leaves it in
+        # the section, unticked, whatever the quantity now reads.
+        if existing["status"] == "spice" and source_weekly_plan_id is None:
+            conn.execute("UPDATE grocery_items SET status = 'needed' WHERE id = ?", (existing["id"],))
         item_id = existing["id"]
         # The name already on the list, not the one just asked for: the
         # row keeps its own wording, so saying "item" back means the line
@@ -620,9 +632,16 @@ def add_grocery_item(
     # Who added it: the adult picked on this device, when the caller did
     # not say (the shell sends nothing; the offline queue replays the same
     # body). "ai" and an explicit name are kept — see _shared.acting_name.
+    # A plan's spice starts in the "Spices this week" section, unticked —
+    # the list assumes a spice rack (Emily, 2026-09-13; see spices.py). A
+    # person's own add is a thing to buy, spice or not. Imported here, not
+    # at the top: spices.py imports this module for the merge key.
+    from . import spices as _spices
+    status = "spice" if source_weekly_plan_id is not None and _spices.is_spice(item) else "needed"
     cur = conn.execute(
-        "INSERT INTO grocery_items (household_id, item, quantity, category, added_by, source_weekly_plan_id, store) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (household_id(), item, quantity, category, acting_name(added_by), source_weekly_plan_id, preferred_store),
+        "INSERT INTO grocery_items (household_id, item, quantity, category, added_by, source_weekly_plan_id, store, status) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (household_id(), item, quantity, category, acting_name(added_by), source_weekly_plan_id, preferred_store, status),
     )
     item_id = cur.lastrowid
     if own_conn:
@@ -664,7 +683,10 @@ def list_grocery_list(status: str = "needed") -> list[dict]:
     """
     List grocery items, optionally filtered by status: 'needed', 'in_cart',
     'purchased', 'all' (every status, including excluded items), or
-    'excluded' (only items hidden via exclude_grocery_item). For 'needed'/
+    'excluded' (only items hidden via exclude_grocery_item). Two more
+    statuses exist and are never "to buy": 'spice' (a recipe's spice
+    waiting unticked in the "Spices this week" section — see spices.py)
+    and 'carried' (last week's leftover waiting for keep-or-drop). For 'needed'/
     'in_cart'/'purchased', items excluded from the list (see
     exclude_grocery_item) are left out automatically — they're still
     tracked, just not shown on the normal shopping list.
@@ -905,22 +927,27 @@ def clear_stale_grocery_items(current_weekly_plan_id: int | None = None) -> dict
         current_id = _weekly_plan.get_weekly_plan().get("weekly_plan_id")
     live_ids = _live_plan_ids(current_id)
     conn = get_conn()
+    # 'carried' as well as 'needed': a line set aside by a newer week's
+    # approval (set_aside_carried_over_items) and never answered is the
+    # same stale leftover this function exists to clear, once the plan it
+    # came from has genuinely gone by. 'spice' too — an unticked spice
+    # from a week that is over was never wanted.
     if live_ids:
         keep = ",".join("?" * len(live_ids))
         rows = conn.execute(
-            f"SELECT id, item FROM grocery_items WHERE household_id = ? AND status = 'needed' "
+            f"SELECT id, item FROM grocery_items WHERE household_id = ? AND status IN ('needed', 'carried', 'spice') "
             f"AND source_weekly_plan_id IS NOT NULL AND source_weekly_plan_id NOT IN ({keep})",
             (household_id(), *live_ids),
         ).fetchall()
     elif current_id is None:
         rows = conn.execute(
-            "SELECT id, item FROM grocery_items WHERE household_id = ? AND status = 'needed' "
+            "SELECT id, item FROM grocery_items WHERE household_id = ? AND status IN ('needed', 'carried', 'spice') "
             "AND source_weekly_plan_id IS NOT NULL",
             (household_id(),),
         ).fetchall()
     else:
         rows = conn.execute(
-            "SELECT id, item FROM grocery_items WHERE household_id = ? AND status = 'needed' "
+            "SELECT id, item FROM grocery_items WHERE household_id = ? AND status IN ('needed', 'carried', 'spice') "
             "AND source_weekly_plan_id IS NOT NULL AND source_weekly_plan_id != ?",
             (household_id(), current_id),
         ).fetchall()
@@ -930,6 +957,402 @@ def clear_stale_grocery_items(current_weekly_plan_id: int | None = None) -> dict
         conn.commit()
     conn.close()
     return {"removed_count": len(removed), "removed_items": removed}
+
+
+# ---------- Last week's leftovers ----------
+# Loop Board, 2026-09-13 (Emily: "some of the quantities are so high but I
+# think it might be because it was adding on from last week's"). Approving
+# a new week used to pour its recipes straight onto whatever was still
+# unbought from the last one: add_grocery_item found the old "2 lbs chicken
+# thighs", summed the new week's 2 lbs into it and stamped the new plan's
+# id on the row — so the list said 4 lbs, nothing on screen said why, and
+# clear_stale_grocery_items could never take the old share back off,
+# because the row now belonged to the new week. It happened every time a
+# week was approved while the previous one still had a day left (any
+# Sunday), since _live_plan_ids keeps a plan alive through its last day.
+#
+# Now the old lines are SET ASIDE first (status 'carried'), so the new
+# week's ingest writes clean lines of its own, and the Shop tab asks about
+# the leftovers one screen before sorting: "Still on the list from last
+# week — keep or drop?" Keep adds the old amount onto this week's line
+# (or restores the line on its own); Don't need takes it off. Both undo.
+
+_CARRIED_KEPT = "carried_kept"
+_CARRIED_DROPPED = "carried_dropped"
+
+
+def set_aside_carried_over_items(weekly_plan_id: int, conn=None) -> list[dict]:
+    """
+    Move every still-'needed' line that came from an EARLIER plan's
+    recipes out of the way of `weekly_plan_id`'s ingest, so this week's
+    quantities land on their own lines rather than on top of last week's.
+    Called by approve_weekly_plan on the transition into 'approved', before
+    a single ingredient is added. Returns the lines set aside.
+
+    What counts as "from last week": a line whose source_weekly_plan_id is
+    another plan whose period has already STARTED. A plan that hasn't
+    begun yet is not a leftover — a household that approves two weeks in
+    advance is building next week's list, and asking them to keep-or-drop
+    it would be asking about groceries nobody has had the chance to buy.
+    Hand-added lines (source NULL) are a person's standing want and are
+    left exactly where they are; a staple's suggestion has its own
+    answers. Excluded lines ("somewhere else") and lines already in a
+    cart are the shopper's, not the plan's, and stay too.
+    """
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
+    today = date.today().isoformat()
+    started = set()
+    for plan in conn.execute(
+        "SELECT id, week_start_date, content_start_date, day_count, status FROM weekly_plans "
+        "WHERE household_id = ? AND id != ?",
+        (household_id(), weekly_plan_id),
+    ).fetchall():
+        start, _days = _weekly_plan.plan_period(plan)
+        if start <= today:
+            started.add(plan["id"])
+    rows = conn.execute(
+        "SELECT id, item, quantity, source_weekly_plan_id FROM grocery_items "
+        "WHERE household_id = ? AND status = 'needed' AND excluded_from_list = 0 "
+        "AND staple_id IS NULL AND source_weekly_plan_id IS NOT NULL AND source_weekly_plan_id != ? "
+        "ORDER BY id",
+        (household_id(), weekly_plan_id),
+    ).fetchall()
+    set_aside = [r for r in rows if r["source_weekly_plan_id"] in started]
+    if set_aside:
+        conn.executemany(
+            "UPDATE grocery_items SET status = 'carried', carried_from_plan_id = source_weekly_plan_id "
+            "WHERE id = ? AND household_id = ?",
+            [(r["id"], household_id()) for r in set_aside],
+        )
+    # An earlier week's spices still UNTICKED in the section were never
+    # wanted, so there is nothing to keep or drop: they go, and this
+    # week's recipes put their own in (spices.py).
+    stale_spices = conn.execute(
+        "SELECT id, source_weekly_plan_id FROM grocery_items WHERE household_id = ? AND status = 'spice' "
+        "AND source_weekly_plan_id IS NOT NULL AND source_weekly_plan_id != ?",
+        (household_id(), weekly_plan_id),
+    ).fetchall()
+    stale_spices = [r for r in stale_spices if r["source_weekly_plan_id"] in started]
+    if stale_spices:
+        conn.executemany(
+            "DELETE FROM grocery_items WHERE id = ? AND household_id = ?",
+            [(r["id"], household_id()) for r in stale_spices],
+        )
+    if own_conn:
+        conn.commit()
+        conn.close()
+    return [{"item_id": r["id"], "item": r["item"], "quantity": r["quantity"] or ""} for r in set_aside]
+
+
+def _this_weeks_line(conn, item: str):
+    """
+    The line a carried-over item would merge into, if this week's recipes
+    (or a hand add) put one there: a 'needed' line, or a spice still
+    unticked in the section (spices.py) — keeping last week's cumin is
+    saying you want to buy cumin, so the kept amount lands on that line
+    and ticks it.
+    """
+    wanted = _merge_key(item)
+    for r in conn.execute(
+        "SELECT id, item, quantity, status FROM grocery_items WHERE household_id = ? "
+        "AND status IN ('needed', 'spice') ORDER BY id",
+        (household_id(),),
+    ).fetchall():
+        if _merge_key(r["item"]) == wanted:
+            return r
+    return None
+
+
+def list_carried_over_items() -> list[dict]:
+    """
+    What is still on the list from an earlier week and waiting for an
+    answer — the rows set aside by set_aside_carried_over_items and not
+    yet kept or dropped. Each carries `this_week_quantity`: what this
+    week's recipes put on the list for the same thing, so the two amounts
+    can be shown side by side rather than as one inflated number.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, item, quantity, category, store, carried_from_plan_id FROM grocery_items "
+        "WHERE household_id = ? AND status = 'carried' ORDER BY category, item",
+        (household_id(),),
+    ).fetchall()
+    out = []
+    for r in rows:
+        this_week = _this_weeks_line(conn, r["item"])
+        out.append({
+            "item_id": r["id"], "item": r["item"], "quantity": r["quantity"] or "",
+            "category": r["category"], "store": r["store"] or "",
+            "carried_from_plan_id": r["carried_from_plan_id"],
+            "this_week_quantity": (this_week["quantity"] or "") if this_week else None,
+        })
+    conn.close()
+    return out
+
+
+def keep_carried_over_item(item_id: int) -> dict:
+    """
+    "Keep" on a carried-over line: the household still wants it. When this
+    week's recipes put the same thing on the list, the old amount is added
+    onto that line — the same consolidation add_grocery_item does, but
+    asked for out loud this time — and the carried row is soft-removed
+    (removed_by 'carried_kept') so an undo can take exactly that amount
+    back off. Otherwise the line itself comes back as needed, as the
+    household's own standing want (source NULL): it was asked for, so no
+    later week's cleanup may quietly delete it.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id, item, quantity, category, status FROM grocery_items WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
+    ).fetchone()
+    if row is None:
+        conn.close()
+        raise ValueError(f"No grocery list item with id {item_id}.")
+    if row["status"] != "carried":
+        conn.close()
+        return {"item_id": item_id, "item": row["item"], "unchanged": True}
+    target = _this_weeks_line(conn, row["item"])
+    if target is not None:
+        merged_qty, _reconciled = _try_consolidate_quantity(target["quantity"] or "", row["quantity"] or "")
+        conn.execute(
+            "UPDATE grocery_items SET quantity = ?, status = 'needed' WHERE id = ? AND household_id = ?",
+            (merged_qty, target["id"], household_id()),
+        )
+        conn.execute(
+            "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
+            "WHERE id = ? AND household_id = ?",
+            (_CARRIED_KEPT, item_id, household_id()),
+        )
+        conn.commit()
+        conn.close()
+        return {
+            "item_id": item_id, "item": target["item"], "kept": True,
+            "merged_into": target["id"], "quantity": merged_qty,
+        }
+    conn.execute(
+        "UPDATE grocery_items SET status = 'needed', source_weekly_plan_id = NULL "
+        "WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
+    )
+    conn.commit()
+    conn.close()
+    return {"item_id": item_id, "item": row["item"], "kept": True, "merged_into": None, "quantity": row["quantity"] or ""}
+
+
+def drop_carried_over_item(item_id: int) -> dict:
+    """"Don't need" on a carried-over line: soft-removed (removed_by 'carried_dropped'), so it can be undone."""
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id, item, status FROM grocery_items WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
+    ).fetchone()
+    if row is None:
+        conn.close()
+        raise ValueError(f"No grocery list item with id {item_id}.")
+    if row["status"] != "carried":
+        conn.close()
+        return {"item_id": item_id, "item": row["item"], "unchanged": True}
+    conn.execute(
+        "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
+        "WHERE id = ? AND household_id = ?",
+        (_CARRIED_DROPPED, item_id, household_id()),
+    )
+    conn.commit()
+    conn.close()
+    return {"item_id": item_id, "item": row["item"], "dropped": True}
+
+
+def undo_carried_over_decision(item_id: int) -> dict:
+    """
+    Put a carried-over line back to "waiting for an answer", whichever
+    answer it got. A kept line that was merged onto this week's line has
+    its amount subtracted back out of that line first (_subtract_quantity,
+    the same inverse a swapped meal uses); a kept line restored on its own
+    goes back to 'carried' with its old plan as its source again; a
+    dropped line simply comes back. A row that was never carried over is
+    left alone.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id, item, quantity, status, removed_by, carried_from_plan_id FROM grocery_items "
+        "WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
+    ).fetchone()
+    if row is None:
+        conn.close()
+        raise ValueError(f"No grocery list item with id {item_id}.")
+    if row["carried_from_plan_id"] is None or row["status"] == "carried":
+        conn.close()
+        return {"item_id": item_id, "item": row["item"], "unchanged": True}
+    if row["status"] == "removed" and row["removed_by"] == _CARRIED_KEPT:
+        # The kept amount has to come back OFF this week's line before the
+        # question can be asked again — otherwise a second Keep counts it
+        # twice. Two cases where it can't: the line has gone (bought, in a
+        # cart, removed), or the two amounts never reconciled ("1 bag +
+        # 2 lbs" — _subtract_quantity can't read that back apart). Then
+        # the honest answer is "too late", not a reopened question
+        # (verifier, 2026-09-13 — reproduced both).
+        target = _this_weeks_line(conn, row["item"])
+        if target is None or target["status"] != "needed":
+            conn.close()
+            return {"item_id": item_id, "item": row["item"], "unchanged": True, "reason": "acted_on"}
+        new_qty, fully_removed = _subtract_quantity(target["quantity"] or "", row["quantity"] or "")
+        if not fully_removed and new_qty == (target["quantity"] or ""):
+            conn.close()
+            return {"item_id": item_id, "item": row["item"], "unchanged": True, "reason": "acted_on"}
+        # Fully removed means the line held nothing but the kept amount
+        # (this week's line was blank), so blank is what it goes back to.
+        conn.execute(
+            "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
+            ("" if fully_removed else new_qty, target["id"], household_id()),
+        )
+    elif row["status"] not in ("removed", "needed"):
+        # Bought or in a cart since: the decision has been acted on.
+        conn.close()
+        return {"item_id": item_id, "item": row["item"], "unchanged": True}
+    conn.execute(
+        "UPDATE grocery_items SET status = 'carried', removed_by = '', removed_at = NULL, "
+        "source_weekly_plan_id = carried_from_plan_id WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
+    )
+    conn.commit()
+    conn.close()
+    return {"item_id": item_id, "item": row["item"], "status": "carried"}
+
+
+# ---------- "I'll use something else instead" ----------
+# Loop Board, 2026-09-13 (Emily: "if we want to use an alternative that
+# should be a spot we can put it here too, for example, instead of fresh
+# oregano I'll use dry oregano"). A per-week swap, made while sorting the
+# list: the line becomes the alternative — or comes off, when the
+# alternative is already in the house — and the recipe's ingredient line
+# says "using dry oregano instead" when cooking (cooker.get_cooker_view).
+# Never a recipe edit, never an inventory record. The "have it already"
+# half of the same ticket is pre_shop.drop_grocery_item_pre_shop: a
+# soft-remove with an undo, listed on the wrap-up, and nothing written to
+# inventory (policy 2026-09-01 — nobody does inventory work to finish the
+# loop).
+
+
+def substitute_grocery_item(item_id: int, alternative: str, at_home: bool = False, author: str = "") -> dict:
+    """
+    Swap a grocery line for something else this week. The line is renamed
+    to `alternative` (its quantity kept as written — nobody can convert
+    fresh oregano into dry, so the number stays for the person to adjust)
+    and picks up the alternative's usual store if the line had none. With
+    `at_home`, the alternative is already in the house, so the line is
+    soft-removed as well (the same removal "have it already" makes —
+    reversible, and listed on the wrap-up). Either way the swap is recorded
+    against the week, so the recipe can say so when it is cooked. Raises
+    ValueError for an unknown line or a blank alternative.
+    """
+    alternative = " ".join((alternative or "").strip().split())
+    if not alternative:
+        raise ValueError("Say what to use instead.")
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id, item, quantity, status, store, source_weekly_plan_id FROM grocery_items "
+        "WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
+    ).fetchone()
+    if row is None:
+        conn.close()
+        raise ValueError(f"No grocery list item with id {item_id}.")
+    if row["status"] not in ("needed", "spice"):
+        conn.close()
+        return {"item_id": item_id, "item": row["item"], "unchanged": True}
+    plan_id = row["source_weekly_plan_id"]
+    if plan_id is None:
+        current = _weekly_plan._current_weekly_plan_row(conn)
+        plan_id = current["id"] if current else None
+    conn.execute(
+        "INSERT INTO grocery_substitutions (household_id, grocery_item_id, weekly_plan_id, original_item, alternative, at_home) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (household_id(), item_id, plan_id, row["item"], alternative, 1 if at_home else 0),
+    )
+    prefs = conn.execute(
+        "SELECT item, store FROM item_store_preferences WHERE household_id = ?", (household_id(),),
+    ).fetchall()
+    pref = next((p for p in prefs if _merge_key(p["item"]) == _merge_key(alternative)), None)
+    store = row["store"] or (pref["store"] if pref else "")
+    if at_home:
+        conn.execute(
+            "UPDATE grocery_items SET item = ?, store = ?, status = 'removed', removed_by = ?, "
+            "removed_at = datetime('now') WHERE id = ? AND household_id = ?",
+            (alternative, store, acting_name(author) or "", item_id, household_id()),
+        )
+    else:
+        # A spice waiting unticked becomes a needed line: choosing what
+        # to buy instead is choosing to buy it.
+        conn.execute(
+            "UPDATE grocery_items SET item = ?, store = ?, status = 'needed' WHERE id = ? AND household_id = ?",
+            (alternative, store, item_id, household_id()),
+        )
+    conn.commit()
+    conn.close()
+    return {
+        "item_id": item_id, "item": alternative, "original_item": row["item"],
+        "at_home": bool(at_home), "status": "removed" if at_home else "needed",
+    }
+
+
+def undo_substitution(item_id: int) -> dict:
+    """Put a substituted line back under its original name (and back on the list, if the swap took it off)."""
+    conn = get_conn()
+    sub = conn.execute(
+        "SELECT id, original_item, at_home FROM grocery_substitutions WHERE household_id = ? AND grocery_item_id = ? "
+        "ORDER BY id DESC LIMIT 1",
+        (household_id(), item_id),
+    ).fetchone()
+    if sub is None:
+        conn.close()
+        return {"item_id": item_id, "unchanged": True}
+    row = conn.execute(
+        "SELECT status FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id()),
+    ).fetchone()
+    if row is not None:
+        if sub["at_home"] and row["status"] == "removed":
+            conn.execute(
+                "UPDATE grocery_items SET item = ?, status = 'needed', removed_by = '', removed_at = NULL "
+                "WHERE id = ? AND household_id = ?",
+                (sub["original_item"], item_id, household_id()),
+            )
+        else:
+            conn.execute(
+                "UPDATE grocery_items SET item = ? WHERE id = ? AND household_id = ?",
+                (sub["original_item"], item_id, household_id()),
+            )
+    conn.execute("DELETE FROM grocery_substitutions WHERE id = ?", (sub["id"],))
+    conn.commit()
+    conn.close()
+    return {"item_id": item_id, "item": sub["original_item"], "status": "needed"}
+
+
+def substitutions_for_plan(plan_id: int | None) -> list[dict]:
+    """
+    This week's swaps, for the cook view: [{original_item, alternative,
+    at_home}]. Only swaps made against THIS plan, and only while the
+    grocery line they were made on still exists — a line the ledger
+    deleted (both meals that wanted it swapped out, the week cleared) takes
+    its swap with it, so a fresh need for the same thing later in the week
+    is not told it was substituted (verifier, 2026-09-13 — reproduced). A
+    swap made with no plan at all annotates nothing: there is no card for
+    it, and matching every later week would make it permanent.
+    """
+    if plan_id is None:
+        return []
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT s.original_item, s.alternative, s.at_home FROM grocery_substitutions s "
+        "WHERE s.household_id = ? AND s.weekly_plan_id = ? "
+        "AND EXISTS (SELECT 1 FROM grocery_items g WHERE g.id = s.grocery_item_id) ORDER BY s.id",
+        (household_id(), plan_id),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 
 def clear_grocery_list(status: str = "needed") -> dict:

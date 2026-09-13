@@ -83,8 +83,13 @@ def _derived_from(entry_id: int) -> dict:
     return json.loads(row["derived_from_json"] or "{}")
 
 
+# Spices (2026-09-13, spices.py): a recipe's olive oil / salt now waits
+# UNTICKED in the "Spices this week" section (status 'spice') rather than
+# sitting on the to-buy list, so "the shop" here reads both — the amounts
+# these tests pin are unchanged, only where the line waits moved.
 def _grocery_by_item():
-    return {g["item"]: g["quantity"] for g in tools.list_grocery_list()}
+    rows = tools.list_grocery_list() + tools.list_grocery_list(status="spice")
+    return {g["item"]: g["quantity"] for g in rows}
 
 
 def _ledger_items_for(entry_id):

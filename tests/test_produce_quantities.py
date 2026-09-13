@@ -42,8 +42,13 @@ def _days() -> list[str]:
     return tools._week_dates(_week_start())
 
 
+# Spices (2026-09-13, spices.py): a recipe's olive oil / salt now waits
+# UNTICKED in the "Spices this week" section (status 'spice') rather than
+# sitting on the to-buy list, so "the shop" here reads both — the amounts
+# these tests pin are unchanged, only where the line waits moved.
 def _qty(item: str) -> str | None:
-    return next((i["quantity"] for i in tools.list_grocery_list() if i["item"] == item), None)
+    rows = tools.list_grocery_list() + tools.list_grocery_list(status="spice")
+    return next((i["quantity"] for i in rows if i["item"] == item), None)
 
 
 def _link_qtys(item: str) -> list[str]:

@@ -4592,6 +4592,13 @@ def approve_weekly_plan(
     ).fetchone()["approved_at"]
     conn.close()
 
+    # Before a single ingredient lands: whatever is still unbought from an
+    # EARLIER week is set aside, so this week's amounts go on clean lines
+    # and the Shop tab can ask "still on the list from last week — keep or
+    # drop?" instead of the two weeks silently summing into one number.
+    # See grocery.set_aside_carried_over_items for what counts.
+    carried_over = _grocery.set_aside_carried_over_items(weekly_plan_id)
+
     # Grouped by RECIPE, not left one row per meal. A week's shop is a
     # recipe-week question: the same breakfast six mornings needs one bag
     # of spinach, not six, and only something that looks at all six meals
@@ -4689,6 +4696,11 @@ def approve_weekly_plan(
         "approved_at": approved_at,
         "conflicts": conflicts,
         "conflicts_note": conflicts_note,
+        # Unbought lines from an earlier week, set aside for the household
+        # to keep or drop on the Shop tab. Named here so the approval can
+        # say so; nothing was merged.
+        "carried_over": carried_over,
+        "carried_over_count": len(carried_over),
     }
 
 

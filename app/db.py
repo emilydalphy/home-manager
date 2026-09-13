@@ -306,6 +306,9 @@ _MIGRATIONS = [
     ("inventory_items", "rev", "INTEGER NOT NULL DEFAULT 0"),
     # Staples (2026-09-11): the line Pomona added because a staple is due.
     ("grocery_items", "staple_id", "INTEGER"),
+    # Carry-over (2026-09-13): the plan an unbought line came from when a
+    # newer week set it aside — see schema.sql on carried_from_plan_id.
+    ("grocery_items", "carried_from_plan_id", "INTEGER"),
     # Loop Board "First-class 'defrost' prep step" — see schema.sql's
     # comment on prep_tasks for what each of these four columns is for.
     ("prep_tasks", "task_type", "TEXT NOT NULL DEFAULT 'general'"),
