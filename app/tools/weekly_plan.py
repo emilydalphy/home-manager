@@ -3523,7 +3523,8 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
                COALESCE(r.name, mpe.freeform_meal) AS meal,
                mpe.slot_state, mpe.open_reason, mpe.reasoning, mpe.derived_from_json,
                mpe.food_groups_json, mpe.sides_json, mpe.cooked_status,
-               r.prep_time_minutes, r.cook_time_minutes
+               r.prep_time_minutes, r.cook_time_minutes,
+               r.tags_json, r.instructions_json
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ?
@@ -3568,7 +3569,12 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         """
         The one short line about this plate: "with a green salad" when the
         app added something, "one-pot, nothing extra" when the dish covers
-        the household's plate rule on its own.
+        the household's plate rule on its own AND was actually cooked that
+        way — a plate that's complete but used a grill, or names a second
+        vessel for one of its components, gets neither line rather than the
+        wrong one (Emily, 2026-09-13: a grilled burger-and-charred-vegetable
+        plate that was food-group-complete still isn't "nothing extra to
+        wash"). See plates.contradicts_one_pot.
 
         An added side is disclosed on EVERY slot — the household's shopping
         list has it, so their card must say so. The reassurance half is
@@ -3583,9 +3589,13 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         if row["slot"] != "dinner":
             return ""
         entry = {"slot": row["slot"], "food_groups": json.loads(row["food_groups_json"] or "[]")}
-        if _plates.has_food_groups(entry) and _plates.is_complete(entry, plate_rule):
-            return "one-pot, nothing extra"
-        return ""
+        if not (_plates.has_food_groups(entry) and _plates.is_complete(entry, plate_rule)):
+            return ""
+        tags = json.loads(row["tags_json"] or "[]")
+        instructions = json.loads(row["instructions_json"] or "[]")
+        if _plates.contradicts_one_pot(row["meal"], tags, instructions):
+            return ""
+        return "one-pot, nothing extra"
 
     def build_slot(row) -> dict | None:
         # The three states a slot can be in. Only a slot that is genuinely
