@@ -1262,6 +1262,10 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   text-align: center;
 }
 .toast.pop-in { animation: popIn .2s ease; }
+/* While the chat sheet is open the toast's usual spot is its composer;
+   this lifts it above the composer and the About chip (their two rows
+   plus the sheet's padding), where it reads over the messages instead. */
+.toast.is-over-sheet { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
 @keyframes popOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(.96); } }
 
 /* =====================================================================
@@ -1899,6 +1903,175 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 }
 .ask-action-card .ask-action-change { font-family: var(--font-body); font-size: 16px; color: var(--ink); }
 .ask-action-card .ask-action-view { flex-shrink: 0; font-family: var(--font-body); font-weight: 700; font-size: 15px; color: var(--ink-strong); }
+
+/* ---------- The change card and the Remembered chip ----------
+   Under an assistant reply (shell.js mountChangeCard / buildAskMessageEl;
+   Emily, 2026-09-13, "Shaping the Draft" Flows C and D). The card is the
+   reply's own surface — --surface-raised on the sheet's --surface, the
+   assistant bubble's radius — never a second hero. Save changes is spruce:
+   the screen's one apricot stays with the dock behind the sheet (Rule 5).
+   Another and Not quite are links in --apricot-label, the token for a
+   link. Kept and Changed share the celadon "already true" tile. */
+.ask-change-card {
+  align-self: stretch;
+  background: var(--surface-raised);
+  border: 1.5px solid var(--hairline);
+  border-radius: 16px 16px 16px 4px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ask-change-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.ask-change-day {
+  flex: 0 0 34px;
+  padding-top: 3px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.ask-change-what { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ask-change-line { display: inline; }
+.ask-change-was { color: var(--ink-secondary); text-decoration: line-through; text-decoration-thickness: 1px; }
+.ask-change-now { font-weight: 700; color: var(--ink-strong); }
+.ask-change-row.is-kept .ask-change-now { font-weight: 600; color: var(--ink-secondary); }
+.ask-change-row.is-quiet .ask-change-what { color: var(--ink-secondary); }
+.ask-change-working { color: var(--ink-secondary); }
+.ask-change-reason { font-size: 13px; font-weight: 500; color: var(--ink-secondary); }
+.ask-change-kept,
+.wk-changed {
+  flex: 0 0 auto;
+  height: 18px;
+  padding: 0 7px;
+  margin-top: 2px;
+  border-radius: var(--radius-badge-sm);
+  background: var(--celadon-tint);
+  border: 1px solid var(--celadon-edge);
+  color: var(--celadon-label);
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+}
+/* Rule 6: a 44px target for a small word, without a 44px row. */
+.ask-change-another {
+  flex: 0 0 auto;
+  min-height: 44px;
+  margin: -12px 0 -12px;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--apricot-label);
+}
+.ask-change-another:hover { color: var(--apricot-label-hover); }
+.ask-change-another:disabled { color: var(--ink-inactive); cursor: default; }
+.ask-change-options { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; }
+.ask-change-opt {
+  text-align: left;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 22px;
+  border: 1.5px solid var(--hairline-strong);
+  background: var(--ground);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-strong);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ask-change-opt .ask-change-opt-m { font-size: 12px; font-weight: 600; color: var(--ink-secondary); }
+.ask-change-opt.is-on { border-color: var(--spruce); background: var(--celadon-tint); }
+.ask-change-foot { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 2px; }
+.ask-change-save {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: var(--spruce);
+  color: var(--ivory-ink);
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  white-space: nowrap;
+}
+.ask-change-save:hover { background: var(--spruce-hover); }
+.ask-change-save:disabled { opacity: .6; cursor: default; }
+.ask-change-leave {
+  min-height: 44px;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--apricot-label);
+  white-space: nowrap;
+}
+.ask-change-leave:hover { color: var(--apricot-label-hover); }
+.ask-change-done { font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--ink-secondary); }
+.ask-remembered {
+  align-self: flex-start;
+  max-width: 88%;
+  min-height: 32px;
+  padding: 0 4px 0 11px;
+  border-radius: var(--radius-chip);
+  background: var(--celadon-tint);
+  border: 1px solid var(--celadon-edge);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-strong);
+}
+.ask-remembered-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--celadon-label);
+}
+.ask-remembered-text { min-width: 0; }
+.ask-remembered-fix {
+  min-height: 44px;
+  margin: -6px 0;
+  padding: 0 8px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--apricot-label);
+}
+.ask-remembered-fix:hover { color: var(--apricot-label-hover); }
+/* The word on a week row for the eight seconds after a card is saved
+   (weekRowLineHtml); the tile itself is shared with Kept above. */
+.wk-line .wk-changed { margin-top: 0; margin-left: 4px; }
 
 .ask-chips { display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
 .ask-chip {

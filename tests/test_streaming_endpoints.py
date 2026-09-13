@@ -284,7 +284,7 @@ def test_chat_stream_generator_delivers_a_reply_that_carries_an_action_card(monk
     # still have to survive serialization, which is what this test is for.
     assert done_payload["actions"] == [
         {"kicker": "Grocery list", "change": "Added milk", "tab": "grocery", "href": None,
-         "date": None, "slot": None},
+         "date": None, "slot": None, "remembered": False},
     ]
 
 

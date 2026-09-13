@@ -417,6 +417,12 @@ class ChatContext(BaseModel):
     entry_id: int | None = None
     date: str | None = None
     slot: str | None = None
+    # kind 'weekly_plan' (Emily, 2026-09-13, "Shaping the Draft" Flow C):
+    # the chat opened from the Plan tab with a week showing. The server
+    # resolves the week itself (tools.describe_plan_for_chat) — the pointer
+    # is trusted, nothing else.
+    week_start: str | None = None
+    weekly_plan_id: int | None = None
 
 
 class ChatRequest(BaseModel):
@@ -460,11 +466,19 @@ class ChatAction(BaseModel):
     # still shows the week, just without selecting a day.
     date: str | None = None
     slot: str | None = None
+    # True for a write that REMEMBERED something about the household (a
+    # dislike, an allergy, a fact, a store) rather than changed a screen —
+    # the shell draws those as the Remembered chip with "Not quite"
+    # (2026-09-13), and everything else as the "View" card.
+    remembered: bool = False
 
 
 class ChatResponse(BaseModel):
     reply: str
     actions: list[ChatAction] = []
+    # The change card, when the turn proposed one (tools.proposals): rows
+    # of what was → what would be, saved from the card, never by the turn.
+    proposal: dict | None = None
 
 
 class MemberInput(BaseModel):
@@ -2612,6 +2626,72 @@ def week_swap_in_place(week_start: str, req: SwapInPlaceRequest):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+class ProposalRowRequest(BaseModel):
+    row: int
+    candidate: int | None = None
+
+
+@app.post("/api/chat/proposals/{proposal_id}/choose")
+def chat_proposal_choose(proposal_id: str, req: ProposalRowRequest):
+    """A tap on one of a row's options. Nothing written."""
+    if req.candidate is None:
+        raise HTTPException(status_code=400, detail="candidate is required.")
+    out = tools.choose_candidate(proposal_id, req.row, req.candidate)
+    if out.get("status") == "gone":
+        raise HTTPException(status_code=404, detail=out["message"])
+    return out
+
+
+@app.post("/api/chat/proposals/{proposal_id}/another")
+def chat_proposal_another(proposal_id: str, req: ProposalRowRequest):
+    """
+    A different dish for one row of the card — the swap's own small model
+    call, with everything the row has already been offered avoided. Not
+    written; it becomes the row's chosen option on the card.
+    """
+    try:
+        out = tools.another_for_row(proposal_id, req.row)
+    except AssistantUnavailableError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.exception("Proposal another failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    if out.get("status") == "gone":
+        raise HTTPException(status_code=404, detail=out["message"])
+    return out
+
+
+@app.post("/api/chat/proposals/{proposal_id}/apply")
+def chat_proposal_apply(proposal_id: str):
+    """
+    Save changes. Every chosen dish goes through the same gates and the
+    same apply as Swap · I'll pick; rows the gates refuse are reported in
+    `refused`, the rest land. A 200 with status 'nothing' means no row had
+    anything to write.
+    """
+    try:
+        out = tools.apply_proposal(proposal_id)
+    except Exception as e:
+        logger.exception("Proposal apply failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    if out.get("status") == "gone":
+        raise HTTPException(status_code=404, detail=out["message"])
+    return out
+
+
+@app.post("/api/chat/proposals/{proposal_id}/undo")
+def chat_proposal_undo(proposal_id: str):
+    """Put back every row Save changes wrote."""
+    try:
+        out = tools.undo_proposal(proposal_id)
+    except Exception as e:
+        logger.exception("Proposal undo failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    if out.get("status") == "gone":
+        raise HTTPException(status_code=404, detail=out["message"])
+    return out
+
+
 @app.post("/api/week/{week_start}/swap-undo")
 def week_swap_undo(week_start: str, req: SwapUndoRequest):
     """Put back the dish that was on this slot before it was swapped."""
@@ -4434,6 +4514,13 @@ _MEMORY_HREF_TOOLS = {
     "get_or_create_member_share_link", "revoke_member_share_link", "regenerate_member_share_link",
     "set_morning_text",
 }
+# The writes that are a fact ABOUT the household rather than a change to a
+# screen: what the chat shows as "Remembered · …" with a way to correct it.
+_REMEMBER_TOOLS = {
+    "add_fact", "add_food_dislikes", "set_member_dietary_restrictions",
+    "set_household_meal_preferences", "edit_preference", "add_usual_stores",
+    "add_store_typical_items", "remove_store_typical_item", "set_household_goals",
+}
 _CATEGORY_KICKERS = {
     "today": "Chores updated",
     "week": "Week updated",
@@ -4621,6 +4708,12 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
             name, args = tool_names_by_id.get(block.get("tool_use_id"), (None, None))
             if not name or name.startswith(_READ_ONLY_PREFIXES):
                 continue
+            # A proposal writes nothing: the household saves it from the
+            # card, and THAT is when the week changes (and the shell says
+            # "Changes saved"). No card here, or the reply would claim a
+            # change the plan hasn't seen.
+            if name == "propose_plan_changes":
+                continue
             try:
                 result = json.loads(block.get("content") or "{}")
             except Exception:
@@ -4675,7 +4768,7 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
             day_date, day_slot = _changed_day(category, args)
             by_category[category] = ChatAction(
                 kicker=_CATEGORY_KICKERS[category], change=change, tab=tab, href=href,
-                date=day_date, slot=day_slot,
+                date=day_date, slot=day_slot, remembered=name in _REMEMBER_TOOLS,
             )
 
     return list(by_category.values())
@@ -4719,7 +4812,41 @@ def _finish_chat_turn(session_id: str, history: list, reply: str, updated_histor
     # whole point of this line is that it cannot break the turn it
     # records.
     tools.record_chat_turn(agent.LAST_TURN_USAGE.get({}))
-    return {"reply": reply, "actions": actions}
+    return {"reply": reply, "actions": actions, "proposal": _proposal_from_turn(history, updated_history)}
+
+
+def _proposal_from_turn(before_history: list, after_history: list) -> dict | None:
+    """
+    The last change card this turn made (tools.propose_plan_changes's own
+    result, which is already the card's public shape), or None. The LAST
+    one: a turn that proposes twice has replaced its first card.
+    """
+    new_entries = after_history[len(before_history):]
+    ids: set[str] = set()
+    for entry in new_entries:
+        if entry.get("role") != "assistant":
+            continue
+        for block in entry.get("content", []):
+            block_type = getattr(block, "type", None) or (block.get("type") if isinstance(block, dict) else None)
+            name = getattr(block, "name", None) or (block.get("name") if isinstance(block, dict) else None)
+            if block_type == "tool_use" and name == "propose_plan_changes":
+                ids.add(getattr(block, "id", None) or (block.get("id") if isinstance(block, dict) else None))
+    found = None
+    for entry in new_entries:
+        if entry.get("role") != "user" or not isinstance(entry.get("content"), list):
+            continue
+        for block in entry["content"]:
+            if not isinstance(block, dict) or block.get("type") != "tool_result" or block.get("is_error"):
+                continue
+            if block.get("tool_use_id") not in ids:
+                continue
+            try:
+                result = json.loads(block.get("content") or "{}")
+            except Exception:
+                continue
+            if isinstance(result, dict) and result.get("proposal_id"):
+                found = result
+    return found
 
 
 @app.post("/api/chat", response_model=ChatResponse)

@@ -1453,6 +1453,10 @@
       toastEl.appendChild(actionBtn);
     }
     toastEl.hidden = false;
+    // Over the chat sheet the usual spot is the composer; sit above it
+    // instead, so "Changes saved" never covers what they were typing.
+    var sheetOpen = typeof askSheet !== 'undefined' && askSheet && !askSheet.hidden;
+    toastEl.classList.toggle('is-over-sheet', !!sheetOpen);
     toastEl.classList.remove('pop-in');
     void toastEl.offsetWidth; // restart the animation if a toast is already showing
     toastEl.classList.add('pop-in');
@@ -10617,9 +10621,11 @@
     } else {
       text = day.isPast ? 'Not planned' : 'Nothing yet';
     }
+    var changed = typeof wasRecentlyChanged === 'function' && wasRecentlyChanged(day.date, slot)
+      ? '<span class="wk-changed">Changed</span>' : '';
     return '<span class="wk-line' + quiet + '">' +
       '<span class="wk-dot ' + dot + '"></span>' +
-      '<span class="wk-line-name">' + escapeHtml(text) + '</span>' +
+      '<span class="wk-line-name">' + escapeHtml(text) + '</span>' + changed +
     '</span>';
   }
 
@@ -18815,7 +18821,11 @@
 
   var askBar = document.getElementById('chat-fab');
   if (askBar) {
-    askBar.addEventListener('click', function () { openAskSheet(); });
+    // Opened from Plan with a week on screen, the chat is about that week
+    // (Emily, 2026-09-13, "Shaping the Draft" Flow C): the About chip says
+    // so, the server gets the week as the turn's subject, and a change
+    // comes back as a card to save rather than a paragraph.
+    askBar.addEventListener('click', function () { openAskSheet('', weekAskContext()); });
     placeFabLabel(askBar);
   }
 
@@ -18897,6 +18907,21 @@
     };
   }
 
+  // The week on the Plan tab, when that is where the chat was opened from
+  // and a plan is showing. Null anywhere else, so the sheet opens plain.
+  function weekAskContext() {
+    if (typeof currentTabKey !== 'function' || currentTabKey() !== 'week') return null;
+    var data = typeof weekState !== 'undefined' && weekState && weekState.data;
+    if (!data || !data.week_start_date || !data.weekly_plan_id) return null;
+    var draft = typeof weekPlanState === 'function' && weekPlanState(data) === 'draft';
+    return {
+      kind: 'weekly_plan',
+      week_start: data.week_start_date,
+      weekly_plan_id: data.weekly_plan_id,
+      label: draft ? 'This week’s draft' : 'This week'
+    };
+  }
+
   function setAskContext(context) {
     askContext = context || null;
     renderAskContext();
@@ -18921,6 +18946,9 @@
   // What goes over the wire: the pointer, never the label.
   function askContextPayload() {
     if (!askContext) return undefined;
+    if (askContext.kind === 'weekly_plan') {
+      return { kind: 'weekly_plan', week_start: askContext.week_start, weekly_plan_id: askContext.weekly_plan_id };
+    }
     return { kind: askContext.kind, entry_id: askContext.entry_id, date: askContext.date, slot: askContext.slot };
   }
 
@@ -19449,6 +19477,24 @@
     });
     wrap.appendChild(bubble);
     (actions || []).forEach(function (action) {
+      // A fact the turn remembered ("the kids won't eat shrimp") is shown
+      // as what it is — Remembered · Kids: no shrimp — with "Not quite"
+      // opening What we know to correct it there (learning etiquette §7:
+      // observe → infer → confirm → remember → correct, in one breath).
+      if (action.remembered) {
+        var chip = document.createElement('div');
+        chip.className = 'ask-remembered';
+        chip.innerHTML =
+          '<span class="ask-remembered-label">Remembered</span>' +
+          '<span class="ask-remembered-text">' + escapeHtml(action.change) + '</span>' +
+          '<button type="button" class="ask-remembered-fix">Not quite</button>';
+        chip.querySelector('.ask-remembered-fix').addEventListener('click', function () {
+          closeAskSheet();
+          followActionHref(action.href);
+        });
+        wrap.appendChild(chip);
+        return;
+      }
       var card = document.createElement('button');
       card.type = 'button';
       card.className = 'ask-action-card';
@@ -19466,6 +19512,237 @@
       wrap.appendChild(card);
     });
     return wrap;
+  }
+
+  // ---------- The change card ----------
+  // What the chat proposes for the week, drawn under its reply and saved
+  // from here (Emily, 2026-09-13, "Shaping the Draft" Flows C and D; the
+  // server side is app/tools/proposals.py). One row per slot: what was →
+  // what would be; two to four options become chips to tap; a night they
+  // said to leave shows as Kept. Nothing is written until Save changes —
+  // then the rows behind the sheet update and say Changed, and the pop-up
+  // says "Changes saved · Undo" (S10). Another re-picks one row without
+  // touching the others; "Leave the week as it was" closes the card.
+  function changeRowHtml(row, i, busyRow, settled, refusedWhy) {
+    var day = row.weekday ? row.weekday.slice(0, 3).toUpperCase() : '';
+    var was = row.current ? escapeHtml(row.current.meal) : '';
+    if (refusedWhy) {
+      // Left as it was, and why — on the row, where it stays readable,
+      // rather than in a pop-up the next pop-up replaces.
+      return '<div class="ask-change-row is-quiet">' +
+        '<span class="ask-change-day">' + escapeHtml(day) + '</span>' +
+        '<span class="ask-change-what">' + was + ' stays — ' + escapeHtml(refusedWhy) + '</span>' +
+      '</div>';
+    }
+    if (row.action === 'keep') {
+      return '<div class="ask-change-row is-kept">' +
+        '<span class="ask-change-day">' + escapeHtml(day) + '</span>' +
+        '<span class="ask-change-what"><span class="ask-change-now">' + was + '</span></span>' +
+        '<span class="ask-change-kept">Kept</span>' +
+      '</div>';
+    }
+    if (row.problem || !row.candidates || !row.candidates.length) {
+      return '<div class="ask-change-row is-quiet">' +
+        '<span class="ask-change-day">' + escapeHtml(day) + '</span>' +
+        '<span class="ask-change-what">' + escapeHtml(row.problem || 'Nothing to offer here') + '</span>' +
+      '</div>';
+    }
+    var chosen = row.candidates[row.chosen] || row.candidates[0];
+    var now = busyRow === i
+      ? '<span class="ask-change-working">Finding another…</span>'
+      : '<span class="ask-change-now">' + escapeHtml(chosen.meal_name) + '</span>' +
+        (chosen.minutes ? ' · ' + escapeHtml(String(chosen.minutes)) + ' min' : '');
+    var options = '';
+    if (row.candidates.length > 1 && !settled) {
+      options = '<div class="ask-change-options">' + row.candidates.map(function (c, k) {
+        return '<button type="button" class="ask-change-opt' + (k === row.chosen ? ' is-on' : '') + '" ' +
+          'data-change-choose="' + i + ':' + k + '" aria-pressed="' + (k === row.chosen ? 'true' : 'false') + '">' +
+          escapeHtml(c.meal_name) + (c.minutes ? ' <span class="ask-change-opt-m">' + escapeHtml(String(c.minutes)) + ' min</span>' : '') +
+        '</button>';
+      }).join('') + '</div>';
+    }
+    var reason = chosen.reason && busyRow !== i
+      ? '<span class="ask-change-reason">' + escapeHtml(chosen.reason) + '</span>' : '';
+    return '<div class="ask-change-row">' +
+      '<span class="ask-change-day">' + escapeHtml(day) + '</span>' +
+      '<span class="ask-change-what">' +
+        '<span class="ask-change-line">' + (was ? '<span class="ask-change-was">' + was + '</span> → ' : '') + now + '</span>' +
+        reason +
+        options +
+      '</span>' +
+      (settled ? '' :
+        '<button type="button" class="ask-change-another" data-change-another="' + i + '"' +
+          (busyRow === i ? ' disabled' : '') + '>Another</button>') +
+    '</div>';
+  }
+
+  function changeCardHtml(proposal, state) {
+    // Once saved or left, the card is a record: no options, no Another.
+    var settled = state.saved || state.left;
+    var refusedBy = {};
+    (state.refused || []).forEach(function (r) { refusedBy[r.date + ':' + r.slot] = r.why; });
+    var rows = proposal.rows.map(function (r, i) {
+      return changeRowHtml(r, i, state.busyRow, settled, refusedBy[r.date + ':' + r.slot]);
+    }).join('');
+    var foot;
+    if (state.saved) {
+      foot = '<div class="ask-change-foot"><span class="ask-change-done">Saved.</span></div>';
+    } else if (state.left) {
+      foot = '<div class="ask-change-foot"><span class="ask-change-done">' + (state.putBack ? 'Put back.' : 'Left as it was.') + '</span></div>';
+    } else {
+      var canSave = proposal.rows.some(function (r) { return r.action === 'change' && r.candidates && r.candidates.length && !r.problem; });
+      // Not while Another is still finding: a save that races the re-pick
+      // would write one dish and show another.
+      var held = state.saving || state.busyRow !== null;
+      foot = '<div class="ask-change-foot">' +
+        (canSave ? '<button type="button" class="ask-change-save" data-change-save' + (held ? ' disabled' : '') + '>' +
+          (state.saving ? 'Saving…' : 'Save changes') + '</button>' : '') +
+        '<button type="button" class="ask-change-leave" data-change-leave>Leave the week as it was</button>' +
+      '</div>';
+    }
+    return rows + foot;
+  }
+
+  // The card is drawn into every surface the reply landed on (the sheet,
+  // and its desktop twin when there is one); one state object drives all.
+  function mountChangeCard(replyEls, proposal) {
+    var state = { proposal: proposal, busyRow: null, saving: false, saved: false, left: false, cards: [] };
+    (replyEls || []).forEach(function (wrap) {
+      var card = document.createElement('div');
+      card.className = 'ask-change-card';
+      wrap.appendChild(card);
+      state.cards.push(card);
+    });
+    function draw() {
+      state.cards.forEach(function (card) {
+        card.innerHTML = changeCardHtml(state.proposal, state);
+        wireChangeCard(card, state, draw);
+        var target = card.parentElement && card.parentElement.parentElement;
+        if (target) target.scrollTop = target.scrollHeight;
+      });
+    }
+    draw();
+  }
+
+  function wireChangeCard(card, state, draw) {
+    var pid = state.proposal.proposal_id;
+    card.querySelectorAll('[data-change-choose]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var parts = btn.getAttribute('data-change-choose').split(':');
+        var row = parseInt(parts[0], 10), cand = parseInt(parts[1], 10);
+        // On the tap, before the server (§6); the server's answer is the
+        // same shape and simply replaces it.
+        state.proposal.rows[row].chosen = cand;
+        draw();
+        postJson('/api/chat/proposals/' + encodeURIComponent(pid) + '/choose', { row: row, candidate: cand })
+          .then(function (out) { if (out && out.proposal) { state.proposal = out.proposal; draw(); } })
+          .catch(function () { /* the tap already shows; the save sends the choice again */ });
+      });
+    });
+    card.querySelectorAll('[data-change-another]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var row = parseInt(btn.getAttribute('data-change-another'), 10);
+        if (state.busyRow !== null) return;
+        state.busyRow = row;
+        draw();
+        postJson('/api/chat/proposals/' + encodeURIComponent(pid) + '/another', { row: row })
+          .then(function (out) {
+            state.busyRow = null;
+            if (out && out.proposal) state.proposal = out.proposal;
+            else showToast((out && out.message) || 'That didn’t work just now — nothing changed.');
+            draw();
+          })
+          .catch(function (err) {
+            state.busyRow = null;
+            draw();
+            showToast(err && err.message ? err.message : 'That didn’t work just now — nothing changed.');
+          });
+      });
+    });
+    var save = card.querySelector('[data-change-save]');
+    if (save) {
+      save.addEventListener('click', function () {
+        if (state.saving) return;
+        state.saving = true;
+        draw();
+        postJson('/api/chat/proposals/' + encodeURIComponent(pid) + '/apply', {})
+          .then(function (out) {
+            state.saving = false;
+            state.refused = (out && out.refused) || [];
+            if (!out || out.status === 'nothing') {
+              state.left = true;
+              draw();
+              showToast('Nothing to change — the week already says that.');
+              return;
+            }
+            if (out.status === 'refused') {
+              // Every row was stopped by a gate (an allergen, someone's
+              // veto): nothing written, and the rows say why.
+              state.left = true;
+              draw();
+              showToast('I left the week as it was — ' + state.refused[0].why + '.', null, 6000);
+              return;
+            }
+            state.saved = true;
+            state.proposal = out.proposal || state.proposal;
+            draw();
+            (out.proposal && out.proposal.applied || []).forEach(function (a) { markRecentlyChanged(a.date, a.slot); });
+            toastSaved({ label: 'Undo', onClick: function () { undoChangeCard(state); } }, SWAP_UNDO_MS);
+            if (panels.week && panels.week.dataset.built) loadWeekMenu(panels.week);
+            else refreshDishIndex();
+          })
+          .catch(function (err) {
+            state.saving = false;
+            draw();
+            showToast(err && err.message ? err.message : 'That didn’t save — try again.');
+          });
+      });
+    }
+    var leave = card.querySelector('[data-change-leave]');
+    if (leave) {
+      leave.addEventListener('click', function () { state.left = true; draw(); });
+    }
+  }
+
+  function undoChangeCard(state) {
+    postJson('/api/chat/proposals/' + encodeURIComponent(state.proposal.proposal_id) + '/undo', {})
+      .then(function () {
+        state.saved = false;
+        state.left = true;
+        state.putBack = true;
+        state.cards.forEach(function (card) { card.innerHTML = changeCardHtml(state.proposal, state); });
+        showToast('Put back.');
+        if (panels.week && panels.week.dataset.built) loadWeekMenu(panels.week);
+      })
+      .catch(function () { showToast('Couldn’t undo that — try it again in a moment.'); });
+  }
+
+  // POST helper for the card's four routes: a 4xx/5xx becomes an Error
+  // carrying the server's own sentence (its `detail`), which every
+  // handler above shows as-is.
+  function postJson(url, body) {
+    return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
+      .then(function (res) {
+        return res.json().catch(function () { return null; }).then(function (data) {
+          if (!res.ok) throw new Error((data && data.detail) || ('Request failed (' + res.status + ')'));
+          return data;
+        });
+      });
+  }
+
+  // "Changed" on the week's rows for the eight seconds after a card is
+  // saved (S6: a highlight says why). Keyed by date+slot, read by
+  // weekRowLineHtml; the next render after the window drops it.
+  var recentlyChanged = {};
+  function markRecentlyChanged(date, slot) {
+    recentlyChanged[date + ':' + slot] = Date.now() + SWAP_UNDO_MS;
+    setTimeout(function () {
+      if (panels.week && panels.week.dataset.built && weekState.step === 'week') renderMealsStep(panels.week);
+    }, SWAP_UNDO_MS + 50);
+  }
+  function wasRecentlyChanged(date, slot) {
+    var until = recentlyChanged[date + ':' + slot];
+    return !!until && until > Date.now();
   }
 
   function addAskMessage(role, text, actions) {
@@ -19679,14 +19956,18 @@
         }
       );
       loadingWraps.forEach(function (w) { w.remove(); });
-      addAskMessage('assistant', data.reply, data.actions);
+      var replyEls = addAskMessage('assistant', data.reply, data.actions);
+      if (data.proposal) mountChangeCard(replyEls, data.proposal);
       refreshStaleTabsFromActions(data.actions);
       offerNextStepChips(data.actions);
       // S10 (Emily, 2026-09-13): a change made through the chat is a
       // decision like any other. The action cards under the reply say
       // what changed; this is the one line that says it saved. Only when
       // the turn actually wrote something — a plain answer stays plain.
-      if (data.actions && data.actions.length) toastSaved();
+      // ...unless the turn came back with a change card: then the week
+      // is not saved yet, and a fact it remembered alongside has its own
+      // chip. The card's Save changes is what says "Changes saved".
+      if (data.actions && data.actions.length && !data.proposal) toastSaved();
     } catch (err) {
       loadingWraps.forEach(function (w) { w.remove(); });
       // Asking needs Claude, and Claude needs a connection. With no signal
