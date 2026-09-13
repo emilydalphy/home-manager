@@ -16,6 +16,14 @@ open (see plan_quality's `full_plate`, which until now only WARNED):
     same entry. See complete_plate.
   - A one-pot dish whose own food_groups already cover the rule is
     complete: nothing gets bolted onto it.
+  - "Complete" is not the same claim as "one pot," and the label must not
+    say the second when only the first is true (Emily, 2026-09-13: a
+    grilled burger-and-charred-vegetables plate that covered every group on
+    its own still got called "one-pot, nothing extra"). See
+    contradicts_one_pot below — a genuinely complete plate that used a
+    grill, or names a component cooked in a second vessel, is complete but
+    not one-pot, and the reassurance line has to say nothing rather than
+    say the wrong thing.
 
 WHERE THE SIDES LIVE, and why not on the recipe. A side attaches to
 `meal_plan_entries.sides_json` — the ENTRY, not the recipe. A recipe is
@@ -62,6 +70,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 
 from ..db import get_conn
 from ._shared import household_id
@@ -195,6 +204,81 @@ def is_complete(entry: dict, rule: tuple[str, ...]) -> bool:
     difference matters.
     """
     return not missing_groups(entry, rule)
+
+
+# Cooking on a grill (or under a broiler) is never "one-pot," no matter how
+# completely the dish's own food_groups cover the plate rule — Emily's
+# report (2026-09-13) was exactly this: a grilled turkey burger plate that
+# was a genuinely complete plate on its own still isn't the "nothing extra
+# to wash" claim the label makes. Word-boundary matched against the
+# dish's own name/tags/instructions text, same style as plan_quality's
+# _method_words — deliberately generous, since a false "no tag" costs
+# nothing and a false "one-pot" is the bug being fixed.
+_GRILL_WORDS = {
+    "grill", "grills", "grilled", "grilling",
+    "bbq", "barbecue", "barbecued", "barbecuing",
+    "broil", "broils", "broiled", "broiling", "broiler",
+}
+
+# Evidence that the recipe's OWN steps name a second cooking vessel/surface
+# used apart from the main — "in a separate pan," "meanwhile, in a skillet"
+# — which is the other half of Emily's report: the burger recipe's charred
+# vegetables are cooked apart from the patties, in the same recipe. This is
+# about a component the recipe itself calls out as separate, not the sides
+# the app attaches via attach_sides (weekly_plan.plate_note already routes
+# those through sides_label before this is ever consulted, so an
+# app-attached side never reaches this check).
+#
+# Two things deliberately don't count as a second vessel, found by testing
+# this against ordinary recipe phrasing rather than just the burger case
+# (2026-09-13):
+#   - "bowl" is dropped from the vessel list. A bowl holds a marinade,
+#     dressing or garnish that's mixed cold and added, not cooked apart —
+#     "in a separate bowl, whisk the dressing" is standard phrasing on
+#     genuinely one-pot dinners and was stripping their tag for no reason.
+#   - A trigger word followed by "preheat" doesn't count, no matter which
+#     vessel word comes after. "Meanwhile, preheat the oven" is the first
+#     step of nearly every oven/sheet-pan recipe, one-pot ones very much
+#     included — it names the SAME oven the dish itself finishes in, not a
+#     second one, so on its own it isn't evidence of anything.
+_SEPARATE_VESSEL_PATTERN = re.compile(
+    r"\b(?:separate|another|second|meanwhile)\b"
+    r"(?![^.]{0,25}\bpreheat)"
+    r"[^.]{0,25}\b"
+    r"(?:pan|pot|skillet|saucepan|sheet\s*pan|tray|dish|grill|oven|broiler)\b"
+)
+
+
+def contradicts_one_pot(
+    name: str | None, tags: list[str] | None, instructions: list[str] | None,
+) -> bool:
+    """
+    True when the dish's own name/tags/instructions describe a method that
+    "one-pot, nothing extra" would misrepresent: cooked on a grill (or
+    under a broiler), or with a step naming a second cooking vessel apart
+    from the main. See weekly_plan.plate_note, the only caller — it only
+    asks this once a plate is already judged `is_complete`, since a plate
+    that's short of the rule gets no reassurance line either way.
+
+    Deliberately a text scan over what the recipe already recorded, not a
+    new field to fill in: a dedicated "cooking method" column would need
+    every existing recipe backfilled and every future one to remember to
+    set it, where the method is already spelled out in the name and steps
+    the household reads anyway.
+
+    "Grilled cheese" is dropped before the grill-word scan: a grilled
+    cheese sandwich is pan-fried on a griddle, not cooked on an actual
+    grill, and it's common enough as an ingredient or topping name (a
+    one-pot tomato soup finished with grilled-cheese croutons) that the
+    literal word "grilled" there was stripping the tag from genuinely
+    one-pot dishes that never touched a grill.
+    """
+    text = " ".join([name or "", *(tags or []), *(instructions or [])]).lower()
+    text = re.sub(r"\bgrilled\s+cheese\b", " ", text)
+    words = set(re.findall(r"[a-z]+", text))
+    if words & _GRILL_WORDS:
+        return True
+    return bool(_SEPARATE_VESSEL_PATTERN.search(text))
 
 
 # ---------- reading and writing the sides on one entry ----------

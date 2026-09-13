@@ -371,6 +371,29 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — "One-pot" was a claim about the plate, not the method.
+  Branch `worktree-plate-tags-method`, NOT merged at the time of writing.**
+  Emily: a grilled turkey-burger-and-charred-vegetables plate got tagged
+  "one-pot, nothing extra." Root cause: `weekly_plan.get_week_menu`'s
+  `plate_note()` awarded the tag whenever `plates.is_complete` was true
+  (food_groups covered protein/veg/carb) — it never looked at how the dish
+  was actually cooked. Fix: `plates.contradicts_one_pot(name, tags,
+  instructions)` text-scans the recipe's own name/tags/instructions for
+  grill/broil/bbq words or a step naming a second cooking vessel
+  ("separate"/"another"/"second"/"meanwhile" + pan/pot/skillet/oven/etc.),
+  and `plate_note` withholds the tag when it fires. Two false-positive
+  traps found by testing against ordinary recipe phrasing, not just the
+  burger case, and excluded: "meanwhile, preheat the oven" (the first line
+  of nearly every oven/sheet-pan one-pot recipe — excluded via a negative
+  lookahead on "preheat") and "in a separate bowl" for a marinade/dressing
+  (bowl dropped from the vessel word list entirely). "Grilled cheese" as an
+  ingredient/topping name is stripped before the grill-word scan for the
+  same reason — it's pan-fried, not grilled. Known remaining gaps, left as
+  is rather than adding more regex complexity: a hyphenated "Bar-B-Q" won't
+  match, and reversed two-pot phrasing ("simmer the sauce in one pot while
+  the pasta boils in another") isn't caught either — both real but
+  low-frequency compared to the reported bug.
+
 - **2026-09-13 — Sorting the list: "Have it" and "Use something else" on
   every item. Branch `worktree-grocery-sorting-round`, NOT merged at the
   time of writing.** Loop Board feature (Emily: "there should also be the
