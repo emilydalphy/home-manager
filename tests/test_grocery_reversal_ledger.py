@@ -4,9 +4,11 @@ unit rolls between two measurable units partway through a week's reversals.
 
 Repro: two ordinary dinners each contribute "0.6 lb ground beef" to the
 same recipe-week (household of 3, a recipe written for 3 — unscaled), so
-approve_weekly_plan rounds the line ONCE to "1.25 lbs" and splits it across
-two meal_plan_grocery_links rows (0.75 lb + 0.5 lb, largest-remainder
-apportioned). Reversing the first meal used to subtract its 0.75 lb out of
+approve_weekly_plan rounds the line ONCE to "1.25 lbs" and records what
+each meal wanted in a meal_plan_grocery_links row (0.6 lb + 0.6 lb; the
+rows carried a largest-remainder apportioned 0.75 lb + 0.5 lb until
+2026-09-13 — see recipes._ledger_share). Reversing the first meal used to
+subtract its share out of
 "1.25 lbs" the way _subtract_quantity always had — landing on "0.5 lbs",
 which _humanize_grocery_quantity then re-rolls to "8 oz" because it is
 under a pound. The second meal's ledger row is still denominated in lb, so
@@ -20,6 +22,15 @@ OTHER meal still on the ledger for it adds up to, converting between units
 in the same family as it sums. That makes reversal order-independent,
 which is what clear_weekly_plan actually needs: it reverses a week's
 entries with no particular ordering of its own.
+
+UPDATED 2026-09-13: the three reversal assertions below used to compare
+the line against the ONE remaining ledger row, which the recompute had
+just written and so could never disagree with. They compare it against a
+fixed string now, the same string in both orders, because that is the
+claim that was actually being made and was not being tested: the answer
+must not depend on which meal was dropped. On the apportioned ledger it
+did — dropping the first meal left 0.5 lb ("8 oz") and dropping the second
+left 0.75 lb ("12 oz"), for the same surviving dinner.
 
 _subtract_quantity itself is still exercised here (see
 test_subtract_quantity_reconciles_units_before_giving_up) because it stays
@@ -133,9 +144,13 @@ def test_beef_line_rounds_once_to_a_pound_and_a_quarter():
     row = _grocery_row("ground beef")
     assert row is not None
     assert row["quantity"] == "1.25 lbs"
-    # The two ledger rows apportion that whole quantum-for-quantum.
-    ledger_total = sum(_in_base_unit(q, "oz") for e in (first, second) for q in _ledger_qtys(e))
-    assert abs(ledger_total - _in_base_unit("1.25 lbs", "oz")) < 1e-6
+    # The two ledger rows hold what each meal actually wanted — the RAW
+    # 0.6 lb apiece, not a share of the rounded line — and rounding that
+    # sum once is exactly what went on the list.
+    ledger = [q for e in (first, second) for q in _ledger_qtys(e)]
+    ledger_total = sum(_in_base_unit(q, "oz") for q in ledger)
+    assert abs(ledger_total - _in_base_unit("1.2 lbs", "oz")) < 1e-6
+    assert quantities._sum_ledger_quantities(ledger) == "1.25 lbs"
 
 
 def test_reversing_first_meal_then_second_leaves_the_line_exact_then_empty():
@@ -145,7 +160,9 @@ def test_reversing_first_meal_then_second_leaves_the_line_exact_then_empty():
     grocery._reverse_meal_grocery_contributions(first)
     row = _grocery_row("ground beef")
     assert row is not None, "the line should still exist — one meal still wants it"
-    assert abs(_in_base_unit(row["quantity"], "oz") - _in_base_unit(remaining_qty, "oz")) < 1e-6
+    # 0.6 lb, re-rounded once: the same answer the other order gives below.
+    assert row["quantity"] == "9.5 oz"
+    assert row["quantity"] == quantities._sum_ledger_quantities([remaining_qty])
 
     grocery._reverse_meal_grocery_contributions(second)
     assert _grocery_row("ground beef") is None
@@ -158,7 +175,10 @@ def test_reversing_second_meal_then_first_leaves_the_line_exact_then_empty():
     grocery._reverse_meal_grocery_contributions(second)
     row = _grocery_row("ground beef")
     assert row is not None, "the line should still exist — one meal still wants it"
-    assert abs(_in_base_unit(row["quantity"], "oz") - _in_base_unit(remaining_qty, "oz")) < 1e-6
+    # The SAME "9.5 oz" the other order leaves, for the same surviving
+    # dinner. On the apportioned ledger this order left "12 oz".
+    assert row["quantity"] == "9.5 oz"
+    assert row["quantity"] == quantities._sum_ledger_quantities([remaining_qty])
 
     grocery._reverse_meal_grocery_contributions(first)
     assert _grocery_row("ground beef") is None
@@ -191,7 +211,8 @@ def test_broth_line_survives_a_cup_to_tablespoon_roll_in_either_order():
     grocery._reverse_meal_grocery_contributions(first)
     row = _grocery_row("chicken broth")
     assert row is not None
-    assert abs(_in_base_unit(row["quantity"], "tsp") - _in_base_unit(remaining_qty, "tsp")) < 1e-6
+    assert row["quantity"] == "9.5 tbsp"
+    assert row["quantity"] == quantities._sum_ledger_quantities([remaining_qty])
     grocery._reverse_meal_grocery_contributions(second)
     assert _grocery_row("chicken broth") is None
 

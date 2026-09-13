@@ -29,6 +29,7 @@ import pytest
 
 from app import agent, tools
 from app.db import get_conn
+from app.tools import quantities
 
 
 def _week_start() -> str:
@@ -261,19 +262,24 @@ def test_a_freeform_quantity_is_still_not_guessed_at(week, family_of_three):
 
 # ---------- the ledger has to add back up to the line ----------
 
-def test_the_meals_ledger_sums_to_exactly_what_went_on_the_list(week, family_of_three):
+def test_the_meals_ledger_holds_what_each_dinner_wanted_and_rounds_once_to_the_line(week, family_of_three):
     """
-    Rounding once means the five dinners' unrounded shares (2.25, 3, 1.5, 3,
-    3) no longer add to the line. They are apportioned instead — whole
-    peppers, largest remainder — so the ledger and the list agree.
+    UPDATED 2026-09-13. This used to assert the opposite: that the five
+    shares were apportioned to WHOLE peppers summing to exactly 13. That
+    apportionment was written for a reversal that subtracted a share out of
+    the displayed line, and it is what made dropping a night hand back a
+    wrong (and order-dependent) number once reversal started recomputing
+    from the ledger instead — see recipes._ledger_share. The ledger holds
+    each dinner's real share now (2.25, 3, 1.5, 3, 3 = 12.75), and the
+    single rounding that produced the line reproduces it exactly.
     """
     _pepper_week(week)
 
     tools.approve_weekly_plan(week, approved_by="Emily")
 
     shares = [float(q) for q in _link_qtys("Bell peppers")]
-    assert sum(shares) == 13.0
-    assert all(share == int(share) for share in shares), "whole peppers per meal, not 2.25"
+    assert sorted(shares) == [1.5, 2.25, 3.0, 3.0, 3.0]
+    assert quantities._sum_ledger_quantities(_link_qtys("Bell peppers")) == _qty("Bell peppers") == "13"
 
 
 def test_approving_and_then_clearing_the_week_leaves_nothing_behind(week, family_of_three):
@@ -292,20 +298,29 @@ def test_approving_and_then_clearing_the_week_leaves_nothing_behind(week, family
     assert tools.list_grocery_list() == []
 
 
-def test_swapping_one_dinner_takes_its_own_share_and_no_more(week, family_of_three):
-    """A swap trims the line by that dinner's apportioned share and leaves
-    the rest of the week's peppers alone."""
+def test_swapping_one_dinner_leaves_what_the_other_four_actually_need(week, family_of_three):
+    """
+    UPDATED 2026-09-13, and the NUMBER did not move — this is a
+    no-regression guard, not a catch. It used to read "the line minus that
+    dinner's apportioned share" (13 - 2), and it now reads "what the four
+    dinners still planned actually need" (3 + 1.5 + 3 + 3 = 10.5, rounded
+    once): both are 11 for this week. The reason is what changed, and the
+    reason is what generalises — see tests/test_grocery_line_to_zero.py for
+    the weeks where the two answers differ, one of them by taking the line
+    to zero.
+    """
     _pepper_week(week)
     tools.add_recipe("Soup", ingredients=[
         {"item": "Carrots", "qty": "4", "category": "produce"}], default_servings=3)
     tools.approve_weekly_plan(week, approved_by="Emily")
     before = int(_qty("Bell peppers"))
-    first_share = int(_link_qtys("Bell peppers")[0])
 
     tools.swap_meal_in_plan(week, _days()[0], "Soup", slot="dinner")
 
-    assert int(_qty("Bell peppers")) == before - first_share
-    assert 0 < before - first_share < before
+    remaining = _link_qtys("Bell peppers")
+    assert len(remaining) == 4
+    assert _qty("Bell peppers") == quantities._sum_ledger_quantities(remaining) == "11"
+    assert 0 < int(_qty("Bell peppers")) < before
 
 
 def test_a_measurable_amount_rounds_once_too(week, family_of_three):

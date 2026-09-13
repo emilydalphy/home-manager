@@ -17,6 +17,7 @@ import json
 import datetime
 
 from app import tools
+from app.tools import quantities
 from app.db import get_conn
 
 
@@ -269,8 +270,10 @@ def test_rescale_shares_one_buffer_with_an_unrelated_same_recipe_cook():
     # them as one recipe-week through one buffer: 1.2 + 2.4 = 3.6 raw,
     # rounded ONCE to 3.5 lb.
     assert _grocery_by_item()["ground beef"] == "3.5 lbs"
-    assert _ledger_items_for(tue)["ground beef"] == "2.25 lbs"
-    assert _ledger_items_for(thu)["ground beef"] == "1.25 lbs"
+    # The ledger rows hold each meal's own raw share (2.4 + 1.2 = 3.6),
+    # not a share of the rounded 3.5 — see recipes._ledger_share.
+    assert _ledger_items_for(tue)["ground beef"] == "2.4 lbs"
+    assert _ledger_items_for(thu)["ground beef"] == "1.2 lbs"
 
     # Swap away Friday, Tuesday's only target — Tuesday becomes an
     # ordinary cook again (raw 1.2), Thursday is untouched (raw 1.2).
@@ -282,13 +285,12 @@ def test_rescale_shares_one_buffer_with_an_unrelated_same_recipe_cook():
     assert on_list["ground beef"] == "2.5 lbs"
     assert on_list["stock"] == "1 l"
 
-    # The ledger still sums to the line — Tuesday's new share plus
-    # Thursday's unchanged share add back up to exactly what's on the
-    # list, the same invariant _apportion guarantees for any rounding.
-    beef_qty = lambda s: float(s.split()[0])  # noqa: E731 - tiny local helper, not worth a def
-    tue_share = beef_qty(_ledger_items_for(tue)["ground beef"])
-    thu_share = beef_qty(_ledger_items_for(thu)["ground beef"])
-    assert tue_share + thu_share == 2.5
+    # The ledger still ROUNDS ONCE to the line — Tuesday's new share plus
+    # Thursday's unchanged share, put through the same single rounding the
+    # ingest used, come back to exactly what's on the list.
+    shares = [_ledger_items_for(tue)["ground beef"], _ledger_items_for(thu)["ground beef"]]
+    assert shares == ["1.2 lbs", "1.2 lbs"]
+    assert quantities._sum_ledger_quantities(shares) == "2.5 lbs"
 
     # Clearing the week empties the list entirely — nothing left behind
     # by the rescale's own reverse-then-reingest pass.

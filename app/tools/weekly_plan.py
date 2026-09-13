@@ -1529,8 +1529,8 @@ def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: in
     the table at this instant: having just lost its confirmed pairing, it
     would otherwise look like an ordinary same-recipe cook and get folded
     into this rounding, only for the caller's own reversal a moment later
-    to subtract an apportioned share back out of a line that was never
-    rounded without it — the same drift, one step removed.
+    to subtract a share back out of a line that was never rounded
+    without it — the same drift, one step removed.
 
     A no-op for a freeform source: nothing structured to rescale, and a
     freeform meal never reaches the grocery list to begin with (see

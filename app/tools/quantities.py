@@ -518,8 +518,33 @@ def _parse_quantity(qty: str) -> tuple[float, str | None] | None:
 _UNIT_PLURALS = {"cup": "cups", "lb": "lbs"}
 
 
-def _format_quantity(amount: float, unit: str | None) -> str:
-    amount_str = f"{amount:g}"
+def _plain_number(amount: float, sig: int = 6) -> str:
+    """
+    A number written out, never in scientific notation.
+
+    "%g" switches to an exponent below 1e-4 and at 1e6 and above, and
+    "1e-05 cups" parses as nothing at all (_QTY_RE reads no exponent). One
+    such row makes _sum_ledger_quantities give up on the WHOLE line, which
+    drops grocery._reverse_meal_grocery_contributions into
+    _subtract_quantity — where an identical current-and-remove string means
+    "this contribution is the whole line" and deletes a row other meals are
+    still linked to.
+
+    Six significant figures by default, which is what a person reads; the
+    per-meal ledger asks for more (see recipes._ledger_share), because
+    three sixths of something has to add back up to a whole one and
+    "0.666667 x 3" is 2.000001, which rounds UP to three of them. A crumb
+    below what the written form can show becomes a plain "0", which the
+    ledger's own floor then handles.
+    """
+    text = f"{amount:.{sig}g}"
+    if "e" not in text and "E" not in text:
+        return text
+    return f"{amount:.{max(sig, 10)}f}".rstrip("0").rstrip(".") or "0"
+
+
+def _format_quantity(amount: float, unit: str | None, sig: int = 6) -> str:
+    amount_str = _plain_number(amount, sig)
     if not unit:
         return amount_str
     # A sized package ("tub (48 oz)") pluralizes the package word and
@@ -614,56 +639,115 @@ def _round_to_nice_fraction(amount: float) -> float:
     return whole + best if best < 1.0 else whole + 1.0
 
 
+def _measurable_unit(unit: str | None) -> bool:
+    """A volume/weight unit that converts, as opposed to a countable thing
+    (a pepper, a clove, a tin) or no unit at all."""
+    return unit in {u for group in _UNIT_CONVERSION_GROUPS for u in group}
+
+
+def _round_in_unit(amount: float, unit: str | None) -> float:
+    """
+    The shopping rounding held to ONE unit — no rolling up to a bigger one.
+
+    _shopping_round is this plus the roll-up, and is what a line is written
+    with. This bare form is for arithmetic that has to stay on one
+    quantum: grocery._restate_standing_want rounds the plan's before and
+    after in the LINE's own unit, so their difference is a whole quantum of
+    that unit and subtracting it cannot leave a sub-quantum residue for the
+    next removal to round away. Rounding each side in whatever unit it
+    happened to roll to is how a 2-cup standing want crept up a quarter of
+    a cup a week.
+    """
+    if not _measurable_unit(unit):
+        return float(math.ceil(amount - 1e-9))
+    nice = _round_to_nice_fraction(amount)
+    if nice <= 0 and amount > 0:
+        nice = 0.25  # never round a real quantity away to nothing
+    return nice
+
+
+def _snap_to_unit_quantum(amount: float, unit: str | None) -> float:
+    """
+    The NEAREST quantum of `unit` — a quarter of a measurable one, a whole
+    countable thing.
+
+    Deliberately not _round_in_unit, whose ceil is the shopping decision
+    ("an extra pepper costs a pepper"). This is for recovering a number
+    that was already written on a quantum and has picked up a little
+    display error since: grocery._restate_standing_want re-derives the
+    household's own amount out of the line at every removal, and the line
+    is re-rounded for display in between, so the derived value drifts by a
+    fraction of a quantum each time and would otherwise compound. Nearest
+    puts it back where it started; rounding it UP every time would be the
+    ratchet again in the other direction.
+
+    HALF ROUNDS UP, which is the one place this differs from
+    _round_to_nice_fraction and is not a detail. The display rounding that
+    put the error there rounds half DOWN, so exactly-half is the case that
+    keeps happening — a household's 8 oz sitting on a line displayed in
+    pounds derives as 0.375 lb, dead between two quarters, and rounding
+    that down quietly hands them 4 oz instead. Half up costs at most a
+    quarter of a unit and costs it in the direction this module always
+    errs.
+    """
+    quantum = 0.25 if _measurable_unit(unit) else 1.0
+    return math.floor(amount / quantum + 0.5 + 1e-9) * quantum
+
+
+def _shopping_round(amount: float, unit: str | None) -> tuple[float, str | None]:
+    """
+    THE rounding a grocery line is written in, and the one place it lives.
+
+    A countable thing rounds UP to a whole one — you cannot buy 1.5 onions,
+    an extra onion costs an onion and a missing one costs the dinner
+    (Emily, 2026-09-05). A measurable unit is rolled up to the largest
+    sensible unit in its family and rounded to the nearest quarter, so "52
+    tbsp" becomes "3.25 cups" rather than a number nobody measures out.
+
+    recipes._week_bought_amount is a thin wrapper on this and
+    _humanize_grocery_quantity is the display form of it. That is
+    load-bearing rather than tidiness: a grocery line is rounded ONCE, on
+    the whole week's total, and reversal re-rounds the surviving ledger
+    shares through _sum_ledger_quantities. If the two roundings could
+    disagree, a line that lost no meal at all would come back different
+    from what was put on it. They cannot disagree, because there is one of
+    them.
+    """
+    if not _measurable_unit(unit):
+        return _round_in_unit(amount, unit), unit
+    rolled_amount, rolled_unit = _roll_up_unit(amount, unit)
+    return _round_in_unit(rolled_amount, rolled_unit), rolled_unit
+
+
 def _humanize_grocery_quantity(amount: float, unit: str | None) -> str:
     """
     Format a quantity for the grocery list the way a shopper actually buys
-    it: unit=None or a discrete descriptor ("clove", "can", or a size
-    adjective normalized away in _UNIT_ALIASES) rounds UP to a whole number
-    — you can't buy 1.5 onions at the store — while a measurable unit
-    (volume/weight) is rolled up to the largest sensible unit and rounded
-    to the nearest quarter, so "52 tbsp" becomes "3.25 cups" instead of a
-    number nobody would actually measure out.
+    it — see _shopping_round, which is the arithmetic. A real amount of a
+    countable thing never displays as none of it.
     """
-    if unit not in {u for group in _UNIT_CONVERSION_GROUPS for u in group}:
-        whole = math.ceil(amount - 1e-9)
-        return _format_quantity(max(whole, 1) if amount > 0 else whole, unit)
-    rolled_amount, rolled_unit = _roll_up_unit(amount, unit)
-    nice_amount = _round_to_nice_fraction(rolled_amount)
-    if nice_amount <= 0 and amount > 0:
-        nice_amount = 0.25
-    return _format_quantity(nice_amount, rolled_unit)
+    rounded, rounded_unit = _shopping_round(amount, unit)
+    if amount > 0 and rounded < 1 and not _measurable_unit(unit):
+        rounded = 1.0
+    return _format_quantity(rounded, rounded_unit)
 
 
-def _sum_ledger_quantities(qty_strings: list[str]) -> str | None:
+def _ledger_buckets(qty_strings: list[str]) -> dict | None:
     """
-    Recombine a grocery line's remaining per-meal ledger contributions into
-    one quantity, in the same units-and-rounding a grocery line is always
-    written in (see _humanize_grocery_quantity) — the recompute half of
-    grocery._reverse_meal_grocery_contributions, the only caller.
+    Add a grocery line's per-meal ledger rows up, one bucket per unit
+    family — the shared reading behind _sum_ledger_quantities and
+    _ledger_totals.
 
-    Each row is a bare "<amount> <unit>" string with no note or repeat
-    marker (see recipes._record_grocery_link / WeekGroceryBuffer.flush, the
-    only things that write one), so there is only ever a unit to
-    reconcile, never a note. Rows in the same measurable family (lb/oz,
-    cup/tbsp/tsp, g/kg, ml/l) are converted to that family's smallest unit
-    and summed together even when they were written in different units of
-    it — which is exactly the case that stranded a line: a week's line
-    rolls its display unit to whatever reads best at ITS total, and a
-    single meal's ledger row was written at ingest time against a
-    different total, so the two don't always agree on lb vs oz for the
-    same pound. Rows that are the same bare count (no unit) sum directly.
-    Rows in genuinely different families (a count next to a measured
-    amount, or two container words) are kept apart and their two
-    humanized amounts are concatenated with " + " — the same honest
-    disagreement _repeat_or_concatenate reports elsewhere in this module,
-    for the same reason: guessing a conversion that doesn't exist is worse
-    than showing both amounts.
+    Rows in the same measurable family (lb/oz, cup/tbsp/tsp, g/kg, ml/l)
+    are converted to that family's smallest unit and summed together even
+    when they were written in different units of it. Rows that are the same
+    bare count sum directly. Rows in genuinely different families (a count
+    next to a measured amount, or two container words) stay in separate
+    buckets — guessing a conversion that does not exist is worse than
+    reporting both.
 
-    Returns None when a row doesn't parse as a number at all (a freeform
-    contribution like "a bunch" that reached this grocery line before a
-    later contribution turned it into something summable) — the caller
-    falls back to subtracting this one contribution out of the current
-    display instead of guessing what the word means.
+    None means a row does not parse as a number at all (a freeform "a
+    bunch"), so the whole line is unaccountable and the caller must not
+    pretend otherwise.
     """
     totals: dict[tuple, list] = {}
     for raw in qty_strings:
@@ -684,9 +768,100 @@ def _sum_ledger_quantities(qty_strings: list[str]) -> str | None:
             key = ("discrete", unit)
             bucket = totals.setdefault(key, [0.0, unit])
             bucket[0] += amount
+    return totals
+
+
+def _sum_ledger_quantities(qty_strings: list[str]) -> str | None:
+    """
+    Recombine a grocery line's remaining per-meal ledger contributions into
+    one quantity, in the same units-and-rounding a grocery line is always
+    written in (see _shopping_round) — the recompute half of
+    grocery._reverse_meal_grocery_contributions, its only caller.
+
+    Each row is a bare "<amount> <unit>" string with no note or repeat
+    marker (see recipes._record_grocery_link / WeekGroceryBuffer.flush, the
+    only things that write one), so there is only ever a unit to
+    reconcile, never a note. How the rows are added up is _ledger_buckets;
+    a family that cannot be reconciled with another is kept apart and the
+    two humanized amounts are concatenated with " + ", the same honest
+    disagreement _repeat_or_concatenate reports elsewhere in this module.
+
+    Returns None when a row doesn't parse as a number at all (a freeform
+    contribution like "a bunch" that reached this grocery line before a
+    later contribution turned it into something summable) — the caller
+    falls back to subtracting this one contribution out of the current
+    display instead of guessing what the word means.
+
+    A GROCERY LINE WITH MEALS STILL BEHIND IT NEVER READS "0". The rows
+    written since 2026-09-13 are each meal's unrounded share (see
+    recipes._ledger_share), so a surviving meal's share is only ever zero
+    if nobody is eating it — but rows written BEFORE that carry an
+    apportioned whole share of the rounded line, and three nights of a
+    recipe serving twelve apportion one lemon as 1 / 0 / 0. Summing the
+    survivors of that is genuinely zero, and "Lemon · 0" on the list with
+    two dinners still planned is a line a shopper would walk past. So a
+    bucket contributing nothing is simply not printed, and a line where
+    NOTHING is left to print is floored at the smallest amount you can buy
+    rather than shown as none of it. (Printing a floored bucket beside a
+    real one would invent a whole pepper next to "2 cups".)
+    """
+    totals = _ledger_buckets(qty_strings)
+    if totals is None:
+        return None
     if not totals:
         return ""
-    return " + ".join(_humanize_grocery_quantity(amount, unit) for amount, unit in totals.values())
+    parts = [
+        _humanize_grocery_quantity(amount, unit)
+        for amount, unit in totals.values() if amount > 0
+    ]
+    if parts:
+        return " + ".join(parts)
+    (kind, _), (_, unit) = next(iter(totals.items()))
+    return _humanize_grocery_quantity(0.25 if kind == "measure" else 1.0, unit)
+
+
+def _ledger_totals(
+    all_qtys: list[str], surviving_qtys: list[str]
+) -> tuple[float, float, str | None] | None:
+    """
+    What a grocery line's meals wanted in total, before and after some of
+    them leave — (before, after, unit), unrounded, in one unit.
+
+    It exists for the household's own standing want ("Onions · 3", then a
+    week of dinners adds to it), the one line
+    grocery._reverse_meal_grocery_contributions may never recompute: the
+    person's own amount is in there and no ledger row describes it. The
+    plan's part has to be taken back instead, and getting THAT wrong
+    compounds — the ingest adds ONE rounded week total, so subtracting each
+    meal's own share leaves a remainder that the ceil pushes straight back
+    up, every week, for ever. (Measured before this existed: a hand-added
+    "3 Onions" under three dinners wanting 1.5 apiece went 3 → 5 → 7 → 9
+    over four approve-and-clear cycles.)
+
+    The numbers come back UNROUNDED on purpose: grocery._restate_standing_want
+    rounds both of them in the LINE's own unit, so the difference is a
+    whole quantum of the unit the line is written in. Rounding them here,
+    each in whatever unit it rolled to, is a quarter of a cup a week of
+    residue.
+
+    None when the rows cannot be read this way — a freeform "a bunch", or a
+    line whose rows span two unit families (a package word beside a
+    measured amount) — and the caller falls back to subtracting the one
+    contribution in front of it, which is what it always did.
+
+    Correct for ledger rows written before 2026-09-13 too, which hold
+    apportioned whole shares: those already sum to the rounded total and
+    rounding leaves such a value alone, so before-minus-after is that
+    meal's own share, exactly what used to be subtracted.
+    """
+    before = _ledger_buckets(all_qtys)
+    after = _ledger_buckets(surviving_qtys)
+    if before is None or after is None or len(before) != 1:
+        return None
+    key, (total_before, unit) = next(iter(before.items()))
+    if set(after) - {key}:
+        return None
+    return total_before, (after[key][0] if key in after else 0.0), unit
 
 
 def _normalize_grocery_quantity(qty: str) -> str:

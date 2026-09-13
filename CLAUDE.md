@@ -301,6 +301,23 @@ names, correct the claim in the same change.
   Multi-word container units ("1 lb bag") and prep-descriptor-bearing
   ingredient names ("Baby spinach, chopped") have both bitten this before —
   see Decision log.
+  **The rounding happens ONCE, on the whole line, and the per-meal ledger
+  (`meal_plan_grocery_links`) holds each meal's UNROUNDED share** — see
+  `recipes._ledger_share`. That is what lets
+  `grocery._reverse_meal_grocery_contributions` re-derive the line from
+  whoever is left when a night is dropped or swapped. Recording a rounded
+  share there (which is what `_apportion` used to do) makes the recompute
+  lossy: it took a line to "0" with two dinners still planned, and made the
+  answer depend on which night went. Don't put a rounded number in that
+  column.
+  **And the mirror of that, which is easy to break: the ONE line that
+  cannot be recomputed — a household's own standing want, any row with
+  `source_weekly_plan_id IS NULL`, which is every hand/chat/offline/scan
+  add and every staples line — must have the ROUNDED plan contribution
+  taken back off it, never the raw shares** (`quantities._ledger_totals` +
+  `grocery._restate_standing_want`). The ingest adds one rounded total, so
+  subtracting anything smaller leaves a remainder the ceil pushes back up
+  and the line climbs a little every week for ever.
 - **A meal slot is never absent — it's one of three states.** Since Plan
   the Week, `meal_plan_entries.slot_state` is `planned`, `planned_empty`
   (nobody home, or the household asked for none of that meal) or `open`
@@ -353,6 +370,209 @@ Newest first. Keep entries terse: one line of fact, one line of why. Full
 detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
+
+- **2026-09-13 — A grocery line could read "0" with two dinners still
+  planned, and which night you dropped decided the number. Branch
+  `overnight/grocery-line-to-zero`, NOT merged at the time of writing.**
+  Reproduced first, twice. (A) Three nights of a recipe written for 12 in a
+  household of 3: the line rounds once to "1 Lemon" and the ledger
+  apportions it 1 / 0 / 0, so dropping the FIRST night summed the two
+  survivors to nothing — `get_grocery_list_by_section` served `"quantity":
+  "0"` to the Shop tab. (B) Two nights of a recipe for 4 wanting 2 cans:
+  line "3 cans", shares 2 / 1, so dropping the second night left 2 cans
+  (right) and dropping the first left 1 (wrong — the surviving dinner needs
+  1.5). Both over HTTP through `POST
+  /api/week/{week}/drop-dish-day` on a throwaway DB, and both reachable
+  through `swap_meal_in_plan`, which is the write behind every swap in the
+  app.
+  - **Root cause is `_apportion` outliving the reversal it was written
+    for.** It was added on 2026-09-05 to serve a reversal that SUBTRACTED a
+    contribution out of the displayed line, where a fractional ledger row
+    really would have left a phantom quarter-pepper behind. Later THE SAME
+    DAY, reversal stopped subtracting and started recomputing the line from
+    what the other ledger rows add up to. Summing rounded shares is lossy —
+    the two fixes are individually right and compose into this. Nobody
+    checked what a `0` share's non-zero sibling leaving does, and
+    `_apportion`'s own docstring anticipates a legitimate `"0"`.
+  - **The fix records what the meal actually asked for.**
+    `recipes._ledger_share` writes each meal's UNROUNDED contribution
+    (0.25 lemon, 1.5 cans, 0.6 lb) in the unit the line ended up in;
+    `_apportion` is deleted, and `_week_bought_amount` no longer returns a
+    quantum for it. Reversal is unchanged — it already sums the survivors
+    through `quantities._sum_ledger_quantities`, which rounds exactly the
+    way `_week_bought_amount` does, so the survivors are rounded ONCE, the
+    answer no longer depends on which night went, and a line that loses no
+    meal at all recomputes to exactly what was put on it. **No schema
+    change and no second copy of the arithmetic**: re-deriving from the
+    surviving ENTRIES was the other option and was rejected — a line can
+    hold five different recipes (Emily's peppers), so it would have meant
+    re-walking each entry's recipe, attendance and chain inside a function
+    that runs inside `swap_meal_in_plan`'s one transaction, i.e. a second
+    implementation of the ingest that can disagree with the first.
+  - **The phantom `_apportion` guarded against cannot come back**, and this
+    is worth being precise about because the brief for this work assumed it
+    could: nothing subtracts any more. The last meal off a line takes the
+    row with it (`fully_removed = not other_qtys`), and every meal before
+    that re-derives the line from scratch. `clear_weekly_plan` still leaves
+    an empty list, pinned by the test that has always said so.
+  - **A line with meals still behind it never reads "0".**
+    `_sum_ledger_quantities` floors at the smallest buyable amount (1 of a
+    count, a quarter of a measurable unit) when nothing is left to print; a
+    bucket contributing nothing beside one that does is simply dropped,
+    rather than printing a phantom whole pepper next to "2 cups". The floor
+    is not belt-and-braces: **ledger rows written before this change still
+    carry apportioned shares**, nothing can recover what those meals
+    wanted, and Emily's live database has them. It is what keeps those old
+    rows off "Lemon · 0". Case B's order-dependence is NOT fixed for them
+    and cannot be, and a line MIXING old and new rows under-contributes
+    while any old row survives (measured: a mixed line recomputed 2 → 1) —
+    the ROWS heal as each week is re-approved, the line only once its last
+    old row is gone.
+  - **THE ONE PATH THAT STILL SUBTRACTS IS THE HOUSEHOLD'S OWN STANDING
+    WANT, AND THE FIRST VERSION OF THIS BRANCH BROKE IT.** Independent
+    review caught it; it is the reason to read this bullet before touching
+    any of it again. A line with `source_weekly_plan_id IS NULL` can never
+    be recomputed — the person's own amount is in it and no ledger row
+    describes it — so reversal subtracts. The ingest adds ONE *rounded*
+    week total; handing that path *unrounded* shares means it subtracts
+    less than was added and the ceil rounds the remainder straight back up.
+    Measured through the public API: a hand-added "3 Onions" under three
+    dinners of a recipe wanting 1.5 apiece went **3 → 5 → 7 → 9 → 11** over
+    four approve-and-clear cycles, +2 a week, for ever. `_apportion` had
+    made that path exactly symmetric by construction, and deleting it took
+    the symmetry with it. **The scope was wide, not a corner**: every
+    discrete countable whose per-meal share is fractional, i.e. whenever
+    `eaters ÷ default_servings ≠ 1`, and `add_grocery_item` keeps
+    `source_weekly_plan_id` NULL on merge by design (`keep_standing`), so
+    every hand add, chat add, offline add, photo-scan add **and every
+    staples line** is a standing want, and `clear_stale_grocery_items`
+    exempts them so nothing ever corrects it.
+    Fixed by `quantities._ledger_totals` + `grocery._restate_standing_want`:
+    the line is RESTATED in one step — what is on it now, less what the
+    plan's meals round to, plus what the ones still planned round to —
+    rather than subtracted from repeatedly. **Three things make that work,
+    and each was found by measuring drift that survived the version before
+    it.** Read all three before touching it; two of them look like
+    over-engineering and are not.
+    (a) **One step**, because re-humanizing the whole line at every removal
+    snaps it to a quantum each time and the residue accumulates.
+    (b) **The plan's share is rounded the way the INGEST rounded it** —
+    `_shopping_round` on the ledger's own unit, rolled up exactly as
+    `_week_bought_amount` does, and only then converted into the line's
+    unit. Rounding it in the LINE's unit instead is tidier-looking and
+    wrong whenever the line's display unit rolls mid-sequence: the first
+    removal rounds at a quarter-POUND and over-credits the plan, the line
+    then rolls to ounces, and the later removals — now on a quarter-ounce
+    quantum — never give the over-credit back. **This shipped in the first
+    correction of this branch and review caught it**: a hand-added "2 oz"
+    came back BLANK, and a "500 ml" staple went 500 → 416.75 → 166.75 and
+    stayed there. Four traces, all now matching or beating `main`.
+    (c) **The household's own amount is snapped back onto the line's
+    quantum** (`_snap_to_unit_quantum`), because it is re-derived out of a
+    line that has been re-rounded for display in between, so it drifts a
+    little further every removal. **Half rounds UP there, and that is the
+    fix, not a detail**: the display rounding that puts the error there
+    rounds half DOWN, so exactly-half keeps coming up — 8 oz on a line
+    shown in pounds derives as 0.375 lb, dead between two quarters, and
+    rounding it down hands the household 4 oz. The snap stands down
+    entirely when it would annihilate a genuinely positive amount (2 oz is
+    under half a quarter-pound), and the derived own floors at zero so a
+    hand-edited line can never come back negative.
+  - **WHAT THIS PATH DOES NOT PROMISE, because an exact restate is not
+    reachable and pretending otherwise is how it went wrong twice.** The
+    line is a rounded string and what the ADD rounded away is not
+    recoverable from it: 15 oz of plan on top of a household's own 8 oz is
+    stored as `"1.5 lbs"`, and the 1.75 oz difference is simply gone before
+    any reversal runs. `main` loses it too. **"Never ends below the
+    household's own amount" is NOT the rule, and an earlier draft of this
+    bullet claimed something close to it** — `main` itself ends below by
+    that measure 13-18 times in 900 randomised runs, so it is not a bar
+    anything here clears. The rules actually held to, and the ones to hold
+    a future change to:
+      - **a line the household typed is never blanked**;
+      - **nothing compounds** — every below-own case is one-shot and flat
+        from the first cycle, checked over eight approve-and-clear cycles
+        on both sides;
+      - **strictly fewer below-own outcomes than `main`, at comparable
+        worst case.** Over 900 runs weighted onto roll-up boundaries: 0
+        blanks either side, below-own **2 here against 13 on `main`** in
+        one set of draws and **7 against 18** in an independent reviewer's;
+        of the end-states that differ from `main`, roughly two thirds land
+        closer to the household's own amount. Worst single case is
+        comparable in both directions (`main` `500 g → 400 g`, −20%; here
+        `6 oz → 4 oz`, −33%).
+    **Where the remaining tail comes from, so nobody hunts it twice:** the
+    snap in (c). Putting a display-drifted number back on a quantum can be
+    up to half a quantum from the truth, and at a coarse quantum that is a
+    real amount — an own of 15 oz derives as 0.828125 lb and snaps to 0.75
+    lb, i.e. 12 oz. It is inherent to re-deriving a number out of a rounded
+    string, it does not accumulate, and the aggregate is better than
+    `main`'s. **The bias is upward** where the arithmetic has any freedom,
+    which is this module's whole stance; the tail above is where it has
+    none.
+  - **The ledger is written at twelve significant figures, not six**
+    (`recipes._LEDGER_SIG`). These rows are machinery, never read, and they
+    have to ADD BACK UP: two thirds written three times at six figures is
+    2.000001, which the ceil turns into three, so reversal believed the
+    plan had put three onions on a line it had only put two on and took the
+    household's own one away with them. `quantities._plain_number` also
+    stops `%g` ever writing an exponent — "1e-05 cups" parses as nothing,
+    which made `_sum_ledger_quantities` give up on the WHOLE line and drop
+    into `_subtract_quantity`, where an identical current-and-remove string
+    means "this is the whole line" and DELETES a row other meals still link
+    to.
+  - **`_week_bought_amount` and `_humanize_grocery_quantity` are now one
+    function** (`quantities._shopping_round`) rather than two that happen
+    to agree. The whole fix rests on that equivalence, and it was
+    unpinned — turning the "you cannot buy 12.75 peppers, round UP" ceil
+    into a `round` passed the entire suite. One function cannot drift, and
+    there is now a test on the direction as well.
+  - **`clear_weekly_plan` calls the same reversal and does NOT exhibit the
+    bug on its own** — checked, not assumed: it removes an entire rounding
+    group at once, so the last removal deletes the row whatever order it
+    goes in. It passes through wrong intermediate states (it commits per
+    meal), which nothing reads. The caller that DOES remove part of a
+    rounding group is `_release_plan_days` — the atomic period takeover —
+    and it had the bug with no single-meal control involved at all; it has
+    its own test.
+  - **Untouched, deliberately, each with a test saying so:** a sealed
+    package (`quantity_mode="max"`) is never apportioned and still survives
+    until its last link; a standing want is still only blanked, never
+    deleted, and still takes the subtract path (what it subtracts is what
+    changed — see above); bought and in-cart lines are still left alone;
+    and household isolation. Approval-time lines are byte-identical to
+    `main` across 120 randomised weeks, and standing wants behave
+    identically to `main` across 200 randomised approve-and-clear runs
+    (and better than it across the 900 boundary-weighted ones above).
+  - `tests/test_grocery_line_to_zero.py`, 35 tests, **19 red on `0d359e5`**
+    (checked both by stashing and by `git checkout 0d359e5 -- app/`) —
+    though **4** of those 19 are red only because they name functions that
+    do not exist on `main` (`..._rounds_UP_and_a_measurable_one...`,
+    `..._vanishingly_small_share_cannot_delete_a_line...`,
+    `..._snap_breaks_a_tie_upward_not_downward`,
+    `..._snap_never_annihilates_a_small_amount_on_a_coarse_line`), so they
+    are guards rather than catches, say so in their own docstrings, and are
+    pinned by mutation instead. Fuzzed as well as tested: 868 drop-one
+    reversals across 300 randomised weeks give **0** zero-valued lines and
+    **0** order-dependent weeks here, against 47 and 174 on `main`. Seven
+    mutations checked to bite: ceil→round (7 red), `_LEDGER_SIG` 12→6 (1),
+    the standing-want rounding put back in the line's unit (6), the snap's
+    tie-break turned back down (1), the snap's annihilation fallback
+    removed (3), the `max(0, …)` floor removed (1), and
+    `_round_in_unit`→`_shopping_round` inside the line recompute (1).
+    Seven test functions in three existing files
+    were updated honestly rather than deleted, each with a note saying what
+    moved — they pinned the apportioned denomination. Two of them
+    (`test_grocery_reversal_ledger`'s reversal-order pair) compared the
+    line against the one ledger row the recompute had just written, which
+    could never disagree; they compare against a fixed string in both
+    orders now, which is the claim that was being made and was not being
+    tested — on the apportioned ledger those two orders left "8 oz" and
+    "12 oz" for the same surviving dinner.
+    `test_produce_quantities`'s swap test keeps its number (11 either way
+    for that particular week) and says in its docstring that it is a guard
+    rather than a catch. Suite 3182 → 3217, the same two
+    `test_onboarding_reveal_stream` Sunday failures before and after.
 
 - **2026-09-12 — Chores v1: add or change anything by saying so. Branch
   `chores-chat-tools`, NOT merged at the time of writing.** Re-verified the

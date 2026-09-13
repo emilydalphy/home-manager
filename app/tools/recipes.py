@@ -4,7 +4,6 @@ Recipes: adding, listing, scaling, feedback and cooking notes.
 from __future__ import annotations
 
 import json
-import math
 import re
 from ..db import get_conn
 from ._shared import household_id
@@ -1184,25 +1183,11 @@ def _record_grocery_link(entry_id: int, item: str, grocery_item_id: int, qty: st
         link_conn.close()
 
 
-_MEASURABLE_UNITS = {u for group in _quantities._UNIT_CONVERSION_GROUPS for u in group}
-
-
-def _measurable(unit: str | None) -> bool:
-    """A volume/weight unit that converts, as opposed to a countable thing
-    (a pepper, a clove, a tin) or no unit at all."""
-    return unit in _MEASURABLE_UNITS
-
-
-def _week_bought_amount(amount: float, unit: str | None) -> tuple[float, str | None, float]:
+def _week_bought_amount(amount: float, unit: str | None) -> tuple[float, str | None]:
     """
     A week's worth of one per-portion ingredient, rounded to something a
     person can actually buy — ONCE, on the total, in the unit the grocery
     line will actually be written in.
-
-    Returns (rounded_amount, unit_to_write_it_in, quantum), where quantum
-    is the step that rounding moved in — 1 whole pepper, or a quarter of a
-    measurable unit. _apportion needs it to hand the rounded total back out
-    to the meals in the same currency the line is denominated in.
 
     Rounding once is the point. Doing it per meal is why Emily's week asked
     for 17 peppers and would still have asked for 14 after the servings
@@ -1217,58 +1202,79 @@ def _week_bought_amount(amount: float, unit: str | None) -> tuple[float, str | N
     unit and letting the display roll it up afterwards would leave "3.25
     cups" on the list with "26 tbsp" in the ledger, and a swap would then
     find nothing it could safely subtract.
+
+    It is the SAME rounding quantities._humanize_grocery_quantity applies,
+    and it is the same CODE — quantities._shopping_round — rather than two
+    copies that agree today. That is load-bearing: the ledger records each
+    meal's share (see _ledger_share) and reversal re-rounds whatever
+    survives through quantities._sum_ledger_quantities, so a line that
+    loses no meal at all has to recompute to what this put on it. Two
+    hand-maintained roundings could drift; one cannot.
     """
     if amount <= 0:
-        return 0.0, unit, (0.25 if _measurable(unit) else 1.0)
-    if not _measurable(unit):
-        # You cannot buy 12.75 peppers. Up, not nearest: an extra pepper
-        # costs a pepper, a missing one costs the dinner.
-        return float(math.ceil(amount - 1e-9)), unit, 1.0
-    rolled, rolled_unit = _quantities._roll_up_unit(amount, unit)
-    nice = _quantities._round_to_nice_fraction(rolled)
-    if nice <= 0:
-        nice = 0.25  # never round a real quantity away to nothing
-    return nice, rolled_unit, 0.25
+        return 0.0, unit
+    return _quantities._shopping_round(amount, unit)
 
 
-def _apportion(total: float, shares: list[float], quantum: float) -> list[float]:
+# The per-meal ledger is machinery, never read by a person, and its rows
+# have to add back up to the line — so they are written finer than the six
+# significant figures a shopping list is displayed at. See _ledger_share.
+_LEDGER_SIG = 12
+
+
+def _ledger_share(amount: float, unit: str | None, line_unit: str | None) -> str:
     """
-    Hand ONE rounded week total back out to the meals that asked for it, so
-    the ledger adds up to exactly what went on the list.
+    What ONE meal actually asked for, written in the unit the grocery line
+    ended up in — UNROUNDED, and the unrounded part is the whole point.
 
-    This is the price of rounding once. The list says 13 peppers; the five
-    dinners behind it wanted 2.25, 3, 1.5, 3 and 3. If each meal's ledger
-    row recorded its own unrounded share, clearing the week would subtract
-    12.75 from 13 and leave a phantom quarter of a pepper on the list,
-    which then displays as one whole pepper nobody is cooking. So the
-    rounded total is split by largest remainder — every row is a whole
-    quantum, and they sum to the line exactly. Clearing a week empties it;
-    swapping one dinner out takes a believable share with it.
+    This used to record that meal's apportioned share of the ROUNDED line
+    instead: `_apportion` (2026-09-05) split the rounded total by largest
+    remainder into whole quanta that summed to the line exactly. It was
+    written for a reversal that SUBTRACTED one contribution out of the
+    displayed line, where a fractional row really would have left a phantom
+    quarter-pepper behind after the week was cleared. Reversal has
+    recomputed the line from the ledger since later that same day (see
+    grocery._reverse_meal_grocery_contributions), and recomputing from
+    ROUNDED shares is lossy in a way that shows on the list:
 
-    A meal can legitimately come out at zero (a tiny share of an amount
-    that rounded down to nothing much). That is recorded as a real "0"
-    rather than a blank, because a blank means "this contribution IS the
-    whole line" to _subtract_quantity and would take the line away.
+      - three nights of a recipe serving twelve apportion one lemon as
+        1 / 0 / 0, so dropping the FIRST night summed the two survivors to
+        nothing and the list read "Lemon · 0" with two dinners still
+        planned;
+      - two nights of a two-can recipe apportion three cans as 2 / 1, so
+        the same plan came back as "1 can" or "2 cans" depending on which
+        night was dropped.
+
+    An unrounded share carries what the meal wanted rather than what it was
+    handed, so the survivors can be summed and rounded ONCE — the same
+    single rounding _week_bought_amount does on the way in. The phantom
+    remainder `_apportion` guarded against cannot come back on the
+    recompute path, because nothing subtracts there any more: the last meal
+    off a line takes the row with it, and every meal before that re-derives
+    the line from scratch.
+
+    "Unrounded" up to _LEDGER_SIG significant figures, which is how the
+    string is written (quantities._plain_number). Twelve rather than the
+    six a person reads, because these have to ADD BACK UP: three sixths of
+    something written at six figures is 2.000001, which rounds up to three
+    of them and hands a household a whole extra onion.
+
+    THE ONE PLACE THAT STILL SUBTRACTS is a household's own standing want,
+    which no recompute may replace. It must not be handed this share: the
+    line was added to ONCE, rounded, so subtracting unrounded shares
+    ratchets it upward every week. See
+    quantities._ledger_totals, which is what
+    grocery._reverse_meal_grocery_contributions subtracts there instead.
     """
-    if not shares:
-        return []
-    n_quanta = int(round(total / quantum))
-    if n_quanta <= 0:
-        return [0.0] * len(shares)
-    weight_total = sum(shares)
-    if weight_total <= 0:
-        # No meal has a claim on it in proportion; give it all to the first.
-        return [n_quanta * quantum] + [0.0] * (len(shares) - 1)
-    exact = [n_quanta * s / weight_total for s in shares]
-    whole = [math.floor(e + 1e-9) for e in exact]
-    remaining = n_quanta - sum(whole)
-    order = sorted(
-        range(len(shares)),
-        key=lambda i: (-(exact[i] - whole[i]), -shares[i], i),
-    )
-    for i in order[:max(0, remaining)]:
-        whole[i] += 1
-    return [w * quantum for w in whole]
+    # unit and line_unit are always the same word, or two units of one
+    # measurable family — _week_bought_amount only ever hands back the unit
+    # it was given or a roll-up within its own family — so this conversion
+    # does not actually fail today. The fallback is here so that a change
+    # to that could never write a None unit into the ledger.
+    converted = _quantities._convert_to_unit(amount, unit, line_unit)
+    if converted is None:
+        return _quantities._format_quantity(amount, unit, sig=_LEDGER_SIG)
+    return _quantities._format_quantity(converted, line_unit, sig=_LEDGER_SIG)
 
 
 class WeekGroceryBuffer:
@@ -1324,16 +1330,16 @@ class WeekGroceryBuffer:
         for line in self._lines.values():
             entry_ids = list(line["shares"])
             shares = [line["shares"][e] for e in entry_ids]
-            rounded, unit, quantum = _week_bought_amount(sum(shares), line["unit"])
+            rounded, unit = _week_bought_amount(sum(shares), line["unit"])
             qty = _quantities._with_note(_quantities._format_quantity(rounded, unit), line["note"])
             add_result = _grocery.add_grocery_item(
                 line["item"], quantity=qty, category=line["category"], added_by="ai",
                 source_weekly_plan_id=self.weekly_plan_id, conn=self.conn,
             )
-            for entry_id, share in zip(entry_ids, _apportion(rounded, shares, quantum)):
+            for entry_id, share in zip(entry_ids, shares):
                 _record_grocery_link(
                     entry_id, line["item"], add_result["item_id"],
-                    _quantities._format_quantity(share, unit), conn=self.conn,
+                    _ledger_share(share, line["unit"], unit), conn=self.conn,
                 )
         self._lines.clear()
 
@@ -1420,10 +1426,10 @@ def _add_recipe_ingredients_for_entries(
     is done and rounded ONCE per grocery line — see WeekGroceryBuffer and
     _week_bought_amount. Rounding each meal's share up on its own is how
     12.75 peppers became 14 instead of 13; a shopper buys the peppers once,
-    so the arithmetic rounds once. Each meal's ledger row then carries an
-    apportioned whole share of that rounded total (_apportion), which is
-    what keeps reversal exactly symmetric — clearing the week empties the
-    line rather than leaving a phantom quarter-pepper behind.
+    so the arithmetic rounds once. Each meal's ledger row then carries its
+    own UNROUNDED share (_ledger_share), which is what keeps reversal
+    symmetric: dropping one meal re-rounds what the survivors still want,
+    and the last meal off a line takes the row with it.
 
     A quantity with no number in it at all ("a bunch", "to taste") can't be
     summed, so it skips the buffer and goes on per meal exactly as before.
@@ -1453,7 +1459,7 @@ def _add_recipe_ingredients_for_entries(
 
     Every contributing meal gets its own meal_plan_grocery_links row, so
     reversal stays exactly symmetric with what was added: a per-portion
-    row carries that meal's apportioned share of the rounded line, and a
+    row carries that meal's own unrounded share of the line, and a
     package row carries the package, with
     _reverse_meal_grocery_contributions holding the line on the list until
     the last meal that named it is gone.
