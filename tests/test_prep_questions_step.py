@@ -13,10 +13,12 @@ The card's helper text takes the on-spruce ink tokens and is measured,
 not eyeballed (DESIGN_SYSTEM Rule 8). The root's receipt card keeps its
 fold — there the week is the point and the asks are its footnote.
 """
+import json
 import re
 from pathlib import Path
 
 from test_contrast import contrast
+from test_cook_ahead_plain_question import _component, _item, _needs_node, _node, THU, TUE
 
 REPO = Path(__file__).resolve().parents[1]
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
@@ -134,13 +136,80 @@ def test_the_confirmation_lines_say_the_thing():
 # ---------- the bug card: dark text on the dark background ----------
 
 def test_the_cook_ahead_sentence_is_not_said_twice():
-    """One repeated dish: the line above the body already reads "Roasted
-    Chickpeas on 2 nights. Cook ahead?", so the block does not repeat it."""
+    """One block — a repeated dish or a shared component — is named by the
+    heading above the body ("Roasted Chickpeas is on 2 nights. Do you want
+    to batch cook it?"), so that block does not repeat its own first line;
+    several blocks share a heading and each opens with its own. A component
+    block sits in the same fold as the dish blocks (batch_components,
+    2026-09-13), so the flag is computed once over both kinds."""
     assert "function cookAheadAskBlockHtml(item, named)" in SHELL_JS
+    assert "function cookAheadComponentBlockHtml(comp, named)" in SHELL_JS
     block = _fn("cookAheadAskBlockHtml")
-    assert "(named\n        ? '<div class=\"ca-ask-line\">'" in block
+    assert "(named ? '<div class=\"ca-ask-line\">' + escapeHtml(cookAheadRepeatLine(item)) + '</div>' : '')" in block
+    comp = _fn("cookAheadComponentBlockHtml")
+    assert "(named ? '<div class=\"ca-ask-line\">' + escapeHtml(cookAheadComponentRepeatLine(comp)) + '</div>' : '')" in comp
     card = _fn("cookAheadAskCardHtml")
-    assert "cookAheadAskBlockHtml(item, items.length > 1)" in card
+    assert "var named = items.length + comps.length > 1;" in card
+    assert "cookAheadAskBlockHtml(item, named)" in card
+    assert "cookAheadComponentBlocksHtml(named)" in card
+    q = _fn("cookAheadAskQuestion")
+    assert "return 'Do you want to batch cook any of these?';" in q
+    assert "if (!items.length) return cookAheadComponentQuestion(comps[0]);" in q
+    assert "return cookAheadRepeatLine(items[0]) + ' Do you want to batch cook it?';" in q
+
+
+@_needs_node
+def test_the_cook_ahead_sentence_is_not_said_twice_in_any_mix():
+    """The same rule, seen the way a phone sees it: single dish, several
+    dishes, dishes with a component block, and a component block alone.
+    In every case each thing is named exactly once across heading + body."""
+    dish = _item()
+    other = _item(dish="Egg Bites", slot="breakfast", later_dates=(TUE, THU))
+    other["first"]["entry_id"] = 2
+    eggs = _component()
+
+    def render(items, comps):
+        return _node(
+            "cookAheadAskState.items = %s; cookAheadComponentReset(%s);"
+            "console.log(JSON.stringify({q: cookAheadAskQuestion(), card: cookAheadAskCardHtml(true)}));"
+            % (json.dumps(items), json.dumps(comps))
+        )
+
+    # (a) one dish: the heading names it, the block does not.
+    out = render([dish], [])
+    assert out["q"] == "Roasted Chickpeas is on 5 nights. Do you want to batch cook it?"
+    assert 'class="ca-ask-line"' not in out["card"]
+    assert (out["q"] + out["card"]).count("Roasted Chickpeas is on 5 nights.") == 1
+
+    # (b) two dishes: a shared heading, each block names itself once.
+    out = render([dish, other], [])
+    assert out["q"] == "Do you want to batch cook any of these?"
+    assert out["card"].count('class="ca-ask-line"') == 2
+    assert out["card"].count("Roasted Chickpeas is on 5 nights.") == 1
+    assert out["card"].count("Egg Bites is on 3 mornings.") == 1
+    assert "Do you want to batch cook" not in out["card"]
+
+    # (c) a dish and a component: same heading, both blocks named, dish first.
+    out = render([dish], [eggs])
+    assert out["q"] == "Do you want to batch cook any of these?"
+    assert out["card"].count('class="ca-ask-line"') == 2
+    assert out["card"].count("Roasted Chickpeas is on 5 nights.") == 1
+    assert out["card"].count("Boiled eggs are in 2 recipes this week.") == 1
+    assert out["card"].index("Roasted Chickpeas") < out["card"].index("Boiled eggs")
+    assert "Do you want to batch cook" not in out["card"]
+
+    # (d) a component alone: the heading is its question, the block skips its line.
+    out = render([], [eggs])
+    assert out["q"] == "Boiled eggs are in 2 recipes this week. Do you want to batch cook them?"
+    assert 'class="ca-ask-line"' not in out["card"]
+    assert "Boiled eggs are in" not in out["card"]
+    # …and still opens with the choice, the chips, the tally, then the buttons.
+    card = out["card"]
+    assert "They&#39;d cook on Tuesday. Which meals should be included?" in card
+    assert card.index('class="ca-ask-q"') < card.index('class="ca-ask-days') < card.index('class="ca-ask-count"') < card.index('id="cook-ahead-ask-confirm"')
+    assert "One cook on Tuesday for 3 meals · 6 eggs" in card
+    assert ">Batch cook these<" in card
+    assert "wk-quick-body-line" not in card
 
 
 def _rule(selector: str) -> str:
@@ -152,8 +221,9 @@ def test_the_helper_text_on_spruce_uses_the_on_spruce_tokens():
     on = ".wk-allset .wk-quick-card.on-spruce"
     helper = _rule(f"{on} .wk-quick-body-line")
     assert "color: var(--ivory-ink-muted)" in helper
-    assert f"{on} .ca-ask-count" in helper  # the "Makes 2 nights · for 4" line shares it
+    assert f"{on} .ca-ask-count" in helper  # the "One cook on Monday feeds …" line shares it
     assert "color: var(--ivory-ink)" in _rule(f"{on} .ca-ask-line")
+    assert "color: var(--ivory-ink)" in _rule(f"{on} .ca-ask-q")
     sand = _rule(f"{on} .ny-actions .btn-sand")
     assert "color: var(--ivory-ink)" in sand and "border-color: var(--apricot-rule)" in sand
     ticked = _rule(f"{on} .defrost-chip.is-selected")

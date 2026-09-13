@@ -35,6 +35,7 @@ rather than of the household; see set_skip_prep_this_week below.
 """
 from __future__ import annotations
 
+import json
 from datetime import date, timedelta
 
 from ..db import get_conn
@@ -54,6 +55,10 @@ from . import weekly_plan as _weekly_plan
 PREP_CUT_MINUTES = 10
 FRIDGE_MOVE_MINUTES = 2
 COOK_AHEAD_FALLBACK_MINUTES = 30
+# A component batch (batch_components.py — the eggs two dishes both boil)
+# is a cook, not a fridge move; it gets the cook-ahead fallback rather
+# than a thaw's two minutes.
+BATCH_COMPONENT_TASK_TYPE = "batch_component"
 
 # task_type for the one row type this module creates. The other two kinds
 # of item are read from rows other modules own — see the docstring.
@@ -216,13 +221,21 @@ def _plan_entries(weekly_plan_id: int) -> dict[int, dict]:
 def _prep_task_rows(weekly_plan_id: int) -> list[dict]:
     conn = get_conn()
     rows = conn.execute(
-        "SELECT id, task_date, description, related_meal, status, task_type, meal_plan_entry_id, quantity "
+        "SELECT id, task_date, description, related_meal, status, task_type, meal_plan_entry_id, quantity, detail_json "
         "FROM prep_tasks WHERE weekly_plan_id = ? AND household_id = ? "
         "ORDER BY task_date ASC, id ASC",
         (weekly_plan_id, household_id()),
     ).fetchall()
     conn.close()
-    return [dict(r) for r in rows]
+    out = []
+    for r in rows:
+        d = dict(r)
+        try:
+            d["detail"] = json.loads(d.pop("detail_json") or "{}")
+        except (TypeError, ValueError):
+            d["detail"] = {}
+        out.append(d)
+    return out
 
 
 def _slot_word(slot: str, count: int) -> str:
@@ -286,16 +299,23 @@ def _task_items(tasks: list[dict], prep_date: str, entries: dict[int, dict]) -> 
             continue
         entry = entries.get(task["meal_plan_entry_id"]) if task["meal_plan_entry_id"] else None
         is_cut = task["task_type"] == PREP_CUT_TASK_TYPE
+        is_batch = task["task_type"] == BATCH_COMPONENT_TASK_TYPE
         covers = [entry["date"]] if entry else [task["task_date"]]
+        if is_batch:
+            # The batch feeds every dish it was made for, not only the
+            # cook day's — those dates are in its detail (batch_components).
+            for d in (task.get("detail") or {}).get("dishes") or []:
+                if d.get("date"):
+                    covers.append(d["date"])
         items.append({
-            "kind": "prep_cut" if is_cut else "fridge_move",
+            "kind": "prep_cut" if is_cut else ("batch_component" if is_batch else "fridge_move"),
             "prep_task_id": task["id"],
             "entry_id": task["meal_plan_entry_id"],
             "title": task["description"],
             "feeds": task["related_meal"] or (entry["meal"] if entry else ""),
             "done": task["status"] == "done",
             "covers": sorted(set(covers)),
-            "minutes": PREP_CUT_MINUTES if is_cut else FRIDGE_MOVE_MINUTES,
+            "minutes": PREP_CUT_MINUTES if is_cut else (COOK_AHEAD_FALLBACK_MINUTES if is_batch else FRIDGE_MOVE_MINUTES),
         })
     return items
 

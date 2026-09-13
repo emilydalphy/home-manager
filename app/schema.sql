@@ -666,6 +666,12 @@ CREATE TABLE IF NOT EXISTS prep_tasks (
     -- recipe's own ingredient line (e.g. "1 lb") — not the amount currently
     -- on hand in inventory. Blank for 'general' tasks.
     quantity TEXT NOT NULL DEFAULT '',
+    -- 'batch_component' (tools/batch_components.py, Emily 2026-09-13): one
+    -- cook of a component — the eggs — for several different dishes. The
+    -- row sits on the cook day's entry (meal_plan_entry_id) and this holds
+    -- the rest: {key, label, ingredient, source_entry_id,
+    -- covered_entry_ids, dishes, quantity}. '{}' for every other kind.
+    detail_json TEXT NOT NULL DEFAULT '{}',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

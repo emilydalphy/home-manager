@@ -9,6 +9,7 @@ from ..db import get_conn
 from ._shared import household_id, require_household_row
 from . import attendance as _attendance
 from . import attention as _attention
+from . import batch_components as _batch_components
 from . import cook_ahead as _cook_ahead
 from . import grocery as _grocery
 from . import inventory as _inventory
@@ -1153,6 +1154,20 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         m["ingredients"] = _recipes.cooking_ingredients(
             m["ingredients"], servings=m.get("default_servings") or m.get("servings"),
         )
+
+    # The component batches the household said yes to at approval
+    # (batch_components.py): the cook day's card says the eggs are for the
+    # later dishes too, and each later dish reads that they are already
+    # done — on its card and on the eggs' own ingredient row. After the
+    # chains (a reheat night is never told its eggs are made ahead twice
+    # over) and after every ingredient rewrite above, since those build
+    # fresh dicts and the row note has to land on the ones the screen gets.
+    if plan_id is not None:
+        _batch_components.attach_batch_components(plan_id, meals)
+    else:
+        for card in meals:
+            card["batch_components"] = []
+            card["components_made_ahead"] = []
 
     # "I'll use something else instead", said while sorting the list
     # (grocery.substitute_grocery_item): the recipe keeps asking for fresh

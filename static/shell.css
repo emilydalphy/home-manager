@@ -3008,7 +3008,13 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   border: 1.5px solid var(--hairline);
   cursor: pointer;
 }
-.defrost-chip:hover, .ca-ask-day:hover { background: var(--sand); }
+/* Hover only where a pointer can hover. On iOS a tap leaves :hover stuck
+   on the last chip touched, so an unticked chip sat in the sand fill and
+   read as a third state (Emily's 2026-09-13 screenshot: Sat). Touch gets
+   exactly two states, off and on. */
+@media (hover: hover) {
+  .defrost-chip:hover, .ca-ask-day:hover { background: var(--sand); }
+}
 /* Selected reads as "settled, already true" rather than "urgent" — celadon
    is the reassurance accent (DESIGN_SYSTEM.md §1), never apricot here. */
 .defrost-chip.is-selected, .ca-ask-day.is-on {
@@ -3017,10 +3023,14 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   color: var(--ink-on-celadon);
 }
 
-/* One block per repeated dish inside the cook-ahead ask card: the sentence,
-   its day chips, and the live "Makes 3 mornings · for 9" line underneath.
-   Blocks are separated by a hairline rather than by cards, so a week with
-   three repeats still reads as one question with one answer. */
+/* One block per repeated dish inside the cook-ahead ask card, in the
+   order Emily set on 2026-09-13 (DESIGN_SYSTEM §8 rule 7): the dish line
+   when there are several, the question naming the cook night ("It'd cook
+   on Monday. Which other nights should it cover?"), the day chips that
+   answer it, and the live tally sentence underneath ("One cook on Monday
+   feeds Mon and Tue · 4 plates"). Blocks are separated by a hairline
+   rather than by cards, so a week with three repeats still reads as one
+   question with one answer. */
 .ca-ask-block { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; }
 .ca-ask-block + .ca-ask-block { border-top: 1px solid var(--hairline); }
 .ca-ask-line {
@@ -3030,7 +3040,22 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   line-height: 1.4;
   color: var(--ink);
 }
+.ca-ask-q {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ink);
+}
 .ca-ask-days { display: flex; flex-wrap: wrap; gap: 8px; }
+/* A component block's chips are dishes, not days ("Tue · Hard-Boiled Eggs
+   and Avocado Toast"), so each takes the row it needs and reads left to
+   right; the weekday inside is the quiet half. Same chip otherwise — it
+   is a .ca-ask-day too, so it gets the pointer-only :hover above and the
+   same two states on touch. */
+.ca-comp-dish { text-align: left; }
+.ca-comp-day { font-weight: 700; opacity: 0.75; }
+.ca-comp-day::after { content: " ·"; }
 .ca-ask-count {
   font-family: var(--font-body);
   font-size: 12px;
@@ -6038,7 +6063,9 @@ button.wwk-chip-text { cursor: pointer; min-height: 34px; }
   font-weight: 700;
   cursor: pointer;
 }
-.cook-ahead-day:hover { background: var(--spruce-hover); }
+@media (hover: hover) {
+  .cook-ahead-day:hover { background: var(--spruce-hover); }
+}
 .cook-ahead-day.is-on { background: var(--celadon); color: var(--on-accent-ink); }
 .cook-ahead-foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .cook-ahead-count {
@@ -7517,7 +7544,8 @@ span.cook-week-name { cursor: default; }
    screen is hard to read"), the cook-ahead sentence in --ink 1.21:1. Every
    text colour below is re-inked to the on-spruce tokens and measured on
    --spruce-raised, light / dark:
-     .wk-quick-title, .wk-quick-q, .ca-ask-line   --ivory-ink        9.86 / 7.70
+     .wk-quick-title, .wk-quick-q, .ca-ask-line,
+       .ca-ask-q                                  --ivory-ink        9.86 / 7.70
      .wk-quick-body-line, .ca-ask-count           --ivory-ink-muted  8.62 / 6.52
      .btn-sand label                              --ivory-ink        9.86 / 7.70
      .wk-quick-done-tick                          --celadon          6.06 / 4.74
@@ -7556,7 +7584,9 @@ span.cook-week-name { cursor: default; }
 .wk-allset .wk-quick-card.on-spruce .wk-quick-ask { color: var(--apricot-light); }
 .wk-allset .wk-quick-card.on-spruce .wk-quick-body-line,
 .wk-allset .wk-quick-card.on-spruce .ca-ask-count { color: var(--ivory-ink-muted); }
-.wk-allset .wk-quick-card.on-spruce .ca-ask-line { color: var(--ivory-ink); }
+.wk-allset .wk-quick-card.on-spruce .ca-ask-line,
+.wk-allset .wk-quick-card.on-spruce .ca-ask-q { color: var(--ivory-ink); }
+.wk-allset .wk-quick-card.on-spruce .ca-comp-day { opacity: 0.85; }
 .wk-allset .wk-quick-card.on-spruce .ca-ask-block + .ca-ask-block { border-top-color: var(--spruce-hover); }
 .wk-allset .wk-quick-card.on-spruce .defrost-chip.is-selected,
 .wk-allset .wk-quick-card.on-spruce .ca-ask-day.is-on {
@@ -8538,7 +8568,9 @@ span.cook-week-name { cursor: default; }
 .wk-card .cook-ahead-ask,
 .wk-card .cook-ahead-count { color: var(--ink-secondary); }
 .wk-card .cook-ahead-day { background: var(--sand); color: var(--ink-strong); }
-.wk-card .cook-ahead-day:hover { background: var(--sand-deep); }
+@media (hover: hover) {
+  .wk-card .cook-ahead-day:hover { background: var(--sand-deep); }
+}
 .wk-card .cook-ahead-day.is-on { background: var(--celadon); color: var(--on-accent-ink); }
 .wk-card .cook-ahead-go {
   border-color: var(--hairline-strong);

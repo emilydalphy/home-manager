@@ -299,6 +299,12 @@ _MIGRATIONS = [
     ("prep_tasks", "inventory_item_id", "INTEGER"),
     ("prep_tasks", "meal_plan_entry_id", "INTEGER"),
     ("prep_tasks", "quantity", "TEXT NOT NULL DEFAULT ''"),
+    # Loop Board "Batch cook: when the same component is in several
+    # recipes" (Emily, 2026-09-13): a task_type='batch_component' row is
+    # one cook of a component for several dishes, and this is where it
+    # keeps which entries it covers (see tools/batch_components.py).
+    # '{}' on every other kind of row.
+    ("prep_tasks", "detail_json", "TEXT NOT NULL DEFAULT '{}'"),
     # Loop Board "Planning periods, not weeks". A plan is a PERIOD — a start
     # date and a day count — and the Monday week is only its most common
     # shape. Both columns default to the "unset" sentinel ('' / 0), which

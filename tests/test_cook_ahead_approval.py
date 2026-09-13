@@ -234,7 +234,7 @@ def test_no_choices_is_cook_each_on_its_own_and_still_marks_asked(signed_in):
     res = signed_in.post(f"/api/week/{WEEK}/cook-ahead-confirm", json={"choices": []})
 
     assert res.status_code == 200
-    assert res.json() == {"weekly_plan_id": plan_id, "applied": [], "refused": []}
+    assert res.json() == {"weekly_plan_id": plan_id, "applied": [], "components_applied": [], "refused": []}
     assert _asked_at(plan_id) is not None
     assert tools.plan_leftover_chains(plan_id)["leftovers"] == {}
     assert "make_double_for" not in _derived_from(ids[MON])
