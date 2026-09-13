@@ -371,6 +371,74 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — Recipe quantities pass a sanity check (no stick of
+  butter in a 2-serving soup). Branch `worktree-recipe-quantity-sanity`,
+  NOT merged at the time of writing.** Emily, on her phone, Turkish-Style
+  Lentil Soup, Serves 2: "½ cups Red lentils · 1 lb Carrots · 1 stick
+  Butter · 1 bunch Mint". "One stick of butter is a crazy amount for this
+  whole recipe."
+  - **Root cause, reproduced with the recipe saved exactly as the prompt
+    asks for it.** It was NOT the serves scaler and NOT a recipe for four
+    scaled down: the card matches a recipe generated for the household's
+    own table of two, where every `qty` is the SHOPPING line
+    (`generate_weekly_plan_llm`'s "how it's actually bought" bullet —
+    butter is bought by the stick, carrots by the pound). The cook view
+    keeps a shopping qty whenever it measures something
+    (`recipes.cooking_ingredients`), and "stick" is in
+    `_EXTRA_MEASURED_UNITS` as a real kitchen unit, so `_quantity_problem`
+    passed it through; `scale_recipe` then kept it whole because a stick is
+    in `_DISCRETE_UNITS` (`max(1, round(0.5))`). Nothing anywhere asked
+    whether the AMOUNT made sense for the number of people. "½ cups" is
+    `quantities._format_quantity` pluralising everything but exactly 1;
+    shell.js's `humanQtyText` only rewrites the number.
+  - **The guard is deterministic and there is no new model call.**
+    `recipes._PLAUSIBLE_PER_SERVING`: seven ingredient classes (fat, salt,
+    sugar, aromatic, spice, protein, grain) with a per-serving ceiling
+    each; `implausible_quantity` judges a cooking amount against it and
+    `plausible_cooking_quantity` replaces one that is over with the app's
+    own figure for the item (`COOKING_QUANTITIES_PER_4`, scaled — the same
+    table that already turns "1 bottle" into "2 tbsp", so the two
+    corrections cannot disagree) or, for an item the table has never met,
+    the ceiling in the line's own unit. It runs in `cooking_ingredients`
+    (so every recipe already saved is covered at read time) and before a
+    save (`add_recipe` and `save_cooking_quantities` write the corrected
+    `cook_qty`; the shopping qty is never touched — one stick is still
+    what you buy). Rescales SILENTLY for the cook and FLAGS separately:
+    `plan_quality._quantities_plausible` is an "info" rule that reports
+    the line as the model wrote it and what the cook view shows, into the
+    morning report like `_steps_match_ingredients`. A repair call was
+    rejected on cost ($1/household/month) and because the table answers
+    the same question for free; the fill path's `validate_measured_
+    quantities` is deliberately still called WITHOUT `servings` so an
+    out-of-range amount never turns into a paid repair round.
+  - **The ranges are ceilings, generous, and per serving** (fat 2 tbsp,
+    salt 1.5 tsp, sugar ¼ cup, dried spice 2 tsp, aromatics 4 cloves /
+    1 tbsp ginger — no bare-count ceiling, because "12 garlic knots" and
+    "24 onion rings" are counted dishes wearing an aromatic's name, found
+    on review; protein 1 lb, grain 2 cups or 8 oz dry). Every floor is
+    zero: nobody has complained of too little, and 2 oz of bacon
+    flavouring a soup is not a mistake. A stick of butter for FOUR is
+    exactly 2 tbsp a head and passes; the same stick for two does not. A
+    baking recipe that says "serves 4" with a cup of butter would be
+    shown 2 tbsp — accepted, this is a dinner planner, and the import path
+    carries the recipe's own yield ("24 cookies" → 24). Names that borrow
+    a class word ("sugar snap peas", "green beans", "low-fat yogurt",
+    "garlic bread") are listed in `_NOT_THIS_CLASS` and not judged; the
+    pre-save pass keys its fixes by line position, so two lines that
+    share a name are each judged on their own (also found on review).
+  - **A stick cut to a fraction is written in tablespoons** (`scale_recipe`,
+    `_STICK_TBSP = 8`): four-person stick halved is "4 tbsp", not rounded
+    back up to a stick; a whole number of sticks stays sticks.
+  - **One or less is singular** in `_format_quantity` ("0.5 cup", "0.75
+    lb"), which is what reads "½ cup" once the front end has done the
+    fraction. Two ledger tests that pinned "0.6 lbs" were updated;
+    parsing reads either form so nothing stored needs rewriting.
+  - **Left out on purpose:** "1 lb Carrots" for two is at the top of what
+    a produce ceiling would allow and there is no vegetable class — a
+    carrot-heavy soup for two really can use a pound; a vegetable class is
+    a one-line addition if Emily wants one. Variety naming (Persian vs
+    English cucumber) and grocery merging are separate cards.
+
 - **2026-09-13 — A starter chore list from what Pomona already knows.
   Branch `worktree-chores-starter-list`, NOT merged at the time of
   writing.** Loop Board "Chores v1: A starter list from what Pomona

@@ -4877,7 +4877,7 @@ _COOKING_QUANTITIES_PROPERTY = {
         "type": "object",
         "properties": {
             "item": {"type": "string"},
-            "cook_qty": {"type": "string", "description": "Amount at default_servings — 2 tbsp, 1.5 cups, 400 g, 3 cloves, or a count. Never a package word (bottle/jar/bag/box/tub); a sized can is fine."},
+            "cook_qty": {"type": "string", "description": "Amount at default_servings — 2 tbsp, 1.5 cups, 400 g, 3 cloves, or a count — and sensible for that many people (a soup for two takes 1-2 tbsp of butter, not a stick). Never a package word (bottle/jar/bag/box/tub); a sized can is fine."},
         },
         "required": ["item", "cook_qty"],
     },

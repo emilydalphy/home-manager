@@ -4,12 +4,15 @@ Recipes: adding, listing, scaling, feedback and cooking notes.
 from __future__ import annotations
 
 import json
+import logging
 import re
 from ..db import get_conn
 from ._shared import household_id
 from . import grocery as _grocery
 from . import household as _household
 from . import quantities as _quantities
+
+logger = logging.getLogger("home_manager")
 
 
 def add_recipe(
@@ -56,7 +59,13 @@ def add_recipe(
     steps from "day of" steps instead of just listing them flat.
     source_url is the web page a recipe was brought in from (the recipe
     import sheet sets it); leave it blank for anything generated or typed.
+
+    Before anything is written, every line's cooking amount is held to
+    the per-serving ranges in _PLAUSIBLE_PER_SERVING at default_servings
+    (settle_cooking_quantities): a line out of range gets a cook_qty the
+    cook can trust, and its shopping qty is stored exactly as given.
     """
+    ingredients = settle_cooking_quantities(ingredients or [], default_servings)
     conn = get_conn()
     cur = conn.execute(
         "INSERT INTO recipes (household_id, name, notes, ingredients_json, tags_json, food_groups_json, cuisine, main_protein, "
@@ -333,7 +342,12 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
         if parsed:
             amount, unit = parsed
             scaled = amount * ratio
-            if unit in _DISCRETE_UNITS:
+            if unit == "stick" and abs(scaled - round(scaled)) > 1e-9:
+                # A stick of butter cut to a fraction is measured in
+                # tablespoons, not rounded back up to a whole stick — which
+                # is how a four-person stick stayed a stick for two.
+                scaled, unit = scaled * _STICK_TBSP, "tbsp"
+            elif unit in _DISCRETE_UNITS:
                 # "0.5 heads of garlic" is not an amount anyone measures.
                 # Same rounding cooking_quantity applies, so the two agree
                 # about a thing that only comes whole.
@@ -648,6 +662,283 @@ def _quantity_problem(item: str, qty: str) -> str | None:
     return "unmeasured" if _needs_measure(item) else None
 
 
+# ---------- plausibility (Emily, 2026-09-13) ----------
+#
+# "One stick of butter is a crazy amount for this whole recipe. how can we
+# make sure it makes better judgement calls on this." Turkish-Style Lentil
+# Soup, serves 2, on her phone: "1 stick Butter", "1 lb Carrots", "1 bunch
+# Mint (fresh)".
+#
+# The stick was not a judgement call the model got wrong. The recipe was
+# generated for the household's own table of two, as the prompt asks, and
+# every qty on it is a SHOPPING line, as the prompt also asks ("how it's
+# actually bought at the store" — butter comes as a stick). The cook view
+# is meant to swap a shopping line for a cooking amount, and it does for
+# package words (cooking_ingredients below), but "stick" sits in
+# _EXTRA_MEASURED_UNITS as a real kitchen unit, so _quantity_problem passed
+# it through, and scale_recipe then kept it whole because a stick is
+# discrete. Nothing anywhere asked whether the AMOUNT made sense for the
+# number of people.
+#
+# This is that question, asked deterministically. Each ingredient class
+# below carries a per-serving range in whichever families it is measured
+# in; a cooking amount outside its class's range at the recipe's servings
+# is replaced by the app's own amount for that item
+# (COOKING_QUANTITIES_PER_4, scaled — the same table that already turns
+# "1 bottle" into "2 tbsp", so the two corrections agree) or, when the
+# table has never heard of the item, by the nearer bound of the range.
+# No model call: the fix costs nothing and gives the same answer in a
+# test as in production. It runs on every cooking amount the cook can
+# see (cooking_ingredients, so recipes saved before today are covered)
+# and once more before a recipe is saved (add_recipe /
+# save_cooking_quantities write the corrected cook_qty down, so the saved
+# recipe reads sensibly in chat too). The shopping qty is never touched:
+# one stick is still what you buy.
+#
+# The ranges are deliberately generous — the job is to catch a stick in a
+# two-person soup, not to second-guess a heavy hand. They are PER SERVING,
+# so a cake for twelve with a cup of butter passes and the same cup for
+# two does not. Every lower bound is zero: "too little" is not a complaint
+# anyone has made, a false alarm here rewrites a line the cook may have
+# meant (two ounces of bacon flavouring a soup is not a mistake), and the
+# shape is kept so a floor can be added to one class without touching the
+# rest.
+#
+# Each entry: (class, the words that put an ingredient in it, {family:
+# (low, high) per serving}). Families are "tsp" (any volume), "g" (any
+# weight), "count" (a bare number) and "clove". A family a class has no
+# range for is not judged — a bunch of mint or a head of garlic is a whole
+# thing this table has no opinion about. Words match whole (plus a plural)
+# against the ingredient name, longest word first across ALL classes, so
+# "garlic powder" is a spice and "garlic" an aromatic, and "salted butter"
+# is a fat rather than salt. An item naming "fresh" anything is not a
+# dried spice, and _NOT_THIS_CLASS lists the vegetables that borrow a
+# class word ("sugar snap peas", "green beans").
+_PLAUSIBLE_PER_SERVING = (
+    ("fat", ("oil", "butter", "ghee", "lard", "fat", "shortening", "margarine"),
+     {"tsp": (0, 6), "g": (0, 30)}),                       # up to 2 tbsp a head
+    ("salt", ("salt",), {"tsp": (0, 1.5), "g": (0, 9)}),   # salted pasta water passes
+    ("sugar", ("sugar", "honey", "maple syrup", "syrup", "molasses", "agave"),
+     {"tsp": (0, 12), "g": (0, 50)}),                       # up to 1/4 cup a head: dessert
+    # No bare-count ceiling here on purpose: "12 garlic knots" and "24
+    # onion rings" are counted dishes wearing an aromatic's name, and a
+    # count of onions the model gets wrong has not happened. Cloves and
+    # spoonfuls are the aromatic amounts that go silly.
+    ("aromatic", ("onion", "shallot", "garlic", "ginger", "leek"),
+     {"clove": (0, 4), "tsp": (0, 3)}),
+    ("spice", (
+        "paprika", "cumin", "coriander", "turmeric", "cinnamon", "nutmeg", "cardamom",
+        "allspice", "cayenne", "chili powder", "chilli powder", "chili flakes",
+        "red pepper flakes", "pepper flakes", "black pepper", "white pepper",
+        "peppercorns", "curry powder", "garam masala", "garlic powder", "onion powder",
+        "seasoning", "oregano", "thyme", "rosemary", "sage", "sumac", "za'atar",
+        "cumin seeds", "mustard seeds", "fennel seeds", "caraway", "five spice",
+        "italian seasoning", "taco seasoning", "dried herbs",
+    ), {"tsp": (0, 2), "g": (0, 6)}),
+    ("protein", (
+        "chicken", "beef", "pork", "lamb", "turkey", "veal", "salmon", "shrimp", "prawns",
+        "fish", "cod", "tilapia", "haddock", "tuna", "trout", "tofu", "tempeh", "steak",
+        "sausage", "bacon", "ham", "mince", "ground meat", "meatballs",
+    ), {"g": (0, 454)}),                                    # up to 1 lb a head, bone-in
+    ("grain", (
+        "rice", "lentils", "quinoa", "couscous", "pasta", "spaghetti", "penne", "noodles",
+        "oats", "oatmeal", "barley", "bulgur", "farro", "orzo", "polenta", "flour",
+        "chickpeas", "split peas",
+    ), {"tsp": (0, 96), "g": (0, 227)}),                    # up to 2 cups / 8 oz a head
+)
+
+# Names that borrow a class word and would be judged by the wrong table:
+# vegetables and drinks, and the "low-fat"/"fat-free" of a dairy label.
+# Matched as plain substrings of the cleaned name.
+_NOT_THIS_CLASS = (
+    "sugar snap", "green beans", "cauliflower rice", "ginger ale", "ginger beer",
+    "onion rings", "garlic bread", "garlic knots", "ginger snap", "gingerbread",
+    "low-fat", "low fat", "fat-free", "fat free", "nonfat", "non-fat", "full-fat", "full fat",
+    "reduced-fat", "reduced fat",
+)
+
+# Kitchen units read into the families above, for the check only — the
+# app's own unit arithmetic (quantities._UNIT_CONVERSION_GROUPS) never
+# crosses cups into millilitres, and should not; this is a plausibility
+# judgement, not a measurement.
+_CHECK_VOLUME_TSP = {
+    "tsp": 1.0, "tbsp": 3.0, "cup": 48.0, "pint": 96.0, "quart": 192.0, "gallon": 768.0,
+    "ml": 1 / 4.929, "l": 1000 / 4.929,
+}
+_CHECK_WEIGHT_G = {"g": 1.0, "kg": 1000.0, "oz": 28.35, "lb": 453.6}
+
+# A stick of butter is half a cup. Read as tablespoons for the fat class
+# only — a cinnamon stick is a stick of nothing this table measures — and
+# written back as tablespoons by scale_recipe whenever a stick would have
+# to be cut into a fraction nobody measures.
+_STICK_TBSP = 8
+
+
+def _ingredient_class(item: str) -> tuple[str, dict] | None:
+    """(class name, its per-serving ranges) for an ingredient, or None when
+    the table has no opinion about it."""
+    clean = _clean_item(item)
+    if not clean:
+        return None
+    best: tuple[int, str, dict] | None = None
+    for name, words, ranges in _PLAUSIBLE_PER_SERVING:
+        for word in words:
+            if _item_matches(clean, word) and (best is None or len(word) > best[0]):
+                best = (len(word), name, ranges)
+    if best is None or any(phrase in clean for phrase in _NOT_THIS_CLASS):
+        return None
+    if best[1] == "spice" and "fresh" in clean.split():
+        return None
+    return best[1], best[2]
+
+
+def _check_family(unit: str | None, klass: str) -> tuple[str, float] | None:
+    """Which family a unit is judged in, and the factor that takes one of
+    it to the family's base (tsp, g, or one) — or None for a unit the check
+    has no reading of (a can, a bunch, a head, freeform)."""
+    head = (unit or "").partition(" (")[0]
+    if not head:
+        return "count", 1.0
+    if head in _CHECK_VOLUME_TSP:
+        return "tsp", _CHECK_VOLUME_TSP[head]
+    if head in _CHECK_WEIGHT_G:
+        return "g", _CHECK_WEIGHT_G[head]
+    if head == "clove":
+        return "clove", 1.0
+    if head == "stick" and klass == "fat":
+        return "tsp", _STICK_TBSP * 3.0
+    return None
+
+
+def _servings_or_base(servings: int | None) -> int:
+    """add_recipe's documented default: quantities with no stated table are
+    written for four."""
+    return int(servings) if servings and servings > 0 else COOKING_BASE_SERVINGS
+
+
+def implausible_quantity(item: str, qty: str, servings: int | None = None) -> dict | None:
+    """
+    Why a COOKING amount is out of range for `servings` people, or None
+    when it is fine (or when the table has no opinion — an unknown item, a
+    unit the check can't read, freeform text).
+
+    Returns {"class", "family", "per_serving", "low", "high"} so a caller
+    can say what was wrong in words; the per-serving figure is in the
+    family's base (tsp, g, or a count).
+    """
+    klass = _ingredient_class(item)
+    if not klass:
+        return None
+    name, ranges = klass
+    parsed = _quantities._parse_quantity((qty or "").strip())
+    if not parsed:
+        return None
+    amount, unit = parsed
+    family = _check_family(unit, name)
+    if not family or family[0] not in ranges:
+        return None
+    per_serving = amount * family[1] / _servings_or_base(servings)
+    low, high = ranges[family[0]]
+    if low <= per_serving <= high:
+        return None
+    return {"class": name, "family": family[0], "per_serving": per_serving, "low": low, "high": high}
+
+
+def plausible_cooking_quantity(item: str, qty: str, servings: int | None = None, shopping_qty: str = "") -> str:
+    """
+    `qty` itself when it is a sensible cooking amount for `servings`
+    people, otherwise the amount the cook should see instead: the app's
+    own figure for that item scaled to the table (cooking_quantity), or —
+    for an item the table has never met — the nearer bound of its class's
+    range, written in the unit the line came in (tablespoons for a stick).
+    """
+    problem = implausible_quantity(item, qty, servings)
+    if not problem:
+        return qty
+    table = cooking_quantity(item, servings=_servings_or_base(servings), shopping_qty=shopping_qty)
+    if table and not implausible_quantity(item, table, servings):
+        return table
+    amount, unit = _quantities._parse_quantity(qty.strip())
+    family, factor = _check_family(unit, problem["class"])
+    bound = problem["high"] if problem["per_serving"] > problem["high"] else problem["low"]
+    total = bound * _servings_or_base(servings)
+    if (unit or "").partition(" (")[0] == "stick":
+        unit, factor = "tbsp", 3.0
+    fixed = total / factor
+    if family in ("count", "clove"):
+        fixed = max(1.0, round(fixed))
+    return _quantities._format_quantity(round(fixed, 3), unit)
+
+
+def _implausible_lines(ingredients: list[dict], servings: int | None, as_written: bool = False) -> list[dict]:
+    """
+    The lines of a recipe whose cooking amount is out of range for
+    `servings` — each with what the cook view shows instead:
+    [{"index", "item", "qty", "shows", "problem"}], `index` being the
+    line's position in `ingredients` — two lines can share a name.
+
+    Which amount is judged: by default the one the cook view would read
+    (the stored cook_qty where there is a measured one, else the qty
+    itself where THAT measures something — cooking_ingredients' own
+    precedence), which is what the pre-save pass wants. With `as_written`
+    it is the qty line itself, cook_qty or no — what the model wrote, and
+    what a cook would have read before the guard existed — which is what
+    the plan-quality flag reports.
+    """
+    out = []
+    for index, ing in enumerate(ingredients or []):
+        if not isinstance(ing, dict):
+            continue
+        item = (ing.get("item") or "").strip()
+        qty = (ing.get("qty") or "").strip()
+        stored = (ing.get("cook_qty") or "").strip()
+        read = stored if stored and not as_written and not _quantity_problem(item, stored) else qty
+        if not item or not read or _quantity_problem(item, read):
+            continue
+        problem = implausible_quantity(item, read, servings)
+        if problem:
+            out.append({
+                "index": index, "item": item, "qty": read, "problem": problem,
+                "shows": cooking_ingredients([ing], servings=servings)[0].get("qty") or "",
+            })
+    return out
+
+
+def settle_cooking_quantities(ingredients: list[dict], servings: int | None) -> list[dict]:
+    """
+    The pre-save pass: the same ingredient dicts, with a cook_qty written
+    onto any line whose cooking amount is out of range for `servings`
+    (see _PLAUSIBLE_PER_SERVING). Everything else is returned untouched —
+    a line that measures sensibly gets no cook_qty it did not have, and
+    the shopping qty is never rewritten. Logged at INFO so a run of these
+    is visible without a database.
+    """
+    fixes = {line["index"]: line for line in _implausible_lines(ingredients, servings)}
+    if not fixes:
+        return ingredients
+    out = []
+    for index, ing in enumerate(ingredients):
+        line = fixes.get(index)
+        out.append({**ing, "cook_qty": line["shows"]} if line else ing)
+    for line in fixes.values():
+        logger.info(
+            "Recipe quantity out of range for %s: %s '%s' (%s); the cook view shows %s",
+            _servings_or_base(servings), line["item"], line["qty"], line["problem"]["class"], line["shows"],
+        )
+    return out
+
+
+def implausible_quantity_message(line: dict, servings: int | None) -> str:
+    """One clause for a line _implausible_lines flagged, in the app's own
+    voice: "Butter '1 stick' is more than 2 would use — the cook view shows
+    1 tbsp"."""
+    much = "more" if line["problem"]["per_serving"] > line["problem"]["high"] else "less"
+    return (
+        f"{line['item']} '{line['qty']}' is {much} than {_servings_or_base(servings)} would use "
+        f"— the cook view shows {line['shows']}"
+    )
+
+
 def cooking_quantity(item: str, servings: int | None = None, shopping_qty: str = "") -> str | None:
     """
     What actually goes in the pan for `item`, for `servings` people —
@@ -694,7 +985,7 @@ def cooking_quantity(item: str, servings: int | None = None, shopping_qty: str =
     return _quantities._format_quantity(round(scaled, 3), unit)
 
 
-def validate_measured_quantities(ingredients: list[dict], field: str = "qty") -> dict:
+def validate_measured_quantities(ingredients: list[dict], field: str = "qty", servings: int | None = None) -> dict:
     """
     Check that ingredient quantities are amounts a person can measure into
     a pan — the recipe-side rule Julia's "one bottle olive oil" broke.
@@ -714,6 +1005,13 @@ def validate_measured_quantities(ingredients: list[dict], field: str = "qty") ->
     "suggested"}]}, where `suggested` is what cooking_quantity would write
     instead — so a caller can repair a line without asking anyone twice.
     `field` (default "qty") lets the same rule check a stored cook_qty.
+
+    With `servings`, a measured amount is also held to the per-serving
+    ranges in _PLAUSIBLE_PER_SERVING and reported as "implausible", with
+    the amount plausible_cooking_quantity would show instead. Without it
+    (the default, and what the recipe-fill path asks) only the unit is
+    judged, so no caller starts paying for a repair call over an amount
+    the table can settle for free.
     """
     problems = []
     for ing in ingredients or []:
@@ -733,6 +1031,13 @@ def validate_measured_quantities(ingredients: list[dict], field: str = "qty") ->
                 "reason": reason,
                 "suggested": cooking_quantity(item, shopping_qty=qty),
             })
+        elif servings and implausible_quantity(item, qty, servings):
+            problems.append({
+                "item": item,
+                "qty": qty,
+                "reason": "implausible",
+                "suggested": plausible_cooking_quantity(item, qty, servings, shopping_qty=(ing.get("qty") or "")),
+            })
     return {"ok": not problems, "problems": problems}
 
 
@@ -748,6 +1053,12 @@ def cooking_ingredients(ingredients: list[dict], servings: int | None = None) ->
     it is still the honest answer to "how much do I buy", a different
     question that stays the grocery list's.
 
+    Whichever amount wins is then held to _PLAUSIBLE_PER_SERVING for
+    `servings` people (plausible_cooking_quantity): "1 stick" of butter
+    measures something, and is still not what goes into a soup for two.
+    `servings` is the table the amounts are written for; None means the
+    recipe's documented default of four.
+
     Never invents an amount it has no basis for: an unknown item with a
     blank qty comes back blank rather than guessed at.
     """
@@ -760,10 +1071,12 @@ def cooking_ingredients(ingredients: list[dict], servings: int | None = None) ->
         qty = (ing.get("qty") or "").strip()
         stored = (ing.get("cook_qty") or "").strip()
         if stored and not _quantity_problem(item, stored):
-            out.append({**ing, "qty": stored, "shopping_qty": qty})
+            sane = plausible_cooking_quantity(item, stored, servings, shopping_qty=qty)
+            out.append({**ing, "qty": sane, "shopping_qty": qty})
             continue
         if not _quantity_problem(item, qty):
-            out.append(dict(ing))
+            sane = plausible_cooking_quantity(item, qty, servings, shopping_qty=qty)
+            out.append(dict(ing) if sane == qty else {**ing, "qty": sane, "shopping_qty": qty})
             continue
         suggested = cooking_quantity(item, servings=servings, shopping_qty=qty)
         out.append({**ing, "qty": suggested, "shopping_qty": qty} if suggested else dict(ing))
@@ -780,7 +1093,7 @@ def save_cooking_quantities(recipe_name: str, cook_quantities: dict[str, str]) -
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT id, ingredients_json FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+        "SELECT id, ingredients_json, default_servings FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?)",
         (household_id(), recipe_name),
     ).fetchone()
     if not row:
@@ -792,6 +1105,9 @@ def save_cooking_quantities(recipe_name: str, cook_quantities: dict[str, str]) -
         measured = (by_item.get(_clean_item(ing.get("item") or "")) or "").strip()
         if measured:
             ing["cook_qty"] = measured
+    # The model's measured lines are held to the same per-serving ranges
+    # as anything else before they are written down (Emily, 2026-09-13).
+    ingredients = settle_cooking_quantities(ingredients, row["default_servings"])
     conn.execute(
         "UPDATE recipes SET ingredients_json = ? WHERE id = ?",
         (json.dumps(ingredients), row["id"]),
