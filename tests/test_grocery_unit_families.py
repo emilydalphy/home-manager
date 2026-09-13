@@ -156,9 +156,12 @@ def test_two_recipes_that_disagree_on_a_unit_still_share_one_plan_line(eggs_by_t
     tools.plan_meal(monday.isoformat(), "Egg Bake", slot="dinner", weekly_plan_id=plan_id)
     tools.plan_meal((monday + datetime.timedelta(days=1)).isoformat(), "Egg Salad", slot="dinner", weekly_plan_id=plan_id)
     tools.approve_weekly_plan(plan_id, "Emily")
-    assert _lines("Eggs") == [{"quantity": "2 cups + 3", "plan": plan_id}]
+    # The count half reads as the carton it is since 2026-09-13 (three eggs
+    # is one dozen bought — test_grocery_counted_packs.py); the disagreement
+    # with the cups half is still reported on the one plan line.
+    assert _lines("Eggs") == [{"quantity": "2 cups + 1 dozen", "plan": plan_id}]
     tools.swap_meal_in_plan(plan_id, monday.isoformat(), "Egg Salad", slot="dinner")
-    assert _lines("Eggs") == [{"quantity": "6", "plan": plan_id}]
+    assert _lines("Eggs") == [{"quantity": "1 dozen", "plan": plan_id}]  # 6 eggs
     tools.clear_weekly_plan(plan_id)
     assert _lines("Eggs") == []
 

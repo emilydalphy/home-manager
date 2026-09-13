@@ -1371,7 +1371,7 @@ TOOL_DEFINITIONS = [
                         "type": "object",
                         "properties": {
                             "item": {"type": "string", "description": "The plain grocery-list name ('Carrots', never 'Carrots, julienned'), naming the kind whenever the count depends on it ('Persian cucumbers' with qty '6' — a bare 'Cucumbers' reads as full-size English ones)."},
-                            "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 dozen', '1 can') — this is what shows up on the grocery list when the recipe gets planned, not a recipe-prep measurement like '2 cups shredded'. Any prep-specific amount belongs in the instructions text instead."},
+                            "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 can') — except eggs and garlic, which are the NUMBER the recipe uses ('4' eggs, '3 cloves' garlic), never '1 dozen' or '1 head'; the grocery list adds the week's eggs up and rounds to dozens itself — this is what shows up on the grocery list when the recipe gets planned, not a recipe-prep measurement like '2 cups shredded'. Any prep-specific amount belongs in the instructions text instead."},
                             "category": {
                                 "type": "string",
                                 "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"],
@@ -2450,7 +2450,7 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                                 "type": "object",
                                 "properties": {
                                     "item": {"type": "string"},
-                                    "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 dozen', '1 can'), not a recipe-prep measurement like '2 cups shredded' — see the prompt guidance above on this."},
+                                    "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 can') — except eggs and garlic, which are the NUMBER the recipe uses ('4' eggs, '3 cloves' garlic), never '1 dozen' or '1 head'; the grocery list adds the week's eggs up and rounds to dozens itself, not a recipe-prep measurement like '2 cups shredded' — see the prompt guidance above on this."},
                                     "category": {
                                         "type": "string",
                                         "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"],
@@ -2855,8 +2855,11 @@ tbsp chopped"; "1 lb" of carrots, not "1 cup diced". This is what shows up on th
 so it needs to read like a shopping list line, not a recipe measurement — any prep-specific \
 amount (how much of that head actually gets used) belongs in the instructions text instead \
 ("shred half the head"), not in qty. Round up to the smallest sensible whole \
-unit a store actually sells (a head, a bunch, a bag, a lb, a dozen, a can) rather than a \
-fractional recipe amount. The same discipline applies to the ingredient's item name itself, not \
+unit a store actually sells (a head, a bunch, a bag, a lb, a can) rather than a \
+fractional recipe amount. TWO EXCEPTIONS, and they matter: eggs and garlic are written as the \
+NUMBER the recipe uses — qty "4" for Eggs, "3 cloves" for Garlic — never "1 dozen" or "1 head". \
+The grocery list adds up every meal's eggs and cloves for the week and rounds to whole dozens \
+and heads itself; a recipe that says "1 dozen" makes the list buy a carton per meal. The same discipline applies to the ingredient's item name itself, not \
 just qty — write it as the plain grocery-list name ("Baby spinach", "Carrots"), never with a \
 prep descriptor tacked on ("Baby spinach, chopped", "Carrots, julienned"). This matters beyond \
 phrasing: the grocery list merges lines by exact item name, so "Baby spinach" in one recipe and \
@@ -2987,7 +2990,7 @@ _GENERATE_COMPONENT_PLAN_TOOL = {
                                 "type": "object",
                                 "properties": {
                                     "item": {"type": "string"},
-                                    "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 dozen', '1 can'), not a recipe-prep measurement like '2 cups shredded' — see the prompt guidance above on this."},
+                                    "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 can') — except eggs and garlic, which are the NUMBER the recipe uses ('4' eggs, '3 cloves' garlic), never '1 dozen' or '1 head'; the grocery list adds the week's eggs up and rounds to dozens itself, not a recipe-prep measurement like '2 cups shredded' — see the prompt guidance above on this."},
                                     "category": {
                                         "type": "string",
                                         "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"],
@@ -3112,7 +3115,8 @@ near-expiring inventory, novelty_preference), never generic filler.
 dairy, meat/seafood, pantry, frozen, other) — pantry means shelf-stable only; eggs/butter/tofu \
 are dairy; fresh vegetables/herbs are produce.
 - Write each ingredient's qty as how it's actually bought at the store (a head, a bunch, a bag, \
-a lb, a dozen, a can), not how much ends up used once prepped, and keep the item name itself \
+a lb, a can) — except eggs and garlic, which are the number the recipe uses ("4" eggs, "3 \
+cloves"), never "1 dozen" or "1 head" — not how much ends up used once prepped, and keep the item name itself \
 free of prep descriptors ("Baby spinach", never "Baby spinach, chopped") — but DO name the kind \
 whenever the count depends on it ("Persian cucumbers" with qty "6", never a bare "Cucumbers" \
 meaning small ones: a bare name reads as the full-size kind) — see the day-based prompt's \

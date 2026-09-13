@@ -567,6 +567,55 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None) -> dict:
     return {"removed_items": removed_items, "trimmed_items": trimmed_items}
 
 
+def _recompute_plan_line_from_ledger(item_id: int, conn=None) -> None:
+    """
+    Put a plan-owned grocery line back to what its whole ledger adds up
+    to — the recompute half of _reverse_meal_grocery_contributions, run
+    after an ADD instead of after a removal.
+
+    Needed for a counted pack (quantities._PACK_CONVERSION_GROUPS), and
+    only there. Every ingest pass rounds its own total up to whole packs
+    before it reaches the list, so a second pass onto the same line — a
+    meal swapped in after approval, a dinner planned in chat — adds a
+    whole carton to a whole carton: three eggs already on the line and
+    three more arriving read "1 dozen" + "1 dozen" = "2 dozen" for six
+    eggs. The ledger still holds the six, so the line is simply re-read
+    from it, exactly as a reversal would. A measurable unit rounds to a
+    quarter and a count to a whole one, both small enough that summing
+    two rounded displays has always been accepted; a pack is twelve.
+
+    Only a line the ledger fully describes (source_weekly_plan_id set)
+    is touched; a person's standing want keeps whatever it reads. A
+    ledger the recompute can't read (a freeform row) leaves the line
+    alone too.
+    """
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
+    row = conn.execute(
+        "SELECT id, quantity, status, source_weekly_plan_id FROM grocery_items WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
+    ).fetchone()
+    if not row or row["source_weekly_plan_id"] is None or row["status"] not in ("needed", "spice"):
+        if own_conn:
+            conn.close()
+        return
+    qtys = [
+        r["quantity"] or "" for r in conn.execute(
+            "SELECT quantity FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ?",
+            (household_id(), item_id),
+        ).fetchall()
+    ]
+    summed = _quantities._sum_ledger_quantities(qtys)
+    if summed:
+        new_qty = _quantities._with_note(summed, _quantities._quantity_note(row["quantity"] or ""))
+        if new_qty != (row["quantity"] or ""):
+            conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ?", (new_qty, row["id"]))
+    if own_conn:
+        conn.commit()
+        conn.close()
+
+
 def add_grocery_item(
     item: str,
     quantity: str = "",
