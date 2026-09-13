@@ -4570,11 +4570,24 @@ def approve_weekly_plan(
     # see conflicts_note_after_approval.
     conflicts_note = _coordination.conflicts_note_after_approval(conflicts)
     approved_by = acting_name(approved_by)
-    return _settle_weekly_plan_approval(weekly_plan_id, approved_by, conflicts, conflicts_note)
+    # Resolved here, not inside the transaction below: acting_member_id_for
+    # calls current_member(), which opens its OWN connection (a local
+    # `from ..db import get_conn` inside _shared.py, invisible to anything
+    # that watches this module's own get_conn) to read the members table.
+    # Called as a bare argument to the UPDATE it would run AFTER BEGIN
+    # IMMEDIATE — a second connection reading while the first holds the
+    # write lock. Harmless in practice (a read, not a write, so it cannot
+    # deadlock against the RESERVED lock) but it breaks the one-connection
+    # invariant every atomic write in this file otherwise holds to exactly,
+    # so it is computed out here instead, exactly where `approved_by`
+    # itself already is.
+    approved_by_member_id = acting_member_id_for(approved_by)
+    return _settle_weekly_plan_approval(weekly_plan_id, approved_by, approved_by_member_id, conflicts, conflicts_note)
 
 
 def _settle_weekly_plan_approval(
-    weekly_plan_id: int, approved_by: str, conflicts: list[dict], conflicts_note: str | None
+    weekly_plan_id: int, approved_by: str, approved_by_member_id: int | None,
+    conflicts: list[dict], conflicts_note: str | None,
 ) -> dict:
     """
     The write behind a genuine transition into 'approved' — one connection,
@@ -4589,10 +4602,12 @@ def _settle_weekly_plan_approval(
     rolls back, and sees THIS call's result when it resumes — not a second
     helping of groceries.
 
-    `conflicts`/`conflicts_note` ride straight through from
-    approve_weekly_plan, computed before this opens (see its docstring for
-    why that read stays outside the lock): they are reported back
-    unchanged, never re-derived here.
+    `conflicts`/`conflicts_note`/`approved_by_member_id` ride straight
+    through from approve_weekly_plan, computed before this opens (see its
+    docstring for why each stays outside the lock): they are reported back
+    or written unchanged, never re-derived here — nothing in this function
+    reads anything but weekly_plans/meal_plan_entries/grocery_items/
+    meal_plan_grocery_links, on this one connection.
     """
     conn = get_conn()
     try:
@@ -4611,7 +4626,7 @@ def _settle_weekly_plan_approval(
             "UPDATE weekly_plans SET status = 'approved', updated_at = datetime('now'), "
             "approved_by = ?, approved_by_member_id = ?, approved_at = datetime('now') "
             "WHERE id = ? AND household_id = ? AND status != 'approved'",
-            (approved_by.strip(), acting_member_id_for(approved_by), weekly_plan_id, household_id()),
+            (approved_by.strip(), approved_by_member_id, weekly_plan_id, household_id()),
         ).rowcount
         if flipped == 0:
             conn.rollback()

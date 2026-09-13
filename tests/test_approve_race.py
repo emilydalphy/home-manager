@@ -36,6 +36,7 @@ import pytest
 
 from app import tools
 from app.db import get_conn
+from app import db
 from app.tools import attendance, grocery, leftovers, meal_plans, recipes, weekly_plan
 
 
@@ -499,7 +500,22 @@ def test_the_transaction_opens_exactly_one_connection(monkeypatch):
     transaction's own. `leftovers`/`attendance` are watched too, not just
     the modules the ingest calls directly — servings_scale_factor and
     plan_leftover_chains/batch_for_source sit one level further down the
-    same tree (an independent verifier's adversarial pass checked this).
+    same tree.
+
+    `db.get_conn` (the true source, patched separately below) catches a
+    DIFFERENT shape than the six module-level patches above: a LOCAL
+    `from ..db import get_conn` inside a function body — the one
+    _shared.current_member() uses — re-resolves against whatever
+    `app.db.get_conn` currently is on every call, so it is invisible to
+    patching any module's own pre-bound name. An independent verifier's
+    adversarial pass found exactly this: acting_member_id_for(approved_by)
+    used to be evaluated as a bare argument to the UPDATE, i.e. AFTER
+    BEGIN IMMEDIATE, and opened one of these on every approval. It is now
+    resolved in approve_weekly_plan before the transaction opens (see its
+    docstring) — a harmless extra READ connection either way, since
+    SQLite's RESERVED lock doesn't block a reader, but the whole point of
+    this test is that "exactly one" means exactly one.
+
     (approve_weekly_plan's own separate, pre-lock status read is
     deliberately not in scope here — see its docstring.)
     """
@@ -515,21 +531,37 @@ def test_the_transaction_opens_exactly_one_connection(monkeypatch):
 
         monkeypatch.setattr(module, "get_conn", counting)
 
+    db_opened = [0]
+    real_db_get_conn = db.get_conn
+
+    def counting_db():
+        db_opened[0] += 1
+        return real_db_get_conn()
+
+    monkeypatch.setattr(db, "get_conn", counting_db)
+
     marks = {}
     real_settle = weekly_plan._settle_weekly_plan_approval
 
     def marking(*args, **kwargs):
-        marks["start"] = dict(opened)
+        marks["start"] = (dict(opened), db_opened[0])
         out = real_settle(*args, **kwargs)
-        marks["end"] = dict(opened)
+        marks["end"] = (dict(opened), db_opened[0])
         return out
 
     monkeypatch.setattr(weekly_plan, "_settle_weekly_plan_approval", marking)
     tools.approve_weekly_plan(plan_id, approved_by="Emily")
 
     assert set(marks) == {"start", "end"}, "the transaction never ran"
-    delta = {k: marks["end"][k] - marks["start"][k] for k in opened}
+    (start_modules, start_db), (end_modules, end_db) = marks["start"], marks["end"]
+    delta = {k: end_modules[k] - start_modules[k] for k in opened}
     assert delta == {
         "weekly_plan": 1, "grocery": 0, "recipes": 0, "meal_plans": 0, "leftovers": 0, "attendance": 0,
     }, f"something inside the transaction opened its own connection: {delta}"
+    # weekly_plan.get_conn was captured and patched BEFORE db.get_conn was,
+    # so its own call bypasses the db-level patch entirely (it calls the
+    # original function object directly) — the transaction's own
+    # connection contributes 0 to this counter, not 1. Anything above 0
+    # here is a local `from ..db import get_conn` firing mid-transaction.
+    assert end_db - start_db == 0, "something opened a connection via a local `from ..db import get_conn`"
     assert _grocery_row(beans)[0]["quantity"] == "1 tin"
