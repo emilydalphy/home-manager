@@ -4102,13 +4102,20 @@
         sec.items.forEach(function (it) { html += groTripRowHtml(it); });
       });
       html += '</div>';
-    } else {
-      html += '<p class="gro-empty">Everything here is in the cart.</p>';
     }
 
     // The trolley, collapsed, with the put-back this screen has always had
     // (groDoneRowHtml's row IS the put-back: status -> needed).
     var inCart = groTripInCart(data);
+    if (!sections.length) {
+      // Nothing left to tick: either it is all in the trolley, or there is
+      // nothing on this stop at all — a store the list no longer has (a
+      // trip paused across a new week's approval, reached by the back
+      // gesture), which used to read "everything is in the cart" over an
+      // empty trolley (found on review).
+      html += '<p class="gro-empty">' +
+        (inCart.length ? 'Everything here is in the cart.' : 'Nothing left on this stop.') + '</p>';
+    }
     if (inCart.length) {
       var open = groceryState.inCartOpen;
       html += '<div class="gro-done' + (open ? ' open' : '') + '">' +
@@ -5091,6 +5098,11 @@
       if (!raw) return null;
       var saved = JSON.parse(raw);
       if (!saved || !Array.isArray(saved.stops) || !saved.stops.length) return null;
+      // No start time means no way to tell how old it is, so it is not
+      // resumed: the three-day rule has to be able to apply to everything
+      // this reads back. (Every writer sets one — this is a guard against
+      // a hand-edited or half-written value, found on review.)
+      if (!Number(saved.startedAt)) return null;
       return saved;
     } catch (err) { return null; }
   }

@@ -499,6 +499,8 @@ console.log(JSON.stringify({ stops: groceryState.tripStops, adopted: STORE.get('
 
 @_needs_node
 def test_a_broken_mirror_is_ignored():
+    """Not JSON, no stops, or no start time (so the three-day rule could
+    never apply to it): none of these is resumed."""
     out = _node("""
 twoShops();
 STORE.set('pomona.trip.h1', '{not json');
@@ -508,10 +510,34 @@ const a = groceryState.tripStops;
 STORE.set('pomona.trip.h1', JSON.stringify({ stops: [] }));
 groceryState.tripRestored = false;
 groRestoreTrip();
-console.log(JSON.stringify({ a: a, b: groceryState.tripStops }));
+const b = groceryState.tripStops;
+STORE.set('pomona.trip.h1', JSON.stringify({ stops: ['Metro'], index: 0, done: {} }));
+groceryState.tripRestored = false;
+groRestoreTrip();
+console.log(JSON.stringify({ a: a, b: b, c: groceryState.tripStops }));
 """)
     assert out["a"] is None
     assert out["b"] is None
+    assert out["c"] is None, "a trip with no start time can never age out, so it is not resumed"
+
+
+@_needs_node
+def test_a_stop_the_list_no_longer_has_does_not_claim_a_full_trolley():
+    """A trip paused across a new week's approval, reached by the back
+    gesture: the store is gone from the list. TRIP used to say "Everything
+    here is in the cart" over an empty trolley (found on review)."""
+    out = _node("""
+twoShops();
+groceryState.tripStops = ['Loblaws', 'Metro'];
+groceryState.tripIndex = 0;
+const gone = groTripHtml(groceryState.data);
+groceryState.data.stores.Loblaws = { sections: [], purchased: [], inCart: [{ id: 9, item: 'Jam', store: 'Loblaws', store_decided: 1 }] };
+const full = groTripHtml(groceryState.data);
+console.log(JSON.stringify({ gone: gone, full: full }));
+""")
+    assert "Nothing left on this stop." in out["gone"]
+    assert "Everything here is in the cart." not in out["gone"]
+    assert "Everything here is in the cart." in out["full"]
 
 
 # --- 6. source markers for the wiring the harness cannot reach ------------

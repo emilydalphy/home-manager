@@ -411,9 +411,9 @@ why*, not duplicating the diff.
     `groInCartCount`) live with the renderers, above the "Actions" marker:
     `tests/test_stores_multiselect.py` slices the region there and calls
     `groDockHtml`, which reads them.
-  - Tests: `tests/test_shop_trip_exit.py` (24, node harness), two copy
+  - Tests: `tests/test_shop_trip_exit.py` (25, node harness), two copy
     markers updated for the renamed button, one root-band marker for the
-    band's sub-line. 3369 on the branch.
+    band's sub-line. 3370 on the branch.
 - **2026-09-13 — Skip, swap, or "not this week": a ··· on every chore row.
   Branch `overnight/chores-skip-hand-move`, NOT merged at the time of
   writing.** Loop Board "Chores v1: Skip, swap, or 'not this week'"
