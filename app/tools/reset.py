@@ -73,6 +73,16 @@ def clear_weekly_plan(weekly_plan_id: int | None = None) -> dict:
         trimmed_items.extend(reversal["trimmed_items"])
 
     conn = get_conn()
+    # Prep rows keyed to this plan's entries go too, wherever they were
+    # dated — a big meal's make-ahead rows sit on the days before, which
+    # can belong to another plan (app/tools/big_meal.py). get_prep_schedule
+    # would hide them once the entries are gone; the table stays honest
+    # instead of relying on that.
+    marks = ",".join("?" * len(entry_ids))
+    by_entry = conn.execute(
+        f"DELETE FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id IN ({marks})",
+        (household_id(), *entry_ids),
+    ).rowcount if entry_ids else 0
     conn.execute(
         "DELETE FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ?",
         (weekly_plan_id, household_id()),
@@ -81,7 +91,7 @@ def clear_weekly_plan(weekly_plan_id: int | None = None) -> dict:
         "DELETE FROM prep_tasks WHERE weekly_plan_id = ? AND household_id = ?",
         (weekly_plan_id, household_id()),
     )
-    prep_tasks_cleared = prep.rowcount
+    prep_tasks_cleared = prep.rowcount + by_entry
     conn.execute(
         "UPDATE weekly_plans SET status = 'draft', updated_at = datetime('now') WHERE id = ? AND household_id = ?",
         (weekly_plan_id, household_id()),

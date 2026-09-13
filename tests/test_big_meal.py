@@ -1016,3 +1016,87 @@ def test_a_misspelled_migration_table_still_fails_loudly():
             db_mod._run_migrations(conn)
     finally:
         db_mod._MIGRATIONS = saved
+
+
+# ---------- verifier round 2 ----------
+
+def test_an_ordinary_weeks_plate_side_still_follows_its_dish_through_the_chain(family):
+    """Item 12 restricted: only a big-meal dish skips the batch scaling. A
+    Tuesday cook + Thursday reheat with a rice side buys the rice for both
+    nights, exactly as before slice 2."""
+    monday = date.today() - timedelta(days=date.today().weekday())
+    tue, thu = (monday + timedelta(days=1)).isoformat(), (monday + timedelta(days=3)).isoformat()
+    tools.add_recipe("Curry", ingredients=[{"item": "chicken thighs", "qty": "1 lb", "category": "meat/seafood"}], default_servings=2)
+    plan_id = tools.create_weekly_plan(monday.isoformat())["weekly_plan_id"]
+    cook = tools.plan_meal(tue, "Curry", slot="dinner", weekly_plan_id=plan_id)
+    tools.plan_meal(thu, "Curry", slot="dinner", weekly_plan_id=plan_id, derived_from={"links_to": f"{tue}:dinner"})
+    tools.repair_leftover_chains(plan_id)
+    from app.tools import plates
+    plates.attach_sides(cook["entry_id"], [{"name": "Steamed rice", "covers": ["carb"],
+                                            "ingredients": [{"item": "rice", "qty": "1 cup", "category": "pantry"}],
+                                            "instructions": ["Steam."], "minutes": 15}], ["carb"])
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+    items = _list()
+    assert items["rice"] == "2 cups", "the reheat night's rice is bought with the cook night's"
+    assert items["chicken thighs"] == "2 lbs"
+
+
+@pytest.mark.parametrize("note,expect_terms", [
+    ("No Nuts", ["nuts"]),
+    ("NO NUTS", ["nuts"]),
+    ("No Peanuts", ["peanuts"]),
+    ("no nuts for Grandma", ["nuts"]),
+    ("Priya can’t have dairy", ["dairy"]),
+    ("Sam’s vegetarian; no Dairy", ["dairy"]),
+])
+def test_a_capitalised_food_word_is_never_read_as_a_name(family, note, expect_terms):
+    avoid = bm.guest_avoidances(note)
+    assert [a["terms"][0][0] for a in avoid] == expect_terms
+    people = bm._people_words(note)
+    assert not ({"nuts", "peanuts", "dairy"} & people)
+
+
+def test_peanut_noodles_never_land_under_a_shouted_no_nuts(family, recipes, proposer):
+    tg = _thanksgiving()
+    _week_with_dinner(tg, "Roast Chicken", approve=True)
+    proposer["answer"]["dishes"] = DISHES + [
+        {"name": "Peanut Noodles", "role": "side", "covers": ["carb"],
+         "ingredients": [{"item": "peanuts", "qty": "1 cup", "category": "pantry"}, {"item": "noodles", "qty": "1 pack", "category": "pantry"}],
+         "instructions": ["Toss."], "minutes": 10, "cook_minutes": 5, "oven": False, "ahead_days": 0},
+    ]
+    result = tools.answer_holiday(tg, "hosting", headcount=5, guest_notes="NO NUTS")
+    assert "Peanut Noodles" not in [d["name"] for d in tools.get_big_meal(tg)["dishes"]]
+    assert "peanuts" not in _list()
+    assert result["big_meal_said"] == "Left off the peanut noodles — NO NUTS."
+
+
+def test_sectionless_produce_is_fresh_and_the_pantry_keeps():
+    assert not bm.keeps("cranberries", "other") and not bm.keeps("brussels sprouts", "other")
+    assert not bm.keeps("butternut squash", "other") and not bm.keeps("yukon potatoes", "other")
+    assert bm.keeps("foil", "other") and bm.keeps("chicken stock", "pantry") and bm.keeps("flour", "other")
+
+
+def test_a_menu_that_is_gone_says_so_not_that_the_week_is_missing(family, recipes, proposer):
+    tg = _thanksgiving()
+    plan_id = _week_with_dinner(tg, "Roast Chicken", approve=True)
+    tools.answer_holiday(tg, "hosting", headcount=5)
+    tools.swap_meal_in_plan(plan_id, tg, "Chili")
+    spoken = tools.get_big_meal(tg)["spoken"]
+    assert "isn’t on the plan any more — say hosting again" in spoken and "no week planned" not in spoken
+
+
+def test_the_same_clash_is_said_once(family, recipes, proposer):
+    assert bm.said({"dropped": [{"name": "Shrimp Boil", "restriction": "no shellfish", "role": "main"},
+                                {"name": "Shrimp Boil", "restriction": "no shellfish", "role": "main"}]}) \
+        == "Left off the shrimp boil — no shellfish."
+
+
+def test_clearing_a_week_takes_its_big_meal_prep_rows_with_it(family, recipes, proposer):
+    tg = _thanksgiving()  # a Monday: its Sunday prep is dated into the week before
+    previous = tools.create_weekly_plan(_shift(tg, -7))["weekly_plan_id"]
+    tools.plan_meal(_shift(tg, -1), "Chili", slot="dinner", weekly_plan_id=previous)
+    plan_id = _week_with_dinner(tg, "Roast Chicken", approve=True)
+    tools.answer_holiday(tg, "hosting", headcount=5)
+    assert any(t["weekly_plan_id"] == previous for t in _holiday_tasks())
+    tools.clear_weekly_plan(plan_id)
+    assert _holiday_tasks() == [], "gone from the table, not merely hidden on read"

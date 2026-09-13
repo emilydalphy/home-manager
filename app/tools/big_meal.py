@@ -145,6 +145,12 @@ PERISHABLE_WORDS = frozenset({
     "berries", "strawberries", "raspberries", "blueberries", "blackberries",
     "bread", "loaf", "loaves", "rolls", "buns", "baguette",
     "milk", "cream", "yogurt", "yoghurt", "cheese", "eggs",
+    # Common produce a recipe may leave sectionless.
+    "cranberries", "cranberry", "sprouts", "sprout", "squash", "potatoes", "potato", "carrots", "carrot",
+    "celery", "apples", "apple", "pears", "pear", "lemons", "lemon", "oranges", "orange", "limes", "lime",
+    "cabbage", "leeks", "leek", "parsnips", "parsnip", "mushrooms", "mushroom", "avocado", "avocados",
+    "tomatoes", "tomato", "peppers", "pepper", "cucumber", "cucumbers", "corn", "onions", "onion",
+    "garlic", "ginger", "beans", "peas", "broccoli", "cauliflower", "asparagus", "zucchini", "eggplant",
 })
 
 # When nothing says otherwise — no `oven`, no cook time — a side is
@@ -534,10 +540,28 @@ def _people_words(text: str) -> set[str]:
             sentence_start = True
             continue
         bare = re.sub(r"[’']s?$", "", token)
-        if token.endswith(("’s", "'s")) or (token[0].isupper() and not sentence_start):
+        possessive = token.endswith(("’s", "'s"))
+        # A capital mid-sentence reads as a name — unless the word is food
+        # the matcher knows ("No Nuts", "no Peanuts for the kids") or it's
+        # shouted in caps ("NO NUTS"), which is emphasis, not a person.
+        looks_like_name = token[0].isupper() and not sentence_start and not token.isupper()
+        if (possessive or looks_like_name) and not _is_food_word(bare.lower()):
             words.add(bare.lower())
         sentence_start = False
     return words
+
+
+def _is_food_word(word: str) -> bool:
+    """Is this a word the allergy matcher would treat as food — an allergen family, an alias, or its plural twin?"""
+    if not word:
+        return False
+    aliases = getattr(_coordination, "_ALLERGEN_ALIASES", {}) or {}
+    known = set(aliases)
+    for family in aliases.values():
+        known |= set(family)
+    known |= PERISHABLE_WORDS
+    variants = {word} | set(_coordination._keyword_variants(word))
+    return any(v in known for v in variants)
 
 
 def dish_conflicts(name: str, ingredients: list[dict], guest_notes: str) -> list[dict]:
@@ -1522,18 +1546,25 @@ def said(result: dict | None) -> str:
     """
     if not result:
         return ""
-    bits = []
+    bits: list[str] = []
+
+    def _say(line: str) -> None:
+        # Two tries at the same dish, or three sides off for one note,
+        # are one thing to say, not three.
+        if line not in bits:
+            bits.append(line)
+
     for d in result.get("dropped") or []:
-        bits.append(f"Left off the {d['name'].lower()} — {d['restriction']}.")
+        _say(f"Left off the {d['name'].lower()} — {d['restriction']}.")
     replaced = result.get("replaced") or []
     if replaced:
-        bits.append(f"Added {_and([r.lower() for r in replaced])} instead.")
+        _say(f"Added {_and([r.lower() for r in replaced])} instead.")
     for c in result.get("conflicts") or []:
-        bits.append(f"Heads up: {c['dish']} has {c['restriction']} in it — your call.")
+        _say(f"Heads up: {c['dish']} has {c['restriction']} in it — your call.")
     if result.get("menu") == "trip" and result.get("note"):
-        bits.append(result["note"])
+        _say(result["note"])
     elif result.get("note") and not bits:
-        bits.append(result["note"])
+        _say(result["note"])
     return " ".join(bits)
 
 
@@ -1567,10 +1598,13 @@ def get_big_meal(date_str: str) -> dict:
         "dishes": [], "prep": [], "shop": None, "timeline": None,
     }
     if entry is None:
-        out["spoken"] = (
-            f"You’re hosting {name} for {eaters}. "
-            + (menu.get("note") or "There’s no week planned over that day yet — plan the week and I’ll build the menu into it.")
-        )
+        if menu.get("note"):
+            why = menu["note"]
+        elif _weekly_plan.get_plan_id_for_date(date_str) is None:
+            why = "There’s no week planned over that day yet — plan the week and I’ll build the menu into it."
+        else:
+            why = "The big meal isn’t on the plan any more — say hosting again and I’ll build one."
+        out["spoken"] = f"You’re hosting {name} for {eaters}. {why}"
         return out
     dishes = dishes_of(entry, menu)
     out["dishes"] = [

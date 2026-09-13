@@ -4260,7 +4260,11 @@ def _ingest_recipe_group_and_sides(
         for servings, side_ingredients in _entry_side_ingredient_groups(entry):
             added, have = _recipes._add_recipe_ingredients_for_entries(
                 [entry["id"]], side_ingredients, weekly_plan_id, default_servings=servings, buffer=buffer,
-                chain_scale=False,
+                # A big-meal dish (it carries the table it was written
+                # for) belongs to the holiday table alone: a reheat night
+                # buys nothing new for it. An ordinary plate side follows
+                # its dish through the chain exactly as it always has.
+                chain_scale=servings is None,
             )
             added_items.extend(added)
             already_have.extend(have)
@@ -4657,7 +4661,11 @@ def approve_weekly_plan(
         for servings, side_ingredients in _entry_side_ingredient_groups(entry):
             added, have = _recipes._add_recipe_ingredients_for_entries(
                 [entry["id"]], side_ingredients, weekly_plan_id, default_servings=servings, buffer=buffer,
-                chain_scale=False,
+                # A big-meal dish (it carries the table it was written
+                # for) belongs to the holiday table alone: a reheat night
+                # buys nothing new for it. An ordinary plate side follows
+                # its dish through the chain exactly as it always has.
+                chain_scale=servings is None,
             )
             added_items.extend(added)
             already_have.extend(have)

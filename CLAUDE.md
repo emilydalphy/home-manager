@@ -516,7 +516,20 @@ why*, not duplicating the diff.
   (#11); a reheat scaled the sides (#12); names in guest notes were
   match terms (#13); a moved dinner was reopened (#14); a draft wrote
   prep rows (#15); raw tokens in copy (#16); a misspelled migration table
-  went silent (#17). **ASSUMPTIONS (constants at the top of
+  went silent (#17). **Round 2 (same day):** `chain_scale=False` had
+  reached every plate side, so an ordinary Tuesday-cook/Thursday-reheat
+  bought its rice once — it is now only a big-meal dish (one carrying
+  `servings`) that skips the batch; `_people_words` had read any
+  mid-sentence capital as a name, so "No Nuts" / "NO NUTS" / "No
+  Peanuts" produced no match terms and peanut noodles landed — a word
+  the matcher knows as food (allergen families, aliases, the perishable
+  table, plural twins) is never dropped, and all-caps is emphasis, not a
+  person; common produce joined `PERISHABLE_WORDS` (cranberries and
+  sprouts left in "other" go on the fresh trip); a gone menu says "The
+  big meal isn't on the plan any more — say hosting again" rather than
+  claiming the week is missing; `said` says one clash once;
+  `reset.clear_weekly_plan` deletes prep rows keyed to its entries
+  wherever dated, not just its own plan's. **ASSUMPTIONS (constants at the top of
   big_meal.py):** one main + 3 sides + 1 sweet; early trip 3 days out,
   fresh trip the day before; pantry/frozen/other keep, "other" by the
   perishable word table; a dish can be made up to 2 days ahead; the
@@ -530,9 +543,9 @@ why*, not duplicating the diff.
   (slice 1's out did the same); per-line override of early/fresh; a Now
   card for the hosting details (the Now tap still points at chat for
   count/time/notes); the Cook-tab timeline. 53 tests in
-  `tests/test_big_meal.py`; suite 3345 → 3377 on the branch, 3694 on the
-  merge with main (`913b7b6`); verified live on a throwaway DB with the
-  model stubbed.
+  `tests/test_big_meal.py` (65 after round 2); suite 3345 → 3377 on the
+  branch, 3912 on the merge with main (`b4f69c8`); verified live on a
+  throwaway DB with the model stubbed.
 - **2026-09-13 — Sorting the list: "Have it" and "Use something else" on
   every item. Branch `worktree-grocery-sorting-round`, NOT merged at the
   time of writing.** Loop Board feature (Emily: "there should also be the
