@@ -12444,8 +12444,10 @@
     });
     row.querySelector('#week-receipt-see').addEventListener('click', function () {
       setWeekReceiptDismissed(data.weekly_plan_id, true);
-      renderWeekApproval(panel, data);
-      if (scrollEl) scrollEl.scrollTop = 0;
+      // Straight to the seven tiles (Which days) — the week view since
+      // 2026-09-13 — rather than the root list under the receipt.
+      reviewState.view = 'days';
+      goMealsStep('review');
     });
   }
 
@@ -12501,7 +12503,10 @@
     var see = panel.querySelector('#wk-allset-see');
     if (see && !see.dataset.wired) {
       see.dataset.wired = '1';
-      see.addEventListener('click', function () { goMealsStep('week'); });
+      // "See the week" lands on the seven tiles (Which days), not the plain
+      // list — since 2026-09-13 the tiles ARE the week view (Emily's pick,
+      // Beyond lists · Week-A); the plain root list is the draft's home.
+      see.addEventListener('click', function () { reviewState.view = 'days'; goMealsStep('review'); });
     }
   }
 
