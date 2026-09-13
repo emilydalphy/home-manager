@@ -371,6 +371,42 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — Two adults approving the week at the same instant no
+  longer buy everything twice. Branch `worktree-approve-race`, NOT merged
+  at the time of writing.** `approve_weekly_plan`'s two "safe to call
+  twice" guards were each a read on one connection, acted on by a write on
+  a later, separate connection/implicit transaction — the status flip
+  into 'approved' committed on its own, before the recipe-week grocery
+  ingest ran. Two threaded calls released at a 0ms gap doubled every
+  grocery line 6/6 trials; at a 20ms gap, 0/6, because the first call had
+  already committed — which is why one impatient tap never showed this.
+  Same class this repo has closed three times already
+  (atomic-period-takeover, swap-atomic, drop-dish-atomic), same shape: the
+  flip is now one conditional UPDATE (`WHERE status != 'approved'`), and
+  everything the transition does — the carry-over set-aside, the
+  ingest, the `approved_grocery_added/skipped` + `carried_over_count`
+  receipt — runs inside the SAME transaction as that flip, on one
+  connection opened with an explicit `BEGIN IMMEDIATE`. Pulled into its
+  own function, `_settle_weekly_plan_approval`, matching
+  `_replace_slot_entries`' shape. A caller that loses the race (0 rows
+  flipped) rolls back having written nothing and returns the same
+  `was_already_approved` shape an honest, unhurried re-approval always
+  has. `tests/test_approve_race.py` reproduces the race with real threads
+  (a `threading.Barrier`, no monkeypatched ordering) — confirmed to fail
+  on the pre-fix code (6/6 doubled) and pass on the branch.
+  - **The confirmation gate for a hard allergy conflict stays OUTSIDE the
+    lock, deliberately.** `check_plan_conflicts` does real read work and
+    nothing that slow belongs inside a write lock (same call the
+    takeover/swap/drop fixes made). The one edge this leaves: two
+    approvals racing a hard-conflict plan in the exact gap between that
+    read and the transaction can make the loser see one extra
+    "needs_confirmation" round-trip for a week that, by the time it asked,
+    was already approved. Confirming past it is harmless — the guard
+    below simply finds nothing left to do — and this is far narrower than
+    the bug being fixed (it needs a hard conflict AND a race, not just a
+    race), so it's left open rather than pulling the conflict check inside
+    the lock too.
+
 - **2026-09-13 — "How did it go?": "Will grab elsewhere" picks the store,
   "Don't need anymore", and "Add a new store" that comes back. Branch
   `worktree-shop-store-screens`, NOT merged at the time of writing.** Loop
