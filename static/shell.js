@@ -7748,13 +7748,25 @@
     body.classList.toggle('is-empty', !rows.length);
 
     if (!data.weekly_plan_id && !meals.length) {
-      // No plan at all: the same empty moment, with the way to a plan as
-      // its second line, and no shelf — there are no nights to shelve.
-      // The in-prose link keeps its own 44px row.
+      // No plan covers today: the same empty moment either way, with the
+      // way to a plan as its second line, and no shelf — there are no
+      // nights to shelve. Two honest wordings for two different truths
+      // (get_cooker_view, 2026-09-13):
+      //
+      // - A household that has never planned at all gets "No plan yet".
+      // - A household whose last approved week has simply run out gets
+      //   told THAT, with the week itself named (last_planned_label) —
+      //   showing that week's dinners under a heading that says "this
+      //   week" (the bug this replaces) would have been worse than
+      //   saying nothing, but going quiet with no explanation isn't much
+      //   better than that.
+      // The in-prose link keeps its own 44px row either way.
+      var lastPlanned = data.last_planned_label;
       body.innerHTML =
-        emptyMomentHtml('pot', 'Nothing to cook tonight.') +
-        '<p class="cook-empty">No plan yet this week &mdash; ' +
-          '<button type="button" class="cook-empty-link" data-cook="goto-plan">plan one on the Plan tab first</button>.</p>' +
+        emptyMomentHtml('pot', lastPlanned ? 'Nothing planned this week yet.' : 'Nothing to cook tonight.',
+          lastPlanned ? 'Last planned: ' + lastPlanned : null) +
+        '<p class="cook-empty">' + (lastPlanned ? 'Ready to plan the next one? ' : 'No plan yet this week &mdash; ') +
+          '<button type="button" class="cook-empty-link" data-cook="goto-plan">plan one on the Plan tab' + (lastPlanned ? '' : ' first') + '</button>.</p>' +
         cookMoreLinkHtml();
       setDock('');
       return;

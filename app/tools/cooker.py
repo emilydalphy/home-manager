@@ -3,6 +3,8 @@ Cook mode: recipe detail, the prep schedule, and checking things off.
 """
 from __future__ import annotations
 
+from datetime import date
+
 from ..db import get_conn
 from ._shared import household_id, require_household_row
 from . import attendance as _attendance
@@ -742,7 +744,15 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     schedule and overall progress — powers the dedicated Cooker view page
     rather than requiring separate get_weekly_plan/get_recipe/
     get_prep_schedule calls. Omit weekly_plan_id for the household's
-    current plan.
+    current plan — except when the plan get_weekly_plan/
+    _current_weekly_plan_row would fall back to has ALREADY ENDED (its
+    last day is before today): a plan generated ahead of time and not yet
+    started still falls back normally (cook mode legitimately opens next
+    week's draft when nothing covers today), but a plan whose entire
+    period is behind us gets the empty "no plan" view instead, with
+    `last_planned_label` naming that last week so a screen can still say
+    when it was. Passing weekly_plan_id explicitly always returns that
+    exact plan, stale or not.
 
     Omitting it also folds in the days-ahead meals that belong to no plan
     at all (weekly_plan.unplanned_meals_ahead) — a dinner answered on Now
@@ -793,6 +803,43 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     """
     plan = _weekly_plan.get_weekly_plan(weekly_plan_id)
 
+    # _current_weekly_plan_row's own fallback (its docstring: "Falls back
+    # to the most-recently-created plan when none covers today") is right
+    # for a chat answer to "what's the plan" — the household's real last
+    # week beats nothing. It is wrong here IN ONE OF ITS TWO CASES: a call
+    # with no weekly_plan_id means "what am I cooking right now", and
+    # handing back August's dinners under a heading that says "this week"
+    # (Loop Board, a household whose last approved week was weeks ago) is
+    # worse than honestly saying nothing is planned. Caught 2026-09-13.
+    #
+    # The OTHER case the same fallback covers is not this bug and must not
+    # be touched: a plan generated ahead of time for NEXT week, on a day
+    # nothing has started yet. test_is_current_plan_is_the_same_query_not_a_date_rule
+    # and TestAPlanThatDoesNotCoverToday (test_needs_you_dinner_visible.py)
+    # pin that a retired "this week" correctly falls back to next week's
+    # draft, and that a future plan's own meals still show alongside a
+    # loose one-off for today — cook mode opening "next week's draft" when
+    # today's own week has nothing left is a real, wanted answer. So the
+    # test here is specifically "has this plan's last day already gone
+    # by", not "does it cover today" — a period that hasn't started yet
+    # fails the second and passes the first, and must fall through
+    # unchanged.
+    #
+    # Only fires when the CALLER left weekly_plan_id out — an explicit
+    # ask for that plan (the Plan tab opening a specific week's meal, a
+    # draft nobody's approved yet) still gets exactly what it asked for,
+    # stale or not. Reduce to the same shape get_weekly_plan hands back
+    # for "no plan exists" at all, so every pass below (loose meals, the
+    # empty-view return, the shell reshape, is_current_plan) already
+    # knows how to treat it — this is "no current plan", not a new case.
+    last_planned_label = None
+    if weekly_plan_id is None and plan.get("weekly_plan_id") is not None:
+        period_end = plan.get("period_end_date")
+        today = date.today().isoformat()
+        if period_end and period_end < today:
+            last_planned_label = plan.get("period_label")
+            plan = {"weekly_plan_id": None, "meals": []}
+
     # ...plus the meals for days ahead that no plan covers. An entry with no
     # weekly_plan_id is a real, first-class shape (see
     # weekly_plan.unplanned_meals_ahead): resolve_needs_you_dinner writes one
@@ -818,11 +865,19 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     # loose rows carry perfectly real dates; it is the branch below that
     # can't take them — it groups by dish name and batch-collapses repeats
     # into one card, which would fold a dated one-off into an undated
-    # component or scale it to a batch nobody planned. KNOWN RESIDUE, not
-    # fixed here: a component household whose current plan doesn't cover
-    # today still has the whole original bug (reproduced 2026-09-13; see
-    # test_a_component_household_still_has_this_bug, which characterises it
-    # so the next session finds it written down). Its own card.
+    # component or scale it to a batch nobody planned.
+    #
+    # KNOWN RESIDUE, narrower than it was: the stale-plan fix above (see its
+    # own comment, "period has ALREADY ENDED") already reduces an ENDED
+    # component plan to plain "no plan" before this line ever runs, so that
+    # sub-case now gets its loose meal like any day-based household does
+    # (test_a_component_household_no_longer_has_this_bug, inverted
+    # 2026-09-13). What's left: a component household whose current plan
+    # HASN'T STARTED YET (a future plan, still "current" by the fallback,
+    # so the stale-plan fix correctly leaves it alone) still has the
+    # original bug for today's loose meal. Not fixed here for the same
+    # reason as before — it needs the component branch itself to learn to
+    # carry a dated row, not another carve-out in front of it.
     loose_meals = (
         _weekly_plan.unplanned_meals_ahead(plan)
         if weekly_plan_id is None and plan.get("planning_mode") != "component_based"
@@ -831,7 +886,7 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
 
     if plan.get("weekly_plan_id") is None and not loose_meals:
         return {"weekly_plan_id": None, "is_current_plan": False, "meals": [], "prep_tasks": [], "prep_sessions": [], "prep_days_set": False, "meals_done": 0, "meals_total": 0, "prep_done": 0, "prep_total": 0, "all_away": False,
-                "period_start_date": None, "day_count": 0, "cook_name": _cook_name()}
+                "period_start_date": None, "day_count": 0, "cook_name": _cook_name(), "last_planned_label": last_planned_label}
 
     if plan.get("weekly_plan_id") is None:
         # Loose meals with no plan behind them at all — a brand-new
@@ -1146,6 +1201,13 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         # answer — DESIGN_SYSTEM §2b S4 noted on 2026-09-11 that
         # cooking_role was stored and shown but never acted on.
         "cook_name": _cook_name(),
+        # Set only when the fallback above discarded a stale plan for
+        # THIS call — a household's last approved week, named the way
+        # the design writes a range ("Aug 18–24"), so Cook can say
+        # honestly what it isn't showing instead of just going quiet.
+        # None on every ordinary call, including one that named its own
+        # weekly_plan_id.
+        "last_planned_label": last_planned_label,
     }
 
 

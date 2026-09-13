@@ -371,6 +371,38 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — With only a past week on file, Kitchen shows last month's
+  meals as "the rest of the week". Branch
+  `worktree-kitchen-fallback-and-memory-types`, NOT merged at the time of
+  writing.** Loop Board bug: `_current_weekly_plan_row`
+  (`app/tools/weekly_plan.py`) deliberately falls back to the household's
+  newest non-retired plan when nothing covers today — right for a chat
+  answer to "what's the plan", wrong for `get_cooker_view`'s "what am I
+  cooking RIGHT NOW" (which Now's `today_moves`/`moves_for_day` also read,
+  via `app/tools/moves.py`, with no id of their own). A household whose
+  last approved week ended weeks ago saw that week's dinners rendered
+  under Cook's "this week" framing. Fixed in `get_cooker_view` only, right
+  after resolving the plan: when the caller omitted `weekly_plan_id` AND
+  the resolved plan's `period_end_date` is before today, the view is
+  reduced to the same empty shape as "no plan at all", with a new
+  `last_planned_label` field (e.g. "Aug 18–24") carrying the stale plan's
+  own date range for an honest line. Deliberately narrower than "doesn't
+  cover today": a plan that HASN'T STARTED YET (a draft generated ahead of
+  time for next week) is left alone — `test_is_current_plan_is_the_same_
+  query_not_a_date_rule` and `TestAPlanThatDoesNotCoverToday` (existing
+  tests) pin that cook mode legitimately opens next week's draft when
+  today's own week is empty, and only a plan whose LAST day has already
+  gone by counts as stale. `static/shell.js`'s `renderKitchen` already had
+  an empty-state branch for "no plan"; extended to say "Nothing planned
+  this week yet." + "Last planned: <label>" for the stale case, vs. "No
+  plan yet this week" for a household that has genuinely never planned.
+  Side effect: this also closes a previously-characterised, deliberately-
+  unfixed residual bug for a component-based household whose current plan
+  has already ended (`test_a_component_household_no_longer_has_this_bug`,
+  inverted) — but NOT for a component household whose current plan is a
+  future, not-yet-started one, which still has the original bug on
+  purpose (`test_a_component_household_with_a_future_plan_still_has_the_
+  narrower_bug`, a new characterisation test for the next session).
 - **2026-09-13 — "How did it go?": "Will grab elsewhere" picks the store,
   "Don't need anymore", and "Add a new store" that comes back. Branch
   `worktree-shop-store-screens`, NOT merged at the time of writing.** Loop
