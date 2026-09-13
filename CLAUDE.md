@@ -371,6 +371,22 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — Swap says who picks: "Swap · I'll pick". Branch
+  `worktree-meal-open-and-swap`, NOT merged at the time of writing.**
+  Loop Board improvement (Emily: "when you click the 'swap' button, it
+  goes with something totally different ... it should make that clear").
+  One constant, `SWAP_LABEL` in `static/shell.js`, at both sites the
+  in-place swap is offered (the Day card, the Meal dock), against "Tell me
+  what instead" beside it. Considered and not built: "Surprise me" (loses
+  the word Swap the clash card and the undo flow use, and over-promises
+  whimsy for a pick that works around the table's exclusions and the
+  week's other dishes) and a hint line under the pair (restates the
+  labels — §8's every-word rule). "Random" is deliberately not in the
+  label for the same reason. The post-swap state is unchanged: reason +
+  Undo + the chat link for `SWAP_UNDO_MS` (8 s), the swap itself still
+  there to go again. A persistent Undo would need `swapped_from` on the
+  week menu's entries; not done, since the reason is saved on the meal
+  and the line is not meant to be furniture.
 - **2026-09-13 — Tapping a meal in the draft always opens that meal.
   Branch `worktree-meal-open-and-swap`, NOT merged at the time of
   writing.** Loop Board bug (Emily, on her phone: "sometimes it brings me

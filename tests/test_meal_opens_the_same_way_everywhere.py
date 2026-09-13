@@ -385,6 +385,7 @@ def _meal_screen(back: str, cookable: bool) -> str:
         + f"var weekState = {{ step: 'meal', mealBack: {json.dumps(back)}, data: {{ weekly_plan_id: 2, slot_times: {{ dinner: '6:30' }} }}, rhythm: null }};\n"
         + "var swapState = null;\n"
         + "var REHEAT_ACTION_LABEL = 'Mark eaten';\n"
+        + "var SWAP_LABEL = 'Swap · I’ll pick';\n"
         + "var cookState = { data: null, cookAheadPicks: {} };\n"
         + "var GRO_ICONS = { chevRight: '<svg></svg>' };\n"
         + "var SLOT_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };\n"
@@ -444,6 +445,7 @@ def test_the_day_steps_card_follows_the_same_rule():
         _ESCAPE
         + "var swapState = null;\n"
         + "var REHEAT_ACTION_LABEL = 'Mark eaten';\n"
+        + "var SWAP_LABEL = 'Swap · I’ll pick';\n"
         + "var cookable = true;\n"
         + "function planCookableNow() { return cookable; }\n"
         + "".join(_extract(n) + "\n" for n in (

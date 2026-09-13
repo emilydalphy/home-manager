@@ -10761,6 +10761,15 @@
     return '<div class="wk-swap-line">' + tell + '</div>';
   }
 
+  // What the in-place swap is called, everywhere it is offered (the Day
+  // step's card, the Meal step's dock). "I'll pick" is the half Emily
+  // asked for (2026-09-13: "when you click the 'swap' button, it goes with
+  // something totally different ... it should make that clear"): the app
+  // chooses the dish, as against "Tell me what instead" beside it, where
+  // the household does. One label, so the two never say different things
+  // about the same call.
+  var SWAP_LABEL = 'Swap · I’ll pick';
+
   // The two-segment control. Which primary a slot gets is entirely a
   // function of its state: a cook is cooked, a made-ahead night is eaten,
   // an open slot is answered, and an away night is offered nothing at all —
@@ -10768,7 +10777,7 @@
   function slotActionsHtml(day, slot, apricot) {
     var entry = daySlotEntry(day, slot);
     var primaryCls = 'wk-act wk-act-primary' + (apricot ? ' is-apricot' : '');
-    var swap = '<button type="button" class="wk-act wk-act-swap" data-wk-swap="' + slot + '">Swap</button>';
+    var swap = '<button type="button" class="wk-act wk-act-swap" data-wk-swap="' + slot + '">' + SWAP_LABEL + '</button>';
     // Rides with the Swap button wherever it is offered, and nowhere else:
     // a slot with no way to change it has nothing to say about changing it.
     var swapLine = swapLineHtml(day, slot);
@@ -10785,7 +10794,7 @@
       var cookable = eaten || typeof planCookableNow !== 'function' || planCookableNow();
       if (!cookable) {
         return '<div class="wk-acts">' +
-          '<button type="button" class="wk-act wk-act-primary" data-wk-swap="' + slot + '">Swap</button>' +
+          '<button type="button" class="wk-act wk-act-primary" data-wk-swap="' + slot + '">' + SWAP_LABEL + '</button>' +
         '</div>' + swapLine;
       }
       return '<div class="wk-acts">' +
@@ -11436,7 +11445,7 @@
   // The Meal step's dock: "Start at 6:00" (the clock's own start), "Start
   // cooking" when there is no time to name, "Keep cooking" once a cook is
   // under way — all the same door into cook mode (data-wk-cook, through
-  // openRecipeFor) that "Cook this" was — with "Swap this meal" as the
+  // openRecipeFor) that "Cook this" was — with the swap (SWAP_LABEL) as the
   // quiet link into the swap-in-place flow. A reheat night or a grab-and-go
   // snack keeps "Mark eaten". Empty (no dock) when the slot has nothing to
   // do — a past day, an away night.
@@ -11461,8 +11470,8 @@
     var row = cookable || eaten
       ? '<button type="button" class="dock-primary" data-wk-cook="' + slot + '">' +
           escapeHtml(label) + '</button>' +
-        '<button type="button" class="dock-link wk-act-swap" data-wk-swap="' + slot + '">Swap this meal</button>'
-      : '<button type="button" class="dock-primary wk-act-swap" data-wk-swap="' + slot + '">Swap this meal</button>' +
+        '<button type="button" class="dock-link wk-act-swap" data-wk-swap="' + slot + '">' + SWAP_LABEL + '</button>'
+      : '<button type="button" class="dock-primary wk-act-swap" data-wk-swap="' + slot + '">' + SWAP_LABEL + '</button>' +
         '<button type="button" class="dock-link wk-swap-tell" data-wk-tell="' + slot + '">Tell me what instead</button>';
     return '<div class="wk-decide dock wk-meal-dock">' +
       '<div class="dock-row">' + row + '</div>' +
