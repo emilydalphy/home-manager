@@ -11641,7 +11641,9 @@
     // "the 3 after", not "the 3 days after" — the dates line right under it
     // says which three, so the second "days" is a word that isn't earning
     // its place.
-    return verb + (which === 'current' ? 'the next ' + unit : 'the ' + dayCount + ' after');
+    // A one-day stretch (a next_period shortened to one day by a plan
+    // already holding the rest) is "the day after", not "the 1 after".
+    return verb + (which === 'current' ? 'the next ' + unit : 'the ' + (dayCount === 1 ? 'day' : dayCount) + ' after');
   }
 
   // The custom-range picker: ONE strip of days, inline in the card that
