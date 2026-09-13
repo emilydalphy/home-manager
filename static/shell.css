@@ -7180,12 +7180,97 @@ span.cook-week-name { cursor: default; }
   text-transform: uppercase;
   color: var(--apricot-light);
 }
-.wk-allset .wk-quick-card.on-spruce { background: var(--spruce-raised); border-color: var(--spruce-raised); color: var(--ivory-ink); }
-.wk-allset .wk-quick-card.on-spruce .wk-quick-title,
-.wk-allset .wk-quick-card.on-spruce .wk-quick-q { color: var(--ivory-ink); }
+/* The two quick asks as a step of their own (Emily, 2026-09-13: "not a
+   subtle piece to skip"): above the counters, a card headline rather than
+   an eyebrow, each question a heading with its chips and answers open
+   under it. Everything inside sits on --spruce-raised, and the ask bodies
+   were written for an ivory card — their --ink-secondary helper lines
+   measured 2.37:1 here in light (Emily: "the dark font on the 'all set'
+   screen is hard to read"), the cook-ahead sentence in --ink 1.21:1. Every
+   text colour below is re-inked to the on-spruce tokens and measured on
+   --spruce-raised, light / dark:
+     .wk-quick-title, .wk-quick-q, .ca-ask-line   --ivory-ink        9.86 / 7.70
+     .wk-quick-body-line, .ca-ask-count           --ivory-ink-muted  8.62 / 6.52
+     .btn-sand label                              --ivory-ink        9.86 / 7.70
+     .wk-quick-done-tick                          --celadon          6.06 / 4.74
+     a ticked chip: --on-accent-ink on --celadon                     7.23 / 8.46
+   A ticked chip is solid celadon, the cook hero's own .cook-ahead-day.is-on
+   recipe — the tint it used to take is 1.38:1 against this card in dark. */
+.wk-allset .wk-quick-card.on-spruce {
+  background: var(--spruce-raised);
+  border-color: var(--spruce-raised);
+  color: var(--ivory-ink);
+  padding: 16px 16px 10px;
+  margin-top: 6px;
+}
+.wk-allset .wk-quick-card.on-spruce .wk-quick-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -0.028em;
+  line-height: 1.15;
+  text-transform: none;
+  color: var(--ivory-ink);
+}
+.wk-allset .wk-quick-card.on-spruce .wk-quick-head.is-fixed {
+  min-height: 0;
+  padding: 14px 0 6px;
+  cursor: default;
+}
+.wk-allset .wk-quick-card.on-spruce .wk-quick-q {
+  font-family: var(--font-display);
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  color: var(--ivory-ink);
+}
 .wk-allset .wk-quick-card.on-spruce .wk-quick-sub { color: var(--ivory-ink-muted); }
 .wk-allset .wk-quick-card.on-spruce .wk-quick-line + .wk-quick-line { border-top-color: var(--spruce-hover); }
 .wk-allset .wk-quick-card.on-spruce .wk-quick-ask { color: var(--apricot-light); }
+.wk-allset .wk-quick-card.on-spruce .wk-quick-body-line,
+.wk-allset .wk-quick-card.on-spruce .ca-ask-count { color: var(--ivory-ink-muted); }
+.wk-allset .wk-quick-card.on-spruce .ca-ask-line { color: var(--ivory-ink); }
+.wk-allset .wk-quick-card.on-spruce .ca-ask-block + .ca-ask-block { border-top-color: var(--spruce-hover); }
+.wk-allset .wk-quick-card.on-spruce .defrost-chip.is-selected,
+.wk-allset .wk-quick-card.on-spruce .ca-ask-day.is-on {
+  background: var(--celadon);
+  border-color: var(--celadon);
+  color: var(--on-accent-ink);
+}
+/* The quiet answer, in the cook hero's outline recipe (.cook-serves-btn):
+   the ivory-card version's --hairline-strong edge and --ink-secondary
+   label both vanish on spruce. */
+.wk-allset .wk-quick-card.on-spruce .ny-actions .btn-sand {
+  border-color: var(--apricot-rule);
+  color: var(--ivory-ink);
+}
+.wk-allset .wk-quick-card.on-spruce .ny-actions .btn-sand:hover { background: var(--spruce-hover); }
+.wk-allset .wk-quick-card.on-spruce .ny-actions .btn-gold { border: 1.5px solid var(--apricot-rule); }
+.wk-allset .wk-quick-card.on-spruce .ny-actions .btn-gold:hover { background: var(--spruce-hover); }
+/* An answered ask: the tick and the line it came to. Inked for the ivory
+   receipt card first (the Cook view's re-ask can land an answer there),
+   then re-inked on spruce. */
+.wk-quick-done {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 0;
+}
+.wk-quick-done-tick {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  color: var(--celadon-label);
+}
+.wk-quick-done-tick svg { width: 22px; height: 22px; display: block; }
+.wk-quick-done-text {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.wk-allset .wk-quick-card.on-spruce .wk-quick-done-tick { color: var(--celadon); }
+.wk-allset .wk-quick-card.on-spruce .wk-quick-done-text { color: var(--ivory-ink); }
 .wk-allset-dock { margin: auto -20px 0; background: var(--spruce); border-top-color: var(--spruce-hover); }
 .tab-panel.is-allset { background: var(--spruce); }
 .tab-panel.is-allset #week-steps { flex: 1 0 auto; display: flex; flex-direction: column; }

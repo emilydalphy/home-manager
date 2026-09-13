@@ -11936,12 +11936,14 @@
   // that "Anything in the freezer?" expands in place — so the chips and the
   // two answers are what is left, and the question is the line above it
   // (Emily's approved design, 2026-09-08). Same id, so wireDefrostAskCard
-  // and submitDefrostAsk find it exactly as before.
-  function defrostAskCardHtml() {
+  // and submitDefrostAsk find it exactly as before. `open` is the caller's
+  // call: the root's receipt folds it behind "Ask", the All set screen
+  // never does (Emily, 2026-09-13 — see renderWeekReceipt).
+  function defrostAskCardHtml(open) {
     var items = defrostAskState.items || [];
     return (
       '<div class="wk-quick-body defrost-ask-card" id="defrost-ask-card"' +
-          (weekQuickOpen.defrost ? '' : ' hidden') + '>' +
+          (open ? '' : ' hidden') + '>' +
         '<div class="wk-quick-body-line">Tap what’s frozen and I’ll tell you when to move it to the fridge.</div>' +
         '<div class="defrost-ask-chips">' + items.map(defrostAskChipHtml).join('') + '</div>' +
         '<div class="ny-actions">' +
@@ -12016,6 +12018,7 @@
       // answer, but a re-ask can offer the same items again.
       defrostAskState.items = null;
       defrostAskState.selected = {};
+      setWeekQuickDone(data.weekly_plan_id, 'defrost', defrostDoneLine(items, body.created || [], body.notes || []));
       var notes = (body.notes || []).map(function (n) { return n.note; });
       if (notes.length) {
         // Calm and plain (DESIGN_SYSTEM §8) — the note already IS the fact
@@ -12046,7 +12049,13 @@
     // been sent away with "See the week" this session), expand this line,
     // and come back out to the ROOT, since the band above the week card is
     // hidden on the Day and Meal steps (renderMealsStep).
-    if (weekState.data) setWeekReceiptDismissed(weekState.data.weekly_plan_id, false);
+    if (weekState.data) {
+      setWeekReceiptDismissed(weekState.data.weekly_plan_id, false);
+      // A re-ask is the question again, not its old answer: drop the
+      // confirmation line, or it would stand in for the ask while the
+      // items are refetched (found by the 2026-09-13 verifier).
+      setWeekQuickDone(weekState.data.weekly_plan_id, 'defrost', '');
+    }
     weekQuickOpen.defrost = true;
     weekState.step = 'week';
     activateTab('week', true);
@@ -12074,7 +12083,14 @@
     return picks;
   }
 
-  function cookAheadAskBlockHtml(item) {
+  // `named` is whether the block needs its own sentence: with one repeated
+  // dish the line above the body already IS that sentence
+  // (cookAheadAskQuestion), and Emily's 2026-09-13 screenshot showed the
+  // two stacked — "Roasted Chickpeas on 2 nights. Cook ahead?" over
+  // "Roasted Chickpeas is on 2 nights. Cook ahead?" — so a lone block says
+  // it once. Two or more dishes share a heading ("Cook anything ahead?")
+  // and each block still names its own.
+  function cookAheadAskBlockHtml(item, named) {
     var later = item.later || [];
     var picks = cookAheadAskPicks(item);
     var ticked = later.filter(function (d) { return !!picks[d.entry_id]; });
@@ -12087,9 +12103,11 @@
     if (eaters) ticked.forEach(function (d) { eaters += d.eaters || 0; });
     var total = later.length + 1;
     return '<div class="ca-ask-block">' +
-      '<div class="ca-ask-line">' +
-        escapeHtml(item.dish + ' is on ' + total + ' ' + cookSlotWord(item.slot, total) + '. Cook ahead?') +
-      '</div>' +
+      (named
+        ? '<div class="ca-ask-line">' +
+            escapeHtml(item.dish + ' is on ' + total + ' ' + cookSlotWord(item.slot, total) + '. Cook ahead?') +
+          '</div>'
+        : '') +
       '<div class="ca-ask-days">' +
         later.map(function (d) {
           var on = !!picks[d.entry_id];
@@ -12108,13 +12126,13 @@
   // answers, expanded in place by the "… Cook ahead?" line rather than
   // stacked as a second full card under the receipt. Same id, so
   // wireCookAheadAskCard and submitCookAheadAsk are untouched.
-  function cookAheadAskCardHtml() {
+  function cookAheadAskCardHtml(open) {
     var items = cookAheadAskState.items || [];
     return (
       '<div class="wk-quick-body cook-ahead-ask-card" id="cook-ahead-ask-card"' +
-          (weekQuickOpen.cookAhead ? '' : ' hidden') + '>' +
+          (open ? '' : ' hidden') + '>' +
         '<div class="wk-quick-body-line">Tick the days a batch should cover and they become one cook.</div>' +
-        items.map(cookAheadAskBlockHtml).join('') +
+        items.map(function (item) { return cookAheadAskBlockHtml(item, items.length > 1); }).join('') +
         // One answer for the whole ask, and no second apricot: the receipt
         // above already spent this screen's one apricot primary on "Open
         // the list" (Rule 5), and .ny-actions .btn-gold is spruce here for
@@ -12198,10 +12216,12 @@
       });
       if (!res.ok) throw new Error('cook-ahead confirm failed');
       var body = await res.json();
-      cookAheadAskState.items = null;
-      cookAheadAskState.picks = {};
       var refused = (body.refused || []);
       var applied = (body.applied || []);
+      setWeekQuickDone(data.weekly_plan_id, 'cookAhead',
+        cookAheadDoneLine(cookAheadAskState.items || [], applied, refused));
+      cookAheadAskState.items = null;
+      cookAheadAskState.picks = {};
       if (refused.length) {
         // The refusal already IS the fact plus its way out (see
         // set_cook_ahead), so it's shown as-is and held long enough to read.
@@ -12230,7 +12250,10 @@
     // Same three things as openDefrostAskFromCook just above: un-dismiss
     // the receipt this line lives in, expand the line, and come back out to
     // the ROOT, where the band above the week card is shown.
-    if (weekState.data) setWeekReceiptDismissed(weekState.data.weekly_plan_id, false);
+    if (weekState.data) {
+      setWeekReceiptDismissed(weekState.data.weekly_plan_id, false);
+      setWeekQuickDone(weekState.data.weekly_plan_id, 'cookAhead', ''); // same as openDefrostAskFromCook
+    }
     weekQuickOpen.cookAhead = true;
     weekState.step = 'week';
     activateTab('week', true);
@@ -12366,8 +12389,67 @@
   // Which of the two asks is expanded, page-view only. Held outside the
   // render because the cook-ahead chips re-render this whole row on every
   // tap (the count line under them has to change with the chip), and a
-  // question that collapsed under your thumb would be unusable.
+  // question that collapsed under your thumb would be unusable. Only the
+  // root's receipt card reads this: on the All set screen both asks are
+  // always open (Emily, 2026-09-13: "not a subtle piece to skip").
   var weekQuickOpen = { defrost: false, cookAhead: false };
+
+  // What each ask was answered with, as the one line it collapses to
+  // ("Chicken breast: move to the fridge Monday night"). Page-view only,
+  // like weekQuickOpen: the server already knows the answer (it is a prep
+  // task, a cook-ahead chain), this is just the screen keeping its word
+  // that the tap landed. Keyed to the plan so a re-plan starts clean.
+  var weekQuickDone = { planId: null, defrost: '', cookAhead: '' };
+
+  function setWeekQuickDone(planId, key, line) {
+    if (weekQuickDone.planId !== planId) weekQuickDone = { planId: planId, defrost: '', cookAhead: '' };
+    weekQuickDone[key] = line || '';
+  }
+
+  // "Chicken breast: move to the fridge Monday night · Salmon: Wednesday
+  // night" — one clause per move the server actually booked (its `created`
+  // rows carry the task date), in the voice's own "the night before" frame.
+  // "None — all fresh" is a real answer too, and says so.
+  function defrostDoneLine(chosen, created, notes) {
+    if (!chosen.length) return 'Nothing in the freezer — all fresh.';
+    if (!created.length) {
+      // Every tapped item was for a meal happening today; the note itself
+      // (already shown as a toast) says what to do instead.
+      return notes.length ? 'Freezer: too late to thaw for tonight.' : 'Freezer: nothing to move this week.';
+    }
+    // One clause per item, its move nights together ("Chicken breast: move
+    // to the fridge Monday night and Thursday night") — created is one row
+    // per (item, cook night), so an item feeding two nights comes twice.
+    var order = [], nights = {};
+    created.forEach(function (c) {
+      if (!nights[c.item]) { nights[c.item] = []; order.push(c.item); }
+      var when = dayName(c.task_date, { weekday: 'long' }) + ' night';
+      if (nights[c.item].indexOf(when) < 0) nights[c.item].push(when);
+    });
+    return order.map(function (item, i) {
+      return item + ': ' + (i === 0 ? 'move to the fridge ' : '') + nights[item].join(' and ');
+    }).join(' · ');
+  }
+
+  // "Roasted Chickpeas: one batch Tuesday covers Thursday" — read back from
+  // the items the card was drawn with (they still hold the dish names and
+  // days) and the server's `applied` list (which chains it actually wrote).
+  function cookAheadDoneLine(items, applied, refused) {
+    if (!applied.length) {
+      return refused.length ? 'Cook ahead: not this time — see the note.' : 'Cooking each on its own.';
+    }
+    var byId = {};
+    items.forEach(function (item) { byId[item.first.entry_id] = item; });
+    return applied.map(function (a) {
+      var item = byId[a.source_entry_id];
+      if (!item) return '';
+      var days = (item.later || [])
+        .filter(function (d) { return (a.covered_entry_ids || []).indexOf(d.entry_id) >= 0; })
+        .map(function (d) { return dayName(d.date, { weekday: 'long' }); });
+      return item.dish + ': one batch ' + dayName(item.first.date, { weekday: 'long' }) +
+        ' covers ' + days.join(' and ');
+    }).filter(Boolean).join(' · ');
+  }
 
   function spellSmallNumber(n) {
     var words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven',
@@ -12378,8 +12460,19 @@
   // One ask, folded to a line: the question, what it is about, and "Ask".
   // The ask's own UI is still exactly the one it always had — it is just
   // hidden until this line is tapped, rather than being a card of its own.
+  // On the All set screen (`line.fixed`) there is nothing to fold: the
+  // question is a heading, its chips and answers sit right under it, and
+  // the summary line goes — the chips it summarised are already showing.
   function weekQuickLineHtml(line) {
     var open = !!line.open;
+    if (line.fixed) {
+      return '<div class="wk-quick-line">' +
+        '<div class="wk-quick-head is-fixed">' +
+          '<span class="wk-quick-text"><span class="wk-quick-q">' + escapeHtml(line.q) + '</span></span>' +
+        '</div>' +
+        line.body +
+      '</div>';
+    }
     return '<div class="wk-quick-line">' +
       '<button type="button" class="wk-quick-head" data-quick="' + line.key + '" ' +
           'aria-expanded="' + open + '">' +
@@ -12390,6 +12483,16 @@
         '<span class="wk-quick-ask">' + (open ? 'Close' : 'Ask') + '</span>' +
       '</button>' +
       line.body +
+    '</div>';
+  }
+
+  // An answered ask, folded to its confirmation: a celadon tick and the
+  // one line the answer comes to. Takes the question's place in the card
+  // so the step reads as done rather than as gone.
+  function weekQuickDoneHtml(text) {
+    return '<div class="wk-quick-line wk-quick-done">' +
+      '<span class="wk-quick-done-tick">' + TICK_ICON + '</span>' +
+      '<span class="wk-quick-done-text">' + escapeHtml(text) + '</span>' +
     '</div>';
   }
 
@@ -12408,7 +12511,7 @@
         // render — the first pass often just starts the fetch, and the
         // re-render it triggers must still see the override.
         defrostAskState.forceShow = false;
-        if (defrostAskState.items.length) defrostHtml = defrostAskCardHtml();
+        if (defrostAskState.items.length) defrostHtml = defrostAskCardHtml(asksOnly || weekQuickOpen.defrost);
       } else {
         ensureDefrostAskItems(panel, data); // re-renders this row once it resolves
       }
@@ -12418,26 +12521,42 @@
     if (!data.cook_ahead_asked_at || forceCookAheadShow) {
       if (cookAheadAskState.planId === data.weekly_plan_id && cookAheadAskState.items !== null) {
         cookAheadAskState.forceShow = false;
-        if (cookAheadAskState.items.length) cookAheadAskHtml = cookAheadAskCardHtml();
+        if (cookAheadAskState.items.length) cookAheadAskHtml = cookAheadAskCardHtml(asksOnly || weekQuickOpen.cookAhead);
       } else {
         ensureCookAheadAskItems(panel, data); // re-renders this row once it resolves
       }
     }
 
+    // On the All set screen each ask is a step, not a footnote (Emily,
+    // 2026-09-13: "something they should be able to give a quick response
+    // to"): open from the start, so the freezer check is one tap ("None —
+    // all fresh") or two (a chip, then "Add to the schedule"), and skipping
+    // is the deliberate tap on the dock rather than the default of never
+    // noticing. The root's receipt keeps the fold — there the week card is
+    // the point and the asks are its footnote.
+    // An ask already answered this page view collapses to its one-line
+    // confirmation, in the place the question had — only where the live
+    // ask is not showing (the Cook view's re-ask forces it back open, and
+    // then the question wins).
+    var answered = weekQuickDone.planId === data.weekly_plan_id ? weekQuickDone : {};
     var lines = [];
     if (defrostHtml) {
       lines.push({
-        key: 'defrost', open: weekQuickOpen.defrost, body: defrostHtml,
+        key: 'defrost', open: asksOnly || weekQuickOpen.defrost, fixed: asksOnly, body: defrostHtml,
         q: 'Anything in the freezer?',
         sub: defrostAskSummary()
       });
+    } else if (answered.defrost) {
+      lines.push({ done: answered.defrost });
     }
     if (cookAheadAskHtml) {
       lines.push({
-        key: 'cookAhead', open: weekQuickOpen.cookAhead, body: cookAheadAskHtml,
+        key: 'cookAhead', open: asksOnly || weekQuickOpen.cookAhead, fixed: asksOnly, body: cookAheadAskHtml,
         q: cookAheadAskQuestion(),
         sub: cookAheadAskSummary()
       });
+    } else if (answered.cookAhead) {
+      lines.push({ done: answered.cookAhead });
     }
 
     var receipt = data.receipt || {};
@@ -12455,12 +12574,18 @@
           '<button type="button" class="week-receipt-see" id="week-receipt-see">See the week</button>' +
         '</div>' +
       '</div>') +
+      // The heading counts the questions asked, answered ones included, so
+      // it does not change under a thumb that just answered the first.
+      // "Before you go", not "if you like" (Emily, 2026-09-13): still
+      // optional, no longer apologetic.
       (lines.length
         ? '<div class="shell-card wk-quick-card' + (asksOnly ? ' on-spruce' : '') + '">' +
             '<div class="wk-quick-title">' +
-              (lines.length === 1 ? 'One quick one, if you like' : 'Two quick ones, if you like') +
+              (lines.length === 1 ? 'One quick one before you go' : 'Two quick ones before you go') +
             '</div>' +
-            lines.map(weekQuickLineHtml).join('') +
+            lines.map(function (line) {
+              return line.done ? weekQuickDoneHtml(line.done) : weekQuickLineHtml(line);
+            }).join('') +
           '</div>'
         : '');
 
@@ -12490,10 +12615,12 @@
   }
 
   // ---------- SET: the All set screen ----------
-  // Spruce, one tick, the receipt's own numbers, the two quick asks as
-  // lines, and one next step. Shown once, in the page view that approved
-  // the week (approveWeek sets weekState.step). Everything on it is the
-  // receipt card's data and the asks' own UI; only the screen is new.
+  // Spruce, one tick, the two quick asks open as a step of their own, then
+  // the receipt's own numbers, and one next step. Shown once, in the page
+  // view that approved the week (approveWeek sets weekState.step).
+  // Everything on it is the receipt card's data and the asks' own UI; only
+  // the screen is new. The asks sit ABOVE the counters (Emily, 2026-09-13):
+  // the numbers are a receipt, the questions are the one thing left to do.
   function allSetStepHtml(data, days) {
     var receipt = data.receipt || {};
     var nums = [];
@@ -12507,6 +12634,7 @@
       '<div class="wk-allset-tick">' + READY_CHECK + '</div>' +
       '<h1 class="wk-allset-title">All set.</h1>' +
       '<p class="wk-allset-line">' + escapeHtml(range) + ' is planned, and the list is built.</p>' +
+      '<div id="wk-allset-asks"></div>' +
       (nums.length
         ? '<div class="wk-allset-nums">' + nums.map(function (x) {
             return '<div class="wk-allset-num"><span class="wk-allset-n">' + escapeHtml(String(x.n)) + '</span>' +
@@ -12514,7 +12642,6 @@
           }).join('') + '</div>'
         : (receipt.title ? '<p class="wk-allset-line">' + escapeHtml(receipt.title) + '</p>' : '')) +
       (receipt.thaw_line ? '<p class="wk-allset-line is-quiet">' + escapeHtml(receipt.thaw_line) + '</p>' : '') +
-      '<div id="wk-allset-asks"></div>' +
       '<div class="dock wk-allset-dock">' +
         '<div class="dock-links"><button type="button" class="dock-link" id="wk-allset-see">See the week</button></div>' +
         '<button type="button" class="dock-primary" id="wk-allset-go">Open the list</button>' +
