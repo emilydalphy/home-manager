@@ -402,6 +402,13 @@ def test_resolving_tonights_dinner_does_not_error_when_the_only_plan_on_file_is_
     that plan's id to tonight's pick unconditionally, and plan_meal's own
     period check ("... isn't in weekly plan N's period") then rejected the
     insert — the exact tap the Today card's dinner_decision card offers.
+
+    Widened 2026-09-13. That fix's own decision-log entry claimed "the
+    unlinked meal is visible tonight, so this isn't a 500 traded for a
+    silent loss" — and this test, which only ever asked get_meal_plan, is
+    why nobody noticed the claim was false. get_meal_plan is not a screen.
+    It asserts the SCREENS now: the cook view (so cook mode is reachable)
+    and Today's own moves.
     """
     old_week_start = _today(-14)
     tools.create_weekly_plan(old_week_start)
@@ -416,10 +423,25 @@ def test_resolving_tonights_dinner_does_not_error_when_the_only_plan_on_file_is_
     ]
     assert len(todays_dinner) == 1
 
+    cooker_tonight = [
+        m for m in tools.get_cooker_view()["meals"]
+        if m["date"] == _today() and m["meal"] == "Chili"
+    ]
+    assert len(cooker_tonight) == 1
+
+    cooks = [m for m in tools.today_moves()["moves"] if m["kind"] == "cook"]
+    assert [m["title"] for m in cooks] == ["Chili"]
+    assert cooks[0]["tickable"] is True
+
 
 def test_the_needs_you_dinner_route_does_not_500_with_only_an_old_plan_on_file(signed_in):
     """Same bug as above, exercised through the actual HTTP route the Today
-    screen's card posts to — this is the shape the bug report described."""
+    screen's card posts to — this is the shape the bug report described.
+
+    Widened 2026-09-13 for the same reason as the test above: answering the
+    card has to leave something ON Today, not merely in the database. The
+    route the card posts to and the route Today re-reads, in that order.
+    """
     old_week_start = _today(-14)
     tools.create_weekly_plan(old_week_start)
     tools.add_recipe("Tacos", ingredients=[{"item": "tortillas", "qty": "1 pack"}])
@@ -431,6 +453,14 @@ def test_the_needs_you_dinner_route_does_not_500_with_only_an_old_plan_on_file(s
 
     assert res.status_code == 200
     assert "Tacos" in [e["meal"] for e in tools.get_meal_plan(days_ahead=1)]
+
+    moves = signed_in.get("/api/today/moves").json()
+    cooks = [m for m in moves["moves"] if m["kind"] == "cook"]
+    assert [m["title"] for m in cooks] == ["Tacos"]
+    # Not `featured`: whether tonight's dinner is the "Next up" CARD depends
+    # on the hour the suite happens to run at (see moves.LOOKAHEAD_HOURS).
+    # Being on the timeline at all, with a way into cook mode, is the claim.
+    assert cooks[0]["action"]["target"]["cookFocus"]["title"] == "Tacos"
 
 
 class TestNeedsYouSurfacesAnOpenDinner:

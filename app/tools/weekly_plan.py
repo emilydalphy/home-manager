@@ -2931,6 +2931,81 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     return result
 
 
+# How far ahead an unplanned meal still counts as "this week's cooking".
+# Seven days inclusive, the same horizon get_meal_plan defaults to, so the
+# Cook screen's "rest of the week" and the assistant's own read of the plan
+# stop at the same place.
+UNPLANNED_HORIZON_DAYS = 6
+
+
+def unplanned_meals_ahead(plan: dict | None = None) -> list[dict]:
+    """
+    The days-ahead meals that belong to NO weekly plan, in exactly the
+    shape get_weekly_plan puts its own `meals` in — so one caller can
+    concatenate the two and treat them alike.
+
+    A meal with no weekly_plan_id is a first-class shape, not an accident:
+    plan_meal writes one for every one-off chat request, and
+    resolve_needs_you_dinner deliberately writes one when the current plan's
+    period doesn't cover the date (2026-09-11 — attaching it to a plan that
+    doesn't cover the day 500'd the tap). Bug, 2026-09-13: nothing on any
+    SCREEN read those rows back. get_cooker_view is plan-scoped, and every
+    surface a cook actually looks at — Now's moves, cook mode, the morning
+    text — is built off it, so a brand-new household answering "Tonight
+    needs a dinner" saw the card vanish and nothing take its place. The
+    meal was saved and invisible.
+
+    Days `plan` already covers are left out, and that is the whole of the
+    no-duplicates rule: on a day a plan speaks for, the plan is the answer
+    and this changes nothing. Only a day no plan covers falls back to its
+    own rows.
+
+    Bounded at UNPLANNED_HORIZON_DAYS from today and never looking back:
+    this answers "what is there to cook from here on", not "what has this
+    household ever eaten". A loose meal in the past is still readable
+    through get_meal_plan and get_recent_meal_history.
+    """
+    today = date.today()
+    start = today.isoformat()
+    end = (today + timedelta(days=UNPLANNED_HORIZON_DAYS)).isoformat()
+    conn = get_conn()
+    rows = conn.execute(
+        f"""
+        SELECT mpe.id, mpe.date, mpe.slot, COALESCE(r.name, mpe.freeform_meal) AS meal,
+               mpe.food_groups_json, mpe.component_category, mpe.cooked_status, mpe.reasoning,
+               mpe.slot_state, mpe.open_reason, mpe.sides_json
+        FROM meal_plan_entries mpe
+        LEFT JOIN recipes r ON r.id = mpe.recipe_id
+        WHERE mpe.household_id = ? AND mpe.weekly_plan_id IS NULL
+          AND mpe.date >= ? AND mpe.date <= ?
+        ORDER BY mpe.date ASC, {slot_order_sql('mpe.slot')} ASC, mpe.id ASC
+        """,
+        (household_id(), start, end),
+    ).fetchall()
+    conn.close()
+
+    covered_start = covered_end = None
+    if plan and plan.get("weekly_plan_id") is not None:
+        covered_start = plan["period_start_date"]
+        covered_end = plan["period_end_date"]
+
+    return [
+        {
+            "entry_id": m["id"], "date": m["date"], "slot": m["slot"], "meal": m["meal"],
+            "food_groups": json.loads(m["food_groups_json"]),
+            "component_category": m["component_category"],
+            "cooked_status": m["cooked_status"],
+            "reasoning": m["reasoning"] or None,
+            "slot_state": m["slot_state"],
+            "open_reason": m["open_reason"] or None,
+            "sides": _plate_sides(m["sides_json"]),
+            "sides_label": _plates.sides_label(_plate_sides(m["sides_json"])),
+        }
+        for m in rows
+        if not (covered_start is not None and covered_start <= m["date"] <= covered_end)
+    ]
+
+
 def _menu_dates(plan: dict) -> list[str]:
     """
     The days the Meals screen draws for a plan: its period, plus any filing
