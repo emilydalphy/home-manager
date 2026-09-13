@@ -2692,6 +2692,56 @@ def chat_proposal_undo(proposal_id: str):
     return out
 
 
+class ChangePartRequest(BaseModel):
+    """
+    One Save on the "Change the protein" sheet. `choice` is an option's
+    name, or what the household typed in "Something else…".
+    """
+    entry_id: int
+    role: str = "protein"
+    choice: str
+
+
+@app.get("/api/week/{week_start}/part-options")
+def week_part_options(week_start: str, entry_id: int, role: str = "protein"):
+    """
+    What the "Change the protein" sheet offers for THIS dish — written for
+    the dish (ground meats for a burger, the cut for a pan-fry), safe for
+    the house, cached for the sitting (Emily, 2026-09-13, "Shaping the
+    Draft" Flow A). Household-scoped: an entry from elsewhere is a 404.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.part_options(plan_id, entry_id, role=role)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except AssistantUnavailableError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.exception("Part options failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/week/{week_start}/change-part")
+def week_change_part(week_start: str, req: ChangePartRequest):
+    """
+    Put the chosen protein into the dish: the recipe rewritten around it,
+    then the same gates and the same apply as Swap · I'll pick, so Undo is
+    the swap's own (/swap-undo). A 200 can still say no (`status`
+    'refused' with the sentence to show) — a real answer, not an error.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.change_part(plan_id, req.entry_id, req.role, req.choice)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except AssistantUnavailableError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.exception("Change part failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.post("/api/week/{week_start}/swap-undo")
 def week_swap_undo(week_start: str, req: SwapUndoRequest):
     """Put back the dish that was on this slot before it was swapped."""

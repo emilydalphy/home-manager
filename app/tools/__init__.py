@@ -622,6 +622,14 @@ from .swap_in_place import (  # noqa: F401
 # The chat's change card (Emily, 2026-09-13, "Shaping the Draft" Flows C
 # and D): propose_plan_changes IS an agent tool — the only one here that
 # writes nothing — and the rest are the card's own routes.
+# The plate, part by part (Emily, 2026-09-13, "Shaping the Draft" Flows A
+# and B): the card's chips, the "Change the protein" sheet's options and
+# the change itself. Not agent tools — a screen's own reads and writes.
+from .plate_parts import (  # noqa: F401
+    change_part,
+    part_options,
+    parts_of_plate,
+)
 from .proposals import (  # noqa: F401
     another_for_row,
     apply_proposal,
