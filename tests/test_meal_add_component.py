@@ -159,7 +159,7 @@ def test_the_list_buys_for_four_when_four_are_eating():
     tools.add_component(entry_id, key="roasted-potatoes", weekly_plan_id=plan_id)
 
     assert _list()["yukon gold potatoes"]["quantity"] == "2 lbs"
-    assert {i["item"]: i["qty"] for i in _card(plan_id, entry_id)["ingredients"]}["Yukon Gold potatoes"] == "2 lb"
+    assert {i["item"]: i["qty"] for i in _card(plan_id, entry_id)["ingredients"]}["Yukon Gold potatoes"] == "2 lbs"
 
 
 def test_adding_the_same_thing_twice_adds_it_once():

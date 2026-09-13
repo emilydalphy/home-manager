@@ -677,7 +677,7 @@ def scale_side_ingredients(side: dict, target_servings: int | None) -> list[dict
             "qty": (ing.get("qty") or "").strip(),
             "category": (ing.get("category") or "other").strip() or "other",
         }
-        if base and target_servings and target_servings > 0 and base != target_servings:
+        if base and target_servings and target_servings > 0:
             from . import quantities as _quantities
             parsed = _quantities._parse_quantity(row["qty"])
             if parsed:
@@ -685,6 +685,9 @@ def scale_side_ingredients(side: dict, target_servings: int | None) -> list[dict
                 scaled = amount * target_servings / base
                 if unit is None or unit in _WHOLE_UNITS:
                     scaled = max(1.0, float(round(scaled)))
+                # Through _format_quantity even at 1:1, so the card says
+                # "2 lbs" the way the list does rather than the catalogue's
+                # raw "2 lb" (found by the verifying pass, 2026-09-13).
                 row["qty"] = _quantities._format_quantity(scaled, unit)
         out.append(row)
     return out
