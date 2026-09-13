@@ -450,7 +450,7 @@ def test_the_two_asks_are_lines_that_expand_in_place():
     _assert_in("Two quick ones before you go", SHELL_JS, "the asks card title", "shell.js")  # reworded 2026-09-13: a step, not a footnote
     _assert_in("One quick one before you go", SHELL_JS, "the single-ask title", "shell.js")
     _assert_in("'Anything in the freezer?'", SHELL_JS, "the freezer line", "shell.js")
-    _assert_in("'. Cook ahead?'", SHELL_JS, "the cook-ahead line", "shell.js")
+    _assert_in("' Do you want to batch cook it?'", SHELL_JS, "the cook-ahead line", "shell.js")  # reworded 2026-09-13: the plain question (DESIGN_SYSTEM §8 rule 7)
     _assert_in("function defrostAskSummary(", SHELL_JS, "the collapsed meat chips", "shell.js")
     _assert_in("items.slice(0, 3).join(' · ')", SHELL_JS,
                "the chips collapsed to one line", "shell.js")

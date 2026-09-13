@@ -134,13 +134,18 @@ def test_the_confirmation_lines_say_the_thing():
 # ---------- the bug card: dark text on the dark background ----------
 
 def test_the_cook_ahead_sentence_is_not_said_twice():
-    """One repeated dish: the line above the body already reads "Roasted
-    Chickpeas on 2 nights. Cook ahead?", so the block does not repeat it."""
+    """One repeated dish: the heading above the body already reads "Roasted
+    Chickpeas is on 2 nights. Do you want to batch cook it?", so the block
+    does not repeat the dish line; several dishes share a heading and each
+    block opens with its own."""
     assert "function cookAheadAskBlockHtml(item, named)" in SHELL_JS
     block = _fn("cookAheadAskBlockHtml")
-    assert "(named\n        ? '<div class=\"ca-ask-line\">'" in block
+    assert "(named ? '<div class=\"ca-ask-line\">' + escapeHtml(cookAheadRepeatLine(item)) + '</div>' : '')" in block
     card = _fn("cookAheadAskCardHtml")
     assert "cookAheadAskBlockHtml(item, items.length > 1)" in card
+    q = _fn("cookAheadAskQuestion")
+    assert "return 'Do you want to batch cook any of these?';" in q
+    assert "return cookAheadRepeatLine(items[0]) + ' Do you want to batch cook it?';" in q
 
 
 def _rule(selector: str) -> str:
@@ -152,8 +157,9 @@ def test_the_helper_text_on_spruce_uses_the_on_spruce_tokens():
     on = ".wk-allset .wk-quick-card.on-spruce"
     helper = _rule(f"{on} .wk-quick-body-line")
     assert "color: var(--ivory-ink-muted)" in helper
-    assert f"{on} .ca-ask-count" in helper  # the "Makes 2 nights · for 4" line shares it
+    assert f"{on} .ca-ask-count" in helper  # the "One cook on Monday feeds …" line shares it
     assert "color: var(--ivory-ink)" in _rule(f"{on} .ca-ask-line")
+    assert "color: var(--ivory-ink)" in _rule(f"{on} .ca-ask-q")
     sand = _rule(f"{on} .ny-actions .btn-sand")
     assert "color: var(--ivory-ink)" in sand and "border-color: var(--apricot-rule)" in sand
     ticked = _rule(f"{on} .defrost-chip.is-selected")
