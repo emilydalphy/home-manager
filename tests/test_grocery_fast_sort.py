@@ -158,7 +158,6 @@ function setUp(n, extra, shops) {
   groceryState.data = listOf(n, extra);
   groceryState.usualStores = shops === undefined ? ['Loblaws', 'Costco'] : shops;
   groceryState.storesPromptDismissed = true;
-  groceryState.sortAllPicks = {};
   return groceryState.data;
 }
 function pickedChip(html, id) {
@@ -346,6 +345,10 @@ console.log(JSON.stringify(groUnsorted(groceryState.data).map(function (it) { re
 
 @_needs_node
 def test_the_one_screen_shows_every_unsorted_thing_with_a_shop_on_it():
+    """Since 2026-09-13 ("a row leaves the moment I sort it") no chip starts
+    lit: a lit chip that had not been written was the screen's lie, and
+    every row now needs its one tap. See tests/test_sort_all_rows_leave.py
+    for the rest of that change."""
     out = _node("""
 setUp(40);
 const html = groSortAllHtml(groceryState.data);
@@ -357,51 +360,9 @@ console.log(JSON.stringify({
 }));
 """)
     assert out["rows"] == 40, "every unsorted thing, one row each"
-    assert out["firstPick"] == "Loblaws", "everything starts at the default"
-    assert out["lastPick"] == "Loblaws"
+    assert out["firstPick"] is None, "nothing starts lit — a tap is a write now"
+    assert out["lastPick"] is None
     assert out["hasAny"] is True, "'Any' is still an answer on every row"
-
-
-@_needs_node
-def test_changing_one_row_changes_only_that_row_and_writes_nothing():
-    out = _node("""
-setUp(40);
-groceryState.sortAllPicks['3'] = 'Costco';
-const html = groSortAllHtml(groceryState.data);
-console.log(JSON.stringify({
-  changed: pickedChip(html, '3'),
-  neighbourBefore: pickedChip(html, '2'),
-  neighbourAfter: pickedChip(html, '4'),
-  posts: POSTS.length
-}));
-""")
-    assert out["changed"] == "Costco"
-    assert out["neighbourBefore"] == "Loblaws"
-    assert out["neighbourAfter"] == "Loblaws"
-    assert out["posts"] == 0, "staged, so a tap costs no request and cannot reload the list"
-
-
-@_needs_node
-def test_saving_the_screen_sends_the_exceptions_and_the_default_together():
-    out = _node("""
-setUp(4);
-groceryState.sortAllPicks['2'] = 'Costco';
-groceryState.sortAllPicks['4'] = '';
-const items = groUnsorted(groceryState.data);
-const fallback = groMostUsedStore(groceryState.data);
-groBulkAssign(
-  items.map(function (it) { return { item_id: it.id, store: groSortAllPick(it, fallback), decided: true }; }),
-  groPreviousStores(items),
-  '4 things sorted.'
-);
-setTimeout(function () { console.log(JSON.stringify(POSTS[0].body.assignments)); }, 20);
-""")
-    assert out == [
-        {"item_id": 1, "store": "Loblaws", "decided": True},
-        {"item_id": 2, "store": "Costco", "decided": True},
-        {"item_id": 3, "store": "Loblaws", "decided": True},
-        {"item_id": 4, "store": "", "decided": True},
-    ]
 
 
 # --- 4. a household with one shop, or none --------------------------------
@@ -552,8 +513,9 @@ groceryState.tripDone = { Costco: true };
 const html = groNextHtml(groceryState.data);
 console.log(JSON.stringify({
   html: html,
-  // Inside the card, where --ink-secondary clears AA — see shell.css.
-  insideCard: html.indexOf('gro-next-note') < html.lastIndexOf('</div>')
+  // Inside the stops block, under the cards — a celadon tile since
+  // 2026-09-13 (the store-card design pass); see shell.css .gro-stops-note.
+  insideCard: html.indexOf('gro-stops-note') < html.lastIndexOf('</div>')
 }));
 """)
     assert "2 things with no shop will come with you." in out["html"]
@@ -675,7 +637,9 @@ def test_a_bulk_assign_does_not_remember_a_shop_for_every_item(signed_in):
 
 def test_the_new_screens_use_tokens_only():
     """Rule 9 — a literal hex outside theme.css is a review failure."""
-    for marker in (".gro-howrow", ".gro-sortall-row", ".gro-nextrow", ".gro-secondary"):
+    # .gro-nextrow became .gro-stop on 2026-09-13 (the store cards both
+    # WHERE NEXT and WHERE ARE WE HEADED are made of).
+    for marker in (".gro-howrow", ".gro-sortall-row", ".gro-stop", ".gro-secondary"):
         assert marker in SHELL_CSS, f"{marker} should be styled"
     block = SHELL_CSS[SHELL_CSS.index("/* ---------- SORT HOW"):SHELL_CSS.index("/* ---------- Review")]
     assert ".gro-secondary {" in block, "the block boundaries still cover the new rules"
@@ -687,7 +651,7 @@ def test_the_new_screens_use_tokens_only():
 def test_nothing_new_is_under_the_tap_size():
     """Rule 6 — every new tappable row is at least 44px tall."""
     block = SHELL_CSS[SHELL_CSS.index("/* ---------- SORT HOW"):SHELL_CSS.index("/* ---------- Review")]
-    for rule in (".gro-howrow {", ".gro-nextrow {"):
+    for rule in (".gro-howrow {", ".gro-stop {"):
         start = block.index(rule)
         body = block[start:block.index("}", start)]
         assert "min-height: 60px" in body, f"{rule} needs a real tap target"
@@ -1042,29 +1006,6 @@ console.log(JSON.stringify({
     assert out["at"] == "Metro"
     assert out["step"] == "trip"
     assert out["snapshot"] == ["Costco", "Loblaws", "Metro"]
-
-
-@_needs_node
-def test_a_staged_row_change_writes_nothing_until_the_button():
-    out = _node("""
-setUp(6);
-groceryState.step = 'sortall';
-click({ gro: 'sortall-pick', id: '2', store: 'Costco' });
-click({ gro: 'sortall-pick', id: '4', store: '' });
-const duringStaging = POSTS.length;
-click({ gro: 'sortall-save' });
-settle(function () {
-  console.log(JSON.stringify({
-    duringStaging: duringStaging,
-    picks: groceryState.sortAllPicks,
-    sent: POSTS[0] ? POSTS[0].body.assignments : null
-  }));
-});
-""")
-    assert out["duringStaging"] == 0, "tapping a chip must not cost a request"
-    assert out["sent"][1] == {"item_id": 2, "store": "Costco", "decided": True}
-    assert out["sent"][3] == {"item_id": 4, "store": "", "decided": True}
-    assert out["sent"][0]["store"] == "Loblaws", "the rest keep the default"
 
 
 @_needs_node

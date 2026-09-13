@@ -460,6 +460,34 @@
     font-size: 13.5px; font-weight: 600; color: var(--ink-secondary); cursor: pointer;
   }
   [hidden] { display: none !important; }
+/* The shell's .toast (shell.css), copied here for the same reason .crumb
+   was: this page loads theme.css only. Same tokens, same size, same
+   place. It exists so the taps that save on this screen — who's at the
+   table, a holiday answer, an away stretch — can say "Changes saved"
+   (DESIGN_SYSTEM §2b S10, Emily 2026-09-13); until then they saved in
+   silence and only spoke up when a save failed. */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  background: var(--toast-bg);
+  color: var(--toast-ink);
+  border-radius: 14px;
+  padding: 14px 17px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: var(--shadow-toast);
+  /* Above this page's sheets (the day sheet and the away sheet sit at 60):
+     most of the saves it reports are made from inside one. */
+  z-index: 70;
+  max-width: calc(100vw - 40px);
+  text-align: center;
+}
+.toast[hidden] { display: none; }
+.toast.pop-in { animation: pw-pop-in .2s ease; }
+@keyframes pw-pop-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
 </style>
 <script src="/static/error-reporter.js"></script>
 <script src="/static/waiting-lines.js"></script>
@@ -496,7 +524,7 @@
          only when it's relevant, rather than a question everyone answers. -->
     <button type="button" class="away-gate" id="away-gate">
       <span class="away-gate-icon">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="8" width="16" height="11" rx="2"></rect><path d="M9 8V6a3 3 0 0 1 6 0v2"></path><path d="M4 13h16"></path></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="8" width="16" height="11" rx="2"></rect><path d="M9 8V6a3 3 0 0 1 6 0v2"></path><path d="M4 13h16"></path></svg>
       </span>
       <span class="away-gate-text">
         <span class="away-gate-title">Anyone away this week?</span>
@@ -551,6 +579,8 @@
   </section>
 </main>
 
+<div id="toast" class="toast" hidden></div>
+
 <div class="footer" id="footer" hidden>
   <div class="footer-inner">
     <div class="footer-links">
@@ -571,7 +601,7 @@
     <div class="sheet-head">
       <span class="sheet-title" id="day-sheet-title"></span>
       <button type="button" class="sheet-close" id="day-close" aria-label="Close">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6l-12 12"></path></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6l-12 12"></path></svg>
       </button>
     </div>
     <div id="day-sheet-body"></div>
@@ -588,7 +618,7 @@
     <div class="sheet-head">
       <span class="sheet-title" id="away-sheet-title">Away this week</span>
       <button type="button" class="sheet-close" id="away-close" aria-label="Close">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6l-12 12"></path></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6l-12 12"></path></svg>
       </button>
     </div>
     <p class="sheet-lede">One range covers every meal in between &mdash; no need to tag each day.</p>
@@ -618,7 +648,7 @@
 
     <div class="covers" id="away-covers">
       <span class="covers-tick">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>
       </span>
       <span class="covers-text" id="away-covers-text"></span>
     </div>
@@ -626,7 +656,7 @@
     <div class="sheet-actions">
       <button type="button" class="cta" id="away-save">Set this range</button>
       <button type="button" class="sheet-add" id="away-another" hidden>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
         Add another range
       </button>
       <button type="button" class="sheet-cancel" id="away-cancel">Cancel</button>
@@ -637,6 +667,25 @@
 <script>
 (function () {
   'use strict';
+
+  // ---------- the pop-up ----------
+  // shell.js's showToast, without the action button (nothing on this
+  // screen offers an undo yet). One sentence for every save that lands
+  // (S10): the same words the shell uses, so the app has one voice for it.
+  var CHANGES_SAVED = 'Changes saved';
+  var toastEl = document.getElementById('toast');
+  var toastTimer = null;
+  function showToast(message) {
+    if (!toastEl) return;
+    toastEl.textContent = message;
+    toastEl.hidden = false;
+    toastEl.classList.remove('pop-in');
+    void toastEl.offsetWidth;
+    toastEl.classList.add('pop-in');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.hidden = true; }, 2200);
+  }
+  function toastSaved() { showToast(CHANGES_SAVED); }
 
   // ---------- state ----------
   var weekStart = new URLSearchParams(location.search).get('week') || '';
@@ -961,6 +1010,7 @@
       attendance.byDate[d] = attendance.byDate[d] || {};
       attendance.byDate[d][slot] = saved;
       paintSlotBlock(dayEl, slot);
+      toastSaved();
     } catch (err) {
       console.warn('Guest count save failed:', err);
       attendance.byDate[d] = previous;
@@ -1078,6 +1128,7 @@
       attendance.byDate[d] = attendance.byDate[d] || {};
       attendance.byDate[d][slot] = saved;
       paintPresence(dayEl, slot);
+      toastSaved();
     } catch (err) {
       console.warn('Attendance save failed:', err);
       if (previous) attendance.byDate[d] = previous; else delete attendance.byDate[d];
@@ -1365,6 +1416,7 @@
       await loadAttendance();
       paintHoliday(date);
       if (open) paintDay(open);
+      toastSaved();
     } catch (err) {
       console.warn('Holiday answer failed:', err);
       h.answer = previous;
@@ -1614,6 +1666,7 @@
       renderAwaySet();
       $('away-another').hidden = false;
       closeAwaySheet();
+      toastSaved();
     } catch (err) {
       console.warn('Away range save failed:', err);
       $('away-covers-text').textContent = 'I couldn’t save that just now — try again in a moment.';

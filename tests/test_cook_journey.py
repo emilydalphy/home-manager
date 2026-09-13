@@ -196,6 +196,8 @@ _FUNCTIONS = [
     "cookFocusPrepTasks",
     "cookFocusPrepHtml",
     "cookAttendanceChip",
+    # A dish whose eggs an earlier cook boiled (batch_components.py).
+    "cookMadeAheadLinesHtml",
     "cookServesShown",
     "cookApplyServesOverride",
     "cookStepServings",
@@ -212,6 +214,7 @@ _FUNCTIONS = [
     "cookGetOutRowHtml",
     "cookGetOutHtml",
     "cookKitHtml",
+    "recipeCitationHtml",  # the credit line at the foot of Before you start (recipe photo import)
     "cookPrepStageHtml",
     "cookStepStageHtml",
     "cookMethodStageHtml",

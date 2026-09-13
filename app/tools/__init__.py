@@ -44,8 +44,10 @@ from .attention import (  # noqa: F401
 from .chores import (  # noqa: F401
     _FREQUENCY_DAYS,
     CHORES_OFF_MESSAGE,
+    CHORE_INSTANCE_STATUSES,
     FREQUENCY_WORDS,
     ChoreRefused,
+    InvalidChoreStatus,
     add_chore,
     chores_enabled,
     complete_chore,
@@ -100,6 +102,12 @@ from .cook_ahead import (  # noqa: F401
     cook_ahead_repeats,
     mark_cook_ahead_asked,
     set_cook_ahead,
+)
+# One component in several dishes, cooked once (see batch_components.py):
+# the eggs a breakfast and a salad both hard-boil.
+from .batch_components import (  # noqa: F401
+    set_batch_component,
+    shared_components,
 )
 from .cooker import (  # noqa: F401
     _find_inventory_match,
@@ -269,6 +277,9 @@ from .leftovers import (  # noqa: F401
     plan_leftover_chains,
 )
 from .leftovers import covers_note as leftovers_covers_note  # noqa: F401
+# "Four dinners a week" enforced after generation (Emily, 2026-09-13) —
+# see meal_variety.py. Not an agent tool: the week's finishing passes call it.
+from .meal_variety import enforce_distinct_count as enforce_distinct_meal_count  # noqa: F401
 from .meal_plans import (  # noqa: F401
     create_weekly_plan,
     discard_failed_plan,
@@ -311,10 +322,14 @@ from .notifications import (  # noqa: F401
 # once it's sitting in this flat namespace (`missing_groups`, `is_complete`
 # and `get_sides` could each be about half a dozen things here).
 from .plates import (  # noqa: F401
+    ADDITIONS,
+    add_component,
     complete_plate,
     plate_rule,
+    remove_component,
     sides_label,
     side_ingredients,
+    suggest_additions,
 )
 from .plates import get_sides as get_plate_sides  # noqa: F401
 from .plates import has_food_groups as plate_has_food_groups  # noqa: F401
@@ -407,6 +422,9 @@ from .recipes import (  # noqa: F401
     log_recipe_note,
     mark_recipe_feedback,
     plausible_cooking_quantity,
+    produce_count_message,
+    produce_count_problem,
+    recipe_citation,
     save_cooking_quantities,
     scale_recipe,
     settle_cooking_quantities,
@@ -436,6 +454,7 @@ from .rhythm import (  # noqa: F401
     prep_days_summary,
     prep_minutes_label,
     rhythm_completeness_signals,
+    save_rhythm_answers,
     set_cooking_role,
     set_dinner_window,
     set_leftovers_stance,
@@ -484,9 +503,15 @@ from .slot_needs import (  # noqa: F401
     set_slot_recommendation,
 )
 from .staples import (  # noqa: F401
+    SECTION_LABELS,
+    SECTION_ORDER,
     add_staple,
     decide_staple_line,
+    group_by_section,
     list_staples,
+    list_staples_by_section,
+    section_for,
+    seed_spice_staples,
     mark_staple_plenty,
     pause_staple,
     record_staple_purchase,
@@ -494,6 +519,7 @@ from .staples import (  # noqa: F401
     remove_staple_by_id,
     sync_due_staples,
     undo_staple_decision,
+    unrecord_staple_purchase,
 )
 from .stores import (  # noqa: F401
     _DEFAULT_AISLE_ORDER,
@@ -607,4 +633,24 @@ from .weekly_plan import (  # noqa: F401
 from .swap_in_place import (  # noqa: F401
     swap_meal_in_place,
     undo_meal_swap,
+)
+# The chat's change card (Emily, 2026-09-13, "Shaping the Draft" Flows C
+# and D): propose_plan_changes IS an agent tool — the only one here that
+# writes nothing — and the rest are the card's own routes.
+from .proposals import (  # noqa: F401
+    another_for_row,
+    apply_proposal,
+    choose_candidate,
+    describe_plan_for_chat,
+    get_proposal,
+    propose_plan_changes,
+    undo_proposal,
+)
+# Now's "Tonight: X. Still good?" card and its swap-from-the-plan sheet
+# (Emily, 2026-09-13). Not agent tools — a screen's own read and one
+# "Yes" write; the swap itself is swap_dinner_nights above.
+from .tonight import (  # noqa: F401
+    TONIGHT_ASK_HOUR,
+    tonight_check,
+    tonight_keep,
 )

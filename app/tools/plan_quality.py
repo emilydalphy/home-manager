@@ -605,6 +605,46 @@ def _quantities_plausible(entries: list[dict], context: dict) -> list[Violation]
     return violations
 
 
+def _produce_variety_named(entries: list[dict], context: dict) -> list[Violation]:
+    """
+    A count of produce says which kind when the count depends on it.
+
+    Emily, 2026-09-13, on the grocery list: "It says 6 cucumbers - does it
+    mean the persian cucumbers? Because that makes sense, but 6 english
+    cucumbers would be a crazy amount." The generation prompt now asks for
+    the variety whenever the count only makes sense for one; this is the
+    catch for the times the model forgets, on the handful of produce
+    where the ordinary kind and a small kind are both bought by the count
+    (recipes._PRODUCE_COUNT_PER_SERVING). Nothing is rewritten — "6
+    cucumbers" was very likely six Persian ones, and only the model knows
+    — so this is "info", like _quantities_plausible: a line in the morning
+    report, never a change to the week or the list.
+    """
+    violations = []
+    for entry in entries:
+        if not _is_planned(entry) or not entry.get("ingredients"):
+            continue
+        servings = entry.get("default_servings")
+        clauses = []
+        for ing in entry["ingredients"]:
+            if not isinstance(ing, dict):
+                continue
+            item, qty = (ing.get("item") or "").strip(), (ing.get("qty") or "").strip()
+            problem = _recipes.produce_count_problem(item, qty, servings)
+            if problem:
+                clauses.append(_recipes.produce_count_message(item, qty, problem, servings))
+        if not clauses:
+            continue
+        violations.append(Violation(
+            rule="produce_variety_named",
+            severity="info",
+            date=entry["date"],
+            slot=entry["slot"],
+            message=f"{entry['meal_name']}: " + "; ".join(clauses) + ".",
+        ))
+    return violations
+
+
 def _by_date(entries: list[dict]) -> dict[str, dict[str, list[dict]]]:
     """Planned entries grouped as {date: {"snacks": [...], "meals": [...]}}."""
     days: dict[str, dict[str, list[dict]]] = {}
@@ -887,6 +927,7 @@ def check_week(plan_entries: list[dict], context: dict) -> list[Violation]:
     violations += _ingredient_repeat(plan_entries, context)
     violations += _steps_match_ingredients(plan_entries, context)
     violations += _quantities_plausible(plan_entries, context)
+    violations += _produce_variety_named(plan_entries, context)
     violations += _snack_variety(plan_entries, context)
     # The food-quality floor (route 4). Same contract as everything above:
     # independent, additive, and one firing never suppresses another.

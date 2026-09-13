@@ -82,6 +82,58 @@ def test_whoami_asks_when_two_adults_and_nobody_picked(client, two_adults):
         assert set(adult) == {"id", "name", "initial", "color"}
 
 
+def test_a_freshly_added_adult_has_a_real_avatar_colour_at_once(client, two_adults):
+    """
+    Defect hunt, 2026-09-13: members.color used to stay blank until the
+    next server restart's db._backfill_member_colors ran — a member
+    added (and marked adult) mid-session had no colour for as long as the
+    process kept running, most visibly in "Who's this?". `two_adults`
+    creates both through the real add_member + set_member_age_group
+    calls, with no restart in between, so this fails on `main`.
+    """
+    _sign_in(client)
+    body = client.get("/api/whoami").json()
+    colors = {a["name"]: a["color"] for a in body["adults"]}
+    assert colors["Emily"] == "#1B3328", "first adult gets the household's first colour"
+    assert colors["Vineeth"] == "#C4703C", "second adult gets the second, not the first's again"
+
+
+def test_a_third_adult_gets_no_colour_same_as_the_backfill(two_adults):
+    """The design names two colours. A third adult is left blank, exactly
+    what db._backfill_member_colors already does — this is a parity
+    check, not a new rule."""
+    tools.add_member("Priya")
+    tools.set_member_age_group("Priya", "Adult")
+    adults = tools.household_adults()
+    assert {a["color"] for a in adults if a["name"] in ("Emily", "Vineeth")} == {"#1B3328", "#C4703C"}
+    assert [a["color"] for a in adults if a["name"] == "Priya"] == [""]
+
+
+def test_a_members_own_colour_choice_is_never_overwritten():
+    """Same invariant db._backfill_member_colors states for itself: a
+    colour already on the row — chosen, or set by an earlier call — is
+    never replaced by a later one."""
+    tools.add_member("Emily")
+    tools.set_member_age_group("Emily", "Adult")
+    conn = get_conn()
+    conn.execute("UPDATE members SET color = '#ABCDEF' WHERE name = 'Emily'")
+    conn.commit()
+    conn.close()
+
+    tools.set_member_age_group("Emily", "Adult")  # called again, e.g. a re-answered onboarding step
+
+    assert tools.household_adults()[0]["color"] == "#ABCDEF"
+
+
+def test_a_child_gets_no_colour():
+    tools.add_member("Sam")
+    tools.set_member_age_group("Sam", "child")
+    conn = get_conn()
+    row = conn.execute("SELECT color FROM members WHERE name = 'Sam'").fetchone()
+    conn.close()
+    assert row["color"] == ""
+
+
 def test_a_household_with_one_adult_needs_no_pick(client):
     """One adult is not a question — the app knows who it is talking to."""
     emily = _adult("Emily")

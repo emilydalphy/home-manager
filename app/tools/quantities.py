@@ -166,6 +166,10 @@ _UNIT_ALIASES = {
     # string they sit, and hands them back as a note. This table only
     # still fires for a unit string built by hand somewhere else.
     "large": "", "medium": "", "small": "", "whole": "", "jumbo": "", "xl": "",
+    # Counted packs (see _PACK_CONVERSION_GROUPS): the recipe's own words
+    # for the thing and for the pack it comes in read as those two units.
+    "egg": "egg", "eggs": "egg", "dozen": "dozen", "dozens": "dozen",
+    "dozen egg": "dozen", "dozen eggs": "dozen",
 }
 
 
@@ -515,7 +519,7 @@ def _parse_quantity(qty: str) -> tuple[float, str | None] | None:
     return amount, unit
 
 
-_UNIT_PLURALS = {"cup": "cups", "lb": "lbs"}
+_UNIT_PLURALS = {"cup": "cups", "lb": "lbs", "egg": "eggs", "dozen": "dozen"}
 
 
 def _plain_number(amount: float, sig: int = 6) -> str:
@@ -588,6 +592,41 @@ _METRIC_VOL_TO_ML = {"ml": 1.0, "l": 1000.0}
 _UNIT_CONVERSION_GROUPS = [_VOLUME_TO_TSP, _WEIGHT_TO_OZ, _MASS_TO_G, _METRIC_VOL_TO_ML]
 
 
+# COUNTED PACKS (Loop Board, 2026-09-13 — Emily's list said "Eggs · 4
+# dozen"). A store sells a pack of N countable things and a recipe uses a
+# few of them: eggs by the dozen, garlic by the head. Every recipe the app
+# had written said "1 dozen" — the prompt asked for the store's unit — and
+# four meals with eggs then added up to four cartons. Emily: "it should add
+# up how many eggs, not the whole dozen for each recipe."
+#
+# So a pack is a unit FAMILY, like tbsp/cup: the ledger keeps each meal's
+# share in the small unit (eggs, cloves), the shares add up across the
+# week, and the line is written in the pack — rounded UP to a whole one,
+# because that is what the shelf sells. The two families here are the two
+# whose words are unambiguous: nothing but eggs comes by the dozen, and
+# nothing but garlic comes in cloves. ("Head" alone is also a lettuce or a
+# cauliflower; it is only read as ten cloves because it sits in this group
+# beside "clove", and a head of lettuce still rounds up to whole heads
+# exactly as it did before — _shopping_round ceils in the pack unit.)
+#
+# These stay OUT of _UNIT_CONVERSION_GROUPS on purpose: a measurable unit
+# rounds to the nearest quarter and rolls up only once it reaches the
+# bigger unit; a pack always rounds up to whole packs.
+_EGGS_TO_EACH = {"egg": 1.0, "dozen": 12.0}
+_GARLIC_TO_CLOVE = {"clove": 1.0, "head": 10.0}
+_PACK_CONVERSION_GROUPS = [_EGGS_TO_EACH, _GARLIC_TO_CLOVE]
+
+
+def _pack_group(unit: str | None) -> dict | None:
+    """The counted-pack family `unit` belongs to, or None."""
+    return next((g for g in _PACK_CONVERSION_GROUPS if unit in g), None)
+
+
+def _pack_units(group: dict) -> tuple[str, str]:
+    """(the small unit, the pack unit) of a counted-pack family."""
+    return min(group, key=group.get), max(group, key=group.get)
+
+
 _NICE_FRACTIONS = (0.0, 0.25, 0.5, 0.75, 1.0)
 
 
@@ -631,7 +670,7 @@ def _convert_to_unit(amount: float, from_unit: str | None, to_unit: str | None) 
         return amount
     if not from_unit or not to_unit:
         return None
-    for group in _UNIT_CONVERSION_GROUPS:
+    for group in _UNIT_CONVERSION_GROUPS + _PACK_CONVERSION_GROUPS:
         if from_unit in group and to_unit in group:
             return amount * group[from_unit] / group[to_unit]
     return None
@@ -719,6 +758,14 @@ def _shopping_round(amount: float, unit: str | None) -> tuple[float, str | None]
     from what was put on it. They cannot disagree, because there is one of
     them.
     """
+    pack = _pack_group(unit)
+    if pack:
+        # A counted pack: however the shares were written (eggs or dozens,
+        # cloves or heads), the line is whole packs, rounded up — 14 eggs
+        # is 2 dozen, 8 cloves is 1 head.
+        _small_unit, pack_unit = _pack_units(pack)
+        in_packs = amount * pack[unit] / pack[pack_unit]
+        return float(math.ceil(in_packs - 1e-9)), pack_unit
     if not _measurable_unit(unit):
         return _round_in_unit(amount, unit), unit
     rolled_amount, rolled_unit = _roll_up_unit(amount, unit)
@@ -764,8 +811,11 @@ def _ledger_buckets(qty_strings: list[str]) -> dict | None:
         if not parsed:
             return None
         amount, unit = parsed
-        group = next((g for g in _UNIT_CONVERSION_GROUPS if unit in g), None)
+        group = next((g for g in _UNIT_CONVERSION_GROUPS + _PACK_CONVERSION_GROUPS if unit in g), None)
         if group:
+            # A counted pack's rows sum in the small unit too ("2 eggs" +
+            # "0.5 dozen" = 8 eggs) and are written back as whole packs
+            # by _shopping_round.
             base_unit = min(group, key=group.get)
             key = ("measure", id(group))
             bucket = totals.setdefault(key, [0.0, base_unit])

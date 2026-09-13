@@ -418,8 +418,9 @@ def test_recipes_add_from_a_link_and_inventory_are_behind_one_more_link():
     assert 'data-kit="more">More ···</button>' in link
     assert "cook-empty-link" in link, "the 44px in-prose link (rule 6)"
     rows = _function("cookMoreRowsHtml")
-    assert rows.count('class="kit-row"') == 3
+    assert rows.count('class="kit-row"') == 4  # + "Add from a cookbook" (recipe photo import, 2026-09-13)
     for needle in ('data-kit="recipes"', ">Recipes<", 'data-kit="recipe-link"', ">Add from a link<",
+                   'data-kit="recipe-photo"', ">Add from a cookbook<",
                    'data-sheet="inventory"', 'kit-row-title">Inventory'):
         assert needle in rows, needle
     assert "dock-primary" not in rows and "btn-primary" not in rows
@@ -516,3 +517,113 @@ def test_no_plan_at_all_still_answers_with_the_keys():
     assert view["weekly_plan_id"] is None
     assert view["period_start_date"] is None and view["day_count"] == 0
     assert view["cook_name"] is None
+    assert view["last_planned_label"] is None
+
+
+# --------------------------------------------------------------------------
+# Bug (Loop Board, 2026-09-13): a household whose last approved week was
+# weeks ago saw THAT week under a heading that says "this week", because
+# get_weekly_plan (via _current_weekly_plan_row) falls back to the newest
+# non-retired plan on file when none covers today — right for a chat
+# answer, wrong for "what am I cooking right now". get_cooker_view now
+# refuses that fallback for itself when no weekly_plan_id was asked for.
+# --------------------------------------------------------------------------
+
+def _month_ago_monday() -> str:
+    today = datetime.date.today()
+    start = today - datetime.timedelta(days=today.weekday() + 28)
+    return start.isoformat()
+
+
+def test_a_stale_last_weeks_plan_is_not_offered_as_this_week():
+    stale_start = _month_ago_monday()
+    plan_id = tools.create_weekly_plan(stale_start)["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(stale_start, "Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id)
+
+    view = tools.get_cooker_view()
+    assert view["weekly_plan_id"] is None, "the stale plan must not be handed back as current"
+    assert view["is_current_plan"] is False
+    assert view["meals"] == [], "August's dinner must not appear under a 'this week' view"
+    assert view["period_start_date"] is None and view["day_count"] == 0
+    from app.tools import weekly_plan as _wp
+    expected_label = _wp._format_period_range(stale_start, 7)
+    assert view["last_planned_label"] == expected_label, "the last plan's dates, for an honest line"
+
+    # Asking for that plan BY ID still gets it, stale or not.
+    direct = tools.get_cooker_view(plan_id)
+    assert direct["weekly_plan_id"] == plan_id
+    assert len(direct["meals"]) == 1 and direct["meals"][0]["meal"] == "Chili"
+    assert direct["last_planned_label"] is None, "only the no-id fallback sets this"
+
+
+def test_a_stale_plan_does_not_hide_a_real_loose_meal_ahead():
+    """A one-off chat-planned dinner for today has nothing to do with last
+    month's plan and must still show, even though the stale plan gets
+    dropped from the view (unplanned_meals_ahead, weekly_plan.py)."""
+    stale_start = _month_ago_monday()
+    plan_id = tools.create_weekly_plan(stale_start)["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(stale_start, "Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id)
+
+    tools.add_recipe("Tacos", ingredients=[{"item": "tortillas", "qty": "1 pack"}])
+    today = datetime.date.today().isoformat()
+    tools.plan_meal(today, "Tacos", slot="dinner")  # no weekly_plan_id: a loose meal
+
+    view = tools.get_cooker_view()
+    assert view["weekly_plan_id"] is None, "still no CURRENT plan, just a loose meal on top"
+    names = [m["meal"] for m in view["meals"]]
+    assert names == ["Tacos"], "the loose meal shows; the stale plan's Chili does not"
+    from app.tools import weekly_plan as _wp
+    assert view["last_planned_label"] == _wp._format_period_range(stale_start, 7)
+
+
+def test_today_moves_do_not_read_a_stale_plan_either():
+    """The Now tab's today_moves is built off the same get_cooker_view()
+    call with no id — same bug, same fix, checked from that side too."""
+    from app.tools import moves as _moves
+
+    stale_start = _month_ago_monday()
+    plan_id = tools.create_weekly_plan(stale_start)["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(stale_start, "Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id)
+
+    payload = _moves.today_moves()
+    assert payload["week_state"] == "none", "the badge must not read 'set' off a month-old plan"
+    kinds = [m["kind"] for m in payload["moves"]]
+    assert "cook" not in kinds, "no cook move should be built off August's dinner"
+
+
+def test_a_plan_ending_exactly_today_is_not_stale():
+    """Boundary case: period_end_date == today must NOT trip the stale
+    check (`period_end < today`, strictly less-than) — a plan whose last
+    day is today is still this week's plan."""
+    start = (datetime.date.today() - datetime.timedelta(days=6)).isoformat()  # a 7-day plan starting 6 days ago ends today
+    plan_id = tools.create_weekly_plan(start)["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(start, "Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id)
+
+    view = tools.get_cooker_view()
+    assert view["weekly_plan_id"] == plan_id
+    assert view["last_planned_label"] is None
+    assert [m["meal"] for m in view["meals"]] == ["Chili"]
+
+
+def test_a_plan_ending_exactly_yesterday_is_stale():
+    """Boundary case: period_end_date == yesterday must trip the stale
+    check — one day past the end is enough."""
+    start = (datetime.date.today() - datetime.timedelta(days=7)).isoformat()  # a 7-day plan starting 7 days ago ended yesterday
+    plan_id = tools.create_weekly_plan(start)["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(start, "Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id)
+
+    view = tools.get_cooker_view()
+    assert view["weekly_plan_id"] is None
+    assert view["meals"] == []
+    from app.tools import weekly_plan as _wp
+    assert view["last_planned_label"] == _wp._format_period_range(start, 7)

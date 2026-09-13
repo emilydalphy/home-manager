@@ -34,7 +34,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exception_handlers import http_exception_handler
 
-from . import agent, backup, calendar_feed, households, ratelimit, recipe_import, security
+from . import agent, backup, calendar_feed, households, ratelimit, recipe_import, recipe_photos, security
 from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
@@ -417,6 +417,12 @@ class ChatContext(BaseModel):
     entry_id: int | None = None
     date: str | None = None
     slot: str | None = None
+    # kind 'weekly_plan' (Emily, 2026-09-13, "Shaping the Draft" Flow C):
+    # the chat opened from the Plan tab with a week showing. The server
+    # resolves the week itself (tools.describe_plan_for_chat) — the pointer
+    # is trusted, nothing else.
+    week_start: str | None = None
+    weekly_plan_id: int | None = None
 
 
 class ChatRequest(BaseModel):
@@ -460,11 +466,19 @@ class ChatAction(BaseModel):
     # still shows the week, just without selecting a day.
     date: str | None = None
     slot: str | None = None
+    # True for a write that REMEMBERED something about the household (a
+    # dislike, an allergy, a fact, a store) rather than changed a screen —
+    # the shell draws those as the Remembered chip with "Not quite"
+    # (2026-09-13), and everything else as the "View" card.
+    remembered: bool = False
 
 
 class ChatResponse(BaseModel):
     reply: str
     actions: list[ChatAction] = []
+    # The change card, when the turn proposed one (tools.proposals): rows
+    # of what was → what would be, saved from the card, never by the turn.
+    proposal: dict | None = None
 
 
 class MemberInput(BaseModel):
@@ -707,6 +721,14 @@ class AddRecipeRequest(BaseModel):
     cuisine: str = ""
     main_protein: str = ""
     source_url: str = ""
+    # The cookbook credit (recipe photo import, 2026-09-13) — whatever the
+    # photo showed plus whatever the household filled in; all optional.
+    source_book: str = ""
+    source_author: str = ""
+    source_page: str = ""
+    # The pending page photo(s) /api/recipes/import-photo stashed, to keep
+    # with the recipe. Only ever this household's tokens resolve.
+    photo_tokens: list[str] = []
 
 
 class CookingDeviationRequest(BaseModel):
@@ -817,6 +839,11 @@ class GroceryStatusRequest(BaseModel):
 
 class GroceryStoreRequest(BaseModel):
     store: str = ""
+    # False for a one-off move — the wrap-up's "Will grab elsewhere" (Emily,
+    # 2026-09-13): this week the eggs come from Metro because Costco was
+    # out, and next week's list should still put them at Costco. See
+    # tools.set_grocery_item_store's remember.
+    remember: bool = True
 
 
 class GroceryStoreAssignment(BaseModel):
@@ -848,6 +875,12 @@ class ResetRequest(BaseModel):
     """
     meal_plan: bool = False
     grocery_list: bool = False
+    # The plan the Plan tab is showing — the one "clear this week's meal
+    # plan" means. Sent by the dialog from its own preview, so the plan
+    # counted is the plan cleared (Loop Board, 2026-09-13: the default
+    # resolver cleared last week's draft under an approved week). Left
+    # unset only by an older client; then the default resolver answers.
+    weekly_plan_id: int | None = None
 
 
 @app.on_event("startup")
@@ -1022,30 +1055,30 @@ def onboarding_rhythm(req: OnboardingRhythmRequest):
     etc.) — this endpoint is just the structured-form path onto the same
     storage, so an onboarding answer and a later chat correction are the
     same write.
+
+    tools.save_rhythm_answers does the actual work in one transaction —
+    see its docstring (defect hunt, 2026-09-13) for why this used to call
+    the individual setters one at a time and half-save a rhythm when a
+    later field was invalid.
     """
     try:
-        for member_name, location in req.lunch_location.items():
-            member_name = (member_name or "").strip()
-            if member_name and location in tools.LUNCH_LOCATIONS:
-                tools.set_lunch_location(member_name, location, source="onboarding")
-        if req.meals_together:
-            tools.set_meals_together(req.meals_together, source="onboarding")
-        if req.cooking_role:
-            tools.set_cooking_role(req.cooking_role, who=req.cooking_role_who, source="onboarding")
-        if req.dinner_window:
-            tools.set_dinner_window(req.dinner_window, source="onboarding")
-        if req.planning_anchor:
-            tools.set_planning_anchor(req.planning_anchor, source="onboarding")
-        if req.leftovers_stance:
-            tools.set_leftovers_stance(req.leftovers_stance, source="onboarding")
-        if req.prep_days is not None:
-            tools.set_prep_days(req.prep_days, source="onboarding")
+        result = tools.save_rhythm_answers(
+            lunch_location=req.lunch_location,
+            meals_together=req.meals_together,
+            cooking_role=req.cooking_role,
+            cooking_role_who=req.cooking_role_who,
+            dinner_window=req.dinner_window,
+            planning_anchor=req.planning_anchor,
+            leftovers_stance=req.leftovers_stance,
+            prep_days=req.prep_days,
+            source="onboarding",
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.exception("Onboarding rhythm save failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return tools.get_household_rhythm()
+    return result
 
 
 @app.get("/api/members/{name}/share-link")
@@ -1553,6 +1586,81 @@ def import_recipe_url(request: Request, req: ImportRecipeUrlRequest):
     return {"draft": draft}
 
 
+@app.post("/api/recipes/import-photo")
+async def import_recipe_photo(
+    request: Request,
+    photo: UploadFile = File(...),
+    photo2: UploadFile | None = File(None),
+    hint: str = Form(""),
+):
+    """
+    Bring a recipe in from a photographed cookbook page (Loop Board,
+    2026-09-13) — one photo, or two when the recipe runs across the
+    spread. Same shape as the link import: the model reads the page(s)
+    (agent.read_recipe_from_photos_llm, one vision call for the pair) and
+    a DRAFT comes back with a proposed citation; nothing is saved here.
+    The photo(s) are stashed as pending under this household and the draft
+    carries their tokens, so the save can keep them with the recipe. A bad
+    read stashes nothing — the household retakes.
+
+    Multipart like the receipt and fridge scans; `hint` is whatever the
+    household typed alongside (the chat path), fenced as data in the prompt.
+    """
+    _enforce_rate_limit(request, "scan")
+    uploads = [photo] + ([photo2] if photo2 is not None and photo2.filename else [])
+    images: list[tuple[bytes, str]] = []
+    for upload in uploads[:recipe_photos.MAX_PHOTOS]:
+        data = await upload.read()
+        try:
+            media_type = recipe_photos.check_upload(data)
+        except recipe_photos.PhotoError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        images.append((data, media_type))
+    try:
+        detail = await run_in_threadpool(
+            agent.read_recipe_from_photos_llm,
+            [(base64.b64encode(data).decode("ascii"), media_type) for data, media_type in images],
+            hint or "",
+        )
+        draft = recipe_import.draft_from_photo_read(detail)
+    except recipe_import.RecipeImportError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except AssistantUnavailableError as e:
+        logger.warning("Recipe photo import hit a transient Claude API failure: %s", e)
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.exception("Recipe photo import failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    try:
+        tokens = [recipe_photos.stash_pending(data, media_type) for data, media_type in images]
+    except OSError:
+        # The read worked; only keeping the picture didn't. The recipe is
+        # the thing the household came for, so the draft still goes back —
+        # without photos, and the sheet says nothing about them.
+        logger.exception("Couldn't keep the recipe photo")
+        tokens = []
+    draft["photo_tokens"] = tokens
+    for candidate in draft.get("candidates") or []:
+        candidate["photo_tokens"] = tokens
+    return {"draft": draft}
+
+
+@app.get("/api/recipes/{recipe_id}/photos/{position}")
+def recipe_photo(recipe_id: int, position: int):
+    """
+    One of the session household's recipe page photos. The row is looked
+    up under household_id() and the file is read from that household's
+    own folder (app/recipe_photos.py) — another household's photo is a
+    404 whatever ids are asked for, and nothing about the path comes from
+    the request.
+    """
+    found = recipe_photos.photo_file(recipe_id, position)
+    if not found:
+        raise HTTPException(status_code=404, detail="No photo here.")
+    path, media_type = found
+    return FileResponse(path, media_type=media_type, headers={"Cache-Control": "private, max-age=3600"})
+
+
 # ---------- the household's calendar (read-only, by subscribe link) ----------
 #
 # Loop Board "Meals: plan the week around what's actually on the household's
@@ -1747,7 +1855,25 @@ def add_recipe_endpoint(req: AddRecipeRequest):
             cuisine=req.cuisine.strip(),
             main_protein=req.main_protein.strip(),
             source_url=source_url,
+            source_book=req.source_book.strip()[:200],
+            source_author=req.source_author.strip()[:200],
+            source_page=req.source_page.strip()[:40],
         )
+        # The page photo(s) the draft was read from, kept with the recipe
+        # (recipe photo import). Only this household's pending tokens
+        # resolve; a stale or foreign token is skipped, never an error.
+        photos = []
+        if req.photo_tokens:
+            try:
+                photos = recipe_photos.attach_pending(result["recipe_id"], req.photo_tokens)
+            except Exception:
+                # The recipe is saved; the photo isn't on it. Logged, never
+                # surfaced — a filesystem error names a path, and a path
+                # is not a sentence for the household.
+                logger.exception("Attaching the recipe photo failed")
+        result["photo_urls"] = [p["url"] for p in photos]
+        if photos and not result.get("citation"):
+            result["citation"] = tools.recipe_citation(has_photo=True)
     except HTTPException:
         raise
     except Exception as e:
@@ -1966,6 +2092,12 @@ def set_chore_status(instance_id: int, req: ChoreStatusRequest):
         raise HTTPException(status_code=403, detail=tools.CHORES_OFF_MESSAGE)
     try:
         result = tools.set_chore_instance_status(instance_id, req.status)
+    except tools.InvalidChoreStatus as e:
+        # A status outside CHORE_INSTANCE_STATUSES is a bad request, not a
+        # missing row — 422, not the 404 below (require_household_row's
+        # ValueError, which InvalidChoreStatus is a sibling of, not a
+        # subclass — this except must come first).
+        raise HTTPException(status_code=422, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -2111,6 +2243,39 @@ def today_move_done(move_id: str, req: MoveDoneRequest, date: str | None = None)
         logger.exception("Today's-move check-off failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return payload
+
+
+@app.get("/api/today/tonight")
+def today_tonight():
+    """
+    Now's top card from mid-afternoon: "Tonight: X. Still good?" — whether
+    to ask, tonight's dish, and the 2–3 other nights of this plan that
+    "Something else" may trade it with. See tools/tonight.py for every
+    rule; the swap itself is POST /api/week/{week_start}/swap-nights.
+    """
+    try:
+        return tools.tonight_check()
+    except Exception as e:
+        logger.exception("Tonight's check failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+class TonightKeepRequest(BaseModel):
+    """"Yes" on Now's tonight card. `date` is the household's local day the
+    screen was showing; omitted, the server uses its own reading of it."""
+    date: str | None = None
+
+
+@app.post("/api/today/tonight/keep")
+def today_tonight_keep(req: TonightKeepRequest):
+    """Remember "Yes, still good" for the rest of the day — the plan is untouched."""
+    try:
+        return tools.tonight_keep(req.date)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Tonight's keep failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
 @app.get("/api/week-menu")
@@ -2571,6 +2736,72 @@ def week_swap_in_place(week_start: str, req: SwapInPlaceRequest):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+class ProposalRowRequest(BaseModel):
+    row: int
+    candidate: int | None = None
+
+
+@app.post("/api/chat/proposals/{proposal_id}/choose")
+def chat_proposal_choose(proposal_id: str, req: ProposalRowRequest):
+    """A tap on one of a row's options. Nothing written."""
+    if req.candidate is None:
+        raise HTTPException(status_code=400, detail="candidate is required.")
+    out = tools.choose_candidate(proposal_id, req.row, req.candidate)
+    if out.get("status") == "gone":
+        raise HTTPException(status_code=404, detail=out["message"])
+    return out
+
+
+@app.post("/api/chat/proposals/{proposal_id}/another")
+def chat_proposal_another(proposal_id: str, req: ProposalRowRequest):
+    """
+    A different dish for one row of the card — the swap's own small model
+    call, with everything the row has already been offered avoided. Not
+    written; it becomes the row's chosen option on the card.
+    """
+    try:
+        out = tools.another_for_row(proposal_id, req.row)
+    except AssistantUnavailableError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.exception("Proposal another failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    if out.get("status") == "gone":
+        raise HTTPException(status_code=404, detail=out["message"])
+    return out
+
+
+@app.post("/api/chat/proposals/{proposal_id}/apply")
+def chat_proposal_apply(proposal_id: str):
+    """
+    Save changes. Every chosen dish goes through the same gates and the
+    same apply as Swap · I'll pick; rows the gates refuse are reported in
+    `refused`, the rest land. A 200 with status 'nothing' means no row had
+    anything to write.
+    """
+    try:
+        out = tools.apply_proposal(proposal_id)
+    except Exception as e:
+        logger.exception("Proposal apply failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    if out.get("status") == "gone":
+        raise HTTPException(status_code=404, detail=out["message"])
+    return out
+
+
+@app.post("/api/chat/proposals/{proposal_id}/undo")
+def chat_proposal_undo(proposal_id: str):
+    """Put back every row Save changes wrote."""
+    try:
+        out = tools.undo_proposal(proposal_id)
+    except Exception as e:
+        logger.exception("Proposal undo failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    if out.get("status") == "gone":
+        raise HTTPException(status_code=404, detail=out["message"])
+    return out
+
+
 @app.post("/api/week/{week_start}/swap-undo")
 def week_swap_undo(week_start: str, req: SwapUndoRequest):
     """Put back the dish that was on this slot before it was swapped."""
@@ -2689,6 +2920,94 @@ def week_add_dish_day(week_start: str, req: AddDishDayRequest):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Adding a dish's day failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+def _addition_context() -> dict:
+    """What the free-text side call should know about this house beyond
+    the meal itself — the same three facts _complete_plates_pass hands
+    generate_sides_llm. Empty when memory can't be read: a side written
+    without the dislikes is worse than none, so the caller treats an
+    empty dict as "add it as typed" rather than guessing."""
+    try:
+        memory = tools.get_household_memory()
+    except Exception:
+        logger.exception("Household memory could not be read for an addition")
+        return {}
+    return {
+        "dislikes": memory.get("dislikes") or [],
+        "dietary_restrictions": sorted({
+            r
+            for member in memory.get("members") or []
+            for r in (member.get("dietary_restrictions") or [])
+        }),
+        "eating_style": memory.get("eating_style") or "",
+    }
+
+
+@app.get("/api/week/{week_start}/additions")
+def week_additions(week_start: str, entry_id: int):
+    """
+    The meal screen's "Add something" sheet: the short list of things
+    that make sense beside THIS dish (plates.suggest_additions — a
+    starch, a green, a sauce; nothing the dish already has), for the
+    picker to draw. A read, no model call.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.suggest_additions(
+            entry_id, eating_style=_addition_context().get("eating_style"), weekly_plan_id=plan_id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+class AddComponentRequest(BaseModel):
+    """`key` is a row of the picker (plates.ADDITIONS); `text` is the
+    free-text line. One or the other."""
+    entry_id: int
+    key: str | None = None
+    text: str | None = None
+
+
+@app.post("/api/week/{week_start}/add-component")
+def week_add_component(week_start: str, req: AddComponentRequest):
+    """
+    "Add potatoes" from the dish itself (Emily, 2026-09-13). One small
+    write onto the entry (plates.add_component): the side goes on the
+    meal, on the grocery list if the week is approved, and on the cooking
+    timeline the next time the screen reads the cooker view. Free text is
+    the one path that spends a model call; a picker row spends none.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.add_component(
+            req.entry_id, key=req.key, text=req.text,
+            context=_addition_context() if req.text else None, weekly_plan_id=plan_id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Adding to a meal failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+class RemoveComponentRequest(BaseModel):
+    entry_id: int
+    name: str
+
+
+@app.post("/api/week/{week_start}/remove-component")
+def week_remove_component(week_start: str, req: RemoveComponentRequest):
+    """The Undo on an addition: the side comes off the meal and its own
+    lines come off the list, the dish's shopping untouched."""
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.remove_component(req.entry_id, req.name, weekly_plan_id=plan_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Removing an addition failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
@@ -2982,10 +3301,23 @@ class CookAheadChoiceRequest(BaseModel):
     covered_entry_ids: list[int] = []
 
 
+class BatchComponentChoiceRequest(BaseModel):
+    """One shared component's answer: which of the dishes that make it
+    should be made in one go (Loop Board "Batch cook: when the same
+    component is in several recipes", Emily 2026-09-13). The earliest
+    entry cooks; see tools.batch_components.set_batch_component."""
+    key: str
+    entry_ids: list[int] = []
+
+
 class WeekCookAheadConfirmRequest(BaseModel):
-    # Empty list is a real, complete answer ("Cook each on its own") — see
+    # Empty lists are a real, complete answer ("Cook each on its own") — see
     # confirm_week_cook_ahead below.
     choices: list[CookAheadChoiceRequest] = []
+    # The component blocks' answers, in the same fold as the per-dish ones
+    # (Emily: "if there is something that is repeated it should be in the
+    # same group"). Absent or empty means "leave every component alone".
+    components: list[BatchComponentChoiceRequest] = []
 
 
 @app.get("/api/week/{week_start}/cook-ahead-items")
@@ -3000,10 +3332,14 @@ def week_cook_ahead_items(week_start: str):
     plan_id = _plan_id_for_week(week_start)
     try:
         items = tools.cook_ahead_repeats(plan_id)
+        # The same fold's other kind of block: one component several
+        # different dishes each cook (tools.batch_components). Only the
+        # ones not yet answered — a batch already filed is the Cook view's.
+        components = [c for c in tools.shared_components(plan_id) if not c["batched"]]
     except Exception as e:
         logger.exception("Cook-ahead repeat lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return {"weekly_plan_id": plan_id, "items": items}
+    return {"weekly_plan_id": plan_id, "items": items, "components": components}
 
 
 @app.post("/api/week/{week_start}/cook-ahead-confirm")
@@ -3026,6 +3362,7 @@ def confirm_week_cook_ahead(week_start: str, req: WeekCookAheadConfirmRequest):
     plan_id = _plan_id_for_week(week_start)
     applied: list[dict] = []
     refused: list[dict] = []
+    components_applied: list[dict] = []
     try:
         for choice in req.choices:
             result = tools.set_cook_ahead(choice.source_entry_id, choice.covered_entry_ids)
@@ -3033,11 +3370,24 @@ def confirm_week_cook_ahead(week_start: str, req: WeekCookAheadConfirmRequest):
                 refused.append({"source_entry_id": choice.source_entry_id, "note": result})
             else:
                 applied.append(result)
+        # The component blocks, same not-all-or-nothing rule: a refusal
+        # is a sentence for that block, and the others still land.
+        for comp in req.components:
+            result = tools.set_batch_component(plan_id, comp.key, comp.entry_ids)
+            if isinstance(result, str):
+                refused.append({"key": comp.key, "note": result})
+            else:
+                components_applied.append(result)
         tools.mark_cook_ahead_asked(plan_id)
     except Exception as e:
         logger.exception("Cook-ahead confirmation failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return {"weekly_plan_id": plan_id, "applied": applied, "refused": refused}
+    return {
+        "weekly_plan_id": plan_id,
+        "applied": applied,
+        "components_applied": components_applied,
+        "refused": refused,
+    }
 
 
 @app.get("/api/week/{week_start}/prep-sessions")
@@ -3107,15 +3457,17 @@ def add_prep_cut_view(req: PrepCutRequest):
 
 
 @app.get("/api/reset/preview")
-def reset_preview():
+def reset_preview(weekly_plan_id: int | None = None):
     """
     Counts for the Meals tab's "Start over" confirm dialog — how many
     planned meals and how many still-needed grocery items a reset would
     remove — so the dialog can name real numbers and grey out a choice
     that would do nothing. Read-only; see tools.get_reset_preview.
+    weekly_plan_id is the plan the tab is showing — the dialog always
+    sends it, so the plan counted here is the plan the reset clears.
     """
     try:
-        return tools.get_reset_preview()
+        return tools.get_reset_preview(weekly_plan_id)
     except Exception as e:
         logger.exception("Reset preview failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -3140,7 +3492,7 @@ def reset(req: ResetRequest):
     result = {"meal_plan": None, "grocery_list": None}
     try:
         if req.meal_plan:
-            result["meal_plan"] = tools.clear_weekly_plan()
+            result["meal_plan"] = tools.clear_weekly_plan(req.weekly_plan_id)
         if req.grocery_list:
             result["grocery_list"] = tools.clear_grocery_list(status="needed")
     except Exception as e:
@@ -3639,9 +3991,13 @@ def decide_staple_line_view(item_id: int, req: StapleDecisionRequest):
 
 @app.get("/api/staples")
 def list_staples_view():
-    """The household's staples with cadence, last bought, next due, paused."""
+    """The household's staples with cadence, last bought, next due, paused —
+    flat in `staples`, and grouped under their derived section (Spices,
+    Pantry basics, Fridge basics, Household supplies, Other) in `sections`,
+    which is what the Staples card renders."""
     try:
-        return {"staples": tools.list_staples()}
+        staples = tools.list_staples()
+        return {"staples": staples, "sections": tools.group_by_section(staples)}
     except Exception as e:
         logger.exception("Staples lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -3855,7 +4211,7 @@ def keep_all_pre_shop_flags_view():
 def set_grocery_list_item_store(item_id: int, req: GroceryStoreRequest):
     """Assign which store a specific listed item should be bought at, directly from the Grocery List view."""
     try:
-        result = tools.set_grocery_item_store(item_id, req.store)
+        result = tools.set_grocery_item_store(item_id, req.store, remember=req.remember)
     except Exception as e:
         logger.exception("Grocery list store assignment failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -4292,6 +4648,13 @@ _MEMORY_HREF_TOOLS = {
     "get_or_create_member_share_link", "revoke_member_share_link", "regenerate_member_share_link",
     "set_morning_text",
 }
+# The writes that are a fact ABOUT the household rather than a change to a
+# screen: what the chat shows as "Remembered · …" with a way to correct it.
+_REMEMBER_TOOLS = {
+    "add_fact", "add_food_dislikes", "set_member_dietary_restrictions",
+    "set_household_meal_preferences", "edit_preference", "add_usual_stores",
+    "add_store_typical_items", "remove_store_typical_item", "set_household_goals",
+}
 _CATEGORY_KICKERS = {
     "today": "Chores updated",
     "week": "Week updated",
@@ -4479,6 +4842,12 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
             name, args = tool_names_by_id.get(block.get("tool_use_id"), (None, None))
             if not name or name.startswith(_READ_ONLY_PREFIXES):
                 continue
+            # A proposal writes nothing: the household saves it from the
+            # card, and THAT is when the week changes (and the shell says
+            # "Changes saved"). No card here, or the reply would claim a
+            # change the plan hasn't seen.
+            if name == "propose_plan_changes":
+                continue
             try:
                 result = json.loads(block.get("content") or "{}")
             except Exception:
@@ -4500,9 +4869,25 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
                 # clash, want me to approve anyway?" question in this case.
                 if isinstance(result, dict) and result.get("status") != "approved":
                     continue
+                # A re-approval that rebuilt nothing changed nothing, and
+                # the cards say what changed. The tool still hands back the
+                # ORIGINAL approval's count in that case (the receipt), and
+                # this used to read it as news — "64 items ready to shop"
+                # over a list Emily had just wiped with Start over
+                # (2026-09-13). One week card, worded as the no-op it is,
+                # and no grocery card at all.
+                if isinstance(result, dict) and result.get("was_already_approved") and not result.get("list_rebuilt"):
+                    by_category[category] = ChatAction(
+                        kicker=_CATEGORY_KICKERS[category],
+                        change="Already approved — nothing changed",
+                        tab=tab, href=href,
+                    )
+                    continue
+                rebuilt = isinstance(result, dict) and bool(result.get("list_rebuilt"))
                 by_category[category] = ChatAction(
                     kicker=_CATEGORY_KICKERS[category],
-                    change="Week approved — your list is ready",
+                    change=("Week already approved — list rebuilt" if rebuilt
+                            else "Week approved — your list is ready"),
                     tab=tab, href=href,
                 )
                 added = result.get("groceries_added_count") if isinstance(result, dict) else None
@@ -4517,7 +4902,7 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
             day_date, day_slot = _changed_day(category, args)
             by_category[category] = ChatAction(
                 kicker=_CATEGORY_KICKERS[category], change=change, tab=tab, href=href,
-                date=day_date, slot=day_slot,
+                date=day_date, slot=day_slot, remembered=name in _REMEMBER_TOOLS,
             )
 
     return list(by_category.values())
@@ -4561,7 +4946,41 @@ def _finish_chat_turn(session_id: str, history: list, reply: str, updated_histor
     # whole point of this line is that it cannot break the turn it
     # records.
     tools.record_chat_turn(agent.LAST_TURN_USAGE.get({}))
-    return {"reply": reply, "actions": actions}
+    return {"reply": reply, "actions": actions, "proposal": _proposal_from_turn(history, updated_history)}
+
+
+def _proposal_from_turn(before_history: list, after_history: list) -> dict | None:
+    """
+    The last change card this turn made (tools.propose_plan_changes's own
+    result, which is already the card's public shape), or None. The LAST
+    one: a turn that proposes twice has replaced its first card.
+    """
+    new_entries = after_history[len(before_history):]
+    ids: set[str] = set()
+    for entry in new_entries:
+        if entry.get("role") != "assistant":
+            continue
+        for block in entry.get("content", []):
+            block_type = getattr(block, "type", None) or (block.get("type") if isinstance(block, dict) else None)
+            name = getattr(block, "name", None) or (block.get("name") if isinstance(block, dict) else None)
+            if block_type == "tool_use" and name == "propose_plan_changes":
+                ids.add(getattr(block, "id", None) or (block.get("id") if isinstance(block, dict) else None))
+    found = None
+    for entry in new_entries:
+        if entry.get("role") != "user" or not isinstance(entry.get("content"), list):
+            continue
+        for block in entry["content"]:
+            if not isinstance(block, dict) or block.get("type") != "tool_result" or block.get("is_error"):
+                continue
+            if block.get("tool_use_id") not in ids:
+                continue
+            try:
+                result = json.loads(block.get("content") or "{}")
+            except Exception:
+                continue
+            if isinstance(result, dict) and result.get("proposal_id"):
+                found = result
+    return found
 
 
 @app.post("/api/chat", response_model=ChatResponse)

@@ -205,6 +205,11 @@ _MIGRATIONS = [
     ("recipes", "advance_prep_step_indices_json", "TEXT NOT NULL DEFAULT '[]'"),
     # The link a recipe was imported from (recipe import, 2026-09-11).
     ("recipes", "source_url", "TEXT NOT NULL DEFAULT ''"),
+    # The cookbook a recipe was photographed from (recipe photo import,
+    # 2026-09-13). The recipe_photos table is new, so schema.sql creates it.
+    ("recipes", "source_book", "TEXT NOT NULL DEFAULT ''"),
+    ("recipes", "source_author", "TEXT NOT NULL DEFAULT ''"),
+    ("recipes", "source_page", "TEXT NOT NULL DEFAULT ''"),
     # Phase 6: set explicitly at creation time (an atomic "does this household
     # have zero prior plans yet?" check at the moment of insert), never
     # inferred later by querying for the earliest plan row — see
@@ -309,12 +314,26 @@ _MIGRATIONS = [
     # Carry-over (2026-09-13): the plan an unbought line came from when a
     # newer week set it aside — see schema.sql on carried_from_plan_id.
     ("grocery_items", "carried_from_plan_id", "INTEGER"),
+    # "Un-ticking a bought staple doesn't un-teach it" (2026-09-13): which
+    # grocery line a 'bought' event stands on, and the staple's rhythm
+    # fields before/after that tick, so the line's untick can take exactly
+    # that event back. NULL on every existing row — nothing is backfilled,
+    # so an event from before this deploy is never removed by an untick.
+    # See schema.sql's comment on staple_events.
+    ("staple_events", "grocery_item_id", "INTEGER"),
+    ("staple_events", "receipt_json", "TEXT"),
     # Loop Board "First-class 'defrost' prep step" — see schema.sql's
     # comment on prep_tasks for what each of these four columns is for.
     ("prep_tasks", "task_type", "TEXT NOT NULL DEFAULT 'general'"),
     ("prep_tasks", "inventory_item_id", "INTEGER"),
     ("prep_tasks", "meal_plan_entry_id", "INTEGER"),
     ("prep_tasks", "quantity", "TEXT NOT NULL DEFAULT ''"),
+    # Loop Board "Batch cook: when the same component is in several
+    # recipes" (Emily, 2026-09-13): a task_type='batch_component' row is
+    # one cook of a component for several dishes, and this is where it
+    # keeps which entries it covers (see tools/batch_components.py).
+    # '{}' on every other kind of row.
+    ("prep_tasks", "detail_json", "TEXT NOT NULL DEFAULT '{}'"),
     # Loop Board "Planning periods, not weeks". A plan is a PERIOD — a start
     # date and a day count — and the Monday week is only its most common
     # shape. Both columns default to the "unset" sentinel ('' / 0), which

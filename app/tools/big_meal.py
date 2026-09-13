@@ -455,7 +455,7 @@ def clean_dish(raw: dict, role: str | None = None, servings: int | None = None) 
         # Written for the whole table: the grocery ingest anchors on this
         # the way it anchors on a recipe's default_servings, so the dish is
         # bought once for the table rather than scaled up again by the
-        # guests attendance already counts (weekly_plan._entry_side_ingredient_groups).
+        # guests attendance already counts (weekly_plan._entry_side_groups).
         "servings": int(servings) if servings else _int_or(raw.get("servings"), None, floor=1),
     }
 
@@ -858,7 +858,7 @@ def refresh_menu(saved: dict, proposer=None) -> dict:
         the reason; an ADOPTED main that clashes is said, not touched;
       - the shopping is re-bought for the new table (the main scales by
         attendance, each dish by the count it was written for — see
-        weekly_plan._entry_side_ingredient_groups), for an approved week;
+        weekly_plan._entry_side_groups), for an approved week;
       - the prep is spread again.
     Returns {"menu": "refreshed", "dropped", "conflicts", "replaced", "eaters"}.
     """

@@ -12,7 +12,11 @@ one-time cleanup that quietly rots:
   (c) the legacy pages this pass deleted (nothing live reached any of
       them — grocery.html/cooker.html/kitchen.html/memory.html went with
       Grocery/Cook/Kitchen/What-we-know going native, index.html with the
-      app-shell redesign) never reappear, on disk or as a route.
+      app-shell redesign) never reappear, on disk or as a route,
+  (d) one stroke width for the whole icon set (Emily, 2026-09-13, Identity
+      Round Q4 = B): every inline `<svg` with stroke="currentColor" in the
+      live files carries stroke-width="2.2" — except the Pomona mark, a
+      logo rather than an icon, which keeps the weight it was drawn at.
 
 A small, explicit ALLOWLIST covers exceptions this pass found and left on
 purpose rather than silently inventing a token for: `<meta name="theme-color">`
@@ -141,6 +145,84 @@ def test_theme_css_still_defines_the_tokens_the_allowlist_reasons_about():
     theme = (STATIC / "theme.css").read_text(encoding="utf-8")
     for token in ("--ivory-ink", "--urgent-ink", "--celadon-edge", "--spruce"):
         assert f"{token}:" in theme, f"{token} is gone from theme.css — re-check NO_TOKEN_TWIN"
+
+
+# ---------------------------------------------------------------------------
+# (d) one stroke width for the icon set
+# ---------------------------------------------------------------------------
+
+ICON_STROKE = "2.2"
+
+# The mark's first path. An SVG that draws the mark is a logo, not an icon
+# (DESIGN_SYSTEM.md §2 rule 7: "the mark is 1.8"), so it is exempt from the
+# one-width rule: 1.8 in the root band and on the chat button, 1.7 on the
+# sign-in plaque and the desktop field mark, 1.6 on the welcome screens'
+# large glyphs — each as drawn. shell.js builds its copy of the mark from
+# the MARK_PATHS constant (markSvg), so that tag's contents are the
+# constant's name rather than the path — allowed by the same token.
+MARK_FIRST_PATH = "M12 20.4c-3.1"
+MARK_PATHS_TOKEN = "MARK_PATHS"
+
+SVG_TAG_RE = re.compile(r"<svg\b[^>]*>")
+
+
+def _stroke_svgs(name: str):
+    """Every inline stroke SVG in a live file: (line, opening tag, contents)."""
+    raw = (STATIC / name).read_text(encoding="utf-8")
+    found = []
+    for m in SVG_TAG_RE.finditer(raw):
+        tag = m.group(0)
+        if 'stroke="currentColor"' not in tag:
+            continue  # a fill-only glyph (the mic) — no stroke to weigh
+        end = raw.find("</svg>", m.end())
+        inner = raw[m.end():end] if end != -1 else ""
+        found.append((raw.count("\n", 0, m.start()) + 1, tag, inner))
+    return found
+
+
+def _is_mark(inner: str) -> bool:
+    return MARK_FIRST_PATH in inner or MARK_PATHS_TOKEN in inner
+
+
+@pytest.mark.parametrize("name", LIVE_FILES)
+def test_every_stroke_icon_is_drawn_at_the_one_width(name):
+    if name == "shell.css":
+        return  # the CSS draws no inline SVG (stroke-width never appears in it)
+    offenders = []
+    for line, tag, inner in _stroke_svgs(name):
+        if _is_mark(inner):
+            continue
+        m = re.search(r'stroke-width="([^"]*)"', tag)
+        width = m.group(1) if m else None
+        if width != ICON_STROKE:
+            offenders.append(f"line {line}: stroke-width={width!r}")
+        # And the caps and joins are round, so the set is one set.
+        if 'stroke-linecap="round"' not in tag or 'stroke-linejoin="round"' not in tag:
+            offenders.append(f"line {line}: caps/joins are not round")
+    assert not offenders, (
+        f"static/{name}: {offenders}. DESIGN_SYSTEM.md §2 rule 7 — one "
+        f"{ICON_STROKE}px stroke for the whole icon set since 2026-09-13; "
+        f"only the Pomona mark (a logo) keeps its own weight."
+    )
+
+
+def test_the_mark_keeps_its_own_weight_and_is_the_only_exception():
+    """The exemption stays what it says: the tags it lets through all draw
+    the mark, and the mark is never re-weighted to the icon width."""
+    marks = []
+    for name in LIVE_FILES:
+        if name == "shell.css":
+            continue
+        for line, tag, inner in _stroke_svgs(name):
+            if _is_mark(inner):
+                m = re.search(r'stroke-width="([^"]*)"', tag)
+                marks.append((name, line, m.group(1) if m else None))
+    assert marks, "the mark should be drawn somewhere (sign-in, the band, the chat button)"
+    for name, line, width in marks:
+        assert width in {"1.6", "1.7", "1.8"}, f"{name}:{line} draws the mark at {width!r}, not a logo weight"
+    # The band and the chat button draw it at 1.8 (Identity Round, 2026-09-13).
+    assert ("shell.js", "1.8") in {(n, w) for n, _, w in marks}
+    assert ("shell.html", "1.8") in {(n, w) for n, _, w in marks}
 
 
 # ---------------------------------------------------------------------------

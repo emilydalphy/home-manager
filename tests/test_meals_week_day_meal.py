@@ -371,7 +371,7 @@ def test_the_meal_step_carries_the_clock_the_thaw_and_the_two_actions():
     _assert_in("entry.defrost", SHELL_JS, "the thaw fact", "shell.js")
     assert "function plateCardHtml(" not in SHELL_JS
     assert "'Nothing to thaw.'" not in SHELL_JS, "an empty line wearing a caption"
-    _assert_in("Swap this meal", SHELL_JS, "the quiet swap link", "shell.js")
+    _assert_in("SWAP_LABEL + '</button>'", SHELL_JS, "the quiet swap link", "shell.js")
     _assert_in("wk-decide dock wk-meal-dock", SHELL_JS, "the Meal step's dock", "shell.js")
 
 
@@ -546,6 +546,7 @@ def _day_snack_cards_html(day: dict) -> str:
         + "var weekState = { data: {} };\n"
         + "var swapState = null;\n"
         + "var REHEAT_ACTION_LABEL = 'Mark eaten';\n"
+        + "var SWAP_LABEL = 'Swap · I’ll pick';\n"
         # Only the one icon daySlotCardHtml actually draws (the chevron on
         # its openable button, added 2026-09-11 for item 11 of the
         # design-tidy pass) — the real GRO_ICONS lives with the Grocery
@@ -600,6 +601,7 @@ def _meal_step_html(day: dict, slot: str) -> str:
         + "var weekState = { data: {} };\n"
         + "var swapState = null;\n"
         + "var REHEAT_ACTION_LABEL = 'Mark eaten';\n"
+        + "var SWAP_LABEL = 'Swap · I’ll pick';\n"
         + "var cookState = { data: { meals: [] }, cookAheadPicks: {} };\n"
         + _extract("isSnackSlot", SHELL_JS) + "\n"
         + _extract("daySlotEntry", SHELL_JS) + "\n"
@@ -616,6 +618,7 @@ def _meal_step_html(day: dict, slot: str) -> str:
         + "function cookMealKey(m) { return 'e' + m.entry_id; }\n"
         + "function cookTicked() { return false; }\n"
         + "function cookAheadHtml() { return ''; }\n"
+        + "var WK_ADD_ICON = '<svg/>'; function humanQtyText(t) { return String(t == null ? '' : t); }\n"
         + "function cookIngredientLabel(i) { return ((i.qty ? i.qty + ' ' : '') + i.item).trim(); }\n"
         + _var_line("NUMBER_WORDS", SHELL_JS) + "\n"
         + _var_line("TENS_WORDS", SHELL_JS) + "\n"
@@ -623,7 +626,7 @@ def _meal_step_html(day: dict, slot: str) -> str:
         + "".join(_extract(name, SHELL_JS) + "\n" for name in (
             "numberWord", "countInWords", "minutesInWords", "clockLabel", "spokenTime",
             "slotTableMinutes", "mealTotalMinutes", "mealStepMinutes", "stopTitleSplit",
-            "ingredientNamesLine", "mealClockStops", "mealClockEyebrow", "mealCookName",
+            "ingredientNamesLine", "mealClockSides", "mealClockTotal", "finishSideStop", "mealClockStops", "mealClockEyebrow", "mealCookName",
             "mealCookUnderway", "mealClockFor", "mealHeroLine", "mealHeroHtml",
             "mealStopHtml", "mealClockHtml"))
         + _extract("swapStateFor", SHELL_JS) + "\n"
@@ -633,6 +636,7 @@ def _meal_step_html(day: dict, slot: str) -> str:
         + _extract("slotEyebrowLabel", SHELL_JS) + "\n"
         + _extract("dishSizeClass", SHELL_JS) + "\n"
         + _extract("mealDockHtml", SHELL_JS) + "\n"
+        + _extract("mealWhatsInHtml", SHELL_JS) + "\n"
         + _extract("mealStepHtml", SHELL_JS) + "\n"
         + f"console.log(JSON.stringify(mealStepHtml({json.dumps(day)}, {json.dumps(slot)})));\n"
     )
@@ -663,7 +667,7 @@ def test_a_real_cook_snack_docks_a_start_and_the_swap_link():
     html = _meal_step_html(day, "snack")
     assert 'data-wk-cook="snack"' in html
     assert "Start cooking" in html  # the cooker view is not loaded in this harness
-    assert "Swap this meal" in html
+    assert "Swap · I’ll pick" in html
 
 
 def _ring_target_slots(pending_slot: str) -> list[str]:

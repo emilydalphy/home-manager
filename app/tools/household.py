@@ -4,7 +4,7 @@ The household itself: onboarding status, the people in it, and pets.
 from __future__ import annotations
 
 import json
-from ..db import get_conn
+from ..db import _ADULT_COLORS, get_conn
 from ._shared import household_id
 
 
@@ -205,12 +205,46 @@ def set_member_dietary_restrictions(name: str, restrictions: list[str], replace:
 
 
 def set_member_age_group(name: str, age_group: str) -> dict:
-    """Set a member's general age group (e.g. 'adult', 'teen', 'child', 'toddler', or anything freeform)."""
+    """
+    Set a member's general age group (e.g. 'adult', 'teen', 'child',
+    'toddler', or anything freeform).
+
+    Defect hunt, 2026-09-13: a newly added adult's avatar color
+    (members.color) used to stay blank until the next server restart's
+    db._backfill_member_colors ran — visible at once in the "Who's this?"
+    picker and anywhere else household_adults()/get_household_people()
+    read the raw column, for as long as the process kept running. The
+    backfill is a startup migration, not a live write path, so a member
+    added mid-session never reached it. Assigning the color the moment
+    someone becomes an adult — the same trigger the backfill uses — closes
+    that gap without waiting for a restart.
+
+    Only touches a still-blank color, same rule the backfill follows: a
+    color a household already has (its own or a previously backfilled
+    one) is never overwritten. Only the first two adults get one — the
+    design names two colors — so a third adult, or a household with two
+    already colored, is left blank exactly as the backfill leaves it.
+    """
     conn = get_conn()
-    member_id = _get_or_create_member(conn, name)
-    conn.execute("UPDATE members SET age_group = ? WHERE id = ?", (age_group, member_id))
-    conn.commit()
-    conn.close()
+    try:
+        member_id = _get_or_create_member(conn, name)
+        conn.execute("UPDATE members SET age_group = ? WHERE id = ?", (age_group, member_id))
+        if (age_group or "").strip().lower() == "adult":
+            row = conn.execute("SELECT color FROM members WHERE id = ?", (member_id,)).fetchone()
+            if not row["color"]:
+                taken = {
+                    r["color"]
+                    for r in conn.execute(
+                        "SELECT color FROM members WHERE household_id = ? AND color != ''",
+                        (household_id(),),
+                    ).fetchall()
+                }
+                available = [c for c in _ADULT_COLORS if c not in taken]
+                if available:
+                    conn.execute("UPDATE members SET color = ? WHERE id = ?", (available[0], member_id))
+        conn.commit()
+    finally:
+        conn.close()
     return {"name": name, "age_group": age_group}
 
 

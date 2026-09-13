@@ -523,3 +523,210 @@ def test_grocery_screen_source_markers():
     end = SHELL_CSS.find("/* ---------- ", start + 1)
     block = SHELL_CSS[start:end if end != -1 else None]
     assert not re.search(r"#[0-9a-fA-F]{3,8}\b", block), "a literal colour crept into the staples CSS"
+
+
+# ------------------------------------------------------------ sections ----
+# "Staples gets sections — and the spice rack is one of them" (Emily,
+# 2026-09-13): every staple sits under one of Spices / Pantry basics /
+# Fridge basics / Household supplies / Other, worked out from its name and
+# grocery category — never typed — and the Spices section IS the spice
+# rack, kept from purchases with no counts to maintain.
+
+
+@pytest.mark.parametrize("name, category, section", [
+    ("Ground cumin", "pantry", "spices"),
+    ("Smoked paprika", "other", "spices"),
+    ("Olive oil", "pantry", "spices"),
+    ("Kosher salt", "other", "spices"),
+    ("dried oregano", "produce", "spices"),
+    ("Fresh cilantro", "produce", "fridge"),      # fresh herbs are produce, not the rack
+    ("Oat milk", "dairy", "fridge"),
+    ("Eggs", "other", "fridge"),
+    ("Chicken thighs", "meat/seafood", "fridge"),
+    ("Frozen peas", "frozen", "fridge"),          # the same appliance
+    ("Coffee beans", "pantry", "pantry"),
+    ("Coffee", "other", "pantry"),
+    ("Basmati rice", "other", "pantry"),
+    ("Dish soap", "household", "household"),
+    ("Dish soap", "pantry", "household"),          # a household word beats a category mistake
+    ("Toilet paper", "other", "household"),
+    ("Paper towels", "other", "household"),
+    ("Cat litter", "other", "household"),
+    ("Batteries", "other", "household"),
+    ("Birthday candles", "other", "household"),
+    ("Widget", "other", "other"),
+    ("Gift card", "", "other"),
+    # verifier, 2026-09-13: the head noun decides, phrases beat it, every
+    # word is singularised
+    ("Peanut butter", "other", "pantry"),
+    ("Almond milk", "other", "fridge"),
+    ("Chicken stock", "other", "pantry"),
+    ("Batteries AA", "other", "household"),
+    ("Sparkling water", "other", "pantry"),
+])
+def test_a_staples_section_is_derived_from_its_name_and_category(name, category, section):
+    assert st.section_for(name, category) == section
+
+
+def test_the_five_sections_in_order_with_their_headings():
+    assert st.SECTION_ORDER == ["spices", "pantry", "fridge", "household", "other"]
+    assert [st.SECTION_LABELS[k] for k in st.SECTION_ORDER] == [
+        "Spices", "Pantry basics", "Fridge basics", "Household supplies", "Other",
+    ]
+
+
+def test_every_staple_carries_its_section_and_the_grouped_payload_skips_empty_ones():
+    tools.add_staple("Dish soap", category="household")
+    tools.add_staple("Coffee", category="pantry")
+    tools.add_staple("Oat milk", category="dairy")
+    tools.add_staple("Cumin", category="pantry")
+    flat = tools.list_staples()
+    assert {s["item"]: (s["section"], s["section_label"]) for s in flat} == {
+        "Dish soap": ("household", "Household supplies"),
+        "Coffee": ("pantry", "Pantry basics"),
+        "Oat milk": ("fridge", "Fridge basics"),
+        "Cumin": ("spices", "Spices"),
+    }
+    grouped = tools.list_staples_by_section()
+    assert [g["section"] for g in grouped] == ["spices", "pantry", "fridge", "household"]  # no "other"
+    assert [g["label"] for g in grouped] == ["Spices", "Pantry basics", "Fridge basics", "Household supplies"]
+    assert [[s["item"] for s in g["staples"]] for g in grouped] == [["Cumin"], ["Coffee"], ["Oat milk"], ["Dish soap"]]
+    assert tools.group_by_section(flat) == grouped
+
+
+def test_nobody_types_a_section():
+    """There is no column and no argument: the section is read off the
+    staple every time, so a better classifier fixes every staple at once."""
+    import inspect
+
+    conn = get_conn()
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(staples)").fetchall()}
+    conn.close()
+    assert "section" not in cols
+    assert "section" not in inspect.signature(tools.add_staple).parameters
+
+
+def test_a_spice_staple_starts_on_the_cards_bought_lately_window():
+    """One number for 'a jar lasts about this long': the staple's default
+    cadence for a spice is spices.RECENTLY_BOUGHT_DAYS, not pantry's 21."""
+    from app.tools import spices
+
+    s = tools.add_staple("Ground cumin", category="pantry")
+    assert s["section"] == "spices"
+    assert s["cadence_days"] == spices.RECENTLY_BOUGHT_DAYS == 56
+    assert s["cadence_words"] == "about every 2 months"
+    assert tools.add_staple("Coffee", category="pantry")["cadence_days"] == 21
+    # A household thing the name gives away starts on the household rhythm
+    # even when a chat add filed it as "other".
+    assert tools.add_staple("Toilet paper", category="other")["cadence_days"] == st.DEFAULT_CADENCE_DAYS["household"]
+
+
+def test_a_bought_spice_becomes_a_spices_staple_with_a_cadence():
+    """A ticked 'Spices this week' line that came home is the rack's own
+    record: buying it makes the staple, in Spices, with the default jar
+    cadence and today as its last-bought date. Nothing else was typed."""
+    tools.add_grocery_item("Smoked paprika", "1 jar", category="pantry")
+    (row,) = tools.list_grocery_list(status="needed")
+    assert tools.list_staples() == []
+    tools.mark_grocery_item(row["id"], "purchased")
+    (s,) = tools.list_staples()
+    assert s["item"] == "Smoked paprika" and s["section"] == "spices"
+    assert s["cadence_days"] == 56 and s["cadence_source"] == "default"
+    assert s["last_bought_at"] == "2026-09-16" and s["next_due_at"] == "2026-11-11"
+    assert s["due"] is False
+    # The line bought today is one purchase, not a "bought when listed"
+    # plus a "bought when ticked" a few days apart.
+    conn = get_conn()
+    dates = [r["on_date"] for r in conn.execute("SELECT on_date FROM staple_events WHERE kind = 'bought'").fetchall()]
+    conn.close()
+    assert dates == ["2026-09-16"]
+
+
+def test_buying_a_non_spice_still_makes_no_staple():
+    tools.add_grocery_item("Chicken thighs", "2 lb", category="meat/seafood")
+    (row,) = tools.list_grocery_list(status="needed")
+    tools.mark_grocery_item(row["id"], "purchased")
+    assert tools.list_staples() == []
+
+
+def test_the_spices_section_is_seeded_from_spices_already_bought():
+    """A household that has been ticking spices for weeks opens the card to
+    a Spices section already filled in — and the cadence is learned from
+    that history where there is enough of it."""
+    conn = get_conn()
+    for d in ("2026-05-06", "2026-07-08", "2026-09-09"):
+        conn.execute(
+            "INSERT INTO grocery_items (household_id, item, category, status, created_at) VALUES (?, ?, 'pantry', 'purchased', ?)",
+            (tools.household_id(), "Ground cumin", d + " 10:00:00"),
+        )
+    conn.execute(
+        "INSERT INTO grocery_items (household_id, item, category, status, created_at) VALUES (?, 'Turmeric', 'pantry', 'purchased', '2026-06-01 10:00:00')",
+        (tools.household_id(),),
+    )
+    conn.execute(
+        "INSERT INTO grocery_items (household_id, item, category, status, created_at) VALUES (?, 'Chicken thighs', 'meat/seafood', 'purchased', '2026-09-09 10:00:00')",
+        (tools.household_id(),),
+    )
+    conn.commit()
+    conn.close()
+    grouped = tools.list_staples_by_section()
+    assert [g["section"] for g in grouped] == ["spices"]
+    by_name = {s["item"]: s for s in grouped[0]["staples"]}
+    assert set(by_name) == {"Ground cumin", "Turmeric"}
+    cumin = by_name["Ground cumin"]
+    assert cumin["cadence_source"] == "learned" and cumin["cadence_days"] == 63
+    assert cumin["last_bought_at"] == "2026-09-09" and cumin["due"] is False
+    turmeric = by_name["Turmeric"]
+    assert turmeric["cadence_days"] == 56 and turmeric["last_bought_at"] == "2026-06-01"
+    assert turmeric["due"] is True and turmeric["due_words"] == "probably running low"
+    # Idempotent: a second read makes nothing new.
+    assert len(tools.list_staples()) == 2
+    assert inventory_count() == 0
+
+
+def test_a_due_spice_never_becomes_a_line_of_its_own():
+    """A jar is used when a recipe calls for it, not on a rhythm: a due
+    spice waits for the 'Spices this week' card rather than landing on
+    the list as 'probably running low' — that line for cumin in a week
+    nobody cooks with cumin is the third jar Emily wants to stop buying."""
+    tools.add_staple("Ground cumin", category="pantry")
+    tools.add_staple("Coffee", category="pantry")
+    travel(60)
+    assert all(s["due"] for s in tools.list_staples())
+    assert [a["item"] for a in tools.sync_due_staples()["added"]] == ["Coffee"]
+    tools.get_grocery_list_by_section(status="needed")
+    assert needed_names() == ["Coffee"]
+
+
+def test_we_are_out_of_cumin_still_goes_on_the_list_today():
+    """The chat promise holds for a spice: running_low puts it on now."""
+    s = tools.add_staple("Ground cumin", category="pantry", running_low=True)
+    assert s["section"] == "spices"
+    assert needed_names() == ["Ground cumin"]
+    (line,) = staple_lines()
+    assert line["staple_id"] == s["id"] and line["added_by"] == st.ADDED_BY_STAPLE
+
+
+def test_api_returns_the_staples_grouped_by_section(signed_in):
+    signed_in.post("/api/staples/add", json={"item": "Dish soap", "category": "household"})
+    signed_in.post("/api/staples/add", json={"item": "Ground cumin", "category": "pantry"})
+    got = signed_in.get("/api/staples").json()
+    assert sorted(s["item"] for s in got["staples"]) == ["Dish soap", "Ground cumin"]
+    assert [(g["section"], g["label"], [s["item"] for s in g["staples"]]) for g in got["sections"]] == [
+        ("spices", "Spices", ["Ground cumin"]),
+        ("household", "Household supplies", ["Dish soap"]),
+    ]
+
+
+def test_staples_card_source_markers_for_sections():
+    for needle in (
+        "function groStapleRowHtml",
+        "groceryState.stapleSections",
+        'class="gro-staple-sec" data-section="',
+        "escapeHtml(sec.label)",
+        "gro-spice-due",
+        "Probably running low",
+    ):
+        assert needle in SHELL_JS, needle
+    for cls in (".gro-staple-sec", ".gro-spice-due"):
+        assert cls in SHELL_CSS, cls

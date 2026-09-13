@@ -3,10 +3,13 @@ Cook mode: recipe detail, the prep schedule, and checking things off.
 """
 from __future__ import annotations
 
+from datetime import date
+
 from ..db import get_conn
 from ._shared import household_id, require_household_row
 from . import attendance as _attendance
 from . import attention as _attention
+from . import batch_components as _batch_components
 from . import cook_ahead as _cook_ahead
 from . import grocery as _grocery
 from . import inventory as _inventory
@@ -400,7 +403,33 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
             result["inventory_queued_for_review"] = []
             result["inventory_already_depleted"] = True
         else:
-            depletion = deplete_inventory_for_meal(entry_id)
+            # The CANONICAL entry_id for this batch, not whichever sibling
+            # was tapped THIS time (found 2026-09-13, adversarial review of
+            # the attention-reopen fix above: deplete_inventory_for_meal
+            # queues its "how much did you use?" attention item keyed on
+            # entry_id+ingredient — see attention.add_attention_item — so
+            # that reopen only works if the batch always hands it the SAME
+            # entry_id. A component batch's own claim already gets released
+            # when nothing was actually reconciled (a no-qty ingredient goes
+            # to queued_for_review, not depleted — see
+            # _changed_any_inventory_row), which is exactly the shape an
+            # untick/re-tick of a batch with such an ingredient takes: the
+            # SAME batch is depleted again on every re-tick, same as a
+            # single-entry meal. But unlike a single-entry meal, a
+            # component-based re-tick can arrive through a DIFFERENT sibling
+            # checkbox than the one originally tapped (Today/Kitchen both
+            # dispatch here, and shell.js's toggle can land on any sibling in
+            # the merged card) — passing that sibling's own entry_id straight
+            # through would queue a brand-new attention item instead of
+            # reopening the first, and answering it would re-deplete the
+            # same shelf a second time, the very bug this file exists to
+            # fix. linked_ids names the same full sibling set regardless of
+            # which one was tapped (the siblings query above keys off
+            # weekly_plan_id + meal name, not entry_id), so its minimum is a
+            # stable stand-in for "the batch" across every tap — ids only
+            # grow as new siblings are planned, so a later-added sibling
+            # never changes it.
+            depletion = deplete_inventory_for_meal(min(linked_ids))
             result["inventory_depleted"] = depletion["depleted"]
             result["inventory_queued_for_review"] = depletion["queued_for_review"]
             if not _changed_any_inventory_row(depletion["depleted"]):
@@ -670,10 +699,35 @@ def _scale_card_to_batch(card: dict, batch_servings: int) -> bool:
     if batch_servings <= 0 or not card.get("has_full_recipe") or not card.get("default_servings"):
         return False
     scaled = _recipes.scale_recipe(card["meal"], batch_servings)
-    card["ingredients"] = scaled["scaled_ingredients"]
+    card["ingredients"] = scaled["scaled_ingredients"] + _side_ingredients_for(card, batch_servings)
     card["default_servings"] = batch_servings
     card["servings"] = batch_servings
     return True
+
+
+def _side_ingredients_for(card: dict, servings: int | None) -> list[dict]:
+    """
+    The card's sides' ingredients, scaled to `servings` where a side says
+    what it was written for (a side the household added from the meal
+    screen — plates.ADDITION_SERVINGS) and as written otherwise. Every
+    rewrite of a card's ingredient list goes through this so the side is
+    never dropped: until 2026-09-13 scale_recipe's list REPLACED the
+    folded one, and a plain night with attendance on record lost its
+    side's ingredients from the card (the steps stayed, so "Alongside —
+    Green salad" had no romaine above it).
+    """
+    out = []
+    for side in card.get("sides") or []:
+        for ing in _plates.scale_side_ingredients(side, servings):
+            # Which side the row came from, so the meal screen's "What's in
+            # it" can say "added" beside the potatoes the household put
+            # there (added_by "household"); the app's own plate sides carry
+            # no such mark and read as part of the dish.
+            ing["from_side"] = side.get("name") or ""
+            if side.get("added_by") == "household":
+                ing["added"] = True
+            out.append(ing)
+    return out
 
 
 def _apply_leftover_chains(weekly_plan_id: int, meals: list[dict], recipes_by_name: dict) -> None:
@@ -771,7 +825,15 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     schedule and overall progress — powers the dedicated Cooker view page
     rather than requiring separate get_weekly_plan/get_recipe/
     get_prep_schedule calls. Omit weekly_plan_id for the household's
-    current plan.
+    current plan — except when the plan get_weekly_plan/
+    _current_weekly_plan_row would fall back to has ALREADY ENDED (its
+    last day is before today): a plan generated ahead of time and not yet
+    started still falls back normally (cook mode legitimately opens next
+    week's draft when nothing covers today), but a plan whose entire
+    period is behind us gets the empty "no plan" view instead, with
+    `last_planned_label` naming that last week so a screen can still say
+    when it was. Passing weekly_plan_id explicitly always returns that
+    exact plan, stale or not.
 
     Omitting it also folds in the days-ahead meals that belong to no plan
     at all (weekly_plan.unplanned_meals_ahead) — a dinner answered on Now
@@ -822,6 +884,43 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     """
     plan = _weekly_plan.get_weekly_plan(weekly_plan_id)
 
+    # _current_weekly_plan_row's own fallback (its docstring: "Falls back
+    # to the most-recently-created plan when none covers today") is right
+    # for a chat answer to "what's the plan" — the household's real last
+    # week beats nothing. It is wrong here IN ONE OF ITS TWO CASES: a call
+    # with no weekly_plan_id means "what am I cooking right now", and
+    # handing back August's dinners under a heading that says "this week"
+    # (Loop Board, a household whose last approved week was weeks ago) is
+    # worse than honestly saying nothing is planned. Caught 2026-09-13.
+    #
+    # The OTHER case the same fallback covers is not this bug and must not
+    # be touched: a plan generated ahead of time for NEXT week, on a day
+    # nothing has started yet. test_is_current_plan_is_the_same_query_not_a_date_rule
+    # and TestAPlanThatDoesNotCoverToday (test_needs_you_dinner_visible.py)
+    # pin that a retired "this week" correctly falls back to next week's
+    # draft, and that a future plan's own meals still show alongside a
+    # loose one-off for today — cook mode opening "next week's draft" when
+    # today's own week has nothing left is a real, wanted answer. So the
+    # test here is specifically "has this plan's last day already gone
+    # by", not "does it cover today" — a period that hasn't started yet
+    # fails the second and passes the first, and must fall through
+    # unchanged.
+    #
+    # Only fires when the CALLER left weekly_plan_id out — an explicit
+    # ask for that plan (the Plan tab opening a specific week's meal, a
+    # draft nobody's approved yet) still gets exactly what it asked for,
+    # stale or not. Reduce to the same shape get_weekly_plan hands back
+    # for "no plan exists" at all, so every pass below (loose meals, the
+    # empty-view return, the shell reshape, is_current_plan) already
+    # knows how to treat it — this is "no current plan", not a new case.
+    last_planned_label = None
+    if weekly_plan_id is None and plan.get("weekly_plan_id") is not None:
+        period_end = plan.get("period_end_date")
+        today = date.today().isoformat()
+        if period_end and period_end < today:
+            last_planned_label = plan.get("period_label")
+            plan = {"weekly_plan_id": None, "meals": []}
+
     # ...plus the meals for days ahead that no plan covers. An entry with no
     # weekly_plan_id is a real, first-class shape (see
     # weekly_plan.unplanned_meals_ahead): resolve_needs_you_dinner writes one
@@ -847,11 +946,19 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     # loose rows carry perfectly real dates; it is the branch below that
     # can't take them — it groups by dish name and batch-collapses repeats
     # into one card, which would fold a dated one-off into an undated
-    # component or scale it to a batch nobody planned. KNOWN RESIDUE, not
-    # fixed here: a component household whose current plan doesn't cover
-    # today still has the whole original bug (reproduced 2026-09-13; see
-    # test_a_component_household_still_has_this_bug, which characterises it
-    # so the next session finds it written down). Its own card.
+    # component or scale it to a batch nobody planned.
+    #
+    # KNOWN RESIDUE, narrower than it was: the stale-plan fix above (see its
+    # own comment, "period has ALREADY ENDED") already reduces an ENDED
+    # component plan to plain "no plan" before this line ever runs, so that
+    # sub-case now gets its loose meal like any day-based household does
+    # (test_a_component_household_no_longer_has_this_bug, inverted
+    # 2026-09-13). What's left: a component household whose current plan
+    # HASN'T STARTED YET (a future plan, still "current" by the fallback,
+    # so the stale-plan fix correctly leaves it alone) still has the
+    # original bug for today's loose meal. Not fixed here for the same
+    # reason as before — it needs the component branch itself to learn to
+    # carry a dated row, not another carve-out in front of it.
     loose_meals = (
         _weekly_plan.unplanned_meals_ahead(plan)
         if weekly_plan_id is None and plan.get("planning_mode") != "component_based"
@@ -859,8 +966,8 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     )
 
     if plan.get("weekly_plan_id") is None and not loose_meals:
-        return {"weekly_plan_id": None, "meals": [], "prep_tasks": [], "prep_sessions": [], "prep_days_set": False, "meals_done": 0, "meals_total": 0, "prep_done": 0, "prep_total": 0, "all_away": False,
-                "period_start_date": None, "day_count": 0, "cook_name": _cook_name()}
+        return {"weekly_plan_id": None, "is_current_plan": False, "meals": [], "prep_tasks": [], "prep_sessions": [], "prep_days_set": False, "meals_done": 0, "meals_total": 0, "prep_done": 0, "prep_total": 0, "all_away": False,
+                "period_start_date": None, "day_count": 0, "cook_name": _cook_name(), "last_planned_label": last_planned_label}
 
     if plan.get("weekly_plan_id") is None:
         # Loose meals with no plan behind them at all — a brand-new
@@ -872,6 +979,26 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         plan = {**plan, "week_start_date": None, "planning_mode": "day_based",
                 "status": None, "day_count": 0, "meals": []}
     plan_id = plan["weekly_plan_id"]
+
+    # Whether this is the plan the Cook tab itself shows — the one a call
+    # with NO weekly_plan_id resolves to (_current_weekly_plan_row: the
+    # plan whose period contains today, else the newest that hasn't
+    # expired). The Plan tab asks for a specific plan's view so a meal on
+    # next week's draft can show its recipe (2026-09-13, "tapping a meal
+    # sometimes lands on the full cook list"), and this is how it knows
+    # whether cook mode — which only ever holds the no-id view — can open
+    # that meal, or whether offering "Cook this" would land the household
+    # on Cook's root looking at a different week. Read from the same query
+    # rather than inferred from dates: on a Sunday with no plan covering
+    # today the fallback IS next week's draft, so "its period has started"
+    # would be the wrong test.
+    if weekly_plan_id is None or plan_id is None:
+        is_current_plan = plan_id is not None
+    else:
+        conn = get_conn()
+        current = _weekly_plan._current_weekly_plan_row(conn)
+        conn.close()
+        is_current_plan = bool(current) and current["id"] == plan_id
 
     # A week where every dinner was deliberately marked planned_empty
     # (see _NOT_COOKABLE_SLOT_STATES above) — "core loop handoffs, slice 2"
@@ -927,7 +1054,7 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
             # go on the END, which also keeps advance_prep_step_indices —
             # 1-based positions into `instructions` — pointing where they
             # always did.
-            "ingredients": (recipe["ingredients"] if recipe else []) + _plates.side_ingredients(sides),
+            "ingredients": (recipe["ingredients"] if recipe else []) + _side_ingredients_for({"sides": sides}, None),
             "instructions": (recipe["instructions"] if recipe else []) + _side_steps(sides),
             "sides": sides,
             "sides_label": _plates.sides_label(sides),
@@ -937,6 +1064,13 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
             "advance_prep_notes": recipe["advance_prep_notes"] if recipe else "",
             "advance_prep_step_indices": recipe["advance_prep_step_indices"] if recipe else [],
             "has_full_recipe": recipe is not None,
+            # Where the recipe came from, ready to say (recipes.recipe_citation)
+            # and the cookbook page photo(s) it was read from, if any —
+            # None / [] for a generated or typed dish (recipe photo import,
+            # 2026-09-13). The meal screen and cook mode print `citation`
+            # as it comes rather than re-deriving it.
+            "citation": recipe.get("citation") if recipe else None,
+            "photo_urls": recipe.get("photo_urls", []) if recipe else [],
             # Set for real by _apply_leftover_chains below. Present on
             # every meal (not only the ones it applies to) so a screen can
             # branch on it without first checking whether the field exists.
@@ -1054,13 +1188,21 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         for m in meals:
             if m["entry_id"] in chained_entry_ids:
                 continue
-            if not m.get("has_full_recipe") or not m.get("default_servings"):
+            scalable = bool(m.get("has_full_recipe") and m.get("default_servings"))
+            if not scalable and not m.get("sides"):
                 continue
             eaters = _leftovers.eaters_at(m["date"], m["slot"])
-            if eaters:
+            if not eaters:
+                continue
+            if scalable:
                 scaled = _recipes.scale_recipe(m["meal"], eaters)
-                m["ingredients"] = scaled["scaled_ingredients"]
+                m["ingredients"] = scaled["scaled_ingredients"] + _side_ingredients_for(m, eaters)
                 m["default_servings"] = eaters
+            elif m.get("sides"):
+                # No recipe to scale, but the side the household added is
+                # still for tonight's table, not the four it was written for.
+                recipe = recipes_by_name.get((m["meal"] or "").lower())
+                m["ingredients"] = (recipe["ingredients"] if recipe else []) + _side_ingredients_for(m, eaters)
 
     # Last, once every card's ingredients and servings are final (batch
     # scaling, leftover chains, attendance): rewrite the amounts into ones
@@ -1082,11 +1224,45 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
             m["ingredients"], servings=m.get("default_servings") or m.get("servings"),
         )
 
+    # The component batches the household said yes to at approval
+    # (batch_components.py): the cook day's card says the eggs are for the
+    # later dishes too, and each later dish reads that they are already
+    # done — on its card and on the eggs' own ingredient row. After the
+    # chains (a reheat night is never told its eggs are made ahead twice
+    # over) and after every ingredient rewrite above, since those build
+    # fresh dicts and the row note has to land on the ones the screen gets.
+    if plan_id is not None:
+        _batch_components.attach_batch_components(plan_id, meals)
+    else:
+        for card in meals:
+            card["batch_components"] = []
+            card["components_made_ahead"] = []
+
     # "I'll use something else instead", said while sorting the list
     # (grocery.substitute_grocery_item): the recipe keeps asking for fresh
     # oregano, and the card says what is actually going in. Matched on the
     # list's own merge key, so "Fresh oregano" and "fresh oregano, chopped"
     # both hear about it.
+    # Already at home, by the one rule the grocery ingest itself uses to
+    # skip buying a thing (recipes._add_recipe_ingredients_for_entries):
+    # an inventory row with a quantity on it. Read-only, and nothing new to
+    # keep up — inventory is deferred as policy, so this is a courtesy mark
+    # on the meal screen's "What's in it", never a thing to fill in.
+    inv_conn = get_conn()
+    at_home = {
+        (row["item"] or "").strip().lower()
+        for row in inv_conn.execute(
+            "SELECT item FROM inventory_items WHERE household_id = ? AND TRIM(quantity) != ''",
+            (household_id(),),
+        ).fetchall()
+    }
+    inv_conn.close()
+    if at_home:
+        for m in meals:
+            for ing in m["ingredients"]:
+                if isinstance(ing, dict) and (ing.get("item") or "").strip().lower() in at_home:
+                    ing["at_home"] = True
+
     swaps = {
         _grocery._merge_key(sw["original_item"]): sw
         for sw in _grocery.substitutions_for_plan(plan_id)
@@ -1104,6 +1280,7 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     prep_tasks = get_prep_schedule(plan_id) if plan_id is not None else []
     return {
         "weekly_plan_id": plan_id,
+        "is_current_plan": is_current_plan,
         "week_start_date": plan["week_start_date"],
         "planning_mode": plan["planning_mode"],
         "status": plan["status"],
@@ -1154,6 +1331,13 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         # answer — DESIGN_SYSTEM §2b S4 noted on 2026-09-11 that
         # cooking_role was stored and shown but never acted on.
         "cook_name": _cook_name(),
+        # Set only when the fallback above discarded a stale plan for
+        # THIS call — a household's last approved week, named the way
+        # the design writes a range ("Aug 18–24"), so Cook can say
+        # honestly what it isn't showing instead of just going quiet.
+        # None on every ordinary call, including one that named its own
+        # weekly_plan_id.
+        "last_planned_label": last_planned_label,
     }
 
 

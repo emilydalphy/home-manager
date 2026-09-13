@@ -27,10 +27,13 @@ exactly how it survived; they are widened in test_tools.py alongside this.
 Thirteen of the twenty tests here fail on 0d359e5. The other seven are
 no-regression guards and each says so in its own docstring — three of them
 name a screen and are green on main deliberately, because their whole claim
-is that something does NOT change (a plan-covered day, a named plan, and
-the component branch, which this fix leaves broken on purpose). An earlier
+is that something does NOT change (a plan-covered day and a named plan; a
+third, the component branch, WAS deliberately left broken by this fix and
+is no longer — see test_a_component_household_no_longer_has_this_bug,
+inverted 2026-09-13 the same day, by the separate get_cooker_view fix for
+"Kitchen shows last month's meals as 'the rest of the week'"). An earlier
 draft of this docstring said "every test here that names a screen fails on
-0d359e5", which was not true of those three.
+0d359e5", which was not true of those three at the time.
 """
 import datetime
 
@@ -299,27 +302,54 @@ class TestWhichLooseMealsCountAsThisWeeksCooking:
             assert tools.get_cooker_view()["meals"] == []
 
 
-def test_a_component_household_still_has_this_bug():
+def test_a_component_household_no_longer_has_this_bug():
     """
-    CHARACTERISATION, not a passing feature: the whole original bug survives
-    for a component-based household whose current plan doesn't cover today.
-    Reproduced 2026-09-13 with the identical symptom — the meal saves, and
-    the cook view and Now show nothing.
-
-    Deliberately not fixed here. get_cooker_view's component branch groups by
-    dish name and batch-collapses repeats into one card; a dated one-off
-    dropped into it would be folded into an undated component or scaled to a
-    batch nobody planned. That is a rebuild of that branch, not a carve-out,
-    and this is a NARROWING of an existing bug rather than a regression —
-    component mode is not the default and needs an approved plan on file to
-    reach at all.
-
-    INVERT THIS TEST when the component branch learns to carry a dated row.
+    INVERTED 2026-09-13, same day as the characterisation it replaces (see
+    git history for `test_a_component_household_still_has_this_bug` if you
+    need the old symptom). The Loop Board fix for "Kitchen shows last
+    month's meals as 'the rest of the week'" (get_cooker_view refusing
+    _current_weekly_plan_row's fallback once a plan's last day has already
+    gone by) closes this one too, as a side effect rather than a rebuild of
+    the component branch: a plan 21 days old is exactly the "ended, not
+    current" case that fix now reduces to the plain "no plan" shape before
+    the planning_mode = component_based carve-out is even checked — so the
+    loose one-off lands in the ordinary day-based pass, the same place a
+    day-based household's loose meal always did, instead of the component
+    branch that never knew how to carry a dated row. The household's own
+    planning_mode is untouched; only THIS view, for THIS already-ended
+    plan, renders it the day-based way.
     """
     tools.set_planning_mode("component_based")
     plan_id = tools.create_weekly_plan(_d(-21))["weekly_plan_id"]
     tools.approve_weekly_plan(plan_id)
     assert tools.get_weekly_plan()["planning_mode"] == "component_based"
+    _a_recipe()
+
+    tools.resolve_needs_you_dinner(_d(), "Chili")
+
+    assert [e["meal"] for e in tools.get_meal_plan(days_ahead=1)] == ["Chili"]
+    assert [m["meal"] for m in tools.get_cooker_view()["meals"]] == ["Chili"]
+    assert [c["title"] for c in _cooks_today()] == ["Chili"]
+
+
+def test_a_component_household_with_a_future_plan_still_has_the_narrower_bug():
+    """
+    CHARACTERISATION, narrower than the one just inverted above. The
+    get_cooker_view stale-plan fix (Loop Board, 2026-09-13) only reduces an
+    ENDED plan to "no plan" — a future component plan (generated ahead of
+    time, not yet started) is still legitimately "current" by
+    _current_weekly_plan_row's fallback, the same way a day-based
+    household's next-week draft is (see test_is_current_plan_is_the_same_
+    query_not_a_date_rule) — so today's loose one-off, on a day that plan
+    doesn't cover either, still has nowhere to land: the component branch
+    is the one that would need to carry a dated row, not another carve-out
+    in front of it. See cooker.py's own comment at the loose_meals line.
+
+    INVERT THIS TEST when the component branch learns to carry a dated row.
+    """
+    tools.set_planning_mode("component_based")
+    plan_id = tools.create_weekly_plan(_d(5))["weekly_plan_id"]  # not started yet
+    tools.approve_weekly_plan(plan_id)
     _a_recipe()
 
     tools.resolve_needs_you_dinner(_d(), "Chili")

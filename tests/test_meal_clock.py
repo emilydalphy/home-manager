@@ -7,7 +7,8 @@ six", the dish, "Start at 6:00" and "Emily's cooking" chips, the thaw as
 its one line), then ONE eyebrow ("About thirty minutes, six stops") and the
 stops — "Everything out" first, at the start time, then one stop per
 instruction with the time it lands at — and the dock's "Start at 6:00" with
-"Swap this meal" beside it. The plate card and the recipe card are gone.
+the swap ("Swap · I'll pick" since 2026-09-13) beside it. The plate card and
+the recipe card are gone.
 
 The timing rule, as built in shell.js's mealClockStops:
 
@@ -78,7 +79,7 @@ _PURE = (
     + "".join(_extract(n) + "\n" for n in (
         "numberWord", "countInWords", "minutesInWords", "clockLabel", "spokenTime",
         "slotTableMinutes", "mealTotalMinutes", "mealStepMinutes", "stopTitleSplit",
-        "ingredientNamesLine", "mealClockStops", "mealClockEyebrow"))
+        "ingredientNamesLine", "mealClockSides", "mealClockTotal", "finishSideStop", "mealClockStops", "mealClockEyebrow"))
 )
 
 
@@ -333,6 +334,7 @@ def _screen(day: dict, slot: str, cook_meals: list, rhythm: dict | None = None, 
         + f"var weekState = {{ data: {{ slot_times: {{ breakfast: '8:00', lunch: '12:30', dinner: '6:30' }} }}, rhythm: {json.dumps(rhythm)} }};\n"
         + "var swapState = null;\n"
         + "var REHEAT_ACTION_LABEL = 'Mark eaten';\n"
+        + "var SWAP_LABEL = 'Swap · I’ll pick';\n"
         + f"var cookState = {{ data: {{ meals: {json.dumps(cook_meals)} }}, cookAheadPicks: {{}} }};\n"
         + "var GRO_ICONS = { chevRight: '<svg class=\"chev\"></svg>' };\n"
         + "var SLOT_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };\n"
@@ -340,13 +342,14 @@ def _screen(day: dict, slot: str, cook_meals: list, rhythm: dict | None = None, 
         + f"var TICKED = {json.dumps(ticked or [])};\n"
         + "function cookTicked(kind, key) { return TICKED.indexOf(kind + ':' + key) !== -1; }\n"
         + "function cookAheadHtml() { return ''; }\n"
+        + "var WK_ADD_ICON = '<svg/>'; function humanQtyText(t) { return String(t == null ? '' : t); }\n"
         + "function cookIngredientLabel(i) { return ((i.qty ? i.qty + ' ' : '') + i.item).trim(); }\n"
         + _PURE
         + "".join(_extract(n) + "\n" for n in (
             "daySlotEntry", "slotWord", "isRealCook", "mealDisplayName", "cookMealForEntry",
             "mealCookName", "mealCookUnderway", "mealClockFor", "mealHeroLine", "mealHeroHtml",
             "mealStopHtml", "mealClockHtml", "swapStateFor", "swapLineHtml", "slotEyebrowLabel",
-            "dishSizeClass", "mealDockHtml", "mealStepHtml"))
+            "dishSizeClass", "mealDockHtml", "mealWhatsInHtml", "recipeCitationHtml", "mealStepHtml"))
         + f"console.log(JSON.stringify(mealStepHtml({json.dumps(day)}, {json.dumps(slot)})));\n"
     )
     res = nodeharness.run_node(harness, timeout=30)
@@ -399,7 +402,7 @@ def test_the_screen_is_the_hero_the_eyebrow_the_stops_and_the_dock():
     # The dock: the start as the one action, the swap as the quiet link.
     assert '<div class="wk-decide dock wk-meal-dock">' in html
     assert 'class="dock-primary" data-wk-cook="dinner">Start at 6:00<' in html
-    assert 'class="dock-link wk-act-swap" data-wk-swap="dinner">Swap this meal<' in html
+    assert 'class="dock-link wk-act-swap" data-wk-swap="dinner">Swap · I’ll pick<' in html
     # The swap line's idle state stays on the Day step; the dock here is the
     # one action and its one quiet link.
     assert "Tell me what instead" not in html
@@ -427,9 +430,14 @@ def test_the_thaw_note_is_the_heros_one_line():
 
 
 @_needs_node
-def test_before_the_cook_view_loads_the_dock_says_start_cooking_and_there_is_no_clock():
+def test_before_the_cook_view_loads_the_dock_says_start_cooking_and_the_clock_waits():
+    # This harness has no planCookView, so the screen reads as "the view has
+    # answered and this entry is not on it" — the no-recipe line. The
+    # waiting line ("Getting the recipe…") is covered in
+    # tests/test_tap_a_meal_opens_recipe.py.
     html = _screen(_monday(_DINNER), "dinner", [])
-    assert "wk-clock" not in html
+    assert "wk-stops" not in html
+    assert "No saved recipe for this one" in html
     assert 'data-wk-cook="dinner">Start cooking<' in html
     # The hero still knows the table time — that is the week's own fact.
     assert "On the table by half six" in html

@@ -26,11 +26,18 @@ never counts. Salt, pepper and cooking oils are treated as spice-rack
 things too: they are the same "you almost certainly have this" shape
 (assumption, recorded in the ticket report — one line to change).
 
-Memory across weeks is light, and borrowed from staples: a purchased
-grocery line's created_at stands in for its bought date (see
-staples._seed_history for the same reasoning). A spice bought within
-RECENTLY_BOUGHT_DAYS is not offered again — the section says which ones it
-is leaving out, so "all the spices the recipes need" stays true.
+Memory across weeks IS the staples (Loop Board "Staples gets sections —
+and the spice rack is one of them", Emily, 2026-09-13): every spice the
+household has bought through the list is a staple in the Spices section
+(staples.seed_spice_staples / record_staple_purchase), with a cadence
+that starts at RECENTLY_BOUGHT_DAYS and is learned from real purchases.
+The card reads that one record three ways: a spice bought within its
+cadence is at home and not offered — the section says which ones it is
+leaving out, so "all the spices the recipes need" stays true; a spice
+whose cadence has run out is PRE-TICKED (probably running low), which is
+the same one-tap check a staple gets on the list; and an untick on a
+pre-ticked spice is "we have plenty", in the staple's own words. No
+counts, no jars to enter: the rack is inferred from what came home.
 """
 from __future__ import annotations
 
@@ -39,10 +46,12 @@ from datetime import date, timedelta
 from ..db import get_conn
 from ._shared import household_id
 from . import grocery as _grocery
+from . import staples as _staples
 
-# Bought within this many days: not offered again. Eight weeks — a jar
-# lasts months, and being wrong here costs one manual add ("cumin"), which
-# merges straight onto the pending line and ticks it.
+# A spice staple's first cadence, before Pomona has seen the jar bought
+# twice: bought within this many days means "at home, not offered". Eight
+# weeks — a jar lasts months, and being wrong here costs one manual add
+# ("cumin"), which merges straight onto the pending line and ticks it.
 RECENTLY_BOUGHT_DAYS = 56
 
 # The classifier. Names are matched on their merge key (lowercased,
@@ -176,24 +185,39 @@ _NOT_ALONE = {
 }
 
 
-def _recently_bought_keys(conn) -> set[str]:
-    since = (date.today() - timedelta(days=RECENTLY_BOUGHT_DAYS)).isoformat()
-    rows = conn.execute(
-        "SELECT item FROM grocery_items WHERE household_id = ? AND status = 'purchased' AND created_at >= ?",
-        (household_id(), since),
-    ).fetchall()
-    return {_grocery._merge_key(r["item"]) for r in rows}
+def _rack(conn) -> dict[str, dict]:
+    """The spice rack as the staples know it: merge key -> the staple row,
+    for every staple in the Spices section, seeding first so a spice bought
+    before this existed counts too."""
+    _staples.seed_spice_staples(conn)
+    rows = conn.execute("SELECT * FROM staples WHERE household_id = ?", (household_id(),)).fetchall()
+    return {
+        _grocery._merge_key(r["item"]): r
+        for r in rows
+        if _staples.section_for(r["item"], r["category"]) == _staples.SECTION_SPICES
+    }
+
+
+def _bought_lately(staple, today: date) -> bool:
+    """Bought within its own cadence — the jar is at home. A "we have
+    plenty" answer moves the due date, not this: it was not bought."""
+    last = _staples._parse(staple["last_bought_at"])
+    return last is not None and last + timedelta(days=staple["cadence_days"]) > today
+
+
+def _due(staple, today: date) -> bool:
+    return not staple["paused"] and staple["next_due_at"] <= today.isoformat()
 
 
 def bought_recently(item: str, conn=None) -> bool:
-    """Whether a purchased line for this spice was made within RECENTLY_BOUGHT_DAYS."""
+    """Whether the spice rack says this jar came home within its cadence."""
     own = conn is None
     if own:
         conn = get_conn()
-    hit = _grocery._merge_key(item) in _recently_bought_keys(conn)
+    staple = _rack(conn).get(_grocery._merge_key(item))
     if own:
         conn.close()
-    return hit
+    return bool(staple) and _bought_lately(staple, _staples._today())
 
 
 def list_spices_this_week() -> dict:
@@ -201,30 +225,50 @@ def list_spices_this_week() -> dict:
     The "Spices this week" section: every spice line the week's recipes put
     on the list (status 'spice', unticked) plus any spice already ticked
     onto the list (a 'needed' or 'in_cart' line whose name is a spice),
-    each with `ticked`. A pending spice bought within RECENTLY_BOUGHT_DAYS
-    is left out and named in `recently_bought` instead.
+    each with `ticked`. The spice rack (the Spices section of staples)
+    pre-answers it: a pending spice bought within its cadence is left out
+    and named in `recently_bought`; one whose cadence has run out is ticked
+    here and now — an ordinary needed line carrying its staple_id, `due`
+    so the card can say "probably running low" — and stays ticked until
+    someone says otherwise (tick_spice's untick is "we have plenty").
     """
     conn = get_conn()
+    rack = _rack(conn)
+    today = _staples._today()
     rows = conn.execute(
-        "SELECT id, item, quantity, category, status, store FROM grocery_items "
+        "SELECT id, item, quantity, category, status, store, staple_id FROM grocery_items "
         "WHERE household_id = ? AND status IN ('spice', 'needed', 'in_cart') AND excluded_from_list = 0 "
         "ORDER BY item",
         (household_id(),),
     ).fetchall()
-    recent = _recently_bought_keys(conn)
-    conn.close()
     items, left_out = [], []
     for r in rows:
         if r["status"] != "spice" and not is_spice(r["item"]):
             continue
-        if r["status"] == "spice" and _grocery._merge_key(r["item"]) in recent:
-            left_out.append(r["item"])
-            continue
+        ticked, linked = r["status"] != "spice", bool(r["staple_id"])
+        staple = rack.get(_grocery._merge_key(r["item"]))
+        if not ticked and staple is not None:
+            if _bought_lately(staple, today):
+                left_out.append(r["item"])
+                continue
+            if _due(staple, today) and not linked:
+                # Pre-ticked: made the same way a due staple's line is
+                # (status 'needed' + staple_id), so the list's own
+                # We-have-plenty / Not-this-trip work on it too.
+                conn.execute(
+                    "UPDATE grocery_items SET status = 'needed', staple_id = ? WHERE id = ?", (staple["id"], r["id"])
+                )
+                ticked = linked = True
+        # "Probably running low": Pomona's own tick (the line carries the
+        # staple) while the rack still says due — an untick's plenty clears it.
+        due = bool(ticked and linked and staple is not None and _due(staple, today))
         items.append({
             "id": r["id"], "item": r["item"], "quantity": r["quantity"] or "",
             "category": r["category"], "store": r["store"] or "",
-            "ticked": r["status"] != "spice",
+            "ticked": ticked, "due": due,
         })
+    conn.commit()
+    conn.close()
     return {"items": items, "recently_bought": left_out}
 
 
@@ -237,7 +281,7 @@ def tick_spice(item_id: int, ticked: bool = True) -> dict:
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT id, item, status FROM grocery_items WHERE id = ? AND household_id = ?",
+        "SELECT id, item, status, staple_id FROM grocery_items WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     ).fetchone()
     if row is None:
@@ -245,8 +289,19 @@ def tick_spice(item_id: int, ticked: bool = True) -> dict:
         raise ValueError(f"No grocery list item with id {item_id}.")
     if ticked and row["status"] == "spice":
         conn.execute("UPDATE grocery_items SET status = 'needed' WHERE id = ?", (item_id,))
+        # Ticking a jar back after unticking Pomona's pre-tick is "actually,
+        # I do need it": the plenty is taken back and the staple is due
+        # again — the pre-shop screen's own undo (staples.reverse_last_answer).
+        if row["staple_id"]:
+            _staples.reverse_last_answer(conn, row["staple_id"])
     elif not ticked and row["status"] == "needed" and is_spice(row["item"]):
         conn.execute("UPDATE grocery_items SET status = 'spice' WHERE id = ?", (item_id,))
+        # Unticking a pre-ticked jar is "we have plenty": the staple's next
+        # due date moves a whole cadence out, so the card won't tick it
+        # again next week. The row stays this week's recipe's spice,
+        # unticked, still linked for a re-tick.
+        if row["staple_id"]:
+            _staples.note_line_removed(conn, row, "plenty")
     else:
         conn.close()
         return {"item_id": item_id, "item": row["item"], "ticked": row["status"] != "spice", "unchanged": True}

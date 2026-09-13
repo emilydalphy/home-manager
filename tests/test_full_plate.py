@@ -223,6 +223,135 @@ def test_a_one_pot_dinner_says_so_on_its_card(recipes, stub_week, stub_sides):
     assert menu["days"][0]["breakfast"]["plate_note"] == ""
 
 
+# ---------- "one-pot" has to be true of the method, not just the plate ----------
+#
+# Emily, 2026-09-13, on the Tuesday dinner page: a grilled turkey burger
+# plate ("Turkish-Style Grilled Kofte-Spiced Turkey Burgers with Charred
+# Vegetables") covered protein/vegetable/carb on its own and so passed
+# plates.is_complete — but the card called it "one-pot, nothing extra",
+# which isn't true of a dish cooked on a grill. See
+# plates.contradicts_one_pot, which plate_note now checks before adding the
+# tag, and which the tests below exercise directly (no DB) and end-to-end
+# (through get_week_menu).
+
+@pytest.mark.parametrize("name", [
+    "Turkish-Style Grilled Kofte-Spiced Turkey Burgers with Charred Vegetables",
+    "BBQ Chicken Thighs",
+    "Broiled Salmon with Asparagus",
+])
+def test_grill_words_contradict_one_pot(name):
+    assert plates.contradicts_one_pot(name, [], []) is True
+
+
+def test_a_step_naming_a_second_vessel_contradicts_one_pot():
+    # No grill word at all — the tell is the recipe's own steps naming a
+    # SECOND pan/pot/skillet apart from the main, the other half of Emily's
+    # report (the burgers' charred vegetables are cooked apart from the
+    # patties, in the same recipe rather than as an app-attached side).
+    assert plates.contradicts_one_pot(
+        "Seared Steak and Charred Corn", [],
+        ["Sear the steak in a pan.",
+         "Meanwhile, in a separate skillet, char the corn.",
+         "Serve together."],
+    ) is True
+
+
+def test_oven_or_a_single_pan_does_not_contradict_one_pot():
+    # Oven, "pan"/"skillet" and "roast" show up constantly in genuinely
+    # one-pot dinners (a sheet-pan roast, a Dutch-oven stew) — only a
+    # grill/broiler, or a step naming an explicit SECOND vessel, should
+    # withhold the tag. Anything looser would quietly take the tag away
+    # from real one-pot/one-pan dinners instead of just the misdescribed one.
+    assert plates.contradicts_one_pot(
+        "Sheet-Pan Chicken and Vegetables", [],
+        ["Toss everything with oil on one sheet pan.",
+         "Roast at 425F for 25 minutes."],
+    ) is False
+    assert plates.contradicts_one_pot(
+        "Beef and Vegetable Stew", [],
+        ["Brown the beef in a Dutch oven.",
+         "Add vegetables and broth.", "Simmer for two hours."],
+    ) is False
+
+
+def test_grilled_cheese_as_a_topping_does_not_contradict_one_pot():
+    # "Grilled cheese" is pan-fried on a griddle, not cooked on an actual
+    # grill -- a one-pot tomato soup finished with grilled-cheese croutons
+    # is still genuinely one-pot, and the literal word "grilled" in that
+    # ingredient/topping name must not strip its tag.
+    assert plates.contradicts_one_pot(
+        "One-Pot Tomato Soup with Grilled Cheese Croutons", [],
+        ["Simmer the soup in one pot.", "Top with grilled cheese croutons."],
+    ) is False
+    # A dish that's genuinely cooked on a grill still loses the tag.
+    assert plates.contradicts_one_pot("Grilled Chicken Thighs", [], []) is True
+
+
+@pytest.fixture
+def method_recipes():
+    """Recipes whose method text is exactly what contradicts_one_pot reads."""
+    tools.add_recipe(
+        "Turkish-Style Grilled Kofte-Spiced Turkey Burgers with Charred Vegetables",
+        ingredients=[{"item": "ground turkey", "qty": "1 lb"}],
+        food_groups=["protein", "vegetable", "carb"],
+        instructions=[
+            "Grill the burgers over medium-high heat, 5 minutes per side.",
+            "Grill the vegetables alongside until charred.",
+        ],
+        prep_time_minutes=15, cook_time_minutes=15,
+    )
+    # A genuine one-pot dish: complete on its own, no grill, no second
+    # vessel named — must keep the tag, not lose it as collateral damage.
+    tools.add_recipe(
+        "Beef and Vegetable Stew",
+        ingredients=[{"item": "beef stew meat", "qty": "1.5 lb"}],
+        food_groups=["protein", "vegetable", "carb"],
+        instructions=[
+            "Brown the beef in a Dutch oven.",
+            "Add vegetables, broth and potatoes.",
+            "Simmer for two hours.",
+        ],
+        prep_time_minutes=15, cook_time_minutes=120,
+    )
+    # No food_groups recorded at all — the pre-existing "don't guess"
+    # behaviour (has_food_groups/is_complete), locked in here alongside the
+    # new check so a future change to either can't silently break it.
+    tools.add_recipe(
+        "Mystery Freezer Meal",
+        ingredients=[{"item": "labelless container", "qty": "1"}],
+        prep_time_minutes=5, cook_time_minutes=20,
+    )
+
+
+def test_a_grilled_meal_never_gets_the_one_pot_tag(method_recipes, stub_week, stub_sides):
+    week = _week_start()
+    tuesday = tools._week_dates(week)[1]
+    stub_week(_week(
+        week, meal="Beef and Vegetable Stew",
+        overrides={(tuesday, "dinner"): "Turkish-Style Grilled Kofte-Spiced Turkey Burgers with Charred Vegetables"},
+    ))
+    stub_sides()
+
+    plan = agent.generate_weekly_plan(week)
+    menu = tools.get_week_menu(plan["weekly_plan_id"])
+
+    assert menu["days"][1]["dinner"]["plate_note"] == ""
+    # A genuine one-pot dish elsewhere in the same week still keeps its
+    # tag — this is a correction, not a blanket "no more one-pot".
+    assert menu["days"][0]["dinner"]["plate_note"] == "one-pot, nothing extra"
+
+
+def test_a_missing_food_groups_field_still_gets_no_tag(method_recipes, stub_week, stub_sides):
+    week = _week_start()
+    stub_week(_week(week, meal="Mystery Freezer Meal"))
+    stub_sides()
+
+    plan = agent.generate_weekly_plan(week)
+    menu = tools.get_week_menu(plan["weekly_plan_id"])
+
+    assert menu["days"][0]["dinner"]["plate_note"] == ""
+
+
 def test_a_keto_household_gets_no_carb_bolted_on(recipes, stub_week, stub_sides):
     week = _week_start()
     tuesday = tools._week_dates(week)[1]

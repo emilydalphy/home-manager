@@ -55,10 +55,19 @@
            bar, the example-prompt chips and the "?" tips button that used to
            live here moved into the ask sheet below: they help the moment
            you're about to type, not all day. The bell moved into each root's
-           header beside the gear (placeNotifBell, shell.js). -->
+           header beside the gear (placeNotifBell, shell.js).
+           The icon is the Pomona mark in apricot (Emily, 2026-09-13, Identity
+           Round Q2 = B) — the sign-in plaque's glyph, shrunk — rather than
+           the speech bubble it was: "talk to Pomona" is, literally, the fruit.
+           The mark is a logo, not an icon, so it keeps its own 1.8 stroke
+           (the icon set is 2.2). Because the fruit doesn't say "chat" on its
+           own, a small ASK label sits under it for a viewer's first three
+           visits (fabLabelCountVisit, shell.js — FAB_LABEL_VISITS); after
+           that the mark alone. -->
       <div id="ask-bar-dock">
         <button type="button" id="chat-fab" class="chat-fab" aria-label="Chat with Pomona" title="Chat with Pomona">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 9h8"/><path d="M8 12h5"/></svg>
+          <svg class="pomona-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.4c-3.1 0-5.6-2.6-5.6-5.9 0-3.2 2.5-5.7 5.6-5.7s5.6 2.5 5.6 5.7c0 3.3-2.5 5.9-5.6 5.9z"/><path d="M12 9V6.2"/><path d="M12.5 7.1c.9-2.2 3.2-3.1 5.3-2.7.4 2.2-.7 4.3-2.8 4.7-1.4.3-2.5-.6-2.5-2z"/><path d="M12 10.2c-1.1 1.6-1.1 6.3 0 8.2"/></svg>
+          <span class="chat-fab-label" id="chat-fab-label" aria-hidden="true" hidden>Ask</span>
         </button>
       </div>
       <div id="tab-bar"></div>
@@ -85,7 +94,7 @@
        placeNotifBell() in shell.js moves this one element into that slot.
        Parked here in the markup; it is never displayed from here. -->
   <button type="button" id="notif-bell" class="notif-bell" hidden aria-label="Notifications">
-    <span class="notif-bell-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 6 2 7H4c.5-1 2-3 2-7Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span>
+    <span class="notif-bell-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 6 2 7H4c.5-1 2-3 2-7Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span>
     <span class="notif-badge" id="notif-badge" hidden></span>
   </button>
   <div id="notif-scrim" hidden></div>
@@ -134,6 +143,14 @@
     <div class="ask-context" id="ask-context" hidden></div>
     <form id="ask-composer" class="ask-composer-bar">
       <textarea id="ask-input" class="ask-composer-input" rows="1" placeholder="What&rsquo;s on your mind?" autocomplete="off"></textarea>
+      <!-- A photograph of a cookbook page goes to the same review sheet
+           the Cook tab's "Add from a cookbook" opens (static/shell.js,
+           openRecipePhotoSheet), with whatever was typed here as the note
+           ("the lasagne from the Ottolenghi book"). The chat itself does
+           not take images; the sheet is the one review-before-save path. -->
+      <button type="button" id="ask-photo-btn" class="ask-composer-mic" aria-label="Photograph a cookbook page" title="Photograph a cookbook page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5h4l1.5-2.5h6L16.5 8.5h4V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19z"/><circle cx="12" cy="13.5" r="3.4"/></svg>
+      </button>
       <button type="button" id="ask-mic-btn" class="ask-composer-mic" aria-label="Dictate message" title="Dictate message">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.07A7 7 0 0 0 19 11z"/></svg>
       </button>
@@ -196,6 +213,39 @@
       <button type="button" class="kit-sheet-close" id="cook-more-close" aria-label="Close">&times;</button>
     </div>
     <div id="cook-more-rows"></div>
+  </div>
+
+  <!-- Now's "Something else" sheet (Emily, 2026-09-13): the 2–3 other
+       nights of this plan that can trade dinners with tonight, one tap
+       each (openTonightSheet / runTonightSwap in shell.js). Same shape as
+       Cook's More above. -->
+  <div id="tonight-scrim" hidden></div>
+  <div id="tonight-sheet" hidden role="dialog" aria-label="Something else tonight">
+    <div class="ask-sheet-handle" id="tonight-handle"></div>
+    <div class="kit-sheet-titlerow">
+      <span class="kit-sheet-title">What should tonight be instead?</span>
+      <span class="kit-sheet-hairline"></span>
+      <button type="button" class="kit-sheet-close" id="tonight-close" aria-label="Close">&times;</button>
+    </div>
+    <p class="tonight-sheet-line" id="tonight-sheet-line"></p>
+    <div id="tonight-rows"></div>
+  </div>
+
+  <!-- The meal screen's "Add something" sheet (Emily, 2026-09-13): a
+       starch, a green, a sauce written for this dish, each row the tap
+       that adds it, and one line to type anything else
+       (openMealAddSheet / runMealAdd in shell.js). Same shape as the
+       "Something else" sheet above; the draft-stage card reuses it. -->
+  <div id="wk-add-scrim" hidden></div>
+  <div id="wk-add-sheet" hidden role="dialog" aria-label="Add something to this meal">
+    <div class="ask-sheet-handle" id="wk-add-handle"></div>
+    <div class="kit-sheet-titlerow">
+      <span class="kit-sheet-title">What should go with it?</span>
+      <span class="kit-sheet-hairline"></span>
+      <button type="button" class="kit-sheet-close" id="wk-add-close" aria-label="Close">&times;</button>
+    </div>
+    <p class="tonight-sheet-line" id="wk-add-line"></p>
+    <div id="wk-add-rows"></div>
   </div>
 
   <!-- Kitchen entry sheet (Stage 2 slice 3). The hub's tiles open What we

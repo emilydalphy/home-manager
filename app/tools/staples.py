@@ -29,6 +29,30 @@ grocery_items.staple_id so the Grocery screen can show it as a suggestion
 this trip" (a week). Keeping it is doing nothing: it is on the list.
 Buying it, by any route, is what teaches the cadence.
 
+Sections (Loop Board "Staples gets sections — and the spice rack is one
+of them", Emily, 2026-09-13: "I want to make sure there are sections
+under it, and then the spices is one section so it's easy to organize"):
+every staple belongs to exactly one of Spices, Pantry basics, Fridge
+basics, Household supplies or Other, DERIVED from its name and grocery
+category (section_for) and never typed by anyone — it is a way of reading
+the list, not a field to fill in. Nothing is stored: a staple's section
+is worked out on every read, so improving the classifier improves every
+staple at once.
+
+The Spices section is the spice rack, kept the staples way: a spice the
+household BOUGHT (a ticked "Spices this week" line that came home, or any
+purchased line whose name is a spice) becomes a staple on its own
+(record_staple_purchase / seed_spice_staples), with a cadence that starts
+at spices.RECENTLY_BOUGHT_DAYS — a jar lasts a couple of months — and is
+learned from real purchases after that, like every staple. A spice staple
+is NEVER pushed onto the list by sync_due_staples: a jar is used when a
+recipe calls for it, not on a rhythm, and a "probably running low" line
+for cumin in a week nobody cooks with cumin is exactly the third jar Emily
+wants to stop buying. It surfaces through the "Spices this week" card
+instead (spices.list_spices_this_week): bought within its cadence means
+"at home, not listed", due means pre-ticked, and an untick is "we have
+plenty" — the staple's own answer, in the card's own box.
+
 Learning etiquette (DESIGN_SYSTEM.md §7): the suggestion is silent
 learning with a visible flag and an undo at the point of use — the
 reference pattern. It gets quieter on its own only in one way: three
@@ -41,6 +65,7 @@ safe for that format. "Today" comes from _today() so tests can pin it.
 
 from __future__ import annotations
 
+import json
 import statistics
 from datetime import date, timedelta
 
@@ -48,6 +73,7 @@ from ..db import get_conn
 from ._shared import household_id
 from . import grocery as _grocery
 from . import quantities as _quantities
+from . import spices as _spices
 
 # How often a household buys a thing before Pomona has seen it buy it.
 # Days. Deliberately coarse — the point of a default is only to make the
@@ -121,8 +147,142 @@ def _clean_category(category: str | None) -> str:
     return cat if cat in _KNOWN_CATEGORIES else "other"
 
 
-def _default_cadence(category: str) -> int:
+def _default_cadence(category: str, item: str = "") -> int:
+    # A spice's first cadence is the card's own "bought lately" window —
+    # one number for "a jar lasts about this long", not two. A household
+    # thing the name gives away ("toilet paper", filed as "other" by a
+    # chat add) starts on the household rhythm, not the catch-all one.
+    if item:
+        section = section_for(item, category)
+        if section == SECTION_SPICES:
+            return _spices.RECENTLY_BOUGHT_DAYS
+        if section == "household":
+            return DEFAULT_CADENCE_DAYS["household"]
     return DEFAULT_CADENCE_DAYS.get((category or "other").strip().lower(), FALLBACK_CADENCE_DAYS)
+
+
+# ------------------------------------------------------------ sections ----
+# The five sections a staple can sit in, in the order the Staples card shows
+# them (assumed set, Emily's ticket of 2026-09-13; the names are one line
+# to change). A section is derived, never stored — see section_for.
+SECTION_SPICES = "spices"
+SECTION_ORDER = ["spices", "pantry", "fridge", "household", "other"]
+SECTION_LABELS = {
+    "spices": "Spices",
+    "pantry": "Pantry basics",
+    "fridge": "Fridge basics",
+    "household": "Household supplies",
+    "other": "Other",
+}
+
+# A grocery category that already says where a thing lives. Frozen goes
+# with the fridge — it is the same appliance — rather than the pantry.
+_FRIDGE_CATEGORIES = {"produce", "dairy", "meat/seafood", "frozen"}
+_PANTRY_CATEGORIES = {"pantry"}
+
+# The small classifier for a name whose category doesn't settle it (a chat
+# add is "other" unless the model said better). Matched lowercased with
+# every word singularised ("Batteries AA" and "AA batteries" are the same
+# thing), as a whole phrase first, then the last word — the thing itself,
+# in an English food name ("chicken stock" is stock) — then any word.
+# Household words win over a category, because "dish soap" filed under
+# pantry is a category mistake, not a pantry basic.
+_HOUSEHOLD_PHRASES = {
+    "toilet paper", "paper towel", "garbage bag", "trash bag", "bin bag",
+    "compost bag", "freezer bag", "sandwich bag", "cling wrap", "plastic wrap",
+    "saran wrap", "tin foil", "aluminum foil", "aluminium foil", "parchment paper",
+    "dryer sheet", "dishwasher tablet", "dishwasher pod", "laundry pod",
+    "cat litter", "cat food", "dog food", "kitty litter", "light bulb",
+    "hand soap", "dish soap", "baby wipe", "wet wipe", "coffee filter",
+}
+_HOUSEHOLD_WORDS = {
+    "soap", "detergent", "sponge", "bleach", "cleaner", "wipe", "tissue",
+    "kleenex", "foil", "ziploc", "battery", "lightbulb", "shampoo", "conditioner",
+    "toothpaste", "toothbrush", "floss", "deodorant", "razor", "diaper", "nappy",
+    "sunscreen", "lotion", "laundry", "litter", "candle", "napkin", "tampon", "pad",
+}
+# Phrases whose last word would file them wrong: a nut butter is a pantry
+# thing, whatever "butter" says.
+_PANTRY_PHRASES = {
+    "peanut butter", "almond butter", "cashew butter", "sunflower butter",
+    "nut butter", "seed butter", "cocoa butter", "apple butter",
+}
+_FRIDGE_WORDS = {
+    "milk", "egg", "butter", "yogurt", "yoghurt", "cheese", "cream", "kefir",
+    "juice", "tofu", "hummus", "bacon", "ham", "sausage", "chicken", "beef",
+    "pork", "turkey", "fish", "salmon", "shrimp", "lettuce", "spinach", "berry",
+    "apple", "banana", "carrot", "onion", "garlic", "lemon", "lime", "tomato",
+}
+_PANTRY_WORDS = {
+    "coffee", "tea", "rice", "pasta", "noodle", "flour", "sugar", "oat", "oatmeal",
+    "cereal", "granola", "cracker", "bean", "lentil", "chickpea", "honey", "syrup",
+    "jam", "peanut", "almond", "walnut", "cashew", "nut", "chip", "snack", "bread",
+    "tortilla", "stock", "broth", "sauce", "ketchup", "mustard", "mayo",
+    "mayonnaise", "vinegar", "paste", "tuna", "cocoa", "chocolate", "popcorn",
+    "bar", "water", "soda", "pop", "quinoa", "couscous", "raisin", "pretzel",
+}
+
+
+def _name_words(item: str) -> list[str]:
+    return [_grocery._singular_word(w) for w in (item or "").strip().lower().replace(",", " ").split()]
+
+
+def _name_section(item: str) -> str | None:
+    words = _name_words(item)
+    if not words:
+        return None
+    if " ".join(words) in _HOUSEHOLD_PHRASES or set(words) & _HOUSEHOLD_WORDS:
+        return "household"
+    return None
+
+
+def _name_section_food(item: str) -> str | None:
+    words = _name_words(item)
+    if not words:
+        return None
+    if " ".join(words) in _PANTRY_PHRASES:
+        return "pantry"
+    for candidates in ([words[-1]], words):
+        if set(candidates) & _FRIDGE_WORDS:
+            return "fridge"
+        if set(candidates) & _PANTRY_WORDS:
+            return "pantry"
+    return None
+
+
+def section_for(item: str, category: str | None = None) -> str:
+    """
+    Which of SECTION_ORDER a staple belongs in, from its name and grocery
+    category and nothing else — nobody picks a section. In order: a spice
+    (spices.is_spice, the same list the "Spices this week" card uses) is
+    Spices; a household word in the name is Household supplies whatever
+    the category says; then the category (household / fridge / pantry);
+    then a food word in the name; then Other.
+    """
+    if _spices.is_spice(item):
+        return SECTION_SPICES
+    by_name = _name_section(item)
+    if by_name:
+        return by_name
+    cat = _clean_category(category)
+    if cat == "household":
+        return "household"
+    if cat in _FRIDGE_CATEGORIES:
+        return "fridge"
+    if cat in _PANTRY_CATEGORIES:
+        return "pantry"
+    return _name_section_food(item) or "other"
+
+
+def group_by_section(staples: list[dict]) -> list[dict]:
+    """The shaped staples grouped under their section, in SECTION_ORDER,
+    skipping empty sections: [{"section", "label", "staples": [...]}]."""
+    out = []
+    for key in SECTION_ORDER:
+        members = [s for s in staples if s["section"] == key]
+        if members:
+            out.append({"section": key, "label": SECTION_LABELS[key], "staples": members})
+    return out
 
 
 def _clamp(days: int) -> int:
@@ -181,10 +341,13 @@ def _find_by_name(conn, item: str):
 
 def _shape(r) -> dict:
     next_due = r["next_due_at"]
+    section = section_for(r["item"], r["category"])
     return {
         "id": r["id"],
         "item": r["item"],
         "category": r["category"],
+        "section": section,
+        "section_label": SECTION_LABELS[section],
         "quantity": r["quantity"] or "",
         "cadence_days": r["cadence_days"],
         "cadence_source": r["cadence_source"],
@@ -198,11 +361,25 @@ def _shape(r) -> dict:
     }
 
 
-def _event(conn, staple_id: int, kind: str, source: str, on_date: str | None = None) -> None:
-    conn.execute(
-        "INSERT INTO staple_events (household_id, staple_id, kind, source, on_date) VALUES (?, ?, ?, ?, ?)",
-        (household_id(), staple_id, kind, source, on_date or _iso(_today())),
+def _event(
+    conn, staple_id: int, kind: str, source: str, on_date: str | None = None, grocery_item_id: int | None = None
+) -> int:
+    cur = conn.execute(
+        "INSERT INTO staple_events (household_id, staple_id, kind, source, on_date, grocery_item_id) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (household_id(), staple_id, kind, source, on_date or _iso(_today()), grocery_item_id),
     )
+    return cur.lastrowid
+
+
+# The rhythm fields a purchase rewrites, recorded on the 'bought' event on
+# either side of the write (staple_events.receipt_json) so an untick can
+# put them back exactly — see unrecord_staple_purchase.
+_RHYTHM_FIELDS = ("cadence_days", "cadence_source", "last_bought_at", "next_due_at", "skip_streak", "paused")
+
+
+def _rhythm_snapshot(r) -> dict:
+    return {k: r[k] for k in _RHYTHM_FIELDS}
 
 
 def _relearn(conn, staple_id: int) -> None:
@@ -240,7 +417,7 @@ def _relearn(conn, staple_id: int) -> None:
     )
 
 
-def _seed_history(conn, staple_id: int, item: str) -> int:
+def _seed_history(conn, staple_id: int, item: str, except_line_id: int | None = None) -> int:
     """
     What Pomona already knows about buying this, so a household that has
     been shopping with it for weeks doesn't start from a default. Purchased
@@ -249,16 +426,19 @@ def _seed_history(conn, staple_id: int, item: str) -> int:
     bought date. That is honest enough to learn a cadence from (it is off
     by the few days between listing and buying, the same way every time)
     and is never used for anything finer than "about every N weeks".
+    except_line_id leaves out the line being bought at this very moment —
+    its created_at and today's tick are the same purchase, and counting
+    both would teach a few-day "interval" that never happened.
     Returns how many dates were seeded.
     """
     wanted = _grocery._merge_key(item)
     rows = conn.execute(
-        "SELECT item, created_at FROM grocery_items WHERE household_id = ? AND status = 'purchased'",
+        "SELECT id, item, created_at FROM grocery_items WHERE household_id = ? AND status = 'purchased'",
         (household_id(),),
     ).fetchall()
     seen = set()
     for row in rows:
-        if _grocery._merge_key(row["item"]) != wanted:
+        if row["id"] == except_line_id or _grocery._merge_key(row["item"]) != wanted:
             continue
         d = (row["created_at"] or "")[:10]
         if not d or d in seen:
@@ -316,7 +496,7 @@ def add_staple(
         conn.execute(f"UPDATE staples SET {', '.join(fields)} WHERE id = ?", (*params, staple_id))
         created = False
     else:
-        cadence = _clamp(every_days) if every_days else _default_cadence(cat)
+        cadence = _clamp(every_days) if every_days else _default_cadence(cat, name)
         source = "told" if every_days else "default"
         # Adding a staple you're not out of means you have some now, so
         # the first due date is a cadence away. Running low means today.
@@ -337,6 +517,10 @@ def add_staple(
             if running_low:
                 conn.execute("UPDATE staples SET next_due_at = ? WHERE id = ?", (today, staple_id))
         created = True
+    if running_low and section_for(name, cat) == SECTION_SPICES:
+        # sync_due_staples never lists a spice on its own (see the module
+        # note), so "we're out of cumin" puts the line on today, here.
+        _put_on_list(conn, _row(conn, staple_id))
     conn.commit()
     out = _shape(_row(conn, staple_id))
     conn.close()
@@ -352,12 +536,76 @@ def list_staples() -> list[dict]:
     before adding one that might already be there.
     """
     conn = get_conn()
+    seed_spice_staples(conn)
     rows = conn.execute(
         "SELECT * FROM staples WHERE household_id = ? ORDER BY paused, next_due_at, item",
         (household_id(),),
     ).fetchall()
     conn.close()
     return [_shape(r) for r in rows]
+
+
+def list_staples_by_section() -> list[dict]:
+    """The Staples card's shape: the same staples as list_staples, grouped
+    under Spices / Pantry basics / Fridge basics / Household supplies /
+    Other, empty sections left out."""
+    return group_by_section(list_staples())
+
+
+def _create_spice_staple(conn, item: str, category: str, except_line_id: int | None = None):
+    """
+    A spice the household bought becomes a staple on its own — the spice
+    rack is kept the staples way, from purchases, never typed in. Cadence
+    starts at the card's "bought lately" window and is learned from the
+    purchased history already on file (_seed_history). Returns the row, or
+    the existing one if the name is already a staple.
+    """
+    existing = _find_by_name(conn, item)
+    if existing:
+        return existing
+    today = _today()
+    cadence = _default_cadence(category, item)
+    cur = conn.execute(
+        "INSERT INTO staples (household_id, item, category, quantity, cadence_days, cadence_source, "
+        "last_bought_at, next_due_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (household_id(), item, _clean_category(category), "", cadence, "default", None, _iso(today + timedelta(days=cadence))),
+    )
+    staple_id = cur.lastrowid
+    _event(conn, staple_id, "added", "spice")
+    if _seed_history(conn, staple_id, item, except_line_id=except_line_id):
+        _relearn(conn, staple_id)
+    return _row(conn, staple_id)
+
+
+def seed_spice_staples(conn) -> int:
+    """
+    Every spice the household has ever bought through the list, made a
+    staple — the Spices section seeded from the "Spices this week" card's
+    own history (a ticked spice that came home is a purchased line whose
+    name is a spice). Idempotent and cheap enough to run on every read of
+    the staples or the card, which is where it runs from; commits nothing
+    itself. Returns how many were made.
+    """
+    rows = conn.execute(
+        "SELECT item, category, MAX(created_at) AS last_seen FROM grocery_items "
+        "WHERE household_id = ? AND status = 'purchased' GROUP BY item ORDER BY last_seen DESC",
+        (household_id(),),
+    ).fetchall()
+    if not rows:
+        return 0
+    known = {
+        _grocery._merge_key(r["item"])
+        for r in conn.execute("SELECT item FROM staples WHERE household_id = ?", (household_id(),)).fetchall()
+    }
+    made = 0
+    for r in rows:
+        key = _grocery._merge_key(r["item"])
+        if not key or key in known or not _spices.is_spice(r["item"]):
+            continue
+        _create_spice_staple(conn, r["item"], r["category"])
+        known.add(key)
+        made += 1
+    return made
 
 
 def remove_staple(item: str) -> dict:
@@ -617,14 +865,88 @@ def remove_staple_by_id(staple_id: int) -> dict:
     return remove_staple(name)
 
 
-def record_staple_purchase(item: str, source: str = "grocery", staple_id: int | None = None) -> dict | None:
+def record_staple_purchase(
+    item: str, source: str = "grocery", staple_id: int | None = None,
+    grocery_item_id: int | None = None, category: str = "other",
+) -> dict | None:
     """
     Something got bought. Called from mark_grocery_item on every line that
     turns 'purchased', whatever put it there — so a staple a person added
     by hand still teaches the rhythm. No-op for anything that isn't a
-    staple. One bought date per day per staple: a receipt and a tick for the
-    same thing on the same day are one purchase.
+    staple — except a spice, which becomes one right here: a jar that came
+    home is the spice rack's own record (the Spices section). One bought
+    date per day per staple: a receipt and a tick for the same thing on the
+    same day are one purchase.
+
+    grocery_item_id is the list line whose tick this is, when it is one
+    (a spice becoming a staple skips that same line when it looks for what
+    is already on the list — see _create_spice_staple's except_line_id).
+    The day's event remembers the line that CREATED it
+    (staple_events.grocery_item_id) and what the rhythm read before and
+    after (receipt_json), so that line's untick can take exactly this event
+    back — see unrecord_staple_purchase. A second source the same day (another
+    line, or a caller with no line) makes the event nobody's in particular:
+    grocery_item_id goes NULL and no untick removes it, because something
+    else also bought it.
     """
+    conn = get_conn()
+    r = _row(conn, staple_id) if staple_id else None
+    if r is None:
+        r = _find_by_name(conn, item)
+    if r is None and _spices.is_spice(item):
+        r = _create_spice_staple(conn, item, category, except_line_id=grocery_item_id)
+    if r is None:
+        conn.close()
+        return None
+    today = _iso(_today())
+    already = conn.execute(
+        "SELECT id, grocery_item_id FROM staple_events WHERE household_id = ? AND staple_id = ? "
+        "AND kind = 'bought' AND on_date = ?",
+        (household_id(), r["id"], today),
+    ).fetchone()
+    event_id = None
+    before = _rhythm_snapshot(r)
+    if not already:
+        event_id = _event(conn, r["id"], "bought", source, today, grocery_item_id=grocery_item_id)
+    elif already["grocery_item_id"] is not None and already["grocery_item_id"] != grocery_item_id:
+        conn.execute("UPDATE staple_events SET grocery_item_id = NULL WHERE id = ?", (already["id"],))
+    conn.execute(
+        "UPDATE staples SET last_bought_at = ?, skip_streak = 0, updated_at = datetime('now') WHERE id = ?",
+        (today, r["id"]),
+    )
+    _relearn(conn, r["id"])
+    after_row = _row(conn, r["id"])
+    if event_id is not None:
+        conn.execute(
+            "UPDATE staple_events SET receipt_json = ? WHERE id = ?",
+            (json.dumps({"before": before, "after": _rhythm_snapshot(after_row)}), event_id),
+        )
+    conn.commit()
+    out = _shape(after_row)
+    conn.close()
+    return out
+
+
+def unrecord_staple_purchase(item: str, staple_id: int | None = None, grocery_item_id: int | None = None) -> dict | None:
+    """
+    A line that had been ticked is un-ticked: the purchase did not happen.
+    Called from mark_grocery_item on every line that leaves 'purchased'.
+    Removes TODAY's 'bought' event for the staple, and only when that event
+    stands on this very line (staple_events.grocery_item_id) — an event
+    another line or another source created, or one a second source joined
+    (grocery_item_id NULL), or one from an earlier day, is left exactly as
+    it is. Then the rhythm: if the staple still reads what the tick left it
+    at (the event's recorded "after"), the recorded "before" is put back —
+    cadence, its source, last bought, next due, skip streak — so a cadence
+    that became "learned" on this one date is un-learned and a due date the
+    tick pushed out comes back. If something else has changed the staple
+    since (a told cadence, a pause), nothing recorded is trusted over that:
+    the event goes and the rhythm is re-learned from the dates that remain.
+    Returns the staple's shape with "unrecorded": True/False, or None for a
+    non-staple.
+    """
+    if grocery_item_id is None:
+        return None
     conn = get_conn()
     r = _row(conn, staple_id) if staple_id else None
     if r is None:
@@ -632,21 +954,39 @@ def record_staple_purchase(item: str, source: str = "grocery", staple_id: int | 
     if r is None:
         conn.close()
         return None
-    today = _iso(_today())
-    already = conn.execute(
-        "SELECT 1 FROM staple_events WHERE household_id = ? AND staple_id = ? AND kind = 'bought' AND on_date = ?",
-        (household_id(), r["id"], today),
+    ev = conn.execute(
+        "SELECT id, receipt_json FROM staple_events WHERE household_id = ? AND staple_id = ? AND kind = 'bought' "
+        "AND on_date = ? AND grocery_item_id = ?",
+        (household_id(), r["id"], _iso(_today()), grocery_item_id),
     ).fetchone()
-    if not already:
-        _event(conn, r["id"], "bought", source, today)
-    conn.execute(
-        "UPDATE staples SET last_bought_at = ?, skip_streak = 0, updated_at = datetime('now') WHERE id = ?",
-        (today, r["id"]),
-    )
-    _relearn(conn, r["id"])
+    if ev is None:
+        out = _shape(r)
+        conn.close()
+        out["unrecorded"] = False
+        return out
+    conn.execute("DELETE FROM staple_events WHERE id = ?", (ev["id"],))
+    try:
+        receipt = json.loads(ev["receipt_json"] or "{}")
+    except (TypeError, ValueError):
+        receipt = {}
+    before, after = receipt.get("before") or {}, receipt.get("after") or {}
+    if before and after and _rhythm_snapshot(r) == after:
+        conn.execute(
+            f"UPDATE staples SET {', '.join(f'{k} = ?' for k in _RHYTHM_FIELDS)}, updated_at = datetime('now') "
+            "WHERE id = ?",
+            (*(before[k] for k in _RHYTHM_FIELDS), r["id"]),
+        )
+    else:
+        # last_bought_at was set to today by the tick; _relearn takes the
+        # latest date still on record when there is one, and otherwise
+        # keeps what it finds — so clear it first rather than let a date
+        # that did not happen anchor next_due.
+        conn.execute("UPDATE staples SET last_bought_at = NULL, updated_at = datetime('now') WHERE id = ?", (r["id"],))
+        _relearn(conn, r["id"])
     conn.commit()
     out = _shape(_row(conn, r["id"]))
     conn.close()
+    out["unrecorded"] = True
     return out
 
 
@@ -697,11 +1037,21 @@ def sync_due_staples() -> dict:
     for s in due:
         if s["id"] in live_staple_ids or s["id"] in answered_today or _grocery._merge_key(s["item"]) in live_keys:
             continue
-        res = _grocery.add_grocery_item(
-            s["item"], quantity=s["quantity"] or "", category=s["category"], added_by=ADDED_BY_STAPLE, conn=conn
-        )
-        conn.execute("UPDATE grocery_items SET staple_id = ? WHERE id = ?", (s["id"], res["item_id"]))
-        added.append({"item_id": res["item_id"], "item": s["item"], "staple_id": s["id"]})
+        # A spice waits for a recipe to want it (the "Spices this week"
+        # card pre-ticks it then) — never a line of its own. Module note.
+        if section_for(s["item"], s["category"]) == SECTION_SPICES:
+            continue
+        added.append(_put_on_list(conn, s))
     conn.commit()
     conn.close()
     return {"added": added}
+
+
+def _put_on_list(conn, s) -> dict:
+    """One ordinary grocery line for a staple, by the same add path a typed
+    item uses, linked back with staple_id. Commits nothing itself."""
+    res = _grocery.add_grocery_item(
+        s["item"], quantity=s["quantity"] or "", category=s["category"], added_by=ADDED_BY_STAPLE, conn=conn
+    )
+    conn.execute("UPDATE grocery_items SET staple_id = ? WHERE id = ?", (s["id"], res["item_id"]))
+    return {"item_id": res["item_id"], "item": s["item"], "staple_id": s["id"]}

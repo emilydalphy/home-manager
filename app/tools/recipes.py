@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+from urllib.parse import urlsplit
 from ..db import get_conn
 from ._shared import household_id
 from . import grocery as _grocery
@@ -30,6 +31,9 @@ def add_recipe(
     advance_prep_notes: str = "",
     advance_prep_step_indices: list[int] | None = None,
     source_url: str = "",
+    source_book: str = "",
+    source_author: str = "",
+    source_page: str = "",
 ) -> dict:
     """
     Save a recipe. ingredients is a list of {"item": str, "qty": str}. tags
@@ -59,6 +63,10 @@ def add_recipe(
     steps from "day of" steps instead of just listing them flat.
     source_url is the web page a recipe was brought in from (the recipe
     import sheet sets it); leave it blank for anything generated or typed.
+    source_book / source_author / source_page credit the cookbook a recipe
+    came from ("Salt Fat Acid Heat", "Samin Nosrat", "212") — set them when
+    the user names the book, even without the other two; leave blank
+    otherwise. Every screen that shows the recipe says where it came from.
 
     Before anything is written, every line's cooking amount is held to
     the per-serving ranges in _PLAUSIBLE_PER_SERVING at default_servings
@@ -70,24 +78,67 @@ def add_recipe(
     cur = conn.execute(
         "INSERT INTO recipes (household_id, name, notes, ingredients_json, tags_json, food_groups_json, cuisine, main_protein, "
         "instructions_json, default_servings, prep_time_minutes, cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json, "
-        "source_url) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "source_url, source_book, source_author, source_page) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             household_id(), name, notes, json.dumps(ingredients), json.dumps(tags or []),
             json.dumps(food_groups or []), cuisine, main_protein,
             json.dumps(instructions or []), default_servings, prep_time_minutes, cook_time_minutes,
             advance_prep_notes, json.dumps(advance_prep_step_indices or []), source_url or "",
+            (source_book or "").strip(), (source_author or "").strip(), (source_page or "").strip(),
         ),
     )
     conn.commit()
     recipe_id = cur.lastrowid
     conn.close()
+    citation = recipe_citation(source_url, source_book, source_author, source_page)
     return {
         "recipe_id": recipe_id, "name": name, "tags": tags or [], "food_groups": food_groups or [],
         "cuisine": cuisine, "main_protein": main_protein, "instructions": instructions or [],
         "default_servings": default_servings, "advance_prep_step_indices": advance_prep_step_indices or [],
         "source_url": source_url or "",
+        "source_book": (source_book or "").strip(), "source_author": (source_author or "").strip(),
+        "source_page": (source_page or "").strip(),
+        "citation": citation,
     }
+
+
+def recipe_citation(source_url: str = "", source_book: str = "", source_author: str = "", source_page: str = "",
+                    has_photo: bool = False) -> dict | None:
+    """
+    Where a recipe came from, said the one way every screen says it (Loop
+    Board recipe-photo import, 2026-09-13). None for a recipe generated or
+    typed in — those show no credit at all.
+
+    A book:  {"kind": "book", "book", "author", "page", "text": "From Salt Fat Acid Heat, Samin Nosrat, p. 212"}
+    A link:  {"kind": "link", "url", "host", "text": "From seriouseats.com"}
+
+    `text` is the plain sentence; the shell renders `book` in italics from
+    the parts. The book wins when both are set (a photo of a page that also
+    carries a URL is still a book). Never "Source:" — DESIGN_SYSTEM §8.
+    """
+    book = (source_book or "").strip()
+    author = (source_author or "").strip()
+    page = (source_page or "").strip()
+    url = (source_url or "").strip()
+    if book or author or page or has_photo:
+        parts = [book or "a cookbook"]
+        if author:
+            parts.append(author)
+        if page:
+            parts.append(("pp. " if re.search(r"[–\-]", page) else "p. ") + page)
+        return {"kind": "book", "book": book, "author": author, "page": page, "text": "From " + ", ".join(parts)}
+    if url:
+        # The registered host only: lowercase, no scheme, no userinfo
+        # ("https://evil.com@seriouseats.com/x" is seriouseats.com), no
+        # port, no path, no leading www.
+        try:
+            host = (urlsplit(url).hostname or "").lower()
+        except ValueError:
+            host = ""
+        host = re.sub(r"^www\.", "", host)
+        return {"kind": "link", "url": url, "host": host, "text": f"From {host}" if host else "From a link"}
+    return None
 
 
 def update_recipe_details(
@@ -171,7 +222,8 @@ def list_recipes(include_temporarily_excluded: bool = True) -> list[dict]:
         SELECT id, name, notes, ingredients_json, tags_json, food_groups_json,
                times_cooked, last_cooked_date, rating, feedback_notes, cuisine, main_protein,
                temporarily_excluded, instructions_json, default_servings, prep_time_minutes,
-               cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json, source_url
+               cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json, source_url,
+               source_book, source_author, source_page
         FROM recipes WHERE household_id = ?
         {exclusion_clause}
         ORDER BY (rating = 'liked') DESC, (rating = 'disliked') ASC, times_cooked DESC, name ASC
@@ -195,6 +247,11 @@ def list_recipes(include_temporarily_excluded: bool = True) -> list[dict]:
             if len(notes_by_recipe[nr["recipe_id"]]) < 3:  # most recent few is plenty of signal
                 notes_by_recipe[nr["recipe_id"]].append(nr["note"])
     conn.close()
+    # The page photos a recipe was read from, if any (recipe photo import).
+    # Imported lazily: app.recipe_photos reads this package's _shared, and
+    # this package is still being assembled when this module is imported.
+    from ..recipe_photos import photo_urls_by_recipe
+    photos_by_recipe = photo_urls_by_recipe() if recipe_ids else {}
 
     return [
         {
@@ -225,6 +282,19 @@ def list_recipes(include_temporarily_excluded: bool = True) -> list[dict]:
             "advance_prep_step_indices": json.loads(r["advance_prep_step_indices_json"]),
             # The web page it was brought in from, or '' (recipe import).
             "source_url": r["source_url"] or "",
+            # The cookbook it was photographed from, or '' (recipe photo import).
+            "source_book": r["source_book"] or "",
+            "source_author": r["source_author"] or "",
+            "source_page": r["source_page"] or "",
+            # Where it came from, ready to say — None for a generated or
+            # typed recipe. Every screen that shows a recipe renders this
+            # one field rather than re-deriving it from the four above.
+            "citation": recipe_citation(
+                r["source_url"], r["source_book"], r["source_author"], r["source_page"],
+                has_photo=bool(photos_by_recipe.get(r["id"])),
+            ),
+            # The page photo(s) it was read from, in page order; [] otherwise.
+            "photo_urls": photos_by_recipe.get(r["id"], []),
         }
         for r in rows
     ]
@@ -575,16 +645,72 @@ def _item_matches(text: str, word: str) -> bool:
     return re.search(rf"(?<![a-z]){re.escape(word)}e?s?(?![a-z])", text) is not None
 
 
-def _table_lookup(item: str) -> str | None:
-    """The table's per-4-servings amount for an ingredient name, longest
-    matching key first ("black pepper" before "pepper")."""
+def _table_key(item: str) -> str | None:
+    """The table key an ingredient name matches, longest key first ("black
+    pepper" before "pepper", "garlic powder" before "garlic"), or None."""
     clean = _clean_item(item)
     if not clean:
         return None
     for key in _COOKING_KEYS_LONGEST_FIRST:
         if _item_matches(clean, key):
-            return COOKING_QUANTITIES_PER_4[key]
+            return key
     return None
+
+
+def _table_lookup(item: str) -> str | None:
+    """The table's per-4-servings amount for an ingredient name."""
+    key = _table_key(item)
+    return COOKING_QUANTITIES_PER_4[key] if key else None
+
+
+# Counted packs — Loop Board 2026-09-13, "Eggs · 4 dozen". Which table
+# entries are bought by the pack and used by the piece, and which pack
+# family (quantities._PACK_CONVERSION_GROUPS) each one is. Keyed by the
+# TABLE key rather than a unit word so "garlic powder" (its own key) and
+# "egg whites" (its own key, measured in cups) are never read as these.
+_COUNTED_PACK_ITEMS = {"eggs": _quantities._EGGS_TO_EACH, "garlic": _quantities._GARLIC_TO_CLOVE}
+
+
+def _counted_pack_share(item: str, core_qty: str, default_servings: int | None) -> tuple[float, str] | None:
+    """
+    What ONE meal of this recipe, at the recipe's own table, uses of a
+    counted-pack ingredient — (amount, the pack's small unit) — or None
+    when the ingredient isn't one, or its quantity isn't a count.
+
+    A recipe that writes the piece ("4" eggs, "3 cloves") is taken at its
+    word. A recipe that writes the PACK ("1 dozen", "1 head") is saying how
+    the thing is bought, not how much of it the dish uses — every recipe
+    the app wrote before 2026-09-13 says "1 dozen" for eggs, however many
+    go in the pan — so the share is what the Cook screen already tells the
+    cook to use: COOKING_QUANTITIES_PER_4's amount, scaled to the recipe's
+    default_servings (the same derivation as cooking_quantity). The
+    caller's per-meal attendance factor is applied on top, as for any
+    per-portion amount. Only when the table has no count for it does the
+    pack's own size stand ("1 dozen" = 12).
+
+    A measured amount ("1 cup", "2 tbsp minced") is not a count of the
+    thing and is left to the ordinary path.
+    """
+    key = _table_key(item)
+    group = _COUNTED_PACK_ITEMS.get(key)
+    if not group:
+        return None
+    parsed = _quantities._parse_quantity(core_qty)
+    if not parsed:
+        return None
+    amount, unit = parsed
+    small_unit, pack_unit = _quantities._pack_units(group)
+    if unit is None and key == "eggs":
+        unit = small_unit  # "4" of Eggs is four eggs
+    if unit == small_unit:
+        return amount, small_unit
+    if unit != pack_unit:
+        return None
+    used = _quantities._parse_quantity(COOKING_QUANTITIES_PER_4[key])
+    if used and (used[1] or small_unit) == small_unit:
+        table = default_servings or COOKING_BASE_SERVINGS
+        return used[0] * table / COOKING_BASE_SERVINGS, small_unit
+    return amount * group[pack_unit], small_unit
 
 
 def _needs_measure(item: str) -> bool:
@@ -937,6 +1063,145 @@ def implausible_quantity_message(line: dict, servings: int | None) -> str:
         f"{line['item']} '{line['qty']}' is {much} than {_servings_or_base(servings)} would use "
         f"— the cook view shows {line['shows']}"
     )
+
+
+# ---------- produce counts that only make sense for a small kind (Emily, 2026-09-13) ----------
+#
+# "It says 6 cucumbers - does it mean the persian cucumbers? Because that
+# makes sense, but 6 english cucumbers would be a crazy amount."
+#
+# The plausibility table above has no vegetable class on purpose: a count
+# of onions the model gets wrong had not happened, and the table's job is
+# to REWRITE a cooking amount, which is the wrong fix here — "6 cucumbers"
+# was very likely six Persian ones, and turning it into "2" would buy the
+# wrong amount of the right thing. What the line is missing is a WORD, not
+# a number, and only the model knows which word; the generation prompt now
+# asks for it whenever the count depends on the kind. This table is the
+# deterministic catch for the times it forgets: the handful of produce
+# where the ordinary full-size kind and a small kind are both bought by
+# the count, and the count alone says which one was meant. It only ever
+# FLAGS (plan_quality._produce_variety_named → the morning report); no
+# amount and no name is rewritten, and the grocery list shows the line as
+# the recipe wrote it.
+#
+# Each entry: (the bare noun, the words that still mean the ordinary kind,
+# what the ordinary kind is called, the small kind to ask about or None,
+# a per-serving ceiling for the ordinary kind). A name is judged only when
+# its last word is the noun and EVERY other word is in the ordinary list
+# or in _PRODUCE_GENERIC_WORDS — any other word ("Persian", "cherry",
+# "baby", "green" on an onion) is the model naming a kind, and a kind
+# named is never second-guessed.
+# The ceilings are per serving and generous, like _PLAUSIBLE_PER_SERVING:
+# a French onion soup for four with six onions passes; six cucumbers in a
+# salad for four does not. Only a count is judged ("6", "6 large", "6
+# each", "1 dozen") — a pound of tomatoes is a weight the kind does not
+# change — and a qty note of "small" is the kind being said in the amount
+# instead. The kind can be said anywhere in the name — "Persian
+# cucumbers", "Cucumbers (Persian)", "Cucumbers, Persian" — and a word
+# that only describes ("fresh", "sliced") says nothing either way.
+_PRODUCE_COUNT_PER_SERVING = (
+    ("cucumber", ("english", "field", "seedless", "hothouse", "greenhouse"),
+     "English cucumbers", "Persian", 1),
+    ("tomato", ("beefsteak", "vine", "on-the-vine", "vine-ripened", "field", "red", "heirloom",
+                "hothouse", "greenhouse", "slicing"),
+     "full-size tomatoes", "cherry or plum", 2),
+    ("potato", ("russet", "yukon", "gold", "idaho", "baking", "white", "yellow"),
+     "full-size potatoes", "baby", 2),
+    ("pepper", ("bell", "red", "green", "yellow", "orange"),
+     "bell peppers", "mini", 1.5),
+    ("onion", ("yellow", "red", "white", "brown", "cooking", "spanish", "vidalia"),
+     "full-size onions", "pearl", 1.5),
+    ("apple", ("granny", "smith", "honeycrisp", "gala", "fuji", "macintosh", "mcintosh", "pink", "lady",
+               "red", "green", "baking", "tart", "sweet"),
+     "full-size apples", None, 2),
+)
+
+# A qty note that already says the small kind was meant ("6 small").
+_SMALL_KIND_NOTES = ("small", "mini", "baby", "little")
+
+# Words in a name that describe the thing without naming a kind — a
+# "(fresh)" tag, a prep descriptor after a comma, "on the vine" — so they
+# neither exempt the line nor count as the kind being spelled out.
+_PRODUCE_GENERIC_WORDS = frozenset((
+    "fresh", "ripe", "firm", "raw", "whole", "large", "medium", "organic", "local",
+    "peeled", "sliced", "diced", "chopped", "halved", "quartered", "grated", "cubed", "thinly", "thin",
+    "on", "the", "of", "and", "or",
+))
+
+# Units that are still a count of the thing itself, and how many each is.
+_COUNT_UNITS = {"each": 1, "ct": 1, "count": 1, "pc": 1, "pcs": 1, "piece": 1, "pieces": 1, "dozen": 12}
+
+
+def _produce_class(item: str) -> tuple | None:
+    """(the _PRODUCE_COUNT_PER_SERVING entry, whether the name spelled the
+    ordinary kind out) for an ingredient written as the ordinary kind, or
+    None — an item the table has no opinion about, or one whose name
+    already says a different kind, anywhere in it: "Persian cucumbers",
+    "Cucumbers (Persian)" and "Cucumbers, Persian" all say it."""
+    lowered = (item or "").strip().lower()
+    # The noun is the last word of the name proper — before any
+    # parenthetical or comma tail; those words are descriptors, judged
+    # alongside the words in front of the noun.
+    tail_words = re.findall(r"[a-zà-ÿ'-]+", " ".join(re.findall(r"\(([^)]*)\)", lowered)))
+    proper = re.sub(r"\s*\([^)]*\)", "", lowered)
+    proper, _comma, comma_tail = proper.partition(",")
+    tail_words += re.findall(r"[a-zà-ÿ'-]+", comma_tail)
+    words = proper.split()
+    if not words:
+        return None
+    last = words[-1]
+    singular = last[:-2] if last.endswith("oes") else last[:-1] if last.endswith("s") else last
+    descriptors = words[:-1] + tail_words
+    for entry in _PRODUCE_COUNT_PER_SERVING:
+        noun, ordinary = entry[0], entry[1]
+        if singular != noun:
+            continue
+        if all(word in ordinary or word in _PRODUCE_GENERIC_WORDS for word in descriptors):
+            return entry, any(word in ordinary and word not in _PRODUCE_GENERIC_WORDS for word in descriptors)
+        return None
+    return None
+
+
+def produce_count_problem(item: str, qty: str, servings: int | None = None) -> dict | None:
+    """
+    Why a bare COUNT of produce only makes sense for the small kind, or
+    None when the count fits the ordinary kind for `servings` people (or
+    when the name says which kind, the amount is not a count, or the table
+    has no opinion). Returns {"noun", "ordinary", "small", "per_serving",
+    "high"} so a caller can say so in words.
+    """
+    found = _produce_class(item)
+    if not found:
+        return None
+    (noun, _ordinary, ordinary_name, small, high), named = found
+    core, note = _quantities._split_quantity_note((qty or "").strip())
+    if any(word in note.lower().split() for word in _SMALL_KIND_NOTES):
+        return None
+    parsed = _quantities._parse_quantity(core)
+    if not parsed or (parsed[1] is not None and parsed[1] not in _COUNT_UNITS):
+        return None
+    count = parsed[0] * _COUNT_UNITS.get(parsed[1] or "", 1)
+    per_serving = count / _servings_or_base(servings)
+    if per_serving <= high:
+        return None
+    return {
+        "noun": noun, "ordinary": ordinary_name, "small": small, "named": named,
+        "per_serving": per_serving, "high": high,
+    }
+
+
+def produce_count_message(item: str, qty: str, problem: dict, servings: int | None) -> str:
+    """One clause for a line produce_count_problem flagged, in the app's
+    own voice: "Cucumbers '6' would be a lot of English cucumbers for 2 —
+    Persian ones? The recipe should say which kind". A name that already
+    says the ordinary kind ("English cucumbers") is not asked which kind —
+    the count is simply a lot."""
+    table = _servings_or_base(servings)
+    item, qty = (item or "").strip(), (qty or "").strip()
+    if problem["named"]:
+        return f"{item} '{qty}' is a lot for {table}"
+    ask = f"{problem['small']} ones? The recipe" if problem["small"] else "the recipe"
+    return f"{item} '{qty}' would be a lot of {problem['ordinary']} for {table} — {ask} should say which kind"
 
 
 def cooking_quantity(item: str, servings: int | None = None, shopping_qty: str = "") -> str | None:
@@ -1657,6 +1922,11 @@ class WeekGroceryBuffer:
                     entry_id, line["item"], add_result["item_id"],
                     _ledger_share(share, line["unit"], unit), conn=self.conn,
                 )
+            # A counted pack that landed on a line the plan already had is
+            # re-read from the whole ledger, so two passes' cartons don't
+            # add as cartons — see grocery._recompute_plan_line_from_ledger.
+            if add_result["merged"] and _quantities._pack_group(unit):
+                _grocery._recompute_plan_line_from_ledger(add_result["item_id"], conn=self.conn)
         self._lines.clear()
 
 
@@ -1711,6 +1981,12 @@ def _add_recipe_ingredients_for_entries(
       right far more often than it is wrong, and a household that truly
       needs a second one can bump the line. Under-buying a staple costs a
       trip; the old behaviour cost trust in the whole list.
+
+    - A COUNTED PACK (eggs by the dozen, garlic by the head — see
+      _counted_pack_share) is bought by the pack and used by the piece.
+      Each meal contributes the pieces it uses, the week's pieces add up,
+      and the line is written in whole packs, rounded up once. Four meals
+      that each say "1 dozen" buy one carton (Loop Board, 2026-09-13).
 
     - Everything else is a PER-PORTION amount — 4 cups of beans, 3 bell
       peppers, a bunch of cilantro — and still adds up across every meal
@@ -1858,10 +2134,12 @@ def _add_recipe_ingredients_for_entries(
             if entry_id in chains["leftovers"]:
                 continue
             source = chains["sources"].get(entry_id)
-            # `chain_scale=False` is the sides' path (weekly_plan's two
-            # side ingests): a side belongs to the cook night's table
-            # alone — the batch that feeds Thursday is the dish, not the
-            # salad beside it, and a reheat night buys nothing new for it.
+            # `chain_scale=False` is a big-meal dish's path (weekly_plan's
+            # side ingests, via _entry_side_groups): a dish on a hosted
+            # holiday's table belongs to that table alone — the batch that
+            # feeds the reheat night is the main, not the stuffing beside
+            # it — so a reheat night buys nothing new for it. Every other
+            # side, and every recipe, follows the chain.
             if source and chain_scale:
                 batch = _leftovers.batch_for_source(source, conn=entry_conn)
                 if batch["servings"] > 0 and batch["cook_eaters"] > 0:
@@ -1917,7 +2195,26 @@ def _add_recipe_ingredients_for_entries(
         # unscaled quantity keeps the classification stable across meals.
         raw_qty = ing.get("qty", "") or ""
         category = ing.get("category", "other")
-        if _quantities.package_unit(raw_qty):
+        # Split exactly the way _normalize_grocery_quantity does, so the
+        # amount and the note that rides with it ("1 bag (2 lb), frozen")
+        # come apart the same on both sides of the list. _parse_quantity
+        # strips a prep descriptor ("3, diced") itself.
+        core, note = _quantities._split_quantity_note(raw_qty.strip())
+        pack_share = _counted_pack_share(ing["item"], core, default_servings)
+        if pack_share:
+            # A COUNTED PACK — eggs, garlic. Whether the recipe wrote the
+            # piece or the pack, what goes in the buffer is the pieces this
+            # meal uses; the week's pieces add up and the line is written
+            # in whole packs once (see _counted_pack_share and
+            # quantities._PACK_CONVERSION_GROUPS). This is how four meals
+            # that each said "1 dozen" buy one carton, not four.
+            share, small_unit = pack_share
+            for entry_id in contributing_ids:
+                buffer.add(
+                    entry_id, ing["item"], category,
+                    share * scale_for_entry[entry_id], small_unit, note,
+                )
+        elif _quantities.package_unit(raw_qty):
             add_result = _grocery.add_grocery_item(
                 ing["item"], quantity=raw_qty, category=category, added_by="ai",
                 source_weekly_plan_id=weekly_plan_id, quantity_mode="max", conn=conn,
@@ -1925,11 +2222,6 @@ def _add_recipe_ingredients_for_entries(
             for entry_id in contributing_ids:
                 _record_grocery_link(entry_id, ing["item"], add_result["item_id"], raw_qty, conn=conn)
         else:
-            # Split exactly the way _normalize_grocery_quantity does, so
-            # the amount and the note that rides with it ("1 bag (2 lb),
-            # frozen") come apart the same on both sides of the list.
-            # _parse_quantity strips a prep descriptor ("3, diced") itself.
-            core, note = _quantities._split_quantity_note(raw_qty.strip())
             parsed = _quantities._parse_quantity(core)
             if parsed:
                 # Into the buffer unrounded, one share per meal. Nothing

@@ -291,8 +291,10 @@ def test_the_draft_review_is_what_that_week_renders():
     # is where Approve lives (reviewDecideHtml); weekDecideHtml is empty.
     shell = (STATIC / "shell.js").read_text()
     decide = shell[shell.index("function reviewDecideHtml("):]
-    assert "weekPlanState(data) !== 'draft'" in decide[:400]
-    assert "Approve and build my shopping list" in decide[:1200]
+    # Approve is the DRAFT branch; an approved week docks "Open the list"
+    # there instead (2026-09-13, tests/test_allset_week_path.py).
+    assert "else if (state === 'draft')" in decide[:900]
+    assert "Approve and build my shopping list" in decide[:1600]
     step = shell[shell.index("function renderMealsStep("):]
     assert "steps.innerHTML = reviewStepHtml(data, weekState.days, true);" in step[:6000]
 

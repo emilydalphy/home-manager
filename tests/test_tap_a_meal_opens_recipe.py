@@ -346,7 +346,7 @@ def _clock_html(cook_meal, slot: str) -> str:
         + _extract("isSnackSlot") + "\n"
         + "".join(_extract(n) + "\n" for n in (
             "numberWord", "countInWords", "minutesInWords", "clockLabel", "slotTableMinutes",
-            "mealTotalMinutes", "mealStepMinutes", "ingredientNamesLine", "mealClockStops",
+            "mealTotalMinutes", "mealStepMinutes", "ingredientNamesLine", "mealClockSides", "mealClockTotal", "finishSideStop", "mealClockStops",
             "mealClockEyebrow", "mealClockFor", "mealStopHtml", "mealClockHtml"))
         + "var STOP_TITLE_TAIL = /^(a|the|in|on|of|to|and|or|with|for)$/i;\n"
         + _extract("stopTitleSplit") + "\n"
@@ -372,7 +372,54 @@ def test_a_dish_with_no_saved_recipe_says_so_rather_than_pretending():
         {"meal": "Energy Balls", "has_full_recipe": True, "ingredients": [], "instructions": []}, "snack")
     # A reheat night has no cook in it, so it has no clock.
     assert _clock_html({"meal": "Bulgogi", "is_leftovers": True}, "dinner") == ""
+    # No entry at all: nothing to wait for and nothing to say. (A real
+    # entry with no card is a different case — see
+    # test_while_the_plans_view_is_on_its_way_the_clock_says_so.)
     assert _clock_html(None, "dinner") == ""
+
+
+@_needs_node
+def test_while_the_plans_view_is_on_its_way_the_clock_says_so():
+    """The Meal step draws before the plan's cooker view has landed (and
+    again while it is re-read after a swap). With no card yet, the clock
+    says the recipe is on its way rather than that there isn't one —
+    Emily, 2026-09-13: "I can't go to the screen where I can see the
+    instructions for it."""
+    harness = (
+        _ESCAPE
+        + "var weekState = { data: { slot_times: { dinner: '6:30' } } };\n"
+        + "var GRO_ICONS = { chevRight: '<svg/>' };\n"
+        + "function capitalizeFirst(s) { return s; }\n"
+        + "function cookIngredientLabel(i) { return i.item; }\n"
+        + "function isRealCook() { return true; }\n"
+        # The plan's view has not landed: planCookView answers null.
+        + "var landed = null;\n"
+        + "function planCookView() { return landed; }\n"
+        + _var_block("NUMBER_WORDS") + "\n"
+        + _var_block("TENS_WORDS") + "\n"
+        + _extract("isSnackSlot") + "\n"
+        + "".join(_extract(n) + "\n" for n in (
+            "numberWord", "countInWords", "minutesInWords", "clockLabel", "slotTableMinutes",
+            "mealTotalMinutes", "mealStepMinutes", "ingredientNamesLine", "mealClockSides", "mealClockTotal", "finishSideStop", "mealClockStops",
+            "mealClockEyebrow", "mealClockFor", "mealStopHtml", "mealClockHtml"))
+        + "var STOP_TITLE_TAIL = /^(a|the)$/i;\n"
+        + _extract("stopTitleSplit") + "\n"
+        + "var entry = { source: 'plan', entry_id: 7, state: 'planned' };\n"
+        + "var day = { date: '2026-09-15' };\n"
+        + "var out = { waiting: mealClockHtml('dinner', mealClockFor(day, 'dinner', entry, null)) };\n"
+        + "landed = { meals: [] };\n"
+        + "out.landed = mealClockHtml('dinner', mealClockFor(day, 'dinner', entry, null));\n"
+        + "out.reheat = mealClockHtml('dinner', mealClockFor(day, 'dinner', { source: 'leftovers', entry_id: 8 }, null));\n"
+        + "console.log(JSON.stringify(out));\n"
+    )
+    got = _run_node(harness)
+    assert "Getting the recipe…" in got["waiting"]
+    assert "No saved recipe" not in got["waiting"]
+    # Once the view has answered and the entry is not on it, it is honest
+    # about that — and never keeps saying "getting" for good.
+    assert "No saved recipe for this one" in got["landed"]
+    # A reheat night has no cook to wait for.
+    assert got["reheat"] == ""
 
 
 def test_the_meal_step_renders_the_clock_off_the_cook_views_own_card():

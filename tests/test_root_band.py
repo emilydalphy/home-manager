@@ -54,6 +54,10 @@ def _node(script: str):
 _BAND_JS = (
     "function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;');}\n"
     "var PREFS_GEAR_ICON = '<svg></svg>';\n"
+    "function markSvg(){ return '<svg class=\"pomona-mark\"></svg>'; }\n"
+    # BAND_IDENTITY and the helpers rootBandHtml reads (2026-09-13); the
+    # tests below run the builder under each of its three values.
+    + SHELL_JS[SHELL_JS.index("  var BAND_IDENTITY = "):SHELL_JS.index("  function rootBandHtml(")]
     + _function("prefsGearHtml") + "\n  }\n"
     + _function("rootBandHtml") + "\n  }\n"
     + _function("emptyMomentHtml") + "\n  }\n"
@@ -76,8 +80,12 @@ def test_the_band_is_one_builder_with_the_five_parts():
 
 @_needs_node
 def test_the_band_renders_its_parts_and_hides_the_empty_ones():
+    """Run under BAND_IDENTITY 'none' — the band as it was before the
+    identity round (2026-09-13); tests/test_identity_build.py covers the
+    wordmark and mark renderings, where the eyebrow folds into the line."""
     out = _node(
         _BAND_JS
+        + "BAND_IDENTITY = 'none';\n"
         + "console.log(JSON.stringify({"
         + " full: rootBandHtml({ id: 'x', eyebrow: 'Friday, Sep 11', title: 'Now', sub: '3 of 4 done', badge: 'Draft' }),"
         + " bare: rootBandHtml({ id: 'y', title: 'Shop' })"
@@ -88,10 +96,10 @@ def test_the_band_renders_its_parts_and_hides_the_empty_ones():
     assert '<h1 class="root-band-title" id="x-title">Now</h1>' in full
     assert 'id="x-eyebrow">Friday, Sep 11<' in full
     assert 'id="x-badge">Draft<' in full and 'id="x-badge" hidden' not in full
-    assert 'id="x-sub">3 of 4 done<' in full
+    assert 'id="x-sub" data-sub="3 of 4 done">3 of 4 done<' in full
     assert 'data-bell-slot' in full and 'class="prefs-gear"' in full
     # Nothing to say is nothing shown — no empty chip, no empty line.
-    assert 'id="y-badge" hidden' in bare and 'id="y-sub" hidden' in bare
+    assert 'id="y-badge" hidden' in bare and 'id="y-sub" data-sub="" hidden' in bare
     assert "<button" not in full.replace('<button type="button" class="prefs-gear"', "")
 
 
@@ -141,10 +149,15 @@ def test_shop_shows_the_band_on_the_root_and_the_crumb_and_head_on_steps():
 
 @_needs_node
 def test_shops_eyebrow_counts_the_list_and_falls_back_to_the_date():
+    """Under BAND_IDENTITY 'none'/'mark' — the eyebrow as it was; under
+    'wordmark' the same text leads the sub-line with the day in front of
+    it (tests/test_identity_build.py)."""
     script = (
         "function groPlural(n, one, many){ return n + ' ' + (n === 1 ? one : many); }\n"
         "function groTotals(d){ return { needed: d.needed }; }\n"
         "function groStoresWithNeeded(d){ return d.stops; }\n"
+        "var BAND_IDENTITY = 'none';\n"
+        + _function("bandDateLabel") + "\n  }\n"
         + _function("groBandEyebrow") + "\n  }\n"
         + "console.log(JSON.stringify({"
         + " many: groBandEyebrow({ needed: 60, stops: ['A'] }),"

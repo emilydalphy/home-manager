@@ -566,6 +566,22 @@ def swap_meal_in_place(
     else:
         return {"status": "refused", "message": REFUSAL, "avoid": tried}
 
+    tried.append(pick["meal_name"])
+    out = apply_pick(weekly_plan_id, entry, pick)
+    out["status"] = "swapped"
+    out["avoid"] = tried
+    return out
+
+
+def apply_pick(weekly_plan_id: int, entry: dict, pick: dict) -> dict:
+    """
+    Put an already-chosen dish on `entry`'s slot: save it as a recipe if it
+    is new, swap it in through swap_meal_in_plan, and write the undo note.
+    The tail of swap_meal_in_place, split out (2026-09-13) so the chat's
+    change card (tools.proposals) applies a pick the household has looked
+    at and saved through exactly the same door — never a second swap.
+    Does NOT run the allergen or taste gates; the caller does, before.
+    """
     serves = _table_for(entry["date"], entry["slot"])["serves"]
     _save_recipe_if_new(pick, serves)
     result = _weekly_plan.swap_meal_in_plan(
@@ -591,16 +607,13 @@ def swap_meal_in_place(
     reason = (pick.get("reason") or "").strip()
     _write_entry_note(new_entry_id, reason, derived)
 
-    tried.append(pick["meal_name"])
     out = {
-        "status": "swapped",
         "entry_id": new_entry_id,
         "date": entry["date"],
         "slot": entry["slot"],
         "meal": pick["meal_name"],
         "replaced": entry["meal"],
         "reason": reason,
-        "avoid": tried,
         "can_undo": True,
         "day": _refreshed_day(weekly_plan_id, entry["date"]),
     }
@@ -609,6 +622,27 @@ def swap_meal_in_place(
     if result.get("taste_verdict"):
         out["taste_verdict"] = result["taste_verdict"]
     return out
+
+
+def pick_gate(pick: dict, entry: dict) -> str | None:
+    """
+    Why this pick must not be written, or None when it may be. The two
+    gates swap_meal_in_place runs between picking and applying — the hard
+    allergen match and Emily's one-veto taste rule — as one call, so the
+    change card runs the same two and no fewer.
+    """
+    name = (pick.get("meal_name") or "").strip()
+    if not name:
+        return "no dish"
+    clash = _hard_clash(pick)
+    if clash:
+        who = ", ".join(sorted({c.get("restriction") or "" for c in clash if c.get("restriction")}))
+        return f"clashes with {who}" if who else "clashes with something this house can't have"
+    verdict = _weekly_plan._taste_verdict_for_slot(name, entry["date"], entry["slot"])
+    if verdict and verdict.get("verdict") == "avoid":
+        who = ", ".join(verdict.get("vetoed_by") or []) or "someone at the table"
+        return f"{who} would rather not"
+    return None
 
 
 def undo_meal_swap(weekly_plan_id: int, entry_id: int) -> dict:

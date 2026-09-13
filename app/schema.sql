@@ -288,7 +288,32 @@ CREATE TABLE IF NOT EXISTS recipes (
     -- Where a recipe came from when it was brought in from a link (recipe
     -- import, 2026-09-11); '' for anything generated or typed in.
     source_url TEXT NOT NULL DEFAULT '',
+    -- The cookbook a recipe was photographed from (recipe photo import,
+    -- 2026-09-13): title, author and the page as printed ("212", "212–213").
+    -- Whatever the photo showed and the household confirmed; all optional,
+    -- '' when unknown. The photos themselves are rows in recipe_photos.
+    source_book TEXT NOT NULL DEFAULT '',
+    source_author TEXT NOT NULL DEFAULT '',
+    source_page TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- The photographs a recipe was read from (recipe photo import, 2026-09-13):
+-- one row per kept photo, in page order. The file itself lives on disk
+-- under app/recipe_photos.py's directory (beside the database, so it is on
+-- the same persistent volume), named by household and recipe; this row is
+-- the only thing that says which file belongs to which recipe, and the
+-- serving route reads it under the session's household_id, never by path.
+CREATE TABLE IF NOT EXISTS recipe_photos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL DEFAULT 1,      -- 1 = first page photographed
+    filename TEXT NOT NULL,                   -- relative to the household's photo directory
+    media_type TEXT NOT NULL,                 -- image/jpeg | image/png | image/webp
+    byte_size INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE (recipe_id, position)
 );
 
 -- One-off notes tied to a specific recipe, distinct from the recipe's
@@ -666,6 +691,12 @@ CREATE TABLE IF NOT EXISTS prep_tasks (
     -- recipe's own ingredient line (e.g. "1 lb") — not the amount currently
     -- on hand in inventory. Blank for 'general' tasks.
     quantity TEXT NOT NULL DEFAULT '',
+    -- 'batch_component' (tools/batch_components.py, Emily 2026-09-13): one
+    -- cook of a component — the eggs — for several different dishes. The
+    -- row sits on the cook day's entry (meal_plan_entry_id) and this holds
+    -- the rest: {key, label, ingredient, source_entry_id,
+    -- covered_entry_ids, dishes, quantity}. '{}' for every other kind.
+    detail_json TEXT NOT NULL DEFAULT '{}',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -977,7 +1008,23 @@ CREATE TABLE IF NOT EXISTS staple_events (
     kind TEXT NOT NULL, -- added | bought | plenty | skipped | paused | resumed
     source TEXT NOT NULL DEFAULT '',
     on_date TEXT NOT NULL, -- ISO date the fact is about
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    -- "Un-ticking a bought staple doesn't un-teach it" (2026-09-13). For a
+    -- 'bought' row: the grocery line whose tick wrote it, so that line's
+    -- untick can take back exactly this row and no other. NULL when the
+    -- row stands on more than one parent (a second line, or a non-list
+    -- source such as a future receipt scan, bought the same thing the same
+    -- day) or on no line at all — then no untick removes it. NULL on every
+    -- row from before this column; those are never removed either.
+    grocery_item_id INTEGER,
+    -- ...and what the staple's rhythm fields read on either side of that
+    -- tick (cadence_days, cadence_source, last_bought_at, next_due_at,
+    -- skip_streak, paused), {"before": {...}, "after": {...}}. The untick
+    -- puts back "before" when the staple still reads exactly "after";
+    -- otherwise it deletes the event and re-learns from the dates left.
+    -- Same recorded-not-derived reasoning as grocery_items.inventory_
+    -- receipt_json: a purchase knows what it changed.
+    receipt_json TEXT
 );
 
 -- design_handoff_home_manager Phase 4: freeform household facts for the

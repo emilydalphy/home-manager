@@ -82,6 +82,7 @@ MSG_UNREACHABLE = "I couldn't reach that page. Check the link, or try again in a
 MSG_TOO_BIG = "That page is too large for me to read."
 MSG_NOT_HTML = "That link isn't a web page I can read — a PDF or an image, maybe."
 MSG_NO_RECIPE = "I couldn't find a recipe on that page."
+MSG_NO_RECIPE_PHOTO = "I couldn't read a recipe in that photo — try a straighter, closer shot of the page."
 
 
 # ---------- URL and address checks (SSRF) ----------
@@ -544,7 +545,10 @@ _UNICODE_FRACTIONS = {
 # "tablespoons" and "tbsp" are both known); the rest are the kitchen and
 # package words a recipe line uses.
 _UNIT_WORDS = {
-    w for w in _quantities._UNIT_ALIASES if _quantities._UNIT_ALIASES[w]
+    # "egg" is a unit to the grocery layer (a twelfth of a dozen — see
+    # quantities._PACK_CONVERSION_GROUPS) but on a recipe line "2 large
+    # eggs" the eggs are the THING, so they stay out of the unit words.
+    w for w in _quantities._UNIT_ALIASES if _quantities._UNIT_ALIASES[w] not in ("", "egg")
 } | {
     "clove", "cloves", "can", "cans", "tin", "tins", "slice", "slices", "pinch", "pinches",
     "bunch", "bunches", "head", "heads", "stalk", "stalks", "stick", "sticks", "sprig", "sprigs",
@@ -578,6 +582,31 @@ def _normalise_fractions(text: str) -> str:
         # "1½" is one and a half, "½" alone is a half.
         text = re.sub(rf"(\d)\s*{glyph}", rf"\1 {ascii_}", text)
         text = text.replace(glyph, ascii_)
+    return text
+
+
+_RANGE_QTY_RE = re.compile(rf"^(?P<lo>{_NUMBER})\s*(?:–|-|to)\s*(?P<hi>{_NUMBER})(?P<rest>\s.*|$)")
+_DUAL_UNIT_RE = re.compile(r"^(?P<first>.+?\S)\s+/\s+\S.*$")
+
+
+def normalise_amount(qty: str) -> str:
+    """
+    An amount a model copied off a page, made readable by
+    quantities._parse_quantity: "1 ½ cups" → "1 1/2 cups"; "400 g / 14 oz"
+    → "400 g" (the one printed first, as the reader was asked); "2–3
+    cloves" → "3 cloves" (a range buys its top end, as split_ingredient_line
+    already does for a whole line). Anything else passes through untouched
+    — this is spelling, not interpretation.
+    """
+    text = _clean_text(_normalise_fractions(qty or ""))
+    if not text:
+        return ""
+    dual = _DUAL_UNIT_RE.match(text)
+    if dual:
+        text = dual.group("first")
+    span = _RANGE_QTY_RE.match(text)
+    if span:
+        text = (span.group("hi") + span.group("rest")).strip()
     return text
 
 
@@ -784,7 +813,7 @@ def draft_from_model(detail: dict | None, source_url: str, fallback_name: str = 
         if isinstance(raw, str):
             parsed = split_ingredient_line(raw)
         elif isinstance(raw, dict):
-            parsed = {"item": _clean_text(raw.get("item") or ""), "qty": _clean_text(raw.get("qty") or "")}
+            parsed = {"item": _clean_text(raw.get("item") or ""), "qty": normalise_amount(raw.get("qty") or "")}
             if parsed["item"] and not parsed["qty"]:
                 parsed = split_ingredient_line(parsed["item"])
         else:
@@ -840,6 +869,62 @@ def extract_recipe_draft(
             if draft is not None:
                 return draft
     raise RecipeImportError(MSG_NO_RECIPE, "no_recipe")
+
+
+# ---------- a draft from photographed cookbook page(s) (2026-09-13) ----------
+# Loop Board "Add a recipe by photographing the page of a cookbook — and the
+# book is cited". agent.read_recipe_from_photos_llm reads the page(s); this
+# turns what it saw into the same draft shape the link import returns, so
+# the review sheet and /api/recipes/add treat the two alike. Two things
+# only this path adds: `citation` (book, author, page — whatever the page
+# showed, for the household to finish) and, when the page carried more
+# than one recipe, `candidates` (the sheet asks which). Marked
+# read_by="photo". Ingredient lines go through the same splitter and
+# category guess as the link import, so groceries and scaling work.
+
+def _citation_parts(detail: dict) -> dict:
+    return {
+        "book": _clean_text(str(detail.get("book_title") or "")),
+        "author": _clean_text(str(detail.get("author") or "")),
+        "page": _clean_text(str(detail.get("page") or "")),
+    }
+
+
+def draft_from_photo_read(detail: dict | None) -> dict:
+    """
+    Normalise the vision reader's answer into a draft. Raises
+    RecipeImportError(MSG_NO_RECIPE_PHOTO or the reader's own plain
+    sentence) when nothing usable was read — a bad read is a sentence and
+    a retake, never a half-empty draft to save.
+    """
+    if not detail or detail.get("found") is False:
+        reason = _clean_text(str((detail or {}).get("unreadable_reason") or ""))
+        raise RecipeImportError(reason or MSG_NO_RECIPE_PHOTO, "no_recipe")
+    raw_recipes = detail.get("recipes")
+    if isinstance(raw_recipes, dict):
+        raw_recipes = [raw_recipes]
+    if not raw_recipes and detail.get("name"):
+        # A reader that answered in the single-recipe shape.
+        raw_recipes = [detail]
+    drafts = []
+    for raw in raw_recipes or []:
+        if not isinstance(raw, dict):
+            continue
+        draft = draft_from_model({**raw, "found": True}, "")
+        if draft is not None:
+            drafts.append(draft)
+    if not drafts:
+        raise RecipeImportError(MSG_NO_RECIPE_PHOTO, "no_recipe")
+    citation = _citation_parts(detail)
+    for draft in drafts:
+        draft["read_by"] = "photo"
+        draft["citation"] = dict(citation)
+    first = dict(drafts[0])
+    # The sheet asks which recipe when a page holds more than one; the
+    # first is the default so a client that ignores candidates still gets
+    # a whole recipe.
+    first["candidates"] = drafts if len(drafts) > 1 else []
+    return first
 
 
 def import_recipe_from_url(

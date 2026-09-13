@@ -108,12 +108,22 @@ def clear_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     }
 
 
-def get_reset_preview() -> dict:
+def get_reset_preview(weekly_plan_id: int | None = None) -> dict:
     """
     What a reset would actually remove, counted before anything happens, so
     the confirm dialog can say "12 planned meals and 23 grocery items"
     instead of asking the household to agree to an unspecified wipe — and
     can disable a choice that would do nothing. Read-only.
+
+    `weekly_plan_id` is the plan the Plan tab is SHOWING, and the dialog
+    must pass it (Loop Board, 2026-09-13). The tab pins itself to the week
+    the household is working on (weekState.showWeekStart in shell.js); the
+    default resolver below answers "the plan covering today" instead, and
+    on a Sunday those are two different plans. Emily had just approved
+    Mon–Sun, tapped Start over, and the reset cleared last week's dying
+    draft (10 meals) while the approved week kept every meal and lost its
+    groceries to the list clear. The preview names the week it counted
+    (`week_label`) so the dialog can say which plan is about to go.
 
     grocery_count counts what clear_grocery_list('needed') would delete,
     which is the whole list as the Grocery screen means it: everything
@@ -121,13 +131,16 @@ def get_reset_preview() -> dict:
     Anything already in a cart or bought stays, and isn't counted here.
     """
     conn = get_conn()
-    plan = _weekly_plan._current_weekly_plan_row(conn)
+    plan = _resolve_plan(conn, weekly_plan_id)
     meal_count = 0
+    week_label = None
     if plan:
         meal_count = conn.execute(
             "SELECT COUNT(*) AS n FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ?",
             (plan["id"], household_id()),
         ).fetchone()["n"]
+        start, days = _weekly_plan.plan_period(plan)
+        week_label = _weekly_plan._format_period_range(start, days)
     grocery_count = conn.execute(
         "SELECT COUNT(*) AS n FROM grocery_items WHERE household_id = ? AND status = 'needed'",
         (household_id(),),
@@ -136,6 +149,20 @@ def get_reset_preview() -> dict:
     return {
         "weekly_plan_id": plan["id"] if plan else None,
         "week_start_date": plan["week_start_date"] if plan else None,
+        "week_label": week_label,
+        "plan_status": plan["status"] if plan else None,
         "meal_count": meal_count,
         "grocery_count": grocery_count,
     }
+
+
+def _resolve_plan(conn, weekly_plan_id: int | None):
+    """The named plan, or the default resolver's answer when none is named.
+    A named plan another household owns, or none at all, is None — a
+    reset never falls back to some other plan than the one it was told."""
+    if weekly_plan_id is None:
+        return _weekly_plan._current_weekly_plan_row(conn)
+    return conn.execute(
+        "SELECT * FROM weekly_plans WHERE id = ? AND household_id = ?",
+        (weekly_plan_id, household_id()),
+    ).fetchone()

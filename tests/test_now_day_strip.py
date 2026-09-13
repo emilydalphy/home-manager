@@ -72,6 +72,10 @@ def _prelude() -> str:
         + _function("todayIsEmpty")
         + _function("todayNeedsPlan")
         + _function("setRootBand")
+        # The band's identity lead (2026-09-13): setRootBand folds the
+        # eyebrow into the sub-line under BAND_IDENTITY 'wordmark'; the
+        # fake band's eyebrow is empty here, so the line is the day's own.
+        + _region("  var BAND_IDENTITY = ", "  function rootBandHtml(")
         + "  var WEEK_STATE_LABELS = { set: 'Week set', draft: 'Draft' };\n"
         + "  function renderTodayEmpty() {}\n"
         + "  function runTodayMoveAction() {}\n"

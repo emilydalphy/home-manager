@@ -79,6 +79,32 @@ class ChoreRefused(ValueError):
     """
 
 
+# The full domain a chore_instances.status column ever holds (see the
+# comment on the column in schema.sql). set_chore_instance_status used to
+# write whatever string it was handed straight to the column — nothing
+# between the request and the DB checked it was one of these, so a typo
+# or a hand-typed request landed a row in a status no screen's WHERE
+# clause was written to find: not 'pending' (so it stopped being due),
+# not 'done' (so it never counted as finished either) — a chore quietly
+# gone. This is a plain tuple rather than an enum because the column
+# itself is TEXT with no CHECK constraint (SQLite's CHECK on an
+# ALTER-heavy table is more trouble than it's worth here); the guard
+# lives on the write path instead.
+CHORE_INSTANCE_STATUSES = ("pending", "done", "skipped")
+
+
+class InvalidChoreStatus(ValueError):
+    """
+    A status outside CHORE_INSTANCE_STATUSES — a client bug, never a real
+    screen (the shell only ever sends 'done' or 'pending' here, and the
+    ··· menu's skip goes through skip_chore_instance instead). Its own
+    marker type, distinct from ChoreRefused and from
+    require_household_row's plain ValueError, so the route can answer 422
+    ("that request doesn't make sense") rather than either the refusal's
+    200 or the not-found's 404.
+    """
+
+
 MODES = ("owned", "shared", "whoever", "outsourced")
 DEFAULT_MODE = "owned"
 
@@ -1470,6 +1496,14 @@ def set_chore_instance_status(instance_id: int, status: str = "done") -> dict:
     occurrence is reckoned from today. An outsourced chore has no tick to
     give — see _refuse_if_outsourced.
     """
+    if status not in CHORE_INSTANCE_STATUSES:
+        # Before opening a connection at all: an unrecognised status is
+        # never something the existence of the row can fix, so there is
+        # nothing to gain by checking the id first.
+        raise InvalidChoreStatus(
+            f"'{status}' isn't a chore status — it wants one of "
+            f"{', '.join(CHORE_INSTANCE_STATUSES)}."
+        )
     conn = get_conn()
     # Same try/finally as complete_chore, and for the same reason: this is
     # the other door into _mark_done. It is also what closes the connection
@@ -1808,10 +1842,25 @@ def move_chore_instance(instance_id: int, to_date: str) -> dict:
     about the day and nothing else. Only a PENDING occurrence moves; one
     already done is history rather than a date to rearrange. Refuses
     rather than doubling the chore up on a day it is already on.
+
+    Also refuses a target before today — "move Hoover to 2020" typed the
+    wrong year, not a real request, and a chore due yesterday should be
+    settled (done/skipped) or left where it is, never rescheduled into a
+    past that already happened. Today itself is a real target: a chore
+    due next week can be pulled in to today. The line is "before today",
+    not "before the chore's creation" — a chore added last month with a
+    slipped instance from three weeks ago is exactly the case skip_chore's
+    sweep exists for, and this refusal would otherwise block moving that
+    old instance forward to a sane date, which is the opposite of what
+    the household wants.
     """
     conn = get_conn()
     try:
         target = _a_date(to_date)
+        if target < date.today():
+            raise ChoreRefused(
+                f"{target.isoformat()} has already happened — pick a day from today onward."
+            )
         require_household_row(conn, "chore_instances", instance_id, label="chore instance")
         row = conn.execute(
             "SELECT ci.chore_id, ci.status, c.name FROM chore_instances ci "

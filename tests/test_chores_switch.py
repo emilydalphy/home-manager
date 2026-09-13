@@ -132,6 +132,14 @@ def test_the_migration_adds_the_column_to_an_existing_database(tmp_path):
         conn.execute("INSERT OR IGNORE INTO households (id, name) VALUES (1, 'Old house')")
         cols = {r["name"] for r in conn.execute("PRAGMA table_info(households)")}
         assert "chores_enabled" not in cols
+        # The way db.init_db does it: schema.sql first (CREATE TABLE IF NOT
+        # EXISTS — creates the tables newer than the snapshot and cannot
+        # touch households' columns), then _MIGRATIONS. Since 2026-09-13 a
+        # migration targets a table the snapshot predates (staple_events),
+        # so running _MIGRATIONS alone over the snapshot is not an upgrade
+        # any real database goes through.
+        conn.executescript((REPO / "app" / "schema.sql").read_text(encoding="utf-8"))
+        assert "chores_enabled" not in {r["name"] for r in conn.execute("PRAGMA table_info(households)")}
         _run_migrations(conn)
         conn.commit()
         cols = {r["name"] for r in conn.execute("PRAGMA table_info(households)")}
@@ -482,10 +490,20 @@ var CALLS = [];
 var FETCHED = [];
 function loadPlanWeekNudge(p) { CALLS.push('nudge'); return Promise.resolve(); }
 function loadNeedsYou(p) { CALLS.push('needsyou'); return Promise.resolve(); }
+function loadTonightAsk(p) { CALLS.push('tonight'); return Promise.resolve(); }
 function loadTodayMoves(p) { CALLS.push('moves'); return Promise.resolve(); }
 function renderCoachCard() { CALLS.push('coach'); }
 function fetch(url) { FETCHED.push(url); return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ chores: [], chores_set_up: true, enabled: true }); } }); }
-""" + _function("prefsGearHtml") + _function("rootBandHtml") + _function("choresEnabled") + _function("buildTodayPanel")
+function markSvg() { return '<svg class="pomona-mark"></svg>'; }
+""" + _band_identity_js() + _function("prefsGearHtml") + _function("rootBandHtml") + _function("choresEnabled") + _function("buildTodayPanel")
+
+
+def _band_identity_js() -> str:
+    """BAND_IDENTITY, bandDateLabel, bandIdentityHtml and bandSubText — the
+    band's identity lead (2026-09-13), which rootBandHtml reads."""
+    start = SHELL_JS.index("  var BAND_IDENTITY = ")
+    end = SHELL_JS.index("  function rootBandHtml(", start)
+    return SHELL_JS[start:end]
 
 
 def _panel_js():
@@ -519,7 +537,7 @@ buildTodayPanel(panel).then(function () {
     assert not any("/api/chores" in u for u in out["fetched"]), "an off house must make no chores request"
     # The rest of Now is untouched.
     assert 'id="today-band"' in out["html"] and 'id="today-rest"' in out["html"] and 'id="needs-you-band"' in out["html"]
-    assert out["calls"] == ["nudge", "needsyou", "moves", "coach"]
+    assert out["calls"] == ["nudge", "needsyou", "tonight", "moves", "coach"]
 
 
 @_needs_node
@@ -640,6 +658,11 @@ function makePanel() {
 // tick here (loadPlanChores) — stubbed, since this file is about Now.
 var panels = {};
 function loadPlanChores() {}
+// A tick says "Changes saved" and a failed one says so too (S10,
+// 2026-09-13) — the pop-up is not what this file is about.
+var TOASTS = [];
+function showToast(m) { TOASTS.push(m); }
+function toastSaved() { TOASTS.push('Changes saved'); }
 """ + _chore_menu() + _function("choreRowHtml") + _function("renderChores") \
         + _function("nowChoreCtx") + _function("toggleChore")
 

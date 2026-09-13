@@ -186,6 +186,48 @@ def _repeat_or_concatenate(existing_qty: str, new_qty: str, sum_counts: bool) ->
     return f"{existing_qty} + {new_qty}", False
 
 
+def _merge_target(same_name: list, quantity: str, consolidate, standing: bool):
+    """
+    Which of the lines already on the list with this name a new amount
+    joins — (row, merged quantity, units reconciled) — or None for a line
+    of its own.
+
+    The first line the amount adds up with cleanly wins, in list order.
+    Failing that, the amount concatenates ("2 cups + 1 lb") onto the
+    first line of its OWN KIND — a person's add onto a person's line, a
+    plan's onto a plan's — and never across that line. `standing` says
+    which kind the add is (True: no plan behind it).
+
+    Why the line between the two kinds matters (Loop Board bug,
+    2026-09-13): a hand-added "1" eggs that a recipe's "2 cups" was
+    concatenated onto read "1 + 2 cups", and nothing could ever take the
+    plan's share back off — the reversal reads a line as one number in one
+    unit, and "1 + 2 cups" is not one — so every week added another
+    "+ 2 cups" for as long as the eggs stayed unbought. Two lines are the
+    honest answer: the person's want, untouched, and the plan's amount on
+    a plan-owned line that recomputes from its ledger, leaves with its
+    week, and is set aside as a leftover like any other plan line. A
+    plan's two recipes that disagree on a unit still share ONE plan line,
+    exactly as before, because that line is fully described by its ledger
+    and recomputes correctly whatever it reads.
+
+    One line is a person's to join whatever it reads: a spice still
+    unticked in the "Spices this week" section (status 'spice',
+    spices.py). That line is the plan's reminder, not an amount, and a
+    person asking for cumin is answering it — their add ticks it onto the
+    list (add_grocery_item), so it must land there and not beside it.
+    """
+    kin = None
+    for row in same_name:
+        merged_qty, merged = consolidate(row["quantity"] or "", quantity)
+        if merged:
+            return row, merged_qty, True
+        own_kind = (row["source_weekly_plan_id"] is None) == standing or (standing and row["status"] == "spice")
+        if kin is None and own_kind:
+            kin = (row, merged_qty, False)
+    return kin
+
+
 def _greater_of_quantity(existing_qty: str, new_qty: str) -> tuple[str, bool]:
     """
     Keep the LARGER of two quantities for the same grocery item instead of
@@ -370,7 +412,7 @@ def _restate_standing_want(
     ), False
 
 
-def _reverse_meal_grocery_contributions(entry_id: int, conn=None) -> dict:
+def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=None, only_link_ids=None) -> dict:
     """
     Undo whatever a meal_plan_entries row added to the grocery list, via the
     meal_plan_grocery_links ledger recorded at plan_meal() time — called
@@ -435,6 +477,15 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None) -> dict:
     it and neither commits nor closes: the caller owns both. Left unset,
     every other call site behaves exactly as before — its own connection,
     its own commit, its own close.
+
+    `only_link_ids` narrows the reversal to those ledger rows of the entry;
+    `only_items` to the rows whose item is one of these names (matched on
+    _merge_key). Both are plates.remove_component taking one added side
+    back off a meal without touching the dish's own shopping. Left unset,
+    every row the entry holds is reversed, as before. In every case
+    "every OTHER contribution" to a line means every ledger row not being
+    reversed here, by row id — so a side's lemon coming off leaves the
+    recipe's own lemon, on the same entry, counted.
     """
     own_conn = conn is None
     if own_conn:
@@ -444,6 +495,15 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None) -> dict:
         "WHERE household_id = ? AND meal_plan_entry_id = ?",
         (household_id(), entry_id),
     ).fetchall()
+    if only_link_ids is not None:
+        keep_ids = {int(i) for i in only_link_ids}
+        links = [link for link in links if link["id"] in keep_ids]
+    if only_items is not None:
+        wanted = {_merge_key(name) for name in only_items if name}
+        links = [link for link in links if _merge_key(link["item"] or "") in wanted]
+    narrowed = only_items is not None or only_link_ids is not None
+    reversing_ids = [link["id"] for link in links]
+    not_reversing = "(" + ",".join("?" * len(reversing_ids)) + ")" if reversing_ids else "(-1)"
     removed_items = []
     trimmed_items = []
     for link in links:
@@ -457,8 +517,8 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None) -> dict:
         if live and _quantities.package_unit(link["quantity"] or ""):
             still_wanted = conn.execute(
                 "SELECT COUNT(*) AS n FROM meal_plan_grocery_links "
-                "WHERE household_id = ? AND grocery_item_id = ? AND meal_plan_entry_id != ?",
-                (household_id(), link["grocery_item_id"], entry_id),
+                f"WHERE household_id = ? AND grocery_item_id = ? AND id NOT IN {not_reversing}",
+                (household_id(), link["grocery_item_id"], *reversing_ids),
             ).fetchone()["n"]
             if not still_wanted and grocery_row["source_weekly_plan_id"] is not None:
                 conn.execute("DELETE FROM grocery_items WHERE id = ?", (grocery_row["id"],))
@@ -467,8 +527,8 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None) -> dict:
             is_standing_want = grocery_row["source_weekly_plan_id"] is None
             other_rows = conn.execute(
                 "SELECT quantity FROM meal_plan_grocery_links "
-                "WHERE household_id = ? AND grocery_item_id = ? AND meal_plan_entry_id != ?",
-                (household_id(), link["grocery_item_id"], entry_id),
+                f"WHERE household_id = ? AND grocery_item_id = ? AND id NOT IN {not_reversing}",
+                (household_id(), link["grocery_item_id"], *reversing_ids),
             ).fetchall()
             other_qtys = [row["quantity"] or "" for row in other_rows]
             summed = None if is_standing_want else _quantities._sum_ledger_quantities(other_qtys)
@@ -518,11 +578,66 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None) -> dict:
             elif new_qty != (grocery_row["quantity"] or ""):
                 conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ?", (new_qty, grocery_row["id"]))
                 trimmed_items.append(grocery_row["item"])
-    conn.execute("DELETE FROM meal_plan_grocery_links WHERE household_id = ? AND meal_plan_entry_id = ?", (household_id(), entry_id))
+    if not narrowed:
+        conn.execute("DELETE FROM meal_plan_grocery_links WHERE household_id = ? AND meal_plan_entry_id = ?", (household_id(), entry_id))
+    elif reversing_ids:
+        conn.execute(
+            f"DELETE FROM meal_plan_grocery_links WHERE household_id = ? AND id IN {not_reversing}",
+            (household_id(), *reversing_ids),
+        )
     if own_conn:
         conn.commit()
         conn.close()
     return {"removed_items": removed_items, "trimmed_items": trimmed_items}
+
+
+def _recompute_plan_line_from_ledger(item_id: int, conn=None) -> None:
+    """
+    Put a plan-owned grocery line back to what its whole ledger adds up
+    to — the recompute half of _reverse_meal_grocery_contributions, run
+    after an ADD instead of after a removal.
+
+    Needed for a counted pack (quantities._PACK_CONVERSION_GROUPS), and
+    only there. Every ingest pass rounds its own total up to whole packs
+    before it reaches the list, so a second pass onto the same line — a
+    meal swapped in after approval, a dinner planned in chat — adds a
+    whole carton to a whole carton: three eggs already on the line and
+    three more arriving read "1 dozen" + "1 dozen" = "2 dozen" for six
+    eggs. The ledger still holds the six, so the line is simply re-read
+    from it, exactly as a reversal would. A measurable unit rounds to a
+    quarter and a count to a whole one, both small enough that summing
+    two rounded displays has always been accepted; a pack is twelve.
+
+    Only a line the ledger fully describes (source_weekly_plan_id set)
+    is touched; a person's standing want keeps whatever it reads. A
+    ledger the recompute can't read (a freeform row) leaves the line
+    alone too.
+    """
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
+    row = conn.execute(
+        "SELECT id, quantity, status, source_weekly_plan_id FROM grocery_items WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
+    ).fetchone()
+    if not row or row["source_weekly_plan_id"] is None or row["status"] not in ("needed", "spice"):
+        if own_conn:
+            conn.close()
+        return
+    qtys = [
+        r["quantity"] or "" for r in conn.execute(
+            "SELECT quantity FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ? ORDER BY id",
+            (household_id(), item_id),
+        ).fetchall()
+    ]
+    summed = _quantities._sum_ledger_quantities(qtys)
+    if summed:
+        new_qty = _quantities._with_note(summed, _quantities._quantity_note(row["quantity"] or ""))
+        if new_qty != (row["quantity"] or ""):
+            conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ?", (new_qty, row["id"]))
+    if own_conn:
+        conn.commit()
+        conn.close()
 
 
 def add_grocery_item(
@@ -541,9 +656,13 @@ def add_grocery_item(
     "3 cups flour" — instead of creating a duplicate line. If the
     quantities can't be reconciled (different, incompatible units), both
     are kept together on the one line rather than silently guessing a
-    conversion. category should be one of: produce, dairy, meat/seafood,
-    pantry, frozen, other — pick the one that actually matches the item so
-    the list stays organized by store section. Leave source_weekly_plan_id
+    conversion — EXCEPT across the line between a person's own want and a
+    plan's: a hand-added "1" eggs and a recipe's "2 cups" stay two lines,
+    the person's and the plan's, so each can be read, bought and cleared
+    on its own (see _merge_target). category should be one of: produce,
+    dairy, meat/seafood, pantry, frozen, other — pick the one that
+    actually matches the item so the list stays organized by store
+    section. Leave source_weekly_plan_id
     unset for anything a person asked for directly (or an ad hoc one-off
     meal) — it marks the item as a standing want that should never be
     auto-cleared. It's set automatically when ingredients come from a
@@ -584,7 +703,9 @@ def add_grocery_item(
         (household_id(),),
     ).fetchall()
     wanted = _merge_key(item)
-    existing = next((r for r in candidates if _merge_key(r["item"]) == wanted), None)
+    same_name = [r for r in candidates if _merge_key(r["item"]) == wanted]
+    consolidate = _greater_of_quantity if quantity_mode == "max" else _try_consolidate_quantity
+    target = _merge_target(same_name, quantity, consolidate, standing=source_weekly_plan_id is None)
     # Matched on the same key the list itself merges on. Otherwise a
     # preference saved for "bell peppers" never applies to the line that
     # won the merge under the name "Bell pepper": the app confirms the
@@ -595,9 +716,8 @@ def add_grocery_item(
     ).fetchall()
     pref = next((p for p in prefs if _merge_key(p["item"]) == _merge_key(item)), None)
     preferred_store = pref["store"] if pref else ""
-    if existing:
-        consolidate = _greater_of_quantity if quantity_mode == "max" else _try_consolidate_quantity
-        merged_qty, merged = consolidate(existing["quantity"] or "", quantity)
+    if target:
+        existing, merged_qty, merged = target
         # A row with no source_weekly_plan_id is something a person asked
         # for directly, and clear_stale_grocery_items is required to leave
         # those alone forever. Stamping this week's plan id onto it during
@@ -810,7 +930,14 @@ def consolidate_grocery_list(status: str = "needed") -> dict:
         keep = entries[0]
         merged_qty = keep["quantity"] or ""
         for extra in entries[1:]:
-            merged_qty, _ = _try_consolidate_quantity(merged_qty, extra["quantity"] or "")
+            # Two lines the list keeps apart on purpose — a person's "1"
+            # beside a plan's "2 cups" (see _merge_target) — stay apart
+            # here too, rather than being glued into the "1 + 2 cups"
+            # nothing can take back apart.
+            candidate, reconciled = _try_consolidate_quantity(merged_qty, extra["quantity"] or "")
+            if not reconciled:
+                continue
+            merged_qty = candidate
             conn.execute(
                 "DELETE FROM grocery_items WHERE id = ? AND household_id = ?",
                 (extra["id"], household_id()),
@@ -1046,13 +1173,19 @@ def set_aside_carried_over_items(weekly_plan_id: int, conn=None) -> list[dict]:
     return [{"item_id": r["id"], "item": r["item"], "quantity": r["quantity"] or ""} for r in set_aside]
 
 
-def _this_weeks_line(conn, item: str):
+def _this_weeks_line(conn, item: str, quantity: str):
     """
-    The line a carried-over item would merge into, if this week's recipes
-    (or a hand add) put one there: a 'needed' line, or a spice still
-    unticked in the section (spices.py) — keeping last week's cumin is
-    saying you want to buy cumin, so the kept amount lands on that line
+    The line a carried-over amount would merge into, if this week's
+    recipes (or a hand add) put one there: a 'needed' line, or a spice
+    still unticked in the section (spices.py) — keeping last week's cumin
+    is saying you want to buy cumin, so the kept amount lands on that line
     and ticks it.
+
+    Only a line the amount adds up with CLEANLY counts. Last week's "2 lbs"
+    beside this week's hand-added "1" is the same unit clash add_grocery_item
+    keeps as two lines (see _merge_target), and Keep must not put it back
+    together as "1 + 2 lbs" — the caller restores the carried line on its
+    own instead.
     """
     wanted = _merge_key(item)
     for r in conn.execute(
@@ -1060,7 +1193,7 @@ def _this_weeks_line(conn, item: str):
         "AND status IN ('needed', 'spice') ORDER BY id",
         (household_id(),),
     ).fetchall():
-        if _merge_key(r["item"]) == wanted:
+        if _merge_key(r["item"]) == wanted and _try_consolidate_quantity(r["quantity"] or "", quantity)[1]:
             return r
     return None
 
@@ -1081,7 +1214,7 @@ def list_carried_over_items() -> list[dict]:
     ).fetchall()
     out = []
     for r in rows:
-        this_week = _this_weeks_line(conn, r["item"])
+        this_week = _this_weeks_line(conn, r["item"], r["quantity"] or "")
         out.append({
             "item_id": r["id"], "item": r["item"], "quantity": r["quantity"] or "",
             "category": r["category"], "store": r["store"] or "",
@@ -1099,7 +1232,9 @@ def keep_carried_over_item(item_id: int) -> dict:
     onto that line — the same consolidation add_grocery_item does, but
     asked for out loud this time — and the carried row is soft-removed
     (removed_by 'carried_kept') so an undo can take exactly that amount
-    back off. Otherwise the line itself comes back as needed, as the
+    back off. Otherwise — nothing on the list for it this week, or only a
+    line in a unit the old amount can't add up with ("1" beside "2 lbs";
+    see _this_weeks_line) — the line itself comes back as needed, as the
     household's own standing want (source NULL): it was asked for, so no
     later week's cleanup may quietly delete it.
     """
@@ -1114,7 +1249,7 @@ def keep_carried_over_item(item_id: int) -> dict:
     if row["status"] != "carried":
         conn.close()
         return {"item_id": item_id, "item": row["item"], "unchanged": True}
-    target = _this_weeks_line(conn, row["item"])
+    target = _this_weeks_line(conn, row["item"], row["quantity"] or "")
     if target is not None:
         merged_qty, _reconciled = _try_consolidate_quantity(target["quantity"] or "", row["quantity"] or "")
         conn.execute(
@@ -1191,11 +1326,11 @@ def undo_carried_over_decision(item_id: int) -> dict:
         # The kept amount has to come back OFF this week's line before the
         # question can be asked again — otherwise a second Keep counts it
         # twice. Two cases where it can't: the line has gone (bought, in a
-        # cart, removed), or the two amounts never reconciled ("1 bag +
-        # 2 lbs" — _subtract_quantity can't read that back apart). Then
-        # the honest answer is "too late", not a reopened question
-        # (verifier, 2026-09-13 — reproduced both).
-        target = _this_weeks_line(conn, row["item"])
+        # cart, removed), or the merge can't be read back apart ("1 bag"
+        # kept onto "1 bag (2 lb)" is "2 bags (2 lb)", and _subtract_quantity
+        # has no bag to take off it). Then the honest answer is "too late",
+        # not a reopened question (verifier, 2026-09-13 — reproduced both).
+        target = _this_weeks_line(conn, row["item"], row["quantity"] or "")
         if target is None or target["status"] != "needed":
             conn.close()
             return {"item_id": item_id, "item": row["item"], "unchanged": True, "reason": "acted_on"}
@@ -1552,15 +1687,29 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
         result["inventory_added"] = added
     if restored is not None:
         result["inventory_restored"] = restored
+    # Imported here, not at the top: staples.py imports this module for the
+    # merge key. Both calls run after the commit above, on their own
+    # connection.
+    from . import staples as _staples
+
     if status == "purchased":
         # A bought staple teaches its rhythm, whoever put the line there —
         # a hand-added "coffee" counts the same as the suggestion Pomona
-        # made. No-op for anything that isn't a staple, and one bought date
-        # per day per staple, so a re-tick teaches nothing twice. Imported
-        # here, not at the top: staples.py imports this module for the
-        # merge key. After the commit above, on its own connection.
-        from . import staples as _staples
-        _staples.record_staple_purchase(row["item"], source="grocery", staple_id=row["staple_id"])
+        # made. No-op for anything that isn't a staple — except a spice,
+        # which becomes one (the spice rack, kept from purchases; see
+        # staples.py's note on sections) — and one bought date per day per
+        # staple, so a re-tick teaches nothing twice. The event remembers
+        # this line as its creator, so the untick below can take it back.
+        _staples.record_staple_purchase(
+            row["item"], source="grocery", staple_id=row["staple_id"],
+            grocery_item_id=item_id, category=row["category"],
+        )
+    elif row["status"] == "purchased":
+        # Un-ticked: the purchase this line taught did not happen. Takes
+        # back today's bought event only when this line created it and
+        # nothing else bought the same thing today — see
+        # staples.unrecord_staple_purchase. Earlier days are never touched.
+        _staples.unrecord_staple_purchase(row["item"], staple_id=row["staple_id"], grocery_item_id=item_id)
     return result
 
 
