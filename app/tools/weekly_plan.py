@@ -4447,9 +4447,14 @@ def approve_weekly_plan(
     Safe to call more than once, AND safe to call twice at once. Two
     separate guards, because they cover different things:
 
-    - Re-approving an ALREADY-approved plan adds nothing at all. The
-      grocery work happens on the transition into 'approved', not on every
-      call. Without this, an entry whose ingredients were all skipped as
+    - Re-approving an ALREADY-approved plan adds nothing at all — with one
+      exception: if every line the first approval put on the list is gone
+      (the household wiped it with "Start over" / clear_grocery_list), the
+      re-approval REBUILDS the list from the same week and says so
+      (`list_rebuilt: True`). A plain no-op re-approval reports the live
+      `list_needed_count` and a `note` to relay instead of the old count.
+      Otherwise the grocery work happens on the transition into
+      'approved', not on every call. Without this, an entry whose ingredients were all skipped as
       already-in-the-pantry leaves no trace that it was ever considered
       (the ledger only records what was actually added), so a later
       re-approve would add them for real once the pantry had emptied — a
@@ -4628,13 +4633,82 @@ def _settle_weekly_plan_approval(
             "WHERE id = ? AND household_id = ? AND status != 'approved'",
             (approved_by.strip(), approved_by_member_id, weekly_plan_id, household_id()),
         ).rowcount
+        # A wiped list is the one re-approval that should NOT be a no-op.
+        # "Start over" (main.py's /api/reset, tools.clear_grocery_list)
+        # deletes every needed line and leaves the week approved, so the
+        # next "approve it" / "build my list" used to hit the guard above,
+        # add nothing, and hand back the ORIGINAL count — the chat then
+        # said "nothing new to add" over a list holding one jar of
+        # allspice (Emily, 2026-09-13: "the chat is obviously not reading
+        # the shop list"). The signal is narrow on purpose: the first
+        # approval put lines on the list, and not one of them is left in a
+        # LIVE state — needed, in a cart, bought, or carried to next week.
+        # A list with even one such line (a bag already bought, a line
+        # still waiting) is a list the household is still working from,
+        # and re-approving it stays a no-op exactly as before. Two kinds
+        # of row are bookkeeping rather than list: a recipe's spice waiting
+        # unticked in its own section (spices.py), and a line taken off
+        # with "have it" / "not this trip" ('removed'). Both survive a
+        # clear, both still carry the meal's ledger link — and that link
+        # is what _plan_grocery_candidate_entries uses to skip a meal as
+        # already ingested. So a rebuild deletes them first (the links go
+        # with them, schema.sql's ON DELETE CASCADE), and every meal is put
+        # on the list again the way the first approval did it — spices
+        # back in their section, and a "have it" line back on the list
+        # unless the pantry still says it is there (the ingest's own
+        # already-have skip). The verifier's case (2026-09-13): a recipe
+        # with allspice in it rebuilt NOTHING under a status != 'spice'
+        # test, reported list_rebuilt anyway, and wrote 0 to the receipt —
+        # which locked the week out of ever rebuilding again.
+        list_wiped = False
+        receipt = None
         if flipped == 0:
-            conn.rollback()
             receipt = conn.execute(
                 "SELECT approved_by, approved_at, approved_grocery_added, approved_grocery_skipped "
                 "FROM weekly_plans WHERE id = ? AND household_id = ?",
                 (weekly_plan_id, household_id()),
             ).fetchone()
+            # "This plan's lines" is the ledger's answer, not just the
+            # source id: an ingredient that merged onto a standing,
+            # hand-added line keeps source NULL by design (grocery.py's
+            # keep_standing) but is linked to the meal all the same, and
+            # that line surviving the clear — bought, or "have it" — is
+            # the household still working from the list (verifier,
+            # 2026-09-13, second pass).
+            live_lines_left = conn.execute(
+                "SELECT COUNT(*) FROM grocery_items g WHERE g.household_id = ? "
+                "AND g.status IN ('needed', 'in_cart', 'purchased', 'carried') "
+                "AND (g.source_weekly_plan_id = ? OR g.id IN ("
+                "  SELECT l.grocery_item_id FROM meal_plan_grocery_links l "
+                "  JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id "
+                "  WHERE e.weekly_plan_id = ? AND e.household_id = g.household_id))",
+                (household_id(), weekly_plan_id, weekly_plan_id),
+            ).fetchone()[0]
+            list_wiped = bool(receipt and (receipt["approved_grocery_added"] or 0) > 0 and live_lines_left == 0)
+            if list_wiped:
+                conn.execute(
+                    "DELETE FROM grocery_items WHERE household_id = ? AND source_weekly_plan_id = ? "
+                    "AND status IN ('spice', 'removed')",
+                    (household_id(), weekly_plan_id),
+                )
+                # And every remaining link this plan's meals hold (a
+                # standing line's, a removed line's) — the link is what
+                # hides a meal from the ingest, and with nothing live left
+                # there is nothing for it to protect.
+                conn.execute(
+                    "DELETE FROM meal_plan_grocery_links WHERE household_id = ? AND meal_plan_entry_id IN ("
+                    "  SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ?)",
+                    (household_id(), weekly_plan_id, household_id()),
+                )
+        if flipped == 0 and not list_wiped:
+            conn.rollback()
+            # What the list holds right now, so the assistant can say so
+            # instead of repeating the receipt as if it were news.
+            list_needed_count = conn.execute(
+                "SELECT COUNT(*) FROM grocery_items WHERE household_id = ? "
+                "AND status = 'needed' AND excluded_from_list = 0",
+                (household_id(),),
+            ).fetchone()[0]
             result = {
                 "weekly_plan_id": weekly_plan_id,
                 "status": "approved",
@@ -4646,6 +4720,13 @@ def _settle_weekly_plan_approval(
                 "groceries_added_count": receipt["approved_grocery_added"] if receipt else 0,
                 "already_have_skipped_count": receipt["approved_grocery_skipped"] if receipt else 0,
                 "was_already_approved": True,
+                "list_rebuilt": False,
+                "list_needed_count": list_needed_count,
+                "note": (
+                    "This week was already approved, so nothing was added this time. "
+                    f"The shopping list currently has {list_needed_count} item"
+                    f"{'' if list_needed_count == 1 else 's'} to buy."
+                ),
                 "approved_by": receipt["approved_by"] if receipt else "",
                 "approved_at": receipt["approved_at"] if receipt else None,
                 "conflicts": conflicts,
@@ -4745,11 +4826,16 @@ def _settle_weekly_plan_approval(
             # recoverable later — see schema.sql on approved_grocery_added.
             added_count = len({n.strip().lower() for n in added_items})
             skipped_count = len({n.strip().lower() for n in already_have})
-            conn.execute(
-                "UPDATE weekly_plans SET approved_grocery_added = ?, approved_grocery_skipped = ? "
-                "WHERE id = ? AND household_id = ?",
-                (added_count, skipped_count, weekly_plan_id, household_id()),
-            )
+            # A rebuild that put nothing back (every line now skipped as
+            # already-have, say) keeps the first approval's receipt: a 0
+            # here would fail the `approved_grocery_added > 0` test above
+            # and lock the week out of ever rebuilding again.
+            if not list_wiped or added_count > 0:
+                conn.execute(
+                    "UPDATE weekly_plans SET approved_grocery_added = ?, approved_grocery_skipped = ? "
+                    "WHERE id = ? AND household_id = ?",
+                    (added_count, skipped_count, weekly_plan_id, household_id()),
+                )
             conn.commit()
             result = {
                 "weekly_plan_id": weekly_plan_id,
@@ -4758,8 +4844,12 @@ def _settle_weekly_plan_approval(
                 "already_have_skipped": already_have,
                 "groceries_added_count": added_count,
                 "already_have_skipped_count": skipped_count,
-                "was_already_approved": False,
-                "approved_by": approved_by.strip(),
+                "was_already_approved": list_wiped,
+                "list_rebuilt": list_wiped,
+                "list_needed_count": None,
+                # A rebuild keeps the receipt's approver — the yes that
+                # settled the week is unchanged; only the list is new.
+                "approved_by": (receipt["approved_by"] if list_wiped and receipt else approved_by.strip()),
                 "approved_at": approved_at,
                 "conflicts": conflicts,
                 "conflicts_note": conflicts_note,

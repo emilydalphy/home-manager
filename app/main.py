@@ -4554,9 +4554,25 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
                 # clash, want me to approve anyway?" question in this case.
                 if isinstance(result, dict) and result.get("status") != "approved":
                     continue
+                # A re-approval that rebuilt nothing changed nothing, and
+                # the cards say what changed. The tool still hands back the
+                # ORIGINAL approval's count in that case (the receipt), and
+                # this used to read it as news — "64 items ready to shop"
+                # over a list Emily had just wiped with Start over
+                # (2026-09-13). One week card, worded as the no-op it is,
+                # and no grocery card at all.
+                if isinstance(result, dict) and result.get("was_already_approved") and not result.get("list_rebuilt"):
+                    by_category[category] = ChatAction(
+                        kicker=_CATEGORY_KICKERS[category],
+                        change="Already approved — nothing changed",
+                        tab=tab, href=href,
+                    )
+                    continue
+                rebuilt = isinstance(result, dict) and bool(result.get("list_rebuilt"))
                 by_category[category] = ChatAction(
                     kicker=_CATEGORY_KICKERS[category],
-                    change="Week approved — your list is ready",
+                    change=("Week already approved — list rebuilt" if rebuilt
+                            else "Week approved — your list is ready"),
                     tab=tab, href=href,
                 )
                 added = result.get("groceries_added_count") if isinstance(result, dict) else None
