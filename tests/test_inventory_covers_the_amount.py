@@ -196,9 +196,12 @@ def test_a_different_unit_family_does_not_cover_it():
 
 
 def test_units_in_the_same_family_do_convert():
-    """40 oz on the shelf covers 2 lbs in the week. GREEN on 2120af5 — a
-    guard, and the one that bites a fix which compares raw numbers without
-    converting: 40 is not less than 2, but 2.5 lbs really does cover 2."""
+    """40 oz on the shelf covers 2 lbs in the week. GREEN on 2120af5, and
+    a guard rather than a catch — an earlier docstring claimed it bites a
+    fix that compares raw numbers without converting, and it does not
+    (40 >= 2 either way). The two tests that DO bite that mutation are
+    test_two_ounces_... and test_a_different_unit_family_.... This one
+    only pins that a same-family conversion is attempted at all."""
     _recipe("Sheet Pan Chicken", [{"item": "Chicken thighs", "qty": "2 lbs", "category": "meat/seafood"}])
     tools.update_inventory("Chicken thighs", "add", quantity="40 oz", category="meat/seafood")
 
@@ -249,6 +252,46 @@ def test_one_unreadable_row_makes_the_whole_name_unknown():
     _approve_week([(day, "Sheet Pan Chicken")])
 
     assert _on_list("Chicken thighs") is not None
+
+
+def test_a_counted_pack_is_spent_at_the_pieces_not_the_whole_pack():
+    """Two heads of garlic (20 cloves) against a week wanting 3 + 2 + 2 of
+    them. Each recipe-week's need rounds up to a whole head, and claiming
+    the ROUNDED figure spent both heads on the first two groups and sent
+    the third to the shop for garlic nobody needed. Garlic and eggs are
+    the whole of the app's counted-pack table and turn up most weeks, so
+    this was weekly noise. Fails against the first cut of this branch,
+    which claimed `wanted`."""
+    for name, cloves in (("Dish A", "3 cloves"), ("Dish B", "2 cloves"), ("Dish C", "2 cloves")):
+        _recipe(name, [{"item": "Garlic", "qty": cloves, "category": "produce"}])
+    tools.update_inventory("Garlic", "add", quantity="2 heads", category="produce")
+
+    days = _next_week_dates(3)
+    _approve_week([(days[0], "Dish A"), (days[1], "Dish B"), (days[2], "Dish C")])
+
+    assert _on_list("Garlic") is None
+
+
+def test_the_comparison_is_still_the_rounded_figure():
+    """Claiming the raw need loosened the LEDGER and must not have
+    loosened the TEST: a group whose need the stock cannot cover is still
+    refused outright, and the refusal still spends nothing. Unit-level, so
+    the two halves can be seen apart. Fails against a version that
+    compares the raw need instead of the rounded one (7 cloves against 1
+    head is 7 <= 10 and would wrongly skip)."""
+    from app.tools import recipes as _recipes
+
+    tools.update_inventory("Garlic", "add", quantity="1 head", category="produce")
+    conn = get_conn()
+    stock = _recipes._KitchenStock(conn)
+    conn.close()
+
+    # 7 cloves rounds to one whole head, and one head is what is there.
+    assert stock.covers("Garlic", (7.0, "clove")) is True
+    # The pack was spent at seven cloves, not at a whole head, so three
+    # cloves are still there — but the next group's need rounds to a head
+    # again, and three cloves is not a head.
+    assert stock.covers("Garlic", (2.0, "clove")) is False
 
 
 # ------------------------------------------------------ the reported shape

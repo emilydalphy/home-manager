@@ -393,12 +393,19 @@ why*, not duplicating the diff.
     line would say. Everything else is bought — this module's standing bias
     (`_PACKAGE_UNITS`: "an extra line beats a missing dinner"), and the one
     direction a wrong answer here is survivable in.
+  - **THE STRONGEST THING ABOUT THIS CHANGE, and the reason it needed no
+    regression hunt (an independent reviewer's argument, better than the
+    author's): the new skip condition is a strict SUBSET of the old one.**
+    The old rule skipped on the name alone; the new one skips on the name
+    AND an amount that covers. So no ingredient can be suppressed that was
+    not already being suppressed — every behaviour change is in the
+    direction of buying more, by construction, and nothing downstream of
+    the ingest can see a shape it could not see before.
   - **The figure compared is this RECIPE-WEEK's whole scaled claim, put
     through `_week_bought_amount` — i.e. what that group would actually
     buy, rounded exactly once by the same function the line is written
     with.** Not one meal's share (three 1-lb dinners want 3 lbs, and 2 lbs
-    on hand is not enough), and not the raw per-portion sum (rounding up is
-    the safe way to be wrong). The week's TOTAL across all recipe groups —
+    on hand is not enough). The week's TOTAL across all recipe groups —
     the strictly correct figure — is only known at `WeekGroceryBuffer.flush`,
     and moving the decision there means restructuring the two paths that
     bypass the buffer (sealed packages, freeform) plus the `already_have`
@@ -408,6 +415,28 @@ why*, not duplicating the diff.
     and third recipes of a week to want chicken thighs cannot each be told
     about the same two pounds. That gets the same answer as a whole-week
     total without a second arithmetic that could disagree with the ingest's.
+  - **"It rounds UP, so it errs safe" IS FALSE, and an earlier draft of
+    this entry and of the code comment both said it.** `_week_bought_amount`
+    → `_shopping_round` ceils a COUNTABLE (and a counted pack), and takes a
+    MEASURABLE unit to the NEAREST quarter of its display unit, which can
+    round DOWN: 1.5 lbs on hand covers a 1.6 lb need, 1 kg covers 1.12 kg
+    (1.13 kg is refused). Bounded at an eighth of the display unit, and it
+    is the same gap the shopping line itself carries — the app would have
+    written "1.5 lbs" for that need too — so the BEHAVIOUR is right and
+    only the sentence was wrong. Fuzzing found one skip short by 1.1% in
+    2,264 skips.
+  - **A counted pack is SPENT at the pieces, not at the whole pack.** The
+    first cut claimed the ROUNDED figure, which put a false line on the
+    list every week garlic or eggs appeared: three recipe-weeks wanting 3,
+    2 and 2 cloves each round up to a whole head, so two heads on the shelf
+    were spent by the first two groups and the third bought garlic nobody
+    needed (reproduced; the list read `Garlic · 1 head`). The claim is now
+    the RAW need converted into the line's unit. It loosens the ledger
+    slightly — a household can be told about the fraction of a pack an
+    earlier group rounded away — and that is acceptable because the
+    COMPARISON is unchanged: every individual skip is still decided against
+    the rounded figure, so the safe direction is preserved and no skip is
+    any less well-founded than it was.
   - **Several rows of one name are SUMMED, not picked between** (the "kept
     in two places" case, 2026-09-13): two rows are two rows of one food and
     "have we enough" is a question about the food. But every row must be
@@ -417,33 +446,58 @@ why*, not duplicating the diff.
     package against a measured amount, two unit families that do not
     convert. Conversion is `quantities._convert_to_unit`, so oz/lb,
     tsp/tbsp/cup, g/kg, ml/l and the counted packs all reconcile and
-    nothing else is guessed at. **The one place this costs rather than
-    saves:** a recipe that writes "to taste" (or nothing) names no amount,
-    so it is now asked for every week where the name alone used to settle
-    it. Kept because the alternative IS the bug — "there is some in the
-    house" standing in for "there is enough" — and because a spice goes to
-    the list's spice section rather than the aisles. One line to reverse.
+    nothing else is guessed at.
+  - **TWO TRADE-OFFS EMILY SHOULD SEE NAMED, both deliberate.**
+    (1) **Coverage is all-or-nothing per group.** 1.5 lbs of salmon against
+    a 2 lb need buys the whole 2 lbs, not the missing half. Safe, and never
+    claimed otherwise — but it means quantities run systematically high
+    wherever there is partial stock, which is adjacent to Emily's own
+    standing complaint that quantities are too high. Buying the difference
+    would mean the ingest writing a line the ledger cannot reverse, so it
+    is a bigger change than this.
+    (2) **The freeform cost, measured rather than guessed.** A realistic
+    five-dinner week against a fully stocked kitchen goes from **0 extra
+    lines on `2120af5` to 4** on this branch: Salt, Black pepper and Olive
+    oil, all three folded into "Spices this week" (spices.py gives them
+    `status='spice'`), plus ONE intrusive line, `Fresh parsley`. Salt and
+    pepper are freeform ("to taste"); olive oil is the package-against-a-
+    measured-amount case. One real line a week is the price of not letting
+    "there is some in the house" stand in for "there is enough". The
+    `to taste ×3` / `a handful ×2` wording those lines carry is
+    pre-existing `_repeat_or_concatenate` behaviour and is not this
+    branch's doing. Reversing the freeform half is one line (the
+    `else: need = None`).
   - **Name matching is unchanged** (`strip().lower()`, not
     `grocery._merge_key`): merge-key matching would make MORE ingredients
     skippable, and widening what counts as "we have it" is the direction
     this fix exists to narrow.
-  - **Deliberately left, each a sibling read that buys nothing:**
+  - **THREE SIBLING READS STILL ASK THE OLD NAME-ONLY QUESTION, and one of
+    them eats most of the visible win.** Scoped out to keep this change to
+    the one function that buys, and each is a small change now that the
+    rule is a class:
+    `pre_shop.get_pre_shop_flags` is the one that matters. It only RENDERS
+    both amounts ("You want 3 lbs. Fridge shows 2 lbs."); its own test is
+    still `_find_inventory_match` plus a non-blank quantity check, i.e.
+    exactly what was just replaced. And `/api/grocery-list?status=needed`
+    hides a flagged line from the shop-from list, so on this branch the six
+    lines restored in shape B are all diverted straight into the pinned
+    "Maybe already home" card and the list reads empty. One "Keep all" tap
+    brings them back, so it is not data loss — but a household that does
+    not tap it still shops from nothing. Its own card.
     `weekly_plan.preview_plan_grocery_impact`'s `already_have_count` (the
-    draft screen's promise) and `cooker.get_cooker_view`'s `at_home` mark
-    still ask the old name-only question, so the preview will now
-    under-promise what approval adds. Both are in a file this branch was
-    not allowed to touch; the rule is a public class so pointing them at it
-    is a small change each. The Shop tab's pre-shop check
-    (`get_pre_shop_flags`) already compared amounts and now does the honest
-    thing on top of this — verified over HTTP: "You want 2 lbs. Fridge
-    shows 2 oz."
-  - `tests/test_inventory_covers_the_amount.py`, 18 tests, **11 red on
-    `2120af5`**; the seven green say in their own docstrings that they are
-    no-regression guards, and three of them were mutation-checked to bite
-    (exactly-enough against a strict `>`, the sum against taking one row,
-    the claim ledger against not claiming). Suite 4649 passed, 1 failed —
-    the known pre-existing `test_a_real_swap_cannot_make_a_chat_link_open_
-    the_new_dish` stale date, red on `main` too.
+    draft screen's "I'll build it — N items") now UNDER-promises what
+    approval adds, and `cooker.get_cooker_view`'s `at_home` mark can say a
+    meal's ingredient is at home when there is a tenth of it. Neither buys
+    or skips anything.
+  - `tests/test_inventory_covers_the_amount.py`, 20 tests, **11 red on
+    `2120af5`**; the green ones say in their own docstrings that they are
+    no-regression guards. Five mutations checked to bite: exactly-enough
+    against a strict `>`, the sum against taking one row, the claim ledger
+    against not claiming, the counted-pack claim against claiming the
+    rounded figure, and the comparison against using the raw need. Suite
+    4651 passed, 1 failed — the known pre-existing
+    `test_a_real_swap_cannot_make_a_chat_link_open_the_new_dish` stale
+    date, red on `main` too.
 
 - **2026-09-13 — Hosting a holiday is THE BIG MEAL now: a menu, the shop
   in two trips, the prep on the days before, a day-of timeline. Branch

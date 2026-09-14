@@ -1894,6 +1894,19 @@ class _KitchenStock:
     it, so without this the second and third recipes of a week to want
     chicken thighs would each be told about the same two pounds and the
     household would cook six pounds out of two.
+
+    COVERAGE IS ALL-OR-NOTHING, deliberately: a pound and a half of salmon
+    against a two-pound need buys the whole two pounds, not the missing
+    half. Safe, and the one place this fix makes quantities run HIGH
+    rather than low — buying only the difference would mean writing a line
+    the per-meal ledger cannot reverse, which is a much bigger claim than
+    this. Named in the decision log so the trade is Emily's to overrule
+    rather than a surprise.
+
+    It also decides nothing beyond this function. The new condition is a
+    strict SUBSET of the old one — the name still has to match, and now an
+    amount has to cover as well — so nothing can be suppressed that was
+    not already being suppressed, and every change is toward buying more.
     """
 
     def __init__(self, conn):
@@ -1927,10 +1940,25 @@ class _KitchenStock:
         claim on the ingredient — is demonstrably already at home, and
         CLAIMS that much of the stock when it is.
 
-        `need` is compared as the shopping line would be written, through
+        `need` is COMPARED as the shopping line would be written, through
         _week_bought_amount: one rounding, the same one, so this and the
         line it is deciding against can never disagree about the amount.
-        That also rounds UP, which is the safe way to be wrong here.
+        Be precise about what that rounding does, because "it rounds up"
+        is only true of countable things: a COUNTABLE (and a counted pack
+        — a head of garlic, a dozen eggs) ceils, and a MEASURABLE unit
+        goes to the nearest QUARTER of its display unit, which can round
+        DOWN. So 1.5 lbs on hand covers a 1.6 lb need, because the line
+        the app would have written for that need says 1.5 lbs too. The
+        gap is bounded at an eighth of the display unit and is the same
+        gap the shopping list itself carries; fuzzing found one skip
+        short by 1.1% in 2,264 skips.
+
+        What is CLAIMED is the raw need, not the rounded one. The
+        comparison is unchanged, so nothing can be skipped that could not
+        be skipped before — but a week that wants seven cloves of garlic
+        out of two heads on the shelf must not have the first two
+        recipe-weeks spend a whole head each and the third be sent to the
+        shop. See the claim below.
         """
         if not need or need[0] is None or need[0] <= 0:
             return False  # nothing to compare against; buy it
@@ -1945,7 +1973,19 @@ class _KitchenStock:
             return False  # can't be reconciled into one unit; buy it
         if have - spent + 1e-9 < wanted:
             return False
-        self._claimed.setdefault(key, []).append((wanted, unit))
+        # The stock is spent at the RAW amount these meals will eat, not at
+        # the rounded amount the shop would have sold. Claiming the rounded
+        # one is tidier and it put a false line on the list every week the
+        # counted packs appeared: three recipe-weeks wanting 3, 2 and 2
+        # cloves each round up to a whole head, so two heads on the shelf
+        # were spent by the first two and the third bought garlic nobody
+        # needed. It loosens the ledger — the household can now be told
+        # about the fraction of a pack the first group rounded away — and
+        # that is the safe direction, because the COMPARISON above still
+        # uses the rounded figure, so every individual skip is exactly as
+        # well-founded as it was.
+        raw = _quantities._convert_to_unit(need[0], need[1], unit)
+        self._claimed.setdefault(key, []).append((wanted if raw is None else raw, unit))
         return True
 
     @staticmethod
