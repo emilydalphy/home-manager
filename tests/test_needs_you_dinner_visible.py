@@ -136,13 +136,26 @@ class TestABrandNewHouseholdWithNoPlanAtAll:
         tools.set_move_done(move_id, False)
         assert [m["done"] for m in _cooks_today()] == [False]
 
-    def test_the_shop_move_can_see_it_too(self):
+    def test_the_shop_move_can_see_it_too(self, frozen_today):
         """
         _shop_move reads the same view: "the list has things on it AND
         there is a real cook close enough for that to matter". With the
         cook invisible, a brand-new household that answered tonight and
         said yes to the ingredients was never told to go and buy them.
+
+        THE HOUR IS PINNED, and only the hour. `_shop_move` offers a shop
+        while there is still a cook ahead of now (`now <= at`, moves.py),
+        and tonight's dinner clock defaults to 18:30 — so this read the real
+        clock and was green before dinner and red after it, which is a test
+        bug and not an app one. Nothing here cares what DAY it is, so the
+        pin keeps whatever date the run is on rather than naming one: a
+        fixed date would take this test out of CI's weekday matrix, which
+        exists to cross every test with every weekday, and would age the way
+        the `pytest` job is there to catch. 10:00 for the same reason
+        --today's bare-date default is 09:00 — mid-morning is inside every
+        window the app reasons about.
         """
+        frozen_today(datetime.datetime.combine(datetime.date.today(), datetime.time(10, 0)))
         _a_recipe()
         tools.resolve_needs_you_dinner(_d(), "Chili", add_ingredients_to_grocery_list=True)
 

@@ -371,6 +371,60 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-14 — The shop-move test read the real clock, so it went red every
+  evening. Branch `overnight/shop-move-frozen-clock`, NOT merged at the time of
+  writing.** Loop Board bug. `test_needs_you_dinner_visible.py::
+  TestABrandNewHouseholdWithNoPlanAtAll::test_the_shop_move_can_see_it_too`
+  passed before 18:30 local and failed after. **Nothing was wrong in the app:**
+  `moves._shop_move` only offers a shop while a cook is still ahead of now
+  (`now <= at`), and tonight's dinner clock defaults to 18:30, so the test was
+  asserting a thing that is deliberately untrue after dinner. Reproduced on the
+  real clock at `TZ=Pacific/Auckland` (23:13 local) before touching anything.
+  `_shop_move` is unchanged; `app/` is untouched.
+  - **Pinned the HOUR, and only the hour** — `frozen_today` with
+    `datetime.combine(date.today(), time(10, 0))`, i.e. whatever date the run is
+    already on, at mid-morning. A `@pytest.mark.today("2026-09-14T10:00")` would
+    have worked (the marker takes an ISO datetime, and `test_frozen_clock.py`'s
+    `test_a_pin_can_carry_a_time_of_day` names this very cliff) and was NOT
+    taken: a marker beats the session pin, so a fixed date would take this test
+    out of CI's `clock` matrix — the four weekday-pinned jobs that exist to
+    cross every test with every weekday — and would age exactly the way the
+    unpinned `pytest` job is there to catch. The failure is about the hour, so
+    the pin says the hour and nothing else. 10:00 for the same reason a bare
+    `--today` lands at 09:00: mid-morning is inside every window the app
+    reasons about, and `SHOP_HORIZON_HOURS = 36` means the 18:30 dinner is
+    comfortably inside it.
+  - Verified green at pins of 00:01, 10:00, 18:30, 18:31 and 23:00, and on the
+    real clock at Toronto 07:12, UTC 11:12, Tokyo 20:12, Auckland 23:12,
+    Kiritimati 01:12 and Niue 00:12. Suite 4649 passed / 0 failed at the
+    default TZ, unchanged.
+  - **The second evening-red test is a DIFFERENT bug and is deliberately left
+    open — its own card.** `test_tonight_still_good.py::
+    test_the_routes_read_tonight_and_remember_yes` fails for no clock cliff at
+    all: its module-level `WEEK` is the Monday of the SERVER's local date,
+    while `tonight.tonight_check` resolves the plan against the HOUSEHOLD's
+    local date (`households.timezone`, default America/Toronto). Those two land
+    in different Monday-weeks for the seven hours a day that Toronto has
+    already rolled over and the runner has not — which is why it and the
+    shop-move test were the only two failures under `TZ=Pacific/Niue` on a
+    Sunday night, and why neither shows up on a Toronto or UTC runner.
+    No plan then covers the household's today, and `tonight_check` returns at
+    `reason: 'no_plan'` **before** it ever reads the dismissal — so `answered`
+    comes back False with the Yes on file. Measured directly, unpinned, at the
+    default TZ. The fix is a test-fixture one (build `WEEK` from the
+    household's clock, or set the household's timezone to the runner's), but
+    the early return swallowing `answered` is an `app/` question and this
+    ticket's own rule was not to touch `app/`. Reproduced on the real clock
+    with `TZ=Etc/GMT+12`: two failures before this branch, one after.
+  - **A landmine found on the way, worth knowing before writing another
+    time-of-day test:** freezegun applies `tz_offset` on top of an
+    already-tz-aware conversion, so under a pin on a non-UTC runner
+    `datetime.now(ZoneInfo(...))` is wrong by the offset —
+    `tonight._household_now()` read 2026-09-13 20:30 for a pin of
+    2026-09-14T00:30 under Niue. Nothing depends on it today (that function is
+    the app's only aware `now`), and a pin whose hour is what matters should
+    stay on the naive clock, as this one does.
+
 - **2026-09-14 — The suite can be pinned to a date, and there are FOUR
   clocks, not one. Branch `overnight/frozen-clock-tests`, NOT merged at the
   time of writing.** Loop Board "The test suite is date-dependent and only
