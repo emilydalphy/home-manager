@@ -16085,6 +16085,11 @@
     }
   }
 
+  // The plain line, for everything that is NOT a sentence written for a
+  // reader: a dropped request, an id the screen no longer has. Same words
+  // the chore rows use for the same job.
+  var DISCARD_TROUBLE = "That didn't save. Try it again in a moment.";
+
   // Drop a draft the household has decided against — Loop Board 2026-09-13.
   // Retiring, not deleting: the draft's meals and answers stay on record,
   // and there is nothing to unwind on the shopping list, because a draft
@@ -16106,6 +16111,16 @@
       });
       if (!res.ok) throw new Error('discard failed (' + res.status + ')');
       var out = await res.json();
+      // A 200 that says no. Reachable from a stale screen — the other
+      // adult approved this week while the sheet was open — and the
+      // sentence is the server's, because it is the one that knows the
+      // week is approved now. Nothing was written, and an app that did
+      // exactly the right thing must not report itself broken.
+      if (out && out.status === 'refused') {
+        showToast(out.message || DISCARD_TROUBLE);
+        await loadWeekMenu(panel);
+        return;
+      }
       // Whatever week this screen was pinned to went with the draft; let
       // the tab fall back to "whichever plan covers today", which is the
       // approved week underneath or the plan-a-week state.
@@ -16117,7 +16132,7 @@
       refreshTodayMoves();
     } catch (err) {
       console.warn('Dropping the draft failed:', err);
-      showToast("That didn't save. Try it again in a moment.");
+      showToast(DISCARD_TROUBLE);
     }
   }
 

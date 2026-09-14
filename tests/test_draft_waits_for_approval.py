@@ -398,11 +398,59 @@ class TestDroppingADraft:
         assert _plan_row(draft_id)["retired_reason"] == "discarded"
 
     def test_dropping_an_approved_plan_is_refused(self, recipes, stub_model):
+        """A SlotRefused, not a bare ValueError: the sentence is written for
+        the household, and the route answers it as a 200 that says no rather
+        than as a failure — reachable whenever the other adult approves
+        while this screen sits open."""
         week, approved = _approved_week(stub_model)
-        with pytest.raises(ValueError, match="reopen it or re-plan it"):
+        with pytest.raises(tools.SlotRefused, match="reopen it or re-plan it"):
             tools.discard_draft_plan(approved)
         assert _plan_row(approved)["status"] == "approved"
         assert "beans" in _needed()
+
+    def test_a_draft_over_two_approved_weeks_names_the_one_they_are_in(self, recipes, stub_model, monkeypatch):
+        """A draft can straddle two approved weeks ("Pick my own days"), and
+        naming the later one tells a household living in this week that next
+        week is still theirs — true, and not the answer to what they asked."""
+        week, first = _approved_week(stub_model)
+        days = tools.period_dates(week, 7)
+        nxt = tools.period_dates(week, 14)[7]
+        stub_model(_full_period(nxt, 7, meal="Chili"))
+        second = agent.generate_weekly_plan(nxt, day_count=7, period_start=nxt, confirm_takeover=True)["weekly_plan_id"]
+        tools.approve_weekly_plan(second, approved_by="Emily")
+        # Friday of week one through Tuesday of week two.
+        draft = _draft_over(stub_model, days[5], 5)
+
+        class _Monday(datetime.date):
+            @classmethod
+            def today(cls):
+                return datetime.date.fromisoformat(days[0])
+        monkeypatch.setattr(_weekly_plan, "date", _Monday)
+
+        out = tools.discard_draft_plan(draft["weekly_plan_id"])
+        assert out["approved_week_label"] == _weekly_plan._format_period_range(week, 7)
+
+    def test_a_draft_wholly_ahead_names_the_nearer_week(self, recipes, stub_model, monkeypatch):
+        """Nothing covers today, so there is no week they are "in" — the
+        earliest of the two is the one they reach first."""
+        week, first = _approved_week(stub_model)
+        days = tools.period_dates(week, 7)
+        nxt = tools.period_dates(week, 14)[7]
+        stub_model(_full_period(nxt, 7, meal="Chili"))
+        second = agent.generate_weekly_plan(nxt, day_count=7, period_start=nxt, confirm_takeover=True)["weekly_plan_id"]
+        tools.approve_weekly_plan(second, approved_by="Emily")
+        draft = _draft_over(stub_model, days[5], 5)
+
+        before = (datetime.date.fromisoformat(week) - datetime.timedelta(days=3)).isoformat()
+
+        class _Earlier(datetime.date):
+            @classmethod
+            def today(cls):
+                return datetime.date.fromisoformat(before)
+        monkeypatch.setattr(_weekly_plan, "date", _Earlier)
+
+        out = tools.discard_draft_plan(draft["weekly_plan_id"])
+        assert out["approved_week_label"] == _weekly_plan._format_period_range(week, 7)
 
     def test_dropping_twice_is_a_no_op(self, recipes, stub_model):
         week, approved = _approved_week(stub_model)
@@ -438,12 +486,25 @@ class TestDroppingADraft:
         assert _plan_row(draft["weekly_plan_id"])["status"] == "retired"
         assert _dates_on(approved) == set(days)
 
-    def test_the_route_refuses_an_approved_week_with_400(self, recipes, stub_model, signed_in):
+    def test_the_route_refuses_an_approved_week_as_a_200_that_says_no(self, recipes, stub_model, signed_in):
+        """The shape add_dish_day and the chore rows already answer a
+        refusal in, so the screen shows the server's sentence rather than
+        reporting an app that did the right thing as broken."""
         week, approved = _approved_week(stub_model)
         res = signed_in.post(f"/api/week/{week}/discard", json={"weekly_plan_id": approved})
-        assert res.status_code == 400
-        assert "reopen it or re-plan it" in res.json()["detail"]
+        assert res.status_code == 200, res.text
+        assert res.json()["status"] == "refused"
+        assert "reopen it or re-plan it" in res.json()["message"]
         assert _plan_row(approved)["status"] == "approved"
+
+    def test_an_id_this_household_does_not_have_takes_the_plain_line(self, recipes, stub_model, signed_in):
+        """An id is not a sentence — it stays a 400, and the screen says its
+        own calm line rather than printing a row number into somebody's
+        week (CLAUDE.md, 2026-09-11)."""
+        week, approved = _approved_week(stub_model)
+        res = signed_in.post(f"/api/week/{week}/discard", json={"weekly_plan_id": approved + 9999})
+        assert res.status_code == 400
+        assert "No weekly plan with id" in res.json()["detail"]
 
     def test_the_route_falls_back_to_the_week_key(self, recipes, stub_model, signed_in):
         week = _monday()
@@ -482,3 +543,27 @@ def test_the_more_sheet_offers_the_row_on_a_draft_only():
     assert "await askAboutDroppingDraft(label)" in drop
     assert "'/discard'" in drop
     assert "Dropped. ' + out.approved_week_label + ' is still your week." in drop
+    # A refusal is the server's sentence, never the generic line.
+    assert "out.status === 'refused'" in drop
+    assert "showToast(out.message || DISCARD_TROUBLE)" in drop
+
+
+def test_the_confirm_is_a_real_dialog_and_not_just_the_insides():
+    """The container rules in shell.css are ID-scoped — reusing
+    .reset-title / .reset-actions gets the insides and none of the box. The
+    first cut of this shipped without them: it rendered in document flow
+    under the tab bar, with no scrim, so the week behind it stayed live and
+    the screen had two apricot fills on it at once."""
+    import pathlib
+    css = (pathlib.Path(__file__).resolve().parents[1] / "static" / "shell.css").read_text()
+    html = (pathlib.Path(__file__).resolve().parents[1] / "static" / "shell.html").read_text()
+    for anchor in (
+        "#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim, #discard-draft-scrim {\n  position: fixed;",
+        "#reset-dialog, #dinner-confirm-dialog, #approve-who-dialog, #discard-draft-dialog {\n  position: fixed;",
+        "#discard-draft-scrim[hidden], #discard-draft-dialog[hidden] { display: none; }",
+        "#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim, #discard-draft-scrim {\n  animation: none;",
+        "#discard-draft-scrim.is-open {",
+    ):
+        assert anchor in css, anchor
+    # And the box's own fade/scale, which is attribute-driven.
+    assert 'id="discard-draft-dialog" hidden data-motion="dialog"' in html

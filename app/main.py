@@ -2350,6 +2350,11 @@ class WeekDiscardRequest(BaseModel):
     non-retired plan filed under it, which for a draft over an approved
     week of a different start is not necessarily the draft on screen — so
     the Plan tab sends the id it is actually showing and that wins.
+
+    A required body with one optional field, like every other week route
+    here — a shared default instance on the signature would be one object
+    handed to every request, which is harmless only for as long as nobody
+    writes to it.
     """
     weekly_plan_id: int | None = None
 
@@ -3274,7 +3279,7 @@ def reopen_week(week_start: str):
 
 
 @app.post("/api/week/{week_start}/discard")
-def discard_week_draft(week_start: str, req: WeekDiscardRequest = WeekDiscardRequest()):
+def discard_week_draft(week_start: str, req: WeekDiscardRequest):
     """
     Drop a draft the household has decided against (Loop Board 2026-09-13).
     Retires it — meals and answers kept, nothing taken off the shopping
@@ -3284,10 +3289,18 @@ def discard_week_draft(week_start: str, req: WeekDiscardRequest = WeekDiscardReq
     Prefers the body's plan id over the week key: the Plan tab knows
     exactly which draft it is showing, and a draft over part of an
     approved week is filed under its own start rather than the week's.
+
+    A 200 can still say no, the shape add_dish_day and the chore rows
+    already answer a refusal in: "that week's approved" is a sentence
+    written for the household, and it is reachable from a stale screen
+    whenever the other adult approves in between. Everything else stays a
+    400 and takes the screen's plain line.
     """
     plan_id = req.weekly_plan_id or _plan_id_for_week(week_start)
     try:
         return tools.discard_draft_plan(plan_id)
+    except tools.SlotRefused as e:
+        return {"status": "refused", "message": str(e)}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

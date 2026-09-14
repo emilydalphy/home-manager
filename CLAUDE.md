@@ -407,9 +407,46 @@ why*, not duplicating the diff.
     shell.html (`reset-dialog`, `dinner-confirm-dialog`) are the pattern,
     and the sentence under the question is the whole reason this is an
     easy yes: "Drop the Sep 17–20 draft? / Nothing from it is on your
-    list." Cancel · Drop it. No new CSS — `.reset-title`, `.reset-note`,
-    `.reset-actions`, `.btn-outline-plum`, `.btn-gold` as they stand, so
-    the screen's one apricot is still the one apricot.
+    list." Cancel · Drop it. The insides are `.reset-title` /
+    `.reset-note` / `.reset-actions` / `.btn-outline-plum` / `.btn-gold`
+    unchanged; the BOX is five ID lists in `shell.css` that the first cut
+    of this missed, and it is worth knowing why, because the next person
+    will reuse the same classes and hit the same wall. **The rules that
+    make a dialog a dialog are ID-scoped, not class-scoped**: the scrim
+    (`#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim`, ~3995),
+    the box (`#reset-dialog, …`, ~4002), the `[hidden]` guard, and the
+    scrim's two transition lists in the Motion section. Reusing the
+    classes gets the insides and none of the container, and the failure is
+    silent-looking rather than blank: measured at 390×844, the dialog came
+    out `position: static`, no background, no z-index, no padding, no
+    radius, full-bleed 390px wide, **in document flow under the tab bar
+    with its buttons clipped past the fold**, and the scrim was 0px tall —
+    so `aria-modal="true"` was a lie, the week behind stayed live, and an
+    independent reviewer tapped **Approve and build my shopping list**
+    through it. The comment beside `[data-motion="dialog"]` in the Motion
+    section ("a future dialog only needs that one attribute") is what made
+    it look done: that attribute covers the box's fade and scale and only
+    that. A note now sits on the container rule itself saying so, and
+    `test_the_confirm_is_a_real_dialog_and_not_just_the_insides` pins all
+    five lists. Re-measured after the fix, light and dark: `position:
+    fixed`, z-index 51 over a 390×844 scrim at 50, centred (top 339,
+    bottom 505), 18px gutter each side, `--surface` and `--scrim` both
+    following the theme with no dark-specific rule of their own; and
+    `elementFromPoint` at the Approve button's centre returns the scrim.
+    **Apricot count with it open is one reachable fill** — the same
+    measurement on the EXISTING `reset-dialog`, on the same screen, gives
+    the identical pair (the screen's own Approve, covered by the scrim,
+    plus the dialog's confirm), so Rule 5 holds here in exactly the sense
+    every dialog in this app already holds it.
+  - **A refusal is the server's sentence, not "that didn't save".** The
+    approved-week refusal is a `SlotRefused` and the route answers it as
+    200 `{status: 'refused', message}` — the shape `add_dish_day` and the
+    chore rows already use, and the 2026-09-11 entry's rule: an app that
+    did exactly the right thing must not report itself broken. Reachable
+    from a stale screen (the other adult approves while the sheet is
+    open), and verified that way in the browser rather than argued for.
+    "No weekly plan with id 7." stays a plain `ValueError` → 400 → the
+    screen's own calm line, because an id is not a sentence.
   - **The row's sub-line is read off `data.replaces`**, which
     `get_week_menu` fills exactly when an approved week is underneath:
     "Your approved week stays as it is" against "Nothing's on your list
@@ -418,7 +455,14 @@ why*, not duplicating the diff.
   - **`approved_week_label` is computed on the server**, not by the
     screen, so the toast ("Dropped. Sep 14–20 is still your week." /
     plain "Dropped.") names the week from the same overlap test rather
-    than from whatever the client last held. Dropping clears
+    than from whatever the client last held. **Which week, when a draft
+    straddles two:** the approved plan whose period contains TODAY, and
+    only failing that the earliest by period start. A draft CAN straddle
+    two approved weeks — "Pick my own days" will draft Sep 19–23 across a
+    Sep 14–20 and a Sep 21–27 — and taking the first overlap by
+    `created_at DESC` told a household living in Sep 14–20 that "Sep
+    21–27 is still your week": true of a week they have not reached, and
+    not the answer to what they asked. Dropping clears
     `weekState.showWeekStart` before the reload, so the tab falls back to
     "whichever plan covers today" — the approved week, or the plan-a-week
     state — and refreshes Now, which for a LONE draft really was reading
@@ -431,9 +475,10 @@ why*, not duplicating the diff.
     the data is there — but "un-retire" has no home in any of the four
     plan resolvers today, and re-planning is the honest way back);
     dropping from Now; anything touching an approved week.
-  - 13 tests in `tests/test_draft_waits_for_approval.py`'s
-    `TestDroppingADraft` plus one source-marker test for the sheet. Full
-    suite **4644 passed, 1 failed** — `test_tap_a_meal_opens_recipe.py::
+  - 15 tests in `tests/test_draft_waits_for_approval.py`'s
+    `TestDroppingADraft` plus two source-marker tests (the sheet's row,
+    and the five CSS lists). Full
+    suite **4648 passed, 1 failed** — `test_tap_a_meal_opens_recipe.py::
     test_a_real_swap_cannot_make_a_chat_link_open_the_new_dish`, which
     fails identically on `2120af5` with the working tree stashed (its
     plan expires on today's date, so `retire_expired_drafts` empties the
@@ -442,9 +487,12 @@ why*, not duplicating the diff.
     (row 58px, dialog, Cancel changes nothing, Drop it → the toast naming
     Sep 14–20, band back to APPROVED, row gone and Reopen in its place)
     and a lone draft (sub-line "Nothing's on your list from it", toast
-    "Dropped.", panel back to Plan a week). Over the route as well: the
-    approved-plan refusal as 400, dropping twice, and the grocery list
-    byte-identical before and after.
+    "Dropped.", panel back to Plan a week) — and again in BOTH colour
+    schemes after the dialog fix, with the stale-screen refusal driven for
+    real (the sheet open, the week approved from a second client, then Drop
+    it → the toast reads "That week's approved — reopen it or re-plan it
+    instead."). Over the route as well: the approved-plan refusal, dropping
+    twice, and the grocery list byte-identical before and after.
 
 - **2026-09-13 — Hosting a holiday is THE BIG MEAL now: a menu, the shop
   in two trips, the prep on the days before, a day-of timeline. Branch
