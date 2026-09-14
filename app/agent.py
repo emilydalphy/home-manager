@@ -2150,7 +2150,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "get_grocery_already_have_items",
-        "description": "Cross-reference the 'needed' grocery list against tracked inventory to flag items that may not actually need buying (already tracked with a quantity on hand). Check this if the user asks whether anything on the list is redundant, or proactively mention it if something obviously overlaps. Each item is only flagged once — see mark_grocery_item_already_have_reviewed to confirm one is still needed.",
+        "description": "Cross-reference the 'needed' grocery list against tracked inventory to flag items that may not actually need buying. Only items whose tracked amount can be shown to COVER what the line asks for — two ounces of chicken thighs is not an answer to a line wanting two pounds, and anything that cannot be compared at all stays on the list. `inventory_quantity` is the amount that was compared, which for a food kept in two places is their sum. Check this if the user asks whether anything on the list is redundant, or proactively mention it if something obviously overlaps. Each item is only flagged once — see mark_grocery_item_already_have_reviewed to confirm one is still needed.",
         "input_schema": {"type": "object", "properties": {}},
     },
     {

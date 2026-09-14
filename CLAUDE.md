@@ -398,6 +398,20 @@ why*, not duplicating the diff.
     divert it again. Imported by the package's module-alias convention
     (`from . import recipes as _recipes`); `recipes`' module-level import
     closure does not reach `pre_shop`, so there is no cycle to resolve.
+    **Say what that does and does not buy, precisely: it is the same RULE,
+    read twice over one shelf — not one reading.** An earlier draft of
+    this entry said the two "cannot disagree about one kitchen", which is
+    false and was caught on review. Each call builds its own ledger, so
+    the ingest's claims are forgotten by the time the card asks, and a
+    week really can be told about the same stock twice: two recipes
+    wanting 2 lbs of chicken each against 3 lbs on the shelf leaves recipe
+    A skipped and a 2 lb line for recipe B — and the pre-shop check, with
+    a fresh ledger, sees all 3 lbs and flags that line, so the household
+    shops for nothing and goes out with 3 lbs for a 4 lb week.
+    Reproduced; identical on the parent, so not introduced here. Closing
+    it means PERSISTING the ingest's claims and reconciling them against
+    what has since been eaten — a much bigger ticket, deliberately not
+    attempted. Its own card.
   - **CLAIMING IS ON** — one reading of the kitchen per pass over the
     list, spent as it is granted. The pre-shop check is a read-only view,
     which argued for judging each line independently; the flag's exclusion
@@ -411,9 +425,11 @@ why*, not duplicating the diff.
     keeps "Pea" and "Peas" as two lines on purpose, while
     `cooker._singularize` reads both as one thing, so both match one
     inventory row confidently. The cost is that WHICH of the two gets the
-    flag follows `list_grocery_list`'s order (category, then item, then
-    insertion) — stable, and either answer is defensible since the pair is
-    one food; what matters is that only one comes off the list.
+    flag follows `list_grocery_list`'s order (category, then item) — which
+    need not even put the pair together, since two lines of one food can
+    be filed under different sections. Stable either way, and either
+    answer is defensible since the pair is one food; what matters is that
+    only one comes off the list.
   - **The kitchen is asked LAST, after the card's wording guards**, because
     `covers()` spends what it grants: a line the card declines to phrase
     (an amount it can't reduce to one clause, a sentence past 60
@@ -441,6 +457,36 @@ why*, not duplicating the diff.
     so the number compared and the phrase printed come from one read of
     one string; the card must never say "You want 2 lbs" about a figure it
     compared as something else.
+  - **THE SAME INVARIANT, ENFORCED ON THE OTHER SIDE TOO — the fix's own
+    bug, found on review of the first commit.** `covers()` sums every
+    inventory row of a name; the sentence printed the ONE row
+    `_find_inventory_match` returned. So a household with a pound of
+    broccoli in the fridge and a pound and a half in the pantry read "You
+    want 2 lbs. Fridge shows 1 lb." over a line the card had just taken
+    off the list — the exact visual signature this branch exists to
+    remove, arriving from the side it was not fixed on, and arbitrary
+    besides: swap the two rows and it reads "a lb and a half". The
+    DECISION was right (they do have 2.5 lbs); the card is the decision
+    surface. Identical on the parent, but this branch is what made summing
+    load-bearing, and the test asserted only that the line was flagged,
+    never what it said — so the suite blessed it unseen. Fixed by
+    PRINTING THE COMPARED FIGURE rather than declining the flag:
+    `_KitchenStock.on_hand_total` (new, read-only, claims nothing) hands
+    back the row count and the sum, rendered in the unit the matched row
+    was written in so a household that tracks in pounds is not told about
+    ounces. Declining would have been the tidier change and the worse one
+    — it throws away a correct answer to avoid saying it. `onHandLocation`
+    is dropped when the total spans more than one row, because a total
+    across two shelves belongs to neither. Same on
+    `get_grocery_already_have_items`, where it matters more: that one is
+    read back in words, and it was reporting "1 lb" for a 2 lb line it had
+    just cleared. A single row is byte-identical to before — its own
+    words, notes and shelf — and there is a test saying so.
+  - **A quantity written `1 (14 oz) can` is now never flagged.** It
+    renders as a label but `_pre_shop_parse_total` cannot reduce it to one
+    (amount, unit), so nothing can be compared and it stays on the list.
+    Consistent with the bias above, and narrow: the link/photo import's own
+    splitter writes that shape as `1 can (14 oz)`, which does parse.
   - **Deliberately left, both flagged rather than fixed:**
     `weekly_plan.preview_plan_grocery_impact`'s `already_have_count` still
     asks the name-only question — it works over DISTINCT ingredient NAMES
@@ -449,11 +495,19 @@ why*, not duplicating the diff.
     not a line; and `cooker.get_cooker_view`'s `at_home` mark, whose
     amounts are per-meal COOK amounts rather than a shopping line, so it
     would want its own claim ledger across the week's meals. Both only
-    mislead — neither buys nor skips. Their own cards.
-  - `tests/test_pre_shop_covers_the_amount.py` (21; **9 red on `0633cdd`**).
+    mislead — neither buys nor skips. Their own cards. What DID get fixed
+    is the sentence above the first one: its docstring claimed it "mirrors
+    _add_recipe_ingredients_to_grocery_list's own two rules exactly", which
+    the PARENT branch made false, so it now says which rule it lost and
+    why it is left. And `agent.TOOL_DEFINITIONS`' description for
+    `get_grocery_already_have_items` said "already tracked with a quantity
+    on hand" — the behaviour is a strict subset of that now, so no
+    contract broke, but the sentence was stale and is rewritten.
+  - `tests/test_pre_shop_covers_the_amount.py` (24; **11 red on `0633cdd`**,
+    and the two sentence tests red on this branch's own first commit too).
     The guards say so in their own docstrings, and two of them are
     mutation-checked instead: removing `_KitchenStock`'s claim ledger, and
-    asking it before the wording guards. Suite **4672 passed, 1 failed** —
+    asking it before the wording guards. Suite **4675 passed, 1 failed** —
     the known pre-existing
     `test_a_real_swap_cannot_make_a_chat_link_open_the_new_dish` stale
     date, red on `main` too. Before/after driven over a real uvicorn on a

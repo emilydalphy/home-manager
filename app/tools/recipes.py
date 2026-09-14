@@ -1988,6 +1988,30 @@ class _KitchenStock:
         self._claimed.setdefault(key, []).append((wanted if raw is None else raw, unit))
         return True
 
+    def on_hand_total(self, item: str, unit: str | None) -> tuple[int, float] | None:
+        """
+        How many tracked rows there are for `item` and what they add up to
+        in `unit`, or None when the name is unreadable or one of the rows
+        will not convert into it.
+
+        READ-ONLY, and no part of the decision — covers() is that. It
+        exists so a caller that PRINTS what is on hand can print the
+        figure that was actually compared. The pre-shop card names ONE row
+        (cooker._find_inventory_match's pick) and this class sums EVERY
+        row of the name, so without it a household with a pound of
+        broccoli in the fridge and a pound and a half in the pantry reads
+        "You want 2 lbs. Fridge shows 1 lb." over a line the card has just
+        taken off the shopping list — the exact sentence this whole fix
+        exists to stop printing, arriving from the other side. Which half
+        it showed depended on which row came back first.
+        """
+        key = (item or "").strip().lower()
+        rows = self._on_hand.get(key)
+        if not rows or key in self._unreadable:
+            return None
+        total = self._total_in(rows, unit)
+        return None if total is None else (len(rows), total)
+
     @staticmethod
     def _total_in(amounts, unit) -> float | None:
         """Everything in `amounts` added up in `unit`, or None the moment

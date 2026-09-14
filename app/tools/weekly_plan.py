@@ -4573,10 +4573,24 @@ def preview_plan_grocery_impact(weekly_plan_id: int) -> dict:
     offered that subtraction as though it were still to come; it now names
     already_have_count separately, and only when it is non-zero.
 
-    Mirrors _add_recipe_ingredients_to_grocery_list's own two rules exactly
-    — entries that already contributed are skipped, and an ingredient whose
-    name matches a tracked inventory item with a real quantity counts as
-    already-in-the-kitchen rather than as something to buy.
+    IT NO LONGER MIRRORS _add_recipe_ingredients_to_grocery_list EXACTLY,
+    and the docstring said it did until 2026-09-14. The first rule still
+    holds — entries that already contributed are skipped. The second does
+    not: this counts an ingredient as already-in-the-kitchen when its NAME
+    is tracked with a real quantity, which is the question the ingest
+    stopped asking when recipes._KitchenStock landed (a name with two
+    ounces behind it is not an answer to a two-pound line). So the promise
+    can over-count what is already at home and under-count what will be
+    bought, and the count it names can be smaller than the list that
+    arrives.
+
+    Left as it is deliberately, and it is the parent branch's debt rather
+    than something this function did wrong: it works over DISTINCT
+    ingredient NAMES with no scaling at all, so asking _KitchenStock here
+    means computing each recipe-week's whole scaled claim the way the
+    ingest does — pack shares, chain scaling, attendance — which is a
+    rewrite of this function, not a gate on it. Its own card. It only
+    mis-states a promise; nothing here buys or skips.
 
     It does NOT mirror that function's third rule, the leftovers one, and
     doesn't need to: a leftovers night contributes nothing on approval,

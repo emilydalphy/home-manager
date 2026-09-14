@@ -157,11 +157,18 @@ def test_a_row_with_no_quantity_at_all_is_still_not_flagged():
     assert "Cumin" not in _flagged()
 
 
-def test_two_rows_of_one_food_are_summed_not_picked_between():
+def test_two_rows_of_one_food_are_summed_and_the_card_says_the_sum():
     """The opened jar in the fridge and the unopened one in the pantry are
     two rows of one food, and "do we have enough" is a question about the
-    food. GUARD (0633cdd flagged it on the name alone) — but it is the
-    test that fails if the coverage check ever starts reading one row."""
+    food — so the DECISION sums them, and so must the SENTENCE. Flagging
+    it is a GUARD (0633cdd flagged it on the name alone). The sentence is
+    a CATCH: on 0633cdd, and on this branch's own first commit, the card
+    printed whichever single row cooker._find_inventory_match returned and
+    read "You want 2 lbs. Fridge shows 1 lb." over a line it had just
+    taken off the list — this fix's own bug arriving from the other side,
+    and arbitrary besides, since swapping the two rows changes which half
+    is shown. The shelf goes unnamed because a total across two of them
+    belongs to neither."""
     _need("Butter", "2 lbs", "dairy")
     _have("Butter", "1 lb", "dairy")
     conn = get_conn()
@@ -173,7 +180,54 @@ def test_two_rows_of_one_food_are_summed_not_picked_between():
     conn.commit()
     conn.close()
 
-    assert "Butter" in _flagged()
+    flags = tools.get_pre_shop_flags()
+    assert [f["name"] for f in flags] == ["Butter"]
+    assert flags[0]["sentence"] == "You want 2 lbs. Fridge shows 2 lbs and a half."
+    assert flags[0]["onHandLocation"] is None
+
+
+def test_one_row_still_names_its_shelf_and_says_exactly_what_it_says():
+    """The other side of that: with one row nothing changed — same words,
+    same shelf. GUARD, and the one that fails if summing the label is ever
+    allowed to re-word a single row."""
+    _need("Butter", "2 lbs", "dairy")
+    _have("Butter", "3 lbs", "dairy")
+
+    flags = tools.get_pre_shop_flags()
+    assert flags[0]["sentence"] == "You want 2 lbs. Fridge shows 3 lbs."
+    assert flags[0]["onHandLocation"] == "fridge"
+
+
+def test_the_assistant_is_told_the_summed_amount_too():
+    """get_grocery_already_have_items is read back in words, so naming one
+    shelf's worth of a two-shelf food is how "you already have that" stops
+    being true. CATCH — this branch's first commit reported "1 lb" for a
+    2 lb line it had just cleared."""
+    _need("Butter", "2 lbs", "dairy")
+    _have("Butter", "1 lb", "dairy")
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO inventory_items (household_id, item, quantity, category, location) "
+        "VALUES (?, 'Butter', '1.5 lbs', 'dairy', 'pantry')",
+        (tools.household_id(),),
+    )
+    conn.commit()
+    conn.close()
+
+    said = tools.get_grocery_already_have_items()
+    assert [(m["item"], m["inventory_quantity"]) for m in said] == [("Butter", "2.5 lbs")]
+    assert said[0]["inventory_location"] == ""
+
+
+def test_the_assistant_still_quotes_a_single_row_verbatim():
+    """With one row the tool reports the row's own words, notes and all.
+    GUARD."""
+    _need("Butter", "2 lbs", "dairy")
+    _have("Butter", "3 lbs, salted", "dairy")
+
+    said = tools.get_grocery_already_have_items()
+    assert said[0]["inventory_quantity"] == "3 lbs, salted"
+    assert said[0]["inventory_location"] == "fridge"
 
 
 # ------------------------------------------------- one shelf, two lines of a food

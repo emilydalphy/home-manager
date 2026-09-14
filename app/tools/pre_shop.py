@@ -61,6 +61,38 @@ def _pre_shop_parse_total(raw_qty: str) -> tuple[float, str | None] | None:
     return sum(p[0] for p in parsed), parsed[0][1]
 
 
+def _pre_shop_on_hand(stock, match: dict) -> tuple[str | None, int, float, str | None]:
+    """
+    What is on hand for a matched row, said as the card should say it:
+    (label, how many rows it came from, the total, the unit).
+
+    ONE ROW IS NOT THE ANSWER, because _KitchenStock sums every row of a
+    name and the decision is made on that sum, while
+    cooker._find_inventory_match hands back a single row. A household
+    keeping a pound of broccoli in the fridge and a pound and a half in
+    the pantry has two and a half pounds; printing whichever row came
+    back first gives "You want 2 lbs. Fridge shows 1 lb." over a line the
+    card has just hidden — this module's own bug, arriving from the side
+    it was not fixed on, and arbitrary besides (swap the rows and it
+    reads "a lb and a half"). So the printed figure is the compared
+    figure. (0, ...) means there is nothing sayable, and the caller does
+    not flag.
+
+    Rendered in the unit the MATCHED row was written in, so a household
+    that tracks in pounds is not suddenly told about ounces. Every row of
+    the name converts into it whenever covers() would say yes, since
+    conversion is within one family.
+    """
+    parsed = _pre_shop_parse_total(match.get("quantity") or "")
+    if parsed is None:
+        return None, 0, 0.0, None
+    total = stock.on_hand_total(match["item"], parsed[1])
+    if total is None:
+        return None, 0, 0.0, None
+    count, amount = total
+    return _pre_shop_amount_words(amount, parsed[1]), count, amount, parsed[1]
+
+
 def get_grocery_already_have_items() -> list[dict]:
     """
     Cross-reference the 'needed' grocery list against tracked inventory to
@@ -96,11 +128,21 @@ def get_grocery_already_have_items() -> list[dict]:
             continue
         if not (match.get("quantity") or "").strip():
             continue  # tracked but with no quantity on hand isn't a confident "we have it"
+        _label, rows, total, unit = _pre_shop_on_hand(stock, match)
         if not stock.covers(match["item"], _pre_shop_parse_total(it["quantity"])):
             continue  # tracked, but not demonstrably enough — see get_pre_shop_flags
         have_matches.append({
             "item_id": it["id"], "item": it["item"], "quantity": it["quantity"], "category": it["category"],
-            "inventory_quantity": match["quantity"], "inventory_location": match.get("location", ""),
+            # The amount that was actually compared. With one row that is
+            # the row's own words; with several it is their sum, because
+            # this is read back to the household out loud and naming one
+            # shelf's worth of a two-shelf food is how "you already have
+            # that" stops being true. The shelf goes unnamed for the same
+            # reason — see _pre_shop_on_hand.
+            "inventory_quantity": (
+                match["quantity"] if rows <= 1 else _quantities._format_quantity(total, unit)
+            ),
+            "inventory_location": match.get("location", "") if rows <= 1 else "",
         })
     return have_matches
 
@@ -145,11 +187,11 @@ def get_pre_shop_flags() -> list[dict]:
     and one dozen eggs on the shelf is an answer to one of them, not to
     both. Claiming makes the second line stay on the list, which is the
     honest answer and the safe one. The cost is that which of the two gets
-    the flag depends on the order list_grocery_list returns — by category
-    then item, so two lines of one food arrive adjacent and the tie among
-    them falls to insertion order. Stable, and either answer is defensible
-    since the pair is one food; what matters is that only one of them
-    comes off the list.
+    the flag depends on the order list_grocery_list returns — by category,
+    then item — which need not put the pair together at all, since the two
+    lines can be filed under different sections. Stable either way, and
+    either answer is defensible since the pair is one food; what matters
+    is that only one of them comes off the list.
 
     The kitchen is asked LAST, after the wording checks, so a line the
     card declines to phrase spends nothing.
@@ -169,7 +211,9 @@ def get_pre_shop_flags() -> list[dict]:
         if not (match.get("quantity") or "").strip():
             continue  # tracked but with no quantity on hand isn't a confident "we have it"
         wanted_label = _pre_shop_humanize_label(it["quantity"])
-        on_hand_label = _pre_shop_humanize_label(match["quantity"])
+        # The amount COMPARED, not the one row that happened to match —
+        # see _pre_shop_on_hand. Read-only, so it is safe above covers().
+        on_hand_label, on_hand_rows, _t, _u = _pre_shop_on_hand(stock, match)
         if not wanted_label or not on_hand_label:
             continue
         sentence = f"You want {wanted_label}. Fridge shows {on_hand_label}."
@@ -196,7 +240,9 @@ def get_pre_shop_flags() -> list[dict]:
             "name": it["item"],
             "wantedLabel": wanted_label,
             "onHandLabel": on_hand_label,
-            "onHandLocation": match.get("location") or None,
+            # One shelf is only named when one shelf is the whole of it;
+            # a total spread over two of them belongs to neither.
+            "onHandLocation": (match.get("location") or None) if on_hand_rows <= 1 else None,
             "sentence": sentence,
         })
     return flags
