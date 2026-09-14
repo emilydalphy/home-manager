@@ -138,7 +138,7 @@ def signed_in(client):
 # has never seen still gets the pinned date.
 #
 # SQLite's clock is pinned with it — `datetime('now')` runs in C, below
-# anything freezegun can reach, and app/ has 181 of them. Pinning Python alone
+# anything freezegun can reach, and app/ has 183 of them. Pinning Python alone
 # leaves the app reasoning on one date and stamping every `created_at` with
 # another, which cost ten false failures on a ONE-DAY pin before this was
 # closed. tests/sqlite_clock.py does that half; read its docstring before
@@ -146,6 +146,13 @@ def signed_in(client):
 # shell.js's own functions do it in a subprocess, which hears nothing about any
 # of this until tests/nodeharness.py hands it the pinned instant. The fourth is
 # the filesystem, which is not pinned at all; see @pytest.mark.live_clock.
+#
+# A pinned run also starts on an exact second boundary, which is worth
+# knowing when a failure will not reproduce: a short test that has to straddle
+# one behaves the same way every time under a pin and is a coin flip without,
+# so `--today` is a sharper instrument for a sub-second timing bug than an
+# unpinned rerun — and a bug that only shows up in one of the two is probably
+# about that boundary rather than about the date.
 #
 # And one trap that is not a clock at all: freezegun's default ignore list
 # hands back the REAL time to any caller with a "threading" frame five levels

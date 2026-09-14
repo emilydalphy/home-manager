@@ -2,7 +2,7 @@
 Pin SQLite's clock to the same instant Python's is pinned to.
 
 freezegun can only reach Python. `datetime('now')` is evaluated inside SQLite,
-in C, under Python's feet — and app/ has 181 of them, every `created_at`,
+in C, under Python's feet — and app/ has 183 of them, every `created_at`,
 `updated_at` and "has this been touched today?" in the application. So a run
 pinned with freezegun alone has the app reasoning on the pinned date and the
 database stamping rows with the real one, and the two disagree the moment the
@@ -14,15 +14,26 @@ take an ISO timestamp wherever they take the literal 'now' — `datetime('now',
 '-7 days')` and `datetime('2026-09-20 09:00:00', '-7 days')` are the same
 question. So the override does one thing: swap the word 'now' for the pinned
 instant and hand the call straight back to SQLite's own implementation, on a
-second connection that has no overrides on it. Every modifier, every format
-string, every edge of SQLite's date language keeps being SQLite's answer.
-Rewriting that language in Python would have been the other option and a much
-worse one — a shim that is subtly wrong makes every test lie.
+second connection that has no overrides on it. Every modifier and every format
+string is still SQLite answering, with the one exception below. Rewriting that
+language in Python would have been the other option and a much worse one — a
+shim that is subtly wrong makes every test lie.
+
+THE ONE EDGE IT DOES NOT MATCH, so nobody has to find it the hard way: real
+SQLite evaluates 'now' ONCE PER STATEMENT, and this evaluates it once per
+ROW, because it is an ordinary user function and SQLite calls those per row.
+Measured: `SELECT DISTINCT strftime('%f','now') FROM t` over 400k rows gives
+1 distinct value really and 3402 through the shim (0.67s vs 4.05s). No call
+site in app/ depends on 'now' being constant within a statement today, so
+this is a latent flakiness risk rather than something that can pass a test
+that should fail — but it is the one sentence above that would otherwise be
+an overclaim. A statement that starts to care wants the value bound as a
+parameter, not read from the clock mid-scan.
 
 WHAT IT COVERS. `date`, `datetime` and `strftime` are the only three the app
-ever calls with 'now' (181 sites; checked, not assumed). The other four are
-overridden anyway so a new call site is pinned the day it is written rather
-than the day somebody notices. CURRENT_TIMESTAMP is a keyword rather than a
+ever calls with 'now' (183 of the first two, 5 of strftime; counted, not
+assumed). The other four are overridden anyway, so a new call site is pinned
+the day it is written rather than the day somebody notices. CURRENT_TIMESTAMP is a keyword rather than a
 function and cannot be overridden — there are zero of those in app/ and
 schema.sql, which is what makes this complete instead of a partial pin, and a
 partial pin would be worse than none.

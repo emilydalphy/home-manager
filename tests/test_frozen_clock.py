@@ -112,7 +112,7 @@ def test_sqlite_is_pinned_too_or_the_pin_is_worse_than_nothing():
     Both clocks or neither.
 
     `datetime('now')` runs inside SQLite, below anything freezegun can reach,
-    and app/ has 181 of them — every created_at, every updated_at, every "has
+    and app/ has 183 of them — every created_at, every updated_at, every "has
     this been touched today?". Pinning Python alone had the app reasoning on
     the pinned date while the rows under it were stamped with the real one, and
     ten tests failed on a ONE-DAY pin for no other reason. tests/sqlite_clock.py
@@ -176,7 +176,7 @@ def test_node_is_pinned_too_because_it_is_a_whole_other_process():
     """
     The third clock.
 
-    Nineteen files run shell.js's own functions under node, and node hears
+    48 files run shell.js's own functions under node, and node hears
     nothing about freezegun — so Python built "tomorrow" from the pinned date
     while the browser code answered with the real one, and nine tests failed on
     a one-day pin looking exactly like real bugs ("show me tomorrow opened
@@ -204,7 +204,7 @@ def test_node_is_pinned_too_because_it_is_a_whole_other_process():
 
 
 def test_without_a_pin_node_gets_the_script_byte_for_byte(request):
-    """The prelude is empty on an ordinary run — nineteen files' harnesses must
+    """The prelude is empty on an ordinary run — 48 files' harnesses must
     be the exact scripts they have always been."""
     import nodeharness
 
@@ -257,7 +257,7 @@ def test_the_pinned_clock_fixture_reports_what_the_run_is_on(_pinned_clock, requ
 @pytest.mark.today(ISO_PIN)
 def test_a_row_written_now_carries_the_pinned_date_from_the_schemas_own_default():
     """
-    56 columns in schema.sql are `DEFAULT (datetime('now'))`, so most
+    55 columns in schema.sql are `DEFAULT (datetime('now'))`, so most
     `created_at` values in this app never pass through Python at all. A pin
     that reached only the queries and not the defaults would leave every row
     stamped with the real day while the code that reads it thought otherwise.
@@ -313,6 +313,29 @@ def test_a_pin_does_not_flatten_local_and_utc_together(frozen_today):
             conn.close()
         assert utc.endswith("20:00:00"), utc
         assert local.endswith("09:00:00"), local
+
+        # THE SEAM, asserted so it is written down rather than discovered.
+        # freezegun applies tz_offset on top of the tz conversion, so an AWARE
+        # now() comes back as the local wall time wearing a UTC label instead
+        # of the instant it stands for: 09:00+00:00 here, where the honest
+        # answer is 20:00+00:00. Practical impact today is nil — `household_now()`
+        # (cooker.py) reads identically on a UTC machine, which is what the
+        # container and both CI jobs are — but it is a real hole in a fix whose
+        # whole headline is that local and UTC do not collapse.
+        #
+        # The cheapest fix if it ever bites: force TZ=UTC for the duration of a
+        # pin, which makes the offset zero and the seam arithmetically
+        # impossible. Not done here because it would make a run under an
+        # explicitly-set TZ quietly not be that TZ, which trades a latent
+        # surprise for an active one.
+        aware = datetime.datetime.now(datetime.timezone.utc)
+        assert aware.hour == 9, (
+            "freezegun's aware now() still double-counts the offset; if this "
+            "starts failing, the seam is closed and this test should assert 20"
+        )
+        # ...and the naive pair above is the one every reader in app/ uses, so
+        # it is the one that has to be right.
+        assert datetime.datetime.utcnow().hour == 20
     finally:
         if was is None:
             os.environ.pop("TZ", None)

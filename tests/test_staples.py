@@ -42,7 +42,19 @@ SHELL_CSS = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
 # a staple's line to be tidied away underneath the test. Reproduced by pinning
 # the suite to 2026-10-12: `..._does_not_block_a_staple_that_is_due_again` went
 # red, and would have done so for real on that day. So the world is pinned to
-# the same Wednesday the file already chose, and the two clocks are one.
+# the same Wednesday the file already chose, and the two clocks agree at the
+# base — `travel()` still moves only `_TODAY_OVERRIDE`, so they diverge again
+# by however far a test travels, which is days rather than the month that
+# broke it.
+#
+# WHAT THIS COSTS, since it is close to the thing the pinning ticket was
+# about: these 51 tests now only ever run on a Wednesday, so the
+# staples/grocery/SQLite interplay is never exercised on another weekday. The
+# alternative that would have kept it is to drive `_TODAY_OVERRIDE` FROM the
+# frozen clock (`date.today()` here instead of a literal) and derive the dates
+# asserted below rather than writing them out — more churn than this ticket
+# should spend, but it is the option, and it is the right one if a weekday bug
+# ever turns up in here.
 BASE_WEDNESDAY = date(2026, 9, 16)
 
 pytestmark = pytest.mark.today(BASE_WEDNESDAY)

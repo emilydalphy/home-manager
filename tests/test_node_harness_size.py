@@ -4,7 +4,7 @@ No test may hand node a script as a command-line argument.
 Loop Board "44 front-end tests stopped running as shell.js grew", found
 2026-09-12. Linux caps a SINGLE command-line argument at 128 KiB
 (MAX_ARG_STRLEN — a kernel constant, and a different, far smaller limit
-than the ARG_MAX that governs the whole argument list). Nineteen test
+than the ARG_MAX that governs the whole argument list). 48 test
 files build a harness of prelude + a sliced region of static/shell.js and
 run it under node; while they passed that harness as `-e <script>`, every
 one whose slice grew past 128 KiB was rejected by the operating system

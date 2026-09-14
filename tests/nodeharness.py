@@ -2,7 +2,7 @@
 Run a browser-code harness under node, without handing the OS a 748 KB
 command-line argument.
 
-Nineteen test files in this repo execute `static/shell.js`'s own functions
+48 test files in this repo execute `static/shell.js`'s own functions
 under node rather than reading the source for markers — the house standard,
 because most of the bugs these files were written for are behaviour a
 source-marker test cannot see. Each builds a string of prelude + a sliced

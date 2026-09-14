@@ -400,17 +400,24 @@ why*, not duplicating the diff.
     looking exactly like real ranking bugs.
   - **SQLite is the second clock** (`tests/sqlite_clock.py`).
     `datetime('now')` runs in C below anything freezegun can reach and app/
-    has 181 of them, so Python reasoned on the pinned date while every
+    has 183 of them, so Python reasoned on the pinned date while every
     `created_at` was stamped with the real one: ten false failures on a
     ONE-day pin. Closed by wrapping `sqlite3.connect` (not `db.get_conn` —
     modules import that name and hold it) and overriding `date`/`datetime`/
     `strftime` et al to swap the word `'now'` for the pinned instant and
     hand the call back to SQLite's own implementation on a shadow
     connection. Not a reimplementation of SQLite's date language: every
-    modifier stays SQLite's answer. It is COMPLETE rather than partial
+    modifier stays SQLite's answer, with ONE documented exception — the shim
+    is an ordinary user function, so SQLite calls it once per ROW where real
+    SQLite reads 'now' once per STATEMENT (measured: 1 distinct value against
+    3402 over 400k rows). Nothing in app/ depends on that constancy today, so
+    it is latent flakiness rather than a false pass, and it is written down at
+    the top of the shim. It is COMPLETE rather than partial
     because there is no `CURRENT_TIMESTAMP` anywhere in app/ or schema.sql
     (checked) — that one is a keyword and cannot be overridden, and a
-    partial pin would be worse than none. Cost measured at ~11%.
+    partial pin would be worse than none. Cost measured at 1.3% by an
+    independent reviewer; this session's own ~11% was a noisy two-file sample
+    on a loaded box, and the smaller number is the one to believe.
   - **node is the third** (`tests/nodeharness.py`). The 48 files that run
     shell.js's own functions do it in a subprocess that hears nothing about
     freezegun, so Python built "tomorrow" from the pinned date and the
@@ -460,7 +467,13 @@ why*, not duplicating the diff.
     resets the timer). `test_staples.py` drove the staples module's own
     `_TODAY_OVERRIDE` from a fixed Wednesday while grocery and SQLite read
     the real one — fine while 2026-09-16 was about now, broken a month later,
-    so the world is pinned to the same Wednesday and the two clocks are one.
+    so the world is pinned to the same Wednesday and the two clocks agree at
+    the base — `travel()` still moves only `_TODAY_OVERRIDE`, so they part
+    again by however far a test travels, which is days rather than the month
+    that broke it. It costs something, recorded at the file: those 51 tests
+    now only ever run on a Wednesday, and driving `_TODAY_OVERRIDE` from the
+    frozen clock would have kept the weekday coverage at the price of
+    rewriting every date asserted in the file.
     `test_chore_row_actions.py` hard-coded a "far" row of `"2026-12-01"`,
     which becomes a date in the PAST on 2026-12-02, where `choreMoveDays`
     correctly clamps at today — it would have gone red for real that morning.
@@ -473,15 +486,33 @@ why*, not duplicating the diff.
     years where Thanksgiving falls early — Halloween is in the table, so it
     would have failed in the autumn of 2028; it now finds a genuinely empty
     week rather than trusting an offset.
-  - **CI runs five jobs** (`.github/workflows/tests.yml`): `live` plus
-    Monday, Friday, Saturday and Sunday. The four are weekday NAMES resolved
-    at run time, never fixed dates — a fixed pin would age exactly the way
-    the fixtures it protects do, so in three months every new test written
-    against a plausible date would fail them and the matrix would get
+  - **CI is TWO jobs, and the shape of the split is operational rather than
+    aesthetic** (`.github/workflows/tests.yml`). `pytest` keeps that literal
+    name and runs the live suite on every push: if a branch-protection rule
+    requires a status check called `pytest`, folding it into a matrix renames
+    it to `pytest (live)`, the required check stops being satisfiable, and
+    every merge blocks until somebody with repo-settings access notices.
+    Nobody here can read those settings, so the safe move is to make the
+    question moot. `clock` is the matrix — Monday, Friday, Saturday, Sunday
+    — and runs on `pull_request` and pushes to `main` only, because four extra
+    full suites on every push to every branch is about five times the CI
+    minutes for feedback nobody reads mid-branch, and a weekday cliff only
+    has to be caught before it reaches main. The pins are weekday NAMES
+    resolved at run time, never fixed dates — a fixed pin would age exactly
+    the way the fixtures it protects do, so in three months every new test
+    written against a plausible date would fail them and the matrix would get
     switched off. conftest prints the resolved date as the run's first line
     (a `print`, because `pytest -q` suppresses a report header and `-q` is
     what CI runs). The live job stays because it is the only one that can
-    see a fixture aging out.
+    see a fixture aging out. **Both jobs set `TZ: America/Toronto`**, matching
+    the households' own default: the runner is UTC, so between 00:00 and
+    03:59 UTC the server's date is already tomorrow by Toronto's reckoning
+    and anything reading the household's clock disagrees with the fixture
+    that seeded it — green at 09:00, red at 01:00.
+    `overnight/moves-household-clock` adds that same TZ to the single
+    pre-existing job, so **whoever merges second should keep the matrix AND
+    keep the TZ**; they answer two different problems. Measured on this
+    branch under Toronto: 4649 live, 4646 + 3 skipped on each pin.
   - **A pin is LOCAL wall time, and that took a second fix.** freezegun reads
     a naive datetime as UTC, so freezing "09:00" with no `tz_offset` makes
     `datetime.now()` and `utcnow()` the same instant — local and UTC collapse.
@@ -495,7 +526,16 @@ why*, not duplicating the diff.
     `test_a_pin_does_not_flatten_local_and_utc_together` sets TZ to Niue
     (UTC-11, no DST, so the arithmetic is the same in every month) and is the
     only way to catch a regression to the flat behaviour on a UTC runner;
-    mutation-checked.
+    mutation-checked. **One seam left, asserted rather than closed:**
+    freezegun applies `tz_offset` on top of the tz conversion, so an AWARE
+    `datetime.now(timezone.utc)` under a pin returns the local wall time
+    wearing a UTC label (09:00+00:00 where the honest answer is 20:00+00:00).
+    Every reader in app/ that matters — `household_now()` in cooker.py,
+    digest.py, calendar_feed.py — goes through the naive pair, which is
+    right, and the suite is green pinned under both UTC and Toronto, so this
+    is latent. The cheapest fix if it ever bites is to force `TZ=UTC` for the
+    duration of a pin, which makes the offset zero; not done, because it
+    would make a run under an explicitly-set TZ quietly not be that TZ.
   - **Judgment calls.** A bare `--today=2026-09-13` freezes at 09:00 local,
     not midnight: mid-morning is inside every window the app reasons about
     (past the 07:00 morning text, well short of the 18:30 after which
