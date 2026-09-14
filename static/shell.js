@@ -12041,6 +12041,75 @@
     return chips;
   }
 
+  // ---------- The plate, part by part ----------
+  // Emily, 2026-09-13 ("Shaping the Draft" Flows A and B): the card shows
+  // the plate as its parts — Protein · Turkey, Veg · Slaw, and a dashed
+  // "+ Add a carb" where the plate rule finds a gap — and each is a tap.
+  // The protein opens "Change the protein" (options written for this
+  // dish; the recipe rewritten around the pick); a veg or carb, present
+  // or missing, opens "Add something" (the plate's own picker). The
+  // server draws the parts (entry.plate_parts, plate_parts.py) from what
+  // the entry already holds — nothing new to enter. A reheat night or a
+  // grab-and-go snack has no plate to change and gets the old chips.
+  function plateCanChange(day, slot, entry) {
+    if (!entry || entry.state !== 'planned' || day.isPast) return false;
+    if (entry.source === 'leftovers') return false;
+    if (isSnackSlot(slot) && !isRealCook(entry)) return false;
+    return Array.isArray(entry.plate_parts) && entry.plate_parts.length > 0;
+  }
+
+  var PLATE_CARET = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+  var PLATE_PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+
+  function platePartChipHtml(part, slot) {
+    var label;
+    if (part.missing) {
+      return '<button type="button" class="plate-part is-missing" data-plate-part="' + escapeHtml(part.role) + '" ' +
+        'data-plate-slot="' + escapeHtml(slot) + '" aria-label="' + escapeHtml('Add a ' + part.word.toLowerCase()) + '">' +
+        PLATE_PLUS + 'Add a ' + escapeHtml(part.word.toLowerCase()) + '</button>';
+    }
+    // A part with no name of its own ("Veg" covered by the dish; a
+    // protein the recipe never named) is just its word — never "in the
+    // dish", which would be the card explaining itself.
+    label = part.name ? '<span class="plate-role">' + escapeHtml(part.word) + '</span>' + escapeHtml(part.name)
+      : '<span class="plate-word">' + escapeHtml(part.word) + '</span>';
+    return '<button type="button" class="plate-part' + (part.name ? '' : ' is-quiet') + '" ' +
+      'data-plate-part="' + escapeHtml(part.role === 'side' ? '' : part.role) + '" data-plate-slot="' + escapeHtml(slot) + '" ' +
+      (part.source === 'side' && part.name ? 'data-plate-side="' + escapeHtml(part.name) + '" ' : '') +
+      'aria-label="' + escapeHtml('Change the ' + part.word.toLowerCase()) + '">' +
+      label + PLATE_CARET + '</button>';
+  }
+
+  function plateRowHtml(day, slot, entry) {
+    if (!plateCanChange(day, slot, entry)) return '';
+    return '<span class="plate">' + entry.plate_parts.map(function (p) { return platePartChipHtml(p, slot); }).join('') + '</span>';
+  }
+
+  // The Meal step's own view of the same parts: one row each, with the
+  // word for it (Protein / Veg / Carb), what it is, and "Change" or "Add".
+  function platePartsRowsHtml(day, slot, entry) {
+    if (!plateCanChange(day, slot, entry)) return '';
+    var rows = entry.plate_parts.map(function (p) {
+      // The row has the role as its eyebrow already, so a part with no name
+      // of its own says where it is rather than its word twice.
+      var name = p.missing ? 'Nothing yet' : (p.name || 'In the dish');
+      return '<div class="plate-row' + (p.missing ? ' is-missing' : '') + '">' +
+        '<span class="plate-row-role">' + escapeHtml(p.word) + '</span>' +
+        '<span class="plate-row-name">' + escapeHtml(name) + '</span>' +
+        '<button type="button" class="plate-row-change" data-plate-part="' + escapeHtml(p.role === 'side' ? '' : p.role) + '" ' +
+          'data-plate-slot="' + escapeHtml(slot) + '"' +
+          (p.source === 'side' && p.name ? ' data-plate-side="' + escapeHtml(p.name) + '"' : '') + '>' +
+          (p.missing ? 'Add' : 'Change') + '</button>' +
+      '</div>';
+    }).join('');
+    return '<section class="plate-rows-wrap" aria-label="The plate">' +
+      '<div class="wk-clock-eyebrow">The plate</div>' +
+      '<div class="plate-rows">' + rows + '</div>' +
+    '</section>';
+  }
+
   function chipsRowHtml(chips, cls) {
     chips = (chips || []).filter(Boolean);
     if (!chips.length) return '';
@@ -12185,11 +12254,18 @@
       quiet = ' is-quiet';
     } else { name = day.isPast ? 'Not planned' : 'Nothing yet'; quiet = ' is-quiet'; }
 
+    // The plate's parts (plateRowHtml) — guarded with typeof for the tests
+    // that run this renderer alone, like planCookableNow below.
+    var plate = typeof plateRowHtml === 'function' ? plateRowHtml(day, slot, entry) : '';
     var body =
       '<span class="wk-slot-eyebrow">' + escapeHtml(slotEyebrow(day, slot)) + '</span>' +
       '<span class="wk-slot-name' + quiet + '">' + escapeHtml(name) + '</span>' +
       (entry && entry.need ? '<span class="wk-slot-need">' + needBadgeHtml(entry) + '</span>' : '') +
-      chipsRowHtml(plateChips(entry)) +
+      // The plate's parts are buttons of their own, so they sit AFTER the
+      // card's body button (below), never inside it — a button in a
+      // button is not markup a browser keeps. Only the quiet chips (a
+      // reheat night's side names) stay in the body.
+      (plate ? '' : chipsRowHtml(plateChips(entry))) +
       // The book or site the recipe came from, in a quiet line (recipe
       // photo import, 2026-09-13). Text only here — the card is already a
       // button; the photo opens from the Meal step.
@@ -12207,6 +12283,7 @@
             '<span class="wk-slot-chev" aria-hidden="true">' + GRO_ICONS.chevRight + '</span>' +
           '</button>'
         : '<div class="wk-slot-body is-flat">' + body + '</div>') +
+      plate +
       // The ready-made recommendation still belongs to dinner and to
       // nothing else — it is an answer to "the first one back tonight",
       // not a property of a slot.
@@ -12946,6 +13023,7 @@
         escapeHtml(back === 'week' ? 'This week' : dayName(day.date, { weekday: 'long' })) + '</button>' +
       mealHeroHtml(day, slot, entry, clock) +
       '<div class="wk-meal-body">' +
+        (typeof platePartsRowsHtml === 'function' ? platePartsRowsHtml(day, slot, entry) : '') +
         mealWhatsInHtml(day, slot, entry, clock) +
         mealClockHtml(slot, clock) +
         // Where the recipe came from — the book and page, or the site —
@@ -13511,6 +13589,20 @@
         btn.classList.toggle('is-open', !open);
       });
     });
+    // The plate's parts (the card's chips and the Meal step's rows): the
+    // protein opens "Change the protein", a veg or carb opens "Add
+    // something" for that part — both the same sheet (openMealAddSheet),
+    // told which part it is about.
+    steps.querySelectorAll('[data-plate-part]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var day = mealsCurrentDay();
+        if (!day) return;
+        openMealAddSheet(panel, day, btn.getAttribute('data-plate-slot'), {
+          role: btn.getAttribute('data-plate-part'),
+          side: btn.getAttribute('data-plate-side') || ''
+        });
+      });
+    });
     // "Add something" — the plate's own picker (openMealAddSheet): a
     // starch, a green, a sauce for this dish, or a line to type.
     steps.querySelectorAll('[data-wk-add]').forEach(function (btn) {
@@ -13856,65 +13948,227 @@
   var mealAddSheet = document.getElementById('wk-add-sheet');
   var mealAddState = null;
 
-  function mealAddRowsHtml(offer) {
+  // The rows are a choice, and the choice is saved on purpose
+  // (DESIGN_SYSTEM §2b S10, Emily 2026-09-13): tapping a row selects it,
+  // Save is what makes it, and the quiet line under Save is the way out.
+  // Two kinds of offer share the shape — the catalogue for a veg or carb
+  // (key + name + hint) and the written-for-this-dish proteins (name +
+  // note) — so one renderer draws both; `mode` says which write Save
+  // makes.
+  var PLATE_TICK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>';
+
+  function mealAddRowsHtml(offer, st) {
     var options = (offer && offer.options) || [];
-    var rows = options.map(function (opt) {
-      return '<button type="button" class="wk-add-option" data-wk-add-key="' + escapeHtml(opt.key) + '">' +
+    var rows = options.map(function (opt, i) {
+      var on = st.selected && st.selected.index === i;
+      var hint = opt.hint || opt.note || '';
+      return '<button type="button" class="wk-add-option' + (on ? ' is-on' : '') + '" data-wk-add-index="' + i + '" ' +
+        'aria-pressed="' + (on ? 'true' : 'false') + '">' +
         '<span class="wk-add-option-text">' +
-          '<span class="wk-add-option-name">' + escapeHtml(opt.name) + '</span>' +
-          (opt.hint ? '<span class="wk-add-option-hint">' + escapeHtml(opt.hint) + '</span>' : '') +
+          '<span class="wk-add-option-name">' + (on ? '<span class="wk-add-tick">' + PLATE_TICK + '</span>' : '') + escapeHtml(opt.name) + '</span>' +
+          (hint ? '<span class="wk-add-option-hint">' + escapeHtml(hint) + '</span>' : '') +
         '</span>' +
-        '<span class="wk-add-option-go">Add</span>' +
       '</button>';
     }).join('');
+    var quiet = st.mode === 'protein' ? 'Leave it as it is'
+      : (st.side ? 'Take ' + st.side.toLowerCase() + ' off' : (st.role ? 'No ' + (st.roleWord || st.role).toLowerCase() + ' tonight' : 'Leave it as it is'));
     return '<div class="wk-add-options">' + rows + '</div>' +
       '<form class="wk-add-free" id="wk-add-free">' +
         '<input type="text" id="wk-add-text" class="wk-add-input" maxlength="80" autocomplete="off" ' +
-          'placeholder="Something else…" aria-label="Something else to add">' +
-        '<button type="submit" class="wk-add-option-go wk-add-free-go">Add</button>' +
-      '</form>';
+          'placeholder="Something else…" aria-label="Something else to add"' +
+          (st.selected && st.selected.text ? ' value="' + escapeHtml(st.selected.text) + '"' : '') + '>' +
+      '</form>' +
+      '<div class="wk-add-foot">' +
+        '<button type="button" class="wk-add-save" id="wk-add-save"' + (st.selected ? '' : ' disabled') + '>Save</button>' +
+        '<button type="button" class="wk-add-quiet" id="wk-add-quiet" data-quiet="' + (st.side ? 'remove' : 'leave') + '">' + escapeHtml(quiet) + '</button>' +
+      '</div>';
   }
 
-  async function openMealAddSheet(panel, day, slot) {
+  // `part` (optional): {role, side} from a plate chip or row. role
+  // 'protein' opens "Change the protein" with options written for this
+  // dish (GET part-options); a veg or carb opens "Add something" with the
+  // catalogue narrowed to that part (its kind first, the rest after —
+  // they asked for a carb, but the picker is theirs); `side` is the side
+  // already on the plate for that part, which the quiet line offers to
+  // take off. No part: the plain "Add something" the Meal step has had.
+  var PART_WORDS = { protein: 'protein', vegetable: 'veg', carb: 'carb' };
+  var PART_COVERS = { vegetable: 'vegetable', carb: 'carb', protein: 'protein' };
+
+  async function openMealAddSheet(panel, day, slot, part) {
     if (!mealAddSheet) return;
     var entry = daySlotEntry(day, slot);
     var weekStart = weekStartForSwap();
     if (!entry || entry.entry_id === null || entry.entry_id === undefined || !weekStart) return;
     closeAskSheet();
-    mealAddState = { panel: panel, date: day.date, slot: slot, entryId: entry.entry_id, weekStart: weekStart, busy: false };
+    var role = (part && part.role) || '';
+    var mode = role === 'protein' ? 'protein' : 'add';
+    mealAddState = {
+      panel: panel, date: day.date, slot: slot, entryId: entry.entry_id, weekStart: weekStart, busy: false,
+      mode: mode, role: role, roleWord: PART_WORDS[role] || '', side: (part && part.side) || '',
+      selected: null, offer: null
+    };
+    var thisOpen = mealAddState;
+    var title = document.querySelector('#wk-add-sheet .kit-sheet-title');
+    if (title) {
+      title.textContent = mode === 'protein' ? 'Change the protein'
+        : (role ? (mealAddState.side ? 'Change the ' + mealAddState.roleWord : 'Add a ' + mealAddState.roleWord) : 'What should go with it?');
+    }
     var line = document.getElementById('wk-add-line');
     if (line) {
       line.textContent = dayName(day.date, { weekday: 'long' }) + '’s ' + slotWord(slot) + ' · ' + mealDisplayName(entry);
     }
     var rows = document.getElementById('wk-add-rows');
-    if (rows) rows.innerHTML = '<p class="wk-add-loading">One moment…</p>';
+    if (rows) rows.innerHTML = '<p class="wk-add-loading">' + (mode === 'protein' ? 'Finding what would work…' : 'One moment…') + '</p>';
     openSheet(mealAddSheet, mealAddScrim);
     var offer = null;
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/additions?entry_id=' +
-        encodeURIComponent(entry.entry_id));
-      if (!res.ok) throw new Error('additions failed (' + res.status + ')');
+      var url = mode === 'protein'
+        ? '/api/week/' + encodeURIComponent(weekStart) + '/part-options?entry_id=' + encodeURIComponent(entry.entry_id) + '&role=protein'
+        : '/api/week/' + encodeURIComponent(weekStart) + '/additions?entry_id=' + encodeURIComponent(entry.entry_id);
+      var res = await fetch(url);
+      if (!res.ok) throw new Error('options failed (' + res.status + ')');
       offer = await res.json();
     } catch (err) {
-      console.warn('Could not fetch additions:', err);
+      console.warn('Could not fetch the options:', err);
       offer = { options: [] };
     }
-    if (!mealAddState || mealAddState.entryId !== entry.entry_id || !rows) return;
-    rows.innerHTML = mealAddRowsHtml(offer);
-    rows.querySelectorAll('[data-wk-add-key]').forEach(function (btn) {
+    // The state object itself, not just the entry: a slow protein fetch
+    // must not land its options in a carb sheet opened for the same meal.
+    if (mealAddState !== thisOpen || !rows) return;
+    if (mode === 'add' && role && PART_COVERS[role]) {
+      // This part's kind first; the rest after.
+      var want = PART_COVERS[role];
+      var mine = (offer.options || []).filter(function (o) { return (o.covers || []).indexOf(want) !== -1; });
+      var rest = (offer.options || []).filter(function (o) { return (o.covers || []).indexOf(want) === -1; });
+      offer = Object.assign({}, offer, { options: mine.concat(rest) });
+    }
+    mealAddState.offer = offer;
+    drawMealAddRows();
+  }
+
+  function drawMealAddRows() {
+    var st = mealAddState;
+    var rows = document.getElementById('wk-add-rows');
+    if (!st || !rows) return;
+    rows.innerHTML = mealAddRowsHtml(st.offer, st);
+    rows.querySelectorAll('[data-wk-add-index]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        runMealAdd({ key: btn.getAttribute('data-wk-add-key') });
+        var i = parseInt(btn.getAttribute('data-wk-add-index'), 10);
+        st.selected = { index: i, option: st.offer.options[i] };
+        drawMealAddRows();
       });
     });
     var form = rows.querySelector('#wk-add-free');
-    if (form) {
+    var input = form && form.querySelector('#wk-add-text');
+    if (input) {
+      // Typing is choosing: the typed line is the selection, and Save
+      // sends it. Enter saves too, the way a form does.
+      input.addEventListener('input', function () {
+        var text = String(input.value || '').trim();
+        st.selected = text ? { text: text } : null;
+        var save = rows.querySelector('#wk-add-save');
+        if (save) save.disabled = !st.selected;
+        rows.querySelectorAll('[data-wk-add-index]').forEach(function (b) { b.classList.remove('is-on'); b.setAttribute('aria-pressed', 'false'); });
+      });
       form.addEventListener('submit', function (ev) {
         ev.preventDefault();
-        var input = form.querySelector('#wk-add-text');
-        var text = input ? String(input.value || '').trim() : '';
-        if (!text) return;
-        runMealAdd({ text: text });
+        if (st.selected && st.selected.text) runMealAddSave();
       });
+      if (st.selected && st.selected.text) input.focus();
+    }
+    var save = rows.querySelector('#wk-add-save');
+    if (save) save.addEventListener('click', runMealAddSave);
+    var quiet = rows.querySelector('#wk-add-quiet');
+    if (quiet) {
+      quiet.addEventListener('click', function () {
+        if (quiet.getAttribute('data-quiet') === 'remove' && st.side) runMealAddRemove(st.side);
+        else closeMealAddSheet();
+      });
+    }
+  }
+
+  function runMealAddSave() {
+    var st = mealAddState;
+    if (!st || !st.selected || st.busy) return;
+    if (st.mode === 'protein') {
+      var choice = st.selected.text || (st.selected.option && st.selected.option.name);
+      if (choice) runMealChangePart(choice);
+      return;
+    }
+    if (st.selected.text) runMealAdd({ text: st.selected.text });
+    else if (st.selected.option) runMealAdd({ key: st.selected.option.key });
+  }
+
+  // "Take roasted potatoes off" — the quiet line when the part tapped is
+  // a side already on the plate. The same remove the Undo uses.
+  async function runMealAddRemove(name) {
+    var st = mealAddState;
+    if (!st || st.busy) return;
+    st.busy = true;
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/remove-component', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_id: st.entryId, name: name })
+      });
+      if (!res.ok) throw new Error('remove failed (' + res.status + ')');
+      closeMealAddSheet();
+      await loadWeekMenu(st.panel);
+      toastSaved();
+    } catch (err) {
+      console.warn('Taking the side off failed:', err);
+      showToast('That didn’t save — try again.');
+    } finally {
+      st.busy = false;
+    }
+  }
+
+  // "Change the protein" → Save: the recipe rewritten around the pick,
+  // through the swap's own gates and apply (plate_parts.change_part), so
+  // the card answers exactly as a swap does — the reason on its line, an
+  // Undo that is the swap's own — and the pop-up says it saved (S10).
+  async function runMealChangePart(choice) {
+    var st = mealAddState;
+    if (!st || st.busy) return;
+    st.busy = true;
+    var save = document.getElementById('wk-add-save');
+    if (save) { save.disabled = true; save.textContent = 'Changing…'; }
+    var panel = st.panel;
+    var dayDate = st.date, slot = st.slot;
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/change-part', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_id: st.entryId, role: 'protein', choice: choice })
+      });
+      var out = await res.json().catch(function () { return null; });
+      if (!res.ok) throw new Error((out && out.detail) || ('change failed (' + res.status + ')'));
+      closeMealAddSheet();
+      if (out.status !== 'changed') {
+        showToast(out.message || SWAP_TROUBLE, null, 6000);
+        return;
+      }
+      // The card's own line, the swap's way: the reason, and Undo for
+      // eight seconds — the swap-undo route puts back the dish that was
+      // there before (apply_pick wrote swapped_from).
+      clearSwapUndoTimer();
+      swapState = { date: dayDate, slot: slot, avoid: [], reason: out.reason || '', canUndo: true };
+      spliceSwappedDay(out.day);
+      renderMealsStep(panel);
+      await loadWeekMenu(panel);
+      var day = mealsCurrentDay();
+      toastSaved({ label: 'Undo', onClick: function () { if (day) runSwapUndo(panel, day, slot); } }, SWAP_UNDO_MS);
+      swapUndoTimer = setTimeout(function () {
+        swapUndoTimer = null;
+        if (swapStateFor(dayDate, slot)) { swapState = null; renderMealsStep(panel); }
+      }, SWAP_UNDO_MS);
+    } catch (err) {
+      console.warn('Changing the protein failed:', err);
+      showToast(err && err.message ? err.message : SWAP_TROUBLE, null, 6000);
+      if (save) { save.disabled = false; save.textContent = 'Save'; }
+    } finally {
+      st.busy = false;
     }
   }
 
@@ -13976,6 +14230,21 @@
         showToast(out.name + ' is already on it.');
         return;
       }
+      // "Change the carb" from a part that already had a side: the new
+      // one is on, so the old one comes off — a change, not a second
+      // carb. Best effort: if the remove fails the plate has both and
+      // says so, which is recoverable from the chip.
+      if (st.side && st.side.toLowerCase() !== String(out.name || '').toLowerCase()) {
+        try {
+          await fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/remove-component', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ entry_id: st.entryId, name: st.side })
+          });
+        } catch (err) {
+          console.warn('Taking the old side off failed:', err);
+        }
+      }
       // The plan changed under the meal (a new side on its entry): the
       // week and its cooker view are read again, and the step re-draws
       // with the addition on the overview, the list and the clock.
@@ -13984,10 +14253,20 @@
       var when = day ? mealAddStopTime(day, st.slot, out.side) : '';
       var said = 'Added ' + String(out.name || '').toLowerCase() + (when ? ' — starts at ' + when + '.' : '.');
       if (out.note) said += ' ' + out.note;
-      showToast(said, {
+      // S10 (2026-09-13): the pop-up says it saved, with Undo; what was
+      // added and when it starts is the card's own line, where it stays.
+      clearSwapUndoTimer();
+      swapState = { date: st.date, slot: st.slot, avoid: [], message: said };
+      renderMealsStep(panel);
+      var replaced = (st.side && st.side.toLowerCase() !== String(out.name || '').toLowerCase()) ? st.side : '';
+      toastSaved({
         label: 'Undo',
-        onClick: function () { return runMealAddUndo(panel, st, out.name); }
-      }, out.note ? 9000 : 6000);
+        onClick: function () { return runMealAddUndo(panel, st, out.name, replaced); }
+      }, out.note ? 9000 : SWAP_UNDO_MS);
+      swapUndoTimer = setTimeout(function () {
+        swapUndoTimer = null;
+        if (swapStateFor(st.date, st.slot)) { swapState = null; renderMealsStep(panel); }
+      }, out.note ? 9000 : SWAP_UNDO_MS);
     } catch (err) {
       console.warn('Adding to the meal failed:', err);
       showToast(MEAL_ADD_TROUBLE);
@@ -13997,7 +14276,12 @@
     }
   }
 
-  async function runMealAddUndo(panel, st, name) {
+  // `replaced`: the side "Change the carb" took off to put this one on —
+  // the undo puts it back by name through add-component's typed line,
+  // which resolves a catalogue name to the catalogue's own side
+  // (plates.addition_by_name), so undoing a change is a change back,
+  // not a plate left short.
+  async function runMealAddUndo(panel, st, name, replaced) {
     try {
       var res = await fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/remove-component', {
         method: 'POST',
@@ -14005,6 +14289,14 @@
         body: JSON.stringify({ entry_id: st.entryId, name: name })
       });
       if (!res.ok) throw new Error('undo failed (' + res.status + ')');
+      if (replaced) {
+        var back = await fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/add-component', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ entry_id: st.entryId, key: null, text: replaced })
+        });
+        if (!back.ok) throw new Error('put back failed (' + back.status + ')');
+      }
       await loadWeekMenu(panel);
       showToast('Taken back off.');
     } catch (err) {

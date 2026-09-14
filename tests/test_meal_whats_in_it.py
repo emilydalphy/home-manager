@@ -264,7 +264,9 @@ def test_the_sheet_asks_the_plain_question_and_has_the_line_to_type():
     assert "What should go with it?" in SHELL_HTML
     rows = _extract("mealAddRowsHtml")
     assert 'placeholder="Something else…"' in rows
-    assert ">Add</span>" in rows
+    # Since 2026-09-13 (S10) a row is chosen, then saved: the "Add" on
+    # every row became one Save under them — see test_plate_parts.py.
+    assert 'id="wk-add-save"' in rows and ">Save</button>" in rows
     assert "coming soon" not in SHELL_JS.lower()
 
 

@@ -14,6 +14,7 @@ from . import grocery as _grocery
 from . import meal_plans as _meal_plans
 from . import notifications as _notifications
 from . import plates as _plates
+from . import plate_parts as _plate_parts_mod
 from . import recipes as _recipes
 from . import rhythm as _rhythm
 from . import week_intake as _week_intake
@@ -3546,7 +3547,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
                mpe.slot_state, mpe.open_reason, mpe.reasoning, mpe.derived_from_json,
                mpe.food_groups_json, mpe.sides_json, mpe.cooked_status,
                r.prep_time_minutes, r.cook_time_minutes,
-               r.tags_json, r.instructions_json,
+               r.tags_json, r.instructions_json, r.main_protein,
                r.source_url, r.source_book, r.source_author, r.source_page,
                (SELECT COUNT(*) FROM recipe_photos rp WHERE rp.recipe_id = r.id) AS photo_count
         FROM meal_plan_entries mpe
@@ -3653,6 +3654,15 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             # this only stops the Meals screen having to ask a second
             # endpoint for what it needs to describe one meal.
             "food_groups": json.loads(row["food_groups_json"] or "[]"),
+            # The plate as parts — protein, veg, carb — for the card's
+            # chips and the Meal step's rows (Emily, 2026-09-13, "Shaping
+            # the Draft" Flows A and B): what each part is, whether a side
+            # or the dish covers it, and what is missing. plate_parts.py.
+            "main_protein": row["main_protein"] or "",
+            "plate_parts": _plate_parts_mod.parts_of_plate(
+                row["slot"] or "dinner", json.loads(row["food_groups_json"] or "[]"),
+                row["main_protein"], sides, prefs["eating_style"] if prefs else "",
+            ),
             "defrost": defrost_by_entry.get(row["id"]),
             # Where the dish's recipe came from, said the one way every
             # screen says it (recipes.recipe_citation); None for a generated
