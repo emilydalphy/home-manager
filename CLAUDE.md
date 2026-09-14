@@ -1293,6 +1293,57 @@ why*, not duplicating the diff.
     it → the toast reads "That week's approved — reopen it or re-plan it
     instead."). Over the route as well: the approved-plan refusal, dropping
     twice, and the grocery list byte-identical before and after.
+- **2026-09-14 — "Olives" no longer matches olive oil, so a household that
+  avoids them can approve a week. Branch `overnight/olive-oil-is-not-olives`,
+  NOT merged at the time of writing.** Found by driving the app on a
+  throwaway DB: a member restriction of `olives` produced a HARD clash on
+  essentially every dinner, because olive oil is in most of them, and the
+  draft's settle card duly asked about each one. Root cause is the alias
+  machinery working as designed — `_keyword_variants("olives")` yields
+  `{olives, olive, oliv}` and `olive` whole-word-matches inside "olive
+  oil" (`oliv` matches nothing, since `\boliv\b` cannot land inside a
+  longer word). The fix is one row in `_COMPOUND_EXCEPTIONS`
+  (`coordination.py`), the table that already exists for exactly this
+  shape and already carries peanut butter, coconut milk, sugar snap, rice
+  flour, soba noodles and chickpea pasta.
+  - **Why a false positive earned a fix rather than a shrug.** It is not
+    the rarity of the restriction that matters, it is the frequency of the
+    warning: every dish, every week, in front of Approve. A household that
+    learns to click past an allergy gate is the exact failure the 2026-09-04
+    pass was written to prevent, and that entry says so — "a check that
+    flags the safe meals too is one the household learns to click past, and
+    the real warning goes past with it".
+  - **Both existing limits of the table are inherited unchanged, on
+    purpose:** only the listed word is discounted (so a NUT allergy still
+    catches peanut butter on "peanut", and nothing here touches that), and
+    a discount applies only to a ONE-WORD avoidance — write "olive oil" as
+    the restriction and you are taken at your word and still get the clash.
+  - **Left alone:** the same false positive is produced for a household-level
+    *won't-eat* (severity `soft`, `member: null`) and was already never
+    rendered there — `_soft_note` requires a member and `_conflicts_note`
+    returns null — so it cost nothing and needed no separate handling. It
+    also reached the holiday path as prose ("Heads up: Bean Chili has olives
+    in it"), which this fixes for free, since that path reads the same
+    matcher.
+  - `tests/test_olive_oil_is_not_olives.py` (15): 7 CATCHES, red against
+    the parent commit (checked by stashing the one-file change, not by
+    reasoning), and 8 no-regression GUARDS, green either way — the guards
+    are what stop a later, broader olive exception from quietly letting a
+    real olive through, and an independent reviewer confirmed they bite by
+    widening the regex to `\bolives?\b` and watching 5 of them go red.
+    Note the catch/guard split does NOT fall on class boundaries:
+    `TestApprovalIsNotGatedByOliveOil` holds one of each, and its docstring
+    says so. A first draft of that docstring called both of them catches —
+    corrected before merge, because a guard mislabelled as a catch is the
+    one kind of test-file error this log keeps having to unpick.
+  - **Known and NOT fixed, because it is the whole table's and not this
+    row's:** every entry in `_COMPOUND_EXCEPTIONS` joins its words with
+    `\s+`, and segments keep their hyphens, so a hyphenated spelling still
+    false-positives — "olive-oil" for olives, and equally "peanut-butter"
+    for butter, "coconut-milk" for milk and "soba-noodles" for noodles on
+    `main` today. Verified as pre-existing rather than introduced here. A
+    recipe line essentially never writes it that way; if it ever matters
+    the fix is `[\s-]+` across all seven rows, which is its own change.
 
 - **2026-09-13 — Hosting a holiday is THE BIG MEAL now: a menu, the shop
   in two trips, the prep on the days before, a day-of timeline. Branch
