@@ -1163,6 +1163,137 @@ why*, not duplicating the diff.
     byte-for-byte untouched, and that `live_clock` and the timezone offset
     both actually take (mutation-checked: removing either fails its test).
     Full suite 4649 unpinned, 4646 + 3 skipped on every pin above.
+- **2026-09-14 — "Drop this draft" puts the approved week back. Branch
+  `overnight/discard-draft`, NOT merged at the time of writing.** Loop
+  Board Phase 0 (Emily: a draft she walked away from stayed the Plan tab's
+  front page until its last day had passed, and the only ways off it were
+  approving it — the opposite of what she meant — or drafting something
+  else over it). **The write is `retire_expired_drafts`'s, not a new
+  one:** `weekly_plan.discard_draft_plan` sets `status = 'retired'` with
+  `retired_reason = 'discarded'` (a third value beside `superseded` and
+  `expired_draft`, `app/schema.sql`) and touches nothing else — the
+  meals, the period and the intake stay on record, "don't lead with it"
+  rather than deletion. **There is nothing to unwind**, and that is the
+  2026-09-13 draft-waits-for-approval entry paying off: a draft reaches
+  the shopping list only at approval, so the approved week underneath is
+  whole already and is neither read nor written here. The four "which
+  plan is this" answers (`_current_weekly_plan_row`, `_pending_draft_over`,
+  `get_plan_id_for_week`, `get_plan_id_for_date`) all exclude retired
+  plans already; `discarded` is no exception to that and there is a test
+  saying so rather than a comment claiming it.
+  - **An APPROVED plan is refused** ("That week's approved — reopen it or
+    re-plan it instead.") — dropping a week that has been shopped for
+    would take the list's own reason away with it, and reopening or
+    re-planning are the household's two real answers. Dropping twice is a
+    no-op (`was_already_retired`), because a second tap or a stale screen
+    must not be an error.
+  - **The route prefers the body's plan id over the week key.** `POST
+    /api/week/{week_start}/discard` resolves through `_plan_id_for_week`
+    like its neighbours, but a draft over PART of an approved week is
+    filed under its own start rather than the week's, and the Plan tab
+    knows exactly which draft it is showing — so it sends
+    `weekly_plan_id` and that wins. The lookup is household-scoped, so a
+    foreign id is "no such plan" and a 400, not somebody else's retired
+    week.
+  - **A real dialog, not `confirm()`** — the two confirms above it in
+    shell.html (`reset-dialog`, `dinner-confirm-dialog`) are the pattern,
+    and the sentence under the question is the whole reason this is an
+    easy yes: "Drop the Sep 17–20 draft? / Nothing from it is on your
+    list." Cancel · Drop it. The insides are `.reset-title` /
+    `.reset-note` / `.reset-actions` / `.btn-outline-plum` / `.btn-gold`
+    unchanged; the BOX is five ID lists in `shell.css` that the first cut
+    of this missed, and it is worth knowing why, because the next person
+    will reuse the same classes and hit the same wall. **The rules that
+    make a dialog a dialog are ID-scoped, not class-scoped**: the scrim
+    (`#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim`, ~3995),
+    the box (`#reset-dialog, …`, ~4002), the `[hidden]` guard, and the
+    scrim's two transition lists in the Motion section. Reusing the
+    classes gets the insides and none of the container, and the failure is
+    silent-looking rather than blank: measured at 390×844, the dialog came
+    out `position: static`, no background, no z-index, no padding, no
+    radius, full-bleed 390px wide, **in document flow under the tab bar
+    with its buttons clipped past the fold**, and the scrim was 0px tall —
+    so `aria-modal="true"` was a lie, the week behind stayed live, and an
+    independent reviewer tapped **Approve and build my shopping list**
+    through it. The comment beside `[data-motion="dialog"]` in the Motion
+    section ("a future dialog only needs that one attribute") is what made
+    it look done: that attribute covers the box's fade and scale and only
+    that. A note now sits on the container rule itself saying so, and
+    `test_the_confirm_is_a_real_dialog_and_not_just_the_insides` pins all
+    five lists. Re-measured after the fix, light and dark: `position:
+    fixed`, z-index 51 over a 390×844 scrim at 50, centred (top 339,
+    bottom 505), 18px gutter each side, `--surface` and `--scrim` both
+    following the theme with no dark-specific rule of their own; and
+    `elementFromPoint` at the Approve button's centre returns the scrim.
+    **Apricot count with it open is one reachable fill** — the same
+    measurement on the EXISTING `reset-dialog`, on the same screen, gives
+    the identical pair (the screen's own Approve, covered by the scrim,
+    plus the dialog's confirm), so Rule 5 holds here in exactly the sense
+    every dialog in this app already holds it.
+  - **A refusal is the server's sentence, not "that didn't save".** The
+    approved-week refusal is a `SlotRefused` and the route answers it as
+    200 `{status: 'refused', message}` — the shape `add_dish_day` and the
+    chore rows already use, and the 2026-09-11 entry's rule: an app that
+    did exactly the right thing must not report itself broken. Reachable
+    from a stale screen (the other adult approves while the sheet is
+    open), and verified that way in the browser rather than argued for.
+    "No weekly plan with id 7." stays a plain `ValueError` → 400 → the
+    screen's own calm line, because an id is not a sentence.
+  - **The row's sub-line is read off `data.replaces`**, which
+    `get_week_menu` fills exactly when an approved week is underneath:
+    "Your approved week stays as it is" against "Nothing's on your list
+    from it". Draft-only, beside Try again / Change my answers; an
+    approved week gets Reopen instead and never this.
+  - **`approved_week_label` is computed on the server**, not by the
+    screen, so the toast ("Dropped. Sep 14–20 is still your week." /
+    plain "Dropped.") names the week from the same overlap test rather
+    than from whatever the client last held. **Which week, when a draft
+    straddles two:** the approved plan whose period contains TODAY, and
+    only failing that the earliest by period start. A draft CAN straddle
+    two approved weeks — "Pick my own days" will draft Sep 19–23 across a
+    Sep 14–20 and a Sep 21–27 — and taking the first overlap by
+    `created_at DESC` told a household living in Sep 14–20 that "Sep
+    21–27 is still your week": true of a week they have not reached, and
+    not the answer to what they asked. Dropping clears
+    `weekState.showWeekStart` before the reload, so the tab falls back to
+    "whichever plan covers today" — the approved week, or the plan-a-week
+    state — and refreshes Now, which for a LONE draft really was reading
+    it (`_current_weekly_plan_row`'s fallback).
+  - **Chat: `discard_draft_plan(weekly_plan_id)`**, tagged `week` in
+    `_WEEK_TOOLS` so the Plan tab refreshes after it; the description
+    says never on its own initiative and never to tidy up before
+    planning again (generating a draft already replaces one).
+  - **Deliberately left out:** undo (the draft is retired, not deleted, so
+    the data is there — but "un-retire" has no home in any of the four
+    plan resolvers today, and re-planning is the honest way back);
+    dropping from Now; anything touching an approved week.
+  - 16 tests in `tests/test_draft_waits_for_approval.py`'s
+    `TestDroppingADraft` plus two source-marker tests (the sheet's row,
+    and the five CSS lists). **The 16th pins the tie-break's covering-today
+    refinement and was added on review**: the other two straddle tests both
+    happen to have the covering week as the EARLIEST of the pair, so both
+    stay green whether the rule is `min(covering)` or `min(overlapping)` —
+    they pin the reported bug (never name the LATEST) and never reach the
+    refinement. The new one runs a draft from the back of a week that has
+    gone into the week the household is in now, where the two rules
+    disagree, and it is red under `min(overlapping, ...)` while every
+    other test in the file stays green. Full
+    suite **4649 passed, 1 failed** — `test_tap_a_meal_opens_recipe.py::
+    test_a_real_swap_cannot_make_a_chat_link_open_the_new_dish`, which
+    fails identically on `2120af5` with the working tree stashed (its
+    plan expires on today's date, so `retire_expired_drafts` empties the
+    week before the swap runs). Verified in Chromium at 390x844 against a
+    throwaway DB, both shapes: an approved week with a draft over Thu–Sun
+    (row 58px, dialog, Cancel changes nothing, Drop it → the toast naming
+    Sep 14–20, band back to APPROVED, row gone and Reopen in its place)
+    and a lone draft (sub-line "Nothing's on your list from it", toast
+    "Dropped.", panel back to Plan a week) — and again in BOTH colour
+    schemes after the dialog fix, with the stale-screen refusal driven for
+    real (the sheet open, the week approved from a second client, then Drop
+    it → the toast reads "That week's approved — reopen it or re-plan it
+    instead."). Over the route as well: the approved-plan refusal, dropping
+    twice, and the grocery list byte-identical before and after.
+
 - **2026-09-13 — Hosting a holiday is THE BIG MEAL now: a menu, the shop
   in two trips, the prep on the days before, a day-of timeline. Branch
   `worktree-holiday-hosting`, slice 2 of Loop Board "Holidays: Pomona

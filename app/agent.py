@@ -1738,6 +1738,15 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "discard_draft_plan",
+        "description": "Drop a DRAFT week the household has said they don't want — it stops being the Plan tab's front page, and nothing else changes. The draft's meals and answers stay on record, nothing comes off (or goes on) the grocery list, and an approved week underneath is left exactly as it is, because a draft only takes days from an approved week at approval. Only call this when the household has actually said they want that draft gone ('drop it', 'forget that draft', 'I don't want this week'); never on your own initiative, and never to tidy up before planning again — generating a new draft already replaces an old one. It refuses an APPROVED week: those are reopened (reopen_weekly_plan) or re-planned instead. Returns approved_week_label when an approved week was underneath, so you can say which week is theirs again.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"weekly_plan_id": {"type": "integer"}},
+            "required": ["weekly_plan_id"],
+        },
+    },
+    {
         "name": "generate_prep_schedule",
         "description": "Generate (or regenerate) the prep/cooking schedule for a weekly plan — what needs prepping or starting ahead of time (marinating, thawing, batch-cooking) and when, derived from each meal's recipe timing. Omit weekly_plan_id for the household's current plan. Regenerating replaces the previous schedule.",
         "input_schema": {
@@ -5928,6 +5937,7 @@ TOOL_FUNCTIONS = {
     "swap_component_in_plan": tools.swap_component_in_plan,
     "swap_dinner_nights": tools.swap_dinner_nights,
     "approve_weekly_plan": tools.approve_weekly_plan,
+    "discard_draft_plan": tools.discard_draft_plan,
     "generate_prep_schedule": generate_prep_schedule,
     "get_prep_schedule": tools.get_prep_schedule,
     "get_defrost_schedule": tools.get_defrost_schedule,

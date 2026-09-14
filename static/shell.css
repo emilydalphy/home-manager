@@ -3992,14 +3992,24 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   min-height: 44px;
 }
 
-#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim {
+/* Centred confirm dialogs: the scrim and the box. These two rules are what
+   MAKE a dialog a dialog — fixed, centred, modal, off the document flow —
+   and they are ID-scoped, so a new one gets none of it from reusing
+   .reset-title / .reset-note / .reset-actions, which are only the insides.
+   Add the new pair by name in all five lists here (these two, the [hidden]
+   guard below, and the scrim's two transition lists in the Motion section)
+   or it renders in flow under the tab bar with no scrim behind it and the
+   screen it is asking about stays live. (The `data-motion="dialog"`
+   attribute covers the box's own fade and scale, and only that — the note
+   beside it in the Motion section is about the ANIMATION, not the box.) */
+#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim, #discard-draft-scrim {
   position: fixed;
   inset: 0;
   background: var(--scrim);
   animation: fadeIn .18s ease;
   z-index: 50;
 }
-#reset-dialog, #dinner-confirm-dialog, #approve-who-dialog {
+#reset-dialog, #dinner-confirm-dialog, #approve-who-dialog, #discard-draft-dialog {
   position: fixed;
   z-index: 51;
   left: 50%;
@@ -4019,7 +4029,8 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 }
 #reset-scrim[hidden], #reset-dialog[hidden],
 #dinner-confirm-scrim[hidden], #dinner-confirm-dialog[hidden],
-#approve-who-scrim[hidden], #approve-who-dialog[hidden] { display: none; }
+#approve-who-scrim[hidden], #approve-who-dialog[hidden],
+#discard-draft-scrim[hidden], #discard-draft-dialog[hidden] { display: none; }
 .dinner-confirm-meal {
   font-family: var(--font-body);
   font-size: 15px;
@@ -9663,7 +9674,7 @@ span.cook-week-name { cursor: default; }
 }
 #ask-scrim, #week-sheet-scrim, #kit-sheet-scrim, #meals-more-scrim, #cook-more-scrim,
 #gro-scan-scrim, #prefs-scrim, #notif-scrim,
-#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim {
+#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim, #discard-draft-scrim {
   animation: none;
   opacity: 0;
   transition: opacity var(--motion-base) var(--motion-ease);
@@ -9671,14 +9682,21 @@ span.cook-week-name { cursor: default; }
 #ask-scrim.is-open, #week-sheet-scrim.is-open, #kit-sheet-scrim.is-open,
 #meals-more-scrim.is-open, #cook-more-scrim.is-open, #gro-scan-scrim.is-open, #prefs-scrim.is-open,
 #notif-scrim.is-open,
-#reset-scrim.is-open, #dinner-confirm-scrim.is-open, #approve-who-scrim.is-open {
+#reset-scrim.is-open, #dinner-confirm-scrim.is-open, #approve-who-scrim.is-open,
+#discard-draft-scrim.is-open {
   opacity: 1;
 }
 
 /* Centred dialogs: same scrim fade, a subtle scale instead of a slide —
    the variant is picked by data-motion="dialog" on the dialog markup
    (shell.html), not by listing IDs here, so a future dialog only needs
-   that one attribute to get the same treatment. */
+   that one attribute to get the same treatment — OF THE ANIMATION. The
+   box and the scrim themselves are ID-scoped and are NOT covered by this
+   attribute: a new dialog must also be added to the five ID lists (the
+   scrim, the box, the [hidden] guard, and the two scrim lists just
+   above). Read on its own this comment cost one reviewer's round — a
+   dialog shipped with the right insides, no box and no scrim, rendering
+   in flow under the tab bar with the screen behind it still tappable. */
 [data-motion="dialog"] {
   animation: none;
   scale: .96;

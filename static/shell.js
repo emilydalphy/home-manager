@@ -1381,6 +1381,44 @@
     });
   }
 
+  // ---------- "Drop this draft?" confirm ----------
+  // Resolves to true (drop it) or false (cancelled, nothing happens). Same
+  // scrim/dialog treatment as the two confirms above, and the same "only
+  // one open at a time" rule as the sheets.
+  var discardDraftScrim = document.getElementById('discard-draft-scrim');
+  var discardDraftDialog = document.getElementById('discard-draft-dialog');
+  var discardDraftResolve = null;
+
+  function closeDiscardDraft(answer) {
+    if (!discardDraftScrim) return;
+    closeSheet(discardDraftDialog, discardDraftScrim);
+    var resolve = discardDraftResolve;
+    discardDraftResolve = null;
+    if (resolve) resolve(answer);
+  }
+
+  function askAboutDroppingDraft(label) {
+    // No dialog in the document (an older cached shell.html) — fail closed
+    // and drop nothing rather than retiring a week nobody confirmed.
+    if (!discardDraftDialog) return Promise.resolve(false);
+    closeAskSheet();
+    closeWeekSheet();
+    document.getElementById('discard-draft-title').textContent =
+      label ? 'Drop the ' + label + ' draft?' : 'Drop this draft?';
+    openSheet(discardDraftDialog, discardDraftScrim);
+    document.getElementById('discard-draft-confirm').focus();
+    return new Promise(function (resolve) { discardDraftResolve = resolve; });
+  }
+
+  if (discardDraftScrim) {
+    discardDraftScrim.addEventListener('click', function () { closeDiscardDraft(false); });
+    document.getElementById('discard-draft-cancel').addEventListener('click', function () { closeDiscardDraft(false); });
+    document.getElementById('discard-draft-confirm').addEventListener('click', function () { closeDiscardDraft(true); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !discardDraftDialog.hidden) closeDiscardDraft(false);
+    });
+  }
+
   // ---------- "Who's approving?" picker ----------
   // Resolves to an adult's name, or null if they backed out. Same
   // scrim/dialog treatment as the reset and ingredients confirms.
@@ -14762,7 +14800,16 @@
       '<div class="week-period-picker" id="week-period-picker" hidden></div>' +
       (hasPlan && data.status !== 'approved'
         ? mealsMoreRowHtml('wk-more-try-again', 'Try again', 'Same answers, a different week') +
-          mealsMoreRowHtml('wk-more-change', 'Change my answers')
+          mealsMoreRowHtml('wk-more-change', 'Change my answers') +
+          // A draft you have decided against, gone in one tap — otherwise
+          // the only ways off it were approving it (which is the opposite
+          // of what you meant) or drafting something else over it. The
+          // sub-line is the whole reason it's an easy yes: an approved week
+          // underneath is untouched, and a draft has never put anything on
+          // the list. data.replaces is present exactly when there is an
+          // approved week under this draft (get_week_menu's approval block).
+          mealsMoreRowHtml('wk-more-discard', 'Drop this draft',
+            data.replaces ? 'Your approved week stays as it is' : "Nothing's on your list from it")
         : '') +
       // Reopening followed the receipt's own buttons in here (Emily's
       // approved design, 2026-09-08: the receipt is a receipt, and once
@@ -14795,6 +14842,7 @@
       closeMealsMoreSheet();
       startPlanningWeek(data.week_start_date, data.day_count || 7);
     });
+    on('wk-more-discard', function () { closeMealsMoreSheet(); discardDraft(panel, data); });
     on('wk-more-reopen', function () { closeMealsMoreSheet(); reopenWeek(panel, data); });
     on('wk-more-check', function () { closeMealsMoreSheet(); goMealsStep('review'); });
     on('wk-more-whole-week', function () { closeMealsMoreSheet(); openWeekSheet(); });
@@ -16034,6 +16082,57 @@
     } catch (err) {
       console.warn('Reopening the week failed:', err);
       alert('Could not reopen the week right now — try again in a moment.');
+    }
+  }
+
+  // The plain line, for everything that is NOT a sentence written for a
+  // reader: a dropped request, an id the screen no longer has. Same words
+  // the chore rows use for the same job.
+  var DISCARD_TROUBLE = "That didn't save. Try it again in a moment.";
+
+  // Drop a draft the household has decided against — Loop Board 2026-09-13.
+  // Retiring, not deleting: the draft's meals and answers stay on record,
+  // and there is nothing to unwind on the shopping list, because a draft
+  // reaches it only at approval. The week the draft was sitting over is
+  // therefore already whole, and the server names it so the toast can say
+  // which week is theirs again rather than only that something went.
+  async function discardDraft(panel, data) {
+    var label = (data.period_start_date || data.week_start_date)
+      ? periodRangeLabel(data.period_start_date || data.week_start_date, data.day_count || 7)
+      : '';
+    if (!(await askAboutDroppingDraft(label))) return;
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/discard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // The week key resolves to whatever is newest under it; this screen
+        // knows exactly which draft it is showing, so it says so.
+        body: JSON.stringify({ weekly_plan_id: data.weekly_plan_id })
+      });
+      if (!res.ok) throw new Error('discard failed (' + res.status + ')');
+      var out = await res.json();
+      // A 200 that says no. Reachable from a stale screen — the other
+      // adult approved this week while the sheet was open — and the
+      // sentence is the server's, because it is the one that knows the
+      // week is approved now. Nothing was written, and an app that did
+      // exactly the right thing must not report itself broken.
+      if (out && out.status === 'refused') {
+        showToast(out.message || DISCARD_TROUBLE);
+        await loadWeekMenu(panel);
+        return;
+      }
+      // Whatever week this screen was pinned to went with the draft; let
+      // the tab fall back to "whichever plan covers today", which is the
+      // approved week underneath or the plan-a-week state.
+      weekState.showWeekStart = null;
+      await loadWeekMenu(panel);
+      showToast(out.approved_week_label
+        ? 'Dropped. ' + out.approved_week_label + ' is still your week.'
+        : 'Dropped.');
+      refreshTodayMoves();
+    } catch (err) {
+      console.warn('Dropping the draft failed:', err);
+      showToast(DISCARD_TROUBLE);
     }
   }
 

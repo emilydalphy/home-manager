@@ -1299,6 +1299,105 @@ def reopen_weekly_plan(weekly_plan_id: int) -> dict:
     }
 
 
+def discard_draft_plan(weekly_plan_id: int) -> dict:
+    """
+    Drop a draft the household has decided against — Loop Board 2026-09-13,
+    "a draft I walked away from never lingers on Plan and never becomes the
+    week by accident".
+
+    Exactly what retire_expired_drafts does to a draft whose days have
+    passed, said out loud instead of waited out: status 'retired' with
+    `retired_reason` 'discarded', and nothing else touched. The meals, the
+    period and the intake stay on record — this is "don't lead with it",
+    not deletion — and there is nothing to reverse on the shopping list,
+    because since 2026-09-13 a draft contributes to it only at approval.
+    An approved plan underneath is therefore whole already, and is never
+    WRITTEN here — it is read, but only to name it (see
+    `approved_week_label` below).
+
+    An APPROVED plan is refused rather than retired: dropping a week that
+    has been shopped for would take the list's own reason away with it,
+    and the household's two real answers are reopening it or re-planning.
+    That refusal is a SlotRefused, because the sentence is written for the
+    household to read and the other adult approving while this screen sat
+    open is exactly how it gets reached — "no such plan" stays an ordinary
+    ValueError and takes the screen's plain line, since an id on screen
+    reports an app that did the right thing as broken. Retiring an
+    already-retired plan is a no-op — the household tapping twice, or a
+    stale screen, must not be an error.
+
+    `approved_week_label` names the approved week this draft was sitting
+    over, when there is one, so the screen that dropped it can say which
+    week is theirs again instead of just that something went.
+    """
+    conn = get_conn()
+    plan = conn.execute(
+        "SELECT * FROM weekly_plans WHERE id = ? AND household_id = ?",
+        (weekly_plan_id, household_id()),
+    ).fetchone()
+    if not plan:
+        conn.close()
+        raise ValueError(f"No weekly plan with id {weekly_plan_id}.")
+    if plan["status"] == "approved":
+        conn.close()
+        raise SlotRefused("That week's approved — reopen it or re-plan it instead.")
+
+    start, days = plan_period(plan)
+    label = _format_period_range(start, days)
+    # The approved week this draft is sitting over, by the same test
+    # _pending_draft_over uses in the other direction (it asks "is there a
+    # draft over this approved week?"; this asks "which approved week is
+    # under this draft?").
+    #
+    # A draft can straddle TWO approved weeks — "Pick my own days" will
+    # happily draft Sep 19–23 across a Sep 14–20 and a Sep 21–27 — so which
+    # one gets named matters. The one whose period contains TODAY is the
+    # week that is actually theirs again once the draft goes; without that
+    # rule the toast told a household living in Sep 14–20 that "Sep 21–27
+    # is still your week", which is true of a week they are not in yet.
+    # Failing that (a draft entirely in the future), the earliest by period
+    # start — the next week they will reach.
+    today = date.today().isoformat()
+    overlapping = []
+    for other in conn.execute(
+        "SELECT * FROM weekly_plans WHERE household_id = ? AND status = 'approved' AND id != ?",
+        (household_id(), weekly_plan_id),
+    ).fetchall():
+        other_start, other_days = plan_period(other)
+        if periods_overlap(start, days, other_start, other_days):
+            overlapping.append((other_start, other_days))
+    approved_label = None
+    if overlapping:
+        covering = [
+            p for p in overlapping
+            if p[0] <= today <= period_end_date(p[0], p[1])
+        ]
+        pick = min(covering or overlapping, key=lambda p: p[0])
+        approved_label = _format_period_range(pick[0], pick[1])
+
+    if plan["status"] == "retired":
+        conn.close()
+        return {
+            "weekly_plan_id": weekly_plan_id, "status": "retired",
+            "week_label": label, "approved_week_label": approved_label,
+            "was_already_retired": True,
+        }
+
+    conn.execute(
+        "UPDATE weekly_plans SET status = 'retired', retired_reason = 'discarded', "
+        "updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+        (weekly_plan_id, household_id()),
+    )
+    conn.commit()
+    conn.close()
+    logger.info("Discarded draft plan %s (%s)", weekly_plan_id, label)
+    return {
+        "weekly_plan_id": weekly_plan_id, "status": "retired",
+        "week_label": label, "approved_week_label": approved_label,
+        "was_already_retired": False,
+    }
+
+
 def attach_intake_to_plan(weekly_plan_id: int, intake_id: int) -> dict:
     """
     Record which revision of the household's answers produced this plan.
