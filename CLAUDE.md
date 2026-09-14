@@ -371,6 +371,67 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-14 — Now was about the wrong day for four hours every evening:
+  moves.py read the SERVER's clock. Branch `overnight/moves-household-clock`,
+  NOT merged at the time of writing.** The deployed container runs in UTC
+  (the Dockerfile is `python:3.11-slim` and sets no `TZ`) and
+  `households.timezone` defaults to `America/Toronto`, so from 8pm Toronto
+  the server's date is already tomorrow. `moves._as_date(None)` was
+  `date.today()` and the three `now = now or datetime.now()` defaults were
+  the server's clock, and neither `/api/today/moves` nor `static/shell.js`
+  passes a date — so Now's whole timeline answered about TOMORROW while
+  `/api/today/tonight`, which has read the household's clock since it
+  shipped, still said today. Two cards on one screen disagreeing about what
+  day it is, at dinner time. Worse, from the same payload: Now offered a
+  cook and `POST /api/cooker/start` — which already goes through
+  `cooker.household_now` — refused it, "That's Monday's — I'll note the
+  start when you cook it Monday." Reproduced over real HTTP on a throwaway
+  DB in BOTH directions (household behind the server, and a server whose
+  own TZ is behind the household).
+  - **Resolved at the three entry points, not in `_as_date`, and the clock
+    is read ONCE.** `today_moves`, `moves_for_day` and `featured_move_id`
+    take `now = now or _household_now()` and then `target = _as_date(day)
+    if day is not None else now.date()`. `_as_date` stays the pure parser
+    with its server-date last resort: it is a shared helper, and making it
+    household-aware would have put a DB read behind every date string this
+    module parses. `today_moves` hands both `day` and `now` down to
+    `moves_for_day` and `featured_move_id` (including the recursive
+    "tomorrow" call), so one screen costs exactly ONE read of the zone
+    however many moves the day holds — pinned by a test that counts the
+    calls. `app/main.py` needed no change at all.
+  - **The day follows the `now` a caller passed**, rather than being
+    resolved separately: a caller holding one clock must never be answered
+    about another day. `tests/test_moves.py` builds its `now` off the
+    server's own today, so nothing there moves.
+  - **`_household_now` is `cooker.household_now`**, the one reader of
+    `households.timezone` for this (module alias `_cooker`, already
+    imported — no new edge in the domain graph, per the package's
+    circular-import convention). It is called only outside any write
+    transaction. Anything raising falls back to `datetime.now()` and logs:
+    a zone nobody can read must never leave Now blank.
+  - **`digest.build_morning_text` is untouched and unchanged** — it has
+    always passed `day=now_local.date(), now=now_local`, i.e. the morning
+    text was already right and the screen was the half that was wrong.
+    Explicit arguments still win over everything here.
+  - **Deliberately left out:** `tonight.py` still carries its own copy of
+    the same UTC→household conversion (a third, after `cooker` and
+    `digest._zone`) — folding those into one is a real tidy-up and not a
+    bug fix, so it is its own card. `cooker.get_cooker_view`'s stale-plan
+    check still compares `period_end_date` to the SERVER's `date.today()`,
+    so a plan whose last day is the household's today can read as stale for
+    the few hours the two dates differ; that is cooker's call to make and
+    this branch owns moves.py only.
+  - `tests/test_moves_household_clock.py` (13; **11 red on `2120af5`**, the
+    other two the explicit-argument guards that pin digest and `?date=`).
+    The clock is frozen by swapping `cooker.datetime` for a subclass whose
+    `now()` answers one fixed UTC instant — the zone lookup, the
+    `households.timezone` read and the ZoneInfo fallback all run for real,
+    and `date.today()` is left real so the two genuinely differ inside one
+    test exactly as they do in production. One test walks all 24 UTC hours
+    in both zone directions asserting `today_moves` and `tonight_check`
+    name the same day. Suite 4645, the only failure the known pre-existing
+    `test_tap_a_meal_opens_recipe::test_a_real_swap_cannot_make_a_chat_link_open_the_new_dish`.
+
 - **2026-09-13 — Hosting a holiday is THE BIG MEAL now: a menu, the shop
   in two trips, the prep on the days before, a day-of timeline. Branch
   `worktree-holiday-hosting`, slice 2 of Loop Board "Holidays: Pomona

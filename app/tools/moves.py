@@ -98,11 +98,48 @@ REHEAT_ACTION_LABEL = "Mark eaten"  # keep in step with shell.js's own constant
 # ---------- small time helpers ----------
 
 def _as_date(day: str | date | None) -> date:
+    """
+    Parse a caller's day. `None` falls back to the SERVER's date — every
+    entry point below resolves the household's own today before calling
+    this, so nothing in this module reaches that branch; it stays as the
+    last resort for a caller that hands in nothing at all.
+    """
     if day is None:
         return date.today()
     if isinstance(day, date):
         return day
     return date.fromisoformat(day)
+
+
+def _household_now() -> datetime:
+    """
+    Now on the household's own clock, as the naive local datetime every
+    window and slot time in this module is already written in.
+
+    The deployed container runs in UTC and households default to
+    America/Toronto, so from 8pm Toronto the server's date is already
+    tomorrow: /api/today/moves answered about TOMORROW while
+    /api/today/tonight — which has read the household's clock since it
+    shipped — still said today. Two cards on one screen disagreeing about
+    what day it is, every evening, at dinner time; and Now would offer a
+    cook that /api/cooker/start then refused as "that's Monday's".
+    digest.build_morning_text has always passed `day=`/`now=` off the
+    household's clock, so the screen was the half that was wrong.
+
+    cooker.household_now is the one reader of households.timezone for this
+    (imported as a module, per the package's own convention, because these
+    domains are circular). It opens a connection, so this is called ONCE
+    per request at the entry points below and threaded down, never inside
+    a loop and never inside an open write transaction. A clock that can't
+    be read must never stop the screen rendering, so anything raising here
+    falls back to the server's own now — worse than before by nothing, and
+    the same stance household_now itself takes towards an unreadable zone.
+    """
+    try:
+        return _cooker.household_now()
+    except Exception:
+        logger.exception("Couldn't read the household's clock; falling back to the server's")
+        return datetime.now()
 
 
 def _clock(t: time) -> str:
@@ -438,12 +475,19 @@ def moves_for_day(
     Every move for one day, earliest window first.
 
     `now` exists for tests and for the shop rule's 36-hour horizon; the UI
-    always passes real time (i.e. omits it). `view` lets a caller that
-    already has the cooker view (today_moves, which needs it twice over)
-    hand it in rather than paying for a second full read of the plan.
+    always passes real time (i.e. omits it). Omitted, it is the
+    HOUSEHOLD's now, not the server's — see _household_now. `view` lets a
+    caller that already has the cooker view (today_moves, which needs it
+    twice over) hand it in rather than paying for a second full read of
+    the plan.
+
+    `day` omitted is the household's today, taken from `now` so that a
+    caller passing one clock can never be answered about another day's
+    moves — which is exactly what "today" meant while this read the
+    server's date.
     """
-    target = _as_date(day)
-    now = now or datetime.now()
+    now = now or _household_now()
+    target = _as_date(day) if day is not None else now.date()
     dinner_clock = _dinner_clock()
     view = view if view is not None else _cooker.get_cooker_view()
 
@@ -476,8 +520,13 @@ def featured_move_id(moves: list[dict], now: datetime | None = None) -> str | No
     own window_end is in the past: that flag exists precisely so a fridge
     move due today doesn't drop out of contention the moment the (wrong,
     dinner-shaped) deadline it used to carry passed.
+
+    `now` omitted is the household's now: these windows are naive local
+    times, so comparing them against a UTC server clock ranked the day
+    from the wrong hour. today_moves always passes one, so the read costs
+    nothing on the path the screen actually takes.
     """
-    now = now or datetime.now()
+    now = now or _household_now()
     horizon = (now + timedelta(hours=LOOKAHEAD_HOURS)).isoformat()
     now_iso = now.isoformat()
     candidates = [
@@ -512,9 +561,16 @@ def today_moves(day: str | date | None = None, now: datetime | None = None) -> d
     The whole Today payload: the day's moves, which one is the card, the
     "N of M done" count, the week-state badge, and — for the days with
     nothing left on them — tomorrow's first move.
+
+    With neither argument this is the household's today and now — the
+    clock is resolved once, here, and handed down to moves_for_day and
+    featured_move_id, so one screen costs one read of the zone however
+    many moves the day holds. /api/today/moves passes only whatever
+    ?date= the caller sent (the shell sends none), which is why this
+    function's default is the fix and app/main.py needed no change.
     """
-    now = now or datetime.now()
-    target = _as_date(day)
+    now = now or _household_now()
+    target = _as_date(day) if day is not None else now.date()
     view = _cooker.get_cooker_view()
     moves = moves_for_day(target, now=now, view=view)
     featured = featured_move_id(moves, now=now)
