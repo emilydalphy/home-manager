@@ -371,6 +371,95 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-14 — ...and then the pre-shop card pinned the restored lines
+  off the list anyway. Branch `overnight/pre-shop-covers-the-amount`
+  (based on `overnight/inventory-covers-the-amount`), NOT merged at the
+  time of writing.** The second half of the entry below, and the identical
+  defect one step later: `pre_shop.get_pre_shop_flags` decided what "may
+  already be home" with a confident NAME match plus a non-blank test, and
+  then RENDERED both amounts in the sentence it showed — so the card read
+  "You want 3 lbs. Fridge shows 2 lbs." while holding that line off what
+  the household shops from. Measured over HTTP on a throwaway DB, the
+  shop-week-1-then-approve-week-2 shape: `/api/grocery-list?status=needed`
+  came back with **zero** sections and all six of the lines the approval
+  fix had just restored sat behind the card, each under a sentence
+  disproving it. Not data loss — one "Keep all" tap restores them — but
+  until this, the approval fix delivered almost nothing visible.
+  - **A flag is not a remark, which is the whole reason the amount has to
+    be compared.** `app/main.py`'s "needed" views (`/api/grocery-list` and
+    `/api/grocery-list/by-store`) filter flagged ids out, so an unreviewed
+    flag removes the line from the Shop tab. Every ticked line writes an
+    inventory row, so a week shopped normally put the next week's whole
+    list behind the card.
+  - **Pointed at `recipes._KitchenStock`, the class the parent branch
+    introduced — deliberately the same class and NOT a second copy of the
+    arithmetic.** Two implementations of "is there enough of this at home"
+    is exactly the bug: the ingest would restore a line and the card would
+    divert it again. Imported by the package's module-alias convention
+    (`from . import recipes as _recipes`); `recipes`' module-level import
+    closure does not reach `pre_shop`, so there is no cycle to resolve.
+  - **CLAIMING IS ON** — one reading of the kitchen per pass over the
+    list, spent as it is granted. The pre-shop check is a read-only view,
+    which argued for judging each line independently; the flag's exclusion
+    filter is what settles it the other way. Two lines of one food can sit
+    on the list at once, and two pounds on the shelf is an answer to one
+    of them; flagging both takes both off the list and sends the household
+    home with half of what the week wants — the same "told about the same
+    two pounds twice" failure the parent branch closed inside one
+    approval. Reachable through the public API, and the test uses that
+    route rather than a hand-written row: `grocery._NUMBER_CHANGES_MEANING`
+    keeps "Pea" and "Peas" as two lines on purpose, while
+    `cooker._singularize` reads both as one thing, so both match one
+    inventory row confidently. The cost is that WHICH of the two gets the
+    flag follows `list_grocery_list`'s order (category, then item, then
+    insertion) — stable, and either answer is defensible since the pair is
+    one food; what matters is that only one comes off the list.
+  - **The kitchen is asked LAST, after the card's wording guards**, because
+    `covers()` spends what it grants: a line the card declines to phrase
+    (an amount it can't reduce to one clause, a sentence past 60
+    characters) must not quietly claim stock the next line of the same
+    food is measured against. Pinned by the one test that goes red when
+    the check is moved above those guards.
+  - **Asked under the MATCHED ROW's name, not the grocery line's.**
+    `_KitchenStock` keys on the plain stripped name while
+    `_find_inventory_match`'s confident test forgives a trailing "s", so
+    keying on the line ("Eggs") would silently stop asking about a row
+    called "Egg" — a narrowing nobody asked for. The matched row's own
+    name asks about exactly the row the sentence is about to name, and
+    picks up duplicate rows of it, which `_KitchenStock` sums.
+  - **`get_grocery_already_have_items` got the same gate**, one door over
+    in the same file: the identical name-only check, and it is a chat tool
+    (`agent.TOOL_FUNCTIONS`), so a wrong "you already have that" is said
+    out loud. One line, the same helper.
+  - **What cannot be compared stays on the list** — the parent's bias, an
+    extra line beats a missing dinner: a freeform wanted amount ("a
+    handful"), an unreadable row on the shelf, one unreadable row among
+    several of a name, two unit families that don't convert. The deliberate
+    cost: a line the card used to flag on its wording alone ("You want a
+    bunch. Fridge shows 1 bunch.") is now bought.
+  - **`_pre_shop_parse_total` is pulled out of `_pre_shop_humanize_label`**
+    so the number compared and the phrase printed come from one read of
+    one string; the card must never say "You want 2 lbs" about a figure it
+    compared as something else.
+  - **Deliberately left, both flagged rather than fixed:**
+    `weekly_plan.preview_plan_grocery_impact`'s `already_have_count` still
+    asks the name-only question — it works over DISTINCT ingredient NAMES
+    with no scaling, so pointing it at `_KitchenStock` means computing each
+    recipe-week's `need` the way the ingest does, which is a rewrite and
+    not a line; and `cooker.get_cooker_view`'s `at_home` mark, whose
+    amounts are per-meal COOK amounts rather than a shopping line, so it
+    would want its own claim ledger across the week's meals. Both only
+    mislead — neither buys nor skips. Their own cards.
+  - `tests/test_pre_shop_covers_the_amount.py` (21; **9 red on `0633cdd`**).
+    The guards say so in their own docstrings, and two of them are
+    mutation-checked instead: removing `_KitchenStock`'s claim ledger, and
+    asking it before the wording guards. Suite **4672 passed, 1 failed** —
+    the known pre-existing
+    `test_a_real_swap_cannot_make_a_chat_link_open_the_new_dish` stale
+    date, red on `main` too. Before/after driven over a real uvicorn on a
+    throwaway DB: 0 lines to shop from and 6 flags, against 6 lines and 0
+    flags.
+
 - **2026-09-14 — Two ounces on the shelf took two POUNDS off the shopping
   list. Branch `overnight/inventory-covers-the-amount`, NOT merged at the
   time of writing.** Loop Board bug, reproduced over HTTP on a throwaway DB

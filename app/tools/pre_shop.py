@@ -11,6 +11,54 @@ from . import cooker as _cooker
 from . import grocery as _grocery
 from . import inventory as _inventory
 from . import quantities as _quantities
+from . import recipes as _recipes
+
+
+def _kitchen_stock() -> "_recipes._KitchenStock":
+    """
+    One reading of the kitchen for one pass over the list.
+
+    The same class the grocery ingest asks — deliberately the same class
+    and not a second copy of the arithmetic, because two implementations
+    of "is there enough of this at home" are exactly the bug this closes:
+    the approval would restore a line and the pre-shop check would divert
+    it again. See recipes._KitchenStock for the rule and its fail-safe
+    direction.
+
+    A fresh instance per call, never one shared between the two readers
+    below: _KitchenStock keeps a claim ledger, and a ledger carried from
+    one question into another would have the second answer depend on
+    whether the first had been asked.
+    """
+    conn = get_conn()
+    try:
+        return _recipes._KitchenStock(conn)
+    finally:
+        conn.close()
+
+
+def _pre_shop_parse_total(raw_qty: str) -> tuple[float, str | None] | None:
+    """
+    A quantity string read as ONE (amount, unit), or None when it can't
+    be: freeform wording ("a bunch", "to taste"), or an unreconciled
+    "X + Y" whose pieces are written in different units.
+
+    This is the amount half of _pre_shop_humanize_label, pulled out so the
+    number the coverage check compares and the phrase the sentence prints
+    come from the same read of the same string — the card must never say
+    "You want 2 lbs" about a figure it compared as something else.
+    """
+    raw = (raw_qty or "").strip()
+    if not raw:
+        return None
+    pieces = [p.strip() for p in raw.split(" + ") if p.strip()]
+    parsed = [_quantities._parse_quantity(p) for p in pieces]
+    if any(p is None for p in parsed):
+        return None
+    units = {p[1] for p in parsed}
+    if len(units) > 1:
+        return None
+    return sum(p[0] for p in parsed), parsed[0][1]
 
 
 def get_grocery_already_have_items() -> list[dict]:
@@ -27,11 +75,18 @@ def get_grocery_already_have_items() -> list[dict]:
     nagging about the same item every time. Powers the Grocery List view's
     "Already have this?" review section, which pulls these out of the
     normal To-buy list until reviewed.
+
+    The amount is compared, not merely present — see get_pre_shop_flags,
+    whose sibling gate this is. Two ounces of chicken thighs is not an
+    answer to a line asking for two pounds, and this function is read back
+    to the household in words by the assistant, so a wrong "you already
+    have that" here is said out loud.
     """
     needed = _grocery.list_grocery_list(status="needed")
     if not needed:
         return []
     inventory = _inventory.get_inventory()
+    stock = _kitchen_stock()
     have_matches = []
     for it in needed:
         if it.get("already_have_reviewed"):
@@ -41,6 +96,8 @@ def get_grocery_already_have_items() -> list[dict]:
             continue
         if not (match.get("quantity") or "").strip():
             continue  # tracked but with no quantity on hand isn't a confident "we have it"
+        if not stock.covers(match["item"], _pre_shop_parse_total(it["quantity"])):
+            continue  # tracked, but not demonstrably enough — see get_pre_shop_flags
         have_matches.append({
             "item_id": it["id"], "item": it["item"], "quantity": it["quantity"], "category": it["category"],
             "inventory_quantity": match["quantity"], "inventory_location": match.get("location", ""),
@@ -63,11 +120,45 @@ def get_pre_shop_flags() -> list[dict]:
     /api/grocery-list/by-store "needed" views' exclusion filter, so a
     flagged item never appears twice and never silently vanishes from
     both places at once.
+
+    THAT EXCLUSION IS WHY THE AMOUNT HAS TO BE COMPARED. A flag is not a
+    remark — it takes the line off what the household shops from until
+    somebody taps through the card. Until 2026-09-14 this asked inventory
+    the same question the grocery ingest did, "is this name in there with
+    a non-blank quantity?", and threw the quantity away; the sentence then
+    rendered both amounts, so the card could read "You want 3 lbs. Fridge
+    shows 2 lbs." while holding that line off the list. A week shopped
+    normally writes an inventory row per ticked line, so the week after it
+    the whole list went behind the card and the Shop tab opened empty.
+    Reproduced over HTTP before this was touched.
+
+    An amount is now compared, through recipes._KitchenStock — the same
+    class the ingest uses, so the two cannot disagree about one kitchen.
+    Everything that cannot be compared stays on the list: a freeform
+    wanted amount ("a bunch"), a row nobody can parse, two unit families
+    that don't convert. Same bias as the ingest — an extra line beats a
+    missing dinner.
+
+    THE STOCK IS CLAIMED AS IT IS GRANTED, one pass over the list. Two
+    lines of one food can co-exist (a household's standing want beside a
+    plan's line, in units that wouldn't add up — see grocery._merge_target),
+    and one dozen eggs on the shelf is an answer to one of them, not to
+    both. Claiming makes the second line stay on the list, which is the
+    honest answer and the safe one. The cost is that which of the two gets
+    the flag depends on the order list_grocery_list returns — by category
+    then item, so two lines of one food arrive adjacent and the tie among
+    them falls to insertion order. Stable, and either answer is defensible
+    since the pair is one food; what matters is that only one of them
+    comes off the list.
+
+    The kitchen is asked LAST, after the wording checks, so a line the
+    card declines to phrase spends nothing.
     """
     needed = _grocery.list_grocery_list(status="needed")
     if not needed:
         return []
     inventory = _inventory.get_inventory()
+    stock = _kitchen_stock()
     flags = []
     for it in needed:
         if it.get("already_have_reviewed"):
@@ -83,6 +174,22 @@ def get_pre_shop_flags() -> list[dict]:
             continue
         sentence = f"You want {wanted_label}. Fridge shows {on_hand_label}."
         if len(sentence) > 60:
+            continue
+        # ...and only once the kitchen can be SHOWN to cover the amount.
+        # Asked LAST, because covers() spends what it grants: a line left
+        # off the card for a wording reason above must not quietly claim
+        # stock the next line of the same food could have used.
+        #
+        # Asked under the MATCHED ROW's name, not the grocery line's.
+        # _KitchenStock keys on the plain stripped name while
+        # _find_inventory_match's confident test forgives a trailing "s",
+        # so keying on the line ("Eggs") would silently stop asking about
+        # a row called "Egg" — a narrowing this ticket never asked for.
+        # The matched row's own name asks the amount question about
+        # exactly the row the sentence is about to name, and picks up any
+        # duplicate rows of it (the opened jar in the fridge beside the
+        # unopened one in the pantry, which _KitchenStock sums).
+        if not stock.covers(match["item"], _pre_shop_parse_total(it["quantity"])):
             continue
         flags.append({
             "itemId": it["id"],
@@ -325,19 +432,15 @@ def _pre_shop_humanize_label(raw_qty: str) -> str | None:
     raw = (raw_qty or "").strip()
     if not raw:
         return None
+    total = _pre_shop_parse_total(raw)
+    if total is not None:
+        return _pre_shop_amount_words(total[0], total[1])
     pieces = [p.strip() for p in raw.split(" + ") if p.strip()]
     if len(pieces) > 1:
-        parsed = [_quantities._parse_quantity(p) for p in pieces]
-        if any(p is None for p in parsed):
-            return None
-        units = {p[1] for p in parsed}
-        if len(units) > 1:
-            return None
-        return _pre_shop_amount_words(sum(p[0] for p in parsed), parsed[0][1])
-    parsed = _quantities._parse_quantity(pieces[0])
-    if parsed:
-        return _pre_shop_amount_words(parsed[0], parsed[1])
+        return None  # two amounts that don't reconcile into one phrase
     # Freeform text ("a bunch", "to taste") is already a single clean
-    # phrase — just drop any trailing prep descriptor.
+    # phrase — just drop any trailing prep descriptor. It reads fine and
+    # says nothing a coverage check can use, which is why a freeform
+    # wanted amount is never flagged — see get_pre_shop_flags.
     cleaned = _quantities._strip_prep_descriptor(pieces[0])
     return cleaned or None
