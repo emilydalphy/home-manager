@@ -371,6 +371,80 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-14 — Two ounces on the shelf took two POUNDS off the shopping
+  list. Branch `overnight/inventory-covers-the-amount`, NOT merged at the
+  time of writing.** Loop Board bug, reproduced over HTTP on a throwaway DB
+  before anything was touched: add "Chicken thighs · 2 oz" to inventory,
+  approve a week whose dinners want 2 lbs of them, and the approval answers
+  `already_have_skipped: 1` with chicken thighs on no list at all. The
+  natural shape is worse and is the one Julia hit — approve week one, shop
+  it normally (ticking a line purchased writes an inventory row, which is
+  what "Done at Costco" does), then approve week two: measured
+  `groceries_added: 0, already_have_skipped: 2` with week two's list EMPTY,
+  against `groceries_added: 2` on the fix.
+  - **Root cause, one line.** `recipes._add_recipe_ingredients_for_entries`
+    built `have_names` from `SELECT item FROM inventory_items WHERE
+    TRIM(quantity) != ''` and skipped any ingredient whose name was in it.
+    The quantity was selected on as a non-blank TEST and then thrown away;
+    nothing ever compared it with what the week needed.
+  - **The rule now (`recipes._KitchenStock`): skip only what the kitchen
+    can be SHOWN to cover.** The tracked quantities, read in the unit the
+    shopping line would be written in, must add up to at least what that
+    line would say. Everything else is bought — this module's standing bias
+    (`_PACKAGE_UNITS`: "an extra line beats a missing dinner"), and the one
+    direction a wrong answer here is survivable in.
+  - **The figure compared is this RECIPE-WEEK's whole scaled claim, put
+    through `_week_bought_amount` — i.e. what that group would actually
+    buy, rounded exactly once by the same function the line is written
+    with.** Not one meal's share (three 1-lb dinners want 3 lbs, and 2 lbs
+    on hand is not enough), and not the raw per-portion sum (rounding up is
+    the safe way to be wrong). The week's TOTAL across all recipe groups —
+    the strictly correct figure — is only known at `WeekGroceryBuffer.flush`,
+    and moving the decision there means restructuring the two paths that
+    bypass the buffer (sealed packages, freeform) plus the `already_have`
+    return. So instead the STOCK IS CLAIMED AS IT IS SPENT: one buffer is
+    one approval, the stock is read once and hangs off it
+    (`buffer.kitchen_stock()`), and a grant deducts itself, so the second
+    and third recipes of a week to want chicken thighs cannot each be told
+    about the same two pounds. That gets the same answer as a whole-week
+    total without a second arithmetic that could disagree with the ingest's.
+  - **Several rows of one name are SUMMED, not picked between** (the "kept
+    in two places" case, 2026-09-13): two rows are two rows of one food and
+    "have we enough" is a question about the food. But every row must be
+    readable and convertible into the needed unit — "3 lbs" beside "a bit
+    left" is a total nobody can state, so it is bought.
+  - **Unreconcilable means buy**: a freeform quantity on either side, a
+    package against a measured amount, two unit families that do not
+    convert. Conversion is `quantities._convert_to_unit`, so oz/lb,
+    tsp/tbsp/cup, g/kg, ml/l and the counted packs all reconcile and
+    nothing else is guessed at. **The one place this costs rather than
+    saves:** a recipe that writes "to taste" (or nothing) names no amount,
+    so it is now asked for every week where the name alone used to settle
+    it. Kept because the alternative IS the bug — "there is some in the
+    house" standing in for "there is enough" — and because a spice goes to
+    the list's spice section rather than the aisles. One line to reverse.
+  - **Name matching is unchanged** (`strip().lower()`, not
+    `grocery._merge_key`): merge-key matching would make MORE ingredients
+    skippable, and widening what counts as "we have it" is the direction
+    this fix exists to narrow.
+  - **Deliberately left, each a sibling read that buys nothing:**
+    `weekly_plan.preview_plan_grocery_impact`'s `already_have_count` (the
+    draft screen's promise) and `cooker.get_cooker_view`'s `at_home` mark
+    still ask the old name-only question, so the preview will now
+    under-promise what approval adds. Both are in a file this branch was
+    not allowed to touch; the rule is a public class so pointing them at it
+    is a small change each. The Shop tab's pre-shop check
+    (`get_pre_shop_flags`) already compared amounts and now does the honest
+    thing on top of this — verified over HTTP: "You want 2 lbs. Fridge
+    shows 2 oz."
+  - `tests/test_inventory_covers_the_amount.py`, 18 tests, **11 red on
+    `2120af5`**; the seven green say in their own docstrings that they are
+    no-regression guards, and three of them were mutation-checked to bite
+    (exactly-enough against a strict `>`, the sum against taking one row,
+    the claim ledger against not claiming). Suite 4649 passed, 1 failed —
+    the known pre-existing `test_a_real_swap_cannot_make_a_chat_link_open_
+    the_new_dish` stale date, red on `main` too.
+
 - **2026-09-13 — Hosting a holiday is THE BIG MEAL now: a menu, the shop
   in two trips, the prep on the days before, a day-of timeline. Branch
   `worktree-holiday-hosting`, slice 2 of Loop Board "Holidays: Pomona

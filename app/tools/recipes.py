@@ -1858,6 +1858,109 @@ def _ledger_share(amount: float, unit: str | None, line_unit: str | None) -> str
     return _quantities._format_quantity(converted, line_unit, sig=_LEDGER_SIG)
 
 
+class _KitchenStock:
+    """
+    What the kitchen already has, and what this ingest pass has already
+    promised out of it.
+
+    The question this answers is the only one the grocery ingest asks of
+    inventory: is there demonstrably enough of this to leave it off the
+    list? Until 2026-09-14 the question was "is this name in inventory at
+    all" — the quantity was selected on as a non-blank test and then
+    thrown away — so two ounces of chicken thighs took two POUNDS of them
+    off the shopping list, and a week shopped normally (every ticked line
+    writes an inventory row) left the next week's list three items long.
+    Reproduced over HTTP before this was touched.
+
+    The rule now: an ingredient is skipped only when the tracked
+    quantities, read in the unit the week's own shopping line would be
+    written in, add up to at least what that line would say. Everything
+    else is bought — a freeform "a handful" on either side, a bag against
+    a cup, two unit families that do not convert. That is this module's
+    standing bias (see _PACKAGE_UNITS: "an extra line beats a missing
+    dinner"), and it is the one direction a wrong answer here is
+    survivable in: an extra line costs a line, a missing one costs the
+    dinner.
+
+    ROWS FOR ONE NAME ARE SUMMED, not picked between. An item kept in two
+    places — the opened jar in the fridge and the unopened one in the
+    pantry — is two rows of the same food, and "do we have enough" is a
+    question about the food, not about a shelf. But every one of those
+    rows has to be readable and convertible: one row saying "a bit left"
+    beside one saying "2 lbs" means the total is unknown, so it is bought.
+
+    THE STOCK IS CLAIMED AS IT IS SPENT. One buffer is one approval (see
+    WeekGroceryBuffer), and the ingest runs once per recipe-week inside
+    it, so without this the second and third recipes of a week to want
+    chicken thighs would each be told about the same two pounds and the
+    household would cook six pounds out of two.
+    """
+
+    def __init__(self, conn):
+        # Read once per buffer — one approval, one reading of the kitchen.
+        # Nothing writes inventory in between.
+        self._on_hand: dict[str, list[tuple[float, str | None]]] = {}
+        self._unreadable: set[str] = set()
+        self._claimed: dict[str, list[tuple[float, str | None]]] = {}
+        rows = conn.execute(
+            "SELECT item, quantity FROM inventory_items "
+            "WHERE household_id = ? AND TRIM(quantity) != ''",
+            (household_id(),),
+        ).fetchall()
+        for row in rows:
+            # Matched on the plain stripped name, exactly as the name-only
+            # check this replaces did. Deliberately NOT grocery._merge_key:
+            # that reads singulars, plurals and prep descriptors as the
+            # same thing, which would make MORE ingredients skippable, and
+            # widening what counts as "we have it" is the direction this
+            # fix exists to narrow.
+            key = (row["item"] or "").strip().lower()
+            parsed = _quantities._parse_quantity(row["quantity"] or "")
+            if parsed is None:
+                self._unreadable.add(key)
+            else:
+                self._on_hand.setdefault(key, []).append(parsed)
+
+    def covers(self, item: str, need: tuple[float, str | None] | None) -> bool:
+        """
+        True when `need` — (amount, unit), this recipe-week's whole scaled
+        claim on the ingredient — is demonstrably already at home, and
+        CLAIMS that much of the stock when it is.
+
+        `need` is compared as the shopping line would be written, through
+        _week_bought_amount: one rounding, the same one, so this and the
+        line it is deciding against can never disagree about the amount.
+        That also rounds UP, which is the safe way to be wrong here.
+        """
+        if not need or need[0] is None or need[0] <= 0:
+            return False  # nothing to compare against; buy it
+        key = (item or "").strip().lower()
+        on_hand = self._on_hand.get(key)
+        if not on_hand or key in self._unreadable:
+            return False
+        wanted, unit = _week_bought_amount(need[0], need[1])
+        have = self._total_in(on_hand, unit)
+        spent = self._total_in(self._claimed.get(key, []), unit)
+        if have is None or spent is None:
+            return False  # can't be reconciled into one unit; buy it
+        if have - spent + 1e-9 < wanted:
+            return False
+        self._claimed.setdefault(key, []).append((wanted, unit))
+        return True
+
+    @staticmethod
+    def _total_in(amounts, unit) -> float | None:
+        """Everything in `amounts` added up in `unit`, or None the moment
+        one of them cannot be expressed in it."""
+        total = 0.0
+        for amount, from_unit in amounts:
+            converted = _quantities._convert_to_unit(amount, from_unit, unit)
+            if converted is None:
+                return None
+            total += converted
+        return total
+
+
 class WeekGroceryBuffer:
     """
     Per-portion amounts held UNROUNDED until every recipe in an ingest pass
@@ -1897,6 +2000,28 @@ class WeekGroceryBuffer:
         # each other in add_grocery_item, which reports the disagreement
         # honestly instead of guessing a conversion.
         self._lines: dict[tuple, dict] = {}
+        # The kitchen as it stood when this pass started, read lazily and
+        # once — see _KitchenStock and kitchen_stock() below.
+        self._stock: "_KitchenStock | None" = None
+
+    def kitchen_stock(self) -> "_KitchenStock":
+        """
+        What the household already has, shared by every recipe-week in this
+        pass so the same two pounds of chicken cannot be counted twice.
+
+        Read on the buffer's own connection when it has one and on a fresh
+        one otherwise — the same rule _add_recipe_ingredients_for_entries
+        follows, because inside an open write transaction a second
+        connection would sit behind its lock (see that function).
+        """
+        if self._stock is None:
+            conn = self.conn or get_conn()
+            try:
+                self._stock = _KitchenStock(conn)
+            finally:
+                if self.conn is None:
+                    conn.close()
+        return self._stock
 
     def add(self, entry_id: int, item: str, category: str, amount: float, unit: str | None, note: str) -> None:
         key = (_grocery._merge_key(item), unit, note)
@@ -2152,23 +2277,6 @@ def _add_recipe_ingredients_for_entries(
     # the same answer the single-meal path gives for a lone leftovers entry.
     if not contributing_ids:
         return [], []
-    # Skip adding anything already tracked in pantry/fridge inventory (with
-    # a non-blank quantity) — this is the "accounts for logged inventory"
-    # behavior for the plan-approval path. For a direct chat-driven add
-    # ("add flour to the list"), the agent checks get_inventory itself and
-    # asks first instead (see system prompt) since there's a person there
-    # to actually ask.
-    inv_conn = get_conn() if own_conn else conn
-    have_names = {
-        row["item"].strip().lower()
-        for row in inv_conn.execute(
-            "SELECT item FROM inventory_items WHERE household_id = ? AND TRIM(quantity) != ''",
-            (household_id(),),
-        ).fetchall()
-    }
-    if own_conn:
-        inv_conn.close()
-
     added_items: list[str] = []
     already_have: list[str] = []
     # Routed through add_grocery_item (its own connection per call) rather
@@ -2184,11 +2292,20 @@ def _add_recipe_ingredients_for_entries(
     own_buffer = buffer is None
     if own_buffer:
         buffer = WeekGroceryBuffer(weekly_plan_id, conn=conn)
+    # Anything the kitchen can be SHOWN to cover is left off the list —
+    # this is the "accounts for logged inventory" behaviour for the
+    # plan-approval path. For a direct chat-driven add ("add flour to the
+    # list") the agent checks get_inventory itself and asks first instead
+    # (see system prompt), since there's a person there to actually ask.
+    # The amount is compared now; it used to be selected on and discarded.
+    # See _KitchenStock.
+    stock = buffer.kitchen_stock()
+    # Every meal in this group added together — the same sum the buffer
+    # arrives at one share at a time, so the kitchen is asked about the
+    # week's amount and not one night's.
+    week_scale = sum(scale_for_entry[e] for e in contributing_ids)
 
     for ing in recipe_ingredients:
-        if ing["item"].strip().lower() in have_names:
-            already_have.append(ing["item"])
-            continue
         # The recipe's own wording decides the path, before any headcount
         # scaling — scaling can only ever turn a package into the same
         # package (you cannot buy two thirds of a jar), so asking the
@@ -2201,6 +2318,35 @@ def _add_recipe_ingredients_for_entries(
         # strips a prep descriptor ("3, diced") itself.
         core, note = _quantities._split_quantity_note(raw_qty.strip())
         pack_share = _counted_pack_share(ing["item"], core, default_servings)
+        parsed_core = _quantities._parse_quantity(core)
+        package = _quantities.package_unit(raw_qty)
+        # What this whole recipe-week claims on the ingredient, written the
+        # way the branches below write it into the buffer — so the kitchen
+        # is asked about the amount that would actually be bought. A
+        # PACKAGE is the exception and is asked about as one package,
+        # because one package is what the branch below adds however often
+        # the meal repeats.
+        #
+        # Freeform ("a bunch", "to taste", blank) names no amount, so
+        # nothing can be shown to cover it and it is bought. That is the
+        # one place this fix costs something rather than saving it: a
+        # recipe that says "salt, to taste" now asks for salt every week,
+        # where the name alone used to settle it. Kept because the
+        # alternative is the shape of the bug — "there is some of this in
+        # the house" standing in for "there is enough" — and because a
+        # spice goes to the list's own spice section (spices.py) rather
+        # than the aisles. One line to reverse if it reads as noise.
+        if pack_share:
+            need = (pack_share[0] * week_scale, pack_share[1])
+        elif package:
+            need = _quantities._parse_quantity(raw_qty)
+        elif parsed_core:
+            need = (parsed_core[0] * week_scale, parsed_core[1])
+        else:
+            need = None
+        if stock.covers(ing["item"], need):
+            already_have.append(ing["item"])
+            continue
         if pack_share:
             # A COUNTED PACK — eggs, garlic. Whether the recipe wrote the
             # piece or the pack, what goes in the buffer is the pieces this
@@ -2214,7 +2360,7 @@ def _add_recipe_ingredients_for_entries(
                     entry_id, ing["item"], category,
                     share * scale_for_entry[entry_id], small_unit, note,
                 )
-        elif _quantities.package_unit(raw_qty):
+        elif package:
             add_result = _grocery.add_grocery_item(
                 ing["item"], quantity=raw_qty, category=category, added_by="ai",
                 source_weekly_plan_id=weekly_plan_id, quantity_mode="max", conn=conn,
@@ -2222,7 +2368,7 @@ def _add_recipe_ingredients_for_entries(
             for entry_id in contributing_ids:
                 _record_grocery_link(entry_id, ing["item"], add_result["item_id"], raw_qty, conn=conn)
         else:
-            parsed = _quantities._parse_quantity(core)
+            parsed = parsed_core
             if parsed:
                 # Into the buffer unrounded, one share per meal. Nothing
                 # reaches the list until every recipe in this pass has
