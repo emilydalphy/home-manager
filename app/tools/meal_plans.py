@@ -196,12 +196,19 @@ def get_meal_plan(days_ahead: int = 7) -> list[dict]:
     # wrong, and it corrected itself by morning, which is exactly why it
     # could go unnoticed.
     #
-    # `date.today()` is the server's local date, which is right for a
-    # single-timezone household and wrong for one in another timezone —
-    # the honest fix for that is storing a household's timezone, not
-    # reaching for UTC, which is nobody's local midnight.
-    today = date.today().isoformat()
-    end_date = (date.today() + timedelta(days=days_ahead)).isoformat()
+    # That honest fix now exists, and this reads it: `households.timezone`,
+    # through the same helper Now's own window uses. It matters here and not
+    # only there because THESE TWO WINDOWS HAVE TO COINCIDE — this function
+    # is what the assistant can name, `unplanned_meals_ahead` is what the
+    # screen can show, and the promise pinned by
+    # `test_the_horizon_matches_what_the_assistant_can_talk_about` is that
+    # nothing nameable is invisible. Moving that one onto the household's
+    # clock and leaving this one on the server's opened exactly the one-day
+    # sliver that test exists to close — found on review, four hours a day,
+    # a loose meal seven days out that chat could name and no screen drew.
+    household_today = _weekly_plan._household_today()
+    today = household_today.isoformat()
+    end_date = (household_today + timedelta(days=days_ahead)).isoformat()
     rows = conn.execute(
         """
         SELECT mpe.date, mpe.slot, COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.food_groups_json,

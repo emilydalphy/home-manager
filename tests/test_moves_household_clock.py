@@ -374,7 +374,11 @@ def test_the_clock_is_read_a_fixed_number_of_times_not_once_per_move(monkeypatch
 
     assert len(_moves.moves_for_day(quiet_day)) > 1, "the day really did get busier"
     assert busy_day == one_move
-    assert one_move <= 3
+    # Both ends. The upper one is the cost guard; the lower one is what
+    # makes this a test rather than a tautology — `<= 3` alone is green at
+    # ZERO, which is what `main` does (it never reads the household's clock
+    # at all), so it would have passed on the very code this branch fixes.
+    assert 1 <= one_move <= 3
 
 
 # ---------- the other half of the clock: the card the screen answers ----------

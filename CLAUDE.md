@@ -474,7 +474,7 @@ why*, not duplicating the diff.
     the same day. That was true of the code until now and is not true of it
     any more. Measured, whole suite, under a genuinely straddling
     `TZ=Pacific/Niue`: `main` 2 failed / 4630 passed, this branch 23 failed
-    / 4628 — **21 post-only failures, every one of them a test seeding by
+    / 4628 — **21 post-only failures, all but ONE of them a test seeding by
     the process's date** (`test_needs_you_dinner_visible` 13,
     `test_tools` 4, `test_draft_waits_for_approval` 2, `test_cook_shelf`
     1, `test_morning_text` 1, plus the two `test_moves.py` route ones
@@ -492,7 +492,43 @@ why*, not duplicating the diff.
     at any hour rather than by luck. It is the RUNNER's clock only and is
     emphatically not a claim that the app may assume Toronto — the app
     reads each household's own zone, which is the entire point of this
-    branch.
+    branch. **The pin fixes CI, not local dev** — a developer whose machine
+    is not on Toronto time still sees up to 23 failures at the wrong hour
+    with nothing explaining why, so run `TZ=America/Toronto pytest` if the
+    suite ever goes red in a way that makes no sense against the diff.
+  - **ONE of those 21 was NOT a harness artifact, and calling them all
+    artifacts was wrong** (found on re-review, corrected here).
+    `test_needs_you_dinner_visible.py::TestWhichLooseMealsCountAsThisWeeks
+    Cooking::test_the_horizon_matches_what_the_assistant_can_talk_about`
+    compares two APP functions to each other — the seeding only decides
+    which meals exist — so it cannot be a seeding artifact by
+    construction. It was red because this branch moved
+    `unplanned_meals_ahead` (what the SCREEN can show) onto the household's
+    clock and left `get_meal_plan` (what the ASSISTANT can name) on the
+    server's, which opened a one-day sliver where chat could name a loose
+    meal seven days out that no screen drew — for the same four hours a
+    day. That is precisely the gap the 2026-09-13 entry below says that
+    test exists to close, reopened a day wide. Fixed rather than
+    documented: `get_meal_plan` reads `_household_today()` too, which its
+    own comment had been asking for ("the honest fix for that is storing a
+    household's timezone"). Measured directly rather than through the
+    suite, household a day behind the server, loose dinners seeded across
+    the horizon: **named-but-invisible was `['Day8']` before the fix and
+    `[]` after.** **The lesson worth keeping: when a clock moves, every
+    window that has to COINCIDE with it moves in the same commit — a
+    half-converted app is a new bug, not a smaller one.**
+  - **That fix RAISES the straddling-TZ artifact count, from 23 to 29, and
+    that is the expected direction rather than a regression.** `get_meal_plan`
+    is read by many more tests than `unplanned_meals_ahead` is, and every
+    one of them seeds its dates from the process's `date.today()` — so
+    moving the function onto the household's clock turns each into the same
+    seeding artifact as the other nineteen. None of the six is an app
+    failure: the app-level gap the change exists to close is closed, by the
+    direct measurement above. At `TZ=America/Toronto` — what CI now runs —
+    the whole suite is **4650 passed, 1 failed**, that one being the known
+    pre-existing stale-date test. The artifact count is a property of the
+    harness's seeding, not of the code, and the card for re-seeding those
+    tests off the household's clock is the thing that takes it to zero.
   - **The obvious fix was tried first and is wrong; recorded so nobody
     re-tries it.** Putting the test household on the process's own clock
     in `tests/conftest.py` (deriving the zone from `TZ`, else
