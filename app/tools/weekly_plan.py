@@ -35,6 +35,49 @@ WEEK_SLOTS = ("breakfast", "lunch", "dinner")
 DAY_SLOTS = WEEK_SLOTS + ("snack",)
 
 
+def _household_today() -> date:
+    """
+    Today where the household lives, not where the container runs.
+
+    The deployed container is UTC and households.timezone defaults to
+    America/Toronto, so between 8pm and midnight Eastern the server's date
+    is already tomorrow. Now's timeline runs on the household's day
+    (moves.py, 2026-09-14) — so anything here that names a day the SCREEN
+    will show, or that decides which days the screen can see, has to run on
+    the same clock or the two halves land on different days. That is
+    exactly how "a dinner answered on Now is saved and invisible"
+    (overnight/needs-you-dinner-invisible, 2026-09-13) comes back: the card
+    offers the server's date, the client posts it back verbatim, and the
+    timeline is looking at the household's.
+
+    cooker.household_now is the one reader of that column, and it is
+    imported HERE rather than at the top of the file because cooker imports
+    this module at import time — a top-level import would be a cycle. The
+    same lazy-import shape moves._today_holiday already uses. A clock that
+    can't be read falls back to the server's date: a bad setting is worth a
+    wrong hour, never a blank screen.
+
+    Written as a SHIFT applied to this module's own `date.today()` rather
+    than as the household datetime's date, and that is deliberate: "the
+    household's today" is exactly "the server's today, moved by however
+    many whole days the two clocks are apart", and saying it that way
+    leaves `weekly_plan.date` the single seam it has always been. A dozen
+    test files pin this module's clock by patching that name
+    (test_holidays, test_planning_periods, test_stale_draft_front_page,
+    test_sunday_next_week_span, …); reading the zone-converted datetime
+    directly would have walked straight past every one of them, and the
+    first version of this did.
+    """
+    from . import cooker as _cooker
+
+    try:
+        shift = (_cooker.household_now().date() - datetime.now().date()).days
+    except Exception:
+        logger.exception("Couldn't read the household's clock; falling back to the server's date")
+        return date.today()
+    return date.today() + timedelta(days=shift)
+
+
 def slot_order_sql(column: str) -> str:
     """
     An ORDER BY fragment that sorts a day's slots into the order they are
@@ -3169,7 +3212,11 @@ def unplanned_meals_ahead(plan: dict | None = None) -> list[dict]:
     in the past is still readable through get_meal_plan and
     get_recent_meal_history.
     """
-    today = date.today()
+    # The household's today, for the reason this function exists at all: the
+    # window never looks back, so reading the SERVER's date would drop a
+    # loose meal saved on the household's own evening the moment the two
+    # dates differ — which is this very bug, one door over.
+    today = _household_today()
     start = today.isoformat()
     end = (today + timedelta(days=UNPLANNED_HORIZON_DAYS)).isoformat()
     conn = get_conn()
@@ -4140,7 +4187,11 @@ def get_needs_you_items() -> list[dict]:
     then shop run.
     """
     conn = get_conn()
-    today = date.today()
+    # The household's today, not the server's: this card says "Tonight" and
+    # carries the date the client posts straight back, and Now's timeline
+    # reads the household's day. The two have to be the same day or the
+    # answered dinner lands where nothing is looking. See _household_today.
+    today = _household_today()
     horizon_end = today + timedelta(days=2)  # today, tomorrow, day-after exclusive edge -> "within 48h" covers today+tomorrow
 
     items: list[dict] = []
@@ -4264,8 +4315,8 @@ def resolve_needs_you_dinner(
 ) -> dict:
     """
     Resolve a needs-you dinner-decision card by planning the picked meal —
-    thin wrapper around plan_meal that also attaches it to the household's
-    current weekly plan (if one exists) so it shows up correctly in the
+    thin wrapper around plan_meal that also attaches it to the weekly plan
+    that covers that day (if one does) so it shows up correctly in the
     Week tab's menu, then returns the refreshed needs-you list so the
     Today screen can just re-render from the response.
 
@@ -4275,22 +4326,23 @@ def resolve_needs_you_dinner(
     standard chat is held to (see plan_meal). It defaults to False so a
     caller that forgets to ask adds nothing.
 
-    "Current" plan means _current_weekly_plan_row's fallback too: a
-    household whose only plan on file is an old week still gets one back
-    (newest-wins), and that plan's period can end before meal_date. Bug,
-    2026-09-11: attaching meal_date to a plan whose period doesn't cover
-    it made plan_meal's own period check reject the insert, 500ing a tap
-    on the card get_needs_you_items had just offered. Attach the plan only
-    when its period actually covers meal_date; otherwise plan_meal still
-    saves the meal for tonight, just with no plan link — the same shape a
-    one-off chat request already gets.
+    The plan is resolved BY THE MEAL'S DAY, not by "which plan is current".
+    Bug, 2026-09-11: attaching meal_date to a plan whose period doesn't
+    cover it made plan_meal's own period check reject the insert, 500ing a
+    tap on the card get_needs_you_items had just offered. That was first
+    fixed by asking _current_weekly_plan_row for "the" plan and then
+    dropping the link when its period missed the date — right, but decided
+    partly by the SERVER's today, which is a different day from the
+    household's for four hours every evening (see _household_today): at a
+    period boundary in that window the covering plan was resolved as "not
+    current" and the link dropped for no reason the household could see.
+    get_plan_id_for_date is the app's own answer to "which plan does this
+    day belong to", it reads no clock at all, and it returns None for a day
+    no live plan covers — in which case plan_meal still saves the meal,
+    just with no plan link, the same shape a one-off chat request already
+    gets and the shape unplanned_meals_ahead exists to keep visible.
     """
-    plan = get_weekly_plan()
-    weekly_plan_id = plan.get("weekly_plan_id")
-    if weekly_plan_id is not None and not (
-        plan["period_start_date"] <= meal_date <= plan["period_end_date"]
-    ):
-        weekly_plan_id = None
+    weekly_plan_id = get_plan_id_for_date(meal_date)
     result = _meal_plans.plan_meal(
         meal_date, meal, slot="dinner", weekly_plan_id=weekly_plan_id,
         add_ingredients_to_grocery_list=add_ingredients_to_grocery_list,
