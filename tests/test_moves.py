@@ -434,21 +434,32 @@ def test_a_shop_move_is_not_tickable_and_ticking_it_is_a_no_op():
 # ---------- the routes ----------
 
 def test_the_endpoints_answer_and_the_tick_round_trips(signed_in):
+    # ?date= is passed on purpose. This test seeds by the SERVER's today and
+    # the route with no date means the HOUSEHOLD's today (moves._household_now,
+    # 2026-09-14) — the same day for a UTC test process and a Toronto
+    # household for twenty hours out of twenty-four, and a different one for
+    # the other four. Naming the day is what makes the claim here — the
+    # endpoints answer, the tick round-trips — about the endpoints rather
+    # than about what hour the suite happened to run at.
     _household()
     _recipe("Chicken Skewers")
     plan_id = _plan()
     tools.plan_meal(ISO_TODAY, "Chicken Skewers", slot="dinner", weekly_plan_id=plan_id)
     entry_id = _entry_id(ISO_TODAY, "dinner")
 
-    payload = signed_in.get("/api/today/moves").json()
+    payload = signed_in.get(f"/api/today/moves?date={ISO_TODAY}").json()
     assert [m["id"] for m in payload["moves"]] == [f"cook:{entry_id}"]
     assert payload["week_state"] == "draft"
 
-    res = signed_in.post(f"/api/today/moves/cook:{entry_id}/done", json={"done": True})
+    res = signed_in.post(
+        f"/api/today/moves/cook:{entry_id}/done?date={ISO_TODAY}", json={"done": True}
+    )
     assert res.status_code == 200
     assert res.json()["moves"][0]["done"] is True
 
-    res = signed_in.post(f"/api/today/moves/cook:{entry_id}/done", json={"done": False})
+    res = signed_in.post(
+        f"/api/today/moves/cook:{entry_id}/done?date={ISO_TODAY}", json={"done": False}
+    )
     assert res.json()["moves"][0]["done"] is False
 
 
@@ -515,12 +526,14 @@ def test_one_households_moves_are_never_another_households(client):
         beta_plan = tools.create_weekly_plan(WEEK_START)["weekly_plan_id"]
         tools.plan_meal(ISO_TODAY, "Miso Soup", slot="dinner", weekly_plan_id=beta_plan)
 
+    # ?date= for the same reason as the test above: this is about which
+    # household's rows come back, not about which day it is.
     client.post("/login", data={"password": "test-password", "next": "/"}, follow_redirects=False)
-    emily_moves = client.get("/api/today/moves").json()["moves"]
+    emily_moves = client.get(f"/api/today/moves?date={ISO_TODAY}").json()["moves"]
     assert [m["title"] for m in emily_moves] == ["Chicken Skewers"]
 
     client.post("/login", data={"password": "beta-tester-passphrase", "next": "/"}, follow_redirects=False)
-    beta_moves = client.get("/api/today/moves").json()["moves"]
+    beta_moves = client.get(f"/api/today/moves?date={ISO_TODAY}").json()["moves"]
     assert [m["title"] for m in beta_moves] == ["Miso Soup"]
 
     # And one household cannot tick the other's move: the id names a row

@@ -641,6 +641,182 @@ why*, not duplicating the diff.
     4651 passed, 1 failed — the known pre-existing
     `test_a_real_swap_cannot_make_a_chat_link_open_the_new_dish` stale
     date, red on `main` too.
+- **2026-09-14 — Now was about the wrong day for four hours every evening:
+  moves.py read the SERVER's clock, and so did the card Now answers with.
+  Branch `overnight/moves-household-clock`, NOT merged at the time of
+  writing.** The deployed container runs in UTC
+  (the Dockerfile is `python:3.11-slim` and sets no `TZ`) and
+  `households.timezone` defaults to `America/Toronto`, so from 8pm Toronto
+  the server's date is already tomorrow. `moves._as_date(None)` was
+  `date.today()` and the three `now = now or datetime.now()` defaults were
+  the server's clock, and neither `/api/today/moves` nor `static/shell.js`
+  passes a date — so Now's whole timeline answered about TOMORROW while
+  `/api/today/tonight`, which has read the household's clock since it
+  shipped, still said today. Two cards on one screen disagreeing about what
+  day it is, at dinner time. Worse, from the same payload: Now offered a
+  cook and `POST /api/cooker/start` — which already goes through
+  `cooker.household_now` — refused it, "That's Monday's — I'll note the
+  start when you cook it Monday." Reproduced over real HTTP on a throwaway
+  DB in BOTH directions (household behind the server, and a server whose
+  own TZ is behind the household).
+  - **Resolved at the three entry points, not in `_as_date`, and the clock
+    is read ONCE.** `today_moves`, `moves_for_day` and `featured_move_id`
+    take `now = now or _household_now()` and then `target = _as_date(day)
+    if day is not None else now.date()`. `_as_date` stays the pure parser
+    with its server-date last resort: it is a shared helper, and making it
+    household-aware would have put a DB read behind every date string this
+    module parses. `today_moves` hands both `day` and `now` down to
+    `moves_for_day` and `featured_move_id` (including the recursive
+    "tomorrow" call), so one screen costs exactly ONE read of the zone
+    however many moves the day holds — pinned by a test that counts the
+    calls. `app/main.py` needed no change at all.
+  - **The day follows the `now` a caller passed**, rather than being
+    resolved separately: a caller holding one clock must never be answered
+    about another day. `tests/test_moves.py` builds its `now` off the
+    server's own today, so nothing there moves.
+  - **`_household_now` is `cooker.household_now`**, the one reader of
+    `households.timezone` for this (module alias `_cooker`, already
+    imported — no new edge in the domain graph, per the package's
+    circular-import convention). It is called only outside any write
+    transaction. Anything raising falls back to `datetime.now()` and logs:
+    a zone nobody can read must never leave Now blank.
+  - **`digest.build_morning_text` is untouched and unchanged** — it has
+    always passed `day=now_local.date(), now=now_local`, i.e. the morning
+    text was already right and the screen was the half that was wrong.
+    Explicit arguments still win over everything here.
+  - **THE OTHER HALF OF THE CLOCK, and moving only the timeline REOPENED a
+    closed bug — found by review, fixed on the same branch.** Now's
+    "Tonight needs a dinner" card carries a DATE, `static/shell.js` posts
+    that date back verbatim, and the meal is written on it — so a card on
+    the server's clock over a timeline on the household's is
+    "a dinner answered on Now is saved and invisible"
+    (`overnight/needs-you-dinner-invisible`, 2026-09-13) coming back from
+    the other side, and strictly worse than `main`, where both halves were
+    wrong TOGETHER and so at least agreed. Measured live at the production
+    shape: card `2026-09-14`, timeline `2026-09-13`, the answered dinner on
+    neither screen. Three reads in `weekly_plan.py` moved onto the same
+    clock through a new `_household_today()`:
+    `get_needs_you_items` (the card's own day, and the holiday ask's);
+    `unplanned_meals_ahead` (its window never looks back, so the server's
+    date DROPPED a loose meal saved on the household's own evening — the
+    same bug wearing the no-plan hat); and `resolve_needs_you_dinner`,
+    which now resolves the plan by `get_plan_id_for_date(meal_date)` — the
+    app's own "which plan does this day belong to", which reads no clock at
+    all — instead of asking which plan is *current* and then checking
+    coverage. The 2026-09-11 rule it was written for (never attach a meal
+    to a plan whose period misses the date, or `plan_meal` 500s the tap) is
+    unchanged and now holds by construction.
+    `_household_today` imports `cooker` INSIDE the function: `cooker`
+    imports `weekly_plan` at module scope, so a top-level import here would
+    be a cycle — the same lazy shape `moves._today_holiday` already uses.
+  - **Deliberately left out:** `tonight.py` still carries its own copy of
+    the same UTC→household conversion (a third, after `cooker` and
+    `digest._zone`) — folding those into one is a real tidy-up and not a
+    bug fix, so it is its own card.
+  - **A pre-existing one, stated plainly rather than softened, because an
+    earlier draft of this entry did soften it:** `cooker.get_cooker_view`'s
+    stale-plan check compares `period_end_date` to the SERVER's
+    `date.today()`, so for the hours the two dates differ a household with
+    an approved plan and a dinner tonight gets `moves: []` and
+    `week_state: "none"` from `/api/today/moves` — an empty Now, not merely
+    a plan that "reads as stale". Identical on `main`, unchanged by this
+    branch, `cooker.py`'s to fix; filed as its own card.
+  - `tests/test_moves_household_clock.py` (19; **11 of the first 13 red on
+    `2120af5`**, and **5 of the 6 needs-you ones red on this branch's own
+    first commit**, which is where that regression lived). The clock is
+    frozen by swapping `cooker.datetime` for a subclass whose `now()`
+    answers one fixed UTC instant — the zone lookup, the
+    `households.timezone` read and the ZoneInfo fallback all run for real,
+    and `date.today()` is left real so the two genuinely differ inside one
+    test exactly as they do in production. One test walks all 24 UTC hours
+    in both zone directions asserting `today_moves` and `tonight_check`
+    name the same day; another answers the card with the date it carries
+    and looks for the dinner on the timeline. Suite **4651, 4650 passing**,
+    the only failure the known pre-existing
+    `test_tap_a_meal_opens_recipe::test_a_real_swap_cannot_make_a_chat_link_open_the_new_dish`.
+  - **THE TEST SUITE NOW HAS A CLOCK IT DID NOT HAVE BEFORE, and this is
+    the thing to read before the next change here.** `tests/conftest.py`
+    creates its household with `households.timezone` at its column default,
+    `America/Toronto`, while the test process runs in whatever `TZ` it is
+    given — UTC on CI. Every test that builds a date with
+    `datetime.date.today()` and then asks a screen about "today" was
+    therefore asserting that the SERVER's day and the HOUSEHOLD's day are
+    the same day. That was true of the code until now and is not true of it
+    any more. Measured, whole suite, under a genuinely straddling
+    `TZ=Pacific/Niue`: `main` 2 failed / 4630 passed, this branch 23 failed
+    / 4628 — **21 post-only failures, all but ONE of them a test seeding by
+    the process's date** (`test_needs_you_dinner_visible` 13,
+    `test_tools` 4, `test_draft_waits_for_approval` 2, `test_cook_shelf`
+    1, `test_morning_text` 1, plus the two `test_moves.py` route ones
+    fixed here). At the default UTC they are green — **except between
+    00:00 and 03:59 UTC**, which is the same four Toronto evening hours
+    this branch is about. Two of them, the `test_moves.py` route pair, are
+    fixed here by naming the day (`?date=`), which is what their claims
+    were always about. **The remaining nineteen are fixed by ONE LINE, and
+    it is in the CI workflow rather than in any test**: the runner now sets
+    `TZ: America/Toronto`, the app's own default household zone, so the
+    process and the household it is testing agree about what day it is.
+    Measured the same tree three ways on 2026-09-14 — `TZ=Pacific/Niue`
+    23 failed; unset (UTC) 0 failed, but only because it ran outside the
+    00:00–03:59 window; `TZ=America/Toronto` 0 failed, and that one holds
+    at any hour rather than by luck. It is the RUNNER's clock only and is
+    emphatically not a claim that the app may assume Toronto — the app
+    reads each household's own zone, which is the entire point of this
+    branch. **The pin fixes CI, not local dev** — a developer whose machine
+    is not on Toronto time still sees up to 23 failures at the wrong hour
+    with nothing explaining why, so run `TZ=America/Toronto pytest` if the
+    suite ever goes red in a way that makes no sense against the diff.
+  - **ONE of those 21 was NOT a harness artifact, and calling them all
+    artifacts was wrong** (found on re-review, corrected here).
+    `test_needs_you_dinner_visible.py::TestWhichLooseMealsCountAsThisWeeks
+    Cooking::test_the_horizon_matches_what_the_assistant_can_talk_about`
+    compares two APP functions to each other — the seeding only decides
+    which meals exist — so it cannot be a seeding artifact by
+    construction. It was red because this branch moved
+    `unplanned_meals_ahead` (what the SCREEN can show) onto the household's
+    clock and left `get_meal_plan` (what the ASSISTANT can name) on the
+    server's, which opened a one-day sliver where chat could name a loose
+    meal seven days out that no screen drew — for the same four hours a
+    day. That is precisely the gap the 2026-09-13 entry below says that
+    test exists to close, reopened a day wide. Fixed rather than
+    documented: `get_meal_plan` reads `_household_today()` too, which its
+    own comment had been asking for ("the honest fix for that is storing a
+    household's timezone"). Measured directly rather than through the
+    suite, household a day behind the server, loose dinners seeded across
+    the horizon: **named-but-invisible was `['Day8']` before the fix and
+    `[]` after.** **The lesson worth keeping: when a clock moves, every
+    window that has to COINCIDE with it moves in the same commit — a
+    half-converted app is a new bug, not a smaller one.**
+  - **That fix RAISES the straddling-TZ artifact count, from 23 to 29, and
+    that is the expected direction rather than a regression.** `get_meal_plan`
+    is read by many more tests than `unplanned_meals_ahead` is, and every
+    one of them seeds its dates from the process's `date.today()` — so
+    moving the function onto the household's clock turns each into the same
+    seeding artifact as the other nineteen. None of the six is an app
+    failure: the app-level gap the change exists to close is closed, by the
+    direct measurement above. At `TZ=America/Toronto` — what CI now runs —
+    the whole suite is **4650 passed, 1 failed**, that one being the known
+    pre-existing stale-date test. The artifact count is a property of the
+    harness's seeding, not of the code, and the card for re-seeding those
+    tests off the household's clock is the thing that takes it to zero.
+  - **The obvious fix was tried first and is wrong; recorded so nobody
+    re-tries it.** Putting the test household on the process's own clock
+    in `tests/conftest.py` (deriving the zone from `TZ`, else
+    `/etc/localtime`) does take `Pacific/Niue` from 23 failures to 14 —
+    but it breaks **four `test_morning_text` tests at the DEFAULT TZ**,
+    because `America/Toronto` is the product's real default and those
+    tests correctly assert it. Aligning the runner instead leaves every
+    test's meaning untouched. The shift form above is what keeps this to the tests
+    that hard-code a date rather than every one that pins a clock: with
+    it, the dozen files patching `weekly_plan.date` still control the
+    answer whenever the two clocks agree, which is every hour but four.
+  - **An earlier version of this entry claimed "identical failure sets
+    under a straddling TZ" and that was wrong** — it was measured under
+    `TZ=America/Anchorage`, which is UTC−8 and only straddles when the UTC
+    hour is under 8; at the hour it ran, it was not straddling at all.
+    `Pacific/Niue` (UTC−11) is the one to use. Left written down because
+    the mistake — checking a timezone property in a timezone that happened
+    not to exercise it — is easy to repeat.
 
 - **2026-09-13 — Hosting a holiday is THE BIG MEAL now: a menu, the shop
   in two trips, the prep on the days before, a day-of timeline. Branch
