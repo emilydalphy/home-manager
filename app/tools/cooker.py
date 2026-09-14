@@ -3,7 +3,8 @@ Cook mode: recipe detail, the prep schedule, and checking things off.
 """
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from ..db import get_conn
 from ._shared import household_id, require_household_row
@@ -366,6 +367,15 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
     # also leaves cooked_at where it was, so a second tap doesn't move the
     # time the meal was actually cooked.
     if all(s == status for s in linked_statuses.values()):
+        # Still forget a start on a not-cooked row: "Mark not cooked" is
+        # the one way to clear a start tapped by mistake, and it must work
+        # whether or not the tick itself has anything to change.
+        if status == "pending":
+            conn.executemany(
+                "UPDATE meal_plan_entries SET cook_started_at = NULL WHERE id = ? AND household_id = ?",
+                [(eid, household_id()) for eid in linked_ids],
+            )
+            conn.commit()
         conn.close()
         result["unchanged"] = True
         if status == "done":
@@ -374,8 +384,16 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
         return result
 
     cooked_at = "datetime('now')" if status == "done" else "NULL"
+    # "Mark not cooked" also forgets when the cook began (cook_started_at,
+    # 2026-09-13): a night put back to not-cooked is a night still to
+    # cook, and its clock goes back to the plan's arithmetic everywhere
+    # that reads it. Marking DONE leaves the start alone — it is a true
+    # fact about the cook that just happened, and every reader already
+    # says "Cooked." over it rather than a clock.
+    started_at = "cook_started_at" if status == "done" else "NULL"
     conn.executemany(
-        f"UPDATE meal_plan_entries SET cooked_status = ?, cooked_at = {cooked_at} WHERE id = ? AND household_id = ?",
+        f"UPDATE meal_plan_entries SET cooked_status = ?, cooked_at = {cooked_at}, "
+        f"cook_started_at = {started_at} WHERE id = ? AND household_id = ?",
         [(status, eid, household_id()) for eid in linked_ids],
     )
     conn.commit()
@@ -541,6 +559,227 @@ def _release_inventory_depletion(entry_ids: list[int]) -> None:
         raise
     finally:
         conn.close()
+
+
+# ---------- the real start ----------
+# Loop Board "Cook: the real start time moves the clock (and says so once)"
+# — Emily, 2026-09-13: "It's good to set the planned start time, but if the
+# user ends up starting at a different time it should auto connect to
+# whatever time it is for them and update the done time accordingly too.
+# And it can make a little pop up note that it adjusted for actual timing."
+#
+# Until this, every clock in the app was PLANNED only: moves.py worked the
+# start back from the dinner hour, and the Meal step's stops did the same
+# arithmetic in shell.js. "Start cooking" in cook mode wrote nothing down,
+# so a cook that began at 6:02 kept reading "Start by 5:45" all evening and
+# every stop time was fifteen minutes stale. Now the tap records the real
+# start on the entry (cook_started_at), and every reader rebases from it.
+
+DEFAULT_TIMEZONE = "America/Toronto"  # the same default digest.py and holidays.py fall back to
+
+
+def household_now(now_utc: datetime | None = None) -> datetime:
+    """
+    Now, on the household's own clock (households.timezone), as the naive
+    local datetime the rest of this app's clocks are in — moves.py's
+    windows, get_week_menu's slot_times and cook_started_at all say
+    "18:02" and mean the household's 18:02, never the server's. The
+    deployed container runs in UTC, so reading datetime.now() here would
+    have stamped a Toronto dinner as starting at ten at night.
+
+    `now_utc` is for tests. A stored zone name that ZoneInfo can't read
+    falls back to Toronto, the same choice digest._zone makes, so a bad
+    setting never stops a cook from starting.
+    """
+    conn = get_conn()
+    row = conn.execute("SELECT timezone FROM households WHERE id = ?", (household_id(),)).fetchone()
+    conn.close()
+    name = (row["timezone"] if row else None) or DEFAULT_TIMEZONE
+    try:
+        zone = ZoneInfo(name)
+    except (ZoneInfoNotFoundError, ValueError):
+        zone = ZoneInfo(DEFAULT_TIMEZONE)
+    now_utc = now_utc or datetime.now(timezone.utc)
+    if now_utc.tzinfo is None:
+        now_utc = now_utc.replace(tzinfo=timezone.utc)
+    return now_utc.astimezone(zone).replace(tzinfo=None, microsecond=0)
+
+
+def cook_total_minutes(meal: dict | None) -> int | None:
+    """
+    How long this card's cook takes, the one number every clock uses: the
+    recipe's prep + cook, or the longest side's minutes when that is more
+    (twenty-five-minute potatoes beside a fifteen-minute stir-fry start
+    before the stir-fry does). The server twin of shell.js's
+    mealClockTotal — written here so Now's "Start by", the Tonight card's
+    tiles and the on-the-table time after a real start all add up the same
+    total the Meal step's stops are spread over. Until 2026-09-13 moves.py
+    added prep + cook alone and the Meal step counted the side, so the two
+    screens could name different starts for the same dinner. None when
+    nothing says how long it takes.
+    """
+    if not meal:
+        return None
+    main = (meal.get("prep_time_minutes") or 0) + (meal.get("cook_time_minutes") or 0)
+    longest = 0
+    for side in meal.get("sides") or []:
+        # A side with no steps has nothing on the clock — the Meal step's
+        # own stops skip it (shell.js mealClockSides), so the total does
+        # too, or Now's "Start by" and the Meal step's would disagree again.
+        if not [s for s in (side.get("instructions") or []) if str(s).strip()]:
+            continue
+        try:
+            mins = int(side.get("minutes")) if side.get("minutes") is not None else 0
+        except (TypeError, ValueError):
+            mins = 0
+        longest = max(longest, mins)
+    total = max(int(main or 0), longest)
+    return total if total > 0 else None
+
+
+def _weekday_word(iso: str) -> str:
+    try:
+        return datetime.fromisoformat(iso).strftime("%A")
+    except (TypeError, ValueError):
+        return "that day"
+
+
+def cook_started_dt(value: str | None) -> datetime | None:
+    """cook_started_at back into a naive local datetime; None for NULL or
+    anything unreadable (a reader must never fail over a stored time)."""
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value)).replace(tzinfo=None)
+    except ValueError:
+        return None
+
+
+def planned_start_for(meal: dict) -> datetime | None:
+    """
+    When the plan said to start this meal: its slot's hour (the household's
+    dinner_window for dinner, moves.py's defaults otherwise) minus
+    cook_total_minutes — the exact arithmetic behind Now's "Start by". Read
+    from moves.py rather than copied, so the number the toast compares
+    against is the number the card showed. None when the card carries no
+    date or no minutes; a component-based card's date is a placeholder,
+    and a start with no length has no plan to be late against.
+    """
+    from . import moves as _moves  # lazy: moves imports this module
+
+    total = cook_total_minutes(meal)
+    if not total or not meal.get("date"):
+        return None
+    try:
+        day = date.fromisoformat(meal["date"])
+    except ValueError:
+        return None
+    at = _moves._slot_dt(day, meal.get("slot") or "dinner", _moves._dinner_clock())
+    return at - timedelta(minutes=total)
+
+
+def _cook_started_map(entry_ids: list[int]) -> dict[int, str]:
+    """entry_id -> cook_started_at, for the entries that have one."""
+    ids = [i for i in entry_ids if i is not None]
+    if not ids:
+        return {}
+    placeholders = ",".join("?" * len(ids))
+    conn = get_conn()
+    rows = conn.execute(
+        f"SELECT id, cook_started_at FROM meal_plan_entries "
+        f"WHERE household_id = ? AND cook_started_at IS NOT NULL AND id IN ({placeholders})",
+        (household_id(), *ids),
+    ).fetchall()
+    conn.close()
+    return {r["id"]: r["cook_started_at"] for r in rows}
+
+
+def start_cooking(entry_id: int, now_utc: datetime | None = None) -> dict:
+    """
+    "Start cooking" was tapped: write the real start on this entry and hand
+    back the refreshed cooker view (the same shape every /api/cooker/*
+    write returns) with the receipt on top — `started_at` (household
+    local, "2026-09-13T18:02:00"), `on_the_table` (started_at plus
+    cook_total_minutes, or None when the card has no minutes),
+    `planned_start` (what the plan said, or None) and `already_started`.
+
+    Idempotent, first tap wins: the UPDATE is COALESCE(cook_started_at, ?)
+    so a second tap — or two panels tapping at once, which the sync route
+    lets Starlette run in two threads — keeps the first time and answers
+    already_started=True, which is how the shell knows to say nothing the
+    second time. Household-scoped like every other write: an entry that
+    belongs to somebody else is "no such meal", not a start.
+
+    The receipt is computed off the refreshed VIEW's card rather than the
+    row, because the total the clock uses lives on the card (recipe
+    minutes plus the sides the plate pass attached) — see
+    cook_total_minutes. A component batch's card stands for several
+    entries; the tap lands on the one entry_id it was given, and the view
+    then carries the batch's earliest start.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id, date, cook_started_at, recipe_id, freeform_meal FROM meal_plan_entries "
+        "WHERE id = ? AND household_id = ?",
+        (entry_id, household_id()),
+    ).fetchone()
+    if row is None:
+        conn.close()
+        raise ValueError(f"No meal plan entry with id {entry_id}.")
+    # Only a cook that is happening now has a real start. Cook mode opens
+    # any night from the shelf (reading tomorrow's recipe tonight is
+    # normal); a start recorded on it would sit there for days, its
+    # Tonight card saying "started two hours late" tomorrow (found by the
+    # branch's verifier, 2026-09-13). A day that isn't today is refused
+    # with a plain sentence and nothing written; a reheat night has no
+    # cook in it to start.
+    today = household_now(now_utc).date().isoformat()
+    if row["date"] != today:
+        conn.close()
+        when = _weekday_word(row["date"])
+        return {"status": "refused", "entry_id": entry_id,
+                "message": f"That’s {when}’s — I’ll note the start when you cook it {when}."}
+    if row["recipe_id"] is None and (row["freeform_meal"] or "").strip().lower().startswith("leftover"):
+        conn.close()
+        return {"status": "refused", "entry_id": entry_id, "message": "Nothing to start on a reheat night."}
+    already_started = row["cook_started_at"] is not None
+    if not already_started:
+        conn.execute(
+            "UPDATE meal_plan_entries SET cook_started_at = COALESCE(cook_started_at, ?) "
+            "WHERE id = ? AND household_id = ?",
+            (household_now(now_utc).isoformat(timespec="seconds"), entry_id, household_id()),
+        )
+        conn.commit()
+        # Read it back rather than trusting the value just sent: if another
+        # tap landed first, COALESCE kept theirs and that is the real one.
+        started = conn.execute(
+            "SELECT cook_started_at FROM meal_plan_entries WHERE id = ?", (entry_id,)
+        ).fetchone()["cook_started_at"]
+    else:
+        started = row["cook_started_at"]
+    conn.close()
+
+    view = get_cooker_view()
+    card = None
+    for meal in view.get("meals") or []:
+        if entry_id in (meal.get("entry_ids") or [meal.get("entry_id")]):
+            card = meal
+            break
+    total = cook_total_minutes(card)
+    started_dt = cook_started_dt(started)
+    on_the_table = (
+        (started_dt + timedelta(minutes=total)).isoformat(timespec="seconds")
+        if started_dt and total else None
+    )
+    planned = planned_start_for(card) if card else None
+    return {
+        **view,
+        "entry_id": entry_id,
+        "started_at": started,
+        "on_the_table": on_the_table,
+        "planned_start": planned.isoformat(timespec="seconds") if planned else None,
+        "already_started": already_started,
+    }
 
 
 def check_off_prep_step(prep_task_id: int, status: str = "done") -> dict:
@@ -1022,6 +1261,10 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         )
 
     recipes_by_name = {r["name"].lower(): r for r in _recipes.list_recipes()}
+    # The real starts, read here rather than added to get_weekly_plan's own
+    # rows: that list is the chat's view of the plan (15 call sites), and a
+    # start time is a cook-screen fact, not a planning one.
+    started_by_entry = _cook_started_map([m["entry_id"] for m in plan["meals"] + loose_meals])
     meals = []
     # Eating order across BOTH sources, not "the plan's days and then the
     # loose ones". kitchenTodayRows and cookRestOfWeekHtml (shell.js) walk
@@ -1079,6 +1322,11 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
             # bigger than the recipe's own baseline — see
             # _scale_card_to_batch.
             "servings": None,
+            # When "Start cooking" was really tapped (household local ISO,
+            # see schema.sql), or None — the one fact every clock reader
+            # checks before falling back to the plan's arithmetic
+            # (2026-09-13, "the real start time moves the clock").
+            "cook_started_at": started_by_entry.get(m["entry_id"]),
         })
 
     # Headcount for the focused cook-mode screen ("for 2 + 1 guest") — real
@@ -1133,6 +1381,9 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
                 g["entry_ids"].append(m["entry_id"])
                 g["meal_count"] += 1
                 g["_statuses"].append(m["cooked_status"])
+                # One batch, one start: the earliest any sibling was begun.
+                starts = [s for s in (g.get("cook_started_at"), m.get("cook_started_at")) if s]
+                g["cook_started_at"] = min(starts) if starts else None
 
         merged_meals = []
         for key in order:

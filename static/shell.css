@@ -6596,6 +6596,10 @@ button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); 
   color: var(--ivory-ink-muted);
   white-space: nowrap;
 }
+/* The chip that says what is actually happening — "Started 6:02" once the
+   cook has really begun (2026-09-13, the real start moves the clock):
+   celadon, the accent that says settled, with dark ink on it (Rule 1). */
+.cook-meta-chip.is-live { background: var(--celadon); color: var(--on-accent-ink); }
 .cook-hero-actions { display: flex; align-items: center; gap: 8px; }
 /* The one apricot action on this screen. */
 .cook-hero-action {

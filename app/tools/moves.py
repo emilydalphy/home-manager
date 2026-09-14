@@ -197,15 +197,35 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
             })
             continue
 
-        duration = (meal.get("prep_time_minutes") or 0) + (meal.get("cook_time_minutes") or 0)
-        start = at - timedelta(minutes=duration)
+        # The one total every clock uses — the recipe's minutes, or a
+        # longer side's (cooker.cook_total_minutes). Until 2026-09-13 this
+        # added prep + cook alone while the Meal step's stops counted the
+        # side, so Now and Plan could name two different starts for one
+        # dinner.
+        duration = _cooker.cook_total_minutes(meal) or 0
+        planned_start = at - timedelta(minutes=duration)
+        # The real start, once "Start cooking" has been tapped (Emily,
+        # 2026-09-13: the clock "should auto connect to whatever time it
+        # is for them and update the done time accordingly too"). The
+        # window opens when the cook actually began, the table time moves
+        # with it, and the chip says what happened ("Started 6:02") rather
+        # than what should have ("Start by 5:45"). Nothing else about the
+        # move changes: it is the same cook, the same tick, the same card.
+        started = _cooker.cook_started_dt(meal.get("cook_started_at"))
+        start = started or planned_start
+        # With no minutes on the card there is nothing to move the table
+        # time by: the plan's stands (the receipt and the hero say the same).
+        table = (started + timedelta(minutes=duration)) if (started and duration) else at
         detail_bits = [slot]
         if duration:
             detail_bits.append(f"{duration} min")
-        detail_bits.append(_clock(at.time()))
+        detail_bits.append(_clock(table.time()))
         chips = []
         if duration:
             chips.append(f"{duration} min")
+        if started:
+            chips.append(f"Started {_clock(started.time())}")
+        elif duration:
             chips.append(f"Start by {_clock(start.time())}")
         moves.append({
             "id": f"cook:{meal['entry_id']}",
@@ -221,7 +241,9 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
             "date": day_str,
             "slot": slot,
             "window_start": start.isoformat(),
-            "window_end": (at + timedelta(hours=SLOT_WINDOW_HOURS)).isoformat(),
+            # A cook begun late is still tonight's for two hours after it
+            # actually lands, not after it was meant to.
+            "window_end": (max(at, table) + timedelta(hours=SLOT_WINDOW_HOURS)).isoformat(),
             "weight": WEIGHT_HIGH,
             "action": {
                 "label": "Cook this",
@@ -246,8 +268,13 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
             "entry_id": meal["entry_id"],
             "task_id": None,
             "duration_min": duration,
-            "time_label": _slot_time_label(slot, at),
+            "time_label": _slot_time_label(slot, table),
             "chips": chips,
+            # Both clocks, so a reader can say how far apart they are
+            # ("Started 17 minutes late" on Cook's Tonight card) without
+            # re-deriving the plan's start from the chips.
+            "started_at": started.isoformat() if started else None,
+            "planned_start": planned_start.isoformat(),
         })
     return moves
 

@@ -546,6 +546,52 @@ why*, not duplicating the diff.
   `tests/test_big_meal.py` (65 after round 2); suite 3345 → 3377 on the
   branch, 3912 on the merge with main (`b4f69c8`); verified live on a
   throwaway DB with the model stubbed.
+- **2026-09-13 — Cook: the real start time moves the clock (and says so
+  once). Branch `worktree-real-start-time`, merged 2026-09-13 evening.** Emily: "if the user ends up starting at a different time it
+  should auto connect to whatever time it is for them and update the done
+  time accordingly too. And it can make a little pop up note that it
+  adjusted for actual timing." Every clock was PLANNED only — moves.py
+  worked the start back from the dinner hour, the Meal step's stops did the
+  same arithmetic, and cook mode's "Start cooking" wrote nothing down. Now:
+  `meal_plan_entries.cook_started_at` (household-local naive ISO, the same
+  clock the slot times are in; migration in `db.py`), written once by
+  `cooker.start_cooking` through `POST /api/cooker/start {entry_id}` —
+  `COALESCE` so the first tap wins under two threads, answers the refreshed
+  cooker view plus `started_at` / `on_the_table` / `planned_start` /
+  `already_started`, 404 for another household's entry. `get_cooker_view`
+  carries `cook_started_at` per card (a component batch: the earliest
+  sibling's); Now's cook move opens at the real start, its chip reads
+  "Started 6:02" for "Start by 5:45", `time_label`/`detail` carry the new
+  table time, and it grew `started_at` + `planned_start`. Shell:
+  `cookStartCooking` enters the steps at once and posts in the background
+  (`cookRecordStart`); ONE toast, once, only when the start is ≥2 minutes
+  off the plan ("You started at 6:02, so the clock moved. On the table by
+  6:47.", 6 s); a failure is one calm line. Readers: the cook hero's chips
+  ("Started 6:02" in the new celadon `.cook-meta-chip.is-live`, "On the
+  table 6:47", on every stage), the Tonight card's tiles (STARTED / ON THE
+  TABLE) and line ("Started 17 minutes late — the clock's moved with
+  you."; nothing inside 2 minutes), the Meal step's hero/stops/dock
+  (`mealClockStops` takes `household.startMinutes` and rebases every stop;
+  "Everything out" at the exact minute, no step rounded before it; the
+  dock says "Keep cooking"). "Mark not cooked" clears the column and every
+  reader falls back to the plan. **Judgment calls:** (1) ONE total for
+  every clock — `cooker.cook_total_minutes` (prep + cook, or the longest
+  side's minutes) is now what moves.py adds up too; until now Now said
+  "Start by" from prep + cook alone while the Meal step counted the side,
+  so a dinner with a 25-minute side could show two different starts. A
+  household with such a side sees Now's start move earlier by the
+  difference. (2) The comparison is by clock, not by date: a meal started
+  on a different day than it was planned for is "late"/"early" by
+  minutes-of-day only. (3) `mealCookUnderway` is still keyed to ticks (the
+  ticklist resumes from them); the Meal step's dock reads the real start
+  as well, so a cook begun is never offered "Start at". 35 tests in
+  `tests/test_real_start_time.py` (backend + node harnesses); full suite
+  4430, 4429 passing. Smoke-tested against a copy of the live DB: the migration adds
+  the column, start/idempotent start/404/clear-on-untick all answer as
+  designed. Pre-existing, not this branch's: `test_needs_you_dinner_visible
+  ::TestABrandNewHouseholdWithNoPlanAtAll::test_the_shop_move_can_see_it_too`
+  fails on main too after 6:30 pm local (it calls `today_moves()` with the
+  real clock and the shop move for tonight's dinner has closed).
 - **2026-09-13 — The Identity Round, built: the mark and "Pomona" open
   every root band, the chat button is the mark, Plan's glyph is the week
   as a row, one 2.2px stroke for the icon set. Branch
