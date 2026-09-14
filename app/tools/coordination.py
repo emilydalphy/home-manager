@@ -133,6 +133,13 @@ _COMPOUND_EXCEPTIONS: tuple[tuple[frozenset[str], re.Pattern], ...] = (
         r"\b(?:almond|cashew|coconut|hazelnut|hemp|oat|pea|rice|soy|soya)\s+milks?\b"
     )),
     (frozenset({"sugar", "sugars"}), re.compile(r"\bsugar\s+snaps?\b")),
+    # Olive oil is a cooking fat, not an olive. A household that avoids
+    # olives got a hard clash on essentially every dinner, because olive
+    # oil is in most of them — which puts an allergy-shaped gate in front
+    # of Approve every week and teaches the household to click past it.
+    # That is the failure this whole check exists to prevent, so the false
+    # positive matters more here than the rarity of the restriction.
+    (frozenset({"olive", "olives"}), re.compile(r"\bolive\s+oils?\b")),
     # Gluten/wheat's own false positive: a naturally gluten-free flour,
     # noodle or pasta still contains the word that means "gluten" to the
     # alias table above. "Gluten-Free Pasta" made with rice flour flagged a
