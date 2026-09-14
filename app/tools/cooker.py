@@ -3,6 +3,7 @@ Cook mode: recipe detail, the prep schedule, and checking things off.
 """
 from __future__ import annotations
 
+import logging
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -21,6 +22,8 @@ from . import quantities as _quantities
 from . import recipes as _recipes
 from . import rhythm as _rhythm
 from . import weekly_plan as _weekly_plan
+
+logger = logging.getLogger(__name__)
 
 # Slot states with no meal behind them, so nothing to cook. See
 # get_cooker_view for why this is a deny-list rather than an allow-list of
@@ -605,6 +608,37 @@ def household_now(now_utc: datetime | None = None) -> datetime:
     return now_utc.astimezone(zone).replace(tzinfo=None, microsecond=0)
 
 
+def household_today(now_utc: datetime | None = None) -> date:
+    """
+    Today where the household lives, not where the container runs — the
+    date half of household_now, for the caller below that only needs a
+    day.
+
+    The deployed container is UTC and households default to
+    America/Toronto, so from 8pm Eastern the server's date is already
+    tomorrow. get_cooker_view's staleness check read date.today(), which
+    meant that on the LAST day of a plan's period, from 8pm local, the
+    plan's last day was "before today" by the server's reckoning: the view
+    collapsed to the same empty shape as no-plan-at-all and the Cook tab
+    said "Nothing planned this week yet" for a week still running, on the
+    evening the household is most likely to be cooking from it. Now's
+    timeline reads the household's day (moves.py, 2026-09-14) and so does
+    unplanned_meals_ahead, so this was the last half of the view still
+    asking a different clock what day it is.
+
+    Opens a connection (household_now does), so resolve it ONCE per view
+    and thread the answer down — never per card, and never inside an open
+    write transaction. A clock that can't be read falls back to the
+    server's date: a wrong hour once a day beats a blank Cook tab, the
+    same stance household_now itself takes towards an unreadable zone.
+    """
+    try:
+        return household_now(now_utc).date()
+    except Exception:
+        logger.exception("Couldn't read the household's clock; falling back to the server's date")
+        return date.today()
+
+
 def cook_total_minutes(meal: dict | None) -> int | None:
     """
     How long this card's cook takes, the one number every clock uses: the
@@ -1152,10 +1186,17 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     # for "no plan exists" at all, so every pass below (loose meals, the
     # empty-view return, the shell reshape, is_current_plan) already
     # knows how to treat it — this is "no current plan", not a new case.
+    #
+    # "Already gone by" is asked of the HOUSEHOLD's clock, not the
+    # container's (see household_today). Read the server's, and on the last
+    # day of a period a Toronto household lost its whole week from 8pm —
+    # empty Cook tab, empty Now, "Last planned: Sep 7-13" — for the four
+    # hours of the evening it was most likely to be cooking from it.
+    # Resolved ONCE, here, for the whole view — it costs a connection.
     last_planned_label = None
     if weekly_plan_id is None and plan.get("weekly_plan_id") is not None:
         period_end = plan.get("period_end_date")
-        today = date.today().isoformat()
+        today = household_today().isoformat()
         if period_end and period_end < today:
             last_planned_label = plan.get("period_label")
             plan = {"weekly_plan_id": None, "meals": []}

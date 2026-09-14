@@ -641,6 +641,87 @@ why*, not duplicating the diff.
     4651 passed, 1 failed — the known pre-existing
     `test_a_real_swap_cannot_make_a_chat_link_open_the_new_dish` stale
     date, red on `main` too.
+- **2026-09-14 — On the last evening of a week, Cook said the week wasn't
+  there. Branch `overnight/cooker-household-clock`, NOT merged at the time
+  of writing.** The third of the clock siblings, and the last half of
+  `get_cooker_view` still asking a different clock what day it is. Its
+  stale-plan guard (the 2026-09-13 "Kitchen shows last month's meals"
+  entry) compared `period_end_date` against **`date.today()` — the
+  SERVER's**. The container runs UTC, households default to
+  America/Toronto, so from 8pm Eastern the server's date is already
+  tomorrow: on the LAST day of a plan's period the plan's last day was
+  "before today", the view collapsed to the same empty shape as no plan at
+  all, and Cook read "Nothing planned this week yet · Last planned: Sep
+  7–13" for a week still running, on the evening the household is most
+  likely to be cooking from it. Now is built off the same call with no id,
+  so it emptied with it. Reproduced over HTTP on a throwaway DB before
+  anything was touched — household a day behind the server,
+  `/api/cooker-view` `weekly_plan_id: None, meals: []` and
+  `/api/today/moves` `week_state: "none", moves: []`; identical on `main`,
+  so pre-existing rather than a regression.
+  - **The guard itself is correct and unchanged.** It is deliberately
+    narrow — "has this plan's LAST day already gone by", never "does it
+    cover today" — so a future, not-yet-started draft falls through
+    untouched, which is what lets cook mode open next week's draft when
+    today's own week has nothing left. Only the clock it asked was wrong.
+    `test_is_current_plan_is_the_same_query_not_a_date_rule` and
+    `TestAPlanThatDoesNotCoverToday` are green, and the new file pins the
+    future draft again from inside a frozen straddling evening.
+  - **`cooker.household_today()`, not `weekly_plan._household_today()`.**
+    Both were read first. weekly_plan's is written as a SHIFT applied to
+    its own `date.today()` precisely so the dozen test files that pin that
+    module's clock by patching `weekly_plan.date` keep working — a seam
+    this module does not have and has never needed. It is also implemented
+    AS `cooker.household_now()` shifted, so routing cooker through it would
+    be cooker → weekly_plan → cooker for an answer already in this file.
+    `household_now` is where cooker's own clock tests already reach
+    (`test_moves_household_clock`, `test_real_start_time` freeze
+    `cooker.datetime`, which it reads), so the new helper is its date half
+    and nothing more. Both resolve to the same date in production and
+    under that freeze, so the guard and `unplanned_meals_ahead` — the two
+    halves of one view — cannot disagree about what day it is.
+  - **Read ONCE per view**, inside the branch that needs it (a call naming
+    a `weekly_plan_id` resolves no clock at all), never per card and never
+    inside a write transaction — `household_now` opens its own connection.
+    A whole cooker view is three reads now: this one,
+    `weekly_plan.unplanned_meals_ahead`, and `moves.today_moves` above it
+    when Now is the caller; pinned by a cost guard that also asserts a
+    lower bound, since `<= 3` alone is green at the merge base's zero.
+  - **A clock that cannot be read falls back to the server's date** rather
+    than raising — a Cook tab four hours out beats one that 500s, the same
+    stance `household_now` takes towards an unreadable zone. Pinned by a
+    test that is a guard on the merge base and a catch against a version
+    of the helper written without the `try`.
+  - **Sweep of `cooker.py`, as asked:** exactly one server-clock read
+    decided something the household sees, and it was this. `start_cooking`
+    already runs on `household_now` (2026-09-13); the three SQL
+    `datetime('now')` writes (`inventory_items.updated_at`,
+    `cooked_at`, `inventory_depleted_at`) are UTC instants compared only
+    against other UTC instants as DURATIONS ("cooked in the last 7 days",
+    usage's 30-day window) — no calendar-day decision rides on them, so
+    they are correct as they are. **Found and deliberately left, one door
+    over in `weekly_plan.py` (out of this card's scope):**
+    `_current_weekly_plan_row` and `retire_expired_drafts` both still read
+    `date.today()`. The first is mostly masked — a plan that fails "covers
+    today" by one evening is usually returned by the fallback underneath
+    anyway — but with a future draft on file the fallback can prefer the
+    draft; the second can retire a draft on the evening of its own last
+    day. Same class, its own card.
+  - `tests/test_cooker_household_clock.py` (11), freezing `cooker.datetime`
+    at a UTC instant and pinning **both directions**: Toronto 21:30 (the
+    household a day BEHIND — the reported bug, the week must stay) and
+    Tokyo 08:30 (a day AHEAD — a week the server thinks is live ended
+    yesterday where the household lives, and must go). 5 red on the merge
+    base; the other 6 say in their own docstrings that they are
+    no-regression guards. Two now-false comments in
+    `tests/test_moves_household_clock.py` — written on the sibling branch
+    and saying the staleness check "still reads the server's date, by
+    design" — were corrected in the same commit rather than left standing.
+    Full suite **1 failed, 4661 passed** at the default TZ and at
+    `TZ=America/Toronto`; the one failure is the pre-existing
+    `test_a_real_swap_cannot_make_a_chat_link_open_the_new_dish` (a
+    hard-coded date), red on the merge base too.
+
 - **2026-09-14 — Now was about the wrong day for four hours every evening:
   moves.py read the SERVER's clock, and so did the card Now answers with.
   Branch `overnight/moves-household-clock`, NOT merged at the time of

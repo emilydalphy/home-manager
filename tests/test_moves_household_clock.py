@@ -20,10 +20,9 @@ How the clock is frozen here: cooker.household_now converts a UTC instant
 to the household's zone, so these tests replace `cooker.datetime` with a
 datetime subclass whose `now()` answers one fixed UTC instant. Only the
 clock is faked — the zone lookup, the DB read of households.timezone and
-the ZoneInfo fallback all run for real. `date.today()` (the server's date,
-which get_cooker_view's staleness check still reads) is deliberately left
-alone, so the two genuinely differ inside one test exactly as they do in
-production at nine at night.
+the ZoneInfo fallback all run for real. `date.today()` (the server's date) is
+deliberately left alone, so the two genuinely differ inside one test
+exactly as they do in production at nine at night.
 
 Each test says in its own docstring whether it is a CATCH (red without the
 fix) or a NO-REGRESSION GUARD.
@@ -44,8 +43,11 @@ from app.tools import tonight as _tonight
 
 # The plan is anchored on the SERVER's today and spans it in both
 # directions, so whichever side of midnight the household is on has a
-# planned day, and get_cooker_view's own staleness check (which still reads
-# the server's date, by design — it is not this module's) never fires.
+# planned day, and get_cooker_view's own staleness check never fires.
+# (That check read the server's date when this file was written and reads
+# the household's now — overnight/cooker-household-clock, 2026-09-14. It
+# was the last half of that view on the wrong clock; a plan spanning both
+# days is unaffected either way, which is why nothing here moved.)
 SERVER_TODAY = date.today()
 WEEK_START = (SERVER_TODAY - timedelta(days=3)).isoformat()
 PLAN_DAYS = [(SERVER_TODAY + timedelta(days=n)).isoformat() for n in range(-3, 4)]
@@ -354,10 +356,13 @@ def test_the_clock_is_read_a_fixed_number_of_times_not_once_per_move(monkeypatch
     GUARD on the cost, not on the behaviour. household_now opens its own
     connection, so each place that needs it resolves it ONCE at its entry
     point and threads it down — never per move, never inside an open write
-    transaction (see the "database is locked" entries in CLAUDE.md). Two
-    reads for a whole Today payload today: moves.today_moves, and
-    weekly_plan.unplanned_meals_ahead underneath get_cooker_view. What is
-    pinned is that the number does not grow with the day.
+    transaction (see the "database is locked" entries in CLAUDE.md). Three
+    reads for a whole Today payload today: moves.today_moves,
+    weekly_plan.unplanned_meals_ahead underneath get_cooker_view, and
+    get_cooker_view's own staleness check
+    (overnight/cooker-household-clock, which was still on the server's
+    date when this file was written). What is pinned is that the number
+    does not grow with the day.
     """
     quiet_day = _local_date(TORONTO, UTC_EARLY)
     _seed(dinner_on=[quiet_day])
