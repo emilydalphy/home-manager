@@ -503,12 +503,15 @@ CREATE TABLE IF NOT EXISTS weekly_plans (
     superseded_json TEXT NOT NULL DEFAULT '',
     status TEXT NOT NULL DEFAULT 'draft', -- draft | approved | retired
     -- WHY a plan is retired, when it is: 'superseded' (a newer period took
-    -- its days — the record above says what went), or 'expired_draft' (a
+    -- its days — the record above says what went), 'expired_draft' (a
     -- draft whose last day passed without ever being approved; nothing of
     -- its reached the shopping list, and the lazy sweep in
     -- weekly_plan.retire_expired_drafts stops it being the Plan tab's front
-    -- page — Emily, 2026-09-11). '' on a live plan, and on any plan retired
-    -- before this column existed. The plan's period and meals are kept.
+    -- page — Emily, 2026-09-11), or 'discarded' (the household dropped the
+    -- draft themselves — weekly_plan.discard_draft_plan; same "don't lead
+    -- with it" semantics, said out loud rather than waited out). '' on a
+    -- live plan, and on any plan retired before this column existed. The
+    -- plan's period and meals are kept.
     retired_reason TEXT NOT NULL DEFAULT '',
     constraints_notes TEXT NOT NULL DEFAULT '', -- freeform per-week asks, e.g. "out Thu/Fri, keep it under 30 min"
     -- Snapshotted from meal_preferences.planning_mode at creation time, so a

@@ -604,6 +604,7 @@ from .weekly_plan import (  # noqa: F401
     audit_plan_slots,
     clear_plan_slot,
     describe_planned_meal,
+    discard_draft_plan,
     drop_dish_from_day,
     _dedupe_duplicate_slots,
     repair_leftover_chains,

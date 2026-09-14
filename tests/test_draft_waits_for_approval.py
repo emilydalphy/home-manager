@@ -297,3 +297,188 @@ class TestNowAndAwayFollowTheApprovedWeek:
             by_day.setdefault(m["date"], set()).add(m["meal"])
         assert by_day[today] == {"Chili"}
         assert all(meals == {"Chili"} for meals in by_day.values())
+
+
+class TestDroppingADraft:
+    """Loop Board 2026-09-13, "Drop this draft puts the approved week back".
+
+    A draft you have decided against had no door out but approving it or
+    drafting something else over it, so it stayed the Plan tab's front page
+    until its last day had passed. Dropping it is exactly what the expiry
+    sweep does — retired, reason 'discarded', meals and answers kept — said
+    out loud instead of waited out.
+    """
+
+    def test_dropping_a_draft_leaves_the_approved_week_and_the_list_whole(self, recipes, stub_model):
+        week, approved = _approved_week(stub_model)
+        days = tools.period_dates(week, 7)
+        before_meals = _dates_on(approved)
+        before_list = _needed()
+        draft = _draft_over(stub_model, days[3], 4)
+
+        out = tools.discard_draft_plan(draft["weekly_plan_id"])
+
+        assert out["status"] == "retired"
+        assert out["was_already_retired"] is False
+        row = _plan_row(draft["weekly_plan_id"])
+        assert row["status"] == "retired"
+        assert row["retired_reason"] == "discarded"
+        # Kept on record, not deleted — the same "don't lead with it" an
+        # expired draft gets.
+        assert _dates_on(draft["weekly_plan_id"]) == set(days[3:7])
+        assert tools.plan_period(row) == (days[3], 4)
+        # And nothing of the approved week's moved.
+        assert tools.plan_period(_plan_row(approved)) == (week, 7)
+        assert _dates_on(approved) == before_meals
+        assert _plan_row(approved)["status"] == "approved"
+        assert _needed() == before_list
+
+    def test_the_toast_can_name_the_week_that_is_still_theirs(self, recipes, stub_model):
+        week, approved = _approved_week(stub_model)
+        days = tools.period_dates(week, 7)
+        draft = _draft_over(stub_model, days[3], 4)
+        out = tools.discard_draft_plan(draft["weekly_plan_id"])
+        assert out["approved_week_label"] == _weekly_plan._format_period_range(week, 7)
+        assert out["week_label"] == _weekly_plan._format_period_range(days[3], 4)
+
+    def test_a_lone_draft_drops_to_the_empty_state(self, recipes, stub_model):
+        week = _monday()
+        stub_model(_full_period(week, 7, meal="Katsu"))
+        draft = agent.generate_weekly_plan(week, day_count=7, period_start=week)
+
+        out = tools.discard_draft_plan(draft["weekly_plan_id"])
+
+        # No approved week underneath, so nothing to name.
+        assert out["approved_week_label"] is None
+        assert tools.get_week_menu()["weekly_plan_id"] is None
+        assert _needed() == {}
+
+    def test_the_plan_tab_falls_back_to_the_approved_week(self, recipes, stub_model, monkeypatch):
+        week, approved = _approved_week(stub_model)
+        thursday = tools.period_dates(week, 7)[3]
+        draft = _draft_over(stub_model, thursday, 4)
+
+        class _Thursday(datetime.date):
+            @classmethod
+            def today(cls):
+                return datetime.date.fromisoformat(thursday)
+        monkeypatch.setattr(_weekly_plan, "date", _Thursday)
+
+        assert tools.get_week_menu()["weekly_plan_id"] == draft["weekly_plan_id"]
+        tools.discard_draft_plan(draft["weekly_plan_id"])
+        menu = tools.get_week_menu()
+        assert menu["weekly_plan_id"] == approved
+        assert menu["status"] == "approved"
+
+    def test_a_dropped_draft_is_never_the_front_page_again(self, recipes, stub_model, monkeypatch):
+        """Every "which plan is this" answer refuses a retired plan already;
+        this pins that the discarded reason is no exception to it."""
+        week, approved = _approved_week(stub_model)
+        days = tools.period_dates(week, 7)
+        draft = _draft_over(stub_model, days[3], 4)
+        draft_id = draft["weekly_plan_id"]
+        tools.discard_draft_plan(draft_id)
+
+        class _Thursday(datetime.date):
+            @classmethod
+            def today(cls):
+                return datetime.date.fromisoformat(days[3])
+        monkeypatch.setattr(_weekly_plan, "date", _Thursday)
+
+        conn = get_conn()
+        assert _weekly_plan._current_weekly_plan_row(conn)["id"] == approved
+        conn.close()
+        assert tools.get_plan_id_for_week(days[3]) != draft_id
+        assert tools.get_plan_id_for_date(days[4]) == approved
+        assert _weekly_plan._pending_draft_over(tools.get_weekly_plan(approved)) is None
+        # The expiry sweep has nothing left to do with it — it only reads
+        # drafts, so a dropped one can't be retired a second time.
+        after = (datetime.date.fromisoformat(days[6]) + datetime.timedelta(days=1)).isoformat()
+        assert draft_id not in tools.retire_expired_drafts(today=after)
+        assert _plan_row(draft_id)["retired_reason"] == "discarded"
+
+    def test_dropping_an_approved_plan_is_refused(self, recipes, stub_model):
+        week, approved = _approved_week(stub_model)
+        with pytest.raises(ValueError, match="reopen it or re-plan it"):
+            tools.discard_draft_plan(approved)
+        assert _plan_row(approved)["status"] == "approved"
+        assert "beans" in _needed()
+
+    def test_dropping_twice_is_a_no_op(self, recipes, stub_model):
+        week, approved = _approved_week(stub_model)
+        days = tools.period_dates(week, 7)
+        draft = _draft_over(stub_model, days[3], 4)
+        tools.discard_draft_plan(draft["weekly_plan_id"])
+        again = tools.discard_draft_plan(draft["weekly_plan_id"])
+        assert again["was_already_retired"] is True
+        assert again["status"] == "retired"
+        assert _plan_row(draft["weekly_plan_id"])["retired_reason"] == "discarded"
+        assert _dates_on(approved) == set(days)
+
+    def test_a_plan_this_household_does_not_have_is_not_droppable(self, recipes, stub_model):
+        """The lookup is household-scoped, so an id from somewhere else is
+        the same answer as an id that doesn't exist — and the route turns
+        that into a 400 rather than retiring somebody else's week."""
+        week, approved = _approved_week(stub_model)
+        with pytest.raises(ValueError, match="No weekly plan with id"):
+            tools.discard_draft_plan(approved + 9999)
+
+    def test_the_route_drops_the_draft_the_screen_names(self, recipes, stub_model, signed_in):
+        """The week key resolves to whatever is newest under it; the Plan tab
+        knows which draft it is showing, and the body's id wins."""
+        week, approved = _approved_week(stub_model)
+        days = tools.period_dates(week, 7)
+        draft = _draft_over(stub_model, days[3], 4)
+
+        res = signed_in.post(
+            f"/api/week/{days[3]}/discard", json={"weekly_plan_id": draft["weekly_plan_id"]}
+        )
+        assert res.status_code == 200, res.text
+        assert res.json()["approved_week_label"] == _weekly_plan._format_period_range(week, 7)
+        assert _plan_row(draft["weekly_plan_id"])["status"] == "retired"
+        assert _dates_on(approved) == set(days)
+
+    def test_the_route_refuses_an_approved_week_with_400(self, recipes, stub_model, signed_in):
+        week, approved = _approved_week(stub_model)
+        res = signed_in.post(f"/api/week/{week}/discard", json={"weekly_plan_id": approved})
+        assert res.status_code == 400
+        assert "reopen it or re-plan it" in res.json()["detail"]
+        assert _plan_row(approved)["status"] == "approved"
+
+    def test_the_route_falls_back_to_the_week_key(self, recipes, stub_model, signed_in):
+        week = _monday()
+        stub_model(_full_period(week, 7, meal="Katsu"))
+        draft = agent.generate_weekly_plan(week, day_count=7, period_start=week)
+        res = signed_in.post(f"/api/week/{week}/discard", json={})
+        assert res.status_code == 200, res.text
+        assert res.json()["weekly_plan_id"] == draft["weekly_plan_id"]
+
+    def test_chat_can_drop_a_draft_and_never_an_approved_week(self, recipes, stub_model):
+        from app import main as _main
+        assert agent.TOOL_FUNCTIONS["discard_draft_plan"] is tools.discard_draft_plan
+        spec = next(t for t in agent.TOOL_DEFINITIONS if t["name"] == "discard_draft_plan")
+        assert "never on your own initiative" in spec["description"]
+        assert "reopen_weekly_plan" in spec["description"]
+        # Tagged `week`, so the Plan tab refreshes after a chat drop.
+        assert "discard_draft_plan" in _main._WEEK_TOOLS
+
+
+def test_the_more_sheet_offers_the_row_on_a_draft_only():
+    """Source markers for the Plan tab's More sheet — the row, its two
+    sub-lines and the confirm it goes through."""
+    import pathlib
+    shell = (pathlib.Path(__file__).resolve().parents[1] / "static" / "shell.js").read_text()
+    sheet = shell.split("function renderMealsMoreSheet()", 1)[1].split("\n  function ", 1)[0]
+    assert "'wk-more-discard', 'Drop this draft'" in sheet
+    assert "Your approved week stays as it is" in sheet
+    assert "Nothing's on your list from it" in sheet
+    # In the draft-only block, beside Try again / Change my answers — an
+    # approved week never gets the row.
+    draft_block = sheet.split("hasPlan && data.status !== 'approved'", 1)[1].split(": '') +", 1)[0]
+    assert "wk-more-discard" in draft_block
+    assert "discardDraft(panel, data)" in sheet
+    # Asked once before anything is retired.
+    drop = shell.split("async function discardDraft(", 1)[1].split("\n  function ", 1)[0]
+    assert "await askAboutDroppingDraft(label)" in drop
+    assert "'/discard'" in drop
+    assert "Dropped. ' + out.approved_week_label + ' is still your week." in drop

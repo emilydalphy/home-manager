@@ -371,6 +371,81 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-14 — "Drop this draft" puts the approved week back. Branch
+  `overnight/discard-draft`, NOT merged at the time of writing.** Loop
+  Board Phase 0 (Emily: a draft she walked away from stayed the Plan tab's
+  front page until its last day had passed, and the only ways off it were
+  approving it — the opposite of what she meant — or drafting something
+  else over it). **The write is `retire_expired_drafts`'s, not a new
+  one:** `weekly_plan.discard_draft_plan` sets `status = 'retired'` with
+  `retired_reason = 'discarded'` (a third value beside `superseded` and
+  `expired_draft`, `app/schema.sql`) and touches nothing else — the
+  meals, the period and the intake stay on record, "don't lead with it"
+  rather than deletion. **There is nothing to unwind**, and that is the
+  2026-09-13 draft-waits-for-approval entry paying off: a draft reaches
+  the shopping list only at approval, so the approved week underneath is
+  whole already and is neither read nor written here. The four "which
+  plan is this" answers (`_current_weekly_plan_row`, `_pending_draft_over`,
+  `get_plan_id_for_week`, `get_plan_id_for_date`) all exclude retired
+  plans already; `discarded` is no exception to that and there is a test
+  saying so rather than a comment claiming it.
+  - **An APPROVED plan is refused** ("That week's approved — reopen it or
+    re-plan it instead.") — dropping a week that has been shopped for
+    would take the list's own reason away with it, and reopening or
+    re-planning are the household's two real answers. Dropping twice is a
+    no-op (`was_already_retired`), because a second tap or a stale screen
+    must not be an error.
+  - **The route prefers the body's plan id over the week key.** `POST
+    /api/week/{week_start}/discard` resolves through `_plan_id_for_week`
+    like its neighbours, but a draft over PART of an approved week is
+    filed under its own start rather than the week's, and the Plan tab
+    knows exactly which draft it is showing — so it sends
+    `weekly_plan_id` and that wins. The lookup is household-scoped, so a
+    foreign id is "no such plan" and a 400, not somebody else's retired
+    week.
+  - **A real dialog, not `confirm()`** — the two confirms above it in
+    shell.html (`reset-dialog`, `dinner-confirm-dialog`) are the pattern,
+    and the sentence under the question is the whole reason this is an
+    easy yes: "Drop the Sep 17–20 draft? / Nothing from it is on your
+    list." Cancel · Drop it. No new CSS — `.reset-title`, `.reset-note`,
+    `.reset-actions`, `.btn-outline-plum`, `.btn-gold` as they stand, so
+    the screen's one apricot is still the one apricot.
+  - **The row's sub-line is read off `data.replaces`**, which
+    `get_week_menu` fills exactly when an approved week is underneath:
+    "Your approved week stays as it is" against "Nothing's on your list
+    from it". Draft-only, beside Try again / Change my answers; an
+    approved week gets Reopen instead and never this.
+  - **`approved_week_label` is computed on the server**, not by the
+    screen, so the toast ("Dropped. Sep 14–20 is still your week." /
+    plain "Dropped.") names the week from the same overlap test rather
+    than from whatever the client last held. Dropping clears
+    `weekState.showWeekStart` before the reload, so the tab falls back to
+    "whichever plan covers today" — the approved week, or the plan-a-week
+    state — and refreshes Now, which for a LONE draft really was reading
+    it (`_current_weekly_plan_row`'s fallback).
+  - **Chat: `discard_draft_plan(weekly_plan_id)`**, tagged `week` in
+    `_WEEK_TOOLS` so the Plan tab refreshes after it; the description
+    says never on its own initiative and never to tidy up before
+    planning again (generating a draft already replaces one).
+  - **Deliberately left out:** undo (the draft is retired, not deleted, so
+    the data is there — but "un-retire" has no home in any of the four
+    plan resolvers today, and re-planning is the honest way back);
+    dropping from Now; anything touching an approved week.
+  - 13 tests in `tests/test_draft_waits_for_approval.py`'s
+    `TestDroppingADraft` plus one source-marker test for the sheet. Full
+    suite **4644 passed, 1 failed** — `test_tap_a_meal_opens_recipe.py::
+    test_a_real_swap_cannot_make_a_chat_link_open_the_new_dish`, which
+    fails identically on `2120af5` with the working tree stashed (its
+    plan expires on today's date, so `retire_expired_drafts` empties the
+    week before the swap runs). Verified in Chromium at 390x844 against a
+    throwaway DB, both shapes: an approved week with a draft over Thu–Sun
+    (row 58px, dialog, Cancel changes nothing, Drop it → the toast naming
+    Sep 14–20, band back to APPROVED, row gone and Reopen in its place)
+    and a lone draft (sub-line "Nothing's on your list from it", toast
+    "Dropped.", panel back to Plan a week). Over the route as well: the
+    approved-plan refusal as 400, dropping twice, and the grocery list
+    byte-identical before and after.
+
 - **2026-09-13 — Hosting a holiday is THE BIG MEAL now: a menu, the shop
   in two trips, the prep on the days before, a day-of timeline. Branch
   `worktree-holiday-hosting`, slice 2 of Loop Board "Holidays: Pomona

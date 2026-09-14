@@ -2344,6 +2344,16 @@ class WeekApproveRequest(BaseModel):
     confirm_hard_conflicts: bool = False
 
 
+class WeekDiscardRequest(BaseModel):
+    """
+    Which draft to drop. The week key in the path resolves to the newest
+    non-retired plan filed under it, which for a draft over an approved
+    week of a different start is not necessarily the draft on screen — so
+    the Plan tab sends the id it is actually showing and that wins.
+    """
+    weekly_plan_id: int | None = None
+
+
 class WeekIntakeRequest(BaseModel):
     """
     Whichever answers this screen collected. Every field is optional and
@@ -3260,6 +3270,28 @@ def reopen_week(week_start: str):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Week reopen failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/week/{week_start}/discard")
+def discard_week_draft(week_start: str, req: WeekDiscardRequest = WeekDiscardRequest()):
+    """
+    Drop a draft the household has decided against (Loop Board 2026-09-13).
+    Retires it — meals and answers kept, nothing taken off the shopping
+    list, nothing touched on an approved week underneath, which a draft
+    has not taken anything from since approval became the takeover.
+
+    Prefers the body's plan id over the week key: the Plan tab knows
+    exactly which draft it is showing, and a draft over part of an
+    approved week is filed under its own start rather than the week's.
+    """
+    plan_id = req.weekly_plan_id or _plan_id_for_week(week_start)
+    try:
+        return tools.discard_draft_plan(plan_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Dropping the draft failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
@@ -4709,7 +4741,7 @@ _CHORE_TOOLS = {
 # changes that day's dinner (out empties it, hosting builds the big meal
 # into it) and the big-meal tools change the dishes on it, so Plan is the
 # screen that goes stale. One line, by test_week_seven_tiles's source check.
-_WEEK_TOOLS = {"plan_meal", "generate_weekly_plan", "set_week_constraints", "swap_meal_in_plan", "swap_component_in_plan", "swap_dinner_nights", "approve_weekly_plan", "answer_holiday", "set_big_meal_dish", "remove_big_meal_dish", "set_big_meal_prep_day", "propose_big_meal"}
+_WEEK_TOOLS = {"plan_meal", "generate_weekly_plan", "set_week_constraints", "swap_meal_in_plan", "swap_component_in_plan", "swap_dinner_nights", "approve_weekly_plan", "discard_draft_plan", "answer_holiday", "set_big_meal_dish", "remove_big_meal_dish", "set_big_meal_prep_day", "propose_big_meal"}
 _KITCHEN_TOOLS = {
     "add_recipe", "update_recipe_details", "mark_recipe_feedback", "log_recipe_note", "log_cooking_deviation",
     "flag_recipe_temporary", "generate_prep_schedule", "check_off_prep_step", "check_off_meal",
