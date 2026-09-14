@@ -475,10 +475,18 @@ why*, not duplicating the diff.
     the data is there — but "un-retire" has no home in any of the four
     plan resolvers today, and re-planning is the honest way back);
     dropping from Now; anything touching an approved week.
-  - 15 tests in `tests/test_draft_waits_for_approval.py`'s
+  - 16 tests in `tests/test_draft_waits_for_approval.py`'s
     `TestDroppingADraft` plus two source-marker tests (the sheet's row,
-    and the five CSS lists). Full
-    suite **4648 passed, 1 failed** — `test_tap_a_meal_opens_recipe.py::
+    and the five CSS lists). **The 16th pins the tie-break's covering-today
+    refinement and was added on review**: the other two straddle tests both
+    happen to have the covering week as the EARLIEST of the pair, so both
+    stay green whether the rule is `min(covering)` or `min(overlapping)` —
+    they pin the reported bug (never name the LATEST) and never reach the
+    refinement. The new one runs a draft from the back of a week that has
+    gone into the week the household is in now, where the two rules
+    disagree, and it is red under `min(overlapping, ...)` while every
+    other test in the file stays green. Full
+    suite **4649 passed, 1 failed** — `test_tap_a_meal_opens_recipe.py::
     test_a_real_swap_cannot_make_a_chat_link_open_the_new_dish`, which
     fails identically on `2120af5` with the working tree stashed (its
     plan expires on today's date, so `retire_expired_drafts` empties the

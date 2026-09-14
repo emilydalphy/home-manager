@@ -452,6 +452,46 @@ class TestDroppingADraft:
         out = tools.discard_draft_plan(draft["weekly_plan_id"])
         assert out["approved_week_label"] == _weekly_plan._format_period_range(week, 7)
 
+    def test_a_draft_over_a_past_week_and_this_one_names_THIS_one(
+        self, recipes, stub_model, monkeypatch
+    ):
+        """
+        The case that actually pins "covering today" rather than "earliest".
+
+        Its two siblings above both have the covering week as the EARLIEST
+        of the pair, so they are equally green whether the rule is
+        `min(covering)` or `min(overlapping)` — they pin the reported bug
+        (don't name the LATEST) and never exercise the refinement. Found by
+        the reviewer, who mutated `min(covering or overlapping, ...)` to
+        `min(overlapping, ...)` and watched all 32 tests in this file stay
+        green.
+
+        Here the covering week is the LATER one, so the two rules disagree:
+        a draft running from the back of a week that has already gone by
+        into the week the household is living in now. "Earliest" would hand
+        back the week that is over.
+        """
+        week, first = _approved_week(stub_model)
+        days = tools.period_dates(week, 7)
+        prev = (datetime.date.fromisoformat(week) - datetime.timedelta(days=7)).isoformat()
+        prev_days = tools.period_dates(prev, 7)
+        stub_model(_full_period(prev, 7, meal="Chili"))
+        earlier = agent.generate_weekly_plan(
+            prev, day_count=7, period_start=prev, confirm_takeover=True
+        )["weekly_plan_id"]
+        tools.approve_weekly_plan(earlier, approved_by="Emily")
+        # Friday of the week that has gone, through Tuesday of this one.
+        draft = _draft_over(stub_model, prev_days[5], 5)
+
+        class _Monday(datetime.date):
+            @classmethod
+            def today(cls):
+                return datetime.date.fromisoformat(days[0])
+        monkeypatch.setattr(_weekly_plan, "date", _Monday)
+
+        out = tools.discard_draft_plan(draft["weekly_plan_id"])
+        assert out["approved_week_label"] == _weekly_plan._format_period_range(week, 7)
+
     def test_dropping_twice_is_a_no_op(self, recipes, stub_model):
         week, approved = _approved_week(stub_model)
         days = tools.period_dates(week, 7)

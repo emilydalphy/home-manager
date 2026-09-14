@@ -1268,8 +1268,9 @@ def discard_draft_plan(weekly_plan_id: int) -> dict:
     period and the intake stay on record — this is "don't lead with it",
     not deletion — and there is nothing to reverse on the shopping list,
     because since 2026-09-13 a draft contributes to it only at approval.
-    An approved plan underneath is therefore whole already, and not read
-    or written here at all.
+    An approved plan underneath is therefore whole already, and is never
+    WRITTEN here — it is read, but only to name it (see
+    `approved_week_label` below).
 
     An APPROVED plan is refused rather than retired: dropping a week that
     has been shopped for would take the list's own reason away with it,

@@ -9690,7 +9690,13 @@ span.cook-week-name { cursor: default; }
 /* Centred dialogs: same scrim fade, a subtle scale instead of a slide —
    the variant is picked by data-motion="dialog" on the dialog markup
    (shell.html), not by listing IDs here, so a future dialog only needs
-   that one attribute to get the same treatment. */
+   that one attribute to get the same treatment — OF THE ANIMATION. The
+   box and the scrim themselves are ID-scoped and are NOT covered by this
+   attribute: a new dialog must also be added to the five ID lists (the
+   scrim, the box, the [hidden] guard, and the two scrim lists just
+   above). Read on its own this comment cost one reviewer's round — a
+   dialog shipped with the right insides, no box and no scrim, rendering
+   in flow under the tab bar with the screen behind it still tappable. */
 [data-motion="dialog"] {
   animation: none;
   scale: .96;
