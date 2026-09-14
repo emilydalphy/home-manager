@@ -47,6 +47,16 @@ def _d(days: int) -> str:
     return (TODAY + datetime.timedelta(days=days)).isoformat()
 
 
+# Eleven weeks out — the docstring's own distance, and the shape of row this
+# was written for (a quarterly chore in "Coming up"). Derived from today rather
+# than written down as a date: it was "2026-12-01", which is a real day, and on
+# 2026-12-02 it becomes a day in the PAST, where choreMoveDays deliberately
+# clamps at today and hands back an entirely different week. The test would
+# then fail every day thereafter, reporting the clamp — which is correct
+# behaviour — as a bug in the window.
+FAR = _d(78)
+
+
 def _adult(name: str) -> int:
     member_id = tools.add_member(name)["member_id"]
     tools.set_member_age_group(name, "Adult")
@@ -1032,22 +1042,21 @@ def test_move_offers_days_around_the_row_not_around_today():
     forward — and, once moved, offered only that same week again, so
     there was no way back to December from any screen.
     """
-    far = "2026-12-01"
     out = _node(_harness("""
 console.log(JSON.stringify({
   far: choreMoveDays({ due_date: '%s' }),
   today: choreMoveDays({ due_date: '%s' }),
   slipped: choreMoveDays({ due_date: '%s' })
 }));
-""" % (far, _d(0), _d(-20))))
+""" % (FAR, _d(0), _d(-20))))
 
     far_days = [d["iso"] for d in out["far"]]
-    assert far_days == ["2026-11-28", "2026-11-29", "2026-11-30",
-                        "2026-12-02", "2026-12-03", "2026-12-04"]
-    assert far not in far_days, "the day it is already on is not an option"
+    assert far_days == [_d(75), _d(76), _d(77), _d(79), _d(80), _d(81)]
+    assert FAR not in far_days, "the day it is already on is not an option"
     # And the way back: from any of them, the original day is offered again.
-    back = _node(_harness("console.log(JSON.stringify(choreMoveDays({ due_date: '2026-12-04' })));"))
-    assert far in [d["iso"] for d in back], "a move has to be undoable from the same control"
+    back = _node(_harness(
+        "console.log(JSON.stringify(choreMoveDays({ due_date: '%s' })));" % _d(81)))
+    assert FAR in [d["iso"] for d in back], "a move has to be undoable from the same control"
 
     # A row due today (or slipped past it) never offers a day in the past.
     assert [d["iso"] for d in out["today"]] == [_d(i) for i in range(1, 7)]
@@ -1057,13 +1066,13 @@ console.log(JSON.stringify({
 
 def test_a_day_chip_says_which_friday_once_there_is_more_than_one():
     """Inside the coming week a bare weekday is unambiguous; beyond it,
-    "Fri" on a December row is a question, not an answer."""
+    "Fri" on a row eleven weeks out is a question, not an answer."""
     out = _node(_harness("""
 console.log(JSON.stringify({
   soon: choreMoveDays({ due_date: '%s' }).map(function (d) { return d.label; }),
-  far: choreMoveDays({ due_date: '2026-12-01' }).map(function (d) { return d.label; })
+  far: choreMoveDays({ due_date: '%s' }).map(function (d) { return d.label; })
 }));
-""" % _d(0)))
+""" % (_d(0), FAR)))
     assert out["soon"][0] == "Tomorrow"
     assert all(len(l) <= 8 for l in out["soon"]), "this week is said as a weekday"
     for label in out["far"]:

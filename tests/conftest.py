@@ -8,6 +8,7 @@ scope here, above the imports that depend on them.
 """
 import os
 import tempfile
+import time
 
 _TMP_DB = os.path.join(tempfile.mkdtemp(prefix="home-manager-tests-"), "test.db")
 os.environ["DB_PATH"] = _TMP_DB
@@ -21,8 +22,16 @@ os.environ["DISABLE_BACKUPS"] = "1"
 # call run_morning_texts_once directly with a stubbed sender.
 os.environ["DISABLE_MORNING_TEXT"] = "1"
 
+import contextlib  # noqa: E402
+import datetime as _dt  # noqa: E402
+
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
+import freezegun  # noqa: E402
+from freezegun import freeze_time  # noqa: E402
+
+import nodeharness  # noqa: E402  (tests/ is on pythonpath — see pytest.ini)
+import sqlite_clock  # noqa: E402
 
 from app import ratelimit  # noqa: E402
 from app.db import get_conn, init_db  # noqa: E402
@@ -107,3 +116,322 @@ def signed_in(client):
     )
     assert res.status_code == 303, "sign-in should redirect on success"
     return client
+
+
+# ---------------------------------------------------------------------------
+# The clock (2026-09-14)
+# ---------------------------------------------------------------------------
+# The app's behaviour genuinely changes with the weekday — `_first_plan_window`
+# folds a Sunday sign-up forward, `PLAN_AHEAD_FROM_WEEKDAY = 4` makes Friday
+# onward suggest next week, `retire_expired_drafts` sweeps a draft the morning
+# after its last day, and the holiday window opens three days out. A test that
+# reads the real clock sits on whichever side of those cliffs the calendar puts
+# it, so a green suite means something different on a Tuesday than on a Sunday.
+# Main has been red twice for behaviour that was deliberate.
+#
+# So: `pytest --today=2026-09-13` pins the whole run, and `@pytest.mark.today(...)`
+# (or the `frozen_today` fixture) pins one test. Both go through freezegun
+# rather than a hand-rolled monkeypatch, because half this codebase writes
+# `from datetime import date` — a monkeypatch would have to find and patch the
+# `date` name in every one of ~30 modules, and the one it missed would be the
+# one that mattered. freezegun replaces the class itself, so an import style it
+# has never seen still gets the pinned date.
+#
+# SQLite's clock is pinned with it — `datetime('now')` runs in C, below
+# anything freezegun can reach, and app/ has 183 of them. Pinning Python alone
+# leaves the app reasoning on one date and stamping every `created_at` with
+# another, which cost ten false failures on a ONE-DAY pin before this was
+# closed. tests/sqlite_clock.py does that half; read its docstring before
+# changing either. node is the third clock — the 48 files that run
+# shell.js's own functions do it in a subprocess, which hears nothing about any
+# of this until tests/nodeharness.py hands it the pinned instant. The fourth is
+# the filesystem, which is not pinned at all; see @pytest.mark.live_clock.
+#
+# A pinned run also starts on an exact second boundary, which is worth
+# knowing when a failure will not reproduce: a short test that has to straddle
+# one behaves the same way every time under a pin and is a coin flip without,
+# so `--today` is a sharper instrument for a sub-second timing bug than an
+# unpinned rerun — and a bug that only shows up in one of the two is probably
+# about that boundary rather than about the date.
+#
+# And one trap that is not a clock at all: freezegun's default ignore list
+# hands back the REAL time to any caller with a "threading" frame five levels
+# up, which is every sync route in this app. See the configure() call below
+# before adding anything to that list.
+_DEFAULT_FREEZE_TIME = "09:00:00"
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--today",
+        action="store",
+        default=None,
+        metavar="YYYY-MM-DD[THH:MM[:SS]]",
+        help=(
+            "Pin the clock for the whole run, e.g. --today=2026-09-13, or a "
+            "weekday name (--today=sunday) for the next one of those. "
+            "Time of day defaults to " + _DEFAULT_FREEZE_TIME + " local. "
+            "POMONA_TEST_TODAY sets the same thing from the environment."
+        ),
+    )
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers",
+        "today(when): pin this test's clock, e.g. @pytest.mark.today('2026-09-13'). "
+        "Beats --today for that test.",
+    )
+    config.addinivalue_line(
+        "markers",
+        "live_clock(why): run this test on the real clock even under --today. "
+        "For a test measuring against a clock we do not pin — say which.",
+    )
+    raw = config.getoption("--today") or os.environ.get("POMONA_TEST_TODAY")
+    if not raw:
+        return
+    # The freeze starts HERE, not in a session fixture, and that is the whole
+    # difference between a pin that works and one that quietly does nothing.
+    # Dozens of test modules open with `TODAY = datetime.date.today()` at
+    # module scope — collection imports them, and collection runs before any
+    # fixture. A session fixture therefore pinned the app while every one of
+    # those constants still held the real date, and the two disagreed: 28 of
+    # test_moves.py's assertions failed on a pinned run for no reason but
+    # that. pytest_configure runs before collection, so the constants are
+    # pinned too. A typo'd pin is a usage error here for the same reason —
+    # at startup, once, rather than 4,600 identical errors.
+    #
+    # _REAL_EPOCH_AT_PIN is captured BEFORE the freeze and is the only way back
+    # to the real clock once it is on: tick=True means the frozen clock
+    # advances at the real one's rate, so real-now is this epoch plus however
+    # far the frozen one has moved. @pytest.mark.live_clock needs that.
+    global _REAL_EPOCH_AT_PIN, _FROZEN_EPOCH_AT_PIN
+    pinned = _parse_pin(raw)
+    at, offset = _freeze_args(raw)
+    _REAL_EPOCH_AT_PIN = time.time()
+    config._pomona_freezer = freeze_time(at, tz_offset=offset, tick=True)
+    config._pomona_freezer.start()
+    _FROZEN_EPOCH_AT_PIN = time.time()
+    # Said out loud, and with print() rather than a pytest report header
+    # because CI runs `pytest -q`, which suppresses the header — and a
+    # weekday-name pin resolves to a different date every week, so a CI failure
+    # has to be reproducible from the log rather than from the command.
+    print(f"clock: pinned to {pinned:%Y-%m-%d %H:%M} ({pinned:%A}) via {raw!r}")
+    # And SQLite's clock with it — see tests/sqlite_clock.py. Python and the
+    # database have to agree about what day it is or the pin is worse than no
+    # pin: the app reasons on one date and stamps rows with another.
+    # utcnow() rather than now() because SQLite's 'now' is UTC.
+    sqlite_clock.install(_sqlite_now)
+    # ...and node's, for the 48 files that run shell.js's own functions in a
+    # subprocess. See tests/nodeharness.py.
+    nodeharness.pin_clock(time.time)
+
+
+def pytest_unconfigure(config):
+    freezer = getattr(config, "_pomona_freezer", None)
+    if freezer is not None:
+        nodeharness.unpin_clock()
+        sqlite_clock.uninstall()
+        freezer.stop()
+        config._pomona_freezer = None
+
+
+_WEEKDAY_NAMES = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
+
+
+def _parse_pin(raw):
+    """
+    Read a --today / marker value into the instant to freeze at.
+
+    Two forms. An ISO date is exact and is what a test's own marker should use,
+    because a test that reproduces a bug wants the day the bug was on. A
+    weekday NAME ("sunday") resolves to the next such day on or after the real
+    today, and is what CI's matrix uses — a fixed pin in CI would age the same
+    way the fixtures it is meant to protect do, so in three months every new
+    test written against a plausible date would fail the pinned jobs and the
+    matrix would be turned off. A name never ages.
+
+    A bare date gets a mid-morning time rather than midnight: 09:00 is inside
+    every window the app reasons about (past the 07:00 morning text, well short
+    of the 18:30 after which tonight's shop move closes), so a pinned run
+    exercises the ordinary case rather than an edge of the day. Pass a time
+    explicitly to test an edge on purpose.
+    """
+    if isinstance(raw, _dt.datetime):
+        return raw
+    raw = str(raw).strip()
+    if raw.lower() in _WEEKDAY_NAMES:
+        wanted = _WEEKDAY_NAMES.index(raw.lower())
+        today = _dt.date.today()
+        day = today + _dt.timedelta(days=(wanted - today.weekday()) % 7)
+        raw = day.isoformat()
+    raw = raw.replace(" ", "T")
+    if "T" not in raw:
+        raw = raw + "T" + _DEFAULT_FREEZE_TIME
+    try:
+        return _dt.datetime.fromisoformat(raw)
+    except ValueError as exc:  # a typo'd pin must say so, not silently run live
+        raise pytest.UsageError(
+            f"--today/@pytest.mark.today: {raw!r} is not a date I can read ({exc}). "
+            f"Give an ISO date, or one of {', '.join(_WEEKDAY_NAMES)}."
+        )
+
+
+@pytest.fixture(scope="session")
+def _pinned_clock(request):
+    """
+    The date this run is pinned to, or None if it is running live.
+
+    The freeze itself is already on by the time any fixture runs — see
+    pytest_configure. This only reports it, so a fixture that wants to build
+    dates around "today" can say so rather than guessing.
+
+    On tick=True: time still moves forward from the pinned instant, because
+    the session cookie's age, the rate limiter and the "is this a new
+    sitting?" gap are all real elapsed-time arithmetic and a clock that never
+    advances makes them answer questions nobody asked. What is pinned is the
+    DATE, which is the thing the app branches on. 09:00 gives a run about
+    fifteen hours before it could roll into the next day.
+    """
+    if getattr(request.config, "_pomona_freezer", None) is None:
+        return None
+    return _dt.date.today()
+
+
+def _sqlite_now():
+    """The pinned instant as SQLite's own 'now' means it: UTC."""
+    return _dt.datetime.utcnow().isoformat(sep=" ", timespec="milliseconds")
+
+
+# freezegun's default ignore list is a call-stack sniffer: `_should_use_real_time`
+# walks five frames up and, if any of them belongs to a module named in that
+# list, hands back the REAL clock instead of the pinned one. "threading" is in
+# it by default, and this app's sync routes run in Starlette's threadpool — so
+# `time.time()` inside a request returned the real epoch while
+# `date.today()` right beside it returned the pinned one. The session cookie is
+# signed with `time.time()` and checked against it, so a pin far enough from
+# today put every signed-in test past COOKIE_MAX_AGE: 385 failures at a
+# five-month pin, all of them 401s, none of them a bug. Emptying the list makes
+# the pin mean the same thing everywhere — and `_should_use_real_time` then
+# returns on its first line rather than inspecting a stack per call, so it is
+# cheaper too. Safe because tick=True: the list exists so a thread waiting on a
+# timeout is not frozen solid, and here the clock still advances.
+freezegun.configure(default_ignore_list=[])
+
+
+def _freeze_args(when):
+    """
+    Turn a pin into the (instant, tz_offset) freezegun needs to behave like a
+    real clock in THIS machine's timezone.
+
+    freezegun reads a naive datetime as UTC and adds `tz_offset` to produce
+    local time, so freezing "09:00" with no offset makes `datetime.now()` and
+    `datetime.utcnow()` the same instant — local and UTC collapse. That is
+    fine on a UTC runner and quietly wrong anywhere else: `datetime('now',
+    'localtime')` in SQLite still converts by the real offset, so it would
+    disagree with Python's "now" by exactly that many hours. Measured under
+    TZ=Pacific/Niue: a pin of 09:00 gave Python 09:00 and SQLite localtime
+    22:00 the previous day.
+    
+    A pin is therefore read as LOCAL wall time — which is what somebody typing
+    --today=2026-09-13 means — and frozen at the UTC instant behind it, with
+    the offset handed to freezegun. `.astimezone()` on a naive datetime reads
+    it as local and is DST-aware for that particular date, so a pin either side
+    of a clock change gets the offset that actually applied.
+    """
+    local = _parse_pin(when)
+    offset = local.astimezone().utcoffset() or _dt.timedelta(0)
+    return local - offset, offset
+
+
+@contextlib.contextmanager
+def _pin(when):
+    """
+    Hold every clock we can reach at one instant.
+
+    All three, always, together — Python's, SQLite's and node's. A
+    half-pinned world is worse than an unpinned one, because the app goes on
+    reasoning about "today" while the rows it writes are stamped with a
+    different day and the browser code answers with a third, and nothing says
+    so.
+    """
+    at, offset = _freeze_args(when)
+    freezer = freeze_time(at, tz_offset=offset, tick=True)
+    freezer.start()
+    sqlite_clock.install(_sqlite_now)
+    nodeharness.pin_clock(time.time)
+    try:
+        yield _dt.date.today()
+    finally:
+        nodeharness.unpin_clock()
+        sqlite_clock.uninstall()
+        freezer.stop()
+
+
+_REAL_EPOCH_AT_PIN = None
+_FROZEN_EPOCH_AT_PIN = None
+
+
+def _real_now():
+    """
+    The wall clock, reachable from inside a freeze.
+
+    tick=True means the frozen clock runs at the real clock's rate, so the gap
+    between them is whatever it was when the freeze started. Nothing else can
+    answer this once freezegun is on — time.time() is the frozen one.
+    """
+    if _REAL_EPOCH_AT_PIN is None:
+        return _dt.datetime.now()
+    return _dt.datetime.fromtimestamp(_REAL_EPOCH_AT_PIN + (time.time() - _FROZEN_EPOCH_AT_PIN))
+
+
+@pytest.fixture(autouse=True)
+def _marked_clock(request):
+    """
+    `@pytest.mark.today('2026-09-13')` — one test, pinned, session pin or not.
+    `@pytest.mark.live_clock('why')` — one test, back on the real clock.
+
+    live_clock is the escape hatch, and it exists because there is a fourth
+    clock nobody pins: the FILESYSTEM. `recipe_photos.sweep_pending` compares
+    `time.time()` against `os.path.getmtime`, and a pinned run therefore reads
+    a file written seconds ago as a day old and sweeps it — three tests in
+    test_recipe_photo_import.py failed that way on a one-day pin, none of them
+    about anything a household would notice.
+
+    Shimming `os.path.getmtime` (and `os.utime` with it, or the arithmetic
+    double-counts) was the other option and was not taken: `os.path` is reached
+    by pytest's own machinery and by importlib, so it is the riskiest thing in
+    this process to patch, and the payoff is three tests that have nothing to
+    do with what day it is. A named exemption that says why is the smaller
+    claim — and those tests still run, in full, in CI's unpinned job.
+    """
+    if request.node.get_closest_marker("live_clock") is not None:
+        if getattr(request.config, "_pomona_freezer", None) is None:
+            yield None  # already live
+            return
+        with _pin(_real_now()) as today:
+            yield today
+        return
+    marker = request.node.get_closest_marker("today")
+    if marker is None:
+        yield None
+        return
+    with _pin(marker.args[0]) as today:
+        yield today
+
+
+@pytest.fixture
+def frozen_today():
+    """
+    Pin the clock from inside a test: `today = frozen_today("2026-09-13")`.
+
+    The marker is the normal way; this is for a test that has to do setup
+    before the pin lands, or that wants the date back as a value. Returns the
+    pinned `datetime.date`, and unfreezes when the test ends.
+    """
+    with contextlib.ExitStack() as stack:
+
+        def _freeze(when):
+            return stack.enter_context(_pin(when))
+
+        yield _freeze

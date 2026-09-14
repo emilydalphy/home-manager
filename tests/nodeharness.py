@@ -2,7 +2,7 @@
 Run a browser-code harness under node, without handing the OS a 748 KB
 command-line argument.
 
-Nineteen test files in this repo execute `static/shell.js`'s own functions
+48 test files in this repo execute `static/shell.js`'s own functions
 under node rather than reading the source for markers — the house standard,
 because most of the bugs these files were written for are behaviour a
 source-marker test cannot see. Each builds a string of prelude + a sliced
@@ -37,6 +37,62 @@ import subprocess
 import tempfile
 
 
+# ---------------------------------------------------------------------------
+# The clock, on the other side of the process boundary
+# ---------------------------------------------------------------------------
+# freezegun pins Python. node is a SEPARATE PROCESS and never hears about it,
+# so on a `pytest --today=...` run the harness files had Python building
+# "tomorrow" from the pinned date and shell.js's own `new Date()` answering
+# with the real one. Nine tests failed on a one-day pin for exactly that, all
+# of them shaped like a genuine bug ("show me tomorrow opened today") and none
+# of them being one.
+#
+# So a pinned run prepends this: `Date` is replaced by a subclass whose
+# no-argument constructor and `now()` answer the pinned instant, and which
+# defers to the real Date for everything else — `new Date(iso)`, `Date.parse`,
+# `Date.UTC`, every getter, `instanceof`. A subclass rather than a hand-built
+# stand-in because the real class then keeps answering every question except
+# the one word being pinned, which is the same bargain tests/sqlite_clock.py
+# makes with SQLite.
+#
+# ONE INSTANT, not a ticking clock: a harness runs in well under a second, and
+# a fixed instant is the more reproducible answer.
+#
+# Nothing here is a class that can be CALLED without `new` — checked: every
+# call site in static/ is `new Date(...)`, and a bare `Date()` would throw.
+# If one ever appears, this shim is where it will show up.
+_pin_provider = None
+_pin_depth = 0
+
+
+def pin_clock(provider):
+    """Point node's `Date` at `provider()` (epoch seconds, as time.time gives
+    them). Counted, so a @pytest.mark.today inside a --today run unwinds to the
+    session's pin rather than to the real clock."""
+    global _pin_provider, _pin_depth
+    _pin_depth += 1
+    _pin_provider = provider
+
+
+def unpin_clock():
+    global _pin_provider, _pin_depth
+    _pin_depth = max(0, _pin_depth - 1)
+    if _pin_depth == 0:
+        _pin_provider = None
+
+
+def _clock_prelude() -> str:
+    if _pin_provider is None:
+        return ""
+    at_ms = int(_pin_provider() * 1000)
+    return (
+        "globalThis.Date = class extends Date {\n"
+        "  constructor(...a) { if (a.length === 0) { super(%d); } else { super(...a); } }\n"
+        "  static now() { return %d; }\n"
+        "};\n"
+    ) % (at_ms, at_ms)
+
+
 # Deliberately just the one function. A run_node_json wrapper was written
 # first and had no callers: every file keeps its own returncode assertion
 # and its own json.loads, because the assertion message names that file's
@@ -58,7 +114,11 @@ def run_node(script: str, timeout: int = 30) -> subprocess.CompletedProcess:
     handle, path = tempfile.mkstemp(suffix=".js", prefix="home-manager-harness-")
     try:
         with os.fdopen(handle, "w", encoding="utf-8") as f:
-            f.write(script)
+            # Prepended, not appended: shell.js regions run at top level, so
+            # the pin has to be in place before the first line of the harness.
+            # Empty on an ordinary unpinned run, so nothing is prepended and
+            # the byte-for-byte script every existing test runs is unchanged.
+            f.write(_clock_prelude() + script)
         return subprocess.run(
             ["node", path], capture_output=True, text=True, timeout=timeout
         )

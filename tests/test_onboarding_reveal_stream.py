@@ -27,7 +27,6 @@ from __future__ import annotations
 
 import datetime
 import json
-import types
 
 import pytest
 
@@ -155,8 +154,9 @@ def test_the_reveal_stream_endpoint_files_under_this_weeks_monday_like_the_plain
     assert datetime.date.fromisoformat(done_payload["week_start_date"]).weekday() == 0
 
 
+@pytest.mark.today(FROZEN_SUNDAY)
 def test_the_reveal_stream_folds_a_sundays_one_day_remainder_forward(
-    signed_in, fake_week_generation, monkeypatch
+    signed_in, fake_week_generation
 ):
     """
     The same key invariant with the clock pinned, so it holds every day.
@@ -167,27 +167,12 @@ def test_the_reveal_stream_folds_a_sundays_one_day_remainder_forward(
     the file went red every Sunday instead. Frozen to a Sunday, the day the
     rule fires: one day left in the period is not a part-week, so the first
     plan is a whole week starting tomorrow.
+
+    The pin was a hand-rolled SimpleNamespace over `main.datetime`, which
+    reached main.py and nothing under it — `suggest_planning_period` lives in
+    weekly_plan.py behind `from datetime import date` and went on reading the
+    real clock. `@pytest.mark.today` pins the whole process.
     """
-    class _FrozenDate(datetime.date):
-        @classmethod
-        def today(cls):
-            return FROZEN_SUNDAY
-
-    # Only the names main.py uses on this path, but kept complete enough
-    # that an unrelated datetime call in the same request still works
-    # rather than raising something confusing. Same shape as
-    # test_onboarding_week_key.py's frozen Saturday.
-    monkeypatch.setattr(
-        main_module,
-        "datetime",
-        types.SimpleNamespace(
-            date=_FrozenDate,
-            timedelta=datetime.timedelta,
-            datetime=datetime.datetime,
-            timezone=datetime.timezone,
-        ),
-    )
-
     res = signed_in.post("/api/onboarding/generate-first-plan/stream")
     assert res.status_code == 200
     done_payload = next(p for n, p in _parse_sse(res.text) if n == "done")
