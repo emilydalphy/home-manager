@@ -11,6 +11,26 @@ on:
 jobs:
   pytest:
     runs-on: ubuntu-latest
+    env:
+      # The runner is UTC; a household defaults to America/Toronto
+      # (households.timezone, and cooker.household_now's own fallback).
+      # Since the screens read the HOUSEHOLD's clock rather than the
+      # server's, a suite whose process sits four hours from the household
+      # it is testing has a different "today" in the test than in the app
+      # for four hours out of every twenty-four — 00:00–03:59 UTC, which is
+      # the Toronto evening — and the date-shaped tests flip red and green
+      # with the wall clock rather than with the code.
+      #
+      # Measured on the merge of this branch with overnight/frozen-clock-tests,
+      # 2026-09-14, same tree three ways: TZ=Pacific/Niue 23 failed,
+      # unset (UTC) 0 failed but only because it was run outside that
+      # window, TZ=America/Toronto 0 failed at any hour. Matching the
+      # runner to the app's own default is what makes it the last of those.
+      #
+      # This is the runner's clock only. It is NOT a claim that the app
+      # should assume Toronto — the app reads each household's own zone,
+      # which is the whole point of the change this comment arrived with.
+      TZ: America/Toronto
     steps:
       - uses: actions/checkout@v4
 

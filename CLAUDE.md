@@ -482,14 +482,25 @@ why*, not duplicating the diff.
     00:00 and 03:59 UTC**, which is the same four Toronto evening hours
     this branch is about. Two of them, the `test_moves.py` route pair, are
     fixed here by naming the day (`?date=`), which is what their claims
-    were always about. **The remaining nineteen are not this branch's to
-    edit** (they span four other files, one of them another live branch)
-    and the clean fix is one line in `tests/conftest.py` putting the test
-    household on the process's own clock — a suite whose household is
-    implicitly seven hours from its process turns every date-shaped
-    assertion into a coin flip. Flagged for Emily rather than done:
-    `conftest.py` was off this branch's list, and it is a decision about
-    the whole suite. The shift form above is what keeps this to the tests
+    were always about. **The remaining nineteen are fixed by ONE LINE, and
+    it is in the CI workflow rather than in any test**: the runner now sets
+    `TZ: America/Toronto`, the app's own default household zone, so the
+    process and the household it is testing agree about what day it is.
+    Measured the same tree three ways on 2026-09-14 — `TZ=Pacific/Niue`
+    23 failed; unset (UTC) 0 failed, but only because it ran outside the
+    00:00–03:59 window; `TZ=America/Toronto` 0 failed, and that one holds
+    at any hour rather than by luck. It is the RUNNER's clock only and is
+    emphatically not a claim that the app may assume Toronto — the app
+    reads each household's own zone, which is the entire point of this
+    branch.
+  - **The obvious fix was tried first and is wrong; recorded so nobody
+    re-tries it.** Putting the test household on the process's own clock
+    in `tests/conftest.py` (deriving the zone from `TZ`, else
+    `/etc/localtime`) does take `Pacific/Niue` from 23 failures to 14 —
+    but it breaks **four `test_morning_text` tests at the DEFAULT TZ**,
+    because `America/Toronto` is the product's real default and those
+    tests correctly assert it. Aligning the runner instead leaves every
+    test's meaning untouched. The shift form above is what keeps this to the tests
     that hard-code a date rather than every one that pins a clock: with
     it, the dozen files patching `weekly_plan.date` still control the
     answer whenever the two clocks agree, which is every hour but four.
