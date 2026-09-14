@@ -204,15 +204,23 @@ def get_meal_plan(days_ahead: int = 7) -> list[dict]:
     end_date = (date.today() + timedelta(days=days_ahead)).isoformat()
     rows = conn.execute(
         """
-        SELECT mpe.date, mpe.slot, COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.food_groups_json
+        SELECT mpe.date, mpe.slot, COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.food_groups_json,
+               wp.status AS plan_status
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
+        LEFT JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id
         WHERE mpe.household_id = ? AND mpe.date >= ? AND mpe.date <= ?
+          AND (wp.id IS NULL OR wp.status != 'retired')
         ORDER BY mpe.date ASC
         """,
         (household_id(), today, end_date),
     ).fetchall()
     conn.close()
+    # A draft may sit over the approved week until it is approved
+    # (2026-09-13); the upcoming plan is the real week's, so on a day the
+    # approved plan holds, the draft's meals are not listed beside them.
+    approved_days = {r["date"] for r in rows if r["plan_status"] == "approved"}
+    rows = [r for r in rows if r["plan_status"] != "draft" or r["date"] not in approved_days]
     return [
         {"date": r["date"], "slot": r["slot"], "meal": r["meal"], "food_groups": json.loads(r["food_groups_json"])}
         for r in rows

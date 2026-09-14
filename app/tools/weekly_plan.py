@@ -896,6 +896,14 @@ def _rhythm_anchor() -> str:
     return (row["value"] if row else "") or ""
 
 
+# The tiebreak between two live plans on one day, since a draft may sit
+# over an approved week until it is approved (2026-09-13): the approved
+# one is the household's real week. Prepended to the newest-first order
+# every day-resolver already used, so with no draft in play nothing
+# changes.
+_SQL_APPROVED_FIRST = "(status = 'approved') DESC"
+
+
 def _live_plan_covering(conn, day: str, approved_only: bool = False):
     """
     The non-retired plan whose period contains `day`, or None. With
@@ -908,7 +916,7 @@ def _live_plan_covering(conn, day: str, approved_only: bool = False):
         f"SELECT * FROM weekly_plans WHERE household_id = ? AND {status_clause} "
         f"AND date({_SQL_PERIOD_START}) <= date(?) "
         f"AND date({_SQL_PERIOD_START}, '+' || {_SQL_PERIOD_LAST_OFFSET} || ' days') >= date(?) "
-        f"ORDER BY created_at DESC, id DESC LIMIT 1",
+        f"ORDER BY {_SQL_APPROVED_FIRST}, created_at DESC, id DESC LIMIT 1",
         (household_id(), day, day),
     ).fetchone()
 
@@ -1927,10 +1935,20 @@ def _longest_run(days: list[str]) -> list[str]:
     return best
 
 
-def _plan_takeover(new_plan_id: int | None, period_start: str, day_count: int) -> list[dict]:
+def _plan_takeover(
+    new_plan_id: int | None, period_start: str, day_count: int, drafts_only: bool = False, conn=None,
+) -> list[dict]:
     """
     Decide what every other live plan keeps and gives up — and decide ALL of
     it before anything is written.
+
+    drafts_only is the generation-time reading (Emily, 2026-09-13: "make
+    the draft wait until approval"): a DRAFT being generated may replace
+    other drafts on its days at once — nothing of theirs has reached the
+    shopping list — but an APPROVED plan is left exactly as it is, neither
+    shortened nor even counted as a claimant, until the draft is approved.
+    Approval then runs the full walk (see _settle_weekly_plan_approval),
+    which is where the approved week actually gives its days up.
 
     Two reasons it is separated from the writing.
 
@@ -1958,19 +1976,27 @@ def _plan_takeover(new_plan_id: int | None, period_start: str, day_count: int) -
     question BEFORE a plan exists, and the answer is the same one, because
     the new plan would be the newest row and is the one this skips anyway.
     """
-    conn = get_conn()
+    # On the caller's connection when given (the approval transaction —
+    # see _settle_weekly_plan_approval, which must open exactly one), on
+    # one of its own otherwise.
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
     rows = conn.execute(
         "SELECT * FROM weekly_plans WHERE household_id = ? AND status != 'retired' "
         "ORDER BY created_at DESC, id DESC",
         (household_id(),),
     ).fetchall()
-    conn.close()
+    if own_conn:
+        conn.close()
 
     new_days = set(_week_intake.period_dates(period_start, day_count))
     claimed = set(new_days)
     decisions = []
     for row in rows:
         if row["id"] == new_plan_id:
+            continue
+        if drafts_only and row["status"] == "approved":
             continue
         other_start, other_days = plan_period(row)
         days = _week_intake.period_dates(other_start, other_days)
@@ -2016,11 +2042,29 @@ def _plan_takeover(new_plan_id: int | None, period_start: str, day_count: int) -
     return decisions
 
 
-def retire_overlapping_plans(new_plan_id: int, period_start: str, day_count: int) -> dict:
+def retire_overlapping_plans(
+    new_plan_id: int, period_start: str, day_count: int, drafts_only: bool = False, conn=None,
+) -> dict:
     """
     Make "no day has two plans" true rather than merely intended: every
     other plan holding a day inside this period gives that day up, and the
     groceries it put on the list for those days come back off.
+
+    Since 2026-09-13 the rule reads "no day has two APPROVED plans", and
+    this runs at two moments with two scopes (Emily: "make the draft wait
+    until approval"):
+
+    - Generation, `drafts_only=True`: a new draft replaces other DRAFTS on
+      its days immediately, and leaves an approved plan untouched — the
+      household can draft a different Thursday-to-Sunday, look at it, and
+      walk away with the approved week exactly as it was.
+    - Approval, `conn=` the approval's own transaction: the full walk. This
+      is when an approved plan's overlapping days go, meals and groceries,
+      in the same commit that puts the draft's own groceries on the list —
+      so the list never holds both weeks' food for one night, and a
+      failure anywhere leaves both plans as they were. Given a connection
+      this applies on it and neither commits nor closes; the caller owns
+      the transaction.
 
     This is the enforcement half of Emily's one-plan-per-day rule
     (2026-09-04). "What's for dinner?" has to have exactly one answer, and
@@ -2092,9 +2136,12 @@ def retire_overlapping_plans(new_plan_id: int, period_start: str, day_count: int
         "grocery_trimmed": [],
         "grocery_kept_bought": [],
     }
-    decisions = _plan_takeover(new_plan_id, period_start, day_count)
+    decisions = _plan_takeover(new_plan_id, period_start, day_count, drafts_only=drafts_only, conn=conn)
     if not decisions:
         return result
+    if conn is not None:
+        result = _apply_takeover(conn, result, decisions, new_plan_id, period_start, day_count)
+        return _finish_takeover_result(result, new_plan_id)
 
     # ONE connection, ONE commit, for the whole destruction loop. Every
     # decision was already settled above; what was left was that acting on
@@ -2123,7 +2170,10 @@ def retire_overlapping_plans(new_plan_id: int, period_start: str, day_count: int
         raise
     finally:
         conn.close()
+    return _finish_takeover_result(result, new_plan_id)
 
+
+def _finish_takeover_result(result: dict, new_plan_id: int) -> dict:
     result["surrendered_dates"] = sorted(set(result["surrendered_dates"]))
     result["orphaned_dates"] = sorted(set(result["orphaned_dates"]))
     if result["orphaned_dates"]:
@@ -2137,10 +2187,13 @@ def retire_overlapping_plans(new_plan_id: int, period_start: str, day_count: int
 
 def preview_approved_takeover(period_start: str, day_count: int) -> dict | None:
     """
-    What generating this period would take away from an APPROVED plan —
-    said before anything is generated, so the household can be asked.
-    Read-only. Returns None when no approved plan would lose a day, which
-    is the ordinary case.
+    What APPROVING a draft of this period would take away from an APPROVED
+    plan — said before anything is generated, so the household can be
+    asked, and again on the draft itself (get_week_menu's approval block)
+    so the Approve button says what it costs. Read-only. Returns None when
+    no approved plan would lose a day, which is the ordinary case. Since
+    2026-09-13 generating the draft itself takes nothing away; approval is
+    the takeover (see retire_overlapping_plans).
 
     This exists because the take-over is Emily's rule and stays one
     (2026-09-04: no day has two plans), but asking first is also her rule
@@ -2252,8 +2305,9 @@ def _takeover_question(
     this is about losing something — so no exclamation marks and no
     softening before the fact.
 
-      "I'd replace Thursday to Sunday's dinners — Bean Chili, Salmon — and
-       11 things on your shopping list would change. Go ahead?"
+      "Once it's approved, I'd replace Thursday to Sunday's dinners — Bean
+       Chili, Salmon — and 11 things on your shopping list would change.
+       Go ahead?"
 
     Dinners are what a household remembers a day by, so those are named
     (each once, in the order they come); the rest of the day's meals go too
@@ -2288,7 +2342,9 @@ def _takeover_question(
         # plan's items carry no date, so its days have nothing called a
         # dinner.
         noun = ("dinners" if len(days) > 1 else "dinner") if dinners else "meals"
-        head = f"I'd replace {span}'s {noun}"
+        # "Once it's approved": the draft itself changes nothing (Emily,
+        # 2026-09-13) — approving it is the moment these days go.
+        head = f"Once it's approved, I'd replace {span}'s {noun}"
         if grocery_line_count:
             things = "one thing" if grocery_line_count == 1 else f"{grocery_line_count} things"
             # The dashes only exist to carry the dinner names INTO the
@@ -2466,6 +2522,47 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
     }
 
 
+def _plan_row_by_id(weekly_plan_id: int):
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT * FROM weekly_plans WHERE id = ? AND household_id = ?",
+        (weekly_plan_id, household_id()),
+    ).fetchone()
+    conn.close()
+    return row
+
+
+def _pending_draft_over(plan: dict) -> int | None:
+    """
+    The id of a live DRAFT, newer than `plan`, that shares at least one
+    day with it — the draft the household is shaping over their approved
+    week — or None. Only a draft over an APPROVED plan counts: two drafts
+    never share a day (generation still replaces a draft on the spot), and
+    a draft is its own front page already.
+    """
+    if plan.get("status") != "approved":
+        return None
+    row = _plan_row_by_id(plan["weekly_plan_id"])
+    if row is None:
+        return None
+    start, days = plan_period(row)
+    conn = get_conn()
+    drafts = conn.execute(
+        f"SELECT * FROM weekly_plans WHERE household_id = ? AND status = 'draft' "
+        f"AND id != ? AND NOT (status = 'draft' AND {_SQL_EXPIRED_BEFORE}) "
+        f"ORDER BY created_at DESC, id DESC",
+        (household_id(), row["id"], date.today().isoformat()),
+    ).fetchall()
+    conn.close()
+    for draft in drafts:
+        if draft["created_at"] < row["created_at"]:
+            continue
+        other_start, other_days = plan_period(draft)
+        if periods_overlap(start, days, other_start, other_days):
+            return draft["id"]
+    return None
+
+
 def get_plan_id_for_date(meal_date: str) -> int | None:
     """
     The plan whose PERIOD contains a given day, or None.
@@ -2494,11 +2591,12 @@ def get_plan_id_for_date(meal_date: str) -> int | None:
     """
     date.fromisoformat(meal_date)
     conn = get_conn()
+    # Approved before draft, then newest — see _current_weekly_plan_row.
     row = conn.execute(
         f"SELECT id FROM weekly_plans WHERE household_id = ? AND status != 'retired' "
         f"AND date({_SQL_PERIOD_START}) <= date(?) "
         f"AND date({_SQL_PERIOD_START}, '+' || {_SQL_PERIOD_LAST_OFFSET} || ' days') >= date(?) "
-        f"ORDER BY created_at DESC, id DESC LIMIT 1",
+        f"ORDER BY {_SQL_APPROVED_FIRST}, created_at DESC, id DESC LIMIT 1",
         (household_id(), meal_date, meal_date),
     ).fetchone()
     conn.close()
@@ -2608,11 +2706,16 @@ def _current_weekly_plan_row(conn):
     nobody said yes to.
     """
     today = date.today().isoformat()
+    # An approved plan outranks a draft on the same day (2026-09-13): a
+    # draft may now sit over an approved week until it is approved, and
+    # "what's for dinner" — Cook, Now, defrost, prep, the list — keeps
+    # following the week somebody said yes to. The Plan tab is the one
+    # screen that leads with the draft instead; see get_week_menu.
     plan = conn.execute(
         f"SELECT * FROM weekly_plans WHERE household_id = ? AND status != 'retired' "
         f"AND date({_SQL_PERIOD_START}) <= date(?) "
         f"AND date({_SQL_PERIOD_START}, '+' || {_SQL_PERIOD_LAST_OFFSET} || ' days') >= date(?) "
-        f"ORDER BY created_at DESC, id DESC LIMIT 1",
+        f"ORDER BY {_SQL_APPROVED_FIRST}, created_at DESC, id DESC LIMIT 1",
         (household_id(), today, today),
     ).fetchone()
     if plan:
@@ -3383,6 +3486,18 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     household_name = household["name"] if household else ""
 
     plan = get_weekly_plan(weekly_plan_id)
+    if weekly_plan_id is None and plan.get("weekly_plan_id"):
+        # The Plan tab is the one screen that leads with a DRAFT sitting
+        # over the household's approved week (2026-09-13: a draft waits
+        # until approval, so the two coexist for a while). Every other
+        # resolver prefers the approved plan — Cook, Now, the list follow
+        # the real week — but here the draft is the pending decision, and
+        # a screen that hid it would leave the household no way back to
+        # the week they were shaping. A pinned read (weekly_plan_id given)
+        # is left alone: it asked for a specific plan.
+        pending = _pending_draft_over(plan)
+        if pending is not None:
+            plan = get_weekly_plan(pending)
     if not plan.get("weekly_plan_id"):
         return {
             "weekly_plan_id": None, "week_start_date": None,
@@ -3447,12 +3562,22 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         # when there is more than one name (static/shell.js approveWeek) — a
         # single-adult household has no question to answer.
         "approving_adults": [],
+        # For a draft: what approving it takes off an approved week (see
+        # below). None for an approved week and in the ordinary case.
+        "replaces": None,
     }
     if plan["status"] != "approved":
         approval["approving_adults"] = [
             p["name"] for p in _coordination.get_household_people()
         ]
         approval["grocery_preview"] = preview_plan_grocery_impact(plan["weekly_plan_id"])
+        # What approving THIS draft takes off an approved week — the days
+        # and the sentence — so the screen can say it beside the Approve
+        # button rather than after the fact. None in the ordinary case.
+        plan_row = _plan_row_by_id(plan["weekly_plan_id"])
+        if plan_row is not None:
+            period_start, period_days = plan_period(plan_row)
+            approval["replaces"] = preview_approved_takeover(period_start, period_days)
         try:
             found = _coordination.check_plan_conflicts(plan["weekly_plan_id"])
             approval["conflicts"] = found["conflicts"]
@@ -4036,9 +4161,20 @@ def get_needs_you_items() -> list[dict]:
         logger.exception("Holiday ask could not be built for the needs-you band")
 
     # ---- Rule 1: dinner decision ----
+    # Ordered so the APPROVED plan's row is the last one seen for a date
+    # and wins the dict below: a draft may sit over the approved week until
+    # it is approved (2026-09-13), and Now follows the real week, not the
+    # draft — a draft's open Thursday is not tonight's decision, and the
+    # approved week's open Thursday still is.
     dinner_rows = conn.execute(
-        "SELECT date, slot_state, open_reason, derived_from_json, weekly_plan_id "
-        "FROM meal_plan_entries WHERE household_id = ? AND slot = 'dinner' AND date >= ? AND date < ?",
+        "SELECT mpe.date, mpe.slot_state, mpe.open_reason, mpe.derived_from_json, mpe.weekly_plan_id "
+        "FROM meal_plan_entries mpe LEFT JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
+        "WHERE mpe.household_id = ? AND mpe.slot = 'dinner' AND mpe.date >= ? AND mpe.date < ? "
+        "AND (wp.id IS NULL OR wp.status != 'retired') "
+        # COALESCE: a row with no plan at all (a dinner planned on its own)
+        # compares as NULL, which would sort ahead of everything; it ties
+        # with a draft instead and the newer row wins, as it always did.
+        f"ORDER BY COALESCE(wp.status = 'approved', 0) ASC, mpe.id ASC",
         (household_id(), today.isoformat(), horizon_end.isoformat()),
     ).fetchall()
     dinner_by_date = {r["date"]: r for r in dinner_rows}
@@ -4065,6 +4201,11 @@ def get_needs_you_items() -> list[dict]:
                 "body": row["open_reason"] or "",
                 "options": derived.get("options") or [],
                 "week_start": week_start,
+                # The plan this card is about, by id: a week key alone
+                # resolves to the newest plan filed under it, which is the
+                # DRAFT when one sits over this week (2026-09-13). The pick
+                # has to land on the row the card was built from.
+                "weekly_plan_id": row["weekly_plan_id"],
             })
             break  # only the soonest unsettled dinner becomes a card
 
@@ -4822,6 +4963,22 @@ def _settle_weekly_plan_approval(
                 "carried_over_count": 0,
             }
         else:
+            # THE takeover (Emily, 2026-09-13: a draft waits until approval).
+            # Any other plan holding a day of this one gives it up now —
+            # meals, and their groceries back off the list — in this same
+            # transaction, before this plan's own groceries go on. A draft's
+            # overlap with other drafts was already settled at generation;
+            # what is left to settle here is the approved week this draft
+            # was drafted over. Only on a real transition: a re-approval
+            # (flipped == 0, list rebuild) has nothing left to take.
+            took_over = {"retired_plan_ids": [], "shortened_plan_ids": [], "surrendered_dates": []}
+            if flipped:
+                plan_row = conn.execute(
+                    "SELECT * FROM weekly_plans WHERE id = ? AND household_id = ?",
+                    (weekly_plan_id, household_id()),
+                ).fetchone()
+                period_start, period_days = plan_period(plan_row)
+                took_over = retire_overlapping_plans(weekly_plan_id, period_start, period_days, conn=conn)
             entries = _plan_grocery_candidate_entries(conn, weekly_plan_id)
             approved_at = conn.execute(
                 "SELECT approved_at FROM weekly_plans WHERE id = ? AND household_id = ?",
@@ -4955,6 +5112,9 @@ def _settle_weekly_plan_approval(
                 # the approval can say so; nothing was merged.
                 "carried_over": carried_over,
                 "carried_over_count": len(carried_over),
+                # What this approval took off other plans — the takeover
+                # that used to happen at generation (2026-09-13).
+                "took_over": took_over,
             }
     except Exception:
         conn.rollback()

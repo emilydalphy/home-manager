@@ -850,11 +850,14 @@ class TestTakeoverDeconflictsGlobally:
         # confirm_takeover: the rows above are APPROVED, and a generation
         # over approved days asks first (test_replan_confirm.py). This is
         # the takeover itself, i.e. after the yes.
-        agent.generate_weekly_plan(
+        new = agent.generate_weekly_plan(
             tools.period_dates(week, 7)[1], day_count=3,
             period_start=tools.period_dates(week, 7)[1], confirm_takeover=True,
         )
-        assert _live_day_owners() == {}, "a generation must leave the household deconflicted"
+        # Generation leaves the approved rows alone (2026-09-13: a draft
+        # waits until approval); approving is the takeover.
+        tools.approve_weekly_plan(new["weekly_plan_id"], approved_by="Emily")
+        assert _live_day_owners() == {}, "an approval must leave the household deconflicted"
 
     def test_orphaned_days_exclude_anything_another_plan_still_holds(self, recipes, stub_model):
         # The warning and the `took_over` payload are what a screen would
@@ -929,7 +932,11 @@ class TestGroceryReconciliationOnTakeover:
         plan = agent.generate_weekly_plan(
             start, day_count=days, period_start=start, confirm_takeover=True,
         )
-        tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
+        approval = tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
+        # Since 2026-09-13 the takeover of an APPROVED plan happens at
+        # approval, not generation (Emily: a draft waits until approval), so
+        # the takeover these tests read is the approval's.
+        plan["took_over"] = approval["took_over"]
         return plan
 
     def _needed(self) -> dict:
@@ -1258,7 +1265,11 @@ class TestTakeoverIsAtomic:
         new = agent.generate_weekly_plan(
             days[3], day_count=4, period_start=days[3], confirm_takeover=True,
         )
-        took = new["took_over"]
+        # The draft took nothing (2026-09-13): the approved week is whole
+        # until this one is approved, which is where the takeover happens.
+        assert new["took_over"]["shortened_plan_ids"] == []
+        assert _dates_on(old["weekly_plan_id"]) == set(days)
+        took = tools.approve_weekly_plan(new["weekly_plan_id"], approved_by="Emily")["took_over"]
 
         assert took["shortened_plan_ids"] == [old["weekly_plan_id"]]
         assert took["retired_plan_ids"] == []

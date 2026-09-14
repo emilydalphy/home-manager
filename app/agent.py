@@ -729,20 +729,23 @@ today — Monday through Sunday, even if most of it has already passed (asked on
 the *next* Monday. Only plan the *following* week when the user actually asks for that — \
 "next week", "get ahead for next week" — never default to it because the current week is \
 mostly over.
-- Generating a period TAKES OVER any days it overlaps with an existing plan: those days leave \
-the old plan and its groceries for them come back off the list, except anything already \
-bought. That is the household's rule, not a glitch — but it means you must not "helpfully" \
-plan a wider window than you were asked for. If someone asks for Thursday to Sunday, generate \
-four days, not seven; the extra three would silently retire days of a plan they never \
-mentioned. The result's `took_over` says what actually happened; if it retired days, say so \
-plainly and once, without apologising.
+- A period TAKES OVER any days it overlaps with an existing plan: those days leave the old \
+plan and its groceries for them come back off the list, except anything already bought. For \
+another DRAFT that happens the moment the new one is generated; for an APPROVED plan it \
+happens only when the new draft is APPROVED — until then the approved week is untouched, on \
+the list and on every screen, and the household can walk away from the draft. That is the \
+household's rule, not a glitch — but it means you must not "helpfully" plan a wider window \
+than you were asked for. If someone asks for Thursday to Sunday, generate four days, not \
+seven; the extra three would replace days of a plan they never mentioned. The result's \
+`took_over` says what actually happened to other drafts; approve_weekly_plan's result says \
+what an approval replaced. If days were replaced, say so plainly and once, without apologising.
 - If those days belong to an APPROVED plan — a week already on the shopping list — \
 generate_weekly_plan will refuse and return needs_confirmation until confirm_takeover is true. \
-Ask the household directly, naming what would go (the result's `note` already says it: "I'd \
-replace Thursday to Sunday's dinners — Bean Chili, Salmon — and 11 things on your shopping \
-list would change. Go ahead?"), and only pass that flag once they've said yes in this conversation, \
-after being told what would be replaced; never set it on your own initiative, and never on \
-the first call. A draft is not asked about — replacing a draft is what re-planning means.
+Ask the household directly, naming what would go (the result's `note` already says it: "Once \
+it's approved, I'd replace Thursday to Sunday's dinners — Bean Chili, Salmon — and 11 things on \
+your shopping list would change. Go ahead?"), and only pass that flag once they've said yes in \
+this conversation, after being told what would be replaced; never set it on your own initiative, \
+and never on the first call. A draft is not asked about — replacing a draft is what re-planning means.
 - The result's is_first_plan and new_recipe_count/repeat_recipe_count exist specifically to \
 make the planning happen visibly, not just functionally — mention them in your reply rather \
 than only in the data. If is_first_plan is true, this is the household's very first generated \
@@ -1592,7 +1595,7 @@ TOOL_DEFINITIONS = [
             "properties": {
                 "week_start_date": {"type": "string", "description": "YYYY-MM-DD, the FIRST day of the period to plan. Any day of the week — a period does not have to start on a Monday."},
                 "constraints_notes": {"type": "string", "description": "Freeform per-week asks, e.g. 'out Thu/Fri, keep it under 30 min on weeknights, one vegetarian night'."},
-                "day_count": {"type": "integer", "description": f"How many days the period runs, 1-{tools.MAX_PERIOD_DAYS}. Defaults to 7. 'Thursday to next Thursday' is 8. Send exactly what was asked for — a period takes over any days it overlaps with an existing plan, so planning wider than asked silently retires days nobody mentioned."},
+                "day_count": {"type": "integer", "description": f"How many days the period runs, 1-{tools.MAX_PERIOD_DAYS}. Defaults to 7. 'Thursday to next Thursday' is 8. Send exactly what was asked for — a period replaces any days it overlaps with another draft at once, and with an approved plan once it is approved, so planning wider than asked replaces days nobody mentioned."},
                 "confirm_takeover": {
                     "type": "boolean",
                     "description": "Defaults to false. The household's explicit yes to replacing days of an APPROVED plan — never set this true on your own initiative, and never on the first call. If a call comes back needs_confirmation, ASK the household in plain words (the result's note names the days and meals), and only call again with this set to true if they say yes in this conversation.",
@@ -3875,13 +3878,15 @@ def _generate_weekly_plan(
     gets audited, what attendance/slot-needs context gets built) is shifted
     to the content start date.
 
-    Once the plan is fully written, any OTHER plan holding days inside this
-    period is retired from those days and its grocery contributions for them
-    reversed — the one-plan-per-day rule (Emily, 2026-09-04). That runs at
-    the very end, after generation has actually succeeded, for the same
-    reason the weekly_plans row is created late: a household's real week must
-    not be dismantled to make room for a generation that then fails and rolls
-    back. See tools.retire_overlapping_plans.
+    Once the plan is fully written, any other DRAFT holding days inside this
+    period is retired from those days — the one-plan-per-day rule (Emily,
+    2026-09-04), narrowed on 2026-09-13 to "no day has two APPROVED plans":
+    an approved week is left whole until this draft is approved, and
+    approval is where its days and groceries go (see
+    tools.retire_overlapping_plans). That runs at the very end, after
+    generation has actually succeeded, for the same reason the weekly_plans
+    row is created late: nothing is dismantled to make room for a generation
+    that then fails and rolls back.
     """
     if period_start and skip_days:
         raise ValueError(
@@ -4230,8 +4235,12 @@ def _generate_weekly_plan(
         # Inside the try, because if it throws, the half-built new plan is
         # rolled back too rather than being left as a second claimant on
         # days the old plan still holds.
+        # ...except an APPROVED plan (Emily, 2026-09-13: "make the draft
+        # wait until approval"). This draft replaces other drafts on its
+        # days now, and leaves the approved week whole until the household
+        # approves this one — approve_weekly_plan is where those days go.
         takeover = tools.retire_overlapping_plans(
-            plan_id, content_start_date, day_count,
+            plan_id, content_start_date, day_count, drafts_only=True,
         )
         if takeover["retired_plan_ids"]:
             logger.info(

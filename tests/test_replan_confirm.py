@@ -230,7 +230,9 @@ class TestChatAsksBeforeReplanningAnApprovedWeek:
 
         stub_model(_full_period(days[3], 4, meal="Katsu"))
         done = _chat_plan(week_start_date=days[3], day_count=4, confirm_takeover=True)
-        took = done["took_over"]
+        # The takeover happens when the draft is APPROVED (2026-09-13), so
+        # the number the question named is checked against the approval.
+        took = tools.approve_weekly_plan(done["weekly_plan_id"], approved_by="Emily")["took_over"]
         # took_over reports per meal reversed; the question counts LINES.
         touched = set(took["grocery_removed"]) | set(took["grocery_trimmed"])
         assert asked["grocery_line_count"] == len(touched)
@@ -343,7 +345,13 @@ class TestAConfirmedRequestProceeds:
 
         assert result.get("status") != "needs_confirmation"
         assert result["weekly_plan_id"] != approved["weekly_plan_id"]
-        assert result["took_over"]["shortened_plan_ids"] == [approved["weekly_plan_id"]]
+        # The yes lets the DRAFT be made; the approved week is still whole
+        # (2026-09-13: a draft waits until approval)...
+        assert result["took_over"]["shortened_plan_ids"] == []
+        assert tools.plan_period(_plan_row(approved["weekly_plan_id"])) == (week, 7)
+        # ...and approving the draft is what replaces the days.
+        took = tools.approve_weekly_plan(result["weekly_plan_id"], approved_by="Emily")["took_over"]
+        assert took["shortened_plan_ids"] == [approved["weekly_plan_id"]]
         assert tools.plan_period(_plan_row(approved["weekly_plan_id"])) == (week, 3)
         assert _dates_on(approved["weekly_plan_id"]) == set(tools.period_dates(week, 3))
 
@@ -405,7 +413,12 @@ class TestThePlanWeekScreenIsNotAskedTwice:
         assert res.status_code == 200, res.text
         body = res.json()
         assert body.get("status") != "needs_confirmation"
-        assert body["took_over"]["retired_plan_ids"] == [approved["weekly_plan_id"]]
+        # Drafted without a question; the approved week goes when this
+        # draft is approved (2026-09-13), not now.
+        assert body["took_over"]["retired_plan_ids"] == []
+        assert _plan_row(approved["weekly_plan_id"])["status"] == "approved"
+        took = tools.approve_weekly_plan(body["weekly_plan_id"], approved_by="Emily")["took_over"]
+        assert took["retired_plan_ids"] == [approved["weekly_plan_id"]]
 
 
 # ---------- the tool schema and the prompt rule ----------

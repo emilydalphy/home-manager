@@ -795,8 +795,9 @@
       // already have bought is worse than a slightly long list.
       $('joined').hidden = false;
       $('joined').textContent = data.plan_status === 'approved'
-        ? data.week_label + ' is already approved and on your shopping list. If we re-plan it ' +
-          'I’ll add anything new — I won’t take anything off.'
+        ? data.week_label + ' is already approved and on your shopping list. Re-planning makes a ' +
+          'new draft beside it — nothing changes until you approve that one. Anything already ' +
+          'bought stays either way.'
         : data.week_label + ' already has a draft. Answering again replaces it, and nothing ' +
           'has reached your shopping list yet either way.';
       // The answers that produced that plan, so this reads as a revision

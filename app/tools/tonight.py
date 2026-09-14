@@ -146,7 +146,7 @@ def tonight_check(now: datetime | None = None) -> dict:
             f"SELECT * FROM weekly_plans WHERE household_id = ? AND status != 'retired' "
             f"AND date({_weekly_plan._SQL_PERIOD_START}) <= date(?) "
             f"AND date({_weekly_plan._SQL_PERIOD_START}, '+' || {_weekly_plan._SQL_PERIOD_LAST_OFFSET} || ' days') >= date(?) "
-            f"ORDER BY created_at DESC, id DESC LIMIT 1",
+            f"ORDER BY {_weekly_plan._SQL_APPROVED_FIRST}, created_at DESC, id DESC LIMIT 1",
             (household_id(), today, today),
         ).fetchone()
         if plan is None:
