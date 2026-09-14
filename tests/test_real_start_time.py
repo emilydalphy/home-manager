@@ -297,12 +297,21 @@ def test_mark_not_cooked_forgets_the_start_and_every_reader_falls_back(tonight):
 
 
 def test_the_route_answers_with_the_view_and_the_receipt(signed_in, tonight):
+    # The route reads the real clock, and only tonight's cook can be
+    # started: on a UTC household after 8pm Toronto "today" is already
+    # tomorrow, so the fixture's dinner is moved to the household's today.
+    hh_today = _cooker.household_now().date().isoformat()
+    if hh_today != ISO_TODAY:
+        conn = get_conn()
+        conn.execute("UPDATE meal_plan_entries SET date = ? WHERE id = ?", (hh_today, tonight))
+        conn.commit()
+        conn.close()
     res = signed_in.post("/api/cooker/start", json={"entry_id": tonight})
     assert res.status_code == 200
     body = res.json()
     assert body["already_started"] is False
-    assert body["started_at"] and body["started_at"].startswith(ISO_TODAY + "T")
-    assert body["on_the_table"] and body["on_the_table"].startswith(ISO_TODAY + "T")
+    assert body["started_at"] and body["started_at"].startswith(hh_today + "T")
+    assert body["on_the_table"] and body["on_the_table"].startswith(hh_today + "T")
     assert body["meals"][0]["cook_started_at"] == body["started_at"]
     assert _started_at(tonight) == body["started_at"]
     # The second tap: the same time, and the shell is told it is a repeat.
@@ -414,7 +423,7 @@ def _screen(day: dict, slot: str, cook_meals: list, ticked: list | None = None) 
             "daySlotEntry", "slotWord", "isRealCook", "mealDisplayName", "cookMealForEntry",
             "mealCookName", "mealCookUnderway", "mealClockFor", "mealHeroLine", "mealHeroHtml",
             "mealStopHtml", "mealClockHtml", "swapStateFor", "swapLineHtml", "slotEyebrowLabel",
-            "dishSizeClass", "mealDockHtml", "mealWhatsInHtml", "mealStepHtml"))
+            "dishSizeClass", "mealDockHtml", "mealWhatsInHtml", "recipeCitationHtml", "mealStepHtml"))
         + f"console.log(JSON.stringify(mealStepHtml({json.dumps(day)}, {json.dumps(slot)})));\n"
     )
     res = nodeharness.run_node(harness, timeout=30)
