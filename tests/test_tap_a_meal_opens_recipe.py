@@ -875,17 +875,34 @@ def test_a_chat_change_to_a_week_nobody_has_opened_still_updates_the_index():
 # swap, and then resolves the link against the REAL cooker view.
 
 def _seed_week_for_swap():
-    """A one-week plan with a different dinner on Monday and Tuesday."""
+    """
+    A one-week plan with a different dinner on Monday and Tuesday.
+
+    The week is THIS week, worked out from today, not a fixed date. It was
+    "2026-09-07" until 2026-09-14, when that week finished and the whole
+    thing quietly stopped testing anything: `get_week_menu` runs
+    `retire_expired_drafts` on the way in, a draft whose last day has gone
+    retires, a retired plan contributes no days, and both id lists came back
+    empty — so the premise assertion read `[] != []` and the file went red
+    every day from then on. Pushing the constant forward a week only resets
+    that timer. A week containing today is a LIVE week, which is what "a real
+    swap of that exact night" means, and it is true on every weekday and in
+    every year.
+    """
+    from datetime import date, timedelta
+
     from app import tools
 
-    monday = "2026-09-07"
+    today = date.today()
+    monday = (today - timedelta(days=today.weekday())).isoformat()
+    tuesday = (date.fromisoformat(monday) + timedelta(days=1)).isoformat()
     plan = tools.create_weekly_plan(week_start_date=monday)
     plan_id = plan["weekly_plan_id"] if isinstance(plan, dict) else plan
     for name in ("Chicken Tacos", "Bean Chili"):
         tools.add_recipe(name, ingredients=[{"item": "something", "qty": "1"}],
                          instructions=["Cook it."])
     tools.plan_meal(monday, "Chicken Tacos", slot="dinner", weekly_plan_id=plan_id)
-    tools.plan_meal("2026-09-08", "Lentil Soup", slot="dinner", weekly_plan_id=plan_id)
+    tools.plan_meal(tuesday, "Lentil Soup", slot="dinner", weekly_plan_id=plan_id)
     return plan_id, monday
 
 

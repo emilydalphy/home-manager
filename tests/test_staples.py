@@ -33,12 +33,26 @@ SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
 SHELL_CSS = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
 
 
+# The staples module has its own clock hook (`_TODAY_OVERRIDE`) and this file
+# has always driven it from a fixed Wednesday, so that the due-date maths and
+# the dates asserted below are stable. That left TWO clocks in every test here:
+# this one, and the real one that `grocery`, `clear_stale_grocery_items` and
+# SQLite all read. They agreed only because 2026-09-16 happened to be about
+# now — and a month past it they disagree by a month, which is long enough for
+# a staple's line to be tidied away underneath the test. Reproduced by pinning
+# the suite to 2026-10-12: `..._does_not_block_a_staple_that_is_due_again` went
+# red, and would have done so for real on that day. So the world is pinned to
+# the same Wednesday the file already chose, and the two clocks are one.
+BASE_WEDNESDAY = date(2026, 9, 16)
+
+pytestmark = pytest.mark.today(BASE_WEDNESDAY)
+
+
 @pytest.fixture(autouse=True)
 def _pin_today(monkeypatch):
     """Every test starts on a fixed Wednesday, and can move the clock with
     `travel(days)`. Real date.today() would make the due-date maths drift."""
-    base = date(2026, 9, 16)
-    monkeypatch.setattr(st, "_TODAY_OVERRIDE", base)
+    monkeypatch.setattr(st, "_TODAY_OVERRIDE", BASE_WEDNESDAY)
     yield
 
 

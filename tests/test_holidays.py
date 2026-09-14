@@ -405,7 +405,7 @@ def test_the_planner_is_told_the_holiday_and_the_answer(family, recipe, stub_mod
 
 
 def test_a_period_with_no_holiday_sends_nothing_new_to_the_prompt(family, recipe, stub_model):
-    week = _shift(_thanksgiving(), 21)  # the first week of November: nothing on it
+    week = _an_empty_week()
     seen = stub_model(_full_week(week, meal="Chili"))
     agent.generate_weekly_plan(week)
     assert "holidays" not in seen["context"]
@@ -570,6 +570,28 @@ def _named(found: list[dict], name: str) -> str | None:
 
 def _shift(day: str, n: int) -> str:
     return (date.fromisoformat(day) + timedelta(days=n)).isoformat()
+
+
+def _an_empty_week(after: str | None = None) -> str:
+    """
+    The next week after Thanksgiving with no holiday anywhere in it.
+
+    It used to be Thanksgiving + 21, described as "the first week of November:
+    nothing on it" — which is true in most years and false in the ones where
+    Thanksgiving falls early enough for that week to reach 31 October. 2028 and
+    2029 are both like that, and Halloween is in the table, so the test would
+    have started failing in the autumn of 2028 claiming the planner had grown a
+    holiday it had not. This file's whole point is that holidays are computed
+    by RULE rather than pinned to a year, so the fix is to find the empty week
+    rather than to pin a different offset — and the premise is then true by
+    construction instead of by luck.
+    """
+    week = _shift(after or _thanksgiving(), 21)
+    for _ in range(12):  # a quarter of a year is far more than enough
+        if not tools.holidays_for_period(week, 7):
+            return week
+        week = _shift(week, 7)
+    raise AssertionError("no holiday-free week in the three months after Thanksgiving")
 
 
 def _answered_on(day: date) -> None:

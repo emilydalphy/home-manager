@@ -11,6 +11,59 @@ on:
 jobs:
   pytest:
     runs-on: ubuntu-latest
+    # Two shapes of run, because there are two shapes of clock hazard and
+    # neither catches the other.
+    #
+    # "live" is the suite as it has always run: the real date, whatever day
+    # the runner happens to be on. It is the only job that can see a fixture
+    # whose hard-coded date has quietly aged into the past — the shape that
+    # took test_tap_a_meal_opens_recipe.py red on 2026-09-14, a week after
+    # the week it names finished.
+    #
+    # The four pinned jobs are the weekday cliffs. `_first_plan_window`
+    # folds a Sunday sign-up forward, PLAN_AHEAD_FROM_WEEKDAY = 4 makes
+    # Friday onward suggest next week, and a live-clock suite sits on
+    # whichever side of those the calendar puts it — so main has gone red on
+    # a Sunday for behaviour that was deliberate, with nothing but the diff
+    # to tell that from a regression. Saturday is in because a Saturday
+    # sign-up's first "week" is a two-day part-week.
+    #
+    # The pins are weekday NAMES, resolved to the next such day at run time,
+    # not fixed dates. A fixed pin would age exactly the way the fixtures it
+    # protects do: in three months every new test written against a
+    # plausible date would fail these four jobs, and the matrix would get
+    # switched off. conftest.py prints the resolved date as the first line of
+    # each pinned run, so a failure is still reproducible from the log.
+    #
+    # There is a SECOND axis that belongs here and is not here yet: an
+    # unpinned run under a timezone that straddles UTC relative to
+    # America/Toronto (TZ=Pacific/Niue, UTC-11, no DST). The container is UTC
+    # and households default to Toronto, so after 8pm Toronto the server's
+    # date is already tomorrow — a relationship between two clocks at one
+    # instant, which a date pin cannot express. It finds real bugs; it also
+    # finds two that are already failing on main (measured 2026-09-14:
+    # 2 failed, 4647 passed), and a job that is red the day it lands gets
+    # ignored. One more matrix entry once those two are fixed.
+    strategy:
+      fail-fast: false
+      matrix:
+        # Written out rather than derived with `clock == 'live' && '' || clock`:
+        # in a GitHub expression `&&` returns its right operand, so an empty
+        # string is falsy and that idiom hands the live job the pin "live",
+        # which conftest rejects as a usage error. One column of pins cannot
+        # get that wrong.
+        include:
+          - clock: live
+            pin: ""
+          - clock: monday
+            pin: monday
+          - clock: friday
+            pin: friday
+          - clock: saturday
+            pin: saturday
+          - clock: sunday
+            pin: sunday
+    name: pytest (${{ matrix.clock }})
     steps:
       - uses: actions/checkout@v4
 
@@ -25,4 +78,9 @@ jobs:
       - name: Run tests
         # No ANTHROPIC_API_KEY here on purpose — the suite must never make a
         # real API call. If a test starts needing one, that test is wrong.
+        #
+        # POMONA_TEST_TODAY rather than --today so the command is one line
+        # either way; conftest.py reads both, and an empty value is no pin.
+        env:
+          POMONA_TEST_TODAY: ${{ matrix.pin }}
         run: pytest -q

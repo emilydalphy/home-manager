@@ -24,7 +24,6 @@ A genuine part-week filed under Monday is real work and has its own ticket.
 from __future__ import annotations
 
 import datetime
-import types
 
 import pytest
 
@@ -147,6 +146,7 @@ def test_chat_and_the_screens_agree_about_the_plan_onboarding_made(signed_in, st
     )
 
 
+@pytest.mark.today(FROZEN_TODAY)
 def test_onboarding_on_a_saturday_still_files_the_plan_under_monday(signed_in, monkeypatch):
     """
     The same property with the clock pinned, so it holds every day.
@@ -156,27 +156,14 @@ def test_onboarding_on_a_saturday_still_files_the_plan_under_monday(signed_in, m
     the day the bug cannot be seen. This one freezes onboarding to a
     Saturday, five days into the week, where a "start today" key is most
     obviously wrong.
+
+    The pin used to be a SimpleNamespace standing in for `main.datetime`,
+    hand-rolled here and copied into two other files. It only ever reached
+    main.py — every module that had done `from datetime import date` went on
+    reading the real clock underneath it, so the route was frozen and the
+    tools it called were not. `@pytest.mark.today` (tests/conftest.py) pins
+    all of it.
     """
-    from app import main as main_module
-
-    class _FrozenDate(datetime.date):
-        @classmethod
-        def today(cls):
-            return FROZEN_TODAY
-
-    # Only the names main.py actually uses on this path, but kept complete
-    # enough that an unrelated datetime call elsewhere in the request would
-    # still work rather than raising something confusing.
-    monkeypatch.setattr(
-        main_module,
-        "datetime",
-        types.SimpleNamespace(
-            date=_FrozenDate,
-            timedelta=datetime.timedelta,
-            datetime=datetime.datetime,
-            timezone=datetime.timezone,
-        ),
-    )
     monkeypatch.setattr(
         agent,
         "generate_weekly_plan_llm",

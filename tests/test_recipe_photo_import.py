@@ -44,6 +44,16 @@ SHELL_HTML = (REPO / "static" / "shell.html").read_text(encoding="utf-8")
 # Three real image headers. The server checks the bytes, not the header the
 # browser sent, and never decodes further (no imaging library) — so a valid
 # signature plus filler IS what a photo looks like to it.
+# The real clock, even on a `pytest --today=...` run. Nothing in this file is
+# about what day it is — but `recipe_photos.sweep_pending` compares
+# `time.time()` against `os.path.getmtime`, and the filesystem is the one clock
+# the pin does not reach. Under a pin, a photo stashed a second ago reads as a
+# day old and is swept out from under the save. See the note on
+# @pytest.mark.live_clock in tests/conftest.py for why that is an exemption
+# rather than a fourth shim.
+pytestmark = pytest.mark.live_clock("sweep_pending reads file mtimes, which nothing pins")
+
+
 JPEG = b"\xff\xd8\xff\xe0" + b"\x00" * 64 + b"page one"
 JPEG2 = b"\xff\xd8\xff\xe0" + b"\x00" * 64 + b"page two"
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32

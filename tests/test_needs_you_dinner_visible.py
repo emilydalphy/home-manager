@@ -64,7 +64,13 @@ class TestABrandNewHouseholdWithNoPlanAtAll:
 
     def test_the_card_is_offered_and_the_meal_is_saved(self):
         _a_recipe()
-        assert [i["type"] for i in tools.get_needs_you_items()] == ["dinner_decision"]
+        # In, not ==. The band legitimately carries other things on some days
+        # — a holiday ask rides there from three days out — so an exact list
+        # made this red for about four days around each of the seven asking
+        # holidays, reporting a feature as a regression. Reproduced with the
+        # clock pinned to Thanksgiving (2026-10-12), Christmas and New Year's
+        # Day; nothing else in this file reads that list.
+        assert "dinner_decision" in [i["type"] for i in tools.get_needs_you_items()]
 
         tools.resolve_needs_you_dinner(_d(), "Chili")
 

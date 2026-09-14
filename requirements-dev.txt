@@ -2,3 +2,8 @@
 -r requirements.txt
 pytest==9.1.1
 httpx==0.28.1
+# The clock. `pytest --today=2026-09-13` and `@pytest.mark.today(...)` both go
+# through this (tests/conftest.py) — freezegun rather than a monkeypatch
+# because half of app/ writes `from datetime import date`, which holds the
+# class and not the module, so patching a module attribute reaches nothing.
+freezegun==1.5.5

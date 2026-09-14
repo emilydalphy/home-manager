@@ -371,6 +371,177 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-14 — The suite can be pinned to a date, and there are FOUR
+  clocks, not one. Branch `overnight/frozen-clock-tests`, NOT merged at the
+  time of writing.** Loop Board "The test suite is date-dependent and only
+  pinned in three files". 43 test files derive a weekday from
+  `date.today()`; three knew the app's behaviour changes with it, and all
+  three were fixed reactively after main went red on a Sunday. Now
+  `pytest --today=2026-09-13` (or `POMONA_TEST_TODAY`, or a weekday NAME —
+  `--today=sunday` is the next one of those) pins a whole run;
+  `@pytest.mark.today('2026-09-13')` and the `frozen_today` fixture pin one
+  test. freezegun (`requirements-dev.txt`), not a monkeypatch: half of app/
+  writes `from datetime import date`, which holds the CLASS, so a patch of
+  `weekly_plan.datetime` reaches nothing and a patch of `weekly_plan.date`
+  would have to be repeated in ~30 modules — the one missed being the one
+  that matters. That is exactly what the two hand-rolled
+  `types.SimpleNamespace` pins over `main.datetime` were doing: freezing the
+  route and leaving every tool it called on the real clock. Both are the
+  marker now (`test_onboarding_week_key`, `test_onboarding_reveal_stream`);
+  the third file, `test_tools.py`, had weekday-aware HELPERS rather than a
+  pin — already right, and untouched.
+  - **The freeze starts in `pytest_configure`, not in a session fixture, and
+    that is the whole difference between a pin that works and one that
+    quietly does nothing.** Dozens of files open with `TODAY =
+    datetime.date.today()` at module scope; collection imports them, and
+    collection runs before any fixture. The first cut pinned the app while
+    every one of those constants still held the real date — 28 of
+    `test_moves.py`'s assertions failed for no other reason, all of them
+    looking exactly like real ranking bugs.
+  - **SQLite is the second clock** (`tests/sqlite_clock.py`).
+    `datetime('now')` runs in C below anything freezegun can reach and app/
+    has 181 of them, so Python reasoned on the pinned date while every
+    `created_at` was stamped with the real one: ten false failures on a
+    ONE-day pin. Closed by wrapping `sqlite3.connect` (not `db.get_conn` —
+    modules import that name and hold it) and overriding `date`/`datetime`/
+    `strftime` et al to swap the word `'now'` for the pinned instant and
+    hand the call back to SQLite's own implementation on a shadow
+    connection. Not a reimplementation of SQLite's date language: every
+    modifier stays SQLite's answer. It is COMPLETE rather than partial
+    because there is no `CURRENT_TIMESTAMP` anywhere in app/ or schema.sql
+    (checked) — that one is a keyword and cannot be overridden, and a
+    partial pin would be worse than none. Cost measured at ~11%.
+  - **node is the third** (`tests/nodeharness.py`). The 48 files that run
+    shell.js's own functions do it in a subprocess that hears nothing about
+    freezegun, so Python built "tomorrow" from the pinned date and the
+    browser code answered with the real one — nine failures on a one-day
+    pin, every one shaped like a genuine bug ("show me tomorrow opened
+    today"). A pinned run prepends a `Date` SUBCLASS whose no-arg
+    constructor and `now()` are the pinned instant and which defers to the
+    real Date for everything else. Empty prelude when unpinned, so every
+    existing harness runs the bytes it always ran.
+  - **The fourth is the FILESYSTEM, and it is not pinned — deliberately.**
+    `recipe_photos.sweep_pending` compares `time.time()` to
+    `os.path.getmtime`, the only such site in app/, so a pinned run reads a
+    photo stashed a second ago as a day old and sweeps it.
+    `@pytest.mark.live_clock(why)` puts one test back on the real clock;
+    `test_recipe_photo_import.py` carries it at module scope. Shimming
+    `os.path.getmtime` (and `os.utime` with it, or the arithmetic
+    double-counts) was the alternative and was refused: `os.path` is reached
+    by pytest's own machinery and by importlib, and the payoff is three
+    tests that have nothing to do with what day it is.
+  - **And a trap that is not a clock: freezegun's default ignore list.**
+    `_should_use_real_time` walks five frames up and hands back the REAL
+    clock if any of them belongs to a listed module. `threading` is on it by
+    default and this app's sync routes run in Starlette's threadpool, so
+    `time.time()` inside a request returned the real epoch while
+    `date.today()` beside it returned the pinned one — the session cookie is
+    signed and checked with `time.time()`, so a pin further out than
+    COOKIE_MAX_AGE 401'd every signed-in test: **385 failures at a
+    five-month pin, not one of them a bug.** `freezegun.configure(
+    default_ignore_list=[])` makes the pin mean one thing everywhere, and
+    is safe because `tick=True` — the list exists so a thread waiting on a
+    timeout is not frozen solid, and here the clock still advances.
+  - **THE SWEEP FOUND NO WEEKDAY CLIFF IN THE APP.** All seven weekdays run
+    green; every failure the sweep turned up was scaffolding — the
+    module-scope constants, SQLite, node, the filesystem, the ignore list.
+    That is the honest result and it is worth writing down: the three files
+    that were already weekday-aware had in fact covered the cliffs, and what
+    was missing was the ability to PROVE it on any day but the one you
+    happen to be on.
+  - **A far-future pin is the other half, and it is the one that found real
+    rot.** A hard-coded date in a fixture is only dangerous when the app
+    reacts to how it compares to today, so `--today=<a date months out>` ages
+    the fixtures on purpose. Five, all fixed, none an app bug:
+    `test_tap_a_meal_opens_recipe.py`'s seed week was `"2026-09-07"` and had
+    already gone red on `main` — that week ended, `get_week_menu` retired the
+    expired draft, and the premise assertion read `[] != []` (derived from
+    today now, so the plan is a LIVE week; pushing the constant forward only
+    resets the timer). `test_staples.py` drove the staples module's own
+    `_TODAY_OVERRIDE` from a fixed Wednesday while grocery and SQLite read
+    the real one — fine while 2026-09-16 was about now, broken a month later,
+    so the world is pinned to the same Wednesday and the two clocks are one.
+    `test_chore_row_actions.py` hard-coded a "far" row of `"2026-12-01"`,
+    which becomes a date in the PAST on 2026-12-02, where `choreMoveDays`
+    correctly clamps at today — it would have gone red for real that morning.
+    `test_needs_you_dinner_visible.py` asserted the needs-you band is
+    EXACTLY `["dinner_decision"]`, which the holiday ask legitimately breaks
+    from three days out: red for about four days around each of the seven
+    asking holidays, roughly a month a year, reporting a feature as a
+    regression. And `test_holidays.py` called Thanksgiving + 21 days "the
+    first week of November: nothing on it", which reaches 31 October in
+    years where Thanksgiving falls early — Halloween is in the table, so it
+    would have failed in the autumn of 2028; it now finds a genuinely empty
+    week rather than trusting an offset.
+  - **CI runs five jobs** (`.github/workflows/tests.yml`): `live` plus
+    Monday, Friday, Saturday and Sunday. The four are weekday NAMES resolved
+    at run time, never fixed dates — a fixed pin would age exactly the way
+    the fixtures it protects do, so in three months every new test written
+    against a plausible date would fail them and the matrix would get
+    switched off. conftest prints the resolved date as the run's first line
+    (a `print`, because `pytest -q` suppresses a report header and `-q` is
+    what CI runs). The live job stays because it is the only one that can
+    see a fixture aging out.
+  - **A pin is LOCAL wall time, and that took a second fix.** freezegun reads
+    a naive datetime as UTC, so freezing "09:00" with no `tz_offset` makes
+    `datetime.now()` and `utcnow()` the same instant — local and UTC collapse.
+    Invisible on a UTC runner, which is what CI and the container both are,
+    and quietly wrong on a laptop: SQLite's `datetime('now', 'localtime')`
+    still converts by the real offset, so it disagreed with Python's "now" by
+    exactly that many hours (measured at 11 under TZ=Pacific/Niue). The pin is
+    now frozen at the UTC instant BEHIND the local time asked for, with the
+    offset handed to freezegun — `.astimezone()` on the naive value, so a pin
+    either side of a clock change gets the offset that actually applied.
+    `test_a_pin_does_not_flatten_local_and_utc_together` sets TZ to Niue
+    (UTC-11, no DST, so the arithmetic is the same in every month) and is the
+    only way to catch a regression to the flat behaviour on a UTC runner;
+    mutation-checked.
+  - **Judgment calls.** A bare `--today=2026-09-13` freezes at 09:00 local,
+    not midnight: mid-morning is inside every window the app reasons about
+    (past the 07:00 morning text, well short of the 18:30 after which
+    tonight's shop move closes), and a run then has about fifteen hours
+    before it could roll into the next day. `tick=True` throughout, so the
+    cookie's age, the rate limiter and the new-sitting gap stay real
+    elapsed-time arithmetic; what is pinned is the DATE, which is the thing
+    the app branches on. `@pytest.mark.today` beats `--today`, and
+    `live_clock` beats both.
+  - **A STRADDLING TIMEZONE IS A SECOND AXIS, AND PINNING THE DATE DOES NOT
+    COVER IT — measured, not added.** The container and both runners are UTC
+    while households default to `America/Toronto`, so after 8pm Toronto the
+    server's date is already tomorrow; that is a relationship between two
+    clocks at ONE instant, which a calendar pin cannot express. Worse, a pin
+    used to erase it (see the local-wall-time fix above) — and even fixed, a
+    pinned run holds the offset constant, so it can check the arithmetic is
+    consistent but never catches a route that reads the wrong one of the two
+    dates. Only an UNPINNED run under a straddling TZ does that. Measured on
+    this branch: `TZ=Pacific/Niue` (UTC-11, no DST — `America/Anchorage` is a
+    poor choice, it only differs from UTC when the UTC hour is under 8 and so
+    does nothing most of the day) gives **2 failed, 4647 passed**, and both
+    fail identically on `main` at 2120af5 and pass at the default TZ:
+    `test_needs_you_dinner_visible::...::test_the_shop_move_can_see_it_too`
+    (already written down as a known main failure after 6:30pm local) and
+    `test_tonight_still_good::test_the_routes_read_tonight_and_remember_yes`.
+    So the axis is real and finds things — a reviewer on another branch
+    measured 13 post-only failures under it, ten of them a genuine regression
+    reopening a bug closed on 2026-09-13 — and it is NOT in the matrix here,
+    because a job that is red the day it lands is worse than no job. Adding
+    `TZ: Pacific/Niue` to a sixth (live, unpinned) matrix entry is one line
+    once those two are fixed; that is Emily's call and the two tests are its
+    only blockers.
+  - **Not done, on purpose.** No future-pinned CI job: it would need a fixed
+    date (which ages) and it goes red for "this will break in eight weeks",
+    which is correct feedback and also a standing amber light — Emily's call
+    whether that trade is worth a sixth job. The other 38 files carrying a
+    hard-coded date that has already aged were NOT rewritten: a stale date
+    only bites where the app reacts to how it compares to today, all of them
+    pass on every pin above, and rewriting 38 files to fix one would be
+    churn with its own bugs in it. 17 tests in `tests/test_frozen_clock.py`
+    guard the machinery itself — including that SQLite and node really are
+    pinned, that a row written by a schema DEFAULT carries the pinned date,
+    that the shim leaves a real date argument alone, that an unpinned run is
+    byte-for-byte untouched, and that `live_clock` and the timezone offset
+    both actually take (mutation-checked: removing either fails its test).
+    Full suite 4649 unpinned, 4646 + 3 skipped on every pin above.
 - **2026-09-13 — Hosting a holiday is THE BIG MEAL now: a menu, the shop
   in two trips, the prep on the days before, a day-of timeline. Branch
   `worktree-holiday-hosting`, slice 2 of Loop Board "Holidays: Pomona
