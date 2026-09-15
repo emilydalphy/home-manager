@@ -580,6 +580,33 @@ why*, not duplicating the diff.
     dinner row AND the whole grocery list are byte-identical after it.
     Full suite **4837 passed, 0 failed** at `TZ=America/Toronto`. Driven in
     Chromium at 390×844 light and dark on a throwaway DB, both shapes.
+  - **Two things the review found in the SCREEN, one fixed and one left.**
+    (a) `tonightNightOffSaid` ignored `already_reason` entirely, so a
+    sheet left open while the other adult (or chat) marked tonight away
+    toasted "Night off." about a trip — the app saying something untrue,
+    which is the whole reason the server carries that field. One line,
+    fixed, and pinned by a node test that runs the real function rather
+    than reading the source for a marker, since a field going UNREAD is
+    exactly what a marker test cannot see. (b) **A chat night-off leaves
+    the Shop tab stale**: `refreshStaleTabsFromActions`' `week` branch
+    calls `loadWeekMenu` and `refreshTonightFromPlan` but not
+    `refreshGroceryPanel()`, while the sheet's own tap calls it
+    explicitly with a comment saying why. Left, because the same is true
+    of `approve_weekly_plan`, `swap_meal_in_plan` and
+    `discard_draft_plan` — it is the week-tag class, not this tool's, and
+    widening that branch is a change to every one of them. Its own card.
+  - **Measured on review, worth keeping**: the whole night-off write is
+    ONE connection in every shape tried (a chain-target drop with sides,
+    attendance, done and pending defrost rows and purchased lines is 60
+    statements on one connection, zero nested writes), and the
+    in-transaction rescale produces byte-identical grocery, dinner rows
+    and ledger to the classic out-of-transaction path. The race was run
+    2-, 3- and 4-threaded and with the window widened to 0.4s — 0 bad out
+    of 64 runs, against 37 of 38 bad on the pre-fix commit. The one
+    honest edge: hold the transaction past SQLite's 5s busy timeout and
+    the loser raises `database is locked` and the household sees "that
+    didn't work" — the DATA is still correct, and that 5s timeout is what
+    every `BEGIN IMMEDIATE` in this app already relies on.
 
 - **2026-09-14 — Recipes, round 2: the planner is told how to WRITE the
   recipe, not just how to cook it. Branch

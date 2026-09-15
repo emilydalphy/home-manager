@@ -2242,6 +2242,17 @@
   // What actually happened, in one breath: the night, then where the dish
   // went, then anything in the house that now wants using.
   function tonightNightOffSaid(out) {
+    // An away night answers `already: true, already_reason: 'away'` and
+    // writes nothing — correctly, because nobody was ever home. Saying
+    // "Night off." about it would be the app telling the household
+    // something untrue, which is the whole reason the server carries
+    // `already_reason` (tonight.py). Reachable from a stale sheet: this
+    // phone has the sheet open while the other adult, or chat, marks
+    // tonight away. Found on review, 2026-09-15 — the server honoured
+    // the distinction and the screen did not.
+    if (out.already && out.already_reason === 'away') {
+      return 'Nobody’s home tonight anyway.';
+    }
     var said = 'Night off.';
     if (out.dish && out.moved_to_weekday) {
       said += ' ' + out.dish + ' moves to ' + out.moved_to_weekday + '.';

@@ -962,3 +962,50 @@ def test_every_colour_in_the_new_rules_goes_through_a_token():
     start = SHELL_CSS.index(".tonight-off-row")
     block = SHELL_CSS[start:SHELL_CSS.index("/* The \"Add something\" sheet")]
     assert not re.search(r"#[0-9a-fA-F]{3,8}\b", block)
+
+
+def test_the_screen_says_nobody_was_home_rather_than_night_off():
+    """
+    CATCH against this branch's own first commit of the toast, and GREEN
+    on `main` only in the sense that none of this exists there.
+
+    The server distinguishes an away night (`already_reason: 'away'`,
+    nothing written, because nobody was ever home) from a real night off,
+    and the screen ignored it — so a sheet left open while the other
+    adult marks tonight away toasted "Night off." about a trip. That is
+    the app saying something untrue, which is exactly what
+    `already_reason` was added to prevent. Found on review, 2026-09-15.
+
+    Run under node against the real function rather than read as a
+    source marker: the defect was a field going unread, which a marker
+    test cannot see.
+    """
+    import json
+
+    import nodeharness
+
+    start = SHELL_JS.index("function tonightNightOffSaid(")
+    end = SHELL_JS.index("async function undoTonightSwap(", start)
+    script = SHELL_JS[start:end] + """
+const away = {status:'night_off', already:true, already_reason:'away', dish:null, use_soon:[]};
+const real = {status:'night_off', already:true, already_reason:'night_off', dish:null, use_soon:[]};
+const fresh = {status:'night_off', dish:'Bean Chili', moved_to_weekday:'Thursday', use_soon:[]};
+console.log(JSON.stringify([
+  tonightNightOffSaid(away),
+  tonightNightOffSaid(real),
+  tonightNightOffSaid(fresh),
+]));
+"""
+    # tests/nodeharness.py, not `node -e`: a script handed to node as a
+    # command-line argument is capped at 128 KiB on Linux, which silently
+    # stopped 44 front-end tests running once shell.js grew past it
+    # (see tests/test_node_harness_size.py).
+    out = nodeharness.run_node(script, timeout=30)
+    away_said, real_said, fresh_said = json.loads(out.stdout)
+
+    assert "Night off" not in away_said, "a trip is not a night off"
+    assert away_said == "Nobody’s home tonight anyway."
+    # The two that ARE nights off still say so, so the guard is narrow.
+    assert real_said.startswith("Night off.")
+    assert fresh_said.startswith("Night off.")
+    assert "moves to Thursday" in fresh_said
