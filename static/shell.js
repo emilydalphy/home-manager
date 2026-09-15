@@ -2947,8 +2947,14 @@
   // The screen answers "what do we need, and where?" as steps, not segments:
   //
   //   LIST     the root: one card per store, the needed things under it, a
-  //            "N TO SORT" badge when anything has no store yet, and the
-  //            screen's one apricot action — "Start the trip".
+  //            "N things to sort" row when anything has no store yet — and
+  //            those things themselves under "Not sorted yet" at the foot of
+  //            the cards — and the screen's one apricot action — "Start the
+  //            trip". Always the first screen (Emily, 2026-09-15: "a store
+  //            question never stands between me and what to buy"): the
+  //            first-run "Where do you usually shop?" card sits at the TOP
+  //            of the list rather than in place of it, and SORT is never
+  //            entered on the household's behalf — see groMaybeCarryFirst.
   //   CARRY    "Still on the list from last week — keep or drop?" (Emily,
   //            2026-09-13). What an earlier week left unbought, set aside by
   //            the new approval (app/tools/grocery.py
@@ -2956,8 +2962,12 @@
   //            week's amounts. One screen, per-item Keep / Don't need, and
   //            it comes BEFORE sorting. Exists only while something waits.
   //   SORT     one unsorted item at a time: its name, its quantity, and the
-  //            store pills (plus Any / Have it / Somewhere else). Exists only
-  //            while something is unsorted.
+  //            store pills (plus Any / Have it / Getting it elsewhere).
+  //            Exists only while something is unsorted, and only ever
+  //            reached from LIST's "N things to sort" row (2026-09-15;
+  //            until then the tab opened on it whenever anything had no
+  //            store — Emily's decision J of 2026-09-11 — and so did every
+  //            Add from the list's own foot).
   //   HEADED   "Where are we headed?" (Emily, 2026-09-13): the week's stops
   //            as store cards — the count, and anything only bought there —
   //            so the trip starts on the list for the shop the household is
@@ -3069,6 +3079,62 @@
   var GRO_ELSEWHERE_SECTION = 'Getting elsewhere';
   var GRO_ELSEWHERE_BACK = 'Put it back';
 
+  // "Not sorted yet" — the card at the foot of LIST's store cards holding
+  // the things that still have no store (Emily, 2026-09-15: "anything
+  // unsorted simply listed under 'Not sorted yet'"). Until then those rows
+  // lived on SORT alone, and the list only counted them. The wording is
+  // an assumption; " · N" is appended (groUnsortedCardHtml).
+  var GRO_UNSORTED_SECTION = 'Not sorted yet';
+
+  // The aisle for a thing typed into the list's own add row, without the
+  // model (2026-09-15). The add row posts straight to /api/grocery-list/add
+  // and used to send category 'other' for everything, so a hand-added
+  // "milk" sat under Other on every store card while the recipe's milk sat
+  // under Dairy. One modest word list, one function (groGuessCategory),
+  // used only where the caller would otherwise say 'other'. The aisles are
+  // the sections app/tools/grocery.py already groups by
+  // (quantities._GROCERY_SECTION_ORDER: produce, dairy, meat/seafood,
+  // pantry, frozen, other) — a category the server doesn't know folds to
+  // Other, so there is no "bakery" here; bread is Other until the server
+  // has an aisle for it. Matching is on whole words, lowercased, with a
+  // trailing "s" forgiven on both sides ("apples", "eggs"); a two-word
+  // entry ("ice cream") matches as a phrase. Frozen is checked first so
+  // "frozen peas" is frozen rather than produce and "ice cream" is frozen
+  // rather than dairy — the order of the aisles below is the order they
+  // are tried. It's a guess, and the row's ⋯ is where a wrong one gets
+  // fixed. To add a word: put it in its aisle.
+  var GRO_AISLE_WORDS = [
+    ['frozen', ['frozen', 'ice cream', 'popsicle']],
+    ['dairy', ['milk', 'cheese', 'yogurt', 'yoghurt', 'egg', 'butter', 'cream']],
+    ['produce', ['banana', 'apple', 'lettuce', 'onion', 'garlic', 'tomato', 'potato',
+      'carrot', 'lemon', 'lime', 'avocado', 'bell pepper', 'cucumber', 'spinach',
+      'broccoli', 'berries', 'strawberries', 'grapes', 'orange', 'celery']],
+    ['meat/seafood', ['chicken', 'beef', 'pork', 'salmon', 'shrimp', 'fish',
+      'turkey', 'bacon', 'sausage', 'steak', 'lamb']],
+    ['pantry', ['rice', 'pasta', 'flour', 'bean', 'sugar', 'oil', 'oat', 'cereal',
+      'lentil', 'chickpea', 'salt', 'stock', 'broth', 'noodle', 'tuna']]
+  ];
+  // One word, the way the list compares it: lowercased, a trailing "s"
+  // dropped past three letters (the same forgiveness groStapleKey gives).
+  function groAisleWord(w) {
+    w = (w || '').toLowerCase();
+    return w.length > 3 && w.slice(-1) === 's' ? w.slice(0, -1) : w;
+  }
+  function groGuessCategory(name) {
+    var words = (name || '').toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/)
+      .filter(Boolean).map(groAisleWord);
+    var phrase = words.join(' ');
+    for (var i = 0; i < GRO_AISLE_WORDS.length; i++) {
+      var aisle = GRO_AISLE_WORDS[i][0];
+      var hit = GRO_AISLE_WORDS[i][1].some(function (key) {
+        var k = key.split(' ').map(groAisleWord).join(' ');
+        return k.indexOf(' ') !== -1 ? phrase.indexOf(k) !== -1 : words.indexOf(k) !== -1;
+      });
+      if (hit) return aisle;
+    }
+    return 'other';
+  }
+
   // How long a paused trip is kept before it is quietly dropped. Three
   // days covers "Costco on Saturday, Metro on Monday"; past that the list
   // it was snapshotted from has very likely been rebuilt by a new week's
@@ -3107,17 +3173,16 @@
     // list | sort | trip | wrap — see goGroceryStep. Starts at the root, so
     // a refresh lands on LIST.
     step: 'list',
-    // Sort comes FIRST when something has no store (Emily, 2026-09-11,
-    // decision J): the first time the list loads with anything unsorted in
-    // this page view, the tab lands on SORT rather than the list. "Sort them
-    // later" and the crumb both set sortDeferred, so the list is the answer
-    // from then on until the next approval refills the list.
-    sortDeferred: false,
-    sortFirst: false,
     // Last week's leftovers waiting for a keep or drop (/api/grocery-list/
     // carried-over), and whether the household said "later" to them this
-    // page view. Same shape as the sort pair above, and cleared the same
-    // way — the next approval refills the list and asks again.
+    // page view; cleared by the next approval, which refills the list and
+    // asks again. This is the one screen the tab still opens on by
+    // itself (Emily, 2026-09-13: the leftovers are a question about
+    // AMOUNTS, asked before the list is read). Sorting used to have the
+    // same pair (sortDeferred / sortFirst, decision J of 2026-09-11) and
+    // the tab opened on SORT whenever anything had no store; since
+    // 2026-09-15 the list is always the first screen and SORT is only
+    // ever reached from its "N things to sort" row.
     carried: [],
     carryDeferred: false,
     data: null,
@@ -3550,11 +3615,21 @@
     return u ? groStoreItems(u) : [];
   }
   // Things with no shop of their own, which therefore ride along with
-  // whichever stop is being shopped. Normally that is the ones answered
-  // "Any"; a one-shop household answered nothing, so for them it is the
-  // whole loose pile.
-  function groRideAlongItems(data) {
-    if (groSoleStore(data)) return groLooseItems(data);
+  // whichever stop is being shopped: the ones answered "Any", and since
+  // 2026-09-15 the ones not sorted yet as well. A thing waiting for a
+  // store is still a thing to buy, and a shopper standing in Costco with
+  // it on the list has to be able to tick it there — leaving it off the
+  // stop was the last place the old sort-first design hid the list. So
+  // the whole loose pile rides, for every household (a one-shop household
+  // answered nothing, and its loose pile always rode). LIST is the one
+  // place the two halves read differently, and it asks for them by name
+  // (groAnyStoreItems, groUnsorted).
+  function groRideAlongItems(data) { return groLooseItems(data); }
+  // The half of the loose pile the household has answered "Any" for —
+  // LIST's "Anywhere" card. Nothing for a one-shop household, whose loose
+  // pile is inside its shop's own card (groStoreCardItems).
+  function groAnyStoreItems(data) {
+    if (groSoleStore(data)) return [];
     var u = data.stores['Unassigned'];
     if (!u) return [];
     return groStoreItems(u).filter(groItemDecided);
@@ -3580,10 +3655,13 @@
     // the shop they actually buy from most, which is the same defensible
     // default "Put all 40 at Loblaws" already offers rather than a second
     // invention; for the one-shop household it IS their one shop.
-    // Read off the RIDE-ALONGS, not the whole loose pile: something still
-    // waiting in the to-sort queue is not homeless, it is unasked, and
-    // inventing a stop for it would answer the household's question for
-    // them and take the TO SORT badge off the screen.
+    // Read off the ride-alongs, which since 2026-09-15 is the whole loose
+    // pile, unsorted things included: a list that is nothing but things
+    // still to sort used to have no stop and no "Start the trip", so the
+    // only way to shop it was to sort it first — the trap the list-first
+    // change removes. The stand-in stop writes nothing to the rows, and
+    // the "N things to sort" row stays on LIST (it reads groUnsorted), so
+    // the household's question is still theirs to answer.
     if (!names.length && groRideAlongItems(data).length) {
       var fallback = groMostUsedStore(data);
       if (fallback) names.push(fallback);
@@ -3733,9 +3811,9 @@
       // over the list and take "Start the trip" away — see grocery-offline.js.
       if (groOffline) groOffline.saveShops({ usualStores: groceryState.usualStores, dismissed: groceryState.storesPromptDismissed });
       // The shops and the list load side by side; whichever lands second
-      // decides whether sorting comes first (groMaybeSortFirst is a no-op
-      // once the tab has left the list).
-      groMaybeSortFirst();
+      // decides whether the leftovers question comes first
+      // (groMaybeCarryFirst is a no-op once the tab has left the list).
+      groMaybeCarryFirst();
       renderGrocery();
     } catch (err) {
       // No signal: the last answer stands. Anything else, sorting still
@@ -3879,43 +3957,44 @@
       groRestoreTrip();
       groDropStaleTrip();
     }
-    groMaybeSortFirst();
+    groMaybeCarryFirst();
     renderGrocery();
     if (!groceryState.loadError) groReplayQueue();
   }
 
   // Called from the three refresh paths (chat action, week approval, reset).
   // A screen that was built early has to stay correct, not stay frozen. A
-  // refill (an approval builds the list) is a new list, so sorting comes
-  // first again.
+  // refill (an approval builds the list) is a new list, so last week's
+  // leftovers are asked about again.
   function refreshGroceryPanel() {
     groceryState.carryDeferred = false;
-    groceryState.sortDeferred = false;
     if (groIsBuilt()) loadGrocery();
   }
 
-  // Before the list: anything with no store gets sorted first, one item at
-  // a time, and the list follows. Only from the list (never yanking a
-  // shopper out of a trip), only when the stores prompt isn't the thing to
-  // answer first, and only until the household says "later".
-  function groMaybeSortFirst() {
+  // Before the list: last week's leftovers, keep or drop, one screen —
+  // they are the amounts that used to add themselves onto this week's, and
+  // reading a line whose quantity is still in question is reading the
+  // wrong number (Emily's call, 2026-09-13, option a). Only from the list
+  // (never yanking a shopper out of a trip), only when the stores prompt
+  // isn't the thing to answer first, and only until the household says
+  // "later".
+  //
+  // This used to be groMaybeSortFirst and went on to open SORT for anything
+  // with no store (decision J, 2026-09-11) — on tab open, after an
+  // approval's "Open the list", and after every Add from the list's own
+  // foot, since groDo re-reads the list through loadGrocery. Emily,
+  // 2026-09-15, one hand free in the car park: the list is what she came
+  // for; an unsorted thing is a row under "Not sorted yet" (groListHtml),
+  // not a screen in front of the list. SORT is reached from the "N things
+  // to sort" row now and from nowhere else.
+  function groMaybeCarryFirst() {
     var data = groceryState.data;
     if (!data || groceryState.loadError) return;
-    if (groceryState.step !== 'list' || groceryState.sortDeferred) return;
+    if (groceryState.step !== 'list') return;
     if (groStoresPromptShouldShow()) return;
-    // Last week's leftovers first, before the sort queue: they are the
-    // amounts that used to add themselves onto this week's, and sorting a
-    // line whose quantity is still in question is sorting the wrong
-    // number. Emily's call (2026-09-13, option a): one screen before
-    // sorting starts.
     if (groceryState.carried.length && !groceryState.carryDeferred) {
-      goGroceryStep('carry', { push: false, first: true });
-      return;
+      goGroceryStep('carry', { push: false });
     }
-    var toSort = groUnsorted(data).length;
-    if (!toSort) { groceryState.sortFirst = false; return; }
-    goGroceryStep(toSort >= GRO_FAST_SORT_MIN ? 'sorthow' : 'sort', { push: false, first: true });
-    groceryState.sortFirst = true;
   }
 
 
@@ -3949,10 +4028,6 @@
     if (step === 'sort' && prev !== 'sort' && groceryState.data) {
       groceryState.sortTotal = groUnsorted(groceryState.data).length;
     }
-    // "Before the list" is only the first, automatic landing (opts.first,
-    // groMaybeSortFirst). A sort reached by the badge, or the list reached
-    // by finishing the queue, is the ordinary screen again.
-    if (!opts.first) groceryState.sortFirst = false;
     if (opts.tripIndex !== undefined && opts.tripIndex !== null) groceryState.tripIndex = opts.tripIndex;
     if (opts.push !== false) pushGroceryStepHistory();
     // Every change to the trip arrives here (see groSaveTrip).
@@ -3980,14 +4055,14 @@
   // chip (all `activateTab('grocery', true, { groScreen: 'plan' })`).
   // They all mean "open the list", and the list is where they land, always:
   // an unsorted item is not a reason to drop somebody into a one-at-a-time
-  // queue they didn't ask for. The TO SORT badge on LIST is how you get to
-  // SORT, and it is right there in the head when there is anything to sort.
+  // queue they didn't ask for. The "N things to sort" row on LIST is how
+  // you get to SORT. (From 2026-09-11 to 2026-09-15 this went on to
+  // groMaybeSortFirst, so "Open the list" after an approval opened the
+  // queue instead; it doesn't any more.) Last week's leftovers are still
+  // asked about first when an approval just set some aside.
   function groSetScreen(screen) {
     goGroceryStep('list');
-    // …unless something has no store yet, in which case the list comes
-    // after sorting it (Emily, 2026-09-11, decision J) — an approval has
-    // just refilled the list, and this is the "Open the list" that follows.
-    groMaybeSortFirst();
+    groMaybeCarryFirst();
   }
 
   // ---------- Render ----------
@@ -4155,25 +4230,16 @@
         sub: groPlural(groceryState.carried.length, 'thing', 'things') + ' · keep or drop?'
       };
     }
+    // "Before the list" was the title of the automatic landing (decision J,
+    // 2026-09-11); the list is always first now, so SORT is only ever the
+    // question it asks.
     if (step === 'sort') {
-      return {
-        back: '‹ Shop',
-        title: groceryState.sortFirst ? 'Before the list' : 'Where does this go?',
-        sub: groceryState.sortFirst
-          ? groPlural(groUnsorted(data).length, 'thing doesn’t', 'things don’t') + ' have a store yet'
-          : groUnsorted(data).length + ' to sort'
-      };
+      return { back: '‹ Shop', title: 'Where does this go?', sub: groUnsorted(data).length + ' to sort' };
     }
     if (step === 'sorthow') {
       // Same question as the queue's, because it is the same question — the
       // household is only choosing how many screens it wants to answer it in.
-      return {
-        back: '‹ Shop',
-        title: groceryState.sortFirst ? 'Before the list' : 'Where does this go?',
-        sub: groceryState.sortFirst
-          ? groPlural(groUnsorted(data).length, 'thing doesn’t', 'things don’t') + ' have a store yet'
-          : groUnsorted(data).length + ' to sort'
-      };
+      return { back: '‹ Shop', title: 'Where does this go?', sub: groUnsorted(data).length + ' to sort' };
     }
     if (step === 'sortall') {
       var allLeft = groUnsorted(data).length;
@@ -4319,8 +4385,15 @@
     // printed over three real items.
     var loose = groLooseItems(data);
 
+    // The first-run "Where do you usually shop?" card sits at the top of
+    // the list, not in place of it (Emily, 2026-09-15). It used to be the
+    // whole screen until answered — a question standing between the
+    // person in the car park and what to buy. The answer still goes the
+    // same way ("That's where we shop" / "One list is fine",
+    // stores-prompt-done); the list under it is the plain no-store
+    // section, since no shop has been named yet.
     if (groStoresPromptShouldShow() && (stops.length || loose.length)) {
-      return html + groStoresPromptHtml();
+      html += groStoresPromptHtml();
     }
 
     if (!stops.length && !loose.length) {
@@ -4366,36 +4439,42 @@
       if (groStoreCardItems(data, name).length) html += groStoreCardHtml(data, name);
     });
 
-    // Things with no store fall into two piles, and only one of them is
-    // repeated elsewhere.
+    // Things with no store fall into two piles, and both are on the list.
     //
-    // NOT YET ANSWERED ones live in SORT, which the badge above opens, so
-    // they are deliberately absent here — reading the same list in two
-    // places is what that rule exists to prevent.
+    // ANSWERED "no particular shop" ones belong to no store card, so with
+    // stops on screen they used to be on no screen: countable in the
+    // subtitle, present on the trip, and unreachable by the one control
+    // that could change them. That was a real regression the day "Any"
+    // started persisting — before it, a reload put the row back in the
+    // queue, where it was at least visible. They get the "Anywhere" card.
     //
-    // ANSWERED "no particular shop" ones live nowhere else at all. They
-    // leave the badge the moment they are answered, and they belong to no
-    // store card, so with stops on screen they used to be on no screen:
-    // countable in the subtitle, present on the trip, and unreachable by
-    // the one control that could change them. That was a real regression
-    // the day "Any" started persisting — before it, a reload put the row
-    // back in the queue, where it was at least visible. They get a card.
+    // NOT YET ANSWERED ones get the "Not sorted yet" card under it
+    // (Emily, 2026-09-15). Until then they lived on SORT alone and LIST
+    // only counted them — "reading the same list in two places" was the
+    // rule — but the sort row is a count and a way in, not the list, and
+    // a person with one hand free needs the rows: what to buy, tickable
+    // at the first stop (groRideAlongItems), fixable from the row's ⋯.
+    // Last, after every store card, for the reason groOrderStores puts
+    // "Any store" last: the remainder, not the first stop.
     //
-    // With NO stops at all there is nothing else to read, so the whole
-    // loose pile IS the list, headingless. This used to be a line of copy
-    // pointing at the badge, which left a household reading "3 things"
-    // above an empty screen — and for a household that never named a store,
-    // that was the permanent state of its Grocery tab. Emily's call,
-    // 2026-09-09: show them as one plain section with no store heading, so
-    // "One list is fine" means what it says.
-    if (!stops.length) {
-      if (loose.length) html += groLooseCardHtml(data, loose);
-    } else {
+    // With NO stops at all and nothing to sort, the whole loose pile IS
+    // the list, headingless. This used to be a line of copy pointing at
+    // the badge, which left a household reading "3 things" above an empty
+    // screen — and for a household that never named a store, that was the
+    // permanent state of its Grocery tab. Emily's call, 2026-09-09: show
+    // them as one plain section with no store heading, so "One list is
+    // fine" means what it says. (A household with shops and nothing but
+    // unsorted things gets the two named cards instead: for them "where
+    // does this go?" is a real question, and the heading says so — S6.)
+    if (stops.length || unsorted.length) {
       // A one-shop household's loose pile is already inside that shop's own
       // card (groStoreCardItems) — it has only one place it could be
       // bought — so a second card here would print it twice.
-      var anywhere = groSoleStore(data) ? [] : groRideAlongItems(data);
+      var anywhere = groAnyStoreItems(data);
       if (anywhere.length) html += groAnywhereCardHtml(data, anywhere);
+      if (unsorted.length) html += groUnsortedCardHtml(data, unsorted);
+    } else if (loose.length) {
+      html += groLooseCardHtml(data, loose);
     }
     return html + groElsewhereHtml() + groSpicesHtml() + groStaplesHtml();
   }
@@ -4647,6 +4726,26 @@
         '<span class="gro-store-avatar gro-anywhere-avatar">' +
           GRO_ICONS.basket + '</span>' +
         '<span class="gro-store-name">Anywhere &middot; ' + items.length + '</span>' +
+      '</div>' +
+      groAislesHtml(sections, data) +
+    '</div>';
+  }
+
+  // The things still waiting for a store, as rows on the list (Emily,
+  // 2026-09-15). The Anywhere card's shape — no store to name, so no
+  // initial — with the "?" the "Any store" pill already wears for the
+  // unanswered bucket, and the words that say why the card is here (S6).
+  // Rows go through groListRowHtml, so the ⋯ offers the store pills: a
+  // thing can be sorted from here one at a time, or all of them from the
+  // "N things to sort" row above. A one-shop household never has any
+  // (groUnsorted is empty when sorting isn't a question).
+  function groUnsortedCardHtml(data, items) {
+    var any = data.stores['Unassigned'];
+    var sections = groSectionsFiltered(any && any.sections, function (it) { return !groItemDecided(it); });
+    return '<div class="gro-store gro-unsorted">' +
+      '<div class="gro-card-head">' +
+        '<span class="gro-store-avatar gro-anywhere-avatar">' + escapeHtml(groStoreInitial('Unassigned')) + '</span>' +
+        '<span class="gro-store-name">' + escapeHtml(GRO_UNSORTED_SECTION) + ' &middot; ' + items.length + '</span>' +
       '</div>' +
       groAislesHtml(sections, data) +
     '</div>';
@@ -5211,9 +5310,7 @@
   // to this stop.
   function groRideAlongInCart(data) {
     var any = data.stores['Unassigned'];
-    if (!any) return [];
-    if (groSoleStore(data)) return any.inCart.slice();
-    return any.inCart.filter(groItemDecided);
+    return any ? any.inCart.slice() : [];
   }
   function groTripInCart(data) {
     var store = groTripStore();
@@ -6115,9 +6212,15 @@
 
   // The LIST foot's inline add — one POST to /api/grocery-list/add, no model
   // turn, exactly as the root's "Add an item" card and the voice session's
-  // "add oat milk" both do it. An item added with no store lands in the
-  // Unassigned bucket, which is what the TO SORT badge counts, so the new
-  // thing shows up there rather than silently having no stop.
+  // "add oat milk" both do it. The server puts the new line under the
+  // store this household last chose for it, when it remembers one
+  // (item_store_preferences, add_grocery_item's preferred_store — the
+  // "Remember rice at Loblaws?" answer); otherwise it lands in the
+  // Unassigned bucket and shows on the list straight away under "Not
+  // sorted yet", with the "N things to sort" row counting it. Either way
+  // the list is what comes back, with the add box focused again — never
+  // the sort screen (2026-09-15; see groMaybeCarryFirst). The aisle is
+  // groGuessCategory's rather than a flat 'other'.
   async function groAddItem() {
     var panel = groPanel();
     if (!panel) return;
@@ -6135,7 +6238,7 @@
     // straight back into an emptied field.
     itemInput.value = '';
     var ok = await groDo(function () {
-      return groPost('/api/grocery-list/add', { item: name, quantity: qty, category: 'other' });
+      return groPost('/api/grocery-list/add', { item: name, quantity: qty, category: groGuessCategory(name) });
     }, "Couldn't add that — try again.");
     var freshItem = panel.querySelector('#gro-add-item');
     var freshBtn = panel.querySelector('#gro-add-btn');
@@ -6648,9 +6751,8 @@
           goGroceryStep('trip', reopenAt === -1 ? undefined : { tripIndex: reopenAt });
           return;
         }
-        // Leaving a sort screen for the list is "later" — the list must not
-        // bounce straight back into the queue. Same for the leftovers.
-        if (GRO_SORT_STEPS.indexOf(groceryState.step) !== -1) groceryState.sortDeferred = true;
+        // Leaving the leftovers for the list is "later" — the list must not
+        // bounce straight back into the question.
         if (groceryState.step === 'carry') groceryState.carryDeferred = true;
         goGroceryStep('list');
         return;
@@ -6704,9 +6806,10 @@
         return;
       }
 
+      // "Sort them later": the sort screens' own way out, kept as a plain
+      // link. Nothing to remember any more — the list never opens SORT on
+      // its own, so "later" is just the list.
       case 'sort-later':
-        groceryState.sortDeferred = true;
-        groceryState.sortFirst = false;
         goGroceryStep('list');
         return;
 
@@ -7470,9 +7573,9 @@
   // over and the shopper lands back on the list with the good news. The
   // auto-return is what makes SORT a queue rather than a screen you have to
   // remember to leave.
-  // The last answer on CARRY hands over to whatever comes next — the sort
-  // queue when something has no store, the list otherwise — exactly as the
-  // first landing would have, had there been nothing from last week.
+  // The last answer on CARRY hands over to the list. (Until 2026-09-15 it
+  // handed over to the sort queue when something had no store; the list's
+  // "N things to sort" row is where that lives now.)
   function groAdvanceCarry() {
     if (groceryState.carried.length) {
       renderGrocery();
@@ -7480,7 +7583,6 @@
     }
     groceryState.step = 'list';
     groceryState.carryDeferred = false;
-    groMaybeSortFirst();
     renderGrocery();
   }
 

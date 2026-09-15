@@ -4808,7 +4808,9 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    border: it would make this one avatar 3px wider than every other one in
    the column, and the fill already separates it. Measured in Chromium off
    computed styles: 11.60:1 light / 11.28:1 dark, against the 3:1 WCAG
-   1.4.11 asks of a graphic. */
+   1.4.11 asks of a graphic. Shared since 2026-09-15 by LIST's "Not sorted
+   yet" card (groUnsortedCardHtml), the other no-shop bucket — a basket on
+   one, the "?" the Any-store pill wears on the other. */
 .gro-anywhere-avatar {
   background: var(--sand);
   color: var(--ink);

@@ -413,9 +413,15 @@ console.log(JSON.stringify({
 
 @_needs_node
 def test_two_shops_still_leaves_the_untagged_things_to_be_sorted():
-    """The control for the two above, and the one test in this file that
-    passed before the change: it pins the behaviour that must NOT move while
-    the one-shop case is being carved out of it."""
+    """The control for the two above: with two shops, "where does this go?"
+    is a real question and every untagged thing is still in the queue.
+
+    Updated 2026-09-15 (list-first): the trip no longer waits for the
+    answer. Unsorted things ride along like "Any" ones (groRideAlongItems),
+    so a list that is nothing but things to sort gets the same stand-in
+    stop an all-"Anywhere" list gets — the shop bought from most, here the
+    first one named — and "Start the trip" with it. This used to assert
+    `stops: []`, which meant a household that hadn't sorted couldn't shop."""
     out = _node("""
 setUp(6, [], ['Loblaws', 'Costco']);
 console.log(JSON.stringify({
@@ -423,7 +429,7 @@ console.log(JSON.stringify({
   toSort: groUnsorted(groceryState.data).length
 }));
 """)
-    assert out == {"stops": [], "toSort": 6}
+    assert out == {"stops": ["Loblaws"], "toSort": 6}
 
 
 # --- 5. where next --------------------------------------------------------
@@ -754,9 +760,14 @@ console.log(JSON.stringify({
 
 
 @_needs_node
-def test_rows_still_waiting_to_be_sorted_are_not_printed_twice():
-    """The control. Unanswered rows live in SORT, which the badge opens —
-    the Anywhere card must not pull them onto LIST as well."""
+def test_rows_still_waiting_to_be_sorted_are_printed_once_under_their_own_heading():
+    """The control. An unanswered row is NOT on the Anywhere card — that
+    card is for things answered "Any" — and it is still in the queue.
+
+    Updated 2026-09-15 (list-first): it used to be on no LIST card at all
+    ("an unanswered row belongs to the queue only"). Now it is on the list
+    once, under "Not sorted yet" (groUnsortedCardHtml), so the person in
+    the car park can read it without opening SORT."""
     out = _node("""
 setUp(0, [{ store: 'Costco', items: [{ id: 1, item: 'Eggs', quantity: '1', store: 'Costco' }] }]);
 groceryState.data.stores.Unassigned.sections[0].items = [
@@ -764,19 +775,26 @@ groceryState.data.stores.Unassigned.sections[0].items = [
 ];
 const html = groListHtml(groceryState.data);
 console.log(JSON.stringify({
-  showsMilk: html.indexOf('Milk') !== -1,
+  milkRows: (html.match(/Milk</g) || []).length,
+  anywhereCard: html.indexOf('Anywhere &middot;') !== -1,
+  unsortedCard: html.indexOf('Not sorted yet &middot; 1') !== -1,
   inTheQueue: groUnsorted(groceryState.data).length
 }));
 """)
-    assert out["showsMilk"] is False, "an unanswered row belongs to the queue only"
-    assert out["inTheQueue"] == 1
+    assert out["milkRows"] == 1, "on the list exactly once"
+    assert out["anywhereCard"] is False, "not an 'Any' answer"
+    assert out["unsortedCard"] is True
+    assert out["inTheQueue"] == 1, "and still to be asked about"
 
 
 @_needs_node
 def test_the_trolley_at_a_stop_holds_the_same_rows_the_stop_showed():
-    """groTripItems filters the shopless rows to the ones that ride along;
-    the cart and the commit have to filter the same way, or a stop commits
-    something that was never on it."""
+    """groTripItems and groTripInCart read the shopless rows the same way,
+    or a stop commits something that was never on it.
+
+    Updated 2026-09-15 (list-first): the whole loose pile rides along now,
+    unsorted things included, so the trolley shows the unanswered Nutmeg
+    beside the "Any" Milk. It used to assert Nutmeg was "not on this stop"."""
     out = _node("""
 setUp(0, [{ store: 'Costco', items: [], inCart: [{ id: 1, item: 'Eggs', store: 'Costco' }] }]);
 groceryState.data.stores.Unassigned.inCart = [
@@ -787,7 +805,7 @@ groceryState.tripStops = ['Costco'];
 groceryState.tripIndex = 0;
 console.log(JSON.stringify(groTripInCart(groceryState.data).map(function (i) { return i.item; })));
 """)
-    assert out == ["Eggs", "Milk"], "the unanswered row is not on this stop"
+    assert out == ["Eggs", "Milk", "Nutmeg"], "the unanswered row rides along too (2026-09-15)"
 
 
 # --- 9. the bulk write is one transaction --------------------------------
@@ -1042,8 +1060,10 @@ def test_finishing_a_stop_buys_everything_in_the_trolley_even_the_unanswered():
     mid-trip — was committed by nothing and drawn by nothing. It stayed
     in_cart forever, on no screen, with the receipt under-reporting.
 
-    The stop still SHOWS only what rides along (the test above pins that).
-    This pins the other half: something physically in the cart is bought."""
+    The stop still SHOWS only what rides along (the test above pins that) —
+    and since 2026-09-15 (list-first) that is the whole loose pile, so the
+    display and the commit agree on every row. This pins the commit half:
+    something physically in the cart is bought."""
     out = _node("""
 setUp(0, [{ store: 'Costco', items: [], inCart: [{ id: 1, item: 'Eggs', store: 'Costco' }] }]);
 groceryState.data.stores.Unassigned.inCart = [
@@ -1064,7 +1084,7 @@ groFinishStore('Costco').then(function (n) {
 """)
     assert out["purchased"] == [1, 2, 3], "the unanswered row in the cart is bought too"
     assert out["bought"] == 3, "and the receipt counts it"
-    assert out["shownAtTheStop"] == ["Eggs", "Milk"], "while the stop still shows only its own"
+    assert out["shownAtTheStop"] == ["Eggs", "Milk", "Nutmeg"], "and the stop shows every one of them"
 
 
 @_needs_node
