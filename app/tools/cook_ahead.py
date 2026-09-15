@@ -112,8 +112,39 @@ def cook_ahead_options(weekly_plan_id: int) -> dict[int, list[dict]]:
     that is what lets the picker show the current choice ticked, and
     un-ticking it release the day. A reheat night gets no options at all
     (it is not a cook, so it has nothing to cook ahead).
+
+    ONE option per (date, slot). A chip is a DAY — it reads "Wed" — and
+    the record behind it is a day and a slot (make_double_for), so a day
+    holding the same dish in BOTH of its snack slots used to offer two
+    chips both saying "Tue" and then write one key for the pair: the note
+    read "enough for Monday, Tuesday, and Tuesday", and taking either row
+    away removed the key they shared and collapsed the whole batch. The
+    cost is stated rather than hidden — a day that really does repeat one
+    snack gets one of the two covered and cooks the other — and it is a
+    shape the app already treats as a mistake
+    (plan_quality.snacks_distinct_per_day). Covering the whole day instead
+    would mean re-keying make_double_for, which six other readers parse as
+    a date.
+
+    WHICH row the chip stands for is the row THIS source is already
+    covering, and only failing that the earliest claimable one. Taking the
+    earliest unconditionally was wrong and reachable in four ordinary
+    taps: with Wednesday's other snack claimed by Tuesday's card, Monday's
+    chip was the later row and covered it — and the moment Tuesday let go,
+    the earlier row was free again, won the chip on id alone, and reported
+    `selected: False` for a day Monday's own card said in words that it
+    covered. Ticking that chip then put TWO rows behind one key, which is
+    the pair of symptoms this dedupe exists to remove, arriving through
+    the dedupe itself.
     """
-    rows = [r for r in _plan_rows(weekly_plan_id) if _is_cookable(r)]
+    # Sorted, because "the earliest row of a day" has to mean the same row
+    # on every read: _plan_rows has no ORDER BY, and which of a day's two
+    # snacks an unordered read happens to hand back first is exactly the
+    # ambiguity this whole fix is about.
+    rows = sorted(
+        (r for r in _plan_rows(weekly_plan_id) if _is_cookable(r)),
+        key=lambda r: (r["date"], r["slot"], r["id"]),
+    )
     chains = _leftovers.plan_leftover_chains(weekly_plan_id)
     covered = chains["leftovers"]
     source_ids = set(chains["sources"])
@@ -122,7 +153,7 @@ def cook_ahead_options(weekly_plan_id: int) -> dict[int, list[dict]]:
     for row in rows:
         if row["id"] in covered:
             continue  # a reheat night is not a cook
-        days = []
+        by_day: dict[tuple[str, str], dict] = {}
         for other in rows:
             if other["id"] == row["id"] or other["slot"] != row["slot"]:
                 continue
@@ -133,15 +164,22 @@ def cook_ahead_options(weekly_plan_id: int) -> dict[int, list[dict]]:
             covering = covered.get(other["id"])
             if covering and covering["source"]["entry_id"] != row["id"]:
                 continue
-            days.append({
+            option = {
                 "entry_id": other["id"],
                 "date": other["date"],
                 "slot": other["slot"],
                 "eaters": _leftovers.eaters_at(other["date"], other["slot"]),
                 "selected": covering is not None,
-            })
-        days.sort(key=lambda d: d["date"])
-        options[row["id"]] = days
+            }
+            # One chip per day, standing for the row this source already
+            # covers where there is one — see the docstring. `rows` is
+            # sorted, so the first candidate for a day is the earliest,
+            # and only a covered sibling displaces it.
+            key = (other["date"], other["slot"])
+            current = by_day.get(key)
+            if current is None or (option["selected"] and not current["selected"]):
+                by_day[key] = option
+        options[row["id"]] = sorted(by_day.values(), key=lambda d: d["date"])
     return options
 
 
@@ -236,6 +274,45 @@ def attach_cook_ahead(weekly_plan_id: int, meals: list[dict]) -> None:
 
 def _target_key(row) -> str:
     return f"{row['date']}:{row['slot']}"
+
+
+def _source_ref(row) -> str:
+    """
+    What a covered day's links_to says to name the day that cooks:
+    "entry_id:<n>", the other shape weekly_plan's resolvers have always
+    accepted, rather than the "YYYY-MM-DD:slot" one the planner writes.
+
+    A date and a slot name a day's DINNER unambiguously and a day's SNACK
+    not at all — preferences.resolve_snacks_per_day gives a day two of
+    them by default, and both rows are filed under "snack". So a chain
+    written that way was resolved against whichever of the day's snacks
+    the query happened to hand back last: usually the other one, which
+    confirms nothing, so the chain was dropped and the batch never
+    scaled (Emily, 2026-09-14, Roasted Chickpeas on three afternoons).
+
+    Unlike the planner, this module is writing about a row it is holding,
+    so it can name that row.
+
+    THE TARGET SIDE IS STILL "date:slot", AND THAT IS A KNOWN COMPROMISE
+    RATHER THAN A SAFE ONE. An earlier version of this docstring said the
+    target side "is never resolved by key" and that "only one row on a day
+    carries it". Both are false and were believed for a day: those keys
+    are resolved by key in leftovers.plan_leftover_chains' agreement
+    check, in weekly_plan._unlink_leftover_target's removal, in
+    _apply_dinner_nights_swap's re-dating map and in
+    repair_leftover_chains, and two rows of one day really can carry one
+    — which is precisely why cook_ahead_options offers one chip per day
+    and releases a hidden sibling with it. Re-keying make_double_for to
+    entry ids is the honest fix and is its own card: six readers parse
+    those keys as dates.
+
+    Written for every slot, not only snacks. A dinner day holds one
+    dinner, so "date:dinner" would have gone on working — but naming the
+    row is strictly safer even there (a source that is deleted and
+    replaced leaves a date key a replacement row can capture, and an id
+    simply dangles), and one form beats two.
+    """
+    return f"entry_id:{row['id']}"
 
 
 def _targets_of(derived: dict) -> list[str]:
@@ -348,11 +425,25 @@ def set_cook_ahead(source_entry_id: int, covered_entry_ids: list[int]) -> dict |
     _save_derived(source_entry_id, source_derived)
 
     chosen_ids = {r["id"] for r in chosen}
-    for entry_id in offered:
+    # Every row the chips speak for: the offered rows, plus any SIBLING on
+    # the same day this source is still covering. One chip stands for a
+    # whole day (cook_ahead_options), so a sibling the dedupe hid must not
+    # be left pointing at a batch the household has just re-answered — and
+    # it is what heals a day that already has two rows behind one key.
+    # Scoped to rows linked to THIS source: a sibling covered by somebody
+    # else's batch is not this picker's to release.
+    my_ref = _source_ref(source_row)
+    siblings = [
+        r["id"] for r in rows.values()
+        if r["id"] not in offered
+        and _target_key(r) in offered_keys
+        and (_derived(r).get("links_to") or "") == my_ref
+    ]
+    for entry_id in list(offered) + siblings:
         row = rows[entry_id]
         derived = _derived(row)
         if entry_id in chosen_ids:
-            derived["links_to"] = _target_key(source_row)
+            derived["links_to"] = _source_ref(source_row)
             derived[COOK_AHEAD_FLAG] = True
         elif derived.get("links_to"):
             # Released: it cooks for itself again. The flag goes with the

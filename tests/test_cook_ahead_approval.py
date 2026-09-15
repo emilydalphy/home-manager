@@ -193,7 +193,9 @@ def test_confirm_writes_the_chain_and_marks_asked(signed_in):
     assert "Monday" in source["make_double_note"]
     for d in (TUE, WED):
         covered = _derived_from(ids[d])
-        assert covered["links_to"] == f"{MON}:breakfast"
+        # The source row, not its day and slot — see _source_ref and the
+        # matching note in test_cook_ahead.py.
+        assert covered["links_to"] == f"entry_id:{ids[MON]}"
         assert covered["cook_ahead"] is True
     chains = tools.plan_leftover_chains(plan_id)
     assert [t["entry_id"] for t in chains["sources"][ids[MON]]["targets"]] == [ids[TUE], ids[WED]]

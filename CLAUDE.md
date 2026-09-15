@@ -542,6 +542,152 @@ why*, not duplicating the diff.
     still 4 on a 14-day one). The `get_week_menu` jump is the one to
     watch if a fifth reader appears.
 
+- **2026-09-15 — "Batch cook these" on a SNACK wrote a chain nothing could
+  read, so the recipe under it went on showing one afternoon's amounts.
+  Branch `overnight/batch-cook-scales-the-recipe`, NOT merged at the time
+  of writing.** Emily, 2026-09-14: Cook → Roasted Chickpeas → Before you
+  start, ticked Wed and Fri, line read "One cook on Tuesday feeds Tue, Wed
+  and Fri · 6 plates", tapped Batch cook these — and Everything out still
+  said Serves 2 and one 15 oz can. A turkey skillet batched at PLANNING
+  time, the same day, read Serves 4 and 2 lbs. **The write was landing all
+  along**; what could not read it back was the chain.
+  - **Root cause: `weekly_plan._LINKS_TO_DATE_SLOT_RE` spelled its slots
+    out as `breakfast|lunch|dinner`.** A day has a snack slot too, so every
+    snack chain's `links_to` failed to parse, `leftovers._resolve` answered
+    None, and `plan_leftover_chains` dropped a chain both halves of which
+    were sitting in the database agreeing with each other —
+    `cooker._apply_leftover_chains` never ran. Dinners and breakfasts
+    worked, which is exactly why Emily saw one dish scale and the other
+    not.
+  - **THE FIRST FIX WAS TO WIDEN THAT REGEX TO `DAY_SLOTS` AND IT WAS
+    WORSE THAN THE BUG. Reverted; read this before widening it again.**
+    `"<date>:snack"` is not a key: a day holds two snacks
+    (`preferences.resolve_snacks_per_day` defaults to 2) and every resolver
+    here picks one out of a dict built from an unordered SELECT. With one
+    legacy snack chain already on disk, an ordinary "batch cook these" on
+    the OTHER snack resolved to the wrong dish — measured: chickpeas at
+    **Serves 10, 5 cans, "enough for Tuesday, Wednesday, Wednesday,
+    Thursday, and Thursday"**, the Apple Slices headlined "Made ahead —
+    Tuesday's Roasted Chickpeas", over a shopping list still reading 3
+    cans. `main` renders that same data as six correct independent cooks,
+    so it was a regression, and the same failure this ticket is about
+    arriving from the other side: before it said 2 where it should say 6,
+    after it could say 10. Found by an independent reviewer, not by the
+    author or the suite.
+  - **So the fix is on the WRITE side: `cook_ahead.set_cook_ahead` names
+    the row** (`_source_ref` → `"entry_id:<n>"`, the other shape both
+    resolvers have always accepted). Unlike the planner, this module is
+    holding the row it is writing about. The parser stays on `WEEK_SLOTS`
+    and goes on saying plainly that a date and a slot do not name a snack.
+  - **The cost, stated: a `"<date>:snack"` chain already on disk never
+    heals.** It reads as no chain — the days come back UNTICKED and one tap
+    rewrites it in the form that survives. The alternative, resolving a
+    snack key only when the day holds exactly one snack row, was offered
+    and refused: it is still a guess about data shape, so a chain that
+    worked yesterday stops the day somebody adds a second snack, and it
+    fixes only ONE of the two places a key is resolved (see the next
+    bullet).
+  - **The target side is keyed by `date:slot` too, and IS resolved by key
+    — a claim in this branch's first commit message said otherwise and was
+    wrong** (`leftovers.py`'s containment check, and
+    `weekly_plan._unlink_leftover_target`'s removal). So the picker now
+    offers **one chip per (date, slot)**, the earliest row: a chip reads
+    "Wed" and the record behind it is a day, so a day holding the same dish
+    in BOTH snack slots used to offer two chips both saying "Tue", write
+    one key for the pair ("enough for Monday, Tuesday, and Tuesday"), and
+    collapse the whole batch when either row was taken away. The stated
+    cost is that such a day gets one of its two covered and cooks the
+    other; it is a shape `plan_quality.snacks_distinct_per_day` already
+    treats as a mistake. Re-keying `make_double_for` to entry ids is the
+    real answer and is its own card — six readers parse those keys as
+    dates.
+  - **The grocery list is untouched and was already right**, which is
+    worth knowing before anyone "fixes" it: the week eats the same portions
+    whether it is cooked once or three times, so the three cans the list
+    carried are the three the batch now asks for. This is the first time
+    the card agrees with it.
+  - **Two things found and deliberately NOT fixed.** (1)
+    `plan_quality._leftover_direction` does `links_to.split(":", 1)[0]`
+    then `fromisoformat`, so an `entry_id:` link throws and hits its own
+    `continue` — every cook-ahead chain now drops silently out of that
+    warn-only rule. Unreachable in practice (the picker only ever offers
+    LATER days, which is the only thing that rule checks). (2) The PARSER
+    is `WEEK_SLOTS` and so is the VALIDATOR: `repair_leftover_chains` skips
+    a snack row outright, so a stale or mis-pointing snack chain is never
+    validated away. Both are one door over from this card.
+  - **THE FIRST CUT OF "one chip per day" INTRODUCED A DEFECT OF ITS OWN,
+    reachable in four ordinary taps, and the commit before it got that
+    case right.** It kept the EARLIEST row of a day among those surviving
+    the filters — so with Wednesday's other snack claimed by Tuesday's
+    card, Monday's chip stood for the later row and covered it, and the
+    moment Tuesday let go the earlier row was free, won the chip on id
+    alone, and reported `selected: False` for a day Monday's own card said
+    in words that it covered. Ticking that chip then put TWO rows behind
+    one key ("enough for Monday, Wednesday, and Wednesday"), and dropping
+    either collapsed the batch — the exact pair of symptoms the dedupe
+    exists to remove, arriving through the dedupe. The chip now stands for
+    **the row this source is already covering**, and only failing that the
+    earliest claimable one; and answering a chip releases the SIBLING it
+    hid as well, scoped to rows linked to this source so another batch's
+    row is never touched. That release is also what heals a day already
+    carrying two rows behind one key, in one confirm. Reachable by a
+    second route with one source (make the earlier row a batch of its own,
+    let the other source take the later one, then release it), and by
+    neither route on a dinner or a breakfast, which hold one row per day.
+  - **TWO JUDGMENT CALLS FOR EMILY, named rather than left to be
+    inferred.** (1) `_source_ref` writes `entry_id:<n>` for EVERY slot,
+    not only snacks, so every cook-ahead chain tapped from now on changes
+    its on-disk shape — dinners and breakfasts included. Wider than the
+    ticket asked for. It is what makes the two-source corner above
+    resolvable at all, and it is strictly safer than a date key even where
+    a date key works (a source that is deleted and replaced leaves a
+    `date:slot` key a replacement row can capture; an id simply dangles).
+    Its one measurable cost is the `plan_quality._leftover_direction`
+    drop-out above. One form beats two, which is why it was not scoped to
+    snacks. (2) `cook_ahead_repeats` — the approval-time ask — is still
+    UNSORTED where `cook_ahead_options` is now sorted, so on a day holding
+    the same dish twice, which row becomes that card's `first` is
+    scan-order dependent. Pre-existing and harmless today, and the two
+    functions now differ in exactly the way this branch's own sort comment
+    says matters.
+  - **The new sort is UNPINNED, and that is worth knowing rather than
+    fixing.** Replacing `cook_ahead._plan_rows`' `sorted(...)` with the
+    old plain comprehension leaves all 30 green: `EXPLAIN QUERY PLAN`
+    gives `SCAN mpe`, i.e. rowid order, so today the sort is a no-op and
+    no test can tell it was lost. It is defence against a future index or
+    a changed query plan — so "the earliest row of a day means the same
+    row on every read" is currently a comment, not something anything
+    would catch losing.
+  - **A legacy `"<date>:snack"` sibling pointing at THIS source is not
+    cleared by the release**, because it is not `my_ref`. So a row can
+    keep an unreadable link for ever after its day has been re-answered.
+    Inert — it reads as no chain — and consistent with "legacy snack keys
+    never heal", but it is a state the heal deliberately does not reach.
+  - **`set_cook_ahead` is still not atomic** (pre-existing on `main`, and
+    round 3 WIDENS the write set: the source's `derived_from`, each
+    offered row, and now each sibling, all on their own connections and
+    commits). A crash or two simultaneous confirms degrade to "the chain
+    is not honoured" rather than to data loss, because
+    `plan_leftover_chains` requires both halves to agree. Read "heals it
+    in one confirm" as one USER ACTION, not one transaction.
+  - `tests/test_batch_cook_scales_the_recipe.py` (30; **25 red on
+    `main`**; **10 red against this branch's own first commit** — seven
+    of them written before round 3 (the parser inversion, BOTH row orders
+    of the wrong-dish case, the card/list agreement and the legacy-unread
+    one in the `apple-first` order only, and both repeat-snack ones) plus
+    three of round 3's own; and **5 red against its second**, which are
+    the chip-contradiction ones above). The 10 was measured on review —
+    an earlier version of this bullet said 7, which was the pre-round-3
+    subset quoted inside the same parenthesis as the post-round-3 count
+    of 30, so it read as current and was not. A branch that
+    changes how pre-deploy data PARSES needs tests seeded with pre-deploy
+    data, in both row orders: that is the coverage whose absence let the
+    first regression through, and the second was found by a reviewer
+    walking taps rather than by any of it. One copy change rode along —
+    `cookSlotWord` read every slot but breakfast and lunch as a night, so
+    a row of afternoon chickpea chips asked "Which other nights should it
+    cover?"; a snack is a day.
+
 - **2026-09-14 — Recipes, round 2: the planner is told how to WRITE the
   recipe, not just how to cook it. Branch
   `worktree-recipes-round-2-write-it-down` (`d1f951e`, `486bdcf`), NOT

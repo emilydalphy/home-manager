@@ -1423,7 +1423,23 @@ def attach_intake_to_plan(weekly_plan_id: int, intake_id: int) -> dict:
 # other — Loop Board "the planner scheduled Wednesday as leftovers of
 # Thursday's cook"). "entry_id:<n>" is also accepted and resolved below,
 # since one existing design doc used that form.
-_LINKS_TO_DATE_SLOT_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}):(breakfast|lunch|dinner)$")
+#
+# WEEK_SLOTS and deliberately NOT DAY_SLOTS: "<date>:snack" is not a key.
+# A day holds two snacks by default (preferences.resolve_snacks_per_day),
+# so that string names two rows, and every resolver here picks one of them
+# out of a dict built from an unordered SELECT. Widening this to include
+# snack was tried on 2026-09-15 and made things WORSE than leaving a snack
+# chain unreadable: with one legacy snack chain on the day, an ordinary
+# "batch cook these" on the OTHER snack resolved to the wrong dish, counted
+# its days twice and put ten plates of chickpeas over a shopping list for
+# six, with the apples headlined "Made ahead — Tuesday's Roasted
+# Chickpeas". That is the same failure this ticket exists to fix, arriving
+# from the other side and worse. So a snack chain names the ROW it means
+# (cook_ahead._source_ref), and this parser goes on saying plainly that a
+# date and a slot do not name a snack.
+_LINKS_TO_DATE_SLOT_RE = re.compile(
+    r"^(\d{4}-\d{2}-\d{2}):(" + "|".join(WEEK_SLOTS) + r")$"
+)
 _LINKS_TO_ENTRY_ID_RE = re.compile(r"^entry_id:(\d+)$")
 
 # Offered when a leftovers night gets reopened — genuinely generic, since

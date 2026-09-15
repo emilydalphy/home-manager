@@ -17256,9 +17256,12 @@
 
   // "morning" / "mornings" — the meal of the day this repeat is, said the
   // way a person would. Dinner is a night, because that is what the rest
-  // of this screen calls it.
+  // of this screen calls it. A snack is a day: it has no hour of its own,
+  // and "which other nights should it cover?" over a row of afternoon
+  // chickpeas was asking about a meal nobody was looking at.
   function cookSlotWord(slot, count) {
-    var one = slot === 'breakfast' ? 'morning' : (slot === 'lunch' ? 'lunch' : 'night');
+    var one = slot === 'breakfast' ? 'morning'
+      : (slot === 'lunch' ? 'lunch' : (slot === 'snack' ? 'day' : 'night'));
     if (count === 1) return one;
     return one === 'lunch' ? 'lunches' : one + 's';
   }
