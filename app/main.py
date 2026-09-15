@@ -3081,13 +3081,19 @@ def week_drop_dish_day(week_start: str, req: DropDishDayRequest):
 class AddDishDayRequest(BaseModel):
     """
     `entry_id` is a night the dish already covers; `target_entry_id` is the
-    day the household picked for one more of it. Two ids and no dish name:
+    day the household picked for one more of it. An id and no dish name:
     the day was chosen by tapping a row that showed what is on it, so the
     thing being replaced is a specific entry, not whatever happens to be
     sitting at a (date, slot) by the time this lands.
+
+    `target_date` is the alternative for a night the picker offers as
+    "Nothing yet" — genuinely empty, no row in meal_plan_entries, so there
+    is no id to send. Pass exactly one of the two; tools.add_dish_day
+    raises on neither or both.
     """
     entry_id: int
-    target_entry_id: int
+    target_entry_id: int | None = None
+    target_date: str | None = None
 
 
 @app.post("/api/week/{week_start}/add-dish-day")
@@ -3095,11 +3101,13 @@ def week_add_dish_day(week_start: str, req: AddDishDayRequest):
     """
     One more day of a dish — the Review screen's stepper going up.
 
-    Every candidate day already holds something, so this is always a
-    replacement and the household picks which day to spend. No model call:
-    the dish is one they already have, so this is the same small write the
-    stepper going down is, and it hands back the changed day in
-    get_week_menu's own shape for the same reason.
+    Most candidate days already hold something, so most taps here are a
+    replacement — the household picks which day to spend. A genuinely
+    empty day (req.target_date instead of req.target_entry_id) is the one
+    exception: nothing is displaced, the blank is filled. No model call
+    either way: the dish is one they already have, so this is the same
+    small write the stepper going down is, and it hands back the changed
+    day in get_week_menu's own shape for the same reason.
 
     A 200 can still say no. `status` 'refused' carries a sentence written
     for the household — a day nobody is home, a meal already cooked — and
@@ -3111,7 +3119,10 @@ def week_add_dish_day(week_start: str, req: AddDishDayRequest):
     """
     plan_id = _plan_id_for_week(week_start)
     try:
-        return tools.add_dish_day(plan_id, req.entry_id, req.target_entry_id)
+        return tools.add_dish_day(
+            plan_id, req.entry_id,
+            target_entry_id=req.target_entry_id, target_date=req.target_date,
+        )
     except tools.SlotRefused as e:
         return {"status": "refused", "message": str(e)}
     except ValueError as e:

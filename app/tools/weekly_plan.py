@@ -609,7 +609,10 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int) -> dict:
     }
 
 
-def add_dish_day(weekly_plan_id: int, entry_id: int, target_entry_id: int) -> dict:
+def add_dish_day(
+    weekly_plan_id: int, entry_id: int,
+    target_entry_id: int | None = None, target_date: str | None = None,
+) -> dict:
     """
     Put a dish the week already has onto one more day — the Review screen's
     stepper going UP.
@@ -654,6 +657,21 @@ def add_dish_day(weekly_plan_id: int, entry_id: int, target_entry_id: int) -> di
     would destroy all three — the cooked_status, and the shopping line for
     a meal that has already been eaten.
 
+    Pass `target_date` instead of `target_entry_id` for a genuinely EMPTY
+    night — the Check-the-week strip's "Nothing yet", meaning no row in
+    meal_plan_entries at all (get_week_menu returns None for a slot that
+    is truly absent, never a stand-in row). There is no id to send because
+    there is nothing to send one for, so the caller names only the day;
+    the slot is the one `entry_id`'s dish already sits in
+    (`source["slot"]`) — the picker only ever offers days within the same
+    meal type. Exactly one of `target_entry_id`/`target_date` must be
+    given. The target is still resolved fresh, by (date, slot), rather
+    than trusted from the screen: the picker was drawn from a snapshot,
+    and if a chat swap or another tab filled that night in the gap, what
+    is there now gets exactly the refusals above — a night that has since
+    gone `planned_empty` or been cooked is still not a night to plan into,
+    however the caller addressed it.
+
     Breaking a chain on the way in is ALLOWED and reported, which is
     deliberately not what the stepper going down does. Down DELETES, so a
     night that was eating off the removed one is left holding a recipe
@@ -684,38 +702,90 @@ def add_dish_day(weekly_plan_id: int, entry_id: int, target_entry_id: int) -> di
     list. `old_entry_id` (added for this) is what keeps a day's OTHER
     snack out of it.
     """
+    if (target_entry_id is None) == (not target_date):
+        # Covers both "neither" and "both" — a caller must say which night
+        # it means exactly one way.
+        raise ValueError("Pass exactly one of target_entry_id or target_date.")
+
     conn = get_conn()
-    rows = conn.execute(
+    source = conn.execute(
         """
         SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.component_category,
-               mpe.food_groups_json, mpe.cooked_status, mpe.derived_from_json,
+               mpe.food_groups_json, mpe.cooked_status,
                COALESCE(r.name, mpe.freeform_meal) AS meal
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
-        WHERE mpe.id IN (?, ?) AND mpe.household_id = ? AND mpe.weekly_plan_id = ?
+        WHERE mpe.id = ? AND mpe.household_id = ? AND mpe.weekly_plan_id = ?
         """,
-        (entry_id, target_entry_id, household_id(), weekly_plan_id),
-    ).fetchall()
-    conn.close()
-    by_id = {r["id"]: r for r in rows}
-    source, target = by_id.get(entry_id), by_id.get(target_entry_id)
-    # Household- and plan-scoped both, same as the in-place swap and the
-    # stepper going down: an id from another household or another week is a
-    # 404, not a quiet edit of somebody else's dinner.
+        (entry_id, household_id(), weekly_plan_id),
+    ).fetchone()
+    # Household- and plan-scoped, same as the in-place swap and the stepper
+    # going down: an id from another household or another week is a 404,
+    # not a quiet edit of somebody else's dinner.
     if not source:
+        conn.close()
         raise ValueError(f"No meal {entry_id} on that week's plan.")
-    if not target:
-        raise ValueError(f"No slot {target_entry_id} on that week's plan.")
-    if source["component_category"] or target["component_category"]:
+    if source["component_category"]:
+        conn.close()
         raise ValueError("That plan is built from components, not day slots.")
     if source["slot_state"] != "planned" or not source["meal"]:
+        conn.close()
         raise ValueError("There's no dish on that slot to put anywhere.")
-    if target["slot"] != source["slot"]:
-        # A breakfast dish onto a dinner is a different decision, and one
-        # nobody made on this screen: the stepper is inside a meal-type
-        # group and every day it offers is a day of that same meal.
-        raise ValueError("That day is a different meal from the one being added to.")
-    if target["id"] == source["id"]:
+
+    if target_entry_id is not None:
+        target_row = conn.execute(
+            """
+            SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.component_category,
+                   mpe.cooked_status, COALESCE(r.name, mpe.freeform_meal) AS meal
+            FROM meal_plan_entries mpe
+            LEFT JOIN recipes r ON r.id = mpe.recipe_id
+            WHERE mpe.id = ? AND mpe.household_id = ? AND mpe.weekly_plan_id = ?
+            """,
+            (target_entry_id, household_id(), weekly_plan_id),
+        ).fetchone()
+        conn.close()
+        if not target_row:
+            raise ValueError(f"No slot {target_entry_id} on that week's plan.")
+        if target_row["component_category"]:
+            raise ValueError("That plan is built from components, not day slots.")
+        if target_row["slot"] != source["slot"]:
+            # A breakfast dish onto a dinner is a different decision, and one
+            # nobody made on this screen: the stepper is inside a meal-type
+            # group and every day it offers is a day of that same meal.
+            raise ValueError("That day is a different meal from the one being added to.")
+        target_id = target_row["id"]
+        target_date_resolved = target_row["date"]
+        target_slot = target_row["slot"]
+        target_slot_state = target_row["slot_state"]
+        target_cooked = target_row["cooked_status"]
+        target_meal = target_row["meal"]
+    else:
+        # An empty night has no row to look up by id — that's the whole
+        # point — so it's resolved fresh by (date, slot) instead: the same
+        # slot source["slot"] already sits in, on the day the caller named.
+        # A row that has appeared here since the screen drew "Nothing yet"
+        # (a chat swap, another tab) is carried through and gets exactly
+        # the same checks below a target_entry_id would.
+        target_row = conn.execute(
+            """
+            SELECT mpe.id, mpe.slot_state, mpe.cooked_status,
+                   COALESCE(r.name, mpe.freeform_meal) AS meal
+            FROM meal_plan_entries mpe
+            LEFT JOIN recipes r ON r.id = mpe.recipe_id
+            WHERE mpe.household_id = ? AND mpe.weekly_plan_id = ?
+              AND mpe.date = ? AND mpe.slot = ?
+            """,
+            (household_id(), weekly_plan_id, target_date, source["slot"]),
+        ).fetchone()
+        conn.close()
+        target_id = target_row["id"] if target_row else None
+        target_date_resolved = target_date
+        target_slot = source["slot"]
+        target_slot_state = target_row["slot_state"] if target_row else None
+        target_cooked = target_row["cooked_status"] if target_row else None
+        target_meal = target_row["meal"] if target_row else None
+
+    if target_id == source["id"]:
         # Readable, and so a SlotRefused: the strip never offers a day the
         # dish already covers, but a screen drawn before the week moved
         # under it can still send one, and "that dish is already on that
@@ -724,7 +794,7 @@ def add_dish_day(weekly_plan_id: int, entry_id: int, target_entry_id: int) -> di
         # of these into the generic line for a day; by its own rule —
         # sentences written for a person — they belong here.)
         raise SlotRefused("That dish is already on that day.")
-    if target["slot_state"] not in ("planned", "open", "planned_empty"):
+    if target_id is not None and target_slot_state not in ("planned", "open", "planned_empty"):
         raise ValueError("That slot isn't one this can take over.")
 
     from . import leftovers as _leftovers
@@ -741,9 +811,11 @@ def add_dish_day(weekly_plan_id: int, entry_id: int, target_entry_id: int) -> di
     # else here is an impossible state reachable only from a stale screen,
     # and printing a row id (or a Python exception) into the household's
     # week is how an app that did the right thing reports itself broken.
-    if target["slot_state"] == "planned_empty":
+    # A genuinely empty night (target_id is None) has neither state, so
+    # neither line below ever fires for one — there is nothing to refuse.
+    if target_slot_state == "planned_empty":
         raise SlotRefused("Nobody’s eating that one — it isn’t a day to plan into.")
-    if (target["cooked_status"] or "") == "done":
+    if (target_cooked or "") == "done":
         # Somebody cooked it and ate it. The tick is a record, the inventory
         # was depleted against it, and the ingredients are on a list that
         # has already been shopped — taking the row away destroys all three
@@ -767,11 +839,15 @@ def add_dish_day(weekly_plan_id: int, entry_id: int, target_entry_id: int) -> di
     # its stored text reports a different meal from the one the household
     # just agreed to lose. The right night is displaced either way — this
     # is the same "labelled with one dish, reported as another" defect the
-    # blocker above was, left half-fixed.
-    target_chained = chains["leftovers"].get(target["id"])
+    # blocker above was, left half-fixed. None of this applies to a
+    # genuinely empty night: target_id is None, chains["leftovers"].get(None)
+    # is None, and target_slot_state (also None) never equals "planned", so
+    # replaced stays None — nothing was displaced, exactly as for an open
+    # slot.
+    target_chained = chains["leftovers"].get(target_id)
     replaced = None
-    if target["slot_state"] == "planned":
-        replaced = target_chained["source"]["meal"] if target_chained else target["meal"]
+    if target_slot_state == "planned":
+        replaced = target_chained["source"]["meal"] if target_chained else target_meal
     if replaced and replaced.strip().lower() == dish.strip().lower():
         raise SlotRefused("That day already has it.")
 
@@ -779,19 +855,28 @@ def add_dish_day(weekly_plan_id: int, entry_id: int, target_entry_id: int) -> di
     # the swap, because afterwards there is nothing left to ask. Those
     # nights are not harmed — swap_meal_in_plan re-buys for them — but
     # nobody was being told, and the stepper going down refuses the mirror
-    # of this outright.
+    # of this outright. Empty for a genuinely empty night, same reason as
+    # `replaced` above: nothing was there to have been feeding anyone.
     unchained = [
         {"date": t["date"], "slot": t["slot"]}
-        for t in (chains["sources"].get(target["id"], {}).get("targets") or [])
+        for t in (chains["sources"].get(target_id, {}).get("targets") or [])
     ]
 
     swap_meal_in_plan(
         weekly_plan_id,
-        target["date"],
+        target_date_resolved,
         dish,
-        slot=target["slot"],
+        slot=target_slot,
         food_groups=json.loads(groups_from["food_groups_json"] or "[]") or None,
-        old_entry_id=target["id"],
+        # None for a genuinely empty night — there is no row to name, and
+        # swap_meal_in_plan resolves an empty (old_entry_id, old_meal) pair
+        # to "every row already in that slot", which for a slot with
+        # nothing in it is the empty list _replace_slot_entries already
+        # treats as a plain insert (see its own docstring). Nothing here
+        # re-implements that; this is the same write add_dish_day always
+        # made, aimed at a day that starts with nothing instead of
+        # something.
+        old_entry_id=target_id,
         # Blank, the same call swap_meal_in_plan's own docstring makes for a
         # swap asked for in chat: there is no "why this?" beyond the
         # household having chosen it, and writing one would be the plan
@@ -800,12 +885,12 @@ def add_dish_day(weekly_plan_id: int, entry_id: int, target_entry_id: int) -> di
     )
     return {
         "status": "added",
-        "date": target["date"],
-        "slot": target["slot"],
+        "date": target_date_resolved,
+        "slot": target_slot,
         "dish": dish,
         # What the day was holding, so the screen can say what it cost.
-        # None for an open slot: nothing was displaced, a question was
-        # answered.
+        # None for an open or genuinely empty slot: nothing was displaced,
+        # a question was answered or a blank was filled.
         "replaced": replaced,
         # The nights that were eating off what just went, now cooking for
         # themselves. Empty for the overwhelming majority of taps.
@@ -815,7 +900,7 @@ def add_dish_day(weekly_plan_id: int, entry_id: int, target_entry_id: int) -> di
         # the week the screen is holding updates by splicing one day.
         "day": next(
             (d for d in (get_week_menu(weekly_plan_id).get("days") or [])
-             if d.get("date") == target["date"]),
+             if d.get("date") == target_date_resolved),
             None,
         ),
     }

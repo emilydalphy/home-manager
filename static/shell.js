@@ -11765,11 +11765,14 @@
   //
   // Going up used to open the ask sheet, because nothing had decided which
   // day an extra one should land on. Emily's answer (2026-09-10) is that
-  // nothing should: every candidate day already holds something, so "+"
-  // always means REPLACING something, and a rule that picks the victim
+  // nothing should: most candidate days already hold something, so "+"
+  // usually means REPLACING something, and a rule that picks the victim
   // silently is exactly the failure this app keeps getting caught by. So
   // the strip shows what each day is holding and the household says which
-  // one they are willing to spend.
+  // one they are willing to spend — including a genuinely EMPTY day,
+  // where nothing is spent at all (Emily's card, 2026-09-15: "+ nights
+  // says there's no other dinner when five nights are empty" — stretching
+  // a roast over an empty Friday should be one tap, not a dead end).
   //
   // Four exclusions, and the middle two are not niceties. A day the dish
   // ALREADY covers is not offered (the stepper's number is the count of
@@ -11787,7 +11790,10 @@
   // Snacks are offered one ENTRY at a time rather than one day at a time,
   // because a day holds two of them by default and they are two different
   // decisions — displacing the apple is not displacing the yogurt beside
-  // it. That is also why the write is by entry id all the way down.
+  // it. That is also why the write is by entry id all the way down. An
+  // empty slot has no id to offer one by, which is also why a genuinely
+  // empty SNACK never shows here: day.snacks only ever lists snacks that
+  // exist, so there is no key to find an absent one under.
   function reviewAddDayOptions(days, dish) {
     var covered = {};
     (dish.days || []).forEach(function (d) { covered[d.date] = true; });
@@ -11799,40 +11805,61 @@
         : [dish.slot];
       keys.forEach(function (key) {
         var e = daySlotEntry(day, key);
-        if (!e || (e.state !== 'planned' && e.state !== 'open')) return;
-        if (e.cooked) return;
-        out.push({
-          date: day.date,
-          entryId: e.entry_id,
-          open: e.state === 'open',
-          // What is on it, in the words the rest of this screen uses for
-          // it — a made-ahead night reads as the dish, not as the whole
-          // "Made ahead — Sunday's Egg White Bites" sentence.
-          holding: e.state === 'open' ? 'Your call' : mealDisplayName(e),
-          // Only when the day has more than one of them to tell apart.
-          eyebrow: (dish.slot === 'snack' && (day.snacks || []).length > 1)
-            ? slotEyebrowLabel(day, key) : ''
-        });
+        if (e) {
+          if (e.state !== 'planned' && e.state !== 'open') return;
+          if (e.cooked) return;
+          out.push({
+            date: day.date,
+            entryId: e.entry_id,
+            empty: false,
+            open: e.state === 'open',
+            // What is on it, in the words the rest of this screen uses for
+            // it — a made-ahead night reads as the dish, not as the whole
+            // "Made ahead — Sunday's Egg White Bites" sentence.
+            holding: e.state === 'open' ? 'Your call' : mealDisplayName(e),
+            // Only when the day has more than one of them to tell apart.
+            eyebrow: (dish.slot === 'snack' && (day.snacks || []).length > 1)
+              ? slotEyebrowLabel(day, key) : ''
+          });
+        } else if (dish.slot !== 'snack') {
+          // No row at all — the day card's own "Nothing yet" (§5, the
+          // Empty moment vocabulary). Nothing is displaced by taking one of
+          // these, unlike every other option here.
+          out.push({ date: day.date, entryId: null, empty: true, open: false, holding: 'Nothing yet', eyebrow: '' });
+        }
       });
     });
+    // Empty nights cost nothing to take, so they're offered first — see the
+    // card cited above. A stable sort keeps each group in the day order it
+    // was built in, so this only ever moves the empty ones forward.
+    out.sort(function (a, b) { return (a.empty ? 0 : 1) - (b.empty ? 0 : 1); });
     return out;
   }
 
   function reviewAddPickerHtml(dish, idx, days) {
     var options = reviewAddDayOptions(days, dish);
     if (!options.length) {
-      // Every other day of this meal is already this dish, out, or gone.
-      // Said plainly rather than opened as an empty strip.
+      // Every other day of this meal is already this dish, out, or gone —
+      // no empty night either. Said plainly rather than opened as an
+      // empty strip.
       return '<div class="rv-pick"><p class="rv-pick-ask">' +
         escapeHtml('There’s no other ' + reviewSlotNoun(dish.slot, 1) +
           ' this week to put it on.') + '</p>' +
         '<button type="button" class="rv-pick-cancel" data-rv-pick-cancel="1">' +
           'Never mind</button></div>';
     }
+    // "Each one already has something, and X takes its place" stopped being
+    // true the moment an empty night could be offered here too (2026-09-15)
+    // — so that line is said only when it still is; a plainer ask stands in
+    // otherwise, and each option's own holding line already says what, if
+    // anything, a given tap costs.
+    var anyEmpty = options.some(function (o) { return o.empty; });
+    var ask = anyEmpty
+      ? 'Which ' + reviewSlotNoun(dish.slot, 1) + '?'
+      : 'Which ' + reviewSlotNoun(dish.slot, 1) + '? Each one already has ' +
+        'something, and ' + dish.name + ' takes its place.';
     return '<div class="rv-pick">' +
-      '<p class="rv-pick-ask">' +
-        escapeHtml('Which ' + reviewSlotNoun(dish.slot, 1) + '? Each one already has ' +
-          'something, and ' + dish.name + ' takes its place.') + '</p>' +
+      '<p class="rv-pick-ask">' + escapeHtml(ask) + '</p>' +
       '<div class="rv-pick-days">' +
         options.map(function (o, i) {
           return '<button type="button" class="rv-pick-day" data-rv-pick="' + idx + '" ' +
@@ -11841,7 +11868,7 @@
               escapeHtml(dayName(o.date, { weekday: 'long' })) +
               (o.eyebrow ? ' · ' + escapeHtml(o.eyebrow) : '') +
             '</span>' +
-            '<span class="rv-pick-holding' + (o.open ? ' is-quiet' : '') + '">' +
+            '<span class="rv-pick-holding' + ((o.open || o.empty) ? ' is-quiet' : '') + '">' +
               escapeHtml(o.holding) + '</span>' +
           '</button>';
         }).join('') +
@@ -12426,10 +12453,17 @@
     reviewState.troubleFor = null;
     renderMealsStep(panel);
     try {
+      // A genuinely empty night has no entryId to send — the route takes
+      // target_date instead, and resolves the slot itself from `entry_id`
+      // (see tools.add_dish_day). Everything else about the write is the
+      // same either way.
+      var body = { entry_id: from.entryId };
+      if (option.empty) body.target_date = option.date;
+      else body.target_entry_id = option.entryId;
       var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/add-dish-day', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: from.entryId, target_entry_id: option.entryId })
+        body: JSON.stringify(body)
       });
       if (!res.ok) throw new Error('add failed');
       var out = await res.json();
