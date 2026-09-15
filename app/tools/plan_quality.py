@@ -789,6 +789,310 @@ def _dish_named_for_an_absence(entries: list[dict], context: dict) -> list[Viola
     return violations
 
 
+# ---------------------------------------------------------------------------
+# A title must not promise an ingredient the recipe hasn't got.
+#
+# Emily, 2026-09-14, standing at the stove: "Seared Turkey and Zucchini
+# Skillet with White Beans" — seven ingredients, seven steps, and not a
+# bean anywhere in either. The title and the ingredient list come out of
+# ONE model call (generate_weekly_plan_llm), so nothing downstream had ever
+# compared the two halves of the same answer to each other. The cook is
+# left wondering what they missed, and the shopping list bought a dish the
+# name doesn't describe.
+#
+# Unlike everything else in this module the fix REPAIRS rather than logs,
+# because a wrong title is read by a person every time the dish comes round
+# — and it repairs by correcting the NAME, never by inventing an
+# ingredient. A recipe whose groceries have already shipped must not grow a
+# tin of beans nobody bought; "Seared Turkey and Zucchini Skillet" is the
+# honest name of what is actually in the pan.
+#
+# The rule is deliberately hard to trip. Its whole risk is the one the
+# allergy work wrote down on 2026-09-04: a check that fires on good dinners
+# is one people learn to click past. So it only ever looks at a TRAILING
+# "with ..." clause, and it passes over anything it cannot be sure about.
+# ---------------------------------------------------------------------------
+
+# The first "with" in the title, and everything after it. An "and" clause
+# was considered and left out on purpose: "Mac and Cheese", "Surf and
+# Turf", "Beef and Broccoli Stir-Fry" all join two halves of ONE name
+# rather than adding a side, and there is no string test that tells those
+# from "Chicken and Dumplings" with no dumplings in it. Missing those is
+# cheap; rewriting "Mac and Cheese" to "Mac" is not.
+_TITLE_WITH_CLAUSE = re.compile(r"^(?P<head>.+?)\s+with\s+(?P<clause>\S.*)$", re.I)
+
+# Words in a clause that describe HOW a thing was done to, not WHAT it is.
+# Dropped before the clause is checked, so "with Roasted Asparagus" is
+# still a promise of asparagus and "with White Beans" is still a promise of
+# beans. Raw words, not stems, so the plural "greens" below can mean
+# something different from the adjective "green".
+_TITLE_MODIFIERS = {
+    "roasted", "roast", "grilled", "griddled", "seared", "charred", "blistered",
+    "crispy", "crisp", "creamy", "toasted", "whipped", "smashed", "mashed",
+    "braised", "pickled", "marinated", "fried", "baked", "steamed", "sauteed",
+    "sautéed", "caramelized", "caramelised", "shaved", "torn", "melted",
+    "broiled", "poached", "smoked", "cured", "chopped", "shredded", "wilted",
+    "herbed", "buttered", "spiced", "seasoned", "dressed", "glazed", "candied",
+    "white", "green", "red", "brown", "black", "yellow", "golden", "purple",
+    "wild", "sweet", "savoury", "savory", "spicy", "tangy", "zesty", "smoky",
+    "herby", "garlicky", "buttery", "cheesy", "lemony", "nutty", "crunchy",
+    "baby", "extra", "double", "loaded", "all", "whole", "chunky", "thin",
+    "thick", "deep", "pan", "sheet", "one", "two", "slow", "fast", "soft",
+    "hearty", "light", "rich", "bright", "tender", "juicy", "perfect",
+    "crusty", "fluffy", "silky", "sticky", "charcoal", "flame", "oven",
+}
+
+# Words that name a CATEGORY or a preparation rather than a thing you buy.
+# When one of these turns up, the clause is passed over whole: "with Garlic
+# Butter Sauce" is a sauce made of things already in the pan, "with
+# Everything Seasoning" is a spice jar, "with Roasted Root Vegetables" is
+# whatever vegetables are in the list. None of them can be checked against
+# an ingredient line, and guessing is how this rule would start rewriting
+# good dinners. Raw words — both forms are listed where both are used.
+_TITLE_VAGUE_WORDS = {
+    "vegetable", "vegetables", "veggie", "veggies", "veg", "greens", "salad",
+    "salads", "slaw", "sauce", "sauces", "dressing", "gravy", "seasoning",
+    "seasonings", "spice", "spices", "herb", "herbs", "topping", "toppings",
+    "top", "garnish", "garnishes", "crumb", "crumbs", "crust", "glaze",
+    "marinade", "drizzle", "relish", "pesto", "aioli", "salsa", "chutney",
+    "dip", "dips", "stuffing", "trimmings", "fixings", "everything", "extras",
+    "fruit", "fruits", "grain", "grains", "protein", "carb", "carbs", "starch",
+    "broth", "stock", "medley", "mix", "blend", "mash", "puree", "hash",
+    "crunch", "finish", "skin", "seasonal", "leftovers", "filling", "batter",
+    "dough", "syrup", "seeds", "sprinkle", "shavings", "ribbons", "wedges",
+    # Named preparations — a thing made FROM other things, which is why the
+    # ingredient list says yogurt and cucumber where the title says
+    # tzatziki. Found by sweeping plausible generated titles: "Chicken
+    # Souvlaki with Tzatziki" and "Turkey Meatballs with Marinara" were the
+    # only two good dinners the rule touched, and both are this shape.
+    # A few of these (hummus, guacamole) really are bought in a tub, so
+    # listing them costs a miss — which is the cheap direction.
+    "marinara", "tzatziki", "hummus", "guacamole", "raita", "tapenade",
+    "chimichurri", "romesco", "gremolata", "bechamel", "hollandaise",
+    "vinaigrette", "ragu", "bolognese", "alfredo", "remoulade", "compote",
+    "coulis", "custard", "ganache", "frosting", "icing", "caramel", "curd",
+}
+
+# The short, arguable list of "this word is satisfied by that one", in the
+# same spirit as _ALLERGEN_ALIASES in coordination.py — a table a person can
+# read and extend when a real miss shows up, rather than a heuristic nobody
+# can see. Every entry makes the rule QUIETER, never louder: it can only
+# turn a would-be flag into a pass. Keys and values are stemmed singulars.
+_TITLE_INGREDIENT_ALIASES = {
+    "bean": {"cannellini", "borlotti", "butterbean", "chickpea", "garbanzo", "edamame", "legume", "lentil"},
+    "pea": {"chickpea", "garbanzo", "edamame", "mangetout"},
+    "crouton": {"bread", "baguette", "sourdough", "ciabatta", "loaf", "brioche", "focaccia"},
+    # Baked alongside, from a meal or a flour the list does name.
+    "cornbread": {"cornmeal", "polenta", "flour"},
+    "dumpling": {"flour", "suet", "wonton", "gyoza"},
+    "biscuit": {"flour", "buttermilk"},
+    "breadcrumb": {"bread", "panko", "baguette", "sourdough"},
+    "bread": {"sourdough", "baguette", "ciabatta", "focaccia", "brioche", "loaf",
+              "roll", "bun", "pita", "naan", "challah", "rye", "flour"},
+    "rice": {"basmati", "jasmine", "arborio", "risotto"},
+    "mac": {"macaroni", "pasta"},
+    "pasta": {"spaghetti", "penne", "rigatoni", "macaroni", "fusilli", "linguine", "orzo",
+              "farfalle", "noodle", "tagliatelle", "fettuccine", "ziti", "shell", "gnocchi",
+              "lasagne", "lasagna", "cavatappi", "bucatini", "orecchiette"},
+    "noodle": {"spaghetti", "linguine", "ramen", "udon", "soba", "vermicelli", "pasta", "rice"},
+    "cheese": {"parmesan", "parmigiano", "cheddar", "mozzarella", "feta", "gruyere", "ricotta",
+               "halloumi", "provolone", "pecorino", "manchego", "brie", "monterey", "queso",
+               "paneer", "burrata", "mascarpone", "boursin", "cotija"},
+    "potato": {"yukon", "russet", "fingerling"},
+    "squash": {"zucchini", "courgette", "butternut", "acorn", "delicata"},
+    "nut": {"almond", "walnut", "pecan", "cashew", "pistachio", "hazelnut", "peanut", "macadamia"},
+    "berry": {"strawberry", "blueberry", "raspberry", "blackberry", "cranberry"},
+    "yogurt": {"greek", "skyr", "yoghurt"},
+    "yoghurt": {"greek", "skyr", "yogurt"},
+    "chili": {"jalapeno", "serrano", "poblano", "chipotle", "habanero", "chile"},
+    "chile": {"jalapeno", "serrano", "poblano", "chipotle", "habanero", "chili"},
+    "tortilla": {"wrap", "taco"},
+    "chicken": {"thigh", "breast", "drumstick"},
+    "beef": {"steak", "sirloin", "chuck", "brisket", "mince"},
+    "pork": {"bacon", "sausage", "chorizo", "prosciutto", "pancetta", "ham"},
+    "onion": {"shallot", "scallion", "leek"},
+}
+
+# An ingredient list shorter than this is treated as no answer rather than
+# as a short one. The model can be cut off mid-list, and the import paths
+# can read a page badly; either way, rewriting a title against three lines
+# that may be all there is of a list of ten is the one way this rule could
+# do real damage.
+_TITLE_MIN_INGREDIENTS = 3
+
+
+def _title_content_stems(text: str) -> list[str] | None:
+    """The things a clause actually promises, or None when it promises
+    nothing this rule can check.
+
+    None covers two cases that must behave identically: a clause with
+    nothing concrete left in it once the adjectives go ("with a Crispy
+    Top"), and a clause naming a category rather than a food ("with
+    Roasted Root Vegetables"). Both mean "can't tell", and can't-tell
+    passes.
+    """
+    stems = []
+    for word in re.findall(r"[a-z]+", (text or "").lower()):
+        if len(word) <= 2:
+            continue
+        if word in _TITLE_VAGUE_WORDS:
+            return None
+        if word in _TITLE_MODIFIERS or word in _NAME_STOPWORDS:
+            continue
+        stem = _stem(word)
+        if stem in _TITLE_VAGUE_WORDS:
+            return None
+        if stem in _NAME_STOPWORDS:
+            continue
+        stems.append(stem)
+    return stems or None
+
+
+def _recipe_word_pool(ingredients: list, instructions: list) -> set:
+    """Every word the recipe itself says, stemmed.
+
+    The METHOD counts as well as the ingredient list, and that is the
+    conservative choice rather than a loose one: a dish whose steps really
+    do simmer white beans has an ingredient list with a hole in it, which
+    is _steps_match_ingredients' business — and renaming it would take a
+    true title off a recipe to cover for a false list.
+    """
+    words = []
+    for ing in ingredients or []:
+        item = ing.get("item") if isinstance(ing, dict) else ing
+        words += re.findall(r"[a-z]+", str(item or "").lower())
+    for step in instructions or []:
+        words += re.findall(r"[a-z]+", str(step or "").lower())
+    return {_stem(w) for w in words if len(w) > 2}
+
+
+_ALLERGEN_TITLE_WORDS: set | None = None
+
+
+def _allergen_title_words() -> set:
+    """Every word coordination.py treats as an allergen, stemmed.
+
+    A clause naming one of these is never stripped, even when the recipe
+    hasn't got it. Two reasons, and the second is the important one: a
+    title saying peanut over a recipe with no peanut in it is worth a
+    person's eyes rather than a silent rename — and the allergen matcher
+    reads the NAME as well as the ingredients, so quietly taking the word
+    off would take a fail-closed signal off every check downstream of it.
+    Imported here rather than at module scope because coordination pulls in
+    weekly_plan, which is the heavier half of this package.
+    """
+    global _ALLERGEN_TITLE_WORDS
+    if _ALLERGEN_TITLE_WORDS is None:
+        from .coordination import _ALLERGEN_ALIASES
+        words = set(_ALLERGEN_ALIASES)
+        for group in _ALLERGEN_ALIASES.values():
+            words |= set(group)
+        _ALLERGEN_TITLE_WORDS = {_stem(w) for word in words for w in re.findall(r"[a-z]+", word)}
+    return _ALLERGEN_TITLE_WORDS
+
+
+def _promise_is_kept(stem: str, pool: set) -> bool:
+    """Whether one promised thing turns up anywhere in the recipe."""
+    if stem in pool:
+        return True
+    if _TITLE_INGREDIENT_ALIASES.get(stem, set()) & pool:
+        return True
+    # "blueberry" keeps a promise of "berry", "butterbean" of "bean". Only
+    # in that direction, and only for a word long enough that the ending
+    # means something -- "pea" inside "chickpea" is the alias table's job,
+    # not a suffix rule's.
+    return len(stem) >= 4 and any(p.endswith(stem) for p in pool)
+
+
+def _split_title_clause(clause: str) -> list[str]:
+    """"Rice, Beans and Slaw" -> the three things it names."""
+    parts = re.split(r"\s*,\s*|\s+and\s+|\s+&\s+", clause, flags=re.I)
+    return [p.strip() for p in parts if p.strip()]
+
+
+def unkept_title_promises(name: str, ingredients: list, instructions: list | None = None) -> list[str]:
+    """The parts of a title's trailing "with ..." clause the recipe hasn't got.
+
+    Empty for every title this rule cannot be sure about — which is most of
+    them, by design. See the section comment above for what it passes over
+    and why.
+    """
+    if len(ingredients or []) < _TITLE_MIN_INGREDIENTS:
+        return []
+    match = _TITLE_WITH_CLAUSE.match((name or "").strip())
+    if not match:
+        return []
+    pool = _recipe_word_pool(ingredients, instructions)
+    unkept = []
+    for part in _split_title_clause(match.group("clause")):
+        stems = _title_content_stems(part)
+        if stems is None:
+            continue
+        if not any(_promise_is_kept(s, pool) for s in stems):
+            unkept.append(part)
+    return unkept
+
+
+def honest_recipe_title(name: str, ingredients: list, instructions: list | None = None) -> str:
+    """The title with anything the recipe hasn't got taken off it.
+
+    "Seared Turkey and Zucchini Skillet with White Beans" -> "Seared Turkey
+    and Zucchini Skillet". A clause that names several things keeps the
+    ones that are real: "Chicken with Rice and White Beans" -> "Chicken
+    with Rice".
+
+    Returns the name unchanged whenever there is nothing to take off; when
+    the clause names an allergen (see _allergen_title_words); and when
+    taking it off would leave a name that says nothing — "Bowl with White
+    Beans" would become "Bowl", so it is left alone for
+    _title_promises_an_ingredient to report instead. A bad name beats no
+    name.
+    """
+    allergens = _allergen_title_words()
+    unkept = [
+        part for part in unkept_title_promises(name, ingredients, instructions)
+        if not (set(_title_content_stems(part) or []) & allergens)
+    ]
+    if not unkept:
+        return name
+    match = _TITLE_WITH_CLAUSE.match((name or "").strip())
+    head = match.group("head").strip()
+    if not _title_content_stems(head):
+        return name
+    kept = [p for p in _split_title_clause(match.group("clause")) if p not in unkept]
+    return f"{head} with {' and '.join(kept)}" if kept else head
+
+
+def _title_promises_an_ingredient(entries: list[dict], context: dict) -> list[Violation]:
+    """A dish's name must not name something that is in neither its
+    ingredients nor its method.
+
+    Every generated week is repaired before it is saved (see
+    honest_recipe_title, called from agent._generate_weekly_plan), so this
+    reports the leftovers: a recipe saved before that shipped, one brought
+    in from a link or a cookbook page, or a title whose head is too thin to
+    correct.
+    """
+    violations = []
+    for entry in entries:
+        if not _is_planned(entry):
+            continue
+        name = entry.get("meal_name") or ""
+        unkept = unkept_title_promises(name, entry.get("ingredients") or [], entry.get("instructions") or [])
+        if not unkept:
+            continue
+        promised = " and ".join(unkept)
+        violations.append(Violation(
+            rule="title_promises_an_ingredient", severity="warn",
+            date=entry.get("date"), slot=entry.get("slot"),
+            message=(
+                f"'{name}' says {promised}, and there is none in the ingredients or the steps. "
+                "The name should say what the dish is."
+            ),
+        ))
+    return violations
+
+
 # Any of these in a method is evidence the dish was seasoned. Deliberately
 # generous: one hit anywhere is enough to pass, because the question is
 # "was it seasoned at all", not "was it seasoned well".
@@ -1154,6 +1458,7 @@ def check_week(plan_entries: list[dict], context: dict) -> list[Violation]:
     # The food-quality floor (route 4). Same contract as everything above:
     # independent, additive, and one firing never suppresses another.
     violations += _dish_named_for_an_absence(plan_entries, context)
+    violations += _title_promises_an_ingredient(plan_entries, context)
     violations += _seasoning_never_mentioned(plan_entries, context)
     violations += _method_is_assembly(plan_entries, context)
     # Round 2 of the floor: how the method is written, not just what it does.
@@ -1376,6 +1681,66 @@ def _swap_entry_dates(entry_id_a: int, entry_id_b: int) -> None:
         )
     conn.commit()
     conn.close()
+
+
+def repair_recipe_titles(apply: bool = False) -> list[dict]:
+    """Every saved recipe whose title names something it hasn't got, and —
+    with apply — the corrected name written back.
+
+    The other half of the 2026-09-14 fix. Generation is honest from now on
+    (agent._honest_meal_names), but the recipes already on record are not,
+    and a dish reheated on Friday is read by the same person who wondered
+    about it on Monday. Renaming the RECIPE ROW is what reaches every
+    screen: plan_meal stores recipe_id and leaves freeform_meal null when a
+    recipe matched, so the week card, the Cook view, the leftover's own
+    line and the share page all read the recipe's name through that join.
+
+    Two things it will not do. It never renames onto a name this household
+    already uses — several lookups are `WHERE name = ?` with one row
+    expected, and two recipes answering to one name is a worse problem than
+    an inaccurate title. And it never touches a meal saved as freeform
+    text: there is no ingredient list behind one, so there is nothing to
+    hold the name against.
+
+    Read-only unless asked. This is a rename with no undo in a database
+    that holds a household's real cooking, so the script that drives it
+    prints the list first and writes only on --apply.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, name, ingredients_json, instructions_json FROM recipes WHERE household_id = ?",
+        (household_id(),),
+    ).fetchall()
+    taken = {(r["name"] or "").strip().lower() for r in rows}
+
+    changes = []
+    for row in rows:
+        try:
+            ingredients = json.loads(row["ingredients_json"] or "[]")
+            instructions = json.loads(row["instructions_json"] or "[]")
+        except (TypeError, ValueError):
+            continue
+        honest = honest_recipe_title(row["name"], ingredients, instructions)
+        if honest == row["name"]:
+            continue
+        if honest.strip().lower() in taken:
+            logger.warning(
+                "Not renaming recipe %d (%r): this household already has a %r",
+                row["id"], row["name"], honest,
+            )
+            continue
+        changes.append({"recipe_id": row["id"], "before": row["name"], "after": honest})
+        taken.add(honest.strip().lower())
+
+    if apply:
+        for change in changes:
+            conn.execute(
+                "UPDATE recipes SET name = ? WHERE id = ? AND household_id = ?",
+                (change["after"], change["recipe_id"], household_id()),
+            )
+        conn.commit()
+    conn.close()
+    return changes
 
 
 def check_and_log(plan_id: int, generation_context: dict) -> list[Violation]:

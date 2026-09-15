@@ -371,6 +371,114 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-15 — "with White Beans" and no beans: a title may not promise
+  an ingredient the recipe hasn't got. Branch
+  `overnight/title-names-a-real-ingredient`, NOT merged at the time of
+  writing.** Emily, 2026-09-14, at the stove: "Seared Turkey and Zucchini
+  Skillet with White Beans" — seven ingredients, seven steps, no bean in
+  either, and a shopping list that bought a dish the name doesn't
+  describe. **Root cause, and it is one line of architecture rather than a
+  bug: the title and the ingredient list come out of the SAME model call**
+  (`agent.generate_weekly_plan_llm`, one `submit_weekly_plan` item
+  carrying `meal_name` AND `ingredients`), and nothing downstream had ever
+  held one half of the model's answer against the other.
+  `agent._generate_weekly_plan` handed `meal_name` straight to
+  `_ensure_recipe_saved` and to `plan_meal`. Reproduced first through
+  `tools.add_recipe` and then over real HTTP.
+  - **The repair CORRECTS THE NAME and never the ingredients, and it costs
+    no model call.** Deterministic, in `plan_quality.honest_recipe_title`,
+    run by `agent._honest_meal_names` on the model's answer before a word
+    of it is written. A recipe whose groceries have already shipped must
+    not grow a tin of beans nobody bought; "Seared Turkey and Zucchini
+    Skillet" is the honest name of what is in the pan. It runs on the
+    `items` list rather than inside `_ensure_recipe_saved` because the name
+    is also what `plan_meal` files the slot under — correcting one and not
+    the other would leave the week's card and its recipe calling one dinner
+    two things.
+  - **It only ever reads a TRAILING "with ..." clause.** An "and" clause
+    was considered and left out: "Mac and Cheese", "Surf and Turf", "Beef
+    and Broccoli Stir-Fry" all join two halves of ONE name, and no string
+    test separates those from "Chicken and Dumplings" with no dumplings.
+    Missing those is cheap; rewriting "Mac and Cheese" to "Mac" is not.
+  - **Three lists decide, all raw words a person can argue with, in
+    `_ALLERGEN_ALIASES`' style.** `_TITLE_MODIFIERS` (how a thing was done
+    to, not what it is) is dropped, so "with Roasted Asparagus" still
+    promises asparagus — and it is what stops a bottle of white wine in the
+    cupboard keeping a promise of white BEANS. `_TITLE_VAGUE_WORDS`
+    (category and preparation words — sauce, vegetables, seasoning, top,
+    fruit) passes the clause over whole, because none of them can be held
+    against an ingredient line. `_TITLE_INGREDIENT_ALIASES` can only ever
+    turn a would-be flag into a pass — cannellini keeps a promise of beans,
+    cheddar of cheese, sourdough of croutons — and a pool word ENDING in
+    the promised word counts, so blueberries keep a promise of berries.
+  - **It passes over far more than it touches, on purpose** (the
+    2026-09-04 allergy rule: a check that fires on good dinners is one
+    people learn to click past). It says nothing when the thing is in the
+    METHOD but not the list — that is a hole in the LIST, which is
+    `_steps_match_ingredients`' business, and renaming would take a true
+    title off to cover a false list; when the ingredient list is shorter
+    than `_TITLE_MIN_INGREDIENTS` (3), because a cut-off model answer is no
+    answer rather than a short one; when the head is too thin to survive
+    the trim ("Bowl with White Beans" would become "Bowl" — a bad name
+    beats no name); and **when the clause names an allergen**, because the
+    allergen matcher reads the NAME as well as the ingredients and a quiet
+    rename would take a fail-closed signal off every check downstream.
+    The last three are reported rather than repaired, through the new
+    `check_week` rule `title_promises_an_ingredient` (warn) — the morning
+    report is where anything the repair passed over becomes legible.
+  - **The correction is applied at the GENERATED call sites, never inside
+    `add_recipe`.** That function is also the door for a link and a
+    cookbook page, where the title is the household's own record of where
+    the dish came from and rewriting it would be wrong. Two sites today —
+    `_generate_weekly_plan` and `swap_in_place.apply_pick` — and in the
+    swap it sits AFTER the allergen and taste gates for the reason above.
+    `big_meal._clean_main` is the third of that shape and is deliberately
+    NOT done: its name rides into `menu_json`, the prep rows, the timeline
+    and the entry, so keeping those in step is its own card. The plan
+    rule still reports it.
+  - **Already on record: `repair_recipe_titles.py`, read-only by default.**
+    `railway ssh -- python repair_recipe_titles.py` prints what it would
+    change, `--apply` writes it. Renaming the RECIPE ROW is what reaches
+    every screen — `plan_meal` stores `recipe_id` and leaves
+    `freeform_meal` null when a recipe matched, so the card, the Cook view
+    and the Friday leftover all read the name through that join. A script
+    rather than a startup backfill, and read-only first, for the reason
+    `planning-periods` gave: a rename with no undo in the one database that
+    matters is not a migration's business. It refuses a rename that would
+    give one household two recipes of one name (several lookups are
+    `WHERE name = ?` expecting one row), and it cannot touch a meal saved
+    as freeform text — there is no ingredient list behind one to hold the
+    name against.
+  - `tests/test_title_names_a_real_ingredient.py` (72; **13 red on
+    `0a59aab`**, the rest green guards). The file cannot be collected against
+    main — the three names it imports do not exist there — so redness was
+    measured with those stubbed to main's behaviour, and every guard a stub
+    could not redden is pinned by mutation instead, named in its own
+    docstring: seven knobs checked to bite (the method in the evidence
+    pool, the 3-ingredient floor, the collision guard, the allergen
+    carve-out, the vague list, the modifier list, the thin-head guard).
+    50 of them are negative cases — real dish names from this repo's own
+    tests and fixtures, plus a swept batch of plausible generated dinners,
+    every one of which must be left alone. **The word lists were TUNED
+    against those sweeps rather than guessed**: 45 plausible titles were
+    put through, the first cut touched three good ones, and all three were
+    the same shape — a named preparation made from things the list does
+    name (tzatziki, marinara) or a thing baked alongside from a flour it
+    does name (cornbread). A second sweep of 25 flags nothing, and the
+    seven genuine over-promises checked beside it are all still caught, so
+    quiet has not become silent. Suite **4860 passed, 0
+    failed** at `TZ=America/Toronto` (4788 before this card). Driven over a real uvicorn on a
+    throwaway DB: generation saves the recipe and files the slot as "Seared
+    Turkey and Zucchini Skillet", the Cook view reads it with the same
+    seven ingredients, and the script corrects a title already on record
+    with both the week card and the Cook view following it.
+  - **Assumptions Emily can overrule, each one line:** the floor of three
+    ingredients (`_TITLE_MIN_INGREDIENTS`); never checking an "and" clause
+    (`_TITLE_WITH_CLAUSE`); never stripping an allergen clause
+    (`_allergen_title_words`, in `honest_recipe_title`); and the three word
+    lists, which are meant to be extended when a real miss or a real false
+    positive shows up.
+
 - **2026-09-14 — Recipes, round 2: the planner is told how to WRITE the
   recipe, not just how to cook it. Branch
   `worktree-recipes-round-2-write-it-down` (`d1f951e`, `486bdcf`), NOT

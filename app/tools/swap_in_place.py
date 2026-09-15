@@ -60,6 +60,7 @@ from . import coordination as _coordination
 from . import household as _household
 from . import memory as _memory
 from . import plates as _plates
+from . import plan_quality as _plan_quality
 from . import recipes as _recipes
 from . import taste_verdict as _taste_verdict
 from . import week_intake as _week_intake
@@ -588,6 +589,16 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
     has: the potatoes went with the chops, not with the night.
     """
     serves = _table_for(entry["date"], entry["slot"])["serves"]
+    # A picked dish's name and its ingredients come out of one model call,
+    # so the name can promise something the list hasn't got — the week
+    # generator's own bug (Emily, 2026-09-14, "…with White Beans" and no
+    # beans), one door over. Corrected here rather than in
+    # swap_meal_in_place so the change card applies a pick through the same
+    # door, and AFTER the gates above on purpose: the allergen matcher
+    # reads the name, and it must see the one the model actually wrote.
+    pick["meal_name"] = _plan_quality.honest_recipe_title(
+        pick["meal_name"], pick.get("ingredients") or [], pick.get("instructions") or [],
+    )
     _save_recipe_if_new(pick, serves)
     sides = _plates.get_sides(entry["entry_id"]) if carry_sides else []
     result = _weekly_plan.swap_meal_in_plan(

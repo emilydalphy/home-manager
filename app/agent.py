@@ -3913,6 +3913,37 @@ def _household_member_taste() -> dict[str, dict]:
     return taste
 
 
+def _honest_meal_names(items: list[dict]) -> None:
+    """Take off any title clause the dish itself hasn't got, before a word
+    of it is written down.
+
+    Emily, 2026-09-14: "Seared Turkey and Zucchini Skillet with White
+    Beans", seven ingredients, seven steps, no beans in either. The title
+    and the ingredients come out of the SAME call — this one, a few lines
+    above — so nothing had ever held one half of the model's answer against
+    the other. Deterministic and free: the name loses the part that isn't
+    true, and no second model call is made. See
+    plan_quality.honest_recipe_title for exactly how little it dares
+    change, and why.
+
+    It runs here rather than in _ensure_recipe_saved because the name is
+    also what plan_meal files the slot under: correcting it in one place
+    and not the other would leave the week's card and its recipe calling
+    the same dinner two different things. An item with no ingredient list
+    (a reused saved recipe, a takeaway night) is left alone — there is
+    nothing to check it against.
+    """
+    for item in items:
+        name = item.get("meal_name")
+        ingredients = item.get("ingredients") or []
+        if not name or not ingredients:
+            continue
+        honest = plan_quality.honest_recipe_title(name, ingredients, item.get("instructions") or [])
+        if honest != name:
+            logger.info("Generation named a dish %r with none in it; saving it as %r", name, honest)
+            item["meal_name"] = honest
+
+
 def _generate_weekly_plan(
     week_start_date: str,
     constraints_notes: str = "",
@@ -4164,6 +4195,7 @@ def _generate_weekly_plan(
             "Generating this week's plan didn't come back with any meals — the model call may "
             "have been cut off or hit an error. Nothing was saved; try generating the week again."
         )
+    _honest_meal_names(items)
 
     # The period is written down, not left implied — including for an
     # ordinary Monday week, where content_start_date == week_start_date and
