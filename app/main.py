@@ -4509,6 +4509,8 @@ def add_grocery_list_item(req: GroceryAddRequest):
     """Add an item to the grocery list directly from the Grocery List view (not via chat)."""
     try:
         result = tools.add_grocery_item(req.item, quantity=req.quantity, category=req.category, added_by=req.added_by)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.exception("Grocery list add failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")

@@ -12,6 +12,17 @@ from . import quantities as _quantities
 from . import weekly_plan as _weekly_plan
 
 
+# Sane upper bounds, not measured limits -- nothing in the schema or the
+# shell enforces a length today, so a stray tap (holding a key down) or a
+# mis-parsed scanned receipt line can otherwise leave an unbounded row on
+# the list. Chosen as assumptions (2026-09-15): 120 covers any real grocery
+# item name with room to spare; 40 covers any real quantity phrase
+# ("3 cans (14 oz each)") with room to spare. Emily's call to move either
+# number.
+MAX_ITEM_NAME_LENGTH = 120
+MAX_QUANTITY_LENGTH = 40
+
+
 # Single-word names where the plural is a DIFFERENT product, not more of
 # the same one. "Pepper" is the black pepper in the cupboard; "peppers"
 # are the bell peppers in the fridge. Merging those puts a pantry staple
@@ -684,8 +695,27 @@ def add_grocery_item(
     write lock is the "database is locked" trap. Given a connection this
     reads and writes on it and neither commits nor closes; left unset,
     every other call site behaves exactly as before.
+
+    `item` is trimmed and, once trimmed, must not be blank -- a stray tap
+    or a mis-parsed scanned receipt line shouldn't be able to leave a
+    blank row on the list -- and is capped at MAX_ITEM_NAME_LENGTH so one
+    can't run unbounded either. Both checks live here rather than in the
+    HTTP route so every caller gets them: the direct-add route, the chat
+    tools, and the scan-review path all come through this one function.
+    Raises ValueError on a blank name; the route layer turns that into a
+    400 (see main.py's `except ValueError`). `quantity` gets the same
+    trim and a shorter cap (MAX_QUANTITY_LENGTH) -- it has no "must not be
+    blank" rule, since an item with no quantity at all is normal.
     """
-    quantity = _quantities._normalize_grocery_quantity(quantity or "")
+    item = (item or "").strip()
+    if not item:
+        raise ValueError("I need a name for that.")
+    if len(item) > MAX_ITEM_NAME_LENGTH:
+        item = item[:MAX_ITEM_NAME_LENGTH].rstrip()
+    quantity = (quantity or "").strip()
+    if len(quantity) > MAX_QUANTITY_LENGTH:
+        quantity = quantity[:MAX_QUANTITY_LENGTH].rstrip()
+    quantity = _quantities._normalize_grocery_quantity(quantity)
     own_conn = conn is None
     if own_conn:
         conn = get_conn()

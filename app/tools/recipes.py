@@ -2098,6 +2098,15 @@ class WeekGroceryBuffer:
 
     def flush(self) -> None:
         for line in self._lines.values():
+            if not (line["item"] or "").strip():
+                # Defensive: _add_recipe_ingredients_for_entries already
+                # skips a blank ingredient name before it ever reaches
+                # buffer.add(), so this shouldn't fire in practice -- but
+                # add_grocery_item now raises ValueError on a blank name
+                # (Loop Board bug fix, 2026-09-15), and a 500 mid-approval
+                # is worse than one skipped line, so guard here too.
+                logger.debug("Skipping a blank grocery item line: %r", line)
+                continue
             entry_ids = list(line["shares"])
             shares = [line["shares"][e] for e in entry_ids]
             rounded, unit = _week_bought_amount(sum(shares), line["unit"])
@@ -2370,6 +2379,17 @@ def _add_recipe_ingredients_for_entries(
     week_scale = sum(scale_for_entry[e] for e in contributing_ids)
 
     for ing in recipe_ingredients:
+        # A recipe (AI-drafted, or hand-typed and mis-parsed) can carry a
+        # line with a blank item name. add_grocery_item now trims and
+        # rejects a blank name outright (Loop Board bug fix, 2026-09-15)
+        # so it can't leave a ghost row on the list -- but this function
+        # runs inside plan approval, and a raised ValueError there would
+        # 500 the whole approval over one bad ingredient line, which is
+        # worse than the ghost row it replaces. Skip the line instead;
+        # every other ingredient in the recipe still lands normally.
+        if not (ing.get("item") or "").strip():
+            logger.debug("Skipping a blank ingredient name for entries %s: %r", entry_ids, ing)
+            continue
         # The recipe's own wording decides the path, before any headcount
         # scaling — scaling can only ever turn a package into the same
         # package (you cannot buy two thirds of a jar), so asking the
