@@ -3165,17 +3165,20 @@ def _addition_context() -> dict:
 
 
 @app.get("/api/week/{week_start}/additions")
-def week_additions(week_start: str, entry_id: int):
+def week_additions(week_start: str, entry_id: int, role: str | None = None):
     """
     The meal screen's "Add something" sheet: the short list of things
     that make sense beside THIS dish (plates.suggest_additions — a
     starch, a green, a sauce; nothing the dish already has), for the
-    picker to draw. A read, no model call.
+    picker to draw. `role` is the chip it was opened from ("carb",
+    "vegetable"), so that part's kind leads the list. A read, no model
+    call.
     """
     plan_id = _plan_id_for_week(week_start)
     try:
         return tools.suggest_additions(
             entry_id, eating_style=_addition_context().get("eating_style"), weekly_plan_id=plan_id,
+            role=role,
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

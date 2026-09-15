@@ -92,8 +92,18 @@ def test_a_side_covers_its_part_by_name_and_keto_asks_for_no_carb():
     by_role = {p["role"]: p for p in parts}
     assert by_role["carb"] == {"role": "carb", "word": "Carb", "name": "Roasted potatoes", "source": "side", "missing": False}
     assert by_role["vegetable"]["missing"] is True
+    # A keto household's rule has no carb — but the card still OFFERS one
+    # (Emily, 2026-09-15: "for the kebab meal I would like an option to
+    # add a carb"). Dashed, theirs to take; the planner never fills it.
     keto = pp.parts_of_plate("dinner", ["protein", "vegetable"], "salmon", [], "keto, low carb")
-    assert [p["role"] for p in keto] == ["protein", "vegetable"]
+    assert [(p["role"], p["missing"]) for p in keto] == [("protein", False), ("vegetable", False), ("carb", True)]
+    # Once they take it, it reads like anyone else's carb.
+    keto = pp.parts_of_plate("dinner", ["protein", "vegetable"], "salmon",
+                             [{"name": "Roasted potatoes", "covers": ["carb"]}], "keto, low carb")
+    assert keto[-1] == {"role": "carb", "word": "Carb", "name": "Roasted potatoes", "source": "side", "missing": False}
+    # And a keto dish that says nothing about what it covers is still
+    # unknown, not short: no dashed chip there either.
+    assert [p["role"] for p in pp.parts_of_plate("dinner", [], "steak", [], "keto")] == ["protein"]
     # Breakfast is held to the lighter rule: protein only.
     assert [p["role"] for p in pp.parts_of_plate("breakfast", [], "", [], "")] == ["protein"]
 
