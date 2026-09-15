@@ -244,3 +244,64 @@ def test_the_floor_does_not_judge_what_it_cannot_judge(entry):
 def test_all_four_are_registered_in_check_week():
     week = [BLIND, OVEN_REMEMBERED_LATE, TOO_MANY_STEPS_TOO_FEW_MINUTES]
     assert _round2(week) == ROUND_2_RULES
+
+
+# --------------------------------------------------------------------------
+# The verifier's findings (independent pass against d1f951e)
+# --------------------------------------------------------------------------
+
+def test_a_cue_on_the_prep_does_not_excuse_a_cooking_step_with_none():
+    """"Marinate until you have time" is an "until", but not one about the
+    cooking. The first draft searched the whole method for any cue and let
+    this through; the cue has to sit on a step that applies heat."""
+    week = [_dinner("2026-09-14", "Marinated Chicken", [
+        "Marinate the chicken until you have time to cook it, up to two days ahead.",
+        "Heat oil in a pan and add the marinated chicken.",
+        "Cook the chicken, stirring occasionally, then add the sauce and combine.",
+        "Serve.",
+    ])]
+    assert "steps_have_no_cue" in _round2(week)
+
+
+def test_a_grill_with_no_heat_named_is_caught():
+    """The first draft only asked when an oven or a pan was in the method,
+    so a grilled dinner was never checked at all."""
+    week = [_dinner("2026-09-14", "Grilled Chicken", [
+        "Pat the chicken dry and season with salt.",
+        "Grill the chicken until cooked through and the juices run clear.",
+        "Rest 5 minutes, then slice and serve.",
+    ])]
+    assert "no_heat_named" in _round2(week)
+
+
+def test_broil_names_its_own_heat():
+    """The verifier offered a broiled salmon as a second case. A home
+    broiler has one setting, so "broil" says how hot the way "simmer" does —
+    this one stays clean on purpose."""
+    week = [_dinner("2026-09-14", "Broiled Salmon", [
+        "Pat the salmon dry and season with salt and pepper.",
+        "Broil until the top is golden and it flakes easily, about 8 minutes.",
+        "Serve with lemon.",
+    ])]
+    assert "no_heat_named" not in _round2(week)
+
+
+def test_until_smoking_counts_as_naming_the_heat():
+    """A wok heated until it smokes has been told exactly how hot to be."""
+    week = [_dinner("2026-09-14", "Beef Stir-Fry", [
+        "Heat the wok until smoking.",
+        "Stir-fry the beef in two batches until browned, 2 minutes each.",
+        "Add garlic and ginger, then the sauce; toss 1 minute and serve.",
+    ])]
+    assert "no_heat_named" not in _round2(week)
+
+
+def test_rice_from_the_packet_plus_a_dressing_is_not_asked_how_hot():
+    """The heat came from the packet. A bowl built on that has no level of
+    its own to name, and the check prefers silence there."""
+    week = [_dinner("2026-09-14", "Rice Bowl", [
+        "Cook the rice according to the packet.",
+        "Whisk the dressing: soy, lime, sesame oil and honey.",
+        "Toss the rice with the edamame, cucumber and dressing; top with avocado.",
+    ])]
+    assert "no_heat_named" not in _round2(week)

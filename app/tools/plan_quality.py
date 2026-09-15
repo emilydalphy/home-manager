@@ -928,6 +928,13 @@ _DONENESS_CUE = re.compile(
     re.IGNORECASE,
 )
 
+# An "until" that is about the cook's schedule, not the food: "until you
+# have time", "until ready to serve", "until needed". Not a doneness cue.
+_NOT_A_CUE = re.compile(
+    r"\buntil\s+(?:you|we|ready|needed|serving|required|it'?s time|the day|the next day)\b",
+    re.IGNORECASE,
+)
+
 # A heat level or a temperature. "hot pan" counts — it is the instruction
 # that matters ("heat the pan before the food"), not the vocabulary.
 _HEAT_NAMED = re.compile(
@@ -935,6 +942,8 @@ _HEAT_NAMED = re.compile(
     r"|\bover\s+(?:low|medium|med|high|medium-high|medium-low)\b"
     r"|\b(?:on|to)\s+(?:low|medium|high)\b"
     r"|\bhot\s+(?:pan|skillet|oil|oven|wok|griddle|grill)\b"
+    r"|\b(?:until|till)\s+(?:it(?:'s| is)\s+|just\s+|lightly\s+)?smoking\b"
+    r"|\b(?:smoking|ripping|screaming|blazing|very)\s+hot\b"
     r"|\b(?:simmer|simmering|boil|boiling|broil|broiling)\b"
     r"|\d+\s*°|\d+\s*(?:°?\s*[fc]\b|degrees)",
     re.IGNORECASE,
@@ -987,15 +996,23 @@ def _steps_have_no_cue(entries: list[dict], context: dict) -> list[Violation]:
     one", which means the household is cooking blind. "Cook the chicken.
     Make the sauce. Serve." has no "until", no minutes, no temperature.
     Silent on a plate that never meets heat: there is nothing to be done.
+
+    The cue has to sit on a step that applies heat. The verifier found the
+    first draft passed a method whose only "until" was "marinate until you
+    have time to cook it" — a cue on the prep, none on the cooking.
     """
     violations = []
     for entry in entries:
         if not _cooked_dinner(entry):
             continue
-        if not (_method_words(entry) & _APPLIES_HEAT_WORDS):
+        steps = entry.get("instructions") or []
+        heat_steps = [
+            step for step in steps
+            if set(re.findall(r"[a-zé]+", step.lower())) & _APPLIES_HEAT_WORDS
+        ]
+        if not heat_steps:
             continue
-        method = " ".join(entry.get("instructions") or [])
-        if _DONENESS_CUE.search(method):
+        if any(_DONENESS_CUE.search(_NOT_A_CUE.sub(" ", step)) for step in heat_steps):
             continue
         violations.append(Violation(
             rule="steps_have_no_cue", severity="info",
@@ -1008,17 +1025,33 @@ def _steps_have_no_cue(entries: list[dict], context: dict) -> list[Violation]:
     return violations
 
 
-def _no_heat_named(entries: list[dict], context: dict) -> list[Violation]:
-    """A cooked dinner whose method uses an oven or a pan but never says how hot.
+# Where a heat level is genuinely the cook's to choose: an oven, a pan, a
+# grill, and the verbs that need one. Deliberately NOT "cook", "pot" or
+# "heat" — "cook the rice according to the packet" gets its heat from the
+# packet, and a bowl built on that plus a dressing has no level to name.
+# Not "broil" either: a home broiler has one setting, so "broil" names the
+# heat the way "simmer" does. Prefer silence in both cases.
+_NEEDS_A_HEAT_LEVEL = _DRY_HEAT_WORDS | {
+    "grill", "grilling", "roast", "roasting", "sear", "searing", "fry",
+    "frying", "saute", "sauté", "sautee", "sweat", "braise", "wok",
+    "stovetop", "stove", "burner",
+}
 
-    Same dry-heat gate as method_is_assembly: a dressed salad has no heat to
-    name, and telling it so would be false.
+
+def _no_heat_named(entries: list[dict], context: dict) -> list[Violation]:
+    """A cooked dinner that grills, roasts, sears, bakes or fries something
+    and never says how hot.
+
+    Gated like method_is_assembly: a dressed salad has no heat to name, and
+    telling it so would be false. The gate is wider than that check's,
+    though — the verifier found "grill until the juices run clear" slipping
+    past a pan-or-oven-only gate.
     """
     violations = []
     for entry in entries:
         if not _cooked_dinner(entry):
             continue
-        if not (_method_words(entry) & _DRY_HEAT_WORDS):
+        if not (_method_words(entry) & _NEEDS_A_HEAT_LEVEL):
             continue
         method = " ".join(entry.get("instructions") or [])
         if _HEAT_NAMED.search(method):
