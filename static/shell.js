@@ -20017,6 +20017,12 @@
   var askSendBtn = document.getElementById('ask-send-btn');
   var askSessionId = 'default'; // same shared backend session static/index.html always used
   var askBuilt = false;
+  // The text of the most recently added assistant bubble, tracked so a
+  // second ensureAskSheetBuilt call (the sheet was already built by an
+  // earlier opener this page load) can tell whether its own greeting was
+  // already just said, rather than stacking a duplicate — see
+  // ensureAskSheetBuilt.
+  var lastAssistantAskText = null;
   var askSending = false;
   var askConversationStarted = false;
   // ---------- What this conversation is about ----------
@@ -20595,14 +20601,29 @@
   // (Cook's "Ask about our recipes" row, say, which just wants to know
   // what's saved, not to rework anything). Callers that don't fit the
   // default pass their own opener through openAskSheet's third argument;
-  // everyone else gets the original line. This only matters for whichever
-  // open happens first in a page load — askBuilt below means the greeting
-  // is written once per session, same as the thread it starts (the sheet
-  // is one shared surface across tabs, not reset per tab).
+  // everyone else gets the original line. The sheet is one shared thread
+  // across tabs for the rest of the page load, not reset per tab — so
+  // this greeting isn't only a first-build concern: if Plan's chat opened
+  // the thread earlier in the session, tapping Cook's row still needs its
+  // own line to show (ensureAskSheetBuilt below appends it to the
+  // existing thread rather than skipping it just because the sheet was
+  // already built).
   var DEFAULT_ASK_GREETING = 'Tell me what you’d like different and I’ll rework it.';
 
   function ensureAskSheetBuilt(greeting) {
-    if (askBuilt) return;
+    if (askBuilt) {
+      // The thread is shared across every opener for the rest of the page
+      // load (askBuilt only gates the very first build) — so an opener
+      // whose own greeting doesn't fit whatever already opened the thread
+      // (Plan's chat, say, before Cook's "Ask about our recipes" gets a
+      // tap) still needs to say its own thing, once, rather than silently
+      // leaving Plan's line standing under an unrelated question. Checking
+      // only the LAST assistant message — not the whole thread — is what
+      // keeps a second tap of the same row from stacking the same line
+      // again.
+      if (greeting && lastAssistantAskText !== greeting) addAskMessage('assistant', greeting);
+      return;
+    }
     askBuilt = true;
     loadQuickActionChips();
     // No exclamation mark, and an offer rather than an instruction — this
@@ -20901,6 +20922,10 @@
   }
 
   function addAskMessage(role, text, actions) {
+    // See lastAssistantAskText's own comment — every assistant bubble
+    // updates it, not just greetings, so it always reflects the thread's
+    // actual last word.
+    if (role === 'assistant') lastAssistantAskText = text;
     // Returns one element per surface that received it (0-2), so the
     // caller (sendAskMessage's loading bubble) can remove/update all of
     // them together — see the multi-target comment above.
@@ -21191,9 +21216,10 @@
   // `context` is the subject the sheet is being opened about (see
   // askContext above); left out, whatever subject the open sheet already
   // had stays — a re-open after a "View" hop is not a change of topic.
-  // `greeting` only matters the first time the sheet is ever built this
-  // page load (see ensureAskSheetBuilt) — an opener whose default "rework
-  // it" line wouldn't fit passes its own.
+  // `greeting` is an opener whose default "rework it" line wouldn't fit
+  // (see ensureAskSheetBuilt) — passed every open, not just the sheet's
+  // first build, since the thread can already exist from an earlier
+  // opener by the time this one runs.
   function openAskSheet(prefill, context, greeting) {
     ensureAskSheetBuilt(greeting);
     closeWeekSheet();
