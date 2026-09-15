@@ -18,6 +18,7 @@ import time
 from anthropic import Anthropic, APIConnectionError, APIStatusError, APITimeoutError
 from . import calendar_feed, tools
 from .tools import plan_quality
+from .tools import voice as _voice
 
 logger = logging.getLogger("home_manager")
 
@@ -646,6 +647,20 @@ updated" -> "I've put 22 items on your list — six were already in your kitchen
 those off". Instead of "Dismissed" -> "Of course. It'll be waiting under Meals — I won't ask \
 again this week". Instead of "Tell me anything" -> "The more you tell me, the less you'll \
 swap". Instead of "Preferences saved" -> "Noted — I'll start from that next week too".
+
+REPLY SHAPE (Emily, 2026-09-15 — chat sounds like the welcome screens, not a chattier app): \
+what I did, in one line -> one question at most, only if the answer changes what happens next \
+-> stop. Two or three short sentences is a whole reply. Never list what you didn't do or \
+couldn't find; never a menu of options in prose. When you can't do a thing, say so in one plain \
+line plus the single most useful next thing, and stop. Clear beats warm: the plain question, \
+not the nice one. "Noted" is never a sentence on its own. Words the household never sees \
+anywhere else in the app don't appear in a reply — say it the way the screens do: \
+"inventory" -> "in the fridge" / "in the freezer" / "in the pantry" / "you've got" (the \
+tracking is background; never "your inventory"). "plan entry" / "entry" / "on file" -> "on \
+Tuesday" / "on the week" / "nothing down for last night". "reconcile" -> just say what you \
+did. "slot it in" -> "put it on Thursday". "moved" only when it moved; "put" / "added" when \
+it's new. The reference reply: "I've put Garlic Butter Shrimp with rice on tonight — quick, \
+and uses up the shrimp before it turns. Want a quick veggie side with it, or is that plenty?"
 
 READING WHAT THEY MEANT — five behaviours you are held to on every turn (Emily, 2026-09-13: \
 "we need to incorporate the smart throughout this app"):
@@ -2270,7 +2285,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "update_inventory",
-        "description": "Update pantry/fridge inventory from a chat mention (buying, using, running out of something). Call this proactively any time the user mentions inventory-related info, the same way preferences get captured proactively — the Inventory screen can add items by hand too, but chat is the only thing that catches what gets mentioned in passing.",
+        "description": "Update pantry/fridge inventory from a chat mention (buying, using, running out of something). Call this proactively any time the user mentions inventory-related info, the same way preferences get captured proactively — the Inventory screen can add items by hand too, but chat is the only thing that catches what gets mentioned in passing. 'Inventory' is this tool's name, not the household's word: in the reply it is 'in the fridge' / 'in the freezer' / 'in the pantry' / 'you've got', never 'your inventory'. An 'add' is new — say 'put' or 'added', not 'moved'.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -6920,6 +6935,25 @@ def _turn_wrote_anything(new_entries: list[dict]) -> bool:
     return False
 
 
+def _note_voice_drift(text: str) -> None:
+    """
+    Log what a reply broke of the chat voice rules (SYSTEM_PROMPT's REPLY
+    SHAPE block; the check is tools/voice.py). Never rewrites: the reply
+    goes out as written, and the flags — never the words — go to the log
+    and to error_events, so the morning report can say the voice is
+    drifting before Emily reads it on her phone. Best-effort, like every
+    other measure around a turn: a bug here must not cost a reply.
+    """
+    try:
+        report = _voice.lint_reply(text)
+        if report.ok:
+            return
+        logger.warning("Chat reply drifted from the voice rules: %s", report.summary())
+        tools.record_error("voice", where="chat_reply", detail=report.summary())
+    except Exception:
+        logger.exception("Checking a reply's voice failed")
+
+
 def verify_change_claim(text: str, new_entries: list[dict]) -> str:
     """
     `text` as written, unless it claims a change this turn never made — in
@@ -7184,6 +7218,7 @@ def run_agent_turn(
             # changed nothing, is rewritten rather than sent — see
             # verify_change_claim.
             text = verify_change_claim(text, conversation[turn_start:])
+            _note_voice_drift(text)
             _log_turn_timing()
             return text, conversation
 

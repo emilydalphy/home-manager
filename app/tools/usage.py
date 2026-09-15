@@ -677,6 +677,12 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
     Returns counts by kind plus the most recent rows, newest first, so a
     report can say "11 tool failures" without printing eleven lines.
 
+    Kind 'voice' — a chat reply that drifted from the voice rules (see
+    agent._note_voice_drift) — is set aside under `voice_drift` and kept
+    out of `total`, `by_kind` and `recent`: a reply that said "inventory"
+    is worth a line in the morning report, but it is not breakage, and
+    it must not turn the report's exit code into "something broke".
+
     The counts are SUM(occurrences), not COUNT(*) -- eleven of one failure
     is eleven failures however many rows record_error folded them into, and
     a count that shrank when deduping landed would have read as the app
@@ -693,7 +699,16 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
             for r in conn.execute(
                 "SELECT kind, SUM(occurrences) AS n FROM error_events "
                 f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
-                "GROUP BY kind ORDER BY n DESC",
+                "AND kind != 'voice' GROUP BY kind ORDER BY n DESC",
+                (hid,),
+            ).fetchall()
+        }
+        voice_flags = {
+            r["detail"]: r["n"]
+            for r in conn.execute(
+                "SELECT detail, SUM(occurrences) AS n FROM error_events "
+                f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
+                "AND kind = 'voice' GROUP BY detail ORDER BY n DESC",
                 (hid,),
             ).fetchall()
         }
@@ -703,6 +718,7 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
                 "SELECT kind, where_ AS location, detail, error_type, source, stack_shape, "
                 "occurrences, last_seen_at, created_at FROM error_events "
                 f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
+                "AND kind != 'voice' "
                 # Newest first means most recently SEEN, not most recently
                 # filed: a row deduping a failure that is still happening is
                 # the freshest news in the table, whatever its id. NULLIF for
@@ -717,6 +733,7 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
             "total": sum(by_kind.values()),
             "by_kind": by_kind,
             "recent": recent,
+            "voice_drift": {"total": sum(voice_flags.values()), "by_flags": voice_flags},
         }
     finally:
         conn.close()

@@ -567,6 +567,16 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
         else:
             print("  Nothing broke.")
 
+        # Chat replies that drifted from the voice rules (builder words, two
+        # questions, too long — agent._note_voice_drift). Its own line, never
+        # under BROKEN and never the exit code: a reply that said
+        # "inventory" is drift to read about, not an outage. .get because a
+        # deployment older than this work answers without the key.
+        drift = errors.get("voice_drift") or {}
+        if drift.get("total"):
+            flags = ", ".join(f"{f} x{n}" for f, n in drift["by_flags"].items())
+            print(f"  Off-voice — {drift['total']} chat repl{'y' if drift['total'] == 1 else 'ies'} in the last {days}d: {flags}")
+
         if usage["looks_inactive"]:
             print(f"  QUIET — no chat, no meals cooked, no plans in {usage['days']}d.")
         else:
