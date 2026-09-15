@@ -2176,9 +2176,9 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   color: var(--apricot-label);
 }
 .ask-remembered-fix:hover { color: var(--apricot-label-hover); }
-/* The word on a week row for the eight seconds after a card is saved
-   (weekRowLineHtml); the tile itself is shared with Kept above. */
-.wk-line .wk-changed { margin-top: 0; margin-left: 4px; }
+/* The word on a slot card's eyebrow for the eight seconds after a card is
+   saved (daySlotCardHtml); the tile itself is shared with Kept above. Its
+   placement lives with the Plan root's styles (.wk-slot-eyebrow .wk-changed). */
 
 .ask-chips { display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
 .ask-chip {
@@ -7921,62 +7921,84 @@ span.cook-week-name { cursor: default; }
 .wk-state.is-set { background: var(--celadon); color: var(--on-accent-ink); }
 .wk-state.is-draft { background: var(--urgent-tint); color: var(--urgent-label); }
 
-/* ---------- WEEK: one card, seven rows ---------- */
-.wk-week-card { margin: 0 20px; padding: 4px 0; overflow: hidden; }
-.wk-day-row {
-  width: 100%;
-  box-sizing: border-box;
+/* ---------- WEEK: the strip, then the day ----------
+   Emily, 2026-09-14 ("Plan root: the week as a strip", canvas B1 + S4):
+   the seven-row card is gone. One tile per day of the period, side by
+   side in the gutter — the Review tiles' anatomy (--surface, --hairline,
+   --radius-tile) at week-root density, 6px apart, sharing the width so
+   any period from two days to seven fits without scrolling (eight or
+   more scroll sideways, .is-long). Under the strip the selected day's
+   own slot cards (daySlotCardHtml, the Day step's), then the snacks
+   two-up. Today is --sand with a TODAY eyebrow (§2b S6: the tint says
+   why); the selected tile carries the --ink-strong rim the segmented
+   control uses for "chosen"; past days sit dimmed and stay tappable.
+   Contrast, measured in Chromium at 390px, both schemes (rule 8):
+     .wk-tile-dow                     --ink-muted on --surface       4.58 light /  7.36 dark
+     .wk-tile.is-today .wk-tile-dow   --apricot-label on --sand      4.46 light /  7.70 dark
+       (the same pair the row's TODAY used since 2026-09-11; 0.04 short
+       of AA for 10px text in light — flagged on the Loop Board card,
+       --ink-strong on --sand measures 11.43 if Emily wants it cleared)
+     .wk-tile-num                     --ink on --surface            13.52 light / 12.49 dark
+     .wk-tile.is-today .wk-tile-num   --ink-strong on --sand        11.43 light / 11.28 dark
+     .wk-snacks-head                  --ink-strong on --ground      12.59 light / 14.40 dark
+     .wk-snack-name                   --ink on --surface            13.52 light / 12.49 dark
+     .wk-snack-name.is-quiet          --ink-secondary on --surface   4.70 light /  7.36 dark */
+.wk-strip {
   display: flex;
-  align-items: stretch;
-  gap: 12px;
-  padding: 11px 14px;
-  border: 0;
-  border-radius: var(--radius-control);
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-  font: inherit;
+  gap: 6px;
+  margin: 0 20px;
 }
-.wk-day-row + .wk-day-row { border-top: 1.5px solid var(--hairline); border-radius: 0; }
-.wk-day-row:hover { background: var(--sand); }
-/* Today, tinted — the one row that says "you are here". Its own hairline
-   goes with it so the tint reads as one block rather than a striped row. */
-/* Sand, not celadon, since 2026-09-11 — celadon says "settled", and today
-   is not settled, it is today; and the row's day column says TODAY so the
-   tint never has to be guessed at (§2b S6). */
-.wk-day-row.is-today { background: var(--sand); }
-.wk-day-row.is-today + .wk-day-row { border-top-color: var(--hairline-strong); }
-.wk-day-row.is-today:hover { background: var(--sand); }
-.wk-day-row.is-today .wk-day-dow { color: var(--apricot-label); }
-.wk-day-row.is-past { opacity: .62; }
-.wk-day-col {
-  flex: 0 0 38px;
+.wk-strip.is-long {
+  overflow-x: auto;
+  margin: 0;
+  padding: 0 20px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.wk-strip.is-long::-webkit-scrollbar { display: none; }
+.wk-strip.is-long .wk-tile { flex: 0 0 46px; }
+.wk-tile {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 72px;
+  box-sizing: border-box;
+  padding: 10px 2px 9px;
+  border-radius: var(--radius-tile);
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  gap: 1px;
+  gap: 4px;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
 }
-.wk-day-dow {
+.wk-tile:hover { background: var(--surface-raised); }
+.wk-tile.is-today { background: var(--sand); border-color: var(--hairline-deep); }
+.wk-tile.is-today:hover { background: var(--sand); }
+.wk-tile.is-selected { border-color: var(--ink-strong); }
+.wk-tile.is-past { opacity: .62; }
+.wk-tile-dow {
   font-family: var(--font-body);
   font-size: 10px;
   font-weight: 800;
-  letter-spacing: .13em;
+  letter-spacing: .1em;
+  line-height: 1;
   color: var(--ink-muted);
 }
-.wk-day-num {
+.wk-tile.is-today .wk-tile-dow { color: var(--apricot-label); }
+.wk-tile-num {
   font-family: var(--font-display);
   font-size: 16px;
   font-weight: 700;
   letter-spacing: -.02em;
+  line-height: 1;
   color: var(--ink);
 }
-.wk-day-row.is-today .wk-day-num { color: var(--ink-strong); }
-.wk-day-meals { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-/* The quiet label on a holiday's row (S6: the word for the day). Same
-   neutral pill as everywhere else, sized to sit above the three lines. */
-.wk-holiday { align-self: flex-start; margin-bottom: 2px; font-size: 11px; padding: 2px 8px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
-.wk-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.wk-tile.is-today .wk-tile-num { font-size: 19px; font-weight: 800; color: var(--ink-strong); }
+.wk-tile-dots { display: flex; gap: 3px; margin-top: 2px; }
 /* The whole legend, in three dots: apricot cooks, celadon is already made,
    grey is nothing to do, and an outline is a question still open. */
 .wk-dot {
@@ -7990,21 +8012,81 @@ span.cook-week-name { cursor: default; }
 .wk-dot.is-cook { background: var(--apricot-deep); }
 .wk-dot.is-ahead { background: var(--celadon); }
 .wk-dot.is-open { background: transparent; border: 1.5px solid var(--apricot-deep); }
-/* One line, always. Emily's call: seven days truncated beats five in full —
-   this card answers "is the week settled", and the Day step answers "what
-   exactly is Thursday". */
-.wk-line-name {
+
+/* The day under the strip: the Day step's cards (.wk-slot-card), 12px
+   apart like .wk-slots, without its FAB clearance — the foot and the
+   dock follow this on the root. */
+.wk-root-day {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px 20px 0;
+}
+/* The holiday's word (§2b S6) and who is home, above the cards, only on
+   a day that has either — the Day step's subtitle said the same things. */
+.wk-day-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 0 2px; }
+.wk-holiday { font-size: 11px; padding: 2px 8px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; }
+.wk-day-att {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+}
+.wk-slot-eyebrow .wk-changed { margin-top: 0; margin-left: 6px; vertical-align: middle; }
+
+/* Snacks two-up (Emily, 2026-09-14, "S4"): the eyebrow on the ground —
+   --ink-strong, since --ink-muted is 4.33 there (the Review tiles' head
+   made the same call) — then a tile per snack, side by side. */
+.wk-snacks { display: flex; flex-direction: column; gap: 8px; }
+.wk-snacks-head {
+  padding: 2px 2px 0;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-strong);
+}
+.wk-snack-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.wk-snack-tile {
+  box-sizing: border-box;
+  min-height: 74px;
+  padding: 12px;
+  border-radius: var(--radius-tile);
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+}
+.wk-snack-tile.is-flat { cursor: default; }
+.wk-snack-tile:not(.is-flat):hover { background: var(--surface-raised); }
+.wk-snack-name {
   flex: 1 1 auto;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-body);
-  font-size: 13.5px;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1.2;
   color: var(--ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
-.wk-line.is-quiet .wk-line-name { color: var(--ink-secondary); font-weight: 500; }
+.wk-snack-name.is-quiet { color: var(--ink-secondary); font-weight: 600; }
+.wk-snack-chev { flex: 0 0 auto; display: inline-flex; color: var(--ink-inactive); }
+.wk-snack-chev svg { width: 18px; height: 18px; }
 
 /* ---------- under the card: the notes, then the decision ---------- */
 /* A soft conflict (somebody at the table isn't keen) and the once-ever

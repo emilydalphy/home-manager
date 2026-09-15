@@ -189,8 +189,8 @@ def test_every_way_of_tapping_a_meal_lands_on_the_meal_step():
     assert "openRecipeFor" not in wiring
     change = SHELL_JS[SHELL_JS.index("[data-rv-change]"):][:1200]
     assert "goMealsStep('meal', {" in change and "back: 'week'" in change
-    card = SHELL_JS[SHELL_JS.index("[data-wk-meal]"):][:300]
-    assert "goMealsStep('meal', { slot: btn.getAttribute('data-wk-meal') });" in card
+    card = SHELL_JS[SHELL_JS.index("[data-wk-meal]"):][:700]
+    assert "goMealsStep('meal', { slot: btn.getAttribute('data-wk-meal'), back: weekState.step === 'week' ? 'week' : 'day' });" in card
     # The dead second handler (no markup ever emitted it) is gone.
     assert "data-rv-recipe-date" not in SHELL_JS
 

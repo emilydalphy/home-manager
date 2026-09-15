@@ -258,7 +258,7 @@ def test_the_routes_offer_and_change(signed_in, week, monkeypatch):
 # ---------- the shell (source) ----------
 
 def test_the_card_draws_the_plate_outside_its_body_button():
-    i = SHELL_JS.index("  function daySlotCardHtml(day, slot) {")
+    i = SHELL_JS.index("  function daySlotCardHtml(day, slot, opts) {")
     body = SHELL_JS[i:i + 3000]
     # The parts are buttons, so they follow the body button, never sit in it.
     assert "var plate = typeof plateRowHtml === 'function' ? plateRowHtml(day, slot, entry) : '';" in body

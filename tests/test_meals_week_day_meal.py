@@ -191,16 +191,39 @@ def _assert_not_in(needle: str, haystack: str, what: str) -> None:
     )
 
 
-def test_the_root_is_one_card_of_day_rows():
-    """Seven rows (or the plan period's days), three dot-prefixed lines
-    each, today's row tinted."""
+def test_the_root_is_a_strip_of_day_tiles_and_the_selected_day():
+    """Emily, 2026-09-14 ("Plan root: the week as a strip", canvas B1 + S4):
+    one tile per day of the period side by side, three dots each, today's
+    tile tinted sand and saying TODAY; the tapped day's own slot cards
+    under the strip, in place, and the snacks two-up after them. The
+    seven-row card this replaced is gone outright."""
     _assert_in("function weekStepHtml(", SHELL_JS, "the Week step", "shell.js")
-    _assert_in("function weekRowHtml(", SHELL_JS, "the day row", "shell.js")
-    _assert_in("function weekRowLineHtml(", SHELL_JS, "the per-slot line", "shell.js")
-    _assert_in("wk-week-card", SHELL_JS, "the week card", "shell.js")
-    _assert_in("data-wk-day=", SHELL_JS, "the row's day handle", "shell.js")
-    _assert_in(".wk-day-row.is-today", SHELL_CSS, "today's tinted row", "shell.css")
-    _assert_in("var(--celadon-tint)", SHELL_CSS, "the celadon tint on today's row", "shell.css")
+    _assert_in("function weekStripHtml(", SHELL_JS, "the strip", "shell.js")
+    _assert_in("function weekTileHtml(", SHELL_JS, "the day tile", "shell.js")
+    _assert_in("function weekDayHtml(", SHELL_JS, "the day under the strip", "shell.js")
+    _assert_in("function weekSnacksHtml(", SHELL_JS, "the snacks two-up", "shell.js")
+    _assert_in("data-wk-tile=", SHELL_JS, "the tile's day handle", "shell.js")
+    _assert_in("daySlotCardHtml(day, slot, { quiet: !PLAN_ROOT_SLOT_ACTIONS })", SHELL_JS,
+               "the Day step's cards, reused on the root", "shell.js")
+    _assert_in(".wk-tile.is-today { background: var(--sand);", SHELL_CSS, "today's tinted tile", "shell.css")
+    _assert_in(".wk-tile.is-selected { border-color: var(--ink-strong); }", SHELL_CSS, "the selected tile's rim", "shell.css")
+    _assert_in("grid-template-columns: repeat(2, minmax(0, 1fr));", SHELL_CSS, "the two-up snack grid", "shell.css")
+    for gone in ("weekRowHtml", "weekRowLineHtml", "wk-week-card", "wk-day-row"):
+        _assert_not_in(gone, SHELL_JS, gone)
+        _assert_not_in(gone, SHELL_CSS, gone)
+
+
+def test_a_tile_selects_its_day_in_place_without_a_new_screen():
+    """The tile is not a step: the root re-renders with that day's cards,
+    the history entry is rewritten (not pushed) so back still leaves Plan,
+    and the Meal step opened from a root card says "‹ This week"."""
+    wiring = SHELL_JS[SHELL_JS.index("[data-wk-tile]"):][:700]
+    assert "weekState.selectedIndex = idx;" in wiring
+    assert "replaceMealsStepHistory();" in wiring
+    assert "renderMealsStep(panel);" in wiring
+    assert "pushMealsStepHistory" not in wiring and "goMealsStep" not in wiring
+    meal = SHELL_JS[SHELL_JS.index("[data-wk-meal]"):][:700]
+    assert "back: weekState.step === 'week' ? 'week' : 'day'" in meal
 
 
 @pytest.mark.parametrize("dot", ["is-cook", "is-ahead", "is-open"])
@@ -215,8 +238,15 @@ def test_names_truncate_to_one_line():
     _assert_in("text-overflow: ellipsis", SHELL_CSS, "the one-line truncation", "shell.css")
 
 
-def test_an_open_slot_asks_to_be_picked():
-    _assert_in("'Pick a ' + slot", SHELL_JS, "the open-slot line", "shell.js")
+def test_an_open_slot_keeps_its_pick_on_the_root():
+    """The root's cards drop "Cook this" / Swap (they live on the Meal
+    step's dock) but an open or empty slot keeps its Pick — a decision
+    must have a home (§2b S7). The outline dot on the tile says the
+    question is still open."""
+    card = _extract("daySlotCardHtml", SHELL_JS)
+    assert "var quietActions = opts.quiet && entry && (entry.state === 'planned' || entry.state === 'planned_empty');" in card
+    assert "(quietActions ? '' : slotActionsHtml(day, slot, false))" in card
+    _assert_in("if (entry && entry.state === 'open') return 'is-open';", SHELL_JS, "the open-slot dot", "shell.js")
 
 
 @pytest.mark.parametrize("badge", ["SET", "DRAFT", "NOTHING YET"])
@@ -471,19 +501,32 @@ _ESCAPE_STUB = (
 _DAYNAME_STUB = "function dayName(d, opts){ return 'Thursday'; }\n"
 
 
-def _week_row_html(day: dict) -> str:
-    """weekRowHtml(day, 0), the day row on the Week root — three meal lines
-    then, per the 2026-09-08 design, one line per snack."""
+def _week_tile_html(day: dict) -> str:
+    """weekTileHtml(day, 0, 0), one tile of the strip on the Week root — the
+    day, the date and the three-dot legend for breakfast, lunch, dinner."""
     harness = (
         _ESCAPE_STUB + _DAYNAME_STUB
         + "var WEEK_SLOTS = ['breakfast', 'lunch', 'dinner'];\n"
+        + _extract("slotDotClass", SHELL_JS) + "\n"
+        + _extract("weekTileHtml", SHELL_JS) + "\n"
+        + f"console.log(JSON.stringify(weekTileHtml({json.dumps(day)}, 0, 0)));\n"
+    )
+    return _run_node(harness)
+
+
+def _week_snacks_html(day: dict) -> str:
+    """weekSnacksHtml(day): the SNACKS eyebrow and one tile per snack, two
+    across (Emily's S4, 2026-09-14) — nothing at all on a day with none."""
+    harness = (
+        _ESCAPE_STUB + _DAYNAME_STUB
+        + "var GRO_ICONS = { chevRight: '<svg aria-hidden=\"true\"></svg>' };\n"
+        + _extract("isSnackSlot", SHELL_JS) + "\n"
+        + _extract("snackSlotKey", SHELL_JS) + "\n"
+        + _extract("daySlotEntry", SHELL_JS) + "\n"
         + _extract("mealDisplayName", SHELL_JS) + "\n"
-        + _extract("awayLineFor", SHELL_JS) + "\n"
-        + _extract("isRealCook", SHELL_JS) + "\n"
-        + _extract("weekRowLineHtml", SHELL_JS) + "\n"
-        + _extract("weekSnackLineHtml", SHELL_JS) + "\n"
-        + _extract("weekRowHtml", SHELL_JS) + "\n"
-        + f"console.log(JSON.stringify(weekRowHtml({json.dumps(day)}, 0)));\n"
+        + _extract("weekSnackTileHtml", SHELL_JS) + "\n"
+        + _extract("weekSnacksHtml", SHELL_JS) + "\n"
+        + f"console.log(JSON.stringify(weekSnacksHtml({json.dumps(day)})));\n"
     )
     return _run_node(harness)
 
@@ -506,24 +549,44 @@ _REAL_COOK_SNACK = {
 
 
 @_needs_node
-def test_a_day_with_two_snacks_renders_two_snack_lines_in_order():
-    html = _week_row_html(_plain_day([_GRAB_AND_GO_SNACK, _REAL_COOK_SNACK]))
-    names = re.findall(r'wk-line-name">([^<]*)<', html)
-    # Three meal lines (all "Nothing yet" on this bare day) then the two
-    # snacks, in the order the plan holds them.
-    assert names[3:] == ["Apple slices", "Baked Oatmeal Cups"]
-    dots = re.findall(r'wk-dot ([\w-]+)"', html)
-    # A grab-and-go snack gets the grey/none dot; only the real recipe earns
-    # the apricot cook dot — the one thing this design narrows beyond the
-    # existing meal-line legend.
-    assert dots[3:] == ["is-none", "is-cook"]
+def test_a_day_with_two_snacks_renders_two_snack_tiles_in_order():
+    html = _week_snacks_html(_plain_day([_GRAB_AND_GO_SNACK, _REAL_COOK_SNACK]))
+    names = re.findall(r'wk-snack-name">([^<]*)<', html)
+    # Two tiles, in the order the plan holds them, each a way into its own
+    # Meal step (data-wk-meal carries the snack's slot key).
+    assert names == ["Apple slices", "Baked Oatmeal Cups"]
+    assert re.findall(r'data-wk-meal="([^"]+)"', html) == ["snack", "snack2"]
+    assert html.startswith('<div class="wk-snacks"><span class="wk-snacks-head">SNACKS</span>')
 
 
 @_needs_node
-def test_a_day_with_zero_snacks_renders_no_snack_lines():
-    html = _week_row_html(_plain_day([]))
-    assert len(re.findall(r'wk-line-name">', html)) == 3
-    assert len(re.findall(r'wk-dot ', html)) == 3
+def test_a_day_with_zero_snacks_renders_no_snack_tiles():
+    assert _week_snacks_html(_plain_day([])) == ""
+
+
+@_needs_node
+def test_the_tile_draws_the_three_meal_dots_and_never_a_snack_dot():
+    """The strip's legend is breakfast · lunch · dinner (WEEK_SLOTS) — a
+    snack never earns a fourth dot, so a tile reads the same on a day with
+    three snacks as on a day with none."""
+    day = _plain_day([_REAL_COOK_SNACK])
+    day["dinner"] = {"state": "planned", "title": "Chili", "source": "plan"}
+    day["lunch"] = {"state": "planned", "title": "Chili", "source": "leftovers"}
+    day["breakfast"] = {"state": "open"}
+    html = _week_tile_html(day)
+    assert re.findall(r'wk-dot ([\w-]+)"', html) == ["is-open", "is-ahead", "is-cook"]
+    assert 'data-wk-tile="0"' in html and 'aria-pressed="true"' in html
+
+
+@_needs_node
+def test_the_today_tile_says_so():
+    """§2b S6: the tint carries its word — today's tile says TODAY where
+    every other tile says its weekday."""
+    day = _plain_day([])
+    day["isToday"] = True
+    html = _week_tile_html(day)
+    assert 'wk-tile-dow">TODAY<' in html and "is-today" in html
+    assert 'wk-tile-dow">THU<' in _week_tile_html(_plain_day([]))
 
 
 @_needs_node
