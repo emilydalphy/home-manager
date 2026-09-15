@@ -12,8 +12,23 @@ scan-review path all funnel through it -- plus a one-off cleanup
 (app/db.py's _delete_blank_grocery_items) for any blank rows a database
 already has, and the route (app/main.py's /api/grocery-list/add) turning
 the tool's ValueError into a plain 400.
+
+Follow-up (same day): add_grocery_item raising on a blank name is right
+for a person typing on the list, but three other callers feed it names
+they don't control -- an AI-drafted recipe's ingredient list
+(app/tools/recipes.py, two call sites: the per-recipe ingredient loop and
+WeekGroceryBuffer.flush()) and a household's own staples
+(app/tools/staples.py's sync_due_staples). A blank ingredient there used
+to become a ghost row (the original bug); now, unguarded, it would raise
+ValueError and 500 the whole plan approval or list read over one bad
+line -- worse than the ghost row. Those three sites now skip a blank/
+whitespace-only item (logged at debug) instead of calling
+add_grocery_item at all. test_recipe_with_one_blank_ingredient_still_
+adds_the_rest below covers the recipe-ingredient path end to end.
 """
 from __future__ import annotations
+
+import datetime
 
 import pytest
 
@@ -164,3 +179,40 @@ def test_migration_cleanup_is_idempotent():
     conn.close()
 
     assert _blank_row_count() == 0
+
+
+# ---------------------------------------------------------------------------
+# Callers that feed add_grocery_item names they don't control -- an
+# AI-drafted recipe's ingredients, a household's staples -- must not let a
+# single blank name turn into a raised ValueError and a 500 mid-approval /
+# mid-read. They skip that one line instead of calling add_grocery_item.
+# ---------------------------------------------------------------------------
+
+def _monday(offset_weeks: int = 0) -> str:
+    today = datetime.date.today()
+    monday = today - datetime.timedelta(days=today.weekday())
+    return (monday + datetime.timedelta(days=7 * offset_weeks)).isoformat()
+
+
+def test_recipe_with_one_blank_ingredient_still_adds_the_rest():
+    # An AI-drafted recipe with one ingredient whose name came back blank
+    # (or whitespace-only) -- approving the week must not raise, and the
+    # recipe's other, real ingredients still land on the list.
+    tools.add_recipe("Mystery Ingredient Stew", ingredients=[
+        {"item": "Chicken thighs", "qty": "2 lb", "category": "meat/seafood"},
+        {"item": "   ", "qty": "1 cup", "category": "pantry"},
+        {"item": "Onion", "qty": "2", "category": "produce"},
+    ])
+    plan_id = tools.create_weekly_plan(_monday())["weekly_plan_id"]
+    day = tools._week_dates(_monday())[0]
+    tools.plan_meal(day, "Mystery Ingredient Stew", slot="dinner", weekly_plan_id=plan_id)
+
+    # Must not raise -- this is the regression: add_grocery_item's own
+    # ValueError on a blank name used to propagate straight out of
+    # approval.
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+
+    names = [r["item"] for r in tools.list_grocery_list()]
+    assert "Chicken thighs" in names
+    assert "Onion" in names
+    assert not any(not n.strip() for n in names)

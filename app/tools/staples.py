@@ -66,6 +66,7 @@ safe for that format. "Today" comes from _today() so tests can pin it.
 from __future__ import annotations
 
 import json
+import logging
 import statistics
 from datetime import date, timedelta
 
@@ -74,6 +75,8 @@ from ._shared import household_id
 from . import grocery as _grocery
 from . import quantities as _quantities
 from . import spices as _spices
+
+logger = logging.getLogger("home_manager")
 
 # How often a household buys a thing before Pomona has seen it buy it.
 # Days. Deliberately coarse — the point of a default is only to make the
@@ -1040,6 +1043,16 @@ def sync_due_staples() -> dict:
         # A spice waits for a recipe to want it (the "Spices this week"
         # card pre-ticks it then) — never a line of its own. Module note.
         if section_for(s["item"], s["category"]) == SECTION_SPICES:
+            continue
+        # A staple's name shouldn't ever be blank -- it's typed in
+        # directly -- but add_grocery_item now trims and rejects a blank
+        # name outright (Loop Board bug fix, 2026-09-15), and sync_due_
+        # staples runs on every read of the grocery list, so a raised
+        # ValueError here would 500 the whole list view over one bad
+        # staple row. Skip it instead; every other due staple still goes
+        # on the list.
+        if not (s["item"] or "").strip():
+            logger.debug("Skipping a blank staple item name for staple_id %s", s["id"])
             continue
         added.append(_put_on_list(conn, s))
     conn.commit()
