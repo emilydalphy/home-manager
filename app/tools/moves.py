@@ -444,14 +444,24 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
     # the fridge move (see _prep_moves): the card would simply stop asking
     # for a shop that is now more urgent, not less.
     overdue = now > deadline
-
     is_today = soonest.date() == now.date()
+    # Once the deadline has gone by, "by 3:40" reads as a time still ahead
+    # of you when it's actually behind you — the same reason _prep_moves'
+    # fridge copy swaps to "still to do" rather than naming a clock that
+    # has already passed.
+    if overdue:
+        when = "still to do"
+    elif is_today:
+        when = f"by {_clock(deadline.time())}"
+    else:
+        when = "by tomorrow"
+
     count = len(needed)
     return [{
         "id": f"shop:{day.isoformat()}",
         "kind": "shop",
         "title": "Shop for tonight" if is_today else "Shop before tomorrow",
-        "detail": f"{count} item{'' if count == 1 else 's'} · by {_clock(deadline.time())}",
+        "detail": f"{count} item{'' if count == 1 else 's'} · {when}",
         "reason": "",
         "date": day.isoformat(),
         "slot": None,
@@ -480,7 +490,7 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
         "entry_id": None,
         "task_id": None,
         "duration_min": 0,
-        "time_label": ("by " + _clock(deadline.time())) if is_today else "by tomorrow",
+        "time_label": when,
         "chips": [],
     }]
 

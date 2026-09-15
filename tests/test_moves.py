@@ -278,6 +278,29 @@ def test_a_shop_move_stays_featured_and_overdue_once_the_cooks_start_time_has_pa
     assert shop["overdue"] is True
 
 
+def test_an_overdue_shop_move_stops_naming_a_time_thats_already_passed():
+    """
+    "By 3:40" is a promise about the future; once 3:40 has come and gone it
+    reads as though there's still time, which is the opposite of true. The
+    fridge move already solves this by swapping to "still to do" once its
+    own window has closed (test_an_undone_fridge_move_is_still_featured_...
+    _overdue_once_evening_has_come) — the shop move's copy follows the same
+    rule once it, too, is overdue.
+    """
+    _household()
+    _recipe("Sunday Roast", prep=20, cook=90)  # 110 minutes; starts at 3:40
+    plan_id = _plan()
+    tools.plan_meal(ISO_TODAY, "Sunday Roast", slot="dinner", weekly_plan_id=plan_id)
+    tools.add_grocery_item("Chicken Thighs", quantity="1 lb")
+    tools.set_dinner_window("5_6ish")  # dinner lands at 5:30
+
+    shop = _by_kind(tools.today_moves(now=_at(16)))["shop"]  # past 3:40, before 5:30
+
+    assert shop["overdue"] is True
+    assert shop["time_label"] == "still to do"
+    assert shop["detail"] == "1 item · still to do"
+
+
 def test_nothing_left_today_features_nothing_and_names_tomorrow():
     _household()
     _recipe("Chicken Skewers")
