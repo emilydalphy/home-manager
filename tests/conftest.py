@@ -58,7 +58,7 @@ _TABLES = [
     "shopping_trips", "stores", "meal_preferences", "pets", "members",
     "chat_turns", "api_calls", "error_events", "plan_quality_events", "feedback_reports",
     "calendar_feeds", "staple_events", "staples", "morning_text_sends",
-    "holiday_answers",
+    "holiday_answers", "held_things",
 ]
 
 

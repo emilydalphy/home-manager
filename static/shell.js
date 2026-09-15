@@ -872,6 +872,12 @@
           // day starts.
           '<div id="needs-you-band" class="today-area-needsyou"></div>' +
           '<div id="today-rest" class="today-area-rest"></div>' +
+          // What Pomona is holding for the household (loadHolding, 2026-09-15,
+          // "'Noted' must never note nothing"): the things said in chat that
+          // nothing could act on yet, in their words. Empty — and so
+          // display:none — when nothing is held. ASSUMED placement, pending
+          // Emily's call: one slot, so moving it is moving one line.
+          '<div id="today-holding" class="today-area-holding"></div>' +
           // The household's Chores switch (choresEnabled, off /api/whoami):
           // with it off this card is left out of the markup entirely — not
           // just hidden, so there's nothing for a stray selector to find
@@ -920,6 +926,7 @@
       loadNeedsYou(panel),
       loadTonightAsk(panel),
       loadTodayMoves(panel),
+      loadHolding(panel),
       // The Chores switch again: skip the call, not just the render — no
       // chores card means no reason to hit /api/chores/today.
       (choresEnabled() ? loadChores(panel) : Promise.resolve())
@@ -929,6 +936,122 @@
     // panel is built, so it is rendered from both ends, and renderCoachCard
     // is idempotent.
     renderCoachCard();
+  }
+
+  // ---------- Holding for you ----------
+  // Loop Board "'Noted' must never note nothing" (Emily, 2026-09-15; flow
+  // H1, "Pomona, hold this"). What the chat kept because it couldn't act
+  // on it yet (app/tools/held.py, GET /api/held): the person's own words,
+  // who said it, when. One card in the gutter, the chores card's quiet
+  // shape — an eyebrow and rows, no apricot, no dock — shown only while
+  // something is held. "Done with this" takes a row off for the whole
+  // household (POST /api/held/{id}/done) and says so, with Undo (S10).
+  // The same list, in full, is the "Holding for you" section under What
+  // we know (wwkHoldingHtml); both read heldState (declared with the
+  // Preferences read-back, beside the row line that reads it) so one tap
+  // updates both.
+
+  function heldMetaLine(h) {
+    return [h.said_by, h.when].filter(Boolean).join(' · ');
+  }
+
+  async function loadHolding(panel) {
+    var slot = panel.querySelector('#today-holding');
+    if (!slot) return;
+    try {
+      var res = await fetch('/api/held');
+      if (!res.ok) throw new Error('held lookup failed');
+      heldState.items = (await res.json()).held || [];
+    } catch (err) {
+      // Nothing held is the safe failure — a card about an error would be
+      // louder than the thing it replaced.
+      console.warn('Held things lookup failed:', err);
+      heldState.items = heldState.items || [];
+    }
+    renderHolding(panel);
+    if (wwkState.open) wwkRenderSection('holding');
+  }
+
+  function renderHolding(panel) {
+    var slot = panel.querySelector('#today-holding');
+    if (!slot) return;
+    var items = heldState.items || [];
+    if (!items.length) { slot.innerHTML = ''; return; }
+    slot.innerHTML =
+      '<div class="shell-card holding-card">' +
+        '<div class="chores-header"><h2>Holding for you</h2></div>' +
+        items.map(holdingRowHtml).join('') +
+      '</div>';
+    slot.querySelectorAll('[data-held-done]').forEach(function (btn) {
+      btn.addEventListener('click', function () { resolveHeld(btn.getAttribute('data-held-done')); });
+    });
+  }
+
+  function holdingRowHtml(h) {
+    return '<div class="holding-row" data-held-id="' + h.id + '">' +
+      '<div class="holding-main">' +
+        '<div class="holding-text">' + escapeHtml(h.text) + '</div>' +
+        (heldMetaLine(h) ? '<div class="holding-meta">' + escapeHtml(heldMetaLine(h)) + '</div>' : '') +
+      '</div>' +
+      '<button type="button" class="holding-done" data-held-done="' + h.id + '">Done with this</button>' +
+    '</div>';
+  }
+
+  function refreshHolding() {
+    if (panels.today && panels.today.dataset.built) loadHolding(panels.today);
+    else if (wwkState.open) loadHeldForWwk();
+  }
+
+  // The list read for What we know when Now hasn't been built this load.
+  async function loadHeldForWwk() {
+    try {
+      var res = await fetch('/api/held');
+      if (res.ok) heldState.items = (await res.json()).held || [];
+    } catch (err) { console.warn('Held things lookup failed:', err); }
+    if (wwkState.open) wwkRenderSection('holding');
+  }
+
+  function renderHeldEverywhere() {
+    if (panels.today && panels.today.dataset.built) renderHolding(panels.today);
+    if (wwkState.open) wwkRenderSection('holding');
+  }
+
+  // Optimistic: the row leaves on the tap; a failed save puts it back and
+  // says so. Undo on the pop-up restores it server-side for the household.
+  async function resolveHeld(id) {
+    var items = heldState.items || [];
+    var gone = items.filter(function (h) { return String(h.id) === String(id); })[0];
+    if (!gone) return;
+    var index = items.indexOf(gone);
+    heldState.items = items.filter(function (h) { return h !== gone; });
+    renderHeldEverywhere();
+    try {
+      var res = await fetch('/api/held/' + encodeURIComponent(id) + '/done', { method: 'POST' });
+      if (!res.ok) throw new Error('held done ' + res.status);
+      toastSaved({ label: 'Undo', onClick: function () { restoreHeld(gone, index); } });
+    } catch (err) {
+      console.warn('Held thing resolve failed:', err);
+      heldState.items = items;
+      renderHeldEverywhere();
+      showToast('That didn’t save. Try it again.');
+    }
+  }
+
+  async function restoreHeld(item, index) {
+    var items = (heldState.items || []).slice();
+    items.splice(Math.min(index, items.length), 0, item);
+    heldState.items = items;
+    renderHeldEverywhere();
+    try {
+      var res = await fetch('/api/held/' + encodeURIComponent(item.id) + '/restore', { method: 'POST' });
+      if (!res.ok) throw new Error('held restore ' + res.status);
+      showToast('Put back');
+    } catch (err) {
+      console.warn('Held thing restore failed:', err);
+      heldState.items = items.filter(function (h) { return h !== item; });
+      renderHeldEverywhere();
+      showToast('That didn’t save. Try it again.');
+    }
   }
 
   // ---------- The offer to plan a week ----------
@@ -9069,6 +9192,10 @@
   // tab edited them). Each `line` is the Preferences row's own function
   // where a row exists.
   var WWK_SECTIONS = [
+    // Held things (2026-09-15) — what the chat is holding, in their words;
+    // heldState is shared with Now's card. ASSUMED placement (first),
+    // pending Emily's call.
+    { key: 'holding', title: 'Holding for you', line: prefsHoldingLine, body: wwkHoldingHtml },
     { key: 'people', title: 'Who’s here', line: prefsPeopleLine, body: wwkPeopleHtml },
     { key: 'wont-eat', title: 'Won’t eat', line: wwkWontEatLine, body: wwkWontEatHtml },
     { key: 'rhythm', title: 'Your rhythm', line: prefsRhythmLine, body: wwkRhythmHtml },
@@ -9090,6 +9217,13 @@
   }
 
   function wwkMem() { return prefsState.memory; }
+
+  // ---------- Holding for you ----------
+  function wwkHoldingHtml() {
+    var items = heldState.items || [];
+    if (!items.length) return wwkLead('Things you tell me that I can’t act on yet live here.');
+    return '<div class="holding-list">' + items.map(holdingRowHtml).join('') + '</div>';
+  }
 
   // ---------- open / load / render ----------
 
@@ -9116,9 +9250,10 @@
   // Preferences sheet's own (loadPrefsCalendar) — one place it is fetched.
   async function loadWhatWeKnow() {
     try {
-      var reads = await Promise.all([fetch('/api/memory'), fetch('/api/facts'), loadPrefsCalendar()]);
+      var reads = await Promise.all([fetch('/api/memory'), fetch('/api/facts'), loadPrefsCalendar(), fetch('/api/held')]);
       if (reads[0].ok) prefsState.memory = await reads[0].json();
       if (reads[1].ok) wwkState.facts = ((await reads[1].json()).facts) || [];
+      if (reads[3] && reads[3].ok) heldState.items = ((await reads[3].json()).held) || [];
     } catch (err) {
       console.warn('What we know lookup failed:', err);
     }
@@ -10153,6 +10288,8 @@
     if (!body) return;
 
     body.addEventListener('click', function (e) {
+      var done = e.target && e.target.closest && e.target.closest('[data-held-done]');
+      if (done && body.contains(done)) return resolveHeld(done.getAttribute('data-held-done'));
       var t = e.target && e.target.closest && e.target.closest('[data-wwk]');
       if (!t || !body.contains(t)) return;
       var what = t.getAttribute('data-wwk');
@@ -21057,6 +21194,26 @@
         wrap.appendChild(chip);
         return;
       }
+      // A thing the turn is holding ("Nana's coming the 28th") is the same
+      // chip in the same place, labelled for what it is — Holding · their
+      // words — with "See the list" opening What we know at the list
+      // (2026-09-15, "'Noted' must never note nothing"). The reply's one
+      // line is the review; the chip is the receipt.
+      if (action.held) {
+        var held = document.createElement('div');
+        held.className = 'ask-remembered is-held';
+        held.innerHTML =
+          '<span class="ask-remembered-label">' + escapeHtml(action.kicker) + '</span>' +
+          '<span class="ask-remembered-text">' + escapeHtml(action.change) + '</span>' +
+          '<button type="button" class="ask-remembered-fix">See the list</button>';
+        held.querySelector('.ask-remembered-fix').addEventListener('click', function () {
+          closeAskSheet();
+          activateTab('kitchen', true);
+          openKitchenSheet('memory', 'holding');
+        });
+        wrap.appendChild(held);
+        return;
+      }
       var card = document.createElement('button');
       card.type = 'button';
       card.className = 'ask-action-card';
@@ -21347,6 +21504,12 @@
   // one line every other tab gets.
   function refreshStaleTabsFromActions(actions) {
     (actions || []).forEach(function (action) {
+      if (action.held) {
+        // hold_thing / resolve_held_thing: Now's "Holding for you" card and
+        // the What we know section read the same list (2026-09-15).
+        refreshHolding();
+        return;
+      }
       if (action.tab === 'week' && panels.week && panels.week.dataset.built) {
         // loadWeekMenu refreshes the Cook state too — see its tail, and
         // the dish index the chat's own dish links read (setDishIndex).
@@ -22214,6 +22377,20 @@
     return names + ' · ' + shown + (avoid.length > 2 ? ' +' + (avoid.length - 2) : '');
   }
 
+  // The held list's cache (GET /api/held) — Now's "Holding for you" card
+  // and What we know's section both read it (2026-09-15). Declared here,
+  // beside the row line that reads it, rather than with memory: it is
+  // not a preference and a chat turn can change it any time. (After
+  // prefsPeopleLine on purpose — the node slice below starts there.)
+  var heldState = { items: null };
+
+  function prefsHoldingLine() {
+    var items = heldState.items;
+    if (items === null) return 'Reading it back…';
+    if (!items.length) return 'Nothing right now. Tell me anything and I’ll keep it.';
+    return items.length === 1 ? items[0].text : items.length + ' things you’ve told me';
+  }
+
   // (Defined after prefsPeopleLine on purpose: tests/test_kitchen_and_preferences.py
   // runs the slice from prefsPeopleLine to PREFS_ROWS under node.)
   // A restriction the way it is said, not the way it is stored: onboarding
@@ -22531,6 +22708,9 @@
   // same line from the same function, so tapping through never changes
   // the words.
   var PREFS_ROWS = [
+    // What the chat is holding (2026-09-15) — the same row opens the same
+    // What we know section; its line reads heldState, not memory.
+    { title: 'Holding for you', section: 'holding', line: prefsHoldingLine },
     { title: 'Who’s here', section: 'people', line: prefsPeopleLine },
     { title: 'Your rhythm', section: 'rhythm', line: prefsRhythmLine },
     { title: 'Prep days', section: 'prep-days', line: prefsPrepLine },
@@ -22645,6 +22825,7 @@
     // sheet, which this cache would otherwise never hear about).
     loadPrefsCalendar();
     loadPrefsMorningText();
+    loadPrefsHeld();
     if (prefsState.memory) { renderPrefsRows(); return; }
     try {
       var res = await fetch('/api/memory');
@@ -22653,6 +22834,18 @@
     } catch (err) {
       console.warn('Preferences lookup failed:', err);
       prefsState.memory = null;
+    }
+    if (prefsState.open) renderPrefsRows();
+  }
+
+  // The "Holding for you" row's line — re-read on every open, like the
+  // calendar's: the list changes from chat and from Now's own card.
+  async function loadPrefsHeld() {
+    try {
+      var res = await fetch('/api/held');
+      if (res.ok) heldState.items = ((await res.json()).held) || [];
+    } catch (err) {
+      console.warn('Held things lookup failed:', err);
     }
     if (prefsState.open) renderPrefsRows();
   }

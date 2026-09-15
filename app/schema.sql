@@ -1635,6 +1635,27 @@ CREATE TABLE IF NOT EXISTS holiday_answers (
     UNIQUE (household_id, date)
 );
 
+-- Held things (Loop Board "'Noted' must never note nothing", Emily,
+-- 2026-09-15 — flow H1, "Pomona, hold this", the founding anchor). What a
+-- person told Pomona that it could not turn into a grocery line, a plan
+-- change, a staple, a preference or a question for the week ("Nana's
+-- coming the 28th", "ask the dentist about the retainer"). Kept in their
+-- own words, with who said it and when, so "holding that" is literally
+-- true: it is shown on Now and under What we know, handed to the weekly
+-- planner as context (app/tools/held.py, generation_context), and never
+-- nagged about — a thing that never becomes useful just sits in the list
+-- until someone taps "Done with this". Household-scoped, not per member:
+-- the other adult sees the same list. See app/tools/held.py.
+CREATE TABLE IF NOT EXISTS held_things (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    member_id INTEGER,                        -- the adult who said it (members.id); NULL when nobody was picked
+    text TEXT NOT NULL,                       -- their words, as said (a short paraphrase at most)
+    said_on TEXT NOT NULL,                    -- ISO date on the household's own clock
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    resolved_at TEXT                          -- NULL while held; set by "Done with this" (resolve_held_thing)
+);
+
 -- Seed a single default household so V1 works out of the box
 INSERT INTO households (id, name)
 SELECT 1, 'My Household'

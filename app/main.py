@@ -553,6 +553,10 @@ class ChatAction(BaseModel):
     # the shell draws those as the Remembered chip with "Not quite"
     # (2026-09-13), and everything else as the "View" card.
     remembered: bool = False
+    # True for hold_thing / resolve_held_thing (2026-09-15): the turn kept
+    # (or let go of) something on the "Holding for you" list. The shell
+    # draws it as the Holding chip, with a way to the list.
+    held: bool = False
 
 
 class ChatResponse(BaseModel):
@@ -4305,6 +4309,47 @@ def undo_staple_decision_view(staple_id: int):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+# ---------- Held things ----------
+# Loop Board "'Noted' must never note nothing" (Emily, 2026-09-15; flow H1).
+# What the chat holds when it can't act (app/tools/held.py), read by Now's
+# "Holding for you" strip and the section of the same name under What we
+# know, and taken off the list from either with one tap. /restore is that
+# tap's Undo (S10): resolving sets a timestamp rather than deleting.
+
+@app.get("/api/held")
+def list_held_view():
+    """Everything the household has asked Pomona to hold and not finished with — their words, who said it, when."""
+    try:
+        return {"held": tools.list_held_things()}
+    except Exception as e:
+        logger.exception("Held things lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/held/{held_id}/done")
+def resolve_held_view(held_id: int):
+    """"Done with this" — take one held thing off the list."""
+    try:
+        return tools.resolve_held_thing(held_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Held thing resolve failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/held/{held_id}/restore")
+def restore_held_view(held_id: int):
+    """The Undo on "Done with this" — put it back on the list."""
+    try:
+        return tools.restore_held_thing(held_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Held thing restore failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.post("/api/grocery-list/{item_id}/pre-shop")
 def resolve_pre_shop_flag(item_id: int, req: GroceryPreShopRequest):
     """
@@ -5151,6 +5196,19 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
                         kicker=_CATEGORY_KICKERS["grocery"], change=grocery_change,
                         tab="grocery", href=None,
                     )
+                continue
+            # A held thing is neither a screen change nor a fact about the
+            # household: it is the person's own words, kept. The chip says
+            # "Holding · <their words>" and leads to the list (2026-09-15).
+            if name in ("hold_thing", "resolve_held_thing") and isinstance(result, dict):
+                words = (result.get("text") or "").strip()
+                if name == "hold_thing" and not result.get("held"):
+                    continue
+                by_category["held"] = ChatAction(
+                    kicker="Holding" if name == "hold_thing" else "Done with this",
+                    change=(words[:57] + "...") if len(words) > 60 else (words or "One thing"),
+                    tab=None, href="/memory", held=True,
+                )
                 continue
             change = _humanize_change(name, args, result) or _CATEGORY_FALLBACK_CHANGES[category]
             day_date, day_slot = _changed_day(category, args)

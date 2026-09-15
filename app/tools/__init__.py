@@ -233,6 +233,17 @@ from .big_meal import (  # noqa: F401
     shop_split as big_meal_shop_split,
     timeline as big_meal_timeline,
 )
+# Held things (2026-09-15, "'Noted' must never note nothing"): what the
+# chat keeps when it can't act on a thing yet — shown on Now and under
+# What we know, handed to the weekly planner. See held.py.
+from .held import (  # noqa: F401
+    HOLD_REPLY,
+    generation_context as held_generation_context,
+    hold_thing,
+    list_held_things,
+    resolve_held_thing,
+    restore_held_thing,
+)
 from .household import (  # noqa: F401
     _NON_RESTRICTION_VALUES,
     _get_or_create_member,
