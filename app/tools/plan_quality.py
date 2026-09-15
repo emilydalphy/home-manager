@@ -906,6 +906,228 @@ def _method_is_assembly(entries: list[dict], context: dict) -> list[Violation]:
     return violations
 
 
+# --------------------------------------------------------------------------
+# Round 2 of the food floor ("Recipes, round 2: write the step, order the
+# minutes, sauce the plate", 2026-09-14). agent.WRITE_IT_DOWN now tells the
+# planner how a step is written and how the steps are ordered. These are the
+# floor under that, in the same spirit as the three above: a fact about the
+# method, never a judgement of taste, and narrow enough that the good dinner
+# stays clean. A "dry plate" check (no sauce word anywhere) was considered
+# and deliberately NOT written — it fires on a perfectly good stir-fry, and
+# a check that fires on a decent dinner is worse than none.
+# --------------------------------------------------------------------------
+
+# A step that says when it is done: "until golden", "about 4 minutes",
+# "400°F", "to 165". The prompt asks for "roughly how long, and what done
+# looks like" on every step; this only asks that the METHOD has it somewhere.
+_DONENESS_CUE = re.compile(
+    r"\buntil\b"
+    r"|\b\d+\s*(?:-|–|to)?\s*\d*\s*(?:min|mins|minute|minutes|hr|hrs|hour|hours|sec|seconds)\b"
+    r"|\d+\s*°|\d+\s*(?:°?\s*[fc]\b|degrees)"
+    r"|\b(?:reads|registers|reaches)\s+\d+",
+    re.IGNORECASE,
+)
+
+# An "until" that is about the cook's schedule, not the food: "until you
+# have time", "until ready to serve", "until needed". Not a doneness cue.
+_NOT_A_CUE = re.compile(
+    r"\buntil\s+(?:you|we|ready|needed|serving|required|it'?s time|the day|the next day)\b",
+    re.IGNORECASE,
+)
+
+# A heat level or a temperature. "hot pan" counts — it is the instruction
+# that matters ("heat the pan before the food"), not the vocabulary.
+_HEAT_NAMED = re.compile(
+    r"\b(?:low|medium|med|high|medium-high|medium-low)\s+heat\b"
+    r"|\bover\s+(?:low|medium|med|high|medium-high|medium-low)\b"
+    r"|\b(?:on|to)\s+(?:low|medium|high)\b"
+    r"|\bhot\s+(?:pan|skillet|oil|oven|wok|griddle|grill)\b"
+    r"|\b(?:until|till)\s+(?:it(?:'s| is)\s+|just\s+|lightly\s+)?smoking\b"
+    r"|\b(?:smoking|ripping|screaming|blazing|very)\s+hot\b"
+    r"|\b(?:simmer|simmering|boil|boiling|broil|broiling)\b"
+    r"|\d+\s*°|\d+\s*(?:°?\s*[fc]\b|degrees)",
+    re.IGNORECASE,
+)
+
+# The things that take longest and should therefore be started first. This
+# is about STARTING an anchor, not mentioning it: "serve over rice" is not
+# starting the rice.
+_ANCHOR_START = re.compile(
+    r"\bpreheat\b"
+    r"|\bbring\b[^.]{0,40}\bto (?:a |the )?boil\b"
+    r"|\bboil(?:ing)? (?:the |a |some )?(?:salted )?water\b"
+    r"|\b(?:put|get|start|set)\b[^.]{0,20}\b(?:rice|potatoes|pasta water|water)\b[^.]{0,20}\bon\b"
+    r"|\bstart (?:the |cooking the )?(?:rice|potatoes|grains|quinoa)\b"
+    r"|\bcook (?:the )?rice (?:according|per|as)\b",
+    re.IGNORECASE,
+)
+
+# Where the anchor may appear and still be "first". Step 1 is ideal; a
+# "pat the chicken dry and salt it" step before "preheat" is normal and
+# fine. Step 4 or later means the oven was remembered after the chopping.
+_ANCHOR_LATEST_OK = 3
+
+# A dinner cannot have this many real steps in this little time. Chosen
+# conservatively — the local dev database held no recipes with steps on
+# 2026-09-14 to tune against, so this is set where it is plainly impossible
+# rather than merely optimistic. Revisit with real rows.
+_MANY_STEPS = 9
+_FEW_MINUTES = 15
+
+
+# Anything that says heat is being applied — an oven, a pan, a pot, or the
+# verb that needs one. Base-form verbs only, on purpose: a recipe cooks in
+# the imperative ("toast the nuts"), while the past participle is usually an
+# ingredient ("toasted hazelnuts" on a salad that never meets heat). A cold
+# plate has nothing that can be "done", so the cue check has no question to
+# ask it.
+_APPLIES_HEAT_WORDS = _DRY_HEAT_WORDS | {
+    "pot", "saucepan", "wok", "stove", "stovetop", "burner",
+    "cook", "cooking", "heat", "boil", "simmer", "fry", "sear", "roast", "grill",
+    "braise", "poach", "steam", "saute", "sauté", "sautee", "sweat", "microwave",
+    "broil", "toast", "char", "reduce", "deglaze", "render", "bloom", "blanch",
+}
+
+
+def _steps_have_no_cue(entries: list[dict], context: dict) -> list[Violation]:
+    """A cooked dinner whose method never says when anything is done.
+
+    Not "every step has a cue" — that is the prompt's job — but "no step has
+    one", which means the household is cooking blind. "Cook the chicken.
+    Make the sauce. Serve." has no "until", no minutes, no temperature.
+    Silent on a plate that never meets heat: there is nothing to be done.
+
+    The cue has to sit on a step that applies heat. The verifier found the
+    first draft passed a method whose only "until" was "marinate until you
+    have time to cook it" — a cue on the prep, none on the cooking.
+    """
+    violations = []
+    for entry in entries:
+        if not _cooked_dinner(entry):
+            continue
+        steps = entry.get("instructions") or []
+        heat_steps = [
+            step for step in steps
+            if set(re.findall(r"[a-zé]+", step.lower())) & _APPLIES_HEAT_WORDS
+        ]
+        if not heat_steps:
+            continue
+        if any(_DONENESS_CUE.search(_NOT_A_CUE.sub(" ", step)) for step in heat_steps):
+            continue
+        violations.append(Violation(
+            rule="steps_have_no_cue", severity="info",
+            date=entry["date"], slot="dinner",
+            message=(
+                f"{entry['date']} dinner ('{entry['meal_name']}'): no step says when anything "
+                "is done — no 'until', no minutes, no temperature."
+            ),
+        ))
+    return violations
+
+
+# Where a heat level is genuinely the cook's to choose: an oven, a pan, a
+# grill, and the verbs that need one. Deliberately NOT "cook", "pot" or
+# "heat" — "cook the rice according to the packet" gets its heat from the
+# packet, and a bowl built on that plus a dressing has no level to name.
+# Not "broil" either: a home broiler has one setting, so "broil" names the
+# heat the way "simmer" does. Prefer silence in both cases.
+_NEEDS_A_HEAT_LEVEL = _DRY_HEAT_WORDS | {
+    "grill", "grilling", "roast", "roasting", "sear", "searing", "fry",
+    "frying", "saute", "sauté", "sautee", "sweat", "braise", "wok",
+    "stovetop", "stove", "burner",
+}
+
+
+def _no_heat_named(entries: list[dict], context: dict) -> list[Violation]:
+    """A cooked dinner that grills, roasts, sears, bakes or fries something
+    and never says how hot.
+
+    Gated like method_is_assembly: a dressed salad has no heat to name, and
+    telling it so would be false. The gate is wider than that check's,
+    though — the verifier found "grill until the juices run clear" slipping
+    past a pan-or-oven-only gate.
+    """
+    violations = []
+    for entry in entries:
+        if not _cooked_dinner(entry):
+            continue
+        if not (_method_words(entry) & _NEEDS_A_HEAT_LEVEL):
+            continue
+        method = " ".join(entry.get("instructions") or [])
+        if _HEAT_NAMED.search(method):
+            continue
+        violations.append(Violation(
+            rule="no_heat_named", severity="info",
+            date=entry["date"], slot="dinner",
+            message=(
+                f"{entry['date']} dinner ('{entry['meal_name']}'): the method uses an oven "
+                "or a pan but never names a heat level or temperature."
+            ),
+        ))
+    return violations
+
+
+def _longest_thing_not_first(entries: list[dict], context: dict) -> list[Violation]:
+    """The oven, the water or the rice is started late in the method.
+
+    The prompt's rule is that whatever takes longest starts first. A method
+    that preheats the oven at step 5 has the household chopping for ten
+    minutes and then waiting for the oven — the 25-minutes-becomes-40 case.
+    Silent when no anchor appears at all: a stir-fry has none to start.
+    """
+    violations = []
+    for entry in entries:
+        if not _cooked_dinner(entry):
+            continue
+        steps = entry.get("instructions") or []
+        first_anchor = None
+        for i, step in enumerate(steps, start=1):
+            if _ANCHOR_START.search(step):
+                first_anchor = i
+                break
+        if first_anchor is None or first_anchor <= _ANCHOR_LATEST_OK:
+            continue
+        violations.append(Violation(
+            rule="longest_thing_not_first", severity="info",
+            date=entry["date"], slot="dinner",
+            message=(
+                f"{entry['date']} dinner ('{entry['meal_name']}'): the oven, water or rice "
+                f"is only started at step {first_anchor} of {len(steps)} — the longest thing "
+                "should start first."
+            ),
+        ))
+    return violations
+
+
+def _minutes_vs_steps(entries: list[dict], context: dict) -> list[Violation]:
+    """A method with many steps claiming very few minutes.
+
+    Nine real steps cannot happen in fifteen minutes at a home stove. This is
+    the one place the honest-minutes rule is checkable from outside; an
+    optimistic number satisfies the rush cap while breaking the promise, and
+    nothing else would notice.
+    """
+    violations = []
+    for entry in entries:
+        if not _cooked_dinner(entry):
+            continue
+        total = _minutes(entry)
+        if not total:
+            continue
+        steps = len(entry.get("instructions") or [])
+        if steps < _MANY_STEPS or total > _FEW_MINUTES:
+            continue
+        violations.append(Violation(
+            rule="minutes_vs_steps", severity="info",
+            date=entry["date"], slot="dinner",
+            message=(
+                f"{entry['date']} dinner ('{entry['meal_name']}'): {steps} steps in {total} "
+                "minutes — the estimate is not one a household can hit."
+            ),
+        ))
+    return violations
+
+
 def check_week(plan_entries: list[dict], context: dict) -> list[Violation]:
     """
     Pure rule engine over an already-assembled week. Takes plain dicts
@@ -934,6 +1156,11 @@ def check_week(plan_entries: list[dict], context: dict) -> list[Violation]:
     violations += _dish_named_for_an_absence(plan_entries, context)
     violations += _seasoning_never_mentioned(plan_entries, context)
     violations += _method_is_assembly(plan_entries, context)
+    # Round 2 of the floor: how the method is written, not just what it does.
+    violations += _steps_have_no_cue(plan_entries, context)
+    violations += _no_heat_named(plan_entries, context)
+    violations += _longest_thing_not_first(plan_entries, context)
+    violations += _minutes_vs_steps(plan_entries, context)
     return violations
 
 
