@@ -39,10 +39,11 @@ import datetime
 
 from app import households, tools
 from app.tools import digest
+from conftest import household_today
 
 
 def _d(offset_days: int = 0) -> str:
-    return (datetime.date.today() + datetime.timedelta(days=offset_days)).isoformat()
+    return (household_today() + datetime.timedelta(days=offset_days)).isoformat()
 
 
 def _a_recipe(name: str = "Chili"):
@@ -52,6 +53,24 @@ def _a_recipe(name: str = "Chili"):
         instructions=["Cook it."],
         prep_time_minutes=10,
         cook_time_minutes=20,
+    )
+
+
+def _morning_text():
+    """
+    The morning text for the household's own today, at 07:00 its time.
+
+    The clock is passed rather than defaulted, and that is the point of the
+    call. `digest.build_morning_text()` falls back to `datetime.now()` — the
+    SERVER's clock — while its own docstring says the argument is "the
+    household's own clock"; the only production caller (the sending loop)
+    always passes the household's, so the default is unreachable in the app
+    and only a test can hit it. A test that hits it is asking about a
+    different day from every other surface in this file the moment the
+    process's timezone is not the household's.
+    """
+    return digest.build_morning_text(
+        datetime.datetime.combine(household_today(), datetime.time(7, 0))
     )
 
 
@@ -118,7 +137,7 @@ class TestABrandNewHouseholdWithNoPlanAtAll:
         _a_recipe()
         tools.resolve_needs_you_dinner(_d(), "Chili")
 
-        assert "Chili" in (digest.build_morning_text() or "")
+        assert "Chili" in (_morning_text() or "")
 
     def test_ticking_it_works_and_counts_once(self):
         _a_recipe()
@@ -155,7 +174,7 @@ class TestABrandNewHouseholdWithNoPlanAtAll:
         --today's bare-date default is 09:00 — mid-morning is inside every
         window the app reasons about.
         """
-        frozen_today(datetime.datetime.combine(datetime.date.today(), datetime.time(10, 0)))
+        frozen_today(datetime.datetime.combine(household_today(), datetime.time(10, 0)))
         _a_recipe()
         tools.resolve_needs_you_dinner(_d(), "Chili", add_ingredients_to_grocery_list=True)
 
@@ -167,7 +186,7 @@ class TestABrandNewHouseholdWithNoPlanAtAll:
 
         assert tools.get_cooker_view()["meals"] == []
         assert _cooks_today() == []
-        assert "Chili" not in (digest.build_morning_text() or "")
+        assert "Chili" not in (_morning_text() or "")
 
 
 class TestAPlanThatDoesNotCoverToday:

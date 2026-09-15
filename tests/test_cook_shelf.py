@@ -37,6 +37,7 @@ import pytest
 
 from app import tools
 from tests import nodeharness
+from conftest import household_today
 
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
@@ -494,14 +495,14 @@ def test_design_system_and_the_decision_log_say_cooks_root_has_a_dock_now():
 # --------------------------------------------------------------------------
 
 def _week_start() -> str:
-    today = datetime.date.today()
+    today = household_today()
     return (today - datetime.timedelta(days=today.weekday())).isoformat()
 
 
 def test_the_cooker_view_carries_the_period_and_the_cook():
     plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
     tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
-    tools.plan_meal(datetime.date.today().isoformat(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.plan_meal(household_today().isoformat(), "Chili", slot="dinner", weekly_plan_id=plan_id)
     view = tools.get_cooker_view()
     assert view["period_start_date"] == _week_start()
     assert view["day_count"] == 7
@@ -530,7 +531,7 @@ def test_no_plan_at_all_still_answers_with_the_keys():
 # --------------------------------------------------------------------------
 
 def _month_ago_monday() -> str:
-    today = datetime.date.today()
+    today = household_today()
     start = today - datetime.timedelta(days=today.weekday() + 28)
     return start.isoformat()
 
@@ -569,7 +570,7 @@ def test_a_stale_plan_does_not_hide_a_real_loose_meal_ahead():
     tools.approve_weekly_plan(plan_id)
 
     tools.add_recipe("Tacos", ingredients=[{"item": "tortillas", "qty": "1 pack"}])
-    today = datetime.date.today().isoformat()
+    today = household_today().isoformat()
     tools.plan_meal(today, "Tacos", slot="dinner")  # no weekly_plan_id: a loose meal
 
     view = tools.get_cooker_view()
@@ -601,7 +602,7 @@ def test_a_plan_ending_exactly_today_is_not_stale():
     """Boundary case: period_end_date == today must NOT trip the stale
     check (`period_end < today`, strictly less-than) — a plan whose last
     day is today is still this week's plan."""
-    start = (datetime.date.today() - datetime.timedelta(days=6)).isoformat()  # a 7-day plan starting 6 days ago ends today
+    start = (household_today() - datetime.timedelta(days=6)).isoformat()  # a 7-day plan starting 6 days ago ends today
     plan_id = tools.create_weekly_plan(start)["weekly_plan_id"]
     tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
     tools.plan_meal(start, "Chili", slot="dinner", weekly_plan_id=plan_id)
@@ -616,7 +617,7 @@ def test_a_plan_ending_exactly_today_is_not_stale():
 def test_a_plan_ending_exactly_yesterday_is_stale():
     """Boundary case: period_end_date == yesterday must trip the stale
     check — one day past the end is enough."""
-    start = (datetime.date.today() - datetime.timedelta(days=7)).isoformat()  # a 7-day plan starting 7 days ago ended yesterday
+    start = (household_today() - datetime.timedelta(days=7)).isoformat()  # a 7-day plan starting 7 days ago ended yesterday
     plan_id = tools.create_weekly_plan(start)["weekly_plan_id"]
     tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
     tools.plan_meal(start, "Chili", slot="dinner", weekly_plan_id=plan_id)
