@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Page not found — Pomona</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Figtree:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/theme.css">
+<link rel="icon" href="/static/icons/icon-192.png" />
+<!-- Exact --spruce light/dark (theme.css); a <meta> tag's content attribute cannot reference a CSS var(). -->
+<meta name="theme-color" content="#1B3328" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#22422F" media="(prefers-color-scheme: dark)" />
+<style>
+  /*
+    "Corners" QA pass (2026-09-15) — an unknown address used to fall
+    through to FastAPI's own bare JSON 404, which reads as the app being
+    broken rather than as a wrong turn. This is that corner's own small,
+    branded page: app/main.py's record_server_errors serves it (instead of
+    the JSON body) only when a browser GETs a path no route matched — an
+    API 404 (JSON fetch, or a route's own "no recipe named that" 404)
+    still answers exactly as it always has.
+
+    theme.css already sets body's background/color/font — this file adds
+    only the centred layout and the one line's sizing, all through tokens
+    (DESIGN_SYSTEM.md §1 rule 9), same as every other standalone page.
+  */
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .nf-wrap { max-width: 320px; text-align: center; }
+  .nf-mark { width: 40px; height: 40px; color: var(--apricot-label); display: block; margin: 0 auto 16px; }
+  .nf-line { font-size: 21px; margin: 0 0 20px; }
+  .nf-back {
+    display: inline-flex; align-items: center; justify-content: center; min-height: 44px;
+    padding: 0 4px; font-weight: 700; font-size: 0.95rem;
+  }
+</style>
+</head>
+<body>
+<div class="nf-wrap">
+  <!-- The Pomona mark (static/shell.js's MARK_PATHS) — a logo, so it keeps
+       its own 1.8 stroke rather than the icon set's 2.2 (DESIGN_SYSTEM.md
+       §2 rule 7). -->
+  <svg class="nf-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 20.4c-3.1 0-5.6-2.6-5.6-5.9 0-3.2 2.5-5.7 5.6-5.7s5.6 2.5 5.6 5.7c0 3.3-2.5 5.9-5.6 5.9z"/>
+    <path d="M12 9V6.2"/>
+    <path d="M12.5 7.1c.9-2.2 3.2-3.1 5.3-2.7.4 2.2-.7 4.3-2.8 4.7-1.4.3-2.5-.6-2.5-2z"/>
+    <path d="M12 10.2c-1.1 1.6-1.1 6.3 0 8.2"/>
+  </svg>
+  <h2 class="nf-line">That page isn&rsquo;t here.</h2>
+  <a class="nf-back" href="/">&larr; Back to Now</a>
+</div>
+</body>
+</html>

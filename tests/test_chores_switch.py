@@ -235,9 +235,19 @@ def test_a_refused_tick_is_not_recorded_as_breakage(signed_in):
     assert after == before
 
 
-def test_chores_setup_stays_reachable_by_url_either_way(signed_in):
-    """The card that hid it said so: the page exists; the switch decides the link."""
-    assert signed_in.get("/chores-setup").status_code == 200
+def test_chores_setup_sends_a_switched_off_household_home(signed_in):
+    """
+    Reversed by the "Corners" QA pass (2026-09-15): this page used to stay
+    reachable by URL regardless of the switch ("the page exists; the
+    switch decides the link"), but a tester who typed the address with
+    Chores off landed on a full questionnaire for a module the house can't
+    see or use anywhere else — a corner that read as abandoned. Off now
+    redirects home (303 to "/"), same as the two /api/chores* write routes'
+    403 for the identical reason; on still serves the page.
+    """
+    off = signed_in.get("/chores-setup", follow_redirects=False)
+    assert off.status_code == 303
+    assert off.headers["location"] == "/"
     tools.set_chores_enabled(True)
     assert signed_in.get("/chores-setup").status_code == 200
 

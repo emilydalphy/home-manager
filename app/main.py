@@ -135,6 +135,24 @@ async def record_server_errors(request: Request, exc: StarletteHTTPException):
         await run_in_threadpool(
             tools.record_error, "server", _route_pattern(request), f"HTTP {exc.status_code}"
         )
+    if (
+        exc.status_code == 404
+        and request.method == "GET"
+        and "text/html" in request.headers.get("accept", "")
+        and _route_pattern(request) == "(unmatched)"
+    ):
+        # A person, not a fetch(), landed on an address nothing serves —
+        # "Corners" QA pass, 2026-09-15. `_route_pattern` reads
+        # `request.scope["route"]`, which FastAPI's own Route.matches only
+        # ever sets on a match (Match.FULL for a normal hit, Match.PARTIAL
+        # for a right-path-wrong-method 405) — so "(unmatched)" here means
+        # routing itself found nothing, never a route's own
+        # `raise HTTPException(404, "No grocery list item with id …")`,
+        # which leaves the matched route's pattern behind instead. Those
+        # keep answering exactly as they always have, JSON included; only
+        # the genuinely blank corner gets the branded page. An API 404 —
+        # no `text/html` in Accept — is untouched for the same reason.
+        return FileResponse(os.path.join(static_dir, "not-found.html"), status_code=404)
     safe = _client_safe_detail(exc.status_code, exc.detail)
     if safe is not exc.detail:
         # A fresh exception rather than exc.detail = safe: the original
@@ -5288,6 +5306,24 @@ static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
+@app.get("/favicon.ico")
+def favicon():
+    """
+    A browser asks for this on every page load whether the app has one or
+    not — it is in security._PUBLIC_EXACT for exactly that reason, so it
+    never needed a session, only a route. Nothing served one until the
+    "Corners" QA pass (2026-09-15), so it 404'd (through
+    record_server_errors) on every single load. Serves the same PNG
+    manifest.json already points at — there is no separate .ico in
+    static/icons — with a long cache header, since a household's icon
+    doesn't change between deploys.
+    """
+    return FileResponse(
+        os.path.join(static_dir, "icons", "icon-192.png"),
+        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+    )
+
+
 # Every tab is native now (design hygiene pass, 2026-09-12): the four
 # top-level shell routes all serve the same shell.html — a persistent app
 # frame whose client-side router (static/shell.js) shows/hides tab content
@@ -5358,16 +5394,22 @@ def chores_setup_page():
     /api/onboarding/household and /api/onboarding/chores-profile routes
     onboarding always used.
 
-    Reachable by URL for every household, on purpose. The one link into
-    it — "Want help with chores too? Set them up" on Now's chores card
-    (renderChores, static/shell.js) — renders only for a household whose
-    `chores_enabled` switch is on (Loop Board "Chores v1: Who sees it — a
-    per-household switch", Emily, 2026-09-12) and that has never been
-    through setup. A house with the switch off gets no link and no card,
-    but this page and its save routes still work if somebody types the
-    address, which is what the card that hid it said should stay true;
-    the switch decides what Now shows, not what exists.
+    The one link into it — "Want help with chores too? Set them up" on
+    Now's chores card (renderChores, static/shell.js) — renders only for a
+    household whose `chores_enabled` switch is on (Loop Board "Chores v1:
+    Who sees it — a per-household switch", Emily, 2026-09-12) and that has
+    never been through setup. Until the "Corners" QA pass (2026-09-15) a
+    house with the switch off had no link and no card but this page still
+    worked if somebody typed the address — deliberately, per the card that
+    hid it. That QA pass changed the call: a tester poking at the address
+    with Chores off landed on a full questionnaire for a module the house
+    can't see or use anywhere else, which reads as an abandoned corner
+    rather than an unfinished one, so this now sends them home instead —
+    the same 303-to-`/` the two `/api/chores*` write routes already answer
+    with a 403 for the identical reason (tools.CHORES_OFF_MESSAGE).
     """
+    if not tools.chores_enabled():
+        return RedirectResponse(url="/", status_code=303)
     return FileResponse(os.path.join(static_dir, "chores-setup.html"))
 
 

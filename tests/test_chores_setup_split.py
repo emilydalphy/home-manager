@@ -116,7 +116,15 @@ def test_onboarding_completes_without_any_chores_fields(signed_in, stub_model):
 
 
 def test_chores_setup_route_serves_the_standalone_page(signed_in):
-    """GET /chores-setup exists and serves the relocated questionnaire, not onboarding.html or a 404."""
+    """
+    GET /chores-setup exists and serves the relocated questionnaire, not
+    onboarding.html or a 404 — for a household whose Chores switch is on.
+    ("Corners" QA pass, 2026-09-15: a switch-off household is redirected
+    instead — see test_corners.py's test_chores_setup_redirects_home_when_the_switch_is_off,
+    which is what this test used to be before that pass, back when the
+    page worked regardless of the switch.)
+    """
+    tools.set_chores_enabled(True)
     res = signed_in.get("/chores-setup")
     assert res.status_code == 200
     assert "rotation-chips" in res.text

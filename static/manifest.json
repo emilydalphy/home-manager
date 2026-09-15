@@ -1,7 +1,7 @@
 {
   "name": "Pomona",
   "short_name": "Pomona",
-  "description": "Chores, meal planning, and groceries in one place.",
+  "description": "Meals on the table — the plan, the list, the cooking — and a hand with the rest of the house.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FBF6EE",
