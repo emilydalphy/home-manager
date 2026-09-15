@@ -13825,15 +13825,17 @@
     // this state rather than fixed on #week-plan-view for every step, so
     // nothing about Plan | Meals moves.
     panel.classList.toggle('is-chores', weekState.step === 'chores');
-    // The review step's dock (reviewDecideHtml) has the same "sits mid-
-    // screen on a short page" bug is-chores fixed: #week-steps is
-    // `flex: 1 0 auto` expecting to grow, but its parent #week-plan-view
-    // is not, so a one-dish week ("What we're eating") never has the
-    // spare height to hand down. "Which days" (always seven tiles) is
-    // tall enough that the dock already sat at the foot, which is why
-    // this went unnoticed. Scoped to 'review' alone, same as is-chores,
-    // so the Day/Meal steps and the week root are untouched.
-    panel.classList.toggle('is-review', weekState.step === 'review');
+    // reviewStepHtml's dock (reviewDecideHtml) has the same "sits mid-
+    // screen on a short page" bug is-chores fixed: #week-steps expects to
+    // grow (`flex: 1 0 auto`), but its parent #week-plan-view doesn't, so
+    // a one-dish week ("What we're eating") gets no spare height to hand
+    // down. "Which days" (always seven tiles) is tall enough that this
+    // went unnoticed. reviewStepHtml renders in TWO places — the
+    // 'review' step and a draft's own root (folds to 'week' just above,
+    // same screen) — so the flag tracks "is reviewStepHtml on screen",
+    // not one step name. Day/Meal steps and the plain week root untouched.
+    var usesReviewLayout = weekState.step === 'review' || (weekState.step === 'week' && draft);
+    panel.classList.toggle('is-review-layout', usesReviewLayout);
 
     // Chores is a state of the ROOT (a sibling of the week, not a step
     // under it): it keeps the band and the gear, and has no crumb of its
