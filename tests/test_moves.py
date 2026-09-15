@@ -210,6 +210,74 @@ def test_a_shop_with_no_cook_close_enough_is_not_a_move():
     assert _by_kind(tools.today_moves(now=_at(9))) == {}
 
 
+def test_the_shop_moves_by_time_is_the_cooks_start_not_the_table_time():
+    """
+    The bug: "Shop for tonight · by 5:30" was dinner time, so a person could
+    shop right up until the table was meant to be set and still be too late
+    to have the roast in the oven on time. The deadline is the moment the
+    bags need to be back — the same "Start at" arithmetic the Meal step's
+    hero already uses (cooker.planned_start_for) — not the slot itself.
+    A 110-minute dinner at 5:30 needs to start at 3:40.
+    """
+    _household()
+    _recipe("Sunday Roast", prep=20, cook=90)  # 110 minutes, total
+    plan_id = _plan()
+    tools.plan_meal(ISO_TODAY, "Sunday Roast", slot="dinner", weekly_plan_id=plan_id)
+    tools.add_grocery_item("Chicken Thighs", quantity="1 lb")
+    tools.set_dinner_window("5_6ish")  # dinner lands at 5:30
+
+    shop = _by_kind(tools.today_moves(now=_at(12)))["shop"]
+
+    assert shop["window_end"] == _at(15, 40).isoformat()
+    assert shop["detail"].endswith("by 3:40")
+    assert shop["time_label"] == "by 3:40"
+    assert shop["overdue"] is False
+
+
+def test_a_no_duration_meal_falls_back_to_the_slot_time():
+    """
+    Nothing on the card says how long the cook takes (no recipe minutes, no
+    timed side) — there's nothing to move the deadline earlier by, so "by"
+    still names dinner time itself, exactly as it did before this fix.
+    """
+    _household()
+    _recipe("Takeout Night", prep=0, cook=0)
+    plan_id = _plan()
+    tools.plan_meal(ISO_TODAY, "Takeout Night", slot="dinner", weekly_plan_id=plan_id)
+    tools.add_grocery_item("Napkins")
+    tools.set_dinner_window("5_6ish")  # dinner lands at 5:30
+
+    shop = _by_kind(tools.today_moves(now=_at(12)))["shop"]
+
+    assert shop["window_end"] == _at(17, 30).isoformat()
+    assert shop["detail"].endswith("by 5:30")
+    assert shop["time_label"] == "by 5:30"
+
+
+def test_a_shop_move_stays_featured_and_overdue_once_the_cooks_start_time_has_passed():
+    """
+    Once the new, earlier deadline has gone by but dinner itself is still
+    ahead, the shop move must not simply vanish from "next up" — that was
+    the exact bug already fixed for the fridge move (see
+    test_an_undone_fridge_move_is_still_featured_and_overdue_once_evening_has_come):
+    featured_move_id's own `window_end >= now` candidacy test would drop an
+    un-flagged move the instant its window closed. `overdue` keeps it in
+    play, more urgent rather than gone.
+    """
+    _household()
+    _recipe("Sunday Roast", prep=20, cook=90)  # 110 minutes; starts at 3:40
+    plan_id = _plan()
+    tools.plan_meal(ISO_TODAY, "Sunday Roast", slot="dinner", weekly_plan_id=plan_id)
+    tools.add_grocery_item("Chicken Thighs", quantity="1 lb")
+    tools.set_dinner_window("5_6ish")  # dinner lands at 5:30
+
+    payload = tools.today_moves(now=_at(16))  # past 3:40, well before 5:30
+
+    assert payload["featured"] == f"shop:{ISO_TODAY}"
+    shop = _by_kind(payload)["shop"]
+    assert shop["overdue"] is True
+
+
 def test_nothing_left_today_features_nothing_and_names_tomorrow():
     _household()
     _recipe("Chicken Skewers")

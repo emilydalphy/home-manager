@@ -22,7 +22,8 @@ check_off_prep_step, but a shop move has nothing behind its tick to flip
 tick at all rather than one that fills in and silently snaps back.
 
 `overdue` is true for an undone fridge/prep move whose window has closed
-for the day — see _prep_moves and featured_move_id below.
+for the day, and for a shop move once its cook's start time has passed —
+see _prep_moves, _shop_move and featured_move_id below.
 
 Nothing here is new state. Every move is derived from something that
 already exists — a cooker-view card, a prep_tasks row, the grocery list —
@@ -411,6 +412,7 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
 
     horizon = now + timedelta(hours=SHOP_HORIZON_HOURS)
     soonest = None
+    soonest_meal = None
     for meal in view.get("meals") or []:
         if meal.get("is_leftovers") or meal.get("cooked_status") == "done":
             continue
@@ -420,8 +422,28 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
             continue
         if now <= at <= horizon and (soonest is None or at < soonest):
             soonest = at
+            soonest_meal = meal
     if soonest is None:
         return []
+
+    # The deadline is when the bags need to be back, not when the plate
+    # lands: the cook's own start time, the same arithmetic behind the
+    # Meal step's "Start at" hero (cooker.planned_start_for — the slot
+    # time minus the recipe's prep + cook minutes, shared here rather than
+    # re-derived so the two screens can't name two different starts for
+    # one dinner). Falls back to the slot time itself when the meal
+    # carries no known duration: there's nothing to move the deadline
+    # earlier by, so "by" still means dinner time, as before.
+    deadline = _cooker.planned_start_for(soonest_meal) or soonest
+    # A cook can need to have started already while dinner itself is still
+    # ahead (a 110-minute roast for a 5:30 table needs the bags back by
+    # 3:40) — so `now` past this new, earlier deadline is an everyday case,
+    # not a corner one. Without `overdue`, featured_move_id's own
+    # `window_end >= now` candidacy test would drop the move from "next
+    # up" the instant the deadline passed, the exact bug already fixed for
+    # the fridge move (see _prep_moves): the card would simply stop asking
+    # for a shop that is now more urgent, not less.
+    overdue = now > deadline
 
     is_today = soonest.date() == now.date()
     count = len(needed)
@@ -429,7 +451,7 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
         "id": f"shop:{day.isoformat()}",
         "kind": "shop",
         "title": "Shop for tonight" if is_today else "Shop before tomorrow",
-        "detail": f"{count} item{'' if count == 1 else 's'} · by {_clock(soonest.time())}",
+        "detail": f"{count} item{'' if count == 1 else 's'} · by {_clock(deadline.time())}",
         "reason": "",
         "date": day.isoformat(),
         "slot": None,
@@ -437,7 +459,12 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
         # is also what makes shopping outrank the cook it is for: they share
         # the top weight, and the tie-break is the earlier window.
         "window_start": datetime.combine(day, time(0, 0)).isoformat(),
-        "window_end": soonest.isoformat(),
+        # The cook's start time, not the meal's — see `deadline` above.
+        # Everything downstream that ranks or colours moves by window_end
+        # (featured_move_id's urgency, the day strip) already treats it as
+        # "whatever this move's real deadline is", so moving it earlier
+        # here is enough; nothing else assumes it equals the slot time.
+        "window_end": deadline.isoformat(),
         "weight": WEIGHT_HIGH,
         "action": {"label": "Open the list", "target": {"tab": "grocery"}},
         # Derived, like every other tick: the move exists only while the
@@ -449,11 +476,11 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
         # UI renders no tick at all rather than one that fills in and snaps
         # back. See the module docstring's `tickable` note.
         "tickable": False,
-        "overdue": False,
+        "overdue": overdue,
         "entry_id": None,
         "task_id": None,
         "duration_min": 0,
-        "time_label": ("by " + _clock(soonest.time())) if is_today else "by tomorrow",
+        "time_label": ("by " + _clock(deadline.time())) if is_today else "by tomorrow",
         "chips": [],
     }]
 
