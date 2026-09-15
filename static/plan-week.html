@@ -279,7 +279,23 @@
     padding: 12px 14px; font-size: 0.88rem; line-height: 1.5;
     color: var(--ink-strong); margin-bottom: 18px;
   }
-  .loading, .failed { color: var(--ink-secondary); font-size: 0.92rem; padding: 40px 0; text-align: center; }
+  .loading { color: var(--ink-secondary); font-size: 0.92rem; padding: 40px 0; text-align: center; }
+  /* The real-failure state (server unreachable, not "no week to plan" —
+     that case is resolved before this ever shows, see resolveWeekStart).
+     A dead end needs two doors, not one line of text: a retry for a
+     failure that might just be the network, and a way out for a household
+     that would rather not wait on it. */
+  .failed {
+    color: var(--ink-secondary); font-size: 0.92rem; padding: 40px 20px 0;
+    text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px;
+  }
+  .failed .crumb { margin: 0; }
+  .failed-retry {
+    font-family: var(--font-body); font-weight: 700; font-size: 0.9rem;
+    background: var(--apricot); color: var(--on-accent-ink); border: none;
+    padding: 10px 22px; min-height: 44px; border-radius: var(--radius-control); cursor: pointer;
+  }
+  .failed-retry:hover { background: var(--apricot-deep); }
 
   /* ---- Drafting progress ----
      Shown in place of Q1/Q2 once "draft my week" is tapped. Generating a
@@ -495,7 +511,11 @@
 <body>
 
 <div id="loading" class="loading">One moment&hellip;</div>
-<div id="failed" class="failed" hidden>I couldn&rsquo;t load your week just now. Try again in a moment.</div>
+<div id="failed" class="failed" hidden>
+  <p style="margin:0;">I couldn&rsquo;t load your week just now.</p>
+  <button type="button" class="failed-retry" id="failed-retry">Try again</button>
+  <button type="button" class="crumb" id="failed-leave">&lsaquo; Plan</button>
+</div>
 
 <main id="flow" hidden>
   <!-- One way back, named for its parent (nav v2 rule 1). Outside the
@@ -688,6 +708,8 @@
   function toastSaved() { showToast(CHANGES_SAVED); }
 
   // ---------- state ----------
+  // Both re-read (not just `var`-captured) inside resolveWeekStart below,
+  // for the one path that arrives with no ?week at all.
   var weekStart = new URLSearchParams(location.search).get('week') || '';
   // How many days this period runs. Absent means seven, so every link that
   // existed before planning periods (and any bookmarked one) still opens
@@ -758,8 +780,32 @@
   function $(id) { return document.getElementById(id); }
 
   // ---------- load ----------
+  // Reached with no ?week when this page is opened directly — a bookmark
+  // or a stale link that predates the ?week it now expects — rather than
+  // through the shell's own "Plan next week" button, which always names
+  // one (startPlanningWeek in shell.js). Retrying a request that never had
+  // a week to ask for would just fail the same way forever, so this asks
+  // the server for the SAME period the shell would have sent: the one
+  // source of "which week" (weekly_plan.suggest_planning_period, behind
+  // /api/week/planning-period). If even that can't be reached, there is
+  // nothing left to try — back to Plan rather than a dead "Try again".
+  async function resolveWeekStart() {
+    try {
+      var res = await fetch('/api/week/planning-period');
+      if (!res.ok) throw new Error('planning period lookup failed');
+      var period = await res.json();
+      if (!period || !period.start_date) throw new Error('planning period missing a start date');
+      weekStart = period.start_date;
+      dayCount = (period.day_count && period.day_count > 0) ? Math.min(period.day_count, 28) : 7;
+      return true;
+    } catch (err) {
+      console.warn('Planning period lookup failed:', err);
+      return false;
+    }
+  }
+
   async function load() {
-    if (!weekStart) { $('loading').hidden = true; $('failed').hidden = false; return; }
+    if (!weekStart && !(await resolveWeekStart())) { location.href = '/week'; return; }
     try {
       var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/intake?day_count=' + dayCount);
       if (!res.ok) throw new Error('prefill failed');
@@ -2089,6 +2135,18 @@
   $('skip').addEventListener('click', advance);
   $('back').addEventListener('click', function () { if (step > 1) showStep(step - 1); });
   $('leave').addEventListener('click', leaveFlow);
+  // The failed state's own two doors. Retry re-runs load() as-is — by the
+  // time this is visible, weekStart is already resolved (a missing ?week
+  // is settled, one way or another, before load() can fail this way — see
+  // resolveWeekStart), so this only ever repeats the one fetch that
+  // actually failed. "‹ Plan" is a plain navigation, not leaveFlow: a
+  // failed load never reached the point of having answers to carry back.
+  $('failed-retry').addEventListener('click', function () {
+    $('failed').hidden = true;
+    $('loading').hidden = false;
+    load();
+  });
+  $('failed-leave').addEventListener('click', function () { location.href = '/week'; });
   $('freeform').addEventListener('input', paintCta);
   $('day-close').addEventListener('click', closeDaySheet);
   $('day-done').addEventListener('click', closeDaySheet);
