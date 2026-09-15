@@ -395,7 +395,7 @@ def test_the_section_head_and_the_preferences_row_say_the_same_words():
     sections = SHELL_JS[sections : SHELL_JS.index("];", sections) + 2]
     bodies = "".join(
         f"function {name}() {{ return ''; }}\n"
-        for name in ("wwkPeopleHtml", "wwkWontEatHtml", "wwkRhythmHtml",
+        for name in ("wwkHoldingHtml", "wwkPeopleHtml", "wwkWontEatHtml", "wwkRhythmHtml",
                      "wwkPrepDaysHtml", "wwkTasteHtml", "wwkCalendarHtml",
                      "wwkStoresHtml")
     )

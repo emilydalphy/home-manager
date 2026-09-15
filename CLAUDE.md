@@ -386,6 +386,29 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-15 — "Noted" must never note nothing: held things. Branch
+  `worktree-held-things`, NOT merged at the time of writing.** Loop Board
+  feature (flow H1, "Pomona, hold this"). Root cause of the walk's
+  "Noted — …" that saved nothing: the chat had a tool for everything it
+  CAN act on and none for a thing it can't yet, and `SYSTEM_PROMPT` lists
+  "noted" under "Words that work" — so the model acknowledged and dropped
+  it. New table `held_things` (text, member_id, said_on, resolved_at);
+  `app/tools/held.py` (`hold_thing` / `list_held_things` /
+  `resolve_held_thing`, plus `restore_held_thing` for Undo and
+  `generation_context`); routes `GET /api/held`, `POST /api/held/{id}/done`
+  and `/restore`; a HOLDING THINGS block at the end of `SYSTEM_PROMPT`
+  with the one exact reply ("Holding that. I'll bring it up when it's
+  useful." — `held.HOLD_REPLY`, handed back by the tool so prompt and code
+  can't drift); the weekly planner's context gains `held_things` (absent
+  when empty, like `holidays`) with a bullet telling it to plan a day
+  around one and name it in the reasoning. UI: a "Holding for you" card on
+  Now (`#today-holding`, chores-card shape, gone entirely when empty), a
+  "Holding for you" section first under What we know and a matching
+  Preferences row (both read `heldState`), the Holding chip under the chat
+  reply (`ChatAction.held`; `.ask-remembered.is-held`), "Done with this"
+  with Undo (S10). PLACEMENT IS ASSUMED pending Emily — one slot on Now
+  and one entry in each of `WWK_SECTIONS` / `PREFS_ROWS`, so moving it is
+  moving a line. Deliberately no reminder, no due date, no category.
 - **2026-09-15 — A Yes about tonight is read BEFORE the plan, so nothing
   can give up before looking at it. Branch
   `overnight/tonight-remembers-the-yes`, NOT merged at the time of

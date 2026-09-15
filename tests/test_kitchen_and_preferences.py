@@ -529,6 +529,9 @@ def test_a_brand_new_household_is_told_nothing_it_never_said(signed_in):
     # rather than "Not set yet" (copy cleanse, 2026-09-11) — still nothing
     # the household never said.
     assert lines == {
+        # The held list (2026-09-15) reads /api/held, not memory; the slice
+        # never fetches it, so the row is still reading — never a default.
+        "Holding for you": "Reading it back…",
         "Who’s here": "Not set yet",
         "Your rhythm": "Sets when to start cooking",
         "Prep days": "Batches the week around them",

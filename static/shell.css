@@ -1828,6 +1828,61 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   padding: 14px 0;
 }
 
+/* ---------- Holding for you (2026-09-15) ----------
+   Loop Board "'Noted' must never note nothing" — flow H1, "Pomona, hold
+   this". What the chat kept because nothing could act on it yet, in the
+   person's own words (renderHolding / wwkHoldingHtml in shell.js). The
+   chores card's own quiet shape — the same 10px eyebrow (.chores-header
+   h2), hairline rows, no apricot fill, no dock: a held thing is not
+   urgent by definition (Rule 3), and the card is a nudge, not a takeover
+   (§2b S3). "Done with this" is the row's one action: apricot-label text
+   in its own 44px row (Rule 6), the same quiet link the Remembered chip's
+   "Not quite" is. The slot is display:none while empty, like the
+   needs-you band, so a day with nothing held leaves no gap. */
+.today-area-holding:empty { display: none; }
+.holding-card { padding: 14px 14px 4px; }
+.holding-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px 0;
+  border-bottom: 1.5px solid var(--hairline);
+}
+.holding-row:last-child { border-bottom: none; }
+.holding-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.holding-text {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.35;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.holding-meta {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+.holding-done {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--apricot-label);
+  white-space: nowrap;
+}
+.holding-done:hover { color: var(--apricot-label-hover); }
+/* The same rows inside What we know's "Holding for you" panel. */
+.holding-list { display: flex; flex-direction: column; }
+.holding-list .holding-row:first-child { padding-top: 0; }
+
 /* ---------- The chat icon (every screen) ---------- */
 /* Emily, 2026-09-11, reviewing the screen-by-screen canvas: "the chat being
    an open bar the whole time is taking up too much room and is confusing.
@@ -2222,6 +2277,9 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   color: var(--apricot-label);
 }
 .ask-remembered-fix:hover { color: var(--apricot-label-hover); }
+/* The Holding chip (2026-09-15): the same chip carrying a whole sentence
+   of the person's words, so the words wrap and the link doesn't. */
+.ask-remembered.is-held .ask-remembered-fix { white-space: nowrap; }
 /* The word on a slot card's eyebrow for the eight seconds after a card is
    saved (daySlotCardHtml); the tile itself is shared with Kept above. Its
    placement lives with the Plan root's styles (.wk-slot-eyebrow .wk-changed). */
