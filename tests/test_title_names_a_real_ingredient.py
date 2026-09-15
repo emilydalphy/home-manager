@@ -240,8 +240,18 @@ def test_the_alias_table_only_ever_makes_the_rule_quieter():
     """CATCH on its second half. Every entry in _TITLE_INGREDIENT_ALIASES can
     turn a would-be flag into a pass and never the other way round — the
     first assertion says an alias quietens, the second that it does not
-    silence the rule outright."""
-    ingredients = _ing("Cannellini beans", "Carrots", "Celery")
+    silence the rule outright.
+
+    The first ingredient is a BARE "Cannellini", not "Cannellini beans",
+    and that is the whole point of this test. Its earlier version wrote
+    the full name, so the clause "with Beans" was answered by the word
+    "beans" sitting in the ingredient string and the assertion passed
+    with `_TITLE_FOOD_GROUPS` emptied — i.e. the one test in this file
+    claiming to pin the alias table proved nothing about it, which is
+    itself an instance of the forgiven-vs-invisible confusion this file
+    documents. Found on review, 2026-09-15. Mutation-checked: emptying
+    the table now reddens the first assertion."""
+    ingredients = _ing("Cannellini", "Carrots", "Celery")
     assert unkept_title_promises("Stew with Beans", ingredients, []) == []
     assert unkept_title_promises("Stew with Quinoa", ingredients, []) == ["Quinoa"]
 

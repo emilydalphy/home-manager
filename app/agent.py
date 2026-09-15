@@ -3943,8 +3943,19 @@ def _honest_meal_names(items: list[dict]) -> None:
 
     `taken` carries this household's recipe names plus every name corrected
     earlier in this same pass, so a correction can neither land on an
-    existing dinner nor collide with its own sibling — see
+    existing dinner nor collide with a sibling it has already passed — see
     plan_quality.honest_recipe_title for what goes wrong without it.
+    Said precisely, because an earlier version of this said "its own
+    sibling" flatly and that is not quite true: `taken` is seeded from
+    list_recipes() and grows only as the pass corrects, so a sibling
+    appearing LATER in the items list under its own uncorrected name is
+    not in it. Reproduced (2026-09-15): two new dishes named "Chicken Bowl
+    with Beans" (no beans) and "Chicken Bowl" (has beans) collapse to one
+    recipe, the honest one pointing at the beanless row. It needs the
+    model to emit two new dishes in one week whose names differ only by a
+    clause, it predates this correction, and `main` collapses that pair
+    too — so it is narrow and not this rule's doing, but the sentence
+    above was wrong and is now the narrower true one.
 
     **A RENAME IS CARRIED ACROSS THE WHOLE WEEK, and that is not a detail.**
     The prompt asks for a breakfast or a snack to repeat two or three times

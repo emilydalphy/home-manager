@@ -452,6 +452,15 @@ why*, not duplicating the diff.
     "courgette" to `staples._FRIDGE_WORDS` for its own good reasons and
     every one of them becomes judgeable overnight, and the alias table has
     to be right again with nothing having drawn attention to it.
+    **DO NOT READ THAT AS "THE BRITISH/US PAIRS ARE DEAD CODE" — HALF OF
+    THEM ARE STILL DOING REAL WORK, and deleting them would turn good
+    dinners into wrong renames.** Measured on review, each British word
+    promised over its US ingredient: courgette/zucchini, swede/rutabaga,
+    mangetout/snow pea and aubergine/eggplant are inert (the word is not in
+    the vocabulary, so nothing is judged either way) — but **rocket/arugula,
+    coriander/cilantro, prawn/shrimp and mince/beef all FLAG the moment
+    `_TITLE_FOOD_GROUPS` is emptied.** The eleven-word list above is exactly
+    right; the sentence that used to wrap it implied more than it should.
   - **It passes over far more than it touches, on purpose** (the
     2026-09-04 allergy rule: a check that fires on good dinners is one
     people learn to click past). It says nothing when the thing is in the
@@ -695,9 +704,14 @@ why*, not duplicating the diff.
        Guacamole", "with Tartare Sauce", "with Crackling and Apple Sauce")
        and alias-only words ("with Chorizo", "with Pappardelle"). Over 30
        dishonest titles of the shape the planner actually writes: **17
-       corrected (57%)**, 4 warned, 9 invisible; the reviewer's own 30 gave
-       **50%**. **The number for the thing she looks at is the second
-       one.** A deliberate bias toward silence — four rounds of review
+       corrected (57%)**, 4 warned, 9 invisible; one reviewer's own 30 gave
+       **50%** and a second reviewer's 16 planner-shaped titles gave
+       **25%** (every one of its 11 misses skipping for a reason written
+       down here). **Read 57% as the TOP of a 25-57% spread rather than a
+       measurement** — four independent samplers, four answers, and the
+       only thing all four agree on is the one that matters: **zero false
+       positives, in every sample.** The rule is safe; the coverage claim
+       is soft. A deliberate bias toward silence — four rounds of review
        found the loud direction doing real damage and the quiet direction
        doing none — but "never names an ingredient that isn't in its
        ingredient list" is emphatically not what ships.
