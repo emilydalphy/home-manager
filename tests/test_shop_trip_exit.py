@@ -548,12 +548,14 @@ console.log(JSON.stringify({ gone: gone, full: full }));
 # --- 6. source markers for the wiring the harness cannot reach ------------
 
 
-def test_the_list_load_restores_then_drops_stale_then_sorts():
-    """Order matters: the mirror is read before groMaybeSortFirst can call
+def test_the_list_load_restores_then_drops_stale_then_asks_about_leftovers():
+    """Order matters: the mirror is read before groMaybeCarryFirst can call
     goGroceryStep (which saves), and the stale check runs on every load so
-    it covers a tab left open for days as well as a relaunch."""
+    it covers a tab left open for days as well as a relaunch. (It was
+    groMaybeSortFirst until 2026-09-15; the list never opens SORT on its
+    own now, and the leftovers question is the only automatic step.)"""
     load = SHELL_JS[SHELL_JS.index("async function loadGrocery("):SHELL_JS.index("function refreshGroceryPanel(")]
-    assert "groRestoreTrip();\n      groDropStaleTrip();\n    }\n    groMaybeSortFirst();" in load
+    assert "groRestoreTrip();\n      groDropStaleTrip();\n    }\n    groMaybeCarryFirst();" in load
 
 
 def test_the_band_carries_the_paused_trip_line_and_the_dock_row_fits_shops_buttons():

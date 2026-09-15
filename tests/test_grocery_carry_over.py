@@ -14,8 +14,16 @@ a plan alive through its last day.
 
 Now the old lines are set aside first (status 'carried'), this week's
 amounts land clean, and the Shop tab asks "Still on the list from last
-week — keep or drop?" one screen before sorting. These tests pin the
+week — keep or drop?" one screen before the list. These tests pin the
 backend half; the screen is exercised in the node harness below.
+
+Updated 2026-09-15 (Loop Board, "Shop: the list hides behind the store
+question and the sort screen"): the screen used to hand over to the sort
+queue once the last leftover was answered, and "Decide later" left
+sorting to come next. SORT is never entered automatically any more —
+groMaybeSortFirst became groMaybeCarryFirst, which asks about the
+leftovers and nothing else — so the three node tests that expected
+"sort" after CARRY now expect the list, with the unsorted things on it.
 """
 from __future__ import annotations
 
@@ -457,10 +465,10 @@ _CARRIED = """[
 
 
 @_needs_node
-def test_the_leftovers_come_before_sorting_and_show_both_amounts():
+def test_the_leftovers_come_before_the_list_and_show_both_amounts():
     out = _node("""
 setUp(3, %s);
-groMaybeSortFirst();
+groMaybeCarryFirst();
 const head = groHeadFor(groceryState.data, groceryState.step);
 const html = groCarryHtml(groceryState.data);
 console.log(JSON.stringify({ step: groceryState.step, title: head.title, sub: head.sub, html: html, dock: groDockHtml(groceryState.data, 'carry') }));
@@ -477,10 +485,10 @@ console.log(JSON.stringify({ step: groceryState.step, title: head.title, sub: he
 
 
 @_needs_node
-def test_answering_the_last_one_moves_on_to_sorting():
+def test_answering_the_last_one_moves_on_to_the_list():
     out = _node("""
 setUp(3, %s);
-groMaybeSortFirst();
+groMaybeCarryFirst();
 click({ gro: 'carry-decide', decision: 'drop', id: '41', name: 'Chicken thighs' });
 settle(function () {
   const afterFirst = groceryState.step;
@@ -493,7 +501,7 @@ settle(function () {
 });
 """ % _CARRIED)
     assert out["afterFirst"] == "carry", "one answered, one still to go"
-    assert out["step"] == "sort", "the last answer hands over to sorting, since things are unsorted"
+    assert out["step"] == "list", "the last answer hands over to the list (2026-09-15; it used to open the sort queue)"
     assert out["posts"][0] == {"url": "/api/grocery-list/41/carried-over", "body": {"decision": "drop"}}
     assert out["posts"][1] == {"url": "/api/grocery-list/42/carried-over", "body": {"decision": "keep"}}
     assert out["toasts"][0] == ["Chicken thighs off the list", "Undo"]
@@ -504,7 +512,7 @@ settle(function () {
 def test_undo_goes_to_the_undo_route_and_later_is_remembered_for_the_visit():
     out = _node("""
 setUp(3, %s);
-groMaybeSortFirst();
+groMaybeCarryFirst();
 click({ gro: 'carry-decide', decision: 'keep', id: '41', name: 'Chicken thighs' });
 settle(function () {
   tapUndo();
@@ -512,7 +520,7 @@ settle(function () {
     const undoPost = POSTS[POSTS.length - 1];
     click({ gro: 'carry-later' });
     const stepAfterLater = groceryState.step;
-    groMaybeSortFirst();
+    groMaybeCarryFirst();
     console.log(JSON.stringify({ undo: undoPost, later: stepAfterLater, again: groceryState.step,
       row: groListHtml(groceryState.data).indexOf('data-gro="goto-carry"') !== -1 }));
   });
@@ -520,7 +528,7 @@ settle(function () {
 """ % _CARRIED)
     assert out["undo"] == {"url": "/api/grocery-list/41/carried-over-undo", "body": {}}
     assert out["later"] == "list"
-    assert out["again"] == "sort", "later means later: sorting proceeds, the leftovers don't bounce back"
+    assert out["again"] == "list", "later means later: the leftovers don't bounce back, and the list never opens SORT itself (2026-09-15)"
     assert out["row"] is True, "the way back in is a row at the top of the list"
 
 
@@ -528,8 +536,8 @@ settle(function () {
 def test_with_nothing_carried_over_the_screen_never_appears():
     out = _node("""
 setUp(3, []);
-groMaybeSortFirst();
+groMaybeCarryFirst();
 console.log(JSON.stringify({ step: groceryState.step, row: groListHtml(groceryState.data).indexOf('goto-carry') }));
 """)
-    assert out["step"] == "sort"
+    assert out["step"] == "list", "the list, with its things to sort on it (until 2026-09-15 this was the sort queue)"
     assert out["row"] == -1

@@ -256,14 +256,17 @@ def test_open_the_list_lands_on_the_list():
     )
 
 
-def test_the_stores_prompt_still_stands_in_for_the_store_cards():
-    """Loop Board 19a's just-in-time question, unchanged in behaviour: when
-    the household has no stores yet it renders INSTEAD of the store cards.
-    (Also guarded by tests/test_frontend_restored_2026_09_08.py.)"""
+def test_the_stores_prompt_sits_on_top_of_the_list():
+    """Loop Board 19a's just-in-time question. It used to render INSTEAD of
+    the store cards until answered; since 2026-09-15 (Loop Board, "Shop: the
+    list hides behind the store question and the sort screen") it is a card
+    at the top of the list, and the list renders under it. Its answers are
+    unchanged (see tests/test_stores_multiselect.py)."""
     _in("function groStoresPromptShouldShow(", SHELL_JS, "the stores prompt guard", "shell.js")
     _in("function groStoresPromptHtml(", SHELL_JS, "the stores prompt", "shell.js")
     _in("function groAddUsualStore(", SHELL_JS, "the usual-store add", "shell.js")
-    _in("return html + groStoresPromptHtml();", SHELL_JS, "the prompt standing in for the cards", "shell.js")
+    _in("html += groStoresPromptHtml();", SHELL_JS, "the prompt at the top of the list", "shell.js")
+    _not_in("return html + groStoresPromptHtml();", SHELL_JS, "the prompt standing in for the cards", "shell.js")
 
 
 # --- SORT ----------------------------------------------------------------
