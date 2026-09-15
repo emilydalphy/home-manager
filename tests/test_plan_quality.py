@@ -12,6 +12,7 @@ import datetime
 import pytest
 
 from app import agent, tools
+from app.db import get_conn
 from app.tools import plan_quality
 from app.tools.plan_quality import check_week
 
@@ -427,6 +428,14 @@ def test_finish_week_slots_checker_is_read_only(monkeypatch, caplog):
     exactly as generation produced it — this pass logs, it never repairs.
     """
     tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}], main_protein="beef")
+    # The fixture's premise is "no new recipe anywhere". "New" is read off
+    # recipes.times_cooked == 0, which moves only when a night is ticked
+    # cooked (never at planning time), so Chili has to have been cooked
+    # before this week for the novelty floor to have something to say.
+    conn = get_conn()
+    conn.execute("UPDATE recipes SET times_cooked = 3, last_cooked_date = '2026-01-05' WHERE name = 'Chili'")
+    conn.commit()
+    conn.close()
     week = _week_start()
     monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _full_week_with_quality_problems(week))
 

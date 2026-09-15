@@ -3,6 +3,7 @@ Cook mode: recipe detail, the prep schedule, and checking things off.
 """
 from __future__ import annotations
 
+import json
 import logging
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -253,6 +254,14 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
     get_attention_items rather than guessed at, and both are reported back
     in the result so it can be mentioned if relevant.
 
+    THIS IS WHERE A RECIPE'S COOK COUNT MOVES. recipes.times_cooked and
+    last_cooked_date ("you've made this 4 times", "last cooked in
+    August") follow the tick, not the plan: they go up once when a night
+    is marked done and back down when it is marked not-cooked — see
+    _move_recipe_cook_counters. Planning a recipe (plan_meal) leaves them
+    alone, so a discarded draft, a swapped night or a week that was never
+    cooked cannot leave a phantom count behind.
+
     Component-based plans are meal-prepped: the same component (e.g. a
     "Jello Bowl" side) is often planned for several meals across the week,
     but it only gets cooked once in one batch, not separately per meal —
@@ -399,6 +408,14 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
         f"cook_started_at = {started_at} WHERE id = ? AND household_id = ?",
         [(status, eid, household_id()) for eid in linked_ids],
     )
+    # Once per BATCH, like the depletion below: a component batch with a
+    # sibling already done was counted when that sibling was ticked, and
+    # unticking any sibling puts the whole batch back, so the count comes
+    # off once. `was_done` is exactly "had this batch been counted?".
+    if status == "done" and not was_done:
+        _move_recipe_cook_counters(conn, linked_ids, cooked=True)
+    elif status == "pending" and was_done:
+        _move_recipe_cook_counters(conn, linked_ids, cooked=False)
     conn.commit()
     conn.close()
     if status == "done":
@@ -482,6 +499,103 @@ def _changed_any_inventory_row(depleted: list[dict]) -> bool:
     column deliberately is not.
     """
     return any((d.get("result") or {}).get("units_reconciled") for d in depleted)
+
+
+def _is_leftovers_night(derived_from_json: str | None) -> bool:
+    """
+    A night whose derived_from.links_to names an earlier cook is a reheat
+    of that cook, not a cook of its own (see leftovers.py). The bare
+    links_to is the test, not the fully validated chain
+    plan_leftover_chains builds: the question here is only whether THIS
+    night was meant as leftovers, and a half-written chain still was.
+    repair_leftover_chains strips links_to off a night whose claim did
+    not hold up, so a night that reads as an ordinary cook here is one.
+    """
+    try:
+        derived = json.loads(derived_from_json or "{}")
+    except (TypeError, ValueError):
+        return False
+    return isinstance(derived, dict) and bool(str(derived.get("links_to") or "").strip())
+
+
+def _move_recipe_cook_counters(conn, entry_ids: list[int], cooked: bool) -> None:
+    """
+    Bump (cooked=True) or reverse (cooked=False) recipes.times_cooked /
+    last_cooked_date for the recipe(s) behind these entries. Loop Board
+    "A recipe counts as cooked the moment it's planned" (Emily): the two
+    columns are what "you've made this 4 times" and "last cooked in
+    August" read, and they feed the variety rules in the generation
+    prompt, so they have to mean meals the household actually ate.
+
+    Called AFTER the entries' cooked_status has been written on `conn`, so
+    "every other done night of this recipe" below already excludes the
+    ones being unticked. Nothing here commits; the caller owns the
+    transaction, and the tick and its count land together or not at all.
+
+    - A leftovers night (_is_leftovers_night) is skipped: ticking it eaten
+      is not a cook. A freeform entry has no recipe row, so nothing to
+      count.
+    - One bump per recipe per batch, whatever the batch's size — a
+      component batch is several rows for one cook.
+    - last_cooked_date is the meal's own date (the night it was for, as
+      the old planning-time bump also wrote), and only ever moves forward
+      on a tick: marking an older night done late does not pull "last
+      cooked" backwards. On an untick it is recomputed only if this was
+      the latest cook — it falls back to the newest remaining done night,
+      or to NULL when none is left.
+    - times_cooked is nudged, not recomputed from rows, so history
+      survives a cooked entry later being deleted with its plan. It never
+      goes below 0.
+    """
+    if not entry_ids:
+        return
+    marks = ",".join("?" for _ in entry_ids)
+    rows = conn.execute(
+        f"""
+        SELECT recipe_id, date, derived_from_json FROM meal_plan_entries
+        WHERE id IN ({marks}) AND household_id = ? AND recipe_id IS NOT NULL
+        """,
+        (*entry_ids, household_id()),
+    ).fetchall()
+    latest_by_recipe: dict[int, str] = {}
+    for r in rows:
+        if _is_leftovers_night(r["derived_from_json"]):
+            continue
+        latest_by_recipe[r["recipe_id"]] = max(latest_by_recipe.get(r["recipe_id"], ""), r["date"] or "")
+    for recipe_id, meal_date in latest_by_recipe.items():
+        if cooked:
+            conn.execute(
+                """
+                UPDATE recipes
+                   SET times_cooked = times_cooked + 1,
+                       last_cooked_date = CASE
+                           WHEN last_cooked_date IS NULL OR last_cooked_date < ? THEN ?
+                           ELSE last_cooked_date END
+                 WHERE id = ? AND household_id = ?
+                """,
+                (meal_date, meal_date, recipe_id, household_id()),
+            )
+            continue
+        remaining = conn.execute(
+            """
+            SELECT date, derived_from_json FROM meal_plan_entries
+            WHERE household_id = ? AND recipe_id = ? AND cooked_status = 'done'
+            """,
+            (household_id(), recipe_id),
+        ).fetchall()
+        newest = max(
+            (r["date"] for r in remaining if r["date"] and not _is_leftovers_night(r["derived_from_json"])),
+            default=None,
+        )
+        conn.execute(
+            """
+            UPDATE recipes
+               SET times_cooked = MAX(times_cooked - 1, 0),
+                   last_cooked_date = CASE WHEN last_cooked_date = ? THEN ? ELSE last_cooked_date END
+             WHERE id = ? AND household_id = ?
+            """,
+            (meal_date, newest, recipe_id, household_id()),
+        )
 
 
 def _claim_inventory_depletion(entry_ids: list[int]) -> bool:

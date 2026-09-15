@@ -856,6 +856,109 @@ def _run_migrations(conn):
     _backfill_snacks_per_week_set(conn)
     _migrate_chore_modes(conn)
     _backfill_chore_done_on(conn)
+    _run_once_data_migrations(conn)
+
+
+# Data migrations that must run exactly ONCE per database, unlike every
+# backfill above (all idempotent, all re-run at every startup). The marker
+# is SQLite's own PRAGMA user_version — an integer kept in the file header,
+# 0 on every database that predates this — so it needs no table of its
+# own and survives backups and restores with the file. Each entry is
+# (version, function); a database at version n runs every entry above n,
+# in order, and is stamped with the last one it ran. Add to the END.
+_DATA_VERSION_COOK_COUNTERS = 1
+
+
+def _run_once_data_migrations(conn):
+    steps = [
+        (_DATA_VERSION_COOK_COUNTERS, _backfill_recipe_cook_counters_from_ticks),
+    ]
+    current = conn.execute("PRAGMA user_version").fetchone()[0]
+    for version, step in steps:
+        if version <= current:
+            continue
+        step(conn)
+        # An integer literal, not a bound parameter: PRAGMA takes no
+        # placeholders. `version` is one of the module constants above.
+        conn.execute(f"PRAGMA user_version = {int(version)}")
+        current = version
+
+
+def _is_leftovers_night_json(derived_from_json) -> bool:
+    """
+    tools.cooker._is_leftovers_night, restated here because db.py sits
+    below tools/ and cannot import from it: a derived_from.links_to means
+    the night reheats an earlier cook rather than being one.
+    """
+    try:
+        derived = json.loads(derived_from_json or "{}")
+    except (TypeError, ValueError):
+        return False
+    return isinstance(derived, dict) and bool(str(derived.get("links_to") or "").strip())
+
+
+def _backfill_recipe_cook_counters_from_ticks(conn):
+    """
+    Loop Board "A recipe counts as cooked the moment it's planned". Until
+    this change plan_meal bumped recipes.times_cooked / last_cooked_date
+    on INSERT, so every existing database carries counts that include
+    drafts, swapped-out nights and abandoned generations — "Roast
+    Chicken, made 2 times, last cooked 2027-10-14" with both of its
+    nights still pending. From now on the columns move only when a night
+    is ticked cooked (tools.cooker.check_off_meal), so the starting point
+    has to be rebuilt the same way: every recipe's count becomes the
+    number of its meal_plan_entries ticked done (cooked_status = 'done'),
+    leftovers nights excluded, and last_cooked_date the latest such
+    night's date — NULL, and 0, for a recipe never ticked. Recipes with no
+    entries at all are reset too: their old count could only have come
+    from rows since deleted with their plan, which is planning history,
+    not cooking history.
+
+    ONCE per database, not every startup (see _run_once_data_migrations):
+    after this runs the tick is the source of truth and a cooked night
+    whose plan is later deleted keeps its place in the count — recomputing
+    from rows again would take it away.
+
+    A household that ticked nothing off before this ships will see its
+    favourites' counts drop to 0. That is the honest number under the new
+    meaning, and the assumption Emily may want to override (the
+    alternative — keeping the old counts as a floor — would keep the
+    drafted-not-eaten residue this card exists to remove).
+    """
+    counts: dict[int, int] = {}
+    latest: dict[int, str] = {}
+    rows = conn.execute(
+        """
+        SELECT recipe_id, date, derived_from_json FROM meal_plan_entries
+        WHERE cooked_status = 'done' AND recipe_id IS NOT NULL
+        """
+    ).fetchall()
+    for r in rows:
+        if _is_leftovers_night_json(r["derived_from_json"]):
+            continue
+        rid = r["recipe_id"]
+        counts[rid] = counts.get(rid, 0) + 1
+        if r["date"] and r["date"] > latest.get(rid, ""):
+            latest[rid] = r["date"]
+    reset = conn.execute("UPDATE recipes SET times_cooked = 0, last_cooked_date = NULL").rowcount
+    conn.executemany(
+        "UPDATE recipes SET times_cooked = ?, last_cooked_date = ? WHERE id = ?",
+        [(n, latest.get(rid), rid) for rid, n in counts.items()],
+    )
+    # Said out loud either way. The no-ticks case is the one that looks
+    # like data loss from the outside (every favourite's count gone to 0
+    # overnight), so it is the one that most needs a line in the log
+    # explaining itself.
+    if counts:
+        logger.info(
+            "[cook counters backfill] recomputed times_cooked/last_cooked_date for %d recipe(s) from ticked-cooked nights",
+            len(counts),
+        )
+    elif reset:
+        logger.info(
+            "[cook counters backfill] Reset cook counters on %d recipes to 0 — no cooked nights on record yet",
+            reset,
+        )
 
 
 def _migrate_chore_modes(conn):

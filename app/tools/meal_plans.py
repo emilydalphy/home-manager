@@ -73,7 +73,7 @@ def plan_meal(
     the meal it is replacing and writes this one in its place, and those
     have to be ONE transaction or the gap between them is a day with no
     row at all — the one state schema.sql says can never exist. Given a
-    connection, the row, the recipe counters and the grocery ingest are
+    connection, the row and the grocery ingest are
     all written on it and nothing here commits or closes; the caller owns
     both. Left unset, every other call site behaves exactly as before.
     """
@@ -145,14 +145,14 @@ def plan_meal(
         conn.commit()
     entry_id = cur.lastrowid
 
-    if recipe:
-        conn.execute(
-            "UPDATE recipes SET times_cooked = times_cooked + 1, last_cooked_date = ? WHERE id = ?",
-            (meal_date, recipe["id"]),
-        )
-        if own_conn:
-            conn.commit()
-
+    # Planning a recipe deliberately does NOT touch recipes.times_cooked /
+    # last_cooked_date. It used to (a bump right here, on insert), which
+    # made "you've made this 4 times" and "last cooked in August" count
+    # drafts, swapped-out nights and abandoned generations as meals the
+    # household ate — and the variety rules then steered the next week
+    # away from dishes nobody had actually cooked. Those two columns now
+    # move only when a night is ticked cooked (cooker.check_off_meal), so
+    # a discarded draft or a swap has nothing to put back.
     recipe_ingredients = json.loads(recipe["ingredients_json"]) if recipe else []
     if own_conn:
         conn.close()
@@ -402,64 +402,3 @@ def discard_failed_plan(weekly_plan_id: int) -> dict:
         if conn is not None:
             conn.close()
     return removed
-
-
-def snapshot_recipe_cook_counters() -> dict:
-    """
-    The `times_cooked` / `last_cooked_date` of every recipe, so a failed
-    week generation can put them back.
-
-    plan_meal bumps both when it attaches a meal to a plan. That is fine
-    when the plan survives -- but when a generation fails partway and is
-    rolled back, deleting the meal rows does not undo the counters, so
-    every recipe the abandoned attempt touched is left looking recently
-    cooked. Those two fields feed the variety and rotation rules in the
-    generation prompt, so the residue quietly biases the NEXT week's plan
-    away from meals the household never actually ate.
-    """
-    conn = get_conn()
-    rows = conn.execute(
-        "SELECT id, times_cooked, last_cooked_date FROM recipes WHERE household_id = ?",
-        (household_id(),),
-    ).fetchall()
-    conn.close()
-    return {r["id"]: (r["times_cooked"], r["last_cooked_date"]) for r in rows}
-
-
-def restore_recipe_cook_counters(snapshot: dict) -> int:
-    """
-    Put the counters back to what snapshot_recipe_cook_counters recorded.
-
-    Only touches recipes whose values actually moved, and only ones that
-    were in the snapshot -- a recipe created during the failed attempt has
-    no "before" to return to, and is left alone rather than guessed at.
-
-    Never raises: like discard_failed_plan, this runs while another
-    exception is propagating, and must not replace the real error.
-    """
-    restored = 0
-    conn = None
-    try:
-        conn = get_conn()
-        current = conn.execute(
-            "SELECT id, times_cooked, last_cooked_date FROM recipes WHERE household_id = ?",
-            (household_id(),),
-        ).fetchall()
-        for row in current:
-            was = snapshot.get(row["id"])
-            if was is None or (row["times_cooked"], row["last_cooked_date"]) == was:
-                continue
-            conn.execute(
-                "UPDATE recipes SET times_cooked = ?, last_cooked_date = ? WHERE id = ? AND household_id = ?",
-                (was[0], was[1], row["id"], household_id()),
-            )
-            restored += 1
-        conn.commit()
-    except Exception:
-        logging.getLogger("home_manager").exception(
-            "Could not restore recipe cook counters after a failed generation"
-        )
-    finally:
-        if conn is not None:
-            conn.close()
-    return restored

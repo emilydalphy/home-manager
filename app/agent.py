@@ -4295,9 +4295,12 @@ def _generate_weekly_plan(
     # 2026-08-31: an orphan plan with zero meals, alongside a good one for
     # the same week.
     completed = False
-    # Captured before anything is written, so a rollback can undo more
-    # than the rows it deletes -- see snapshot_recipe_cook_counters.
-    counters_before = tools.snapshot_recipe_cook_counters()
+    # Deleting the rows is the whole rollback. There used to be a second
+    # half — snapshot and restore recipes.times_cooked/last_cooked_date,
+    # because plan_meal bumped them on insert and an abandoned attempt
+    # left every recipe it touched looking recently cooked. Those columns
+    # now move only when a night is ticked cooked (cooker.check_off_meal),
+    # so a generation that never finished has nothing to put back.
     try:
 
         def _ensure_recipe_saved(meal_name, item):
@@ -4466,7 +4469,6 @@ def _generate_weekly_plan(
             # guarantee shouldn't rest on the helper's internals alone.
             try:
                 tools.discard_failed_plan(plan_id)
-                tools.restore_recipe_cook_counters(counters_before)
             except Exception:
                 logger.exception(
                     "Rolling back weekly plan %s failed; keeping the original error", plan_id
