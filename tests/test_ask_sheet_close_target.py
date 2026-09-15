@@ -159,9 +159,11 @@ def test_no_desktop_ask_column_short_circuit_remains():
     )
     open_fn = re.search(
         # (prefill, context) since 2026-09-13 — the second argument is the
-        # subject a meal card opens chat about; the history plumbing is
-        # unchanged by it.
-        r"function openAskSheet\(prefill, context\) \{(.*?)\n  \}\n",
+        # subject a meal card opens chat about. A third, `greeting`, was
+        # added 2026-09-15 so an opener whose default "rework it" line
+        # doesn't fit (Cook's "Ask about our recipes" row) can supply its
+        # own first message; the history plumbing is unchanged by either.
+        r"function openAskSheet\(prefill, context, greeting\) \{(.*?)\n  \}\n",
         SHELL_JS,
         re.S,
     )

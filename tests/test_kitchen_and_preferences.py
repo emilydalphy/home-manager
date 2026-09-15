@@ -125,17 +125,38 @@ def test_the_rest_of_the_week_is_the_shelf():
 
 def test_the_two_quiet_tiles_are_inventory_and_recipes():
     """Rows in one card since 2026-09-11 (Build 8); in the More sheet, one
-    tap off the root, since 2026-09-13 — still quiet, still no apricot."""
+    tap off the root, since 2026-09-13 — still quiet, still no apricot.
+    The recipes row was relabelled "Ask about our recipes" (from bare
+    "Recipes") 2026-09-15 — it opens the chat, not a recipes screen, and
+    the row should say so rather than imply a browser that doesn't exist."""
     tiles = _function("cookMoreRowsHtml")
     # Inventory's title is followed by the "In development" pill (Loop
     # Board: mark inventory as still being built) rather than closing
     # straight away — see tests/test_inventory_in_development_marker.py
     # for that pill's own coverage.
-    assert 'kit-row-title">Inventory' in tiles and ">Recipes<" in tiles
+    assert 'kit-row-title">Inventory' in tiles and ">Ask about our recipes<" in tiles
     assert 'class="kit-row"' in tiles, "Kitchen's entry points are quiet rows"
     assert "btn-primary" not in tiles and "apricot" not in tiles, (
         "the entry points are quiet — the root's one apricot is the dock's (DESIGN_SYSTEM Rule 5)"
     )
+
+
+def test_ask_about_our_recipes_opens_the_chat_with_its_own_greeting():
+    """
+    The row opens the chat (there's no recipes screen to open — see
+    cookMoreRowsHtml's own comment), so it must not greet with Plan's
+    "Tell me what you'd like different and I'll rework it." — a household
+    tapping this to ask what's in the fridge isn't asking to change
+    anything. openAskSheet's third argument carries the sheet's one-time
+    opening line for callers whose default doesn't fit; 2026-09-15.
+    """
+    click = _function("onKitchenClick")
+    match = re.search(r"openAskSheet\(([^)]*)\)", click)
+    assert match, "the recipes row must open the ask sheet"
+    args = match.group(1)
+    assert "'What recipes do we have saved?'" in args
+    assert "rework it" not in args, "must not fall through to Plan's rework-it greeting"
+    assert "Ask me anything about the recipes we" in args
 
 
 def test_what_we_know_and_the_snw_tile_left_the_kitchen_tab():

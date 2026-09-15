@@ -8785,7 +8785,9 @@
       return;
     }
     if (what === 'recipes') {
-      openAskSheet('What recipes do we have saved?');
+      // Cook's own opener, not Plan's "I'll rework it" — this row isn't
+      // about changing the week, it's a question about what's saved.
+      openAskSheet('What recipes do we have saved?', null, 'Ask me anything about the recipes we’ve saved.');
       return;
     }
     if (what === 'recipe-link') {
@@ -8815,7 +8817,7 @@
       // the assistant answers off list_recipes (app/tools/recipes.py).
       '<button type="button" class="kit-row" data-kit="recipes">' +
         '<span class="kit-row-icon">' + KITCHEN_ICONS.book + '</span>' +
-        '<span class="kit-row-text"><span class="kit-row-title">Recipes</span></span>' +
+        '<span class="kit-row-text"><span class="kit-row-title">Ask about our recipes</span></span>' +
         '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
       '</button>' +
       // Bring in a recipe the household already makes, from a web page —
@@ -20379,6 +20381,12 @@
   var askSendBtn = document.getElementById('ask-send-btn');
   var askSessionId = 'default'; // same shared backend session static/index.html always used
   var askBuilt = false;
+  // The text of the most recently added assistant bubble, tracked so a
+  // second ensureAskSheetBuilt call (the sheet was already built by an
+  // earlier opener this page load) can tell whether its own greeting was
+  // already just said, rather than stacking a duplicate — see
+  // ensureAskSheetBuilt.
+  var lastAssistantAskText = null;
   var askSending = false;
   var askConversationStarted = false;
   // ---------- What this conversation is about ----------
@@ -20951,14 +20959,41 @@
     return askInput ? [{ input: askInput, btn: askSendBtn }] : [];
   }
 
-  function ensureAskSheetBuilt() {
-    if (askBuilt) return;
+  // Plan's own opener assumes you came here to change something about the
+  // week — true for the ask bar on Plan and for most sheet openers, but
+  // not for the ones below that open the sheet on an unrelated question
+  // (Cook's "Ask about our recipes" row, say, which just wants to know
+  // what's saved, not to rework anything). Callers that don't fit the
+  // default pass their own opener through openAskSheet's third argument;
+  // everyone else gets the original line. The sheet is one shared thread
+  // across tabs for the rest of the page load, not reset per tab — so
+  // this greeting isn't only a first-build concern: if Plan's chat opened
+  // the thread earlier in the session, tapping Cook's row still needs its
+  // own line to show (ensureAskSheetBuilt below appends it to the
+  // existing thread rather than skipping it just because the sheet was
+  // already built).
+  var DEFAULT_ASK_GREETING = 'Tell me what you’d like different and I’ll rework it.';
+
+  function ensureAskSheetBuilt(greeting) {
+    if (askBuilt) {
+      // The thread is shared across every opener for the rest of the page
+      // load (askBuilt only gates the very first build) — so an opener
+      // whose own greeting doesn't fit whatever already opened the thread
+      // (Plan's chat, say, before Cook's "Ask about our recipes" gets a
+      // tap) still needs to say its own thing, once, rather than silently
+      // leaving Plan's line standing under an unrelated question. Checking
+      // only the LAST assistant message — not the whole thread — is what
+      // keeps a second tap of the same row from stacking the same line
+      // again.
+      if (greeting && lastAssistantAskText !== greeting) addAskMessage('assistant', greeting);
+      return;
+    }
     askBuilt = true;
     loadQuickActionChips();
     // No exclamation mark, and an offer rather than an instruction — this
     // is the first thing the assistant ever says, and it has to sit beside
     // the same voice as the rest of the app.
-    addAskMessage('assistant', 'Tell me what you’d like different and I’ll rework it.');
+    addAskMessage('assistant', greeting || DEFAULT_ASK_GREETING);
   }
 
   function buildAskMessageEl(role, text, actions) {
@@ -21251,6 +21286,10 @@
   }
 
   function addAskMessage(role, text, actions) {
+    // See lastAssistantAskText's own comment — every assistant bubble
+    // updates it, not just greetings, so it always reflects the thread's
+    // actual last word.
+    if (role === 'assistant') lastAssistantAskText = text;
     // Returns one element per surface that received it (0-2), so the
     // caller (sendAskMessage's loading bubble) can remove/update all of
     // them together — see the multi-target comment above.
@@ -21559,8 +21598,12 @@
   // `context` is the subject the sheet is being opened about (see
   // askContext above); left out, whatever subject the open sheet already
   // had stays — a re-open after a "View" hop is not a change of topic.
-  function openAskSheet(prefill, context) {
-    ensureAskSheetBuilt();
+  // `greeting` is an opener whose default "rework it" line wouldn't fit
+  // (see ensureAskSheetBuilt) — passed every open, not just the sheet's
+  // first build, since the thread can already exist from an earlier
+  // opener by the time this one runs.
+  function openAskSheet(prefill, context, greeting) {
+    ensureAskSheetBuilt(greeting);
     closeWeekSheet();
     closeMealsMoreSheet();
     if (context) setAskContext(context);
@@ -22710,7 +22753,12 @@
   };
 
   // The one example built from household data rather than written down.
+  // The server names an adult who isn't the one signed in when it can
+  // (household.get_coaching_state) — but a lone adult IS the one signed
+  // in, and `example_is_you` says so, so the chip speaks in the first
+  // person instead of naming you in the third.
   function coachAwayExample() {
+    if (coachState && coachState.exampleIsYou) return 'I’m out Thursday';
     var name = coachState && coachState.exampleName;
     return name ? name + ' is out Thursday' : 'One of us is out Thursday';
   }
@@ -22732,6 +22780,10 @@
     // example. Null until /api/coaching answers, and for a household with
     // no members yet — coachAwayExample() has a name-free sentence for both.
     exampleName: null,
+    // True when the example adult IS the one signed in (always true for a
+    // one-adult household) — coachAwayExample() then speaks in the first
+    // person instead of naming the signed-in person back to themself.
+    exampleIsYou: false,
     // Starts true so nothing can flash before /api/coaching answers: a card
     // that appears and vanishes is worse than one that appears a beat late.
     seen: true
@@ -23175,6 +23227,7 @@
           coachState.hasPlan = !!state.has_plan;
           coachState.seen = !!state.coaching_seen_at;
           coachState.exampleName = state.example_name || null;
+          coachState.exampleIsYou = !!state.example_is_you;
         }
         // Whatever tab the app opened on never got counted, because the
         // household wasn't known yet.
