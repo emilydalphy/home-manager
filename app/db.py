@@ -625,6 +625,20 @@ def _merge_duplicate_item_store_preferences(conn):
                     conn.execute("DELETE FROM item_store_preferences WHERE id = ?", (row["id"],))
 
 
+def _delete_blank_grocery_items(conn):
+    """
+    One-time cleanup (2026-09-15, Loop Board bug card): before
+    tools.grocery.add_grocery_item started trimming and rejecting a blank
+    name, a stray tap or a mis-parsed scanned/chat message could land a
+    row whose item is empty or all whitespace -- it would sit on the list
+    forever since nothing could ever match it to tick or clear it. New
+    adds can't create one any more; this sweeps whatever a database made
+    before that fix. Idempotent: a household with no blank rows left does
+    nothing here every startup after the first.
+    """
+    conn.execute("DELETE FROM grocery_items WHERE TRIM(item) = ''")
+
+
 _REPEATS_TOLERANCE_TO_LEFTOVERS_STANCE = {
     "cook_once_eat_twice": "love_them",
     "one_a_week": "fine_sometimes",
@@ -850,6 +864,7 @@ def _run_migrations(conn):
     # Idempotent: only ever touches rows whose color is still blank.
     _backfill_member_colors(conn)
     _merge_duplicate_item_store_preferences(conn)
+    _delete_blank_grocery_items(conn)
     _migrate_repeats_tolerance_to_leftovers_stance(conn)
     _migrate_planning_anchor_values(conn)
     _backfill_allergy_notes_from_facts(conn)
