@@ -101,7 +101,8 @@ unless Pomona acted on it.
 Pomona can't act on a thing — does it hold it or drop it; (c) the reply after a
 consequence-laden fact ("dinner didn't happen") — does it do the thinking.
 
-- **State:** `Walked` 2026-09-15. **Caveat:** the walk ran on the laptop copy of the
+- **State:** `Walked` 2026-09-15; four cards from the walk Done the same day — **due a
+  re-walk** (on her phone) before it can be `Refined`. **Caveat:** the walk ran on the laptop copy of the
   household, whose week is not Emily's real week (its only approved plan is dated
   October 2027 — leftover test data, not a bug in her life). The defrost tick she made
   on her phone does not exist on this copy. Findings about *behaviour* (the greeting, the
@@ -112,21 +113,22 @@ consequence-laden fact ("dinner didn't happen") — does it do the thinking.
 **Friction found:**
 - The door is labelled "meal edits" — greeting + all three chips are about dinner;
   nothing says "I'll hold things for you." She translated her thought into a command
-  because of it. → card "Ask: the door says 'hold this', not 'meal edits'" (High, Phase 1)
+  because of it. → card "Ask: the door says 'hold this', not 'meal edits'" (High, Phase 1) → Done, merged c779345 2026-09-15
   https://app.notion.com/p/3dc1f4c0523181bd8fedc123c0b31811
 - "Noted" that notes nothing — when Pomona can't act, it sounds like it held the thing
   and drops it. No place a held thing lives; no surfacing later. **The founding-anchor
   gap.** → card "'Noted' must never note nothing" (High, Phase 1, Needs Your Call on
-  placement) https://app.notion.com/p/3dc1f4c05231813ea265c842b5e0e587
+  placement) → Done, merged 3dc9897 2026-09-15 — placement (Now card + What we know) still
+  Emily's to confirm https://app.notion.com/p/3dc1f4c05231813ea265c842b5e0e587
 - Skipped dinner → no consequences worked out (move the dish, the thawed protein, the
   groceries bought for it). Work handed back to her. *Emily to re-type the in-laws
   sentence into the real Pomona on her phone; card only after that (on her to-do).*
 - A supply item dropped in chat isn't offered as a staple. → card "Something you run
-  out of, mentioned in chat, is offered as a staple" (Medium, Phase 1.5)
+  out of, mentioned in chat, is offered as a staple" (Medium, Phase 1.5) → Done, merged 6435ed5 2026-09-15
   https://app.notion.com/p/3dc1f4c05231817fbba1d7c787966bba
 - Chat voice slips: "plan entry on file," "reconcile against," "inventory," three
   paragraphs where one would do. → card "Chat voice: one line for what I did…" (Medium,
-  Phase 1) https://app.notion.com/p/3dc1f4c0523181aaba2ad46c881657dc
+  Phase 1) → Done, merged 40cd499 2026-09-15 https://app.notion.com/p/3dc1f4c0523181aaba2ad46c881657dc
 - Small: "moved" vs created; tips sheet says "type for the rest" but the chat greeting
   narrows it back to meals — the two disagree.
 - Seen in passing (belongs to flow 0): **WEEK SET** badge while Now says "Quiet day —
