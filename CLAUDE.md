@@ -437,10 +437,21 @@ why*, not duplicating the diff.
   - **The alias table is read in BOTH directions** (`_TITLE_FOOD_GROUPS`).
     Read one way, every word listed as a *satisfier* was an unsatisfiable
     *promise*: "Chicken with Orzo" over a list saying Pasta, "Soup with
-    Ciabatta" over Sourdough — eight more wrong renames. The British/US
-    produce pairs (courgette/zucchini, rocket/arugula, coriander/cilantro,
-    swede/rutabaga, mangetout/snow pea, prawn/shrimp) live in the same
-    table and close five more; this repo's own fixtures write both.
+    Ciabatta" over Sourdough — eight more wrong renames, and the British/US
+    produce pairs closed five more.
+    **THAT IS THE HISTORY AND IT IS NO LONGER THE MECHANISM — corrected
+    after round 3's own change, measured rather than assumed.** Round 3
+    took the alias words OUT of the vocabulary, so all eleven of those
+    cases are now **invisible rather than forgiven**: orzo, basmati,
+    ciabatta, sourdough, flatbread, mangetout, courgette, aubergine, swede,
+    cornbread and crouton are none of them judgeable, and emptying
+    `_TITLE_FOOD_GROUPS` outright leaves every one of them passing. The
+    table earns its keep only on words the six tables DO know (cannellini
+    answering for beans, cheddar for cheese). **So the six-table coupling
+    named below is now the single point of failure for all eleven**: add
+    "courgette" to `staples._FRIDGE_WORDS` for its own good reasons and
+    every one of them becomes judgeable overnight, and the alias table has
+    to be right again with nothing having drawn attention to it.
   - **It passes over far more than it touches, on purpose** (the
     2026-09-04 allergy rule: a check that fires on good dinners is one
     people learn to click past). It says nothing when the thing is in the
@@ -532,10 +543,11 @@ why*, not duplicating the diff.
     `WHERE name = ?` expecting one row), and it cannot touch a meal saved
     as freeform text — there is no ingredient list behind one to hold the
     name against.
-  - `tests/test_title_names_a_real_ingredient.py` (135). **The numbers to
-    trust are commit-to-commit, because they need no stubbing: 60 red
-    against this branch's first cut (`005b81e`) and 20 against its second
-    (`b4f0304`).** Red-against-`main` was quoted as 26 and then as 24 and
+  - `tests/test_title_names_a_real_ingredient.py` (139). **The numbers to
+    trust are commit-to-commit, because they need no stubbing: red against
+    this branch's own earlier commits, re-measured each round — 61 against
+    the first cut (`005b81e`), 24 against the second (`b4f0304`), 3
+    against the third (`ba2c737`).** Red-against-`main` was quoted as 26 and then as 24 and
     then measured at 33 — the three differ only in how many of the absent
     names the harness stubs, because the file cannot be collected against
     main at all, so **it is not a meaningful number for this file** and is
@@ -550,7 +562,12 @@ why*, not duplicating the diff.
     carve-out, the vague list, the modifier list, the thin-head guard).
     90 of them are negative cases — real dish names from this repo's own
     tests and fixtures, the review's own 28, and swept batches of plausible
-    generated dinners, every one of which must be left alone. **The lists
+    generated dinners, every one of which must be left alone. **About a
+    third of those pass because the word is not in the vocabulary at all,
+    not because the mechanism their section documents works** (measured: 15
+    unknown-word, 11 alias-only, of 79 checked), and no test tells
+    "forgiven" from "invisible" — so do not read a green negative as
+    evidence that the alias table or the vague list did anything. **The lists
     were TUNED against sweeps rather than guessed, and the first round of
     tuning is exactly what review showed is not enough**: 45 plausible
     titles written by the author found three false positives; 77 written by
@@ -558,7 +575,7 @@ why*, not duplicating the diff.
     carry — you cannot sweep your own blocklist, and round 3 proved it a
     third time with the -oes plurals. After the inversion: 0 wrong renames
     across the review's 28 and 30 more adversarial titles, with all 5 of
-    its controls still caught. Suite **4923 passed, 0
+    its controls still caught. Suite **4927 passed, 0
     failed** at `TZ=America/Toronto` (4788 before this card). Driven over a real uvicorn on a
     throwaway DB: generation saves the recipe and files the slot as "Seared
     Turkey and Zucchini Skillet", the Cook view reads it with the same
@@ -625,6 +642,35 @@ why*, not duplicating the diff.
       six-table. Groups are also keyed on STEMS, because `"chip": {"fries"}`
       stemmed to "fry" and sat there matching nothing while still making
       its words judgeable.
+  - **ROUND 4 (2026-09-15): the one STRICT REGRESSION AGAINST MAIN this
+    card produced, found after three rounds of review had passed it.** The
+    prompt asks for a breakfast or a snack to repeat two or three times,
+    marking the first `is_new_recipe` and the repeats not — and `taken` was
+    a snapshot taken BEFORE the pass, which never reflected the pass's own
+    renames back onto later items carrying the same original name. So a
+    dish corrected on Monday was unrecognisable to Tuesday's copy of it:
+    `plan_meal` looked the old name up, found nothing, and **Tuesday and
+    Wednesday landed as FREEFORM entries** — no recipe on Cook, no steps,
+    nothing bought at approval. Doing nothing at all was better, which is
+    the only time that has been true of this card. Marking every copy new
+    was no better: the second was corrected onto its own sibling's new
+    name, refused for colliding with it, and the week ended with TWO recipe
+    rows for one dish that `repair_recipe_titles` could then never
+    reconcile — the thing its own docstring calls the worse problem, and
+    introduced by round 2's collision guard, which round 3 rewrote without
+    noticing. Fixed by carrying a rename across the whole pass: the FIRST
+    thing every item is asked is whether this pass has already renamed a
+    dish by that name, before any gate and needing no ingredient list.
+    Same root as the other three — a name that identifies a row, judged
+    against something that is not that row; here a row this very pass made.
+  - **"One fix, not three" was the framing and not the count, and that
+    should be said plainly.** The big-meal blocker needed BOTH halves: with
+    the name guard but not the clocks the timeline still loses its times,
+    and with the clocks but not the guard a saved recipe whose steps
+    genuinely never say the clause word is still renamed and forked. Round
+    3 pinned only the clocks half, so **deleting `taken=` from
+    `_clean_main` left the entire suite green while the blocker came
+    straight back**; there is a behavioural test on it now.
   - **Residue left on purpose, so nobody reports it as new:** a title whose
     thing is in none of the six tables (broccolini, capers, anchovies,
     ricotta, halloumi) or only in the alias table (chorizo, orzo,
@@ -641,13 +687,20 @@ why*, not duplicating the diff.
   - **FIVE THINGS FOR EMILY, named rather than tuned away. Three rounds of
     review is where this stops; the rest is her call.**
     1. **The ticket's criterion as literally written is NOT met, and the
-       number is measured rather than described.** Over 66 ordinary dinner
-       ingredients promised by a title and absent from the recipe: **48
-       corrected (72%), 5 warned and never corrected (7%), 13 invisible
-       (19%)**. A deliberate bias toward silence — three rounds of review
+       number to look at is 50-57%, not 72%.** Two measurements, and the
+       difference between them is the point. Over 66 bare INGREDIENTS
+       promised and absent: 48 corrected (**72%**), 5 warned, 13 invisible
+       — an independent reviewer reproduced that at 79-81%. But Emily's
+       screens show TITLES, and a real title carries vague words ("with
+       Guacamole", "with Tartare Sauce", "with Crackling and Apple Sauce")
+       and alias-only words ("with Chorizo", "with Pappardelle"). Over 30
+       dishonest titles of the shape the planner actually writes: **17
+       corrected (57%)**, 4 warned, 9 invisible; the reviewer's own 30 gave
+       **50%**. **The number for the thing she looks at is the second
+       one.** A deliberate bias toward silence — four rounds of review
        found the loud direction doing real damage and the quiet direction
        doing none — but "never names an ingredient that isn't in its
-       ingredient list" is not what ships.
+       ingredient list" is emphatically not what ships.
     2. **An allergen clause is warned and never corrected, and there is no
        way to rename a recipe from any screen**, so those warnings recur on
        every generation for ever. The five are shrimp, prawns, eggs,
@@ -671,6 +724,14 @@ why*, not duplicating the diff.
        tempeh, edamame) are not carved out either. Safe by the carve-out's
        own argument — the rule only removes a word the recipe hasn't got —
        but worth naming, since a fish allergy is real.
+    6. **The name guard makes a pre-existing behaviour the default
+       outcome.** A genuinely NEW dish whose name collides with a saved
+       recipe now keeps its name, and `_ensure_recipe_saved` is
+       skip-if-the-name-exists — so its own ingredients are silently
+       discarded and the slot points at the OLD recipe. That was always
+       true of a colliding name; before the guard, the rename would at
+       least sometimes have saved the new dish under a free one. Correct
+       for this rule's purposes and still a real edge.
 
 - **2026-09-14 — Recipes, round 2: the planner is told how to WRITE the
   recipe, not just how to cook it. Branch

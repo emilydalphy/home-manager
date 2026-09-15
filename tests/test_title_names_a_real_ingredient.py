@@ -882,3 +882,115 @@ def test_the_repair_script_says_which_refusal_it_made():
 
     assert "already another of your recipes" in why[TICKET_TITLE]
     assert "doesn't say what the dish is" in why["Salad with Feta"]
+
+
+# ---------------------------------------------------------------------------
+# Round 4: a corrected name has to survive the rest of its own week.
+# ---------------------------------------------------------------------------
+
+_BITES = _ing("Eggs", "Cottage cheese", "Cheddar", "Salt", "Chives")
+_BITES_STEPS = ["Blend the eggs and cottage cheese.", "Bake in a muffin tin 20 minutes."]
+
+
+def _three_mornings(week: str, flags: list[bool]) -> list[dict]:
+    """The shape the prompt asks for: one dish on three mornings, the first
+    marked new and the repeats not (generate_weekly_plan_llm)."""
+    days = tools._week_dates(week)
+    out = []
+    for i, day in enumerate(days):
+        for slot in tools.WEEK_SLOTS:
+            if slot == "breakfast" and i < 3:
+                out.append({"date": day, "slot": slot, "meal_name": "Egg White Bites with Spinach",
+                            "is_new_recipe": flags[i], "reasoning": "quick mornings",
+                            "ingredients": _BITES, "instructions": _BITES_STEPS,
+                            "default_servings": 4})
+            else:
+                out.append({"date": day, "slot": slot, "meal_name": "Chili",
+                            "is_new_recipe": False, "reasoning": "it fit the week"})
+    return out
+
+
+def _breakfast_rows(plan_id: int) -> list[tuple]:
+    from app.db import get_conn
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT date, recipe_id, freeform_meal FROM meal_plan_entries "
+        "WHERE weekly_plan_id = ? AND slot = 'breakfast' ORDER BY date LIMIT 3", (plan_id,)
+    ).fetchall()
+    conn.close()
+    return [(r["recipe_id"], r["freeform_meal"]) for r in rows]
+
+
+def test_a_repeated_dish_keeps_its_recipe_on_every_morning(stub_week):
+    """CATCH against all three earlier commits, and the one strict
+    REGRESSION AGAINST MAIN this card produced: a dish corrected on Monday
+    was unrecognisable to Tuesday's copy of it, so `plan_meal` found nothing
+    under the old name and Tuesday and Wednesday landed FREEFORM — no
+    recipe on Cook, no steps, nothing bought at approval. Doing nothing at
+    all was better."""
+    week = _week_start()
+    stub_week(_three_mornings(week, [True, False, False]))
+
+    plan = agent.generate_weekly_plan(week)
+
+    assert [r["name"] for r in tools.list_recipes()] == ["Egg White Bites"]
+    rows = _breakfast_rows(plan["weekly_plan_id"])
+    assert len({rid for rid, _ in rows}) == 1, "all three mornings are one recipe"
+    assert all(rid and free is None for rid, free in rows), "none of them is freeform"
+
+
+def test_a_repeated_dish_marked_new_every_time_still_makes_ONE_recipe(stub_week):
+    """CATCH against b4f0304 and ba2c737 — and introduced by 005b81e's own
+    successor, which is the point: round 2 added the collision guard and
+    round 3 rewrote it, and neither noticed it fires on its own sibling. The
+    second copy was corrected onto the first's new name, refused for
+    colliding with it, and the week ended with two recipe rows for one dish
+    that repair_recipe_titles can then never reconcile — which its own
+    docstring calls the worse problem."""
+    week = _week_start()
+    stub_week(_three_mornings(week, [True, True, True]))
+
+    plan = agent.generate_weekly_plan(week)
+
+    assert [r["name"] for r in tools.list_recipes()] == ["Egg White Bites"]
+    assert len({rid for rid, _ in _breakfast_rows(plan["weekly_plan_id"])}) == 1
+    assert repair_recipe_titles() == [], "nothing left for the repair to argue with"
+
+
+def test_a_repeat_carrying_no_ingredient_list_follows_the_rename_too():
+    """CATCH. A reuse often comes back as a bare name, so the rename has to
+    be followed BEFORE the gates that need an ingredient list."""
+    items = [
+        {"meal_name": "Egg White Bites with Spinach", "is_new_recipe": True,
+         "ingredients": _BITES, "instructions": _BITES_STEPS},
+        {"meal_name": "Egg White Bites with Spinach", "is_new_recipe": False},
+    ]
+
+    agent._honest_meal_names(items)
+
+    assert [i["meal_name"] for i in items] == ["Egg White Bites", "Egg White Bites"]
+
+
+def test_the_big_meals_guard_is_what_keeps_a_reused_main_whole():
+    """CATCH against ba2c737's TEST, not its code: the guard was real and
+    only the clocks half was pinned, so deleting `taken=` from _clean_main
+    left the whole suite green while the blocker came straight back.
+
+    Worth saying precisely, because "one fix" was the framing and not the
+    count: this blocker needed BOTH halves. Without the guard a reused main
+    is renamed and forks; without the clocks the timeline loses its times."""
+    from app.tools import big_meal
+
+    tools.add_recipe(name="Duck Traybake with Mushrooms",
+                     ingredients=_ing("Duck legs", "Potatoes", "Thyme", "Stock", "Garlic"),
+                     instructions=["Roast the duck.", "Add the potatoes."],
+                     prep_time_minutes=15, cook_time_minutes=90)
+    saved = tools.list_recipes()[0]
+
+    main = big_meal._clean_main({
+        "name": "Duck Traybake with Mushrooms",
+        "ingredients": saved["ingredients"],
+        "instructions": saved["instructions"],
+    }, eaters=8)
+
+    assert main["name"] == "Duck Traybake with Mushrooms"

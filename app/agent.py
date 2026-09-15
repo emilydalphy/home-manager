@@ -3945,18 +3945,46 @@ def _honest_meal_names(items: list[dict]) -> None:
     earlier in this same pass, so a correction can neither land on an
     existing dinner nor collide with its own sibling — see
     plan_quality.honest_recipe_title for what goes wrong without it.
+
+    **A RENAME IS CARRIED ACROSS THE WHOLE WEEK, and that is not a detail.**
+    The prompt asks for a breakfast or a snack to repeat two or three times
+    (generate_weekly_plan_llm), marking the first `is_new_recipe` and the
+    repeats not — so a dish corrected on Monday is a dish the pass itself
+    has renamed by the time Tuesday's copy of it comes round. Judging that
+    copy again, or skipping it because it is a reuse, both end the same
+    way: `plan_meal` looks the old name up, finds nothing, and Tuesday and
+    Wednesday land as FREEFORM entries with no recipe on Cook, no steps and
+    nothing on the shopping list. Reproduced through a real generation, and
+    strictly worse than doing nothing at all. Marking every copy new is no
+    better — the second one is judged, corrected onto its own sibling's new
+    name, refused for colliding with it, and the week ends with two recipe
+    rows for one dish that the repair can then never reconcile.
+
+    So the FIRST thing every item is asked is whether this pass has already
+    renamed a dish by that name, and if so it simply follows — no gate, no
+    re-judging, no ingredient list needed. Same root as the three blockers
+    before it: a name that identifies a row, judged against something that
+    is not that row. Here the row is one this very pass created.
     """
     taken = {(r.get("name") or "").strip().lower() for r in tools.list_recipes()}
+    renamed: dict[str, str] = {}
     for item in items:
         name = item.get("meal_name")
+        if not name:
+            continue
+        already = renamed.get(name.strip().lower())
+        if already:
+            item["meal_name"] = already
+            continue
         ingredients = item.get("ingredients") or []
-        if not name or not ingredients or not item.get("is_new_recipe"):
+        if not ingredients or not item.get("is_new_recipe"):
             continue
         honest = plan_quality.honest_recipe_title(
             name, ingredients, item.get("instructions") or [], taken=taken,
         )
         if honest != name:
             logger.info("Generation named a dish %r with none in it; saving it as %r", name, honest)
+            renamed[name.strip().lower()] = honest
             item["meal_name"] = honest
             taken.add(honest.strip().lower())
 
