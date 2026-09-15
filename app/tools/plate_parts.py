@@ -450,7 +450,13 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
         return {"status": "refused", "message": f"I left it as it was — {choice} {why}."}
     # The same dish with a different protein is the same plate: the sides
     # go with it (carry_sides), where a swap to another dish leaves them.
-    out = _swap.apply_pick(weekly_plan_id, entry, pick, carry_sides=True)
+    # correct_title=False: _variant_name above built this name to be unique,
+    # not to describe the dish — see apply_pick for what reading it as a
+    # promise does to a change of protein. Belt and braces today, because
+    # that name's base is always one the household already uses and
+    # honest_recipe_title refuses a correction onto a taken name anyway —
+    # but this says the intent rather than leaning on the coincidence.
+    out = _swap.apply_pick(weekly_plan_id, entry, pick, carry_sides=True, correct_title=False)
     out["status"] = "changed"
     out["role"] = role
     out["choice"] = choice

@@ -3928,6 +3928,93 @@ def _household_member_taste() -> dict[str, dict]:
     return taste
 
 
+def _honest_meal_names(items: list[dict]) -> None:
+    """Take off any title clause the dish itself hasn't got, before a word
+    of it is written down.
+
+    Emily, 2026-09-14: "Seared Turkey and Zucchini Skillet with White
+    Beans", seven ingredients, seven steps, no beans in either. The title
+    and the ingredients come out of the SAME call — this one, a few lines
+    above — so nothing had ever held one half of the model's answer against
+    the other. Deterministic and free: the name loses the part that isn't
+    true, and no second model call is made. See
+    plan_quality.honest_recipe_title for exactly how little it dares
+    change, and why.
+
+    It runs here rather than in _ensure_recipe_saved because the name is
+    also what plan_meal files the slot under: correcting it in one place
+    and not the other would leave the week's card and its recipe calling
+    the same dinner two different things.
+
+    **Gated on exactly what _ensure_recipe_saved is gated on, and it has to
+    be.** A REUSED recipe's name belongs to a row already on disk; the
+    model is not required to restate its ingredients and, when it does, it
+    can leave the clause word out. Correcting then renames the dish off its
+    own recipe, plan_meal finds nothing under the new name, and the slot
+    lands as FREEFORM — no recipe on Cook, no steps, and nothing on the
+    shopping list at approval, silently. Reproduced on review, 2026-09-15.
+    The schema note telling the model to restate the list is not a defence:
+    telling the generator something is not the same as preventing it.
+
+    `taken` carries this household's recipe names plus every name corrected
+    earlier in this same pass, so a correction can neither land on an
+    existing dinner nor collide with a sibling it has already passed — see
+    plan_quality.honest_recipe_title for what goes wrong without it.
+    Said precisely, because an earlier version of this said "its own
+    sibling" flatly and that is not quite true: `taken` is seeded from
+    list_recipes() and grows only as the pass corrects, so a sibling
+    appearing LATER in the items list under its own uncorrected name is
+    not in it. Reproduced (2026-09-15): two new dishes named "Chicken Bowl
+    with Beans" (no beans) and "Chicken Bowl" (has beans) collapse to one
+    recipe, the honest one pointing at the beanless row. It needs the
+    model to emit two new dishes in one week whose names differ only by a
+    clause, it predates this correction, and `main` collapses that pair
+    too — so it is narrow and not this rule's doing, but the sentence
+    above was wrong and is now the narrower true one.
+
+    **A RENAME IS CARRIED ACROSS THE WHOLE WEEK, and that is not a detail.**
+    The prompt asks for a breakfast or a snack to repeat two or three times
+    (generate_weekly_plan_llm), marking the first `is_new_recipe` and the
+    repeats not — so a dish corrected on Monday is a dish the pass itself
+    has renamed by the time Tuesday's copy of it comes round. Judging that
+    copy again, or skipping it because it is a reuse, both end the same
+    way: `plan_meal` looks the old name up, finds nothing, and Tuesday and
+    Wednesday land as FREEFORM entries with no recipe on Cook, no steps and
+    nothing on the shopping list. Reproduced through a real generation, and
+    strictly worse than doing nothing at all. Marking every copy new is no
+    better — the second one is judged, corrected onto its own sibling's new
+    name, refused for colliding with it, and the week ends with two recipe
+    rows for one dish that the repair can then never reconcile.
+
+    So the FIRST thing every item is asked is whether this pass has already
+    renamed a dish by that name, and if so it simply follows — no gate, no
+    re-judging, no ingredient list needed. Same root as the three blockers
+    before it: a name that identifies a row, judged against something that
+    is not that row. Here the row is one this very pass created.
+    """
+    taken = {(r.get("name") or "").strip().lower() for r in tools.list_recipes()}
+    renamed: dict[str, str] = {}
+    for item in items:
+        name = item.get("meal_name")
+        if not name:
+            continue
+        already = renamed.get(name.strip().lower())
+        if already:
+            item["meal_name"] = already
+            continue
+        ingredients = item.get("ingredients") or []
+        if not ingredients or not item.get("is_new_recipe"):
+            continue
+        honest = plan_quality.honest_recipe_title(
+            name, ingredients, item.get("instructions") or [], taken=taken,
+        )
+        if honest != name:
+            logger.info("Generation named a dish %r with none in it; saving it as %r", name, honest)
+            renamed[name.strip().lower()] = honest
+            item["meal_name"] = honest
+            taken.add(honest.strip().lower())
+
+
 def _generate_weekly_plan(
     week_start_date: str,
     constraints_notes: str = "",
@@ -4179,6 +4266,7 @@ def _generate_weekly_plan(
             "Generating this week's plan didn't come back with any meals — the model call may "
             "have been cut off or hit an error. Nothing was saved; try generating the week again."
         )
+    _honest_meal_names(items)
 
     # The period is written down, not left implied — including for an
     # ordinary Monday week, where content_start_date == week_start_date and
