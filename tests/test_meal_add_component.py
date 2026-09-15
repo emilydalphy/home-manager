@@ -110,6 +110,26 @@ def test_a_low_carb_house_still_sees_the_starches_but_last():
     assert kinds[-1] == "starch" and kinds[0] != "starch"
 
 
+def test_a_low_carb_house_tapping_add_a_carb_sees_every_carb_first():
+    # Emily, 2026-09-15: the card's "+ Add a carb" on her keto plan. The
+    # sheet opened for a carb leads with the carbs — all of them, ahead
+    # of the six-row cap, not the one starch the low-carb ordering left.
+    _members(2)
+    _shrimp()
+    plan_id, entry_id = _plan()
+
+    offered = tools.suggest_additions(entry_id, eating_style="keto", weekly_plan_id=plan_id, role="carb")
+
+    kinds = [o["kind"] for o in offered["options"]]
+    assert kinds[:3] == ["starch", "starch", "starch"]
+    names = [o["name"] for o in offered["options"][:3]]
+    assert set(names) == {"Roasted potatoes", "Rice", "Crusty bread"}
+    assert len(offered["options"]) <= plates.MAX_ADDITIONS_OFFERED
+    # Opened for a veg, the greens lead instead — the same rule, any part.
+    offered = tools.suggest_additions(entry_id, weekly_plan_id=plan_id, role="vegetable")
+    assert offered["options"][0]["kind"] == "green"
+
+
 def test_something_already_added_is_not_offered_again():
     _members(2)
     _shrimp()

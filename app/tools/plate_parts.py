@@ -15,7 +15,10 @@ part in between:
     Each part is either named (the dish's own protein; a side by name), in
     the dish (covered by its food_groups, no separate name), or missing —
     which the card draws as a dashed "+ Add a carb". Read from what the
-    entry already holds; nothing new to enter.
+    entry already holds; nothing new to enter. A low-carb household's
+    rule leaves the carb off the plate the planner builds, but the card
+    still offers it (Emily, 2026-09-15): the chip is an option, not a
+    shortfall, and the planner never fills it on its own.
   * `part_options(...)` — the four proteins that would work IN THIS DISH,
     written for the dish, not from a list: a burger gets ground meats and
     a bean patty, never chicken thighs; a pan-fried chicken gets the CUT
@@ -94,7 +97,19 @@ def parts_of_plate(slot: str, food_groups: list[str], main_protein: str | None,
         # protein + veg + carb is a dinner at 7am.
         wanted = [r for r in rule if r == "protein"]
     else:
+        # The card offers the carb even where the rule leaves it off. A
+        # low-carb household's rule (plates.plate_rule, decision 7a) is
+        # what the PLANNER follows — it never puts rice beside their
+        # steak on its own — but the household still needs the one tap
+        # when they want it: Emily, 2026-09-15, her own keto plan,
+        # "for the kebab meal I would like an option to add a carb", and
+        # the kofte's card had nowhere to say so. So the carb is drawn
+        # here as an offer, dashed and theirs to take, on the same terms
+        # as any other plate: only when the dish says what it covers
+        # (`known`), never when it would be a guess.
         wanted = list(rule)
+        if "carb" not in wanted:
+            wanted.append("carb")
     groups = set(food_groups or [])
     # A dish with no food groups recorded at all (an older recipe, a
     # freeform line) is UNKNOWN, not short: "Roast Chicken · + Add a

@@ -14854,7 +14854,11 @@
     try {
       var url = mode === 'protein'
         ? '/api/week/' + encodeURIComponent(weekStart) + '/part-options?entry_id=' + encodeURIComponent(entry.entry_id) + '&role=protein'
-        : '/api/week/' + encodeURIComponent(weekStart) + '/additions?entry_id=' + encodeURIComponent(entry.entry_id);
+        : '/api/week/' + encodeURIComponent(weekStart) + '/additions?entry_id=' + encodeURIComponent(entry.entry_id) +
+          // The part the chip was tapped for leads the list server-side,
+          // before its six-row cap — a low-carb house tapping "Add a
+          // carb" must see the carbs, not one of them (Emily, 2026-09-15).
+          (role && PART_COVERS[role] ? '&role=' + encodeURIComponent(PART_COVERS[role]) : '');
       var res = await fetch(url);
       if (!res.ok) throw new Error('options failed (' + res.status + ')');
       offer = await res.json();

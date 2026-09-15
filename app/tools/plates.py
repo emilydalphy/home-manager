@@ -772,7 +772,8 @@ def _dish_words(row, sides: list[dict]) -> str:
     return " ".join(parts).lower()
 
 
-def suggest_additions(entry_id: int, eating_style: str | None = None, weekly_plan_id: int | None = None) -> dict:
+def suggest_additions(entry_id: int, eating_style: str | None = None, weekly_plan_id: int | None = None,
+                      role: str | None = None) -> dict:
     """
     What the meal screen's "Add something" sheet offers for THIS dish:
     the catalogue, minus anything the dish already has (a potato dish is
@@ -781,6 +782,14 @@ def suggest_additions(entry_id: int, eating_style: str | None = None, weekly_pla
     household whose eating_style reads low-carb — with the starches last
     rather than hidden: they asked to add something, and the picker is
     theirs to choose from.
+
+    `role` is the part the sheet was opened for ("carb" from the card's
+    "+ Add a carb" chip, "vegetable" from a Veg chip): that part's kind
+    comes first, ahead of the low-carb ordering and BEFORE the list is
+    cut to its six rows. Without it a low-carb household tapping "Add a
+    carb" got one starch and five things they didn't ask for (Emily,
+    2026-09-15) — the cap was taking the carbs off before the sheet
+    could put them first.
 
     Pure read. Returns {"entry_id", "meal", "options": [...], "added":
     [names already on the dish]}.
@@ -801,9 +810,12 @@ def suggest_additions(entry_id: int, eating_style: str | None = None, weekly_pla
     missing = missing_groups({"slot": row["slot"], "food_groups": groups}, rule)
     low_carb = is_low_carb(eating_style)
 
+    asked_for = (role or "").strip().lower()
+
     def rank(a):
         group = _KIND_GROUP.get(a["kind"])
         return (
+            0 if asked_for and group == asked_for else 1,
             0 if group and group in missing else 1,
             3 if (low_carb and a["kind"] == "starch") else _KIND_ORDER.get(a["kind"], 9),
         )
