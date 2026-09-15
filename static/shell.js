@@ -14493,7 +14493,10 @@
         body: JSON.stringify({ entry_id: st.entryId, role: 'protein', choice: choice })
       });
       var out = await res.json().catch(function () { return null; });
-      if (!res.ok) throw new Error((out && out.detail) || ('change failed (' + res.status + ')'));
+      // A failed request gets the swap's own line (SWAP_TROUBLE), never
+      // the server's detail — runSwapInPlace does the same. The status
+      // goes to the console for whoever is debugging.
+      if (!res.ok) throw new Error('change failed (' + res.status + ')');
       closeMealAddSheet();
       if (out.status !== 'changed') {
         showToast(out.message || SWAP_TROUBLE, null, 6000);
@@ -14515,7 +14518,7 @@
       }, SWAP_UNDO_MS);
     } catch (err) {
       console.warn('Changing the protein failed:', err);
-      showToast(err && err.message ? err.message : SWAP_TROUBLE, null, 6000);
+      showToast(SWAP_TROUBLE, null, 6000);
       if (save) { save.disabled = false; save.textContent = 'Save'; }
     } finally {
       st.busy = false;
@@ -21016,7 +21019,7 @@
     if (!res.ok || !res.body) {
       var detail = '';
       try { detail = (await res.json()).detail || ''; } catch (e) { /* not JSON */ }
-      throw new Error(detail || ('Request failed (' + res.status + ' ' + res.statusText + ')'));
+      throw askError(detail, 'Request failed (' + res.status + ' ' + res.statusText + ')', res.status);
     }
     var reader = res.body.getReader();
     var decoder = new TextDecoder();
@@ -21035,9 +21038,7 @@
       if (eventName === 'done') {
         result = body;
       } else if (eventName === 'error') {
-        var err = new Error(body.detail || 'Request failed');
-        err.status = body.status;
-        throw err;
+        throw askError(body.detail, 'Request failed', body.status);
       } else if (onProgress) {
         onProgress(eventName, body);
       }
@@ -21058,6 +21059,22 @@
   // One calm line for a turn that never reached the server (DESIGN_SYSTEM
   // §8: the thing, and its way out, in the same breath). Emily may reword.
   var ASK_NO_SIGNAL_LINE = "I need a signal for this one — try again when you’re back.";
+  // ...and one for a turn that reached it and came back broken with no
+  // sentence to show — a proxy's HTML 502, a dropped stream. The server
+  // writes its own line for every error it answers (main.py's
+  // SERVER_TROUBLE_LINE for a 5xx, the rate limit's wait-a-bit for a
+  // 429), so this is only for the cases it never got to answer.
+  var ASK_TROUBLE_LINE = "I couldn’t think just now — your data is fine. Try again in a minute.";
+
+  // The error a failed turn throws. `detail` is the server's own sentence
+  // when it wrote one (shown as the reply, as-is); without one the message
+  // is for the console and the reply falls back to ASK_TROUBLE_LINE.
+  function askError(detail, fallback, status) {
+    var err = new Error(detail || fallback);
+    err.status = status;
+    err.detail = detail || '';
+    return err;
+  }
 
   async function sendAskMessage(message) {
     if (!message || askSending) return;
@@ -21114,9 +21131,12 @@
     } catch (err) {
       loadingWraps.forEach(function (w) { w.remove(); });
       // Asking needs Claude, and Claude needs a connection. With no signal
-      // that is the whole answer — not "Error: Failed to fetch".
+      // that is the whole answer — not "Error: Failed to fetch". Otherwise
+      // the server's sentence, in Pomona's voice, never "Error: " and a
+      // status code: the person just sends again.
       var askNoSignal = navigator.onLine === false || (err && err.name === 'TypeError');
-      addAskMessage('assistant', askNoSignal ? ASK_NO_SIGNAL_LINE : 'Error: ' + err.message);
+      console.warn('Ask failed:', err);
+      addAskMessage('assistant', askNoSignal ? ASK_NO_SIGNAL_LINE : ((err && err.detail) || ASK_TROUBLE_LINE));
     } finally {
       askSending = false;
       setAskInputsDisabled(false);

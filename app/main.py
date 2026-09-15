@@ -74,10 +74,44 @@ def _route_pattern(request: Request) -> str:
     return pattern or "(unmatched)"
 
 
+# The one line a person sees when something on our side fails (Loop Board:
+# "Chat and toasts show raw error text when the AI call fails"). Pomona's
+# voice for trouble (DESIGN_SYSTEM §8): the thing, then its way out, and
+# the reassurance that matters most — a failed call never touched their
+# data. Emily may reword; this is the only place to do it.
+SERVER_TROUBLE_LINE = "I couldn't think just now — your data is fine. Try again in a minute."
+
+
+def _client_safe_detail(status_code: int, detail):
+    """
+    What the browser is allowed to read from an error's `detail`.
+
+    146 routes build theirs as f"Server error: {e}", and {e} is whatever
+    the exception said — an Anthropic 401 is "Error code: 401 - {'type':
+    'error', ... 'request_id': ...}", a SQLite failure is a table name.
+    The chat showed all of that as the assistant's reply, and toasts
+    showed it verbatim. Scrubbed here, once, rather than at 146 sites,
+    for the same reason record_server_errors records here: a route
+    nobody has written yet is covered too. The message itself is not
+    lost — every one of those routes already logged the traceback.
+
+    Below 500 the detail is the answer and stays: 400 "week_start must be
+    an ISO date", 404 "No grocery list item with id …", 429's wait-a-bit
+    line are all written for the person. So is 503: it only ever carries
+    AssistantUnavailableError's own warm line (see that class — a friendly
+    message is its contract) or security's "isn't configured for public
+    access yet", and tests read "Claude" out of it.
+    """
+    if status_code >= 500 and status_code != 503:
+        return SERVER_TROUBLE_LINE
+    return detail
+
+
 @app.exception_handler(StarletteHTTPException)
 async def record_server_errors(request: Request, exc: StarletteHTTPException):
     """
-    Record any 5xx before it leaves the building.
+    Record any 5xx before it leaves the building, and send the person a
+    sentence rather than the exception (_client_safe_detail).
 
     Hooked here rather than in each route's except block on purpose: there
     are 84 of those, they already log a traceback, and the thing that keeps
@@ -101,6 +135,12 @@ async def record_server_errors(request: Request, exc: StarletteHTTPException):
         await run_in_threadpool(
             tools.record_error, "server", _route_pattern(request), f"HTTP {exc.status_code}"
         )
+    safe = _client_safe_detail(exc.status_code, exc.detail)
+    if safe is not exc.detail:
+        # A fresh exception rather than exc.detail = safe: the original
+        # keeps its text for anything still holding it (the log line the
+        # route wrote, the traceback), and only the response changes.
+        exc = StarletteHTTPException(status_code=exc.status_code, detail=safe, headers=exc.headers)
     return await http_exception_handler(request, exc)
 
 
@@ -2660,6 +2700,11 @@ def _sse_event(event: str, data) -> str:
     ends up in a streamed payload is covered the same way, not just
     ChatAction specifically.
     """
+    if event == "error" and isinstance(data, dict):
+        # The stream's twin of record_server_errors' scrub: an "error"
+        # frame is the SSE shape of an HTTPException, so it gets the same
+        # rule in the same one place, not at each generator's except.
+        data = dict(data, detail=_client_safe_detail(data.get("status", 500), data.get("detail")))
     return f"event: {event}\ndata: {json.dumps(jsonable_encoder(data))}\n\n"
 
 
