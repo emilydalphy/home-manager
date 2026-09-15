@@ -371,6 +371,96 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-15 — The last two server-clock reads in `weekly_plan.py`, so a
+  draft survives its own last evening. Branch
+  `overnight/weekly-plan-household-clock`, NOT merged at the time of
+  writing.** Loop Board bug, filed by the 2026-09-14 `cooker.py` sweep
+  rather than swept in there. The container runs UTC and households
+  default to `America/Toronto`, so from 8pm local the server's date is
+  already tomorrow, and two reads still asked it.
+  - **`retire_expired_drafts` is the one with teeth**: retiring is a
+    WRITE, it is what stops a plan being the Plan tab's front page, and
+    it happens silently inside an ordinary read (`get_week_menu`,
+    `get_week_planning_nudge`), so a draft could be retired at 9pm on the
+    evening of its own last day, out from under a household still
+    cooking from it. The clock is resolved BEFORE `get_conn`, so it is
+    never read inside this function's own write transaction — pinned by a
+    source-marker test, since the failure mode is an intermittent
+    "database is locked" rather than a wrong answer.
+  - **`_current_weekly_plan_row` is mostly masked and not always**: a
+    plan failing "covers today" by one evening usually falls through to
+    a fallback that hands back the same plan anyway — but the fallback
+    prefers the NEWEST non-retired plan, so with a future draft on file
+    it hands back next week's draft during this week's last evening.
+    That case is the branch's real catch; the plain one is green on
+    `main` and its test says so rather than claiming otherwise.
+  - **`_household_today()` was used as-is, shift form and all** — the
+    2026-09-14 entry explains why it is written as a shift applied to
+    this module's own `date.today()` rather than as the converted
+    datetime, and a dozen test files still pin `weekly_plan.date`.
+  - **The cost guard in `tests/test_moves_household_clock.py` went 3 → 4
+    and was updated rather than worked around.** `_current_weekly_plan_row`
+    is a fourth reader of the household's clock on the Today payload,
+    reached by the other three. The property that guard exists for — the
+    number does not grow with the DAY — is unchanged and still asserted;
+    only the named enumeration moved. It is a ceiling with the readers
+    listed in it, so a fifth wants naming there; if that keeps happening,
+    the clock wants resolving once at the entry point and threading down.
+  - **No caller holds an open write transaction** at the point it calls
+    `_current_weekly_plan_row` — all twelve sites were checked, not
+    assumed, because `household_now` opens its own connection and this
+    repo has twice earned a "database is locked" from a nested `get_conn`.
+  - **THE FIRST COMMIT CLOSED ONLY HALF THE SYMPTOM, and the entry said
+    otherwise until review caught it.** `_SQL_EXPIRED_BEFORE` has THREE
+    readers and its own comment named two — so moving those two left
+    `_pending_draft_over` binding it with the server's date. The draft
+    survived retirement and was STILL not the Plan tab's front page on
+    the same evening: measured at 21:30 Toronto with a draft over an
+    approved week, `retire_expired_drafts()` returned `[]` (the fix
+    working) while `get_week_menu()` handed back the approved week.
+    Retiring is not the only thing that stops a plan leading the tab.
+    The LONE-draft case was fully fixed by the first commit; the
+    draft-over-an-approved-week shape — the one the 2026-09-13 "a draft
+    waits for approval" work made ordinary, and the one "Pick my own
+    days" produces — was not. Fixed here, and the predicate's comment now
+    names all three readers and says a fourth must be named there too.
+  - **`get_week_menu`'s OTHER half moved with it.** `build_slot`'s
+    `today_str` gated the empty-dinner "Pick" rows on the server's date,
+    so a household a day behind lost them on tonight's empty dinner in
+    the evening they would reach for them. Pre-existing and identical on
+    `main` — taken here rather than filed because this branch put the
+    first half of that function's clock on the household, and the
+    2026-09-14 lesson is that a half-converted function is a new bug
+    rather than a smaller one.
+  - **Six more server-clock reads in this file are KNOWN AND LEFT**, on
+    their own card: `suggest_planning_period` (:879), 
+    `get_week_planning_nudge` (:1016 — it calls the now-household-clocked
+    `retire_expired_drafts` and then reasons with `date.today()`, i.e.
+    two clocks in one function), `next_period_after` (:1119),
+    `discard_draft_plan` (:1360), `week_receipt` (:3568) and the
+    component_based branch (:3782). None was reproduced as a symptom;
+    the nudge pair in particular is mostly self-consistent rather than
+    correct.
+  - `tests/test_weekly_plan_household_clock.py` (19; **9 red on
+    `0a59aab`**, and **3 of those red on this branch's own first commit**
+    — the two front-page ones and the Pick-rows one), freezing
+    `cooker.datetime` at one UTC instant and pinning BOTH directions —
+    Toronto 21:30 (the household a day behind, the reported bug, the
+    draft must stay and must lead) and Tokyo 08:30 (a day ahead, a draft
+    the server thinks is live is over where the household lives and must
+    go). Note the "red on main" count contains one SOURCE-MARKER test
+    that errors there rather than failing, and its docstring says so, so
+    the behaviour-catch count is 8 rather than 9. Suite **4807 passed, 0
+    failed** at `TZ=America/Toronto`.
+  - **Cost, measured by the reviewer and worth Emily seeing**: household
+    clock reads per payload went `today_moves` 3→4, `get_cooker_view`
+    2→3, `get_week_planning_nudge` 0→1, `get_prep_schedule()` 0→1, and
+    `get_week_menu` **0→2** — the Plan tab payload, previously free of
+    them. Each is one small connection-and-SELECT, constant per payload
+    and never per meal or per day (pinned: 4 reads on a 7-day plan and
+    still 4 on a 14-day one). The `get_week_menu` jump is the one to
+    watch if a fifth reader appears.
+
 - **2026-09-14 — Recipes, round 2: the planner is told how to WRITE the
   recipe, not just how to cook it. Branch
   `worktree-recipes-round-2-write-it-down` (`d1f951e`, `486bdcf`), NOT
