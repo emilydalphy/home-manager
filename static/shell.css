@@ -5770,6 +5770,9 @@ button.shelf-tile:hover { background: var(--surface-raised); }
   font-weight: 700;
   letter-spacing: -.02em;
   line-height: 1.1;
+  /* "Oct 13" on a night outside this month (cookShelfNights) is one
+     line, never a wrapped "Oct" over "13". */
+  white-space: nowrap;
 }
 .shelf-dish {
   font-family: var(--font-body);

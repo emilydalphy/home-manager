@@ -128,9 +128,14 @@ def test_plan_fills_its_band_on_the_root_and_hides_it_on_every_step():
     assert step.count("rootBandHtml(") == 1
     parts = _function("weekBandParts")
     assert "id: 'week-band'" in parts
-    # "Next week" only when the empty state names a period that hasn't
-    # started (stale-draft fix, 2026-09-11) — see weekBandData.
-    assert "title = isWeek || !range ? (data.period_is_ahead ? 'Next week' : 'This week') : range;" in parts
+    # "Next week" when the empty state names a period that hasn't started
+    # (stale-draft fix, 2026-09-11 — see weekBandData), and since
+    # 2026-09-15 a plan on screen is placed against today the same way
+    # (periodRelation): "This week" only when it covers today. The
+    # behaviour itself is pinned in tests/test_week_set_covers_today.py.
+    assert "? (data.period_is_ahead ? 'next' : 'current')" in parts
+    assert "periodRelation(data.period_start_date || data.week_start_date, dayCount, today)" in parts
+    assert "? (relation === 'next' ? 'Next week' : 'This week')" in parts
     assert "weekBandParts(weekBandData(data), weekState.days || [])" in step
     # The retired in-flow head is gone from the root's two forms.
     assert "weekStepHeadHtml" not in SHELL_JS
