@@ -277,19 +277,27 @@ def part_options(weekly_plan_id: int, entry_id: int, role: str = "protein", aske
     cached = _OPTIONS_CACHE.get(key)
     if cached and cached["meal"] == entry["meal"] and time.time() - cached["at"] < _OPTIONS_TTL:
         return {"entry_id": entry_id, "meal": entry["meal"], "role": role,
-                "current": cached["current"], "options": cached["options"]}
+                "current": cached["current"], "options": cached["options"],
+                "options_unavailable": cached.get("unavailable", False)}
     recipe = _recipe_for(entry)
     current = ((recipe or {}).get("main_protein") or "").strip()
     context = _options_context(entry, recipe)
     ask = asker or _ask_options
+    # `unavailable` tells the sheet a failed call apart from the model
+    # genuinely finding nothing — both leave `options` empty, but only the
+    # first is "the AI call is down" rather than "this dish stumped it".
+    unavailable = False
     try:
         raw = ask(context)
     except Exception:
         logger.exception("Asking for protein options failed; the sheet will offer the typed line only")
         raw = []
+        unavailable = True
     options = _clean_options(raw, current)
-    _OPTIONS_CACHE[key] = {"at": time.time(), "meal": entry["meal"], "current": current, "options": options}
-    return {"entry_id": entry_id, "meal": entry["meal"], "role": role, "current": current, "options": options}
+    _OPTIONS_CACHE[key] = {"at": time.time(), "meal": entry["meal"], "current": current,
+                            "options": options, "unavailable": unavailable}
+    return {"entry_id": entry_id, "meal": entry["meal"], "role": role, "current": current,
+            "options": options, "options_unavailable": unavailable}
 
 
 def forget_options(entry_id: int) -> None:

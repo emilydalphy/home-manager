@@ -1241,6 +1241,16 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   color: var(--ink-strong);
   flex-shrink: 0;
 }
+/* The line above the typed box when the model came back with nothing to
+   offer (a failed call or a genuinely empty answer look the same here). */
+.wk-add-empty-note {
+  margin: 8px 2px 0;
+  padding: 0 2px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-secondary);
+}
 /* The one line to type: an input and its Add, the same row shape. */
 .wk-add-free {
   display: flex;
@@ -1345,7 +1355,6 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .plate-part .plate-role { font-weight: 600; color: var(--ink-secondary); }
 .plate-part svg { width: 12px; height: 12px; color: var(--ink-secondary); flex: 0 0 auto; }
 .plate-part:hover { background: var(--sand-deep); border-color: var(--sand-deep); }
-.plate-part.is-quiet { color: var(--ink-secondary); font-weight: 600; }
 .plate-part.is-missing { background: transparent; border: 1.5px dashed var(--hairline-strong); color: var(--apricot-label); }
 .plate-part.is-missing svg { color: var(--apricot-label); }
 .plate-part.is-missing:hover { border-color: var(--apricot-deep); background: transparent; }
