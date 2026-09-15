@@ -81,6 +81,7 @@ _PRELUDE = (
     "function dayName(dateStr, opts){ return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', opts); }\n"
     "function dayNameShort(iso){ return new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' }); }\n"
     + _function("addDaysLocal") + "\n"
+    + _function("daysBetweenLocal") + "\n"  # kitchenNextCookLine counts the days out (2026-09-15)
     + _function("cookMinutesLabel") + "\n"
     + _function("cookCoversLabel") + "\n"
     + _function("cookFocusPrepTasks") + "\n"

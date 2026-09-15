@@ -586,10 +586,34 @@ def featured_move_id(moves: list[dict], now: datetime | None = None) -> str | No
     return candidates[0]["id"]
 
 
-def _week_state(view: dict) -> str:
-    """'set' | 'draft' | 'none' — the small badge under Today's date."""
+def _week_state(view: dict, day: date) -> str:
+    """
+    'set' | 'draft' | 'ahead' | 'none' — the small badge under Today's date.
+
+    'set' and 'draft' only when the plan's period actually covers `day`.
+    get_cooker_view hands back a plan that hasn't STARTED yet as the
+    current one on purpose (cook mode legitimately opens next week's
+    draft when nothing covers today — see its docstring), and this used to
+    read that plan's status straight through: on a Tuesday with an
+    approved plan for a week in another year, Now wore "Week set" beside
+    "Shall I put Sep 14–20 together?" (Loop Board, 2026-09-15). A plan
+    that starts after `day` is 'ahead' — no chip, since the empty moment
+    and the nudge already say the week needs planning; the value is kept
+    distinct from 'none' so a reader can still tell "nothing planned" from
+    "planned, just not this week". A period already behind `day` reads
+    'none' (get_cooker_view blanks that plan before it reaches here; the
+    check is kept whole rather than trusting that).
+    """
     if not view.get("weekly_plan_id"):
         return "none"
+    start = view.get("period_start_date")
+    if start:
+        first = date.fromisoformat(start)
+        last = first + timedelta(days=max(1, view.get("day_count") or 1) - 1)
+        if day < first:
+            return "ahead"
+        if day > last:
+            return "none"
     return "set" if view.get("status") == "approved" else "draft"
 
 
@@ -624,7 +648,9 @@ def today_moves(day: str | date | None = None, now: datetime | None = None) -> d
         "featured": featured,
         "done": sum(1 for m in moves if m["done"]),
         "total": len(moves),
-        "week_state": _week_state(view),
+        # The badge is about the day this payload is about — the household's
+        # today unless a caller named one — never the plan's own status alone.
+        "week_state": _week_state(view, target),
         "tomorrow": tomorrow,
         # The quiet label beside the date when today is a holiday — name
         # and answer, or None on an ordinary day (see holidays.py).

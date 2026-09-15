@@ -1718,7 +1718,10 @@
 
   // The band's chip says the state of the plan behind the day. No plan is
   // no chip: with nothing planned the empty moment already says so, and
-  // a chip reading "nothing planned" over it would say it twice.
+  // a chip reading "nothing planned" over it would say it twice. A plan
+  // that hasn't started yet ('ahead', moves._week_state) is no chip for
+  // the same reason — "Week set" beside "want me to plan the week?" was
+  // the two contradicting each other (Loop Board, 2026-09-15).
   var WEEK_STATE_LABELS = { set: 'Week set', draft: 'Draft' };
 
   function renderTodayMoves(panel, data) {
@@ -8164,13 +8167,22 @@
 
   // "Next: Saturday, pancakes." — the first real cook after today, so a
   // quiet day still says what is coming. Plain text (the empty moment
-  // escapes it); empty when there is no real fact to state.
+  // escapes it); empty when there is no real fact to state. A weekday on
+  // its own only means something inside the coming week: past six days
+  // out it is the date instead — "Next: Wed Oct 13 — Roast Chicken." —
+  // with the year when it isn't this one, so a plan sitting in another
+  // year never reads as this month's Wednesday (Loop Board, 2026-09-15).
   function kitchenNextCookLine(meals, todayIso) {
     var next = (meals || []).filter(function (m) {
       return m.date && !m.component_category && m.date > todayIso && !m.is_leftovers && m.meal;
     }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; })[0];
     if (!next) return '';
-    return 'Next: ' + dayName(next.date, { weekday: 'long' }) + ', ' + next.meal + '.';
+    if (daysBetweenLocal(todayIso, next.date) <= 6) {
+      return 'Next: ' + dayName(next.date, { weekday: 'long' }) + ', ' + next.meal + '.';
+    }
+    var when = dayName(next.date, { weekday: 'short' }) + ' ' + dayName(next.date, { month: 'short', day: 'numeric' });
+    if (next.date.slice(0, 4) !== todayIso.slice(0, 4)) when += ', ' + next.date.slice(0, 4);
+    return 'Next: ' + when + ' — ' + next.meal + '.';
   }
 
   function kitchenTodayRowHtml(row) {
@@ -8322,6 +8334,9 @@
       nights.push({
         iso: iso,
         isTonight: iso === todayIso,
+        // A night outside today's month carries the month on its tile —
+        // "13" under WED is this month's Wednesday until it says "Oct 13".
+        otherMonth: iso.slice(0, 7) !== todayIso.slice(0, 7),
         meal: pick ? pick.meal : null,
         idx: pick ? pick.idx : null
       });
@@ -8349,9 +8364,11 @@
       (m && m.cooked_status === 'done' ? ' is-done' : '');
     var label = dayName(night.iso, { weekday: 'long', month: 'long', day: 'numeric' }) +
       (night.isTonight ? ', tonight' : '') + (m ? ': ' + (m.is_leftovers ? (m.leftovers_headline || 'Leftovers') : m.meal) : ': nothing planned');
+    var num = String(parseInt(night.iso.slice(8, 10), 10));
+    if (night.otherMonth) num = dayName(night.iso, { month: 'short' }) + ' ' + num;
     var inner =
       '<span class="shelf-day">' + escapeHtml(dayNameShort(night.iso).toUpperCase()) + '</span>' +
-      '<span class="shelf-num">' + escapeHtml(String(parseInt(night.iso.slice(8, 10), 10))) + '</span>' +
+      '<span class="shelf-num">' + escapeHtml(num) + '</span>' +
       '<span class="shelf-dish">' + escapeHtml(word) + '</span>';
     if (!m) return '<div class="' + cls + '" aria-label="' + escapeHtml(label) + '">' + inner + '</div>';
     return '<button type="button" class="' + cls + '" data-cook="focus" data-idx="' + night.idx + '" data-at="steps" aria-label="' + escapeHtml(label) + '">' +
@@ -11362,11 +11379,25 @@
       range = periodRangeLabel(start, dayCount);
     }
     var isWeek = dayCount === 7;
-    // "Next week" only for the empty state naming a period that hasn't
-    // started (from Friday, an unplanned week's suggestion is next week —
-    // see weekStepHtml); a plan on screen is always "this week".
-    var title = isWeek || !range ? (data.period_is_ahead ? 'Next week' : 'This week') : range;
-    var eyebrow = isWeek || !range ? range : dayCount + ' days';
+    // Where the period sits against today decides what to call it. With
+    // no plan, the suggestion already says whether it is this week or the
+    // next (period_is_ahead, from Friday — see weekStepHtml). With a plan
+    // on screen it is read off the plan's own dates: "This week" only when
+    // it covers today, "Next week" when it starts inside the next seven
+    // days, and otherwise the dates themselves — with the year when it
+    // isn't this one ("Oct 11–17, 2027"). A plan on screen used to be
+    // "this week" whatever its dates, and get_cooker_view hands back a
+    // plan that hasn't started as the current one on purpose, so a week
+    // in another year sat under "This week" (Loop Board, 2026-09-15).
+    var today = todayLocalStr();
+    var relation = state === 'none'
+      ? (data.period_is_ahead ? 'next' : 'current')
+      : periodRelation(data.period_start_date || data.week_start_date, dayCount, today);
+    var named = !range || (isWeek && (relation === 'current' || relation === 'next'));
+    var title = named
+      ? (relation === 'next' ? 'Next week' : 'This week')
+      : range + periodYearSuffix(data.period_start_date || data.week_start_date, dayCount, today);
+    var eyebrow = named ? range : dayCount + ' days';
     var sub = [];
     // A DRAFT's line says whose turn it is, not the shape of the week:
     // the shape is what the rows underneath are for, and the one thing
@@ -16846,6 +16877,27 @@
     }
     return startMonth + ' ' + start.getDate() + '–' +
       end.toLocaleDateString('en-US', { month: 'short' }) + ' ' + end.getDate();
+  }
+
+  // Where a period sits against today: 'current' when it covers today,
+  // 'next' when it starts inside the next seven days, 'ahead' when it
+  // starts later than that, 'past' once it has ended; null with no start
+  // to place. What Plan's band title and Now's badge both turn on.
+  function periodRelation(startIso, dayCount, todayIso) {
+    if (!startIso) return null;
+    var endIso = addDaysLocal(startIso, Math.max(1, dayCount || 7) - 1);
+    if (endIso < todayIso) return 'past';
+    if (startIso <= todayIso) return 'current';
+    return daysBetweenLocal(todayIso, startIso) <= 7 ? 'next' : 'ahead';
+  }
+
+  // ", 2027" for a period whose last day is not in today's year, else
+  // nothing — periodRangeLabel never carries a year on its own, because
+  // inside one year it is noise.
+  function periodYearSuffix(startIso, dayCount, todayIso) {
+    if (!startIso) return '';
+    var endIso = addDaysLocal(startIso, Math.max(1, dayCount || 7) - 1);
+    return endIso.slice(0, 4) === todayIso.slice(0, 4) ? '' : ', ' + endIso.slice(0, 4);
   }
 
   function weekIsPlanned(data, weekStart) {
