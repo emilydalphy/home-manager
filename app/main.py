@@ -149,6 +149,7 @@ async def record_server_errors(request: Request, exc: StarletteHTTPException):
         and request.method == "GET"
         and "text/html" in request.headers.get("accept", "")
         and _route_pattern(request) == "(unmatched)"
+        and not request.scope["path"].startswith(("/api/", "/static/"))
     ):
         # A person, not a fetch(), landed on an address nothing serves —
         # "Corners" QA pass, 2026-09-15. `_route_pattern` reads
@@ -161,6 +162,20 @@ async def record_server_errors(request: Request, exc: StarletteHTTPException):
         # keep answering exactly as they always have, JSON included; only
         # the genuinely blank corner gets the branded page. An API 404 —
         # no `text/html` in Accept — is untouched for the same reason.
+        #
+        # The path-prefix check is a second, separate guard on top of that
+        # one (verifier's note): `/static` is mounted as a plain Starlette
+        # `Mount`, which — unlike FastAPI's own `APIRoute` — never sets
+        # `scope["route"]` at all, matched file or not, so `_route_pattern`
+        # reads "(unmatched)" for a missing static asset exactly the same
+        # as for an address nothing serves. And a bare "(unmatched)" is
+        # also the honest answer for a mistyped `/api/...` address, which
+        # *did* fail to match anything — but /api is a machine namespace
+        # regardless of what Accept header the caller happened to send, so
+        # it keeps the plain JSON answer rather than being read as "a
+        # browser wandered somewhere." `request.scope["path"]`, not
+        # `request.url.path`, for the same round-trip-safety reason
+        # security.is_public_path uses it.
         return FileResponse(os.path.join(static_dir, "not-found.html"), status_code=404)
     safe = _client_safe_detail(exc.status_code, exc.detail)
     if safe is not exc.detail:

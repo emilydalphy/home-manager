@@ -162,6 +162,36 @@ def test_unknown_path_via_post_stays_json_even_for_a_browser(signed_in):
     assert "application/json" in res.headers["content-type"]
 
 
+def test_unknown_api_path_stays_json_even_for_a_browser(signed_in):
+    """
+    /api/nothing-here matches no route — by the "(unmatched)" test alone
+    it looks exactly like the "nothing here at all" case the branded page
+    is for. But /api is a machine namespace regardless of what Accept
+    header the caller happens to send (a stale bookmark to a removed
+    endpoint, a script with a sloppy header), so it keeps the plain JSON
+    404 rather than being read as a browser wandering somewhere.
+    """
+    res = signed_in.get("/api/nothing-here", headers={"accept": "text/html"})
+    assert res.status_code == 404
+    assert "application/json" in res.headers["content-type"]
+    assert res.json() == {"detail": "Not Found"}
+
+
+def test_missing_static_asset_stays_json_even_for_a_browser(signed_in):
+    """
+    /static is mounted as a plain Starlette Mount, not a FastAPI APIRoute —
+    Mount.matches never sets scope["route"], matched file or not, so a
+    missing asset under /static also reads "(unmatched)" the same way a
+    genuinely dead address does. Without its own guard that would have
+    served the app's own not-found page as a CSS or JS file when a
+    <link>/<script> 404'd — worse than the bare JSON it replaces, since a
+    browser evaluating it as CSS/JS would silently swallow the HTML.
+    """
+    res = signed_in.get("/static/this-file-does-not-exist.js", headers={"accept": "text/html"})
+    assert res.status_code == 404
+    assert "application/json" in res.headers["content-type"]
+
+
 def test_a_routes_own_404_is_not_repainted(signed_in):
     """
     /api/members/{name}/share-link raises HTTPException(404, "No household
