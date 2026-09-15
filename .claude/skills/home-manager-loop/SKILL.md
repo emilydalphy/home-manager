@@ -360,6 +360,14 @@ Emily gave it) and `## Source` (who said it, when, the quote). A design card use
 outcome: a feedback dump becomes several cards grouped by the screen or rule they change.
 The Notes property stays the one-paragraph summary plus the CLAIMED line.
 
+**Cards should name their flow (added 2026-09-13).** `PRODUCT_FLOWS.md` at the repo root
+is the Product Owner mode's map of every user flow; a card written from that mode also
+carries `## Flow` (which map entry, which step) and `## Why now` (which load phase, for
+whom). When building any card, read its flow's map entry first so the fix lands in the
+direction the flow is heading. Product-level work — walking flows, module reviews,
+grooming the board, user feedback — is the `pomona-product-owner` skill's job, not the
+loop's; if Emily asks for it here, load that skill. The loop never edits the map.
+
 ## Automation rules (unattended/scheduled runs only)
 
 Per Emily's 2026-08-30 decision, a **scheduled or unattended** run (not a live conversation

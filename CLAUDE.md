@@ -20,6 +20,11 @@ inventory, and answers "what we know" about the household. Deployed to
 Railway, auto-deploying from `main` on push. Live at
 `home-manager-production-4949.up.railway.app`.
 
+**`PRODUCT_FLOWS.md` is the map of every user flow, from the person's side of the
+screen** — read the entry for whatever flow you're touching. Product-level work
+(walking a flow, reviewing a module, grooming the board, user feedback) is the
+`pomona-product-owner` skill's job; building is the loop's.
+
 **All UI work follows `DESIGN_SYSTEM.md` — read it before touching anything
 visual.** Tokens, hard rules, components, nav rules, voice, and who's allowed
 to change what are all there.
