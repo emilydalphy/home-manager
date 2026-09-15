@@ -2047,15 +2047,24 @@
   // The last row, and the one the sheet exists for as much as the swaps
   // (Emily, 2026-09-14): a night off is an answer in its own right, not a
   // swap for a dish nobody is going to cook either. Its sub-line says what
-  // happens to tonight's dish — the server already worked that out on the
-  // same dry run the answer itself will use (night_off_moves_to) — so the
-  // tap is never a guess. Not apricot: Now's one accent is the dock.
+  // happens to tonight's dish — the server worked that out on the same dry
+  // run and the same chain check the answer itself will use
+  // (night_off_moves_to / night_off_blocked_message) — so the tap is never
+  // a guess, and never a promise the tap then refuses. Not apricot: Now's
+  // one accent is the dock.
+  //
+  // The dish is named as the PLAN names it, not as the question above it
+  // does: tonightDishName appends " leftovers" for a reheat, which reads
+  // as "Bean Chili leftovers comes off the week" and disagrees with the
+  // toast that follows. One name, the toast's.
   function tonightNightOffRowHtml(data) {
-    var dish = tonightDishName(data && data.dinner);
-    var sub = !dish ? ''
-      : (data.night_off_moves_to_weekday
-          ? dish + ' moves to ' + data.night_off_moves_to_weekday + '.'
-          : dish + ' comes off the week.');
+    var dish = (data && data.dinner && data.dinner.meal) || '';
+    var sub = data && data.night_off_blocked_message
+      ? data.night_off_blocked_message
+      : (!dish ? ''
+          : (data.night_off_moves_to_weekday
+              ? dish + ' moves to ' + data.night_off_moves_to_weekday + '.'
+              : dish + ' comes off the week.'));
     return '<div class="tonight-off-row">' +
       '<button type="button" class="tonight-option is-night-off" id="tonight-night-off">' +
         '<span class="tonight-option-text">' +

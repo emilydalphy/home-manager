@@ -22,7 +22,9 @@ def add_attention_item(kind: str, summary: str, detail: dict | None = None) -> d
     dropping it.
 
     Dedupe/reopen: when `detail` carries both `entry_id` and `ingredient`
-    (the only caller today, cooker.deplete_inventory_for_meal), those two
+    (cooker.deplete_inventory_for_meal — the only caller that does; the
+    other today is tonight.tonight_night_off's "use soon" note, which
+    carries neither and so takes the pending-only fallback below), those two
     together name the SAME underlying question across an untick/re-tick of
     the same meal — not just while it is still pending, but after it has
     already been resolved or dismissed too. Found 2026-09-13 while fixing

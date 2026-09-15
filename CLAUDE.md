@@ -387,8 +387,9 @@ why*, not duplicating the diff.
     one, so nothing anywhere reads the night as missed, skipped or overdue.
     The pair of writes is `clear_plan_slot` + `plan_slot_empty`, in that
     order, which is exactly what `slot_needs.set_slot_need` already does
-    when a night goes 'away' — same shape, same transactional boundary, no
-    second implementation of either.
+    when a night goes 'away' — no second implementation of either. It is
+    NOT the same transactional boundary, and that is the correction below:
+    `set_slot_need` commits those two separately and this does not.
   - **The dish moves when there is anywhere to move it, through
     `swap_dinner_nights`.** "Free" is a later night of this plan whose
     dinner is `open` or has no row at all — not one the household is away
@@ -449,6 +450,113 @@ why*, not duplicating the diff.
     reheat into a cook; its own card if it bites.
   - **No Undo.** A dropped dish cannot be put back (its groceries are
     reversed and the row is gone) and half an undo is worse than none.
+  - **FOUR DEFECTS FOUND ON REVIEW, all reproduced, all fixed on the same
+    branch — two of them lost or corrupted plan data, and the entry above
+    recorded none of them until this paragraph.** Worth reading as a set:
+    every one is the same shape, a function that composes other people's
+    atomic writes and holds no transaction of its own.
+    - **Two simultaneous taps destroyed the dish and told both phones it
+      had moved.** The answer was four transactions — read the rows,
+      compute the free night, swap, settle — with no claim on the slot, so
+      B computed "the next free night" against the same pre-tap week, and
+      its swap put the dish straight back onto tonight for its clear to
+      delete: **the dish gone from the week, the free night empty, the
+      grocery line reversed, and both callers answering "Shrimp moves to
+      Thursday."** A wider window left TWO `planned_empty` rows on one
+      slot — `audit_plan_slots`' `duplicated`, which this file calls "how
+      a night nobody is home ends up with groceries bought for it."
+      Reachable from two phones, a phone plus chat (the tool has no client
+      guard at all), or one retried POST; the sheet's own in-flight
+      disable covered a single-phone double-tap and nothing else.
+    - **The gap between the clear and the empty row left the slot
+      genuinely ABSENT** — the one state schema.sql, `audit_plan_slots`
+      and `plan_slot_open`'s own docstring all say cannot exist — with the
+      groceries already reversed, under a toast reading "That didn't work
+      — the plan is as it was", which was false. In the move branch it was
+      worse: the dish HAD moved, tonight was absent, and `tonight_check`
+      then answered 'unplanned', so Now turned round and asked "Tonight
+      needs a dinner" — the question just answered. The first version of
+      this entry called that an accepted deferral on the grounds that
+      `slot_needs.set_slot_need` has the same two commits. That was the
+      wrong call and the wrong comparison: this repo has closed the class
+      three times (`atomic-period-takeover`, `drop-dish-atomic`,
+      `swap-atomic`), and **`plan_slot_open` had already grown a `conn=`
+      for exactly this while `plan_slot_empty` never did.**
+    - **Both are one fix.** `plan_slot_empty`, `clear_plan_slot` and
+      `_apply_dinner_nights_swap` each gained the `conn=` parameter
+      `plan_slot_open` and `_reverse_meal_grocery_contributions` already
+      have — given one they neither begin, commit nor close — and the
+      whole answer is now ONE `BEGIN IMMEDIATE`, taken before its first
+      read. That is what makes the loser of a race see the world the
+      winner left: an already-`planned_empty` tonight, which is `already`,
+      or a swap **the swap's own rules refuse** rather than a second copy
+      of them. Two things fall out that are worth knowing. `clear_plan_slot`
+      given a connection runs the leftover source's grocery rescale INSIDE
+      the transaction (the shape `_replace_slot_entries` uses, now that
+      `_rescale_leftover_source_grocery` takes a `conn`). And
+      `_apply_dinner_nights_swap` given one OMITS `days` and
+      `taste_verdicts` from its result, deliberately rather than silently:
+      both are reads, and a read inside an open write transaction sees the
+      world as it was before it. A `dry_run` on a caller's connection also
+      must not roll back — it would throw away the caller's work.
+    - **The sheet stated an effect it would then refuse.** The preview ran
+      WITHOUT the chain check the answer applies, so a dinner cooked
+      double for a later night read "Dish comes off the week" and refused
+      on the tap — §8 rule 7 inverted, and leftover chains are generated
+      routinely. One function now, `tonight._chain_refusal`, read by the
+      card and by the write, so they cannot say different things; the row
+      shows that sentence in place of the promise.
+    - **"Use soon" named food another planned dinner still needs.** Two
+      dinners share one purchased bag of spinach; calling tonight off does
+      not free it, and the household would have eaten Friday's dinner out
+      of the fridge on the app's own instruction. One `NOT EXISTS` clause:
+      a line any OTHER live entry still links is left out, whatever state
+      that entry is in, because the safe direction here is to say less.
+  - **A DONE FRIDGE MOVE'S RECORD GOES WITH A DROPPED DINNER, and the
+    ticket's criterion says it shouldn't.** `clear_plan_slot` deletes a
+    meal's prep rows with the meal, by its own documented rule, and this
+    answer uses `clear_plan_slot` rather than inventing a second removal.
+    The FOOD is handled — a ticked defrost row is exactly what puts its
+    item in `use_soon` — and nothing is ever un-ticked or shown as missed;
+    what is destroyed is the record that somebody did the work. Left, not
+    fixed: detaching those rows instead would change `clear_plan_slot` for
+    every caller (away nights, every swap), which is more than this ticket
+    gets to do. `test_a_done_fridge_move_record_goes_with_a_dropped_dinner`
+    characterises it by name rather than leaving it implicit in a test
+    about the MOVE branch, where the row does travel with its status
+    intact. **The first version of this entry left that distinction to a
+    test name.**
+  - **Smaller things found with them.** The row's sub-line said "Bean Chili
+    leftovers comes off the week" (a verb disagreeing with a name
+    `tonightDishName` had appended " leftovers" to) while the toast for the
+    same tap said "Bean Chili is off the week" — one name now, the plan's,
+    which is what the server sends back. `tonight._chain_targets` was a
+    second copy of `drop_dish_from_day`'s `make_double_for` reading, with a
+    behavioural difference (it skipped an unreadable date, the original
+    raises), which made this branch's "no second copy of any rule" claim
+    false; both now read `weekly_plan.chain_fed_nights`, and the caller
+    that would rather refuse than raise catches the ValueError and says so
+    without naming a night. An AWAY night answered `already: True` with no
+    way to tell it from a night off, so chat would have called a trip "a
+    night off already taken" — `already_reason` says which.
+    `add_attention_item`'s docstring still named its one caller.
+  - **Known and left, each its own line rather than buried.** A sectionless
+    perishable that isn't in `big_meal.PERISHABLE_WORDS` (halloumi, tofu,
+    tortillas) reads as keeping and is never flagged — defensible, since
+    that is a table anyone can extend, and the cost is a missed reminder
+    rather than a wrong one. And the concurrency fix covers one household's
+    two phones; nothing here serialises against an unrelated writer holding
+    the database for a long time, which is SQLite's own business.
+  - **FOR EMILY, and nothing in the UI says it: `get_week_menu`'s
+    `build_slot` hardcodes "Out — nothing to cook" for every
+    `planned_empty` slot, so the Plan tab reports a called-off night as an
+    OUT night and `NIGHT_OFF_REASON` renders nowhere — its only reader is
+    the agent prompt.** Verified live at 390px. Nothing reads as missed,
+    skipped or overdue, so the ticket's criterion holds; whether the two
+    should read differently on Plan is a product call, not a bug, and it is
+    hers. Worth knowing with it: the Day card DOES offer "Swap · I'll pick"
+    on a night-off slot, which is the household's only route back into
+    that night, and `resolve_open_slot` refuses it.
   - **Chat: `take_the_night_off`**, tagged `week` in `_WEEK_TOOLS`. That tag
     also now re-reads Now's tonight card, its needs-you band and its moves
     (`refreshTonightFromPlan` in shell.js) — a pre-existing hole, since any
@@ -457,14 +565,21 @@ why*, not duplicating the diff.
     measured in Chromium off computed styles at 390×844 in both schemes and
     recorded in `shell.css`: the row's title 10.65:1 light / 10.37:1 dark,
     its sub-line and "Night off" 4.87:1 / 5.92:1.
-  - `tests/test_tonight_night_off.py` (38; **36 red on `origin/main`**, the
+  - `tests/test_tonight_night_off.py` (49; **47 red on `origin/main`**, the
     two green ones saying in their own docstrings that they are
-    no-regression guards on the takeout hint). Six mutations checked to
-    bite: the household filter, planned_empty→open, no freeness filter at
-    all, always-drop, use_soon ignoring status, and the thawed rows'
-    done-only filter. Full suite **4826 passed, 0 failed** at
-    `TZ=America/Toronto`. Driven in Chromium at 390×844 light and dark on a
-    throwaway DB, both shapes.
+    no-regression guards on the takeout hint). Most of those are red
+    because the function does not exist there, which is the only kind of
+    red a new feature can have — so NINE mutations are the real evidence,
+    and each one reddens at least one test: the household filter, the
+    shared-line `NOT EXISTS`, `planned_empty`→`open`, no freeness filter at
+    all, always-drop, `use_soon` ignoring line status, the thawed rows'
+    done-only filter, taking the write lock late instead of `BEGIN
+    IMMEDIATE` first, and the preview skipping the chain check. The two
+    race tests use a real `threading.Barrier`, and the two all-or-nothing
+    tests force a `RuntimeError` inside `plan_slot_empty` and assert every
+    dinner row AND the whole grocery list are byte-identical after it.
+    Full suite **4837 passed, 0 failed** at `TZ=America/Toronto`. Driven in
+    Chromium at 390×844 light and dark on a throwaway DB, both shapes.
 
 - **2026-09-14 — Recipes, round 2: the planner is told how to WRITE the
   recipe, not just how to cook it. Branch

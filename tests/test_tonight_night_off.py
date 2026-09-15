@@ -20,7 +20,10 @@ from __future__ import annotations
 
 import datetime
 import json
+import threading
 from pathlib import Path
+
+import pytest
 
 from app import tools
 from app.db import get_conn
@@ -55,8 +58,13 @@ def _recipe(name, ingredients=None):
     tools.add_recipe(
         name,
         ingredients=ingredients or [
+            # Shrimp and Rice are on every dish of the week, so the whole
+            # week's lines merge and a drop has to recompute them. "Greens
+            # for X" is this dish's alone, which is what a dropped dinner
+            # can honestly free up.
             {"item": "Shrimp", "qty": "1 lb", "category": "meat"},
             {"item": "Rice", "qty": "1 cup", "category": "pantry"},
+            {"item": f"Greens for {name}", "qty": "1 bag", "category": "produce"},
         ],
         prep_time_minutes=10, cook_time_minutes=20, default_servings=4,
     )
@@ -87,6 +95,22 @@ def _week_with_a_free_night(plan: int, free_day: str = THU, approve: bool = True
         tools.plan_meal(day, dish, slot="dinner", weekly_plan_id=plan)
     if approve:
         tools.approve_weekly_plan(plan)
+
+
+def _fill_rest(plan: int, skip: set[str]) -> None:
+    """A dinner on every other night of the week, each with an ingredient of
+    its own — so there is no FREE night and a called-off tonight has to drop
+    its dish rather than move it. (A night with no dinner row counts as free,
+    which is what makes a sparsely-seeded week the wrong fixture for testing
+    the drop.)"""
+    for day in DAYS:
+        if day in skip:
+            continue
+        dish = f"Filler {day}"
+        tools.add_recipe(dish, ingredients=[
+            {"item": f"Filler greens {day}", "qty": "1 bag", "category": "produce"},
+        ], prep_time_minutes=5, cook_time_minutes=20, default_servings=4)
+        tools.plan_meal(day, dish, slot="dinner", weekly_plan_id=plan)
 
 
 def _dinner_row(day: str):
@@ -283,21 +307,27 @@ def test_what_was_already_bought_and_wont_keep_is_flagged():
     not."""
     plan = _plan()
     for day, dish in zip(DAYS, DISHES):
-        # Rice keeps (pantry) and foil isn't food at all — only the shrimp
-        # is sitting in a fridge with nothing pointing at it.
+        # Rice keeps (pantry) and foil isn't food at all; the shrimp is
+        # fresh but every other dinner this week wants it too. Only this
+        # dish's own greens are freed by dropping it.
         _recipe(dish, ingredients=[
             {"item": "Shrimp", "qty": "1 lb", "category": "meat"},
             {"item": "Rice", "qty": "1 cup", "category": "pantry"},
-            {"item": "Foil", "qty": "1 roll", "category": "household"},
+            # Both of this dish's own: the foil is freed by dropping it and
+            # is still never named, because foil is not food.
+            {"item": f"Foil for {dish}", "qty": "1 roll", "category": "household"},
+            {"item": f"Greens for {dish}", "qty": "1 bag", "category": "produce"},
         ])
         tools.plan_meal(day, dish, slot="dinner", weekly_plan_id=plan)
     tools.approve_weekly_plan(plan)
     _buy_everything()
     out = _tonight.tonight_night_off(now=AFTERNOON)
-    assert out["use_soon"] == ["Shrimp"]
+    assert out["use_soon"] == [f"Greens for {DISHES[2]}"]
     # And it outlives the one card that first said it.
     summaries = [i["summary"] for i in tools.get_attention_items() if i["kind"] == _tonight.USE_SOON_KIND]
-    assert summaries == ["Use the Shrimp soon — Garlic Shrimp came off the plan."]
+    assert summaries == [
+        f"Use the Greens for {DISHES[2]} soon — {DISHES[2]} came off the plan."
+    ]
 
 
 def test_nothing_bought_means_nothing_to_use_up():
@@ -319,7 +349,7 @@ def test_the_use_soon_note_is_read_back_off_the_night_itself():
     _tonight.tonight_night_off(now=AFTERNOON)
     out = tools.tonight_check(now=AFTERNOON)
     assert out["reason"] == "night_off" and out["night_off"] is True
-    assert out["use_soon"] == ["Shrimp"]
+    assert out["use_soon"] == [f"Greens for {DISHES[2]}"]
     assert out["ask"] is False
 
 
@@ -505,8 +535,52 @@ def test_saying_it_twice_changes_nothing_and_keeps_the_note():
     first = _tonight.tonight_night_off(now=AFTERNOON)
     again = _tonight.tonight_night_off(now=AFTERNOON)
     assert again["status"] == "night_off" and again["already"] is True
-    assert again["use_soon"] == first["use_soon"] == ["Shrimp"]
+    assert again["already_reason"] == _tonight.NIGHT_OFF_CONSTRAINT
+    assert again["use_soon"] == first["use_soon"] == [f"Greens for {DISHES[2]}"]
     assert _dinner_rows_count(TONIGHT) == 1
+
+
+def test_an_away_night_is_not_reported_as_a_night_off_already_taken():
+    """CATCH. Nothing is written either way — but the assistant reads this
+    result out loud, and "that's already a night off" about a trip is the
+    app telling the household something that isn't true."""
+    plan = _plan()
+    tools.plan_slot_empty(plan, TONIGHT, "dinner", reason="You're away.")
+    out = _tonight.tonight_night_off(now=AFTERNOON)
+    assert out["status"] == "night_off" and out["already"] is True
+    assert out["already_reason"] == "away"
+
+
+def test_a_done_fridge_move_record_goes_with_a_dropped_dinner():
+    """CATCH — and a CHARACTERISATION, stated plainly because the ticket's
+    criterion says "a fridge move already done stays done" and this is the
+    one branch where the RECORD does not.
+
+    The food itself is handled (it lands in use_soon). What goes is the
+    prep_tasks row saying somebody did the work — clear_plan_slot deletes a
+    meal's prep rows with the meal, by its own documented rule, and this
+    answer uses clear_plan_slot rather than inventing a second removal.
+    Nothing is ever un-ticked and nothing reads as missed; the history is
+    simply gone. Invert this test if that is ever deemed worth keeping."""
+    plan = _plan()
+    _full_week(plan)
+    entry = _dinner_row(TONIGHT)["id"]
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO prep_tasks (household_id, weekly_plan_id, meal_plan_entry_id, task_date, "
+        "description, task_type, status, related_meal) VALUES (?, ?, ?, ?, ?, 'defrost', 'done', ?)",
+        (tools.household_id(), plan, entry, TUE, "Move the shrimp to the fridge.", DISHES[2]),
+    )
+    conn.commit()
+    conn.close()
+    _tonight.tonight_night_off(now=AFTERNOON)
+    conn = get_conn()
+    left = conn.execute(
+        "SELECT COUNT(*) n FROM prep_tasks WHERE household_id = ? AND task_type = 'defrost'",
+        (tools.household_id(),),
+    ).fetchone()["n"]
+    conn.close()
+    assert left == 0
 
 
 def test_a_night_the_household_was_simply_away_for_is_not_a_night_off():
@@ -516,6 +590,44 @@ def test_a_night_the_household_was_simply_away_for_is_not_a_night_off():
     tools.plan_slot_empty(plan, TONIGHT, "dinner", reason="You're out.")
     out = tools.tonight_check(now=AFTERNOON)
     assert out["reason"] == "away" and out["night_off"] is False
+
+
+def test_use_soon_never_names_food_another_planned_dinner_still_needs():
+    """CATCH. Two dinners share one purchased bag of spinach. Calling
+    tonight off doesn't free it — and "use the spinach soon" would have the
+    household eat Friday's dinner out of the fridge on the app's own
+    instruction, leaving Friday short."""
+    plan = _plan()
+    shared = [{"item": "Baby spinach", "qty": "1 bag", "category": "produce"}]
+    for day, dish in ((TONIGHT, "Tonight's dish"), (FRI, "Friday's dish")):
+        tools.add_recipe(dish, ingredients=list(shared), prep_time_minutes=5,
+                         cook_time_minutes=20, default_servings=4)
+        tools.plan_meal(day, dish, slot="dinner", weekly_plan_id=plan)
+    _fill_rest(plan, {TONIGHT, FRI})
+    tools.approve_weekly_plan(plan)
+    _buy_everything()
+    out = _tonight.tonight_night_off(now=AFTERNOON)
+    assert out["moved_to"] is None  # the premise: the dish was dropped, not moved
+    assert out["use_soon"] == []
+    assert [i for i in tools.get_attention_items() if i["kind"] == _tonight.USE_SOON_KIND] == []
+    # Friday is untouched and still needs it.
+    assert _dinner_row(FRI)["meal"] == "Friday's dish"
+
+
+def test_a_line_only_tonight_wanted_is_still_named():
+    """CATCH. The guard above must not silence the whole note — a line no
+    other meal holds is exactly what a dropped dinner frees."""
+    plan = _plan()
+    tools.add_recipe("Tonight's dish", ingredients=[
+        {"item": "Baby spinach", "qty": "1 bag", "category": "produce"},
+    ], prep_time_minutes=5, cook_time_minutes=20, default_servings=4)
+    tools.plan_meal(TONIGHT, "Tonight's dish", slot="dinner", weekly_plan_id=plan)
+    _fill_rest(plan, {TONIGHT})
+    tools.approve_weekly_plan(plan)
+    _buy_everything()
+    out = _tonight.tonight_night_off(now=AFTERNOON)
+    assert out["moved_to"] is None  # the premise: there was nowhere to move it
+    assert out["use_soon"] == ["Baby spinach"]
 
 
 # ------------------------------------------------------------ the preview
@@ -537,6 +649,31 @@ def test_the_preview_says_nothing_to_move_to_on_a_full_week():
     _full_week(plan)
     out = tools.tonight_check(now=AFTERNOON)
     assert out["night_off_moves_to"] is None
+    assert out["night_off_blocked"] is False
+
+
+def test_the_preview_never_promises_something_the_tap_would_refuse():
+    """CATCH. §8 rule 7 inverted: with tonight's dish cooked double for a
+    later night and nowhere to move it, the row read "Dish comes off the
+    week" and then refused on the tap. The card and the write run the same
+    check now, and say the same sentence."""
+    plan = _plan()
+    _full_week(plan)
+    conn = get_conn()
+    conn.execute(
+        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE household_id = ? AND date = ? AND slot = 'dinner'",
+        (json.dumps({"make_double_for": [f"{FRI}:dinner"]}), tools.household_id(), TONIGHT),
+    )
+    conn.commit()
+    conn.close()
+    preview = tools.tonight_check(now=AFTERNOON)
+    assert preview["night_off_moves_to"] is None
+    assert preview["night_off_blocked"] is True
+    tapped = _tonight.tonight_night_off(now=AFTERNOON)
+    assert tapped["status"] == "refused"
+    # One sentence, one source.
+    assert preview["night_off_blocked_message"] == tapped["message"]
+    assert "Friday" in tapped["message"]
 
 
 # ------------------------------------------------------- the learned hint
@@ -584,6 +721,129 @@ def test_the_word_takeout_in_a_meal_name_still_feeds_the_hint():
     hints = _week_intake._observed_day_patterns(next_week)
     wednesday = tools._week_dates(next_week)[DAYS.index(TONIGHT)]
     assert hints.get(wednesday) == "Takeout two of the last four weeks"
+
+
+# ------------------------------------------------- two taps at the same time
+
+def test_two_taps_at_once_settle_the_night_once_and_keep_the_dish():
+    """CATCH. The whole answer is one BEGIN IMMEDIATE, so the loser sees the
+    world the winner left rather than a half-finished one. Before this, both
+    callers computed "the next free night" against the same pre-tap week:
+    the second swap put the dish straight back onto tonight and the second
+    clear deleted it — the dish gone from the week, the free night empty,
+    its grocery line reversed, and BOTH phones told "it moves to
+    Thursday"."""
+    plan = _plan()
+    _week_with_a_free_night(plan, free_day=THU)
+    results = {}
+    barrier = threading.Barrier(2)
+
+    def go(tag):
+        barrier.wait()
+        try:
+            results[tag] = _tonight.tonight_night_off(now=AFTERNOON)
+        except Exception as exc:  # pragma: no cover - a crash is a failure below
+            results[tag] = {"status": "raised", "message": repr(exc)}
+
+    threads = [threading.Thread(target=go, args=(t,)) for t in ("A", "B")]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert {r["status"] for r in results.values()} == {"night_off"}
+    # Exactly one of them did the work; the other says so.
+    did = [r for r in results.values() if not r["already"]]
+    already = [r for r in results.values() if r["already"]]
+    assert len(did) == 1 and len(already) == 1
+    assert did[0]["moved_to"] == THU
+    # The dish is still on the week, exactly once, and tonight is settled.
+    assert _dinner_row(THU)["meal"] == DISHES[2]
+    assert _dinner_row(TONIGHT)["slot_state"] == "planned_empty"
+    assert _dinner_rows_count(TONIGHT) == 1
+    audit = tools.audit_plan_slots(plan)
+    assert audit["duplicated"] == []
+    assert {"date": TONIGHT, "slot": "dinner"} not in audit["missing"]
+
+
+def test_two_taps_at_once_on_a_week_with_nowhere_to_move_leave_one_empty_row():
+    """CATCH. The drop branch's own race: two clears before either insert
+    used to leave TWO planned_empty rows on one slot — audit_plan_slots'
+    `duplicated`, which CLAUDE.md calls "how a night nobody is home ends up
+    with groceries bought for it"."""
+    plan = _plan()
+    _full_week(plan)
+    barrier = threading.Barrier(2)
+    results = {}
+
+    def go(tag):
+        barrier.wait()
+        try:
+            results[tag] = _tonight.tonight_night_off(now=AFTERNOON)
+        except Exception as exc:  # pragma: no cover
+            results[tag] = {"status": "raised", "message": repr(exc)}
+
+    threads = [threading.Thread(target=go, args=(t,)) for t in ("A", "B")]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert {r["status"] for r in results.values()} == {"night_off"}
+    assert _dinner_rows_count(TONIGHT) == 1
+    assert tools.audit_plan_slots(plan)["duplicated"] == []
+
+
+# ------------------------------------------- all of it, or none of it
+
+def test_a_failure_part_way_through_a_drop_leaves_the_plan_exactly_as_it_was():
+    """CATCH. The toast says "That didn't work — the plan is as it was", and
+    that sentence has to be true. Before this the dinner row was already
+    deleted and its groceries already reversed when plan_slot_empty failed,
+    leaving the day with NO dinner row at all — the one state schema.sql,
+    audit_plan_slots and plan_slot_open's own docstring all say cannot
+    exist."""
+    plan = _plan()
+    _full_week(plan)
+    before_rows = [(d, _dinner_row(d)["slot_state"], _dinner_row(d)["meal"]) for d in DAYS]
+    before_list = _grocery_snapshot()
+
+    from app.tools import weekly_plan as _wp
+    real = _wp.plan_slot_empty
+    _wp.plan_slot_empty = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("forced"))
+    try:
+        with pytest.raises(RuntimeError):
+            _tonight.tonight_night_off(now=AFTERNOON)
+    finally:
+        _wp.plan_slot_empty = real
+
+    assert [(d, _dinner_row(d)["slot_state"], _dinner_row(d)["meal"]) for d in DAYS] == before_rows
+    assert _grocery_snapshot() == before_list
+    assert {"date": TONIGHT, "slot": "dinner"} not in tools.audit_plan_slots(plan)["missing"]
+
+
+def test_a_failure_part_way_through_a_move_puts_the_dish_back_too():
+    """CATCH. The move and the empty night are one write: before this the
+    dish HAD moved, tonight was absent, and tonight_check then answered
+    'unplanned' — so Now turned round and asked "Tonight needs a dinner",
+    the question just answered."""
+    plan = _plan()
+    _week_with_a_free_night(plan, free_day=THU)
+    before_rows = [(d, _dinner_row(d)["slot_state"], _dinner_row(d)["meal"]) for d in DAYS]
+    before_list = _grocery_snapshot()
+
+    from app.tools import weekly_plan as _wp
+    real = _wp.plan_slot_empty
+    _wp.plan_slot_empty = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("forced"))
+    try:
+        with pytest.raises(RuntimeError):
+            _tonight.tonight_night_off(now=AFTERNOON)
+    finally:
+        _wp.plan_slot_empty = real
+
+    assert [(d, _dinner_row(d)["slot_state"], _dinner_row(d)["meal"]) for d in DAYS] == before_rows
+    assert _grocery_snapshot() == before_list
+    assert tools.tonight_check(now=AFTERNOON)["reason"] != "unplanned"
 
 
 # ------------------------------------------------------------------- chat
@@ -662,6 +922,28 @@ def test_the_card_states_the_night_and_asks_nothing_more():
     # carries none of its buttons.
     statement = block[:block.index("if (!data || !data.ask")]
     assert "tonight-yes" not in statement and "tonight-else" not in statement
+
+
+def test_the_rows_sub_line_and_the_toast_name_the_dish_the_same_way():
+    """CATCH. tonightDishName appends " leftovers" for a reheat night, which
+    read "Bean Chili leftovers comes off the week" on the row and "Bean
+    Chili is off the week" in the toast — one tap, two names, and a verb
+    that didn't agree with either. The row uses the plan's own name, which
+    is what the server sends back."""
+    start = SHELL_JS.index("function tonightNightOffRowHtml")
+    block = SHELL_JS[start:start + 1200]
+    assert "tonightDishName" not in block
+    assert "data.dinner.meal" in block
+    # And it prefers the server's refusal sentence over its own promise.
+    assert "night_off_blocked_message" in block
+
+
+def test_the_row_never_writes_its_own_version_of_a_refusal():
+    """CATCH. The blocked sentence is the server's, word for word — the
+    screen must not paraphrase a rule it doesn't own."""
+    start = SHELL_JS.index("function tonightNightOffRowHtml")
+    block = SHELL_JS[start:start + 1200]
+    assert "also feeds" not in block
 
 
 def test_the_answer_is_not_a_second_apricot():
