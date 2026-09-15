@@ -371,6 +371,35 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-14 — Recipes, round 2: the planner is told how to WRITE the
+  recipe, not just how to cook it. Branch
+  `worktree-recipes-round-2-write-it-down` (`d1f951e`, `486bdcf`), NOT
+  merged at the time of writing.** Emily asked for another level up on
+  recipe quality after the 09-10 block landed. The research pass (68
+  sources, eleven themes; artifact "Cook Like It Matters") found
+  `COOK_DONT_ASSEMBLE` covers flavour well and says nothing about the
+  step itself: only the small fill-in prompt asked for a heat, a time and
+  a doneness cue; nothing about stove order, what the minutes count, or a
+  sauce on the plate; fat, savoury depth and sweet never named.
+  - `agent.WRITE_IT_DOWN` is a second cached block directly after the
+    first in BOTH planners (a test pins the adjacency — its first line
+    says "the moves above"). Eleven moves; a plain string, so nothing can
+    ship as a literal `{placeholder}`; ~5,800 chars, so ~1,400 tokens of
+    cached input, not the ~900 estimated. Never loosens a cap. `add_recipe`'s
+    description carries one sentence of the same standard for chat.
+  - Four more `plan_quality` floors, same discipline as the first three:
+    `steps_have_no_cue`, `no_heat_named`, `longest_thing_not_first`,
+    `minutes_vs_steps`. A "dry plate" check was considered and not written
+    (fires on a good stir-fry). `minutes_vs_steps` is conservative (≥9
+    steps in ≤15 min) because the local DB held no recipes with steps to
+    tune on. The verifier found both cue and heat checks under-firing
+    (a schedule "until"; grilled dinners never gated in) — fixed and
+    pinned. "Broil" deliberately counts as naming its heat.
+  - Second worked example NOT added: no real dull output to quote (local
+    DB empty of steps), and a made-up pair teaches a made-up distinction.
+  - Still owed from the 09-10 card: a before/after of the same brief. The
+    eleven themes are the bar.
+
 - **2026-09-14 — ...and then the pre-shop card pinned the restored lines
   off the list anyway. Branch `overnight/pre-shop-covers-the-amount`
   (based on `overnight/inventory-covers-the-amount`), NOT merged at the
