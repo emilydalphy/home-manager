@@ -525,6 +525,66 @@ console.log(JSON.stringify({ onMeals: onMeals, onChores: onChores, onDay: onDay 
 
 
 @_needs_node
+def test_the_review_layouts_dock_reaches_the_foot_on_a_short_week():
+    """
+    Loop Board bug: on a short "What we're eating" (reviewStepHtml), the
+    sticky dock ("Open the list · N ingredients" on an approved week,
+    "Approve and build my shopping list" on a draft's own root) floated
+    mid-screen instead of sitting at the foot. Root cause: #week-plan-view
+    is `0 1 auto`, so #week-steps' own `flex: 1 0 auto` (which the dock's
+    `margin-top: auto` leans on) has no spare height to grow into on a
+    short page — the exact gap the Chores state's `.is-chores` class
+    already closes for its own empty moment.
+
+    reviewStepHtml renders on screen in two situations — the 'review' step
+    (an approved week reached via "Check the week") AND a draft's own root
+    (weekState.step folds to 'week' for a draft, same screen) — so the fix
+    tracks "is reviewStepHtml on screen", not the 'review' step name alone,
+    hence `is-review-layout` rather than `is-review`. This test fails on
+    main (renderMealsStep never sets any such flag, and shell.css has no
+    rule for it) and passes once both situations get the same treatment,
+    scoped so nothing else moves.
+    """
+    out = _node(_prelude() + _dom() + """
+var panel = makePanel();
+weekState.data = { state: 'set' };
+weekState.step = 'week';
+renderMealsStep(panel);
+var onWeek = !!panel.classes['is-review-layout'];
+weekState.step = 'review';           // "Check the week" — What we're eating / Which days
+renderMealsStep(panel);
+var onReview = !!panel.classes['is-review-layout'];
+weekState.step = 'day';
+renderMealsStep(panel);
+var onDay = !!panel.classes['is-review-layout'];
+weekState.step = 'chores';
+renderMealsStep(panel);
+var onChores = !!panel.classes['is-review-layout'];
+weekState.data = { state: 'draft' };
+weekState.step = 'week';             // a draft's OWN ROOT also renders reviewStepHtml
+renderMealsStep(panel);
+var onDraftRoot = !!panel.classes['is-review-layout'];
+weekState.step = 'review';           // 'review' on a draft folds into 'week' — same screen
+renderMealsStep(panel);
+var onDraftReviewStep = !!panel.classes['is-review-layout'];
+console.log(JSON.stringify({ onWeek: onWeek, onReview: onReview, onDay: onDay, onChores: onChores,
+  onDraftRoot: onDraftRoot, onDraftReviewStep: onDraftReviewStep }));
+""")
+    # reviewStepHtml's two situations both grow the plan view — the
+    # everyday (non-draft) week root, the day step and the Chores state
+    # (which grows it its own way) are untouched.
+    assert out["onWeek"] is False
+    assert out["onReview"] is True
+    assert out["onDay"] is False
+    assert out["onChores"] is False
+    assert out["onDraftRoot"] is True
+    assert out["onDraftReviewStep"] is True
+    assert ".tab-panel.is-review-layout #week-plan-view { flex: 1 0 auto; }" in SHELL_CSS
+    # is-chores stays exactly as it was — untouched by this fix.
+    assert ".tab-panel.is-chores #week-plan-view { flex: 1 0 auto; }" in SHELL_CSS
+
+
+@_needs_node
 def test_chores_is_a_step_of_the_plan_tab_with_history_and_the_back_gesture():
     out = _node(_prelude() + _dom() + """
 var FETCHES = [];

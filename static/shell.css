@@ -8495,6 +8495,20 @@ span.cook-week-name { cursor: default; }
    way .is-allset grows #week-steps — so the moment centres and the dock
    reaches the foot. */
 .tab-panel.is-chores #week-plan-view { flex: 1 0 auto; }
+/* reviewStepHtml's dock (reviewDecideHtml's .wk-decide.dock) has the
+   identical problem on a short "What we're eating" list — one dish
+   measured the dock at y=335 in a 729px-tall panel, well short of the
+   foot — because #week-steps' own `flex: 1 0 auto` (above) only has
+   spare height to grow into when its parent does too. "Which days" (the
+   seven day tiles, same screen, just reviewState.view toggled) is tall
+   enough on its own that the gap never showed. reviewStepHtml is also
+   what a DRAFT's own root renders (it's the same screen, folded into
+   'week' — see renderMealsStep), so is-review-layout is named for "this
+   is reviewStepHtml", not for the 'review' step name alone, and is set
+   for both. Grown here, scoped to that layout the same way is-chores is
+   scoped to its own state, so the day-view root, the meal detail and the
+   everyday (non-draft) week root are untouched. */
+.tab-panel.is-review-layout #week-plan-view { flex: 1 0 auto; }
 
 .rv-body { display: flex; flex-direction: column; gap: 18px; padding: 0 20px; }
 /* On --ground, where --ink-secondary is 4.44:1 — just under AA. */
