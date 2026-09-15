@@ -9758,6 +9758,29 @@ span.cook-week-name { cursor: default; }
 .gro-staple-row .gro-staple-act:nth-of-type(1) { grid-area: pause; }
 .gro-staple-row .gro-staple-act:nth-of-type(2) { grid-area: remove; }
 
+/* "Getting elsewhere · 1" — what's set aside, at the foot of LIST
+   (groElsewhereHtml, 2026-09-15). The Staples card's shape and its row
+   ink, with two differences on purpose: the head is not a toggle (the
+   rows are always in view, so "Put it back" is one tap, not two), and
+   each row has one verb. No fill anywhere — a thing set aside is a note,
+   not a task (apricot) and not a thing done (celadon); LIST's one apricot
+   stays "Start the trip". The name is .gro-staple-name (--ink) and the
+   verb .gro-staple-act (--ink-secondary, 44px), both already measured. */
+.gro-elsewhere .gro-ps-head { cursor: default; }
+.gro-elsewhere-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  /* Named, because .gro-staple-name places itself by `name` — without the
+     area here it would land on an implicit column past the button. */
+  grid-template-areas: "name back";
+  align-items: center;
+  column-gap: 14px;
+  min-height: 52px;
+  border-top: 1.5px solid var(--hairline);
+}
+.gro-elsewhere-row:first-of-type { border-top: none; }
+.gro-elsewhere-row .gro-staple-act { grid-area: back; }
+
 /* ===========================================================
    Motion (Emily, 2026-09-11). Four animations in the whole app —
    see DESIGN_SYSTEM.md §4 "Motion":

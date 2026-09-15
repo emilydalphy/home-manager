@@ -3055,6 +3055,20 @@
   // showToast's shorter default.
   var GRO_UNDO_MS = 8000;
 
+  // "Getting it elsewhere" — the chip that sets a thing aside because it's
+  // being picked up somewhere that isn't one of this household's stores
+  // (the butcher, the market). Until 2026-09-15 it read "Somewhere else",
+  // which sat beside "Add a new store" and read as one more way to name a
+  // store, and a tap on it made the row vanish with no word and no way
+  // back except WRAP UP. Now it says what it does, the toast confirms it
+  // with an Undo, and LIST shows what's set aside in a foot section with
+  // a way back onto the list. The three strings live here so a rewording
+  // is one line: the chip (SORT's card and the row's ⋯), the foot
+  // section's title (" · N" is appended), and the row's way back.
+  var GRO_ELSEWHERE_CHIP = 'Getting it elsewhere';
+  var GRO_ELSEWHERE_SECTION = 'Getting elsewhere';
+  var GRO_ELSEWHERE_BACK = 'Put it back';
+
   // How long a paused trip is kept before it is quietly dropped. Three
   // days covers "Costco on Saturday, Metro on Monday"; past that the list
   // it was snapshotted from has very likely been rebuilt by a new week's
@@ -4314,7 +4328,7 @@
       // needed, not home yet. "Nothing to buy" would be a lie over a full
       // trolley; the dock's "Finish the trip" is what brings it home.
       if (groTripPaused() && groInCartCount(data)) {
-        return html + emptyMomentHtml('bag', 'Everything’s in the cart. Finish the trip to bring it home.') + groStaplesHtml();
+        return html + emptyMomentHtml('bag', 'Everything’s in the cart. Finish the trip to bring it home.') + groElsewhereHtml() + groStaplesHtml();
       }
       if (groceryState.justFinishedTrip) {
         if (groceryState.shopDoneHandoffDismissed) {
@@ -4329,11 +4343,14 @@
       // Spices waiting unticked are not "nothing to buy" — they are the
       // list, until one is ticked. The section stands where the stops
       // would, and the dock stays quiet (nothing to start a trip for).
-      if (groceryState.spices.items.length) return html + groSpicesHtml() + groStaplesHtml();
+      if (groceryState.spices.items.length) return html + groElsewhereHtml() + groSpicesHtml() + groStaplesHtml();
       // The empty moment (emptyMomentHtml): one sentence, and "Go to
       // Plan" in the dock (groDockHtml). The staples card keeps its place
-      // under it — a rhythm is a real thing even on an empty list.
-      return html + emptyMomentHtml('bag', 'Nothing to buy. Approve a week and I’ll build the list.') + groStaplesHtml();
+      // under it — a rhythm is a real thing even on an empty list. So
+      // does the "Getting elsewhere" foot: the last thing on the list set
+      // aside by a thumb-slip has to be findable from the empty screen
+      // it left behind.
+      return html + emptyMomentHtml('bag', 'Nothing to buy. Approve a week and I’ll build the list.') + groElsewhereHtml() + groStaplesHtml();
     }
 
     html += groCarryRowHtml(data);
@@ -4380,7 +4397,44 @@
       var anywhere = groSoleStore(data) ? [] : groRideAlongItems(data);
       if (anywhere.length) html += groAnywhereCardHtml(data, anywhere);
     }
-    return html + groSpicesHtml() + groStaplesHtml();
+    return html + groElsewhereHtml() + groSpicesHtml() + groStaplesHtml();
+  }
+
+  // ---------- Getting elsewhere: what's set aside ----------
+  // The foot of LIST, only while something is set aside ("Getting it
+  // elsewhere" on SORT's card or a row's ⋯): one row per thing, its
+  // amount, and "Put it back" — the one tap that returns it to the list.
+  // Read off the same already-have summary WRAP UP's "Already sorted this
+  // week" reads (groceryState.alreadyHaveSummary.elsewhere, loaded with
+  // everything else), so the two can never disagree about what's aside.
+  // The Staples card's shape on a plain surface; always open, because a
+  // way back that's behind a "See" is two taps, and the whole point of
+  // this section is that a thing set aside is never out of sight. Quiet:
+  // no apricot, no celadon — set aside is neither the thing to do nor a
+  // thing already done, it's a note.
+  function groElsewhereHtml() {
+    var summary = groceryState.alreadyHaveSummary || {};
+    var aside = summary.elsewhere || [];
+    if (!aside.length) return '';
+    return '<div class="gro-staples gro-elsewhere">' +
+      '<div class="gro-ps-head">' +
+        GRO_ICONS.basket +
+        '<span class="gro-ps-text">' +
+          '<span class="gro-ps-title">' + escapeHtml(GRO_ELSEWHERE_SECTION) + ' &middot; ' + aside.length + '</span>' +
+        '</span>' +
+      '</div>' +
+      '<div class="gro-staples-body">' +
+        aside.map(function (it) {
+          return '<div class="gro-elsewhere-row">' +
+            '<span class="gro-staple-name">' + escapeHtml(it.item) +
+              (it.quantity ? ' <span class="gro-qty">' + escapeHtml(it.quantity) + '</span>' : '') + '</span>' +
+            '<button type="button" class="gro-staple-act" data-gro="elsewhere-back" data-id="' + String(it.id) + '" ' +
+              'data-name="' + escapeHtml(it.item) + '" aria-label="' + escapeHtml('Put ' + it.item + ' back on the list') + '">' +
+              escapeHtml(GRO_ELSEWHERE_BACK) + '</button>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>';
   }
 
   // ---------- Spices this week ----------
@@ -4658,8 +4712,8 @@
   //                         "Any" is the old move / not-this-time, which
   //                         clears the row's store for this week without
   //                         forgetting the remembered item->store preference,
-  //                         and "Somewhere else" is the same /exclude the
-  //                         SORT chip uses)
+  //                         and "Getting it elsewhere" is the same /exclude
+  //                         the SORT chip uses, with the same undo toast)
   //   remove the line    -> POST /api/grocery-list/{id}/remove   (with an undo)
   // Quiet throughout — no apricot anywhere in it. LIST's one apricot is
   // "Start the trip" (Rule 5), and a row action is never the thing the
@@ -4681,8 +4735,7 @@
         }).join('') +
         '<button type="button" class="gro-pill" data-gro="row-store" data-id="' + id + '" data-store="" ' +
           'aria-label="No particular store for ' + escapeHtml(it.item) + '">Any</button>' +
-        '<button type="button" class="gro-pill gro-pill-else" data-gro="row-exclude" data-id="' + id + '" ' +
-          'aria-label="Getting ' + escapeHtml(it.item) + ' somewhere else">Somewhere else</button>' +
+        groElsewherePillHtml('row-exclude', it) +
       '</div>' +
       // The two answers sorting offers, here too — for a one-shop
       // household this row is the only place they can be given.
@@ -5086,7 +5139,7 @@
   // One thing at a time. The pills and their semantics are the ones the
   // triage row already had: a store assigns and advances, "Any" saves an
   // empty store and advances, "Have it" takes it off the list into the
-  // kitchen, "Somewhere else" excludes it. The last choice drops through to
+  // kitchen, "Getting it elsewhere" sets it aside. The last choice drops through to
   // LIST on its own — see the 'assign' handler.
   function groSortHtml(data) {
     var unsorted = groUnsorted(data);
@@ -5123,8 +5176,7 @@
           // Covers the other reason a thing leaves the sort queue without a
           // store: it's being picked up on a trip that isn't one of this
           // household's stores. Same /exclude route as ever.
-          '<button type="button" class="gro-pill gro-pill-else" data-gro="triage-exclude" data-id="' + id + '" ' +
-            'aria-label="Getting ' + escapeHtml(it.item) + ' somewhere else">Somewhere else</button>' +
+          groElsewherePillHtml('triage-exclude', it) +
         '</div>' +
         (groceryState.substOpenId === id ? groSubstFieldHtml(it) : '') +
       '</div>' +
@@ -5489,6 +5541,18 @@
         groAddStorePillHtml('wrap', it) +
       '</div>' +
     '</div>';
+  }
+
+  // "Getting it elsewhere", on SORT's card and the LIST row's ⋯ — the two
+  // places that mean the same thing on the same route (/exclude). The
+  // name rides along so the handler can toast it without the row. Sand
+  // fill (.gro-pill-else), which is what keeps it apart from "Add a new
+  // store" beside it: that one is link-coloured on no fill, a door to a
+  // setting, and this one is an answer.
+  function groElsewherePillHtml(action, it) {
+    return '<button type="button" class="gro-pill gro-pill-else" data-gro="' + action + '" ' +
+      'data-id="' + String(it.id) + '" data-name="' + escapeHtml(it.item) + '" ' +
+      'aria-label="Getting ' + escapeHtml(it.item) + ' elsewhere">' + escapeHtml(GRO_ELSEWHERE_CHIP) + '</button>';
   }
 
   // "Add a new store", wherever stores are being chosen — WRAP UP's picker,
@@ -6817,9 +6881,7 @@
       case 'row-exclude':
         el.disabled = true;
         groceryState.openRowId = null;
-        groDo(function () {
-          return groPostEmpty('/api/grocery-list/' + id + '/exclude');
-        }, "Couldn't update that — try again.");
+        groSetAside(id, el.dataset.name);
         return;
 
       case 'row-remove': {
@@ -7180,11 +7242,7 @@
       // WRAP UP instead. Same /exclude route as ever.
       case 'triage-exclude':
         el.disabled = true;
-        groDo(function () {
-          return groPostEmpty('/api/grocery-list/' + id + '/exclude');
-        }, "Couldn't update that — try again.").then(function (ok) {
-          if (ok) groAdvanceSort();
-        });
+        groSetAside(id, el.dataset.name, groAdvanceSort);
         return;
 
       // ----- TRIP -----
@@ -7361,7 +7419,51 @@
           return groPostEmpty('/api/grocery-list/' + id + '/include');
         }, "Couldn't undo that — try again.");
         return;
+
+      // LIST's "Getting elsewhere" foot section: the one-tap way back onto
+      // the list for a thing set aside — the same /include the toast's
+      // Undo runs, and it says so the same way.
+      case 'elsewhere-back':
+        el.disabled = true;
+        groPutBack(id);
+        return;
     }
+  }
+
+  // ---------- "Getting it elsewhere", and the way back ----------
+  // Setting a thing aside is a decision, so it says it took (S10) and the
+  // way back is on the toast — the same shape as Remove's undo. Before
+  // 2026-09-15 this was a silent /exclude: the row vanished from LIST and
+  // the only sight of it was WRAP UP's "Already sorted this week", which a
+  // thumb-slip in the aisle never reaches. `after` runs once the write has
+  // landed and before the toast (SORT's advance, which may toast "All
+  // sorted." — the undo is the later tap's, so it wins).
+  function groSetAside(id, name, after) {
+    var aside = name || 'That';
+    return groDo(function () {
+      return groPostEmpty('/api/grocery-list/' + id + '/exclude');
+    }, "Couldn't set that aside — try again.").then(function (ok) {
+      if (!ok) return false;
+      if (after) after();
+      showToast(aside + ' set aside — getting it elsewhere.', {
+        label: 'Undo',
+        onClick: function () { groPutBack(id); }
+      }, GRO_UNDO_MS);
+      return true;
+    });
+  }
+
+  // /include is the exact undo of /exclude (include_grocery_item): the
+  // same row, same store, same quantity, back where it was. Shared by the
+  // toast's Undo and the foot section's "Put it back", so the two can't
+  // say different things. "Put back." is the undo's own line (S10).
+  function groPutBack(id) {
+    return groDo(function () {
+      return groPostEmpty('/api/grocery-list/' + id + '/include');
+    }, "Couldn't put that back — try again.").then(function (ok) {
+      if (ok) showToast('Put back.');
+      return ok;
+    });
   }
 
   // One choice made: either there's another thing to sort, or the step is
