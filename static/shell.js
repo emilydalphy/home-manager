@@ -21062,8 +21062,9 @@
   // ...and one for a turn that reached it and came back broken with no
   // sentence to show — a proxy's HTML 502, a dropped stream. The server
   // writes its own line for every error it answers (main.py's
-  // SERVER_TROUBLE_LINE for a 5xx, the rate limit's wait-a-bit for a
-  // 429), so this is only for the cases it never got to answer.
+  // THINK_TROUBLE_LINE on a stream's 5xx, the rate limit's wait-a-bit for
+  // a 429), so this is only for the cases it never got to answer. Same
+  // sentence as THINK_TROUBLE_LINE, byte for byte; reword both together.
   var ASK_TROUBLE_LINE = "I couldn’t think just now — your data is fine. Try again in a minute.";
 
   // The error a failed turn throws. `detail` is the server's own sentence
