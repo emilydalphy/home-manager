@@ -904,6 +904,15 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     -- NULL for every line that was never carried over. See
     -- tools/grocery.py set_aside_carried_over_items.
     carried_from_plan_id INTEGER,
+    -- "Something you run out of, mentioned in chat, is offered as a staple"
+    -- (Loop Board, 2026-09-15): set the moment the CHAT add tool
+    -- (app/tools/staples.py offer_for_chat_grocery_add, called only from
+    -- app/agent.py's add_grocery_item_for_chat — never the Shop tab's own
+    -- add route) has raised or answered the staple offer for THIS line,
+    -- so it asks at most once per line whichever way the household
+    -- answers ("yes", "no", or nothing at all). 0 on every existing row
+    -- and on every line the Shop tab adds directly.
+    staple_offer_made INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

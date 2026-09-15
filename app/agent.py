@@ -1014,6 +1014,13 @@ set_big_meal_prep_day / propose_big_meal. Times the way a person says them ("4:1
 it on the list just before it's probably due — no counting, no inventory. "We've got plenty" is \
 mark_staple_plenty; "we don't buy that any more" is remove_staple. A one-off "grab batteries" is \
 still add_grocery_item, not a staple.
+- add_grocery_item's result can carry a staple_offer key (item, already_staple) when what was \
+just added is a running-low supply worth watching. already_staple false: add one short line to \
+the reply offering it, with the item's own name — "On the list. Want me to keep an eye on \
+<item> so you don't have to?" — and only if the very next message says yes, call add_staple for \
+that item and confirm in one line ("I'll watch for it."); anything else (no answer, "no", a new \
+topic) means don't call add_staple and don't raise it again. already_staple true: say so instead \
+— "<Item>'s already one I watch — it's on the list for this trip." — and don't call add_staple.
 - If the user asks what's been learned or whether suggestions have improved, use \
 get_learning_summary for the aggregate picture (recipes tracked, liked/disliked counts, \
 deviations logged) rather than get_household_memory, which is raw preference values.
@@ -2119,7 +2126,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "add_staple",
-        "description": "Remember something the household buys on a rhythm — food or not: 'we always get coffee', 'we go through dish soap about every month', 'add toilet paper to our staples', 'we need to keep cat litter stocked'. Pomona puts it on the grocery list just before it's probably due and learns the real rhythm from when it gets bought. Only pass every_days for a rhythm the person actually said (a month = 30, every two weeks = 14); otherwise leave it unset. Set running_low true when they say they're out or nearly out right now — it goes on the list today. This is NOT inventory: no counts, no locations, never ask what's in the cupboard. If they just want something on the list once, use add_grocery_item instead.",
+        "description": "Remember something the household buys on a rhythm — food or not: 'we always get coffee', 'we go through dish soap about every month', 'add toilet paper to our staples', 'we need to keep cat litter stocked'. Pomona puts it on the grocery list just before it's probably due and learns the real rhythm from when it gets bought. Only pass every_days for a rhythm the person actually said (a month = 30, every two weeks = 14); otherwise leave it unset. Set running_low true when they say they're out or nearly out right now — it goes on the list today. This is NOT inventory: no counts, no locations, never ask what's in the cupboard. If they just want something on the list once, use add_grocery_item instead. A message of the form 'Yes, keep an eye on <item>.' — the chip the household taps right after a staple offer — means call this for that item; reply with exactly one line, 'I'll watch for it.'",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -6173,7 +6180,12 @@ TOOL_FUNCTIONS = {
     "delete_fact": tools.delete_fact,
     "edit_preference": tools.edit_preference,
     "delete_preference": tools.delete_preference,
-    "add_grocery_item": tools.add_grocery_item,
+    # The chat turn's own wrapper (app/tools/staples.py), not
+    # tools.add_grocery_item directly — same add, plus the staple_offer
+    # key a chat reply can act on. The direct-add HTTP route still calls
+    # tools.add_grocery_item itself, untouched (Loop Board "Something you
+    # run out of, mentioned in chat, is offered as a staple", 2026-09-15).
+    "add_grocery_item": tools.add_grocery_item_for_chat,
     "add_staple": tools.add_staple,
     "list_staples": tools.list_staples,
     "mark_staple_plenty": tools.mark_staple_plenty,

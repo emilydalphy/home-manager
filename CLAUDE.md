@@ -9615,3 +9615,42 @@ action card carries no index), so it always lands on the first, same as
 new render functions by running them under node (8 more tests, 1644 total)
 rather than reading the source for the right words — the original bug was
 exactly a case a source-marker test cannot catch.
+
+### 2026-09-15 — A supply added in chat is offered as a staple. Branch `staple-offer-from-chat`.
+
+Loop Board: "add dish soap to the list" put it on the list and nothing
+else — no offer to watch it, so the same gap notices it again in six
+weeks. Fix stays out of `inventory_items` entirely, per the standing rule.
+`app/tools/staples.py` gets three additions: `_is_supply(item, category)`
+reuses `section_for`'s own classifier (pantry/household = supply; fridge
+and spices are recipe-shaped or already staple-tracked on their own, see
+`seed_spice_staples`) rather than a new keyword list;
+`offer_for_chat_grocery_add` decides whether THIS grocery line is worth
+asking about and marks it asked (`grocery_items.staple_offer_made`, new
+column) in the same breath, so it asks at most once per line whichever
+way the household answers (yes, no, silence); `add_grocery_item_for_chat`
+is the chat tool's own `add_grocery_item` — identical to
+`grocery.add_grocery_item` plus a `staple_offer` key on the result. Only
+`app/agent.py`'s `TOOL_FUNCTIONS["add_grocery_item"]` mapping points at
+the new wrapper — the tool's name Claude calls never changes, and the
+direct-add HTTP route (`app/main.py`) still calls
+`grocery.add_grocery_item` itself, untouched, so the Shop tab's own add is
+exactly as before. `app/main.py` gets `_staple_offer_from_turn` (mirrors
+`_proposal_from_turn`) onto a new `ChatResponse.staple_offer` field, None
+whenever the item was already a staple (nothing to tap, only a sentence
+to say). `static/shell.js`'s `offerNextStepChips` takes the offer as a
+second argument and, when present, puts a "Yes" chip first — tapping it
+sends "Yes, keep an eye on <item>." as a plain message, same door every
+other chip already uses. One system-prompt bullet (`app/agent.py`, right
+after the existing Staples bullet) tells the model what to do with the
+key: offer in one line, only call `add_staple` on an explicit yes, say
+"already watched" instead when `already_staple` is true. 18 new tests in
+`tests/test_staple_offer_from_chat.py` (17 fail against the prior
+`add_grocery_item`, one Shop-tab regression guard passes either way); one
+existing source-marker test (`test_changes_saved.py`) updated for the
+call site's new argument. Full suite: 5181 → 5199, all green. Left out:
+`add_grocery_items` (the plural chat tool) isn't wrapped, so a multi-item
+add ("add milk and dish soap") never offers — the card's own examples are
+all single-item; and there's no explicit "decline" tool, since the offer
+being raised is itself what suppresses the next ask for that line, which
+covers "no" and "no answer" identically by construction.

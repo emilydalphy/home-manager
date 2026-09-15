@@ -293,7 +293,7 @@ def test_a_chat_turn_that_changed_something_says_changes_saved():
     """The send handler streams and touches the DOM throughout, so this
     one reads the source: the pop-up follows the action cards, and only
     when the turn carried any."""
-    i = SHELL_JS.index("      offerNextStepChips(data.actions);\n")
+    i = SHELL_JS.index("      offerNextStepChips(data.actions, data.staple_offer);\n")
     tail = SHELL_JS[i:i + 700]
     # ...and not when the turn came back with a change card — the week is
     # not saved yet, and the card's own Save says so (test_chat_change_card).

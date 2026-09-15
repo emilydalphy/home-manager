@@ -277,6 +277,84 @@ def section_for(item: str, category: str | None = None) -> str:
     return _name_section_food(item) or "other"
 
 
+def _is_supply(item: str, category: str | None) -> bool:
+    """
+    Whether a CHAT-added grocery item is a running-low SUPPLY — household
+    goods, toiletries, pantry basics — rather than a recipe ingredient for
+    a specific meal ("add shrimp", "we need parsley for Thursday"). Reuses
+    section_for's own classifier rather than a separate list: pantry and
+    household are supply-shaped; fridge (produce/dairy/meat-seafood/
+    frozen) is what a dinner draws on, and a spice already gets its own
+    staple the moment it's added (see seed_spice_staples) — so both are
+    excluded here rather than offered twice.
+    """
+    return section_for(item, category) in ("pantry", "household")
+
+
+def offer_for_chat_grocery_add(item: str, category: str | None, item_id: int) -> dict | None:
+    """
+    "Something you run out of, mentioned in chat, is offered as a staple"
+    (Loop Board, 2026-09-15). Called only from add_grocery_item_for_chat,
+    the chat tool's own wrapper around grocery.add_grocery_item — never
+    from the Shop tab's own add route, which is untouched by this.
+
+    Returns None when there's nothing to offer: not a supply (_is_supply),
+    or this exact grocery line already raised or answered the offer once
+    (grocery_items.staple_offer_made) — asked once per line, for the life
+    of that line on the list, not once per message. Otherwise returns
+    {"item": item, "already_staple": bool} and marks the line asked in the
+    same breath, so "yes", "no" and no answer at all all land on "don't
+    ask again for this line" without needing to tell those three apart.
+    """
+    if not _is_supply(item, category):
+        return None
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT staple_offer_made FROM grocery_items WHERE id = ? AND household_id = ?",
+            (item_id, household_id()),
+        ).fetchone()
+        if row is None or row["staple_offer_made"]:
+            return None
+        already_staple = _find_by_name(conn, item) is not None
+        conn.execute("UPDATE grocery_items SET staple_offer_made = 1 WHERE id = ?", (item_id,))
+        conn.commit()
+        return {"item": item, "already_staple": already_staple}
+    finally:
+        conn.close()
+
+
+def add_grocery_item_for_chat(
+    item: str,
+    quantity: str = "",
+    category: str = "other",
+    added_by: str = "user",
+    source_weekly_plan_id: int | None = None,
+    quantity_mode: str = "sum",
+) -> dict:
+    """
+    What the chat agent calls for its "add_grocery_item" tool — identical
+    to grocery.add_grocery_item (same arguments, same return shape), plus
+    one thing only a chat turn can act on: a `staple_offer` key on the
+    result when offer_for_chat_grocery_add says this add is worth Pomona
+    asking about. The direct-add HTTP route and every other caller still
+    go through grocery.add_grocery_item itself and never see this key —
+    see CLAUDE.md's Decision log, 2026-09-15 ("Shop tab behaviour
+    unchanged").
+    """
+    result = _grocery.add_grocery_item(
+        item, quantity=quantity, category=category, added_by=added_by,
+        source_weekly_plan_id=source_weekly_plan_id, quantity_mode=quantity_mode,
+    )
+    # result["item"] is the line's own wording (the existing row's, on a
+    # merge) — the same reason add_grocery_item itself reports that name
+    # back rather than the raw argument.
+    offer = offer_for_chat_grocery_add(result["item"], category, result["item_id"])
+    if offer:
+        result["staple_offer"] = offer
+    return result
+
+
 def group_by_section(staples: list[dict]) -> list[dict]:
     """The shaped staples grouped under their section, in SECTION_ORDER,
     skipping empty sections: [{"section", "label", "staples": [...]}]."""

@@ -505,11 +505,13 @@ from .slot_needs import (  # noqa: F401
 from .staples import (  # noqa: F401
     SECTION_LABELS,
     SECTION_ORDER,
+    add_grocery_item_for_chat,
     add_staple,
     decide_staple_line,
     group_by_section,
     list_staples,
     list_staples_by_section,
+    offer_for_chat_grocery_add,
     section_for,
     seed_spice_staples,
     mark_staple_plenty,
