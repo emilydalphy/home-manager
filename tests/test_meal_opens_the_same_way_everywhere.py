@@ -407,7 +407,7 @@ def _meal_screen(back: str, cookable: bool) -> str:
             "ingredientNamesLine", "mealClockSides", "mealClockTotal", "finishSideStop", "mealClockStops", "mealClockEyebrow", "mealCookName",
             "mealCookUnderway", "mealClockFor", "mealHeroLine", "mealHeroHtml",
             "mealStopHtml", "mealClockHtml", "swapStateFor", "swapLineHtml",
-            "slotEyebrowLabel", "dishSizeClass", "mealDockHtml", "mealWhatsInHtml", "mealStepHtml"))
+            "slotEyebrowLabel", "dishSizeClass", "mealDockHtml", "mealWhatsInEyebrow", "mealWhatsInHtml", "mealStepHtml"))
         + f"console.log(JSON.stringify(mealStepHtml({json.dumps(day)}, 'dinner')));\n"
     )
     return _run_node(harness)

@@ -75,7 +75,7 @@ _PURE = (
         "slotTableMinutes", "mealTotalMinutes", "mealStepMinutes", "stopTitleSplit",
         "ingredientNamesLine", "mealClockSides", "mealClockTotal", "finishSideStop",
         "mealClockStops", "mealClockEyebrow", "humanQtyAmount", "humanQtyText",
-        "cookIngredientLabel", "mealStopHtml", "mealWhatsInHtml"))
+        "cookIngredientLabel", "mealStopHtml", "mealWhatsInEyebrow", "mealWhatsInHtml"))
 )
 
 
@@ -223,6 +223,53 @@ def test_the_overview_is_one_ingredient_per_row_with_the_amount_for_tonight():
     assert 'class="wk-ing-add" data-wk-add="dinner"' in html
     assert "<span>Add something</span>" in html
     assert "dock-primary" not in html and "btn-primary" not in html
+
+
+ROAST_CHICKEN_BATCHED = {
+    "meal": "Roast Chicken",
+    "has_full_recipe": True,
+    "default_servings": 4,
+    "servings": 4,
+    "attendance": {"headcount": 2},
+    "covers": [{"date": "2027-10-14", "slot": "dinner", "eaters": 2}],
+    "covers_note": "Cooking for 4 — enough for Tuesday and Thursday.",
+    "ingredients": [
+        {"item": "Whole chicken", "qty": "2"},
+        {"item": "Rice", "qty": "2 cups"},
+    ],
+    "instructions": ["Roast the chicken.", "Cook the rice."],
+    "sides": [],
+}
+
+
+@_needs_node
+def test_a_batched_source_night_says_nights_and_plates_not_tonights_headcount():
+    # Loop Board bug: entry 40 (Roast Chicken, make_double_for pointing at
+    # Thursday) showed "WHAT'S IN IT · FOR TWO" over the doubled amounts
+    # (two whole chickens) — the eyebrow read tonight's headcount while the
+    # numbers on the right were the whole batch. The eyebrow must describe
+    # what the amounts are actually for.
+    html = _overview(ROAST_CHICKEN_BATCHED)
+    assert 'class="wk-clock-eyebrow wk-whatsin-eyebrow">What’s in it · two nights, 4 plates</div>' in html
+    assert 'for two' not in html
+    assert '<span class="wk-ing-name">Whole chicken</span><span class="wk-ing-qty">2</span>' in html
+    assert '<span class="wk-ing-name">Rice</span><span class="wk-ing-qty">2 cups</span>' in html
+
+
+@_needs_node
+def test_an_ordinary_night_still_says_for_the_table_it_is_cooking_for():
+    # Not batched (no covers_note/servings): unchanged behaviour — the
+    # eyebrow names tonight's own table, and the amounts already match it.
+    assert _run(f"mealWhatsInEyebrow({json.dumps(SHRIMP)})") == "What’s in it · for two"
+
+
+@_needs_node
+def test_a_batch_of_one_plate_still_reads_naturally():
+    # Belt and braces on the pluralization — not reachable from a real
+    # batch (a batch always covers at least one later night), but the
+    # helper itself should never say "1 plates".
+    one_plate = dict(ROAST_CHICKEN_BATCHED, servings=1)
+    assert _run(f"mealWhatsInEyebrow({json.dumps(one_plate)})") == "What’s in it · two nights, 1 plate"
 
 
 @_needs_node

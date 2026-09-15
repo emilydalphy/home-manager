@@ -699,6 +699,7 @@ def _meal_step_html(day: dict, slot: str) -> str:
         + _extract("slotEyebrowLabel", SHELL_JS) + "\n"
         + _extract("dishSizeClass", SHELL_JS) + "\n"
         + _extract("mealDockHtml", SHELL_JS) + "\n"
+        + _extract("mealWhatsInEyebrow", SHELL_JS) + "\n"
         + _extract("mealWhatsInHtml", SHELL_JS) + "\n"
         + _extract("mealStepHtml", SHELL_JS) + "\n"
         + f"console.log(JSON.stringify(mealStepHtml({json.dumps(day)}, {json.dumps(slot)})));\n"
