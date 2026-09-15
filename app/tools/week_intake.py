@@ -399,7 +399,11 @@ def _observed_day_patterns(week_start: str, day_count: int = 7) -> dict:
       - A recurring rhythm fact from What We Know that names this weekday
         ("Tuesdays are tee-ball so we eat at 5").
       - An observed pattern in the plan history: the same weekday resolved
-        to takeout or leftovers in most of the last four weeks.
+        to takeout or leftovers in most of the last four weeks. A night the
+        household called off outright ("Not tonight — we're going out", see
+        tools/tonight.py) counts the same way: nobody cooked, and the point
+        of the hint is that next week's plan goes lighter on that day
+        without anyone having to say so again.
     A day with neither gets no hint, and the row still works — it just
     reads "Nothing on the calendar."
     A period longer than a week can repeat a weekday (Thursday to next
@@ -417,7 +421,8 @@ def _observed_day_patterns(week_start: str, day_count: int = 7) -> dict:
     lookback_start = (date.fromisoformat(week_start) - timedelta(days=28)).isoformat()
     history = conn.execute(
         """
-        SELECT mpe.date, COALESCE(r.name, mpe.freeform_meal) AS meal
+        SELECT mpe.date, mpe.derived_from_json,
+               COALESCE(r.name, mpe.freeform_meal) AS meal
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.household_id = ? AND mpe.slot = 'dinner'
@@ -427,10 +432,22 @@ def _observed_day_patterns(week_start: str, day_count: int = 7) -> dict:
     ).fetchall()
     conn.close()
 
+    # Imported here rather than at module scope: tonight.py reads this
+    # module's period_dates, so a top-level import either way is a cycle.
+    from .tonight import NIGHT_OFF_CONSTRAINT
+
     takeout_by_weekday: dict[str, int] = {}
     for row in history:
         text = (row["meal"] or "").lower()
-        if re.search(r"take[\s-]?out|delivery|order in", text):
+        called_off = False
+        try:
+            called_off = (
+                json.loads(row["derived_from_json"] or "{}").get("constraint")
+                == NIGHT_OFF_CONSTRAINT
+            )
+        except (TypeError, ValueError):
+            called_off = False
+        if called_off or re.search(r"take[\s-]?out|delivery|order in", text):
             name = date.fromisoformat(row["date"]).strftime("%A")
             takeout_by_weekday[name] = takeout_by_weekday.get(name, 0) + 1
 

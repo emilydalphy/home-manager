@@ -1981,6 +1981,21 @@
     var slot = panel.querySelector('#tonight-ask');
     if (!slot) return;
     panel._tonight = data;
+    if (data && data.night_off) {
+      // The night is settled and there is nothing left to decide, so this
+      // says so and stops — no buttons, and a celadon dot rather than the
+      // apricot one, because celadon is the app's "already true". The one
+      // extra line is the only thing left that needs doing: food that is
+      // already in the house for a dinner nobody is cooking.
+      var used = (data.use_soon || []).join(', ');
+      slot.innerHTML =
+        '<div class="shell-card needs-you-card tonight-card is-off" data-card-type="tonight_night_off">' +
+          '<div class="ny-kicker">Dinner</div>' +
+          '<div class="ny-title">Night off — enjoy.</div>' +
+          (used ? '<p class="tonight-off-line">' + escapeHtml('Use the ' + used + ' soon.') + '</p>' : '') +
+        '</div>';
+      return;
+    }
     if (!data || !data.ask || !data.dinner) { slot.innerHTML = ''; return; }
     slot.innerHTML =
       '<div class="shell-card needs-you-card tonight-card" data-card-type="tonight_ask">' +
@@ -2029,6 +2044,38 @@
   var tonightScrim = document.getElementById('tonight-scrim');
   var tonightSheet = document.getElementById('tonight-sheet');
 
+  // The last row, and the one the sheet exists for as much as the swaps
+  // (Emily, 2026-09-14): a night off is an answer in its own right, not a
+  // swap for a dish nobody is going to cook either. Its sub-line says what
+  // happens to tonight's dish — the server worked that out on the same dry
+  // run and the same chain check the answer itself will use
+  // (night_off_moves_to / night_off_blocked_message) — so the tap is never
+  // a guess, and never a promise the tap then refuses. Not apricot: Now's
+  // one accent is the dock.
+  //
+  // The dish is named as the PLAN names it, not as the question above it
+  // does: tonightDishName appends " leftovers" for a reheat, which reads
+  // as "Bean Chili leftovers comes off the week" and disagrees with the
+  // toast that follows. One name, the toast's.
+  function tonightNightOffRowHtml(data) {
+    var dish = (data && data.dinner && data.dinner.meal) || '';
+    var sub = data && data.night_off_blocked_message
+      ? data.night_off_blocked_message
+      : (!dish ? ''
+          : (data.night_off_moves_to_weekday
+              ? dish + ' moves to ' + data.night_off_moves_to_weekday + '.'
+              : dish + ' comes off the week.'));
+    return '<div class="tonight-off-row">' +
+      '<button type="button" class="tonight-option is-night-off" id="tonight-night-off">' +
+        '<span class="tonight-option-text">' +
+          '<span class="tonight-option-dish">Not tonight — we’re going out</span>' +
+          (sub ? '<span class="tonight-option-when">' + escapeHtml(sub) + '</span>' : '') +
+        '</span>' +
+        '<span class="tonight-option-go">Night off</span>' +
+      '</button>' +
+    '</div>';
+  }
+
   function tonightOptionRowsHtml(data) {
     var options = (data && data.options) || [];
     if (!options.length) {
@@ -2036,9 +2083,11 @@
       // tonight (a one-night plan, every later night away or cooked, or
       // tonight's cook feeding tomorrow's leftovers). Say so, and hand
       // over to the plan — the day itself is where the rest of the
-      // choices live.
+      // choices live. The night off is still on offer: it needs nothing
+      // to trade with.
       return '<p class="tonight-none">Nothing else on this week’s plan can move to tonight.</p>' +
-        '<button type="button" class="tonight-plan-link" id="tonight-open-plan">Open today in the plan</button>';
+        '<button type="button" class="tonight-plan-link" id="tonight-open-plan">Open today in the plan</button>' +
+        tonightNightOffRowHtml(data);
     }
     return '<div class="tonight-options">' + options.map(function (opt) {
       var when = opt.weekday || dayName(opt.date, { weekday: 'long' });
@@ -2052,7 +2101,7 @@
         '</span>' +
         '<span class="tonight-option-go">Swap</span>' +
       '</button>';
-    }).join('') + '</div>';
+    }).join('') + '</div>' + tonightNightOffRowHtml(data);
   }
 
   function openTonightSheet(panel) {
@@ -2067,8 +2116,11 @@
     if (line) {
       // What the swap does, in one breath — so the row's "Swap" is never
       // a mystery: the dish they pick moves to tonight, tonight's moves
-      // to that night.
-      line.textContent = tonightDishName(data.dinner) + ' moves to that night.';
+      // to that night. With no nights to trade with there is no swap for
+      // it to describe, and the night-off row says its own consequence.
+      line.textContent = (data.options || []).length
+        ? tonightDishName(data.dinner) + ' moves to that night.'
+        : '';
     }
     openSheet(tonightSheet, tonightScrim);
     tonightSheet.querySelectorAll('[data-tonight-date]').forEach(function (btn) {
@@ -2076,6 +2128,10 @@
         runTonightSwap(panel, btn.getAttribute('data-tonight-date'));
       });
     });
+    var nightOff = tonightSheet.querySelector('#tonight-night-off');
+    if (nightOff) {
+      nightOff.addEventListener('click', function () { runTonightNightOff(panel); });
+    }
     var openPlan = tonightSheet.querySelector('#tonight-open-plan');
     if (openPlan) {
       openPlan.addEventListener('click', function () {
@@ -2141,6 +2197,73 @@
     }
   }
 
+  // "Not tonight — we're going out": one tap, one call, no follow-up
+  // question (POST /api/today/tonight/night-off — the dish moves to the
+  // next free night of the plan, or comes off the week, and tonight ends
+  // deliberately empty). The toast says which of the two happened and, if
+  // anything already bought won't keep, names it; there is no Undo,
+  // because a dropped dish cannot be put back and half an undo is worse
+  // than none.
+  async function runTonightNightOff(panel) {
+    var data = panel._tonight;
+    if (!data || panel._tonightSwapping) return;
+    panel._tonightSwapping = true;
+    var buttons = tonightSheet ? tonightSheet.querySelectorAll('.tonight-option') : [];
+    buttons.forEach(function (b) { b.disabled = true; });
+    try {
+      var res = await fetch('/api/today/tonight/night-off', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: data.date })
+      });
+      if (!res.ok) throw new Error('night off failed (' + res.status + ')');
+      var out = await res.json();
+      if (out.status !== 'night_off') {
+        // A 200 that says no — the sentence is the server's.
+        showToast(out.message || TONIGHT_SWAP_TROUBLE, null, 6000);
+        return;
+      }
+      closeTonightSheet();
+      showToast(tonightNightOffSaid(out), null, 6000);
+      afterTonightSwap(panel);
+      // The one thing a night off can change that a nights swap never
+      // does: a dropped dish puts back whatever it had put on the list
+      // that nobody has bought yet.
+      refreshGroceryPanel();
+    } catch (err) {
+      console.warn('Taking tonight off failed:', err);
+      showToast(TONIGHT_SWAP_TROUBLE);
+    } finally {
+      panel._tonightSwapping = false;
+      buttons.forEach(function (b) { b.disabled = false; });
+    }
+  }
+
+  // What actually happened, in one breath: the night, then where the dish
+  // went, then anything in the house that now wants using.
+  function tonightNightOffSaid(out) {
+    // An away night answers `already: true, already_reason: 'away'` and
+    // writes nothing — correctly, because nobody was ever home. Saying
+    // "Night off." about it would be the app telling the household
+    // something untrue, which is the whole reason the server carries
+    // `already_reason` (tonight.py). Reachable from a stale sheet: this
+    // phone has the sheet open while the other adult, or chat, marks
+    // tonight away. Found on review, 2026-09-15 — the server honoured
+    // the distinction and the screen did not.
+    if (out.already && out.already_reason === 'away') {
+      return 'Nobody’s home tonight anyway.';
+    }
+    var said = 'Night off.';
+    if (out.dish && out.moved_to_weekday) {
+      said += ' ' + out.dish + ' moves to ' + out.moved_to_weekday + '.';
+    } else if (out.dish) {
+      said += ' ' + out.dish + ' is off the week.';
+    }
+    var used = (out.use_soon || []).join(', ');
+    if (used) said += ' Use the ' + used + ' soon.';
+    return said;
+  }
+
   async function undoTonightSwap(panel, tonightDate, otherDate) {
     var data = panel._tonight;
     if (!data || !data.week_start) return;
@@ -2169,6 +2292,18 @@
     loadNeedsYou(panel);
     // The kitchen branch re-reads Today's moves as well (see that function).
     refreshStaleTabsFromActions([{ tab: 'week' }, { tab: 'kitchen' }]);
+  }
+
+  // A plan change by DATE changes what tonight is, which Now's own card
+  // and strip are readings of — so "we're going out tonight" in chat
+  // (take_the_night_off, tagged `week` in app/main.py) settles the card
+  // just as the sheet's own tap does, and so does a chat swap of two
+  // nights. Cheap and a no-op when Now was never opened.
+  function refreshTonightFromPlan() {
+    if (!panels.today || !panels.today.dataset.built) return;
+    loadTonightAsk(panels.today);
+    loadNeedsYou(panels.today);
+    refreshTodayMoves();
   }
 
   function renderTodayMovesError(panel) {
@@ -20794,7 +20929,9 @@
         // days tiles follow a chat "move Thursday's dinner to Friday"
         // (swap_dinner_nights, tagged `week` in app/main.py) as well.
         loadWeekMenu(panels.week);
+        refreshTonightFromPlan();
       } else if (action.tab === 'week') {
+        refreshTonightFromPlan();
         // The same week changed, but Meals has never been opened in this
         // page load, so there is no panel to reload — and the dish index
         // would go on naming last week's dinners in every reply. One

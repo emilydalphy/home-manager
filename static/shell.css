@@ -1124,6 +1124,43 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   cursor: pointer;
 }
 
+/* "Not tonight — we're going out" (Emily, 2026-09-14): the sheet's last
+   row, and a different KIND of answer from the swaps above it — so it sits
+   under a hairline of its own rather than in the .tonight-options stack.
+   Celadon, not apricot: it settles the night (the token's own role, §1),
+   and Now's one apricot is the dock (rule 5). Ratios measured in Chromium
+   off computed styles at 390px — the title --ink-on-celadon on
+   --celadon-tint 10.65:1 light / 10.37:1 dark, its sub-line and the "Night
+   off" word --celadon-label on the same fill 4.87:1 / 5.92:1. */
+.tonight-off-row {
+  margin-top: 12px;
+  padding: 12px 2px 0;
+  border-top: 1.5px solid var(--hairline);
+}
+.tonight-option.is-night-off {
+  background: var(--celadon-tint);
+  border-color: var(--celadon-edge);
+}
+.tonight-option.is-night-off:hover {
+  background: var(--celadon-tint);
+  border-color: var(--celadon-label);
+}
+.tonight-option.is-night-off .tonight-option-dish { color: var(--ink-on-celadon); }
+.tonight-option.is-night-off .tonight-option-when,
+.tonight-option.is-night-off .tonight-option-go { color: var(--celadon-label); }
+/* The settled card on Now: a statement, so its dot is celadon rather than
+   the apricot one a question carries, and the one line under it is the
+   only thing still worth doing. */
+.tonight-card.is-off .ny-kicker::before { background: var(--celadon); }
+.tonight-off-line {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+}
+
 /* The "Add something" sheet (#wk-add-sheet in shell.html): the geometry of
    Now's "Something else" sheet, its rows the same .tonight-option shape. */
 #wk-add-scrim {

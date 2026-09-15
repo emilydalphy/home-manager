@@ -657,11 +657,15 @@ from .proposals import (  # noqa: F401
     propose_plan_changes,
     undo_proposal,
 )
-# Now's "Tonight: X. Still good?" card and its swap-from-the-plan sheet
-# (Emily, 2026-09-13). Not agent tools — a screen's own read and one
-# "Yes" write; the swap itself is swap_dinner_nights above.
+# Now's "Tonight: X. Still good?" card, its swap-from-the-plan sheet
+# (Emily, 2026-09-13) and its third answer, "Not tonight — we're going
+# out" (Emily, 2026-09-14). tonight_check and tonight_keep are a screen's
+# own read and one "Yes" write; tonight_night_off IS an agent tool, because
+# "we're going out tonight" is a thing people say rather than tap.
 from .tonight import (  # noqa: F401
     TONIGHT_ASK_HOUR,
+    NIGHT_OFF_CONSTRAINT,
     tonight_check,
     tonight_keep,
+    tonight_night_off,
 )

@@ -224,7 +224,7 @@ def periods_overlap(a_start: str, a_days: int, b_start: str, b_days: int) -> lis
     return _week_intake.period_dates(lo, span)
 
 
-def clear_plan_slot(weekly_plan_id: int, meal_date: str, slot: str) -> int:
+def clear_plan_slot(weekly_plan_id: int, meal_date: str, slot: str, conn=None) -> int:
     """
     Remove whatever is currently occupying one slot of a plan, reversing any
     grocery contribution it made first. Returns how many entries went.
@@ -236,24 +236,64 @@ def clear_plan_slot(weekly_plan_id: int, meal_date: str, slot: str) -> int:
     buys ingredients for a night the household was promised nothing would be
     bought for. Which of the two rows a screen happens to show is incidental
     — the shopping list is the part that isn't.
+
+    **A DONE prep row goes with the meal, and that is a real loss to know
+    about**: a fridge move somebody actually ticked off is history, and
+    deleting the meal deletes the record of the work. It is deliberate and
+    predates this note — a reminder for a meal that no longer exists has
+    nowhere honest to live, and get_prep_schedule drops a dangling row on
+    read anyway — but a caller whose ticket says "a fridge move already
+    done stays done" is not getting that from here.
+
+    `conn` is the same arrangement plan_slot_open and
+    _reverse_meal_grocery_contributions already have, and it exists for the
+    same reason: this function DELETES a row, and a caller that has to put
+    something in its place (tonight.tonight_night_off, which follows it with
+    plan_slot_empty) must do both or neither — the gap between two commits
+    is a genuinely ABSENT slot, the one state schema.sql, audit_plan_slots
+    and plan_slot_open's own docstring all say cannot exist. Given a
+    connection this reads and writes on it and neither commits nor closes;
+    the caller owns both, and owns taking the write lock (BEGIN IMMEDIATE)
+    before its first read. The leftover source's grocery rescale runs INSIDE
+    that transaction, exactly as _replace_slot_entries does it. Left unset,
+    every other call site behaves precisely as before.
     """
-    conn = get_conn()
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
     rows = conn.execute(
         "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? AND slot = ? "
         "AND household_id = ? AND component_category IS NULL",
         (weekly_plan_id, meal_date, slot, household_id()),
     ).fetchall()
-    conn.close()
+    approved = False
+    if not own_conn and rows:
+        plan_row = conn.execute(
+            "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?",
+            (weekly_plan_id, household_id()),
+        ).fetchone()
+        approved = bool(plan_row) and plan_row["status"] == "approved"
+    if own_conn:
+        conn.close()
     for row in rows:
         # If this row was reheating an earlier night's batch, tell that
         # source before the row disappears out from under it — see
         # _unlink_leftover_target.
-        _unlink_leftover_target(weekly_plan_id, row["id"])
+        if own_conn:
+            _unlink_leftover_target(weekly_plan_id, row["id"])
+        else:
+            # Handed a connection it defers the source's grocery rescale to
+            # us; on an approved week that happens right here, inside the
+            # transaction (the shape _replace_slot_entries uses).
+            rescale_source_id = _unlink_leftover_target(weekly_plan_id, row["id"], conn=conn)
+            if rescale_source_id is not None and approved:
+                _rescale_leftover_source_grocery(rescale_source_id, row["id"], conn=conn)
         # Same care swap_meal_in_plan takes — anything this entry put on the
         # list comes back off, and anything already in a cart is left alone.
-        _grocery._reverse_meal_grocery_contributions(row["id"])
+        _grocery._reverse_meal_grocery_contributions(row["id"], conn=None if own_conn else conn)
     if rows:
-        conn = get_conn()
+        if own_conn:
+            conn = get_conn()
         marks = ",".join("?" * len(rows))
         # Prep rows for a meal that no longer exists go with it — the same
         # reasoning _replace_slot_entries applies. (get_prep_schedule also
@@ -267,8 +307,9 @@ def clear_plan_slot(weekly_plan_id: int, meal_date: str, slot: str) -> int:
             f"DELETE FROM meal_plan_entries WHERE id IN ({marks})",
             tuple(r["id"] for r in rows),
         )
-        conn.commit()
-        conn.close()
+        if own_conn:
+            conn.commit()
+            conn.close()
     return len(rows)
 
 
@@ -278,28 +319,40 @@ def plan_slot_empty(
     slot: str,
     reason: str,
     derived_from: dict | None = None,
+    conn=None,
 ) -> dict:
     """
     Record a slot as deliberately empty — `planned_empty`.
 
     Not a gap and not a question. This is a slot that needs no decision and
-    must NEVER be offered to the household as one. Two things produce it:
+    must NEVER be offered to the household as one. Three things produce it:
     a dinner on a night nobody is home ("You're out — I've planned nothing
-    and bought nothing"), and a meal category the household has asked for
-    zero of.
+    and bought nothing"), a meal category the household has asked for zero
+    of, and a night the household called off outright (tonight.py's
+    "Not tonight — we're going out").
 
     `reason` is what the draft screen shows in place of a meal, so it has
     to read as a statement, never as an apology or an ask.
+
+    `conn` is the sibling of plan_slot_open's own, added for the same
+    reason and late: a caller that CLEARS a slot and then states it empty
+    has to do both or neither, because the gap between two commits is a
+    genuinely absent slot. Given a connection this writes on it and neither
+    commits nor closes — the caller owns both. Left unset, every other call
+    site behaves exactly as before.
     """
-    conn = get_conn()
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
     cur = conn.execute(
         "INSERT INTO meal_plan_entries (household_id, date, slot, weekly_plan_id, slot_state, reasoning, derived_from_json) "
         "VALUES (?, ?, ?, ?, 'planned_empty', ?, ?)",
         (household_id(), meal_date, slot, weekly_plan_id, reason, json.dumps(derived_from or {})),
     )
-    conn.commit()
     entry_id = cur.lastrowid
-    conn.close()
+    if own_conn:
+        conn.commit()
+        conn.close()
     return {"entry_id": entry_id, "date": meal_date, "slot": slot, "slot_state": "planned_empty", "reason": reason}
 
 
@@ -453,20 +506,9 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int) -> dict:
             ),
         }
 
-    # The nights this entry was cooked double for. Written as "date:slot"
-    # strings on the SOURCE's own derived_from (see _unlink_leftover_target
-    # for the other direction), and tolerating the pre-fix scalar shape the
-    # same way that function does.
-    fed = json.loads(row["derived_from_json"] or "{}").get("make_double_for") or []
-    if isinstance(fed, str):
-        fed = [fed]
-    fed = [str(t) for t in fed if str(t).strip()]
+    fed = chain_fed_nights(row["derived_from_json"])
     if fed:
-        nights = []
-        for target in fed:
-            part = target.split(":")
-            weekday = date.fromisoformat(part[0]).strftime("%A")
-            nights.append(f"{weekday}’s {part[1]}" if len(part) > 1 else weekday)
+        nights = fed
         return {
             "status": "refused",
             "date": meal_date,
@@ -1654,6 +1696,37 @@ def _make_double_note_text(targets: list[str]) -> str:
         f"I’ll set aside a double batch tonight — {_join_with_and(day_names)} "
         f"{'eats' if len(day_names) == 1 else 'eat'} the leftovers."
     )
+
+
+def chain_fed_nights(derived_from_json: str | None) -> list[str]:
+    """
+    The nights an entry was cooked double for, said as weekdays — "Friday",
+    "Friday’s lunch" — or an empty list when it feeds nobody.
+
+    The SOURCE side of a leftover chain, written as "date:slot" strings on
+    the entry's own derived_from (see _unlink_leftover_target for the other
+    direction), tolerating the pre-fix scalar shape the same way that
+    function does. One reading, because two callers now refuse on it and a
+    refusal that names a different night in each would be worse than no
+    refusal: drop_dish_from_day (the Review stepper's "−") and
+    tonight.tonight_night_off ("we're going out", with nowhere to move the
+    dish to). An unreadable date raises, as it always has here — a caller
+    that would rather refuse than raise catches it and says so without
+    naming a night.
+    """
+    try:
+        fed = json.loads(derived_from_json or "{}").get("make_double_for") or []
+    except (TypeError, ValueError):
+        return []
+    if isinstance(fed, str):
+        fed = [fed]
+    fed = [str(t) for t in fed if str(t).strip()]
+    nights = []
+    for target in fed:
+        part = target.split(":")
+        weekday = date.fromisoformat(part[0]).strftime("%A")
+        nights.append(f"{weekday}’s {part[1]}" if len(part) > 1 else weekday)
+    return nights
 
 
 def _unlink_leftover_target(weekly_plan_id: int, entry_id: int, conn=None) -> int | None:
@@ -5752,6 +5825,7 @@ def _rewrite_chain_ref(ref, mapping: dict[str, str]):
 
 def _apply_dinner_nights_swap(
     weekly_plan_id: int, date_a: str, date_b: str, *, undo: bool, dry_run: bool = False,
+    conn=None,
 ) -> dict:
     """
     The one write behind swap_dinner_nights and undo_dinner_nights_swap.
@@ -5765,6 +5839,18 @@ def _apply_dinner_nights_swap(
     writing, answering `status` 'ok'. It is how Now's "Something else"
     sheet offers only nights that would actually swap, without a second
     copy of these rules that could drift.
+
+    `conn` lets a caller that ALREADY holds BEGIN IMMEDIATE fold this whole
+    swap into its own transaction (tonight.tonight_night_off, which moves
+    tonight's dish and then states the night empty — two writes that must
+    not be separately visible, or a second tap computed against the gap
+    swaps the dish straight back and then deletes it). Given one, this
+    neither begins, commits, rolls back nor closes, and a `dry_run` simply
+    returns without rolling back the caller's work. Two fields are then
+    OMITTED from the result, deliberately rather than silently: `days` and
+    `taste_verdicts` are reads, and a read on a second connection inside
+    an open write transaction sees the world as it was BEFORE it — so they
+    are the caller's to take after its commit, if it wants them at all.
     """
     for d in (date_a, date_b):
         try:
@@ -5774,9 +5860,12 @@ def _apply_dinner_nights_swap(
     if date_a == date_b:
         raise ValueError("Those are the same night — nothing to move.")
 
-    conn = get_conn()
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
     try:
-        conn.execute("BEGIN IMMEDIATE")
+        if own_conn:
+            conn.execute("BEGIN IMMEDIATE")
         plan = conn.execute(
             "SELECT id, week_start_date, content_start_date, day_count, planning_mode, status "
             "FROM weekly_plans WHERE id = ? AND household_id = ?",
@@ -5882,7 +5971,11 @@ def _apply_dinner_nights_swap(
                     date_a, date_b)
 
         if dry_run:
-            conn.rollback()
+            # Nothing has been written yet — the rollback only releases the
+            # lock this call took, so on a caller's connection it must not
+            # happen: it would throw away the caller's own work.
+            if own_conn:
+                conn.rollback()
             return {"status": "ok", "date_a": date_a, "date_b": date_b}
 
         # ---- write: the rows, then what their dates were holding up ----
@@ -5918,12 +6011,15 @@ def _apply_dinner_nights_swap(
                     (moved_to, said, t["id"]),
                 )
                 prep_moved += 1
-        conn.commit()
+        if own_conn:
+            conn.commit()
     except Exception:
-        conn.rollback()
+        if own_conn:
+            conn.rollback()
         raise
     finally:
-        conn.close()
+        if own_conn:
+            conn.close()
 
     moved = [
         {"entry_id": r["id"], "meal": r["meal"], "from": r["date"], "to": new_date[r["id"]]}
@@ -5936,10 +6032,14 @@ def _apply_dinner_nights_swap(
         "moved": moved,
         "prep_tasks_moved": prep_moved,
         "can_undo": not undo,
-        # Both changed days in get_week_menu's own shape, so the screen
-        # splices them in exactly as it does after an in-place swap.
-        "days": _menu_days_for(weekly_plan_id, [date_a, date_b]),
     }
+    if not own_conn:
+        # See the docstring: both of the fields below are reads, and the
+        # caller's transaction is still open.
+        return out
+    # Both changed days in get_week_menu's own shape, so the screen
+    # splices them in exactly as it does after an in-place swap.
+    out["days"] = _menu_days_for(weekly_plan_id, [date_a, date_b])
     # Reported, never enforced — the same advisory a chat swap carries:
     # the dish is now in front of whoever is home THAT night.
     verdicts = []
