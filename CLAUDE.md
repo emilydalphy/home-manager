@@ -371,6 +371,87 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-15 — A Yes about tonight is read BEFORE the plan, so nothing
+  can give up before looking at it. Branch
+  `overnight/tonight-remembers-the-yes`, NOT merged at the time of
+  writing.** Loop Board bug. `tonight.tonight_check` read the dismissal
+  after resolving the plan, so its `no_plan` and `components` early
+  returns handed back `answered: False` with the answer sitting on
+  record. Reproduced directly, unpinned, at the default TZ
+  (`reason: 'no_plan'`, `answered: False`, immediately after a
+  successful `tonight_keep`), so it is a real app behaviour and not an
+  artifact of a straddling clock; the clock is only what makes
+  `no_plan` reachable in ordinary use, since this function resolves the
+  plan against the HOUSEHOLD's date while the container runs UTC.
+  - **WHAT THIS DOES AND DOES NOT BUY, corrected on review before merge,
+    because the first version of this entry said something untrue and
+    then contradicted it two bullets later.** It claimed "the household
+    said the dinner was still good and was asked again an hour later".
+    That cannot happen: being re-asked needs `ask: True`, which needs a
+    plan covering today — and on that path the dismissal was already
+    read correctly. The very next bullet said no card appears that
+    didn't before. Both could not be true. **Measured**: across a
+    28-state matrix (7 plan shapes x Yes/no-Yes x afternoon/morning),
+    `ask` and `reason` are byte-identical to `main`, and the only four
+    states that move are ones where `ask` is False AND `dinner` is None
+    — exactly where `renderTonightAsk` draws nothing. `answered` is
+    written once by `shell.js` and never read. So the user-visible
+    effect is **zero**, and what this branch actually buys is three
+    things worth having: an API field that no longer lies; a real,
+    reproduced suite failure fixed (`test_the_routes_read_tonight_and_
+    remember_yes` fails on `main` under a Monday-crossing straddle and
+    passes here); and one of the two files blocking the CI timezone axis
+    cleared. Left written down rather than quietly deleted, because this
+    file's own rule is that a plausible overstatement is believed —
+    and an impact claim nobody can check is the easiest kind to make.
+  - **The fix is an ORDERING, not a new read.** The record is keyed by
+    household and day and nothing else, so whether somebody has answered
+    is knowable before the plan lookup and true whatever that lookup
+    finds. `answered` is now reported alongside every `reason` rather
+    than only the ones that got far enough to look.
+  - **No card appears that didn't before**: `ask` is False down every one
+    of those paths regardless, and a guard test says so. What
+    `answered: True, reason: 'no_plan'` means to a caller is simply "a
+    Yes is on file for today, and separately no plan covers it";
+    `static/shell.js` reads `answered` for rendering only, and renders
+    nothing when `ask` is False, so nothing downstream changed.
+  - **THE TEST HALF IS BELT-AND-BRACES, NOT THE FIX, and this is worth
+    knowing before the sibling re-seeding card is worked.** The card
+    assumed both halves were needed. `tests/test_tonight_still_good.py`'s
+    module-level `WEEK` was the Monday of the SERVER's date while the
+    code uses the household's, so the two could land in different
+    Monday-weeks — but only when the split crosses a Monday, which is why
+    it showed up on a Sunday night. It is built off the household's zone
+    now; measured, that change is NOT what makes the file pass. With the
+    app half in place the file is green under `Etc/GMT+12` and
+    `Pacific/Kiritimati` at Sunday, Monday and Saturday pins with
+    `_monday()` mutated back to `date.today()` — the route test takes its
+    day from the response, not from the constant. Kept anyway so the next
+    date-sensitive test in the file doesn't inherit the wrong assumption,
+    and the docstring says plainly that it is belt-and-braces.
+  - **The CI timezone axis this card names is NOT added here**, because
+    it would land red: measured whole-suite under `TZ=Pacific/Niue`,
+    **28 failed on this branch and 28 failed on `main`** (4765 vs 4760
+    passed — the difference is this branch's five new tests, and no
+    straddling failure is added). Those 28 are the "Re-seed the
+    date-shaped tests off the household's clock" card's, not this one's.
+    That card plus this one is what makes the axis a one-line change.
+  - `tests/test_tonight_still_good.py` grew 6 (23 → 29); **2 red on
+    `0a59aab`** and 4 no-regression guards saying so in their own
+    docstrings — including one that the fix must not INVENT an answer,
+    and one that yesterday's Yes does not answer today. The sixth is a
+    CROSS-HOUSEHOLD isolation test added on review: the read this branch
+    moved is the one that decides whether a household has answered, this
+    log records three separate cross-household leaks, and the invariant
+    had no test at all. Isolation is fine (measured both ways), so it is
+    pinned by MUTATION rather than by redness — dropping `household_id`
+    from the dismissal read fails it. Its first draft gave only one
+    household a plan, which made it red on `main` for the `no_plan` bug
+    rather than for isolation; a test that goes red for a reason other
+    than the one it is named after proves nothing about its own claim,
+    so both households now get a week. Suite **4794 passed, 0 failed**
+    at `TZ=America/Toronto`.
+
 - **2026-09-14 — Recipes, round 2: the planner is told how to WRITE the
   recipe, not just how to cook it. Branch
   `worktree-recipes-round-2-write-it-down` (`d1f951e`, `486bdcf`), NOT

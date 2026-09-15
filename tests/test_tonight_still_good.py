@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -28,7 +29,37 @@ SHELL_HTML = (REPO / "static" / "shell.html").read_text(encoding="utf-8")
 
 
 def _monday() -> datetime.date:
-    today = datetime.date.today()
+    """
+    The HOUSEHOLD's Monday, not the runner's.
+
+    tonight_check resolves the plan against the household's local date
+    (`households.timezone`, which conftest leaves at its column default,
+    `_tonight.DEFAULT_TIMEZONE`), while the test process runs in whatever
+    TZ it is given — UTC on CI. Building this week off `date.today()`
+    quietly asserted that the server's day and the household's are the
+    same day: for the hours when one has rolled over and the other has
+    not, the two land in DIFFERENT Monday-weeks, no plan covers the
+    household's today, and the route test fails for a reason that has
+    nothing to do with what it is testing. It only bites when the split
+    crosses a Monday, which is why it showed up on a Sunday night and not
+    on the Tuesday somebody went looking.
+
+    The same class as the "Re-seed the date-shaped tests off the
+    household's clock" card; this file is one of the two that was
+    blocking a timezone axis in CI.
+
+    BELT-AND-BRACES, not the fix — say so plainly, because it would read
+    as the fix otherwise. Measured 2026-09-15: with the app half done
+    (tonight_check reads the dismissal before the plan), this file is
+    already green under Etc/GMT+12 and Pacific/Kiritimati at Sunday and
+    Monday pins with `_monday()` reverted to `date.today()`. The route
+    test is the only one here that reads the real clock, and it takes
+    its day from the response rather than from this constant. This stays
+    because it makes the file mean what it says, and because the next
+    date-sensitive test written in it would otherwise inherit the wrong
+    assumption for free.
+    """
+    today = datetime.datetime.now(ZoneInfo(_tonight.DEFAULT_TIMEZONE)).date()
     return today - datetime.timedelta(days=today.weekday())
 
 
@@ -361,3 +392,129 @@ def test_the_sheet_has_its_own_geometry_and_a_44px_row():
     assert ".tonight-option" in SHELL_CSS
     start = SHELL_CSS.index(".tonight-option {")
     assert "min-height: 44px" in SHELL_CSS[start:start + 600] or "min-height: 5" in SHELL_CSS[start:start + 600]
+
+
+# ------------------------------------------- a Yes is remembered regardless
+
+def test_a_yes_is_remembered_when_no_plan_covers_today():
+    """
+    CATCH (red on main). The reported bug: tonight_check used to read the
+    dismissal AFTER resolving the plan, so the `no_plan` return gave up
+    before it ever looked — the answer was on record and the code never
+    asked. Reachable in ordinary use, because this function resolves the
+    plan against the household's date while the container runs UTC.
+
+    Nothing is planned here at all, which is the same shape from the
+    app's point of view and needs no clock trickery to reach.
+    """
+    day = _tonight._household_now().date().isoformat()
+    assert tools.tonight_check()["reason"] == "no_plan"
+
+    tools.tonight_keep(day)
+
+    after = tools.tonight_check()
+    assert after["reason"] == "no_plan"
+    assert after["answered"] is True, "the Yes is on file and must be reported"
+    assert after["ask"] is False, "a day with no plan still asks nothing"
+
+
+def test_a_yes_is_remembered_on_a_component_based_plan():
+    """CATCH (red on main). The other early return that swallowed it."""
+    plan = _plan()
+    conn = get_conn()
+    conn.execute("UPDATE weekly_plans SET planning_mode = 'component_based' WHERE id = ?", (plan,))
+    conn.commit()
+    conn.close()
+
+    tools.tonight_keep(TONIGHT)
+
+    out = tools.tonight_check(now=AFTERNOON)
+    assert out["reason"] == "components"
+    assert out["answered"] is True
+    assert out["ask"] is False
+
+
+def test_answered_is_still_false_when_nobody_has_said_yes():
+    """
+    GUARD (green on main). The fix reports a Yes that exists; it must not
+    invent one. Both shapes: no plan at all, and a real afternoon.
+    """
+    assert tools.tonight_check()["answered"] is False
+
+    plan = _plan()
+    _full_week(plan)
+    out = tools.tonight_check(now=AFTERNOON)
+    assert out["answered"] is False
+    assert out["ask"] is True, "an unanswered afternoon still asks"
+
+
+def test_a_yes_on_a_normal_afternoon_is_unchanged():
+    """
+    GUARD (green on main). The path that always worked: a plan covering
+    today, a Yes on file, the card quiet with reason 'answered'. Moving
+    the read must not have changed what the ordinary day says.
+    """
+    plan = _plan()
+    _full_week(plan)
+    tools.tonight_keep(TONIGHT)
+
+    out = tools.tonight_check(now=AFTERNOON)
+    assert out["answered"] is True
+    assert out["reason"] == "answered"
+    assert out["ask"] is False
+    assert out["dinner"]["meal"] == "Chettinad-Style Pepper Chicken"
+
+
+def test_yesterdays_yes_does_not_answer_today():
+    """
+    GUARD (green on main). The record is keyed by the day, so reading it
+    earlier must not make it outlive its day — otherwise the card would
+    go quiet for good after one Yes.
+    """
+    yesterday = (datetime.date.fromisoformat(TONIGHT) - datetime.timedelta(days=1)).isoformat()
+    tools.tonight_keep(yesterday)
+
+    plan = _plan()
+    _full_week(plan)
+    out = tools.tonight_check(now=AFTERNOON)
+    assert out["answered"] is False
+    assert out["ask"] is True
+
+
+def test_one_households_yes_is_not_another_households():
+    """
+    GUARD (green on main). The read this branch MOVED is the one that
+    decides whether a household has answered, and this repo's decision
+    log records three separate cross-household leaks — so the invariant
+    is worth a test rather than an argument. It had none before.
+
+    BOTH households get a real week on purpose. An earlier draft gave
+    only household 1 a plan, which made this red on main — not because
+    isolation was broken there (it wasn't) but because the second
+    household fell down the `no_plan` path this branch exists to fix.
+    A test that goes red for a reason other than the one it is named
+    after proves nothing about its own claim, so the plans are here to
+    keep the two questions apart. Pinned by mutation instead of by
+    redness: dropping `household_id` from the dismissal read fails it.
+    """
+    _full_week(_plan())
+    tools.tonight_keep(TONIGHT)
+    assert tools.tonight_check(now=AFTERNOON)["answered"] is True
+
+    conn = get_conn()
+    conn.execute("INSERT OR IGNORE INTO households (id, name) VALUES (2, 'Next door')")
+    conn.commit()
+    conn.close()
+
+    # use_household is a context manager — calling it bare builds a
+    # generator and changes nothing, which is how the first draft of
+    # this test "found a leak" that wasn't there.
+    with tools.use_household(2):
+        _full_week(_plan())
+        assert tools.tonight_check(now=AFTERNOON)["answered"] is False, \
+            "household 2 never said yes"
+        tools.tonight_keep(TONIGHT)
+        assert tools.tonight_check(now=AFTERNOON)["answered"] is True
+
+    # And household 1's own answer is untouched by any of that.
+    assert tools.tonight_check(now=AFTERNOON)["answered"] is True

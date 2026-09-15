@@ -93,7 +93,9 @@ def tonight_check(now: datetime | None = None) -> dict:
         "ask": bool,            # show the question at all
         "reason": str,          # why not, when `ask` is False (see below)
         "afternoon": bool,      # TONIGHT_ASK_HOUR has passed, locally
-        "answered": bool,       # "Yes" already given today
+        "answered": bool,       # "Yes" already given today — read before
+                                #   the plan, so it is reported whatever
+                                #   the plan lookup finds (2026-09-15)
         "week_start": str|None, # the plan's week_start_date, for the swap route
         "dinner": {"entry_id", "meal", "is_leftovers", "leftovers_from"} | None,
         "options": [{"entry_id", "date", "weekday", "meal", "is_leftovers",
@@ -102,8 +104,11 @@ def tonight_check(now: datetime | None = None) -> dict:
 
     `ask` is True only when every one of these holds: it is the afternoon;
     a plan covers today and tonight's dinner on it is a real, planned,
-    not-yet-cooked dish; and nobody has said "Yes" today. `reason` names
-    the first that fails — 'morning', 'no_plan', 'components',
+    not-yet-cooked dish; and nobody has said "Yes" today. `answered` is
+    NOT one of those conditions read backwards: it is a fact about the
+    day on its own, true whenever a Yes is on file, and it is reported
+    alongside every `reason` rather than only the ones that get far
+    enough to look. `reason` names the first condition that fails — 'morning', 'no_plan', 'components',
     'unplanned', 'away', 'open', 'cooked', 'answered' — so a screen (or a
     test) can tell a quiet card from a broken one. A day with no dinner
     planned is `reason` 'unplanned' with `dinner` None: Now's existing
@@ -136,6 +141,29 @@ def tonight_check(now: datetime | None = None) -> dict:
 
     conn = get_conn()
     try:
+        # The answer is read FIRST, and that ordering is the fix for a
+        # real bug (Loop Board, 2026-09-14): this used to be read after
+        # the plan, so the `no_plan` and `components` returns below gave
+        # up before ever looking, and a Yes already on file came back as
+        # `answered: False`. The record is keyed by the household and the
+        # day and nothing else — it does not depend on a plan existing —
+        # so whether somebody has answered is knowable here whatever the
+        # plan lookup goes on to find, and reporting it is simply telling
+        # the truth. `ask` is False down every one of those paths anyway,
+        # so no card starts appearing that didn't before; what stops is
+        # the app forgetting an answer it has.
+        #
+        # `no_plan` is reachable in ordinary use, not just in theory: it
+        # resolves the plan against the HOUSEHOLD's date while other
+        # things still resolve it against the server's, and the deployed
+        # container is UTC. For the hours when Toronto has rolled over
+        # and the server has not, the two land in different weeks.
+        answered = conn.execute(
+            "SELECT 1 FROM notification_dismissals WHERE household_id = ? AND key = ?",
+            (household_id(), tonight_ok_key(today)),
+        ).fetchone() is not None
+        out["answered"] = answered
+
         # The plan whose period holds the household's LOCAL today — the
         # same period arithmetic _current_weekly_plan_row uses, minus its
         # fall-back to "the latest plan" (a plan that doesn't cover tonight
@@ -169,14 +197,9 @@ def tonight_check(now: datetime | None = None) -> dict:
             """,
             (plan["id"], household_id()),
         ).fetchall()
-        answered = conn.execute(
-            "SELECT 1 FROM notification_dismissals WHERE household_id = ? AND key = ?",
-            (household_id(), tonight_ok_key(today)),
-        ).fetchone() is not None
     finally:
         conn.close()
 
-    out["answered"] = answered
     tonight = [r for r in rows if r["date"] == today]
     tonight_row = tonight[0] if tonight else None
     if tonight_row is None:
