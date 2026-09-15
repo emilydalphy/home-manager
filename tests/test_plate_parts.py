@@ -140,9 +140,11 @@ def test_options_are_asked_for_this_dish_and_cached_for_the_sitting(week):
     # Never the protein it already has; at most four; names capitalised.
     assert [o["name"] for o in out["options"]] == ["Ground beef", "Ground pork", "Ground chicken", "Black bean patties"]
     assert out["options"][1]["note"] == "richer"
+    assert out["options_unavailable"] is False  # the call worked
     # The second open is instant — no second call.
     again = pp.part_options(week, entry_id, asker=lambda ctx: (_ for _ in ()).throw(AssertionError("called twice")))
     assert again["options"] == out["options"]
+    assert again["options_unavailable"] is False
 
 
 def test_options_carry_the_houses_exclusions_and_survive_a_failed_call(week):
@@ -157,8 +159,24 @@ def test_options_carry_the_houses_exclusions_and_survive_a_failed_call(week):
 
     out = pp.part_options(week, entry_id, asker=asker)
     assert out["options"] == []  # the sheet still has "Something else…"
+    # A failed call is flagged apart from the model genuinely finding
+    # nothing (bug card, 2026-09-15) — the sheet's "couldn't think of
+    # options" line can eventually tell the two apart even though both
+    # leave `options` empty today.
+    assert out["options_unavailable"] is True
     assert "shellfish" in " ".join(seen[0]["must_not_contain"]).lower()
     assert "mushrooms" in seen[0]["dislikes"]
+
+
+def test_options_unavailable_is_false_when_the_model_genuinely_finds_nothing(week):
+    # A successful call that simply has nothing to offer is not the same
+    # as the call failing — options_unavailable stays False so the two
+    # are told apart at the data layer even though the sheet's copy
+    # (checked in the shell/source tests) reads the same either way.
+    entry_id = _dinner(week, TUESDAY)["entry_id"]
+    out = pp.part_options(week, entry_id, asker=lambda context: [])
+    assert out["options"] == []
+    assert out["options_unavailable"] is False
 
 
 def test_only_the_protein_is_changed_here(week):
@@ -244,6 +262,7 @@ def test_the_routes_offer_and_change(signed_in, week, monkeypatch):
     res = signed_in.get(f"/api/week/{WEEK_START}/part-options?entry_id={entry_id}&role=protein")
     assert res.status_code == 200
     assert res.json()["options"] == [{"name": "Ground beef", "note": ""}]
+    assert res.json()["options_unavailable"] is False
     res = signed_in.post(f"/api/week/{WEEK_START}/change-part",
                          json={"entry_id": entry_id, "role": "protein", "choice": "Ground beef"})
     assert res.status_code == 200
@@ -279,6 +298,36 @@ def test_the_parts_are_chips_with_a_dashed_missing_one_and_rows_on_the_meal_step
     assert "entry.source === 'leftovers'" in guard and "isSnackSlot(slot) && !isRealCook(entry)" in guard
     for cls in (".plate-part.is-missing", ".plate-rows", ".plate-row-change", ".wk-add-save", ".wk-add-option.is-on"):
         assert cls in SHELL_CSS, cls
+
+
+def test_a_blank_part_reads_as_in_the_dish_on_both_the_chip_and_the_row():
+    # Bug, Emily 2026-09-15: Tuesday's Roast Chicken card showed chips
+    # "Protein ⌄" (no value) while the detail page said "PROTEIN · In the
+    # dish" — a blank-looking chip reads as broken. The two renderers now
+    # share one fallback string (PLATE_NO_NAME) instead of disagreeing.
+    assert "var PLATE_NO_NAME = 'In the dish';" in SHELL_JS
+    i = SHELL_JS.index("  function platePartChipHtml(part, slot) {")
+    chip = SHELL_JS[i:SHELL_JS.index("  function plateRowHtml(")]
+    assert "escapeHtml(part.name || PLATE_NO_NAME)" in chip
+    # The dashed "missing" chip (a part the rule wants and nothing covers)
+    # is untouched — this fallback is only for a part the dish HAS but
+    # never named.
+    assert "is-missing" in chip and 'Add a ' in chip
+    j = SHELL_JS.index("  function platePartsRowsHtml(")
+    rows = SHELL_JS[j:j + 1200]
+    assert "p.missing ? 'Nothing yet' : (p.name || PLATE_NO_NAME)" in rows
+
+
+def test_the_protein_sheet_says_so_when_it_has_nothing_to_offer():
+    # Whether the AI call failed or genuinely found nothing, the sheet
+    # still works — the free-text box is always there — so one calm line
+    # above it says so rather than leaving a bare, unexplained empty list.
+    i = SHELL_JS.index("  function mealAddRowsHtml(offer, st) {")
+    sheet = SHELL_JS[i:SHELL_JS.index("  var MEAL_ADD_TROUBLE")]
+    assert "st.mode === 'protein' && !options.length" in sheet
+    assert "I couldn’t think of options just now — type one, or leave it." in sheet
+    assert sheet.index("wk-add-empty-note") < sheet.index('id="wk-add-free"')
+    assert ".wk-add-empty-note" in SHELL_CSS
 
 
 def test_the_sheet_selects_then_saves_and_the_protein_goes_through_the_swaps_undo():

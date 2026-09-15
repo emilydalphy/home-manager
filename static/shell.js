@@ -12588,20 +12588,22 @@
     'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
   var PLATE_PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
     'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+  // A part the dish has but never named of its own ("Veg" covered by the
+  // dish; a protein the recipe never recorded) — the day card's chip and
+  // the Meal step's row share this one word so they never disagree. Bug,
+  // Emily 2026-09-15: the chip used to show only its role word here, which
+  // on Roast Chicken's Protein chip read as blank — a chip with nothing on
+  // it looks broken, not quiet.
+  var PLATE_NO_NAME = 'In the dish';
 
   function platePartChipHtml(part, slot) {
-    var label;
     if (part.missing) {
       return '<button type="button" class="plate-part is-missing" data-plate-part="' + escapeHtml(part.role) + '" ' +
         'data-plate-slot="' + escapeHtml(slot) + '" aria-label="' + escapeHtml('Add a ' + part.word.toLowerCase()) + '">' +
         PLATE_PLUS + 'Add a ' + escapeHtml(part.word.toLowerCase()) + '</button>';
     }
-    // A part with no name of its own ("Veg" covered by the dish; a
-    // protein the recipe never named) is just its word — never "in the
-    // dish", which would be the card explaining itself.
-    label = part.name ? '<span class="plate-role">' + escapeHtml(part.word) + '</span>' + escapeHtml(part.name)
-      : '<span class="plate-word">' + escapeHtml(part.word) + '</span>';
-    return '<button type="button" class="plate-part' + (part.name ? '' : ' is-quiet') + '" ' +
+    var label = '<span class="plate-role">' + escapeHtml(part.word) + '</span>' + escapeHtml(part.name || PLATE_NO_NAME);
+    return '<button type="button" class="plate-part" ' +
       'data-plate-part="' + escapeHtml(part.role === 'side' ? '' : part.role) + '" data-plate-slot="' + escapeHtml(slot) + '" ' +
       (part.source === 'side' && part.name ? 'data-plate-side="' + escapeHtml(part.name) + '" ' : '') +
       'aria-label="' + escapeHtml('Change the ' + part.word.toLowerCase()) + '">' +
@@ -12620,7 +12622,7 @@
     var rows = entry.plate_parts.map(function (p) {
       // The row has the role as its eyebrow already, so a part with no name
       // of its own says where it is rather than its word twice.
-      var name = p.missing ? 'Nothing yet' : (p.name || 'In the dish');
+      var name = p.missing ? 'Nothing yet' : (p.name || PLATE_NO_NAME);
       return '<div class="plate-row' + (p.missing ? ' is-missing' : '') + '">' +
         '<span class="plate-row-role">' + escapeHtml(p.word) + '</span>' +
         '<span class="plate-row-name">' + escapeHtml(name) + '</span>' +
@@ -14637,7 +14639,16 @@
     }).join('');
     var quiet = st.mode === 'protein' ? 'Leave it as it is'
       : (st.side ? 'Take ' + st.side.toLowerCase() + ' off' : (st.role ? 'No ' + (st.roleWord || st.role).toLowerCase() + ' tonight' : 'Leave it as it is'));
+    // The model sits this one out sometimes — a failed call and a
+    // genuinely-empty answer look the same here (offer.options: []; see
+    // options_unavailable in plate_parts.part_options for which one it
+    // was). Either way the sheet still works: say so, once, above the
+    // typed line, rather than leaving a bare list of nothing.
+    var noOptionsNote = (st.mode === 'protein' && !options.length)
+      ? '<p class="wk-add-empty-note">I couldn’t think of options just now — type one, or leave it.</p>'
+      : '';
     return '<div class="wk-add-options">' + rows + '</div>' +
+      noOptionsNote +
       '<form class="wk-add-free" id="wk-add-free">' +
         '<input type="text" id="wk-add-text" class="wk-add-input" maxlength="80" autocomplete="off" ' +
           'placeholder="Something else…" aria-label="Something else to add"' +
