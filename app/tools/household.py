@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 from ..db import _ADULT_COLORS, get_conn
-from ._shared import household_id
+from ._shared import current_member, household_id
 
 
 # Junk "no answer" values that sometimes get written into a restrictions
@@ -64,7 +64,7 @@ def get_coaching_state() -> dict:
     What the shell needs to decide whether to show the one-time "This is how
     to talk to me" card, and which household's chip counters to read.
 
-    Four fields, no judgement call baked in — the shell owns the rule
+    Five fields, no judgement call baked in — the shell owns the rule
     (a plan exists AND coaching has never been seen), because the same
     payload also feeds the per-tab example chips, which don't care about
     either flag.
@@ -77,10 +77,20 @@ def get_coaching_state() -> dict:
     the better lesson: the sentence is one they might actually send.
 
     An adult rather than any member, because the example is about somebody
-    having plans of their own; lowest id, so the chip doesn't reshuffle
-    between visits. None when nobody is on record yet (the shell falls back
-    to a name-free sentence) — onboarding can reach the shell before any
-    member is saved.
+    having plans of their own. With two or more adults and a signed-in
+    session, the example names an adult who is NOT the one signed in
+    (lowest id among the others, so the chip doesn't reshuffle between
+    visits) — reading your own name back to you as "someone else is out"
+    is the same mistake the hardcoded name was, just per-household instead
+    of global. With exactly one adult on record, `current_member()`
+    resolves that adult with no session pick needed (see
+    `_shared.current_member`), so the example is always that lone adult —
+    `example_is_you` comes back true so the shell can say "I'm out
+    Thursday" instead of naming them in the third person. With no member
+    picked and more than one adult (a script or tool call with nobody
+    chosen), today's rule holds: lowest id. None when nobody is on record
+    yet (the shell falls back to a name-free sentence) — onboarding can
+    reach the shell before any member is saved.
     """
     conn = get_conn()
     row = conn.execute(
@@ -90,20 +100,34 @@ def get_coaching_state() -> dict:
         "SELECT COUNT(*) AS c FROM weekly_plans WHERE household_id = ?", (household_id(),)
     ).fetchone()["c"]
     # LOWER() because onboarding writes "Adult" and older rows say "adult".
-    example = conn.execute(
+    adults = conn.execute(
         """
-        SELECT name FROM members
+        SELECT id, name FROM members
         WHERE household_id = ? AND LOWER(age_group) = 'adult' AND TRIM(name) != ''
-        ORDER BY id LIMIT 1
+        ORDER BY id
         """,
         (household_id(),),
-    ).fetchone()
+    ).fetchall()
     conn.close()
+
+    acting = current_member()
+    example = None
+    example_is_you = False
+    if len(adults) == 1:
+        example = adults[0]
+        example_is_you = True
+    elif adults and acting is not None:
+        other = next((a for a in adults if a["id"] != acting["id"]), None)
+        example = other or adults[0]
+    elif adults:
+        example = adults[0]
+
     return {
         "household_id": household_id(),
         "has_plan": plans > 0,
         "coaching_seen_at": (row["coaching_seen_at"] if row else None) or None,
         "example_name": example["name"] if example else None,
+        "example_is_you": example_is_you,
     }
 
 

@@ -180,10 +180,11 @@ function sendAskMessage(t) { SENT.push(t); }
 """
 
 
-def _add_adult(name: str) -> None:
+def _add_adult(name: str) -> int:
     """An adult, spelled the way onboarding spells it — "Adult", capitalised."""
-    tools.add_member(name)
+    member_id = tools.add_member(name)["member_id"]
     tools.set_member_age_group(name, "Adult")
+    return member_id
 
 
 def _examples_block() -> str:
@@ -258,6 +259,26 @@ console.log(JSON.stringify(ELS['ask-examples'].labels()));
 
 
 @_needs_node
+def test_the_away_example_speaks_in_first_person_when_the_only_adult_is_you():
+    """
+    /api/coaching sets example_is_you when the household's one adult is the
+    one signed in (household.get_coaching_state) — the chip should then
+    read "I'm out Thursday", not "Emily is out Thursday" back at Emily.
+    """
+    script = (
+        _DOM_STUB + _examples_block() + """
+coachState.ready = true;
+coachState.householdId = 1;
+coachState.exampleName = 'Emily';
+coachState.exampleIsYou = true;
+coachOnTabShown('week');
+console.log(JSON.stringify(ELS['ask-examples'].labels()));
+"""
+    )
+    assert _node(script) == ["Plan the rest of my week", "Less chicken this week", "I’m out Thursday"]
+
+
+@_needs_node
 def test_the_away_example_still_teaches_when_no_name_is_known_yet():
     """
     /api/coaching has not answered, or the household has nobody on record.
@@ -304,6 +325,50 @@ def test_a_lowercase_age_group_still_counts_as_an_adult():
     tools.add_member("Emily")
     tools.set_member_age_group("Emily", "adult")
     assert tools.get_coaching_state()["example_name"] == "Emily"
+
+
+def test_the_example_names_the_other_adult_when_someone_is_signed_in():
+    """
+    Reading the signed-in adult's own name back to them as "X is out
+    Thursday" is the same mistake the hardcoded name was, just scoped to
+    the household instead of the whole beta — the chip should be about
+    somebody ELSE having plans.
+    """
+    emily = _add_adult("Emily")
+    marcus = _add_adult("Marcus")
+    with tools.use_member(emily):
+        state = tools.get_coaching_state()
+        assert state["example_name"] == "Marcus"
+        assert state["example_is_you"] is False
+    with tools.use_member(marcus):
+        state = tools.get_coaching_state()
+        assert state["example_name"] == "Emily"
+        assert state["example_is_you"] is False
+
+
+def test_a_lone_adult_is_their_own_example_and_flagged_as_you():
+    """
+    With exactly one adult, current_member() resolves to them with no
+    session pick needed (see _shared.current_member) — so the example is
+    always that adult, and example_is_you tells the shell to say "I'm out
+    Thursday" rather than naming them in the third person.
+    """
+    _add_adult("Emily")
+    state = tools.get_coaching_state()
+    assert state["example_name"] == "Emily"
+    assert state["example_is_you"] is True
+
+
+def test_no_member_picked_with_two_adults_keeps_the_lowest_id_rule():
+    """A script or tool call with nobody chosen (member_id() is None and
+    more than one adult, so current_member() can't resolve one either)
+    falls back to today's rule rather than guessing who's "you"."""
+    _add_adult("Emily")
+    _add_adult("Marcus")
+    with tools.use_member(None):
+        state = tools.get_coaching_state()
+        assert state["example_name"] == "Emily"
+        assert state["example_is_you"] is False
 
 
 def test_a_household_with_nobody_on_record_gets_no_example_name():
