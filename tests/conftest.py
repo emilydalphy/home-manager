@@ -24,6 +24,7 @@ os.environ["DISABLE_MORNING_TEXT"] = "1"
 
 import contextlib  # noqa: E402
 import datetime as _dt  # noqa: E402
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError  # noqa: E402
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
@@ -36,6 +37,8 @@ import sqlite_clock  # noqa: E402
 from app import ratelimit  # noqa: E402
 from app.db import get_conn, init_db  # noqa: E402
 from app.main import app  # noqa: E402
+from app import tools as _tools  # noqa: E402  (household_id, for household_today below)
+from app.tools import cooker as _cooker  # noqa: E402  (household_today, below)
 
 # Tables are wiped between tests rather than the file being recreated, so
 # the schema and migrations run once and each test still starts clean.
@@ -435,3 +438,104 @@ def frozen_today():
             return stack.enter_context(_pin(when))
 
         yield _freeze
+
+
+# ---------------------------------------------------------------------------
+# The household's clock (2026-09-15) — READ THIS BEFORE WRITING A DATED TEST
+# ---------------------------------------------------------------------------
+# Use `household_today()`, not `datetime.date.today()`, for any date a SCREEN
+# will be asked about.
+#
+#     from conftest import household_today
+#     TODAY = household_today()                       # module scope is fine
+#     tomorrow = household_today() + timedelta(days=1)
+#
+# Why there are two answers at all. Since overnight/moves-household-clock
+# (2026-09-14) the screens run on the HOUSEHOLD's clock — moves.py's timeline,
+# get_cooker_view's staleness guard, weekly_plan._household_today, the morning
+# text. `tests/conftest.py` seeds that household at America/Toronto (the
+# column default, restored before every test by clean_state), while the test
+# PROCESS runs in whatever TZ it was given: UTC on CI, and anything at all on
+# a laptop. So `date.today()` is the SERVER's day, and for some hours of every
+# day it is not the day the app is talking about — four hours under UTC
+# (00:00–03:59, the Toronto evening), seven under Pacific/Niue, eighteen under
+# Pacific/Kiritimati.
+#
+# A test that seeds a date with `date.today()` and then asks a screen about
+# "today" is therefore not asserting what it looks like it is asserting: it is
+# asserting that the server's day and the household's day are the same day.
+# That was true of the code until 2026-09-14 and is not true of it now, and it
+# is why CI had to be pinned to TZ=America/Toronto — i.e. to the one
+# configuration in which this entire class of bug cannot occur. Production is
+# a UTC container with a Toronto household. Seeding off the household closes
+# that gap so the pin stops being load-bearing.
+#
+# THIS IS NOT A SECOND CLOCK MECHANISM. It composes with --today /
+# @pytest.mark.today / frozen_today rather than competing with them: under a
+# pin every clock this function reads is already frozen, so it returns the
+# household's date AT THE PINNED INSTANT. Nothing here starts or stops a
+# freeze.
+#
+# It is also NOT the thing to reach for when a test is ABOUT the two clocks
+# disagreeing. tests/test_moves_household_clock.py and
+# tests/test_cooker_household_clock.py set households.timezone themselves and
+# freeze cooker.datetime at a chosen UTC instant so the two genuinely differ
+# inside one test — that is the point of those files and they must keep doing
+# it. This helper is for the other 100 files, which mean "today" plainly.
+def household_today() -> _dt.date:
+    """
+    Today where the seeded household lives — the date the app's screens will
+    use, whatever timezone this process happens to be running in.
+
+    Computed the same way `cooker.household_now` computes it (UTC now, read
+    into households.timezone), so it agrees with the app by construction
+    rather than by two pieces of arithmetic being kept in step. It is
+    deliberately NOT a call to `cooker.household_today()`: that one swallows
+    any failure and falls back to `date.today()`, which is the server's date
+    — exactly the answer this helper exists to stop a test from using. At
+    module scope, which is where a dozen `TODAY = ...` constants live, the
+    throwaway database has not been created yet (init_db runs in a session
+    fixture, after collection), so that fallback would fire on every one of
+    them and the helper would silently do nothing.
+    """
+    name = _seeded_timezone() or _cooker.DEFAULT_TIMEZONE
+    try:
+        zone = ZoneInfo(name)
+    except (ZoneInfoNotFoundError, ValueError):
+        zone = ZoneInfo(_cooker.DEFAULT_TIMEZONE)
+    return _dt.datetime.now(_dt.timezone.utc).astimezone(zone).date()
+
+
+def household_date(offset_days: int = 0) -> str:
+    """`household_today()` plus N days, as the ISO string the API speaks."""
+    return (household_today() + _dt.timedelta(days=offset_days)).isoformat()
+
+
+def _seeded_timezone():
+    """
+    households.timezone for the household under test, or None if it cannot be
+    read yet.
+
+    None rather than a raise, and the caller falls back to the column's own
+    default: at collection time there is no database, and a test that changed
+    the zone on purpose is inside a test, where there is. Both answers are the
+    right one for their moment.
+    """
+    try:
+        conn = get_conn()
+        try:
+            row = conn.execute(
+                "SELECT timezone FROM households WHERE id = ?", (_tools.household_id(),)
+            ).fetchone()
+        finally:
+            conn.close()
+    except Exception:
+        return None
+    return (row["timezone"] if row else None) or None
+
+
+# Deliberately NOT also a fixture. A fixture named `today` would be shadowed
+# by `@pytest.mark.parametrize("today", ...)` in test_stale_draft_front_page.py
+# — which pytest allows, and which would leave two things called `today` in one
+# suite meaning different answers. A plain function reads the same at module
+# scope and inside a test, and composes with `frozen_today` either way.

@@ -26,6 +26,7 @@ from app.db import get_conn
 from app.tools import tonight as _tonight
 from app.tools import weekly_plan as _weekly_plan
 from tests.test_planning_periods import _dates_on, _full_period, _monday, _plan_row, recipes, stub_model  # noqa: F401
+from conftest import household_today
 
 
 def _needed() -> dict:
@@ -236,8 +237,9 @@ class TestNowAndAwayFollowTheApprovedWeek:
         # An approved week that covers TODAY, and a draft over today too —
         # the case Now, "away" and the chat's upcoming list all have to get
         # right. Generated on the real date so get_needs_you_items (which
-        # reads the clock itself) sees them.
-        today = datetime.date.today()
+        # reads the clock itself) sees them — and on the HOUSEHOLD's real
+        # date, because that is the clock it reads.
+        today = household_today()
         start = (today - datetime.timedelta(days=1)).isoformat()
         stub_model(_full_period(start, 4, meal="Chili"))
         approved = agent.generate_weekly_plan(start, day_count=4, period_start=start)["weekly_plan_id"]

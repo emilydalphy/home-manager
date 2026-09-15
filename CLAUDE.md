@@ -356,6 +356,21 @@ names, correct the claim in the same change.
   this before suspecting the code — especially on an installed iOS
   Home-Screen PWA, which is slower to pick up service worker updates than a
   normal browser tab.
+- **A dated test seeds off the HOUSEHOLD's clock, never the process's.**
+  `from conftest import household_today` (and `household_date(n)` for the ISO
+  string) — the date the app's screens will actually use. Since 2026-09-14
+  the screens run on `households.timezone` (default `America/Toronto`) while
+  the test process runs on whatever `TZ` it was given, so
+  `datetime.date.today()` is the SERVER's day and is a different day from the
+  app's for four hours of every UTC day. A test that seeds with it and then
+  asks a screen about "today" is asserting that the two clocks agree, which
+  they do not. It composes with `--today` / `@pytest.mark.today` /
+  `frozen_today` rather than replacing them — under a pin it reports the
+  household's date at the pinned instant. A test that is ABOUT the two clocks
+  disagreeing sets `households.timezone` itself and freezes `cooker.datetime`
+  (`tests/test_moves_household_clock.py` is the model). CI's `straddle`
+  matrix is what catches the next one of these.
+
 - **`home_manager` logger's INFO output was silently dropped** until
   `main.py` added `logging.basicConfig(level=logging.INFO, ...)`. Nothing
   else in the app configures logging, and Python's default "handler of last
@@ -687,6 +702,142 @@ why*, not duplicating the diff.
     `cookSlotWord` read every slot but breakfast and lunch as a night, so
     a row of afternoon chickpea chips asked "Which other nights should it
     cover?"; a snack is a day.
+
+- **2026-09-15 — The suite is timezone-independent now, and CI has a
+  tripwire again. Branch `overnight/reseed-date-tests`, NOT merged at the
+  time of writing.** Loop Board "Re-seed the date-shaped tests off the
+  household's clock". Test-only: not one line of `app/` is touched.
+  `overnight/moves-household-clock` moved the screens onto the household's
+  clock and answered the resulting 28 red tests with `TZ: America/Toronto`
+  in CI. That pin works and hides the thing it fixes: **production is a UTC
+  container serving a Toronto household, which is the configuration the whole
+  bug class lives in, and pinning CI to Toronto runs the suite in the one
+  configuration where it cannot occur.** A regression re-splitting the two
+  clocks went from a roughly 1-in-6 chance of turning CI red to none.
+  - **The worklist, measured before anything was changed:** `TZ=Pacific/Niue`
+    on the merge base, **28 failed / 4760 passed** — the number the card
+    predicted, in six files (`test_needs_you_dinner_visible` 15,
+    `test_tools` 6, `test_draft_waits_for_approval` 3, `test_cook_shelf` 2,
+    `test_morning_text` 1, `test_plan_integrity` 1). At `TZ=UTC` and
+    `TZ=America/Toronto`, 0.
+  - **All 28 are harness artifacts and there is no app bug among them** —
+    every one seeds a date from `datetime.date.today()` (the SERVER's day)
+    and then asks a screen about "today" (the HOUSEHOLD's). Checked one at a
+    time rather than assumed, because this exact class produced three real
+    defects on 2026-09-14.
+  - **`conftest.household_today()` is the one helper, and `household_date(n)`
+    is its ISO form.** `from conftest import household_today` — which
+    resolves to the module pytest already loaded, so there is no second
+    import of it (checked). 15 seeding sites across those six files moved
+    onto it; no test was deleted, skipped or xfailed, and the same 4788 tests
+    collect as before, plus the 6 new guards below.
+  - **It is deliberately NOT a call to `cooker.household_today()`, and that
+    is the subtlety worth keeping.** That one swallows any failure and falls
+    back to `date.today()` — the server's date, i.e. the exact answer this
+    helper exists to prevent. A dozen modules hold `TODAY = ...` at MODULE
+    scope, which is collection, which is before the session fixture that
+    calls `init_db()`; so there is no `households` table to read and that
+    fallback would have fired on every one of them while the helper looked
+    like it was working. It reads the zone if it can and converts through the
+    column's own default if it cannot, which is the right answer at both
+    moments.
+  - **It composes with `--today` / `@pytest.mark.today` / `frozen_today`
+    rather than being a fifth clock.** Under a pin every clock it reads is
+    already frozen, so it reports the household's date AT the pinned instant;
+    it starts and stops nothing. The files that are ABOUT the two clocks
+    disagreeing — `test_moves_household_clock.py`,
+    `test_cooker_household_clock.py` — still set `households.timezone` and
+    freeze `cooker.datetime` themselves and are untouched.
+  - **One test's meaning changed and it is stated here rather than in a
+    commit message.** `test_plan_integrity::
+    test_tonights_dinner_is_still_on_the_plan_late_in_the_evening` proved
+    "a meal planned for the PROCESS's today comes back from `get_meal_plan`".
+    It now proves "a meal planned for the HOUSEHOLD's today comes back",
+    which is what it always meant — the two were the same sentence until
+    2026-09-14. Its original claim is intact: put a UTC `date('now')` back as
+    the start of that window and it still fails through the Toronto evening,
+    which is the bug it was written for. Two `test_cook_shelf` boundary tests
+    (`period_end == today` / `== yesterday`) are STRONGER, not weaker: under a
+    straddle they were sitting a day off the boundary they name.
+  - **A latent hazard in `app/`, found and deliberately NOT fixed here.**
+    `digest.build_morning_text(now_local=None)` defaults to
+    `datetime.now()` — the SERVER's clock — while its own docstring says the
+    argument is "the household's own clock". Unreachable in production (the
+    sending loop at `digest.py:519` always passes the household's now; it is
+    not a chat tool and not a route), so it is a trap rather than a defect,
+    and `app/` is not this card's to change. The two tests that were calling
+    it bare now pass the clock, which is what the docstring says callers do.
+    Worth a line in `digest.py` or a `household_now()` default next time
+    somebody is in that file.
+  - **CI: the Toronto pin STAYS on both existing jobs, and a third job
+    `straddle` is the tripwire** — unpinned, blocking (no
+    `continue-on-error`), on `pull_request` and pushes to `main` like
+    `clock`. **A workflow file cannot make a check REQUIRED**, so somebody
+    with repo settings has to add `straddle (Pacific/Niue)` and `straddle
+    (Asia/Tokyo)` to branch protection for it to hold a merge — those are
+    the two the matrix actually runs, and an earlier version of this line
+    said Kiritimati, which the very next bullet explains was tried and
+    REJECTED. Getting that wrong is not cosmetic: GitHub would hold every
+    PR for ever on a check that can never report, and `straddle
+    (Asia/Tokyo)` — the production-direction half of the coverage — would
+    not be required at all;
+    until then it is visible on every PR. Adding a job never breaks an
+    existing required check, so it is safe to land ahead of that. Keeping the pin means those two jobs go red for the reason they
+    are named after and never for the wall clock; the straddle job carries
+    the timezone axis explicitly instead of it being smuggled into everything.
+    **TWO zones, leaning opposite ways:** `Pacific/Niue` (UTC-11) is on a
+    different day from Toronto while Toronto reads 00:00–06:59 — the
+    household a day AHEAD of the process — and `Asia/Tokyo` (UTC+9) while
+    Toronto reads 11:00–23:59 — the household a day BEHIND, which is the
+    direction production actually has. Twenty hours of twenty-four, **with a
+    real four-hour gap at Toronto 07:00–10:59 that is stated rather than
+    papered over.** `Pacific/Kiritimati` (UTC+14) would have closed it and was
+    tried and REJECTED: any zone east of UTC+9 fails three tests in
+    `tests/test_frozen_clock.py`, **on the merge base as well as here**
+    (verified by stashing; Kiritimati, `Etc/GMT-13`, `Etc/GMT-12`,
+    `Etc/GMT-11` and `Australia/Brisbane` all give the same three, Tokyo and
+    everything west of it are green). That is the PIN machinery and not this
+    bug class — a bare `--today` is 09:00 LOCAL, so above +9 the UTC instant
+    behind it falls on the previous day and SQLite's `'now'` lands on a
+    different date from Python's. Its own card; swap Tokyo for Kiritimati once
+    it is fixed and the job covers every hour. **A job that is red the day it
+    lands gets ignored**, which is the whole reason this is Tokyo.
+    **Unpinned for a second reason:** under a freeze `datetime.now(utc)` comes
+    back as local wall time wearing a UTC label (conftest's `_freeze_args`),
+    which splits the two clocks too — so a pinned straddle would look like it
+    worked and would stop working silently the day that seam is fixed.
+  - **Numbers, whole suite, on this branch, 2026-09-15.** `TZ=Pacific/Niue`
+    **inside a real straddle** (process 09-14, household 09-15) — **4794
+    passed, 0 failed**, against 28 failed on the merge base at the same
+    instant. `TZ=UTC` 4794/0. `TZ=America/Toronto` 4794/0. `TZ=Asia/Tokyo`
+    4794/0. `POMONA_TEST_TODAY=sunday` 4791 passed + 3 skipped (the
+    `live_clock` photo tests), 0 failed. And a pin of **02:00**, which puts
+    the household a day BEHIND the process deterministically, 4791 + 3
+    skipped, 0 failed — that is the production direction, and it is the
+    evidence for it, because at the hour these ran no real zone could put the
+    process's date ahead of Toronto's. Plus
+    `tests/test_household_clock_helper.py`, 6 guards on the helper itself,
+    two mutations checked to bite (body replaced with
+    `cooker.household_today()`; body replaced with `date.today()`). Those
+    guards manufacture a REAL disagreement at any hour — `_a_zone_on_another_day`
+    picks between UTC-11 and UTC+14, which are 25 hours apart and so cannot
+    both share the process's date — rather than hoping the run lands in a
+    window.
+  - **The re-seeding was mutation-checked too, not just re-run.**
+    `test_the_horizon_matches_what_the_assistant_can_talk_about` is the one
+    test the 2026-09-14 entry says "cannot be a seeding artifact by
+    construction" (it compares two APP functions), so it was the one to prove
+    had not been neutered: with `UNPLANNED_HORIZON_DAYS` put back to 6 — the
+    regression it exists for — it fails in all three of Niue, UTC and Toronto.
+    Before this branch it could not do that: under a straddle the seeding put
+    its boundary a day off, so it was failing on the wrong assertion.
+  - **Deliberately left out.** The ~95 other test files carrying
+    `date.today()` were not swept: most are not asking a screen about
+    "today", all of them are green in every zone above, and rewriting 95
+    files to fix 6 is churn with its own bugs in it — the straddle job is
+    what finds the next one. `app/` untouched, including the
+    `build_morning_text` default above. `static/shell.js` untouched (another
+    branch owns it).
 
 - **2026-09-14 — Recipes, round 2: the planner is told how to WRITE the
   recipe, not just how to cook it. Branch
@@ -1189,10 +1340,26 @@ why*, not duplicating the diff.
     at any hour rather than by luck. It is the RUNNER's clock only and is
     emphatically not a claim that the app may assume Toronto — the app
     reads each household's own zone, which is the entire point of this
-    branch. **The pin fixes CI, not local dev** — a developer whose machine
-    is not on Toronto time still sees up to 23 failures at the wrong hour
-    with nothing explaining why, so run `TZ=America/Toronto pytest` if the
-    suite ever goes red in a way that makes no sense against the diff.
+    branch. **SUPERSEDED 2026-09-15 — the pin is no longer what makes the
+    suite green, and it never fixed local dev.** As written here it did not:
+    a developer whose machine is not on Toronto time still saw up to 23
+    failures at the wrong hour with nothing explaining why, and the pin also
+    put CI in the one configuration where this bug class cannot occur, so a
+    regression re-splitting the two clocks had no way to turn it red.
+    `overnight/reseed-date-tests` re-seeded the date-shaped tests off
+    `conftest.household_today()`, so the suite is green in any zone AT OR
+    WEST OF UTC+9, at any hour. Not "any zone": measured on review,
+    unpinned `TZ=Pacific/Kiritimati` (UTC+14) is 3 failed / 4791 passed,
+    and so is every zone at UTC+10 or east — a pre-existing seam in the
+    `--today` pin machinery, filed as its own card and the reason the
+    matrix runs Tokyo rather than Kiritimati. The pin stays on the
+    `pytest` and `clock` jobs only so they fail
+    for the reason they are named after, and a required unpinned `straddle`
+    matrix carries the timezone axis. See that entry at the top of this log.
+    The old advice still works as a diagnosis — if the suite goes red in a
+    way that makes no sense against the diff, `TZ=America/Toronto pytest`
+    going green now means a test is seeding off the process's clock, and the
+    fix is `household_today()` rather than the TZ.
   - **ONE of those 21 was NOT a harness artifact, and calling them all
     artifacts was wrong** (found on re-review, corrected here).
     `test_needs_you_dinner_visible.py::TestWhichLooseMealsCountAsThisWeeks
@@ -1440,6 +1607,9 @@ why*, not duplicating the diff.
     pre-existing job, so **whoever merges second should keep the matrix AND
     keep the TZ**; they answer two different problems. Measured on this
     branch under Toronto: 4649 live, 4646 + 3 skipped on each pin.
+    (**2026-09-15:** the TZ is still on both jobs and is no longer what makes
+    them green — the tests seed off the household's clock now, and a third
+    `straddle` job carries the timezone axis. Three jobs to keep, not two.)
   - **A pin is LOCAL wall time, and that took a second fix.** freezegun reads
     a naive datetime as UTC, so freezing "09:00" with no `tz_offset` makes
     `datetime.now()` and `utcnow()` the same instant — local and UTC collapse.
@@ -1494,7 +1664,16 @@ why*, not duplicating the diff.
     because a job that is red the day it lands is worse than no job. Adding
     `TZ: Pacific/Niue` to a sixth (live, unpinned) matrix entry is one line
     once those two are fixed; that is Emily's call and the two tests are its
-    only blockers.
+    only blockers. **DONE 2026-09-15** (`overnight/reseed-date-tests`): the
+    axis is its own `straddle` job —
+    two zones rather than one, because a single zone straddles for only part
+    of the day. **The two tests this paragraph names are NOT among the 28
+    that branch fixed** — checked both ways on review: neither appears in
+    the merge-base failure list under `Pacific/Niue`, and run directly
+    against the merge base there they both pass. Earlier branches fixed
+    them; this one fixed 28 OTHER tests. "2 + 26 = 28" is a coincidence,
+    not a fact, and this log has had to unpick that kind of tidy-sounding
+    arithmetic before. See that entry at the top of this log.
   - **Not done, on purpose.** No future-pinned CI job: it would need a fixed
     date (which ages) and it goes red for "this will break in eight weeks",
     which is correct feedback and also a standing amber light — Emily's call

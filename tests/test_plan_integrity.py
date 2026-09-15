@@ -15,6 +15,7 @@ import pytest
 
 from app import agent, tools
 from app.db import get_conn
+from conftest import household_today
 
 
 def _plan_rows():
@@ -305,12 +306,19 @@ def test_tonights_dinner_is_still_on_the_plan_late_in_the_evening():
     which is why it went unnoticed for so long.
 
     This test only fails during the affected window, so it is written to
-    fail everywhere: it plans a meal for the local today and asserts it
-    comes back, whatever UTC currently thinks the date is.
-    """
-    from datetime import date as _date
+    fail everywhere: it plans a meal for today and asserts it comes back,
+    whatever UTC currently thinks the date is.
 
-    local_today = _date.today().isoformat()
+    "Today" is the HOUSEHOLD's (conftest.household_today), which is the one
+    get_meal_plan now runs both ends of its window off. It used to be the
+    process's `date.today()`, and that was the same thing right up until the
+    screens moved onto the household's clock on 2026-09-14 — after which the
+    test was quietly asserting that the two agree rather than that the window
+    holds together. The original claim survives the change intact: reintroduce
+    a UTC `date('now')` as the start of that window and this still fails
+    through the Toronto evening, which is exactly the bug it was written for.
+    """
+    local_today = household_today().isoformat()
     tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
     tools.plan_meal(meal_date=local_today, meal="Chili", slot="dinner")
 

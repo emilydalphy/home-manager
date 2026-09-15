@@ -40,12 +40,18 @@ import pytest
 from app import agent, households, tools
 from app.db import get_conn
 from app.tools import digest
+from conftest import household_today
 
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
 SHELL_CSS = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
 
-TODAY = dt.date.today()
+# The HOUSEHOLD's today, not the process's: the morning text is built off
+# today_moves for the household's own local day, and _local() below hands
+# the loop a wall-clock moment in TORONTO. Seeding from the process's
+# date.today() made every one of those a different day for the hours the
+# runner's zone and America/Toronto disagree.
+TODAY = household_today()
 ISO_TODAY = TODAY.isoformat()
 WEEK_START = (TODAY - dt.timedelta(days=2)).isoformat()
 TORONTO = ZoneInfo("America/Toronto")

@@ -18,17 +18,30 @@ name: Tests
 # be caught before it reaches main, which is what `pull_request` and pushes to
 # `main` cover.
 #
-# TZ is America/Toronto on both, matching the households' own default. The
-# container runs UTC, so between 00:00 and 03:59 UTC the server's date is
-# already tomorrow by Toronto's reckoning and anything reading the household's
-# clock disagrees with a fixture that seeded it — a suite that is green at
-# 09:00 and red at 01:00. Setting it here makes the runner and the household
-# agree at every hour.
+# `straddle` is the third job and the reason the other two can be trusted. See
+# its own comment below. It is written to BLOCK — no continue-on-error — but a
+# workflow file cannot make a check required: somebody with repo settings has
+# to add `straddle (Pacific/Niue)` and `straddle (Asia/Tokyo)` to
+# branch protection. Until that happens it is still visible on every PR, and
+# adding a job never breaks an existing required check, so this is safe to
+# land first.
 #
-# NOTE for whoever merges second: `overnight/moves-household-clock` also edits
-# this file, adding that same TZ to the single pre-existing `pytest` job. The
-# resolution is keep the matrix AND keep the TZ — they are answers to two
-# different problems and neither replaces the other.
+# NOTE for whoever merges second: if another branch also edits this file, the
+# resolution is KEEP ALL THREE JOBS. They answer three different questions —
+# did it break (pytest), does a weekday cliff break it (clock), do the
+# server's clock and the household's still agree about what day it is
+# (straddle) — and none of them replaces another.
+#
+# TZ is America/Toronto on the first two, matching the households' own
+# default, so that neither of them is ALSO answering the timezone question.
+# It is no longer load-bearing: since 2026-09-15 the date-shaped tests seed
+# off the household's clock (conftest.household_today) rather than the
+# process's, so the suite is green in any zone at or west of UTC+9, at any
+# hour. Not "any zone": UTC+10 and east (Kiritimati, Etc/GMT-13, Brisbane)
+# still fail 3 test_frozen_clock tests, which is why this matrix runs Tokyo
+# and not Kiritimati — see the straddle job below. The pin now buys
+# one thing only — those two jobs go red for the reason they are named after
+# (a real break; a weekday cliff) and never for the wall clock.
 on:
   push:
     branches: ["**"]
@@ -40,24 +53,18 @@ jobs:
     name: pytest
     runs-on: ubuntu-latest
     env:
-      # The runner is UTC; a household defaults to America/Toronto
-      # (households.timezone, and cooker.household_now's own fallback).
-      # Since the screens read the HOUSEHOLD's clock rather than the
-      # server's, a suite whose process sits four hours from the household
-      # it is testing has a different "today" in the test than in the app
-      # for four hours out of every twenty-four — 00:00–03:59 UTC, which is
-      # the Toronto evening — and the date-shaped tests flip red and green
-      # with the wall clock rather than with the code.
+      # Held at the households' own default so this job answers ONE question:
+      # did something break, and has a fixture's hard-coded date aged out.
+      # It used to be the fix for the whole timezone problem — the runner is
+      # UTC, a household defaults to America/Toronto, and a test that seeded
+      # a date from the process's clock and then asked a screen about "today"
+      # was really asserting that those two clocks are on the same day, which
+      # they are not for 00:00–03:59 UTC. That is fixed in the tests now
+      # (conftest.household_today), and `straddle` below is what proves it
+      # stays fixed. Keeping the pin here is belt and braces, not the belt.
       #
-      # Measured on the merge of this branch with overnight/frozen-clock-tests,
-      # 2026-09-14, same tree three ways: TZ=Pacific/Niue 23 failed,
-      # unset (UTC) 0 failed but only because it was run outside that
-      # window, TZ=America/Toronto 0 failed at any hour. Matching the
-      # runner to the app's own default is what makes it the last of those.
-      #
-      # This is the runner's clock only. It is NOT a claim that the app
-      # should assume Toronto — the app reads each household's own zone,
-      # which is the whole point of the change this comment arrived with.
+      # It is the runner's clock only, and never a claim that the app may
+      # assume Toronto — the app reads each household's own zone.
       TZ: America/Toronto
     steps:
       - uses: actions/checkout@v4
@@ -96,13 +103,8 @@ jobs:
     # conftest.py prints the resolved date as the first line of each pinned
     # run, so a failure is still reproducible from the log.
     #
-    # There is a SECOND axis that belongs here and is not here yet: an
-    # unpinned run under a timezone that straddles UTC relative to
-    # America/Toronto (TZ=Pacific/Niue, UTC-11, no DST). Two clocks at one
-    # instant is a relationship a date pin cannot express. It finds real bugs;
-    # it also finds two that are already failing on main (measured 2026-09-14:
-    # 2 failed, 4647 passed), and a job that is red the day it lands gets
-    # ignored. One more matrix entry once those two are fixed.
+    # The SECOND axis — two clocks at one instant, which a date pin cannot
+    # express — is its own job now. See `straddle`.
     name: clock (${{ matrix.clock }})
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
@@ -140,4 +142,81 @@ jobs:
         # either way; conftest.py reads both, and an empty value is no pin.
         env:
           POMONA_TEST_TODAY: ${{ matrix.pin }}
+        run: pytest -q
+
+  straddle:
+    # THE TRIPWIRE. Production is a UTC container serving a household on
+    # America/Toronto, and since overnight/moves-household-clock the screens
+    # read the HOUSEHOLD's clock while the process reads its own. That is a
+    # relationship between two clocks at ONE instant, which no date pin can
+    # express: a pinned run holds the offset constant, so it can check the
+    # arithmetic is consistent but never catches a route that reads the wrong
+    # one of the two dates. Only an UNPINNED run in a zone that is on a
+    # different DAY from the household does that.
+    #
+    # The other two jobs are pinned to America/Toronto, i.e. to the one
+    # configuration in which this whole bug class cannot occur. Without this
+    # job a regression that re-splits the two clocks has no way to turn CI
+    # red. It is deliberately NOT continue-on-error for that reason: an
+    # advisory tripwire is a tripwire nobody looks at.
+    #
+    # TWO ZONES, because one is only straddling for part of the day and a job
+    # that quietly proves nothing for most of the day is the same problem in a
+    # different hat. Both fixed-offset, no DST, and they lean opposite ways:
+    #   Pacific/Niue   UTC-11, seven hours behind Toronto's EDT — a different
+    #                  day while Toronto reads 00:00-06:59, i.e. the HOUSEHOLD
+    #                  is a day AHEAD of the process.
+    #   Asia/Tokyo     UTC+9, thirteen hours ahead — a different day while
+    #                  Toronto reads 11:00-23:59, i.e. the household is a day
+    #                  BEHIND the process, which is the direction production
+    #                  actually has.
+    # Twenty of the twenty-four hours, with a gap at Toronto 07:00-10:59
+    # (06:00-09:59 under EST). The gap is real and is stated rather than
+    # papered over; it is four hours in which a PR merged at exactly the wrong
+    # time still gets no answer from this job. Do not drop one zone to save
+    # minutes — dropping Tokyo leaves only seven hours, and only one of the two
+    # directions.
+    #
+    # Pacific/Kiritimati (UTC+14) would close the gap entirely and was tried
+    # and rejected: ANY zone east of UTC+9 fails three tests in
+    # tests/test_frozen_clock.py, on main as well as here (measured
+    # 2026-09-15: Kiritimati, Etc/GMT-13, Etc/GMT-12, Etc/GMT-11 and
+    # Australia/Brisbane all give the same 3 failures; Asia/Tokyo and
+    # everything west of it are green). That is the pin machinery, not this
+    # bug class — a bare --today pin is 09:00 LOCAL, so at an offset above
+    # +9 the UTC instant behind it falls on the previous day and SQLite's
+    # 'now' lands on a different date from Python's. Its own card. Swap Tokyo
+    # for Kiritimati once it is fixed and this job covers every hour.
+    #
+    # No pin, for a second reason as well: under a freeze `datetime.now(utc)`
+    # comes back as local wall time wearing a UTC label (see conftest's
+    # _freeze_args), which happens to split the two clocks too — so a pinned
+    # straddle would look like it worked and would stop working silently the
+    # day that seam is fixed.
+    name: straddle (${{ matrix.tz }})
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    strategy:
+      fail-fast: false
+      matrix:
+        tz: ["Pacific/Niue", "Asia/Tokyo"]
+    env:
+      TZ: ${{ matrix.tz }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run tests
+        # Unpinned on purpose — see above. If this goes red and the pinned
+        # jobs are green, the failure is almost certainly a test that seeded
+        # a date from `datetime.date.today()` (the SERVER's day) and then
+        # asked a screen about "today" (the HOUSEHOLD's). The fix is
+        # conftest.household_today(), not a TZ.
         run: pytest -q

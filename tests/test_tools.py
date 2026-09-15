@@ -11,15 +11,16 @@ import datetime
 import pytest
 
 from app import tools
+from conftest import household_today
 
 
 def _today(offset_days: int = 0) -> str:
-    return (datetime.date.today() + datetime.timedelta(days=offset_days)).isoformat()
+    return (household_today() + datetime.timedelta(days=offset_days)).isoformat()
 
 
 def _week_start() -> str:
     """Monday of the current week — what create_weekly_plan expects."""
-    today = datetime.date.today()
+    today = household_today()
     return (today - datetime.timedelta(days=today.weekday())).isoformat()
 
 
@@ -31,7 +32,7 @@ def _plan_covering_tomorrow(this_weeks_plan_id: int) -> int:
     outside the plan's period, so tests that planned "tomorrow" into this
     week's plan failed every Sunday.
     """
-    today = datetime.date.today()
+    today = household_today()
     if today.weekday() != 6:
         return this_weeks_plan_id
     next_monday = (today + datetime.timedelta(days=1)).isoformat()
@@ -45,7 +46,7 @@ def _another_day_this_week() -> str:
     plan_meal refuses a date outside the plan's period, so a test that
     planned "tomorrow" into this week's plan failed every Sunday.
     """
-    today = datetime.date.today()
+    today = household_today()
     step = -1 if today.weekday() == 6 else 1
     return (today + datetime.timedelta(days=step)).isoformat()
 
