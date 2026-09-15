@@ -102,6 +102,88 @@ browns, blooms, layers and finishes, and the first one does none of them. Every 
 moves would have fitted inside the salmon's own 25 minutes."""
 
 
+# Round 2 of the same ticket ("Recipes, round 2: write the step, order the
+# minutes, sauce the plate", Emily 2026-09-14). The research pass compared
+# eleven themes from chefs, food scientists and recipe writers against the
+# block above: three already covered, four half there, four never mentioned.
+# COOK_DONT_ASSEMBLE says how the food gets good; this says how the household
+# actually gets there at a real stove — the step written so a person can
+# follow it, the steps in stove order, honest minutes, a sauce on the plate,
+# and the half of the flavour kit the first block never named (fat, savoury
+# depth, sweet). Same rules as its sibling: it rides the CACHED instructions
+# block of both planners, it never loosens a time cap, and it is not a licence
+# to write longer recipes. A plain string on purpose — nothing in it needs
+# interpolating, so nothing in it can ship as a literal "{placeholder}".
+WRITE_IT_DOWN = """- WRITE IT DOWN SO A PERSON CAN COOK IT — the moves above are how the food gets good; \
+these are how the household actually gets there at a real stove on a weeknight. None of them \
+add a minute to a dish; several take minutes off. Every time cap stays exactly as hard as it is.
+  * WRITE THE STEP, NOT THE IDEA. Every step names the pan and the heat, what goes in, roughly \
+how long, and what "done" looks, sounds or feels like — "medium-high, until the underside is \
+deep brown and lets go of the pan, 4-5 minutes", never "cook the chicken". One action per step; \
+if a step has two, it is two steps. Give the amount, not the instruction: "½ tsp salt over the \
+chicken", not "season". Where a number helps a nervous cook, give it alongside the cue, never \
+instead of it: chicken breast comes off at 160°F/71°C and rests to 165; thighs are better at \
+175°F/80°C; pork at 145°F/63°C; fish when it flakes. A short "why" when the technique matters \
+("don't stir — let it brown").
+  * STEPS ARE A TIMELINE. Order them the way a person stands at a stove, not the way the dish \
+is described: whatever takes longest starts first (oven on, water on, rice on, potatoes in), \
+the chopping happens while it goes — say "meanwhile" — the delicate thing goes in last, and \
+the meat rests while the sauce comes together in its pan. A 25-minute dinner written \
+one-thing-after-another takes 40 at a real stove, and the night's cap is only true if the \
+order is right.
+  * HONEST MINUTES. prep_time_minutes counts getting things out, chopping, measuring and the \
+oven heating, timed for an ordinary cook on a weeknight, not a chef with everything already \
+in bowls. cook_time_minutes is the time from the first pan going on to the plate. If the \
+honest total breaks the night's cap, choose a different dish — never shave the estimate to \
+fit. A number the household can't hit is a promise the app broke.
+  * SOMETHING WET, ON PURPOSE. Every dinner plate carries a sauce, dressing, broth or spoonable \
+something. The default is the pan sauce made where the protein was seared: a splash of liquid \
+(stock, wine, or plain water), scrape the browned bits up, let it bubble down by half, a knob \
+of cold butter off the heat, taste — three minutes, no extra pan. Otherwise a yogurt, tahini, \
+herb or salsa-style sauce made while something roasts. A plate of well-cooked dry things still \
+reads as dull, and this is the cheapest fix there is.
+  * THE OTHER THREE. Salt, acid and browning are above; the rest of the kit is savoury depth, \
+fat and a little sweet. Where the dish can carry it, cook ONE savoury-depth ingredient into \
+the base early — tomato paste fried a minute until it darkens, a parmesan rind in the pot, \
+soy, miso, fish sauce, an anchovy melted into the oil, mushrooms browned hard. Use enough fat \
+to actually brown (a dry pan browns nothing) and a little good fat to finish. A pinch of \
+sugar or honey where tomato, vinegar or bitter greens are fighting. The LAST step of every \
+cooked dinner is "taste it — flat means salt first, then a squeeze of acid." These respect \
+the household's dislikes and restrictions like everything else: no anchovy in a house that \
+said no fish.
+  * AROMATICS IN ORDER. Anything with a sauce, soup or braise starts from the base its cuisine \
+uses — onion-carrot-celery, sofrito, onion-celery-green pepper, ginger-garlic-scallion, \
+onion-ginger-garlic-chilli — and the order is not negotiable: onion (or its equivalent) goes \
+in first and softens; garlic goes in LAST and cooks under a minute, because it burns and turns \
+bitter; hardy herbs (rosemary, thyme, bay, sage) go in early; tender herbs (parsley, cilantro, \
+basil, dill, mint, chives) go on at the end, off the heat.
+  * PROTEIN, PROPERLY. Pat it dry. Salt it before the pan, not after. Heat the pan before the \
+food. Leave room — two batches beats one crowded pan, every time. Leave it alone until it lets \
+go of the pan on its own. On a weeknight reach for thighs over breasts unless the household \
+asked for breast; when it is breast, pound it to an even thickness or slice it into cutlets so \
+the thin end isn't dry before the thick end is done. Rest meat a few minutes before it's cut.
+  * VEGETABLES THAT TASTE OF SOMETHING. High heat (425°F/220°C for roasting), enough oil, a \
+single layer, room between the pieces — crowded is steamed, and steamed tastes of nothing. \
+Things that need different times don't share a pan or go in at the same moment: the potatoes \
+go in twenty minutes before the asparagus. Dense green vegetables — beans, broccoli, sprouts — \
+get a quick blanch or a splash of water in the hot pan with a lid, THEN dry heat to brown.
+  * CRUNCH ON TOP. When everything on the plate is soft, name the crunchy thing and put it in \
+the ingredients: toasted nuts or seeds, crispy shallots, breadcrumbs fried in the pan's fat, a \
+raw slaw, pickled onions.
+  * BOLD ON THE SIDE. "Confident, not aggressive" is about the base, not the table. Where the \
+household has children or mixed appetites, cook the dish properly and build the bold part to \
+be ADDED at the table — the chilli crisp, the herby green sauce, the pickled onions, the hot \
+half of the spice in a bowl — so the adults eat the dish they'd order and the kids eat the one \
+they will, from one cook. Where it suits, plate it in parts (the taco, the bowl, the platter) \
+rather than mixed.
+  * COOK-ONCE NIGHTS. A dinner chosen to feed a `left` night, or for a love_them week, is \
+chosen FOR it: braises, stews, chilli, curries, beans, baked pasta and anything saucy improve \
+overnight; fried, crumbed, fish, and plain rice or pasta do not. Cook and store the starch \
+separately from the saucy thing. The leftovers entry says how it comes back — reheated low \
+with a splash of water, then re-finished with fresh herbs or a squeeze of something — and its \
+ingredients include that finish."""
+
+
 # The model interactive chat falls back to, once, after the primary model's
 # retries exhaust on an overload-shaped error (see _OVERLOADED_STATUS_CODES
 # and _create_with_retry's fallback_model parameter). Pinned to an exact
@@ -1389,7 +1471,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "add_recipe",
-        "description": "Save a recipe with its ingredients, for reuse in meal planning. When you're building this out from the user's own dish idea (see the weekly-planning guidance on one-off meals), fill in instructions/default_servings/prep_time_minutes/cook_time_minutes/advance_prep_notes too in this same call rather than leaving them for a separate update_recipe_details call — a recipe with no instructions saved shows in the Cooker view as 'no saved recipe detail,' which defeats the point of building it out. If the dish names a specific regional cuisine or style, give it real depth — the actual spice/aromatic blend and technique that style is known for, not a generic dish with one token ingredient bolted on; use a broader cuisine label instead if you don't know the named style well enough to do it justice.",
+        "description": "Save a recipe with its ingredients, for reuse in meal planning. When you're building this out from the user's own dish idea (see the weekly-planning guidance on one-off meals), fill in instructions/default_servings/prep_time_minutes/cook_time_minutes/advance_prep_notes too in this same call rather than leaving them for a separate update_recipe_details call — a recipe with no instructions saved shows in the Cooker view as 'no saved recipe detail,' which defeats the point of building it out. If the dish names a specific regional cuisine or style, give it real depth — the actual spice/aromatic blend and technique that style is known for, not a generic dish with one token ingredient bolted on; use a broader cuisine label instead if you don't know the named style well enough to do it justice. Write each instruction so a person can cook from it at the stove: the pan and heat, what goes in, roughly how long, and what done looks like ('medium-high until deep brown and it lets go of the pan, 4-5 minutes'), one action per step, in the order they'd actually do it — longest thing first, 'meanwhile' for what happens alongside.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -2986,6 +3068,7 @@ to do this properly, pick a broader, less specific cuisine label instead of nami
 regional style and getting it thin — a plausible-but-shallow "Chettinad" dish is worse than \
 an honestly-labeled "Indian-spiced" one.
 {COOK_DONT_ASSEMBLE}
+{WRITE_IT_DOWN}
 - For each day, also fill in reasoning: one short, specific sentence a household member \
 would actually find useful if they tapped "why this?" — name the real thing that drove the \
 choice (a stated protein/cuisine preference, filling a variety gap from recent_history, \
@@ -3268,6 +3351,7 @@ ingredient bolted on. See the day-based prompt's guidance on this; same rule app
 you don't know a named regional style well enough to do it justice, use a broader cuisine \
 label instead rather than naming something specific and getting it thin.
 {COOK_DONT_ASSEMBLE}
+{WRITE_IT_DOWN}
 - For each item, also fill in reasoning: one short, specific sentence on why it made the \
 pool — same guidance as the day-based prompt (name the real driver: preference, variety, \
 near-expiring inventory, novelty_preference), never generic filler.
