@@ -92,6 +92,6 @@ def test_the_asks_fetches_land_on_the_all_set_row_and_the_dock_wires_once():
     assert "go.dataset.wired" in asks and "see.dataset.wired" in asks
 
 
-def test_the_today_row_says_so():
-    assert "(day.isToday ? 'TODAY' : dayName(day.date, { weekday: 'short' }).slice(0, 3).toUpperCase())" in _fn("weekRowHtml")
-    assert ".wk-day-row.is-today { background: var(--sand); }" in SHELL_CSS
+def test_the_today_tile_says_so():
+    assert "(day.isToday ? 'TODAY' : dayName(day.date, { weekday: 'short' }).slice(0, 3).toUpperCase())" in _fn("weekTileHtml")
+    assert ".wk-tile.is-today { background: var(--sand); border-color: var(--hairline-deep); }" in SHELL_CSS
