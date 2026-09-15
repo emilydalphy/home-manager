@@ -11539,7 +11539,7 @@
     return weekSuggestedNoteHtml(data) +
       weekStripHtml(days, selected) +
       (days[selected] ? weekDayHtml(days[selected]) : '') +
-      weekNotesHtml(data) +
+      weekNotesHtml(data, days[selected]) +
       // Everything rare is one tap away and nothing rare is on the page.
       // ABOVE the decision, not below it, since the decision became a dock
       // (rule 2): a sticky strip's flow position has to be the end of the
@@ -11589,9 +11589,24 @@
     return replaces.note.replace(/\s*Go ahead\?\s*$/, '');
   }
 
-  function weekNotesHtml(data) {
+  // Whether the day actually on screen has a meal the app rounded out with
+  // an app-added side — breakfast/lunch/dinner or either snack (day.snacks,
+  // see get_week_menu). data.plates_note is a WEEK-level sentence (the
+  // server checks the whole plan, not one day — it has to, since it's the
+  // one-time telling and can't wait for the household to land on the right
+  // day to hear it), so the day it lands under has to be checked here:
+  // under a day with nothing added, "I added a small side" would be
+  // describing a plate that isn't on screen (Loop Board, 2026-09-15).
+  function _dayHasPlateSides(day) {
+    if (!day) return false;
+    return WEEK_SLOTS.map(function (s) { return day[s]; })
+      .concat(day.snacks || [])
+      .some(function (s) { return s && s.sides && s.sides.length; });
+  }
+
+  function weekNotesHtml(data, day) {
     var notes = [];
-    if (data.plates_note) notes.push(data.plates_note);
+    if (data.plates_note && _dayHasPlateSides(day)) notes.push(data.plates_note);
     if (weekPlanState(data) === 'draft' && data.soft_note) notes.push(data.soft_note);
     // Why the next stretch on offer is shorter than a week ("Sep 17–20 is
     // already planned."), said once, right above the link it is about.
