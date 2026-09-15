@@ -5279,6 +5279,30 @@ def kitchen_page():
 
 @app.get("/onboarding")
 def onboarding_page():
+    """
+    First-run setup. A household that already has members has already been
+    through this — the same `has_members` signal `/api/onboarding/status`
+    reports and `shell.js`'s own boot check (checkOnboarding) uses to decide
+    whether to *send* someone here in the first place. Without this, opening
+    the link again (a bookmark, a shared link, the browser's own back/forward)
+    started the wizard from blank, and add_member's get-or-create is by NAME —
+    so a re-run that changed a spelling ("Emily" -> "Em") added a second
+    person rather than editing the first. Sent to /meal-setup instead, the
+    revisitable version of the same questions.
+    Assumption: /meal-setup is the right landing spot for "I've already set
+    up, let me change something" — Emily may prefer prefilling /onboarding
+    itself and letting them edit in place instead of bouncing away from it.
+    """
+    try:
+        already_set_up = tools.get_household_setup_status().get("has_members", False)
+    except Exception:
+        # A status check that can't run is not a reason to trap a genuine
+        # first-run household behind an error — fall through to the wizard,
+        # same as the shell's own boot check does on a failed fetch.
+        logger.exception("Onboarding page status check failed")
+        already_set_up = False
+    if already_set_up:
+        return RedirectResponse(url="/meal-setup", status_code=303)
     return FileResponse(os.path.join(static_dir, "onboarding.html"))
 
 
