@@ -165,7 +165,13 @@ def test_setting_cook_ahead_writes_both_halves_of_the_chain():
     assert "Monday" in source["make_double_note"]
     for d in (TUE, WED):
         covered = _derived_from(ids[d])
-        assert covered["links_to"] == f"{MON}:breakfast"
+        # Names the ROW that cooks, not its day and slot. Changed
+        # 2026-09-15 with the snack fix (see _source_ref): a day holds two
+        # snacks by default, so "date:snack" names neither of them, and
+        # every batch tapped on a snack wrote a chain nothing could
+        # resolve. Both halves still have to agree — that is the assertion
+        # under this one — only the way the source is named moved.
+        assert covered["links_to"] == f"entry_id:{ids[MON]}"
         assert covered["cook_ahead"] is True
 
     # The agreement check both sides have to pass before anything acts on
@@ -253,7 +259,7 @@ def test_a_day_another_batch_already_covers_is_refused():
     assert "Wednesday" in result
     # Refused means nothing moved: Monday still covers Wednesday, and
     # Tuesday is still an ordinary cook.
-    assert _derived_from(ids[WED])["links_to"] == f"{MON}:breakfast"
+    assert _derived_from(ids[WED])["links_to"] == f"entry_id:{ids[MON]}"
     assert "make_double_for" not in _derived_from(ids[TUE])
 
 
