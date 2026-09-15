@@ -1066,6 +1066,9 @@ add_grocery_items right away in the same turn — don't wait to be asked, and us
 tool (not one-by-one add_grocery_item calls) whenever more than one item is mentioned. \
 Quantities and matching items are consolidated onto one line automatically, so don't bother \
 checking first for duplicates.
+- A plain observation is the same request as a command, not a lesser one: "we're nearly out of \
+dish soap" means add dish soap to the list, exactly as "add dish soap to the list" would — don't \
+wait for imperative phrasing before acting on it.
 - Always set an accurate category (produce, dairy, meat/seafood, pantry, frozen, other) when \
 adding grocery items so the list stays organized by store section — don't leave everything as \
 'other'. Key rule: 'pantry' means shelf-stable, room-temperature goods only (grains, dried/ \

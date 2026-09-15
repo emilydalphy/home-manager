@@ -78,8 +78,11 @@ RECIPES_GREETING = 'Ask me anything about the recipes we’ve saved.'
 # Plan's own default opener (DEFAULT_ASK_GREETING in shell.js) — asserted
 # verbatim, the same rule test_coaching.py's header states for user-facing
 # copy: if it's deliberately reworded, update this constant in the same
-# commit rather than deleting the test.
-DEFAULT_ASK_GREETING = 'Tell me what you’d like different and I’ll rework it.'
+# commit rather than deleting the test. Reworded 2026-09-15 (Loop Board:
+# "Ask: the door says 'hold this', not 'meal edits'") from "Tell me what
+# you'd like different and I'll rework it." — the old line only invited
+# plan edits.
+DEFAULT_ASK_GREETING = 'Say it however it comes — I’ll put it where it belongs.'
 
 
 def _script(body: str) -> str:

@@ -219,7 +219,7 @@ console.log(JSON.stringify(out));
     )
     seen = _node(script)
     expected = {
-        "today": ["What should I cook tonight?", "Swap tonight for something quicker", "What do I need to defrost?"],
+        "today": ["What should I cook tonight?", "Swap tonight for something quicker", "We’re nearly out of…"],
         # No exampleName set in this script, so the away example falls back
         # to the name-free sentence — see the two tests below for both
         # branches.
@@ -418,7 +418,7 @@ console.log(JSON.stringify({ spentForOne: spentForOne, freshForTwo: ELS['ask-exa
     out = _node(script)
     assert out["spentForOne"] is True
     assert out["freshForTwo"] == [
-        "What should I cook tonight?", "Swap tonight for something quicker", "What do I need to defrost?"
+        "What should I cook tonight?", "Swap tonight for something quicker", "We’re nearly out of…"
     ]
 
 
@@ -436,6 +436,52 @@ console.log(JSON.stringify({ sent: SENT, opened: OPENED.length }));
     out = _node(script)
     assert out["sent"] == ["Less chicken this week"]
     assert out["opened"] == 1, "the chip must open the surface the reply lands on"
+
+
+@_needs_node
+def test_todays_two_complete_sentence_chips_still_send_unchanged():
+    """Today's third slot became a fill-in-the-blank starter 2026-09-15 (see
+    the test below); its other two chips are complete requests on their own
+    and must keep sending exactly as before."""
+    script = (
+        _DOM_STUB + _examples_block() + """
+coachState.ready = true;
+coachState.householdId = 1;
+coachOnTabShown('today');
+ELS['ask-examples'].handlers[0]();
+ELS['ask-examples'].handlers[1]();
+console.log(JSON.stringify({ sent: SENT, opened: OPENED.length }));
+"""
+    )
+    out = _node(script)
+    assert out["sent"] == ["What should I cook tonight?", "Swap tonight for something quicker"]
+    assert out["opened"] == 2
+
+
+@_needs_node
+def test_the_held_thing_chip_fills_the_box_instead_of_sending():
+    """
+    Loop Board: "Ask: the door says 'hold this', not 'meal edits'"
+    (2026-09-15). Today's third example, "We're nearly out of…", is
+    deliberately not a complete sentence — only the household knows what
+    they're low on — so tapping it must insert a starter into the composer
+    (openAskSheet's prefill argument, ASK_EXAMPLE_INSERT_ONLY in shell.js)
+    rather than send the unfinished sentence as a message on its own.
+    """
+    script = (
+        _DOM_STUB + _examples_block() + """
+coachState.ready = true;
+coachState.householdId = 1;
+coachOnTabShown('today');
+ELS['ask-examples'].handlers[2]();
+console.log(JSON.stringify({ sent: SENT, opened: OPENED }));
+"""
+    )
+    out = _node(script)
+    assert out["sent"] == [], "the held-thing chip must not send anything on its own"
+    assert out["opened"] == ["We’re nearly out of "], (
+        "tapping it must insert a starter into the box for the household to finish"
+    )
 
 
 @_needs_node
