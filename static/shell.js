@@ -20972,7 +20972,14 @@
   // own line to show (ensureAskSheetBuilt below appends it to the
   // existing thread rather than skipping it just because the sheet was
   // already built).
-  var DEFAULT_ASK_GREETING = 'Tell me what you’d like different and I’ll rework it.';
+  // Was "Tell me what you'd like different and I'll rework it." until
+  // 2026-09-15 (Loop Board: "Ask: the door says 'hold this', not 'meal
+  // edits'") — a household walking the "Pomona, hold this" flow read that
+  // line and translated their thought into a command because it only
+  // named plan edits. The sheet's own title already says "What's on your
+  // mind?" (shell.html), so this doesn't repeat it — it answers the next
+  // question instead: what happens to whatever you say.
+  var DEFAULT_ASK_GREETING = 'Say it however it comes — I’ll put it where it belongs.';
 
   function ensureAskSheetBuilt(greeting) {
     if (askBuilt) {
@@ -22745,8 +22752,15 @@
   // `example_name` comes from /api/coaching, and for a household with
   // nobody on record yet the name-free sentence teaches exactly the same
   // thing.
+  // Today's third slot was "What do I need to defrost?" until 2026-09-15
+  // (Loop Board: "Ask: the door says 'hold this', not 'meal edits'") — all
+  // three read as dinner questions, and a household with a held thing
+  // ("we're nearly out of dish soap") had no chip telling them this was
+  // the place for it. This one is deliberately not a complete sentence —
+  // see ASK_EXAMPLE_INSERT_ONLY below, which makes tapping it fill the box
+  // rather than send, since only the household knows what they're low on.
   var COACH_EXAMPLES = {
-    today: ['What should I cook tonight?', 'Swap tonight for something quicker', 'What do I need to defrost?'],
+    today: ['What should I cook tonight?', 'Swap tonight for something quicker', 'We’re nearly out of…'],
     week: ['Plan the rest of my week', 'Less chicken this week', null],
     grocery: ['Add what we’re low on', 'Move this to Costco', 'What’s this for?'],
     kitchen: ['Walk me through tonight', 'What can I prep now?', 'How long will dinner take?']
@@ -22827,6 +22841,18 @@
     return el ? [el] : [];
   }
 
+  // Every other example chip is a complete request on its own — tapping it
+  // sends exactly that sentence. "We're nearly out of…" isn't: it's a
+  // starter for a held thing only the household can finish, so tapping it
+  // fills the box instead (same as a dish row's "For Thursday's dinner,
+  // I'd like " prefill elsewhere in this file) rather than sending the
+  // ellipsis as-is. Keyed by the example text itself, so adding another
+  // fill-in-the-blank chip later is a one-line addition here, not a change
+  // to renderAskExamples' click handler below.
+  var ASK_EXAMPLE_INSERT_ONLY = {
+    'We’re nearly out of…': 'We’re nearly out of '
+  };
+
   // A single target now (the ask sheet's own #ask-examples) — this used to
   // also carry the desktop Ask column's row, removed 2026-09-11, hence the
   // forEach over what's now always a one-element array.
@@ -22863,6 +22889,8 @@
       el.querySelectorAll('.ask-chip-example').forEach(function (chip) {
         chip.addEventListener('click', function () {
           var text = prompts[Number(chip.dataset.i)];
+          var starter = ASK_EXAMPLE_INSERT_ONLY[text];
+          if (starter) { openAskSheet(starter); return; }
           openAskSheet();
           sendAskMessage(text);
         });
@@ -22891,7 +22919,12 @@
 
   var COACH_CARD_LINES = [
     ['Buttons do the everyday things.', 'Approve the week, tick off the shopping, start a recipe.'],
-    ['Everything else, type in the chat.', '“Jamie’s out Thursday.” “Less chicken.”'],
+    // Second example was "Less chicken." until 2026-09-15 (Loop Board:
+    // "Ask: the door says 'hold this', not 'meal edits'") — both examples
+    // read as plan edits, so this line taught the same narrow lesson the
+    // greeting did. Paired with a held-thing example now, matching the
+    // Ask sheet's own greeting.
+    ['Everything else, type in the chat.', '“Jamie’s out Thursday.” “We’re nearly out of dish soap.”'],
     ['If I get it wrong, say so there.', 'I’ll fix it and remember.']
   ];
   var COACH_CARD_TITLE = 'Tap for the usual. Type for the rest.';
