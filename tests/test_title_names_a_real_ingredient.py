@@ -439,9 +439,18 @@ def test_every_generated_recipe_path_goes_through_the_same_correction():
     assert "_honest_meal_names(items)" in inspect.getsource(agent._generate_weekly_plan)
     assert "honest_meal_name(pick)" in inspect.getsource(swap_in_place.apply_pick)
     assert "honest_recipe_title" in inspect.getsource(swap_in_place.honest_meal_name)
+    from app.tools import big_meal
+    assert "honest_recipe_title" in inspect.getsource(big_meal._clean_main)
     # ...and the one caller that must NOT be corrected says so at the call.
+    # COMMENTS STRIPPED FIRST: the comment above that call explains itself
+    # using the same literal, so searching the raw source made this test
+    # green with the argument deleted. Review found that, and it is the
+    # standing hazard with every source-marker test in this repo.
     from app.tools import plate_parts
-    assert "correct_title=False" in inspect.getsource(plate_parts.change_part)
+    code = "\n".join(
+        line.split("#")[0] for line in inspect.getsource(plate_parts.change_part).splitlines()
+    )
+    assert "correct_title=False" in code
 
 
 # ---------------------------------------------------------------------------
@@ -527,26 +536,26 @@ def test_a_reused_saved_recipe_is_never_renamed_off_its_own_recipe():
     renames the dish off the row it names, plan_meal finds nothing under the
     new name, and the slot lands FREEFORM — no recipe, no steps, and nothing
     on the shopping list at approval."""
-    tools.add_recipe(name="Chicken Traybake with Chorizo",
-                     ingredients=_ing("Chicken thighs", "Chorizo", "Potatoes", "Paprika", "Onion"))
-    items = [{"meal_name": "Chicken Traybake with Chorizo", "is_new_recipe": False,
+    tools.add_recipe(name="Chicken Traybake with Mushrooms",
+                     ingredients=_ing("Chicken thighs", "Mushrooms", "Potatoes", "Paprika", "Onion"))
+    items = [{"meal_name": "Chicken Traybake with Mushrooms", "is_new_recipe": False,
               "ingredients": _ing("Chicken thighs", "Potatoes", "Paprika", "Onion")}]
 
     agent._honest_meal_names(items)
 
-    assert items[0]["meal_name"] == "Chicken Traybake with Chorizo"
+    assert items[0]["meal_name"] == "Chicken Traybake with Mushrooms"
 
 
 def test_a_generated_week_reusing_a_recipe_still_lands_on_its_recipe(stub_week):
     """CATCH against this branch's own first commit, end to end: the failure
     above is only visible as a freeform entry three steps later."""
-    tools.add_recipe(name="Chicken Traybake with Chorizo",
-                     ingredients=_ing("Chicken thighs", "Chorizo", "Potatoes", "Paprika", "Onion"),
+    tools.add_recipe(name="Chicken Traybake with Mushrooms",
+                     ingredients=_ing("Chicken thighs", "Mushrooms", "Potatoes", "Paprika", "Onion"),
                      food_groups=["protein", "carb"], instructions=["Roast it all."])
     week = _week_start()
     monday = tools._week_dates(week)[0]
     stub_week(_full_week(week, {(monday, "dinner"): {
-        "date": monday, "slot": "dinner", "meal_name": "Chicken Traybake with Chorizo",
+        "date": monday, "slot": "dinner", "meal_name": "Chicken Traybake with Mushrooms",
         "is_new_recipe": False, "reasoning": "you liked it last time",
         "ingredients": _ing("Chicken thighs", "Potatoes", "Paprika", "Onion"),
     }}))
@@ -555,7 +564,7 @@ def test_a_generated_week_reusing_a_recipe_still_lands_on_its_recipe(stub_week):
 
     entry = next(m for m in tools.get_weekly_plan(plan["weekly_plan_id"])["meals"]
                  if m["date"] == monday and m["slot"] == "dinner")
-    assert entry["meal"] == "Chicken Traybake with Chorizo"
+    assert entry["meal"] == "Chicken Traybake with Mushrooms"
     # Read the row itself: a freeform entry is exactly "no recipe_id", and
     # that is the whole failure — the name alone cannot show it.
     from app.db import get_conn
@@ -649,11 +658,14 @@ def test_a_caller_can_say_its_name_is_not_a_description():
             "ingredients": _ing("Ground turkey", "Zucchini", "Garlic", "Parmesan"),
             "instructions": ["Cook it."], "default_servings": 4}
 
+    # The default corrects... (asked FIRST: applying the pick saves a recipe
+    # under that name, and a name that is already a recipe is one this rule
+    # refuses to touch at all.)
+    assert swap_in_place.honest_meal_name(pick) == "Weeknight Skillet"
+
+    # ...and the opt-out does not.
     out = swap_in_place.apply_pick(plan["weekly_plan_id"], entry, dict(pick), correct_title=False)
     assert out["meal"] == "Weeknight Skillet with Mushrooms"
-
-    # ...and the default still corrects.
-    assert swap_in_place.honest_meal_name(pick) == "Weeknight Skillet"
 
 
 def test_the_holiday_big_meal_saves_an_honest_title_too():
@@ -692,3 +704,181 @@ def test_the_alias_table_is_read_in_both_directions():
     assert "pasta" in plan_quality._same_food("orzo")
     assert "orzo" in plan_quality._same_food("pasta")
     assert "sourdough" in plan_quality._same_food("ciabatta")
+
+
+# ---------------------------------------------------------------------------
+# Re-review, 2026-09-15. One root: the correction was being applied to names
+# that IDENTIFY AN EXISTING ROW, judged against a model's echo of that row.
+# ---------------------------------------------------------------------------
+
+def test_a_name_that_is_already_a_recipe_is_never_corrected():
+    """CATCH against b4f0304. The one guard, stated on its own: a saved
+    recipe's name does not describe a dish, it names a row — and what it is
+    judged against here is somebody's restatement of that row, which can be
+    missing the very word the clause names."""
+    saved = _ing("Beef chuck", "Carrots", "Onion", "Stock", "Thyme")
+    tools.add_recipe(name="Beef Stew with Mushrooms", ingredients=saved,
+                     instructions=["Brown the beef.", "Add the mushrooms.", "Simmer."])
+    taken = {"beef stew with mushrooms"}
+
+    assert honest_recipe_title("Beef Stew with Mushrooms", saved, [], taken=taken) == "Beef Stew with Mushrooms"
+    # ...and with no `taken` it would still be corrected, which is why every
+    # live write path has to pass one.
+    assert honest_recipe_title("Beef Stew with Mushrooms", saved, []) == "Beef Stew"
+
+
+def test_a_swap_reusing_a_saved_recipe_does_not_fork_a_stepless_duplicate():
+    """CATCH against b4f0304. apply_pick never got the is_new_recipe gate
+    agent._honest_meal_names did, so a picker reusing a household recipe and
+    restating its ingredients (but not its steps) renamed the dish off its
+    own row, planted a stepless duplicate under the short name, and orphaned
+    the real recipe — its steps, its times and its mushrooms."""
+    from app.tools import swap_in_place
+
+    tools.add_recipe(name="Beef Stew with Mushrooms",
+                     ingredients=_ing("Beef chuck", "Carrots", "Onion", "Stock", "Thyme"),
+                     instructions=["Brown the beef.", "Add the mushrooms.", "Simmer 40 minutes."],
+                     prep_time_minutes=10, cook_time_minutes=40, food_groups=["protein"])
+    tools.add_recipe(name="Chili", ingredients=_ing("Ground beef", "Beans", "Tomatoes"),
+                     instructions=["Simmer."])
+    week = _week_start()
+    plan = tools.create_weekly_plan(week)
+    e = tools.plan_meal(meal_date=week, meal="Chili", slot="dinner",
+                        weekly_plan_id=plan["weekly_plan_id"])
+    entry = swap_in_place._entry(plan["weekly_plan_id"], e["entry_id"])
+
+    out = swap_in_place.apply_pick(plan["weekly_plan_id"], entry, {
+        "meal_name": "Beef Stew with Mushrooms", "is_new_recipe": False,
+        "food_groups": ["protein"], "default_servings": 4,
+        "ingredients": _ing("Beef chuck", "Carrots", "Onion", "Stock", "Thyme"),
+    })
+
+    assert out["meal"] == "Beef Stew with Mushrooms"
+    assert len(tools.list_recipes()) == 2, "no third, stepless recipe"
+    from app.db import get_conn
+    conn = get_conn()
+    row = conn.execute("SELECT recipe_id FROM meal_plan_entries WHERE id = ?", (out["entry_id"],)).fetchone()
+    steps = conn.execute("SELECT instructions_json FROM recipes WHERE id = ?", (row["recipe_id"],)).fetchone()
+    conn.close()
+    assert "Simmer 40 minutes." in steps["instructions_json"], "the slot must point at the real recipe"
+
+
+def test_a_model_that_mislabels_a_reuse_as_new_is_covered_too():
+    """CATCH against b4f0304. The is_new_recipe gates cannot see this case —
+    it is exactly what _ensure_recipe_saved's own `if not existing` guard
+    exists for — and the name guard can."""
+    tools.add_recipe(name="Chicken Traybake with Mushrooms",
+                     ingredients=_ing("Chicken thighs", "Mushrooms", "Potatoes", "Paprika", "Onion"))
+    items = [{"meal_name": "Chicken Traybake with Mushrooms", "is_new_recipe": True,
+              "ingredients": _ing("Chicken thighs", "Potatoes", "Paprika", "Onion")}]
+
+    agent._honest_meal_names(items)
+
+    assert items[0]["meal_name"] == "Chicken Traybake with Mushrooms"
+
+
+def test_the_big_meal_keeps_a_reused_recipes_method_and_clocks():
+    """CATCH against b4f0304. set_big_meal_dish(role='main') looked the dish
+    up from the household's own recipe for its INGREDIENTS and then passed
+    `instructions or []`, so it judged a saved title with the method thrown
+    away — and the timeline lost the times to work back from."""
+    from app.tools import big_meal
+    import inspect
+
+    code = inspect.getsource(big_meal.set_big_meal_dish)
+    assert 'match.get("instructions")' in code
+    assert 'match.get("prep_time_minutes")' in code
+    assert 'match.get("cook_time_minutes")' in code
+
+
+@pytest.mark.parametrize("title,ingredients", [
+    ("Chicken with Sweet Potatoes", _ing("Chicken thighs", "Sweet potato", "Onion", "Oil", "Paprika")),
+    ("Chicken with Potatoes", _ing("Chicken thighs", "Potato", "Onion", "Oil", "Rosemary")),
+    ("Traybake with Sweet Potato", _ing("Chicken", "Sweet potatoes", "Onion", "Oil", "Cumin")),
+    ("Chicken with Tomatoes", _ing("Chicken", "Cherry tomato", "Garlic", "Basil", "Oil")),
+    ("Skillet with Tomato", _ing("Ground turkey", "Cherry tomatoes", "Garlic", "Spinach", "Parmesan")),
+])
+def test_a_plural_in_oes_still_finds_its_singular(title, ingredients):
+    """CATCH against b4f0304. _stem's `es` branch handled shes/ches/xes/ses
+    only, so "potatoes" became "potatoe" and matched nothing — and whether a
+    title agreed with its own ingredient line was a coin flip on which
+    plural each happened to use. Both corpora missed it because every potato
+    and tomato in them was spelled the agreeing way. Two of the commonest
+    words in a dinner title."""
+    assert unkept_title_promises(title, ingredients, []) == []
+    assert honest_recipe_title(title, ingredients, []) == title
+
+
+@pytest.mark.parametrize("title,ingredients,expected", [
+    ("Lentil Salad with Feta", _ing("Lentils", "Cucumber", "Tomato", "Olive oil", "Lemon"), "Lentil Salad"),
+    ("Chicken Salad with Avocado", _ing("Chicken", "Romaine", "Tomato", "Olive oil", "Lemon"), "Chicken Salad"),
+    ("Pork Ragu with Peas", _ing("Pork shoulder", "Passata", "Onion", "Pasta", "Garlic"), "Pork Ragu"),
+    ("Beef Hash with Mushrooms", _ing("Beef", "Potato", "Onion", "Eggs", "Paprika"), "Beef Hash"),
+    ("Winter Slaw with Apples", _ing("Cabbage", "Carrot", "Mayonnaise", "Vinegar", "Parsley"), "Winter Slaw"),
+])
+def test_a_head_containing_a_vague_word_can_still_be_corrected(title, ingredients, expected):
+    """CATCH against b4f0304, which asked _title_content_stems — a function
+    that answers "can I read this as a promise" — the different question
+    "does this name say anything". Any head with salad, slaw, hash, ragu or
+    mash in it was detected and never correctable: a permanent line in the
+    morning report, on an extremely common shape of generated title."""
+    assert honest_recipe_title(title, ingredients, []) == expected
+
+
+def test_a_head_that_really_says_nothing_is_still_refused():
+    """GUARD on the fix above not going too far — mutation-checked against a
+    version that only checks for a non-empty word list."""
+    assert honest_recipe_title("Salad with Feta",
+                               _ing("Romaine", "Cucumber", "Tomato", "Olive oil", "Lemon"), []) == "Salad with Feta"
+
+
+@pytest.mark.parametrize("title,ingredients", [
+    ("Battered Cod with Chips", _ing("Cod", "Flour", "French fries", "Malt vinegar", "Peas")),
+    ("Steak with Fries", _ing("Sirloin", "Potato chips", "Butter", "Salt", "Rocket")),
+    ("Sandwich with Chips", _ing("Bread", "Ham", "Crisps", "Butter", "Lettuce")),
+])
+def test_a_word_that_means_two_foods_in_two_englishes_is_not_judged(title, ingredients):
+    """CATCH against b4f0304. British chips are American fries; American
+    chips are British crisps. No table reconciles that, so the rule cannot
+    say what the clause promises and must not guess."""
+    assert unkept_title_promises(title, ingredients, []) == []
+
+
+def test_an_alias_can_only_ever_make_the_rule_quieter():
+    """CATCH against b4f0304, and the claim the whole known-food gate rests
+    on. The alias table used to feed the vocabulary — 91 of 418 words came
+    from it — so ADDING AN ALIAS MADE THE RULE LOUDER by making that word
+    judgeable, which is the opposite of what its own comment promises. Out
+    of the vocabulary now, so the comment is true."""
+    known = plan_quality._known_food_words()
+    alias_only = {w for w in plan_quality._TITLE_FOOD_GROUPS
+                  if w in ("orzo", "courgette", "sourdough", "chorizo", "mangetout", "sirloin")}
+    assert alias_only, "the table still holds these words"
+    assert not (alias_only & known), "an alias word must not become judgeable"
+    # ...and it still does its real job: quietening a word the app does know.
+    assert unkept_title_promises("Stew with Beans",
+                                 _ing("Cannellini beans", "Carrots", "Celery"), []) == []
+
+
+def test_no_alias_entry_is_silently_dead():
+    """GUARD. Groups are keyed on stems and lookups are stemmed, so an entry
+    written in a form that stems to something else would sit there matching
+    nothing — which is what "chip: {fries}" did, while still making its
+    words judgeable."""
+    for key, family in plan_quality._TITLE_INGREDIENT_ALIASES.items():
+        for word in {key} | set(family):
+            assert plan_quality._stem(word) in plan_quality._TITLE_FOOD_GROUPS, word
+
+
+def test_the_repair_script_says_which_refusal_it_made():
+    """CATCH against b4f0304, which printed one sentence for three different
+    refusals and sent the true reason to stderr — against this function's
+    own docstring."""
+    tools.add_recipe(name=TICKET_HONEST, ingredients=_ing("Ground turkey", "Zucchini", "Garlic"))
+    tools.add_recipe(name=TICKET_TITLE, ingredients=TICKET_INGREDIENTS, instructions=TICKET_STEPS)
+    tools.add_recipe(name="Salad with Feta", ingredients=_ing("Romaine", "Cucumber", "Tomato"))
+
+    why = {f["before"]: f["why"] for f in repair_recipe_titles() if not f["after"]}
+
+    assert "already another of your recipes" in why[TICKET_TITLE]
+    assert "doesn't say what the dish is" in why["Salad with Feta"]

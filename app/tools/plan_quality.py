@@ -184,7 +184,14 @@ def _stem(word: str) -> str:
     """
     if len(word) > 3 and word.endswith("ies"):
         return word[:-3] + "y"
-    if len(word) > 3 and word.endswith("es") and word.endswith(("shes", "ches", "xes", "ses")):
+    # "oes" is here because "potatoes" and "tomatoes" are two of the
+    # commonest words in a dinner title, and without it they stem to
+    # "potatoe"/"tomatoe" and match nothing -- so whether a title agreed
+    # with its own ingredient line came down to which plural each happened
+    # to use. Found by review 2026-09-15; invisible to two rounds of
+    # sweeping because every potato and tomato in both corpora was spelled
+    # the way that happened to agree.
+    if len(word) > 3 and word.endswith("es") and word.endswith(("shes", "ches", "xes", "ses", "oes")):
         return word[:-2]
     if len(word) > 3 and word.endswith("s") and not word.endswith("ss"):
         return word[:-1]
@@ -860,6 +867,13 @@ _TITLE_VAGUE_WORDS = {
     "broth", "stock", "medley", "mix", "blend", "mash", "puree", "hash",
     "crunch", "finish", "skin", "seasonal", "leftovers", "filling", "batter",
     "dough", "syrup", "seeds", "sprinkle", "shavings", "ribbons", "wedges",
+    # Not a category word — a word that means two different foods depending
+    # on who wrote it. British "chips" are American "fries"; American
+    # "chips" are British "crisps". No table reconciles that, so the rule
+    # cannot say what "with Chips" promises and must not guess: review
+    # 2026-09-15 found it renaming "Battered Cod with Chips" over a list
+    # saying French fries.
+    "chip", "chips", "fries", "crisp", "crisps",
     # Named preparations — a thing made FROM other things, which is why the
     # ingredient list says yogurt and cucumber where the title says
     # tzatziki. Found by sweeping plausible generated titles: "Chicken
@@ -877,7 +891,10 @@ _TITLE_VAGUE_WORDS = {
 # same spirit as _ALLERGEN_ALIASES in coordination.py — a table a person can
 # read and extend when a real miss shows up, rather than a heuristic nobody
 # can see. Every entry makes the rule QUIETER, never louder: it can only
-# turn a would-be flag into a pass. Keys and values are stemmed singulars.
+# turn a would-be flag into a pass — which is true only because these words
+# are deliberately kept OUT of _known_food_words (see it). Keys and values
+# are stemmed on the way in, so an entry written in a form that stems to
+# something else cannot sit here doing nothing.
 _TITLE_INGREDIENT_ALIASES = {
     "bean": {"cannellini", "borlotti", "butterbean", "chickpea", "garbanzo", "edamame", "legume", "lentil"},
     "pea": {"chickpea", "garbanzo", "edamame", "mangetout"},
@@ -927,7 +944,6 @@ _TITLE_INGREDIENT_ALIASES = {
     "mince": {"beef"},
     "beetroot": {"beet"},
     "capsicum": {"pepper"},
-    "chip": {"fries"},
     "scallion": {"shallot", "leek", "onion"},
 }
 
@@ -943,7 +959,11 @@ def _build_food_groups() -> dict:
     """
     groups: dict[str, set] = {}
     for key, family in _TITLE_INGREDIENT_ALIASES.items():
-        whole = {key} | set(family)
+        # Stemmed on both sides. Lookups are stemmed, so an entry written in
+        # a form that stems to something else is simply dead -- "fries"
+        # stems to "fry" and never matched anything, which review found
+        # because the DEAD half still made its words judgeable.
+        whole = {_stem(w) for w in ({key} | set(family))}
         for word in whole:
             groups.setdefault(word, set()).update(whole)
     return {word: frozenset(family - {word}) for word, family in groups.items()}
@@ -1020,11 +1040,45 @@ def _known_food_words() -> set:
         phrases |= set(_staples._FRIDGE_WORDS) | set(_staples._PANTRY_WORDS) | set(_staples._PANTRY_PHRASES)
         phrases |= {row[0] for row in _recipes._PRODUCE_COUNT_PER_SERVING}
         phrases |= {w for row in _recipes._PRODUCE_COUNT_PER_SERVING for w in row[1]}
-        phrases |= set(_TITLE_FOOD_GROUPS)
+        # NOT the alias table, and this is the correction review forced: 91
+        # of the words here used to come from it, so ADDING AN ALIAS MADE
+        # THE RULE LOUDER — it made that word judgeable — which is the exact
+        # opposite of what the table's own comment promises. Out of the
+        # vocabulary, an alias can only ever help a known word find its
+        # match, which is the one direction it is meant to work in. The cost
+        # is that a clause naming only an alias word (orzo, courgette,
+        # chorizo) is never judged at all. A miss, and the cheap direction.
         _KNOWN_FOOD_WORDS = {
             _stem(w) for phrase in phrases for w in re.findall(r"[a-z]+", str(phrase).lower()) if len(w) > 2
         }
     return _KNOWN_FOOD_WORDS
+
+
+def _head_says_something(text: str) -> bool:
+    """Whether what is left of a title once its clause goes still names the
+    dish.
+
+    NOT _title_content_stems, which returns None on the first vague word
+    and means "I can't read this as a promise" — a different question.
+    Using it here detected every head containing salad, slaw, hash, ragu,
+    mash, mix, medley or stuffing, so "Lentil Salad with Feta", "Pork Ragu
+    with Peas" and "Beef Hash with Mushrooms" were reported and could never
+    be corrected — permanent lines in the morning report, on an extremely
+    common shape of generated title. Found by review 2026-09-15.
+
+    "Salad with Feta" is still refused, and should be: "Salad" on its own
+    says nothing, which is exactly what this asks.
+    """
+    for word in re.findall(r"[a-z]+", (text or "").lower()):
+        if len(word) <= 2 or word in _TITLE_VAGUE_WORDS:
+            continue
+        if word in _TITLE_MODIFIERS or word in _NAME_STOPWORDS:
+            continue
+        stem = _stem(word)
+        if stem in _TITLE_VAGUE_WORDS or stem in _NAME_STOPWORDS:
+            continue
+        return True
+    return False
 
 
 def _title_content_stems(text: str) -> list[str] | None:
@@ -1200,25 +1254,56 @@ def honest_recipe_title(
     left alone for _title_promises_an_ingredient to report instead. A bad
     name beats no name.
     """
+    return title_correction(name, ingredients, instructions, taken)[0]
+
+
+def title_correction(
+    name: str,
+    ingredients: list,
+    instructions: list | None = None,
+    taken: set | frozenset | tuple = (),
+) -> tuple[str, str | None]:
+    """honest_recipe_title, plus the sentence for why it declined.
+
+    The reason is part of the ANSWER, not a log line: repair_recipe_titles
+    prints it, and printing the same sentence for three different refusals
+    — as the first cut did — tells the person reading it something untrue.
+    """
+    held = {str(t).strip().lower() for t in (taken or ())}
+    # THE ONE GUARD THAT MATTERS, and the root of three separate blockers.
+    # A name that is already a recipe of this household's does not describe
+    # a dish, it IDENTIFIES A ROW — and what it is being judged against here
+    # is the model's echo of that row, which can be missing the very word
+    # the clause names, or (big_meal) its whole method. Correcting it
+    # renames the dish off its own recipe: the save path is
+    # skip-if-the-name-exists, so a stepless, timeless duplicate is planted
+    # under the shortened name and the household's real recipe is orphaned.
+    # Reproduced three ways — a week reusing a recipe, a swap picker reusing
+    # one, and chat making one the holiday main.
+    #
+    # This subsumes the is_new_recipe gates rather than replacing them: a
+    # model that mislabels a reuse as new lands here too, which is the case
+    # those gates cannot see.
+    if (name or "").strip().lower() in held:
+        return name, None
     allergens = _allergen_title_words()
     unkept = [
         part for part in unkept_title_promises(name, ingredients, instructions)
         if not (set(_title_content_stems(part) or []) & allergens)
     ]
     if not unkept:
-        return name
+        if unkept_title_promises(name, ingredients, instructions):
+            return name, "It names an allergen, so I'd rather you looked at it than have me quietly take the word off."
+        return name, None
     match = _TITLE_WITH_CLAUSE.match((name or "").strip())
     head = match.group("head").strip()
-    if not _title_content_stems(head):
-        return name
+    if not _head_says_something(head):
+        return name, "Taking that off would leave a name that doesn't say what the dish is."
     kept = [p for p in _split_title_clause(match.group("clause")) if p not in unkept]
     honest = f"{head} with {' and '.join(kept)}" if kept else head
-    if honest.strip().lower() in {str(t).strip().lower() for t in (taken or ())}:
-        logger.warning(
-            "Not correcting %r to %r: that name is already this household's", name, honest,
-        )
-        return name
-    return honest
+    if honest.strip().lower() in held:
+        return name, f"{honest!r} is already another of your recipes, so renaming onto it would point meals at the wrong one."
+    return honest, None
 
 
 def _title_promises_an_ingredient(entries: list[dict], context: dict) -> list[Violation]:
@@ -1886,15 +1971,15 @@ def repair_recipe_titles(apply: bool = False) -> list[dict]:
             continue
         if not unkept_title_promises(row["name"], ingredients, instructions):
             continue
-        # Its OWN name is not a collision -- it is the name being corrected.
-        honest = honest_recipe_title(
+        # Its OWN name is not a collision -- it is the name being corrected,
+        # and here it is judged against the row's OWN ingredients and steps
+        # rather than a model's echo of them, which is what makes this the
+        # one path allowed to correct a name that names a saved recipe.
+        honest, why = title_correction(
             row["name"], ingredients, instructions, taken=taken - {(row["name"] or "").strip().lower()},
         )
         if honest == row["name"]:
-            found.append({
-                "recipe_id": row["id"], "before": row["name"], "after": None,
-                "why": "I can see it, and I can't correct the name without losing what the dish is.",
-            })
+            found.append({"recipe_id": row["id"], "before": row["name"], "after": None, "why": why})
             continue
         found.append({"recipe_id": row["id"], "before": row["name"], "after": honest, "why": None})
         taken.add(honest.strip().lower())

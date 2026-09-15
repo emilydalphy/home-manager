@@ -1732,6 +1732,13 @@ def set_big_meal_dish(
             if match is None:
                 raise ValueError(f"I don’t have a recipe called {name!r} — give me its ingredients and I’ll save it.")
             ingredients = match["ingredients"]
+            # Its method and its clocks, not just its shopping. Taking the
+            # ingredients alone threw the steps away and left the timeline
+            # with no times to work back from, and handed _clean_main a
+            # recipe to judge with half of it missing.
+            instructions = instructions or match.get("instructions") or []
+            minutes = minutes if minutes is not None else match.get("prep_time_minutes")
+            cook_minutes = cook_minutes if cook_minutes is not None else match.get("cook_time_minutes")
         clashes = dish_conflicts(name, ingredients, guest_notes)
         if clashes:
             raise ValueError(f"{name} clashes with {clashes[0]['restriction']} — pick something else for the table.")
