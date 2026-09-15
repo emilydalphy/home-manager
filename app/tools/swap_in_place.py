@@ -570,11 +570,38 @@ def swap_meal_in_place(
     tried.append(pick["meal_name"])
     out = apply_pick(weekly_plan_id, entry, pick)
     out["status"] = "swapped"
-    out["avoid"] = tried
+    # Both spellings: `tried` caught the name the model wrote, and
+    # apply_pick may have shortened it. The screen sends this straight back
+    # as the next tap's `avoid`, and it has to name the dish it can see.
+    out["avoid"] = _dedup(tried + [out["meal"]])
     return out
 
 
-def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool = False) -> dict:
+def honest_meal_name(pick: dict) -> str:
+    """A picked dish's name, with anything its own ingredients don't back up
+    taken off it.
+
+    A pick's name and its list come out of ONE model call, so the name can
+    promise something the list hasn't got — the week generator's own bug
+    (Emily, 2026-09-14, "…with White Beans" and no beans), one door over.
+    `taken` is this household's recipe names, because a correction that
+    lands on one of them is worse than the title it fixes: the recipe is
+    not saved and the slot points at a different dinner.
+
+    Public so apply_proposal can ask for the name BEFORE deciding whether
+    the pick is already what is on the slot; idempotent, so apply_pick
+    asking again a moment later changes nothing.
+    """
+    return _plan_quality.honest_recipe_title(
+        pick.get("meal_name") or "",
+        pick.get("ingredients") or [],
+        pick.get("instructions") or [],
+        taken={(r.get("name") or "").strip().lower() for r in _recipes.list_recipes()},
+    )
+
+
+def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool = False,
+               correct_title: bool = True) -> dict:
     """
     Put an already-chosen dish on `entry`'s slot: save it as a recipe if it
     is new, swap it in through swap_meal_in_plan, and write the undo note.
@@ -587,18 +614,21 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
     change_part — the same dish with a different protein is the same
     plate). A swap to a different dish leaves them behind, as it always
     has: the potatoes went with the chops, not with the night.
+
+    `correct_title`: whether the pick's name may be held against its own
+    ingredients (see honest_meal_name). ONE caller passes false, and it is
+    not an optimisation — plate_parts.change_part builds its name with
+    _variant_name, whose whole job is to produce a name nothing else is
+    using, by appending "with <the protein you asked for>". That clause is
+    a uniqueness device and not a description of the dish, so reading it as
+    a promise is a category error: review, 2026-09-15, reproduced
+    "Chili with mince" corrected back to the taken "Chili", the new recipe
+    therefore not saved, and the OLD beef chili planned again and reported
+    as a change.
     """
     serves = _table_for(entry["date"], entry["slot"])["serves"]
-    # A picked dish's name and its ingredients come out of one model call,
-    # so the name can promise something the list hasn't got — the week
-    # generator's own bug (Emily, 2026-09-14, "…with White Beans" and no
-    # beans), one door over. Corrected here rather than in
-    # swap_meal_in_place so the change card applies a pick through the same
-    # door, and AFTER the gates above on purpose: the allergen matcher
-    # reads the name, and it must see the one the model actually wrote.
-    pick["meal_name"] = _plan_quality.honest_recipe_title(
-        pick["meal_name"], pick.get("ingredients") or [], pick.get("instructions") or [],
-    )
+    if correct_title:
+        pick["meal_name"] = honest_meal_name(pick)
     _save_recipe_if_new(pick, serves)
     sides = _plates.get_sides(entry["entry_id"]) if carry_sides else []
     result = _weekly_plan.swap_meal_in_plan(

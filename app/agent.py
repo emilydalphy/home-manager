@@ -3929,19 +3929,36 @@ def _honest_meal_names(items: list[dict]) -> None:
     It runs here rather than in _ensure_recipe_saved because the name is
     also what plan_meal files the slot under: correcting it in one place
     and not the other would leave the week's card and its recipe calling
-    the same dinner two different things. An item with no ingredient list
-    (a reused saved recipe, a takeaway night) is left alone — there is
-    nothing to check it against.
+    the same dinner two different things.
+
+    **Gated on exactly what _ensure_recipe_saved is gated on, and it has to
+    be.** A REUSED recipe's name belongs to a row already on disk; the
+    model is not required to restate its ingredients and, when it does, it
+    can leave the clause word out. Correcting then renames the dish off its
+    own recipe, plan_meal finds nothing under the new name, and the slot
+    lands as FREEFORM — no recipe on Cook, no steps, and nothing on the
+    shopping list at approval, silently. Reproduced on review, 2026-09-15.
+    The schema note telling the model to restate the list is not a defence:
+    telling the generator something is not the same as preventing it.
+
+    `taken` carries this household's recipe names plus every name corrected
+    earlier in this same pass, so a correction can neither land on an
+    existing dinner nor collide with its own sibling — see
+    plan_quality.honest_recipe_title for what goes wrong without it.
     """
+    taken = {(r.get("name") or "").strip().lower() for r in tools.list_recipes()}
     for item in items:
         name = item.get("meal_name")
         ingredients = item.get("ingredients") or []
-        if not name or not ingredients:
+        if not name or not ingredients or not item.get("is_new_recipe"):
             continue
-        honest = plan_quality.honest_recipe_title(name, ingredients, item.get("instructions") or [])
+        honest = plan_quality.honest_recipe_title(
+            name, ingredients, item.get("instructions") or [], taken=taken,
+        )
         if honest != name:
             logger.info("Generation named a dish %r with none in it; saving it as %r", name, honest)
             item["meal_name"] = honest
+            taken.add(honest.strip().lower())
 
 
 def _generate_weekly_plan(

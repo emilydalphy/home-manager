@@ -411,6 +411,32 @@ why*, not duplicating the diff.
     turn a would-be flag into a pass — cannellini keeps a promise of beans,
     cheddar of cheese, sourdough of croutons — and a pool word ENDING in
     the promised word counts, so blueberries keep a promise of berries.
+  - **THE DEFAULT IS THAT IT SAYS NOTHING, and getting that backwards is
+    what review sent the first cut back for.** The first cut stripped
+    unless the word was on a list of category words — an open-ended
+    blocklist against an open-ended world — and of 77 titles written by
+    somebody who had not seen the lists, **27 were renamed wrongly**.
+    Almost all one shape, and it is the shape the app's own prompt asks for
+    ("Every dinner plate carries a sauce, dressing, broth or spoonable
+    something"): toum, mojo, chermoula, sofrito, ssamjang, zhoug, crema,
+    pico de gallo, beurre blanc, aji verde, nuoc cham, ranch, chilli crisp.
+    No blocklist bounds that tail. So the rule now judges a promise **only
+    when every word of it is food this app already has a vocabulary for**
+    (`_known_food_words`, ~420 words assembled from six tables the app
+    maintains for other jobs — the cooking-quantity table, the spice rack,
+    the allergen families, the holiday shop's perishable words, the staples
+    sections and the produce-variety table, never a list written for this
+    rule, so it grows with the app instead of rotting). Same bias as the
+    grocery ingest's "what cannot be compared stays on the list". The cost
+    is misses — chorizo and asparagus are in none of those tables — and a
+    miss is the cheap direction.
+  - **The alias table is read in BOTH directions** (`_TITLE_FOOD_GROUPS`).
+    Read one way, every word listed as a *satisfier* was an unsatisfiable
+    *promise*: "Chicken with Orzo" over a list saying Pasta, "Soup with
+    Ciabatta" over Sourdough — eight more wrong renames. The British/US
+    produce pairs (courgette/zucchini, rocket/arugula, coriander/cilantro,
+    swede/rutabaga, mangetout/snow pea, prawn/shrimp) live in the same
+    table and close five more; this repo's own fixtures write both.
   - **It passes over far more than it touches, on purpose** (the
     2026-09-04 allergy rule: a check that fires on good dinners is one
     people learn to click past). It says nothing when the thing is in the
@@ -420,25 +446,78 @@ why*, not duplicating the diff.
     than `_TITLE_MIN_INGREDIENTS` (3), because a cut-off model answer is no
     answer rather than a short one; when the head is too thin to survive
     the trim ("Bowl with White Beans" would become "Bowl" — a bad name
-    beats no name); and **when the clause names an allergen**, because the
-    allergen matcher reads the NAME as well as the ingredients and a quiet
-    rename would take a fail-closed signal off every check downstream.
+    beats no name); and **when the clause names an allergen** — but only
+    the family names and the nut/shellfish/sesame members, not every word
+    `coordination` can match. Carving out the whole allergen table took
+    butter, cheese, bread and pasta off the rule and lost a control ("Steak
+    with Garlic Butter"), and buys nothing: the rule only ever removes a
+    word the recipe does NOT have, so it can hide a lie about butter and
+    never real butter. What the carve-out does buy, for the alarming words,
+    is that the matcher — which reads the NAME as well as the ingredients —
+    keeps its fail-closed signal.
     The last three are reported rather than repaired, through the new
     `check_week` rule `title_promises_an_ingredient` (warn) — the morning
     report is where anything the repair passed over becomes legible.
+    **That warning cannot be cleared from a screen**, and Emily should know
+    it: a recipe the repair deliberately won't touch warns on every
+    generation of a week containing it until somebody edits the recipe.
+    Bounded (per generation, not per day), and both cases it covers — a
+    title naming an allergen the dish hasn't got, a title too thin to trim
+    — are worth a person's eyes. Her call whether to silence it.
   - **The correction is applied at the GENERATED call sites, never inside
     `add_recipe`.** That function is also the door for a link and a
     cookbook page, where the title is the household's own record of where
-    the dish came from and rewriting it would be wrong. Two sites today —
-    `_generate_weekly_plan` and `swap_in_place.apply_pick` — and in the
-    swap it sits AFTER the allergen and taste gates for the reason above.
-    `big_meal._clean_main` is the third of that shape and is deliberately
-    NOT done: its name rides into `menu_json`, the prep rows, the timeline
-    and the entry, so keeping those in step is its own card. The plan
-    rule still reports it.
+    the dish came from and rewriting it would be wrong. Three sites:
+    `agent._generate_weekly_plan`, `swap_in_place.apply_pick` (after the
+    allergen and taste gates, for the reason above) and
+    `big_meal._clean_main` — the last corrected in `_clean_main` rather
+    than at its save because the name also rides into `menu_json`, the prep
+    rows and the timeline, and correcting it at the save alone would leave
+    the record and the recipe calling one dish two things. **An earlier
+    version of this entry said "two sites" and deferred big_meal as a
+    reporting gap; both were wrong** — review pointed out that a dishonest
+    title really was SAVED there, which this card's own acceptance criteria
+    forbid. `plates.generate_sides_llm` and the chat `add_recipe` tool are
+    the same shape at lower stakes and are still not corrected.
+  - **`apply_pick` has THREE callers, not two, and the third must NOT be
+    corrected** — `swap_meal_in_place`, `proposals.apply_proposal` and
+    `plate_parts.change_part`. The last builds its name with
+    `_variant_name`, whose whole job is to produce a name nothing else is
+    using by appending "with <the protein you asked for>". That clause is a
+    uniqueness device, not a description, so reading it as a promise is a
+    category error: review reproduced "Chili with mince" corrected back to
+    the taken "Chili", the new recipe therefore not saved, and the OLD beef
+    chili planned again and reported as a change. `apply_pick` takes
+    `correct_title` and `change_part` passes false. Defence in depth rather
+    than the load-bearing fix — the `taken` guard below already covers it,
+    since that name's base is always one the household uses — and a test
+    pins the parameter directly for the day `_variant_name` changes.
+  - **Two more things a corrected name can break, both reproduced on
+    review, both closed by ONE guard: a correction landing on a name the
+    household already uses is REFUSED** (`honest_recipe_title(taken=...)`,
+    passed from every live write path). `_ensure_recipe_saved` and
+    `_save_recipe_if_new` are skip-if-the-name-exists and `plan_meal`
+    resolves `WHERE name = ?`, so a corrected name landing on a different
+    saved recipe silently points the slot at a different dinner and the
+    week shops for it — and the correction makes that LIKELIER, because
+    taking the distinguishing words off is what causes the collision.
+    `_honest_meal_names` also adds each name it corrects to that set, so
+    two new dishes in one generation cannot be corrected onto each other.
+  - **The correction is gated on `is_new_recipe`, matching
+    `_ensure_recipe_saved` twelve lines below it.** Without that, a model
+    reusing a saved recipe and echoing a list missing the clause word
+    renames the dish off its own row: `plan_meal` finds nothing under the
+    new name, the slot lands FREEFORM, and there is no recipe on Cook, no
+    steps, and nothing on the shopping list at approval — silently.
+    Reproduced end to end. The schema note telling the model to restate the
+    list is not a defence: telling the generator something is not the same
+    as preventing it.
   - **Already on record: `repair_recipe_titles.py`, read-only by default.**
-    `railway ssh -- python repair_recipe_titles.py` prints what it would
-    change, `--apply` writes it. Renaming the RECIPE ROW is what reaches
+    `railway ssh -- python repair_recipe_titles.py --all` prints what it
+    would change for every household, `--apply` writes it. A title it found
+    and REFUSED to correct is printed too, not merely logged: the person
+    reading it is deciding whether to write, and "I found one and left it
+    alone" is part of the answer. Renaming the RECIPE ROW is what reaches
     every screen — `plan_meal` stores `recipe_id` and leaves
     `freeform_meal` null when a recipe matched, so the card, the Cook view
     and the Friday leftover all read the name through that join. A script
@@ -449,24 +528,27 @@ why*, not duplicating the diff.
     `WHERE name = ?` expecting one row), and it cannot touch a meal saved
     as freeform text — there is no ingredient list behind one to hold the
     name against.
-  - `tests/test_title_names_a_real_ingredient.py` (72; **13 red on
-    `0a59aab`**, the rest green guards). The file cannot be collected against
+  - `tests/test_title_names_a_real_ingredient.py` (114; **26 red on
+    `0a59aab`** and **38 red on this branch's own first commit**, which is
+    the honest framing for the review round: main flags nothing at all, so
+    "leave this good title alone" passes there trivially and only bites
+    against the version that renamed it). The file cannot be collected against
     main — the three names it imports do not exist there — so redness was
     measured with those stubbed to main's behaviour, and every guard a stub
     could not redden is pinned by mutation instead, named in its own
     docstring: seven knobs checked to bite (the method in the evidence
     pool, the 3-ingredient floor, the collision guard, the allergen
     carve-out, the vague list, the modifier list, the thin-head guard).
-    50 of them are negative cases — real dish names from this repo's own
-    tests and fixtures, plus a swept batch of plausible generated dinners,
-    every one of which must be left alone. **The word lists were TUNED
-    against those sweeps rather than guessed**: 45 plausible titles were
-    put through, the first cut touched three good ones, and all three were
-    the same shape — a named preparation made from things the list does
-    name (tzatziki, marinara) or a thing baked alongside from a flour it
-    does name (cornbread). A second sweep of 25 flags nothing, and the
-    seven genuine over-promises checked beside it are all still caught, so
-    quiet has not become silent. Suite **4860 passed, 0
+    78 of them are negative cases — real dish names from this repo's own
+    tests and fixtures, the review's own 28, and swept batches of plausible
+    generated dinners, every one of which must be left alone. **The lists
+    were TUNED against sweeps rather than guessed, and the first round of
+    tuning is exactly what review showed is not enough**: 45 plausible
+    titles written by the author found three false positives; 77 written by
+    somebody who had not seen the lists found 27. That is the lesson to
+    carry — you cannot sweep your own blocklist. After the inversion: 0
+    wrong renames across the review's 28 and 30 more adversarial titles,
+    with all 5 of its controls still caught. Suite **4902 passed, 0
     failed** at `TZ=America/Toronto` (4788 before this card). Driven over a real uvicorn on a
     throwaway DB: generation saves the recipe and files the slot as "Seared
     Turkey and Zucchini Skillet", the Cook view reads it with the same
@@ -474,10 +556,21 @@ why*, not duplicating the diff.
     with both the week card and the Cook view following it.
   - **Assumptions Emily can overrule, each one line:** the floor of three
     ingredients (`_TITLE_MIN_INGREDIENTS`); never checking an "and" clause
-    (`_TITLE_WITH_CLAUSE`); never stripping an allergen clause
-    (`_allergen_title_words`, in `honest_recipe_title`); and the three word
-    lists, which are meant to be extended when a real miss or a real false
-    positive shows up.
+    (`_TITLE_WITH_CLAUSE`); which allergen words are never stripped
+    (`_ALARMING_ALLERGEN_FAMILIES`); which tables the food vocabulary is
+    built from (`_known_food_words`); and the word lists, meant to be
+    extended when a real miss or a real false positive shows up. The
+    unclearable warning above is hers too.
+  - **Residue left on purpose, so nobody reports it as new:** a title whose
+    thing is genuinely absent but whose word is in none of the app's tables
+    (chorizo, asparagus, broccolini) is not caught — a miss, the cheap
+    direction, and it closes by itself as those tables grow. "Rice Bowl
+    with Egg" and "Salad with Feta" are reported and not renamed, the first
+    by the allergen carve-out and the second because "Salad" alone says
+    nothing; both are the guards working. And `plates.generate_sides_llm`
+    and the chat `add_recipe` tool are the same one-model-call shape and
+    are still uncorrected — lower stakes (a side is not a recipe row; a
+    chat add is a person watching), their own card.
 
 - **2026-09-14 — Recipes, round 2: the planner is told how to WRITE the
   recipe, not just how to cook it. Branch

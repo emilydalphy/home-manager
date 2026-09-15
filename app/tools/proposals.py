@@ -326,6 +326,17 @@ def apply_proposal(proposal_id: str) -> dict:
         if why:
             refused.append({"date": row["date"], "slot": row["slot"], "meal": cand["meal_name"], "why": why})
             continue
+        # The name apply_pick will actually write, asked for here so the
+        # "already what's there" test above can be made again against it.
+        # A candidate whose title corrects back to the dish already on the
+        # slot is not a change, and putting it through anyway deletes and
+        # reinserts the row for nothing — a new entry_id, the sides
+        # dropped, an undo note offering to undo a change nobody made.
+        # After the gate, never before it: the allergen matcher reads the
+        # name and must see the one the model wrote.
+        cand["meal_name"] = _swap.honest_meal_name(cand)
+        if entry["meal"].strip().lower() == cand["meal_name"].strip().lower():
+            continue
         result = _swap.apply_pick(plan_id, entry, cand)
         landed = {
             "date": row["date"], "slot": row["slot"], "entry_id": result["entry_id"],

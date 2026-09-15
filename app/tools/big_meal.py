@@ -88,6 +88,7 @@ from . import household as _household
 from . import meal_plans as _meal_plans
 from . import memory as _memory
 from . import plates as _plates
+from . import plan_quality as _plan_quality
 from . import quantities as _quantities
 from . import recipes as _recipes
 from . import rhythm as _rhythm
@@ -634,6 +635,19 @@ def _clean_main(raw: dict | None, eaters: int) -> dict | None:
             })
     if not name or not ingredients:
         return None
+    # The name and the list came out of one model call, so the name can
+    # promise something the list hasn't got — the week generator's bug
+    # (2026-09-14), and this is the third door onto add_recipe that has it.
+    # Corrected HERE rather than in _recipe_for_main because the name also
+    # rides into menu_json, the prep rows and the timeline: correcting it at
+    # the save alone would leave the record and the recipe calling one dish
+    # two things. Refused onto a name the household already uses, and the
+    # allergen words a title can carry are never stripped, so the conflict
+    # check below still reads what matters.
+    name = _plan_quality.honest_recipe_title(
+        name, ingredients, raw.get("instructions") or [],
+        taken={(r.get("name") or "").strip().lower() for r in _recipes.list_recipes()},
+    )
     return {
         "name": name,
         "ingredients": ingredients,
