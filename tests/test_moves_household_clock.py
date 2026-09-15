@@ -356,13 +356,24 @@ def test_the_clock_is_read_a_fixed_number_of_times_not_once_per_move(monkeypatch
     GUARD on the cost, not on the behaviour. household_now opens its own
     connection, so each place that needs it resolves it ONCE at its entry
     point and threads it down — never per move, never inside an open write
-    transaction (see the "database is locked" entries in CLAUDE.md). Three
+    transaction (see the "database is locked" entries in CLAUDE.md). FOUR
     reads for a whole Today payload today: moves.today_moves,
-    weekly_plan.unplanned_meals_ahead underneath get_cooker_view, and
+    weekly_plan.unplanned_meals_ahead underneath get_cooker_view,
     get_cooker_view's own staleness check
     (overnight/cooker-household-clock, which was still on the server's
-    date when this file was written). What is pinned is that the number
-    does not grow with the day.
+    date when this file was written), and — added 2026-09-15 by
+    overnight/weekly-plan-household-clock — _current_weekly_plan_row,
+    which every one of those goes through to find out which plan it is
+    talking about.
+
+    The bound was 3 and is 4, and that is the honest way to record a
+    fourth reader rather than the guard being worked around: what is
+    pinned here is that the number does not grow with the DAY, and the
+    `busy_day == one_move` assertion below is the half that says so. The
+    ceiling is a named enumeration — if you add a fifth reader, name it
+    here and raise the number, and if you find yourself doing that often,
+    the clock wants resolving once at the entry point and threading down
+    instead.
     """
     quiet_day = _local_date(TORONTO, UTC_EARLY)
     _seed(dinner_on=[quiet_day])
@@ -383,7 +394,7 @@ def test_the_clock_is_read_a_fixed_number_of_times_not_once_per_move(monkeypatch
     # makes this a test rather than a tautology — `<= 3` alone is green at
     # ZERO, which is what `main` does (it never reads the household's clock
     # at all), so it would have passed on the very code this branch fixes.
-    assert 1 <= one_move <= 3
+    assert 1 <= one_move <= 4
 
 
 # ---------- the other half of the clock: the card the screen answers ----------

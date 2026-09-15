@@ -149,8 +149,12 @@ _SQL_PERIOD_LAST_OFFSET = (
     "(CASE WHEN content_start_date = '' AND day_count = 0 THEN 6 ELSE day_count - 1 END)"
 )
 # "This plan's last day is before the bound date" — the period end resolved
-# in SQL, so retire_expired_drafts and _current_weekly_plan_row's fallback
-# agree with plan_period exactly. Takes one bound parameter.
+# in SQL, so retire_expired_drafts, _current_weekly_plan_row's fallback and
+# _pending_draft_over agree with plan_period exactly. Takes one bound
+# parameter, and ALL THREE readers must bind it with the same clock: this
+# comment named only the first two, and the third was duly left on the
+# server's date when the other two moved to the household's (2026-09-15).
+# If you add a fourth, name it here.
 _SQL_EXPIRED_BEFORE = (
     f"date({_SQL_PERIOD_START}, '+' || {_SQL_PERIOD_LAST_OFFSET} || ' days') < date(?)"
 )
@@ -2693,7 +2697,14 @@ def _pending_draft_over(plan: dict) -> int | None:
         f"SELECT * FROM weekly_plans WHERE household_id = ? AND status = 'draft' "
         f"AND id != ? AND NOT (status = 'draft' AND {_SQL_EXPIRED_BEFORE}) "
         f"ORDER BY created_at DESC, id DESC",
-        (household_id(), row["id"], date.today().isoformat()),
+        # The HOUSEHOLD's today, like the predicate's other two readers
+        # (2026-09-15). This is the THIRD reader of _SQL_EXPIRED_BEFORE
+        # and its comment only names two, which is exactly how it got
+        # left behind: retiring the draft was fixed and this was not, so
+        # for the same four evening hours the draft survived in the
+        # database and STILL wasn't the Plan tab's front page. Retiring
+        # is not the only thing that stops a plan leading the tab.
+        (household_id(), row["id"], _household_today().isoformat()),
     ).fetchall()
     conn.close()
     for draft in drafts:
@@ -2847,7 +2858,17 @@ def _current_weekly_plan_row(conn):
     only thing left to show, which is a different question from a draft
     nobody said yes to.
     """
-    today = date.today().isoformat()
+    # The HOUSEHOLD's today, not the server's. The container runs UTC and
+    # households default to America/Toronto, so from 8pm Toronto the
+    # server's date is already tomorrow — and a plan that fails "covers
+    # today" by one evening falls through to the branch below. That is
+    # mostly masked, because the fallback usually hands back the same
+    # plan anyway; with a future draft on file it does NOT, and the
+    # household is shown next week's draft on this week's last evening.
+    # Read once, before either query, and never inside a write
+    # transaction: every caller passes a connection sitting on a plain
+    # read, and _household_today opens its own.
+    today = _household_today().isoformat()
     # An approved plan outranks a draft on the same day (2026-09-13): a
     # draft may now sit over an approved week until it is approved, and
     # "what's for dinner" — Cook, Now, defrost, prep, the list — keeps
@@ -2893,7 +2914,14 @@ def retire_expired_drafts(today: str = "") -> list[int]:
     draft never contributed to it. Only drafts: an approved plan whose
     week has passed was the household's real week and is left alone.
     """
-    bound = today or date.today().isoformat()
+    # The HOUSEHOLD's today (2026-09-15), for the reason the sibling
+    # reads moved in 2026-09-14: retiring is a WRITE, it is what stops a
+    # plan being the front page, and it happens silently — so on the
+    # server's clock a draft could be retired at 9pm on the evening of
+    # its own last day, out from under a household still cooking from it.
+    # Resolved here, before get_conn, so the clock is never read inside
+    # this function's own write transaction.
+    bound = today or _household_today().isoformat()
     conn = get_conn()
     rows = conn.execute(
         f"SELECT id FROM weekly_plans WHERE household_id = ? AND status = 'draft' "
@@ -4047,7 +4075,15 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     # so a day beyond that 48h window still has something to tap instead of
     # a dead end. Only for today-or-future days: a past day's empty dinner
     # is just "not planned," nothing to suggest into it.
-    today_str = date.today().isoformat()
+    #
+    # The HOUSEHOLD's today (2026-09-15). Pre-existing, and moved here
+    # rather than left because this branch put the OTHER half of
+    # get_week_menu's clock on the household — and a function answering
+    # about two different days is a new bug, not a smaller one (the
+    # 2026-09-14 log entry's own lesson). On the server's date a
+    # household a day behind lost the Pick rows on tonight's empty
+    # dinner, in the very evening they would reach for them.
+    today_str = _household_today().isoformat()
     suggestions = None
     for day in days:
         if day["dinner"] is None and day["date"] >= today_str:
