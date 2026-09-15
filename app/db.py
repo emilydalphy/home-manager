@@ -535,6 +535,10 @@ _MIGRATIONS = [
     # already in, and turning a house on is a decision somebody makes
     # (set_chores_enabled.py), not something a migration guesses at.
     ("households", "chores_enabled", "INTEGER NOT NULL DEFAULT 0"),
+    # "Something you run out of, mentioned in chat, is offered as a staple"
+    # (Loop Board, 2026-09-15) — see schema.sql's comment on
+    # grocery_items.staple_offer_made. 0 on every existing row.
+    ("grocery_items", "staple_offer_made", "INTEGER NOT NULL DEFAULT 0"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

@@ -20843,8 +20843,16 @@
     return chips;
   }
 
-  function offerNextStepChips(actions) {
+  // stapleOffer is /api/chat's own staple_offer ({item}) — "Something you
+  // run out of, mentioned in chat, is offered as a staple" (Loop Board,
+  // 2026-09-15). Its "Yes" goes first and is additional to, not instead
+  // of, whatever computeNextStepChips already offers this turn: it's a
+  // yes/no question about a different thing than "go look at the list".
+  function offerNextStepChips(actions, stapleOffer) {
     var chips = computeNextStepChips(actions);
+    if (stapleOffer && stapleOffer.item) {
+      chips = [{ label: 'Yes', msg: 'Yes, keep an eye on ' + stapleOffer.item + '.' }].concat(chips);
+    }
     if (chips.length) renderAskChips(chips);
   }
 
@@ -21520,7 +21528,7 @@
       var replyEls = addAskMessage('assistant', data.reply, data.actions);
       if (data.proposal) mountChangeCard(replyEls, data.proposal);
       refreshStaleTabsFromActions(data.actions);
-      offerNextStepChips(data.actions);
+      offerNextStepChips(data.actions, data.staple_offer);
       // S10 (Emily, 2026-09-13): a change made through the chat is a
       // decision like any other. The action cards under the reply say
       // what changed; this is the one line that says it saved. Only when

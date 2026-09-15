@@ -561,6 +561,12 @@ class ChatResponse(BaseModel):
     # The change card, when the turn proposed one (tools.proposals): rows
     # of what was → what would be, saved from the card, never by the turn.
     proposal: dict | None = None
+    # {"item": ...} when this turn's add_grocery_item_for_chat offered to
+    # watch a running-low supply as a staple (see _staple_offer_from_turn)
+    # — the shell renders a "Yes" chip that sends the answer as a plain
+    # message. None whenever there's nothing to tap: no offer, or the item
+    # was already a staple (the reply's own sentence covers that case).
+    staple_offer: dict | None = None
 
 
 class MemberInput(BaseModel):
@@ -5194,7 +5200,11 @@ def _finish_chat_turn(session_id: str, history: list, reply: str, updated_histor
     # whole point of this line is that it cannot break the turn it
     # records.
     tools.record_chat_turn(agent.LAST_TURN_USAGE.get({}))
-    return {"reply": reply, "actions": actions, "proposal": _proposal_from_turn(history, updated_history)}
+    return {
+        "reply": reply, "actions": actions,
+        "proposal": _proposal_from_turn(history, updated_history),
+        "staple_offer": _staple_offer_from_turn(history, updated_history),
+    }
 
 
 def _proposal_from_turn(before_history: list, after_history: list) -> dict | None:
@@ -5228,6 +5238,34 @@ def _proposal_from_turn(before_history: list, after_history: list) -> dict | Non
                 continue
             if isinstance(result, dict) and result.get("proposal_id"):
                 found = result
+    return found
+
+
+def _staple_offer_from_turn(before_history: list, after_history: list) -> dict | None:
+    """
+    The last `staple_offer` a tool result carried this turn (mirrors
+    _proposal_from_turn above) — app/tools/staples.py's
+    add_grocery_item_for_chat puts one on its result when a chat-added
+    item is worth Pomona asking to watch. Only the genuine offer is worth
+    a tappable chip: an "already a staple" result has nothing to tap (the
+    reply's own sentence says so instead), so that shape returns None here
+    rather than a chip with nothing useful to do.
+    """
+    new_entries = after_history[len(before_history):]
+    found = None
+    for entry in new_entries:
+        if entry.get("role") != "user" or not isinstance(entry.get("content"), list):
+            continue
+        for block in entry["content"]:
+            if not isinstance(block, dict) or block.get("type") != "tool_result" or block.get("is_error"):
+                continue
+            try:
+                result = json.loads(block.get("content") or "{}")
+            except Exception:
+                continue
+            offer = result.get("staple_offer") if isinstance(result, dict) else None
+            if isinstance(offer, dict) and offer.get("item") and not offer.get("already_staple"):
+                found = {"item": offer["item"]}
     return found
 
 
