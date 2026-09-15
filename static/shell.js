@@ -3097,14 +3097,21 @@
   // pantry, frozen, other) — a category the server doesn't know folds to
   // Other, so there is no "bakery" here; bread is Other until the server
   // has an aisle for it. Matching is on whole words, lowercased, with a
-  // trailing "s" forgiven on both sides ("apples", "eggs"); a two-word
-  // entry ("ice cream") matches as a phrase. Frozen is checked first so
-  // "frozen peas" is frozen rather than produce and "ice cream" is frozen
-  // rather than dairy — the order of the aisles below is the order they
-  // are tried. It's a guess, and the row's ⋯ is where a wrong one gets
-  // fixed. To add a word: put it in its aisle.
+  // plural forgiven on both sides ("apples", "eggs", "tomatoes"); a
+  // two-word entry ("ice cream") matches as a phrase. The aisles are
+  // tried in the order below, and the first hit wins, so the ones whose
+  // words are ALSO in a later aisle come first: frozen before produce
+  // ("frozen peas") and before dairy ("ice cream"); the pantry phrases
+  // before dairy, produce and meat, because "peanut butter" is not
+  // butter, "tomato sauce" is not a tomato and "chicken stock" is not
+  // chicken. It's a guess, and the row's ⋯ is where a wrong one gets
+  // fixed. To add a word: put it in its aisle; a phrase that would
+  // otherwise match a single word elsewhere goes in the pantry-first list.
   var GRO_AISLE_WORDS = [
     ['frozen', ['frozen', 'ice cream', 'popsicle']],
+    ['pantry', ['peanut butter', 'almond butter', 'chicken stock', 'beef stock', 'vegetable stock',
+      'chicken broth', 'beef broth', 'garlic powder', 'onion powder', 'tomato sauce',
+      'tomato paste', 'apple juice', 'orange juice', 'apple sauce', 'applesauce']],
     ['dairy', ['milk', 'cheese', 'yogurt', 'yoghurt', 'egg', 'butter', 'cream']],
     ['produce', ['banana', 'apple', 'lettuce', 'onion', 'garlic', 'tomato', 'potato',
       'carrot', 'lemon', 'lime', 'avocado', 'bell pepper', 'cucumber', 'spinach',
@@ -3114,11 +3121,18 @@
     ['pantry', ['rice', 'pasta', 'flour', 'bean', 'sugar', 'oil', 'oat', 'cereal',
       'lentil', 'chickpea', 'salt', 'stock', 'broth', 'noodle', 'tuna']]
   ];
-  // One word, the way the list compares it: lowercased, a trailing "s"
-  // dropped past three letters (the same forgiveness groStapleKey gives).
+  // One word, the way the list compares it: lowercased, its plural
+  // dropped past three letters — "-oes" and "-es" before a plain "-s", so
+  // "tomatoes" and "potatoes" read as tomato and potato rather than the
+  // "tomatoe" a bare trailing-s rule left, which matched nothing (verifier,
+  // 2026-09-15). "-es" only after a consonant sound that takes it (s, x,
+  // z, ch, sh), so "grapes" stays grape and "apples" stays apple.
   function groAisleWord(w) {
     w = (w || '').toLowerCase();
-    return w.length > 3 && w.slice(-1) === 's' ? w.slice(0, -1) : w;
+    if (w.length <= 3 || w.slice(-1) !== 's') return w;
+    if (/oes$/.test(w)) return w.slice(0, -2);
+    if (/(s|x|z|ch|sh)es$/.test(w)) return w.slice(0, -2);
+    return w.slice(0, -1);
   }
   function groGuessCategory(name) {
     var words = (name || '').toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/)
@@ -5789,12 +5803,14 @@
       // the top of itself — see groTripPausedDockHtml.
       if (groTripPaused()) return groTripPausedDockHtml(data);
       var stops = groStoresWithNeeded(data);
-      // Nothing to start while the shops question is up: LIST is showing
-      // that card INSTEAD of the stops (groListHtml returns early), so the
-      // button would walk the household through shops that aren't on the
-      // screen — and its apricot would be a second one beside the card's,
-      // which Rule 5 doesn't allow. No action, so no dock — the rule's own
-      // "a screen with no single action has no dock" case.
+      // Nothing to start while the shops question is up: LIST shows that
+      // card at the top of the list (since 2026-09-15; it used to stand in
+      // for the list), and the card's own "That's where we shop" is the
+      // screen's one apricot while it is there — a "Start the trip" under
+      // it would be a second one, which Rule 5 doesn't allow. No action,
+      // so no dock — the rule's own "a screen with no single action has no
+      // dock" case. (A household that has named no shop has no stops
+      // anyway, so nothing is being withheld.)
       var canGo = stops.length > 0 && !groStoresPromptShouldShow();
       // "See the week" rides beside the trip the way "Finish later" does on
       // the trip screens: from the list the week is one tap, and from the
@@ -7821,7 +7837,7 @@
         .trim();
       if (!name) return null;
       try {
-        await groPost('/api/grocery-list/add', { item: name, quantity: '', category: 'other' });
+        await groPost('/api/grocery-list/add', { item: name, quantity: '', category: groGuessCategory(name) });
       } catch (err) { return null; }
       loadGrocery();
       return { spoken: 'Added ' + name + ' to the list.' };

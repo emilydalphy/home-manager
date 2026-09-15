@@ -465,7 +465,7 @@ _CARRIED = """[
 
 
 @_needs_node
-def test_the_leftovers_come_before_sorting_and_show_both_amounts():
+def test_the_leftovers_come_before_the_list_and_show_both_amounts():
     out = _node("""
 setUp(3, %s);
 groMaybeCarryFirst();
@@ -485,7 +485,7 @@ console.log(JSON.stringify({ step: groceryState.step, title: head.title, sub: he
 
 
 @_needs_node
-def test_answering_the_last_one_moves_on_to_sorting():
+def test_answering_the_last_one_moves_on_to_the_list():
     out = _node("""
 setUp(3, %s);
 groMaybeCarryFirst();

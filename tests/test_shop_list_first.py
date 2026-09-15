@@ -242,6 +242,25 @@ console.log(JSON.stringify(['milk', 'Cheddar cheese', 'eggs', 'butter', 'bananas
     ]
 
 
+@_needs_node
+def test_the_categoriser_reads_plurals_and_puts_the_sauce_with_the_pantry():
+    """Verifier, 2026-09-15: "tomatoes" and "sweet potatoes" came back as
+    Other, because a bare trailing-s rule made "tomatoe" of them; and the
+    single-word match put peanut butter with the dairy, chicken stock with
+    the meat, and garlic powder / tomato sauce / apple juice with the
+    produce. The pantry phrases are tried before those aisles now."""
+    out = _node("""
+console.log(JSON.stringify(['tomatoes', 'sweet potatoes', 'peaches', 'grapes', 'peanut butter', 'chicken stock',
+  'garlic powder', 'tomato sauce', 'apple juice', 'orange juice', 'tomato paste', 'butter', 'chicken thighs',
+  'garlic', 'oranges'].map(groGuessCategory)));
+""")
+    assert out == [
+        "produce", "produce", "other", "produce",
+        "pantry", "pantry", "pantry", "pantry", "pantry", "pantry", "pantry",
+        "dairy", "meat/seafood", "produce", "produce",
+    ]
+
+
 def test_the_categoriser_only_knows_aisles_the_server_groups_by():
     """The by-store grouping folds anything else to Other, so a made-up
     aisle here would be a silent no-op. quantities._GROCERY_SECTION_ORDER
@@ -255,9 +274,11 @@ def test_the_categoriser_only_knows_aisles_the_server_groups_by():
     for aisle in aisles:
         assert aisle in quantities._GROCERY_SECTION_ORDER, aisle
     assert "bakery" not in block
-    # One function, one call site, and only where the caller used to say 'other'.
+    # One function, used by the add row and the voice add — the two places
+    # that used to say 'other' — and nowhere a real category is known.
     assert SHELL_JS.count("function groGuessCategory(") == 1
-    assert "category: groGuessCategory(name)" in SHELL_JS
+    assert SHELL_JS.count("category: groGuessCategory(name)") == 2
+    assert "category: 'other' }" not in SHELL_JS
     assert "category: 'other' }" not in SHELL_JS.split("async function groAddItem(", 1)[1].split("\n  }\n", 1)[0]
 
 
