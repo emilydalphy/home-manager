@@ -149,10 +149,14 @@ def test_cooked_and_never_mind_toasts():
 
 def test_somewhere_else_triage_chip():
     """The grocery triage row's neutral third option, and the sand
-    treatment that keeps it from reading as one more store."""
-    _assert_in("Somewhere else", SHELL_JS, "the 'Somewhere else' triage chip", "shell.js")
-    _assert_in("gro-pill-else", SHELL_JS, "the 'Somewhere else' chip class", "shell.js")
-    _assert_in(".gro-pill-else", SHELL_CSS, "the 'Somewhere else' chip style", "shell.css")
+    treatment that keeps it from reading as one more store.
+
+    Reworded 2026-09-15 to "Getting it elsewhere" (GRO_ELSEWHERE_CHIP,
+    tests/test_shop_set_aside_undo.py) — the chip now says what it does;
+    its class and its sand treatment are unchanged."""
+    _assert_in("var GRO_ELSEWHERE_CHIP = 'Getting it elsewhere';", SHELL_JS, "the 'Getting it elsewhere' triage chip", "shell.js")
+    _assert_in("gro-pill-else", SHELL_JS, "the 'Getting it elsewhere' chip class", "shell.js")
+    _assert_in(".gro-pill-else", SHELL_CSS, "the 'Getting it elsewhere' chip style", "shell.css")
 
 
 # --- a2c4973 loop-handoffs-slice-3 ---------------------------------------

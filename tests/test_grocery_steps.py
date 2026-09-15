@@ -167,7 +167,7 @@ def test_adding_one_thing_never_costs_a_model_turn():
 def test_a_list_row_keeps_its_quiet_row_action():
     """The per-row ⋯ came back with the three verbs it always had, on the
     routes it always used: quantity via /update, store via /store (the pills,
-    with "Any" as the old move / not-this-time and "Somewhere else" on
+    with "Any" as the old move / not-this-time and "Getting it elsewhere" on
     /exclude), and /remove with an undo. Quiet — no apricot: the row is never
     what the screen is for."""
     _in("function groRowMenuHtml(", SHELL_JS, "the row menu", "shell.js")
@@ -184,7 +184,10 @@ def test_a_list_row_keeps_its_quiet_row_action():
     _in("'Remove</button>'", SHELL_JS, "its copy", "shell.js")
     # The store pills, including the two non-store answers.
     _in("function groPillStores(", SHELL_JS, "the shared store pills", "shell.js")
-    _in("data-gro=\"row-exclude\"", SHELL_JS, "the Somewhere else pill", "shell.js")
+    # The pill is drawn by one helper for both places (groElsewherePillHtml,
+    # 2026-09-15), so the marker is its handler rather than its markup.
+    _in("groElsewherePillHtml('row-exclude', it)", SHELL_JS, "the Getting it elsewhere pill", "shell.js")
+    _in("case 'row-exclude':", SHELL_JS, "its handler", "shell.js")
     # Remove is reversible in the moment — /remove is a hard delete, so the
     # undo puts the line back through /add.
     _in("label: 'Undo',", SHELL_JS, "the remove undo", "shell.js")
@@ -278,13 +281,20 @@ def test_sort_asks_about_one_thing_at_a_time():
 
 
 def test_sort_keeps_the_existing_chips_and_their_semantics():
-    """Store pills, "Any" (no store, advances), "Have it", and "Somewhere
-    else" (the /exclude route) — the chips the triage row already had."""
+    """Store pills, "Any" (no store, advances), "Have it", and "Getting it
+    elsewhere" (the /exclude route) — the chips the triage row already had.
+
+    Reworded 2026-09-15 (Loop Board, "Somewhere else quietly removes an
+    item"): the chip was "Somewhere else", which beside "Add a new store"
+    read as one more way to name a shop. It now says what it does, through
+    GRO_ELSEWHERE_CHIP; tests/test_shop_set_aside_undo.py covers the toast,
+    the undo and LIST's foot section that came with it."""
     _in("data-gro=\"assign\"", SHELL_JS, "the store pills", "shell.js")
     _in(">Any</button>", SHELL_JS, "the Any pill", "shell.js")
-    _in("gro-pill-else", SHELL_JS, "the Somewhere else chip class", "shell.js")
-    _in(">Somewhere else</button>", SHELL_JS, "the Somewhere else chip", "shell.js")
-    _in("data-gro=\"triage-exclude\"", SHELL_JS, "its handler", "shell.js")
+    _in("gro-pill-else", SHELL_JS, "the Getting it elsewhere chip class", "shell.js")
+    _in("var GRO_ELSEWHERE_CHIP = 'Getting it elsewhere';", SHELL_JS, "the Getting it elsewhere chip", "shell.js")
+    _in("groElsewherePillHtml('triage-exclude', it)", SHELL_JS, "the chip on SORT's card", "shell.js")
+    _in("case 'triage-exclude':", SHELL_JS, "its handler", "shell.js")
     _in("/exclude'", SHELL_JS, "the exclude route", "shell.js")
     _in("gro-pill-have", SHELL_JS, "the Have it chip class", "shell.js")
     # "Any" saves an empty store. Where the memory of that lives CHANGED on
