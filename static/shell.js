@@ -13825,6 +13825,15 @@
     // this state rather than fixed on #week-plan-view for every step, so
     // nothing about Plan | Meals moves.
     panel.classList.toggle('is-chores', weekState.step === 'chores');
+    // The review step's dock (reviewDecideHtml) has the same "sits mid-
+    // screen on a short page" bug is-chores fixed: #week-steps is
+    // `flex: 1 0 auto` expecting to grow, but its parent #week-plan-view
+    // is not, so a one-dish week ("What we're eating") never has the
+    // spare height to hand down. "Which days" (always seven tiles) is
+    // tall enough that the dock already sat at the foot, which is why
+    // this went unnoticed. Scoped to 'review' alone, same as is-chores,
+    // so the Day/Meal steps and the week root are untouched.
+    panel.classList.toggle('is-review', weekState.step === 'review');
 
     // Chores is a state of the ROOT (a sibling of the week, not a step
     // under it): it keeps the band and the gear, and has no crumb of its

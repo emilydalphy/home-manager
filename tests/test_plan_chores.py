@@ -525,6 +525,45 @@ console.log(JSON.stringify({ onMeals: onMeals, onChores: onChores, onDay: onDay 
 
 
 @_needs_node
+def test_the_review_steps_dock_reaches_the_foot_on_a_short_week():
+    """
+    Loop Board bug: on an approved week with one dish, "What we're eating"'s
+    sticky dock ("Open the list · N ingredients") floated mid-screen instead
+    of sitting at the foot. Root cause: #week-plan-view is `0 1 auto`, so
+    #week-steps' own `flex: 1 0 auto` (which the dock's `margin-top: auto`
+    leans on) has no spare height to grow into on a short page — the exact
+    gap the Chores state's `.is-chores` class already closes for its own
+    empty moment. This test fails on main (renderMealsStep never sets
+    `is-review`, and shell.css has no rule for it) and passes once the
+    review step gets the same treatment, scoped so nothing else moves.
+    """
+    out = _node(_prelude() + _dom() + """
+var panel = makePanel();
+weekState.data = { state: 'set' };
+weekState.step = 'week';
+renderMealsStep(panel);
+var onWeek = !!panel.classes['is-review'];
+weekState.step = 'review';           // "Check the week" — What we're eating / Which days
+renderMealsStep(panel);
+var onReview = !!panel.classes['is-review'];
+weekState.step = 'day';
+renderMealsStep(panel);
+var onDay = !!panel.classes['is-review'];
+weekState.step = 'chores';
+renderMealsStep(panel);
+var onChores = !!panel.classes['is-review'];
+console.log(JSON.stringify({ onWeek: onWeek, onReview: onReview, onDay: onDay, onChores: onChores }));
+""")
+    # Only the Review step grows the plan view — the week root, the day
+    # step and the Chores state (which grows it its own way) are untouched.
+    assert out["onWeek"] is False
+    assert out["onReview"] is True
+    assert out["onDay"] is False
+    assert out["onChores"] is False
+    assert ".tab-panel.is-review #week-plan-view { flex: 1 0 auto; }" in SHELL_CSS
+
+
+@_needs_node
 def test_chores_is_a_step_of_the_plan_tab_with_history_and_the_back_gesture():
     out = _node(_prelude() + _dom() + """
 var FETCHES = [];
