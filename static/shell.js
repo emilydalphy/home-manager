@@ -20849,6 +20849,13 @@
   // of, whatever computeNextStepChips already offers this turn: it's a
   // yes/no question about a different thing than "go look at the list".
   function offerNextStepChips(actions, stapleOffer) {
+    // A PREVIOUS turn's chip (e.g. yesterday's "Yes, keep an eye on dish
+    // soap.") must never survive into a turn that offers none of its own
+    // — renderAskChips only ever ADDS, it doesn't clear, so without this
+    // a stale chip sits there indefinitely and a tap days later sends
+    // that literal message to the model. Cleared unconditionally, before
+    // the length guard below decides whether there's anything new to show.
+    askChipTargets().forEach(function (chipsEl) { chipsEl.innerHTML = ''; chipsEl.hidden = true; });
     var chips = computeNextStepChips(actions);
     if (stapleOffer && stapleOffer.item) {
       chips = [{ label: 'Yes', msg: 'Yes, keep an eye on ' + stapleOffer.item + '.' }].concat(chips);

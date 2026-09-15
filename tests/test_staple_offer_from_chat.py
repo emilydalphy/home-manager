@@ -28,14 +28,20 @@ staple -- there is nothing to tap in that case, only a sentence to say.
 from __future__ import annotations
 
 import json
+import shutil
 import types
+from pathlib import Path
 
+import nodeharness
 import pytest
 
 from app import agent, tools
 from app.db import get_conn
 from app.tools import staples as st
 from app import main as app_main
+
+REPO = Path(__file__).resolve().parent.parent
+SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
 
 
 def _staples_count() -> int:
@@ -281,3 +287,166 @@ def test_end_to_end_chat_turn_has_no_offer_for_a_recipe_ingredient(signed_in, mo
     res = signed_in.post("/api/chat", json={"session_id": "default", "message": "add shrimp"})
     assert res.status_code == 200
     assert res.json()["staple_offer"] is None
+
+
+def test_the_yes_message_reaches_add_staple_and_creates_it_through_the_real_tool(signed_in, monkeypatch):
+    """
+    Verification (2026-09-15): the Yes -> add_staple binding lived only in
+    prose (the system-prompt bullet above), untested. add_staple's own
+    tool description (app/agent.py) now spells out that a "Yes, keep an
+    eye on <item>." message -- the exact text the chip sends, see
+    static/shell.js's offerNextStepChips -- means call add_staple for that
+    item. This stubs only the model's decision to call the tool (the
+    scripted response below stands in for what that description is meant
+    to make the real model do); everything downstream -- TOOL_FUNCTIONS
+    dispatch, tools.add_staple itself, the database write -- is real.
+    """
+    _stub_client(monkeypatch, [
+        types.SimpleNamespace(
+            content=[_tool_block("add_staple", {"item": "Dish soap", "category": "household"})],
+            stop_reason="tool_use",
+            usage=_Usage(),
+        ),
+        types.SimpleNamespace(
+            content=[_text_block("I'll watch for it.")],
+            stop_reason="end_turn",
+            usage=_Usage(),
+        ),
+    ])
+
+    res = signed_in.post(
+        "/api/chat", json={"session_id": "default", "message": "Yes, keep an eye on dish soap."}
+    )
+
+    assert res.status_code == 200
+    assert res.json()["reply"] == "I'll watch for it."
+    staples = tools.list_staples()
+    assert [s["item"] for s in staples] == ["Dish soap"]
+
+
+# --------------------------------------------- the front end, run rather than read ----
+#
+# Verification (2026-09-15): a "Yes, keep an eye on dish soap." chip
+# persisted across later turns that offered no chip of their own, because
+# renderAskChips only ever ADDS to #ask-chips and offerNextStepChips's own
+# `if (chips.length) renderAskChips(chips)` skipped calling it at all when
+# there was nothing new. A tap days later sent that stale literal message
+# to the model. Fixed by clearing #ask-chips unconditionally at the top of
+# offerNextStepChips, before that length guard -- see static/shell.js.
+#
+# Node, not source-marker: the bug is about what's left in the DOM across
+# two calls, which no grep for a string can see (test_coaching.py's own
+# "NODE" tests are the house pattern for exactly this).
+
+_needs_node = pytest.mark.skipif(
+    shutil.which("node") is None, reason="node is needed to execute the shell's own functions"
+)
+
+
+def _node(script: str):
+    res = nodeharness.run_node(script, timeout=30)
+    assert res.returncode == 0, f"node failed: {res.stderr}"
+    return json.loads(res.stdout.strip())
+
+
+def _chip_functions_block() -> str:
+    """renderAskChips through offerNextStepChips, in that order in the
+    file, with nothing else pulled in -- computeNextStepChips (which
+    offerNextStepChips calls) sits between them and comes along for free.
+    askChipTargets is defined much further down the file (it's shared
+    with the message/input targets beside it) so the stub below defines
+    the one-line equivalent itself rather than slicing a second,
+    non-contiguous region out of the file."""
+    start = "  function renderAskChips(actions) {"
+    end = "  function focusChangedWeekDay(date, slot) {"
+    a = SHELL_JS.index(start)
+    b = SHELL_JS.index(end, a)
+    return SHELL_JS[a:b]
+
+
+# A DOM stub in the same shape test_coaching.py's own _DOM_STUB uses:
+# innerHTML/hidden set by the code under test, read back by regex rather
+# than a real parser -- honest about the two things renderAskChips
+# actually does to an element.
+_CHIP_DOM_STUB = """
+function escapeHtml(s){return String(s == null ? '' : s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function makeEl() {
+  return {
+    innerHTML: '', hidden: false, dataset: {}, handlers: {},
+    querySelectorAll: function () {
+      const el = this, out = [], re = /data-i="(\\d+)"/g;
+      let m;
+      while ((m = re.exec(el.innerHTML)) !== null) {
+        (function (i) {
+          out.push({ dataset: { i: String(i) },
+                     addEventListener: function (_evt, fn) { el.handlers[i] = fn; } });
+        })(Number(m[1]));
+      }
+      return out;
+    },
+    labels: function () {
+      const out = [], re = />([^<]+)<\\/button>/g;
+      let m;
+      while ((m = re.exec(this.innerHTML)) !== null) out.push(m[1]);
+      return out;
+    }
+  };
+}
+const ELS = { 'ask-chips': makeEl(), 'ask-examples': null };
+const document = { getElementById: function (id) { return ELS[id] || null; } };
+var askChipsEl = document.getElementById('ask-chips');
+function askChipTargets() { return askChipsEl ? [askChipsEl] : []; }
+var SENT = [];
+function sendAskMessage(t) { SENT.push(t); }
+"""
+
+
+@_needs_node
+def test_a_staple_offer_chip_does_not_survive_a_later_turn_with_no_chips_of_its_own():
+    script = (
+        _CHIP_DOM_STUB + _chip_functions_block() + """
+var out = {};
+offerNextStepChips([], { item: 'dish soap' });
+out.withOffer = { hidden: ELS['ask-chips'].hidden, labels: ELS['ask-chips'].labels() };
+// The very next turn asks nothing and offers no action chip either --
+// the "Yes" chip from the turn above must be gone, not just unreachable.
+offerNextStepChips([], null);
+out.nextTurn = { hidden: ELS['ask-chips'].hidden, labels: ELS['ask-chips'].labels(), html: ELS['ask-chips'].innerHTML };
+console.log(JSON.stringify(out));
+"""
+    )
+    out = _node(script)
+    assert out["withOffer"] == {"hidden": False, "labels": ["Yes"]}
+    assert out["nextTurn"] == {"hidden": True, "labels": [], "html": ""}
+
+
+@_needs_node
+def test_a_staple_offer_chip_does_not_survive_a_later_turn_that_has_its_own_chip():
+    """Not just cleared to nothing -- replaced. A later turn that DOES have
+    an action chip (e.g. "Plan my stops") must show only its own, not the
+    earlier "Yes" beside or before it."""
+    script = (
+        _CHIP_DOM_STUB + _chip_functions_block() + """
+offerNextStepChips([], { item: 'dish soap' });
+var groceryAction = { tab: 'grocery', change: 'Added milk' };
+offerNextStepChips([groceryAction], null);
+console.log(JSON.stringify({ hidden: ELS['ask-chips'].hidden, labels: ELS['ask-chips'].labels() }));
+"""
+    )
+    assert _node(script) == {"hidden": False, "labels": ["Plan my stops"]}
+
+
+@_needs_node
+def test_the_staple_offer_chip_still_renders_and_sends_the_expected_message():
+    """The fix must only clear stale chips, not the offer's own -- same
+    behaviour as before the fix for the turn that actually carries one."""
+    script = (
+        _CHIP_DOM_STUB + _chip_functions_block() + """
+offerNextStepChips([], { item: 'dish soap' });
+var chip = ELS['ask-chips'].querySelectorAll('.ask-chip')[0];
+ELS['ask-chips'].handlers[chip.dataset.i]();
+console.log(JSON.stringify({ labels: ELS['ask-chips'].labels(), sent: SENT }));
+"""
+    )
+    assert _node(script) == {"labels": ["Yes"], "sent": ["Yes, keep an eye on dish soap."]}
