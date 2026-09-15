@@ -153,6 +153,43 @@ A walk with Emily present is best done live: she holds her phone or the preview,
 watch and take notes. A walk without her is still valuable — it produces the map entry
 and the ranked list she reviews later.
 
+#### How a live walk runs (the way that worked on 2026-09-15 — do it this way)
+
+Emily: "having the app on the side so you could view it and then just asking you to
+look was a great way." The mechanics, in order:
+
+1. **Put the real app in the Browser pane.** `preview_start` with the launch config
+   named `home-manager` (it lives in `/Users/emilydalphy/Repos/.claude/launch.json`; if
+   another session has overwritten that file, restore the entry — `zsh -lc "cd '/Users/
+   emilydalphy/Home Manager Project' && exec .venv/bin/python -m uvicorn app.main:app
+   --port 8010"`, port 8010 — alongside whatever else is in it, never replacing it).
+   Only the main session may do this; it runs against the laptop's copy of her household.
+   Check the startup log, then `resize_window` to the **mobile** preset so it looks like
+   her phone. Tell her in one line: *this panel is the real app, click in it like a
+   phone, anything you do saves.* (If the pane snaps back to full width between turns,
+   tell her to pick Mobile in the pane's Viewport menu.)
+2. **She drives, you watch.** Ask her to do exactly one thing — open Ask, type one real
+   thing she's carrying, however she'd naturally say it — and then say **"look."** Don't
+   type for her unless she asks; her phrasing *is* data (on 2026-09-15 she typed a
+   command because the greeting told her to, which became a card).
+3. **On "look": screenshot, then read.** `computer` screenshot for what she sees, then
+   `get_page_text` / `find` / a small `javascript_tool` read to capture the full reply
+   text (screenshots cut long replies). Then check what the app *actually did* against
+   what it *said* — read-only SQL on the laptop DB: `sqlite3 "file:app/home_manager.db?
+   mode=ro" …` (never a write, never a reset). "Noted" that saved nothing was found this
+   way; it would not have been found from the screen.
+4. **Reply with one step's worth.** What she typed, what Pomona said (quote it), what it
+   did underneath, the one or two quality-bar failures in the person's words — then ask
+   for the next thing. Never dump the whole list mid-walk; the ranked list comes at the
+   end.
+5. **Three things is a walk.** Then write the map entry, then the ranked "moments that
+   need her" (3–5), then wait for her yes / no / your call before writing cards.
+6. **When she's away from the keyboard**, the same loop works with you driving — but
+   only for behaviour findings; state findings need her phone or a fresh copy of
+   production data (see the walk-environment rule above). Say which you used.
+7. **Stop the preview at the end** (`preview_stop`) so nothing sits against her
+   household database, and reset the viewport (`preset: desktop`).
+
 ### 2. Module review
 
 A module is a capability that shows up in several flows (staples, notifications, the
