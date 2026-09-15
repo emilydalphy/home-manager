@@ -2302,6 +2302,25 @@ def today_tonight_keep(req: TonightKeepRequest):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+@app.post("/api/today/tonight/night-off")
+def today_tonight_night_off(req: TonightKeepRequest):
+    """
+    "Not tonight — we're going out." Settles tonight in one answer: the
+    dish moves to the next free night of this plan, or comes off the week
+    with anything already bought for it that won't keep handed back as
+    `use_soon`. See tools.tonight_night_off for every rule. A 200 can still
+    say no — `status` 'refused' carries the sentence to show and nothing was
+    written.
+    """
+    try:
+        return tools.tonight_night_off(req.date)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Tonight's night off failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.get("/api/week-menu")
 def week_menu(weekly_plan_id: int | None = None):
     """
@@ -4754,7 +4773,7 @@ _CHORE_TOOLS = {
 # changes that day's dinner (out empties it, hosting builds the big meal
 # into it) and the big-meal tools change the dishes on it, so Plan is the
 # screen that goes stale. One line, by test_week_seven_tiles's source check.
-_WEEK_TOOLS = {"plan_meal", "generate_weekly_plan", "set_week_constraints", "swap_meal_in_plan", "swap_component_in_plan", "swap_dinner_nights", "approve_weekly_plan", "discard_draft_plan", "answer_holiday", "set_big_meal_dish", "remove_big_meal_dish", "set_big_meal_prep_day", "propose_big_meal"}
+_WEEK_TOOLS = {"plan_meal", "generate_weekly_plan", "set_week_constraints", "swap_meal_in_plan", "swap_component_in_plan", "swap_dinner_nights", "take_the_night_off", "approve_weekly_plan", "discard_draft_plan", "answer_holiday", "set_big_meal_dish", "remove_big_meal_dish", "set_big_meal_prep_day", "propose_big_meal"}
 _KITCHEN_TOOLS = {
     "add_recipe", "update_recipe_details", "mark_recipe_feedback", "log_recipe_note", "log_cooking_deviation",
     "flag_recipe_temporary", "generate_prep_schedule", "check_off_prep_step", "check_off_meal",

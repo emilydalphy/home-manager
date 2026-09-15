@@ -371,6 +371,101 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-15 — "Tonight still good?" takes a third answer: "Not tonight —
+  we're going out". Branch `overnight/tonight-night-off`, NOT merged at the
+  time of writing.** Loop Board improvement. Emily, on her phone
+  (2026-09-14): the sheet behind **Something else** listed only other
+  planned dishes to swap with, so a night off meant fighting the app into
+  swapping for a dish she wasn't going to cook either. One more row, at the
+  foot of the sheet and under a hairline of its own because it is a
+  different KIND of answer, and no follow-up question — takeout, leftovers
+  and cereal all mean the same thing here, so the app never asks which.
+  - **The night ends `planned_empty`, never `open`, and that is the whole
+    decision.** An open slot is a decision handed back, so Now would turn
+    straight round and ask "Tonight needs a dinner" — the question just
+    answered. planned_empty needs no decision and must never be offered as
+    one, so nothing anywhere reads the night as missed, skipped or overdue.
+    The pair of writes is `clear_plan_slot` + `plan_slot_empty`, in that
+    order, which is exactly what `slot_needs.set_slot_need` already does
+    when a night goes 'away' — same shape, same transactional boundary, no
+    second implementation of either.
+  - **The dish moves when there is anywhere to move it, through
+    `swap_dinner_nights`.** "Free" is a later night of this plan whose
+    dinner is `open` or has no row at all — not one the household is away
+    for (nobody is eating, so it would cook for an empty table) and not one
+    with a real dish (that is what the swap rows above it are for). Each
+    candidate is proven by the swap's own `dry_run`, so a leftover chain
+    that would run backwards is simply never chosen rather than chosen and
+    refused. **Moving is the default; making it always drop is one line —
+    `free = _next_free_night(...)` in `tonight.tonight_night_off`.**
+  - **On an ordinary fully-planned week there IS no free night, so the
+    common path is the drop** — which is the ticket's own expectation and
+    worth knowing before reading the code as mostly-move.
+  - **The grocery list, measured rather than argued.** A drop reverses only
+    what is still `needed`; `_reverse_meal_grocery_contributions` has always
+    left `in_cart`/`purchased` lines alone, so a week already shopped comes
+    back byte-identical (driven over HTTP: 3 lbs shrimp + 3.5 cups rice
+    purchased, unchanged either side). A move touches nothing at all — same
+    dishes, same week.
+  - **What was bought and won't keep is handed back as `use_soon`**, read
+    off the entry's own ledger BEFORE the reversal clears it, and judged by
+    `big_meal.keeps` — the same reading of a grocery line the holiday shop
+    split already makes, not a second table. One narrowing: a `household`
+    line (foil, dish soap) is dropped first, because `keeps` reads that
+    section as fresh — its table lists the sections that keep and
+    "household" isn't one, since a holiday MENU's ingredients never land
+    there. **A thing already THAWED counts too** (a defrost row ticked
+    done), which is the one case the list cannot see: the chicken may have
+    been bought weeks ago. Read off the row's `inventory_item_id`, never by
+    parsing defrost's own sentence back.
+  - **The note outlives the card.** `add_attention_item(kind='use_soon')` —
+    the app's existing queue for something the household should look at
+    rather than have guessed at — so it reaches Cook's fold and the morning
+    text with no new surface. Now's card says it too, read off the
+    planned_empty row's `derived_from.use_soon` rather than re-derived,
+    because the ledger it came from is gone by then.
+  - **The learned takeout hint is fed, not duplicated.**
+    `week_intake._observed_day_patterns` already counts a weekday that
+    resolved to takeout in the last four weeks; it now counts a called-off
+    night the same way (the `night_off` marker on `derived_from`, one
+    string, three readers). An AWAY night deliberately does not count —
+    being on a plane is not a pattern to lighten Wednesdays for. **The hint
+    still says "Takeout two of the last four weeks" for a night that was
+    actually cereal**; that wording is the ticket's own and is left alone,
+    but it is Emily's to change (`week_intake.py`, the two hint strings).
+  - **The row says what it will do before it is tapped** (§8 rule 7):
+    `tonight_check` carries `night_off_moves_to`, from the same dry run the
+    answer itself uses, so the sub-line reads "Bean Chili moves to
+    Wednesday" or "Bean Chili comes off the week" rather than being a
+    mystery. Costs one extra dry run per Now load, and none at all on a
+    fully-planned week.
+  - **Refusals are answers, not errors** (`status` 'refused' at 200): a
+    dinner already ticked cooked, and a dinner cooked double for a later
+    night with nowhere to move to — dropping that one would leave the fed
+    night holding a reheat with no batch behind it, which
+    `drop_dish_from_day` refuses for the same reason. **The second one
+    leaves the household with no way to take the night off**, which is a
+    real dead end and deliberately not papered over by promoting somebody's
+    reheat into a cook; its own card if it bites.
+  - **No Undo.** A dropped dish cannot be put back (its groceries are
+    reversed and the row is gone) and half an undo is worse than none.
+  - **Chat: `take_the_night_off`**, tagged `week` in `_WEEK_TOOLS`. That tag
+    also now re-reads Now's tonight card, its needs-you band and its moves
+    (`refreshTonightFromPlan` in shell.js) — a pre-existing hole, since any
+    plan change by date can change what tonight is.
+  - Celadon, not apricot (rule 5; Now's one accent is the dock). Ratios
+    measured in Chromium off computed styles at 390×844 in both schemes and
+    recorded in `shell.css`: the row's title 10.65:1 light / 10.37:1 dark,
+    its sub-line and "Night off" 4.87:1 / 5.92:1.
+  - `tests/test_tonight_night_off.py` (38; **36 red on `origin/main`**, the
+    two green ones saying in their own docstrings that they are
+    no-regression guards on the takeout hint). Six mutations checked to
+    bite: the household filter, planned_empty→open, no freeness filter at
+    all, always-drop, use_soon ignoring status, and the thawed rows'
+    done-only filter. Full suite **4826 passed, 0 failed** at
+    `TZ=America/Toronto`. Driven in Chromium at 390×844 light and dark on a
+    throwaway DB, both shapes.
+
 - **2026-09-14 — Recipes, round 2: the planner is told how to WRITE the
   recipe, not just how to cook it. Branch
   `worktree-recipes-round-2-write-it-down` (`d1f951e`, `486bdcf`), NOT
