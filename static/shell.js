@@ -13250,14 +13250,32 @@
   // A plus, drawn like every other icon here (rule 7: stroke SVG, round caps).
   var WK_ADD_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
     'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+  // The eyebrow's own second half: what the amounts on the right are FOR.
+  // A source night batched for later ones (make_double_for on the entry —
+  // covers_note/servings/covers are get_cooker_view's own signal for that,
+  // the same one cookAttendanceChip already reads to skip a redundant "for
+  // N" chip on the hero) shows amounts scaled to the WHOLE batch, not just
+  // tonight's table — so the eyebrow has to say "batched for N nights, M
+  // plates" rather than "for tonight's headcount", or the two disagree
+  // (Loop Board: two whole chickens under "for two" reads as a mistake).
+  // Plain digits for the plate count, same choice cookAheadTallyLine made
+  // for the same number elsewhere on this screen — arithmetic, not prose.
+  function mealWhatsInEyebrow(cookMeal) {
+    if (cookMeal.covers_note && cookMeal.servings) {
+      var nights = 1 + (cookMeal.covers || []).length;
+      return 'What’s in it · ' + countInWords(nights, 'night') + ', ' + cookMeal.servings +
+        (cookMeal.servings === 1 ? ' plate' : ' plates');
+    }
+    var eaters = (cookMeal.attendance && cookMeal.attendance.headcount) || cookMeal.default_servings || 0;
+    return 'What’s in it' + (eaters > 0 ? ' · for ' + (eaters <= 12 ? numberWord(eaters) : eaters) : '');
+  }
   function mealWhatsInHtml(day, slot, entry, clock) {
     if (!clock.isCook || !clock.cookMeal) return '';
     var cookMeal = clock.cookMeal;
     var ings = cookMeal.ingredients || [];
     var canAdd = !!(entry && entry.state === 'planned' && !day.isPast);
     if (!ings.length && !canAdd) return '';
-    var eaters = (cookMeal.attendance && cookMeal.attendance.headcount) || cookMeal.default_servings || 0;
-    var eyebrow = 'What’s in it' + (eaters > 0 ? ' · for ' + (eaters <= 12 ? numberWord(eaters) : eaters) : '');
+    var eyebrow = mealWhatsInEyebrow(cookMeal);
     var rows = ings.map(function (ing) {
       if (!ing || !ing.item) return '';
       var tags = [];
