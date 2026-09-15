@@ -940,15 +940,24 @@ def _backfill_recipe_cook_counters_from_ticks(conn):
         counts[rid] = counts.get(rid, 0) + 1
         if r["date"] and r["date"] > latest.get(rid, ""):
             latest[rid] = r["date"]
-    conn.execute("UPDATE recipes SET times_cooked = 0, last_cooked_date = NULL")
+    reset = conn.execute("UPDATE recipes SET times_cooked = 0, last_cooked_date = NULL").rowcount
     conn.executemany(
         "UPDATE recipes SET times_cooked = ?, last_cooked_date = ? WHERE id = ?",
         [(n, latest.get(rid), rid) for rid, n in counts.items()],
     )
+    # Said out loud either way. The no-ticks case is the one that looks
+    # like data loss from the outside (every favourite's count gone to 0
+    # overnight), so it is the one that most needs a line in the log
+    # explaining itself.
     if counts:
         logger.info(
             "[cook counters backfill] recomputed times_cooked/last_cooked_date for %d recipe(s) from ticked-cooked nights",
             len(counts),
+        )
+    elif reset:
+        logger.info(
+            "[cook counters backfill] Reset cook counters on %d recipes to 0 — no cooked nights on record yet",
+            reset,
         )
 
 

@@ -325,3 +325,23 @@ def test_backfill_runs_once_per_database(tmp_path):
     conn.commit()
     assert conn.execute("SELECT times_cooked FROM recipes WHERE name = 'Chili'").fetchone()[0] == 2
     conn.close()
+
+
+def test_backfill_says_so_when_it_resets_every_count_to_zero(caplog):
+    """
+    A database with old-style counts and no ticked nights — Emily's own —
+    drops every favourite to 0 on the first startup. That must not happen
+    silently: the log has to say what moved and why.
+    """
+    conn = get_conn()
+    try:
+        conn.execute("INSERT INTO recipes (household_id, name, times_cooked, last_cooked_date) VALUES (1, 'Roast Chicken', 2, '2027-10-14')")
+        conn.execute("INSERT INTO recipes (household_id, name, times_cooked, last_cooked_date) VALUES (1, 'Chili', 5, '2026-08-20')")
+        with caplog.at_level("INFO", logger="home_manager"):
+            _db._backfill_recipe_cook_counters_from_ticks(conn)
+        conn.commit()
+        counts = [r[0] for r in conn.execute("SELECT times_cooked FROM recipes")]
+    finally:
+        conn.close()
+    assert counts == [0, 0]
+    assert "Reset cook counters on 2 recipes to 0 — no cooked nights on record yet" in caplog.text
