@@ -575,7 +575,10 @@ CREATE TABLE IF NOT EXISTS meal_plan_entries (
     -- Cooker execution layer: has this specific planned meal actually been
     -- cooked yet? Separate from recipes.times_cooked (a lifetime counter) —
     -- this is per-entry, so the week's progress view can show done vs.
-    -- outstanding. See check_off_meal/get_plan_progress.
+    -- outstanding. See check_off_meal/get_plan_progress. The lifetime
+    -- counter (and recipes.last_cooked_date) moves WITH this flag, not
+    -- with planning: check_off_meal bumps it on 'done' and reverses on
+    -- 'pending', skipping leftovers nights (derived_from.links_to).
     cooked_status TEXT NOT NULL DEFAULT 'pending', -- pending | done
     -- When cooked_status was last set to 'done' — powers the feedback nudge
     -- (get_feedback_nudge): a meal that's been cooked but whose recipe still

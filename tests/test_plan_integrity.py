@@ -184,9 +184,13 @@ def test_a_failed_generation_does_not_empty_the_grocery_list(monkeypatch):
 
 def test_a_failed_generation_does_not_leave_recipes_looking_cooked(monkeypatch):
     """
-    Planning a meal bumps times_cooked/last_cooked_date. Those feed the
-    variety rules, so residue from an abandoned attempt biases the NEXT
-    week away from meals nobody actually ate.
+    times_cooked/last_cooked_date feed the variety rules, so residue from
+    an abandoned attempt biases the NEXT week away from meals nobody
+    actually ate. Planning used to bump both on insert, and the rollback
+    used to put them back by snapshot; now nothing is bumped until a night
+    is ticked cooked (see test_times_cooked_at_cook.py), so the guarantee
+    holds with nothing to restore. Kept as the regression test for the
+    failure path either way.
     """
     tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
     before = {r["name"]: r["times_cooked"] for r in tools.list_recipes()}

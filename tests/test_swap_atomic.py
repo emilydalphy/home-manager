@@ -664,9 +664,11 @@ def test_the_happy_path_lands_where_it_always_did():
     """
     One transaction has to produce the same end state the four-commit
     version produced: the new meal on the day, the old meal's lines off
-    the list and the new one's on, the ledger moved over, the recipe
-    counters bumped. A no-regression guard, green on both sides by design —
-    every number here was measured against the parent commit.
+    the list and the new one's on, the ledger moved over. A no-regression
+    guard, green on both sides by design — every number here was measured
+    against the parent commit. (The recipe counters used to be bumped here
+    too; they now move only when a night is ticked cooked, so a swapped-in
+    recipe still reads 0 — see test_times_cooked_at_cook.py.)
     """
     plan_id, entry_id = _plain_plan()
 
@@ -683,7 +685,7 @@ def test_the_happy_path_lands_where_it_always_did():
     assert conn.execute(
         "SELECT COUNT(*) c FROM meal_plan_grocery_links WHERE meal_plan_entry_id = ?", (out["entry_id"],)
     ).fetchone()["c"] == 2
-    assert conn.execute("SELECT times_cooked FROM recipes WHERE name = 'Soup'").fetchone()[0] == 1
+    assert conn.execute("SELECT times_cooked FROM recipes WHERE name = 'Soup'").fetchone()[0] == 0
     conn.close()
     assert {"date": MON, "slot": "dinner"} not in tools.audit_plan_slots(plan_id)["missing"]
 

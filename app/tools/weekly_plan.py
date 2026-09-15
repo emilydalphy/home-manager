@@ -3184,10 +3184,14 @@ def _compute_freshness(meal_dicts: list[dict], plan_created_at: str) -> dict:
     beforehand — the "2 new recipes this week" freshness signal. A recipe
     counts as "new" if its created_at is at/after this plan's own
     created_at (it didn't exist before this plan brought it in).
-    Deliberately NOT based on recipes.times_cooked: that counter
-    increments at *planning* time (see plan_meal), not at actual-cooking
-    time, so it already reads >= 1 for every meal in the very plan being
-    inspected — using it here would make everything look like a repeat.
+    Deliberately NOT based on recipes.times_cooked. That counter now
+    moves only when a night is ticked cooked (cooker.check_off_meal), so
+    it could be read here — but it answers a different question. "Never
+    cooked" would call a recipe imported months ago and never made "new
+    this week", which the share page's "2 new recipes this week" line
+    would then say about a dish the household has been looking at for
+    ages. What this signal means is "this plan brought it in", and
+    created_at is the honest record of that.
     Freeform/untracked entries (no saved recipe) aren't counted either way.
     """
     conn = get_conn()
@@ -3225,8 +3229,8 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     household's very first generated plan — mention this warmly, e.g.
     "here's your first week, built around what you told me") and
     `new_recipe_count`/`repeat_recipe_count` (the freshness signal — how
-    many planned meals are recipes never cooked before vs. ones the
-    household's made before).
+    many planned meals are recipes this plan brought in vs. ones the
+    household already had saved).
     """
     conn = get_conn()
     if weekly_plan_id is None:

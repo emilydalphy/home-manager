@@ -285,8 +285,6 @@ from .meal_variety import enforce_distinct_count as enforce_distinct_meal_count 
 from .meal_plans import (  # noqa: F401
     create_weekly_plan,
     discard_failed_plan,
-    restore_recipe_cook_counters,
-    snapshot_recipe_cook_counters,
     get_meal_plan,
     get_recent_meal_history,
     plan_meal,

@@ -1762,8 +1762,13 @@ def _load_plan_entries(plan_id: int) -> list[dict]:
             # added this turn (add_recipe never sets times_cooked) and for
             # an older saved recipe nobody has actually cooked yet -- both
             # are real, uncooked novelty on the household's plate, which is
-            # what this floor cares about. A freeform meal (no recipe row)
-            # isn't a recipe at all, so it doesn't count either way.
+            # what this floor cares about. The counter moves only when a
+            # night is ticked cooked (cooker.check_off_meal), never at
+            # planning time, so a recipe planned last week and never made
+            # is still new here -- and this plan's own entries, written
+            # moments before this reads them, have not touched it. A
+            # freeform meal (no recipe row) isn't a recipe at all, so it
+            # doesn't count either way.
             "is_new_recipe": r["times_cooked"] == 0 if r["times_cooked"] is not None else False,
             "links_to": derived_from.get("links_to"),
             # A freeform meal has no recipe row and therefore no ingredient
