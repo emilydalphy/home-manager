@@ -83,11 +83,11 @@ def _sse_events(raw_lines):
     return events
 
 
-def _assert_one_plain_sentence(text: str):
+def _assert_one_plain_sentence(text: str, line: str):
     for tell in RAW_TELLS:
         assert tell not in text, f"{tell!r} reached the person: {text!r}"
     assert "{" not in text and "}" not in text, text
-    assert text == main_module.SERVER_TROUBLE_LINE
+    assert text == line
 
 
 # ---------- the chat, over the stream the shell actually uses ----------
@@ -107,7 +107,8 @@ def test_chat_stream_hides_a_raw_anthropic_error_behind_one_plain_sentence(signe
     assert names[-1] == "error", names
     payload = next(p for e, p in events if e == "error")
     assert payload["status"] == 500
-    _assert_one_plain_sentence(payload["detail"])
+    # A stream is always Pomona thinking, so it says so.
+    _assert_one_plain_sentence(payload["detail"], main_module.THINK_TROUBLE_LINE)
 
 
 def test_chat_stream_keeps_the_assistants_own_line_for_a_503(signed_in, monkeypatch):
@@ -153,7 +154,8 @@ def test_change_part_500_carries_the_one_line_not_the_exception(signed_in, monke
         "/api/week/2026-09-14/change-part", json={"entry_id": 1, "role": "protein", "choice": "tofu"}
     )
     assert res.status_code == 500
-    _assert_one_plain_sentence(res.json()["detail"])
+    # A plain HTTP 5xx can be anything, so the neutral line.
+    _assert_one_plain_sentence(res.json()["detail"], main_module.SERVER_TROUBLE_LINE)
 
 
 def test_a_500_from_any_route_never_carries_household_text(signed_in, monkeypatch):
@@ -230,21 +232,46 @@ def test_the_week_draft_stream_gets_the_same_rule(signed_in, monkeypatch):
         events = _sse_events(list(res.iter_lines()))
     payload = next(p for e, p in events if e == "error")
     assert payload["status"] == 500
-    _assert_one_plain_sentence(payload["detail"])
+    _assert_one_plain_sentence(payload["detail"], main_module.THINK_TROUBLE_LINE)
 
 
-def test_the_line_is_in_pomonas_voice():
+def test_a_calendar_500_does_not_blame_pomonas_thinking(signed_in, monkeypatch):
+    """
+    A plain HTTP 5xx can be a calendar sync or a photo scan, nothing to
+    do with Claude — so the handler's line is the neutral one, not
+    "I couldn't think just now".
+    """
+    monkeypatch.setattr(
+        main_module.calendar_feed, "refresh", lambda: (_ for _ in ()).throw(RuntimeError("feed exploded")),
+    )
+    res = signed_in.post("/api/calendar/refresh")
+    assert res.status_code == 500
+    assert "exploded" not in res.text
+    assert res.json()["detail"] == main_module.SERVER_TROUBLE_LINE
+    assert "think" not in res.json()["detail"]
+
+
+@pytest.mark.parametrize("name", ["THINK_TROUBLE_LINE", "SERVER_TROUBLE_LINE"])
+def test_the_lines_are_in_pomonas_voice(name):
     """
     DESIGN_SYSTEM §8, calm in trouble: the thing, its way out, and the
-    reassurance — in one breath, with a contraction, no exclamation mark,
-    no "Error".
+    reassurance — in one breath, no exclamation mark, no "Error", no
+    status code. Straight apostrophes never: shell.js's copy is curly, and
+    the two must be byte-identical.
     """
-    line = main_module.SERVER_TROUBLE_LINE
+    line = getattr(main_module, name)
     assert line.count(".") <= 2 and "!" not in line
-    assert "'" in line or "’" in line, "contractions, always (§8 Sounding human, rule 3)"
+    assert "'" not in line, "curly apostrophes, as everywhere in shell.js"
     assert "try again" in line.lower()
     assert "data" in line.lower()
     assert not re.search(r"\b\d{3}\b", line)
+    assert "Error" not in line
+
+
+def test_the_chat_fallback_is_byte_identical_to_the_servers_thinking_line():
+    js = SHELL_JS[SHELL_JS.index("var ASK_TROUBLE_LINE = ") + len("var ASK_TROUBLE_LINE = "):]
+    js = js[:js.index("\n")].rstrip(";")
+    assert json.loads(js) == main_module.THINK_TROUBLE_LINE
 
 
 # ---------- the shell: what the person reads ----------

@@ -74,17 +74,26 @@ def _route_pattern(request: Request) -> str:
     return pattern or "(unmatched)"
 
 
-# The one line a person sees when something on our side fails (Loop Board:
-# "Chat and toasts show raw error text when the AI call fails"). Pomona's
-# voice for trouble (DESIGN_SYSTEM §8): the thing, then its way out, and
-# the reassurance that matters most — a failed call never touched their
-# data. Emily may reword; this is the only place to do it.
-SERVER_TROUBLE_LINE = "I couldn't think just now — your data is fine. Try again in a minute."
+# The two lines a person sees when something on our side fails (Loop
+# Board: "Chat and toasts show raw error text when the AI call fails").
+# Pomona's voice for trouble (DESIGN_SYSTEM §8): the thing, then its way
+# out, and the reassurance that matters most — a failed call never touched
+# their data. Two rather than one because the streams (chat, the draft,
+# onboarding's reveal) are always Pomona thinking, while a plain HTTP 5xx
+# can be anything — a calendar sync, a photo scan — and "couldn't think"
+# would read as an AI failure for a calendar. Emily may reword; these are
+# the only places to do it. shell.js's ASK_TROUBLE_LINE is the same
+# sentence as THINK_TROUBLE_LINE, curly apostrophe and all — keep them
+# byte-identical.
+THINK_TROUBLE_LINE = "I couldn’t think just now — your data is fine. Try again in a minute."
+SERVER_TROUBLE_LINE = "Something went wrong on my side just now — your data is fine. Try again in a minute."
 
 
-def _client_safe_detail(status_code: int, detail):
+def _client_safe_detail(status_code: int, detail, line: str = SERVER_TROUBLE_LINE):
     """
-    What the browser is allowed to read from an error's `detail`.
+    What the browser is allowed to read from an error's `detail`. `line`
+    is what a scrubbed 5xx says instead — the caller picks the one that
+    is true for it (see the two constants above).
 
     146 routes build theirs as f"Server error: {e}", and {e} is whatever
     the exception said — an Anthropic 401 is "Error code: 401 - {'type':
@@ -103,7 +112,7 @@ def _client_safe_detail(status_code: int, detail):
     access yet", and tests read "Claude" out of it.
     """
     if status_code >= 500 and status_code != 503:
-        return SERVER_TROUBLE_LINE
+        return line
     return detail
 
 
@@ -2704,7 +2713,9 @@ def _sse_event(event: str, data) -> str:
         # The stream's twin of record_server_errors' scrub: an "error"
         # frame is the SSE shape of an HTTPException, so it gets the same
         # rule in the same one place, not at each generator's except.
-        data = dict(data, detail=_client_safe_detail(data.get("status", 500), data.get("detail")))
+        data = dict(data, detail=_client_safe_detail(
+            data.get("status", 500), data.get("detail"), line=THINK_TROUBLE_LINE,
+        ))
     return f"event: {event}\ndata: {json.dumps(jsonable_encoder(data))}\n\n"
 
 
