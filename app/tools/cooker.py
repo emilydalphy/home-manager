@@ -26,6 +26,26 @@ from . import weekly_plan as _weekly_plan
 
 logger = logging.getLogger(__name__)
 
+MEAL_COOKED_STATUSES = ("pending", "done")
+
+
+class InvalidMealStatus(ValueError):
+    """
+    A cooked status outside MEAL_COOKED_STATUSES — a client bug, never a
+    real screen. The cook checkbox is a toggle that only ever sends
+    'done' or 'pending', and the chat tool's own schema enumerates the
+    same two; only a hand-made request can carry a third.
+
+    Its own marker type, distinct from require_household_row's plain
+    ValueError, so the route can answer 422 ("that request doesn't make
+    sense") rather than the 404 that means "no such meal" — the shape
+    chores.InvalidChoreStatus already uses one door over. Without it a
+    typo'd status wrote straight through to meal_plan_entries.cooked_status
+    and left the row in a state no screen's WHERE clause looks for: not
+    done, not pending, just gone.
+    """
+
+
 # Slot states with no meal behind them, so nothing to cook. See
 # get_cooker_view for why this is a deny-list rather than an allow-list of
 # 'planned'. The ordered tuple and its placeholders exist only so
@@ -334,6 +354,14 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
     still could not rebuild a DELETED row's location and expiry, and
     half-exact is the worst of the three. The door is open if Emily wants it.
     """
+    # Before the connection, so a status nothing can read never reaches the
+    # row. The cooked tick drives times_cooked and the inventory claim off
+    # this column, and both read it by name.
+    if status not in MEAL_COOKED_STATUSES:
+        raise InvalidMealStatus(
+            f"A meal is cooked or it isn't — status must be "
+            f"{' or '.join(MEAL_COOKED_STATUSES)}, not {status!r}."
+        )
     conn = get_conn()
     row = conn.execute(
         """
