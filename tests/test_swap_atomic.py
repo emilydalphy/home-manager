@@ -26,6 +26,8 @@ import sqlite3
 
 import pytest
 
+from conftest import household_today
+
 from app import agent, tools
 from app.db import DB_PATH, get_conn
 from app.tools import attendance, grocery, leftovers, meal_plans, recipes, weekly_plan
@@ -42,6 +44,16 @@ def _day(offset: int) -> str:
 
 
 MON, TUE, WED, FRI = _day(0), _day(1), _day(2), _day(4)
+
+# add_dish_day refuses a target night that has already gone by (2026-09-16),
+# on the household's clock — so the "+" tests below plan from the
+# household's own today rather than from this week's Monday, which puts
+# MON and TUE behind it on every weekday but Monday. What they are about is
+# a forced failure mid-write; the day they aim at only has to be a day the
+# app will still take a dish on, on any weekday the suite runs.
+ADD_START = household_today()
+ADD_SRC = ADD_START.isoformat()
+ADD_TGT = (ADD_START + datetime.timedelta(days=1)).isoformat()
 
 
 # ---------------------------------------------------------------- helpers
@@ -315,9 +327,9 @@ def test_the_stepper_going_UP_leaves_the_day_intact_on_a_failure(monkeypatch):
     """add_dish_day — the Check-the-week "+" — over an approved week."""
     _household()
     _recipes()
-    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
-    source = tools.plan_meal(MON, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
-    target = tools.plan_meal(TUE, "Soup", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    plan_id = tools.create_weekly_plan(ADD_SRC)["weekly_plan_id"]
+    source = tools.plan_meal(ADD_SRC, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    target = tools.plan_meal(ADD_TGT, "Soup", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
     tools.approve_weekly_plan(plan_id, "Emily")
     before = _snapshot()
     missing = tools.audit_plan_slots(plan_id)["missing"]
@@ -326,23 +338,23 @@ def test_the_stepper_going_UP_leaves_the_day_intact_on_a_failure(monkeypatch):
     with pytest.raises(RuntimeError):
         tools.add_dish_day(plan_id, source, target)
 
-    _assert_untouched(before, plan_id, TUE, "dinner", missing)
-    assert [r["id"] for r in _rows_on(TUE, "dinner")] == [target]
+    _assert_untouched(before, plan_id, ADD_TGT, "dinner", missing)
+    assert [r["id"] for r in _rows_on(ADD_TGT, "dinner")] == [target]
 
 
 def test_the_add_dish_route_says_nothing_changed_and_is_telling_the_truth(signed_in, monkeypatch):
     """The half the household sees: a 500, under a screen saying nothing changed. True now."""
     _household()
     _recipes()
-    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
-    source = tools.plan_meal(MON, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
-    target = tools.plan_meal(TUE, "Soup", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    plan_id = tools.create_weekly_plan(ADD_SRC)["weekly_plan_id"]
+    source = tools.plan_meal(ADD_SRC, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    target = tools.plan_meal(ADD_TGT, "Soup", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
     tools.approve_weekly_plan(plan_id, "Emily")
     before = _snapshot()
 
     monkeypatch.setattr(weekly_plan._meal_plans, "plan_meal", _boom)
     res = signed_in.post(
-        f"/api/week/{_monday().isoformat()}/add-dish-day",
+        f"/api/week/{ADD_SRC}/add-dish-day",
         json={"entry_id": source, "target_entry_id": target},
     )
 

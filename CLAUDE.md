@@ -391,6 +391,103 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-16 — Add-a-night refuses a night that has already gone by.
+  Branch `overnight/add-a-night-refuses-the-past`, NOT merged at the time
+  of writing.** Loop Board bug. `add_dish_day` — the Review stepper's "+"
+  — took any target inside the plan's period, past nights included; the
+  only thing keeping those days off the screen was the picker's own
+  `day.isPast` filter, which is a rule the SCREEN follows and not one the
+  week does. Reproduced on both address forms before anything was
+  touched: `target_entry_id` rewrote yesterday's uneaten dinner to another
+  dish, and `target_date` planted a dinner on an empty night that was
+  over. One `SlotRefused` now, on the date alone, so it covers both forms
+  and covers a genuinely empty night — which has no row to be refused on
+  anything else.
+  - **The HOUSEHOLD's today, and that is the whole care in it.** The
+    container runs UTC and households default to America/Toronto, so from
+    8pm local the server's date is already tomorrow — on the server's
+    clock this would refuse TONIGHT for four hours every evening, which is
+    a worse bug than the one it fixes. `_household_today()`, unmodified,
+    read once, and both directions are pinned (Toronto 21:30, the
+    household a day behind and the production direction; Tokyo 08:30, a
+    day ahead).
+  - **Strictly BEFORE.** Today itself is never refused — a dish on
+    tonight's dinner is an ordinary thing to ask for, and a check that
+    took it away is the same bug wearing the other hat. Pinned by
+    mutation: `<=` reddens five tests.
+  - **Refused before anything is read for the write.** It sits above the
+    chain lookup and well above the swap, and no connection of this
+    function's is open when the clock is read — both branches close before
+    they reach it. That is a runtime guard rather than a comment, because
+    a nested `get_conn` fails as an intermittent "database is locked"
+    (twice earned in this repo) and not as a wrong answer. **That guard is
+    RED on `main` for the wrong reason** — the feature is absent there, so
+    it dies on `DID NOT RAISE` and never reaches the assertion it is named
+    after — so it is pinned by MUTATION and its own docstring says so.
+  - **An unparseable `target_date` is deliberately not this function's
+    problem.** ISO dates compare as strings, so one somebody wrote by hand
+    that isn't one simply fails the test and meets whatever the rest of
+    the function already does with it. Widening this into date validation
+    would change behaviour nobody asked about.
+  - **THE WORDING IS AN ASSUMPTION, Emily's to overrule in one line:**
+    "That night’s already gone.", inline beside its two sibling refusals
+    in `add_dish_day` (`app/tools/weekly_plan.py`), the same shape as
+    "Nobody’s eating that one — it isn’t a day to plan into."
+  - **ONE REACHABLE FALSE POSITIVE, named rather than fixed, and for one
+    population it is a REGRESSION — Emily should see it.** The picker
+    filters on the BROWSER's date (`todayLocalStr()` → `classifyDay`'s
+    `isPast`) and the server now refuses on `households.timezone`, so the
+    two disagree whenever the phone is WEST of the stored zone — and that
+    column defaults to `America/Toronto` for every household, with nothing
+    in the app prompting anyone to change it. Reproduced: a Vancouver
+    phone has its own tonight refused for about 3 hours a night (2h
+    Denver, 1h Chicago). Nothing is written and another night is one tap
+    away. It is a pre-existing misconfiguration made visible rather than a
+    new class of error — the same household already has Now, the morning
+    text and "tonight still good?" a day off in exactly those hours — and
+    `_household_today()` is what the card mandated. But **on `main` that
+    add succeeds**, so for a household whose phone is west of its stored
+    zone this is a behaviour regression, and the honest fix is the stored
+    zone rather than this check.
+  - **`drop_dish_from_day` HAS THE SAME HOLE and is deliberately not fixed
+    here** — its own card. Measured: dropping yesterday's uncooked dinner
+    goes straight through, reverses its grocery contribution and hands the
+    night back as an `open` question reading "You cut Bean Chili back, so
+    this one is yours to fill." — a decision handed back on a day that is
+    over, about food that was probably already bought.
+  - `tests/test_add_a_night_refuses_the_past.py` (22; **13 red on
+    `697da2a`**, measured, at `TZ=America/Toronto` and again at
+    `TZ=Pacific/Niue`). Of the 9 green, 3 are guards on the harness — two
+    on the freeze and one on the anchor below — and the other 6 name the
+    mutation that pins them. All four were run: the server's clock for
+    `date.today()` (4 red in Toronto, 12 under a straddle), `<=` for today
+    (5 red), holding a connection across the clock read (1 red,
+    `assert 2 == 1`), and this file's own `_day` repointed at the
+    process's clock (3 red under a straddle, 0 in Toronto).
+  - **THE TEST FILE SEEDED OFF THE PROCESS'S CLOCK AT FIRST, WHICH IS THE
+    EXACT TRAP IT WAS WRITTEN TO CLOSE.** `_day(n)` was `date.today() + n`
+    while the app reads the household's, so under `Pacific/Niue` — a
+    genuine straddle, process on the 15th and Toronto on the 16th — the
+    two "today itself is never refused" tests asked about the household's
+    YESTERDAY and were correctly refused: **9 failed against main's 7 on
+    the blocking `straddle` job, both of them this file's.** The app was
+    right and the harness was wrong, which is how this class always
+    presents. Everything unfrozen counts off `conftest.household_today()`
+    now, `_server_day` exists for the frozen tests alone, and one guard
+    asserts the anchor directly rather than hoping a run lands in a
+    straddling hour. Found by review, not by three green timezone runs —
+    `TZ=Asia/Tokyo` was green by the hour it ran, since that direction
+    only splits while Toronto reads 11:00–23:59.
+  - Three existing tests in `test_swap_atomic.py` /
+    `test_drop_dish_atomic.py` seeded MON→TUE off this week's Monday,
+    which is the past on every weekday but Monday, so their add_dish_day
+    cases now plan from `conftest.household_today()` instead — the same
+    harness-artifact class, not an app change; a reviewer confirmed all
+    three still bite under a real atomicity regression. Suite **5270
+    passed, 0 failed** at `TZ=America/Toronto` and **5263 passed, 7
+    failed** at `TZ=Pacific/Niue` — those 7 measured name-for-name
+    identical against the merge base's own `app/` in the same zone, so
+    the post-only count there is ZERO.
 - **2026-09-16 — The morning text's own default clock is the household's now,
   which is what its docstring always claimed. Branch
   `overnight/morning-text-household-clock`, NOT merged at the time of
