@@ -27,15 +27,28 @@ wearing the other hat.
 
 Each test says in its own docstring whether it is a CATCH (red on the
 unmodified app) or a NO-REGRESSION GUARD (green either way, here to say
-what did not change). Several of the guards are pinned by MUTATION
-instead — swapping `_household_today()` for the server's `date.today()`
-reddens them, and that is the failure they exist for.
+what did not change). The guards are pinned by MUTATION instead, and all
+four were run: swapping `_household_today()` for the server's
+`date.today()`, `<` for `<=`, holding a connection open across the clock
+read, and repointing this file's own `_day` at the process's clock.
+
+That last one is the trap this file fell into once already and it is
+worth naming. Everything UNFROZEN counts its days off
+`conftest.household_today()`, never off `date.today()`: the two are
+different days for part of every UTC day, in both directions, so a file
+seeded on the process's clock that then asks the app about "today" is
+asserting the two agree. Seeded that way, two tests here went red on a
+runner in Pacific/Niue while passing in Toronto — the app being right and
+the harness being wrong. `_server_day` exists for the frozen tests alone,
+where naming a day in the process's own terms is the entire point.
 """
 from __future__ import annotations
 
 from datetime import date, datetime, time, timedelta, timezone
 
 import pytest
+
+from conftest import household_today
 
 from app import tools
 from app.db import get_conn
@@ -44,6 +57,15 @@ from app.tools import weekly_plan as _wp
 
 
 SERVER_TODAY = date.today()
+# Today where the seeded household lives — which is the clock the refusal
+# reads, and so the only honest anchor for the unfrozen tests below. The
+# process's own date is a different day from the household's for part of
+# every UTC day, in BOTH directions (a runner west of Toronto is behind it,
+# one east of Toronto is ahead), and a test that seeds with `date.today()`
+# and then asks the app about "today" is asserting the two agree. They do
+# not. The frozen tests keep the SERVER anchor on purpose — the gap between
+# the two clocks is the thing they are about.
+HOUSEHOLD_TODAY = household_today()
 
 # 01:30 UTC is 21:30 the evening BEFORE in Toronto, so the household is a
 # whole day BEHIND the server. That is the production direction, and every
@@ -57,10 +79,11 @@ TORONTO = "America/Toronto"
 TOKYO = "Asia/Tokyo"
 
 # The plan is deliberately wider than the window any one test needs, and
-# filed from three days back, so a past target is inside its period and
-# `plan_meal`'s own period guard is never what refuses anything here.
-PLAN_START = SERVER_TODAY - timedelta(days=3)
-PLAN_DAYS = 8
+# starts four days back from whichever anchor is earlier, so a past target
+# is inside its period whichever clock named it and `plan_meal`'s own period
+# guard is never what refuses anything here.
+PLAN_START = min(SERVER_TODAY, HOUSEHOLD_TODAY) - timedelta(days=4)
+PLAN_DAYS = 11
 
 REFUSAL = "That night’s already gone."
 
@@ -104,7 +127,15 @@ def _ahead(monkeypatch) -> date:
 
 
 def _day(offset: int) -> str:
-    """A day of the plan, counted off the SERVER's today."""
+    """A day of the plan, counted off the HOUSEHOLD's today — the clock the
+    refusal reads. Everything unfrozen uses this."""
+    return (HOUSEHOLD_TODAY + timedelta(days=offset)).isoformat()
+
+
+def _server_day(offset: int) -> str:
+    """A day counted off the SERVER's today. Only the frozen tests use it,
+    and only because naming a day in the process's own terms is exactly what
+    they are for."""
     return (SERVER_TODAY + timedelta(days=offset)).isoformat()
 
 
@@ -163,6 +194,24 @@ class TestTheFreezeReallySplitsTheTwoClocks:
         household_today = _ahead(monkeypatch)
         assert household_today != SERVER_TODAY
         assert _wp._household_today() == household_today
+
+    def test_the_unfrozen_tests_count_their_days_off_the_households_clock(self):
+        """
+        GUARD on the anchor every unfrozen test below rests on, and the one
+        that stops this file going red on a runner in another timezone.
+        `_day(0)` must be the day the APP will call today, not the day the
+        process does — those are different days for part of every UTC day,
+        in both directions, and a file seeded off `date.today()` that then
+        asks the app about "today" is asserting the two agree.
+
+        Trivially true when the two clocks happen to agree and a real
+        assertion whenever they do not, which is exactly when it matters.
+        Measured: repointing `_day` at `SERVER_TODAY` reddens this plus
+        the two tests in TestTodayItselfIsNeverRefused that name today —
+        3 red under a straddling runner (Pacific/Niue), 0 in Toronto,
+        which is the whole shape of the trap.
+        """
+        assert _day(0) == _wp._household_today().isoformat()
 
 
 # ------------------------------------------- 1. the target_entry_id path
@@ -303,11 +352,12 @@ class TestTheHouseholdsClockAndNotTheServers:
         swapped for `date.today()`, which is measured and is the whole
         reason it exists."""
         household_today = _behind(monkeypatch)
-        assert household_today.isoformat() == _day(-1)
-        plan = _seed(_day(1), household_today.isoformat())
+        assert household_today == SERVER_TODAY - timedelta(days=1)
+        source = _server_day(1)
+        plan = _seed(source, household_today.isoformat())
 
         out = tools.add_dish_day(
-            plan, _ids(_day(1))[0], target_entry_id=_ids(household_today.isoformat())[0]
+            plan, _ids(source)[0], target_entry_id=_ids(household_today.isoformat())[0]
         )
 
         assert out["status"] == "added"
@@ -317,9 +367,10 @@ class TestTheHouseholdsClockAndNotTheServers:
         """GUARD / anti-wrong-fix CATCH, the date path's half. Same
         mutation reddens it."""
         household_today = _behind(monkeypatch)
-        plan = _seed(_day(1))
+        source = _server_day(1)
+        plan = _seed(source)
 
-        out = tools.add_dish_day(plan, _ids(_day(1))[0], target_date=household_today.isoformat())
+        out = tools.add_dish_day(plan, _ids(source)[0], target_date=household_today.isoformat())
 
         assert out["status"] == "added"
         assert _state(household_today.isoformat()) == [("planned", "Chicken Tacos")]
@@ -330,10 +381,11 @@ class TestTheHouseholdsClockAndNotTheServers:
         it is."""
         household_today = _behind(monkeypatch)
         gone = (household_today - timedelta(days=1)).isoformat()
-        plan = _seed(_day(1), gone)
+        source = _server_day(1)
+        plan = _seed(source, gone)
 
         with pytest.raises(_wp.SlotRefused) as excinfo:
-            tools.add_dish_day(plan, _ids(_day(1))[0], target_entry_id=_ids(gone)[0])
+            tools.add_dish_day(plan, _ids(source)[0], target_entry_id=_ids(gone)[0])
 
         assert str(excinfo.value) == REFUSAL
         assert _state(gone) == [("planned", "Bean Chili")]
@@ -346,11 +398,12 @@ class TestTheHouseholdsClockAndNotTheServers:
         has already had, so it is refused — on the unmodified app it is
         accepted, and on the server's date it would be accepted as well."""
         _ahead(monkeypatch)
-        gone = _day(0)  # the server's today; the household's yesterday.
-        plan = _seed(_day(2), gone)
+        gone = _server_day(0)  # the server's today; the household's yesterday.
+        source = _server_day(2)
+        plan = _seed(source, gone)
 
         with pytest.raises(_wp.SlotRefused) as excinfo:
-            tools.add_dish_day(plan, _ids(_day(2))[0], target_entry_id=_ids(gone)[0])
+            tools.add_dish_day(plan, _ids(source)[0], target_entry_id=_ids(gone)[0])
 
         assert str(excinfo.value) == REFUSAL
         assert _state(gone) == [("planned", "Bean Chili")]
@@ -358,23 +411,26 @@ class TestTheHouseholdsClockAndNotTheServers:
     def test_a_household_a_day_ahead_is_refused_an_empty_one_too(self, monkeypatch):
         """CATCH. The date path, same instant, the night with no row."""
         _ahead(monkeypatch)
-        plan = _seed(_day(2))
+        source = _server_day(2)
+        gone = _server_day(0)
+        plan = _seed(source)
 
         with pytest.raises(_wp.SlotRefused) as excinfo:
-            tools.add_dish_day(plan, _ids(_day(2))[0], target_date=_day(0))
+            tools.add_dish_day(plan, _ids(source)[0], target_date=gone)
 
         assert str(excinfo.value) == REFUSAL
-        assert _state(_day(0)) == []
+        assert _state(gone) == []
 
     def test_a_household_a_day_ahead_can_fill_the_day_the_server_calls_tomorrow(self, monkeypatch):
         """GUARD. The household's own today, which the server calls
         tomorrow, is still an ordinary night to add a dish to. Pinned by
         mutation: it reddens under `<=`."""
         household_today = _ahead(monkeypatch)
-        plan = _seed(_day(2), household_today.isoformat())
+        source = _server_day(2)
+        plan = _seed(source, household_today.isoformat())
 
         out = tools.add_dish_day(
-            plan, _ids(_day(2))[0], target_entry_id=_ids(household_today.isoformat())[0]
+            plan, _ids(source)[0], target_entry_id=_ids(household_today.isoformat())[0]
         )
 
         assert out["status"] == "added"
@@ -390,9 +446,13 @@ def test_the_clock_is_read_with_no_connection_of_this_functions_open(monkeypatch
     read while add_dish_day is holding one it would be a nested get_conn,
     and this app has twice paid for that with an intermittent "database is
     locked" rather than a wrong answer — the kind of failure no test sees
-    until production. Green on the unmodified app (which never reads the
-    clock at all) and pinned by mutation instead: moving the check above
-    either branch's `conn.close()` reddens it.
+    until production.
+
+    RED on the unmodified app, and for the wrong reason — the feature is
+    absent there, so it fails on `DID NOT RAISE SlotRefused` and never
+    reaches the assertion it is named after. So it is pinned by MUTATION
+    rather than by that redness: holding a connection open across the clock
+    read fails it on `assert 2 == 1`, which is the thing it is for.
 
     Both modules import get_conn by name, so both have to be patched — a
     patch of app.db.get_conn alone would watch a door neither of them
