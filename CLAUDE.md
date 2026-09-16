@@ -496,16 +496,36 @@ why*, not duplicating the diff.
     `TZ=America/Toronto` (+11 is the guard file exactly; no test was deleted
     or weakened away) — 0 failed on every one of nine full runs, eight of
     them at Toronto and six of those with `-x`.
-    **At `TZ=Pacific/Niue` this branch is 5259 passed / 0 failed, against
-    5248 passed / 0 failed on `697da2a` with the same `app/` and that
-    commit's own `tests/`** — so it adds no straddle failure, and there is
-    no straddle failure on either side to add one to. That is the number
-    `overnight/reseed-date-tests` predicts and is worth writing down,
-    because a plausible expectation of "about seven, matching main" was
-    doing the rounds: Niue is UTC-11, the suite has been green in every zone
-    at or west of UTC+9 since that branch, and the residual 3 failures that
-    entry records are a `--today` pin seam reachable only EAST of it. Both
-    sides were measured rather than one side assumed.
+    **THE STRADDLE NUMBER, AND THE CORRECTION THAT HAD TO BE MADE TO IT,
+    because the first version of this bullet repeated the exact mistake
+    the 2026-09-14 entry below already records somebody making with
+    `America/Anchorage`.** It said: "at `TZ=Pacific/Niue` this branch is
+    5259 passed / 0 failed against 5248 passed / 0 failed on `697da2a`, so
+    there is no straddle failure on either side", and concluded that a
+    circulating expectation of "about seven, matching main" was wrong.
+    **The two runs were real; the label on them was not.** They were
+    started when Niue read 2026-09-16 00:29 and Toronto read
+    2026-09-16 07:29 — the SAME DATE, so the process clock and the
+    household clock agreed and no straddle was being exercised at all.
+    Niue is UTC-11 and Toronto is UTC-4, i.e. seven hours apart, so a Niue
+    run only straddles while Toronto reads 00:00-06:59; that run began at
+    07:29 and missed the window by half an hour. **A timezone is not a
+    straddle. Check the two dates differ before quoting the number** —
+    `TZ=<zone> date +%F` against `TZ=America/Toronto date +%F` — and say
+    in the entry which instant it was measured at.
+    **Re-measured inside a real one** (`TZ=Etc/GMT+12`, which is eight
+    hours behind Toronto and so straddles while Toronto reads 00:00-07:59;
+    process day 2026-09-15, household day 2026-09-16, both runs started and
+    finished between Toronto 07:31 and 07:37): **this branch is 7 failed /
+    5252 passed, against 7 failed / 5241 passed on `697da2a`** — the SAME
+    seven tests, the same list byte for byte
+    (`test_reset_clears_the_plan_on_screen` 2, `test_stale_draft_front_page`
+    2, `test_sunday_next_week_span` 3). So the CONCLUSION stands and the
+    number that carried it did not: this branch adds no straddle failure,
+    and the "about seven, matching main" figure it argued against is the
+    right one. Those seven are `overnight/weekly-plan-last-clock-reads`'s,
+    not this branch's — measured on that branch at the same kind of
+    instant, they go to zero.
   - **Spot-checked five ways, by mangling `app/agent.py` in a scratch copy
     OUTSIDE the repo** (the real one is never touched, by this ticket or by
     its tests): dropping "is the week's ANCHOR" reddens
