@@ -26,7 +26,7 @@ from app.db import get_conn
 from app.tools import tonight as _tonight
 from app.tools import weekly_plan as _weekly_plan
 from tests.test_planning_periods import _dates_on, _full_period, _monday, _plan_row, recipes, stub_model  # noqa: F401
-from conftest import household_today
+from conftest import household_today, pin_household_clock
 
 
 def _needed() -> dict:
@@ -84,6 +84,7 @@ class TestTheDraftChangesNothing:
             def today(cls):
                 return datetime.date.fromisoformat(thursday)
         monkeypatch.setattr(_weekly_plan, "date", _Thursday)
+        pin_household_clock(monkeypatch)
         conn = get_conn()
         current = _weekly_plan._current_weekly_plan_row(conn)
         conn.close()
@@ -99,6 +100,7 @@ class TestTheDraftChangesNothing:
             def today(cls):
                 return datetime.date.fromisoformat(thursday)
         monkeypatch.setattr(_weekly_plan, "date", _Thursday)
+        pin_household_clock(monkeypatch)
 
         menu = tools.get_week_menu()
         assert menu["weekly_plan_id"] == draft["weekly_plan_id"]
@@ -365,6 +367,7 @@ class TestDroppingADraft:
             def today(cls):
                 return datetime.date.fromisoformat(thursday)
         monkeypatch.setattr(_weekly_plan, "date", _Thursday)
+        pin_household_clock(monkeypatch)
 
         assert tools.get_week_menu()["weekly_plan_id"] == draft["weekly_plan_id"]
         tools.discard_draft_plan(draft["weekly_plan_id"])
@@ -386,6 +389,7 @@ class TestDroppingADraft:
             def today(cls):
                 return datetime.date.fromisoformat(days[3])
         monkeypatch.setattr(_weekly_plan, "date", _Thursday)
+        pin_household_clock(monkeypatch)
 
         conn = get_conn()
         assert _weekly_plan._current_weekly_plan_row(conn)["id"] == approved
@@ -428,6 +432,7 @@ class TestDroppingADraft:
             def today(cls):
                 return datetime.date.fromisoformat(days[0])
         monkeypatch.setattr(_weekly_plan, "date", _Monday)
+        pin_household_clock(monkeypatch)
 
         out = tools.discard_draft_plan(draft["weekly_plan_id"])
         assert out["approved_week_label"] == _weekly_plan._format_period_range(week, 7)
@@ -450,6 +455,7 @@ class TestDroppingADraft:
             def today(cls):
                 return datetime.date.fromisoformat(before)
         monkeypatch.setattr(_weekly_plan, "date", _Earlier)
+        pin_household_clock(monkeypatch)
 
         out = tools.discard_draft_plan(draft["weekly_plan_id"])
         assert out["approved_week_label"] == _weekly_plan._format_period_range(week, 7)
@@ -490,6 +496,7 @@ class TestDroppingADraft:
             def today(cls):
                 return datetime.date.fromisoformat(days[0])
         monkeypatch.setattr(_weekly_plan, "date", _Monday)
+        pin_household_clock(monkeypatch)
 
         out = tools.discard_draft_plan(draft["weekly_plan_id"])
         assert out["approved_week_label"] == _weekly_plan._format_period_range(week, 7)

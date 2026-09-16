@@ -34,9 +34,18 @@ import pytest
 
 from app import tools
 from app.db import get_conn
+from conftest import household_today
 
 
-TODAY = datetime.date.today()
+# The HOUSEHOLD's date, never the process's. Every constant below is fed to
+# plan_meal and then asked about by a screen ("is there a cook left this
+# week?", "which week is still approved?"), and since 2026-09-16 those
+# answers run on households.timezone while this process runs on whatever TZ
+# it was given. Seeding from date.today() asserts the two clocks agree, which
+# they do not for four hours of every UTC day -- measured: under a UTC runner
+# pinned to 02:00 the household is a day behind, so ISO_YESTERDAY was the
+# household's TODAY and the receipt correctly named a cook still ahead.
+TODAY = household_today()
 # Two days back, so today is never the plan's first day: a made-ahead source
 # has to sit on an earlier day of the same plan.
 WEEK_START = (TODAY - datetime.timedelta(days=2)).isoformat()
