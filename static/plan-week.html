@@ -142,8 +142,10 @@
   /* Small captions naming what each row of controls is asking — added so
      "Nothing special" (née "Regular night") isn't left to explain itself,
      and so the presence row reads as a question rather than a stray row of
-     initials. Same eyebrow idiom as .presence-label, just above the row
-     instead of beside it. */
+     initials. The presence row's own caption is the only label it has now:
+     a "WHO" eyebrow used to sit beside the initials as well, and under a
+     question that means the opposite ("Is anyone out?") it was the word
+     doing the misreading. */
   .day-section-label {
     font-size: 10px; font-weight: 800; letter-spacing: 0.08em;
     text-transform: uppercase; color: var(--ink-secondary); margin: 0 0 6px;
@@ -337,12 +339,12 @@
      The one-off gesture: one tap takes a person out of one meal. Canonical
      tokens only — this block is new code, so it never reaches for the
      legacy aliases the older rules above still use (DESIGN_SYSTEM §1). */
-  .presence { display: flex; align-items: center; gap: 10px; padding-top: 2px; }
-  .presence-label {
-    width: 52px; flex: 0 0 auto; font-size: 10px; font-weight: 800;
-    letter-spacing: 0.1em; text-transform: uppercase; color: var(--apricot-label);
-  }
-  .presence-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  /* One element, not two: .presence was a row holding the "WHO" eyebrow and
+     a .presence-chips box, and with the eyebrow gone its gap and its
+     align-items applied to a single child. data-slot is read by nothing and
+     is kept anyway — three identical rows sit in one sheet and it is what
+     tells them apart in the DOM. */
+  .presence { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 2px; }
   /* 44px square, per hard rule 6 — nothing tappable is smaller. */
   .avatar {
     width: 44px; height: 44px; flex: 0 0 auto; border-radius: var(--radius-pill);
@@ -355,6 +357,19 @@
     border-color: var(--hairline); background: var(--sand);
     color: var(--ink-inactive); text-decoration: line-through;
   }
+  /* :focus-visible, never :focus — a tap must leave nothing behind on the
+     initial, because an apricot ring sitting on the person you just took
+     out reads as "selected" and says the opposite of what the tap did
+     (Emily, 2026-09-15). This IS the whole mechanism: measured in Chromium
+     141 on the real page, a touch tap and a mouse click each leave the
+     outline at 0px while Tab, Enter and Space each leave it at 3px. A
+     blur() in the tap handler was tried and removed — it changed no ring
+     and dropped focus onto <body>, outside #day-sheet's own
+     aria-modal dialog. Neither this session nor the review could name an
+     engine that paints the ring on tap; if one turns up, fix it here.
+     Outranked in practice by theme.css's focus block, which carries
+     !important and is what actually paints — the same is true of .opt
+     below. */
   .avatar:focus-visible { outline: 2px solid var(--apricot); outline-offset: 2px; }
   .presence-summary {
     font-size: 13px; font-weight: 700; line-height: 1.4;
@@ -364,7 +379,7 @@
   /* The offer to remember a one-off as a standing pattern. Dashed, because
      it is an offer rather than a state — nothing has been remembered yet. */
   .remember {
-    min-height: 44px; padding: 0 14px; margin-top: 8px; margin-left: 62px;
+    min-height: 44px; padding: 0 14px; margin-top: 8px;
     display: inline-flex; align-items: center; gap: 7px;
     border-radius: var(--radius-pill); border: 1.5px dashed var(--hairline-strong);
     background: transparent; font-family: var(--font-body);
@@ -442,6 +457,8 @@
   }
   .opt.wide-label { font-size: 12.5px; font-weight: 600; }
   .opt.on { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); font-weight: 800; }
+  /* Same two notes as .avatar's rule above: :focus-visible so a tap leaves
+     nothing behind, and outranked by theme.css's !important copy. */
   .opt:focus-visible { outline: 2px solid var(--apricot); outline-offset: 2px; }
   .who-row { display: flex; flex-wrap: wrap; gap: 8px; }
   .who-opt {
@@ -769,6 +786,12 @@
   // new cuisine" were Emily's asks (2026-09-04, 2026-09-11).
   var MOODS = ['Something warm', 'Lighter than usual', 'Comfort food', 'On the grill',
     'Protein-heavy', 'Veggie-heavy', 'Fibre-focused', 'Something new', 'Try a new cuisine'];
+  // The question above the initials, and the reason it isn't "Who's eating?"
+  // any more (Emily, flow 0 walk, 2026-09-15): a tap TAKES SOMEBODY OUT, so
+  // a label asking who's in made the household learn the rule by getting it
+  // wrong — and a wrong guess here writes an absence to the week. One
+  // constant because the same row appears three times in a day sheet.
+  var PRESENCE_QUESTION = 'Is anyone out?';
   var STEP_COUNT = 4;
   var SKIP_LABELS = { 1: 'Nothing different', 2: 'Nothing on the go', 3: 'Surprise me', 4: 'Nothing else' };
 
@@ -976,7 +999,6 @@
     return '<div class="meal-block" data-slot="' + slot + '">' +
       '<div class="day-section-label">' + esc(label) + '</div>' +
       presenceHtml(slot) +
-      '<div class="presence-summary"></div>' +
       '<div class="guests-slot">' + stepperHtml('guests-' + slot, 'Guests') + '</div>' +
     '</div>';
   }
@@ -996,9 +1018,7 @@
               return '<button type="button" class="tag" data-tag="' + t.key + '">' + esc(t.label) + '</button>';
             }).join('') +
           '</div>' +
-          (attendance.members.length ? '<div class="day-section-label presence-section-label">Who&rsquo;s eating?</div>' : '') +
           presenceHtml('dinner') +
-          '<div class="presence-summary"></div>' +
           '<div class="ack"></div>' +
           '<div class="guests" hidden></div>' +
         '</div>' +
@@ -1082,21 +1102,28 @@
   // ---------- presence avatars: the one-off gesture ----------
   // Emily's distinction (2026-09-03): an extended absence is the trips
   // gateway below; ONE evening out is a single tap here, no form at all.
-  // Dinner only — the day card is a dinner-shaped question in this app,
-  // same as the night tags beside it. Breakfast and lunch absences are
-  // reachable through the range picker and through chat.
+  // One row per meal since Build 4 (2026-09-11) — this comment said
+  // "dinner only" for four days after mealBlockHtml started calling it for
+  // lunch and breakfast as well.
+  //
+  // The whole control is one function: the question, the initials, the
+  // caption under them and the offer, so the three rows in a day sheet
+  // cannot end up asking three different things. That is exactly what had
+  // happened — dinner carried a "Who's eating?" caption its own block
+  // wrote, and lunch and breakfast carried none.
   function presenceHtml(slot) {
     if (!attendance.members.length) return '';
     return (
+      '<div class="day-section-label presence-section-label">' + PRESENCE_QUESTION + '</div>' +
       '<div class="presence" data-slot="' + slot + '">' +
-        '<span class="presence-label">Who</span>' +
-        '<div class="presence-chips">' +
-          attendance.members.map(function (m) {
-            return '<button type="button" class="avatar" data-member="' + esc(m.name) + '" data-slot="' + slot + '" ' +
-              'aria-pressed="true" title="' + esc(m.name) + '">' + esc(initialFor(m)) + '</button>';
-          }).join('') +
-        '</div>' +
+        attendance.members.map(function (m) {
+          return '<button type="button" class="avatar" data-member="' + esc(m.name) + '" data-slot="' + slot + '" ' +
+            'aria-pressed="false" title="' + esc(m.name) + '">' + esc(initialFor(m)) + '</button>';
+        }).join('') +
       '</div>' +
+      // The caption comes before the offer: it confirms the tap that was
+      // just made, and the offer only follows from it.
+      '<div class="presence-summary"></div>' +
       '<button type="button" class="remember" hidden>' +
         '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
         'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -1140,7 +1167,11 @@
     block.querySelectorAll('.avatar').forEach(function (btn) {
       var out = awayNames.indexOf(btn.dataset.member) !== -1;
       btn.classList.toggle('out', out);
-      btn.setAttribute('aria-pressed', out ? 'false' : 'true');
+      // Pressed means OUT, matching the question above the row. It used to
+      // mean IN, which was right under "Who's eating?" and is the same
+      // contradiction Emily reported, one layer down: a screen reader said
+      // "V, toggle button, pressed" under a heading asking who is out.
+      btn.setAttribute('aria-pressed', out ? 'true' : 'false');
       btn.title = btn.dataset.member + (out ? ' — out for ' + slot : ' — home for ' + slot);
     });
     var summary = block.querySelector('.presence-summary');
@@ -1199,8 +1230,17 @@
     att.summary = localSummary(att, slot);
   }
 
-  // A local echo of the server's own sentence, used only for the instant
-  // between the tap and the response — the server's version replaces it.
+  // A local echo of the server's own sentence (attendance.summary_line).
+  // It covers the instant between a tap and its response — and every slot
+  // on the way in besides, because the week GET carries no summary of its
+  // own, so this is what a day sheet opens reading. So it says what the
+  // server says: the two used to differ on the one shape that has both an
+  // absence and a guest ("Vineeth’s out and 1 guest" here, "…out with 1
+  // guest" there), and a caption that rewords itself when it is re-saved
+  // is a caption nobody trusts. One difference is left and is not this
+  // page's to settle: the server writes straight apostrophes — in "'s out"
+  // and in "nobody's home" — where every sentence on this page writes curly
+  // ones.
   function localSummary(att, slot) {
     var meal = capitalize(slot || 'dinner');
     var away = att.absent_names || [];
@@ -1208,8 +1248,10 @@
     if (!att.headcount) return meal + ' skipped — nobody’s home. Nothing planned, nothing bought.';
     var bits = [];
     if (away.length) bits.push(joinNames(away) + (away.length === 1 ? '’s out' : ' are out'));
-    if (att.guest_count) bits.push(att.guest_count + ' guest' + (att.guest_count === 1 ? '' : 's'));
-    return meal + ' for ' + att.headcount + ' — ' + bits.join(' and ') + '.';
+    if (att.guest_count) {
+      bits.push((bits.length ? 'with ' : '') + att.guest_count + ' guest' + (att.guest_count === 1 ? '' : 's'));
+    }
+    return meal + ' for ' + att.headcount + ' — ' + bits.join(' ') + '.';
   }
 
   function joinNames(names) {
