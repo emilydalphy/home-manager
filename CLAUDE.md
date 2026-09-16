@@ -391,6 +391,134 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-16 — A prompt-text test reads the COMPILED function, never
+  `app/agent.py` as it happens to be on disk. Branch
+  `overnight/tests-read-agent-once`, NOT merged at the time of writing.**
+  Loop Board Phase 0. Nine test files pinned the planner prompts' wording —
+  the allergy rules, the plate rule, the anchor rule, the recipe-quality
+  guidance — through `inspect.getsource(agent.<fn>)`, which pairs line
+  numbers baked into the function object at IMPORT time against the file as
+  linecache reads it AT THE MOMENT THE ASSERTION RUNS. A merge landing on
+  the checkout mid-run can therefore hand a test the right text under the
+  wrong function, which is what happened on 2026-09-15. **Test-only: not one
+  line of `app/` or `static/` is touched.**
+  - **`conftest.prompt_literals(fn)` is the one door for "what does this
+    prompt say"** — `test_full_plate.py`'s own helper moved out whole (the
+    same `co_consts` walk, unchanged), beside `household_today` and imported
+    the same way. Its answer is fixed the moment the module is imported, so
+    nothing that later happens to the file can change it.
+  - **It is not the same string as the source, and the differences were
+    measured before anything was converted, not after.** Every one of the
+    ~44 assertion strings in those nine files was probed against both forms;
+    eight differ. Two of the differences are improvements and one is a
+    genuine narrowing:
+    - **Line continuations are already resolved by the compiler, so
+      `"AT MOST 3"` — split across a wrapped line in agent.py — is findable
+      here and is NOT findable in `getsource` output.**
+      `test_ingredient_variety` and `test_produce_quantities` each carried a
+      `.replace("\\\n", "")` to paper over exactly that; both are gone. The
+      hazard they were papering over is worth naming: any NEW assertion in
+      those files written without remembering that call would have been a
+      silent false negative.
+    - **Comments, identifiers and code text are gone**, which narrows one
+      test rather than widening it: `test_leftovers_and_snacks::
+      test_prompt_no_longer_mentions_repeats_tolerance` is a NEGATIVE
+      assertion, and it now says the PROMPT never names the retired field
+      rather than the looser "the function's source text never does". A
+      local variable or a comment carrying the word would no longer fail it.
+      That is the claim the test's own name makes, and there is a comment at
+      the assertion saying so — recorded here because a narrowing that only
+      lives in a comment is one nobody finds.
+  - **What it CANNOT see is an f-string's `{interpolation}`, and that is
+    why there are two more helpers rather than one.** `{COOK_DONT_ASSEMBLE}`
+    is a LOAD_GLOBAL, not a constant, so it is in neither the function's
+    literals nor their expansion. Three tests are about WHERE that block is
+    spliced — inside the cached `instructions` block, before `context_block`,
+    directly after its sibling — which is a fact about the file, not about
+    the compiled prompt. They keep the bytes and take them from
+    `agent_source()` (ONE read, at conftest import, shared) and
+    `agent_function_source(name)`, which takes its line numbers from
+    **parsing that same cached string** rather than from the compiled
+    function object. A torn file therefore raises a SyntaxError or a named
+    ValueError; it can never quietly hand back a neighbour's body, which is
+    the original failure. Proven byte-identical to `inspect.getsource` for
+    every function it is used on.
+  - **`test_prompt_anchor` and `test_taste_verdict` sliced the instructions
+    block on `instructions = f"""` — a line of CODE.** They slice on the
+    prompt's own first and last sentence now (each occurs exactly once).
+    The new slice is not byte-identical — the code prefix is gone, the
+    continuations are resolved, each `{interp}` reads as a newline — and
+    every phrase they assert on was checked present in both. `test_prompt_
+    anchor` also gained a named assertion, because its four tests share one
+    slicer and a changed opening sentence would otherwise fail them with a
+    bare `ValueError: substring not found`.
+  - **Found on the way, in `test_taste_verdict`'s old slice: the second
+    `.index()` took no `start` offset**, so it searched the whole source
+    from 0 for the closing marker. Correct only because that marker occurs
+    once. The rework passes `start` explicitly.
+  - **`tests/test_prompt_literals_helper.py` (11) REPRODUCES the flake
+    rather than describing it.** Two functions trade places in a throwaway
+    module AFTER it has been imported — exactly what a merge does to a line
+    number — and `inspect.getsource(first)` duly returns `second`'s body,
+    with no error anywhere, while `prompt_literals` stays right. It also
+    survives the file being rewritten outright and deleted (where getsource
+    raises). Everything is done on modules in `tmp_path`: a test that edited
+    the agent.py the rest of the suite is reading would be a worse bug than
+    the one it guards. Three mutations checked to bite: the helper back to
+    `getsource` (6 red, plus a real converted test), the ast slice widened
+    and its raise removed (2), the cached read made per-call (1).
+  - **One blind spot characterised rather than fixed: a string inside a
+    constant TUPLE is invisible to `_walk`**, which yields strings and
+    recurses into code objects and a tuple is neither. Widening it was tried
+    and REJECTED on measurement: on both planners the only strings it adds
+    are the keyword-name tuples the compiler stores for keyword calls
+    (`model`, `max_tokens`, `cache_control`, `tool_schema` …), which are
+    code rather than prompt and which would show up as noise in exactly the
+    negative assertions this change just made more precise. Widen `_walk`
+    if a prompt sentence ever moves into a tuple; do not widen it to make
+    that test pass, which is what the test says.
+  - **The three module-level `inspect.getsource(agent)` calls are LEFT, and
+    the distinction is real rather than laziness.** `test_usage.py`,
+    `test_held_things.py` and `test_streaming_and_effort.py` read the WHOLE
+    module for a `.count()`; there is no line-number pairing in that, so it
+    cannot return the wrong function's text — a different and much milder
+    risk than the one this branch removes. `agent_source()` exists if
+    somebody wants them sharing the one cached read.
+  - **`test_title_names_a_real_ingredient.py`'s two `agent.*` reads ARE
+    converted**, though that file is not one of the nine: they are the same
+    function/line pairing and would have been the next flake out of a file
+    this branch had already decided to leave. Its other five `getsource`
+    calls read `swap_in_place`, `big_meal` and `plate_parts` and are
+    untouched — no helper for `tools/` exists, and inventing one was not
+    this ticket's. **After that, `inspect.getsource(agent.<fn>)` appears
+    nowhere in `tests/` except as prose in the guard file's own docstring.**
+  - **Numbers, all measured.** Suite **5248 -> 5259 passed, 0 failed** at
+    `TZ=America/Toronto` (+11 is the guard file exactly; no test was deleted
+    or weakened away) — 0 failed on every one of nine full runs, eight of
+    them at Toronto and six of those with `-x`.
+    **At `TZ=Pacific/Niue` this branch is 5259 passed / 0 failed, against
+    5248 passed / 0 failed on `697da2a` with the same `app/` and that
+    commit's own `tests/`** — so it adds no straddle failure, and there is
+    no straddle failure on either side to add one to. That is the number
+    `overnight/reseed-date-tests` predicts and is worth writing down,
+    because a plausible expectation of "about seven, matching main" was
+    doing the rounds: Niue is UTC-11, the suite has been green in every zone
+    at or west of UTC+9 since that branch, and the residual 3 failures that
+    entry records are a `--today` pin seam reachable only EAST of it. Both
+    sides were measured rather than one side assumed.
+  - **Spot-checked five ways, by mangling `app/agent.py` in a scratch copy
+    OUTSIDE the repo** (the real one is never touched, by this ticket or by
+    its tests): dropping "is the week's ANCHOR" reddens
+    `test_prompt_anchor`, dropping "AT MOST 3"
+    reddens `test_produce_quantities`, dropping `{COOK_DONT_ASSEMBLE}` from
+    the COMPONENT planner alone reddens all three structural tests, and
+    renaming `honest_recipe_title` / changing the `_honest_meal_names(items)`
+    call site each redden the converted wiring test. **A mangling has to
+    avoid the substring it is testing**, which the first attempt did not:
+    `honest_recipe_title` -> `unhonest_recipe_title_XXX` still CONTAINS
+    `honest_recipe_title`, so the spot-check passed and looked like a
+    toothless assertion when it was a toothless mangling.
+
 - **2026-09-15 — "Noted" must never note nothing: held things. Branch
   `worktree-held-things`, NOT merged at the time of writing.** Loop Board
   feature (flow H1, "Pomona, hold this"). Root cause of the walk's

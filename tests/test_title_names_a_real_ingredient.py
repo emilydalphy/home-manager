@@ -44,6 +44,7 @@ from app.tools.plan_quality import (
     repair_recipe_titles,
     unkept_title_promises,
 )
+from conftest import agent_function_source
 
 
 # Emily's recipe, exactly as it was on the Cook screen.
@@ -445,8 +446,17 @@ def test_every_generated_recipe_path_goes_through_the_same_correction():
     model call; a third one added later should have to notice this test."""
     from app.tools import swap_in_place
 
-    assert "honest_recipe_title" in inspect.getsource(agent._honest_meal_names)
-    assert "_honest_meal_names(items)" in inspect.getsource(agent._generate_weekly_plan)
+    # agent_function_source, not inspect.getsource, for the two that live in
+    # app/agent.py: getsource pairs line numbers baked in at import time
+    # against the file as it reads NOW, so a merge landing mid-run can return
+    # a different function's body and redden this for a reason that is not
+    # real (tests/conftest.py, and the 2026-09-15 failure it records). It is
+    # byte-identical to what getsource returned for both of these, so the two
+    # assertions below see exactly the bytes they always saw. The other three
+    # modules are not swept here: this file is not that ticket's, and the same
+    # helper for tools/ does not exist yet.
+    assert "honest_recipe_title" in agent_function_source("_honest_meal_names")
+    assert "_honest_meal_names(items)" in agent_function_source("_generate_weekly_plan")
     assert "honest_meal_name(pick)" in inspect.getsource(swap_in_place.apply_pick)
     assert "honest_recipe_title" in inspect.getsource(swap_in_place.honest_meal_name)
     from app.tools import big_meal
