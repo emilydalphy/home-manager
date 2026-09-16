@@ -29,11 +29,26 @@ different answers to one question is the thing this codebase keeps
 getting bitten by. One line in app/main.py to change if she disagrees.
 
 Each test says in its own docstring whether it is a CATCH (red before the
-fix) or a NO-REGRESSION GUARD. Measured, not assumed: against an
-unmodified app/ this file is 13 red / 6 green — but ONE of the 13 is red
-only because it names a constant the fix introduces (AttributeError, not
-a failed assertion) and says so itself. So: 12 behaviour catches, 6
-guards, and 1 pinned by mutation.
+fix) or a NO-REGRESSION GUARD.
+
+ON THE NUMBERS, CORRECTED AFTER REVIEW — the first version of this
+paragraph said "13 red / 6 green, so 12 behaviour catches", and that was
+wrong in exactly the way this repo keeps having to unpick. 13 red is
+right, but TWELVE of the thirteen die on AttributeError, not one: most of
+them name tools.InvalidMealStatus inside pytest.raises, which is
+evaluated before the test can assert anything. Re-measured with the new
+names stubbed to main's behaviour: 11 failed, 8 passed.
+
+So the honest split is 11 BEHAVIOUR CATCHES, 6 GUARDS, and 2 pinned by
+MUTATION. The second of those two is
+test_the_status_is_checked_before_the_row_is_looked_up, which passes
+under the stub for the wrong reason — main raises the missing-row
+ValueError there, not a status refusal.
+
+The coverage is real either way; five mutations bite (delete the guard:
+12 red; move it below get_conn: 1; widen the tuple: 6; put the route's
+new except second: 1; use a plain ValueError: 12). It was the stated
+number that needed fixing, not the tests.
 """
 from __future__ import annotations
 
@@ -120,9 +135,14 @@ def test_the_refusal_is_a_sentence_naming_what_is_allowed():
 
 def test_the_status_is_checked_before_the_row_is_looked_up():
     """
-    CATCH. A bad status on a meal that doesn't exist is a bad status, not
-    a 404 — so the guard has to run before the lookup. Pins the ORDER,
-    which is what decides which status code the route can answer.
+    PINNED BY MUTATION, not by redness. A bad status on a meal that
+    doesn't exist is a bad status, not a 404 — so the guard has to run
+    before the lookup. This is red on main, but for the feature's
+    absence; with the new names stubbed it PASSES there for the wrong
+    reason, because main raises the missing-row ValueError instead. What
+    holds it is the mutation: move the guard below get_conn and the row
+    lookup and this is the one test that reddens. (That placement also
+    leaks the connection, since the raise skips conn.close().)
     """
     with pytest.raises(tools.InvalidMealStatus):
         tools.check_off_meal(999999, "skipped")

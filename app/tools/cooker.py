@@ -31,18 +31,35 @@ MEAL_COOKED_STATUSES = ("pending", "done")
 
 class InvalidMealStatus(ValueError):
     """
-    A cooked status outside MEAL_COOKED_STATUSES — a client bug, never a
-    real screen. The cook checkbox is a toggle that only ever sends
-    'done' or 'pending', and the chat tool's own schema enumerates the
-    same two; only a hand-made request can carry a third.
+    A cooked status outside MEAL_COOKED_STATUSES. The two screen paths
+    cannot produce one: the cook checkbox is a toggle and every site that
+    renders it writes data-next as 'done' or 'pending', and Now's tick
+    computes the same two. THE CHAT TOOL IS THE THIRD CALLER AND IS NOT
+    A GUARANTEE — its schema enumerates the two, but this app's own rule
+    is that telling the generator something is not the same as
+    preventing it, and the tool immediately next to it in
+    TOOL_DEFINITIONS, check_off_prep_step, enumerates 'skipped' and
+    talks about skipping. "We skipped Wednesday's dinner" is a plausible
+    way to reach this, not a theoretical one. That is a good outcome —
+    the model is handed a sentence it can act on instead of writing a
+    garbage status and reporting success — but it means this can appear
+    in error_events as check_off_meal / InvalidMealStatus, which is the
+    guard working rather than a new breakage.
 
-    Its own marker type, distinct from require_household_row's plain
-    ValueError, so the route can answer 422 ("that request doesn't make
-    sense") rather than the 404 that means "no such meal" — the shape
-    chores.InvalidChoreStatus already uses one door over. Without it a
-    typo'd status wrote straight through to meal_plan_entries.cooked_status
-    and left the row in a state no screen's WHERE clause looks for: not
-    done, not pending, just gone.
+    Its own marker type, distinct from this function's own "No meal plan
+    entry with id N." ValueError, so the route can answer 422 ("that
+    request doesn't make sense") rather than the 404 that means "no such
+    meal" — the shape chores.InvalidChoreStatus already uses one door
+    over. It IS a ValueError subclass, which is exactly why the route's
+    except for it must come before the plain one; ordering is
+    load-bearing here, not tidiness.
+
+    Without it a typo'd status wrote straight through to
+    meal_plan_entries.cooked_status and left the row in a state no
+    screen's WHERE clause looks for: not done, not pending, just gone.
+    Nothing heals a row already written that way — reaching the bug
+    needed a hand-made request, so the count in the wild is likely zero,
+    but this closes the door rather than sweeping up behind it.
     """
 
 

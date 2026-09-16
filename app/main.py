@@ -1990,10 +1990,12 @@ def cooker_check_meal(req: CheckOffMealRequest):
         view = tools.get_cooker_view()
     except tools.InvalidMealStatus as e:
         # A status outside MEAL_COOKED_STATUSES is a bad request, not a
-        # missing row — 422, not the 404 below (require_household_row's
-        # ValueError, which InvalidMealStatus is a sibling of, not a
-        # subclass — this except must come first). Same shape as the
-        # chore-status route.
+        # missing row — 422, not the 404 below, which is check_off_meal's
+        # own "No meal plan entry with id N." InvalidMealStatus IS a
+        # ValueError subclass, so this except must come first or the 404
+        # swallows it. Same shape as the chore-status route. (This route
+        # already answered 422 for a non-string status, from pydantic, so
+        # 400 here would give one client mistake two codes.)
         raise HTTPException(status_code=422, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
