@@ -416,9 +416,18 @@ def _standing_list_move(day: date, needed: list[dict]) -> list[dict]:
     rows actually name that many shops. How many stops a trip really has is
     the Shop tab's own answer (shell.js groStoresWithNeeded), which falls
     back to the household's most-used shop when nothing is tagged yet; this
-    counts only what the rows themselves say, so it can be quieter than the
-    Shop tab but never louder, rather than being a second implementation of
-    that rule that could disagree with it out loud.
+    counts only what the rows themselves say, rather than being a second
+    implementation of that rule.
+
+    An earlier version of this docstring said it could be "quieter than the
+    Shop tab but never louder". That is FALSE and was measured so: the
+    pre-shop "maybe already home" filter lives in main.py's
+    /api/grocery-list routes, not in list_grocery_list, so a stop whose only
+    row is flagged is counted here and not there — Now can read "2 stops"
+    over a Shop tab showing one. The item count has diverged the same way
+    since before this function existed; the stop count is new. Left rather
+    than papered over, because the honest fix is for one of the two to stop
+    disagreeing about what is on the list, which is its own card.
     """
     count = len(needed)
     stops = len({(r.get("store") or "").strip() for r in needed} - {""})

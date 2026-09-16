@@ -334,7 +334,8 @@ def _digest_lines(now_local: datetime) -> list[str]:
     # 3. The shop, when there is a cook close enough for it to matter. A
     # shop move with no deadline is the standing list saying it is still
     # there (moves._standing_list_move) — true, and not one of today's
-    # moves, which is all this text is for.
+    # JOBS, which is all this text is for. (It is one of today's moves:
+    # by_kind is built from today_moves, which is why this has to skip it.)
     for m in by_kind.get("shop", []):
         if not m.get("timed", True):
             continue

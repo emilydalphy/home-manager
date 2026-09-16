@@ -100,8 +100,6 @@ def _seed_day(*, cook=True, fridge=True, shop=True):
         )
         conn.commit()
         conn.close()
-    if shop and not cook:
-        tools.add_grocery_item("Chicken Thighs", quantity="1 lb")
     return plan_id
 
 

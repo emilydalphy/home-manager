@@ -886,6 +886,26 @@ def entry_ids_awaiting_a_shop() -> set[int]:
       would miss exactly the lines a meal really is waiting on. A line no
       meal ever contributed to has no row here at all, which is the same
       answer by a route that cannot be wrong.
+
+    WHAT THIS CANNOT SEE, named so nobody reports it as new. A meal with no
+    ledger row cannot claim a deadline, however much the household has just
+    bought for it by hand:
+
+    - An ingredient the kitchen check skipped at ingest (recipes._KitchenStock
+      decided there was enough at home) leaves that meal no row. If the
+      household then finds there isn't enough and hand-adds it, that line is
+      exactly what tonight is waiting on and Now will not put a clock on it.
+      Routine rather than exotic — every ticked purchase writes an inventory
+      row, so ingest skips are ordinary.
+    - A freeform meal, and a chat-planned one where the household declined
+      "shall I add the ingredients?" and added them by hand, by voice or by
+      photo-scan, have no ingredients to have made rows.
+
+    Both are the QUIET direction, which is this card's own stated
+    preference — before this, the move claimed a deadline unconditionally
+    and was right in these cases only by accident. Closing them means
+    answering "is this line for that meal?" for a line no meal ever
+    recorded, which is name-matching by another name; its own card.
     """
     conn = get_conn()
     rows = conn.execute(
