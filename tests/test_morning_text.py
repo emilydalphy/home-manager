@@ -83,7 +83,13 @@ def _seed_day(*, cook=True, fridge=True, shop=True):
     )
     plan_id = tools.create_weekly_plan(WEEK_START)["weekly_plan_id"]
     if cook:
-        tools.plan_meal(ISO_TODAY, "Chicken Skewers", slot="dinner", weekly_plan_id=plan_id)
+        # `shop` puts the skewers' OWN thighs on the list rather than a
+        # hand-added line beside them: since 2026-09-16 the shop move only
+        # names a deadline for something a cook is actually waiting on
+        # (moves._shop_move reads the per-meal ledger), so a standing want
+        # here would seed a day the text has no shop line for at all.
+        tools.plan_meal(ISO_TODAY, "Chicken Skewers", slot="dinner", weekly_plan_id=plan_id,
+                        add_ingredients_to_grocery_list=shop)
     if fridge:
         conn = get_conn()
         conn.execute(
@@ -94,7 +100,7 @@ def _seed_day(*, cook=True, fridge=True, shop=True):
         )
         conn.commit()
         conn.close()
-    if shop:
+    if shop and not cook:
         tools.add_grocery_item("Chicken Thighs", quantity="1 lb")
     return plan_id
 

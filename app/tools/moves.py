@@ -25,6 +25,11 @@ tick at all rather than one that fills in and silently snaps back.
 for the day, and for a shop move once its cook's start time has passed —
 see _prep_moves, _shop_move and featured_move_id below.
 
+`timed` is false for a move with no deadline of its own, which today means
+one thing: a shopping list nothing being cooked is waiting on. It is stated
+on the timeline and never featured — see _standing_list_move. Absent means
+true, so every other move here says nothing about it.
+
 Nothing here is new state. Every move is derived from something that
 already exists — a cooker-view card, a prep_tasks row, the grocery list —
 and every tick dispatches back to the tool that owns that state
@@ -395,11 +400,75 @@ def _prep_moves(view: dict, day: date, now: datetime, dinner_clock: time) -> lis
     return moves
 
 
+def _standing_list_move(day: date, needed: list[dict]) -> list[dict]:
+    """
+    The list, with no deadline on it: things are waiting to be bought, and
+    none of them is what today's cooking is waiting on.
+
+    Said rather than hidden, because "is there a shop to do?" is a question
+    a person standing in the kitchen actually has — but said as a fact, not
+    as a job with a clock on it. No "by", no urgency, and `timed: False`
+    keeps it out of "next up", so Now's one apricot never becomes "Open the
+    list" for a list nothing today needs (Emily, Flow 0, 2026-09-15).
+
+    WORDING ASSUMPTION (Emily's to overrule in one line, here): "3 things
+    on the list" as the title, and "2 stops" beside it only when the list's
+    rows actually name that many shops. How many stops a trip really has is
+    the Shop tab's own answer (shell.js groStoresWithNeeded), which falls
+    back to the household's most-used shop when nothing is tagged yet; this
+    counts only what the rows themselves say, so it can be quieter than the
+    Shop tab but never louder, rather than being a second implementation of
+    that rule that could disagree with it out loud.
+    """
+    count = len(needed)
+    stops = len({(r.get("store") or "").strip() for r in needed} - {""})
+    return [{
+        "id": f"shop:{day.isoformat()}",
+        "kind": "shop",
+        "title": f"{count} thing{'' if count == 1 else 's'} on the list",
+        "detail": f"{stops} stop{'' if stops == 1 else 's'}" if stops else "",
+        "reason": "",
+        "date": day.isoformat(),
+        "slot": None,
+        # Open all day and closing with it: the honest window for something
+        # that can be done any time today and is late for nothing.
+        "window_start": datetime.combine(day, time(0, 0)).isoformat(),
+        "window_end": datetime.combine(day, time(23, 59)).isoformat(),
+        "weight": WEIGHT_LOW,
+        "action": {"label": "Open the list", "target": {"tab": "grocery"}},
+        "done": False,
+        "tickable": False,
+        # No deadline, so never the card — see featured_move_id.
+        "timed": False,
+        "overdue": False,
+        "entry_id": None,
+        "task_id": None,
+        "duration_min": 0,
+        "time_label": "",
+        "chips": [],
+    }]
+
+
 def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list[dict]:
     """
-    One move, only when both halves are true: the list still has things on
-    it, and there is a real cook close enough for that to matter. A standing
-    grocery list with nothing to cook against is not a thing to do today.
+    The list, said the one way that is true of it today.
+
+    "Shop for tonight · by 6:05" is a deadline, so it is only ever said
+    when there is a cook close enough to have one AND something on the list
+    that cook is actually waiting on. Emily walked Flow 0 on 2026-09-15 and
+    Now told her to shop by 6:05 for a dinner already thawed in the fridge,
+    against a list of chicken, rice and dish soap for nothing that night:
+    the rule used to be "anything on the list, any cook in the horizon",
+    which is two true facts standing next to each other pretending to be
+    one. An invented deadline at seven in the morning is how a morning
+    check-in stops being believed.
+
+    With a cook in the horizon but nothing on the list for it, the list is
+    still worth naming and has no deadline at all — an untimed line, never
+    the card (see the `timed` flag below). With nothing to cook against it
+    is not today's business at all and there is no move, as before: that is
+    also what keeps the empty moment empty for a household with a standing
+    list and no plan.
     """
     if day != now.date():
         return []
@@ -410,7 +479,19 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
     if not needed:
         return []
 
+    # Which meals still have something on the list waiting to be bought for
+    # them, off the per-meal ledger — never by matching ingredient names,
+    # which would be a second answer to a question the ledger already
+    # answers exactly. Unreadable is the quiet direction: no waiting meal
+    # means no deadline is claimed, rather than one being guessed.
+    try:
+        waiting = _grocery.entry_ids_awaiting_a_shop()
+    except Exception:
+        logger.exception("Today's shop move could not read the grocery ledger")
+        waiting = set()
+
     horizon = now + timedelta(hours=SHOP_HORIZON_HOURS)
+    a_cook_at_all = False
     soonest = None
     soonest_meal = None
     for meal in view.get("meals") or []:
@@ -420,11 +501,21 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
             at = _slot_dt(date.fromisoformat(meal["date"]), meal.get("slot") or "dinner", dinner_clock)
         except (KeyError, ValueError):
             continue
-        if now <= at <= horizon and (soonest is None or at < soonest):
+        if not (now <= at <= horizon):
+            continue
+        a_cook_at_all = True
+        # entry_ids for a component-based plan's merged card, entry_id for
+        # every other — the same reading cooker.start_cooking makes of one.
+        ids = [i for i in (meal.get("entry_ids") or [meal.get("entry_id")]) if i]
+        if not any(i in waiting for i in ids):
+            continue
+        if soonest is None or at < soonest:
             soonest = at
             soonest_meal = meal
-    if soonest is None:
+    if not a_cook_at_all:
         return []
+    if soonest is None:
+        return _standing_list_move(day, needed)
 
     # The deadline is when the bags need to be back, not when the plate
     # lands: the cook's own start time, the same arithmetic behind the
@@ -486,6 +577,9 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
         # UI renders no tick at all rather than one that fills in and snaps
         # back. See the module docstring's `tickable` note.
         "tickable": False,
+        # This one has a real deadline behind it — a cook waiting on the
+        # list. See _standing_list_move for the half that doesn't.
+        "timed": True,
         "overdue": overdue,
         "entry_id": None,
         "task_id": None,
@@ -535,11 +629,15 @@ def moves_for_day(
         # it names the trip and what it's for, so the week's generic "Shop
         # before tomorrow" would be the same ask twice. Its count rides on
         # the named one instead.
-        count = next((m["detail"] for m in shop), "")
+        # Only off a TIMED one: the untimed list line's detail is a stop
+        # count, not an item count (see _standing_list_move), so moving it
+        # across would put "2 stops" where "3 items · by 6:05" belongs. The
+        # named trip still stands on its own either way.
+        generic = next((m for m in shop if m.get("timed", True)), None)
         for m in prep:
-            if m["kind"] == "shop" and count:
-                m["detail"] = count
-                m["time_label"] = next((x["time_label"] for x in shop), m["time_label"])
+            if m["kind"] == "shop" and generic and generic["detail"]:
+                m["detail"] = generic["detail"]
+                m["time_label"] = generic["time_label"]
         shop = []
     moves = _cook_and_reheat_moves(view, target, dinner_clock) + prep + shop
     moves.sort(key=lambda m: (m["window_start"], -m["weight"], m["id"]))
@@ -558,6 +656,12 @@ def featured_move_id(moves: list[dict], now: datetime | None = None) -> str | No
     move due today doesn't drop out of contention the moment the (wrong,
     dinner-shaped) deadline it used to carry passed.
 
+    A move with `timed` false never features at all: "next up" is a
+    question about time, and a move with no deadline has no claim on it.
+    The one that carries the flag today is the untimed shopping list
+    (_standing_list_move), which is also what keeps Now's one apricot off
+    "Open the list" for a list nothing today is waiting on.
+
     `now` omitted is the household's now: these windows are naive local
     times, so comparing them against a UTC server clock ranked the day
     from the wrong hour. today_moves always passes one, so the read costs
@@ -570,6 +674,7 @@ def featured_move_id(moves: list[dict], now: datetime | None = None) -> str | No
         m for m in moves
         if not m["done"]
         and m["kind"] != "reheat"
+        and m.get("timed", True)
         and m["window_start"] <= horizon
         and (m.get("overdue") or m["window_end"] >= now_iso)
     ]

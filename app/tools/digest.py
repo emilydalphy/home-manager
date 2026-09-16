@@ -331,8 +331,13 @@ def _digest_lines(now_local: datetime) -> list[str]:
         reason = _tidy(m.get("reason") or "")
         lines.append(f"{_tidy(m['title'])} — {reason}." if reason else f"{_tidy(m['title'])} today.")
 
-    # 3. The shop, when there is a cook close enough for it to matter.
+    # 3. The shop, when there is a cook close enough for it to matter. A
+    # shop move with no deadline is the standing list saying it is still
+    # there (moves._standing_list_move) — true, and not one of today's
+    # moves, which is all this text is for.
     for m in by_kind.get("shop", []):
+        if not m.get("timed", True):
+            continue
         lines.append(f"{_tidy(m['title'])} — {_tidy(m['detail'])}.")
 
     # 4. The prep.
