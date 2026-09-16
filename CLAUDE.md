@@ -391,6 +391,97 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-16 — "One list is fine" bought a list nobody could shop. Branch
+  `overnight/one-list-can-start-a-trip`, NOT merged at the time of
+  writing.** Loop Board bug (Phase 1, Beta), pre-existing on `main` and the
+  state of Emily's own database, so she sees this the moment it lands. A
+  household that named no shop had no stop, so LIST's dock was the empty
+  string: the list could be read and never shopped through, ticked or
+  wrapped up. Reproduced before anything was touched, by running the
+  Grocery region against the payload the server really hands such a
+  household (one `Unassigned` bucket, every row `store: ''`,
+  `store_decided: 0`, checked over HTTP on a throwaway DB) —
+  `groStoresWithNeeded` `[]`, `groMostUsedStore` `null`, dock `""`.
+  - **Root cause is one `if`, and the fix is a third household in a
+    fallback that already existed** rather than a second way of answering
+    "which stops are there". `groStoresWithNeeded` has carried a stand-in
+    stop since the fast-sort work for the two households whose list is
+    untagged — one named shop, or everything answered "Anywhere" — and
+    reads it off `groMostUsedStore`, which iterates `groPillStores`. A
+    household that named no shop has no pill stores, so `groMostUsedStore`
+    answered null and the `if (fallback)` swallowed it. It is
+    `groMostUsedStore(data) || GRO_ONE_LIST_STOP` now.
+  - **`GRO_ONE_LIST_STOP` is a STOP and not a store, which is what keeps it
+    from colliding with a real one.** Nothing heads a card with it, nothing
+    offers it as a pill, it is never written to a row, and it can only ever
+    exist while `groPillStores` is empty. The one place a stop name reaches
+    the database — `shopping_trips.store`, via `/api/shopping-trips/close` —
+    records it as the empty string: nothing reads trip history back today,
+    and inventing a shop nobody has been to is a trap for whoever first
+    does.
+  - **"Your list" IS AN ASSUMPTION, and it is one line — `GRO_ONE_LIST_STOP`
+    at the top of the Grocery region.** So is "Done shopping", the finish
+    button for that stop (`groStopDoneLabel`): "Done at Costco" names the
+    shop you are standing in, and "Done at Your list" is not a sentence.
+    Emily's to overrule, both.
+  - **Two counts drop a clause that counts SHOPS**, since this household has
+    none — the band's eyebrow ("3 things", not "3 things · 1 stop") and the
+    trip head's ("3 left", not "Stop 1 of 1 · 3 left"). A household with one
+    NAMED shop keeps both, and there are tests either way: that stop has a
+    name they chose.
+  - **The screen the fix could most easily have broken is the list itself.**
+    `groListHtml` draws the loose pile as one plain headingless section
+    only when there are no stops (Emily, 2026-09-09: "One list is fine"
+    means what it says), so a stand-in stop would have emptied the screen
+    — the whole list drawn by nothing. That branch reads `groOneListStop`
+    now, and a test says so.
+  - **A REAL DEFECT FOUND ON THE WAY AND FIXED WITH IT, pre-existing and
+    not in the ticket: a single-stop trip could not be continued once it
+    was paused.** `groStopRemaining` counted only `data.stores[name]`, and
+    a single-stop household's whole list is in the shopless pile — so LIST
+    said "Trip in progress · every stop done" over three unbought things,
+    offered "Finish the trip" and no way to continue, and continuing anyway
+    walked past the stop into the wrap-up. Measured on `main` for a
+    one-shop household before this branch. Fixed rather than reproduced
+    for the one-list one: a stop that is the ONLY place these things can be
+    bought counts them (the stand-in, and `groSoleStore`). **Never for a
+    real stop among several** — there the shopless things follow the
+    shopper (`groTripItems`) and belong to no one of them, so counting them
+    per stop counts them twice; pinned by a mutation.
+  - **Known and deliberately left, its own card:** a household with two
+    named shops that answered "Anywhere" to everything has the same
+    unpausable trip, because its one stop is a real shop holding nothing of
+    its own. Not fixed here because those things genuinely could be bought
+    at either shop, and "which stop owns them" is a question this ticket
+    has no answer to.
+    `test_two_shops_with_everything_anywhere_still_cannot_continue_a_paused_trip`
+    characterises it; invert it when that card is worked.
+  - **The multi-store path is unchanged, measured rather than argued.** The
+    same probe over ten household shapes, run against this branch and
+    against the merge base: **164 keys identical, 22 moved**, and every
+    moved key belongs to the no-shop household, the one-shop household's
+    paused trip, or an internal value with no rendered output behind it.
+    Two shops, three shops, a route taken out of order, all-Anywhere,
+    all-unsorted and both empty lists are byte-identical.
+  - `tests/test_one_list_can_start_a_trip.py` (32; 16 red on `697da2a`,
+    though redness is weak evidence for a screen that does not exist
+    there — several can only fail because the trip never starts). **Eight
+    mutations are the real evidence** and each reddens at least one test:
+    the eyebrow's stand-in filter, the list's plain-section branch, the
+    stop count in both directions, the trip head's clause, the finish
+    button, the trip record, and dropping the stand-in altogether. Three
+    existing files were updated honestly, each saying what moved:
+    `test_grocery_steps.py`'s "Done at" marker (its own message asks for
+    exactly that when the rule moves), and the two band harnesses
+    (`test_root_band.py`, `test_identity_build.py`), which slice
+    `groBandEyebrow` out on its own and needed the new constant stubbed
+    beside the stubs they already had. Suite **5280 passed, 0 failed** at
+    `TZ=America/Toronto`. Driven end to end for a no-shop household — start,
+    tick, "Done shopping", wrap-up, finish — and over a real uvicorn on a
+    throwaway DB, where the two ticked things came home to inventory, one
+    stayed on the list for the wrap-up, and the trip was recorded with no
+    shop on it.
+
 - **2026-09-15 — "Noted" must never note nothing: held things. Branch
   `worktree-held-things`, NOT merged at the time of writing.** Loop Board
   feature (flow H1, "Pomona, hold this"). Root cause of the walk's

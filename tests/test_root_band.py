@@ -161,6 +161,12 @@ def test_shops_eyebrow_counts_the_list_and_falls_back_to_the_date():
         "function groPlural(n, one, many){ return n + ' ' + (n === 1 ? one : many); }\n"
         "function groTotals(d){ return { needed: d.needed }; }\n"
         "function groStoresWithNeeded(d){ return d.stops; }\n"
+        # 2026-09-16 ("One list is fine" can start a trip): the eyebrow drops
+        # the stops clause for a household whose only stop is the one-list
+        # stand-in, so it reads that constant now. Stubbed like its
+        # neighbours; the stops below are real shop names, so the wording
+        # this test is about is unchanged.
+        "var GRO_ONE_LIST_STOP = 'Your list';\n"
         "var BAND_IDENTITY = 'none';\n"
         + _function("bandDateLabel") + "\n  }\n"
         + _function("groBandEyebrow") + "\n  }\n"

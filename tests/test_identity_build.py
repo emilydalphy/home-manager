@@ -81,6 +81,11 @@ _BAND_JS = (
     + "function groPlural(n, one, many){ return n + ' ' + (n === 1 ? one : many); }\n"
     "function groTotals(d){ return { needed: d.needed }; }\n"
     "function groStoresWithNeeded(d){ return d.stops; }\n"
+    # 2026-09-16 ("One list is fine" can start a trip): the eyebrow drops the
+    # stops clause for a household whose only stop is the one-list stand-in,
+    # so it reads that constant now. Stubbed like its neighbours above; the
+    # stops these tests pass are real shop names, so nothing they assert moves.
+    "var GRO_ONE_LIST_STOP = 'Your list';\n"
     + _function("groBandEyebrow")
     + """
 function el() { return { textContent: '', hidden: false, dataset: {} }; }
