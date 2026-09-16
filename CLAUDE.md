@@ -391,6 +391,113 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-16 — "Shop for tonight" is claimed only when the list is actually
+  holding tonight up. Branch `overnight/shop-move-for-tonight`, merged
+  2026-09-16.** Emily, Flow 0 walk: Now read "Shop for tonight · 3 items · by
+  6:05" while tonight's shrimp was already thawed and the three needed lines —
+  whole chicken, rice, dish soap — were for nothing that night. The rule was
+  "anything on the list, any cook inside the 36-hour horizon": two true facts
+  standing next to each other pretending to be one. An invented deadline at
+  seven in the morning is how a morning check-in stops being believed.
+  Reproduced over real HTTP on a throwaway DB before anything was touched.
+  - **The deadline is read off the PER-MEAL LEDGER, never by matching
+    ingredient names** — `grocery.entry_ids_awaiting_a_shop` over
+    `meal_plan_grocery_links`, so the soonest cook the list is genuinely
+    waiting on is the only one that can carry a clock. Name-matching would be
+    a second answer to a question the ledger already answers exactly.
+  - **Deliberately NOT gated on `source_weekly_plan_id`**, and this is the
+    trap: `add_grocery_item` keeps that NULL when a plan's amount merges into
+    a hand-added line, so reading it as "nobody's meal put this here" drops
+    lines a cook really is waiting on. A line no meal contributed to has no
+    ledger row at all — the same answer by a route that cannot be wrong.
+    `needed` only; a line in the trolley, bought, or set aside is not a
+    reason to go.
+  - **A cook in the horizon with nothing on the list for it gets an UNTIMED
+    line** (`moves._standing_list_move`): "3 things on the list · 2 stops",
+    no "by", weight LOW, `timed: False`. `featured_move_id` skips an untimed
+    move outright — "next up" is a question about time — so Now's one apricot
+    is never "Open the list" for a list nothing today needs. `shell.js` needed
+    no change: an unfeatured move already renders as a plain node.
+  - **Nothing to cook against still means NO move at all**, and that is
+    load-bearing: Now's empty moment and its "Let's plan the week" dock both
+    key off `todayIsEmpty`.
+  - **The stop count reads the rows' own stores only**, deliberately skipping
+    the Shop tab's most-used-shop fallback rather than keeping a second copy
+    of it. **And the docstring's "quieter than the Shop tab but never louder"
+    was FALSE and is corrected**: the pre-shop "maybe already home" filter
+    lives in `main.py`'s grocery routes, not in `list_grocery_list`, so a stop
+    whose only row is flagged is counted here and not there — Now can read "2
+    stops" over a Shop tab showing one. Said plainly rather than promised
+    away (§8).
+  - **Two misses the ledger rule has, named so nobody reports them as new:** an
+    ingredient the kitchen check skipped at ingest and the household then
+    hand-added, and a freeform or hand-shopped chat-planned meal. Both are the
+    quiet direction, which is this card's stated preference — before this the
+    move claimed a deadline unconditionally and was right in those cases only
+    by accident.
+  - Two neighbours that would otherwise have gone wrong: `moves_for_day` folds
+    the generic shop's ITEM count onto a big meal's named trip, so it now takes
+    only a timed one; and the morning text skips an untimed list.
+  - `tests/test_shop_move_for_tonight.py` (22; **14 red on the merge base, of
+    which 2 are red for a reason other than the one they are named after and
+    say so — 12 catches**), eight mutations checked to bite. Three existing
+    files seeded the bug's own shape (a hand-added line beside a dinner that
+    never put it there) and were corrected honestly with a comment each. Suite
+    **5270 passed, 0 failed** at `TZ=America/Toronto`.
+
+- **2026-09-16 — "Who's eating?" asked who was IN and the tap took somebody
+  OUT. Branch `overnight/is-anyone-out`, merged 2026-09-16.** Emily, Flow 0
+  walk, from the Monday sheet: "this who's eating and then the clicking
+  doesn't make sense. the click of the initial removes them from the
+  attendee." The household learned the rule by getting it wrong, and a wrong
+  guess here is not cosmetic — it writes an absence to the week. The heading
+  is **"Is anyone out?"** now, so the tap and the question point the same way.
+  - **The control is ONE function** (`presenceHtml` in `static/plan-week.html`):
+    the question, the initials, the caption and the "Just this week?" offer.
+    That is exactly what had gone wrong — dinner carried a "Who's eating?"
+    caption its own block wrote and lunch and breakfast carried none, with the
+    wording living in markup rather than a constant (`PRESENCE_QUESTION`).
+  - **`aria-pressed` IS INVERTED, not dropped, and it was the real blocker.**
+    It still meant "this person is IN", so under a heading asking who is OUT a
+    screen reader announced "V, toggle button, pressed" — Emily's own complaint
+    one layer down. Dropping it would leave the state carried only by `title`,
+    a description rather than a name and not announced by every AT, so a
+    screen-reader user could not tell who is out at all. The markup ships
+    `aria-pressed="false"`, because nobody is out until somebody says so. The
+    test that pinned the old polarity said in its own docstring that
+    pressed-means-in "is what makes the row an 'is anyone out?' question",
+    which had it exactly backwards.
+  - **THE BLUR-ON-TAP IS DELETED AND THE HONEST VERSION IS THAT THE CRITERION
+    WAS ALREADY MET.** Measured both ways in Chromium 141: without it a touch
+    tap and a mouse click each leave the outline at 0px, and Tab, Enter and
+    Space each leave it at 3px. Its only measured effect was moving focus to
+    `<body>` — and `#day-sheet` is `role="dialog" aria-modal="true"`, so that
+    is focus leaving the dialog, the APG anti-pattern, reproduced with
+    AT-shaped activation. The mechanism is the CSS alone, and the rule's
+    comment now records the measurement rather than the fear. If an engine
+    ever does paint a ring on tap, the fix belongs there — and **must not drop
+    focus out of the dialog**.
+  - **A docstring stated a measurement that was wrong.** With a day sheet open
+    at 390px TWO visible elements fill apricot (`#cta` and the sheet's
+    `#day-done`) and exactly ONE is reachable, because `elementFromPoint` over
+    `#cta` returns `#day-done`. Identical on `main`; rule 5 holds in the sense
+    it has always held here. It says "reachable" now.
+  - `tests/test_is_anyone_out.py` (24; **13 red against the page as it was**,
+    every one a behavioural catch — nothing red merely for naming a missing
+    symbol). Nine mutations run, each reddening exactly the test it should.
+    Suite **5272 passed, 0 failed** at `TZ=America/Toronto`. **A second run at
+    `TZ=Pacific/Niue` is NOT offered as straddle evidence** — it started at
+    Toronto 07:15, when Niue and Toronto are on the same date. The
+    deterministic version is a UTC runner pinned to 02:00 (household a day
+    behind the process, production's own direction): 2 failed, 5267 passed, 3
+    skipped, both failures pre-existing in
+    `tests/test_stale_draft_front_page.py` and proven so by reverting this
+    ticket's two files and re-running the same pin.
+  - **Found and NOT fixed, its own card:** `offerToRemember` hardcodes dinner,
+    so "Just this week?" under LUNCH and BREAKFAST does nothing at all.
+    Identical on `main`, live-reproduced, and more visible now that each row
+    has a caption of its own.
+
 - **2026-09-16 — A prompt-text test reads the COMPILED function, never
   `app/agent.py` as it happens to be on disk. Branch
   `overnight/tests-read-agent-once`, NOT merged at the time of writing.**
