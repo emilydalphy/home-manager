@@ -1909,18 +1909,37 @@ class _KitchenStock:
     not already being suppressed, and every change is toward buying more.
     """
 
-    def __init__(self, conn):
+    def __init__(self, conn, locations: set[str] | None = None,
+                 exclude_sources: set[str] | None = None):
+        """
+        `locations` and `exclude_sources` narrow which rows count, and
+        both default to None, which is every row — the ingest's own
+        question is about the kitchen as a whole and is unchanged.
+
+        They exist for defrost.meat_items_for_plan (2026-09-15), which
+        asks a narrower one: is there demonstrably enough of this ON A
+        NAMED SHELF, on a row somebody actually put there. A location is
+        read the way every screen reads it (_display_location, so a blank
+        one falls back to its category's shelf) and compared case-folded,
+        because 'Freezer' typed with a capital is the same shelf.
+        """
         # Read once per buffer — one approval, one reading of the kitchen.
         # Nothing writes inventory in between.
         self._on_hand: dict[str, list[tuple[float, str | None]]] = {}
         self._unreadable: set[str] = set()
         self._claimed: dict[str, list[tuple[float, str | None]]] = {}
         rows = conn.execute(
-            "SELECT item, quantity FROM inventory_items "
+            "SELECT item, quantity, category, location, source FROM inventory_items "
             "WHERE household_id = ? AND TRIM(quantity) != ''",
             (household_id(),),
         ).fetchall()
         for row in rows:
+            if exclude_sources and (row["source"] or "") in exclude_sources:
+                continue
+            if locations is not None:
+                where = _quantities._display_location(dict(row)).strip().lower()
+                if where not in locations:
+                    continue
             # Matched on the plain stripped name, exactly as the name-only
             # check this replaces did. Deliberately NOT grocery._merge_key:
             # that reads singulars, plurals and prep descriptors as the

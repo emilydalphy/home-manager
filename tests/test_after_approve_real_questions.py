@@ -13,37 +13,49 @@ Three things changed, and this file is one section each:
 
   1. cook_ahead._is_a_cook — the batch offer is only ever about a dish
      somebody actually cooks.
-  2. defrost._already_known_items — the freezer ask only lists things the
-     app has no other record of.
+  2. defrost's four rules — the freezer ask only lists what the app has no
+     other record of: what the fridge demonstrably covers, a move already
+     booked or done, a line still to buy, and a night it is too late to
+     thaw for. The first is _KitchenStock's answer, not a second one; the
+     middle two are per NIGHT.
   3. shell.js — two or more things to batch is ONE question with one line
-     each, and the card's heading counts what it is actually asking.
+     each, and the card's heading counts what it is actually asking
+     (a no-op on today's two asks; see that test's own docstring).
 
-WHAT IS RED WHERE, measured rather than claimed. Against `main`'s app/ and
-static/ with this file's `_function` lookups stubbed (it cannot be
-COLLECTED against main otherwise — the prelude names five functions main
-has not got), 29 of the 45 fail:
+WHAT IS RED WHERE, measured rather than claimed, 2026-09-15.
 
-  * 20 are real catches. 19 are back-end and route tests that call
-    functions main has and get a different answer from; the twentieth is
-    the heading, which main writes out as a ternary saying "Two" about any
-    number that is not one.
-  * 9 are red because they name something main has not got: the seven node
-    tests of the one-line shape, and the two CSS markers. Those are pinned
-    by MUTATION, not by that redness — though the gap the :empty one
-    describes really is on main, it is simply never visible there because
-    the row is never empty.
-  * 16 are green on main and say so in their own docstrings. They are the
-    no-regression guards, and the first in section 2 is the floor this
-    whole ticket sits on: a real thaw must still be asked about.
+Against `main`'s app/ and static/, with this file's `_function` lookups
+stubbed (it cannot be COLLECTED against main otherwise — the prelude names
+five functions main has not got): **33 of 56 fail.** 24 are behavioural —
+they call functions main has and get a different answer, the last of them
+being the heading, which main writes out as a literal. 9 are red only
+because they name something main has not got (the seven node tests of the
+one-line shape, and the two CSS markers), and are pinned by MUTATION
+instead. The other 23 are green on main and say so in their own
+docstrings.
 
-Thirteen mutations were run and every one reddens at least one test: the
-`_is_a_cook` filter and its instructions clause; the `_already_known_items`
-filter, its status clause, its inventory clause, reading the raw location
-column in place of get_inventory, the household scoping on its grocery
-read and the plan scoping on its task read; cookAheadPrimePicks' write;
-the lines' sub-line; the several-blocks branch; the heading's count; and
-the .ca-ask-pick rule. Cross-household isolation on the INVENTORY side is
-get_inventory's own and is guarded rather than mutation-pinned here.
+**That split flatters section 2 and the number to read is the other one.**
+Main asks about everything, so every test here of the shape "this is still
+asked" passes there for free. The real evidence for the freezer rules is
+redness against THIS BRANCH'S OWN FIRST COMMIT, which needs no stubbing:
+**11 of 56 are red on `259b166`** — every false negative an adversarial
+review reproduced (a shelf the app guessed from a purchase, a pantry row,
+two ounces against a three-pound need, a capital F on Freezer, an
+unanswered carried line, a skipped move, one booked night silencing a
+whole week) plus two found while fixing them (the need summed across
+nights, and the ask coming back after the shop).
+
+**24 mutations were run and every one reddens at least one test.** In
+cook_ahead: the `_is_a_cook` filter, its instructions clause. In defrost:
+each of the four rules dropped outright; clause 1 widened to any shelf,
+to a guessed shelf, and to name-only; clause 2 given every status, keyed
+by name rather than by night, and unscoped from its plan; clause 3 given
+`carried`, given every status, and unscoped from its household; clause 4
+never firing; and the need not summed across nights. In recipes:
+_KitchenStock ignoring its new location filter. In shell.js:
+cookAheadPrimePicks' write, the lines' sub-line, the several-blocks
+branch, the heading's count. In shell.css: the .ca-ask-pick rule and the
+empty-row rule.
 """
 from __future__ import annotations
 
@@ -259,19 +271,49 @@ def test_another_households_repeat_is_never_offered_here():
 # ---------------------------------------------------------------------------
 # 2. The freezer ask lists only what the app has no other record of
 # ---------------------------------------------------------------------------
+# These plan NEXT week, the way tests/test_defrost_confirm.py already does,
+# and for a reason worth knowing: this ask now drops a night it is too late
+# to thaw for, so a cook night close to today makes every other rule in
+# this section untestable. Two of these passed for the wrong reason before
+# that was spotted — a "Whole Chicken" needs 48 hours, so a Thursday
+# dinner read as too late on a Wednesday and dropped out for the wrong
+# clause, and under the CI clock matrix's Friday and Sunday pins that
+# happens to nearly all of them.
 
-def _meat(name="Chicken Skewers", item="Chicken Thighs"):
-    tools.add_recipe(name, ingredients=[{"item": item, "qty": "1 lb", "category": "meat/seafood"}],
+NEXT_WEEK = (_monday() + datetime.timedelta(days=7)).isoformat()
+NEXT_TUE = (_monday() + datetime.timedelta(days=8)).isoformat()
+NEXT_THU = (_monday() + datetime.timedelta(days=10)).isoformat()
+NEXT_SAT = (_monday() + datetime.timedelta(days=12)).isoformat()
+
+
+def _meat(name="Chicken Skewers", item="Chicken Thighs", qty="1 lb"):
+    tools.add_recipe(name, ingredients=[{"item": item, "qty": qty, "category": "meat/seafood"}],
                      default_servings=3, prep_time_minutes=10, cook_time_minutes=15)
 
 
-def _meat_week(dish="Chicken Skewers", day=THU):
-    plan_id, ids = _plan((day, dish, "dinner"))
-    return plan_id, ids[0]
+def _meat_week(*meals):
+    """(date, dish) pairs on a plan for NEXT week, so nothing is too late
+    to thaw for. Defaults to one chicken dinner on the Thursday."""
+    plan_id = tools.create_weekly_plan(NEXT_WEEK)["weekly_plan_id"]
+    for date_str, dish in (meals or ((NEXT_THU, "Chicken Skewers"),)):
+        tools.plan_meal(date_str, dish, slot="dinner", weekly_plan_id=plan_id)
+    return plan_id
 
 
 def _items(plan_id):
     return [i["item"] for i in defrost.meat_items_for_plan(plan_id)]
+
+
+def _nights(plan_id):
+    return [(i["item"], [n["date"] for n in i["nights"]])
+            for i in defrost.meat_items_for_plan(plan_id)]
+
+
+def _sql(query, *args):
+    conn = db.get_conn()
+    conn.execute(query, args)
+    conn.commit()
+    conn.close()
 
 
 def test_a_thing_in_the_freezer_the_app_knows_nothing_else_about_is_still_asked():
@@ -281,21 +323,118 @@ def test_a_thing_in_the_freezer_the_app_knows_nothing_else_about_is_still_asked(
     an extra question, so this test is the floor the narrowing sits on."""
     _household()
     _meat()
-    plan_id, _ = _meat_week()
+    plan_id = _meat_week()
 
     assert _items(plan_id) == ["Chicken Thighs"]
 
 
-def test_something_already_in_the_fridge_is_not_asked_about():
+# ---------- 1. what the fridge demonstrably covers ----------
+
+def test_enough_of_it_in_the_fridge_is_not_asked_about():
     """CATCH — tonight's shrimp. It is out of the freezer already, so
     "is it in the freezer?" is a question about a thing the app can see."""
     _household()
     _meat("Shrimp Skewers", "Shrimp")
-    plan_id, _ = _meat_week("Shrimp Skewers")
-    tools.update_inventory("Shrimp", "add", quantity="1 lb", location="fridge", category="meat/seafood")
+    plan_id = _meat_week((NEXT_THU, "Shrimp Skewers"))
+    tools.update_inventory("Shrimp", "add", quantity="3 lbs", location="fridge", category="meat/seafood")
 
     assert _items(plan_id) == []
 
+
+def test_two_ounces_in_the_fridge_does_not_silence_a_three_pound_need():
+    """CATCH — and it is the defect `overnight/inventory-covers-the-amount`
+    removed from the grocery ingest on 2026-09-14, arriving one door over.
+    The first cut of this branch asked the name-only question that branch
+    exists to have replaced; this one reuses its _KitchenStock, so the two
+    read one shelf by one rule."""
+    _household()
+    _meat(qty="1.5 lbs")
+    plan_id = _meat_week((NEXT_TUE, "Chicken Skewers"), (NEXT_THU, "Chicken Skewers"))
+    tools.update_inventory("Chicken Thighs", "add", quantity="2 oz", location="fridge", category="meat/seafood")
+
+    assert _items(plan_id) == ["Chicken Thighs"]
+
+
+def test_the_need_is_the_whole_weeks_need_not_one_nights():
+    """CATCH by mutation — a pound in the fridge against two dinners of a
+    pound each is enough for one of them and not for the week. Count only
+    the first night and the second dinner's thaw goes unasked, which is
+    the same "told about the same stock twice" failure _KitchenStock's own
+    claim ledger exists to stop one level up."""
+    _household()
+    _meat(qty="1 lb")
+    plan_id = _meat_week((NEXT_TUE, "Chicken Skewers"), (NEXT_THU, "Chicken Skewers"))
+    tools.update_inventory("Chicken Thighs", "add", quantity="1.5 lbs",
+                           location="fridge", category="meat/seafood")
+
+    assert _items(plan_id) == ["Chicken Thighs"]
+
+
+def test_a_shelf_the_app_guessed_from_a_purchase_is_never_a_reason_not_to_ask():
+    """CATCH — the bulk-meat buyer, and the sharpest false negative this
+    branch had. Tick a 5 lb pack purchased and _add_to_inventory files it
+    under the meat category's default shelf, 'fridge', having never seen
+    one. It is in the freezer, it feeds two dinners, and the first cut of
+    this branch said nothing at all about it."""
+    _household()
+    _meat()
+    plan_id = _meat_week((NEXT_TUE, "Chicken Skewers"), (NEXT_THU, "Chicken Skewers"))
+    tools.add_grocery_item("Chicken Thighs", quantity="5 lbs", category="meat/seafood")
+    conn = db.get_conn()
+    line = conn.execute("SELECT id FROM grocery_items WHERE item = 'Chicken Thighs'").fetchone()["id"]
+    conn.close()
+    tools.mark_grocery_item(line, "purchased")
+
+    conn = db.get_conn()
+    row = conn.execute("SELECT location, source FROM inventory_items").fetchone()
+    conn.close()
+    # The premise: the app really did file it in the fridge, on its own.
+    assert (row["location"], row["source"]) == ("fridge", "grocery_checkoff")
+    assert _items(plan_id) == ["Chicken Thighs"]
+
+
+def test_a_pantry_row_is_neither_thawed_nor_in_the_fridge():
+    """CATCH — criterion 3 says "already recorded as thawed or in the
+    fridge". A mis-categorised receipt or a pantry scan is neither, and the
+    first cut read every shelf but the freezer as a reason to stay quiet."""
+    _household()
+    _meat()
+    plan_id = _meat_week()
+    tools.update_inventory("Chicken Thighs", "add", quantity="3 lbs", location="pantry", category="meat/seafood")
+
+    assert _items(plan_id) == ["Chicken Thighs"]
+
+
+def test_a_freezer_spelled_with_a_capital_is_still_the_freezer():
+    """CATCH — and it was a DOUBLE miss: defrost_candidates_for_plan's own
+    `== "freezer"` already skips it, so the automatic task never happens,
+    and the first cut's `!= "freezer"` then read it as known and took the
+    ask away too. The auto path is untouched and still misses it; what is
+    restored is that the ask catches what the auto path drops."""
+    _household()
+    _meat()
+    plan_id = _meat_week()
+    tools.update_inventory("Chicken Thighs", "add", quantity="3 lbs", location="Freezer", category="meat/seafood")
+
+    assert _items(plan_id) == ["Chicken Thighs"]
+
+
+def test_a_row_with_no_location_on_it_is_read_the_way_every_screen_reads_it():
+    """GUARD by mutation — a legacy row saved before the location column
+    takes its category's default (quantities._display_location), which is
+    what get_inventory hands back and what defrost_candidates_for_plan
+    already treats as frozen. Ask the raw column instead and a
+    frozen-category row reads as "not in the freezer"."""
+    _household()
+    _meat("Fish Pie", "Cod Fillets")
+    plan_id = _meat_week((NEXT_THU, "Fish Pie"))
+    _sql("INSERT INTO inventory_items (household_id, item, quantity, category) "
+         "VALUES (1, 'Cod Fillets', '2 lbs', 'frozen')")
+
+    assert _items(plan_id) == ["Cod Fillets"]
+
+
+# ---------- 3. a line still to buy ----------
 
 def test_something_still_on_the_shopping_list_is_not_asked_about():
     """CATCH — the whole chicken. The app has just told her to go and buy
@@ -303,41 +442,51 @@ def test_something_still_on_the_shopping_list_is_not_asked_about():
     itself on two consecutive screens."""
     _household()
     _meat("Roast Chicken", "Whole Chicken")
-    plan_id, _ = _meat_week("Roast Chicken")
+    plan_id = _meat_week((NEXT_THU, "Roast Chicken"))
     tools.add_grocery_item("Whole Chicken", quantity="1", category="meat/seafood")
 
     assert _items(plan_id) == []
 
 
-@pytest.mark.parametrize("status", ["needed", "in_cart", "carried", "spice"])
+@pytest.mark.parametrize("status", ["needed", "in_cart", "spice"])
 def test_every_kind_of_line_still_to_buy_counts_as_on_the_list(status):
-    """CATCH — a line waiting in the sorting queue or carried over from
-    last week is as much "you are going to buy this" as a plain needed one."""
+    """CATCH — a line waiting in the sorting queue is as much "you are
+    going to buy this" as a plain needed one."""
     _household()
-    _meat("Roast Chicken", "Whole Chicken")
-    plan_id, _ = _meat_week("Roast Chicken")
-    tools.add_grocery_item("Whole Chicken", quantity="1", category="meat/seafood")
-    conn = db.get_conn()
-    conn.execute("UPDATE grocery_items SET status = ?", (status,))
-    conn.commit()
-    conn.close()
+    _meat()
+    plan_id = _meat_week()
+    tools.add_grocery_item("Chicken Thighs", quantity="1 lb", category="meat/seafood")
+    _sql("UPDATE grocery_items SET status = ?", status)
 
     assert _items(plan_id) == []
+
+
+def test_an_unanswered_carried_line_is_not_an_answer():
+    """CATCH against the first cut of this branch, which counted 'carried'
+    as on the list. A carried line is last week's line waiting for a keep
+    or a drop — nobody has said either — so it cannot stand in for the
+    household saying the food is not frozen."""
+    _household()
+    _meat()
+    plan_id = _meat_week()
+    tools.add_grocery_item("Chicken Thighs", quantity="1 lb", category="meat/seafood")
+    _sql("UPDATE grocery_items SET status = 'carried'")
+
+    assert _items(plan_id) == ["Chicken Thighs"]
 
 
 @pytest.mark.parametrize("status", ["purchased", "removed"])
 def test_a_line_already_bought_or_taken_off_is_not_on_the_list(status):
     """GUARD by mutation — widen the status clause to every row and this
     goes red. A purchased line is in the kitchen, not on the list, and a
-    removed one is nowhere; neither is a reason to stop asking."""
+    removed one is nowhere; neither is a reason to stop asking. This is
+    also what gives the ask its home: after the shop, the line is
+    purchased and the question is finally answerable."""
     _household()
     _meat()
-    plan_id, _ = _meat_week()
+    plan_id = _meat_week()
     tools.add_grocery_item("Chicken Thighs", quantity="1 lb", category="meat/seafood")
-    conn = db.get_conn()
-    conn.execute("UPDATE grocery_items SET status = ?", (status,))
-    conn.commit()
-    conn.close()
+    _sql("UPDATE grocery_items SET status = ?", status)
 
     assert _items(plan_id) == ["Chicken Thighs"]
 
@@ -347,72 +496,9 @@ def test_a_line_excluded_from_the_list_is_not_on_the_list():
     it stops being a reason not to ask."""
     _household()
     _meat()
-    plan_id, _ = _meat_week()
+    plan_id = _meat_week()
     tools.add_grocery_item("Chicken Thighs", quantity="1 lb", category="meat/seafood")
-    conn = db.get_conn()
-    conn.execute("UPDATE grocery_items SET excluded_from_list = 1")
-    conn.commit()
-    conn.close()
-
-    assert _items(plan_id) == ["Chicken Thighs"]
-
-
-def test_a_row_with_no_location_on_it_is_read_the_way_every_screen_reads_it():
-    """GUARD by mutation — a legacy row saved before the location column
-    has its category's default (quantities._display_location), which is
-    what get_inventory hands back and what defrost_candidates_for_plan
-    already treats as frozen. Ask the raw column instead and a
-    frozen-category row reads as "not in the freezer", i.e. as a reason
-    not to ask, and a real thaw goes quiet."""
-    _household()
-    _meat("Fish Pie", "Cod Fillets")
-    plan_id, _ = _meat_week("Fish Pie")
-    conn = db.get_conn()
-    conn.execute("INSERT INTO inventory_items (household_id, item, quantity, category) "
-                 "VALUES (1, 'Cod Fillets', '2 lbs', 'frozen')")
-    conn.commit()
-    conn.close()
-
-    assert _items(plan_id) == ["Cod Fillets"]
-
-
-def test_a_move_already_booked_is_not_asked_about_again():
-    """CATCH — answering the ask writes the defrost rows, and the Cook
-    view's re-ask link then offered the same chips over again with no way
-    to un-say them. Pomona already knows; it says so on the Now card."""
-    _household()
-    _meat()
-    plan_id, _ = _meat_week()
-    assert _items(plan_id) == ["Chicken Thighs"]
-
-    defrost.confirm_frozen_items(plan_id, ["Chicken Thighs"])
-    assert _items(plan_id) == []
-
-
-def test_a_move_already_ticked_done_is_not_asked_about_again():
-    """CATCH — "already recorded as thawed", in Emily's own words."""
-    _household()
-    _meat()
-    plan_id, _ = _meat_week()
-    defrost.confirm_frozen_items(plan_id, ["Chicken Thighs"])
-    conn = db.get_conn()
-    conn.execute("UPDATE prep_tasks SET status = 'done'")
-    conn.commit()
-    conn.close()
-
-    assert _items(plan_id) == []
-
-
-def test_a_move_booked_on_a_different_week_does_not_silence_this_one():
-    """GUARD by mutation — the task read is scoped to this plan. Another
-    week's chicken is not this week's answer."""
-    _household()
-    _meat()
-    other_plan = tools.create_weekly_plan((_monday() + datetime.timedelta(days=7)).isoformat())
-    tools.plan_meal((_monday() + datetime.timedelta(days=10)).isoformat(), "Chicken Skewers",
-                    slot="dinner", weekly_plan_id=other_plan["weekly_plan_id"])
-    defrost.confirm_frozen_items(other_plan["weekly_plan_id"], ["Chicken Thighs"])
-    plan_id, _ = _meat_week()
+    _sql("UPDATE grocery_items SET excluded_from_list = 1")
 
     assert _items(plan_id) == ["Chicken Thighs"]
 
@@ -424,24 +510,143 @@ def test_a_plural_spelling_is_still_the_same_thing():
     already matches names with."""
     _household()
     _meat()
-    plan_id, _ = _meat_week()
+    plan_id = _meat_week()
     tools.add_grocery_item("Chicken Thigh", quantity="1 lb", category="meat/seafood")
 
     assert _items(plan_id) == []
 
 
-def test_another_households_fridge_does_not_silence_this_one():
-    """GUARD by mutation — drop household_id from either query in
-    _already_known_items and this goes red. Three cross-household leaks are
-    on record in this repo; a read that decides what a household is asked
-    is exactly the shape they had."""
+# ---------- 2 and 4: a move already settled, night by night ----------
+
+def test_a_move_already_booked_is_not_asked_about_again():
+    """CATCH — answering the ask writes the defrost rows, and the Cook
+    view's re-ask link then offered the same chips over again."""
     _household()
     _meat()
-    plan_id, _ = _meat_week()
+    plan_id = _meat_week()
+    assert _items(plan_id) == ["Chicken Thighs"]
+
+    defrost.confirm_frozen_items(plan_id, ["Chicken Thighs"])
+    assert _items(plan_id) == []
+
+
+def test_a_move_already_ticked_done_is_not_asked_about_again():
+    """CATCH — "already recorded as thawed", in Emily's own words."""
+    _household()
+    _meat()
+    plan_id = _meat_week()
+    defrost.confirm_frozen_items(plan_id, ["Chicken Thighs"])
+    _sql("UPDATE prep_tasks SET status = 'done'")
+
+    assert _items(plan_id) == []
+
+
+def test_a_skipped_move_leaves_the_question_askable():
+    """CATCH against the first cut, which had no status filter at all.
+    'skipped' is the Now tile's one-tap decline (cooker.check_off_prep_step)
+    — the household saying they will not move it tonight, which says
+    nothing about whether the food is frozen."""
+    _household()
+    _meat()
+    plan_id = _meat_week()
+    defrost.confirm_frozen_items(plan_id, ["Chicken Thighs"])
+    _sql("UPDATE prep_tasks SET status = 'skipped'")
+
+    assert _items(plan_id) == ["Chicken Thighs"]
+
+
+def test_one_night_booked_does_not_silence_a_dinner_added_afterwards():
+    """CATCH against the first cut, which keyed this by NAME: one booked
+    night made the item unbookable for the whole rest of the week, so a
+    second chicken dinner swapped in after the answer could never have its
+    thaw scheduled. The key is the (item, meal, night) description
+    confirm_frozen_items itself de-dupes with."""
+    _household()
+    _meat()
+    plan_id = _meat_week((NEXT_TUE, "Chicken Skewers"))
+    defrost.confirm_frozen_items(plan_id, ["Chicken Thighs"])
+    tools.plan_meal(NEXT_THU, "Chicken Skewers", slot="dinner", weekly_plan_id=plan_id)
+
+    assert _nights(plan_id) == [("Chicken Thighs", [NEXT_THU])]
+
+
+def test_a_move_booked_on_a_different_week_does_not_silence_this_one():
+    """GUARD by mutation — the task read is scoped to this plan."""
+    _household()
+    _meat()
+    after = (_monday() + datetime.timedelta(days=14)).isoformat()
+    other = tools.create_weekly_plan(after)["weekly_plan_id"]
+    tools.plan_meal((_monday() + datetime.timedelta(days=17)).isoformat(),
+                    "Chicken Skewers", slot="dinner", weekly_plan_id=other)
+    # The premise: a task really was booked, on that other week.
+    assert defrost.confirm_frozen_items(other, ["Chicken Thighs"])["created"]
+    plan_id = _meat_week()
+
+    assert _items(plan_id) == ["Chicken Thighs"]
+
+
+# A period that starts TODAY and runs a week, so "tonight" and "four days
+# out" are both on the plan whatever weekday the suite is run on — which
+# the CI clock matrix makes a real requirement, not a nicety.
+#
+# The SERVER's today, deliberately, and it is the one place in this file
+# that is not household_today(). The rule under test reads date.today()
+# because confirm_frozen_items does, and those two have to agree about
+# what is still possible or the ask offers a night the write then refuses.
+# Seeding from the household's clock instead makes these two tests red
+# under any straddling zone — measured, 2026-09-15, TZ=Pacific/Niue — for
+# the two clocks disagreeing rather than for anything about thawing. When
+# confirm_frozen_items moves onto the household's clock, this moves with
+# it, in the same commit.
+def _from_today_plan(*meals):
+    today = datetime.date.today()
+    plan_id = tools.create_weekly_plan(
+        today.isoformat(), content_start_date=today.isoformat(), day_count=7,
+    )["weekly_plan_id"]
+    for offset, dish in meals:
+        tools.plan_meal((today + datetime.timedelta(days=offset)).isoformat(),
+                        dish, slot="dinner", weekly_plan_id=plan_id)
+    return plan_id
+
+
+def test_a_night_it_is_too_late_to_thaw_for_is_not_offered():
+    """CATCH — Emily's "tonight's already-eaten shrimp", settled without
+    guessing at a shelf. confirm_frozen_items refuses to write a task whose
+    move date has gone by and hands back TOO_LATE_TO_THAW_NOTE instead, so
+    asking about such a night can only ever produce a note."""
+    _household()
+    _meat("Shrimp Skewers", "Shrimp")
+    plan_id = _from_today_plan((0, "Shrimp Skewers"))
+
+    assert _items(plan_id) == []
+
+
+def test_a_night_still_ahead_survives_a_night_that_is_too_late():
+    """CATCH — the too-late rule is per NIGHT like the booked one, so a
+    dish cooked tonight AND later in the week keeps the night that can
+    still be thawed for."""
+    _household()
+    _meat("Shrimp Skewers", "Shrimp")
+    plan_id = _from_today_plan((0, "Shrimp Skewers"), (4, "Shrimp Skewers"))
+
+    later = (datetime.date.today() + datetime.timedelta(days=4)).isoformat()
+    assert _nights(plan_id) == [("Shrimp", [later])]
+
+
+# ---------- isolation, scope, and the route ----------
+
+def test_another_households_fridge_does_not_silence_this_one():
+    """GUARD by mutation — drop household_id from the grocery read and this
+    goes red; the inventory side is _KitchenStock's own scoping. Three
+    cross-household leaks are on record in this repo, and a read that
+    decides what a household is asked is exactly their shape."""
+    _household()
+    _meat()
+    plan_id = _meat_week()
     conn = db.get_conn()
     conn.execute("INSERT INTO households (id, name) VALUES (99, 'Next door')")
     conn.execute("INSERT INTO inventory_items (household_id, item, quantity, location, category) "
-                 "VALUES (99, 'Chicken Thighs', '2 lbs', 'fridge', 'meat/seafood')")
+                 "VALUES (99, 'Chicken Thighs', '9 lbs', 'fridge', 'meat/seafood')")
     conn.execute("INSERT INTO grocery_items (household_id, item, quantity, status) "
                  "VALUES (99, 'Chicken Thighs', '1 lb', 'needed')")
     conn.commit()
@@ -451,30 +656,66 @@ def test_another_households_fridge_does_not_silence_this_one():
 
 
 def test_something_not_in_this_weeks_plan_is_never_asked_about():
-    """GUARD — already true, and it is one of the three clauses of the
-    criterion, so it is said here rather than left implied elsewhere."""
+    """GUARD — already true, and it is one of the criterion's own clauses,
+    so it is said here rather than left implied elsewhere."""
     _household()
     _meat()
     tools.add_recipe("Pork Chops", ingredients=[{"item": "Pork Chops", "qty": "3", "category": "meat/seafood"}],
                      default_servings=3, prep_time_minutes=5, cook_time_minutes=20)
-    plan_id, _ = _meat_week()
+    plan_id = _meat_week()
 
     assert _items(plan_id) == ["Chicken Thighs"]
 
 
 def test_the_route_serves_the_narrowed_list(signed_in):
-    """CATCH — over the wire, the exact pair Emily was shown."""
+    """CATCH — over the wire, the exact pair Emily was shown, plus the one
+    that must survive."""
     _household()
     _meat("Shrimp Skewers", "Shrimp")
     _meat("Roast Chicken", "Whole Chicken")
     _meat()
-    plan_id, _ = _plan((MON, "Shrimp Skewers", "dinner"), (THU, "Roast Chicken", "dinner"),
-                       (FRI, "Chicken Skewers", "dinner"))
-    tools.update_inventory("Shrimp", "add", quantity="1 lb", location="fridge", category="meat/seafood")
+    plan_id = _meat_week((NEXT_TUE, "Shrimp Skewers"), (NEXT_THU, "Roast Chicken"),
+                         (NEXT_SAT, "Chicken Skewers"))
+    tools.update_inventory("Shrimp", "add", quantity="3 lbs", location="fridge", category="meat/seafood")
     tools.add_grocery_item("Whole Chicken", quantity="1", category="meat/seafood")
 
-    body = signed_in.get(f"/api/week/{WEEK}/defrost-items").json()
+    body = signed_in.get(f"/api/week/{NEXT_WEEK}/defrost-items").json()
+    assert body["weekly_plan_id"] == plan_id
     assert [i["item"] for i in body["items"]] == ["Chicken Thighs"]
+
+
+def test_after_an_approval_a_household_that_tracks_nothing_is_asked_nothing():
+    """CATCH — Emily's screen. Every surface that shows this ask renders
+    after an approval, and approval has just put the week's meat on the
+    shopping list, so there is nothing real to say."""
+    _household()
+    _meat()
+    plan_id = _meat_week()
+    assert _items(plan_id) == ["Chicken Thighs"]  # the premise: before the list exists
+
+    tools.approve_weekly_plan(plan_id)
+    assert _items(plan_id) == []
+
+
+def test_and_it_comes_back_the_moment_the_food_is_home():
+    """CATCH, and the answer to "where does this ask live now". Ticking the
+    line purchased takes it off the list and files it under the meat
+    category's default shelf — a guess — so the Cook tab's "Something in
+    the freezer?" link asks about exactly the thing in the kitchen whose
+    shelf nobody has told the app about. Driven over HTTP as well, on a
+    throwaway DB, 2026-09-15."""
+    _household()
+    _meat()
+    plan_id = _meat_week((NEXT_TUE, "Chicken Skewers"), (NEXT_THU, "Chicken Skewers"))
+    tools.approve_weekly_plan(plan_id)
+    assert _items(plan_id) == []
+
+    conn = db.get_conn()
+    line = conn.execute("SELECT id FROM grocery_items WHERE item LIKE 'Chicken%'").fetchone()["id"]
+    conn.close()
+    tools.mark_grocery_item(line, "purchased")
+
+    assert _nights(plan_id) == [("Chicken Thighs", [NEXT_TUE, NEXT_THU])]
 
 
 def test_when_the_app_knows_about_all_of_it_there_is_nothing_to_ask():
@@ -482,12 +723,11 @@ def test_when_the_app_knows_about_all_of_it_there_is_nothing_to_ask():
     real to say, so neither is shown."""
     _household()
     _meat("Shrimp Skewers", "Shrimp")
-    _meat("Roast Chicken", "Whole Chicken")
     _no_cook()
-    plan_id, _ = _plan((MON, "Shrimp Skewers", "dinner"), (THU, "Roast Chicken", "dinner"),
-                       (MON, "Trail mix", "snack"), (TUE, "Trail mix", "snack"))
-    tools.update_inventory("Shrimp", "add", quantity="1 lb", location="fridge", category="meat/seafood")
-    tools.add_grocery_item("Whole Chicken", quantity="1", category="meat/seafood")
+    plan_id = _meat_week((NEXT_TUE, "Shrimp Skewers"), (NEXT_THU, "Trail mix"))
+    tools.plan_meal(NEXT_SAT, "Trail mix", slot="snack", weekly_plan_id=plan_id)
+    tools.plan_meal(NEXT_THU, "Trail mix", slot="snack", weekly_plan_id=plan_id)
+    tools.update_inventory("Shrimp", "add", quantity="3 lbs", location="fridge", category="meat/seafood")
 
     assert defrost.meat_items_for_plan(plan_id) == []
     assert cook_ahead.cook_ahead_repeats(plan_id) == []
@@ -718,9 +958,13 @@ def test_tapping_a_line_writes_the_pick_the_confirm_posts():
 
 
 def test_the_heading_says_the_true_number():
-    """CATCH — main writes the sentence out as a ternary that says "Two"
-    about anything that is not one, which is what Emily read over nine
-    questions. spellSmallNumber cannot lie about a third ask."""
+    """CATCH on the source, and a NO-OP on the screen — said that way
+    round because the first version of this docstring claimed otherwise.
+    `lines` can only ever hold one ask or two, and spellSmallNumber(2) is
+    'Two', so this renders byte-for-byte what main renders. What misled
+    Emily was the nine BLOCKS inside one ask, which section 3 above is
+    about. All this buys is that a third ask could never be announced as
+    "Two"."""
     receipt = _function("renderWeekReceipt")
     assert "'One quick one before you go'" in receipt
     assert "spellSmallNumber(lines.length) + ' quick ones before you go'" in receipt

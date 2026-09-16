@@ -391,6 +391,144 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-15 — "Two quick ones before you go" was TEN questions. Branch
+  `overnight/after-approve-real-questions`, NOT merged at the time of
+  writing.** Loop Board bug (Phase 1, Beta, High). Emily, walking flow 2:
+  after approving, a freezer ask naming tonight's already-eaten shrimp and
+  a whole chicken that was on the shopping list she had just been handed,
+  plus **nine** batch-cook asks — "Trail mix … it'd cook on Tuesday. Which
+  other days should it cover?", and apple slices, cheese and crackers,
+  cucumbers and yogurt with it. Reproduced over real HTTP through the
+  actual approve route on a throwaway DB before anything was touched: **8
+  batch questions and 3 freezer chips; 1 and 0 after.**
+  - **"Actually cooked" is `cook_ahead._is_a_cook`, and it is a THIRD
+    answer to that question rather than a reuse of one — said plainly
+    because the first version of this entry and of the docstring both
+    claimed it was the same rule.** `weekly_plan._is_cook` is "planned,
+    not a reheat, not takeout" and reads no times; `shell.js`'s
+    `isRealCook` is that plus "the slot shows a time" (`build_slot`'s
+    `meta`) and is used for snacks only; this is that **or the recipe has
+    a written method**, because steps with no minutes on them is a number
+    missing from a recipe, not a bowl of fruit. Two consequences to know:
+    a repeated FREEFORM dinner counts in the receipt's "4 cooks" and is
+    never offered for batching two inches below it, and a
+    steps-but-no-times recipe gets three different answers on three
+    surfaces. The direction is safe (this only ever offers MORE than
+    `isRealCook` would). Folding the three into one is its own card and
+    could not be done here — `_is_cook` takes a menu-entry dict, not a row,
+    and `weekly_plan.py` was owned by another branch that night.
+  - **Scoped to `cook_ahead_repeats` alone. `cook_ahead_options` and
+    `set_cook_ahead` keep the wider `_is_cookable` on purpose**: a chain
+    already written on a no-cook dish has to stay editable and RELEASABLE,
+    and narrowing them would have made "That one reheats an earlier batch"
+    the refusal you get for trying to undo one. The cost, stated: the Cook
+    card still offers "which other days should this cover?" on a trail
+    mix. Its own card if Emily minds; there the household is standing on
+    one dish having chosen to look at it.
+  - **THE FREEZER ASK IS THE PART THAT WENT WRONG, AND THE FIRST CUT OF IT
+    WAS WORSE THAN THE BUG. Read this before touching
+    `meat_items_for_plan`.** It left an item off on three reasons, and an
+    independent review reproduced **seven** false negatives, each one a
+    thaw the app would now never mention — branch `[]` against main
+    `['Chicken thighs']` in every case. The worst: **a 5 lb pack bought
+    last week and ticked purchased.** `_add_to_inventory` resolves a blank
+    location through `quantities._DEFAULT_LOCATION_BY_CATEGORY`, which
+    files meat under **`fridge`** — so the app recorded a shelf it had
+    never seen, and the first cut read that guess as proof the food was
+    not frozen. A frozen block, two dinners, not one word. The rules now:
+    - **1 — what the FRIDGE demonstrably covers.** Not "tracked anywhere
+      but the freezer" (a pantry row is neither thawed nor in the fridge),
+      not name-only (two ounces silenced a three-pound need — the exact
+      defect `overnight/inventory-covers-the-amount` removed from the
+      ingest on 2026-09-14, arriving one door over), and **never on a shelf
+      the app guessed**: a row whose `source` is `grocery_checkoff` or
+      `grocery_list_already_have` is skipped outright
+      (`_INFERRED_LOCATION_SOURCES`). The arithmetic is
+      `recipes._KitchenStock`, which grew two optional narrowing arguments
+      (`locations`, `exclude_sources`, both defaulting to today's
+      behaviour) rather than this module answering "is there enough at
+      home" a second time. **The residue, named: a chat add that names no
+      shelf still defaults to the fridge and still suppresses** — the
+      source is the app's own record of its confidence and it is a proxy,
+      not the truth.
+    - **2 — a move already booked, pending or done, keyed per NIGHT.** The
+      first cut keyed it by NAME, so one booked Wednesday made the item
+      unbookable for the whole week and a chicken dinner swapped in for
+      Friday could never have its thaw scheduled. And it had **no status
+      filter**, so a `skipped` row silenced it — which is the Now tile's
+      one-tap decline (`cooker.check_off_prep_step`), the household saying
+      "not tonight", not "it isn't frozen". The key is the very
+      `_describe(item, meal, date)` string `confirm_frozen_items` de-dupes
+      with, so the ask and the write cannot drift about which move is
+      which.
+    - **3 — a grocery line still to buy**, as an allow-list
+      (`needed`/`in_cart`/`spice`). `carried` is deliberately NOT in it: an
+      unanswered keep-or-drop line from last week is not an answer to
+      anything.
+    - **4 — a night it is already too late to thaw for**, per night, using
+      the module's own `_move_date` and the same `< today` test
+      `confirm_frozen_items` uses to refuse writing such a task. This is
+      Emily's "tonight's already-eaten shrimp", settled without guessing at
+      a shelf at all — and it is the clause the first cut should have led
+      with. It reads the SERVER's date because `confirm_frozen_items` does;
+      matching it matters more than the household's clock here, since the
+      two have to agree about what is still possible, and that function's
+      own clock is an older question.
+  - **WHERE THE ASK LIVES NOW — the question the review made me measure
+    rather than assert.** Every surface that shows it (All set, the Meals
+    receipt, Cook's re-ask link) renders AFTER an approval, and approval
+    has just put the week's meat on the shopping list, so rule 3 empties it
+    at that moment: a household that tracks nothing is asked nothing, which
+    is Emily's complaint fixed and is the intended shape. It comes back the
+    moment the food is home. **Measured end to end over HTTP on a throwaway
+    DB:** approve → `defrost-items` `[]`; list reads "Chicken thighs · 2
+    lbs · needed"; tick it purchased → the row lands as
+    `('Chicken thighs', 'fridge', 'grocery_checkoff')`; **Cook's re-ask →
+    `[('Chicken thighs', ['Thursday', 'Friday'])]`**. So the ask has a
+    working home, and it is the one moment the question is answerable. **It
+    only works because of the `_INFERRED_LOCATION_SOURCES` carve-out** — on
+    fridge-covers alone that purchased row suppresses and the ask is dead
+    everywhere.
+  - **Known and left: `defrost_asked_at` is never stamped when there is
+    nothing to ask**, so `ensureDefrostAskItems` makes one GET per page
+    view of Meals for the life of the plan. Stamping it would be the app
+    answering its own question and would stop the ask reappearing once the
+    food IS home, which is the whole point above. One request, no card.
+  - **Screen: two or more things to batch is ONE question with one line
+    each and one answer** (`cookAheadPickLinesHtml`); a lone block keeps
+    its day chips, where the chips are the question (Emily, 2026-09-13).
+    **The lines start TICKED, which is a new default and is Emily's to
+    overrule**: dish picks used to start unticked, so with the line shape
+    one tap on "Batch cook these" now writes leftover chains across the
+    whole week with no per-day choice on that screen. It has to be that way
+    or the apricot answer would do exactly what the quiet one does — and it
+    is what the component blocks have always done — but it amplifies a
+    known hazard (a breakfast chain source is invalid to
+    `repair_leftover_chains`). Per-day refinement is still on the Cook
+    card. `named` is now always false at both call sites, so the
+    `named ?` ternary inside both block builders is unreachable; kept, with
+    the parameter, as the seam a design that brings blocks back would need.
+  - **The heading's copy change is a NO-OP and two comments claimed
+    otherwise until review.** `lines` can only hold one ask or two and
+    `spellSmallNumber(2)` is `'Two'`, so it renders what the ternary it
+    replaced rendered. The old code was right about the NUMBER OF ASKS;
+    what misled Emily was the nine blocks inside one of them. All it buys
+    is that a third ask could never be announced as "Two". What criterion 4
+    really delivers is `#wk-allset-asks:empty { display: none; }` — the
+    empty asks row was still a flex item in a 14px-gap column.
+  - `tests/test_after_approve_real_questions.py` (56). **24 mutations run
+    and every one reddens at least one test**, which is the evidence that
+    matters here: the front-end half cannot be collected against main at
+    all. Its section 2 plans NEXT week deliberately — rule 4 drops a night
+    too close to today, and two tests passed for the wrong reason before
+    that was spotted (a "Whole Chicken" needs 48 hours, so a Thursday
+    dinner read as too late on a Wednesday), which under CI's weekday pins
+    would have hit nearly all of them. Four existing files were updated
+    honestly with a note saying what moved, including
+    `test_cook_ahead_approval.py`, whose egg bites and chili carried no
+    cook time and would have made four `== []` assertions pass for the
+    wrong reason.
+
 - **2026-09-15 — "Noted" must never note nothing: held things. Branch
   `worktree-held-things`, NOT merged at the time of writing.** Loop Board
   feature (flow H1, "Pomona, hold this"). Root cause of the walk's

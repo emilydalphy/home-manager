@@ -16117,7 +16117,12 @@
     // (cookAheadPickLinesHtml). `named` — whether a block opens with its
     // own dish line — is therefore always false now: the only block that
     // still draws is the lone one, and the fold heading above it
-    // (cookAheadAskQuestion) has already said which dish it is.
+    // (cookAheadAskQuestion) has already said which dish it is. So the
+    // `named ?` ternary inside both block builders is UNREACHABLE today.
+    // Kept rather than cut, with the parameter, because it is the seam a
+    // design that brings blocks back would need, and because the rule it
+    // encodes — the heading and the body never say one sentence twice —
+    // is what test_prep_questions_step still pins through it.
     var several = items.length + comps.length > 1;
     return (
       '<div class="wk-quick-body cook-ahead-ask-card" id="cook-ahead-ask-card"' +
@@ -16613,6 +16618,13 @@
       // optional, no longer apologetic.
       (lines.length
         ? '<div class="shell-card wk-quick-card' + (asksOnly ? ' on-spruce' : '') + '">' +
+            // Counted rather than written out. Be honest about what that
+            // is worth: `lines` can only hold one ask or two, and
+            // spellSmallNumber(2) is 'Two', so this renders exactly what
+            // the ternary it replaces rendered. It is not what fixed
+            // Emily's screen — the nine questions were nine BLOCKS inside
+            // one ask, and cookAheadPickLinesHtml is what fixed that. This
+            // only means a third ask could never be announced as "Two".
             '<div class="wk-quick-title">' +
               (lines.length === 1
                 ? 'One quick one before you go'

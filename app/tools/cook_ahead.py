@@ -102,18 +102,36 @@ def _is_a_cook(row) -> bool:
     so there is no batch to make, and a nonsense question at the moment of
     leaving undoes the approval.
 
-    The rule is the app's existing one, not a second answer to it:
-    weekly_plan._is_cook (planned, not a reheat, not takeout — covered
-    between _is_cookable and cook_ahead_repeats' own chain check) plus the
-    part shell.js already adds for snacks (isRealCook: the slot shows a
-    time, i.e. prep + cook is more than nothing). A written method counts
-    too: a recipe with steps and no times is somebody standing at a stove
-    with a number missing from the recipe, not a bowl of fruit.
+    It is built on the app's existing notions rather than invented beside
+    them, and it is NOT identical to either of them — say that plainly,
+    because "same rule" was the first version of this docstring and it was
+    not true:
 
-    A freeform meal has neither, so it is not a cook — which is the same
-    answer the screens already give it: get_week_menu's build_slot has no
-    recipe to read times off, hands back `meta: null`, and isRealCook
-    reads that as not a cook.
+      weekly_plan._is_cook   planned, not a reheat, not takeout. Covered
+                             here between _is_cookable and
+                             cook_ahead_repeats' own chain check. It reads
+                             no times at all.
+      shell.js isRealCook    that, AND the slot shows a time (build_slot's
+                             `meta`, i.e. prep + cook is more than
+                             nothing). Used for snacks only.
+      this                   that, OR the recipe has a written method.
+
+    The extra clause is deliberate: a recipe with steps and no minutes is
+    somebody standing at a stove with a number missing from the recipe,
+    not a bowl of fruit. The direction is safe — this only ever offers
+    MORE than isRealCook would — but three surfaces now give three answers
+    to "is this a cook", and two consequences follow that Emily should see
+    rather than discover. A repeated FREEFORM dinner counts toward the "4
+    cooks" on the week receipt (_is_cook reads no times) and is never
+    offered for batching two inches below it. And a saved recipe with
+    steps and no times is a cook here, a cook on the receipt, and not a
+    cook to the snack rows on Plan. Folding the three into one is its own
+    card; it cannot be done from here, because weekly_plan._is_cook takes
+    a menu-entry dict rather than a row.
+
+    A freeform meal has neither times nor steps, so it is not a cook here
+    — which is at least what the SCREENS say about one: build_slot has no
+    recipe to read times off and hands back `meta: null`.
     """
     if not _is_cookable(row):
         return False
