@@ -1010,14 +1010,22 @@ def suggest_planning_period(from_date: str = "", plan_ahead: bool = True) -> dic
     Unasked, "today" is the HOUSEHOLD's (2026-09-15). This names a week a
     screen shows, and from 8pm Eastern the server is already on tomorrow —
     which, on the last evening of a period, is the evening the Friday rule
-    starts skipping it. No symptom was ever reproduced: the nudge and the
-    Plan tab both read this, so the two move together and stay
-    self-consistent on either clock. It moves because self-consistent is
-    not the same as right, and because every window that has to coincide
+    starts skipping it.
+
+    It was FILED with no reproduced symptom, and the reason is worth
+    keeping: the check that found nothing compared two households' nudge
+    payloads, and the nudge and the Plan tab both read this function, so
+    the two move together and stay self-consistent on either clock.
+    Self-consistent is not the same as right — driven at Toronto 21:30 the
+    wrong week really is offered, and every window that has to coincide
     with the household's day moves in the same commit (the 2026-09-14
-    lesson). A caller that passes `from_date` reads no clock at all, which
-    is how the two callers that already had one — main._first_plan_window
-    and chores._chores_week — stay at exactly one read between them.
+    lesson).
+
+    A caller that passes `from_date` reads no clock here at all, so this
+    change reaches neither main._first_plan_window nor chores._chores_week:
+    both resolve a day themselves and hand it in. What day they hand in is
+    their own business, and today both hand in the SERVER's — their own
+    cards, not this one's.
     """
     today = date.fromisoformat(from_date) if from_date else _household_today()
     anchor = (_rhythm_anchor() or "sunday")
@@ -1152,13 +1160,15 @@ def get_week_planning_nudge() -> dict:
     THIS suggested period specifically (below): dismissed, it stays quiet
     until the suggestion changes; not dismissed, it asks again tomorrow.
     """
-    # ONE clock for the whole function (2026-09-15). This used to read
-    # three: retire_expired_drafts on the household's, a bare date.today()
-    # here, and suggest_planning_period on the server's underneath it — so
-    # for the four evening hours the two dates differ, the sweep and the
-    # offer were reasoning about different days. Resolved once and threaded
-    # down, which also keeps the nudge at the single connection-and-SELECT
-    # it already cost.
+    # ONE clock for the whole function (2026-09-15). Three READS on TWO
+    # clocks before it: retire_expired_drafts on the household's, a bare
+    # date.today() here, and suggest_planning_period on the server's
+    # underneath it — so for the four evening hours the two dates differ,
+    # the sweep at the top and the offer beneath it were reasoning about
+    # different days, and a draft this function had just decided was still
+    # live was invisible to the question it asked next. Resolved once and
+    # threaded down, which also keeps the nudge at the single
+    # connection-and-SELECT it already cost.
     today = _household_today()
     # A draft whose last day has passed is nobody's week any more; retire
     # it before deciding what to offer, so this and the Plan tab (which
@@ -2914,6 +2924,14 @@ def _pending_draft_over(plan: dict) -> int | None:
         # for the same four evening hours the draft survived in the
         # database and STILL wasn't the Plan tab's front page. Retiring
         # is not the only thing that stops a plan leading the tab.
+        #
+        # It is evaluated AFTER get_conn above, which is the shape
+        # discard_draft_plan's own comment argues against one screen down
+        # — noted rather than moved (2026-09-15). Harmless here and only
+        # here: this function never writes, so there is no BEGIN IMMEDIATE
+        # for a second connection to sit behind, and moving it would be a
+        # change with no behaviour behind it. Give this function a write
+        # and it wants hoisting first.
         (household_id(), row["id"], _household_today().isoformat()),
     ).fetchall()
     conn.close()

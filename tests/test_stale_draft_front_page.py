@@ -32,6 +32,7 @@ from pathlib import Path
 
 import pytest
 
+from conftest import pin_household_clock
 from app import tools
 from app.db import get_conn
 from app.tools import weekly_plan as _weekly_plan
@@ -59,6 +60,9 @@ def pin_today(monkeypatch):
     def _pin(iso_date: str):
         _FixedToday._value = datetime.date.fromisoformat(iso_date)
         monkeypatch.setattr(_weekly_plan, "date", _FixedToday)
+        # ...and the household's clock with it, or the pin means two dates
+        # under a straddling timezone. See conftest.pin_household_clock.
+        pin_household_clock(monkeypatch)
     return _pin
 
 

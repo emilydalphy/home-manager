@@ -592,3 +592,110 @@ class TestTheClockIsStillReadAFixedNumberOfTimes:
         """
         _behind(monkeypatch)
         assert _clock_reads(monkeypatch, tools.get_week_planning_nudge) == 1
+
+    def test_the_component_payload_reads_it_once_too(self, monkeypatch):
+        """
+        GUARD, and the pin on the component branch's own
+        `week_receipt(..., today=...)` thread. That thread cannot be pinned
+        by VALUE — see the class below for why — so what says it is still
+        there is the count: drop it and this payload asks a fourth time.
+        """
+        household_today = _behind(monkeypatch)
+        tools.add_recipe("Quick Chili", ingredients=[{"item": "Beans", "qty": "1 can"}],
+                         prep_time_minutes=5, cook_time_minutes=10)
+        tools.set_planning_mode("component_based")
+        tools.create_weekly_plan((household_today - timedelta(days=3)).isoformat())
+        tools.approve_weekly_plan(tools.get_weekly_plan()["weekly_plan_id"])
+
+        assert _clock_reads(monkeypatch, tools.get_week_menu) == 3
+
+    def test_a_payload_with_no_plan_at_all_reads_it_twice(self, monkeypatch):
+        """
+        GUARD, and the pin on the no-plan branch's
+        `suggest_planning_period(from_date=...)` thread — the Plan tab's
+        empty state, and the one shape the guard above never reaches,
+        because it seeds a plan. Two: this function's own, and
+        _current_weekly_plan_row's underneath get_weekly_plan. Drop the
+        thread and it is three.
+        """
+        _behind(monkeypatch)
+        assert tools.get_week_menu()["weekly_plan_id"] is None, "really no plan"
+        assert _clock_reads(monkeypatch, tools.get_week_menu) == 2
+
+    def test_a_read_pinned_to_one_plan_costs_a_single_read(self, monkeypatch):
+        """
+        GUARD. `get_week_menu(id)` is the public share page's shape, and it
+        resolves neither _current_weekly_plan_row nor _pending_draft_over —
+        it was told which plan. One read, which is the honest cost of the
+        branch's "is this day still ahead of us" and of the receipt.
+
+        This seeds a DAY-BASED plan, where it was already one before this
+        branch (that branch's Pick-row gate, 2026-09-15) — so read it as a
+        pin on the receipt's thread, which it catches, and not as evidence
+        of a cost change. The shape that really goes 0 -> 1 is the same
+        call on a COMPONENT plan, whose Pick rows and receipt were both on
+        the server's date; measured 0 on the merge base and 1 here.
+        """
+        household_today = _behind(monkeypatch)
+        plan = _insert_plan(household_today - timedelta(days=3), "approved")
+
+        assert _clock_reads(monkeypatch, lambda: tools.get_week_menu(plan)) == 1
+
+
+# ---------- one payload, one day ----------
+#
+# The cost guards above say the clock is READ once. They do not say the
+# whole payload is ABOUT one day, and the difference matters: every callee
+# threaded here defaults to `_household_today()` itself, so dropping a
+# thread changes no value while the clock is still — which is exactly why
+# three of the four threads pass their own value tests unmutated, and why
+# the counts above are what actually pin them.
+#
+# What the threading buys beyond cost is that a payload straddling midnight
+# cannot answer about two days. That is not reachable with a single frozen
+# instant, so it is reached the only honest way: a clock that answers a
+# different day each time it is asked. Artificial as a wall clock, exact as
+# a statement of the property — "ask once, use that answer everywhere".
+
+class TestOnePayloadAnswersAboutOneDay:
+    def test_the_plan_tab_uses_the_day_it_first_asked_for(self, monkeypatch):
+        """
+        CATCH against the mutation, not against main (main reads the
+        server's clock everywhere, so it is trivially self-consistent and
+        this passes there for the wrong reason — a GUARD there, a mutation
+        check here). Drop either `today=` on the day-based branch and the
+        two halves of one Plan tab payload describe two different days:
+        "Plan next week ›" stops offering the stretch after this plan and
+        falls back to the standing suggestion, and the receipt loses the
+        cook it was meant to name.
+        """
+        _as_we_go()
+        first = SERVER_TODAY
+        plan = _insert_plan(first - timedelta(days=6), "approved")
+
+        rolling = iter(first + timedelta(days=n) for n in range(100))
+        monkeypatch.setattr(_wp, "_household_today", lambda: next(rolling))
+
+        menu = tools.get_week_menu()
+        assert menu["weekly_plan_id"] == plan
+        # The stretch after this plan, sized by the rhythm — computed from
+        # the day the payload started on, not from whatever the clock said
+        # by the time this line was reached.
+        assert menu["next_period"]["start_date"] == (first + timedelta(days=1)).isoformat()
+        assert menu["next_period"]["is_current_period"] is False
+        # And the receipt names this plan's next cook from that same day.
+        assert menu["receipt"]["thaw_line"] == f"Nothing to thaw before {first.strftime('%A')}."
+
+    def test_the_empty_state_names_the_day_it_first_asked_for(self, monkeypatch):
+        """
+        CATCH against the mutation, the same shape on the no-plan branch:
+        the week the Plan tab offers a household that has never planned.
+        """
+        _as_we_go()
+        first = SERVER_TODAY
+        rolling = iter(first + timedelta(days=n) for n in range(100))
+        monkeypatch.setattr(_wp, "_household_today", lambda: next(rolling))
+
+        menu = tools.get_week_menu()
+        assert menu["weekly_plan_id"] is None
+        assert menu["suggested_period"]["start_date"] == first.isoformat()
