@@ -873,6 +873,12 @@ class ScannedItem(BaseModel):
 
 class ConfirmScanRequest(BaseModel):
     items: list[ScannedItem]
+    # Which photo this came off: 'receipt' | 'fridge' | 'pantry'. Optional
+    # and defaulted to nothing on purpose — it is provenance, never a
+    # requirement — but a receipt row and a fridge row are not the same
+    # claim about where the food is, and tools.inventory.scan_source is
+    # where that difference is written down.
+    kind: str = ""
 
 
 class StapleDecisionRequest(BaseModel):
@@ -3512,12 +3518,17 @@ class DefrostConfirmRequest(BaseModel):
 @app.get("/api/week/{week_start}/defrost-items")
 def week_defrost_items(week_start: str):
     """
-    The plan's own meat/seafood ingredients, each with the night(s) it
-    feeds — the freezer-check ask card's chip list (Loop Board "Defrost
-    check: ask at approval"). Read-only; never touches inventory, since the
-    whole point of asking is that inventory is deferred policy and most
-    households never track a freezer item there at all (see
-    tools.defrost.meat_items_for_plan).
+    The plan's own meat/seafood ingredients that the app has no other
+    record of, each with the night(s) it feeds — the freezer-check ask
+    card's chip list (Loop Board "Defrost check: ask at approval").
+
+    Read-only, and it DOES read inventory now, which this sentence claimed
+    it never did until 2026-09-15: one of the four rules is whether the
+    fridge demonstrably covers the need. It still never writes one, and it
+    still works for a household that tracks nothing — which is most of
+    them, inventory being deferred policy. See
+    tools.defrost.meat_items_for_plan for all four rules and for where
+    this ask now lives.
     """
     plan_id = _plan_id_for_week(week_start)
     try:
@@ -4790,10 +4801,23 @@ async def scan_pantry(request: Request, photo: UploadFile = File(...)):
 
 @app.post("/api/inventory/confirm-scan")
 def confirm_scan(req: ConfirmScanRequest):
-    """Save a reviewed/edited scan result (receipt, fridge, or pantry photo) into inventory."""
+    """
+    Save a reviewed/edited scan result (receipt, fridge, or pantry photo)
+    into inventory.
+
+    Each row records WHICH photo it came off (tools.inventory.scan_source),
+    because a receipt names food and never a shelf: agent.scan_receipt_image
+    returns no location at all, so those rows take the category default,
+    and defrost.meat_items_for_plan must not read that guess as proof the
+    food is not frozen. Reproduced through this very route on 2026-09-15 —
+    a 5 lb pack photographed off the receipt, filed under 'fridge', thaw
+    never mentioned.
+    """
     try:
         entries = [
-            {"item": i.item, "action": "add", "quantity": i.quantity, "category": i.category, "expiration_date": i.expiration_date, "location": i.location}
+            {"item": i.item, "action": "add", "quantity": i.quantity, "category": i.category,
+             "expiration_date": i.expiration_date, "location": i.location,
+             "source": tools.inventory.scan_source(req.kind, i.location)}
             for i in req.items
         ]
         tools.update_inventory_items(entries, action="add")

@@ -400,7 +400,12 @@ why*, not duplicating the diff.
   other days should it cover?", and apple slices, cheese and crackers,
   cucumbers and yogurt with it. Reproduced over real HTTP through the
   actual approve route on a throwaway DB before anything was touched: **8
-  batch questions and 3 freezer chips; 1 and 0 after.**
+  batch questions and 3 freezer chips; 1 and 0 after — and read that "0
+  freezer chips" as the freezer ask going DELIBERATELY SILENT at approval,
+  not as three wrong chips corrected.** It is silent because approval has
+  just listed the week's meat, and it comes back when the food is home. The
+  bullet further down is the long version; this is the short one, because
+  the number on its own reads like a fix.
   - **"Actually cooked" is `cook_ahead._is_a_cook`, and it is a THIRD
     answer to that question rather than a reuse of one — said plainly
     because the first version of this entry and of the docstring both
@@ -451,6 +456,31 @@ why*, not duplicating the diff.
       shelf still defaults to the fridge and still suppresses** — the
       source is the app's own record of its confidence and it is a proxy,
       not the truth.
+      **A THIRD PATH WAS MISSING FROM THAT SET AND A RE-REVIEW FOUND IT
+      STILL OPEN — the same blocker, one door over.** `POST
+      /api/inventory/confirm-scan` wrote every row as `source='chat'`, so a
+      5 lb pack photographed off the RECEIPT landed under 'fridge' and the
+      thaw was never mentioned. `agent.scan_receipt_image` returns no
+      location key at all — a receipt names food, never a shelf — where the
+      fridge and pantry scans tag every row through `_tag_scan_location`;
+      and `static/inventory.html` then pre-fills the review sheet's
+      location select from a category guess of its OWN, so the row reaches
+      the server looking stated. The route records which photo a row came
+      off now (`inventory.scan_source`, `ConfirmScanRequest.kind`,
+      `update_inventory(source=)`), and the receipt — plus the bare `scan`
+      that a caller saying nothing gets — is in the set, which lives in
+      `inventory.GUESSED_LOCATION_SOURCES` beside the writes rather than in
+      defrost.py. **Storing `location = ''` instead does NOT work, so
+      nobody should try it twice:** `_add_to_inventory` resolves the
+      default and stores the GUESS (inventory.py:215/:295), so a guessed
+      shelf and a stated one are byte-identical on disk; `source` is the
+      only signal there is. Making `location` itself carry that difference
+      is the real answer and is its own card. `source` is in neither
+      inventory tool's schema, so the assistant cannot set it.
+      **The exclusion can only ever make this ask LOUDER** — it takes a
+      reason for silence away, never adds one — so a stated fridge row that
+      a receipt scan later merged into costs one extra question rather than
+      a missed thaw.
     - **2 — a move already booked, pending or done, keyed per NIGHT.** The
       first cut keyed it by NAME, so one booked Wednesday made the item
       unbookable for the whole week and a chicken dinner swapped in for
@@ -473,7 +503,19 @@ why*, not duplicating the diff.
       with. It reads the SERVER's date because `confirm_frozen_items` does;
       matching it matters more than the household's clock here, since the
       two have to agree about what is still possible, and that function's
-      own clock is an older question.
+      own clock is an older question, filed as its own card.
+      **THE COST OF THAT MATCH, MEASURED IN THE PRODUCTION SHAPE**
+      (container UTC, household Toronto): from about **21:00 Toronto the
+      server is already on tomorrow**, so a 48-hour-lead item loses a night
+      the household could still have started that evening with about 46
+      hours in hand — roughly **four hours of every evening, which is
+      exactly when somebody taps "Something in the freezer?"**. What is NEW
+      is the SILENCE rather than the wrongness: on main that chip came back
+      with `TOO_LATE_TO_THAW_NOTE`, wrong in that window and at least
+      actionable; here the night is simply not offered. The rule is still
+      right to match the write — an ask offering a night the write refuses
+      is §8 rule 7 inverted — so the fix belongs in `confirm_frozen_items`,
+      and both move in one commit.
   - **WHERE THE ASK LIVES NOW — the question the review made me measure
     rather than assert.** Every surface that shows it (All set, the Meals
     receipt, Cook's re-ask link) renders AFTER an approval, and approval
@@ -489,6 +531,21 @@ why*, not duplicating the diff.
     only works because of the `_INFERRED_LOCATION_SOURCES` carve-out** — on
     fridge-covers alone that purchased row suppresses and the ask is dead
     everywhere.
+  - **FOR EMILY, two things about the freezer rules that are correct and
+    worth knowing rather than discovering.** (a) **Rule 1 compares the
+    RECIPE's written quantity, not the week's servings-scaled need.**
+    `_batch_quantity` applies the leftover-chain factor and not
+    `attendance.servings_scale_factor`, so a household of six or eight
+    whose shopping line would read 3-4 lbs is silenced by 2 lbs in the
+    fridge. Self-consistent — the defrost task it writes says 2 lbs too —
+    but it means rule 1's comparison is NOT the shopping-line figure
+    `_KitchenStock`'s own docstring is written around, which is the one
+    place this reuse is looser than it looks. (b) **The ask has TWO homes,
+    not one.** Cook's "Something in the freezer?" link is the quiet one,
+    and the Plan receipt row comes back on its own in a later session,
+    because `defrost_asked_at` is never stamped and the receipt's
+    dismissal is session-scoped — so a household that shops on Saturday
+    meets the question again on Sunday without going looking for it.
   - **Known and left: `defrost_asked_at` is never stamped when there is
     nothing to ask**, so `ensureDefrostAskItems` makes one GET per page
     view of Meals for the life of the plan. Stamping it would be the app

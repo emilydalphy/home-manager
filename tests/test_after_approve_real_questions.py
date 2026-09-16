@@ -67,8 +67,8 @@ from pathlib import Path
 import pytest
 
 from conftest import household_today
-from app import db, tools
-from app.tools import cook_ahead, defrost
+from app import agent, db, tools
+from app.tools import cook_ahead, defrost, inventory
 from tests import nodeharness
 
 REPO = Path(__file__).resolve().parents[1]
@@ -631,6 +631,114 @@ def test_a_night_still_ahead_survives_a_night_that_is_too_late():
 
     later = (datetime.date.today() + datetime.timedelta(days=4)).isoformat()
     assert _nights(plan_id) == [("Shrimp", [later])]
+
+
+# ---------- where a shelf came from: the scan paths ----------
+# A re-review (2026-09-15) found the guessed-shelf blocker still open one
+# path over: agent.scan_receipt_image returns no location key at all, so a
+# 5 lb pack photographed off the receipt landed under the meat category's
+# default, 'fridge', and the thaw was never mentioned. The fridge and
+# pantry scans do tag every row (_tag_scan_location), so they are a real
+# statement about a shelf and still count.
+
+def _confirm_scan(client, kind=None, location=None, item="Chicken Thighs", quantity="5 lbs"):
+    body = {"items": [{"item": item, "quantity": quantity, "category": "meat/seafood"}]}
+    if location is not None:
+        body["items"][0]["location"] = location
+    if kind is not None:
+        body["kind"] = kind
+    assert client.post("/api/inventory/confirm-scan", json=body).status_code == 200
+
+
+def _inventory_row():
+    conn = db.get_conn()
+    row = conn.execute("SELECT item, location, source FROM inventory_items").fetchone()
+    conn.close()
+    return dict(row)
+
+
+def test_a_receipt_scan_never_takes_the_thaw_away(signed_in):
+    """CATCH against 0ab91f4 — the blocker again, through a path the first
+    two source names did not cover. The shipped client fills the review
+    sheet's location select from guessLocationForCategory, so the row
+    reaches the server looking stated; it is not, and a receipt cannot say
+    where anything went."""
+    _household()
+    _meat()
+    plan_id = _meat_week()
+    _confirm_scan(signed_in, kind="receipt", location="fridge")
+
+    assert _inventory_row()["source"] == "scan_receipt"
+    assert _items(plan_id) == ["Chicken Thighs"]
+
+
+def test_a_scan_that_says_nothing_about_itself_is_read_as_placing_nothing(signed_in):
+    """CATCH against 0ab91f4 — the raw agent.scan_receipt_image payload,
+    which is what the reviewer posted: no `kind`, no `location`, so the
+    shelf is _resolve_location's category default twice over. A caller
+    that tells us nothing is the case the fallback exists for."""
+    _household()
+    _meat()
+    plan_id = _meat_week()
+    _confirm_scan(signed_in)
+
+    assert _inventory_row() == {"item": "Chicken Thighs", "location": "fridge", "source": "scan"}
+    assert _items(plan_id) == ["Chicken Thighs"]
+
+
+def test_a_fridge_scan_really_did_look_at_a_shelf(signed_in):
+    """GUARD — the other half, and the reason this is about the SOURCE and
+    not about scans in general. scan_fridge_photo tags every row through
+    _tag_scan_location, so 'fridge' there is a photograph of a fridge, not
+    a category default, and it still answers the question."""
+    _household()
+    _meat()
+    plan_id = _meat_week()
+    _confirm_scan(signed_in, kind="fridge", location="fridge")
+
+    assert _inventory_row()["source"] == "scan_fridge"
+    assert _items(plan_id) == []
+
+
+def test_a_fridge_scan_that_saw_the_freezer_compartment_still_asks(signed_in):
+    """GUARD — the same scan, the other shelf. Nothing about the source
+    rule reaches a row that is actually in the freezer."""
+    _household()
+    _meat()
+    plan_id = _meat_week()
+    _confirm_scan(signed_in, kind="fridge", location="freezer")
+
+    assert _items(plan_id) == ["Chicken Thighs"]
+
+
+@pytest.mark.parametrize("kind,location,expected", [
+    ("receipt", "fridge", "scan_receipt"),
+    ("fridge", "fridge", "scan_fridge"),
+    ("pantry", "pantry", "scan_pantry"),
+    ("fridge", None, "scan"),        # tagged nothing, whatever it says it is
+    ("", "fridge", "scan"),          # an old client, or none
+    ("nonsense", "fridge", "scan"),
+])
+def test_scan_source_falls_back_to_the_one_that_claims_nothing(kind, location, expected):
+    """GUARD by mutation — every unknown road leads to "scan", which is IN
+    the guessed set, so the fallback costs a question rather than a thaw."""
+    assert inventory.scan_source(kind, location) == expected
+    if expected == "scan":
+        assert expected in inventory.GUESSED_LOCATION_SOURCES
+
+
+def test_the_chat_tool_still_writes_chat_and_cannot_be_told_otherwise():
+    """GUARD — `source` is threaded for the routes, and the assistant must
+    not be able to set it: it is absent from this tool's schema, so a model
+    call always takes the default. Both halves asserted, because the
+    default alone would be true of a schema that offered it."""
+    _household()
+    tools.update_inventory("Chicken Thighs", "add", quantity="2 lbs", category="meat/seafood")
+    assert _inventory_row()["source"] == "chat"
+
+    for tool in agent.TOOL_DEFINITIONS:
+        if tool["name"] in ("update_inventory", "update_inventory_items"):
+            assert "source" not in tool["input_schema"]["properties"]
 
 
 # ---------- isolation, scope, and the route ----------

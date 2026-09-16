@@ -598,17 +598,17 @@ def _iter_plan_meat_ingredients(weekly_plan_id: int):
             yield m, ing, ing_name, batch_factor
 
 
-# Where a row's location is the app's own guess rather than something
-# anybody looked at: the two paths that write an inventory row straight off
-# a shopping line. _add_to_inventory resolves a blank location through
-# quantities._DEFAULT_LOCATION_BY_CATEGORY, which files meat and seafood
-# under 'fridge' — so a 5 lb pack bought for the freezer and ticked off the
-# list is recorded, silently, as being in the fridge. That is exactly the
-# household this ask is for, so a row from one of these is never a reason
-# to stop asking (review, 2026-09-15: "never suppress on a category-default
-# guess"). A row a person put somewhere — a scan, a chat line naming the
-# shelf, the Inventory screen — still counts.
-_INFERRED_LOCATION_SOURCES = frozenset({"grocery_checkoff", "grocery_list_already_have"})
+# Which rows' shelf the app guessed rather than being told — the one list,
+# kept beside the writes that produce them (inventory.GUESSED_LOCATION_SOURCES)
+# rather than restated here, because this module reads it and never writes
+# one. It covers the two grocery paths and the receipt scan; the comment
+# there says which and why.
+#
+# What it can only ever do is make this ask LOUDER: excluding a row takes a
+# reason for silence away, never adds one. So a stated fridge row that a
+# receipt scan later merged into costs one extra question rather than a
+# missed thaw, which is the direction this whole function is biased in.
+_INFERRED_LOCATION_SOURCES = _inventory.GUESSED_LOCATION_SOURCES
 
 # A grocery line that still means "you are going to buy this". Deliberately
 # an allow-list: 'purchased' and 'removed' are in the kitchen or nowhere,
