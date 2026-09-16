@@ -81,6 +81,15 @@ _BAND_JS = (
     + "function groPlural(n, one, many){ return n + ' ' + (n === 1 ? one : many); }\n"
     "function groTotals(d){ return { needed: d.needed }; }\n"
     "function groStoresWithNeeded(d){ return d.stops; }\n"
+    # 2026-09-16 ("One list is fine" can start a trip): the eyebrow drops the
+    # stops clause for a stop that is the one-list stand-in, so it asks
+    # groIsStandIn now. That predicate runs for real here — only its
+    # groPillStores is stubbed, from the same fake the neighbours above use,
+    # where the stops ARE the shops. The stops these tests pass are ordinary
+    # shop names, so nothing they assert moves.
+    "var GRO_ONE_LIST_STOP = 'Your list';\n"
+    "function groPillStores(d){ return d.stops || []; }\n"
+    + _function("groIsStandIn")
     + _function("groBandEyebrow")
     + """
 function el() { return { textContent: '', hidden: false, dataset: {} }; }
