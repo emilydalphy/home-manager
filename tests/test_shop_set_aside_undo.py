@@ -298,7 +298,20 @@ def test_the_header_count_and_nows_shop_move_agree_through_set_aside_and_back(si
     tools.add_grocery_item("rice", "1 bag", "pantry")
     today = date(2026, 9, 15)
     now = datetime.combine(today, time(10, 0))
-    view = {"meals": [{"date": today.isoformat(), "slot": "dinner"}]}
+    # Both rows are what tonight's dinner is waiting on: since 2026-09-16
+    # the shop move only names a deadline for a cook the list is actually
+    # for (moves._shop_move reads the per-meal ledger). Planning the meal
+    # with its ingredients merges into the two rows above rather than
+    # adding new ones, so the counts under test are still 2 and then 1.
+    tools.add_recipe("Roast Night", ingredients=[
+        {"item": "whole chicken", "qty": "1", "category": "meat"},
+        {"item": "rice", "qty": "1 bag", "category": "pantry"},
+    ])
+    plan_id = tools.create_weekly_plan(today.isoformat())["weekly_plan_id"]
+    entry = tools.plan_meal(today.isoformat(), "Roast Night", slot="dinner",
+                            weekly_plan_id=plan_id, add_ingredients_to_grocery_list=True)
+    view = {"meals": [{"date": today.isoformat(), "slot": "dinner",
+                       "entry_id": entry["entry_id"]}]}
 
     def counts() -> tuple[int, int]:
         move = _moves._shop_move(view, today, now, time(18, 0))

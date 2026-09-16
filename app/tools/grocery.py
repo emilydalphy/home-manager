@@ -864,6 +864,61 @@ def list_grocery_list(status: str = "needed") -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def entry_ids_awaiting_a_shop() -> set[int]:
+    """
+    Every meal_plan_entries row that still has something to buy for it —
+    read off the per-meal ledger (meal_plan_grocery_links), the same record
+    the reversal above re-derives a line from.
+
+    This is how Today answers "is the list actually for tonight?" without
+    matching ingredient names, which would be a second answer to a question
+    the ledger already answers exactly (see moves._shop_move).
+
+    Two things about the rule, both deliberate:
+
+    - 'needed' only, matching what the list itself calls "to buy". A line
+      already in the trolley or bought is not a reason to tell anybody to
+      go shopping, and an excluded line is off the list by the household's
+      own say-so.
+    - NOT gated on source_weekly_plan_id. A hand-added standing want keeps
+      that NULL even after a plan's amount merges into it (add_grocery_item's
+      keep_standing), so reading it as "this line belongs to nobody's meal"
+      would miss exactly the lines a meal really is waiting on. A line no
+      meal ever contributed to has no row here at all, which is the same
+      answer by a route that cannot be wrong.
+
+    WHAT THIS CANNOT SEE, named so nobody reports it as new. A meal with no
+    ledger row cannot claim a deadline, however much the household has just
+    bought for it by hand:
+
+    - An ingredient the kitchen check skipped at ingest (recipes._KitchenStock
+      decided there was enough at home) leaves that meal no row. If the
+      household then finds there isn't enough and hand-adds it, that line is
+      exactly what tonight is waiting on and Now will not put a clock on it.
+      Routine rather than exotic — every ticked purchase writes an inventory
+      row, so ingest skips are ordinary.
+    - A freeform meal, and a chat-planned one where the household declined
+      "shall I add the ingredients?" and added them by hand, by voice or by
+      photo-scan, have no ingredients to have made rows.
+
+    Both are the QUIET direction, which is this card's own stated
+    preference — before this, the move claimed a deadline unconditionally
+    and was right in these cases only by accident. Closing them means
+    answering "is this line for that meal?" for a line no meal ever
+    recorded, which is name-matching by another name; its own card.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT DISTINCT l.meal_plan_entry_id AS entry_id "
+        "FROM meal_plan_grocery_links l JOIN grocery_items g ON g.id = l.grocery_item_id "
+        "WHERE l.household_id = ? AND g.household_id = ? "
+        "  AND g.status = 'needed' AND g.excluded_from_list = 0",
+        (household_id(), household_id()),
+    ).fetchall()
+    conn.close()
+    return {r["entry_id"] for r in rows}
+
+
 def exclude_grocery_item(item_id: int) -> dict:
     """
     Hide an item from the normal shown/shopped grocery list without

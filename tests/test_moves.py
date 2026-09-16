@@ -184,8 +184,12 @@ def test_shopping_outranks_the_dinner_it_is_for_while_the_list_still_has_items()
     _household()
     _recipe("Chicken Skewers", prep=10, cook=25)
     plan_id = _plan()
-    tools.plan_meal(ISO_TODAY, "Chicken Skewers", slot="dinner", weekly_plan_id=plan_id)
-    tools.add_grocery_item("Chicken Thighs", quantity="1 lb")
+    # The skewers' own thighs, on the list because this meal put them there:
+    # since 2026-09-16 the shop move only names a deadline for something the
+    # cook is actually waiting on (moves._shop_move reads the per-meal
+    # ledger), and a hand-added line beside the dinner is not that.
+    tools.plan_meal(ISO_TODAY, "Chicken Skewers", slot="dinner", weekly_plan_id=plan_id,
+                    add_ingredients_to_grocery_list=True)
 
     payload = tools.today_moves(now=_at(18))
     assert payload["featured"] == f"shop:{ISO_TODAY}"
@@ -222,8 +226,8 @@ def test_the_shop_moves_by_time_is_the_cooks_start_not_the_table_time():
     _household()
     _recipe("Sunday Roast", prep=20, cook=90)  # 110 minutes, total
     plan_id = _plan()
-    tools.plan_meal(ISO_TODAY, "Sunday Roast", slot="dinner", weekly_plan_id=plan_id)
-    tools.add_grocery_item("Chicken Thighs", quantity="1 lb")
+    tools.plan_meal(ISO_TODAY, "Sunday Roast", slot="dinner", weekly_plan_id=plan_id,
+                    add_ingredients_to_grocery_list=True)
     tools.set_dinner_window("5_6ish")  # dinner lands at 5:30
 
     shop = _by_kind(tools.today_moves(now=_at(12)))["shop"]
@@ -243,8 +247,8 @@ def test_a_no_duration_meal_falls_back_to_the_slot_time():
     _household()
     _recipe("Takeout Night", prep=0, cook=0)
     plan_id = _plan()
-    tools.plan_meal(ISO_TODAY, "Takeout Night", slot="dinner", weekly_plan_id=plan_id)
-    tools.add_grocery_item("Napkins")
+    tools.plan_meal(ISO_TODAY, "Takeout Night", slot="dinner", weekly_plan_id=plan_id,
+                    add_ingredients_to_grocery_list=True)
     tools.set_dinner_window("5_6ish")  # dinner lands at 5:30
 
     shop = _by_kind(tools.today_moves(now=_at(12)))["shop"]
@@ -267,8 +271,8 @@ def test_a_shop_move_stays_featured_and_overdue_once_the_cooks_start_time_has_pa
     _household()
     _recipe("Sunday Roast", prep=20, cook=90)  # 110 minutes; starts at 3:40
     plan_id = _plan()
-    tools.plan_meal(ISO_TODAY, "Sunday Roast", slot="dinner", weekly_plan_id=plan_id)
-    tools.add_grocery_item("Chicken Thighs", quantity="1 lb")
+    tools.plan_meal(ISO_TODAY, "Sunday Roast", slot="dinner", weekly_plan_id=plan_id,
+                    add_ingredients_to_grocery_list=True)
     tools.set_dinner_window("5_6ish")  # dinner lands at 5:30
 
     payload = tools.today_moves(now=_at(16))  # past 3:40, well before 5:30
@@ -290,8 +294,8 @@ def test_an_overdue_shop_move_stops_naming_a_time_thats_already_passed():
     _household()
     _recipe("Sunday Roast", prep=20, cook=90)  # 110 minutes; starts at 3:40
     plan_id = _plan()
-    tools.plan_meal(ISO_TODAY, "Sunday Roast", slot="dinner", weekly_plan_id=plan_id)
-    tools.add_grocery_item("Chicken Thighs", quantity="1 lb")
+    tools.plan_meal(ISO_TODAY, "Sunday Roast", slot="dinner", weekly_plan_id=plan_id,
+                    add_ingredients_to_grocery_list=True)
     tools.set_dinner_window("5_6ish")  # dinner lands at 5:30
 
     shop = _by_kind(tools.today_moves(now=_at(16)))["shop"]  # past 3:40, before 5:30

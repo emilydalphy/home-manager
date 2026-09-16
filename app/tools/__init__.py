@@ -178,6 +178,7 @@ from .grocery import (  # noqa: F401
     clear_stale_grocery_items,
     consolidate_grocery_list,
     drop_carried_over_item,
+    entry_ids_awaiting_a_shop,
     exclude_grocery_item,
     get_grocery_list_by_section,
     include_grocery_item,
