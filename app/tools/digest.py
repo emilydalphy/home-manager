@@ -52,6 +52,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from ..db import get_conn
 from ._shared import PUBLIC_BASE_URL, household_id, use_household
 from . import attention as _attention
+from . import cooker as _cooker
 from . import moves as _moves
 from . import notifications as _notifications
 
@@ -371,14 +372,26 @@ def build_morning_text(now_local: datetime | None = None) -> str | None:
     """
     The text, or None when there is nothing worth a text. `now_local` is
     the household's own clock, naive (today_moves compares naive
-    timestamps); the loop passes it, tests pass what they like.
+    timestamps); the loop passes it, tests pass what they like, and
+    omitting it reads the household's clock rather than the server's.
 
     Lines go in most-important-first and each one is kept only if the
     whole thing still fits in MAX_TEXT_CHARS with the link. The first line
     is always kept, trimmed if it must be — a text that says "Tonight:
     chicken tacos" and nothing else is still the text.
     """
-    now_local = now_local or datetime.now()
+    # The default is the HOUSEHOLD's clock, never the server's. The container
+    # runs UTC and households default to America/Toronto, so from 8pm local
+    # datetime.now() is already tomorrow — a text reasoning about a different
+    # day from every screen that produced it. The sending loop has always
+    # passed now_local, so nothing in production ever took the old default;
+    # it was the next caller's trap, and it contradicted the line above.
+    #
+    # household_now opens its own connection, so a caller that omits the
+    # clock must not be inside an open write transaction. The sending loop
+    # holds one open across this call but passes the clock and has only
+    # read on it, so nothing here nests a write.
+    now_local = now_local if now_local is not None else _cooker.household_now()
     if now_local.tzinfo is not None:
         now_local = now_local.replace(tzinfo=None)
     lines = _digest_lines(now_local)
