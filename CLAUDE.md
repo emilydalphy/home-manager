@@ -391,6 +391,61 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-16 — The morning text's own default clock is the household's now,
+  which is what its docstring always claimed. Branch
+  `overnight/morning-text-household-clock`, NOT merged at the time of
+  writing.** Loop Board Phase 0 bug, filed by the `overnight/reseed-date-tests`
+  build rather than fixed there (that branch's rule was tests-only).
+  `build_morning_text(now_local=None)` fell back to `datetime.now()` — the
+  SERVER's clock — while its own docstring called the argument "the
+  household's own clock". The container runs UTC and households default to
+  `America/Toronto`, so from 8pm local those are different days.
+  - **It was never a live defect and this entry does not pretend otherwise.**
+    Verified rather than assumed, twice: `app/` has exactly one call site
+    (`digest.py:527`, the sending loop) and it has passed `now_local` since
+    the module's first commit; the function is in neither
+    `agent.TOOL_FUNCTIONS` nor `TOOL_DEFINITIONS` and sits behind no route;
+    no root script calls it. **Cost is zero, measured** — 42 `get_conn`
+    calls across a real loop pass before and after — precisely because the
+    one caller never takes the default.
+  - **What it WAS is the next caller's trap**, and two tests were already
+    caught by it: they called it bare, and one was **vacuously passing**
+    under a straddling timezone as a result. That is how this class
+    announces itself before it becomes a defect, and this app produced four
+    separate server-clock-vs-household-clock defects in two days.
+  - **`cooker.household_now()`, not a second conversion.** digest.py already
+    carries its own `_zone` for the sending loop, and tonight.py carries a
+    third; folding those into one is a real tidy-up and its own card. This
+    adds no fourth — it reads the one helper every other screen reads.
+    `digest` already imported `moves`, which imports `cooker` at module
+    scope, so the new `from . import cooker as _cooker` adds no edge to the
+    package's import graph (checked by AST and by importing each module
+    first in a fresh subprocess).
+  - **The comment says the connection rule**, because `household_now` opens
+    its own: the sending loop holds a connection open across this call, and
+    it is read-only there, so nothing nests a write. Instrumented on a real
+    loop pass rather than argued: `in_transaction` is False at the call.
+  - `tests/test_morning_text_household_clock.py` (5; **3 red on `697da2a`**,
+    and the 2 guards say so in their own docstrings). Both directions,
+    frozen at one UTC instant with `cooker.datetime` subclassed: Toronto
+    21:30 (the household a day BEHIND — the production direction) and Tokyo
+    08:30 (a day AHEAD). One test pins that the default reads the
+    household's STORED zone by running two zones at the same instant and
+    requiring two different days, so a default hard-wired to Toronto fails
+    it. **The aware-clock guard was toothless when first written** — its
+    seed had nothing to buy, so `today_moves` never built a shop move and
+    never reached the `now <= at` comparison the tzinfo-stripping exists
+    for; deleting that stripping left all five green. It seeds a grocery
+    line now and dies on the real `TypeError`. Found by review, not by the
+    author. A fourth mutation is **knowingly not covered**: the right day at
+    the wrong hour passes, because the suite pins the DAY only.
+  - **A now-false comment was corrected in the same change** rather than
+    left standing (`tests/test_needs_you_dinner_visible.py`'s `_morning_text`
+    helper, which explained at length why it passed the clock because the
+    default asked about a different day). The same care the 2026-09-14
+    `moves-household-clock` entry records. Suite **5253 passed, 0 failed**
+    at `TZ=America/Toronto`, `UTC` and `Asia/Tokyo` (5248 before).
+
 - **2026-09-15 — "Noted" must never note nothing: held things. Branch
   `worktree-held-things`, NOT merged at the time of writing.** Loop Board
   feature (flow H1, "Pomona, hold this"). Root cause of the walk's
@@ -787,16 +842,17 @@ why*, not duplicating the diff.
     which is the bug it was written for. Two `test_cook_shelf` boundary tests
     (`period_end == today` / `== yesterday`) are STRONGER, not weaker: under a
     straddle they were sitting a day off the boundary they name.
-  - **A latent hazard in `app/`, found and deliberately NOT fixed here.**
-    `digest.build_morning_text(now_local=None)` defaults to
-    `datetime.now()` — the SERVER's clock — while its own docstring says the
-    argument is "the household's own clock". Unreachable in production (the
-    sending loop at `digest.py:519` always passes the household's now; it is
-    not a chat tool and not a route), so it is a trap rather than a defect,
-    and `app/` is not this card's to change. The two tests that were calling
-    it bare now pass the clock, which is what the docstring says callers do.
-    Worth a line in `digest.py` or a `household_now()` default next time
-    somebody is in that file.
+  - **A latent hazard in `app/`, found and deliberately NOT fixed here —
+    FIXED 2026-09-16 on `overnight/morning-text-household-clock`; see that
+    entry at the top of this log.** `digest.build_morning_text(now_local=None)`
+    defaulted to `datetime.now()` — the SERVER's clock — while its own
+    docstring said the argument is "the household's own clock". Unreachable
+    in production (the sending loop at `digest.py:519` always passes the
+    household's now; it is not a chat tool and not a route), so it was a
+    trap rather than a defect, and `app/` was not this card's to change. The
+    two tests that were calling it bare now pass the clock, which is what
+    the docstring says callers do. The default is `cooker.household_now()`
+    now, so the trap is gone rather than merely written down.
   - **CI: the Toronto pin STAYS on both existing jobs, and a third job
     `straddle` is the tripwire** — unpinned, blocking (no
     `continue-on-error`), on `pull_request` and pushes to `main` like

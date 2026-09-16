@@ -60,14 +60,13 @@ def _morning_text():
     """
     The morning text for the household's own today, at 07:00 its time.
 
-    The clock is passed rather than defaulted, and that is the point of the
-    call. `digest.build_morning_text()` falls back to `datetime.now()` — the
-    SERVER's clock — while its own docstring says the argument is "the
-    household's own clock"; the only production caller (the sending loop)
-    always passes the household's, so the default is unreachable in the app
-    and only a test can hit it. A test that hits it is asking about a
-    different day from every other surface in this file the moment the
-    process's timezone is not the household's.
+    The clock is passed rather than defaulted, and the hour is why. The
+    DAY would now be the same either way — `build_morning_text()` reads the
+    household's clock when nothing is passed (2026-09-16), so the default
+    no longer asks about a different day from the rest of this file. What
+    the default does not fix is the time of day: these tests want a
+    household's 07:00, when the day's moves are all still ahead, rather
+    than whatever hour the run happens to land on.
     """
     return digest.build_morning_text(
         datetime.datetime.combine(household_today(), datetime.time(7, 0))
