@@ -162,12 +162,15 @@ def test_shops_eyebrow_counts_the_list_and_falls_back_to_the_date():
         "function groTotals(d){ return { needed: d.needed }; }\n"
         "function groStoresWithNeeded(d){ return d.stops; }\n"
         # 2026-09-16 ("One list is fine" can start a trip): the eyebrow drops
-        # the stops clause for a household whose only stop is the one-list
-        # stand-in, so it reads that constant now. Stubbed like its
-        # neighbours; the stops below are real shop names, so the wording
-        # this test is about is unchanged.
+        # the stops clause for a stop that is the one-list stand-in, so it
+        # asks groIsStandIn now. That predicate runs for real here — only
+        # its groPillStores is stubbed, from the same fake the neighbours
+        # use, where the stops ARE the shops. The stops below are ordinary
+        # shop names, so the wording this test is about is unchanged.
         "var GRO_ONE_LIST_STOP = 'Your list';\n"
-        "var BAND_IDENTITY = 'none';\n"
+        "function groPillStores(d){ return d.stops || []; }\n"
+        + _function("groIsStandIn") + "\n  }\n"
+        + "var BAND_IDENTITY = 'none';\n"
         + _function("bandDateLabel") + "\n  }\n"
         + _function("groBandEyebrow") + "\n  }\n"
         + "console.log(JSON.stringify({"

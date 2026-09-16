@@ -27,6 +27,18 @@ store. Nothing heads a card with it, nothing offers it as a pill, nothing
 writes it to a row, and the one place a stop name reaches the database
 (shopping_trips) records it as no shop at all.
 
+Section 8 is the correction that came out of reviewing the first commit,
+and it is the one to read before changing any of this. That commit matched
+the stand-in by NAME, under a comment claiming it "cannot collide with a
+real store". It can, twice over — a trip is a snapshot, so a shop named
+mid-trip leaves "Your list" in tripStops beside real pill stores; and the
+app shows the household the words "Your list" as a stop title, so a shop
+can be typed with that name. Measured, such a shop was undercounted in the
+band, double-counted in its own remaining, lost its "Stop 1 of 2", was
+recorded under no shop, and was finished with "Done shopping" while another
+shop was still to go. groIsStandIn — that name AND no pill store by it —
+is read by all five sites now.
+
 Behaviour is run under node against shell.js's own functions, the way
 tests/test_shop_trip_exit.py and tests/test_grocery_fast_sort.py do — "the
 button isn't there" is exactly what a source-marker test cannot see.
@@ -419,7 +431,7 @@ def test_the_one_list_household_keeps_its_headingless_list():
     easily have caused: LIST draws the loose pile as one plain section only
     when there are no stops, so a stand-in stop would have emptied the
     screen. Emily's call, 2026-09-09: "One list is fine" means what it says.
-    Pinned by MUTATION: drop `!groOneListStop(data) &&` from groListHtml and
+    Pinned by MUTATION: drop `!groNoShopNamed(data) &&` from groListHtml and
     the three rows are drawn by nothing."""
     out = _node("""
 const d = oneList();
@@ -461,7 +473,7 @@ def test_a_one_list_household_whose_rows_were_all_answered_still_sees_them():
     card, the rest into "Not sorted yet". A household with no shop has no
     card for either, so the plain section has to draw the whole pile
     whatever each row was answered. That half is green on main and is
-    pinned by the `!groOneListStop(data) &&` mutation."""
+    pinned by the `!groNoShopNamed(data) &&` mutation."""
     out = _node("""
 const d = base({ usualStores: [], stores: {
   Unassigned: { sections: rows([item(1, 'Rice', '', 1), item(2, 'Oats', '', 1), item(3, 'Eggs', '', 1)]),
@@ -761,7 +773,86 @@ def test_the_new_copy_keeps_the_voice():
     assert "!" not in "Your list Done shopping"
 
 
-# --- 8. what is still true, and deliberately not fixed here ----------------
+# --- 8. a real shop called "Your list" wins its own name back --------------
+
+
+@_needs_node
+def test_a_shop_actually_named_your_list_is_a_shop_and_not_the_stand_in():
+    """CATCH against this branch's own first commit (11cb882), where the
+    stand-in was matched by NAME alone.
+
+    The app shows the household the words "Your list" as a stop title, so
+    typing them into "+ Add a store" is a path a confused person can take.
+    Measured on 11cb882 with that shop beside Costco and one shopless row:
+    the band read "1 stop" for two real shops, the shop double-counted the
+    shopless row in its own remaining (1 -> 2), the head lost "Stop 1 of
+    2", the trip was recorded under no shop at all — and the one with
+    teeth, the dock said "Done shopping" with Costco still to go. Every
+    value below is main's, which is what a real shop is owed."""
+    out = _node("""
+const d = base({ usualStores: ['Your list', 'Costco'], stores: {
+  Unassigned: { sections: rows([item(9, 'Foil', '', 1)]), purchased: [], inCart: [] },
+  'Your list': { sections: rows([item(1, 'Rice', 'Your list', 1)]), purchased: [], inCart: [] },
+  Costco: { sections: rows([item(2, 'Oats', 'Costco', 1)]), purchased: [], inCart: [] }
+} });
+const before = { band: groBandEyebrow(d), stops: groStoresWithNeeded(d),
+  remaining: groStopRemaining(d, 'Your list'), costco: groStopRemaining(d, 'Costco') };
+click({ gro: 'start-trip' });
+click({ gro: 'head-for', store: 'Your list' });
+const onIt = { head: groHeadFor(d, 'trip'), dock: groDockHtml(d, 'trip') };
+click({ gro: 'stop-done' });
+settle(function () {
+  console.log(JSON.stringify({ before: before, onIt: onIt,
+    closes: closesOf().map(function (p) { return p.body.store; }),
+    step: groceryState.step }));
+});
+""")
+    assert out["before"]["band"] == "3 things · 2 stops", "two real shops are two stops"
+    assert sorted(out["before"]["stops"]) == ["Costco", "Your list"], "both are stops"
+    assert out["before"]["remaining"] == 1, "the shopless row rides to either shop, so it is neither's"
+    assert out["before"]["costco"] == 1
+    assert out["onIt"]["head"]["sub"] == "Stop 1 of 2 · 2 left"
+    assert 'data-gro="stop-done">Done at Your list</button>' in out["onIt"]["dock"], \
+        "a shop is finished by name, however that name reads"
+    assert "Done shopping" not in out["onIt"]["dock"], "Costco is still to go"
+    assert out["closes"] == ["Your list"], "and the trip is recorded under it"
+    assert out["step"] == "next", "with somewhere still to go"
+
+
+@_needs_node
+def test_the_stand_in_survives_a_shop_being_named_while_the_trip_is_on():
+    """GUARD — it cannot be run against this branch's first commit, where
+    the names it calls do not exist, so its redness there says nothing.
+
+    It is the reason groIsStandIn asks about PILL STORES rather than about
+    the household or about the trip: a trip is a snapshot, so "Your list"
+    stays in tripStops after a shop is named, and in that state the
+    household does have a pill store. It is still the stand-in, because the
+    shop they named is not called "Your list".
+
+    Pinned by MUTATION, and the mutation is the tidier-looking rule that
+    was considered and dropped — "the stand-in is whatever the only stop
+    is". That reddens this and
+    test_naming_a_shop_mid_trip_does_not_renumber_the_trip_already_on
+    together, which is what makes the pill-store form the robust one."""
+    out = _node("""
+const d = oneList();
+click({ gro: 'start-trip' });
+click({ gro: 'trip-pause' });
+groceryState.usualStores = ['Metro'];   // added from What we know
+click({ gro: 'trip-resume' });
+console.log(JSON.stringify({ at: groTripStore(), noShopNamed: groNoShopNamed(d),
+  isStandIn: groIsStandIn(d, 'Your list'), dock: groDockHtml(d, 'trip'),
+  head: groHeadFor(d, 'trip') }));
+""")
+    assert out["at"] == "Your list"
+    assert out["noShopNamed"] is False, "they have named a shop by now"
+    assert out["isStandIn"] is True, "and it still is not this one"
+    assert 'data-gro="stop-done">Done shopping</button>' in out["dock"]
+    assert out["head"]["sub"] == "3 left"
+
+
+# --- 9. what is still true, and deliberately not fixed here ----------------
 
 
 @_needs_node

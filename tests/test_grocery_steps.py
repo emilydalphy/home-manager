@@ -364,7 +364,7 @@ def test_finishing_a_stop_ends_that_stop_and_asks_where_next():
     # what this marker is about, and what the behaviour test in
     # tests/test_one_list_can_start_a_trip.py runs for real.
     _in("return 'Done at ' + (store || 'this stop');", SHELL_JS, "the stop's own button", "shell.js")
-    _in("escapeHtml(groStopDoneLabel())", SHELL_JS, "where the dock reads it", "shell.js")
+    _in("escapeHtml(groStopDoneLabel(data))", SHELL_JS, "where the dock reads it", "shell.js")
     _in("data-gro=\"stop-done\"", SHELL_JS, "its handler", "shell.js")
     _in("goGroceryStep(stillToGo.length ? 'next' : 'wrap');", SHELL_JS, "where it goes next", "shell.js")
     # Reworded 2026-09-13 (Loop Board "Shop: a way out of the Shop loop"):

@@ -3741,12 +3741,31 @@
   // One shop short of groSoleStore, and the same trick — the trip runs on
   // a stop NAME, so give it the one place they shop: their list.
   //
-  // It is a stop, not a store. Nothing heads a card with it, nothing
-  // offers it as a pill, and it is never written to a row — so it cannot
-  // collide with a real store, which by definition does not exist while
-  // this is in use (groPillStores is empty, or there is a real stop).
+  // It is a stop, not a store: nothing heads a card with it, nothing
+  // offers it as a pill, and it is never written to a row.
   var GRO_ONE_LIST_STOP = 'Your list';
-  function groOneListStop(data) { return groPillStores(data).length === 0; }
+  // Did this household name any shop at all? The question LIST asks to
+  // decide whether it draws store cards or one plain section.
+  function groNoShopNamed(data) { return groPillStores(data).length === 0; }
+  // Is THIS stop the stand-in — a different question, and the two were
+  // muddled when this shipped. The comment here used to say the stand-in
+  // "cannot collide with a real store, which by definition does not exist
+  // while this is in use", and that was false twice over. A trip is a
+  // snapshot, so a shop named mid-trip leaves "Your list" in tripStops
+  // beside real pill stores (this branch's own
+  // test_naming_a_shop_mid_trip_does_not_renumber_the_trip_already_on puts
+  // it in that state on purpose). And the app SHOWS the household the
+  // words "Your list" as a stop title, so typing them into "+ Add a store"
+  // is a path a confused person can take — measured, that shop was
+  // undercounted in the band, double-counted in its own remaining, and
+  // finished with "Done shopping" while another shop was still to go.
+  //
+  // So it is the stand-in only while no shop by that name exists. A real
+  // shop always wins its own name back, and the snapshot case still reads
+  // as the stand-in, because there "Your list" is still not a pill store.
+  function groIsStandIn(data, name) {
+    return name === GRO_ONE_LIST_STOP && groPillStores(data).indexOf(name) === -1;
+  }
   // Whether a person has answered where this row goes. Persisted now
   // (grocery_items.store_decided) rather than held in a page-view map: an
   // "Any" answer writes store '', which is byte-identical on the wire to
@@ -4435,9 +4454,10 @@
       return {
         back: '‹ Shop',
         title: store || 'The trip',
-        // "Stop 1 of 1" is a count of stops, and the one-list household
-        // has none to count — same reason the band drops the clause.
-        sub: store === GRO_ONE_LIST_STOP ? left
+        // "Stop 1 of 1" is a count of stops, and a household that named
+        // no shop has none to count — same reason the band drops the
+        // clause, and the same predicate.
+        sub: groIsStandIn(data, store) ? left
           : 'Stop ' + (done + 1) + ' of ' + Math.max(stops.length, 1) + ' · ' + left
       };
     }
@@ -4452,13 +4472,14 @@
   function groBandEyebrow(data) {
     var t = data ? groTotals(data) : { needed: 0 };
     if (!t.needed) return bandDateLabel();
-    // The clause counts SHOPS, and the one-list stand-in is not one: "1
-    // stop" would be the first time the word appeared for somebody who
-    // answered "One list is fine", and it tells them nothing they didn't
-    // know. A household with one NAMED shop still gets "· 1 stop" — that
-    // stop has a name they chose.
+    // The clause counts SHOPS, and the stand-in is not one: "1 stop" would
+    // be the first time the word appeared for somebody who answered "One
+    // list is fine", and it tells them nothing they didn't know. A
+    // household with one NAMED shop still gets "· 1 stop" — that stop has
+    // a name they chose, and so does a shop actually called "Your list"
+    // (groIsStandIn, not a name match).
     var stopCount = groStoresWithNeeded(data).filter(function (n) {
-      return n !== GRO_ONE_LIST_STOP;
+      return !groIsStandIn(data, n);
     }).length;
     var eyebrow = groPlural(t.needed, 'thing', 'things');
     if (stopCount) eyebrow += ' · ' + groPlural(stopCount, 'stop', 'stops');
@@ -4634,11 +4655,11 @@
     // unsorted things gets the two named cards instead: for them "where
     // does this go?" is a real question, and the heading says so — S6.)
     //
-    // The one-list household (groOneListStop) takes the plain section
-    // whatever else is true: their only "stop" is the stand-in, which
-    // heads no card, so reading `stops` here as store cards on screen
-    // would leave their whole list drawn by nothing.
-    if (!groOneListStop(data) && (stops.length || unsorted.length)) {
+    // A household that named no shop (groNoShopNamed) takes the plain
+    // section whatever else is true: their only "stop" is the stand-in,
+    // which heads no card, so reading `stops` here as store cards on
+    // screen would leave their whole list drawn by nothing.
+    if (!groNoShopNamed(data) && (stops.length || unsorted.length)) {
       // A one-shop household's loose pile is already inside that shop's own
       // card (groStoreCardItems) — it has only one place it could be
       // bought — so a second card here would print it twice.
@@ -5466,9 +5487,11 @@
   // household is standing in no shop they ever named, and "Done at Your
   // list" is not a sentence — theirs is one list and one trip, so the
   // button says the whole of what it does.
-  function groStopDoneLabel() {
+  // `data` is not optional: without it a caller silently gets "Done at
+  // Your list" back, which is the sentence this exists to prevent.
+  function groStopDoneLabel(data) {
     var store = groTripStore();
-    if (store === GRO_ONE_LIST_STOP) return 'Done shopping';
+    if (groIsStandIn(data, store)) return 'Done shopping';
     return 'Done at ' + (store || 'this stop');
   }
 
@@ -5628,7 +5651,7 @@
     // Never for a real stop among several: there the shopless things
     // follow the shopper from stop to stop (groTripItems) and belong to
     // no one of them, so counting them per stop would count them twice.
-    if (name === GRO_ONE_LIST_STOP || groSoleStore(data) === name) {
+    if (groIsStandIn(data, name) || groSoleStore(data) === name) {
       n += groRideAlongItems(data).length + groRideAlongInCart(data).length;
     }
     return n;
@@ -5994,8 +6017,11 @@
       // screen's one apricot while it is there — a "Start the trip" under
       // it would be a second one, which Rule 5 doesn't allow. No action,
       // so no dock — the rule's own "a screen with no single action has no
-      // dock" case. (A household that has named no shop has no stops
-      // anyway, so nothing is being withheld.)
+      // dock" case. (Until 2026-09-16 this line said a household that had
+      // named no shop "has no stops anyway, so nothing is being withheld".
+      // The opposite is true now: they get the one-list stand-in
+      // (groStoresWithNeeded), so this clause is exactly what holds their
+      // dock back until the question above it is answered.)
       var canGo = stops.length > 0 && !groStoresPromptShouldShow();
       // "See the week" rides beside the trip the way "Finish later" does on
       // the trip screens: from the list the week is one tap, and from the
@@ -6045,7 +6071,7 @@
       // no longer this screen's to decide — see the WHERE NEXT step.
       return '<div class="dock-row">' +
         '<button type="button" class="gro-primary" data-gro="stop-done">' +
-          escapeHtml(groStopDoneLabel()) + '</button>' +
+          escapeHtml(groStopDoneLabel(data)) + '</button>' +
         groTripPauseLinkHtml() +
       '</div>';
     }
@@ -6636,7 +6662,7 @@
       // this row is the one place a stop name reaches the database, and
       // inventing a store called "Your list" there would hand whatever
       // reads trip history back one day a shop nobody has ever been to.
-      var recordAs = store === GRO_ONE_LIST_STOP ? '' : store;
+      var recordAs = groIsStandIn(data, store) ? '' : store;
       await groPost('/api/shopping-trips/close', { store: recordAs, item_count: inCart.length });
     } catch (err) { /* bookkeeping only */ }
     groceryState.tripBought += inCart.length;
