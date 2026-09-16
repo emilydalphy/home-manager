@@ -29,6 +29,8 @@ import datetime
 
 import pytest
 
+from conftest import household_today
+
 from app import tools
 from app.db import get_conn
 from app.tools import grocery, meal_plans, weekly_plan
@@ -44,6 +46,16 @@ def _day(offset: int) -> str:
 
 
 MON, TUE, WED, FRI = _day(0), _day(1), _day(2), _day(4)
+
+# add_dish_day refuses a target night that has already gone by (2026-09-16),
+# on the household's clock — so the "+" tests below plan from the
+# household's own today rather than from this week's Monday, which puts
+# MON and TUE behind it on every weekday but Monday. What they are about is
+# a forced failure mid-write; the day they aim at only has to be a day the
+# app will still take a dish on, on any weekday the suite runs.
+ADD_START = household_today()
+ADD_SRC = ADD_START.isoformat()
+ADD_TGT = (ADD_START + datetime.timedelta(days=1)).isoformat()
 
 
 # ---------------------------------------------------------------- helpers
@@ -468,9 +480,9 @@ def test_the_stepper_going_UP_had_the_same_seam_and_is_now_atomic_too():
     _household()
     _wraps()
     tools.add_recipe("Soup", ingredients=[{"item": "stock", "qty": "1 l"}], default_servings=3)
-    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
-    source = tools.plan_meal(MON, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
-    target = tools.plan_meal(TUE, "Soup", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    plan_id = tools.create_weekly_plan(ADD_SRC)["weekly_plan_id"]
+    source = tools.plan_meal(ADD_SRC, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    target = tools.plan_meal(ADD_TGT, "Soup", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
     before = _snapshot()
 
     real = meal_plans.plan_meal
@@ -483,6 +495,6 @@ def test_the_stepper_going_UP_had_the_same_seam_and_is_now_atomic_too():
     finally:
         weekly_plan._meal_plans.plan_meal = real
 
-    assert _rows_on(TUE, "dinner") == 1
+    assert _rows_on(ADD_TGT, "dinner") == 1
     assert _snapshot() == before
-    assert {"date": TUE, "slot": "dinner"} not in tools.audit_plan_slots(plan_id)["missing"]
+    assert {"date": ADD_TGT, "slot": "dinner"} not in tools.audit_plan_slots(plan_id)["missing"]

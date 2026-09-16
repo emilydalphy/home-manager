@@ -672,6 +672,14 @@ def add_dish_day(
     gone `planned_empty` or been cooked is still not a night to plan into,
     however the caller addressed it.
 
+    A night that has already GONE BY is refused the same way, on the date
+    alone and so for both address forms — including a genuinely empty one,
+    which has no row to be refused on anything else. Only the picker's
+    `day.isPast` filter used to keep those days off the strip, which is a
+    screen's rule and not the week's. Read on the HOUSEHOLD's clock, or
+    this would refuse tonight for the four hours a day the server is
+    already on tomorrow; today itself is never refused.
+
     Breaking a chain on the way in is ALLOWED and reported, which is
     deliberately not what the stepper going down does. Down DELETES, so a
     night that was eating off the removed one is left holding a recipe
@@ -797,6 +805,29 @@ def add_dish_day(
     if target_id is not None and target_slot_state not in ("planned", "open", "planned_empty"):
         raise ValueError("That slot isn't one this can take over.")
 
+    # A night that has already gone by, whichever way the caller named it.
+    # Only the picker's own `day.isPast` filter kept those days off the
+    # strip, and that is a screen's rule rather than the week's — a tab drawn
+    # yesterday, a retried POST or a direct call can all still send one, and
+    # the rule holds at the write, same as planned_empty and cooked just
+    # below it. Refused before the chain read and long before the swap:
+    # nothing is written.
+    #
+    # THE HOUSEHOLD'S TODAY, never the server's. The container runs UTC and
+    # households default to America/Toronto, so from 8pm local the server's
+    # date is already tomorrow — on that clock this would refuse TONIGHT for
+    # four hours every evening, which is a worse bug than the one it fixes.
+    # _household_today opens a connection of its own and nothing here is
+    # holding one: both branches above close before they reach this.
+    #
+    # Strictly BEFORE, so today itself is untouched — a dish on tonight's
+    # dinner is an ordinary thing to ask for. ISO dates compare as strings,
+    # so a target_date somebody wrote by hand that isn't one simply fails
+    # this test and meets whatever the rest of this function already does
+    # with it; this is not the place to start validating dates.
+    if target_date_resolved < _household_today().isoformat():
+        raise SlotRefused("That night’s already gone.")
+
     from . import leftovers as _leftovers
 
     # The name the ROW READS AS, which for a confirmed reheat is the dish it
@@ -812,7 +843,9 @@ def add_dish_day(
     # and printing a row id (or a Python exception) into the household's
     # week is how an app that did the right thing reports itself broken.
     # A genuinely empty night (target_id is None) has neither state, so
-    # neither line below ever fires for one — there is nothing to refuse.
+    # neither line below ever fires for one — there is no row to refuse.
+    # The DAY still can be: an empty night that has gone by is refused
+    # above, on the date alone.
     if target_slot_state == "planned_empty":
         raise SlotRefused("Nobody’s eating that one — it isn’t a day to plan into.")
     if (target_cooked or "") == "done":

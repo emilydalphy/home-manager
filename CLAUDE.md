@@ -391,6 +391,65 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-16 — Add-a-night refuses a night that has already gone by.
+  Branch `overnight/add-a-night-refuses-the-past`, NOT merged at the time
+  of writing.** Loop Board bug. `add_dish_day` — the Review stepper's "+"
+  — took any target inside the plan's period, past nights included; the
+  only thing keeping those days off the screen was the picker's own
+  `day.isPast` filter, which is a rule the SCREEN follows and not one the
+  week does. Reproduced on both address forms before anything was
+  touched: `target_entry_id` rewrote yesterday's uneaten dinner to another
+  dish, and `target_date` planted a dinner on an empty night that was
+  over. One `SlotRefused` now, on the date alone, so it covers both forms
+  and covers a genuinely empty night — which has no row to be refused on
+  anything else.
+  - **The HOUSEHOLD's today, and that is the whole care in it.** The
+    container runs UTC and households default to America/Toronto, so from
+    8pm local the server's date is already tomorrow — on the server's
+    clock this would refuse TONIGHT for four hours every evening, which is
+    a worse bug than the one it fixes. `_household_today()`, unmodified,
+    read once, and both directions are pinned (Toronto 21:30, the
+    household a day behind and the production direction; Tokyo 08:30, a
+    day ahead).
+  - **Strictly BEFORE.** Today itself is never refused — a dish on
+    tonight's dinner is an ordinary thing to ask for, and a check that
+    took it away is the same bug wearing the other hat. Pinned by
+    mutation: `<=` reddens three tests.
+  - **Refused before anything is read for the write.** It sits above the
+    chain lookup and well above the swap, and no connection of this
+    function's is open when the clock is read — both branches close before
+    they reach it. That is a runtime guard rather than a comment, because
+    a nested `get_conn` fails as an intermittent "database is locked"
+    (twice earned in this repo) and not as a wrong answer.
+  - **An unparseable `target_date` is deliberately not this function's
+    problem.** ISO dates compare as strings, so one somebody wrote by hand
+    that isn't one simply fails the test and meets whatever the rest of
+    the function already does with it. Widening this into date validation
+    would change behaviour nobody asked about.
+  - **THE WORDING IS AN ASSUMPTION, Emily's to overrule in one line:**
+    "That night’s already gone.", inline beside its two sibling refusals
+    in `add_dish_day` (`app/tools/weekly_plan.py`), the same shape as
+    "Nobody’s eating that one — it isn’t a day to plan into."
+  - **`drop_dish_from_day` HAS THE SAME HOLE and is deliberately not fixed
+    here** — its own card. Measured: dropping yesterday's uncooked dinner
+    goes straight through, reverses its grocery contribution and hands the
+    night back as an `open` question reading "You cut Bean Chili back, so
+    this one is yours to fill." — a decision handed back on a day that is
+    over, about food that was probably already bought.
+  - `tests/test_add_a_night_refuses_the_past.py` (21; **12 red on
+    `697da2a`**). Of the 9 green, 2 are harness guards on the freeze
+    itself and the other 7 say in their own docstrings which mutation
+    pins them — all three were run: the server's clock for
+    `date.today()` (4 red), `<=` for today (5 red), and holding a
+    connection across the clock read (1 red, `assert 2 == 1`). Three
+    existing tests in `test_swap_atomic.py` / `test_drop_dish_atomic.py`
+    seeded MON→TUE off this week's Monday, which is the past on every
+    weekday but Monday, so their add_dish_day cases now plan from
+    `conftest.household_today()` instead — the harness-artifact class this
+    file already describes, not an app change. Suite **5269 passed, 0
+    failed** at `TZ=America/Toronto`, and the same at `TZ=UTC` and
+    `TZ=Asia/Tokyo`.
+
 - **2026-09-15 — "Noted" must never note nothing: held things. Branch
   `worktree-held-things`, NOT merged at the time of writing.** Loop Board
   feature (flow H1, "Pomona, hold this"). Root cause of the walk's
