@@ -21,13 +21,13 @@ a louder opinion. Four things are pinned here:
 from __future__ import annotations
 
 import datetime
-import inspect
 import json
 
 import pytest
 
 from app import agent, tools
 from app.tools import taste_verdict
+from conftest import prompt_literals
 
 
 def _week_start(offset_weeks: int = 1) -> str:
@@ -243,8 +243,12 @@ def test_a_guests_only_night_reuses_the_whole_table_verdict(couple, risotto, stu
 
 def test_the_prompt_explains_the_shared_verdict_rule():
     """The rule has to actually reach the model, not just the context."""
-    src = inspect.getsource(agent.generate_weekly_plan_llm)
-    instructions = src[src.index('instructions = f"""'):src.index("Call submit_weekly_plan with the result.")]
+    # prompt_literals, not inspect.getsource — see tests/conftest.py. Sliced
+    # to the instructions block by its own first and last sentences, so the
+    # docstring above it can never satisfy one of these assertions.
+    text = prompt_literals(agent.generate_weekly_plan_llm)
+    start = text.index("Generate a full menu for this household's planning period")
+    instructions = text[start:text.index("Call submit_weekly_plan with the result.", start)]
     assert "`taste_verdicts`" in instructions
     assert "vetoes it for the whole table" in instructions
 

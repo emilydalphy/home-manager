@@ -23,13 +23,13 @@ test_the_generation_prompt_asks_for_ingredient_variety below and
 tests/test_plan_quality.py.
 """
 import datetime
-import inspect
 
 import pytest
 
 from app import agent, tools
 from app.db import get_conn
 from app.tools import quantities
+from conftest import prompt_literals
 
 
 def _week_start() -> str:
@@ -348,10 +348,15 @@ def test_a_measurable_amount_rounds_once_too(week, family_of_three):
 # ---------- the prompt half ----------
 
 def _prompt_text(fn) -> str:
-    """The instructions as the model actually reads them — the source's
-    line-continuation backslashes joined back up, so a test can assert on a
-    sentence rather than on where it happened to wrap."""
-    return inspect.getsource(fn).replace("\\\n", "")
+    """The instructions as the model actually reads them.
+
+    prompt_literals, not inspect.getsource: the compiled string constants
+    have already had their line-continuation backslashes resolved, so a test
+    can assert on a sentence rather than on where it happened to wrap — and
+    nothing that later happens to app/agent.py on disk can change the
+    answer. See tests/conftest.py.
+    """
+    return prompt_literals(fn)
 
 
 def test_the_generation_prompt_asks_for_ingredient_variety():
