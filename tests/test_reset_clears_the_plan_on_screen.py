@@ -18,6 +18,7 @@ import datetime
 
 import pytest
 
+from conftest import pin_household_clock
 from app import tools
 from app.db import get_conn
 from app.tools import reset as _reset
@@ -40,6 +41,9 @@ class _FixedToday(datetime.date):
 def sunday(monkeypatch):
     _FixedToday._value = datetime.date.fromisoformat(SUNDAY)
     monkeypatch.setattr(_weekly_plan, "date", _FixedToday)
+    # ...and the household's clock with it, or the pin means two dates under
+    # a straddling timezone. See conftest.pin_household_clock.
+    pin_household_clock(monkeypatch)
 
 
 def _meal_count(plan_id: int) -> int:

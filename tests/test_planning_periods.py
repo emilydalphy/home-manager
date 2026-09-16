@@ -32,6 +32,7 @@ from pathlib import Path
 
 import pytest
 
+from conftest import household_date, household_today, pin_household_clock
 from app import agent, tools
 from app.db import get_conn
 from app.tools import grocery, weekly_plan
@@ -374,7 +375,10 @@ class TestRhythmAnchoredDefault:
         # three days from today, not seven.
         self._set_anchor("as_we_go")
         suggestion = tools.suggest_planning_period()
-        assert suggestion["start_date"] == datetime.date.today().isoformat()
+        # The HOUSEHOLD's today — this class is unpinned, and "three days
+        # from today" is a question about the day the SCREEN is on. See
+        # conftest.household_today.
+        assert suggestion["start_date"] == household_date()
         assert suggestion["day_count"] == 3
         assert suggestion["planning_anchor"] == "as_we_go"
 
@@ -389,7 +393,7 @@ class TestRhythmAnchoredDefault:
         self._set_anchor("as_we_go")
         res = signed_in.get("/api/week/planning-period")
         assert res.status_code == 200
-        assert res.json()["start_date"] == datetime.date.today().isoformat()
+        assert res.json()["start_date"] == household_date()
         assert res.json()["day_count"] == 3
 
     def test_the_endpoint_labels_the_real_span_not_a_week(self, signed_in):
@@ -399,7 +403,7 @@ class TestRhythmAnchoredDefault:
         # seven-day intake. The label is the visible half of that bug, so
         # it is pinned alongside the count: three days from today reads as
         # a three-day range, seven as a seven-day one.
-        today = datetime.date.today()
+        today = household_today()
 
         self._set_anchor("as_we_go")
         short = signed_in.get("/api/week/planning-period").json()
@@ -441,6 +445,9 @@ class TestPlanningNudgeOpensBeforeTheReadyDay:
         from app.tools import weekly_plan as _weekly_plan
         self._FixedToday._value = datetime.date.fromisoformat(iso_date)
         monkeypatch.setattr(_weekly_plan, "date", self._FixedToday)
+        # ...and the household's clock with it, or the pin means two dates
+        # under a straddling timezone. See conftest.pin_household_clock.
+        pin_household_clock(monkeypatch)
 
     def _make_current_period_plan(self, recipes, stub_model):
         tools.set_planning_anchor("friday")
@@ -496,6 +503,9 @@ class TestPlanningNudgeReappearsDailyUntilReplanned:
         from app.tools import weekly_plan as _weekly_plan
         self._FixedToday._value = datetime.date.fromisoformat(iso_date)
         monkeypatch.setattr(_weekly_plan, "date", self._FixedToday)
+        # ...and the household's clock with it, or the pin means two dates
+        # under a straddling timezone. See conftest.pin_household_clock.
+        pin_household_clock(monkeypatch)
 
     def _make_partial_plan(self):
         conn = get_conn()

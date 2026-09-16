@@ -1006,8 +1006,28 @@ def suggest_planning_period(from_date: str = "", plan_ahead: bool = True) -> dic
     week" and has its own floor rule for how short is too short. Shifting
     underneath it would turn "this week" into next week and "next week"
     into the one after, on a Friday sign-up — Julia's bug, inverted.
+
+    Unasked, "today" is the HOUSEHOLD's (2026-09-15). This names a week a
+    screen shows, and from 8pm Eastern the server is already on tomorrow —
+    which, on the last evening of a period, is the evening the Friday rule
+    starts skipping it.
+
+    It was FILED with no reproduced symptom, and the reason is worth
+    keeping: the check that found nothing compared two households' nudge
+    payloads, and the nudge and the Plan tab both read this function, so
+    the two move together and stay self-consistent on either clock.
+    Self-consistent is not the same as right — driven at Toronto 21:30 the
+    wrong week really is offered, and every window that has to coincide
+    with the household's day moves in the same commit (the 2026-09-14
+    lesson).
+
+    A caller that passes `from_date` reads no clock here at all, so this
+    change reaches neither main._first_plan_window nor chores._chores_week:
+    both resolve a day themselves and hand it in. What day they hand in is
+    their own business, and today both hand in the SERVER's — their own
+    cards, not this one's.
     """
-    today = date.fromisoformat(from_date) if from_date else date.today()
+    today = date.fromisoformat(from_date) if from_date else _household_today()
     anchor = (_rhythm_anchor() or "sunday")
     is_current = True
     if anchor == "as_we_go":
@@ -1140,12 +1160,21 @@ def get_week_planning_nudge() -> dict:
     THIS suggested period specifically (below): dismissed, it stays quiet
     until the suggestion changes; not dismissed, it asks again tomorrow.
     """
+    # ONE clock for the whole function (2026-09-15). Three READS on TWO
+    # clocks before it: retire_expired_drafts on the household's, a bare
+    # date.today() here, and suggest_planning_period on the server's
+    # underneath it — so for the four evening hours the two dates differ,
+    # the sweep at the top and the offer beneath it were reasoning about
+    # different days, and a draft this function had just decided was still
+    # live was invisible to the question it asked next. Resolved once and
+    # threaded down, which also keeps the nudge at the single
+    # connection-and-SELECT it already cost.
+    today = _household_today()
     # A draft whose last day has passed is nobody's week any more; retire
     # it before deciding what to offer, so this and the Plan tab (which
     # sweeps too, in get_week_menu) are reasoning about the same plans.
-    retire_expired_drafts()
-    today = date.today()
-    suggestion = suggest_planning_period()
+    retire_expired_drafts(today.isoformat())
+    suggestion = suggest_planning_period(from_date=today.isoformat())
 
     conn = get_conn()
     dismissed = _notifications._dismissed_keys(conn)
@@ -1205,7 +1234,7 @@ def _plan_covers_any(start_date: str, day_count: int) -> int | None:
     return found[0]["weekly_plan_id"] if found else None
 
 
-def next_period_after(plan: dict) -> dict:
+def next_period_after(plan: dict, today: str = "") -> dict:
     """
     The period the Plan tab's "Plan next week ›" offers underneath a plan
     that is on screen: the stretch that FOLLOWS it, sized by the
@@ -1241,16 +1270,24 @@ def next_period_after(plan: dict) -> dict:
 
     Never shortened for a trip: a night away is a planned_empty slot inside
     the week, not a reason to plan a shorter one (see _finish_week_slots).
+
+    `today` is the household's day, passed in by get_week_menu, which has
+    already resolved it — the clock is one connection-and-SELECT and this
+    is the only caller. Left out, it resolves its own, on the household's
+    clock rather than the server's (2026-09-15): "has this plan already
+    ended" decides whether the link offers the day after it or falls back
+    to the standing suggestion, and on the evening of a plan's last day
+    the server says ended and the household says not yet.
     """
     # `plan` is get_weekly_plan's dict, whose period is already resolved
     # (period_start_date / day_count) — not a weekly_plans row, which
     # would need plan_period() to read its sentinels.
     start_str, days = plan["period_start_date"], int(plan["day_count"] or 0)
     plan_id = plan["weekly_plan_id"]
-    today = date.today()
-    suggestion = suggest_planning_period()
+    on = date.fromisoformat(today) if today else _household_today()
+    suggestion = suggest_planning_period(from_date=on.isoformat())
     following = date.fromisoformat(period_end_date(start_str, days)) + timedelta(days=1)
-    if days < 1 or following <= today:
+    if days < 1 or following <= on:
         start = date.fromisoformat(suggestion["start_date"])
         is_current = suggestion["is_current_period"]
     else:
@@ -1461,6 +1498,12 @@ def discard_draft_plan(weekly_plan_id: int) -> dict:
     over, when there is one, so the screen that dropped it can say which
     week is theirs again instead of just that something went.
     """
+    # The household's day, resolved BEFORE the connection below is opened
+    # rather than where it is used, forty lines down. This function writes
+    # and _household_today opens its own connection; this repo has twice
+    # earned a "database is locked" from a nested get_conn inside a write
+    # transaction, and the cost of reading it early is nothing.
+    today = _household_today().isoformat()
     conn = get_conn()
     plan = conn.execute(
         "SELECT * FROM weekly_plans WHERE id = ? AND household_id = ?",
@@ -1487,8 +1530,11 @@ def discard_draft_plan(weekly_plan_id: int) -> dict:
     # rule the toast told a household living in Sep 14–20 that "Sep 21–27
     # is still your week", which is true of a week they are not in yet.
     # Failing that (a draft entirely in the future), the earliest by period
-    # start — the next week they will reach.
-    today = date.today().isoformat()
+    # start — the next week they will reach. On the HOUSEHOLD's clock
+    # (2026-09-15, resolved at the top): the toast names a week out loud,
+    # and an evening where the server is already on tomorrow is exactly
+    # where "which week contains today" flips from one of a straddling
+    # pair to the other.
     overlapping = []
     for other in conn.execute(
         "SELECT * FROM weekly_plans WHERE household_id = ? AND status = 'approved' AND id != ?",
@@ -2878,6 +2924,14 @@ def _pending_draft_over(plan: dict) -> int | None:
         # for the same four evening hours the draft survived in the
         # database and STILL wasn't the Plan tab's front page. Retiring
         # is not the only thing that stops a plan leading the tab.
+        #
+        # It is evaluated AFTER get_conn above, which is the shape
+        # discard_draft_plan's own comment argues against one screen down
+        # — noted rather than moved (2026-09-15). Harmless here and only
+        # here: this function never writes, so there is no BEGIN IMMEDIATE
+        # for a second connection to sit behind, and moving it would be a
+        # change with no behaviour behind it. Give this function a write
+        # and it wants hoisting first.
         (household_id(), row["id"], _household_today().isoformat()),
     ).fetchall()
     conn.close()
@@ -3683,7 +3737,7 @@ def _pending_thaw_count(weekly_plan_id: int) -> int:
     return row["n"] if row else 0
 
 
-def week_receipt(days: list[dict], weekly_plan_id: int) -> dict:
+def week_receipt(days: list[dict], weekly_plan_id: int, today: str = "") -> dict:
     """
     The approved week in one sentence plus one line.
 
@@ -3716,6 +3770,13 @@ def week_receipt(days: list[dict], weekly_plan_id: int) -> dict:
     a hand-added line and a staple's suggestion are. Zero is not a
     failure (a household whose kitchen already had everything), so the
     sentence drops that clause instead of promising a list of nothing.
+
+    `today` is the household's day, passed in by get_week_menu, which has
+    already resolved it. Left out it resolves its own, on the household's
+    clock (2026-09-15): the no-thaw line names a weekday out loud — the
+    week's next cook from today on — and on the server's date a household
+    a day behind skipped tonight's cook and was told to thaw nothing
+    before TOMORROW, in the evening the receipt is read.
     """
     meals = 0
     cooks = 0
@@ -3754,7 +3815,7 @@ def week_receipt(days: list[dict], weekly_plan_id: int) -> dict:
         count = _receipt_number(thaw_count)
         thaw_line = f"{count[0].upper()}{count[1:]} {thing} to move to the fridge this week."
     else:
-        today_str = date.today().isoformat()
+        today_str = today or _household_today().isoformat()
         next_cook = next(
             (
                 d["date"] for d in days
@@ -3825,10 +3886,19 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     week the screen should name instead (suggest_planning_period's
     answer, the same one the Now nudge is built from).
     """
+    # ONE reading of the household's clock for this whole payload
+    # (2026-09-15), threaded down instead of each part asking again.
+    # retire_expired_drafts, next_period_after, week_receipt and the two
+    # branches' "is this day still ahead of us" all need the same day, and
+    # each resolve costs a connection and a SELECT — so a payload that
+    # already read the clock four times would have read it seven. Resolved
+    # before the first get_conn below, because household_now opens its own.
+    today_str = _household_today().isoformat()
+
     # The Plan tab's read is one of the two moments an expired draft is
     # retired (the nudge is the other) — see retire_expired_drafts.
     if weekly_plan_id is None:
-        retire_expired_drafts()
+        retire_expired_drafts(today_str)
 
     conn = get_conn()
     household = conn.execute(
@@ -3856,13 +3926,13 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             "household_name": household_name, "days": [], "menu_is_suggested": False,
             "slot_times": _slot_clock_labels(),
             "receipt": None,
-            "suggested_period": suggest_planning_period(),
+            "suggested_period": suggest_planning_period(from_date=today_str),
         }
 
     # What "Plan next week ›" under this plan offers — sized by the
     # household's rhythm, not by the plan on screen (Emily, 2026-09-13: a
     # two-day plan was offering two more days). See next_period_after.
-    next_period = next_period_after(plan)
+    next_period = next_period_after(plan, today=today_str)
 
     # design_handoff_plan_the_week: the Meals screen is where a week is
     # approved, so it needs both halves of that state — whether this plan
@@ -3968,7 +4038,6 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     if plan["planning_mode"] == "component_based":
         by_date = {d["date"]: d for d in plan["menu"]}
         days = []
-        today_str = date.today().isoformat()
         suggestions = None
         for d in dates:
             row = by_date.get(d, {})
@@ -4009,7 +4078,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             # Only an approved week has a receipt to show — a draft's
             # question is still "is this right", not "here's what you did".
             "receipt": (
-                week_receipt(days, plan["weekly_plan_id"])
+                week_receipt(days, plan["weekly_plan_id"], today=today_str)
                 if plan["status"] == "approved" else None
             ),
             "next_period": next_period,
@@ -4260,8 +4329,9 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     # about two different days is a new bug, not a smaller one (the
     # 2026-09-14 log entry's own lesson). On the server's date a
     # household a day behind lost the Pick rows on tonight's empty
-    # dinner, in the very evening they would reach for them.
-    today_str = _household_today().isoformat()
+    # dinner, in the very evening they would reach for them. `today_str`
+    # is the one this function resolved at the top; the component branch
+    # above gates its own Pick rows on the same value.
     suggestions = None
     for day in days:
         if day["dinner"] is None and day["date"] >= today_str:
@@ -4313,7 +4383,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         # None while the week is a draft: a receipt is what you get for
         # having decided, and a draft hasn't.
         "receipt": (
-            week_receipt(days, plan["weekly_plan_id"])
+            week_receipt(days, plan["weekly_plan_id"], today=today_str)
             if plan["status"] == "approved" else None
         ),
         # The stretch "Plan next week ›" offers, and why it is the length

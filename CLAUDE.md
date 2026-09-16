@@ -391,6 +391,124 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-16 — The last six server-clock reads in `weekly_plan.py`, one
+  clock per payload, and the straddle job that was already red. Branch
+  `overnight/weekly-plan-last-clock-reads`, NOT merged at the time of
+  writing.** Loop Board Phase 0, the tail of the household-clock
+  conversion: the six reads `overnight/weekly-plan-household-clock` named
+  and left. All six moved; none was defensible on the server's clock,
+  because each decides a calendar day somebody sees.
+  - **`suggest_planning_period`** (which week Plan and the nudge offer),
+    **`next_period_after`** (whether "Plan next week ›" offers the day
+    after this plan or falls back to the standing suggestion),
+    **`discard_draft_plan`** (which approved week the "…is still your
+    week" toast names when a draft straddles two), **`week_receipt`** (the
+    weekday in "Nothing to thaw before Thursday"), **`get_week_menu`'s
+    component branch** (the Pick rows on an empty dinner — the day-based
+    twin moved on 2026-09-15), and **`get_week_planning_nudge`**, which is
+    the one worth reading twice.
+  - **The nudge was THREE READS ON TWO CLOCKS, which is worse than it
+    sounds and is what the card meant by "two clocks in one function".**
+    `retire_expired_drafts` swept on the household's clock at the top;
+    `date.today()` and `suggest_planning_period` underneath it answered on
+    the server's. So a draft whose last day is the household's today
+    survived the sweep and was then invisible to the question the same
+    function asked next — the household told, in one answer, that this
+    week had no plan, about a week that function had just decided was
+    still live. One clock now, resolved first and threaded into both.
+  - **FILED WITH NO REPRODUCED SYMPTOM, and the reason the check found
+    none is the interesting part.** It compared two households' nudge
+    payloads — and the nudge and the Plan tab both read
+    `suggest_planning_period`, so the two moved together and stayed
+    self-consistent on either clock. A reviewer later drove all six
+    producing wrong screens at Toronto 21:30 and right ones here.
+    Self-consistent is not the same as right.
+  - **THE COST WENT DOWN, 4 → 3.** `get_week_menu` resolves the day ONCE
+    at its entry point and threads it into `retire_expired_drafts`,
+    `next_period_after`, `week_receipt` and both branches' "is this day
+    still ahead of us"; adding those four naively would have made the Plan
+    tab payload 7. `today_moves` 4→4, `get_cooker_view` 3→3, the nudge
+    1→1. **Four call shapes DO go up by one**, all once-per-request and
+    none per-day or per-meal: the bare `/api/week/planning-period` route
+    0→1, `get_week_menu(id)` (the public share page) 0→1,
+    `next_period_after(plan)` with no `today` 0→1, and
+    `discard_draft_plan(id)` 0→1. The two reads still separate under
+    `get_week_menu` are `_current_weekly_plan_row` and
+    `_pending_draft_over`, reached through many other callers — named in
+    the guard rather than threaded.
+  - **THE THREADS CHANGE NO VALUE, and that had to be measured rather than
+    assumed.** Every callee defaults to the same `_household_today()`, so
+    dropping a thread costs a read and answers identically — which is why
+    three of the four passed the whole 5276-test suite unmutated, and why
+    the pins on them are per-SHAPE COUNTS (day-based 3, component 3, no
+    plan 2, pinned id 1) rather than values. What threading buys beyond
+    cost is that a payload straddling midnight cannot answer about two
+    days; that is unreachable with one frozen instant, so it is pinned the
+    only honest way, with a clock that answers a different day each time
+    it is asked. All four threads are mutation-checked to bite.
+  - **`_household_today()` is untouched** — it is a shift applied to this
+    module's own `date.today()` on purpose, and a reviewer confirmed the
+    seam is real: replacing it with `cooker.household_now().date()` turns
+    11 existing tests red.
+  - **THE THREE-ZONE RUN THIS BRANCH FIRST CLAIMED WAS WORTH NOTHING AS
+    STRADDLE EVIDENCE, and that is the lesson to carry.** Toronto, UTC and
+    Tokyo were all on the same date at the hour it ran, so "green in three
+    zones" said only that the suite is green when the two clocks agree —
+    the one configuration in which this whole bug class cannot occur. The
+    zones that straddle are `Pacific/Niue` and `Etc/GMT+12`. Measured
+    there: merge base **7 failed / 5241 passed**, this branch before
+    remediation **21 failed / 5255** — **+14**, in `test_planning_periods`
+    (6), `test_stale_draft_front_page` (5) and `test_sunday_next_week_span`
+    (3). `straddle (Pacific/Niue)` blocks.
+  - **All 14 were harness artifacts and the remediation is on this branch,
+    not a card — plus the 7 that were already red on `main`.** They are one
+    defect from one cause, and this file's own rule is that a clock moves
+    with every window that has to coincide with it. Four files pin a
+    weekday by hand (`monkeypatch.setattr(weekly_plan, "date",
+    _FixedToday)`), which is only half the clock now: `_household_today()`
+    is that pin PLUS the real shift, so under a straddling zone a test
+    pinned to "Thursday" asks the app about Wednesday and asserts the
+    Thursday answer. New `conftest.pin_household_clock(monkeypatch)` sets
+    the shift to zero; four fixtures call it, and three unpinned tests in
+    `TestRhythmAnchoredDefault` re-seed off `conftest.household_today()`.
+    **Test-only — not one line of `app/` is in the remediation.**
+  - **A HALF-PINNED TEST PASSES WRONGLY AS WELL AS FAILING WRONGLY, and
+    that is the finding that inverts how to read the 14.**
+    `test_stale_draft_front_page::test_thursday_still_offers_this_week` is
+    GREEN on `main` for the wrong reason — its fixture describes the
+    SERVER's clock, which is the clock `main` happens to read — and this
+    branch reddens it by making the app read the household. Redness under
+    a straddle is not evidence of a defect, and greenness is not evidence
+    of correctness, unless you know which clock the fixture is describing.
+  - **A shared helper rather than four copies**, deliberately, and it is in
+    shared test infrastructure, which is why it is named and documented at
+    length: four files need the same two lines, a fifth will, and the
+    files that are genuinely ABOUT the two clocks disagreeing must never
+    call it. Its docstring says both.
+  - `tests/test_weekly_plan_last_clock_reads.py` (33; **18 red against the
+    unmodified `app/`**, of which **14 are behaviour catches** — the other
+    four say in their own docstrings that they are not: two name a
+    parameter that does not exist there and one reads the source for a
+    marker, all errors rather than failures, and the cost guard is red
+    there only because its ceiling moved DOWN). Both directions at a frozen
+    UTC instant, Toronto 21:30 and Tokyo 08:30, following
+    `test_weekly_plan_household_clock.py`. The `as_we_go` planning anchor
+    is what makes them land the same way on every weekday rather than only
+    where the two clocks' Mondays differ.
+  - Suite **5281 passed, 0 failed** at `TZ=America/Toronto`, at
+    `TZ=Pacific/Niue` and at `TZ=Etc/GMT+12` — the last two are the ones
+    that mean anything, and they clear this branch's 14 AND the merge
+    base's pre-existing 7, so the "straddle CI job is already red on main"
+    card closes with this. Driven over a real uvicorn on a throwaway DB
+    as well.
+  - **Out of scope, found and named rather than fixed:**
+    `app/tools/chores.py` is a whole module on the server's clock (16
+    reads), and `get_chores_pending` is the one with teeth — its `today`
+    groups the Plan | Chores list into today/week/later AND is passed to
+    `_top_up_unscheduled`, which WRITES a chore's next occurrence. Same
+    class, its own card. Smaller pockets, unaudited, for sizing only:
+    `big_meal.py` 6, `inventory.py` 5, `notifications.py` 3, `defrost.py` 3.
+
 - **2026-09-15 — "Noted" must never note nothing: held things. Branch
   `worktree-held-things`, NOT merged at the time of writing.** Loop Board
   feature (flow H1, "Pomona, hold this"). Root cause of the walk's
@@ -584,6 +702,17 @@ why*, not duplicating the diff.
     and never per meal or per day (pinned: 4 reads on a 7-day plan and
     still 4 on a 14-day one). The `get_week_menu` jump is the one to
     watch if a fifth reader appears.
+    **CORRECTED 2026-09-16 — `get_week_menu` was at FOUR after this
+    branch, not two, and it is THREE now.** The 0→2 is this branch's own
+    delta and reads as the current number, which it never was: it counts
+    `retire_expired_drafts` and the Pick-row gate and not the two
+    `get_week_menu` also reaches through, `_current_weekly_plan_row` and
+    `_pending_draft_over`. Measured twice, independently, on the merge
+    base: 4. `overnight/weekly-plan-last-clock-reads` takes it to 3 by
+    resolving the day once at the entry point and threading it down —
+    see that entry at the top of this log. A per-payload delta is not a
+    per-payload total, and this is the second time this log has had to
+    unpick one.
 
 - **2026-09-15 — "Batch cook these" on a SNACK wrote a chain nothing could
   read, so the recipe under it went on showing one afternoon's amounts.

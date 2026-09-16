@@ -511,6 +511,42 @@ def household_date(offset_days: int = 0) -> str:
     return (household_today() + _dt.timedelta(days=offset_days)).isoformat()
 
 
+def pin_household_clock(monkeypatch) -> None:
+    """
+    Make a pin of `weekly_plan.date` mean ONE date, for the household's
+    clock as well as the server's.
+
+    For the file that pins a weekday by hand — `monkeypatch.setattr(
+    weekly_plan, "date", _FixedToday)`, which four files do — that seam is
+    only half the clock now. `weekly_plan._household_today()` is written as
+    a SHIFT: `date.today()` (the pin) plus however many whole days
+    `cooker.household_now()` is from the server's real `datetime.now()`.
+    Under a straddling timezone that shift is a day, so a test pinned to
+    "Thursday" asks the app about Wednesday or Friday and then asserts the
+    Thursday answer. This sets the shift to zero.
+
+    It is a pin of the HOUSEHOLD's clock onto the process's, which is the
+    right way round for these files: each one is about a WEEKDAY RULE (the
+    Friday plan-ahead shift, a draft expiring, the span a link offers), and
+    picks one date to say it with. None of them is about the two clocks
+    disagreeing — the files that ARE
+    (test_moves_household_clock, test_cooker_household_clock,
+    test_weekly_plan_household_clock, test_weekly_plan_last_clock_reads)
+    set households.timezone and freeze cooker.datetime themselves, and must
+    never call this.
+
+    A half-pinned test fails wrongly AND passes wrongly, which is why this
+    is shared rather than four local copies. Measured on
+    `overnight/weekly-plan-last-clock-reads` at TZ=Pacific/Niue: fourteen
+    tests red for this reason and no app defect among them — and one of
+    them, test_stale_draft_front_page's `test_thursday_still_offers_this_
+    week`, was GREEN before that branch for the wrong reason, because its
+    fixture described the server's clock and the server's clock was the one
+    the app read. A fifth file wanting a hand pin wants this line too.
+    """
+    monkeypatch.setattr(_cooker, "household_now", lambda *a, **kw: _dt.datetime.now())
+
+
 def _seeded_timezone():
     """
     households.timezone for the household under test, or None if it cannot be

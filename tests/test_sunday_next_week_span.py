@@ -30,6 +30,7 @@ from pathlib import Path
 
 import pytest
 
+from conftest import pin_household_clock
 from app import main as main_module
 from app import tools
 from app.db import get_conn
@@ -69,6 +70,9 @@ def pin_today(monkeypatch):
                 timezone=datetime.timezone,
             ),
         )
+        # ...and the household's clock with it, or the pin means two dates
+        # under a straddling timezone. See conftest.pin_household_clock.
+        pin_household_clock(monkeypatch)
     return _pin
 
 
