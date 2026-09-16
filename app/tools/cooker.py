@@ -26,6 +26,43 @@ from . import weekly_plan as _weekly_plan
 
 logger = logging.getLogger(__name__)
 
+MEAL_COOKED_STATUSES = ("pending", "done")
+
+
+class InvalidMealStatus(ValueError):
+    """
+    A cooked status outside MEAL_COOKED_STATUSES. The two screen paths
+    cannot produce one: the cook checkbox is a toggle and every site that
+    renders it writes data-next as 'done' or 'pending', and Now's tick
+    computes the same two. THE CHAT TOOL IS THE THIRD CALLER AND IS NOT
+    A GUARANTEE — its schema enumerates the two, but this app's own rule
+    is that telling the generator something is not the same as
+    preventing it, and the tool immediately next to it in
+    TOOL_DEFINITIONS, check_off_prep_step, enumerates 'skipped' and
+    talks about skipping. "We skipped Wednesday's dinner" is a plausible
+    way to reach this, not a theoretical one. That is a good outcome —
+    the model is handed a sentence it can act on instead of writing a
+    garbage status and reporting success — but it means this can appear
+    in error_events as check_off_meal / InvalidMealStatus, which is the
+    guard working rather than a new breakage.
+
+    Its own marker type, distinct from this function's own "No meal plan
+    entry with id N." ValueError, so the route can answer 422 ("that
+    request doesn't make sense") rather than the 404 that means "no such
+    meal" — the shape chores.InvalidChoreStatus already uses one door
+    over. It IS a ValueError subclass, which is exactly why the route's
+    except for it must come before the plain one; ordering is
+    load-bearing here, not tidiness.
+
+    Without it a typo'd status wrote straight through to
+    meal_plan_entries.cooked_status and left the row in a state no
+    screen's WHERE clause looks for: not done, not pending, just gone.
+    Nothing heals a row already written that way — reaching the bug
+    needed a hand-made request, so the count in the wild is likely zero,
+    but this closes the door rather than sweeping up behind it.
+    """
+
+
 # Slot states with no meal behind them, so nothing to cook. See
 # get_cooker_view for why this is a deny-list rather than an allow-list of
 # 'planned'. The ordered tuple and its placeholders exist only so
@@ -334,6 +371,14 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
     still could not rebuild a DELETED row's location and expiry, and
     half-exact is the worst of the three. The door is open if Emily wants it.
     """
+    # Before the connection, so a status nothing can read never reaches the
+    # row. The cooked tick drives times_cooked and the inventory claim off
+    # this column, and both read it by name.
+    if status not in MEAL_COOKED_STATUSES:
+        raise InvalidMealStatus(
+            f"A meal is cooked or it isn't — status must be "
+            f"{' or '.join(MEAL_COOKED_STATUSES)}, not {status!r}."
+        )
     conn = get_conn()
     row = conn.execute(
         """

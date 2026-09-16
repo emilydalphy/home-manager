@@ -391,6 +391,73 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-16 — A cooked tick takes no third word. Branch
+  `overnight/cooked-tick-status-validated`, NOT merged at the time of
+  writing.** Loop Board Phase 0 bug. `POST /api/cooker/check-meal` with
+  `{"status": "skipped"}` answered 200 and wrote `cooked_status = 'skipped'`
+  into `meal_plan_entries`. The chat tool's schema has enumerated
+  `["pending", "done"]` since it shipped and `schema.sql` documents the
+  column as `-- pending | done`; the HTTP model never did, and
+  `check_off_meal` took whatever it was handed.
+  - **Nothing crashed, which is what made it a card rather than a shrug.**
+    The row simply landed in a status no screen's WHERE clause looks for —
+    not done, not pending, gone from both. The times_cooked counter handles
+    a third value safely, so the damage is invisible until somebody asks
+    why a meal is on no list.
+  - **The shape is `chores.InvalidChoreStatus`'s, one door over**: a marker
+    exception so the route can answer 422 ("that request doesn't make
+    sense") rather than the 404 that means "no such meal". It IS a
+    `ValueError` subclass, which is exactly why the route's `except` for it
+    must come first — ordering is load-bearing, and a mutation swapping the
+    two blocks turns the refusal into a 404.
+  - **The check is in `check_off_meal`, before any connection opens**, not
+    in the route: chat reaches that function without the route at all, and
+    a bad status on a meal that doesn't exist is a bad status rather than a
+    404. Putting it below `get_conn` also leaks the connection, since the
+    raise skips `conn.close()`.
+  - **422, NOT the card's 400 — a deliberate deviation, Emily's to
+    overrule in one line.** Four reasons, all checked: the chores route
+    already answers 422 for the identical mistake; nothing anywhere pins a
+    code for this route (no test, no doc, no client — `cookCheckMeal`
+    swallows any non-2xx into one toast); **this route already returned 422
+    for a non-string status**, from pydantic, so 400 would give one client
+    mistake two codes; and 422 is the semantically right code. The request
+    model stays a plain `str` for a related reason — a pydantic `Literal`
+    would be a second definition of what a cooked status may be, and would
+    answer with a field-error list where the screen wants a line.
+  - **The hole really is closed**: `cooker.py`'s is the only
+    `SET cooked_status` in `app/`, the three INSERTs don't name the column
+    (it takes schema.sql's `DEFAULT 'pending'`), `db.py` only reads it, and
+    no root script mentions it.
+  - **THE CHAT TOOL IS A THIRD CALLER AND IS NOT A GUARANTEE**, which the
+    first version of this branch's docstring got wrong by saying only a
+    hand-made request could carry a third word. The tool next to it in
+    `TOOL_DEFINITIONS`, `check_off_prep_step`, enumerates `skipped` and
+    discusses skipping, so "we skipped Wednesday's dinner" is a plausible
+    way to reach this. The outcome is good — the model gets an actionable
+    sentence instead of writing garbage and reporting success — but it can
+    now appear in `error_events` as `check_off_meal / InvalidMealStatus`,
+    which is the guard working rather than a new breakage.
+  - **The test-evidence number in this branch's first commit was wrong and
+    is corrected here.** It claimed 13 red / 6 green → "12 behaviour
+    catches, 1 pinned by mutation". 13 red is right, but TWELVE of the
+    thirteen die on `AttributeError` (most name the new exception inside
+    `pytest.raises`, evaluated before any assertion). Re-measured with the
+    new names stubbed to main's behaviour: 11 failed, 8 passed. Honest
+    split: **11 behaviour catches, 6 guards, 2 pinned by mutation**. Same
+    trap the `title-names-a-real-ingredient` entry records — a red-on-main
+    count where the file cannot reach its assertions is not a meaningful
+    number — applied by the author to one test and missed on eleven.
+    Found by review, not by me. Five mutations bite. Suite **5267 passed,
+    0 failed** at `TZ=America/Toronto`; 7 at `Pacific/Niue`, identical to
+    main's 7, so this adds no straddle failures.
+  - **Nothing heals a row already written with a third word.** Reaching the
+    bug needed a hand-made request so the count in the wild is likely zero;
+    this closes the door rather than sweeping up behind it.
+  - **Known and left, one door over:** `check_off_prep_step` already
+    validates its own three statuses but raises a plain `ValueError`, so
+    the same mistake on a prep task answers 404 rather than 422. Its own
+    card — widening it would change a route this one does not name.
 - **2026-09-16 — Add-a-night refuses a night that has already gone by.
   Branch `overnight/add-a-night-refuses-the-past`, NOT merged at the time
   of writing.** Loop Board bug. `add_dish_day` — the Review stepper's "+"

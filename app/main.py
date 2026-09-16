@@ -743,6 +743,10 @@ class StoreTypicalItemRemoveRequest(BaseModel):
 
 class CheckOffMealRequest(BaseModel):
     entry_id: int
+    # Kept a plain str so the refusal is tools.check_off_meal's own sentence
+    # rather than pydantic's field error — one definition of what a cooked
+    # status may be (tools.MEAL_COOKED_STATUSES), enforced where the write
+    # happens, which chat reaches too.
     status: str = "done"  # pending | done
 
 
@@ -1984,6 +1988,15 @@ def cooker_check_meal(req: CheckOffMealRequest):
     try:
         tools.check_off_meal(req.entry_id, req.status)
         view = tools.get_cooker_view()
+    except tools.InvalidMealStatus as e:
+        # A status outside MEAL_COOKED_STATUSES is a bad request, not a
+        # missing row — 422, not the 404 below, which is check_off_meal's
+        # own "No meal plan entry with id N." InvalidMealStatus IS a
+        # ValueError subclass, so this except must come first or the 404
+        # swallows it. Same shape as the chore-status route. (This route
+        # already answered 422 for a non-string status, from pydantic, so
+        # 400 here would give one client mistake two codes.)
+        raise HTTPException(status_code=422, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
