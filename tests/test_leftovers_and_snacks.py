@@ -13,11 +13,10 @@ Item B adds a fourth "Snacks & desserts" count (meal_preferences.
 snacks_per_week, default 3) alongside the existing breakfasts/lunches/
 dinners counts, following the same distinct-count-then-rotate rule.
 """
-import inspect
-
 import pytest
 
 from app import agent, db, tools
+from conftest import prompt_literals
 
 
 def _week_start():
@@ -146,7 +145,12 @@ class TestRepeatsToleranceMigration:
 # ---------- Item A: the planner prompt reads only leftovers_stance ----------
 
 def test_prompt_no_longer_mentions_repeats_tolerance():
-    source = inspect.getsource(agent.generate_weekly_plan_llm)
+    # prompt_literals is what the model is handed, so this now says the
+    # PROMPT never names the retired field rather than the looser "the
+    # function's source text never does". Narrower than the getsource
+    # version it replaces — a local variable or a comment carrying the word
+    # would no longer fail it — and it is the claim this test's name makes.
+    source = prompt_literals(agent.generate_weekly_plan_llm)
     assert "repeats_tolerance" not in source
 
 

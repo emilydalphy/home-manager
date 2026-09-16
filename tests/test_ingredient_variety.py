@@ -20,13 +20,13 @@ ones, and only the model knows — and the list line is left as written.
 from __future__ import annotations
 
 import datetime
-import inspect
 
 import pytest
 
 from app import agent, tools
 from app.tools import plan_quality, recipes
 from app.tools.plan_quality import check_week
+from conftest import prompt_literals
 
 
 def _problem(item, qty, servings):
@@ -315,9 +315,15 @@ def test_plan_quality_reads_the_recipe_back_from_the_database():
 # ---------- the prompt half ----------
 
 def _prompt_text(fn) -> str:
-    """The instructions as the model reads them — the source's
-    line-continuation backslashes joined back up."""
-    return inspect.getsource(fn).replace("\\\n", "")
+    """The instructions as the model reads them.
+
+    prompt_literals, not inspect.getsource: the compiled string constants
+    have already had their line-continuation backslashes resolved, so a test
+    can assert on a sentence rather than on where someone happened to wrap
+    it — and nothing that later happens to app/agent.py on disk can change
+    the answer. See tests/conftest.py.
+    """
+    return prompt_literals(fn)
 
 
 def test_the_generation_prompts_ask_for_the_kind_when_the_count_depends_on_it():

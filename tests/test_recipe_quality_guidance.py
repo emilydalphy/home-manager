@@ -25,14 +25,13 @@ that guideline in place, and hold it in the part of the prompt where it is
 nearly free to carry.
 """
 
-import inspect
-
 import pytest
 
 from app import agent
+from conftest import agent_function_source, agent_source, prompt_literals
 
 
-PROMPT = inspect.getsource(agent.generate_weekly_plan_llm)
+PROMPT = prompt_literals(agent.generate_weekly_plan_llm)
 
 
 def _instructions_block() -> str:
@@ -155,8 +154,12 @@ def test_the_guidance_rides_in_the_cached_block():
     every household, forever — the exact mistake the 2026-08-31 measurement
     caught and fixed.
     """
+    # agent_function_source, not inspect.getsource: this one really is about
+    # the file's shape (a splice point inside an f-string survives no
+    # compilation), so it needs the text — but from conftest's single cached
+    # read, ast-sliced, rather than from a fresh linecache read per call.
     for fn in (agent.generate_weekly_plan_llm, agent.generate_component_plan_llm):
-        body = inspect.getsource(fn)
+        body = agent_function_source(fn.__name__)
         ins_at = body.index('instructions = f"""')
         ctx_at = body.index("context_block")
         guidance_at = body.index("{COOK_DONT_ASSEMBLE}")
@@ -200,7 +203,7 @@ def test_both_planners_carry_it_not_just_the_day_based_one():
     plan_quality.py's own module docstring already records as a known gap in
     this codebase."""
     for fn in (agent.generate_weekly_plan_llm, agent.generate_component_plan_llm):
-        assert "{COOK_DONT_ASSEMBLE}" in inspect.getsource(fn), (
+        assert "{COOK_DONT_ASSEMBLE}" in agent_function_source(fn.__name__), (
             "%s never picks up the quality guidance" % fn.__name__
         )
 
@@ -208,6 +211,4 @@ def test_both_planners_carry_it_not_just_the_day_based_one():
 def test_the_guidance_is_defined_once():
     """Two copies of a 900-token block drift, and nobody notices which one a
     household got."""
-    import app.agent as mod
-    source = inspect.getsource(mod)
-    assert source.count("COOK_DONT_ASSEMBLE = ") == 1
+    assert agent_source().count("COOK_DONT_ASSEMBLE = ") == 1

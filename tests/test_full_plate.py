@@ -21,6 +21,7 @@ import pytest
 
 from app import agent, tools
 from app.tools import plates
+from conftest import prompt_literals
 
 
 def _week_start() -> str:
@@ -644,37 +645,9 @@ def test_the_assistants_own_read_of_the_menu_doesnt_burn_the_telling(
 
 # ---------- the model is asked to get it right the first time ----------
 
-def _prompt_literals(fn) -> str:
-    """
-    The string literals baked into `fn` at compile time.
-
-    This used to be `inspect.getsource(fn)`, which re-reads app/agent.py off
-    disk (via linecache) at whatever moment the test happens to run — not at
-    import time. That was caught flaky under `pytest -x`: one run got back
-    `_stream_forced_tool_call`'s source instead of `generate_weekly_plan_llm`'s
-    (right text, wrong function, same file) with nothing in this repo's own
-    test state to explain it — no unrestored monkeypatch, no wrapper, no
-    deterministic-order dependency (verified: collection order is stable
-    across runs). The likely cause lives outside any one test: this suite
-    sometimes runs directly against the shared "main" checkout while another
-    session is mid-merge on it, and linecache's first read of agent.py can
-    land mid-write, pairing a function's real (already-compiled) line number
-    against a torn version of the file's text. `co_consts` sidesteps that
-    entirely — it's whatever the interpreter already baked into the function
-    object when it was compiled, so nothing later happening to the file on
-    disk can change what this reads.
-    """
-    def _walk(code, seen):
-        if id(code) in seen:
-            return
-        seen.add(id(code))
-        for const in code.co_consts:
-            if isinstance(const, str):
-                yield const
-            elif hasattr(const, "co_consts"):  # a nested def/lambda/comprehension
-                yield from _walk(const, seen)
-
-    return "\n".join(_walk(fn.__code__, set()))
+# `_prompt_literals` used to be defined here and is now
+# `conftest.prompt_literals`, shared with the other files that assert on a
+# prompt's wording — the whole reason it exists is in that module's comment.
 
 
 def test_both_generation_prompts_state_the_plate_rule():
@@ -683,8 +656,8 @@ def test_both_generation_prompts_state_the_plate_rule():
     have to carry the rule, or a component-mode household gets a pool that
     can't make a plate and no pass to fix it.
     """
-    day_based = _prompt_literals(agent.generate_weekly_plan_llm)
-    component = _prompt_literals(agent.generate_component_plan_llm)
+    day_based = prompt_literals(agent.generate_weekly_plan_llm)
+    component = prompt_literals(agent.generate_component_plan_llm)
     for source in (day_based, component):
         assert "EVERY MEAL IS A FULL PLATE" in source
         assert "low-carb" in source

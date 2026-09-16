@@ -15,13 +15,12 @@ planners, beside the first one — and hold the floor under it: four narrow
 checks that read how a method is written, never whether it tastes good.
 """
 
-import inspect
-
 import pytest
 
 from app import agent
 from app.tools import plan_quality as q
 from tests.test_food_quality_floor import SALMON, TIKKA, PINEAPPLE_FREE, AVOIDS, _dinner
+from conftest import agent_function_source, agent_source
 
 
 ROUND_2_RULES = {
@@ -58,8 +57,11 @@ def test_it_sits_in_the_cached_block_of_both_planners_right_after_its_sibling():
     """Same placement test its sibling has, and one more: it follows
     COOK_DONT_ASSEMBLE directly. "The moves above" in its first line refers
     to that block, so the order is part of the meaning, not just the cost."""
+    # agent_function_source, not inspect.getsource: adjacency of two f-string
+    # splice points is a fact about the file, not about the compiled prompt,
+    # so it needs the text — from conftest's single cached read, ast-sliced.
     for fn in (agent.generate_weekly_plan_llm, agent.generate_component_plan_llm):
-        body = inspect.getsource(fn)
+        body = agent_function_source(fn.__name__)
         ins_at = body.index('instructions = f"""')
         ctx_at = body.index("context_block")
         sibling_at = body.index("{COOK_DONT_ASSEMBLE}")
@@ -75,8 +77,7 @@ def test_it_sits_in_the_cached_block_of_both_planners_right_after_its_sibling():
 
 
 def test_it_is_defined_once_and_ships_no_unrendered_placeholder():
-    source = inspect.getsource(agent)
-    assert source.count("WRITE_IT_DOWN = ") == 1
+    assert agent_source().count("WRITE_IT_DOWN = ") == 1
     assert "{" not in agent.WRITE_IT_DOWN and "}" not in agent.WRITE_IT_DOWN
 
 

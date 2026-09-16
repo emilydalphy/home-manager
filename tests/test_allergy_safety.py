@@ -25,6 +25,7 @@ import pytest
 
 from app import agent, db, tools
 from app.db import get_conn
+from conftest import prompt_literals
 
 
 def _week_start(offset_weeks: int = 1) -> str:
@@ -115,9 +116,8 @@ class TestTheGeneratorIsTold:
     def test_both_prompts_say_a_hard_fact_is_not_negotiable(self):
         # The context is only half the fix: the model has to be told what a
         # hard fact means, or it reads as one more note among many.
-        import inspect
         for fn in (agent.generate_weekly_plan_llm, agent.generate_component_plan_llm):
-            source = inspect.getsource(fn)
+            source = prompt_literals(fn)
             assert "household_facts" in source
             assert "hard=true" in source
 

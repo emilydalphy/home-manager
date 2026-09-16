@@ -3,16 +3,32 @@ A stated request in the intake is the week's ANCHOR, not an order to satisfy
 in a vacuum (Emily, 2026-09-05, decision 11a). These tests pin the wording so
 a later prompt edit can't quietly revert the stance.
 """
-import inspect
-
 from app import agent
+from conftest import prompt_literals
+
+# The day-based `instructions` block, and only it — the docstring above it and
+# the short code strings under it are not prompt. prompt_literals rather than
+# inspect.getsource (see tests/conftest.py): the slice markers are the first
+# and last sentences of the prompt itself rather than the `instructions = f"""`
+# line of code, so the same block comes back without reading agent.py at test
+# time. Not byte-identical to the getsource slice it replaces — the line of
+# code at the front is gone, the line-continuation backslashes are resolved,
+# and each `{interpolation}` reads as a newline — but every sentence below
+# was checked against both.
+_OPENS = "Generate a full menu for this household's planning period"
+_CLOSES = "Call submit_weekly_plan with the result."
 
 
 def _day_based_instructions() -> str:
-    src = inspect.getsource(agent.generate_weekly_plan_llm)
-    start = src.index('instructions = f"""')
-    end = src.index("Call submit_weekly_plan with the result.", start)
-    return src[start:end]
+    text = prompt_literals(agent.generate_weekly_plan_llm)
+    assert _OPENS in text and _CLOSES in text, (
+        "the day-based prompt no longer opens and closes with the sentences "
+        "this file slices on — move _OPENS/_CLOSES to the new ones rather "
+        "than dropping the slice, or these four tests start reading the "
+        "function's docstring as if it were prompt"
+    )
+    start = text.index(_OPENS)
+    return text[start:text.index(_CLOSES, start)]
 
 
 def test_a_stated_request_is_the_weeks_anchor_not_an_isolated_order():

@@ -22,6 +22,7 @@ os.environ["DISABLE_BACKUPS"] = "1"
 # call run_morning_texts_once directly with a stubbed sender.
 os.environ["DISABLE_MORNING_TEXT"] = "1"
 
+import ast as _ast  # noqa: E402  (agent_function_source, below)
 import contextlib  # noqa: E402
 import datetime as _dt  # noqa: E402
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError  # noqa: E402
@@ -575,3 +576,116 @@ def _seeded_timezone():
 # — which pytest allows, and which would leave two things called `today` in one
 # suite meaning different answers. A plain function reads the same at module
 # scope and inside a test, and composes with `frozen_today` either way.
+
+
+# ---------------------------------------------------------------------------
+# Prompt text (2026-09-16) — READ THIS BEFORE ASSERTING ON app/agent.py
+# ---------------------------------------------------------------------------
+# Use `prompt_literals(fn)`, never `inspect.getsource(fn)`, for any assertion
+# about what a prompt SAYS.
+#
+#     from conftest import prompt_literals
+#     assert "COOK, DON'T ASSEMBLE" in prompt_literals(agent.generate_weekly_plan_llm)
+#
+# Why. `inspect.getsource` pairs the function's line numbers — baked in at
+# import time — against app/agent.py as it reads on disk AT THE MOMENT THE
+# TEST RUNS, via linecache. So a merge landing on the checkout mid-run can
+# hand a test the right text under the wrong function: on 2026-09-15 a
+# prompt-text test got `_stream_forced_tool_call`'s body back instead of
+# `generate_weekly_plan_llm`'s, with nothing in this suite's own state to
+# explain it. `prompt_literals` reads `fn.__code__.co_consts` — whatever the
+# interpreter already compiled into the function object — so nothing that
+# later happens to the file can change its answer.
+#
+# It is also more honest about what a prompt IS. Three differences from
+# source text, each of which has already mattered here:
+#   * Line-continuation backslashes are gone, because the compiler resolved
+#     them. `"AT MOST 3"` is split across a wrapped line in agent.py and is
+#     NOT findable in getsource output; it is findable here. Two files used
+#     to carry `.replace("\\\n", "")` to paper over exactly that.
+#   * Comments, identifiers and code text are gone. A negative assertion is
+#     therefore narrower — `"repeats_tolerance" not in prompt_literals(fn)`
+#     says the PROMPT never names it, not that the function's code never
+#     does. That is the claim those tests are making; it is not the same
+#     claim.
+#   * An f-string's `{interpolation}` is gone, and so is whatever it pulls
+#     in. `{COOK_DONT_ASSEMBLE}` is a LOAD_GLOBAL, not a constant, so it
+#     appears in neither the literals of the function nor their expansion.
+#     A test about WHERE a block is spliced is a test about code structure,
+#     not about prompt text — those use `agent_function_source` below.
+def prompt_literals(fn) -> str:
+    """
+    The string literals baked into `fn` at compile time, newline-joined.
+
+    Everything the function's own code object holds, walking into nested
+    defs/lambdas/comprehensions, in the order the compiler stored them —
+    which for a prompt function is the docstring, then the instructions,
+    then a handful of short code strings (dict keys, tool names).
+    """
+    def _walk(code, seen):
+        if id(code) in seen:
+            return
+        seen.add(id(code))
+        for const in code.co_consts:
+            if isinstance(const, str):
+                yield const
+            elif hasattr(const, "co_consts"):  # a nested def/lambda/comprehension
+                yield from _walk(const, seen)
+
+    return "\n".join(_walk(fn.__code__, set()))
+
+
+# A handful of tests are about the SHAPE of app/agent.py rather than about
+# what a prompt says: that `{COOK_DONT_ASSEMBLE}` is spliced inside the
+# cached `instructions` f-string and before `context_block`, that
+# `WRITE_IT_DOWN = ` is assigned exactly once. None of that survives
+# compilation, so those genuinely need the file's text — but they do not
+# need it read afresh at each call, at whatever moment that call happens.
+#
+# It is read ONCE, here, while conftest is imported at the start of
+# collection, and every consumer gets that same string. That does not make a
+# torn read impossible; it makes it a single early event with one answer
+# instead of a scatter of reads that can disagree with each other. And
+# `agent_function_source` takes its line numbers from PARSING THAT STRING
+# rather than from the compiled function object, so a file that arrived torn
+# raises a SyntaxError instead of quietly handing back the wrong function's
+# body — which is the failure that started all this.
+_AGENT_AST = []
+_AGENT_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "app", "agent.py")
+try:
+    _AGENT_SOURCE = open(_AGENT_PATH, encoding="utf-8").read()
+except OSError as exc:  # pragma: no cover - the suite is unusable anyway
+    _AGENT_SOURCE = None
+    _AGENT_SOURCE_ERROR = exc
+
+
+def agent_source() -> str:
+    """app/agent.py's text, read once at collection time and cached."""
+    if _AGENT_SOURCE is None:  # pragma: no cover
+        raise RuntimeError("could not read %s: %s" % (_AGENT_PATH, _AGENT_SOURCE_ERROR))
+    return _AGENT_SOURCE
+
+
+def agent_function_source(name: str) -> str:
+    """
+    The text of `def <name>(...)` in app/agent.py — for the handful of tests
+    that are about the file's SHAPE rather than about what a prompt says.
+
+    The line numbers come from parsing the CACHED STRING, never from the
+    compiled function object, so the two halves of the answer can never come
+    from two different versions of the file. A file that arrived torn raises
+    a SyntaxError or a named ValueError here; it can never quietly hand back
+    a different function's body, which is the failure that started all this.
+    """
+    tree = _agent_ast()
+    for node in tree.body:
+        if isinstance(node, (_ast.FunctionDef, _ast.AsyncFunctionDef)) and node.name == name:
+            lines = agent_source().splitlines(keepends=True)
+            return "".join(lines[node.lineno - 1:node.end_lineno])
+    raise ValueError("no top-level `def %s(` in %s" % (name, _AGENT_PATH))
+
+
+def _agent_ast():
+    if not _AGENT_AST:
+        _AGENT_AST.append(_ast.parse(agent_source()))
+    return _AGENT_AST[0]
