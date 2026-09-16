@@ -68,19 +68,6 @@ def _extract(name: str, source: str = PAGE) -> str:
     return source[start:j + 1]
 
 
-def _extract_optional(name: str) -> str:
-    """The function if the page has it, else a no-op of the same name.
-
-    Only for a harness whose CLAIM is that something else did not change: it
-    has to be runnable against a page that predates this ticket, or "the write
-    is byte-identical" is a sentence no test can check.
-    """
-    try:
-        return _extract(name)
-    except ValueError:
-        return "function %s() {}" % name
-
-
 def _copy_constant(name: str) -> str:
     """The page's own copy constant, so a rewording there is a rewording here.
 
@@ -312,52 +299,6 @@ def test_tapping_again_puts_the_person_back_and_clears_the_caption():
 # 3. The ring
 # ---------------------------------------------------------------------------
 
-@_needs_node
-def test_a_pointer_tap_leaves_no_focus_on_the_initial():
-    """PINNED BY MUTATION, not by redness: releasePointerFocus does not exist
-    on main, so a test naming it can only fail there for that reason.
-
-    Three mutations were run and each reddens it: blurring unconditionally
-    (which takes the ring off a keyboard user — a WCAG 2.4.7 regression, and
-    the reason this is not simply el.blur()), inverting the question, and
-    dropping the try/catch, which turns a browser too old to be asked into a
-    tap that throws."""
-    harness = (
-        "var blurred = [];\n"
-        "function stub(id, focusVisible) {\n"
-        "  return { id: id, blur: function () { blurred.push(id); },\n"
-        "           matches: function () { if (focusVisible === 'throw') throw new Error('bad selector');\n"
-        "                                  return focusVisible; } };\n"
-        "}\n"
-        "var pointer = stub('pointer', false), keyboard = stub('keyboard', true),\n"
-        "    ancient = stub('ancient', 'throw'), elsewhere = stub('elsewhere', false);\n"
-        "var document = { activeElement: null };\n"
-        + _extract("releasePointerFocus") + "\n"
-        + "document.activeElement = pointer;  releasePointerFocus(pointer);\n"
-        + "document.activeElement = keyboard; releasePointerFocus(keyboard);\n"
-        + "document.activeElement = ancient;  releasePointerFocus(ancient);\n"
-        + "document.activeElement = keyboard; releasePointerFocus(elsewhere);\n"
-        + "releasePointerFocus(null);\n"
-        + "console.log(JSON.stringify(blurred));\n"
-    )
-    assert _node(harness) == ["pointer"], (
-        "a pointer focus is let go; a keyboard focus, a focus the browser "
-        "cannot be asked about, and a button that isn't focused are all left alone"
-    )
-
-
-def test_the_tap_handler_lets_that_focus_go_before_anything_else():
-    """A SOURCE MARKER, because what it pins is an ORDER and the rest of
-    toggleAvatar is a fetch. Red on the unmodified page only because the call
-    is not there at all, which is no evidence about the order — so the order
-    is PINNED BY MUTATION: moving the line below the optimistic repaint
-    reddens it, and the point of running first is that nothing can paint a
-    ring in the beat between."""
-    fn = _extract("toggleAvatar")
-    assert "releasePointerFocus(btn);" in fn
-    assert fn.index("releasePointerFocus(btn);") < fn.index("paintPresence(dayEl, slot);")
-
-
 def test_the_ring_is_keyboard_only_in_css_and_is_never_removed():
     """GUARD, and a SOURCE MARKER because a stylesheet has no behaviour to
     run: every focus rule that can reach an initial is :focus-visible, and
@@ -385,11 +326,18 @@ def test_the_initials_are_still_44px_targets_and_the_out_state_still_reads_as_ou
 
 
 def test_the_day_sheet_gains_no_second_apricot():
-    """GUARD on the fills, CATCH on the eyebrow. Hard rule 5: the one apricot
-    fill on this page is still the footer CTA (measured in Chromium at 390px
-    with a day sheet open — exactly one element fills rgb(224, 145, 92), the
-    .cta). The second half is red on the unmodified page: the "WHO" eyebrow
-    beside the initials was --apricot-label, and it went with the word."""
+    """GUARD on the fills, CATCH on the eyebrow.
+
+    Hard rule 5, stated the way it actually measures. With a day sheet open at
+    390px, TWO visible elements fill rgb(224, 145, 92) — the footer #cta and
+    the sheet's own #day-done — and exactly ONE of them is reachable, because
+    elementFromPoint over #cta returns the #day-done sitting above it. That is
+    identical on the unmodified page, so the rule holds here in the sense it
+    has always held. An earlier version of this docstring claimed "exactly one
+    element fills", which was simply wrong.
+
+    The second half is red on the unmodified page: the "WHO" eyebrow beside
+    the initials was --apricot-label, and it went with the word."""
     assert PAGE.count("background: var(--apricot);") == 2   # .cta and .failed-retry
     assert "--apricot" not in _extract("presenceHtml")
     presence_css = PAGE[PAGE.index("  .presence {"):PAGE.index("  .remember {")]
@@ -418,7 +366,6 @@ def test_the_attendance_write_is_byte_identical():
         + _extract("attendanceFor") + "\n"
         + _extract("ensureLocalAttendance") + "\n"
         + _extract("applyLocalToggle") + "\n"
-        + _extract_optional("releasePointerFocus") + "\n"
         + "async " + _extract("toggleAvatar") + "\n"
         + "var btn = { dataset: { slot: 'dinner', member: 'Vineeth' },\n"
         + "            classList: { contains: function () { return false; } } };\n"
@@ -433,12 +380,59 @@ def test_the_attendance_write_is_byte_identical():
 
 
 def test_the_initials_are_still_a_tap_to_exclude_control():
-    """GUARD — aria-pressed starts true (everyone is in) and the tap sends the
-    opposite of the state it found, which is what makes the row an "is anyone
-    out?" question rather than a "who's eating?" one."""
-    fn = _extract("presenceHtml")
-    assert 'aria-pressed="true"' in fn
+    """GUARD — the tap sends the opposite of the state it found, which is what
+    makes the initials a way OUT of a meal rather than a way into one. That
+    half of the control is unchanged."""
     assert "present: wasOut" in _extract("toggleAvatar")
-    paint = _extract("paintPresence")
-    assert "btn.classList.toggle('out', out);" in paint
-    assert "btn.setAttribute('aria-pressed', out ? 'false' : 'true');" in paint
+    assert "btn.classList.toggle('out', out);" in _extract("paintPresence")
+
+
+@_needs_node
+def test_pressed_means_out_because_that_is_what_the_question_asks():
+    """CATCH — on the unmodified page aria-pressed meant IN. That was right
+    under "Who's eating?" and, once the heading says "Is anyone out?", it is
+    Emily's own complaint one layer down: a screen reader announced "V, toggle
+    button, pressed" beneath a question asking who is OUT, which reads as the
+    opposite of the truth.
+
+    Inverted rather than dropped. Dropping aria-pressed would leave the state
+    carried only by `title`, which is a description rather than a name and is
+    not announced by every AT — a screen-reader user would then have no way to
+    tell who is out at all.
+
+    Runs the real paintPresence against stub buttons, so what is pinned is the
+    polarity rather than the spelling of a line."""
+    harness = (
+        "var attendance = { members: [{ id: 1, name: 'Emily' }, { id: 2, name: 'Vineeth' }],"
+        "  byDate: { '2026-09-14': { dinner:"
+        "    { absent_names: ['Vineeth'], summary: 'Dinner for 1' } } } };\n"
+        "var seen = { Emily: { cls: {}, attrs: {} }, Vineeth: { cls: {}, attrs: {} } };\n"
+        "function stub(name) { return { dataset: { member: name }, title: '',\n"
+        "  classList: { toggle: function (c, on) { seen[name].cls[c] = on; } },\n"
+        "  setAttribute: function (k, v) { seen[name].attrs[k] = v; } }; }\n"
+        "var buttons = [stub('Emily'), stub('Vineeth')];\n"
+        "var block = { querySelectorAll: function () { return buttons; },\n"
+        "              querySelector: function () { return null; } };\n"
+        "var dayEl = { dataset: { date: '2026-09-14' },\n"
+        "              querySelector: function () { return block; } };\n"
+        + _extract("attendanceFor") + "\n"
+        + _extract("paintPresence") + "\n"
+        + "paintPresence(dayEl, 'dinner');\n"
+        + "console.log(JSON.stringify(seen));\n"
+    )
+    assert _node(harness) == {
+        # home: not struck through, not pressed
+        "Emily": {"cls": {"out": False}, "attrs": {"aria-pressed": "false"}},
+        # out: struck through, and pressed
+        "Vineeth": {"cls": {"out": True}, "attrs": {"aria-pressed": "true"}},
+    }
+
+
+def test_the_row_ships_with_nobody_pressed():
+    """CATCH — nobody is out until somebody says so, so the markup ships
+    aria-pressed="false". The unmodified page shipped "true", which under the
+    new heading would announce the whole household as out for the beat before
+    paintPresence runs."""
+    fn = _extract("presenceHtml")
+    assert 'aria-pressed="false"' in fn
+    assert 'aria-pressed="true"' not in fn

@@ -339,8 +339,12 @@
      The one-off gesture: one tap takes a person out of one meal. Canonical
      tokens only — this block is new code, so it never reaches for the
      legacy aliases the older rules above still use (DESIGN_SYSTEM §1). */
-  .presence { display: flex; align-items: center; gap: 10px; padding-top: 2px; }
-  .presence-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  /* One element, not two: .presence was a row holding the "WHO" eyebrow and
+     a .presence-chips box, and with the eyebrow gone its gap and its
+     align-items applied to a single child. data-slot is read by nothing and
+     is kept anyway — three identical rows sit in one sheet and it is what
+     tells them apart in the DOM. */
+  .presence { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 2px; }
   /* 44px square, per hard rule 6 — nothing tappable is smaller. */
   .avatar {
     width: 44px; height: 44px; flex: 0 0 auto; border-radius: var(--radius-pill);
@@ -356,8 +360,16 @@
   /* :focus-visible, never :focus — a tap must leave nothing behind on the
      initial, because an apricot ring sitting on the person you just took
      out reads as "selected" and says the opposite of what the tap did
-     (Emily, 2026-09-15). The keyboard ring is a floor and stays; see
-     theme.css's focus block, whose !important actually paints this one. */
+     (Emily, 2026-09-15). This IS the whole mechanism: measured in Chromium
+     141 on the real page, a touch tap and a mouse click each leave the
+     outline at 0px while Tab, Enter and Space each leave it at 3px. A
+     blur() in the tap handler was tried and removed — it changed no ring
+     and dropped focus onto <body>, outside #day-sheet's own
+     aria-modal dialog. Neither this session nor the review could name an
+     engine that paints the ring on tap; if one turns up, fix it here.
+     Outranked in practice by theme.css's focus block, which carries
+     !important and is what actually paints — the same is true of .opt
+     below. */
   .avatar:focus-visible { outline: 2px solid var(--apricot); outline-offset: 2px; }
   .presence-summary {
     font-size: 13px; font-weight: 700; line-height: 1.4;
@@ -445,6 +457,8 @@
   }
   .opt.wide-label { font-size: 12.5px; font-weight: 600; }
   .opt.on { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); font-weight: 800; }
+  /* Same two notes as .avatar's rule above: :focus-visible so a tap leaves
+     nothing behind, and outranked by theme.css's !important copy. */
   .opt:focus-visible { outline: 2px solid var(--apricot); outline-offset: 2px; }
   .who-row { display: flex; flex-wrap: wrap; gap: 8px; }
   .who-opt {
@@ -1102,12 +1116,10 @@
     return (
       '<div class="day-section-label presence-section-label">' + PRESENCE_QUESTION + '</div>' +
       '<div class="presence" data-slot="' + slot + '">' +
-        '<div class="presence-chips">' +
-          attendance.members.map(function (m) {
-            return '<button type="button" class="avatar" data-member="' + esc(m.name) + '" data-slot="' + slot + '" ' +
-              'aria-pressed="true" title="' + esc(m.name) + '">' + esc(initialFor(m)) + '</button>';
-          }).join('') +
-        '</div>' +
+        attendance.members.map(function (m) {
+          return '<button type="button" class="avatar" data-member="' + esc(m.name) + '" data-slot="' + slot + '" ' +
+            'aria-pressed="false" title="' + esc(m.name) + '">' + esc(initialFor(m)) + '</button>';
+        }).join('') +
       '</div>' +
       // The caption comes before the offer: it confirms the tap that was
       // just made, and the offer only follows from it.
@@ -1155,7 +1167,11 @@
     block.querySelectorAll('.avatar').forEach(function (btn) {
       var out = awayNames.indexOf(btn.dataset.member) !== -1;
       btn.classList.toggle('out', out);
-      btn.setAttribute('aria-pressed', out ? 'false' : 'true');
+      // Pressed means OUT, matching the question above the row. It used to
+      // mean IN, which was right under "Who's eating?" and is the same
+      // contradiction Emily reported, one layer down: a screen reader said
+      // "V, toggle button, pressed" under a heading asking who is out.
+      btn.setAttribute('aria-pressed', out ? 'true' : 'false');
       btn.title = btn.dataset.member + (out ? ' — out for ' + slot : ' — home for ' + slot);
     });
     var summary = block.querySelector('.presence-summary');
@@ -1167,30 +1183,11 @@
     if (remember) remember.hidden = !(att && awayNames.length && !att.remembered);
   }
 
-  // A tap leaves focus on the button it hit, and whether the engine then
-  // paints the focus ring is the engine's heuristic, not ours. Here it must
-  // not: an apricot ring sitting on the person you have just taken out
-  // reads as "selected", which is the opposite of what the tap did.
-  //
-  // :focus-visible IS the question "should this focus be shown". A focus it
-  // answers no to is one nobody needs, so letting it go costs nothing; a
-  // keyboard focus (it says yes) is kept, ring and all, because a visible
-  // focus ring is a floor (theme.css). A browser too old to be asked keeps
-  // its focus too — it is also too old to have parsed the CSS rule, so
-  // there is no ring on it to take away.
-  function releasePointerFocus(el) {
-    if (!el || document.activeElement !== el) return;
-    var wanted;
-    try { wanted = el.matches(':focus-visible'); } catch (e) { wanted = true; }
-    if (!wanted) el.blur();
-  }
-
   async function toggleAvatar(dayEl, btn) {
     var d = dayEl.dataset.date;
     var slot = btn.dataset.slot || 'dinner';
     var name = btn.dataset.member;
     var wasOut = btn.classList.contains('out');
-    releasePointerFocus(btn);
     var previous = attendance.byDate[d] ? JSON.parse(JSON.stringify(attendance.byDate[d])) : null;
 
     // Update on tap, before the server confirms (DESIGN_SYSTEM §6 refresh
@@ -1241,8 +1238,9 @@
   // absence and a guest ("Vineeth’s out and 1 guest" here, "…out with 1
   // guest" there), and a caption that rewords itself when it is re-saved
   // is a caption nobody trusts. One difference is left and is not this
-  // page's to settle: the server writes a straight apostrophe in "'s out"
-  // and every sentence on this page writes a curly one.
+  // page's to settle: the server writes straight apostrophes — in "'s out"
+  // and in "nobody's home" — where every sentence on this page writes curly
+  // ones.
   function localSummary(att, slot) {
     var meal = capitalize(slot || 'dinner');
     var away = att.absent_names || [];
