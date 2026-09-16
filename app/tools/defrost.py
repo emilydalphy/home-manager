@@ -597,23 +597,99 @@ def _iter_plan_meat_ingredients(weekly_plan_id: int):
             yield m, ing, ing_name, batch_factor
 
 
+def _already_known_items(weekly_plan_id: int) -> set[str]:
+    """
+    The lowercased names this week's freezer check has nothing to ask
+    about, because the app already knows where the thing is.
+
+    Emily, walking flow 2 on 2026-09-15: the ask listed tonight's shrimp,
+    which was already out of the freezer, and a whole chicken that was on
+    the shopping list she had just been handed. Being asked "is this in
+    your freezer?" about food the app itself says you are going out to buy
+    is the app contradicting itself on two consecutive screens.
+
+    Three reasons, and no more than three — the safe direction here is to
+    ask one question too many rather than miss a thaw:
+
+    1. It is IN THE FRIDGE. A tracked row anywhere but the freezer means
+       the app knows where it is and it is not frozen. Read through
+       get_inventory, which resolves a blank location to the category's
+       own default — the same reading defrost_candidates_for_plan uses to
+       decide what IS frozen, so the two halves of this module cannot
+       disagree about one shelf.
+    2. A DEFROST TASK for it is already on this plan, pending or done.
+       Done is "already recorded as thawed"; pending is Pomona having
+       already booked the move. Keyed on the very description
+       confirm_frozen_items de-dupes with, so the two cannot drift about
+       which move is which.
+    3. A GROCERY LINE for it is still to buy. Not a purchased line and not
+       a removed one — those are in the kitchen, not on the list.
+
+    What it deliberately does NOT drop is the case the ask was written
+    for: something the household has, that the grocery ingest therefore
+    never put on the list, that nothing has scheduled a thaw for. That is
+    the real "you need to thaw this", and it is the one thing left.
+    """
+    known: set[str] = set()
+
+    # 1 — tracked anywhere but the freezer.
+    for it in _inventory.get_inventory():
+        if it.get("location") != "freezer":
+            known.add((it.get("item") or "").strip().lower())
+
+    conn = get_conn()
+    # 3 — still to buy.
+    for row in conn.execute(
+        "SELECT item FROM grocery_items WHERE household_id = ? "
+        "AND status NOT IN ('purchased', 'removed') AND excluded_from_list = 0",
+        (household_id(),),
+    ).fetchall():
+        known.add((row["item"] or "").strip().lower())
+
+    descriptions = {
+        (row["description"] or "")
+        for row in conn.execute(
+            "SELECT description FROM prep_tasks WHERE household_id = ? "
+            "AND weekly_plan_id = ? AND task_type = 'defrost'",
+            (household_id(), weekly_plan_id),
+        ).fetchall()
+    }
+    conn.close()
+
+    # 2 — a move already booked for this (item, meal, night).
+    if descriptions:
+        for m, _ing, ing_name, _batch in _iter_plan_meat_ingredients(weekly_plan_id):
+            if _describe(ing_name, m["meal"], m["date"]) in descriptions:
+                known.add(ing_name.strip().lower())
+    return known
+
+
 def meat_items_for_plan(weekly_plan_id: int) -> list[dict]:
     """
     The distinct meat/seafood ingredients this plan's own meals actually
-    call for, each with the night(s) it feeds — the ask card's own chip
-    list, and the GET route behind it. Reads recipes directly; never looks
-    at inventory, since the whole point is to work for a household that
-    doesn't track any.
+    call for and the app has no other record of, each with the night(s) it
+    feeds — the ask card's own chip list, and the GET route behind it.
+    Reads recipes directly; the only thing it asks inventory is whether it
+    already knows where something is (_already_known_items), since the
+    whole point is to work for a household that doesn't track any.
 
     A night only appears here if it's a real cook night (see
     _iter_plan_meat_ingredients) — the leftover-chain reheat night is left
     off "which night(s)" the same way it's left off the scheduled task
     itself: the batch that covers it is cooked, and defrosted for, on the
     source night alone.
+
+    Right after an approval almost everything is still to buy, so this
+    list is often empty and the ask is not shown at all (Emily,
+    2026-09-15: when there is nothing real to say, say nothing). That is
+    the intended shape, not a feature going quiet.
     """
+    known = _already_known_items(weekly_plan_id)
     by_item: dict[str, dict] = {}
     for m, _ing, ing_name, _batch_factor in _iter_plan_meat_ingredients(weekly_plan_id):
         key = ing_name.lower()
+        if _matches_selected_item(ing_name, known):
+            continue
         entry = by_item.get(key)
         if entry is None:
             entry = {"item": ing_name, "nights": []}
