@@ -470,14 +470,34 @@ why*, not duplicating the diff.
     for week tools that change nothing and, through `afterTonightSwap`, from
     a plain UI tap.
     `refreshGroceryPanel(opts)` takes `refill` now: the two FOREGROUND
-    rebuilds the household asked for — Approve (`refreshGrocerySurfaces`) and
-    Start over (`refreshAfterReset`) — pass it and behave exactly as before,
-    CARRY landing included. Everything else is a background re-read that does
-    everything a load does except open a step (`loadGrocery({background:
-    true})`). **Nothing is lost by not navigating**: LIST already carries
-    `groCarryRowHtml`'s "N things from last week · Keep or drop?" row, whose
-    own comment calls it "the way back into CARRY once Later was said". After:
-    step, scroll, `carryDeferred` and the typed text all survive.
+    rebuilds the household asked for — the Approve button and Start over —
+    pass it and behave exactly as before, CARRY landing included. Everything
+    else is a background re-read that does everything a load does except open
+    a step (`loadGrocery({background: true})`). **Nothing is lost by not
+    navigating**: LIST already carries `groCarryRowHtml`'s "N things from last
+    week · Keep or drop?" row, whose own comment calls it "the way back into
+    CARRY once Later was said". After: step, scroll, `carryDeferred` and the
+    typed text all survive.
+  - **ROUND 3, and it is the round-2 mechanism not reaching far enough rather
+    than anything new. `refreshGrocerySurfaces` has FOUR callers and only ONE
+    is the Approve button** — the other three are the Review stepper's "−"
+    and "+" and resolving an open slot, all edits to an ALREADY-APPROVED week
+    made from the PLAN tab. Round 2 had that helper passing `refill: true`
+    for all four, so those three went on doing the exact yank the bullet
+    above exists to remove: measured, all three gave step `list` -> `carry`,
+    scroll 733 -> 0, "later" cleared and the add row eaten, **from a tap on a
+    different tab, reachable without chat at all**. Identical on `main` and
+    on the first cut, so not a regression — but it made three sentences
+    false, including this log's own "the two foreground rebuilds ... every
+    other path is a background re-read". **Both halves of that were wrong**:
+    there are four callers, and three of them were not background.
+    `refreshGrocerySurfaces(opts)` forwards now; Approve passes `refill`, the
+    three edits pass nothing. **Decided on consistency rather than taste**:
+    those three are the same logical change as a chat `swap_meal_in_plan` or
+    `take_the_night_off`, which have gone through the background path since
+    round 2 — so dropping a dinner moved the hidden Shop panel from the
+    stepper and left it alone from chat, which is two doors disagreeing about
+    one change.
   - **WHAT A REFRESH CAN STILL MOVE, completely this time.** Two folds in
     `renderGrocery`, both pre-existing and both right — SORT back to LIST when
     the change left nothing to sort, and `next` -> `wrap` when it emptied the
@@ -497,9 +517,10 @@ why*, not duplicating the diff.
     directly) — measured at 2 on `origin/main` as well, so it is
     pre-existing, not this branch's, and deduping it means threading through
     a function with other callers. Its own card.
-  - `tests/test_shop_stale_after_chat.py` (36). **Two baselines, because one
-    number would hide half of it: 12 red against `origin/main`, 8 red
-    against this branch's own first commit.** Of the 12, only THREE are
+  - `tests/test_shop_stale_after_chat.py` (39). **Three baselines, because
+    one number would hide most of it: 14 red against `origin/main`, 10 red
+    against this branch's first commit, 2 against its second.** Of the 14,
+    only THREE are
     independent behavioural catches — `swap_meal_in_plan`,
     `take_the_night_off`, and the 0-added-plus-carried approval; the rest are
     the same missing line from another angle, and `discard_draft_plan` is red
@@ -513,14 +534,49 @@ why*, not duplicating the diff.
     updated honestly with a note saying what moved
     (`test_shop_build7`, `test_shop_trip_exit`, `test_grocery_offline` — all
     three slice on `loadGrocery(` / `refreshGroceryPanel(`, which gained
-    parameters). Four mutations run earlier in the branch still bite; two of
-    them had caught a toothless test.
-    Suite **5454 passed, 0 failed** at `TZ=America/Toronto` and **5454
-    passed, 0 failed** at `TZ=Pacific/Niue` inside a VERIFIED straddle —
+    parameters).
+    **EIGHT MUTATIONS, all biting — and the reason to run them is that ONE
+    OF THEM DID NOT, which is round 3's real lesson.** After round 2,
+    deleting the `opts.background` guard outright left **all 36 tests
+    green** while the bug came straight back in the chat-approval case this
+    ticket is about. It was invisible because the test that looked like it
+    covered it set `carryDeferred = true` first, and `groMaybeCarryFirst`
+    returns early on `!carryDeferred` whether or not it is called — so that
+    test pinned the `carryDeferred` half and never the `background` half.
+    The whole mechanism could have been deleted and the suite would have
+    said nothing. Closed by one more test seeding `carryDeferred = false`
+    (Shop on LIST with nothing carried, then an approval carries a line
+    over — the ordinary shape), confirmed to redden under that mutation.
+    **And this is the correction to this entry's own "a script checks each
+    claim against the measured sets": that audit compares docstring CLAIMS
+    against redness, so an unpinned mechanism is invisible to it by
+    construction — it has no claim to be wrong about.** Mutation against a
+    green suite is the only thing that finds it. Two mutations also pin
+    round 3's judgment in both directions: making Approve stop passing
+    `refill`, and making a Review edit pass it again, each redden the
+    wiring test.
+    The fake DOM behind those tests answers `querySelector('#id')` from a
+    real registry of the ids the render actually wrote, rather than null to
+    everything — which is why round 1 could not see the add-row loss at all
+    (the capture/restore pair looks its field up by id, so against a
+    null-returning node it is a no-op and the loss cannot be observed).
+    Suite **5457 passed, 0 failed** at `TZ=America/Toronto` and
+    **5457 passed, 0 failed** at `TZ=Pacific/Niue` inside a VERIFIED
+    straddle —
     Toronto 2026-09-17 against Niue 2026-09-16, checked before the run and
     again after it, not assumed from the zone's name (the 2026-09-16 lesson:
     a timezone is not a straddle). Against **5418 passed, 0 failed** on the
-    merge base at both, measured the same way; +36 is exactly this file.
+    merge base at both, measured the same way; +39 is exactly this file.
+    **A FOURTH existing test was corrected in round 3, and it was one this
+    branch had written the day before**: `test_shop_build7`'s refill check
+    had become `count("refreshGroceryPanel({ refill: true })") == 2`, which
+    is a claim about how the two callers are SPELLED rather than about which
+    of them mean a new list — so it broke the moment
+    `refreshGrocerySurfaces` started forwarding `opts`. It names the two
+    entry points now, over comment-stripped source, because the first
+    rewrite of it counted a literal that appears in a comment. Both mistakes
+    are the same one this log keeps re-learning: an assertion prose can
+    satisfy is not an assertion.
   - **A SEPARATE BUG FOUND AND DELIBERATELY NOT FIXED, one branch over:**
     `refreshKitchenPanel()` is called from INSIDE `loadWeekMenu`, which only
     runs in the arm where Meals was built — so on a page view where somebody

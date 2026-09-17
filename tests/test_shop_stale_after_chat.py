@@ -35,23 +35,36 @@ REAL `summarize_chat_actions` rather than hand-built, and section 4 runs the
 real `refreshGroceryPanel` -> `loadGrocery` -> `renderGrocery` against a
 stubbed fetch and a small fake DOM.
 
-LABELS. There are TWO baselines now, and a single "red on main" number
-would hide half of what this file covers, so every docstring names both:
+LABELS. There are THREE baselines, and a single "red on main" number would
+hide most of what this file covers, so every docstring names the ones it is
+red against:
 
   * MAIN      — origin/main at 5702234, the shipped app.
-  * FIRST CUT — this branch's own first commit, which fixed the bug and
+  * FIRST CUT — this branch's first commit, which fixed the bug and
                 introduced four problems of its own (a double refresh, a
                 falsified comment, a redundant call, and a background
-                refresh that navigated). Round 2 fixed those.
+                refresh that navigated).
+  * ROUND 2   — which fixed those four and left two: three of
+                `refreshGrocerySurfaces`' four callers still yanking the
+                Shop panel, and the `opts.background` mechanism pinned by
+                nothing at all.
 
-Measured: 12 red against MAIN, 8 red against FIRST CUT.
+Measured, as pytest failure counts against this file:
+MAIN 14, FIRST CUT 10, ROUND 2 2.
 
-And of the 12 red against main, only THREE are independent behavioural
-catches — `swap_meal_in_plan`, `take_the_night_off`, and the approval that
-adds nothing while carrying last week's lines over. The rest are the same
-one missing line seen from another angle, or (in the case of
-`discard_draft_plan`) red for a refresh this file itself proves is waste.
-Each says which it is.
+Of the 14 red against main, only THREE are independent behavioural catches
+— `swap_meal_in_plan`, `take_the_night_off`, and the approval that adds
+nothing while carrying last week's lines over. The rest are the same one
+missing line from another angle, or (in the case of `discard_draft_plan`)
+red for a refresh this file itself proves is waste. Each says which it is.
+
+AND REDNESS IS NOT COVERAGE, which is the lesson round 3 paid for. The
+docstring audit this file runs compares each CLAIM against the measured red
+sets; a mechanism no test exercises has no claim to be wrong about, so the
+audit cannot see it. `opts.background` was in exactly that state after
+round 2 — deleting it left all 36 tests green while the bug came back in
+the chat-approval case the ticket is about. Only mutation against a green
+suite finds that.
 """
 from __future__ import annotations
 
@@ -727,16 +740,29 @@ function el() {
     getAttribute: function () { return null; },
     focus: function () {}, setSelectionRange: function () {} };
   var html = '';
-  // The one selector these tests look up for real: the LIST foot's add
-  // field. groFootHtml writes it on LIST only, and groCaptureAddRow /
-  // groRestoreAddRow are what carry a half-typed "oat milk" across a
-  // re-render — the thing a background refresh must not eat. A node that
-  // answered null to everything could not see that either way.
+  // AN ID-ADDRESSABLE CHILD REGISTRY, not a stub that answers null.
+  //
+  // A fake node that returns null from every querySelector is why the first
+  // round of this work could not see the add-row loss at all: the capture/
+  // restore pair that carries a half-typed "oat milk" across a re-render
+  // (groCaptureAddRow / groRestoreAddRow, and the two input helpers beside
+  // them) look their field up BY ID, so against a null-returning node they
+  // are no-ops and the loss is invisible. Round 2 special-cased
+  // #gro-add-item; round 3 generalised it, because a test now depends on
+  // this and the next one should not have to add its own case.
+  //
+  // Any id this render actually wrote is findable, and the same object
+  // comes back every time so a value set on it survives until the id stops
+  // being written — which is exactly the real behaviour under test: the
+  // field goes when the foot stops rendering it.
+  node._byId = {};
   node.querySelector = function (sel) {
-    if (sel === '#gro-add-item' && /id="gro-add-item"/.test(html)) {
-      return node._add || (node._add = el());
-    }
-    return null;
+    var m = /^#([A-Za-z0-9_-]+)$/.exec(sel || '');
+    if (!m) return null;
+    var id = m[1];
+    if (html.indexOf('id="' + id + '"') === -1) return null;
+    if (!node._byId[id]) node._byId[id] = el();
+    return node._byId[id];
   };
   Object.defineProperty(node, 'innerHTML', {
     get: function () { return html; },
@@ -782,6 +808,13 @@ function fetch(url) {
 var UNSORTED = true;
 var CARRIED = [];
 """
+
+
+# refreshGrocerySurfaces sits far outside the Grocery region (it belongs to
+# the week's approval code), so the two tests that drive it append it.
+_SURFACES = ("""
+function refreshTodayMoves() {}
+""" + _function("refreshGrocerySurfaces"))
 
 
 def _shop(body: str) -> dict:
@@ -1012,20 +1045,172 @@ setTimeout(function () {
     assert out["deferred"] is False
 
 
-def test_the_two_foreground_rebuilds_are_the_ones_that_pass_refill():
+def test_only_the_approve_button_and_start_over_ask_for_a_refill():
     """
-    RED on main and on FIRST CUT, where the parameter does not exist — so
-    this is a wiring pin rather than a behavioural catch, and says so.
-    Approve (refreshGrocerySurfaces) and Start over (refreshAfterReset) are
-    the only two callers that mean "a new list"; every other path is a
-    background re-read.
+    RED on main and on FIRST CUT, where the parameter does not exist — a
+    wiring pin rather than a behavioural catch, and it says so.
+
+    THE COUNT THIS TEST USED TO MAKE WAS WRONG, and the wrong version is
+    worth keeping in view because it read as more than it was. It was named
+    `..._the_two_foreground_rebuilds_...` and its docstring said "Approve
+    (refreshGrocerySurfaces) and Start over (refreshAfterReset) are the only
+    two callers that mean 'a new list'; every other path is a background
+    re-read." Both halves were false: `refreshGrocerySurfaces` has FOUR
+    callers, and three of them are Plan-tab edits to an already-approved
+    week. What the assertion actually pinned was two CALL SITES OF
+    `refreshGroceryPanel` — true, and a different claim from the one the
+    name made.
+
+    So it counts CALL SITES now, of both functions, and names them.
     """
-    assert "refreshGroceryPanel({ refill: true });" in _strip_comments(
+    # The two direct refills: the Approve button's helper, and Start over.
+    assert "refreshGroceryPanel(opts);" in _strip_comments(
         _function("refreshGrocerySurfaces"))
     assert "refreshGroceryPanel({ refill: true })" in _strip_comments(
         _function("refreshAfterReset"))
-    # And the chat door does not.
+    # refreshGrocerySurfaces forwards rather than deciding, and exactly ONE
+    # of its four callers asks for a refill.
+    body = _strip_comments(SHELL_JS)
+    assert body.count("refreshGrocerySurfaces({ refill: true });") == 1
+    assert body.count("refreshGrocerySurfaces();") == 3
+    # The chat door never refills.
     assert "refill" not in _strip_comments(_function("refreshStaleTabsFromActions"))
+
+
+@_needs_node
+def test_a_plan_tab_edit_to_an_approved_week_does_not_move_the_shop_panel():
+    """
+    RED on main and on FIRST CUT and on ROUND 2 — the round-2 mechanism did
+    not reach this far, which is what round 3 is for.
+
+    `refreshGrocerySurfaces` has four callers and only the Approve button is
+    an approval. The other three — the Review stepper's "−" and "+", and
+    resolving an open slot — are edits to a week that ALREADY has a list,
+    made while the household is looking at the PLAN tab. Until this they
+    passed `refill: true` like the approve path, so a stepper tap on Plan
+    moved the hidden Shop panel to CARRY, zeroed its scroll, cleared an
+    answered "later" and ate a half-typed add row. Measured, and identical
+    on main — not a regression, but the harm this branch's own comment
+    describes, reachable without chat at all.
+
+    Decided rather than inherited: those three are the SAME logical change
+    as a chat `swap_meal_in_plan` or `take_the_night_off`, which have gone
+    through the background path since round 2. Two doors onto one change
+    must not disagree about whether the shopper gets moved.
+    """
+    out = _shop(_SURFACES + """
+groceryState.usualStores = ['Loblaws', 'Costco'];
+groceryState.storesPromptDismissed = true;
+loadGrocery();
+setTimeout(function () {
+  var foot = GRO_NODES['#gro-foot'];
+  var addRow = foot.querySelector('#gro-add-item');
+  if (addRow) addRow.value = 'oat milk';
+  scrollEl.scrollTop = 733;
+  CARRIED = [{ id: 9, item: 'Spinach', quantity: '1 bag' }];
+  groceryState.carryDeferred = true;
+  // What the three Review / open-slot call sites do: no opts at all.
+  refreshGrocerySurfaces();
+  setTimeout(function () {
+    var a2 = GRO_NODES['#gro-foot'].querySelector('#gro-add-item');
+    console.log(JSON.stringify({
+      step: groceryState.step, scroll: scrollEl.scrollTop,
+      deferred: groceryState.carryDeferred, typed: a2 ? a2.value : null
+    }));
+  }, 60);
+}, 60);
+""")
+    assert out["step"] == "list", "a Plan-tab edit must not move the Shop panel"
+    assert out["scroll"] == 733
+    assert out["deferred"] is True
+    assert out["typed"] == "oat milk"
+
+
+@_needs_node
+def test_the_approve_button_still_refills_through_the_same_helper():
+    """
+    GUARD, and the one that must not break: Approve is a refill and must go
+    on landing on CARRY. Same helper, same call, one argument.
+    """
+    out = _shop(_SURFACES + """
+groceryState.usualStores = ['Loblaws', 'Costco'];
+groceryState.storesPromptDismissed = true;
+loadGrocery();
+setTimeout(function () {
+  CARRIED = [{ id: 9, item: 'Spinach', quantity: '1 bag' }];
+  groceryState.carryDeferred = true;
+  refreshGrocerySurfaces({ refill: true });
+  setTimeout(function () {
+    console.log(JSON.stringify({ step: groceryState.step,
+                                 deferred: groceryState.carryDeferred }));
+  }, 60);
+}, 60);
+""")
+    assert out["step"] == "carry"
+    assert out["deferred"] is False
+
+
+@_needs_node
+def test_a_background_refresh_leaves_list_alone_even_with_nothing_deferred():
+    """
+    RED on main and on FIRST CUT (both navigate). GREEN on ROUND 2, which
+    is the whole point of it: round 2 had the mechanism and nothing pinned
+    it, so this test's value is not its redness against any commit — it is
+    that it reddens under the mutation below.
+
+    THE ONE THAT PINS `opts.background`, and it exists because the test
+    above it did not.
+
+    Six mutations were run against round 2 and five bit. The one that did
+    not: make `loadGrocery` ignore `opts.background` entirely — the whole
+    mechanism deleted — and all 36 tests still passed. The reason is that
+    `test_a_background_refresh_does_not_take_the_household_to_another_screen`
+    sets `carryDeferred = true` first, and `groMaybeCarryFirst` returns
+    early on `!carryDeferred` whether or not it is called. That test pins
+    the `carryDeferred` half and never the `background` half.
+
+    This is the case that has no `carryDeferred` to hide behind, and it is
+    the ordinary one: Shop sitting on LIST with nothing carried, so nothing
+    was ever deferred, and then a chat approval carries a line over for the
+    first time. Exactly the turn this ticket is about.
+
+    The lesson, worth more than the test: the docstring-label audit this
+    file runs checks CLAIMS against redness, and an unpinned mechanism is
+    invisible to it by construction — it has no claim to be wrong about.
+    Mutation is the only thing that finds that, and it has to be run against
+    a green suite.
+    """
+    out = _shop("""
+groceryState.usualStores = ['Loblaws', 'Costco'];
+groceryState.storesPromptDismissed = true;
+loadGrocery();
+setTimeout(function () {
+  var foot = GRO_NODES['#gro-foot'];
+  var addRow = foot.querySelector('#gro-add-item');
+  if (addRow) addRow.value = 'oat milk';
+  scrollEl.scrollTop = 733;
+  // NOTHING deferred — there was nothing to defer until now. This is what
+  // makes the assertion reach opts.background instead of stopping at
+  // groMaybeCarryFirst's own carryDeferred guard.
+  CARRIED = [{ id: 9, item: 'Spinach', quantity: '1 bag' }];
+  groceryState.carryDeferred = false;
+  refreshGroceryPanel();
+  setTimeout(function () {
+    var a2 = GRO_NODES['#gro-foot'].querySelector('#gro-add-item');
+    console.log(JSON.stringify({
+      step: groceryState.step, scroll: scrollEl.scrollTop,
+      deferred: groceryState.carryDeferred, typed: a2 ? a2.value : null
+    }));
+  }, 60);
+}, 60);
+""")
+    assert out["deferred"] is False, "the harness must not have deferred it"
+    assert out["step"] == "list", (
+        "a background re-read must not open CARRY — this is the assertion "
+        "that reaches opts.background rather than carryDeferred"
+    )
+    assert out["scroll"] == 733
+    assert out["typed"] == "oat milk"
 
 
 @_needs_node

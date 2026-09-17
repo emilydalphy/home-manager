@@ -4168,7 +4168,14 @@
   // that the amounts are settled before the list is read.
   //
   // Everything else is a background re-read, and it must not move anybody.
-  // Before this it did, measured: on LIST with leftovers waiting and
+  // That sentence was FALSE when first written and is true now: round 2
+  // left `refreshGrocerySurfaces` passing refill for all four of its
+  // callers, three of which are Plan-tab edits to an approved week rather
+  // than a new list. Round 3 made those three background — see that
+  // function.
+  //
+  // Before any of this it moved everybody, measured: on LIST with
+  // leftovers waiting and
   // "later" already said, one refresh went step `list` -> `carry`,
   // scrollTop 733 -> 0, and took a half-typed "oat milk" in the add row
   // with it — groFootHtml renders that field on LIST only, so
@@ -12665,7 +12672,9 @@
         slotWord(out.slot) + ' is yours to fill now.');
       // An approved week's shopping list just changed underneath, so
       // anything showing it is stale — the same courtesy resolveOpenSlot
-      // already pays.
+      // already pays. A BACKGROUND re-read: this is an edit to a week that
+      // already has a list, made from the Plan tab, so it must not move a
+      // Shop panel nobody is looking at (round 3, 2026-09-17).
       if (data.status === 'approved') refreshGrocerySurfaces();
     } catch (err) {
       console.warn('Dropping a day failed:', err);
@@ -12777,7 +12786,7 @@
       showToast(addDishToastText(out));
       // An approved week's shopping list just changed underneath, so
       // anything showing it is stale — the same courtesy the stepper going
-      // down already pays.
+      // down already pays. Background, for the reason written there.
       if (data.status === 'approved') refreshGrocerySurfaces();
     } catch (err) {
       console.warn('Adding a day failed:', err);
@@ -15718,7 +15727,8 @@
       await res.json();
       showToast(dayName(date, { weekday: 'long' }) + '’s settled — thank you.');
       // Settling a slot in an already-approved week writes to the shopping
-      // list, so anything showing that list is now stale.
+      // list, so anything showing that list is now stale. Background — an
+      // answered question is not a new list, and the household is on Plan.
       if (data.status === 'approved') refreshGrocerySurfaces();
       await loadWeekMenu(panel);
     } catch (err) {
@@ -15743,17 +15753,33 @@
   // counted sentence instead — see weekly_plan.week_receipt, which builds
   // it on the server where the numbers are.
 
-  function refreshGrocerySurfaces() {
+  // FOUR callers, and only ONE of them is an approval — which is why this
+  // takes `opts` and forwards it rather than deciding for all of them
+  // (2026-09-17, round 3 of review; it used to pass `refill: true`
+  // unconditionally and the comment here said "approval is what builds the
+  // list", inside a function three quarters of whose callers are not
+  // approvals):
+  //
+  //   * the Approve button — a REFILL. It is what builds the list, so last
+  //     week's leftovers become an open question again and "Open the list"
+  //     may land on CARRY. Passes { refill: true }.
+  //   * the Review stepper's "−" and "+", and resolving an open slot —
+  //     edits to an ALREADY-APPROVED week, made on the PLAN tab. They trim
+  //     or add a line or two; they do not build a list. Background.
+  //
+  // The second group is the same logical change as a chat swap_meal_in_plan
+  // or take_the_night_off, which have gone through the background path
+  // since round 2 — so dropping a dinner used to move the hidden Shop panel
+  // when done from the stepper and leave it alone when said in chat, which
+  // is two doors disagreeing about one change. Measured before the fix: all
+  // three went step `list` -> `carry`, scrollTop 733 -> 0, "later" cleared
+  // and a half-typed add row eaten, from a tap on a different tab.
+  function refreshGrocerySurfaces(opts) {
     // Both surfaces that show groceries are this script's own now, so both
     // are re-rendered in place. This used to reload the Grocery iframe's src
     // — throwing the whole screen away, scroll position and all — because a
     // second document was the only handle the shell had on it.
-    //
-    // A REFILL: approval is what builds the list, so last week's leftovers
-    // are an open question again and "Open the list" may land on CARRY.
-    // That is this caller's own rule and it is unchanged — see
-    // refreshGroceryPanel, where the background case now differs.
-    refreshGroceryPanel({ refill: true });
+    refreshGroceryPanel(opts);
     // Today's shop move is a reading of the same list — it appears and
     // disappears with it.
     refreshTodayMoves();
@@ -17363,7 +17389,11 @@
       // moment it succeeds — the same staleness
       // refreshStaleTabsFromActions handles for chat-driven changes, just
       // reached by a button instead of a sentence.
-      refreshGrocerySurfaces();
+      //
+      // The one REFILL among refreshGrocerySurfaces' four callers: this is
+      // the list being built, so the leftovers question reopens and "Open
+      // the list" may land on CARRY. The household is watching it happen.
+      refreshGrocerySurfaces({ refill: true });
       // Land on the All set screen (Emily, 2026-09-11: "make this the dark
       // background and more of a fun screen") — the one finish in the loop
       // that gets its own screen (DESIGN_SYSTEM §2b S5). The root's
