@@ -450,10 +450,16 @@ why*, not duplicating the diff.
     its own tonight refused: 3 hours a night in Vancouver (21:00–23:59
     local), 2 in Denver, 1 in Chicago — the sibling's figures exactly. It
     arrives by a different route here, since the "−" has no client date
-    filter to disagree with the server, but the substance is identical.
-    Nothing is written and the sentence is shown inline. **On `main` that
-    drop succeeds**, so for that household this is a behaviour regression,
-    and the honest fix is the stored zone rather than this check.
+    filter to disagree with the server. **It is NOT the same shape, and
+    saying "the substance is identical" — as the first version of this
+    entry did — undersells it.** The sibling's own words are that "another
+    night is one tap away": the "+" offers a picker, so a refused day
+    leaves the household somewhere to go. The "−" targets `days[last]` and
+    nothing else, so during those hours they cannot reduce that dish's
+    count AT ALL. A harder dead end, not an equivalent one. Nothing is
+    written and the sentence is shown inline. **On `main` that drop
+    succeeds**, so for that household this is a behaviour regression, and
+    the honest fix is the stored zone rather than this check.
   - **`swap_meal_in_plan` AND `resolve_open_slot` HAVE THE SAME HOLE.
     Checked, not assumed, and deliberately not fixed here — each its own
     card.** Neither reads a clock at all. `swap_meal_in_plan` is the
@@ -465,6 +471,15 @@ why*, not duplicating the diff.
     smuggle in. `resolve_open_slot` is the Day step's "Pick", and whether
     settling a past open slot is wrong at all is a product question rather
     than an obvious bug.
+    **AND THIS BRANCH PUTS THAT ASYMMETRY ON ONE ROW, which is worth
+    naming because this log's own 2026-09-10 entry says "one screen must
+    not refuse the mirror of what it silently allows."** `reviewDishRowHtml`
+    renders "Change one" beside the stepper, and its handler reaches
+    `swap_meal_in_plan`. Driven on a past night of an approved week: the
+    "−" is refused and the swap goes straight through, rewrites the night
+    AND puts a new line (`Carrots · 6`) on the approved week's shopping
+    list for a night that is over — arguably worse than the drop this card
+    fixes. The two cards above are what close it.
   - `tests/test_drop_a_night_refuses_the_past.py` (21; **9 red against the
     unmodified `app/`**, every one a behavioural catch — none dies on a
     missing name, because the refusal is a returned dict rather than a new
@@ -491,11 +506,67 @@ why*, not duplicating the diff.
     commit-between-steps regression reddens 2 of the atomicity tests and
     putting the chain unlink back on its own connection reddens 4 more,
     including the one named for that seam.
+  - **A THIRD FILE WAS SILENTLY DISARMED, THIS ENTRY SAID OTHERWISE IN SO
+    MANY WORDS, AND A GREEN SUITE IS EXACTLY WHAT HID IT.** The sentence
+    was "+21 is this branch's own test file exactly; no test was deleted or
+    weakened." The arithmetic is right and the second clause was FALSE
+    outside the two files its author was thinking about. Found by review,
+    not by the suite, because the damage was a test that kept PASSING.
+    `tests/test_grocery_line_to_zero.py`'s
+    `test_the_review_steppers_minus_does_not_take_the_line_to_zero` — a
+    named guard on the bug that file is entirely about, a class this log
+    records being reopened four times — went vacuous **six days out of
+    seven**. Three things had to line up: its `entries[0]` is this week's
+    MONDAY on the PROCESS's clock, so the drop was refused rather than
+    driven; its `assert result.get("refused") is None` reads a key NEITHER
+    return shape has (both say `status`), so it was None whether the drop
+    happened or not; and the lemon line reads "1" before and after a real
+    drop (0.25 x 3 and 0.25 x 2 both round to 1), so the one surviving
+    assertion is satisfied by the no-op. **Measured teeth, mutating
+    `grocery.py`'s `fully_removed = not other_qtys` to `True`:** main 11
+    red at every pin with that test among them; this branch before the fix
+    **10 red and that test PASSING** at live/friday/sunday, red only under
+    `--today=monday`. So on the CI `clock` matrix only the Monday job still
+    ran it for real. Both halves fixed — the file counts off
+    `conftest.household_today()` now and the dead assertion is
+    `result["status"] == "dropped"` — and the mutation reddens it again at
+    **live, monday, friday and sunday, 11 red each, matching main**.
+  - **The sweep that should have caught it, run afterwards rather than
+    before, and worth keeping as the tool for this class.** A green suite
+    cannot see a vacuous pass, so the new refusal was instrumented to log
+    a stack trace every time it fired and the WHOLE suite was run under it:
+    every hit is inside this branch's own test file, and every one is a
+    test named for being refused. Nothing else in 5439 tests is being
+    silently swallowed. Three other files that call `drop_dish_from_day`
+    were checked by hand as well — only `test_review_plus_and_counts.py`
+    really drops, on the process's TOMORROW, which no straddle can put
+    behind the household's today.
   - Suite **5439 passed, 0 failed** at `TZ=America/Toronto` and again at
     `TZ=Pacific/Niue` inside a VERIFIED straddle (Toronto 2026-09-17,
     Niue 2026-09-16, checked before and after the run) — against a
     measured 5418/0 on the merge base in both. +21 is this branch's own
-    test file exactly; no test was deleted or weakened.
+    test file exactly. **Three existing files were corrected, none
+    weakened** — and that claim is now backed by measurement rather than
+    by the author's memory: each is green under BOTH apps, and under every
+    mutation each gives the same failure count and the same test names on
+    its corrected form as on main's, which a test bent to fit cannot do.
+  - **THE "−" IS LEFT ENABLED ON AN ALL-PAST DISH, deliberately, and the
+    change is one clause if Emily wants it** (`canDrop` in
+    `reviewDishRowHtml`, where the reasoning is written out). It can now
+    only ever print the refusal there, which argues for greying it — and
+    three things argue the other way. The `cooked` term beside it is NOT
+    the precedent it looks like: it reads a server fact with no clock in
+    it, where a date term would read the BROWSER's and, east of the stored
+    zone, grey out a night the server would take — a control removed with
+    no explanation, worse than one that explains itself. The CHAIN refusal
+    has no client term either, on purpose, so "discover it by tapping and
+    be told exactly why" is this control's own pattern for two of its
+    three refusals. And "Change one" on the same row still rewrites the
+    past freely (above), so greying the honest refusal while the harmful
+    control stays live reads worse rather than better. The fix for the
+    whole class is an `is_past` on the HOUSEHOLD's clock in
+    `get_week_menu`'s day payload, which would also close the "+" picker's
+    own documented mismatch. Its own card.
   - **THE WORDING IS AN ASSUMPTION, Emily's to overrule in one line:**
     "That night’s already gone.", the sibling's sentence, inline beside
     the two refusals it joins in `drop_dish_from_day`.

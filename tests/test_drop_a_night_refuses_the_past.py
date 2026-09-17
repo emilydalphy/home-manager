@@ -32,7 +32,10 @@ thing to ask for, and a check that took it away would be the same bug
 wearing the other hat.
 
 Each test says in its own docstring whether it is a CATCH (red on the
-unmodified app) or a NO-REGRESSION GUARD (green either way, here to say
+unmodified app, on the assertion it is named for — the three that read
+`out["message"]` assert `status` first, so they fail on the claim rather
+than on a KeyError a dropped result has no reason to avoid) or a
+NO-REGRESSION GUARD (green either way, here to say
 what did not change). The guards are pinned by MUTATION instead, and five
 were run: swapping `_household_today()` for the server's `date.today()`,
 `<` for `<=`, moving the new refusal above the cooked one, moving the clock
@@ -320,6 +323,10 @@ class TestANightThatHasGoneBy:
 
         out = tools.drop_dish_from_day(plan, _ids(_day(-3))[0])
 
+        # status first, so an app that DROPS fails on the claim this test
+        # is named for rather than on a KeyError reading a key a dropped
+        # result has no reason to carry.
+        assert out["status"] == "refused"
         assert out["message"] == REFUSAL
 
     def test_the_refusal_is_the_same_shape_the_other_two_answer_in(self):
@@ -464,6 +471,7 @@ class TestTheClockIsTheHouseholds:
 
         out = tools.drop_dish_from_day(plan, _ids(past)[0])
 
+        assert out["status"] == "refused"
         assert out["message"] == REFUSAL
 
     def test_a_household_a_day_ahead_is_refused_the_servers_today(self, monkeypatch):
@@ -481,6 +489,7 @@ class TestTheClockIsTheHouseholds:
         out = tools.drop_dish_from_day(plan, _ids(_server_day(0))[0])
 
         assert _server_day(0) == (day - timedelta(days=1)).isoformat()
+        assert out["status"] == "refused"
         assert out["message"] == REFUSAL
 
     def test_a_household_a_day_ahead_can_still_drop_its_own_tonight(self, monkeypatch):
