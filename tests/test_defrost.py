@@ -19,6 +19,12 @@ import pytest
 
 from app import agent, tools
 from app.tools import defrost
+# The date the app's SCREENS will use. get_defrost_today and
+# get_defrost_schedule read households.timezone (2026-09-17), and the test
+# process runs on whatever TZ it was given — so a task seeded with
+# datetime.date.today() and then asked about as "today" is asserting that
+# the two clocks agree, which they do not for four hours of every UTC day.
+from conftest import household_date
 
 
 def _week_start(offset_weeks: int = 1) -> str:
@@ -295,8 +301,8 @@ def test_get_defrost_today_only_returns_todays_pending_defrost_tasks(chicken_rec
     _freeze()
     week = _week_start()
     plan = tools.create_weekly_plan(week)
-    today = datetime.date.today().isoformat()
-    tomorrow = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
+    today = household_date()
+    tomorrow = household_date(1)
     tools.plan_meal(tools._week_dates(week)[3], "Chicken Skewers", slot="dinner", weekly_plan_id=plan["weekly_plan_id"])
     defrost.sync_defrost_tasks(plan["weekly_plan_id"])
     # Force the one real candidate's date to today for a clean assertion,
@@ -329,8 +335,8 @@ def test_get_defrost_schedule_windows_by_days_ahead(chicken_recipe):
     conn = get_conn()
     week = _week_start()
     plan = tools.create_weekly_plan(week)
-    near = (datetime.date.today() + datetime.timedelta(days=2)).isoformat()
-    far = (datetime.date.today() + datetime.timedelta(days=10)).isoformat()
+    near = household_date(2)
+    far = household_date(10)
     conn.execute(
         "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, task_type, status) "
         "VALUES (1, ?, ?, 'Near task', 'defrost', 'pending')", (plan["weekly_plan_id"], near),
@@ -531,7 +537,7 @@ def test_defrost_today_endpoint(signed_in, chicken_recipe):
     task = tools.get_prep_schedule(plan["weekly_plan_id"])[0]
     from app.db import get_conn
     conn = get_conn()
-    conn.execute("UPDATE prep_tasks SET task_date = ? WHERE id = ?", (datetime.date.today().isoformat(), task["id"]))
+    conn.execute("UPDATE prep_tasks SET task_date = ? WHERE id = ?", (household_date(), task["id"]))
     conn.commit()
     conn.close()
 
@@ -566,7 +572,7 @@ def test_undo_a_skipped_defrost_task_reverts_it_to_pending(signed_in, chicken_re
     task = tools.get_prep_schedule(plan["weekly_plan_id"])[0]
     from app.db import get_conn
     conn = get_conn()
-    conn.execute("UPDATE prep_tasks SET task_date = ? WHERE id = ?", (datetime.date.today().isoformat(), task["id"]))
+    conn.execute("UPDATE prep_tasks SET task_date = ? WHERE id = ?", (household_date(), task["id"]))
     conn.commit()
     conn.close()
 

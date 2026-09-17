@@ -391,6 +391,117 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-17 — The freezer ask lost the thaw that starts tonight, for
+  four hours every evening: all three of `defrost.py`'s clock reads were
+  the server's. Branch `overnight/freezer-ask-household-clock`, NOT merged
+  at the time of writing.** Loop Board Phase 0 bug, the next module in the
+  household-clock sweep — NOT the last one; four more are named at the
+  foot of this entry. The container runs UTC and households default to
+  `America/Toronto`, so from 8pm local the server's date is already
+  tomorrow, and all three of this module's `date.today()` reads decided a
+  calendar day a household sees.
+  - **`confirm_frozen_items`' too-late test is the one with teeth, and it
+    was reproduced before anything was touched.** Household Toronto, a 48h
+    item (a whole chicken), nights at H+1/H+2/H+3: at **Toronto 09:00** the
+    app offered `[H+2, H+3]` and refused `[H+1]`; at **Toronto 21:30** it
+    offered `[H+3]` and refused `[H+1, H+2]`. H+2's move date IS the
+    household's own today — so for four hours every evening, precisely when
+    somebody taps "Something in the freezer?", the household was told "too
+    late to thaw safely" about a thaw it could have started that night with
+    about forty-five hours in hand. After: `[H+2, H+3]` at both instants,
+    with the one refusal being the night that really has run out.
+  - **THE ASK READS NO CLOCK AT ALL, and that is why only one side had to
+    move.** `meat_items_for_plan` offers every meat/seafood ingredient the
+    plan calls for with every night it feeds, filtered by nothing —
+    checked rather than assumed, and the ask card's chips are ITEMS, not
+    nights (`defrostAskChipHtml`). So the screen offered a chip and the
+    write refused it, which is §8 rule 7 inverted, and the disagreement was
+    entirely on the write's side. Pinned both ways: one test runs the ask
+    at two frozen instants a day apart and requires the same answer
+    (mutation-checked by making it filter), another requires that the only
+    chip-night the write refuses is the one whose lead time genuinely ran
+    out.
+  - **All three reads moved in the same commit**, on this repo's own rule
+    that a half-converted module is a new bug rather than a smaller one.
+    The two read paths were reproduced too, at Toronto 21:30:
+    `get_defrost_today` returned the move dated the SERVER's today and
+    hid the household's own still-pending one — a false positive and a
+    false negative on one Today tile — and `get_defrost_schedule(7)` ran
+    its window `[server today .. +7]` instead of `[household today .. +7]`,
+    dropping tonight's move off the near edge (the one "what do I need to
+    defrost?" is asking about) while reaching a day too far at the other.
+    It also had to be the same clock `moves.py` reads, since Now's fridge
+    move is built from these very rows.
+  - **`cooker.household_today()`, not a fourth conversion**, and not
+    `weekly_plan._household_today`'s shift form: that shape exists because
+    a dozen files pin `weekly_plan.date`, and nothing pins `defrost.date`
+    (checked). `from .cooker import _find_inventory_match` became
+    `from . import cooker as _cooker` — one import for one module, the
+    package's own convention, and no new edge in the import graph, since
+    cooker was already imported here and imports neither this module nor
+    anything reaching it.
+  - **The clock is resolved BEFORE `get_conn` in all three**, which was
+    already true and is now load-bearing: `household_today` opens its own
+    connection, and nesting one inside the writer's transaction is how this
+    repo has twice earned an intermittent "database is locked". Two
+    source-marker guards pin it; both ERROR against the unmodified app
+    (the name isn't there), so they are mutation-pinned and say so.
+  - **One read deliberately left on the server's clock, with a comment
+    saying why:** `mark_defrost_asked`'s SQLite `datetime('now')`. It is a
+    UTC instant written to `defrost_asked_at`, which `weekly_plan` passes
+    straight through and `shell.js` reads as `!data.defrost_asked_at` — a
+    gate, never compared against a calendar day, so there is no day for it
+    to be wrong about. A test pins that it is still a timestamp rather than
+    quietly becoming a date somebody reasons with.
+  - `tests/test_defrost_household_clock.py` (17; **10 behaviour catches**,
+    red against the unmodified app for the reason they are named after).
+    12 go red there in total — the other two are the ordering guards above,
+    which die on a `ValueError` and say so; five are green either way and
+    each names the mutation that pins it. Eight mutations run, each
+    reddening exactly the test it should: the clock read moved below
+    `get_conn` in the writer and again in a reader, the pending filter, the
+    too-late branch removed, the too-late test widened to `<=`,
+    `LARGE_LEAD_HOURS` 48→24, `datetime('now')`→`date('now')`, and the ask
+    made to filter by the clock. Both directions at a frozen UTC instant:
+    Toronto 21:30 (household a day BEHIND — the production direction) and
+    Tokyo 08:30 (a day AHEAD, where the server's clock booked a move for a
+    day the household had already lost).
+  - **Four tests in `tests/test_defrost.py` seeded off the PROCESS's clock
+    and are re-seeded off `conftest.household_date()`.** Three of them went
+    red under a straddle the moment the app started reading the household's
+    day — the app was right and the harness was wrong, which is how this
+    class always presents. The fourth (`..._windows_by_days_ahead`) was
+    green by its margins rather than by construction (+2 and +10 against a
+    seven-day edge) and moved with them. They are STRONGER, not weaker:
+    with `get_defrost_today` mutated back to the server's clock they go red
+    under `Pacific/Niue`, which they could not do before.
+  - **Numbers, measured.** Suite **5435 passed, 0 failed** at
+    `TZ=America/Toronto` and at `TZ=Pacific/Niue`; the merge base is
+    **5418 passed, 0 failed** at `Pacific/Niue`, so +17 is this branch's
+    own file and the post-only failure count is ZERO. **The straddle was
+    verified rather than assumed**, per the 2026-09-16 lesson: the runs
+    started at 07:25 and 07:30 UTC, with `TZ=Pacific/Niue date +%F` reading
+    2026-09-16 against `TZ=America/Toronto date +%F` reading 2026-09-17 —
+    two different dates, so the two clocks really were apart.
+  - **Driven over a real uvicorn on a throwaway DB, in a LIVE straddle**
+    rather than a frozen one — the container is UTC and the household was
+    set to `Pacific/Niue`, which at 07:42 UTC is genuinely the previous
+    day. Merge base: `/api/prep/defrost-today` returned the task dated
+    2026-09-17 (the server's) and `/defrost-confirm` answered
+    `created: []` with the too-late note for a Friday cook. This branch,
+    same seed: the task dated 2026-09-16 (the household's) and
+    `created: [{task_date: "2026-09-16"}]`, `notes: []`.
+  - **One acceptance criterion skipped and said out loud:** the card names
+    two tests in `tests/test_after_approve_real_questions.py` as part of
+    this work. That file does not exist on `main` — it lives on the
+    unmerged `overnight/after-approve-real-questions` branch. Same reason
+    the card counted four `date.today()` reads where `main` has three.
+  - **Found and NOT fixed, its own card:** `app/tools/big_meal.py` (6
+    server-clock reads), `inventory.py` (5), `notifications.py` (3) and
+    `chores.py` (16, with `get_chores_pending` the one with teeth) are
+    still on the server's clock — already named by the 2026-09-16
+    `weekly-plan-last-clock-reads` entry and unchanged by this one.
+
 - **2026-09-16 — "Shop for tonight" is claimed only when the list is actually
   holding tonight up. Branch `overnight/shop-move-for-tonight`, merged
   2026-09-16.** Emily, Flow 0 walk: Now read "Shop for tonight · 3 items · by
