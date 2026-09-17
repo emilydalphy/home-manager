@@ -391,6 +391,117 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-17 — A week-tagged chat change left the Shop tab showing the
+  list as it read at build time. Branch `overnight/shop-stale-after-chat`,
+  NOT merged at the time of writing.** Loop Board bug, Phase 1.
+  `refreshStaleTabsFromActions` (`static/shell.js`) is the one thing standing
+  between this file's own "tab panels build once per page load" gotcha and
+  somebody shopping from a list the app already knows is out of date, and its
+  `week` branch called `loadWeekMenu` and `refreshTonightFromPlan` and
+  nothing else.
+  - **Reproduced by driving the real function under node before anything was
+    touched**, which is the only evidence worth anything here — the defect is
+    a MISSING CALL, and a source-marker test cannot see one (the 2026-09-13
+    lesson). `{tab:'week'}` with Meals built gave `[loadWeekMenu,
+    refreshTonightFromPlan, refreshTodayMoves]`; with Meals unbuilt,
+    `[refreshTonightFromPlan, refreshTodayMoves, refreshDishIndex]`. No
+    grocery refresh either way, against the `grocery` branch ONE BRANCH BELOW
+    it, which has called `refreshGroceryPanel()` all along. Found by the
+    reviewer of `overnight/tonight-night-off`: the tonight sheet's own
+    night-off tap makes that call explicitly, with a comment saying why,
+    while the identical change said in chat got nothing.
+  - **The list really does change, measured per tool over the real code on a
+    throwaway DB — and the ticket's own list is wrong about one of them.**
+    `approve_weekly_plan` 0 -> 8 lines. `swap_meal_in_plan` takes the old
+    dish's line off and puts the new one on. `take_the_night_off` removes the
+    dropped dinner's line and recomputes the merged one (Rice 7 cups -> 6).
+    **`discard_draft_plan` changes NOTHING** — checked both ways, a lone
+    draft and a draft over an approved week — and cannot, because a draft
+    never reaches the list at all (the whole point of the 2026-09-13
+    draft-waits-for-approval work, and what the drop dialog's own second line
+    says out loud). It is refreshed anyway; see the next bullet. A FIFTH week
+    tool the card does not name can also change it: `plan_meal`, when the
+    assistant passes `add_ingredients_to_grocery_list=true` — measured not to
+    touch the list without that flag, which is its default.
+  - **UNCONDITIONAL, and that is a decision with a measurement behind it.** A
+    `ChatAction` (app/main.py) carries `tab`, `href`, `date`, `slot`,
+    `kicker`, `change`, `remembered`, `held` — and never the tool that
+    produced it. So this side cannot tell an approval from a
+    `set_week_constraints`, and `date`/`slot` are no proxy: the tool that
+    rewrites the WHOLE list carries neither, and the one that carries both
+    changes it too. Narrowing it means widening the server's action contract
+    for every card to save one request — and `_categorize_tool` gives each
+    action exactly ONE tab, so re-tagging a week tool `grocery` would swap
+    this bug for a stale Plan tab. The cost of being keen is measured:
+    **zero requests when Shop was never built**, and a re-render of the same
+    screen when it was.
+  - **In BOTH arms, because the arms split on whether MEALS was built and
+    Shop is built independently of it** — somebody can have opened Shop and
+    never Plan. Same lesson the `today` branch was taught on 2026-09-12, when
+    `loadPlanChores` went outside its own `panels.today` guard.
+  - **No `refreshTodayMoves()` beside it, unlike the `grocery` branch, and
+    that was checked rather than assumed.** `refreshTonightFromPlan` already
+    makes that call, in both arms, and is itself a no-op on an unbuilt Today
+    — so the week branch reaches Today either way and a second call would be
+    two fetches for one answer, the waste
+    `tests/test_kitchen_refresh_once.py` exists for. Pinned.
+  - **What it does to somebody already using the tab, measured by running the
+    real `refreshGroceryPanel` -> `loadGrocery` -> `renderGrocery` against a
+    stubbed fetch and a small fake DOM.** Mid-TRIP: the step, the stop
+    snapshot, the index, the stops already behind and what came home this
+    trip all survive, and so does the scroll — `loadGrocery` touches none of
+    that, and `renderGrocery` reads `scrollTop` before it writes and puts it
+    back (the 2026-09-02 measurement, matched). Mid-SORT: the step and the
+    open row survive.
+  - **Two things it CAN change, characterised rather than papered over.** (1)
+    If the change left nothing to sort, `renderGrocery`'s own fallback folds
+    SORT back to LIST — "a step that stopped making sense under its own feet
+    falls back to the root". Pre-existing and right; this only makes it
+    reachable from chat as well as from the shopper's own taps. (2)
+    `refreshGroceryPanel` clears `carryDeferred`, so a household that said
+    "later" to last week's keep-or-drop is asked again. Correct for
+    `approve_weekly_plan` — a refill is a new list, and the Approve button
+    already does exactly this through `refreshGrocerySurfaces` — and
+    over-eager for a week tool that only moved a night around. Left rather
+    than special-cased: two doors into one refresh that disagree about this
+    is worse than one that is occasionally keen. It can only happen on LIST
+    (`groMaybeCarryFirst` returns early on every other step), so it can never
+    reach a trip.
+  - **The ticket's "staged sort picks" describe a screen that no longer
+    exists.** SORT ALL staged every pick behind a save button when it shipped
+    (2026-09-09) and stopped on 2026-09-13 — a tap WRITES now and the row
+    leaves the screen. There is nothing staged left to lose.
+  - `tests/test_shop_stale_after_chat.py` (25; **7 red against the unmodified
+    `shell.js`**, and the other 18 say in their own docstrings that they are
+    premise measurements, tag guards, no-regression guards or
+    characterisations). Two of the seven are weak and say so — they are red
+    for the same one missing line as the four per-tool ones, not for a second
+    reason. **Four mutations run, and two of them caught a toothless test,
+    which is the whole reason to run them:** the scroll assertion passed with
+    the scroll restore deleted, because the fake DOM never MOVED `scrollTop`
+    (it now drops it to 0 on any `innerHTML` write, as a browser does); and
+    the unbuilt-panel test sits behind TWO guards (`refreshGroceryPanel`'s
+    and `loadGrocery`'s own), so removing either alone leaves it green and
+    only removing both reddens it — written into its docstring rather than
+    claimed as a pin it is not. The other two bite. Suite **5443 passed, 0
+    failed** at `TZ=America/Toronto`, against **5418 passed, 0 failed** on the
+    merge base measured the same way — +25 is exactly this file, and nothing
+    else moved in either direction.
+  - **A SEPARATE BUG FOUND ON THE WAY AND DELIBERATELY NOT FIXED, one branch
+    over and the same shape:** `refreshKitchenPanel()` is called from INSIDE
+    `loadWeekMenu`, which only runs in the arm where Meals was built. So on a
+    page view where somebody opened Shop and Kitchen and never Plan, a
+    week-tagged chat change leaves KITCHEN — today's cooks, the rest of the
+    week, cook mode — reading what it loaded at build time. Measured, and
+    characterised by name in
+    `test_kitchen_goes_stale_in_the_same_arm_and_is_NOT_fixed_here`; invert
+    that test when it is fixed. Not widened into here because the fix is to
+    hoist that call out of `loadWeekMenu`, which changes behaviour for all
+    six of its callers. Its own card.
+  - **Not verified in a browser.** The node harness runs the real functions
+    against the real state, which is where this bug lived; the pixels are
+    unchecked.
+
 - **2026-09-16 — "Shop for tonight" is claimed only when the list is actually
   holding tonight up. Branch `overnight/shop-move-for-tonight`, merged
   2026-09-16.** Emily, Flow 0 walk: Now read "Shop for tonight · 3 items · by

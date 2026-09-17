@@ -21604,6 +21604,40 @@
         refreshHolding();
         return;
       }
+      // Shop was the third hole, and it stayed open longer than the other
+      // two because this branch LOOKED complete. A week-tagged change
+      // rewrites the shopping list all the time: approve_weekly_plan writes
+      // the whole thing, swap_meal_in_plan moves lines between dishes,
+      // take_the_night_off puts back whatever a dropped dinner had put on
+      // it that nobody has bought yet, generate_weekly_plan reverses the
+      // groceries of every plan it takes days from
+      // (retire_overlapping_plans). Said in chat, every one of those left
+      // Shop showing the list as it read at build time — on the one screen
+      // somebody then walks into a shop holding.
+      //
+      // Found by the reviewer of overnight/tonight-night-off: the sheet's
+      // own night-off tap has called refreshGroceryPanel() all along, with
+      // a comment saying why, while the identical change made from chat got
+      // no grocery refresh at all. The client already knew the list had
+      // changed; it was wired for one entry point.
+      //
+      // UNCONDITIONAL, deliberately. A ChatAction carries a tab and never
+      // the tool that produced it (see ChatAction in app/main.py), so this
+      // side cannot tell an approval from a set_week_constraints, and
+      // date/slot are no proxy — approve_weekly_plan carries neither and
+      // rewrites everything. Narrowing it means widening the server's action
+      // contract for every card to save one request, and the request costs
+      // nothing when it wasn't needed: refreshGroceryPanel is a no-op unless
+      // Shop has been built, and re-reading the same list renders the same
+      // screen (renderGrocery holds the scroll, and the step, the trip
+      // snapshot and an open SORT are all left exactly as they stand).
+      //
+      // In BOTH arms, because the arms split on whether MEALS was built and
+      // Shop is built independently of it — the same reason the `today`
+      // branch calls loadPlanChores outside its own panels.today guard
+      // (2026-09-12). No refreshTodayMoves() beside it, unlike the `grocery`
+      // branch below: refreshTonightFromPlan already makes that call, and a
+      // second one is two fetches for one answer.
       if (action.tab === 'week' && panels.week && panels.week.dataset.built) {
         // loadWeekMenu refreshes the Cook state too — see its tail, and
         // the dish index the chat's own dish links read (setDishIndex).
@@ -21612,8 +21646,10 @@
         // (swap_dinner_nights, tagged `week` in app/main.py) as well.
         loadWeekMenu(panels.week);
         refreshTonightFromPlan();
+        refreshGroceryPanel();
       } else if (action.tab === 'week') {
         refreshTonightFromPlan();
+        refreshGroceryPanel();
         // The same week changed, but Meals has never been opened in this
         // page load, so there is no panel to reload — and the dish index
         // would go on naming last week's dinners in every reply. One
