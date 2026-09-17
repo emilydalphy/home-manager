@@ -39,8 +39,17 @@ def test_the_list_never_lands_on_sort_by_itself():
     # "Open the list" after an approval lands on the list.
     shim = SHELL_JS.split("function groSetScreen(", 1)[1].split("\n  }", 1)[0]
     assert "goGroceryStep('list');" in shim and "groMaybeCarryFirst();" in shim
-    # A refill (approval) is a new list: the leftovers are asked about again.
-    assert "groceryState.carryDeferred = false;\n    if (groIsBuilt()) loadGrocery();" in SHELL_JS
+    # A refill (approval, Start over) is a new list: the leftovers are asked
+    # about again, and the tab may land on CARRY. Unchanged as a rule — what
+    # moved on 2026-09-17 is that it is now the REFILL callers' behaviour
+    # rather than every caller's, because a background re-read arriving from
+    # chat was navigating people off LIST mid-scroll (see
+    # tests/test_shop_stale_after_chat.py). The two foreground rebuilds pass
+    # refill: true and behave exactly as they always did.
+    assert ("    var refill = !!(opts && opts.refill);\n"
+            "    if (refill) groceryState.carryDeferred = false;\n"
+            "    if (groIsBuilt()) loadGrocery({ background: !refill });") in SHELL_JS
+    assert SHELL_JS.count("refreshGroceryPanel({ refill: true })") == 2
     # The only ways into a sort step are the list's own row and its fast paths.
     assert "case 'goto-sort': {" in SHELL_JS
     for step in ("'sort'", "'sorthow'", "'sortall'"):

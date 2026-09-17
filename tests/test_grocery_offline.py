@@ -536,8 +536,12 @@ def test_both_ticks_go_through_the_offline_path():
 
 
 def test_a_failed_load_falls_back_to_the_copy_and_keeps_the_step():
-    load = SHELL_JS[SHELL_JS.index("async function loadGrocery()"):]
-    load = load[:load.index("function refreshGroceryPanel()")]
+    # Both markers gained a parameter on 2026-09-17 (loadGrocery(opts) /
+    # refreshGroceryPanel(opts) — a background re-read no longer opens the
+    # leftovers step). The claims below are unchanged; only where this
+    # slice starts and stops moved.
+    load = SHELL_JS[SHELL_JS.index("async function loadGrocery("):]
+    load = load[:load.index("function refreshGroceryPanel(")]
     assert "groOffline.readList()" in load
     assert "groOffline.applyPending(copy.data)" in load
     assert "groOffline.saveList(pair[0])" in load

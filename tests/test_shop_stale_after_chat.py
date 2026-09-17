@@ -1,37 +1,57 @@
 """
-A week-tagged chat change refreshes the Shop tab.
+A week-tagged chat change refreshes the Shop tab — once.
 
 Loop Board bug, Phase 1: "A chat change that alters the shopping list leaves
 the Shop tab stale until you reload." `refreshStaleTabsFromActions`
 (static/shell.js) is the one thing standing between CLAUDE.md's "tab panels
-build once per page load" gotcha and a household shopping from a list the
-app already knows is out of date — and its `week` branch called
-`loadWeekMenu` and `refreshTonightFromPlan` and nothing else.
+build once per page load" gotcha and a household shopping from a list the app
+already knows is out of date, and its `week` branch called `loadWeekMenu` and
+`refreshTonightFromPlan` and nothing else.
 
-Measured before the fix, by driving the real function under node:
+WHAT THE GAP ACTUALLY IS, because the first version of this file got it wrong
+and said so confidently. An ordinary `approve_weekly_plan` was ALREADY
+covered: `summarize_chat_actions` gives it TWO cards, `week` AND `grocery`,
+so the branch below already re-read Shop for it. Driven for real and
+measured on origin/main:
 
-    {tab:'week'}, Meals built     -> loadWeekMenu, refreshTonightFromPlan
-    {tab:'week'}, Meals not built -> refreshTonightFromPlan, refreshDishIndex
-    {tab:'grocery'}               -> refreshGroceryPanel, refreshTodayMoves
+    approve, groceries_added_count > 0  -> ['week', 'grocery']   1 refresh
+    approve, 0 added but carried > 0    -> ['week']              0 refreshes
+    swap_meal_in_plan / take_the_night_off / discard / ...  -> ['week']
 
-The `grocery` branch had it right the whole time, one branch below.
+So the honest gap is the week tools that move the list and emit a `week` card
+alone — including approval in ONE shape, the one that adds nothing and
+carries last week's unbought lines over, where the rows really do move
+`needed` -> `carried` and Shop goes on showing them as needed.
 
-Found by the reviewer of overnight/tonight-night-off: the tonight sheet's OWN
-night-off tap calls refreshGroceryPanel() explicitly, with a comment saying
-why, while the identical change made from chat got nothing. The client
-demonstrably knew the list had changed and was wired for one entry point.
+And because a turn CAN carry both cards, the refresh de-duplicates per turn:
+two cards pointing at one panel are one re-read, not two.
 
 HOW THIS FILE IS BUILT, and why it is not a source-marker file. The defect is
 a MISSING CALL, which is exactly what reading the source for a name cannot
 see (CLAUDE.md, 2026-09-13). So every behavioural test here RUNS shell.js's
 own functions under node (tests/nodeharness.py): section 3 drives
-`refreshStaleTabsFromActions` against stubs and counts what it called, and
-section 4 runs the real `refreshGroceryPanel` -> `loadGrocery` ->
-`renderGrocery` against a stubbed fetch and a small fake DOM.
+`refreshStaleTabsFromActions` against stubs, over action lists taken from the
+REAL `summarize_chat_actions` rather than hand-built, and section 4 runs the
+real `refreshGroceryPanel` -> `loadGrocery` -> `renderGrocery` against a
+stubbed fetch and a small fake DOM.
 
-Every test says in its own docstring whether it is a CATCH (red against the
-unmodified static/shell.js) or a GUARD (green either way — a promise that
-something this change could have broken did not move).
+LABELS. There are TWO baselines now, and a single "red on main" number
+would hide half of what this file covers, so every docstring names both:
+
+  * MAIN      — origin/main at 5702234, the shipped app.
+  * FIRST CUT — this branch's own first commit, which fixed the bug and
+                introduced four problems of its own (a double refresh, a
+                falsified comment, a redundant call, and a background
+                refresh that navigated). Round 2 fixed those.
+
+Measured: 12 red against MAIN, 8 red against FIRST CUT.
+
+And of the 12 red against main, only THREE are independent behavioural
+catches — `swap_meal_in_plan`, `take_the_night_off`, and the approval that
+adds nothing while carrying last week's lines over. The rest are the same
+one missing line seen from another angle, or (in the case of
+`discard_draft_plan`) red for a refresh this file itself proves is waste.
+Each says which it is.
 """
 from __future__ import annotations
 
@@ -44,7 +64,7 @@ import nodeharness
 import pytest
 
 from app import tools
-from app.main import _WEEK_TOOLS, _categorize_tool
+from app.main import _WEEK_TOOLS, _categorize_tool, summarize_chat_actions
 from conftest import household_date, household_today
 
 REPO = Path(__file__).resolve().parents[1]
@@ -242,13 +262,24 @@ def _function(name: str) -> str:
     return SHELL_JS[start:end] + "\n  }\n"
 
 
-def _refresh(actions: list[dict], week_built: bool = True) -> list[str]:
+def _strip_comments(js: str) -> str:
+    """Whole-line `//` comments out. Never a trailing `//` on a code line —
+    shell.js is full of `https://` inside strings (test_refresh_policy's own
+    reasoning, borrowed whole)."""
+    return "\n".join(l for l in js.splitlines() if not l.lstrip().startswith("//"))
+
+
+def _refresh(actions: list[dict], week_built: bool = True, opts=None) -> list[str]:
     """Run the real refreshStaleTabsFromActions and report what it called."""
+    call = "refreshStaleTabsFromActions(%s%s);\n" % (
+        json.dumps(actions),
+        "" if opts is None else ", " + json.dumps(opts),
+    )
     script = (
         _REFRESH_STUB
         + _function("refreshStaleTabsFromActions")
         + ("\n" if week_built else "\ndelete panels.week.dataset.built;\n")
-        + "refreshStaleTabsFromActions(%s);\n" % json.dumps(actions)
+        + call
         + "console.log(JSON.stringify(CALLS));\n"
     )
     res = nodeharness.run_node(script, timeout=30)
@@ -256,29 +287,160 @@ def _refresh(actions: list[dict], week_built: bool = True) -> list[str]:
     return json.loads(res.stdout.strip().splitlines()[-1])
 
 
-@_needs_node
-@pytest.mark.parametrize("tool", WEEK_TOOLS_UNDER_TEST)
-def test_the_shop_tab_refreshes_for_each_week_tool(tool):
-    """
-    CATCH (red against the unmodified shell.js, for all four).
+def _after_tonight_swap(opts=None) -> list[str]:
+    """Run the real afterTonightSwap — the NON-chat caller of the same
+    function, a tap on Now rather than a chat turn."""
+    script = (
+        _REFRESH_STUB
+        + "function loadTonightAsk() { CALLS.push('tonightask'); }\n"
+        + _function("refreshStaleTabsFromActions")
+        + _function("afterTonightSwap")
+        + "afterTonightSwap(panels.today%s);\n" % ("" if opts is None else ", " + json.dumps(opts))
+        + "console.log(JSON.stringify(CALLS));\n"
+    )
+    res = nodeharness.run_node(script, timeout=30)
+    assert res.returncode == 0, "node failed: %s" % res.stderr
+    return json.loads(res.stdout.strip().splitlines()[-1])
 
-    One test per tool, and the tab each action carries is asked of
-    _categorize_tool rather than written here — so this is the real chain
-    from the tool name the assistant called through to the refresh, not a
-    hard-coded 'week' string agreeing with itself.
+
+class _ToolUse:
+    """One assistant tool_use block, in the shape summarize_chat_actions
+    reads (it uses getattr first, then dict access)."""
+
+    def __init__(self, name: str, block_id: str):
+        self.type = "tool_use"
+        self.name = name
+        self.id = block_id
+        self.input = {}
+
+
+def real_cards(tool: str, result: dict) -> list[dict]:
+    """The action list the SERVER really produces for one tool call.
+
+    This is the chain, and `_categorize_tool` is not it: app/main.py
+    special-cases `approve_weekly_plan` and gives it a second, `grocery`
+    card whenever it added anything. Building `[{'tab': 'week'}]` by hand
+    for that tool tests a payload the app never sends — which is exactly
+    what the first version of this file did, and why it reported a gap that
+    was already closed.
     """
-    _category, tab, _href = _categorize_tool(tool)
-    calls = _refresh([{"tab": tab, "kicker": "Week updated", "change": tool}])
-    assert "grocery" in calls, (
-        "a %s said in chat leaves Shop showing the list as it read at build "
-        "time: %r" % (tool, calls)
+    actions = summarize_chat_actions(
+        [],
+        [
+            {"role": "assistant", "content": [_ToolUse(tool, "t1")]},
+            {"role": "user", "content": [
+                {"type": "tool_result", "tool_use_id": "t1", "content": json.dumps(result)}
+            ]},
+        ],
+    )
+    return [{"tab": a.tab, "href": a.href} for a in actions]
+
+
+# The action list the SERVER really sends for each tool, measured. The
+# `result` dicts are the shapes summarize_chat_actions branches on.
+REAL_TURNS = {
+    # The commonest approval. TWO cards — and so it was already covered.
+    "approve_weekly_plan (ordinary)": (
+        "approve_weekly_plan",
+        {"status": "approved", "groceries_added_count": 8, "carried_over_count": 0},
+    ),
+    # THE REAL APPROVE GAP: nothing added, last week's lines set aside.
+    "approve_weekly_plan (0 added, carried)": (
+        "approve_weekly_plan",
+        {"status": "approved", "groceries_added_count": 0, "carried_over_count": 3},
+    ),
+    "swap_meal_in_plan": ("swap_meal_in_plan", {"meal_date": "2026-09-18", "slot": "dinner"}),
+    "take_the_night_off": ("take_the_night_off", {"status": "night_off"}),
+    "discard_draft_plan": ("discard_draft_plan", {"ok": True}),
+}
+
+
+def test_the_server_gives_an_ordinary_approval_two_cards():
+    """
+    GUARD, and the correction that this whole file's framing rests on.
+    app/main.py hangs a second `grocery` card on `groceries_added_count`,
+    so an ordinary approval was never the gap — and an approval that adds
+    nothing while carrying last week's lines over emits `week` alone, which
+    is.
+    """
+    assert real_cards(*REAL_TURNS["approve_weekly_plan (ordinary)"]) == [
+        {"tab": "week", "href": None}, {"tab": "grocery", "href": None},
+    ]
+    assert real_cards(*REAL_TURNS["approve_weekly_plan (0 added, carried)"]) == [
+        {"tab": "week", "href": None},
+    ]
+
+
+def test_an_approval_that_adds_nothing_still_moves_rows_off_the_needed_list():
+    """
+    GUARD (green either way) — the premise behind the approve case, over
+    the real tools on a throwaway DB rather than reasoned about.
+
+    A week with nothing to buy (every night takeout) approved over a
+    previous week with an unbought line: `groceries_added_count` 0,
+    `carried_over_count` 1, and the row really moves `needed` -> `carried`.
+    Shop was showing it as a needed row; it is now a keep-or-drop question.
+    """
+    prev_monday = household_today() - datetime.timedelta(days=household_today().weekday() + 7)
+    prev = tools.create_weekly_plan(prev_monday.isoformat())["weekly_plan_id"]
+    _recipe("Old Dish", "Spinach")
+    tools.plan_meal(tools._week_dates(prev_monday.isoformat())[0], "Old Dish",
+                    slot="dinner", weekly_plan_id=prev)
+    tools.approve_weekly_plan(prev)
+    assert [r["status"] for r in tools.list_grocery_list("all")].count("needed") >= 1
+
+    plan = tools.create_weekly_plan(WEEK)["weekly_plan_id"]
+    for day in DAYS:
+        tools.plan_meal(day, "Takeout", slot="dinner", weekly_plan_id=plan)
+    out = tools.approve_weekly_plan(plan)
+
+    assert out["groceries_added_count"] == 0
+    assert out["carried_over_count"] >= 1
+    statuses = [r["status"] for r in tools.list_grocery_list("all")]
+    assert statuses and set(statuses) == {"carried"}, statuses
+    # ...and the server tells the shell about it with a `week` card only.
+    assert real_cards("approve_weekly_plan", out) == [{"tab": "week", "href": None}]
+
+
+@_needs_node
+@pytest.mark.parametrize("label", sorted(REAL_TURNS))
+def test_the_shop_tab_refreshes_for_each_week_tool(label):
+    """
+    Driven over the REAL `summarize_chat_actions` output for each tool, not
+    a hand-built `[{'tab': 'week'}]` — see real_cards for why that
+    distinction is the difference between testing the app and testing a
+    payload it never sends.
+
+    WHICH OF THESE ARE REAL CATCHES, stated rather than implied.
+
+      * swap_meal_in_plan          RED on main   — a real behavioural catch
+      * take_the_night_off         RED on main   — a real behavioural catch
+      * approve (0 added, carried) RED on main   — a real behavioural catch
+      * approve (ordinary)         RED on FIRST CUT, green on main — it was
+                                   ALREADY covered by its own grocery card,
+                                   and the job here is that it stays at
+                                   exactly one re-read rather than two
+      * discard_draft_plan         RED on main, and proves nothing about the
+                                   bug: that tool changes no line (the test
+                                   above measures it), so this is red for a
+                                   refresh that is pure waste. Kept because
+                                   the waste is a deliberate, stated cost of
+                                   the unconditional rule, and a test is
+                                   where a cost should be visible.
+    """
+    tool, result = REAL_TURNS[label]
+    cards = real_cards(tool, result)
+    assert cards, "the server sends no card at all for %s" % label
+    calls = _refresh(cards)
+    assert calls.count("grocery") == 1, (
+        "%s should leave Shop re-read exactly once: %r" % (label, calls)
     )
 
 
 @_needs_node
 def test_it_refreshes_shop_even_when_meals_has_never_been_opened():
     """
-    CATCH (red against the unmodified shell.js).
+    RED on main, for the same one missing call as the per-tool tests.
 
     The two arms of the `week` branch split on whether MEALS was built, and
     Shop is built independently of it — somebody can have opened Shop and
@@ -314,12 +476,11 @@ def test_the_week_branch_does_not_ask_today_twice():
 @_needs_node
 def test_shop_is_refreshed_once_for_one_action():
     """
-    CATCH, though a weak one, and it is worth saying which: it is red
-    against the unmodified shell.js for the same one missing call as the
-    four above, not for a second reason of its own. What it adds is the
-    other direction — both arms carry the call, and an action must take
-    exactly one of them, so a restructure that let both run would double
-    every refresh.
+    RED on main, and weak — it is red for the same one missing call as the
+    per-tool tests, not for a reason of its own. What it adds is the other
+    direction: both arms carry the call, and one action must take exactly
+    one of them, so a restructure letting both run would double every
+    refresh.
     """
     assert _refresh([{"tab": "week"}]).count("grocery") == 1
     assert _refresh([{"tab": "week"}], week_built=False).count("grocery") == 1
@@ -377,17 +538,120 @@ def test_the_grocery_branch_still_refreshes_both_surfaces():
 
 
 @_needs_node
-def test_two_actions_in_one_turn_each_do_their_own_work():
+def test_one_turn_re_reads_the_shop_panel_once_however_many_cards_say_so():
     """
-    CATCH, and weak in the same way as the one above — on the unmodified
-    shell.js it counts one refresh where it wants two, which is the same
-    missing line again. Its own claim is that a turn which swaps a meal AND
-    adds an item produces two cards, and the week one must not swallow the
-    grocery one.
+    RED on FIRST CUT, green on main — worth stating that way round, because
+    an earlier version of this test asserted the OPPOSITE (that two refreshes
+    were correct) and framed it as a feature.
+
+    An ordinary approval sends TWO cards, `week` and `grocery`, and both
+    branches want the SAME single Shop panel. One re-read is the right
+    answer; two is 16 requests and two concurrent loadGrocery() runs over
+    the same eight endpoints, on exactly the turn this ticket is about.
+    Main did one (via the grocery card alone); the first commit here did
+    two; this does one.
     """
-    calls = _refresh([{"tab": "week"}, {"tab": "grocery"}])
-    assert calls.count("grocery") == 2, calls
+    cards = real_cards(*REAL_TURNS["approve_weekly_plan (ordinary)"])
+    assert len(cards) == 2, cards
+    calls = _refresh(cards)
+    assert calls.count("grocery") == 1, calls
+    # Each card still does its own OTHER work.
     assert "weekmenu" in calls
+
+
+@_needs_node
+def test_a_hand_built_pair_of_week_and_grocery_cards_is_also_one_re_read():
+    """
+    RED on main AND on FIRST CUT, for opposite reasons — which is the point
+    of having it beside the real-cards test above. Main does nothing for a
+    `week` card, so `[week, week]` gives 0; the first cut did one per card,
+    so `[week, grocery]` gave 2. The rule this pins is independent of what
+    the server happens to send today: any cards in one turn that mean "the
+    list moved" are ONE re-read of the one panel.
+    """
+    assert _refresh([{"tab": "week"}, {"tab": "grocery"}]).count("grocery") == 1
+    assert _refresh([{"tab": "grocery"}, {"tab": "week"}]).count("grocery") == 1
+    assert _refresh([{"tab": "week"}, {"tab": "week"}]).count("grocery") == 1
+
+
+# --------------------------------------------------------------------------
+# The OTHER caller: a tap on Now, not a chat turn
+# --------------------------------------------------------------------------
+# refreshStaleTabsFromActions has two call sites. afterTonightSwap is the
+# second, and it knows something a chat action never can — exactly which
+# write it just made.
+
+@_needs_node
+def test_a_nights_swap_tap_still_leaves_shop_alone():
+    """
+    RED on FIRST CUT, green on main — a pure regression guard.
+    `afterTonightSwap`'s own comment says "the grocery list is untouched by
+    a nights swap, so Shop is left alone" — swap_dinner_nights
+    re-dates the rows in place and the grocery links ride along. The first
+    commit here made that sentence false by routing the tap through a week
+    branch that had begun re-reading Shop unconditionally: main 0
+    refreshes, that commit 1, under a comment saying the opposite.
+    """
+    calls = _after_tonight_swap()
+    assert "grocery" not in calls, calls
+    # ...and it still does everything it always did.
+    assert "weekmenu" in calls and "kitchen" in calls and "tonightask" in calls
+
+
+@_needs_node
+def test_a_night_off_tap_re_reads_shop_exactly_once():
+    """
+    RED on main (where afterTonightSwap takes no second argument, so the
+    flag is ignored and nothing re-reads Shop). GREEN on FIRST CUT — and
+    that is worth saying, because it is NOT the test that catches the
+    double this fix removed.
+
+    The double lived one level up, in runTonightNightOff, which called
+    afterTonightSwap and then refreshGroceryPanel() again; this test calls
+    afterTonightSwap directly and so cannot see it. The test that does is
+    test_the_night_off_tap_no_longer_carries_its_own_grocery_call, and it
+    is a source pin because there is no harness for a route handler here.
+    Said plainly rather than letting the pair read as one catch.
+
+    What this one does claim: a night off DOES move the list — a dropped
+    dish puts back whatever it had put on it that nobody has bought — so
+    the flag has to reach Shop, exactly once.
+    """
+    calls = _after_tonight_swap({"listMoved": True})
+    assert calls.count("grocery") == 1, calls
+
+
+def test_the_night_off_tap_no_longer_carries_its_own_grocery_call():
+    """
+    RED on main and on FIRST CUT (both carry the explicit call). A shape
+    pin rather than a behaviour one: the duplicate really is gone from the
+    CODE, not merely coalesced at runtime by refreshGroceryOnce — which is
+    scoped to
+    one refreshStaleTabsFromActions call and could not have caught it,
+    because the old explicit call sat outside.
+
+    Comments are stripped first, the way tests/test_refresh_policy.py does
+    it and for its reason: this function is more prose than code now, and
+    the prose names the call it is explaining. An assertion a comment can
+    satisfy is not an assertion."""
+    body = _strip_comments(_function("runTonightNightOff"))
+    assert "refreshGroceryPanel(" not in body
+    assert "afterTonightSwap(panel, { listMoved: true });" in body
+
+
+@_needs_node
+def test_a_chat_action_can_never_say_the_list_stayed_put():
+    """
+    RED on main for the same one missing call as everything else in this
+    section, and RED on FIRST CUT, where the parameter does not exist at
+    all. Its own claim is the narrow one: `listMoved` is for the LOCAL
+    caller only — the chat door omits the second argument and gets the keen
+    behaviour, which is the whole point of the unconditional rule, and an
+    absent or empty opts must never be read as "the list stayed put".
+    """
+    assert "grocery" in _refresh([{"tab": "week"}])
+    assert "grocery" in _refresh([{"tab": "week"}], opts={})
+    assert "grocery" not in _refresh([{"tab": "week"}], opts={"listMoved": False})
 
 
 # ==========================================================================
@@ -455,13 +719,25 @@ const window = {
 // checked by mutation, and the first version of this harness did exactly
 // that.
 function el() {
-  var node = { hidden: false, textContent: '',
+  var node = { hidden: false, textContent: '', value: '',
     classList: { toggle: function () {}, add: function () {}, remove: function () {},
                  contains: function () { return false; } },
-    querySelector: function () { return null; }, querySelectorAll: function () { return []; },
+    querySelectorAll: function () { return []; },
     addEventListener: function () {}, setAttribute: function () {},
-    getAttribute: function () { return null; } };
+    getAttribute: function () { return null; },
+    focus: function () {}, setSelectionRange: function () {} };
   var html = '';
+  // The one selector these tests look up for real: the LIST foot's add
+  // field. groFootHtml writes it on LIST only, and groCaptureAddRow /
+  // groRestoreAddRow are what carry a half-typed "oat milk" across a
+  // re-render — the thing a background refresh must not eat. A node that
+  // answered null to everything could not see that either way.
+  node.querySelector = function (sel) {
+    if (sel === '#gro-add-item' && /id="gro-add-item"/.test(html)) {
+      return node._add || (node._add = el());
+    }
+    return null;
+  };
   Object.defineProperty(node, 'innerHTML', {
     get: function () { return html; },
     set: function (v) { html = v; if (scrollEl) scrollEl.scrollTop = 0; }
@@ -641,38 +917,139 @@ setTimeout(function () { console.log(JSON.stringify({ step: groceryState.step })
 
 
 @_needs_node
-def test_a_deferred_leftovers_question_is_asked_again_and_that_is_the_cost():
+def test_a_background_refresh_does_not_take_the_household_to_another_screen():
     """
-    CHARACTERISATION (green either way), and the one behaviour cost of
-    routing the week branch through refreshGroceryPanel rather than straight
-    to loadGrocery.
+    RED on main AND on FIRST CUT. The first cut shipped this loss and
+    DOCUMENTED it as an acceptable cost; it was worse than documented, and
+    the measurement below is why it is fixed rather than written down.
+    (It is red on main too, for the same reason — main navigates as well;
+    main simply never reached this path from a chat turn.)
 
-    refreshGroceryPanel clears carryDeferred, so a household that said
-    "later" to last week's keep-or-drop gets asked again. That is correct for
-    approve_weekly_plan — the function's own docstring says a refill is a new
-    list, and an approval IS a refill — and it is what the Approve button
-    already does through refreshGrocerySurfaces. It is over-eager for a week
-    tool that only moved a night around. Kept rather than special-cased,
-    because approval is the week tool that matters most here and because
-    two doors into the same refresh that disagree about this is worse than
-    one door that is occasionally keen.
+    On LIST, with last week's leftovers waiting and "later" already said,
+    one background refresh used to go:
 
-    It can only happen on LIST: groMaybeCarryFirst returns early on any other
-    step, which is what keeps it away from a trip.
+        step `list` -> `carry`,  scrollTop 733 -> 0,
+        and the half-typed "oat milk" in the add row GONE
+
+    — the add row because groFootHtml renders `#gro-add-item` on LIST only,
+    so groRestoreAddRow had nothing to put the text back into. That is the
+    exact loss renderGrocery's own capture/restore comment exists to
+    prevent, arriving through a refresh nobody asked for, from a chat turn
+    or another tab's tap.
+
+    Nothing is lost by not navigating: LIST already carries
+    groCarryRowHtml's "N things from last week · Keep or drop?" row, whose
+    own comment calls it "the way back into CARRY once Later was said".
     """
     out = _shop("""
 groceryState.usualStores = ['Loblaws', 'Costco'];
 groceryState.storesPromptDismissed = true;
-CARRIED = [{ id: 9, item: 'Spinach', quantity: '1 bag' }];
-groceryState.carried = CARRIED;
-groceryState.carryDeferred = true;
-refreshGroceryPanel();
+// An ordinary LIST load first, so the foot writes its real add row.
+loadGrocery();
 setTimeout(function () {
-  console.log(JSON.stringify({ step: groceryState.step, deferred: groceryState.carryDeferred }));
+  var foot = GRO_NODES['#gro-foot'];
+  var addRow = foot.querySelector('#gro-add-item');
+  if (addRow) addRow.value = 'oat milk';
+  scrollEl.scrollTop = 733;
+  var before = { step: groceryState.step, scroll: scrollEl.scrollTop,
+                 typed: addRow ? addRow.value : null,
+                 hasAddRow: /id="gro-add-item"/.test(foot.innerHTML) };
+  // Now an approval sets last week's lines aside, and this household has
+  // already said "later" to them once this page view.
+  CARRIED = [{ id: 9, item: 'Spinach', quantity: '1 bag' }];
+  groceryState.carryDeferred = true;
+  refreshGroceryPanel();
+  setTimeout(function () {
+    var f2 = GRO_NODES['#gro-foot'];
+    var a2 = f2.querySelector('#gro-add-item');
+    console.log(JSON.stringify({ before: before, after: {
+      step: groceryState.step, scroll: scrollEl.scrollTop,
+      deferred: groceryState.carryDeferred,
+      typed: a2 ? a2.value : null,
+      hasAddRow: /id="gro-add-item"/.test(f2.innerHTML)
+    }}));
+  }, 60);
 }, 60);
 """)
-    assert out["deferred"] is False
+    assert out["before"] == {"step": "list", "scroll": 733, "typed": "oat milk",
+                             "hasAddRow": True}, out["before"]
+    assert out["after"]["step"] == "list", "a background refresh must not navigate"
+    assert out["after"]["scroll"] == 733, "a background refresh must not scroll"
+    assert out["after"]["typed"] == "oat milk", "it must not eat a half-typed add"
+    assert out["after"]["hasAddRow"] is True
+    assert out["after"]["deferred"] is True, (
+        "'later' is the household's answer; a background re-read is not a "
+        "reason to forget it"
+    )
+
+
+@_needs_node
+def test_a_refill_still_opens_the_leftovers_question_the_way_it_always_did():
+    """
+    GUARD, and the reason the fix above is a parameter rather than a
+    deletion. Approve and Start over are FOREGROUND rebuilds the household
+    just asked for: a refill really is a new list, so the leftovers become
+    an open question again and the tab may land on CARRY — the 2026-09-13
+    rule that the amounts are settled before the list is read. Byte for
+    byte what refreshGroceryPanel did for every caller before this change;
+    now it is what it does for the two that mean it.
+    """
+    out = _shop("""
+groceryState.usualStores = ['Loblaws', 'Costco'];
+groceryState.storesPromptDismissed = true;
+loadGrocery();
+setTimeout(function () {
+  CARRIED = [{ id: 9, item: 'Spinach', quantity: '1 bag' }];
+  groceryState.carryDeferred = true;
+  refreshGroceryPanel({ refill: true });
+  setTimeout(function () {
+    console.log(JSON.stringify({ step: groceryState.step,
+                                 deferred: groceryState.carryDeferred }));
+  }, 60);
+}, 60);
+""")
     assert out["step"] == "carry"
+    assert out["deferred"] is False
+
+
+def test_the_two_foreground_rebuilds_are_the_ones_that_pass_refill():
+    """
+    RED on main and on FIRST CUT, where the parameter does not exist — so
+    this is a wiring pin rather than a behavioural catch, and says so.
+    Approve (refreshGrocerySurfaces) and Start over (refreshAfterReset) are
+    the only two callers that mean "a new list"; every other path is a
+    background re-read.
+    """
+    assert "refreshGroceryPanel({ refill: true });" in _strip_comments(
+        _function("refreshGrocerySurfaces"))
+    assert "refreshGroceryPanel({ refill: true })" in _strip_comments(
+        _function("refreshAfterReset"))
+    # And the chat door does not.
+    assert "refill" not in _strip_comments(_function("refreshStaleTabsFromActions"))
+
+
+@_needs_node
+def test_a_trip_at_its_last_stop_folds_to_the_wrap_up():
+    """
+    CHARACTERISATION (green either way), the sibling of the SORT fold and
+    undisclosed in the first round. renderGrocery folds `next` -> `wrap`
+    when nothing is left to choose between — so a chat change that empties
+    the remaining stops moves a shopper from "where next?" to the wrap-up.
+    Pre-existing and right (there is no question left to ask); named here
+    so the list of what a refresh can move is complete.
+    """
+    out = _shop("""
+groceryState.usualStores = ['Loblaws', 'Costco'];
+groceryState.storesPromptDismissed = true;
+groceryState.step = 'next';
+groceryState.tripStops = ['Loblaws', 'Costco'];
+groceryState.tripDone = { Loblaws: true, Costco: true };   // both behind us
+groceryState.tripStartedAt = Date.now();
+groceryState.tripRestored = true;
+refreshGroceryPanel();
+setTimeout(function () { console.log(JSON.stringify({ step: groceryState.step })); }, 60);
+""")
+    assert out["step"] == "wrap"
 
 
 @_needs_node
