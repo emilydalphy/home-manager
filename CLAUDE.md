@@ -466,6 +466,16 @@ why*, not duplicating the diff.
     Toronto 21:30 (household a day BEHIND — the production direction) and
     Tokyo 08:30 (a day AHEAD, where the server's clock booked a move for a
     day the household had already lost).
+  - **Known low-severity test hazard, named rather than fixed:** the two
+    ordering guards read `inspect.getsource(_defrost.<fn>)`, which is the
+    same line-numbers-baked-at-import against linecache-at-assertion
+    pairing that `overnight/tests-read-agent-once` took out of `tests/` on
+    2026-09-16 after it produced a real flake — a merge landing on the
+    checkout mid-run can hand back a NEIGHBOURING function's body with no
+    error anywhere. Not a rule violation: that work was scoped to
+    `app/agent.py`, and there is no `conftest.agent_function_source`
+    equivalent for `app/tools/`. Both guards are mutation-checked to bite.
+    If somebody widens that helper past agent.py, take these two with it.
   - **Four tests in `tests/test_defrost.py` seeded off the PROCESS's clock
     and are re-seeded off `conftest.household_date()`.** Three of them went
     red under a straddle the moment the app started reading the household's
@@ -475,22 +485,64 @@ why*, not duplicating the diff.
     seven-day edge) and moved with them. They are STRONGER, not weaker:
     with `get_defrost_today` mutated back to the server's clock they go red
     under `Pacific/Niue`, which they could not do before.
+  - **Cost, measured with an instrumented `get_conn`: +1 connection per
+    payload on each of the three, and nothing else moves.**
+    `get_defrost_today` 1 → 2, `get_defrost_schedule` 1 → 2,
+    `confirm_frozen_items` 7 → 8 (9 → 10 with a leftover chain on the
+    plan, which is the chain's own two attendance reads either side). One
+    small connection-and-SELECT, once per call — never in a loop, never
+    per day or per meal, and the same delta with or without a chain. In
+    screen terms: one extra per Today load, one per `/defrost-confirm`,
+    one per chat call of `get_defrost_schedule`.
   - **Numbers, measured.** Suite **5435 passed, 0 failed** at
     `TZ=America/Toronto` and at `TZ=Pacific/Niue`; the merge base is
     **5418 passed, 0 failed** at `Pacific/Niue`, so +17 is this branch's
     own file and the post-only failure count is ZERO. **The straddle was
-    verified rather than assumed**, per the 2026-09-16 lesson: the runs
-    started at 07:25 and 07:30 UTC, with `TZ=Pacific/Niue date +%F` reading
-    2026-09-16 against `TZ=America/Toronto date +%F` reading 2026-09-17 —
-    two different dates, so the two clocks really were apart.
+    verified rather than assumed**, per the 2026-09-16 lesson: every
+    Niue run had `TZ=Pacific/Niue date +%F` reading 2026-09-16 against
+    `TZ=America/Toronto date +%F` reading 2026-09-17 — two different dates,
+    so the two clocks really were apart. Measured at 07:25 and 07:30 UTC,
+    and the whole set re-run after the review round at 08:22 (Niue, dates
+    checked before AND after the run) and 08:26 (Toronto), same numbers
+    both times.
+  - **CI's `clock` matrix is green, and the one pinned failure is not
+    this branch's.** All four weekday pins (monday, friday, saturday,
+    sunday) pass on both defrost files. Under `--today=sunday` the WHOLE
+    suite is **1 failed, 5431 passed, 3 skipped** — exactly one failure,
+    and it is
+    `test_tonight_night_off.py::test_the_night_is_planned_empty_and_never_open`,
+    a needs-you weekday cliff with nothing to do with defrost — and it
+    fails identically with the merge base's own `app/` under the same pin
+    (measured both ways by reverting just that file). So this branch adds
+    ZERO pinned-matrix failures; that one is its own card and should not
+    be read as this work's.
   - **Driven over a real uvicorn on a throwaway DB, in a LIVE straddle**
     rather than a frozen one — the container is UTC and the household was
-    set to `Pacific/Niue`, which at 07:42 UTC is genuinely the previous
-    day. Merge base: `/api/prep/defrost-today` returned the task dated
-    2026-09-17 (the server's) and `/defrost-confirm` answered
-    `created: []` with the too-late note for a Friday cook. This branch,
-    same seed: the task dated 2026-09-16 (the household's) and
-    `created: [{task_date: "2026-09-16"}]`, `notes: []`.
+    set to `Pacific/Niue`, so the server read 2026-09-17 and the household
+    2026-09-16 with no clock faked anywhere. **TWO seeds, and the first
+    version of this bullet narrated them as one**, which is corrected here
+    rather than quietly rewritten: somebody re-running "the same seed"
+    would have got different numbers with no way to tell which half to
+    trust. Both are cook nights only, nothing hand-inserted, and each probe
+    is tile → confirm → tile.
+    - **SEED A — one cook night at H+2** (Friday 09-18; a 48h item, so its
+      move date is the household's own tonight). Merge base: tile empty,
+      `/defrost-confirm` answers `created: []` with the too-late note
+      against 09-18, tile still empty — the household is told no and
+      nothing is booked at all. This branch: `created` carries
+      `task_date 2026-09-16`, `notes: []`, and the tile then reads
+      `['2026-09-16']`.
+    - **SEED B — two cook nights, H+2 and H+3.** Merge base books only the
+      later one (`created` `task_date ['2026-09-17']`, note against 09-18),
+      so the tile afterwards reads `['2026-09-17']` — a move dated the
+      SERVER's today — while the household's own tonight holds nothing.
+      This branch books both (`['2026-09-16', '2026-09-17']`, no notes) and
+      the tile reads `['2026-09-16']`, the one actually due tonight.
+    `_move_date` reads no clock, so a night's move date is identical on
+    both apps; all that moves is which nights survive the too-late test and
+    which day the tile asks about. That is also why the two seeds cannot
+    share one narration — a seed that books nothing cannot put a task on
+    the tile.
   - **One acceptance criterion skipped and said out loud:** the card names
     two tests in `tests/test_after_approve_real_questions.py` as part of
     this work. That file does not exist on `main` — it lives on the

@@ -720,8 +720,17 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
     dinner_window = _rhythm.get_household_rhythm().get("dinner_window")
     # Both of these open their own connection, so both are resolved before
     # get_conn below — see get_defrost_today's note on the nested-connection
-    # hazard. This is the one of the three that WRITES, which is where that
-    # matters most.
+    # hazard. That is a claim about THIS read and nothing wider: the
+    # function is NOT otherwise free of nested connections, and saying so
+    # would be false. With a leftover chain on the plan,
+    # _iter_plan_meat_ingredients -> leftovers.batch_for_source ->
+    # eaters_at -> attendance.get_slot_attendance opens one connection per
+    # counted night while this function's own is already mid-write —
+    # measured at two, identically on main, so none of them is new here.
+    # They are READS, which coexist with a RESERVED lock under SQLite's
+    # rollback journal; closing them means threading `conn` down through
+    # that chain, which is its own card. What this ordering buys is that
+    # the clock is not a third one.
     today = _cooker.household_today()
 
     conn = get_conn()
