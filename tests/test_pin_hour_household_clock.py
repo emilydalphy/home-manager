@@ -205,11 +205,18 @@ def test_household_pin_names_the_households_hour_in_any_zone(
     in_zone, frozen_today, process_zone
 ):
     """
-    CATCH. A pin is the process's wall time, so a test that means the
-    household's hour has to convert — and the three zones here are the three
-    CI runs in. Tokyo is the one that matters: thirteen hours from Toronto, so
-    a test pinning 10:00 and meaning the household's got 21:00 the evening
-    before and lost tonight's shop move.
+    CATCH in two of its three cases, and the third says so rather than being
+    counted. A pin is the process's wall time, so a test that means the
+    household's hour has to convert — and these are the three zones CI runs
+    in. Tokyo is the one that matters: thirteen hours from Toronto, so a test
+    pinning 10:00 and meaning the household's got 21:00 the evening before and
+    lost tonight's shop move.
+
+    [UTC] IS A GUARD, NOT A CATCH, and cannot be red. The seam was the process
+    offset applied twice, and UTC's offset is zero, so the bug could never
+    manifest there. It is parametrized in anyway because a future change that
+    got the conversion backwards would break it, and because dropping it would
+    leave the one zone the deployed container runs in untested here.
     """
     in_zone(process_zone)
     frozen_today(household_pin(10))

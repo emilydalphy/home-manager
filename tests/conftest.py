@@ -272,6 +272,19 @@ def _parse_pin(raw):
     inside those windows: a 09:00 pin on a Tokyo laptop puts a Toronto
     household at 20:00 the evening before. `household_pin()` below is how a
     test names the HOUSEHOLD's hour and gets it in any zone.
+
+    AND SO A WEEKDAY PIN STOPS NAMING THE HOUSEHOLD'S WEEKDAY OFF-ZONE, which
+    is the real cost of closing the aware seam on 2026-09-17 and is worth
+    knowing before debugging a weekday cliff on a laptop. Until then the seam
+    made `household_today()` equal the pinned date in EVERY zone — the bug was
+    zone-independent, which is most of why it survived — and now the
+    household's date moves with the process's zone, as it does in production.
+    Measured: `TZ=Asia/Tokyo POMONA_TEST_TODAY=sunday` puts the process on
+    Sunday and the household on SATURDAY 20:00. CI is unaffected (`clock` pins
+    TZ: America/Toronto, and test_pin_hour_household_clock.py guards that
+    line), but `pytest --today=sunday` from anywhere else no longer exercises
+    Sunday from the app's point of view. Use `household_pin(..., on=...)` when
+    the weekday is the thing under test.
     """
     if isinstance(raw, _dt.datetime):
         return raw
@@ -347,17 +360,34 @@ freezegun.configure(default_ignore_list=[])
 # utcnow() and time.time() both 13:00 UTC, now(timezone.utc) 09:00+00:00.
 # Four hours apart, from one clock, with nothing saying so.
 #
-# THE READERS THAT CARED ARE EVERY HOUSEHOLD CLOCK IN THE APP.
-# `cooker.household_now()` is `datetime.now(timezone.utc).astimezone(zone)`, and
-# so are digest.py's, tonight.py's and holidays'. They were therefore reading
-# `pin_hour + the household's UTC offset`: a Toronto household sat at 05:00
-# under a 09:00 pin, so all four pinned `clock` CI jobs exercised a household
-# that had not yet had its 07:00 morning text and could never reach the 18:30
-# after which tonight's shop move closes — the evening branch of every reader
-# moved onto that clock in the week of 2026-09-14 was unreachable under a pin.
-# Dropping the offset from the aware branch closes that: now(tz) agrees with
-# utcnow() and time.time(), and a household in the process's own zone reads the
-# hour the pin names.
+# THE READERS THAT CARED, named exactly — an earlier draft of this comment got
+# the list wrong in both directions.
+#   cooker.household_now()  `datetime.now(timezone.utc).astimezone(zone)`
+#   digest.py:574           the same, for the morning text's sending loop
+#   tonight.py:107          `datetime.now(zone)` — a different call SHAPE, the
+#                           same patched branch, the same correction
+#   calendar_feed.py:804/856/902  `datetime.now(timezone.utc)` for the feed's
+#                           freshness arithmetic. Write and read go through one
+#                           call, so it was internally consistent either way;
+#                           what changes is that the instant it records now
+#                           matches utcnow(), SQLite's 'now' and time.time().
+# NOT holidays.py, whose live clock is `date.today()` (:447, :924) with :968
+# converting a stored stamp — it never reads the aware form at all.
+#
+# Those readers were getting `pin_hour + the household's UTC offset`: a Toronto
+# household sat at 05:00 under a 09:00 pin, so all four pinned `clock` CI jobs
+# exercised a household that had not yet had its 07:00 morning text and could
+# never reach the 18:30 after which tonight's shop move closes — the evening
+# branch of every reader moved onto that clock in the week of 2026-09-14 was
+# unreachable under a pin. Dropping the offset from the aware branch closes
+# that: now(tz) agrees with utcnow() and time.time(), and a household in the
+# process's own zone reads the hour the pin names.
+#
+# WHAT IT COSTS, because it is not free: the household's DATE used to equal the
+# pinned date in EVERY process zone — the bug was zone-independent, which is
+# most of why it survived — and now it moves with the process's zone, honestly.
+# So a WEEKDAY pin stops naming the household's weekday off-zone. See
+# _parse_pin.
 #
 # Deliberately NOT the fix the 2026-09-14 entry proposed (force TZ=UTC for the
 # duration of a pin). That one makes the offset zero, so the three answers
@@ -600,8 +630,20 @@ def household_pin(hour: int, minute: int = 0, on: _dt.date | None = None) -> _dt
     Returns a naive process-local datetime, which is what `frozen_today` and
     `@pytest.mark.today` take. Reads the clock as it stands, so call it
     OUTSIDE the pin it is computing — which is the natural way round anyway.
+
+    ONE EDGE, named rather than handled: the round trip is household-aware ->
+    process-naive, and `.astimezone()` resolves an ambiguous wall time at
+    fold=0. So during the process zone's repeated hour — one hour, twice a
+    year, and only when the household's hour maps into it — this picks the
+    first of the two. Nothing in this suite is about that hour; if something
+    ever is, it wants an explicit fold rather than this helper.
     """
     day = on or household_today()
+    # The same three lines as household_today() above, deliberately not shared:
+    # extracting them is a refactor of live test infrastructure for two
+    # callers. If a third appears, share it — a silent divergence between two
+    # copies of "which zone is this household in" is exactly the class of bug
+    # this file exists to stop.
     name = _seeded_timezone() or _cooker.DEFAULT_TIMEZONE
     try:
         zone = ZoneInfo(name)
