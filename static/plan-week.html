@@ -1034,7 +1034,13 @@
       btn.addEventListener('click', function () { toggleAvatar(dayEl, btn); });
     });
     dayEl.querySelectorAll('.remember').forEach(function (btn) {
-      btn.addEventListener('click', function () { offerToRemember(dayEl); });
+      btn.addEventListener('click', function () {
+        // Which meal this offer was rendered under — the same read the
+        // guests steppers below already make. It used to say nothing, and
+        // offerToRemember answered "dinner" for all three.
+        var block = btn.closest('.meal-block');
+        offerToRemember(dayEl, block && block.dataset.slot);
+      });
     });
     dayEl.querySelectorAll('.guests-slot .stepper button').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -1269,17 +1275,33 @@
   // the persistence is deliberately not faked.
   // TODO(rhythm): wire to a household_rhythm per-weekday override once
   // that promotion rule is decided.
-  function offerToRemember(dayEl) {
+  function offerToRemember(dayEl, slot) {
     var d = dayEl.dataset.date;
-    var att = attendanceFor(d, 'dinner');
-    if (!att) return;
+    // Scoped to the meal it was tapped under, never to dayEl. A day sheet
+    // holds THREE .presence-summary nodes and THREE .remember buttons since
+    // Build 4, so a selector on the day returns dinner's every time, and
+    // this asked attendanceFor for 'dinner' besides. Measured in Chromium
+    // on the unmodified page: tapping the offer under lunch or breakfast
+    // did nothing at all on an ordinary day (no dinner attendance row yet,
+    // so the early return) and, once dinner had a row of its own, wrote
+    // DINNER's caption and hid DINNER's offer instead.
+    //
+    // No `|| dayEl` fallback, deliberately, unlike paintPresence and
+    // toggleAvatar above. Theirs is a dead defensive branch: the block is
+    // missing only when the household has no members on record, and then
+    // the day carries no presence markup at all for it to find. Here it
+    // would land on the dinner block and be exactly this bug again. A
+    // block we can't find is a tap we do nothing about.
+    var block = dayEl.querySelector('.meal-block[data-slot="' + slot + '"]');
+    var att = attendanceFor(d, slot);
+    if (!block || !att) return;
     att.remembered = true;
-    var summary = dayEl.querySelector('.presence-summary');
+    var summary = block.querySelector('.presence-summary');
     if (summary) {
       summary.textContent = att.summary +
         ' Just this week for now — ask me in chat to make it every week.';
     }
-    var remember = dayEl.querySelector('.remember');
+    var remember = block.querySelector('.remember');
     if (remember) remember.hidden = true;
   }
 

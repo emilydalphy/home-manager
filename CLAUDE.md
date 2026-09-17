@@ -391,6 +391,109 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-17 — "Just this week?" acts on the meal it was tapped under, not
+  always dinner. Branch `overnight/just-this-week-per-meal`, NOT merged at the
+  time of writing.** Loop Board bug, filed off the `overnight/is-anyone-out`
+  walk. `presenceHtml` has rendered the offer under all three meals since
+  Build 4 (2026-09-11); `offerToRemember` only ever acted on dinner — it asked
+  `attendanceFor(d, 'dinner')` and then read `dayEl.querySelector(
+  '.presence-summary')` and `dayEl.querySelector('.remember')`, which return
+  THE FIRST IN THE DOM, i.e. dinner's, because `openDaySheet` writes the
+  dinner block before `mealBlockHtml('lunch')` and `mealBlockHtml('breakfast')`.
+  - **TWO failure modes, not the one the card reported, both measured in
+    Chromium on the unmodified page before anything was touched** — the real
+    page over a plain static server with canned `/api` answers, no app and no
+    database. (a) Only that meal touched, which is the ordinary case: there is
+    no dinner attendance row, so the first guard returned and the tap did
+    NOTHING AT ALL — caption unchanged, button still asking, nothing saved,
+    no sign given. (b) Dinner touched as well: the guard passed on dinner's
+    row and a tap made under LUNCH wrote dinner's caption and hid dinner's
+    offer; reopening the sheet showed dinner remembered by a tap nobody made
+    there, and lunch still asking. The card said "nothing happens"; (b) is
+    worse and has its own tests.
+  - **The fix is the shape already three functions up this file**, not a new
+    one: the wiring reads `btn.closest('.meal-block').dataset.slot` exactly as
+    the guests steppers four lines below it do, and `offerToRemember(dayEl,
+    slot)` resolves the block once and takes BOTH reads off it.
+  - **NO `|| dayEl` FALLBACK, deliberately, and that is the one judgment call
+    here.** `paintPresence` and `toggleAvatar`'s catch both write
+    `dayEl.querySelector('.meal-block[data-slot="…"]') || dayEl`. Theirs is a
+    dead branch — a block is missing only when the household has no members on
+    record, and then the day carries no `.avatar`, no `.presence-summary` and
+    no `.remember` for the fallback to find, so it is a defensive no-op.
+    Copying it here would land on the dinner block and be exactly this bug
+    again. A block we can't find is a tap we do nothing about, and a test
+    builds a sheet with no lunch block to say so. The slot does not default to
+    'dinner' either, for the same reason: a caller that names no meal now
+    changes nothing.
+  - **THE "ROUND TRIP" IS THE PAGE'S OWN STORE, NOT THE SERVER, and the
+    acceptance criterion has to be read that way.** What "Just this week?"
+    writes is `att.remembered` on that date's attendance row for that slot —
+    page-local, gone on reload — which is the HONEST GAP this function's own
+    comment has carried since it shipped (`TODO(rhythm)`: a standing rule
+    belongs in `household_rhythm` and needs Emily's decision about what one
+    week's tap may imply about every future week). Unchanged by this ticket.
+    So the round trip pinned is: the flag lands on the right slot, and
+    `paintPresence` on a freshly built sheet keeps asking under the two meals
+    that were not answered and stops under the one that was — which is what
+    reopening the day sheet does.
+  - **The sweep the card asked for, measured in a real day sheet rather than
+    grepped** (holiday block open, two members): `.tag` 10, `.ack` 3, `.avatar`
+    6, `.presence` 3, `.presence-summary` 3, `.remember` 3, `.guests` 1,
+    `.guests-slot` 2. Every other `dayEl.querySelector` in the page is already
+    right, and a test pins the rule rather than the list: `.tag:not(
+    .holiday-answer)` is day-scoped on purpose (a night tag is keyed by date
+    alone, and the exclusion is what keeps the holiday block's own answers
+    out); `.avatar` and `.guests-slot .stepper button` are collected across all
+    three blocks on purpose and each handler reads the slot off the button it
+    was given; `.guests` is ONE node (`.guests-slot` is a different class and
+    does not match it); `paintDay` already names dinner and `paintHolidayBlock`
+    already scopes to its own `.holiday`, both from earlier rounds of this same
+    defect.
+  - **Named, not fixed, because it is a different defect:** those two `||
+    dayEl` fallbacks are a latent version of this bug. They cannot fire today
+    (proved above), and the day a meal block is rendered conditionally — a
+    household that does not do breakfast, say — `paintPresence(dayEl,
+    'breakfast')` would paint DINNER's initials, caption and offer with
+    breakfast's answers, silently. Left alone rather than churned: removing a
+    branch that cannot currently run is a behaviour claim this ticket has no
+    measurement for.
+  - **Also named, not fixed:** the caption this writes ends "ask me in chat to
+    make it every week", and `/plan-week` is a standalone page with no chat
+    button on it (no tab bar by design), so the way to act on that sentence is
+    to leave the flow. True but inconvenient, pre-existing, and three times as
+    visible now that all three meals can reach it.
+  - `tests/test_just_this_week_per_meal.py` (18; **12 red on `5702234`**, and
+    none of them dies in the harness — `offerToRemember` exists there and takes
+    the extra argument silently, so every one reaches its own assertion. Of the
+    12, **9 are behaviour catches** and 3 are source markers that name the
+    defect's exact one-line shape). The front end runs the page's own functions
+    AND its own click wiring — lifted out of `openDaySheet` rather than
+    re-typed, since half the defect was in the wiring — against a small DOM
+    whose `querySelector` is a genuine depth-first search, so "dinner wins"
+    falls out of document order the way it does in a browser instead of being
+    asserted into the harness. **All 6 green-either-way tests are pinned by
+    mutation**, eight run and each biting: dropping `att.remembered`, never
+    hiding the offer, never writing the caption, `mealBlockHtml` dropping its
+    presence row, `paintDay` reading `.ack` off the day, the offer dropping
+    below 44px, an over-correcting fix that writes every block, and the `||
+    dayEl` fallback coming back.
+  - One existing test was corrected honestly with a note saying what moved:
+    `test_intake_build4.py::test_nothing_still_reaches_for_the_old_day_list`
+    pinned the literal `offerToRemember(dayEl);`. Its claim — the button is
+    wired in the SHEET, not in the list it used to live in — is unchanged.
+  - **Behavioural, not visual: the diff touches no CSS, no markup and no
+    token.** Measured anyway at 390px in both schemes: the offer is 130x44 (hard
+    rule 6), no sideways scroll, and the day sheet's apricot count is untouched
+    (`test_is_anyone_out.py` pins it at two source-level fills). Before/after
+    screenshots of the same sheet are identical but for the one intended
+    difference. Suite **5436 passed, 0 failed** at `TZ=America/Toronto`, and
+    **5436 passed, 0 failed** at `TZ=Pacific/Niue` **inside a verified
+    straddle** — process day 2026-09-16, household day 2026-09-17, both dates
+    checked at the start AND the end of the run (Toronto 04:03 to 04:07, inside
+    Niue's 00:00-06:59 window). Against the 5418/0 baseline on `5702234` in
+    both zones, so the +18 is this file and nothing else.
+
 - **2026-09-16 — "Shop for tonight" is claimed only when the list is actually
   holding tonight up. Branch `overnight/shop-move-for-tonight`, merged
   2026-09-16.** Emily, Flow 0 walk: Now read "Shop for tonight · 3 items · by
