@@ -438,9 +438,16 @@ why*, not duplicating the diff.
     that were not answered and stops under the one that was — which is what
     reopening the day sheet does.
   - **The sweep the card asked for, measured in a real day sheet rather than
-    grepped** (holiday block open, two members): `.tag` 10, `.ack` 3, `.avatar`
-    6, `.presence` 3, `.presence-summary` 3, `.remember` 3, `.guests` 1,
-    `.guests-slot` 2. Every other `dayEl.querySelector` in the page is already
+    grepped. THE COUNTS ARE A STATE, NOT AN INVARIANT, and the first version of
+    this entry printed them as though they were one** — with a holiday block
+    open, TWO members and the dinner guests follow-up CLOSED: `.tag` 10,
+    `.ack` 3, `.avatar` 6, `.presence` 3, `.presence-summary` 3, `.remember` 3,
+    `.guests` 1, `.guests-slot` 2. Two of those move: `.ack` is **4** with the
+    guests panel open (`renderGuests` writes one inside `.guests`) and
+    `.avatar` is **9** for three members; the other six hold in every state
+    measured. What does not move is the thing the sweep is about — dinner's
+    `.ack` is dinner's own in all three states, while a day-wide `.ack` read
+    lands on the HOLIDAY block's. Every other `dayEl.querySelector` in the page is already
     right, and a test pins the rule rather than the list: `.tag:not(
     .holiday-answer)` is day-scoped on purpose (a night tag is keyed by date
     alone, and the exclusion is what keeps the holiday block's own answers
@@ -454,10 +461,30 @@ why*, not duplicating the diff.
     dayEl` fallbacks are a latent version of this bug. They cannot fire today
     (proved above), and the day a meal block is rendered conditionally — a
     household that does not do breakfast, say — `paintPresence(dayEl,
-    'breakfast')` would paint DINNER's initials, caption and offer with
-    breakfast's answers, silently. Left alone rather than churned: removing a
+    'breakfast')` would be WORSE than the bug this ticket fixed, not equal to
+    it: `block.querySelectorAll('.avatar')` on the day collects all three rows,
+    so EVERY initial in the sheet would be struck through and re-`aria-pressed`
+    by that one meal's away names, and the caption and the offer would land on
+    dinner's. Silently. (An earlier version of this entry said only "dinner's
+    initials", which undersold it.) Left alone rather than churned: removing a
     branch that cannot currently run is a behaviour claim this ticket has no
     measurement for.
+  - **A KNOWN ACCESSIBILITY REGRESSION, NAMED RATHER THAN FIXED, AND IT IS
+    THIS TICKET'S OWN DOING.** Answering the offer hides the button that was
+    just pressed, so keyboard focus drops to `<body>` — outside `#day-sheet`,
+    which is `role="dialog" aria-modal="true"`. That is the APG anti-pattern
+    the `overnight/is-anyone-out` entry names by hand and deleted a
+    blur-on-tap over, ONE TICKET AGO. Measured both sides, Enter on a focused
+    offer, `document.activeElement` after: on `5702234` dinner → BODY while
+    lunch and breakfast → the button itself, i.e. **those two were spared only
+    by the bug** — the tap did nothing, so nothing was hidden to lose focus
+    from. On this branch all three → BODY. So no new class (dinner already did
+    it) and the count goes **1 slot to 3**, which is the unavoidable
+    consequence of making the control work; leaving it broken is strictly
+    worse. The real fix — moving focus to the block, or to the caption that
+    now carries the answer — is its own change, and it should take the same
+    care the is-anyone-out entry did: whatever it does must NOT drop focus out
+    of the dialog.
   - **Also named, not fixed:** the caption this writes ends "ask me in chat to
     make it every week", and `/plan-week` is a standalone page with no chat
     button on it (no tab bar by design), so the way to act on that sentence is
@@ -483,8 +510,14 @@ why*, not duplicating the diff.
     pinned the literal `offerToRemember(dayEl);`. Its claim — the button is
     wired in the SHEET, not in the list it used to live in — is unchanged.
   - **Behavioural, not visual: the diff touches no CSS, no markup and no
-    token.** Measured anyway at 390px in both schemes: the offer is 130x44 (hard
-    rule 6), no sideways scroll, and the day sheet's apricot count is untouched
+    token.** Measured anyway at 390px in both schemes: the offer's HEIGHT is
+    44px exactly, matching its `min-height` — which is the half hard rule 6
+    governs, and the half that is font-independent. **Its WIDTH is not a fact
+    about this app**: 130.3px measured here, where no network means the
+    webfont never loaded and the label fell back to a serif, against 144.1px
+    measured by a reviewer with Figtree rendering. The first version of this
+    entry printed "130x44" flat, which reads as a property of the control.
+    Also: no sideways scroll, and the day sheet's apricot count is untouched
     (`test_is_anyone_out.py` pins it at two source-level fills). Before/after
     screenshots of the same sheet are identical but for the one intended
     difference. Suite **5436 passed, 0 failed** at `TZ=America/Toronto`, and

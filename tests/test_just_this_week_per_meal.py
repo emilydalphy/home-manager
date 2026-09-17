@@ -27,6 +27,15 @@ under node, against a small DOM whose querySelector is a genuine
 depth-first search — so "dinner wins" falls out of document order the way
 it does in a browser rather than being asserted into the harness. A
 source-marker test cannot see any of this: the bug was a selector's scope.
+
+NOT PINNED HERE, and named so nobody reads this file as covering it:
+answering the offer hides the button that was just pressed, so keyboard
+focus drops to <body>, outside the `role="dialog" aria-modal="true"` day
+sheet. Measured on both sides — dinner did that already, and lunch and
+breakfast were spared only by the bug, so fixing it takes the count from
+one slot to three. It is the decision log's 2026-09-17 entry, and moving
+focus to the block or to the caption is its own change; whatever does it
+must not drop focus out of the dialog.
 """
 from __future__ import annotations
 
@@ -261,10 +270,16 @@ def test_the_offer_answers_the_meal_it_was_tapped_under(slot):
 @_needs_node
 @pytest.mark.parametrize("slot", SLOTS)
 def test_the_other_two_meals_do_not_move(slot):
-    """CATCH — the half the card's report missed. With dinner also holding an
-    attendance row, the unmodified page passed its guard on DINNER's row and
-    wrote dinner's caption and hid dinner's offer from a tap made under lunch.
-    Nothing but the meal that was tapped may change."""
+    """CATCH for lunch and breakfast, GUARD for dinner — the half the card's
+    report missed. With dinner also holding an attendance row, the unmodified
+    page passed its guard on DINNER's row and wrote dinner's caption and hid
+    dinner's offer from a tap made under lunch. Nothing but the meal that was
+    tapped may change.
+
+    The [dinner] case is green on 5702234 for the right reason — dinner IS the
+    block a day-wide read lands on, so its tap never leaked either — and is
+    pinned by mutation instead: a fix that over-corrects by writing every
+    block (`dayEl.querySelectorAll('.presence-summary')`) reddens it."""
     others = [s for s in SLOTS if s != slot]
     r = _tap(slot, also_out_of=others)
     for other in others:
@@ -275,11 +290,20 @@ def test_the_other_two_meals_do_not_move(slot):
 @_needs_node
 @pytest.mark.parametrize("slot", SLOTS)
 def test_what_is_saved_is_saved_against_that_meal(slot):
-    """CATCH — the round trip, not the DOM. The standing rule this writes is
-    `remembered` on that date's attendance row for that SLOT, and it is what
-    paintPresence reads to decide whether to keep asking. Read back off the
-    store, and off a freshly built sheet the page has repainted, which is what
-    reopening the day sheet does."""
+    """CATCH for lunch and breakfast, GUARD for dinner — the round trip, not
+    the DOM. The standing rule this writes is `remembered` on that date's
+    attendance row for that SLOT, and it is what paintPresence reads to decide
+    whether to keep asking. Read back off the store, and off a freshly built
+    sheet the page has repainted, which is what reopening the day sheet does.
+
+    Page-local, and deliberately so: there is no `remembered` column on
+    `slot_attendance` and the attendance POST never carries one, which is the
+    HONEST GAP offerToRemember's own comment has carried since it shipped. The
+    page's store is the only honest reading of "recorded against the right
+    slot".
+
+    The [dinner] case is green on 5702234 and is pinned by mutation: dropping
+    `att.remembered = true` reddens it."""
     others = [s for s in SLOTS if s != slot]
     r = _tap(slot, also_out_of=others)
     assert r["remembered"][slot] is True, f"nothing was recorded against {slot}"
@@ -405,14 +429,22 @@ def test_the_day_sheet_really_does_hold_three_of_each():
 
 
 def test_nothing_else_in_the_day_sheet_reads_a_class_that_now_exists_three_times():
-    """GUARD — the sweep the card asked for, as a rule rather than a list.
+    """CATCH, and a SOURCE MARKER — the sweep the card asked for, as a rule
+    rather than a list. Red on 5702234, where offerToRemember's own
+    `dayEl.querySelector('.presence-summary')` is precisely what this refuses;
+    CLAUDE.md counts it among this file's three markers, and an earlier
+    version of this docstring called it a guard, which it has never been.
 
     Every `dayEl.querySelector`/`querySelectorAll` in the page either names a
     class that exists once in a day sheet, carries its own `[data-slot]`, or
     hands the node to a handler that reads the slot off it. Measured in a real
-    day sheet with a holiday block open: `.tag` 10, `.ack` 3, `.avatar` 6,
-    `.presence` 3, `.presence-summary` 3, `.remember` 3, `.guests` 1,
-    `.guests-slot` 2.
+    day sheet with a holiday block open, TWO members and the dinner guests
+    follow-up CLOSED — a state, not an invariant: `.tag` 10, `.ack` 3,
+    `.avatar` 6, `.presence` 3, `.presence-summary` 3, `.remember` 3,
+    `.guests` 1, `.guests-slot` 2. `.ack` goes to 4 with the guests panel open
+    (renderGuests writes one inside `.guests`) and `.avatar` to 9 for three
+    members; what does not move is that dinner's `.ack` is dinner's own in
+    every one of those states, while a day-wide read lands on the holiday's.
 
     The two that are NOT scoped by a slot are named here with why:
       * `.tag:not(.holiday-answer)` — a night tag is a fact about the DAY
