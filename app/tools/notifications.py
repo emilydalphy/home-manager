@@ -37,19 +37,73 @@ def get_active_notifications() -> list[dict]:
     # 1. Dinner decision nudge (NOTIFICATIONS.md #1) — reuses the same
     # dinner-gap detection the Today needs-you band already uses, so the
     # notification and the band never disagree about what's open.
+    #
+    # BOTH of the band's dinner shapes, which is what makes that sentence
+    # true. It said it from the day it was written and the very next line
+    # made it false until 2026-09-17: `dinner_decision` is a night with no
+    # dinner row at all, `dinner_open` is a night the app deliberately
+    # handed back with a reason (the Review stepper's "−", a generation
+    # gap it could not settle, an away night undone). Both are a decision
+    # waiting on the household, and filtering to the first left an open
+    # dinner with a card on Now, no bell, and no morning text. A
+    # `planned_empty` night — nobody home — is neither, and the band never
+    # offers one, so it stays silent here by construction.
+    #
+    # No day word is computed here, deliberately. The band item's own
+    # title already carries it ("Tonight needs a dinner", "Tomorrow's
+    # dinner needs your call"), worked out on the HOUSEHOLD's clock. A
+    # `day_label` off date.today() sat here unused from the day this was
+    # written; it read like the server-clock bug class this repo has spent
+    # a week sweeping and it was simply dead, so it went rather than being
+    # moved onto household_today(). Don't reinstate it: a second day word
+    # is a second answer to a question the title already answers, and on
+    # the wrong clock.
     for item in _weekly_plan.get_needs_you_items():
-        if item.get("type") != "dinner_decision":
+        kind = item.get("type")
+        if kind not in ("dinner_decision", "dinner_open"):
             continue
-        key = f"dinner_gap:{item['date']}"
+        # Separate keys on purpose. The two are different news about the
+        # same night — "you haven't decided" against "I couldn't, and
+        # here's why" — and a night really can turn from the first into
+        # the second, since generating a week over an undecided night
+        # fills it as an open question. One key would let this morning's
+        # dismissal silence this afternoon's different ask. `dinner_gap:`
+        # is left exactly as it was for the decision shape, so every
+        # dismissal already on record keeps working.
+        key = f"dinner_gap:{item['date']}" if kind == "dinner_decision" else f"dinner_open:{item['date']}"
         if key in dismissed:
             continue
-        day_label = "Tonight" if item["date"] == date.today().isoformat() else "tomorrow"
-        first_option = (item.get("options") or [{}])[0].get("name") if item.get("options") else None
+        if kind == "dinner_open":
+            # The app wrote a sentence when it opened this slot
+            # (plan_slot_open's open_reason names the constraint), and the
+            # card on Now already shows it. Saying anything else here is
+            # the bell and the band disagreeing about one night. The
+            # fallback is the decision body with its untrue half deleted:
+            # an open slot is emphatically not "nothing planned yet". It
+            # is only reachable for a row written past plan_slot_open,
+            # which refuses a blank reason — audit_plan_slots guards the
+            # same state.
+            body = item.get("body") or "Take a look at tonight's options."
+            # "Show options" only when there are any: the commonest open
+            # slot has none (drop_dish_from_day plans one with no options
+            # at all) and its card offers "Tell me what you'd like
+            # instead" in their place. A label naming a control that isn't
+            # on the screen is exactly the small promise §8 rules out.
+            action_label = "Show options" if item.get("options") else "Take a look"
+        else:
+            # KNOWN AND LEFT, its own card, older than this change and
+            # untouched by it: _suggest_quick_dinners returns {meal,
+            # minutes}, so .get("name") is always None and this body has
+            # always been the fallback. Fixing it changes what the
+            # decision bell says, which this ticket is not about.
+            first_option = (item.get("options") or [{}])[0].get("name") if item.get("options") else None
+            body = f"The quickest option is {first_option}." if first_option else "Nothing planned yet — take a look at tonight's options."
+            action_label = "Show options"
         out.append({
-            "key": key, "type": "dinner_decision",
+            "key": key, "type": kind,
             "title": item["title"],
-            "body": f"The quickest option is {first_option}." if first_option else "Nothing planned yet — take a look at tonight's options.",
-            "tab": "today", "action_label": "Show options",
+            "body": body,
+            "tab": "today", "action_label": action_label,
         })
         break
 

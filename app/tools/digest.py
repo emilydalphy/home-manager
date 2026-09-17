@@ -323,8 +323,28 @@ def _digest_lines(now_local: datetime) -> list[str]:
         lines.append(f"Tonight: {_tidy(dinner_reheat['title'])}, {provenance}.")
     elif kinds.get("dinner_decision", {}).get("key") == f"dinner_gap:{now_local.date().isoformat()}":
         # The feed's nudge covers tonight OR tomorrow; only tonight's gap
-        # belongs in today's text.
+        # belongs in today's text. Two shapes, two lines, because they are
+        # two different pieces of news: nothing is planned for tonight at
+        # all, against a night the app deliberately handed back with a
+        # reason. Saying "nothing's planned yet" about the second is
+        # saying a thing that isn't true, which §8 doesn't allow.
         lines.append("Tonight's still open — nothing's planned yet.")
+    elif kinds.get("dinner_open", {}).get("key") == f"dinner_open:{now_local.date().isoformat()}":
+        # The card carries the app's own reason for opening the slot and
+        # the bell repeats it word for word; this line deliberately does
+        # not. A text is a line, not a page: half the sentences
+        # plan_slot_open is handed open with a weekday name ("Thursday I'd
+        # rather ask than guess: …"), which argues with "Tonight" two
+        # words earlier, and the longest of them run past 120 characters —
+        # on the first line, the one build_morning_text always keeps, so
+        # it would crowd the fridge move and the shop out of the 300. A
+        # length test on the reason would be copy that reads differently
+        # depending on which day opened the night, which is worse than
+        # either. "your call" is the band's own words
+        # (get_needs_you_items' title, "Tonight's dinner needs your
+        # call"); the reason itself is one tap away on the card this text
+        # links to.
+        lines.append("Tonight's still open — it's your call.")
 
     # 2. The freezer. "Move the chicken thighs to the fridge — for
     # Thursday's skewers." Today is implied: this is today's text.
