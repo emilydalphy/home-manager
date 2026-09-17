@@ -391,6 +391,115 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-17 — The "−" on Check the week could rewrite yesterday. Branch
+  `overnight/drop-dish-refuses-the-past`, NOT merged at the time of
+  writing.** Loop Board bug, the exact sibling of `add-a-night-refuses-the-past`
+  (merged 2026-09-16), which closed the same hole in the "+" of the same
+  stepper and left the "−" alone so that branch stayed the size of its
+  ticket. `drop_dish_from_day` already refused two things — a leftover-chain
+  source and a night already cooked — so the machinery was there and the
+  comparison was not. Reproduced over the tool and over the route on a
+  throwaway DB before anything was touched: yesterday's uncooked dinner
+  went straight through (`status: dropped`), its grocery contribution was
+  reversed on an APPROVED week (Black beans 4 cans → 2, Onion 2 → 1, two
+  ledger rows gone) — for food in all likelihood already bought — and the
+  night came back as an `open` question reading "You cut Bean Chili back,
+  so this one is yours to fill.", a decision handed back on a day that is
+  over. After: `refused`, and the plan rows, the list and the ledger
+  byte-identical.
+  - **THE CARD'S OWN REACHABILITY STORY IS UNDERSTATED, and that is worth
+    knowing.** It says only the picker's client-side `day.isPast` filter
+    hides those days. That filter is on the "+" (`shell.js:12046`); the
+    "−" has NO date filter at all — `canDrop` is `n > 1 && !busy &&
+    !lastDay.cooked` — and `runDropDishDay` always takes
+    `dish.days[dish.days.length - 1]`. So a dish whose days are ALL behind
+    today (a week reviewed on Wednesday that held it on Monday and
+    Tuesday) had a live, enabled button, with no stale tab required.
+  - **The refusal is the RETURNED DICT, not `SlotRefused`.** The card says
+    "the same `SlotRefused` shape its two existing refusals use", and its
+    two existing refusals do not raise — they return `{status: 'refused',
+    date, slot, dish, message}` at 200, which is the shape
+    `week_add_dish_day`'s own docstring points at as the one
+    `drop_dish_from_day` already answers in. So no route change and no
+    client change: `runDropDishDay`'s `status === 'refused'` branch shows
+    the sentence under the row that was tapped.
+  - **ORDERING IS LOAD-BEARING and it is not simply "first".** It sits
+    ABOVE the chain refusal because that one names a remedy — "change that
+    first and I'll take this one off" — which cannot work on a night that
+    is over, so it must never be the answer a past night gets. It sits
+    BELOW the cooked refusal because both sentences are true of a past
+    night somebody cooked and "already been cooked" is the more specific,
+    and says why the record is kept. Both directions are pinned (one
+    catch, one guard; the guard by the mutation that moves it up).
+  - **`_household_today()`, resolved before the first `get_conn`.** The
+    container runs UTC and households default to Toronto, so on the
+    server's clock this would refuse TONIGHT for four hours every evening
+    — worse than the bug. Read at the top rather than beside the
+    comparison, the shape `discard_draft_plan` already uses: a nested
+    `get_conn` inside this function's write transaction fails as an
+    intermittent "database is locked", not as a wrong answer. Pinned by a
+    runtime depth guard driven down the path that GOES THROUGH, because
+    the refusal returns before the transaction exists and so cannot see
+    the hazard at all.
+  - **Strictly BEFORE.** Today itself is never refused — taking tonight's
+    dinner off the week is ordinary — and `<=` reddens six tests.
+  - **THE SAME REACHABLE FALSE POSITIVE IS INHERITED, measured not
+    reasoned, and for one population it is a REGRESSION.** The stored zone
+    defaults to `America/Toronto` for every household with nothing in the
+    app prompting a change, so a household whose phone is WEST of it has
+    its own tonight refused: 3 hours a night in Vancouver (21:00–23:59
+    local), 2 in Denver, 1 in Chicago — the sibling's figures exactly. It
+    arrives by a different route here, since the "−" has no client date
+    filter to disagree with the server, but the substance is identical.
+    Nothing is written and the sentence is shown inline. **On `main` that
+    drop succeeds**, so for that household this is a behaviour regression,
+    and the honest fix is the stored zone rather than this check.
+  - **`swap_meal_in_plan` AND `resolve_open_slot` HAVE THE SAME HOLE.
+    Checked, not assumed, and deliberately not fixed here — each its own
+    card.** Neither reads a clock at all. `swap_meal_in_plan` is the
+    app's central plan write (every chat swap, `swap_in_place`,
+    `add_dish_day`, `resolve_open_slot` through `_replace_slot_entries`,
+    and `plan_quality.repair_snack_clashes` at generation time, which
+    legitimately touches a part-week's earlier days) — a refusal there
+    changes generation, so it is emphatically not a one-line comparison to
+    smuggle in. `resolve_open_slot` is the Day step's "Pick", and whether
+    settling a past open slot is wrong at all is a product question rather
+    than an obvious bug.
+  - `tests/test_drop_a_night_refuses_the_past.py` (21; **9 red against the
+    unmodified `app/`**, every one a behavioural catch — none dies on a
+    missing name, because the refusal is a returned dict rather than a new
+    symbol). The 12 guards say so in their own docstrings and are pinned
+    by mutation; five were run and each reddens what it should: the
+    server's clock for `_household_today()` (2 red, one in each frozen
+    direction), `<=` for `<` (6), the past check moved above the cooked
+    one (1), the clock read moved inside the write transaction (1,
+    `assert 2 == 1`), and this file's own `_day` repointed at the
+    process's clock (5 under a straddle, 0 in Toronto — the trap, visible
+    only where it lives).
+  - **Two existing files seeded days the app now correctly refuses, and
+    both are harness artifacts rather than app bugs — the same class the
+    sibling recorded.** `test_drop_dish_atomic.py` counted off THIS WEEK'S
+    MONDAY on the process's clock, so offsets 0 and 2 are behind today on
+    almost every weekday the suite runs (11 red at Toronto); its days are
+    counted off `conftest.household_today()` now and named for their roles
+    (`COOK`/`REHEAT`/`LATE_REHEAT`) rather than for weekdays nothing
+    asserts, which is what the Monday anchor was really claiming. And
+    `test_review_two_views.py` seeded `TODAY = date.today()`, which is the
+    household's YESTERDAY under a straddling runner (6 red at
+    `Pacific/Niue`, 0 at Toronto); one line, `household_today()`. **Both
+    were re-checked for teeth rather than merely re-run**: a
+    commit-between-steps regression reddens 2 of the atomicity tests and
+    putting the chain unlink back on its own connection reddens 4 more,
+    including the one named for that seam.
+  - Suite **5439 passed, 0 failed** at `TZ=America/Toronto` and again at
+    `TZ=Pacific/Niue` inside a VERIFIED straddle (Toronto 2026-09-17,
+    Niue 2026-09-16, checked before and after the run) — against a
+    measured 5418/0 on the merge base in both. +21 is this branch's own
+    test file exactly; no test was deleted or weakened.
+  - **THE WORDING IS AN ASSUMPTION, Emily's to overrule in one line:**
+    "That night’s already gone.", the sibling's sentence, inline beside
+    the two refusals it joins in `drop_dish_from_day`.
+
 - **2026-09-16 — "Shop for tonight" is claimed only when the list is actually
   holding tonight up. Branch `overnight/shop-move-for-tonight`, merged
   2026-09-16.** Emily, Flow 0 walk: Now read "Shop for tonight · 3 items · by
