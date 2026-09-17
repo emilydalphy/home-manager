@@ -42,15 +42,31 @@ from app.tools._shared import use_household
 # so this week is seeded from the household's own today rather than from
 # this calendar week's Monday, which put the first days of it behind today
 # on every weekday but Monday and made every swap below a swap into the
-# past. The names are POSITIONS in the seeded week, not weekdays; nothing
-# in this file asserts a weekday. Same harness-artifact class the
-# add_dish_day branch fixed in test_swap_atomic.py on 2026-09-16, and it
-# presents the same way: the app is right and the seed is wrong.
+# past. The names are POSITIONS in the seeded week, not weekdays. Same
+# harness-artifact class the add_dish_day branch fixed in
+# test_swap_atomic.py on 2026-09-16, and it presents the same way: the app
+# is right and the seed is wrong.
+#
+# **BUT THE APP DOES BRANCH ON THE WEEKDAY, AND A SEED THAT MOVES HAS TO
+# RECKON WITH IT.** The first version of this note said "nothing in this
+# file asserts a weekday", which is true as written and misses the point:
+# swap_in_place._minutes_cap ends `cap if (cap and weekday < 5) else None`,
+# so a test can assert THE RESULT OF A WEEKDAY BRANCH without naming one.
+# The old seed pinned this calendar week's Monday and so held on whatever
+# day the suite ran; DAY1 is the household's today now, which is Saturday
+# or Sunday twice a week — and that took `clock (saturday)` from 36 passed
+# to 35, on a matrix whose entire purpose is catching exactly this. The one
+# test that needs a Monday-to-Friday night names WEEKNIGHT below.
 TODAY = household_today()
 WEEK_START = TODAY.isoformat()
 DAYS = [(datetime.date.fromisoformat(WEEK_START) + datetime.timedelta(days=i)).isoformat()
         for i in range(7)]
 DAY1, DAY2, DAY3 = DAYS[0], DAYS[1], DAYS[2]
+# The first genuine weeknight in the seeded week, for the one test whose
+# subject IS the weeknight cap. Any seven consecutive days hold five of
+# them, so this always exists, is never behind the household's today, and
+# is always inside the plan's period.
+WEEKNIGHT = next(d for d in DAYS if datetime.date.fromisoformat(d).weekday() < 5)
 
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
@@ -119,6 +135,23 @@ def week():
         tools.plan_meal(day, dish, slot="dinner", weekly_plan_id=plan_id,
                         reasoning="fits the week")
     return plan_id
+
+
+def _weeknight_entry(plan_id: int) -> int:
+    """A dinner on a day that really is Monday to Friday.
+
+    _minutes_cap only applies the household's weeknight cap when the date's
+    own `weekday() < 5`, so a test about that cap has to name a weeknight
+    or it is asserting which day of the week the suite happens to be run
+    on. The fixture's three days start at the household's today and cannot
+    promise one, so this plans onto WEEKNIGHT when it is not already among
+    them — and only then, because a second dinner on one day would give
+    _entry_id two rows to choose between.
+    """
+    if WEEKNIGHT not in (DAY1, DAY2, DAY3):
+        tools.plan_meal(WEEKNIGHT, "Pork Chops", slot="dinner", weekly_plan_id=plan_id,
+                        reasoning="fits the week")
+    return _entry_id(plan_id, WEEKNIGHT)
 
 
 def _entry_id(plan_id: int, day: str, slot: str = "dinner") -> int:
@@ -228,10 +261,15 @@ class TestThePrompt:
 
     def test_a_weeknight_limit_still_applies_to_an_untagged_night(self, week):
         """The control for the test above: the cap is lifted BY the tag,
-        not by the household merely having set one."""
+        not by the household merely having set one.
+
+        The one test in this file that needs a real Monday-to-Friday night
+        — _minutes_cap applies the cap only when `weekday() < 5`, and its
+        two neighbours above return before that line ever runs, so they
+        hold on any day and this does not. See WEEKNIGHT."""
         tools.edit_preference("weeknight_max_minutes", 30)
         picker = _recorder(_pick())
-        tools.swap_meal_in_place(week, _entry_id(week, DAY1), picker=picker)
+        tools.swap_meal_in_place(week, _weeknight_entry(week), picker=picker)
         assert picker.contexts[0]["max_minutes"] == 30
 
     def test_the_instructions_are_a_separate_cacheable_block(self):

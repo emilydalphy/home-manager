@@ -51,10 +51,17 @@ clock.py` pins them: `cooker.datetime` frozen at one UTC instant with
 `households.timezone` set, so the household's day genuinely moves while the
 server's does not. The zone lookup and the column read both run for real.
 
-Each test says in its own docstring whether it is a CATCH (red on the
-unmodified app) or a NO-REGRESSION GUARD (green either way, here to say
-what did not change). The guards are pinned by MUTATION instead, and every
-mutation named in one was run.
+Each test says in its own docstring which of THREE things it is: a CATCH
+(red on the unmodified app, on the assertion it is named after), a
+NO-REGRESSION GUARD (green either way, here to say what did not change),
+or RED FOR ANOTHER REASON — red on the unmodified app but dying before it
+reaches its own claim. Measured: **26 red / 9 green, and only 7 of the 26
+fail on the assertion they name.** 12 never reach one at all (the twin
+does not exist there) and 7 die earlier, on a picker guard, a precondition
+or a missing-key 500 — every one for the right underlying reason, none of
+them evidence for its own specific claim. So the MUTATIONS are the
+evidence throughout: twelve of them, each named in the docstring of what
+it reddens, and every one was run.
 
 Everything UNFROZEN counts its days off `conftest.household_today()`, never
 off `date.today()`. The two are different days for part of every UTC day,
@@ -531,6 +538,81 @@ class TestTheChangeCard:
         assert body["status"] == "refused"
         assert body["refused"][0]["why"] == REFUSAL_WHY
         assert _state(_day(-1)) == [("planned", "Bean Chili")]
+
+    def test_judging_the_card_costs_one_reading_of_the_households_clock(self):
+        """RED FOR ANOTHER REASON on the unmodified app (nothing is
+        refused there at all, so it dies on `assert 0 == 4` and never
+        reaches the count), and so pinned by MUTATION: un-hoisting the
+        read back into the loop fails it, measured. It is a CATCH against
+        this branch's own first commit, which asked night_has_gone per ROW
+        — seven connections for a seven-row card, measured 7 -> 1. Hoisted
+        above the loop, the way weekly-plan-last-clock-reads settled it on
+        2026-09-16.
+
+        Four rows, all past, so nothing reaches apply_pick: what is being
+        counted is the card's own JUDGEMENT and not a write. A row that
+        DOES land reads the clock once more through apply_pick's backstop,
+        which is named here rather than hidden — it is one read inside a
+        write that already costs many.
+
+        The lower bound matters as much as the upper: `<= 1` alone would
+        pass a version that never read the clock at all."""
+        plan = _seed(_day(-1), _day(-2), _day(-3), _day(-4))
+        pid = self._card(plan, [_day(-1), _day(-2), _day(-3), _day(-4)])
+        reads = {"n": 0}
+        real = _cooker.get_conn
+
+        def counted():
+            reads["n"] += 1
+            return real()
+
+        try:
+            _cooker.get_conn = counted
+            reads["n"] = 0
+            out = tools.apply_proposal(pid)
+        finally:
+            _cooker.get_conn = real
+
+        assert len(out["refused"]) == 4
+        assert reads["n"] == 1
+
+    def test_a_backstop_refusal_is_a_refused_row_and_not_a_dead_card(self):
+        """RED FOR ANOTHER REASON on the unmodified app — nothing is
+        refused there, so it dies on an empty list rather than on the
+        claim it makes — and so pinned by MUTATION: removing the
+        try/except makes this raise SlotRefused out of apply_proposal,
+        which is measured.
+
+        apply_pick's backstop reads the clock for ITSELF, so a card being
+        saved across a midnight tick can be refused there after passing the
+        card's own test at the top of the loop. That is not wrong — by then
+        the night really is over — but it must degrade to a refused ROW,
+        because a raise here takes every row after it down too, which is
+        the one thing the per-row refusal exists to prevent. The clock
+        moves five days forward after its first answer, which is what puts
+        a row past the backstop that the card itself accepted."""
+        plan = _seed(_day(-1), _day(2))
+        pid = self._card(plan, [_day(-1), _day(2)])
+        real_today = _wp._household_today()
+        calls = {"n": 0}
+
+        def moving():
+            calls["n"] += 1
+            return real_today if calls["n"] == 1 else real_today + timedelta(days=5)
+
+        saved = _wp._household_today
+        _wp._household_today = moving
+        try:
+            out = tools.apply_proposal(pid)
+        finally:
+            _wp._household_today = saved
+
+        # No exception, both rows accounted for, and the card says one
+        # thing about one fact however the refusal arrived.
+        assert sorted(r["date"] for r in out["refused"]) == sorted([_day(-1), _day(2)])
+        assert {r["why"] for r in out["refused"]} == {REFUSAL_WHY}
+        assert _state(_day(-1)) == [("planned", "Bean Chili")]
+        assert _state(_day(2)) == [("planned", "Bean Chili")]
 
     def test_a_card_of_only_past_rows_refuses_the_whole_thing(self):
         """CATCH. Nothing written, and `status` 'refused' rather than

@@ -394,8 +394,9 @@ why*, not duplicating the diff.
 - **2026-09-17 — Swapping a dish onto a night that has gone by is refused,
   and the refusal is at the DOORS rather than in the write. Branch
   `overnight/swap-refuses-the-past`, NOT merged at the time of writing.**
-  Loop Board bug, the third and last of the date-guard set after
-  `add_dish_day` ("+") and `drop_dish_from_day` ("−").
+  Loop Board bug, the third of the date-guard set after `add_dish_day`
+  ("+") and `drop_dish_from_day` ("−") — **the card called it the last one
+  and it is not; see "the set is incomplete" below.**
   `weekly_plan.swap_meal_in_plan` read no clock at all. Reproduced first,
   over the real function on an approved week: the dish was rewritten and a
   NEW line went on the shopping list for a dinner that was over —
@@ -412,9 +413,13 @@ why*, not duplicating the diff.
     fix in place — a refusal inside `swap_meal_in_plan` — and the repair
     returned `moved: []` with its exception swallowed by its own
     try/except, **which wraps the whole loop, so every other repair on the
-    week went with it. Silently.** The other possible shape is worse: a
+    week went with it. Silently.** An independent reviewer reproduced that
+    collateral half directly and it is worse than stated here: on a week
+    with TWO clashes, one past and one FUTURE, the naive fix loses the
+    unrelated future-day clash as well, with two swallowed exceptions and
+    nothing on any screen. The other possible shape is worse again: a
     refusal DICT would be read as a successful move, because that function
-    reads nothing off the result.
+    reads nothing off the result — `moved.append` runs unconditionally.
   - **So the rule is stated where the DECISION is, not where the write
     is** — which is also what both halves of the Review stepper already do,
     and what keeps the machine path byte-identical rather than exempt by
@@ -442,6 +447,22 @@ why*, not duplicating the diff.
     is lower case with no stop, because `changeRowHtml` renders it as
     "<dish> stays — <why>" — the whole sentence lands there as "— That
     night’s already gone..". Pinned both ways.
+  - **The card's clock is read ONCE, above the row loop — and the first cut
+    read it per row** (`night_has_gone` opens a connection of its own, so a
+    seven-row card cost seven; measured 7 → 1). Cheap either way — a Save
+    tap, not a render payload — but it is the shape
+    `weekly-plan-last-clock-reads` settled on, and it buys the property
+    that every row is judged against the SAME day rather than one being
+    refused because midnight passed between two iterations.
+    **It is the JUDGEMENT that is one day, not the whole card**, and saying
+    otherwise was the first wording: `apply_pick`'s backstop reads the
+    clock again further down and can refuse a row this loop accepted. That
+    is not wrong — by then the night really is over — but it surfaced a
+    real hole the hoist's own test found: **that raise propagated out of
+    `apply_proposal` and took every remaining row of the card with it**,
+    which is the one thing the per-row refusal exists to prevent. Caught
+    per row now, through `_as_why`, so the card says one thing about one
+    fact however the refusal arrived.
   - **The chat twin RAISES rather than answering a dict**, and that is not
     style: `_turn_wrote_anything` counts only non-error tool results, so a
     dict would let the model claim "I've swapped that" with
@@ -457,6 +478,56 @@ why*, not duplicating the diff.
     refused, and the re-swap that would fix it refused too). After this fix
     it is strictly LESS reachable than before, since the swap that writes
     the undo note is now refused.
+  - **THE SET IS INCOMPLETE, AND THAT IS NOT THE SAME AS "OUT OF SCOPE".**
+    `resolve_open_slot` reaches `_replace_slot_entries` DIRECTLY, so it
+    bypasses all five doors above, and `apply_pick`'s backstop cannot catch
+    it — it is an existing door that never passes through `apply_pick`.
+    Reproduced here on an approved week: settling a past open night wrote
+    the meal and put **`{'Carrots': '3'}`** on the shopping list for a
+    dinner that was over, which is the same exposure used above to justify
+    guarding "Swap · I'll pick". It is left because it carries a genuine
+    product question that is Emily's — should settling a past open slot be
+    refused at all, or is answering an old question a repair? — and it has
+    its own card. One piece of good news, measured: the Now needs-you card
+    resolves through the same route but is only built `for offset in (0,
+    1)`, so Now can never name a past date; the exposure is the Plan screen
+    plus a direct POST.
+  - **`swap_component_in_plan` is NOT the same gap, and an earlier version
+    of this entry named it as one.** It takes `(weekly_plan_id,
+    component_category, old_meal, new_meal, food_groups)` — **no date at
+    all** — because a component plan's rows are keyed by category rather
+    than by day, so "refuse a past night" has no target there as stated.
+    Something is still missing for those households; it is a different
+    question and needs a different answer.
+  - **THE MODEL IS TOLD THE SERVER'S DATE WHILE THIS REFUSES ON THE
+    HOUSEHOLD'S — named, not fixed.** `agent.py`'s per-turn block is
+    `today = datetime.date.today()`, interpolated as "Today's date is … Use
+    this to resolve relative dates like 'today'". The chat door is the one
+    fully reachable door here, so the two clocks matter. **Direction is
+    what keeps it off the live list:** in production the UTC server is
+    always at or ahead of a Toronto household, so a date resolved against
+    it can only ever MISS a refusal, never invent one. But
+    `households.timezone` is settable, and for a household EAST of the
+    server the model is told the household's YESTERDAY — so "change
+    tonight's dinner" resolves to a night this branch then refuses, and the
+    app declines tonight. That is precisely the state
+    `test_a_household_a_day_ahead_is_refused_the_servers_today` pins as
+    CORRECT behaviour, reached from the prompt rather than from a stale
+    screen. The false-positive analysis below names only the
+    browser-vs-stored-zone split; this is a second one,
+    prompt-vs-stored-zone, and the honest fix for both is the stored zone.
+  - **MERGE ORDER, AND GIT WILL NOT WARN ANYBODY.**
+    `overnight/drop-dish-refuses-the-past` (pushed, not yet on main)
+    hardcodes the same sentence with its own inline `if meal_date < today:`
+    and a duplicated copy of the clock reasoning, in a DIFFERENT region of
+    this same file. Checked here rather than taken on trust: `git
+    merge-tree` produces **no conflict markers in `app/tools/weekly_plan.py`
+    at all** — only CLAUDE.md conflicts, because both branches add an entry
+    at the top of this log, and resolving that says nothing about the code.
+    So merging both leaves a fourth hardcoded copy of the one sentence,
+    which is exactly what `NIGHT_GONE`'s own comment exists to prevent. **Whoever merges
+    second should repoint `drop_dish_from_day` at `night_has_gone` /
+    `NIGHT_GONE`**, the way `add_dish_day` is repointed here.
   - **REACHABILITY, corrected against the card's own framing.** The two
     CHAT doors have no client date filter and are fully reachable — and the
     change card was measured APPLYING a change to a past night on main
@@ -473,22 +544,28 @@ why*, not duplicating the diff.
     same size as both siblings; a regression against `main` for that
     population, and the honest fix is the stored zone, which has its own
     card. Not fixed here. `static/` is untouched by this branch.
-  - `tests/test_swap_refuses_the_past.py` (33). **23 red against the
-    unmodified `app/`, and only 11 of those reach an assertion** — 12 die
-    on `AttributeError: swap_meal_in_plan_for_chat`, which is the only kind
-    of red a test of a new function can have and proves nothing about its
-    own claim. Of the 11: **9 are behaviour catches**, one (the
-    swap-in-place route) is red as a 500 because without the refusal it
-    reaches a real model call with no key, and one (the connection guard)
-    is red for a reason other than its name. All three say so in their own
-    docstrings. **NINE mutations are the real evidence and every one bit**:
-    `<=` for `<` (7 red), the server's clock (3), the naive in-function fix
-    (4 — all three generation tests), a connection held across the clock
-    read (1, `assert 2 == 1`), dropping the `apply_pick` backstop (2),
-    dropping the change card's row check (4), the fragment given a capital
-    and a stop (2), the twin reading positional args only (1), and this
-    file's own `_day` repointed at the process's clock (0 in Toronto, **5
-    under a real straddle** — the harness trap, reproduced).
+  - `tests/test_swap_refuses_the_past.py` (35). **26 red against the
+    unmodified `app/`, 9 green — and the red count is worth much less than
+    it looks.** 12 never reach an assertion at all (`AttributeError:
+    swap_meal_in_plan_for_chat`, the only kind of red a test of a new
+    function can have). Of the 14 that do, **7 fail on the assertion they
+    are named after and 7 fail earlier** — on a picker guard, a
+    precondition, or a missing-key 500 — every one for the right underlying
+    reason (the door did not refuse) but none of them evidence for its own
+    specific claim. All of them say which they are in their own docstrings.
+    **THE FIRST VERSION OF THIS BULLET SAID 23 AND 11**, stably off by one
+    in both figures against a reviewer's five independent pins, in an entry
+    that makes a point of precision about exactly this statistic.
+    **TWELVE mutations are the real evidence and every one bit**: `<=` for
+    `<` (7 red), the server's clock (3), the naive in-function fix (4 — all
+    three generation tests), a connection held across the clock read (1,
+    `assert 2 == 1`), dropping the `apply_pick` backstop (2), dropping the
+    change card's row check (4), the fragment given a capital and a stop
+    (2), the twin reading positional args only (1), this file's own `_day`
+    repointed at the process's clock (0 in Toronto, **5 under a real
+    straddle** — the harness trap, reproduced), un-hoisting the card's
+    clock (1), dropping the `apply_pick`-refusal catch (1), and the
+    blocker's own fix removed (1 red at saturday AND sunday).
   - **Four existing files were re-seeded honestly, each with a note saying
     what moved** (35 red at Toronto before it): `test_swap_in_place.py`,
     `test_plate_parts.py` and `test_chat_change_card.py` all built their
@@ -498,18 +575,73 @@ why*, not duplicating the diff.
     are renamed DAY1/DAY2/… because they are positions and never weekdays.
     One test in `test_swap_atomic.py` took `_plain_plan(day=ADD_SRC)`, the
     anchor the add_dish_day branch already put there. Same harness-artifact
-    class, same presentation: the app is right and the seed is wrong.
-  - **Numbers, measured.** Suite **5451 passed, 0 failed** at
-    `TZ=America/Toronto` (+33 on the 5418 baseline — exactly the new file;
-    nothing deleted or weakened). **The straddle was CHECKED before it was
-    quoted**, the correction the 2026-09-16 entry demands: at the hour this
-    ran, `Pacific/Niue` and `Asia/Tokyo` were both on Toronto's date and
-    exercised nothing. `Pacific/Kiritimati` did straddle (process 09-17,
-    household 09-18, verified either side of the run): **3 failed / 5448
-    passed here against 3 failed / 5415 on the merge base at the same
-    instant, the same three tests byte for byte** — the pre-existing
-    `test_frozen_clock.py` seam east of UTC+9 — so this adds no straddle
-    failure.
+    class, same presentation: the app is right and the seed is wrong. The
+    re-seed is sound in the way that matters: those files pass **112/112
+    against the UNGUARDED app**, which is the symmetry that says the
+    harness followed the app rather than being bent to fit it.
+  - **THE RE-SEED BROKE THE `clock (saturday)` MATRIX, AND THE NOTE THAT
+    SAID IT COULDN'T IS THE LESSON.** That note read "nothing in this file
+    asserts a weekday" — true as written, and beside the point:
+    `swap_in_place._minutes_cap` ends `cap if (cap and weekday < 5) else
+    None`, so `test_a_weeknight_limit_still_applies_to_an_untagged_night`
+    asserts THE RESULT OF A WEEKDAY BRANCH without naming a weekday. The
+    old seed pinned this calendar week's Monday and so held on whatever day
+    the suite ran; `DAY1 = household_today()` is Saturday or Sunday twice a
+    week. Measured: `clock (saturday)` went **36 passed on main to 1 failed
+    / 35 passed**, and `clock (sunday)` 0 → 1 on top of its own pre-existing
+    failure — on a matrix that runs on every PR and every push to main and
+    whose entire stated purpose is catching weekday cliffs. Fixed by
+    `WEEKNIGHT`, the first Monday-to-Friday day of the seeded week (any
+    seven consecutive days hold five, so it always exists, is never behind
+    today, and is always inside the period). All four pins are 36/36 now,
+    matching main. **When a seed moves from a fixed weekday to "today",
+    sweep for what BRANCHES on the weekday, not for what asserts one** —
+    and run all four pins, which is the only thing that would have caught
+    it. Its two neighbours in the same class are safe because `rush` and
+    `unrushed` both return before that line ever runs. Swept afterwards:
+    `app/` holds exactly TWO places that branch on a MEAL DATE's weekday —
+    this one and `agent.py`'s own weeknight cap in the plate pass — and
+    every other `.weekday()` in it is deriving a week start or parsing a
+    calendar rule.
+  - **`_plain_plan` was left holding TWO clocks, and it only shows in the
+    straddle job.** It took `day=ADD_SRC` (the household's today) while
+    still filing the plan at `create_weekly_plan(_monday())`, and
+    `_monday()` reads the SERVER's. Those land in different weeks whenever
+    the two clocks disagree across a Monday, and `plan_meal`'s own period
+    guard then refuses outright — reproduced on the merge base with a day
+    outside that week: "2026-09-23 isn't in weekly plan 1's period". Both
+    reachable pairs are the straddle job's own zones, and one of them is
+    **production's own direction every Sunday evening** (server Monday,
+    household Sunday). It is `create_weekly_plan(day)` now, which is
+    byte-identical for every other caller since `MON` is `_monday() + 0`
+    and immune by construction rather than by arithmetic.
+  - **Numbers, measured, and ALL FOUR WEEKDAY PINS this time — which is
+    what the blocker above was about.** `TZ=America/Toronto` throughout.
+    Live (a Thursday) **5453 passed / 0 failed**, +35 on the 5418 baseline,
+    exactly the new file and nothing deleted or weakened.
+    `clock (monday)` **5450 / 0**, `clock (friday)` **5450 / 0**,
+    `clock (saturday)` **5450 / 0** — 1 failed before the fix — and
+    `clock (sunday)` **5449 / 1**, that one being
+    `test_tonight_night_off.py::test_the_night_is_planned_empty_and_never_open`,
+    **confirmed pre-existing by running it at the same pin against the
+    merge base's own app and tests** rather than assumed from the fact
+    that this branch does not touch the file. (3 skipped under every pin:
+    the `live_clock` photo tests.)
+  - **THE STRADDLE, AND THE DIRECTION LABEL THIS ENTRY GOT BACKWARDS.**
+    Checked before it was quoted, which is the correction the 2026-09-16
+    entry demands: at the hour these ran, `Pacific/Niue`, `Asia/Tokyo` and
+    `Etc/GMT+12` were all on Toronto's date and would have exercised
+    nothing. `Pacific/Kiritimati` (UTC+14) did straddle, verified at both
+    ends of the run: **process 2026-09-18, household 2026-09-17 — the
+    PROCESS AHEAD of the household, which is production's own direction**
+    (a UTC container serving a Toronto house). The first version of this
+    bullet wrote that pair round the other way and so claimed the
+    non-production direction while having measured the production one —
+    the same mistake, one layer down, that the entry it cites exists to
+    prevent. **3 failed / 5450 passed here against 3 failed / 5415 on the
+    merge base at the same zone, the same three tests byte for byte** — the
+    pre-existing `test_frozen_clock.py` seam east of UTC+9 — so this adds
+    no straddle failure, and the +35 is the new file.
 
 - **2026-09-16 — "Shop for tonight" is claimed only when the list is actually
   holding tonight up. Branch `overnight/shop-move-for-tonight`, merged

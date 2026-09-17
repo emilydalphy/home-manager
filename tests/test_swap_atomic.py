@@ -118,7 +118,14 @@ def _plain_plan(approve: bool = True, day: str = MON) -> tuple[int, int]:
     """
     _household()
     _recipes()
-    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
+    # Filed under the day it plans into, not under _monday() — which reads
+    # the SERVER's clock while ADD_SRC reads the HOUSEHOLD's, so the two
+    # land in different weeks whenever those clocks disagree across a
+    # Monday and plan_meal's own period guard refuses the write outright.
+    # Reproduced on the merge base with a day outside _monday()'s week:
+    # "2026-09-23 isn't in weekly plan 1's period". Identical for every
+    # other caller, since MON is _monday() + 0.
+    plan_id = tools.create_weekly_plan(day)["weekly_plan_id"]
     entry_id = tools.plan_meal(day, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
     if approve:
         tools.approve_weekly_plan(plan_id, "Emily")

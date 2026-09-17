@@ -294,6 +294,22 @@ def another_for_row(proposal_id: str, row_index: int, picker=None) -> dict:
     return {"status": "refused", "message": _swap.REFUSAL}
 
 
+def _as_why(sentence: str) -> str:
+    """A refusal SENTENCE reshaped into the fragment a refused row renders.
+
+    changeRowHtml puts this after "<dish> stays — ", so it wants no capital
+    and no stop on the end. weekly_plan.NIGHT_GONE_WHY is the hand-written
+    fragment for the one refusal that reaches the card today, and it wins
+    here so the card says ONE thing about one fact however the refusal
+    arrived; anything a future backstop adds gets reshaped instead of
+    printed as a sentence inside somebody else's.
+    """
+    if sentence == _weekly_plan.NIGHT_GONE:
+        return _weekly_plan.NIGHT_GONE_WHY
+    text = sentence.strip().rstrip(".")
+    return (text[:1].lower() + text[1:]) if text else "it can’t be changed"
+
+
 def apply_proposal(proposal_id: str) -> dict:
     """
     Save changes. Each 'change' row's chosen candidate goes through the
@@ -308,6 +324,21 @@ def apply_proposal(proposal_id: str) -> dict:
     if proposal["status"] == "applied":
         return {"status": "applied", "proposal": public_view(proposal), "refused": []}
     plan_id = proposal["weekly_plan_id"]
+    # ONE reading of the household's clock for the card's own JUDGEMENT,
+    # resolved before the loop rather than inside it. night_has_gone opens
+    # a connection of its own, so asking it per row cost a seven-row card
+    # seven of them (measured, 7 -> 1) — and it is the shape
+    # weekly-plan-last-clock-reads settled on 2026-09-16, for a second
+    # reason worth more than the connections: every row is judged against
+    # the same day, so a card cannot refuse one night and accept another
+    # because midnight passed between two iterations.
+    #
+    # Say JUDGEMENT rather than "the whole card", because apply_pick's own
+    # backstop reads the clock again further down and can refuse a row this
+    # loop accepted. That is not wrong — by then the night really is over
+    # — and the except below is what keeps it a refused ROW rather than an
+    # exception that takes the rest of the card with it.
+    today = _weekly_plan._household_today().isoformat()
     applied: list[dict] = []
     refused: list[dict] = []
     for row in proposal["rows"]:
@@ -322,15 +353,17 @@ def apply_proposal(proposal_id: str) -> dict:
         if entry["meal"].strip().lower() == cand["meal_name"].strip().lower():
             # Already what's there — nothing to write, nothing to undo.
             continue
-        if _weekly_plan.night_has_gone(row["date"]):
-            # A night that has already gone by. A row of this card is a
-            # person tapping Save changes, so it gets the same refusal the
-            # Review stepper and "Swap · I'll pick" get — but PER ROW, in
-            # the shape the gate refusals below already use, rather than as
-            # the raise apply_pick would give it: a card can name several
-            # nights, and one that is over must not take the rest of them
-            # down with it. The fragment, not the sentence — changeRowHtml
-            # renders this as "<dish> stays — <why>".
+        if row["date"] < today:
+            # A night that has already gone by — weekly_plan.night_has_gone's
+            # rule, against the one day resolved above rather than its own
+            # read, which is the only thing the hoist changes. A row of this
+            # card is a person tapping Save changes, so it gets the same
+            # refusal the Review stepper and "Swap · I'll pick" get — but
+            # PER ROW, in the shape the gate refusals below already use,
+            # rather than as the raise apply_pick would give it: a card can
+            # name several nights, and one that is over must not take the
+            # rest of them down with it. The fragment, not the sentence —
+            # changeRowHtml renders this as "<dish> stays — <why>".
             refused.append({"date": row["date"], "slot": row["slot"],
                             "meal": cand["meal_name"], "why": _weekly_plan.NIGHT_GONE_WHY})
             continue
@@ -349,7 +382,21 @@ def apply_proposal(proposal_id: str) -> dict:
         cand["meal_name"] = _swap.honest_meal_name(cand)
         if entry["meal"].strip().lower() == cand["meal_name"].strip().lower():
             continue
-        result = _swap.apply_pick(plan_id, entry, cand)
+        try:
+            result = _swap.apply_pick(plan_id, entry, cand)
+        except _weekly_plan.SlotRefused as refusal:
+            # apply_pick carries its own past-night backstop, and it reads
+            # the clock for itself rather than taking the one resolved
+            # above — so a card being saved across a midnight tick can
+            # reach it even though the row passed the test at the top of
+            # this loop. Rare to the point of theoretical, and caught
+            # rather than left, because a raise here takes the REST of the
+            # card down with it, which is the one thing the per-row
+            # refusal exists to prevent. Any other refusal a future
+            # backstop adds lands here too, in words, per row.
+            refused.append({"date": row["date"], "slot": row["slot"],
+                            "meal": cand["meal_name"], "why": _as_why(str(refusal))})
+            continue
         landed = {
             "date": row["date"], "slot": row["slot"], "entry_id": result["entry_id"],
             "meal": result["meal"], "replaced": result["replaced"],
