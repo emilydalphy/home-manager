@@ -25,6 +25,8 @@ from pathlib import Path
 
 import pytest
 
+from conftest import household_today
+
 from app import tools
 from app.db import get_conn
 from app.tools import tonight as _tonight
@@ -37,7 +39,11 @@ SHELL_HTML = (REPO / "static" / "shell.html").read_text(encoding="utf-8")
 
 
 def _monday() -> datetime.date:
-    today = datetime.date.today()
+    """The HOUSEHOLD's Monday, never the process's. The week seeded here has
+    to be the week the app's own screens are in: under a straddling timezone
+    the two differ, and a server-Sunday/household-Monday run would seed a
+    week that has already ended where the household lives."""
+    today = household_today()
     return today - datetime.timedelta(days=today.weekday())
 
 
@@ -47,6 +53,9 @@ MON, TUE, WED, THU, FRI, SAT, SUN = DAYS
 # "Tonight" is Wednesday of the current week, so there are nights on both
 # sides of it. The clock is injected, never read.
 TONIGHT = WED
+# The household's own today, for the one test that is about what NOW shows
+# rather than about what the plan holds — see that test's docstring.
+TODAY = household_today().isoformat()
 AFTERNOON = datetime.datetime.fromisoformat(f"{TONIGHT}T15:50:00")
 
 
@@ -254,13 +263,32 @@ def test_no_free_night_drops_the_dish_and_leaves_the_night_deliberately_empty():
 def test_the_night_is_planned_empty_and_never_open():
     """CATCH. `open` is a decision handed back, so Now would turn round and
     ask "Tonight needs a dinner" — the question just answered. planned_empty
-    needs no decision and must never be offered as one."""
+    needs no decision and must never be offered as one.
+
+    This is the one test in the file that takes the HOUSEHOLD'S OWN TODAY
+    off rather than the module's Wednesday, and both halves of that matter.
+    get_needs_you_items only ever reads today and tomorrow (its 48-hour
+    horizon, deliberate and documented), so a Wednesday night is outside
+    what the band looks at on four weekdays in seven — asking the band
+    about it would pass without the band ever having seen the night. And
+    the answer has to be read for THAT DATE: the band legitimately carries
+    other cards, and on a Sunday run the seeded week's last day is today,
+    so "Tomorrow needs a dinner" about the Monday after it is the right
+    answer and not this test's business. Asserting over the whole band is
+    what made this red every Sunday while the app was correct.
+    """
     plan = _plan()
     _full_week(plan)
-    _tonight.tonight_night_off(now=AFTERNOON)
-    assert _dinner_row(TONIGHT)["slot_state"] == "planned_empty"
-    kinds = [i["type"] for i in tools.get_needs_you_items()]
-    assert "dinner_decision" not in kinds
+    _tonight.tonight_night_off(now=datetime.datetime.fromisoformat(f"{TODAY}T15:50:00"))
+    assert _dinner_row(TODAY)["slot_state"] == "planned_empty"
+    # Both card shapes, because both are a decision handed back: an absent
+    # row reads as 'dinner_decision' and an `open` one as 'dinner_open',
+    # and it is the `open` one this test is named after.
+    handed_back = [
+        i for i in tools.get_needs_you_items()
+        if i["type"] in ("dinner_decision", "dinner_open") and i.get("date") == TODAY
+    ]
+    assert handed_back == []
 
 
 # ------------------------------------------------------------ the grocery list

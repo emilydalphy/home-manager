@@ -391,6 +391,76 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-17 — CI's `clock (sunday)` pin was red on `main` and the APP WAS
+  RIGHT: a test asked the whole needs-you band a question about one night.
+  Branch `overnight/night-off-test-sunday`, NOT merged at the time of
+  writing. Test-only — not one line of `app/` is touched.**
+  `tests/test_tonight_night_off.py::test_the_night_is_planned_empty_and_never_open`
+  took Wednesday's night off and then asserted `dinner_decision` appeared
+  NOWHERE in `get_needs_you_items()`. That band deliberately covers only
+  today and tomorrow (`weekly_plan.py`, `horizon_end = today +
+  timedelta(days=2)`), and the file seeds a Mon–Sun week, so on a Sunday run
+  today IS the week's last day and TOMORROW is the Monday after it, which
+  genuinely has no dinner row. "Tomorrow needs a dinner" is the correct
+  answer. Six days a week the assertion passed by luck.
+  - **The docstring already said what the claim was** — "`open` is a decision
+    handed back, so Now would turn round and ask *Tonight needs a dinner*" —
+    i.e. a claim about THE NIGHT THAT WAS TAKEN OFF. It was written as a
+    claim about the whole band, which also carries cards that are none of its
+    business.
+  - **THE FINDING THAT MATTERS MORE THAN THE RED PIN: the old assertion never
+    once caught the thing it is named after, on any weekday.** Measured, not
+    reasoned: mutate the night-off write from `plan_slot_empty` to
+    `plan_slot_open` (`tonight._settle_night_off`) and the band answers
+    `dinner_open`, not `dinner_decision` — a type the assertion did not name.
+    With the `slot_state` line above it removed so the band assertion is
+    actually reached, the old form **passes** under that mutation on monday,
+    friday and saturday (Wednesday is outside the horizon, so the band is
+    just `[shop_run]`) and **fails on sunday for the unrelated Monday card**,
+    which it would have failed on with no mutation at all. Vacuous four days
+    in seven and wrong on the fifth. The test as a whole still bit, but only
+    through the `slot_state` assertion beside it.
+  - **The fix is both halves or neither.** The night taken off is the
+    HOUSEHOLD'S OWN TODAY, which is inside the horizon on every weekday by
+    construction — scoping the assertion to the module's Wednesday instead
+    would have made it green everywhere and meant nothing, which is the trap
+    here. And the assertion reads that ONE date and both card shapes
+    (`dinner_decision` for an absent row, `dinner_open` for an `open` one),
+    because both are a decision handed back and the second is the one the
+    test is named after.
+  - **`_monday()` reseeded off `conftest.household_today()`** — this file's
+    week was still the PROCESS's Monday, which is the 2026-09-15 class. Not a
+    live failure today and not reproducible at the hour this was written, so
+    it is a latent hazard rather than a symptom, demonstrated rather than
+    asserted: constructed at a pin of `2026-09-20T20:00` with the household
+    on `Pacific/Kiritimati`, the process reads Sunday 09-20 and the household
+    Monday 09-21, and the old form seeds `09-14..09-20` with the household's
+    today OUTSIDE it. The rewritten test acts on the household's today, so
+    without this it would break in CI's real straddle window (Toronto Monday
+    00:00–06:59 under `Pacific/Niue`).
+  - **Numbers, measured.** Before: `clock (sunday)` `1 failed, 49 passed`.
+    After, full suite at `TZ=America/Toronto`: **5418 passed, 0 failed**
+    unpinned (baseline exactly — no test added or removed), and **5415
+    passed, 3 skipped, 0 failed** on each of `monday`, `friday`, `saturday`
+    and `sunday`. At a VERIFIED straddle — `Pacific/Niue`, process
+    2026-09-16 against household Toronto 2026-09-17, checked at the start AND
+    the end of the run — **5418 passed, 0 failed**. The opposite direction
+    (household BEHIND the process, production's own) is stated rather than
+    claimed: no zone can produce it at Toronto 04:45, since the furthest east
+    is only +18 hours from it.
+  - **Checked and clean, so nobody re-hunts it:** the four other files that
+    read `get_needs_you_items` do not have this shape. `test_tools.py`'s two
+    "surfaces nothing" tests seed BOTH horizon days on purpose, with a
+    comment saying why; `test_needs_you_dinner_visible.py` asserts an exact
+    band but seeds no grocery list, so `shop_run` cannot appear;
+    `test_holidays.py` reads `items[0]` for the holiday ask, which is Rule 0
+    and always first. The full suite is green on all four pins, so nothing
+    else is red — "green by luck" was looked for in the band family only, not
+    swept for across the suite.
+  - **Left undone, named rather than fixed:** `drop_dish_from_day` still
+    hands a night back as `open` on a day that is over (its own card, from
+    the 2026-09-16 add-a-night entry) — unrelated to this, and untouched.
+
 - **2026-09-16 — "Shop for tonight" is claimed only when the list is actually
   holding tonight up. Branch `overnight/shop-move-for-tonight`, merged
   2026-09-16.** Emily, Flow 0 walk: Now read "Shop for tonight · 3 items · by
