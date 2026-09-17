@@ -66,6 +66,14 @@ def _memory_mod():
     from . import memory
     return memory
 
+
+def _weekly_plan_mod():
+    # Lazy for the reason the two above are: weekly_plan imports THIS
+    # module at module scope for plate_parts(), so a top-level import here
+    # would be a cycle.
+    from . import weekly_plan
+    return weekly_plan
+
 ROLES = ("protein", "vegetable", "carb")
 # The word on the chip for each role — the household's words, not the
 # schema's ("Veg", never "vegetable").
@@ -454,6 +462,15 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
     entry = _swap._entry(weekly_plan_id, entry_id)
     if entry["slot_state"] != "planned" or not entry["meal"]:
         raise ValueError("There's no meal on that slot to change.")
+    # A night that has already gone by: a different protein in a dinner
+    # that has been eaten is still a rewrite of a night nobody can act on,
+    # and on an approved week it still moves the shopping list. Asked above
+    # the model call — apply_pick refuses it too, but only after a real API
+    # call has been spent — and answered in this function's own refusal
+    # shape, which the screen shows as a plain toast.
+    _plan = _weekly_plan_mod()
+    if _plan.night_has_gone(entry["date"]):
+        return {"status": "refused", "message": _plan.NIGHT_GONE}
     recipe = _recipe_for(entry)
     context = _options_context(entry, recipe)
     context["new_protein"] = choice

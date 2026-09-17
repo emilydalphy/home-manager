@@ -608,6 +608,9 @@ from .weekly_plan import (  # noqa: F401
     MAX_PERIOD_DAYS,
     PLAN_AHEAD_FROM_WEEKDAY,
     SlotRefused,
+    NIGHT_GONE,
+    NIGHT_GONE_WHY,
+    night_has_gone,
     _plan_grocery_candidate_entries,
     _suggest_quick_dinners,
     _week_headline,
@@ -640,6 +643,11 @@ from .weekly_plan import (  # noqa: F401
     swap_component_in_plan,
     swap_dinner_nights,
     swap_meal_in_plan,
+    # The one the chat tool is wired to — swap_meal_in_plan plus the
+    # refusal a person is owed for a night that has already gone by. The
+    # bare one stays exported: add_dish_day and the week generator's own
+    # snack repair both compose it, and the repair must not be refused.
+    swap_meal_in_plan_for_chat,
     undo_dinner_nights_swap,
     week_receipt,
 )

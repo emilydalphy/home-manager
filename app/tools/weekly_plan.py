@@ -139,6 +139,55 @@ class SlotRefused(ValueError):
     simply asks first.
     """
 
+
+# The one sentence every "you can't change that night" refusal says, so a
+# fourth door cannot invent a fourth wording for one fact. add_dish_day has
+# said it since 2026-09-16; the swap doors below say it now.
+NIGHT_GONE = "That night’s already gone."
+
+# The same fact as a FRAGMENT, for the one caller that interpolates rather
+# than prints: the chat change card renders a refused row as "<dish> stays
+# — <why>" and its toast as "I left the week as it was — <why>."
+# (changeRowHtml in shell.js), so a whole sentence with a stop on the end of
+# it lands there as "— That night’s already gone.." Lower case, no stop,
+# reads as the end of somebody else's sentence.
+NIGHT_GONE_WHY = "that night has already gone"
+
+
+def night_has_gone(meal_date: str) -> bool:
+    """
+    Whether `meal_date` is behind the day the HOUSEHOLD is having.
+
+    The one test every person-initiated change to the week has to pass,
+    written once so the doors that ask it cannot drift about what "already
+    gone" means. add_dish_day (the Review stepper's "+", 2026-09-16) and
+    drop_dish_from_day (its "−") ask the same question inline; the swap
+    doors ask it through here.
+
+    THE HOUSEHOLD'S TODAY, never the server's, and that is the whole care
+    in it. The container runs UTC and households default to
+    America/Toronto, so from 8pm local the server's date is already
+    tomorrow — on that clock this would refuse TONIGHT for four hours
+    every evening, which is a worse bug than the one it fixes.
+
+    Strictly BEFORE, so today itself is never refused: changing tonight's
+    dinner is the most ordinary thing anybody does here, and a check that
+    took it away would be the same bug wearing the other hat.
+
+    ISO dates compare as strings, so a date somebody wrote by hand that
+    isn't one simply fails this test and meets whatever its caller already
+    does with it. This is not the place to start validating dates.
+
+    **It opens a connection** — _household_today reaches
+    cooker.household_now, which has one of its own — so every caller has to
+    ask it with none of its own open. Read from inside a write transaction
+    it would be a nested get_conn, and this repo has twice paid for one of
+    those with an intermittent "database is locked" rather than a wrong
+    answer: the kind of failure no test sees until production.
+    """
+    return meal_date < _household_today().isoformat()
+
+
 # The SQL form of plan_period(), for the two places that have to resolve the
 # period inside a query rather than in Python (see _current_weekly_plan_row).
 # Kept beside the Python version because they have to agree exactly, and a
@@ -813,20 +862,14 @@ def add_dish_day(
     # below it. Refused before the chain read and long before the swap:
     # nothing is written.
     #
-    # THE HOUSEHOLD'S TODAY, never the server's. The container runs UTC and
-    # households default to America/Toronto, so from 8pm local the server's
-    # date is already tomorrow — on that clock this would refuse TONIGHT for
-    # four hours every evening, which is a worse bug than the one it fixes.
-    # _household_today opens a connection of its own and nothing here is
-    # holding one: both branches above close before they reach this.
-    #
-    # Strictly BEFORE, so today itself is untouched — a dish on tonight's
-    # dinner is an ordinary thing to ask for. ISO dates compare as strings,
-    # so a target_date somebody wrote by hand that isn't one simply fails
-    # this test and meets whatever the rest of this function already does
-    # with it; this is not the place to start validating dates.
-    if target_date_resolved < _household_today().isoformat():
-        raise SlotRefused("That night’s already gone.")
+    # Whose clock this reads, why it is strictly BEFORE, and why a caller
+    # must be holding no connection of its own when it asks are all in
+    # night_has_gone, which is where they belong now that the swap doors
+    # ask the same question (2026-09-17). The one thing that IS local: both
+    # branches above close their connection before they reach this, so the
+    # read inside it nests nothing.
+    if night_has_gone(target_date_resolved):
+        raise SlotRefused(NIGHT_GONE)
 
     from . import leftovers as _leftovers
 
@@ -5788,6 +5831,42 @@ def swap_meal_in_plan(
     None and take every row in the slot with it — the two-snacks bug over
     again, reached from the other side. Given both, the id wins; it is the
     more precise of the two.
+
+    **THIS FUNCTION DELIBERATELY ACCEPTS A NIGHT THAT HAS ALREADY GONE BY,
+    and the refusal lives at the doors instead — 2026-09-17, and read this
+    before moving it.** A person may not rewrite a night that is over: it
+    changes a plan nobody can act on and, on an approved week, puts a new
+    line on a shopping list for a dinner that has been and gone (measured:
+    "Black beans 4 cans" became "Black beans 2 cans, Carrots 6"). But this
+    is not only a person's write. plan_quality.repair_snack_clashes reaches
+    it AT GENERATION TIME, and a period that STARTED before today is an
+    ordinary shape here — a Saturday sign-up's Sat–Sun week, a custom date
+    range, a takeover remnant — so the repair legitimately swaps a snack on
+    a day that is behind the household's today (measured, on a plan begun
+    three days ago). A refusal in here would break that, and silently, in
+    both possible shapes: repair_snack_clashes wraps its whole loop in one
+    try/except, so a raise abandons every other repair on the week, and it
+    reads nothing off the result, so a refusal dict would be recorded as a
+    move that never happened.
+
+    So the rule is stated where the DECISION is, not where the write is —
+    which is also what the two halves of the Review stepper already do
+    (add_dish_day, drop_dish_from_day), and what keeps the machine path
+    byte-identical rather than exempt. Every door a person reaches asks
+    weekly_plan.night_has_gone first:
+      * this function's chat twin, swap_meal_in_plan_for_chat, which is
+        what agent.TOOL_FUNCTIONS points at;
+      * add_dish_day, above — the Review stepper's "+";
+      * swap_in_place.swap_meal_in_place — "Swap · I'll pick";
+      * plate_parts.change_part — a different protein in the same dish;
+      * proposals.apply_proposal — the chat change card's Save changes;
+      * and swap_in_place.apply_pick, which the last three share, as the
+        backstop: a NEW door that forgets gets a refusal there rather than
+        the bug back.
+    What that costs is honest and worth knowing: a new caller of THIS
+    function, composing it directly the way add_dish_day does, is not
+    covered by any of them. Add the ask at your door, or the class comes
+    back.
     """
     if slot not in DAY_SLOTS:
         raise ValueError(
@@ -5840,6 +5919,49 @@ def swap_meal_in_plan(
     if verdict:
         result["taste_verdict"] = verdict
     return result
+
+
+def swap_meal_in_plan_for_chat(*args, **kwargs) -> dict:
+    """
+    swap_meal_in_plan with the one refusal a PERSON is owed in front of it:
+    a night that has already gone by.
+
+    agent.TOOL_FUNCTIONS points at this rather than at the function itself,
+    the shape grocery.add_grocery_item_for_chat already uses (2026-09-15).
+    A wrapper rather than an argument on the real function, because the
+    caller that must NOT be refused is week generation, and an opt-out is a
+    line somebody deletes while tidying — with nothing going red, since
+    repair_snack_clashes swallows what it gets. A door that has to opt IN
+    is a door somebody adds; a door that has to opt OUT is a door somebody
+    silently loses. See swap_meal_in_plan's own docstring for the whole
+    argument and for what it gives up.
+
+    `*args` rather than a restated signature on purpose: everything about
+    which slot, which old meal and which id is that function's to define,
+    and a second copy of its parameters here is one more thing to keep in
+    step. The date is read the same way the model sends it — second
+    positional or `meal_date` — and a call that names neither falls through
+    to the real function's own TypeError rather than being second-guessed.
+
+    **It RAISES rather than answering a refusal dict, and that is not a
+    style choice.** The agent dispatch packages a raise as `is_error`, and
+    `_turn_wrote_anything` counts only tool results that are NOT errors —
+    so a dict would let the model say "I've swapped that" with
+    verify_change_claim finding a successful write behind it and declining
+    to retract. That is the 2026-09-08 bug ("the chat said it changed a
+    snack and it didn't") reached from a new direction. The known cost is
+    one `error_events` row per refusal, `swap_meal_in_plan / SlotRefused`:
+    the same shape check_off_meal's status guard already produces, and the
+    guard working rather than a new breakage.
+    """
+    meal_date = kwargs.get("meal_date")
+    if meal_date is None and len(args) >= 2:
+        meal_date = args[1]
+    # Asked before anything is read for the write, and with no connection of
+    # this call's open — there is none, this is the first line.
+    if isinstance(meal_date, str) and night_has_gone(meal_date):
+        raise SlotRefused(NIGHT_GONE)
+    return swap_meal_in_plan(*args, **kwargs)
 
 
 def describe_planned_meal(entry_id: int | None = None, meal_date: str | None = None,

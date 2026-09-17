@@ -107,12 +107,19 @@ def _recipes():
     )
 
 
-def _plain_plan(approve: bool = True) -> tuple[int, int]:
-    """A one-dinner week (approved by default). Returns (plan_id, the dinner's entry id)."""
+def _plain_plan(approve: bool = True, day: str = MON) -> tuple[int, int]:
+    """A one-dinner week (approved by default). Returns (plan_id, the dinner's entry id).
+
+    `day` is MON for every caller but one: swap_meal_in_place refuses a
+    night that has already gone by (2026-09-17), on the household's clock,
+    and MON is behind it on every weekday but Monday. Same note as ADD_SRC
+    above — what that test is about is a forced failure mid-write, so the
+    night it aims at only has to be one the app will still take a swap on.
+    """
     _household()
     _recipes()
     plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
-    entry_id = tools.plan_meal(MON, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    entry_id = tools.plan_meal(day, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
     if approve:
         tools.approve_weekly_plan(plan_id, "Emily")
     return plan_id, entry_id
@@ -388,7 +395,7 @@ def test_swap_in_place_leaves_the_day_intact_on_a_failure(monkeypatch):
     new recipe is saved, and then the write behind it dies. The dinner is
     still Bulgogi Wraps, still bought for.
     """
-    plan_id, entry_id = _plain_plan()
+    plan_id, entry_id = _plain_plan(day=ADD_SRC)
     before = _snapshot()
     missing = tools.audit_plan_slots(plan_id)["missing"]
     pick = {
@@ -410,7 +417,7 @@ def test_swap_in_place_leaves_the_day_intact_on_a_failure(monkeypatch):
     assert after["grocery"] == before["grocery"]
     assert after["ledger"] == before["ledger"]
     assert tools.audit_plan_slots(plan_id)["missing"] == missing
-    assert [r["id"] for r in _rows_on(MON, "dinner")] == [entry_id]
+    assert [r["id"] for r in _rows_on(ADD_SRC, "dinner")] == [entry_id]
     assert _grocery_by_item() == {"beef": "1 lb", "lettuce": "1 head"}
 
 

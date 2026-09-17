@@ -531,6 +531,35 @@ def swap_meal_in_place(
     if entry["slot_state"] != "planned" or not entry["meal"]:
         raise ValueError("There's no meal on that slot to swap.")
 
+    # A night that has already gone by — the Day/Meal step's "Swap · I'll
+    # pick", and the Review row's "Change one", which walks to that same
+    # step. Measured before this went in, on an approved week: the dish was
+    # rewritten and a NEW line went on the shopping list for a dinner that
+    # was over.
+    #
+    # BE PRECISE ABOUT WHAT KEPT THAT OFF THE SCREEN, because it is not
+    # nothing: slotActionsHtml and mealDockHtml both render no controls at
+    # all for a day whose `isPast` is set. But that flag is computed from
+    # todayLocalStr() — the BROWSER's date — while this refuses on
+    # households.timezone, so it is a screen's rule and not the week's. A
+    # tab drawn yesterday, a retried POST, a direct call, or a phone west
+    # of the stored zone all still reach here, which is exactly the list
+    # add_dish_day wrote down for its own "+" on 2026-09-16.
+    #
+    # Asked HERE, above the picker, rather than left to apply_pick's
+    # backstop below: every attempt down there is a real API call against a
+    # $1/household/month budget, and spending one to be told the night is
+    # gone is a cost with nothing on the other side of it. _entry's own
+    # connection is closed by the time it returns, so nothing nests.
+    #
+    # A refusal, not an error — this function's own contract, the one the
+    # allergen refusal already uses, and runSwapInPlace shows `message` for
+    # any status that isn't 'swapped'. `avoid` is echoed back untouched
+    # because nothing was tried.
+    if _weekly_plan.night_has_gone(entry["date"]):
+        return {"status": "refused", "message": _weekly_plan.NIGHT_GONE,
+                "avoid": _dedup(list(avoid or []))}
+
     # The outgoing dish is on `avoid` from the first call and stays on the
     # list handed back, so tapping Swap three times never circles back to
     # what was there to begin with — the screen sends this list straight
@@ -626,6 +655,19 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
     therefore not saved, and the OLD beef chili planned again and reported
     as a change.
     """
+    # The BACKSTOP for a night that has already gone by, and deliberately
+    # dead code from the three doors above it: swap_meal_in_place,
+    # plate_parts.change_part and proposals.apply_proposal each ask
+    # night_has_gone for themselves, earlier, so they can say it in their
+    # own words and not spend a model call on it. It is here anyway because
+    # this is the one write all three share, and a NEW door that forgets to
+    # ask should get a refusal rather than the bug back — "a rule enforced
+    # in one place and assumed in another" is how this class keeps
+    # returning. First line of the function, so nothing is saved (this
+    # would otherwise leave a recipe behind) and no connection is open.
+    if _weekly_plan.night_has_gone(entry["date"]):
+        raise _weekly_plan.SlotRefused(_weekly_plan.NIGHT_GONE)
+
     serves = _table_for(entry["date"], entry["slot"])["serves"]
     if correct_title:
         pick["meal_name"] = honest_meal_name(pick)

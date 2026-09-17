@@ -322,6 +322,18 @@ def apply_proposal(proposal_id: str) -> dict:
         if entry["meal"].strip().lower() == cand["meal_name"].strip().lower():
             # Already what's there — nothing to write, nothing to undo.
             continue
+        if _weekly_plan.night_has_gone(row["date"]):
+            # A night that has already gone by. A row of this card is a
+            # person tapping Save changes, so it gets the same refusal the
+            # Review stepper and "Swap · I'll pick" get — but PER ROW, in
+            # the shape the gate refusals below already use, rather than as
+            # the raise apply_pick would give it: a card can name several
+            # nights, and one that is over must not take the rest of them
+            # down with it. The fragment, not the sentence — changeRowHtml
+            # renders this as "<dish> stays — <why>".
+            refused.append({"date": row["date"], "slot": row["slot"],
+                            "meal": cand["meal_name"], "why": _weekly_plan.NIGHT_GONE_WHY})
+            continue
         why = _swap.pick_gate(cand, entry)
         if why:
             refused.append({"date": row["date"], "slot": row["slot"], "meal": cand["meal_name"], "why": why})

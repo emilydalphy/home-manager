@@ -391,6 +391,126 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-17 — Swapping a dish onto a night that has gone by is refused,
+  and the refusal is at the DOORS rather than in the write. Branch
+  `overnight/swap-refuses-the-past`, NOT merged at the time of writing.**
+  Loop Board bug, the third and last of the date-guard set after
+  `add_dish_day` ("+") and `drop_dish_from_day` ("−").
+  `weekly_plan.swap_meal_in_plan` read no clock at all. Reproduced first,
+  over the real function on an approved week: the dish was rewritten and a
+  NEW line went on the shopping list for a dinner that was over —
+  `{'Black beans': '4 cans'}` → `{'Black beans': '2 cans', 'Carrots': '6'}`.
+  A decision nobody can act on, and a shop for a night that has been and
+  gone.
+  - **WHY IT IS NOT IN THAT FUNCTION, which is the whole card, and it was
+    MEASURED rather than reasoned.** `plan_quality.repair_snack_clashes`
+    reaches it at GENERATION time, and a plan whose period STARTED before
+    today is an ordinary shape here (a Saturday sign-up's Sat–Sun week, a
+    custom date range, a takeover remnant). Measured on a plan begun three
+    days ago: the repair's `copy` arm legitimately swaps a snack on a day
+    two days behind the household's today. Measured again with the naive
+    fix in place — a refusal inside `swap_meal_in_plan` — and the repair
+    returned `moved: []` with its exception swallowed by its own
+    try/except, **which wraps the whole loop, so every other repair on the
+    week went with it. Silently.** The other possible shape is worse: a
+    refusal DICT would be read as a successful move, because that function
+    reads nothing off the result.
+  - **So the rule is stated where the DECISION is, not where the write
+    is** — which is also what both halves of the Review stepper already do,
+    and what keeps the machine path byte-identical rather than exempt by
+    an argument. An opt-out on the real function was the alternative and
+    was refused on one point: a door that has to opt IN is a door somebody
+    adds, a door that has to opt OUT is a door somebody silently loses —
+    and the caller that must not be refused swallows what it gets.
+  - **ONE predicate, `weekly_plan.night_has_gone`**, beside `SlotRefused`,
+    carrying the clock reasoning once; `NIGHT_GONE` is the one sentence
+    (add_dish_day's own literal now points at it). Five person-facing
+    doors ask it: the new `swap_meal_in_plan_for_chat` (the twin
+    `agent.TOOL_FUNCTIONS` points at — `add_grocery_item_for_chat`'s shape,
+    2026-09-15), `swap_in_place.swap_meal_in_place`,
+    `plate_parts.change_part`, `proposals.apply_proposal` per row, and
+    `apply_pick` as the backstop the last three share. **WHAT THAT GIVES
+    UP, said plainly: a new caller of `swap_meal_in_plan` composing it
+    directly — the way `add_dish_day` does — is covered by none of them.**
+    Its docstring says so at the top.
+  - **Three doors ask ABOVE their model call**, so a refusal costs no API
+    call; `apply_pick`'s is deliberately dead code from all three and
+    first-line, so it saves no recipe on the way out.
+  - **The change card refuses PER ROW, in a FRAGMENT.** A card can name
+    several nights and one that is over must not take the rest down with
+    it, so it is a `refused` entry rather than the raise. `NIGHT_GONE_WHY`
+    is lower case with no stop, because `changeRowHtml` renders it as
+    "<dish> stays — <why>" — the whole sentence lands there as "— That
+    night’s already gone..". Pinned both ways.
+  - **The chat twin RAISES rather than answering a dict**, and that is not
+    style: `_turn_wrote_anything` counts only non-error tool results, so a
+    dict would let the model claim "I've swapped that" with
+    `verify_change_claim` finding a write behind it — the 2026-09-08 snack
+    bug from a new direction. Known cost: one `error_events` row per
+    refusal (`swap_meal_in_plan / SlotRefused`), the shape
+    `check_off_meal`'s status guard already produces.
+  - **`undo_meal_swap` is deliberately NOT refused**, characterised by a
+    test rather than left implicit. An undo is the withdrawal of a decision
+    the app allowed and can only ever restore the dish that was already
+    there, never an arbitrary one; refusing it would create a dead end this
+    change itself put the household in (swap at 11:59, midnight, Undo
+    refused, and the re-swap that would fix it refused too). After this fix
+    it is strictly LESS reachable than before, since the swap that writes
+    the undo note is now refused.
+  - **REACHABILITY, corrected against the card's own framing.** The two
+    CHAT doors have no client date filter and are fully reachable — and the
+    change card was measured APPLYING a change to a past night on main
+    (`assert 'applied' == 'refused'`), the strongest evidence here. The
+    three SCREEN doors are all gated by `day.isPast` in `slotActionsHtml` /
+    `mealDockHtml`, so they need a tab drawn yesterday, a retried POST, a
+    direct call, or a phone west of the stored zone. "Change one" on the
+    Review row does not call the swap itself — it walks to the Meal step,
+    which is `isPast`-gated.
+  - **THE VANCOUVER FALSE POSITIVE IS INHERITED, measured at exactly 3
+    hours a night** (local 21:00–23:59) for a phone west of a household row
+    left at the `America/Toronto` default — `isPast` is the BROWSER's date
+    and the refusal is the stored zone's. Same shape, same population and
+    same size as both siblings; a regression against `main` for that
+    population, and the honest fix is the stored zone, which has its own
+    card. Not fixed here. `static/` is untouched by this branch.
+  - `tests/test_swap_refuses_the_past.py` (33). **23 red against the
+    unmodified `app/`, and only 11 of those reach an assertion** — 12 die
+    on `AttributeError: swap_meal_in_plan_for_chat`, which is the only kind
+    of red a test of a new function can have and proves nothing about its
+    own claim. Of the 11: **9 are behaviour catches**, one (the
+    swap-in-place route) is red as a 500 because without the refusal it
+    reaches a real model call with no key, and one (the connection guard)
+    is red for a reason other than its name. All three say so in their own
+    docstrings. **NINE mutations are the real evidence and every one bit**:
+    `<=` for `<` (7 red), the server's clock (3), the naive in-function fix
+    (4 — all three generation tests), a connection held across the clock
+    read (1, `assert 2 == 1`), dropping the `apply_pick` backstop (2),
+    dropping the change card's row check (4), the fragment given a capital
+    and a stop (2), the twin reading positional args only (1), and this
+    file's own `_day` repointed at the process's clock (0 in Toronto, **5
+    under a real straddle** — the harness trap, reproduced).
+  - **Four existing files were re-seeded honestly, each with a note saying
+    what moved** (35 red at Toronto before it): `test_swap_in_place.py`,
+    `test_plate_parts.py` and `test_chat_change_card.py` all built their
+    week from THIS CALENDAR WEEK'S MONDAY, so every swap in them was a swap
+    into the past on every weekday but Monday; they seed off
+    `conftest.household_today()` now and their MONDAY/TUESDAY/… constants
+    are renamed DAY1/DAY2/… because they are positions and never weekdays.
+    One test in `test_swap_atomic.py` took `_plain_plan(day=ADD_SRC)`, the
+    anchor the add_dish_day branch already put there. Same harness-artifact
+    class, same presentation: the app is right and the seed is wrong.
+  - **Numbers, measured.** Suite **5451 passed, 0 failed** at
+    `TZ=America/Toronto` (+33 on the 5418 baseline — exactly the new file;
+    nothing deleted or weakened). **The straddle was CHECKED before it was
+    quoted**, the correction the 2026-09-16 entry demands: at the hour this
+    ran, `Pacific/Niue` and `Asia/Tokyo` were both on Toronto's date and
+    exercised nothing. `Pacific/Kiritimati` did straddle (process 09-17,
+    household 09-18, verified either side of the run): **3 failed / 5448
+    passed here against 3 failed / 5415 on the merge base at the same
+    instant, the same three tests byte for byte** — the pre-existing
+    `test_frozen_clock.py` seam east of UTC+9 — so this adds no straddle
+    failure.
+
 - **2026-09-16 — "Shop for tonight" is claimed only when the list is actually
   holding tonight up. Branch `overnight/shop-move-for-tonight`, merged
   2026-09-16.** Emily, Flow 0 walk: Now read "Shop for tonight · 3 items · by
