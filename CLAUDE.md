@@ -391,6 +391,95 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-17 — Two shops, everything answered "Anywhere": the paused trip
+  knows it isn’t finished. Branch `overnight/two-shops-anywhere-trip`, NOT
+  merged at the time of writing.** Loop Board bug (Phase 1, Beta) — the
+  residue `overnight/one-list-can-start-a-trip` measured, characterised and
+  deliberately left on 2026-09-16, whose test is inverted here the way its
+  own docstring asked. Such a household has no shop with rows of its own,
+  so `groStoresWithNeeded` falls back to ONE stop, its most-used shop; that
+  stop is a real shop, so neither `groIsStandIn` nor `groSoleStore`
+  answered for it and `groStopRemaining` read zero. Reproduced against the
+  Grocery region’s own functions before anything was touched: the trip
+  screen read "Stop 1 of 1 · 2 left" over two tickable rows while LIST,
+  over the SAME snapshot and under a band reading "2 things · 1 stop",
+  read "Trip in progress · every stop done", offered "Finish the trip" and
+  nothing else, and continuing anyway landed on WHERE NEXT with no cards —
+  which `renderGrocery` folds into the wrap-up.
+  - **THE RULE, which is the question that branch had no answer to: a thing
+    that could be bought at either shop is owed at THE STOP YOU ARE
+    STANDING IN.** Not a new rule — `groTripItems` has said it since
+    2026-09-13, when the shopless pile stopped being stranded at the first
+    stop and started following the shopper. `groStopRemaining` was the one
+    place that disagreed with it, and a stop holding nothing of its own is
+    where the two came apart. One clause: `|| (here && here === name)`.
+  - **It cannot double-count BY CONSTRUCTION, and that is exactly why it is
+    the OPEN stop rather than "any stop that could take it": only one stop
+    is open at a time.** The sibling’s rule is unchanged in substance and
+    its mutation still bites — measured, counting the pile unconditionally
+    reddens 9 tests including that branch’s own
+    `test_the_shopless_pile_is_not_counted_against_any_one_of_several_stops`.
+    The sum over the snapshot’s stops is the size of what is left to buy:
+    2 for a list of 3 before (the foil was owed nowhere), 3 after, 4 under
+    the mutation. Pinned both ways.
+  - **That mutation had to be RE-WORDED rather than left standing, and this
+    is the trap for the next person.** The sibling’s guard names it as
+    "drop the `name === GRO_ONE_LIST_STOP || groSoleStore(data) === name`
+    condition", which with three clauses reads as deleting two of them —
+    and that no longer bites, because the third answers null with no trip
+    on. It names THE WHOLE CONDITION now, and the single-stop clauses are
+    pinned by a new test instead: delete them and a one-shop household’s
+    three things read as 0.
+  - **The two clauses before it are kept and their justification narrowed
+    honestly**: they answer for a stop nobody is standing in yet. Each is
+    the only stop there is, so the pile can be owed nowhere else.
+  - **What a stop holding nothing of its own DISPLAYS**: the pile, and only
+    while it is the open stop. Before the trip starts, "Where are we
+    headed?" shows each stop’s own rows with the celadon note under them
+    saying the rest comes with you — unchanged, and pinned.
+  - **The payload was read off a real uvicorn on a throwaway DB rather than
+    assumed.** `/api/grocery-list/by-store` hands this household ONE
+    `Unassigned` bucket and NO bucket for either shop, so the fallback stop
+    is a name only `groceryState.usualStores` knows and `groStopRemaining`
+    starts from an undefined store. The fixtures carry an empty bucket per
+    shop; there is a test for the live shape as well.
+  - **Nothing visual changed.** The dock this household now gets is the
+    two-button one a single-stop household already had
+    (`groTripPausedDockHtml`) — one apricot, one quiet link, no new markup
+    and no CSS.
+  - **Known and left, named so nobody reports it as new:** reached by the
+    back gesture, WHERE NEXT can draw the OPEN stop’s card with the pile in
+    its count ("Costco, 2 things left") over the note saying the same two
+    things come with you. Redundant, not false — they are what you would
+    tick if you went there now — and suppressing the note for one stop is
+    the condition-piling this region already warns against. Characterised
+    by name.
+  - **FOR EMILY, a separate question rather than a bug:** this household
+    named two shops and is never asked "Where are we headed?", because
+    `groStoresWithNeeded` hands back one stop and `groStartTrip` treats one
+    stop as no question. The trip opens at the shop the APP picked (most
+    used, else the first they typed). That is the sibling branch’s
+    deliberate default and the same one "Put all 40 at Loblaws" offers, so
+    it is left alone — but the household never said Costco, and now that
+    the trip actually runs they will see it.
+  - `tests/test_two_shops_anywhere_trip.py` (19; **11 red against the
+    unmodified `shell.js`**, plus the inverted characterisation test in the
+    sibling’s file). One of the 11 is half guard / half catch and says
+    which half is which; one characterises behaviour this card introduces.
+    An earlier draft’s Rule-5 guard was red there **for a reason other than
+    the one it is named after** — the dock is the other branch on that file,
+    so it had no quiet button at all — and the end-to-end walk was GREEN
+    there for the opposite reason, because the harness can click a button
+    that was never rendered; both were corrected, and the walk reads the
+    dock before it taps it. Five mutations run: pile unconditional (9 red),
+    drop the two single-stop clauses (2), drop the open-stop clause (11),
+    `groIsStandIn` as a bare name match (2), and drop the `here &&` null
+    guard (**0 — nothing pins it; it is defensive and the code says so**).
+    Suite **5437 passed, 0 failed** at `TZ=America/Toronto` AND at
+    `TZ=Pacific/Niue` inside a VERIFIED straddle (Toronto 2026-09-17 against
+    Niue 2026-09-16, checked at the start and the end of the run), against
+    main’s 5418/0 at both — the +19 is this file exactly.
+
 - **2026-09-16 — "Shop for tonight" is claimed only when the list is actually
   holding tonight up. Branch `overnight/shop-move-for-tonight`, merged
   2026-09-16.** Emily, Flow 0 walk: Now read "Shop for tonight · 3 items · by

@@ -5637,21 +5637,41 @@
   function groStopRemaining(data, name) {
     var s = data.stores[name];
     var n = s ? groNeededCount(s) + s.inCart.length : 0;
-    // A stop that is the ONLY place these things can be bought counts the
-    // shopless pile as its own: the one-list stand-in, whose whole stop it
-    // is, and the sole store, whose list was never tagged because there
-    // was no question to answer (groSoleStore). Without this, one stop
-    // and an untagged list read as nothing left — LIST said "Trip in
-    // progress · every stop done" over three unbought things, offered
-    // "Finish the trip" and no way to continue, and continuing anyway
-    // walked past the stop into the wrap-up. Pre-existing for the
-    // one-shop household; it is the same sentence, so it is fixed here
-    // rather than reproduced for the one-list one.
+    // Who owns a thing that could be bought at either shop? THE STOP YOU
+    // ARE STANDING IN — which is not a new rule, it is the one
+    // groTripItems has followed since 2026-09-13, when the shopless pile
+    // stopped being stranded at the first stop and started following the
+    // shopper. This function was the one place that disagreed with it, and
+    // a stop holding nothing of its own is where the two came apart: a
+    // household with two named shops that answers "Anywhere" to everything
+    // gets one stand-in stop (its most-used shop, groStoresWithNeeded),
+    // and that stop's own trip screen read "Stop 1 of 1 · 2 left" over
+    // Rice and Oats while LIST, over the same snapshot, read "Trip in
+    // progress · every stop done", offered "Finish the trip" and no way
+    // back in, and continuing anyway walked into the wrap-up. Measured.
     //
-    // Never for a real stop among several: there the shopless things
-    // follow the shopper from stop to stop (groTripItems) and belong to
-    // no one of them, so counting them per stop would count them twice.
-    if (groIsStandIn(data, name) || groSoleStore(data) === name) {
+    // It cannot double-count, and that is exactly why it is the OPEN stop
+    // rather than "any stop that could take it": only one stop is open at
+    // a time, so the pile is owed at one of them and never at two. The
+    // sum over the snapshot's stops is still the size of the list.
+    // Counting the pile against each stop instead — which is what the
+    // comment here used to rule out, and rightly — would put the same
+    // three things on two cards and make the band say "2 stops left" for
+    // one pile.
+    //
+    // The two clauses before it answer the same question for a stop
+    // nobody is standing in yet: the one-list stand-in, whose whole stop
+    // it is, and the sole store, whose list was never tagged because
+    // there was no question to answer (groSoleStore). Both are the only
+    // stop there is, so the pile can be owed nowhere else — without them
+    // a one-shop household read as nothing left before anybody set off.
+    //
+    // `here &&` is defensive and nothing pins it: no caller passes a falsy
+    // name (they all come from tripStops or groStoresWithNeeded), but
+    // groTripStore() answers null off a trip, and null === null would hand
+    // the pile to a stop that does not exist.
+    var here = groTripStore();
+    if (groIsStandIn(data, name) || groSoleStore(data) === name || (here && here === name)) {
       n += groRideAlongItems(data).length + groRideAlongInCart(data).length;
     }
     return n;

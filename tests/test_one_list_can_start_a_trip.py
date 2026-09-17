@@ -43,6 +43,12 @@ Behaviour is run under node against shell.js's own functions, the way
 tests/test_shop_trip_exit.py and tests/test_grocery_fast_sort.py do — "the
 button isn't there" is exactly what a source-marker test cannot see.
 
+Section 9 was the residue this branch measured and deliberately left —
+two named shops, everything answered "Anywhere" — and it was inverted on
+2026-09-17 by `overnight/two-shops-anywhere-trip`, which answered the
+question this one had none for: which stop owns a thing that could be
+bought at either.
+
 Each test says in its own docstring whether it is a CATCH (red against the
 merge base) or a no-regression GUARD, and two say they are half of each.
 Sixteen of the thirty-two go red on main — but redness there is not worth
@@ -406,12 +412,20 @@ console.log(JSON.stringify({ paused: paused, step: groceryState.step, at: groTri
 
 @_needs_node
 def test_the_shopless_pile_is_not_counted_against_any_one_of_several_stops():
-    """GUARD — green on main, and the thing the fix above must not have
-    cost. With more than one stop the shopless things follow the shopper
-    (groTripItems) and belong to no one of them, so counting them per stop
-    would count them twice. Pinned by MUTATION: drop the
-    `name === GRO_ONE_LIST_STOP || groSoleStore(data) === name` condition
-    from groStopRemaining and both stops below read 2."""
+    """GUARD — green on main, green after 2026-09-17, and the thing both
+    fixes must not have cost. The shopless things follow the shopper
+    (groTripItems), so they are owed at one stop and never at two —
+    counting them per stop would put the same foil on both cards. Nobody
+    has set off here, so they are owed at neither.
+
+    Pinned by MUTATION, and the mutation is the WHOLE condition rather than
+    any clause of it, because there are three clauses now: make
+    groStopRemaining add the pile unconditionally and both stops below read
+    2. (Deleting only the two single-stop clauses leaves the third, which
+    reads the open stop and answers null here — so that no longer bites,
+    and this docstring said it did until the day the third clause landed.)
+    tests/test_two_shops_anywhere_trip.py pins the same property with a
+    trip actually on, which is the position this fixture cannot reach."""
     out = _node("""
 const d = twoShops();
 console.log(JSON.stringify({
@@ -852,21 +866,24 @@ console.log(JSON.stringify({ at: groTripStore(), noShopNamed: groNoShopNamed(d),
     assert out["head"]["sub"] == "3 left"
 
 
-# --- 9. what is still true, and deliberately not fixed here ----------------
+# --- 9. the case this branch left, inverted 2026-09-17 --------------------
 
 
 @_needs_node
-def test_two_shops_with_everything_anywhere_still_cannot_continue_a_paused_trip():
-    """CHARACTERISATION — green on main and green here, on purpose.
+def test_two_shops_with_everything_anywhere_can_continue_a_paused_trip():
+    """CATCH — this was the characterisation test this branch left behind,
+    inverted on `overnight/two-shops-anywhere-trip` the way its own
+    docstring asked for. It used to assert the defect: a household with two
+    named shops that answered "Anywhere" to everything gets one stand-in
+    stop (its most-used shop) holding nothing of its own, so
+    groStopRemaining read zero for it and a paused trip could not be
+    continued.
 
-    A household with two named shops that answered "Anywhere" to everything
-    gets one stand-in stop (its most-used shop) holding nothing of its own,
-    so groStopRemaining reads zero for it and a paused trip cannot be
-    continued — the same sentence this branch fixed for the one-stop
-    households. It is NOT fixed here because there the shopless things
-    genuinely could be bought at either shop, and "which stop owns them" is
-    a question this ticket has no answer to. Pre-existing; its own card.
-    Invert this test when that one is worked."""
+    The question that branch had no answer to was which stop owns a thing
+    that could be bought at either. The answer is the stop you are standing
+    in, which is what groTripItems has said since 2026-09-13 — see
+    groStopRemaining's own comment, and
+    tests/test_two_shops_anywhere_trip.py for the rest of it."""
     out = _node("""
 const d = base({ usualStores: ['Costco', 'Metro'], stores: {
   Unassigned: { sections: rows([item(1, 'Rice', '', 1), item(2, 'Oats', '', 1)]), purchased: [], inCart: [] },
@@ -876,5 +893,5 @@ click({ gro: 'start-trip' });
 click({ gro: 'trip-pause' });
 console.log(JSON.stringify({ line: groTripPausedLine(d), dock: groDockHtml(d, 'list') }));
 """)
-    assert out["line"] == "Trip in progress · every stop done", "the known remaining case"
-    assert "trip-resume" not in out["dock"]
+    assert out["line"] == "Trip in progress \u00b7 1 stop left"
+    assert 'data-gro="trip-resume">Continue the trip</button>' in out["dock"]
