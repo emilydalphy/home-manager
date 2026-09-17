@@ -50,11 +50,15 @@ def _monday() -> datetime.date:
 WEEK = _monday().isoformat()
 DAYS = tools._week_dates(WEEK)
 MON, TUE, WED, THU, FRI, SAT, SUN = DAYS
-# "Tonight" is Wednesday of the current week, so there are nights on both
-# sides of it. The clock is injected, never read.
+# TWO DIFFERENT DAYS, and reaching for the wrong one is the mistake to
+# avoid here. TONIGHT is Wednesday of the seeded week — a fixed weekday with
+# nights on both sides of it, which is what nearly every test in this file
+# wants, and the clock is injected into those rather than read. TODAY is the
+# household's real today, read at module scope, and exactly ONE test uses it:
+# the one that asks the needs-you band a question, because that band only
+# ever looks at today and tomorrow. Use TONIGHT unless you are asking
+# something that reads the clock for itself — see that test's docstring.
 TONIGHT = WED
-# The household's own today, for the one test that is about what NOW shows
-# rather than about what the plan holds — see that test's docstring.
 TODAY = household_today().isoformat()
 AFTERNOON = datetime.datetime.fromisoformat(f"{TONIGHT}T15:50:00")
 
@@ -269,13 +273,16 @@ def test_the_night_is_planned_empty_and_never_open():
     off rather than the module's Wednesday, and both halves of that matter.
     get_needs_you_items only ever reads today and tomorrow (its 48-hour
     horizon, deliberate and documented), so a Wednesday night is outside
-    what the band looks at on four weekdays in seven — asking the band
-    about it would pass without the band ever having seen the night. And
-    the answer has to be read for THAT DATE: the band legitimately carries
-    other cards, and on a Sunday run the seeded week's last day is today,
-    so "Tomorrow needs a dinner" about the Monday after it is the right
-    answer and not this test's business. Asserting over the whole band is
-    what made this red every Sunday while the app was correct.
+    what the band looks at on FIVE weekdays in seven — measured, Wednesday
+    sits at +2, -1, -2, -3 and -4 from a monday/thursday/friday/saturday/
+    sunday run's today, and only a tuesday or wednesday run has it in
+    range. Asking the band about Wednesday would pass on those five
+    without the band ever having seen the night. And the answer has to be
+    read for THAT DATE: the band legitimately carries other cards, and on a
+    Sunday run the seeded week's last day is today, so "Tomorrow needs a
+    dinner" about the Monday after it is the right answer and not this
+    test's business. Asserting over the whole band is what made this red
+    every Sunday while the app was correct.
     """
     plan = _plan()
     _full_week(plan)
