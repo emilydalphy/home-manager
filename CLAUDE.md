@@ -391,6 +391,132 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-17 — A `--today` pin means the same thing east of UTC+9 now, so the
+  straddle job covers the whole day. Branch
+  `overnight/today-pin-east-of-utc9`, NOT merged at the time of writing.**
+  Loop Board Phase 0. Three tests in `tests/test_frozen_clock.py` failed in any
+  zone east of UTC+9 — reproduced on the merge base `5702234` at
+  `TZ=Pacific/Kiritimati` before anything was touched: **3 failed / 5415 passed**,
+  and the same three under `Etc/GMT-13` and `Australia/Brisbane`. That is what
+  kept `Pacific/Kiritimati` out of the `straddle` matrix, and Kiritimati is the
+  one zone that closes that job's four-hour blind spot. **Test-only: not one
+  line of `app/` or `static/` is touched.**
+  - **The mechanism, measured rather than guessed.** `_freeze_args` reads a pin
+    as LOCAL wall time and freezes at the UTC instant behind it
+    (`local - offset`), which is right. At the default 09:00 that instant is
+    `09:00 - offset`, and for any offset above +9 it lands on the PREVIOUS
+    calendar day: Kiritimati (+14) pins `2026-09-13` at `2026-09-12 19:00 UTC`.
+    SQLite's `'now'`, node's `toISOString()` and every
+    `DEFAULT (datetime('now'))` column all answer in UTC, so they honestly read
+    the 12th while `date.today()` reads the 13th. **Nothing in the machinery was
+    wrong** — every clock is consistent with one instant. What was wrong was what
+    the three guards ASSERTED: that a UTC read carries the pin's LOCAL date,
+    which is only true at or west of UTC+9.
+  - **THE DEFAULT HOUR IS NOT THE FIX AND CANNOT BE, and this is arithmetic
+    rather than taste.** For the local and UTC dates to coincide, the pinned
+    hour H must satisfy `0 <= H - offset < 24` for every offset in -12..+14 —
+    i.e. `H >= 14` and `H < 12`. There is no such H. Reading the pin as UTC
+    instead mirrors the problem (`H >= 12` and `H < 10`). So 09:00 stays, for
+    the reason it was picked: it is inside every window the app reasons about.
+    A mutation moving it to 14:00 reddens four tests.
+  - **The guards measure against PYTHON'S FROZEN CLOCK now, not against
+    `ISO_PIN`** — `conftest.pinned_utc_now()`, one documented helper, three
+    callers. That is the claim they are named for ("both clocks or neither") and
+    it is strictly STRONGER than the date prefix it replaces, because it pins
+    the instant to the second. The pinned DATE is still asserted, through
+    `date('now', 'localtime')` and node's local getters, which carry it in
+    every zone.
+  - **THE TEMPTING WRONG FIX WOULD HAVE LOOKED LIKE IT WORKED, measured.**
+    Making `_sqlite_now` hand SQLite local wall time instead of UTC takes the
+    three named tests from **3 failed to 1** under Kiritimati (only node
+    survives, being pinned from `time.time()` rather than from `_sqlite_now`)
+    and leaves Toronto green — while making every `datetime('now')` in `app/`
+    stamp rows in a timezone SQLite does not mean, and double-converting any
+    future `'localtime'` read. Against the new form it reddens 4 tests in every
+    zone, on the HOURS rather than the date. `app/` uses `'localtime'` nowhere
+    today (checked), which is exactly why this would have gone unnoticed.
+  - **Forcing `TZ=UTC` for the duration of a pin was the other option and is
+    refused**: it makes a run under an explicitly-set TZ quietly not be that TZ,
+    which is the whole point of the straddle job.
+  - **CI: Kiritimati is ADDED, not swapped for Tokyo.** On coverage alone Tokyo
+    is redundant — Kiritimati is a different day from Toronto for eighteen hours
+    (Toronto 06:00-23:59) and strictly contains Tokyo's thirteen (11:00-23:59),
+    and it is the SAME direction (household a day behind the process, which is
+    production's), so swapping would not have cost the direction that matters.
+    It would have cost something worse: **removing a matrix entry removes its
+    CHECK NAME**, and if `straddle (Asia/Tokyo)` is required in branch
+    protection by the time this lands, every PR blocks for ever on a check that
+    can never report, recoverable only by somebody with repo settings. Adding
+    cannot do that. Tokyo also earns its keep as a live guard on the +9
+    boundary — 09:00 local is 00:00 UTC there exactly, so it is the first
+    previously-green zone that would break if the hour or the offset arithmetic
+    moved. Cost is one more full suite per PR.
+    **SOMEBODY WITH REPO SETTINGS MUST ADD `straddle (Pacific/Kiritimati)` to
+    branch protection** for the new hours to actually hold a merge; until then
+    it is visible on every PR and blocking nothing. Same sentence as the
+    2026-09-15 entry below, one zone longer.
+  - **THE AWARE-DATETIME SEAM IS NOT CLOSED, and east of +9 it is worse.**
+    freezegun applies `tz_offset` on top of an already-tz-aware conversion, so
+    under a pin `datetime.now(timezone.utc)` hands back the local wall time
+    wearing a UTC label. Under Niue that is eleven hours out on the right day;
+    under Kiritimati it is fourteen hours out and **on the wrong DATE**
+    (09-13 09:00+00:00 where the honest answer is 09-12 19:00+00:00), which is
+    the escalation worth knowing. Left open deliberately: the only two fixes are
+    patching freezegun or forcing `TZ=UTC` under a pin (refused above), and it
+    is invisible today because `conftest.household_today()` and
+    `cooker.household_now()` BOTH read the aware form, so they are wrong
+    together and agree — which is why the suite is green. It is pinned in both
+    directions now (`test_a_pin_does_not_flatten_local_and_utc_together` for
+    Niue, and the new east-of-+9 test for Kiritimati), each with a note saying
+    what to assert when it is closed. **Note the straddle job is UNPINNED, so
+    adding Kiritimati there does not touch this seam.**
+  - **Numbers, whole suite, 2026-09-17, and which runs were REAL straddles.**
+    `5419 passed / 0 failed` at `TZ=America/Toronto`, `UTC`, `Asia/Tokyo`,
+    `Etc/GMT-13`, `Pacific/Kiritimati` and `Pacific/Niue` (5418 before; +1 is
+    the new test exactly, no test deleted or weakened). **Two of those were
+    checked to be straddling at the instant they ran, start AND end, rather
+    than assumed from the zone** — the trap this log has recorded twice:
+    Kiritimati (process 2026-09-18 against Toronto 2026-09-17, i.e. the
+    production DIRECTION and the hours the job could not see before) and Niue
+    (process 2026-09-16 against Toronto 2026-09-17, the other direction).
+    Tokyo and `Etc/GMT-13` ran at Toronto 05:26 and 05:29, when both were on
+    Toronto's date — green, but not straddle evidence, and said so here rather
+    than quoted as if it were. The four weekday pins at `TZ=America/Toronto`:
+    monday, friday and saturday `5416 passed + 3 skipped / 0 failed` (the 3 are
+    the `live_clock` photo tests), sunday `1 failed` — pre-existing, see below.
+  - **TWO PRE-EXISTING FAILURES FOUND ON THE WAY, both reproduced on the merge
+    base with this branch stashed, NEITHER FIXED — each its own card.**
+    - `test_tonight_night_off.py::test_the_night_is_planned_empty_and_never_open`
+      fails under a SUNDAY pin only, on `main` as well. Measured, not
+      reasoned: the `dinner_decision` it objects to is for **2026-09-21,
+      "Tomorrow needs a dinner"** — a day outside the planned week — and not
+      for the Wednesday night the test just took off. `TONIGHT = WED` is
+      module-level, so on the last day of the planned week tomorrow falls off
+      the end and the band legitimately asks about it. The assertion is too
+      broad: it wants "no dinner_decision FOR TONIGHT", not "none at all".
+    - A PINNED run east of UTC+9 fails four tests around
+      `get_already_have_decisions` (`test_grocery_have_it_and_instead.py` x2,
+      `test_tools.py` x2) — measured byte-identical on the merge base at
+      `TZ=Pacific/Kiritimati` with a monday pin. That function computes its
+      cutoff from `date.today()` (the PROCESS's local date) and compares it
+      against `removed_at`, which SQLite stamps in **UTC**; east of +9 those
+      are different days, and a MONDAY pin puts the cutoff exactly on the
+      boundary so a row removed "now" falls just outside it. Latent in
+      production (the container is UTC, so the two agree) and reachable by no
+      CI job here — `clock` is pinned at Toronto and `straddle` is unpinned.
+      **It is the reason not to pin the straddle matrix**, on top of the
+      aware-datetime reason already written into the workflow.
+  - `tests/test_frozen_clock.py` grew one test,
+    `test_a_pin_east_of_utc_plus_9_holds_every_clock_on_one_instant`, which
+    forces `TZ=Pacific/Kiritimati` (no DST, so the arithmetic is the same in
+    every month) and asserts all four clocks against the one instant. It is what
+    stops the old assertion coming back from either side.
+  - **Five mutations run, every one bites**, at `TZ=Pacific/Kiritimati`:
+    `_sqlite_now` to local (4 red), the default hour to 14:00 (4 red),
+    `pinned_utc_now` reading the aware `now()` instead of `utcnow()` (3 red),
+    node's prelude disabled (2 red), `sqlite_clock.install` removed (4 red).
+    And the literal revert puts the card's three back to red under Kiritimati.
+
 - **2026-09-16 — "Shop for tonight" is claimed only when the list is actually
   holding tonight up. Branch `overnight/shop-move-for-tonight`, merged
   2026-09-16.** Emily, Flow 0 walk: Now read "Shop for tonight · 3 items · by
@@ -1572,6 +1698,13 @@ why*, not duplicating the diff.
     different date from Python's. Its own card; swap Tokyo for Kiritimati once
     it is fixed and the job covers every hour. **A job that is red the day it
     lands gets ignored**, which is the whole reason this is Tokyo.
+    **CLOSED 2026-09-17 on `overnight/today-pin-east-of-utc9` — the gap is
+    gone, and the advice in the sentence above was NOT taken.** Kiritimati is
+    ADDED as a third zone rather than swapped in for Tokyo, because removing a
+    matrix entry removes its CHECK NAME and would strand branch protection on
+    a check that can never report; a third name,
+    `straddle (Pacific/Kiritimati)`, now also needs adding there. See that
+    entry at the top of this log.
     **Unpinned for a second reason:** under a freeze `datetime.now(utc)` comes
     back as local wall time wearing a UTC label (conftest's `_freeze_args`),
     which splits the two clocks too — so a pinned straddle would look like it

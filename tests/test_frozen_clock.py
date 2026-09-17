@@ -118,20 +118,50 @@ def test_sqlite_is_pinned_too_or_the_pin_is_worse_than_nothing():
     ten tests failed on a ONE-DAY pin for no other reason. tests/sqlite_clock.py
     closes it by handing SQLite the pinned instant where it would have read its
     own clock.
+
+    MEASURED AGAINST PYTHON'S FROZEN CLOCK, NOT AGAINST ISO_PIN, and that is
+    what makes this test mean the same thing in every zone. SQLite's `'now'`
+    is UTC; a pin is local wall time; east of UTC+9 those are different
+    calendar days (see conftest.pinned_utc_now). Asserting that the UTC read
+    carried the LOCAL date is what made Kiritimati unusable as a CI zone, and
+    it was never the claim this test is named after. The claim is "both clocks
+    or neither" — so it is held against Python's frozen clock, to the second.
+
+    That is strictly STRONGER than the date prefix it replaces, which matters
+    because the tempting wrong fix for the Kiritimati problem is to make
+    `_sqlite_now` hand over local wall time instead of UTC, and the old form
+    could not see it: measured, that change takes the three tests the card
+    named from 3 failed to 1 under Kiritimati (only node survives, because
+    node is pinned from time.time() rather than from _sqlite_now) and from 0
+    failed to 0 under Toronto — while making 184 `datetime('now')` call sites
+    in app/ stamp rows in a timezone SQLite does not mean. It fails this form
+    in every zone, on the hours.
     """
     from app.db import get_conn
 
+    from conftest import pinned_utc_now
+
+    utc = pinned_utc_now()
     conn = get_conn()
     try:
         row = conn.execute(
-            "SELECT date('now'), datetime('now'), datetime('now', '-7 days'), strftime('%Y', 'now')"
+            "SELECT date('now'), datetime('now'), date('now', 'localtime'), "
+            "datetime('now', '-7 days'), strftime('%Y', 'now')"
         ).fetchone()
     finally:
         conn.close()
-    assert row[0] == ISO_PIN
-    assert row[1].startswith(ISO_PIN)
-    assert row[2].startswith("2026-09-06"), "modifiers still SQLite's own answer, not a reimplementation"
-    assert row[3] == "2026"
+    assert row[0] == utc.date().isoformat(), "SQLite's UTC day is Python's frozen UTC day"
+    # The instant, within a few seconds — tick=True, so the clock moves between
+    # the two reads. An unpinned SQLite is months out and a local-for-UTC mix-up
+    # is hours; neither hides inside this tolerance.
+    read_at = datetime.datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
+    assert abs(read_at - utc) < datetime.timedelta(seconds=5), (row[1], utc)
+    # ...and the day the pin NAMES is the local wall clock's, in every zone.
+    assert row[2] == ISO_PIN, "the pin is local wall time, whatever UTC reads"
+    assert row[3].startswith(
+        (utc - datetime.timedelta(days=7)).date().isoformat()
+    ), "modifiers still SQLite's own answer, not a reimplementation"
+    assert row[4] == str(utc.year)
 
 
 @pytest.mark.today(ISO_PIN)
@@ -181,23 +211,46 @@ def test_node_is_pinned_too_because_it_is_a_whole_other_process():
     while the browser code answered with the real one, and nine tests failed on
     a one-day pin looking exactly like real bugs ("show me tomorrow opened
     today"). tests/nodeharness.py hands the subprocess the pinned instant.
+
+    `toISOString()` is UTC, so it is held against Python's frozen UTC clock
+    rather than against ISO_PIN — east of UTC+9 the pin's instant is on the
+    previous UTC day and the two are honestly different (see
+    conftest.pinned_utc_now). node's LOCAL getters are what carry the pinned
+    date, in every zone, because node reads TZ from the environment it
+    inherits; both halves are asserted, which is more than the old form did.
     """
     import json
 
     import nodeharness
 
+    from conftest import pinned_utc_now
+
+    utc = pinned_utc_now()
     res = nodeharness.run_node(
+        "const d = new Date();\n"
         "console.log(JSON.stringify({"
-        "  today: new Date().toISOString().slice(0, 10),"
+        "  today: d.toISOString().slice(0, 10),"
         "  fromNow: new Date(Date.now()).toISOString().slice(0, 10),"
+        "  epoch: Date.now(),"
+        "  local: [d.getFullYear(), d.getMonth() + 1, d.getDate()],"
+        "  localHour: d.getHours(),"
         "  real: new Date('2024-02-29T12:00:00Z').toISOString().slice(0, 10),"
         "  parsed: Date.parse('2024-02-29T00:00:00Z'),"
         "}));\n"
     )
     assert res.returncode == 0, res.stderr
     got = json.loads(res.stdout)
-    assert got["today"] == ISO_PIN
-    assert got["fromNow"] == ISO_PIN, "Date.now() is pinned, not just the constructor"
+    assert got["today"] == utc.date().isoformat(), "node's UTC day is Python's frozen UTC day"
+    assert got["fromNow"] == got["today"], "Date.now() is pinned, not just the constructor"
+    # The instant itself. node's pin is one fixed value for the whole
+    # subprocess, taken when the harness was built, so it lags Python's ticking
+    # clock by however long node took to start — seconds, never hours.
+    pinned_epoch = utc.replace(tzinfo=datetime.timezone.utc).timestamp()
+    assert abs(got["epoch"] / 1000 - pinned_epoch) < 30, (got["epoch"], pinned_epoch)
+    # ...and the day the pin NAMES is node's local wall clock, in every zone.
+    pin = datetime.date.fromisoformat(ISO_PIN)
+    assert got["local"] == [pin.year, pin.month, pin.day], got["local"]
+    assert got["localHour"] == 9, "09:00 local, the same hour Python is pinned to"
     # ...and the real Date is still doing all the work underneath.
     assert got["real"] == "2024-02-29", "a real argument is still answered by the real Date"
     assert got["parsed"] == 1709164800000
@@ -261,19 +314,31 @@ def test_a_row_written_now_carries_the_pinned_date_from_the_schemas_own_default(
     `created_at` values in this app never pass through Python at all. A pin
     that reached only the queries and not the defaults would leave every row
     stamped with the real day while the code that reads it thought otherwise.
+
+    The column is `datetime('now')`, so what lands in it is UTC — held against
+    Python's frozen UTC clock rather than against ISO_PIN, which is the local
+    day and is a different day east of UTC+9 (see conftest.pinned_utc_now).
+    Read back through 'localtime' it is the pinned day again, in every zone.
     """
     from app.db import get_conn
 
+    from conftest import pinned_utc_now
+
+    utc = pinned_utc_now()
     conn = get_conn()
     try:
         conn.execute("INSERT INTO members (household_id, name) VALUES (1, 'Clockcheck')")
         conn.commit()
-        written = conn.execute(
-            "SELECT created_at FROM members WHERE name = 'Clockcheck'"
-        ).fetchone()[0]
+        written, local_day = conn.execute(
+            "SELECT created_at, date(created_at, 'localtime') "
+            "FROM members WHERE name = 'Clockcheck'"
+        ).fetchone()
     finally:
         conn.close()
-    assert written.startswith(ISO_PIN), written
+    assert written.startswith(utc.date().isoformat()), written
+    stamped = datetime.datetime.strptime(written, "%Y-%m-%d %H:%M:%S")
+    assert abs(stamped - utc) < datetime.timedelta(seconds=5), (written, utc)
+    assert local_day == ISO_PIN, (local_day, written)
 
 
 def test_a_pin_does_not_flatten_local_and_utc_together(frozen_today):
@@ -336,6 +401,107 @@ def test_a_pin_does_not_flatten_local_and_utc_together(frozen_today):
         # ...and the naive pair above is the one every reader in app/ uses, so
         # it is the one that has to be right.
         assert datetime.datetime.utcnow().hour == 20
+    finally:
+        if was is None:
+            os.environ.pop("TZ", None)
+        else:
+            os.environ["TZ"] = was
+        _time.tzset()
+
+
+def test_a_pin_east_of_utc_plus_9_holds_every_clock_on_one_instant(frozen_today):
+    """
+    The zone band the pin used to be unusable in, written down as arithmetic.
+
+    A pin is 09:00 LOCAL, so the UTC instant behind it is `09:00 - offset` —
+    which falls on the PREVIOUS calendar day for every zone east of UTC+9.
+    Kiritimati is +14, so a pin of 2026-09-13 freezes at 2026-09-12 19:00 UTC,
+    and SQLite's `'now'`, node's `toISOString()` and every
+    `DEFAULT (datetime('now'))` column honestly read the 12th while
+    `date.today()` reads the 13th. That is not a broken pin: it is what a real
+    server in Kiritimati reads at nine in the morning.
+
+    Three tests in this file used to assert the UTC reads carried the LOCAL
+    date, which is only true at or west of UTC+9. That made
+    `Pacific/Kiritimati` unusable as a CI zone — and Kiritimati is the one zone
+    that closes the straddle job's four-hour blind spot, because it is a
+    different day from Toronto for eighteen hours out of twenty-four. This
+    test is what stops that assertion coming back, in either direction: it
+    fails if the UTC clocks are made to answer local, and it fails if the
+    default pin hour is moved (which cannot fix it anyway — no hour makes the
+    local and UTC dates agree across -12..+14; see conftest.pinned_utc_now).
+
+    Kiritimati has no daylight saving, so this arithmetic is the same in every
+    month.
+    """
+    import json
+    import os
+    import time as _time
+
+    import nodeharness
+    from app.db import get_conn
+
+    was = os.environ.get("TZ")
+    os.environ["TZ"] = "Pacific/Kiritimati"
+    _time.tzset()
+    try:
+        frozen_today(ISO_PIN)
+        # Python: local is the pinned day at 09:00; UTC is fourteen hours behind.
+        assert datetime.date.today() == datetime.date(2026, 9, 13)
+        assert datetime.datetime.now().hour == 9
+        assert datetime.datetime.utcnow().date() == datetime.date(2026, 9, 12)
+        assert datetime.datetime.utcnow().hour == 19
+
+        # SQLite: 'now' is UTC and says so; 'localtime' puts it back on the pin.
+        conn = get_conn()
+        try:
+            conn.execute("INSERT INTO members (household_id, name) VALUES (1, 'Kiribati')")
+            conn.commit()
+            utc_day, local_day, written = conn.execute(
+                "SELECT date('now'), date('now', 'localtime'), created_at "
+                "FROM members WHERE name = 'Kiribati'"
+            ).fetchone()
+        finally:
+            conn.close()
+        assert utc_day == "2026-09-12", utc_day
+        assert local_day == ISO_PIN, local_day
+        assert written.startswith("2026-09-12 19:"), written
+
+        # node: same instant, same split.
+        res = nodeharness.run_node(
+            "const d = new Date();\n"
+            "console.log(JSON.stringify({"
+            "  utc: d.toISOString().slice(0, 10),"
+            "  local: [d.getFullYear(), d.getMonth() + 1, d.getDate()],"
+            "  localHour: d.getHours(),"
+            "}));\n"
+        )
+        assert res.returncode == 0, res.stderr
+        got = json.loads(res.stdout)
+        assert got["utc"] == "2026-09-12", got
+        assert got["local"] == [2026, 9, 13], got
+        assert got["localHour"] == 9, got
+
+        # THE SEAM, one zone further out than test_a_pin_does_not_flatten_local_
+        # and_utc_together measures it, because here it costs a whole DAY rather
+        # than eleven hours: freezegun applies tz_offset on top of an already
+        # tz-aware conversion, so the AWARE now() hands back the local wall time
+        # wearing a UTC label. Honest answer is 2026-09-12 19:00+00:00.
+        # Deliberately not fixed here — the only fixes are patching freezegun or
+        # forcing TZ=UTC for the duration of a pin, and the second would make a
+        # run under an explicitly-set TZ quietly not be that TZ, which is the
+        # whole point of the straddle job. It is invisible today because
+        # conftest.household_today() and cooker.household_now() both read the
+        # aware form, so they are wrong together and agree.
+        aware = datetime.datetime.now(datetime.timezone.utc)
+        assert aware.date() == datetime.date(2026, 9, 13) and aware.hour == 9, (
+            "freezegun's aware now() still double-counts the offset; if this "
+            "starts failing, the seam is closed and this should assert "
+            "2026-09-12 19:00+00:00"
+        )
+        # ...and the naive pair above is the one every guard in this file and
+        # every reader in app/ measures against, so it is the one that matters.
+        assert datetime.datetime.utcnow().date() == datetime.date(2026, 9, 12)
     finally:
         if was is None:
             os.environ.pop("TZ", None)

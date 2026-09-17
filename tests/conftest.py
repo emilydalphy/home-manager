@@ -307,6 +307,41 @@ def _sqlite_now():
     return _dt.datetime.utcnow().isoformat(sep=" ", timespec="milliseconds")
 
 
+def pinned_utc_now() -> _dt.datetime:
+    """
+    The instant every clock in this run is holding, as UTC.
+
+    A pin is LOCAL wall time — `--today=2026-09-13` freezes at 09:00 on the
+    machine's own clock (see `_freeze_args`). But three of the clocks a test
+    has to check answer in UTC, because UTC is what they mean: SQLite's
+    `'now'`, node's `toISOString()`, and every `DEFAULT (datetime('now'))`
+    column in schema.sql. This is the value to hold those against — never the
+    pinned date itself.
+
+    THE TWO ARE NOT THE SAME CALENDAR DAY EVERYWHERE, and that is the whole
+    reason this function exists rather than a literal. The UTC instant behind
+    09:00 local is `09:00 - offset`, which falls on the PREVIOUS day for any
+    zone east of UTC+9 — Kiritimati (+14) freezes at 19:00 the day before, so
+    `date('now')` is honestly the 12th while `date.today()` is the 13th. That
+    is not a broken pin; it is what a real server in that zone reads at nine
+    in the morning, and it is arithmetically unavoidable. For the local and
+    UTC dates to coincide the pinned hour H needs `0 <= H - offset < 24` at
+    every offset a real zone has: H at or after 14:00 to survive UTC+14, and
+    before 12:00 to survive UTC-12. There is no such H, and reading the pin as
+    UTC instead only mirrors the problem (H at or after 12:00, and before
+    10:00). So moving 09:00 cannot fix this, and would cost the one hour that
+    is inside every window the app reasons about.
+
+    `utcnow()`, deliberately, NOT `now(timezone.utc)`. freezegun applies
+    `tz_offset` on top of an already-tz-aware conversion, so the aware form
+    comes back as the local wall time wearing a UTC label — 09:00+00:00 under
+    Kiritimati, where the honest answer is 19:00+00:00 the day before. The
+    naive pair is the one `_sqlite_now` and node's pin are built from, so it
+    is the one a guard has to measure against.
+    """
+    return _dt.datetime.utcnow()
+
+
 # freezegun's default ignore list is a call-stack sniffer: `_should_use_real_time`
 # walks five frames up and, if any of them belongs to a module named in that
 # list, hands back the REAL clock instead of the pinned one. "threading" is in
