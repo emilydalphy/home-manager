@@ -332,18 +332,40 @@ def _digest_lines(now_local: datetime) -> list[str]:
     elif kinds.get("dinner_open", {}).get("key") == f"dinner_open:{now_local.date().isoformat()}":
         # The card carries the app's own reason for opening the slot and
         # the bell repeats it word for word; this line deliberately does
-        # not. A text is a line, not a page: half the sentences
-        # plan_slot_open is handed open with a weekday name ("Thursday I'd
-        # rather ask than guess: …"), which argues with "Tonight" two
-        # words earlier, and the longest of them run past 120 characters —
-        # on the first line, the one build_morning_text always keeps, so
-        # it would crowd the fridge move and the shop out of the 300. A
-        # length test on the reason would be copy that reads differently
+        # not. A text is a line, not a page — and the numbers below are
+        # measured, because the first version of this comment overstated
+        # both of them in defence of a decision that did not need it:
+        #
+        #  - TWO of plan_slot_open's EIGHT call sites open on a weekday
+        #    name ("Thursday I'd rather ask than guess: …"), where it
+        #    argues with "Tonight" two words earlier: the leftovers repair
+        #    (weekly_plan.py) and the generation gap (agent.py). The other
+        #    five with fixed text do not, and the eighth is the model's own
+        #    sentence, so unknowable. Not "half". Two is still enough,
+        #    because this line cannot know which of them opened the night.
+        #
+        #  - LENGTH is the bigger half. Four of the seven fixed reasons run
+        #    past 120 characters and the leftovers repair runs 147 to 179
+        #    depending on the clause it interpolates. This is the FIRST
+        #    line, the one build_morning_text always keeps, so it spends the
+        #    budget before anything else can: measured at the production
+        #    shape (a 46-character link, budget 253), a 179-character first
+        #    line leaves room for ONE of the day's other three jobs where
+        #    the line below leaves room for all three. And the trimmer SKIPS
+        #    a line that doesn't fit and still keeps a later one that does,
+        #    so what goes is whatever is longest, not the tail — with no
+        #    link the same first line drops the shop and keeps the prep
+        #    after it. "Crowds the fridge move and the shop out" is not
+        #    what the algorithm does.
+        #
+        # A length test on the reason would be copy that reads differently
         # depending on which day opened the night, which is worse than
         # either. "your call" is the band's own words
         # (get_needs_you_items' title, "Tonight's dinner needs your
         # call"); the reason itself is one tap away on the card this text
-        # links to.
+        # links to — which also keeps the one model-authored open_reason
+        # (agent.py's per-slot pass) off the SMS channel entirely, a
+        # standing property worth not undoing.
         lines.append("Tonight's still open — it's your call.")
 
     # 2. The freezer. "Move the chicken thighs to the fridge — for

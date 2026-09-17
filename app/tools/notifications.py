@@ -35,8 +35,16 @@ def get_active_notifications() -> list[dict]:
     out = []
 
     # 1. Dinner decision nudge (NOTIFICATIONS.md #1) — reuses the same
-    # dinner-gap detection the Today needs-you band already uses, so the
-    # notification and the band never disagree about what's open.
+    # dinner-gap DETECTION the Today needs-you band already uses, so the
+    # two never disagree about which nights are open.
+    #
+    # What is SHOWN can still differ, and the exception is written down
+    # here rather than left for somebody to find, because a comment of
+    # exactly this shape is what was believed for months below: dismissing
+    # a notification silences the bell and leaves the band's card standing
+    # where it was. That is what a dismissal means in this feed (see
+    # schema.sql's notification_dismissals comment), not the two disagreeing
+    # about a night.
     #
     # BOTH of the band's dinner shapes, which is what makes that sentence
     # true. It said it from the day it was written and the very next line
@@ -77,13 +85,27 @@ def get_active_notifications() -> list[dict]:
             # The app wrote a sentence when it opened this slot
             # (plan_slot_open's open_reason names the constraint), and the
             # card on Now already shows it. Saying anything else here is
-            # the bell and the band disagreeing about one night. The
-            # fallback is the decision body with its untrue half deleted:
-            # an open slot is emphatically not "nothing planned yet". It
-            # is only reachable for a row written past plan_slot_open,
-            # which refuses a blank reason — audit_plan_slots guards the
-            # same state.
-            body = item.get("body") or "Take a look at tonight's options."
+            # the bell and the band disagreeing about one night.
+            #
+            # The fallback names no control and no day, and both halves of
+            # that are deliberate. It must not promise "options": the label
+            # two lines down goes out of its way NOT to say that word when
+            # there are none, and a body promising them underneath it would
+            # be the same small lie by another route. And it must not say
+            # "tonight's" — this card is the SOONEST unsettled dinner,
+            # which is tomorrow's about as often as it is tonight's, and
+            # its own title already says which. ("Tell me what you'd like"
+            # is the card's own button for an open slot with nothing to
+            # tap.) The decision branch below still has both of those and
+            # they are pre-existing; what this branch must not do is add a
+            # second copy of them.
+            #
+            # Unreachable today rather than merely unlikely, and that was
+            # checked rather than assumed: plan_slot_open raises on a blank
+            # reason, all three INSERTs into meal_plan_entries hardcode
+            # slot_state, and nothing in app/ UPDATEs it — so no row can
+            # reach here `open` with nothing to say.
+            body = item.get("body") or "Take a look and tell me what you'd like."
             # "Show options" only when there are any: the commonest open
             # slot has none (drop_dish_from_day plans one with no options
             # at all) and its card offers "Tell me what you'd like

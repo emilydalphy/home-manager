@@ -319,9 +319,20 @@ def test_the_comment_above_the_filter_is_true_again():
     """CATCH. The filter's own comment promised the notification and the
     band never disagree about what's open, and the next line made it
     false. A now-false comment is corrected in the change that makes it
-    false — or, as here, in the change that makes it true."""
-    assert "never disagree about what's open" in NOTIFICATIONS_PY
+    false — or, as here, in the change that makes it true.
+
+    It says "detection" and "which nights are open" now, and it names the
+    one way the two can still differ: a dismissal silences the bell and
+    leaves the band's card standing. Raised on review — the claim was
+    defensible on the "same detection" reading and still not literally
+    true, which is exactly how the original survived."""
+    assert "never disagree about which nights are open" in NOTIFICATIONS_PY
     assert '("dinner_decision", "dinner_open")' in NOTIFICATIONS_PY
+    # ...and the one way the two CAN differ is named rather than left to
+    # be found: a dismissal silences the bell and leaves the card. Review
+    # raised it, and this branch's whole premise is that a comment of this
+    # shape was believed for months.
+    assert "notification_dismissals comment" in NOTIFICATIONS_PY
 
 
 def test_the_dead_server_clock_day_word_is_gone():
@@ -335,3 +346,32 @@ def test_the_dead_server_clock_day_word_is_gone():
     # read. Anything that assigned it would match "day_label =".
     assert "day_label =" not in NOTIFICATIONS_PY
     assert "Don't reinstate it" in NOTIFICATIONS_PY
+
+
+def test_the_reasonless_fallback_names_no_control_and_no_day(monkeypatch):
+    """GUARD, on a state that is unreachable today — plan_slot_open raises
+    on a blank reason, every INSERT hardcodes slot_state and nothing
+    UPDATEs it — so it is driven through the band directly.
+
+    It is here because the line it pins contradicted the line two below it
+    in the first cut: a body promising "options" under a label written to
+    avoid that word when there are none, and "tonight's" on a card that is
+    titled "Tomorrow's dinner needs your call" as often as not. Mutation-
+    checked: either wording back reddens this.
+    """
+    from app.tools import notifications as _notifications
+
+    monkeypatch.setattr(
+        _notifications._weekly_plan, "get_needs_you_items",
+        lambda: [{
+            "type": "dinner_open", "kicker": "DINNER",
+            "title": "Tomorrow’s dinner needs your call",
+            "urgency": "urgent", "date": ISO_TOMORROW, "slot": "dinner",
+            "body": "", "options": [], "week_start": WEEK_START, "weekly_plan_id": 1,
+        }],
+    )
+    bell = _dinner_bell()[0]
+    assert bell["body"] == "Take a look and tell me what you'd like."
+    assert "option" not in bell["body"].lower()
+    assert "tonight" not in bell["body"].lower()
+    assert bell["action_label"] == "Take a look"
