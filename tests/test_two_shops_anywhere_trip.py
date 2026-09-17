@@ -383,6 +383,102 @@ console.log(JSON.stringify({ paused: paused, step: groceryState.step, at: groTri
     assert out["at"] == stop
 
 
+# --- 4b. the same sentence, for an ORDINARY multi-shop household ---------
+# Found by review, and the reason it has a section of its own: this is a
+# strictly BIGGER population than the household the card was written about,
+# and nothing pinned it.
+
+
+@_needs_node
+def test_an_ordinary_multi_shop_trip_is_not_finished_while_the_pile_is_left():
+    """CATCH, and the win this card did not claim until review found it.
+    Nothing here is answered "Anywhere" and nothing falls back to a
+    stand-in stop: two real shops, each with rows of its own, and one thing
+    with no shop.
+
+    A stop’s own rows can leave the list without that stop being finished
+    — the other adult ticks them off on their phone, chat is told "we got
+    the rice", a row is removed or dropped from LIST’s row menu while the
+    trip is paused. Once both shops’ own rows have gone that way and only
+    the shopless foil is left, the open stop holds nothing of its own, so
+    on the unmodified file LIST read "every stop done" over an unbought
+    thing, offered "Finish the trip" and nothing else, and continuing
+    walked into the wrap-up — the card’s sentence exactly, reached without
+    a stand-in stop anywhere near it."""
+    out = _node("""
+const d = twoShops();
+click({ gro: 'start-trip' });
+click({ gro: 'head-for', store: 'Costco' });
+click({ gro: 'trip-pause' });
+// Both shops' own rows leave the list some other way; the foil does not.
+['Costco', 'Metro'].forEach(function (name) {
+  d.stores[name].purchased = d.stores[name].sections[0].items;
+  d.stores[name].sections[0].items = [];
+});
+const paused = { line: groTripPausedLine(d), dock: groDockHtml(d, 'list'),
+  remaining: groRemainingStops(d), costco: groStopRemaining(d, 'Costco'),
+  metro: groStopRemaining(d, 'Metro') };
+click({ gro: 'trip-resume' });
+console.log(JSON.stringify({ paused: paused, step: groceryState.step,
+  at: groTripStore(), items: groTripItems(d).map(function (i) { return i.item; }) }));
+""")
+    assert out["paused"]["costco"] == 1, "nothing of its own, and the foil"
+    assert out["paused"]["metro"] == 0, "and Metro is not owed it as well"
+    assert out["paused"]["remaining"] == ["Costco"]
+    assert out["paused"]["line"] == "Trip in progress · 1 stop left"
+    assert 'data-gro="trip-resume">Continue the trip</button>' in out["paused"]["dock"]
+    assert out["step"] == "trip", "not the wrap-up"
+    assert out["at"] == "Costco"
+    assert out["items"] == ["Foil"]
+
+
+@_needs_node
+def test_but_a_pile_left_once_every_stop_is_BEHIND_you_is_still_not_offered():
+    """CHARACTERISATION — byte-identical on the unmodified file, so this is
+    residue rather than regression, and it is the near neighbour of the
+    test above. The difference is one word: there the open stop was still
+    OPEN, here it has been finished. groRemainingStops filters on
+    `!tripDone[name]` before it asks anything about the pile, so a pile
+    owed at the stop you are standing in is owed at no REMAINING stop once
+    you have finished that stop and the only other one has nothing of its
+    own left.
+
+    Reachable the same way as the test above (rows leaving by another
+    route), and the wrap-up is arguably where such a pile belongs — that is
+    what "Couldn’t find it / Will grab elsewhere / Don’t need anymore" is
+    for. Named so nobody reports it as new. Its own card if it bites.
+
+    It asserts the OUTCOME only, because that is the part that is
+    byte-identical on the unmodified file. The open stop’s own reading does
+    differ (1 here, 0 there — it is owed the foil now), and asserting that
+    would make this red on main for a reason other than the one it is named
+    after, which would prove nothing about the residue it is about. What
+    matters is that the reading is filtered out before anything reads it."""
+    out = _node("""
+const d = twoShops();
+click({ gro: 'start-trip' });
+click({ gro: 'head-for', store: 'Costco' });
+click({ gro: 'stop-done' });                 // Costco is behind us now
+settle(function () {
+  // …and both shops' own rows went elsewhere, leaving only the foil.
+  ['Costco', 'Metro'].forEach(function (name) {
+    d.stores[name].purchased = d.stores[name].purchased.concat(d.stores[name].sections[0].items);
+    d.stores[name].sections[0].items = [];
+  });
+  console.log(JSON.stringify({
+    done: Object.keys(groceryState.tripDone),
+    remaining: groRemainingStops(d),
+    stillToBuy: groTotals(d).needed,
+    line: groTripPausedLine(d)
+  }));
+});
+""")
+    assert out["done"] == ["Costco"]
+    assert out["remaining"] == [], "the open stop is filtered out for being finished"
+    assert out["stillToBuy"] == 1, "over a thing nobody has bought"
+    assert out["line"] == "Trip in progress · every stop done"
+
+
 # --- 5. end to end --------------------------------------------------------
 
 
@@ -549,7 +645,12 @@ def test_where_next_says_the_open_stops_pile_twice_and_that_is_left_alone():
     not false — those two things really are what you would tick if you went
     there now — and suppressing the note for one stop is the kind of
     condition-piling the Grocery region already warns against. Its own card
-    if it ever reads wrong to somebody."""
+    if it ever reads wrong to somebody.
+
+    THIS HOUSEHOLD HAS ONE STOP, SO IT IS THE MILD HALF. The test below is
+    the scope this docstring used to leave out: with several stops the same
+    inflation is an arithmetic error across the screen, not just a repeated
+    sentence. Read the two together."""
     out = _node("""
 const d = anywhere();
 click({ gro: 'start-trip' });
@@ -557,3 +658,55 @@ console.log(JSON.stringify({ next: groNextHtml(d) }));
 """)
     assert "Costco, 2 things left" in out["next"]
     assert "2 things with no shop will come with you." in out["next"]
+
+
+@_needs_node
+def test_and_on_a_multi_shop_where_next_those_cards_add_up_to_more_than_the_list():
+    """CHARACTERISATION, added on review because the test above understated
+    its own scope — and this is the sharper half, because it is an ORDINARY
+    multi-shop household rather than the one this card is about.
+
+    Costco holds two of its own, Metro one, and two things have no shop: a
+    list of five. Back-gesture onto WHERE NEXT with Costco still open and
+    the cards advertise 4 + 1 with a note about 2 more — SEVEN things on a
+    screen about five. On the unmodified file they advertise 2 + 1 and the
+    same note, which is five, i.e. the list.
+
+    So "the sum over the stops is the size of the list" — the property this
+    card's own no-double-counting tests assert over the SNAPSHOT — does not
+    hold over what WHERE NEXT DISPLAYS when the open stop is among the
+    cards. Per card it is still redundant rather than false, and it is
+    display only: tapping the card is guarded (the 'head-for' handler
+    re-reads a live trip the way WHERE NEXT would), so nothing can be
+    written wrongly from here. Left alone deliberately; named so that
+    whoever does fix it knows which property they are restoring."""
+    out = _node("""
+// Costco 2 of its own, Metro 1, two with no shop — a list of five.
+const d = base({ usualStores: ['Costco', 'Metro'], stores: {
+  Unassigned: { sections: rows([item(8, 'Foil', '', 1), item(9, 'Cling film', '', 1)]),
+    purchased: [], inCart: [] },
+  Costco: { sections: rows([item(1, 'Rice', 'Costco', 1), item(2, 'Oats', 'Costco', 1)]),
+    purchased: [], inCart: [] },
+  Metro: { sections: rows([item(3, 'Eggs', 'Metro', 1)]), purchased: [], inCart: [] }
+} });
+click({ gro: 'start-trip' });
+click({ gro: 'head-for', store: 'Costco' });
+goGroceryStep('next');                       // what the back gesture reaches
+const next = groNextHtml(d);
+console.log(JSON.stringify({
+  list: groTotals(d).needed,
+  costco: groStopRemaining(d, 'Costco'),
+  metro: groStopRemaining(d, 'Metro'),
+  ride: groRideAlongItems(d).length,
+  note: next.indexOf('2 things with no shop will come with you.') !== -1,
+  cards: [next.indexOf('Costco, 4 things left') !== -1,
+          next.indexOf('Metro, 1 thing left') !== -1]
+}));
+""")
+    assert out["list"] == 5
+    assert out["costco"] == 4, "its own two, and both shopless things"
+    assert out["metro"] == 1, "and Metro is still owed only its own — never double-counted"
+    assert out["cards"] == [True, True]
+    assert out["note"] is True
+    assert out["costco"] + out["metro"] + out["ride"] == 7, \
+        "seven advertised on a screen about five — the known overstatement"
