@@ -112,7 +112,7 @@ def test_sqlite_is_pinned_too_or_the_pin_is_worse_than_nothing():
     Both clocks or neither.
 
     `datetime('now')` runs inside SQLite, below anything freezegun can reach,
-    and app/ has 183 of them — every created_at, every updated_at, every "has
+    and app/ has 184 of them — every created_at, every updated_at, every "has
     this been touched today?". Pinning Python alone had the app reasoning on
     the pinned date while the rows under it were stamped with the real one, and
     ten tests failed on a ONE-DAY pin for no other reason. tests/sqlite_clock.py
@@ -127,15 +127,25 @@ def test_sqlite_is_pinned_too_or_the_pin_is_worse_than_nothing():
     it was never the claim this test is named after. The claim is "both clocks
     or neither" — so it is held against Python's frozen clock, to the second.
 
-    That is strictly STRONGER than the date prefix it replaces, which matters
-    because the tempting wrong fix for the Kiritimati problem is to make
-    `_sqlite_now` hand over local wall time instead of UTC, and the old form
-    could not see it: measured, that change takes the three tests the card
-    named from 3 failed to 1 under Kiritimati (only node survives, because
-    node is pinned from time.time() rather than from _sqlite_now) and from 0
-    failed to 0 under Toronto — while making 184 `datetime('now')` call sites
-    in app/ stamp rows in a timezone SQLite does not mean. It fails this form
-    in every zone, on the hours.
+    That is strictly STRONGER than the date prefix it replaces, and the
+    tempting wrong fix for the Kiritimati problem is where it shows. Making
+    `_sqlite_now` hand over local wall time instead of UTC would stamp all 184
+    `datetime('now')` call sites in app/ in a timezone SQLite does not mean —
+    and THIS test could not see it: measured, that change takes the three
+    tests the card named from 3 failed to 1 under Kiritimati (only node
+    survives, being pinned from time.time() rather than from _sqlite_now) and
+    leaves all three green at Toronto.
+
+    IT WAS NEVER INVISIBLE TO THE SUITE, THOUGH, and saying so would overstate
+    what this rewrite buys. `test_a_pin_does_not_flatten_local_and_utc_together`
+    at the foot of this file forces TZ=Pacific/Niue internally and reddens on
+    that mutation in EVERY zone — measured on the merge base at 1 failed under
+    UTC, Toronto, Tokyo and Niue, and 2 under Kiritimati — so main's own
+    `pytest` job would have gone red immediately. What the new form adds is
+    catching it HERE, on the HOURS rather than the date: 4 red at Toronto,
+    Tokyo, Niue and Kiritimati. NOT at TZ=UTC, where local IS UTC and the
+    mutation is a no-op for this assertion — worth knowing, because UTC is
+    what the deployed container runs.
     """
     from app.db import get_conn
 
@@ -152,8 +162,11 @@ def test_sqlite_is_pinned_too_or_the_pin_is_worse_than_nothing():
         conn.close()
     assert row[0] == utc.date().isoformat(), "SQLite's UTC day is Python's frozen UTC day"
     # The instant, within a few seconds — tick=True, so the clock moves between
-    # the two reads. An unpinned SQLite is months out and a local-for-UTC mix-up
-    # is hours; neither hides inside this tolerance.
+    # the two reads. An unpinned SQLite is months out, so it can never hide in
+    # here. A local-for-UTC mix-up is the machine's own offset, which is hours
+    # in every zone but ONE: at TZ=UTC it is zero and hides completely. That
+    # case is covered by test_a_pin_does_not_flatten_local_and_utc_together,
+    # which forces a zone of its own rather than trusting the runner's.
     read_at = datetime.datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
     assert abs(read_at - utc) < datetime.timedelta(seconds=5), (row[1], utc)
     # ...and the day the pin NAMES is the local wall clock's, in every zone.
@@ -242,9 +255,11 @@ def test_node_is_pinned_too_because_it_is_a_whole_other_process():
     got = json.loads(res.stdout)
     assert got["today"] == utc.date().isoformat(), "node's UTC day is Python's frozen UTC day"
     assert got["fromNow"] == got["today"], "Date.now() is pinned, not just the constructor"
-    # The instant itself. node's pin is one fixed value for the whole
-    # subprocess, taken when the harness was built, so it lags Python's ticking
-    # clock by however long node took to start — seconds, never hours.
+    # The instant itself. nodeharness._clock_prelude() reads the provider at
+    # run_node() CALL time, once per invocation, and bakes that one value into
+    # the subprocess — so it is fixed inside node however long node takes to
+    # start, and it lags Python's ticking clock only by the moment between the
+    # line above and the call below. Seconds, never hours.
     pinned_epoch = utc.replace(tzinfo=datetime.timezone.utc).timestamp()
     assert abs(got["epoch"] / 1000 - pinned_epoch) < 30, (got["epoch"], pinned_epoch)
     # ...and the day the pin NAMES is node's local wall clock, in every zone.
@@ -310,7 +325,7 @@ def test_the_pinned_clock_fixture_reports_what_the_run_is_on(_pinned_clock, requ
 @pytest.mark.today(ISO_PIN)
 def test_a_row_written_now_carries_the_pinned_date_from_the_schemas_own_default():
     """
-    55 columns in schema.sql are `DEFAULT (datetime('now'))`, so most
+    56 columns in schema.sql are `DEFAULT (datetime('now'))`, so most
     `created_at` values in this app never pass through Python at all. A pin
     that reached only the queries and not the defaults would leave every row
     stamped with the real day while the code that reads it thought otherwise.

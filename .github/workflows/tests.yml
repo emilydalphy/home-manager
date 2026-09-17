@@ -26,16 +26,35 @@ name: Tests
 # are still visible on every PR, and adding a job never breaks an existing
 # required check, so this is safe to land first.
 #
-# THAT IS ALSO WHY KIRITIMATI WAS ADDED RATHER THAN SWAPPED IN FOR TOKYO
-# (2026-09-17). Kiritimati's straddle window strictly contains Tokyo's, so on
-# coverage alone Tokyo is redundant — but removing a matrix entry REMOVES ITS
-# CHECK NAME, and if `straddle (Asia/Tokyo)` is required in branch protection
-# by the time this lands, every PR blocks for ever on a check that can never
-# report, and only somebody with repo settings can undo it. Adding costs one
-# more full suite per PR and cannot do that. Tokyo also earns its place as a
-# live guard on the +9 boundary — it is the exact edge of the bug this closes
-# (09:00 local is 00:00 UTC there), so it is the first zone that would go red
-# if the pin's hour or its offset arithmetic ever moved.
+# KIRITIMATI WAS ADDED RATHER THAN SWAPPED IN FOR TOKYO (2026-09-17), AND THAT
+# IS A DECISION FOR EMILY TO CONFIRM OR REVERSE RATHER THAN A SETTLED ONE.
+# Kiritimati's straddle window strictly contains Tokyo's and leans the same
+# way, so on coverage alone Tokyo now buys nothing: keeping it is one extra
+# full suite on every PR, for ever, for hours Kiritimati already covers.
+#
+# The case for adding rather than swapping is that removing a matrix entry
+# REMOVES ITS CHECK NAME, and a branch-protection rule pointing at
+# `straddle (Asia/Tokyo)` would then block every PR for ever on a check that
+# can never report, undoable only by somebody with repo settings. **Measured
+# 2026-09-17: GitHub reports `main` as "protected": false, so no required
+# check exists today and nothing can actually be stranded right now** — the
+# caveat being that repository RULESETS do not necessarily surface in that
+# field. So this is insurance against a state that does not exist yet, not
+# against one that does.
+#
+# An earlier version of this comment also claimed Tokyo earns its place as a
+# live guard on the +9 boundary (09:00 local is 00:00 UTC there, the exact
+# edge of the bug fixed that day). THAT IS FALSE and is corrected rather than
+# quietly dropped: this job is UNPINNED, so no entry in this matrix exercises
+# pin-hour arithmetic at all. That boundary is guarded by
+# `test_a_bare_date_lands_mid_morning` and
+# `test_a_pin_east_of_utc_plus_9_holds_every_clock_on_one_instant`, which
+# carry their own markers and run in every job including this one.
+#
+# Net, honestly: dropping Tokyo costs nothing measurable today and saves a
+# suite per PR. It is left in because the downside of being wrong about branch
+# protection is unrecoverable without repo access and the downside of the
+# extra job is minutes.
 #
 # NOTE for whoever merges second: if another branch also edits this file, the
 # resolution is KEEP ALL THREE JOBS. They answer three different questions —
@@ -212,13 +231,17 @@ jobs:
     # straddle would look like it worked and would stop working silently the
     # day that seam is fixed.
     #
-    # And a third, measured 2026-09-17: a PINNED run east of UTC+9 fails four
-    # tests around `get_already_have_decisions`, which takes its cutoff from
-    # `date.today()` (the process's local date) and compares it against
-    # `removed_at`, which SQLite stamps in UTC. Pre-existing on main, latent in
-    # production (a UTC container has no gap between those two), and reachable
-    # by no job here precisely because this one is unpinned and `clock` is at
-    # Toronto. Its own card. Do not pin this matrix without fixing it first.
+    # And a third, measured 2026-09-17: a run east of UTC+9 pinned to a MONDAY
+    # fails four tests around `get_already_have_decisions`, which takes its
+    # cutoff from `date.today()` (the process's local date) and compares it
+    # against `removed_at`, which SQLite stamps in UTC. A Monday pin
+    # specifically, because the cutoff falls back to "this Monday" and the
+    # one-day skew puts `removed_at` just the wrong side of it — measured at
+    # Kiritimati, monday is 4 failed and the other six weekdays are 0.
+    # Pre-existing on main, latent in production (a UTC container has no gap
+    # between those two), and reachable by no job here precisely because this
+    # one is unpinned and `clock` is at Toronto. Its own card. Do not pin this
+    # matrix without fixing it first.
     name: straddle (${{ matrix.tz }})
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
