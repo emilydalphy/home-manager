@@ -391,6 +391,107 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-18 — `live_clock` handed a test a clock an hour out whenever the
+  pin was on the other side of a daylight-saving change. Branch
+  `overnight/live-clock-crosses-dst`, NOT merged at the time of writing.**
+  Loop Board Phase 0 bug. Test infrastructure only — **not one line of `app/`
+  or `static/` is touched**, and the code change is four lines in
+  `tests/conftest.py` (the other thirty are the comment saying why).
+  Reproduced on `main` before anything was touched:
+  `TZ=America/Toronto pytest tests/test_frozen_clock.py::test_live_clock_beats_a_pin_including_the_marker_beside_it --today=2026-01-15`
+  fails on `assert 3600.06 < 300`, and passes at `--today=2026-07-04` and in
+  every zone without DST.
+  - **THE EPOCH ARITHMETIC WAS NEVER THE BROKEN HALF, which is why this looked
+    like a flake.** `_real_now()` keeps the real epoch captured before the
+    freeze and adds the frozen clock's own elapsed time back onto it (tick=True
+    means it runs at the real rate), and that is exactly right. The step after
+    it was not: it turned that epoch into a wall clock with
+    `_dt.datetime.fromtimestamp`, which is `FakeDatetime.fromtimestamp` while a
+    freeze is up and, with no tz argument, converts through **the PIN's own
+    `tz_offset`** — the offset that applied on the PINNED date — rather than
+    through the zone's rules at the instant being converted. Measured directly
+    rather than reasoned: at `TZ=America/Toronto` under a January pin, a real
+    September instant came back as 02:21 where `real_datetime.fromtimestamp`
+    said 03:21. `_freeze_args` then read that naive value as September and
+    froze an hour behind the truth.
+  - **The fix is `freezegun.api.real_datetime.fromtimestamp`** — the unpatched
+    class, so the conversion reads the zone as it actually stands. Nothing else
+    moves: the pin is still LOCAL wall time frozen at the UTC instant behind it
+    (`_freeze_args`), and the aware-`now()` seam closed on 2026-09-17 is
+    untouched — both are still pinned by their own tests, which stayed green
+    throughout.
+  - **IT BIT A REAL TEST, NOT ONLY ITS OWN GUARD, and that is the evidence
+    worth quoting.** `tests/test_recipe_photo_import.py` carries `live_clock` at
+    module scope because `sweep_pending` compares `time.time()` against file
+    mtimes. At `TZ=America/Toronto --today=2026-01-15`: **1 failed / 70 passed**
+    against `main`'s conftest (`test_pending_photos_nobody_saved_are_swept_after_a_day`
+    — its fixture is 60 seconds past the cutoff, which an hour of slip swamps),
+    **71 passed** with the fix.
+  - **CI CANNOT REACH THIS AND STILL CANNOT, which is why it needed a test that
+    forces its own pin.** `live_clock` only does anything under a SESSION pin
+    (`_marked_clock` returns early when `_pomona_freezer` is None), so a marker
+    alone cannot reproduce it, and the four `clock` jobs pin by weekday NAME,
+    resolved inside seven days, so they can never cross a change. What does
+    cross one, about half the time, is the far-future-pin sweep — the technique
+    that aged five fixtures out on 2026-09-14.
+  - `tests/test_frozen_clock.py::test_a_pin_across_a_daylight_saving_change_still_restores_the_real_clock`
+    simulates the session pin exactly as `pytest_configure` does (real epoch
+    before, frozen epoch after, the pair written into the globals `_real_now`
+    reads) and then runs the hatch. **It forces `TZ=America/Toronto`** — what
+    the `clock` jobs use, and it observes DST — **and picks whichever of
+    midwinter and midsummer is in the OPPOSITE DST state from the real today**,
+    so it means the same thing in every month and in every runner zone rather
+    than relying on the machine happening to be somewhere with DST. Two
+    assertions: the mechanism (`_real_now()` is the real wall clock) and the
+    consequence (a file written this second reads as written this second).
+    `freezegun.api.real_time` is the unpatched `time.time`, so it is honest
+    even inside a run that is already pinned.
+  - **Mutation numbers, measured both ways.** Against `main`'s `_real_now`:
+    `tests/test_frozen_clock.py` is **1 failed / 18 passed** at
+    `TZ=America/Toronto`, `UTC` and `Asia/Tokyo` — the forced TZ is what makes
+    the runner's zone irrelevant. Each assertion was checked to bite on its
+    own: with the mechanism assertion neutered so the end-to-end one is
+    reached, it still fails in all of Toronto, UTC, Niue and Tokyo. Restored:
+    **19 passed** in all five of those zones plus Kiritimati.
+  - **ONE THING IN THE FIX IS PINNED BY NOTHING AND SAYS SO.** The result is
+    wrapped back into a FakeDatetime so `_parse_pin` takes its `isinstance`
+    branch (`_dt.datetime` is FakeDatetime there). Dropping that wrap leaves the
+    whole suite green — `str()` round-trips a naive datetime through
+    `fromisoformat` without losing a microsecond, so the string branch answers
+    identically. It is there so the call takes the branch it is written for
+    rather than working by accident, and the docstring records that it is a
+    claim rather than a test.
+  - **THE DIRECTION MEASURED IS ONE OF TWO, said plainly.** Built in September,
+    so what was reproduced is a summer today against a winter pin, where the
+    restored clock is an hour BEHIND. The other direction is the same
+    arithmetic with the sign flipped and was NOT measured — the calendar does
+    not allow it today. The new test picks its pin off the real date, so it
+    exercises whichever direction the month puts it in.
+  - **ACCEPTANCE CRITERION 3, ANSWERED BY GREP RATHER THAN BY REASONING:
+    NOTHING ELSE IN THE REPO RECONSTRUCTS A REAL INSTANT FROM A FROZEN ONE.**
+    `_REAL_EPOCH_AT_PIN` / `_FROZEN_EPOCH_AT_PIN` / `_real_now` appear only in
+    `tests/conftest.py`. The three other `fromtimestamp` call sites are a
+    different thing twice over: `test_frozen_clock.py:37` skips under a pin, so
+    no freeze is on, and `test_pin_hour_household_clock.py:123/184` pass an
+    explicit `timezone.utc`, which takes freezegun's aware branch (no
+    `tz_offset` applied at all) and converts the FROZEN clock rather than a
+    reconstructed real one. Every `time.time()` in `app/` — the cookie's age,
+    the rate limiter, the new-sitting gap, `plate_parts`' TTL,
+    `recipe_photos`' cutoff — is elapsed-duration arithmetic on the ticking
+    frozen clock, which tick=True keeps honest.
+  - **Numbers, whole suite, read off the runs on the final tree.**
+    `TZ=America/Toronto` **5671 passed, 0 failed**; `TZ=UTC` **5671 passed, 0
+    failed** — against a 5670/0 baseline on `main` at Toronto, so +1 is this
+    branch's own test exactly and nothing was deleted or weakened. All four
+    CI weekday pins at `TZ=America/Toronto`: monday, friday, saturday and
+    sunday each **5668 passed, 3 skipped, 0 failed** (the 3 are the tests that
+    skip themselves under a pin because they are about the unpinned clock).
+  - **Deliberately not done:** the far-future sweep itself was not re-run over
+    the whole suite, so this fixes the hazard the sweep hits rather than
+    re-auditing what the sweep would find; and `_real_now`'s `_REAL_EPOCH_AT_PIN
+    is None` arm is still unreachable from the only caller (`_marked_clock`
+    checks `_pomona_freezer` first), untouched and unpinned as before.
+
 - **2026-09-17 — Merging the eleven overnight branches of 09-16/17 into
   `main`: two of them fought, and the fight was real.** Eleven branches,
   each green alone, ten of them appending to this log at the same line

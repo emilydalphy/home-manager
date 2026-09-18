@@ -517,10 +517,41 @@ def _real_now():
     tick=True means the frozen clock runs at the real clock's rate, so the gap
     between them is whatever it was when the freeze started. Nothing else can
     answer this once freezegun is on — time.time() is the frozen one.
+
+    THE EPOCH ARITHMETIC IS THE EASY HALF, and it was never the broken one.
+    Turning that epoch back into a wall clock is, and only across a
+    daylight-saving change. `_dt.datetime` is FakeDatetime while a freeze is
+    up, and `FakeDatetime.fromtimestamp` with no tz argument converts through
+    the PIN's own `tz_offset` — the offset that applied on the PINNED date —
+    rather than through the zone's rules at the instant being converted. Those
+    two are the same number all year except when the pin and today sit on
+    opposite sides of a clock change, and then they are an hour apart:
+    measured at TZ=America/Toronto under `--today=2026-01-15`, a real September
+    instant came back as 02:21 while the wall clock read 03:21. So live_clock
+    handed a test a clock an hour out, which is the one thing that marker
+    exists to prevent.
+
+    Invisible to CI — the four `clock` jobs pin by weekday NAME, resolved
+    inside seven days, so they can never cross a change — and roughly a coin
+    flip for the far-future-pin sweep, which is what aged five fixtures out on
+    2026-09-14 and is the reason to keep doing it. `real_datetime` is the
+    unpatched class, so it reads the zone as it actually stands at that
+    instant.
+
+    The wrap back into a FakeDatetime is for `_parse_pin`, which recognises a
+    datetime by `isinstance` and is looking at FakeDatetime here — a bare
+    real_datetime falls through to its string branch instead. NOTHING PINS IT:
+    dropping it leaves the whole suite green, because str() round-trips a naive
+    datetime through fromisoformat without losing a microsecond. It is here so
+    the call takes the branch it is written for rather than working by
+    accident, which is a smaller claim than a test.
     """
     if _REAL_EPOCH_AT_PIN is None:
         return _dt.datetime.now()
-    return _dt.datetime.fromtimestamp(_REAL_EPOCH_AT_PIN + (time.time() - _FROZEN_EPOCH_AT_PIN))
+    real_epoch = _REAL_EPOCH_AT_PIN + (time.time() - _FROZEN_EPOCH_AT_PIN)
+    return freezegun.api.datetime_to_fakedatetime(
+        freezegun.api.real_datetime.fromtimestamp(real_epoch)
+    )
 
 
 @pytest.fixture(autouse=True)
