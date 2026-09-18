@@ -135,8 +135,10 @@
   --celadon-label:  #4F6B5B;  /* label + icon stroke inside celadon tiles */
 
   /*
-    Grocery's per-store avatar colours (shell.js groStoreColor/
-    GRO_STORE_PALETTE). Arbitrary identity colours, not semantic roles —
+    Store identity colours, kept for a future use: they coloured Grocery's
+    per-store avatar until 2026-09-17 (Emily: Shop's root is the checklist,
+    and its cards carry no avatar), so nothing in shell.js reads them
+    today. Arbitrary identity colours, not semantic roles —
     unlike every token above, they are deliberately the SAME value in light
     and dark (not redefined in the dark block below), because the avatar
     always carries --on-accent-ink per Rule 1 and needs to stay a light
@@ -150,7 +152,7 @@
   --store-4: #C7DACD;
   --store-5: #E6D9C4;
   --store-6: #EFD3A9;
-  /* The "Unassigned"/"Any store" fallback (shell.js groStoreColor) — a
+  /* The "Unassigned"/"Any store" fallback of the same retired avatar — a
      quiet neutral, not a store identity, but it shares --store-5's exact
      value and the same "fixed regardless of theme" reasoning: it must NOT
      move to --sand-deep/--hairline-strong's dark value, since it was never

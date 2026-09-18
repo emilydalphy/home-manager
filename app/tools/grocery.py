@@ -829,6 +829,32 @@ def add_grocery_items(items: list, category: str = "other", added_by: str = "use
     return {"added": added, "merged_with_existing": merged}
 
 
+def list_built_at() -> str:
+    """
+    When the household's list was last BUILT, as the UTC timestamp the
+    grocery_items stamps compare against: the most recent approval of a
+    week (weekly_plans.approved_at — approving is what writes the list,
+    see approve_weekly_plan), or seven days ago for a household that has
+    never approved one and shops from a hand-made list.
+
+    This is the window the Shop tab's checklist reads its BOUGHT rows in
+    (list_grocery_list(status='bought'), 2026-09-18). A purchased row is
+    kept for life — staples learn their rhythm from those rows and nothing
+    ever resets one — so "what did we buy off THIS list" cannot be read
+    off the status alone; it is the rows ticked since the list was last
+    built. The next approval moves the window, and last week's ticks stop
+    being drawn as this week's.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT MAX(approved_at) AS at FROM weekly_plans WHERE household_id = ? AND approved_at IS NOT NULL",
+        (household_id(),),
+    ).fetchone()
+    fallback = conn.execute("SELECT datetime('now', '-7 days') AS at").fetchone()["at"]
+    conn.close()
+    return (row["at"] if row and row["at"] else None) or fallback
+
+
 def list_grocery_list(status: str = "needed") -> list[dict]:
     """
     List grocery items, optionally filtered by status: 'needed', 'in_cart',
@@ -840,9 +866,25 @@ def list_grocery_list(status: str = "needed") -> list[dict]:
     'in_cart'/'purchased', items excluded from the list (see
     exclude_grocery_item) are left out automatically — they're still
     tracked, just not shown on the normal shopping list.
+
+    'bought' (2026-09-18, the list is the checklist) is the rows ticked off
+    THIS list: anything in a trolley (in_cart, a status nothing writes any
+    more but an older build may have left), plus the purchased rows whose
+    tick (inventory_added_at, stamped by mark_grocery_item) is since the
+    list was last built — see list_built_at. 'purchased' alone is the
+    household's whole buying history and is what the staples read.
     """
     conn = get_conn()
-    if status == "excluded":
+    if status == "bought":
+        since = list_built_at()
+        rows = conn.execute(
+            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by, staple_id FROM grocery_items "
+            "WHERE household_id = ? AND excluded_from_list = 0 AND (status = 'in_cart' "
+            "OR (status = 'purchased' AND inventory_added_at IS NOT NULL AND inventory_added_at >= ?)) "
+            "ORDER BY category, item",
+            (household_id(), since),
+        ).fetchall()
+    elif status == "excluded":
         rows = conn.execute(
             "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by, staple_id FROM grocery_items "
             "WHERE household_id = ? AND excluded_from_list = 1 ORDER BY category, item",

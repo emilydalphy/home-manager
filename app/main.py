@@ -4178,7 +4178,10 @@ def _stamp_shop_split(items: list[dict]) -> dict | None:
 def get_grocery_list_view(status: str = "needed"):
     """
     Grocery list grouped by store section — powers the dedicated Grocery
-    List view page. status: needed | in_cart | purchased | excluded | all.
+    List view page. status: needed | in_cart | purchased | bought | excluded | all
+    ('bought' is what the Shop tab's checklist draws struck through: the
+    rows ticked off since the list was last built — see
+    tools.list_grocery_list).
     For 'needed', items flagged by get_pre_shop_flags (not yet reviewed)
     are left out here too — they're shown separately in the Grocery
     screen's pinned "Maybe already home" pre-shop check instead, so

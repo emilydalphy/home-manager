@@ -529,10 +529,15 @@ def test_shell_loads_the_offline_module_before_its_own_script():
 
 
 def test_both_ticks_go_through_the_offline_path():
-    trip = SHELL_JS.index("case 'trip-toggle':")
-    assert "groTick(id, 'in_cart');" in SHELL_JS[trip:trip + 200]
-    un = SHELL_JS.index("case 'uncheck':")
-    assert "groTick(id, 'needed');" in SHELL_JS[un:un + 200]
+    """The list's tick and its put-back (groTickLine, 2026-09-18 — the
+    trip's 'trip-toggle' / 'uncheck' until then) both go through groTick:
+    'purchased' straight away rather than the trip's 'in_cart'."""
+    tick = SHELL_JS.index("function groTickLine(")
+    body = SHELL_JS[tick:tick + 700]
+    assert "var next = bought ? 'needed' : 'purchased';" in body
+    assert "groTick(id, next);" in body
+    assert "groTick(id, bought ? 'purchased' : 'needed');" in body, "the toast's way back is the same tap the other way"
+    assert "'in_cart'" not in body
 
 
 def test_a_failed_load_falls_back_to_the_copy_and_keeps_the_step():
@@ -619,7 +624,7 @@ def test_online_and_offline_events_are_wired_when_the_screen_is_built():
 def _grocery_region() -> str:
     """The whole Grocery region, from its icons to the hands-free voice
     code — the same slice tests/test_grocery_fast_sort.py runs."""
-    start = SHELL_JS.index("  var GRO_STORE_PALETTE = [")
+    start = SHELL_JS.index("  var GRO_ICONS = {")
     end = SHELL_JS.index("  // ---------- Hands-free voice ----------", start)
     return SHELL_JS[start:end]
 

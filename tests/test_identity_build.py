@@ -79,18 +79,19 @@ _BAND_JS = (
     + _function("dayName")
     + _function("cookBandEyebrow")
     + "function groPlural(n, one, many){ return n + ' ' + (n === 1 ? one : many); }\n"
-    "function groTotals(d){ return { needed: d.needed }; }\n"
-    "function groStoresWithNeeded(d){ return d.stops; }\n"
-    # 2026-09-16 ("One list is fine" can start a trip): the eyebrow drops the
-    # stops clause for a stop that is the one-list stand-in, so it asks
-    # groIsStandIn now. That predicate runs for real here — only its
-    # groPillStores is stubbed, from the same fake the neighbours above use,
-    # where the stops ARE the shops. The stops these tests pass are ordinary
-    # shop names, so nothing they assert moves.
+    "function groTotals(d){ return { all: d.all }; }\n"
+    "function groStoresOnList(d){ return d.stops; }\n"
+    # The band's line drops the stores clause for the one-list stand-in, so
+    # it asks groIsStandIn. That predicate runs for real here — only its
+    # groPillStores is stubbed, where the stops ARE the shops. The stops
+    # these tests pass are ordinary shop names, so nothing they assert moves.
     "var GRO_ONE_LIST_STOP = 'Your list';\n"
     "function groPillStores(d){ return d.stops || []; }\n"
     + _function("groIsStandIn")
-    + _function("groBandEyebrow")
+    # Shop's band: the eyebrow constant, the number words and the two
+    # builders, as one region (2026-09-18: "This week · 14 things, two
+    # stores.").
+    + _region("  var GRO_BAND_EYEBROW = ", "  // ---------- LIST ----------")
     + """
 function el() { return { textContent: '', hidden: false, dataset: {} }; }
 function bandPanel(eyebrow, sub) {
@@ -233,31 +234,35 @@ def test_now_hands_the_band_todays_date_as_its_eyebrow():
 
 
 @_needs_node
-def test_shop_and_cook_lead_their_lines_with_the_date_under_wordmark_only():
+def test_shop_and_cook_lead_their_lines_with_their_eyebrow_under_wordmark_only():
+    """Cook's eyebrow is the date; Shop's is "This week" (Emily's
+    shopping-list mockup, 2026-09-18 — it was the date with the list's
+    count until then). Under 'wordmark' each leads its own sub-line."""
     out = _node(
         _BAND_JS
         + "var r = {};\n"
         + "BAND_IDENTITY = 'wordmark';\n"
-        + "r.shop = groBandEyebrow({ needed: 60, stops: ['A'] });\n"
-        + "r.shopNone = groBandEyebrow({ needed: 0, stops: [] });\n"
+        + "r.shop = groBandEyebrow({ all: 60, stops: ['A'] });\n"
+        + "r.shopNone = groBandEyebrow({ all: 0, stops: [] });\n"
         + "r.cook = cookBandEyebrow('2026-09-13');\n"
         + "r.cookLine = after(bandPanel(cookBandEyebrow('2026-09-13'), ''), { sub: '1 cook tonight' }).sub;\n"
-        + "r.shopLine = after(bandPanel(r.shop, ''), { sub: '' }).sub;\n"
+        + "r.shopLine = after(bandPanel(r.shop, ''), { sub: groBandLine({ all: 14, stops: ['A', 'B'] }) }).sub;\n"
+        + "r.shopLineNone = after(bandPanel(r.shopNone, ''), { sub: groBandLine({ all: 0, stops: [] }) }).sub;\n"
         + "BAND_IDENTITY = 'mark';\n"
-        + "r.shopMark = groBandEyebrow({ needed: 60, stops: ['A'] });\n"
+        + "r.shopMark = groBandEyebrow({ all: 60, stops: ['A'] });\n"
         + "r.cookMark = cookBandEyebrow('2026-09-13');\n"
         + "BAND_IDENTITY = 'none';\n"
-        + "r.shopPlain = groBandEyebrow({ needed: 60, stops: ['A'] });\n"
+        + "r.shopPlain = groBandEyebrow({ all: 60, stops: ['A'] });\n"
         + "r.cookPlain = cookBandEyebrow('2026-09-13');\n"
         + "console.log(JSON.stringify(r));"
     )
-    assert re.fullmatch(DATE_RE + r" · 60 things · 1 stop", out["shop"]), out["shop"]
-    assert re.fullmatch(DATE_RE, out["shopNone"]), "nothing to buy: the day alone"
-    assert out["shopLine"] == out["shop"]
+    assert out["shop"] == "This week" and out["shopNone"] == "This week"
+    assert out["shopLine"] == "This week · 14 things, two stores."
+    assert out["shopLineNone"] == "This week", "nothing to buy: the eyebrow alone — the empty moment says the rest"
     assert out["cook"] == "Sunday, Sep 13"
     assert out["cookLine"] == "Sunday, Sep 13 · 1 cook tonight"
     # B and the old band keep the eyebrows they had.
-    assert out["shopMark"] == "60 things · 1 stop" and out["shopPlain"] == "60 things · 1 stop"
+    assert out["shopMark"] == "This week" and out["shopPlain"] == "This week"
     assert out["cookMark"] == "Sunday" and out["cookPlain"] == "Sunday"
 
 
@@ -270,7 +275,7 @@ def test_plan_and_cook_pass_through_the_same_band_builder():
     assert "setRootBand(panel, 'kit-band', { eyebrow: cookBandEyebrow(todayIso) });" in kitchen
     assert "setRootBand(panel, 'kit-band', { sub: kitchenSubtitle(rows, meals, todayIso) });" in kitchen
     shop = _function("renderGrocery")
-    assert "setRootBand(panel, 'gro-band', { eyebrow: groBandEyebrow(data), sub: groTripPausedLine(data) });" in shop
+    assert "setRootBand(panel, 'gro-band', { eyebrow: groBandEyebrow(data), sub: groBandLine(data) });" in shop
 
 
 def test_the_band_brand_css_is_the_canvas_sizes_from_tokens():

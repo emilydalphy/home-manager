@@ -32,19 +32,12 @@ from datetime import date, datetime, time
 from pathlib import Path
 
 import nodeharness
-import pytest
-from test_shop_trip_exit import _STUB, _grocery_block
+from shop_harness import CLICK as _CLICK, SHELL_CSS, SHELL_JS, STUB as _STUB, grocery_block as _grocery_block, needs_node
 
 from app import tools
 from app.tools import moves as _moves
 
-REPO = Path(__file__).resolve().parent.parent
-SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
-SHELL_CSS = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
-
-_needs_node = pytest.mark.skipif(
-    shutil.which("node") is None, reason="node is needed to execute the shell's own functions"
-)
+_needs_node = needs_node
 
 # groIsBuilt/renderGrocery need a panel the harness does not have — replaced
 # after the region loads, which a function declaration allows. loadGrocery
@@ -54,6 +47,19 @@ var RENDERS = 0;
 groIsBuilt = function () { return true; };
 renderGrocery = function () { RENDERS += 1; };
 function posts(url) { return POSTS.filter(function (p) { return p.url.indexOf(url) !== -1; }).map(function (p) { return p.url; }); }
+function twoShops() {
+  groceryState.data = { stores: {
+    Unassigned: { sections: [], purchased: [], inCart: [] },
+    Costco: { sections: [{ section: 'other', items: [
+      { id: 1, item: 'Rice', quantity: '1', store: 'Costco', store_decided: 1, status: 'needed' },
+      { id: 2, item: 'Oats', quantity: '1', store: 'Costco', store_decided: 1, status: 'needed' }] }], purchased: [], inCart: [] },
+    Metro: { sections: [{ section: 'other', items: [
+      { id: 3, item: 'Eggs', quantity: '1', store: 'Metro', store_decided: 1, status: 'needed' }] }], purchased: [], inCart: [] }
+  } };
+  groceryState.usualStores = ['Costco', 'Metro'];
+  groceryState.storesPromptDismissed = true;
+  groceryState.step = 'list';
+}
 function listWith(aside) {
   twoShops();
   groceryState.alreadyHaveSummary = { already_have: [], elsewhere: aside || [] };
@@ -62,7 +68,7 @@ function listWith(aside) {
 
 
 def _node(body: str):
-    res = nodeharness.run_node(_STUB + _grocery_block() + _PATCH + body, timeout=30)
+    res = nodeharness.run_node(_STUB + _grocery_block() + _CLICK + _PATCH + body, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout.strip())
 
@@ -71,27 +77,27 @@ def _node(body: str):
 
 
 @_needs_node
-def test_the_chip_says_what_it_does_in_both_places_and_the_old_words_are_gone():
+def test_the_chip_says_what_it_does_and_the_old_words_are_gone():
+    """On the row's ⋯ — the one place it lives since the sort queue went
+    (2026-09-18); SORT ALL's rows have Have it / Use something else and
+    the shops, not this."""
     out = _node("""
 twoShops();
 groceryState.openRowId = '1';
 groceryState.data.stores.Unassigned.sections = [{ section: 'other', items: [
-  { id: 7, item: 'Whole chicken', quantity: '1', store: '', store_decided: 0 }] }];
+  { id: 7, item: 'Whole chicken', quantity: '1', store: '', store_decided: 0, status: 'needed' }] }];
 console.log(JSON.stringify({
   row: groRowMenuHtml(groceryState.data.stores.Costco.sections[0].items[0], groceryState.data),
-  sort: groSortHtml(groceryState.data)
+  sortall: groSortAllHtml(groceryState.data)
 }));
 """)
-    for html in (out["row"], out["sort"]):
-        assert html.count(">Getting it elsewhere</button>") == 1
-        assert "Somewhere else" not in html
-        assert 'class="gro-pill gro-pill-else"' in html
-    assert 'data-gro="row-exclude" data-id="1" data-name="Rice"' in out["row"]
-    assert 'data-gro="triage-exclude" data-id="7" data-name="Whole chicken"' in out["sort"]
-    assert 'aria-label="Getting Whole chicken elsewhere"' in out["sort"]
-    # Beside it on SORT's card, "Add a new store" is a different kind of
-    # thing and wears a different class.
-    assert 'class="gro-pill gro-pill-add"' in out["sort"]
+    html = out["row"]
+    assert html.count(">Getting it elsewhere</button>") == 1
+    assert "Somewhere else" not in html
+    assert 'class="gro-pill gro-pill-else"' in html
+    assert 'data-gro="row-exclude" data-id="1" data-name="Rice"' in html
+    assert 'aria-label="Getting Rice elsewhere"' in html
+    assert "triage-exclude" not in out["sortall"] and "triage-exclude" not in SHELL_JS
 
 
 def test_the_chip_and_the_foot_wording_are_one_line_changes():
@@ -101,7 +107,7 @@ def test_the_chip_and_the_foot_wording_are_one_line_changes():
     assert "var GRO_ELSEWHERE_BACK = 'Put it back';" in SHELL_JS
     # And nothing renders the chip's words directly.
     assert SHELL_JS.count(">Getting it elsewhere<") == 0
-    assert SHELL_JS.count("escapeHtml(GRO_ELSEWHERE_CHIP)") == 1, "one renderer, two call sites"
+    assert SHELL_JS.count("escapeHtml(GRO_ELSEWHERE_CHIP)") == 1, "one renderer"
 
 
 def test_the_chip_is_visually_apart_from_add_a_new_store():
@@ -129,7 +135,7 @@ settle(function () {
   toast.action.onClick();
   settle(function () {
     console.log(JSON.stringify({
-      before: before, posts: posts('/api/grocery-list/1/'), after: lastToast(), removed: posts('/remove').length
+      before: before, posts: posts('/api/grocery-list/1/'), after: lastToast().msg, removed: posts('/remove').length
     }));
   });
 });
@@ -141,43 +147,6 @@ settle(function () {
     assert out["posts"] == ["/api/grocery-list/1/exclude", "/api/grocery-list/1/include"]
     assert out["after"] == "Put back."
     assert out["removed"] == 0, "set aside is never a delete"
-
-
-@_needs_node
-def test_sorts_chip_sets_aside_advances_the_queue_and_still_offers_the_undo():
-    """The queue moves on as before (groAdvanceSort runs once the write has
-    landed), and the undo toast is the later one — it is the last tap's,
-    so it wins over the queue's own "All sorted.". The harness has no
-    panel, so loadGrocery never re-reads the list: the queue's advance is
-    seen as its re-render, and the finish is forced by emptying the queue
-    by hand before the second tap."""
-    out = _node("""
-listWith();
-groceryState.step = 'sort';
-groceryState.data.stores.Unassigned.sections = [{ section: 'other', items: [
-  { id: 7, item: 'Whole chicken', quantity: '1', store: '', store_decided: 0 },
-  { id: 8, item: 'Sourdough', quantity: '', store: '', store_decided: 0 }] }];
-click({ gro: 'triage-exclude', id: '7', name: 'Whole chicken' });
-settle(function () {
-  const first = { toasts: TOASTS.map(function (t) { return t.msg; }), renders: RENDERS, step: groceryState.step };
-  groceryState.data.stores.Unassigned.sections = [];
-  click({ gro: 'triage-exclude', id: '8', name: 'Sourdough' });
-  settle(function () {
-    console.log(JSON.stringify({
-      first: first,
-      toasts: TOASTS.map(function (t) { return t.msg; }),
-      undo: TOASTS[TOASTS.length - 1].action.label,
-      step: groceryState.step, posts: posts('/exclude')
-    }));
-  });
-});
-""")
-    assert out["posts"] == ["/api/grocery-list/7/exclude", "/api/grocery-list/8/exclude"]
-    assert out["first"]["renders"] >= 1 and out["first"]["step"] == "sort", "one down, the queue re-draws on the next"
-    assert out["first"]["toasts"] == ["Whole chicken set aside — getting it elsewhere."]
-    assert out["step"] == "list", "the last thing to sort was set aside, so the queue is done"
-    assert out["toasts"][-2:] == ["All sorted.", "Sourdough set aside — getting it elsewhere."]
-    assert out["undo"] == "Undo"
 
 
 @_needs_node
@@ -208,7 +177,7 @@ listWith([{ id: 7, item: 'Whole chicken', quantity: '1', category: 'meat' }, { i
 const html = groListHtml(groceryState.data);
 click({ gro: 'elsewhere-back', id: '7', name: 'Whole chicken' });
 settle(function () {
-  console.log(JSON.stringify({ html: html, posts: posts('/api/grocery-list/7/'), toast: lastToast() }));
+  console.log(JSON.stringify({ html: html, posts: posts('/api/grocery-list/7/'), toast: lastToast().msg }));
 });
 """)
     html = out["html"]
@@ -221,7 +190,7 @@ settle(function () {
     assert '<span class="gro-qty">1</span>' in foot
     assert "flag-toggle" not in foot and "staples-toggle" not in foot, "not a fold — the rows are in view"
     # Below the store cards.
-    assert html.index("gro-elsewhere") > html.index("Costco")
+    assert html.index("gro-elsewhere") > html.index('data-store="Costco"')
     assert out["posts"] == ["/api/grocery-list/7/include"]
     assert out["toast"] == "Put back."
 
@@ -250,11 +219,12 @@ def test_the_foot_is_quiet_and_its_tap_is_44px():
     assert "min-height: 44px" in act and "min-width: 44px" in act
 
 
-def test_the_wrap_up_keeps_its_own_way_back():
-    """WRAP UP's "Actually, get it here" is untouched — same row, same
-    /include, same handler."""
-    assert "'undo-elsewhere', 'Actually, get it here'" in SHELL_JS
-    assert "case 'undo-elsewhere':" in SHELL_JS
+def test_the_foot_is_the_one_way_back():
+    """The wrap-up's "Actually, get it here" went with the wrap-up
+    (2026-09-18); the foot's "Put it back" is the way back, on the same
+    /include the toast's Undo runs."""
+    assert "undo-elsewhere" not in SHELL_JS
+    assert "case 'elsewhere-back':" in SHELL_JS
 
 
 # --- 4. the routes and the counts -----------------------------------------------

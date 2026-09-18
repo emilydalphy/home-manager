@@ -30,7 +30,7 @@ import pytest
 import nodeharness
 from test_contrast import contrast
 from test_prep_questions_step import _light_and_dark
-from test_shop_trip_exit import _node as _gro_node
+from shop_harness import run as _gro_node
 from test_week_seven_tiles import _extract, _extract_var
 
 REPO = Path(__file__).resolve().parent.parent
@@ -149,43 +149,18 @@ def test_the_review_dock_is_wired_to_the_same_landing_as_all_set():
 
 
 @_needs_node
-def test_the_shop_list_offers_see_the_week_beside_start_the_trip():
+def test_the_shop_root_has_no_dock_and_no_see_the_week_link():
+    """Until 2026-09-18 the list's dock read "Start the trip" with "See the
+    week" as its quiet link. The list is the checklist now: the root has
+    no dock (ticking a row is the action) and the week is one tap away on
+    the tab bar, so the link went with the trip."""
     out = _gro_node("""
-twoShops();
+setUp(0, [{ store: 'Costco', items: [{ id: 1, item: 'Rice', quantity: '1', store: 'Costco', store_decided: 1, status: 'needed' }] }]);
 console.log(JSON.stringify(groDockHtml(groceryState.data, 'list')));
 """)
-    assert out.startswith('<div class="dock-row">')
-    assert 'data-gro="start-trip">Start the trip</button>' in out
-    assert '<button type="button" class="dock-link" data-gro="see-week">See the week</button>' in out
-    assert out.count("gro-primary") == 1, "Rule 5: the week is a quiet link, never a second fill"
-
-
-@_needs_node
-def test_see_the_week_lands_on_the_tiles_of_an_approved_week_and_on_the_root_otherwise():
-    out = _gro_node(
-        _extract("weekPlanState", SHELL_JS)
-        + """
-var STEPS = [];
-function goMealsStep(step) { STEPS.push(step); }
-var reviewState = { view: 'eating' };
-var weekState = { data: null };
-twoShops();
-click({ gro: 'see-week' });
-var unloaded = { tabs: TAB_SWITCHES.slice(), steps: STEPS.slice(), view: reviewState.view };
-weekState.data = { weekly_plan_id: 7, status: 'draft', days: [{}] };
-click({ gro: 'see-week' });
-var draft = { tabs: TAB_SWITCHES.slice(), steps: STEPS.slice(), view: reviewState.view };
-weekState.data = { weekly_plan_id: 7, status: 'approved', days: [{}] };
-click({ gro: 'see-week' });
-var set = { tabs: TAB_SWITCHES.slice(), steps: STEPS.slice(), view: reviewState.view };
-console.log(JSON.stringify({ unloaded: unloaded, draft: draft, set: set }));
-"""
-    )
-    assert out["unloaded"] == {"tabs": ["week"], "steps": [], "view": "eating"}, "no week loaded: the Plan root"
-    assert out["draft"] == {"tabs": ["week", "week"], "steps": [], "view": "eating"}, "a draft's root is its review"
-    assert out["set"] == {"tabs": ["week", "week", "week"], "steps": ["review"], "view": "days"}, (
-        "an approved week: the seven tiles, the same landing as All set's own See the week"
-    )
+    assert out == ""
+    assert 'data-gro="see-week"' not in SHELL_JS
+    assert 'data-gro="start-trip"' not in SHELL_JS
 
 
 # ---------- Leaving Plan ends the All set screen ----------
@@ -200,7 +175,6 @@ def _activate_tab_harness(step: str, leave_for: str) -> str:
         "var panels = { today: el(), week: el(), grocery: el(), kitchen: el() };\n"
         "var document = { querySelectorAll: function () { return []; } };\n"
         "var window = { location: { pathname: '/week' }, history: { pushState: function () {}, replaceState: function () {} } };\n"
-        "var groceryState = { justFinishedTrip: false };\n"
         "var cookState = { focusOrigin: null };\n"
         "var scrollEl = null;\n"
         "function closeKitchenSheet() {} function stopCookVoice() {} function animateTabPanelIn() {}\n"

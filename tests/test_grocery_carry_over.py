@@ -447,7 +447,7 @@ function setUp(n, carried) {
 
 
 def _grocery_block() -> str:
-    start = SHELL_JS.index("  var GRO_CATEGORY_LABELS = {")
+    start = SHELL_JS.index("  var GRO_ICONS = {")
     end = SHELL_JS.index("  // ---------- Hands-free voice ----------", start)
     return SHELL_JS[start:end]
 

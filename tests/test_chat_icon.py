@@ -96,8 +96,11 @@ def test_cook_roots_more_row_clears_the_fab_when_its_dock_is_empty():
     assert ".kit-body:not(:has(+ .dock:not([hidden]))) { padding-bottom: 70px; }" in SHELL_CSS
 
 
-def test_shops_add_row_clears_the_fab_when_its_dock_is_empty():
-    assert ".gro-foot:not(:has(+ .gro-dock:not(:empty))) { padding-bottom: 70px; }" in SHELL_CSS
+def test_shops_list_clears_the_fab_when_its_dock_is_empty():
+    """The root has no dock since 2026-09-18 (the list is the checklist),
+    so the body itself clears the FAB; the add row moved from the foot to
+    the top of the list the same day."""
+    assert ".gro-body:has(+ .gro-dock:empty) { padding-bottom: 70px; }" in SHELL_CSS
 
 
 def test_nows_content_clears_the_fab_when_its_dock_is_hidden():

@@ -301,24 +301,29 @@ console.log(JSON.stringify({
 
 @_needs_node
 def test_the_card_owns_the_screens_one_apricot_while_it_is_up():
-    """Rule 5. LIST returns the card INSTEAD of its stops, so "Start the
-    trip" would be a second apricot pointing at stores that aren't on the
-    screen. It reads groDockHtml as of nav v2 part 2 (2026-09-10): the
-    step's action moved out of the scrolling foot and into the dock, which
-    is also rule 2's "a screen with no single action has no dock" case."""
+    """Rule 5. The card's own button is the screen's one apricot while it
+    is up, and the root has no dock either way since 2026-09-18 (the list
+    is the checklist; ticking a row is the action) — so the only thing to
+    check is that the card is drawn above the list's rows, and nothing
+    else on the screen is apricot."""
     out = _node("""
 data.stores['Costco'] = { sections: [{ section: 'other', items: [
-  { id: 9, item: 'Eggs', quantity: '1', store: 'Costco' } ] }], purchased: [], inCart: [] };
-const whileAsking = groDockHtml(data, 'list');
+  { id: 9, item: 'Eggs', quantity: '1', store: 'Costco', status: 'needed' } ] }], purchased: [], inCart: [] };
+const whileAsking = groListHtml(data);
+const dockWhileAsking = groDockHtml(data, 'list');
 groceryState.storesPromptDismissed = true;
-const afterAnswering = groDockHtml(data, 'list');
+const afterAnswering = groListHtml(data);
 console.log(JSON.stringify({
-  whileAsking: whileAsking.indexOf('start-trip') !== -1,
-  afterAnswering: afterAnswering.indexOf('start-trip') !== -1
+  cardWhileAsking: whileAsking.indexOf('gro-stores-prompt') !== -1,
+  primaryCount: (whileAsking.match(/gro-primary/g) || []).length,
+  dockWhileAsking: dockWhileAsking,
+  cardAfter: afterAnswering.indexOf('gro-stores-prompt') !== -1,
+  primaryAfter: (afterAnswering.match(/gro-primary/g) || []).length
 }));
 """)
-    assert out["whileAsking"] is False
-    assert out["afterAnswering"] is True
+    assert out["cardWhileAsking"] is True and out["primaryCount"] == 1
+    assert out["dockWhileAsking"] == ""
+    assert out["cardAfter"] is False and out["primaryAfter"] == 0
 
 
 # --- 4. the shops picked here are the shops offered later -----------------
@@ -332,13 +337,15 @@ groToggleUsualStore('Costco')
   .then(function () { return groAddUsualStore('Kim’s Market'); })
   .then(function () { return groToggleUsualStore('Metro'); })
   .then(function () {
-    const sort = groSortHtml(data), pills = [], re = /data-gro="assign"[^>]*data-store="([^"]*)"/g;
+    const sort = groSortAllHtml(data), pills = [], re = /data-gro="sortall-pick"[^>]*data-store="([^"]*)"/g;
     let m; while ((m = re.exec(sort)) !== null) pills.push(m[1]);
-    console.log(JSON.stringify({ offered: groPillStores(data), sortPills: pills }));
+    const rows = (sort.match(/gro-sortall-row/g) || []).length;
+    console.log(JSON.stringify({ offered: groPillStores(data), sortPills: pills.slice(0, pills.length / rows), rows: rows }));
   });
 """)
     assert out["offered"] == ["Costco", "Kim’s Market"]
-    # The sort card's own chips, in order, ending on the store-less "Any".
+    # SORT ALL's chips on each row, in order, ending on the store-less "Any".
+    assert out["rows"] >= 1
     assert out["sortPills"] == ["Costco", "Kim’s Market", ""]
 
 
