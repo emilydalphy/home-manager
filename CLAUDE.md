@@ -996,7 +996,254 @@ why*, not duplicating the diff.
     because `requirements-dev.txt` pins `freezegun==1.5.5` exactly and this
     file already depends on three other internals of it, but it is a thing to
     check on an upgrade.
-
+- **2026-09-18 — Marking a night away is ONE transaction, and so is coming
+  back. Branch `overnight/away-night-atomic`, NOT merged at the time of
+  writing.** Loop Board Phase 0 bug, and the seam `tonight-night-off`
+  (2026-09-15) names three times in its own entry as being in this exact
+  function and deliberately leaves — its `_settle_night_off` docstring
+  names `set_slot_need` as the sibling with two commits, and the entry
+  corrects itself for once having called that "an accepted deferral".
+  (**`drop-dish-atomic` does NOT name it, and the first version of this
+  entry said both branches did.** Checked rather than remembered: the
+  string `slot_need` appears nowhere in that entry, whose
+  "deliberately NOT fixed" bullet is about `add_dish_day` and
+  `swap_meal_in_plan`. Its tests are still this file's model; its entry is
+  not its provenance.) `slot_needs.set_slot_need`'s away conversion was
+  `clear_plan_slot` then `plan_slot_empty`, two connections and two
+  commits. Reproduced over the real function on a throwaway DB before
+  anything was touched, with `plan_slot_empty` made to raise: before
+  `[{'slot_state': 'planned', 'recipe_id': 1}]` and `[('Black beans', '1
+  can'), ('Onion', '1')]`, after `[]` and `[]` — the dinner gone, its
+  ingredients already off the shopping list, the slot genuinely ABSENT
+  (the one state schema.sql, `audit_plan_slots` and `plan_slot_open`'s own
+  docstring all say cannot exist), under a route answering 500 and a
+  screen saying nothing had been saved. Which was false. After: both
+  byte-identical.
+  - **THREE copies of that pair, not the two the ticket names, and all
+    three are converted.** `_reopen_away_slot` (somebody comes back, so
+    the night is handed back as an open question) is `clear_plan_slot`
+    then `plan_slot_open` — reproduced the same way, `planned_empty` →
+    `[]`. And `apply_slot_needs_to_plan`, the belt-and-braces pass over a
+    just-generated week, carried a third. Leaving that one would have been
+    the half-converted module this repo's own rule warns about
+    (`freezer-ask-household-clock`, 2026-09-17), and one shared private
+    helper is less code than two conversions plus a duplicate.
+  - **`_settle_slot_empty` is that helper, and it is
+    `tonight._settle_night_off`'s shape rather than a second one.** Given a
+    connection it writes on it and neither commits nor closes; left unset
+    it opens its own, takes `BEGIN IMMEDIATE` and commits once.
+    `apply_slot_needs_to_plan` takes the second form: its away slots are
+    independent of each other, so **one transaction per slot, not per
+    week** — the invariant that matters there is that no single slot is
+    left absent, not that the week's whole pass is atomic.
+  - **THE WIN IN THE GOING-AWAY DIRECTION IS BIGGER THAN "a milder wrong",
+    which is how the first version of this entry framed it, and it is the
+    half worth reading first.** Driven through the door a household
+    actually uses — `set_slot_attendance` with nobody home, which reaches
+    this through `attendance._sync_away_need` — and with `plan_slot_empty`
+    made to raise. **On main**: `rows []`, need `away`, and the retry is
+    the same tap, which `_sync_away_need` answers `already_away` and does
+    nothing about, because the need row committed before the conversion
+    was attempted. So the slot is absent, `audit_plan_slots` reports it
+    MISSING, and it stays that way FOR EVER. **On this branch**: `rows
+    ['planned']`, need `normal`, groceries untouched, and the same tap
+    again converts it correctly. Not a smaller wrong — a state that heals
+    where main's does not.
+  - **NOTHING HAD TO BE DEFERRED PAST THE COMMIT, unlike `drop-dish-atomic`
+    — and that is measured rather than reasoned.** The step that could not
+    join there was the leftover source's grocery rescale, which re-enters
+    the ingest tree; `swap-atomic` gave that whole tree a `conn`, and
+    `clear_plan_slot` given a connection already runs the rescale inside
+    the transaction. The evidence is the mutation below: putting ONE nested
+    WRITING `get_conn` back makes the file take **66 and 76 seconds on two
+    runs** instead of 1.0 — the figure moves with the machine and the point
+    is the order of magnitude — because the nested connection sits out
+    SQLite's busy timeout. That is the intermittent "database is locked"
+    this class produces, reproduced on purpose; the unmutated path shows
+    none of it.
+  - **`weekly_plan.get_plan_id_for_date` gained the same optional `conn=`
+    its neighbours have — and it is HYGIENE, not a deadlock fix. The first
+    version of this entry and the docstring it quoted both said that read
+    "fails as an intermittent 'database is locked'", and that is false.**
+    Measured: revert that one line, so the lookup opens its own connection
+    from inside the open write transaction, and the file takes **0.83s
+    with exactly ONE test red** — the connection-counting one. No hang at
+    all, because this is a SELECT and SQLite lets a reader in alongside a
+    writer holding RESERVED. The minute-plus hang above belongs
+    specifically to a nested WRITING connection. So the `conn=` buys a
+    connection per call and one fewer place where the package's "one
+    connection inside the transaction" rule is only nearly true, and the
+    counting test is the only thing that would catch losing it. Both
+    docstrings say so now.
+  - **THE `BEGIN IMMEDIATE` IS LOAD-BEARING IN ONE OF THE TWO AND
+    BELT-AND-BRACES IN THE OTHER — and the first version of this bullet
+    contradicted itself two sentences apart, which is the plausible
+    overstatement this log keeps having to unpick, caught this time inside
+    a paragraph written to avoid one.** It said "take it out of
+    `set_slot_need` and **the whole file stays green**", and then said in
+    the next sentence that it "is pinned on its own by a test that reads
+    the first statement run on the connection". Both cannot be true.
+    Measured, against the file as it was WHEN THAT WAS WRITTEN: **1 red**,
+    and it is exactly that test,
+    `test_the_away_conversion_opens_its_transaction_immediately`. What was
+    true, and is all that was meant, is narrower: the LOCK guard beside it
+    stays green, because there the first statement is the `slot_needs`
+    upsert, so sqlite3's legacy `isolation_level=""` has already opened a
+    transaction by the time the plan lookup runs. So in `set_slot_need` the
+    BEGIN buys the guarantee being a property of the function rather than
+    of the order its statements happen to be in today, and one test says
+    so. In `_reopen_away_slot` it is load-bearing outright: that function's
+    first statement is a SELECT, `isolation_level=""` opens DEFERRED at the
+    first WRITE, so without it the row that decides which plan gets the
+    open row would be read under no lock at all — 2 red there, the lock
+    guard and the away-vs-coming-back race.
+  - **`rollback()` IS DEFENCE IN DEPTH AND NOTHING PINS IT** — measured and
+    written into both functions, the way this repo's other unpinned notes
+    are. Delete the whole `except Exception: conn.rollback(); raise` from
+    `set_slot_need`, or from `_reopen_away_slot`, and all 22 tests stay
+    green, because `finally: conn.close()` discards an open transaction
+    anyway. Kept in both: it says what is meant where it happens, and
+    closing-implies-rollback is a property of sqlite3 rather than of these
+    functions.
+  - **The need row rolls back with the conversion now, which is a
+    behaviour change and is named rather than left to be found.** On main
+    the `slot_needs` upsert committed before the conversion was even
+    attempted — which is exactly what makes main's absent slot permanent,
+    above. One transaction covers both, so the 500's "nothing was saved" is
+    true of both.
+  - **A NEW FAILURE MODE, minor and named rather than found later, and it
+    is `_reopen_away_slot`'s alone — checked rather than assumed.** In
+    `set_slot_need` and in `_settle_slot_empty`'s own-connection form the
+    explicit `BEGIN` sits immediately before a WRITE, so the lock is taken
+    at the same statement main's implicit transaction would have taken it
+    at; what changes there is only that it is held LONGER, which is the
+    fix. `_reopen_away_slot` is the one that takes an exclusive lock for a
+    call that may write nothing at all: it runs `BEGIN IMMEDIATE` before a
+    read that frequently returns False — an away need with no plan behind
+    it is the ordinary case, and its one caller,
+    `attendance._sync_away_need`, comes through here on every attendance
+    change that clears such a need. Measured with another writer holding
+    the lock: **5.0s and `OperationalError: database is locked` here
+    against 0.0s and a `False` on main**, i.e. it waits out sqlite3's 5s
+    busy timeout where main's shared-lock read simply succeeded. It fails
+    loudly and corrupts nothing, and it is the ordinary price of the fix.
+  - **THE OTHER RACE IS FIXED TOO AND NOW HAS A TEST.** The first cut
+    covered away-vs-away and left away-vs-coming-back uncovered while
+    claiming the class was closed — which is the shape a household really
+    produces, since `set_away_stretch` loops `set_slot_need` over nights
+    that are already away while the other adult taps an avatar back on.
+    Measured over 40 runs: **main leaves two rows on one slot 39 times**
+    (`audit_plan_slots`' `duplicated`, what this file calls "how a night
+    nobody is home ends up with groceries bought for it"), this branch
+    leaves exactly one **40 times**.
+  - **STILL BROKEN, AND THIS IS THE CORRECTION THAT MATTERS MOST: "and so
+    is coming back" is true of `_reopen_away_slot` and NOT of coming back
+    as a household reaches it.** `attendance._sync_away_need` clears the
+    away need on its OWN commit and only then calls the reopen. Reproduced
+    on this branch: mark the night away, then `set_slot_attendance` with
+    everyone present and `plan_slot_open` raising, and the slot is left
+    `planned_empty` with the need already back to `normal` — the dinner
+    blanked with everyone home, word for word the state
+    `_reopen_away_slot`'s own docstring says it exists to prevent — and
+    **a retry does nothing**, because `_sync_away_need` then reads
+    `current["need"] != "away"` and returns "unchanged". Permanent.
+    **NOT a regression**: main leaves the slot genuinely ABSENT in the same
+    case (`rows []`, `audit_plan_slots` reporting MISSING) and also never
+    heals, so this is strictly the milder of the two. Its own card, and
+    `test_coming_back_is_still_two_transactions_at_the_attendance_level`
+    characterises it by name so nobody reports it as new. Worth knowing
+    with it: this branch's own attendance test narrows its comparison to
+    the entries snapshot, and that narrowing is what lets it step past the
+    `slot_needs` row that really did move — its docstring says so now.
+  - **THE SAME SEAM IS LIVE ONE MODULE OVER, and this branch does not
+    touch it.** `holidays._reopen` (`app/tools/holidays.py`, ~719-727) is
+    `clear_plan_slot` then `plan_slot_open`, two commits, and it is reached
+    by an ordinary household tap rather than by a forced failure in a
+    private helper: answer a holiday "we're going out and we're bringing
+    the crumble", then answer it again "actually it's just us", and
+    `_undo_effects` runs it. Reproduced here with `plan_slot_open` raising:
+    the dinner **GONE** (`rows []`), the grocery line reversed (`{}`), and
+    `audit_plan_slots` reporting that slot **MISSING** — this ticket's own
+    reproduction, in a module this ticket does not name.
+    `test_the_holiday_reopen_has_the_identical_seam_and_is_NOT_fixed_here`
+    characterises it; invert it when it is fixed. **`big_meal.py:815` and
+    `:924`** (the no-main and clashing-main arms of the hosting menu) are
+    the same shape and were NOT driven — said honestly, since this entry's
+    whole job is not to claim more than was measured. **`agent.py:4700`
+    and `:4724`** are the same shape and are safe in practice for a reason
+    worth writing down: they only run inside `generate_weekly_plan`, whose
+    `finally` calls `discard_failed_plan`, so a failure there deletes the
+    whole half-built plan and nothing survives to be inconsistent.
+  - **Found and NOT fixed, its own card:** `set_away_stretch` is a loop of
+    `set_slot_need` calls, so a whole trip is not one transaction — a
+    failure part-way leaves some nights away and some not. Every
+    individual night is whole now and no slot is ever absent, which is the
+    invariant this ticket is about; making a whole trip atomic is a
+    different claim and a bigger one.
+  - **THE TEST-EVIDENCE FIGURES IN THE FIRST VERSION OF THIS ENTRY WERE
+    WRONG, AND SO WERE THE TWO IN A TEST'S OWN DOCSTRING — one of them in
+    that test's favour, which is the more dangerous direction.** It claimed
+    "14 red against main's `app/` in a whole-file run, measured three
+    times"; that is not reproducible, because the fourteenth is a race.
+    Re-measured over 20 whole-file runs against main's `app/` with the file
+    as it now stands: **13 red every single time** (the forced-failure and
+    connection-counting tests — those are the catches), the two races red
+    **18** and **19** times, and one CHARACTERISATION red every time for a
+    reason other than the one it is named after (it says so in its own
+    docstring). So: **13 deterministic catches plus two timing-dependent
+    ones**, and five green either way, each naming the mutation that pins
+    it. The race test's own docstring said "red on main 3 whole-file runs
+    out of 3" and "only 2 runs in 10 when run alone"; measured here it is
+    red **38 of 40 alone** and **42 of 46 whole-file**, and an independent
+    reviewer on another machine measured **12 of 20** and **11 of 16**.
+    The rate moves with the machine, so the docstring gives the sentence
+    and not a number now. Green on this branch 20 of 20 alone, which was
+    the one figure that was right.
+  - **ONE TEST DID NOT TEST WHAT IT SAID, and the assertion is fixed
+    rather than the docstring softened.**
+    `test_the_transaction_is_open_while_the_empty_row_is_written` claimed
+    to prove the empty row is written on the SAME connection as the
+    delete, "visible as gone only to the connection that deleted it". That
+    last clause is false: a COMMITTED delete is gone as seen from any
+    connection. Measured — put a `conn.commit()` between the clear and the
+    empty row in `_settle_slot_empty`, which is genuinely two transactions
+    on one connection, exactly the property the test names, and the whole
+    file went **3 failed / 16 passed with this test among the 16**. It
+    reads `conn.in_transaction` from inside `plan_slot_empty` now, which
+    is the one thing that can see a split; under that same mutation the
+    file is **4 failed / 15 passed** and this test is the fourth, red on
+    `still_in_transaction` with `sees_the_delete` still True — the point,
+    exactly.
+  - `tests/test_away_night_atomic.py` (22), modelled on
+    `test_drop_dish_atomic.py`: a forced `RuntimeError` at each seam of
+    both writes against a whole-database snapshot (entries, grocery,
+    ledger AND slot_needs), the connection counts over the transaction's
+    own window, the transaction proved open from inside `plan_slot_empty`,
+    two real-barrier races, and two characterisations of what is left.
+    **TEN mutations re-run against the file as it now stands rather than
+    carried forward from the first cut — six of the counts had moved, which
+    is why they were re-run rather than copied.** All ten bite: the empty
+    row dropped (**15** red), the clear dropped (**13**), the open row
+    dropped (**5**), the plan lookup always answering with a plan (1), the
+    `BEGIN IMMEDIATE` out of the reopen (**2**), the reopen's
+    `planned_empty` guard widened (1), `plan_slot_empty` opening its own
+    connection again (**15**, and the hang above), the plan lookup's
+    fallback opening its own (1), a `conn.commit()` split between the clear
+    and the empty row (**4**, including the rewritten test), and the
+    `BEGIN IMMEDIATE` out of `set_slot_need` (**1** — see the bullet above,
+    where the first version of this entry said 0). **TWO things measured
+    NOT to bite and written down as such**: either `rollback()`. And note what
+    one of them really proves: the `conn=` on `get_plan_id_for_date` is
+    pinned by the counting test and by nothing else, which is a claim about
+    consistency rather than about correctness — take it off and it is 1 red
+    over a perfectly correct app.
+  - **Numbers, read off the runs.** At `TZ=America/Toronto`, whole suite:
+    **5692 passed, 0 failed**. That is the main baseline of 5670 plus this
+    file's 22 exactly — and the 5670 is arithmetic rather than a separate
+    run, which is worth saying: this branch adds one test file and changes
+    no other, so `git diff main -- tests/` is that one file and nothing
+    else. Not verified in a browser: every failure here is mid-write and
+    the screens are untouched.
 - **2026-09-17 — Merging the eleven overnight branches of 09-16/17 into
   `main`: two of them fought, and the fight was real.** Eleven branches,
   each green alone, ten of them appending to this log at the same line
