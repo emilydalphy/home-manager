@@ -391,6 +391,95 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-18 — The last three server-clock pockets outside Chores: milk
+  that is good all day today read "expired" for four hours every evening.
+  Branch `overnight/last-clock-pockets`, NOT merged at the time of
+  writing.** Loop Board bug, the tail of the household-clock sweep. The
+  container runs UTC and `households.timezone` defaults to
+  `America/Toronto`, so from about 8pm local the server's date is already
+  tomorrow. `inventory.py` (5 reads), `big_meal.py` (6) and
+  `notifications.py` (2) were each named as a follow-up by the 2026-09-16
+  `weekly-plan-last-clock-reads` and 2026-09-17 `freezer-ask` entries and
+  never filed. All three move in the same commit, on this file's own rule
+  that a half-converted module is a new bug rather than a smaller one.
+  - **`inventory.get_expiring_soon` is the one with teeth, and it is worse
+    than a wrong badge.** An `expiration_date` is a CALENDAR DATE, never a
+    UTC instant, so there is no sense in which the server's day is the
+    right one to compare it against. Measured on a throwaway DB, Toronto
+    household, server at `2026-09-19 01:30 UTC` (Toronto 21:30 on the
+    18th): milk dated the 18th came back `expired` rather than
+    `expiring_soon`. That function is one of the two checks
+    `agent._build_proactive_check_block` injects into the model's context
+    at the start of a session, so the assistant says the milk has gone off
+    **unprompted**, in exactly the evening hours somebody opens the app to
+    sort dinner.
+  - **`get_fresh_perishable_inventory` had to move with it or the two
+    lists would disagree about one item.** It is the complement of
+    `get_expiring_soon`; two clocks let an item be in both lists or in
+    neither. Pinned by a test that seeds eight days of produce and asserts
+    the two sets partition them, and by the mutation that points either one
+    back at `date.today()`.
+  - **`notifications.py`'s dismissal key is the quiet one.** It is
+    `expiring:<today>`, so on the server's clock it rolls over at about 8pm
+    local: a household that tapped the notification away at 7:55 was shown
+    it again at 8:01 under a key naming tomorrow.
+  - **One read is DELIBERATELY left on UTC and says so at the function.**
+    `notifications`' `datetime.utcnow()` measures how long ago a plan was
+    created against SQLite's own UTC `created_at`, as a DURATION. There is
+    no calendar day in it to be wrong about, and converting one side would
+    make the two disagree — the sweep's own rule, stated where a future
+    sweep will read it.
+  - **Two lazy imports and one at module scope, and which is which was
+    checked rather than assumed.** A small AST pass over `app/tools/` says
+    `cooker` transitively reaches `inventory` and `notifications` but not
+    `big_meal`, so those two use the in-function import `held._today` and
+    `weekly_plan._household_today` already use, and `big_meal` takes the
+    package's ordinary `from . import cooker as _cooker`. Each module was
+    then imported FIRST in a fresh subprocess to prove it.
+  - **NOT the shift form `weekly_plan._household_today` uses**, and that is
+    a measurement rather than a preference: that shape exists because a
+    dozen test files pin `weekly_plan.date`, and **nothing anywhere pins
+    `inventory.date`, `big_meal.date` or `notifications.date`** (checked).
+    So these read `cooker.household_today()` directly, as `defrost.py` does.
+  - **`big_meal`'s six reads are all DEFAULTS**, so a caller holding one
+    clock still wins — which is what keeps `spread_prep` and `shop_split`
+    answering about the day their caller named rather than about two.
+  - **TWO OF MY OWN TESTS WERE WORTHLESS AND ONLY MEASUREMENT FOUND THEM**,
+    which is the part of this worth reading. (1) The plan-ready test
+    filtered on `type == "plan_ready"`, a string the app never emits, so it
+    compared an empty list to an empty list; and it was written in the
+    BEHIND direction, where both clocks suppress the notification anyway,
+    so even with the type fixed it could not have failed. It is in the
+    AHEAD direction now — a household a day ahead was being told the week
+    it woke up in was next week's plan, newly ready — with a
+    still-announced guard beside it. (2) The
+    explicit-`today`-wins guard named a day a month out, where both clocks
+    give the same answer, so making `shop_dates` ignore its argument
+    outright left it GREEN. It now uses two days one apart, where one keeps
+    the early trip and the other has already dropped it, and the mutation
+    reddens it.
+  - `tests/test_last_clock_pockets.py` (16; **12 red against the unmodified
+    `app/`**, of which **10 are behaviour catches** and one is the AST
+    sweep guard, red for exactly the reason it is named after. The twelfth
+    is red only because `_today` does not exist there and says so in its own
+    docstring). Both directions at one frozen UTC instant, following
+    `test_weekly_plan_household_clock.py`: Toronto 21:30 (the household a
+    day BEHIND, production's own direction) and Tokyo 08:30 (a day AHEAD).
+    Three mutations run and each reddens what it should. One test
+    characterises a labelling error rather than hiding it: the
+    already-passed-holiday case was written as a guard and is a catch.
+  - **Severity, honestly: LOW today.** Inventory is marked "still in
+    development" (Emily, 2026-09-11) and beta testers are told not to keep
+    it up to date, so almost nothing is in those tables. The `big_meal`
+    reads matter from 12 October. This is a pocket closed before inventory
+    comes out of development, not a fire.
+  - Suite **5686 passed, 0 failed** at `TZ=America/Toronto`, against a
+    measured **5670** on the merge base in the same zone — +16 is this file
+    exactly, nothing deleted or weakened.
+  - **Still on the server's clock and deliberately untouched:**
+    `app/tools/chores.py`, 16 reads, the fourth and largest pocket, with
+    its own card. Tonight's override was bugs-only and no Chores.
+
 - **2026-09-17 — Merging the eleven overnight branches of 09-16/17 into
   `main`: two of them fought, and the fight was real.** Eleven branches,
   each green alone, ten of them appending to this log at the same line

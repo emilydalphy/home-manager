@@ -11,6 +11,28 @@ from . import recipes as _recipes
 from . import weekly_plan as _weekly_plan
 
 
+def _today() -> date:
+    """
+    Today where the household lives. Lazily imported because cooker reaches
+    this module, so `from . import cooker` at module scope would be a cycle
+    — the same shape held._today and inventory._today use.
+
+    Both readers below decide a CALENDAR DAY. The dismissal key is the one
+    with teeth: on the server's clock it rolls over at about 8pm local, so a
+    household that tapped a notification away at 7:55 was shown it again at
+    8:01 under a key naming tomorrow.
+
+    Deliberately NOT applied to the `datetime.utcnow()` a few lines further
+    down, which measures how long ago a plan was created against SQLite's
+    own UTC `created_at`. That is a UTC instant compared against a UTC
+    instant, as a DURATION; there is no calendar day in it to be wrong
+    about, and converting it would make the two sides disagree.
+    """
+    from .cooker import household_today
+
+    return household_today()
+
+
 # Live, in-app "what needs your attention" feed — see schema.sql's comment
 # on notification_dismissals for why this isn't real scheduled push.
 # Covers 3 of the 4 spec'd types (dinner nudge, expiring soon, weekly plan
@@ -134,7 +156,7 @@ def get_active_notifications() -> list[dict]:
     # deliberately tighter, matching the spec's own trigger).
     expiring = _inventory.get_expiring_soon(days=2)
     if expiring:
-        today_iso = date.today().isoformat()
+        today_iso = _today().isoformat()
         key = f"expiring:{today_iso}"
         if key not in dismissed:
             if len(expiring) == 1:
@@ -162,7 +184,7 @@ def get_active_notifications() -> list[dict]:
     conn = get_conn()
     plan_row = conn.execute(
         "SELECT id, week_start_date, created_at FROM weekly_plans WHERE household_id = ? AND week_start_date > ? ORDER BY created_at DESC LIMIT 1",
-        (household_id(), date.today().isoformat()),
+        (household_id(), _today().isoformat()),
     ).fetchone()
     if plan_row:
         created = plan_row["created_at"]
