@@ -21,11 +21,15 @@ Two kinds of test, the split every cook file uses:
     Now's moves say before and after, and that "Mark not cooked" forgets
     the start.
   * The shell's own functions under node (tests/nodeharness.py) — the
-    stops rebased from the real start, the Meal step's hero and dock,
-    Cook's Tonight card and hero, and the "Start cooking" handler itself:
-    one pop-up when the plan was two minutes or more off, none inside two
-    minutes, none the second time, a calm line on failure and nothing
-    else.
+    real-start readers, the Meal step's dock, Cook's Tonight card, and the
+    "Start cooking" handler itself: one pop-up when the plan was two
+    minutes or more off, none inside two minutes, none the second time, a
+    calm line on failure and nothing else.
+
+Since 2026-09-18 ("The recipe is the recipe") the recipe and cooker
+screens show no clock at all — the Tonight card and Now are where the
+real start reads — so the Meal step's stops and the cook hero's chips,
+which this file used to assert, are gone with those screens.
 """
 from __future__ import annotations
 
@@ -47,7 +51,7 @@ from app.tools._shared import use_household
 
 from test_cook_journey import _STUBS as _COOK_STUBS, _extract as _extract_async, _var_block
 from test_cook_shelf import _MOVE, _meal, _node as _shelf_node, MON as SHELF_MON
-from test_meal_clock import _COOK_CARD, _DINNER, _ESCAPE, _PURE, _extract, _monday, _var
+from test_recipe_screen import _COOK_CARD, _DINNER, _PURE, _extract, _monday, _screen, _var, _var_block as _icons
 
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
@@ -209,8 +213,8 @@ def test_cook_total_minutes_is_the_recipe_or_the_longest_side():
                                        "sides": [{"name": "Roasted potatoes", "minutes": 25, "instructions": ["Roast."]}]}) == 25
     assert _cooker.cook_total_minutes({"prep_time_minutes": 5, "cook_time_minutes": 30,
                                        "sides": [{"name": "Green salad", "minutes": 5, "instructions": ["Toss."]}]}) == 35
-    # A side with minutes but no steps is nothing on the clock — the Meal
-    # step's stops skip it (mealClockSides), so the total does too.
+    # A side with minutes but no steps is nothing on the clock — the shell
+    # skips it (mealClockSides), so the total does too.
     assert _cooker.cook_total_minutes({"prep_time_minutes": 5, "cook_time_minutes": 10,
                                        "sides": [{"name": "Rice", "minutes": 25}]}) == 15
     assert _cooker.cook_total_minutes({"prep_time_minutes": None, "cook_time_minutes": None}) is None
@@ -352,38 +356,6 @@ def _run(expr: str):
 
 
 @_needs_node
-def test_the_stops_are_rebased_from_the_real_start():
-    """
-    Thirty minutes planned for half six starts at six; begun at 6:02 the
-    stops run from 6:02 to 6:32 — "Everything out" at the minute it really
-    happened, not the nearest five, the last stop on the new table time.
-    """
-    stops = _run(f"mealClockStops({json.dumps(_COOK_CARD)}, {{ tableMinutes: 18 * 60 + 30, startMinutes: 18 * 60 + 2 }})")
-    assert [s["title"] for s in stops][:2] == ["Everything out", "Heat the oil"]
-    assert stops[0]["time"] == "6:02"
-    assert stops[0]["minutes"] == 18 * 60 + 2
-    assert stops[-1]["time"] == "6:32"
-    assert all(s["minutes"] >= 18 * 60 + 2 for s in stops)
-    assert [s["minutes"] for s in stops] == sorted(s["minutes"] for s in stops)
-    # Without a real start the same card keeps the plan's clock exactly.
-    planned = _run(f"mealClockStops({json.dumps(_COOK_CARD)}, {{ tableMinutes: 18 * 60 + 30 }})")
-    assert [s["time"] for s in planned] == ["6:00", "6:05", "6:10", "6:20", "6:25", "6:30"]
-
-
-@_needs_node
-def test_a_side_keeps_its_own_timing_off_the_new_table():
-    card = dict(_COOK_CARD, sides=[{"name": "Roasted potatoes", "minutes": 25,
-                                    "instructions": ["Halve the potatoes.", "Into the oven."]}],
-                instructions=_COOK_CARD["instructions"] + [
-                    "Alongside — Roasted potatoes: Halve the potatoes.", "Alongside: Into the oven."])
-    stops = _run(f"mealClockStops({json.dumps(card)}, {{ tableMinutes: 18 * 60 + 30, startMinutes: 18 * 60 + 2 }})")
-    sides = [s for s in stops if s["kind"] == "side"]
-    # The side's last step is at table − 25 = 6:07, rounded to the grid.
-    assert [s["time"] for s in sides] == ["6:02", "6:05"]
-    assert stops[-1]["time"] == "6:32"
-
-
-@_needs_node
 def test_the_real_start_readers():
     out = _run("[isoClockMinutes('2026-09-13T18:02:00'), isoClockMinutes(null), isoClockMinutes('nope'),"
                " cookStartedMinutes({ cook_started_at: '2026-09-13T06:15:00' }), cookStartedMinutes({}),"
@@ -400,67 +372,28 @@ def test_the_real_start_readers():
                    "", ""]
 
 
-def _screen(day: dict, slot: str, cook_meals: list, ticked: list | None = None) -> str:
-    """tests/test_meal_clock.py's screen harness, with the real-start readers in scope."""
-    harness = (
-        _ESCAPE
-        + "function dayName(d, opts){ return 'Monday'; }\n"
-        + "var weekState = { data: { slot_times: { breakfast: '8:00', lunch: '12:30', dinner: '6:30' } }, rhythm: null };\n"
-        + "var swapState = null;\n"
-        + "var REHEAT_ACTION_LABEL = 'Mark eaten';\n"
-        + "var SWAP_LABEL = 'Swap · I’ll pick';\n"
-        + f"var cookState = {{ data: {{ meals: {json.dumps(cook_meals)} }}, cookAheadPicks: {{}} }};\n"
-        + "var GRO_ICONS = { chevRight: '<svg class=\"chev\"></svg>' };\n"
-        + "var SLOT_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };\n"
-        + "function cookMealKey(m) { return 'e' + m.entry_id; }\n"
-        + f"var TICKED = {json.dumps(ticked or [])};\n"
-        + "function cookTicked(kind, key) { return TICKED.indexOf(kind + ':' + key) !== -1; }\n"
-        + "function cookAheadHtml() { return ''; }\n"
-        + "var WK_ADD_ICON = '<svg/>'; function humanQtyText(t) { return String(t == null ? '' : t); }\n"
-        + "function cookIngredientLabel(i) { return ((i.qty ? i.qty + ' ' : '') + i.item).trim(); }\n"
-        + _PURE + _live_helpers()
-        + "".join(_extract(n) + "\n" for n in (
-            "daySlotEntry", "slotWord", "isRealCook", "mealDisplayName", "cookMealForEntry",
-            "mealCookName", "mealCookUnderway", "mealClockFor", "mealHeroLine", "mealHeroHtml",
-            "mealStopHtml", "mealClockHtml", "swapStateFor", "swapLineHtml", "slotEyebrowLabel",
-            "dishSizeClass", "mealDockHtml", "mealWhatsInEyebrow", "mealWhatsInHtml", "recipeCitationHtml", "mealStepHtml"))
-        + f"console.log(JSON.stringify(mealStepHtml({json.dumps(day)}, {json.dumps(slot)})));\n"
-    )
-    res = nodeharness.run_node(harness, timeout=30)
-    assert res.returncode == 0, f"node failed: {res.stderr}"
-    return json.loads(res.stdout.strip())
-
-
 @_needs_node
-def test_the_meal_steps_hero_stops_and_dock_follow_the_real_start():
+def test_the_meal_steps_dock_follows_the_real_start_and_shows_no_clock():
     card = dict(_COOK_CARD, cook_started_at="2026-09-14T18:02:00")
     html = _screen(_monday(_DINNER), "dinner", [card])
-    # The hero: the rebased table time in words, and "Started" for "Start at".
-    assert 'class="wk-meal-by">On the table by 6:32<' in html
-    assert re.findall(r'hero-chip">([^<]*)<', html) == ["Started 6:02"]
-    # The stops are true to the real start.
-    times = re.findall(r'wk-stop-time">([^<]*)<', html)
-    assert times[0] == "6:02" and times[-1] == "6:32"
-    # A cook that has begun is not offered "Start at 6:02".
+    # A cook that has begun is not offered a start again — and no time is
+    # said anywhere on the recipe (2026-09-18).
     assert 'data-wk-cook="dinner">Keep cooking<' in html
-    assert "Start at" not in html
-    # And the same screen without a start is exactly the plan's.
+    assert "Start at" not in html and "6:02" not in html and "On the table" not in html
+    # And the same screen without a start is "Start cooking", no time.
     html = _screen(_monday(_DINNER), "dinner", [_COOK_CARD])
-    assert 'class="wk-meal-by">On the table by half six<' in html
-    assert re.findall(r'hero-chip">([^<]*)<', html) == ["Start at 6:00"]
-    assert 'data-wk-cook="dinner">Start at 6:00<' in html
+    assert 'data-wk-cook="dinner">Start cooking<' in html
+    assert not re.search(r"\b\d{1,2}:\d{2}\b", html)
 
 
 @_needs_node
-def test_a_started_card_marked_cooked_is_back_to_the_plan_on_the_meal_step():
-    """cook_started_at is kept on a cooked meal (a true fact); the readers
-    that show a clock still fall back, since mealClockFor is only asked
-    for a cook, and the dock offers the start again once it is unticked."""
+def test_a_started_card_marked_cooked_offers_the_start_again_on_the_meal_step():
+    """cook_started_at is kept on a cooked meal (a true fact); the server
+    clears it the moment "Mark not cooked" is tapped, and the dock offers
+    the start again once it is unticked."""
     card = dict(_COOK_CARD, cook_started_at="2026-09-14T18:02:00", cooked_status="done")
     html = _screen(_monday(_DINNER), "dinner", [card])
-    # The clock still reads off the real start while the card carries it —
-    # the server clears it the moment "Mark not cooked" is tapped.
-    assert 'class="wk-meal-by">On the table by 6:32<' in html
+    assert 'data-wk-cook="dinner">Start cooking<' in html
 
 
 # ---------- Cook's Tonight card ----------
@@ -528,19 +461,34 @@ def test_the_tonight_card_without_a_start_is_exactly_what_it_was():
     assert ">Nothing to thaw or prep ahead.<" in html
 
 
-# ---------- the cook hero ----------
+# ---------- the recipe and the cooker ----------
 
 
-def _hero(meal: dict, stage: str) -> str:
+def _cook_screen(meal: dict, stage: str) -> str:
     harness = (
         _COOK_STUBS
-        + "var cookState = { stepIdx: 1 };\n"
+        + f"var cookState = {{ stepIdx: 1, focusStage: {json.dumps(stage)}, data: {{ meals: [] }} }};\n"
+        + _icons("RECIPE_ICONS") + "\n"
+        + "function cookTicked() { return false; }\n"
+        + "function cookMealKey(m) { return 'e' + m.entry_id; }\n"
+        + "function cookServesShown(m) { return m.default_servings; }\n"
+        + "function humanQtyText(t) { return String(t == null ? '' : t); }\n"
+        + "function cookIngredientLabel(i) { return ((i.qty ? i.qty + ' ' : '') + i.item).trim(); }\n"
+        + "function cookIngredientNouns(item) { return [String(item).toLowerCase()]; }\n"
+        + "function recipeCitationHtml() { return ''; }\n"
+        + "function cookFocusPrepTasks() { return []; }\n"
+        + "function cookFocusPrepHtml() { return ''; }\n"
+        + "function cookMadeAheadLinesHtml() { return ''; }\n"
         + _var("NUMBER_WORDS") + "\n" + _var("TENS_WORDS") + "\n"
         + "".join(_extract(n) + "\n" for n in (
             "numberWord", "minutesInWords", "clockLabel", "mealTotalMinutes", "mealClockSides", "mealClockTotal",
-            "cookAttendanceChip", "cookBatchNote", "cookMadeAheadLinesHtml", "cookFocusHeroHtml"))
+            "cookUnscaledHtml", "cookIngTickId", "cookGetOutRowHtml", "cookStepNeeds",
+            "recipeTitleHtml", "recipeServesHtml", "recipeIngredientsHtml", "recipeIngredientRowHtml",
+            "recipeStepsHtml", "cookRecipeLinesHtml", "cookDockHtml", "cookDockCookedHtml", "cookRecipeDockHtml",
+            "cookRecipeHtml", "cookProgressHtml", "cookNextStepLine", "cookCookerDockHtml", "cookCookerHtml",
+            "cookFocusHtml"))
         + _live_helpers()
-        + f"console.log(JSON.stringify(cookFocusHeroHtml({{}}, {json.dumps(meal)}, 0, {json.dumps(stage)})));\n"
+        + f"console.log(JSON.stringify(cookFocusHtml({{}}, [{json.dumps(meal)}], 0)));\n"
     )
     res = nodeharness.run_node(harness, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
@@ -549,39 +497,23 @@ def _hero(meal: dict, stage: str) -> str:
 
 _HERO_MEAL = {"entry_id": 7, "meal": "Ginger Beef Stir-Fry", "date": "2026-09-14", "slot": "dinner",
               "cooked_status": "pending", "prep_time_minutes": 10, "cook_time_minutes": 20,
+              "has_full_recipe": True, "default_servings": 2,
               "instructions": ["Heat the oil.", "Add the steak.", "Serve."], "ingredients": [], "sides": []}
 
 
-def _chips(html: str) -> list[tuple[str, str]]:
-    return re.findall(r'<span class="cook-meta-chip( is-live)?">([^<]*)</span>', html)
-
-
 @_needs_node
-def test_the_cook_hero_says_started_on_every_stage_in_the_live_chip():
+def test_a_begun_cook_shows_no_clock_on_the_recipe_or_the_cooker_only_keep_cooking():
     live = dict(_HERO_MEAL, cook_started_at="2026-09-14T18:02:00")
-    for stage in ("prep", "step", "method"):
-        chips = _chips(_hero(live, stage))
-        assert (" is-live", "Started 6:02") in chips, stage
-        assert ("", "On the table 6:32") in chips, stage
-        # Only the one live chip is celadon.
-        assert [c for c in chips if c[0]] == [(" is-live", "Started 6:02")], stage
-    # Before you start still carries its own facts first.
-    assert _chips(_hero(live, "prep"))[0] == ("", "Tuesday, Sep 9")
-    # A cook not yet begun: no live chip anywhere, and the slim stages
-    # carry no chips at all, as before.
-    assert not any(c[0] for c in _chips(_hero(_HERO_MEAL, "prep")))
-    assert _chips(_hero(_HERO_MEAL, "step")) == []
-    # A cooked meal keeps its start on the row but the hero says nothing
-    # about a clock that has finished.
-    assert _chips(_hero(dict(live, cooked_status="done"), "step")) == []
-
-
-def test_the_live_chip_is_celadon_with_dark_ink_and_every_colour_a_token():
-    block = SHELL_CSS[SHELL_CSS.index(".cook-meta-chip.is-live"):]
-    block = block[:block.index("}") + 1]
-    assert "background: var(--celadon)" in block
-    assert "color: var(--on-accent-ink)" in block  # Rule 1
-    assert "#" not in block
+    recipe = _cook_screen(live, "recipe")
+    assert "Keep cooking" in recipe
+    for gone in ("Started", "On the table", "6:02", "6:32", "cook-meta-chip", "is-live", "Start at", "10m prep"):
+        assert gone not in recipe, gone
+    cooker = _cook_screen(live, "step")
+    assert "step 2 of 3" in cooker
+    assert not re.search(r"\b\d{1,2}:\d{2}\b", cooker)
+    # A cook not yet begun: "Start cooking", and still no clock.
+    fresh = _cook_screen(_HERO_MEAL, "recipe")
+    assert "Start cooking" in fresh and not re.search(r"\b\d{1,2}:\d{2}\b", fresh)
 
 
 # ---------- "Start cooking" itself ----------
@@ -688,11 +620,9 @@ def test_a_failed_post_is_one_calm_line_and_nothing_else():
 
 
 def test_every_string_a_person_reads_goes_through_escape_html():
-    hero = _extract("cookFocusHeroHtml")
-    assert "escapeHtml(text)" in hero
     card = _extract("cookTonightCardHtml")
     assert "escapeHtml(note)" in card and "escapeHtml(t.value)" in card
-    assert "escapeHtml(c)" in _extract("mealHeroHtml")
+    assert "escapeHtml(meal.meal || 'Dinner')" in _extract("recipeTitleHtml")
 
 
 def test_the_dispatch_and_the_route_are_wired():

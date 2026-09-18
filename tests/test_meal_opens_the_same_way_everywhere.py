@@ -367,8 +367,8 @@ def test_a_failed_read_is_held_not_retried_on_every_render():
     go = _extract("goMealsStep")
     assert "weekState.cookView.failed" in go and "weekState.cookView = null;" in go
     # And the words: the read failed, paired with its way out.
-    clock = _extract("mealClockHtml")
-    assert "Couldn’t get the recipe just now — go back and open it again." in clock
+    line = _extract("mealNoRecipeHtml")
+    assert "Couldn’t get the recipe just now — go back and open it again." in line
 
 
 # ------------------------------------ the crumb goes back the way you came
@@ -392,22 +392,20 @@ def _meal_screen(back: str, cookable: bool) -> str:
         + "function capitalizeFirst(s) { return String(s).charAt(0).toUpperCase() + String(s).slice(1); }\n"
         + "function cookMealKey(m) { return 'e' + m.entry_id; }\n"
         + "function cookTicked() { return false; }\n"
-        + "function cookAheadHtml() { return ''; }\n"
         + "var WK_ADD_ICON = '<svg/>'; function humanQtyText(t) { return String(t == null ? '' : t); }\n"
         + "function cookIngredientLabel(i) { return i.item; }\n"
+        + "function cookServesShown(m) { return m.default_servings; }\n"
+        + "function recipeCitationHtml() { return ''; }\n"
+        + "var RECIPE_ICONS = { minus: '<svg/>', plus: '<svg/>', chevLeft: '<svg/>' };\n"
         + f"function planCookView() {{ return {{ is_current_plan: {json.dumps(cookable)}, meals: [] }}; }}\n"
-        + "var NUMBER_WORDS = ['zero','one','two','three','four','five','six'];\n"
-        + "var TENS_WORDS = ['', '', 'twenty', 'thirty'];\n"
-        + "var STOP_TITLE_TAIL = /^(a|the)$/i;\n"
         + "".join(_extract(n) + "\n" for n in (
             "isSnackSlot", "daySlotEntry", "slotWord", "isRealCook", "mealDisplayName",
             "chipsRowHtml", "cookTimeChip", "planCookableNow", "cookMealForEntry",
-            "numberWord", "countInWords", "minutesInWords", "clockLabel", "spokenTime",
-            "slotTableMinutes", "mealTotalMinutes", "mealStepMinutes", "stopTitleSplit",
-            "ingredientNamesLine", "mealClockSides", "mealClockTotal", "finishSideStop", "mealClockStops", "mealClockEyebrow", "mealCookName",
-            "mealCookUnderway", "mealClockFor", "mealHeroLine", "mealHeroHtml",
-            "mealStopHtml", "mealClockHtml", "swapStateFor", "swapLineHtml",
-            "slotEyebrowLabel", "dishSizeClass", "mealDockHtml", "mealWhatsInEyebrow", "mealWhatsInHtml", "mealStepHtml"))
+            "mealCookUnderway", "mealRecipeFor", "mealHeroLine", "mealNoRecipeHtml",
+            "cookUnscaledHtml", "cookIngTickId", "cookGetOutRowHtml",
+            "recipeTitleHtml", "recipeServesHtml", "recipeIngredientsHtml", "recipeIngredientRowHtml",
+            "recipeStepsHtml", "mealIngredientsHtml", "swapStateFor", "swapLineHtml",
+            "mealDockHtml", "mealStepHtml"))
         + f"console.log(JSON.stringify(mealStepHtml({json.dumps(day)}, 'dinner')));\n"
     )
     return _run_node(harness)
