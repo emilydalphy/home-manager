@@ -740,6 +740,35 @@ def _release_inventory_depletion(entry_ids: list[int]) -> None:
 DEFAULT_TIMEZONE = "America/Toronto"  # the same default digest.py and holidays.py fall back to
 
 
+def household_zone() -> ZoneInfo:
+    """
+    The zone the household lives in, for the caller that needs the zone
+    itself rather than the time in it.
+
+    household_now below answers "what does the household's clock read at
+    this instant". This is the opposite question: where does one of the
+    household's own DAYS begin, as an instant? pre_shop.get_already_have_
+    decisions is the caller — removed_at is a UTC instant and the window
+    it is measured against is a household day, so the day has to be turned
+    back into the instant it started at before the two can be compared at
+    all. SQLite cannot do that conversion: it knows UTC and the SERVER's
+    local zone, and neither is the household's.
+
+    Opens a connection. An unreadable zone name falls back to Toronto —
+    the same choice household_now has always made, and it lives here now
+    rather than in two places, because a reader whose day started in a
+    different zone from another reader's is the whole bug this is for.
+    """
+    conn = get_conn()
+    row = conn.execute("SELECT timezone FROM households WHERE id = ?", (household_id(),)).fetchone()
+    conn.close()
+    name = (row["timezone"] if row else None) or DEFAULT_TIMEZONE
+    try:
+        return ZoneInfo(name)
+    except (ZoneInfoNotFoundError, ValueError):
+        return ZoneInfo(DEFAULT_TIMEZONE)
+
+
 def household_now(now_utc: datetime | None = None) -> datetime:
     """
     Now, on the household's own clock (households.timezone), as the naive
@@ -749,18 +778,12 @@ def household_now(now_utc: datetime | None = None) -> datetime:
     deployed container runs in UTC, so reading datetime.now() here would
     have stamped a Toronto dinner as starting at ten at night.
 
-    `now_utc` is for tests. A stored zone name that ZoneInfo can't read
-    falls back to Toronto, the same choice digest._zone makes, so a bad
-    setting never stops a cook from starting.
+    `now_utc` is for tests. The zone read, and the fallback to Toronto for
+    a name ZoneInfo can't make sense of, are household_zone's above — so a
+    bad setting never stops a cook from starting, and never leaves this
+    reader in a different zone from the one asking where a day begins.
     """
-    conn = get_conn()
-    row = conn.execute("SELECT timezone FROM households WHERE id = ?", (household_id(),)).fetchone()
-    conn.close()
-    name = (row["timezone"] if row else None) or DEFAULT_TIMEZONE
-    try:
-        zone = ZoneInfo(name)
-    except (ZoneInfoNotFoundError, ValueError):
-        zone = ZoneInfo(DEFAULT_TIMEZONE)
+    zone = household_zone()
     now_utc = now_utc or datetime.now(timezone.utc)
     if now_utc.tzinfo is None:
         now_utc = now_utc.replace(tzinfo=timezone.utc)

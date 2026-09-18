@@ -391,6 +391,125 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-18 — "Already have" measured its week from midnight UTC, and read
+  the day off the server. Branch `overnight/already-have-household-clock`, NOT
+  merged at the time of writing.** Loop Board bug, Phase 1, the pocket the
+  `today-pin-east-of-utc9` entry names as the reason never to pin the straddle
+  matrix. `pre_shop.get_already_have_decisions` scopes the Review screen's
+  confirmation section to the current planning period by `removed_at`, and
+  BOTH halves of that comparison were somebody else's.
+  - **THE BOUNDARY IS THE HALF WITH TEETH, and it is not the half the test
+    failures were about.** `removed_at` is a UTC instant — SQLite
+    `datetime('now')`, from all six writers of it across `pre_shop.py`,
+    `grocery.py` and `staples.py` — and the cutoff was a calendar DATE, so
+    the string comparison opens the window at **midnight UTC**. West of UTC
+    that is merely generous: Toronto's window opened four hours early.
+    **East of UTC it opens LATE**, and every already-have decision made in
+    the first hours of the period's own first day is missing from the screen
+    that exists to let the household take it back — nine hours for Tokyo,
+    measured. Nobody lives east of UTC today; `households.timezone` is a
+    column anyone can set, and `period_start` has been household-relative
+    since planning periods shipped.
+  - **The day was the other half.** `date.today()` is the container's, so on
+    the evening of a period's LAST day the server is already on tomorrow, the
+    "does this plan still cover today?" test answers no, and the window falls
+    back to the Monday cutoff this function's own docstring exists to be rid
+    of. Worse: `_current_weekly_plan_row` had already PICKED that plan on the
+    household's clock, so one function asked two clocks about one day.
+  - **WHICH CLOCK, stated plainly: the household's DAY, compared as a UTC
+    INSTANT — and after the fix it is genuinely one clock, not two units
+    pretending.** `removed_at` is an instant and instants belong in UTC; the
+    write side is right and is left alone (six writers, rows already on disk,
+    and `staples.py` reads that column as UTC deliberately — changing it would
+    be a migration inventing history). What was wrong was the other side: a
+    household day boundary written as a date. `_household_day_start_utc` turns
+    it into the instant that day began at, so both sides are UTC instants.
+    The conversion is in Python because SQLite cannot do it — it knows UTC and
+    the SERVER's zone, and the household's is neither.
+  - **`cooker.household_zone()` is EXTRACTED from `household_now`, not written
+    beside it.** This log already records three copies of the UTC→household
+    conversion (cooker, digest, tonight) and calls folding them into one its
+    own card; a fourth, inline here, would have been the wrong direction.
+    `household_now` calls it now, so the zone read and the Toronto fallback
+    live in one place and the reader asking "what time is it there" cannot end
+    up in a different zone from the one asking "where does their day begin".
+    No new import and no new edge in the package graph: `pre_shop` has
+    imported `cooker` at module scope all along, and `cooker` does not import
+    `pre_shop`.
+  - **Both reads are resolved before either `get_conn`**, the established
+    shape — each opens its own connection, and a nested one inside an open
+    one is how this repo has twice earned an intermittent "database is
+    locked". Pinned by a runtime guard that watches the reads `pre_shop`
+    makes through its own `_cooker` reference, rather than by counting the
+    deepest connection reached: **one nesting on this path is pre-existing
+    and deliberate** — `_current_weekly_plan_row` is handed a connection and
+    reads `_household_today` inside it, on a plain read, with a comment
+    saying so. A depth count cannot tell that one from a new one.
+  - **The module is fully converted, checked rather than assumed.** Line 354
+    was the only `date.today()` in all 492 lines of `pre_shop.py`. The one
+    other clock read is `drop_grocery_item_pre_shop`'s `datetime('now')`,
+    which is correct on the server's clock for `mark_defrost_asked`'s reason
+    inverted: it is a UTC instant, and it is now compared against another UTC
+    instant rather than against a day.
+  - **ONE BEHAVIOUR CHANGE EVERY EXISTING HOUSEHOLD SEES, named rather than
+    buried:** a decision made in the four hours before a Toronto period began
+    (nine at night the evening before) used to be listed and is not any more.
+    It is a decision made before the period started and the window is the
+    period, so this is the fix working — but it is a real narrowing, it has
+    its own test, and it is the only thing here a Toronto household can
+    notice.
+  - **Cost, measured with an instrumented `get_conn`: 3 → 5 connections per
+    call**, once per read of the Review screen's confirmation section, never
+    in a loop and never per row. (Main is 3 rather than 2 because
+    `_current_weekly_plan_row` already opens one of its own.)
+  - `tests/test_already_have_household_clock.py` (11; **6 red against main's
+    `app/`** at `TZ=America/Toronto` and again at
+    `TZ=Pacific/Kiritimati --today=monday`, the same six both times). Read
+    that 6 for less than it looks: **4 are behaviour catches**, one dies on a
+    name main has not got (`_household_day_start_utc`), and the ordering
+    guard is red there for a reason other than the one it is named after —
+    main reads no household clock here at all, so it dies on an empty list
+    rather than a badly ordered one. Every docstring says which it is.
+    **Six mutations run, every one biting exactly what it should:** the
+    day-start helper off by a day (5 red, including the west-of-UTC guard it
+    was named to pin), the `removed_at` cutoff dropped from the query (3),
+    `datetime('now', 'localtime')` on the write (1), each of the two clock
+    reads moved below the first `get_conn` (1 each), and `household_zone`
+    ignoring the stored zone (3). Both directions at one frozen UTC instant,
+    following `test_weekly_plan_household_clock.py`: Toronto 21:30 (the
+    household a day BEHIND, production every evening) and Tokyo 08:30 (a day
+    AHEAD). `removed_at` is written explicitly in the seeds, because these
+    tests are about which instants fall inside the window and not about when
+    the suite happened to run — the write path being UTC is pinned separately
+    as its own guard.
+  - **Numbers, all read off the runs.** `TZ=America/Toronto` unpinned:
+    **5681 passed, 0 failed** (+11 on the 5670 baseline, this file exactly —
+    no test deleted or weakened). At `TZ=Pacific/Kiritimati --today=monday`,
+    the configuration that surfaces the bug: this branch **4 failed, 5674
+    passed, 3 skipped** against main's **8 failed, 5659 passed, 3 skipped**,
+    both full suites run here. The four the card names are gone; the four
+    that remain are byte-identical to main's own, in
+    `test_meal_opens_the_same_way_everywhere.py` (3) and `test_plan_chores.py`
+    (1) — proved by running those two files against main's `app/` at the same
+    pin and getting the same four names. The new file is green on all four
+    weekday pins across Toronto, Kiritimati and Niue, and unpinned at UTC,
+    Tokyo and Kiritimati.
+  - **Known and left, each named so nobody reports it as new.** (1) The
+    conversion takes ZoneInfo's own answer for a local midnight that is
+    ambiguous or does not exist (`fold=0`), so once a year, in a zone that
+    changes its clocks at midnight, the window boundary can be an hour out.
+    Smaller than the fourteen hours it replaces, and the honest alternative
+    is a policy decision nobody has made. (2) `households.timezone` is one
+    zone for the whole household; two adults in two zones are not modelled
+    anywhere in this app, and this does not change that. (3)
+    **`app/tools/staples.py` is a whole module on the server's clock** —
+    `_today()` is `date.today()`, and `sync_due_staples` compares
+    `date(removed_at)` (UTC-derived) against it at :1107 under a comment that
+    calls it "the module's" clock. It is the server's. That comment already
+    accepts the skew and says it errs toward staying quiet, which it does, so
+    this is a pocket rather than a live defect — but it is the same class,
+    it is one door over from this one, and it is its own card.
+
 - **2026-09-17 — Merging the eleven overnight branches of 09-16/17 into
   `main`: two of them fought, and the fight was real.** Eleven branches,
   each green alone, ten of them appending to this log at the same line
