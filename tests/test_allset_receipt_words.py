@@ -138,9 +138,11 @@ def test_the_menu_payload_carries_recipes_for_the_screen():
 
 # ---------- the tiles ----------
 
-def test_the_all_set_tiles_read_meals_recipes_ingredients():
+def test_the_all_set_tiles_read_meals_and_recipes():
+    """"ingredients" was the third tile until 2026-09-18 (Emily's "All set is
+    one thing" card drops it — the list is the next screen)."""
     allset = _fn("allSetStepHtml")
     labels = [line for line in allset.splitlines() if "nums.push(" in line]
-    assert [l.split("label: '")[1].split("'")[0] for l in labels] == ["meals", "recipes", "ingredients"]
+    assert [l.split("label: '")[1].split("'")[0] for l in labels] == ["meals", "recipes"]
     assert "receipt.recipes" in allset, "the tile shows the distinct-dish count, not the cook nights"
     assert "'cooks'" not in allset and "'to buy'" not in allset

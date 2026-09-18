@@ -4105,6 +4105,9 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         # same receipt right below the freezer check — see
         # tools.cook_ahead.cook_ahead_repeats.
         "cook_ahead_asked_at": plan["cook_ahead_asked_at"],
+        # The household's very first plan — All set says "Week 1 is
+        # planned." for it and the dates for every week after (2026-09-18).
+        "is_first_plan": bool(plan.get("is_first_plan")),
         "grocery_preview": None,
         # The dietary/allergy warning the review band shows above the
         # Approve button. Recomputed here rather than stored with the plan
@@ -5415,6 +5418,19 @@ def approve_weekly_plan(
     if not result["was_already_approved"] or result["list_rebuilt"]:
         from . import big_meal as _big_meal
         _big_meal.spread_prep_for_plan(weekly_plan_id)
+    # Batch cooking is assumed from prep days (2026-09-18): a dish on more
+    # than one day is cooked once, on its first day, when the household
+    # preps ahead — the chain the old approval-time ask wrote on a "yes".
+    # Only on a genuine approval, and after the settle for the same reason
+    # spread_prep runs after it (its own connections; the settle holds the
+    # write lock until it commits). It never raises past here: a batch
+    # that could not be written is not a reason to un-approve the week.
+    if not result["was_already_approved"]:
+        from . import cook_ahead as _cook_ahead
+        try:
+            result["cook_ahead"] = _cook_ahead.apply_prep_day_batches(weekly_plan_id)
+        except Exception:
+            logger.exception("Batching repeated dishes at approval failed for plan %s", weekly_plan_id)
     return result
 
 

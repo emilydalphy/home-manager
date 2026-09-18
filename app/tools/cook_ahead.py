@@ -327,6 +327,49 @@ def mark_cook_ahead_asked(weekly_plan_id: int) -> None:
     conn.close()
 
 
+def apply_prep_day_batches(weekly_plan_id: int) -> dict:
+    """
+    Batch cooking is assumed from prep days (Emily, 2026-09-18, Loop Board
+    "Batch cooking is assumed from prep days"): the approval-time
+    "Do you want to batch cook…" ask is gone from All set and the Plan
+    root, and this is the rule that stands in for it.
+
+    When a household has one or more prep days (rhythm.prep_days) and a
+    dish is on the plan more than once in the same slot, the FIRST day it
+    appears is the cook and the later days are covered by that batch —
+    exactly the chain a "yes" on the old ask wrote (set_cook_ahead, with
+    every later day ticked), so servings and the shopping list scale as
+    they did then. With no prep days nothing is batched, and nothing is
+    asked either way. cook_ahead_asked_at is set in both cases so no
+    surface re-asks.
+
+    Kept simple on purpose: the first occurrence cooks, whether or not it
+    falls on a prep day. Choosing the prep day itself as the cook would
+    mean cooking on a day the dish isn't eaten, which the chain machinery
+    (make_double_for on a planned entry) can't represent.
+
+    Called from approve_weekly_plan once the yes has really done something
+    — never on a no-op re-approval. Not all-or-nothing: a repeat the
+    chain refuses (a day claimed by another batch) is reported in
+    `refused` and the rest still land, the shape confirm_week_cook_ahead
+    used.
+    """
+    from . import rhythm as _rhythm
+
+    prep_days = _rhythm.get_household_rhythm().get("prep_days") or []
+    applied: list[dict] = []
+    refused: list[dict] = []
+    if prep_days:
+        for item in cook_ahead_repeats(weekly_plan_id):
+            result = set_cook_ahead(item["first"]["entry_id"], [d["entry_id"] for d in item["later"]])
+            if isinstance(result, str):
+                refused.append({"source_entry_id": item["first"]["entry_id"], "dish": item["dish"], "note": result})
+            else:
+                applied.append(dict(result, dish=item["dish"]))
+    mark_cook_ahead_asked(weekly_plan_id)
+    return {"prep_days": bool(prep_days), "applied": applied, "refused": refused}
+
+
 def attach_cook_ahead(weekly_plan_id: int, meals: list[dict]) -> None:
     """
     Hang the picker's data on the Cook view's cards as

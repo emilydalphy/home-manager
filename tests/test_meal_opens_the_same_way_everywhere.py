@@ -182,15 +182,14 @@ def test_the_endpoint_serves_a_named_plan(signed_in, two_weeks):
 
 
 def test_every_way_of_tapping_a_meal_lands_on_the_meal_step():
-    """The name on the root's list, "Change" beside it, and the Day step's
-    card all go through goMealsStep('meal'); none goes into cook mode."""
-    wiring = SHELL_JS[SHELL_JS.index("[data-rv-recipe]"):][:1400]
-    assert "goMealsStep('meal', { dayIndex: idx, slot: slot, back: 'week' });" in wiring
-    assert "openRecipeFor" not in wiring
-    change = SHELL_JS[SHELL_JS.index("[data-rv-change]"):][:1200]
-    assert "goMealsStep('meal', {" in change and "back: 'week'" in change
-    card = SHELL_JS[SHELL_JS.index("[data-wk-meal]"):][:700]
-    assert "goMealsStep('meal', { slot: btn.getAttribute('data-wk-meal'), back: weekState.step === 'week' ? 'week' : 'day' });" in card
+    """The dish on a row — the root's card, Check the week's cards, the
+    Day step's card — goes through goMealsStep('meal'); none goes into
+    cook mode. (The root's list and its "Change" went on 2026-09-18; the
+    rows' names are the one door now.)"""
+    card = SHELL_JS[SHELL_JS.index("[data-wk-meal]"):][:1200]
+    assert "goMealsStep('meal', { slot: btn.getAttribute('data-wk-meal'), back: back });" in card
+    assert "openRecipeFor" not in card
+    assert "data-rv-recipe" not in SHELL_JS
     # The dead second handler (no markup ever emitted it) is gone.
     assert "data-rv-recipe-date" not in SHELL_JS
 

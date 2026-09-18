@@ -98,6 +98,7 @@ from .chores import (  # noqa: F401
 # choice about which mornings to cook for is the household's to make by
 # tapping, not the assistant's to make by inferring.
 from .cook_ahead import (  # noqa: F401
+    apply_prep_day_batches,
     cook_ahead_options,
     cook_ahead_repeats,
     mark_cook_ahead_asked,
@@ -663,7 +664,9 @@ from .swap_in_place import (  # noqa: F401
     undo_meal_swap,
 )
 # Three picks for one slot, chosen before anything is written — the Week 1
-# reveal's Swap (2026-09-18). A screen's own read and write, not agent tools.
+# reveal's Swap and the Plan tab's Swap sheet (2026-09-18; the two were
+# built apart and reconciled onto this one module). A screen's own read
+# and write, not agent tools.
 from .swap_options import (  # noqa: F401
     choose_swap_option,
     swap_options,

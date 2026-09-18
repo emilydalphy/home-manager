@@ -62,6 +62,7 @@ def test_the_coaching_card_is_gone_for_good():
     assert "coach-sheet" not in SHELL_CSS and "coachCardHtml" not in SHELL_JS
     assert "plan-nudge-eyebrow\">A QUICK WORD" not in SHELL_JS
     assert '<script src="/static/help-sheet.js"></script>' in SHELL_HTML
+    assert "#prefs-sheet,\n#tips-sheet" in SHELL_CSS
 
 
 def test_the_dinner_suggestions_fold_behind_one_pick():

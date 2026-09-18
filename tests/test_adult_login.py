@@ -459,7 +459,9 @@ def _in(needle: str, haystack: str, where: str) -> None:
 
 def test_the_shell_asks_before_any_tab_renders():
     boot = SHELL_JS[SHELL_JS.index("async function checkOnboarding"):]
-    boot = boot[: boot.index("activateTab(currentTabKey(), false)")]
+    # The first tab is the path's, or Plan when the onboarding reveal's
+    # Approve hands in with ?after=approve (2026-09-18).
+    boot = boot[: boot.index("activateTab(afterApprove ? 'week' : currentTabKey(), false)")]
     _in("await ensureWhoPicked();", boot, "shell.js")
     _in("if (!data || !data.needs_pick) return;", SHELL_JS, "shell.js")
     _in("fetch('/api/whoami/pick'", SHELL_JS, "shell.js")

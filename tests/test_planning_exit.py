@@ -117,11 +117,17 @@ def _review_root_html(status: str, root: bool) -> str:
     # The step's own function, with its neighbours stubbed: this test is
     # about what the root form adds around the views, not about the views.
     harness = (
-        "var reviewState = { view: 'eating' };\n"
+        "var reviewState = { dayIndex: null };\n"
         "function weekSuggestedNoteHtml(){ return ''; }\n"
-        "function reviewEatingHtml(){ return '<div class=\"rv-body\"></div>'; }\n"
-        "function reviewDaysHtml(){ return '<div class=\"rv-body rv-days\"></div>'; }\n"
+        "function reviewOpenIndex(){ return 0; }\n"
+        "function wkDayMealCount(){ return 1; }\n"
+        "function wkDayTabsHtml(){ return '<div class=\"wk-daytabs\"></div>'; }\n"
+        "function wkDayCardHtml(){ return '<div class=\"wk-day-card\"></div>'; }\n"
+        "function wkDotsHtml(){ return ''; }\n"
+        "function wkHelpButtonHtml(){ return '<button id=\"wk-help\"></button>'; }\n"
+        "function periodRangeLabel(){ return 'Sep 14–20'; }\n"
         "function reviewDecideHtml(d){ return d.status === 'draft' ? '<div class=\"wk-decide dock\">approve</div>' : ''; }\n"
+        + _extract("escapeHtml", SHELL_JS) + "\n"
         + _extract("weekPlanState", SHELL_JS) + "\n"
         + _extract("weekReplacesNote", SHELL_JS) + "\n"
         + _extract("reviewStepHtml", SHELL_JS) + "\n"

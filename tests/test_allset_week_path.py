@@ -1,27 +1,22 @@
-"""After the plan, seeing the week is a first-class path — with the list
-still the enticing next step (Emily, 2026-09-13).
+"""After the plan, one thing at a time (Emily, 2026-09-13 and 2026-09-18).
 
-On her phone, over All set: "After you have the plan, make the loop easier
-to go and see the week and not go straight to the list. but make the CTA
-to go to the list enticing."
+On her phone, over All set (2026-09-13): "After you have the plan, make the
+loop easier to go and see the week and not go straight to the list. but
+make the CTA to go to the list enticing." Then on 2026-09-18 (board 11):
+All set is ONE thing — the tick, one line, two numbers, one button, "Next ·
+Anything in the freezer?" — and the week is checked from Plan's own root
+(Check the week, via More) rather than from a second door here.
 
-What was there: "See the week" as a 13px text link above a full-width
-"Open the list"; the approved week's tiles with no way to the list but the
-tab bar; the Shop list with no way to the week but the tab bar; and All
-set staying on the Plan tab after "Open the list" — come back by the tab
-bar and the finished-planning screen is still there, because nothing but
-"See the week" ever moved weekState.step off 'allset'.
-
-Now: "See the week" is a real secondary button (never a second apricot —
-Rule 5), "Open the list · 53 ingredients" keeps the pull, the approved
-week's review step docks "Open the list", the Shop list's dock carries
-"See the week" beside "Start the trip", and leaving Plan by any door ends
-the All set screen. Behaviour runs under node against shell.js's own
-functions where it can (the way tests/test_shop_trip_exit.py does).
+What this file still pins: the approved week's review docks "Open grocery
+list" and goes the freezer-or-list road, the Shop list's dock carries "See
+the week" beside "Start the trip", and leaving Plan by any door ends the
+All set screen (and, since 2026-09-18, the freezer step). Behaviour runs
+under node against shell.js's own functions where it can.
 """
 from __future__ import annotations
 
 import json
+import re
 import shutil
 from pathlib import Path
 
@@ -36,6 +31,7 @@ from test_week_seven_tiles import _extract, _extract_var
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
 SHELL_CSS = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
+THEME = (REPO / "static" / "theme.css").read_text(encoding="utf-8")
 DESIGN = (REPO / "DESIGN_SYSTEM.md").read_text(encoding="utf-8")
 
 _needs_node = pytest.mark.skipif(
@@ -54,6 +50,21 @@ def _rule(selector: str) -> str:
     return SHELL_CSS[start:SHELL_CSS.index("}", start)]
 
 
+def _tokens(block: str) -> dict:
+    return {m.group(1): m.group(2).strip() for m in re.finditer(r"^\s*(--[\w-]+):\s*([^;]+);", block, re.MULTILINE)}
+
+
+def _light_and_dark():
+    """theme.css's :root values, and the same names as the dark block
+    overrides them — a token the dark block leaves alone keeps its light
+    value there, exactly as the cascade does."""
+    dark_at = THEME.index("\n@media (prefers-color-scheme: dark)")
+    light = _tokens(THEME[:dark_at])
+    dark = dict(light)
+    dark.update(_tokens(THEME[dark_at:]))
+    return light, dark
+
+
 # The All set screen and the review dock, with only what they read.
 _PLAN_PRELUDE = (
     _extract("escapeHtml", SHELL_JS) + "\n"
@@ -61,66 +72,54 @@ _PLAN_PRELUDE = (
     + "function periodRangeLabel(start, n) { return start + ' +' + n; }\n"
     + "function countOpenSlots() { return 0; }\n"
     + "function approveWithOpenLabel() { return 'Approve anyway'; }\n"
+    + "var defrostAskState = { planId: null, items: null, selected: {} };\n"
     + _extract("weekPlanState", SHELL_JS) + "\n"
-    + _extract("openListLabel", SHELL_JS) + "\n"
     + _extract("allSetStepHtml", SHELL_JS) + "\n"
     + _extract("reviewDecideHtml", SHELL_JS) + "\n"
 )
 
 _APPROVED = {
     "weekly_plan_id": 7, "status": "approved", "days": [{"date": "2026-09-14"}],
-    "week_label": "Sep 14–20",
+    "week_label": "Sep 14–20", "defrost_asked_at": None,
     "receipt": {"meals": 6, "recipes": 5, "cooks": 6, "list_count": 53, "thaw_line": ""},
 }
 
 
-# ---------- All set: two doors, one apricot ----------
+# ---------- All set: one door ----------
 
 
 @_needs_node
-def test_see_the_week_is_a_button_above_the_list_with_its_count():
+def test_all_set_has_one_apricot_and_it_goes_to_the_freezer_question():
     html = _run(_PLAN_PRELUDE + f"console.log(JSON.stringify(allSetStepHtml({json.dumps(_APPROVED)}, [])));")
     dock = html[html.index('<div class="dock wk-allset-dock">'):]
-    see = dock.index('class="dock-secondary" id="wk-allset-see">See the week</button>')
-    go = dock.index('class="dock-primary" id="wk-allset-go">Open the list · 53 ingredients</button>')
-    assert see < go, "the week is offered first; the list is the apricot at the thumb"
+    assert 'class="dock-primary" id="wk-allset-next">Next · Anything in the freezer?</button>' in dock
     assert dock.count("dock-primary") == 1, "one apricot (Rule 5)"
-    assert "dock-link" not in dock, "a real button, not a small text link"
+    assert "dock-secondary" not in dock and "See the week" not in html and "dock-link" not in dock
 
 
 @_needs_node
-@pytest.mark.parametrize(
-    "count,label",
-    [(0, "Open the list"), (None, "Open the list"), (1, "Open the list · 1 ingredient"), (53, "Open the list · 53 ingredients")],
-)
-def test_the_list_button_says_how_many_only_when_there_are_some(count, label):
-    out = _run(_PLAN_PRELUDE + f"console.log(JSON.stringify(openListLabel({{ list_count: {json.dumps(count)} }})));")
-    assert out == label
+def test_the_dock_reads_open_grocery_list_when_there_is_nothing_to_ask():
+    answered = dict(_APPROVED, defrost_asked_at="2026-09-14T10:00")
+    html = _run(_PLAN_PRELUDE + f"console.log(JSON.stringify(allSetStepHtml({json.dumps(answered)}, [])));")
+    assert 'id="wk-allset-next">Open grocery list</button>' in html
 
 
-def test_the_secondary_is_a_sand_button_re_inked_for_spruce_and_measured():
-    base = _rule(".dock-secondary")
-    assert "background: var(--sand)" in base and "min-height: 52px" in base
-    assert "apricot" not in base, "never a second apricot"
-    on_spruce = _rule(".wk-allset-dock .dock-secondary")
-    assert "background: var(--spruce-raised)" in on_spruce
-    assert "color: var(--ivory-ink)" in on_spruce
-    assert "border-color: var(--apricot-rule)" in on_spruce
+def test_the_dock_secondary_went_with_see_the_week():
+    """All set's sand "See the week" over the apricot was the only
+    .dock-secondary; both are gone (2026-09-18). Rule 5 still holds on the
+    dock that is left."""
+    assert ".dock-secondary" not in SHELL_CSS and "dock-secondary" not in SHELL_JS
     light, dark = _light_and_dark()
     for mode, tokens in (("light", light), ("dark", dark)):
-        for ground in ("--spruce-raised", "--spruce-hover"):
-            ratio = contrast(tokens["--ivory-ink"], tokens[ground])
-            assert ratio >= 4.5, f"--ivory-ink on {ground} is {ratio:.2f}:1 in {mode}"
-        ratio = contrast(tokens["--ink"], tokens["--sand"])
-        assert ratio >= 4.5, f"--ink on --sand is {ratio:.2f}:1 in {mode}"
-    assert "`.dock-secondary`" in DESIGN, "the dock's second door is written down where the dock is"
+        ratio = contrast(tokens["--on-accent-ink"], tokens["--apricot"])
+        assert ratio >= 4.5, f"--on-accent-ink on --apricot is {ratio:.2f}:1 in {mode}"
 
 
 # ---------- From the week, the list is one tap ----------
 
 
 @_needs_node
-def test_an_approved_week_docks_open_the_list_where_approve_was():
+def test_an_approved_week_docks_open_grocery_list_where_approve_was():
     out = _run(
         _PLAN_PRELUDE
         + f"var set = reviewDecideHtml({json.dumps(_APPROVED)});\n"
@@ -129,20 +128,23 @@ def test_an_approved_week_docks_open_the_list_where_approve_was():
         + "console.log(JSON.stringify({ set: set, draft: draft, none: none }));"
     )
     assert out["set"].startswith('<div class="wk-decide dock">')
-    assert 'id="wk-review-go">Open the list · 53 ingredients</button>' in out["set"]
+    assert 'id="wk-review-go">Open grocery list</button>' in out["set"]
     assert out["set"].count("dock-primary") == 1 and "week-approve-btn" not in out["set"]
-    assert 'id="week-approve-btn">Approve and build my shopping list</button>' in out["draft"]
+    assert 'id="week-approve-btn">Approve · Open grocery list</button>' in out["draft"]
     assert "wk-review-go" not in out["draft"]
     assert out["none"] == ""
     # One dock on the review, whichever state it is in (test_nav_v2_back_and_dock).
     assert SHELL_JS.count('<div class="wk-decide dock">') == 1
 
 
-def test_the_review_dock_is_wired_to_the_same_landing_as_all_set():
+def test_the_review_dock_goes_the_freezer_or_list_road_all_set_goes():
     wire = SHELL_JS[SHELL_JS.index("  function wireMealsStep("):]
     wire = wire[:wire.index("\n  }\n")]
     assert "steps.querySelector('#wk-review-go')" in wire
-    assert "activateTab('grocery', true, { groScreen: 'plan' });" in wire
+    assert "goAfterWeekSet(panel, weekState.data || {});" in wire
+    road = _extract("goAfterWeekSet", SHELL_JS)
+    assert "goMealsStep('freezer')" in road and "goGroceryList()" in road
+    assert "activateTab('grocery', true, { groScreen: 'plan' });" in _extract("goGroceryList", SHELL_JS)
 
 
 # ---------- From the list, the week is one tap ----------
@@ -192,12 +194,13 @@ def _activate_tab_harness(step: str, leave_for: str) -> str:
 
 @_needs_node
 @pytest.mark.parametrize("door", ["grocery", "today", "kitchen"])
-def test_leaving_plan_from_all_set_by_any_door_folds_it_to_the_week(door):
+@pytest.mark.parametrize("finish", ["allset", "freezer"])
+def test_leaving_plan_from_a_finish_screen_by_any_door_folds_it_to_the_week(door, finish):
     """"Open the list" is activateTab('grocery'); the tab bar is the other
     three. Either way, the next look at Plan is the week, not the
     finished-planning screen — re-rendered while hidden, so nothing moves
-    under a thumb."""
-    out = _run(_activate_tab_harness("allset", door))
+    under a thumb. The freezer step (2026-09-18) is a finish screen too."""
+    out = _run(_activate_tab_harness(finish, door))
     assert out == {"step": "week", "renders": ["week"]}
 
 
@@ -212,15 +215,12 @@ def test_a_deeper_plan_step_is_left_alone_when_leaving_and_all_set_when_staying(
     assert out == {"step": "allset", "renders": []}
 
 
-# ---------- What was already there, and stays ----------
+# ---------- What went ----------
 
 
-def test_the_root_receipt_card_keeps_its_two_equal_buttons():
-    """A week approved in another session opens Plan on the receipt card,
-    whose "Open the list" / "See the week" were already two buttons in one
-    row — the shape All set now matches. Untouched."""
-    receipt = SHELL_JS[SHELL_JS.index("  function renderWeekReceipt("):]
-    receipt = receipt[:receipt.index("\n  }\n")]
-    assert '<button type="button" class="btn-gold week-receipt-go" id="week-receipt-go">Open the list</button>' in receipt
-    assert '<button type="button" class="week-receipt-see" id="week-receipt-see">See the week</button>' in receipt
-    assert "grid-template-columns: 1fr 1fr" in _rule(".week-receipt-acts")
+def test_the_root_receipt_card_is_gone():
+    """The approved week's receipt card (Open the list / See the week over
+    the week card) went on 2026-09-18 with the asks it carried: the root
+    has no apricot now, and the freezer question is a step of its own."""
+    assert "renderWeekReceipt" not in SHELL_JS and "week-receipt-go" not in SHELL_JS
+    assert ".week-receipt-card" not in SHELL_CSS

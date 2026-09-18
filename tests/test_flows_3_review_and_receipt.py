@@ -366,18 +366,17 @@ def test_the_old_stacked_receipt_and_nudge_cards_are_gone(gone):
     _assert_gone(gone, SHELL_JS, "the old stacked receipt/nudge cards")
 
 
-def test_the_settle_card_renders_only_when_there_is_a_hard_clash():
+def test_the_clash_renders_only_when_there_is_a_hard_clash():
     """`data.settle` is None unless a HARD clash exists (coordination._settle
-    above), and the card's own guard returns an empty band without it — a
-    soft conflict must never grow a card."""
-    _assert_in("function renderWeekSettle(", SHELL_JS, "the settle card", "shell.js")
-    _assert_in("if (!settle || !settle.note) { row.innerHTML = ''; return; }", SHELL_JS,
-               "the settle card's guard", "shell.js")
-    _assert_in("'One thing to settle'", SHELL_JS, "the settle card's title", "shell.js")
+    above), and the row's own guard renders nothing without it — a soft
+    conflict must never grow a card. Since 2026-09-11 the clash sits on the
+    dish's own row (wkSettleFor / wkMealRowHtml since 2026-09-18), not in
+    a card above the week."""
+    _assert_in("function wkSettleFor(", SHELL_JS, "the clash lookup", "shell.js")
+    _assert_in("if (!settle || !settle.note || !settle.meal || !entry || entry.state !== 'planned') return null;", SHELL_JS,
+               "the clash's guard", "shell.js")
     _assert_in("Keep it anyway", SHELL_JS, "the keep-it-anyway segment", "shell.js")
-    _assert_in("'Swap the ' + dishShortName(settle.meal)", SHELL_JS,
-               "the swap segment", "shell.js")
-    _assert_in("var(--urgent-tint)", SHELL_CSS, "the settle card's urgent tint", "shell.css")
+    _assert_in("var(--urgent-tint)", SHELL_CSS, "the clash's urgent tint", "shell.css")
 
 
 def test_keeping_it_anyway_still_costs_the_confirm_tap():
@@ -443,52 +442,20 @@ def test_a_soft_conflict_is_a_line_under_the_card():
     _assert_in("data.soft_note", SHELL_JS, "the soft-conflict line", "shell.js")
 
 
-def test_the_receipt_is_one_card_with_two_segments():
-    _assert_in("function renderWeekReceipt(", SHELL_JS, "the receipt", "shell.js")
-    _assert_in("YOUR WEEK IS SET", SHELL_JS, "the receipt eyebrow", "shell.js")
-    _assert_in("receipt.title", SHELL_JS, "the counted sentence", "shell.js")
-    _assert_in("receipt.thaw_line", SHELL_JS, "the thaw line", "shell.js")
-    _assert_in(">Open the list<", SHELL_JS, "the Open the list segment", "shell.js")
-    _assert_in(">See the week<", SHELL_JS, "the See the week segment", "shell.js")
-    _assert_in("var(--celadon-tint)", SHELL_CSS, "the receipt's celadon fill", "shell.css")
-
-
-def test_the_two_asks_are_lines_that_expand_in_place():
-    """The defrost and cook-ahead asks keep their own UI and their own
-    routes — only the presentation folds into a line with an "Ask"."""
-    # "Two quick ones" is counted rather than written out since 2026-09-15 —
-    # it used to be a ternary that said "Two" about any number but one,
-    # which is the sentence Emily read over nine questions.
-    _assert_in("quick ones before you go", SHELL_JS, "the asks card title", "shell.js")  # reworded 2026-09-13: a step, not a footnote
-    _assert_in("One quick one before you go", SHELL_JS, "the single-ask title", "shell.js")
-    _assert_in("'Anything in the freezer?'", SHELL_JS, "the freezer line", "shell.js")
-    _assert_in("' Do you want to batch cook it?'", SHELL_JS, "the cook-ahead line", "shell.js")  # reworded 2026-09-13: the plain question (DESIGN_SYSTEM §8 rule 7)
-    _assert_in("function defrostAskSummary(", SHELL_JS, "the collapsed meat chips", "shell.js")
-    _assert_in("items.slice(0, 3).join(' · ')", SHELL_JS,
-               "the chips collapsed to one line", "shell.js")
-    # The asks themselves are the same code and the same endpoints.
+def test_the_receipt_card_and_its_asks_are_gone():
+    """The approved week's receipt card above the week, with its "Open the
+    list / See the week" and the two asks folded under it, went on
+    2026-09-18: All set is one button, the freezer question is a step of
+    its own (tests/test_plan_cards_2026_09_18.py), and batch cooking is
+    assumed from prep days (tests/test_batch_from_prep_days.py). The
+    receipt's own numbers (week_receipt, above) still feed All set."""
+    for gone in ("function renderWeekReceipt(", "YOUR WEEK IS SET", "quick ones before you go",
+                 "'pomona.weekReceiptDismissed.'", "/cook-ahead-confirm", "data.cook_ahead_asked_at"):
+        _assert_gone(gone, SHELL_JS, gone)
+    _assert_gone(".wk-quick-body", SHELL_CSS, "the folded ask's styling")
+    # The freezer question kept its route and its gate.
     _assert_in("/defrost-confirm", SHELL_JS, "the defrost route", "shell.js")
-    _assert_in("/cook-ahead-confirm", SHELL_JS, "the cook-ahead route", "shell.js")
     _assert_in("data.defrost_asked_at", SHELL_JS, "the defrost asked_at gate", "shell.js")
-    _assert_in("data.cook_ahead_asked_at", SHELL_JS, "the cook-ahead asked_at gate", "shell.js")
-    _assert_in(".wk-quick-body", SHELL_CSS, "the expanded ask's styling", "shell.css")
-    # Found in the browser, not in review: an author `display` beats the UA
-    # sheet's [hidden] rule, so without this guard both asks rendered open
-    # and the card was as tall as the two it replaced.
-    _assert_in(".wk-quick-body[hidden] { display: none; }", SHELL_CSS,
-               "the collapsed ask's hidden guard", "shell.css")
-
-
-def test_the_receipt_is_dismissed_per_plan_for_this_session_only():
-    """sessionStorage keyed by weekly_plan_id: it survives a tab switch (the
-    panel re-renders every time Meals comes back) but not a new session — a
-    week approved yesterday opens on the week card, not on its receipt."""
-    _assert_in("'pomona.weekReceiptDismissed.'", SHELL_JS, "the dismissal key", "shell.js")
-    _assert_in("sessionStorage.setItem(WEEK_RECEIPT_DISMISS_KEY", SHELL_JS,
-               "the dismissal write", "shell.js")
-    _assert_in("function weekReceiptDismissed(", SHELL_JS, "the dismissal read", "shell.js")
-    _assert_in("setWeekReceiptDismissed(data.weekly_plan_id, true);", SHELL_JS,
-               "'See the week' dismissing the receipt", "shell.js")
 
 
 def test_reopening_the_week_kept_an_entry_point():
