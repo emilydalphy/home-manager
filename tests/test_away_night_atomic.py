@@ -329,7 +329,7 @@ def test_coming_back_is_still_two_transactions_at_the_attendance_level(monkeypat
     assert tools.get_slot_need(AWAY, "dinner")["need"] == "normal"
 
 
-def test_the_holiday_reopen_has_the_identical_seam_and_is_NOT_fixed_here():
+def test_the_holiday_reopen_has_the_identical_seam_and_is_now_atomic_too():
     """
     CHARACTERISATION — the same two commits, live, one module over, and
     reached by an ordinary household tap rather than by a forced failure in
@@ -355,7 +355,10 @@ def test_the_holiday_reopen_has_the_identical_seam_and_is_NOT_fixed_here():
     a failure there deletes the whole half-built plan and nothing survives
     to be inconsistent.
 
-    Invert this test when holidays._reopen becomes one transaction.
+    INVERTED 2026-09-18 when `overnight/holiday-reopen-atomic` landed
+    alongside this branch: holidays._reopen is one transaction now, so the
+    forced failure below leaves the planned dinner, its groceries and the
+    audit exactly as they were.
     """
     from app.tools import holidays
 
@@ -381,10 +384,10 @@ def test_the_holiday_reopen_has_the_identical_seam_and_is_NOT_fixed_here():
     finally:
         weekly_plan.plan_slot_open = real
 
-    # The state this ticket's own fix exists to make impossible, still here.
-    assert _dinner_rows(hol) == []
-    assert _grocery_by_item() == {}
-    assert {"date": hol, "slot": "dinner"} in tools.audit_plan_slots(plan_id)["missing"]
+    # The state this ticket's own fix exists to make impossible — and now it is.
+    assert [r["slot_state"] for r in _dinner_rows(hol)] == ["planned"]
+    assert _grocery_by_item() == {"Apples": "3"}
+    assert {"date": hol, "slot": "dinner"} not in tools.audit_plan_slots(plan_id)["missing"]
 
 
 # ------------------------------------- a failure enforcing needs at generation

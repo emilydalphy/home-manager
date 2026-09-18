@@ -278,7 +278,7 @@ def test_two_adults_changing_the_same_answer_leave_one_row(approved_week):
 
 # ---------- what this does NOT close ----------
 
-def test_the_commonest_holiday_answer_does_NOT_go_through_reopen(approved_week, monkeypatch):
+def test_the_commonest_holiday_answer_is_atomic_one_module_over(approved_week, monkeypatch):
     """
     CHARACTERISATION, and the most important test in this file: it says what
     this branch does not fix.
@@ -290,9 +290,11 @@ def test_the_commonest_holiday_answer_does_NOT_go_through_reopen(approved_week, 
     `slot_needs._reopen_away_slot` — which is the identical clear-then-open
     pair, still TWO COMMITS, and still leaves the slot genuinely absent.
 
-    Measured here, not reasoned: `_reopen` is called ZERO times and the day
-    ends with no dinner row. `overnight/away-night-atomic` is the branch
-    that closes it. INVERT THIS TEST when that lands.
+    Measured here, not reasoned: `_reopen` is called ZERO times, so this
+    file's fix cannot be what protects the path. `overnight/away-night-atomic`
+    made `_reopen_away_slot` one transaction, and this test was INVERTED
+    when both landed together (2026-09-18): a failure in the second write now
+    rolls the first back, and the night stays off rather than going absent.
     """
     pid, tg = approved_week
     tools.answer_holiday(tg, "out")
@@ -306,8 +308,8 @@ def test_the_commonest_holiday_answer_does_NOT_go_through_reopen(approved_week, 
     with pytest.raises(RuntimeError):
         tools.answer_holiday(tg, "unsure")
 
-    assert seen["n"] == 0, "this path does not reach _reopen, so this branch cannot have fixed it"
-    assert _rows(pid, tg) == [], "still absent — slot_needs._reopen_away_slot's two commits"
+    assert seen["n"] == 0, "this path does not reach _reopen, so this file's fix is not what protects it"
+    assert _rows(pid, tg) == [("planned_empty", None)], "the night stays off — nothing lost, nothing absent"
 
 
 # ---------- helpers ----------
