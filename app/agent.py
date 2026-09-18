@@ -1901,7 +1901,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "get_defrost_schedule",
-        "description": "What needs to move from the freezer to the fridge, and when — today or over the next `days` days. Each item names the freezer item, how much the meal needs, which meal it's for, and the day it should come out (computed from the household's dinner_window and a category-based lead-time rule of thumb: ~48h for a large roast/whole bird, ~24h for standard cuts, ~18h for small/thin cuts like fillets or shrimp — see tools/defrost.py if asked why). Use this for 'what do I need to defrost' or similar, rather than filtering get_prep_schedule yourself.",
+        "description": "What needs to move from the freezer to the fridge, and when — today or over the next `days` days. Each item names the freezer item, how much the meal needs, which meal it's for, and the day it should come out (computed from the household's dinner_window and a category-based lead-time rule of thumb: ~72h for a large roast/whole bird, ~48h for everyday cuts, ~24h for small/thin cuts like fillets or shrimp — see tools/defrost.py if asked why). Use this for 'what do I need to defrost' or similar, rather than filtering get_prep_schedule yourself.",
         "input_schema": {
             "type": "object",
             "properties": {"days": {"type": "integer", "description": "How many days ahead to look, in addition to today. Defaults to 7."}},

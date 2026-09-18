@@ -64,34 +64,58 @@ from . import weekly_plan as _weekly_plan
 # inventory item's own name, coarser than a real cookbook but transparent
 # about what it is: a rule of thumb, not a simulation.
 #
-# "Standard cuts" (24h) is the default for anything that doesn't match a
+# Rule cited: USDA FSIS "The Big Thaw" — a refrigerator thaw is safe but
+# slow, and even a comparatively small, thin cut (a pound of ground meat,
+# boneless chicken breasts) needs a FULL DAY in the fridge; large or
+# tightly-packed items scale up from there at roughly 24h per 4-5 lb.
+# Once thawed, poultry/ground meat/fish are good for another 1-2 days in
+# the fridge and red meat for 3-5 — which is exactly why the longer leads
+# below are safe to plan around rather than cutting it close: a household
+# that takes something out a night early hasn't put it at risk, it has
+# room to spare.
+#
+# Emily's ask (2026-09-18): the household-pack sizes this app is actually
+# planning for — a Costco-sized family pack of chicken thighs, say — are
+# not the one-pound item the USDA's 24h figure assumes, and she's found in
+# practice that a full pack needs more than 24 hours to thaw through. So
+# every tier below moved up a size from where it started: what used to be
+# the 24h "standard" default is now 48h, and the two tiers on either side
+# of it moved with it.
+#
+# "Everyday cuts" (48h) is the default for anything that doesn't match a
 # more specific keyword — chicken breasts/thighs, pork chops, steaks,
-# ground meat, most fish not caught by the "small/thin" list below.
-STANDARD_LEAD_HOURS = 24.0
+# ground meat, sausages, most fish not caught by the "small/thin" list
+# below. This is the tier Emily's ask was about: a family-pack quantity of
+# an ordinary cut, not the single-portion USDA baseline.
+STANDARD_LEAD_HOURS = 48.0
 
-# Large roasts / whole birds: the USDA rule of thumb is roughly 24h per
-# 4-5 lbs in the fridge, which for a typical whole chicken/small roast
-# rounds to "about two days" — 48h is the honest single number for that
-# tier, not a weight-scaled formula (this app doesn't track item weight).
-LARGE_LEAD_HOURS = 48.0
+# Large roasts / whole birds: USDA's roughly-24h-per-4-5-lb rule of thumb,
+# for a family-pack-sized whole chicken/small roast, rounds to "about three
+# days" once the same up-sizing above is applied — 72h is the honest single
+# number for that tier, not a weight-scaled formula (this app doesn't track
+# item weight).
+LARGE_LEAD_HOURS = 72.0
 # No bare "turkey": "whole turkey" already covers the legitimate whole-bird
 # case, and a bare "turkey" keyword was matching straight through common
 # compound items that are anything but large — "Ground Turkey" and "Turkey
-# Bacon" both got tagged 48h before this was caught in review. Same reasoning
-# kept "ham" off this list entirely (it's genuinely ambiguous — a whole
-# holiday ham vs. diced deli ham — and "Hamburger" doesn't even mean ham; see
-# _matches_keyword's word-boundary matching below for why that one part was
-# already a plain bug, not just an ambiguous call).
+# Bacon" both got tagged as a large roast before this was caught in review.
+# Same reasoning kept "ham" off this list entirely (it's genuinely
+# ambiguous — a whole holiday ham vs. diced deli ham — and "Hamburger"
+# doesn't even mean ham; see _matches_keyword's word-boundary matching below
+# for why that one part was already a plain bug, not just an ambiguous
+# call).
 _LARGE_KEYWORDS = (
     "whole chicken", "whole turkey", "roast", "brisket",
     "prime rib", "leg of lamb", "pork shoulder", "pork butt", "whole duck",
     "whole ham", "rack of",
 )
 
-# Small/thin cuts thaw faster — commonly cited as 12-24h. 18h is the
-# midpoint of that range, used as a single number only because scheduling
-# needs one; the comment is the honesty, not the number itself.
-SMALL_THIN_LEAD_HOURS = 18.0
+# Small/thin cuts thaw faster than a family-pack of an everyday cut, but
+# still get the USDA's own full-day floor rather than the shorter window
+# sometimes quoted for a single one-pound portion — 24h is the honest
+# single number for this tier now, one size up from where it started, same
+# reasoning as STANDARD_LEAD_HOURS above.
+SMALL_THIN_LEAD_HOURS = 24.0
 _SMALL_THIN_KEYWORDS = (
     "shrimp", "prawn", "fillet", "filet", "tilapia", "cutlet", "thin-cut",
     "thin cut", "scallop", "bacon",
@@ -106,7 +130,7 @@ def _matches_keyword(name: str, keyword: str) -> bool:
     name` check was the actual bug caught in review: "ham" is a substring
     of "hamburger" (a single word, not "ham" + "burger"), and "roast" is a
     substring of "roasted" ("Roasted Vegetables") — both matched and
-    wrongly tagged an ordinary item as a 48h large roast. \\b anchors the
+    wrongly tagged an ordinary item as a 72h large roast. \\b anchors the
     keyword to real word edges so it only matches the words it's meant to;
     the first fix (plain \\b, no plural allowance) over-corrected and
     stopped matching "Salmon Fillets"/"Beef Roasts" at all, caught in the
@@ -168,9 +192,11 @@ def _move_date(cook_date_str: str, lead_hours: float, dinner_window: str | None)
     lead time than the table calls for.
 
     Never returns the cook day itself, even when the clock arithmetic would
-    technically allow it (a short lead against a late dinner_window, e.g.
-    18h against a 7pm dinner lands at 1am the SAME calendar day) — caught
-    in independent review: the Today tile frames this as "defrost tonight",
+    technically allow it (a short lead against a late dinner_window, e.g. a
+    synthetic 6h lead against an 8pm dinner lands at 2pm the SAME calendar
+    day — no real tier is ever this short, but the floor holds regardless of
+    how short a lead gets) — caught in independent review: the Today tile
+    frames this as "defrost tonight",
     and "tonight" for a meal happening that same evening is nonsensical (the
     move would need to happen that morning, and by the time anyone reads a
     tile that says "tonight" it may already be too late). The ticket's own
