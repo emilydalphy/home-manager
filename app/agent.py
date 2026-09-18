@@ -2644,7 +2644,7 @@ TOOL_DEFINITIONS = [
     {
         "name": "set_prep_days",
         "description": (
-            "Set (or correct) the days the household preps ahead on, household-level: up to two days, each "
+            "Set (or correct) the days the household preps ahead on, household-level: any number of days, each "
             "{weekday: 'monday'...'sunday', minutes: roughly how long (optional), note: anything they said about it (optional)}. "
             "\"We prep on Saturdays now\" is set_prep_days(days=[{\"weekday\": \"saturday\"}]); \"we don't prep ahead any more\" is "
             "set_prep_days(days=[]), which clears the answer. "
@@ -2658,7 +2658,7 @@ TOOL_DEFINITIONS = [
             "properties": {
                 "days": {
                     "type": "array",
-                    "description": "Up to two prep days, in the order the household says them (the big prep first).",
+                    "description": "The prep days, in the order the household says them (the big prep first).",
                     "items": {
                         "type": "object",
                         "properties": {

@@ -74,10 +74,14 @@ LEFTOVERS_STANCES = ("love_them", "fine_sometimes", "fresh_each_night")
 # standing answer" for lunch_location. This is a list-valued household
 # fact, not seven weekday facts.
 PREP_DAY_WEEKDAYS = PLANNING_ANCHOR_WEEKDAYS  # 'monday' ... 'sunday'
-# Two to start (Emily's own rhythm is exactly two). Not a technical limit —
-# the storage is a list — but the question is asked as "up to two" on both
-# screens, and a setter that accepted five would make those screens lie.
-MAX_PREP_DAYS = 2
+# UPDATED 2026-09-18 (Loop Board board 06-prep-days, Card 4): both screens
+# used to ask "up to two" and this capped the setter to match, so a third
+# day would have made either screen lie. The screens now ask "which days"
+# with no cap ("you can select multiple if you want to do a few cook days
+# throughout the week"), so the setter's own limit is the number of
+# distinct weekdays there are — seven — with duplicates already deduped by
+# _normalize_prep_days below rather than by this cap.
+MAX_PREP_DAYS = 7
 # What the onboarding/What-we-know chips offer. Any positive integer is
 # accepted (chat can say "about 40 minutes"); these are just the three
 # buckets the chips ask in.
@@ -474,9 +478,10 @@ def save_rhythm_answers(
     set_meals_together, set_cooking_role, ... one at a time, each opening
     its own connection and committing on the spot. Every one of those
     setters validates only its OWN value, so a bad field partway through
-    (an invalid cooking_role, a prep day over MAX_PREP_DAYS) raised after
-    the fields before it had already landed — a half-saved rhythm with no
-    way to tell, from the household's side, which answers actually took.
+    (an invalid cooking_role, a prep day naming a weekday that doesn't
+    exist) raised after the fields before it had already landed — a
+    half-saved rhythm with no way to tell, from the household's side,
+    which answers actually took.
 
     So: every field is validated here FIRST, with no write yet — the same
     checks the individual setters make, just made before touching the

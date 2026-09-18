@@ -135,9 +135,28 @@ def test_a_correction_replaces_rather_than_appends():
     assert tools.get_household_rhythm()["prep_days_summary"] == "Preps on Saturday (about half an hour)."
 
 
-def test_more_than_two_prep_days_is_refused():
-    with pytest.raises(ValueError):
-        tools.set_prep_days([{"weekday": "sunday"}, {"weekday": "wednesday"}, {"weekday": "friday"}])
+def test_any_number_of_days_can_be_set_and_read_back():
+    """
+    UPDATED 2026-09-18 (Loop Board board 06-prep-days, Card 4): the
+    two-day cap is gone — "any number of days can be on." Four days
+    round-trip through the rhythm read exactly like one or two did,
+    in the order given (not sorted into week order), and the summary
+    reads all of them back.
+    """
+    tools.set_prep_days([
+        {"weekday": "sunday"}, {"weekday": "monday"},
+        {"weekday": "wednesday"}, {"weekday": "friday"},
+    ])
+
+    rhythm = tools.get_household_rhythm()
+
+    assert rhythm["prep_days"] == [
+        {"weekday": "sunday", "minutes": None, "note": None},
+        {"weekday": "monday", "minutes": None, "note": None},
+        {"weekday": "wednesday", "minutes": None, "note": None},
+        {"weekday": "friday", "minutes": None, "note": None},
+    ]
+    assert rhythm["prep_days_summary"] == "Preps on Sunday, Monday, Wednesday, and Friday."
 
 
 def test_a_weekday_that_is_not_a_weekday_is_refused():
@@ -156,6 +175,29 @@ def test_the_onboarding_route_saves_prep_days(signed_in):
     assert res.status_code == 200
     assert res.json()["prep_days"] == [{"weekday": "sunday", "minutes": 60, "note": None}]
     assert tools.get_household_rhythm()["prep_days"][0]["weekday"] == "sunday"
+
+
+def test_the_onboarding_route_saves_more_than_two_prep_days(signed_in):
+    """
+    The real path the onboarding screen and What we know's Preferences
+    editor both post through — the one that used to 400 the moment a
+    household ticked a third day. Card 4, 2026-09-18: the screens ask
+    "which days" with no cap, so this call must succeed the same way the
+    one-day case above does.
+    """
+    res = signed_in.post(
+        "/api/onboarding/rhythm",
+        json={"prep_days": [
+            {"weekday": "sunday"}, {"weekday": "monday"},
+            {"weekday": "wednesday"}, {"weekday": "friday"},
+        ]},
+    )
+
+    assert res.status_code == 200
+    assert [d["weekday"] for d in res.json()["prep_days"]] == ["sunday", "monday", "wednesday", "friday"]
+    assert [d["weekday"] for d in tools.get_household_rhythm()["prep_days"]] == [
+        "sunday", "monday", "wednesday", "friday",
+    ]
 
 
 def test_a_rhythm_post_that_never_mentions_prep_days_leaves_them_alone(signed_in):

@@ -627,8 +627,10 @@ class OnboardingRhythmRequest(BaseModel):
     leftovers_stance: str = ""
     # The seventh, skippable question (Loop Board "Prep days", Emily
     # 2026-09-04/09-08): a list of {"weekday": 'sunday'..., "minutes":
-    # int|null, "note": str|null}, at most two. None means "this request
-    # isn't about prep days" and leaves the fact alone — an empty LIST
+    # int|null, "note": str|null} — any number of distinct weekdays since
+    # 2026-09-18 (Card 4: "any number of days can be on"). None means
+    # "this request isn't about prep days" and leaves the fact alone — an
+    # empty LIST
     # means "we don't prep ahead" and clears it, which is why this is
     # `| None` rather than defaulting to []. Every other field on this
     # model reads its own falsy value the same way.
