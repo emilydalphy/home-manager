@@ -5,6 +5,7 @@ and the wording used to ask about it.
 from __future__ import annotations
 
 import math
+from datetime import date, datetime, time, timedelta, timezone
 from ..db import get_conn
 from ._shared import acting_name, household_id, require_household_row
 from . import cooker as _cooker
@@ -324,6 +325,29 @@ def undo_pre_shop_drop(item_id: int) -> dict:
     return {"item_id": item_id, "status": "needed"}
 
 
+def _household_day_start_utc(day: date, zone) -> str:
+    """
+    The UTC instant the household's clock struck midnight on `day`, in the
+    shape SQLite stamps removed_at with.
+
+    grocery_items.removed_at is an instant — `datetime('now')`, i.e. UTC,
+    from all SEVEN writers of it: five in grocery.py, one here (the
+    pre-shop drop), one in staples.py — and the window below is a
+    household DAY. Comparing the
+    two as strings compares an instant against a date, which reads as
+    "midnight UTC", not "midnight where they live". So the day is turned
+    into the instant it began at and the comparison is instant against
+    instant. The conversion has to happen here rather than in the query
+    because SQLite knows UTC and the SERVER's zone, and the household's is
+    neither.
+    """
+    return (
+        datetime.combine(day, time(), tzinfo=zone)
+        .astimezone(timezone.utc)
+        .strftime("%Y-%m-%d %H:%M:%S")
+    )
+
+
 def get_already_have_decisions() -> list[dict]:
     """
     Review screen's confirmation section (Loop Board: "Review screen
@@ -347,19 +371,50 @@ def get_already_have_decisions() -> list[dict]:
     decision has silently aged out of a period still running. Falls back to
     this Monday when no plan covers today, which is byte-identical to the
     old behaviour for every household without a plan.
+
+    Both the day and the boundary are the HOUSEHOLD's, which they were not
+    until 2026-09-18. The day was `date.today()` — the container's, so a
+    period the household is standing in the middle of could fail the
+    "covers today" test by one evening and drop the window back to a
+    Monday cutoff the docstring above exists to be rid of; and
+    _current_weekly_plan_row picked the plan on the household's clock in
+    the first place, so the two reads could disagree about the same day.
+    The boundary was the cutoff DATE compared against a UTC timestamp,
+    which begins the window at midnight UTC: for a Toronto household four
+    hours early in EDT and five in EST — the last evening before the
+    period, from 20:00 local, 19:00 between November and March — which is
+    harmless, and nine hours LATE for a household east of UTC,
+    which loses them the first morning of their own period off the Review
+    screen with no way to undo a decision they can no longer see. Nobody
+    lives east of UTC today; households.timezone is a column anyone can
+    set. See _household_day_start_utc for why the conversion is in Python.
+
+    ONE NARROWING FALLS OUT OF THAT AND IT IS EMILY'S TO OVERRULE. A
+    decision made the evening BEFORE a period starts is no longer listed,
+    and for a household on the default `sunday_before` planning anchor
+    that evening is exactly when they approve the week and sort the list
+    these decisions come off. Nothing else can take one back: this is the
+    only screen that shows a removed row, and undo_pre_shop_drop is not a
+    chat tool. The window being the period is the fix; widening it back is
+    a product decision, not a clock one. Measured and written up in
+    CLAUDE.md, 2026-09-18.
     """
-    from datetime import date, timedelta
     from . import weekly_plan as _weekly_plan
 
-    today = date.today()
+    # Both halves of the comparison below are read here, before any
+    # connection opens: each opens one of its own, and a nested get_conn
+    # inside an open one is how this repo has twice earned an intermittent
+    # "database is locked".
+    today = _cooker.household_today()
+    zone = _cooker.household_zone()
     conn = get_conn()
     plan = _weekly_plan._current_weekly_plan_row(conn)
     conn.close()
-    cutoff = (today - timedelta(days=today.weekday())).isoformat()
+    cutoff = _household_day_start_utc(today - timedelta(days=today.weekday()), zone)
     if plan:
         period_start, period_days = _weekly_plan.plan_period(plan)
         if period_start <= today.isoformat() <= _weekly_plan.period_end_date(period_start, period_days):
-            cutoff = period_start
+            cutoff = _household_day_start_utc(date.fromisoformat(period_start), zone)
     conn = get_conn()
     rows = conn.execute(
         "SELECT id, item, quantity, category, store, removed_by, removed_at FROM grocery_items "
