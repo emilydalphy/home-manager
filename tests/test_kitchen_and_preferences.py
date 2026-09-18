@@ -247,10 +247,11 @@ def test_no_call_site_still_asks_for_the_meals_cook_state():
         # Meals' "Cook this" does — the back link has to name where the tap
         # actually came from. Same {entryId, date, slot, title} payload.
         # Updated 2026-09-10 (nav v2 part 2): the crumb names the tab as the
-        # household reads it, and that tab has been "Now" since the part 1
-        # rename. It said "Today" here because the rename grepped markup and
-        # these labels are JS object values.
-        "openRecipeFor(target.cookFocus, { label: 'Now', tab: 'today' })",
+        # household reads it — "Now" from the part 1 rename until 2026-09-17,
+        # when Emily renamed the tab back to Today. It said "Today" here
+        # before that because the rename grepped markup and these labels
+        # are JS object values.
+        "openRecipeFor(target.cookFocus, { label: 'Today', tab: 'today' })",
         # Meals' Day/Meal "Cook this" (wireMealsStep). It goes through
         # openRecipeFor as of 2026-09-09 so cook mode's back link can name
         # the Meals step it came from; the payload it passes is the same
@@ -921,7 +922,7 @@ _ACTION_JS = (
     + _function("runTodayMoveAction") + "\n"
 )
 
-_FROM_TODAY = {"label": "Now", "tab": "today"}
+_FROM_TODAY = {"label": "Today", "tab": "today"}
 
 
 def _run_move_action(target: dict):

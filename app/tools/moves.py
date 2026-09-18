@@ -13,7 +13,17 @@ which doing it makes sense:
 
     {id, kind, title, detail, reason, date, slot, window_start, window_end,
      weight, action: {label, target}, done, tickable, overdue, entry_id,
-     task_id, duration_min, time_label, chips}
+     task_id, duration_min, time_label, meta, chips}
+
+`meta` is the one clock-free line under the title on Today (Emily,
+2026-09-17, "Today: Shop / Cook, Morning · Afternoon · Evening"): what the
+move is FOR or how long it takes — "for Thursday's skewers", "35 min",
+"made ahead Sunday · reheat" — never "6:30". The clock belongs to the
+Morning / Afternoon / Evening tag beside the row (shell.js moveTimeOfDay,
+off window_start / window_end), so it must not be said twice. `detail`
+keeps the clock: the morning text (digest.py) and Cook still read it.
+A shop move also carries `stops`, one per store with something to buy
+(see _shop_stops) — Today draws one row per stop.
 
 `tickable` is true only when ticking the move actually does something —
 set_move_done dispatches cook/reheat to check_off_meal and fridge/prep to
@@ -285,6 +295,7 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
                 "task_id": None,
                 "duration_min": 0,
                 "time_label": _slot_time_label(slot, at),
+                "meta": f"{provenance} · reheat",
                 "chips": [],
             })
             continue
@@ -361,6 +372,8 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
             "task_id": None,
             "duration_min": duration,
             "time_label": _slot_time_label(slot, table),
+            # "35 min", or the slot when the recipe has no minutes on it.
+            "meta": f"{duration} min" if duration else slot,
             "chips": chips,
             # Both clocks, so a reader can say how far apart they are
             # ("Started 17 minutes late" on Cook's Tonight card) without
@@ -425,12 +438,17 @@ def _prep_moves(view: dict, day: date, now: datetime, dinner_clock: time) -> lis
         done = task.get("status") in ("done", "skipped")
         overdue = (not done) and evening < now
         when = "still to do" if overdue else "by tonight"
+        reason = reason or (task.get("related_meal") and f"for {task['related_meal']}") or ""
+        # What it's for, first; "still to do" only once it's running late —
+        # "by tonight" is the Evening tag's job on Today.
+        kind_word = "fridge move" if is_fridge else ("shop" if is_shop else "prep")
+        meta = " · ".join(b for b in (reason or kind_word, "still to do" if overdue else "") if b)
         moves.append({
             "id": ("fridge:" if is_fridge else "prep:") + str(task["id"]),
             "kind": "fridge" if is_fridge else ("shop" if is_shop else "prep"),
             "title": title or ("Fridge move" if is_fridge else "Prep"),
-            "detail": ("fridge move" if is_fridge else ("shop" if is_shop else "prep")) + f" · {when}",
-            "reason": reason or (task.get("related_meal") and f"for {task['related_meal']}") or "",
+            "detail": f"{kind_word} · {when}",
+            "reason": reason,
             "date": day_str,
             "slot": None,
             "window_start": open_from.isoformat(),
@@ -444,9 +462,42 @@ def _prep_moves(view: dict, day: date, now: datetime, dinner_clock: time) -> lis
             "task_id": task["id"],
             "duration_min": 0,
             "time_label": when,
+            "meta": meta,
             "chips": [],
         })
     return moves
+
+
+SHOP_ACTION_LABEL = "Go shopping"  # Today's dock when the shop is next up; opens the list
+STOP_PREVIEW_ITEMS = 3  # how many of a stop's things the row names before "…"
+
+
+def _shop_stops(needed: list[dict]) -> list[dict]:
+    """
+    The list, one entry per store with something to buy on it — what
+    Today's Shop group draws a row from ("Costco · 6 things", then the
+    first few things). Rows tagged to no shop are one stop of their own,
+    named "" here and "Any store" on screen (the Shop tab's own word for
+    that pile, groStoreLabel), last; a list nothing is tagged on is one
+    stop, its whole self. Stores keep the order the list first names them
+    in (the list is sorted by category then item, so that is stable).
+    """
+    by_store: dict[str, list[str]] = {}
+    for row in needed:
+        store = (row.get("store") or "").strip()
+        if store == "Unassigned":
+            store = ""
+        by_store.setdefault(store, []).append((row.get("item") or "").strip())
+    names = [n for n in by_store if n] + ([""] if "" in by_store else [])
+    return [{"store": n, "count": len(by_store[n]), "items": by_store[n][:STOP_PREVIEW_ITEMS]}
+            for n in names]
+
+
+def _shop_meta(stops: list[dict]) -> str:
+    """"orzo, salmon, black beans…" — the first few things across the list."""
+    items = [i for stop in stops for i in stop["items"]][:STOP_PREVIEW_ITEMS]
+    more = sum(stop["count"] for stop in stops) > len(items)
+    return ", ".join(i for i in items if i) + ("…" if more else "")
 
 
 def _standing_list_move(day: date, needed: list[dict]) -> list[dict]:
@@ -479,7 +530,8 @@ def _standing_list_move(day: date, needed: list[dict]) -> list[dict]:
     disagreeing about what is on the list, which is its own card.
     """
     count = len(needed)
-    stops = len({(r.get("store") or "").strip() for r in needed} - {""})
+    stops = len({(r.get("store") or "").strip() for r in needed} - {"", "Unassigned"})
+    stop_rows = _shop_stops(needed)
     return [{
         "id": f"shop:{day.isoformat()}",
         "kind": "shop",
@@ -493,7 +545,7 @@ def _standing_list_move(day: date, needed: list[dict]) -> list[dict]:
         "window_start": datetime.combine(day, time(0, 0)).isoformat(),
         "window_end": datetime.combine(day, time(23, 59)).isoformat(),
         "weight": WEIGHT_LOW,
-        "action": {"label": "Open the list", "target": {"tab": "grocery"}},
+        "action": {"label": SHOP_ACTION_LABEL, "target": {"tab": "grocery"}},
         "done": False,
         "tickable": False,
         # No deadline, so never the card — see featured_move_id.
@@ -503,6 +555,8 @@ def _standing_list_move(day: date, needed: list[dict]) -> list[dict]:
         "task_id": None,
         "duration_min": 0,
         "time_label": "",
+        "meta": _shop_meta(stop_rows),
+        "stops": stop_rows,
         "chips": [],
     }]
 
@@ -606,6 +660,7 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
         when = "by tomorrow"
 
     count = len(needed)
+    stop_rows = _shop_stops(needed)
     return [{
         "id": f"shop:{day.isoformat()}",
         "kind": "shop",
@@ -628,7 +683,7 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
         # here is enough; nothing else assumes it equals the slot time.
         "window_end": deadline.isoformat(),
         "weight": WEIGHT_HIGH,
-        "action": {"label": "Open the list", "target": {"tab": "grocery"}},
+        "action": {"label": SHOP_ACTION_LABEL, "target": {"tab": "grocery"}},
         # Derived, like every other tick: the move exists only while the
         # list has needed items on it, so it is never "done" — it stops
         # being a move instead.
@@ -646,6 +701,10 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
         "task_id": None,
         "duration_min": 0,
         "time_label": when,
+        # The things, not the deadline: "still to do" rides on the tag's
+        # side of the row only through `detail` (the morning text's line).
+        "meta": _shop_meta(stop_rows),
+        "stops": stop_rows,
         "chips": [],
     }]
 
@@ -720,8 +779,8 @@ def featured_move_id(moves: list[dict], now: datetime | None = None) -> str | No
     A move with `timed` false never features at all: "next up" is a
     question about time, and a move with no deadline has no claim on it.
     The one that carries the flag today is the untimed shopping list
-    (_standing_list_move), which is also what keeps Now's one apricot off
-    "Open the list" for a list nothing today is waiting on.
+    (_standing_list_move), which is also what keeps Today's one apricot
+    off "Go shopping" for a list nothing today is waiting on.
 
     `now` omitted is the household's now: these windows are naive local
     times, so comparing them against a UTC server clock ranked the day

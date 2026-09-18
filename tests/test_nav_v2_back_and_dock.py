@@ -29,12 +29,14 @@ SHELL_HTML = (REPO / "static" / "shell.html").read_text(encoding="utf-8")
 # Rule 1 — one way back, and it names its parent
 # --------------------------------------------------------------------------
 
-# The four tab names as a household reads them since part 1 (2026-09-09).
-# Their predecessors are listed beside them because the failure this guards
-# against is a crumb that still says the OLD word above a tab bar showing the
-# new one — which is exactly what shipped: part 1 grepped markup, and four
-# crumb labels are JS object values, so they were missed.
-RETIRED_TAB_WORDS = {"Today": "Now", "Meals": "Plan", "Grocery": "Shop", "Kitchen": "Cook"}
+# The four tab names as a household reads them since part 1 (2026-09-09) —
+# and since 2026-09-17, when Emily renamed "Now" back to Today, so "Now" is
+# the retired word for the first tab. Their predecessors are listed beside
+# them because the failure this guards against is a crumb that still says
+# the OLD word above a tab bar showing the new one — which is exactly what
+# shipped: part 1 grepped markup, and four crumb labels are JS object
+# values, so they were missed.
+RETIRED_TAB_WORDS = {"Now": "Today", "Meals": "Plan", "Grocery": "Shop", "Kitchen": "Cook"}
 
 
 def _crumb_buttons():

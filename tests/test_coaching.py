@@ -583,8 +583,9 @@ console.log(JSON.stringify({
     lines = 1 + len(tips["groups"]) + len(tips["closers"]) + 1
     assert lines <= 10, f"the tips sheet is {lines} lines"
     # Renamed 2026-09-09 (Emily): the tips sheet names each tab, so it
-    # follows the tab bar. Words only — the keys behind them are unchanged.
-    assert [g["tab"] for g in tips["groups"]] == ["Now", "Plan", "Shop", "Cook"]
+    # follows the tab bar (and the first tab back to Today, 2026-09-17).
+    # Words only — the keys behind them are unchanged.
+    assert [g["tab"] for g in tips["groups"]] == ["Today", "Plan", "Shop", "Cook"]
     assert [g["example"] for g in tips["groups"]] == [
         "What’s next tonight?",
         "Swap Thursday for something lighter",

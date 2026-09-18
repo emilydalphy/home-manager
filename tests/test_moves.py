@@ -649,7 +649,8 @@ def test_one_households_moves_are_never_another_households(client):
 # removed. A marker that is present but mis-wired is still a far better
 # failure mode than a marker that is gone. (The two-block shape — a Next
 # up card and "The rest of today" — became one strip down the day on
-# 2026-09-13; tests/test_now_day_strip.py covers the strip itself.)
+# 2026-09-13, and two cards, Shop and Cook, on 2026-09-17;
+# tests/test_today_shop_cook.py covers the groups themselves.)
 
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
@@ -657,9 +658,9 @@ SHELL_CSS = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize("marker", [
-    "id=\"today-rest\"",             # where the strip renders
-    "function dayStripNodeHtml(",     # one node of it
-    "class=\"day-strip\"",
+    "id=\"today-rest\"",             # where the groups render
+    "function dayStripNodeHtml(",     # one row of them
+    "class=\"day-groups\"",
     "data-move-tick",                 # the tick control (the node's dot)
     "function toggleTodayMove(",
     "/api/today/moves",               # one fetch, not four

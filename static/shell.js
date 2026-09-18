@@ -208,7 +208,9 @@
   }
 
   var TABS = [
-    { key: 'today', path: '/', label: 'Now', icon: ICONS.sunrise, real: true },
+    // "Now" from nav v2 part 1 (2026-09-09) until 2026-09-17, when Emily
+    // renamed it back to Today (Loop Board "Today: rename Now → Today").
+    { key: 'today', path: '/', label: 'Today', icon: ICONS.sunrise, real: true },
     { key: 'week', path: '/week', label: 'Plan', icon: ICONS.week, week: true },
     // Stage 2 slice 2: Grocery is a real shell screen now, not an embedded
     // page. static/grocery.html still exists and still works standalone, but
@@ -800,13 +802,14 @@
   // only exists (is only ever shown) at >=1024px — see "Ask sheet vs. Ask
   // column" below for how the same conversation renders into both surfaces
   // depending on which one exists at the moment.
-  // ---------- Today: one timeline of moves ----------
+  // ---------- Today: the day's moves, Shop then Cook ----------
   // Emily's approved Today design, 2026-09-08. The screen answers "what's
   // next for us?" with the day's moves and nothing else. Until 2026-09-13
   // that was two blocks — ONE "Next up" card carrying a single action, and
   // "The rest of today", a plain list of every other move with a round
-  // tick; it is one strip down the day now (see "Now: the day as a strip"
-  // below), with the next-up move as the strip's one tinted node.
+  // tick; then one strip down the day with a time rail; since 2026-09-17
+  // it is two cards, Shop and Cook (see "Today: Shop and Cook" below),
+  // with the next-up move as the one tinted row across both.
   //
   // Everything comes from one fetch, /api/today/moves (app/tools/moves.py), which
   // ranks the day's cooks, reheats, fridge moves, prep and shopping against
@@ -833,7 +836,7 @@
         rootBandHtml({
           id: 'today-band',
           eyebrow: bandDateLabel(),
-          title: 'Now'
+          title: 'Today'
         }) +
         // The holiday, when today is one — name and answer in the neutral
         // pill, first thing under the band. Hidden on an ordinary day.
@@ -849,15 +852,16 @@
         // (The one-time "how to talk to me" sheet that used to be a card
         // here is body-level now — see #coach-card-slot in shell.html.)
         //
-        // The day itself is ONE strip (renderTodayMoves → .day-strip in
-        // #today-rest, 2026-09-13): the next-up move is the strip's one
-        // tinted node, in its place on the day, rather than a card above
-        // it. Until 2026-09-11 that card was the spruce hero bleeding the
-        // panel's full width; Emily, reviewing the screen-by-screen canvas:
-        // "the next-up card pulls too much attention… making the screen
-        // more even, but a bit called out" (§2b S3) — first a sand card in
-        // the gutter (#today-next-up, gone now), then the strip. Its action
-        // lives in the dock at the foot of the screen either way.
+        // The day itself is two cards, Shop and Cook (renderTodayMoves →
+        // .day-groups in #today-rest, 2026-09-17): the next-up move is the
+        // one tinted row, in its place on the day, rather than a card
+        // above it. Until 2026-09-11 that card was the spruce hero bleeding
+        // the panel's full width; Emily, reviewing the screen-by-screen
+        // canvas: "the next-up card pulls too much attention… making the
+        // screen more even, but a bit called out" (§2b S3) — first a sand
+        // card in the gutter (#today-next-up, gone now), then one strip
+        // down the day (2026-09-13), now the two groups. Its action lives
+        // in the dock at the foot of the screen either way.
         '<div class="today-body">' +
           // The top card from mid-afternoon on a day with a planned
           // dinner (Emily, 2026-09-13): "Tonight: X. Still good?" — Yes
@@ -912,7 +916,7 @@
         // under the band and the moment centres in what is left.
         '<div id="today-empty" class="today-area-empty" hidden></div>' +
         // The screen's one action — the featured move's ("Cook this",
-        // "Done", "Open the list") or, with no week planned, the offer to
+        // "Done", "Go shopping") or, with no week planned, the offer to
         // plan one. Same .dock every other tab uses (nav v2 rule 2); it
         // used to be that Now had none because its action sat inside the
         // hero. Filled by renderTodayDock, hidden when there is nothing
@@ -1646,17 +1650,21 @@
   var DOTS_ICON =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5.5" r="0.6"/><circle cx="12" cy="12" r="0.6"/><circle cx="12" cy="18.5" r="0.6"/></svg>';
 
-  // ---------- Now: the day as a strip ----------
-  // Emily, 2026-09-12, from the "Beyond lists" canvas ("Now · A · The day
-  // as a strip"). Now's content is ONE vertical strip down the day: every
-  // move is a node on a two-column grid — the time, a round dot and a
-  // hairline running down to the next node on the left; the title and one
-  // meta line on the right. The dot says the state (done = celadon with a
-  // tick; now = apricot with the move's icon; later = surface with a
-  // hairline) and is the move's tick (44px of tap around 28px of dot, Rule
-  // 6). The next-up move is the ONE tinted node (celadon-tint tile, a NOW
-  // eyebrow — §2b S3/S6), and its action stays in the dock. This replaced
-  // the sand next-up card plus "The rest of today" / "Done today" lists.
+  // ---------- Today: Shop and Cook ----------
+  // Emily, 2026-09-17 (Loop Board "Today: rename Now → Today; group by
+  // Shop / Cook; Morning · Afternoon · Evening"; mockup 17a-today-tags).
+  // Today's content is two cards in the gutter: SHOP (the bag; one row per
+  // store stop, "Costco · 6 things" over the first few things) and COOK
+  // (the pot; fridge moves, prep, cooks and reheats in day order). A group
+  // with nothing in it is not drawn. Each row is the move's tick on the
+  // left (44px of tap around 28px of dot, Rule 6 — the dot says the state:
+  // done = celadon with a tick, now = apricot with the kind's icon, later =
+  // surface with a hairline), the title and one clock-free meta line, and
+  // a MORNING / AFTERNOON / EVENING tag at the right where the strip used
+  // to print a clock (moveTimeOfDay). The next-up move is the ONE tinted
+  // row across both groups (celadon-tint, a NOW eyebrow — §2b S3/S6), and
+  // its action stays in the dock. Until 2026-09-17 this was one strip down
+  // the day with a time rail ("Now · A · The day as a strip").
   //
   // The move's icon, by kind. Same drawing style as ICONS/KITCHEN_ICONS
   // (2.2px stroke, round caps, 24 grid); declared here rather than reached
@@ -1676,6 +1684,15 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 8.5h15l-1.3 10.7a2 2 0 0 1-2 1.8H7.8a2 2 0 0 1-2-1.8z"/><path d="M9.2 8.5V6.6a2.8 2.8 0 0 1 5.6 0v1.9"/></svg>'
   };
 
+  // The two groups' own icons — the tab bar's bag and pot (ICONS.bag /
+  // ICONS.kitchen are the same drawings), in a 32px sand tile at the head
+  // of each card so the card reads as "the Shop part of today" and "the
+  // Cook part of today" without saying so.
+  var DAY_GROUPS = {
+    shop: { title: 'Shop', icon: MOVE_ICONS.shop },
+    cook: { title: 'Cook', icon: MOVE_ICONS.cook }
+  };
+
   // The node's dot — and, for a move with a tick behind it, the tick
   // itself. Both icons are always in the dot (the kind's, and the tick),
   // and the node's state class picks which one shows: that is what lets a
@@ -1692,7 +1709,7 @@
     // ticking it used to fill the circle in and have it silently snap back,
     // with a toast that lied about it. `tickable` (from moves.py) says
     // whether the done dispatch actually flips anything; when it doesn't,
-    // the dot is a plain mark on the rail, not a button.
+    // the dot is a plain mark on the row, not a button.
     if (!move.tickable) return '<span class="day-tick" aria-hidden="true">' + dot + '</span>';
     return '<button type="button" class="day-tick' + (move.done ? ' is-done' : '') + '" ' +
       'data-move-tick="' + escapeHtml(move.id) + '" ' +
@@ -1705,37 +1722,42 @@
   // When a move sits on the day. A cook's window_start is its meal time
   // minus the cooking (moves.py), so the meal is window_start + duration;
   // a reheat's window opens AT the meal. An all-day move has no clock of
-  // its own: a shop is "any time today" and sits at the top of the day,
-  // a fridge or prep move is "by tonight" and sits at the foot (the old
-  // "Before bed" tile's slot) — sorted by the end of its window, since
-  // the deadline is the only real time it has.
+  // its own but a deadline: a shop is "by the cook it's for" (its
+  // window_end is that cook's start), a fridge or prep move is "by
+  // tonight" — so the end of the window is the only real time either has,
+  // and is what orders it and what the tag reads.
   function moveStripAt(move) {
-    var iso = (move.kind === 'fridge' || move.kind === 'prep') ? move.window_end : move.window_start;
+    var iso = (move.kind === 'fridge' || move.kind === 'prep' || move.kind === 'shop') ? move.window_end : move.window_start;
     var at = new Date(iso || '');
     if (isNaN(at.getTime())) return null;
     if (move.kind === 'cook') at.setMinutes(at.getMinutes() + (move.duration_min || 0));
     return at;
   }
 
-  // The rail's eyebrow: the clock the way a person reads it off a wall
-  // ("8:00", "6:30", "Noon"), never "18:30"; "Tonight" / "Today" for a
-  // move with no clock (see moveStripAt). The meta line beside it says
-  // which half of the day ("6:30 tonight" — moves.py's time_label).
-  function moveStripTime(move) {
-    if (move.kind === 'shop') return 'Today';
-    if (move.kind === 'fridge' || move.kind === 'prep') return 'Tonight';
+  // The tag at the right of a row: which part of the day, never a clock
+  // (Emily, 2026-09-17 — "6:30" on every row was the strip reading like a
+  // timetable). One mapping, here and nowhere else: before noon is
+  // Morning, noon to five is Afternoon, five on is Evening. A fridge or
+  // prep move is "by tonight" (window_end 22:00, moves.py), so it lands in
+  // Evening; dinner lands in Evening because the household's dinner clock
+  // (the dinner_window rhythm fact, moves._dinner_clock) is five or later.
+  // A shop with no clock — the standing list, nothing today waiting on it
+  // (`timed` false) — is "Any time"; a shop with a deadline reads off it.
+  function moveTimeOfDay(move) {
+    if (move.kind === 'shop' && move.timed === false) return 'Any time';
     var at = moveStripAt(move);
-    if (!at) return move.time_label || '';
-    var h = at.getHours(), m = at.getMinutes();
-    if (h === 12 && m === 0) return 'Noon';
-    return ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m;
+    if (!at) return 'Any time';
+    var h = at.getHours();
+    if (h < 12) return 'Morning';
+    if (h < 17) return 'Afternoon';
+    return 'Evening';
   }
 
   // Top to bottom down the day. The server's order (moves.py, by
   // window_start) puts every all-day move first, which read as "Tonight"
-  // above breakfast; the strip orders by where each move sits on the day
-  // instead, and keeps the server's order between two moves at the same
-  // time (the shop before the cook it is for).
+  // above breakfast; the groups order by where each move sits on the day
+  // instead, and keep the server's order between two moves at the same
+  // time.
   function dayStripOrder(moves) {
     return moves.map(function (m, i) { return { m: m, i: i, at: moveStripAt(m) }; })
       .sort(function (a, b) {
@@ -1745,51 +1767,120 @@
       .map(function (x) { return x.m; });
   }
 
-  // One node. `state` is 'done', 'now' (the next-up move — exactly one node
-  // ever, §2b S3) or 'later'. The node's body is the tap target for "open
-  // this move" (52px+, Rule 6): a pending node runs the move's action (a
-  // cook opens its recipe in cook mode, a reheat or fridge move ticks —
-  // runTodayMoveAction); a done node has nothing left to do, so only its
-  // dish name stays a link (Emily, 2026-09-09) and the dot undoes.
-  function dayStripNodeHtml(move, state) {
+  // The one clock-free line under a title (moves.py `meta`: "for
+  // Thursday's skewers", "35 min", "made ahead Sunday · reheat"). A
+  // payload cached from before that field existed still carries `detail`,
+  // which says the clock the tag now says — better than an empty line.
+  function moveMetaLine(move) {
+    return move.meta != null ? move.meta : (move.detail || '');
+  }
+
+  // One row. `state` is 'done', 'now' (the next-up move — exactly one row
+  // ever, across both groups, §2b S3) or 'later'. The row's body is the tap
+  // target for "open this move" (52px+, Rule 6): a pending row runs the
+  // move's action (a cook opens its recipe in cook mode, a reheat or fridge
+  // move ticks, a shop opens the list — runTodayMoveAction); a done row has
+  // nothing left to do, so only its dish name stays a link (Emily,
+  // 2026-09-09) and the dot undoes. `text` overrides the title and meta
+  // (a shop's store stops — todayShopRowsHtml); the tick, the tag and the
+  // state are the move's either way.
+  function dayStripNodeHtml(move, state, text) {
     var id = escapeHtml(move.id);
-    var meta = move.detail ? '<span class="day-node-meta">' + escapeHtml(move.detail) + '</span>' : '';
+    var title = escapeHtml((text && text.title) || move.title);
+    var metaLine = text ? (text.meta || '') : moveMetaLine(move);
+    var meta = metaLine ? '<span class="day-node-meta">' + escapeHtml(metaLine) + '</span>' : '';
     var body;
     if (state === 'now') {
-      // The one tinted node: a celadon-tint tile with the word for it
-      // (S6). What the move is FOR — a fridge move's "for Thursday's
-      // skewers", a batch's "covers Thursday" — rides under the meta
-      // line here only, the way the old card's accent line did.
-      body = '<button type="button" class="day-node-tile" data-move-action="' + id + '">' +
+      // The one tinted row: the word for it (S6), the title, the meta, and
+      // what the move is FOR — a batch's "covers Thursday" — under them,
+      // here only, the way the old card's accent line did. (A fridge
+      // move's reason IS its meta line — "for Thursday's skewers", or
+      // that with "· still to do" after it — so it is not said twice.)
+      var why = (move.reason && metaLine.indexOf(move.reason) !== 0) ? '<span class="day-node-meta day-node-why">' + escapeHtml(move.reason) + '</span>' : '';
+      body = '<button type="button" class="day-node-text day-node-open" data-move-action="' + id + '">' +
         '<span class="day-node-eyebrow">Now</span>' +
-        '<span class="day-node-title">' + escapeHtml(move.title) + '</span>' +
-        meta +
-        (move.reason ? '<span class="day-node-meta day-node-why">' + escapeHtml(move.reason) + '</span>' : '') +
+        '<span class="day-node-title">' + title + '</span>' +
+        meta + why +
       '</button>';
     } else if (state === 'done') {
       body = '<span class="day-node-text">' + moveDishHtml(move, 'day-node-title') + meta + '</span>';
     } else {
       body = '<button type="button" class="day-node-text day-node-open" data-move-action="' + id + '">' +
-        '<span class="day-node-title">' + escapeHtml(move.title) + '</span>' + meta +
+        '<span class="day-node-title">' + title + '</span>' + meta +
       '</button>';
     }
     return '<div class="day-node is-' + state + '" data-move-id="' + id + '">' +
-      '<div class="day-node-rail">' +
-        '<span class="day-node-time">' + escapeHtml(moveStripTime(move)) + '</span>' +
-        moveTickHtml(move) +
-        '<span class="day-node-line" aria-hidden="true"></span>' +
-      '</div>' +
-      '<div class="day-node-body">' + body + '</div>' +
+      moveTickHtml(move) +
+      body +
+      '<span class="day-node-tag">' + escapeHtml(moveTimeOfDay(move)) + '</span>' +
     '</div>';
   }
 
-  // A ticked node settles rather than snapping (animation 3 — the same
+  // The Shop group's rows: one per store stop of the list ("Costco · 6
+  // things", then the first few things — moves.py `stops`), each opening
+  // the list. A shop with no stops on it (a holiday's own shop row, a
+  // cached payload) is one row of its own. Only the first row of a
+  // featured shop is the tinted one — one across both groups.
+  function todayShopRowsHtml(move, state) {
+    var stops = move.stops || [];
+    if (!stops.length) return dayStripNodeHtml(move, state);
+    return stops.map(function (stop, i) {
+      var n = stop.count || (stop.items || []).length;
+      var name = stop.store || 'Any store';
+      var items = (stop.items || []).join(', ');
+      return dayStripNodeHtml(move, (state === 'now' && i) ? 'later' : state, {
+        title: name + ' · ' + n + (n === 1 ? ' thing' : ' things'),
+        meta: items + (n > (stop.items || []).length ? '…' : '')
+      });
+    }).join('');
+  }
+
+  // How many rows the Shop group draws for a move — the card's "N stops".
+  function todayShopStops(move) {
+    return Math.max(1, (move.stops || []).length);
+  }
+
+  // One group card: the icon in its sand tile, the title, the count at
+  // the right ("1 stop", "1 of 4"), then the rows.
+  function dayGroupHtml(key, count, rows) {
+    var g = DAY_GROUPS[key];
+    return '<div class="shell-card day-group day-group-' + key + '">' +
+      '<div class="day-group-head">' +
+        '<span class="day-group-icon">' + g.icon + '</span>' +
+        '<span class="day-group-title">' + g.title + '</span>' +
+        '<span class="day-group-count">' + escapeHtml(count) + '</span>' +
+      '</div>' +
+      rows +
+    '</div>';
+  }
+
+  // Both groups, or whichever of them has something in it. Shop first:
+  // the trip is what the day's cooking waits on.
+  function dayGroupsHtml(moves, featured) {
+    var stateOf = function (m) { return m.done ? 'done' : (featured && m.id === featured.id ? 'now' : 'later'); };
+    var shops = moves.filter(function (m) { return m.kind === 'shop'; });
+    var cooks = dayStripOrder(moves.filter(function (m) { return m.kind !== 'shop'; }));
+    var html = '';
+    if (shops.length) {
+      var stops = shops.reduce(function (n, m) { return n + todayShopStops(m); }, 0);
+      html += dayGroupHtml('shop', stops + (stops === 1 ? ' stop' : ' stops'),
+        shops.map(function (m) { return todayShopRowsHtml(m, stateOf(m)); }).join(''));
+    }
+    if (cooks.length) {
+      var done = cooks.filter(function (m) { return m.done; }).length;
+      html += dayGroupHtml('cook', done + ' of ' + cooks.length,
+        cooks.map(function (m) { return dayStripNodeHtml(m, stateOf(m)); }).join(''));
+    }
+    return html;
+  }
+
+  // A ticked row settles rather than snapping (animation 3 — the same
   // transitions the grocery trip row plays, on a second surface; see
   // shell.css's Motion section and groAnimateRowSettle for the trick).
-  // toggleTodayMove re-renders the whole strip, so by the time this runs
-  // the node is a brand-new element already at its final state; this
-  // forces the earlier frame — the state it was in before the tap —
-  // reflows, then lets the class change play the CSS transition.
+  // toggleTodayMove re-renders both groups, so by the time this runs the
+  // row is a brand-new element already at its final state; this forces
+  // the earlier frame — the state it was in before the tap — reflows,
+  // then lets the class change play the CSS transition.
   function todayAnimateNodeSettle(panel, id, fromState) {
     var node = panel.querySelector('.day-node[data-move-id="' + id + '"]');
     if (!node) return;
@@ -1877,21 +1968,16 @@
     panel._featured = featured;
     renderTodayDock(panel);
 
-    // The strip: every move, done ones included, in the order they sit on
-    // the day (dayStripOrder) — the featured move is the one 'now' node,
-    // in its own place on the day rather than lifted out above the rest.
+    // The two groups (dayGroupsHtml): Shop, then Cook — every move, done
+    // ones included, in the order they sit on the day; the featured move
+    // is the one 'now' row, in its own place rather than lifted out.
     var restEl = panel.querySelector('#today-rest');
     if (!restEl) return;
-    var html = '';
-    if (moves.length) {
-      html += '<div class="day-strip">' + dayStripOrder(moves).map(function (m) {
-        return dayStripNodeHtml(m, m.done ? 'done' : (featured && m.id === featured.id ? 'now' : 'later'));
-      }).join('') + '</div>';
-    }
+    var html = '<div class="day-groups">' + dayGroupsHtml(moves, featured) + '</div>';
     var pending = moves.filter(function (m) { return !m.done; });
     // Nothing left to do today. Say so, and — when there is one — name
     // tomorrow's first move rather than leaving a blank screen, after the
-    // strip. A day with no moves AT ALL is the empty moment's
+    // groups. A day with no moves AT ALL is the empty moment's
     // (renderTodayEmpty), not a card's.
     if (!featured && !pending.length && !panel._openDinnerCard && moves.length) {
       html += data.tomorrow
@@ -1921,7 +2007,7 @@
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
         var move = todayMoveById(panel, btn.getAttribute('data-move-dish'));
-        if (move) openRecipeFor(moveRecipeTarget(move), { label: 'Now', tab: 'today' });
+        if (move) openRecipeFor(moveRecipeTarget(move), { label: 'Today', tab: 'today' });
       });
     });
   }
@@ -2058,7 +2144,7 @@
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
         var move = todayMoveById(panel, btn.getAttribute('data-move-dish'));
-        if (move) openRecipeFor(moveRecipeTarget(move), { label: 'Now', tab: 'today' });
+        if (move) openRecipeFor(moveRecipeTarget(move), { label: 'Today', tab: 'today' });
       });
     });
   }
@@ -2543,7 +2629,7 @@
     // "‹ Today" while its action button said "‹ Kitchen", two answers to
     // one meal 200px apart.
     if (target.tab === 'kitchen' && target.cookFocus) {
-      return openRecipeFor(target.cookFocus, { label: 'Now', tab: 'today' });
+      return openRecipeFor(target.cookFocus, { label: 'Today', tab: 'today' });
     }
     // The same thing, in the shape moves.py wrote it before 2026-09-08,
     // when cook mode was a state of the Meals tab. A payload cached by the
@@ -2552,7 +2638,7 @@
     // translate it rather than dropping the tap on the plan, where it
     // would silently do nothing.
     if (target.tab === 'week' && target['mealsView'] === 'cook') {
-      return openRecipeFor(target['mealsFocus'] || true, { label: 'Now', tab: 'today' });
+      return openRecipeFor(target['mealsFocus'] || true, { label: 'Today', tab: 'today' });
     }
     if (target.tab) return activateTab(target.tab, true);
   }
@@ -23760,7 +23846,7 @@
   var TIPS_OPENING = 'Say it however it comes out.';
 
   var TIPS_GROUPS = [
-    { tab: 'Now', example: 'What’s next tonight?', line: 'The day in front of you — what’s cooking, who’s out, what still needs doing.' },
+    { tab: 'Today', example: 'What’s next tonight?', line: 'The day in front of you — what’s cooking, who’s out, what still needs doing.' },
     { tab: 'Plan', example: 'Swap Thursday for something lighter', line: 'The week’s plan — swaps, away nights, what you’re in the mood for.' },
     { tab: 'Shop', example: 'Add oat milk and lemons', line: 'The list — adding, dropping, what you already have at home.' },
     { tab: 'Cook', example: 'What can I make with the chicken thighs?', line: 'Tonight’s cooking — what’s in the house, and how long you’ve got.' }

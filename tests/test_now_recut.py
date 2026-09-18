@@ -5,8 +5,9 @@ in a dock at the foot, the plan offer as a question with nothing under it,
 the coaching card turned into a one-time sheet, and the dinner suggestions
 folded behind one Pick.
 
-Since 2026-09-13 the next-up card is the day strip's one tinted node
-(tests/test_now_day_strip.py); what this file still guards is that the
+Since 2026-09-13 the next-up card is the one tinted row of the day's
+moves (two cards, Shop and Cook, since 2026-09-17 —
+tests/test_today_shop_cook.py); what this file still guards is that the
 action stayed in the dock and never came back into the content.
 """
 from pathlib import Path
@@ -28,8 +29,9 @@ def test_next_up_is_not_the_hero_and_not_a_card_above_the_day():
     assert 'class="dinner-hero nextup-hero"' not in SHELL_JS
     assert 'id="today-next-up"' not in SHELL_JS
     assert ".nextup-card {" not in SHELL_CSS and ".today-area-nextup" not in SHELL_CSS
-    # The next-up move is the strip's one tinted node now.
-    assert "dayStripNodeHtml(m, m.done ? 'done' : (featured && m.id === featured.id ? 'now' : 'later'))" in _fn("renderTodayMoves")
+    # The next-up move is the one tinted row of the Shop / Cook cards now.
+    assert "dayGroupsHtml(moves, featured)" in _fn("renderTodayMoves")
+    assert "return m.done ? 'done' : (featured && m.id === featured.id ? 'now' : 'later');" in _fn("dayGroupsHtml")
 
 
 def test_the_node_carries_no_apricot_button_the_dock_does():
