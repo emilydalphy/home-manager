@@ -1945,11 +1945,17 @@ def add_recipe_endpoint(req: AddRecipeRequest):
     if source_url and not source_url.lower().startswith(("http://", "https://")):
         source_url = ""
     try:
-        existing = [r for r in tools.list_recipes() if r["name"].lower() == name.lower()]
+        # Asked here as well as inside add_recipe, and deliberately: this
+        # door can answer 409 ("that name is taken") rather than the 500 a
+        # raise would become, and the review sheet shows the sentence over
+        # the draft the household is still holding. Both read the same rule
+        # and say the same words (tools.existing_recipe_named), so they
+        # cannot drift apart the way the four old guards did.
+        existing = tools.existing_recipe_named(name)
         if existing:
             raise HTTPException(
                 status_code=409,
-                detail=f"You already have a recipe called “{existing[0]['name']}” — change the name to keep both.",
+                detail=tools.duplicate_recipe_message(existing["name"]),
             )
         result = tools.add_recipe(
             name,

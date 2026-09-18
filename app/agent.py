@@ -4390,8 +4390,11 @@ def _generate_weekly_plan(
 
         def _ensure_recipe_saved(meal_name, item):
             if item.get("is_new_recipe") and item.get("ingredients"):
-                existing = next((r for r in tools.list_recipes() if r["name"] == meal_name), None)
-                if not existing:
+                # Case-insensitively (tools.existing_recipe_named), which is
+                # the one rule now. Comparing names exactly let the model's
+                # "chicken tacos" write a second row beside a saved "Chicken
+                # Tacos" — a recipe nothing could then reach by name.
+                if not tools.existing_recipe_named(meal_name):
                     tools.add_recipe(
                         name=meal_name,
                         ingredients=item.get("ingredients", []),

@@ -698,12 +698,7 @@ def _existing_main_summary(entry) -> dict | None:
 
 def _recipe_for_main(main: dict, holiday_name: str) -> int:
     """A saved recipe for the proposed main — reused by name when one exists, else written for this table."""
-    conn = get_conn()
-    row = conn.execute(
-        "SELECT id FROM recipes WHERE household_id = ? AND lower(name) = lower(?)",
-        (household_id(), main["name"]),
-    ).fetchone()
-    conn.close()
+    row = _recipes.existing_recipe_named(main["name"])
     if row:
         return row["id"]
     saved = _recipes.add_recipe(

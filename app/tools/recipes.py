@@ -73,6 +73,15 @@ def add_recipe(
     (settle_cooking_quantities): a line out of range gets a cook_qty the
     cook can trust, and its shopping qty is stored exactly as given.
     """
+    # One household, one recipe per name. Checked here rather than at each
+    # door because the door with no check was the one a person reaches by
+    # talking — see existing_recipe_named. Resolved before get_conn: this
+    # opens its own connection, and this repo has twice earned an
+    # intermittent "database is locked" from a nested one.
+    clash = existing_recipe_named(name)
+    if clash:
+        raise DuplicateRecipeName(duplicate_recipe_message(clash["name"]))
+
     ingredients = settle_cooking_quantities(ingredients or [], default_servings)
     conn = get_conn()
     cur = conn.execute(
@@ -101,6 +110,60 @@ def add_recipe(
         "source_page": (source_page or "").strip(),
         "citation": citation,
     }
+
+
+
+class DuplicateRecipeName(ValueError):
+    """
+    A save that would give one household two recipes under one name.
+
+    Every lookup that resolves a recipe BY NAME — plan_meal, get_recipe,
+    mark_recipe_feedback, update_recipe_details, the swap paths — is a
+    fetchone() with no ORDER BY, so a second row under the same name is
+    reachable by nothing: the older one wins every read and the newer one
+    is saved and then invisible. repair_recipe_titles.py already refuses
+    any rename that would produce that state and calls it the worse
+    problem; this stops it being produced in the first place.
+
+    A ValueError, so the chat loop surfaces it to the model as a tool
+    error rather than a success — the same reasoning check_off_meal's
+    status guard made (2026-09-16): _turn_wrote_anything counts a
+    non-error result, so answering with a dict would let the assistant
+    say "Saved" about a recipe that was never written. The cost is one
+    error_events row per collision, which is the guard working.
+    """
+
+
+def existing_recipe_named(name: str) -> dict | None:
+    """
+    This household's recipe of that name, or None — case-insensitively,
+    because that is what a person means by "the same recipe" and what
+    most of this module's own lookups already do.
+
+    The one place the "one household, one recipe per name" rule is
+    decided. It had been decided in four places instead, which is how
+    they came to disagree: the import route answered 409, swap and
+    big_meal skipped silently, week generation compared names
+    case-SENSITIVELY (so `chicken tacos` beside `Chicken Tacos` made a
+    second row), and the chat tool checked nothing at all. A fifth door
+    should call this rather than write a fifth answer.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id, name FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) "
+        "ORDER BY id LIMIT 1",
+        (household_id(), (name or "").strip()),
+    ).fetchone()
+    conn.close()
+    return {"id": row["id"], "name": row["name"]} if row else None
+
+
+def duplicate_recipe_message(existing_name: str) -> str:
+    """The one sentence both doors say about a name that is already taken."""
+    return (
+        f"You already have a recipe called “{existing_name}” — "
+        "change the name to keep both."
+    )
 
 
 def recipe_citation(source_url: str = "", source_book: str = "", source_author: str = "", source_page: str = "",

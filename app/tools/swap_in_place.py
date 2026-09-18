@@ -470,7 +470,7 @@ def _save_recipe_if_new(pick: dict, serves: int) -> None:
     ingredients = _clean_ingredients(pick.get("ingredients"))
     if not ingredients:
         return
-    if any(r["name"].lower() == name.lower() for r in _recipes.list_recipes()):
+    if _recipes.existing_recipe_named(name):
         return
     _recipes.add_recipe(
         name=name,

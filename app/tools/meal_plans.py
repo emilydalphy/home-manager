@@ -128,8 +128,17 @@ def plan_meal(
                     f"weekly_plan_id, or generate a period that covers that day."
                 )
 
+    # Case-insensitively, and ordered, for the same reason every other
+    # recipe-by-name lookup in this package is: a household means one dish
+    # by one name whatever the capitalisation, and a slot that misses by a
+    # capital lands FREEFORM — no recipe on Cook, and nothing on the
+    # shopping list at approval. That used to be masked by add_recipe
+    # writing a second row for the second spelling; it refuses that now
+    # (recipes.existing_recipe_named), so this has to resolve it instead.
     recipe = conn.execute(
-        "SELECT * FROM recipes WHERE household_id = ? AND name = ?", (household_id(), meal)
+        "SELECT * FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) "
+        "ORDER BY id LIMIT 1",
+        (household_id(), (meal or "").strip()),
     ).fetchone()
 
     recipe_id = recipe["id"] if recipe else None
