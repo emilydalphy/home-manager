@@ -35,21 +35,97 @@ def get_active_notifications() -> list[dict]:
     out = []
 
     # 1. Dinner decision nudge (NOTIFICATIONS.md #1) — reuses the same
-    # dinner-gap detection the Today needs-you band already uses, so the
-    # notification and the band never disagree about what's open.
+    # dinner-gap DETECTION the Today needs-you band already uses, so the
+    # two never disagree about which nights are open.
+    #
+    # What is SHOWN can still differ, and the exception is written down
+    # here rather than left for somebody to find, because a comment of
+    # exactly this shape is what was believed for months below: dismissing
+    # a notification silences the bell and leaves the band's card standing
+    # where it was. That is what a dismissal means in this feed (see
+    # schema.sql's notification_dismissals comment), not the two disagreeing
+    # about a night.
+    #
+    # BOTH of the band's dinner shapes, which is what makes that sentence
+    # true. It said it from the day it was written and the very next line
+    # made it false until 2026-09-17: `dinner_decision` is a night with no
+    # dinner row at all, `dinner_open` is a night the app deliberately
+    # handed back with a reason (the Review stepper's "−", a generation
+    # gap it could not settle, an away night undone). Both are a decision
+    # waiting on the household, and filtering to the first left an open
+    # dinner with a card on Now, no bell, and no morning text. A
+    # `planned_empty` night — nobody home — is neither, and the band never
+    # offers one, so it stays silent here by construction.
+    #
+    # No day word is computed here, deliberately. The band item's own
+    # title already carries it ("Tonight needs a dinner", "Tomorrow's
+    # dinner needs your call"), worked out on the HOUSEHOLD's clock. A
+    # `day_label` off date.today() sat here unused from the day this was
+    # written; it read like the server-clock bug class this repo has spent
+    # a week sweeping and it was simply dead, so it went rather than being
+    # moved onto household_today(). Don't reinstate it: a second day word
+    # is a second answer to a question the title already answers, and on
+    # the wrong clock.
     for item in _weekly_plan.get_needs_you_items():
-        if item.get("type") != "dinner_decision":
+        kind = item.get("type")
+        if kind not in ("dinner_decision", "dinner_open"):
             continue
-        key = f"dinner_gap:{item['date']}"
+        # Separate keys on purpose. The two are different news about the
+        # same night — "you haven't decided" against "I couldn't, and
+        # here's why" — and a night really can turn from the first into
+        # the second, since generating a week over an undecided night
+        # fills it as an open question. One key would let this morning's
+        # dismissal silence this afternoon's different ask. `dinner_gap:`
+        # is left exactly as it was for the decision shape, so every
+        # dismissal already on record keeps working.
+        key = f"dinner_gap:{item['date']}" if kind == "dinner_decision" else f"dinner_open:{item['date']}"
         if key in dismissed:
             continue
-        day_label = "Tonight" if item["date"] == date.today().isoformat() else "tomorrow"
-        first_option = (item.get("options") or [{}])[0].get("name") if item.get("options") else None
+        if kind == "dinner_open":
+            # The app wrote a sentence when it opened this slot
+            # (plan_slot_open's open_reason names the constraint), and the
+            # card on Now already shows it. Saying anything else here is
+            # the bell and the band disagreeing about one night.
+            #
+            # The fallback names no control and no day, and both halves of
+            # that are deliberate. It must not promise "options": the label
+            # two lines down goes out of its way NOT to say that word when
+            # there are none, and a body promising them underneath it would
+            # be the same small lie by another route. And it must not say
+            # "tonight's" — this card is the SOONEST unsettled dinner,
+            # which is tomorrow's about as often as it is tonight's, and
+            # its own title already says which. ("Tell me what you'd like"
+            # is the card's own button for an open slot with nothing to
+            # tap.) The decision branch below still has both of those and
+            # they are pre-existing; what this branch must not do is add a
+            # second copy of them.
+            #
+            # Unreachable today rather than merely unlikely, and that was
+            # checked rather than assumed: plan_slot_open raises on a blank
+            # reason, all three INSERTs into meal_plan_entries hardcode
+            # slot_state, and nothing in app/ UPDATEs it — so no row can
+            # reach here `open` with nothing to say.
+            body = item.get("body") or "Take a look and tell me what you'd like."
+            # "Show options" only when there are any: the commonest open
+            # slot has none (drop_dish_from_day plans one with no options
+            # at all) and its card offers "Tell me what you'd like
+            # instead" in their place. A label naming a control that isn't
+            # on the screen is exactly the small promise §8 rules out.
+            action_label = "Show options" if item.get("options") else "Take a look"
+        else:
+            # KNOWN AND LEFT, its own card, older than this change and
+            # untouched by it: _suggest_quick_dinners returns {meal,
+            # minutes}, so .get("name") is always None and this body has
+            # always been the fallback. Fixing it changes what the
+            # decision bell says, which this ticket is not about.
+            first_option = (item.get("options") or [{}])[0].get("name") if item.get("options") else None
+            body = f"The quickest option is {first_option}." if first_option else "Nothing planned yet — take a look at tonight's options."
+            action_label = "Show options"
         out.append({
-            "key": key, "type": "dinner_decision",
+            "key": key, "type": kind,
             "title": item["title"],
-            "body": f"The quickest option is {first_option}." if first_option else "Nothing planned yet — take a look at tonight's options.",
-            "tab": "today", "action_label": "Show options",
+            "body": body,
+            "tab": "today", "action_label": action_label,
         })
         break
 

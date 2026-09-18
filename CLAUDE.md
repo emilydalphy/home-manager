@@ -985,6 +985,162 @@ why*, not duplicating the diff.
   - **Left undone, named rather than fixed:** `drop_dish_from_day` still
     hands a night back as `open` on a day that is over (its own card, from
     the 2026-09-16 add-a-night entry) — unrelated to this, and untouched.
+- **2026-09-17 — An `open` dinner reaches the bell and the morning text, not
+  just Now. Branch `overnight/open-dinner-reaches-the-bell`, NOT merged at
+  the time of writing.** Loop Board Phase 0 bug.
+  `weekly_plan.get_needs_you_items` emits TWO dinner shapes —
+  `dinner_decision` (no dinner row at all) and `dinner_open` (a row whose
+  `slot_state` is `open`, carrying a sentence the app itself wrote saying
+  why it handed the night back). `notifications.py` filtered to the first
+  and `digest.py` gated the morning text's "tonight's still open" line on
+  the first's dismissal key, so an open dinner produced a card on Now and
+  **nothing else**. Reproduced through the honest path
+  (`drop_dish_from_day`, the Review stepper's "−") on a throwaway DB before
+  anything was touched: BAND `[('dinner_open', <today>)]`, BELL `[]`, and a
+  morning text with no dinner line in it at all.
+  - **THE COMMENT DIRECTLY ABOVE THE FILTER IS WHY THIS WAS A CARD RATHER
+    THAN A SHRUG**: "reuses the same dinner-gap detection the Today
+    needs-you band already uses, so the notification and the band never
+    disagree about what's open." The next line made it false, from the day
+    it was written. It is true now, and there is a test on the sentence.
+    **Tightened again on review, because it still was not LITERALLY true**:
+    it says "detection" and "which nights are open" now, and it names the
+    one way the two can still differ — a dismissal silences the bell and
+    leaves the band's card standing. That is what a dismissal means in this
+    feed rather than a disagreement, and dismissal is not this ticket; but
+    a comment of exactly this shape is what was believed for months, so the
+    exception is written down rather than left to be found.
+  - **The morning text is the half that matters.** It is the channel built
+    to reach the household OUT of the app (2026-09-11, "Reach me before the
+    moment"), and it went quiet for exactly the nights the app itself
+    decided it could not answer.
+  - **THE TWO SHAPES GET DIFFERENT COPY, deliberately, and this is the
+    judgment call.** "Nothing planned yet" is TRUE of a decision night and
+    FALSE of a night the app deliberately opened, and §8 doesn't let the app
+    say a thing that isn't. **Bell**: title and body are the band item's
+    own, so the body IS `plan_slot_open`'s `open_reason` word for word —
+    "You cut Bean Chili back, so this one is yours to fill." No invention,
+    and the bell and the card cannot disagree about one night. **Morning
+    text**: `"Tonight's still open — it's your call."` — the sibling line's
+    own opening, and "your call" is the band title's own words
+    ("Tonight's dinner needs your call").
+  - **The text deliberately does NOT carry the reason, and that was the
+    close call. THE FIRST VERSION OF THIS BULLET OVERSTATED BOTH HALVES OF
+    A SOUND ARGUMENT — corrected here, and in the comment, because a
+    plausible overstatement is what this log keeps having to unpick, and a
+    COMMENT is what the next person acts on.** What is actually measured:
+    - **TWO of `plan_slot_open`'s EIGHT call sites open on a weekday name**
+      ("Thursday I'd rather ask than guess: …") — `weekly_plan.py`'s
+      leftovers repair and `agent.py`'s generation gap — where it argues
+      with "Tonight" two words earlier. Not "half". The other five with
+      fixed text do not (`drop_dish_from_day`, two in `big_meal.py`,
+      `holidays.py`, `slot_needs.py`) and the eighth is the model's own
+      sentence, so unknowable. Two is still enough, because the line cannot
+      know which of them opened the night.
+    - **Length is the bigger half, and the crowding is real but is not what
+      the first version said it was.** Four of the seven fixed reasons run
+      past 120 characters and the leftovers repair runs 147–179 depending
+      on the clause it interpolates. Measured at the production shape (a
+      46-character link, budget 253): a 179-character first line — the one
+      `build_morning_text` always keeps — leaves room for ONE of the day's
+      other three jobs, where the line that shipped leaves room for all
+      three. And the trimmer SKIPS a line that doesn't fit and still keeps
+      a later one that does, so what goes is whatever is longest rather
+      than the tail: with no link the same first line drops the SHOP and
+      keeps the prep after it. "Crowds the fridge move and the shop out" is
+      not what the algorithm does.
+    A length-conditional would make the copy read differently depending on
+    which day opened the night, which is worse than either. The reason is
+    one tap away on the card the text links to.
+  - **TWO DISMISSAL KEYS, not one** — `dinner_gap:<date>` kept exactly as it
+    was for the decision shape (renaming it would resurrect every card any
+    household has ever tapped away), `dinner_open:<date>` for the open one.
+    They are different news about the same night, and a night really can
+    turn from the first into the second: generating a week over an undecided
+    night fills it as an open question, so one key would let this morning's
+    dismissal silence this afternoon's different ask. Both are per-date, as
+    every key in this feed is.
+  - **`action_label` is "Take a look", not "Show options", when there are
+    none** — `drop_dish_from_day` opens a slot with no options at all and
+    its card offers "Tell me what you'd like instead" in their place, so
+    "Show options" would name a control that isn't on the screen.
+  - **The reasonless FALLBACK body contradicted that rule two lines above
+    it and was corrected on review** — latent, never live, and worth the
+    line anyway. It read "Take a look at tonight's options.", i.e. it
+    promised options under a label written to avoid the word when there
+    are none, and said "tonight's" on a card that is titled "Tomorrow's
+    dinner needs your call" as often as not — the same §8 defect this
+    branch correctly named as pre-existing in the decision branch,
+    re-introduced in its own. It is "Take a look and tell me what you'd
+    like." now. **Unreachable rather than merely unlikely, checked rather
+    than asserted**: `plan_slot_open` raises on a blank reason, all three
+    `INSERT INTO meal_plan_entries` in `app/` hardcode `slot_state`, and
+    nothing anywhere UPDATEs it.
+  - **A standing safety property falls out of the copy decision, and it is
+    written down so nobody undoes it by "improving" the text.**
+    `agent.py`'s per-slot pass passes the MODEL's own `open_reason` through
+    with no length bound, and that string is now the bell's body — no new
+    exposure, since the Now card already renders it and it is escaped. But
+    keeping the reason out of the morning text keeps model-authored prose
+    off Twilio entirely. Putting the reason in the SMS would change that.
+  - **FOR EMILY, plainly: a household with morning texts on now gets a text
+    on days that previously produced NONE.** Repro case A goes from `None`
+    to a one-line text. That is the card's whole point — the channel was
+    silent for exactly the nights the app could not answer — but it is a
+    new outbound SMS on a channel that costs money and interrupts people,
+    and it fires on any night the app hands back. Bounded to one per open
+    night (the feed emits at most one dinner card and the digest takes only
+    tonight's), and switched off per adult exactly as before.
+  - **The ride-along: `day_label` is DELETED, not moved onto the household's
+    clock.** It was computed off `date.today()` and read by nothing — one
+    occurrence in the file, the assignment — so the wrong-clock read was
+    inert. It reads like the server-clock class this repo has spent a week
+    sweeping and it is not; somebody nearly filed it as a live clock bug.
+    Deleted because the band item's own title already carries the day word,
+    on the HOUSEHOLD's clock, so a second one would be a second answer to a
+    question already answered. A comment says so, and a test pins that no
+    assignment comes back.
+  - **`planned_empty` stays silent and is pinned — but the guard is on the
+    whole pipeline, not on this diff**, and its docstring says so: the
+    silence comes from `get_needs_you_items` never emitting a card for a
+    night nobody is home, one module up, so no mutation of `notifications.py`
+    or `digest.py` can redden it (measured: widening the filter to accept
+    every band shape leaves it green).
+  - `tests/test_open_dinner_reaches_the_bell.py` (18; **12 red on
+    `5702234`**, of which **10 are behaviour catches** — the other two are
+    source markers on the corrected comment and the deleted `day_label`, and
+    say so. **Five of the ten die on `IndexError` at `_dinner_bell()[0]`**,
+    which IS the bug — an empty bell — rather than red-for-the-wrong-reason;
+    each one's actual claim is separately pinned by a mutation. Said here
+    because this log has twice had to unpick a red-count that meant less
+    than it looked.) The two channel tests are **parametrized over both shapes**, so
+    "works for `dinner_decision`" can never again read as "works" — the
+    whole lesson of the branch that found this. Six mutations run, each
+    reddening what it should: the decision branch taking the open copy (1),
+    the decision shape given the open key (4), the open key losing its date
+    (5), the filter widened to every shape (1, and only the comment marker),
+    the open branch always saying "Show options" (1), and the digest's new
+    branch removed (3). Two more on the review pass: the old fallback
+    wording back (1), and the dismissal exception dropped from the header
+    comment (1). Suite **5436 passed, 0 failed** at
+    `TZ=America/Toronto` and at `TZ=Pacific/Niue` inside a VERIFIED straddle
+    (process day 2026-09-16, household day 2026-09-17, checked at the start
+    AND the end of the run), against 5418/0 on the merge base in both — so
+    +18 is this file exactly and no straddle failure is added.
+  - **Known and left, each its own card, named so nobody reports them as
+    new.** (1) The bell is still behind `SHOW_NOTIF_BELL = false` in
+    `shell.js`, so the bell half of this is invisible until that flips; the
+    morning-text half is live wherever the Twilio keys are set. (2)
+    `notifications.py`'s decision body has NEVER said "The quickest option
+    is X" — `_suggest_quick_dinners` returns `{meal, minutes}` and the code
+    reads `.get("name")`, so `first_option` is always None and the fallback
+    is the only body that ships. Older than this change, untouched by it,
+    and left because fixing it changes what the decision bell says. (3)
+    `get_needs_you_items` emits only the SOONEST dinner card, so dismissing
+    tonight's hides tomorrow's until tomorrow — pre-existing, true of both
+    shapes. (4) Two `date.today()` reads remain in `notifications.py` (the
+    expiring-soon dismissal key, the next-week plan query); same class as
+    the clock sweep, not this card's.
 
 - **2026-09-16 — "Shop for tonight" is claimed only when the list is actually
   holding tonight up. Branch `overnight/shop-move-for-tonight`, merged
