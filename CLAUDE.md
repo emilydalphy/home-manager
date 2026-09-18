@@ -8068,6 +8068,52 @@ why*, not duplicating the diff.
   the tinted node, as before. Not done: `move.detail` still repeats the
   clock the rail shows ("dinner · 25 min · 6:30"); dropping it is a
   moves.py change left for a follow-up.
+- **2026-09-17 — Today: Shop and Cook, tagged by part of the day. Branch
+  `today-shop-cook`, NOT merged at the time of writing.** Emily's card
+  "Today: rename Now → Today; group by Shop / Cook; Morning · Afternoon ·
+  Evening instead of clock times; drop 'Open the list'" (mockup
+  `17a-today-tags`). The first tab is **Today** again (`TABS` label only;
+  the key stays `today`), the band title too, and every crumb / tips-sheet
+  / chores-setup back link that named the tab follows the word. The one
+  strip down the day (above) is two `.shell-card`s in the gutter
+  (`dayGroupsHtml` / `.day-groups` in `static/shell.js` / `shell.css`,
+  "TODAY — Shop and Cook" section): **Shop** — the bag in a 32px `--sand`
+  tile, "N stops", one row per store stop ("Costco · 6 things" over the
+  first three things, off the new `stops` on the shop move,
+  `moves._shop_stops`; untagged rows are one "Any store" stop, last) —
+  and **Cook** — the pot, "N of M", fridge moves, prep, cooks and reheats
+  in day order (`dayStripOrder`). A group with nothing in it is not drawn.
+  A row is the same 28px dot-tick in 44px, the title (15px/600), one
+  clock-free meta line (new `meta` on every move in `moves.py`: "for
+  Thursday's skewers", "35 min", "made ahead Sunday · reheat" — `detail`
+  keeps the clock for the morning text and Cook), and a 10px/800 tag at
+  the right: **Morning / Afternoon / Evening** from ONE mapping,
+  `moveTimeOfDay` (before noon / noon–4:59 / 5:00 on, off `moveStripAt`,
+  which now reads a shop's deadline too), "Any time" for the standing
+  list (`timed: false`). The rail, its clock (`moveStripTime`) and the
+  tile are gone. The next-up move is still the one `--celadon-tint` row
+  with a NOW eyebrow and a `--celadon-edge` border, one across both
+  groups (a featured shop with several stops tints its first row only);
+  its action stays in the dock, and the shop's action word is **"Go
+  shopping"** (`moves.SHOP_ACTION_LABEL`) — never "Open the list"; a
+  shop row's body opens the list the same way. Dinner lands in Evening
+  because every `dinner_window` clock (`defrost._DINNER_CLOCK_BY_WINDOW`:
+  5:30 / 7:00 / 8:00, default 6:30) is five or later — asserted in both
+  suites. **No evening cook nudge exists to move**: the only scheduled
+  send is the morning text (`digest.py`, `morning_text_time`); nothing
+  in `app/` schedules a notification off `dinner_window`, so that half
+  of the card is a report, not a change. `tests/test_today_shop_cook.py`
+  (replaces `test_now_day_strip.py`). Judgment calls for Emily: (1) a
+  TIMED shop is tagged by its deadline (the cook's start) — "Shop for
+  breakfast · by 7:40" reads Morning, "Shop for tonight · by 5:55"
+  reads Evening; the mockup's Costco row said Morning, which the
+  standing list can't say honestly, so it says "Any time"; (2) a cook's
+  meta is its minutes ("35 min") or, with none, its slot ("lunch") — the
+  "Started 6:02" / "Start by 5:45" chips stay on Cook's own card; (3) a
+  fridge move's reason IS its meta line, so the NOW row does not say it
+  twice; (4) the tinted row's meta and tag ink is `--celadon-label`, as
+  the tile's was (contrast); (5) `--ink-on-celadon` for the tinted
+  title, as before.
 - **2026-09-13 — The meal screen is a clock. Branch `worktree-meal-clock`,
   NOT merged at the time of writing.** Emily picked "Meal · B · The clock"
   from the Beyond-lists canvas on 2026-09-12. Plan › a day › a meal is now

@@ -12,7 +12,7 @@ abandoned. Five small corners, covered here:
    the comment on ".inv-add-row .dictate-btn" in that file).
 2. GET /chores-setup redirects a switched-off household home instead of
    showing a full questionnaire for a module the house can't see anywhere
-   else; static/chores-setup.html's back link ("Now", not "Today").
+   else; static/chores-setup.html's back link names the tab ("Today").
 3. static/manifest.json's description no longer leads with Chores.
 4. An unknown address a browser navigates to gets a small branded page
    instead of a bare JSON 404 — but only that: a route's own 404 (a real
@@ -83,9 +83,10 @@ def test_inventory_still_wires_up_the_mic_button():
 # 2. Chores setup: gated by the switch, and its back link
 # ==========================================================================
 
-def test_chores_setup_html_back_link_names_now():
-    assert '<a class="back-link" href="/">&larr; Now</a>' in CHORES_SETUP_HTML
-    assert "Back to Today" not in CHORES_SETUP_HTML
+def test_chores_setup_html_back_link_names_today():
+    # "Now" from nav v2 part 1 until 2026-09-17, when the tab became Today again.
+    assert '<a class="back-link" href="/">&larr; Today</a>' in CHORES_SETUP_HTML
+    assert "Back to Today" not in CHORES_SETUP_HTML and "&larr; Now" not in CHORES_SETUP_HTML
 
 
 def test_chores_setup_redirects_home_when_the_switch_is_off(signed_in):
