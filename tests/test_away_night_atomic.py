@@ -452,15 +452,21 @@ def test_the_transaction_is_open_while_the_empty_row_is_written(monkeypatch):
 def test_the_lock_is_taken_before_the_plan_is_looked_up(monkeypatch):
     """
     CATCH — red on main, where the lookup runs after a commit and is under
-    no lock at all.
+    no lock at all, so a second writer could move this slot onto another
+    plan between the lookup that chose plan A and the clear that empties
+    it — and the clear would then empty a slot on a plan that no longer
+    owns the day.
 
-    Criterion 3, said directly. sqlite3's legacy isolation_level="" opens
-    the transaction at the first WRITE, not at the first read — so without
-    an explicit BEGIN IMMEDIATE a second writer could move this slot onto
-    another plan between the lookup that chose plan A and the clear that
-    empties it, and this would empty a slot on a plan that no longer owns
-    the day. in_transaction is True here only because BEGIN IMMEDIATE ran
-    before anything else.
+    What it pins is that the lookup happens INSIDE the transaction, not
+    that BEGIN IMMEDIATE is what put it there: measured, taking that BEGIN
+    out of set_slot_need leaves this green, because the slot_needs INSERT
+    two lines above it opens a transaction implicitly and takes the write
+    lock anyway. The explicit BEGIN is what keeps this true if those
+    statements are ever reordered, and it is pinned on its own by
+    test_the_away_conversion_opens_its_transaction_immediately below. Its
+    sibling in _reopen_away_slot is not belt-and-braces at all — there the
+    first statement is a SELECT, and dropping the BEGIN there reddens
+    test_the_lock_is_taken_before_the_reopen_reads_its_row.
     """
     _approved_week()
     seen = {}
@@ -474,6 +480,48 @@ def test_the_lock_is_taken_before_the_plan_is_looked_up(monkeypatch):
     tools.set_slot_need(AWAY, "dinner", "away", reason="we're out")
 
     assert seen == {"in_transaction": True}
+
+
+class _LoggingConn:
+    """A connection that remembers the statements run on it, and is otherwise itself."""
+
+    def __init__(self, real):
+        self._real = real
+        self.statements = []
+
+    def execute(self, sql, *args, **kwargs):
+        self.statements.append(" ".join(sql.split())[:40])
+        return self._real.execute(sql, *args, **kwargs)
+
+    def __getattr__(self, name):
+        return getattr(self._real, name)
+
+
+def test_the_away_conversion_opens_its_transaction_immediately(monkeypatch):
+    """
+    CATCH — red on main, which opens no transaction of its own at all.
+
+    The half its neighbour above cannot see. sqlite3's legacy
+    isolation_level="" opens a DEFERRED transaction at the first write, so
+    a function whose first statement happens to be a write is covered by
+    accident; one whose first statement is a read is not. Naming the BEGIN
+    is what makes the guarantee a property of the function rather than of
+    the order its statements happen to be in today.
+    """
+    _approved_week()
+    real_get_conn = slot_needs.get_conn
+    opened = []
+
+    def logging_get_conn():
+        conn = _LoggingConn(real_get_conn())
+        opened.append(conn)
+        return conn
+
+    monkeypatch.setattr(slot_needs, "get_conn", logging_get_conn)
+    tools.set_slot_need(AWAY, "dinner", "away", reason="we're out")
+
+    assert opened, "set_slot_need opened no connection of its own"
+    assert opened[0].statements[0] == "BEGIN IMMEDIATE"
 
 
 def test_the_lock_is_taken_before_the_reopen_reads_its_row(monkeypatch):
@@ -504,12 +552,19 @@ def test_the_lock_is_taken_before_the_reopen_reads_its_row(monkeypatch):
 
 def test_two_aways_at_once_leave_exactly_one_empty_row():
     """
-    CATCH — red on main, though timing-dependent by nature and so weaker
-    evidence than the forced-failure tests above. On main both callers
-    clear before either writes, leaving TWO planned_empty rows on one slot
-    — audit_plan_slots' `duplicated`, which CLAUDE.md calls "how a night
-    nobody is home ends up with groceries bought for it". Here the lock is
-    held from the first read, so the loser sees the world the winner left.
+    A TIMING-DEPENDENT CATCH, and the numbers are measured rather than
+    claimed: red on main 3 whole-file runs out of 3, but red only 2 runs in
+    10 when run on its own — the eighteen tests before it are apparently
+    what makes the window wide enough to land in reliably. Green on this
+    branch 20 runs out of 20 on its own. So it is real evidence and it is
+    weaker than the forced-failure tests above, which are deterministic;
+    read the file's count as 13 solid catches plus this one.
+
+    What it is about: on main both callers can clear before either writes,
+    leaving TWO planned_empty rows on one slot — audit_plan_slots'
+    `duplicated`, which CLAUDE.md calls "how a night nobody is home ends up
+    with groceries bought for it". Here the lock is held from the first
+    read, so the loser sees the world the winner left.
     """
     plan_id, _entry = _approved_week()
     results = {}

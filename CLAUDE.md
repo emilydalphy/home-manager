@@ -391,6 +391,108 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-18 — Marking a night away is ONE transaction, and so is coming
+  back. Branch `overnight/away-night-atomic`, NOT merged at the time of
+  writing.** Loop Board Phase 0 bug, and the seam BOTH
+  `drop-dish-atomic` (2026-09-11) and `tonight-night-off` (2026-09-15) name
+  in their own entries as being in this exact function and deliberately
+  leave. `slot_needs.set_slot_need`'s away conversion was
+  `clear_plan_slot` then `plan_slot_empty`, two connections and two
+  commits. Reproduced over the real function on a throwaway DB before
+  anything was touched, with `plan_slot_empty` made to raise: before
+  `[{'slot_state': 'planned', 'recipe_id': 1}]` and `[('Black beans', '1
+  can'), ('Onion', '1')]`, after `[]` and `[]` — the dinner gone, its
+  ingredients already off the shopping list, the slot genuinely ABSENT
+  (the one state schema.sql, `audit_plan_slots` and `plan_slot_open`'s own
+  docstring all say cannot exist), under a route answering 500 and a
+  screen saying nothing had been saved. Which was false. After: both
+  byte-identical.
+  - **THREE copies of that pair, not the two the ticket names, and all
+    three are converted.** `_reopen_away_slot` (somebody comes back, so
+    the night is handed back as an open question) is `clear_plan_slot`
+    then `plan_slot_open` — reproduced the same way, `planned_empty` →
+    `[]`. And `apply_slot_needs_to_plan`, the belt-and-braces pass over a
+    just-generated week, carried a third. Leaving that one would have been
+    the half-converted module this repo's own rule warns about
+    (`freezer-ask-household-clock`, 2026-09-17), and one shared private
+    helper is less code than two conversions plus a duplicate.
+  - **`_settle_slot_empty` is that helper, and it is
+    `tonight._settle_night_off`'s shape rather than a second one** — whose
+    docstring already named `set_slot_need` as the sibling with two
+    commits. Given a connection it writes on it and neither commits nor
+    closes; left unset it opens its own, takes `BEGIN IMMEDIATE` and
+    commits once. `apply_slot_needs_to_plan` takes the second form: its
+    away slots are independent of each other, so **one transaction per
+    slot, not per week** — the invariant that matters there is that no
+    single slot is left absent, not that the week's whole pass is atomic.
+  - **NOTHING HAD TO BE DEFERRED PAST THE COMMIT, unlike `drop-dish-atomic`
+    — and that is measured rather than reasoned.** The step that could not
+    join there was the leftover source's grocery rescale, which re-enters
+    the ingest tree; `swap-atomic` gave that whole tree a `conn`, and
+    `clear_plan_slot` given a connection already runs the rescale inside
+    the transaction. The evidence is mutation M7 below: putting ONE nested
+    `get_conn` back makes the file take **67 seconds** instead of 0.8,
+    because the nested connection sits out SQLite's busy timeout — the
+    intermittent "database is locked" this class produces, reproduced on
+    purpose. The unmutated path shows none of it.
+  - **`weekly_plan.get_plan_id_for_date` gained the same optional `conn=`
+    its neighbours have**, for one caller: it is the fallback branch of
+    `_plan_id_for_date`, that read is now inside the lock, and a second
+    connection opened in there is exactly the nested `get_conn` above. It
+    never writes, so given a connection it reads on it and leaves the
+    caller to close.
+  - **THE `BEGIN IMMEDIATE` IS LOAD-BEARING IN ONE OF THE TWO AND
+    BELT-AND-BRACES IN THE OTHER, and saying otherwise would have been the
+    plausible overstatement this log keeps having to unpick.** Measured:
+    take it out of `_reopen_away_slot` and a guard goes red, because that
+    function's first statement is a SELECT and sqlite3's legacy
+    `isolation_level=""` opens a DEFERRED transaction at the first WRITE —
+    so the row that decides which plan gets the open row would be read
+    under no lock at all. Take it out of `set_slot_need` and **the whole
+    file stays green**: there the first statement is the `slot_needs`
+    upsert, so the transaction is already open by the time the plan lookup
+    runs. It is kept because it makes the guarantee a property of the
+    function rather than of the order its statements happen to be in
+    today, and it is pinned on its own by a test that reads the first
+    statement run on the connection.
+  - **The need row rolls back with the conversion now, which is a
+    behaviour change and is named rather than left to be found.** On main
+    the `slot_needs` upsert committed before the conversion was even
+    attempted, so a failure left the away recorded with the dinner still
+    standing — milder than an absent slot and still the two halves of the
+    app disagreeing on screen, and a state `apply_slot_needs_to_plan`
+    would never correct, since that pass only runs when a week is
+    generated. One transaction covers both, so the 500's "nothing was
+    saved" is true of both.
+  - **Found and NOT fixed, its own card:** `set_away_stretch` is a loop of
+    `set_slot_need` calls, so a whole trip is not one transaction — a
+    failure part-way leaves some nights away and some not. Every
+    individual night is whole now and no slot is ever absent, which is the
+    invariant this ticket is about; making a whole trip atomic is a
+    different claim and a bigger one.
+  - `tests/test_away_night_atomic.py` (19), modelled on
+    `test_drop_dish_atomic.py`: a forced `RuntimeError` at each seam of
+    both writes against a whole-database snapshot (entries, grocery,
+    ledger AND slot_needs), the connection counts over the transaction's
+    own window, and the transaction proved open by reading the deleted row
+    back from inside `plan_slot_empty`. **14 red against main's `app/` in
+    a whole-file run, measured three times; 13 of those are deterministic
+    and the fourteenth is the two-threads race, which is red 3 whole-file
+    runs out of 3 on main but only 2 runs in 10 when run alone — its own
+    docstring says so.** Five are green either way and each names the
+    mutation that pins it. **EIGHT mutations run, all eight bite**: the
+    empty row dropped (13 red), the clear dropped (11), the open row
+    dropped (4), the plan lookup always answering with a plan (1), the
+    `BEGIN IMMEDIATE` out of the reopen (1), the reopen's
+    `planned_empty` guard widened (1), `plan_slot_empty` opening its own
+    connection again (13, and the 67-second hang above), and the plan
+    lookup's fallback opening its own (1).
+  - **Numbers, read off the runs.** With the `app/` change alone and this
+    file not yet collected: **5670 passed, 0 failed** at
+    `TZ=America/Toronto`, the main baseline exactly — no existing test
+    changed, and none had to. With the file: **5689 passed, 0 failed**,
+    which is 5670 plus this file's 19 exactly. Not verified in a browser:
+    every failure here is mid-write and the screens are untouched.
 - **2026-09-17 — Merging the eleven overnight branches of 09-16/17 into
   `main`: two of them fought, and the fight was real.** Eleven branches,
   each green alone, ten of them appending to this log at the same line
