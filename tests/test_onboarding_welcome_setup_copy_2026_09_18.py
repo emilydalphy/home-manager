@@ -211,6 +211,40 @@ console.log(JSON.stringify({
     assert out == {"daysHidden": False, "usingHidden": True, "noteHidden": True}
 
 
+@_needs_node
+def test_a_failed_generation_also_hides_the_using_card_and_its_note():
+    """
+    Coordinator follow-up (2026-09-18): revealShowDays() was the only place
+    that hid the using card — a generation that FAILS never reaches it, so
+    the card (and its "not quite right" note) used to sit on screen right
+    alongside the failure receipt. renderRevealFailedReceipt is the
+    function that owns rendering a failure, so it owns hiding them too, the
+    same way revealShowDays() owns hiding them on success.
+    """
+    harness = "\n".join([
+        _go_back._DOM_STUB,
+        "el('reveal-receipt'); el('reveal-using'); el('reveal-using-note');",
+        "document.getElementById('reveal-using').hidden = false;",
+        "document.getElementById('reveal-using-note').hidden = false;",
+        _const("REVEAL_RECEIPT_EYEBROW"),
+        _const("REVEAL_FAILED_TITLE"),
+        _const("REVEAL_FAILED_LINE"),
+        _fn("escapeHtmlLocal"),
+        _fn("revealReceiptLinesHtml"),
+        _fn("renderRevealFailedReceipt"),
+        """
+renderRevealFailedReceipt();
+console.log(JSON.stringify({
+  receiptHidden: document.getElementById('reveal-receipt').hidden,
+  usingHidden: document.getElementById('reveal-using').hidden,
+  noteHidden: document.getElementById('reveal-using-note').hidden,
+}));
+""",
+    ])
+    out = _run(harness)
+    assert out == {"receiptHidden": False, "usingHidden": True, "noteHidden": True}
+
+
 def test_generate_first_plan_and_reveal_fills_the_using_card_every_attempt():
     body = _fn("generateFirstPlanAndReveal")
     assert "renderRevealUsingFacts(answers)" in body

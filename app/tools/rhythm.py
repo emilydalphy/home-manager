@@ -303,10 +303,12 @@ def _normalize_prep_days(days) -> list[dict]:
 
 def set_prep_days(days: list | None = None, this_week_only: bool = False, source: str = "onboarding") -> dict:
     """
-    Set (or correct) the days the household preps ahead on: a list of at
-    most two {"weekday": 'sunday'...'saturday', "minutes": int|None,
-    "note": str|None}. An empty list is a real answer — "we don't prep
-    ahead" — and clears the fact rather than leaving the old days standing.
+    Set (or correct) the days the household preps ahead on: a list of
+    {"weekday": 'sunday'...'saturday', "minutes": int|None, "note":
+    str|None} — any number of distinct weekdays (MAX_PREP_DAYS = 7, since
+    2026-09-18: "any number of days can be on"). An empty list is a real
+    answer — "we don't prep ahead" — and clears the fact rather than
+    leaving the old days standing.
 
     `this_week_only=True` is the one-off, and it does NOT touch the
     standing answer: it flips `skip_prep_this_week` on the household's

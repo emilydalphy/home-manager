@@ -2246,6 +2246,13 @@ function renderRevealFailedReceipt() {
     `<p class="reveal-receipt-title">${escapeHtmlLocal(REVEAL_FAILED_TITLE)}</p>` +
     revealReceiptLinesHtml([REVEAL_FAILED_LINE]);
   box.hidden = false;
+  // The using card was for the wait; a failure ends the wait with its own
+  // answer (this receipt), the same way revealShowDays() ends it with a
+  // real week — never both on screen at once.
+  const usingCard = document.getElementById('reveal-using');
+  if (usingCard) usingCard.hidden = true;
+  const usingNote = document.getElementById('reveal-using-note');
+  if (usingNote) usingNote.hidden = true;
 }
 
 async function renderInviteOffer(memberNames) {
@@ -2884,7 +2891,7 @@ document.querySelectorAll('[data-step-back]').forEach(el => {
   el.addEventListener('click', () => goBackFrom(el.dataset.stepBack));
 });
 
-// The intro's five buttons each go one step forward — nothing to save,
+// The intro's four buttons each go one step forward — nothing to save,
 // nothing to validate, so the flow decides the destination the same way
 // the back control does.
 INTRO_STEPS.forEach(key => {
