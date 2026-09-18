@@ -534,6 +534,119 @@ why*, not duplicating the diff.
     measured 5670 on the merge base — +13 is this file exactly, and **no
     existing test needed changing**, which is the strongest evidence here
     that nothing was saving one name twice on purpose.
+- **2026-09-18 — The morning text said "Shop for tonight — by 7:55" at seven
+  in the morning. Branch `overnight/shop-move-names-the-meal`, NOT merged
+  at the time of writing.** Found by driving the app on a throwaway
+  database. The 2026-09-16 `shop-move-for-tonight` work made the shop
+  move's DEADLINE the start time of the soonest cook the list is genuinely
+  waiting on — correct, and very often breakfast or lunch. The TITLE did
+  not move with it: `moves._shop_move` said "Shop for tonight" for any
+  waiting cook today, whichever meal it was.
+  - **Measured, on the shape a real household has.** Two adults, dinner
+    window 6–8, Overnight Oats on breakfast and Bean Chili on dinner, each
+    recipe 10 min prep + 15 min cook with one ingredient, week approved,
+    nothing bought: at 07:00 `Now` and the morning text both read **"Shop
+    for tonight — 2 items, by 7:35"** — "tonight" and a deadline
+    thirty-five minutes away, in one sentence. At 11:00 the same household
+    reads "Shop for tonight — by 6:35", which is right. So the word was
+    wrong exactly when the deadline was earliest. (**The first version of
+    this entry said "4 items, by 7:55"**, which came from a different,
+    unstated seed and is not re-derivable from the shape it described —
+    the committed test asserts 7:35. Corrected rather than quietly
+    rewritten, because an un-re-derivable number is the class this log
+    keeps having to fix.)
+  - **The morning text is why this is worth a branch rather than a note.**
+    It goes out at 07:00 by default, and 07:00 is precisely the hour
+    today's dinner is the LAST cook still ahead rather than the first — so
+    the channel built to reach the household OUT of the app is where this
+    is most likely, not least. `_shop_move`'s own docstring says an
+    invented deadline at seven in the morning is how a morning check-in
+    stops being believed. The deadline was fixed on 09-16; the word was
+    left saying something the same line disproves.
+  - **`_shop_title` reads the slot of the meal the DEADLINE belongs to**,
+    not the day's earliest slot — pinned by its own test, because that is
+    the easier wrong fix: a household whose breakfast is already bought is
+    waiting on lunch, and the title has to say lunch while breakfast is
+    still ahead.
+  - **A snack answers "Shop for today", deliberately.** There is no
+    "before" a person would recognise for a snack the way there is for a
+    meal, and naming the wrong half of the day is the thing being fixed,
+    so the honest answer is the smaller one.
+  - **The not-today branch is untouched.** "Shop before tomorrow" stays as
+    it is: naming tomorrow's MEAL would claim a precision that wording
+    deliberately does not, and a mutation applying `_shop_title` there
+    reddens its guard.
+  - **ONE GRAMMAR, AND THE FIRST CUT HAD TWO — changed on review.** It
+    said "Shop BEFORE breakfast" / "Shop BEFORE lunch" beside "Shop FOR
+    tonight". Three reasons to make them all `for`, in order of weight.
+    "Shop for tonight" is the line already approved, and three siblings in
+    its shape read as one family instead of leaving "Shop for today" the
+    odd one out. `for` says what the trip is FOR and leaves the clock to
+    the detail line, where the deadline already lives, while `before`
+    issues an instruction the app sometimes cannot stand behind — see the
+    next bullet. And it is shorter, which is not cosmetic: see the one
+    after that.
+  - **A LONGER TITLE CAN COST THE MORNING TEXT A WHOLE LINE, measured by
+    review on the first cut.** `build_morning_text` keeps lines while they
+    fit a budget and SKIPS one that does not rather than stopping, so
+    every extra character shifts a keep/drop boundary. A real household
+    with long dish names went from a 297-character text WITH its "Lunch:
+    …" line on `main` to 236 WITHOUT it — five characters of "Shop before
+    breakfast" ate the line. "Shop for breakfast" is +2 and "Shop for
+    lunch" is actually shorter than the line it replaces; the same
+    household now reads 299 characters with the lunch line intact. A
+    length bound is pinned rather than that one text, since the text
+    depends on the household's own dish names.
+  - **THE FIX MAKES A PRE-EXISTING IMPOSSIBLE INSTRUCTION LEGIBLE, and
+    that is the obvious next card.** The deadline is a cook's START time,
+    so a long breakfast bake gives "Shop for breakfast — by 5:00" and,
+    from 06:00, "· still to do". That deadline is the 2026-09-16 work's,
+    not this branch's. What changes is that the sentence now reads as a
+    plain instruction instead of a self-contradiction a reader would have
+    discounted. Net better — the app is finally saying what it means, and
+    what it means turns out to be wrong — and the follow-up is "a
+    breakfast whose ingredients aren't home isn't a shop deadline at all."
+  - **"Shop for today" IS NOT A RARE FALLBACK, despite how the docstring
+    first read it.** Review measured a snack as the soonest waiting cook
+    from 09:00 to about 15:25 and FEATURED — Now's one apricot, and the
+    sentence the household reads — at every one of those hours. With
+    `snacks_per_day` defaulting to 2 it is the headline most afternoons of
+    an unshopped day, and it is the only one of the four that does not say
+    what the shop is for. "Shop before the snack" is worse. Emily's to
+    better.
+  - **A latent trap closed while here:** `_shop_title`'s unknown-slot
+    fallback now matches the call site's own `or "dinner"` in effect, so a
+    later tidy-up dropping that `or` cannot flip the title to "today"
+    while `_slot_time`'s own unknown-slot fallback still computes a
+    DINNER-hour deadline. Unreachable today, which is why it is written
+    down rather than left to be found.
+  - **THE WORDING IS AN ASSUMPTION, Emily's to overrule in one line** —
+    `_SHOP_TITLE_BY_SLOT` at the top of `moves.py`.
+  - `tests/test_shop_move_names_the_meal.py` (9; **5 red against `app/` on
+    277d854, every one a behaviour catch** — none dies on a missing name).
+    The 4 guards each name the mutation that pins them, and all five were
+    run and bite: the title hardcoded to one meal (5 red), the bug put back
+    (5), a snack falling back to "tonight" (1), the tomorrow branch naming
+    a meal (1), and the untimed branch removed (1).
+  - Suite **5679 passed, 0 failed** at `TZ=America/Toronto`, against a
+    measured 5670 on the merge base, and **5682 passed, 0 failed** after
+    the review round (+12, this file exactly). **No existing test needed
+    changing.** **FIVE** other files contain the literal "Shop for
+    tonight", not four as first written — and only **three** of them make
+    a live assertion against a real payload; all three seed a DINNER as
+    the waiting cook, which is the common shape and is unchanged. The
+    other two are a hand-built fake move dict and a docstring, so "every
+    one of them seeds a dinner" was vacuous for two of the five.
+  - **Attacked and unbroken**, by an independent review: early and late
+    dinner windows, an unset one, the `overdue` branch on every slot, a
+    leftovers night, a component-merged card (whose `plan_meal` default
+    makes every merged card `slot="dinner"`, so its title is byte-identical
+    to main), the big-meal holiday fold, a tomorrow-only cook, a list with
+    no cook waiting on it, and both directions of earliest-slot versus
+    soonest-WAITING-slot. Nothing downstream keys off the title string —
+    `shell.js` only escapes it into `.day-node-title`, `moveStripTime`
+    branches on `kind`, and the move id is unchanged, so ticks, dismissals
+    and `featured_move_id` are untouched.
 
 - **2026-09-17 — Merging the eleven overnight branches of 09-16/17 into
   `main`: two of them fought, and the fight was real.** Eleven branches,

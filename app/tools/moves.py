@@ -191,6 +191,55 @@ def _slot_time_label(slot: str, at: datetime) -> str:
     return f"{clock} today"
 
 
+# "Shop for tonight" is only true when the cook the list is holding up IS
+# tonight's. The deadline has been the soonest waiting cook's start time
+# since 2026-09-16, and that is very often breakfast or lunch — most of all
+# in the morning text, which goes out at 07:00, when today's dinner is the
+# LAST cook still ahead rather than the first. Measured before this: a
+# household with one breakfast and one dinner, nothing shopped, was texted
+# "Shop for tonight — 4 items, by 7:55" at seven in the morning. The
+# deadline was honest; the word was not, and that function's own docstring
+# says an invented deadline at seven in the morning is how a morning
+# check-in stops being believed.
+# One grammar, because "Shop for tonight" is the line already approved and
+# three siblings in its shape read as one family. "Shop BEFORE breakfast"
+# was the first wording and was dropped on review: `for` says what the trip
+# is FOR and leaves the clock to the detail line, where the deadline
+# already lives, while `before` issues an instruction the app sometimes
+# cannot stand behind — a long breakfast bake puts the deadline at 5:00 in
+# the morning, and "be at a shop before 5:00" is not something to say to a
+# person. §8: don't encode the same thing twice, and describe only what is
+# true. It is also five characters shorter, which matters: the morning text
+# SKIPS a line that does not fit its budget, so a longer title can silently
+# cost a household the whole "Lunch: ..." line.
+_SHOP_TITLE_BY_SLOT = {
+    "dinner": "Shop for tonight",
+    "breakfast": "Shop for breakfast",
+    "lunch": "Shop for lunch",
+}
+
+
+def _shop_title(slot: str) -> str:
+    """
+    The shop, named after the meal it is actually for.
+
+    A snack answers "Shop for today". Not a rare fallback, despite how it
+    reads: measured, a snack is the soonest waiting cook for a whole band
+    of the afternoon and IS the featured card at every hour of it, so with
+    `snacks_per_day` defaulting to 2 this is the headline most afternoons
+    of an unshopped day. It is the weakest of the four — the only one that
+    does not say what the shop is for — and "Shop before the snack" is
+    worse. Emily's to better.
+
+    The unknown-slot fallback is the same string on purpose, so this
+    function's answer never depends on the call site's own `or "dinner"`
+    — the two used to disagree, and a later tidy-up dropping that `or`
+    would have flipped the title to "today" while `_slot_time`'s own
+    unknown-slot fallback still computed a DINNER-hour deadline.
+    """
+    return _SHOP_TITLE_BY_SLOT.get((slot or "").strip().lower(), "Shop for today")
+
+
 def _weekday(day: str) -> str:
     return date.fromisoformat(day).strftime("%A")
 
@@ -560,7 +609,10 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
     return [{
         "id": f"shop:{day.isoformat()}",
         "kind": "shop",
-        "title": "Shop for tonight" if is_today else "Shop before tomorrow",
+        "title": (
+            _shop_title(soonest_meal.get("slot") or "dinner") if is_today
+            else "Shop before tomorrow"
+        ),
         "detail": f"{count} item{'' if count == 1 else 's'} · {when}",
         "reason": "",
         "date": day.isoformat(),
