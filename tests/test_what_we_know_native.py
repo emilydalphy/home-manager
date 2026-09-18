@@ -255,7 +255,10 @@ CHECKLIST = {
     "dinner window": ("data-field=\"dinner_window\"", "/api/onboarding/rhythm"),
     "planning anchor": ("data-field=\"planning_anchor\"", "/api/onboarding/rhythm"),
     "leftovers stance": ("data-field=\"leftovers_stance\"", "field === 'leftovers_stance' ? 'taste' : 'rhythm'"),
-    "prep days": ("data-wwk=\"prep-day\"", "WWK_MAX_PREP_DAYS"),
+    # WWK_MAX_PREP_DAYS left with the two-day cap (2026-09-18, Card 4 — "any
+    # number of days can be on"); the save path is wwkTogglePrepDay's own
+    # write, wwkSaveRhythm('prep-days', ...).
+    "prep days": ("data-wwk=\"prep-day\"", "wwkSaveRhythm('prep-days'"),
     "prep minutes": ("data-wwk=\"prep-minutes\"", "current === picked ? null : picked"),
     # Calendar
     "calendar check": ("data-wwk=\"cal-check\"", "/api/calendar/check"),

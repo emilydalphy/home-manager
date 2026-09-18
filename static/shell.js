@@ -9321,7 +9321,6 @@
     { key: 'saturday', label: 'Sat' }
   ];
   var WWK_PREP_MINUTES = [{ key: 30, label: '30 min' }, { key: 60, label: 'About an hour' }, { key: 120, label: 'Longer' }];
-  var WWK_MAX_PREP_DAYS = 2;
   // Taste: the same lists the old page carried (its PROTEIN_OPTIONS /
   // KIT_OPTIONS / RECIPE_COUNT_FIELDS / SNACKS_PER_DAY_FIELD). No onboarding
   // step collects protein preferences, so that list is this sheet's own.
@@ -9909,7 +9908,11 @@
     var days = ((mem.rhythm || {}).prep_days) || [];
     var keys = days.map(function (d) { return d.weekday; });
     var minutes = (days.filter(function (d) { return d.minutes; })[0] || {}).minutes || 0;
-    var html = wwkLead('Up to two') + '<div class="wwk-chips">' +
+    // The "Up to two" lead and its cap left with onboarding's Card 4
+    // (2026-09-18): any number of prep days can be on now, so there's
+    // nothing left to lead with here — the "Prep days" section title
+    // already says what this row is.
+    var html = '<div class="wwk-chips">' +
       WWK_PREP_DAYS.map(function (o) { return wwkChip(o.label, 'data-wwk="prep-day" data-value="' + o.key + '"', keys.indexOf(o.key) !== -1 ? 'on' : ''); }).join('') + '</div>';
     if (keys.length) {
       html += wwkLead('Roughly how long') + '<div class="wwk-chips">' +
@@ -9929,9 +9932,10 @@
     var days = ((wwkMem().rhythm || {}).prep_days) || [];
     var keys = days.map(function (d) { return d.weekday; });
     var minutes = (days.filter(function (d) { return d.minutes; })[0] || {}).minutes || null;
+    // The third-tap-does-nothing guard left with the two-day cap
+    // (2026-09-18): any number of days can be on, so every tap toggles.
     if (keys.indexOf(key) !== -1) keys = keys.filter(function (k) { return k !== key; });
-    else if (keys.length < WWK_MAX_PREP_DAYS) keys = keys.concat([key]);
-    else return;  // "up to two" — a third tap does nothing, as in onboarding
+    else keys = keys.concat([key]);
     var next = wwkPrepPayload(keys, minutes);
     wwkSaveRhythm('prep-days', { prep_days: next }, function () {
       var r = wwkMem().rhythm || (wwkMem().rhythm = {});
