@@ -155,10 +155,15 @@ def test_planning_by_a_differently_cased_name_still_finds_the_recipe():
 
 def test_the_import_route_still_answers_409_with_the_same_sentence(signed_in):
     """
-    GUARD, green either way — that door already guarded itself. What is
-    new is that it reads the same rule, so the two doors cannot drift
-    apart. Pinned by mutation: give `duplicate_recipe_message` different
-    wording from the route's and this fails.
+    GUARD on the 409, green either way — that door already guarded itself.
+
+    The assertion is against a LITERAL, not against
+    `duplicate_recipe_message(...)`: the route calls that function now, so
+    comparing its output to its own output is an assertion nothing can
+    fail. Found by review — gutting the message to "Nope." left all
+    thirteen tests green. Same shape as the source marker satisfied by its
+    own comment, two commits ago, which is why the literal is spelled out
+    here even though it duplicates the one in the app.
     """
     tools.add_recipe("Chicken Tacos", CHICKEN)
     res = signed_in.post("/api/recipes/add", json={
@@ -167,7 +172,13 @@ def test_the_import_route_still_answers_409_with_the_same_sentence(signed_in):
         "instructions": ["Brown the mince."],
     })
     assert res.status_code == 409
-    assert res.json()["detail"] == tools.duplicate_recipe_message("Chicken Tacos")
+    assert res.json()["detail"] == (
+        "You already have a recipe called \u201cChicken Tacos\u201d — change the name to keep both."
+    )
+    # ...and the chat door says the same words, from the same function.
+    with pytest.raises(tools.DuplicateRecipeName) as caught:
+        tools.add_recipe("CHICKEN TACOS", BEEF)
+    assert str(caught.value) == res.json()["detail"]
     assert len(_recipe_rows()) == 1
 
 
@@ -206,16 +217,30 @@ def test_a_reused_name_inside_the_app_still_skips_rather_than_raising():
     GUARD, green either way. `swap_in_place` and `big_meal` mean "we
     already have this one, carry on" — they must keep skipping quietly
     rather than inheriting the chat door's refusal, or an ordinary swap
-    onto a dish the household already has would blow up. Pinned by
-    mutation: make either of them call `add_recipe` unconditionally and
-    this fails.
+    onto a dish the household already has would blow up.
+
+    BOTH are driven, because the first version of this test drove only
+    `swap_in_place` while its docstring claimed either one was pinned —
+    review removed big_meal's guard entirely and all 5683 tests stayed
+    green. Pinned by mutation: make either call `add_recipe`
+    unconditionally and this fails.
     """
+    from app.tools import big_meal as _big_meal
     from app.tools import swap_in_place as _swap
 
-    tools.add_recipe("Chicken Tacos", CHICKEN)
+    saved = tools.add_recipe("Chicken Tacos", CHICKEN)
     _swap._save_recipe_if_new(
         {"meal_name": "chicken tacos", "ingredients": BEEF}, serves=4
     )  # must not raise
+    assert len(_recipe_rows()) == 1
+
+    reused = _big_meal._recipe_for_main(
+        {"name": "CHICKEN TACOS", "ingredients": BEEF, "food_groups": [],
+         "cuisine": "", "main_protein": "", "instructions": [],
+         "default_servings": 8, "prep_minutes": 10, "cook_minutes": 20},
+        "Thanksgiving",
+    )
+    assert reused == saved["recipe_id"], "the holiday main reuses the saved recipe"
     assert len(_recipe_rows()) == 1
 
 
@@ -259,4 +284,100 @@ def test_the_three_inside_doors_ask_the_one_rule():
     ):
         assert "existing_recipe_named(" in code_only(src), (
             f"{label} should ask tools.existing_recipe_named, not compare names itself"
+        )
+
+
+# ---------------------------------------------------------------------------
+# What an independent review found this branch had got wrong (2026-09-18)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("call", [
+    lambda: tools.mark_recipe_feedback("chicken tacos", "liked"),
+    lambda: tools.log_recipe_note("chicken tacos", "a bit runny"),
+    lambda: tools.log_cooking_deviation("chicken tacos", "used beef"),
+    lambda: tools.flag_recipe_temporary("chicken tacos"),
+])
+def test_the_sibling_chat_tools_find_the_recipe_whatever_the_capitalisation(call):
+    """
+    CATCH against this branch's own first commit, and the regression that
+    commit introduced.
+
+    These four resolved `name = ?`, case-sensitively. On main that was
+    survivable: the model passing the household's own casing raised "No
+    recipe named 'chicken tacos'. Save it first with add_recipe." — and
+    add_recipe then SAVED a second row, so the rating landed and was
+    readable. With add_recipe refusing, the same sequence became a dead
+    end: the error string tells the model to call the one door that now
+    says no, and the like is lost.
+
+    Reachable by design, not by accident: SYSTEM_PROMPT says to call
+    mark_recipe_feedback "right away with the recipe name ... Don't wait
+    to be asked", so the model passing "we loved the chicken tacos" as
+    typed is the expected behaviour.
+    """
+    tools.add_recipe("Chicken Tacos", CHICKEN, instructions=["Sear the thighs."])
+    call()  # must not raise
+    assert len(_recipe_rows()) == 1
+
+
+def test_a_recipe_is_stored_under_a_trimmed_name():
+    """
+    CATCH against this branch's own first commit. The rule trimmed the
+    QUERY and the INSERT stored the name as typed, so a recipe saved with
+    a stray space was invisible to the rule and the reported bug came
+    straight back through the other door — the test file's own padding
+    case only ever exercised the direction that worked.
+    """
+    tools.add_recipe("  Bean Chili  ", CHICKEN)
+    assert [r["name"] for r in _recipe_rows()] == ["Bean Chili"]
+    with pytest.raises(tools.DuplicateRecipeName):
+        tools.add_recipe("Bean Chili", BEEF)
+    assert len(_recipe_rows()) == 1
+
+
+def test_two_saves_at_the_same_instant_still_leave_one_recipe():
+    """
+    CATCH against this branch's own first commit, measured rather than
+    reasoned: the check read on one connection and the INSERT wrote on
+    another, so review measured 6 of 20 simultaneous pairs still writing a
+    duplicate — better than main's 20 of 20, and not the invariant this
+    branch claims. `/api/recipes/add` is a sync def, so Starlette runs it
+    in a threadpool and two devices really are concurrent.
+
+    A real `threading.Barrier`, no monkeypatched ordering, following
+    `tests/test_approve_race.py`.
+    """
+    import threading
+
+    tools.add_member("Emily")
+    # Twelve pairs, not one: a single pair is a coin flip on whether the
+    # two threads land inside the window, so against this branch's first
+    # commit one trial passed while review measured 6 duplicates in 20.
+    # A race test that only sometimes reproduces the race is a test that
+    # only sometimes means anything.
+    for trial in range(12):
+        conn = get_conn()
+        conn.execute("DELETE FROM recipes")
+        conn.commit()
+        conn.close()
+
+        ready = threading.Barrier(2)
+        saved, refused = [], []
+
+        def save():
+            ready.wait()
+            try:
+                saved.append(tools.add_recipe("Chicken Tacos", CHICKEN)["recipe_id"])
+            except Exception as e:  # DuplicateRecipeName, or a busy database
+                refused.append(type(e).__name__)
+
+        threads = [threading.Thread(target=save) for _ in range(2)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        assert len(_recipe_rows()) == 1, (
+            f"trial {trial}: one of the two had to lose — "
+            f"saved {saved}, refused {refused}"
         )

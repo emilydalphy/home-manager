@@ -78,12 +78,34 @@ def add_recipe(
     # talking — see existing_recipe_named. Resolved before get_conn: this
     # opens its own connection, and this repo has twice earned an
     # intermittent "database is locked" from a nested one.
-    clash = existing_recipe_named(name)
-    if clash:
-        raise DuplicateRecipeName(duplicate_recipe_message(clash["name"]))
-
+    # Stripped on the way IN as well as on the way out. The rule trimmed
+    # the query and the INSERT stored the name as typed, so a recipe saved
+    # with a stray space was invisible to it and the reported bug came
+    # straight back through the other door — found by review, measured.
+    name = (name or "").strip()
     ingredients = settle_cooking_quantities(ingredients or [], default_servings)
+
+    # The check and the INSERT share one transaction, opened with BEGIN
+    # IMMEDIATE so the write lock is held from the READ rather than from
+    # the write. Asked on a connection of its own it is a TOCTOU: review
+    # measured 6 of 20 simultaneous saves still writing a duplicate,
+    # which is better than main's 20 of 20 and is not the invariant this
+    # claims to be. `/api/recipes/add` is a sync def, so Starlette runs it
+    # in a threadpool and two devices really are concurrent.
     conn = get_conn()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        clash = existing_recipe_named(name, conn=conn)
+        if clash:
+            conn.rollback()
+            raise DuplicateRecipeName(duplicate_recipe_message(clash["name"]))
+    except DuplicateRecipeName:
+        conn.close()
+        raise
+    except Exception:
+        conn.rollback()
+        conn.close()
+        raise
     cur = conn.execute(
         "INSERT INTO recipes (household_id, name, notes, ingredients_json, tags_json, food_groups_json, cuisine, main_protein, "
         "instructions_json, default_servings, prep_time_minutes, cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json, "
@@ -134,7 +156,7 @@ class DuplicateRecipeName(ValueError):
     """
 
 
-def existing_recipe_named(name: str) -> dict | None:
+def existing_recipe_named(name: str, conn=None) -> dict | None:
     """
     This household's recipe of that name, or None — case-insensitively,
     because that is what a person means by "the same recipe" and what
@@ -147,14 +169,24 @@ def existing_recipe_named(name: str) -> dict | None:
     case-SENSITIVELY (so `chicken tacos` beside `Chicken Tacos` made a
     second row), and the chat tool checked nothing at all. A fifth door
     should call this rather than write a fifth answer.
+
+    Given a connection it reads on that one and neither commits nor
+    closes, so a caller can ask the question and act on the answer inside
+    one transaction — which is what stops `add_recipe`'s check being a
+    TOCTOU. Left unset it opens and closes its own, as every other caller
+    wants.
     """
-    conn = get_conn()
-    row = conn.execute(
-        "SELECT id, name FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) "
-        "ORDER BY id LIMIT 1",
-        (household_id(), (name or "").strip()),
-    ).fetchone()
-    conn.close()
+    own = conn is None
+    conn = conn or get_conn()
+    try:
+        row = conn.execute(
+            "SELECT id, name FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) "
+            "ORDER BY id LIMIT 1",
+            (household_id(), (name or "").strip()),
+        ).fetchone()
+    finally:
+        if own:
+            conn.close()
     return {"id": row["id"], "name": row["name"]} if row else None
 
 
@@ -1526,7 +1558,8 @@ def mark_recipe_feedback(recipe_name: str, rating: str | None = None, notes: str
     """
     conn = get_conn()
     recipe = conn.execute(
-        "SELECT id, feedback_notes FROM recipes WHERE household_id = ? AND name = ?",
+        "SELECT id, feedback_notes FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) "
+        "ORDER BY id LIMIT 1",
         (household_id(), recipe_name),
     ).fetchone()
     if not recipe:
@@ -1735,7 +1768,8 @@ def log_recipe_note(recipe_name: str, note: str) -> dict:
     """
     conn = get_conn()
     recipe = conn.execute(
-        "SELECT id FROM recipes WHERE household_id = ? AND name = ?", (household_id(), recipe_name)
+        "SELECT id FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) ORDER BY id LIMIT 1",
+        (household_id(), (recipe_name or "").strip()),
     ).fetchone()
     if not recipe:
         conn.close()
@@ -1762,7 +1796,8 @@ def log_cooking_deviation(recipe_name: str, note: str) -> dict:
     """
     conn = get_conn()
     recipe = conn.execute(
-        "SELECT id FROM recipes WHERE household_id = ? AND name = ?", (household_id(), recipe_name)
+        "SELECT id FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) ORDER BY id LIMIT 1",
+        (household_id(), (recipe_name or "").strip()),
     ).fetchone()
     if not recipe:
         conn.close()
@@ -1788,7 +1823,8 @@ def flag_recipe_temporary(recipe_name: str, excluded: bool = True) -> dict:
     """
     conn = get_conn()
     recipe = conn.execute(
-        "SELECT id FROM recipes WHERE household_id = ? AND name = ?", (household_id(), recipe_name)
+        "SELECT id FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) ORDER BY id LIMIT 1",
+        (household_id(), (recipe_name or "").strip()),
     ).fetchone()
     if not recipe:
         conn.close()
