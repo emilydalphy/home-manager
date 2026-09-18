@@ -270,7 +270,7 @@ function setUp(n, shops) {
 
 
 def _grocery_block() -> str:
-    start = SHELL_JS.index("  var GRO_CATEGORY_LABELS = {")
+    start = SHELL_JS.index("  var GRO_ICONS = {")
     end = SHELL_JS.index("  // ---------- Hands-free voice ----------", start)
     return SHELL_JS[start:end]
 
@@ -282,15 +282,16 @@ def _node(body: str):
 
 
 @_needs_node
-def test_every_sorting_screen_and_the_row_menu_offer_both():
+def test_the_sort_screen_and_the_row_menu_offer_both():
+    """SORT ALL and a LIST row's ⋯ — the two places since the one-at-a-time
+    queue went (2026-09-18)."""
     out = _node("""
 setUp(3);
-groceryState.step = 'sort';
-const queue = groSortHtml(groceryState.data);
+groceryState.step = 'sortall';
 const all = groSortAllHtml(groceryState.data);
 groceryState.openRowId = '2';
 const menu = groRowMenuHtml(groceryState.data.stores.Unassigned.sections[0].items[1], groceryState.data);
-console.log(JSON.stringify({ queue: queue, all: all, menu: menu }));
+console.log(JSON.stringify({ all: all, menu: menu }));
 """)
     for name, html in out.items():
         assert 'data-gro="have-it"' in html, name + " offers Have it"
@@ -303,7 +304,7 @@ console.log(JSON.stringify({ queue: queue, all: all, menu: menu }));
 def test_have_it_drops_the_line_without_inventory_and_undoes():
     out = _node("""
 setUp(3);
-groceryState.step = 'sort';
+groceryState.step = 'sortall';
 click({ gro: 'have-it', id: '1', name: 'Thing 1' });
 settle(function () {
   tapUndo();
@@ -321,9 +322,9 @@ settle(function () {
 def test_use_something_else_opens_a_field_then_writes_the_swap_and_undoes():
     out = _node("""
 setUp(3);
-groceryState.step = 'sort';
+groceryState.step = 'sortall';
 click({ gro: 'subst-open', id: '1' });
-const opened = groSortHtml(groceryState.data);
+const opened = groSortAllHtml(groceryState.data);
 FIELD_VALUE = '';
 click({ gro: 'subst-save', id: '1', have: '0', name: 'Thing 1' });
 const postsAfterBlank = POSTS.length;

@@ -685,7 +685,7 @@ def _grocery_block() -> str:
     """The whole Grocery region, up to the hands-free voice code (which
     wants a SpeechRecognition engine). The same slice
     tests/test_grocery_fast_sort.py takes."""
-    start = SHELL_JS.index("  var GRO_CATEGORY_LABELS = {")
+    start = SHELL_JS.index("  var GRO_ICONS = {")
     end = SHELL_JS.index("  // ---------- Hands-free voice ----------", start)
     return SHELL_JS[start:end]
 
@@ -770,8 +770,10 @@ function el() {
   });
   return node;
 }
+window.PomonaGroceryOffline = require(OFFLINE_MODULE);
+var navigator = { onLine: true };
 var GRO_NODES = {};
-['#gro-back','#gro-head','#gro-band','#gro-title','#gro-sub','#gro-body','#gro-foot','#gro-dock']
+['#gro-back','#gro-head','#gro-band','#gro-title','#gro-sub','#gro-body','#gro-dock']
   .forEach(function (s) { GRO_NODES[s] = el(); });
 var document = { activeElement: null, createElement: function () { return el(); } };
 var panels = { grocery: { dataset: { built: '1' },
@@ -818,50 +820,52 @@ function refreshTodayMoves() {}
 
 
 def _shop(body: str) -> dict:
-    script = _SHOP_STUB + _band_identity() + _grocery_block() + body
+    module = "const OFFLINE_MODULE = %s;\n" % json.dumps(str(REPO / "static" / "grocery-offline.js"))
+    script = module + _SHOP_STUB + _band_identity() + _grocery_block() + body
     res = nodeharness.run_node(script, timeout=30)
     assert res.returncode == 0, "node failed: %s" % res.stderr
     return json.loads(res.stdout.strip().splitlines()[-1])
 
 
 @_needs_node
-def test_a_refresh_mid_trip_does_not_yank_the_shopper_out_of_the_shop():
+def test_a_refresh_mid_shop_does_not_move_the_shopper_or_lose_a_tick():
     """
-    GUARD. The worst thing this fix could do is end somebody's trip from a
-    phone in another room. It doesn't: loadGrocery never touches
-    groceryState.step or the trip snapshot, so the stop stays open, the
-    stops already behind stay behind, and what came home this trip is still
-    counted. All it changes is the list the stop is drawn from — which is
-    the whole point.
+    GUARD. The worst thing this fix could do is move somebody mid-shop from
+    a phone in another room. It doesn't: loadGrocery never touches
+    groceryState.step, the scroll comes back where it was, and a tick made
+    a moment ago in a dead zone is not dropped by the re-read — the load
+    replays the queue (groReplayQueue, static/grocery-offline.js), so the
+    tick reaches the server rather than being overwritten by its answer.
+    All it changes is the list the cards are drawn from — which is the
+    whole point.
+
+    (Until 2026-09-18 this guarded the trip's snapshot — the open stop, the
+    stops behind, the count of what came home. The list is the checklist
+    now, and what it guards is the tick.)
     """
     out = _shop("""
 groceryState.usualStores = ['Loblaws', 'Costco'];
 groceryState.storesPromptDismissed = true;
-groceryState.step = 'trip';
-groceryState.tripStops = ['Loblaws', 'Costco'];
-groceryState.tripIndex = 1;
-groceryState.tripDone = { Loblaws: true };
-groceryState.tripStartedAt = Date.now();
-groceryState.tripTotal = 9;
-groceryState.tripBought = 4;
-groceryState.tripRestored = true;
-scrollEl.scrollTop = 412;
-refreshGroceryPanel();
+groceryState.step = 'list';
+loadGrocery();
 setTimeout(function () {
-  console.log(JSON.stringify({
-    step: groceryState.step, stops: groceryState.tripStops,
-    index: groceryState.tripIndex, done: groceryState.tripDone,
-    bought: groceryState.tripBought, scroll: scrollEl.scrollTop,
-    fetched: FETCHED.length
-  }));
+  groOffline.queueStatus('1', 'purchased');
+  scrollEl.scrollTop = 412;
+  refreshGroceryPanel();
+  setTimeout(function () {
+    console.log(JSON.stringify({
+      step: groceryState.step, scroll: scrollEl.scrollTop,
+      sent: FETCHED.filter(function (u) { return u === '/api/grocery-list/1/status'; }).length,
+      pending: groOffline.pending().length,
+      fetched: FETCHED.length
+    }));
+  }, 60);
 }, 60);
 """)
-    assert out["step"] == "trip"
-    assert out["stops"] == ["Loblaws", "Costco"]
-    assert out["index"] == 1
-    assert out["done"] == {"Loblaws": True}
-    assert out["bought"] == 4
-    assert out["scroll"] == 412, "a refresh must not scroll the shopper's stop away"
+    assert out["step"] == "list"
+    assert out["scroll"] == 412, "a refresh must not scroll the shopper's list away"
+    assert out["sent"] == 1, "the tick waiting to be sent went with the re-read"
+    assert out["pending"] == 0
     assert out["fetched"] > 0, "the harness never reached the network at all"
 
 
@@ -889,8 +893,8 @@ setTimeout(function () {
 @_needs_node
 def test_a_refresh_mid_sort_leaves_the_sorting_screen_where_it_was():
     """
-    GUARD. SORT and SORT ALL stay up, and so does the row whose "Use
-    something else" field is open.
+    GUARD. SORT ALL stays up, and so does the row whose "Use something
+    else" field is open.
 
     Note what this does and does not measure: the STEP and the open row
     survive, which is what is asserted. Whether the half-typed text inside
@@ -911,18 +915,15 @@ groceryState.usualStores = ['Loblaws', 'Costco'];
 groceryState.storesPromptDismissed = true;
 groceryState.step = 'sortall';
 groceryState.substOpenId = '2';
-groceryState.sortTotal = 3;
 refreshGroceryPanel();
 setTimeout(function () {
   console.log(JSON.stringify({
-    step: groceryState.step, subst: groceryState.substOpenId,
-    total: groceryState.sortTotal
+    step: groceryState.step, subst: groceryState.substOpenId
   }));
 }, 60);
 """)
     assert out["step"] == "sortall"
     assert out["subst"] == "2"
-    assert out["total"] == 3
 
 
 @_needs_node
@@ -941,7 +942,7 @@ def test_sorting_folds_back_to_the_list_when_the_change_left_nothing_to_sort():
     out = _shop("""
 groceryState.usualStores = ['Loblaws', 'Costco'];
 groceryState.storesPromptDismissed = true;
-groceryState.step = 'sort';
+groceryState.step = 'sortall';
 UNSORTED = false;   // the chat change sorted, bought or dropped the last one
 refreshGroceryPanel();
 setTimeout(function () { console.log(JSON.stringify({ step: groceryState.step })); }, 60);
@@ -980,26 +981,26 @@ groceryState.storesPromptDismissed = true;
 // An ordinary LIST load first, so the foot writes its real add row.
 loadGrocery();
 setTimeout(function () {
-  var foot = GRO_NODES['#gro-foot'];
-  var addRow = foot.querySelector('#gro-add-item');
+  var body = GRO_NODES['#gro-body'];
+  var addRow = body.querySelector('#gro-add-item');
   if (addRow) addRow.value = 'oat milk';
   scrollEl.scrollTop = 733;
   var before = { step: groceryState.step, scroll: scrollEl.scrollTop,
                  typed: addRow ? addRow.value : null,
-                 hasAddRow: /id="gro-add-item"/.test(foot.innerHTML) };
+                 hasAddRow: /id="gro-add-item"/.test(body.innerHTML) };
   // Now an approval sets last week's lines aside, and this household has
   // already said "later" to them once this page view.
   CARRIED = [{ id: 9, item: 'Spinach', quantity: '1 bag' }];
   groceryState.carryDeferred = true;
   refreshGroceryPanel();
   setTimeout(function () {
-    var f2 = GRO_NODES['#gro-foot'];
-    var a2 = f2.querySelector('#gro-add-item');
+    var b2 = GRO_NODES['#gro-body'];
+    var a2 = b2.querySelector('#gro-add-item');
     console.log(JSON.stringify({ before: before, after: {
       step: groceryState.step, scroll: scrollEl.scrollTop,
       deferred: groceryState.carryDeferred,
       typed: a2 ? a2.value : null,
-      hasAddRow: /id="gro-add-item"/.test(f2.innerHTML)
+      hasAddRow: /id="gro-add-item"/.test(b2.innerHTML)
     }}));
   }, 60);
 }, 60);
@@ -1103,8 +1104,8 @@ groceryState.usualStores = ['Loblaws', 'Costco'];
 groceryState.storesPromptDismissed = true;
 loadGrocery();
 setTimeout(function () {
-  var foot = GRO_NODES['#gro-foot'];
-  var addRow = foot.querySelector('#gro-add-item');
+  var body = GRO_NODES['#gro-body'];
+  var addRow = body.querySelector('#gro-add-item');
   if (addRow) addRow.value = 'oat milk';
   scrollEl.scrollTop = 733;
   CARRIED = [{ id: 9, item: 'Spinach', quantity: '1 bag' }];
@@ -1112,7 +1113,7 @@ setTimeout(function () {
   // What the three Review / open-slot call sites do: no opts at all.
   refreshGrocerySurfaces();
   setTimeout(function () {
-    var a2 = GRO_NODES['#gro-foot'].querySelector('#gro-add-item');
+    var a2 = GRO_NODES['#gro-body'].querySelector('#gro-add-item');
     console.log(JSON.stringify({
       step: groceryState.step, scroll: scrollEl.scrollTop,
       deferred: groceryState.carryDeferred, typed: a2 ? a2.value : null
@@ -1185,8 +1186,8 @@ groceryState.usualStores = ['Loblaws', 'Costco'];
 groceryState.storesPromptDismissed = true;
 loadGrocery();
 setTimeout(function () {
-  var foot = GRO_NODES['#gro-foot'];
-  var addRow = foot.querySelector('#gro-add-item');
+  var body = GRO_NODES['#gro-body'];
+  var addRow = body.querySelector('#gro-add-item');
   if (addRow) addRow.value = 'oat milk';
   scrollEl.scrollTop = 733;
   // NOTHING deferred — there was nothing to defer until now. This is what
@@ -1196,7 +1197,7 @@ setTimeout(function () {
   groceryState.carryDeferred = false;
   refreshGroceryPanel();
   setTimeout(function () {
-    var a2 = GRO_NODES['#gro-foot'].querySelector('#gro-add-item');
+    var a2 = GRO_NODES['#gro-body'].querySelector('#gro-add-item');
     console.log(JSON.stringify({
       step: groceryState.step, scroll: scrollEl.scrollTop,
       deferred: groceryState.carryDeferred, typed: a2 ? a2.value : null
@@ -1211,30 +1212,6 @@ setTimeout(function () {
     )
     assert out["scroll"] == 733
     assert out["typed"] == "oat milk"
-
-
-@_needs_node
-def test_a_trip_at_its_last_stop_folds_to_the_wrap_up():
-    """
-    CHARACTERISATION (green either way), the sibling of the SORT fold and
-    undisclosed in the first round. renderGrocery folds `next` -> `wrap`
-    when nothing is left to choose between — so a chat change that empties
-    the remaining stops moves a shopper from "where next?" to the wrap-up.
-    Pre-existing and right (there is no question left to ask); named here
-    so the list of what a refresh can move is complete.
-    """
-    out = _shop("""
-groceryState.usualStores = ['Loblaws', 'Costco'];
-groceryState.storesPromptDismissed = true;
-groceryState.step = 'next';
-groceryState.tripStops = ['Loblaws', 'Costco'];
-groceryState.tripDone = { Loblaws: true, Costco: true };   // both behind us
-groceryState.tripStartedAt = Date.now();
-groceryState.tripRestored = true;
-refreshGroceryPanel();
-setTimeout(function () { console.log(JSON.stringify({ step: groceryState.step })); }, 60);
-""")
-    assert out["step"] == "wrap"
 
 
 @_needs_node

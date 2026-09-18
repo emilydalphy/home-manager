@@ -96,7 +96,9 @@ def _gro_head_body():
 
 
 # Grocery's deeper steps. LIST is the tab root and correctly has no crumb.
-GRO_DEEPER_STEPS = ["sort", "sorthow", "sortall", "next", "trip", "wrap"]
+# (The trip's steps and the sort queue went on 2026-09-18 — the list is
+# the checklist; sorting has one way.)
+GRO_DEEPER_STEPS = ["carry", "sortall"]
 
 
 @pytest.mark.parametrize("step", GRO_DEEPER_STEPS)
@@ -109,7 +111,8 @@ def test_every_deeper_grocery_step_offers_a_way_back(step):
     about what the handler does, not a new destination.
     """
     body = _gro_head_body()
-    block = body[body.index("'%s'" % step):]
+    # SORT ALL is groHeadFor's last, unconditional return; CARRY is named.
+    block = body[body.index("'%s'" % step):] if step == "carry" else body[body.index("title: 'Sort them all'") - 40:]
     back = re.search(r"back: ([^,\n]+)", block)
     assert back, "step %r has no back at all" % step
     expr = back.group(1).strip()
@@ -206,22 +209,23 @@ def _gro_dock_body():
     return SHELL_JS[start:end]
 
 
-def test_shops_action_left_the_scrolling_foot():
-    """It used to sit at the end of .gro-foot, under the whole list.
-
-    On a real week's groceries that put "Start the trip" — the button the
-    screen exists for — a hundred rows below the fold. The foot keeps the add
-    row, which is a side errand rather than what the screen is for.
+def test_shops_root_has_no_action_and_the_add_row_is_not_the_docks():
+    """Until 2026-09-18 "Start the trip" sat in the dock over the list. The
+    list is the checklist now: the root has no single action (ticking a
+    row is it), so no dock — rule 2's own case — and the add row, a side
+    errand, opens the list rather than riding in a strip.
     """
-    start = SHELL_JS.index("function groFootHtml(")
-    foot = SHELL_JS[start:SHELL_JS.index("function groDockHtml(")]
-    assert "gro-primary" not in foot, "the foot still renders the screen's action"
-    assert "gro-add-item" in foot, "the add row should stay in the foot"
+    add = SHELL_JS[SHELL_JS.index("function groAddRowHtml("):SHELL_JS.index("function groDockHtml(")]
+    assert "gro-primary" not in add, "the add row renders no screen action"
+    assert "gro-add-item" in add
 
     dock = _gro_dock_body()
     assert "gro-add-item" not in dock, "the add row is a second job; it is not the dock's"
-    # Five steps have an action, and each puts exactly one fill in the dock.
-    assert dock.count("gro-primary") == 5
+    # One step has an action, and it puts exactly one fill in the dock:
+    # SORT ALL's finish. LIST's "Go to Plan" over an empty list is the
+    # shared .dock-primary.
+    assert dock.count("gro-primary") == 1
+    assert dock.count("dock-primary") == 1
 
 
 def test_the_dock_is_the_last_thing_in_its_container():
@@ -237,8 +241,8 @@ def test_the_dock_is_the_last_thing_in_its_container():
     # Shop: the dock is the last child of the panel's markup.
     build = SHELL_JS[SHELL_JS.index("function buildGroceryPanel("):]
     build = build[:build.index("panel.addEventListener")]
-    assert build.index('id="gro-dock"') > build.index('id="gro-foot"')
-    assert build.index('id="gro-foot"') > build.index('id="gro-body"')
+    assert build.index('id="gro-dock"') > build.index('id="gro-body"')
+    assert 'id="gro-foot"' not in build, "the foot went with the trip; the add row opens the list"
 
     # Plan's two docks: the call that builds them ends its function's return
     # expression, so what follows is ";" and never " +" (another chunk of
@@ -261,19 +265,17 @@ def test_a_screen_with_no_single_action_has_no_dock():
     design gave it "Start cooking" on 2026-09-13; a Cook night with nothing
     to cook still has none — see tests/test_cook_shelf.py.)
 
-    Shop's LIST returns the empty string while the shops question is up,
-    because the card owns the screen's one apricot then; and an empty dock
-    collapses rather than leaving a bare hairline across the bottom of a
-    screen with nothing to say.
+    Shop's LIST is the standing example since 2026-09-18: the list is the
+    checklist, ticking a row is the action, so the root returns the empty
+    string — except over an empty list, where the empty moment's next
+    step, "Go to Plan", is the dock — and an empty dock collapses rather
+    than leaving a bare hairline across the bottom of a screen with
+    nothing to say.
     """
     dock = _gro_dock_body()
-    # Since 2026-09-13 the button rides in a .dock-row with the quiet
-    # "See the week" link beside it (tests/test_allset_week_path.py).
-    assert "if (canGo) {" in dock
-    assert "'<button type=\"button\" class=\"gro-primary\" data-gro=\"start-trip\">Start the trip</button>'" in dock
-    # Over the shops question, and on the just-finished trip's own screen,
-    # LIST renders no dock at all. (An empty list is the exception since
-    # 2026-09-11: its empty moment's next step, "Go to Plan", is the dock.)
-    assert "!groStoresPromptShouldShow() && !groceryState.justFinishedTrip" in dock
-    assert "return '';" in dock.split("data-gro=\"goto-plan\"", 1)[1][:80], "LIST should be able to render no dock"
+    assert "start-trip" not in dock
+    assert "!groStoresPromptShouldShow() &&" in dock, "never over the shops question"
+    assert "return '';" in dock.split("data-gro=\"goto-plan\"", 1)[1][:80], "LIST renders no dock"
     assert ".gro-dock:empty { display: none; }" in SHELL_CSS
+    # And the FAB is cleared by the body when there is no dock under it.
+    assert ".gro-body:has(+ .gro-dock:empty) { padding-bottom: 70px; }" in SHELL_CSS

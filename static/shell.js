@@ -496,14 +496,6 @@
     // them.
     closeKitchenSheet();
 
-    // The shop-done handoff is page-view-only (see
-    // groceryState.justFinishedTrip's declaration, further down this file
-    // but already assigned by the time any tab click can reach here, same
-    // as weekState below) — leaving Grocery for any other tab and coming
-    // back later must not still show "that's the shopping done" from a
-    // stop finished earlier in this same visit.
-    if (key !== 'grocery') groceryState.justFinishedTrip = false;
-
     // The All set screen is shown once, in the page view that approved the
     // week (allSetStepHtml). Leaving Plan by any door — "Open the list", the
     // tab bar — is the end of it: the tab shows the week when it is next
@@ -3083,94 +3075,67 @@
   }
 
   // ==========================================================================
-  // Grocery — four STEPS of one tab (Emily's approved design, 2026-09-08)
+  // Grocery — the list IS the checklist (Emily's approved design, 2026-09-18)
   // ==========================================================================
-  // The screen answers "what do we need, and where?" as steps, not segments:
+  // The Shop tab answers "what do we need, and where — and what have we
+  // got?" on one screen. Its steps:
   //
-  //   LIST     the root: one card per store, the needed things under it, a
-  //            "N things to sort" row when anything has no store yet — and
-  //            those things themselves under "Not sorted yet" at the foot of
-  //            the cards — and the screen's one apricot action — "Start the
-  //            trip". Always the first screen (Emily, 2026-09-15: "a store
-  //            question never stands between me and what to buy"): the
-  //            first-run "Where do you usually shop?" card sits at the TOP
-  //            of the list rather than in place of it, and SORT is never
-  //            entered on the household's behalf — see groMaybeCarryFirst.
+  //   LIST     the root: the band ("This week · 14 things, two stores."),
+  //            the add row, then one card per store in the household's
+  //            stop order — the store's name, "N of M" at the right, and
+  //            one tickable row per thing. Loose things with no store sit
+  //            in a final "Anywhere" card. A tick marks the thing BOUGHT
+  //            (status 'purchased', the same route the old trip's "Done at
+  //            Costco" wrote) on the screen at once, on the server when it
+  //            can be (static/grocery-offline.js), with "Changes saved ·
+  //            Put back" as the way back. When every row on a card is
+  //            ticked its head reads "Done at Costco"; when every card is
+  //            done the list's finished moment (groShopDoneHtml) stands at
+  //            the top of it. Always the first screen (Emily, 2026-09-15:
+  //            "a store question never stands between me and what to
+  //            buy"): the first-run "Where do you usually shop?" card sits
+  //            at the TOP of the list, and SORT ALL is never entered on
+  //            the household's behalf — see groMaybeCarryFirst.
   //   CARRY    "Still on the list from last week — keep or drop?" (Emily,
   //            2026-09-13). What an earlier week left unbought, set aside by
   //            the new approval (app/tools/grocery.py
   //            set_aside_carried_over_items) rather than summed into this
-  //            week's amounts. One screen, per-item Keep / Don't need, and
-  //            it comes BEFORE sorting. Exists only while something waits.
-  //   SORT     one unsorted item at a time: its name, its quantity, and the
-  //            store pills (plus Any / Have it / Getting it elsewhere).
-  //            Exists only while something is unsorted, and only ever
-  //            reached from LIST's "N things to sort" row (2026-09-15;
-  //            until then the tab opened on it whenever anything had no
-  //            store — Emily's decision J of 2026-09-11 — and so did every
-  //            Add from the list's own foot).
-  //   HEADED   "Where are we headed?" (Emily, 2026-09-13): the week's stops
-  //            as store cards — the count, and anything only bought there —
-  //            so the trip starts on the list for the shop the household is
-  //            actually driving to. Exists only when there is more than one
-  //            stop; a one-shop week goes straight into TRIP.
-  //   TRIP     one stop at a time: this store's things with a tick each, the
-  //            trolley collapsed underneath, and "Done at Costco → Metro".
-  //   NEXT     "Where next?" between stops: the same store cards, for what
-  //            is left.
-  //   WRAP UP  what didn't make it into the cart, the trip's own count, and
-  //            "Finish the trip".
+  //            week's amounts. One screen, per-item Keep / Don't need.
+  //            Exists only while something waits.
+  //   SORT ALL every unsorted thing on one screen with a store chip each
+  //            (Emily, 2026-09-18: "sorting has one way"). Reached from
+  //            LIST's "N things to sort" row and nowhere else; the crumb
+  //            is "sort them later". Until 2026-09-18 there was a chooser
+  //            in front of it ("Sort them all on one screen" / "Or one at
+  //            a time" / "Sort them later") and a one-at-a-time queue
+  //            behind that; both are gone.
+  //
+  // Until 2026-09-18 the tab also had a TRIP — "Start the trip", "Where
+  // are we headed?", one stop at a time with a trolley, "Where next?", a
+  // wrap-up ("How did it go?"), and a paused-trip dock on the root. Emily,
+  // reviewing the shopping-list mockup: the list is the checklist, so a
+  // trip is just ticking the list. What the trip wrote server-side is kept
+  // by the tick itself — a bought row goes to 'purchased' directly (the
+  // kitchen add and the staples' rhythm happen in mark_grocery_item), and
+  // the last tick on a store records the stop (/api/shopping-trips/close,
+  // groRecordStopDone) the way "Done at Costco" did.
   //
   // They are STATES of this tab, never routes — /grocery throughout, exactly
-  // as Meals is /week in all three of its steps (NavBlueprint: "never a new
-  // page with its own header"). goGroceryStep pushes its own history entry so
-  // the browser's back gesture steps out one level; a refresh lands on LIST,
+  // as Meals is /week in all its steps (NavBlueprint: "never a new page with
+  // its own header"). goGroceryStep pushes its own history entry so the
+  // browser's back gesture steps out one level; a refresh lands on LIST,
   // because groceryState.step starts there and nothing restores it.
   //
-  // What the three-segment version had and this doesn't: the To buy / Plan
-  // stops / Review segmented control, the spruce trip hero, the Done group
-  // on To buy, and Review's missing-quantity and no-store flag cards — all
-  // questions the four steps already answer. Review's CONFIRMATION half
-  // ("Already sorted this week", with its two undos) is kept and is now part
-  // of WRAP UP, and its duplicate flag is kept as one quiet line at the top
-  // of LIST (groDuplicatesHtml).
+  // The per-row ⋯ (groRowMenuHtml — quantity, store, remove, on the routes
+  // the old menu used), the inline add row (groAddItem, one POST to
+  // /api/grocery-list/add) and the duplicate line (groDuplicatesHtml) are
+  // all still here: the ask bar is the escape hatch for anything wordier,
+  // but it is not the ONLY way to fix a row.
   //
-  // Three things went out with the segments and came BACK, because "the ask
-  // bar can do it" is not the same as "a person should have to spend a model
-  // turn on it": the per-row ⋯ (groRowMenuHtml — quantity, store, remove, on
-  // the routes the old menu used), the inline add row in LIST's foot
-  // (groAddItem, one POST to /api/grocery-list/add), and the duplicate line
-  // above. The ask bar is still the escape hatch for anything wordier — that
-  // is what it is good at — but it is no longer the ONLY way to fix a row.
-  //
-  // Same /api/grocery-list* endpoints as before, same request bodies, same
-  // statuses (needed / in_cart / purchased / excluded). No new routes.
-
-  var GRO_CATEGORY_LABELS = {
-    produce: 'Produce', dairy: 'Dairy', 'meat/seafood': 'Meat / seafood',
-    pantry: 'Pantry', frozen: 'Frozen', other: 'Other'
-  };
-  // The trip's aisle spine used to color-code by section (celadon for
-  // Produce, urgent-red for Meat/Seafood, etc.) with no key anywhere on
-  // screen — a colour with no legend just looks decorative, and terracotta
-  // on Meat/Seafood in particular reads as urgent when it isn't (design
-  // rule 3). The eyebrow beside it already names the aisle, so the spine is
-  // one neutral (--hairline-strong) now — see .gro-aisle-spine in shell.css.
-  // Store identity colours. Every entry is a LIGHT accent, because the avatar
-  // carries spruce ink (--on-accent-ink) and RULE ONE has no exceptions.
-  // Read from theme.css's --store-1.."-6 (design hygiene pass, 2026-09-12)
-  // rather than hardcoded here, unlike the aisle spines above: these are
-  // arbitrary identity colours rather than semantic roles, and a light accent
-  // fill carrying dark ink is correct on either ground, so --store-1.."-6 are
-  // deliberately NOT redefined in theme.css's dark block — pointing this at
-  // --celadon-edge or --sand-deep directly would be wrong, since those DO go
-  // dark in dark mode, which would put dark ink on a dark fill. These
-  // resolve inline (`style="background:var(--store-1)"`), so no JS-side
-  // lookup is needed.
-  var GRO_STORE_PALETTE = [
-    'var(--store-1)', 'var(--store-2)', 'var(--store-3)',
-    'var(--store-4)', 'var(--store-5)', 'var(--store-6)'
-  ];
+  // Same /api/grocery-list* endpoints as before, same request bodies. One
+  // read is new: /api/grocery-list?status=bought — the rows ticked off
+  // since the list was last built (tools.list_grocery_list), which is what
+  // the cards draw struck through and count in "N of M".
 
   var GRO_ICONS = {
     refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5A8 8 0 1 0 18.4 17"/><path d="M20 5.5V11h-5.5"/></svg>',
@@ -3183,22 +3148,8 @@
     camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5h4l1.5-2.5h6L16.5 8.5h4V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19z"/><circle cx="12" cy="13.5" r="3.4"/></svg>'
   };
 
-  // Above this many things to sort, the tab offers the fast paths first
-  // instead of dropping the household straight into the one-at-a-time queue.
-  // Emily, 2026-09-09: "if there's 40 ingredients it can take too long to go
-  // through the screens all like this." Five is the handful she likes the
-  // queue for — three stray items are finished before a menu of ways to
-  // finish them could be read. Six is where the menu starts earning its own
-  // screen.
-  var GRO_FAST_SORT_MIN = 6;
   // The list head's mic and refresh buttons (see the head markup).
   var SHOW_GRO_HEADER_TOOLS = false;
-
-  // The three screens that only exist while something is unsorted. Named as
-  // a set because they share one fallback: the moment the queue empties —
-  // by any route, including a bulk assign — all three stop making sense and
-  // drop back to LIST.
-  var GRO_SORT_STEPS = ['sort', 'sorthow', 'sortall'];
 
   // How long an Undo chip stays beside its toast. The tab's own remove-undo
   // and Meals' swap-undo both sit around eight seconds; a bulk assign is the
@@ -3211,21 +3162,25 @@
   // (the butcher, the market). Until 2026-09-15 it read "Somewhere else",
   // which sat beside "Add a new store" and read as one more way to name a
   // store, and a tap on it made the row vanish with no word and no way
-  // back except WRAP UP. Now it says what it does, the toast confirms it
-  // with an Undo, and LIST shows what's set aside in a foot section with
-  // a way back onto the list. The three strings live here so a rewording
-  // is one line: the chip (SORT's card and the row's ⋯), the foot
+  // back except the old wrap-up. Now it says what it does, the toast
+  // confirms it with an Undo, and LIST shows what's set aside in a foot
+  // section with a way back onto the list. The three strings live here so
+  // a rewording is one line: the chip (the row's ⋯), the foot
   // section's title (" · N" is appended), and the row's way back.
   var GRO_ELSEWHERE_CHIP = 'Getting it elsewhere';
   var GRO_ELSEWHERE_SECTION = 'Getting elsewhere';
   var GRO_ELSEWHERE_BACK = 'Put it back';
 
-  // "Not sorted yet" — the card at the foot of LIST's store cards holding
-  // the things that still have no store (Emily, 2026-09-15: "anything
-  // unsorted simply listed under 'Not sorted yet'"). Until then those rows
-  // lived on SORT alone, and the list only counted them. The wording is
-  // an assumption; " · N" is appended (groUnsortedCardHtml).
-  var GRO_UNSORTED_SECTION = 'Not sorted yet';
+  // The card at the foot of LIST's store cards holding the things with no
+  // store — answered "Any" or not yet asked (Emily, 2026-09-18: "loose
+  // items with no store sit in a final Anywhere card"; until then the two
+  // halves were an "Anywhere" card and a "Not sorted yet" card). Its head
+  // when every row on it is ticked, and the head of the one-list
+  // household's card (GRO_ONE_LIST_STOP) — "Done at Your list" is not a
+  // sentence. A store's own card says "Done at Costco" (groCardDoneLabel).
+  var GRO_ANYWHERE_CARD = 'Anywhere';
+  var GRO_ANYWHERE_DONE = 'All bought';
+  var GRO_ONE_LIST_DONE = 'Done shopping';
 
   // The aisle for a thing typed into the list's own add row, without the
   // model (2026-09-15). The add row posts straight to /api/grocery-list/add
@@ -3290,42 +3245,28 @@
     return 'other';
   }
 
-  // How long a paused trip is kept before it is quietly dropped. Three
-  // days covers "Costco on Saturday, Metro on Monday"; past that the list
-  // it was snapshotted from has very likely been rebuilt by a new week's
-  // approval, and resuming would hide this week's Costco behind last
-  // week's "Costco done". Nothing bought is ever at stake here — purchases
-  // are on the server the moment a stop is finished — only the snapshot.
-  var GRO_TRIP_KEEP_MS = 3 * 24 * 60 * 60 * 1000;
-  var GRO_TRIP_KEY = 'pomona.trip.h';
-
-  function groStoreColor(name) {
-    // "Any store" is the leftovers bucket, not a stop — it gets the quiet
-    // sand fill rather than a store identity colour.
-    if (!name || name === 'Unassigned') return 'var(--store-none)';
-    var h = 0;
-    for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
-    return GRO_STORE_PALETTE[h % GRO_STORE_PALETTE.length];
-  }
-  function groStoreLabel(name) { return (!name || name === 'Unassigned') ? 'Any store' : name; }
-  function groStoreInitial(name) {
-    if (!name || name === 'Unassigned') return '?';
-    return (name.trim()[0] || '?').toUpperCase();
-  }
   function groPlural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
-  // Real stores first, "Any store" last. It is where things land before
-  // anyone has decided, so it reads as the remainder at the bottom of the
-  // list rather than as the first stop of the trip.
+  // The household's stop order: the shops in the order they named them
+  // ("Where do you usually shop?" / Preferences → Stores), then any shop
+  // the list mentions that they never named, in the order the list has
+  // them; "Any store" last — it is where things land before anyone has
+  // decided, so it reads as the remainder at the bottom of the list rather
+  // than as the first stop.
   function groOrderStores(names) {
+    var usual = groceryState.usualStores || [];
     return names.slice().sort(function (a, b) {
       if (a === 'Unassigned') return 1;
       if (b === 'Unassigned') return -1;
-      return 0;
+      var ia = usual.indexOf(a), ib = usual.indexOf(b);
+      if (ia === -1 && ib === -1) return 0;
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
     });
   }
 
   var groceryState = {
-    // list | sort | trip | wrap — see goGroceryStep. Starts at the root, so
+    // list | carry | sortall — see goGroceryStep. Starts at the root, so
     // a refresh lands on LIST.
     step: 'list',
     // Last week's leftovers waiting for a keep or drop (/api/grocery-list/
@@ -3336,7 +3277,7 @@
     // AMOUNTS, asked before the list is read). Sorting used to have the
     // same pair (sortDeferred / sortFirst, decision J of 2026-09-11) and
     // the tab opened on SORT whenever anything had no store; since
-    // 2026-09-15 the list is always the first screen and SORT is only
+    // 2026-09-15 the list is always the first screen and SORT ALL is only
     // ever reached from its "N things to sort" row.
     carried: [],
     carryDeferred: false,
@@ -3381,20 +3322,19 @@
     // Closed by default: less scrolling was half the ask.
     spices: { items: [], recently_bought: [] },
     spicesOpen: false,
-    alreadyHaveSummary: { already_have: [], elsewhere: [] },  // WRAP UP's confirmation
+    // This week's "Have it" / "Don't need" decisions and the things set
+    // aside, for the two quiet foot sections (groNotNeededHtml,
+    // groElsewhereHtml) that are the way back from either.
+    alreadyHaveSummary: { already_have: [], elsewhere: [] },
     // The one LIST row whose ⋯ menu is open, as a string id, or null. One at
     // a time on purpose — the old per-row menu worked the same way, and two
     // open editors on a phone list is two places a half-typed quantity can
     // be lost.
     openRowId: null,
-    // The one row whose "Use something else" field is open (SORT, SORT
-    // ALL or a LIST row's ⋯), as a string id, or null. One at a time, for
-    // the same reason openRowId is.
+    // The one row whose "Use something else" field is open (SORT ALL or
+    // a LIST row's ⋯), as a string id, or null. One at a time, for the
+    // same reason openRowId is.
     substOpenId: null,
-    inCartOpen: false,      // "In your cart · N" group on TRIP
-    // How many things SORT set out to sort, so the progress line can say
-    // "2 of 3" rather than counting down from a number nobody saw.
-    sortTotal: 0,
     // SORT ALL reached zero by sorting (Emily, 2026-09-13: "then I get
     // the satisfaction of going through the whole list and finishing it").
     // renderGrocery normally folds a sort step with nothing left to sort
@@ -3409,58 +3349,8 @@
     // leaves it sitting here, which is harmless because the only thing that
     // reads it is the chip inside that toast.
     bulkUndo: null,
-    // The trip, snapshotted at "Start the trip" so finishing a stop can't
-    // renumber the ones behind it: an ordered list of store names, plus
-    // where we are in it. Null between trips.
-    //
-    // A trip OUTLIVES the screen it was started on (Emily, 2026-09-13, on
-    // her phone: "unless you complete all the shops, you get stuck in the
-    // Shop loop"). Leaving any trip screen — the crumb, "Finish later" in
-    // the dock, or the tab bar — keeps all of this exactly as it stands,
-    // and LIST then shows the trip as in progress with "Continue the trip"
-    // and "Finish the trip" in its dock. It is mirrored into localStorage
-    // (groSaveTrip / groRestoreTrip) because on a phone "come back later"
-    // usually means the installed app was killed in between; the mirror
-    // is what makes the paused trip still be there when it relaunches.
-    tripStops: null,
-    tripIndex: 0,
-    // When the snapshot was taken (ms since epoch). A paused trip older
-    // than GRO_TRIP_KEEP_MS is dropped rather than resumed — see
-    // groDropStaleTrip.
-    tripStartedAt: null,
-    // Whether the localStorage mirror has been read this page view. Once:
-    // the mirror is a fallback for a relaunch, not a second source of truth
-    // while the page is up.
-    tripRestored: false,
-    tripTotal: 0,           // things needed when the trip began
-    tripBought: 0,          // things actually committed, this trip only
-    // Stops finished on this trip, by name. Finishing a stop no longer
-    // starts the next one on its own — the household says where it is
-    // actually driving next (the WHERE NEXT step) — so something has to
-    // remember which shops are behind us. Keyed by name rather than by
-    // index because the order stops are VISITED is now the household's
-    // choice, while tripStops stays the snapshot it always was.
-    tripDone: {},
-    // The stop most recently finished, so WHERE NEXT's back link can reopen
-    // it. Only ever the last one: "back" means one step, not a history of
-    // the trip.
-    tripLastDone: null,
-    // WRAP UP: ids the shopper said "Couldn't find it" about. There is no
-    // note column on grocery_items (see app/schema.sql), so this keeps the
-    // row exactly as it is — needed — and only records that it has been
-    // answered, so the wrap-up list doesn't keep asking.
-    wrapKept: {},
-    // WRAP UP: ids answered "Will grab elsewhere", and the store each went
-    // to. The line is still needed (it is on that store's list now), so
-    // the wrap-up would keep asking about it otherwise; this is what lets
-    // the row read "Grabbing at Metro" instead. Undo clears it.
-    wrapMoved: {},
-    // WRAP UP: the id whose "Will grab elsewhere" picker is open — the
-    // household's other stores, under that row. Page-view only; a step
-    // change closes it (goGroceryStep), the same as a row's ⋯.
-    wrapElseId: null,
-    // "Add a new store" from a store picker (WRAP UP's, SORT's, SORT ALL's)
-    // opens the Stores section of What we know — a sheet over THIS screen,
+    // "Add a new store" from a store picker (SORT ALL's, a row's ⋯) opens
+    // the Stores section of What we know — a sheet over THIS screen,
     // never a trip to the Kitchen tab — and this remembers where to hand
     // the new store back to: { step, kind, id, name, from }. Read by
     // groUsualStoreAdded when the sheet saves a store, cleared when the
@@ -3469,22 +3359,13 @@
     openFlagKey: null,
     voiceSession: null,
     voiceLog: [],
-    // Page-view only — "I'll come back to
-    // it" on the shop-done handoff (Plan stops, everything bought) just
-    // collapses the offer for this visit, no persistence.
+    // Page-view only — "I'll come back to it" on the finished moment
+    // (every card done) just collapses the offer for this visit, no
+    // persistence. The moment itself is read off the list (groListDone):
+    // every row bought and none left, which the bought window
+    // (tools.list_grocery_list 'bought') keeps true until the next
+    // approval rebuilds the list.
     shopDoneHandoffDismissed: false,
-    // Whether a trip was finished in THIS page view (see 'finish-trip').
-    // groTotals().done can't answer "did anything get bought this cycle" —
-    // it sums purchased + in_cart rows over the household's entire
-    // lifetime, and nothing ever resets a purchased row (clear_stale_
-    // grocery_items only touches 'needed' rows), so it stays > 0 forever
-    // after the first-ever trip. This flag is the honest replacement: true
-    // only from a successful finish in this visit, and cleared (a) the
-    // moment the list gains needed items again (groListHtml), so a stale
-    // trip from before a restock can't resurface once the restock is bought
-    // out too, and (b) on leaving the Grocery tab for any other tab
-    // (activateTab), so "away and back" doesn't resurrect it either.
-    justFinishedTrip: false,
     // Whether the last thing this screen tried to reach the server with
     // didn't get there. True means the list on screen is the phone's own
     // copy (see static/grocery-offline.js) and any ticks since are queued.
@@ -3562,17 +3443,15 @@
   }
 
   // A ticked row settles rather than just snapping to its new look (Emily,
-  // 2026-09-11 — one of the app's three animations; see shell.css's Motion
+  // 2026-09-11 — one of the app's four animations; see shell.css's Motion
   // section for the actual transitions this plays). Ticking/unticking
-  // re-renders the whole trip list (groTick -> renderGrocery), and the
-  // "done" and "not done" states of a row come from two different HTML
-  // templates (groTripRowHtml/groDoneRowHtml) rather than one element
-  // whose class changes — so by the time this runs, `id`'s row is already
-  // a brand-new DOM node sitting at its final state, with no earlier frame
-  // for a CSS transition to animate from. This forces that earlier frame:
-  // flip the row (and its checkbox) to the opposite of what it actually
-  // is, reflow, then flip back — the flip back is what actually plays the
-  // CSS transition on .gro-row.done/.gro-box.checked in shell.css.
+  // re-renders the whole list (groTick -> renderGrocery), and the row is a
+  // brand-new DOM node by the time this runs, sitting at its final state
+  // with no earlier frame for a CSS transition to animate from. This
+  // forces that earlier frame: flip the row (and its checkbox) to the
+  // opposite of what it actually is, reflow, then flip back — the flip
+  // back is what actually plays the CSS transition on
+  // .gro-row.done/.gro-box.checked in shell.css.
   function groAnimateRowSettle(id) {
     var panel = groPanel();
     var row = panel && panel.querySelector('.gro-row[data-id="' + id + '"]');
@@ -3590,6 +3469,10 @@
   // is changed first, then the request goes out — with no signal it is
   // queued instead, and it is queued too whenever something older is still
   // waiting, so the order the shopper made them in is the order they land.
+  // `status` is 'purchased' for a tick and 'needed' for a put-back
+  // (groTickLine); the route is the one the old trip's "Done at Costco"
+  // wrote, so the kitchen add and the staples' rhythm (mark_grocery_item)
+  // are exactly as they were.
   function groTick(id, status) {
     if (groceryState.data && groOffline) {
       groOffline.applyStatus(groceryState.data, id, status);
@@ -3688,37 +3571,35 @@
   function groIsBuilt() { var p = groPanel(); return !!(p && p.dataset.built); }
 
   // ---------- Data ----------
-  // One fetch of three views, combined client-side into
+  // One fetch of two views, combined client-side into
   //   storeName -> { sections: [{section, items}], purchased: [], inCart: [] }
-  // exactly as the page this replaces did — no new endpoints, and the three
-  // statuses are the three things every step needs.
+  // — the needed rows by store, and the rows bought off this list
+  // (/api/grocery-list?status=bought: purchased since the list was last
+  // built, plus anything an older build left in a trolley). Both buckets
+  // read as BOUGHT on the screen (groBoughtItems); the shape keeps the two
+  // so static/grocery-offline.js's applyStatus, which files a queued
+  // status into its bucket, needs no change.
   async function groLoadAllData() {
     var results = await Promise.all([
       fetch('/api/grocery-list/by-store?status=needed'),
-      fetch('/api/grocery-list?status=purchased'),
-      fetch('/api/grocery-list?status=in_cart')
+      fetch('/api/grocery-list?status=bought')
     ]);
     if (results.some(function (r) { return r.status === 401; })) groForgetOffline();
     if (results.some(function (r) { return !r.ok; })) throw new Error('grocery load failed');
     var byStore = await results[0].json();
-    var purchasedView = await results[1].json();
-    var inCartView = await results[2].json();
+    var boughtView = await results[1].json();
 
     var stores = {};
     (byStore.stores || []).forEach(function (s) {
       stores[s.store] = { sections: s.sections || [], purchased: [], inCart: [] };
     });
-    function fold(view, key) {
-      (view.sections || []).forEach(function (sec) {
-        (sec.items || []).forEach(function (it) {
-          var name = it.store || 'Unassigned';
-          if (!stores[name]) stores[name] = { sections: [], purchased: [], inCart: [] };
-          stores[name][key].push(it);
-        });
+    (boughtView.sections || []).forEach(function (sec) {
+      (sec.items || []).forEach(function (it) {
+        var name = it.store || 'Unassigned';
+        if (!stores[name]) stores[name] = { sections: [], purchased: [], inCart: [] };
+        stores[name][it.status === 'in_cart' ? 'inCart' : 'purchased'].push(it);
       });
-    }
-    fold(purchasedView, 'purchased');
-    fold(inCartView, 'inCart');
+    });
     // The big meal's two trips, when a hosted holiday is ahead (Holidays
     // slice 2, app/tools/big_meal.py): each of its lines carries
     // shop_timing 'early' | 'fresh', and this names the trips. Null on an
@@ -3732,6 +3613,13 @@
   function groStoreItems(storeData) {
     return (storeData.sections || []).reduce(function (acc, s) { return acc.concat(s.items); }, []);
   }
+  // What has been ticked off this list at a store: bought, or still in a
+  // trolley from before the trip went (an older build's in_cart rows —
+  // nothing writes that status now). Both read as bought.
+  function groBoughtItems(storeData) {
+    return (storeData.purchased || []).concat(storeData.inCart || []);
+  }
+  function groIsBought(it) { return it.status === 'purchased' || it.status === 'in_cart'; }
   // Whether "where does this go?" is a question at all. It needs more than
   // one possible answer: a household that named no shop, or exactly one, is
   // being asked to choose between one option and itself. Emily,
@@ -3743,41 +3631,25 @@
   // The one shop, when there is exactly one. Their list never gets tagged to
   // it (there was no question to answer), so several things below have to
   // read "no store" as "that shop" — otherwise the household's whole list
-  // sits in a bucket with no stop attached and the trip can never start.
+  // sits in a bucket with no card to sit on.
   function groSoleStore(data) {
     var shops = groPillStores(data);
     return shops.length === 1 ? shops[0] : null;
   }
-  // The stand-in stop for a household that named NO shop — "One list is
-  // fine" on the stores card, which is the state of a great many
-  // households and was the state of Emily's own. They had no stop, so
-  // groStoresWithNeeded returned nothing, so LIST's dock was empty: the
-  // list could be read and never shopped through, ticked or wrapped up.
-  // One shop short of groSoleStore, and the same trick — the trip runs on
-  // a stop NAME, so give it the one place they shop: their list.
-  //
-  // It is a stop, not a store: nothing heads a card with it, nothing
-  // offers it as a pill, and it is never written to a row.
+  // The stand-in for a household that named NO shop — "One list is fine"
+  // on the stores card, which is the state of a great many households and
+  // was the state of Emily's own. They have no shop to head a card, so
+  // their one card is headed with this (groStoreCardHtml) and finishes
+  // with "Done shopping" (GRO_ONE_LIST_DONE). It is a stop, not a store:
+  // nothing offers it as a pill, and it is never written to a row.
   var GRO_ONE_LIST_STOP = 'Your list';
-  // Did this household name any shop at all? The question LIST asks to
-  // decide whether it draws store cards or one plain section.
+  // Did this household name any shop at all?
   function groNoShopNamed(data) { return groPillStores(data).length === 0; }
-  // Is THIS stop the stand-in — a different question, and the two were
-  // muddled when this shipped. The comment here used to say the stand-in
-  // "cannot collide with a real store, which by definition does not exist
-  // while this is in use", and that was false twice over. A trip is a
-  // snapshot, so a shop named mid-trip leaves "Your list" in tripStops
-  // beside real pill stores (this branch's own
-  // test_naming_a_shop_mid_trip_does_not_renumber_the_trip_already_on puts
-  // it in that state on purpose). And the app SHOWS the household the
-  // words "Your list" as a stop title, so typing them into "+ Add a store"
-  // is a path a confused person can take — measured, that shop was
-  // undercounted in the band, double-counted in its own remaining, and
-  // finished with "Done shopping" while another shop was still to go.
-  //
-  // So it is the stand-in only while no shop by that name exists. A real
-  // shop always wins its own name back, and the snapshot case still reads
-  // as the stand-in, because there "Your list" is still not a pill store.
+  // Is THIS card the stand-in — a different question from the one above.
+  // The app SHOWS the household the words "Your list" as a card title, so
+  // typing them into "+ Add a store" is a path a confused person can
+  // take; a real shop always wins its own name back, and the stand-in is
+  // the stand-in only while no shop by that name exists.
   function groIsStandIn(data, name) {
     return name === GRO_ONE_LIST_STOP && groPillStores(data).indexOf(name) === -1;
   }
@@ -3802,74 +3674,90 @@
     var u = data.stores['Unassigned'];
     return u ? groStoreItems(u) : [];
   }
-  // Things with no shop of their own, which therefore ride along with
-  // whichever stop is being shopped: the ones answered "Any", and since
-  // 2026-09-15 the ones not sorted yet as well. A thing waiting for a
-  // store is still a thing to buy, and a shopper standing in Costco with
-  // it on the list has to be able to tick it there — leaving it off the
-  // stop was the last place the old sort-first design hid the list. So
-  // the whole loose pile rides, for every household (a one-shop household
-  // answered nothing, and its loose pile always rode). LIST is the one
-  // place the two halves read differently, and it asks for them by name
-  // (groAnyStoreItems, groUnsorted).
-  function groRideAlongItems(data) { return groLooseItems(data); }
-  // The half of the loose pile the household has answered "Any" for —
-  // LIST's "Anywhere" card. Nothing for a one-shop household, whose loose
-  // pile is inside its shop's own card (groStoreCardItems).
-  function groAnyStoreItems(data) {
-    if (groSoleStore(data)) return [];
+  // The whole loose pile, bought rows included — what the "Anywhere" card
+  // holds, and what a one-shop household's card folds in (its loose pile
+  // has nowhere else it could be bought). A thing waiting for a store is
+  // still a thing to buy, and a shopper standing in Costco with it on the
+  // list has to be able to tick it there.
+  function groLooseLineItems(data) {
     var u = data.stores['Unassigned'];
-    if (!u) return [];
-    return groStoreItems(u).filter(groItemDecided);
+    return u ? groStoreItems(u).concat(groBoughtItems(u)) : [];
   }
-  // What a store's card and its count actually cover. For the one-shop
-  // household that is its own rows plus the loose pile, which has nowhere
-  // else it could be bought.
-  function groStoreCardItems(data, name) {
+  // The rows a store's card draws and counts: its own, needed and bought,
+  // plus the loose pile for the one-shop household and for the one-list
+  // stand-in (GRO_ONE_LIST_STOP), whose whole card the pile is. In one
+  // stable order — the aisle the server walks them in, then the name — so
+  // a tick changes a row's look and never its place ("nothing else moves").
+  function groStoreLineItems(data, name) {
     var s = data.stores[name];
-    var items = s ? groStoreItems(s) : [];
-    if (groSoleStore(data) === name) items = items.concat(groLooseItems(data));
-    return items;
+    var items = s ? groStoreItems(s).concat(groBoughtItems(s)) : [];
+    if (groSoleStore(data) === name || groIsStandIn(data, name)) items = items.concat(groLooseLineItems(data));
+    return groSortLines(items);
   }
-  function groStoresWithNeeded(data) {
-    var names = Object.keys(data.stores).filter(function (n) {
-      return n !== 'Unassigned' && groNeededCount(data.stores[n]) > 0;
+  var GRO_SECTION_ORDER = ['produce', 'dairy', 'meat/seafood', 'pantry', 'frozen', 'other'];
+  function groSortLines(items) {
+    function rank(it) {
+      var i = GRO_SECTION_ORDER.indexOf(it.category);
+      return i === -1 ? GRO_SECTION_ORDER.length : i;
+    }
+    return items.slice().sort(function (a, b) {
+      var d = rank(a) - rank(b);
+      if (d) return d;
+      var an = (a.item || '').toLowerCase(), bn = (b.item || '').toLowerCase();
+      if (an < bn) return -1;
+      if (an > bn) return 1;
+      return (Number(a.id) || 0) - (Number(b.id) || 0);
     });
-    // Nothing tagged to any shop, but things on the list that still have to
-    // be bought somewhere: without a stop there is no "Start the trip" and
-    // the tab is a dead end. Three households land here — one that named a
-    // single shop (its list was never tagged because there was no question
-    // to answer), one that answered "Anywhere" to everything, and one that
-    // named no shop at all. The first two get the shop they actually buy
-    // from most, which is the same defensible default "Put all 40 at
-    // Loblaws" already offers rather than a second invention; for the
-    // one-shop household it IS their one shop. The third has no shop to
-    // name, so the stop is their list (GRO_ONE_LIST_STOP) — until
-    // 2026-09-16 they got nothing, and a dead end is what "One list is
-    // fine" bought them.
-    // Read off the ride-alongs, which since 2026-09-15 is the whole loose
-    // pile, unsorted things included: a list that is nothing but things
-    // still to sort used to have no stop and no "Start the trip", so the
-    // only way to shop it was to sort it first — the trap the list-first
-    // change removes. The stand-in stop writes nothing to the rows, and
-    // the "N things to sort" row stays on LIST (it reads groUnsorted), so
-    // the household's question is still theirs to answer.
-    if (!names.length && groRideAlongItems(data).length) {
-      names.push(groMostUsedStore(data) || GRO_ONE_LIST_STOP);
+  }
+  // The cards LIST draws, in stop order: every shop with something on it
+  // this week — still to buy OR already bought, so a shop whose things
+  // all came home keeps its card and reads "Done at Costco" rather than
+  // vanishing (groStoreCardHtml). Two households have a list and no shop
+  // with rows of its own: the one that named a single shop (its list was
+  // never tagged, there was no question to answer) gets that shop's card
+  // with the loose pile inside it, and the one that named no shop at all
+  // gets the one-list stand-in (GRO_ONE_LIST_STOP) — until 2026-09-16
+  // they got nothing, and a dead end is what "One list is fine" bought
+  // them. The stand-in writes nothing to the rows. A household with
+  // several shops and nothing tagged to any of them has just the
+  // "Anywhere" card, which is the truth of its list.
+  function groStoresOnList(data) {
+    var names = Object.keys(data.stores).filter(function (n) {
+      return n !== 'Unassigned' && (groNeededCount(data.stores[n]) > 0 || groBoughtItems(data.stores[n]).length > 0);
+    });
+    if (!names.length && groLooseLineItems(data).length) {
+      var sole = groSoleStore(data);
+      if (sole) names.push(sole);
+      else if (groNoShopNamed(data)) names.push(GRO_ONE_LIST_STOP);
     }
     return groOrderStores(names);
   }
-  function groTotals(data) {
-    var names = Object.keys(data.stores);
-    var totalNeeded = 0, totalDone = 0;
-    names.forEach(function (name) {
-      var s = data.stores[name];
-      // in_cart is "found, still in the trolley" — it counts as progress on
-      // the trip, the same way the stop's own count does.
-      totalNeeded += groNeededCount(s);
-      totalDone += s.purchased.length + s.inCart.length;
+  // The shops with something still to buy — the band's "· 2 stops" count.
+  function groStoresWithNeeded(data) {
+    return groStoresOnList(data).filter(function (n) {
+      return groStoreLineItems(data, n).some(function (it) { return !groIsBought(it); });
     });
-    return { needed: totalNeeded, done: totalDone, all: totalNeeded + totalDone };
+  }
+  // Every row on the list: still to buy, bought, and the loose pile.
+  function groAllLines(data) {
+    var out = [];
+    Object.keys(data.stores).forEach(function (name) {
+      var s = data.stores[name];
+      out = out.concat(groStoreItems(s), groBoughtItems(s));
+    });
+    return out;
+  }
+  function groTotals(data) {
+    var lines = groAllLines(data);
+    var bought = lines.filter(groIsBought).length;
+    return { needed: lines.length - bought, done: bought, all: lines.length };
+  }
+  // The finished moment: something was on the list and all of it came
+  // home. Read off the data, so it is true on the phone that ticked the
+  // last thing and on the other adult's phone when it next loads.
+  function groListDone(data) {
+    var t = groTotals(data);
+    return t.all > 0 && t.needed === 0;
   }
 
   // ---------- Requests ----------
@@ -3947,9 +3835,10 @@
         '<p class="gro-offline" id="gro-offline" hidden></p>' +
         '<div class="gro-voice" id="gro-voice" hidden></div>' +
         '<div class="gro-body" id="gro-body"><p class="gro-empty">Loading&hellip;</p></div>' +
-        '<div class="gro-body gro-foot" id="gro-foot"></div>' +
         // The step's one action, in the dock (rule 2) — last in the markup
         // because that is where a sticky footer's flow position has to be.
+        // (Until 2026-09-18 a .gro-foot sat between the two holding the
+        // add row; the add row opens the list now — groAddRowHtml.)
         '<div class="dock gro-dock" id="gro-dock"></div>' +
       '</div>';
 
@@ -3999,7 +3888,7 @@
       groceryState.storesPromptOpen = readStoresPromptOpen();
       // Kept with the list's copy: with no signal this request fails, and
       // an empty answer here would put the "where do you shop?" card up
-      // over the list and take "Start the trip" away — see grocery-offline.js.
+      // over the list — see grocery-offline.js.
       if (groOffline) groOffline.saveShops({ usualStores: groceryState.usualStores, dismissed: groceryState.storesPromptDismissed });
       // The shops and the list load side by side; whichever lands second
       // decides whether the leftovers question comes first
@@ -4093,10 +3982,10 @@
     } catch (err) { groceryState.staples = []; groceryState.stapleSections = []; }
   }
 
-  // WRAP UP's confirmation section — this week's "already have" decisions
-  // plus current "Elsewhere" exclusions. Loaded alongside everything else
-  // rather than only when WRAP UP is the active step, same as preShopFlags,
-  // so the count is already right the moment you get there.
+  // LIST's two quiet foot sections — this week's "already have" decisions
+  // (groNotNeededHtml) and current "Elsewhere" exclusions
+  // (groElsewhereHtml). Loaded alongside everything else, same as
+  // preShopFlags, so the counts are right the moment the list is up.
   async function groLoadAlreadyHaveSummary() {
     try {
       var res = await fetch('/api/grocery-list/already-have-summary');
@@ -4145,12 +4034,6 @@
         groceryState.loadError = true;
       }
     }
-    // A trip paused before the app was put away comes back with the list
-    // (once), and one too old to still be true goes — see groRestoreTrip.
-    if (groceryState.data) {
-      groRestoreTrip();
-      groDropStaleTrip();
-    }
     if (!(opts && opts.background)) groMaybeCarryFirst();
     renderGrocery();
     if (!groceryState.loadError) groReplayQueue();
@@ -4178,9 +4061,9 @@
   // leftovers waiting and
   // "later" already said, one refresh went step `list` -> `carry`,
   // scrollTop 733 -> 0, and took a half-typed "oat milk" in the add row
-  // with it — groFootHtml renders that field on LIST only, so
-  // groRestoreAddRow had nothing to put it back into, which is the exact
-  // loss renderGrocery's own capture/restore comment exists to prevent.
+  // with it — the add row is rendered on LIST only, so groRestoreAddRow
+  // had nothing to put it back into, which is the exact loss
+  // renderGrocery's own capture/restore comment exists to prevent.
   // Nothing is lost by not opening CARRY: LIST already carries
   // groCarryRowHtml's "N things from last week · Keep or drop?" row for
   // precisely this case — "the way back into CARRY once Later was said" —
@@ -4196,9 +4079,9 @@
   // they are the amounts that used to add themselves onto this week's, and
   // reading a line whose quantity is still in question is reading the
   // wrong number (Emily's call, 2026-09-13, option a). Only from the list
-  // (never yanking a shopper out of a trip), only when the stores prompt
-  // isn't the thing to answer first, and only until the household says
-  // "later".
+  // (never yanking somebody off the sort screen), only when the stores
+  // prompt isn't the thing to answer first, and only until the household
+  // says "later".
   //
   // This used to be groMaybeSortFirst and went on to open SORT for anything
   // with no store (decision J, 2026-09-11) — on tab open, after an
@@ -4206,8 +4089,8 @@
   // foot, since groDo re-reads the list through loadGrocery. Emily,
   // 2026-09-15, one hand free in the car park: the list is what she came
   // for; an unsorted thing is a row under "Not sorted yet" (groListHtml),
-  // not a screen in front of the list. SORT is reached from the "N things
-  // to sort" row now and from nowhere else.
+  // not a screen in front of the list. SORT ALL is reached from the "N
+  // things to sort" row now and from nowhere else.
   function groMaybeCarryFirst() {
     var data = groceryState.data;
     if (!data || groceryState.loadError) return;
@@ -4229,30 +4112,18 @@
     // that doesn't exist.
     window.history.pushState({
       tab: 'grocery',
-      groStep: groceryState.step,
-      groTripIndex: groceryState.tripIndex
+      groStep: groceryState.step
     }, '', '/grocery');
   }
 
   function goGroceryStep(step, opts) {
     opts = opts || {};
-    var prev = groceryState.step;
     groceryState.step = step;
     // A row's ⋯ belongs to the LIST you opened it on, not to the next step.
     groceryState.openRowId = null;
-    groceryState.wrapElseId = null;
     // The finish belongs to the SORT ALL screen that reached it.
     groceryState.sortAllDone = false;
-    // Arriving at SORT fixes how many things it set out to sort, so the
-    // progress line can say "2 of 3" instead of counting down from a number
-    // nobody was shown.
-    if (step === 'sort' && prev !== 'sort' && groceryState.data) {
-      groceryState.sortTotal = groUnsorted(groceryState.data).length;
-    }
-    if (opts.tripIndex !== undefined && opts.tripIndex !== null) groceryState.tripIndex = opts.tripIndex;
     if (opts.push !== false) pushGroceryStepHistory();
-    // Every change to the trip arrives here (see groSaveTrip).
-    groSaveTrip();
     renderGrocery();
     // A step change is a screen change, so it starts at the top.
     if (scrollEl) scrollEl.scrollTop = 0;
@@ -4263,9 +4134,6 @@
   // means, rather than a second listener racing the first.
   function applyGroceryStepFromHistory(state) {
     if (!groIsBuilt()) return;
-    if (state && state.groTripIndex !== undefined && state.groTripIndex !== null) {
-      groceryState.tripIndex = state.groTripIndex;
-    }
     groceryState.step = (state && state.groStep) || 'list';
     renderGrocery();
   }
@@ -4275,9 +4143,9 @@
   // grocery segment, its toast twin, and the ask sheet's "Plan my stops"
   // chip (all `activateTab('grocery', true, { groScreen: 'plan' })`).
   // They all mean "open the list", and the list is where they land, always:
-  // an unsorted item is not a reason to drop somebody into a one-at-a-time
-  // queue they didn't ask for. The "N things to sort" row on LIST is how
-  // you get to SORT. (From 2026-09-11 to 2026-09-15 this went on to
+  // an unsorted item is not a reason to drop somebody onto a sort screen
+  // they didn't ask for. The "N things to sort" row on LIST is how you get
+  // to SORT ALL. (From 2026-09-11 to 2026-09-15 this went on to
   // groMaybeSortFirst, so "Open the list" after an approval opened the
   // queue instead; it doesn't any more.) Last week's leftovers are still
   // asked about first when an approval just set some aside.
@@ -4296,9 +4164,8 @@
     var title = panel.querySelector('#gro-title');
     var sub = panel.querySelector('#gro-sub');
     var body = panel.querySelector('#gro-body');
-    var foot = panel.querySelector('#gro-foot');
     var dock = panel.querySelector('#gro-dock');
-    if (!back || !head || !band || !title || !sub || !body || !foot || !dock) return;
+    if (!back || !head || !band || !title || !sub || !body || !dock) return;
 
     // Re-rendering replaces the list under the reader's thumb, so hold the
     // scroll position across it. "Nothing else moves, ever."
@@ -4316,27 +4183,20 @@
         : groceryState.loadError
         ? '<p class="gro-error">Couldn\'t load the grocery list right now — pull down to refresh.' + snwLink() + '</p>'
         : '<p class="gro-empty">Loading&hellip;</p>';
-      foot.innerHTML = '';
       dock.innerHTML = '';
       return;
     }
 
     var data = groceryState.data;
     // A step that stopped making sense under its own feet falls back to the
-    // root rather than rendering a screen about nothing: SORT with nothing
-    // left to sort, a trip whose stops were never snapshotted.
-    if (GRO_SORT_STEPS.indexOf(groceryState.step) !== -1 && !groUnsorted(data).length &&
-        !(groceryState.step === 'sortall' && groceryState.sortAllDone)) {
+    // root rather than rendering a screen about nothing: SORT ALL with
+    // nothing left to sort (unless it just finished, which is its own
+    // moment), CARRY with nothing carried.
+    if (groceryState.step === 'sortall' && !groUnsorted(data).length && !groceryState.sortAllDone) {
       groceryState.step = 'list';
     }
     if (groceryState.step === 'carry' && !groceryState.carried.length) groceryState.step = 'list';
-    if ((groceryState.step === 'trip' || groceryState.step === 'wrap' || groceryState.step === 'next') &&
-        !groceryState.tripStops) {
-      groceryState.step = 'list';
-    }
-    // Every stop is behind us: there is nothing to choose between, so the
-    // question is the wrap-up rather than "where next?".
-    if (groceryState.step === 'next' && !groRemainingStops(data).length) groceryState.step = 'wrap';
+    if (groceryState.step !== 'carry' && groceryState.step !== 'sortall') groceryState.step = 'list';
     var step = groceryState.step;
 
     // The root wears the band (and the gear in it); every deeper step
@@ -4345,10 +4205,8 @@
     var onRoot = step === 'list';
     band.hidden = !onRoot;
     head.hidden = onRoot;
-    // The band's one line is the paused trip, when there is one — "Trip
-    // in progress · 1 stop left" — and nothing otherwise.
     if (onRoot) {
-      setRootBand(panel, 'gro-band', { eyebrow: groBandEyebrow(data), sub: groTripPausedLine(data) });
+      setRootBand(panel, 'gro-band', { eyebrow: groBandEyebrow(data), sub: groBandLine(data) });
       back.hidden = true;
     } else {
       var headFor = groHeadFor(data, step);
@@ -4359,36 +4217,28 @@
       if (headFor.sub) sub.textContent = headFor.sub;
     }
 
-    // The body holds a live input too while the shops card is up — its
-    // "Somewhere else?" field — and since a tapped chip re-renders the card
-    // straight away, an unrelated re-render is no longer a rare event. Same
-    // rule as the foot's add row below.
+    // The body holds live inputs — LIST's add row, the shops card's
+    // "Somewhere else?" field, a row's "What instead?" — and a re-render
+    // it didn't ask for (the usual-stores fetch landing, another tab
+    // pushing a refresh, a tapped chip redrawing the card) must not eat a
+    // half-typed "oat milk", or the focus that was sitting in it.
+    var addRow = groCaptureAddRow(body);
     var storesTyped = groCaptureStoresPromptInput(body);
     var substTyped = groCaptureSubstInput(body);
     if (step === 'carry') body.innerHTML = groCarryHtml(data);
-    else if (step === 'sort') body.innerHTML = groSortHtml(data);
-    else if (step === 'sorthow') body.innerHTML = groSortHowHtml(data);
     else if (step === 'sortall') groSortAllRender(body, data);
-    else if (step === 'headed') body.innerHTML = groHeadedHtml(data);
-    else if (step === 'next') body.innerHTML = groNextHtml(data);
-    else if (step === 'trip') body.innerHTML = groTripHtml(data);
-    else if (step === 'wrap') body.innerHTML = groWrapHtml(data);
     else body.innerHTML = groListHtml(data);
+    groRestoreAddRow(body, addRow);
     groRestoreStoresPromptInput(body, storesTyped);
     groRestoreSubstInput(body, substTyped);
     // The empty moment fills the panel and centres itself (shell.css) —
     // the body has to be told it is carrying one.
     body.classList.toggle('is-empty', !!body.querySelector('.empty-moment'));
 
-    // LIST's foot holds a live input. A re-render it didn't ask for — the
-    // usual-stores fetch landing, another tab pushing a refresh — must not
-    // eat a half-typed "oat milk", or the focus that was sitting in it.
-    var addRow = groCaptureAddRow(foot);
-    foot.innerHTML = groFootHtml(data, step);
-    groRestoreAddRow(foot, addRow);
-
     // The step's one action last, and in its own strip: it has to stay on
-    // screen while the list scrolls under it (rule 2).
+    // screen while the list scrolls under it (rule 2). The root has none
+    // — ticking a row is the action — except "Go to Plan" over an empty
+    // list.
     dock.innerHTML = groDockHtml(data, step);
 
     if (scrollEl) scrollEl.scrollTop = keepScroll;
@@ -4426,14 +4276,14 @@
     try { input.setSelectionRange(input.value.length, input.value.length); } catch (err) { /* not all inputs allow it */ }
   }
 
-  function groCaptureAddRow(foot) {
-    var item = foot.querySelector('#gro-add-item');
+  function groCaptureAddRow(body) {
+    var item = body.querySelector('#gro-add-item');
     if (!item) return null;
     return { item: item.value, focused: document.activeElement === item };
   }
-  function groRestoreAddRow(foot, saved) {
+  function groRestoreAddRow(body, saved) {
     if (!saved) return;
-    var item = foot.querySelector('#gro-add-item');
+    var item = body.querySelector('#gro-add-item');
     if (item) item.value = saved.item;
     if (!item || !saved.focused) return;
     item.focus();
@@ -4441,7 +4291,7 @@
   }
 
   // Title, subtitle and back link for each DEEPER step, in one place so the
-  // copy is readable as a set rather than scattered through four builders.
+  // copy is readable as a set rather than scattered through the builders.
   // The root has no head: it opens with the band (rootBandHtml).
   function groHeadFor(data, step) {
     if (step === 'carry') {
@@ -4451,97 +4301,43 @@
         sub: groPlural(groceryState.carried.length, 'thing', 'things') + ' · keep or drop?'
       };
     }
-    // "Before the list" was the title of the automatic landing (decision J,
-    // 2026-09-11); the list is always first now, so SORT is only ever the
-    // question it asks.
-    if (step === 'sort') {
-      return { back: '‹ Shop', title: 'Where does this go?', sub: groUnsorted(data).length + ' to sort' };
-    }
-    if (step === 'sorthow') {
-      // Same question as the queue's, because it is the same question — the
-      // household is only choosing how many screens it wants to answer it in.
-      return { back: '‹ Shop', title: 'Where does this go?', sub: groUnsorted(data).length + ' to sort' };
-    }
-    if (step === 'sortall') {
-      var allLeft = groUnsorted(data).length;
-      return { back: '‹ Shop', title: 'Sort them all', sub: allLeft ? allLeft + ' to sort' : '' };
-    }
-    if (step === 'headed') {
-      var headedStops = groStoresWithNeeded(data);
-      return {
-        back: '‹ Shop',
-        title: 'Where are we headed?',
-        sub: groPlural(headedStops.length, 'stop', 'stops') + ' · ' + groPlural(groTotals(data).needed, 'thing', 'things')
-      };
-    }
-    if (step === 'next') {
-      var left = groRemainingStops(data).length;
-      return {
-        // Back reopens the stop just finished, which is the one thing this
-        // screen can be reached by mistake from: "Done at Costco" is a
-        // full-width apricot under a list of things still to tick, and
-        // without this the mis-tap ended that shop for the trip.
-        back: groceryState.tripLastDone ? '‹ Back to ' + groceryState.tripLastDone : '‹ Shop',
-        title: 'Where next?',
-        sub: left ? groPlural(left, 'stop', 'stops') + ' left' : ''
-      };
-    }
-    if (step === 'trip') {
-      var store = groTripStore();
-      var stops = groceryState.tripStops || [];
-      // Counted from the stops already BEHIND you, not from this stop's
-      // place in the snapshot. The household picks its own order now, so the
-      // snapshot index would say "Stop 3 of 3" while two shops were still
-      // waiting — the number has to describe the trip, not the list.
-      var done = 0;
-      stops.forEach(function (n) { if (groceryState.tripDone[n]) done += 1; });
-      var left = groTripItems(data).length + ' left';
-      return {
-        back: '‹ Shop',
-        title: store || 'The trip',
-        // "Stop 1 of 1" is a count of stops, and a household that named
-        // no shop has none to count — same reason the band drops the
-        // clause, and the same predicate.
-        sub: groIsStandIn(data, store) ? left
-          : 'Stop ' + (done + 1) + ' of ' + Math.max(stops.length, 1) + ' · ' + left
-      };
-    }
-    // 'wrap' — LIST never asks: the root's head is the band (groBandEyebrow).
-    return { back: '‹ Shop', title: 'How did it go?', sub: '' };
+    // 'sortall' — the only other step. "Where does this go?" was the
+    // queue's question; this screen is named for what it does.
+    var allLeft = groUnsorted(data).length;
+    return { back: '‹ Shop', title: 'Sort them all', sub: allLeft ? allLeft + ' to sort' : '' };
   }
 
-  // The root band's eyebrow: "60 things · 1 stop" while there is a list,
-  // and the date while there isn't — the empty moment says "nothing to
-  // buy", so the band doesn't say it a second time (and an empty eyebrow
-  // would leave the title sitting in a hole).
-  function groBandEyebrow(data) {
-    var t = data ? groTotals(data) : { needed: 0 };
-    if (!t.needed) return bandDateLabel();
-    // The clause counts SHOPS, and the stand-in is not one: "1 stop" would
-    // be the first time the word appeared for somebody who answered "One
-    // list is fine", and it tells them nothing they didn't know. A
-    // household with one NAMED shop still gets "· 1 stop" — that stop has
-    // a name they chose, and so does a shop actually called "Your list"
-    // (groIsStandIn, not a name match).
-    var stopCount = groStoresWithNeeded(data).filter(function (n) {
-      return !groIsStandIn(data, n);
-    }).length;
-    var eyebrow = groPlural(t.needed, 'thing', 'things');
-    if (stopCount) eyebrow += ' · ' + groPlural(stopCount, 'stop', 'stops');
-    // Under the wordmark band (BAND_IDENTITY, 2026-09-13) this text is the
-    // sub-line's lead rather than the eyebrow, and there it carries the
-    // day too: "Sunday, Sep 13 · 60 things · 1 stop".
-    return BAND_IDENTITY === 'wordmark' ? bandDateLabel() + ' · ' + eyebrow : eyebrow;
+  // The root band's two lines (Emily's shopping-list mockup, 2026-09-18):
+  // the eyebrow is "This week", and the line counts the list — "14 things,
+  // two stores." — from the data: every row on the cards, bought or not,
+  // and the shops with a card (the "Anywhere" card and the one-list
+  // stand-in are not stores, so they are not counted). Under the wordmark
+  // band (BAND_IDENTITY, 2026-09-13) the eyebrow's text leads the line:
+  // "This week · 14 things, two stores." With nothing on the list the line
+  // is empty — the empty moment under it says "nothing to buy", and the
+  // band must not say it a second time.
+  var GRO_BAND_EYEBROW = 'This week';
+  var GRO_SMALL_WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+  function groSmallWord(n) { return GRO_SMALL_WORDS[n] || String(n); }
+  function groBandEyebrow(data) { return GRO_BAND_EYEBROW; }
+  function groBandLine(data) {
+    var t = data ? groTotals(data) : { all: 0 };
+    if (!t.all) return '';
+    var stores = groStoresOnList(data).filter(function (n) { return !groIsStandIn(data, n); }).length;
+    var line = groPlural(t.all, 'thing', 'things');
+    if (stores) line += ', ' + groSmallWord(stores) + ' ' + (stores === 1 ? 'store' : 'stores');
+    return line + '.';
   }
 
   // ---------- LIST ----------
-  // The way into SORT: a row at the top of the list, only while something
-  // has no store. It was an apricot "3 TO SORT" badge in the head until
-  // 2026-09-11; the root band carries no button, so the control moved
-  // into the list it is about, in the same row shape Cook's More sheet
-  // uses (.kit-row). groUnsorted already answers "is sorting even a question
-  // here" (groCanSort), so a household with one shop or none gets no row.
-  // Not while the shops question itself is still on screen underneath.
+  // The way into SORT ALL: a row at the top of the list, only while
+  // something has no store. It was an apricot "3 TO SORT" badge in the
+  // head until 2026-09-11; the root band carries no button, so the control
+  // moved into the list it is about, in the same row shape Cook's More
+  // sheet uses (.kit-row). groUnsorted already answers "is sorting even a
+  // question here" (groCanSort), so a household with one shop or none
+  // gets no row. Not while the shops question itself is still on screen
+  // underneath.
   // The way back into CARRY once "Later" was said: the same row shape as
   // the sort row below, above it, only while something still waits.
   function groCarryRowHtml(data) {
@@ -4599,131 +4395,78 @@
   }
 
   function groListHtml(data) {
-    var stops = groStoresWithNeeded(data);
-    var unsorted = groUnsorted(data);
-    if (stops.length || unsorted.length) {
-      // The list has needed items again — any justFinishedTrip signal left
-      // over from an earlier trip in this same visit no longer describes
-      // this list. See the flag's declaration in groceryState above.
-      groceryState.justFinishedTrip = false;
-    }
-
-    var html = groPreShopHtml();
-
-    // Nothing to shop, nowhere to shop it: the just-in-time stores card
-    // stands in for the store cards, unchanged in behaviour.
-    // The union, not `unsorted`: an item answered "Any" is still a thing on
-    // the list, and before 2026-09-09 it counted for neither branch below —
-    // so a household that finished sorting saw "Nothing on the list yet"
-    // printed over three real items.
-    var loose = groLooseItems(data);
+    var stops = groStoresOnList(data);
+    var loose = groLooseLineItems(data);
+    var html = groAddRowHtml() + groPreShopHtml();
 
     // The first-run "Where do you usually shop?" card sits at the top of
     // the list, not in place of it (Emily, 2026-09-15). It used to be the
     // whole screen until answered — a question standing between the
     // person in the car park and what to buy. The answer still goes the
     // same way ("That's where we shop" / "One list is fine",
-    // stores-prompt-done); the list under it is the plain no-store
-    // section, since no shop has been named yet.
+    // stores-prompt-done).
     if (groStoresPromptShouldShow() && (stops.length || loose.length)) {
       html += groStoresPromptHtml();
     }
 
     if (!stops.length && !loose.length) {
-      // Every last thing ticked at a stop that was never finished: not
-      // needed, not home yet. "Nothing to buy" would be a lie over a full
-      // trolley; the dock's "Finish the trip" is what brings it home.
-      if (groTripPaused() && groInCartCount(data)) {
-        return html + emptyMomentHtml('bag', 'Everything’s in the cart. Finish the trip to bring it home.') + groElsewhereHtml() + groStaplesHtml();
-      }
-      if (groceryState.justFinishedTrip) {
-        if (groceryState.shopDoneHandoffDismissed) {
-          return html +
-            '<div class="shell-card gro-shop-done-card gro-shop-done-dismissed">' +
-              '<div class="gro-shop-done-line">That’s the shopping done.</div>' +
-              '<button type="button" class="gro-shop-done-link" data-gro="shop-done-tonight">See tonight’s dinner &rarr;</button>' +
-            '</div>';
-        }
-        return html + groShopDoneHtml();
-      }
       // Spices waiting unticked are not "nothing to buy" — they are the
-      // list, until one is ticked. The section stands where the stops
-      // would, and the dock stays quiet (nothing to start a trip for).
-      if (groceryState.spices.items.length) return html + groElsewhereHtml() + groSpicesHtml() + groStaplesHtml();
+      // list, until one is ticked. The section stands where the cards
+      // would, and the dock stays quiet.
+      if (groceryState.spices.items.length) return html + groListFootHtml();
       // The empty moment (emptyMomentHtml): one sentence, and "Go to
       // Plan" in the dock (groDockHtml). The staples card keeps its place
       // under it — a rhythm is a real thing even on an empty list. So
       // does the "Getting elsewhere" foot: the last thing on the list set
       // aside by a thumb-slip has to be findable from the empty screen
       // it left behind.
-      return html + emptyMomentHtml('bag', 'Nothing to buy. Approve a week and I’ll build the list.') + groElsewhereHtml() + groStaplesHtml();
+      return html + emptyMomentHtml('bag', 'Nothing to buy. Approve a week and I’ll build the list.') + groListFootHtml();
+    }
+
+    // Every card done: the finished moment stands at the top of the list
+    // — what the old trip's wrap-up used to hand over to — and the ticked
+    // cards stay under it, so a mis-tick can still be put back. "I'll come
+    // back to it" folds it to one line for this page view.
+    if (groListDone(data)) {
+      html += groceryState.shopDoneHandoffDismissed
+        ? '<div class="shell-card gro-shop-done-card gro-shop-done-dismissed">' +
+            '<div class="gro-shop-done-line">That’s the shopping done.</div>' +
+            '<button type="button" class="gro-shop-done-link" data-gro="shop-done-tonight">See tonight’s dinner &rarr;</button>' +
+          '</div>'
+        : groShopDoneHtml();
     }
 
     html += groCarryRowHtml(data);
     html += groSortRowHtml(data);
     html += groDuplicatesHtml(data);
 
-    // A stop with nothing of its own gets no card. That happens exactly
-    // once — when the only stop is the stand-in above, put there so a list
-    // of shopless things can still be shopped. "Loblaws · 0" sitting over
-    // "Anywhere · 2" would be a card about nothing, and the honest reading
-    // is the one the Anywhere card already gives.
+    // One card per store in stop order, then the loose pile last — for
+    // the reason groOrderStores puts "Any store" last: the remainder, not
+    // the first stop. A one-shop household's loose pile is already inside
+    // that shop's own card (groStoreLineItems) — it has only one place it
+    // could be bought — so no second card; the same for the one-list
+    // stand-in, whose whole card the pile is.
     stops.forEach(function (name) {
-      if (groStoreCardItems(data, name).length) html += groStoreCardHtml(data, name);
+      if (groStoreLineItems(data, name).length) html += groStoreCardHtml(data, name);
     });
+    var folded = stops.some(function (name) { return groSoleStore(data) === name || groIsStandIn(data, name); });
+    if (loose.length && !folded) html += groAnywhereCardHtml(data, loose);
+    return html + groListFootHtml();
+  }
 
-    // Things with no store fall into two piles, and both are on the list.
-    //
-    // ANSWERED "no particular shop" ones belong to no store card, so with
-    // stops on screen they used to be on no screen: countable in the
-    // subtitle, present on the trip, and unreachable by the one control
-    // that could change them. That was a real regression the day "Any"
-    // started persisting — before it, a reload put the row back in the
-    // queue, where it was at least visible. They get the "Anywhere" card.
-    //
-    // NOT YET ANSWERED ones get the "Not sorted yet" card under it
-    // (Emily, 2026-09-15). Until then they lived on SORT alone and LIST
-    // only counted them — "reading the same list in two places" was the
-    // rule — but the sort row is a count and a way in, not the list, and
-    // a person with one hand free needs the rows: what to buy, tickable
-    // at the first stop (groRideAlongItems), fixable from the row's ⋯.
-    // Last, after every store card, for the reason groOrderStores puts
-    // "Any store" last: the remainder, not the first stop.
-    //
-    // With NO stops at all and nothing to sort, the whole loose pile IS
-    // the list, headingless. This used to be a line of copy pointing at
-    // the badge, which left a household reading "3 things" above an empty
-    // screen — and for a household that never named a store, that was the
-    // permanent state of its Grocery tab. Emily's call, 2026-09-09: show
-    // them as one plain section with no store heading, so "One list is
-    // fine" means what it says. (A household with shops and nothing but
-    // unsorted things gets the two named cards instead: for them "where
-    // does this go?" is a real question, and the heading says so — S6.)
-    //
-    // A household that named no shop (groNoShopNamed) takes the plain
-    // section whatever else is true: their only "stop" is the stand-in,
-    // which heads no card, so reading `stops` here as store cards on
-    // screen would leave their whole list drawn by nothing.
-    if (!groNoShopNamed(data) && (stops.length || unsorted.length)) {
-      // A one-shop household's loose pile is already inside that shop's own
-      // card (groStoreCardItems) — it has only one place it could be
-      // bought — so a second card here would print it twice.
-      var anywhere = groAnyStoreItems(data);
-      if (anywhere.length) html += groAnywhereCardHtml(data, anywhere);
-      if (unsorted.length) html += groUnsortedCardHtml(data, unsorted);
-    } else if (loose.length) {
-      html += groLooseCardHtml(data, loose);
-    }
-    return html + groElsewhereHtml() + groSpicesHtml() + groStaplesHtml();
+  // The quiet sections under the cards, in one place so every branch of
+  // LIST ends the same way: what's set aside, what's not needed this
+  // week, the spices, the staples.
+  function groListFootHtml() {
+    return groElsewhereHtml() + groNotNeededHtml() + groSpicesHtml() + groStaplesHtml();
   }
 
   // ---------- Getting elsewhere: what's set aside ----------
   // The foot of LIST, only while something is set aside ("Getting it
-  // elsewhere" on SORT's card or a row's ⋯): one row per thing, its
-  // amount, and "Put it back" — the one tap that returns it to the list.
-  // Read off the same already-have summary WRAP UP's "Already sorted this
-  // week" reads (groceryState.alreadyHaveSummary.elsewhere, loaded with
-  // everything else), so the two can never disagree about what's aside.
+  // elsewhere" on a row's ⋯): one row per thing, its amount, and "Put it
+  // back" — the one tap that returns it to the list. Read off the same
+  // already-have summary the "Not needed this week" foot reads
+  // (groceryState.alreadyHaveSummary, loaded with everything else).
   // The Staples card's shape on a plain surface; always open, because a
   // way back that's behind a "See" is two taps, and the whole point of
   // this section is that a thing set aside is never out of sight. Quiet:
@@ -4813,6 +4556,9 @@
   // by its own merge key when a person adds something, so a surviving pair
   // is two spellings of one thing that arrived by two routes — worth
   // showing, never worth the app merging on its own.
+  function groAllNeeded(data) {
+    return groAllLines(data).filter(function (it) { return !groIsBought(it); });
+  }
   function groDuplicateGroups(data) {
     var groups = {};
     groAllNeeded(data).forEach(function (it) {
@@ -4857,170 +4603,101 @@
     }).join('');
   }
 
-  // Merge N store-shaped `sections` arrays (each [{section, items}, ...])
-  // into one ordered list, combining by section name across sources so a
-  // second source (a sole store's loose pile riding along on LIST, say)
-  // files into the aisle it belongs to rather than trailing after it as a
-  // group of its own. Shared by every LIST card and by the trip screen
-  // (groTripSections).
-  function groFoldSectionLists(lists) {
-    var out = [];
-    var byName = {};
-    (lists || []).forEach(function (sections) {
-      (sections || []).forEach(function (sec) {
-        if (!sec.items.length) return;
-        if (!byName[sec.section]) {
-          byName[sec.section] = { section: sec.section, items: [] };
-          out.push(byName[sec.section]);
-        }
-        byName[sec.section].items = byName[sec.section].items.concat(sec.items);
-      });
-    });
-    return out;
-  }
-
-  // The subset of a `sections` array whose items pass `predicate`, sections
-  // with nothing left dropped entirely.
-  function groSectionsFiltered(sections, predicate) {
-    var out = [];
-    (sections || []).forEach(function (sec) {
-      var kept = sec.items.filter(predicate);
-      if (kept.length) out.push({ section: sec.section, items: kept });
-    });
-    return out;
-  }
-
-  // One aisle's worth of a card: the eyebrow that already names it (no
-  // per-section colour — see the trip screen's own note on why the spine
-  // is one neutral) and every row in it. LIST shows the whole list this way
-  // now, grouped by aisle rather than a four-row peek behind "+ N more" —
-  // Emily's read on the store card was "just show me the list" (design rule
-  // 2b S1/S2), and a household's real shop is never four things.
-  function groAisleGroupHtml(sec, data) {
-    return '<div class="gro-aisle">' +
-        '<span class="gro-aisle-spine"></span>' +
-        '<span class="gro-eyebrow">' + escapeHtml(GRO_CATEGORY_LABELS[sec.section] || sec.section) + '</span>' +
-      '</div>' +
-      sec.items.map(function (it) { return groListRowHtml(it, data); }).join('');
-  }
-
-  // A card's aisles. On an ordinary week: every aisle, as it always was. In
-  // the week of a big meal the household is hosting (data.shopSplit), the
-  // same aisles read in groups instead — the rest of the week first, then
-  // "For Thanksgiving — buy by Friday" (the keeps-well things) and "For
-  // Thanksgiving — buy fresh on Sunday" — each group its own run of aisles
-  // under one quiet heading, so the list reads as two trips without a
-  // single row appearing twice. The grouping key is the row's shop_timing,
+  // ---------- The cards: the list as the checklist ----------
+  // One card per store (Emily's shopping-list mockup, 2026-09-18): the
+  // store's name in the display face, "N of M" at the right, and one row
+  // per thing — a tickable box, the name, the amount. A bought row is
+  // struck through in --ink-done; when every row is bought the head reads
+  // "Done at Costco" in --celadon-label. The rows are flat — no aisle
+  // eyebrows (the mockup has none) — but they keep the server's aisle
+  // order, so the card still walks the shop the way the list always has.
+  // In the week of a big meal the household is hosting (data.shopSplit),
+  // the rows read in groups — the rest of the week, then "For
+  // Thanksgiving — buy by Friday" and "— buy fresh on Sunday" — each under
+  // one quiet heading (.gro-trip), so the list reads as two trips without
+  // a row appearing twice. The grouping key is the row's shop_timing,
   // stamped by the server; nothing here decides what keeps.
-  function groAislesHtml(sections, data) {
+  function groCardHtml(data, name, title, doneLabel, items, extraClass) {
+    var bought = items.filter(groIsBought).length;
+    var done = items.length > 0 && bought === items.length;
+    return '<div class="gro-store' + (extraClass ? ' ' + extraClass : '') + (done ? ' is-done' : '') + '"' +
+        (name ? ' data-store="' + escapeHtml(name) + '"' : '') + '>' +
+      '<div class="gro-card-head">' +
+        '<span class="gro-store-name">' + escapeHtml(done ? doneLabel : title) + '</span>' +
+        '<span class="gro-store-count">' + bought + ' of ' + items.length + '</span>' +
+      '</div>' +
+      groCardRowsHtml(items, data) +
+    '</div>';
+  }
+
+  function groCardRowsHtml(items, data) {
     var split = data && data.shopSplit;
-    var tagged = split && (sections || []).some(function (sec) {
-      return sec.items.some(function (it) { return !!it.shop_timing; });
-    });
-    if (!tagged) {
-      return (sections || []).map(function (sec) { return groAisleGroupHtml(sec, data); }).join('');
-    }
+    var tagged = split && items.some(function (it) { return !!it.shop_timing; });
+    function rows(subset) { return subset.map(function (it) { return groLineHtml(it, data); }).join(''); }
+    if (!tagged) return rows(items);
     function pass(predicate, label) {
-      var subset = groSectionsFiltered(sections, predicate);
+      var subset = items.filter(predicate);
       if (!subset.length) return '';
       return (label ? '<div class="gro-trip"><span class="gro-trip-label">' + escapeHtml(label) + '</span></div>' : '') +
-        subset.map(function (sec) { return groAisleGroupHtml(sec, data); }).join('');
+        rows(subset);
     }
     return pass(function (it) { return !it.shop_timing; }, '') +
       pass(function (it) { return it.shop_timing === 'early'; }, split.early && split.early.label) +
       pass(function (it) { return it.shop_timing === 'fresh'; }, split.fresh && split.fresh.label);
   }
 
-  // A store's card minus the head — no avatar, no name, because there is no
-  // store to name. Rows still go through groListRowHtml, so the menu, the
-  // quantity and the tick behave exactly as they do under a stop; the only
-  // thing missing is a heading this household never chose.
-  function groLooseCardHtml(data, items) {
-    var any = data.stores['Unassigned'];
-    var sections = groFoldSectionLists([any && any.sections]);
-    return '<div class="gro-store">' +
-      groAislesHtml(sections, data) +
-    '</div>';
-  }
-
-  // The things answered "no particular shop", once there ARE store cards for
-  // them to sit beside. They are not a stop — they have no shop — but they
-  // are very much on the list, and without this card they were on no screen
-  // at all: out of the TO SORT badge because they are answered, out of every
-  // store card because they belong to no store, and so out of reach of the
-  // row ⋯ that is the only way to change your mind about one. "Anywhere" has
-  // to be a place you can point at, not a disappearance.
-  function groAnywhereCardHtml(data, items) {
-    var any = data.stores['Unassigned'];
-    var sections = groSectionsFiltered(any && any.sections, groItemDecided);
-    return '<div class="gro-store">' +
-      '<div class="gro-card-head">' +
-        // A basket rather than an initial: there is no name here to take a
-        // letter from. No inline colour either — a store avatar's fill comes
-        // from the hash palette, which is a set of LIGHT accents carrying
-        // dark ink in both schemes, and this one has no name to hash. Its
-        // pair of tokens lives in .gro-anywhere-avatar, where it can differ
-        // by scheme like every other pair.
-        '<span class="gro-store-avatar gro-anywhere-avatar">' +
-          GRO_ICONS.basket + '</span>' +
-        '<span class="gro-store-name">Anywhere &middot; ' + items.length + '</span>' +
-      '</div>' +
-      groAislesHtml(sections, data) +
-    '</div>';
-  }
-
-  // The things still waiting for a store, as rows on the list (Emily,
-  // 2026-09-15). The Anywhere card's shape — no store to name, so no
-  // initial — with the "?" the "Any store" pill already wears for the
-  // unanswered bucket, and the words that say why the card is here (S6).
-  // Rows go through groListRowHtml, so the ⋯ offers the store pills: a
-  // thing can be sorted from here one at a time, or all of them from the
-  // "N things to sort" row above. A one-shop household never has any
-  // (groUnsorted is empty when sorting isn't a question).
-  function groUnsortedCardHtml(data, items) {
-    var any = data.stores['Unassigned'];
-    var sections = groSectionsFiltered(any && any.sections, function (it) { return !groItemDecided(it); });
-    return '<div class="gro-store gro-unsorted">' +
-      '<div class="gro-card-head">' +
-        '<span class="gro-store-avatar gro-anywhere-avatar">' + escapeHtml(groStoreInitial('Unassigned')) + '</span>' +
-        '<span class="gro-store-name">' + escapeHtml(GRO_UNSORTED_SECTION) + ' &middot; ' + items.length + '</span>' +
-      '</div>' +
-      groAislesHtml(sections, data) +
-    '</div>';
+  // "Done at Costco" names the shop. The one-list household's card is
+  // their whole list and no shop they ever named, so it says the whole
+  // of what happened ("Done shopping"); the loose pile's card is not a
+  // shop either ("All bought").
+  function groCardDoneLabel(data, name) {
+    if (groIsStandIn(data, name)) return GRO_ONE_LIST_DONE;
+    return 'Done at ' + name;
   }
 
   function groStoreCardHtml(data, name) {
-    var items = groStoreCardItems(data, name);
-    var s = data.stores[name];
-    var lists = [s && s.sections];
-    // A sole-store household's loose pile has nowhere else it could be
-    // bought — same reasoning groStoreCardItems already applies to the
-    // header count, folded in here so every one of those rows is actually
-    // on screen rather than counted and then hidden.
-    if (groSoleStore(data) === name) lists.push(data.stores['Unassigned'] && data.stores['Unassigned'].sections);
-    var sections = groFoldSectionLists(lists);
-    return '<div class="gro-store">' +
-      '<div class="gro-card-head">' +
-        '<span class="gro-store-avatar" style="background:' + groStoreColor(name) + '">' +
-          escapeHtml(groStoreInitial(name)) + '</span>' +
-        '<span class="gro-store-name">' + escapeHtml(name) + ' · ' + items.length + '</span>' +
-      '</div>' +
-      groAislesHtml(sections, data) +
-    '</div>';
+    var items = groStoreLineItems(data, name);
+    // The stand-in heads its card with the words the household has seen
+    // for it ("Your list") — a name, not a shop, and never written to a
+    // row (GRO_ONE_LIST_STOP).
+    return groCardHtml(data, name, name, groCardDoneLabel(data, name), items, groIsStandIn(data, name) ? 'gro-onelist' : '');
   }
 
-  function groListRowHtml(it, data) {
+  // The things with no store — answered "no particular shop" and not yet
+  // asked alike (Emily, 2026-09-18) — once there ARE store cards for them
+  // to sit beside. They are not a stop, but they are very much on the
+  // list, and without this card they were on no screen at all. The
+  // "N things to sort" row above the cards is the way to give the
+  // unasked ones a store; the row's ⋯ does it one at a time.
+  function groAnywhereCardHtml(data, items) {
+    return groCardHtml(data, '', GRO_ANYWHERE_CARD, GRO_ANYWHERE_DONE, groSortLines(items), 'gro-anywhere');
+  }
+
+  // One row of a card: the box, the name, the amount, and the quiet ⋯
+  // that opens the row's own actions (groRowMenuHtml). The whole row is
+  // the tick (data-gro="line-tick" on the row and on the box, the way
+  // the trip's rows worked), so a thumb lands anywhere; the ⋯ is its own
+  // 44px target at the end. A staple Pomona put on the list keeps its
+  // line underneath (groStapleLineHtml).
+  function groLineHtml(it, data) {
     var id = String(it.id);
+    var bought = groIsBought(it);
     var open = groceryState.openRowId === id;
     var staple = !!it.staple_id;
-    return '<div class="gro-listrow' + (open ? ' open' : '') + (staple ? ' gro-listrow-staple' : '') + '">' +
-      '<span class="gro-listrow-name">' + escapeHtml(it.item) + '</span>' +
-      (it.quantity ? '<span class="gro-qty">' + escapeHtml(it.quantity) + '</span>' : '') +
+    return '<div class="gro-row gro-line' + (bought ? ' done' : '') + (open ? ' open' : '') +
+        (staple ? ' gro-line-staple' : '') + '" data-gro="line-tick" data-id="' + id + '" data-bought="' + (bought ? '1' : '0') + '">' +
+      '<button type="button" class="gro-box' + (bought ? ' checked' : '') + '" role="checkbox" ' +
+        'aria-checked="' + (bought ? 'true' : 'false') + '" data-gro="line-tick" data-id="' + id + '" ' +
+        'data-bought="' + (bought ? '1' : '0') + '" ' +
+        'aria-label="' + escapeHtml((bought ? 'Put ' + it.item + ' back on the list' : 'Bought ' + it.item)) + '">' +
+        (bought ? GRO_ICONS.tick : '') + '</button>' +
+      '<p class="gro-name">' + escapeHtml(it.item) + '</p>' +
+      (it.quantity ? '<span class="gro-line-qty">' + escapeHtml(it.quantity) + '</span>' : '') +
       '<button type="button" class="gro-rowmore" data-gro="row-menu" data-id="' + id + '" ' +
         'aria-expanded="' + open + '" aria-label="More for ' + escapeHtml(it.item) + '">' +
         GRO_ICONS.dots + '</button>' +
     '</div>' +
-    (staple ? groStapleLineHtml(it) : '') +
+    (staple && !bought ? groStapleLineHtml(it) : '') +
     (open ? groRowMenuHtml(it, data) : '');
   }
 
@@ -5052,9 +4729,8 @@
   //                         and "Getting it elsewhere" is the same /exclude
   //                         the SORT chip uses, with the same undo toast)
   //   remove the line    -> POST /api/grocery-list/{id}/remove   (with an undo)
-  // Quiet throughout — no apricot anywhere in it. LIST's one apricot is
-  // "Start the trip" (Rule 5), and a row action is never the thing the
-  // screen is for.
+  // Quiet throughout — no apricot anywhere in it (Rule 5): a row action
+  // is never the thing the screen is for.
   function groRowMenuHtml(it, data) {
     var id = String(it.id);
     return '<div class="gro-rowmenu" data-menu-for="' + id + '">' +
@@ -5162,8 +4838,8 @@
   }
 
   // Every store already on the list, plus the household's usual stores — so
-  // a store can be chosen before anything is tagged to it. Shared by SORT's
-  // chips and the LIST row's ⋯ so the two can't offer different stores.
+  // a store can be chosen before anything is tagged to it. Shared by SORT
+  // ALL's chips and the LIST row's ⋯ so the two can't offer different stores.
   function groPillStores(data) {
     var pillStores = [];
     Object.keys(data.stores).forEach(function (n) {
@@ -5175,65 +4851,13 @@
     return pillStores;
   }
 
-  // ---------- SORT HOW: the two fast paths, and the queue as the third ----
-  // Forty things answered one screen at a time is forty screens, and that
-  // was Emily's complaint. The queue is still right for a handful and is
-  // untouched below; this step is what stands in front of it once there are
-  // more than GRO_FAST_SORT_MIN, and it offers the two answers that finish
-  // the job in one go before offering the one that doesn't.
-
-  // Which shop to put everything at. Read off the list the tab already has
-  // open: every row tagged to a shop, whatever its status — still needed, in
-  // the trolley, or bought this cycle — counted per shop, biggest wins. That
-  // is the app's own record of where this household's groceries actually go,
-  // so there is no new counter and no new fetch behind this number. A
-  // household with nothing tagged yet has no record to read, and falls back
-  // to the first shop it named, which is the order it typed them in.
-  function groMostUsedStore(data) {
-    var counts = {};
-    Object.keys(data.stores).forEach(function (name) {
-      if (name === 'Unassigned') return;
-      var s = data.stores[name];
-      counts[name] = groNeededCount(s) + s.purchased.length + s.inCart.length;
-    });
-    var best = null;
-    groPillStores(data).forEach(function (name) {
-      if (best === null || (counts[name] || 0) > (counts[best] || 0)) best = name;
-    });
-    return best;
-  }
-
-  function groSortHowHtml(data) {
-    var unsorted = groUnsorted(data);
-    if (!unsorted.length) return '<p class="gro-empty">Nothing left to sort.</p>';
-    // Two rows, and the quiet one is last. "1 of 40" is the queue said
-    // honestly: it is where you would be after the first answer, out of how
-    // many answers it wants.
-    return '<div class="shell-card gro-howcard">' +
-        '<button type="button" class="gro-howrow" data-gro="goto-sortall">' +
-          '<span class="gro-howrow-text">' +
-            '<span class="gro-howrow-title">Sort them all on one screen</span>' +
-            '<span class="gro-howrow-sub">One tap each.</span>' +
-          '</span>' +
-          '<span class="gro-chev">' + GRO_ICONS.chevRight + '</span>' +
-        '</button>' +
-        '<button type="button" class="gro-howrow" data-gro="goto-sort-one">' +
-          '<span class="gro-howrow-text">' +
-            '<span class="gro-howrow-title">Or one at a time</span>' +
-            '<span class="gro-howrow-sub">1 of ' + unsorted.length + '</span>' +
-          '</span>' +
-          '<span class="gro-chev">' + GRO_ICONS.chevRight + '</span>' +
-        '</button>' +
-      '</div>' +
-      '<button type="button" class="gro-sort-later" data-gro="sort-later">Sort them later</button>';
-  }
-
   // ---------- SORT ALL: the whole list, one row each ----------
-  // Every unsorted thing with a shop chip on it. A tap WRITES (the same
-  // /store route the one-at-a-time queue uses) and the row leaves the
-  // screen, so the list shrinks as the person works down it and reaching
-  // the bottom is a finish (Emily, 2026-09-13: "if I put it into a
-  // category it should no longer be on that screen").
+  // Every unsorted thing with a shop chip on it. A tap WRITES (the row's
+  // /store route) and the row leaves the screen, so the list shrinks as
+  // the person works down it and reaching the bottom is a finish (Emily,
+  // 2026-09-13: "if I put it into a category it should no longer be on
+  // that screen"). The one way to sort since 2026-09-18 — the chooser in
+  // front of it and the one-at-a-time queue behind it are gone.
   //
   // This screen used to stage every pick and save them all from a button
   // at the foot, for one reason: writing per tap re-rendered forty rows
@@ -5429,15 +5053,14 @@
   // Emily, 2026-09-13: "there should also be the 'have this already'
   // option ... and if we want to use an alternative that should be a spot
   // we can put it here too, for example, instead of fresh oregano I'll use
-  // dry oregano." Both live wherever an item is being sorted — the queue,
-  // the one-screen sort, and a LIST row's ⋯ (the only place for a one-shop
-  // household, which never sees a sorting step) — and both undo from the
-  // toast they leave.
+  // dry oregano." Both live wherever an item is being sorted — SORT ALL
+  // and a LIST row's ⋯ (the only place for a one-shop household, which
+  // never sees a sorting step) — and both undo from the toast they leave.
   //
   // "Have it" is a per-week answer, not an inventory record (policy
   // 2026-09-01: nobody does inventory work to finish the loop): it is the
-  // pre-shop "Drop it" — a soft-remove, listed on the wrap-up under
-  // "Already have" with its own undo — and never /already-have, which
+  // pre-shop "Drop it" — a soft-remove, listed under "Not needed this
+  // week" with its own undo — and never /already-have, which
   // writes to the kitchen's inventory. A staple's line dropped this way
   // tells the staple "we have plenty" (drop_grocery_item_pre_shop).
   //
@@ -5472,588 +5095,87 @@
       'aria-label="Use something else instead of ' + escapeHtml(it.item) + '">Use something else</button>';
   }
 
-  // ---------- SORT ----------
-  // One thing at a time. The pills and their semantics are the ones the
-  // triage row already had: a store assigns and advances, "Any" saves an
-  // empty store and advances, "Have it" takes it off the list into the
-  // kitchen, "Getting it elsewhere" sets it aside. The last choice drops through to
-  // LIST on its own — see the 'assign' handler.
-  function groSortHtml(data) {
-    var unsorted = groUnsorted(data);
-    if (!unsorted.length) return '<p class="gro-empty">Nothing left to sort.</p>';
-    var it = unsorted[0];
-    var id = String(it.id);
-
-    // Every store already on the list, plus the household's usual stores —
-    // so a store can be chosen before anything is tagged to it.
-    var pillStores = groPillStores(data);
-
-    var total = Math.max(groceryState.sortTotal, unsorted.length);
-    var position = total - unsorted.length + 1;
-
-    return '<div class="shell-card gro-sortcard">' +
-        '<p class="gro-sort-item">' + escapeHtml(it.item) + '</p>' +
-        (it.quantity ? '<p class="gro-sort-qty">' + escapeHtml(it.quantity) + '</p>' : '') +
-        '<div class="gro-pills open">' +
-          pillStores.map(function (n) {
-            return '<button type="button" class="gro-pill" data-gro="assign" data-id="' + id + '" data-store="' + escapeHtml(n) + '" ' +
-              'aria-label="Buy ' + escapeHtml(it.item) + ' at ' + escapeHtml(n) + '">' + escapeHtml(n) + '</button>';
-          }).join('') +
-          '<button type="button" class="gro-pill" data-gro="assign" data-id="' + id + '" data-store="" ' +
-            'aria-label="No particular store for ' + escapeHtml(it.item) + '">Any</button>' +
-          // A store that isn't set up yet: the sheet, and the new store
-          // comes back as this item's answer (groUsualStoreAdded).
-          groAddStorePillHtml('sort', it) +
-          // Secondary actions: a store pill sorts the item; "Have it" takes
-          // it off the list because it turns out nothing needs buying (a
-          // per-week answer, no inventory — see groHaveItPillHtml); "Use
-          // something else" opens the field below.
-          groHaveItPillHtml(it) +
-          groSubstPillHtml(it) +
-          // Covers the other reason a thing leaves the sort queue without a
-          // store: it's being picked up on a trip that isn't one of this
-          // household's stores. Same /exclude route as ever.
-          groElsewherePillHtml('triage-exclude', it) +
-        '</div>' +
-        (groceryState.substOpenId === id ? groSubstFieldHtml(it) : '') +
-      '</div>' +
-      '<p class="gro-sort-progress">' + position + ' of ' + total + '</p>' +
-      // The quiet way out: the list, with these under the TO SORT badge as
-      // the way back in.
-      '<button type="button" class="gro-sort-later" data-gro="sort-later">Sort them later</button>';
-  }
-
-  // ---------- TRIP ----------
-  function groTripStore() {
-    var stops = groceryState.tripStops || [];
-    return stops[groceryState.tripIndex] || null;
-  }
-  // "Done at Costco" names the shop you are standing in. The one-list
-  // household is standing in no shop they ever named, and "Done at Your
-  // list" is not a sentence — theirs is one list and one trip, so the
-  // button says the whole of what it does.
-  // `data` is not optional: without it a caller silently gets "Done at
-  // Your list" back, which is the sentence this exists to prevent.
-  function groStopDoneLabel(data) {
-    var store = groTripStore();
-    if (groIsStandIn(data, store)) return 'Done shopping';
-    return 'Done at ' + (store || 'this stop');
-  }
-
-  // What this stop is for — its own things, plus everything with no shop of
-  // its own. Those follow the shopper from stop to stop rather than being
-  // pinned to the first one: they can be bought anywhere, the shop you are
-  // standing in is as good an answer as any, and one left unbought at the
-  // first stop used to be stranded for the rest of the trip. That mattered
-  // more once the household started choosing its own order of stops.
-  function groTripItems(data) {
-    var store = groTripStore();
-    if (!store) return [];
-    var s = data.stores[store];
-    var items = s ? groStoreItems(s) : [];
-    return items.concat(groRideAlongItems(data));
-  }
-  // The trolley at this stop. The shopless half is filtered the same way
-  // groTripItems filters the needed half — only what actually rides along —
-  // so the two halves of one screen cannot disagree about which rows belong
-  // to this stop.
-  function groRideAlongInCart(data) {
-    var any = data.stores['Unassigned'];
-    return any ? any.inCart.slice() : [];
-  }
-  function groTripInCart(data) {
-    var store = groTripStore();
-    if (!store) return [];
-    var s = data.stores[store];
-    var items = s ? s.inCart.slice() : [];
-    return items.concat(groRideAlongInCart(data));
-  }
-  // The stop's needed things, aisle by aisle, in the order the payload
-  // already put them (get_grocery_list_by_store's own section order — the
-  // order a shop is walked in). The ride-along things fold into the matching
-  // aisle rather than trailing after it.
-  function groTripSections(data) {
-    var store = groTripStore();
-    if (!store) return [];
-    var out = [];
-    var byName = {};
-    function fold(sections) {
-      (sections || []).forEach(function (sec) {
-        if (!sec.items.length) return;
-        if (!byName[sec.section]) {
-          byName[sec.section] = { section: sec.section, items: [] };
-          out.push(byName[sec.section]);
-        }
-        byName[sec.section].items = byName[sec.section].items.concat(sec.items);
-      });
-    }
-    fold(data.stores[store] && data.stores[store].sections);
-    var rideIds = {};
-    groRideAlongItems(data).forEach(function (it) { rideIds[String(it.id)] = true; });
-    var any = data.stores['Unassigned'];
-    if (any) {
-      fold((any.sections || []).map(function (sec) {
-        return {
-          section: sec.section,
-          items: sec.items.filter(function (it) { return !!rideIds[String(it.id)]; })
-        };
-      }));
-    }
-    return out;
-  }
-
-  function groTripHtml(data) {
-    var store = groTripStore();
-    if (!store) return '<p class="gro-empty">This trip has no stops left — head back and start a new one.</p>';
-
-    var sections = groTripSections(data);
-    var html = '';
-    if (sections.length) {
-      html += '<div class="gro-store">';
-      sections.forEach(function (sec) {
-        html += '<div class="gro-aisle">' +
-          '<span class="gro-aisle-spine"></span>' +
-          '<span class="gro-eyebrow">' + escapeHtml(GRO_CATEGORY_LABELS[sec.section] || sec.section) + '</span>' +
-          '<span class="gro-aisle-count">' + sec.items.length + ' left</span>' +
-        '</div>';
-        sec.items.forEach(function (it) { html += groTripRowHtml(it); });
-      });
-      html += '</div>';
-    }
-
-    // The trolley, collapsed, with the put-back this screen has always had
-    // (groDoneRowHtml's row IS the put-back: status -> needed).
-    var inCart = groTripInCart(data);
-    if (!sections.length) {
-      // Nothing left to tick: either it is all in the trolley, or there is
-      // nothing on this stop at all — a store the list no longer has (a
-      // trip paused across a new week's approval, reached by the back
-      // gesture), which used to read "everything is in the cart" over an
-      // empty trolley (found on review).
-      html += '<p class="gro-empty">' +
-        (inCart.length ? 'Everything here is in the cart.' : 'Nothing left on this stop.') + '</p>';
-    }
-    if (inCart.length) {
-      var open = groceryState.inCartOpen;
-      html += '<div class="gro-done' + (open ? ' open' : '') + '">' +
-        '<button type="button" class="gro-done-head" data-gro="toggle-incart" aria-expanded="' + open + '">' +
-          '<span class="gro-done-tick">' + GRO_ICONS.basket + '</span>' +
-          '<span class="gro-done-label">In your cart · ' + inCart.length + '</span>' +
-          '<span class="gro-chev">' + (open ? GRO_ICONS.chevDown : GRO_ICONS.chevRight) + '</span>' +
-        '</button>' +
-        (open ? '<div class="gro-done-body">' + inCart.map(groDoneRowHtml).join('') + '</div>' : '') +
-      '</div>';
-    }
-    // Wrapped for its own bottom clearance (item 13, design-tidy pass
-    // 2026-09-11): a long stop's last row otherwise sits right where the
-    // floating chat FAB hovers above the "Done at X" dock.
-    return '<div class="gro-trip-body">' + html + '</div>';
-  }
-
-  function groTripRowHtml(it) {
-    var id = String(it.id);
-    return '<div class="gro-row" data-gro="trip-toggle" data-id="' + id + '" data-incart="0">' +
-      '<button type="button" class="gro-box" role="checkbox" aria-checked="false" ' +
-        'data-gro="trip-toggle" data-id="' + id + '" data-incart="0" ' +
-        'aria-label="Found ' + escapeHtml(it.item) + '"></button>' +
-      '<p class="gro-name">' + escapeHtml(it.item) + '</p>' +
-      (it.quantity ? '<span class="gro-qty">' + escapeHtml(it.quantity) + '</span>' : '') +
-    '</div>';
-  }
-
-  // A row already in the trolley — tapping it puts it back on the list.
-  function groDoneRowHtml(it) {
-    var id = String(it.id);
-    return '<div class="gro-row done" data-gro="uncheck" data-id="' + id + '">' +
-      '<button type="button" class="gro-box checked" role="checkbox" aria-checked="true" data-gro="uncheck" data-id="' + id + '" ' +
-        'aria-label="Put ' + escapeHtml(it.item) + ' back on the list">' + GRO_ICONS.tick + '</button>' +
-      '<p class="gro-name">' + escapeHtml(it.item) + '</p>' +
-      (it.quantity ? '<span class="gro-qty">' + escapeHtml(it.quantity) + '</span>' : '') +
-    '</div>';
-  }
-
-  // ---------- WHERE NEXT ----------
-  // Finishing a stop used to start the next one, in the order the snapshot
-  // happened to be in. Nobody drives in the order a list was built, so this
-  // asks: the stops that are left, with what is still on each, and the
-  // answer that ends the day. The snapshot rule holds — tripStops is
-  // untouched, so nothing is renumbered; this only changes which of them the
-  // shopper walks into next.
-  function groStopRemaining(data, name) {
-    var s = data.stores[name];
-    var n = s ? groNeededCount(s) + s.inCart.length : 0;
-    // Who owns a thing that could be bought at either shop? THE STOP YOU
-    // ARE STANDING IN — which is not a new rule, it is the one
-    // groTripItems has followed since 2026-09-13, when the shopless pile
-    // stopped being stranded at the first stop and started following the
-    // shopper. This function was the one place that disagreed with it, and
-    // a stop holding nothing of its own is where the two came apart: a
-    // household with two named shops that answers "Anywhere" to everything
-    // gets one stand-in stop (its most-used shop, groStoresWithNeeded),
-    // and that stop's own trip screen read "Stop 1 of 1 · 2 left" over
-    // Rice and Oats while LIST, over the same snapshot, read "Trip in
-    // progress · every stop done", offered "Finish the trip" and no way
-    // back in, and continuing anyway walked into the wrap-up. Measured.
-    //
-    // It cannot double-count, and that is exactly why it is the OPEN stop
-    // rather than "any stop that could take it": only one stop is open at
-    // a time, so the pile is owed at one of them and never at two. The
-    // sum over the snapshot's stops is still the size of the list.
-    // Counting the pile against each stop instead — which is what the
-    // comment here used to rule out, and rightly — would put the same
-    // three things on two cards and make the band say "2 stops left" for
-    // one pile.
-    //
-    // The two clauses before it answer the same question for a stop
-    // nobody is standing in yet: the one-list stand-in, whose whole stop
-    // it is, and the sole store, whose list was never tagged because
-    // there was no question to answer (groSoleStore). Both are the only
-    // stop there is, so the pile can be owed nowhere else — without them
-    // a one-shop household read as nothing left before anybody set off.
-    //
-    // `here &&` is defensive and nothing pins it: no caller passes a falsy
-    // name (they all come from tripStops or groStoresWithNeeded), but
-    // groTripStore() answers null off a trip, and null === null would hand
-    // the pile to a stop that does not exist.
-    var here = groTripStore();
-    if (groIsStandIn(data, name) || groSoleStore(data) === name || (here && here === name)) {
-      n += groRideAlongItems(data).length + groRideAlongInCart(data).length;
-    }
-    return n;
-  }
-  // Stops still worth walking into: not already finished, and with something
-  // left on them. A shop whose things all came home some other way is not a
-  // choice, it is a detour.
-  function groRemainingStops(data) {
-    return (groceryState.tripStops || []).filter(function (n) {
-      return !groceryState.tripDone[n] && groStopRemaining(data, n) > 0;
-    });
-  }
-
-  function groNextHtml(data) {
-    var remaining = groRemainingStops(data);
-    if (!remaining.length) return '<p class="gro-empty">That’s every stop — wrap it up.</p>';
-    return groStopCardsHtml(data, remaining, 'next-stop', ' left');
-  }
-
-  // ---------- WHERE ARE WE HEADED ----------
-  // Emily, 2026-09-13: "it should ask me (through a select screen) which
-  // store we're headed to so it knows which grocery store to start with
-  // for the trip — similar to the 'where's next' screen". So it IS that
-  // screen, one step earlier: the same store cards, before any list is
-  // shown, and picking one takes the snapshot and opens that stop first.
-  // Only asked when there is a choice — groStartTrip walks a one-shop
-  // week straight in.
-  function groHeadedHtml(data) {
-    var stops = groStoresWithNeeded(data);
-    if (!stops.length) return '<p class="gro-empty">Nothing to buy.</p>';
-    return groStopCardsHtml(data, stops, 'head-for', '');
-  }
-
-  // The store cards both screens are made of (Emily, 2026-09-13: "make the
-  // design of that one + the where next screen a bit nicer — add some
-  // colour"). One card per stop: a spine in the store's own colour down the
-  // card's left edge (square where it meets the card, round on the outside —
-  // the joined-tile motif, DESIGN_SYSTEM §4) with the initial in it, the
-  // name in the display face, how many things are on it, and the things
-  // only bought there. Colour comes from the store palette and the
-  // celadon note, not from a second apricot: the cards ARE the choice, so
-  // neither screen has a primary fill (Rule 5's "at most one").
-  //
-  // `suffix` is what follows the count — " left" between stops, nothing
-  // before the trip starts, when nothing has been bought yet.
-  function groStopCardsHtml(data, stops, action, suffix) {
-    var html = '<div class="gro-stops">' +
-      stops.map(function (name) {
-        var only = groOnlyHereItems(data, name);
-        return '<button type="button" class="gro-stop" data-gro="' + action + '" ' +
-            'data-store="' + escapeHtml(name) + '" ' +
-            'aria-label="' + escapeHtml(name) + ', ' + groPlural(groStopRemaining(data, name), 'thing', 'things') + suffix + '">' +
-            '<span class="gro-stop-spine" style="background:' + groStoreColor(name) + '">' +
-              escapeHtml(groStoreInitial(name)) + '</span>' +
-            '<span class="gro-stop-text">' +
-              '<span class="gro-stop-name">' + escapeHtml(name) + '</span>' +
-              '<span class="gro-stop-count">' + groPlural(groStopRemaining(data, name), 'thing', 'things') + suffix + '</span>' +
-              (only.length ? '<span class="gro-stop-only">' +
-                '<span class="gro-stop-only-label">Only here</span>' +
-                escapeHtml(groOnlyHereLine(only)) + '</span>' : '') +
-            '</span>' +
-            '<span class="gro-chev">' + GRO_ICONS.chevRight + '</span>' +
-          '</button>';
-      }).join('');
-    // Said once, because it is the one thing about this screen a shopper
-    // could get wrong: the shopless things are not at any of these stops,
-    // they come to whichever one you pick. A celadon tile — the reassuring
-    // one, "settled, already true" — under the cards, inside the same
-    // block. Measured: --ink-on-celadon on --celadon-tint 10.65:1 light /
-    // 10.37:1 dark (the same pair Plan's period strip cites in shell.css).
-    var ride = groRideAlongItems(data).length;
-    if (ride) {
-      html += '<p class="gro-stops-note">' + groPlural(ride, 'thing', 'things') +
-        ' with no shop will come with you.</p>';
-    }
-    return html + '</div>';
-  }
-
-  // The things on this stop's list that the household has told us come
-  // from here (a remembered item -> store preference, groIsUsuallyHere) —
-  // the ones you can't pick up at the other stop, which is what decides
-  // whether a shop can be skipped today. Read off the remembered
-  // preferences rather than the row's store: every row on a stop's list
-  // has that store, and "all of them" would say nothing.
-  function groOnlyHereItems(data, name) {
-    var s = data.stores[name];
-    if (!s) return [];
-    return groStoreItems(s).concat(s.inCart || []).filter(function (it) {
-      return groIsUsuallyHere(it.item, name);
-    }).map(function (it) { return it.item; });
-  }
-  // Three by name, and a count for the rest — the card is a choice, not
-  // the list.
-  function groOnlyHereLine(names) {
-    var shown = names.slice(0, 3);
-    var more = names.length - shown.length;
-    return shown.join(', ') + (more > 0 ? ' +' + more : '');
-  }
-
-  // ---------- A paused trip, as LIST sees it ----------
-  // Leaving any trip screen keeps the snapshot (see groceryState.tripStops);
-  // these three are what the root reads off it. They live here, with the
-  // other renderers, rather than with the trip's actions below.
-  // How many things are sitting in a trolley somewhere — ticked at a stop
-  // that was never finished. They are not on the list (not needed) and not
-  // home yet (not purchased), so LIST has to account for them by name
-  // while a trip is paused, or a list with everything ticked reads as
-  // "nothing to buy".
-  function groInCartCount(data) {
-    return Object.keys(data.stores).reduce(function (n, name) {
-      return n + data.stores[name].inCart.length;
-    }, 0);
-  }
-
-  // Whether LIST is standing over a paused trip: one is on, and the shops
-  // question is not the thing on screen instead of the stops.
-  function groTripPaused() {
-    return !!(groceryState.tripStops && groceryState.tripStops.length) && !groStoresPromptShouldShow();
-  }
-
-  // The root band's one line while a trip is paused. Counted from the
-  // stops still worth walking into (groRemainingStops), not from the
-  // snapshot's length: a shop whose things all came home some other way
-  // is not "left".
-  function groTripPausedLine(data) {
-    if (!groTripPaused()) return '';
-    var left = groRemainingStops(data).length;
-    return 'Trip in progress · ' + (left ? groPlural(left, 'stop', 'stops') + ' left' : 'every stop done');
-  }
-
-  // ---------- WRAP UP ----------
-  function groAllNeeded(data) {
-    var out = [];
-    Object.keys(data.stores).forEach(function (name) {
-      groStoreItems(data.stores[name]).forEach(function (it) { out.push(it); });
-    });
-    return out;
-  }
-
-  // Three answers per thing that didn't make it into the cart (Emily,
-  // 2026-09-13): "Couldn't find it" keeps the row as it is; "Will grab
-  // elsewhere" opens the household's other stores under the row and moves
-  // the line to the one tapped (this week only — see 'wrap-move'); "Don't
-  // need anymore" takes it off the list for the week, the pre-shop drop
-  // ("Have it"'s route — soft-removed, undo from the toast, never bought
-  // and never inventory). "Somewhere else" used to be the second answer,
-  // and it EXCLUDED the row (status 'excluded', off every list); a thing
-  // you will grab at Metro is not off the list, it is on Metro's.
-  function groWrapHtml(data) {
-    var stillNeeded = groAllNeeded(data);
-    var html = '';
-    if (stillNeeded.length) {
-      html += '<p class="gro-eyebrow">Still on the list</p><div class="gro-store gro-wrap-list">';
-      stillNeeded.forEach(function (it) {
-        var id = String(it.id);
-        var kept = !!groceryState.wrapKept[id];
-        var movedTo = groceryState.wrapMoved[id] || '';
-        var elseOpen = groceryState.wrapElseId === id;
-        html += '<div class="gro-wrap-row' + (kept || movedTo ? ' kept' : '') + '">' +
-          '<span class="gro-wrap-name">' + escapeHtml(it.item) +
-            (it.quantity ? ' <span class="gro-qty">' + escapeHtml(it.quantity) + '</span>' : '') + '</span>' +
-          (kept
-            ? '<span class="gro-wrap-kept">Kept on the list</span>'
-            : movedTo
-            ? '<span class="gro-wrap-kept">Grabbing at ' + escapeHtml(movedTo) + '</span>'
-            : '<span class="gro-wrap-seg">' +
-                '<button type="button" class="gro-wrap-btn" data-gro="wrap-keep" data-id="' + id + '">Couldn’t find it</button>' +
-                '<button type="button" class="gro-wrap-btn' + (elseOpen ? ' gro-wrap-btn-on' : '') + '" data-gro="wrap-else" data-id="' + id + '" ' +
-                  'aria-expanded="' + elseOpen + '">Will grab elsewhere</button>' +
-                '<button type="button" class="gro-wrap-btn" data-gro="wrap-drop" data-id="' + id + '" ' +
-                  'data-name="' + escapeHtml(it.item) + '">Don’t need anymore</button>' +
-              '</span>') +
-          (elseOpen && !kept && !movedTo ? groWrapStorePickerHtml(it, data) : '') +
-        '</div>';
-      });
-      html += '</div>';
-    } else {
-      html += '<div class="gro-allclear">Everything on the list made it into the cart.</div>';
-    }
-
-    // Review's confirmation half, kept: this week's "already have" decisions
-    // and current "Elsewhere" exclusions, each with its undo.
-    html += groAlreadyHaveHtml();
-
-    var bought = groceryState.tripBought;
-    var total = Math.max(groceryState.tripTotal, bought);
-    html += '<p class="gro-wrap-summary">Bought ' + bought + ' of ' + total + '</p>';
-    return html;
-  }
-
-  // Under a row whose "Will grab elsewhere" is open: the household's OTHER
-  // stores as pills (everything on the list or in usual_stores, minus the
-  // one this row is already at — that is the store it wasn't found at),
-  // and "Add a new store". A one-shop household sees only the add.
-  function groWrapStorePickerHtml(it, data) {
-    var id = String(it.id);
-    var others = groPillStores(data).filter(function (n) { return n !== (it.store || ''); });
-    return '<div class="gro-wrap-pick" data-pick-for="' + id + '">' +
-      '<div class="gro-pills open">' +
-        others.map(function (n) {
-          return '<button type="button" class="gro-pill" data-gro="wrap-move" data-id="' + id + '" ' +
-            'data-store="' + escapeHtml(n) + '" data-from="' + escapeHtml(it.store || '') + '" ' +
-            'data-name="' + escapeHtml(it.item) + '" ' +
-            'aria-label="Grab ' + escapeHtml(it.item) + ' at ' + escapeHtml(n) + '">' + escapeHtml(n) + '</button>';
-        }).join('') +
-        groAddStorePillHtml('wrap', it) +
-      '</div>' +
-    '</div>';
-  }
-
-  // "Getting it elsewhere", on SORT's card and the LIST row's ⋯ — the two
-  // places that mean the same thing on the same route (/exclude). The
-  // name rides along so the handler can toast it without the row. Sand
-  // fill (.gro-pill-else), which is what keeps it apart from "Add a new
-  // store" beside it: that one is link-coloured on no fill, a door to a
-  // setting, and this one is an answer.
+  // "Getting it elsewhere", on the LIST row's ⋯ (/exclude). The name
+  // rides along so the handler can toast it without the row. Sand fill
+  // (.gro-pill-else), which is what keeps it apart from "Add a new store"
+  // beside it: that one is link-coloured on no fill, a door to a setting,
+  // and this one is an answer.
   function groElsewherePillHtml(action, it) {
     return '<button type="button" class="gro-pill gro-pill-else" data-gro="' + action + '" ' +
       'data-id="' + String(it.id) + '" data-name="' + escapeHtml(it.item) + '" ' +
       'aria-label="Getting ' + escapeHtml(it.item) + ' elsewhere">' + escapeHtml(GRO_ELSEWHERE_CHIP) + '</button>';
   }
 
-  // "Add a new store", wherever stores are being chosen — WRAP UP's picker,
-  // the SORT queue, SORT ALL (Emily, 2026-09-13: "have an option for them
-  // if they want to add a new store (also in the sorting screen in case)
-  // where it brings them to the settings to add in a store, but then make
-  // sure the flow brings them back to this screen"). The tap opens the
-  // Stores section of What we know as a sheet over this screen and arms
-  // groceryState.storeReturn with where to hand the new store back to;
-  // the item's name and current store ride along so WRAP UP's move can
-  // toast and undo without the row. Link-coloured, not a fill: it is a
-  // way to a setting, not one of the answers.
+  // "Add a new store", where stores are being chosen — SORT ALL (Emily,
+  // 2026-09-13: "have an option for them if they want to add a new store
+  // (also in the sorting screen in case) where it brings them to the
+  // settings to add in a store, but then make sure the flow brings them
+  // back to this screen"). The tap opens the Stores section of What we
+  // know as a sheet over this screen and arms groceryState.storeReturn
+  // with where to hand the new store back to. Link-coloured, not a fill:
+  // it is a way to a setting, not one of the answers.
   function groAddStorePillHtml(kind, it) {
     return '<button type="button" class="gro-pill gro-pill-add" data-gro="store-add" data-kind="' + kind + '" ' +
       'data-id="' + String(it.id) + '" data-name="' + escapeHtml(it.item) + '" data-from="' + escapeHtml(it.store || '') + '" ' +
       'aria-label="Add a new store for ' + escapeHtml(it.item) + '">Add a new store</button>';
   }
 
-  // This week's "already have" decisions (Have it + pre-shop drops) and
-  // current "Elsewhere" exclusions — a confirmation, not a warning, so it is
-  // always celadon ("settled, handled, already true" per the design system),
-  // never urgent/apricot.
-  function groAlreadyHaveHtml() {
+  // ---------- Not needed this week ----------
+  // This week's "Have it" / "Don't need" / pre-shop "Drop it" decisions
+  // (get_already_have_decisions), each with "Actually, I need it" — the
+  // way back once the toast's Undo has gone. It was half of the old
+  // wrap-up's "Already sorted this week" card; the other half, what's set
+  // aside, is groElsewhereHtml above it. A confirmation, not a warning,
+  // so it is celadon ("settled, handled, already true"), never urgent or
+  // apricot, and closed by default.
+  function groNotNeededHtml() {
     var summary = groceryState.alreadyHaveSummary || {};
     var already = summary.already_have || [];
-    var elsewhere = summary.elsewhere || [];
-    if (!already.length && !elsewhere.length) return '';
-
-    function decisionRow(it, action, label) {
-      return '<div class="gro-fix">' +
-        '<span>' + escapeHtml(it.item) + (it.quantity ? ' &middot; ' + escapeHtml(it.quantity) : '') + '</span>' +
-        '<button type="button" class="secondary" data-gro="' + action + '" data-id="' + String(it.id) + '">' + label + '</button>' +
-      '</div>';
-    }
-
-    var body = '';
-    // "Have it" and "Don't need anymore" both land here (the same
-    // soft-remove), so the line says what is true of both.
-    if (already.length) {
-      body += '<p class="gro-fix-note">Not needed this week: ' +
-        already.map(function (it) { return escapeHtml(it.item); }).join(', ') + '</p>' +
-        already.map(function (it) { return decisionRow(it, 'undo-already-have', 'Actually, I need it'); }).join('');
-    }
-    if (elsewhere.length) {
-      body += '<p class="gro-fix-note">Getting elsewhere: ' +
-        elsewhere.map(function (it) { return escapeHtml(it.item); }).join(', ') + '</p>' +
-        elsewhere.map(function (it) { return decisionRow(it, 'undo-elsewhere', 'Actually, get it here'); }).join('');
-    }
-
+    if (!already.length) return '';
     var open = groceryState.openFlagKey === 'already-have';
     return '<div class="gro-flag">' +
       '<button type="button" class="gro-flag-head" data-gro="flag-toggle" data-key="already-have" aria-expanded="' + open + '">' +
-        '<span class="gro-flag-badge" style="background:var(--celadon);color:var(--on-accent-ink)">&check;</span>' +
-        '<span class="gro-flag-title">Already sorted this week &middot; ' + (already.length + elsewhere.length) + '</span>' +
+        '<span class="gro-flag-badge">' + GRO_ICONS.tick + '</span>' +
+        '<span class="gro-flag-title">Not needed this week &middot; ' + already.length + '</span>' +
         '<span class="gro-chev">' + (open ? GRO_ICONS.chevDown : GRO_ICONS.chevRight) + '</span>' +
       '</button>' +
-      (open ? '<div class="gro-flag-body">' + body + '</div>' : '') +
+      (open
+        ? '<div class="gro-flag-body">' +
+            already.map(function (it) {
+              return '<div class="gro-fix">' +
+                '<span>' + escapeHtml(it.item) + (it.quantity ? ' &middot; ' + escapeHtml(it.quantity) : '') + '</span>' +
+                '<button type="button" class="secondary" data-gro="undo-already-have" data-id="' + String(it.id) + '">Actually, I need it</button>' +
+              '</div>';
+            }).join('') +
+          '</div>'
+        : '') +
     '</div>';
   }
 
-  // ---------- LIST's dock over a paused trip ----------
-  // "Continue the trip" is the apricot (it is what the screen is for, the
-  // same way "Start the trip" is when no trip is on) and "Finish the trip"
-  // rides along as the quiet link, the shape Now's dock uses for "Let's
-  // plan the week" + "Not now". Finishing from here is one tap, because
-  // that is the whole ask: the remaining stores aren't happening. With
-  // nothing left to walk into, finishing IS the action and gets the fill.
-  // Kept out of groDockHtml so that function still reads as one fill per
-  // step; this is LIST's fill in one particular state.
-  function groTripPausedDockHtml(data) {
-    var left = groRemainingStops(data).length;
-    if (!left) {
-      return '<button type="button" class="gro-primary" data-gro="trip-finish-now">Finish the trip</button>';
-    }
-    return '<div class="dock-row">' +
-      '<button type="button" class="gro-primary" data-gro="trip-resume">Continue the trip</button>' +
-      '<button type="button" class="dock-link" data-gro="trip-finish-now">Finish the trip</button>' +
-    '</div>';
-  }
-
-  // The quiet way out of any trip screen, beside that screen's own action.
-  function groTripPauseLinkHtml() {
-    return '<button type="button" class="dock-link" data-gro="trip-pause">Finish later</button>';
-  }
-
-  // ---------- The foot: what is NOT the screen's one action ----------
-  // Only LIST has anything here now, and only the add row. The step's one
-  // action moved to the dock below (rule 2) — at the foot of a real week's
-  // groceries, "Start the trip" sat a hundred rows under the fold.
-  function groFootHtml(data, step) {
-    if (step !== 'list') return '';
-    // Adding one thing must not cost a model turn. This posts straight to
-    // /api/grocery-list/add — the same route groHandleVoiceCommand's "add
-    // oat milk" uses, and the same one the root's "Add an item" card used
-    // — so the cheap, common case stays cheap. The ask bar above the tab
-    // bar is still there for anything wordier ("add oat milk and lemons,
-    // and drop the spinach"), which is what it is good at.
-    //
-    // It stays out of the dock deliberately: adding a thing is a side
-    // errand next to starting the trip, and a dock holding two jobs is not
-    // a dock (rule 2 — "a second apricot" is what Rule 5 already forbids,
-    // and a second STRIP is the same mistake one level up).
-    // The photo button (Loop Board, 2026-09-11 — "snap a photo of a
-    // written or on-screen list and have Pomona add it") rides along inside
-    // the same field as the manual add, the nearest existing "put something
-    // on the list" affordance — the inventory scans this borrows the
-    // pattern from live on a different tab (Kitchen's Inventory sheet).
-    //
-    // Changed 2026-09-11 (design-tidy pass, item 7): four controls in one
-    // row ("Add something" / Qty / Add / camera) truncated the one field
-    // that matters — the item name — to make room for a Qty box most adds
-    // never use. Now it's one wide text field with the camera sitting
-    // inside its own right end (absolute, 44×44 — see .gro-add-field) and
-    // a spruce Add after it. Quantity comes from what's typed, via
-    // groParseAddInput ("2 lb carrots", "milk 2") rather than a box of its
-    // own; nothing recognizable in the text just means no quantity, same as
-    // leaving the old Qty box blank.
+  // ---------- The add row ----------
+  // The first thing under the band on LIST (Emily's shopping-list mockup,
+  // 2026-09-18; until then it sat at the foot of the list, under every
+  // card). Adding one thing must not cost a model turn: this posts
+  // straight to /api/grocery-list/add — the same route
+  // groHandleVoiceCommand's "add oat milk" uses — so the cheap, common
+  // case stays cheap. The ask sheet is still there for anything wordier
+  // ("add oat milk and lemons, and drop the spinach"), which is what it is
+  // good at.
+  //
+  // It stays out of the dock deliberately: the root has no dock — ticking
+  // a row is the action — and a strip holding a side errand would not be
+  // one (rule 2).
+  //
+  // The photo button (Loop Board, 2026-09-11 — "snap a photo of a written
+  // or on-screen list and have Pomona add it") rides along inside the same
+  // field as the manual add, the nearest existing "put something on the
+  // list" affordance. One wide text field with the camera sitting inside
+  // its own right end (absolute, 44×44 — see .gro-add-field) and a spruce
+  // Add after it (design-tidy pass 2026-09-11, item 7). Quantity comes
+  // from what's typed, via groParseAddInput ("2 lb carrots", "milk 2")
+  // rather than a box of its own; nothing recognizable in the text just
+  // means no quantity.
+  function groAddRowHtml() {
     return '<div class="gro-add">' +
         '<div class="gro-add-field">' +
           '<input type="text" class="gro-add-item" id="gro-add-item" ' +
@@ -6068,59 +5190,24 @@
   }
 
   // ---------- The dock: one apricot action per step (Rule 5) ----------
-  // Same labels, same handlers, same one-per-screen discipline these had at
-  // the foot; what changed is that they stay on screen (rule 2).
+  // The root has none (Emily, 2026-09-18: the list is the checklist, and
+  // nothing single is left to press — rule 2's "a screen with no single
+  // action has no dock"), except "Go to Plan" under the empty moment. The
+  // "See the week" link that used to ride beside "Start the trip" went
+  // with it: the week is one tap away on the tab bar.
   function groDockHtml(data, step) {
     if (step === 'list') {
-      // A paused trip is continued or finished, never started again over
-      // the top of itself — see groTripPausedDockHtml.
-      if (groTripPaused()) return groTripPausedDockHtml(data);
-      var stops = groStoresWithNeeded(data);
-      // Nothing to start while the shops question is up: LIST shows that
-      // card at the top of the list (since 2026-09-15; it used to stand in
-      // for the list), and the card's own "That's where we shop" is the
-      // screen's one apricot while it is there — a "Start the trip" under
-      // it would be a second one, which Rule 5 doesn't allow. No action,
-      // so no dock — the rule's own "a screen with no single action has no
-      // dock" case. (Until 2026-09-16 this line said a household that had
-      // named no shop "has no stops anyway, so nothing is being withheld".
-      // The opposite is true now: they get the one-list stand-in
-      // (groStoresWithNeeded), so this clause is exactly what holds their
-      // dock back until the question above it is answered.)
-      var canGo = stops.length > 0 && !groStoresPromptShouldShow();
-      // "See the week" rides beside the trip the way "Finish later" does on
-      // the trip screens: from the list the week is one tap, and from the
-      // week the list is (reviewDecideHtml) — neither goes back through All
-      // set (Emily, 2026-09-13). Quiet, not a second fill (Rule 5).
-      if (canGo) {
-        return '<div class="dock-row">' +
-          '<button type="button" class="gro-primary" data-gro="start-trip">Start the trip</button>' +
-          '<button type="button" class="dock-link" data-gro="see-week">See the week</button>' +
-        '</div>';
-      }
       // Nothing to buy at all: the empty moment's next step is the Plan
       // tab, where a week gets approved and this list gets built. Only
       // when the list is genuinely empty — never over the shops question,
-      // and never over the just-finished trip's own screen (S5).
-      var loose = groLooseItems(data);
-      // …and not while spices wait unticked: there is a list, it is just
-      // all in one section, and "Go to Plan" would send someone away
+      // and not while spices wait unticked: there is a list then, it is
+      // just all in one section, and "Go to Plan" would send someone away
       // from it.
-      if (!stops.length && !loose.length && !groStoresPromptShouldShow() && !groceryState.justFinishedTrip &&
+      if (!groStoresOnList(data).length && !groLooseLineItems(data).length && !groStoresPromptShouldShow() &&
           !groceryState.spices.items.length) {
         return '<button type="button" class="dock-primary" data-gro="goto-plan">Go to Plan</button>';
       }
       return '';
-    }
-    // SORT HOW's one apricot is the bulk answer, because it is the one that
-    // finishes the job in a single tap. The other two paths are rows in the
-    // body — quieter, and neither of them is a second primary (Rule 5).
-    if (step === 'sorthow') {
-      var most = groMostUsedStore(data);
-      if (!most) return '';
-      return '<button type="button" class="gro-primary" data-gro="sort-all-at" ' +
-        'data-store="' + escapeHtml(most) + '">Put all ' + groUnsorted(data).length +
-        ' at ' + escapeHtml(most) + '</button>';
     }
     // SORT ALL writes every answer as it is tapped, so there is nothing
     // to save and no button while rows are left — the crumb is the way
@@ -6128,41 +5215,6 @@
     if (step === 'sortall') {
       if (!groceryState.sortAllDone || groUnsorted(data).length) return '';
       return '<button type="button" class="gro-primary" data-gro="sortall-done">Back to the list</button>';
-    }
-    // Every trip screen's dock carries "Finish later" beside its own action
-    // (groTripPauseLinkHtml): the way out of the trip that keeps it.
-    if (step === 'trip') {
-      // The button no longer names the next stop, because the next stop is
-      // no longer this screen's to decide — see the WHERE NEXT step.
-      return '<div class="dock-row">' +
-        '<button type="button" class="gro-primary" data-gro="stop-done">' +
-          escapeHtml(groStopDoneLabel(data)) + '</button>' +
-        groTripPauseLinkHtml() +
-      '</div>';
-    }
-    // HEADED has no dock at all: the cards are the choice, no trip is on
-    // yet so there is nothing to finish later, and the crumb is the way
-    // back (rule 2 — a screen with no single action has no dock).
-    if (step === 'headed') return '';
-    if (step === 'next') {
-      // Quiet, and deliberately not a fill: the stops above are the choice
-      // this screen is for, and an apricot on ending the trip early would
-      // put the tab's accent on it. Rule 5 allows a screen with no primary;
-      // Kitchen's root is the precedent. It used to read "I'm done shopping
-      // for today", which is also what a shopper going home with a store
-      // still to do would say — and it walked them into the wrap-up. Now
-      // it says what it does, and going home is "Finish later".
-      return '<div class="dock-row">' +
-        '<button type="button" class="gro-secondary" data-gro="trip-end">' +
-          'Skip the rest</button>' +
-        groTripPauseLinkHtml() +
-      '</div>';
-    }
-    if (step === 'wrap') {
-      return '<div class="dock-row">' +
-        '<button type="button" class="gro-primary" data-gro="finish-trip">Finish the trip</button>' +
-        groTripPauseLinkHtml() +
-      '</div>';
     }
     return '';
   }
@@ -6244,11 +5296,11 @@
   }
 
   // The handoff for "that's the shopping done" (Emily, 2026-09-04's ask to
-  // walk the loop forward): shown on LIST once the list has nothing left to
-  // buy AND a trip was actually finished in this page view —
-  // groceryState.justFinishedTrip, not a lifetime purchased/in_cart count
-  // (see that flag's declaration for why). Spruce fill, not apricot: LIST's
-  // own "Start the trip" owns the screen's one apricot (Rule 5).
+  // walk the loop forward): the list's finished moment, at the top of it
+  // once every card is done (groListDone — read off the data, not a
+  // page-view flag: the bought window keeps it true until the next
+  // approval rebuilds the list). Its "Show me tonight" is the screen's
+  // one apricot then (Rule 5) — the root has no dock.
   //
   // The dish name in that line is a link too (2026-09-10). The branch's own
   // decision-log entry claimed "Grocery names no dishes at all"; it names
@@ -6625,11 +5677,9 @@
       '</div>' +
       '<div class="gro-scan-actions">' +
         '<button type="button" class="gro-scan-cancel" data-gro="scan-close">Cancel</button>' +
-        // .btn-gold, not apricot: Shop's LIST step already spends its one
-        // apricot on .gro-primary ("Start the trip") — DESIGN_SYSTEM §2
-        // rule 5. Every other body-level confirm sheet in the app
-        // (week-sheet-back, reset-confirm, dinner-confirm-add) uses this
-        // same class for exactly this reason.
+        // .btn-gold, the class every other body-level confirm sheet in
+        // the app (week-sheet-back, reset-confirm, dinner-confirm-add)
+        // uses for its one action.
         '<button type="button" class="gro-scan-save btn-gold" data-gro="scan-save">Add to the list</button>' +
       '</div>';
   }
@@ -6698,283 +5748,65 @@
   // handler here is a plain function it can call directly rather than
   // code that touches the DOM at load time.
 
-  // Finishing a stop: everything in the trolley becomes purchased (which is
-  // what actually writes it into the kitchen's inventory — see
-  // tools.mark_grocery_item), then the trip is recorded. The trip row is
-  // bookkeeping and never blocks the flow, which is why it is caught
-  // separately.
-  async function groFinishStore(store) {
-    var data = groceryState.data || await groLoadAllData();
-    var s = data.stores[store];
-    var inCart = s ? s.inCart.slice() : [];
-    // Every stop carries the shopless things (see groTripItems), so
-    // whatever of them is in the trolley here is committed here — and here
-    // that means ALL of them, not the decided-only set the screen draws.
-    // The filter is right for the display (a stop should not show a row
-    // that was never on it) and wrong for the commit: a row is in the
-    // trolley only because somebody put it there, and an undecided one can
-    // arrive there when a store is added or a preference cleared mid-trip.
-    // Filter the commit too and that row is committed by nothing and drawn
-    // by nothing — in_cart forever, on no screen, with the receipt quietly
-    // under-reporting. Something physically in the cart has been bought.
-    var anyBucket = data.stores['Unassigned'];
-    inCart = inCart.concat(anyBucket ? anyBucket.inCart.slice() : []);
-    for (var i = 0; i < inCart.length; i++) {
-      await groPost('/api/grocery-list/' + inCart[i].id + '/status', { status: 'purchased' });
-    }
-    try {
-      // The stand-in is a stop, not a shop, so it is recorded as no shop:
-      // this row is the one place a stop name reaches the database, and
-      // inventing a store called "Your list" there would hand whatever
-      // reads trip history back one day a shop nobody has ever been to.
-      var recordAs = groIsStandIn(data, store) ? '' : store;
-      await groPost('/api/shopping-trips/close', { store: recordAs, item_count: inCart.length });
-    } catch (err) { /* bookkeeping only */ }
-    groceryState.tripBought += inCart.length;
-    return inCart.length;
-  }
-
-  // Anything still in a trolley when the trip is wrapped up — normally
-  // nothing, because each stop commits as you leave it, but a stop that was
-  // paused and never re-entered would otherwise strand its cart.
-  async function groFinishAnyRemainingCarts() {
-    var data = groceryState.data;
-    if (!data) return;
-    var names = Object.keys(data.stores);
-    for (var i = 0; i < names.length; i++) {
-      var s = data.stores[names[i]];
-      for (var j = 0; j < s.inCart.length; j++) {
-        await groPost('/api/grocery-list/' + s.inCart[j].id + '/status', { status: 'purchased' });
-        groceryState.tripBought += 1;
+  // ---------- A tick on the list ----------
+  // The box is the whole answer, both ways. A tick marks the thing bought
+  // — on the screen now, on the server when it can be (groTick: queued
+  // with no signal, static/grocery-offline.js) — and says "Changes saved
+  // · Put back" (S10); Put back is the same tap the other way. The row
+  // settles rather than snapping (groAnimateRowSettle, animation 3).
+  // 'purchased' straight away, not the trip's old 'in_cart' then
+  // 'purchased' at "Done at Costco": there is no stop to finish any more,
+  // and mark_grocery_item does the kitchen add and teaches the staple's
+  // rhythm on that one write exactly as it did.
+  function groTickLine(id, bought) {
+    var next = bought ? 'needed' : 'purchased';
+    groTick(id, next);
+    groAnimateRowSettle(id);
+    if (next === 'purchased') groRecordStopDone(id);
+    toastSaved({
+      label: bought ? 'Undo' : 'Put back',
+      onClick: function () {
+        groTick(id, bought ? 'purchased' : 'needed');
+        groAnimateRowSettle(id);
+        if (bought) groRecordStopDone(id);
       }
-    }
-  }
-
-  // ---------- A trip that outlives its screen ----------
-  // The snapshot above is page-view state, and the phone is the device
-  // this runs on: an installed app that is put away at the car and opened
-  // again at home has usually been relaunched in between. So the trip is
-  // mirrored into localStorage, keyed per household the way the shops
-  // question is (storesPromptOpenKey), and read back once on the first
-  // list load (groRestoreTrip). Every read and write is wrapped for the
-  // same reason as there: Safari in private mode throws on localStorage,
-  // and a remembered trip must never take the Shop tab down with it.
-  function groTripKey() {
-    var id = (typeof coachState !== 'undefined' && coachState) ? coachState.householdId : null;
-    return GRO_TRIP_KEY + (id == null ? 'x' : id);
-  }
-
-  function groTripSnapshot() {
-    return {
-      stops: groceryState.tripStops,
-      index: groceryState.tripIndex,
-      total: groceryState.tripTotal,
-      bought: groceryState.tripBought,
-      done: groceryState.tripDone,
-      lastDone: groceryState.tripLastDone,
-      kept: groceryState.wrapKept,
-      moved: groceryState.wrapMoved,
-      startedAt: groceryState.tripStartedAt
-    };
-  }
-
-  // Called from goGroceryStep, which every change to the trip goes through
-  // (a stop finished, a next stop picked, a pause, the finish), plus the
-  // one wrap-up answer that only re-renders. With no trip on, it clears the
-  // mirror rather than writing an empty one.
-  function groSaveTrip() {
-    try {
-      if (groceryState.tripStops && groceryState.tripStops.length) {
-        window.localStorage.setItem(groTripKey(), JSON.stringify(groTripSnapshot()));
-        return;
-      }
-      // No trip on. Until the mirror has been read this page view, "no
-      // trip" only means "not yet" — a step change before the list loads
-      // (an approval's "Open the list", the first sort landing) must not
-      // wipe the trip a relaunch is about to restore.
-      if (!groceryState.tripRestored) return;
-      window.localStorage.removeItem(groTripKey());
-      window.localStorage.removeItem(GRO_TRIP_KEY + 'x');
-    } catch (err) { /* the trip just stays page-view only */ }
-  }
-
-  function groReadSavedTrip() {
-    try {
-      var raw = window.localStorage.getItem(groTripKey());
-      // A trip started in the moment before /api/coaching answered was
-      // saved under the household-less key. Adopt it once, under this
-      // household's own key, the way readStoresPromptOpen does.
-      if (!raw && groTripKey() !== GRO_TRIP_KEY + 'x') {
-        raw = window.localStorage.getItem(GRO_TRIP_KEY + 'x');
-        if (raw) {
-          window.localStorage.removeItem(GRO_TRIP_KEY + 'x');
-          window.localStorage.setItem(groTripKey(), raw);
-        }
-      }
-      if (!raw) return null;
-      var saved = JSON.parse(raw);
-      if (!saved || !Array.isArray(saved.stops) || !saved.stops.length) return null;
-      // No start time means no way to tell how old it is, so it is not
-      // resumed: the three-day rule has to be able to apply to everything
-      // this reads back. (Every writer sets one — this is a guard against
-      // a hand-edited or half-written value, found on review.)
-      if (!Number(saved.startedAt)) return null;
-      return saved;
-    } catch (err) { return null; }
-  }
-
-  // Once per page view, and only when no trip is already on: the mirror
-  // is a fallback for a relaunch, never a second source of truth.
-  function groRestoreTrip() {
-    if (groceryState.tripRestored) return;
-    groceryState.tripRestored = true;
-    if (groceryState.tripStops) return;
-    var saved = groReadSavedTrip();
-    if (!saved) return;
-    groceryState.tripStops = saved.stops;
-    groceryState.tripIndex = Math.min(Math.max(Number(saved.index) || 0, 0), saved.stops.length - 1);
-    groceryState.tripTotal = Number(saved.total) || 0;
-    groceryState.tripBought = Number(saved.bought) || 0;
-    groceryState.tripDone = saved.done || {};
-    groceryState.tripLastDone = saved.lastDone || null;
-    groceryState.wrapKept = saved.kept || {};
-    groceryState.wrapMoved = saved.moved || {};
-    groceryState.tripStartedAt = Number(saved.startedAt) || null;
-  }
-
-  function groClearTrip() {
-    groceryState.tripStops = null;
-    groceryState.tripIndex = 0;
-    groceryState.tripStartedAt = null;
-    groceryState.wrapKept = {};
-    groceryState.wrapMoved = {};
-    groceryState.tripDone = {};
-    groceryState.tripLastDone = null;
-    groSaveTrip();
-  }
-
-  // A trip older than GRO_TRIP_KEEP_MS is not resumed — see the constant.
-  // Run on every list load, so it applies to a trip restored from the
-  // mirror and to one left open in a tab for days alike. Returns whether
-  // one was dropped.
-  function groDropStaleTrip(now) {
-    if (!groceryState.tripStops || !groceryState.tripStartedAt) return false;
-    var at = now === undefined ? Date.now() : now;
-    if (at - groceryState.tripStartedAt <= GRO_TRIP_KEEP_MS) return false;
-    groClearTrip();
-    return true;
-  }
-
-  // Back into the trip where it makes sense to land, rather than where
-  // the index happens to point. The index still names the stop that was
-  // just FINISHED after "Done at Costco" (WHERE NEXT never moves it), so
-  // resuming blindly reopened a finished stop — "Costco, Stop 2 of 2,
-  // everything here is in the cart" — and the only way on was to finish it
-  // a second time. Now: the current stop if it is still open with
-  // something on it, otherwise the choice of what is left (WHERE NEXT,
-  // which renderGrocery turns into the wrap-up when nothing is).
-  function groResumeTrip() {
-    var data = groceryState.data;
-    if (!data || !groceryState.tripStops) return;
-    groceryState.inCartOpen = false;
-    var here = groTripStore();
-    if (here && !groceryState.tripDone[here] && groStopRemaining(data, here) > 0) {
-      goGroceryStep('trip');
-      return;
-    }
-    goGroceryStep('next');
-  }
-
-  function groStartTrip() {
-    var data = groceryState.data;
-    if (!data) return;
-    // A paused trip is continued, never restarted over the top of itself
-    // — a second snapshot would forget which stops are already behind us.
-    // LIST's dock says "Continue the trip" in that state (groTripPausedDockHtml),
-    // so this is belt and braces for the one button reaching here.
-    if (groceryState.tripStops && groceryState.tripStops.length) {
-      groResumeTrip();
-      return;
-    }
-    var stops = groStoresWithNeeded(data);
-    if (!stops.length) return;
-    // More than one stop is a question — "Where are we headed?" — and the
-    // answer is what the snapshot opens on. One stop is no question.
-    if (stops.length > 1) {
-      goGroceryStep('headed');
-      return;
-    }
-    groBeginTrip(stops, 0);
-  }
-
-  // The snapshot itself, opening on the stop the household named. Reached
-  // from HEADED's cards (any stop) and from groStartTrip (the only stop).
-  function groBeginTrip(stops, startAt) {
-    var data = groceryState.data;
-    if (!data || !stops.length) return;
-    groceryState.tripStops = stops;
-    groceryState.tripIndex = Math.min(Math.max(startAt || 0, 0), stops.length - 1);
-    groceryState.tripBought = 0;
-    groceryState.tripTotal = groTotals(data).needed;
-    groceryState.wrapKept = {};
-    groceryState.wrapMoved = {};
-    groceryState.tripDone = {};
-    groceryState.tripLastDone = null;
-    groceryState.tripStartedAt = Date.now();
-    groceryState.inCartOpen = false;
-    goGroceryStep('trip');
-  }
-
-  // The whole trip ends: whatever is still in a trolley comes home
-  // (groFinishAnyRemainingCarts), the snapshot is cleared, and LIST says
-  // how many things did. Reached from WRAP UP's "Finish the trip" and from
-  // LIST's own "Finish the trip" while a trip is paused — one function, so
-  // the two cannot drift. Anything still needed stays needed: finishing
-  // is about what was bought, not a verdict on what wasn't.
-  function groFinishTrip(el) {
-    if (el) el.disabled = true;
-    return groDo(function () {
-      return groFinishAnyRemainingCarts();
-    }, "Couldn't finish the trip — try again.").then(function (ok) {
-      if (!ok) { if (el) el.disabled = false; return false; }
-      groceryState.justFinishedTrip = true;
-      // The whole trip just ended, not one stop of it — "Stop saved" was
-      // the per-stop line, and saying it here undersold what happened.
-      // Count this trip's own purchases (tripBought), never
-      // groTotals().done, which sums every purchase the household has
-      // ever made.
-      var home = groceryState.tripBought;
-      groClearTrip();
-      goGroceryStep('list');
-      showToast(home
-        ? 'Trip finished — ' + groPlural(home, 'thing', 'things') + ' home.'
-        : 'Trip finished.');
-      return true;
     });
   }
 
-  // ---------- Sorting many things at once ----------
-  // Both fast paths land here, and so does their undo: one request carrying
-  // every row's answer, rather than one request per row. See
-  // tools.set_grocery_items_stores for why that is a route of its own.
-  //
-  // `previous` is captured from the rows as they stand BEFORE the write —
-  // each one's store AND whether anybody had answered for it — so Undo puts
-  // the list back exactly as it was. Restoring everything to "unsorted"
-  // instead would be a different list from the one the household had a
-  // moment ago: anything already answered "Any", or already tagged to a
-  // shop it was about to be moved off, would come back as an open question.
-  function groBulkAssign(assignments, previous, doneMessage) {
-    if (!assignments.length) return;
-    groDo(function () {
-      return groPost('/api/grocery-list/store-bulk', { assignments: assignments, remember: false });
-    }, "Couldn't sort those — try again.").then(function (ok) {
-      if (!ok) return;
-      groceryState.bulkUndo = previous;
-      groOfferBulkUndo(doneMessage);
+  // What "Done at Costco" used to write and the last tick writes now: a
+  // closed record of the stop (/api/shopping-trips/close, bookkeeping
+  // nothing reads back yet — see tools.close_shopping_trip), once every
+  // row on that card is bought. Read off the screen's own copy of the
+  // list, which the tick has already moved; found by the row's card so
+  // the loose pile counts at the card it is drawn on. The stand-in and
+  // the "Anywhere" card are stops, not shops, so they are recorded as no
+  // shop — inventing a store called "Your list" there would hand whatever
+  // reads trip history back one day a shop nobody has ever been to. Never
+  // through groDo (a failure here is not a failed tick) and never queued:
+  // with no signal the stop goes unrecorded, which costs nothing today.
+  function groRecordStopDone(id) {
+    var data = groceryState.data;
+    if (!data) return;
+    var card = null;
+    groStoresOnList(data).forEach(function (name) {
+      if (card) return;
+      if (groStoreLineItems(data, name).some(function (it) { return String(it.id) === String(id); })) card = name;
     });
+    var items = card ? groStoreLineItems(data, card) : groLooseLineItems(data);
+    if (!items.length || !items.every(groIsBought)) return;
+    var recordAs = card && !groIsStandIn(data, card) ? card : '';
+    groPostJson('/api/shopping-trips/close', { store: recordAs, item_count: items.length })
+      .catch(function () { /* bookkeeping only */ });
   }
 
+  // ---------- A sort's undo ----------
+  // SORT ALL's undo is one request carrying the row's answer as it stood
+  // BEFORE the write (/store-bulk — see tools.set_grocery_items_stores):
+  // its store AND whether anybody had answered for it, so an undone row
+  // is back in the queue rather than sitting at "Any". (This was the
+  // bulk "Put all 40 at Loblaws" path's undo too, until that chooser went
+  // on 2026-09-18; the one-row case kept the route because it restores a
+  // row exactly.)
   function groOfferBulkUndo(message) {
     showToast(message, { label: 'Undo', onClick: groRunBulkUndo }, GRO_UNDO_MS);
   }
@@ -7032,22 +5864,8 @@
         // Up one level, named — never history.back(), which after any
         // wandering points at the previous VIEW rather than the parent. The
         // back gesture keeps its own, correct meaning through the shell's
-        // popstate listener. Pausing a trip keeps tripStops, so "Start the
-        // trip" resumes where it left off.
-        //
-        // WHERE NEXT is the exception, and it is still "up one level,
-        // named": its parent is the stop you were just at, not the list.
-        // Reopening it puts the shop back among the choices — what was
-        // already bought there stays bought, because it was.
-        if (groceryState.step === 'next' && groceryState.tripLastDone) {
-          var reopen = groceryState.tripLastDone;
-          delete groceryState.tripDone[reopen];
-          groceryState.tripLastDone = null;
-          var reopenAt = (groceryState.tripStops || []).indexOf(reopen);
-          groceryState.inCartOpen = false;
-          goGroceryStep('trip', reopenAt === -1 ? undefined : { tripIndex: reopenAt });
-          return;
-        }
+        // popstate listener. From SORT ALL this is "sort them later":
+        // nothing to remember, the list never opens it on its own.
         // Leaving the leftovers for the list is "later" — the list must not
         // bounce straight back into the question.
         if (groceryState.step === 'carry') groceryState.carryDeferred = true;
@@ -7103,66 +5921,15 @@
         return;
       }
 
-      // "Sort them later": the sort screens' own way out, kept as a plain
-      // link. Nothing to remember any more — the list never opens SORT on
-      // its own, so "later" is just the list.
-      case 'sort-later':
-        goGroceryStep('list');
-        return;
-
-      // The badge is still the only way in, and for a handful it still opens
-      // the queue directly: a menu of ways to answer three questions costs
-      // more than answering them. Past GRO_FAST_SORT_MIN the fast paths come
-      // first, and the queue is one of the three things they offer.
       case 'goto-plan':
         activateTab('week', true);
         return;
 
-      // The week the list is for, on its seven tiles — the same landing as
-      // every other "See the week". With no approved week loaded (Plan not
-      // opened yet this visit, or a draft, or nothing planned) it is the
-      // Plan root, which shows whatever the week is once it has loaded;
-      // renderMealsStep would fold the tiles step to the root anyway, and
-      // pushing a step the screen then folds would leave Back pointing at
-      // a screen nobody saw.
-      case 'see-week':
-        activateTab('week', true);
-        if (weekState.data && weekPlanState(weekState.data) === 'set') {
-          reviewState.view = 'days';
-          goMealsStep('review');
-        }
-        return;
-
-      case 'goto-sort': {
-        var toSort = groceryState.data ? groUnsorted(groceryState.data).length : 0;
-        goGroceryStep(toSort >= GRO_FAST_SORT_MIN ? 'sorthow' : 'sort');
-        return;
-      }
-
-      case 'goto-sortall':
+      // The "N things to sort" row is the only way in, and it opens SORT
+      // ALL — the one way to sort (Emily, 2026-09-18).
+      case 'goto-sort':
         goGroceryStep('sortall');
         return;
-
-      case 'goto-sort-one':
-        goGroceryStep('sort');
-        return;
-
-      // "Put all 40 at Loblaws" — every unsorted thing, one request, one
-      // undo. Nothing already answered is touched: groUnsorted is the queue,
-      // so a row the household deliberately put somewhere else keeps its
-      // answer.
-      case 'sort-all-at': {
-        if (!groceryState.data) return;
-        var bulkStore = el.dataset.store || '';
-        var bulkItems = groUnsorted(groceryState.data);
-        el.disabled = true;
-        groBulkAssign(
-          bulkItems.map(function (it) { return { item_id: it.id, store: bulkStore, decided: true }; }),
-          groPreviousStores(bulkItems),
-          groPlural(bulkItems.length, 'thing', 'things') + ' at ' + bulkStore + '.'
-        );
-        return;
-      }
 
       // One row of SORT ALL: the chip lights, the row leaves, the answer
       // is written — see groSortAllAssign. The chip is lit by hand because
@@ -7181,40 +5948,10 @@
         goGroceryStep('list');
         return;
 
-      case 'start-trip':
-        groStartTrip();
+      // ----- the list's own tick (see groTickLine) -----
+      case 'line-tick':
+        groTickLine(id, el.dataset.bought === '1');
         return;
-
-      // HEADED's answer: the trip starts, and it starts here. The stops
-      // are read fresh rather than from the screen, so a list that changed
-      // while the question was up (the other adult ticking something off)
-      // is snapshotted as it is now; a store that is no longer on it falls
-      // back to the first stop rather than to nothing.
-      case 'head-for': {
-        if (!groceryState.data) return;
-        // The back gesture can step onto this screen with a trip already
-        // on (HEADED, TRIP and NEXT each push a history entry). A live
-        // trip is never snapshotted again — that would forget which
-        // stops are behind us and the count of what came home — so the
-        // card is read as WHERE NEXT would read it: into that stop if it
-        // is still open, else wherever resuming makes sense. Same guard
-        // groStartTrip has (found by review).
-        if (groceryState.tripStops && groceryState.tripStops.length) {
-          var liveAt = groceryState.tripStops.indexOf(el.dataset.store);
-          if (liveAt !== -1 && !groceryState.tripDone[el.dataset.store] &&
-              groStopRemaining(groceryState.data, el.dataset.store) > 0) {
-            groceryState.inCartOpen = false;
-            goGroceryStep('trip', { tripIndex: liveAt });
-          } else {
-            groResumeTrip();
-          }
-          return;
-        }
-        var headStops = groStoresWithNeeded(groceryState.data);
-        var headAt = headStops.indexOf(el.dataset.store);
-        groBeginTrip(headStops, headAt === -1 ? 0 : headAt);
-        return;
-      }
 
       case 'add':
         // Straight to /api/grocery-list/add — see groAddItem. The ask bar
@@ -7533,16 +6270,10 @@
         });
         return;
 
-      // ----- SORT -----
-      case 'assign':
-        el.disabled = true;
-        groSortAssign(id, el.dataset.store);
-        return;
-
-      // "Add a new store" on any store picker: arm the way back, open the
-      // Stores section of What we know over this screen. The sheet's own
-      // close is the way out; a store saved in it comes straight back here
-      // (groUsualStoreAdded).
+      // "Add a new store" on SORT ALL's store picker: arm the way back,
+      // open the Stores section of What we know over this screen. The
+      // sheet's own close is the way out; a store saved in it comes
+      // straight back here (groUsualStoreAdded).
       case 'store-add':
         groceryState.storeReturn = {
           step: groceryState.step,
@@ -7554,13 +6285,14 @@
         groOpenStoresSheet();
         return;
 
-      // "Wait, I already have this" — on the queue, the one-screen sort or
-      // a LIST row's ⋯. The pre-shop drop (soft-remove, undo, on the
-      // wrap-up), never an inventory write — see groHaveItPillHtml.
+      // "Wait, I already have this" — on SORT ALL or a LIST row's ⋯. The
+      // pre-shop drop (soft-remove, undo from the toast and from the
+      // list's "Not needed this week" foot), never an inventory write —
+      // see groHaveItPillHtml.
       case 'have-it': {
         var haveName = el.dataset.name || 'That';
         var haveId = id;
-        var onSortScreen = GRO_SORT_STEPS.indexOf(groceryState.step) !== -1;
+        var onSortScreen = groceryState.step === 'sortall';
         el.disabled = true;
         groceryState.openRowId = null;
         groceryState.substOpenId = null;
@@ -7598,7 +6330,7 @@
         var substHave = el.dataset.have === '1';
         var substName = el.dataset.name || 'That';
         var substId = id;
-        var onSort = GRO_SORT_STEPS.indexOf(groceryState.step) !== -1;
+        var onSort = groceryState.step === 'sortall';
         el.disabled = true;
         groceryState.openRowId = null;
         groceryState.substOpenId = null;
@@ -7625,159 +6357,6 @@
         return;
       }
 
-      // The kitchen-inventory version, kept for anything else that still
-      // calls it; the sorting screens use 'have-it' above.
-      case 'already-have':
-        el.disabled = true;
-        groDo(function () {
-          return groPostEmpty('/api/grocery-list/' + id + '/already-have');
-        }, "Couldn't move that to the kitchen — try again.").then(function (ok) {
-          if (ok) groAdvanceSort();
-        });
-        return;
-
-      // The item is getting picked up somewhere that isn't one of this
-      // household's stores, so it comes off the sort queue the same way
-      // "Have it" does, and shows up under "Already sorted this week" on
-      // WRAP UP instead. Same /exclude route as ever.
-      case 'triage-exclude':
-        el.disabled = true;
-        groSetAside(id, el.dataset.name, groAdvanceSort);
-        return;
-
-      // ----- TRIP -----
-      // Both ticks go through groTick rather than groDo: on the screen at
-      // once, queued if there is no signal. These two are the whole of what
-      // works offline, on purpose — see the "No signal" section above.
-      case 'trip-toggle':
-        groTick(id, 'in_cart');
-        groAnimateRowSettle(id);
-        return;
-
-      case 'uncheck':
-        groTick(id, 'needed');
-        groAnimateRowSettle(id);
-        return;
-
-      case 'toggle-incart':
-        groceryState.inCartOpen = !groceryState.inCartOpen;
-        renderGrocery();
-        return;
-
-      // Finishing a stop ends THAT stop and nothing else. It used to march
-      // straight into the next one in snapshot order, which assumed a route
-      // nobody had said they were driving; now the household is asked (the
-      // WHERE NEXT step), and the trip only ends when they say so or when
-      // there is genuinely nothing left to walk into.
-      case 'stop-done': {
-        var doneStore = groTripStore();
-        el.disabled = true;
-        groDo(function () {
-          return groFinishStore(doneStore);
-        }, "Couldn't finish this stop — try again.").then(function (ok) {
-          if (!ok) { el.disabled = false; return; }
-          groceryState.inCartOpen = false;
-          if (doneStore) {
-            groceryState.tripDone[doneStore] = true;
-            groceryState.tripLastDone = doneStore;
-          }
-          var stillToGo = groceryState.data ? groRemainingStops(groceryState.data) : [];
-          goGroceryStep(stillToGo.length ? 'next' : 'wrap');
-        });
-        return;
-      }
-
-      // WHERE NEXT's answers. The stop is found in the SNAPSHOT rather than
-      // in today's list, so picking one cannot renumber the others, and a
-      // finished stop is never on this screen to be picked (groRemainingStops
-      // filters on tripDone).
-      case 'next-stop': {
-        var goTo = (groceryState.tripStops || []).indexOf(el.dataset.store);
-        if (goTo === -1) return;
-        groceryState.inCartOpen = false;
-        goGroceryStep('trip', { tripIndex: goTo });
-        return;
-      }
-
-      case 'trip-end':
-        goGroceryStep('wrap');
-        return;
-
-      // ----- WRAP UP -----
-      // "Couldn't find it" keeps the row exactly as it is (needed). There is
-      // no note column on grocery_items, so nothing is written — this only
-      // records that the question has been answered, so the list stops
-      // asking about it in this wrap-up.
-      case 'wrap-keep':
-        groceryState.wrapKept[id] = true;
-        groSaveTrip();
-        renderGrocery();
-        return;
-
-      // "Will grab elsewhere" opens the other stores under the row; the
-      // move itself is 'wrap-move'. The old answer excluded the row on the
-      // spot — see groWrapHtml.
-      case 'wrap-else':
-        groceryState.wrapElseId = groceryState.wrapElseId === id ? null : id;
-        renderGrocery();
-        return;
-
-      case 'wrap-move':
-        el.disabled = true;
-        groWrapMove(id, el.dataset.name || 'That', el.dataset.store || '', el.dataset.from || '');
-        return;
-
-      // Off the list for this week — the pre-shop drop, the same route
-      // "Have it" uses (drop_grocery_item_pre_shop: soft-removed, listed
-      // under "Already sorted this week", undone from the toast). Not
-      // bought, not inventory, and next week's plan asks again.
-      case 'wrap-drop': {
-        var dropName = el.dataset.name || 'That';
-        var dropId = id;
-        el.disabled = true;
-        groDo(function () {
-          return groPost('/api/grocery-list/' + dropId + '/pre-shop', { decision: 'drop', author: 'user' });
-        }, "Couldn't update that — try again.").then(function (ok) {
-          if (!ok) return;
-          showToast(dropName + ' off the list for this week', {
-            label: 'Undo',
-            onClick: function () {
-              groDo(function () {
-                return groPostEmpty('/api/grocery-list/' + dropId + '/pre-shop-undo');
-              }, "Couldn't undo that — try again.");
-            }
-          });
-        });
-        return;
-      }
-
-      case 'finish-trip':
-        groFinishTrip(el);
-        return;
-
-      // ----- leaving and coming back -----
-      // "Finish later", in the dock of every trip screen: out to the list
-      // with the trip kept exactly as it stands — what is in the trolley
-      // stays in the trolley, what is behind us stays behind us — so the
-      // shopper who has done one store and is going home is not held in
-      // the trip until every store is done. The crumb on TRIP and WRAP UP
-      // already landed here; this is the same exit where the thumb is,
-      // named for what it does, and it is the one WHERE NEXT was missing
-      // (its crumb reopens the stop just finished, on purpose).
-      case 'trip-pause':
-        groceryState.inCartOpen = false;
-        goGroceryStep('list');
-        return;
-
-      // LIST's dock while a trip is paused (groTripPausedDockHtml).
-      case 'trip-resume':
-        groResumeTrip();
-        return;
-
-      case 'trip-finish-now':
-        groFinishTrip(el);
-        return;
-
       case 'flag-toggle':
         groceryState.openFlagKey = groceryState.openFlagKey === el.dataset.key ? null : el.dataset.key;
         renderGrocery();
@@ -7797,26 +6376,16 @@
         renderGrocery();
         return;
 
-      // Undo either kind of "already have" decision via the one existing
-      // pre-shop-undo endpoint. Restoring the grocery row to 'needed' is
-      // identical either way; the backend also deletes the inventory row a
-      // Have it/Already have action created, but only when that write didn't
-      // merge into pre-existing stock (see undo_pre_shop_drop/
-      // already_have_inventory_id).
+      // "Actually, I need it" on the "Not needed this week" foot: the one
+      // pre-shop-undo endpoint, whichever flow removed the row. Restoring
+      // it to 'needed' is identical either way; the backend also deletes
+      // the inventory row an already-have action created, but only when
+      // that write didn't merge into pre-existing stock (see
+      // undo_pre_shop_drop / already_have_inventory_id).
       case 'undo-already-have':
         el.disabled = true;
         groDo(function () {
           return groPostEmpty('/api/grocery-list/' + id + '/pre-shop-undo');
-        }, "Couldn't undo that — try again.");
-        return;
-
-      // Restores an "Elsewhere" exclusion — reuses the existing include
-      // endpoint, which already had a backend undo but no UI control
-      // anywhere until this row.
-      case 'undo-elsewhere':
-        el.disabled = true;
-        groDo(function () {
-          return groPostEmpty('/api/grocery-list/' + id + '/include');
         }, "Couldn't undo that — try again.");
         return;
 
@@ -7883,73 +6452,14 @@
     renderGrocery();
   }
 
+  // One answer given on SORT ALL by a route other than a chip (Have it,
+  // Use something else): the row leaves through the re-render, and the
+  // last one makes the finish ("All sorted." and the way back,
+  // groSortAllHtml).
   function groAdvanceSort() {
     var left = groceryState.data ? groUnsorted(groceryState.data).length : 0;
-    if (left) {
-      renderGrocery();
-      return;
-    }
-    // SORT ALL has a finish of its own ("All sorted." and the way back,
-    // groSortAllHtml); the queue's finish is the list and a toast.
-    if (groceryState.step === 'sortall') {
-      groceryState.sortAllDone = true;
-      renderGrocery();
-      return;
-    }
-    goGroceryStep('list');
-    showToast('All sorted.');
-  }
-
-  // One SORT answer: the row's store, then on to the next thing. Shared by
-  // the queue's pills and by a store that arrives from the Stores sheet
-  // (groUsualStoreAdded), so the two cannot drift.
-  function groSortAssign(id, toStore) {
-    var assignResult = null;
-    return groDo(function () {
-      return groPost('/api/grocery-list/' + id + '/store', { store: toStore }).then(function (r) { assignResult = r; return r; });
-    }, "Couldn't assign that — try again.").then(function (ok) {
-      if (!ok) return false;
-      // The "Any" pill sends an empty store, which on its own reads as
-      // never-sorted. The row is marked answered server-side instead
-      // (grocery_items.store_decided, set by the same call), so the
-      // choice survives a reload — it used to live in a page-view map
-      // and the queue asked again on the next refresh.
-      groAdvanceSort();
-      if (assignResult && assignResult.needs_confirmation) {
-        groOfferRememberToast(assignResult.item, assignResult.store, id);
-      }
-      return true;
-    });
-  }
-
-  // WRAP UP's "Will grab elsewhere" answer: the line moves to that store's
-  // list — this week only (remember: false), because "Costco was out of
-  // eggs, I'll get them at Metro" is not "eggs come from Metro now", and
-  // the remembered preference must not quietly follow a one-off. Undo
-  // puts it back where it was, the same way.
-  function groWrapMove(id, name, store, from) {
-    groceryState.wrapElseId = null;
-    return groDo(function () {
-      return groPost('/api/grocery-list/' + id + '/store', { store: store, remember: false });
-    }, "Couldn't move that — try again.").then(function (ok) {
-      if (!ok) return false;
-      // Answered: the row reads "Grabbing at Metro" from here on (it is
-      // still needed, so it would be asked about again otherwise).
-      groceryState.wrapMoved[String(id)] = store;
-      groSaveTrip();
-      renderGrocery();
-      showToast(name + ' moved to ' + store, {
-        label: 'Undo',
-        onClick: function () {
-          delete groceryState.wrapMoved[String(id)];
-          groSaveTrip();
-          groDo(function () {
-            return groPost('/api/grocery-list/' + id + '/store', { store: from, remember: false });
-          }, "Couldn't undo that — try again.");
-        }
-      });
-      return true;
-    });
+    if (!left && groceryState.step === 'sortall') groceryState.sortAllDone = true;
+    renderGrocery();
   }
 
   // ---------- "Add a new store", and the way back ----------
@@ -7958,8 +6468,8 @@
   // §6: everything that isn't one of the four screens is a state, a sheet
   // or a step). So "back to this screen" is the sheet closing; what this
   // adds is the hand-off. The chat's "/memory" href goes through the
-  // Kitchen tab (followActionHref) and would have lost the wrap-up; this
-  // never changes tabs.
+  // Kitchen tab (followActionHref) and would have lost the sort screen;
+  // this never changes tabs.
   function groOpenStoresSheet() {
     if (typeof openKitchenSheet !== 'function') return;
     openKitchenSheet('stores');
@@ -7971,8 +6481,7 @@
   // Called by What we know when a store is saved there (wwkAddStore). The
   // list's own copy of the shops learns it either way; with a return
   // armed, the sheet closes and the new store is the answer on the screen
-  // it was opened from: the SORT queue's row and SORT ALL's row are
-  // assigned to it, WRAP UP's line moves to it.
+  // it was opened from: SORT ALL's row is assigned to it.
   function groUsualStoreAdded(name) {
     if (!groIsBuilt() || !name) return;
     if (groceryState.usualStores.indexOf(name) === -1) {
@@ -7984,14 +6493,6 @@
     if (typeof closeKitchenSheet === 'function') closeKitchenSheet();
     if (back.kind === 'sortall') {
       groSortAllAssign(back.id, name);
-      return;
-    }
-    if (back.kind === 'sort') {
-      groSortAssign(back.id, name);
-      return;
-    }
-    if (back.kind === 'wrap') {
-      groWrapMove(back.id, back.name || 'That', name, back.from || '');
       return;
     }
     renderGrocery();

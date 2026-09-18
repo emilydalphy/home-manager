@@ -146,46 +146,48 @@ def test_shop_shows_the_band_on_the_root_and_the_crumb_and_head_on_steps():
     render = _function("renderGrocery")
     assert "var onRoot = step === 'list';" in render
     assert "band.hidden = !onRoot;" in render and "head.hidden = onRoot;" in render
-    # The sub-line is the paused trip when there is one ("Trip in progress ·
-    # 1 stop left", 2026-09-13 — see tests/test_shop_trip_exit.py) and
-    # empty otherwise; groTripPausedLine returns '' with no trip on.
-    assert "setRootBand(panel, 'gro-band', { eyebrow: groBandEyebrow(data), sub: groTripPausedLine(data) });" in render
+    # The eyebrow is "This week" and the line counts the list — "14 things,
+    # two stores." (Emily's shopping-list mockup, 2026-09-18); the line is
+    # empty with nothing on the list.
+    assert "setRootBand(panel, 'gro-band', { eyebrow: groBandEyebrow(data), sub: groBandLine(data) });" in render
 
 
 @_needs_node
-def test_shops_eyebrow_counts_the_list_and_falls_back_to_the_date():
-    """Under BAND_IDENTITY 'none'/'mark' — the eyebrow as it was; under
-    'wordmark' the same text leads the sub-line with the day in front of
-    it (tests/test_identity_build.py)."""
+def test_shops_band_says_this_week_and_counts_the_list():
+    """"This week" over "14 things, two stores." — counted from the data
+    (every row on the cards, bought or not; the stores with a card). Under
+    'wordmark' the eyebrow's text leads the sub-line
+    (tests/test_identity_build.py)."""
     script = (
         "function groPlural(n, one, many){ return n + ' ' + (n === 1 ? one : many); }\n"
-        "function groTotals(d){ return { needed: d.needed }; }\n"
-        "function groStoresWithNeeded(d){ return d.stops; }\n"
-        # 2026-09-16 ("One list is fine" can start a trip): the eyebrow drops
-        # the stops clause for a stop that is the one-list stand-in, so it
-        # asks groIsStandIn now. That predicate runs for real here — only
-        # its groPillStores is stubbed, from the same fake the neighbours
-        # use, where the stops ARE the shops. The stops below are ordinary
-        # shop names, so the wording this test is about is unchanged.
+        "function groTotals(d){ return { all: d.all }; }\n"
+        "function groStoresOnList(d){ return d.stops; }\n"
         "var GRO_ONE_LIST_STOP = 'Your list';\n"
-        "function groPillStores(d){ return d.stops || []; }\n"
+        "function groPillStores(d){ return d.shops || d.stops || []; }\n"
         + _function("groIsStandIn") + "\n  }\n"
         + "var BAND_IDENTITY = 'none';\n"
         + _function("bandDateLabel") + "\n  }\n"
-        + _function("groBandEyebrow") + "\n  }\n"
+        # The band's constants and the three builders, as one region.
+        + SHELL_JS[SHELL_JS.index("  var GRO_BAND_EYEBROW = "):SHELL_JS.index("  // ---------- LIST ----------")]
         + "console.log(JSON.stringify({"
-        + " many: groBandEyebrow({ needed: 60, stops: ['A'] }),"
-        + " two: groBandEyebrow({ needed: 2, stops: ['A', 'B'] }),"
-        + " none: groBandEyebrow({ needed: 0, stops: [] }),"
-        + " nodata: groBandEyebrow(null)"
+        + " eyebrow: groBandEyebrow({ all: 60, stops: ['A'] }),"
+        + " one: groBandLine({ all: 60, stops: ['A'] }),"
+        + " two: groBandLine({ all: 14, stops: ['A', 'B'] }),"
+        + " oneList: groBandLine({ all: 3, stops: ['Your list'], shops: [] }),"
+        + " loose: groBandLine({ all: 2, stops: [] }),"
+        + " none: groBandLine({ all: 0, stops: [] }),"
+        + " nodata: groBandLine(null)"
         + "}));"
     )
     out = _node(script)
-    assert out["many"] == "60 things · 1 stop"
-    assert out["two"] == "2 things · 2 stops"
-    # With nothing to buy the empty moment says so; the eyebrow says the day.
-    assert re.match(r"^[A-Z][a-z]+day, [A-Z][a-z]{2} \d{1,2}$", out["none"]), out["none"]
-    assert out["nodata"] == out["none"]
+    assert out["eyebrow"] == "This week"
+    assert out["one"] == "60 things, one store."
+    assert out["two"] == "14 things, two stores."
+    assert out["oneList"] == "3 things.", "a household that named no shop is not told it has one"
+    assert out["loose"] == "2 things."
+    # With nothing to buy the empty moment says so; the band's line is empty.
+    assert out["none"] == ""
+    assert out["nodata"] == ""
 
 
 def test_the_band_says_one_thing_once():
@@ -307,11 +309,11 @@ def test_the_prep_days_card_left_the_cook_root():
 # Docks on the roots
 # --------------------------------------------------------------------------
 
-def test_shops_action_sits_at_the_foot_of_the_panel():
-    """"Start the trip" was already in the dock element, but on a short list
-    the element sat straight under the last card — it read as a button in
-    the page. The container fills the panel now and the dock pins to its
-    foot, exactly as Now's does."""
+def test_shops_dock_sits_at_the_foot_of_the_panel():
+    """Shop's dock element (SORT ALL's finish, "Go to Plan" over an empty
+    list — the root itself has none since 2026-09-18) pins to the foot of
+    the panel rather than sitting under the last card, exactly as Now's
+    does."""
     assert ".grocery-content .gro-dock { margin-top: auto; }" in SHELL_CSS
     assert ".today-content .today-dock { margin-top: auto; }" in SHELL_CSS
 

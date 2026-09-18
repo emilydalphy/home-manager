@@ -45,7 +45,7 @@ import pytest
 
 import nodeharness
 from app import tools
-from test_grocery_fast_sort import _CLICK, _FIXTURE, _STUB, _grocery_block
+from shop_harness import CLICK as _CLICK, FIXTURE as _FIXTURE, STUB as _STUB, grocery_block as _grocery_block
 
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
@@ -454,7 +454,7 @@ def test_the_finish_stays_up_rather_than_folding_to_the_list_and_back_is_the_lis
     root; the finish is the one exception, and only while it is a finish."""
     src = SHELL_JS
     fold = src[src.index("    // A step that stopped making sense under its own feet"):src.index("    if (groceryState.step === 'carry' && !groceryState.carried.length)")]
-    assert "!(groceryState.step === 'sortall' && groceryState.sortAllDone)" in fold
+    assert "groceryState.step === 'sortall' && !groUnsorted(data).length && !groceryState.sortAllDone" in fold
     out = _node("""
 setUp(1);
 groceryState.step = 'sortall';
@@ -529,9 +529,12 @@ def test_nothing_is_staged_and_the_save_button_is_gone():
     assert "them sorted" not in SHELL_JS
 
 
-def test_the_fast_path_offer_no_longer_promises_tap_only_the_exceptions():
+def test_the_fast_path_offer_is_gone_with_the_chooser():
+    """The chooser that offered this screen went on 2026-09-18 (sorting has
+    one way); the promise it used to make lives in this screen's own
+    behaviour now."""
     assert "Tap only the exceptions." not in SHELL_JS
-    assert '<span class="gro-howrow-sub">One tap each.</span>' in SHELL_JS
+    assert "gro-howrow-sub" not in SHELL_JS
 
 
 def test_the_collapse_uses_the_leaving_curve_and_the_fast_token_only():

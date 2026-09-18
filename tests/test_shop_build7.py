@@ -65,27 +65,29 @@ def test_the_list_never_lands_on_sort_by_itself():
                      if not l.lstrip().startswith("//"))
     callers = re.findall(r"(\w+)\(\{ refill: true \}\)", code)
     assert sorted(callers) == ["refreshGroceryPanel", "refreshGrocerySurfaces"], callers
-    # The only ways into a sort step are the list's own row and its fast paths.
-    assert "case 'goto-sort': {" in SHELL_JS
-    for step in ("'sort'", "'sorthow'", "'sortall'"):
-        assert "goGroceryStep(%s, { push: false" % step not in SHELL_JS
+    # The only way into the sort screen is the list's own row (one way to
+    # sort since 2026-09-18: SORT ALL).
+    assert "case 'goto-sort':\n        goGroceryStep('sortall');" in SHELL_JS
+    assert "goGroceryStep('sortall', { push: false" not in SHELL_JS
 
 
-def test_later_is_a_link_on_both_sort_screens_and_the_crumb_still_leaves():
-    assert SHELL_JS.count('data-gro="sort-later">Sort them later</button>') == 2
-    later = SHELL_JS[SHELL_JS.index("case 'sort-later':"):][:200]
-    assert "goGroceryStep('list');" in later
+def test_later_is_the_crumb_and_it_still_leaves():
+    """"Sort them later" was a link on the sort screens; since 2026-09-18
+    it is simply leaving by the crumb."""
+    assert 'data-gro="sort-later"' not in SHELL_JS
     back = SHELL_JS[SHELL_JS.index("case 'step-back':"):]
-    assert "if (groceryState.step === 'carry') groceryState.carryDeferred = true;" in back[:1600]
-    assert "sortDeferred" not in back[:1600]
+    assert "goGroceryStep('list');" in back[:1200]
+    assert "if (groceryState.step === 'carry') groceryState.carryDeferred = true;" in back[:1200]
+    assert "sortDeferred" not in back[:1200]
 
 
 def test_sort_only_ever_asks_its_own_question():
-    """"Before the list" was the automatic landing's title; with no
-    automatic landing the SORT and SORT HOW heads carry one title."""
+    """"Before the list" was the automatic landing's title; "Where does
+    this go?" the queue's. SORT ALL is named for what it does."""
     head = _fn("groHeadFor")
     assert "'Before the list'" not in head, "the old title is a comment now, never copy"
-    assert head.count("title: 'Where does this go?'") == 2
+    assert "title: 'Where does this go?'" not in head
+    assert head.count("title: 'Sort them all'") == 1
 
 
 def test_the_head_lost_its_mic_and_refresh():

@@ -19,34 +19,27 @@ What stood in front of it, read off the code:
     the "N things to sort" row — and left off every stop of the trip.
 
 Now: the card sits at the top of the list; groMaybeSortFirst is
-groMaybeCarryFirst and asks about last week's leftovers only; SORT is
+groMaybeCarryFirst and asks about last week's leftovers only; SORT ALL is
 reached from the "N things to sort" row and nowhere else; the unsorted
-things are a "Not sorted yet · N" card under the store cards and ride
-along on the trip like the "Any" ones; an Add lands on the list with the
-add box focused and an aisle guessed locally (groGuessCategory) rather
-than a flat 'other'.
+things are rows on the list — on the "Anywhere" card since 2026-09-18
+("the list is the checklist"), on a "Not sorted yet" card of their own
+before that — tickable like everything else; an Add lands on the list
+with the add box focused and an aisle guessed locally (groGuessCategory)
+rather than a flat 'other'.
 
-Behaviour runs under node against shell.js's own functions (the
-tests/test_shop_trip_exit.py harness). The tab-open and add tests drive
-loadGrocery / groAddItem end to end with canned fetch answers, so they
-are the real paths, not a re-statement of them.
+Behaviour runs under node against shell.js's own functions
+(tests/shop_harness). The tab-open and add tests drive loadGrocery /
+groAddItem end to end with canned fetch answers, so they are the real
+paths, not a re-statement of them.
 """
 from __future__ import annotations
 
 import json
-import shutil
-from pathlib import Path
 
 import nodeharness
-import pytest
-from test_shop_trip_exit import _STUB, _grocery_block
+from shop_harness import CLICK as _CLICK, SHELL_JS, STUB as _STUB, grocery_block as _grocery_block, needs_node
 
-REPO = Path(__file__).resolve().parent.parent
-SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
-
-_needs_node = pytest.mark.skipif(
-    shutil.which("node") is None, reason="node is needed to execute the shell's own functions"
-)
+_needs_node = needs_node
 
 # A panel the harness does not otherwise have, so loadGrocery runs (it
 # returns early without one) and groAddItem finds its add row. renderGrocery
@@ -85,16 +78,17 @@ fetch = function (url, opts) {
 };
 groceryState.usualStores = ['Costco', 'Metro'];
 groceryState.storesPromptDismissed = true;
-groceryState.tripRestored = true;
-function posts(url) { return POSTS.filter(function (p) { return p.url.indexOf(url) !== -1; }); }
 function cards(html) {
   return (html.match(/gro-store-name">([^<]*)</g) || []).map(function (m) { return /gro-store-name">([^<]*)</.exec(m)[1]; });
+}
+function counts(html) {
+  return (html.match(/gro-store-count">([^<]*)</g) || []).map(function (m) { return /gro-store-count">([^<]*)</.exec(m)[1]; });
 }
 """
 
 
 def _node(body: str):
-    res = nodeharness.run_node(_STUB + _grocery_block() + _PATCH + body, timeout=30)
+    res = nodeharness.run_node(_STUB + _grocery_block() + _CLICK + _PATCH + body, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout.strip())
 
@@ -286,85 +280,92 @@ def test_the_categoriser_only_knows_aisles_the_server_groups_by():
 
 
 @_needs_node
-def test_the_not_sorted_yet_card_lists_the_unsorted_rows_after_the_stores():
+def test_the_anywhere_card_lists_the_unsorted_rows_after_the_stores():
+    """The unsorted things are rows on the list — on the "Anywhere" card,
+    last, after every store card (2026-09-18; a "Not sorted yet" card of
+    their own before that) — each with its ⋯ and its tick."""
     out = _node("""
 loadGrocery().then(function () {
   var html = groListHtml(groceryState.data);
-  var card = html.slice(html.indexOf('gro-unsorted'));
+  var card = html.slice(html.indexOf('gro-anywhere'));
   console.log(JSON.stringify({
-    cards: cards(html), card: card,
-    order: [html.indexOf('data-gro="goto-sort"'), html.indexOf('Costco'), html.indexOf('gro-unsorted')]
+    cards: cards(html), counts: counts(html), card: card,
+    order: [html.indexOf('data-gro="goto-sort"'), html.indexOf('data-store="Costco"'), html.indexOf('gro-anywhere')]
   }));
 });
 """)
-    assert out["cards"] == ["Costco · 1", "Not sorted yet &middot; 2"]
+    assert out["cards"] == ["Costco", "Anywhere"]
+    assert out["counts"] == ["0 of 1", "0 of 2"]
     card = out["card"]
     assert "Milk" in card and "Foil" in card
-    assert '<span class="gro-qty">2 L</span>' in card
+    assert '<span class="gro-line-qty">2 L</span>' in card
     assert card.count('data-gro="row-menu"') == 2, "each row keeps its ⋯, which is how one gets a store from here"
-    assert ">Dairy<" in card and ">Other<" in card, "aisle eyebrows, like every other card"
-    assert 'class="gro-store-avatar gro-anywhere-avatar">?</span>' in card
+    assert card.count('data-gro="line-tick"') == 4, "and its tick (the row and its box)"
     a, b, c = out["order"]
-    assert 0 <= a < b < c, "the sort row at the top, the stores, then the unsorted things"
+    assert 0 <= a < b < c, "the sort row at the top, the stores, then the loose things"
 
 
 @_needs_node
-def test_any_and_not_sorted_are_two_cards_and_a_row_is_never_on_both():
+def test_any_and_not_sorted_share_the_anywhere_card_and_a_row_is_on_it_once():
     out = _node("""
 BY_STORE.stores[1].sections[0].items.push({ id: 4, item: 'Eggs', quantity: '12', store: '', store_decided: 1, category: 'dairy' });
 loadGrocery().then(function () {
   var html = groListHtml(groceryState.data);
-  var anywhere = html.slice(html.indexOf('Anywhere &middot;'), html.indexOf('gro-unsorted'));
-  var unsorted = html.slice(html.indexOf('gro-unsorted'));
-  console.log(JSON.stringify({ cards: cards(html),
+  var anywhere = html.slice(html.indexOf('gro-anywhere'));
+  console.log(JSON.stringify({ cards: cards(html), counts: counts(html),
     anywhereHasEggs: anywhere.indexOf('Eggs') !== -1, anywhereHasMilk: anywhere.indexOf('Milk') !== -1,
-    unsortedHasEggs: unsorted.indexOf('Eggs') !== -1, unsortedHasMilk: unsorted.indexOf('Milk') !== -1,
-    eggsRows: (html.match(/Eggs</g) || []).length }));
+    eggsRows: (html.match(/Eggs</g) || []).length, toSort: groUnsorted(groceryState.data).length }));
 });
 """)
-    assert out["cards"] == ["Costco · 1", "Anywhere &middot; 1", "Not sorted yet &middot; 2"]
-    assert out["anywhereHasEggs"] and not out["anywhereHasMilk"]
-    assert out["unsortedHasMilk"] and not out["unsortedHasEggs"]
+    assert out["cards"] == ["Costco", "Anywhere"]
+    assert out["counts"] == ["0 of 1", "0 of 3"]
+    assert out["anywhereHasEggs"] and out["anywhereHasMilk"]
     assert out["eggsRows"] == 1
+    assert out["toSort"] == 2, "the answered 'Any' row is not to sort; the other two are"
 
 
 @_needs_node
 def test_a_list_that_is_nothing_but_unsorted_things_still_reads_and_still_shops():
     """No shop has anything tagged yet (a fresh approval, no remembered
-    stores): the rows are on the list under their heading, and the trip
-    can start — the most-used shop stands in, exactly as it does for a
-    list answered 'Anywhere' throughout. Until 2026-09-15 this household
-    saw the sort queue and, from the list, no 'Start the trip'."""
+    stores): the rows are on the list, tickable, on the one card there is.
+    Until 2026-09-15 this household saw the sort queue instead."""
     out = _node("""
 BY_STORE.stores = [BY_STORE.stores[1]];
 loadGrocery().then(function () {
-  console.log(JSON.stringify({ step: groceryState.step, cards: cards(groListHtml(groceryState.data)),
-    stops: groStoresWithNeeded(groceryState.data), dock: groDockHtml(groceryState.data, 'list') }));
+  var html = groListHtml(groceryState.data);
+  console.log(JSON.stringify({ step: groceryState.step, cards: cards(html), ticks: (html.match(/data-gro="line-tick"/g) || []).length / 2,
+    band: groBandLine(groceryState.data), dock: groDockHtml(groceryState.data, 'list') }));
 });
 """)
     assert out["step"] == "list"
-    assert out["cards"] == ["Not sorted yet &middot; 2"]
-    assert out["stops"] == ["Costco"]
-    assert 'data-gro="start-trip"' in out["dock"]
+    assert out["cards"] == ["Anywhere"]
+    assert out["ticks"] == 2
+    assert out["band"] == "2 things."
+    assert out["dock"] == "", "no dock on the root: ticking a row is the action"
 
 
 @_needs_node
-def test_a_household_with_one_shop_or_none_keeps_its_plain_list():
-    """groUnsorted is empty when sorting isn't a question, so the heading
-    never appears for them — their loose pile is the whole list, headingless
-    (Emily, 2026-09-09: 'One list is fine' means what it says)."""
+def test_a_household_with_one_shop_or_none_keeps_its_one_card():
+    """groUnsorted is empty when sorting isn't a question, so "Anywhere"
+    never appears for them — their loose pile is the whole list, on the
+    one card there is: their shop's, or "Your list" for a household that
+    named none (Emily, 2026-09-09: 'One list is fine' means what it says)."""
     out = _node("""
 BY_STORE.stores = [BY_STORE.stores[1]];
 groceryState.usualStores = [];
 loadGrocery().then(function () {
   var none = groListHtml(groceryState.data);
+  var noneBand = groBandLine(groceryState.data);
   groceryState.usualStores = ['Costco'];
   var one = groListHtml(groceryState.data);
-  console.log(JSON.stringify({ none: cards(none), noneHasMilk: none.indexOf('Milk') !== -1, one: cards(one) }));
+  console.log(JSON.stringify({ none: cards(none), noneHasMilk: none.indexOf('Milk') !== -1, noneBand: noneBand,
+    one: cards(one), oneCounts: counts(one), oneBand: groBandLine(groceryState.data) }));
 });
 """)
-    assert out["none"] == [] and out["noneHasMilk"] is True
-    assert out["one"] == ["Costco · 2"]
+    assert out["none"] == ["Your list"] and out["noneHasMilk"] is True
+    assert out["noneBand"] == "2 things.", "a household that named no shop is not told it has one"
+    assert out["one"] == ["Costco"] and out["oneCounts"] == ["0 of 2"]
+    assert out["oneBand"] == "2 things, one store."
 
 
 # --- 5. the store question is a card on the list, not the screen ------------
@@ -392,31 +393,16 @@ loadGrocery().then(function () {
     assert out["asking"]["step"] == "list"
     assert out["asking"]["card"] is True
     assert out["asking"]["listUnder"] is True, "the list is under the card, not behind it"
-    assert "start-trip" not in out["asking"]["dock"], "the card's button is the screen's one apricot while it is up (Rule 5)"
+    assert out["asking"]["dock"] == "", "the card's button is the screen's one apricot while it is up (Rule 5); no dock"
     assert out["dismissed"] is True and out["posted"] == 1
     assert out["cardAfter"] is False and out["listAfter"] is True
 
 
-# --- 6. the trip -----------------------------------------------------------
-
-
-@_needs_node
-def test_unsorted_things_ride_along_on_the_trip_like_any_ones():
-    out = _node("""
-loadGrocery().then(function () {
-  groceryState.tripStops = ['Costco'];
-  groceryState.tripIndex = 0;
-  console.log(JSON.stringify({
-    items: groTripItems(groceryState.data).map(function (i) { return i.item; }),
-    sections: groTripSections(groceryState.data).map(function (s) { return [s.section, s.items.map(function (i) { return i.item; })]; })
-  }));
-});
-""")
-    assert out["items"] == ["Rice", "Milk", "Foil"]
-    assert out["sections"] == [["pantry", ["Rice"]], ["dairy", ["Milk"]], ["other", ["Foil"]]], "folded into the aisles, tickable at this stop"
+# --- 6. the heading is one line to change -----------------------------------
 
 
 def test_the_heading_is_one_line_to_change():
-    assert "var GRO_UNSORTED_SECTION = 'Not sorted yet';" in SHELL_JS
-    assert SHELL_JS.count("escapeHtml(GRO_UNSORTED_SECTION)") == 1
-    assert SHELL_JS.count(">Not sorted yet<") == 0
+    assert "var GRO_ANYWHERE_CARD = 'Anywhere';" in SHELL_JS
+    assert SHELL_JS.count("GRO_ANYWHERE_CARD,") == 1
+    assert SHELL_JS.count(">Anywhere<") == 0
+    assert "GRO_UNSORTED_SECTION" not in SHELL_JS, "the 'Not sorted yet' card folded into Anywhere (2026-09-18)"

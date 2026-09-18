@@ -1,24 +1,22 @@
 """
-Grocery as four steps — LIST -> SORT -> TRIP -> WRAP UP (Emily's approved
-design, 2026-09-08, branch `flows-5-grocery-sort-step`).
+Grocery as three states of one tab — LIST, CARRY, SORT ALL (Emily's
+approved design: four steps on 2026-09-08, the list as the checklist on
+2026-09-18, branch `shop-checklist`).
 
-The tab answers "what do we need, and where?" as steps rather than as three
-segments. LIST is one card per store plus a "N TO SORT" badge; SORT is one
-unsorted thing at a time; TRIP is one stop at a time; WRAP UP is what didn't
-make it into the cart, plus the trip's own count.
+The tab answers "what do we need, where — and what have we got?" on one
+screen. LIST is the band, the add row, one card per store with a tickable
+row per thing and a final "Anywhere" card; CARRY is last week's leftovers,
+keep or drop; SORT ALL is every unsorted thing with a shop chip. The trip
+(HEADED / TRIP / NEXT / WRAP UP), the paused-trip dock and the sort
+chooser + one-at-a-time queue are gone.
 
-These are SOURCE MARKERS, not behaviour tests: shell.js has no JS test
-harness in this repo (see tests/test_frontend_restored_2026_09_08.py's
-docstring for the full reasoning and for what a marker is worth). They are
-cheap tripwires for what each step renders, and for what left the root and
-did not come back somewhere else by accident. Where a string is user-facing
-copy it is asserted verbatim — if the copy is deliberately reworded, update
-the constant here in the same commit and say so; do not delete the test.
-
-No backend change came with this work: every step reuses the
-/api/grocery-list* routes and the needed / in_cart / purchased / excluded
-statuses exactly as the segmented version did, so there is nothing new to
-test on the Python side.
+These are SOURCE MARKERS, not behaviour tests: cheap tripwires for what
+each state renders, and for what left the tab and did not come back
+somewhere else by accident. Behaviour is in tests/test_shop_checklist.py,
+tests/test_shop_list_first.py and tests/test_sort_all_rows_leave.py, run
+under node. Where a string is user-facing copy it is asserted verbatim —
+if the copy is deliberately reworded, update the constant here in the
+same commit and say so; do not delete the test.
 """
 
 from __future__ import annotations
@@ -33,24 +31,24 @@ SHELL_CSS = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
 def _in(needle: str, haystack: str, what: str, where: str) -> None:
     assert needle in haystack, (
         f"{what} is missing from static/{where}.\nExpected to find: {needle!r}\n"
-        "This is part of Emily's approved four-step Grocery design "
-        "(2026-09-08). If the change is deliberate, update this test in the "
-        "same commit and say why."
+        "This is part of Emily's approved Shop design (the list is the "
+        "checklist, 2026-09-18). If the change is deliberate, update this "
+        "test in the same commit and say why."
     )
 
 
 def _not_in(needle: str, haystack: str, what: str, where: str) -> None:
     assert needle not in haystack, (
         f"{what} is back in static/{where}: {needle!r}\n"
-        "The four-step Grocery design removed it deliberately. If it is "
-        "coming back, update this test in the same commit and say why."
+        "The checklist design removed it deliberately. If it is coming "
+        "back, update this test in the same commit and say why."
     )
 
 
 # --- the step machine ----------------------------------------------------
 
 def test_grocery_steps_are_tab_states_not_routes():
-    """Four steps of one tab, pushing their own history at /grocery — the
+    """Three states of one tab, pushing their own history at /grocery — the
     same shape Meals' goMealsStep uses, wired into the shell's one popstate
     listener so Back means one thing."""
     _in("function goGroceryStep(", SHELL_JS, "the grocery step machine", "shell.js")
@@ -60,10 +58,14 @@ def test_grocery_steps_are_tab_states_not_routes():
     _in("}, '', '/grocery');", SHELL_JS, "the step URL (never a new route)", "shell.js")
     # A refresh lands on LIST because that is where the state starts.
     _in("step: 'list',", SHELL_JS, "the starting step", "shell.js")
+    # Anything but the three states folds to the root.
+    _in("if (groceryState.step !== 'carry' && groceryState.step !== 'sortall') groceryState.step = 'list';",
+        SHELL_JS, "the fold to the root", "shell.js")
+    _not_in("groTripIndex", SHELL_JS, "the trip's history state", "shell.js")
 
 
 def test_the_three_way_segmented_control_is_gone():
-    """To buy / Plan stops / Review was the shape this replaces."""
+    """To buy / Plan stops / Review was the shape the four steps replaced."""
     _not_in("data-gro=\"seg\"", SHELL_JS, "the segmented control", "shell.js")
     _not_in("'Plan stops'", SHELL_JS, "the Plan stops segment", "shell.js")
     _not_in(".gro-seg-btn", SHELL_CSS, "the segment button style", "shell.css")
@@ -72,109 +74,107 @@ def test_the_three_way_segmented_control_is_gone():
 
 # --- LIST ----------------------------------------------------------------
 
-def test_list_renders_one_card_per_store_grouped_by_aisle_with_no_peek():
-    """One card per store, "Costco · 14", every row shown grouped by aisle —
-    not four things and then "+ N more".
-
-    Changed 2026-09-11 (design-tidy pass, item 6): the peek hid the actual
-    list behind a tap, which is the opposite of what the store card is for
-    ("just show me the list" — DESIGN_SYSTEM §2b S1/S2). GRO_CARD_PEEK,
-    GRO_LOOSE_KEY, groceryState.listExpanded and the expand-store handler
-    all went with it — LIST was their only caller, so there was nothing
-    left to peek. See tests/test_the_no_store_section_has_no_heading... for
-    the corresponding update to the no-store card's own test."""
+def test_list_renders_one_card_per_store_with_a_tick_per_row():
+    """One card per store in stop order, "Costco" and "N of M" in the head,
+    one tickable row per thing (groLineHtml), a final "Anywhere" card for
+    the loose things — the mockup (board 16-shopping-list)."""
     _in("function groListHtml(", SHELL_JS, "the LIST step", "shell.js")
     _in("function groStoreCardHtml(", SHELL_JS, "the store card", "shell.js")
-    _in("escapeHtml(name) + ' · ' + items.length", SHELL_JS, "the store card's count", "shell.js")
-    _in("function groAisleGroupHtml(", SHELL_JS, "the aisle grouping shared with LIST and the trip", "shell.js")
+    _in("function groAnywhereCardHtml(", SHELL_JS, "the Anywhere card", "shell.js")
+    _in("function groCardHtml(", SHELL_JS, "the one card builder", "shell.js")
+    _in("'<span class=\"gro-store-count\">' + bought + ' of ' + items.length + '</span>'", SHELL_JS,
+        "the card's \"N of M\"", "shell.js")
+    _in("function groLineHtml(", SHELL_JS, "the row", "shell.js")
+    _in("data-gro=\"line-tick\"", SHELL_JS, "the tick", "shell.js")
+    _in("function groStoresOnList(", SHELL_JS, "the cards in stop order", "shell.js")
+    _in("function groStoreLineItems(", SHELL_JS, "a card's rows", "shell.js")
+    _in(".gro-line {", SHELL_CSS, "the row style", "shell.css")
+    _in(".gro-store-count {", SHELL_CSS, "the count style", "shell.css")
+    # What went: the aisle eyebrows, the store avatar, the peek, the two
+    # loose cards.
+    _not_in("function groAisleGroupHtml(", SHELL_JS, "the aisle grouping", "shell.js")
+    _not_in("GRO_CATEGORY_LABELS", SHELL_JS, "the aisle labels", "shell.js")
+    _not_in("gro-store-avatar", SHELL_JS, "the store avatar", "shell.js")
+    _not_in("GRO_STORE_PALETTE", SHELL_JS, "the store palette", "shell.js")
+    _not_in("function groLooseCardHtml(", SHELL_JS, "the headingless loose card", "shell.js")
+    _not_in("function groUnsortedCardHtml(", SHELL_JS, "the Not sorted yet card", "shell.js")
     _not_in("GRO_CARD_PEEK", SHELL_JS, "the four-row peek", "shell.js")
-    _not_in("data-gro=\"expand-store\"", SHELL_JS, "its handler", "shell.js")
-    _not_in(".gro-more-link", SHELL_CSS, "the +N more control's style", "shell.css")
-    _in(".gro-listrow", SHELL_CSS, "the list row style", "shell.css")
+    _not_in(".gro-listrow", SHELL_CSS, "the old list row style", "shell.css")
+    _not_in(".gro-aisle", SHELL_CSS, "the aisle style", "shell.css")
 
 
-def test_list_subtitle_counts_things_and_stops():
-    """"23 things · 2 stops" — the shape of the shop in one line."""
-    _in("groPlural(t.needed, 'thing', 'things')", SHELL_JS, "the things count", "shell.js")
-    _in("groPlural(stopCount, 'stop', 'stops')", SHELL_JS, "the stops count", "shell.js")
+def test_a_done_card_says_so_in_celadon():
+    _in("'Done at ' + name", SHELL_JS, "\"Done at Costco\"", "shell.js")
+    _in("var GRO_ANYWHERE_DONE = 'All bought';", SHELL_JS, "the Anywhere card's done line", "shell.js")
+    _in("var GRO_ONE_LIST_DONE = 'Done shopping';", SHELL_JS, "the one-list card's done line", "shell.js")
+    _in(".gro-store.is-done .gro-store-name, .gro-store.is-done .gro-store-count { color: var(--celadon-label); }",
+        SHELL_CSS, "the done head's ink", "shell.css")
+    _in(".gro-line.done .gro-line-qty { color: var(--ink-done); }", SHELL_CSS, "a struck row's amount", "shell.css")
 
 
-def test_the_way_into_sort_only_exists_when_something_is_unsorted():
-    """A row at the top of the list, and the only way into SORT.
-
-    It was an apricot "N TO SORT" badge in the head until the root band
-    (2026-09-11), which carries no button — so the control moved into the
-    list it is about, in the .kit-row shape, and the badge is gone.
-    """
-    _in("function groSortRowHtml(", SHELL_JS, "the sort row builder", "shell.js")
-    row = SHELL_JS[SHELL_JS.index("function groSortRowHtml("):SHELL_JS.index("function groListHtml(")]
-    assert 'data-gro="goto-sort"' in row, "the row's target"
-    assert "if (!unsorted || groStoresPromptShouldShow()) return '';" in row, "the row's guard"
-    assert "groPlural(unsorted, 'thing', 'things') + ' to sort'" in row, "the row copy"
-    _in("html += groSortRowHtml(data);", SHELL_JS, "the row at the top of LIST", "shell.js")
-    _not_in("gro-sortbadge", SHELL_JS, "the retired TO SORT badge", "shell.js")
-    _not_in(".gro-sortbadge", SHELL_CSS, "the retired badge style", "shell.css")
+def test_the_band_says_this_week_and_counts_the_list():
+    """"This week · 14 things, two stores." — the eyebrow and the line from
+    the mockup, counted from the data."""
+    _in("var GRO_BAND_EYEBROW = 'This week';", SHELL_JS, "the eyebrow", "shell.js")
+    _in("function groBandLine(", SHELL_JS, "the line", "shell.js")
+    _in("groPlural(t.all, 'thing', 'things')", SHELL_JS, "the things count", "shell.js")
+    _in("(stores === 1 ? 'store' : 'stores')", SHELL_JS, "the stores count", "shell.js")
+    _not_in("function groTripPausedLine(", SHELL_JS, "the paused-trip line", "shell.js")
 
 
-def test_list_carries_the_screens_one_apricot_and_an_inline_add():
-    """One apricot ("Start the trip"), and under it an add row that is a
-    plain POST. Adding one thing must never cost a model turn, which is why
-    the "Add something" button that opened the ask sheet is gone — see
-    test_adding_one_thing_never_costs_a_model_turn below."""
-    _in("data-gro=\"start-trip\"", SHELL_JS, "Start the trip", "shell.js")
-    _in(">Start the trip<", SHELL_JS, "its copy", "shell.js")
-    # The per-tab ask hint ("Add oat milk and lemons…") went with the
-    # always-open bar on 2026-09-11 (chat icon, Build 1): one line everywhere.
-    _in(".gro-primary", SHELL_CSS, "the primary action style", "shell.css")
-    _not_in("data-gro=\"add-something\"", SHELL_JS, "the ask-sheet Add something button", "shell.js")
+def test_the_root_has_no_dock_and_the_tick_is_the_action():
+    """Nothing single to do on the root (nav rule 2): no "Start the trip",
+    no "See the week" link. "Go to Plan" under the empty moment is the one
+    exception."""
+    _not_in("data-gro=\"start-trip\"", SHELL_JS, "Start the trip", "shell.js")
+    _not_in(">Start the trip<", SHELL_JS, "its copy", "shell.js")
+    _not_in("data-gro=\"see-week\"", SHELL_JS, "See the week", "shell.js")
+    _not_in("function groTripPausedDockHtml(", SHELL_JS, "the paused-trip dock", "shell.js")
+    _in("data-gro=\"goto-plan\">Go to Plan</button>", SHELL_JS, "the empty moment's next step", "shell.js")
+    _in("function groTickLine(", SHELL_JS, "the tick", "shell.js")
+    _in("case 'line-tick':", SHELL_JS, "its handler", "shell.js")
+    _in("groTick(id, next);", SHELL_JS, "the tick going through the offline path", "shell.js")
+    _in("label: bought ? 'Undo' : 'Put back',", SHELL_JS, "the toast's way back", "shell.js")
+    _in("function groRecordStopDone(", SHELL_JS, "the stop record on the last tick", "shell.js")
+    _in("groPostJson('/api/shopping-trips/close'", SHELL_JS, "the same route the trip closed a stop with", "shell.js")
 
 
-def test_adding_one_thing_never_costs_a_model_turn():
-    """The LIST foot's inline add row POSTs /api/grocery-list/add directly —
-    the same route groHandleVoiceCommand's "add oat milk" and the old root's
-    "Add an item" card used. The ask bar above the tab bar is still there for
-    anything wordier; it just isn't the only way to add a carton of milk.
-
-    Changed 2026-09-11 (design-tidy pass, item 7): the separate Qty box is
-    gone — one wide "Add something" field now, with quantity parsed from
-    what's typed (groParseAddInput) and the camera living inside the
-    field's own right end rather than trailing it as a fifth control."""
+def test_the_add_row_opens_the_list():
+    """The inline add row POSTs /api/grocery-list/add directly — the same
+    route groHandleVoiceCommand's "add oat milk" uses. It is the first
+    thing under the band now (the mockup), not the foot of the list."""
+    _in("function groAddRowHtml(", SHELL_JS, "the add row", "shell.js")
+    _in("var html = groAddRowHtml() + groPreShopHtml();", SHELL_JS, "the add row opening LIST", "shell.js")
+    _not_in("function groFootHtml(", SHELL_JS, "the foot", "shell.js")
+    _not_in("id=\"gro-foot\"", SHELL_JS, "the foot's element", "shell.js")
     _in("function groAddItem(", SHELL_JS, "the inline add", "shell.js")
     _in("function groParseAddInput(", SHELL_JS, "the typed-quantity parser", "shell.js")
     _in("'/api/grocery-list/add'", SHELL_JS, "the add route", "shell.js")
     _in("id=\"gro-add-item\"", SHELL_JS, "the name field", "shell.js")
-    _not_in("id=\"gro-add-qty\"", SHELL_JS, "the retired separate quantity field", "shell.js")
     _in("data-gro=\"add\"", SHELL_JS, "the Add button", "shell.js")
     _in("case 'add':", SHELL_JS, "its handler", "shell.js")
-    # Enter in the field adds, so a list can be filled without reaching for
-    # the button.
     _in("e.target.id === 'gro-add-item'", SHELL_JS, "the Enter-to-add wiring", "shell.js")
-    # The camera is inside the field now, not a sibling control — its own
-    # wrapper is positioned so the button can sit absolute inside it.
+    _in("id=\"gro-scan-btn\"", SHELL_JS, "the camera", "shell.js")
     _in(".gro-add-field {", SHELL_CSS, "the field wrapping the camera button", "shell.css")
     field = SHELL_CSS.split(".gro-add-field {", 1)[1][:200]
-    assert "position: relative" in field, "The camera button needs a positioned ancestor to sit inside the field."
-    scan_btn = SHELL_CSS.split(".gro-scan-btn {", 1)[1][:400]
-    assert "position: absolute" in scan_btn, "The camera button sits inside the field's own right end now."
-    # Spruce, not apricot: LIST's one apricot is the trip (Rule 5).
+    assert "position: relative" in field
     add_btn = SHELL_CSS.split(".gro-add-btn {", 1)[1][:400]
-    assert "var(--spruce)" in add_btn and "var(--apricot)" not in add_btn, (
-        "The inline Add button is spruce — LIST's one apricot is "
-        "\"Start the trip\" (DESIGN_SYSTEM.md Rule 5)."
-    )
+    assert "var(--spruce)" in add_btn and "var(--apricot)" not in add_btn, "the Add button is spruce (Rule 5)"
+    # A re-render must not eat a half-typed "oat milk": the add row is
+    # captured and restored across the body's re-render.
+    _in("var addRow = groCaptureAddRow(body);", SHELL_JS, "the add row captured before a re-render", "shell.js")
+    _in("groRestoreAddRow(body, addRow);", SHELL_JS, "and restored after", "shell.js")
 
 
 def test_a_list_row_keeps_its_quiet_row_action():
-    """The per-row ⋯ came back with the three verbs it always had, on the
-    routes it always used: quantity via /update, store via /store (the pills,
-    with "Any" as the old move / not-this-time and "Getting it elsewhere" on
-    /exclude), and /remove with an undo. Quiet — no apricot: the row is never
-    what the screen is for."""
+    """The per-row ⋯ with the three verbs it always had, on the routes it
+    always used: quantity via /update, store via /store (the pills, with
+    "Any" as the old move / not-this-time and "Getting it elsewhere" on
+    /exclude), and /remove with an undo. Quiet — no apricot."""
     _in("function groRowMenuHtml(", SHELL_JS, "the row menu", "shell.js")
     _in("data-gro=\"row-menu\"", SHELL_JS, "the ⋯ control", "shell.js")
     _in("GRO_ICONS.dots", SHELL_JS, "its ⋯ glyph", "shell.js")
     _in("openRowId", SHELL_JS, "the one-open-at-a-time state", "shell.js")
-    # The three verbs, and the endpoints each one actually calls.
     _in("data-gro=\"row-qty\"", SHELL_JS, "edit quantity", "shell.js")
     _in("'/update', { quantity: rowQty }", SHELL_JS, "its update call", "shell.js")
     _in("data-gro=\"row-store\"", SHELL_JS, "change store", "shell.js")
@@ -182,86 +182,38 @@ def test_a_list_row_keeps_its_quiet_row_action():
     _in("data-gro=\"row-remove\"", SHELL_JS, "remove", "shell.js")
     _in("'/remove');", SHELL_JS, "its remove call", "shell.js")
     _in("'Remove</button>'", SHELL_JS, "its copy", "shell.js")
-    # The store pills, including the two non-store answers.
     _in("function groPillStores(", SHELL_JS, "the shared store pills", "shell.js")
-    # The pill is drawn by one helper for both places (groElsewherePillHtml,
-    # 2026-09-15), so the marker is its handler rather than its markup.
     _in("groElsewherePillHtml('row-exclude', it)", SHELL_JS, "the Getting it elsewhere pill", "shell.js")
     _in("case 'row-exclude':", SHELL_JS, "its handler", "shell.js")
-    # Remove is reversible in the moment — /remove is a hard delete, so the
-    # undo puts the line back through /add.
     _in("label: 'Undo',", SHELL_JS, "the remove undo", "shell.js")
+    _in("function groOfferRememberToast(", SHELL_JS, "\"usually here\" — the remember-this-store toast", "shell.js")
     _in(".gro-rowmore", SHELL_CSS, "the ⋯ style", "shell.css")
     _in(".gro-rowmenu", SHELL_CSS, "the row menu style", "shell.css")
     rowmore = SHELL_CSS.split(".gro-rowmore {", 1)[1][:400]
-    assert "width: 44px" in rowmore and "height: 44px" in rowmore, (
-        "The ⋯ needs a full 44px hit area — it is a thumb target on a phone."
-    )
+    assert "width: 44px" in rowmore and "height: 44px" in rowmore
     rowmenu = SHELL_CSS.split(".gro-rowmenu {", 1)[1][:900]
-    assert "--apricot" not in rowmenu, (
-        "The row menu is quiet — LIST's one apricot is \"Start the trip\"."
-    )
+    assert "--apricot" not in rowmenu
 
 
 def test_two_rows_of_the_same_thing_get_one_quiet_line():
-    """Review's "Possible duplicate" flag card moved here whole: the same
-    grouping key, the same Merge, said as a line above the store cards rather
-    than as a card of its own."""
     _in("function groDuplicateGroups(", SHELL_JS, "the duplicate detection", "shell.js")
     _in("(it.item || '').trim().toLowerCase()", SHELL_JS, "its grouping key", "shell.js")
     _in("return g.length > 1;", SHELL_JS, "what counts as a duplicate", "shell.js")
     _in("function groDuplicatesHtml(", SHELL_JS, "the line", "shell.js")
     _in("' rows of '", SHELL_JS, "its copy — \"Two rows of spinach\"", "shell.js")
-    _in("function groCountWord(", SHELL_JS, "the number as a word", "shell.js")
     _in("html += groDuplicatesHtml(data);", SHELL_JS, "it rendering at the top of LIST", "shell.js")
     _in("data-gro=\"merge\"", SHELL_JS, "the Merge control", "shell.js")
     _in("case 'merge':", SHELL_JS, "the old merge handler", "shell.js")
     _in(".gro-dupe", SHELL_CSS, "its style", "shell.css")
 
 
-def test_the_unsorted_line_is_gone_rather_than_repaired():
-    """
-    This test used to guard a line reading "Everything on the list still
-    needs a store — tap N TO SORT above", and specifically that it said
-    `unsorted.length` rather than `unsorted`, which would have printed
-    "[object Object],…" into the copy.
-
-    That line is GONE as of 2026-09-09 (Emily's call), so the assertion is
-    inverted rather than deleted — per this file's own rule. The line was
-    correct about its number and wrong about its existence: for a household
-    with no store named it pointed at a badge that opened a step with
-    nothing to sort into, while the items themselves stayed off screen. The
-    fix shows the items; see the no-store tests at the end of this file.
-
-    The lesson the old test encoded still stands anywhere a count reaches
-    copy: pass the length, never the array.
-    """
-    _not_in("TO SORT above", SHELL_JS, "the sort nag", "shell.js")
-    # And the count that IS still in copy — the sort row's own — stays a
-    # number (groSortRowHtml reads .length before it reaches the words).
-    _in("var unsorted = groUnsorted(data).length;\n    if (!unsorted || groStoresPromptShouldShow()) return '';",
-        SHELL_JS, "the row count (unsorted is already a number here)", "shell.js")
-
-
 def test_open_the_list_lands_on_the_list():
-    """The receipt's grocery segment, its toast twin and the ask sheet's
-    chip all mean "open the list". They land on LIST every time — an unsorted
-    item is not a reason to drop somebody into a one-at-a-time queue they
-    didn't ask for. The TO SORT badge is how you get to SORT."""
     _in("function groSetScreen(", SHELL_JS, "the compatibility shim", "shell.js")
     shim = SHELL_JS.split("function groSetScreen(", 1)[1].split("\n  }", 1)[0]
-    assert "goGroceryStep('list')" in shim and "'sort'" not in shim, (
-        "groSetScreen must land on LIST, never SORT — the badge is the way "
-        "into SORT. Found:\n" + shim
-    )
+    assert "goGroceryStep('list')" in shim and "'sort" not in shim
 
 
 def test_the_stores_prompt_sits_on_top_of_the_list():
-    """Loop Board 19a's just-in-time question. It used to render INSTEAD of
-    the store cards until answered; since 2026-09-15 (Loop Board, "Shop: the
-    list hides behind the store question and the sort screen") it is a card
-    at the top of the list, and the list renders under it. Its answers are
-    unchanged (see tests/test_stores_multiselect.py)."""
     _in("function groStoresPromptShouldShow(", SHELL_JS, "the stores prompt guard", "shell.js")
     _in("function groStoresPromptHtml(", SHELL_JS, "the stores prompt", "shell.js")
     _in("function groAddUsualStore(", SHELL_JS, "the usual-store add", "shell.js")
@@ -269,245 +221,112 @@ def test_the_stores_prompt_sits_on_top_of_the_list():
     _not_in("return html + groStoresPromptHtml();", SHELL_JS, "the prompt standing in for the cards", "shell.js")
 
 
-# --- SORT ----------------------------------------------------------------
-
-def test_sort_asks_about_one_thing_at_a_time():
-    _in("function groSortHtml(", SHELL_JS, "the SORT step", "shell.js")
-    _in("Where does this go?", SHELL_JS, "the SORT title", "shell.js")
-    _in("' to sort'", SHELL_JS, "the SORT subtitle", "shell.js")
-    _in("var it = unsorted[0];", SHELL_JS, "one thing at a time", "shell.js")
-    _in("position + ' of ' + total", SHELL_JS, "the progress line", "shell.js")
-    # Renamed with the tab on 2026-09-09 (Emily): Grocery -> Shop. The back
-    # link names its parent, so it follows the parent's name.
-    _in("‹ Shop", SHELL_JS, "the SORT back link", "shell.js")
-    _in(".gro-sortcard", SHELL_CSS, "the sort card style", "shell.css")
-
-
-def test_sort_keeps_the_existing_chips_and_their_semantics():
-    """Store pills, "Any" (no store, advances), "Have it", and "Getting it
-    elsewhere" (the /exclude route) — the chips the triage row already had.
-
-    Reworded 2026-09-15 (Loop Board, "Somewhere else quietly removes an
-    item"): the chip was "Somewhere else", which beside "Add a new store"
-    read as one more way to name a shop. It now says what it does, through
-    GRO_ELSEWHERE_CHIP; tests/test_shop_set_aside_undo.py covers the toast,
-    the undo and LIST's foot section that came with it."""
-    _in("data-gro=\"assign\"", SHELL_JS, "the store pills", "shell.js")
-    _in(">Any</button>", SHELL_JS, "the Any pill", "shell.js")
-    _in("gro-pill-else", SHELL_JS, "the Getting it elsewhere chip class", "shell.js")
-    _in("var GRO_ELSEWHERE_CHIP = 'Getting it elsewhere';", SHELL_JS, "the Getting it elsewhere chip", "shell.js")
-    _in("groElsewherePillHtml('triage-exclude', it)", SHELL_JS, "the chip on SORT's card", "shell.js")
-    _in("case 'triage-exclude':", SHELL_JS, "its handler", "shell.js")
-    _in("/exclude'", SHELL_JS, "the exclude route", "shell.js")
-    _in("gro-pill-have", SHELL_JS, "the Have it chip class", "shell.js")
-    # "Any" saves an empty store. Where the memory of that lives CHANGED on
-    # 2026-09-09 (branch overnight/grocery-fast-sort): it used to be
-    # groceryState.anyStoreIds, a page-view map, so a reload put the item
-    # straight back into the queue. It is now a column the server writes
-    # (grocery_items.store_decided), read back through groItemDecided —
-    # tests/test_grocery_fast_sort.py covers that it survives the reload.
-    _in("function groItemDecided(", SHELL_JS, "the Any memory", "shell.js")
+def test_the_quiet_sections_keep_their_places():
+    """Pre-shop check, Getting elsewhere, Not needed this week, Spices,
+    Staples — where they were."""
+    _in("function groPreShopHtml(", SHELL_JS, "the pre-shop check", "shell.js")
+    _in("function groElsewhereHtml(", SHELL_JS, "the set-aside foot", "shell.js")
+    _in("function groNotNeededHtml(", SHELL_JS, "the not-needed foot (the wrap-up's confirmation half)", "shell.js")
+    _in("data-gro=\"undo-already-have\"", SHELL_JS, "its way back", "shell.js")
+    _in("function groSpicesHtml(", SHELL_JS, "the spices section", "shell.js")
+    _in("function groStaplesHtml(", SHELL_JS, "the staples card", "shell.js")
+    _in("return groElsewhereHtml() + groNotNeededHtml() + groSpicesHtml() + groStaplesHtml();", SHELL_JS,
+        "the foot in one place", "shell.js")
+    _not_in("function groAlreadyHaveHtml(", SHELL_JS, "the old two-part confirmation", "shell.js")
 
 
-def test_the_last_sort_choice_returns_to_the_list_with_a_toast():
-    _in("function groAdvanceSort(", SHELL_JS, "the sort advance", "shell.js")
-    _in("showToast('All sorted.');", SHELL_JS, "the all-sorted toast", "shell.js")
+# --- the finished moment -------------------------------------------------
+
+def test_the_finished_moment_is_the_lists_not_a_screen():
+    """What the wrap-up used to hand over to (groShopDoneHtml) stands at the
+    top of the list once every card is done — read off the data
+    (groListDone), not a page-view flag."""
+    _in("function groListDone(", SHELL_JS, "the finished predicate", "shell.js")
+    _in("if (groListDone(data)) {", SHELL_JS, "LIST reading it", "shell.js")
+    _in("function groShopDoneHtml(", SHELL_JS, "the finished moment", "shell.js")
+    _in("That’s the shopping done.", SHELL_JS, "its line", "shell.js")
+    _in("data-gro=\"shop-done-tonight\"", SHELL_JS, "its way to tonight", "shell.js")
+    _in("data-gro=\"shop-done-later\"", SHELL_JS, "its way to fold", "shell.js")
+    _not_in("justFinishedTrip", SHELL_JS, "the page-view flag", "shell.js")
 
 
-# --- TRIP ----------------------------------------------------------------
+# --- CARRY ---------------------------------------------------------------
 
-def test_trip_shows_one_store_at_a_time():
-    _in("function groTripHtml(", SHELL_JS, "the TRIP step", "shell.js")
-    _in("function groTripSections(", SHELL_JS, "the stop's aisles", "shell.js")
-    # Changed 2026-09-11 (design-tidy pass, item 1): a crumb names its
-    # parent (design rule 6), and "Pause the trip" didn't — it goes back to
-    # Shop exactly like every other crumb here, and pausing was never a
-    # distinct action (the trip's own stops/tripDone survive the trip either
-    # way, so leaving IS pausing, whatever the crumb calls it).
-    _in("‹ Shop", SHELL_JS, "the trip step's back crumb", "shell.js")
-    # The counter counts stops BEHIND you, not this stop's place in the
-    # snapshot — changed 2026-09-09 with the WHERE NEXT step, because the
-    # household picks its own order and the snapshot index would have said
-    # "Stop 3 of 3" with two shops still waiting.
-    _in("'Stop ' + (done + 1) + ' of '", SHELL_JS, "the stop counter", "shell.js")
-    _in("' left'", SHELL_JS, "the things-left count", "shell.js")
-    # The stops are snapshotted, so finishing one can't renumber the rest.
-    _in("groceryState.tripStops = stops;", SHELL_JS, "the snapshotted stops", "shell.js")
+def test_carry_is_still_the_one_screen_the_tab_opens_on_by_itself():
+    _in("function groCarryHtml(", SHELL_JS, "the CARRY step", "shell.js")
+    _in("function groMaybeCarryFirst(", SHELL_JS, "the carry-first rule", "shell.js")
+    _in("goGroceryStep('carry', { push: false });", SHELL_JS, "the tab opening on it", "shell.js")
+    _in("data-gro=\"carry-decide\"", SHELL_JS, "its answers", "shell.js")
+    _in("data-gro=\"carry-later\"", SHELL_JS, "its way out", "shell.js")
 
 
-def test_trip_ticks_into_the_cart_and_can_put_things_back():
-    _in("data-gro=\"trip-toggle\"", SHELL_JS, "the tick", "shell.js")
-    # A tick writes in_cart through groTick since 2026-09-11 (grocery
-    # offline): on screen at once, queued when there is no signal, and sent
-    # to the same /status route as before — see tests/test_grocery_offline.py.
-    _in("groTick(id, 'in_cart');", SHELL_JS, "what a tick writes", "shell.js")
-    _in("In your cart · ' + inCart.length", SHELL_JS, "the cart group", "shell.js")
-    _in("data-gro=\"toggle-incart\"", SHELL_JS, "its toggle", "shell.js")
-    _in("function groDoneRowHtml(", SHELL_JS, "the put-back row", "shell.js")
-    _in("data-gro=\"uncheck\"", SHELL_JS, "the put-back", "shell.js")
+# --- SORT ALL ------------------------------------------------------------
+
+def test_sorting_has_one_way():
+    """The "N things to sort" row opens SORT ALL — every unsorted thing on
+    one screen, one tap each. No chooser, no queue."""
+    _in("function groSortRowHtml(", SHELL_JS, "the sort row builder", "shell.js")
+    row = SHELL_JS[SHELL_JS.index("function groSortRowHtml("):SHELL_JS.index("function groListHtml(")]
+    assert 'data-gro="goto-sort"' in row, "the row's target"
+    assert "if (!unsorted || groStoresPromptShouldShow()) return '';" in row, "the row's guard"
+    assert "groPlural(unsorted, 'thing', 'things') + ' to sort'" in row, "the row copy"
+    _in("case 'goto-sort':\n        goGroceryStep('sortall');", SHELL_JS, "the row opening SORT ALL", "shell.js")
+    _in("function groSortAllHtml(", SHELL_JS, "the SORT ALL step", "shell.js")
+    _in("function groSortAllRender(", SHELL_JS, "its row-by-row render", "shell.js")
+    _in("data-gro=\"sortall-pick\"", SHELL_JS, "its chips", "shell.js")
+    _in("title: 'Sort them all'", SHELL_JS, "its title", "shell.js")
+    _in("emptyMomentHtml('bag', 'All sorted.')", SHELL_JS, "its finish", "shell.js")
+    for gone in ("function groSortHowHtml(", "function groSortHtml(", "data-gro=\"assign\"",
+                 "data-gro=\"goto-sort-one\"", "data-gro=\"goto-sortall\"", "data-gro=\"sort-all-at\"",
+                 "data-gro=\"sort-later\"", "GRO_FAST_SORT_MIN", "GRO_SORT_STEPS", "showToast('All sorted.');",
+                 "function groSortAssign(", "function groBulkAssign(", "data-gro=\"triage-exclude\""):
+        _not_in(gone, SHELL_JS, "the chooser / the queue", "shell.js")
+    _in("function groCanSort(data) { return groPillStores(data).length > 1; }", SHELL_JS,
+        "the sort gate", "shell.js")
+    _in("if (!groCanSort(data)) return [];", SHELL_JS, "the gate applied to the queue itself", "shell.js")
 
 
-def test_finishing_a_stop_ends_that_stop_and_asks_where_next():
-    """Was test_trip_advances_to_the_next_stop_and_then_to_wrap_up, and the
-    rename is the change: finishing a stop used to march straight into the
-    next one in snapshot order, so the button named it ("Done at Costco →
-    Metro"). Emily, 2026-09-09 — the household says where it is actually
-    driving. The last stop still drops into WRAP UP, because there is
-    nothing left to choose between. The two ride-along assertions moved with
-    the rule they described (things with no shop follow the shopper now
-    rather than being pinned to stop one) — both are in
-    tests/test_grocery_fast_sort.py."""
-    # The label moved into groStopDoneLabel on 2026-09-16 ("One list is
-    # fine" can start a trip): a household that named no shop is standing in
-    # none, and "Done at Your list" is not a sentence, so that one stop says
-    # "Done shopping". A named shop is still finished by name — which is
-    # what this marker is about, and what the behaviour test in
-    # tests/test_one_list_can_start_a_trip.py runs for real.
-    _in("return 'Done at ' + (store || 'this stop');", SHELL_JS, "the stop's own button", "shell.js")
-    _in("escapeHtml(groStopDoneLabel(data))", SHELL_JS, "where the dock reads it", "shell.js")
-    _in("data-gro=\"stop-done\"", SHELL_JS, "its handler", "shell.js")
-    _in("goGroceryStep(stillToGo.length ? 'next' : 'wrap');", SHELL_JS, "where it goes next", "shell.js")
-    # Reworded 2026-09-13 (Loop Board "Shop: a way out of the Shop loop"):
-    # it read "I'm done shopping for today", which is also what a shopper
-    # going home with a store still to do would say — and it walked them
-    # into the wrap-up. Going home is "Finish later" now (see
-    # tests/test_shop_trip_exit.py); this button says what it does.
-    _in("Skip the rest</button>", SHELL_JS, "the way to end the trip", "shell.js")
-    _not_in("done shopping for today", SHELL_JS, "the old, ambiguous end-the-trip label", "shell.js")
-    # The rows became store cards shared with "Where are we headed?" on
-    # 2026-09-13 (groStopCardsHtml takes the action by name), so the
-    # attribute is no longer a literal — the handler and the call are.
-    _in("groStopCardsHtml(data, remaining, 'next-stop'", SHELL_JS, "picking the next stop", "shell.js")
-    _in("case 'next-stop':", SHELL_JS, "its handler", "shell.js")
+# --- what left with the trip --------------------------------------------
+
+def test_the_trip_screens_and_their_state_are_gone():
+    for gone in (
+        "function groTripHtml(", "function groHeadedHtml(", "function groNextHtml(", "function groWrapHtml(",
+        "function groStopCardsHtml(", "function groTripRowHtml(", "function groDoneRowHtml(",
+        "function groFinishStore(", "function groFinishTrip(", "function groFinishAnyRemainingCarts(",
+        "function groStartTrip(", "function groBeginTrip(", "function groResumeTrip(",
+        "function groTripSnapshot(", "function groSaveTrip(", "function groRestoreTrip(", "function groDropStaleTrip(",
+        "function groTripPaused(", "function groStopDoneLabel(", "function groRemainingStops(", "function groStopRemaining(",
+        "tripStops", "tripIndex", "tripDone", "tripBought", "wrapKept", "wrapMoved", "wrapElseId", "inCartOpen",
+        "GRO_TRIP_KEY", "GRO_TRIP_KEEP_MS",
+        "data-gro=\"head-for\"", "data-gro=\"stop-done\"", "data-gro=\"next-stop\"", "data-gro=\"trip-end\"",
+        "data-gro=\"finish-trip\"", "data-gro=\"trip-pause\"", "data-gro=\"trip-resume\"", "data-gro=\"trip-finish-now\"",
+        "data-gro=\"trip-toggle\"", "data-gro=\"uncheck\"", "data-gro=\"toggle-incart\"",
+        "'Trip finished — '", "Finish later", "Continue the trip", "Skip the rest",
+    ):
+        _not_in(gone, SHELL_JS, "the trip", "shell.js")
+    for gone in (".gro-trip-body", ".gro-done {", ".gro-stops", ".gro-stop {", ".gro-secondary {", ".gro-wrap-row",
+                 ".gro-allclear", ".gro-foot"):
+        _not_in(gone, SHELL_CSS, "the trip's style", "shell.css")
+    # The big meal's two-trip headings inside a card stay (Holidays slice 2).
+    _in(".gro-trip {", SHELL_CSS, "the big meal's heading style", "shell.css")
+    _in("shop_timing === 'early'", SHELL_JS, "the big meal's grouping", "shell.js")
 
 
-# --- WRAP UP -------------------------------------------------------------
-
-def test_wrap_up_asks_how_it_went_and_finishes_the_trip():
-    _in("function groWrapHtml(", SHELL_JS, "the WRAP UP step", "shell.js")
-    _in("How did it go?", SHELL_JS, "the WRAP UP title", "shell.js")
-    _in("Couldn’t find it", SHELL_JS, "the keep-it-needed answer", "shell.js")
-    _in("data-gro=\"wrap-keep\"", SHELL_JS, "its handler", "shell.js")
-    _in("data-gro=\"wrap-else\"", SHELL_JS, "the somewhere-else answer", "shell.js")
-    _in("Bought ' + bought + ' of ' + total", SHELL_JS, "the summary line", "shell.js")
-    _in(">Finish the trip<", SHELL_JS, "the finish button", "shell.js")
-    _in("data-gro=\"finish-trip\"", SHELL_JS, "its handler", "shell.js")
-    _in(".gro-wrap-summary", SHELL_CSS, "the summary style", "shell.css")
-
-
-def test_wrap_up_keeps_reviews_confirmation_logic():
-    """Review's "Already sorted this week" card, with both undos, is the one
-    half of that segment the design keeps."""
-    _in("function groAlreadyHaveHtml(", SHELL_JS, "the confirmation card", "shell.js")
-    _in("Already sorted this week", SHELL_JS, "its title", "shell.js")
-    _in("'undo-already-have', 'Actually, I need it'", SHELL_JS, "the already-have undo", "shell.js")
-    _in("'undo-elsewhere', 'Actually, get it here'", SHELL_JS, "the elsewhere undo", "shell.js")
-    _in("case 'undo-already-have':", SHELL_JS, "its handler", "shell.js")
-    _in("case 'undo-elsewhere':", SHELL_JS, "its handler", "shell.js")
-    _in("html += groAlreadyHaveHtml();", SHELL_JS, "it rendering inside WRAP UP", "shell.js")
-
-
-def test_finishing_writes_purchases_and_lands_back_on_the_list():
-    """The existing trip-finish logic: in_cart -> purchased (which is what
-    writes the kitchen's inventory), the trip row closed, back to LIST with
-    the receipt toast the app already showed."""
-    _in("function groFinishStore(", SHELL_JS, "the stop finish", "shell.js")
-    _in("{ status: 'purchased' }", SHELL_JS, "the purchase write", "shell.js")
-    _in("'/api/shopping-trips/close'", SHELL_JS, "the trip row", "shell.js")
-    _in("function groFinishAnyRemainingCarts(", SHELL_JS, "the stranded-cart sweep", "shell.js")
-
-
-def test_the_finish_toast_is_about_the_trip_not_a_stop():
-    """"Finish the trip" ends the whole trip, so the line says so. It used to
-    say "Stop saved — I'll remember what you bought where", which was the
-    per-stop line and undersold what had just happened. The count is
-    tripBought — THIS trip — never groTotals().done, which sums every
-    purchase the household has ever made."""
-    _in("'Trip finished — ' + groPlural(home, 'thing', 'things') + ' home.'", SHELL_JS,
-        "the trip-level finish toast", "shell.js")
-    _in("var home = groceryState.tripBought;", SHELL_JS, "what it counts", "shell.js")
-    _not_in("showToast('Stop saved", SHELL_JS, "the old per-stop toast", "shell.js")
-    # Calm, not cheery (DESIGN_SYSTEM.md §8): no exclamation mark.
-    assert "Trip finished!" not in SHELL_JS, "The finish line takes no exclamation mark."
-
-
-# --- a household with no store named (Emily's call, 2026-09-09) -----------
-#
-# The bug this closes: LIST drew only store cards, and an item with no store
-# belonged to no card. A household that tapped "One list is fine" therefore
-# had an invisible grocery list — the header counted "3 things" over an empty
-# screen, and answering "Any" in SORT moved the items from one invisible
-# bucket ("not sorted") to another ("sorted, no store"), at which point LIST
-# said "Nothing on the list yet" over three real rows. Naming any store fixed
-# it instantly, which is why every earlier test — all of which name one —
-# missed it entirely.
-
-def test_a_list_with_no_stops_still_renders_its_items():
-    """The union of both Unassigned halves, drawn as one plain section."""
-    _in("function groLooseItems(", SHELL_JS, "the no-store item list", "shell.js")
-    _in("function groLooseCardHtml(", SHELL_JS, "the section that draws them", "shell.js")
-    _in("var loose = groLooseItems(data);", SHELL_JS, "LIST reading the union", "shell.js")
-    _in("html += groLooseCardHtml(data, loose);", SHELL_JS, "LIST rendering it", "shell.js")
+def test_the_bought_rows_come_from_the_bought_view():
+    """The rows ticked off THIS list, not the household's whole buying
+    history — see tools.list_grocery_list('bought')."""
+    _in("fetch('/api/grocery-list?status=bought')", SHELL_JS, "the bought view", "shell.js")
+    _not_in("fetch('/api/grocery-list?status=purchased')", SHELL_JS, "the lifetime purchased view", "shell.js")
+    _not_in("fetch('/api/grocery-list?status=in_cart')", SHELL_JS, "the separate in_cart view", "shell.js")
+    _in("function groBoughtItems(", SHELL_JS, "the bought reader", "shell.js")
+    _in("function groIsBought(it) { return it.status === 'purchased' || it.status === 'in_cart'; }", SHELL_JS,
+        "both buckets reading as bought", "shell.js")
 
 
 def test_the_empty_line_is_gated_on_the_union_not_on_unsorted_alone():
-    """"Nothing on the list yet" over a full list was the whole defect: the
-    old branch asked about `unsorted`, which excludes anything answered
-    "Any", so a finished sort emptied the screen."""
     _in("if (!stops.length && !loose.length) {", SHELL_JS,
         "the empty state gated on the union", "shell.js")
     _not_in("if (!stops.length && !unsorted.length) {", SHELL_JS,
             "the old empty-state gate", "shell.js")
-
-
-def test_the_sort_nag_is_gone_because_the_items_are_on_screen_now():
-    """It pointed at a badge that, for a store-less household, opened a step
-    with nothing to sort into. Replaced by showing the things themselves."""
-    _not_in("Everything on the list still needs a store", SHELL_JS,
-            "the sort nag", "shell.js")
-
-
-def test_sorting_is_only_offered_once_there_is_a_store_to_sort_into():
-    """The badge would otherwise count things that are already fully on
-    screen, and open a step whose only possible answer is "Any".
-
-    The gate MOVED on 2026-09-09 (branch overnight/grocery-fast-sort) and
-    got stricter with it: it used to be "the household named at least one
-    shop", checked here at the badge, and it is now "there is more than one
-    shop to choose between", checked inside groUnsorted so the badge, the
-    step and its fast paths all go quiet together. Emily: a household with
-    one shop, or none, must never see a sorting step. The behaviour is
-    covered by tests/test_grocery_fast_sort.py, which runs it rather than
-    reading for it."""
-    _in("function groCanSort(data) { return groPillStores(data).length > 1; }", SHELL_JS,
-        "the badge's store gate", "shell.js")
-    _in("if (!groCanSort(data)) return [];", SHELL_JS,
-        "the gate applied to the queue itself", "shell.js")
-
-
-def test_the_no_store_section_has_no_heading():
-    """No avatar and no name, because there is no store to name.
-
-    Until 2026-09-11 this card also carried GRO_LOOSE_KEY, a bracketed key
-    ('<no-store>') its "+ N more" control used as a listExpanded key that
-    could never collide with a household really shopping somewhere called
-    "Everything". Item 6 of the design-tidy pass removed the peek (LIST
-    shows every row now, grouped by aisle), which removed the only reason
-    this key existed — see test_list_renders_one_card_per_store_grouped_by_aisle_with_no_peek.
-    """
-    _not_in("GRO_LOOSE_KEY", SHELL_JS, "the retired peek key", "shell.js")
-    # The heading belongs to the CARDS. This section is the entire list of a
-    # household with no stops at all ("One list is fine"), so there is
-    # nothing a heading could distinguish it from.
-    #
-    # The slice now ends at groAnywhereCardHtml, added 2026-09-09 between the
-    # two. THAT one carries a heading, and correctly: it only ever appears
-    # alongside store cards, where "these have no shop" is exactly what the
-    # reader needs told. Both rules are still true — see
-    # tests/test_grocery_fast_sort.py section 8.
-    loose = SHELL_JS[SHELL_JS.index("function groLooseCardHtml("):SHELL_JS.index("function groAnywhereCardHtml(")]
-    assert "gro-card-head" not in loose, (
-        "The no-store section drew a store heading. It has no store to name — "
-        "that is the entire difference between it and groStoreCardHtml."
-    )
-    assert "gro-store-avatar" not in loose, "Same: no avatar without a store."
+    _not_in("Everything on the list still needs a store", SHELL_JS, "the sort nag", "shell.js")
+    _not_in("TO SORT above", SHELL_JS, "the sort nag", "shell.js")

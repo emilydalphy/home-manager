@@ -449,11 +449,9 @@ html, body {
    "Not now", and the empty moment's "Just tonight"). */
 .dock-row { display: flex; align-items: center; gap: 14px; }
 .dock-row .dock-primary { flex: 1 1 auto; width: auto; min-width: 0; }
-/* Shop's trip screens put "Finish later" beside their own action the same
-   way (2026-09-13), and LIST puts "Finish the trip" beside "Continue the
-   trip" over a paused trip; .gro-primary / .gro-secondary are that tab's
-   older names for the same 52px button, so they take the same row rule. */
-.dock-row .gro-primary, .dock-row .gro-secondary { flex: 1 1 auto; width: auto; min-width: 0; }
+/* .gro-primary is Shop's older name for the same 52px button, so it takes
+   the same row rule. */
+.dock-row .gro-primary { flex: 1 1 auto; width: auto; min-width: 0; }
 .dock-row .dock-link { flex: 0 0 auto; }
 
 /* =====================================================================
@@ -4223,19 +4221,15 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    every width now. */
 
 /* ===========================================================================
-   Grocery — the native tab (Pomona InnGrocery, Stage 2 slice 2)
+   Grocery — the native tab: the list is the checklist (Emily, 2026-09-18)
    ---------------------------------------------------------------------------
-   Replaces the static/grocery.html iframe. The four screens that page had —
-   To buy, Plan your stops, Shopping <store>, Review — are four STATES of this
-   one panel, per the layout blueprint's rule that a screen never becomes a
-   page with its own chrome. To buy / Plan stops / Review are the three real
-   tabs behind a segmented control; Shopping a store is entered from the hero
-   or from a store bucket and takes over the hero rather than opening a page.
-
-   One hero, one apricot action: the spruce trip panel at the top answers
-   "where is this trip at" on every state, and the single apricot button is
-   "Start shopping" (or, while shopping, "Done here"). Everything else is
-   spruce, outline, or plain text.
+   One panel, three STATES (never a page with its own chrome): LIST — the
+   root band, the add row, one card per store with a tickable row per thing
+   and a final "Anywhere" card; CARRY — last week's leftovers; SORT ALL —
+   every unsorted thing with a shop chip. The root has no dock (ticking a
+   row is the action) and no apricot except the finished moment's own
+   button; the trip screens, the wrap-up and the paused-trip dock went on
+   2026-09-18.
    =========================================================================== */
 
 .grocery-content {
@@ -4249,9 +4243,9 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   flex-shrink: 0;
   /* Fills the panel so the dock (margin-top: auto on .gro-dock) sits at
      the foot of a short list rather than under its last card — until
-     2026-09-11 "Start the trip" sat mid-screen on a one-store list, and
-     read as a button in the page rather than the dock's. Same move
-     .today-content makes. */
+     2026-09-11 the old "Start the trip" sat mid-screen on a one-store
+     list, and read as a button in the page rather than the dock's. Same
+     move .today-content makes. */
   flex: 1 0 auto;
 }
 
@@ -4386,39 +4380,17 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 }
 .crumb.on-spruce:hover { color: var(--ivory-ink); }
 
-/* ---------- The foot: the step's one action ---------- */
-.gro-foot { padding-top: 16px; gap: 4px; }
-.gro-foot:empty { display: none; }
-/* Same FAB-clearance bug as .wk-foot (Loop Board
-   3da1f4c0-5231-81c9-8123-f230175d2310): groDockHtml's LIST step returns
-   '' (collapsing #gro-dock via :empty below) whenever the shops question is
-   still up with loose or spice items on the list — a list fresh off
-   approving a week lands here — leaving groFootHtml's "Add something" row
-   as .gro-foot's own last child with nothing after it to clear the FAB. */
-.gro-foot:not(:has(+ .gro-dock:not(:empty))) { padding-bottom: 70px; }
-/* Shop's step action, in the dock (rule 2). It used to sit at the foot of
-   the list inside .gro-foot, which on a real week's groceries meant "Start
-   the trip" was a hundred rows below the fold — the button the screen
-   exists for, reachable only by scrolling past everything it is about.
-   The add row stays behind in .gro-foot: adding one thing is a side errand,
-   not what the screen is for, and two strips would be no strip at all. */
+/* The FAB's clearance when there is no dock — which on the root is always
+   (Loop Board 3da1f4c0-5231-81c9-8123-f230175d2310 found the same gap
+   under .wk-foot): 70px = the floating chat button's 54px + 16px, so the
+   last card's last row never sits under it. */
+.gro-body:has(+ .gro-dock:empty) { padding-bottom: 70px; }
+/* A step's one action, in the dock (rule 2): SORT ALL's "Back to the
+   list" at its finish, "Go to Plan" under the empty moment. */
 .gro-dock { padding-bottom: 12px; }
 /* At the foot of the panel, not under the last card (see .grocery-content).
    Two selectors deep so it outranks .dock's own 20px margin below. */
 .grocery-content .gro-dock { margin-top: auto; }
-.gro-sort-later {
-  align-self: center;
-  min-height: 44px;
-  margin-top: 4px;
-  border: none;
-  background: none;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink-secondary);
-  cursor: pointer;
-}
-.gro-sort-later:hover { color: var(--ink-strong); }
 .gro-icon-btn[hidden] { display: none; }
 .gro-dock:empty { display: none; }
 .gro-primary {
@@ -4616,9 +4588,8 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 /* .gro-scan-save carries layout only — its fill/color/type come from
    .btn-gold (theme.css), the app's existing convention for a body-level
    confirm sheet's one action when the tab behind it already has its own
-   apricot (DESIGN_SYSTEM §2 rule 5: one apricot primary per screen; Shop's
-   LIST step spends its on .gro-primary, "Start the trip"). Same pairing
-   week-sheet-back/reset-confirm/dinner-confirm-add use. */
+   apricot (DESIGN_SYSTEM §2 rule 5: one apricot primary per screen). Same
+   pairing week-sheet-back/reset-confirm/dinner-confirm-add use. */
 .gro-scan-save { flex: 1 1 auto; }
 .gro-scan-save:disabled { opacity: .6; cursor: default; }
 /* Sized to match .btn-gold's row-mate (44px min-height, 12px radius) now
@@ -4857,91 +4828,78 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .gro-ps-more:hover, .gro-ps-keepall:hover { color: var(--ink-strong); }
 .gro-ps-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 
-/* ---------- Store card ---------- */
+/* ---------- Store card: the checklist ----------
+   One per store in stop order, then "Anywhere" (Emily's shopping-list
+   mockup, 2026-09-18). The head is the store's name in the display face
+   and "N of M" at the right; every row under it is a tick. Contrast,
+   measured in Chromium off computed styles (Rule 8): the name is --ink on
+   --surface, 13.52:1 light / 12.49:1 dark; the count and a row's amount
+   are --ink-secondary on --surface, 4.70:1 / 7.36:1; "Done at Costco" is
+   --celadon-label on --surface, 5.87:1 / 7.32:1; a struck row is
+   --ink-done on --surface, 4.53:1 / 6.27:1. */
 .gro-store {
   border-radius: var(--radius-card);
   background: var(--surface);
   border: 1.5px solid var(--hairline);
-  padding: 0 14px;
+  padding: 0 14px 4px;
   display: flex;
   flex-direction: column;
 }
-.gro-store-avatar {
-  width: 30px;
-  height: 30px;
-  flex: 0 0 auto;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--on-accent-ink);
-}
-/* The no-shop bucket's avatar. Every other one is filled from the hash
-   palette — a set of light accents that carry --on-accent-ink in both
-   schemes — and this one has no name to hash, so it takes a pair of tokens
-   instead of an inline colour and can differ by scheme like anything else.
-   Sand rather than an accent — it is not a stop — but full --ink on it, the
-   same dark-glyph-on-light-tile reading its siblings get from
-   --on-accent-ink, and it inverts correctly in dark where sand does. No
-   border: it would make this one avatar 3px wider than every other one in
-   the column, and the fill already separates it. Measured in Chromium off
-   computed styles: 11.60:1 light / 11.28:1 dark, against the 3:1 WCAG
-   1.4.11 asks of a graphic. Shared since 2026-09-15 by LIST's "Not sorted
-   yet" card (groUnsortedCardHtml), the other no-shop bucket — a basket on
-   one, the "?" the Any-store pill wears on the other. */
-.gro-anywhere-avatar {
-  background: var(--sand);
-  color: var(--ink);
-}
-.gro-anywhere-avatar svg { width: 16px; height: 16px; }
 .gro-store-name {
   flex: 1 1 auto;
-  font-family: var(--font-body);
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: -0.015em;
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.028em;
   color: var(--ink);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* "6 of 6" and "Done at Costco": the head goes celadon when the card is
+   done — settled, handled, already true. */
+.gro-store-count { flex: 0 0 auto; font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); }
+.gro-store.is-done .gro-store-name, .gro-store.is-done .gro-store-count { color: var(--celadon-label); }
 .gro-chev { color: var(--ink-inactive); flex: 0 0 auto; display: flex; }
 .gro-chev svg { width: 17px; height: 17px; }
 
-/* The store card's head — "Costco · 14". A div, not a button: the card no
-   longer collapses, so there is nothing to toggle. */
+/* The store card's head. A div, not a button: nothing to toggle. */
 .gro-card-head {
   min-height: 48px;
-  padding: 9px 0;
+  padding: 9px 0 4px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 11px;
 }
-/* A LIST row is a name, a quantity and one quiet ⋯ — the row's own actions
+/* A card's row (groLineHtml): the 22px box, the name at 15/500, the amount
+   in --ink-secondary at the right, and one quiet ⋯ — the row's own actions
    (quantity, store, remove) live behind it, so a correction never costs a
-   model turn. Nothing else on the row is tappable. */
-.gro-listrow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 44px;
-  padding: 2px 0;
+   model turn. The whole row is the tick; rows are separated by --hairline.
+   It is a .gro-row too, so the settle animation (Motion 3) plays on it. */
+.gro-line {
+  min-height: 52px;
+  padding: 6px 0;
+  gap: 12px;
   border-top: 1.5px solid var(--hairline);
+  cursor: pointer;
 }
-.gro-listrow-name {
-  flex: 1 1 auto;
+.gro-line .gro-box { width: 22px; height: 22px; border-radius: 7px; }
+.gro-line .gro-box svg { width: 14px; height: 14px; }
+.gro-line .gro-name { font-weight: 500; }
+.gro-line-qty {
+  flex: 0 0 auto;
   font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--ink);
-  min-width: 0;
+  font-size: 13px;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+  transition: color var(--motion-base) var(--motion-ease);
 }
+.gro-line.done .gro-line-qty { color: var(--ink-done); }
+.gro-line:last-child { padding-bottom: 6px; }
 /* The ⋯ itself: a full 44px target, muted until touched. Quiet is the whole
-   point — it must not compete with "Start the trip". */
+   point — it must not compete with the tick beside it. */
 .gro-rowmore {
   flex: 0 0 auto;
   width: 44px;
@@ -4958,11 +4916,10 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 }
 .gro-rowmore svg { width: 20px; height: 20px; }
 .gro-rowmore:hover { color: var(--ink-secondary); }
-.gro-listrow.open .gro-rowmore { color: var(--ink-strong); }
+.gro-line.open .gro-rowmore { color: var(--ink-strong); }
 /* The row's open menu, inline under the row rather than over the screen —
    it belongs to one line of a list, and a sheet would hide the list it is
-   about. No apricot anywhere in it (Rule 5: LIST's one apricot is the
-   trip). */
+   about. No apricot anywhere in it (Rule 5). */
 .gro-rowmenu {
   padding: 10px 0 4px;
   border-top: 1.5px solid var(--hairline);
@@ -5037,28 +4994,6 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .gro-dupe-merge:hover { color: var(--apricot-label-hover); }
 .gro-dupe-merge:disabled { opacity: .6; cursor: default; }
 
-/* 70px = the floating chat FAB's 54px + 16px clearance (item 13,
-   design-tidy pass 2026-09-11) — the trip's own dock button sits right
-   above the FAB's floating zone, but a long stop's last row still ended up
-   under it before this. */
-.gro-trip-body { padding-bottom: 70px; }
-
-/* Aisle spine + name */
-.gro-aisle {
-  min-height: 24px;
-  padding: 4px 0 6px;
-  border-top: 1.5px solid var(--hairline);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-/* One neutral for every aisle — the eyebrow beside it already names the
-   aisle, so a per-section colour (celadon here, terracotta there) had no
-   key anywhere on screen and terracotta on Meat/Seafood read as urgent
-   when it wasn't (design rule 3). */
-.gro-aisle-spine { width: 3px; height: 13px; border-radius: 2px; flex: 0 0 auto; background: var(--hairline-strong); }
-.gro-aisle-count { margin-left: auto; font-family: var(--font-body); font-weight: 800; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--apricot-label); }
-
 /* The big meal's two trips (Holidays slice 2): one quiet heading over a
    run of aisles inside a store card — "For Thanksgiving — buy by Friday".
    Ink-secondary, no accent: it's a label on the list, not a call to act. */
@@ -5073,7 +5008,7 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   font-size: 12px;
   color: var(--ink-secondary);
 }
-.gro-aisle + .gro-trip, .gro-listrow + .gro-trip, .gro-staple-line + .gro-trip, .gro-rowmenu + .gro-trip { border-top: 1.5px solid var(--hairline-strong); margin-top: 6px; }
+.gro-line + .gro-trip, .gro-staple-line + .gro-trip, .gro-rowmenu + .gro-trip { border-top: 1.5px solid var(--hairline-strong); margin-top: 6px; }
 
 /* ---------- Item row ---------- */
 .gro-row {
@@ -5128,73 +5063,6 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   white-space: nowrap;
 }
 .gro-row.done .gro-qty { background: transparent; color: var(--ink-done-soft); }
-/* ---------- The Done row (collapsed by default) ---------- */
-.gro-done {
-  border-radius: 18px;
-  border: 1.5px solid var(--hairline-strong);
-  padding: 0 14px;
-  display: flex;
-  flex-direction: column;
-}
-.gro-done.open { background: var(--surface); border-color: var(--hairline); }
-.gro-done-head {
-  min-height: 50px;
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  cursor: pointer;
-  background: none;
-  border: none;
-  padding: 0;
-  width: 100%;
-  text-align: left;
-  font-family: inherit;
-}
-.gro-done-tick {
-  width: 30px;
-  height: 30px;
-  flex: 0 0 auto;
-  border-radius: 10px;
-  background: var(--celadon);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--on-accent-ink);
-}
-.gro-done-tick svg { width: 16px; height: 16px; }
-.gro-done-label { flex: 1 1 auto; font-family: var(--font-body); font-size: 15px; font-weight: 700; color: var(--ink-secondary); }
-.gro-done-body { border-top: 1.5px solid var(--hairline); padding-bottom: 6px; }
-
-/* ---------- SORT: one thing at a time, and its pills ----------
-   The step exists only while something has no store. The card is the thing
-   being sorted; the pills under it are the household's stores plus the three
-   answers that aren't a store (Any, Have it, Somewhere else). */
-.gro-sortcard { padding: 16px 14px 4px; }
-.gro-sort-item {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 21px;
-  letter-spacing: -0.028em;
-  line-height: 1.15;
-  color: var(--ink);
-  margin: 0;
-}
-.gro-sort-qty {
-  font-family: var(--font-body);
-  font-size: 14px;
-  color: var(--ink-secondary);
-  margin: 3px 0 0;
-}
-.gro-sortcard .gro-pills { padding-top: 13px; }
-.gro-sort-progress {
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: .04em;
-  color: var(--ink-secondary);
-  text-align: center;
-  margin: 2px 0 0;
-}
 .gro-pills { display: none; flex-wrap: wrap; gap: 8px; padding: 0 0 13px; }
 .gro-pills.open { display: flex; }
 .gro-pill {
@@ -5264,48 +5132,13 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .gro-linkbtn:hover { color: var(--apricot-label-hover); }
 .gro-linkbtn:disabled { opacity: .6; cursor: default; }
 
-/* ---------- SORT HOW: two ways to finish, one row each ----------
-   Rows, not tiles: they are two answers to one question and want to read as
-   a short list. The screen's apricot is at the foot ("Put all 40 at
-   Loblaws"), so nothing in here carries an accent fill — a card of three
-   equally loud answers would be three primaries. */
-.gro-howcard { padding: 0 14px; }
-.gro-howrow {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  width: 100%;
-  min-height: 60px;
-  padding: 10px 0;
-  background: none;
-  border: none;
-  border-top: 1.5px solid var(--hairline);
-  text-align: left;
-  font-family: inherit;
-  cursor: pointer;
-}
-.gro-howrow:first-child { border-top: none; }
-.gro-howrow-text { flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.gro-howrow-title {
-  font-family: var(--font-body);
-  font-weight: 800;
-  font-size: 15px;
-  letter-spacing: -0.01em;
-  color: var(--ink);
-}
-/* Measured in Chromium off computed styles, both schemes: the title is
-   --ink on --surface, 13.52:1 light / 12.49:1 dark; this line is
-   --ink-secondary on the same surface, 4.70:1 / 7.36:1. Same pair carries
-   .gro-stop-name / .gro-stop-count below. */
-.gro-howrow-sub { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); }
-
 /* ---------- SORT ALL: the whole list, one row each ----------
    A row is a name ABOVE its shop chips rather than beside them: at 390px a
    name and three chips on one line either truncates the name or wraps the
    chips into a ragged second column, and the thing being sorted has to stay
-   readable. The chips are .gro-pill, the same control the one-at-a-time
-   screen uses, so a picked shop looks picked in exactly the same way
-   (.gro-pill-on — its contrast is measured on that rule). */
+   readable. The chips are .gro-pill, the app's choice chip, so a picked
+   shop looks picked in exactly the same way (.gro-pill-on — its contrast
+   is measured on that rule). */
 .gro-sortall { padding: 0 14px; }
 .gro-sortall-row {
   padding: 10px 0 2px;
@@ -5336,11 +5169,10 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .gro-subst .gro-subst-input { width: 100%; box-sizing: border-box; margin-bottom: 8px; }
 .gro-subst-actions { display: flex; gap: 8px; }
 .gro-subst-actions .gro-ps-btn-drop { border-color: var(--hairline-strong); }
-.gro-sortcard .gro-subst { padding: 0 0 12px; }
 .gro-rowmenu-answers { padding-top: 0; }
 
 /* ---------- Spices this week ----------
-   The Staples card's shape (below), holding trip-style tick rows (.gro-row
+   The Staples card's shape (below), holding the list's tick rows (.gro-row
    / .gro-box) so a tick here looks like a tick anywhere in the tab. No
    .done strike — the row is not bought, it is on the list now. */
 .gro-spices .gro-spice-row { cursor: pointer; }
@@ -5389,137 +5221,9 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .gro-carry .gro-ps-actions { margin-top: 8px; }
 .gro-carry .gro-ps-btn-drop { border-color: var(--hairline-strong); }
 
-/* ---------- WHERE ARE WE HEADED / WHERE NEXT: the stop cards ----------
-   One component for both screens (Emily, 2026-09-13: the start-of-trip
-   question should look like "Where next?", and both should get "some
-   colour"). Each stop is its own card — surface, hairline, --radius-card,
-   the 12px card gap — rather than a row in a shared list, so a shop reads
-   as a place to drive to. The colour is the store's own: a spine down the
-   card's left edge in the palette colour the LIST's avatar already gives
-   it, square on the edge it shares with the card and round on the outside
-   (the joined-tile motif, DESIGN_SYSTEM §4), with the initial in it.
-   Neither screen has an apricot fill: the cards are the choice, and Rule 5
-   is "at most one". Contrast, measured (Rule 8): the initial is
-   --on-accent-ink on the store palette, worst pair 5.40:1 light / 6.32:1
-   dark (theme.css); the count is --ink-secondary on --surface, 4.70:1
-   light / 7.36:1 dark; the ONLY HERE micro-label is --apricot-label on
-   --surface, 5.20:1 light / 8.53:1 dark. */
-.gro-stops { display: flex; flex-direction: column; gap: 12px; }
-.gro-stop {
-  display: flex;
-  align-items: stretch;
-  gap: 0;
-  width: 100%;
-  min-height: 60px;
-  padding: 0 14px 0 0;
-  background: var(--surface);
-  border: 1.5px solid var(--hairline);
-  border-radius: var(--radius-card);
-  overflow: hidden;
-  text-align: left;
-  font-family: inherit;
-  cursor: pointer;
-}
-.gro-stop:hover { border-color: var(--hairline-strong); }
-.gro-stop-spine {
-  flex: 0 0 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-size: 21px;
-  font-weight: 700;
-  letter-spacing: -0.028em;
-  color: var(--on-accent-ink);
-}
-.gro-stop-text {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  padding: 13px 12px 13px 14px;
-}
-.gro-stop-name {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 17px;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.gro-stop-count { font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--ink-secondary); }
-/* "ONLY HERE  Rotisserie chicken, coffee beans" — the things this stop
-   alone has, so a shopper deciding which shop to skip can see what she
-   would be skipping. The micro-label is the one uppercase in the card,
-   in --apricot-label (its token role: uppercase micro-labels); the names
-   are plain --ink. */
-.gro-stop-only {
-  margin-top: 4px;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.4;
-  color: var(--ink);
-}
-.gro-stop-only-label {
-  display: inline-block;
-  margin-right: 7px;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: var(--apricot-label);
-  vertical-align: 1px;
-}
-.gro-stop .gro-chev { align-self: center; }
-/* The shopless things come to whichever stop you pick — said once, under
-   the cards, as the celadon tile (settled, already true; the nudge, not
-   the task). Measured: --ink-on-celadon on --celadon-tint 10.65:1 light /
-   10.37:1 dark. */
-.gro-stops-note {
-  margin: 0;
-  padding: 12px 14px;
-  border-radius: var(--radius-card);
-  background: var(--celadon-tint);
-  border: 1.5px solid var(--celadon-edge);
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.4;
-  color: var(--ink-on-celadon);
-}
-
-/* A full-width action that is NOT the screen's primary — the same size and
-   shape as .gro-primary so it sits in the foot the same way, in the sand
-   fill secondary buttons already use elsewhere. It exists for the one
-   screen whose real choice is the list above it (WHERE NEXT), where an
-   apricot on "I'm done shopping" would put the tab's accent on ending the
-   trip early. Measured in Chromium off computed styles, both schemes: label
-   --ink on --sand 11.60:1 light / 11.28:1 dark. Its border is
-   --hairline-strong on --ground, 1.29:1 / 1.71:1 — decoration rather than
-   the control's only boundary, exactly as on .gro-add-item and the other
-   hairline-strong edges in this tab; the fill is what separates it from the
-   ground, and it is a 52px full-width button either way. */
-.gro-secondary {
-  width: 100%;
-  min-height: 52px;
-  border-radius: var(--radius-action);
-  background: var(--sand);
-  border: 1.5px solid var(--hairline-strong);
-  color: var(--ink);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 17px;
-  letter-spacing: -0.02em;
-  cursor: pointer;
-}
-.gro-secondary:hover { border-color: var(--ink-strong); }
-.gro-secondary:disabled { opacity: .6; cursor: default; }
-
-/* ---------- Review ---------- */
+/* ---------- "Not needed this week" (groNotNeededHtml) ----------
+   A closed celadon confirmation at the foot of LIST — this week's Have it
+   / Don't need / Drop it decisions, each with "Actually, I need it". */
 .gro-flag {
   border-radius: var(--radius-card);
   background: var(--surface);
@@ -5547,10 +5251,10 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-body);
-  font-weight: 800;
-  font-size: 14px;
+  background: var(--celadon);
+  color: var(--on-accent-ink);
 }
+.gro-flag-badge svg { width: 15px; height: 15px; }
 .gro-flag-title { flex: 1 1 auto; font-family: var(--font-body); font-weight: 700; font-size: 15px; color: var(--ink); }
 .gro-flag-body { border-top: 1.5px solid var(--hairline); padding: 8px 0 12px; }
 .gro-fix {
@@ -5590,16 +5294,6 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .gro-fix button:disabled { opacity: .6; cursor: default; }
 .gro-fix-note { font-family: var(--font-body); font-size: 14px; line-height: 1.5; color: var(--ink-secondary); margin: 0 0 6px; }
 
-.gro-allclear {
-  font-family: var(--font-body);
-  font-size: 14px;
-  color: var(--celadon-label);
-  background: var(--celadon-tint);
-  border: 1.5px solid var(--celadon-edge);
-  border-radius: var(--radius-card);
-  padding: 13px 15px;
-}
-
 /* ---------- Hands-free voice log ---------- */
 .gro-voice {
   margin: 8px 20px 0;
@@ -5618,84 +5312,6 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .gro-voice-log li { padding: 4px 0; border-top: 1.5px solid var(--hairline); color: var(--ink-secondary); }
 .gro-voice-log li:first-child { border-top: none; }
 .gro-voice-note { display: block; margin-top: 8px; color: var(--ink-muted); font-size: 12px; }
-
-/* ---------- WRAP UP ----------
-   What didn't make it into the cart, three answers each, and the trip's
-   own count. The answers are equal weight on purpose — none of "couldn't
-   find it", "will grab elsewhere" and "don't need anymore" is the expected
-   one. Three don't fit one line at 375px, so the row wraps them. */
-.gro-wrap-list { padding-bottom: 6px; }
-.gro-wrap-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px 10px;
-  min-height: 44px;
-  padding: 8px 0;
-  border-top: 1.5px solid var(--hairline);
-}
-.gro-wrap-row:first-of-type { border-top: none; }
-.gro-wrap-name {
-  flex: 1 1 100%;
-  /* A row of its own so the quantity chip (.gro-qty is display:flex)
-     sits beside the name rather than stretching under it as a bar —
-     found on 2026-09-13 while the third answer went in. */
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--ink);
-  min-width: 0;
-}
-.gro-wrap-row.kept .gro-wrap-name { color: var(--ink-secondary); }
-.gro-wrap-seg { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
-.gro-wrap-btn {
-  min-height: 44px;
-  padding: 0 12px;
-  border-radius: var(--radius-control);
-  border: 1.5px solid var(--hairline-strong);
-  background: var(--surface);
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 13px;
-  color: var(--ink-secondary);
-  cursor: pointer;
-  white-space: nowrap;
-}
-.gro-wrap-btn:hover { border-color: var(--apricot); }
-.gro-wrap-btn:disabled { opacity: .6; cursor: default; }
-/* "Will grab elsewhere" while its store picker is open under the row —
-   the same "picked" mark the sort chips use (.gro-pill-on): celadon tint,
-   and the border carrying the state in --ink-strong. Measured there:
-   border 9.73:1 light / 8.43:1 dark against the unpicked edge; label
-   --ink-on-celadon on the tint 10.65:1 / 10.37:1. */
-.gro-wrap-btn-on { background: var(--celadon-tint); color: var(--ink-on-celadon); border-color: var(--ink-strong); }
-.gro-wrap-btn-on:hover { border-color: var(--ink-strong); }
-/* The other stores, under the row that asked. The pills are .gro-pill,
-   the app's choice chip, so a store here looks like a store on SORT. */
-.gro-wrap-pick { flex: 1 1 100%; padding-top: 4px; }
-.gro-wrap-pick .gro-pills { padding-bottom: 6px; }
-.gro-wrap-kept {
-  margin-left: auto;
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 12px;
-  color: var(--celadon-label);
-  background: var(--celadon-tint);
-  border-radius: 999px;
-  padding: 6px 10px;
-  white-space: nowrap;
-}
-.gro-wrap-summary {
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 15px;
-  color: var(--ink);
-  padding: 4px 2px 0;
-  margin: 0;
-}
 
 /* The old ">=1100px wide screens" block (a wider gutter for Grocery) is gone
    (2026-09-11) — the column keeps its phone width and padding all the way
@@ -6989,11 +6605,11 @@ button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); 
 .dock-primary:disabled { opacity: .6; cursor: default; box-shadow: none; }
 /* The dock's second door, when the second path is a real one and not a
    rare action: a full-width secondary ABOVE the apricot, never a second
-   apricot (Rule 5). Same sand-and-hairline button .gro-secondary is on
-   Shop's WHERE NEXT and .wk-check-btn was above Approve — the fill is what
-   separates it from the ground, and its label is --ink on --sand (11.60:1
-   light / 11.28:1 dark, measured for .gro-secondary). All set's spruce
-   dock re-inks it below (.wk-allset-dock .dock-secondary). */
+   apricot (Rule 5). The same sand-and-hairline button was Shop's
+   .gro-secondary (gone with the trip, 2026-09-18) and .wk-check-btn was
+   above Approve — the fill is what separates it from the ground, and its
+   label is --ink on --sand (11.60:1 light / 11.28:1 dark, measured). All
+   set's spruce dock re-inks it below (.wk-allset-dock .dock-secondary). */
 .dock-secondary {
   width: 100%;
   min-height: 52px;
@@ -9066,7 +8682,7 @@ span.cook-week-name { cursor: default; }
 /* weekStepHtml's own wk-foot (weekDecideHtml always returns '') and both
    wk-foot-solo variants (weekStepHtml's "none" state, reviewStepHtml's
    draft/set-less root) are the panel's own last child, same problem
-   .wk-slots/.wk-meal-body/.gro-trip-body already had: #shell-scroll has no
+   .wk-slots/.wk-meal-body/.gro-body already had: #shell-scroll has no
    bottom padding of its own, and the chat FAB floats over the scroll
    area's last ~66px from the non-scrolling strip after it (#ask-bar-dock,
    shell.html), so a trailing row with no clearance ends up under it —
@@ -9076,7 +8692,7 @@ span.cook-week-name { cursor: default; }
    (reviewDecideHtml, for a draft/approved week) — that dock is sticky and
    already clears the FAB itself, so this skips it there rather than
    double-padding. 70px = the FAB's 54px + 16px inset, same formula as
-   .wk-slots/.gro-trip-body below. */
+   .wk-slots/.gro-body. */
 .wk-foot:not(:has(+ .dock)) { padding-bottom: 70px; }
 .wk-foot-link, .wk-foot-more {
   min-height: 44px;
@@ -9093,7 +8709,7 @@ span.cook-week-name { cursor: default; }
 .wk-foot-link:hover, .wk-foot-more:hover { color: var(--apricot-label-hover); }
 
 /* ---------- DAY / MEAL: the back link ---------- */
-/* It is .crumb now — one definition, up beside .gro-foot. */
+/* It is .crumb now — one definition, up in the Grocery section. */
 
 /* ---------- DAY: three equal cards ---------- */
 /* 70px = the floating chat FAB's 54px + 16px clearance (item 13,
@@ -9869,8 +9485,8 @@ span.cook-week-name { cursor: default; }
    ink, with two differences on purpose: the head is not a toggle (the
    rows are always in view, so "Put it back" is one tap, not two), and
    each row has one verb. No fill anywhere — a thing set aside is a note,
-   not a task (apricot) and not a thing done (celadon); LIST's one apricot
-   stays "Start the trip". The name is .gro-staple-name (--ink) and the
+   not a task (apricot) and not a thing done (celadon). The name is
+   .gro-staple-name (--ink) and the
    verb .gro-staple-act (--ink-secondary, 44px), both already measured. */
 .gro-elsewhere .gro-ps-head { cursor: default; }
 .gro-elsewhere-row {
@@ -9973,18 +9589,18 @@ span.cook-week-name { cursor: default; }
   transform: translateY(0);
 }
 
-/* ---- 3. A ticked grocery row settles (the trip list: groTripRowHtml/
-   groDoneRowHtml + groAnimateRowSettle, shell.js) ----
+/* ---- 3. A ticked grocery row settles (the list's rows: groLineHtml +
+   groAnimateRowSettle, shell.js; the Spices rows share it) ----
    The checkbox fill, the strike-through and the row's ink all ease
    together over --motion-base; unticking reverses the same transition.
    The strike is a ::after line scaled from the left edge (transform-origin
    left) rather than text-decoration, so it can transition at all — see the
    removed `text-decoration: line-through` at .gro-row.done .gro-name above.
-   Ticking a row swaps in a differently-templated element (groTripRowHtml
-   vs groDoneRowHtml) rather than toggling a class on one persistent node,
-   so groAnimateRowSettle (shell.js) does the same "start from the opposite
-   state, force a reflow, settle to the real one" trick openSheet() uses for
-   sheets — these transitions are what it settles into. */
+   A tick re-renders the list, so the row is a fresh node rather than one
+   persistent node whose class changed; groAnimateRowSettle (shell.js) does
+   the same "start from the opposite state, force a reflow, settle to the
+   real one" trick openSheet() uses for sheets — these transitions are what
+   it settles into. */
 .gro-row .gro-box, .day-dot {
   transition: background var(--motion-base) var(--motion-ease),
               border-color var(--motion-base) var(--motion-ease),
