@@ -520,3 +520,123 @@ def test_a_pin_east_of_utc_plus_9_holds_every_clock_on_one_instant(frozen_today)
         else:
             os.environ["TZ"] = was
         _time.tzset()
+
+
+def test_a_pin_across_a_daylight_saving_change_still_restores_the_real_clock():
+    """
+    CATCH. `live_clock` has to hand back the REAL clock whatever date the pin
+    is on, and until this branch it did not across a clock change.
+
+    `conftest._real_now()` keeps the real epoch from just before the freeze and
+    adds the frozen clock's own elapsed time back onto it, which is right. What
+    was wrong is the step after: it turned that epoch into a wall clock with
+    `datetime.fromtimestamp`, which is FakeDatetime's under a freeze and
+    converts by the PIN's tz_offset rather than by the zone's real rules at the
+    real instant. Pin one side of a daylight-saving change and today is on the
+    other, and the restored clock is an hour out — which is the whole quantity
+    `recipe_photos.sweep_pending` reads.
+
+    IT NEEDS A TEST OF ITS OWN BECAUSE IT IS A DATED FAILURE, NOT AN
+    UNREACHABLE ONE — and the first version of this docstring said the
+    opposite. A weekday-name pin resolves to the next such day ON OR AFTER
+    today, so it reaches up to six days ahead, and a clock change inside that
+    window puts it on the other side: sunday 12 days a year at Toronto, monday
+    10, friday 2, saturday none. Measured on main at `--today=2026-11-01`,
+    which is what the sunday job resolves to that week: 3 failed, this file
+    and test_recipe_photo_import. So without a test that forces its own pin
+    this would be green every day of the year but 24, and red on those.
+
+    The live_clock marker only does anything under a SESSION pin
+    (`_marked_clock` returns early when `_pomona_freezer` is None), so a
+    marker alone cannot reproduce it — hence the pin forced here the way
+    pytest_configure does it.
+
+    Written to mean the same thing in every month and on every runner:
+    America/Toronto is forced — what the `clock` jobs use, and it observes DST
+    — and the pin is whichever of midwinter and midsummer is in the OPPOSITE
+    DST state from the real today, so there is always a change in between.
+    That also means it exercises whichever DIRECTION the calendar is in. Built
+    in September, so what was measured is a summer today against a winter pin,
+    where the restored clock came back an hour BEHIND; run it in January and it
+    pins midsummer and the slip is an hour the other way. Same defect, same
+    assertion, and neither direction is the one this happens to have been
+    written in.
+    """
+    import os
+    import tempfile
+    import time as _time
+
+    import freezegun
+
+    import conftest
+
+    def wall_clock():
+        """The machine's own clock, under a freeze or not — freezegun's
+        unpatched time.time and unpatched datetime, so neither the session's
+        pin nor the one this test starts can reach it."""
+        return freezegun.api.real_datetime.fromtimestamp(freezegun.api.real_time())
+
+    was = os.environ.get("TZ")
+    os.environ["TZ"] = "America/Toronto"
+    _time.tzset()
+    try:
+        today = wall_clock()
+        here = today.astimezone().utcoffset()
+        at_nine = {"hour": 9, "minute": 0, "second": 0, "microsecond": 0}
+        midwinter = today.replace(month=1, day=15, **at_nine)
+        midsummer = today.replace(month=7, day=4, **at_nine)
+        pin = midwinter if midwinter.astimezone().utcoffset() != here else midsummer
+        assert pin.astimezone().utcoffset() != here, (
+            f"{pin:%Y-%m-%d} is in the same DST state as today in America/Toronto, so this "
+            "test would prove nothing — pick two dates that really do straddle a change"
+        )
+
+        # Exactly what pytest_configure does for --today, in miniature: the
+        # real epoch captured before the freeze, the frozen one after it, and
+        # the pair handed to _real_now through the globals it reads. real_time
+        # is freezegun's own unpatched time.time, so this is honest even when
+        # the run it is inside is already pinned.
+        at, offset = conftest._freeze_args(pin)
+        freezer = freezegun.freeze_time(at, tz_offset=offset, tick=True)
+        real_at_pin = freezegun.api.real_time()
+        freezer.start()
+        saved = (conftest._REAL_EPOCH_AT_PIN, conftest._FROZEN_EPOCH_AT_PIN)
+        conftest._REAL_EPOCH_AT_PIN = real_at_pin
+        conftest._FROZEN_EPOCH_AT_PIN = _time.time()
+        try:
+            assert datetime.date.today() == pin.date(), "the simulated session pin took"
+
+            # The mechanism: the reconstruction is the real wall clock, not the
+            # real instant read through the pin's offset.
+            restored = conftest._real_now()
+            assert restored.tzinfo is None, "_freeze_args reads a pin as naive local wall time"
+            slip = abs((wall_clock() - restored).total_seconds())
+            assert slip < 300, (
+                f"_real_now() is {slip / 3600:.2f}h from the real wall clock under a pin on "
+                f"{pin:%Y-%m-%d}; the epoch is right, so this is the conversion reading the "
+                "pin's tz_offset instead of the zone"
+            )
+
+            # ...and the consequence, measured the way the live_clock marker's
+            # own test measures it: against the one clock nothing pins.
+            with conftest._pin(conftest._real_now()):
+                handle, path = tempfile.mkstemp(prefix="pomona-dst-clock-check-")
+                os.close(handle)
+                try:
+                    drift = abs(_time.time() - os.path.getmtime(path))
+                finally:
+                    os.unlink(path)
+                assert drift < 300, (
+                    f"live_clock restored a clock {drift / 3600:.2f}h from a file written this "
+                    f"second, under a pin on {pin:%Y-%m-%d} — the other side of a "
+                    "daylight-saving change from today"
+                )
+        finally:
+            conftest._REAL_EPOCH_AT_PIN, conftest._FROZEN_EPOCH_AT_PIN = saved
+            freezer.stop()
+    finally:
+        if was is None:
+            os.environ.pop("TZ", None)
+        else:
+            os.environ["TZ"] = was
+        _time.tzset()

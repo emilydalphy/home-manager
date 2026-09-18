@@ -286,7 +286,10 @@ def _parse_pin(raw):
     Sunday from the app's point of view. Use `household_pin(..., on=...)` when
     the weekday is the thing under test.
     """
-    if isinstance(raw, _dt.datetime):
+    # `real_datetime` as well as the patched class: _real_now hands back the
+    # unpatched one now, because wrapping it into a FakeDatetime loses `fold`
+    # and so re-creates this file's own hour-out bug inside a fall-back.
+    if isinstance(raw, (_dt.datetime, freezegun.api.real_datetime)):
         return raw
     raw = str(raw).strip()
     if raw.lower() in _WEEKDAY_NAMES:
@@ -517,10 +520,45 @@ def _real_now():
     tick=True means the frozen clock runs at the real clock's rate, so the gap
     between them is whatever it was when the freeze started. Nothing else can
     answer this once freezegun is on — time.time() is the frozen one.
+
+    THE EPOCH ARITHMETIC IS THE EASY HALF, and it was never the broken one.
+    Turning that epoch back into a wall clock is, and only across a
+    daylight-saving change. `_dt.datetime` is FakeDatetime while a freeze is
+    up, and `FakeDatetime.fromtimestamp` with no tz argument converts through
+    the PIN's own `tz_offset` — the offset that applied on the PINNED date —
+    rather than through the zone's rules at the instant being converted. Those
+    two are the same number all year except when the pin and today sit on
+    opposite sides of a clock change, and then they are an hour apart:
+    measured at TZ=America/Toronto under `--today=2026-01-15`, a real September
+    instant came back as 02:21 while the wall clock read 03:21. So live_clock
+    handed a test a clock an hour out, which is the one thing that marker
+    exists to prevent.
+
+    CI REACHES THIS, and the first cut of this docstring said it could not.
+    A weekday-name pin resolves to the next such day ON OR AFTER today, so it
+    reaches up to six days ahead and a clock change inside that window puts
+    the pin on the other side. Swept over 2026 at America/Toronto for the four
+    jobs actually in the matrix: sunday 12 days a year, monday 10, friday 2,
+    saturday none — 24 job-days, and the next window opens 2026-10-26. It also
+    crosses for a far-future pin, which is what aged five fixtures out on
+    2026-09-14; about 35% of random far pins from a summer today, not the half
+    first written. `real_datetime` is the unpatched class, so it reads the zone
+    as it actually stands at that instant.
+
+    NO WRAP BACK INTO A FakeDatetime, and that is the second half of the fix
+    rather than a style choice. `freezegun.api.datetime_to_fakedatetime`
+    rebuilds the value field by field and does NOT carry `fold`, so inside
+    the repeated hour of a fall-back it resolves the ambiguity to the wrong
+    side and hands `live_clock` a clock an hour out — the same symptom, the
+    same magnitude and the same marker as the bug this function exists to
+    fix, for 01:00-01:59 on the fall-back Sunday. Found by review, after the
+    first cut shipped the wrap as a free safety improvement; going through
+    `str()` instead is equally wrong for the same reason, since an ISO
+    string does not encode fold either. `_parse_pin` recognises the
+    unpatched class directly now.
     """
-    if _REAL_EPOCH_AT_PIN is None:
-        return _dt.datetime.now()
-    return _dt.datetime.fromtimestamp(_REAL_EPOCH_AT_PIN + (time.time() - _FROZEN_EPOCH_AT_PIN))
+    real_epoch = _REAL_EPOCH_AT_PIN + (time.time() - _FROZEN_EPOCH_AT_PIN)
+    return freezegun.api.real_datetime.fromtimestamp(real_epoch)
 
 
 @pytest.fixture(autouse=True)
