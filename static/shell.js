@@ -3307,7 +3307,7 @@
     // Loaded with the list, shown as one quiet card at the foot of LIST when
     // there are any, closed by default. A due one is not in here twice — it
     // is an ordinary line in its section carrying staple_id, rendered as a
-    // suggestion by groListRowHtml. stapleSections is the same staples
+    // suggestion by groLineHtml. stapleSections is the same staples
     // grouped under their derived section — Spices, Pantry basics, Fridge
     // basics, Household supplies, Other (Emily, 2026-09-13) — in the
     // order the card shows them; the server decides the section, never
