@@ -867,6 +867,124 @@ why*, not duplicating the diff.
     checked at the start AND the end of the run (Toronto 04:03 to 04:07, inside
     Niue's 00:00-06:59 window). Against the 5418/0 baseline on `5702234` in
     both zones, so the +18 is this file and nothing else.
+- **2026-09-17 — CI's `clock (sunday)` pin was red on `main` and the APP WAS
+  RIGHT: a test asked the whole needs-you band a question about one night.
+  Branch `overnight/night-off-test-sunday`, NOT merged at the time of
+  writing. Test-only — not one line of `app/` is touched.**
+  `tests/test_tonight_night_off.py::test_the_night_is_planned_empty_and_never_open`
+  took Wednesday's night off and then asserted `dinner_decision` appeared
+  NOWHERE in `get_needs_you_items()`. That band deliberately covers only
+  today and tomorrow (`weekly_plan.py`, `horizon_end = today +
+  timedelta(days=2)`), and the file seeds a Mon–Sun week, so on a Sunday run
+  today IS the week's last day and TOMORROW is the Monday after it, which
+  genuinely has no dinner row. "Tomorrow needs a dinner" is the correct
+  answer. The assertion passed on six weekdays in seven — but only four of
+  those six were luck: on a tuesday or wednesday run Wednesday IS in the
+  band's range and the band correctly showed nothing, which is a real pass.
+  - **The docstring already said what the claim was** — "`open` is a decision
+    handed back, so Now would turn round and ask *Tonight needs a dinner*" —
+    i.e. a claim about THE NIGHT THAT WAS TAKEN OFF. It was written as a
+    claim about the whole band, which also carries cards that are none of its
+    business.
+  - **THE FINDING THAT MATTERS MORE THAN THE RED PIN: the old assertion
+    caught the thing it is named after on ZERO of the seven weekdays.** Not
+    "most" and not "four in seven" — never. Measured over all seven pins,
+    not reasoned: mutate the night-off write from `plan_slot_empty` to
+    `plan_slot_open` (`tonight._settle_night_off`), remove the `slot_state`
+    line above it so the band assertion is actually reached, and run the
+    census against the unmutated app and the mutated one. **The pass/fail
+    column is byte-identical between the two runs on every one of the seven
+    days** — 6 pass, 1 fail either way — which is the whole finding: the
+    mutation makes no difference to this assertion anywhere.
+    **And the REASON is the card TYPE, not the horizon.** The horizon
+    explains only five of the days; on the other two the band genuinely
+    looked at the night and the assertion still let the mutation through:
+
+    | pin | Wed offset | band under the mutation | old assertion |
+    |---|---|---|---|
+    | monday | +2 | `[shop_run]` | PASS — never looked |
+    | tuesday | +1 | `[dinner_open WED, shop_run]` | **PASS — looked, wrong type** |
+    | wednesday | 0 | `[dinner_open WED, shop_run]` | **PASS — looked, wrong type** |
+    | thursday | −1 | `[shop_run]` | PASS — never looked |
+    | friday | −2 | `[shop_run]` | PASS — never looked |
+    | saturday | −3 | `[shop_run]` | PASS — never looked |
+    | sunday | −4 | `[dinner_decision MON-after, shop_run]` | FAIL — unrelated card |
+
+    So an `open` night answers `dinner_open`, a type the assertion did not
+    name, and the sunday failure is not the mutation's doing at all — it is
+    identical with no mutation applied. Reading the horizon as the primary
+    reason would suggest date-scoping alone fixes this; it does not, and
+    that is why the rewritten assertion names both types. The test as a
+    whole still bit, but only through the `slot_state` assertion beside it.
+  - **The fix is both halves or neither.** The night taken off is the
+    HOUSEHOLD'S OWN TODAY, which is inside the horizon on every weekday by
+    construction — scoping the assertion to the module's Wednesday instead
+    would have made it green everywhere and meant nothing, which is the trap
+    here. And the assertion reads that ONE date and both card shapes
+    (`dinner_decision` for an absent row, `dinner_open` for an `open` one),
+    because both are a decision handed back and the second is the one the
+    test is named after.
+  - **`_monday()` reseeded off `conftest.household_today()`** — this file's
+    week was still the PROCESS's Monday, which is the 2026-09-15 class. Not a
+    live failure today and not reproducible at the hour this was written, so
+    it is a latent hazard rather than a symptom, demonstrated rather than
+    asserted: constructed at a pin of `2026-09-20T20:00` with the household
+    on `Pacific/Kiritimati`, the process reads Sunday 09-20 and the household
+    Monday 09-21, and the old form seeds `09-14..09-20` with the household's
+    today OUTSIDE it. The rewritten test acts on the household's today, so
+    without this it would break in CI's real straddle window (Toronto Monday
+    00:00–06:59 under `Pacific/Niue`).
+  - **Numbers, measured.** Before: `clock (sunday)` `1 failed, 49 passed`.
+    After, full suite at `TZ=America/Toronto`: **5418 passed, 0 failed**
+    unpinned (baseline exactly — no test added or removed), and **5415
+    passed, 3 skipped, 0 failed** on each of `monday`, `friday`, `saturday`
+    and `sunday`. At a VERIFIED straddle — `Pacific/Niue`, process
+    2026-09-16 against household Toronto 2026-09-17, checked at the start AND
+    the end of the run — **5418 passed, 0 failed**. The opposite direction
+    (household BEHIND the process, production's own) is stated rather than
+    claimed: no zone can produce it at Toronto 04:45, since the furthest east
+    is only +18 hours from it. **Independently reproduced on review**, which
+    added `TZ=Etc/GMT+12` as a second straddle in the same direction (5418
+    passed, 0 failed), confirmed the collection count is 5418 on `main` as
+    well as here, and checked the rewritten test is non-vacuous on all SEVEN
+    weekdays with two mutations of its own plus the date-scoped-to-Wednesday
+    trap variant for contrast.
+  - **Checked, so nobody re-hunts it — and the count in the first version of
+    this entry was wrong.** It said "the four other files that read
+    `get_needs_you_items`" and then named three. There are **FIVE**, and the
+    grep that says so was run and pasted in the same session, so this was a
+    miscount against evidence in hand rather than a gap in the sweep. All
+    five: `test_tools.py`'s two "surfaces nothing" tests seed BOTH horizon
+    days on purpose, with a comment saying why; `test_holidays.py` reads
+    `items[0]` for the holiday ask, which is Rule 0 and always first;
+    `test_draft_waits_for_approval.py` filters POSITIVELY on `dinner_open`,
+    so a type narrowing is not a hazard there; `test_moves_household_clock.py`
+    filters on `slot == "dinner"`, which covers both card types; and
+    `test_needs_you_dinner_visible.py` is two separate things — its exact-band
+    assertion seeds no grocery list, so `shop_run` cannot appear, and that is
+    fine.
+  - **One genuinely type-narrow assertion, found on review and NOT fixed
+    here, because "the others are correct as written" was too generous.**
+    `test_needs_you_dinner_visible.py`'s
+    `test_answering_over_http_leaves_a_move_on_todays_timeline` asserts
+    `"dinner_decision" not in [...]` scoped by date — so it is immune to the
+    Sunday problem, and it names only `dinner_decision`, so a regression
+    leaving the slot `open` would slip past THAT assertion. It is caught two
+    lines later by the same test's moves and cooker-view assertions, which a
+    slot that was never really planned would fail. Defended rather than
+    broken, so it is written down rather than changed under a prose pass.
+    The full suite is green on all four pins, so nothing else is red —
+    "green by luck" was looked for in the band family only, not swept for
+    across the suite.
+  - **THE FIRST COMMIT'S MESSAGE (`c9758bc`) CARRIES THE LOOSER SENTENCE**
+    — "Six days a week the assertion passed by luck" — and it is corrected
+    here rather than amended away, because the branch's history is the
+    record of what was believed when. Its other numbers stand; it was the
+    more careful of the two texts and contains none of the census errors
+    this round fixed.
+  - **Left undone, named rather than fixed:** `drop_dish_from_day` still
+    hands a night back as `open` on a day that is over (its own card, from
+    the 2026-09-16 add-a-night entry) — unrelated to this, and untouched.
 
 - **2026-09-16 — "Shop for tonight" is claimed only when the list is actually
   holding tonight up. Branch `overnight/shop-move-for-tonight`, merged
