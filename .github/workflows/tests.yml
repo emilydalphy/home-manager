@@ -34,14 +34,22 @@ name: Tests
 #
 # TZ is America/Toronto on the first two, matching the households' own
 # default, so that neither of them is ALSO answering the timezone question.
-# It is no longer load-bearing: since 2026-09-15 the date-shaped tests seed
-# off the household's clock (conftest.household_today) rather than the
-# process's, so the suite is green in any zone at or west of UTC+9, at any
-# hour. Not "any zone": UTC+10 and east (Kiritimati, Etc/GMT-13, Brisbane)
-# still fail 3 test_frozen_clock tests, which is why this matrix runs Tokyo
-# and not Kiritimati — see the straddle job below. The pin now buys
-# one thing only — those two jobs go red for the reason they are named after
-# (a real break; a weekday cliff) and never for the wall clock.
+# Since 2026-09-15 the date-shaped tests seed off the household's clock
+# (conftest.household_today) rather than the process's, so the suite is green
+# in any zone at or west of UTC+9, at any hour. Not "any zone": UTC+10 and
+# east (Kiritimati, Etc/GMT-13, Brisbane) still fail 3 test_frozen_clock
+# tests, which is why this matrix runs Tokyo and not Kiritimati — see the
+# straddle job below.
+#
+# ON `clock` THAT LINE IS LOAD-BEARING AGAIN, for a reason it did not have
+# before 2026-09-17. A pin is the PROCESS's local wall clock, and the app
+# reads the HOUSEHOLD's; the two coincide only when the runner is in the
+# household's own zone. Take TZ off `clock` and its four jobs go back to
+# exercising a house four hours behind the hour they pinned — before its
+# morning text, and unable to reach the evening at all. That was the state
+# until 2026-09-17 and it cost real coverage; see conftest's
+# freezegun.configure block. tests/test_pin_hour_household_clock.py is the
+# tripwire on this line.
 on:
   push:
     branches: ["**"]
@@ -188,11 +196,15 @@ jobs:
     # 'now' lands on a different date from Python's. Its own card. Swap Tokyo
     # for Kiritimati once it is fixed and this job covers every hour.
     #
-    # No pin, for a second reason as well: under a freeze `datetime.now(utc)`
-    # comes back as local wall time wearing a UTC label (see conftest's
-    # _freeze_args), which happens to split the two clocks too — so a pinned
-    # straddle would look like it worked and would stop working silently the
-    # day that seam is fixed.
+    # No pin, and the first reason above is the whole of it now. It used to
+    # have a second: under a freeze `datetime.now(utc)` came back as local
+    # wall time wearing a UTC label, which split the two clocks by itself, so
+    # a pinned straddle looked like it worked and would have stopped working
+    # silently the day that seam was fixed. It was fixed on 2026-09-17 (see
+    # conftest's freezegun.configure block), so a pinned run in one of these
+    # zones now genuinely straddles. This job stays unpinned anyway, because a
+    # pin holds the offset constant and so can never catch a route that reads
+    # the wrong one of the two dates as the day turns over.
     name: straddle (${{ matrix.tz }})
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'

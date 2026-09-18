@@ -1141,6 +1141,230 @@ why*, not duplicating the diff.
     shapes. (4) Two `date.today()` reads remain in `notifications.py` (the
     expiring-soon dismissal key, the next-week plan query); same class as
     the clock sweep, not this card's.
+- **2026-09-17 — A `--today` pin put the HOUSEHOLD four hours before the hour
+  it named, so the four pinned `clock` jobs exercised a 05:00 house. Branch
+  `overnight/pin-hour-household-clock`, NOT merged at the time of writing.**
+  Loop Board Phase 0. Test infrastructure only — **not one line of `app/`**.
+  `_parse_pin`'s docstring says 09:00 is "past the 07:00 morning text, well
+  short of the 18:30 after which tonight's shop move closes". True of the
+  PROCESS's clock; false of the household's, which is the clock every screen
+  reads since the week of 2026-09-14.
+  - **Reproduced first, and the table is sharper than "four hours early".**
+    Under `--today=2026-09-21T09:00`, `cooker.household_now()` for a Toronto
+    household read **05:00 in every process zone** — Toronto, UTC,
+    Asia/Tokyo, Pacific/Kiritimati — while the honest answer moved with the
+    zone (09:00, 05:00, 20:00 the day before, 15:00 the day before). It is
+    `pin_hour + the household's own UTC offset`, so it is not always EARLY:
+    the same pin put a Tokyo household at 18:00 and a Kiritimati one at
+    23:00. A Vancouver household read 02:00. That zone-independence is
+    exactly why every DATE agreed and why this survived.
+  - **ROOT CAUSE, and it is a contradiction rather than a coverage choice.**
+    `freezegun.api.FakeDatetime.now(tz)` computes `tz.fromutc(frozen)` — the
+    right instant in the right zone — and then adds `tz_offset` on top, which
+    is the PROCESS's offset and has no business in a conversion already done.
+    So one clock had two answers for the instant it stood on: measured at
+    `TZ=America/Toronto` under a 09:00 pin, `utcnow()` and `time.time()` both
+    said 13:00 UTC and `datetime.now(timezone.utc)` said 09:00+00:00.
+    `cooker.household_now()` and `digest.py:574` are
+    `datetime.now(timezone.utc).astimezone(zone)`; `tonight.py:107` is
+    `datetime.now(zone)`, a different call SHAPE through the same patched
+    branch; and **`calendar_feed.py:804/856/902` is an affected reader the
+    first version of this entry never mentioned** — write and read go through
+    one call, so it was internally consistent either way, and what changes is
+    that the instant it records now matches `utcnow()`, SQLite's `'now'` and
+    `time.time()`. **NOT `holidays.py`**, which the first version wrongly
+    named: its live clock is `date.today()` (:447, :924), with :968 converting
+    a stored stamp, so it never reads the aware form at all.
+  - **OUTCOME 1 TAKEN, by a third route neither the card nor the 2026-09-14
+    entry considered: drop the offset from the aware branch only**
+    (`_fg_aware_now`, beside conftest's existing `freezegun.configure` patch
+    and in its spirit). `now(tz)` agrees with `utcnow()` and `time.time()`,
+    and at `TZ=America/Toronto` — the `clock` matrix's own zone — a 09:00 pin
+    is the household's 09:00. The naive pair is untouched: `datetime.now()`
+    is still 09:00 local, `utcnow()` still 13:00, SQLite's `'now'` and
+    `'localtime'` unchanged, `date.today()` still the pinned day in every
+    zone. A no-op when nothing is frozen.
+  - **THE 2026-09-14 ENTRY'S "cheapest fix" WOULD NOT HAVE CLOSED THIS CARD,
+    and that is worth having in writing.** Forcing `TZ=UTC` for the duration
+    of a pin makes the offset zero, so the three answers agree — at 09:00
+    UTC, where a Toronto household is honestly at 05:00. It closes the
+    CONTRADICTION and leaves the coverage hole exactly where it was. Its
+    stated objection (a run under an explicitly-set TZ quietly not being that
+    TZ) stands on top of that.
+  - **COST, measured before deciding: ONE test**, and it is the one that
+    documented the seam. At `TZ=America/Toronto --today=sunday`: merge base
+    1 failed / 5414 passed, patched 2 failed / 5413 — the extra being
+    `test_frozen_clock::test_a_pin_does_not_flatten_local_and_utc_together`,
+    whose own assertion message read "if this starts failing, the seam is
+    closed and this test should assert 20". It asserts 20 now, plus that the
+    aware and naive UTC clocks stand on one instant, and its comment records
+    that its "practical impact is nil — household_now() reads identically on
+    a UTC machine, which is what the container and both CI jobs are" was
+    overtaken the day the pinned jobs moved to `TZ: America/Toronto`.
+  - **THE RESIDUAL, named rather than papered over: the household reads the
+    pinned hour only while the process is in the household's zone.** A pin is
+    the process's local wall clock (`_freeze_args`, deliberately — SQLite's
+    `localtime` rests on it), so the two coincide on CI and not on a laptop
+    elsewhere: a 09:00 pin on a Tokyo machine puts a Toronto household at
+    20:00 the evening before, which is the honest answer and is a genuine
+    straddle. Both docstrings say which clock they are about now.
+  - **AND THE CONSEQUENCE OF THAT, WHICH IS THE REAL COST OF THIS CHANGE AND
+    WHICH THE FIRST VERSION OF THIS ENTRY DID NOT STATE: a weekday pin stops
+    naming the household's weekday off-zone.** The seam was zone-INDEPENDENT —
+    the property this entry itself identifies as why it survived — so until
+    now `household_today()` equalled the pinned date in every process zone.
+    After this it moves with the process's zone. Measured: `TZ=Asia/Tokyo
+    POMONA_TEST_TODAY=sunday` puts the process on Sunday 2026-09-20 and the
+    household on **Saturday** 2026-09-19 20:00, against Sunday 05:00 on
+    `main`. Whole suite there: `main` 1 failed / 5414 passed, this branch
+    **0 failed / 5429 passed** — and the failure that disappears,
+    `test_tonight_night_off::test_the_night_is_planned_empty_and_never_open`,
+    **goes green for the wrong reason, because the household is now on
+    Saturday rather than because anything was fixed.** A test passing for the
+    wrong reason, produced by this change. Contained on CI (`clock` pins
+    Toronto, and there is a tripwire on that line) and the new semantics are
+    the honest ones — but a developer running `pytest --today=sunday` on a
+    non-Toronto laptop no longer exercises Sunday from the app's point of
+    view. `_parse_pin`'s docstring says so, and `household_pin(..., on=...)`
+    is the way to name the household's own weekday.
+  - **`TZ: America/Toronto` ON `clock` IS LOAD-BEARING AGAIN**, for a reason
+    it did not have before: it is what makes a pinned hour the household's
+    hour. Its own comment has called it "belt and braces, not the belt" since
+    2026-09-15. Corrected in `tests.yml`, and
+    `test_the_pinned_jobs_still_run_in_the_households_own_zone` is the
+    tripwire — drop that line and the four jobs go quietly back to a 05:00
+    house. The straddle job's second reason for being unpinned (a pinned
+    straddle "would stop working silently the day that seam is fixed") was
+    corrected in the same change; its first reason is untouched and is the
+    whole of it now. **`straddle` is unpinned, so none of this touches it** —
+    checked in the workflow, not assumed.
+  - **`conftest.household_pin(hour, minute=0, on=None)`** is the way a test
+    names the HOUSEHOLD's hour and gets it in any zone. It exists because one
+    test needed it: `test_needs_you_dinner_visible::
+    test_the_shop_move_can_see_it_too` pins 10:00 and MEANS the household's
+    (18:30 is when tonight's shop move closes), and under a Tokyo pin that
+    became 21:00 the evening before — the move gone, looking like the app
+    losing it. That was the only new failure this change caused outside the
+    seam test, measured at `TZ=Asia/Tokyo --today=sunday`.
+  - **NOT DONE, and this is the more ambitious reading of the card:** making
+    the pin mean the household's wall time in EVERY zone. It needs the naive
+    clock shifted too (`datetime.now()` reading 13:00 for a 09:00 pin), which
+    redefines what `--today` means and drifts `date.today()` by zone. The
+    suite already forbids it. **Take the conclusion and not the number**: the
+    count depends on how the mutation is written AND on the process zone.
+    Mutating `_freeze_args`'s return to `local - offset + timedelta(hours=4)`
+    reddens 13 at `TZ=America/Toronto` (3 of them in `test_frozen_clock`) and
+    16 at `TZ=Pacific/Niue`; a reviewer's own implementation of the same idea
+    reddened 9 (4 in that file). What every version breaks is the same set of
+    guards: `test_a_bare_date_lands_mid_morning`,
+    `test_a_pin_can_carry_a_time_of_day`, this branch's
+    `test_the_pin_is_still_the_process_wall_clock`, and — in the reviewer's
+    version — `test_live_clock_beats_a_pin`. "A pin is the process's local
+    wall clock" is a promise a dozen files rest on. Emily's to reopen;
+    `household_pin` gives any single test that answer without it.
+  - **One branch is defence in depth and nothing pins it**, said in its own
+    docstring rather than claimed as coverage: the `frozen is None` arm of
+    `_fg_aware_now`. freezegun only installs `FakeDatetime` while a freeze is
+    up, so with nothing frozen the method is not on the call path and
+    deleting that arm leaves the suite green.
+  - `tests/test_pin_hour_household_clock.py` (14; **9 red / 5 passed** with the
+    aware fix reverted). **The first version of this entry said 10, and 10 is
+    the count of CATCH-LABELLED cases rather than of red ones** — this log has
+    had to unpick a red-count claim twice before and this is the third. The
+    case that is labelled CATCH and cannot be red is
+    `test_household_pin_names_the_households_hour_in_any_zone[UTC]`: the seam
+    was the process offset applied twice and UTC's offset is zero, so the bug
+    could not manifest there. Its docstring says so now, and it is kept
+    because dropping it would leave the container's own zone untested here.
+    **It is a mutation count and NOT a red-against-`main` count** — the first
+    version gave a false reason for that ("the file needs no symbol `main`
+    lacks"); line 33 imports `household_pin`, which `main`'s conftest has not
+    got, so against `main` the file is an ImportError and a collection error.
+    The conclusion was right and the reason was wrong.
+    Six mutations run, five bite: the aware fix reverted (9 red),
+    `household_pin` without its conversion (4), the naive clock shifted
+    instead (see below), `household_pin` on the default zone rather than the
+    household's (1), `TZ` dropped from the `clock` job (1), and the
+    unreachable arm (0, said above).
+  - **Numbers, all read off the runs.** Unpinned **5432 passed / 0 failed**
+    at `TZ=America/Toronto`, at `TZ=UTC`, and at `TZ=Etc/GMT+12` — the last
+    a **verified** straddle (process 2026-09-16, household 2026-09-17,
+    checked with `date +%F` on both before quoting it; Niue and Tokyo were
+    NOT straddling at the hour these ran, which is the trap the 2026-09-16
+    entry records). 5418 -> 5432 is this file's 14 exactly. Pins:
+    `clock (monday/friday/saturday)` **5429 passed / 3 skipped / 0 failed**
+    each, `clock (sunday)` 1 failed — the pre-existing one below.
+    **WHICH ZONE STRADDLES DEPENDS ON THE HOUR, so the re-run after review
+    could not use the same one**: by then Toronto read 09:31 and every zone
+    west of it was back on the same date, leaving only UTC+10 and east.
+    `Pacific/Auckland` (UTC+12, verified: process 2026-09-18, household
+    2026-09-17) gives **3 failed / 5429 passed** — and those three are the
+    documented "pin machinery above UTC+9" trio, **measured identical on
+    `main` at the same zone** (3 failed / 14 passed in `test_frozen_clock`,
+    both trees, same three names). They are what
+    `overnight/today-pin-east-of-utc9` fixes, which the merged run below
+    confirms. At
+    `TZ=Pacific/Kiritimati` `test_frozen_clock` is **3 failures before and 3
+    after**, the same three, which are the separate "pin machinery above
+    UTC+9" card. **The first version of this entry claimed 4 -> 3 and that was
+    an artifact of my own measurement**: I ran this branch's MODIFIED
+    `test_frozen_clock.py` against an UNMODIFIED `conftest.py`, so the seam
+    test was asserting the new behaviour under the old clock. A half-reverted
+    tree is not the merge base. The seam test sets `TZ=Pacific/Niue` itself,
+    so the outer zone never reached it and it passes on `main` at Kiritimati
+    (run alone there: 1 passed). Nothing was made worse anywhere; nothing was
+    made better there either.
+  - **MERGING WITH `overnight/today-pin-east-of-utc9` — READ THIS BEFORE
+    RESOLVING, BECAUSE GIT WILL NOT ASK.** That branch is already pushed and
+    the two overlap on three files. Measured on a real trial merge, not
+    reasoned about: **`tests/test_frozen_clock.py` and `tests/conftest.py`
+    AUTO-MERGE WITH NO CONFLICT**, and `.github/workflows/tests.yml` and this
+    file conflict.
+    - **The clean auto-merge is the dangerous one.** Its new test
+      `test_a_pin_east_of_utc_plus_9_holds_every_clock_on_one_instant` asserts
+      the OLD aware behaviour (`aware.date() == datetime.date(2026, 9, 13)
+      and aware.hour == 9`), so the merged tree is **1 failed / 5432 passed**
+      at Toronto, that test being the failure. Apply the one-line fix
+      its own message prescribes (`aware.date() == datetime.date(2026, 9, 12)
+      and aware.hour == 19`) and it is **5433 passed / 0 failed** at Toronto
+      AND at a verified `Pacific/Kiritimati` straddle. The two fixes compose;
+      both numbers were run here.
+    - **Also stale after that merge, in the cleanly-auto-merged file:**
+      `pinned_utc_now()`'s docstring (conftest ~:347-352), which justifies
+      `utcnow()` over `now(timezone.utc)` on the grounds that "the aware form
+      comes back as the local wall time wearing a UTC label". The CODE stays
+      right — `utcnow()` is what `_sqlite_now` and node's pin are built from —
+      and only the reason becomes false.
+    - **`tests.yml`, hunk by hunk.** Hunk 1: take east's factual update, DROP
+      east's "no longer load-bearing" sentence (false after this branch), DROP
+      this branch's "still fail 3 tests / Tokyo not Kiritimati" sentence
+      (false after east's), KEEP this branch's load-bearing paragraph, and add
+      a clause saying the TZ on the UNPINNED `pytest` job genuinely is still
+      belt-and-braces — only `clock` is load-bearing. Hunk 2: this branch's
+      retirement of the straddle job's reason 2, PLUS east's Monday-pin
+      warning kept verbatim and renumbered; that one is a separate finding and
+      is still true.
+    - **THE TWO BRANCHES SAW THE SAME SEAM AND JUDGED IT DIFFERENTLY, and
+      this one is right.** East-of-utc9 called it "invisible today because
+      `conftest.household_today()` and `cooker.household_now()` both read the
+      aware form, so they are wrong together and agree." They do agree — and
+      they agree on an answer four hours (at Kiritimati, a whole day) from the
+      household's real clock, which is what cost the four pinned jobs their
+      evening coverage. Its entry is **superseded on that point only**;
+      everything else in it stands.
+  - **A SEPARATE BUG, found and NOT fixed: `clock (sunday)` is RED on
+    `main`.** `test_tonight_night_off::
+    test_the_night_is_planned_empty_and_never_open` fails under
+    `--today=sunday` at `TZ=America/Toronto`, before this branch and after
+    it. That file seeds `WEEK` from the server's Monday and calls Wednesday
+    "tonight", so on a Sunday pin today is the week's LAST day and the
+    needs-you band legitimately asks about tomorrow — a day no plan covers.
+    **It is NOT the class `conftest.household_today()` exists for** — an
+    earlier version of this bullet said so, and that would have sent the
+    follow-up the wrong way. At `TZ=America/Toronto` the two clocks agree, so
+    seeding off the household changes nothing; the cause is `TONIGHT = WED`
+    hard-wired (`tests/test_tonight_night_off.py:44-50`) against a pin that
+    lands on Sunday. Already being fixed on its own branch.
 
 - **2026-09-16 — "Shop for tonight" is claimed only when the list is actually
   holding tonight up. Branch `overnight/shop-move-for-tonight`, merged

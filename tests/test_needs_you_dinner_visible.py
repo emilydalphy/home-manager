@@ -39,7 +39,7 @@ import datetime
 
 from app import households, tools
 from app.tools import digest
-from conftest import household_today
+from conftest import household_pin, household_today
 
 
 def _d(offset_days: int = 0) -> str:
@@ -172,8 +172,16 @@ class TestABrandNewHouseholdWithNoPlanAtAll:
         the `pytest` job is there to catch. 10:00 for the same reason
         --today's bare-date default is 09:00 — mid-morning is inside every
         window the app reasons about.
+
+        THE HOUR IS THE HOUSEHOLD'S, which is why this goes through
+        `household_pin` rather than combining a household date with a wall
+        time: 18:30 is read off the household's clock, so a pin naming 10:00
+        in the PROCESS's zone puts a Toronto household at 21:00 the evening
+        before when this runs on a Tokyo laptop, the shop move has closed, and
+        the failure looks like the app losing a move. Measured exactly that
+        way at TZ=Asia/Tokyo under --today=sunday.
         """
-        frozen_today(datetime.datetime.combine(household_today(), datetime.time(10, 0)))
+        frozen_today(household_pin(10))
         _a_recipe()
         tools.resolve_needs_you_dinner(_d(), "Chili", add_ingredients_to_grocery_list=True)
 

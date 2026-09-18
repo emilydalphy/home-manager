@@ -314,28 +314,29 @@ def test_a_pin_does_not_flatten_local_and_utc_together(frozen_today):
         assert utc.endswith("20:00:00"), utc
         assert local.endswith("09:00:00"), local
 
-        # THE SEAM, asserted so it is written down rather than discovered.
-        # freezegun applies tz_offset on top of the tz conversion, so an AWARE
-        # now() comes back as the local wall time wearing a UTC label instead
-        # of the instant it stands for: 09:00+00:00 here, where the honest
-        # answer is 20:00+00:00. Practical impact today is nil — `household_now()`
-        # (cooker.py) reads identically on a UTC machine, which is what the
-        # container and both CI jobs are — but it is a real hole in a fix whose
-        # whole headline is that local and UTC do not collapse.
+        # THE SEAM, CLOSED 2026-09-17 — and this assertion is the one the old
+        # version of this comment said to change. It read 9, because freezegun
+        # applied tz_offset on top of the tz conversion and an AWARE now() came
+        # back as the local wall time wearing a UTC label. The claim that its
+        # practical impact was nil ("household_now() reads identically on a UTC
+        # machine, which is what the container and both CI jobs are") was
+        # overtaken the day the pinned jobs moved to TZ: America/Toronto: there
+        # the seam put a Toronto household at 05:00 under a 09:00 pin, four
+        # hours before its own morning text. See conftest's freezegun.configure
+        # block for the fix and for the measurement.
         #
-        # The cheapest fix if it ever bites: force TZ=UTC for the duration of a
-        # pin, which makes the offset zero and the seam arithmetically
-        # impossible. Not done here because it would make a run under an
-        # explicitly-set TZ quietly not be that TZ, which trades a latent
-        # surprise for an active one.
+        # 20 is the honest answer: 09:00 Niue is UTC-11, so the instant this
+        # clock stands on IS 20:00 UTC, which is what utcnow(), time.time() and
+        # SQLite's 'now' have always said.
         aware = datetime.datetime.now(datetime.timezone.utc)
-        assert aware.hour == 9, (
-            "freezegun's aware now() still double-counts the offset; if this "
-            "starts failing, the seam is closed and this test should assert 20"
+        assert aware.hour == 20, (
+            "an aware now() must stand on the same instant as utcnow(); if this "
+            "reads 9 again, the tz_offset is being applied twice (conftest)"
         )
         # ...and the naive pair above is the one every reader in app/ uses, so
         # it is the one that has to be right.
         assert datetime.datetime.utcnow().hour == 20
+        assert aware.replace(tzinfo=None).hour == datetime.datetime.utcnow().hour
     finally:
         if was is None:
             os.environ.pop("TZ", None)
