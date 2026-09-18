@@ -402,6 +402,21 @@ why*, not duplicating the diff.
   `weekly-plan-last-clock-reads` and 2026-09-17 `freezer-ask` entries and
   never filed. All three move in the same commit, on this file's own rule
   that a half-converted module is a new bug rather than a smaller one.
+  - **THE FIRST CUT REDDENED THE BLOCKING `straddle` CI JOB, in both
+    directions, at any hour — found by review and fixed here.**
+    `tests/test_inventory_use_soon.py` seeded off the PROCESS's
+    `date.today()` and then asked the BACKEND about it, which on `main`
+    collapsed to one clock by accident and after this does not. Measured:
+    base 4 passed at `Pacific/Niue`, branch 1 failed; same at
+    `Pacific/Kiritimati` and `Etc/GMT+12`, green at Toronto and Tokyo — i.e.
+    it was only ever measured in the one configuration where this bug class
+    cannot occur, which is the mistake every earlier branch in this sweep
+    made once and fixed. **The file holds TWO clocks and neither helper is
+    right for both halves**: its page tests run under node, which inherits
+    the process's TZ and knows nothing about `households.timezone`, so
+    `_iso` stays on the process's clock and a new `_household_iso` serves
+    the one backend-facing test. Pointing `_iso` at the household outright
+    was tried first and moved the failure to the node half.
   - **`inventory.get_expiring_soon` is the one with teeth, and it is worse
     than a wrong badge.** An `expiration_date` is a CALENDAR DATE, never a
     UTC instant, so there is no sense in which the server's day is the
@@ -423,6 +438,15 @@ why*, not duplicating the diff.
     `expiring:<today>`, so on the server's clock it rolls over at about 8pm
     local: a household that tapped the notification away at 7:55 was shown
     it again at 8:01 under a key naming tomorrow.
+  - **The guard on that rule was itself satisfiable by a COMMENT**, which is
+    the disease this file's own `_code_of` helper exists to prevent, on the
+    one test that states the rule. It read comment-stripped code for one
+    half and comment-inclusive source for the other, so turning both
+    `utcnow()` into `now()` — genuinely harmful, since `created_at` is
+    SQLite's UTC and CI runs `TZ=America/Toronto` — passed the whole file as
+    long as the word survived in a comment. Both halves are `_code_of` now.
+    This matters beyond today: `utcnow()` is deprecated from Python 3.12,
+    and that is the exact edit a linter will suggest at the next bump.
   - **One read is DELIBERATELY left on UTC and says so at the function.**
     `notifications`' `datetime.utcnow()` measures how long ago a plan was
     created against SQLite's own UTC `created_at`, as a DURATION. There is
@@ -441,9 +465,29 @@ why*, not duplicating the diff.
     dozen test files pin `weekly_plan.date`, and **nothing anywhere pins
     `inventory.date`, `big_meal.date` or `notifications.date`** (checked).
     So these read `cooker.household_today()` directly, as `defrost.py` does.
-  - **`big_meal`'s six reads are all DEFAULTS**, so a caller holding one
-    clock still wins — which is what keeps `spread_prep` and `shop_split`
-    answering about the day their caller named rather than about two.
+  - **FOUR OF THE TWELVE CONVERTED READS WERE PINNED BY NOTHING, and one of
+    them silently deletes a household's prep rows.** Found by a reviewer
+    mutating each call site in an AST-invisible spelling
+    (`datetime.now().date()`) rather than the `date.today()` the sweep guard
+    knew: `spread_prep`'s default, `shop_split`'s default and
+    `_spoken_summary`'s two `_relative_day` reads all reverted with the
+    WHOLE SUITE GREEN (`5686 passed` either way). Driven on a real straddle
+    with no clock faking, reverting `spread_prep` wrote **zero** prep rows
+    where the household should have had two — "Make the stuffing" and the
+    fresh shop, both dated its own today. Each has a behaviour test now, and
+    the AST guard knows every spelling (`datetime.now`, `datetime.today`,
+    `datetime.utcnow`, `time.time`) rather than one.
+  - **The `spread_prep` test only discriminates on the right seed**, which
+    is worth knowing before anyone "simplifies" it: the holiday has to be
+    the household's TOMORROW, so both rows fall on its own today and the
+    server's clock reads that day as already gone. A holiday two days out —
+    the first version — is ahead of both clocks and stays green under the
+    mutation.
+  - **`big_meal`'s reads are DEFAULTS except two**, and the first version of
+    this entry said all six were. `_spoken_summary` takes no `today`
+    parameter at all, so `get_big_meal` reads the clock three separate times
+    with nothing threaded. Naming it rather than threading it: that is a
+    signature change on a function with other callers.
   - **TWO OF MY OWN TESTS WERE WORTHLESS AND ONLY MEASUREMENT FOUND THEM**,
     which is the part of this worth reading. (1) The plan-ready test
     filtered on `type == "plan_ready"`, a string the app never emits, so it
@@ -458,24 +502,63 @@ why*, not duplicating the diff.
     outright left it GREEN. It now uses two days one apart, where one keeps
     the early trip and the other has already dropped it, and the mutation
     reddens it.
-  - `tests/test_last_clock_pockets.py` (16; **12 red against the unmodified
-    `app/`**, of which **10 are behaviour catches** and one is the AST
-    sweep guard, red for exactly the reason it is named after. The twelfth
-    is red only because `_today` does not exist there and says so in its own
-    docstring). Both directions at one frozen UTC instant, following
+  - `tests/test_last_clock_pockets.py` (19; **15 red against the unmodified
+    `app/`**, of which **13 are behaviour catches** and one is the AST sweep
+    guard, red for exactly the reason it is named after. The fifteenth is
+    red only because `_today` does not exist there and says so). **The first
+    version of this entry said 12 and decomposed it into 12, and the true
+    count was 13** — the extra was a test labelled GUARD that was red, at a
+    first assertion duplicating another test, so it never reached the claim
+    it is named for. Corrected and the dead assertion removed, which is the
+    same labelling error this entry already made a virtue of catching one
+    test earlier. Both directions at one frozen UTC instant, following
     `test_weekly_plan_household_clock.py`: Toronto 21:30 (the household a
     day BEHIND, production's own direction) and Tokyo 08:30 (a day AHEAD).
     Three mutations run and each reddens what it should. One test
     characterises a labelling error rather than hiding it: the
     already-passed-holiday case was written as a guard and is a catch.
+  - **COST, measured: three extra connections on the notifications payload
+    and one each on the rest.** `get_active_notifications` 8 → 11,
+    `get_expiring_soon` 1 → 2, `get_fresh_perishable_inventory` 1 → 2,
+    `shop_split` 1 → 2, `shop_dates` 0 → 1. The +3 is three separate clock
+    reads per payload where `weekly-plan-last-clock-reads` went out of its
+    way to resolve once and thread down — it took `get_week_menu` from 4 to
+    3 by doing so. Threading here would mean signature changes on functions
+    with other callers; named rather than done.
+  - **A HALF-CONVERSION THIS DOES NOT CLOSE, and by this entry's own rule it
+    has to be named: the WRITE side of `expiration_date` is still on the
+    server's clock.** `quantities._estimate_expiration_date` is what dates
+    every inventory row added without an explicit date — the grocery tick,
+    the scans, `update_inventory`. Measured over HTTP with no clock faking:
+    a dairy row (10-day table) lands 10 days from the SERVER's today, i.e.
+    11 from a household behind it and 9 from one ahead. The east-of-UTC
+    direction announces the item a day early, which is this branch's own bug
+    class arriving from the write side. One day, and inventory is beta.
+  - **And "chores is what's left" is not true.** An AST sweep of `app/` for
+    `date.today()` on this branch: `chores.py` 16, `calendar_feed.py` 4,
+    `grocery.py` 2, `holidays.py` 2, `leftovers.py` 1, `meal_plans.py` 1,
+    `pre_shop.py` 1, `quantities.py` 1, `staples.py` 1. Chores is the
+    largest; `quantities.py` is the one that matters, for the reason above.
+  - **The notifications half is PARTLY latent, and the first version told its
+    story in the present tense.** `SHOW_NOTIF_BELL` is false and
+    `/api/notifications` is never requested, so the dismissal story cannot
+    happen through the bell — but `digest.build_morning_text` calls
+    `get_active_notifications` and surfaces the expiring title, so the
+    `expiring:` key fix IS live wherever the Twilio keys are set. The
+    `weekly_plan_ready` half is bell-only and genuinely latent.
   - **Severity, honestly: LOW today.** Inventory is marked "still in
     development" (Emily, 2026-09-11) and beta testers are told not to keep
     it up to date, so almost nothing is in those tables. The `big_meal`
     reads matter from 12 October. This is a pocket closed before inventory
     comes out of development, not a fire.
-  - Suite **5686 passed, 0 failed** at `TZ=America/Toronto`, against a
-    measured **5670** on the merge base in the same zone — +16 is this file
-    exactly, nothing deleted or weakened.
+  - Suite **5689 passed, 0 failed** at `TZ=America/Toronto`, against a
+    measured **5670** on the merge base in the same zone — +19 is this file
+    exactly, nothing deleted or weakened. And **5689 passed, 0 failed under
+    BOTH verified straddles**, which is the number that matters here:
+    `Pacific/Niue` (process 2026-09-17 against household 2026-09-18) and
+    `Pacific/Kiritimati` (process 2026-09-19 against the same household),
+    both dates checked before and after each run. That is the blocking job
+    the first cut reddened.
   - **Still on the server's clock and deliberately untouched:**
     `app/tools/chores.py`, 16 reads, the fourth and largest pocket, with
     its own card. Tonight's override was bugs-only and no Chores.

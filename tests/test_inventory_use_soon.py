@@ -29,6 +29,7 @@ from pathlib import Path
 import pytest
 
 from app import tools
+from conftest import household_today
 
 
 INVENTORY = Path(__file__).resolve().parent.parent / "static" / "inventory.html"
@@ -39,7 +40,27 @@ pytestmark = pytest.mark.skipif(
 
 
 def _iso(days: int) -> str:
+    """
+    A date the PAGE will reason about, so it is counted off the PROCESS's
+    clock — the page's helper runs under node, which inherits this process's
+    TZ and knows nothing about households.timezone.
+    """
     return (datetime.date.today() + datetime.timedelta(days=days)).isoformat()
+
+
+def _household_iso(days: int) -> str:
+    """
+    A date the BACKEND will reason about, counted off the HOUSEHOLD's clock.
+
+    Since 2026-09-18 `inventory.get_expiring_soon` measures its window from
+    the household's own day rather than the server's, so a seed seeded off
+    this process's `date.today()` and then asked about by the backend is
+    asserting that the two clocks agree — which they do not for the hours
+    CI's `straddle` job exists to cover. This file holds BOTH clocks on
+    purpose and neither helper is the right one for both halves: the node
+    tests above need the process's, this one needs the household's.
+    """
+    return (household_today() + datetime.timedelta(days=days)).isoformat()
 
 
 def _extract(name: str, source: str) -> str:
@@ -109,8 +130,8 @@ def test_the_screen_and_the_backend_agree_on_the_threshold():
     src = INVENTORY.read_text()
     page_days = int(re.search(r"const USE_SOON_DAYS = (\d+);", src).group(1))
 
-    tools.update_inventory("Milk", action="add", quantity="1", expiration_date=_iso(page_days))
-    tools.update_inventory("Rice", action="add", quantity="1", expiration_date=_iso(page_days + 1))
+    tools.update_inventory("Milk", action="add", quantity="1", expiration_date=_household_iso(page_days))
+    tools.update_inventory("Rice", action="add", quantity="1", expiration_date=_household_iso(page_days + 1))
 
     names = {i["item"] for i in tools.get_expiring_soon(days=page_days)}
     assert "Milk" in names, (

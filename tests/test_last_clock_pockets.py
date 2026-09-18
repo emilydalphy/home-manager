@@ -233,21 +233,23 @@ def test_a_holiday_the_household_has_already_passed_is_not_upcoming(monkeypatch)
 
 def test_an_explicit_today_still_wins_over_the_clock(monkeypatch):
     """
-    GUARD, pinned by mutation: every one of these takes `today` and the
-    change is to its DEFAULT only. A caller holding one clock must never be
-    answered about another day.
+    GUARD: the change is to the DEFAULT only, so a caller holding one clock
+    must never be answered about another day.
 
-    The first version of this test was TOOTHLESS and only measurement found
-    it: it named a day a month out, where both clocks give the same answer,
-    so making shop_dates ignore its argument outright left it green. The two
-    days below are chosen so the two clocks genuinely disagree — one keeps
-    the early trip, the other has already dropped it.
+    TWO corrections live in this one test and both were found by measuring
+    rather than reading. (1) The first version named a day a month out, where
+    both clocks give the same answer, so making shop_dates ignore its
+    argument outright left it GREEN. (2) The second version opened by
+    exercising the DEFAULT — which duplicated
+    test_the_early_trip_is_not_dropped_a_day_early, made this test red
+    against main, and meant it never reached the assertion it is named for.
+    It asserts one thing now, on two days one apart, where the two clocks
+    genuinely disagree.
     """
     household_today = _behind(monkeypatch)
     holiday = household_today + timedelta(days=_big_meal.EARLY_SHOP_DAYS_AHEAD)
-    # On the household's own clock the early trip is today, and stands.
-    assert _big_meal.shop_dates(holiday.isoformat())["early"] == household_today.isoformat()
-    # A caller naming tomorrow is past it, and must be told so.
+    # The household's own day keeps this trip; a caller naming tomorrow is
+    # past it and must be told so.
     named = household_today + timedelta(days=1)
     assert _big_meal.shop_dates(holiday.isoformat(), today=named)["early"] is None
 
@@ -331,6 +333,110 @@ def test_a_plan_for_a_week_genuinely_ahead_is_still_announced(monkeypatch):
     assert "weekly_plan_ready" in kinds, kinds
 
 
+# ---------- the four reads nothing else pins ----------
+
+def _spy_on_household_today(monkeypatch):
+    """Record every call to the household clock, still answering honestly."""
+    seen = {"n": 0}
+    real = _cooker.household_today
+
+    def _counted(*a, **k):
+        seen["n"] += 1
+        return real(*a, **k)
+
+    monkeypatch.setattr(_big_meal._cooker, "household_today", _counted)
+    return seen
+
+
+def _hosting_menu_on(day: date) -> None:
+    """
+    The smallest real seed spread_prep will not return early from: a hosting
+    answer whose menu names a dinner entry that is still there, on an
+    APPROVED plan.
+    """
+    import json
+
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO weekly_plans (household_id, week_start_date, status, content_start_date, day_count) "
+        "VALUES (1, ?, 'approved', ?, 7)",
+        (day.isoformat(), day.isoformat()),
+    )
+    plan_id = conn.execute("SELECT id FROM weekly_plans ORDER BY id DESC LIMIT 1").fetchone()["id"]
+    conn.execute(
+        "INSERT INTO meal_plan_entries (household_id, weekly_plan_id, date, slot, freeform_meal, "
+        "slot_state, derived_from_json) VALUES (1, ?, ?, 'dinner', 'Roast', 'planned', ?)",
+        (plan_id, day.isoformat(), json.dumps({"holiday_menu": True})),
+    )
+    entry_id = conn.execute("SELECT id FROM meal_plan_entries ORDER BY id DESC LIMIT 1").fetchone()["id"]
+    conn.execute(
+        "INSERT INTO holiday_answers (household_id, date, holiday_name, answer, headcount, menu_json) "
+        "VALUES (1, ?, 'Thanksgiving', 'hosting', 6, ?)",
+        (day.isoformat(), json.dumps({
+            "entry_id": entry_id, "status": "built",
+            "dishes": [{"name": "Stuffing", "role": "side", "ahead_days": 1}],
+        })),
+    )
+    conn.commit()
+    conn.close()
+
+
+def test_spread_prep_dates_its_rows_off_the_households_day(monkeypatch):
+    """
+    CATCH for the converted read with the most teeth, and NOTHING in the
+    suite pinned it — found by a reviewer mutating the call site in an
+    AST-invisible spelling and watching the WHOLE suite stay green
+    (`5686 passed` either way).
+
+    What that mutation costs, measured by the reviewer on a real straddle
+    with no clock faking: zero prep rows written where the household should
+    have had two — "Make the stuffing" and the fresh shop, both dated its
+    own today — because `spread_prep` writes nothing for a day already gone
+    and on the server's clock that day had gone.
+
+    The seed is the reviewer's: the holiday is the household's TOMORROW, so
+    both rows fall on the household's own today — and `spread_prep` writes
+    nothing for a day already gone, which on the server's clock that day is.
+    A holiday further out does NOT discriminate (the first version of this
+    test used two days and stayed green under the mutation), because every
+    row is then ahead of both clocks.
+    """
+    household_today = _behind(monkeypatch)
+    holiday = household_today + timedelta(days=1)
+    _hosting_menu_on(holiday)
+
+    rows = _big_meal.spread_prep(holiday.isoformat())
+    assert rows, "the household's own today is not 'already gone'"
+    assert [r["task_date"] for r in rows] == [household_today.isoformat()] * len(rows), rows
+
+
+@pytest.mark.parametrize("call", [
+    pytest.param(lambda: _big_meal.shop_split(), id="shop_split"),
+    pytest.param(lambda: _big_meal._spoken_summary({
+        "holiday_name": "Thanksgiving", "eaters": 6,
+        "dishes": [{"name": "Roast", "role": "main", "ahead_days": 0, "made_ahead_on": None}],
+        "shop": {"early": {"date": "2026-10-09"}, "fresh": {"date": "2026-10-11"}},
+    }), id="said"),
+])
+def test_the_other_reads_with_no_test_of_their_own_ask_the_household(monkeypatch, call):
+    """
+    CATCH for the other three reads a reviewer found unpinned:
+    `shop_split`'s default and `_spoken_summary`'s two `_relative_day`
+    reads — the second of which is the sentence a household actually reads
+    ("the fresh things tomorrow"), and which said "today" from about 8pm the
+    evening before.
+
+    This asserts the READ rather than its downstream effect, deliberately:
+    seeding a real menu for each would make these tests of the menu builder
+    that happen to mention a clock. It catches exactly the mutation that
+    found them — any spelling of "ask the server instead" stops calling this
+    function.
+    """
+    seen = _spy_on_household_today(monkeypatch)
+    call()
+    assert seen["n"] >= 1, "this read is not on the household's clock"
+
+
 # ---------- the rule the sweep follows ----------
 
 def test_the_duration_read_is_deliberately_left_on_utc():
@@ -343,9 +449,14 @@ def test_the_duration_read_is_deliberately_left_on_utc():
     the two disagree — and _today()'s docstring says so, which is what a
     future sweep will act on.
     """
-    code = _code_of(_notifications._today)
-    assert "utcnow" in _source(_notifications.get_active_notifications)
-    assert "household_today" in code
+    assert "household_today" in _code_of(_notifications._today)
+    # _code_of on BOTH halves. The first cut used comment-inclusive source
+    # here, and a mutation that turned both utcnow() into now() -- genuinely
+    # harmful, since created_at is SQLite's UTC and CI runs TZ=America/Toronto
+    # -- passed the whole file as long as the word "utcnow" survived in a
+    # comment. That is this file's own rule failing on the one test that
+    # states it.
+    assert "utcnow" in _code_of(_notifications.get_active_notifications)
 
 
 def test_every_module_moved_in_the_same_commit():
@@ -363,15 +474,30 @@ def test_every_module_moved_in_the_same_commit():
     import ast
     import inspect
 
+    # EVERY spelling, not just `date.today()`. A reviewer reverted all twelve
+    # reads as `datetime.now().date()` and this guard stayed green while
+    # twelve behaviour tests went red — a guard that knows one spelling is a
+    # guard somebody routes around by accident.
     for module in (_inventory, _big_meal, _notifications):
         tree = ast.parse(inspect.getsource(module))
-        calls = [
-            n for n in ast.walk(tree)
-            if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
-            and n.func.attr == "today" and isinstance(n.func.value, ast.Name)
-            and n.func.value.id == "date"
-        ]
-        assert not calls, f"{module.__name__} still reads the server's clock at line {calls[0].lineno}"
+        bad = []
+        for n in ast.walk(tree):
+            if not isinstance(n, ast.Call):
+                continue
+            f = n.func
+            if isinstance(f, ast.Attribute) and isinstance(f.value, ast.Name):
+                if (f.value.id, f.attr) in {
+                    ("date", "today"), ("datetime", "now"),
+                    ("datetime", "today"), ("datetime", "utcnow"),
+                    ("time", "time"),
+                }:
+                    bad.append((f.value.id, f.attr, n.lineno))
+        if module is _notifications:
+            # The one deliberate exception, and it is pinned by line as well
+            # as by name: a UTC instant compared against SQLite's own UTC
+            # created_at, as a DURATION. See _today's docstring.
+            bad = [b for b in bad if b[:2] != ("datetime", "utcnow")]
+        assert not bad, f"{module.__name__} reads the server's clock: {bad}"
 
 
 # ---------- helpers ----------
