@@ -85,7 +85,7 @@ def test_at_seven_in_the_morning_the_shop_is_named_after_breakfast():
     _week_with({"breakfast": ("Overnight Oats", "Rolled oats"),
                 "dinner": ("Bean Chili", "Black beans")})
     shop = _shop(_at(7))
-    assert shop["title"] == "Shop before breakfast"
+    assert shop["title"] == "Shop for breakfast"
     assert shop["detail"].endswith("by 7:35"), shop["detail"]
 
 
@@ -97,7 +97,7 @@ def test_the_morning_text_says_it_too():
     _week_with({"breakfast": ("Overnight Oats", "Rolled oats"),
                 "dinner": ("Bean Chili", "Black beans")})
     text = _digest.build_morning_text(now_local=_at(7))
-    assert "Shop before breakfast" in text
+    assert "Shop for breakfast" in text
     assert "Shop for tonight" not in text, (
         "the text must not say tonight over a deadline before eight in the morning"
     )
@@ -123,7 +123,7 @@ def test_a_lunch_is_named_as_lunch():
     """CATCH. The third slot a deadline can belong to."""
     _week_with({"lunch": ("Turkey Sandwiches", "Sliced turkey"),
                 "dinner": ("Bean Chili", "Black beans")})
-    assert _shop(_at(9))["title"] == "Shop before lunch"
+    assert _shop(_at(9))["title"] == "Shop for lunch"
 
 
 def test_a_snack_says_today_rather_than_naming_a_half_of_the_day():
@@ -199,4 +199,69 @@ def test_the_title_reads_the_soonest_waiting_cooks_slot_and_not_the_first_meal_o
     for row in tools.list_grocery_list(status="needed"):
         if row["item"].lower().startswith("rolled oats"):
             tools.mark_grocery_item(row["id"], "purchased")
-    assert _shop(_at(6))["title"] == "Shop before lunch"
+    assert _shop(_at(6))["title"] == "Shop for lunch"
+
+
+# ---------------------------------------------------------------------------
+# What an independent review found (2026-09-18)
+# ---------------------------------------------------------------------------
+
+def test_no_title_is_long_enough_to_cost_the_morning_text_a_line():
+    """
+    CATCH against this branch's own first commit, which said "Shop before
+    breakfast" — five characters longer than the line it replaced.
+
+    `build_morning_text` keeps lines while they fit a budget and SKIPS one
+    that does not rather than stopping, so every extra character shifts a
+    keep/drop boundary. Review measured a real household losing its whole
+    "Lunch: ..." line to those five characters: main 297 chars with the
+    lunch line, the first cut 236 without it.
+
+    A length bound rather than a reproduction of that one text, because
+    the text depends on the household's own dish names and this is the
+    property that actually holds: no title may run more than a couple of
+    characters past "Shop for tonight", which is the line the budget was
+    tuned against.
+    """
+    from app.tools.moves import _SHOP_TITLE_BY_SLOT, _shop_title
+
+    approved = len("Shop for tonight")
+    for slot, title in list(_SHOP_TITLE_BY_SLOT.items()) + [("snack", _shop_title("snack"))]:
+        assert len(title) <= approved + 2, (
+            f"{title!r} is {len(title) - approved} characters longer than "
+            "'Shop for tonight' — long enough to push a line out of the morning text"
+        )
+
+
+def test_every_title_is_one_grammar():
+    """
+    GUARD, green either way — pinned by mutation: put "Shop before
+    breakfast" back and this fails.
+
+    "Shop for tonight" is the line Emily already approved. `for` says what
+    the trip is FOR and leaves the clock to the detail line; `before`
+    issues an instruction the app sometimes cannot stand behind, because
+    the deadline is a cook's START time and a long breakfast bake puts it
+    at 5:00 in the morning.
+    """
+    from app.tools.moves import _SHOP_TITLE_BY_SLOT, _shop_title
+
+    for title in list(_SHOP_TITLE_BY_SLOT.values()) + [_shop_title("snack")]:
+        assert title.startswith("Shop for "), title
+
+
+def test_the_unknown_slot_fallback_agrees_with_the_call_sites_own():
+    """
+    GUARD on a latent trap, green either way — pinned by mutation: make
+    `_shop_title`'s fallback "Shop for tonight" while the call site keeps
+    its `or "dinner"`, and nothing notices; make them differ the other way
+    and a later tidy-up dropping the `or` flips the title while
+    `_slot_time`'s own unknown-slot fallback still computes a DINNER-hour
+    deadline, so title and clock disagree where on main they agreed.
+
+    Unreachable today — `DAY_SLOTS` has four non-empty values — which is
+    exactly why it is written down rather than left to be found.
+    """
+    from app.tools.moves import _shop_title
+
+    assert _shop_title("") == _shop_title(None) == _shop_title("brunch")

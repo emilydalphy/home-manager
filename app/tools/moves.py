@@ -201,10 +201,21 @@ def _slot_time_label(slot: str, at: datetime) -> str:
 # deadline was honest; the word was not, and that function's own docstring
 # says an invented deadline at seven in the morning is how a morning
 # check-in stops being believed.
+# One grammar, because "Shop for tonight" is the line already approved and
+# three siblings in its shape read as one family. "Shop BEFORE breakfast"
+# was the first wording and was dropped on review: `for` says what the trip
+# is FOR and leaves the clock to the detail line, where the deadline
+# already lives, while `before` issues an instruction the app sometimes
+# cannot stand behind — a long breakfast bake puts the deadline at 5:00 in
+# the morning, and "be at a shop before 5:00" is not something to say to a
+# person. §8: don't encode the same thing twice, and describe only what is
+# true. It is also five characters shorter, which matters: the morning text
+# SKIPS a line that does not fit its budget, so a longer title can silently
+# cost a household the whole "Lunch: ..." line.
 _SHOP_TITLE_BY_SLOT = {
     "dinner": "Shop for tonight",
-    "breakfast": "Shop before breakfast",
-    "lunch": "Shop before lunch",
+    "breakfast": "Shop for breakfast",
+    "lunch": "Shop for lunch",
 }
 
 
@@ -212,9 +223,19 @@ def _shop_title(slot: str) -> str:
     """
     The shop, named after the meal it is actually for.
 
-    A snack falls back to "Shop for today": there is no "before" a person
-    would recognise for a snack the way there is for a meal, and naming
-    the wrong half of the day is the thing this is fixing.
+    A snack answers "Shop for today". Not a rare fallback, despite how it
+    reads: measured, a snack is the soonest waiting cook for a whole band
+    of the afternoon and IS the featured card at every hour of it, so with
+    `snacks_per_day` defaulting to 2 this is the headline most afternoons
+    of an unshopped day. It is the weakest of the four — the only one that
+    does not say what the shop is for — and "Shop before the snack" is
+    worse. Emily's to better.
+
+    The unknown-slot fallback is the same string on purpose, so this
+    function's answer never depends on the call site's own `or "dinner"`
+    — the two used to disagree, and a later tidy-up dropping that `or`
+    would have flipped the title to "today" while `_slot_time`'s own
+    unknown-slot fallback still computed a DINNER-hour deadline.
     """
     return _SHOP_TITLE_BY_SLOT.get((slot or "").strip().lower(), "Shop for today")
 
