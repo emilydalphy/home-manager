@@ -391,6 +391,56 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-18 — The morning text said "Shop for tonight — by 7:55" at seven
+  in the morning. Branch `overnight/shop-move-names-the-meal`, NOT merged
+  at the time of writing.** Found by driving the app on a throwaway
+  database. The 2026-09-16 `shop-move-for-tonight` work made the shop
+  move's DEADLINE the start time of the soonest cook the list is genuinely
+  waiting on — correct, and very often breakfast or lunch. The TITLE did
+  not move with it: `moves._shop_move` said "Shop for tonight" for any
+  waiting cook today, whichever meal it was.
+  - **Measured, on the shape a real household has**, two adults, one
+    breakfast and one dinner, nothing shopped: at 07:00 `Now` and the
+    morning text both read **"Shop for tonight — 4 items, by 7:55"** —
+    "tonight" and a deadline fifty-five minutes away, in one sentence. At
+    11:00 the same household reads "Shop for tonight — by 6:35", which is
+    right. So the word was wrong exactly when the deadline was earliest.
+  - **The morning text is why this is worth a branch rather than a note.**
+    It goes out at 07:00 by default, and 07:00 is precisely the hour
+    today's dinner is the LAST cook still ahead rather than the first — so
+    the channel built to reach the household OUT of the app is where this
+    is most likely, not least. `_shop_move`'s own docstring says an
+    invented deadline at seven in the morning is how a morning check-in
+    stops being believed. The deadline was fixed on 09-16; the word was
+    left saying something the same line disproves.
+  - **`_shop_title` reads the slot of the meal the DEADLINE belongs to**,
+    not the day's earliest slot — pinned by its own test, because that is
+    the easier wrong fix: a household whose breakfast is already bought is
+    waiting on lunch, and the title has to say lunch while breakfast is
+    still ahead.
+  - **A snack answers "Shop for today", deliberately.** There is no
+    "before" a person would recognise for a snack the way there is for a
+    meal, and naming the wrong half of the day is the thing being fixed,
+    so the honest answer is the smaller one.
+  - **The not-today branch is untouched.** "Shop before tomorrow" stays as
+    it is: naming tomorrow's MEAL would claim a precision that wording
+    deliberately does not, and a mutation applying `_shop_title` there
+    reddens its guard.
+  - **THE WORDING IS AN ASSUMPTION, Emily's to overrule in one line** —
+    `_SHOP_TITLE_BY_SLOT` at the top of `moves.py`. "Shop before breakfast"
+    / "Shop before lunch" / "Shop for tonight" / "Shop for today".
+  - `tests/test_shop_move_names_the_meal.py` (9; **5 red against `app/` on
+    277d854, every one a behaviour catch** — none dies on a missing name).
+    The 4 guards each name the mutation that pins them, and all five were
+    run and bite: the title hardcoded to one meal (5 red), the bug put back
+    (5), a snack falling back to "tonight" (1), the tomorrow branch naming
+    a meal (1), and the untimed branch removed (1).
+  - Suite **5679 passed, 0 failed** at `TZ=America/Toronto`, against a
+    measured 5670 on the merge base — +9 is this file exactly, and **no
+    existing test needed changing**, though four other files pin "Shop for
+    tonight": every one of them seeds a DINNER as the waiting cook, which
+    is the common shape and is unchanged.
+
 - **2026-09-17 — Merging the eleven overnight branches of 09-16/17 into
   `main`: two of them fought, and the fight was real.** Eleven branches,
   each green alone, ten of them appending to this log at the same line
