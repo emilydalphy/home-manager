@@ -191,6 +191,34 @@ def _slot_time_label(slot: str, at: datetime) -> str:
     return f"{clock} today"
 
 
+# "Shop for tonight" is only true when the cook the list is holding up IS
+# tonight's. The deadline has been the soonest waiting cook's start time
+# since 2026-09-16, and that is very often breakfast or lunch — most of all
+# in the morning text, which goes out at 07:00, when today's dinner is the
+# LAST cook still ahead rather than the first. Measured before this: a
+# household with one breakfast and one dinner, nothing shopped, was texted
+# "Shop for tonight — 4 items, by 7:55" at seven in the morning. The
+# deadline was honest; the word was not, and that function's own docstring
+# says an invented deadline at seven in the morning is how a morning
+# check-in stops being believed.
+_SHOP_TITLE_BY_SLOT = {
+    "dinner": "Shop for tonight",
+    "breakfast": "Shop before breakfast",
+    "lunch": "Shop before lunch",
+}
+
+
+def _shop_title(slot: str) -> str:
+    """
+    The shop, named after the meal it is actually for.
+
+    A snack falls back to "Shop for today": there is no "before" a person
+    would recognise for a snack the way there is for a meal, and naming
+    the wrong half of the day is the thing this is fixing.
+    """
+    return _SHOP_TITLE_BY_SLOT.get((slot or "").strip().lower(), "Shop for today")
+
+
 def _weekday(day: str) -> str:
     return date.fromisoformat(day).strftime("%A")
 
@@ -560,7 +588,10 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
     return [{
         "id": f"shop:{day.isoformat()}",
         "kind": "shop",
-        "title": "Shop for tonight" if is_today else "Shop before tomorrow",
+        "title": (
+            _shop_title(soonest_meal.get("slot") or "dinner") if is_today
+            else "Shop before tomorrow"
+        ),
         "detail": f"{count} item{'' if count == 1 else 's'} · {when}",
         "reason": "",
         "date": day.isoformat(),
