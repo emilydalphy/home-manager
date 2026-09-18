@@ -49,15 +49,15 @@ def _freeze(item="Chicken Thighs", quantity="1 lb", category="meat/seafood"):
 # ---------- lead_hours_for_item: the documented rule-of-thumb table ----------
 
 @pytest.mark.parametrize("item,expected_hours,expected_tier", [
-    ("Whole Chicken", 48.0, "large"),
-    ("Whole Turkey", 48.0, "large"),
-    ("Pork Shoulder", 48.0, "large"),
-    ("Pot Roast", 48.0, "large"),
-    ("Chicken Thighs", 24.0, "standard"),
-    ("Ground Beef", 24.0, "standard"),
-    ("Shrimp", 18.0, "small_thin"),
-    ("Salmon Fillet", 18.0, "small_thin"),
-    ("Bacon", 18.0, "small_thin"),
+    ("Whole Chicken", 72.0, "large"),
+    ("Whole Turkey", 72.0, "large"),
+    ("Pork Shoulder", 72.0, "large"),
+    ("Pot Roast", 72.0, "large"),
+    ("Chicken Thighs", 48.0, "standard"),
+    ("Ground Beef", 48.0, "standard"),
+    ("Shrimp", 24.0, "small_thin"),
+    ("Salmon Fillet", 24.0, "small_thin"),
+    ("Bacon", 24.0, "small_thin"),
 ])
 def test_lead_hours_for_item_tiers(item, expected_hours, expected_tier):
     hours, tier = defrost.lead_hours_for_item(item)
@@ -70,17 +70,17 @@ def test_lead_hours_for_item_tiers(item, expected_hours, expected_tier):
     # matched "ham" inside "Hamburger" and "roast" inside "Roasted
     # Vegetables", and a bare "turkey" keyword matched straight through
     # "Ground Turkey" and "Turkey Bacon" -- all four got wrongly tagged as a
-    # 48h large roast. These are regression tests for that fix
+    # 72h large roast. These are regression tests for that fix
     # (_matches_keyword's word-boundary matching, and dropping the
     # over-broad bare "turkey"/"ham" keywords in favor of "whole turkey"/
     # "whole ham").
-    ("Hamburger", 24.0, "standard"),
-    ("Ground Turkey", 24.0, "standard"),
-    ("Turkey Bacon", 18.0, "small_thin"),  # "bacon" now correctly wins
-    ("Roasted Vegetables", 24.0, "standard"),
-    ("Turkey", 24.0, "standard"),  # bare "turkey" alone is not assumed to mean a whole bird
-    ("Ham", 24.0, "standard"),  # bare "ham" alone is ambiguous (deli ham vs. a whole roast) -- not assumed large
-    ("Whole Ham", 48.0, "large"),
+    ("Hamburger", 48.0, "standard"),
+    ("Ground Turkey", 48.0, "standard"),
+    ("Turkey Bacon", 24.0, "small_thin"),  # "bacon" now correctly wins
+    ("Roasted Vegetables", 48.0, "standard"),
+    ("Turkey", 48.0, "standard"),  # bare "turkey" alone is not assumed to mean a whole bird
+    ("Ham", 48.0, "standard"),  # bare "ham" alone is ambiguous (deli ham vs. a whole roast) -- not assumed large
+    ("Whole Ham", 72.0, "large"),
 ])
 def test_lead_hours_for_item_does_not_false_positive_on_substrings(item, expected_hours, expected_tier):
     hours, tier = defrost.lead_hours_for_item(item)
@@ -91,25 +91,28 @@ def test_lead_hours_for_item_does_not_false_positive_on_substrings(item, expecte
 # ---------- _move_date: backward scheduling, with and without dinner_window ----------
 
 def test_move_date_with_a_known_dinner_window_uses_clock_time():
-    # Thursday 6-8pm dinner (mapped to 19:00), 24h lead -> Wednesday.
-    assert defrost._move_date("2026-09-10", 24.0, "6_8") == "2026-09-09"
+    # Thursday 6-8pm dinner (mapped to 19:00), 48h (everyday-cut) lead ->
+    # two nights before, Tuesday.
+    assert defrost._move_date("2026-09-10", 48.0, "6_8") == "2026-09-08"
 
 
 def test_move_date_never_lands_on_the_cook_day_itself():
     """
-    Independent-review regression: 18h (small/thin) against a 6-8pm dinner
-    (19:00) is 01:00 the SAME calendar day as cooking -- clock-arithmetic-
-    correct, but the Today tile frames this as "defrost tonight", and
-    "tonight" for a same-day meal is nonsensical (the move would need to
-    happen that morning, and by evening it's too late). The ticket's own
-    framing is consistently "the night before, sometimes two", so this
-    floors at one full day of buffer even when the raw clock arithmetic
-    would technically allow same-day.
+    Independent-review regression: a short lead against a late dinner_window
+    can put the raw clock arithmetic on the SAME calendar day as cooking --
+    clock-arithmetic-correct, but the Today tile frames this as "defrost
+    tonight", and "tonight" for a same-day meal is nonsensical (the move
+    would need to happen that morning, and by evening it's too late). The
+    ticket's own framing is consistently "the night before, sometimes two",
+    so this floors at one full day of buffer even when the raw clock
+    arithmetic would technically allow same-day. No real tier is short
+    enough to trigger this any more (the shortest, small/thin, is 24h --
+    always at least a full day before even against the latest dinner_window),
+    so this is exercised with a synthetic short lead, proving the floor
+    holds for the clock-arithmetic branch generally rather than being
+    specific to any one tier's old number.
     """
     assert defrost._move_date("2026-09-10", 18.0, "6_8") == "2026-09-09"
-    # A synthetic short lead (no real category is ever this low) proves the
-    # floor isn't specific to 18h -- it holds for the clock-arithmetic
-    # branch generally.
     assert defrost._move_date("2026-09-10", 6.0, "later") == "2026-09-09"
 
 
@@ -117,13 +120,43 @@ def test_move_date_without_a_dinner_window_falls_back_to_whole_days():
     # 'all_over' and an unset dinner_window have no honest clock to
     # subtract from, per the household rhythm docs -- whole-day counting,
     # rounded UP so the fallback never under-shoots the table's lead time.
-    assert defrost._move_date("2026-09-10", 24.0, "all_over") == "2026-09-09"
-    assert defrost._move_date("2026-09-10", 24.0, None) == "2026-09-09"
+    # Each real tier's own lead, run through the fallback: small/thin (24h)
+    # -> 1 day before, everyday cuts (48h) -> 2 days before, large (72h) ->
+    # 3 days before -- the acceptance criteria's own numbers.
+    assert defrost._move_date("2026-09-10", defrost.SMALL_THIN_LEAD_HOURS, "all_over") == "2026-09-09"
+    assert defrost._move_date("2026-09-10", defrost.SMALL_THIN_LEAD_HOURS, None) == "2026-09-09"
+    assert defrost._move_date("2026-09-10", defrost.STANDARD_LEAD_HOURS, None) == "2026-09-08"
+    assert defrost._move_date("2026-09-10", defrost.LARGE_LEAD_HOURS, None) == "2026-09-07"
     # A 6h lead with no known dinner time still rounds up to a full day,
     # unlike the known-window case above -- the honest-default direction
     # is "a bit early," never "cutting it close."
     assert defrost._move_date("2026-09-10", 6.0, None) == "2026-09-09"
-    assert defrost._move_date("2026-09-10", 48.0, None) == "2026-09-08"
+
+
+# ---------- _move_date: the three tiers against a real dinner window ----------
+# Emily's own worked example (Loop Board card): a default (everyday-cut)
+# item cooked Monday with a 6-7pm dinner window moves to the fridge
+# Saturday night -- two nights before -- not "tomorrow night", and nothing
+# here is a bare hour count. Monday 2026-09-21 is a real Monday (verified
+# below), so these read as calendar dates rather than relative offsets.
+
+MONDAY = "2026-09-21"
+
+
+def test_monday_dinner_the_default_item_moves_saturday_two_nights_before():
+    assert defrost._weekday_name(MONDAY) == "Monday"
+    assert defrost._move_date(MONDAY, defrost.STANDARD_LEAD_HOURS, "6_8") == "2026-09-19"
+    assert defrost._weekday_name("2026-09-19") == "Saturday"
+
+
+def test_monday_dinner_a_shrimp_item_moves_sunday_one_night_before():
+    assert defrost._move_date(MONDAY, defrost.SMALL_THIN_LEAD_HOURS, "6_8") == "2026-09-20"
+    assert defrost._weekday_name("2026-09-20") == "Sunday"
+
+
+def test_monday_dinner_a_roast_moves_friday_three_nights_before():
+    assert defrost._move_date(MONDAY, defrost.LARGE_LEAD_HOURS, "6_8") == "2026-09-18"
+    assert defrost._weekday_name("2026-09-18") == "Friday"
 
 
 # ---------- defrost_candidates_for_plan / sync_defrost_tasks ----------
@@ -143,9 +176,9 @@ def test_a_freezer_item_used_by_a_planned_meal_produces_a_defrost_candidate(chic
     assert c["related_meal"] == "Chicken Skewers"
     assert "Chicken Thighs" in c["description"]
     assert "for " in c["description"] and "Chicken Skewers" in c["description"]
-    # No dinner_window set for this household -> whole-day fallback, 24h
-    # (standard cut) rounds up to exactly one day before the meal.
-    assert c["task_date"] == (datetime.date.fromisoformat(dates[3]) - datetime.timedelta(days=1)).isoformat()
+    # No dinner_window set for this household -> whole-day fallback, 48h
+    # (everyday cut) rounds up to exactly two days before the meal.
+    assert c["task_date"] == (datetime.date.fromisoformat(dates[3]) - datetime.timedelta(days=2)).isoformat()
 
 
 def test_candidate_derivation_honors_a_known_dinner_window(chicken_recipe):
@@ -166,10 +199,10 @@ def test_candidate_derivation_honors_a_known_dinner_window(chicken_recipe):
     candidates = defrost.defrost_candidates_for_plan(plan["weekly_plan_id"])
 
     assert len(candidates) == 1
-    # Standard cut, 24h, against an 8pm dinner: 8pm - 24h = 8pm the day
-    # before -- same single-day-before answer as the no-window fallback
-    # for this particular lead, but derived via the real clock branch.
-    assert candidates[0]["task_date"] == (datetime.date.fromisoformat(dates[3]) - datetime.timedelta(days=1)).isoformat()
+    # Everyday cut, 48h, against an 8pm dinner: 8pm - 48h = 8pm two days
+    # before -- same two-days-before answer as the no-window fallback for
+    # this particular lead, but derived via the real clock branch.
+    assert candidates[0]["task_date"] == (datetime.date.fromisoformat(dates[3]) - datetime.timedelta(days=2)).isoformat()
 
 
 def test_candidate_derivation_matches_a_plural_inventory_item_name(chicken_recipe):
@@ -192,7 +225,7 @@ def test_candidate_derivation_matches_a_plural_inventory_item_name(chicken_recip
 
     assert len(candidates) == 1
     assert candidates[0]["lead_tier"] == "small_thin"
-    assert candidates[0]["lead_hours"] == 18.0
+    assert candidates[0]["lead_hours"] == 24.0
 
 
 def test_a_fridge_item_of_the_same_name_is_not_a_defrost_candidate(chicken_recipe):

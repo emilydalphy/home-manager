@@ -71,13 +71,13 @@ UTC_EVENING = datetime.combine(SERVER_TODAY, time(1, 30), tzinfo=timezone.utc)
 # the same trap read from the other side.
 UTC_MORNING_AHEAD = datetime.combine(SERVER_TODAY, time(23, 30), tzinfo=timezone.utc)
 
-# "Whole Chicken" is a _LARGE_KEYWORDS match, so 48h — and with no
+# "Whole Chicken" is a _LARGE_KEYWORDS match, so 72h — and with no
 # dinner_window answered _move_date falls back to whole-day counting, i.e.
-# exactly two calendar days before the cook. Deterministic on every weekday,
-# which matters under CI's `clock` matrix.
+# exactly three calendar days before the cook. Deterministic on every
+# weekday, which matters under CI's `clock` matrix.
 FROZEN_ITEM = "Whole Chicken"
 DISH = "Roast Chicken Dinner"
-LEAD_DAYS = 2
+LEAD_DAYS = 3
 
 
 def _set_timezone(name: str) -> None:
@@ -178,13 +178,14 @@ class TestTheFreezerAskInTheEvening:
 
     def test_only_the_night_that_has_really_run_out_of_time_is_refused(self, monkeypatch):
         """
-        CATCH. The same three nights the reproduction used. On the server's
-        clock two of the three were refused; on the household's only the
-        cook happening today is, and its note is the one the household
-        should read.
+        CATCH. Three nights spanning the lead-time boundary (one day short
+        of it, right on it, and one day past it) — on the server's clock
+        two of the three were refused; on the household's only the one
+        genuinely inside the lead time is, and its note is the one the
+        household should read.
         """
         household_day = _behind(monkeypatch)
-        nights = [household_day + timedelta(days=n) for n in (1, 2, 3)]
+        nights = [household_day + timedelta(days=n) for n in (LEAD_DAYS - 1, LEAD_DAYS, LEAD_DAYS + 1)]
         plan_id = _seed_plan(nights)
 
         result = _defrost.confirm_frozen_items(plan_id, [FROZEN_ITEM])
@@ -292,15 +293,16 @@ class TestTheAskAndTheWriteAgree:
         — reading date.today() "to match the write". Merged, the ask was
         on the server's clock and the write on the household's, and from
         8pm Eastern the card dropped a night the write would have booked.
-        Toronto at half nine: three cooks, tomorrow / the night after /
-        the night after that, a two-day thaw. Tomorrow needed its move
-        yesterday and is honestly gone; the other two are still open on
-        the household's clock. On the server's clock, a day ahead, the
-        middle one was dropped as well. Pinned by mutation: put
-        date.today() back in _settled_nights and this fails.
+        Toronto at half nine: three cooks spanning the lead-time boundary
+        (one day short of it, right on it, and one day past it), FROZEN_ITEM's
+        own lead time. The first needed its move yesterday and is honestly
+        gone; the other two are still open on the household's clock. On the
+        server's clock, a day ahead, the middle one was dropped as well.
+        Pinned by mutation: put date.today() back in _settled_nights and
+        this fails.
         """
         household_day = _behind(monkeypatch)
-        nights = [household_day + timedelta(days=n) for n in (1, 2, 3)]
+        nights = [household_day + timedelta(days=n) for n in (LEAD_DAYS - 1, LEAD_DAYS, LEAD_DAYS + 1)]
         plan_id = _seed_plan(nights)
 
         offered = [n["date"] for n in _defrost.meat_items_for_plan(plan_id)[0]["nights"]]
@@ -317,7 +319,7 @@ class TestTheAskAndTheWriteAgree:
         really has run out, which the card already left off.
         """
         household_day = _behind(monkeypatch)
-        nights = [household_day + timedelta(days=n) for n in (1, 2, 3)]
+        nights = [household_day + timedelta(days=n) for n in (LEAD_DAYS - 1, LEAD_DAYS, LEAD_DAYS + 1)]
         plan_id = _seed_plan(nights)
 
         offered = {n["date"] for n in _defrost.meat_items_for_plan(plan_id)[0]["nights"]}

@@ -136,10 +136,10 @@ def test_confirming_a_frozen_item_creates_a_defrost_task_at_the_right_lead():
     assert len(result["created"]) == 1
     created = result["created"][0]
     assert created["lead_tier"] == "standard"
-    assert created["lead_hours"] == 24.0
-    # No dinner_window set -> whole-day fallback, 24h rounds up to exactly
-    # one day before the meal, same arithmetic as the inventory path.
-    assert created["task_date"] == (datetime.date.fromisoformat(dates[3]) - datetime.timedelta(days=1)).isoformat()
+    assert created["lead_hours"] == 48.0
+    # No dinner_window set -> whole-day fallback, 48h rounds up to exactly
+    # two days before the meal, same arithmetic as the inventory path.
+    assert created["task_date"] == (datetime.date.fromisoformat(dates[3]) - datetime.timedelta(days=2)).isoformat()
 
     tasks = tools.get_prep_schedule(plan["weekly_plan_id"])
     assert len(tasks) == 1
@@ -165,7 +165,7 @@ def test_confirming_two_items_uses_each_ones_own_lead_tier():
 
     by_item = {c["item"]: c for c in result["created"]}
     assert by_item["Whole Chicken"]["lead_tier"] == "large"
-    assert by_item["Whole Chicken"]["task_date"] == (datetime.date.fromisoformat(dates[5]) - datetime.timedelta(days=2)).isoformat()
+    assert by_item["Whole Chicken"]["task_date"] == (datetime.date.fromisoformat(dates[5]) - datetime.timedelta(days=3)).isoformat()
     assert by_item["Shrimp"]["lead_tier"] == "small_thin"
     assert by_item["Shrimp"]["task_date"] == (datetime.date.fromisoformat(dates[5]) - datetime.timedelta(days=1)).isoformat()
 
@@ -183,8 +183,8 @@ def test_confirming_an_item_used_on_two_separate_cook_nights_creates_a_task_per_
     assert len(result["created"]) == 2
     task_dates = sorted(c["task_date"] for c in result["created"])
     assert task_dates == sorted([
-        (datetime.date.fromisoformat(dates[1]) - datetime.timedelta(days=1)).isoformat(),
-        (datetime.date.fromisoformat(dates[4]) - datetime.timedelta(days=1)).isoformat(),
+        (datetime.date.fromisoformat(dates[1]) - datetime.timedelta(days=2)).isoformat(),
+        (datetime.date.fromisoformat(dates[4]) - datetime.timedelta(days=2)).isoformat(),
     ])
 
 
@@ -212,7 +212,7 @@ def test_confirming_a_leftover_chain_source_creates_only_the_cook_nights_task():
 
     assert len(result["created"]) == 1
     assert result["created"][0]["date"] == tue
-    assert result["created"][0]["task_date"] == (datetime.date.fromisoformat(tue) - datetime.timedelta(days=1)).isoformat()
+    assert result["created"][0]["task_date"] == (datetime.date.fromisoformat(tue) - datetime.timedelta(days=2)).isoformat()
 
 
 def test_confirming_an_unselected_item_creates_nothing():
