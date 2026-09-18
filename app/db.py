@@ -278,6 +278,9 @@ _MIGRATIONS = [
     # the household dismissed the one-time how-and-why card on Today. Stored
     # on the household, not in localStorage, so a second device doesn't show
     # a card the household has already read. NULL means never seen.
+    # Retired 2026-09-18 (nothing reads or writes it since the one-time
+    # "how to talk to me" sheet went); kept so an existing database and a
+    # fresh one keep the same shape.
     ("households", "coaching_seen_at", "TEXT"),
     # Per-person attendance (Emily's deepened week-planning model,
     # 2026-09-03). Both default to '[]' = "the whole household", which is
@@ -379,6 +382,12 @@ _MIGRATIONS = [
     # (Emily, 2026-09-05). Existing households get 3, not 7 — see
     # schema.sql's comment on meal_preferences.snacks_per_week for why.
     ("meal_preferences", "snacks_per_week", "INTEGER NOT NULL DEFAULT 3"),
+    # Which screen the person was on when they said something wasn't
+    # working ("Week 1", "Plan › Check the week") — chosen by the app, not
+    # typed, and shape-checked in main.py before it is stored (Loop Board
+    # "Help icon: Need a hand? sheet", 2026-09-18). '' for a report filed
+    # before the column existed, or from a screen that doesn't name itself.
+    ("feedback_reports", "screen", "TEXT NOT NULL DEFAULT ''"),
     # ...and whether that number is an answer or the default. The column
     # above is NOT NULL DEFAULT 3, so nothing in the row could tell the two
     # apart, and the Preferences sheet's "How you eat" line duly told a

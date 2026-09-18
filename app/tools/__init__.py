@@ -259,7 +259,6 @@ from .household import (  # noqa: F401
     get_household_setup_status,
     list_members,
     list_pets,
-    mark_coaching_seen,
     set_household_goals,
     set_member_age_group,
     set_member_dietary_restrictions,
@@ -662,6 +661,12 @@ from .weekly_plan import (  # noqa: F401
 from .swap_in_place import (  # noqa: F401
     swap_meal_in_place,
     undo_meal_swap,
+)
+# Three picks for one slot, chosen before anything is written — the Week 1
+# reveal's Swap (2026-09-18). A screen's own read and write, not agent tools.
+from .swap_options import (  # noqa: F401
+    choose_swap_option,
+    swap_options,
 )
 # The chat's change card (Emily, 2026-09-13, "Shaping the Draft" Flows C
 # and D): propose_plan_changes IS an agent tool — the only one here that

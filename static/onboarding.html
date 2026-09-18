@@ -350,32 +350,43 @@
     body { transition: none; }
   }
 
-  /* ---------- The reveal (rule S5: finishes get their own screen —
-     redesigned 2026-09-12 as the mirror of "Hi, I'm Pomona."). The whole
-     ground is spruce again (body.reveal-active shares the intro's rules
-     below), the mark sits over one big line, the one number that matters
-     stands on its own, and the end-of-setup receipt, the week to look
-     over and the invite sit under it as tiles on spruce. The one apricot
-     is in a fixed foot like every question's. Canonical tokens throughout;
-     the only divider on spruce is --apricot-rule (§1). ---------- */
-  .reveal-screen { display: flex; flex-direction: column; gap: 24px; padding-top: 16px; }
-  .reveal-head {
-    display: flex; flex-direction: column; align-items: center; text-align: center;
-    gap: 18px; padding-top: 40px;
+  /* ---------- The reveal: Week 1 (rule S5: finishes get their own screen).
+     Redesigned 2026-09-18 (Loop Board "Week 1: day-card carousel replaces
+     'sample week'", mockup 09-week1): the whole ground is spruce
+     (body.reveal-active shares the intro's rules below), the mark and
+     wordmark over "Here's week 1.", a row of day tabs, and the week as a
+     sideways strip of one card per day — the day's meals with a Swap under
+     each — so the first thing the household does with the plan is look at
+     it a day at a time and change what they don't fancy. The one apricot
+     is in the foot ("Approve · Open grocery list"). The "15 meals" number
+     and the end-of-setup receipt that used to sit here are gone: the
+     numbers live on the app's All set screen, and what setup saved is on
+     Preferences. Canonical tokens throughout. ---------- */
+  .reveal-screen { display: flex; flex-direction: column; gap: 14px; padding-top: 16px; position: relative; }
+  .reveal-head { display: flex; flex-direction: column; gap: 6px; padding-top: 4px; padding-right: 56px; }
+  .reveal-mark {
+    display: flex; align-items: center; gap: 8px; color: var(--apricot-light);
+    font-family: var(--font-display); font-weight: 700; font-size: 15px; letter-spacing: -0.02em;
   }
+  .reveal-mark svg { width: 20px; height: 20px; }
   .reveal-eyebrow {
     font-family: var(--font-body); font-weight: 800; font-size: 10px;
-    letter-spacing: 0.16em; text-transform: uppercase; color: var(--apricot-light);
-    margin: 0;
+    letter-spacing: 0.15em; text-transform: uppercase; color: var(--apricot-light);
+    margin: 6px 0 0;
   }
   .reveal-title {
-    font-family: var(--font-display); font-weight: 700; font-size: 38px;
+    font-family: var(--font-display); font-weight: 700; font-size: 31px;
     letter-spacing: -0.038em; line-height: 1.05; color: var(--ivory-ink);
     margin: 0; text-wrap: balance;
   }
+  .reveal-lead {
+    font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+    color: var(--ivory-ink-muted); margin: 0;
+  }
+  .reveal-lead[hidden] { display: none; }
   .reveal-status {
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-    color: var(--ivory-ink-muted); font-size: 16px; font-weight: 500; margin: 0;
+    display: flex; align-items: center; gap: 10px;
+    color: var(--ivory-ink-muted); font-size: 16px; font-weight: 500; margin: 4px 0 0;
   }
   .reveal-status[hidden] { display: none; }
   .reveal-spinner {
@@ -384,25 +395,35 @@
     animation: reveal-spin 0.8s linear infinite;
   }
   @keyframes reveal-spin { to { transform: rotate(360deg); } }
-  /* The one number: how many meals the first week holds, counted off the
-     plan that came back (revealPlanCounts — the same count the receipt's
-     second line says in a sentence). */
-  .reveal-number { display: flex; flex-direction: column; align-items: center; gap: 0; }
-  .reveal-number[hidden] { display: none; }
-  .reveal-number-value {
-    font-family: var(--font-display); font-weight: 700; font-size: 96px;
-    letter-spacing: -0.05em; line-height: 1; color: var(--ivory-ink); margin: 0;
+  /* The round `?` (Card B): 44px, --spruce-raised on spruce, the ivory
+     stroke icon. Absolute in the head's top-right, level with the mark. */
+  .reveal-help-btn {
+    position: absolute; top: 16px; right: 0;
+    width: 44px; height: 44px; border-radius: var(--radius-pill);
+    background: var(--spruce-raised); color: var(--ivory-ink); border: 0;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
   }
-  .reveal-number-word {
-    font-family: var(--font-body); font-weight: 600; font-size: 17px;
-    color: var(--apricot-light); margin: 2px 0 0;
+  .reveal-help-btn:hover { background: var(--spruce-hover); }
+  .reveal-help-btn svg { width: 22px; height: 22px; }
+  /* The day tabs: one per day of the plan, sharing the width. 36px tall as
+     drawn (Emily's mockup); the ::before pad makes the tap 44px each way
+     (rule 6) without changing what shows — 4px above and below, and 2px
+     either side into the 4px gap, because seven tabs across a 375px phone
+     come out 43.3px wide. */
+  .reveal-tabs { display: flex; gap: 4px; }
+  .reveal-tabs[hidden] { display: none; }
+  .reveal-tab {
+    position: relative; flex: 1 1 0; min-width: 0; height: 36px; padding: 0 4px;
+    border: 0; border-radius: 12px; background: var(--spruce-raised); color: var(--ivory-ink-muted);
+    font-family: var(--font-body); font-weight: 700; font-size: 13px; cursor: pointer;
   }
+  .reveal-tab::before { content: ''; position: absolute; left: -2px; right: -2px; top: -4px; bottom: -4px; }
+  .reveal-tab.is-on { background: var(--apricot); color: var(--on-accent-ink); }
   /* Card 6 (2026-09-18, board 08-loading): while the reveal is still
      waiting — nothing to show yet but the spinner — this card says what
-     the first week is being built FROM, off the same facts the finished
-     receipt reads back (revealSetupFacts). Hidden the instant
-     revealShowDays() runs; the reveal never shows the facts and the days
-     at once. */
+     the first week is being built FROM (revealSetupFacts). Hidden the
+     instant revealShowDays() runs; the reveal never shows the facts and
+     the days at once. */
   .reveal-using {
     align-self: stretch;
     margin-top: 14px;
@@ -439,84 +460,125 @@
     margin: 10px 0 0;
   }
   .reveal-using-note[hidden] { display: none; }
-  .reveal-days { display: flex; flex-direction: column; gap: 10px; }
+  /* The carousel: native sideways scroll in the gutter, snapping a card to
+     the left edge, the next one peeking. Bleeds to the page edge (the
+     body's 24px is the gutter) so the strip is not boxed in. */
+  .reveal-days {
+    display: flex; gap: 12px; overflow-x: auto; overflow-y: hidden;
+    margin: 0 -24px; padding: 2px 24px 4px;
+    scroll-snap-type: x mandatory; scroll-padding-left: 24px;
+    scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .reveal-days::-webkit-scrollbar { display: none; }
   /* Same guard pair .reveal-status carries: a flex container needs its own
-     [hidden] rule or display:flex wins and the empty box keeps its margin. */
+     [hidden] rule or display:flex wins and the empty box keeps its shape. */
   .reveal-days[hidden] { display: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal-days { scroll-behavior: auto; } }
   .reveal-day {
-    background: var(--spruce-raised);
-    border-radius: var(--radius-card);
-    padding: 14px 16px;
+    flex: 0 0 300px; width: 300px; max-width: calc(100vw - 48px); scroll-snap-align: start;
+    background: var(--surface); border: 1.5px solid var(--hairline);
+    border-radius: var(--radius-card); padding: 16px 16px 14px; color: var(--ink);
+    display: flex; flex-direction: column;
     animation: reveal-day-in .25s ease-out;
   }
   @keyframes reveal-day-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  .reveal-day-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 4px; }
   .reveal-day-name {
-    font-family: var(--font-display); font-weight: 700; font-size: 15px;
-    letter-spacing: -0.01em; color: var(--ivory-ink); margin: 0 0 8px;
-  }
-  .reveal-slot {
-    display: flex; align-items: baseline; gap: 8px;
-    padding: 5px 0; font-size: 14px; line-height: 1.4;
-  }
-  .reveal-slot + .reveal-slot { border-top: 1px solid var(--apricot-rule); }
-  .reveal-slot-label {
-    flex: 0 0 auto; font-family: var(--font-body); font-weight: 700;
-    font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
-    color: var(--ivory-ink-muted); display: inline-flex; align-items: center; gap: 6px;
-    min-width: 64px;
-  }
-  /* Dinner starred — the same accent-dot + bold-uppercase idiom the
-     desktop week grid uses for its one primary slot per day
-     (shell.css .wg2-label-dinner/.wg2-dot), reused rather than inventing
-     a new star icon (DESIGN_SYSTEM Rule 7: no emoji, and a new glyph
-     would be a Tier 2 change). */
-  .reveal-slot-dinner .reveal-slot-label { color: var(--ivory-ink); font-weight: 800; }
-  .reveal-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--apricot-light); flex: 0 0 auto; }
-  .reveal-slot-dish { color: var(--ivory-ink); font-weight: 600; }
-  .reveal-slot-dish-open { color: var(--apricot-light); font-weight: 600; }
-  .reveal-slot-dish-empty { color: var(--ivory-ink-muted); font-style: italic; font-weight: 400; }
-  /* The end-of-setup receipt (Emily + Julia, 2026-09-08: "tell me plainly
-     that setup is done, what you did, and the one thing to do next"). It is
-     the same pattern as the approval receipt on Meals — celadon tint,
-     celadon eyebrow, one display title, plain lines under it (shell.css
-     .week-receipt-*) — so the two moments a week gets settled look like the
-     same app saying the same kind of thing. Restated here rather than
-     shared because onboarding.html is a standalone wizard page and never
-     loads shell.css. */
-  .reveal-receipt {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-    background: var(--celadon-tint);
-    border: 1.5px solid var(--celadon-edge);
-    border-radius: var(--radius-card);
-    padding: 16px 18px;
-  }
-  /* A flex container needs its own [hidden] rule or display:flex wins —
-     the same guard pair .reveal-status and .reveal-days already carry. */
-  .reveal-receipt[hidden] { display: none; }
-  .reveal-receipt-eyebrow {
-    font-family: var(--font-body); font-weight: 800; font-size: 10px;
-    letter-spacing: 0.14em; color: var(--celadon-label); margin: 0;
-  }
-  .reveal-receipt-title {
     font-family: var(--font-display); font-weight: 700; font-size: 21px;
-    letter-spacing: -0.028em; line-height: 1.2; color: var(--ink-on-celadon);
-    margin: 0;
+    letter-spacing: -0.028em; color: var(--ink); margin: 0;
   }
-  .reveal-receipt-line {
-    font-family: var(--font-body); font-size: 14px; line-height: 1.45;
-    color: var(--ink-on-celadon); margin: 0;
+  .reveal-day-count { font-size: 13px; color: var(--ink-secondary); white-space: nowrap; }
+  .reveal-slot {
+    display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 6px 0;
+    border-top: 1.5px solid var(--hairline);
   }
-  /* The failure twin: the same block with the celadon taken off it. Celadon
-     means "already true and good" (DESIGN_SYSTEM §1), and a settled tint
-     over "the first week didn't come together" would be saying the opposite
-     of what happened — see §8's calm-in-trouble rule. On spruce it is a
-     raised spruce tile with ivory ink. */
-  .reveal-receipt-failed { background: var(--spruce-raised); border-color: var(--spruce-raised); }
-  .reveal-receipt-failed .reveal-receipt-eyebrow { color: var(--ivory-ink-muted); }
-  .reveal-receipt-failed .reveal-receipt-title { color: var(--ivory-ink); }
-  .reveal-receipt-failed .reveal-receipt-line { color: var(--ivory-ink-muted); }
+  .reveal-slot:first-of-type { border-top: 0; }
+  .reveal-slot-text { flex: 1 1 auto; min-width: 0; }
+  .reveal-slot-label {
+    font-family: var(--font-body); font-weight: 800; font-size: 10px;
+    letter-spacing: 0.13em; text-transform: uppercase; color: var(--ink-muted); margin: 0;
+  }
+  .reveal-slot-dish { font-size: 15px; font-weight: 600; color: var(--ink); line-height: 1.3; margin: 0; }
+  .reveal-slot-dish-open { color: var(--apricot-label); }
+  .reveal-slot-dish-empty { color: var(--ink-secondary); font-weight: 500; }
+  .reveal-slot-meta { font-size: 13px; color: var(--ink-secondary); margin: 2px 0 0; }
+  /* Swap: a sand in-card button, 36px as drawn with the same 44px pad. */
+  .reveal-swap {
+    position: relative; flex: 0 0 auto; height: 36px; padding: 0 14px; border: 0;
+    border-radius: var(--radius-control); background: var(--sand); color: var(--ink);
+    font-family: var(--font-body); font-weight: 700; font-size: 14px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  }
+  .reveal-swap::before { content: ''; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px; }
+  .reveal-swap svg { width: 16px; height: 16px; }
+  .reveal-swap:disabled { opacity: .55; cursor: default; }
+  .reveal-pager { display: flex; gap: 6px; justify-content: center; align-items: center; min-height: 6px; }
+  .reveal-pager[hidden] { display: none; }
+  .reveal-pager span { width: 6px; height: 6px; border-radius: var(--radius-pill); background: var(--ivory-ink-muted); opacity: .4; }
+  .reveal-pager span.is-on { width: 18px; background: var(--apricot-light); opacity: 1; }
+  /* The failure block: the week didn't come together. A raised spruce tile
+     with ivory ink — never celadon, which would say "settled" over the
+     opposite (DESIGN_SYSTEM §8, calm in trouble). */
+  .reveal-failed {
+    display: flex; flex-direction: column; gap: 7px;
+    background: var(--spruce-raised); border-radius: var(--radius-card); padding: 16px 18px;
+  }
+  .reveal-failed[hidden] { display: none; }
+  .reveal-failed-title {
+    font-family: var(--font-display); font-weight: 700; font-size: 21px;
+    letter-spacing: -0.028em; line-height: 1.2; color: var(--ivory-ink); margin: 0;
+  }
+  .reveal-failed-line { font-family: var(--font-body); font-size: 14px; line-height: 1.45; color: var(--ivory-ink-muted); margin: 0; }
+  /* The swap sheet: three picks and the way to chat. The same sheet shape
+     help-sheet.js draws (surface, --radius-hero top corners, --shadow-sheet
+     over a scrim); restated here because that file's sheet has one job. */
+  #reveal-swap-scrim { position: fixed; inset: 0; z-index: 60; background: var(--scrim); animation: reveal-fade var(--motion-fast) var(--motion-ease); }
+  #reveal-swap-sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 61; max-height: 88%; overflow-y: auto;
+    background: var(--surface); color: var(--ink);
+    border-radius: var(--radius-hero) var(--radius-hero) 0 0; box-shadow: var(--shadow-sheet);
+    padding: 14px 20px calc(28px + env(safe-area-inset-bottom, 0px));
+    display: flex; flex-direction: column; gap: 10px;
+    animation: reveal-up var(--motion-base) var(--motion-ease);
+  }
+  #reveal-swap-scrim[hidden], #reveal-swap-sheet[hidden] { display: none; }
+  @keyframes reveal-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes reveal-up { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (min-width: 768px) { #reveal-swap-sheet { left: 50%; right: auto; transform: translateX(-50%); width: 520px; max-width: 100%; } }
+  .reveal-sheet-handle { width: 36px; height: 4px; border-radius: var(--radius-pill); background: var(--hairline-deep); margin: 0 auto 6px; }
+  .reveal-sheet-title { font-family: var(--font-display); font-weight: 700; font-size: 24px; letter-spacing: -0.03em; line-height: 1.1; color: var(--ink); margin: 0; }
+  .reveal-sheet-sub { font-size: 15px; line-height: 1.4; color: var(--ink-secondary); margin: 0; }
+  .reveal-pick {
+    display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 10px 14px; text-align: left;
+    background: var(--surface); border: 1.5px solid var(--hairline-strong); border-radius: var(--radius-control);
+    color: var(--ink); font-family: var(--font-body); cursor: pointer;
+  }
+  .reveal-pick:hover { border-color: var(--ink-strong); }
+  .reveal-pick:disabled { opacity: .55; cursor: default; }
+  .reveal-pick-text { flex: 1 1 auto; min-width: 0; }
+  .reveal-pick-name { display: block; font-size: 15px; font-weight: 600; line-height: 1.3; margin: 0; }
+  .reveal-pick-line { display: block; font-size: 13px; color: var(--ink-secondary); line-height: 1.4; margin: 2px 0 0; }
+  .reveal-pick-min { font-size: 12px; font-weight: 700; color: var(--ink-secondary); white-space: nowrap; }
+  .reveal-sheet-quiet {
+    display: flex; align-items: center; justify-content: center; width: 100%; min-height: 44px;
+    background: none; border: 0; padding: 0; font: italic 400 17px var(--font-accent); color: var(--ink-secondary); cursor: pointer;
+  }
+  .reveal-sheet-quiet:hover { color: var(--ink); }
+  .reveal-sheet-outline {
+    display: flex; align-items: center; justify-content: center; width: 100%; height: 54px; border-radius: var(--radius-action);
+    background: transparent; border: 1.5px solid var(--hairline-strong); font-family: var(--font-display); font-weight: 700;
+    font-size: 17px; letter-spacing: -0.02em; color: var(--ink-strong); cursor: pointer;
+  }
+  .reveal-sheet-note { font-size: 14px; line-height: 1.45; color: var(--ink-secondary); margin: 0; text-align: center; }
+  /* "Changes saved" — the app's own toast (shell.css .toast: its own
+     --toast-bg/--toast-ink pair, dark-on-light in light mode). */
+  .toast {
+    position: fixed; left: 50%; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+    background: var(--toast-bg); color: var(--toast-ink); border-radius: 14px; padding: 14px 17px;
+    font-family: var(--font-body); font-weight: 600; font-size: 14px; box-shadow: var(--shadow-toast);
+    z-index: 70; max-width: calc(100vw - 40px); text-align: center;
+  }
+  .toast[hidden] { display: none; }
   .invite-card {
     background: var(--spruce-raised);
     border-radius: var(--radius-card);
@@ -541,6 +603,9 @@
   .q-foot.on-spruce { background: var(--spruce); gap: 4px; }
   .q-foot.on-spruce::before { background: linear-gradient(to bottom, transparent, var(--spruce)); }
   .reveal-primary-btn { width: 100%; }
+  .reveal-primary-btn:disabled { opacity: .6; cursor: default; }
+  .reveal-foot-note { font-family: var(--font-body); font-size: 14px; line-height: 1.4; color: var(--ivory-ink-muted); margin: 0 0 6px; text-align: center; }
+  .reveal-foot-note[hidden] { display: none; }
   /* The quiet iteration path — same idiom as shell.css's "or start over"
      under Approve: one plain text line, not a second button competing
      with the one apricot primary above it. */
@@ -792,6 +857,7 @@
 </style>
 <script src="/static/error-reporter.js"></script>
 <script src="/static/waiting-lines.js"></script>
+<script src="/static/help-sheet.js"></script>
 </head>
 <body>
 
@@ -1106,23 +1172,27 @@
   </div>
 </div>
 
-<!-- First-plan reveal — the finish (rule S5), and the mirror of "Hi, I'm
-     Pomona.": the whole ground is spruce again (body.reveal-active), the
-     mark over one big line, the one number that matters, and the one
-     apricot in the foot. The receipt, the week to look over and the invite
-     sit under it as tiles on spruce. Redesigned 2026-09-12; the markup
-     each renderer fills is unchanged — see the .reveal-* rules above. -->
+<!-- Week 1 — the finish (rule S5). The whole ground is spruce
+     (body.reveal-active), the mark and wordmark over "Here's week 1.", the
+     day tabs, and the week as a strip of one card per day with a Swap under
+     every meal (Loop Board "Week 1: day-card carousel", 2026-09-18). The one
+     apricot is in the foot. The markup each renderer fills — see the
+     .reveal-* rules above and the "First-plan reveal" script section. -->
 <div id="step-reveal" style="display:none">
   <div class="reveal-screen">
+    <!-- The round `?`: "Need a hand?" (static/help-sheet.js), named for
+         this screen so a "Something not working?" report says where. -->
+    <button type="button" class="reveal-help-btn" id="reveal-help-btn" aria-label="Need a hand?"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17h.01"/></svg></button>
     <div class="reveal-head">
-      <div class="intro-glyph"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.4c-3.1 0-5.6-2.6-5.6-5.9 0-3.2 2.5-5.7 5.6-5.7s5.6 2.5 5.6 5.7c0 3.3-2.5 5.9-5.6 5.9z"></path><path d="M12 9V6.2"></path><path d="M12.5 7.1c.9-2.2 3.2-3.1 5.3-2.7.4 2.2-.7 4.3-2.8 4.7-1.4.3-2.5-.6-2.5-2z"></path><path d="M12 10.2c-1.1 1.6-1.1 6.3 0 8.2"></path></svg></div>
-      <!-- The title claims a sample week only once one exists. Until the
-           first real day lands, the screen says what is actually happening
-           (Julia, 2026-09-08: "never show a blank sample menu while it's
+      <div class="reveal-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.4c-3.1 0-5.6-2.6-5.6-5.9 0-3.2 2.5-5.7 5.6-5.7s5.6 2.5 5.6 5.7c0 3.3-2.5 5.9-5.6 5.9z"></path><path d="M12 9V6.2"></path><path d="M12.5 7.1c.9-2.2 3.2-3.1 5.3-2.7.4 2.2-.7 4.3-2.8 4.7-1.4.3-2.5-.6-2.5-2z"></path><path d="M12 10.2c-1.1 1.6-1.1 6.3 0 8.2"></path></svg><span>Pomona</span></div>
+      <p class="reveal-eyebrow">Your first week</p>
+      <!-- The title claims a week only once one exists. Until the first
+           real day lands, the screen says what is actually happening
+           (Julia, 2026-09-08: "never show a blank menu while it's
            loading"). REVEAL_TITLE_WAITING / REVEAL_TITLE_READY below are the
            two strings, and generateFirstPlanAndReveal owns the swap. -->
-      <p class="reveal-eyebrow">First sample week</p>
       <h1 class="reveal-title" id="reveal-title">Cooking up your first week&hellip;</h1>
+      <p class="reveal-lead" id="reveal-lead" hidden>Swipe through the days. Swap anything you don&rsquo;t fancy.</p>
       <div class="reveal-status" id="reveal-status">
         <span class="reveal-spinner" aria-hidden="true"></span>
         <!-- The rotating waiting line (static/waiting-lines.js) takes this
@@ -1131,10 +1201,6 @@
              somehow didn't load. -->
         <span class="waiting-line" id="reveal-status-text">Drafting your week&hellip;</span>
       </div>
-      <!-- The one number: the meals in the first week, counted off the plan
-           that came back. Empty and hidden until there is one
-           (renderRevealNumber). -->
-      <div class="reveal-number" id="reveal-number" hidden></div>
       <!-- Card 6 (2026-09-18, board 08-loading): "what I'm using" — the
            answers this first week is drafted from, shown while there is
            nothing else to look at yet. renderRevealUsingFacts fills it at
@@ -1147,36 +1213,37 @@
       </div>
     </div>
     <p class="reveal-using-note" id="reveal-using-note" hidden>Not quite right? You can change any of it later.</p>
-    <!-- How setup ends (Emily + Julia, 2026-09-08). Empty and hidden until
-         the week has finished building — or failed — because it is the
-         answer to "am I done?", and there is no answer yet while the plan is
-         still coming in. Above the day list on purpose: what was saved, what
-         Pomona did and the one thing to do next, and then the week itself to
-         look over. renderRevealReceipt / renderRevealFailedReceipt fill it,
-         and nothing else in the app repeats it — the answers themselves live
-         on Preferences from here on. -->
-    <div id="reveal-receipt" class="reveal-receipt" hidden></div>
-    <!-- Empty AND hidden until the first real day arrives: an empty
-         .reveal-days still contributes its 14px gap and its own shape to the
-         screen, which is the blank menu Julia saw. revealShowDays() is the
-         one place that unhides it. -->
+    <!-- A week that didn't come together, said plainly with its way out
+         (renderRevealFailed). Empty and hidden otherwise. -->
+    <div id="reveal-failed" class="reveal-failed" hidden></div>
+    <!-- The day tabs, the strip and its dots. All three empty AND hidden
+         until the first real day arrives: an empty strip still has a shape,
+         which is the blank menu Julia saw. revealShowDays() is the one place
+         that unhides them; renderRevealDays / upsertRevealDay fill them. -->
+    <div id="reveal-tabs" class="reveal-tabs" role="tablist" aria-label="Days" hidden></div>
     <div id="reveal-days" class="reveal-days" hidden></div>
+    <div id="reveal-pager" class="reveal-pager" aria-hidden="true" hidden></div>
     <div id="invite-section"></div>
   </div>
   <div class="reveal-actions q-foot on-spruce" id="reveal-actions" style="display:none">
-    <!-- The receipt above says the one thing to do next; this is that thing.
-         It replaces "Looks good — take me in", which named no next step and
-         landed on whatever week today happens to sit in. -->
-    <button class="btn-primary q-next reveal-primary-btn" id="reveal-done-btn" type="button">Review my week</button>
+    <!-- Said only when approving needs a second look (a hard allergy
+         clash the approve route stopped on). -->
+    <p class="reveal-foot-note" id="reveal-approve-note" hidden></p>
+    <!-- Approve IS the yes (the app's own approve route): the week is
+         settled and the shopping list written, then the app opens on it. -->
+    <button class="btn-primary q-next reveal-primary-btn" id="reveal-done-btn" type="button">Approve &middot; Open grocery list</button>
     <button class="reveal-quiet-link" id="reveal-iterate-btn" type="button">or tweak it with me</button>
   </div>
   <!-- A failed generation shows this instead of reveal-actions above, never
-       both — "Looks good — take me in" sitting over zero days would be
-       saying the opposite of what actually happened. -->
+       both — an Approve sitting over zero days would be saying the opposite
+       of what actually happened. -->
   <div class="reveal-actions q-foot on-spruce" id="reveal-error-actions" style="display:none">
     <button class="btn-primary q-next reveal-primary-btn" id="reveal-retry-btn" type="button">Try again</button>
     <button class="reveal-quiet-link" id="reveal-anyway-btn" type="button">Take me in anyway</button>
   </div>
+  <div id="reveal-swap-scrim" hidden></div>
+  <div id="reveal-swap-sheet" role="dialog" aria-modal="true" aria-labelledby="reveal-swap-title" hidden></div>
+  <div class="toast" id="reveal-toast" role="status" hidden></div>
 </div>
 <!-- Chores questions (pets, home type, upkeep standard, rotation, etc.) used
      to live here as two more onboarding steps after the reveal. Emily
@@ -1926,218 +1993,327 @@ async function saveOnboardingAnswers() {
   return body;
 }
 
-// ---------- First-plan reveal ----------
-// WEEK_SLOTS/SLOT_LABELS mirror static/shell.js's constants of the same
-// name (the app's one existing "group a week by day, then by meal type"
-// pattern — Loop Board technical findings, 2026-08-30) so a meal slot
-// reads the same word here as it does everywhere else in the app. Kept
-// as a local copy rather than a shared import since onboarding.html
-// doesn't load shell.js (it's a standalone wizard page).
+// ---------- First-plan reveal: Week 1 ----------
+// Redesigned 2026-09-18 (Loop Board "Week 1: day-card carousel replaces
+// 'sample week' and the 15-meals stat", mockup 09-week1): the week as a
+// sideways strip of one card per day, a row of day tabs over it, a Swap
+// under every meal. Three sources feed the same card renderer, and each is
+// normalised into one slot shape first (revealSlotFrom*) so the card never
+// has to know which one it is looking at:
+//   * the stream, one `day` item per meal as the model decides it
+//     (meal_name, prep/cook minutes, derived_from.links_to);
+//   * the finished plan (GET /api/week-menu's day dicts: entry_id — what a
+//     Swap needs — meta, leftover_from), fetched once the stream is done;
+//   * a swap's answer, which is one of those day dicts.
+// REVEAL_WEEK_SLOTS mirrors static/shell.js's WEEK_SLOTS (the app's one
+// "group a week by day, then by meal type" pattern) so a slot reads the same
+// word here as everywhere else. A local copy, since this is a standalone
+// page that doesn't load shell.js.
 const REVEAL_WEEK_SLOTS = ['breakfast', 'lunch', 'dinner', 'snack'];
 const REVEAL_SLOT_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack' };
+const REVEAL_DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const REVEAL_DAY_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-function formatPlanDate(dateStr) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr + 'T00:00:00');
-  if (isNaN(d)) return dateStr;
-  return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+const REVEAL_SWAP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg>';
+
+function revealWeekdayIndex(dateStr) {
+  const d = new Date(String(dateStr || '') + 'T00:00:00');
+  return isNaN(d) ? -1 : d.getDay();
 }
 
-// Groups a flat meals[] list (each {date, slot, meal, ...}) into one
-// entry per date, in date order, each carrying only the slots that were
-// actually generated for that day — a household that asked for e.g. 3
-// dinners a week won't have every day filled, and showing "not planned"
-// for a slot nobody asked about would read as a broken promise rather
-// than an honest gap.
+// "Monday" — the day as the card names it, and as "from Monday" names a
+// leftover's source night.
+function formatPlanDate(dateStr) {
+  const i = revealWeekdayIndex(dateStr);
+  return i === -1 ? String(dateStr || '') : REVEAL_DAY_LONG[i];
+}
+
+function revealMinutesMeta(minutes) {
+  const n = Number(minutes) || 0;
+  return n ? n + ' min' : '';
+}
+
+// The one slot shape every renderer reads: {slot, state, dish, meta,
+// entryId, from, fromSlot, fromMeal}. `from` is the source date of a
+// leftover night — with the slot (the stream's "date:slot") or the dish
+// (the menu's leftover_from.meal) that says WHICH meal that day it eats —
+// so a cook night can count what it makes (revealMakes).
+function revealSlotFromStream(item) {
+  const state = item.slot_state === 'open' ? 'open' : 'planned';
+  const links = String((item.derived_from && item.derived_from.links_to) || '').split(':');
+  return {
+    slot: item.slot, state: state,
+    dish: state === 'open' ? '' : String(item.meal_name || '').trim(),
+    meta: revealMinutesMeta((item.prep_time_minutes || 0) + (item.cook_time_minutes || 0)),
+    entryId: null,
+    from: links[0] || '', fromSlot: links[1] || '', fromMeal: '',
+  };
+}
+
+// get_week_menu's slot entry ({title, meta, state, entry_id, source,
+// leftover_from}). A reheat night's title already names its source
+// ("Leftovers — Monday's Chili"); the card says the dish and "from Monday".
+function revealSlotFromMenu(slot, entry) {
+  if (!entry) return null;
+  const state = entry.state || 'planned';
+  const leftover = entry.leftover_from || null;
+  let meta = '';
+  if (!leftover && entry.meta && entry.meta !== 'reheat' && entry.meta !== 'takeout') meta = entry.meta;
+  return {
+    slot: slot, state: state,
+    dish: leftover ? String(leftover.meal || entry.title || '') : String(entry.title || ''),
+    meta: meta,
+    entryId: entry.entry_id || null,
+    from: leftover ? leftover.date : '', fromSlot: '', fromMeal: leftover ? String(leftover.meal || '') : '',
+  };
+}
+
+// get_weekly_plan's flat meal ({entry_id, date, slot, meal, slot_state}) —
+// the fallback when the menu can't be fetched. No minutes, so no meta.
+function revealSlotFromPlanMeal(m) {
+  return {
+    slot: m.slot, state: m.slot_state || 'planned',
+    dish: String(m.meal || '').trim(), meta: '', entryId: m.entry_id || null, from: '', fromSlot: '', fromMeal: '',
+  };
+}
+
+// One day: {date, slots: {breakfast: slotShape, ...}}. The strip's days, in
+// date order, keyed by date — the stream and a swap both write into it.
+const revealStreamDays = new Map();
+function revealPutSlot(date, slotShape) {
+  if (!date || !slotShape || !slotShape.slot) return;
+  if (!revealStreamDays.has(date)) revealStreamDays.set(date, { date: date, slots: {} });
+  revealStreamDays.get(date).slots[slotShape.slot] = slotShape;
+}
+function revealOrderedDays() {
+  return Array.from(revealStreamDays.values()).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+}
+
+// Groups a flat meals[] list (get_weekly_plan's shape) into days, for the
+// no-menu fallback. Only the slots actually generated: a household that
+// asked for three dinners won't have every day filled, and "not planned"
+// for a slot nobody asked about reads as a broken promise.
 function groupRevealMealsByDay(meals) {
   const byDate = new Map();
-  meals.forEach(m => {
+  (meals || []).forEach(m => {
+    if (!m || !m.date || !m.slot) return;
     if (!byDate.has(m.date)) byDate.set(m.date, { date: m.date, slots: {} });
-    byDate.get(m.date).slots[m.slot] = m;
+    byDate.get(m.date).slots[m.slot] = revealSlotFromPlanMeal(m);
   });
   return Array.from(byDate.values()).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
 }
 
-function revealSlotDishHtml(m) {
-  if (m.slot_state === 'open') {
-    return `<span class="reveal-slot-dish reveal-slot-dish-open">Still deciding</span>`;
-  }
-  if (m.slot_state === 'planned_empty' || !m.meal) {
-    return `<span class="reveal-slot-dish reveal-slot-dish-empty">Nothing planned</span>`;
-  }
-  return `<span class="reveal-slot-dish">${escapeHtmlLocal(m.meal)}</span>`;
+// get_week_menu's days → the same shape. Days before the plan's own start
+// and days with nothing on them are left out — a part-week's blank Monday
+// is not a day to swipe to.
+function revealDaysFromMenu(menuDays) {
+  const out = [];
+  (menuDays || []).forEach(day => {
+    if (!day || !day.date || day.before_plan_start) return;
+    const slots = {};
+    ['breakfast', 'lunch', 'dinner'].forEach(slot => {
+      const s = revealSlotFromMenu(slot, day[slot]);
+      if (s) slots[slot] = s;
+    });
+    if (day.snack) { const s = revealSlotFromMenu('snack', day.snack); if (s) slots.snack = s; }
+    if (Object.keys(slots).length) out.push({ date: day.date, slots: slots });
+  });
+  return out;
 }
 
-function revealDayCardHtml(day) {
-  const rows = REVEAL_WEEK_SLOTS
-    .filter(slot => day.slots[slot])
-    .map(slot => {
-      const m = day.slots[slot];
-      const isDinner = slot === 'dinner';
-      return `<div class="reveal-slot${isDinner ? ' reveal-slot-dinner' : ''}">
-        <span class="reveal-slot-label">${isDinner ? '<span class="reveal-dot" aria-hidden="true"></span>' : ''}${REVEAL_SLOT_LABELS[slot] || slot}</span>
-        ${revealSlotDishHtml(m)}
-      </div>`;
-    }).join('');
-  return `<div class="reveal-day" data-date="${escapeHtmlLocal(day.date)}">
-    <p class="reveal-day-name">${escapeHtmlLocal(formatPlanDate(day.date))}</p>
+function revealSlotDishHtml(s) {
+  if (s.state === 'open') return `<p class="reveal-slot-dish reveal-slot-dish-open">Still deciding</p>`;
+  if (s.state === 'planned_empty' || !s.dish) return `<p class="reveal-slot-dish reveal-slot-dish-empty">Nothing planned</p>`;
+  return `<p class="reveal-slot-dish">${escapeHtmlLocal(s.dish)}</p>`;
+}
+
+// How many later meals this one feeds ("makes 3": tonight and two more),
+// counted off the leftover meals that point back at THIS meal — the same
+// day and the same slot (the stream) or the same dish (the menu). A first
+// plan rarely has any; the line is left out rather than guessed at.
+function revealMakes(day, slotShape, allDays) {
+  let n = 0;
+  (allDays || []).forEach(d => {
+    Object.keys(d.slots).forEach(k => {
+      const s = d.slots[k];
+      if (!s.from || s.from !== day.date || d.date === day.date) return;
+      const same = s.fromSlot ? s.fromSlot === slotShape.slot : (s.fromMeal && s.fromMeal === slotShape.dish);
+      if (same) n += 1;
+    });
+  });
+  return n ? 'makes ' + (n + 1) : '';
+}
+
+// The one line under a dish: a leftover says where it is from and nothing
+// else; a cook says its minutes and what it makes.
+function revealSlotMeta(day, s, allDays) {
+  if (s.from) return 'from ' + formatPlanDate(s.from);
+  const parts = [];
+  if (s.meta) parts.push(s.meta);
+  const makes = revealMakes(day, s, allDays);
+  if (makes) parts.push(makes);
+  return parts.join(' · ');
+}
+
+// One card. Rows in eating order (Breakfast, Lunch, Dinner, then a snack),
+// only the slots this day has; a Swap under every planned meal (an open or
+// deliberately empty slot has nothing to swap — chat is its way).
+function revealDayCardHtml(day, allDays) {
+  const slots = REVEAL_WEEK_SLOTS.filter(slot => day.slots[slot]);
+  const count = slots.filter(slot => day.slots[slot].state === 'planned' && day.slots[slot].dish).length;
+  const rows = slots.map(slot => {
+    const s = day.slots[slot];
+    const meta = revealSlotMeta(day, s, allDays);
+    const swappable = s.state === 'planned' && !!s.dish;
+    return `<div class="reveal-slot" data-slot="${escapeHtmlLocal(slot)}">
+      <div class="reveal-slot-text">
+        <p class="reveal-slot-label">${REVEAL_SLOT_LABELS[slot] || escapeHtmlLocal(slot)}</p>
+        ${revealSlotDishHtml(s)}
+        ${meta ? `<p class="reveal-slot-meta">${escapeHtmlLocal(meta)}</p>` : ''}
+      </div>
+      ${swappable ? `<button type="button" class="reveal-swap" data-swap-date="${escapeHtmlLocal(day.date)}" data-swap-slot="${escapeHtmlLocal(slot)}"${s.entryId ? ` data-entry-id="${s.entryId}"` : ''} aria-label="Swap ${escapeHtmlLocal(s.dish)}">${REVEAL_SWAP_ICON}Swap</button>` : ''}
+    </div>`;
+  }).join('');
+  return `<div class="reveal-day" data-date="${escapeHtmlLocal(day.date)}" role="group" aria-label="${escapeHtmlLocal(formatPlanDate(day.date))}">
+    <div class="reveal-day-head">
+      <p class="reveal-day-name">${escapeHtmlLocal(formatPlanDate(day.date))}</p>
+      <span class="reveal-day-count">${count} ${count === 1 ? 'meal' : 'meals'}</span>
+    </div>
     ${rows}
   </div>`;
 }
 
+function revealTabsHtml(days, selected) {
+  return days.map((day, i) => {
+    const wd = revealWeekdayIndex(day.date);
+    return `<button type="button" class="reveal-tab${i === selected ? ' is-on' : ''}" role="tab" aria-selected="${i === selected ? 'true' : 'false'}" data-day-index="${i}">${wd === -1 ? escapeHtmlLocal(day.date) : REVEAL_DAY_SHORT[wd]}</button>`;
+  }).join('');
+}
+
+function revealPagerHtml(days, selected) {
+  return days.map((_, i) => `<span${i === selected ? ' class="is-on"' : ''}></span>`).join('');
+}
+
 // Nothing menu-shaped is on screen until this runs (Julia, 2026-09-08).
-// While the plan is generating, the reveal is a hero, a waiting line and
-// nothing else — an empty day list reads as a sample menu with no food in
-// it, which is a worse first impression than an honest wait. The title
-// stops saying "here's your sample week" until there is one, too.
+// While the plan is generating, the reveal is the head, a waiting line and
+// nothing else — an empty strip reads as a menu with no food in it. The
+// title stops saying "here's week 1" until there is one, too.
 const REVEAL_TITLE_WAITING = 'Cooking up your first week…';
-const REVEAL_TITLE_READY = "Here's your sample week.";
+const REVEAL_TITLE_READY = "Here's week 1.";
 function revealShowDays() {
   const daysDiv = document.getElementById('reveal-days');
   if (!daysDiv.hidden) return;
   daysDiv.hidden = false;
+  document.getElementById('reveal-tabs').hidden = false;
+  document.getElementById('reveal-pager').hidden = false;
+  document.getElementById('reveal-lead').hidden = false;
   document.getElementById('reveal-title').textContent = REVEAL_TITLE_READY;
   // The reveal shows the facts it's working from OR the days — never both
   // (Card 6, 2026-09-18): the moment there's a real day on screen, the
   // "what I'm using" card and its note have done their job.
-  const usingCard = document.getElementById('reveal-using');
-  if (usingCard) usingCard.hidden = true;
-  const usingNote = document.getElementById('reveal-using-note');
-  if (usingNote) usingNote.hidden = true;
+  revealHideUsingFacts();
 }
 
-// Only ever called with a real week. A finished generation that produced
-// nothing used to be handled here, with its own "No meals generated yet —
-// you can ask for a weekly plan any time in chat." box; a week that never
-// arrived is now the failure receipt's to say (renderRevealFailedReceipt),
-// which says it once, in the same words as a generation that threw, and
-// with Try again beside it rather than an instruction to go find chat.
-function renderRevealDays(meals) {
+// Which card is in view. The tabs and the dots follow the strip, and the
+// strip follows a tab.
+let revealSelectedDay = 0;
+function revealSelectDay(index, opts) {
+  const days = revealOrderedDays();
+  if (!days.length) return;
+  revealSelectedDay = Math.max(0, Math.min(index, days.length - 1));
+  document.getElementById('reveal-tabs').innerHTML = revealTabsHtml(days, revealSelectedDay);
+  document.getElementById('reveal-pager').innerHTML = revealPagerHtml(days, revealSelectedDay);
+  if (opts && opts.scroll) {
+    const card = document.getElementById('reveal-days').children[revealSelectedDay];
+    if (card && card.scrollIntoView) card.scrollIntoView({ block: 'nearest', inline: 'start' });
+  }
+}
+
+// Draws the strip from what revealStreamDays holds, keeping the card in
+// view where it was. The one renderer for the stream, the finished plan
+// and a swap.
+function renderRevealStrip() {
+  const days = revealOrderedDays();
   const daysDiv = document.getElementById('reveal-days');
-  revealShowDays();
-  daysDiv.innerHTML = groupRevealMealsByDay(meals).map(revealDayCardHtml).join('');
+  const keepScroll = daysDiv.scrollLeft;
+  daysDiv.innerHTML = days.map(day => revealDayCardHtml(day, days)).join('');
+  daysDiv.scrollLeft = keepScroll;
+  revealSelectDay(revealSelectedDay);
 }
 
-// Incremental version of the above, used while the plan streams in day by
-// day: finds (or creates, in date order) the one day card a given meal
-// belongs to, and adds or replaces just that slot row within it — so the
-// screen fills in progressively instead of sitting blank for ~30 seconds
-// and then jumping to a finished list all at once.
-const revealStreamDays = new Map();
+// Only ever called with a real week (get_week_menu's days, or the plan's
+// flat meals as the fallback): replaces whatever the stream drew with the
+// saved plan, which is what a Swap needs (its entry ids).
+function renderRevealDays(days) {
+  revealStreamDays.clear();
+  (days || []).forEach(day => Object.keys(day.slots).forEach(slot => revealPutSlot(day.date, day.slots[slot])));
+  revealShowDays();
+  renderRevealStrip();
+}
+
+// Incremental version, used while the plan streams in day by day: finds
+// (or creates, in date order) the one day card a meal belongs to and adds
+// or replaces just that slot row — so the screen fills in progressively
+// instead of sitting blank for ~30 seconds and then jumping to a finished
+// strip all at once.
 function upsertRevealDay(m) {
   if (!m || !m.date || !m.slot) return;
-  if (!revealStreamDays.has(m.date)) revealStreamDays.set(m.date, { date: m.date, slots: {} });
-  revealStreamDays.get(m.date).slots[m.slot] = m;
+  revealPutSlot(m.date, revealSlotFromStream(m));
   // The first real day is what turns the waiting screen into a menu.
   revealShowDays();
-  const ordered = Array.from(revealStreamDays.values()).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
-  document.getElementById('reveal-days').innerHTML = ordered.map(revealDayCardHtml).join('');
+  renderRevealStrip();
 }
 
-// ---------- The end-of-setup receipt ----------
-// "I want to be told plainly that setup is complete, what Pomona did, and
-// the one thing to do next, so I never wonder whether I missed a step"
-// (Emily + Julia, 2026-09-08). Three lines, in that order, and each one is
-// built from something that actually happened — the answers this household
-// gave, and the plan that came back. Nothing here is a template with a
-// number dropped into it: a fact nobody gave is left out of the sentence
-// rather than guessed at.
-const REVEAL_RECEIPT_EYEBROW = "YOU'RE SET UP";
-const REVEAL_RECEIPT_TITLE = "That's everything I need.";
-const REVEAL_RECEIPT_NEXT = "Next: look it over and approve it, then I'll write your list.";
-// The failure twin. Plain, and paired with its way out in the same breath
-// (DESIGN_SYSTEM §8) — the answers really are saved, so that is said first.
-const REVEAL_FAILED_TITLE = 'Your answers are saved.';
-const REVEAL_FAILED_LINE = "The first week didn't come together — tap Try again, or I'll draft it when you open the app.";
-
-// Numbers are digits here, deliberately, and not the words-to-twelve rule
-// the approved-week receipt follows (weekly_plan._receipt_number): this
-// block is a count-back of what was saved, and digits are what makes it
-// scannable as one.
-const REVEAL_DINNER_WINDOW_FACT = {
-  '5_6ish': 'dinner around 5 or 6',
-  '6_8': 'dinner between 6 and 8',
-  'later': 'dinner on the later side',
-  // 'all_over' says nothing specific enough to read back as a fact, so it
-  // is left out of the line entirely rather than padded into it.
-};
-
-function revealTitleCase(word) {
-  return word ? word.charAt(0).toUpperCase() + word.slice(1) : '';
-}
-
-function revealJoinWords(items) {
-  if (items.length <= 1) return items[0] || '';
-  if (items.length === 2) return items[0] + ' and ' + items[1];
-  return items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1];
-}
-
-// Line 1: what was saved. `facts` is {people, allergies, dinnerWindow,
-// prepDays} — see revealSetupFacts for where each one comes from.
-function revealSetupLine(facts) {
-  const parts = [];
-  const people = facts.people || 0;
-  if (people === 1) parts.push('just you');
-  else if (people > 1) parts.push(people + ' of you');
-  const allergies = facts.allergies || 0;
-  // Said either way: "no allergies" is an answer this household gave, and
-  // seeing it read back is the point of the whole block.
-  parts.push(allergies ? allergies + (allergies === 1 ? ' allergy' : ' allergies') : 'no allergies');
-  const dinner = REVEAL_DINNER_WINDOW_FACT[facts.dinnerWindow];
-  if (dinner) parts.push(dinner);
-  const prepDays = (facts.prepDays || []).map(revealTitleCase).filter(Boolean);
-  if (prepDays.length) parts.push('prep on ' + revealJoinWords(prepDays));
-  if (!parts.length) return '';
-  return revealTitleCase(parts.join(', ')) + '.';
-}
-
-// Line 2: what Pomona did, counted off the plan that just came back. Same
-// rule as the approved-week receipt (weekly_plan._is_cook): a reheat night
-// and a takeout night are meals but not cooks, and an away or still-open
-// slot is neither. A first plan has no confirmed leftover chains yet, so
-// the freeform-text test is the whole of it here — the same regex pair
-// get_week_menu uses on the same text.
-const REVEAL_NOT_A_COOK = /leftovers?\b|take[\s-]?out|delivery|order in/i;
-
-function revealPlanCounts(meals) {
-  let mealCount = 0;
-  let cookCount = 0;
-  (meals || []).forEach(m => {
-    if (!m || !m.meal) return;
-    if (m.slot_state && m.slot_state !== 'planned') return;
-    mealCount += 1;
-    if (!REVEAL_NOT_A_COOK.test(m.meal)) cookCount += 1;
+// The strip, the tabs and the dots agree: a tab scrolls the strip to its
+// card; a swipe moves the tab and the dot. The scroll handler reads which
+// card is nearest the left edge — plain arithmetic on the cards' offsets,
+// no library — and nothing here depends on the swap sheet or the stream.
+function wireRevealCarousel() {
+  const daysDiv = document.getElementById('reveal-days');
+  const tabs = document.getElementById('reveal-tabs');
+  tabs.addEventListener('click', e => {
+    const tab = e.target.closest('[data-day-index]');
+    if (tab) revealSelectDay(Number(tab.getAttribute('data-day-index')), { scroll: true });
   });
-  return { meals: mealCount, cooks: cookCount };
+  let ticking = false;
+  daysDiv.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      ticking = false;
+      const cards = Array.from(daysDiv.children);
+      if (!cards.length) return;
+      const left = daysDiv.scrollLeft + daysDiv.offsetLeft;
+      let nearest = 0, best = Infinity;
+      cards.forEach((card, i) => {
+        const d = Math.abs(card.offsetLeft - left - 24);
+        if (d < best) { best = d; nearest = i; }
+      });
+      if (nearest !== revealSelectedDay) revealSelectDay(nearest);
+    });
+  }, { passive: true });
+  daysDiv.addEventListener('click', e => {
+    const btn = e.target.closest('.reveal-swap');
+    if (btn) openRevealSwap(btn);
+  });
 }
 
-function revealPlanLine(counts) {
-  const parts = [];
-  if (counts.meals) parts.push(counts.meals + (counts.meals === 1 ? ' meal' : ' meals'));
-  if (counts.cooks) parts.push(counts.cooks + (counts.cooks === 1 ? ' cook' : ' cooks'));
-  if (!parts.length) return '';
-  return 'Your first week is drafted: ' + parts.join(', ') + '.';
-}
-
+// ---------- The loading screen's "what I'm using" card (Card 6) ----------
 // The answers actually given, read from the same places the save calls read
 // them: the answer body for people and restrictions, the rhythm step's own
 // globals for the dinner window and the prep days.
 function revealSetupFacts(answers) {
   const restrictions = (answers && answers.household_restrictions) || {};
-  let allergies = 0;
-  // The actual things to avoid, not just a count — allergy: entries plus
-  // won't-eat items, deduped and lower-cased, for the loading card's "no
-  // shrimp, no peanuts" style row (Card 6). The receipt's own line above
-  // only ever needed the count.
+  // The actual things to avoid — allergy: entries plus won't-eat items,
+  // deduped and lower-cased, for the card's "no shrimp, no peanuts" row.
   const avoidItems = [];
   const seenAvoid = new Set();
   Object.keys(restrictions).forEach(name => {
     (restrictions[name] || []).forEach(item => {
       const s = String(item);
       // currentRestrictions() writes an allergy as "allergy: peanuts", one
-      // entry per thing — so this counts things, not people.
+      // entry per thing — so this lists things, not people.
       if (s.toLowerCase().indexOf('allergy:') === 0) {
-        allergies += 1;
         const thing = s.slice(s.indexOf(':') + 1).trim().toLowerCase();
         if (thing && !seenAvoid.has(thing)) { seenAvoid.add(thing); avoidItems.push(thing); }
       }
@@ -2149,28 +2325,37 @@ function revealSetupFacts(answers) {
   });
   return {
     people: ((answers && answers.member_names) || []).length,
-    allergies: allergies,
     avoidItems: avoidItems,
     dinnerWindow: rhythmDinnerWindow,
     prepDays: currentPrepDays().map(d => d.weekday),
   };
 }
 
-function revealReceiptLinesHtml(lines) {
-  return lines
-    .filter(Boolean)
-    .map(line => `<p class="reveal-receipt-line">${escapeHtmlLocal(line)}</p>`)
-    .join('');
+// Numbers are digits here, deliberately: the card is a count-back of what
+// was saved, and digits are what makes it scannable as one.
+const REVEAL_DINNER_WINDOW_FACT = {
+  '5_6ish': 'dinner around 5 or 6',
+  '6_8': 'dinner between 6 and 8',
+  'later': 'dinner on the later side',
+  // 'all_over' says nothing specific enough to read back as a fact, so it
+  // is left out of the card entirely rather than padded into it.
+};
+
+function revealTitleCase(word) {
+  const s = String(word || '');
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+}
+function revealJoinWords(items) {
+  if (items.length <= 1) return items[0] || '';
+  if (items.length === 2) return items[0] + ' and ' + items[1];
+  return items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1];
 }
 
-// ---------- The loading screen's "what I'm using" card (Card 6) ----------
-// One 20px stroke icon + fact per row, on the same facts revealSetupFacts
-// already gathers for the finished receipt — see board 08-loading. A row
-// with nothing to say still renders its "no X" / "no prep days" form: those
-// are real, given answers (revealSetupLine's own comment makes the same
-// call for "no allergies"), not blanks to skip. The dinner window is the
-// one row that's genuinely skippable — REVEAL_DINNER_WINDOW_FACT already
-// leaves out anything not specific enough to read back as a fact.
+// One 20px stroke icon + fact per row — see board 08-loading. A row with
+// nothing to say still renders its "no X" / "no prep days" form: those are
+// real, given answers, not blanks to skip. The dinner window is the one row
+// that's genuinely skippable — REVEAL_DINNER_WINDOW_FACT already leaves out
+// anything not specific enough to read back as a fact.
 const REVEAL_USING_ICONS = {
   people: '<circle cx="9" cy="8" r="3.2"></circle><path d="M3 20a6 6 0 0 1 12 0"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M15.5 14.5A5 5 0 0 1 22 19"></path>',
   avoid: '<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"></path>',
@@ -2206,55 +2391,180 @@ function renderRevealUsingFacts(answers) {
   card.hidden = false;
   if (note) note.hidden = false;
 }
-
-// The one number that matters (rule S5: a finish is spruce, big type, one
-// number, one next step): how many meals the first week holds, counted by
-// the same revealPlanCounts the receipt's second line reads, so the big
-// figure and the sentence under it can never disagree. The word beside it
-// is that line's own word. Hidden until there is a week, and hidden again
-// on a failure — a big number over no week would be the receipt's lie.
-function renderRevealNumber(counts) {
-  const box = document.getElementById('reveal-number');
-  if (!box) return;
-  const meals = (counts && counts.meals) || 0;
-  if (!meals) { box.innerHTML = ''; box.hidden = true; return; }
-  box.innerHTML =
-    `<p class="reveal-number-value">${meals}</p>` +
-    `<p class="reveal-number-word">${meals === 1 ? 'meal' : 'meals'}</p>`;
-  box.hidden = false;
+// The card was for the wait; the wait ends with a real week
+// (revealShowDays) or with the failure block (renderRevealFailed) — never
+// with both on screen at once.
+function revealHideUsingFacts() {
+  const card = document.getElementById('reveal-using');
+  if (card) card.hidden = true;
+  const note = document.getElementById('reveal-using-note');
+  if (note) note.hidden = true;
 }
 
-function renderRevealReceipt(answers, meals) {
-  const box = document.getElementById('reveal-receipt');
-  box.classList.remove('reveal-receipt-failed');
+// ---------- the failure block ----------
+// Plain, and paired with its way out in the same breath (DESIGN_SYSTEM §8)
+// — the answers really are saved, so that is said first.
+const REVEAL_FAILED_TITLE = 'Your answers are saved.';
+const REVEAL_FAILED_LINE = "The first week didn't come together — tap Try again, or I'll draft it when you open the app.";
+function renderRevealFailed() {
+  const box = document.getElementById('reveal-failed');
   box.innerHTML =
-    `<p class="reveal-receipt-eyebrow">${REVEAL_RECEIPT_EYEBROW}</p>` +
-    `<p class="reveal-receipt-title">${escapeHtmlLocal(REVEAL_RECEIPT_TITLE)}</p>` +
-    revealReceiptLinesHtml([
-      revealSetupLine(revealSetupFacts(answers)),
-      revealPlanLine(revealPlanCounts(meals)),
-      REVEAL_RECEIPT_NEXT,
-    ]);
+    `<p class="reveal-failed-title">${escapeHtmlLocal(REVEAL_FAILED_TITLE)}</p>` +
+    `<p class="reveal-failed-line">${escapeHtmlLocal(REVEAL_FAILED_LINE)}</p>`;
   box.hidden = false;
+  revealHideUsingFacts();
 }
 
-function renderRevealFailedReceipt() {
-  const box = document.getElementById('reveal-receipt');
-  box.classList.add('reveal-receipt-failed');
-  box.innerHTML =
-    `<p class="reveal-receipt-eyebrow">${REVEAL_RECEIPT_EYEBROW}</p>` +
-    `<p class="reveal-receipt-title">${escapeHtmlLocal(REVEAL_FAILED_TITLE)}</p>` +
-    revealReceiptLinesHtml([REVEAL_FAILED_LINE]);
-  box.hidden = false;
-  // The using card was for the wait; a failure ends the wait with its own
-  // answer (this receipt), the same way revealShowDays() ends it with a
-  // real week — never both on screen at once.
-  const usingCard = document.getElementById('reveal-using');
-  if (usingCard) usingCard.hidden = true;
-  const usingNote = document.getElementById('reveal-using-note');
-  if (usingNote) usingNote.hidden = true;
+// ---------- "Changes saved" ----------
+// The app's own pop-up (DESIGN_SYSTEM §2b S10, shell.js toastSaved).
+const CHANGES_SAVED = 'Changes saved';
+let revealToastTimer = null;
+function revealToast(message) {
+  const el = document.getElementById('reveal-toast');
+  if (!el) return;
+  el.textContent = message;
+  el.hidden = false;
+  if (revealToastTimer) clearTimeout(revealToastTimer);
+  revealToastTimer = setTimeout(() => { el.hidden = true; }, 2200);
 }
 
+// ---------- Swap: three picks ----------
+// Tap Swap under a meal → a sheet with three other dishes for that slot
+// (POST /api/week/{week}/swap-options — one small model call, nothing
+// written, every pick already checked against what the house can't have)
+// and "Something else — tell me", which is the chat with the slot named.
+// A tapped pick goes through the swap's own apply (/swap-choose) and the
+// card redraws from the day the server hands back.
+function revealSwapSheetEls() {
+  return { scrim: document.getElementById('reveal-swap-scrim'), sheet: document.getElementById('reveal-swap-sheet') };
+}
+
+function closeRevealSwap() {
+  const els = revealSwapSheetEls();
+  if (els.scrim) els.scrim.hidden = true;
+  if (els.sheet) els.sheet.hidden = true;
+}
+
+function revealSwapSheetHtml(title, sub, body) {
+  return `<div class="reveal-sheet-handle" aria-hidden="true"></div>
+    <h2 class="reveal-sheet-title" id="reveal-swap-title">${escapeHtmlLocal(title)}</h2>
+    ${sub ? `<p class="reveal-sheet-sub">${escapeHtmlLocal(sub)}</p>` : ''}
+    ${body}
+    <button type="button" class="reveal-sheet-quiet" data-swap-sheet="chat">Something else — tell me</button>
+    <button type="button" class="reveal-sheet-outline" data-swap-sheet="close">Keep it</button>`;
+}
+
+function revealPickHtml(opt) {
+  return `<button type="button" class="reveal-pick" data-swap-option="${opt.index}">
+    <span class="reveal-pick-text">
+      <span class="reveal-pick-name">${escapeHtmlLocal(opt.meal)}</span>
+      ${opt.reason ? `<span class="reveal-pick-line">${escapeHtmlLocal(opt.reason)}</span>` : ''}
+    </span>
+    ${opt.minutes ? `<span class="reveal-pick-min">${escapeHtmlLocal(revealMinutesMeta(opt.minutes))}</span>` : ''}
+  </button>`;
+}
+
+// What a slot is called in the chat prefill and the sheet: "Monday dinner".
+function revealSlotName(date, slot) {
+  return formatPlanDate(date) + ' ' + (REVEAL_SLOT_LABELS[slot] || slot).toLowerCase();
+}
+
+let revealSwapCurrent = null;
+
+async function openRevealSwap(btn) {
+  const date = btn.getAttribute('data-swap-date');
+  const slot = btn.getAttribute('data-swap-slot');
+  const entryId = Number(btn.getAttribute('data-entry-id')) || null;
+  const els = revealSwapSheetEls();
+  revealSwapCurrent = { date: date, slot: slot, entryId: entryId, options: [] };
+  const name = revealSlotName(date, slot);
+  els.scrim.hidden = false;
+  els.sheet.hidden = false;
+  if (!entryId || !firstPlanWeekStart) {
+    // The stream is still in: the plan isn't saved yet, so there is nothing
+    // to swap onto. Said plainly, with the way that always works.
+    els.sheet.innerHTML = revealSwapSheetHtml('Swap ' + name, '', `<p class="reveal-sheet-note">One moment — the week's still landing. Tell me instead, or tap Swap again in a second.</p>`);
+    return;
+  }
+  els.sheet.innerHTML = revealSwapSheetHtml('Swap ' + name, 'Three other picks:', `<p class="reveal-sheet-note">Finding three you might like…</p>`);
+  try {
+    const res = await fetch('/api/week/' + encodeURIComponent(firstPlanWeekStart) + '/swap-options', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entry_id: entryId, avoid: [] }),
+    });
+    if (!res.ok) throw new Error('swap-options failed');
+    const data = await res.json();
+    if (!revealSwapCurrent || revealSwapCurrent.entryId !== entryId) return;
+    revealSwapCurrent.options = data.options || [];
+    const picks = revealSwapCurrent.options.map(revealPickHtml).join('');
+    els.sheet.innerHTML = revealSwapSheetHtml('Swap ' + name, picks ? 'Three other picks:' : '',
+      picks || `<p class="reveal-sheet-note">I couldn't find picks just now — tell me what you'd like instead.</p>`);
+  } catch (err) {
+    console.warn('Swap options failed:', err);
+    if (!els.sheet.hidden) {
+      els.sheet.innerHTML = revealSwapSheetHtml('Swap ' + name, '', `<p class="reveal-sheet-note">I couldn't find picks just now — tell me what you'd like instead.</p>`);
+    }
+  }
+}
+
+async function chooseRevealSwap(index) {
+  const cur = revealSwapCurrent;
+  if (!cur || !cur.entryId) return;
+  const els = revealSwapSheetEls();
+  els.sheet.querySelectorAll('.reveal-pick').forEach(b => { b.disabled = true; });
+  try {
+    const res = await fetch('/api/week/' + encodeURIComponent(firstPlanWeekStart) + '/swap-choose', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entry_id: cur.entryId, option: index }),
+    });
+    if (!res.ok) throw new Error('swap-choose failed');
+    const data = await res.json();
+    if (data.status !== 'swapped') {
+      els.sheet.innerHTML = revealSwapSheetHtml('Swap ' + revealSlotName(cur.date, cur.slot), '',
+        `<p class="reveal-sheet-note">${escapeHtmlLocal(data.message || "I couldn't make that change.")}</p>`);
+      return;
+    }
+    if (data.day) {
+      const day = revealDaysFromMenu([data.day])[0];
+      if (day) Object.keys(day.slots).forEach(s => revealPutSlot(day.date, day.slots[s]));
+    } else {
+      const existing = revealStreamDays.get(cur.date);
+      if (existing && existing.slots[cur.slot]) {
+        existing.slots[cur.slot].dish = data.meal || existing.slots[cur.slot].dish;
+        existing.slots[cur.slot].entryId = data.entry_id || existing.slots[cur.slot].entryId;
+      }
+    }
+    renderRevealStrip();
+    closeRevealSwap();
+    revealToast(CHANGES_SAVED);
+  } catch (err) {
+    console.warn('Swap choose failed:', err);
+    els.sheet.innerHTML = revealSwapSheetHtml('Swap ' + revealSlotName(cur.date, cur.slot), '',
+      `<p class="reveal-sheet-note">That didn't save — nothing changed. Try again, or tell me instead.</p>`);
+  }
+}
+
+function wireRevealSwapSheet() {
+  const els = revealSwapSheetEls();
+  els.scrim.addEventListener('click', closeRevealSwap);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !els.sheet.hidden) closeRevealSwap(); });
+  els.sheet.addEventListener('click', e => {
+    const pick = e.target.closest('[data-swap-option]');
+    if (pick) { chooseRevealSwap(Number(pick.getAttribute('data-swap-option'))); return; }
+    const act = e.target.closest('[data-swap-sheet]');
+    if (!act) return;
+    if (act.getAttribute('data-swap-sheet') === 'close') closeRevealSwap();
+    else if (act.getAttribute('data-swap-sheet') === 'chat') {
+      // The existing tweak path, with the slot named: shell.js's
+      // buildWeekPanel reads ?tweak=1 into the ask sheet's prefill and
+      // ?about= into its first words.
+      const cur = revealSwapCurrent;
+      revealGoTweak(cur ? revealSlotName(cur.date, cur.slot) : '');
+    }
+  });
+}
+
+// ---------- the invite ----------
 async function renderInviteOffer(memberNames) {
   const section = document.getElementById('invite-section');
   if (memberNames.length <= 1) { section.innerHTML = ''; return; }
@@ -2289,13 +2599,12 @@ async function renderInviteOffer(memberNames) {
   });
 }
 
+// ---------- the stream ----------
 // Streams the first plan day by day, same SSE convention as
 // /api/week/{week_start}/generate/stream + static/plan-week.html's
-// streamGenerate (Loop Board: "the reveal's plan generation should use
-// the day-by-day progressive path if it doesn't already" — it didn't;
-// this wires it up). Manual fetch + reader rather than EventSource
-// because EventSource can't carry a POST body — same reasoning as
-// plan-week.html's own comment on streamGenerate.
+// streamGenerate. Manual fetch + reader rather than EventSource because
+// EventSource can't carry a POST body — same reasoning as plan-week.html's
+// own comment on streamGenerate.
 // `waiter` is the rotating waiting line (static/waiting-lines.js), moved
 // between stages by the same frames that drive the day cards — so the line
 // only ever claims what the stream says is happening.
@@ -2359,19 +2668,34 @@ async function streamFirstPlan(waiter) {
   return finalPlan;
 }
 
+// The saved week as the app reads it (GET /api/week-menu): entry ids for
+// Swap, minutes, and which nights reheat which. Null when it can't be
+// fetched — the plan's own flat meals draw the strip then, without Swap's
+// three picks (the chat still changes anything).
+async function fetchRevealMenu(weeklyPlanId) {
+  if (!weeklyPlanId) return null;
+  try {
+    const res = await fetch('/api/week-menu?weekly_plan_id=' + encodeURIComponent(weeklyPlanId));
+    if (!res.ok) return null;
+    const menu = await res.json();
+    return revealDaysFromMenu(menu.days || []);
+  } catch (err) {
+    console.warn('Week menu fetch failed:', err);
+    return null;
+  }
+}
+
 // Remembered so "Try again" (the failed-generation path below) can re-run
 // the exact same call without the caller having to thread answers through
 // a second time.
 let lastFirstPlanAnswers = null;
 
 // The week the first plan was actually filed under, straight off the plan
-// that came back. "Review my week" carries it, because the first plan is
-// not always the week today sits in — a household that chose "Next week",
-// or a Sunday household whose part-week folded forward, gets a plan filed
-// under a Monday that ISN'T this one, and the Meals tab defaults to
-// whichever week contains today. Same fact, same query param and same
-// handling as /plan-week's own hand-back (shell.js buildWeekPanel reads
-// ?drafted=<Monday> into weekState.showWeekStart).
+// that came back — the key every week route (approve, swap) takes, and what
+// "or tweak it with me" carries as ?drafted=. Not always the week today sits
+// in: a household that chose "Next week", or a Sunday household whose
+// part-week folded forward, gets a plan filed under a Monday that isn't
+// this one.
 let firstPlanWeekStart = '';
 
 async function generateFirstPlanAndReveal(answers) {
@@ -2381,6 +2705,7 @@ async function generateFirstPlanAndReveal(answers) {
   const errorActions = document.getElementById('reveal-error-actions');
   const daysDiv = document.getElementById('reveal-days');
   document.getElementById('reveal-title').textContent = REVEAL_TITLE_WAITING;
+  document.getElementById('reveal-lead').hidden = true;
   status.hidden = false;
   actions.style.display = 'none';
   errorActions.style.display = 'none';
@@ -2388,13 +2713,14 @@ async function generateFirstPlanAndReveal(answers) {
   // rather than to the shape of the week that just failed.
   daysDiv.innerHTML = '';
   daysDiv.hidden = true;
-  // Same reason: "That's everything I need" over a week being rebuilt is a
-  // receipt for something that hasn't happened yet.
-  const receiptBox = document.getElementById('reveal-receipt');
-  receiptBox.innerHTML = '';
-  receiptBox.hidden = true;
-  renderRevealNumber(null);
+  document.getElementById('reveal-tabs').hidden = true;
+  document.getElementById('reveal-pager').hidden = true;
+  const failedBox = document.getElementById('reveal-failed');
+  failedBox.innerHTML = '';
+  failedBox.hidden = true;
   renderRevealUsingFacts(answers);
+  revealStreamDays.clear();
+  revealSelectedDay = 0;
   firstPlanWeekStart = '';
   let failed = false;
   // Starts in 'reading' rather than waiting for the first frame: the
@@ -2411,24 +2737,21 @@ async function generateFirstPlanAndReveal(answers) {
     // is a week that isn't there, whichever way it didn't arrive.
     if (!meals.length) throw new Error('The first plan came back with no meals');
     firstPlanWeekStart = data.week_start_date || '';
-    renderRevealDays(meals);
-    renderRevealNumber(revealPlanCounts(meals));
-    renderRevealReceipt(answers, meals);
+    const menuDays = await fetchRevealMenu(data.weekly_plan_id);
+    renderRevealDays(menuDays && menuDays.length ? menuDays : groupRevealMealsByDay(meals));
   } catch (err) {
     console.warn('First-plan generation failed:', err);
     failed = true;
     // Calm and plain, and the title stops promising a week — see the
     // calm-in-trouble rule in DESIGN_SYSTEM.md §8.
     document.getElementById('reveal-title').textContent = 'Your first week';
-    renderRevealFailedReceipt();
+    renderRevealFailed();
   } finally {
     if (waiter) waiter.stop();
     status.hidden = true;
-    // The normal actions ("Review my week") assume a real week is sitting
-    // above them — on a failed generation there are zero days, so this
-    // shows the retry pair instead rather than the two overlapping. Try
-    // again is the one primary there, beside the failure receipt that just
-    // named it.
+    // The normal actions (Approve) assume a real week is sitting above
+    // them — on a failed generation there are zero days, so this shows the
+    // retry pair instead rather than the two overlapping.
     if (failed) {
       errorActions.style.display = 'flex';
     } else {
@@ -2904,45 +3227,86 @@ INTRO_STEPS.forEach(key => {
 });
 
 // ---------- Post-reveal ----------
-// The reveal is the last onboarding step (Emily, 2026-09-05, 20a) — its two
-// actions below are how onboarding ends. Chores questions used to be a
-// third, optional path out of this screen ("Set up chores too"); that path
-// is gone (see the comment above the old step-chores-q markup) — chores
-// setup is reachable afterward from Today's chores card instead.
-// The one thing to do next, and the receipt above says so: land on the
-// Meals tab looking at the DRAFT this reveal just built — the week card
-// with its DRAFT badge, its rows and its "Approve this week" under them
-// (flows 3). ?drafted=<the plan's own Monday> is what makes it that week
-// rather than whichever week today falls in: shell.js's buildWeekPanel
-// reads it into weekState.showWeekStart, the same hand-back /plan-week
-// already uses, and its arrival line ("Here's your week — change anything
-// before you approve it.") is the same next step in the same words.
-// Replaces '?firstplan=1', whose toast ("Here's a first pass…") the
-// receipt now says at more length and with the next step named.
-document.getElementById('reveal-done-btn').onclick = () => {
-  window.location.href = firstPlanWeekStart
-    ? '/week?drafted=' + encodeURIComponent(firstPlanWeekStart)
-    : '/week';
-};
+// The reveal is the last onboarding step (Emily, 2026-09-05, 20a) — its
+// actions below are how onboarding ends.
+//
+// Approve IS the yes (2026-09-18): the same route the Plan tab's Approve
+// posts to (POST /api/week/{week}/approve, tools.approve_weekly_plan), so
+// the week is settled and the shopping list written before the app opens.
+// Then the hand-off: /grocery?after=approve&drafted=<the plan's Monday>.
+// shell.js's Shop tab reads `after=approve` (buildGroceryPanel) and says
+// "Approved. Here's your list."; a step between approving and the list
+// (Plan's freezer step) can read the same param and land there instead.
+// `drafted` rides along for the same reason it always has: the first plan
+// is not always the week today sits in.
+//
+// A hard allergy clash stops the approve route with `needs_confirmation`
+// and nothing written — said in the foot, and one more tap on the same
+// button sends confirm_hard_conflicts, exactly as shell.js's
+// showApproveConfirm does.
+let revealApproveConfirming = false;
+function revealAfterApproveUrl() {
+  return '/grocery?after=approve' + (firstPlanWeekStart ? '&drafted=' + encodeURIComponent(firstPlanWeekStart) : '');
+}
+async function approveFirstWeek() {
+  const btn = document.getElementById('reveal-done-btn');
+  const note = document.getElementById('reveal-approve-note');
+  if (!firstPlanWeekStart) { window.location.href = '/week'; return; }
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Approving…';
+  try {
+    const res = await fetch('/api/week/' + encodeURIComponent(firstPlanWeekStart) + '/approve', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ approved_by: '', confirm_hard_conflicts: revealApproveConfirming }),
+    });
+    if (!res.ok) throw new Error('approve failed');
+    const data = await res.json();
+    if (data.status === 'needs_confirmation') {
+      revealApproveConfirming = true;
+      note.textContent = (data.conflicts_note || 'One meal clashes with something someone here can\'t have.') + ' Approve anyway, or swap it first.';
+      note.hidden = false;
+      btn.disabled = false;
+      btn.textContent = 'Approve anyway';
+      return;
+    }
+    window.location.href = revealAfterApproveUrl();
+  } catch (err) {
+    console.warn('First-week approval failed:', err);
+    note.textContent = "Couldn't approve just now — nothing changed. Try again in a moment.";
+    note.hidden = false;
+    btn.disabled = false;
+    btn.textContent = label;
+  }
+}
+document.getElementById('reveal-done-btn').onclick = () => { approveFirstWeek(); };
 // The iterate path (Loop Board "add an iterate/feedback path at the end")
 // — a quiet secondary next to the one apricot primary, straight into
 // chat rather than a bespoke feedback form, since chat is already how
 // every correction in this app gets made. ?tweak=1 is read by shell.js's
-// buildWeekPanel the same way ?firstplan=1 already is: land on the week,
-// then open the ask sheet with a prefill instead of a toast, and scrub
-// the param so a refresh doesn't reopen it.
-document.getElementById('reveal-iterate-btn').onclick = () => {
-  // Same week the receipt points at: a "next week" first plan must not land
-  // the tweak on an empty current week.
-  window.location.href = '/week?tweak=1' + (firstPlanWeekStart ? '&drafted=' + encodeURIComponent(firstPlanWeekStart) : '');
-};
+// buildWeekPanel: land on the week, then open the ask sheet with a
+// prefill, and scrub the param so a refresh doesn't reopen it. `about`
+// names a slot when the swap sheet's "Something else — tell me" sent us.
+function revealGoTweak(about) {
+  // Same week the strip shows: a "next week" first plan must not land the
+  // tweak on an empty current week.
+  window.location.href = '/week?tweak=1'
+    + (about ? '&about=' + encodeURIComponent(about) : '')
+    + (firstPlanWeekStart ? '&drafted=' + encodeURIComponent(firstPlanWeekStart) : '');
+}
+document.getElementById('reveal-iterate-btn').onclick = () => { revealGoTweak(''); };
 // The failed-generation pair: "Try again" just re-runs the exact same
 // generation call (same answers, same code path a success would have
-// taken); "Take me in anyway" is deliberately plain '/week', not
-// '?firstplan=1' — that param's own toast ("Here's a first pass…") would
-// be describing a plan that was never actually made.
+// taken); "Take me in anyway" is deliberately plain '/week'.
 document.getElementById('reveal-retry-btn').onclick = () => { generateFirstPlanAndReveal(lastFirstPlanAnswers); };
 document.getElementById('reveal-anyway-btn').onclick = () => { window.location.href = '/week'; };
+// The round `?` — "Need a hand?" (static/help-sheet.js), named for this
+// screen so a "Something not working?" report says where it was written.
+document.getElementById('reveal-help-btn').onclick = () => {
+  if (window.openHelpSheet) window.openHelpSheet({ screenName: 'Week 1' });
+};
+wireRevealCarousel();
+wireRevealSwapSheet();
 
 // The first step, and the history entry the back gesture unwinds onto.
 // Normally this REPLACES the entry the browser is already on, so nothing is

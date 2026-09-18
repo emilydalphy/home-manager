@@ -1509,23 +1509,13 @@ def onboarding_chores_save(req: ChoreSaveRequest):
 def coaching_state():
     """
     Onboarding coaching state for the shell: which household this is, whether
-    it has a plan yet, and whether the "This is how to talk to me" card has
-    already been read. See tools.get_coaching_state.
+    it has a plan yet, and whose name the example chips carry. See
+    tools.get_coaching_state.
     """
     try:
         return tools.get_coaching_state()
     except Exception as e:
         logger.exception("Coaching state lookup failed")
-        raise HTTPException(status_code=500, detail=f"Server error: {e}")
-
-
-@app.post("/api/coaching/seen")
-def coaching_seen():
-    """The how-and-why card's "Got it" — write-once, and idempotent."""
-    try:
-        return tools.mark_coaching_seen()
-    except Exception as e:
-        logger.exception("Marking coaching seen failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
@@ -2918,6 +2908,57 @@ def week_swap_in_place(week_start: str, req: SwapInPlaceRequest):
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.exception("Swap in place failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+class SwapOptionsRequest(BaseModel):
+    """One tap on the Week 1 screen's Swap: which slot, and what this
+    sitting has already turned down for it."""
+    entry_id: int
+    avoid: list[str] | None = None
+
+
+class SwapChooseRequest(BaseModel):
+    """A tap on one of the three picks — `option` is its index in the list
+    /swap-options handed back."""
+    entry_id: int
+    option: int
+
+
+@app.post("/api/week/{week_start}/swap-options")
+def week_swap_options(week_start: str, req: SwapOptionsRequest):
+    """
+    Three other dishes for one slot, nothing written (tools.swap_options)
+    — the first-week reveal's Swap sheet (Loop Board "Week 1: day-card
+    carousel", 2026-09-18). Household-scoped like every other week route:
+    an entry from elsewhere is a 404. A 200 with an empty `options` list
+    and `options_unavailable` true means the model call failed; the sheet
+    keeps its "Something else — tell me" line either way.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.swap_options(plan_id, req.entry_id, avoid=req.avoid)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Swap options failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/week/{week_start}/swap-choose")
+def week_swap_choose(week_start: str, req: SwapChooseRequest):
+    """
+    Put one of those picks on the slot, through the swap's own apply
+    (tools.choose_swap_option). Answers with the swap's own shape — the
+    refreshed day, or `status` 'refused' with the sentence to show.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.choose_swap_option(plan_id, req.entry_id, req.option)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Swap choose failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
@@ -5968,10 +6009,26 @@ def _app_version() -> str:
 
 _MAX_FEEDBACK_SHAPES = 5
 
+# A screen's name for itself, as the help sheet passes it ("Week 1",
+# "Plan › Check the week"): words, digits, spaces and the few marks a
+# screen title uses. Anything else — a sentence, a URL, a name typed into
+# a field somewhere — is dropped rather than trimmed, the same rule
+# _safe_client_where applies to the path.
+_SCREEN_SHAPE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 ’'›.&-]{0,59}$")
+
+
+def _safe_feedback_screen(screen: str) -> str:
+    text = " ".join(str(screen or "").split())
+    return text if _SCREEN_SHAPE_RE.match(text) else ""
+
 
 class FeedbackRequest(BaseModel):
     what_happened: str = ""
     trying_to_do: str = ""
+    # Which screen the person was on, in the screen's own words — the
+    # Need-a-hand sheet says "I'll include which screen you were on:
+    # Week 1." and this is that. Shape-checked server-side.
+    screen: str = ""
     # Where the person was, as the browser knows it — a pathname or a tab
     # key. Redacted and shape-checked server-side before it is stored, the
     # same way the browser error reporter's `where` is: the browser is the
@@ -6028,6 +6085,7 @@ def submit_feedback(request: Request, req: FeedbackRequest):
             app_version=_app_version(),
             user_agent=request.headers.get("user-agent", ""),
             error_shapes=shapes,
+            screen=_safe_feedback_screen(req.screen),
         )
     except Exception:
         logger.exception("Filing a feedback report failed")

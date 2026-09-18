@@ -61,13 +61,15 @@ def get_household_setup_status() -> dict:
 
 def get_coaching_state() -> dict:
     """
-    What the shell needs to decide whether to show the one-time "This is how
-    to talk to me" card, and which household's chip counters to read.
+    What the shell needs for the per-tab example chips: which household's
+    chip counters to read, whether it has a plan yet, and whose name the
+    "someone is out" example carries.
 
-    Five fields, no judgement call baked in — the shell owns the rule
-    (a plan exists AND coaching has never been seen), because the same
-    payload also feeds the per-tab example chips, which don't care about
-    either flag.
+    Until 2026-09-18 this also carried `coaching_seen_at`, the write-once
+    dismissal of a one-time "This is how to talk to me" sheet. That sheet
+    went with the Week 1 "Need a hand?" sheet (static/help-sheet.js); the
+    column stays in the schema (a column is never dropped here) but nothing
+    reads or writes it any more.
 
     `example_name` is one of this household's own adults, for the Today
     chip that teaches "you can just tell me someone is out". That chip
@@ -93,9 +95,6 @@ def get_coaching_state() -> dict:
     reach the shell before any member is saved.
     """
     conn = get_conn()
-    row = conn.execute(
-        "SELECT coaching_seen_at FROM households WHERE id = ?", (household_id(),)
-    ).fetchone()
     plans = conn.execute(
         "SELECT COUNT(*) AS c FROM weekly_plans WHERE household_id = ?", (household_id(),)
     ).fetchone()["c"]
@@ -125,34 +124,9 @@ def get_coaching_state() -> dict:
     return {
         "household_id": household_id(),
         "has_plan": plans > 0,
-        "coaching_seen_at": (row["coaching_seen_at"] if row else None) or None,
         "example_name": example["name"] if example else None,
         "example_is_you": example_is_you,
     }
-
-
-def mark_coaching_seen() -> dict:
-    """
-    Remember that this household has read the how-and-why card.
-
-    Write-once: a second call leaves the original timestamp alone, so
-    "when did they first see it" stays answerable and two devices racing
-    the same dismissal can't disagree about it.
-    """
-    conn = get_conn()
-    conn.execute(
-        """
-        UPDATE households SET coaching_seen_at = datetime('now')
-        WHERE id = ? AND (coaching_seen_at IS NULL OR coaching_seen_at = '')
-        """,
-        (household_id(),),
-    )
-    conn.commit()
-    row = conn.execute(
-        "SELECT coaching_seen_at FROM households WHERE id = ?", (household_id(),)
-    ).fetchone()
-    conn.close()
-    return {"coaching_seen_at": row["coaching_seen_at"] if row else None}
 
 
 def add_member(name: str) -> dict:

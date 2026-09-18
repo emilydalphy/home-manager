@@ -192,11 +192,15 @@ def test_reveal_setup_facts_gathers_avoid_items_from_allergies_and_wont_eat():
 def test_reveal_show_days_hides_the_using_card_and_its_note():
     harness = "\n".join([
         _go_back._DOM_STUB,
-        "el('reveal-days'); el('reveal-title'); el('reveal-using'); el('reveal-using-note');",
+        # Week 1's reveal (merged 2026-09-18) also unhides its tabs, pager
+        # and lead line here; they just need to exist.
+        "el('reveal-days'); el('reveal-title'); el('reveal-tabs'); el('reveal-pager'); el('reveal-lead');",
+        "el('reveal-using'); el('reveal-using-note');",
         "document.getElementById('reveal-days').hidden = true;",
         "document.getElementById('reveal-using').hidden = false;",
         "document.getElementById('reveal-using-note').hidden = false;",
         _const("REVEAL_TITLE_READY"),
+        _fn("revealHideUsingFacts"),
         _fn("revealShowDays"),
         """
 revealShowDays();
@@ -217,25 +221,26 @@ def test_a_failed_generation_also_hides_the_using_card_and_its_note():
     Coordinator follow-up (2026-09-18): revealShowDays() was the only place
     that hid the using card — a generation that FAILS never reaches it, so
     the card (and its "not quite right" note) used to sit on screen right
-    alongside the failure receipt. renderRevealFailedReceipt is the
-    function that owns rendering a failure, so it owns hiding them too, the
-    same way revealShowDays() owns hiding them on success.
+    alongside the failure block. renderRevealFailed is the function that
+    owns rendering a failure, so it owns hiding them too, the same way
+    revealShowDays() owns hiding them on success.
     """
     harness = "\n".join([
         _go_back._DOM_STUB,
-        "el('reveal-receipt'); el('reveal-using'); el('reveal-using-note');",
+        # Week 1's reveal (merged 2026-09-18) replaced the failure receipt
+        # with the #reveal-failed block (renderRevealFailed); same rule.
+        "el('reveal-failed'); el('reveal-using'); el('reveal-using-note');",
         "document.getElementById('reveal-using').hidden = false;",
         "document.getElementById('reveal-using-note').hidden = false;",
-        _const("REVEAL_RECEIPT_EYEBROW"),
         _const("REVEAL_FAILED_TITLE"),
         _const("REVEAL_FAILED_LINE"),
         _fn("escapeHtmlLocal"),
-        _fn("revealReceiptLinesHtml"),
-        _fn("renderRevealFailedReceipt"),
+        _fn("revealHideUsingFacts"),
+        _fn("renderRevealFailed"),
         """
-renderRevealFailedReceipt();
+renderRevealFailed();
 console.log(JSON.stringify({
-  receiptHidden: document.getElementById('reveal-receipt').hidden,
+  receiptHidden: document.getElementById('reveal-failed').hidden,
   usingHidden: document.getElementById('reveal-using').hidden,
   noteHidden: document.getElementById('reveal-using-note').hidden,
 }));

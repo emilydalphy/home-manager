@@ -440,7 +440,8 @@ def _print_feedback(report: list[dict], days: int) -> None:
             continue
         for r in reports:
             where = r.get("route_pattern") or "(not recorded)"
-            print(f"\n  [{r.get('created_at', '')}] on {where}")
+            screen = r.get("screen") or ""
+            print(f"\n  [{r.get('created_at', '')}] on {where}" + (f" · screen: {screen}" if screen else ""))
             shapes = r.get("error_shapes") or []
             if shapes:
                 print(f"  browser saw: {', '.join(str(s) for s in shapes)}")
