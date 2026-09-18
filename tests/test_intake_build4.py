@@ -51,7 +51,17 @@ def test_nothing_still_reaches_for_the_old_day_list():
     'Just this week?' button has to be wired in the sheet, not only in the
     list it used to live in."""
     assert "$('days')" not in PAGE
-    assert "btn.addEventListener('click', function () { offerToRemember(dayEl); });" in PAGE
+    # The wiring moved on 2026-09-17 (`overnight/just-this-week-per-meal`) and
+    # this assertion moved with it. It used to pin the literal
+    # `offerToRemember(dayEl);`, which always answered DINNER: a day sheet
+    # holds three .presence-summary nodes and three .remember buttons, so a
+    # selector on the day returns the first, and the offer under lunch or
+    # breakfast did nothing. The claim this test makes is unchanged — the
+    # button is wired inside the SHEET, not in the list it used to live in —
+    # and the wiring now names the meal it was tapped under as well.
+    # tests/test_just_this_week_per_meal.py is where that behaviour is pinned.
+    assert "dayEl.querySelectorAll('.remember').forEach(" in PAGE
+    assert "offerToRemember(dayEl, block && block.dataset.slot);" in PAGE
 
 
 def test_mood_pills_map_to_guidance_the_planner_reads():
