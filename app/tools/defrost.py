@@ -44,6 +44,7 @@ from ._shared import household_id
 from . import attendance as _attendance
 from . import inventory as _inventory
 from . import leftovers as _leftovers
+from . import quantities as _quantities
 from . import recipes as _recipes
 from . import rhythm as _rhythm
 from . import weekly_plan as _weekly_plan
@@ -597,31 +598,209 @@ def _iter_plan_meat_ingredients(weekly_plan_id: int):
             yield m, ing, ing_name, batch_factor
 
 
+# Which rows' shelf the app guessed rather than being told — the one list,
+# kept beside the writes that produce them (inventory.GUESSED_LOCATION_SOURCES)
+# rather than restated here, because this module reads it and never writes
+# one. It covers the two grocery paths and the receipt scan; the comment
+# there says which and why.
+#
+# What it can only ever do is make this ask LOUDER: excluding a row takes a
+# reason for silence away, never adds one. So a stated fridge row that a
+# receipt scan later merged into costs one extra question rather than a
+# missed thaw, which is the direction this whole function is biased in.
+_INFERRED_LOCATION_SOURCES = _inventory.GUESSED_LOCATION_SOURCES
+
+# A grocery line that still means "you are going to buy this". Deliberately
+# an allow-list: 'purchased' and 'removed' are in the kitchen or nowhere,
+# and 'carried' is an UNANSWERED keep-or-drop line from last week, which is
+# not an answer to anything and must not silence a question.
+_STILL_TO_BUY_STATUSES = ("needed", "in_cart", "spice")
+
+# A defrost row that means the move is settled: booked, or done. NOT
+# 'skipped' — that is the household declining this one move on the Now
+# tile (see cooker.check_off_prep_step), which says nothing about whether
+# the food is frozen, and must leave the question askable.
+_SETTLED_DEFROST_STATUSES = ("pending", "done")
+
+
+def _plan_need_by_item(weekly_plan_id: int) -> tuple[dict[str, dict], dict[str, tuple[float, str | None] | None]]:
+    """
+    One walk over the plan's meat/seafood ingredients, giving both halves
+    meat_items_for_plan needs: the nights each one feeds, and how much of
+    it the week actually wants.
+
+    The need is the same figure the defrost task itself would carry
+    (_batch_quantity, so a batch cooked for two nights counts once for
+    both), summed across nights. None the moment any night's amount cannot
+    be read or cannot be added to the others — an unknown total is not a
+    total, and this module's bias is to ask rather than to assume.
+    """
+    nights: dict[str, list[dict]] = {}
+    names: dict[str, str] = {}
+    need: dict[str, tuple[float, str | None] | None] = {}
+    for m, ing, ing_name, batch_factor in _iter_plan_meat_ingredients(weekly_plan_id):
+        key = ing_name.lower()
+        names.setdefault(key, ing_name)
+        night = {"date": m["date"], "meal": m["meal"], "weekday": _weekday_name(m["date"])}
+        rows = nights.setdefault(key, [])
+        if night not in rows:
+            rows.append(night)
+        parsed = _quantities._parse_quantity(_batch_quantity(ing, batch_factor))
+        if key not in need:
+            need[key] = parsed
+            continue
+        running = need[key]
+        if running is None or parsed is None:
+            need[key] = None
+            continue
+        added = _quantities._convert_to_unit(parsed[0], parsed[1], running[1])
+        need[key] = None if added is None else (running[0] + added, running[1])
+    return {k: {"item": names[k], "nights": v} for k, v in nights.items()}, need
+
+
+def _covered_at_home(need: dict[str, tuple[float, str | None] | None]) -> set[str]:
+    """
+    The names this household's own fridge demonstrably covers — the one
+    reason the app can be sure a thing is not frozen without anybody
+    saying so.
+
+    Reuses recipes._KitchenStock rather than answering "is there enough at
+    home" a second time: that class is the app's one answer to it
+    (2026-09-14, after two ounces on a shelf took two POUNDS off a
+    shopping list), and a second implementation here could disagree with
+    the ingest about the very line it is deciding against. Narrowed to the
+    FRIDGE — a pantry or 'other' row is neither thawed nor in the fridge,
+    which is what criterion 3 actually says — and away from the rows whose
+    shelf the app guessed (_INFERRED_LOCATION_SOURCES).
+    """
+    conn = get_conn()
+    try:
+        stock = _recipes._KitchenStock(
+            conn, locations={"fridge"}, exclude_sources=set(_INFERRED_LOCATION_SOURCES),
+        )
+    finally:
+        conn.close()
+    return {key for key, want in need.items() if stock.covers(key, want)}
+
+
+def _settled_nights(weekly_plan_id: int, by_item: dict[str, dict]) -> set[str]:
+    """
+    The individual MOVES this ask has nothing left to say about, as the
+    very _describe() strings confirm_frozen_items de-dupes with — so the
+    ask and the write cannot drift about which move is which.
+
+    Two kinds, and both are per NIGHT rather than per item, which is the
+    whole point: a chicken booked for Wednesday says nothing about the
+    second chicken dinner swapped in for Friday, and keying this by name
+    made that second thaw unbookable for the rest of the week.
+
+      * a defrost row already on this plan for that night, pending or done;
+      * a night it is already too late to thaw for. confirm_frozen_items
+        refuses to write a task whose move date has gone by and hands back
+        TOO_LATE_TO_THAW_NOTE instead, so asking about such a night can
+        only ever produce a note — which is Emily's "tonight's already
+        eaten shrimp", settled without guessing at a shelf.
+
+    The too-late test reads date.today() because confirm_frozen_items does;
+    matching it matters more here than the household's own clock, since the
+    two have to agree about what is still possible. (That function's server
+    clock is its own, older question.)
+    """
+    conn = get_conn()
+    booked = {
+        (row["description"] or "")
+        for row in conn.execute(
+            "SELECT description FROM prep_tasks WHERE household_id = ? "
+            "AND weekly_plan_id = ? AND task_type = 'defrost' "
+            f"AND status IN ({','.join('?' * len(_SETTLED_DEFROST_STATUSES))})",
+            (household_id(), weekly_plan_id, *_SETTLED_DEFROST_STATUSES),
+        ).fetchall()
+    }
+    conn.close()
+
+    dinner_window = _rhythm.get_household_rhythm().get("dinner_window")
+    today = date.today()
+    settled = set(booked)
+    for entry in by_item.values():
+        lead_hours, _tier = lead_hours_for_item(entry["item"])
+        for night in entry["nights"]:
+            move = _move_date(night["date"], lead_hours, dinner_window)
+            if date.fromisoformat(move) < today:
+                settled.add(_describe(entry["item"], night["meal"], night["date"]))
+    return settled
+
+
+def _still_to_buy(names: set[str]) -> set[str]:
+    """
+    The names with a grocery line still waiting to be bought. Emily,
+    2026-09-15: being asked "is this in your freezer?" about a whole
+    chicken the app has just told her to go and buy is the app
+    contradicting itself on two consecutive screens.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT item FROM grocery_items WHERE household_id = ? "
+        f"AND status IN ({','.join('?' * len(_STILL_TO_BUY_STATUSES))}) "
+        "AND excluded_from_list = 0",
+        (household_id(), *_STILL_TO_BUY_STATUSES),
+    ).fetchall()
+    conn.close()
+    listed = {(row["item"] or "").strip().lower() for row in rows}
+    return {n for n in names if _matches_selected_item(n, listed)}
+
+
 def meat_items_for_plan(weekly_plan_id: int) -> list[dict]:
     """
-    The distinct meat/seafood ingredients this plan's own meals actually
-    call for, each with the night(s) it feeds — the ask card's own chip
-    list, and the GET route behind it. Reads recipes directly; never looks
-    at inventory, since the whole point is to work for a household that
-    doesn't track any.
+    The distinct meat/seafood ingredients this plan's own meals call for
+    and the app has no other record of, each with the night(s) it feeds —
+    the ask card's own chip list, and the GET route behind it.
+
+    Emily, walking flow 2 on 2026-09-15: the ask listed tonight's shrimp,
+    already out of the freezer and eaten, and a whole chicken that was on
+    the shopping list she had just been handed. Four things are left off
+    now, and the safe direction throughout is to ask one question too many
+    rather than miss a thaw — a missed thaw costs the dinner:
+
+      1. a name the FRIDGE demonstrably covers (_covered_at_home);
+      2. a night whose move is already booked, or already done;
+      3. a name with a grocery line still to buy (_still_to_buy);
+      4. a night it is already too late to thaw for.
+
+    2 and 4 are per NIGHT, so an item keeps the nights that are still open
+    and only drops out when every one of them is settled.
 
     A night only appears here if it's a real cook night (see
     _iter_plan_meat_ingredients) — the leftover-chain reheat night is left
     off "which night(s)" the same way it's left off the scheduled task
     itself: the batch that covers it is cooked, and defrosted for, on the
     source night alone.
+
+    WHERE THE ASK LIVES NOW, said plainly, because rule 3 is the wide one.
+    Every surface that shows it renders after an approval, and approval has
+    just put this week's meat on the shopping list — so on a household that
+    tracks nothing this list is empty at that moment and the ask is not
+    shown at all. It comes back the moment the food is home: ticking a line
+    purchased takes it off the list, and the Cook tab's "Something in the
+    freezer?" link then asks about exactly the things in the kitchen whose
+    shelf nobody has told the app about. Measured end to end over HTTP on
+    2026-09-15 — [] right after approving, and the item with both its
+    nights after the shop.
     """
-    by_item: dict[str, dict] = {}
-    for m, _ing, ing_name, _batch_factor in _iter_plan_meat_ingredients(weekly_plan_id):
-        key = ing_name.lower()
-        entry = by_item.get(key)
-        if entry is None:
-            entry = {"item": ing_name, "nights": []}
-            by_item[key] = entry
-        night = {"date": m["date"], "meal": m["meal"], "weekday": _weekday_name(m["date"])}
-        if night not in entry["nights"]:
-            entry["nights"].append(night)
-    return sorted(by_item.values(), key=lambda e: (e["item"].lower()))
+    by_item, need = _plan_need_by_item(weekly_plan_id)
+    known = _covered_at_home(need) | _still_to_buy(set(by_item))
+    settled = _settled_nights(weekly_plan_id, by_item)
+
+    out: list[dict] = []
+    for key, entry in by_item.items():
+        if key in known:
+            continue
+        nights = [
+            n for n in entry["nights"]
+            if _describe(entry["item"], n["meal"], n["date"]) not in settled
+        ]
+        if nights:
+            out.append({"item": entry["item"], "nights": nights})
+    return sorted(out, key=lambda e: (e["item"].lower()))
 
 
 def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:

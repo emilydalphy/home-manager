@@ -65,7 +65,11 @@ def test_the_questions_sit_above_the_counters():
 
 
 def test_the_heading_lost_its_apology():
-    assert "Two quick ones before you go" in SHELL_JS
+    # "Two quick ones" is built from the count now rather than written out
+    # (2026-09-15): it used to be a ternary that said "Two" about anything
+    # that was not one, which is the sentence Emily read over nine
+    # questions. The apology is what this test is about and is still gone.
+    assert "spellSmallNumber(lines.length) + ' quick ones before you go'" in SHELL_JS
     assert "One quick one before you go" in SHELL_JS
     assert "'One quick one, if you like'" not in SHELL_JS
     assert "'Two quick ones, if you like'" not in SHELL_JS
@@ -138,10 +142,15 @@ def test_the_confirmation_lines_say_the_thing():
 def test_the_cook_ahead_sentence_is_not_said_twice():
     """One block — a repeated dish or a shared component — is named by the
     heading above the body ("Roasted Chickpeas is on 2 nights. Do you want
-    to batch cook it?"), so that block does not repeat its own first line;
-    several blocks share a heading and each opens with its own. A component
-    block sits in the same fold as the dish blocks (batch_components,
-    2026-09-13), so the flag is computed once over both kinds."""
+    to batch cook it?"), so that block does not repeat its own first line.
+
+    WHAT MOVED, 2026-09-15: several blocks no longer share a heading and
+    open with their own line each — several is one line each now
+    (cookAheadPickLinesHtml), because "one line per dish" is Emily's own
+    answer to being asked nine separate questions. So the only block that
+    still draws is the lone one, `named` is always false, and the rule this
+    test is about — the heading and the body never say the same sentence
+    twice — is unchanged and is what (a) and (d) below still pin."""
     assert "function cookAheadAskBlockHtml(item, named)" in SHELL_JS
     assert "function cookAheadComponentBlockHtml(comp, named)" in SHELL_JS
     block = _fn("cookAheadAskBlockHtml")
@@ -149,9 +158,10 @@ def test_the_cook_ahead_sentence_is_not_said_twice():
     comp = _fn("cookAheadComponentBlockHtml")
     assert "(named ? '<div class=\"ca-ask-line\">' + escapeHtml(cookAheadComponentRepeatLine(comp)) + '</div>' : '')" in comp
     card = _fn("cookAheadAskCardHtml")
-    assert "var named = items.length + comps.length > 1;" in card
-    assert "cookAheadAskBlockHtml(item, named)" in card
-    assert "cookAheadComponentBlocksHtml(named)" in card
+    assert "var several = items.length + comps.length > 1;" in card
+    assert "cookAheadAskBlockHtml(item, false)" in card
+    assert "cookAheadComponentBlocksHtml(false)" in card
+    assert "several ? cookAheadPickLinesHtml() :" in card
     q = _fn("cookAheadAskQuestion")
     assert "return 'Do you want to batch cook any of these?';" in q
     assert "if (!items.length) return cookAheadComponentQuestion(comps[0]);" in q
@@ -181,20 +191,22 @@ def test_the_cook_ahead_sentence_is_not_said_twice_in_any_mix():
     assert 'class="ca-ask-line"' not in out["card"]
     assert (out["q"] + out["card"]).count("Roasted Chickpeas is on 5 nights.") == 1
 
-    # (b) two dishes: a shared heading, each block names itself once.
+    # (b) two dishes: a shared heading, and one line each rather than a
+    # block each (2026-09-15) — so the heading's question is still asked
+    # exactly once, which is what this test is about.
     out = render([dish, other], [])
     assert out["q"] == "Do you want to batch cook any of these?"
-    assert out["card"].count('class="ca-ask-line"') == 2
-    assert out["card"].count("Roasted Chickpeas is on 5 nights.") == 1
-    assert out["card"].count("Egg Bites is on 3 mornings.") == 1
+    assert out["card"].count('class="ca-ask-day ca-ask-pick') == 2
+    assert out["card"].count("Roasted Chickpeas") == 1
+    assert out["card"].count("Egg Bites") == 1
     assert "Do you want to batch cook" not in out["card"]
 
-    # (c) a dish and a component: same heading, both blocks named, dish first.
+    # (c) a dish and a component: same heading, one line each, dish first.
     out = render([dish], [eggs])
     assert out["q"] == "Do you want to batch cook any of these?"
-    assert out["card"].count('class="ca-ask-line"') == 2
-    assert out["card"].count("Roasted Chickpeas is on 5 nights.") == 1
-    assert out["card"].count("Boiled eggs are in 2 recipes this week.") == 1
+    assert out["card"].count('class="ca-ask-day ca-ask-pick') == 2
+    assert out["card"].count("Roasted Chickpeas") == 1
+    assert out["card"].count("Boiled eggs") == 1
     assert out["card"].index("Roasted Chickpeas") < out["card"].index("Boiled eggs")
     assert "Do you want to batch cook" not in out["card"]
 

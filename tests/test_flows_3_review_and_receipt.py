@@ -456,7 +456,10 @@ def test_the_receipt_is_one_card_with_two_segments():
 def test_the_two_asks_are_lines_that_expand_in_place():
     """The defrost and cook-ahead asks keep their own UI and their own
     routes — only the presentation folds into a line with an "Ask"."""
-    _assert_in("Two quick ones before you go", SHELL_JS, "the asks card title", "shell.js")  # reworded 2026-09-13: a step, not a footnote
+    # "Two quick ones" is counted rather than written out since 2026-09-15 —
+    # it used to be a ternary that said "Two" about any number but one,
+    # which is the sentence Emily read over nine questions.
+    _assert_in("quick ones before you go", SHELL_JS, "the asks card title", "shell.js")  # reworded 2026-09-13: a step, not a footnote
     _assert_in("One quick one before you go", SHELL_JS, "the single-ask title", "shell.js")
     _assert_in("'Anything in the freezer?'", SHELL_JS, "the freezer line", "shell.js")
     _assert_in("' Do you want to batch cook it?'", SHELL_JS, "the cook-ahead line", "shell.js")  # reworded 2026-09-13: the plain question (DESIGN_SYSTEM §8 rule 7)

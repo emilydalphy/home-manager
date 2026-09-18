@@ -42,16 +42,25 @@ def _household(*names):
         tools.add_member(n)
 
 
+# Both fixtures carry a cook time and a method, which they did not need
+# until 2026-09-15: the ask is only ever about a dish somebody actually
+# cooks now (cook_ahead._is_a_cook), after Emily was asked which other
+# days her trail mix should cover. Egg bites are baked and chili is
+# simmered, so the recipes were simply wrong before — and without the
+# times the four "== []" assertions below would pass for the wrong reason.
 def _eggs():
     tools.add_recipe(
         "Egg White Bites",
         ingredients=[{"item": "egg whites", "qty": "1 cup"}],
-        default_servings=3,
+        default_servings=3, prep_time_minutes=10, cook_time_minutes=20,
+        instructions=["Heat the oven to 180C.", "Bake 20 minutes."],
     )
 
 
 def _chili():
-    tools.add_recipe("Turkey Chili", ingredients=[{"item": "ground turkey", "qty": "1 lb"}], default_servings=3)
+    tools.add_recipe("Turkey Chili", ingredients=[{"item": "ground turkey", "qty": "1 lb"}],
+                     default_servings=3, prep_time_minutes=10, cook_time_minutes=40,
+                     instructions=["Brown the turkey.", "Simmer 40 minutes."])
 
 
 def _breakfast_week(days=(MON, TUE, WED, THU)):

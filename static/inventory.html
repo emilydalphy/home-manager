@@ -713,9 +713,14 @@ function renderScanReview() {
       const items = scanDraftItems
         .filter(it => (it.item || '').trim())
         .map(it => ({ item: it.item.trim(), quantity: it.quantity || '', category: it.category || 'other', location: it.location || 'pantry' }));
+      // Which photo this was. The server records it per row, because a
+      // receipt names food and never a shelf — the location select above
+      // is pre-filled from guessLocationForCategory for those, which is a
+      // guess wearing a stated answer's clothes, and the freezer check
+      // must not read it as one. See tools/inventory.py's scan_source.
       await fetch('/api/inventory/confirm-scan', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({ items, kind: scanKind || '' }),
       });
       closeScanSheet();
       showToast(`Added ${items.length} item${items.length === 1 ? '' : 's'} to inventory`);

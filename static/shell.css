@@ -3601,6 +3601,20 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    right; the weekday inside is the quiet half. Same chip otherwise — it
    is a .ca-ask-day too, so it gets the pointer-only :hover above and the
    same two states on touch. */
+/* Two or more things to batch is one line each, not a block each (Emily,
+   2026-09-15: "one question with one line per dish and one answer"). The
+   line is the same chip, taken full width and given two rows — the name,
+   and what making it once would do. It inherits the chip's states, so
+   ticked is the same celadon on the ivory card and on the All set screen
+   and needs no colour of its own; the second row rides the first's ink at
+   a lower weight, the way .ca-comp-day does inside its own chip. Measured
+   at that opacity, against the chip it sits in — unticked (--surface)
+   7.16:1 in both schemes, ticked on the ivory card 6.01 light / 7.26 dark,
+   ticked on the All set screen's solid celadon 4.69 / 5.41. The 4.69 is
+   the floor and it clears AA. */
+.ca-ask-pick { width: 100%; text-align: left; display: block; }
+.ca-ask-pick-dish { display: block; font-weight: 700; }
+.ca-ask-pick-what { display: block; font-weight: 500; opacity: 0.8; }
 .ca-comp-dish { text-align: left; }
 .ca-comp-day { font-weight: 700; opacity: 0.75; }
 .ca-comp-day::after { content: " ·"; }
@@ -8288,6 +8302,12 @@ span.cook-week-name { cursor: default; }
   align-items: stretch;
   gap: 14px;
 }
+/* Neither ask has anything real to say more often than it used to
+   (Emily, 2026-09-15): the freezer check only lists what the app has no
+   other record of, and right after an approval that is usually nothing.
+   .wk-allset is a 14px-gap flex column, so an empty asks row still spent
+   a gap — this is what makes "no card at all" mean no space at all. */
+#wk-allset-asks:empty { display: none; }
 .wk-allset-tick {
   width: 72px;
   height: 72px;

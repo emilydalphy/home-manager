@@ -16025,6 +16025,16 @@
       (cookAheadComponentPlural(comp) ? 'them' : 'it') + '?';
   }
 
+  // "One cook on Tuesday for 3 meals · 6 eggs" — what making this
+  // component once would actually do. One sentence, read by the block's
+  // own tally and by the one-line shape further down, so the two ways of
+  // asking about a component can never describe it differently.
+  function cookAheadComponentTallyLine(comp, ticked) {
+    if (ticked.length < 2) return 'Each recipe makes its own.';
+    return 'One cook on ' + dayName(ticked[0].date, { weekday: 'long' }) + ' for ' + ticked.length + ' meals' +
+      (comp.quantity ? ' · ' + comp.quantity + ' ' + comp.ingredient : '');
+  }
+
   // One component's block, in the same order as a dish's (DESIGN_SYSTEM
   // §8 rule 7): the component line when there are other blocks, the
   // question naming the cook day, the meal chips that answer it, the
@@ -16039,13 +16049,7 @@
     var ticked = uses.filter(function (u) { return !!picks[u.entry_id]; });
     var plural = cookAheadComponentPlural(comp);
     var cookOn = ticked[0] || uses[0];
-    var count;
-    if (ticked.length < 2) {
-      count = 'Each recipe makes its own.';
-    } else {
-      count = 'One cook on ' + dayName(ticked[0].date, { weekday: 'long' }) + ' for ' + ticked.length + ' meals' +
-        (comp.quantity ? ' · ' + comp.quantity + ' ' + comp.ingredient : '');
-    }
+    var count = cookAheadComponentTallyLine(comp, ticked);
     return '<div class="ca-ask-block ca-comp-block">' +
       (named ? '<div class="ca-ask-line">' + escapeHtml(cookAheadComponentRepeatLine(comp)) + '</div>' : '') +
       '<div class="ca-ask-q">' +
@@ -16120,6 +16124,75 @@
     return parts.join(' · ');
   }
 
+  // ---------- More than one thing to batch: one line each ----------
+  // Emily, walking flow 2 on 2026-09-15: approving her week asked nine
+  // batch-cook questions, each with its own sentence and its own row of
+  // day chips. Her rule — one question, one line per dish, one answer.
+  // So once there is more than one block, every block (a repeated dish, a
+  // shared component) becomes a single line saying what making it once
+  // would do, ticked, and the two buttons at the foot answer for all of
+  // them. A lone block keeps its chips: there it IS one question already,
+  // and the chips are how you say "cover Thursday but not Saturday".
+  //
+  // Ticked to start, which the component blocks have always been: the
+  // question these lines answer is "batch cook these?", so an untapped
+  // "Batch cook these" has to mean yes. Per-day and per-meal refinement
+  // is still one tap away on the Cook card, which is where a household
+  // standing on one dish already goes to change its batch.
+  function cookAheadPickHtml(key, attr, on, name, what) {
+    return '<button type="button" class="ca-ask-day ca-ask-pick' + (on ? ' is-on' : '') + '" ' +
+      attr + '="' + escapeHtml(key) + '" aria-pressed="' + on + '">' +
+      '<span class="ca-ask-pick-dish">' + escapeHtml(name) + '</span>' +
+      '<span class="ca-ask-pick-what">' + escapeHtml(what) + '</span>' +
+    '</button>';
+  }
+
+  // A repeated dish, as one line. Ticked means the whole run: every later
+  // day it repeats on, which is what "batch cook these" says out loud.
+  function cookAheadDishPickHtml(item) {
+    var later = item.later || [];
+    var picks = cookAheadAskPicks(item);
+    var on = later.some(function (d) { return !!picks[d.entry_id]; });
+    var eaters = item.first.eaters || 0;
+    if (eaters) later.forEach(function (d) { eaters += d.eaters || 0; });
+    // Left out reads in the answer button's own words, so the line and
+    // the button are plainly the same choice. Not built off cookSlotWord:
+    // a snack's word is "day", and "Days cooked on their own" is not a
+    // sentence about food.
+    var what = on
+      ? cookAheadTallyLine(item.first.date, later.map(function (d) { return d.date; }), eaters)
+      : 'Each one cooked on its own';
+    return cookAheadPickHtml(String(item.first.entry_id), 'data-ca-pick-dish', on, item.dish, what);
+  }
+
+  function cookAheadComponentPickHtml(comp) {
+    var uses = comp.uses || [];
+    var picks = cookAheadComponentPicks(comp);
+    var ticked = uses.filter(function (u) { return !!picks[u.entry_id]; });
+    return cookAheadPickHtml(comp.key, 'data-ca-pick-comp', ticked.length >= 2, comp.label,
+      cookAheadComponentTallyLine(comp, ticked));
+  }
+
+  function cookAheadPickLinesHtml() {
+    return (cookAheadAskState.items || []).map(cookAheadDishPickHtml).join('') +
+      cookAheadComponents().map(cookAheadComponentPickHtml).join('');
+  }
+
+  // Everything this ask can offer starts ticked once there is more than
+  // one of them — see cookAheadPickHtml. Done where the data lands rather
+  // than at render time, because `picks` is what the confirm posts: a
+  // default that lived only in the markup would send nothing.
+  function cookAheadPrimePicks() {
+    var items = cookAheadAskState.items || [];
+    if (items.length + cookAheadComponents().length < 2) return;
+    items.forEach(function (item) {
+      var picks = cookAheadAskPicks(item);
+      (item.later || []).forEach(function (d) { picks[d.entry_id] = true; });
+    });
+    // The components prime themselves all-on the first time they are read
+    // (cookAheadComponentPicks), so they need nothing here.
+  }
+
   // Same fold as the freezer check just above: the blocks and the two
   // answers, expanded in place by the "Do you want to batch cook …?" line
   // rather than stacked as a second full card under the receipt. Same id,
@@ -16130,15 +16203,23 @@
   function cookAheadAskCardHtml(open) {
     var items = cookAheadAskState.items || [];
     var comps = cookAheadComponents();
-    // Every block opens with its own line unless it is the only one — then
-    // the fold heading (cookAheadAskQuestion) already said it. A component
-    // block sits under the per-dish ones (Emily: "the same group").
-    var named = items.length + comps.length > 1;
+    // One block keeps its chips; two or more are one line each
+    // (cookAheadPickLinesHtml). `named` — whether a block opens with its
+    // own dish line — is therefore always false now: the only block that
+    // still draws is the lone one, and the fold heading above it
+    // (cookAheadAskQuestion) has already said which dish it is. So the
+    // `named ?` ternary inside both block builders is UNREACHABLE today.
+    // Kept rather than cut, with the parameter, because it is the seam a
+    // design that brings blocks back would need, and because the rule it
+    // encodes — the heading and the body never say one sentence twice —
+    // is what test_prep_questions_step still pins through it.
+    var several = items.length + comps.length > 1;
     return (
       '<div class="wk-quick-body cook-ahead-ask-card" id="cook-ahead-ask-card"' +
           (open ? '' : ' hidden') + '>' +
-        items.map(function (item) { return cookAheadAskBlockHtml(item, named); }).join('') +
-        cookAheadComponentBlocksHtml(named) +
+        (several ? cookAheadPickLinesHtml() :
+          items.map(function (item) { return cookAheadAskBlockHtml(item, false); }).join('') +
+          cookAheadComponentBlocksHtml(false)) +
         // One answer for the whole ask, and no second apricot: the receipt
         // above already spent this screen's one apricot primary on "Open
         // the list" (Rule 5), and .ny-actions .btn-gold is spruce here for
@@ -16156,6 +16237,38 @@
     var card = row.querySelector('#cook-ahead-ask-card');
     if (!card) return;
     wireCookAheadComponentChips(card, panel, data);
+    // The one-line shape: a whole dish on or off, a whole component on or
+    // off. Writes the same `picks` the chips write, so the confirm below
+    // needs to know nothing about which shape was on screen.
+    card.querySelectorAll('[data-ca-pick-dish]').forEach(function (line) {
+      line.addEventListener('click', function () {
+        var id = line.getAttribute('data-ca-pick-dish');
+        var item = (cookAheadAskState.items || []).filter(function (i) {
+          return String(i.first.entry_id) === id;
+        })[0];
+        if (!item) return;
+        var picks = cookAheadAskPicks(item);
+        var on = (item.later || []).some(function (d) { return !!picks[d.entry_id]; });
+        (item.later || []).forEach(function (d) {
+          if (on) delete picks[d.entry_id]; else picks[d.entry_id] = true;
+        });
+        renderWeekApproval(panel, data);
+      });
+    });
+    card.querySelectorAll('[data-ca-pick-comp]').forEach(function (line) {
+      line.addEventListener('click', function () {
+        var comp = cookAheadComponents().filter(function (c) {
+          return c.key === line.getAttribute('data-ca-pick-comp');
+        })[0];
+        if (!comp) return;
+        var picks = cookAheadComponentPicks(comp);
+        var on = (comp.uses || []).filter(function (u) { return !!picks[u.entry_id]; }).length >= 2;
+        (comp.uses || []).forEach(function (u) {
+          if (on) delete picks[u.entry_id]; else picks[u.entry_id] = true;
+        });
+        renderWeekApproval(panel, data);
+      });
+    });
     card.querySelectorAll('[data-ca-day]').forEach(function (chip) {
       chip.addEventListener('click', function () {
         var picks = cookAheadAskState.picks[chip.getAttribute('data-ca-source')] ||
@@ -16206,6 +16319,7 @@
       if (cookAheadAskState.planId !== data.weekly_plan_id) return; // a newer plan loaded while this was in flight
       cookAheadAskState.items = body.items || [];
       cookAheadComponentReset(body.components);
+      cookAheadPrimePicks();
       renderWeekApproval(panel, data);
     } catch (err) {
       console.warn('Cook-ahead item lookup failed:', err);
@@ -16594,8 +16708,17 @@
       // optional, no longer apologetic.
       (lines.length
         ? '<div class="shell-card wk-quick-card' + (asksOnly ? ' on-spruce' : '') + '">' +
+            // Counted rather than written out. Be honest about what that
+            // is worth: `lines` can only hold one ask or two, and
+            // spellSmallNumber(2) is 'Two', so this renders exactly what
+            // the ternary it replaces rendered. It is not what fixed
+            // Emily's screen — the nine questions were nine BLOCKS inside
+            // one ask, and cookAheadPickLinesHtml is what fixed that. This
+            // only means a third ask could never be announced as "Two".
             '<div class="wk-quick-title">' +
-              (lines.length === 1 ? 'One quick one before you go' : 'Two quick ones before you go') +
+              (lines.length === 1
+                ? 'One quick one before you go'
+                : spellSmallNumber(lines.length) + ' quick ones before you go') +
             '</div>' +
             lines.map(function (line) {
               return line.done ? weekQuickDoneHtml(line.done) : weekQuickLineHtml(line);

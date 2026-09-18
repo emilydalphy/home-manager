@@ -225,6 +225,50 @@ def _add_to_inventory(
     return {"item_id": item_id, "item": item, "fresh": existing is None, "before": before, "after": after}
 
 
+# ---------------------------------------------------------------------------
+# Provenance, and the one thing it is load-bearing for
+# ---------------------------------------------------------------------------
+# `inventory_items.source` is the only record of whether anybody actually
+# STATED where a thing is kept. _add_to_inventory resolves a blank location
+# through quantities._DEFAULT_LOCATION_BY_CATEGORY and stores the guess, so
+# a guessed shelf and a stated one are byte-identical in the location
+# column; there is nothing else to read. defrost.meat_items_for_plan is the
+# reader (2026-09-15): it may not take the freezer question away from a
+# household on a shelf the app picked for them.
+SCAN_SOURCES = {"receipt": "scan_receipt", "fridge": "scan_fridge", "pantry": "scan_pantry"}
+
+# Where the shelf on a row came from the category default rather than from
+# a person. The two grocery paths write a row straight off a line the app
+# watched go into a bag. A RECEIPT scan belongs here too and is the one
+# that is easy to miss: agent.scan_receipt_image returns no location key at
+# all — a receipt names food, never a shelf — where the fridge and pantry
+# scans tag every row through _tag_scan_location. static/inventory.html
+# then pre-fills the review sheet's location select with a guess of its
+# own, so such a row reaches the server looking stated. It is not, and a
+# household that did change the select pays one extra question, which is
+# the cheap direction.
+GUESSED_LOCATION_SOURCES = frozenset({
+    "grocery_checkoff", "grocery_list_already_have",
+    SCAN_SOURCES["receipt"], "scan",
+})
+
+
+def scan_source(kind: str, location: str | None = None) -> str:
+    """
+    What to record as the source of a row saved from a photo review.
+
+    An unrecognised kind, or one that named no shelf, falls back to the
+    bare "scan" — which GUESSED_LOCATION_SOURCES contains, so a caller
+    that says nothing is read as having placed nothing. That is the safe
+    fallback: the cost is a question the household could have been spared,
+    and the alternative is a thaw nobody mentions.
+    """
+    known = SCAN_SOURCES.get((kind or "").strip().lower())
+    if not known or not (location or "").strip():
+        return "scan"
+    return known
+
+
 def update_inventory(
     item: str,
     action: str,
@@ -232,6 +276,7 @@ def update_inventory(
     expiration_date: str | None = None,
     category: str | None = None,
     location: str | None = None,
+    source: str = "chat",
 ) -> dict:
     """
     Update pantry/fridge inventory from a chat mention — this is the
@@ -263,11 +308,17 @@ def update_inventory(
     as distinct entries rather than merging into one. Leave it unset to
     fall back to a reasonable category-based guess for a brand-new item, or
     to leave an existing item's location as-is.
+
+    `source` is not the assistant's to set — it is absent from this tool's
+    schema in agent.TOOL_DEFINITIONS, so a model call always gets the
+    "chat" default. It exists for the routes that know something the chat
+    does not, and today that is one: a photo review, which knows which
+    photo it was (see scan_source above and /api/inventory/confirm-scan).
     """
     if action == "add":
         # The receipt fields (fresh/before/after) are mark_grocery_item's
         # business, not the chat agent's — keep this tool's answer as it was.
-        added = _add_to_inventory(item, quantity, source="chat", expiration_date=expiration_date, category=category, location=location)
+        added = _add_to_inventory(item, quantity, source=source, expiration_date=expiration_date, category=category, location=location)
         return {"item_id": added["item_id"], "item": added["item"]}
 
     if action == "set":
@@ -294,8 +345,8 @@ def update_inventory(
             item_category = category or "other"
             item_location = _quantities._resolve_location(location, item_category)
             cur = conn.execute(
-                "INSERT INTO inventory_items (household_id, item, quantity, source, category, expiration_date, location) VALUES (?, ?, ?, 'chat', ?, ?, ?)",
-                (household_id(), item, quantity, item_category, expiration_date or _quantities._estimate_expiration_date(item_category, item), item_location),
+                "INSERT INTO inventory_items (household_id, item, quantity, source, category, expiration_date, location) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (household_id(), item, quantity, source, item_category, expiration_date or _quantities._estimate_expiration_date(item_category, item), item_location),
             )
             conn.commit()
             item_id = cur.lastrowid
@@ -329,7 +380,7 @@ def update_inventory(
     raise ValueError(f"Unknown inventory action '{action}'.")
 
 
-def update_inventory_items(items: list, action: str = "add") -> dict:
+def update_inventory_items(items: list, action: str = "add", source: str = "chat") -> dict:
     """
     Update several inventory items at once — use this (not repeated
     update_inventory calls) whenever the user mentions more than one item
@@ -343,6 +394,9 @@ def update_inventory_items(items: list, action: str = "add") -> dict:
     update_inventory for what each action/category/location means — fill in
     category (and location, when known) per item when populating a batch so
     everything lands in the right place immediately.
+
+    `source` — per entry, or one for the whole call — is the routes'
+    business and not the assistant's; see update_inventory just above.
     """
     results = []
     for raw in items:
@@ -353,6 +407,7 @@ def update_inventory_items(items: list, action: str = "add") -> dict:
             exp = raw.get("expiration_date")
             cat = raw.get("category")
             loc = raw.get("location")
+            src = raw.get("source") or source
         else:
             name = (raw or "").strip()
             act = action
@@ -360,9 +415,11 @@ def update_inventory_items(items: list, action: str = "add") -> dict:
             exp = None
             cat = None
             loc = None
+            src = source
         if not name:
             continue
-        results.append(update_inventory(name, act, quantity=qty, expiration_date=exp, category=cat, location=loc))
+        results.append(update_inventory(name, act, quantity=qty, expiration_date=exp,
+                                        category=cat, location=loc, source=src))
     return {"updated": results}
 
 

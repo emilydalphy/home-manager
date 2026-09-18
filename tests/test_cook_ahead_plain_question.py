@@ -65,12 +65,20 @@ _PRELUDE = (
     + _function("cookAheadComponentPlural") + "\n"
     + _function("cookAheadComponentRepeatLine") + "\n"
     + _function("cookAheadComponentQuestion") + "\n"
+    + _function("cookAheadComponentTallyLine") + "\n"
     + _function("cookAheadComponentBlockHtml") + "\n"
     + _function("cookAheadComponentBlocksHtml") + "\n"
     + _function("cookAheadComponentReset") + "\n"
     + _function("cookAheadRepeatLine") + "\n"
     + _function("cookAheadTallyLine") + "\n"
     + _function("cookAheadAskBlockHtml") + "\n"
+    # Two or more things to batch is one line each (2026-09-15) — the card
+    # reaches these whenever it is not drawing a lone block.
+    + _function("cookAheadPickHtml") + "\n"
+    + _function("cookAheadDishPickHtml") + "\n"
+    + _function("cookAheadComponentPickHtml") + "\n"
+    + _function("cookAheadPickLinesHtml") + "\n"
+    + _function("cookAheadPrimePicks") + "\n"
     + _function("cookAheadAskCardHtml") + "\n"
     + _function("cookAheadAskQuestion") + "\n"
     + _function("cookAheadPicks") + "\n"
@@ -137,28 +145,28 @@ def test_one_dish_opens_with_the_plain_question_and_names_the_cook_night():
 
 
 @_needs_node
-def test_several_dishes_share_the_heading_and_each_block_names_its_own():
+def test_several_dishes_share_the_heading_and_are_one_line_each():
+    """WHAT MOVED, 2026-09-15: this used to assert that each dish got its
+    own block — its own "Which other nights should it cover?" and its own
+    row of day chips. That is the thing Emily reported: approving her week
+    asked nine of them. Several dishes are one line each now, under the
+    one heading, answered by the one pair of buttons
+    (tests/test_after_approve_real_questions.py owns the new shape). What
+    this test still pins is unchanged: the heading is shared, both dishes
+    are named, and the heading's own sentence is never said twice."""
     items = [_item(), _item(dish="Egg Bites", slot="breakfast", later_dates=(TUE, THU))]
     for i, it in enumerate(items):
         it["first"]["entry_id"] = 100 + i
     out = _node(
-        "var items = %s; cookAheadAskState.items = items;"
+        "var items = %s; cookAheadAskState.items = items; cookAheadPrimePicks();"
         "console.log(JSON.stringify({q: cookAheadAskQuestion(), card: cookAheadAskCardHtml(true)}));"
         % json.dumps(items)
     )
     assert out["q"] == "Do you want to batch cook any of these?"
     card = out["card"]
-    assert card.count('class="ca-ask-line"') == 2
-    assert "Roasted Chickpeas is on 5 nights." in card
-    assert "Egg Bites is on 3 mornings." in card
-    assert "Which other nights should it cover?" in card
-    assert "Which other mornings should it cover?" in card
-    # Each block makes sense on its own: dish line, then its question.
-    a = card.index("Roasted Chickpeas is on 5 nights.")
-    b = card.index("Which other nights should it cover?")
-    c = card.index("Egg Bites is on 3 mornings.")
-    d = card.index("Which other mornings should it cover?")
-    assert a < b < c < d
+    assert card.count('class="ca-ask-day ca-ask-pick') == 2
+    assert card.index("Roasted Chickpeas") < card.index("Egg Bites")
+    assert "should it cover?" not in card
     # The heading's sentence is never said twice.
     assert "Do you want to batch cook" not in card
 
@@ -171,11 +179,13 @@ def test_a_component_block_reads_like_a_dish_block():
     and say it the same way: the fact, the question naming the cook day,
     the chips, the tally — and the chips start ticked, because the
     question is "all at once?" and a chip is for leaving one out."""
+    # A component ALONE, since 2026-09-15: with a dish beside it the fold
+    # is one line each and neither block draws (the new shape has its own
+    # file). The block itself is untouched, which is what this pins.
     out = _node(
-        "cookAheadAskState.items = [%s]; cookAheadComponentReset([%s]);"
-        "console.log(JSON.stringify(cookAheadAskCardHtml(true)));" % (json.dumps(_item()), json.dumps(_component()))
+        "cookAheadAskState.items = []; cookAheadComponentReset([%s]);"
+        "console.log(JSON.stringify(cookAheadAskCardHtml(true)));" % json.dumps(_component())
     )
-    assert "Boiled eggs are in 2 recipes this week." in out
     assert "They&#39;d cook on Tuesday. Which meals should be included?" in out
     assert "One cook on Tuesday for 3 meals · 6 eggs" in out
     assert out.count('data-ca-use="') == 3 and out.count('ca-comp-dish is-on') == 3

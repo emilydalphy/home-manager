@@ -67,7 +67,8 @@ def _plan_rows(weekly_plan_id: int) -> list:
     rows = conn.execute(
         """
         SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.recipe_id, mpe.freeform_meal,
-               mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal
+               mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal,
+               r.prep_time_minutes, r.cook_time_minutes, r.instructions_json
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.component_category IS NULL
@@ -84,6 +85,64 @@ def _is_cookable(row) -> bool:
         and bool(row["recipe_id"] or row["freeform_meal"])
         and bool((row["meal"] or "").strip())
     )
+
+
+def _is_a_cook(row) -> bool:
+    """
+    Is this dish actually COOKED? A different question from _is_cookable
+    above, which asks a structural one — "is there a dish on this row a
+    chain could hang off" — and is what the picker and set_cook_ahead
+    need, since a chain already written has to stay editable whatever the
+    dish is.
+
+    Emily, walking flow 2 on 2026-09-15: approving her week asked her nine
+    batch-cook questions, including "Trail mix … it'd cook on Tuesday.
+    Which other days should it cover?", plus apple slices, cheese and
+    crackers, cucumbers and yogurt. Nothing about any of those is cooked,
+    so there is no batch to make, and a nonsense question at the moment of
+    leaving undoes the approval.
+
+    It is built on the app's existing notions rather than invented beside
+    them, and it is NOT identical to either of them — say that plainly,
+    because "same rule" was the first version of this docstring and it was
+    not true:
+
+      weekly_plan._is_cook   planned, not a reheat, not takeout. Covered
+                             here between _is_cookable and
+                             cook_ahead_repeats' own chain check. It reads
+                             no times at all.
+      shell.js isRealCook    that, AND the slot shows a time (build_slot's
+                             `meta`, i.e. prep + cook is more than
+                             nothing). Used for snacks only.
+      this                   that, OR the recipe has a written method.
+
+    The extra clause is deliberate: a recipe with steps and no minutes is
+    somebody standing at a stove with a number missing from the recipe,
+    not a bowl of fruit. The direction is safe — this only ever offers
+    MORE than isRealCook would — but three surfaces now give three answers
+    to "is this a cook", and two consequences follow that Emily should see
+    rather than discover. A repeated FREEFORM dinner counts toward the "4
+    cooks" on the week receipt (_is_cook reads no times) and is never
+    offered for batching two inches below it. And a saved recipe with
+    steps and no times is a cook here, a cook on the receipt, and not a
+    cook to the snack rows on Plan. Folding the three into one is its own
+    card; it cannot be done from here, because weekly_plan._is_cook takes
+    a menu-entry dict rather than a row.
+
+    A freeform meal has neither times nor steps, so it is not a cook here
+    — which is at least what the SCREENS say about one: build_slot has no
+    recipe to read times off and hands back `meta: null`.
+    """
+    if not _is_cookable(row):
+        return False
+    minutes = (row["prep_time_minutes"] or 0) + (row["cook_time_minutes"] or 0)
+    if minutes > 0:
+        return True
+    try:
+        steps = json.loads(row["instructions_json"] or "[]")
+    except (TypeError, ValueError):
+        steps = []
+    return bool(steps)
 
 
 def _same_dish(a, b) -> bool:
@@ -206,8 +265,17 @@ def cook_ahead_repeats(weekly_plan_id: int) -> list[dict]:
     entirely: that batch has an owner, and the Cook card's own picker is
     where it gets changed. So is a repeat whose first day is a reheat, and
     a dish that appears once — neither has a "cook it all now" to offer.
+
+    And so is anything that is not actually COOKED (_is_a_cook): trail
+    mix, apple slices, cheese and crackers. This is the only surface that
+    applies that rule — cook_ahead_options and set_cook_ahead deliberately
+    keep the wider _is_cookable, because a chain already written has to
+    stay editable and releasable whatever the dish is, and because on the
+    Cook card the household is standing on one dish having chosen to look
+    at it. The two are different questions: "is this worth asking about"
+    and "what days can this row claim".
     """
-    rows = [r for r in _plan_rows(weekly_plan_id) if _is_cookable(r)]
+    rows = [r for r in _plan_rows(weekly_plan_id) if _is_a_cook(r)]
     options = cook_ahead_options(weekly_plan_id)
     chains = _leftovers.plan_leftover_chains(weekly_plan_id)
     chained = set(chains["leftovers"]) | set(chains["sources"])
