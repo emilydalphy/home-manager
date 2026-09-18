@@ -391,6 +391,54 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-18 — The core loop, seven branches built in parallel off
+  `417bb92`, integrated as ONE branch: `core-loop-2026-09-18`.** In merge
+  order: `today-shop-cook` (Now → Today; Shop / Cook groups tagged Morning ·
+  Afternoon · Evening), `onboarding-welcome-setup-copy` (six welcome/setup
+  copy cards, the prep-days cap lifted, the "What I'm using" loading card),
+  `defrost-lead-nights` (thaw lead times in nights, not hours),
+  `shop-checklist` (the list IS the checklist; the sort queue and the trip
+  are gone), `cook-recipe-stripped` (the recipe is the recipe: no clock, no
+  batch question on the recipe or the cooker; only the Meal step's dock
+  starts a cook), `week1-carousel-help` (the Week 1 day-card carousel,
+  three-pick Swap, the "Need a hand?" sheet in `static/help-sheet.js`) and
+  last `plan-cards-freezer-inline` (Check the week as day cards, All set as
+  one thing, the freezer step, Done + Swap on the Plan root, batch cooking
+  assumed from prep days). Every conflict was with plan-cards. What the
+  integration decided, beyond taking both sides: (1) **the three swap picks
+  were built twice** — Week 1's `app/tools/swap_options.py` (POST
+  `/swap-options`, POST `/swap-choose` with the pick's INDEX, a 30-minute
+  per-entry cache, an explicit offered-index check) is the one kept; plan's
+  `swap_in_place.swap_options`/`apply_swap_option`, its GET `/swap-options`
+  and POST `/swap-pick`, and the duplicate `swap_options` export are gone,
+  and Plan's swap sheet (`openSwapSheet`/`runSwapPick`) calls Week 1's
+  routes — one feature, two doors. (2) Cook's links to the Plan asks went
+  with the clock, so `openDefrostAskFromCook`, `openCookAheadAskFromCook`
+  and `cookAheadTallyLine` (plan kept them only for those links) are
+  removed, and `defrostAskState.forceShow` (set, never read) with them.
+  (3) `wwkSectionInnerHtml` (Preferences › What we know) used
+  `RV_CHEVRON_SVG`, which left with the review step — it has its own
+  `WWK_CHEVRON_SVG` now; a whole-file node render is how that was caught,
+  and the What-we-know test now renders the section rather than reading
+  the source. (4) The `?after=approve` hand-off: the "change anything
+  before you approve it" toast no longer fires on a week that was just
+  approved, and the freezer items are AWAITED before choosing between the
+  freezer step and the list — a week with nothing to thaw lands on the
+  list with "Approved. Here's your list." rather than on an empty step.
+  (5) Plan's `?` calls `openHelpSheet({screenName: 'Check the week'})`
+  outright (shell.html loads help-sheet.js ahead of shell.js); the
+  `typeof` fallback to the ask sheet is gone. (6) Week 1 rebuilt the
+  reveal screen; the copy branch's Card 6 loading card was re-ported onto
+  it with the receipt helpers it needed (the receipt itself stayed gone).
+  Tests: `test_onboarding_done_receipt.py` stays deleted (Week 1 removed
+  the receipt); `test_cook_ahead_plain_question.py` keeps only what still
+  exists (both pickers that asked the question are gone);
+  `test_swap_sheet_options.py` re-pointed at the kept module. Suite: main
+  5767 → integrated 5577 (the shop and plan branches each retired far more
+  than they added: the trip, the sort queue, the seven-tile review, the
+  receipt, the clock), green; `test_stores_multiselect`'s "three quick
+  taps on a slow connection" is timing-sensitive under full-suite load
+  (passes alone, 5/5). The seven source branches are untouched.
 - **2026-09-18 — Saving a recipe under a name you already have made a
   second copy nothing could reach. Branch `overnight/one-recipe-per-name`,
   NOT merged at the time of writing.** Found by driving the app on a

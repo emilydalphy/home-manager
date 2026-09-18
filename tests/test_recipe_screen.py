@@ -634,8 +634,10 @@ def test_the_clock_and_the_batch_question_are_gone_from_the_shell():
                  "data-cook=\"defrost-ask\"", "data-cook=\"cook-ahead-ask\"", ">Something in the freezer?<",
                  "The whole method", "Before you start</", "'Mark it cooked'"):
         assert gone not in SHELL_JS, gone
-    # forceShow stays for the freezer question's new home on Plan.
-    assert "forceShow" in SHELL_JS
+    # The freezer question's home is Plan's own step now (openFreezerStep,
+    # merged the same day); nothing on Cook points at it.
+    assert "function openFreezerStep(" in SHELL_JS
+    assert "openDefrostAskFromCook" not in SHELL_JS and "forceShow" not in SHELL_JS
 
 
 # ---------------------------------------------- the CSS

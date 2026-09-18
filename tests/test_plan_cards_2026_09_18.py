@@ -373,6 +373,22 @@ def test_the_freezer_step_is_a_step_of_the_plan_flow_and_ends_when_plan_is_left(
     assert "background: var(--celadon-tint)" in means
 
 
+def test_the_after_approve_hand_off_waits_for_the_freezer_items_and_says_approved_not_draft():
+    """Integration follow-ups (2026-09-18): the Week 1 reveal hands in with
+    ?after=approve&drafted=<Monday>. That week is past "change anything
+    before you approve it", so that toast stays quiet; and the freezer
+    step is only the landing when there is something to thaw — the items
+    are one request, awaited, rather than landing on an empty step."""
+    build = SHELL_JS[SHELL_JS.index("async function buildWeekPanel("):SHELL_JS.index("async function loadPlanningPeriodDefault(")]
+    assert "if (drafted && !afterApprove) {" in build
+    assert build.index("var afterApprove = ") < build.index("await loadWeekMenu(panel);")
+    landing = build[build.index("if (afterApprove && weekState.data && weekPlanState(weekState.data) === 'set') {"):]
+    assert "await ensureDefrostAskItems(panel, weekState.data);" in landing
+    assert "ask = !!(defrostAskState.items && defrostAskState.items.length);" in landing
+    assert "if (ask) goMealsStep('freezer', { replace: true });" in landing
+    assert "else { goGroceryList(); showToast('Approved. Here’s your list.'); }" in landing
+
+
 # ---------------------------------------------------------------------------
 # 3. No cook-ahead ask on Plan
 # ---------------------------------------------------------------------------

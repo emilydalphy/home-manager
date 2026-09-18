@@ -24,7 +24,6 @@ import pytest
 
 import nodeharness
 from test_contrast import contrast
-from test_prep_questions_step import _light_and_dark
 from shop_harness import run as _gro_node
 from test_week_seven_tiles import _extract, _extract_var
 

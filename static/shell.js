@@ -5440,8 +5440,9 @@
   // so every EXISTING household — shops named months ago, no dismissal row —
   // would be asked the question all over again.
   //
-  // So the flag is persisted on the client, the same shape the approved-week
-  // receipt's dismissal uses (WEEK_RECEIPT_DISMISS_KEY). localStorage rather
+  // So the flag is persisted on the client (the same shape the approved
+  // week's receipt used for its dismissal, until that receipt went on
+  // 2026-09-18). localStorage rather
   // than sessionStorage, and that is the whole of the decision: an installed
   // PWA is killed and relaunched constantly, and a relaunch ends the session
   // — so a household that taps a shop, takes a phone call and comes back
@@ -11636,13 +11637,11 @@
     return '';
   }
 
-  // opts.quiet (the Plan root, PLAN_ROOT_SLOT_ACTIONS off): no "Cook this"
-  // / Swap row under a planned meal — only the open and empty slots keep
-  // their Pick, because a decision must have a home (§2b S7).
-  function daySlotCardHtml(day, slot, opts) {
-    opts = opts || {};
+  // The Day step's card. (The Plan root drew these too, quietly — no
+  // "Cook this" / Swap row — until 2026-09-18; the root is rows with Done
+  // and Swap now, wkMealRowHtml, and the quiet option went with it.)
+  function daySlotCardHtml(day, slot) {
     var entry = daySlotEntry(day, slot);
-    var quietActions = opts.quiet && entry && (entry.state === 'planned' || entry.state === 'planned_empty');
     var openable = !!(entry && entry.state === 'planned');
     var name, quiet = '';
     if (entry && entry.state === 'planned') name = mealDisplayName(entry);
@@ -11691,7 +11690,7 @@
       // nothing else — it is an answer to "the first one back tonight",
       // not a property of a slot.
       (slot === 'dinner' ? readyMadeHtml(day) : '') +
-      (quietActions ? '' : slotActionsHtml(day, slot, false)) +
+      slotActionsHtml(day, slot, false) +
       '<div class="wk-slot-open" id="wk-open-' + slot + '" hidden>' +
         (entry && entry.state === 'open' ? openSlotCardHtml(day.date, slot, entry) : '') +
       '</div>' +

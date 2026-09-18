@@ -239,13 +239,16 @@ def test_names_truncate_to_one_line():
 
 
 def test_an_open_slot_keeps_its_pick_on_the_root():
-    """The root's cards drop "Cook this" / Swap (they live on the Meal
-    step's dock) but an open or empty slot keeps its Pick — a decision
-    must have a home (§2b S7). The outline dot on the tile says the
-    question is still open."""
+    """An open or empty slot keeps its Pick — a decision must have a home
+    (§2b S7). Since 2026-09-18 the root is rows (wkMealRowHtml, Done +
+    Swap), not the Day step's cards, so the card's old "quiet" option is
+    gone; the Day step's card always carries its actions, and the root's
+    open row offers Pick. The outline dot on the tile says the question is
+    still open."""
     card = _extract("daySlotCardHtml", SHELL_JS)
-    assert "var quietActions = opts.quiet && entry && (entry.state === 'planned' || entry.state === 'planned_empty');" in card
-    assert "(quietActions ? '' : slotActionsHtml(day, slot, false))" in card
+    assert "opts.quiet" not in card and "slotActionsHtml(day, slot, false) +" in card
+    row = _extract("wkMealRowHtml", SHELL_JS)
+    assert "entry.state === 'open'" in row and "Pick" in row
     _assert_in("if (entry && entry.state === 'open') return 'is-open';", SHELL_JS, "the open-slot dot", "shell.js")
 
 

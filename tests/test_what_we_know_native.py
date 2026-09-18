@@ -101,7 +101,7 @@ def test_one_sheet_of_collapsible_sections_and_no_segmented_control():
     head = _function("wwkSectionInnerHtml")
     assert 'class="prefs-row wwk-head"' in head, "a section head IS a Preferences row"
     assert '<span class="prefs-row-title">' in head and '<span class="prefs-row-sub">' in head
-    assert 'aria-expanded="' in head and "RV_CHEVRON_SVG" in head
+    assert 'aria-expanded="' in head and "WWK_CHEVRON_SVG" in head
     assert "wwkToggle(t.getAttribute('data-section'))" in WWK, "tap to open in place"
 
 
@@ -313,6 +313,45 @@ def _run(script: str):
     res = nodeharness.run_node(script, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout.strip())
+
+
+def _section_head_block() -> str:
+    """wwkSectionInnerHtml with only what it reads: its own chevron, the
+    sheet's open-sections state and the memory the lines read."""
+    chev = SHELL_JS.index("var WWK_CHEVRON_SVG = ")
+    return (
+        _function("escapeHtml") + "\n"
+        + SHELL_JS[chev : SHELL_JS.index("</svg>';", chev) + len("</svg>';")] + "\n"
+        + "var wwkState = { openSections: {} };\n"
+        + "var prefsState = { memory: null };\n"
+        + _function("wwkMem") + "\n"
+        + _function("wwkSectionInnerHtml") + "\n"
+    )
+
+
+def test_a_section_head_renders_with_its_chevron_open_or_shut():
+    """Run, not read (2026-09-18): the head borrowed the review step's
+    RV_CHEVRON_SVG, and when that step went the sheet threw a
+    ReferenceError the source assertions could not see."""
+    section = ("{ key: 'people', title: 'Who’s here', line: function (m) { return m.members.join(', '); }, "
+               "body: function (m) { return '<div class=\"wwk-body\">' + m.members.length + '</div>'; } }")
+    out = _run(_section_head_block() + f"""
+prefsState.memory = {{ members: ['Emily', 'Sam'] }};
+var shut = wwkSectionInnerHtml({section});
+wwkState.openSections.people = true;
+var open = wwkSectionInnerHtml({section});
+prefsState.memory = null;
+var waiting = wwkSectionInnerHtml({section});
+console.log(JSON.stringify([shut, open, waiting]));
+""")
+    shut, open_, waiting = out
+    for html in (shut, open_):
+        assert 'class="prefs-row wwk-head" data-wwk="toggle" data-section="people"' in html
+        assert "Who’s here" in html and "Emily, Sam" in html
+        assert '<span class="wwk-chev"><svg' in html and 'stroke-width="2.2"' in html and 'd="M8 10l4 4 4-4"' in html
+    assert 'aria-expanded="false"' in shut and 'id="wwk-panel-people" hidden></div>' in shut
+    assert 'aria-expanded="true"' in open_ and '<div class="wwk-body">2</div>' in open_
+    assert "Reading it back…" in waiting and "wwk-body" not in waiting
 
 
 def test_the_people_line_says_allergic_to_the_way_a_person_would():

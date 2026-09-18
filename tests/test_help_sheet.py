@@ -87,9 +87,10 @@ def test_both_pages_load_the_one_file_and_the_shell_does_not_wire_it_itself():
     assert '<script src="/static/help-sheet.js"></script>' in SHELL_HTML
     assert SHELL_HTML.index("help-sheet.js") < SHELL_HTML.index('src="/static/shell.js"')
     assert '<script src="/static/help-sheet.js"></script>' in ONBOARDING
-    # The Plan screen's `?` is another card's; this one only makes the
-    # sheet loadable there.
-    assert "openHelpSheet" not in SHELL_JS
+    # The Plan screen's `?` (openWeekHelp, the "Check the week" card) calls
+    # the sheet by name, and nothing in shell.js builds or wires one of its own.
+    assert "openHelpSheet({ screenName: screenName });" in SHELL_JS
+    assert "function openHelpSheet" not in SHELL_JS and "help-sheet-scrim" not in SHELL_JS
     src = HELP_JS.read_text()
     assert "global.openHelpSheet = openHelpSheet;" in src and "global.closeHelpSheet = closeHelpSheet;" in src
     assert "if (e.key === 'Escape'" in src and "scrimEl.addEventListener('click', closeHelpSheet)" in src
