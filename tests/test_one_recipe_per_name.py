@@ -243,11 +243,20 @@ def test_the_three_inside_doors_ask_the_one_rule():
     from app.tools import big_meal as _big_meal
     from app.tools import swap_in_place as _swap
 
+    def code_only(src):
+        # Comment-stripped, because the comment BESIDE the agent's call
+        # names the helper too — so the first version of this assertion
+        # passed with the call removed, satisfied by its own prose. That
+        # is the one mistake this repo's log keeps having to unpick.
+        return "\n".join(
+            line for line in src.splitlines() if not line.lstrip().startswith("#")
+        )
+
     for label, src in (
         ("swap_in_place._save_recipe_if_new", inspect.getsource(_swap._save_recipe_if_new)),
         ("big_meal._recipe_for_main", inspect.getsource(_big_meal._recipe_for_main)),
         ("agent's _ensure_recipe_saved", agent_function_source("_generate_weekly_plan")),
     ):
-        assert "existing_recipe_named" in src, (
+        assert "existing_recipe_named(" in code_only(src), (
             f"{label} should ask tools.existing_recipe_named, not compare names itself"
         )
