@@ -436,10 +436,76 @@ why*, not duplicating the diff.
     guards a SAVE — they answer "do we have one of these", and big_meal's
     needs the whole row (ingredients, steps, clocks), which this helper
     deliberately does not return. Same family, different question, their own
-    change if anyone wants one helper for both. And `recipes.py`'s four
-    remaining `name = ?` lookups stay case-sensitive; with one row per name
-    enforced they can only ever bite on a differently-cased argument, which
-    is a narrowing rather than a hole.
+    change if anyone wants one helper for both.
+  - **THE FIRST CUT LEFT FOUR SIBLING TOOLS CASE-SENSITIVE AND CALLED IT
+    "a narrowing rather than a hole". IT WAS A HOLE, AND ONE THIS BRANCH
+    MADE — found by review, measured, fixed here.**
+    `mark_recipe_feedback`, `log_recipe_note`, `log_cooking_deviation` and
+    `flag_recipe_temporary` all resolved `name = ?`. On `main` that was
+    survivable: the model passing the household's own casing raised "No
+    recipe named 'chicken tacos'. Save it first with add_recipe." — and
+    `add_recipe` then SAVED a second row, so the rating landed and was
+    readable (`get_recipe` is case-insensitive and `list_recipes` sorts
+    liked first). With `add_recipe` refusing, the same sequence is a dead
+    end: **the error string tells the model to call the one door that now
+    says no**, the like is lost, and two `error_events` rows are written.
+    Reachable by design rather than by accident — `SYSTEM_PROMPT` says to
+    call `mark_recipe_feedback` "right away with the recipe name … Don't
+    wait to be asked". All four read `LOWER(name)` now, which is what this
+    entry's own argument for moving `plan_meal` already demanded.
+  - **THE REPORTED BUG STILL REPRODUCED THROUGH THE OTHER DOOR.**
+    `existing_recipe_named` trimmed the QUERY and `add_recipe` stored the
+    name AS TYPED, so a recipe saved with a stray space was invisible to
+    the rule: a second save went straight through and the first row became
+    unreachable. The test file's own padding case only ever exercised the
+    direction that worked. The name is stripped at the insert.
+  - **THE CHECK WAS A TOCTOU, and "one household, one recipe per name" was
+    a check rather than an invariant.** It read on one connection and wrote
+    on another: review measured **6 of 20 simultaneous saves still writing
+    a duplicate** — better than `main`'s 20 of 20, and not what this claimed.
+    `/api/recipes/add` is a sync `def`, so Starlette runs it in a threadpool
+    and two devices really are concurrent. The check and the INSERT share
+    one `BEGIN IMMEDIATE` now, and `existing_recipe_named` takes the
+    package's optional `conn=` so it can be asked inside it. **0 of 20
+    after.** A UNIQUE index on `(household_id, LOWER(TRIM(name)))` would
+    make it an invariant rather than a check and was NOT taken: any
+    database that already holds a duplicate would fail the migration, and
+    Emily's live one may.
+  - **TWO ASSERTIONS THAT COULD NOT FAIL, and this file had already fixed
+    one of that shape two commits earlier.** The import-route test compared
+    `duplicate_recipe_message`'s output to its own output — gutting the
+    message to "Nope." left all thirteen green — and the guard claiming
+    "either of them" was pinned drove only `swap_in_place`; removing
+    `big_meal`'s guard entirely left the whole 5683-test suite green. Both
+    assert against a literal and drive both doors now.
+  - **A CONSEQUENCE OF THE `plan_meal` CHANGE THAT IS NOT MERELY
+    DEFENSIVE, and should be seen as a behaviour change:** with "Pizza"
+    saved and the model planning a reuse as "pizza", `main` files the night
+    FREEFORM and approval buys **nothing**; here it lands on the recipe and
+    approval buys its ingredients. Right — it is this entry's own argument
+    — and it means a week can now shop for things it did not shop for
+    before, purely because of the model's casing.
+  - **Known and left, each named rather than fixed:** a refused duplicate
+    writes an `error_events` row that `usage.get_recent_errors` counts in
+    `total`, which drives the morning report's lead and its exit code (kind
+    `'voice'` was explicitly carved out of that total on the reasoning that
+    it "is not breakage"; this is the same class, and `SlotRefused` and
+    `InvalidMealStatus` are the precedent for leaving it). `add_recipe`'s
+    tool description says nothing about names being unique, and nothing
+    points the model at `update_recipe_details` as the other road. Existing
+    duplicates on any live database are not healed — there is no `DELETE
+    FROM recipes` anywhere in the repo — though reads of them are at least
+    deterministic now. And `seed.py` run twice raises on the second
+    `add_recipe`; it already produced garbage on a second run.
+  - **The review round's own numbers.** `tests/test_one_recipe_per_name.py`
+    13 -> 19; the six added are red against this branch's own earlier
+    commits. The race test runs **twelve** pairs rather than one: a single
+    pair passed against the broken code, and a race test that only
+    sometimes reproduces the race only sometimes means anything. Suite
+    **5689 passed, 0 failed** at `TZ=America/Toronto` (5670 baseline + 19),
+    and **5683 passed, 0 failed** at `TZ=Pacific/Niue` inside a verified
+    straddle at the earlier commit — Niue 2026-09-17 against Toronto
+    2026-09-18, checked before and after the run.
   - **FOR EMILY, the one product call in this, and it is one line to
     reverse:** told to save a recipe under a name already on file, Pomona
     REFUSES and asks for a different name ("You already have a recipe called
