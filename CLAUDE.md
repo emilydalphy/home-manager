@@ -1244,6 +1244,109 @@ why*, not duplicating the diff.
     no other, so `git diff main -- tests/` is that one file and nothing
     else. Not verified in a browser: every failure here is mid-write and
     the screens are untouched.
+- **2026-09-18 — ONE of the three ways a holiday answer could leave the
+  dinner slot genuinely absent. Branch `overnight/holiday-reopen-atomic`,
+  NOT merged at the time of writing.** Loop Board bug, filed and built the
+  same night off the `overnight/away-night-atomic` review, which named this
+  as "the identical bug, live, one module over" and correctly left it out
+  of scope. `holidays._reopen` made the same pair of writes `tonight.py`
+  makes — clear whatever is in the slot, then state the question — as TWO
+  COMMITS; it is one transaction now.
+  - **READ THIS FIRST: THE COMMONEST HOLIDAY ANSWER IS NOT FIXED BY THIS
+    BRANCH, and the first version of this entry claimed otherwise.** Found
+    by an independent review and then reproduced directly rather than taken
+    on trust. `_reopen` is reached only for an answer this module itself
+    planned a dinner into. For the ordinary "we're out" answer on a
+    household WITH members on record, `_undo_effects` calls
+    `attendance.clear_slot_attendance` first, which reaches
+    `slot_needs._reopen_away_slot` — the identical clear-then-open pair,
+    still two commits on `main`. Measured on this branch: `holidays._reopen`
+    called **0** times, and the day still ends `[]`. `overnight/
+    away-night-atomic` is what closes that one, and the two merge with
+    CLAUDE.md as their only conflict.
+    Which answers this branch DOES cover, measured with a spy:
+    "out" WITH a brought dish (1 call), "out" with NO members on record
+    (1), and leaving a hosting answer via `big_meal.clear_menu` (1).
+  - **And `slot_needs` is therefore NOT prior art for the atomic pair, which
+    the first version of this entry also said.** `tonight.py:688` has
+    `BEGIN IMMEDIATE`; `slot_needs._reopen_away_slot` does not. Saying
+    otherwise would send the next session away from a module where the bug
+    is still live.
+  - **THREE call sites, not two.** `holidays.py:707`, `holidays.py:712`
+    and `big_meal.py:1013`. The third was checked on review rather than
+    swept: `big_meal.clear_menu` reaches it through helpers that each open
+    and close their own connection and hold no transaction, so the new
+    `BEGIN IMMEDIATE` does not nest, and `tests/test_big_meal.py:533`
+    already covers its happy path.
+  - **Reproduced before anything was touched**, on a throwaway DB, with
+    `plan_slot_open` forced to raise: `before [(1, 'planned')]` →
+    `after []`. The day ends with no dinner row at all, which is the one
+    state `schema.sql`, `audit_plan_slots` and `plan_slot_open`'s own
+    docstring all say cannot exist.
+  - **The half with teeth is the grocery line, and it needed an APPROVED
+    week to see.** The first reproduction used a draft, where nothing has
+    reached the list; on an approved week the measured before/after is
+    `([(1, 'planned')], [('Black beans', '1 can', 'needed')])` → `([], [])`.
+    The row is gone AND the line is gone, for food the household may
+    already have bought, under an `answer_holiday` that raised — i.e. under
+    a screen saying nothing had been saved.
+  - **`weekly_plan`'s three slot writers already took `conn=` on main**, so
+    this is `holidays.py` and a test file and nothing else — no change to
+    the app's central plan write, and no overlap with the away-night
+    branch, which was in flight in `slot_needs.py`/`weekly_plan.py`.
+  - **`plan_id` is resolved by the CALLER, above the transaction**, and all
+    three call sites already did. `_plan_for` opens a connection of its own,
+    and a nested `get_conn` inside an open write transaction is how this
+    repo has twice earned an intermittent "database is locked".
+  - **`BEGIN IMMEDIATE` is load-bearing, and the two WRONG transactions fail
+    differently — which is why the race test asserts two things.** Delete
+    the transaction outright and both writers read the pre-tap slot, so two
+    `open` rows land on one day (`audit_plan_slots`' `duplicated`). Weaken
+    it to a plain DEFERRED `BEGIN` and the row count stays right while the
+    LOSER DIES of "database is locked" — measured 5 runs of 5 on review, and
+    at first nothing in the file noticed, because the only thing pinning the
+    lock mode was a string marker. The race now runs eight trials and treats
+    a writer that raises as a failure: measured 3 runs of 3 for each
+    mutation, DEFERRED reddens 2 and no-transaction reddens 3.
+  - **"deterministically 2 rows" WAS FALSE and is corrected rather than
+    quietly dropped.** One trial catches the no-transaction mutation about
+    three times in ten (review measured 3/10); the entry called that
+    deterministic on a sample of one. Eight trials is what makes it hold.
+  - **A source guard was satisfied by its own docstring on the first cut**,
+    the third time this log has recorded that: it searched `_reopen`'s raw
+    source for `_plan_for`, and the docstring names `_plan_for` while
+    explaining why it must not be called there. It reads the function's
+    CODE now, docstring and comments stripped via `ast`.
+  - `tests/test_holiday_reopen_atomic.py` (13; **9 red against the
+    unmodified `app/`** — and of those nine, **7 fail on the assertion they
+    are named for**. The other two say so: one dies inside its own
+    instrumentation on a kwarg main does not take, and one has two
+    assertions of which only the second is red there). The 3 green happy-path
+    guards are pinned by mutation: dropping `plan_slot_open` reddens 8,
+    dropping `clear_plan_slot` reddens 5. The thirteenth is the
+    characterisation above, which is the one to invert when away-night lands.
+  - **`conn.close()` is not pinned and the loss is near-unobservable**:
+    deleting it leaves all 13 green, because the local connection is
+    refcount-collected at function exit. Named rather than chased.
+  - **The write lock is now held across the grocery ingest tree** when the
+    holiday dinner is a leftover TARGET, since `clear_plan_slot(conn=…)`
+    runs the source's rescale inside it. Checked on review for model calls
+    (none) and nested connections (none, instrumented across all 45 `app.*`
+    modules that bind `get_conn`: still exactly 1). Bounded local SQLite
+    work, and a real increase in lock duration.
+  - Suite **5682 passed, 0 failed** at `TZ=America/Toronto`, against a
+    measured 5670 on the merge base — independently reproduced by the
+    reviewer at both numbers. The happy path was diffed between the two
+    trees across the whole holiday lifecycle and is byte-identical,
+    including the leftover-chain reopen.
+  - **Found with it and NOT fixed, its own card:** `holidays.py:768`
+    (`_plan_dish`) and `meal_variety.py:230` do `clear_plan_slot` then
+    `plan_meal` by hand instead of going through
+    `weekly_plan._replace_slot_entries`. The holidays one was reproduced on
+    an approved week and loses the row AND the shopping line.
+    `app/agent.py:4702`/`:4726` are a third instance (generation-time only)
+    and `big_meal.py:810`/`:918` a fourth, unmeasured.
+
 - **2026-09-17 — Merging the eleven overnight branches of 09-16/17 into
   `main`: two of them fought, and the fight was real.** Eleven branches,
   each green alone, ten of them appending to this log at the same line
