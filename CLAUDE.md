@@ -570,6 +570,168 @@ why*, not duplicating the diff.
   - **THE WORDING IS AN ASSUMPTION, Emily's to overrule in one line:**
     "That night’s already gone.", the sibling's sentence, inline beside
     the two refusals it joins in `drop_dish_from_day`.
+- **2026-09-17 — The freezer ask lost the thaw that starts tonight, for
+  four hours every evening: all three of `defrost.py`'s clock reads were
+  the server's. Branch `overnight/freezer-ask-household-clock`, NOT merged
+  at the time of writing.** Loop Board Phase 0 bug, the next module in the
+  household-clock sweep — NOT the last one; four more are named at the
+  foot of this entry. The container runs UTC and households default to
+  `America/Toronto`, so from 8pm local the server's date is already
+  tomorrow, and all three of this module's `date.today()` reads decided a
+  calendar day a household sees.
+  - **`confirm_frozen_items`' too-late test is the one with teeth, and it
+    was reproduced before anything was touched.** Household Toronto, a 48h
+    item (a whole chicken), nights at H+1/H+2/H+3: at **Toronto 09:00** the
+    app offered `[H+2, H+3]` and refused `[H+1]`; at **Toronto 21:30** it
+    offered `[H+3]` and refused `[H+1, H+2]`. H+2's move date IS the
+    household's own today — so for four hours every evening, precisely when
+    somebody taps "Something in the freezer?", the household was told "too
+    late to thaw safely" about a thaw it could have started that night with
+    about forty-five hours in hand. After: `[H+2, H+3]` at both instants,
+    with the one refusal being the night that really has run out.
+  - **THE ASK READS NO CLOCK AT ALL, and that is why only one side had to
+    move.** `meat_items_for_plan` offers every meat/seafood ingredient the
+    plan calls for with every night it feeds, filtered by nothing —
+    checked rather than assumed, and the ask card's chips are ITEMS, not
+    nights (`defrostAskChipHtml`). So the screen offered a chip and the
+    write refused it, which is §8 rule 7 inverted, and the disagreement was
+    entirely on the write's side. Pinned both ways: one test runs the ask
+    at two frozen instants a day apart and requires the same answer
+    (mutation-checked by making it filter), another requires that the only
+    chip-night the write refuses is the one whose lead time genuinely ran
+    out.
+  - **All three reads moved in the same commit**, on this repo's own rule
+    that a half-converted module is a new bug rather than a smaller one.
+    The two read paths were reproduced too, at Toronto 21:30:
+    `get_defrost_today` returned the move dated the SERVER's today and
+    hid the household's own still-pending one — a false positive and a
+    false negative on one Today tile — and `get_defrost_schedule(7)` ran
+    its window `[server today .. +7]` instead of `[household today .. +7]`,
+    dropping tonight's move off the near edge (the one "what do I need to
+    defrost?" is asking about) while reaching a day too far at the other.
+    It also had to be the same clock `moves.py` reads, since Now's fridge
+    move is built from these very rows.
+  - **`cooker.household_today()`, not a fourth conversion**, and not
+    `weekly_plan._household_today`'s shift form: that shape exists because
+    a dozen files pin `weekly_plan.date`, and nothing pins `defrost.date`
+    (checked). `from .cooker import _find_inventory_match` became
+    `from . import cooker as _cooker` — one import for one module, the
+    package's own convention, and no new edge in the import graph, since
+    cooker was already imported here and imports neither this module nor
+    anything reaching it.
+  - **The clock is resolved BEFORE `get_conn` in all three**, which was
+    already true and is now load-bearing: `household_today` opens its own
+    connection, and nesting one inside the writer's transaction is how this
+    repo has twice earned an intermittent "database is locked". Two
+    source-marker guards pin it; both ERROR against the unmodified app
+    (the name isn't there), so they are mutation-pinned and say so.
+  - **One read deliberately left on the server's clock, with a comment
+    saying why:** `mark_defrost_asked`'s SQLite `datetime('now')`. It is a
+    UTC instant written to `defrost_asked_at`, which `weekly_plan` passes
+    straight through and `shell.js` reads as `!data.defrost_asked_at` — a
+    gate, never compared against a calendar day, so there is no day for it
+    to be wrong about. A test pins that it is still a timestamp rather than
+    quietly becoming a date somebody reasons with.
+  - `tests/test_defrost_household_clock.py` (17; **10 behaviour catches**,
+    red against the unmodified app for the reason they are named after).
+    12 go red there in total — the other two are the ordering guards above,
+    which die on a `ValueError` and say so; five are green either way and
+    each names the mutation that pins it. Eight mutations run, each
+    reddening exactly the test it should: the clock read moved below
+    `get_conn` in the writer and again in a reader, the pending filter, the
+    too-late branch removed, the too-late test widened to `<=`,
+    `LARGE_LEAD_HOURS` 48→24, `datetime('now')`→`date('now')`, and the ask
+    made to filter by the clock. Both directions at a frozen UTC instant:
+    Toronto 21:30 (household a day BEHIND — the production direction) and
+    Tokyo 08:30 (a day AHEAD, where the server's clock booked a move for a
+    day the household had already lost).
+  - **Known low-severity test hazard, named rather than fixed:** the two
+    ordering guards read `inspect.getsource(_defrost.<fn>)`, which is the
+    same line-numbers-baked-at-import against linecache-at-assertion
+    pairing that `overnight/tests-read-agent-once` took out of `tests/` on
+    2026-09-16 after it produced a real flake — a merge landing on the
+    checkout mid-run can hand back a NEIGHBOURING function's body with no
+    error anywhere. Not a rule violation: that work was scoped to
+    `app/agent.py`, and there is no `conftest.agent_function_source`
+    equivalent for `app/tools/`. Both guards are mutation-checked to bite.
+    If somebody widens that helper past agent.py, take these two with it.
+  - **Four tests in `tests/test_defrost.py` seeded off the PROCESS's clock
+    and are re-seeded off `conftest.household_date()`.** Three of them went
+    red under a straddle the moment the app started reading the household's
+    day — the app was right and the harness was wrong, which is how this
+    class always presents. The fourth (`..._windows_by_days_ahead`) was
+    green by its margins rather than by construction (+2 and +10 against a
+    seven-day edge) and moved with them. They are STRONGER, not weaker:
+    with `get_defrost_today` mutated back to the server's clock they go red
+    under `Pacific/Niue`, which they could not do before.
+  - **Cost, measured with an instrumented `get_conn`: +1 connection per
+    payload on each of the three, and nothing else moves.**
+    `get_defrost_today` 1 → 2, `get_defrost_schedule` 1 → 2,
+    `confirm_frozen_items` 7 → 8 (9 → 10 with a leftover chain on the
+    plan, which is the chain's own two attendance reads either side). One
+    small connection-and-SELECT, once per call — never in a loop, never
+    per day or per meal, and the same delta with or without a chain. In
+    screen terms: one extra per Today load, one per `/defrost-confirm`,
+    one per chat call of `get_defrost_schedule`.
+  - **Numbers, measured.** Suite **5435 passed, 0 failed** at
+    `TZ=America/Toronto` and at `TZ=Pacific/Niue`; the merge base is
+    **5418 passed, 0 failed** at `Pacific/Niue`, so +17 is this branch's
+    own file and the post-only failure count is ZERO. **The straddle was
+    verified rather than assumed**, per the 2026-09-16 lesson: every
+    Niue run had `TZ=Pacific/Niue date +%F` reading 2026-09-16 against
+    `TZ=America/Toronto date +%F` reading 2026-09-17 — two different dates,
+    so the two clocks really were apart. Measured at 07:25 and 07:30 UTC,
+    and the whole set re-run after the review round at 08:22 (Niue, dates
+    checked before AND after the run) and 08:26 (Toronto), same numbers
+    both times.
+  - **CI's `clock` matrix is green, and the one pinned failure is not
+    this branch's.** All four weekday pins (monday, friday, saturday,
+    sunday) pass on both defrost files. Under `--today=sunday` the WHOLE
+    suite is **1 failed, 5431 passed, 3 skipped** — exactly one failure,
+    and it is
+    `test_tonight_night_off.py::test_the_night_is_planned_empty_and_never_open`,
+    a needs-you weekday cliff with nothing to do with defrost — and it
+    fails identically with the merge base's own `app/` under the same pin
+    (measured both ways by reverting just that file). So this branch adds
+    ZERO pinned-matrix failures; that one is its own card and should not
+    be read as this work's.
+  - **Driven over a real uvicorn on a throwaway DB, in a LIVE straddle**
+    rather than a frozen one — the container is UTC and the household was
+    set to `Pacific/Niue`, so the server read 2026-09-17 and the household
+    2026-09-16 with no clock faked anywhere. **TWO seeds, and the first
+    version of this bullet narrated them as one**, which is corrected here
+    rather than quietly rewritten: somebody re-running "the same seed"
+    would have got different numbers with no way to tell which half to
+    trust. Both are cook nights only, nothing hand-inserted, and each probe
+    is tile → confirm → tile.
+    - **SEED A — one cook night at H+2** (Friday 09-18; a 48h item, so its
+      move date is the household's own tonight). Merge base: tile empty,
+      `/defrost-confirm` answers `created: []` with the too-late note
+      against 09-18, tile still empty — the household is told no and
+      nothing is booked at all. This branch: `created` carries
+      `task_date 2026-09-16`, `notes: []`, and the tile then reads
+      `['2026-09-16']`.
+    - **SEED B — two cook nights, H+2 and H+3.** Merge base books only the
+      later one (`created` `task_date ['2026-09-17']`, note against 09-18),
+      so the tile afterwards reads `['2026-09-17']` — a move dated the
+      SERVER's today — while the household's own tonight holds nothing.
+      This branch books both (`['2026-09-16', '2026-09-17']`, no notes) and
+      the tile reads `['2026-09-16']`, the one actually due tonight.
+    `_move_date` reads no clock, so a night's move date is identical on
+    both apps; all that moves is which nights survive the too-late test and
+    which day the tile asks about. That is also why the two seeds cannot
+    share one narration — a seed that books nothing cannot put a task on
+    the tile.
+  - **One acceptance criterion skipped and said out loud:** the card names
+    two tests in `tests/test_after_approve_real_questions.py` as part of
+    this work. That file does not exist on `main` — it lives on the
+    unmerged `overnight/after-approve-real-questions` branch. Same reason
+    the card counted four `date.today()` reads where `main` has three.
+  - **Found and NOT fixed, its own card:** `app/tools/big_meal.py` (6
+    server-clock reads), `inventory.py` (5), `notifications.py` (3) and
+    `chores.py` (16, with `get_chores_pending` the one with teeth) are
+    still on the server's clock — already named by the 2026-09-16
+    `weekly-plan-last-clock-reads` entry and unchanged by this one.
 
 - **2026-09-16 — "Shop for tonight" is claimed only when the list is actually
   holding tonight up. Branch `overnight/shop-move-for-tonight`, merged

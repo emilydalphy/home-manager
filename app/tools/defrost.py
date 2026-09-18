@@ -42,13 +42,18 @@ from datetime import date, datetime, time, timedelta
 from ..db import get_conn
 from ._shared import household_id
 from . import attendance as _attendance
+# cooker is this module's clock as well as its name matcher (see the note
+# above get_defrost_today). The module alias replaces the `from .cooker
+# import _find_inventory_match` this block used to end with — one import
+# for one module, the package's own convention, and no new edge in the
+# import graph, since that named import already pulled cooker in here.
+from . import cooker as _cooker
 from . import inventory as _inventory
 from . import leftovers as _leftovers
 from . import quantities as _quantities
 from . import recipes as _recipes
 from . import rhythm as _rhythm
 from . import weekly_plan as _weekly_plan
-from .cooker import _find_inventory_match
 
 # ---------- Lead-time rule of thumb (Emily's ask: honest defaults, no
 # invented precision) ----------
@@ -262,7 +267,7 @@ def _candidates_from_plan(plan: dict, freezer_items: list[dict], dinner_window: 
             ing_name = (ing.get("item") or "").strip()
             if not ing_name:
                 continue
-            match, confident = _find_inventory_match(ing_name, freezer_items)
+            match, confident = _cooker._find_inventory_match(ing_name, freezer_items)
             if not match or not confident:
                 continue
             lead_hours, tier = lead_hours_for_item(match["item"])
@@ -473,8 +478,32 @@ def get_defrost_today() -> list[dict]:
     tile). Deliberately not scoped to any one weekly_plan_id: a task can
     outlive the plan that produced it (e.g. next week's plan already
     exists), and "what needs to move today" should still surface.
+
+    TODAY IS THE HOUSEHOLD'S, and this is the note the other two clock
+    reads in this module point at. The deployed container runs UTC and
+    households.timezone defaults to America/Toronto, so from 8pm Eastern
+    the server's date is already tomorrow. Every date this module writes
+    is a plain calendar day (prep_tasks.task_date), and every date it
+    reads back is compared against one — so a server-clock "today" shows
+    the Today tile TOMORROW's move while hiding tonight's still-pending
+    one, for four hours every evening. Measured at Toronto 21:30 before
+    this was changed: a task dated the household's today was invisible and
+    a task dated the day after was on the tile.
+
+    It also has to be the same clock moves.py already reads, because the
+    fridge move on Now is built from these very rows and Now has run on
+    `cooker.household_now` since 2026-09-14 — two halves of one screen
+    disagreeing about what day it is is exactly how this app produced four
+    separate defects in two days.
+
+    household_today opens its own connection, so it is resolved BEFORE
+    get_conn here and in both siblings below — nesting one inside an open
+    transaction is how this codebase has twice earned an intermittent
+    "database is locked". A clock that cannot be read falls back to the
+    server's date (see cooker.household_today): a wrong hour once a day
+    beats a blank tile.
     """
-    today = date.today().isoformat()
+    today = _cooker.household_today().isoformat()
     conn = get_conn()
     rows = conn.execute(
         "SELECT id, task_date, description, related_meal, quantity, inventory_item_id, "
@@ -492,8 +521,16 @@ def get_defrost_schedule(days: int = 7) -> list[dict]:
     Every pending defrost task due today or in the next `days` days —
     chat-parity answer for "what do I need to defrost?" / "what's coming
     up to defrost this week?". Ordered soonest-first.
+
+    The household's clock, for the reason written out above
+    get_defrost_today: the window's near edge IS a calendar day, so on the
+    server's clock the evening answer to "what do I need to defrost?"
+    silently drops the move due TONIGHT — the one being asked about — and
+    reaches a day too far at the other end. Measured at Toronto
+    21:30 before this was changed: the window ran [server today .. +7]
+    rather than [household today .. +7], losing today's own pending row.
     """
-    today = date.today()
+    today = _cooker.household_today()
     end = (today + timedelta(days=max(days, 0))).isoformat()
     conn = get_conn()
     rows = conn.execute(
@@ -830,6 +867,26 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
     reassuring, never cheery" rule for anything that names a problem: the
     fact, plus its way out, in the same breath.
 
+    "Already passed" is measured against the HOUSEHOLD's today (see
+    get_defrost_today's note), and this one had teeth. On the server's
+    clock, from 8pm Eastern, a night whose move date is the household's
+    own today read as already gone: measured with a 48h item at Toronto
+    21:30, a cook two nights out was refused with the too-late note, and
+    at Toronto 09:00 on the same household day the same cook was booked.
+    So for four hours every evening — precisely when somebody taps
+    "Something in the freezer?" — the household lost a thaw it could
+    genuinely have started that night with about forty-five hours in hand,
+    and was told it was too late instead.
+
+    The ask card itself reads no clock at all (meat_items_for_plan offers
+    every meat/seafood ingredient the plan calls for, whatever night it
+    falls on), so the disagreement was entirely on this side: the screen
+    offered a chip and the write refused it, which is DESIGN_SYSTEM.md's
+    §8 rule 7 inverted. The too-late note stays — a cook happening today
+    really cannot be thawed for — but it is now only ever said about a
+    night that has genuinely run out of time on the clock the household
+    is living on.
+
     Returns {"created": [...], "notes": [...]} — never raises for "nothing
     matched" or "nothing to do"; both are ordinary answers here (see
     get_defrost_today's docstring for why this module treats an empty
@@ -840,7 +897,20 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
         return {"created": [], "notes": []}
 
     dinner_window = _rhythm.get_household_rhythm().get("dinner_window")
-    today = date.today()
+    # Both of these open their own connection, so both are resolved before
+    # get_conn below — see get_defrost_today's note on the nested-connection
+    # hazard. That is a claim about THIS read and nothing wider: the
+    # function is NOT otherwise free of nested connections, and saying so
+    # would be false. With a leftover chain on the plan,
+    # _iter_plan_meat_ingredients -> leftovers.batch_for_source ->
+    # eaters_at -> attendance.get_slot_attendance opens one connection per
+    # counted night while this function's own is already mid-write —
+    # measured at two, identically on main, so none of them is new here.
+    # They are READS, which coexist with a RESERVED lock under SQLite's
+    # rollback journal; closing them means threading `conn` down through
+    # that chain, which is its own card. What this ordering buys is that
+    # the clock is not a third one.
+    today = _cooker.household_today()
 
     conn = get_conn()
     created: list[dict] = []
@@ -907,6 +977,14 @@ def mark_defrost_asked(weekly_plan_id: int) -> None:
     Emily's ask, and there's no meaningful difference between the first
     answer's timestamp and a later one for what this column exists to do
     (hide the automatic card, once).
+
+    The one clock read in this module deliberately left on the server:
+    SQLite's datetime('now') is UTC, and defrost_asked_at is only ever
+    read as "is it set" — weekly_plan passes it straight through to
+    get_week_menu and shell.js asks `!data.defrost_asked_at`. Nothing
+    compares it against a calendar day, so there is no day for it to be
+    wrong about. Give it a reader that does, and it belongs on
+    cooker.household_now like everything above it.
     """
     conn = get_conn()
     conn.execute(
