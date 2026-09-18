@@ -589,17 +589,16 @@ def test_a_move_booked_on_a_different_week_does_not_silence_this_one():
 # out" are both on the plan whatever weekday the suite is run on — which
 # the CI clock matrix makes a real requirement, not a nicety.
 #
-# The SERVER's today, deliberately, and it is the one place in this file
-# that is not household_today(). The rule under test reads date.today()
-# because confirm_frozen_items does, and those two have to agree about
-# what is still possible or the ask offers a night the write then refuses.
-# Seeding from the household's clock instead makes these two tests red
-# under any straddling zone — measured, 2026-09-15, TZ=Pacific/Niue — for
-# the two clocks disagreeing rather than for anything about thawing. When
-# confirm_frozen_items moves onto the household's clock, this moves with
-# it, in the same commit.
+# The HOUSEHOLD's today, like everything else in this file. This used to be
+# the one place that read the server's date.today(), because the rule under
+# test did — "to match confirm_frozen_items", which at the time also read
+# the server's. confirm_frozen_items moved onto the household's clock on
+# 2026-09-17 (tests/test_defrost_household_clock.py), the ask's too-late
+# rule moved with it in the same commit, and so did this: seeding from the
+# other clock makes these two tests red under any straddling zone for the
+# two clocks disagreeing rather than for anything about thawing.
 def _from_today_plan(*meals):
-    today = datetime.date.today()
+    today = household_today()
     plan_id = tools.create_weekly_plan(
         today.isoformat(), content_start_date=today.isoformat(), day_count=7,
     )["weekly_plan_id"]
@@ -629,7 +628,7 @@ def test_a_night_still_ahead_survives_a_night_that_is_too_late():
     _meat("Shrimp Skewers", "Shrimp")
     plan_id = _from_today_plan((0, "Shrimp Skewers"), (4, "Shrimp Skewers"))
 
-    later = (datetime.date.today() + datetime.timedelta(days=4)).isoformat()
+    later = (household_today() + datetime.timedelta(days=4)).isoformat()
     assert _nights(plan_id) == [("Shrimp", [later])]
 
 

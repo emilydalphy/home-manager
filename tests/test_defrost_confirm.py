@@ -13,10 +13,14 @@ import datetime
 
 from app import tools
 from app.tools import defrost
+from conftest import household_today
 
 
 def _monday() -> datetime.date:
-    today = datetime.date.today()
+    # The household's today, not the process's: the too-late rule reads the
+    # household's clock, so a straddling zone (CI's Kiritimati job) must not
+    # seed "tonight" a day off from the day the app is living on.
+    today = household_today()
     return today - datetime.timedelta(days=today.weekday())
 
 
@@ -238,7 +242,7 @@ def test_confirming_a_meal_happening_today_is_too_late_and_creates_no_task():
     say so plainly instead, in voice, with a real way out.
     """
     _meat_recipe()
-    today = datetime.date.today().isoformat()
+    today = household_today().isoformat()
     plan = tools.create_weekly_plan(_week_start(offset_weeks=0))
     tools.plan_meal(today, "Chicken Skewers", slot="dinner", weekly_plan_id=plan["weekly_plan_id"])
 
@@ -407,7 +411,7 @@ def test_confirming_the_same_item_twice_keeps_one_task(signed_in):
 
 def test_defrost_confirm_endpoint_too_late_answer_returns_the_note(signed_in):
     _meat_recipe()
-    today = datetime.date.today().isoformat()
+    today = household_today().isoformat()
     plan = tools.create_weekly_plan(_week_start(offset_weeks=0))
     tools.plan_meal(today, "Chicken Skewers", slot="dinner", weekly_plan_id=plan["weekly_plan_id"])
 

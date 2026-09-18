@@ -281,35 +281,40 @@ class TestTheFreezerAskInTheEvening:
         assert clock_at < conn_at, "the household's clock must be read before the connection opens"
 
 
-# ---------- 2. the ask, which reads no clock at all ----------
+# ---------- 2. the ask and the write read the same clock ----------
 
 class TestTheAskAndTheWriteAgree:
-    def test_the_ask_offers_the_same_nights_whatever_the_clock_says(self, monkeypatch):
+    def test_the_ask_leaves_off_only_the_night_the_household_has_run_out_of(self, monkeypatch):
         """
-        GUARD, and the reason this ticket only had to change one side.
-        meat_items_for_plan offers every meat ingredient the plan calls for
-        with every night it feeds, and looks at no clock — so the screen
-        and the write could only ever disagree because the WRITE was on the
-        wrong one. Pinned by mutation: filter that function by any date and
-        this fails.
+        CATCH, found at merge on 2026-09-17. This ticket fixed the WRITE's
+        clock while a sibling branch taught the ASK to leave off a night
+        it is already too late to thaw for (meat_items_for_plan, rule 4)
+        — reading date.today() "to match the write". Merged, the ask was
+        on the server's clock and the write on the household's, and from
+        8pm Eastern the card dropped a night the write would have booked.
+        Toronto at half nine: three cooks, tomorrow / the night after /
+        the night after that, a two-day thaw. Tomorrow needed its move
+        yesterday and is honestly gone; the other two are still open on
+        the household's clock. On the server's clock, a day ahead, the
+        middle one was dropped as well. Pinned by mutation: put
+        date.today() back in _settled_nights and this fails.
         """
         household_day = _behind(monkeypatch)
         nights = [household_day + timedelta(days=n) for n in (1, 2, 3)]
         plan_id = _seed_plan(nights)
 
-        behind = _defrost.meat_items_for_plan(plan_id)
-        _ahead(monkeypatch)
-        ahead = _defrost.meat_items_for_plan(plan_id)
+        offered = [n["date"] for n in _defrost.meat_items_for_plan(plan_id)[0]["nights"]]
 
-        assert behind == ahead
-        assert [n["date"] for n in behind[0]["nights"]] == [n.isoformat() for n in nights]
+        assert offered == [n.isoformat() for n in nights[1:]]
 
-    def test_every_night_the_ask_offers_past_today_is_one_the_write_books(self, monkeypatch):
+    def test_every_night_the_ask_offers_is_one_the_write_books(self, monkeypatch):
         """
         CATCH. §8 rule 7 the right way up: in the evening the card offered
         chips covering three nights and the write refused two of them, one
-        of which the household had the time for. One refusal now, and it is
-        the night that really has run out.
+        of which the household had the time for. Now the card never offers
+        a night the write would refuse — every chip it shows is booked — and
+        the one refusal the write still has to make is for the night that
+        really has run out, which the card already left off.
         """
         household_day = _behind(monkeypatch)
         nights = [household_day + timedelta(days=n) for n in (1, 2, 3)]
@@ -318,13 +323,11 @@ class TestTheAskAndTheWriteAgree:
         offered = {n["date"] for n in _defrost.meat_items_for_plan(plan_id)[0]["nights"]}
         result = _defrost.confirm_frozen_items(plan_id, [FROZEN_ITEM])
         booked = {c["date"] for c in result["created"]}
+        refused = {n["date"] for n in result["notes"]}
 
-        # Exactly ONE chip the card offers is refused, and it is the one
-        # whose forty-eight hours really did run out — the cook tomorrow,
-        # which needed its move yesterday. On the server's clock the cook
-        # the night after that was refused too, and that one the household
-        # had the time for.
-        assert offered - booked == {nights[0].isoformat()}
+        assert offered == booked
+        assert refused == {nights[0].isoformat()}
+        assert not (offered & refused)
 
 
 # ---------- 3. get_defrost_today ----------

@@ -357,12 +357,11 @@ def pinned_utc_now() -> _dt.datetime:
     10:00). So moving 09:00 cannot fix this, and would cost the one hour that
     is inside every window the app reasons about.
 
-    `utcnow()`, deliberately, NOT `now(timezone.utc)`. freezegun applies
-    `tz_offset` on top of an already-tz-aware conversion, so the aware form
-    comes back as the local wall time wearing a UTC label — 09:00+00:00 under
-    Kiritimati, where the honest answer is 19:00+00:00 the day before. The
-    naive pair is the one `_sqlite_now` and node's pin are built from, so it
-    is the one a guard has to measure against.
+    `utcnow()`, deliberately, NOT `now(timezone.utc)`. The two agree now
+    (the freezegun.configure block below closed the seam that once had the
+    aware form answering local wall time wearing a UTC label), but the naive
+    pair is the one `_sqlite_now` and node's pin are built from, so it is
+    the one a guard has to measure against.
     """
     return _dt.datetime.utcnow()
 

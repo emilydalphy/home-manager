@@ -738,11 +738,16 @@ def _settled_nights(weekly_plan_id: int, by_item: dict[str, dict]) -> set[str]:
         only ever produce a note — which is Emily's "tonight's already
         eaten shrimp", settled without guessing at a shelf.
 
-    The too-late test reads date.today() because confirm_frozen_items does;
-    matching it matters more here than the household's own clock, since the
-    two have to agree about what is still possible. (That function's server
-    clock is its own, older question.)
+    The too-late test reads the HOUSEHOLD's today because confirm_frozen_items
+    does, and the two have to agree about what is still possible: an earlier
+    draft read date.today() here "to match" a write that had, on a parallel
+    branch, just moved to household_today — so from 8pm Eastern the ask
+    dropped a night the write would happily have booked. Same clock on both
+    sides, or the screen and the write drift about what is still possible.
+    household_today opens its own connection, so it is resolved before this
+    function's own opens (see get_defrost_today's note).
     """
+    today = _cooker.household_today()
     conn = get_conn()
     booked = {
         (row["description"] or "")
@@ -756,7 +761,6 @@ def _settled_nights(weekly_plan_id: int, by_item: dict[str, dict]) -> set[str]:
     conn.close()
 
     dinner_window = _rhythm.get_household_rhythm().get("dinner_window")
-    today = date.today()
     settled = set(booked)
     for entry in by_item.values():
         lead_hours, _tier = lead_hours_for_item(entry["item"])
@@ -878,11 +882,12 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
     genuinely have started that night with about forty-five hours in hand,
     and was told it was too late instead.
 
-    The ask card itself reads no clock at all (meat_items_for_plan offers
-    every meat/seafood ingredient the plan calls for, whatever night it
-    falls on), so the disagreement was entirely on this side: the screen
-    offered a chip and the write refused it, which is DESIGN_SYSTEM.md's
-    §8 rule 7 inverted. The too-late note stays — a cook happening today
+    When this was fixed the ask card read no clock at all, so the
+    disagreement was entirely on this side: the screen offered a chip and
+    the write refused it, which is DESIGN_SYSTEM.md's §8 rule 7 inverted.
+    The ask has since learned to leave off a night that is already too late
+    (meat_items_for_plan, rule 4), and it reads the household's clock for
+    that for the same reason — see _settled_nights. The too-late note stays — a cook happening today
     really cannot be thawed for — but it is now only ever said about a
     night that has genuinely run out of time on the clock the household
     is living on.

@@ -498,22 +498,18 @@ def test_a_pin_east_of_utc_plus_9_holds_every_clock_on_one_instant(frozen_today)
         assert got["local"] == [2026, 9, 13], got
         assert got["localHour"] == 9, got
 
-        # THE SEAM, one zone further out than test_a_pin_does_not_flatten_local_
-        # and_utc_together measures it, because here it costs a whole DAY rather
-        # than eleven hours: freezegun applies tz_offset on top of an already
-        # tz-aware conversion, so the AWARE now() hands back the local wall time
-        # wearing a UTC label. Honest answer is 2026-09-12 19:00+00:00.
-        # Deliberately not fixed here — the only fixes are patching freezegun or
-        # forcing TZ=UTC for the duration of a pin, and the second would make a
-        # run under an explicitly-set TZ quietly not be that TZ, which is the
-        # whole point of the straddle job. It is invisible today because
-        # conftest.household_today() and cooker.household_now() both read the
-        # aware form, so they are wrong together and agree.
+        # THE SEAM, closed. Until 2026-09-17 freezegun applied tz_offset on
+        # top of an already tz-aware conversion, so the AWARE now() handed back
+        # the local wall time wearing a UTC label — 09:00 on the 13th here,
+        # a whole day out. This test used to assert THAT, with a note saying
+        # to flip it the day the seam closed. It closed on 2026-09-17 (see
+        # conftest's freezegun.configure block, from
+        # tests/test_pin_hour_household_clock.py's branch), and this is the
+        # flip: the aware clock now says the honest instant, the same one
+        # utcnow(), SQLite and node have said all along.
         aware = datetime.datetime.now(datetime.timezone.utc)
-        assert aware.date() == datetime.date(2026, 9, 13) and aware.hour == 9, (
-            "freezegun's aware now() still double-counts the offset; if this "
-            "starts failing, the seam is closed and this should assert "
-            "2026-09-12 19:00+00:00"
+        assert aware.date() == datetime.date(2026, 9, 12) and aware.hour == 19, (
+            f"the aware now() has drifted off the pinned instant: {aware}"
         )
         # ...and the naive pair above is the one every guard in this file and
         # every reader in app/ measures against, so it is the one that matters.

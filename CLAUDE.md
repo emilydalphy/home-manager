@@ -391,6 +391,42 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-17 — Merging the eleven overnight branches of 09-16/17 into
+  `main`: two of them fought, and the fight was real.** Eleven branches,
+  each green alone, ten of them appending to this log at the same line
+  (kept both sides every time). Two pairs disagreed in substance, and
+  `git` merged the code without a word:
+  - **`freezer-ask-household-clock` moved the defrost WRITE onto the
+    household's clock; `after-approve-real-questions` taught the defrost
+    ASK to drop a too-late night, reading `date.today()` "to match the
+    write".** Merged, the ask was on the server's clock and the write on the
+    household's — the exact evening bug the freezer branch fixed, back on
+    the other side, and a guard test caught it (`meat_items_for_plan`
+    offered one night where the household had two). `_settled_nights` now
+    reads `household_today()`, before its connection opens; the guard
+    became a catch pinned by that mutation; and the four tests that seeded
+    "tonight" off the process clock (two in `test_after_approve_real_questions`,
+    two in `test_defrost_confirm`, the latter already red under Kiritimati
+    on the freezer branch alone) seed off the household's — the move their
+    own comment said would come "in the same commit".
+  - **`pin-hour-household-clock` closed freezegun's aware-`now()` seam;
+    `today-pin-east-of-utc9` documented that seam as open and added a test
+    asserting it.** That test carried its own instruction ("if this starts
+    failing, the seam is closed and this should assert 2026-09-12
+    19:00+00:00"), so it was flipped as written; `tests.yml`'s header and
+    straddle comments now say both things that are true (the +9 limit is
+    closed AND `TZ` on `clock` is load-bearing for the pin-vs-household
+    reason); `conftest.pinned_utc_now`'s docstring stopped claiming the
+    aware form is wrong.
+  - Measured after: 5670 passed under `clock (sunday)`, `clock (monday)`,
+    `straddle (Pacific/Kiritimati)` and `straddle (Pacific/Niue)`, the
+    Kiritimati and Niue runs genuinely straddling (Toronto 22:00 on the
+    17th). The `clock (sunday)` red that sat on `main` since 09-15 is gone.
+  - Lesson for the overnight routine, said once: "green alone" is not
+    "green together" when two branches touch the same clock. The merge is
+    where that gets found, and it needs the suite run in every matrix shape
+    before the push, not after.
+
 - **2026-09-17 — The "−" on Check the week could rewrite yesterday. Branch
   `overnight/drop-dish-refuses-the-past`, NOT merged at the time of
   writing.** Loop Board bug, the exact sibling of `add-a-night-refuses-the-past`
