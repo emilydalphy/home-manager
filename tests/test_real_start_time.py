@@ -378,11 +378,11 @@ def test_the_meal_steps_dock_follows_the_real_start_and_shows_no_clock():
     html = _screen(_monday(_DINNER), "dinner", [card])
     # A cook that has begun is not offered a start again — and no time is
     # said anywhere on the recipe (2026-09-18).
-    assert 'data-wk-cook="dinner">Keep cooking<' in html
+    assert 'data-wk-start="1">Keep cooking<' in html
     assert "Start at" not in html and "6:02" not in html and "On the table" not in html
     # And the same screen without a start is "Start cooking", no time.
     html = _screen(_monday(_DINNER), "dinner", [_COOK_CARD])
-    assert 'data-wk-cook="dinner">Start cooking<' in html
+    assert 'data-wk-start="1">Start cooking<' in html
     assert not re.search(r"\b\d{1,2}:\d{2}\b", html)
 
 
@@ -393,7 +393,7 @@ def test_a_started_card_marked_cooked_offers_the_start_again_on_the_meal_step():
     the start again once it is unticked."""
     card = dict(_COOK_CARD, cook_started_at="2026-09-14T18:02:00", cooked_status="done")
     html = _screen(_monday(_DINNER), "dinner", [card])
-    assert 'data-wk-cook="dinner">Start cooking<' in html
+    assert 'data-wk-start="1">Start cooking<' in html
 
 
 # ---------- Cook's Tonight card ----------

@@ -51,8 +51,11 @@ _needs_node = pytest.mark.skipif(
 
 
 def _extract(name: str) -> str:
-    """Lift one brace-balanced `function name(...) {...}` out of shell.js."""
+    """Lift one brace-balanced `function name(...) {...}` out of shell.js
+    (keeping a leading `async`, which an await inside needs)."""
     start = SHELL_JS.index(f"function {name}(")
+    if SHELL_JS[max(0, start - 6) : start] == "async ":
+        start -= 6
     i = SHELL_JS.index("{", start)
     depth, j = 0, i
     while True:
@@ -366,7 +369,7 @@ def test_the_meal_step_is_the_crumb_the_title_the_count_the_cards_and_the_dock()
     assert html.count('<li class="cook-getout-item') == 6
     assert re.findall(r'recipe-step-num" aria-hidden="true">(\d+)<', html) == ["1", "2", "3", "4", "5"]
     # The dock: Start cooking as the one action, the swap as the quiet link.
-    assert 'class="dock-primary" data-wk-cook="dinner">Start cooking<' in html
+    assert 'class="dock-primary" data-wk-cook="dinner" data-wk-start="1">Start cooking<' in html
     assert 'class="dock-link wk-act-swap" data-wk-swap="dinner">Swap · I’ll pick<' in html
     assert "Tell me what instead" not in html
 
@@ -401,15 +404,15 @@ def test_the_thaw_note_is_the_one_line_under_the_title():
 @_needs_node
 def test_a_cook_already_under_way_offers_to_keep_cooking_without_a_time():
     html = _screen(_monday(_DINNER), "dinner", [_COOK_CARD], ticked=["steps:e7:0", "steps:e7:1"])
-    assert 'data-wk-cook="dinner">Keep cooking<' in html
+    assert 'data-wk-start="1">Keep cooking<' in html
     # The real start on record says the same.
     started = dict(_COOK_CARD, cook_started_at="2026-09-14T18:02:00")
     html = _screen(_monday(_DINNER), "dinner", [started])
-    assert 'data-wk-cook="dinner">Keep cooking<' in html and "6:02" not in html
+    assert 'data-wk-start="1">Keep cooking<' in html and "6:02" not in html
     # Marked cooked: not under way any more, and the start is offered again.
     done = dict(_COOK_CARD, cooked_status="done")
     html = _screen(_monday(_DINNER), "dinner", [done], ticked=["steps:e7:0"])
-    assert 'data-wk-cook="dinner">Start cooking<' in html
+    assert 'data-wk-start="1">Start cooking<' in html
 
 
 @_needs_node
@@ -417,7 +420,9 @@ def test_before_the_cook_view_loads_the_screen_waits_and_the_dock_still_starts()
     html = _screen(_monday(_DINNER), "dinner", [], plan_view="null")
     assert 'class="cook-norecipe recipe-norecipe">Getting the recipe…</p>' in html
     assert "Cooking for" not in html and 'aria-label="Steps"' not in html
-    assert 'data-wk-cook="dinner">Start cooking<' in html
+    # No card yet: the door still says Start cooking (cookStartCooking
+    # itself falls back to the recipe if the card turns out stepless).
+    assert 'data-wk-start="1">Start cooking<' in html
     # The view has answered and this entry is not on it: the no-recipe line.
     html = _screen(_monday(_DINNER), "dinner", [])
     assert "No saved recipe for this one — ask me for it in the chat." in html
@@ -430,7 +435,8 @@ def test_a_dinner_with_no_recipe_says_so():
     html = _screen(_monday(_DINNER), "dinner", [card])
     assert "No saved recipe for this one" in html
     assert 'aria-label="Steps"' not in html and "Cooking for" not in html
-    assert 'data-wk-cook="dinner">Start cooking<' in html
+    # Nothing to step through: the door says what Cook's screen says.
+    assert 'data-wk-cook="dinner">Done — on the table<' in html and "data-wk-start" not in html
 
 
 @_needs_node
@@ -466,6 +472,125 @@ def test_a_thing_can_still_be_added_from_the_ingredients():
     assert html.index('aria-label="Ingredients"') < html.index('data-wk-add="dinner"') < html.index('aria-label="Steps"')
 
 
+# ---------------------------------------------- the two doors into cook mode
+
+
+def _cook_listener() -> str:
+    """The [data-wk-cook] click handler, lifted out of wireMealsStep as the
+    one statement it is (steps.querySelectorAll(...).forEach(...))."""
+    wire = _extract("wireMealsStep")
+    start = wire.index("steps.querySelectorAll('[data-wk-cook]')")
+    end = wire.index("    // Swap is the in-place action now", start)
+    return wire[start:end]
+
+
+def _tap_cook(html: str, step: str, cook_meals: list) -> dict:
+    """Render the tapped screen's own button HTML, click its [data-wk-cook]
+    the way wireMealsStep does, and follow it through openRecipeFor →
+    cookEnterFocus → (maybe) cookStartCooking, with fetch watched."""
+    harness = (
+        _ESCAPE
+        + "function dayName(d, opts){ return 'Monday'; }\n"
+        + f"var weekState = {{ step: {json.dumps(step)}, selectedIndex: 0, mealSlot: 'dinner', mealBack: 'day', data: {{}} }};\n"
+        + f"var DAY = {json.dumps(_monday(_DINNER))};\n"
+        + "function mealsCurrentDay() { return DAY; }\n"
+        + "var POSTS = [], RENDERS = 0, TABS = [];\n"
+        + "function fetch(url, opts) { POSTS.push(url); return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ meals: [] }); } }); }\n"
+        + "function renderCook() { RENDERS += 1; }\n"
+        + "function renderCookFrom() {}\nfunction refreshPlanSurfacesAfterCook() {}\nfunction showToast() {}\n"
+        + "function cookTicked() { return false; }\n"
+        + "function cookMealKey(m) { return 'e' + m.entry_id; }\n"
+        + f"var cookState = {{ data: {{ weekly_plan_id: 1, meals: {json.dumps(cook_meals)} }}, focusStage: null, stepIdx: 0, pendingFocusTarget: false }};\n"
+        + "var kitchenState = { loading: false };\n"
+        + "function kitchenPanel() { return { dataset: { built: '1' } }; }\n"
+        # activateTab's one relevant line, so the target reaches kitchenEnterCook.
+        + "function activateTab(tab, push, opts) { TABS.push(tab); if (opts && opts.cookFocus) kitchenEnterCook(opts.cookFocus, !!opts.cookStart); }\n"
+        + "".join(_extract(n) + "\n" for n in (
+            "isSnackSlot", "daySlotEntry", "isRealCook", "mealsOriginFor", "openRecipeFor", "kitchenEnterCook",
+            "cookResolveFocusIndex", "cookEnterFocus", "cookFocusMeal", "cookFirstUndoneStep", "cookGoStage",
+            "cookStartCooking", "cookRecordStart", "cookPost", "isoClockMinutes", "cookStartOffsetLabel",
+            "clockLabel", "minutesInWords", "numberWord"))
+        + _var("START_SLACK_MINUTES") + "\n" + _var("START_MOVED_TROUBLE") + "\n"
+        + _var("NUMBER_WORDS") + "\n" + _var("TENS_WORDS") + "\n"
+        # A one-button DOM: the [data-wk-cook] button parsed out of the HTML.
+        + f"var HTML = {json.dumps(html)};\n"
+        + "var m = /<button([^>]*)data-wk-cook=\"([^\"]+)\"([^>]*)>/.exec(HTML);\n"
+        + "var attrs = (m[1] + ' ' + m[3]);\n"
+        + "var btn = { handler: null, getAttribute: function (a) { return a === 'data-wk-cook' ? m[2] : null; },\n"
+        + "  hasAttribute: function (a) { return attrs.indexOf(a + '=') !== -1; },\n"
+        + "  addEventListener: function (ev, fn) { this.handler = fn; } };\n"
+        + "var steps = { querySelectorAll: function () { return [btn]; } };\n"
+        + _cook_listener() + "\n"
+        + "btn.handler();\n"
+        + "setTimeout(function () { console.log(JSON.stringify({ stage: cookState.focusStage, step: cookState.stepIdx,\n"
+        + "  posts: POSTS, tabs: TABS, renders: RENDERS })); }, 20);\n"
+    )
+    res = nodeharness.run_node(harness, timeout=30)
+    assert res.returncode == 0, f"node failed: {res.stderr}"
+    return json.loads(res.stdout.strip().splitlines()[-1])
+
+
+def _day_card_actions() -> str:
+    harness = (
+        _ESCAPE
+        + "var REHEAT_ACTION_LABEL = 'Mark eaten';\n"
+        + "function planCookableNow() { return true; }\n"
+        + "function swapLineHtml() { return ''; }\n"
+        + "function cookTimeChip() { return ''; }\n"
+        + "".join(_extract(n) + "\n" for n in ("isSnackSlot", "daySlotEntry", "isRealCook", "slotActionsHtml"))
+        + _var("SWAP_LABEL") + "\n"
+        + f"console.log(JSON.stringify(slotActionsHtml({json.dumps(_monday(_DINNER))}, 'dinner', true)));\n"
+    )
+    res = nodeharness.run_node(harness, timeout=30)
+    assert res.returncode == 0, f"node failed: {res.stderr}"
+    return json.loads(res.stdout.strip())
+
+
+@_needs_node
+def test_the_day_steps_cook_this_opens_the_recipe_and_starts_nothing():
+    """The Day step's slot card and the Meal step's dock share data-wk-cook
+    and one listener. "Cook this" on the card is a look at the recipe, not
+    a start: it must land on the recipe stage and POST nothing."""
+    card = _day_card_actions()
+    assert 'data-wk-cook="dinner"' in card and ">Cook this<" in card
+    assert "data-wk-start" not in card
+    got = _tap_cook(card, "day", [_COOK_CARD])
+    assert got["tabs"] == ["kitchen"]
+    assert got["stage"] == "recipe" and got["step"] == 0
+    assert got["posts"] == [], "a look at the recipe recorded a start"
+
+
+@_needs_node
+def test_the_meal_steps_dock_starts_the_cook_and_records_the_start():
+    dock = _screen(_monday(_DINNER), "dinner", [_COOK_CARD])
+    assert 'data-wk-cook="dinner" data-wk-start="1">Start cooking<' in dock
+    got = _tap_cook(dock, "meal", [_COOK_CARD])
+    assert got["tabs"] == ["kitchen"]
+    assert got["stage"] == "step" and got["step"] == 0
+    assert got["posts"] == ["/api/cooker/start"]
+
+
+@_needs_node
+def test_a_dish_with_nothing_to_step_through_offers_the_same_thing_at_both_doors():
+    """Cook's recipe screen offers the finish for a card with no steps
+    (cookRecipeDockHtml); the Meal step's dock says the same and does not
+    start — and even a stray start lands on the recipe with no POST."""
+    empty = dict(_COOK_CARD, instructions=[])
+    dock = _screen(_monday(_DINNER), "dinner", [empty])
+    assert 'data-wk-cook="dinner">Done — on the table<' in dock
+    assert "data-wk-start" not in dock and "Start cooking" not in dock
+    got = _tap_cook(dock, "meal", [empty])
+    assert got["stage"] == "recipe" and got["posts"] == []
+    # A cooked one offers the undo, as Cook does.
+    done = _screen(_monday(_DINNER), "dinner", [dict(empty, cooked_status="done")])
+    assert 'data-wk-cook="dinner">Mark not cooked<' in done
+    # No saved recipe at all: the same.
+    none = _screen(_monday(_DINNER), "dinner", [dict(empty, has_full_recipe=False, ingredients=[])])
+    assert 'data-wk-cook="dinner">Done — on the table<' in none
+    # ...and cookStartCooking itself refuses to start a stepless dish.
+    assert "if (meal && !(meal.instructions || []).length) return cookGoStage('recipe');" in _extract("cookStartCooking")
+
+
 # ---------------------------------------------- the wiring
 
 
@@ -473,7 +598,8 @@ def test_start_cooking_on_the_meal_step_goes_straight_into_the_cooker():
     wire = SHELL_JS[SHELL_JS.index("function wireMealsStep("):]
     wire = wire[:wire.index("[data-wk-swap]")]
     assert "openRecipeFor({" in wire
-    assert "{ start: !!(entry && entry.source !== 'leftovers') }" in wire
+    assert "{ start: btn.hasAttribute('data-wk-start') }" in wire
+    assert "data-wk-start" not in _extract("slotActionsHtml")
     assert "activateTab('kitchen', true, { cookFocus: target, cookStart: !!(opts && opts.start) })" in _extract("openRecipeFor")
     assert "kitchenEnterCook(opts.cookFocus, !!opts.cookStart)" in SHELL_JS
     enter = _extract("cookEnterFocus")

@@ -13605,12 +13605,17 @@
   }
 
   // The Meal step's dock: "Start cooking" — the door into the cooker's
-  // steps (data-wk-cook, through openRecipeFor with `start`), which
+  // steps (data-wk-cook, and data-wk-start so wireMealsStep knows this
+  // button, and only this one, means "and start" — the Day step's "Cook
+  // this" carries the same data-wk-cook and opens the recipe), which
   // records the real start on the way — or "Keep cooking" once a cook is
   // under way, with the swap (SWAP_LABEL) as the quiet link into the
   // swap-in-place flow. A reheat night or a grab-and-go snack keeps "Mark
-  // eaten". Empty (no dock) when the slot has nothing to do — a past day,
-  // an away night. Never a time on the button (2026-09-18).
+  // eaten". A dish with nothing to step through offers what Cook's own
+  // screen offers for it — "Done — on the table" (cookRecipeDockHtml) —
+  // and opens that screen without starting anything. Empty (no dock)
+  // when the slot has nothing to do — a past day, an away night. Never a
+  // time on the button (2026-09-18).
   //
   // A meal on a plan Cook doesn't hold yet (next week's draft, on a Sunday
   // — see planCookableNow) gets no way into cook mode: cook mode only ever
@@ -13625,16 +13630,21 @@
     var eaten = entry.source === 'leftovers' || (isSnackSlot(slot) && !isRealCook(entry));
     var cookable = typeof planCookableNow !== 'function' || planCookableNow();
     var cookMeal = info && info.cookMeal;
-    var label;
+    // Nothing to step through — the card has landed and carries no steps
+    // (no saved recipe, or a saved one with none yet). Cook's screen for
+    // it offers the finish, so this door says the same and does not start.
+    var noSteps = !!cookMeal && !(cookMeal.instructions || []).length;
+    var label, start = false;
     if (eaten) label = REHEAT_ACTION_LABEL;
+    else if (noSteps) label = cookMeal.cooked_status === 'done' ? 'Mark not cooked' : 'Done — on the table';
     // Under way by its ticks, or by the real start being on record and
     // the meal not yet cooked (mealCookUnderway itself stays keyed to
     // ticks, which is what the cooker resumes from).
     else if (cookMeal && (mealCookUnderway(cookMeal) ||
-      (cookMeal.cooked_status !== 'done' && !!cookMeal.cook_started_at))) label = 'Keep cooking';
-    else label = 'Start cooking';
+      (cookMeal.cooked_status !== 'done' && !!cookMeal.cook_started_at))) { label = 'Keep cooking'; start = true; }
+    else { label = 'Start cooking'; start = true; }
     var row = cookable || eaten
-      ? '<button type="button" class="dock-primary" data-wk-cook="' + slot + '">' +
+      ? '<button type="button" class="dock-primary" data-wk-cook="' + slot + '"' + (start ? ' data-wk-start="1"' : '') + '>' +
           escapeHtml(label) + '</button>' +
         '<button type="button" class="dock-link wk-act-swap" data-wk-swap="' + slot + '">' + SWAP_LABEL + '</button>'
       : '<button type="button" class="dock-primary wk-act-swap" data-wk-swap="' + slot + '">' + SWAP_LABEL + '</button>' +
@@ -14223,16 +14233,19 @@
         // this came from ("‹ Monday") and lands back on it, rather than
         // saying Kitchen — somewhere this person has not been.
         //
-        // This screen IS the recipe (2026-09-18), so "Start cooking" goes
-        // straight into the cooker's steps rather than onto a second
-        // recipe screen — `start` records the real start on the way
-        // (cookStartCooking). "Mark eaten" opens the reheat card as before.
+        // The Meal step IS the recipe (2026-09-18), so its dock's "Start
+        // cooking" goes straight into the cooker's steps rather than onto
+        // a second recipe screen — `start` records the real start on the
+        // way (cookStartCooking). ONLY that button carries data-wk-start
+        // (mealDockHtml): the Day step's "Cook this" shares data-wk-cook
+        // and opens the recipe, as it always did, without starting
+        // anything. "Mark eaten" opens the reheat card as before.
         openRecipeFor({
           entryId: entry ? entry.entry_id : null,
           date: day ? day.date : null,
           slot: isSnackSlot(slot) ? 'snack' : slot,
           title: entry ? entry.title : ''
-        }, mealsOriginFor(day, slot), { start: !!(entry && entry.source !== 'leftovers') });
+        }, mealsOriginFor(day, slot), { start: btn.hasAttribute('data-wk-start') });
       });
     });
     // Swap is the in-place action now: one call, one new dish, answered on
@@ -15581,9 +15594,9 @@
   // the same two people sitting down three times is six plates, and "for
   // 6" read as a headcount. With nothing ticked the batch is just the one
   // day, and the line says so. Eaters can be 0 for a household with nobody
-  // on record, and then the line stops at the days — still true. Shared
-  // with the Cook card's own picker (cookAheadHtml) so the two surfaces
-  // say the same thing about the same batch.
+  // on record, and then the line stops at the days — still true. (The
+  // Cook card's own picker used to share this line; it came off the
+  // recipe screen on 2026-09-18, and the ask here is the one place left.)
   function cookAheadTallyLine(firstDate, tickedDates, eaters) {
     // A Cook card without a date (a leftovers-only card) never offers
     // days, so this is belt and braces — but "on undefined" must not
@@ -18374,6 +18387,10 @@
   // time anyway.
   function cookStartCooking() {
     var meal = cookFocusMeal();
+    // Nothing to step through is nothing to start: the recipe, and no
+    // time written down for a cook that cannot happen (the same rule
+    // cookRecipeDockHtml follows when it offers the finish instead).
+    if (meal && !(meal.instructions || []).length) return cookGoStage('recipe');
     cookState.stepIdx = meal ? cookFirstUndoneStep(meal) : 0;
     cookGoStage('step');
     // (typeof guard: tests/test_cook_journey.py runs the stages alone.)
