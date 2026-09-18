@@ -405,6 +405,195 @@ swap, under about ten words, no exclamation mark: "Lighter than the chops, and n
 Call submit_swap with the one dish."""
 
 
+# ---------- three picks for the swap sheet ----------
+# Plan's Swap sheet (Emily, 2026-09-18, board 19b "swap picks"): instead of
+# one dish landing on the slot the moment Swap is tapped, the sheet shows
+# THREE to choose from, each with a short reason, and only the tap on one
+# of them writes anything (DESIGN_SYSTEM §2b S10 — a decision is saved on
+# purpose). Same context, same gates, same apply as the one-dish swap; the
+# only new thing is that the model is asked for three and the household
+# picks. Priced under the same `swap_in_place` call-site label.
+
+_OPTION_SCHEMA = {
+    "type": "object",
+    "properties": dict(SWAP_TOOL["input_schema"]["properties"]),
+    "required": ["meal_name", "reason"],
+}
+_OPTION_SCHEMA["properties"]["reason"] = {
+    "type": "string",
+    "description": (
+        "A few words the household reads beside the dish on the sheet — what it "
+        "has going for it against the rest of the week: 'uses the sausages', "
+        "'no shopping', 'same tortillas', 'nothing to thaw'. Under six words, no full "
+        "stop, no exclamation mark. Never repeat the minutes — they are shown "
+        "separately."
+    ),
+}
+
+SWAP_OPTIONS_TOOL = {
+    "name": "submit_swap_options",
+    "description": "Submit three different replacement dishes for this slot, best first.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "options": {"type": "array", "items": _OPTION_SCHEMA, "minItems": 1, "maxItems": 3},
+        },
+        "required": ["options"],
+    },
+}
+
+OPTIONS_INSTRUCTIONS = INSTRUCTIONS.replace(
+    "and you are not \
+being asked for options. Pick one dish, and write it out properly enough to cook and to shop for.",
+    "and the household \
+will choose. Offer THREE genuinely different dishes — different proteins or cuisines from each \
+other, and at least one that needs little or no shopping — each written out properly enough to \
+cook and to shop for.",
+).replace(
+    "- `reason` is the one line shown under the new dish on the card. Warm, plain, specific to the \
+swap, under about ten words, no exclamation mark: \"Lighter than the chops, and nothing to thaw.\"",
+    "- `reason` is a few words beside each dish on the sheet — what it has going for it: \"uses the \
+sausages\", \"no shopping\", \"same tortillas\", \"nothing to thaw\". Under six words, no full stop, and never \
+the minutes (they are shown separately).",
+).replace(
+    "Call submit_swap with the one dish.",
+    "Call submit_swap_options with the three dishes, best first.",
+)
+
+MAX_SWAP_OPTIONS = 3
+
+
+def _pick_options(context: dict) -> list[dict]:
+    """The one model call behind the sheet — see _pick_replacement."""
+    from .. import agent
+
+    client = agent._client()
+    response = agent._create_with_retry(
+        client,
+        label="swap_in_place",
+        model=agent.MODEL,
+        max_tokens=4000,
+        tools=[SWAP_OPTIONS_TOOL],
+        tool_choice={"type": "tool", "name": "submit_swap_options"},
+        messages=[{
+            "role": "user",
+            "content": [
+                {"type": "text", "text": OPTIONS_INSTRUCTIONS, "cache_control": {"type": "ephemeral"}},
+                {"type": "text", "text": f"The slot (JSON):\n{json.dumps(context, indent=2)}"},
+            ],
+        }],
+        output_config=agent._effort_config("utility"),
+    )
+    if getattr(response, "stop_reason", None) == "max_tokens":
+        logger.warning("swap options hit max_tokens; the picks may be incomplete")
+    for block in response.content:
+        if getattr(block, "type", None) == "tool_use":
+            raw = (block.input or {}).get("options")
+            return [o for o in (raw or []) if isinstance(o, dict)]
+    return []
+
+
+def clean_option(raw: dict) -> dict | None:
+    """One pick as the sheet may hold it and send back — the model's shape,
+    with anything it may not put in the database dropped (the same trust
+    boundary _clean_ingredients draws), and `minutes` summed for the line
+    the sheet shows beside the reason."""
+    if not isinstance(raw, dict):
+        return None
+    name = (raw.get("meal_name") or raw.get("name") or "").strip()
+    if not name:
+        return None
+    pick = {
+        "meal_name": name,
+        "reason": (raw.get("reason") or "").strip(),
+        "ingredients": _clean_ingredients(raw.get("ingredients")),
+        "instructions": [s for s in (raw.get("instructions") or []) if isinstance(s, str) and s.strip()],
+        "food_groups": [g for g in (raw.get("food_groups") or []) if g in ("protein", "carb", "vegetable")],
+        "cuisine": (raw.get("cuisine") or "").strip(),
+        "main_protein": (raw.get("main_protein") or "").strip(),
+        "is_new_recipe": bool(raw.get("is_new_recipe", True)),
+    }
+    for key in ("prep_time_minutes", "cook_time_minutes", "default_servings"):
+        val = raw.get(key)
+        if isinstance(val, int) and not isinstance(val, bool) and val >= 0:
+            pick[key] = val
+    total = (pick.get("prep_time_minutes") or 0) + (pick.get("cook_time_minutes") or 0)
+    if total:
+        pick["minutes"] = total
+    return pick
+
+
+def swap_options(weekly_plan_id: int, entry_id: int, avoid: list[str] | None = None, picker=None) -> dict:
+    """
+    Three dishes the household could put on this slot instead — nothing
+    written. `status` 'options' with `options` (each a clean pick the sheet
+    hands straight back to apply_swap_option), or 'refused' with the
+    sentence to show: a night already gone, or nothing that clears the
+    gates.
+
+    Each pick is run through pick_gate here, so a dish the house can't
+    have never reaches the sheet; the gate runs again on apply, since the
+    pick comes back over HTTP and the plan may have moved in between.
+    `picker` is the model call, injectable so tests never touch the API.
+    """
+    pick_many = picker or _pick_options
+    entry = _entry(weekly_plan_id, entry_id)
+    if entry["slot_state"] != "planned" or not entry["meal"]:
+        raise ValueError("There's no meal on that slot to swap.")
+    tried = _dedup([entry["meal"]] + list(avoid or []))
+    if _weekly_plan.night_has_gone(entry["date"]):
+        return {"status": "refused", "message": _weekly_plan.NIGHT_GONE, "avoid": tried}
+    context = build_swap_context(weekly_plan_id, entry, tried)
+    options: list[dict] = []
+    seen = {n.lower() for n in tried}
+    for raw in pick_many(context) or []:
+        pick = clean_option(raw)
+        if not pick or pick["meal_name"].lower() in seen:
+            continue
+        why_not = pick_gate(pick, entry)
+        if why_not:
+            logger.warning("swap option %r left off the sheet: %s", pick["meal_name"], why_not)
+            continue
+        seen.add(pick["meal_name"].lower())
+        options.append(pick)
+        if len(options) >= MAX_SWAP_OPTIONS:
+            break
+    if not options:
+        return {"status": "refused", "message": REFUSAL, "avoid": tried}
+    return {
+        "status": "options",
+        "entry_id": entry["entry_id"],
+        "date": entry["date"],
+        "slot": entry["slot"],
+        "replacing": entry["meal"],
+        "options": options,
+        "avoid": tried,
+    }
+
+
+def apply_swap_option(weekly_plan_id: int, entry_id: int, option: dict) -> dict:
+    """
+    The tap on one of the three: the same gates and the same apply_pick
+    door as "Swap · I'll pick", so undo, leftovers and the grocery list
+    behave identically. `status` 'swapped' with the refreshed day, or
+    'refused' and nothing written.
+    """
+    entry = _entry(weekly_plan_id, entry_id)
+    if entry["slot_state"] != "planned" or not entry["meal"]:
+        raise ValueError("There's no meal on that slot to swap.")
+    if _weekly_plan.night_has_gone(entry["date"]):
+        return {"status": "refused", "message": _weekly_plan.NIGHT_GONE}
+    pick = clean_option(option)
+    if not pick:
+        return {"status": "refused", "message": REFUSAL}
+    why_not = pick_gate(pick, entry)
+    if why_not:
+        return {"status": "refused", "message": REFUSAL}
+    out = apply_pick(weekly_plan_id, entry, pick)
+    out["status"] = "swapped"
+    return out
+
+
 def _pick_replacement(context: dict) -> dict:
     """
     The single model call. Lazily imports agent for its client, retry,

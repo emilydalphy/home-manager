@@ -2919,6 +2919,54 @@ def week_swap_in_place(week_start: str, req: SwapInPlaceRequest):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+@app.get("/api/week/{week_start}/swap-options")
+def week_swap_options(week_start: str, entry_id: int):
+    """
+    Three dishes for the Swap sheet (Plan, Emily 2026-09-18, board 19b) —
+    one small model call, nothing written. `status` 'options' carries the
+    picks the sheet hands straight back to /swap-pick; 'refused' carries
+    the sentence to show (a night already gone, nothing clearing the
+    gates). Household-scoped like every other week route.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.swap_options(plan_id, entry_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except AssistantUnavailableError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.exception("Swap options failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+class SwapPickRequest(BaseModel):
+    """The tap on one of the sheet's three: the slot, and the pick exactly
+    as /swap-options handed it out."""
+    entry_id: int
+    option: dict
+
+
+@app.post("/api/week/{week_start}/swap-pick")
+def week_swap_pick(week_start: str, req: SwapPickRequest):
+    """
+    Put the chosen pick on the slot — the same gates and the same door as
+    the one-dish swap (tools.apply_swap_option), so undo, leftovers and
+    the list behave identically. A 200 can still say no (`status`
+    'refused'); nothing is written then.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.apply_swap_option(plan_id, req.entry_id, req.option)
+    except tools.SlotRefused as e:
+        return {"status": "refused", "message": str(e)}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Swap pick failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 class ProposalRowRequest(BaseModel):
     row: int
     candidate: int | None = None
