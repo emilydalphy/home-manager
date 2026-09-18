@@ -286,7 +286,10 @@ def _parse_pin(raw):
     Sunday from the app's point of view. Use `household_pin(..., on=...)` when
     the weekday is the thing under test.
     """
-    if isinstance(raw, _dt.datetime):
+    # `real_datetime` as well as the patched class: _real_now hands back the
+    # unpatched one now, because wrapping it into a FakeDatetime loses `fold`
+    # and so re-creates this file's own hour-out bug inside a fall-back.
+    if isinstance(raw, (_dt.datetime, freezegun.api.real_datetime)):
         return raw
     raw = str(raw).strip()
     if raw.lower() in _WEEKDAY_NAMES:
@@ -531,27 +534,31 @@ def _real_now():
     handed a test a clock an hour out, which is the one thing that marker
     exists to prevent.
 
-    Invisible to CI — the four `clock` jobs pin by weekday NAME, resolved
-    inside seven days, so they can never cross a change — and roughly a coin
-    flip for the far-future-pin sweep, which is what aged five fixtures out on
-    2026-09-14 and is the reason to keep doing it. `real_datetime` is the
-    unpatched class, so it reads the zone as it actually stands at that
-    instant.
+    CI REACHES THIS, and the first cut of this docstring said it could not.
+    A weekday-name pin resolves to the next such day ON OR AFTER today, so it
+    reaches up to six days ahead and a clock change inside that window puts
+    the pin on the other side. Swept over 2026 at America/Toronto for the four
+    jobs actually in the matrix: sunday 12 days a year, monday 10, friday 2,
+    saturday none — 24 job-days, and the next window opens 2026-10-26. It also
+    crosses for a far-future pin, which is what aged five fixtures out on
+    2026-09-14; about 35% of random far pins from a summer today, not the half
+    first written. `real_datetime` is the unpatched class, so it reads the zone
+    as it actually stands at that instant.
 
-    The wrap back into a FakeDatetime is for `_parse_pin`, which recognises a
-    datetime by `isinstance` and is looking at FakeDatetime here — a bare
-    real_datetime falls through to its string branch instead. NOTHING PINS IT:
-    dropping it leaves the whole suite green, because str() round-trips a naive
-    datetime through fromisoformat without losing a microsecond. It is here so
-    the call takes the branch it is written for rather than working by
-    accident, which is a smaller claim than a test.
+    NO WRAP BACK INTO A FakeDatetime, and that is the second half of the fix
+    rather than a style choice. `freezegun.api.datetime_to_fakedatetime`
+    rebuilds the value field by field and does NOT carry `fold`, so inside
+    the repeated hour of a fall-back it resolves the ambiguity to the wrong
+    side and hands `live_clock` a clock an hour out — the same symptom, the
+    same magnitude and the same marker as the bug this function exists to
+    fix, for 01:00-01:59 on the fall-back Sunday. Found by review, after the
+    first cut shipped the wrap as a free safety improvement; going through
+    `str()` instead is equally wrong for the same reason, since an ISO
+    string does not encode fold either. `_parse_pin` recognises the
+    unpatched class directly now.
     """
-    if _REAL_EPOCH_AT_PIN is None:
-        return _dt.datetime.now()
     real_epoch = _REAL_EPOCH_AT_PIN + (time.time() - _FROZEN_EPOCH_AT_PIN)
-    return freezegun.api.datetime_to_fakedatetime(
-        freezegun.api.real_datetime.fromtimestamp(real_epoch)
-    )
+    return freezegun.api.real_datetime.fromtimestamp(real_epoch)
 
 
 @pytest.fixture(autouse=True)

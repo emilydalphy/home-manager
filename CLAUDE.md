@@ -427,13 +427,44 @@ why*, not duplicating the diff.
     against `main`'s conftest (`test_pending_photos_nobody_saved_are_swept_after_a_day`
     — its fixture is 60 seconds past the cutoff, which an hour of slip swamps),
     **71 passed** with the fix.
-  - **CI CANNOT REACH THIS AND STILL CANNOT, which is why it needed a test that
-    forces its own pin.** `live_clock` only does anything under a SESSION pin
-    (`_marked_clock` returns early when `_pomona_freezer` is None), so a marker
-    alone cannot reproduce it, and the four `clock` jobs pin by weekday NAME,
-    resolved inside seven days, so they can never cross a change. What does
-    cross one, about half the time, is the far-future-pin sweep — the technique
-    that aged five fixtures out on 2026-09-14.
+  - **"CI CANNOT REACH THIS" WAS THE FIRST VERSION OF THIS ENTRY AND IT IS
+    EXACTLY BACKWARDS: CI GOES RED ON `main` ON 2026-10-26, thirty-eight days
+    after this was written.** Found by review, and it is the strongest argument
+    for the branch rather than, as first written, the argument against its
+    urgency. A weekday-name pin resolves to the next such day ON OR AFTER
+    today, so it reaches up to SIX days ahead, and a clock change inside that
+    window puts the pin on the other side of it. Swept over 2026 at
+    `America/Toronto` for the four jobs actually in the matrix: **`clock
+    (sunday)` 12 days a year, `clock (monday)` 10, `clock (friday)` 2,
+    `clock (saturday)` none — 24 job-days.** Reproduced on `main` at
+    `--today=2026-11-01`, which is what the sunday job resolves to in that
+    window: **3 failed** (this file's two plus
+    `test_recipe_photo_import.py`), against **87 passed** on the branch.
+    The March 2026 window predates the `live_clock` marker, which is why
+    nobody has seen it yet. `live_clock` only does anything under a SESSION
+    pin, so a marker alone still cannot reproduce it — which is why the test
+    forces its own.
+  - **THE FIRST CUT LEFT A RESIDUAL OF ITS OWN BUG AND SHIPPED IT AS A FREE
+    SAFETY IMPROVEMENT — found by review, fixed here.** It wrapped the answer
+    back into a `FakeDatetime` for `_parse_pin`'s benefit, and
+    `freezegun.api.datetime_to_fakedatetime` rebuilds the value field by field
+    WITHOUT carrying `fold`. So inside the repeated hour of a fall-back the
+    ambiguity resolves to the wrong side and `live_clock` gets a clock an hour
+    out — the same symptom, the same magnitude and the same marker as the bug
+    this branch exists to close, for 01:00-01:59 on the fall-back Sunday.
+    Measured: the second pass of that hour round-trips **3600 seconds** wrong
+    through the wrap and **0** without it. The docstring called it unpinned
+    decoration; it was not neutral. `_parse_pin` recognises the unpatched class
+    directly now, and going through `str()` instead — the alternative that
+    docstring named — is equally wrong, because an ISO string does not encode
+    fold either.
+  - **"The calendar does not allow measuring the opposite direction today" was
+    also false**, and is dropped: it is the NORTHERN calendar that does not.
+    Review measured `Australia/Sydney` and `Pacific/Auckland` at a January pin
+    giving **-3600s** (the restored clock an hour AHEAD) on the same day
+    Toronto gives +3600s, and `Australia/Lord_Howe` giving **-1799.93s** — a
+    non-hour DST delta the builder never tested and the fix handles. Both
+    directions are measurable and both are measured.
   - `tests/test_frozen_clock.py::test_a_pin_across_a_daylight_saving_change_still_restores_the_real_clock`
     simulates the session pin exactly as `pytest_configure` does (real epoch
     before, frozen epoch after, the pair written into the globals `_real_now`
@@ -486,11 +517,24 @@ why*, not duplicating the diff.
     CI weekday pins at `TZ=America/Toronto`: monday, friday, saturday and
     sunday each **5668 passed, 3 skipped, 0 failed** (the 3 are the tests that
     skip themselves under a pin because they are about the unpinned clock).
-  - **Deliberately not done:** the far-future sweep itself was not re-run over
-    the whole suite, so this fixes the hazard the sweep hits rather than
-    re-auditing what the sweep would find; and `_real_now`'s `_REAL_EPOCH_AT_PIN
-    is None` arm is still unreachable from the only caller (`_marked_clock`
-    checks `_pomona_freezer` first), untouched and unpinned as before.
+  - **The far-future sweep WAS run on review, and it is not otherwise clean —
+    which the first version of this entry implied it was.** Whole suite at
+    `TZ=America/Toronto --today=2026-01-15`: **main 5 failed / 5662 passed**,
+    **branch 3 failed / 5665 passed**. The branch removes exactly the two
+    clock failures. The remaining three are pre-existing on `main` and are
+    NOT DST-related — plain date/weekday cliffs in
+    `test_food_quality_floor.py`, `test_grocery_spices.py` and
+    `test_inventory_two_places_pick.py`, which give 3 failures at a January
+    pin, 3 at 2026-11-20, 2 at 2026-07-04 and 0 at 2027-02-10 or 2030-06-01.
+    Not this branch's; their own card.
+  - **Deliberately not done:** `_real_now`'s `_REAL_EPOCH_AT_PIN is None` arm
+    is still unreachable from the only caller (`_marked_clock` checks
+    `_pomona_freezer` first), untouched and unpinned as before. And
+    `freezegun.api.real_datetime` is an undocumented internal
+    (`freezegun.__all__` is only `freeze_time` and `configure`) — acceptable
+    because `requirements-dev.txt` pins `freezegun==1.5.5` exactly and this
+    file already depends on three other internals of it, but it is a thing to
+    check on an upgrade.
 
 - **2026-09-17 — Merging the eleven overnight branches of 09-16/17 into
   `main`: two of them fought, and the fight was real.** Eleven branches,

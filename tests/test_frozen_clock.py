@@ -536,14 +536,20 @@ def test_a_pin_across_a_daylight_saving_change_still_restores_the_real_clock():
     other, and the restored clock is an hour out — which is the whole quantity
     `recipe_photos.sweep_pending` reads.
 
-    IT NEEDED A TEST OF ITS OWN BECAUSE CI CANNOT REACH IT. The live_clock
-    marker only does anything under a SESSION pin (`_marked_clock` returns
-    early when `_pomona_freezer` is None), and the four `clock` jobs pin by
-    weekday name, resolved inside seven days, so they never cross a change. So
-    this forces its own session pin the way pytest_configure does, rather than
-    waiting for somebody to type `--today=<a date in the other half of the
-    year>`. That is the far-future-pin sweep the 2026-09-14 entry used to age
-    fixtures, and it crosses a change about half the time.
+    IT NEEDS A TEST OF ITS OWN BECAUSE IT IS A DATED FAILURE, NOT AN
+    UNREACHABLE ONE — and the first version of this docstring said the
+    opposite. A weekday-name pin resolves to the next such day ON OR AFTER
+    today, so it reaches up to six days ahead, and a clock change inside that
+    window puts it on the other side: sunday 12 days a year at Toronto, monday
+    10, friday 2, saturday none. Measured on main at `--today=2026-11-01`,
+    which is what the sunday job resolves to that week: 3 failed, this file
+    and test_recipe_photo_import. So without a test that forces its own pin
+    this would be green every day of the year but 24, and red on those.
+
+    The live_clock marker only does anything under a SESSION pin
+    (`_marked_clock` returns early when `_pomona_freezer` is None), so a
+    marker alone cannot reproduce it — hence the pin forced here the way
+    pytest_configure does it.
 
     Written to mean the same thing in every month and on every runner:
     America/Toronto is forced — what the `clock` jobs use, and it observes DST
