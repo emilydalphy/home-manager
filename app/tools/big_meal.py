@@ -82,6 +82,7 @@ from datetime import date, datetime, time, timedelta
 from ..db import get_conn
 from ._shared import household_id
 from . import attendance as _attendance
+from . import cooker as _cooker
 from . import coordination as _coordination
 from . import grocery as _grocery
 from . import household as _household
@@ -1064,7 +1065,7 @@ def _delete_prep(entry_id: int | None, date_str: str) -> int:
 
 def shop_dates(date_str: str, today: date | None = None) -> dict:
     """The two trips' dates. The early trip is dropped once it is already too late for it."""
-    today = today or date.today()
+    today = today or _cooker.household_today()
     d = date.fromisoformat(date_str)
     early = d - timedelta(days=EARLY_SHOP_DAYS_AHEAD)
     fresh = d - timedelta(days=FRESH_SHOP_DAYS_AHEAD)
@@ -1099,7 +1100,7 @@ def spread_prep(date_str: str, today: date | None = None) -> list[dict]:
         # approved (approve_weekly_plan calls spread_prep_for_plan), the
         # same moment its shopping does.
         return []
-    today = today or date.today()
+    today = today or _cooker.household_today()
     d = date.fromisoformat(date_str)
     anchor = _prep_anchor(date_str)
     weekday = _weekday(date_str)
@@ -1232,7 +1233,7 @@ def dishes_of(entry, menu: dict) -> list[dict]:
 
 def _upcoming_menus(today: date | None = None) -> list[tuple[dict, object]]:
     """Every hosting answer from today on whose menu entry is still there, nearest first."""
-    today = today or date.today()
+    today = today or _cooker.household_today()
     conn = get_conn()
     rows = conn.execute(
         "SELECT * FROM holiday_answers WHERE household_id = ? AND answer = 'hosting' AND date >= ? ORDER BY date",
@@ -1258,7 +1259,7 @@ def shop_split(today: date | None = None) -> dict | None:
     A line is early when every menu ingredient on it keeps (EARLY_CATEGORIES)
     OR another meal needs it before the early trip anyway; fresh otherwise.
     """
-    today = today or date.today()
+    today = today or _cooker.household_today()
     for answer, entry in _upcoming_menus(today):
         trips = shop_dates(answer["date"], today)
         conn = get_conn()
@@ -1652,10 +1653,13 @@ def _spoken_summary(info: dict) -> str:
         bits.append(" ".join(f"{_weekday(day)}: {_and(names)}." for day, names in sorted(by_day.items())))
     shop = info.get("shop")
     if shop:
+        # The household's own day, not the server's: "the fresh things
+        # tomorrow" is a sentence somebody reads, and on the server's clock
+        # it said "today" from about 8pm the evening before.
         if shop["early"]["date"]:
-            bits.append(f"Shop in two trips — the keeps-well things by {_weekday(shop['early']['date'])}, the fresh things {_relative_day(shop['fresh']['date'], date.today())}.")
+            bits.append(f"Shop in two trips — the keeps-well things by {_weekday(shop['early']['date'])}, the fresh things {_relative_day(shop['fresh']['date'], _cooker.household_today())}.")
         else:
-            bits.append(f"One shop left, {_relative_day(shop['fresh']['date'], date.today())}.")
+            bits.append(f"One shop left, {_relative_day(shop['fresh']['date'], _cooker.household_today())}.")
     if info.get("note"):
         bits.append(info["note"])
     tl = info.get("timeline")

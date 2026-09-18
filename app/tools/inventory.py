@@ -11,6 +11,28 @@ from . import grocery as _grocery
 from . import quantities as _quantities
 
 
+def _today() -> date:
+    """
+    Today where the household lives, not where the container runs.
+
+    Lazily imported, and that is forced rather than stylistic: cooker
+    imports this module at module scope, so `from . import cooker` up there
+    would be a cycle. Same shape held._today uses, for the same reason.
+
+    An expiration_date is a CALENDAR DATE, never a UTC instant, so there is
+    no sense in which the server's day is the right one to compare it
+    against. The container runs UTC and households default to
+    America/Toronto: before this, from about 8pm local, milk good all day
+    today was reported `expired`, and get_expiring_soon is one of the two
+    checks agent._build_proactive_check_block injects into the model's
+    context at the start of a session — so the assistant said so out loud,
+    unprompted, in exactly the evening hours somebody opens the app.
+    """
+    from .cooker import household_today
+
+    return household_today()
+
+
 _LEADING_NUM_RE = re.compile(r"^\s*([\d.]+)\s*(.*)$")
 
 
@@ -75,9 +97,9 @@ def step_inventory_expiration(item_id: int, delta_days: int) -> dict:
         return {"item_id": item_id, "found": False}
     base = row["expiration_date"]
     try:
-        base_date = date.fromisoformat(base) if base else date.today()
+        base_date = date.fromisoformat(base) if base else _today()
     except ValueError:
-        base_date = date.today()
+        base_date = _today()
     new_date = (base_date + timedelta(days=delta_days)).isoformat()
     conn.execute("UPDATE inventory_items SET expiration_date = ?, updated_at = datetime('now') WHERE id = ?", (new_date, item_id))
     conn.commit()
@@ -515,8 +537,9 @@ def get_expiring_soon(days: int = 4) -> list[dict]:
     meal, so near-expiring items get worked in before they're wasted (see
     generate_weekly_plan's use_it_up weighting).
     """
-    cutoff = (date.today() + timedelta(days=days)).isoformat()
-    today = date.today().isoformat()
+    today_date = _today()
+    cutoff = (today_date + timedelta(days=days)).isoformat()
+    today = today_date.isoformat()
     conn = get_conn()
     rows = conn.execute(
         "SELECT id, item, quantity, category, expiration_date FROM inventory_items "
@@ -545,7 +568,9 @@ def get_fresh_perishable_inventory(near_expiring_days: int = 4) -> list[dict]:
     hand over buying more of the same, distinct from near_expiring_inventory's
     stronger "use this up before it's wasted" signal.
     """
-    cutoff = (date.today() + timedelta(days=near_expiring_days)).isoformat()
+    # The same clock get_expiring_soon reads: this is its complement, and
+    # two clocks here would let one item be in both lists or in neither.
+    cutoff = (_today() + timedelta(days=near_expiring_days)).isoformat()
     conn = get_conn()
     rows = conn.execute(
         "SELECT id, item, quantity, category, expiration_date FROM inventory_items "
