@@ -83,10 +83,10 @@ _ESCAPE = (
 def test_one_door_every_dish_tap_goes_through():
     """openRecipeFor is where the tab switch, the focus target and the back
     link are decided — once, not five times."""
-    assert "function openRecipeFor(target, origin)" in SHELL_JS
+    assert "function openRecipeFor(target, origin, opts)" in SHELL_JS
     fn = _extract("openRecipeFor")
     assert "cookState.focusOrigin = origin || null;" in fn
-    assert "activateTab('kitchen', true, { cookFocus: target });" in fn
+    assert "activateTab('kitchen', true, { cookFocus: target, cookStart: !!(opts && opts.start) });" in fn
 
 
 def test_the_back_link_never_calls_history_back():
@@ -246,10 +246,11 @@ def test_todays_plain_dish_names_go_through_the_link_helper():
 
 @_needs_node
 def test_the_meal_step_shows_the_recipe_and_none_of_its_controls():
-    """One renderer, two frames: cook mode gets the working recipe, Meals'
-    Meal step gets the same words with nothing on them that writes. Every
-    control in cookDetailHtml lands through onCookClick/renderCook, which
-    only ever redraw the Kitchen panel."""
+    """One renderer, two frames (since 2026-09-18 the recipe's own cards,
+    recipeIngredientsHtml / recipeStepsHtml): cook mode gets the working
+    recipe, Meals' Meal step gets the same words with nothing on them that
+    writes. Every control lands through onCookClick/renderCook, which only
+    ever redraw the Kitchen panel."""
     meal = {
         "meal": "Chicken Tacos", "has_full_recipe": True, "default_servings": 4,
         "cooked_status": "pending", "entry_id": 7, "reasoning": "Quick on a school night.",
@@ -263,97 +264,62 @@ def test_the_meal_step_shows_the_recipe_and_none_of_its_controls():
         + "var COOK_VOICE_ENABLED = false;\n"
         + "var cookState = { focusOrigin: null };\n"
         + "var COOK_ICONS = { check: '<svg/>', mic: '<svg/>' };\n"
-        # 2026-09-10: the ingredient line is one shared helper now
-        # (cookIngredientLabel), rather than the same quantity-then-item
-        # expression written out in the renderer and again in the serving
-        # stepper's rewrite. cookState lost focusStepsChecked in the same
-        # change — step ticks live in the tick store now (cookReadTicks),
-        # which the plain frame deliberately never touches, so the stub
-        # here no longer needs to carry one.
-        # The CHECKABLE copy really does read the tick store now, so the
-        # harness has to answer it. Nothing is ticked here on purpose: this
-        # test is about which controls each frame renders, and the plain
-        # frame's whole point is that it renders none of them.
+        + "var RECIPE_ICONS = { minus: '<svg/>', plus: '<svg/>', chevLeft: '<svg/>' };\n"
         + "function cookTicked(){ return false; }\n"
         + _extract("cookMealKey") + "\n"
-        # cookIngredientLabel reads its amount through humanQtyText now
-        # (item 14, design-tidy pass 2026-09-11).
         + _var_block("HUMAN_QTY_FRACTIONS") + "\n"
-        + _extract("humanQtyAmount") + "\n"
-        + _extract("humanQtyText") + "\n"
-        + _extract("cookIngredientLabel") + "\n"
-        # 2026-09-10, review round: the "eyeball these" note is rendered off
-        # the meal now rather than poked into a hidden <p> after a rescale,
-        # so both frames call one helper for it. The plain frame carries no
-        # stepper, so it only ever renders the empty string — which is the
-        # point of asserting below that it gains no control.
-        + _extract("cookUnscaledHtml") + "\n"
-        # ...and the serving count is read through one helper now, because
-        # the cook's own count lives beside the meal's while a rescale is in
-        # flight. The plain frame renders no stepper at all, which is the
-        # point of the assertions below.
-        + _extract("cookServesShown") + "\n"
-        + _extract("cookBackLabel") + "\n"
-        + _extract("cookFocusEndHtml") + "\n"
-        + _extract("cookStepLi") + "\n"
-        + _extract("cookInstructionsHtml") + "\n"
-        + _extract("cookDetailHtml") + "\n"
-        + _extract("isSnackSlot") + "\n"
+        + "".join(_extract(n) + "\n" for n in (
+            "humanQtyAmount", "humanQtyText", "cookIngredientLabel", "cookUnscaledHtml", "cookServesShown",
+            "cookIngTickId", "cookGetOutRowHtml", "recipeServesHtml", "recipeIngredientsHtml",
+            "recipeIngredientRowHtml", "recipeStepsHtml", "isSnackSlot"))
         + "console.log(JSON.stringify({\n"
-        + f"  plain: cookDetailHtml({json.dumps(meal)}, 'meal', false, true),\n"
-        + f"  cooking: cookDetailHtml({json.dumps(meal)}, 3, false, false)\n"
+        + f"  plain: recipeIngredientsHtml({json.dumps(meal)}, 'wk', false) + recipeStepsHtml({json.dumps(meal)}, false),\n"
+        + f"  cooking: recipeServesHtml({json.dumps(meal)}, 3) + recipeIngredientsHtml({json.dumps(meal)}, 3, true) + recipeStepsHtml({json.dumps(meal)}, true)\n"
         + "}));\n"
     )
     got = _run_node(harness)
     plain, cooking = got["plain"], got["cooking"]
 
     # The recipe really is there.
-    for wanted in ("Ingredients", "Instructions", "chicken thigh", "tortillas",
-                   "Griddle for 4 minutes a side.", "Advance prep", "Do ahead", "Day of"):
+    for wanted in ("Ingredients", "Steps", "chicken thigh", "tortillas",
+                   "Griddle for 4 minutes a side.", "Do ahead"):
         assert wanted in plain, f"the reading copy lost {wanted!r}"
 
     # ...and not one thing on it writes.
-    for control in ('data-cook="serves"', 'data-cook="voice"', 'data-cook="check-step"',
-                    'data-cook="fill"', 'data-cook="focus-check"', 'data-cook="why"',
-                    "cook-focus-end", "cook-serves", "cook-mic"):
+    for control in ('data-cook="serves"', 'data-cook="voice"', 'data-cook="check-ing"',
+                    'data-cook="fill"', 'data-cook="focus-check"', "cook-serves", "cook-mic", "<button"):
         assert control not in plain, f"the reading copy still carries {control!r}"
-    # The ids are handles for exactly those controls; a second copy of one
-    # would have getElementById reaching the wrong screen.
-    assert "id=" not in plain
 
-    # The cooking copy is untouched — every one of those is still there.
-    for control in ('data-cook="serves"', 'data-cook="check-step"', 'id="cook-ings-3"',
-                    "cook-focus-end"):
+    # The cooking copy is the one with the controls.
+    for control in ('data-cook="serves"', 'data-cook="check-ing"'):
         assert control in cooking, f"cook mode lost {control!r}"
 
-    # (The Meal step stopped rendering this plain frame on 2026-09-12 — the
-    # recipe card became the clock, tests/test_meal_clock.py — but the
-    # frame is still the one renderer cook mode's whole method reads, so
-    # its two-frames contract stays tested here.)
 
-
-def _clock_html(cook_meal, slot: str) -> str:
-    """mealClockHtml for one cooker-view card on one slot — the part of the
-    Meal step under the hero (2026-09-12)."""
+def _recipe_html(cook_meal, slot: str, plan_view: str = "undefined") -> str:
+    """The part of the Meal step under the title for one cooker-view card
+    on one slot: the recipe's cards, or the line that says why not."""
     harness = (
         _ESCAPE
-        + "var weekState = { data: { slot_times: { dinner: '6:30' } } };\n"
         + "var GRO_ICONS = { chevRight: '<svg/>' };\n"
-        + "function capitalizeFirst(s) { return String(s).charAt(0).toUpperCase() + String(s).slice(1); }\n"
+        + "var WK_ADD_ICON = '<svg/>';\n"
+        + "var RECIPE_ICONS = { minus: '<svg/>', plus: '<svg/>', chevLeft: '<svg/>' };\n"
         + "function cookIngredientLabel(i) { return ((i.qty ? i.qty + ' ' : '') + i.item).trim(); }\n"
-        + _var_block("NUMBER_WORDS") + "\n"
-        + _var_block("TENS_WORDS") + "\n"
+        + "function cookMealKey(m) { return 'e' + m.entry_id; }\n"
+        + "function cookTicked() { return false; }\n"
+        + "function cookServesShown(m) { return m.default_servings; }\n"
+        + "function isRealCook(e) { return e && e.title !== 'Apple slices'; }\n"
+        + (f"function planCookView() {{ return {plan_view}; }}\nfunction planCookViewFailed() {{ return false; }}\n"
+           if plan_view != "undefined" else "")
         + _extract("isSnackSlot") + "\n"
         + "".join(_extract(n) + "\n" for n in (
-            "numberWord", "countInWords", "minutesInWords", "clockLabel", "slotTableMinutes",
-            "mealTotalMinutes", "mealStepMinutes", "ingredientNamesLine", "mealClockSides", "mealClockTotal", "finishSideStop", "mealClockStops",
-            "mealClockEyebrow", "mealClockFor", "mealStopHtml", "mealClockHtml"))
-        + "var STOP_TITLE_TAIL = /^(a|the|in|on|of|to|and|or|with|for)$/i;\n"
-        + _extract("stopTitleSplit") + "\n"
+            "cookUnscaledHtml", "cookIngTickId", "cookGetOutRowHtml", "recipeIngredientsHtml",
+            "recipeIngredientRowHtml", "recipeStepsHtml", "mealRecipeFor", "mealNoRecipeHtml", "mealIngredientsHtml"))
         + f"var meal = {json.dumps(cook_meal)};\n"
-        + "var entry = meal ? { source: 'plan', entry_id: meal.entry_id } : null;\n"
-        + f"console.log(JSON.stringify(mealClockHtml({json.dumps(slot)}, "
-        + f"mealClockFor({{ date: '2026-09-10' }}, {json.dumps(slot)}, entry, meal))));\n"
+        + "var entry = meal ? { source: meal.is_leftovers ? 'leftovers' : 'plan', entry_id: meal.entry_id, state: 'planned', title: meal.meal } : null;\n"
+        + f"var info = mealRecipeFor({json.dumps(slot)}, entry, meal);\n"
+        + f"var out = mealIngredientsHtml({{ isPast: false }}, {json.dumps(slot)}, entry, info) + "
+        + f"(info.isCook && meal.has_full_recipe ? recipeStepsHtml(meal, false) : mealNoRecipeHtml({json.dumps(slot)}, info));\n"
+        + "console.log(JSON.stringify(out));\n"
     )
     return _run_node(harness)
 
@@ -361,55 +327,46 @@ def _clock_html(cook_meal, slot: str) -> str:
 @_needs_node
 def test_a_dish_with_no_saved_recipe_says_so_rather_than_pretending():
     # A meal with nothing written up says so, and names the way to fill it in.
-    assert "No saved recipe for this one" in _clock_html({"meal": "Takeaway", "has_full_recipe": False}, "dinner")
+    assert "No saved recipe for this one" in _recipe_html({"meal": "Takeaway", "has_full_recipe": False, "entry_id": 1}, "dinner")
     # A grab-and-go snack does not: "Apple slices" is not a recipe somebody
     # forgot to write, so a block whose whole content is "there isn't one"
     # is an empty block.
-    assert _clock_html({"meal": "Apple slices", "has_full_recipe": False}, "snack") == ""
-    assert _clock_html({"meal": "Apple slices", "has_full_recipe": False}, "snack2") == ""
+    assert _recipe_html({"meal": "Apple slices", "has_full_recipe": False, "entry_id": 2}, "snack") == ""
+    assert _recipe_html({"meal": "Apple slices", "has_full_recipe": False, "entry_id": 2}, "snack2") == ""
     # ...and a snack that IS a recipe, with nothing in it yet, says that.
-    assert "No steps saved yet" in _clock_html(
-        {"meal": "Energy Balls", "has_full_recipe": True, "ingredients": [], "instructions": []}, "snack")
-    # A reheat night has no cook in it, so it has no clock.
-    assert _clock_html({"meal": "Bulgogi", "is_leftovers": True}, "dinner") == ""
+    assert "No steps saved yet" in _recipe_html(
+        {"meal": "Energy Balls", "has_full_recipe": True, "ingredients": [], "instructions": [], "entry_id": 3}, "snack")
+    # A reheat night has no cook in it, so it has no recipe.
+    assert _recipe_html({"meal": "Bulgogi", "is_leftovers": True, "entry_id": 4}, "dinner") == ""
     # No entry at all: nothing to wait for and nothing to say. (A real
     # entry with no card is a different case — see
-    # test_while_the_plans_view_is_on_its_way_the_clock_says_so.)
-    assert _clock_html(None, "dinner") == ""
+    # test_while_the_plans_view_is_on_its_way_the_screen_says_so.)
+    assert _recipe_html(None, "dinner") == ""
 
 
 @_needs_node
-def test_while_the_plans_view_is_on_its_way_the_clock_says_so():
+def test_while_the_plans_view_is_on_its_way_the_screen_says_so():
     """The Meal step draws before the plan's cooker view has landed (and
-    again while it is re-read after a swap). With no card yet, the clock
+    again while it is re-read after a swap). With no card yet, the screen
     says the recipe is on its way rather than that there isn't one —
     Emily, 2026-09-13: "I can't go to the screen where I can see the
     instructions for it."""
     harness = (
         _ESCAPE
-        + "var weekState = { data: { slot_times: { dinner: '6:30' } } };\n"
         + "var GRO_ICONS = { chevRight: '<svg/>' };\n"
-        + "function capitalizeFirst(s) { return s; }\n"
-        + "function cookIngredientLabel(i) { return i.item; }\n"
         + "function isRealCook() { return true; }\n"
         # The plan's view has not landed: planCookView answers null.
         + "var landed = null;\n"
         + "function planCookView() { return landed; }\n"
-        + _var_block("NUMBER_WORDS") + "\n"
-        + _var_block("TENS_WORDS") + "\n"
+        + "function planCookViewFailed() { return false; }\n"
         + _extract("isSnackSlot") + "\n"
-        + "".join(_extract(n) + "\n" for n in (
-            "numberWord", "countInWords", "minutesInWords", "clockLabel", "slotTableMinutes",
-            "mealTotalMinutes", "mealStepMinutes", "ingredientNamesLine", "mealClockSides", "mealClockTotal", "finishSideStop", "mealClockStops",
-            "mealClockEyebrow", "mealClockFor", "mealStopHtml", "mealClockHtml"))
-        + "var STOP_TITLE_TAIL = /^(a|the)$/i;\n"
-        + _extract("stopTitleSplit") + "\n"
+        + _extract("mealRecipeFor") + "\n"
+        + _extract("mealNoRecipeHtml") + "\n"
         + "var entry = { source: 'plan', entry_id: 7, state: 'planned' };\n"
-        + "var day = { date: '2026-09-15' };\n"
-        + "var out = { waiting: mealClockHtml('dinner', mealClockFor(day, 'dinner', entry, null)) };\n"
+        + "var out = { waiting: mealNoRecipeHtml('dinner', mealRecipeFor('dinner', entry, null)) };\n"
         + "landed = { meals: [] };\n"
-        + "out.landed = mealClockHtml('dinner', mealClockFor(day, 'dinner', entry, null));\n"
-        + "out.reheat = mealClockHtml('dinner', mealClockFor(day, 'dinner', { source: 'leftovers', entry_id: 8 }, null));\n"
+        + "out.landed = mealNoRecipeHtml('dinner', mealRecipeFor('dinner', entry, null));\n"
+        + "out.reheat = mealNoRecipeHtml('dinner', mealRecipeFor('dinner', { source: 'leftovers', entry_id: 8 }, null));\n"
         + "console.log(JSON.stringify(out));\n"
     )
     got = _run_node(harness)
@@ -422,18 +379,17 @@ def test_while_the_plans_view_is_on_its_way_the_clock_says_so():
     assert got["reheat"] == ""
 
 
-def test_the_meal_step_renders_the_clock_off_the_cook_views_own_card():
-    """The stops and cook mode's steps are one list: both read the cooker
-    view's `instructions`, so the Meal step builds its clock off the same
-    card cook mode focuses (cookMealForEntry), not off the week entry."""
+def test_the_meal_step_renders_the_recipe_off_the_cook_views_own_card():
+    """The Meal step's steps and cook mode's steps are one list: both read
+    the cooker view's `instructions`, so the Meal step draws its recipe off
+    the same card cook mode focuses (cookMealForEntry), not off the week
+    entry."""
     step = _extract("mealStepHtml")
     assert "cookMealForEntry(entry.entry_id)" in step
-    assert "mealClockFor(day, slot, entry, cookMeal)" in step
-    assert "mealClockHtml(slot, clock)" in step
-    assert "(meal && meal.instructions) || []" in _extract("mealClockStops")
-    # And the picker above it is borrowed from the cook screen the same
-    # way it always was — this is the established pattern here, not a new one.
-    assert "cookAheadHtml(cookMeal)" in step
+    assert "mealRecipeFor(slot, entry, cookMeal)" in step
+    assert "recipeStepsHtml(cookMeal, false)" in step
+    assert "var steps = meal.instructions || [];" in _extract("recipeStepsHtml")
+    assert "var steps = meal.instructions || [];" in _extract("cookCookerHtml")
 
 
 # ------------------------------------------------ dish names in chat prose

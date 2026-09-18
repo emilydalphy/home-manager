@@ -383,21 +383,28 @@ def test_cook_this_still_passes_the_exact_meal():
     name the Meals step it came from instead of saying Kitchen. The target
     it hands over is the same four fields, and openRecipeFor's own last
     line is still activateTab('kitchen', ..., { cookFocus }).
+
+    UPDATED 2026-09-18 ("The recipe is the recipe"): openRecipeFor takes a
+    third argument — { start } — so the Meal step's own "Start cooking"
+    lands in the cooker's steps rather than on the recipe again; the
+    target and the door are the same.
     """
-    _assert_in("function openRecipeFor(target, origin)", SHELL_JS,
+    _assert_in("function openRecipeFor(target, origin, opts)", SHELL_JS,
                "the one door every dish-name tap goes through", "shell.js")
-    _assert_in("activateTab('kitchen', true, { cookFocus: target });",
+    _assert_in("activateTab('kitchen', true, { cookFocus: target, cookStart: !!(opts && opts.start) });",
                SHELL_JS, "the cook mode entry", "shell.js")
     _assert_in("entryId: entry ? entry.entry_id : null", SHELL_JS, "the focused entry", "shell.js")
     _assert_in("function cookResolveFocusIndex(", SHELL_JS, "the focus resolver", "shell.js")
 
 
-def test_the_meal_step_carries_the_clock_the_thaw_and_the_two_actions():
+def test_the_meal_step_carries_the_recipe_the_thaw_and_the_two_actions():
     # 2026-09-12 ("Meal · B · The clock"): the plate card is gone; the thaw
-    # is the hero's one line, and the cook is a list of timed stops.
+    # is the one line under the title. 2026-09-18 ("The recipe is the
+    # recipe"): the clock went too — the cook is the recipe's own steps.
     _assert_in("function mealStepHtml(", SHELL_JS, "the Meal step", "shell.js")
-    _assert_in("function mealClockStops(", SHELL_JS, "the clock", "shell.js")
-    _assert_in("function mealHeroLine(", SHELL_JS, "the hero's one line", "shell.js")
+    assert "function mealClockStops(" not in SHELL_JS, "the clock is back"
+    _assert_in("recipeStepsHtml(cookMeal, false)", SHELL_JS, "the steps", "shell.js")
+    _assert_in("function mealHeroLine(", SHELL_JS, "the one line", "shell.js")
     _assert_in("entry.defrost", SHELL_JS, "the thaw fact", "shell.js")
     assert "function plateCardHtml(" not in SHELL_JS
     assert "'Nothing to thaw.'" not in SHELL_JS, "an empty line wearing a caption"
@@ -405,12 +412,16 @@ def test_the_meal_step_carries_the_clock_the_thaw_and_the_two_actions():
     _assert_in("wk-decide dock wk-meal-dock", SHELL_JS, "the Meal step's dock", "shell.js")
 
 
-def test_the_meal_step_reuses_the_cook_ahead_picker():
-    """Same picker, same POST (cookSetCookAhead) — not a second copy of the
-    rules about which days a batch may cover."""
+def test_the_meal_step_reuses_the_recipe_renderers():
+    """One recipe, two doors (2026-09-18): the Meal step draws cook mode's
+    own title / count / Ingredients / Steps renderers off the same cooker
+    view card, and no longer carries the cook-ahead picker (the batch
+    question is the plan's)."""
     _assert_in("function cookMealForEntry(", SHELL_JS, "the cook card lookup", "shell.js")
-    _assert_in("cookAheadHtml(cookMeal)", SHELL_JS, "the reused picker", "shell.js")
-    _assert_in("await cookSetCookAhead(go)", SHELL_JS, "the reused write", "shell.js")
+    for shared in ("recipeServesHtml(cookMeal, 'wk')", "recipeIngredientsHtml(cookMeal, 'wk', false)",
+                   "recipeStepsHtml(cookMeal, false)"):
+        _assert_in(shared, SHELL_JS, "the shared recipe renderer", "shell.js")
+    assert "cookAheadHtml(" not in SHELL_JS and "cookSetCookAhead(" not in SHELL_JS
 
 
 def test_the_steps_are_states_not_routes():
@@ -665,7 +676,7 @@ def _meal_step_html(day: dict, slot: str) -> str:
         + "var swapState = null;\n"
         + "var REHEAT_ACTION_LABEL = 'Mark eaten';\n"
         + "var SWAP_LABEL = 'Swap · I’ll pick';\n"
-        + "var cookState = { data: { meals: [] }, cookAheadPicks: {} };\n"
+        + "var cookState = { data: { meals: [] } };\n"
         + _extract("isSnackSlot", SHELL_JS) + "\n"
         + _extract("daySlotEntry", SHELL_JS) + "\n"
         + _extract("slotWord", SHELL_JS) + "\n"
@@ -675,32 +686,25 @@ def _meal_step_html(day: dict, slot: str) -> str:
         + _extract("cookTimeChip", SHELL_JS) + "\n"
         + "function capitalizeFirst(s) { return String(s).charAt(0).toUpperCase() + String(s).slice(1); }\n"
         + _extract("cookMealForEntry", SHELL_JS) + "\n"
-        # The clock (2026-09-12): the stops the Meal step renders, and the
-        # cook-mode helpers they read (the tick store, the ingredient label).
+        # The recipe (2026-09-18): the renderers the Meal step shares with
+        # cook mode, and the cook-mode helpers they read.
         + "var GRO_ICONS = { chevRight: '<svg></svg>' };\n"
         + "function cookMealKey(m) { return 'e' + m.entry_id; }\n"
         + "function cookTicked() { return false; }\n"
-        + "function cookAheadHtml() { return ''; }\n"
         + "var WK_ADD_ICON = '<svg/>'; function humanQtyText(t) { return String(t == null ? '' : t); }\n"
         + "function cookIngredientLabel(i) { return ((i.qty ? i.qty + ' ' : '') + i.item).trim(); }\n"
-        + _var_line("NUMBER_WORDS", SHELL_JS) + "\n"
-        + _var_line("TENS_WORDS", SHELL_JS) + "\n"
-        + _var_line("STOP_TITLE_TAIL", SHELL_JS) + "\n"
+        + "function cookServesShown(m) { return m.default_servings; }\n"
+        + "function recipeCitationHtml() { return ''; }\n"
+        + "var RECIPE_ICONS = { minus: '<svg/>', plus: '<svg/>', chevLeft: '<svg/>' };\n"
         + "".join(_extract(name, SHELL_JS) + "\n" for name in (
-            "numberWord", "countInWords", "minutesInWords", "clockLabel", "spokenTime",
-            "slotTableMinutes", "mealTotalMinutes", "mealStepMinutes", "stopTitleSplit",
-            "ingredientNamesLine", "mealClockSides", "mealClockTotal", "finishSideStop", "mealClockStops", "mealClockEyebrow", "mealCookName",
-            "mealCookUnderway", "mealClockFor", "mealHeroLine", "mealHeroHtml",
-            "mealStopHtml", "mealClockHtml"))
+            "mealCookUnderway", "mealRecipeFor", "mealHeroLine", "mealNoRecipeHtml",
+            "cookUnscaledHtml", "cookIngTickId", "cookGetOutRowHtml",
+            "recipeTitleHtml", "recipeServesHtml", "recipeIngredientsHtml", "recipeIngredientRowHtml",
+            "recipeStepsHtml", "mealIngredientsHtml"))
         + _extract("swapStateFor", SHELL_JS) + "\n"
         + _extract("swapLineHtml", SHELL_JS) + "\n"
-        # The hero head (2026-09-11) names the slot and sizes the dish name.
         + "var SLOT_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };\n"
-        + _extract("slotEyebrowLabel", SHELL_JS) + "\n"
-        + _extract("dishSizeClass", SHELL_JS) + "\n"
         + _extract("mealDockHtml", SHELL_JS) + "\n"
-        + _extract("mealWhatsInEyebrow", SHELL_JS) + "\n"
-        + _extract("mealWhatsInHtml", SHELL_JS) + "\n"
         + _extract("mealStepHtml", SHELL_JS) + "\n"
         + f"console.log(JSON.stringify(mealStepHtml({json.dumps(day)}, {json.dumps(slot)})));\n"
     )
@@ -708,18 +712,18 @@ def _meal_step_html(day: dict, slot: str) -> str:
 
 
 @_needs_node
-def test_a_snack_renders_on_the_meal_step_as_a_hero_and_mark_eaten():
-    """A grab-and-go snack has no recipe, no thaw and nothing to time —
-    so it is the hero with the dish's name and "Mark eaten" in the dock,
-    and no clock (the 2026-09-12 meal screen has no plate card to hide any
-    more; the "Nothing to thaw." caption went with it)."""
+def test_a_snack_renders_on_the_meal_step_as_a_title_and_mark_eaten():
+    """A grab-and-go snack has no recipe, no thaw and nothing to cook — so
+    it is the dish's name as the title and "Mark eaten" in the dock, and
+    no Ingredients or Steps (the 2026-09-12 meal screen has no plate card
+    to hide any more; the "Nothing to thaw." caption went with it)."""
     entry = dict(_GRAB_AND_GO_SNACK, entry_id=101, sides=[], food_groups=[], defrost=None, plate_note="")
     day = _plain_day([entry])
     html = _meal_step_html(day, "snack")
     assert "The plate" not in html and "Nothing to thaw" not in html
-    assert "Apple slices" in html
+    assert '<h1 class="recipe-title">Apple slices</h1>' in html
     assert "Mark eaten" in html
-    assert "wk-clock" not in html
+    assert 'aria-label="Steps"' not in html and "No saved recipe" not in html
 
 
 @_needs_node

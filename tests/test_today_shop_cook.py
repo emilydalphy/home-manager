@@ -563,8 +563,9 @@ def test_the_old_card_and_row_rules_are_retired():
         assert not re.search(r"(^|[\s,}])%s\s*[,{:\[.]" % re.escape(dead), SHELL_CSS, re.M), (
             f"{dead} still has a CSS rule — the day strip replaced it"
         )
-    # .nextup-when stays: Plan's Meal step hero prints the day with it.
-    assert ".nextup-when {" in SHELL_CSS and ".wk-meal-hero .nextup-when" in SHELL_CSS
+    # .nextup-when went too (2026-09-18): the Meal step's hero, which had
+    # printed the day with it, is gone with "The recipe is the recipe".
+    assert ".nextup-when" not in SHELL_CSS
 
 
 def test_the_decision_log_has_the_entry():

@@ -12,30 +12,30 @@ def _fn(name):
     return SHELL_JS[start:SHELL_JS.index("\n  }\n", start)]
 
 
-def test_the_meal_opens_on_a_spruce_hero_with_its_facts_and_no_reasoning():
+def test_the_meal_opens_on_its_title_with_no_hero_and_no_reasoning():
+    """UPDATED 2026-09-18 ("The recipe is the recipe"): the spruce hero
+    ("Meal · B · The clock", 2026-09-12) is gone — the meal opens on the
+    dish as its title, "Cooking for", the Ingredients and Steps cards. The
+    planner's reasoning stays out (copy cleanse, 2026-09-11)."""
     meal = _fn("mealStepHtml")
-    assert "mealHeroHtml(day, slot, entry, clock)" in meal
-    hero = _fn("mealHeroHtml")
-    assert '<div class="dinner-hero wk-meal-hero">' in hero
-    # 2026-09-12 ("Meal · B · The clock"): the eyebrow is the slot and the
-    # day; the right end says when it is on the table, in words.
-    assert "slotEyebrowLabel(day, slot) + ' · ' + weekday" in hero
-    assert "On the table by " in hero and "spokenTime(clock.table)" in hero
-    # The planner's reasoning used to be the hero's italic line; cut
-    # 2026-09-11 (copy cleanse) — the hero is the name and the facts.
-    assert "entry.reason" not in hero and "entry.reason" not in meal
-    assert "hero-chips" in hero
+    assert '<h1 class="recipe-title">' in meal
+    assert "mealHeroHtml" not in meal and "dinner-hero" not in meal
+    assert "On the table by" not in meal and "spokenTime" not in meal
+    assert "entry.reason" not in meal
     assert 'wk-card-title">Why this night' not in meal
 
 
-def test_the_clock_and_cook_ahead_follow_and_the_action_is_docked():
+def test_the_recipe_follows_and_the_action_is_docked():
     meal = _fn("mealStepHtml")
-    # The plate card and the recipe card are gone (2026-09-12); the cook
-    # is the clock, and the cook-ahead picker keeps its card under it.
+    # The plate card and the recipe card are gone (2026-09-12), and so is
+    # the clock and the cook-ahead picker (2026-09-18); the recipe's own
+    # cards render here, the same ones cook mode draws.
     assert "plateCardHtml" not in meal and "mealRecipeCardHtml" not in meal
-    assert "mealClockHtml(slot, clock)" in meal
-    assert "cookAheadHtml(cookMeal)" in meal
-    assert "mealDockHtml(day, slot, clock)" in meal
+    assert "mealClockHtml" not in meal and "cookAheadHtml" not in meal
+    assert "recipeServesHtml(cookMeal, 'wk')" in meal
+    assert "mealIngredientsHtml(day, slot, entry, info)" in meal
+    assert "recipeStepsHtml(cookMeal, false)" in meal
+    assert "mealDockHtml(day, slot, info)" in meal
     dock = _fn("mealDockHtml")
     assert '<div class="wk-decide dock wk-meal-dock">' in dock
     assert "day.isPast) return '';" in dock  # no dock on a past day

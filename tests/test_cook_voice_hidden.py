@@ -76,13 +76,14 @@ def test_cook_voice_enabled_declared_beside_other_shell_constants():
 
 def test_both_cook_mic_buttons_are_gated():
     """
-    Two mic buttons exist in the source (prep schedule, recipe detail) —
-    both must render only when COOK_VOICE_ENABLED is true, not
-    unconditionally.
+    Every mic button in the source must render only when COOK_VOICE_ENABLED
+    is true, not unconditionally. (Two existed — prep schedule, recipe
+    detail — until 2026-09-18, when the recipe detail panel went with "The
+    recipe is the recipe"; the prep rows' one remains.)
     """
     occurrences = [m.start() for m in re.finditer(r'data-cook="voice"', SHELL_JS)]
-    assert len(occurrences) == 2, (
-        f"expected exactly 2 cook-mic buttons in the source, found {len(occurrences)}"
+    assert len(occurrences) == 1, (
+        f"expected exactly 1 cook-mic button in the source, found {len(occurrences)}"
     )
     for pos in occurrences:
         window = SHELL_JS[max(0, pos - 250) : pos]

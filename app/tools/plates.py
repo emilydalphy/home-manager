@@ -987,8 +987,9 @@ def add_component(
     shape as a side the plate pass chose, so every reader already knows
     it), then buys it if the week is approved (_buy_side_now). The Cooker
     card picks it up on the next read: its ingredients fold into the
-    dish's list, its steps land as "Alongside — <name>: …" and the meal
-    screen's clock times them off `minutes` (mealClockStops, shell.js).
+    dish's list, its steps land as "Alongside — <name>: …" on the recipe's
+    Steps card, and `minutes` counts toward the whole plate's time
+    (mealClockTotal, shell.js — what the Tonight card's clock reads).
 
     The same thing twice is a no-op with status "already", never a second
     row and never a second buy.

@@ -81,14 +81,14 @@ def test_full_plate_note_and_side_chips_render():
     width, so a second grid saying the same thing underneath it came out
     with the day rail and the day card. The side chips themselves did NOT
     go: `entry.plate_note` still renders (as a chip on the Day step's slot
-    card and in the Meal step's "The plate" card, via plateChips), and
-    `meal.sides_label` still renders on the Cook hero, which this slice did
-    not touch. The marker moved; the disclosure did not.
+    card and in the Meal step's "The plate" card, via plateChips). The
+    Cook hero's `meal.sides_label` chip went with the hero on 2026-09-18
+    ("The recipe is the recipe"): the side's ingredients and steps are on
+    the recipe itself. The marker moved; the disclosure did not.
     """
     _assert_in("data.plates_note", SHELL_JS, "the full-plate week note", "shell.js")
     _assert_in("wk-chip", SHELL_JS, "the plate chip", "shell.js")
     _assert_in("entry.plate_note", SHELL_JS, "the per-entry plate note chip", "shell.js")
-    _assert_in("meal.sides_label", SHELL_JS, "the sides label chip", "shell.js")
 
 
 # --- ea41834 allergy-confirm-tap: a hard clash needs a confirm tap --------
@@ -173,8 +173,12 @@ def test_prep_section_says_what_is_next_once_prep_is_done():
 
 
 def test_end_of_cook_offers_the_next_step():
-    _assert_in("function cookFocusEndHtml(", SHELL_JS, "the end-of-cook panel", "shell.js")
-    _assert_in(".cook-focus-end", SHELL_CSS, "the end-of-cook panel style", "shell.css")
+    # The end-of-cook panel under the whole method (cookFocusEndHtml) went
+    # with that stage on 2026-09-18; the cooker's last step ends on "Done —
+    # on the table" in the dock (cookDockCookedHtml) and the rating toast's
+    # handoff to tomorrow is untouched.
+    _assert_in("function cookDockCookedHtml(", SHELL_JS, "the finish", "shell.js")
+    _assert_in("Done — on the table", SHELL_JS, "the finish's words", "shell.js")
     _assert_in("Show me tomorrow", SHELL_JS, "the 'Show me tomorrow' handoff", "shell.js")
     _assert_in("function cookTomorrowHasPrepOrDefrost(", SHELL_JS, "its guard", "shell.js")
 

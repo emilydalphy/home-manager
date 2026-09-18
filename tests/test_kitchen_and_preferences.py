@@ -219,12 +219,14 @@ def test_the_back_link_says_where_it_came_from():
 
 
 def test_cook_mode_keeps_its_apricot_and_its_end_state():
-    """Kitchen's root has no apricot; cook mode's "Mark it cooked" IS the
-    tab's one apricot (the rule that changed with this slice)."""
-    _assert_in("Mark it cooked", SHELL_JS, "the end-of-cook primary", "shell.js")
-    _assert_in("function cookFocusEndHtml(", SHELL_JS, "the end-of-cook panel", "shell.js")
+    """Kitchen's root has no apricot; cook mode's finish IS the tab's one
+    apricot (the rule that changed with this slice). Since 2026-09-18 the
+    finish reads "Done — on the table" (board 14-cooking) and the cook-ahead
+    picker is gone from the cook screen — the batch question is the plan's."""
+    _assert_in("Done — on the table", SHELL_JS, "the end-of-cook primary", "shell.js")
+    _assert_in("function cookDockCookedHtml(", SHELL_JS, "the finish", "shell.js")
     _assert_in("function cookFocusHtml(", SHELL_JS, "the focused cook screen", "shell.js")
-    _assert_in("cookAheadHtml(meal)", SHELL_JS, "the cook-ahead picker", "shell.js")
+    assert "cookAheadHtml(meal)" not in SHELL_JS, "the cook-ahead picker is back on the cook screen"
     _assert_in("cookPrepCutHtml(data, meal)", SHELL_JS, "the prep-cut offer", "shell.js")
 
 
@@ -274,7 +276,7 @@ def test_the_focus_target_is_still_resolved_the_same_way():
     fn = _function("cookResolveFocusIndex")
     assert "target.entryId" in fn and "target.date && target.slot" in fn and "target.title" in fn
     assert "return null;" in fn, "an unresolvable target must land on the root, not on a guess"
-    _assert_in("if (tab.kitchen && opts && opts.cookFocus) kitchenEnterCook(opts.cookFocus);",
+    _assert_in("if (tab.kitchen && opts && opts.cookFocus) kitchenEnterCook(opts.cookFocus, !!opts.cookStart);",
                SHELL_JS, "the cookFocus entry in activateTab", "shell.js")
 
 
@@ -291,8 +293,8 @@ def test_cook_voice_is_still_gated_after_the_move():
     _assert_in("var COOK_VOICE_ENABLED = false;", SHELL_JS, "the voice flag", "shell.js")
     panel = _function("cookVoicePanelHtml")
     assert "COOK_VOICE_ENABLED ?" in panel
-    assert SHELL_JS.count('data-cook="voice"') == 2, (
-        "expected exactly two cook mics (the recipe's and the prep section's)"
+    assert SHELL_JS.count('data-cook="voice"') == 1, (
+        "expected exactly one cook mic (the prep section's — the recipe panel's went with it, 2026-09-18)"
     )
     for pos in [m.start() for m in re.finditer(r'data-cook="voice"', SHELL_JS)]:
         assert "COOK_VOICE_ENABLED" in SHELL_JS[max(0, pos - 250) : pos]
@@ -897,11 +899,15 @@ def test_the_cook_mode_apricot_and_the_end_button_say_the_same_thing():
     about did not move with it: the button still says "Mark it cooked", the
     same words as the row that closes the whole method's last step. Only
     the function the assertion is scoped to changed.
+
+    UPDATED 2026-09-18 ("The step-by-step view has no timestamps and no
+    batch prompt"): the finish reads "Done — on the table" now, and the
+    whole method's end row is gone with the whole method — the dock is the
+    one place a cook meets it.
     """
     cooked = _function("cookDockCookedHtml")
-    assert "'Mark it cooked'" in cooked, "the apricot still says 'Mark it cooked'"
-    assert "'Mark cooked'" not in cooked
-    assert ">Mark it cooked<" in _function("cookFocusEndHtml")
+    assert "'Done — on the table'" in cooked, "the apricot says 'Done — on the table'"
+    assert "'Mark cooked'" not in cooked and "'Mark it cooked'" not in cooked
     # The Kitchen root's own checkboxes keep "Mark cooked" as their
     # aria-label — cookCheckMeal reads that exact string to tell a real
     # cook from a reheat before it offers the "Rate it" toast.

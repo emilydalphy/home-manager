@@ -167,7 +167,7 @@ def test_the_shelf_is_one_tile_per_night_of_the_period():
     assert tonight, "tonight's empty tile is a plain tile"
     assert ">TUE<" in tonight.group(1) and ">15<" in tonight.group(1) and ">—<" in tonight.group(1)
     # The planned nights are buttons into their meal (S8), one word each.
-    assert '<button type="button" class="shelf-tile" data-cook="focus" data-idx="0" data-at="steps"' in html
+    assert '<button type="button" class="shelf-tile" data-cook="focus" data-idx="0"' in html
     assert ">Tikka<" in html and ">Stir-fry<" in html
     # A reheat night says so and opens the reheat's own card.
     assert ">Leftovers<" in html and 'data-cook="focus" data-idx="2"' in html

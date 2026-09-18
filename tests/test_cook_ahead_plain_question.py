@@ -55,7 +55,6 @@ _PRELUDE = (
     "function dayNameShort(iso){ return new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' }); }\n"
     "var cookAheadAskState = { planId: null, items: null, picks: {}, forceShow: false };\n"
     "var cookAheadComponentState = { components: [], picks: {} };\n"
-    "var cookState = { cookAheadPicks: {} };\n"
     + _function("cookSlotWord") + "\n"
     + _function("cookAheadAskPicks") + "\n"
     # The shared-component block shares the fold (batch_components.py).
@@ -81,8 +80,6 @@ _PRELUDE = (
     + _function("cookAheadPrimePicks") + "\n"
     + _function("cookAheadAskCardHtml") + "\n"
     + _function("cookAheadAskQuestion") + "\n"
-    + _function("cookAheadPicks") + "\n"
-    + _function("cookAheadHtml") + "\n"
 )
 
 
@@ -255,22 +252,9 @@ def test_ticking_a_chip_moves_the_tally_in_the_block():
     assert out.count("is-on") == 2
 
 
-# ---------- the Cook card's own picker says the same thing ----------
-
-@_needs_node
-def test_the_cook_card_picker_asks_the_same_plain_question():
-    meal = {
-        "entry_id": 1, "date": MON, "slot": "dinner",
-        "attendance": {"headcount": 2},
-        "cook_ahead": {"days": [
-            {"entry_id": 11, "date": TUE, "eaters": 2, "selected": False},
-            {"entry_id": 12, "date": THU, "eaters": 2, "selected": True},
-        ]},
-    }
-    out = _node("console.log(JSON.stringify(cookAheadHtml(%s)));" % json.dumps(meal))
-    assert "Do you want to batch cook this? Which other nights should it cover?" in out
-    assert "One cook on Monday feeds Mon and Thu · 4 plates" in out
-    assert "Makes " not in out and "Cooking ahead?" not in out
+# The Cook card's own picker (cookAheadHtml) used to be asserted here to
+# ask the same question; it came off the recipe screen on 2026-09-18
+# ("The recipe is the recipe") — the batch question is the plan's alone.
 
 
 # ---------- two states on touch ----------
@@ -290,8 +274,7 @@ def _hover_is_pointer_only(selector: str) -> None:
 def test_chip_hover_is_only_for_pointers_so_a_tap_leaves_no_ghost():
     _hover_is_pointer_only(".ca-ask-day")
     _hover_is_pointer_only(".defrost-chip")
-    _hover_is_pointer_only(".cook-ahead-day")
-    _hover_is_pointer_only(".wk-card .cook-ahead-day")
+    _hover_is_pointer_only(".cook-offer-chip")
 
 
 def test_the_question_line_is_inked_for_both_cards():
