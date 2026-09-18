@@ -294,7 +294,7 @@ def test_the_draft_review_is_what_that_week_renders():
     # Approve is the DRAFT branch; an approved week docks "Open the list"
     # there instead (2026-09-13, tests/test_allset_week_path.py).
     assert "else if (state === 'draft')" in decide[:900]
-    assert "Approve and build my shopping list" in decide[:1600]
+    assert "Approve · Open grocery list" in decide[:1600]  # since 2026-09-18 (was "Approve and build my shopping list")
     step = shell[shell.index("function renderMealsStep("):]
     assert "steps.innerHTML = reviewStepHtml(data, weekState.days, true);" in step[:6000]
 

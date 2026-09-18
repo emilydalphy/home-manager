@@ -519,20 +519,6 @@ def test_another_household_sees_nothing(client):
 
 
 # ---------- the block's words (static/shell.js) ----------
+# The approval-time ask block went on 2026-09-18 (batch cooking is assumed
+# from prep days); the component batch itself is still the Cook view's.
 
-def test_the_block_counts_recipes_in_the_question_and_meals_under_the_chips():
-    """Verifier, 2026-09-13: the toast on two days plus a salad read "3
-    recipes" in the question and "4 recipes" under the chips. The question
-    counts different recipes; the chips are one per meal, so the lines
-    that count ticks say meals."""
-    import pathlib
-
-    js = pathlib.Path(__file__).resolve().parents[1].joinpath("static", "shell.js").read_text()
-    assert "function cookAheadComponentRecipeCount(comp)" in js
-    assert "var n = cookAheadComponentRecipeCount(comp);" in js
-    assert "' in ' + n + ' recipes this week.'" in js
-    assert "' for ' + ticked.length + ' meals'" in js
-    assert "': one cook ' + day + ' for ' + n + ' meals'" in js
-    assert "comp.label + ' in ' + cookAheadComponentRecipeCount(comp) + ' recipes'" in js
-    # The fold shows for a week whose only question is a component.
-    assert "if (cookAheadAskState.items.length || cookAheadComponents().length) cookAheadAskHtml" in js

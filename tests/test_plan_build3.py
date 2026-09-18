@@ -1,8 +1,12 @@
 """Plan, Build 3 of the screen-by-screen redesign (Emily, 2026-09-11).
 
 A draft opens on Review; the clash sits on its dish; a dish name opens the
-recipe and the crumb brings you back; cook times on Which days; approval
-lands on an All set screen; the week root's today row says TODAY.
+recipe and the crumb brings you back; approval lands on an All set screen;
+the week root's today row says TODAY.
+
+Since 2026-09-18 the review is a carousel of day cards and All set is one
+button (tests/test_plan_cards_2026_09_18.py); what is pinned here is the
+part of Build 3 that still stands.
 """
 from pathlib import Path
 
@@ -23,73 +27,56 @@ def test_a_draft_root_is_the_review_with_no_crumb_and_approve_in_the_dock():
     assert "if (weekState.step === 'review' && draft) weekState.step = 'week';" in step
     assert "steps.innerHTML = reviewStepHtml(data, weekState.days, true);" in step
     review = _fn("reviewStepHtml")
-    # The root form has no in-flow head since the root band (2026-09-11):
-    # the week's dates, title and DRAFT chip are the band's (weekBandParts,
-    # rendered by renderMealsStep above #week-steps). Only the deeper,
-    # approved-week form still draws a .wk-head under its crumb.
+    # The root form has no in-flow title since the root band (2026-09-11):
+    # the week's dates, title and DRAFT chip are the band's. Only the
+    # deeper, approved-week form draws the "Check the week." title under
+    # its crumb.
     assert "? weekSuggestedNoteHtml(data)" in review.split("var head = root", 1)[1][:80]
-    assert review.count('<div class="wk-head">') == 1
+    assert review.count('<h1 class="wk-title">Check the week.</h1>') == 1
     assert "weekStepHeadHtml" not in SHELL_JS
-    # No invitation line either (copy cleanse, 2026-09-11): the dock's
-    # Approve label already says nothing is bought until then.
     assert "rv-invite" not in review
-    assert "weekDecideHtml(data) {\n    return '';" in SHELL_JS
     assert 'id="week-check-btn"' not in SHELL_JS
     assert "Tweak it with me" not in SHELL_JS
 
 
-def test_the_clash_sits_on_its_dish_and_is_a_word_on_its_day():
-    row = _fn("reviewDishRowHtml")
-    assert "reviewSettleFor(dish)" in row
-    assert 'class="rv-settle"' in row and "data-rv-settle-swap" in row and "data-rv-settle-keep" in row
-    assert "'not for ' + settle.member" in SHELL_JS
-    assert ".rv-day-clash {" in SHELL_CSS
-    # The old card above the title is not rendered for a draft any more.
-    assert "if (approve) approve.hidden = !onRoot || draft;" in SHELL_JS
+def test_the_clash_sits_on_its_dish():
+    row = _fn("wkMealRowHtml")
+    assert "wkSettleFor(day, entry)" in row
+    assert 'class="rv-settle"' in row and "data-wk-settle-keep" in row
+    # Swap the meal is the row's own button, so no second "Swap the …".
+    assert "data-rv-settle-swap" not in SHELL_JS
+    assert ".rv-settle {" in SHELL_CSS
 
 
 def test_a_dish_name_opens_the_meal_step_with_a_crumb_back_to_the_week():
-    # Since 2026-09-13 the name opens the Meal step (the same screen the
-    # Day step's card opens), not cook mode — see
+    # The name on a row opens the Meal step (the same screen the Day step's
+    # card opens), not cook mode — see
     # tests/test_meal_opens_the_same_way_everywhere.py for why.
-    assert 'class="rv-dish-name dish-link" data-rv-recipe="' in SHELL_JS
-    wiring = SHELL_JS[SHELL_JS.index("[data-rv-recipe]"):]
-    assert "goMealsStep('meal', { dayIndex: idx, slot: slot, back: 'week' });" in wiring[:1200]
+    assert 'class="wk-row-name dish-link" data-wk-meal="' in SHELL_JS
+    wiring = SHELL_JS[SHELL_JS.index("[data-wk-meal]"):]
+    assert "goMealsStep('meal', { slot: btn.getAttribute('data-wk-meal'), back: back });" in wiring[:1200]
     assert "openRecipeFor" not in wiring[:1200]
+    # ...and from Check the week the crumb says so.
+    assert "'Check the week'" in _fn("mealStepHtml")
 
 
-def test_which_days_carries_the_cook_time_on_every_night():
-    # Since the seven tiles (2026-09-12) the time is a bar plus "N min" on
-    # each night's tile, read off the entry's own meta — same source, new
-    # shape (see tests/test_week_seven_tiles.py for the bar itself).
-    time = _fn("reviewTileTimeHtml")
-    assert "reviewDinnerMinutes(entry)" in time and 'class="rv-tile-min"' in time
-    face = _fn("reviewDayFaceLine")
-    assert "else if (dinner.meta) note = dinner.meta;" in face
+def test_each_row_carries_the_cook_time():
+    meta = _fn("wkRowMeta")
+    assert "return entry.meta || '';" in meta
+    assert "'from ' + dayName(entry.leftover_from.date, { weekday: 'long' })" in meta
 
 
 def test_approval_lands_on_an_all_set_screen_in_spruce():
     approve = _fn("submitWeekApproval")
     assert "weekState.step = 'allset';" in approve
     allset = _fn("allSetStepHtml")
-    assert "All set." in allset and "is planned, and the list is built." in allset
-    assert "receipt.meals" in allset and "receipt.recipes" in allset and "receipt.list_count" in allset
+    assert "All set." in allset and "' is planned.'" in allset and "'Week 1 is planned.'" in allset
+    assert "receipt.meals" in allset and "receipt.recipes" in allset and "receipt.list_count" not in allset
     assert '<div class="dock wk-allset-dock">' in allset
     assert ".tab-panel.is-allset { background: var(--spruce); }" in SHELL_CSS
-    # The two asks ride along as lines, and only there — the root's receipt
-    # card is dismissed by the screen.
-    assert "renderWeekReceipt(row, panel, data, true);" in _fn("renderAllSetAsks")
-    assert "if (data.weekly_plan_id) setWeekReceiptDismissed(data.weekly_plan_id, true);" in approve
-
-
-def test_the_asks_fetches_land_on_the_all_set_row_and_the_dock_wires_once():
-    """The defrost / cook-ahead fetches come back through renderWeekApproval;
-    on the All set screen that has to re-render the screen's own row, not
-    the root's hidden receipt row (found by the 2026-09-11 verifier)."""
-    approval = _fn("renderWeekApproval")
-    assert "if (weekState.step === 'allset' && panel.querySelector('#wk-allset-asks'))" in approval
-    asks = _fn("renderAllSetAsks")
-    assert "go.dataset.wired" in asks and "see.dataset.wired" in asks
+    # No asks on it any more: the freezer question is the next step.
+    assert "wk-allset-asks" not in SHELL_JS and "renderAllSetAsks" not in SHELL_JS
+    assert "goAfterWeekSet(panel, data)" in _fn("wireAllSetStep")
 
 
 def test_the_today_tile_says_so():

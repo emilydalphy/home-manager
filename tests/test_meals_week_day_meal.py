@@ -203,8 +203,8 @@ def test_the_root_is_a_strip_of_day_tiles_and_the_selected_day():
     _assert_in("function weekDayHtml(", SHELL_JS, "the day under the strip", "shell.js")
     _assert_in("function weekSnacksHtml(", SHELL_JS, "the snacks two-up", "shell.js")
     _assert_in("data-wk-tile=", SHELL_JS, "the tile's day handle", "shell.js")
-    _assert_in("daySlotCardHtml(day, slot, { quiet: !PLAN_ROOT_SLOT_ACTIONS })", SHELL_JS,
-               "the Day step's cards, reused on the root", "shell.js")
+    _assert_in("wkDayCardHtml(day, i, { done: true, swapLabel: 'Swap' })", SHELL_JS,
+               "the day's one card with its rows (Done + Swap), 2026-09-18", "shell.js")
     _assert_in(".wk-tile.is-today { background: var(--sand);", SHELL_CSS, "today's tinted tile", "shell.css")
     _assert_in(".wk-tile.is-selected { border-color: var(--ink-strong); }", SHELL_CSS, "the selected tile's rim", "shell.css")
     _assert_in("grid-template-columns: repeat(2, minmax(0, 1fr));", SHELL_CSS, "the two-up snack grid", "shell.css")
@@ -222,8 +222,8 @@ def test_a_tile_selects_its_day_in_place_without_a_new_screen():
     assert "replaceMealsStepHistory();" in wiring
     assert "renderMealsStep(panel);" in wiring
     assert "pushMealsStepHistory" not in wiring and "goMealsStep" not in wiring
-    meal = SHELL_JS[SHELL_JS.index("[data-wk-meal]"):][:700]
-    assert "back: weekState.step === 'week' ? 'week' : 'day'" in meal
+    meal = SHELL_JS[SHELL_JS.index("[data-wk-meal]"):][:1200]
+    assert ": (weekState.step === 'week' ? 'week' : 'day');" in meal
 
 
 @pytest.mark.parametrize("dot", ["is-cook", "is-ahead", "is-open"])
@@ -341,9 +341,9 @@ def test_the_draft_review_band_is_gone_and_the_decision_moved_under_the_card():
     )
     # UPDATED 2026-09-11 (Build 3 of the screen-by-screen redesign, Emily's decisions C and E): a draft's root IS the review, so the week card's own decision strip (Check the week / Approve this week / the italic Tweak it with me) is gone; the one apricot is reviewDecideHtml's, in the dock.
     _assert_in("function reviewDecideHtml(", SHELL_JS, "the draft's decision (in the review it opens on)", "shell.js")
-    _assert_in("Approve and build my shopping list", SHELL_JS, "the Approve button", "shell.js")
-    _assert_in("if (approve) approve.hidden = !onRoot || draft;", SHELL_JS,
-               "the receipt row above the card belonging to the root only (a draft's clash sits on its dish instead)", "shell.js")
+    _assert_in("Approve · Open grocery list", SHELL_JS, "the Approve button (2026-09-18 wording)", "shell.js")
+    # The receipt row above the card went on 2026-09-18 with the asks it held.
+    assert 'id="week-approve-row"' not in SHELL_JS
 
 
 def test_the_day_step_is_three_equal_cards():
@@ -428,10 +428,10 @@ def test_a_changed_day_still_lands_on_that_day():
     """Today's and the tweak sheet's "See your week" name a date and a slot;
     it opens the Day step for that date with the changed meal ringed."""
     _assert_in("function focusChangedWeekDay(", SHELL_JS, "the See-your-week handoff", "shell.js")
-    _assert_in("goMealsStep('day', { dayIndex: index });", SHELL_JS,
-               "landing on the Day step", "shell.js")
-    _assert_in(".wk-slot-card[data-wk-slot=\"' + pending.slot + '\"]", SHELL_JS,
-               "the ring on the changed meal", "shell.js")
+    _assert_in("goMealsStep('week', { dayIndex: index, replace: true });", SHELL_JS,
+               "landing on that day, on the root", "shell.js")
+    _assert_in(".wk-row[data-wk-row=\"' + pending.slot + '\"]", SHELL_JS,
+               "the ring on the changed meal's row", "shell.js")
     _assert_in("just-changed", SHELL_JS, "the ring itself", "shell.js")
 
 

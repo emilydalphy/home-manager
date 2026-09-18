@@ -243,7 +243,7 @@ def test_the_dock_is_the_last_thing_in_its_container():
     # Plan's two docks: the call that builds them ends its function's return
     # expression, so what follows is ";" and never " +" (another chunk of
     # markup concatenated after the strip).
-    for fn, call in (("weekStepHtml", "weekDecideHtml(data)"),
+    for fn, call in (("weekStepHtml", "weekDecideHtml(data, next)"),
                      ("reviewStepHtml", "reviewDecideHtml(data)")):
         body = SHELL_JS[SHELL_JS.index("function %s(" % fn):]
         at = body.index(call) + len(call)

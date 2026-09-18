@@ -1072,7 +1072,9 @@ def test_only_the_approve_button_and_start_over_ask_for_a_refill():
     # of its four callers asks for a refill.
     body = _strip_comments(SHELL_JS)
     assert body.count("refreshGrocerySurfaces({ refill: true });") == 1
-    assert body.count("refreshGrocerySurfaces();") == 3
+    # Three until 2026-09-18: the Review stepper's "−" and "+" went with the
+    # stepper; the swap sheet's pick took one of their places.
+    assert body.count("refreshGrocerySurfaces();") == 2
     # The chat door never refills.
     assert "refill" not in _strip_comments(_function("refreshStaleTabsFromActions"))
 

@@ -52,12 +52,14 @@ def test_the_offer_is_a_question_with_nothing_under_it():
     assert "WHENEVER SUITS YOU" not in offer
 
 
-def test_the_coaching_card_is_a_one_time_sheet_at_body_level():
-    assert '<div id="coach-card-slot"></div>' in SHELL_HTML
-    assert 'id="coach-card-slot" class="today-area-nudge"' not in SHELL_JS
-    assert "#coach-card-slot:empty { display: none; }" in SHELL_CSS
-    assert "#coach-sheet,\n#prefs-sheet,\n#tips-sheet" in SHELL_CSS
-    assert "plan-nudge-eyebrow\">A QUICK WORD" not in SHELL_JS
+def test_the_coaching_card_is_gone():
+    """It became a one-time sheet at body level on 2026-09-11 and went
+    altogether on 2026-09-18 ("Check the week": no tips overlay); the same
+    three ideas live under Helpful tips."""
+    assert 'id="coach-card-slot"' not in SHELL_HTML
+    assert "coach-card-slot" not in SHELL_JS and "coachCardHtml" not in SHELL_JS
+    assert "#coach-sheet" not in SHELL_CSS
+    assert "#prefs-sheet,\n#tips-sheet" in SHELL_CSS
 
 
 def test_the_dinner_suggestions_fold_behind_one_pick():

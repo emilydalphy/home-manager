@@ -678,7 +678,8 @@ def _plan_need_by_item(weekly_plan_id: int) -> tuple[dict[str, dict], dict[str, 
     for m, ing, ing_name, batch_factor in _iter_plan_meat_ingredients(weekly_plan_id):
         key = ing_name.lower()
         names.setdefault(key, ing_name)
-        night = {"date": m["date"], "meal": m["meal"], "weekday": _weekday_name(m["date"])}
+        night = {"date": m["date"], "meal": m["meal"], "weekday": _weekday_name(m["date"]),
+                 "slot": m.get("slot") or "dinner"}
         rows = nights.setdefault(key, [])
         if night not in rows:
             rows.append(night)
@@ -830,13 +831,21 @@ def meat_items_for_plan(weekly_plan_id: int) -> list[dict]:
     by_item, need = _plan_need_by_item(weekly_plan_id)
     known = _covered_at_home(need) | _still_to_buy(set(by_item))
     settled = _settled_nights(weekly_plan_id, by_item)
+    # Each night also says WHEN it would move to the fridge — the same
+    # _move_date confirm_frozen_items books, so the freezer step's "What
+    # that means" line ("Chicken thighs → into the fridge Saturday night,
+    # for Monday's dinner") and the task it writes can't name two nights.
+    dinner_window = _rhythm.get_household_rhythm().get("dinner_window")
 
     out: list[dict] = []
     for key, entry in by_item.items():
         if key in known:
             continue
+        lead_hours, _tier = lead_hours_for_item(entry["item"])
         nights = [
-            n for n in entry["nights"]
+            dict(n, move_date=_move_date(n["date"], lead_hours, dinner_window),
+                 move_weekday=_weekday_name(_move_date(n["date"], lead_hours, dinner_window)))
+            for n in entry["nights"]
             if _describe(entry["item"], n["meal"], n["date"]) not in settled
         ]
         if nights:

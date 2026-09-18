@@ -584,7 +584,7 @@ def test_sign_out_and_a_401_forget_the_copy():
     assert "if (res.status === 401) groForgetOffline();" in SHELL_JS  # groPostJson and /api/coaching
     assert "if (results.some(function (r) { return r.status === 401; })) groForgetOffline();" in SHELL_JS
     coaching = SHELL_JS[SHELL_JS.index("function loadCoachingState()"):]
-    coaching = coaching[:coaching.index("renderCoachCard();")]
+    coaching = coaching[:coaching.index("coachOnTabShown(coachState.tab || currentTabKey());")]
     assert "groOffline.setHousehold(state.household_id) && groceryState.offline" in coaching
 
 

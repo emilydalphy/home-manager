@@ -353,7 +353,10 @@ function reviewStepHtml() { return '<div>REVIEW</div>'; }
 function mealStepHtml() { return ''; }
 function dayStepHtml() { return ''; }
 function allSetStepHtml() { return ''; }
-function renderAllSetAsks() {}
+function wireAllSetStep() {}
+function freezerStepHtml() { return ''; }
+function wireFreezerStep() {}
+function ensureDefrostAskItems() {}
 function ensureCookDataForMeals() {}
 """ + _var("TICK_ICON", ";\n") + _var("DOTS_ICON", ";\n") + _var("EMPTY_ICONS") + _var("weekState") + labels + \
         _function("choresEnabled") + _function("emptyMomentHtml") + _chore_menu() + \
@@ -428,7 +431,7 @@ function el() {
   return e;
 }
 function makePanel() {
-  var slots = { '#week-steps': el(), '#week-approve-row': el(), '#week-band-slot': el(), '#week-mode-slot': el() };
+  var slots = { '#week-steps': el(), '#week-band-slot': el(), '#week-mode-slot': el() };
   var panel = { dataset: { built: '1' }, classes: {}, slots: slots };
   panel.classList = { toggle: function (c, on) { panel.classes[c] = !!on; } };
   panel.querySelector = function (sel) { return slots[sel] || null; };
@@ -486,12 +489,12 @@ weekState.data = { state: 'set' };
 weekState.chores = %s;
 renderMealsStep(panel);
 var onMeals = { slotHidden: panel.slots['#week-mode-slot'].hidden, slot: panel.slots['#week-mode-slot'].innerHTML,
-  steps: panel.slots['#week-steps'].innerHTML, band: bandParts(panel), approveHidden: panel.slots['#week-approve-row'].hidden,
+  steps: panel.slots['#week-steps'].innerHTML, band: bandParts(panel),
   fills: !!panel.classes['is-chores'] };
 weekState.step = 'chores';
 renderMealsStep(panel);
 var onChores = { slotHidden: panel.slots['#week-mode-slot'].hidden, slot: panel.slots['#week-mode-slot'].innerHTML,
-  steps: panel.slots['#week-steps'].innerHTML, band: bandParts(panel), approveHidden: panel.slots['#week-approve-row'].hidden,
+  steps: panel.slots['#week-steps'].innerHTML, band: bandParts(panel),
   bandHidden: panel.slots['#week-band-slot'].hidden, fills: panel.classes['is-chores'], mealsFilled: onMeals.fills };
 onMeals.fills = false;
 weekState.step = 'review';           // a deeper step (the approved week's check)
@@ -506,7 +509,7 @@ console.log(JSON.stringify({ onMeals: onMeals, onChores: onChores, onDay: onDay 
     assert meals["slot"].count("wk-seg-btn") == 2 and "<svg" not in meals["slot"]
     assert re.search(r'class="wk-seg-btn is-on"[^>]*data-plan-mode="meals">Meals<', meals["slot"])
     assert re.search(r'class="wk-seg-btn"[^>]*data-plan-mode="chores">Chores<', meals["slot"])
-    assert "MEALS" in meals["steps"] and meals["approveHidden"] is False
+    assert "MEALS" in meals["steps"]
     # Meals' band is untouched.
     assert meals["band"] == {"id": "week-band", "eyebrow": "Sep 7–13", "title": "This week", "sub": "a draft, your turn", "badge": "Draft"}
     # Chores: same frame — band shown, gear with it — the meal plan's chip
@@ -514,7 +517,6 @@ console.log(JSON.stringify({ onMeals: onMeals, onChores: onChores, onDay: onDay 
     assert chores["bandHidden"] is False and chores["slotHidden"] is False
     assert chores["band"] == {"id": "week-band", "eyebrow": "Sep 7–13", "title": "This week", "sub": "", "badge": ""}
     assert re.search(r'class="wk-seg-btn is-on"[^>]*data-plan-mode="chores">Chores<', chores["slot"])
-    assert chores["approveHidden"] is True
     assert "crumb" not in chores["steps"] and "wk-head" not in chores["steps"] and "MEALS" not in chores["steps"]
     assert 'data-pc-group="today"' in chores["steps"]
     # Only the Chores state grows the plan view (.is-chores) — Meals' layout is untouched.

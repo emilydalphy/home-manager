@@ -3530,21 +3530,12 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 }
 .plan-nudge-link:hover { text-decoration: underline; }
 
-/* The freezer-check ask card (Loop Board "Defrost check: ask at
-   approval") — a .plan-nudge-card instance, not a new card type: same
-   eyebrow/title/body/dismiss shape, just with a row of toggle chips and a
-   two-button .ny-actions row (borrowed as-is — see this file's own
-   comment above on why .ny-actions .btn-gold overrides gold to spruce: this
-   card's primary action must not be apricot, since the receipt above it
-   already used the screen's one apricot primary on "Take me to the
-   list"). */
+/* The freezer step's chips (Emily, 2026-09-18, board 11b — until then the
+   freezer-check ask card folded into the root's receipt): a row of toggle
+   chips, a selected one carrying the snowflake. */
 .defrost-ask-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-/* The cook-ahead ask card (Loop Board "Cook ahead: ask at approval", Emily
-   2026-09-08) is the same card family sitting directly below, so its day
-   chips share these rules outright rather than growing a second chip
-   look — the Cook card's own .cook-ahead-day can't be reused here because
-   it's painted for the spruce cook hero, not for an ivory nudge card. */
-.defrost-chip, .ca-ask-day {
+.defrost-chip svg { width: 16px; height: 16px; margin-right: 6px; vertical-align: -3px; }
+.defrost-chip {
   background: var(--surface);
   color: var(--ink);
   font-family: var(--font-body);
@@ -3561,68 +3552,14 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    read as a third state (Emily's 2026-09-13 screenshot: Sat). Touch gets
    exactly two states, off and on. */
 @media (hover: hover) {
-  .defrost-chip:hover, .ca-ask-day:hover { background: var(--sand); }
+  .defrost-chip:hover { background: var(--sand); }
 }
 /* Selected reads as "settled, already true" rather than "urgent" — celadon
    is the reassurance accent (DESIGN_SYSTEM.md §1), never apricot here. */
-.defrost-chip.is-selected, .ca-ask-day.is-on {
+.defrost-chip.is-selected {
   background: var(--celadon-tint);
   border-color: var(--celadon-edge);
   color: var(--ink-on-celadon);
-}
-
-/* One block per repeated dish inside the cook-ahead ask card, in the
-   order Emily set on 2026-09-13 (DESIGN_SYSTEM §8 rule 7): the dish line
-   when there are several, the question naming the cook night ("It'd cook
-   on Monday. Which other nights should it cover?"), the day chips that
-   answer it, and the live tally sentence underneath ("One cook on Monday
-   feeds Mon and Tue · 4 plates"). Blocks are separated by a hairline
-   rather than by cards, so a week with three repeats still reads as one
-   question with one answer. */
-.ca-ask-block { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; }
-.ca-ask-block + .ca-ask-block { border-top: 1px solid var(--hairline); }
-.ca-ask-line {
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.4;
-  color: var(--ink);
-}
-.ca-ask-q {
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  color: var(--ink);
-}
-.ca-ask-days { display: flex; flex-wrap: wrap; gap: 8px; }
-/* A component block's chips are dishes, not days ("Tue · Hard-Boiled Eggs
-   and Avocado Toast"), so each takes the row it needs and reads left to
-   right; the weekday inside is the quiet half. Same chip otherwise — it
-   is a .ca-ask-day too, so it gets the pointer-only :hover above and the
-   same two states on touch. */
-/* Two or more things to batch is one line each, not a block each (Emily,
-   2026-09-15: "one question with one line per dish and one answer"). The
-   line is the same chip, taken full width and given two rows — the name,
-   and what making it once would do. It inherits the chip's states, so
-   ticked is the same celadon on the ivory card and on the All set screen
-   and needs no colour of its own; the second row rides the first's ink at
-   a lower weight, the way .ca-comp-day does inside its own chip. Measured
-   at that opacity, against the chip it sits in — unticked (--surface)
-   7.16:1 in both schemes, ticked on the ivory card 6.01 light / 7.26 dark,
-   ticked on the All set screen's solid celadon 4.69 / 5.41. The 4.69 is
-   the floor and it clears AA. */
-.ca-ask-pick { width: 100%; text-align: left; display: block; }
-.ca-ask-pick-dish { display: block; font-weight: 700; }
-.ca-ask-pick-what { display: block; font-weight: 500; opacity: 0.8; }
-.ca-comp-dish { text-align: left; }
-.ca-comp-day { font-weight: 700; opacity: 0.75; }
-.ca-comp-day::after { content: " ·"; }
-.ca-ask-count {
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--ink-secondary);
 }
 
 /* The permanent entry point on Meals — same row shape as .week-reset-row
@@ -3885,16 +3822,12 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    row in the More sheet now (Emily's approved design, 2026-09-08: the
    receipt is a receipt, and rare actions live behind More). */
 
-/* ---------- Approve the week / approved receipt ----------
-   design_handoff_plan_the_week, as Emily's 2026-09-08 design leaves it: the
-   draft's decision sits UNDER the week card it is about (.wk-decide), and
-   the receipt sits above it (#week-approve-row) until it is dismissed. */
-/* The draft's Approve button and the settled week's receipt. The band that
-   used to sit above the week card (.week-approve-card, .week-review-eyebrow,
-   .week-approve-promise) is gone with it, and so are the receipt's long body
-   paragraph (.week-receipt-body) and its "your list is ready" handoff
-   (.week-receipt-handoff*): between them they filled a phone viewport and
-   pushed the week itself below the fold. Emily's approved design, 2026-09-08. */
+/* ---------- Approve the week ----------
+   The draft's decision sits in the dock under the week it is about
+   (.wk-decide). The approved receipt card that sat above the week until
+   2026-09-18, with its freezer and batch-cook asks, is gone: the freezer
+   question is a step of its own now (.wk-freezer-*) and batch cooking is
+   assumed from prep days. */
 
 /* The one primary action on Meals while a week is a draft (Rule 5). It sits
    in .wk-decide, directly under the seven rows it is about. */
@@ -3920,147 +3853,6 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .week-approve-btn:hover:not(:disabled) { background: var(--apricot-light); }
 .week-approve-btn:disabled { opacity: .6; cursor: default; }
 
-/* The receipt reads as a settled, positive state — celadon tint and a
-   celadon eyebrow, the token for "already true" (DESIGN_SYSTEM §1). */
-.week-receipt-card {
-  padding: 16px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  flex-shrink: 0;
-  border-color: var(--celadon-edge);
-  background: var(--celadon-tint);
-}
-.week-receipt-eyebrow {
-  font-family: var(--font-body);
-  font-weight: 800;
-  font-size: 10px;
-  letter-spacing: .14em;
-  color: var(--celadon-label);
-}
-/* The whole week in one counted sentence (weekly_plan.week_receipt). Card
-   headline size — it is the thing you read, not a label on something else. */
-.week-receipt-title {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 21px;
-  letter-spacing: -0.028em;
-  line-height: 1.2;
-  color: var(--ink-on-celadon);
-}
-.week-receipt-line {
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.45;
-  color: var(--ink-secondary);
-}
-.week-receipt-acts {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 4px;
-}
-.week-receipt-go, .week-receipt-see {
-  min-height: 46px;
-  border-radius: var(--radius-control);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 15px;
-  letter-spacing: -0.02em;
-  cursor: pointer;
-  padding: 0 12px;
-}
-/* The SET state's one apricot (Rule 5) — the draft's Approve button is gone
-   by the time this exists, and the asks below it are deliberately quiet. */
-.week-receipt-go {
-  border: none;
-  background: var(--apricot);
-  color: var(--on-accent-ink);
-}
-.week-receipt-go:hover { background: var(--apricot-light); }
-.week-receipt-see {
-  background: none;
-  border: 1.5px solid var(--celadon-edge);
-  color: var(--ink-on-celadon);
-}
-.week-receipt-see:hover { background: var(--surface); }
-
-/* "Two quick ones before you go" — the freezer check and the cook-ahead
-   offer, folded from two full cards into two lines in one. Each line is a
-   44px+ tap target that expands the ask's own UI in place (.wk-quick-body);
-   nothing about the asks themselves changed. */
-.wk-quick-card {
-  padding: 13px 16px 6px;
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-}
-.wk-quick-title {
-  font-family: var(--font-body);
-  font-weight: 800;
-  font-size: 10px;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-}
-.wk-quick-line + .wk-quick-line { border-top: 1.5px solid var(--hairline); }
-.wk-quick-head {
-  width: 100%;
-  box-sizing: border-box;
-  min-height: 52px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 0;
-  border: 0;
-  background: none;
-  text-align: left;
-  cursor: pointer;
-}
-.wk-quick-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.wk-quick-q {
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 15px;
-  color: var(--ink);
-}
-/* The chips, collapsed to one line — it truncates rather than wrapping, the
-   same call the week card's own meal names make (Emily: one line beats a
-   complete list, the full set is one tap away). */
-.wk-quick-sub {
-  font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 13px;
-  color: var(--ink-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.wk-quick-ask {
-  flex: 0 0 auto;
-  font-family: var(--font-body);
-  font-weight: 800;
-  font-size: 12px;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--apricot-label);
-}
-.wk-quick-head:hover .wk-quick-ask { color: var(--apricot-label-hover); }
-.wk-quick-body {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  padding: 2px 0 12px;
-}
-/* An author `display` beats the UA sheet's [hidden] rule, so a collapsed ask
-   would render open. Same guard every sheet in this file carries. */
-.wk-quick-body[hidden] { display: none; }
-.wk-quick-body-line {
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--ink-secondary);
-}
 
 /* "Who's approving?" picker — one button per adult, stacked. Uses the
    shared dialog scrim/panel styling defined with the reset dialog below. */
@@ -6987,28 +6779,6 @@ button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); 
 }
 .dock-primary:hover { background: var(--apricot-light); }
 .dock-primary:disabled { opacity: .6; cursor: default; box-shadow: none; }
-/* The dock's second door, when the second path is a real one and not a
-   rare action: a full-width secondary ABOVE the apricot, never a second
-   apricot (Rule 5). Same sand-and-hairline button .gro-secondary is on
-   Shop's WHERE NEXT and .wk-check-btn was above Approve — the fill is what
-   separates it from the ground, and its label is --ink on --sand (11.60:1
-   light / 11.28:1 dark, measured for .gro-secondary). All set's spruce
-   dock re-inks it below (.wk-allset-dock .dock-secondary). */
-.dock-secondary {
-  width: 100%;
-  min-height: 52px;
-  margin-bottom: 8px;
-  border-radius: var(--radius-action);
-  background: var(--sand);
-  border: 1.5px solid var(--hairline-strong);
-  color: var(--ink);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 17px;
-  letter-spacing: -0.02em;
-  cursor: pointer;
-}
-.dock-secondary:hover { border-color: var(--ink-strong); }
 .today-dock[hidden] { display: none; }
 /* space-between with a single link leaves it at the start, which is
    where a lone back link belongs — no second rule needed. */
@@ -7691,8 +7461,6 @@ span.cook-week-name { cursor: default; }
 .bell-slot .notif-bell-icon svg { width: 17px; height: 17px; }
 .bell-slot .notif-badge { top: 3px; right: 3px; }
 
-#coach-card-slot:empty { display: none; }
-#coach-scrim,
 #prefs-scrim,
 #tips-scrim,
 #morning-scrim {
@@ -7702,7 +7470,6 @@ span.cook-week-name { cursor: default; }
   animation: fadeIn .18s ease;
   z-index: 40;
 }
-#coach-sheet,
 #prefs-sheet,
 #tips-sheet,
 #morning-sheet {
@@ -8237,30 +8004,8 @@ span.cook-week-name { cursor: default; }
      end of the file takes it back with the rest of the docks. */
   padding: 14px 84px 10px 20px;
 }
-/* The way into the Review step, above the decision it is for. Secondary by
-   construction — the screen's one apricot is the Approve button under it
-   (Rule 5), and a second fill here would make neither of them the primary.
-   Sand fill + hairline is the same secondary the slot cards' .wk-act uses,
-   widened to match the button it sits above. */
-.wk-check-btn {
-  width: 100%;
-  min-height: 48px;
-  margin-bottom: 8px;
-  border-radius: var(--radius-action);
-  border: 1.5px solid var(--hairline-strong);
-  background: var(--sand);
-  color: var(--ink-strong);
-  cursor: pointer;
-  font-family: var(--font-display);
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -.02em;
-}
-.wk-check-btn:hover { background: var(--sand-deep); }
-
 /* The clash, on its dish: urgent tint inside the row, the same two quiet
    segments the old card had. */
-.rv-dish.has-settle { flex-wrap: wrap; }
 .rv-settle {
   flex: 1 0 100%;
   background: var(--urgent-tint);
@@ -8276,18 +8021,6 @@ span.cook-week-name { cursor: default; }
   line-height: 1.4;
   color: var(--urgent-label);
 }
-/* The clash as one red word on a night's tile (S6: the word says why). */
-.rv-day-clash {
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--urgent-label);
-}
-/* The dish name in the review is a button into the recipe now; it keeps
-   its own type (see .dish-link), left-aligned, no full width so the acts
-   beside it keep their room. */
-.rv-dish-said .rv-dish-name { width: auto; text-align: left; }
-
 /* ---------- SET: the All set screen ----------
    Spruce, the one finish in the loop that gets its own screen (§2b S5). */
 .wk-allset {
@@ -8339,8 +8072,7 @@ span.cook-week-name { cursor: default; }
   margin: 0;
   color: var(--ivory-ink);
 }
-.wk-allset-line.is-quiet { font-size: 14px; color: var(--ivory-ink-muted); }
-.wk-allset-nums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 4px; }
+.wk-allset-nums { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 4px; }
 .wk-allset-num {
   background: var(--spruce-raised);
   border-radius: var(--radius-card);
@@ -8366,134 +8098,371 @@ span.cook-week-name { cursor: default; }
   text-transform: uppercase;
   color: var(--apricot-light);
 }
-/* The two quick asks as a step of their own (Emily, 2026-09-13: "not a
-   subtle piece to skip"): above the counters, a card headline rather than
-   an eyebrow, each question a heading with its chips and answers open
-   under it. Everything inside sits on --spruce-raised, and the ask bodies
-   were written for an ivory card — their --ink-secondary helper lines
-   measured 2.37:1 here in light (Emily: "the dark font on the 'all set'
-   screen is hard to read"), the cook-ahead sentence in --ink 1.21:1. Every
-   text colour below is re-inked to the on-spruce tokens and measured on
-   --spruce-raised, light / dark:
-     .wk-quick-title, .wk-quick-q, .ca-ask-line,
-       .ca-ask-q                                  --ivory-ink        9.86 / 7.70
-     .wk-quick-body-line, .ca-ask-count           --ivory-ink-muted  8.62 / 6.52
-     .btn-sand label                              --ivory-ink        9.86 / 7.70
-     .wk-quick-done-tick                          --celadon          6.06 / 4.74
-     a ticked chip: --on-accent-ink on --celadon                     7.23 / 8.46
-   A ticked chip is solid celadon, the cook hero's own .cook-ahead-day.is-on
-   recipe — the tint it used to take is 1.38:1 against this card in dark. */
-.wk-allset .wk-quick-card.on-spruce {
-  background: var(--spruce-raised);
-  border-color: var(--spruce-raised);
-  color: var(--ivory-ink);
-  padding: 16px 16px 10px;
-  margin-top: 6px;
-}
-.wk-allset .wk-quick-card.on-spruce .wk-quick-title {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 21px;
-  letter-spacing: -0.028em;
-  line-height: 1.15;
-  text-transform: none;
-  color: var(--ivory-ink);
-}
-.wk-allset .wk-quick-card.on-spruce .wk-quick-head.is-fixed {
-  min-height: 0;
-  padding: 14px 0 6px;
-  cursor: default;
-}
-.wk-allset .wk-quick-card.on-spruce .wk-quick-q {
-  font-family: var(--font-display);
-  font-size: 17px;
-  letter-spacing: -0.02em;
-  color: var(--ivory-ink);
-}
-.wk-allset .wk-quick-card.on-spruce .wk-quick-sub { color: var(--ivory-ink-muted); }
-.wk-allset .wk-quick-card.on-spruce .wk-quick-line + .wk-quick-line { border-top-color: var(--spruce-hover); }
-.wk-allset .wk-quick-card.on-spruce .wk-quick-ask { color: var(--apricot-light); }
-.wk-allset .wk-quick-card.on-spruce .wk-quick-body-line,
-.wk-allset .wk-quick-card.on-spruce .ca-ask-count { color: var(--ivory-ink-muted); }
-.wk-allset .wk-quick-card.on-spruce .ca-ask-line,
-.wk-allset .wk-quick-card.on-spruce .ca-ask-q { color: var(--ivory-ink); }
-.wk-allset .wk-quick-card.on-spruce .ca-comp-day { opacity: 0.85; }
-.wk-allset .wk-quick-card.on-spruce .ca-ask-block + .ca-ask-block { border-top-color: var(--spruce-hover); }
-.wk-allset .wk-quick-card.on-spruce .defrost-chip.is-selected,
-.wk-allset .wk-quick-card.on-spruce .ca-ask-day.is-on {
-  background: var(--celadon);
-  border-color: var(--celadon);
-  color: var(--on-accent-ink);
-}
-/* The quiet answer, in the cook hero's outline recipe (.cook-serves-btn):
-   the ivory-card version's --hairline-strong edge and --ink-secondary
-   label both vanish on spruce. */
-.wk-allset .wk-quick-card.on-spruce .ny-actions .btn-sand {
-  border-color: var(--apricot-rule);
-  color: var(--ivory-ink);
-}
-.wk-allset .wk-quick-card.on-spruce .ny-actions .btn-sand:hover { background: var(--spruce-hover); }
-.wk-allset .wk-quick-card.on-spruce .ny-actions .btn-gold { border: 1.5px solid var(--apricot-rule); }
-.wk-allset .wk-quick-card.on-spruce .ny-actions .btn-gold:hover { background: var(--spruce-hover); }
-/* An answered ask: the tick and the line it came to. Inked for the ivory
-   receipt card first (the Cook view's re-ask can land an answer there),
-   then re-inked on spruce. */
-.wk-quick-done {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px 0;
-}
-.wk-quick-done-tick {
-  flex: 0 0 auto;
-  width: 22px;
-  height: 22px;
-  color: var(--celadon-label);
-}
-.wk-quick-done-tick svg { width: 22px; height: 22px; display: block; }
-.wk-quick-done-text {
-  font-family: var(--font-body);
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.4;
-  color: var(--ink);
-}
-.wk-allset .wk-quick-card.on-spruce .wk-quick-done-tick { color: var(--celadon); }
-.wk-allset .wk-quick-card.on-spruce .wk-quick-done-text { color: var(--ivory-ink); }
 .wk-allset-dock { margin: auto -20px 0; background: var(--spruce); border-top-color: var(--spruce-hover); }
 .tab-panel.is-allset { background: var(--spruce); }
 .tab-panel.is-allset #week-steps { flex: 1 0 auto; display: flex; flex-direction: column; }
-/* "See the week" on spruce: the counters' own tile fill (--spruce-raised)
-   with the on-spruce outline (.cook-serves-btn's --apricot-rule edge) and
-   the ivory label — a button, not a link, and not a second apricot.
-   --ivory-ink on --spruce-raised 9.86:1 light / 7.70:1 dark (the numbers
-   the asks card above it recorded), on --spruce-hover 8.53 / 6.90. */
-.wk-allset-dock .dock-secondary {
-  background: var(--spruce-raised);
-  border-color: var(--apricot-rule);
-  color: var(--ivory-ink);
-}
-.wk-allset-dock .dock-secondary:hover { background: var(--spruce-hover); border-color: var(--apricot-light); }
 
-/* ---------- REVIEW: one control, two ways to read one week ----------
-   Emily's approved design, 2026-09-09. The segmented control is the only
-   one on this screen (§5) — the Plan | Cook control that used to be the
-   Meals tab's went with cooking, to Kitchen.
-   Contrast measured in Chromium at 390px, both schemes, and recorded per
-   rule. Everything here clears 4.5:1 in both:
-     .wk-seg-btn         --ink-strong on --sand           11.43 light / 11.28 dark
-     .rv-group-label     --ink-strong on --ground         12.59 light / 14.40 dark
-     .rv-dish-name       --ink on --surface               13.52 light / 12.49 dark
-     .rv-dish-cooks      --ink-secondary on --surface      4.70 light /  7.36 dark
-     .rv-step-count      --ink-strong on --sand           11.43 light / 11.28 dark
-     (the Which days tiles carry their own table — see "which days" below)
-     .rv-empty/.rv-trouble  --ink on --ground             12.78 light / 14.40 dark
-   The one exception is .rv-step-btn:disabled (--ink-inactive on --sand,
-   2.92:1) — a disabled control, which WCAG 1.4.3 exempts, and the low
-   contrast IS the signal that it is off. Nothing else here leans on that
-   exemption: the count used to fade to --ink-secondary while a call was
-   out (4.04:1 on this track), which a transient state does not get to do,
-   so the two buttons going inert is the whole of the busy signal now. */
+/* ---------- the day card: rows with Done and Swap (Emily, 2026-09-18) ----------
+   Boards 12 "Check the week" and 19 "Plan": one card per day, the three
+   meals as rows — the slot as an eyebrow, the dish, one meta line — and
+   36px mini buttons at the right. The visible box is the boards' 36px;
+   the tap target is the full 44px (rule 6) through .wk-mini's ::before.
+   Contrast, both schemes: .wk-row-name --ink on --surface (13.52 light /
+   12.49 dark), .wk-row-meta --ink-secondary on --surface (4.70 / 7.36),
+   .wk-mini --ink on --surface, a done tick --on-accent-ink on --celadon
+   (7.23 / 8.46, Rule 1). */
+.wk-root-day-head { display: flex; justify-content: space-between; align-items: baseline; padding: 0 2px; }
+.wk-root-day-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -.028em;
+  color: var(--ink);
+}
+.wk-root-day-today {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--apricot-label);
+}
+.wk-day-card { padding: 4px 14px; display: flex; flex-direction: column; }
+.wk-card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 12px 0 4px; }
+.wk-card-day {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -.028em;
+  color: var(--ink);
+}
+.wk-card-count { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); text-align: right; }
+.wk-card-tags { display: flex; flex-wrap: wrap; gap: 6px 10px; padding: 0 0 6px; }
+.wk-card-tag {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--apricot-label);
+}
+.wk-row { border-top: 1.5px solid var(--hairline); padding: 6px 0; display: flex; flex-direction: column; gap: 8px; }
+.wk-card-head + .wk-row, .wk-card-tags + .wk-row { border-top: 0; }
+.wk-row-main { display: flex; align-items: center; gap: 12px; min-height: 52px; }
+.wk-row-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.wk-row-eyebrow {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.wk-row-eyebrow .wk-changed { margin-top: 0; margin-left: 6px; vertical-align: middle; }
+.wk-row-name {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink);
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  width: auto;
+}
+.wk-row-name.is-quiet { font-weight: 500; color: var(--ink-secondary); }
+.wk-row.is-done .wk-row-name { color: var(--ink-done); text-decoration: line-through; }
+.wk-row-meta { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); }
+.wk-row-acts { display: flex; gap: 6px; flex: 0 0 auto; }
+.wk-row .rv-settle { margin-bottom: 6px; }
+.wk-mini {
+  position: relative;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: var(--radius-control);
+  border: 1.5px solid var(--hairline-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+/* The 44px tap target around the 36px box (rule 6). */
+.wk-mini::before { content: ""; position: absolute; inset: -4px 0; }
+.wk-mini svg { width: 16px; height: 16px; flex: 0 0 auto; }
+@media (hover: hover) { .wk-mini:hover { background: var(--sand); } }
+.wk-mini:disabled { opacity: .6; cursor: default; }
+.wk-mini-done.is-done { background: var(--celadon); border-color: var(--celadon); color: var(--on-accent-ink); }
+/* The sand, edge-less variant: Check the week's "Swap the meal" and the
+   root's "+ Add a meal" (the boards' .mini.ghost). */
+.wk-carousel .wk-mini, .wk-mini-add { background: var(--sand); border-color: transparent; }
+@media (hover: hover) { .wk-carousel .wk-mini:hover, .wk-mini-add:hover { background: var(--sand-deep); } }
+.wk-mini-add { align-self: flex-start; }
+
+/* The root's freezer row: a celadon-tint snowflake tile, the question (or
+   the answer once it is given), a chevron into the freezer step. */
+.wk-freezer-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 2px;
+  margin-top: 2px;
+  border: 0;
+  border-top: 1.5px solid var(--hairline);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+}
+.wk-freezer-tile {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-badge-sm);
+  background: var(--celadon-tint);
+  color: var(--celadon-label);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wk-freezer-text { flex: 1 1 auto; font-family: var(--font-body); font-size: 15px; font-weight: 600; line-height: 1.3; }
+.wk-freezer-chev { flex: 0 0 auto; display: inline-flex; color: var(--ink-inactive); }
+/* The approved root's dock: no apricot; "Plan next week" as an outline
+   secondary at the right, beside the chat FAB (the dock's own right
+   padding clears it). */
+.wk-root-dock { flex-direction: row; justify-content: flex-end; align-items: center; }
+.wk-plan-next {
+  min-height: 52px;
+  padding: 0 18px;
+  border-radius: var(--radius-action);
+  border: 1.5px solid var(--hairline-strong);
+  background: transparent;
+  color: var(--ink-strong);
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  cursor: pointer;
+}
+.wk-plan-next:hover { border-color: var(--ink-strong); }
+
+/* ---------- Check the week: the carousel ---------- */
+.wk-check-head .wk-head-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.wk-check-head.is-root { padding-top: 12px; }
+.wk-check-head .wk-sub { flex: 1 1 auto; }
+.wk-help {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-pill);
+  border: 0;
+  background: var(--sand);
+  color: var(--ink-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.wk-help:hover { background: var(--sand-deep); }
+.wk-daytabs { display: flex; gap: 4px; padding: 8px 20px 0; }
+.wk-daytab {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 36px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--sand);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+.wk-daytab::before { content: ""; position: absolute; inset: -4px 0; }
+.wk-daytab.is-on { background: var(--apricot); color: var(--on-accent-ink); }
+.wk-carousel {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: 20px;
+  padding: 12px 20px 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.wk-carousel::-webkit-scrollbar { display: none; }
+.wk-carousel .wk-day-card {
+  flex: 0 0 auto;
+  width: 310px;
+  max-width: calc(100vw - 60px);
+  scroll-snap-align: start;
+  padding: 12px 16px 10px;
+}
+.wk-dots { display: flex; gap: 6px; justify-content: center; padding: 8px 0 0; }
+.wk-dot-page { width: 6px; height: 6px; border-radius: var(--radius-pill); background: var(--hairline-deep); }
+.wk-dot-page.is-on { background: var(--apricot); width: 18px; }
+
+/* ---------- the freezer step ---------- */
+.wk-freezer-body { padding: 0 20px; display: flex; flex-direction: column; gap: 18px; }
+.wk-freezer-none { padding: 4px 0; }
+.wk-freezer-means {
+  background: var(--celadon-tint);
+  border-color: var(--celadon-edge);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px;
+}
+.wk-freezer-means-icon { flex: 0 0 auto; display: inline-flex; color: var(--celadon-label); padding-top: 1px; }
+.wk-freezer-means-text { display: flex; flex-direction: column; gap: 4px; }
+.wk-freezer-means-title { font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--celadon-label); }
+.wk-freezer-means-line { font-family: var(--font-body); font-size: 14px; line-height: 1.4; color: var(--ink-on-celadon); }
+.wk-freezer-dock { gap: 4px; }
+.wk-freezer-none-btn {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+.wk-freezer-none-btn:hover { color: var(--ink-strong); }
+
+/* ---------- the swap sheet (Emily, 2026-09-18, board 19b) ---------- */
+#wk-swap-scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  z-index: 40;
+  opacity: 0;
+  transition: opacity var(--motion-base) var(--motion-ease);
+}
+#wk-swap-scrim.is-open { opacity: 1; }
+#wk-swap-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 41;
+  max-height: 84%;
+  overflow-y: auto;
+  background: var(--surface);
+  border-radius: var(--radius-hero) var(--radius-hero) 0 0;
+  box-shadow: var(--shadow-sheet);
+  padding: 14px 20px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  translate: 0 100%;
+  transition: translate var(--motion-base) var(--motion-ease);
+}
+#wk-swap-sheet.is-open { translate: 0 0; }
+#wk-swap-scrim[hidden], #wk-swap-sheet[hidden] { display: none; }
+#wk-swap-body { display: flex; flex-direction: column; gap: 10px; }
+@media (min-width: 768px) {
+  #wk-swap-sheet {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: 520px;
+    max-width: 100%;
+  }
+}
+.wk-swap-eyebrow {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.wk-swap-title {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: -.03em;
+  line-height: 1.1;
+  color: var(--ink);
+}
+.wk-swap-sub, .wk-swap-loading, .wk-swap-trouble {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+}
+.wk-swap-trouble { color: var(--ink); }
+.wk-swap-picks { display: flex; flex-direction: column; gap: 10px; }
+.wk-swap-pick {
+  width: 100%;
+  min-height: 60px;
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
+  border-radius: var(--radius-card);
+  padding: 14px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+}
+@media (hover: hover) { .wk-swap-pick:hover { background: var(--sand); } }
+.wk-swap-pick:disabled { opacity: .6; cursor: default; }
+.wk-swap-pick-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.wk-swap-pick-name { font-family: var(--font-body); font-size: 15px; font-weight: 600; line-height: 1.3; }
+.wk-swap-pick-why { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); }
+.wk-swap-pick-chev { flex: 0 0 auto; display: inline-flex; color: var(--ink-inactive); }
+.wk-swap-quiet {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+.wk-swap-quiet:hover { color: var(--ink-strong); }
+.wk-swap-tell {
+  width: 100%;
+  min-height: 54px;
+  border-radius: var(--radius-action);
+  border: 1.5px solid var(--hairline-strong);
+  background: transparent;
+  color: var(--ink-strong);
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  cursor: pointer;
+}
+.wk-swap-tell:hover { border-color: var(--ink-strong); }
+/* ---------- the segmented control ----------
+   Emily's approved design, 2026-09-09. Since 2026-09-18 only Plan | Chores
+   uses it (the review's What we're eating / Which days went with the
+   review's rebuild as day cards, below). --ink-strong on --sand measures
+   11.43 light / 11.28 dark. */
 .wk-seg {
   display: flex;
   gap: 4px;
@@ -8583,18 +8552,11 @@ span.cook-week-name { cursor: default; }
    reaches the foot. */
 .tab-panel.is-chores #week-plan-view { flex: 1 0 auto; }
 /* reviewStepHtml's dock (reviewDecideHtml's .wk-decide.dock) has the
-   identical problem on a short "What we're eating" list — one dish
-   measured the dock at y=335 in a 729px-tall panel, well short of the
-   foot — because #week-steps' own `flex: 1 0 auto` (above) only has
-   spare height to grow into when its parent does too. "Which days" (the
-   seven day tiles, same screen, just reviewState.view toggled) is tall
-   enough on its own that the gap never showed. reviewStepHtml is also
-   what a DRAFT's own root renders (it's the same screen, folded into
+   identical problem: #week-steps' own `flex: 1 0 auto` (above) only has
+   spare height to grow into when its parent does too. reviewStepHtml is
+   also what a DRAFT's own root renders (the same screen, folded into
    'week' — see renderMealsStep), so is-review-layout is named for "this
-   is reviewStepHtml", not for the 'review' step name alone, and is set
-   for both. Grown here, scoped to that layout the same way is-chores is
-   scoped to its own state, so the day-view root, the meal detail and the
-   everyday (non-draft) week root are untouched. */
+   is reviewStepHtml", not for the 'review' step name alone. */
 .tab-panel.is-review-layout #week-plan-view { flex: 1 0 auto; }
 
 .rv-body { display: flex; flex-direction: column; gap: 18px; padding: 0 20px; }
@@ -8624,388 +8586,6 @@ span.cook-week-name { cursor: default; }
 /* One dish, once, with the days it covers. Stacked rather than side by side
    because at 390px a dish name and a stepper on one line leaves the name
    two words wide. */
-.rv-dish {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px 14px;
-  border-top: 1px solid var(--hairline);
-}
-.rv-dish:first-child { border-top: 0; }
-.rv-dish-said { display: flex; flex-direction: column; gap: 2px; }
-.rv-dish-name {
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: -.02em;
-  line-height: 1.25;
-  color: var(--ink);
-}
-.rv-dish-cooks {
-  font-family: var(--font-body);
-  font-size: 13px;
-  color: var(--ink-secondary);
-}
-/* Stepper and Change one, one row (item 5, design-tidy pass 2026-09-11) —
-   they used to stack because at 390px "3 mornings" plus "Change one" ran
-   about 10px past the card's width, and flex-wrap took the wrap it was
-   there for. .rv-step-count and .rv-change below give back enough of
-   their own padding to fit both on one line at 375-390px without
-   shrinking either below its 44px tap height; flex-wrap stays as a safety
-   net for a longer slot word ("servings") or a two-digit count. */
-.rv-dish-acts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.rv-step {
-  display: flex;
-  align-items: center;
-  border-radius: var(--radius-control);
-  border: 1.5px solid var(--hairline-strong);
-  background: var(--sand);
-  overflow: hidden;
-}
-.rv-step-btn {
-  width: 44px;
-  height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  background: none;
-  color: var(--ink-strong);
-  cursor: pointer;
-}
-.rv-step-btn:hover:not(:disabled) { background: var(--sand-deep); }
-/* A stepper at its floor, or one with a call out. Kept visible rather than
-   removed: a control that disappears reads as a bug, and its absence would
-   move the count under the finger about to tap it. */
-.rv-step-btn:disabled { color: var(--ink-inactive); cursor: default; }
-.rv-step-count {
-  min-width: 88px;
-  padding: 0 3px;
-  text-align: center;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ink-strong);
-}
-.rv-change {
-  min-height: 44px;
-  padding: 0 10px;
-  border-radius: var(--radius-control);
-  border: 1.5px solid var(--hairline-strong);
-  background: var(--sand);
-  color: var(--ink-strong);
-  cursor: pointer;
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: -.02em;
-}
-.rv-change:hover { background: var(--sand-deep); }
-
-/* ---------- REVIEW: one more day, and what it costs ---------- */
-/* The "+" strip. Every day it offers is already holding something, so each
-   row has to SAY what — a picker that only listed weekdays would be asking
-   the household to agree to a swap it never showed them. Rows rather than
-   the compact day chips cook-ahead uses (.cook-ahead-day), which carry a
-   three-letter weekday and nothing else: there is no room in one for a
-   dish name at 390px, and this is a single choice rather than a set of
-   toggles waiting on a confirm.
-
-   No apricot anywhere in here (Rule 5) — the screen's one accent belongs
-   to Approve, at the foot. The strip is marked out by the sand ground it
-   sits on instead. */
-.rv-pick {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 2px;
-  padding-block: 12px;
-  padding-inline: 12px;
-  border-radius: var(--radius-card);
-  background: var(--sand);
-}
-/* Supporting copy on --sand: --ink-secondary measures 4.04:1 there, which
-   is under AA, so the ask takes body ink — measured in Chromium off
-   computed styles, 11.60:1 light / 11.28:1 dark. (Recorded here first as
-   11.05/12.43, which was the token pair's own figure rather than this
-   element's. Both pass AA comfortably; a recorded ratio is worth nothing
-   if it is not the one that reproduces on the thing it is written above.) */
-.rv-pick-ask {
-  margin: 0;
-  font-family: var(--font-body);
-  font-size: 13px;
-  line-height: 1.45;
-  color: var(--ink);
-}
-.rv-pick-days { display: flex; flex-direction: column; gap: 6px; }
-.rv-pick-day {
-  width: 100%;
-  box-sizing: border-box;
-  min-height: 44px;
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 8px 12px;
-  border-radius: var(--radius-control);
-  border: 1.5px solid var(--hairline-strong);
-  background: var(--ground);
-  cursor: pointer;
-  text-align: left;
-}
-.rv-pick-day:hover { background: var(--sand-deep); }
-.rv-pick-when {
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: -.02em;
-  color: var(--ink-strong);
-  flex: 0 0 auto;
-}
-/* What that day is holding — the thing being spent. Right-aligned and
-   allowed to wrap: a long dish name must not push the day off the row. */
-.rv-pick-holding {
-  font-family: var(--font-body);
-  font-size: 13px;
-  color: var(--ink);
-  text-align: right;
-  min-width: 0;
-}
-/* An open slot is not a dish being lost and should not read as one.
-   --ink-secondary on --ground is 4.44:1 light / 8.48:1 dark. */
-.rv-pick-holding.is-quiet { color: var(--ink-secondary); }
-.rv-pick-cancel {
-  align-self: flex-start;
-  min-height: 44px;
-  padding: 0 4px;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: -.02em;
-  color: var(--ink-strong);
-}
-
-/* Same ground, and this one is trouble copy — the line most worth being
-   able to read. --ink is 12.78:1 light / 14.40:1 dark.
-
-   It sits INSIDE the dish row whose stepper was tapped. It used to render
-   once at the foot of the whole body, which on a real seven-day week put
-   it 2114px down an 844px screen: a refused tap that moved nothing, said
-   nothing where the finger was, and explained itself a page and a half
-   away. No urgent tint and no icon — it is a plain answer, not an alarm,
-   and the row it is sitting in is the context. */
-.rv-trouble {
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.45;
-  color: var(--ink);
-}
-/* The one inside a row needs the separation the foot got for free. */
-.rv-dish > .rv-trouble { margin-top: 2px; }
-
-/* ---------- REVIEW: which days — seven tiles ----------
-   Emily's pick, 2026-09-12 ("Week · A · Seven tiles"). One tile a night:
-   date | dinner + bar | drag handle, on a 52px | 1fr | 44px grid. Every
-   tile is a --surface card with a --hairline edge; today's is the
-   celadon tint with its own edge (§1). The lifted tile is the one thing
-   here that carries a shadow, and only while it is off the list — it is
-   floating over the screen, which is what --shadow-hero's family is for.
-   Motion is the tab crossfade's own tokens: --motion-fast + --motion-ease
-   on transform, nothing new. All seven fit above the dock at 375×812 when
-   no tile carries a tag (56px min-height, 6px apart).
-   Contrast, measured in Chromium at 375px, both schemes (rule 8):
-     .rv-tiles-eyebrow / .rv-tiles-key  --ink-strong on --ground  12.59 light / 14.40 dark
-       (the head sits on the ground, where --ink-muted is 4.33 and
-       --ink-secondary 4.44 — both short of AA for 10–12px text, so the
-       head takes the token .rv-group-label already uses on this ground)
-     .rv-tile-dow                      --ink-muted on --surface   4.58 light /  7.36 dark
-     .rv-tile-num / .rv-tile-name      --ink on --surface        13.52 light / 12.49 dark
-     .rv-tile-min                      --ink-secondary on --surface  4.70 light / 7.36 dark
-     .rv-tile-today                    --celadon-label on --celadon-tint  4.87 light / 5.92 dark
-     .rv-tile.is-today .rv-tile-name   --ink-on-celadon on --celadon-tint  10.65 light / 10.37 dark
-     .rv-tile-tag                      --apricot-label on --surface  5.20 light / 8.53 dark
-     .rv-tile-handle                   --ink-muted, an icon (3:1 applies): 4.58 on --surface,
-                                       3.88 on --celadon-tint light / 6.11 dark */
-.rv-days { gap: 10px; }
-.rv-tiles-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 0 2px;
-}
-.rv-tiles-eyebrow {
-  font-family: var(--font-body);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .13em;
-  text-transform: uppercase;
-  color: var(--ink-strong);
-}
-.rv-tiles-key {
-  flex: 0 0 auto;
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--ink-strong);
-}
-.rv-tiles {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.rv-tile {
-  position: relative;
-  box-sizing: border-box;
-  min-height: 56px;
-  display: grid;
-  grid-template-columns: 52px 1fr 44px;
-  align-items: center;
-  gap: 12px;
-  padding: 7px 12px 7px 10px;
-  background: var(--surface);
-  border: 1.5px solid var(--hairline);
-  border-radius: var(--radius-tile);
-  color: var(--ink);
-  transition: transform var(--motion-fast) var(--motion-ease);
-}
-.rv-tile.is-today {
-  background: var(--celadon-tint);
-  border-color: var(--celadon-edge);
-}
-.rv-tile.is-lifted {
-  transition: none;
-  z-index: 2;
-  box-shadow: var(--shadow-hero);
-}
-/* While a move is out, the list is read-only: nothing here changes shape
-   (the swap is optimistic and the tiles already traded), the handles
-   just go inert until the answer lands. */
-.rv-tiles.is-busy .rv-tile-handle { pointer-events: none; }
-.rv-tile-date {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
-  line-height: 1;
-}
-.rv-tile-dow {
-  font-family: var(--font-body);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .13em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-}
-.rv-tile-num {
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: -.02em;
-  color: var(--ink);
-}
-.rv-tile.is-today .rv-tile-num { font-size: 19px; font-weight: 800; }
-.rv-tile-body {
-  min-width: 0;
-  min-height: 44px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 3px;
-  padding: 0;
-  border: 0;
-  background: none;
-  text-align: left;
-  cursor: pointer;
-  font: inherit;
-  color: inherit;
-}
-.rv-tile-eyebrow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 8px;
-  font-family: var(--font-body);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .13em;
-  text-transform: uppercase;
-  line-height: 1.3;
-}
-.rv-tile-today { color: var(--celadon-label); }
-.rv-tile-tag { color: var(--apricot-label); }
-.rv-tile-name {
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: -.02em;
-  line-height: 1.2;
-  color: var(--ink);
-  /* Wraps, never truncates: the dish name is the answer to "what's
-     Thursday", and a cut-off answer is no answer. */
-  overflow-wrap: anywhere;
-}
-.rv-tile-name.is-quiet { color: var(--ink-secondary); font-weight: 500; }
-.rv-tile.is-today .rv-tile-name { color: var(--ink-on-celadon); }
-.rv-tile-time {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.rv-tile-bar {
-  flex: 0 0 auto;
-  height: 5px;
-  border-radius: var(--radius-pill);
-  background: var(--celadon);
-}
-.rv-tile-bar.is-long { background: var(--apricot); }
-.rv-tile-min {
-  flex: 0 0 auto;
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--ink-secondary);
-  white-space: nowrap;
-}
-.rv-tile-handle {
-  width: 44px;
-  height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-tile);
-  background: none;
-  color: var(--ink-muted);
-  cursor: grab;
-  /* The handle is the drag: a finger on it is moving a night, not the
-     page, so the browser is told not to pan from here. */
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-.rv-tile.is-lifted .rv-tile-handle { cursor: grabbing; }
-.rv-tile-handle:focus-visible { outline: 2px solid var(--apricot-deep); outline-offset: 2px; }
-.rv-tile-handle.is-off { cursor: default; }
-/* The live region: read by assistive tech, never seen. */
-.rv-tiles-live {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  border: 0;
-}
-
 /* ---------- "One thing to settle": a hard allergen clash ---------- */
 /* Urgent TINT, not the urgent fill — a clash needs a decision, and Rule 3
    reserves the fill itself for something worse than that. The only card
@@ -9078,7 +8658,7 @@ span.cook-week-name { cursor: default; }
    double-padding. 70px = the FAB's 54px + 16px inset, same formula as
    .wk-slots/.gro-trip-body below. */
 .wk-foot:not(:has(+ .dock)) { padding-bottom: 70px; }
-.wk-foot-link, .wk-foot-more {
+.wk-foot-more {
   min-height: 44px;
   padding: 0 4px;
   border: 0;
@@ -9090,7 +8670,7 @@ span.cook-week-name { cursor: default; }
   color: var(--ink-strong);
 }
 .wk-foot-more { color: var(--ink-secondary); letter-spacing: .02em; }
-.wk-foot-link:hover, .wk-foot-more:hover { color: var(--apricot-label-hover); }
+.wk-foot-more:hover { color: var(--apricot-label-hover); }
 
 /* ---------- DAY / MEAL: the back link ---------- */
 /* It is .crumb now — one definition, up beside .gro-foot. */
@@ -9588,11 +9168,10 @@ span.cook-week-name { cursor: default; }
 .wk-foot-solo { justify-content: flex-end; }
 
 /* ---------- Onboarding coaching (Emily + Julia, 2026-09-08) ----------
-   "This is how to talk to me": example prompts under the ask bar, the
-   one-time card on Today, and the Helpful tips sheet. Nothing new visually
-   — the chips are .ask-chip, the card is a .plan-nudge-card, and the sheet
-   is the Preferences sheet's own furniture. No apricot in any of it: the
-   card is a word, not an action, and Today's hero owns that colour. */
+   "This is how to talk to me": example prompts under the ask bar and the
+   Helpful tips sheet (the one-time card went on 2026-09-18). Nothing new
+   visually — the chips are .ask-chip and the sheet is the Preferences
+   sheet's own furniture. */
 
 /* .ask-chips is display:flex, which beats the bare [hidden] attribute — the
    same trap #reveal-days hit on the onboarding branch. Both the quick-action
@@ -9622,47 +9201,6 @@ span.cook-week-name { cursor: default; }
   cursor: pointer;
 }
 .ask-tips-btn:hover { color: var(--ink-strong); border-color: var(--ink-placeholder); }
-
-/* ---------- the how-and-why card ---------- */
-/* The one-time sheet (coachCardHtml). Its title reuses .plan-nudge-title. */
-#coach-sheet { padding: 12px 20px 24px; gap: 12px; }
-#coach-sheet .coach-title { padding-top: 2px; }
-.coach-lines { display: flex; flex-direction: column; }
-.coach-line { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; border-top: 1.5px solid var(--hairline); }
-.coach-line:first-child { border-top: 0; padding-top: 4px; }
-.coach-line-lead { font-family: var(--font-body); font-weight: 600; font-size: 15px; color: var(--ink); line-height: 1.3; }
-.coach-line-more { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); line-height: 1.4; }
-#coach-sheet .coach-actions { display: flex; align-items: center; gap: 16px; margin-top: 4px; }
-#coach-sheet .coach-actions .dock-primary { flex: 1 1 auto; width: auto; }
-.coach-card .coach-lines {
-  list-style: none;
-  margin: 2px 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.coach-card .coach-lines li {
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--ink-secondary);
-  padding-left: 14px;
-  position: relative;
-}
-.coach-card .coach-lines li::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 9px;
-  width: 5px;
-  height: 5px;
-  border-radius: var(--radius-pill);
-  background: var(--celadon);
-}
-.coach-actions { display: flex; align-items: center; gap: 18px; margin-top: 2px; }
-.coach-actions .plan-nudge-link { min-height: 44px; }
-.coach-tips { color: var(--ink-secondary); }
 
 /* ---------- Helpful tips sheet ---------- */
 /* The scrim and the sheet itself are the Preferences sheet's own rules,
@@ -10071,7 +9609,7 @@ span.cook-week-name { cursor: default; }
    predates and is independent of this ticket). */
 @media (min-width: 768px) {
   #week-sheet, #kit-sheet, #meals-more-sheet, #cook-more-sheet, #gro-scan-sheet, #rli-sheet,
-  #coach-sheet, #prefs-sheet, #tips-sheet, #morning-sheet, #snw-sheet {
+  #prefs-sheet, #tips-sheet, #morning-sheet, #snw-sheet {
     left: 50%;
     right: auto;
     transform: translateX(-50%);
