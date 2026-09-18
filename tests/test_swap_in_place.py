@@ -29,17 +29,44 @@ from pathlib import Path
 
 import pytest
 
+from conftest import household_today
+
 from app import agent, tools
 from app.db import get_conn
 from app.tools import swap_in_place as sip
 from app.tools._shared import use_household
 
 
-TODAY = datetime.date.today()
-WEEK_START = (TODAY - datetime.timedelta(days=TODAY.weekday())).isoformat()
+# Swapping a dish onto a night that has ALREADY GONE BY is refused now
+# (overnight/swap-refuses-the-past, 2026-09-17), on the HOUSEHOLD's clock —
+# so this week is seeded from the household's own today rather than from
+# this calendar week's Monday, which put the first days of it behind today
+# on every weekday but Monday and made every swap below a swap into the
+# past. The names are POSITIONS in the seeded week, not weekdays. Same
+# harness-artifact class the add_dish_day branch fixed in
+# test_swap_atomic.py on 2026-09-16, and it presents the same way: the app
+# is right and the seed is wrong.
+#
+# **BUT THE APP DOES BRANCH ON THE WEEKDAY, AND A SEED THAT MOVES HAS TO
+# RECKON WITH IT.** The first version of this note said "nothing in this
+# file asserts a weekday", which is true as written and misses the point:
+# swap_in_place._minutes_cap ends `cap if (cap and weekday < 5) else None`,
+# so a test can assert THE RESULT OF A WEEKDAY BRANCH without naming one.
+# The old seed pinned this calendar week's Monday and so held on whatever
+# day the suite ran; DAY1 is the household's today now, which is Saturday
+# or Sunday twice a week — and that took `clock (saturday)` from 36 passed
+# to 35, on a matrix whose entire purpose is catching exactly this. The one
+# test that needs a Monday-to-Friday night names WEEKNIGHT below.
+TODAY = household_today()
+WEEK_START = TODAY.isoformat()
 DAYS = [(datetime.date.fromisoformat(WEEK_START) + datetime.timedelta(days=i)).isoformat()
         for i in range(7)]
-MONDAY, TUESDAY, WEDNESDAY = DAYS[0], DAYS[1], DAYS[2]
+DAY1, DAY2, DAY3 = DAYS[0], DAYS[1], DAYS[2]
+# The first genuine weeknight in the seeded week, for the one test whose
+# subject IS the weeknight cap. Any seven consecutive days hold five of
+# them, so this always exists, is never behind the household's today, and
+# is always inside the plan's period.
+WEEKNIGHT = next(d for d in DAYS if datetime.date.fromisoformat(d).weekday() < 5)
 
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
@@ -104,10 +131,27 @@ def week():
             food_groups=groups, prep_time_minutes=10, cook_time_minutes=20,
         )
     plan_id = tools.create_weekly_plan(WEEK_START)["weekly_plan_id"]
-    for day, dish in ((MONDAY, "Pork Chops"), (TUESDAY, "Chili"), (WEDNESDAY, "Fish Tacos")):
+    for day, dish in ((DAY1, "Pork Chops"), (DAY2, "Chili"), (DAY3, "Fish Tacos")):
         tools.plan_meal(day, dish, slot="dinner", weekly_plan_id=plan_id,
                         reasoning="fits the week")
     return plan_id
+
+
+def _weeknight_entry(plan_id: int) -> int:
+    """A dinner on a day that really is Monday to Friday.
+
+    _minutes_cap only applies the household's weeknight cap when the date's
+    own `weekday() < 5`, so a test about that cap has to name a weeknight
+    or it is asserting which day of the week the suite happens to be run
+    on. The fixture's three days start at the household's today and cannot
+    promise one, so this plans onto WEEKNIGHT when it is not already among
+    them — and only then, because a second dinner on one day would give
+    _entry_id two rows to choose between.
+    """
+    if WEEKNIGHT not in (DAY1, DAY2, DAY3):
+        tools.plan_meal(WEEKNIGHT, "Pork Chops", slot="dinner", weekly_plan_id=plan_id,
+                        reasoning="fits the week")
+    return _entry_id(plan_id, WEEKNIGHT)
 
 
 def _entry_id(plan_id: int, day: str, slot: str = "dinner") -> int:
@@ -146,7 +190,7 @@ class TestThePrompt:
         tools.set_member_dietary_restrictions("Vineeth", ["peanut allergy"])
         tools.add_fact("people", "No shellfish in this house", hard=True)
         picker = _recorder(_pick())
-        tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=picker)
+        tools.swap_meal_in_place(week, _entry_id(week, DAY1), picker=picker)
 
         must_not = picker.contexts[0]["must_not_contain"]
         assert any("peanut allergy" in x and "Vineeth" in x for x in must_not)
@@ -162,22 +206,22 @@ class TestThePrompt:
         tools.add_recipe("Lemon Orzo", ingredients=[{"item": "Orzo", "qty": "1 box"}])
         tools.attribute_recipe_feedback("Thai Green Curry", "Vineeth", rating="disliked")
         tools.attribute_recipe_feedback("Lemon Orzo", "Emily", rating="liked")
-        tools.set_member_attendance(MONDAY, "dinner", "Vineeth", present=False)
+        tools.set_member_attendance(DAY1, "dinner", "Vineeth", present=False)
 
         picker = _recorder(_pick())
-        tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=picker)
+        tools.swap_meal_in_place(week, _entry_id(week, DAY1), picker=picker)
 
         lines = picker.contexts[0]["taste_verdicts"]
         # One hater at the table vetoes the dish for that table.
         assert any(line.startswith("whole table") and "Thai Green Curry" in line for line in lines)
         # The night Vineeth is out is a different table, and gets its own
         # line — which is the whole point of computing this per slot.
-        assert any(MONDAY in line and "Emily" in line for line in lines)
+        assert any(DAY1 in line and "Emily" in line for line in lines)
 
     def test_the_prompt_carries_the_rest_of_the_week(self, week):
         """What stops the replacement being a second helping of Tuesday."""
         picker = _recorder(_pick())
-        tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=picker)
+        tools.swap_meal_in_place(week, _entry_id(week, DAY1), picker=picker)
 
         others = picker.contexts[0]["week_other_dishes"]
         assert any("Chili" in line for line in others)
@@ -187,13 +231,13 @@ class TestThePrompt:
 
     def test_the_dish_being_replaced_is_always_on_avoid(self, week):
         picker = _recorder(_pick())
-        tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=picker)
+        tools.swap_meal_in_place(week, _entry_id(week, DAY1), picker=picker)
         assert picker.contexts[0]["avoid"] == ["Pork Chops"]
 
     def test_the_prompt_carries_the_slots_plate_rule_and_table(self, week):
-        tools.set_guest_count(MONDAY, "dinner", 2)
+        tools.set_guest_count(DAY1, "dinner", 2)
         picker = _recorder(_pick())
-        tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=picker)
+        tools.swap_meal_in_place(week, _entry_id(week, DAY1), picker=picker)
         context = picker.contexts[0]
         assert context["plate_rule"] == ["protein", "vegetable", "carb"]
         assert context["table"]["serves"] == 4  # two members plus two guests
@@ -201,26 +245,31 @@ class TestThePrompt:
         assert context["slot"] == "dinner"
 
     def test_a_rush_night_caps_the_minutes(self, week):
-        tools.save_week_intake(WEEK_START, night_tags={MONDAY: ["rush"]})
+        tools.save_week_intake(WEEK_START, night_tags={DAY1: ["rush"]})
         picker = _recorder(_pick())
-        tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=picker)
+        tools.swap_meal_in_place(week, _entry_id(week, DAY1), picker=picker)
         assert picker.contexts[0]["night_tags"] == ["rush"]
         assert picker.contexts[0]["max_minutes"] == tools.RUSH_MAX_MINUTES
 
     def test_an_unrushed_night_has_no_cap_even_with_a_weeknight_limit(self, week):
         tools.edit_preference("weeknight_max_minutes", 30)
-        tools.save_week_intake(WEEK_START, night_tags={MONDAY: ["unrushed"]})
+        tools.save_week_intake(WEEK_START, night_tags={DAY1: ["unrushed"]})
         picker = _recorder(_pick())
-        tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=picker)
+        tools.swap_meal_in_place(week, _entry_id(week, DAY1), picker=picker)
         assert picker.contexts[0]["night_tags"] == ["unrushed"]
         assert picker.contexts[0]["max_minutes"] is None
 
     def test_a_weeknight_limit_still_applies_to_an_untagged_night(self, week):
         """The control for the test above: the cap is lifted BY the tag,
-        not by the household merely having set one."""
+        not by the household merely having set one.
+
+        The one test in this file that needs a real Monday-to-Friday night
+        — _minutes_cap applies the cap only when `weekday() < 5`, and its
+        two neighbours above return before that line ever runs, so they
+        hold on any day and this does not. See WEEKNIGHT."""
         tools.edit_preference("weeknight_max_minutes", 30)
         picker = _recorder(_pick())
-        tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=picker)
+        tools.swap_meal_in_place(week, _weeknight_entry(week), picker=picker)
         assert picker.contexts[0]["max_minutes"] == 30
 
     def test_the_instructions_are_a_separate_cacheable_block(self):
@@ -239,15 +288,15 @@ class TestThePrompt:
 
 class TestApplyingThePick:
     def test_the_new_dish_replaces_the_old_one_on_that_slot_only(self, week):
-        result = tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=_recorder(_pick()))
+        result = tools.swap_meal_in_place(week, _entry_id(week, DAY1), picker=_recorder(_pick()))
         assert result["status"] == "swapped"
         assert result["meal"] == "Lemon Chicken Traybake"
         assert result["replaced"] == "Pork Chops"
 
-        rows = _entry_rows(week, MONDAY)
+        rows = _entry_rows(week, DAY1)
         assert [r["meal"] for r in rows] == ["Lemon Chicken Traybake"]
         # One slot, and nothing else on the week moved.
-        assert [r["meal"] for r in _entry_rows(week, TUESDAY)] == ["Chili"]
+        assert [r["meal"] for r in _entry_rows(week, DAY2)] == ["Chili"]
 
     def test_the_chain_fields_are_sane(self, week):
         """
@@ -255,8 +304,8 @@ class TestApplyingThePick:
         attached to the same plan, carrying the model's one-line reason as
         its reasoning — the field the Meal step's "Why this night" reads.
         """
-        result = tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=_recorder(_pick()))
-        row = _entry_rows(week, MONDAY)[0]
+        result = tools.swap_meal_in_place(week, _entry_id(week, DAY1), picker=_recorder(_pick()))
+        row = _entry_rows(week, DAY1)[0]
         assert row["id"] == result["entry_id"]
         assert row["weekly_plan_id"] == week
         assert row["slot"] == "dinner"
@@ -265,7 +314,7 @@ class TestApplyingThePick:
         assert row["reasoning"] == "Lighter than the chops, and nothing to thaw."
 
     def test_the_pick_is_saved_as_a_cookable_recipe(self, week):
-        tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=_recorder(_pick()))
+        tools.swap_meal_in_place(week, _entry_id(week, DAY1), picker=_recorder(_pick()))
         recipe = tools.get_recipe("Lemon Chicken Traybake")
         assert [i["item"] for i in recipe["ingredients"]] == [
             "Chicken thighs", "Lemons", "Baby potatoes"]
@@ -277,13 +326,13 @@ class TestApplyingThePick:
         changes the plan and nothing else — the same rule swap_meal_in_plan
         already follows, which is exactly why this goes through it.
         """
-        tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=_recorder(_pick()))
+        tools.swap_meal_in_place(week, _entry_id(week, DAY1), picker=_recorder(_pick()))
         assert tools.list_grocery_list("all") == []
 
     def test_the_refreshed_day_comes_back_in_the_shape_the_screen_reads(self, week):
-        result = tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=_recorder(_pick()))
+        result = tools.swap_meal_in_place(week, _entry_id(week, DAY1), picker=_recorder(_pick()))
         day = result["day"]
-        assert day["date"] == MONDAY
+        assert day["date"] == DAY1
         assert day["dinner"]["title"] == "Lemon Chicken Traybake"
         assert day["dinner"]["state"] == "planned"
 
@@ -310,7 +359,7 @@ class TestApplyingThePick:
                 return response
 
         monkeypatch.setattr(agent, "_client", lambda: types.SimpleNamespace(messages=_Messages()))
-        result = tools.swap_meal_in_place(week, _entry_id(week, MONDAY))
+        result = tools.swap_meal_in_place(week, _entry_id(week, DAY1))
         assert result["status"] == "swapped"
         assert calls["n"] == 1, "one meal, one model call"
         # The cheapest effort route the app has, not the week generator's.
@@ -332,7 +381,7 @@ class TestAnAllergenClash:
     def test_a_clashing_pick_costs_one_retry_and_the_second_one_lands(self, week):
         tools.set_member_dietary_restrictions("Vineeth", ["peanut allergy"])
         picker = _recorder(_pick(name="Peanut Noodles"), _pick(name="Lemon Chicken Traybake"))
-        result = tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=picker)
+        result = tools.swap_meal_in_place(week, _entry_id(week, DAY1), picker=picker)
 
         assert result["status"] == "swapped"
         assert result["meal"] == "Lemon Chicken Traybake"
@@ -343,7 +392,7 @@ class TestAnAllergenClash:
     def test_two_clashes_are_refused_in_plain_words_and_nothing_changes(self, week):
         tools.set_member_dietary_restrictions("Vineeth", ["peanut allergy"])
         picker = _recorder(_pick(name="Peanut Noodles"), _pick(name="Peanut Satay"))
-        result = tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=picker)
+        result = tools.swap_meal_in_place(week, _entry_id(week, DAY1), picker=picker)
 
         assert result["status"] == "refused"
         assert result["message"] == sip.REFUSAL
@@ -351,7 +400,7 @@ class TestAnAllergenClash:
         assert len(picker.contexts) == 2, "it stops after the retry"
         # Nothing written: the dinner is untouched and the clashing dish was
         # never saved as a recipe.
-        assert [r["meal"] for r in _entry_rows(week, MONDAY)] == ["Pork Chops"]
+        assert [r["meal"] for r in _entry_rows(week, DAY1)] == ["Pork Chops"]
         assert not any(r["name"] == "Peanut Noodles" for r in tools.list_recipes())
 
     def test_an_allergen_only_in_the_ingredients_is_caught_too(self, week):
@@ -361,14 +410,14 @@ class TestAnAllergenClash:
             {"item": "Shrimp", "qty": "1 lb", "category": "meat/seafood"},
         ])
         picker = _recorder(clashing, _pick(name="Lemon Chicken Traybake"))
-        result = tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=picker)
+        result = tools.swap_meal_in_place(week, _entry_id(week, DAY1), picker=picker)
         assert result["meal"] == "Lemon Chicken Traybake"
 
     def test_a_standing_dislike_never_refuses_a_swap(self, week):
         """A dislike is worth a word, never worth blocking what was asked for."""
         tools.add_food_dislikes(["mushrooms"])
         picker = _recorder(_pick(name="Mushroom Risotto"))
-        result = tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=picker)
+        result = tools.swap_meal_in_place(week, _entry_id(week, DAY1), picker=picker)
         assert result["status"] == "swapped"
         assert result["meal"] == "Mushroom Risotto"
 
@@ -377,7 +426,7 @@ class TestAnAllergenClash:
 
 
 def test_a_second_swap_avoids_the_first_replacement(week):
-    first = tools.swap_meal_in_place(week, _entry_id(week, MONDAY),
+    first = tools.swap_meal_in_place(week, _entry_id(week, DAY1),
                                 picker=_recorder(_pick(name="Lemon Chicken Traybake")))
     assert first["avoid"] == ["Pork Chops", "Lemon Chicken Traybake"]
 
@@ -395,7 +444,7 @@ def test_undo_after_two_swaps_restores_the_original_dish(week):
     before I started tapping", not "step back one dish" — a household that
     taps Swap three times and then Undo wants their Pork Chops.
     """
-    first = tools.swap_meal_in_place(week, _entry_id(week, MONDAY),
+    first = tools.swap_meal_in_place(week, _entry_id(week, DAY1),
                                 picker=_recorder(_pick(name="Lemon Chicken Traybake")))
     second = tools.swap_meal_in_place(week, first["entry_id"], avoid=first["avoid"],
                                  picker=_recorder(_pick(name="Black Bean Bowls")))
@@ -403,12 +452,12 @@ def test_undo_after_two_swaps_restores_the_original_dish(week):
     restored = tools.undo_meal_swap(week, second["entry_id"])
     assert restored["status"] == "restored"
     assert restored["meal"] == "Pork Chops"
-    assert [r["meal"] for r in _entry_rows(week, MONDAY)] == ["Pork Chops"]
+    assert [r["meal"] for r in _entry_rows(week, DAY1)] == ["Pork Chops"]
     assert restored["day"]["dinner"]["title"] == "Pork Chops"
 
 
 def test_undo_forgets_the_swap_so_it_cannot_be_undone_twice(week):
-    first = tools.swap_meal_in_place(week, _entry_id(week, MONDAY),
+    first = tools.swap_meal_in_place(week, _entry_id(week, DAY1),
                                 picker=_recorder(_pick()))
     restored = tools.undo_meal_swap(week, first["entry_id"])
     with pytest.raises(ValueError, match="nothing to put back"):
@@ -416,9 +465,9 @@ def test_undo_forgets_the_swap_so_it_cannot_be_undone_twice(week):
 
 
 def test_undo_restores_the_reason_the_slot_had_before(week):
-    first = tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=_recorder(_pick()))
+    first = tools.swap_meal_in_place(week, _entry_id(week, DAY1), picker=_recorder(_pick()))
     tools.undo_meal_swap(week, first["entry_id"])
-    assert _entry_rows(week, MONDAY)[0]["reasoning"] == "fits the week"
+    assert _entry_rows(week, DAY1)[0]["reasoning"] == "fits the week"
 
 
 # ---------- scoping and refusal to guess ----------
@@ -430,11 +479,11 @@ def test_another_households_meal_is_not_swappable(week):
     plan is real — they just belong to somebody else, which has to read as
     "no such meal", not as a swap.
     """
-    entry_id = _entry_id(week, MONDAY)
+    entry_id = _entry_id(week, DAY1)
     with use_household(2):
         with pytest.raises(ValueError, match="No meal"):
             tools.swap_meal_in_place(week, entry_id, picker=_recorder(_pick()))
-    assert [r["meal"] for r in _entry_rows(week, MONDAY)] == ["Pork Chops"]
+    assert [r["meal"] for r in _entry_rows(week, DAY1)] == ["Pork Chops"]
 
 
 def test_an_empty_slot_has_nothing_to_swap(week):
@@ -446,9 +495,9 @@ def test_an_empty_slot_has_nothing_to_swap(week):
 
 
 def test_a_model_that_comes_back_with_nothing_is_refused_not_guessed(week):
-    result = tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=_recorder({}))
+    result = tools.swap_meal_in_place(week, _entry_id(week, DAY1), picker=_recorder({}))
     assert result["status"] == "refused"
-    assert [r["meal"] for r in _entry_rows(week, MONDAY)] == ["Pork Chops"]
+    assert [r["meal"] for r in _entry_rows(week, DAY1)] == ["Pork Chops"]
 
 
 def test_the_route_is_household_scoped_and_answers_with_the_day(signed_in, week, monkeypatch):
@@ -457,7 +506,7 @@ def test_the_route_is_household_scoped_and_answers_with_the_day(signed_in, week,
                             plan_id, entry_id, avoid=avoid, picker=_recorder(_pick())))
     res = signed_in.post(
         f"/api/week/{WEEK_START}/swap-in-place",
-        json={"entry_id": _entry_id(week, MONDAY), "avoid": []},
+        json={"entry_id": _entry_id(week, DAY1), "avoid": []},
     )
     assert res.status_code == 200
     body = res.json()
@@ -542,7 +591,7 @@ class TestVerifierFindings:
         tools.add_recipe("Mushroom Risotto", ingredients=[{"item": "rice", "qty": "1 cup"}])
         tools.attribute_recipe_feedback("Mushroom Risotto", "Vineeth", rating="disliked")
         picker = _recorder(_pick("Mushroom Risotto"), _pick("Lemon Chicken Traybake"))
-        result = tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=picker)
+        result = tools.swap_meal_in_place(week, _entry_id(week, DAY1), picker=picker)
         assert result["status"] == "swapped"
         assert result["meal"] == "Lemon Chicken Traybake"
         assert "Mushroom Risotto" in result["avoid"]

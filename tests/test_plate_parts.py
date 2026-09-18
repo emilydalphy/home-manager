@@ -17,17 +17,28 @@ from pathlib import Path
 
 import pytest
 
+from conftest import household_today
+
 from app import tools
 from app.tools import plate_parts as pp
 from app.tools import swap_in_place as sip
 from app.tools._shared import use_household
 
 
-TODAY = datetime.date.today()
-WEEK_START = (TODAY - datetime.timedelta(days=TODAY.weekday())).isoformat()
+# Swapping a dish onto a night that has ALREADY GONE BY is refused now
+# (overnight/swap-refuses-the-past, 2026-09-17), on the HOUSEHOLD's clock —
+# so this week is seeded from the household's own today rather than from
+# this calendar week's Monday, which put the first days of it behind today
+# on every weekday but Monday and made every swap below a swap into the
+# past. The names are POSITIONS in the seeded week, not weekdays; nothing
+# in this file asserts a weekday. Same harness-artifact class the
+# add_dish_day branch fixed in test_swap_atomic.py on 2026-09-16, and it
+# presents the same way: the app is right and the seed is wrong.
+TODAY = household_today()
+WEEK_START = TODAY.isoformat()
 DAYS = [(datetime.date.fromisoformat(WEEK_START) + datetime.timedelta(days=i)).isoformat()
         for i in range(7)]
-MONDAY, TUESDAY = DAYS[0], DAYS[1]
+DAY1, DAY2 = DAYS[0], DAYS[1]
 
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
@@ -64,8 +75,8 @@ def week():
     tools.add_recipe("Chili", ingredients=[{"item": "Ground beef", "qty": "1 lb", "category": "meat/seafood"}],
                      food_groups=["protein", "vegetable", "carb"], main_protein="beef")
     plan_id = tools.create_weekly_plan(WEEK_START)["weekly_plan_id"]
-    tools.plan_meal(TUESDAY, "Turkey burgers", slot="dinner", weekly_plan_id=plan_id, reasoning="quick")
-    tools.plan_meal(MONDAY, "Chili", slot="dinner", weekly_plan_id=plan_id, reasoning="batch")
+    tools.plan_meal(DAY2, "Turkey burgers", slot="dinner", weekly_plan_id=plan_id, reasoning="quick")
+    tools.plan_meal(DAY1, "Chili", slot="dinner", weekly_plan_id=plan_id, reasoning="batch")
     pp._OPTIONS_CACHE.clear()
     return plan_id
 
@@ -120,18 +131,18 @@ def test_a_dish_with_nothing_recorded_is_unknown_not_short():
 
 
 def test_the_week_menu_carries_the_parts_on_a_planned_slot(week):
-    dinner = _dinner(week, TUESDAY)
+    dinner = _dinner(week, DAY2)
     assert dinner["main_protein"] == "turkey"
     assert [(p["role"], p["name"], p["missing"]) for p in dinner["plate_parts"]] == [
         ("protein", "Turkey", False), ("vegetable", None, False), ("carb", None, True),
     ]
-    assert all(not p["missing"] for p in _dinner(week, MONDAY)["plate_parts"])
+    assert all(not p["missing"] for p in _dinner(week, DAY1)["plate_parts"])
 
 
 # ---------- the options ----------
 
 def test_options_are_asked_for_this_dish_and_cached_for_the_sitting(week):
-    entry_id = _dinner(week, TUESDAY)["entry_id"]
+    entry_id = _dinner(week, DAY2)["entry_id"]
     seen = []
 
     def asker(context):
@@ -160,7 +171,7 @@ def test_options_are_asked_for_this_dish_and_cached_for_the_sitting(week):
 def test_options_carry_the_houses_exclusions_and_survive_a_failed_call(week):
     tools.set_member_dietary_restrictions("Emily", ["shellfish"])
     tools.add_food_dislikes(["mushrooms"])
-    entry_id = _dinner(week, TUESDAY)["entry_id"]
+    entry_id = _dinner(week, DAY2)["entry_id"]
     seen = []
 
     def asker(context):
@@ -183,14 +194,14 @@ def test_options_unavailable_is_false_when_the_model_genuinely_finds_nothing(wee
     # as the call failing — options_unavailable stays False so the two
     # are told apart at the data layer even though the sheet's copy
     # (checked in the shell/source tests) reads the same either way.
-    entry_id = _dinner(week, TUESDAY)["entry_id"]
+    entry_id = _dinner(week, DAY2)["entry_id"]
     out = pp.part_options(week, entry_id, asker=lambda context: [])
     assert out["options"] == []
     assert out["options_unavailable"] is False
 
 
 def test_only_the_protein_is_changed_here(week):
-    entry_id = _dinner(week, TUESDAY)["entry_id"]
+    entry_id = _dinner(week, DAY2)["entry_id"]
     with pytest.raises(ValueError, match="add_component"):
         pp.part_options(week, entry_id, role="carb", asker=lambda c: [])
     with pytest.raises(ValueError, match="add_component"):
@@ -200,7 +211,7 @@ def test_only_the_protein_is_changed_here(week):
 # ---------- the change ----------
 
 def test_save_rewrites_the_dish_around_the_pick_through_the_swaps_own_door(week):
-    entry_id = _dinner(week, TUESDAY)["entry_id"]
+    entry_id = _dinner(week, DAY2)["entry_id"]
     seen = []
 
     def asker(context):
@@ -217,18 +228,18 @@ def test_save_rewrites_the_dish_around_the_pick_through_the_swaps_own_door(week)
     # protein recorded, the plate's parts following.
     saved = tools.get_recipe("Beef burgers")
     assert saved["main_protein"] == "beef"
-    assert _dinner(week, TUESDAY)["plate_parts"][0]["name"] == "Beef"
+    assert _dinner(week, DAY2)["plate_parts"][0]["name"] == "Beef"
     # The swap's undo note is there, so the swap's undo puts turkey back.
     entry = sip._entry(week, out["entry_id"])
     assert entry["derived_from"]["swapped_from"]["meal"] == "Turkey burgers"
     undone = tools.undo_meal_swap(week, out["entry_id"])
     assert undone["meal"] == "Turkey burgers"
-    assert _dinner(week, TUESDAY)["title"] == "Turkey burgers"
+    assert _dinner(week, DAY2)["title"] == "Turkey burgers"
 
 
 def test_a_pick_the_house_cannot_have_is_refused_and_nothing_is_written(week):
     tools.set_member_dietary_restrictions("Emily", ["shellfish"])
-    entry_id = _dinner(week, TUESDAY)["entry_id"]
+    entry_id = _dinner(week, DAY2)["entry_id"]
     out = pp.change_part(
         week, entry_id, "protein", "Shrimp",
         asker=lambda c: _variant("Shrimp burgers", "shrimp",
@@ -236,19 +247,19 @@ def test_a_pick_the_house_cannot_have_is_refused_and_nothing_is_written(week):
     )
     assert out["status"] == "refused"
     assert "Shrimp" in out["message"] and "as it was" in out["message"]
-    assert _dinner(week, TUESDAY)["title"] == "Turkey burgers"
+    assert _dinner(week, DAY2)["title"] == "Turkey burgers"
     assert not any(r["name"] == "Shrimp burgers" for r in tools.list_recipes())
 
 
 def test_a_model_that_comes_back_with_nothing_is_refused_not_guessed(week):
-    entry_id = _dinner(week, TUESDAY)["entry_id"]
+    entry_id = _dinner(week, DAY2)["entry_id"]
     out = pp.change_part(week, entry_id, "protein", "Lamb", asker=lambda c: {})
     assert out["status"] == "refused" and out["message"] == pp.REFUSAL
-    assert _dinner(week, TUESDAY)["title"] == "Turkey burgers"
+    assert _dinner(week, DAY2)["title"] == "Turkey burgers"
 
 
 def test_a_change_forgets_the_cached_options_for_that_slot(week):
-    entry_id = _dinner(week, TUESDAY)["entry_id"]
+    entry_id = _dinner(week, DAY2)["entry_id"]
     pp.part_options(week, entry_id, asker=lambda c: [{"name": "Ground beef"}])
     assert (tools.household_id(), entry_id) in pp._OPTIONS_CACHE
     pp.change_part(week, entry_id, "protein", "Ground beef", asker=lambda c: _variant())
@@ -256,17 +267,17 @@ def test_a_change_forgets_the_cached_options_for_that_slot(week):
 
 
 def test_another_households_meal_is_not_changeable(week):
-    entry_id = _dinner(week, TUESDAY)["entry_id"]
+    entry_id = _dinner(week, DAY2)["entry_id"]
     with use_household(2):
         with pytest.raises(ValueError, match="No meal"):
             pp.change_part(week, entry_id, "protein", "Ground beef", asker=lambda c: _variant())
-    assert _dinner(week, TUESDAY)["title"] == "Turkey burgers"
+    assert _dinner(week, DAY2)["title"] == "Turkey burgers"
 
 
 # ---------- the routes ----------
 
 def test_the_routes_offer_and_change(signed_in, week, monkeypatch):
-    entry_id = _dinner(week, TUESDAY)["entry_id"]
+    entry_id = _dinner(week, DAY2)["entry_id"]
     monkeypatch.setattr(pp, "_ask_options", lambda ctx: [{"name": "Ground beef", "note": ""}])
     monkeypatch.setattr(pp, "_ask_variant", lambda ctx: _variant())
     res = signed_in.get(f"/api/week/{WEEK_START}/part-options?entry_id={entry_id}&role=protein")
@@ -367,7 +378,7 @@ def test_a_variant_that_keeps_the_dishes_name_is_saved_under_a_name_that_says_wh
     # isn't in it), and a recipe is only saved when its name is new — so
     # without this the old beef Chili would be planned again and reported
     # as a change. Reproduced by the branch's verifier, 2026-09-13.
-    entry_id = _dinner(week, MONDAY)["entry_id"]
+    entry_id = _dinner(week, DAY1)["entry_id"]
     out = pp.change_part(
         week, entry_id, "protein", "Ground turkey",
         asker=lambda c: _variant("Chili", "turkey",
@@ -380,27 +391,27 @@ def test_a_variant_that_keeps_the_dishes_name_is_saved_under_a_name_that_says_wh
     assert saved["main_protein"] == "turkey"
     assert any(i["item"] == "Ground turkey" for i in saved["ingredients"])
     assert tools.get_recipe("Chili")["main_protein"] == "beef"  # untouched
-    assert _dinner(week, MONDAY)["plate_parts"][0]["name"] == "Turkey"
+    assert _dinner(week, DAY1)["plate_parts"][0]["name"] == "Turkey"
     # A proposed name that is another saved recipe's is renamed the same way.
-    entry_id = _dinner(week, TUESDAY)["entry_id"]
+    entry_id = _dinner(week, DAY2)["entry_id"]
     out = pp.change_part(week, entry_id, "protein", "Ground beef", asker=lambda c: _variant("Chili", "beef"))
     assert out["meal"] == "Chili with ground beef"
 
 
 def test_changing_the_protein_keeps_the_sides_and_so_does_undo(week):
-    entry_id = _dinner(week, TUESDAY)["entry_id"]
+    entry_id = _dinner(week, DAY2)["entry_id"]
     tools.add_component(entry_id, key="roasted-potatoes")
-    dinner = _dinner(week, TUESDAY)
+    dinner = _dinner(week, DAY2)
     assert [s["name"] for s in dinner["sides"]] == ["Roasted potatoes"]
     assert [p for p in dinner["plate_parts"] if p["role"] == "carb"][0]["name"] == "Roasted potatoes"
     out = pp.change_part(week, dinner["entry_id"], "protein", "Ground beef", asker=lambda c: _variant())
-    after = _dinner(week, TUESDAY)
+    after = _dinner(week, DAY2)
     assert after["title"] == "Beef burgers"
     assert [s["name"] for s in after["sides"]] == ["Roasted potatoes"]
     assert [p for p in after["plate_parts"] if p["role"] == "carb"][0]["name"] == "Roasted potatoes"
     # ...and back.
     tools.undo_meal_swap(week, out["entry_id"])
-    back = _dinner(week, TUESDAY)
+    back = _dinner(week, DAY2)
     assert back["title"] == "Turkey burgers"
     assert [s["name"] for s in back["sides"]] == ["Roasted potatoes"]
 
@@ -408,11 +419,11 @@ def test_changing_the_protein_keeps_the_sides_and_so_does_undo(week):
 def test_a_plain_swap_still_leaves_the_sides_behind(week):
     # "Swap · I'll pick" is a different dish: the potatoes went with the
     # chops, not with the night. Unchanged.
-    entry_id = _dinner(week, TUESDAY)["entry_id"]
+    entry_id = _dinner(week, DAY2)["entry_id"]
     tools.add_component(entry_id, key="roasted-potatoes")
     out = tools.swap_meal_in_place(week, entry_id, picker=lambda c: dict(_variant("Lemon chicken", "chicken"), is_new_recipe=True))
     assert out["status"] == "swapped"
-    assert _dinner(week, TUESDAY)["sides"] == []
+    assert _dinner(week, DAY2)["sides"] == []
 
 
 def test_the_cut_is_offered_and_only_the_same_protein_is_not(week):
@@ -443,10 +454,10 @@ def test_a_typed_name_that_is_the_catalogues_uses_the_catalogue(week):
     # The undo of "Change the carb" puts the old side back by name; the
     # catalogue's roasted potatoes come back, amounts and step and all —
     # never a bare line with no amount (verifier, round 2).
-    entry_id = _dinner(week, TUESDAY)["entry_id"]
+    entry_id = _dinner(week, DAY2)["entry_id"]
     out = tools.add_component(entry_id, text="roasted Potatoes", side_generator=lambda ctx: (_ for _ in ()).throw(AssertionError("asked the model")))
     assert out["status"] == "added"
     side = out["side"]
     assert side["name"] == "Roasted potatoes" and side["covers"] == ["carb"]
     assert side["minutes"] and side["instructions"] and side["ingredients"][0]["qty"]
-    assert [p for p in _dinner(week, TUESDAY)["plate_parts"] if p["role"] == "carb"][0]["name"] == "Roasted potatoes"
+    assert [p for p in _dinner(week, DAY2)["plate_parts"] if p["role"] == "carb"][0]["name"] == "Roasted potatoes"

@@ -6206,7 +6206,10 @@ TOOL_FUNCTIONS = {
     "generate_weekly_plan": generate_weekly_plan,
     "set_week_constraints": tools.set_week_constraints,
     "get_weekly_plan": tools.get_weekly_plan,
-    "swap_meal_in_plan": tools.swap_meal_in_plan,
+    # The chat twin, not the bare function: a person may not rewrite a
+    # night that is over, and the week generator (which composes the bare
+    # one) must still be able to. See weekly_plan.swap_meal_in_plan.
+    "swap_meal_in_plan": tools.swap_meal_in_plan_for_chat,
     "propose_plan_changes": tools.propose_plan_changes,
     "swap_component_in_plan": tools.swap_component_in_plan,
     "swap_dinner_nights": tools.swap_dinner_nights,

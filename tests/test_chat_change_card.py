@@ -25,6 +25,8 @@ from pathlib import Path
 
 import pytest
 
+from conftest import household_today
+
 from app import agent, tools
 from app.tools import proposals as prop
 from app.tools import swap_in_place as sip
@@ -32,11 +34,20 @@ from app.tools._shared import use_household
 from app import main as app_main
 
 
-TODAY = datetime.date.today()
-WEEK_START = (TODAY - datetime.timedelta(days=TODAY.weekday())).isoformat()
+# Swapping a dish onto a night that has ALREADY GONE BY is refused now
+# (overnight/swap-refuses-the-past, 2026-09-17), on the HOUSEHOLD's clock —
+# so this week is seeded from the household's own today rather than from
+# this calendar week's Monday, which put the first days of it behind today
+# on every weekday but Monday and made every swap below a swap into the
+# past. The names are POSITIONS in the seeded week, not weekdays; nothing
+# in this file asserts a weekday. Same harness-artifact class the
+# add_dish_day branch fixed in test_swap_atomic.py on 2026-09-16, and it
+# presents the same way: the app is right and the seed is wrong.
+TODAY = household_today()
+WEEK_START = TODAY.isoformat()
 DAYS = [(datetime.date.fromisoformat(WEEK_START) + datetime.timedelta(days=i)).isoformat()
         for i in range(7)]
-MONDAY, TUESDAY, WEDNESDAY, THURSDAY = DAYS[0], DAYS[1], DAYS[2], DAYS[3]
+DAY1, DAY2, DAY3, DAY4 = DAYS[0], DAYS[1], DAYS[2], DAYS[3]
 
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
@@ -68,7 +79,7 @@ def week():
             food_groups=groups, prep_time_minutes=10, cook_time_minutes=20,
         )
     plan_id = tools.create_weekly_plan(WEEK_START)["weekly_plan_id"]
-    for day, dish in ((MONDAY, "Pork Chops"), (TUESDAY, "Chili"), (THURSDAY, "Chicken Tikka")):
+    for day, dish in ((DAY1, "Pork Chops"), (DAY2, "Chili"), (DAY4, "Chicken Tikka")):
         tools.plan_meal(day, dish, slot="dinner", weekly_plan_id=plan_id, reasoning="fits the week")
     prop._PROPOSALS.clear()
     return plan_id
@@ -89,9 +100,9 @@ def test_the_week_is_described_with_every_planned_slot_and_its_entry_id(week):
     assert out["weekly_plan_id"] == week
     assert out["status"] == "draft"
     by_date = {d["date"]: d for d in out["days"]}
-    thu = [s for s in by_date[THURSDAY]["slots"] if s["slot"] == "dinner"][0]
+    thu = [s for s in by_date[DAY4]["slots"] if s["slot"] == "dinner"][0]
     assert thu["meal"] == "Chicken Tikka"
-    assert thu["entry_id"] == _dinner(week, THURSDAY)["entry_id"]
+    assert thu["entry_id"] == _dinner(week, DAY4)["entry_id"]
     assert tools.describe_plan_for_chat(week_start="2031-01-06") is None
 
 
@@ -122,8 +133,8 @@ def test_the_five_behaviours_are_in_the_prompt_for_every_turn():
 
 def test_a_proposal_writes_nothing_and_echoes_the_card(week):
     out = tools.propose_plan_changes(week, [
-        {"date": THURSDAY, "slot": "dinner", "action": "change", "candidates": [_cand("Shrimp Tacos", 20, "shrimp")]},
-        {"date": MONDAY, "slot": "dinner", "action": "keep"},
+        {"date": DAY4, "slot": "dinner", "action": "change", "candidates": [_cand("Shrimp Tacos", 20, "shrimp")]},
+        {"date": DAY1, "slot": "dinner", "action": "keep"},
     ])
     assert out["proposal_id"] and out["status"] == "open"
     rows = out["rows"]
@@ -133,14 +144,14 @@ def test_a_proposal_writes_nothing_and_echoes_the_card(week):
     # The recipes stay server-side; the wire shape carries names and minutes.
     assert "ingredients" not in rows[0]["candidates"][0]
     # Nothing on the plan moved, and the dish was not saved as a recipe.
-    assert _dinner(week, THURSDAY)["title"] == "Chicken Tikka"
+    assert _dinner(week, DAY4)["title"] == "Chicken Tikka"
     assert not any(r["name"] == "Shrimp Tacos" for r in tools.list_recipes())
 
 
 def test_a_row_for_an_empty_slot_carries_a_problem_not_a_crash(week):
     out = tools.propose_plan_changes(week, [
-        {"date": WEDNESDAY, "slot": "dinner", "action": "change", "candidates": [_cand("Anything")]},
-        {"date": THURSDAY, "slot": "dinner", "action": "change", "candidates": []},
+        {"date": DAY3, "slot": "dinner", "action": "change", "candidates": [_cand("Anything")]},
+        {"date": DAY4, "slot": "dinner", "action": "change", "candidates": []},
     ])
     assert "plan_meal" in out["rows"][0]["problem"]
     assert "no dish" in out["rows"][1]["problem"]
@@ -150,49 +161,49 @@ def test_a_row_for_an_empty_slot_carries_a_problem_not_a_crash(week):
 
 def test_save_lands_every_row_through_the_swaps_own_door_and_undo_puts_them_back(week):
     out = tools.propose_plan_changes(week, [
-        {"date": THURSDAY, "slot": "dinner", "action": "change", "candidates": [_cand("Shrimp Tacos", 20, "shrimp")]},
-        {"date": MONDAY, "slot": "dinner", "action": "change", "candidates": [_cand("Grilled Pork Chops", 25, "pork")]},
-        {"date": TUESDAY, "slot": "dinner", "action": "keep"},
+        {"date": DAY4, "slot": "dinner", "action": "change", "candidates": [_cand("Shrimp Tacos", 20, "shrimp")]},
+        {"date": DAY1, "slot": "dinner", "action": "change", "candidates": [_cand("Grilled Pork Chops", 25, "pork")]},
+        {"date": DAY2, "slot": "dinner", "action": "keep"},
     ])
     pid = out["proposal_id"]
     applied = tools.apply_proposal(pid)
     assert applied["status"] == "applied" and applied["refused"] == []
     assert [a["meal"] for a in applied["proposal"]["applied"]] == ["Shrimp Tacos", "Grilled Pork Chops"]
-    assert _dinner(week, THURSDAY)["title"] == "Shrimp Tacos"
-    assert _dinner(week, MONDAY)["title"] == "Grilled Pork Chops"
-    assert _dinner(week, TUESDAY)["title"] == "Chili"
+    assert _dinner(week, DAY4)["title"] == "Shrimp Tacos"
+    assert _dinner(week, DAY1)["title"] == "Grilled Pork Chops"
+    assert _dinner(week, DAY2)["title"] == "Chili"
     # Cookable and shoppable: the dish became a recipe, as a swap's does.
     assert any(r["name"] == "Shrimp Tacos" for r in tools.list_recipes())
     # The undo note is the swap's own, so the swap's undo works on it.
-    entry = sip._entry(week, _dinner(week, THURSDAY)["entry_id"])
+    entry = sip._entry(week, _dinner(week, DAY4)["entry_id"])
     assert entry["derived_from"]["swapped_from"]["meal"] == "Chicken Tikka"
     # The refreshed days ride along for the screen behind the sheet.
-    assert sorted(d["date"] for d in applied["days"]) == sorted([THURSDAY, MONDAY])
+    assert sorted(d["date"] for d in applied["days"]) == sorted([DAY4, DAY1])
 
     undone = tools.undo_proposal(pid)
     assert undone["status"] == "restored"
-    assert _dinner(week, THURSDAY)["title"] == "Chicken Tikka"
-    assert _dinner(week, MONDAY)["title"] == "Pork Chops"
+    assert _dinner(week, DAY4)["title"] == "Chicken Tikka"
+    assert _dinner(week, DAY1)["title"] == "Pork Chops"
 
 
 def test_a_row_the_gate_refuses_is_reported_and_the_rest_still_land(week):
     tools.set_member_dietary_restrictions("Emily", ["shellfish"])
     out = tools.propose_plan_changes(week, [
-        {"date": THURSDAY, "slot": "dinner", "action": "change",
+        {"date": DAY4, "slot": "dinner", "action": "change",
          "candidates": [_cand("Shrimp Tacos", 20, "shrimp", ingredients=[{"item": "Shrimp", "qty": "1 lb", "category": "meat/seafood"}])]},
-        {"date": MONDAY, "slot": "dinner", "action": "change", "candidates": [_cand("Grilled Pork Chops", 25, "pork")]},
+        {"date": DAY1, "slot": "dinner", "action": "change", "candidates": [_cand("Grilled Pork Chops", 25, "pork")]},
     ])
     applied = tools.apply_proposal(out["proposal_id"])
     assert applied["status"] == "applied"
     assert [r["meal"] for r in applied["refused"]] == ["Shrimp Tacos"]
     assert "clashes" in applied["refused"][0]["why"]
-    assert _dinner(week, THURSDAY)["title"] == "Chicken Tikka"
-    assert _dinner(week, MONDAY)["title"] == "Grilled Pork Chops"
+    assert _dinner(week, DAY4)["title"] == "Chicken Tikka"
+    assert _dinner(week, DAY1)["title"] == "Grilled Pork Chops"
 
 
 def test_saving_the_dish_already_there_writes_nothing(week):
     out = tools.propose_plan_changes(week, [
-        {"date": THURSDAY, "slot": "dinner", "action": "change", "candidates": [_cand("Chicken Tikka")]},
+        {"date": DAY4, "slot": "dinner", "action": "change", "candidates": [_cand("Chicken Tikka")]},
     ])
     applied = tools.apply_proposal(out["proposal_id"])
     assert applied["status"] == "nothing"
@@ -203,7 +214,7 @@ def test_saving_the_dish_already_there_writes_nothing(week):
 
 def test_options_are_chosen_by_tap_and_the_chosen_one_is_what_saves(week):
     out = tools.propose_plan_changes(week, [
-        {"date": THURSDAY, "slot": "dinner", "action": "change",
+        {"date": DAY4, "slot": "dinner", "action": "change",
          "candidates": [_cand("Sheet-pan Sausages", 25, "pork"), _cand("Veggie Fried Rice", 20, "vegetarian"),
                         _cand("Pasta with Peas", 15, "vegetarian")]},
     ])
@@ -213,13 +224,13 @@ def test_options_are_chosen_by_tap_and_the_chosen_one_is_what_saves(week):
     assert chosen["status"] == "chosen" and chosen["proposal"]["rows"][0]["chosen"] == 2
     assert tools.choose_candidate(pid, 0, 9)["status"] == "refused"
     tools.apply_proposal(pid)
-    assert _dinner(week, THURSDAY)["title"] == "Pasta with Peas"
+    assert _dinner(week, DAY4)["title"] == "Pasta with Peas"
 
 
 def test_another_repicks_one_row_avoiding_everything_it_was_offered(week):
     out = tools.propose_plan_changes(week, [
-        {"date": THURSDAY, "slot": "dinner", "action": "change", "candidates": [_cand("Shrimp Tacos", 20, "shrimp")]},
-        {"date": MONDAY, "slot": "dinner", "action": "change", "candidates": [_cand("Grilled Pork Chops", 25, "pork")]},
+        {"date": DAY4, "slot": "dinner", "action": "change", "candidates": [_cand("Shrimp Tacos", 20, "shrimp")]},
+        {"date": DAY1, "slot": "dinner", "action": "change", "candidates": [_cand("Grilled Pork Chops", 25, "pork")]},
     ])
     pid = out["proposal_id"]
     seen = []
@@ -237,13 +248,13 @@ def test_another_repicks_one_row_avoiding_everything_it_was_offered(week):
     assert again["proposal"]["rows"][1]["candidates"][0]["meal_name"] == "Grilled Pork Chops"
     assert set(seen[0]["avoid"]) >= {"Chicken Tikka", "Shrimp Tacos"}
     # Nothing written by Another either.
-    assert _dinner(week, THURSDAY)["title"] == "Chicken Tikka"
+    assert _dinner(week, DAY4)["title"] == "Chicken Tikka"
 
 
 def test_another_refuses_a_pick_the_gate_refuses_and_tries_once_more(week):
     tools.set_member_dietary_restrictions("Emily", ["shellfish"])
     out = tools.propose_plan_changes(week, [
-        {"date": THURSDAY, "slot": "dinner", "action": "change", "candidates": [_cand("Chicken Tacos", 20)]},
+        {"date": DAY4, "slot": "dinner", "action": "change", "candidates": [_cand("Chicken Tacos", 20)]},
     ])
     picks = iter([
         _cand("Shrimp Bowls", 20, "shrimp", ingredients=[{"item": "Shrimp", "qty": "1 lb", "category": "meat/seafood"}]),
@@ -258,7 +269,7 @@ def test_another_refuses_a_pick_the_gate_refuses_and_tries_once_more(week):
 
 def test_a_proposal_is_household_scoped_and_expires(week):
     out = tools.propose_plan_changes(week, [
-        {"date": THURSDAY, "slot": "dinner", "action": "change", "candidates": [_cand("Shrimp Tacos")]},
+        {"date": DAY4, "slot": "dinner", "action": "change", "candidates": [_cand("Shrimp Tacos")]},
     ])
     pid = out["proposal_id"]
     with use_household(2):
@@ -274,7 +285,7 @@ def test_a_proposal_is_household_scoped_and_expires(week):
 
 def test_the_routes_choose_apply_and_undo(signed_in, week):
     out = tools.propose_plan_changes(week, [
-        {"date": THURSDAY, "slot": "dinner", "action": "change",
+        {"date": DAY4, "slot": "dinner", "action": "change",
          "candidates": [_cand("Shrimp Tacos", 20, "shrimp"), _cand("Chicken Tacos", 20)]},
     ])
     pid = out["proposal_id"]
@@ -282,16 +293,16 @@ def test_the_routes_choose_apply_and_undo(signed_in, week):
     assert res.status_code == 200 and res.json()["proposal"]["rows"][0]["chosen"] == 1
     res = signed_in.post(f"/api/chat/proposals/{pid}/apply", json={})
     assert res.status_code == 200 and res.json()["status"] == "applied"
-    assert _dinner(week, THURSDAY)["title"] == "Chicken Tacos"
+    assert _dinner(week, DAY4)["title"] == "Chicken Tacos"
     res = signed_in.post(f"/api/chat/proposals/{pid}/undo", json={})
     assert res.status_code == 200 and res.json()["status"] == "restored"
-    assert _dinner(week, THURSDAY)["title"] == "Chicken Tikka"
+    assert _dinner(week, DAY4)["title"] == "Chicken Tikka"
     assert signed_in.post("/api/chat/proposals/nope/apply", json={}).status_code == 404
 
 
 def test_the_another_route_uses_the_swaps_picker(signed_in, week, monkeypatch):
     out = tools.propose_plan_changes(week, [
-        {"date": THURSDAY, "slot": "dinner", "action": "change", "candidates": [_cand("Shrimp Tacos", 20, "shrimp")]},
+        {"date": DAY4, "slot": "dinner", "action": "change", "candidates": [_cand("Shrimp Tacos", 20, "shrimp")]},
     ])
     monkeypatch.setattr(sip, "_pick_replacement", lambda ctx: _cand("Bean Burritos", 20, "vegetarian"))
     res = signed_in.post(f"/api/chat/proposals/{out['proposal_id']}/another", json={"row": 0})
@@ -317,7 +328,7 @@ def _turn_with_proposal(proposal):
 
 def test_the_chat_turn_carries_the_card_and_no_action_card_for_it(week):
     out = tools.propose_plan_changes(week, [
-        {"date": THURSDAY, "slot": "dinner", "action": "change", "candidates": [_cand("Shrimp Tacos", 20, "shrimp")]},
+        {"date": DAY4, "slot": "dinner", "action": "change", "candidates": [_cand("Shrimp Tacos", 20, "shrimp")]},
     ])
     before, after = _turn_with_proposal(out)
     assert app_main.summarize_chat_actions(before, after) == []
@@ -387,32 +398,32 @@ def test_a_remembered_fact_is_a_chip_with_a_way_to_correct_it():
 def test_every_row_refused_is_said_as_refused_not_as_nothing_to_change(week):
     tools.set_member_dietary_restrictions("Emily", ["shellfish"])
     out = tools.propose_plan_changes(week, [
-        {"date": THURSDAY, "slot": "dinner", "action": "change",
+        {"date": DAY4, "slot": "dinner", "action": "change",
          "candidates": [_cand("Shrimp Tacos", 20, "shrimp", ingredients=[{"item": "Shrimp", "qty": "1 lb", "category": "meat/seafood"}])]},
     ])
     applied = tools.apply_proposal(out["proposal_id"])
     assert applied["status"] == "refused"
     assert applied["refused"][0]["why"].startswith("clashes")
-    assert _dinner(week, THURSDAY)["title"] == "Chicken Tikka"
+    assert _dinner(week, DAY4)["title"] == "Chicken Tikka"
 
 
 def test_a_candidate_without_ingredients_is_dropped_unless_the_recipe_exists(week):
     out = tools.propose_plan_changes(week, [
-        {"date": THURSDAY, "slot": "dinner", "action": "change",
+        {"date": DAY4, "slot": "dinner", "action": "change",
          "candidates": [_cand("Mystery Bowl", ingredients=[]), _cand("Pork Chops", ingredients=[])]},
     ])
     row = out["rows"][0]
     assert [c["meal_name"] for c in row["candidates"]] == ["Pork Chops"]  # saved already
     assert row["dropped"] == ["Mystery Bowl"]
     only = tools.propose_plan_changes(week, [
-        {"date": THURSDAY, "slot": "dinner", "action": "change", "candidates": [_cand("Mystery Bowl", ingredients=[])]},
+        {"date": DAY4, "slot": "dinner", "action": "change", "candidates": [_cand("Mystery Bowl", ingredients=[])]},
     ])
     assert "ingredients" in only["rows"][0]["problem"]
 
 
 def test_another_avoids_everything_ever_offered_even_past_the_visible_four(week):
     out = tools.propose_plan_changes(week, [
-        {"date": THURSDAY, "slot": "dinner", "action": "change", "candidates": [_cand("Shrimp Tacos", 20, "shrimp")]},
+        {"date": DAY4, "slot": "dinner", "action": "change", "candidates": [_cand("Shrimp Tacos", 20, "shrimp")]},
     ])
     pid = out["proposal_id"]
     seen = []
@@ -431,8 +442,8 @@ def test_another_avoids_everything_ever_offered_even_past_the_visible_four(week)
 
 def test_a_row_that_landed_before_a_later_row_raised_can_still_be_undone(week, monkeypatch):
     out = tools.propose_plan_changes(week, [
-        {"date": MONDAY, "slot": "dinner", "action": "change", "candidates": [_cand("Grilled Pork Chops", 25, "pork")]},
-        {"date": THURSDAY, "slot": "dinner", "action": "change", "candidates": [_cand("Shrimp Tacos", 20, "shrimp")]},
+        {"date": DAY1, "slot": "dinner", "action": "change", "candidates": [_cand("Grilled Pork Chops", 25, "pork")]},
+        {"date": DAY4, "slot": "dinner", "action": "change", "candidates": [_cand("Shrimp Tacos", 20, "shrimp")]},
     ])
     pid = out["proposal_id"]
     real = sip.apply_pick
@@ -447,9 +458,9 @@ def test_a_row_that_landed_before_a_later_row_raised_can_still_be_undone(week, m
     monkeypatch.setattr(sip, "apply_pick", flaky)
     with pytest.raises(ValueError):
         tools.apply_proposal(pid)
-    assert _dinner(week, MONDAY)["title"] == "Grilled Pork Chops"
+    assert _dinner(week, DAY1)["title"] == "Grilled Pork Chops"
     assert tools.undo_proposal(pid)["status"] == "restored"
-    assert _dinner(week, MONDAY)["title"] == "Pork Chops"
+    assert _dinner(week, DAY1)["title"] == "Pork Chops"
 
 
 def test_the_shell_says_why_a_row_was_left_and_holds_save_while_another_runs():
