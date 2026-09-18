@@ -3104,10 +3104,19 @@ def get_plan_id_for_date(meal_date: str, conn=None) -> int | None:
     `conn` is the read-only member of the family clear_plan_slot and
     plan_slot_empty already belong to, and it is here for one caller:
     slot_needs.set_slot_need asks this question from inside its own open
-    write transaction, and a second connection opened in there is the
-    nested get_conn that fails as an intermittent "database is locked"
-    rather than as a wrong answer. This function never writes, so given a
-    connection it reads on it and leaves the caller to close it.
+    write transaction. This function never writes, so given a connection it
+    reads on it and leaves the caller to close it.
+
+    HYGIENE AND CONSISTENCY, not a deadlock fix, and saying otherwise was
+    the first version of this paragraph. A nested WRITING connection inside
+    an open write transaction really does sit out SQLite's busy timeout —
+    that is the minute-plus hang slot_needs' own tests reproduce on
+    purpose. This one is a SELECT, and SQLite lets a reader in alongside a
+    writer holding RESERVED, so calling it without `conn` from in there is
+    measured at 0.8s and no hang at all. What it costs is a connection per
+    call and one more place the package's "one connection inside the
+    transaction" rule is not actually true; the only thing that would catch
+    losing it is slot_needs' connection-counting test.
     """
     date.fromisoformat(meal_date)
     own_conn = conn is None

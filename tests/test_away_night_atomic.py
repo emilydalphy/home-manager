@@ -17,14 +17,22 @@ than a smaller one.
 
 These are drop-dish-atomic's tests one screen along, and they are its tests
 on purpose: a forced failure at each seam against a whole-database snapshot,
-a count of how many connections the conversion opens (a nested get_conn
-inside an open write transaction fails as an intermittent "database is
-locked" rather than as anything a deterministic test would catch), and a
-check that the lock is held from before the read that decides which plan
-gets written to.
+a count of how many connections the conversion opens (a nested WRITING
+get_conn inside an open write transaction sits out SQLite's busy timeout
+and fails as an intermittent "database is locked" rather than as anything a
+deterministic test would catch — a nested READ does not, and the one such
+count here is a consistency guard rather than a deadlock one, which its own
+docstring says), and a check that the lock is held from before the read
+that decides which plan gets written to.
 
 Every test says in its own docstring whether it is red against main's app/
-(CATCH) or green on both sides and pinned by a named mutation (GUARD).
+(CATCH), green on both sides and pinned by a named mutation (GUARD), or a
+CHARACTERISATION of something this ticket deliberately leaves — and the two
+races say what their measured rate is, because it moves with the machine.
+Measured here, 20 whole-file runs against main's app/: 13 red every time,
+the two races red 18 and 19 times, and one CHARACTERISATION red every time
+for a reason other than the one it is named after (it says so). So the
+honest count is 13 deterministic catches plus two timing-dependent ones.
 """
 from __future__ import annotations
 
@@ -238,6 +246,16 @@ def test_a_failure_coming_back_through_attendance_leaves_it_as_it_was(monkeypatc
     CATCH — red on main. The same seam driven the way a household reaches
     it: nobody was home, then somebody is, so attendance undoes the away.
     Nothing here calls _reopen_away_slot by name.
+
+    It compares the ENTRIES and not the whole snapshot, deliberately, and
+    that narrowing is exactly the difference between what this ticket fixed
+    and what it did not. _sync_away_need clears the away need on its OWN
+    commit and only then calls _reopen_away_slot, so by the time the seam
+    below is reached the slot_needs row has genuinely moved and is not
+    coming back. Comparing the whole snapshot would fail here for a reason
+    this ticket is not about — and the state it leaves behind has a
+    characterisation test of its own,
+    test_coming_back_is_still_two_transactions_at_the_attendance_level.
     """
     ids = None
     plan_id, _entry = _approved_week()
@@ -255,6 +273,118 @@ def test_a_failure_coming_back_through_attendance_leaves_it_as_it_was(monkeypatc
 
     assert _snapshot()["entries"] == before["entries"]
     assert [r["slot_state"] for r in _dinner_rows()] == ["planned_empty"]
+
+
+# ------------------------------------- the same seam, NOT fixed here
+
+def test_coming_back_is_still_two_transactions_at_the_attendance_level(monkeypatch):
+    """
+    CHARACTERISATION — what this ticket does NOT fix, written down so it is
+    not reported as new. NOT a regression: main is worse in the same case.
+
+    It is red against main, and NOT as a catch: there the slot comes out
+    genuinely absent, so it dies on `[] == ['planned_empty']` rather than
+    on anything it is named after. Read the file's catch count as 13
+    deterministic plus the two races, and this one as neither.
+
+    _reopen_away_slot is one transaction now. Coming back, as a household
+    reaches it, is not: attendance._sync_away_need clears the away need on
+    its own commit and THEN calls the reopen, so a failure in the reopen
+    leaves the slot planned_empty with the need already back to 'normal' —
+    the dinner blanked with everyone home, which is word for word the state
+    _reopen_away_slot's own docstring says it exists to prevent.
+
+    And it never heals, which is what makes it worth a test rather than a
+    note: the only retry the app offers is the same tap, and _sync_away_need
+    reads current["need"] != "away" and falls straight to "unchanged".
+
+    Measured on main in the same shape: rows [] (genuinely absent, so
+    audit_plan_slots reports the slot MISSING) and need 'normal', also never
+    healing. So this is strictly the milder of the two. Invert this test
+    when _sync_away_need's need write and the reopen become one
+    transaction.
+    """
+    _plan_id, _entry = _approved_week()
+    conn = get_conn()
+    ids = [r["id"] for r in conn.execute(
+        "SELECT id FROM members WHERE household_id = ? ORDER BY id", (tools.household_id(),))]
+    conn.close()
+    tools.set_slot_attendance(AWAY, "dinner", present_member_ids=[], guest_count=0)
+    assert [r["slot_state"] for r in _dinner_rows()] == ["planned_empty"]
+
+    monkeypatch.setattr(weekly_plan, "plan_slot_open", _boom)
+    with pytest.raises(RuntimeError):
+        tools.set_slot_attendance(AWAY, "dinner", present_member_ids=ids)
+    monkeypatch.undo()
+
+    # Blanked, with everyone home and no away on record to explain it.
+    assert [r["slot_state"] for r in _dinner_rows()] == ["planned_empty"]
+    assert tools.get_slot_need(AWAY, "dinner")["need"] == "normal"
+
+    # And the same tap again does nothing at all.
+    att = tools.get_slot_attendance(AWAY, "dinner")
+    assert attendance._sync_away_need(AWAY, "dinner", att) == "unchanged"
+    tools.set_slot_attendance(AWAY, "dinner", present_member_ids=ids)
+    assert [r["slot_state"] for r in _dinner_rows()] == ["planned_empty"]
+    assert tools.get_slot_need(AWAY, "dinner")["need"] == "normal"
+
+
+def test_the_holiday_reopen_has_the_identical_seam_and_is_NOT_fixed_here():
+    """
+    CHARACTERISATION — the same two commits, live, one module over, and
+    reached by an ordinary household tap rather than by a forced failure in
+    a private helper.
+
+    holidays._reopen is clear_plan_slot then plan_slot_open with a commit
+    between them, and answering a holiday a second time runs it: "we're
+    going out and we're bringing the crumble", then "actually it's just
+    us". Forced here, that leaves the dinner GONE, its ingredients already
+    off the shopping list and audit_plan_slots reporting the slot MISSING —
+    the ticket's own reproduction, in a module the ticket does not name.
+
+    Left because widening this ticket into holidays.py means threading a
+    connection through _undo_effects and its four branches, which is a
+    bigger claim than "the away conversion is atomic". Its own card, and
+    big_meal.py has two more of the same shape (the no-main and the
+    clashing-main arms of the hosting menu) which are NOT driven here and
+    are named on that card rather than measured.
+
+    agent.py's pair in _finish_week_slots is the same shape and is safe in
+    practice for a reason worth knowing: it only runs inside
+    generate_weekly_plan, whose finally block calls discard_failed_plan, so
+    a failure there deletes the whole half-built plan and nothing survives
+    to be inconsistent.
+
+    Invert this test when holidays._reopen becomes one transaction.
+    """
+    from app.tools import holidays
+
+    hol = "2026-10-12"  # Canadian Thanksgiving: second Monday of October, by rule
+    assert holidays.holiday_on(hol)["name"] == "Thanksgiving"
+
+    _household()
+    _chili()
+    tools.add_recipe("Apple Crumble", ingredients=[{"item": "Apples", "qty": "6"}],
+                     default_servings=6)
+    plan_id = tools.create_weekly_plan(hol)["weekly_plan_id"]
+    tools.plan_meal(hol, "Bean Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, "Emily")
+    holidays.answer_holiday(hol, "out", bring_dish="Apple Crumble", answered_by="Emily")
+    assert [r["slot_state"] for r in _dinner_rows(hol)] == ["planned"]
+    assert _grocery_by_item() == {"Apples": "3"}
+
+    real = weekly_plan.plan_slot_open
+    weekly_plan.plan_slot_open = _boom
+    try:
+        with pytest.raises(RuntimeError):
+            holidays.answer_holiday(hol, "just_us", answered_by="Emily")
+    finally:
+        weekly_plan.plan_slot_open = real
+
+    # The state this ticket's own fix exists to make impossible, still here.
+    assert _dinner_rows(hol) == []
+    assert _grocery_by_item() == {}
+    assert {"date": hol, "slot": "dinner"} in tools.audit_plan_slots(plan_id)["missing"]
 
 
 # ------------------------------------- a failure enforcing needs at generation
@@ -375,6 +505,15 @@ def test_the_plan_lookup_opens_no_second_connection_either(monkeypatch):
     outside any transaction at all, so the connection it opens is harmless
     and the count still moves.
 
+    AND IT IS A CONSISTENCY GUARD, NOT A DEADLOCK ONE — unlike its two
+    neighbours, which count the connections around a WRITE. This lookup is
+    a SELECT, and SQLite lets a reader in alongside a writer holding
+    RESERVED, so measured, letting it open its own connection from inside
+    the transaction costs 0.83s and this one test, with no hang anywhere.
+    What it buys is that "one connection inside the transaction" is true of
+    this function rather than nearly true, and nothing else would notice
+    losing it.
+
     _plan_id_for_date falls through to weekly_plan.get_plan_id_for_date
     when no entry exists for the slot yet — a day in a generated week that
     the plan left blank. That read is now inside the lock, so it had to
@@ -426,9 +565,18 @@ def test_the_transaction_is_open_while_the_empty_row_is_written(monkeypatch):
     """
     CATCH — red on main. "No second connection" is only half the property:
     the empty row has to be written on the SAME connection the delete was,
-    or the two are two transactions however few connections got opened.
-    Asserted by reading the deleted row back from inside plan_slot_empty —
-    visible as gone only to the connection that deleted it.
+    AND that connection has to still be in the transaction the delete was
+    made in. One connection used twice is two transactions.
+
+    Which assertion pins which half is worth being exact about, because an
+    earlier version of this test named a property it could not see. Reading
+    the deleted row back from inside plan_slot_empty proves only that the
+    delete already happened — a COMMITTED delete is gone as seen from any
+    connection, so that read is satisfied by a split transaction too.
+    `conn.in_transaction` is the one that can tell them apart. Measured:
+    put a conn.commit() between the clear and the empty row in
+    _settle_slot_empty — genuinely two transactions on one connection —
+    and the row-read assertion stays green while this one goes red.
     """
     _plan_id, entry_id = _approved_week()
     seen = {}
@@ -438,6 +586,7 @@ def test_the_transaction_is_open_while_the_empty_row_is_written(monkeypatch):
         conn = kwargs.get("conn")
         seen["got_conn"] = conn is not None
         if conn is not None:
+            seen["still_in_transaction"] = conn.in_transaction
             seen["sees_the_delete"] = conn.execute(
                 "SELECT COUNT(*) c FROM meal_plan_entries WHERE id = ?", (entry_id,)
             ).fetchone()["c"] == 0
@@ -446,7 +595,9 @@ def test_the_transaction_is_open_while_the_empty_row_is_written(monkeypatch):
     monkeypatch.setattr(weekly_plan, "plan_slot_empty", watching)
     tools.set_slot_need(AWAY, "dinner", "away", reason="we're out")
 
-    assert seen == {"got_conn": True, "sees_the_delete": True}
+    assert seen == {
+        "got_conn": True, "still_in_transaction": True, "sees_the_delete": True,
+    }
 
 
 def test_the_lock_is_taken_before_the_plan_is_looked_up(monkeypatch):
@@ -552,13 +703,23 @@ def test_the_lock_is_taken_before_the_reopen_reads_its_row(monkeypatch):
 
 def test_two_aways_at_once_leave_exactly_one_empty_row():
     """
-    A TIMING-DEPENDENT CATCH, and the numbers are measured rather than
-    claimed: red on main 3 whole-file runs out of 3, but red only 2 runs in
-    10 when run on its own — the eighteen tests before it are apparently
-    what makes the window wide enough to land in reliably. Green on this
-    branch 20 runs out of 20 on its own. So it is real evidence and it is
-    weaker than the forced-failure tests above, which are deterministic;
-    read the file's count as 13 solid catches plus this one.
+    A TIMING-DEPENDENT CATCH — real evidence, and weaker than the
+    forced-failure tests above, which are deterministic. Read the file's
+    count as 13 solid catches plus this one and its sibling below,
+    test_going_away_and_coming_back_at_once_leave_exactly_one_row.
+
+    THE RATE MOVES WITH THE MACHINE, so take that sentence and not a
+    number. An earlier version of this docstring gave two, "red on main 3
+    whole-file runs out of 3" and "red only 2 runs in 10 when run alone",
+    and both were wrong — the second in this test's own favour, which is
+    the more dangerous direction, since it made the test look weaker than
+    it is and so made the file's count look more honest than it was.
+    Measured here: against main's app/ it is red in 38 of 40 runs alone and
+    in 42 of 46 whole-file runs, and the 4 whole-file runs where it is
+    green are the only reason that file's failure count is ever 13 rather
+    than 14. An independent reviewer on another machine measured 12 of 20
+    alone and 11 of 16 whole-file. Green on this branch 20 runs out of 20
+    on its own.
 
     What it is about: on main both callers can clear before either writes,
     leaving TWO planned_empty rows on one slot — audit_plan_slots'
@@ -585,6 +746,64 @@ def test_two_aways_at_once_leave_exactly_one_empty_row():
 
     assert all("raised" not in r for r in results.values()), results
     assert [r["slot_state"] for r in _dinner_rows()] == ["planned_empty"]
+    assert tools.audit_plan_slots(plan_id)["duplicated"] == []
+    assert {"date": AWAY, "slot": "dinner"} not in tools.audit_plan_slots(plan_id)["missing"]
+
+
+def test_going_away_and_coming_back_at_once_leave_exactly_one_row():
+    """
+    A TIMING-DEPENDENT CATCH, and the other race — the one the first cut of
+    this file left uncovered while claiming the class was closed.
+
+    Its sibling above races two AWAYS. This races an away against a COMING
+    BACK, which is the shape a household actually produces: one phone
+    extends the trip over a night that is already away (set_away_stretch
+    loops set_slot_need over every night in the range, already-away ones
+    included) while the other taps somebody's avatar back on. On main
+    neither write holds a lock across its own read, so both can clear
+    before either writes and the slot ends up with TWO rows — one
+    planned_empty and one open, in whichever order won — which is
+    audit_plan_slots' `duplicated`, what CLAUDE.md calls "how a night
+    nobody is home ends up with groceries bought for it".
+
+    Measured against main's app/: 39 of 40 runs left two rows. On this
+    branch: 40 of 40 left exactly one, and which one it is depends on who
+    won, which is the correct answer to a genuine race.
+    """
+    plan_id, _entry = _approved_week()
+    tools.set_slot_need(AWAY, "dinner", "away", reason="we're out")
+    assert [r["slot_state"] for r in _dinner_rows()] == ["planned_empty"]
+
+    errs = []
+    barrier = threading.Barrier(2)
+
+    def going_away():
+        barrier.wait()
+        try:
+            tools.set_slot_need(AWAY, "dinner", "away", reason="still out")
+        except Exception as exc:  # pragma: no cover - a crash is a failure below
+            errs.append(("away", repr(exc)))
+
+    def coming_back():
+        barrier.wait()
+        try:
+            slot_needs._reopen_away_slot(
+                AWAY, "dinner", {"present_names": ["Alex"], "guest_count": 0}
+            )
+        except Exception as exc:  # pragma: no cover
+            errs.append(("back", repr(exc)))
+
+    threads = [threading.Thread(target=going_away), threading.Thread(target=coming_back)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert errs == [], errs
+    states = [r["slot_state"] for r in _dinner_rows()]
+    assert len(states) == 1, f"the slot ended up with {states}"
+    # Either winner is correct; what must never happen is both, or neither.
+    assert states[0] in ("planned_empty", "open"), states
     assert tools.audit_plan_slots(plan_id)["duplicated"] == []
     assert {"date": AWAY, "slot": "dinner"} not in tools.audit_plan_slots(plan_id)["missing"]
 

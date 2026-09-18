@@ -247,6 +247,13 @@ def set_slot_need(
             converted = True
         conn.commit()
     except Exception:
+        # DEFENCE IN DEPTH, AND NOTHING PINS IT — measured, so it is
+        # written down rather than left to look load-bearing. Delete this
+        # whole except block and all 22 of test_away_night_atomic.py stay
+        # green, because `finally: conn.close()` discards an open
+        # transaction anyway. It is kept because it says what is meant at
+        # the point it happens, and because closing-implies-rollback is a
+        # property of sqlite3 rather than of this function.
         conn.rollback()
         raise
     finally:
@@ -283,6 +290,16 @@ def _reopen_away_slot(date_str: str, slot: str, attendance: dict) -> bool:
     # with the meal's groceries still reversed; and the row read below
     # decides which plan is written to, so the lock has to be held from
     # before it rather than from the first write.
+    #
+    # THE NEW FAILURE MODE THAT BUYS, named rather than found later: this
+    # takes a WRITE lock before a read that frequently returns False — an
+    # away need with no plan behind it is the ordinary case, and every
+    # attendance change that clears such a need comes through here. Where
+    # main's shared-lock read always succeeded, this waits out sqlite3's 5s
+    # busy timeout and then raises "database is locked" (measured: 5.0s and
+    # a raise here against 0.0s and a False on main, with another writer
+    # holding the lock). It fails loudly and corrupts nothing, which is the
+    # ordinary price of the fix.
     conn = get_conn()
     try:
         conn.execute("BEGIN IMMEDIATE")
@@ -319,7 +336,7 @@ def _reopen_away_slot(date_str: str, slot: str, attendance: dict) -> bool:
         )
         conn.commit()
     except Exception:
-        conn.rollback()
+        conn.rollback()  # defence in depth, unpinned — see set_slot_need's
         raise
     finally:
         conn.close()
