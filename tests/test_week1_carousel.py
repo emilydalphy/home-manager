@@ -409,3 +409,22 @@ def test_the_routes_are_week_scoped_and_answer_with_the_day(signed_in, week, mon
     assert res.json()["status"] == "swapped" and res.json()["day"]["dinner"]["title"] == "Lemon Chicken Traybake"
     assert signed_in.post(f"/api/week/{WEEK_START}/swap-options", json={"entry_id": 99999}).status_code == 404
     assert signed_in.post(f"/api/week/{WEEK_START}/swap-choose", json={"entry_id": entry_id, "option": 9}).status_code == 404
+
+
+def test_a_pick_index_off_either_end_is_not_a_pick(week):
+    entry_id = _entry_id(week, DAY1)
+    tools.swap_options(week, entry_id, asker=_asker(_pick("Lemon Chicken Traybake"), _pick("Fish Tacos", protein="cod")))
+    for bad in (-1, 2, "x"):
+        with pytest.raises(ValueError, match="one of the picks"):
+            tools.choose_swap_option(week, entry_id, bad)
+
+
+def test_the_tabs_and_swap_clear_44px_on_a_375_phone():
+    """Seven tabs sharing 335px (375 less the gutter) with 4px gaps are
+    43.3px wide, so the pad has to reach sideways as well as up and down."""
+    css = ONBOARDING[ONBOARDING.index("<style>"): ONBOARDING.index("</style>")]
+    assert "height: 36px" in css[css.index(".reveal-tab {"): css.index(".reveal-tab::before")]
+    assert ".reveal-tab::before { content: ''; position: absolute; left: -2px; right: -2px; top: -4px; bottom: -4px; }" in css
+    assert ".reveal-swap::before { content: ''; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px; }" in css
+    width = (375 - 2 * 20 - 6 * 4) / 7
+    assert width + 4 >= 44 and 36 + 8 >= 44

@@ -195,10 +195,15 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int) -> dict:
     cached = _OPTIONS_CACHE.get((household_id(), entry_id))
     if not cached or cached["meal"] != entry["meal"]:
         raise ValueError("Those picks aren't on offer any more — tap Swap again.")
+    # An explicit range, not Python indexing: -1 is not "the last pick",
+    # it is not one of the picks.
     try:
-        pick = dict(cached["options"][int(index)])
-    except (IndexError, ValueError, TypeError):
+        index = int(index)
+    except (ValueError, TypeError):
         raise ValueError("That isn't one of the picks.")
+    if not 0 <= index < len(cached["options"]):
+        raise ValueError("That isn't one of the picks.")
+    pick = dict(cached["options"][index])
     if _weekly_plan.night_has_gone(entry["date"]):
         return {"status": "refused", "message": _weekly_plan.NIGHT_GONE}
     why = _swap.pick_gate(pick, entry)

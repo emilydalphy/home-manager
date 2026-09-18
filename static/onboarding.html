@@ -393,8 +393,10 @@
   .reveal-help-btn:hover { background: var(--spruce-hover); }
   .reveal-help-btn svg { width: 22px; height: 22px; }
   /* The day tabs: one per day of the plan, sharing the width. 36px tall as
-     drawn (Emily's mockup); the ::before pad makes the tap 44px (rule 6)
-     without changing what shows. */
+     drawn (Emily's mockup); the ::before pad makes the tap 44px each way
+     (rule 6) without changing what shows — 4px above and below, and 2px
+     either side into the 4px gap, because seven tabs across a 375px phone
+     come out 43.3px wide. */
   .reveal-tabs { display: flex; gap: 4px; }
   .reveal-tabs[hidden] { display: none; }
   .reveal-tab {
@@ -402,7 +404,7 @@
     border: 0; border-radius: 12px; background: var(--spruce-raised); color: var(--ivory-ink-muted);
     font-family: var(--font-body); font-weight: 700; font-size: 13px; cursor: pointer;
   }
-  .reveal-tab::before { content: ''; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px; }
+  .reveal-tab::before { content: ''; position: absolute; left: -2px; right: -2px; top: -4px; bottom: -4px; }
   .reveal-tab.is-on { background: var(--apricot); color: var(--on-accent-ink); }
   /* The carousel: native sideways scroll in the gutter, snapping a card to
      the left edge, the next one peeking. Bleeds to the page edge (the

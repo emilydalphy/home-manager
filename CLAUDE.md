@@ -11571,6 +11571,10 @@ why*, not duplicating the diff.
   `POST /api/coaching/seen` — being handed "here's how this works" again on
   the phone after reading it on the laptop is the opposite of being coached.
   The write is write-once, so "when did they first see it" stays answerable.
+  (**Retired 2026-09-18**, branch `week1-carousel-help`: the card/sheet, its
+  `seen` flag, `POST /api/coaching/seen` and `mark_coaching_seen` are gone;
+  the column stays in `_MIGRATIONS` unread. `GET /api/coaching` still serves
+  the example chips.)
   Two traps worth remembering: `.ask-chips` is `display:flex`, which beats
   the bare `[hidden]` attribute (the same trap `#reveal-days` hit on the
   onboarding branch — fixed for the existing quick-action containers too),
@@ -13540,3 +13544,44 @@ add ("add milk and dish soap") never offers — the card's own examples are
 all single-item; and there's no explicit "decline" tool, since the offer
 being raised is itself what suppresses the next ask for that line, which
 covers "no" and "no answer" identically by construction.
+
+### 2026-09-18 — Week 1: the day-card carousel, three-pick Swap, and "Need a hand?". Branch `week1-carousel-help`.
+
+Two Loop Board cards, one commit. **Week 1** (`static/onboarding.html`'s
+reveal): "Here's week 1." over Mon…Sun tabs and a native scroll-snap strip
+of one card per day — a Swap under every meal, the "15 meals" number and
+the end-of-setup receipt gone (the numbers live on All set, the facts on
+Preferences), the word "sample" gone from the screen and from shell.js's
+tweak prefill. The card renders from ONE slot shape (`revealSlotFrom*`)
+whichever of three sources fed it: the stream's `day` items (which carry
+`meal_name`, never `meal` — the old `upsertRevealDay` read `m.meal` and
+drew "Nothing planned" for every streamed row until the `done` event
+redrew it), `GET /api/week-menu`'s day dicts (fetched once the stream is
+done, because a Swap needs `entry_id`), or a swap's own `day`. Swap is
+three picks: `app/tools/swap_options.py` — one call with
+`swap_in_place.build_swap_context`, every pick through `pick_gate` before
+it is offered, nothing written, cached per entry like
+`plate_parts.part_options`; `choose_swap_option` re-gates and applies
+through `apply_pick` (so Undo is the swap's own). Routes
+`/api/week/{w}/swap-options` and `/swap-choose` beside swap-in-place.
+Approve posts the app's own `/approve` (a `needs_confirmation` answer is
+said in the foot; the next tap sends `confirm_hard_conflicts`), then
+hands off with `/grocery?after=approve&drafted=<Monday>`;
+`buildGroceryPanel` catches `after=approve` (toast, scrub) — a freezer
+step between approve and the list should catch the same param.
+**Need a hand?**: `static/help-sheet.js`, one file both `onboarding.html`
+and `shell.html` load (`openHelpSheet({screenName})` /
+`closeHelpSheet()`, token-only CSS injected once); the "Something not
+working?" form inside it and shell.js's own `snwFormHtml` both say which
+screen they will include and send `screen` — a new `feedback_reports.screen`
+column, shape-checked by `_safe_feedback_screen` in `app/main.py` (a
+screen title's characters, 60 max, else dropped, same rule as the route
+pattern) and printed by `observability_report.py --feedback`. The one-time
+coach sheet is gone (see the 2026-09-08 coaching entry's retirement
+note). Tests: `tests/test_week1_carousel.py` (20) and
+`tests/test_help_sheet.py` (10) added, `test_onboarding_done_receipt.py`
+removed with the receipt; full suite 5767 → 5779, all green. Verified in
+the browser against a throwaway DB copy on port 8022. Open for Emily: the
+hand-off lands on the list until the freezer step exists; tabs and Swap
+are 36px as drawn with an invisible pad to 44px; the swap sheet's close
+button reads "Keep it".
