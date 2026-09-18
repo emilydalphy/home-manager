@@ -245,17 +245,23 @@ jobs:
     # the offset constant and so can never catch a route that reads the wrong
     # one of the two dates as the day turns over.
     #
-    # And a second reason that still stands, measured 2026-09-17: a run east
-    # of UTC+9 pinned to a MONDAY fails four tests around
-    # `get_already_have_decisions`, which takes its cutoff from `date.today()`
-    # (the process's local date) and compares it against `removed_at`, which
-    # SQLite stamps in UTC. A Monday pin specifically, because the cutoff falls
-    # back to "this Monday" and the one-day skew puts `removed_at` just the
-    # wrong side of it — measured at Kiritimati, monday is 4 failed and the
-    # other six weekdays are 0. Pre-existing on main, latent in production (a
-    # UTC container has no gap between those two), and reachable by no job
-    # here precisely because this one is unpinned and `clock` is at Toronto.
-    # Its own card. Do not pin this matrix without fixing it first.
+    # And a second reason that still stands — though not the one that used to
+    # be written here. Until 2026-09-18 this said a run east of UTC+9 pinned to
+    # a MONDAY fails four tests around `get_already_have_decisions`, which took
+    # its cutoff from `date.today()` (the process's local date) and compared it
+    # against `removed_at`, which SQLite stamps in UTC. That is fixed:
+    # `overnight/already-have-household-clock` reads the household's day and
+    # turns it into the instant that day began at, so both sides of that
+    # comparison are UTC instants now and those four are green at every pin.
+    #
+    # The INSTRUCTION stands, for a residue that is a different bug. Measured
+    # 2026-09-18 at `TZ=Pacific/Kiritimati --today=monday`: 4 failed, 5674
+    # passed, 3 skipped — three in `test_meal_opens_the_same_way_everywhere.py`
+    # and one in `test_plan_chores.py`, monday only (the other six weekdays are
+    # 0 for both files), and byte-identical against main's own `app/` at the
+    # same pin. Nothing to do with the function this paragraph used to name.
+    # So: do not pin this matrix without fixing THOSE first, and read the
+    # failure names before assuming they are the ones this used to be about.
     name: straddle (${{ matrix.tz }})
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'

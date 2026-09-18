@@ -400,10 +400,15 @@ why*, not duplicating the diff.
   BOTH halves of that comparison were somebody else's.
   - **THE BOUNDARY IS THE HALF WITH TEETH, and it is not the half the test
     failures were about.** `removed_at` is a UTC instant — SQLite
-    `datetime('now')`, from all six writers of it across `pre_shop.py`,
-    `grocery.py` and `staples.py` — and the cutoff was a calendar DATE, so
+    `datetime('now')`, from all SEVEN writers of it — `grocery.py` :1345,
+    :1379, :1504, :1848 and :1914, `pre_shop.py` :278, `staples.py` :779,
+    counted 2026-09-18; the four that set it back to NULL are un-writers
+    and are not among them — and the cutoff was a calendar DATE, so
     the string comparison opens the window at **midnight UTC**. West of UTC
-    that is merely generous: Toronto's window opened four hours early.
+    that is merely generous: Toronto's window opened four hours early in
+    EDT and five in EST — measured, the band is the evening before the
+    period, 20:00 to midnight local, 19:00 to midnight between November and
+    March.
     **East of UTC it opens LATE**, and every already-have decision made in
     the first hours of the period's own first day is missing from the screen
     that exists to let the household take it back — nine hours for Tokyo,
@@ -419,7 +424,7 @@ why*, not duplicating the diff.
   - **WHICH CLOCK, stated plainly: the household's DAY, compared as a UTC
     INSTANT — and after the fix it is genuinely one clock, not two units
     pretending.** `removed_at` is an instant and instants belong in UTC; the
-    write side is right and is left alone (six writers, rows already on disk,
+    write side is right and is left alone (seven writers, rows already on disk,
     and `staples.py` reads that column as UTC deliberately — changing it would
     be a migration inventing history). What was wrong was the other side: a
     household day boundary written as a date. `_household_day_start_utc` turns
@@ -427,9 +432,13 @@ why*, not duplicating the diff.
     The conversion is in Python because SQLite cannot do it — it knows UTC and
     the SERVER's zone, and the household's is neither.
   - **`cooker.household_zone()` is EXTRACTED from `household_now`, not written
-    beside it.** This log already records three copies of the UTC→household
+    beside it.** This log records three copies of the UTC→household
     conversion (cooker, digest, tonight) and calls folding them into one its
-    own card; a fourth, inline here, would have been the wrong direction.
+    own card — **and the real count is FOUR**: `holidays._answered_on`
+    (:955-968) does the same read of `households.timezone`, the same
+    `ZoneInfo`, the same Toronto fallback and the same `.astimezone`, and no
+    entry here had named it. So a fifth, inline here, would have been the
+    wrong direction.
     `household_now` calls it now, so the zone read and the Toronto fallback
     live in one place and the reader asking "what time is it there" cannot end
     up in a different zone from the one asking "where does their day begin".
@@ -451,17 +460,84 @@ why*, not duplicating the diff.
     which is correct on the server's clock for `mark_defrost_asked`'s reason
     inverted: it is a UTC instant, and it is now compared against another UTC
     instant rather than against a day.
-  - **ONE BEHAVIOUR CHANGE EVERY EXISTING HOUSEHOLD SEES, named rather than
-    buried:** a decision made in the four hours before a Toronto period began
-    (nine at night the evening before) used to be listed and is not any more.
-    It is a decision made before the period started and the window is the
-    period, so this is the fix working — but it is a real narrowing, it has
-    its own test, and it is the only thing here a Toronto household can
-    notice.
+  - **ONE BEHAVIOUR CHANGE EVERY EXISTING HOUSEHOLD SEES — AND IT IS A
+    PRODUCT CALL FOR EMILY, NOT SOMETHING A CLOCK TICKET GETS TO DECIDE.**
+    A decision made before the period began is no longer listed: four hours
+    before in EDT, five in EST, i.e. the evening before the period starts,
+    from 20:00 local and from 19:00 between November and March. The first
+    version of this entry called that "the fix working" and stopped there.
+    It IS the fix working — the window is the period — and it is not only
+    that, because of WHEN those hours fall and WHAT the screen is for.
+    - **`planning_anchor` defaults to `sunday_before`**, so a household that
+      never answered the weekday picker plans on Sunday for a Monday start
+      (`suggest_planning_period`'s own docstring: "ready the Sunday before,
+      Monday start — which is the exact old default"). The band this
+      narrowing covers is therefore Sunday evening, which is exactly when
+      such a household is approving the week and sorting the list these
+      decisions come off.
+    - **Measured end to end, not reasoned**: a Toronto household, an
+      approved Mon–Sun plan, and one real `drop_grocery_item_pre_shop` at
+      Sunday 21:00 local — both clocks frozen together at that instant, so
+      the stamp is SQLite's own (`2026-09-14 01:00:00` UTC).
+
+      | read at | main | this branch |
+      |---|---|---|
+      | Sunday 21:30 local | `['rice']` | `['rice']` |
+      | Monday 09:00 local — the shop | `['rice']` | `[]` |
+      | Wednesday 18:00 local | `['rice']` | `[]` |
+
+      The two agree on the Sunday for opposite reasons, which is worth
+      knowing: main is inside the period because the SERVER has already
+      rolled into Monday, and this branch is outside it and falls back to
+      the Monday-before cutoff. The row goes the moment the period it was
+      made for actually starts — the morning they shop.
+    - **And there is nowhere else to look.** `get_already_have_decisions`
+      has exactly one caller, `/api/grocery-list/already-have-summary`, and
+      that is the only SCREEN anywhere that shows a `status='removed'` row.
+      Nothing can put one back except `undo_pre_shop_drop`, which is not a
+      chat tool — nor is `get_already_have_decisions`. (Be precise about the
+      other half: `list_grocery_list(status='all')` IS a chat tool and DOES
+      include a removed row, so "they cannot see it" is too strong. They
+      cannot UNDO it.) So what falls out of the window is not a line on a
+      screen, it is the household's ability to change their mind — from the
+      morning of the shop onward, for every existing household, in the hours
+      they were most likely to have decided.
+    - **Left exactly as built**, because the window being the period is the
+      fix and widening it back is a different decision from the clock one.
+      The honest lever if Emily wants those hours kept is the WINDOW, not
+      the boundary — the evening before a period is arguably part of
+      planning it, which is what `sunday_before` says it is. Its own card.
   - **Cost, measured with an instrumented `get_conn`: 3 → 5 connections per
     call**, once per read of the Review screen's confirmation section, never
     in a loop and never per row. (Main is 3 rather than 2 because
     `_current_weekly_plan_row` already opens one of its own.)
+  - **It is 5 and not 4 because `households.timezone` is read TWICE, on two
+    connections** — `household_today()` reaches it through `household_now()`
+    → `household_zone()`, and then `household_zone()` is called again for the
+    boundary. Harmless on local SQLite and deliberately not restructured
+    here. **What is worth knowing before anybody does restructure it is that
+    the two reads do not FAIL the same way:** `household_today()` swallows
+    any exception, logs, and falls back to the SERVER's date, while
+    `household_zone()` falls back to Toronto. So on a transient read failure
+    on the first connection and a success on the second, this function puts a
+    server DAY against a household BOUNDARY — half the bug it just fixed,
+    arriving from inside the fix. Written down rather than closed; one read
+    threaded into both is its own card.
+  - **Pre-existing and not a regression, named so nobody reports it as new:**
+    a BLOB in `households.timezone` raises `TypeError` out of
+    `household_zone` — its `except (ZoneInfoNotFoundError, ValueError)` does
+    not cover it, and `household_now` has had that same narrow clause inline
+    all along. Unreachable through any app write path: `digest.py:266` is the
+    only writer, its parameter is typed `str | None`, and it validates
+    through `ZoneInfo` before it writes. What is NEW is the blast radius, and
+    it is narrower than it first looks — **measured on both apps**: on main
+    `get_already_have_decisions` answers fine (it never reads the zone) and
+    `get_cooker_view` also answers fine, because every reader of that clock
+    sits behind a broad `except Exception` that logs and falls back. This
+    branch adds the first caller that reads `household_zone()` DIRECTLY, with
+    nothing swallowing underneath it, so the Review screen's confirmation
+    section is the first surface where that value becomes a 500. Cook is
+    unaffected either way.
   - `tests/test_already_have_household_clock.py` (11; **6 red against main's
     `app/`** at `TZ=America/Toronto` and again at
     `TZ=Pacific/Kiritimati --today=monday`, the same six both times). Read
@@ -494,6 +570,17 @@ why*, not duplicating the diff.
     pin and getting the same four names. The new file is green on all four
     weekday pins across Toronto, Kiritimati and Niue, and unpinned at UTC,
     Tokyo and Kiritimati.
+  - **`.github/workflows/tests.yml` said this bug was open, and it is
+    corrected in the same change that closes it** — this file's own standing
+    rule. That comment named four `get_already_have_decisions` failures under
+    a Monday pin east of UTC+9 as a reason never to pin the straddle matrix;
+    they are gone, and every test that touches that function is green at all
+    seven weekday pins under `Pacific/Kiritimati` (226 passed, each pin).
+    **The INSTRUCTION itself stands, for a residue that is a different bug**
+    — the four that remain in the bullet above, monday only (measured: 0 on
+    the other six weekdays for both files). The comment names those two
+    files now, so the next reader does not assume they are the ones it used
+    to be about, and does not read "fixed" as "safe to pin".
   - **Known and left, each named so nobody reports it as new.** (1) The
     conversion takes ZoneInfo's own answer for a local midnight that is
     ambiguous or does not exist (`fold=0`), so once a year, in a zone that

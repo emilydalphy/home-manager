@@ -331,8 +331,9 @@ def _household_day_start_utc(day: date, zone) -> str:
     shape SQLite stamps removed_at with.
 
     grocery_items.removed_at is an instant — `datetime('now')`, i.e. UTC,
-    from all six writers of it across this module, grocery.py and
-    staples.py — and the window below is a household DAY. Comparing the
+    from all SEVEN writers of it: five in grocery.py, one here (the
+    pre-shop drop), one in staples.py — and the window below is a
+    household DAY. Comparing the
     two as strings compares an instant against a date, which reads as
     "midnight UTC", not "midnight where they live". So the day is turned
     into the instant it began at and the comparison is instant against
@@ -379,12 +380,24 @@ def get_already_have_decisions() -> list[dict]:
     _current_weekly_plan_row picked the plan on the household's clock in
     the first place, so the two reads could disagree about the same day.
     The boundary was the cutoff DATE compared against a UTC timestamp,
-    which begins the window at midnight UTC: four hours early for a
-    Toronto household, harmless, and nine hours LATE for one east of UTC,
+    which begins the window at midnight UTC: for a Toronto household four
+    hours early in EDT and five in EST — the last evening before the
+    period, from 20:00 local, 19:00 between November and March — which is
+    harmless, and nine hours LATE for a household east of UTC,
     which loses them the first morning of their own period off the Review
     screen with no way to undo a decision they can no longer see. Nobody
     lives east of UTC today; households.timezone is a column anyone can
     set. See _household_day_start_utc for why the conversion is in Python.
+
+    ONE NARROWING FALLS OUT OF THAT AND IT IS EMILY'S TO OVERRULE. A
+    decision made the evening BEFORE a period starts is no longer listed,
+    and for a household on the default `sunday_before` planning anchor
+    that evening is exactly when they approve the week and sort the list
+    these decisions come off. Nothing else can take one back: this is the
+    only screen that shows a removed row, and undo_pre_shop_drop is not a
+    chat tool. The window being the period is the fix; widening it back is
+    a product decision, not a clock one. Measured and written up in
+    CLAUDE.md, 2026-09-18.
     """
     from . import weekly_plan as _weekly_plan
 

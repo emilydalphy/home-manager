@@ -275,9 +275,10 @@ class TestTheDayIsTheHouseholdsOwn:
 class TestThePremiseThisRestsOn:
     def test_removed_at_is_stamped_in_utc(self):
         """GUARD, on the fact the whole fix is built on: removed_at is an
-        instant in UTC, from all six writers of it across this module,
-        grocery.py and staples.py. If it were ever local, converting the
-        cutoff into UTC would be the wrong move rather than the right one.
+        instant in UTC, from all SEVEN writers of it — five in grocery.py,
+        one here (the pre-shop drop), one in staples.py. If it were ever
+        local, converting the cutoff into UTC would be the wrong move
+        rather than the right one.
         Pinned by mutation: make drop_grocery_item_pre_shop stamp
         datetime('now', 'localtime') and this goes red in any process zone
         that is not UTC."""
@@ -326,7 +327,18 @@ class TestThePremiseThisRestsOn:
         reference rather than counting the deepest connection reached,
         because one nesting here is pre-existing and documented:
         _current_weekly_plan_row is handed a connection and reads
-        _household_today inside it, deliberately, on a plain read."""
+        _household_today inside it, deliberately, on a plain read.
+
+        What it asserts is the DEPTHS and the SET of names, never their
+        ORDER. The two reads are adjacent and independent, so swapping
+        them is the same claim and must not redden this — an assertion
+        that fails on a change it has no opinion about is pinning the
+        spelling rather than the rule. Be honest about what it does still
+        constrain: it names both reads, so a rewrite that folds them into
+        ONE call (there is an obvious one — the zone is all either of them
+        needs) would fail it and would want this updated. That is a change
+        to what the test is about, not a reordering of what it already
+        says."""
         _behind(monkeypatch)
         _plan(SERVER_TODAY - timedelta(days=4))
         _decision_at("rice", _at(TORONTO, SERVER_TODAY - timedelta(days=2), 9))
@@ -374,4 +386,5 @@ class TestThePremiseThisRestsOn:
         monkeypatch.setattr(_pre_shop, "_cooker", _Watched())
 
         assert tools.get_already_have_decisions()[0]["item"] == "rice"
-        assert reads == [("household_today", 0), ("household_zone", 0)]
+        assert [depth for _, depth in reads] == [0, 0]
+        assert {name for name, _ in reads} == {"household_today", "household_zone"}
