@@ -2351,11 +2351,14 @@
       }
       closeTonightSheet();
       showToast(tonightNightOffSaid(out), null, 6000);
-      afterTonightSwap(panel);
-      // The one thing a night off can change that a nights swap never
-      // does: a dropped dish puts back whatever it had put on the list
-      // that nobody has bought yet.
-      refreshGroceryPanel();
+      // listMoved: the one thing a night off can change that a nights swap
+      // never does — a dropped dish puts back whatever it had put on the
+      // list that nobody has bought yet. This used to be a
+      // refreshGroceryPanel() of its own, directly under this sentence;
+      // once the `week` branch started re-reading Shop too that was a
+      // second reload of the same panel on one tap (measured: 2), so the
+      // sentence moved onto the flag and the duplicate went.
+      afterTonightSwap(panel, { listMoved: true });
     } catch (err) {
       console.warn('Taking tonight off failed:', err);
       showToast(TONIGHT_SWAP_TROUBLE);
@@ -2411,13 +2414,25 @@
   // The plan changed by date: re-read this card (it now asks about the
   // new tonight), the strip (a different cook, a different window), and
   // the tabs that read the same nights — Plan (loadWeekMenu, which also
-  // refreshes Cook's reading) and Kitchen. The grocery list is untouched
-  // by a nights swap, so Shop is left alone.
-  function afterTonightSwap(panel) {
+  // refreshes Cook's reading) and Kitchen.
+  //
+  // `opts.listMoved` is the one thing this caller knows that a chat action
+  // never can, and it is why the second argument exists (2026-09-17, on
+  // review). A NIGHTS SWAP leaves the grocery list alone — swap_dinner_-
+  // nights re-dates the rows in place, ids kept, so the grocery links ride
+  // along: same dishes, same lines, nothing to re-read (worktree-week-
+  // tiles, 2026-09-13). A NIGHT OFF does move it: a dropped dish puts back
+  // whatever it had put on the list that nobody has bought yet. So Shop is
+  // left alone for the first and re-read for the second, rather than both
+  // paying the chat door's "the client cannot tell" price.
+  function afterTonightSwap(panel, opts) {
     loadTonightAsk(panel);
     loadNeedsYou(panel);
     // The kitchen branch re-reads Today's moves as well (see that function).
-    refreshStaleTabsFromActions([{ tab: 'week' }, { tab: 'kitchen' }]);
+    refreshStaleTabsFromActions(
+      [{ tab: 'week' }, { tab: 'kitchen' }],
+      { listMoved: !!(opts && opts.listMoved) }
+    );
   }
 
   // A plan change by DATE changes what tonight is, which Now's own card
@@ -4090,7 +4105,10 @@
     } catch (err) { groceryState.alreadyHaveSummary = { already_have: [], elsewhere: [] }; }
   }
 
-  async function loadGrocery() {
+  // `opts.background` — a re-read nobody on this screen asked for (a chat
+  // turn, another tab's tap). It does everything a load does EXCEPT open a
+  // step: see refreshGroceryPanel for what that was costing.
+  async function loadGrocery(opts) {
     var panel = groPanel();
     if (!panel || !panel.dataset.built) return;
     try {
@@ -4133,18 +4151,45 @@
       groRestoreTrip();
       groDropStaleTrip();
     }
-    groMaybeCarryFirst();
+    if (!(opts && opts.background)) groMaybeCarryFirst();
     renderGrocery();
     if (!groceryState.loadError) groReplayQueue();
   }
 
-  // Called from the three refresh paths (chat action, week approval, reset).
-  // A screen that was built early has to stay correct, not stay frozen. A
-  // refill (an approval builds the list) is a new list, so last week's
-  // leftovers are asked about again.
-  function refreshGroceryPanel() {
-    groceryState.carryDeferred = false;
-    if (groIsBuilt()) loadGrocery();
+  // Called from every refresh path: a chat action, the week's approval, a
+  // reset, the tonight sheet. A screen that was built early has to stay
+  // correct, not stay frozen.
+  //
+  // `refill` is the difference between a rebuild the household ASKED for
+  // and a re-read that merely arrived, and it is load-bearing (added
+  // 2026-09-17, on review). A refill — they tapped Approve, or Start over
+  // — really is a new list, so last week's leftovers become an open
+  // question again and the tab may open CARRY on them: the 2026-09-13 rule
+  // that the amounts are settled before the list is read.
+  //
+  // Everything else is a background re-read, and it must not move anybody.
+  // That sentence was FALSE when first written and is true now: round 2
+  // left `refreshGrocerySurfaces` passing refill for all four of its
+  // callers, three of which are Plan-tab edits to an approved week rather
+  // than a new list. Round 3 made those three background — see that
+  // function.
+  //
+  // Before any of this it moved everybody, measured: on LIST with
+  // leftovers waiting and
+  // "later" already said, one refresh went step `list` -> `carry`,
+  // scrollTop 733 -> 0, and took a half-typed "oat milk" in the add row
+  // with it — groFootHtml renders that field on LIST only, so
+  // groRestoreAddRow had nothing to put it back into, which is the exact
+  // loss renderGrocery's own capture/restore comment exists to prevent.
+  // Nothing is lost by not opening CARRY: LIST already carries
+  // groCarryRowHtml's "N things from last week · Keep or drop?" row for
+  // precisely this case — "the way back into CARRY once Later was said" —
+  // so the question is on the screen either way, and the household reaches
+  // it when they are ready rather than being taken there.
+  function refreshGroceryPanel(opts) {
+    var refill = !!(opts && opts.refill);
+    if (refill) groceryState.carryDeferred = false;
+    if (groIsBuilt()) loadGrocery({ background: !refill });
   }
 
   // Before the list: last week's leftovers, keep or drop, one screen —
@@ -12656,7 +12701,9 @@
         slotWord(out.slot) + ' is yours to fill now.');
       // An approved week's shopping list just changed underneath, so
       // anything showing it is stale — the same courtesy resolveOpenSlot
-      // already pays.
+      // already pays. A BACKGROUND re-read: this is an edit to a week that
+      // already has a list, made from the Plan tab, so it must not move a
+      // Shop panel nobody is looking at (round 3, 2026-09-17).
       if (data.status === 'approved') refreshGrocerySurfaces();
     } catch (err) {
       console.warn('Dropping a day failed:', err);
@@ -12768,7 +12815,7 @@
       showToast(addDishToastText(out));
       // An approved week's shopping list just changed underneath, so
       // anything showing it is stale — the same courtesy the stepper going
-      // down already pays.
+      // down already pays. Background, for the reason written there.
       if (data.status === 'approved') refreshGrocerySurfaces();
     } catch (err) {
       console.warn('Adding a day failed:', err);
@@ -15709,7 +15756,8 @@
       await res.json();
       showToast(dayName(date, { weekday: 'long' }) + '’s settled — thank you.');
       // Settling a slot in an already-approved week writes to the shopping
-      // list, so anything showing that list is now stale.
+      // list, so anything showing that list is now stale. Background — an
+      // answered question is not a new list, and the household is on Plan.
       if (data.status === 'approved') refreshGrocerySurfaces();
       await loadWeekMenu(panel);
     } catch (err) {
@@ -15734,12 +15782,33 @@
   // counted sentence instead — see weekly_plan.week_receipt, which builds
   // it on the server where the numbers are.
 
-  function refreshGrocerySurfaces() {
+  // FOUR callers, and only ONE of them is an approval — which is why this
+  // takes `opts` and forwards it rather than deciding for all of them
+  // (2026-09-17, round 3 of review; it used to pass `refill: true`
+  // unconditionally and the comment here said "approval is what builds the
+  // list", inside a function three quarters of whose callers are not
+  // approvals):
+  //
+  //   * the Approve button — a REFILL. It is what builds the list, so last
+  //     week's leftovers become an open question again and "Open the list"
+  //     may land on CARRY. Passes { refill: true }.
+  //   * the Review stepper's "−" and "+", and resolving an open slot —
+  //     edits to an ALREADY-APPROVED week, made on the PLAN tab. They trim
+  //     or add a line or two; they do not build a list. Background.
+  //
+  // The second group is the same logical change as a chat swap_meal_in_plan
+  // or take_the_night_off, which have gone through the background path
+  // since round 2 — so dropping a dinner used to move the hidden Shop panel
+  // when done from the stepper and leave it alone when said in chat, which
+  // is two doors disagreeing about one change. Measured before the fix: all
+  // three went step `list` -> `carry`, scrollTop 733 -> 0, "later" cleared
+  // and a half-typed add row eaten, from a tap on a different tab.
+  function refreshGrocerySurfaces(opts) {
     // Both surfaces that show groceries are this script's own now, so both
     // are re-rendered in place. This used to reload the Grocery iframe's src
     // — throwing the whole screen away, scroll position and all — because a
     // second document was the only handle the shell had on it.
-    refreshGroceryPanel();
+    refreshGroceryPanel(opts);
     // Today's shop move is a reading of the same list — it appears and
     // disappears with it.
     refreshTodayMoves();
@@ -17472,7 +17541,11 @@
       // moment it succeeds — the same staleness
       // refreshStaleTabsFromActions handles for chat-driven changes, just
       // reached by a button instead of a sentence.
-      refreshGrocerySurfaces();
+      //
+      // The one REFILL among refreshGrocerySurfaces' four callers: this is
+      // the list being built, so the leftovers question reopens and "Open
+      // the list" may land on CARRY. The household is watching it happen.
+      refreshGrocerySurfaces({ refill: true });
       // Land on the All set screen (Emily, 2026-09-11: "make this the dark
       // background and more of a fun screen") — the one finish in the loop
       // that gets its own screen (DESIGN_SYSTEM §2b S5). The root's
@@ -20652,7 +20725,9 @@
       if (clearedMealPlan) loadNeedsYou(panels.today);
       loadTodayMoves(panels.today);
     }
-    if (clearedGroceryList || clearedMealPlan) refreshGroceryPanel();
+    // A refill for the same reason approval is: Start over rebuilds the
+    // list from nothing, and the household is watching it happen.
+    if (clearedGroceryList || clearedMealPlan) refreshGroceryPanel({ refill: true });
   }
 
   if (resetScrim) {
@@ -21748,7 +21823,26 @@
   // changed the list and the Grocery tab went on showing the old one until a
   // reload. Now that the panel is this script's own, the branch is the same
   // one line every other tab gets.
-  function refreshStaleTabsFromActions(actions) {
+  //
+  // `opts.listMoved` is for the LOCAL caller — afterTonightSwap, which is a
+  // tap on Now rather than a chat turn and therefore knows exactly which
+  // write it just made. A chat action can never say it, so the chat door
+  // omits it and gets true. See the `week` branch below.
+  function refreshStaleTabsFromActions(actions, opts) {
+    var listMoved = !opts || opts.listMoved !== false;
+    // ONE turn, ONE re-read of the Shop panel, however many cards say the
+    // list moved. summarize_chat_actions gives an ordinary
+    // approve_weekly_plan TWO cards — `week` AND `grocery` (app/main.py
+    // writes both, because approval changes two screens at once) — and
+    // both branches below want the same single panel. Without this the
+    // commonest turn the ticket is about cost 16 requests in two
+    // concurrent loadGrocery() runs over the same eight endpoints.
+    var groceryDone = false;
+    function refreshGroceryOnce() {
+      if (groceryDone) return;
+      groceryDone = true;
+      refreshGroceryPanel();
+    }
     (actions || []).forEach(function (action) {
       if (action.held) {
         // hold_thing / resolve_held_thing: Now's "Holding for you" card and
@@ -21756,6 +21850,50 @@
         refreshHolding();
         return;
       }
+      // Shop was the third hole, and it is a NARROWER one than the first
+      // version of this comment claimed. Said plainly, because the false
+      // version was believed for a day: an ordinary approve_weekly_plan was
+      // ALREADY covered — it emits a `grocery` card of its own, so the
+      // branch below already re-read Shop for it. The gap is the week tools
+      // that move the list and emit only a `week` card:
+      //
+      //   * swap_meal_in_plan — takes the old dish's line off, puts the new
+      //     dish's on;
+      //   * take_the_night_off — a dropped dinner puts back whatever it had
+      //     put on the list that nobody has bought yet;
+      //   * generate_weekly_plan — retire_overlapping_plans reverses the
+      //     groceries of every plan it takes days from;
+      //   * plan_meal with add_ingredients_to_grocery_list;
+      //   * and approve_weekly_plan in ONE shape: an approval that adds
+      //     nothing (`groceries_added_count` 0 — a week of leftovers and
+      //     takeout, or a kitchen that covers it) but carries last week's
+      //     unbought lines over. app/main.py hangs the grocery card on the
+      //     added count, so that one emits `week` alone — while the rows
+      //     really did move `needed` -> `carried`, which is the whole
+      //     keep-or-drop screen. Measured, not reasoned: 0 added, 1
+      //     carried, one card.
+      //
+      // Found by the reviewer of overnight/tonight-night-off: Now's own
+      // night-off tap has re-read Shop all along, with a comment saying
+      // why, while the same change made from chat got nothing.
+      //
+      // UNCONDITIONAL WITHIN THIS BRANCH, and the honest reason is smaller
+      // than "the server has no contract for it" — it plainly does, for the
+      // one tool where it can. It is that a ChatAction carries a tab and
+      // never the tool that produced it, so for the other week tools there
+      // is no signal on the wire at all, and date/slot are no proxy. The
+      // cost of being keen is one re-read for a week tool that changed
+      // nothing (discard_draft_plan, set_week_constraints, a nights swap) —
+      // measured at zero requests when Shop was never built, and a
+      // background re-read that moves nothing when it was. Narrowing it
+      // means a per-tool flag on every card; that is a real option, not a
+      // blocked one, and this chose the cheap side of it.
+      //
+      // In BOTH arms, because the arms split on whether MEALS was built and
+      // Shop is built independently of it — the same reason the `today`
+      // branch calls loadPlanChores outside its own panels.today guard
+      // (2026-09-12). No refreshTodayMoves() beside it, unlike the `grocery`
+      // branch below: refreshTonightFromPlan already makes that call.
       if (action.tab === 'week' && panels.week && panels.week.dataset.built) {
         // loadWeekMenu refreshes the Cook state too — see its tail, and
         // the dish index the chat's own dish links read (setDishIndex).
@@ -21764,8 +21902,10 @@
         // (swap_dinner_nights, tagged `week` in app/main.py) as well.
         loadWeekMenu(panels.week);
         refreshTonightFromPlan();
+        if (listMoved) refreshGroceryOnce();
       } else if (action.tab === 'week') {
         refreshTonightFromPlan();
+        if (listMoved) refreshGroceryOnce();
         // The same week changed, but Meals has never been opened in this
         // page load, so there is no panel to reload — and the dish index
         // would go on naming last week's dinners in every reply. One
@@ -21803,7 +21943,7 @@
         // stale lives.
         prefsInvalidate();
       } else if (action.tab === 'grocery') {
-        refreshGroceryPanel();
+        refreshGroceryOnce();
         // The list changing also changes Today's shop move, which is a
         // reading of the same items.
         refreshTodayMoves();

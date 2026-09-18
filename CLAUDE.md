@@ -1365,6 +1365,204 @@ why*, not duplicating the diff.
     seeding off the household changes nothing; the cause is `TONIGHT = WED`
     hard-wired (`tests/test_tonight_night_off.py:44-50`) against a pin that
     lands on Sunday. Already being fixed on its own branch.
+- **2026-09-17 — A week-tagged chat change left the Shop tab stale — but a
+  NARROWER set of changes than the ticket said, and the first cut of the fix
+  refreshed it twice. Branch `overnight/shop-stale-after-chat`, NOT merged at
+  the time of writing.** Loop Board bug, Phase 1.
+  `refreshStaleTabsFromActions` (`static/shell.js`) is what stands between
+  this file's "tab panels build once per page load" gotcha and somebody
+  shopping from a list the app already knows is out of date, and its `week`
+  branch called `loadWeekMenu` and `refreshTonightFromPlan` and nothing else.
+  - **THE GAP IS NOT WHAT THE TICKET SAID, AND THE FIRST VERSION OF THIS
+    ENTRY REPEATED THE TICKET.** `summarize_chat_actions` gives an ordinary
+    `approve_weekly_plan` **two** cards, `week` AND `grocery` (app/main.py
+    hangs the second on `groceries_added_count`), so the branch below already
+    re-read Shop for it. Measured on `origin/main` by driving the real
+    summarizer, not by reading `_categorize_tool`:
+    approval with 8 added -> `['week','grocery']`, one refresh; every other
+    week tool -> `['week']`, none. The flagship example was covered all
+    along, and the corrected claim "approve_weekly_plan 0 -> 8 lines" proved
+    nothing about staleness.
+  - **The real gap, measured over the real tools on a throwaway DB:**
+    `swap_meal_in_plan` and `take_the_night_off` move the list and emit a
+    `week` card alone — and so does **approval in ONE shape**, the one that
+    adds nothing (`groceries_added_count` 0: a week of takeout, or a kitchen
+    that covers it) while carrying last week's unbought lines over.
+    Reproduced end to end: 0 added, 1 carried, the row really moves
+    `needed` -> `carried`, and the server sends `['week']`. Shop went on
+    showing it as a needed row. That is the honest justification for
+    covering approval, and it is the one this branch now states.
+    `generate_weekly_plan` (via `retire_overlapping_plans`) and `plan_meal`
+    with `add_ingredients_to_grocery_list` are the same shape.
+  - **ONE RE-READ PER TURN.** Both branches point at the same single Shop
+    panel, and a turn can carry both cards, so the first cut cost **16
+    requests in two concurrent `loadGrocery()` runs over the same eight
+    endpoints** on exactly the turn the ticket is about — and its own test
+    asserted that as correct. `refreshGroceryOnce` is a closure over the one
+    call; the test now says one.
+  - **UNCONDITIONAL WITHIN THE WEEK BRANCH, and the first cut's stated
+    reason was wrong.** It said narrowing "means widening the server's action
+    contract for every card". The server ALREADY has that contract, for the
+    one tool where it can express it — that is what the second approval card
+    IS. The true reason is smaller: a `ChatAction` carries a tab and never
+    the tool that produced it, so for every OTHER week tool there is no
+    signal on the wire, and `date`/`slot` are no proxy. The cost is one
+    re-read for a week tool that changes nothing (`discard_draft_plan`,
+    `set_week_constraints`) — measured at zero requests when Shop was never
+    built. A per-tool flag on every card is a real option, not a blocked one;
+    this chose the cheap side and says so.
+  - **`discard_draft_plan` changes NOTHING** — checked both ways, a lone
+    draft and a draft over an approved week. A draft never reaches the list.
+    The ticket lists it as a tool that "demonstrably changes the list"; it
+    does not, and its refresh is the stated waste above.
+  - **THE SECOND CALLER, which the first cut did not consider.**
+    `refreshStaleTabsFromActions` has two call sites, and the other is
+    `afterTonightSwap` — a TAP on Now, from the swap-nights row, the
+    night-off row and the undo. Its own comment says "the grocery list is
+    untouched by a nights swap, so Shop is left alone", and the first cut
+    made that false: main 0 grocery refreshes on a nights swap, first cut 1,
+    under a comment saying the opposite. And `runTonightNightOff` called
+    `afterTonightSwap` and THEN `refreshGroceryPanel()` again, under a
+    comment reading "the one thing a night off can change that a nights swap
+    never does" — a premise the same change falsified: 1 refresh on main, 2
+    on the first cut.
+    **Fixed with `afterTonightSwap(panel, opts)` and a `listMoved` flag**, a
+    second argument on `refreshStaleTabsFromActions` that ONLY a local
+    caller can set. A nights swap passes false (the rows are re-dated in
+    place, ids kept, so the grocery links ride along — `worktree-week-tiles`,
+    2026-09-13) and its comment is true again; a night off passes true and
+    the explicit duplicate is gone, its sentence moved onto the flag.
+    Measured after: nights swap 0, night off 1.
+  - **A BACKGROUND REFRESH NO LONGER NAVIGATES, and the first cut shipped
+    this loss and documented it as an acceptable cost.** It was worse than
+    documented. Measured, on LIST with last week's leftovers waiting and
+    "later" already said: step `list` -> `carry`, scrollTop **733 -> 0**, and
+    **a half-typed "oat milk" in the add row silently eaten** —
+    `groFootHtml` renders `#gro-add-item` on LIST only, so `groRestoreAddRow`
+    had nothing to put it back into, which is the exact loss
+    `renderGrocery`'s own capture/restore comment exists to prevent. It fired
+    for week tools that change nothing and, through `afterTonightSwap`, from
+    a plain UI tap.
+    `refreshGroceryPanel(opts)` takes `refill` now: the two FOREGROUND
+    rebuilds the household asked for — the Approve button and Start over —
+    pass it and behave exactly as before, CARRY landing included. Everything
+    else is a background re-read that does everything a load does except open
+    a step (`loadGrocery({background: true})`). **Nothing is lost by not
+    navigating**: LIST already carries `groCarryRowHtml`'s "N things from last
+    week · Keep or drop?" row, whose own comment calls it "the way back into
+    CARRY once Later was said". After: step, scroll, `carryDeferred` and the
+    typed text all survive.
+  - **ROUND 3, and it is the round-2 mechanism not reaching far enough rather
+    than anything new. `refreshGrocerySurfaces` has FOUR callers and only ONE
+    is the Approve button** — the other three are the Review stepper's "−"
+    and "+" and resolving an open slot, all edits to an ALREADY-APPROVED week
+    made from the PLAN tab. Round 2 had that helper passing `refill: true`
+    for all four, so those three went on doing the exact yank the bullet
+    above exists to remove: measured, all three gave step `list` -> `carry`,
+    scroll 733 -> 0, "later" cleared and the add row eaten, **from a tap on a
+    different tab, reachable without chat at all**. Identical on `main` and
+    on the first cut, so not a regression — but it made three sentences
+    false, including this log's own "the two foreground rebuilds ... every
+    other path is a background re-read". **Both halves of that were wrong**:
+    there are four callers, and three of them were not background.
+    `refreshGrocerySurfaces(opts)` forwards now; Approve passes `refill`, the
+    three edits pass nothing. **Decided on consistency rather than taste**:
+    those three are the same logical change as a chat `swap_meal_in_plan` or
+    `take_the_night_off`, which have gone through the background path since
+    round 2 — so dropping a dinner moved the hidden Shop panel from the
+    stepper and left it alone from chat, which is two doors disagreeing about
+    one change.
+  - **WHAT A REFRESH CAN STILL MOVE, completely this time.** Two folds in
+    `renderGrocery`, both pre-existing and both right — SORT back to LIST when
+    the change left nothing to sort, and `next` -> `wrap` when it emptied the
+    remaining stops. Characterised by name. Mid-TRIP nothing moves at all:
+    the step, the stop snapshot, the index, the stops already behind, what
+    came home this trip, and the scroll, all verified by running the real
+    `refreshGroceryPanel` -> `loadGrocery` -> `renderGrocery`. **That is a
+    property of the trip case, not of the refresh in general** — the first
+    version of this entry stated it as general, and its own code comment
+    ("the step ... left exactly as they stand") contradicted the bullet two
+    paragraphs below it. One of them was wrong and a reader would have
+    believed whichever they hit first.
+  - **No `refreshTodayMoves()` beside the grocery call**, unlike the
+    `grocery` branch: `refreshTonightFromPlan` already makes it. Worth
+    knowing and NOT fixed here: an approval's two cards do ask Today twice
+    (the week card through `refreshTonightFromPlan`, the grocery card
+    directly) — measured at 2 on `origin/main` as well, so it is
+    pre-existing, not this branch's, and deduping it means threading through
+    a function with other callers. Its own card.
+  - `tests/test_shop_stale_after_chat.py` (39). **Three baselines, because
+    one number would hide most of it: 14 red against `origin/main`, 10 red
+    against this branch's first commit, 2 against its second.** Of the 14,
+    only THREE are
+    independent behavioural catches — `swap_meal_in_plan`,
+    `take_the_night_off`, and the 0-added-plus-carried approval; the rest are
+    the same missing line from another angle, and `discard_draft_plan` is red
+    for a refresh this file itself proves is waste. Every docstring names
+    both baselines, and a script checks each claim against the measured sets
+    (four were wrong on the first pass, including one claiming to catch a
+    double it structurally cannot see). The per-tool tests drive the REAL
+    `summarize_chat_actions` output rather than a hand-built
+    `[{tab:'week'}]`, which is the payload the app never sends for the tool
+    the first cut built it for. Three existing source-marker tests were
+    updated honestly with a note saying what moved
+    (`test_shop_build7`, `test_shop_trip_exit`, `test_grocery_offline` — all
+    three slice on `loadGrocery(` / `refreshGroceryPanel(`, which gained
+    parameters).
+    **EIGHT MUTATIONS, all biting — and the reason to run them is that ONE
+    OF THEM DID NOT, which is round 3's real lesson.** After round 2,
+    deleting the `opts.background` guard outright left **all 36 tests
+    green** while the bug came straight back in the chat-approval case this
+    ticket is about. It was invisible because the test that looked like it
+    covered it set `carryDeferred = true` first, and `groMaybeCarryFirst`
+    returns early on `!carryDeferred` whether or not it is called — so that
+    test pinned the `carryDeferred` half and never the `background` half.
+    The whole mechanism could have been deleted and the suite would have
+    said nothing. Closed by one more test seeding `carryDeferred = false`
+    (Shop on LIST with nothing carried, then an approval carries a line
+    over — the ordinary shape), confirmed to redden under that mutation.
+    **And this is the correction to this entry's own "a script checks each
+    claim against the measured sets": that audit compares docstring CLAIMS
+    against redness, so an unpinned mechanism is invisible to it by
+    construction — it has no claim to be wrong about.** Mutation against a
+    green suite is the only thing that finds it. Two mutations also pin
+    round 3's judgment in both directions: making Approve stop passing
+    `refill`, and making a Review edit pass it again, each redden the
+    wiring test.
+    The fake DOM behind those tests answers `querySelector('#id')` from a
+    real registry of the ids the render actually wrote, rather than null to
+    everything — which is why round 1 could not see the add-row loss at all
+    (the capture/restore pair looks its field up by id, so against a
+    null-returning node it is a no-op and the loss cannot be observed).
+    Suite **5457 passed, 0 failed** at `TZ=America/Toronto` and
+    **5457 passed, 0 failed** at `TZ=Pacific/Niue` inside a VERIFIED
+    straddle —
+    Toronto 2026-09-17 against Niue 2026-09-16, checked before the run and
+    again after it, not assumed from the zone's name (the 2026-09-16 lesson:
+    a timezone is not a straddle). Against **5418 passed, 0 failed** on the
+    merge base at both, measured the same way; +39 is exactly this file.
+    **A FOURTH existing test was corrected in round 3, and it was one this
+    branch had written the day before**: `test_shop_build7`'s refill check
+    had become `count("refreshGroceryPanel({ refill: true })") == 2`, which
+    is a claim about how the two callers are SPELLED rather than about which
+    of them mean a new list — so it broke the moment
+    `refreshGrocerySurfaces` started forwarding `opts`. It names the two
+    entry points now, over comment-stripped source, because the first
+    rewrite of it counted a literal that appears in a comment. Both mistakes
+    are the same one this log keeps re-learning: an assertion prose can
+    satisfy is not an assertion.
+  - **A SEPARATE BUG FOUND AND DELIBERATELY NOT FIXED, one branch over:**
+    `refreshKitchenPanel()` is called from INSIDE `loadWeekMenu`, which only
+    runs in the arm where Meals was built — so on a page view where somebody
+    opened Shop and Kitchen and never Plan, a week-tagged chat change leaves
+    KITCHEN stale in exactly the way this ticket fixed for Shop.
+    Characterised by name in
+    `test_kitchen_goes_stale_in_the_same_arm_and_is_NOT_fixed_here`; invert
+    it when fixed. The fix is to hoist that call, which changes behaviour for
+    all six of `loadWeekMenu`'s callers. Its own card.
+  - **Not verified in a browser.** The node harness runs the real functions
+    against real state, which is where every one of these lived; the pixels
+    are unchecked.
 
 - **2026-09-16 — "Shop for tonight" is claimed only when the list is actually
   holding tonight up. Branch `overnight/shop-move-for-tonight`, merged

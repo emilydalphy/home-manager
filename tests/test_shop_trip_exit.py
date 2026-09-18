@@ -555,7 +555,14 @@ def test_the_list_load_restores_then_drops_stale_then_asks_about_leftovers():
     groMaybeSortFirst until 2026-09-15; the list never opens SORT on its
     own now, and the leftovers question is the only automatic step.)"""
     load = SHELL_JS[SHELL_JS.index("async function loadGrocery("):SHELL_JS.index("function refreshGroceryPanel(")]
-    assert "groRestoreTrip();\n      groDropStaleTrip();\n    }\n    groMaybeCarryFirst();" in load
+    # The leftovers call gained a guard on 2026-09-17: a BACKGROUND re-read
+    # (a chat turn, another tab's tap) does everything a load does except
+    # open a step, because navigating out from under somebody cost them
+    # their scroll and a half-typed add row. The ORDER this test is about
+    # is unchanged — the mirror is still read, and the stale check still
+    # run, before anything can call goGroceryStep.
+    assert ("groRestoreTrip();\n      groDropStaleTrip();\n    }\n"
+            "    if (!(opts && opts.background)) groMaybeCarryFirst();") in load
 
 
 def test_the_band_carries_the_paused_trip_line_and_the_dock_row_fits_shops_buttons():
