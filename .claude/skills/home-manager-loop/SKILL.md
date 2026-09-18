@@ -238,11 +238,14 @@ has a **Phase** select property mirroring it — use it when picking work:
 - **Phase 0 — Beta-ready** is the active focus: core-loop bugs, the tools.py split →
   multi-household chain, API cost, and the beta-safety pass. This is what unblocks the
   friend beta (which ships on the PWA, not the App Store).
-- **Phase 1 — Beta** (first-impression polish + the brand/redesign program) and
-  **Phase 2 — Chores** run next; per Emily's explicit call, Chores scoping/building may
-  proceed **in parallel with** the beta — the old "don't touch Chores until meal planning
-  wraps" rule is superseded. The beta tester's app stays meals-only until Chores is
-  validated.
+- **Phase 1 — Beta** (first-impression polish + the brand/redesign program) runs next.
+- **Phase 2 — Chores is PAUSED (Emily, 2026-09-18) until she asks to change it.** No
+  session — desktop, cloud, or the overnight routine — picks up, investigates, proposes on,
+  builds, or files cards for the Chores module. That covers every card whose title starts
+  with "Chores", the parent "Home Manager: Build out the Chores module" card, and any
+  code or screen under chores. If a Chores defect turns up in passing, one line in the
+  summary and move on. The earlier 2026-09-11 call that Chores could run in parallel with
+  the beta is superseded by this pause. The beta tester's app stays meals-only.
 - **Phase 3 — App Store** and **Phase 4 — Flywheel** are later; **Parked** tickets are
   deliberately out of rotation — don't pick them up without Emily asking.
 
@@ -310,7 +313,8 @@ only thing it never does is merge (or push without her go-ahead); those stay her
 
 1. **Pick the card(s).** Query the Loop Board for Status = "Not started" (or the tickets she
    named). "Work Tonight"-checked cards first; otherwise highest Priority, earlier Phase on a
-   tie, never a "Parked" card, oldest if still tied. Uncheck "Work Tonight" once handled.
+   tie, never a "Parked" card and never a Chores card (paused 2026-09-18, see Phases),
+   oldest if still tied. Uncheck "Work Tonight" once handled.
    "A few" means a few — run them in parallel with delegated agents (see Sub-agents and
    Emily's model rule: Opus for complex/design/risky/safety work, Sonnet for well-specified
    execution and reviews), one worktree each.
