@@ -98,6 +98,7 @@ from .chores import (  # noqa: F401
 # choice about which mornings to cook for is the household's to make by
 # tapping, not the assistant's to make by inferring.
 from .cook_ahead import (  # noqa: F401
+    apply_prep_day_batches,
     cook_ahead_options,
     cook_ahead_repeats,
     mark_cook_ahead_asked,
@@ -659,7 +660,9 @@ from .weekly_plan import (  # noqa: F401
 # swap_meal_in_plan and a whole conversation to choose with, and this
 # exists precisely to avoid spending that turn.
 from .swap_in_place import (  # noqa: F401
+    apply_swap_option,
     swap_meal_in_place,
+    swap_options,
     undo_meal_swap,
 )
 # The chat's change card (Emily, 2026-09-13, "Shaping the Draft" Flows C
