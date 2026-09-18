@@ -455,7 +455,24 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int) -> dict:
     meal now off the plan, and the ingredients for a meal somebody had
     eaten came off the shopping list. A tick is a record of something that
     happened, and no arithmetic on a plan gets to delete one.
+
+    And a night that has already GONE BY, which is the same refusal
+    add_dish_day grew on 2026-09-16 — the "+" in this very stepper. The
+    "−" was left alone then so that branch stayed the size of its ticket;
+    this is the other half. See the comparison below for what going
+    through wrote, and for why the clock it reads is the household's.
     """
+    # The household's day, resolved BEFORE the first connection below is
+    # opened rather than beside the comparison it is for.
+    # _household_today reaches cooker.household_now, which opens a
+    # connection of its own; read from inside this function's own write
+    # transaction it would be a nested get_conn, and this repo has twice
+    # paid for one of those with an intermittent "database is locked"
+    # rather than a wrong answer — the kind of failure no test sees until
+    # production. discard_draft_plan resolves its own clock the same way
+    # and for the same reason, and the cost of reading it early is one
+    # small SELECT.
+    today = _household_today().isoformat()
     conn = get_conn()
     row = conn.execute(
         """
@@ -504,6 +521,44 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int) -> dict:
                 f"{dish} on {date.fromisoformat(meal_date).strftime('%A')} has already "
                 "been cooked — I’ll leave that one on the week."
             ),
+        }
+
+    if meal_date < today:
+        # A night that has already gone by. Nothing on the screen kept
+        # these off it — unlike the "+", whose picker filters them out,
+        # "−" simply takes the LAST day the dish covers, so a dish whose
+        # days are ALL behind today (a week reviewed on Wednesday, a tab
+        # drawn yesterday, a retried POST, a direct call) hands one over.
+        # Reproduced before this went in: it went straight through and
+        # wrote two things, neither recoverable from the screen — the
+        # meal's grocery contribution reversed, for food that was in all
+        # likelihood already bought, and the night handed back as an `open`
+        # question, a decision returned on a day nobody can act on.
+        #
+        # THE HOUSEHOLD'S TODAY, never the server's. The container runs UTC
+        # and households default to America/Toronto, so from 8pm local the
+        # server's date is already tomorrow — on that clock this would
+        # refuse TONIGHT for four hours every evening, which is a worse bug
+        # than the one it fixes.
+        #
+        # Strictly BEFORE, so today itself is never refused: taking
+        # tonight's dinner off the week is an ordinary thing to ask for,
+        # and a check that took it away would be the same bug wearing the
+        # other hat.
+        #
+        # ABOVE the chain refusal below, deliberately. That one's sentence
+        # names a remedy — "change that first and I'll take this one off" —
+        # which cannot work on a night that is already over, so it must
+        # never be the answer a past night gets. The cooked refusal keeps
+        # its place above this one: both sentences are true of a past night
+        # somebody cooked, and "already been cooked" is the more specific
+        # of the two and says why the record is being kept.
+        return {
+            "status": "refused",
+            "date": meal_date,
+            "slot": slot,
+            "dish": dish,
+            "message": "That night’s already gone.",
         }
 
     fed = chain_fed_nights(row["derived_from_json"])

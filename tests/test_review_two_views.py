@@ -35,11 +35,21 @@ from pathlib import Path
 
 import pytest
 
+from conftest import household_today
+
 from app import tools
 from app.db import get_conn
 
 
-TODAY = datetime.date.today()
+# The HOUSEHOLD's today, never the process's. Both halves of the Review
+# stepper refuse a night that has already gone by — add_dish_day since
+# 2026-09-16, drop_dish_from_day with the sibling card that closed the same
+# hole in the "−" — and both read the household's clock. The two clocks are
+# different days for part of every UTC day, so seeded off date.today() D1 is
+# the household's YESTERDAY under a straddling runner and every drop below
+# is correctly refused: the app right, the harness wrong. Measured at
+# TZ=Pacific/Niue — 6 red here before this line, 0 after.
+TODAY = household_today()
 WEEK_START = (TODAY - datetime.timedelta(days=1)).isoformat()
 D0 = WEEK_START
 D1 = (TODAY + datetime.timedelta(days=0)).isoformat()

@@ -36,21 +36,43 @@ import datetime
 
 import pytest
 
+from conftest import household_today
+
 from app import tools
 from app.db import get_conn
 from app.tools import grocery, quantities, recipes, weekly_plan
 
 
-def _monday() -> datetime.date:
-    today = datetime.date.today()
-    return today - datetime.timedelta(days=today.weekday())
+# The HOUSEHOLD's today, and nothing in this file plans behind it.
+#
+# It was this week's Monday on the PROCESS's clock, and that quietly went
+# wrong twice over when drop_dish_from_day learned to refuse a night that
+# has already gone by (2026-09-17, the sibling of add_dish_day's own check
+# a day earlier). Monday is the past on every weekday but Monday, so
+# test_the_review_steppers_minus_does_not_take_the_line_to_zero — a named
+# guard on the bug this whole FILE is about — was refused rather than
+# driven, and PASSED anyway, because its other assertion is satisfied by
+# the drop not happening at all. Six days out of seven it tested nothing.
+# Found by review, not by the suite, and not by the author of that check.
+# Under a straddling runner the process's Monday is behind the household's
+# today even on a Monday, so the process anchor was wrong in both
+# directions.
+#
+# Nothing here asserts a weekday — these tests are about arithmetic across
+# a rounding group — so the days are named for their offsets, which is all
+# the Monday anchor was ever really claiming.
+START = household_today()
+
+
+def _start() -> datetime.date:
+    return START
 
 
 def _day(offset: int) -> str:
-    return (_monday() + datetime.timedelta(days=offset)).isoformat()
+    return (START + datetime.timedelta(days=offset)).isoformat()
 
 
-MON, TUE, WED = _day(0), _day(1), _day(2)
+D0, D1, D2 = _day(0), _day(1), _day(2)
 
 
 @pytest.fixture
@@ -75,7 +97,7 @@ def _links(item: str) -> list[str]:
 
 def _plan(recipe: str, ingredient: dict, servings: int, days: list[str]) -> tuple[int, list[int]]:
     tools.add_recipe(recipe, ingredients=[ingredient], default_servings=servings)
-    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
+    plan_id = tools.create_weekly_plan(_start().isoformat())["weekly_plan_id"]
     entries = [
         tools.plan_meal(d, recipe, slot="dinner", weekly_plan_id=plan_id)["entry_id"]
         for d in days
@@ -91,13 +113,13 @@ TOMATOES = {"item": "Tomatoes", "qty": "2 cans", "category": "pantry"}
 def _lemon_week():
     """Reproduction A: three nights, a recipe for twelve, a household of
     three — a quarter of a lemon per night, one lemon on the list."""
-    return _plan("Lemon Cake", LEMON, 12, [MON, TUE, WED])
+    return _plan("Lemon Cake", LEMON, 12, [D0, D1, D2])
 
 
 def _tomato_week():
     """Reproduction B: two nights, a recipe for four wanting two cans, a
     household of three — one and a half cans a night, three on the list."""
-    return _plan("Tomato Stew", TOMATOES, 4, [MON, TUE])
+    return _plan("Tomato Stew", TOMATOES, 4, [D0, D1])
 
 
 # ---------- reproduction A: the line went to zero ----------
@@ -148,7 +170,7 @@ def test_swapping_a_night_out_does_not_take_the_line_to_zero(family_of_three):
         default_servings=3,
     )
 
-    tools.swap_meal_in_plan(plan_id, MON, "Carrot Soup", slot="dinner", old_entry_id=entries[0])
+    tools.swap_meal_in_plan(plan_id, D0, "Carrot Soup", slot="dinner", old_entry_id=entries[0])
 
     assert _qty("Lemon") == "1"
     assert _qty("Carrot") == "3"
@@ -160,7 +182,11 @@ def test_the_review_steppers_minus_does_not_take_the_line_to_zero(family_of_thre
 
     result = weekly_plan.drop_dish_from_day(plan_id, entries[0])
 
-    assert result.get("refused") is None
+    # "status", not "refused" — the latter is a key NEITHER return shape has
+    # (both say status: 'dropped' | 'refused'), so `result.get("refused") is
+    # None` was true whether the drop happened or not. Half of what let a
+    # refused drop pass here unnoticed; the other half is the anchor above.
+    assert result["status"] == "dropped"
     assert _qty("Lemon") == "1"
 
 
@@ -171,7 +197,7 @@ def test_a_partial_period_takeover_leaves_the_days_it_kept_shopped_for(family_of
     without any single-meal control being touched at all."""
     plan_id, entries = _lemon_week()
 
-    weekly_plan._release_plan_days(plan_id, [MON])
+    weekly_plan._release_plan_days(plan_id, [D0])
 
     assert _qty("Lemon") == "1", "Tuesday and Wednesday still cook it"
 
@@ -202,7 +228,7 @@ def test_a_measurable_share_is_recorded_in_the_lines_own_unit(family_of_three):
     for, now with nothing lost to rounding on the way in."""
     plan_id, entries = _plan(
         "Beef Skillet", {"item": "Ground beef", "qty": "0.6 lb", "category": "meat/seafood"},
-        3, [MON, TUE],
+        3, [D0, D1],
     )
     assert _qty("Ground beef") == "1.25 lbs"
     assert _links("Ground beef") == ["0.6 lb", "0.6 lb"]
@@ -251,7 +277,7 @@ def test_a_sealed_package_still_survives_until_its_last_meal(family_of_three):
     link to it does."""
     plan_id, entries = _plan(
         "Pancakes", {"item": "Maple syrup", "qty": "1 bottle", "category": "pantry"},
-        3, [MON, TUE, WED],
+        3, [D0, D1, D2],
     )
     assert _qty("Maple syrup") == "1 bottle"
     assert _links("Maple syrup") == ["1 bottle", "1 bottle", "1 bottle"]
@@ -335,7 +361,7 @@ def test_a_standing_want_comes_back_to_exactly_what_the_household_asked_for(fami
     tools.add_grocery_item("Onions", quantity="3", category="produce")
 
     for week in range(4):
-        plan_id = _onion_week(_monday() + datetime.timedelta(days=7 * week))
+        plan_id = _onion_week(_start() + datetime.timedelta(days=7 * week))
         assert _qty("Onions") == "8", f"week {week}: 3 of the household's own plus 5 for the week"
         tools.clear_weekly_plan(plan_id)
         assert _qty("Onions") == "3", f"week {week}: back to exactly what the household asked for"
@@ -353,10 +379,10 @@ def test_a_standing_want_loses_the_rounded_delta_when_one_night_is_swapped(famil
         default_servings=3,
     )
     tools.add_grocery_item("Onions", quantity="3", category="produce")
-    plan_id = _onion_week(_monday())
+    plan_id = _onion_week(_start())
     assert _qty("Onions") == "8"
 
-    tools.swap_meal_in_plan(plan_id, MON, "Carrot Soup", slot="dinner")
+    tools.swap_meal_in_plan(plan_id, D0, "Carrot Soup", slot="dinner")
 
     assert _qty("Onions") == "6"
 
@@ -369,8 +395,8 @@ def test_a_standing_want_is_only_ever_blanked_never_deleted(family_of_three):
     """
     tools.add_grocery_item("Lemon", quantity="2", category="produce")
     tools.add_recipe("Lemon Cake", ingredients=[LEMON], default_servings=12)
-    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
-    entry = tools.plan_meal(MON, "Lemon Cake", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    plan_id = tools.create_weekly_plan(_start().isoformat())["weekly_plan_id"]
+    entry = tools.plan_meal(D0, "Lemon Cake", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
     tools.approve_weekly_plan(plan_id, "Emily")
     assert _qty("Lemon") == "3", "two of the household's own, plus one for the dinner"
 
@@ -388,8 +414,8 @@ def test_a_standing_want_the_ledger_cannot_read_still_falls_back(family_of_three
         "Herby Rice", ingredients=[{"item": "Parsley", "qty": "a bunch", "category": "produce"}],
         default_servings=3,
     )
-    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
-    entry = tools.plan_meal(MON, "Herby Rice", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    plan_id = tools.create_weekly_plan(_start().isoformat())["weekly_plan_id"]
+    entry = tools.plan_meal(D0, "Herby Rice", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
     tools.approve_weekly_plan(plan_id, "Emily")
 
     grocery._reverse_meal_grocery_contributions(entry)
@@ -424,8 +450,8 @@ def test_a_week_that_wants_a_hair_over_twelve_peppers_buys_thirteen(family_of_th
         "Pepper Bake", ingredients=[{"item": "Peppers", "qty": "5.44", "category": "produce"}],
         default_servings=4,
     )
-    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
-    for day in (MON, TUE, WED):
+    plan_id = tools.create_weekly_plan(_start().isoformat())["weekly_plan_id"]
+    for day in (D0, D1, D2):
         tools.plan_meal(day, "Pepper Bake", slot="dinner", weekly_plan_id=plan_id)
     tools.approve_weekly_plan(plan_id, "Emily")
 
@@ -441,7 +467,7 @@ def test_marking_one_night_away_does_not_take_the_line_to_zero(family_of_three):
     _lemon_week()
     assert _qty("Lemon") == "1"
 
-    tools.set_away_stretch(MON, "dinner", MON, "dinner", reason="out")
+    tools.set_away_stretch(D0, "dinner", D0, "dinner", reason="out")
 
     assert _qty("Lemon") == "1", "Tuesday and Wednesday still cook it"
 
@@ -486,8 +512,8 @@ def test_thirds_of_a_thing_add_back_up_to_a_whole_one(family_of_three):
         default_servings=6,
     )
     tools.add_grocery_item("Onions", quantity="1", category="produce")
-    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
-    for day in (MON, TUE, WED):
+    plan_id = tools.create_weekly_plan(_start().isoformat())["weekly_plan_id"]
+    for day in (D0, D1, D2):
         tools.plan_meal(day, "Third Pie", slot="dinner", weekly_plan_id=plan_id)
     tools.approve_weekly_plan(plan_id, "Emily")
     assert _qty("Onions") == "3", "the household's own 1, plus 2 for three two-thirds nights"
@@ -515,7 +541,7 @@ def test_a_measurable_standing_want_does_not_creep_up_a_quarter_a_week(family_of
         default_servings=12,
     )
     tools.add_grocery_item("Milk", quantity="2 cups", category="dairy")
-    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
+    plan_id = tools.create_weekly_plan(_start().isoformat())["weekly_plan_id"]
     entries = [
         tools.plan_meal(_day(o), "Cup Cake", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
         for o in range(4)
@@ -562,7 +588,7 @@ def test_a_rolling_display_unit_cannot_eat_the_households_own_amount(
         default_servings=servings,
     )
     tools.add_grocery_item("Thing", quantity=standing, category="other")
-    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
+    plan_id = tools.create_weekly_plan(_start().isoformat())["weekly_plan_id"]
     entries = [
         tools.plan_meal(_day(o), "Roller", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
         for o in range(nights)
@@ -588,7 +614,7 @@ def test_a_hand_typed_line_is_never_left_with_no_quantity_at_all(family_of_three
         default_servings=8,
     )
     tools.add_grocery_item("Thing", quantity="2 oz", category="other")
-    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
+    plan_id = tools.create_weekly_plan(_start().isoformat())["weekly_plan_id"]
     entries = [
         tools.plan_meal(_day(o), "Roller", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
         for o in range(3)
@@ -637,7 +663,7 @@ def test_a_hand_edit_below_the_plans_share_does_not_blank_the_line(family_of_thr
         default_servings=4,
     )
     tools.add_grocery_item("Onions", quantity="3", category="produce")
-    plan_id = _onion_week(_monday())
+    plan_id = _onion_week(_start())
     assert _qty("Onions") == "8"
     item_id = next(i["id"] for i in tools.list_grocery_list() if i["item"] == "Onions")
     tools.update_grocery_item(item_id, quantity="2")

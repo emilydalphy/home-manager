@@ -12142,6 +12142,35 @@
     // last UNCOOKED day instead": that would quietly take a different day
     // from the one the count implies, which is this screen's own recurring
     // bug wearing a different hat. The write refuses it in words too.
+    //
+    // ...and there is deliberately NO date term here, though the write
+    // refuses a night that has already gone by (2026-09-17) and "−" always
+    // takes days[n - 1], so for a dish whose days are ALL behind today this
+    // button can now only ever print "That night's already gone." Three
+    // reasons it is still live, and the change if Emily wants it is one
+    // clause — `&& !(lastDay && lastDay.isPast)`, with days[] carrying the
+    // flag classifyDay already computes.
+    //   1. `cooked` above is not the precedent it looks like: it reads a
+    //      SERVER fact off the payload, with no clock in it. A date term
+    //      would read the BROWSER's, while the write refuses on
+    //      households.timezone — so east of the stored zone it would grey
+    //      out a night the server would happily take, which is a control
+    //      removed with no explanation. Worse than one that explains
+    //      itself.
+    //   2. It would be the app's only statement of this rule disappearing.
+    //      "Change one" sits on this same row, reaches swap_meal_in_plan,
+    //      and reads no clock at all — so a past night can still be
+    //      rewritten from here, and bought for. Greying the honest refusal
+    //      while the harmful control stays live reads worse, not better.
+    //   3. The CHAIN refusal has no client term either, on purpose ("which
+    //      is where the check belongs, since only it can see the chain", in
+    //      reviewEatingGroups above). A refusal you discover by tapping,
+    //      and that then says exactly why, is this control's own pattern
+    //      for two of its three refusals.
+    // The honest fix for all of it is an is_past computed on the
+    // HOUSEHOLD's clock in get_week_menu's day payload, which would close
+    // the "+" picker's own documented browser-vs-stored-zone mismatch in
+    // the same change. Its own card.
     var lastDay = dish.days[n - 1];
     var canDrop = n > 1 && !busy && !(lastDay && lastDay.cooked);
     // (typeof guards: the tests run these renderers in isolation under node.)

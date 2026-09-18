@@ -36,26 +36,33 @@ from app.db import get_conn
 from app.tools import grocery, meal_plans, weekly_plan
 
 
-def _monday() -> datetime.date:
-    today = datetime.date.today()
-    return today - datetime.timedelta(days=today.weekday())
+# ONE anchor for the whole file, and it is the HOUSEHOLD's today.
+#
+# BOTH halves of the Review stepper now refuse a night that has already
+# gone by, on the household's clock: add_dish_day since 2026-09-16, and
+# drop_dish_from_day with the sibling card that closed the same hole in the
+# "−". Anchored on this week's Monday, as this file used to be, offsets 0
+# and 2 are behind today on almost every weekday the suite runs, so the
+# drops below were refused rather than driven — and offset 0 is behind the
+# HOUSEHOLD's today under a straddling runner even on a Monday. The app
+# right, the harness wrong, which is how this class always presents.
+#
+# Nothing here asserts a weekday: these tests are about a forced failure
+# mid-write, and the days only have to be ones the app will still take, in
+# an order that puts the cook before the nights that reheat it. So they are
+# named for those roles rather than for days of the week, which is what the
+# Monday anchor was really claiming.
+START = household_today()
 
 
 def _day(offset: int) -> str:
-    return (_monday() + datetime.timedelta(days=offset)).isoformat()
+    return (START + datetime.timedelta(days=offset)).isoformat()
 
 
-MON, TUE, WED, FRI = _day(0), _day(1), _day(2), _day(4)
+COOK, REHEAT, LATE_REHEAT = _day(0), _day(2), _day(4)
 
-# add_dish_day refuses a target night that has already gone by (2026-09-16),
-# on the household's clock — so the "+" tests below plan from the
-# household's own today rather than from this week's Monday, which puts
-# MON and TUE behind it on every weekday but Monday. What they are about is
-# a forced failure mid-write; the day they aim at only has to be a day the
-# app will still take a dish on, on any weekday the suite runs.
-ADD_START = household_today()
-ADD_SRC = ADD_START.isoformat()
-ADD_TGT = (ADD_START + datetime.timedelta(days=1)).isoformat()
+# The "+"-recorded test at the foot of the file, same anchor.
+ADD_SRC, ADD_TGT = _day(0), _day(1)
 
 
 # ---------------------------------------------------------------- helpers
@@ -111,33 +118,34 @@ def _plain_plan() -> tuple[int, int]:
     """An approved one-dinner week. Returns (plan_id, the dinner's entry id)."""
     _household()
     _wraps()
-    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
-    entry_id = tools.plan_meal(MON, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    plan_id = tools.create_weekly_plan(START.isoformat())["weekly_plan_id"]
+    entry_id = tools.plan_meal(COOK, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
     tools.approve_weekly_plan(plan_id, "Emily")
     return plan_id, entry_id
 
 
 def _chain_plan() -> tuple[int, int, int, int]:
     """
-    An approved Monday-cooks / Wednesday-and-Friday-reheat chain — the shape
+    An approved cook-once / reheat-twice chain (offsets 0, 2 and 4 from
+    the household's today) — the shape
     that makes _unlink_leftover_target (and its approved-plan grocery
-    rescale) part of a drop at all. Returns (plan, mon, wed, fri).
+    rescale) part of a drop at all. Returns (plan, cook, reheat, late_reheat).
     """
     _household()
     _wraps()
-    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
-    mon = tools.plan_meal(MON, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
-    wed = tools.plan_meal(
-        WED, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id,
-        derived_from={"links_to": f"{MON}:dinner"},
+    plan_id = tools.create_weekly_plan(START.isoformat())["weekly_plan_id"]
+    cook = tools.plan_meal(COOK, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    reheat = tools.plan_meal(
+        REHEAT, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id,
+        derived_from={"links_to": f"{COOK}:dinner"},
     )["entry_id"]
-    fri = tools.plan_meal(
-        FRI, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id,
-        derived_from={"links_to": f"{MON}:dinner"},
+    late_reheat = tools.plan_meal(
+        LATE_REHEAT, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id,
+        derived_from={"links_to": f"{COOK}:dinner"},
     )["entry_id"]
     tools.repair_leftover_chains(plan_id)
     tools.approve_weekly_plan(plan_id, "Emily")
-    return plan_id, mon, wed, fri
+    return plan_id, cook, reheat, late_reheat
 
 
 def _grocery_by_item() -> dict:
@@ -177,7 +185,7 @@ def test_a_failure_writing_the_open_row_leaves_the_week_exactly_as_it_was(monkey
     assert _snapshot() == before
     # Said again in the terms the household would notice, because a dict
     # comparison that goes wrong is hard to read.
-    assert _rows_on(MON, "dinner") == 1
+    assert _rows_on(COOK, "dinner") == 1
     assert _grocery_by_item() == {"beef": "1 lb", "lettuce": "1 head"}
 
 
@@ -207,10 +215,10 @@ def test_a_failure_after_the_grocery_reversal_puts_the_list_back(monkeypatch):
 def test_a_failure_after_the_chain_unlink_leaves_the_chain_intact(monkeypatch):
     """
     The first seam. Dropping a reheat night tells the cook night that fed it
-    first; a failure after that used to leave Monday claiming a batch for a
-    Wednesday that is still, in fact, on the plan.
+    first; a failure after that used to leave the cook night claiming a
+    batch for a reheat night that is still, in fact, on the plan.
     """
-    plan_id, mon, wed, fri = _chain_plan()
+    plan_id, cook, reheat, late_reheat = _chain_plan()
     before = _snapshot()
     assert tools.plan_leftover_chains(plan_id)["sources"], "the chain has to be confirmed"
 
@@ -222,12 +230,12 @@ def test_a_failure_after_the_chain_unlink_leaves_the_chain_intact(monkeypatch):
 
     monkeypatch.setattr(weekly_plan, "_unlink_leftover_target", flaky)
     with pytest.raises(RuntimeError):
-        tools.drop_dish_from_day(plan_id, wed)
+        tools.drop_dish_from_day(plan_id, reheat)
 
     assert _snapshot() == before
     chains = tools.plan_leftover_chains(plan_id)
-    assert wed in chains["leftovers"], "Wednesday stopped being a reheat over a failed drop"
-    assert sorted(t["entry_id"] for t in chains["sources"][mon]["targets"]) == sorted([wed, fri])
+    assert reheat in chains["leftovers"], "the reheat night stopped being one over a failed drop"
+    assert sorted(t["entry_id"] for t in chains["sources"][cook]["targets"]) == sorted([reheat, late_reheat])
 
 
 def test_audit_plan_slots_reports_no_gap_after_a_failed_drop(monkeypatch):
@@ -247,7 +255,7 @@ def test_audit_plan_slots_reports_no_gap_after_a_failed_drop(monkeypatch):
 
     after = tools.audit_plan_slots(plan_id)
     assert after["missing"] == missing_before
-    assert {"date": MON, "slot": "dinner"} not in after["missing"]
+    assert {"date": COOK, "slot": "dinner"} not in after["missing"]
     assert after["hollow"] == []
 
 
@@ -265,7 +273,7 @@ def test_the_route_says_nothing_changed_and_is_telling_the_truth(signed_in, monk
         lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("database is locked")),
     )
     res = signed_in.post(
-        f"/api/week/{_monday().isoformat()}/drop-dish-day", json={"entry_id": entry_id}
+        f"/api/week/{START.isoformat()}/drop-dish-day", json={"entry_id": entry_id}
     )
 
     assert res.status_code == 500
@@ -378,8 +386,8 @@ def test_the_happy_path_lands_where_it_always_did():
     assert out["status"] == "dropped"
     assert out["dish"] == "Bulgogi Wraps"
     assert "Bulgogi Wraps" in out["open_reason"]
-    assert _rows_on(MON, "dinner") == 1
-    day = [d for d in tools.get_week_menu(plan_id)["days"] if d["date"] == MON][0]
+    assert _rows_on(COOK, "dinner") == 1
+    day = [d for d in tools.get_week_menu(plan_id)["days"] if d["date"] == COOK][0]
     assert day["dinner"]["state"] == "open"
     assert day["dinner"]["open_reason"] == out["open_reason"]
     # The meal's ingredients came back off the list, and the ledger went
@@ -403,17 +411,17 @@ def test_dropping_a_reheat_on_an_approved_week_still_rescales_the_source():
     and the same ones test_leftover_chain_target_swap records for a SWAP of
     the same night.
     """
-    plan_id, mon, wed, fri = _chain_plan()
-    # Monday cooks for three nights of three eaters against a recipe
+    plan_id, cook, reheat, late_reheat = _chain_plan()
+    # The cook night cooks for three nights of three eaters against a recipe
     # written for three.
     assert _grocery_by_item() == {"beef": "3 lbs", "lettuce": "3 heads"}
 
-    out = tools.drop_dish_from_day(plan_id, wed)
+    out = tools.drop_dish_from_day(plan_id, reheat)
 
     assert out["status"] == "dropped"
     assert _grocery_by_item() == {"beef": "2 lbs", "lettuce": "2 heads"}
     chains = tools.plan_leftover_chains(plan_id)
-    assert [t["entry_id"] for t in chains["sources"][mon]["targets"]] == [fri]
+    assert [t["entry_id"] for t in chains["sources"][cook]["targets"]] == [late_reheat]
 
 
 def test_a_failed_rescale_still_hands_the_day_back(monkeypatch):
@@ -426,17 +434,17 @@ def test_a_failed_rescale_still_hands_the_day_back(monkeypatch):
     the cost of raising is a household told their week is unchanged when a
     day has just been handed back to them.
     """
-    plan_id, mon, wed, fri = _chain_plan()
+    plan_id, cook, reheat, late_reheat = _chain_plan()
     monkeypatch.setattr(
         weekly_plan, "_rescale_leftover_source_grocery",
         lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("database is locked")),
     )
 
-    out = tools.drop_dish_from_day(plan_id, wed)
+    out = tools.drop_dish_from_day(plan_id, reheat)
 
     assert out["status"] == "dropped"
-    assert _rows_on(WED, "dinner") == 1
-    day = [d for d in tools.get_week_menu(plan_id)["days"] if d["date"] == WED][0]
+    assert _rows_on(REHEAT, "dinner") == 1
+    day = [d for d in tools.get_week_menu(plan_id)["days"] if d["date"] == REHEAT][0]
     assert day["dinner"]["state"] == "open"
     # The line is over-bought rather than wrong: still there, still the
     # three-night batch, because the trim is what failed.
@@ -451,10 +459,10 @@ def test_the_ordinary_unlink_still_rescales_for_every_other_caller():
     this drives the swap path the deferral could have broken. A
     no-regression guard, green on both sides by design.
     """
-    plan_id, mon, wed, fri = _chain_plan()
+    plan_id, cook, reheat, late_reheat = _chain_plan()
     tools.add_recipe("Soup", ingredients=[{"item": "stock", "qty": "1 l"}], default_servings=3)
 
-    tools.swap_meal_in_plan(plan_id, WED, "Soup", slot="dinner")
+    tools.swap_meal_in_plan(plan_id, REHEAT, "Soup", slot="dinner")
 
     on_list = _grocery_by_item()
     assert on_list["beef"] == "2 lbs"
