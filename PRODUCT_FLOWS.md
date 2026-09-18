@@ -34,13 +34,105 @@ place in the daily routine.
   the place they go in the mornings and when they need to check on things. Retention
   comes from being deep in the routine; this is the routine. It is the flow that decides
   whether the app becomes a habit or a tool.
-- **State:** `Not walked`. Today the home screen, the "needs you" strip, notifications,
-  the morning text and Cook tonight each carry a piece of this; nobody has walked them as
-  *one* moment. Expect the walk to be as much about what's missing as what's there.
-- **For builders:** home tab in `static/shell.html`, `/api/needs-you*`, `/api/attention`,
-  `/api/notifications`, `app/tools/tonight.py`, `app/tools/attention.py`,
-  `app/tools/moves.py`, `app/tools/digest.py` (the morning text is the same content,
-  delivered out of the app).
+
+**The path as it is (walked 2026-09-15, Emily driving, laptop copy of the household —
+see the caveat under State):**
+1. Open Pomona → **Who's this?** (Emily / Vineeth) → tap a name. *(Asked again on
+   re-open in the panel despite "I'll remember on this device" — likely the panel
+   forgetting, not the app; check on her phone.)*
+2. **Now.** Header: *Tuesday, Sep 15 · 0 of 2 done*. Then, top to bottom: a **THIS
+   WEEK** card *"Shall I put Sep 14–20 together?"*; a **DINNER** card *"Tomorrow needs a
+   dinner" · Pick*; today's timeline — **NOW · Shop for tonight · 3 items · by 6:05**,
+   then **6:30 Garlic Butter Shrimp · dinner · 25 min**; a big orange **Open the list**
+   button with **Ask** beside it. Tabs: Now · Plan · Shop · Cook.
+   Emily: *"the actions were really unclear on the Now screen, so I just clicked Shop
+   for tonight."*
+3. Tap **Shop for tonight** → **Shop** tab. *Tuesday, Sep 15 · 3 things · 2 stops* —
+   Costco: whole chicken (2), Dish soap; T&T: rice (2 cups). **Start the trip** / See
+   the week. A **"1" badge** appears on the Now tab the moment you leave it.
+4. Emily, asked what she'd do next at 7am: *"I would go into the plan for the day to
+   know what to expect for meals."* Tap **Plan** → on this copy it opens on **Oct 11–17,
+   2027 · APPROVED** (the stale test plan), "Your week is set — 2 meals, 1 recipe, one
+   list of 3 ingredients," a "One quick one before you go — Anything in the freezer?
+   whole chicken" card, seven day tiles, and Monday's three slots all *Nothing yet · Pick*.
+   Today (Sep 15) is not on the screen at all.
+
+**The exits:** close the app (nothing to close — nothing was asked that has to be
+answered); Open the list → Shop; Pick → tomorrow's dinner options; the THIS WEEK card →
+week planning; Ask. Nothing on Now records that the morning check happened.
+
+**Moments that matter:** (a) the first two seconds of Now — does it tell today's story
+or list jobs; (b) the day's meals in one glance without leaving Now (Emily's own next
+tap); (c) whether anything on the screen is *wrong* — one invented deadline and the
+morning is un-trusted.
+
+- **State:** `Walked` 2026-09-15 (laptop copy, Emily driving, viewed in the Browser
+  pane). **Caveat:** on this copy the only approved plan is Oct 2027, there is no plan
+  for this week, and tonight's shrimp came from the H1 chat walk. The findings about
+  the *shape* of Now (competing asks, no greeting, "0 of 2 done", the shop-for-tonight
+  logic, the badge) are behaviour and stand on her phone. Whether Plan opens on today
+  vs. a future approved week, and what Now shows when a real week *is* set, need her
+  phone.
+
+**Friction found:**
+- **"The actions were really unclear"** (Emily's words, step 2). Four asks compete —
+  put the week together? pick tomorrow? shop for tonight? Open the list (orange) — and
+  two overlap: saying yes to the week solves tomorrow, so "Pick" asks twice. Now is a
+  job list, not today's story. → card "Now tells today's story for the household (not a job list)" (High, Phase 1)
+  https://app.notion.com/p/3dc1f4c052318116823bde70ac45ef91
+- **"Shop for tonight · by 6:05" is not true.** Tonight is the shrimp (already in the
+  fridge); the three things on the list are chicken, rice, dish soap — none of them for
+  tonight. Pomona says "shop for tonight" whenever the list has anything on it and a
+  cook is within reach; it never checks whether the items are *for* that cook. At 7am it
+  hands over a deadline that doesn't exist. → card "'Shop for tonight' only when something on the list is for tonight" (Bug,
+  High, Phase 1) https://app.notion.com/p/3dc1f4c0523181838fe2f2ca8c708ebf
+- **The day's meals aren't on Now.** Emily's real next tap was Plan, "to know what to
+  expect for meals." Now shows dinner only, as a timeline row; breakfast and lunch (and
+  who's home) live a tab away. → card "Every planned meal today shows on Now, not just dinner" (Medium, Phase 1)
+  https://app.notion.com/p/3dc1f4c0523181c085d0f88443ecebce
+- **"0 of 2 done" at 7am** reads as a scoreboard before the day has started; nothing
+  says good morning, who it is talking to, or what the other adult did. → folded into the
+  "Now tells today's story" card (cut "0 of 2 done"); "what Vineeth did" is H3's job.
+- **The "1" on Now never goes away** while "Tomorrow needs a dinner" is open — a badge
+  that is always lit is one you stop reading. → folded into the "Now tells
+  today's story" card (cut until it can mean *new since you last looked*, H3).
+- Two screens, two stories (seen in H1 too): Now asks "Shall I put Sep 14–20 together?"
+  while Plan says "Your week is set." On this copy the set week is Oct 2027, so partly
+  a state artefact — but Plan opening on a future approved week instead of today is a
+  real question. *Check on her phone.*
+- Small: Who's this? re-asked in the panel (probably the panel); "Anything in the
+  freezer? whole chicken" sits on Plan while the same chicken is on the shopping list
+  — the two don't know about each other.
+- **Seen from here, belongs to flow 2 (Plan the week → "Any days that are
+  different?"):** the **"Who's eating?"** circles (E / V). Everyone starts as *in*; a
+  tap marks them *out*, but a plain lettered circle reads as "tap to choose me," and
+  the orange focus glow after a tap reads as "selected" — the opposite of what
+  happened. Emily: *"the clicking doesn't make sense — the click of the initial
+  removes them."* → **Decision 2026-09-15: label becomes "Is anyone out?"** (tap = mark
+  out; the question now matches the gesture). → card "'Who's eating?' becomes
+  'Is anyone out?'" (Medium, Phase 1) https://app.notion.com/p/3dc1f4c05231815da491c1c6760bf85a
+
+**Decisions (Emily, 2026-09-15):**
+- "Who's eating?" → **"Is anyone out?"** — the label says what a tap does.
+- Direction, in her words: *"There is a lot that's been built, but I want to be really
+  clear on if we even need everything. I want everything to have a clear purpose."*
+  Applies to every element on Now before any of moments 1–4 become cards: each card,
+  badge and button on the hub must name its purpose in one line or go.
+- **Now is for the household**, not the person who opened it — "yes for the household."
+- Purpose audit of Now (2026-09-15): keep the date line, the timeline, the one orange
+  button, the holiday pill, the afternoon "Still good?", held things; merge the week ask
+  with "Tomorrow needs a dinner"; cut "0 of 2 done", the always-lit tab badge, the bell
+  (already hidden). Emily: "yes write those cards." Five moments → three cards + one
+  under flow 2. The hole the household framing exposes: nothing says what the other
+  adult did (H3).
+
+- **For builders:** home tab in `static/shell.html` / `static/shell.js` (Now =
+  `panel-today`, the timeline = `day-strip`, tile taps = `runTodayMoveAction`),
+  `app/tools/moves.py` (`_shop_moves` — the "Shop for tonight" move, `SHOP_HORIZON_HOURS`,
+  deadline from `cooker.planned_start_for`), `/api/needs-you` (`app/tools/attention.py` —
+  the dinner_decision + shop_run items and the tab badge), `/api/notifications`,
+  `app/tools/tonight.py`, `app/tools/digest.py` (the morning text is the same content,
+  delivered out of the app), `static/plan-week.html` (which week Plan opens on).
 
 ## Habits — the moments Pomona attaches to
 
@@ -223,11 +315,108 @@ confirm with one tap inside H2 if needed).
   ahead is a blur.
 - **Job / load phase:** a week of dinners they can say yes to, shaped to the calendar
   and the household. (Anticipate + identify done by the app; decide is a tap.)
-- **State:** `Not walked`. Most recent feedback: Emily's 2026-09-13 phone test (19 cards)
-  and the "shaping the draft" work (plate chips, add-a-carb, chat on the draft).
-- **For builders:** `static/plan-week.html`, `app/tools/weekly_plan.py`,
-  `app/tools/proposals.py`, `app/tools/plates.py`, `app/tools/plate_parts.py`,
-  `app/tools/swap_in_place.py`, `app/tools/meal_variety.py`, `app/tools/plan_quality.py`.
+
+**The path as it is (walked 2026-09-15, Emily driving in the Browser pane, laptop copy
+of the household — the copy's "next week" was Oct 18–24, 2027; dates ignored, behaviour
+judged):**
+1. **Plan** tab → **Plan next week ›**.
+2. **1 of 4 · "Any days that are different this week?"** — *Tap a day. Out, home late,
+   guests — for any meal.* Seven day tiles; tapping one opens a day sheet (Dinner tags:
+   Nothing special / Nobody home / Short on time / Got time tonight / Hosting guests /
+   Leftovers; **Who's eating?** E / V initials per meal; guest steppers for lunch and
+   breakfast). Card: *"Anyone away this week? I'll skip planning and shopping while
+   you're gone."* Button **Next — 1 day noted**.
+3. **2 of 4 · "Any lunches on the go this week?"** — *I'll keep those to food that packs
+   cold.* Seven day chips. **‹ Back · Nothing on the go · Next.**
+4. **3 of 4 · "What are you in the mood for?"** — *As many as you like. I won't make
+   every night the same.* Nine mood chips; **Cuisines you fancy** (*A starting point —
+   I'll remember whatever you tap*), ten more. **‹ Back · Surprise me · Next.**
+5. **4 of 4 · "Anything else I should plan around?"** — one text box, hint *"Friday is
+   pizza night. I want to use the lamb in the freezer."* **‹ Back · Nothing else · Draft
+   my week.**
+6. **Building your week** — *○ Looking at who's home which nights.* *"No need to wait
+   here — I'll keep going, and the draft will be on Plan once it's done. Nothing is
+   approved until you say so."* Button greyed **Drafting your week…** (~20 s; the status
+   line never changed; "Nothing else" still showing).
+7. **The draft, on Plan.** Band: **DRAFT · Oct 18–24 · 7 days · a draft, your turn.**
+   Toggle **What we're eating | Which days** (menu view is default). Menu view:
+   BREAKFASTS (3 dishes, e.g. *Greek Yogurt … 4 mornings*), LUNCHES (5, two of them
+   leftovers marked *nothing to cook*), DINNERS (7, each *1 night*), SNACKS (5), every
+   row with a − / + stepper and **Change** / **Change one**. Sticky **Approve and build
+   my shopping list**, Ask beside it.
+8. **Which days**: *DINNERS · drag to move a night · Bar = how long* — seven rows, day,
+   dish, a time bar (25–110 min), drag handles. Dinners only.
+9. **Approve** → **All set.** *Oct 18–24 is planned, and the list is built.* Toast:
+   *"Approved. I'll get your list together. Open the list."* Then **"Two quick ones
+   before you go"**: (a) *Anything in the freezer? Tap what's frozen and I'll tell you
+   when to move it to the fridge* — eight chips (Bacon … Shrimp … whole chicken) →
+   **Add to the schedule / None — all fresh**; (b) *Do you want to batch cook any of
+   these?* — **nine** questions, one per repeated dish, including Trail mix, Apple slices
+   with peanut butter, Cheese and crackers, Sliced cucumbers with tzatziki, Greek
+   yogurt (*"It'd cook on Tuesday. Which other days should it cover?"*) → **Batch cook
+   these / Cook each on its own**. Then **21 MEALS · 13 RECIPES · 66 INGREDIENTS**,
+   *Nothing to thaw before Monday.* **See the week / Open the list · 66 ingredients.**
+
+**The exits:** ‹ Plan at any intake step (answers so far are saved); leaving during
+"Building your week" (the draft lands on Plan anyway); the draft left unapproved (Now
+keeps asking); Approve → All set → Open the list (flow 3) or See the week.
+
+**Moments that matter:** (a) the first line of the draft — does it show it *listened*;
+(b) the intake's length — four screens of telling before one of getting; (c) the
+after-approve screen — the last thing they see, and today it is ten questions.
+
+- **State:** `Walked` 2026-09-15 (laptop copy, Emily driving; Emily's taps on "Which
+  days" and "Approve" did not register in the pane and were re-tapped by the session —
+  a pane quirk, not app behaviour, unless it recurs on her phone). Behaviour findings
+  stand; the draft's *content* (dishes, variety vs. previous weeks) is the copy's, not
+  hers.
+
+**Friction found:**
+- **Four screens of telling before one of getting.** Steps 1–3 each ask something
+  Pomona could know or remember: which days are different (the calendar it already
+  reads); which lunches leave the house (it pre-answers this from onboarding rhythm but
+  still shows the screen); moods and cuisines (it says "I'll remember" but week 30 looks
+  like week 1). → card "Week intake: one screen of what Pomona already knows, not four of asking"
+  (High, Phase 1, Design) https://app.notion.com/p/3dc1f4c052318195974dc1c92c1959f8
+- **The draft doesn't say what it did with what you told it.** No opening line, no
+  reason next to a dish (Pomona stores one per dish and shows none). Monday's +2 guests
+  are invisible on both views. Trust has to be earned by reading twenty rows. → card "The draft says what it did with what you told it" (High, Phase 1)
+  https://app.notion.com/p/3dc1f4c0523181d38224d1773b1359aa
+- **"Two quick ones before you go" is ten questions**, and half of them are nonsense
+  in a person's ears — *"Trail mix … it'd cook on Tuesday. Which other days should it
+  cover?"* Snacks and yogurt are not cooked. The freezer chips include the shrimp that
+  was eaten tonight and the whole chicken that is on the shopping list (so not in the
+  freezer). Asked *after* approval, at the moment the person wants to leave. → card "After approve: only real questions, asked once — not ten" (Bug, High,
+  Phase 1) https://app.notion.com/p/3dc1f4c05231813ba149e22bfa0aa64d
+- **Menu view is the default; the week view is behind a toggle.** For "Sunday, ten
+  minutes, say yes," the seven-line Which days is the glance and the menu is the
+  detail. Steppers on every row invite fiddling. → **Emily, 2026-09-15: keep the menu
+  first, as today.** No card.
+- Small: "Nothing on the go" / "Surprise me" / "Nothing else" each duplicate "Next
+  with nothing chosen"; "Leftover Turkey Club Wraps" vs *nothing to cook* for the same
+  idea; the building screen's status line never advances; "Nothing else" still tappable
+  while drafting; guest counts tapped by accident save silently and count as "1 day
+  noted".
+- **Who's eating? → "Is anyone out?"** → card (Medium, Phase 1)
+  https://app.notion.com/p/3dc1f4c05231815da491c1c6760bf85a (decided during the flow 0
+  walk, same day).
+
+**Decisions (Emily, 2026-09-15):** "go with your recommendations — ask me questions
+directly" on A–C (one-screen intake, the draft explains itself, only real questions
+after approve). D (which view is the draft's front door): **"What we're eating" stays first, as today** —
+Emily's answer, 2026-09-15, asked directly. The by-type menu is the front door; Which
+days stays behind the toggle. No card.
+
+- **For builders:** `static/plan-week.html` (the intake: steps 1–4, day sheet,
+  `toggleAvatar`, `SKIP_LABELS`, the building screen), `app/tools/week_intake.py`
+  (`_rhythm_packed_lunch_suggestions` — the lunch prefill that exists but doesn't skip
+  the step), `static/shell.js` (the draft on Plan: `wk-seg-btn` What we're eating /
+  Which days, steppers, `wk-review-go` approve, the All set sheet with the freezer ask
+  and batch-cook asks), `app/tools/weekly_plan.py` (approval, `reasoning` per entry —
+  stored, unshown), `app/tools/proposals.py`, `app/tools/plates.py`,
+  `app/tools/plate_parts.py`, `app/tools/swap_in_place.py`, `app/tools/meal_variety.py`,
+  `app/tools/plan_quality.py`, `app/calendar_feed.py` (read-only; not used by intake
+  step 1).
 
 ### 3. Shop
 - **Who and when:** whoever is going to the store — sometimes the other adult — in the
@@ -389,6 +578,11 @@ it assumes about the household*.
 
 ## Decisions log (product direction, dated)
 
+- 2026-09-15 — Emily, during the flow 0 walk: "There is a lot that's been built, but I
+  want to be really clear on if we even need everything. I want everything to have a
+  clear purpose." Purpose-first: every surface, card, badge and button must be able to
+  say in one line which load it removes for whom, or it is cut. Grooming and walks apply
+  this as the first test.
 - 2026-09-15 — Emily: the feedback loop is a flow to map — user reports a bug → stored as
   memory → AI analyses trends across all reports → shares them for (1) bugs to fix and
   (2) feature improvements. Flow 13 expanded from "in-app feedback" to the full loop.
