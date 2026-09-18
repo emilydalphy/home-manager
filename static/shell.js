@@ -10902,7 +10902,11 @@
       var card = cards[index];
       if (!card) return;
       var left = card.offsetLeft - cards[0].offsetLeft;
-      if (typeof carousel.scrollTo === 'function') carousel.scrollTo({ left: left, behavior: smooth ? 'smooth' : 'auto' });
+      // A tab tap glides to its card — unless the person asked for no
+      // motion (same check as groSortAllLeave): then it lands at once.
+      var reduce = typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (typeof carousel.scrollTo === 'function') carousel.scrollTo({ left: left, behavior: smooth && !reduce ? 'smooth' : 'auto' });
       else carousel.scrollLeft = left;
     }
     // Land on the day it opened for, before the person sees it move.

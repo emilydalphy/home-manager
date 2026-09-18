@@ -71,6 +71,7 @@ def test_the_dinner_suggestions_fold_behind_one_pick():
     assert ".needs-you-card.is-folded .ny-options { display: none; }" in SHELL_CSS
 
 
-def test_the_design_system_says_now_has_a_dock_and_no_hero():
-    assert "Now got a dock on 2026-09-11" in DESIGN
-    assert "Now has no hero" in DESIGN
+def test_the_design_system_says_today_has_a_dock_and_no_hero():
+    # "Now" until 2026-09-17; the tab is Today now and the rules say so.
+    assert "Today (called Now until 2026-09-17) got a dock on 2026-09-11" in DESIGN
+    assert "Today has no hero" in DESIGN

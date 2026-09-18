@@ -261,6 +261,12 @@ def test_the_help_button_opens_the_shared_need_a_hand_sheet():
     assert SHELL_HTML.index('<script src="/static/help-sheet.js"></script>') < SHELL_HTML.index('<script src="/static/shell.js"></script>')
 
 
+def test_a_tab_tap_scrolls_smoothly_unless_motion_is_reduced():
+    wire = _extract("wireReviewCarousel", SHELL_JS)
+    assert "window.matchMedia('(prefers-reduced-motion: reduce)').matches" in wire
+    assert "behavior: smooth && !reduce ? 'smooth' : 'auto'" in wire
+
+
 def test_the_carousel_and_tabs_are_sized_as_the_board_says():
     tab = SHELL_CSS[SHELL_CSS.index(".wk-daytab {"):SHELL_CSS.index("}", SHELL_CSS.index(".wk-daytab {"))]
     assert "height: 36px" in tab and "background: var(--sand)" in tab
