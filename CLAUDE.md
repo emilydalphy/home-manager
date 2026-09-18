@@ -391,6 +391,84 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-18 — Saving a recipe under a name you already have made a
+  second copy nothing could reach. Branch `overnight/one-recipe-per-name`,
+  NOT merged at the time of writing.** Found by driving the app on a
+  throwaway database rather than from a report. `recipes.add_recipe` was a
+  bare INSERT with no name check, so a second save under one name wrote a
+  second row — and every lookup that resolves a recipe BY NAME is a
+  `fetchone()` with no `ORDER BY`, i.e. a table scan in rowid order, so the
+  OLDER row won every read. Measured: `get_recipe` returned row 1's
+  ingredients, `plan_meal` filed the slot under row 1, `mark_recipe_feedback`
+  rated row 1, and `list_recipes` showed the dish twice. The app said
+  "Saved" and nothing was usable.
+  - **FOUR DOORS EACH CARRIED THEIR OWN GUARD AND THEY DISAGREED, and the
+    one with none was the one a person reaches by talking.** The import
+    route answered 409 case-insensitively; `swap_in_place._save_recipe_if_new`
+    and `big_meal._recipe_for_main` skipped silently, case-insensitively;
+    `agent._ensure_recipe_saved` compared `r["name"] == meal_name`, i.e.
+    case-SENSITIVELY; and the chat `add_recipe` tool checked nothing. The
+    rule lives once now, in `recipes.existing_recipe_named`, and the other
+    four read it.
+  - **The case-sensitive one is the door that needed no unusual behaviour
+    from the household at all.** A model answering "chicken tacos" beside a
+    saved "Chicken Tacos" forked the recipe during an ORDINARY week
+    generation. The prompt already asks for a variant to be named "under a
+    name that says what changed" — and this file's own rule is that telling
+    the generator something is not the same as preventing it.
+  - **It RAISES rather than answering a dict, and that is not style.**
+    `_turn_wrote_anything` counts a non-error tool result, so a dict would
+    let the model say "I've saved that" about a recipe that was never
+    written — the 2026-09-16 `check_off_meal` status guard's reasoning
+    exactly. Known cost, the same one that entry accepted: one
+    `error_events` row per collision, `add_recipe / DuplicateRecipeName`,
+    which is the guard working rather than a new breakage.
+  - **`plan_meal`'s own lookup moved to `LOWER(name)` in the same commit,
+    and that is load-bearing rather than tidying.** It was case-sensitive
+    and got away with it only because `add_recipe` used to write a second
+    row for the second spelling. With that refused, a name differing by a
+    capital would miss and land the night FREEFORM — no recipe on Cook and
+    nothing on the shopping list at approval, which is worse than the
+    duplicate. A half-converted rule is a new bug, not a smaller one.
+  - **Checked and deliberately NOT changed, so nobody reports them as a
+    miss:** `holidays._recipe_named` and `big_meal.set_big_meal_dish`'s main
+    lookup also resolve a recipe by name case-insensitively, but neither
+    guards a SAVE — they answer "do we have one of these", and big_meal's
+    needs the whole row (ingredients, steps, clocks), which this helper
+    deliberately does not return. Same family, different question, their own
+    change if anyone wants one helper for both. And `recipes.py`'s four
+    remaining `name = ?` lookups stay case-sensitive; with one row per name
+    enforced they can only ever bite on a differently-cased argument, which
+    is a narrowing rather than a hole.
+  - **FOR EMILY, the one product call in this, and it is one line to
+    reverse:** told to save a recipe under a name already on file, Pomona
+    REFUSES and asks for a different name ("You already have a recipe called
+    “Chicken Tacos” — change the name to keep both.", the import screen's own
+    sentence, now said by both doors from one function). The alternative is
+    updating the recipe in place, which is arguably what "here's how I
+    actually make it" means. Refusing loses nothing and says something true,
+    so it is the conservative answer; updating is hers to ask for.
+  - `tests/test_one_recipe_per_name.py` (13). **Against main's `app/` with
+    the three new names stubbed to main's behaviour: 9 failed / 4 passed —
+    8 behaviour catches and one source marker.** The raw red-against-main
+    count is 10 and means less, because four of those die on a name main
+    has not got; this log has had to unpick that statistic three times, so
+    it is given the honest way. Seven mutations run and every one bites:
+    the rule matching any name (1 red), forgetting the household (1), the
+    route saying different words (1), swap saving unconditionally (2),
+    the agent comparing names by hand again (2), `plan_meal` case-sensitive
+    again (2), and the refusal removed altogether (6).
+  - **One of those tests was satisfied by its own COMMENT and is fixed in
+    its own commit, because it is the mistake this log keeps recording.**
+    The source marker looked for `existing_recipe_named` anywhere in the
+    agent's generation function — and the comment beside the call names the
+    helper, so deleting the CALL left it green. It reads comment-stripped
+    source now and looks for the call.
+  - Suite **5683 passed, 0 failed** at `TZ=America/Toronto`, against a
+    measured 5670 on the merge base — +13 is this file exactly, and **no
+    existing test needed changing**, which is the strongest evidence here
+    that nothing was saving one name twice on purpose.
+
 - **2026-09-17 — Merging the eleven overnight branches of 09-16/17 into
   `main`: two of them fought, and the fight was real.** Eleven branches,
   each green alone, ten of them appending to this log at the same line
