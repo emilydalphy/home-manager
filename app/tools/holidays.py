@@ -718,14 +718,49 @@ def _undo_effects(previous: dict) -> None:
 
 
 def _reopen(plan_id: int, d: str, name: str) -> None:
-    """The dinner slot back as a question, groceries reversed, never a blank."""
+    """
+    The dinner slot back as a question, groceries reversed, never a blank.
+
+    ONE transaction, and that is the whole of this function. It is the same
+    pair of writes slot_needs and tonight.py make — clear whatever is there
+    (reversing its grocery contribution, leaving anything already in a cart
+    or through the till alone), then state the question — and it used to be
+    TWO COMMITS here. The gap between them is a genuinely ABSENT slot, the
+    one state schema.sql, audit_plan_slots and plan_slot_open's own
+    docstring all say cannot exist. Reproduced before this was changed: a
+    failure inside the second write left the day with no dinner row at all,
+    its grocery line already gone, while answer_holiday raised and the
+    screen said nothing had been saved — which was false.
+
+    `plan_id` is resolved by the caller, BEFORE this opens anything. That is
+    not tidiness: _plan_for opens a connection of its own, and a nested
+    get_conn inside an open write transaction waits on SQLite's single
+    writer and dies as an intermittent "database is locked" rather than as a
+    wrong answer — this repo has earned that twice.
+
+    BEGIN IMMEDIATE is explicit so the write lock is held from the first
+    read rather than from the first DELETE: two adults changing the same
+    holiday answer at once must leave one row on that slot, never two, and
+    audit_plan_slots' `duplicated` is "how a night nobody is home ends up
+    with groceries bought for it".
+    """
     from . import weekly_plan as _weekly_plan
-    _weekly_plan.clear_plan_slot(plan_id, d, "dinner")
-    _weekly_plan.plan_slot_open(
-        weekly_plan_id=plan_id, meal_date=d, slot="dinner",
-        open_reason=f"Plans for {name} changed — what would you like for dinner?",
-        derived_from={"holiday": name, "constraint": "holiday_answer_changed"},
-    )
+    conn = get_conn()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        _weekly_plan.clear_plan_slot(plan_id, d, "dinner", conn=conn)
+        _weekly_plan.plan_slot_open(
+            weekly_plan_id=plan_id, meal_date=d, slot="dinner",
+            open_reason=f"Plans for {name} changed — what would you like for dinner?",
+            derived_from={"holiday": name, "constraint": "holiday_answer_changed"},
+            conn=conn,
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def _dish_entry(plan_id: int, d: str):

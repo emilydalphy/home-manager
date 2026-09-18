@@ -391,6 +391,76 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-18 — Changing a holiday answer could leave the dinner slot
+  genuinely absent, with an approved week's shopping line already gone.
+  Branch `overnight/holiday-reopen-atomic`, NOT merged at the time of
+  writing.** Loop Board bug, filed and built the same night off the
+  `overnight/away-night-atomic` review, which named this as "the identical
+  bug, live, one module over" and correctly left it out of scope.
+  `holidays._reopen` made the same pair of writes `slot_needs` and
+  `tonight.py` make — clear whatever is in the slot, then state the
+  question — as TWO COMMITS.
+  - **Reproduced before anything was touched**, on a throwaway DB, with
+    `plan_slot_open` forced to raise: `before [(1, 'planned')]` →
+    `after []`. The day ends with no dinner row at all, which is the one
+    state `schema.sql`, `audit_plan_slots` and `plan_slot_open`'s own
+    docstring all say cannot exist, and that date's dinner is then in
+    `audit_plan_slots(...)['missing']`.
+  - **The half with teeth is the grocery line, and it needed an APPROVED
+    week to see.** The first reproduction used a draft, where nothing has
+    reached the list and there is nothing to lose; on an approved week
+    `clear_plan_slot` reverses the contribution before the crash, so the
+    measured before/after is `([(1, 'planned')], [('Black beans', '1 can',
+    'needed')])` → `([], [])`. The row is gone AND the line is gone, for
+    food the household may already have bought — under an `answer_holiday`
+    that raised, i.e. under a screen saying nothing had been saved.
+  - **`weekly_plan`'s three slot writers already took `conn=` on main**, so
+    this is `holidays.py` and a test file and nothing else — no change to
+    the app's central plan write, and no overlap with the away-night branch,
+    which was in flight in `slot_needs.py`/`weekly_plan.py` at the time.
+  - **`plan_id` is resolved by the CALLER, above the transaction**, and both
+    call sites in `_undo_effects` already did that. `_plan_for` opens a
+    connection of its own, and a nested `get_conn` inside an open write
+    transaction is how this repo has twice earned an intermittent "database
+    is locked" — a wrong failure rather than a wrong answer, which is why it
+    is pinned by a connection count (exactly 1) rather than waited for.
+  - **`BEGIN IMMEDIATE` is explicit and is load-bearing, measured rather than
+    asserted.** Deleting it leaves **two `open` rows on one slot, 3 runs out
+    of 3, with no error raised** — `audit_plan_slots`' `duplicated`, which
+    this log elsewhere calls "how a night nobody is home ends up with
+    groceries bought for it". sqlite3's default would open the transaction at
+    the first DELETE rather than at the first read, so both writers read the
+    pre-tap slot.
+  - **A source guard was satisfied by its own docstring on the first cut**,
+    which is the third time this log has had to record that: it searched
+    `_reopen`'s raw source for `_plan_for`, and the docstring names
+    `_plan_for` while explaining why `_plan_for` must not be called there.
+    It reads the function's CODE now, docstring and comments stripped via
+    `ast`. An assertion prose can satisfy is not an assertion.
+  - `tests/test_holiday_reopen_atomic.py` (12; **9 red against the
+    unmodified `app/`**, and every one of the nine is red for the reason it
+    is named after rather than on a missing symbol — five are behaviour
+    catches driving a forced failure, including one through the real door
+    (`answer_holiday` with a dish, then changed), and four are the mechanics
+    main genuinely lacks). The 3 green say so in their own docstrings and
+    are pinned by mutation: dropping `plan_slot_open` reddens 8, dropping
+    `clear_plan_slot` reddens 5, dropping `BEGIN IMMEDIATE` reddens 3. The
+    race test is 20/20 green with the fix and deterministically 2-rows
+    without it.
+  - Suite **5682 passed, 0 failed** at `TZ=America/Toronto`, against a
+    measured 5670 on the merge base — +12 is this file exactly, nothing
+    deleted or weakened.
+  - **Found with it and NOT fixed, its own card:** `holidays.py:768`
+    (`_plan_dish`) and `meal_variety.py:230` do `clear_plan_slot` then
+    `plan_meal` by hand instead of going through
+    `weekly_plan._replace_slot_entries`, which exists precisely so that
+    swapping one meal for another is one transaction. The holidays one was
+    reproduced on an approved week and loses the row AND the shopping line;
+    the fix is to route both through `_replace_slot_entries` rather than to
+    open a second hand-rolled transaction beside it. `app/agent.py:4702`
+    and `:4726` are a third instance (generation-time only) and
+    `big_meal.py:810`/`:918` a fourth, unmeasured.
+
 - **2026-09-17 — Merging the eleven overnight branches of 09-16/17 into
   `main`: two of them fought, and the fight was real.** Eleven branches,
   each green alone, ten of them appending to this log at the same line
