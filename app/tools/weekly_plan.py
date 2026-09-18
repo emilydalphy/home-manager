@@ -3075,7 +3075,7 @@ def _pending_draft_over(plan: dict) -> int | None:
     return None
 
 
-def get_plan_id_for_date(meal_date: str) -> int | None:
+def get_plan_id_for_date(meal_date: str, conn=None) -> int | None:
     """
     The plan whose PERIOD contains a given day, or None.
 
@@ -3100,9 +3100,19 @@ def get_plan_id_for_date(meal_date: str) -> int | None:
     said they were away. None is the honest answer for a day no live plan
     covers, and every caller already handles it — a need declared before a
     week is generated is the ordinary case.
+
+    `conn` is the read-only member of the family clear_plan_slot and
+    plan_slot_empty already belong to, and it is here for one caller:
+    slot_needs.set_slot_need asks this question from inside its own open
+    write transaction, and a second connection opened in there is the
+    nested get_conn that fails as an intermittent "database is locked"
+    rather than as a wrong answer. This function never writes, so given a
+    connection it reads on it and leaves the caller to close it.
     """
     date.fromisoformat(meal_date)
-    conn = get_conn()
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
     # Approved before draft, then newest — see _current_weekly_plan_row.
     row = conn.execute(
         f"SELECT id FROM weekly_plans WHERE household_id = ? AND status != 'retired' "
@@ -3111,7 +3121,8 @@ def get_plan_id_for_date(meal_date: str) -> int | None:
         f"ORDER BY {_SQL_APPROVED_FIRST}, created_at DESC, id DESC LIMIT 1",
         (household_id(), meal_date, meal_date),
     ).fetchone()
-    conn.close()
+    if own_conn:
+        conn.close()
     return row["id"] if row else None
 
 

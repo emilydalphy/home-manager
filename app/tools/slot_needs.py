@@ -115,7 +115,54 @@ def _plan_id_for_date(conn, meal_date: str, slot: str) -> int | None:
     # Thursday-to-Thursday period is filed under its own Thursday, so the
     # snap would have reported every one of its days unplanned. The Monday
     # lookup survives inside that helper as the fallback.
-    return _weekly_plan.get_plan_id_for_date(meal_date)
+    return _weekly_plan.get_plan_id_for_date(meal_date, conn=conn)
+
+
+def _settle_slot_empty(
+    plan_id: int, date_str: str, slot: str, reason: str,
+    derived_from: dict | None = None, conn=None,
+) -> None:
+    """
+    Clear whatever is on a slot and state it deliberately empty, as ONE
+    write.
+
+    The pair itself is not new — it is what an 'away' has always meant, and
+    tonight._settle_night_off makes the identical pair for a night the
+    household calls off. What is new is that it is one transaction. Both
+    halves used to commit on their own connections, and the gap between
+    them was a genuinely ABSENT slot: the dinner deleted, its ingredients
+    already reversed off the shopping list, nothing in its place, under a
+    route answering 500 and a screen saying nothing had been saved. Which
+    was false. An absent slot is the one state schema.sql, audit_plan_slots
+    and plan_slot_open's own docstring all say cannot exist.
+
+    Given a connection this writes on it and neither commits nor closes —
+    the caller owns both, and owns having taken the write lock before its
+    first read. Left unset it opens its own, takes BEGIN IMMEDIATE and
+    commits once, which is what apply_slot_needs_to_plan wants: its away
+    slots are independent of each other, so each one settling whole is the
+    invariant that matters there, not the whole week's pass.
+    """
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
+    try:
+        if own_conn:
+            conn.execute("BEGIN IMMEDIATE")
+        _weekly_plan.clear_plan_slot(plan_id, date_str, slot, conn=conn)
+        _weekly_plan.plan_slot_empty(
+            weekly_plan_id=plan_id, meal_date=date_str, slot=slot,
+            reason=reason, derived_from=derived_from, conn=conn,
+        )
+        if own_conn:
+            conn.commit()
+    except Exception:
+        if own_conn:
+            conn.rollback()
+        raise
+    finally:
+        if own_conn:
+            conn.close()
 
 
 def set_slot_need(
@@ -157,36 +204,53 @@ def set_slot_need(
         return clear_slot_need(date_str, slot)
 
     resolved_reason = (reason or "").strip() or _default_reason(need)
-    conn = get_conn()
-    conn.execute(
-        """
-        INSERT INTO slot_needs
-            (household_id, date, slot, need, reason, away_stretch_id, for_member_ids_json, superseded_json, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-        ON CONFLICT(household_id, date, slot) DO UPDATE SET
-            need = excluded.need, reason = excluded.reason,
-            away_stretch_id = excluded.away_stretch_id,
-            for_member_ids_json = excluded.for_member_ids_json,
-            superseded_json = excluded.superseded_json,
-            updated_at = datetime('now')
-        """,
-        (household_id(), date_str, slot, need, resolved_reason, away_stretch_id,
-         json.dumps(sorted(for_member_ids or [])), json.dumps(superseded) if superseded else ""),
-    )
-    conn.commit()
-
-    plan_id = _plan_id_for_date(conn, date_str, slot) if need == "away" else None
-    conn.close()
-
     converted = False
-    if need == "away" and plan_id is not None:
-        _weekly_plan.clear_plan_slot(plan_id, date_str, slot)
-        _weekly_plan.plan_slot_empty(
-            weekly_plan_id=plan_id, meal_date=date_str, slot=slot,
-            reason=resolved_reason,
-            derived_from={"need": "away", "away_stretch_id": away_stretch_id},
+    # ONE transaction for the need and the conversion it causes, and the
+    # write lock is taken before the first read — the shape
+    # _replace_slot_entries and tonight.tonight_night_off both use.
+    #
+    # Two things needed it. The conversion used to be two commits (see
+    # _settle_slot_empty), so a failure in the gap deleted the dinner,
+    # reversed its groceries and left the slot absent under a screen
+    # saying nothing had been saved. And the plan lookup is a READ that
+    # decides which plan gets written to, so under sqlite3's legacy
+    # isolation_level="" — where the lock is only taken at the first
+    # write — a second writer could move the slot to another plan between
+    # that read and the clear, and this would then empty a slot on a plan
+    # that no longer owns the day. BEGIN IMMEDIATE holds the lock across
+    # both.
+    conn = get_conn()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        conn.execute(
+            """
+            INSERT INTO slot_needs
+                (household_id, date, slot, need, reason, away_stretch_id, for_member_ids_json, superseded_json, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            ON CONFLICT(household_id, date, slot) DO UPDATE SET
+                need = excluded.need, reason = excluded.reason,
+                away_stretch_id = excluded.away_stretch_id,
+                for_member_ids_json = excluded.for_member_ids_json,
+                superseded_json = excluded.superseded_json,
+                updated_at = datetime('now')
+            """,
+            (household_id(), date_str, slot, need, resolved_reason, away_stretch_id,
+             json.dumps(sorted(for_member_ids or [])), json.dumps(superseded) if superseded else ""),
         )
-        converted = True
+        plan_id = _plan_id_for_date(conn, date_str, slot) if need == "away" else None
+        if plan_id is not None:
+            _settle_slot_empty(
+                plan_id, date_str, slot, resolved_reason,
+                derived_from={"need": "away", "away_stretch_id": away_stretch_id},
+                conn=conn,
+            )
+            converted = True
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
     return {
         "date": date_str, "slot": slot, "need": need, "reason": resolved_reason,
@@ -213,37 +277,52 @@ def _reopen_away_slot(date_str: str, slot: str, attendance: dict) -> bool:
     was no plan slot to reopen, which is the normal case for a need
     declared before the week was generated.
     """
+    # ONE transaction, lock first — the mirror of set_slot_need's, and it
+    # is needed here for the same two reasons. The clear and the open used
+    # to commit separately, so a failure between them left the slot absent
+    # with the meal's groceries still reversed; and the row read below
+    # decides which plan is written to, so the lock has to be held from
+    # before it rather than from the first write.
     conn = get_conn()
-    # Same tiebreak as _plan_id_for_date: the approved plan's row.
-    row = conn.execute(
-        "SELECT mpe.id, mpe.weekly_plan_id, mpe.slot_state FROM meal_plan_entries mpe "
-        "LEFT JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
-        "WHERE mpe.household_id = ? AND mpe.date = ? AND mpe.slot = ? AND mpe.component_category IS NULL "
-        "AND (wp.id IS NULL OR wp.status != 'retired') "
-        "ORDER BY (wp.status = 'approved') DESC, mpe.id DESC LIMIT 1",
-        (household_id(), date_str, slot),
-    ).fetchone()
-    conn.close()
-    if not row or row["slot_state"] != "planned_empty" or not row["weekly_plan_id"]:
-        return False
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        # Same tiebreak as _plan_id_for_date: the approved plan's row.
+        row = conn.execute(
+            "SELECT mpe.id, mpe.weekly_plan_id, mpe.slot_state FROM meal_plan_entries mpe "
+            "LEFT JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
+            "WHERE mpe.household_id = ? AND mpe.date = ? AND mpe.slot = ? AND mpe.component_category IS NULL "
+            "AND (wp.id IS NULL OR wp.status != 'retired') "
+            "ORDER BY (wp.status = 'approved') DESC, mpe.id DESC LIMIT 1",
+            (household_id(), date_str, slot),
+        ).fetchone()
+        if not row or row["slot_state"] != "planned_empty" or not row["weekly_plan_id"]:
+            conn.rollback()
+            return False
 
-    who = attendance.get("present_names") or []
-    guests = attendance.get("guest_count") or 0
-    if who and guests:
-        eaters = f"{_join_people(who)} plus {guests} guest{'s' if guests != 1 else ''}"
-    elif who:
-        eaters = _join_people(who)
-    else:
-        eaters = f"{guests} guest{'s' if guests != 1 else ''}"
-    _weekly_plan.clear_plan_slot(row["weekly_plan_id"], date_str, slot)
-    _weekly_plan.plan_slot_open(
-        weekly_plan_id=row["weekly_plan_id"], meal_date=date_str, slot=slot,
-        open_reason=(
-            f"This was down as nobody home, but {eaters} will be here after all — "
-            "tell me what you'd like and I'll shop for it."
-        ),
-        derived_from={"need": "away", "undone_by": "attendance"},
-    )
+        who = attendance.get("present_names") or []
+        guests = attendance.get("guest_count") or 0
+        if who and guests:
+            eaters = f"{_join_people(who)} plus {guests} guest{'s' if guests != 1 else ''}"
+        elif who:
+            eaters = _join_people(who)
+        else:
+            eaters = f"{guests} guest{'s' if guests != 1 else ''}"
+        _weekly_plan.clear_plan_slot(row["weekly_plan_id"], date_str, slot, conn=conn)
+        _weekly_plan.plan_slot_open(
+            weekly_plan_id=row["weekly_plan_id"], meal_date=date_str, slot=slot,
+            open_reason=(
+                f"This was down as nobody home, but {eaters} will be here after all — "
+                "tell me what you'd like and I'll shop for it."
+            ),
+            derived_from={"need": "away", "undone_by": "attendance"},
+            conn=conn,
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
     return True
 
 
@@ -828,10 +907,12 @@ def apply_slot_needs_to_plan(plan_id: int, week_start_date: str, day_count: int 
             if slot not in _SEQUENCE_SLOTS:
                 continue
             if info["need"] == "away":
-                _weekly_plan.clear_plan_slot(plan_id, d, slot)
-                _weekly_plan.plan_slot_empty(
-                    weekly_plan_id=plan_id, meal_date=d, slot=slot,
-                    reason=info["reason"] or _default_reason("away"),
+                # One transaction per slot, not per week: these slots are
+                # independent of each other, and what must never happen is
+                # that one of them is left absent half-way through.
+                _settle_slot_empty(
+                    plan_id, d, slot,
+                    info["reason"] or _default_reason("away"),
                     derived_from={"need": "away", "away_stretch_id": info["away_stretch_id"]},
                 )
                 away_enforced.append({"date": d, "slot": slot})
