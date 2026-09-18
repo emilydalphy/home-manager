@@ -168,6 +168,19 @@
      finishSetupAndReveal). */
   .skip-link.is-busy { pointer-events: none; opacity: 0.6; cursor: default; }
 
+  /* Dinner time's Skip (Card 5, 2026-09-18 — mock 07-dinner-time): under
+     Continue rather than above it, and a quiet italic line rather than the
+     bold .skip-link the other steps use — the one approved exception to
+     "no italics on the question screens" (test_onboarding_setup_luxury.py
+     carves it out by name), matching the welcome screens' own .quiet line. */
+  .q-skip-quiet {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 44px; margin: 0; width: 100%;
+    font-family: var(--font-accent); font-style: italic; font-weight: 400;
+    font-size: 17px; color: var(--ink-secondary); cursor: pointer;
+  }
+  .q-skip-quiet:hover { color: var(--ink-strong); }
+
   /* Chips — one look for both chip families the page grew over time
      (.chip from the taste steps, .rhythm-chip from the rhythm steps; the
      JS reads them by those names and there was no reason to rename what
@@ -384,6 +397,48 @@
     font-family: var(--font-body); font-weight: 600; font-size: 17px;
     color: var(--apricot-light); margin: 2px 0 0;
   }
+  /* Card 6 (2026-09-18, board 08-loading): while the reveal is still
+     waiting — nothing to show yet but the spinner — this card says what
+     the first week is being built FROM, off the same facts the finished
+     receipt reads back (revealSetupFacts). Hidden the instant
+     revealShowDays() runs; the reveal never shows the facts and the days
+     at once. */
+  .reveal-using {
+    align-self: stretch;
+    margin-top: 14px;
+    background: var(--spruce-raised);
+    border-radius: var(--radius-card);
+    padding: 16px 18px 6px;
+    text-align: left;
+  }
+  .reveal-using[hidden] { display: none; }
+  .reveal-using-eyebrow {
+    font-family: var(--font-body); font-weight: 800; font-size: 10px;
+    letter-spacing: 0.15em; text-transform: uppercase; color: var(--apricot-light);
+    margin: 0 0 4px;
+  }
+  .reveal-using-lead {
+    font-family: var(--font-body); font-size: 15px; font-weight: 500;
+    line-height: 1.4; color: var(--ivory-ink-muted); margin: 0 0 4px;
+  }
+  .reveal-using-rows { display: flex; flex-direction: column; }
+  .reveal-using-row {
+    display: flex; gap: 12px; align-items: center;
+    padding: 12px 0; border-top: 1.5px solid var(--apricot-rule);
+  }
+  .reveal-using-icon { color: var(--apricot-light); flex: none; display: flex; }
+  .reveal-using-icon svg { width: 20px; height: 20px; }
+  .reveal-using-text {
+    font-family: var(--font-body); font-size: 16px; font-weight: 500;
+    color: var(--ivory-ink); margin: 0;
+  }
+  .reveal-using-note {
+    align-self: stretch;
+    font-family: var(--font-accent); font-style: italic; font-weight: 400;
+    font-size: 17px; color: var(--ivory-ink-muted); text-align: center;
+    margin: 10px 0 0;
+  }
+  .reveal-using-note[hidden] { display: none; }
   .reveal-days { display: flex; flex-direction: column; gap: 10px; }
   /* Same guard pair .reveal-status carries: a flex container needs its own
      [hidden] rule or display:flex wins and the empty box keeps its margin. */
@@ -501,8 +556,10 @@
   /* ---------- The welcome flow (Loop Board "Onboarding: the welcome flow",
      Emily 2026-09-10; mockups + copy approved the same day:
      https://claude.ai/code/artifact/9137ee30-533a-44ba-87ef-155ec4dcde7b).
-     Five screens between sign-in and the first question, all on spruce
-     like the sign-in page so sign-in → intro reads as one continuous
+     Four screens between sign-in and the first question (a fifth, "Nice to
+     meet you", folded into the hello screen's own purpose line on
+     2026-09-18), all on spruce like the sign-in page so sign-in → intro
+     reads as one continuous
      moment before the ivory app appears. The body swaps to spruce while an
      intro step is showing (body.intro-active, set in showStep) and back
      again for the questions. Since 2026-09-12 the reveal shares the spruce
@@ -608,14 +665,6 @@
     margin: 0;
     text-wrap: pretty;
   }
-  .intro-remember {
-    font-family: var(--font-body);
-    font-size: 17px;
-    font-weight: 500;
-    line-height: 1.5;
-    color: var(--ivory-ink);
-    margin: 0;
-  }
   /* Screen 4's ask bar is a picture of the real one (shell.css
      .ask-composer-bar / .ask-chip, same tokens and radii) so what they see
      here is what they'll find under every tab. Not interactive. */
@@ -678,7 +727,31 @@
     color: var(--ivory-ink);
     margin: 0;
   }
-  /* The foot: the intro's own five-dot pager (the question steps' progress
+  /* "Here's how it works." (board 04): five filled number tiles, not the
+     "getting to know you" screen's outline pill — these are steps in a
+     process, not stops on a tour, so the tile is solid the way a numbered
+     instruction reads. */
+  .intro-steps { display: flex; flex-direction: column; gap: 16px; }
+  .intro-step { display: flex; gap: 14px; align-items: center; }
+  .intro-step-num {
+    flex: 0 0 36px; width: 36px; height: 36px;
+    border-radius: var(--radius-badge);
+    background: var(--spruce-raised);
+    color: var(--apricot-light);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .intro-step-text {
+    font-family: var(--font-body);
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--ivory-ink);
+    margin: 0;
+  }
+  /* The foot: the intro's own four-dot pager (the question steps' progress
      strip starts as it does today, once the intro is over) and the screen's
      one apricot. */
   .intro-foot { display: flex; flex-direction: column; gap: 22px; }
@@ -723,37 +796,30 @@
 <body>
 
 <!-- ---------- The welcome flow (Emily, 2026-09-10) ----------
-     Five screens before the first question, in her words: "Hi I'm Pomona,
+     Four screens before the first question, in her words: "Hi I'm Pomona,
      I'm your home manager… this is my purpose… this is what I can do…
      this is how you can interact with me… this is what we're going to
      walk through so I can get to know you." Every line below is her
      approved copy — change it on the Loop Board card first, not here. No
      skip, on purpose ("it's a low time commitment and they should go
      through it"). The order puts "let's get to know each other" LAST so
-     its button leads straight into the first question. -->
+     its button leads straight into the first question.
+     UPDATED 2026-09-18 (Loop Board, board 01-welcome): the separate "Nice to
+     meet you" / purpose screen is gone — its line now sits under the hello
+     glyph and title as the intro-lead paragraph, so "this is my purpose" is
+     said in the same breath as "Hi, I'm Pomona" instead of its own screen.
+     "How we'll talk" also became "Here's how it works" (a five-step
+     walkthrough) — see the step-intro-talk markup below. -->
 <div id="step-intro-hello" style="display:none">
   <div class="intro-screen">
-    <div class="intro-body is-centred">
+    <div class="intro-body is-centred has-lead">
       <div class="intro-glyph"><svg width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.4c-3.1 0-5.6-2.6-5.6-5.9 0-3.2 2.5-5.7 5.6-5.7s5.6 2.5 5.6 5.7c0 3.3-2.5 5.9-5.6 5.9z"></path><path d="M12 9V6.2"></path><path d="M12.5 7.1c.9-2.2 3.2-3.1 5.3-2.7.4 2.2-.7 4.3-2.8 4.7-1.4.3-2.5-.6-2.5-2z"></path><path d="M12 10.2c-1.1 1.6-1.1 6.3 0 8.2"></path></svg></div>
       <h1 class="intro-title is-hello">Hi, I&rsquo;m Pomona.</h1>
+      <p class="intro-lead">I&rsquo;m your home manager. My job is to make your life easier by taking on the mental load of planning your weekly meals and helping you get food on the table.</p>
     </div>
     <div class="intro-foot">
-      <div class="intro-pager" aria-hidden="true"><span class="is-on"></span><span></span><span></span><span></span><span></span></div>
+      <div class="intro-pager" aria-hidden="true"><span class="is-on"></span><span></span><span></span><span></span></div>
       <button class="intro-next" id="intro-hello-next" type="button">Nice to meet you<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.5 6l6 6-6 6"></path></svg></button>
-    </div>
-  </div>
-</div>
-
-<div id="step-intro-purpose" style="display:none">
-  <button class="back-link on-spruce" type="button" data-step-back="intro-purpose" hidden></button>
-  <div class="intro-screen">
-    <div class="intro-body has-lead">
-      <h1 class="intro-title is-lead">Nice to meet you.</h1>
-      <p class="intro-lead">I&rsquo;m your home manager. My whole job is to take the mental load off you &mdash; the planning, the remembering, the what-are-we-eating-tonight &mdash; so it isn&rsquo;t all on you.</p>
-    </div>
-    <div class="intro-foot">
-      <div class="intro-pager" aria-hidden="true"><span></span><span class="is-on"></span><span></span><span></span><span></span></div>
-      <button class="intro-next" id="intro-purpose-next" type="button">Continue<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.5 6l6 6-6 6"></path></svg></button>
     </div>
   </div>
 </div>
@@ -764,14 +830,13 @@
     <div class="intro-body">
       <h1 class="intro-title">Here&rsquo;s what I help you with.</h1>
       <div class="intro-rows">
-      <div class="intro-row"><div class="intro-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"></rect><path d="M3.5 10h17"></path><path d="M8 3v4"></path><path d="M16 3v4"></path><path d="M8 14h3"></path></svg></div><div class="intro-row-text"><p class="intro-row-title">The plan</p><p class="intro-row-body">A week of meals around your people and your schedule.</p></div></div>
-      <div class="intro-row"><div class="intro-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h2l2.2 10.5h9.6L20 8H7"></path><circle cx="9.5" cy="19" r="1.4"></circle><circle cx="16.5" cy="19" r="1.4"></circle></svg></div><div class="intro-row-text"><p class="intro-row-title">The shopping</p><p class="intro-row-body">One grocery list, sorted by where you shop.</p></div></div>
-      <div class="intro-row"><div class="intro-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11h16"></path><path d="M5.5 11a6.5 6.5 0 0 1 13 0"></path><path d="M6 11v5a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-5"></path><path d="M12 4.5v-1"></path></svg></div><div class="intro-row-text"><p class="intro-row-title">The cooking</p><p class="intro-row-body">Prep ahead, then dinner one step at a time.</p></div></div>
+      <div class="intro-row"><div class="intro-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"></rect><path d="M3.5 10h17"></path><path d="M8 3v4"></path><path d="M16 3v4"></path><path d="M8 14h3"></path></svg></div><div class="intro-row-text"><p class="intro-row-title">Planning</p><p class="intro-row-body">No more what&rsquo;s-for-dinner at five o&rsquo;clock, no more last-minute takeout. I&rsquo;ll make the plan, and I&rsquo;ll make it easy to stick to.</p></div></div>
+      <div class="intro-row"><div class="intro-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h2l2.2 10.5h9.6L20 8H7"></path><circle cx="9.5" cy="19" r="1.4"></circle><circle cx="16.5" cy="19" r="1.4"></circle></svg></div><div class="intro-row-text"><p class="intro-row-title">Shopping</p><p class="intro-row-body">One list, built from the plan. Less time in the store, less money, less food in the bin.</p></div></div>
+      <div class="intro-row"><div class="intro-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11h16"></path><path d="M5.5 11a6.5 6.5 0 0 1 13 0"></path><path d="M6 11v5a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-5"></path><path d="M12 4.5v-1"></path></svg></div><div class="intro-row-text"><p class="intro-row-title">Cooking</p><p class="intro-row-body">Meals you&rsquo;ll actually want to eat. Shaped to your tastes and your goals, and they don&rsquo;t get boring.</p></div></div>
       </div>
-      <p class="intro-remember">And I remember. Every answer and every correction makes the next week fit better.</p>
     </div>
     <div class="intro-foot">
-      <div class="intro-pager" aria-hidden="true"><span></span><span></span><span class="is-on"></span><span></span><span></span></div>
+      <div class="intro-pager" aria-hidden="true"><span></span><span class="is-on"></span><span></span><span></span></div>
       <button class="intro-next" id="intro-help-next" type="button">Continue<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.5 6l6 6-6 6"></path></svg></button>
     </div>
   </div>
@@ -781,19 +846,17 @@
   <button class="back-link on-spruce" type="button" data-step-back="intro-talk" hidden></button>
   <div class="intro-screen">
     <div class="intro-body">
-      <h1 class="intro-title">You can just talk to me.</h1>
-      <div class="intro-rows">
-      <div class="intro-row"><div class="intro-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11.5V5.5a1.5 1.5 0 0 1 3 0v5"></path><path d="M12 10.5a1.5 1.5 0 0 1 3 0v1.5"></path><path d="M15 12a1.5 1.5 0 0 1 3 0v3.5a5 5 0 0 1-5 5h-1.6a5 5 0 0 1-4.1-2.1L4.7 14.6a1.4 1.4 0 0 1 2.2-1.7L9 15"></path></svg></div><div class="intro-row-text"><p class="intro-row-title">The everyday stuff is a tap</p><p class="intro-row-body">Approving the week, ticking off groceries, starting a recipe &mdash; one button each.</p></div></div>
-      <div class="intro-row"><div class="intro-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 3.5V16A2.5 2.5 0 0 1 4 13.5z"></path><path d="M8 9h8"></path><path d="M8 12h5"></path></svg></div><div class="intro-row-text"><p class="intro-row-title">Everything else, just tell me</p><p class="intro-row-body">Say it the way you&rsquo;d say it out loud. &ldquo;Jamie&rsquo;s out Thursday.&rdquo; &ldquo;We already have rice.&rdquo; I&rsquo;ll take it from there.</p></div></div>
-      <div class="intro-row"><div class="intro-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 8H4V4"></path><path d="M4.5 8.5A8 8 0 1 1 4 13"></path></svg></div><div class="intro-row-text"><p class="intro-row-title">If I get it wrong, say so</p><p class="intro-row-body">Correct me right where it happens, and I&rsquo;ll remember for next time.</p></div></div>
+      <h1 class="intro-title">Here&rsquo;s how it works.</h1>
+      <div class="intro-steps">
+      <div class="intro-step"><div class="intro-step-num">1</div><p class="intro-step-text">Set up your household</p></div>
+      <div class="intro-step"><div class="intro-step-num">2</div><p class="intro-step-text">Share your preferences</p></div>
+      <div class="intro-step"><div class="intro-step-num">3</div><p class="intro-step-text">I draft your week.</p></div>
+      <div class="intro-step"><div class="intro-step-num">4</div><p class="intro-step-text">You tweak it until it&rsquo;s right.</p></div>
+      <div class="intro-step"><div class="intro-step-num">5</div><p class="intro-step-text">Your grocery list builds itself.</p></div>
       </div>
-      <!-- The picture of the ask bar and its two chips that sat here left on
-           2026-09-11: it pushed Continue off the bottom of a 375×812 phone
-           (found while measuring for the screen-by-screen canvas), and the
-           three lines say it. -->
     </div>
     <div class="intro-foot">
-      <div class="intro-pager" aria-hidden="true"><span></span><span></span><span></span><span class="is-on"></span><span></span></div>
+      <div class="intro-pager" aria-hidden="true"><span></span><span></span><span class="is-on"></span><span></span></div>
       <button class="intro-next" id="intro-talk-next" type="button">Continue<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.5 6l6 6-6 6"></path></svg></button>
     </div>
   </div>
@@ -815,7 +878,7 @@
       </div>
     </div>
     <div class="intro-foot">
-      <div class="intro-pager" aria-hidden="true"><span></span><span></span><span></span><span></span><span class="is-on"></span></div>
+      <div class="intro-pager" aria-hidden="true"><span></span><span></span><span></span><span class="is-on"></span></div>
       <button class="intro-next" id="intro-know-next" type="button">Let&rsquo;s go<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.5 6l6 6-6 6"></path></svg></button>
     </div>
   </div>
@@ -980,8 +1043,8 @@
 <div id="step-prep" style="display:none">
   <button class="back-link" type="button" data-step-back="prep" hidden></button>
   <div class="q-body">
-    <h1 class="q-title">Do you like meal prepping?</h1>
-    <p class="q-line">Up to two days.</p>
+    <h1 class="q-title">Which days do you want to do your meal prepping?</h1>
+    <p class="q-line">You can select multiple if you want to do a few cook days throughout the week.</p>
     <div class="q-controls">
       <div class="rhythm-chip-row" id="rhythm-prep-day-chips"></div>
       <div class="q-group" id="rhythm-prep-minutes-wrap" style="display:none">
@@ -992,7 +1055,6 @@
   </div>
   <div class="q-foot">
     <div class="q-pager" aria-hidden="true"></div>
-    <span class="skip-link" id="prep-skip">I don&rsquo;t prep ahead</span>
     <button class="btn-primary q-next" id="prep-next" type="button">Continue</button>
   </div>
 </div>
@@ -1008,8 +1070,8 @@
   </div>
   <div class="q-foot">
     <div class="q-pager" aria-hidden="true"></div>
-    <span class="skip-link" id="dinner-time-skip">Skip</span>
     <button class="btn-primary q-next" id="dinner-time-next" type="button">Continue</button>
+    <span class="q-skip-quiet" id="dinner-time-skip">Skip</span>
   </div>
 </div>
 
@@ -1073,7 +1135,18 @@
            that came back. Empty and hidden until there is one
            (renderRevealNumber). -->
       <div class="reveal-number" id="reveal-number" hidden></div>
+      <!-- Card 6 (2026-09-18, board 08-loading): "what I'm using" — the
+           answers this first week is drafted from, shown while there is
+           nothing else to look at yet. renderRevealUsingFacts fills it at
+           the start of every generation attempt; revealShowDays() hides it
+           (with its note below) the instant the first real day lands. -->
+      <div class="reveal-using" id="reveal-using" hidden>
+        <p class="reveal-using-eyebrow">What I&rsquo;m using</p>
+        <p class="reveal-using-lead">Here&rsquo;s what I&rsquo;m building your first week from:</p>
+        <div class="reveal-using-rows" id="reveal-using-rows"></div>
+      </div>
     </div>
+    <p class="reveal-using-note" id="reveal-using-note" hidden>Not quite right? You can change any of it later.</p>
     <!-- How setup ends (Emily + Julia, 2026-09-08). Empty and hidden until
          the week has finished building — or failed — because it is the
          answer to "am I done?", and there is no answer yet while the plan is
@@ -1369,7 +1442,6 @@ const PREP_MINUTES_OPTIONS = [
   { key: 60, label: 'About an hour' },
   { key: 120, label: 'Longer' },
 ];
-const MAX_PREP_DAYS = 2;
 
 let rhythmDinnerWindow = '';
 let rhythmLeftoversStance = '';
@@ -1405,13 +1477,28 @@ function renderLeftoversChips() {
     updateRhythm2ContinueState();
   });
 }
-// Multi-select chips, capped. Tapping a day past the cap is ignored rather
-// than swapping one out: "up to two" is already on screen above these
-// chips, and silently dropping a day the person picked earlier is the kind
-// of thing they only notice after saving.
+// Multi-select chips, uncapped (the two-day cap left with Card 4,
+// 2026-09-18 — Loop Board board 06-prep-days: "any number of days can be
+// on"). "I don't prep ahead" sits in the row as its own chip rather than a
+// separate skip link: it is ON exactly when no day chip is, tapping it
+// clears every day, and tapping a day turns it back off on its own — no
+// flag of its own to keep in step with rhythmPrepDays.
 function renderPrepDayChips() {
   const row = document.getElementById('rhythm-prep-day-chips');
   row.innerHTML = '';
+  const noPrep = rhythmPrepDays.length === 0;
+  const noneBtn = document.createElement('button');
+  noneBtn.type = 'button';
+  noneBtn.className = 'rhythm-chip' + (noPrep ? ' active' : '');
+  noneBtn.textContent = "I don’t prep ahead";
+  noneBtn.setAttribute('aria-pressed', noPrep ? 'true' : 'false');
+  noneBtn.addEventListener('click', () => {
+    if (noPrep) return;
+    rhythmPrepDays = [];
+    renderPrepDayChips();
+    renderPrepMinutesChips();
+  });
+  row.appendChild(noneBtn);
   PREP_DAY_OPTIONS.forEach(opt => {
     const on = rhythmPrepDays.indexOf(opt.key) !== -1;
     const btn = document.createElement('button');
@@ -1422,8 +1509,7 @@ function renderPrepDayChips() {
     btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     btn.addEventListener('click', () => {
       if (on) rhythmPrepDays = rhythmPrepDays.filter(k => k !== opt.key);
-      else if (rhythmPrepDays.length < MAX_PREP_DAYS) rhythmPrepDays.push(opt.key);
-      else return;
+      else rhythmPrepDays.push(opt.key);
       renderPrepDayChips();
       renderPrepMinutesChips();
     });
@@ -1911,6 +1997,13 @@ function revealShowDays() {
   if (!daysDiv.hidden) return;
   daysDiv.hidden = false;
   document.getElementById('reveal-title').textContent = REVEAL_TITLE_READY;
+  // The reveal shows the facts it's working from OR the days — never both
+  // (Card 6, 2026-09-18): the moment there's a real day on screen, the
+  // "what I'm using" card and its note have done their job.
+  const usingCard = document.getElementById('reveal-using');
+  if (usingCard) usingCard.hidden = true;
+  const usingNote = document.getElementById('reveal-using-note');
+  if (usingNote) usingNote.hidden = true;
 }
 
 // Only ever called with a real week. A finished generation that produced
@@ -2032,16 +2125,32 @@ function revealPlanLine(counts) {
 function revealSetupFacts(answers) {
   const restrictions = (answers && answers.household_restrictions) || {};
   let allergies = 0;
+  // The actual things to avoid, not just a count — allergy: entries plus
+  // won't-eat items, deduped and lower-cased, for the loading card's "no
+  // shrimp, no peanuts" style row (Card 6). The receipt's own line above
+  // only ever needed the count.
+  const avoidItems = [];
+  const seenAvoid = new Set();
   Object.keys(restrictions).forEach(name => {
     (restrictions[name] || []).forEach(item => {
+      const s = String(item);
       // currentRestrictions() writes an allergy as "allergy: peanuts", one
       // entry per thing — so this counts things, not people.
-      if (String(item).toLowerCase().indexOf('allergy:') === 0) allergies += 1;
+      if (s.toLowerCase().indexOf('allergy:') === 0) {
+        allergies += 1;
+        const thing = s.slice(s.indexOf(':') + 1).trim().toLowerCase();
+        if (thing && !seenAvoid.has(thing)) { seenAvoid.add(thing); avoidItems.push(thing); }
+      }
     });
+  });
+  ((answers && answers.wont_eat) || []).forEach(item => {
+    const thing = String(item).trim().toLowerCase();
+    if (thing && !seenAvoid.has(thing)) { seenAvoid.add(thing); avoidItems.push(thing); }
   });
   return {
     people: ((answers && answers.member_names) || []).length,
     allergies: allergies,
+    avoidItems: avoidItems,
     dinnerWindow: rhythmDinnerWindow,
     prepDays: currentPrepDays().map(d => d.weekday),
   };
@@ -2052,6 +2161,50 @@ function revealReceiptLinesHtml(lines) {
     .filter(Boolean)
     .map(line => `<p class="reveal-receipt-line">${escapeHtmlLocal(line)}</p>`)
     .join('');
+}
+
+// ---------- The loading screen's "what I'm using" card (Card 6) ----------
+// One 20px stroke icon + fact per row, on the same facts revealSetupFacts
+// already gathers for the finished receipt — see board 08-loading. A row
+// with nothing to say still renders its "no X" / "no prep days" form: those
+// are real, given answers (revealSetupLine's own comment makes the same
+// call for "no allergies"), not blanks to skip. The dinner window is the
+// one row that's genuinely skippable — REVEAL_DINNER_WINDOW_FACT already
+// leaves out anything not specific enough to read back as a fact.
+const REVEAL_USING_ICONS = {
+  people: '<circle cx="9" cy="8" r="3.2"></circle><path d="M3 20a6 6 0 0 1 12 0"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M15.5 14.5A5 5 0 0 1 22 19"></path>',
+  avoid: '<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"></path>',
+  dinner: '<circle cx="12" cy="13" r="4"></circle><path d="M12 3v2M4 13H2M22 13h-2M5.6 6.6l1.4 1.4M18.4 6.6L17 8M3 19h18"></path>',
+  prep: '<path d="M4 10h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM2 10h20M8 6c0-2 2-2 2-4M14 6c0-2 2-2 2-4"></path>',
+};
+function revealUsingRowHtml(iconKey, text) {
+  return '<div class="reveal-using-row"><div class="reveal-using-icon">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    REVEAL_USING_ICONS[iconKey] + '</svg></div>' +
+    `<p class="reveal-using-text">${escapeHtmlLocal(text)}</p></div>`;
+}
+function revealUsingRows(facts) {
+  const rows = [];
+  const people = facts.people || 0;
+  if (people) rows.push(revealUsingRowHtml('people', people + (people === 1 ? ' person' : ' people')));
+  const avoid = (facts.avoidItems || []).map(revealTitleCase);
+  rows.push(revealUsingRowHtml('avoid', avoid.length
+    ? revealTitleCase(avoid.map(item => 'no ' + item.toLowerCase()).join(', '))
+    : 'No allergies'));
+  const dinner = REVEAL_DINNER_WINDOW_FACT[facts.dinnerWindow];
+  if (dinner) rows.push(revealUsingRowHtml('dinner', revealTitleCase(dinner)));
+  const prepDays = (facts.prepDays || []).map(revealTitleCase).filter(Boolean);
+  rows.push(revealUsingRowHtml('prep', prepDays.length ? 'Prep on ' + revealJoinWords(prepDays) : 'No prep days'));
+  return rows.join('');
+}
+function renderRevealUsingFacts(answers) {
+  const card = document.getElementById('reveal-using');
+  const note = document.getElementById('reveal-using-note');
+  if (!card) return;
+  const rows = document.getElementById('reveal-using-rows');
+  rows.innerHTML = revealUsingRows(revealSetupFacts(answers));
+  card.hidden = false;
+  if (note) note.hidden = false;
 }
 
 // The one number that matters (rule S5: a finish is spruce, big type, one
@@ -2093,6 +2246,13 @@ function renderRevealFailedReceipt() {
     `<p class="reveal-receipt-title">${escapeHtmlLocal(REVEAL_FAILED_TITLE)}</p>` +
     revealReceiptLinesHtml([REVEAL_FAILED_LINE]);
   box.hidden = false;
+  // The using card was for the wait; a failure ends the wait with its own
+  // answer (this receipt), the same way revealShowDays() ends it with a
+  // real week — never both on screen at once.
+  const usingCard = document.getElementById('reveal-using');
+  if (usingCard) usingCard.hidden = true;
+  const usingNote = document.getElementById('reveal-using-note');
+  if (usingNote) usingNote.hidden = true;
 }
 
 async function renderInviteOffer(memberNames) {
@@ -2234,6 +2394,7 @@ async function generateFirstPlanAndReveal(answers) {
   receiptBox.innerHTML = '';
   receiptBox.hidden = true;
   renderRevealNumber(null);
+  renderRevealUsingFacts(answers);
   firstPlanWeekStart = '';
   let failed = false;
   // Starts in 'reading' rather than waiting for the first frame: the
@@ -2286,15 +2447,15 @@ async function generateFirstPlanAndReveal(answers) {
 // 'reveal' is the last step (Emily, 2026-09-05, 20a) — chores questions
 // used to follow it as 'chores-q'/'chores-review' but now live on their
 // own page (see the comment above step-reveal's old chores markup).
-// The five intro screens come first (Emily, 2026-09-10 — see the markup
+// The four intro screens come first (Emily, 2026-09-10 — see the markup
 // above step-intro-hello); INTRO_STEPS is the same list, named so the
 // progress strip and the body background can tell them from the questions.
-const INTRO_STEPS = ['intro-hello', 'intro-purpose', 'intro-help', 'intro-talk', 'intro-know'];
+const INTRO_STEPS = ['intro-hello', 'intro-help', 'intro-talk', 'intro-know'];
 // Build 6 (Emily, 2026-09-11, decision G): setup asks only what changes the
 // plan. rhythm-1, rhythm-2, dinners and typical-week left the flow —
 // 'meals' (which meals to plan) took their place, and the three rhythm
 // answers the planner acts on became one screen each.
-const ALL_STEPS = ['intro-hello', 'intro-purpose', 'intro-help', 'intro-talk', 'intro-know', 'household', 'meals', 'restrictions', 'eating-style', 'wont-eat', 'excited-about', 'leftovers', 'prep', 'dinner-time', 'kit-repeats', 'reveal'];
+const ALL_STEPS = ['intro-hello', 'intro-help', 'intro-talk', 'intro-know', 'household', 'meals', 'restrictions', 'eating-style', 'wont-eat', 'excited-about', 'leftovers', 'prep', 'dinner-time', 'kit-repeats', 'reveal'];
 
 // What each step is called when another step points back at it. Named
 // destinations, never "Back" (Emily, 2026-09-09) — a bare arrow asks you to
@@ -2302,9 +2463,8 @@ const ALL_STEPS = ['intro-hello', 'intro-purpose', 'intro-help', 'intro-talk', '
 // worth tapping.
 const STEP_TITLES = {
   'intro-hello': 'Hello',
-  'intro-purpose': 'Nice to meet you',
   'intro-help': 'What I help with',
-  'intro-talk': 'How we talk',
+  'intro-talk': 'How it works',
   'intro-know': 'Getting to know you',
   'household': "Who's here",
   'meals': 'Which meals',
@@ -2376,7 +2536,7 @@ const STEP_BUILDERS = {
 // once; the pager itself is the empty .q-pager in each question's foot, so
 // a question screen without one shows nothing rather than a strip from
 // somewhere else. The reveal and the intro have no entry — the intro
-// carries its own five-dot pager, and the reveal is where setup ends, not
+// carries its own four-dot pager, and the reveal is where setup ends, not
 // another thing to answer.
 //
 // The grouping follows the ORDER the questions are asked in, so the long
@@ -2618,10 +2778,6 @@ document.getElementById('leftovers-next').onclick = () => {
   showStep('prep');
 };
 document.getElementById('prep-next').onclick = () => { showStep('dinner-time'); };
-document.getElementById('prep-skip').onclick = () => {
-  rhythmPrepDays = []; rhythmPrepMinutes = 0;
-  showStep('dinner-time');
-};
 document.getElementById('dinner-time-next').onclick = () => { showStep('kit-repeats'); };
 document.getElementById('dinner-time-skip').onclick = () => {
   rhythmDinnerWindow = '';
@@ -2735,7 +2891,7 @@ document.querySelectorAll('[data-step-back]').forEach(el => {
   el.addEventListener('click', () => goBackFrom(el.dataset.stepBack));
 });
 
-// The intro's five buttons each go one step forward — nothing to save,
+// The intro's four buttons each go one step forward — nothing to save,
 // nothing to validate, so the flow decides the destination the same way
 // the back control does.
 INTRO_STEPS.forEach(key => {

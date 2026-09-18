@@ -82,8 +82,11 @@ def _function_body(name: str) -> str:
 # questions are gone with the questions.
 REWORDINGS = [
     # (what Emily wrote, which step it belongs to, what it replaced)
-    ("Do you like meal prepping?",
-     "step-prep", "Do you like to prep ahead?"),
+    # UPDATED 2026-09-18 (Card 4, board 06-prep-days): "Do you like meal
+    # prepping?" was itself replaced by the direct question ("which days"),
+    # so this row now pins the CURRENT wording against the round before it.
+    ("Which days do you want to do your meal prepping?",
+     "step-prep", "Do you like meal prepping?"),
     ("Anything I should never put on the plate?",
      "step-restrictions", "Dietary preferences or restrictions"),
     ("Anything I should never recommend?",

@@ -6,9 +6,9 @@ to call the individual rhythm setters (set_lunch_location,
 set_meals_together, set_cooking_role, ...) one at a time, each opening its
 own connection and committing on the spot. Every one of those setters
 validates only its OWN value, so a bad field partway through a call (an
-invalid cooking_role, a prep day past MAX_PREP_DAYS) raised after the
-fields ahead of it in the request had already landed — a rhythm answer
-half-saved with nothing on screen to say so.
+invalid cooking_role, a prep day naming a weekday that doesn't exist)
+raised after the fields ahead of it in the request had already landed — a
+rhythm answer half-saved with nothing on screen to say so.
 
 tools.save_rhythm_answers (app/tools/rhythm.py) is the fix: every field in
 one call is validated before any of them is written, and the writes
@@ -46,15 +46,22 @@ def test_an_invalid_field_saves_nothing_at_all():
 
 
 def test_a_bad_prep_day_saves_nothing_either():
-    """prep_days is validated (via _normalize_prep_days) before any write,
-    same as every other field — a household over MAX_PREP_DAYS must not
-    lose its otherwise-valid dinner_window in the same call."""
+    """
+    prep_days is validated (via _normalize_prep_days) before any write,
+    same as every other field — a household with an invalid weekday must
+    not lose its otherwise-valid dinner_window in the same call.
+
+    UPDATED 2026-09-18 (Card 4 — "any number of days can be on"):
+    MAX_PREP_DAYS is no longer a real limit (there are only seven distinct
+    weekdays to begin with, all already accepted); a nonexistent weekday
+    name is what still makes this call invalid.
+    """
     with pytest.raises(ValueError):
         tools.save_rhythm_answers(
             dinner_window="6_8",
             prep_days=[
-                {"weekday": "sunday"}, {"weekday": "monday"}, {"weekday": "tuesday"},
-            ],  # three — MAX_PREP_DAYS is two
+                {"weekday": "sunday"}, {"weekday": "monday"}, {"weekday": "someday"},
+            ],
         )
     rhythm = tools.get_household_rhythm()
     assert rhythm["dinner_window"] is None

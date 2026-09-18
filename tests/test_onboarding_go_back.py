@@ -55,13 +55,16 @@ _needs_node = pytest.mark.skipif(
     reason="node is needed to run the page's own navigation for real",
 )
 
-# The welcome flow (Emily, 2026-09-10) put five intro screens ahead of the
+# The welcome flow (Emily, 2026-09-10) put four intro screens ahead of the
 # first question, so "the first step" is now "Hi, I'm Pomona" and the
 # household step is one of the steps AFTER it — it carries a way back like
 # every other. A reload still lands on household, not the intro: see
 # test_a_reload_mid_setup_throws_away_the_entries_in_front_of_it.
+# UPDATED 2026-09-18 (Card 1): the separate "Nice to meet you" / purpose
+# screen (intro-purpose) is gone — its line folded into intro-hello's own
+# body, so it never had its own step or its own way back.
 FIRST_STEP = "intro-hello"
-INTRO_STEPS_AFTER_THE_FIRST = ["intro-purpose", "intro-help", "intro-talk", "intro-know"]
+INTRO_STEPS_AFTER_THE_FIRST = ["intro-help", "intro-talk", "intro-know"]
 # The two rhythm-1 tests that used to sit at the end of this file (who cooks re-asked when a second adult is added; a lunch answer for somebody no longer here is dropped) went with the rhythm-1 screen itself on 2026-09-11 — see the note below.
 # UPDATED 2026-09-11 (Build 6 of the screen-by-screen redesign, Emily's decision G): setup asks only what changes the plan. rhythm-1, rhythm-2, dinners and typical-week left the flow; 'meals' took the rhythm screens' place, and leftovers / prep / dinner-time became one screen each.
 QUESTION_STEPS = [
@@ -406,10 +409,9 @@ const labels = {};
 console.log(JSON.stringify(labels));
 """ % json.dumps(STEPS_AFTER_THE_FIRST))
     assert out == {
-        "intro-purpose": "‹ Hello",
-        "intro-help": "‹ Nice to meet you",
+        "intro-help": "‹ Hello",
         "intro-talk": "‹ What I help with",
-        "intro-know": "‹ How we talk",
+        "intro-know": "‹ How it works",
         "household": "‹ Getting to know you",
         "meals": "‹ Who's here",
         "restrictions": "‹ Which meals",

@@ -54,7 +54,10 @@ _spec.loader.exec_module(_go_back)
 _nav_harness, _run, _needs_node = _go_back._nav_harness, _go_back._run, _go_back._needs_node
 _step_markup = _go_back._step_markup
 
-INTRO = ["intro-hello", "intro-purpose", "intro-help", "intro-talk", "intro-know"]
+# UPDATED 2026-09-18 (Loop Board board 01-welcome, Card 1): the separate
+# "Nice to meet you" / purpose screen is gone — its line is now the hello
+# screen's own intro-lead, so the tour is four screens, not five.
+INTRO = ["intro-hello", "intro-help", "intro-talk", "intro-know"]
 
 
 def _unescape(markup: str) -> str:
@@ -74,14 +77,14 @@ def _text(step: str) -> str:
 # ---------- the five screens, in order, ahead of the questions ----------
 
 
-def test_the_five_intro_screens_come_before_the_household_step():
+def test_the_four_intro_screens_come_before_the_household_step():
     m = re.search(r"const ALL_STEPS = (\[.*?\]);", ONBOARDING)
     assert m, "ALL_STEPS has moved"
     steps = json.loads(m.group(1).replace("'", '"'))
-    assert steps[:6] == INTRO + ["household"], steps[:6]
+    assert steps[:5] == INTRO + ["household"], steps[:5]
     # The questions after them, since 2026-09-11 (Build 6, Emily's decision
     # G — setup asks only what changes the plan).
-    assert steps[6:] == ["meals", "restrictions", "eating-style", "wont-eat",
+    assert steps[5:] == ["meals", "restrictions", "eating-style", "wont-eat",
                          "excited-about", "leftovers", "prep", "dinner-time", "kit-repeats", "reveal"]
 
 
@@ -100,34 +103,37 @@ def test_the_page_starts_on_hello_not_on_the_first_question():
 APPROVED = {
     "intro-hello": [
         "Hi, I’m Pomona.",
+        # Card 1 (2026-09-18): the old "Nice to meet you" purpose screen
+        # folded into this one — the purpose line now sits right under the
+        # title, in the same breath as the hello.
+        "I’m your home manager. My job is to make your life easier by taking "
+        "on the mental load of planning your weekly meals and helping you "
+        "get food on the table.",
         "Nice to meet you",
-    ],
-    "intro-purpose": [
-        "Nice to meet you.",
-        "I’m your home manager. My whole job is to take the mental load off you "
-        "— the planning, the remembering, the what-are-we-eating-tonight "
-        "— so it isn’t all on you.",
-        "Continue",
     ],
     "intro-help": [
         "Here’s what I help you with.",
-        "The plan", "A week of meals around your people and your schedule.",
-        "The shopping", "One grocery list, sorted by where you shop.",
-        "The cooking", "Prep ahead, then dinner one step at a time.",
-        "And I remember. Every answer and every correction makes the next week fit better.",
+        "Planning",
+        "No more what’s-for-dinner at five o’clock, no more last-minute takeout. "
+        "I’ll make the plan, and I’ll make it easy to stick to.",
+        "Shopping",
+        "One list, built from the plan. Less time in the store, less money, "
+        "less food in the bin.",
+        "Cooking",
+        "Meals you’ll actually want to eat. Shaped to your tastes and your "
+        "goals, and they don’t get boring.",
         "Continue",
     ],
     "intro-talk": [
-        "You can just talk to me.",
-        "The everyday stuff is a tap",
-        "Approving the week, ticking off groceries, starting a recipe — one button each.",
-        "Everything else, just tell me",
-        "Say it the way you’d say it out loud. “Jamie’s out Thursday.” "
-        "“We already have rice.” I’ll take it from there.",
-        "If I get it wrong, say so",
-        "Correct me right where it happens, and I’ll remember for next time.",
-        # The demo chips and ask bar left this screen on 2026-09-11: they
-        # pushed Continue off a 375×812 phone, and the chat is an icon now.
+        # Card 3 (2026-09-18): "You can just talk to me" became "Here's how
+        # it works" — a five-step walkthrough of the whole loop, replacing
+        # the three rows about talking to Pomona.
+        "Here’s how it works.",
+        "Set up your household",
+        "Share your preferences",
+        "I draft your week.",
+        "You tweak it until it’s right.",
+        "Your grocery list builds itself.",
         "Continue",
     ],
     "intro-know": [
@@ -147,9 +153,19 @@ def test_every_line_on_each_screen_is_the_approved_one(step, lines):
         assert line in text, f"{step}: {line!r} is not on the screen (or not as approved)"
 
 
-def test_the_first_screen_says_nothing_but_hello():
-    """One line and one button. Nothing narrated, nothing explained yet."""
-    assert _text("intro-hello") == "Hi, I’m Pomona. Nice to meet you"
+def test_the_first_screen_says_hello_and_its_purpose_and_nothing_more():
+    """
+    UPDATED 2026-09-18 (Card 1): the hello screen used to say nothing but
+    hello, with the purpose ("this is my purpose") on its own screen right
+    after. That screen is gone — the purpose line now sits under the title
+    here, in the same breath, and this is what replaces the old
+    one-line-and-a-button assertion.
+    """
+    assert _text("intro-hello") == (
+        "Hi, I’m Pomona. I’m your home manager. My job is to make your life "
+        "easier by taking on the mental load of planning your weekly meals "
+        "and helping you get food on the table. Nice to meet you"
+    )
 
 
 def test_no_screen_offers_a_skip():
@@ -233,14 +249,16 @@ def test_the_page_paints_spruce_during_the_intro_and_ivory_from_the_first_questi
 const body = makeEl('body');
 document.body = body;
 const seen = [];
-['intro-purpose', 'household', 'intro-know', 'leftovers'].forEach(function (k) {
+['intro-help', 'household', 'intro-know', 'leftovers'].forEach(function (k) {
   showStep(k); seen.push([k, body.classList.contains('intro-active')]);
 });
 console.log(JSON.stringify(seen));
 """)
     # 'rhythm-1' used to be the fourth step here; it left the flow on
     # 2026-09-11 and resolveStep sends an unknown key to the first screen.
-    assert out == [["intro-purpose", True], ["household", False], ["intro-know", True], ["leftovers", False]]
+    # 'intro-purpose' was the third step here until Card 1 (2026-09-18)
+    # folded it into intro-hello, leaving it with no step of its own.
+    assert out == [["intro-help", True], ["household", False], ["intro-know", True], ["leftovers", False]]
 
 
 # ---------- the styling goes through tokens ----------
@@ -271,7 +289,7 @@ def test_every_colour_in_the_intro_css_is_a_token():
 def test_icons_are_stroke_svg_not_emoji():
     for step in INTRO:
         markup = _step_markup(f"step-{step}")
-        assert 'stroke="currentColor"' in markup or step == "intro-purpose"
+        assert 'stroke="currentColor"' in markup
         assert not re.search(r"[\U0001F300-\U0001FAFF]", markup), f"{step} uses an emoji"
 
 

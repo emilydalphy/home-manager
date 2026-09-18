@@ -262,7 +262,14 @@ def test_the_dinner_time_line_sits_under_the_question_not_under_the_chips():
     ("step-wont-eat", ["Anything I should never recommend?"]),
     ("step-excited-about", ["What are you excited to eat more of lately?"]),
     ("step-leftovers", ["How do you feel about leftovers?"]),
-    ("step-prep", ["Do you like meal prepping?", "Up to two days.", "Roughly how long?", "I don&rsquo;t prep ahead"]),
+    # "I don't prep ahead" is now the first chip renderPrepDayChips draws
+    # (Card 4) rather than static markup, so it's pinned in
+    # test_onboarding_go_back.py's node harness instead of here.
+    ("step-prep", [
+        "Which days do you want to do your meal prepping?",
+        "You can select multiple if you want to do a few cook days throughout the week.",
+        "Roughly how long?",
+    ]),
     ("step-dinner-time", ["What time do you usually have dinner?", "So I can tell you when to start cooking.", "Skip"]),
     ("step-kit-repeats", [
         "Just two more! Almost there.", "What you&rsquo;ve got to cook with",
@@ -281,7 +288,13 @@ def test_no_italics_no_emoji_no_literal_colours_on_the_question_screens():
     # The reveal's "Nothing planned" italic predates this work and is the
     # only font-style on the page; the question screens add none.
     question_only = css.split("The reveal (rule S5")[0]
-    assert "font-style" not in question_only
+    # Card 5 (2026-09-18, mock 07-dinner-time): dinner-time's Skip is a
+    # quiet italic line, approved in the mockup — the one other font-style
+    # on the question screens, carved out the same way as the reveal's.
+    skip_quiet_rule = _rule(css, ".q-skip-quiet") + "}"
+    assert "font-style: italic" in skip_quiet_rule, "the carve-out no longer matches .q-skip-quiet"
+    question_only_sans_skip_quiet = question_only.replace(skip_quiet_rule, "")
+    assert "font-style" not in question_only_sans_skip_quiet
     literals = re.findall(r"#[0-9a-fA-F]{3,6}\b", question_only.replace("#7C7161", "").replace("#FBF6EE", "").replace("#BFB6A5", "").replace("#101F19", ""))
     assert literals == [], f"literal colours in the question CSS: {literals}"
     for step in QUESTION_STEPS:
