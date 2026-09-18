@@ -425,10 +425,12 @@ def test_the_sweep_left_one_width_for_the_set_and_the_marks_alone():
     # the floor rather than the exact number, so a new icon at 2.2 passes.
     assert len(icons) >= 70, len(icons)
     assert {w for _, w in icons} == {"2.2"}, sorted({(n, w) for n, w in icons if w != "2.2"})
-    # The mark: six drawings, each at the weight it was drawn.
+    # The mark: six drawings, each at the weight it was drawn. Since
+    # 2026-09-18 the Week 1 screen's head carries the root band's 20px mark
+    # (1.8) where the welcome flow's 64px glyph (1.6) used to stand.
     assert len(marks) == 6, marks
     assert {w for _, w in marks} == {"1.6", "1.7", "1.8"}
-    assert sorted(n for n, w in marks if w == "1.8") == ["shell.html", "shell.js"]
+    assert sorted(n for n, w in marks if w == "1.8") == ["onboarding.html", "shell.html", "shell.js"]
 
 
 def test_the_week_glyphs_dots_are_filled_not_stroked():

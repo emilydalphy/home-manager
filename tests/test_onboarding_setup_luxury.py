@@ -323,17 +323,20 @@ console.log(JSON.stringify([a, ELS['step-meals']._classes.has('step-enter')]));
 # ---------- the reveal is the finish ----------
 
 
-def test_the_reveal_is_on_spruce_with_the_mark_the_number_and_one_button():
+def test_the_reveal_is_on_spruce_with_the_mark_and_one_button():
+    """Since 2026-09-18 (Week 1: the day-card carousel) the head is the mark
+    and wordmark over "Here's week 1."; the big number that used to stand
+    under the title is gone — it lives on the app's All set screen."""
     markup = _step_markup("step-reveal")
-    assert 'class="intro-glyph"' in markup, "the reveal has no mark"
-    assert 'id="reveal-number"' in markup and "hidden" in re.search(r'<div class="reveal-number"[^>]*>', markup).group(0)
+    assert 'class="reveal-mark"' in markup, "the reveal has no mark"
+    assert 'id="reveal-number"' not in markup and "reveal-receipt" not in markup
     assert markup.count("btn-primary") == 2, "one apricot per foot state (done / failed)"
     assert 'class="reveal-actions q-foot on-spruce"' in markup
     body = _fn("showStep")
     assert "classList.toggle('reveal-active', key === 'reveal')" in body
     css = _css()
     assert "body.intro-active, body.reveal-active { background-color: var(--spruce); }" in css
-    assert "font-size: 96px" in _rule(css, ".reveal-number-value")
+    assert ".reveal-number-value" not in css
 
 
 @_needs_node
@@ -351,35 +354,3 @@ console.log(JSON.stringify(seen));
         ["intro-know", True, False], ["household", False, False],
         ["kit-repeats", False, False], ["reveal", False, True],
     ]
-
-
-def _reveal_number_harness() -> str:
-    return "\n".join([
-        _go_back._DOM_STUB,
-        "ELS['reveal-number'] = makeEl('div');",
-        _fn("renderRevealNumber"),
-    ])
-
-
-@_needs_node
-def test_the_one_number_is_the_meal_count_and_hides_when_there_is_none():
-    out = _run(_reveal_number_harness() + """
-const box = ELS['reveal-number'];
-renderRevealNumber({ meals: 14, cooks: 12 });
-const a = [box.hidden, box.innerHTML];
-renderRevealNumber({ meals: 1, cooks: 1 });
-const b = [box.hidden, box.innerHTML];
-renderRevealNumber(null);
-const c = [box.hidden, box.innerHTML];
-console.log(JSON.stringify([a, b, c]));
-""")
-    assert out[0][0] is False and ">14<" in out[0][1] and ">meals<" in out[0][1]
-    assert out[1][0] is False and ">1<" in out[1][1] and ">meal<" in out[1][1]
-    assert out[2] == [True, ""]
-
-
-def test_the_number_is_reset_before_a_retry_and_drawn_from_the_plans_own_count():
-    generate = _fn("generateFirstPlanAndReveal")
-    assert "renderRevealNumber(null);" in generate
-    assert "renderRevealNumber(revealPlanCounts(meals));" in generate
-    assert generate.index("renderRevealNumber(null)") < generate.index("await streamFirstPlan")

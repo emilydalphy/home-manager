@@ -38,6 +38,7 @@ from ._shared import household_id
 MAX_WHAT_HAPPENED = 2000
 MAX_TRYING_TO_DO = 1000
 MAX_USER_AGENT = 200
+MAX_SCREEN = 60
 
 _KEEP_ROWS = 500
 _KEEP_DAYS = 180
@@ -73,6 +74,7 @@ def record_feedback_report(
     app_version: str = "",
     user_agent: str = "",
     error_shapes: list[str] | None = None,
+    screen: str = "",
 ) -> None:
     """
     File one report against the current household. Never raises.
@@ -85,6 +87,10 @@ def record_feedback_report(
 
     `what_happened` and `trying_to_do` are stored exactly as typed, minus a
     length cap. That is the feature.
+
+    `screen` is the screen's own name for itself ("Week 1") — set by the
+    app's code, never typed, and shape-checked by the caller
+    (app/main.py's _safe_feedback_screen) like `route_pattern` is.
     """
     conn = None
     try:
@@ -104,8 +110,8 @@ def record_feedback_report(
             """
             INSERT INTO feedback_reports
                 (household_id, what_happened, trying_to_do, route_pattern,
-                 app_version, user_agent, extra_json)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+                 app_version, user_agent, extra_json, screen)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 hid,
@@ -115,6 +121,7 @@ def record_feedback_report(
                 str(app_version or "")[:80],
                 str(user_agent or "")[:MAX_USER_AGENT],
                 extra,
+                str(screen or "")[:MAX_SCREEN],
             ),
         )
         _prune(conn, hid)
@@ -166,7 +173,7 @@ def get_feedback_reports(days: int = 30, limit: int = 50) -> list[dict]:
     try:
         rows = conn.execute(
             f"SELECT id, what_happened, trying_to_do, route_pattern, app_version, "
-            f"user_agent, extra_json, created_at FROM feedback_reports "
+            f"user_agent, extra_json, screen, created_at FROM feedback_reports "
             f"WHERE household_id = ? AND created_at >= datetime('now', '-{days} days') "
             f"ORDER BY id DESC LIMIT ?",
             (household_id(), limit),
@@ -189,6 +196,7 @@ def get_feedback_reports(days: int = 30, limit: int = 50) -> list[dict]:
                 "app_version": row["app_version"],
                 "user_agent": row["user_agent"],
                 "error_shapes": extra.get("error_shapes") or [],
+                "screen": row["screen"] or "",
                 "created_at": row["created_at"],
             }
         )

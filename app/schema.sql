@@ -1567,6 +1567,7 @@ CREATE TABLE IF NOT EXISTS feedback_reports (
     app_version TEXT NOT NULL DEFAULT '',     -- commit/version if the deploy knows one
     user_agent TEXT NOT NULL DEFAULT '',      -- truncated
     extra_json TEXT NOT NULL DEFAULT '{}',    -- {"error_shapes": ["TypeError", ...]}
+    screen TEXT NOT NULL DEFAULT '',          -- the screen's own name ("Week 1"), shape-checked, never typed
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_feedback_reports_household_created

@@ -7691,8 +7691,6 @@ span.cook-week-name { cursor: default; }
 .bell-slot .notif-bell-icon svg { width: 17px; height: 17px; }
 .bell-slot .notif-badge { top: 3px; right: 3px; }
 
-#coach-card-slot:empty { display: none; }
-#coach-scrim,
 #prefs-scrim,
 #tips-scrim,
 #morning-scrim {
@@ -7702,7 +7700,6 @@ span.cook-week-name { cursor: default; }
   animation: fadeIn .18s ease;
   z-index: 40;
 }
-#coach-sheet,
 #prefs-sheet,
 #tips-sheet,
 #morning-sheet {
@@ -7939,6 +7936,25 @@ span.cook-week-name { cursor: default; }
   color: var(--ink);
   margin: 10px 0 0;
 }
+/* What travels with the note, said on the form (2026-09-18): the screen's
+   own name in a celadon tile — the gentle, already-true tint (§1). */
+.snw-screen-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--celadon-tint);
+  border: 1.5px solid var(--celadon-edge);
+  border-radius: var(--radius-control);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--celadon-label);
+}
+.snw-screen-note-icon { display: flex; flex: 0 0 auto; }
+.snw-screen-note-icon svg { width: 18px; height: 18px; }
 
 /* ---------- "Morning text" sheet ("Reach me before the moment", 2026-09-11) ----------
    The sheet frame is shared with #prefs-sheet/#tips-sheet above. Inputs
@@ -9588,11 +9604,12 @@ span.cook-week-name { cursor: default; }
 .wk-foot-solo { justify-content: flex-end; }
 
 /* ---------- Onboarding coaching (Emily + Julia, 2026-09-08) ----------
-   "This is how to talk to me": example prompts under the ask bar, the
-   one-time card on Today, and the Helpful tips sheet. Nothing new visually
-   — the chips are .ask-chip, the card is a .plan-nudge-card, and the sheet
-   is the Preferences sheet's own furniture. No apricot in any of it: the
-   card is a word, not an action, and Today's hero owns that colour. */
+   "This is how to talk to me": example prompts under the ask bar and the
+   Helpful tips sheet. Nothing new visually — the chips are .ask-chip and
+   the sheet is the Preferences sheet's own furniture. (The one-time
+   how-and-why sheet that used to open after setup went 2026-09-18 with
+   the Week 1 "Need a hand?" sheet — static/help-sheet.js — which says the
+   same things where they are needed.) */
 
 /* .ask-chips is display:flex, which beats the bare [hidden] attribute — the
    same trap #reveal-days hit on the onboarding branch. Both the quick-action
@@ -9622,47 +9639,6 @@ span.cook-week-name { cursor: default; }
   cursor: pointer;
 }
 .ask-tips-btn:hover { color: var(--ink-strong); border-color: var(--ink-placeholder); }
-
-/* ---------- the how-and-why card ---------- */
-/* The one-time sheet (coachCardHtml). Its title reuses .plan-nudge-title. */
-#coach-sheet { padding: 12px 20px 24px; gap: 12px; }
-#coach-sheet .coach-title { padding-top: 2px; }
-.coach-lines { display: flex; flex-direction: column; }
-.coach-line { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; border-top: 1.5px solid var(--hairline); }
-.coach-line:first-child { border-top: 0; padding-top: 4px; }
-.coach-line-lead { font-family: var(--font-body); font-weight: 600; font-size: 15px; color: var(--ink); line-height: 1.3; }
-.coach-line-more { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); line-height: 1.4; }
-#coach-sheet .coach-actions { display: flex; align-items: center; gap: 16px; margin-top: 4px; }
-#coach-sheet .coach-actions .dock-primary { flex: 1 1 auto; width: auto; }
-.coach-card .coach-lines {
-  list-style: none;
-  margin: 2px 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.coach-card .coach-lines li {
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--ink-secondary);
-  padding-left: 14px;
-  position: relative;
-}
-.coach-card .coach-lines li::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 9px;
-  width: 5px;
-  height: 5px;
-  border-radius: var(--radius-pill);
-  background: var(--celadon);
-}
-.coach-actions { display: flex; align-items: center; gap: 18px; margin-top: 2px; }
-.coach-actions .plan-nudge-link { min-height: 44px; }
-.coach-tips { color: var(--ink-secondary); }
 
 /* ---------- Helpful tips sheet ---------- */
 /* The scrim and the sheet itself are the Preferences sheet's own rules,
@@ -10071,7 +10047,7 @@ span.cook-week-name { cursor: default; }
    predates and is independent of this ticket). */
 @media (min-width: 768px) {
   #week-sheet, #kit-sheet, #meals-more-sheet, #cook-more-sheet, #gro-scan-sheet, #rli-sheet,
-  #coach-sheet, #prefs-sheet, #tips-sheet, #morning-sheet, #snw-sheet {
+  #prefs-sheet, #tips-sheet, #morning-sheet, #snw-sheet {
     left: 50%;
     right: auto;
     transform: translateX(-50%);

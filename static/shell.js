@@ -842,13 +842,6 @@
         // .today-body is a named-area grid on desktop, and an area whose
         // only child is display:none still leaves its row's gap behind.
         '<div id="plan-week-nudge" class="today-area-nudge"></div>' +
-        // Onboarding coaching, part 2 (2026-09-08): the one-time "This is
-        // how to talk to me" card. Outside .today-body for the same reason
-        // the nudge above it is — see that comment. Empty (and so
-        // display:none) on every load but the one it is shown on.
-        // (The one-time "how to talk to me" sheet that used to be a card
-        // here is body-level now — see #coach-card-slot in shell.html.)
-        //
         // The day itself is ONE strip (renderTodayMoves → .day-strip in
         // #today-rest, 2026-09-13): the next-up move is the strip's one
         // tinted node, in its place on the day, rather than a card above
@@ -931,11 +924,6 @@
       // chores card means no reason to hit /api/chores/today.
       (choresEnabled() ? loadChores(panel) : Promise.resolve())
     ]);
-
-    // The how-and-why sheet: /api/coaching may answer before or after this
-    // panel is built, so it is rendered from both ends, and renderCoachCard
-    // is idempotent.
-    renderCoachCard();
   }
 
   // ---------- Holding for you ----------
@@ -3985,6 +3973,17 @@
     // populated from what is already tagged on the list, so neither blocks.
     groLoadUsualStores();
     groLoadStorePrefs();
+
+    // The Week 1 screen (static/onboarding.html, 2026-09-18) approves the
+    // first week and hands off here with /grocery?after=approve&drafted=
+    // <Monday>: say it took (S10) and scrub the params so a refresh doesn't
+    // say it twice. If a step between approving and the list lands later
+    // (Plan's freezer step), it reads the same `after=approve` and lands
+    // the household there instead; until then the list is the next step.
+    if (new URLSearchParams(window.location.search).get('after') === 'approve') {
+      showToast('Approved. Here’s your list.');
+      window.history.replaceState({ tab: 'grocery' }, '', window.location.pathname);
+    }
   }
 
   async function groLoadUsualStores() {
@@ -11320,12 +11319,16 @@
       showToast("Here's a first pass — change anything and I'll re-plan around it.");
     }
     // The reveal's "or tweak it with me" quiet link (Loop Board "Redesign
-    // the post-onboarding first sample week screen") redirects here with
+    // the post-onboarding first week screen") redirects here with
     // ?tweak=1 instead of ?firstplan=1 — same landing, but straight into
     // the ask sheet with a prefill rather than a toast, since the person
     // already said they want to change something rather than just look.
+    // ?about=<Monday dinner> names the slot the Week 1 swap sheet's
+    // "Something else — tell me" was tapped under (2026-09-18), so the
+    // prefill starts on the meal they meant rather than on the whole week.
     if (window.location.search.indexOf('tweak=1') !== -1) {
-      openAskSheet("Let's tweak my first sample week — ");
+      var about = (new URLSearchParams(window.location.search).get('about') || '').trim().slice(0, 60);
+      openAskSheet(about ? "Let's change " + about + " — " : "Let's tweak my first week — ");
     }
     if (drafted || window.location.search.indexOf('firstplan=1') !== -1 || window.location.search.indexOf('tweak=1') !== -1) {
       var cleanUrl = window.location.pathname;
@@ -23327,7 +23330,7 @@
   //
   // Julia is the first person to reach this app never having talked to one.
   // She finished setup, landed on Today, and had no idea what she was meant
-  // to say. Three parts, all teaching the same one thing — the ask bar is
+  // to say. Two parts, both teaching the same one thing — the ask bar is
   // the app, and the buttons are the shortcuts:
   //
   //   1. Three tappable example prompts under the ask bar, per tab, on the
@@ -23337,17 +23340,18 @@
   //      until 2026-09-11, when item 15 of the design-tidy pass made them
   //      three and, more to the point, actually per-tab — see COACH_EXAMPLES
   //      below, and loadQuickActionChips' comment for what this replaced.)
-  //   2. One card on Today the first time the shell opens after setup — the
-  //      household has a plan and has never dismissed it.
-  //   3. A "Helpful tips" sheet, behind a Preferences row and a "?" beside
+  //   2. A "Helpful tips" sheet, behind a Preferences row and a "?" beside
   //      the ask bar, for anyone who wants the whole thing back later.
   //
-  // Where each piece of state lives, and why the two differ: the per-tab
-  // visit counters are localStorage, per household, because they are a
-  // per-device teaching aid and a lost count costs one chip. The card's
-  // dismissal is on the SERVER (households.coaching_seen_at, GET/POST
-  // /api/coaching) — being handed "here's how this works" again on the
-  // phone after reading it on the laptop is the opposite of being coached.
+  // There used to be a third: one "tap for the usual, type for the rest"
+  // sheet the first time the shell opened after setup, dismissed once per
+  // household on the server (households.coaching_seen_at). It went on
+  // 2026-09-18 with the Week 1 screen's "Need a hand?" sheet
+  // (static/help-sheet.js), which says the same things at the moment they
+  // are needed — a lesson at the door was one more thing between setup and
+  // the week (DESIGN_SYSTEM §2b S2). The per-tab visit counters are
+  // localStorage, per household: a per-device teaching aid whose lost count
+  // costs one chip.
 
   var COACH_VISITS_TO_SHOW = 3;
 
@@ -23411,10 +23415,7 @@
     // True when the example adult IS the one signed in (always true for a
     // one-adult household) — coachAwayExample() then speaks in the first
     // person instead of naming the signed-in person back to themself.
-    exampleIsYou: false,
-    // Starts true so nothing can flash before /api/coaching answers: a card
-    // that appears and vanishes is worse than one that appears a beat late.
-    seen: true
+    exampleIsYou: false
   };
 
   function coachVisitsKey() {
@@ -23528,81 +23529,6 @@
     if (!prompts) return renderAskExamples(null);
     renderAskExamples(coachCountVisit(key) <= COACH_VISITS_TO_SHOW ? prompts : null);
   }
-
-  // ---------- the how-and-why card ----------
-
-  var COACH_CARD_LINES = [
-    ['Buttons do the everyday things.', 'Approve the week, tick off the shopping, start a recipe.'],
-    // Second example was "Less chicken." until 2026-09-15 (Loop Board:
-    // "Ask: the door says 'hold this', not 'meal edits'") — both examples
-    // read as plan edits, so this line taught the same narrow lesson the
-    // greeting did. Paired with a held-thing example now, matching the
-    // Ask sheet's own greeting.
-    ['Everything else, type in the chat.', '“Jamie’s out Thursday.” “We’re nearly out of dish soap.”'],
-    ['If I get it wrong, say so there.', 'I’ll fix it and remember.']
-  ];
-  var COACH_CARD_TITLE = 'Tap for the usual. Type for the rest.';
-
-  // A sheet shown once — the first time the app opens after setup — and
-  // then gone; the same three ideas live under Helpful tips for good. It
-  // used to be a card on Now under the next-up card ("A QUICK WORD / This
-  // is how to talk to me"), which Emily cut on 2026-09-11: a working screen
-  // never carries a lesson (DESIGN_SYSTEM §2b S2), and "a quick word, once"
-  // meant nothing to her. Body level like every other sheet here; the slot
-  // is in shell.html and is empty (display:none) on every load but this one.
-  function coachCardHtml() {
-    return '<div id="coach-scrim" data-coach="got-it"></div>' +
-      '<div id="coach-sheet" class="coach-sheet" role="dialog" aria-modal="true" aria-labelledby="coach-title">' +
-        '<div class="ask-sheet-handle"></div>' +
-        '<div class="plan-nudge-title coach-title" id="coach-title">' + escapeHtml(COACH_CARD_TITLE) + '</div>' +
-        '<div class="coach-lines">' +
-          COACH_CARD_LINES.map(function (line) {
-            return '<div class="coach-line">' +
-              '<span class="coach-line-lead">' + escapeHtml(line[0]) + '</span>' +
-              '<span class="coach-line-more">' + escapeHtml(line[1]) + '</span>' +
-            '</div>';
-          }).join('') +
-        '</div>' +
-        '<div class="coach-actions">' +
-          '<button type="button" class="dock-primary coach-got-it" data-coach="got-it">Got it</button>' +
-          '<button type="button" class="plan-nudge-link coach-tips" data-coach="tips">More tips</button>' +
-        '</div>' +
-      '</div>';
-  }
-
-  function renderCoachCard() {
-    if (!coachState) return; // see coachOnTabShown
-    var slot = document.getElementById('coach-card-slot');
-    if (!slot) return;
-    var show = coachState.ready && coachState.hasPlan && !coachState.seen;
-    if (!show) { slot.innerHTML = ''; return; }
-    if (slot.dataset.built === '1') return;
-    slot.dataset.built = '1';
-    slot.innerHTML = coachCardHtml();
-  }
-
-  // Both buttons dismiss it, because both mean "I've read this" — the card
-  // is shown exactly once and "Show me tips" is the longer answer to the
-  // same question, not a way of putting the card off.
-  function coachDismissCard() {
-    coachState.seen = true;
-    var slot = document.getElementById('coach-card-slot');
-    if (slot) slot.innerHTML = '';
-    // Fire-and-forget: a failed write costs one repeated card on the next
-    // load, which is not worth an error message on a screen whose whole job
-    // is a warm first impression.
-    try {
-      fetch('/api/coaching/seen', { method: 'POST', keepalive: true })
-        .catch(function () { /* see above */ });
-    } catch (err) { /* see above */ }
-  }
-
-  document.addEventListener('click', function (e) {
-    var target = e.target && e.target.closest && e.target.closest('[data-coach]');
-    if (!target) return;
-    coachDismissCard();
-    if (target.getAttribute('data-coach') === 'tips') openTipsSheet();
-  });
 
   // ---------- "Morning text" ----------
   //
@@ -23872,14 +23798,12 @@
             loadGrocery();
           }
           coachState.hasPlan = !!state.has_plan;
-          coachState.seen = !!state.coaching_seen_at;
           coachState.exampleName = state.example_name || null;
           coachState.exampleIsYou = !!state.example_is_you;
         }
         // Whatever tab the app opened on never got counted, because the
         // household wasn't known yet.
         coachOnTabShown(coachState.tab || currentTabKey());
-        renderCoachCard();
       });
   }
 
@@ -23983,7 +23907,20 @@
     });
   }
 
-  function snwFormHtml() {
+  // Which screen the report is about, in the screen's own words — the tab's
+  // label ("Plan"), or the name a caller passes. Sent as `screen` and said
+  // on the form, so nobody wonders what travels with their note.
+  function snwScreenName(screenName) {
+    if (screenName) return String(screenName);
+    var key = currentTabKey();
+    for (var i = 0; i < TABS.length; i++) if (TABS[i].key === key) return TABS[i].label;
+    return '';
+  }
+
+  var SNW_SCREEN_ICON =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
+
+  function snwFormHtml(screenName) {
     return '' +
       '<label class="snw-label" for="snw-what">What happened?</label>' +
       '<textarea id="snw-what" class="snw-input" rows="4" ' +
@@ -23991,24 +23928,29 @@
       '<label class="snw-label" for="snw-trying">What were you trying to do?' +
         '<span class="snw-optional">Optional</span></label>' +
       '<textarea id="snw-trying" class="snw-input" rows="2"></textarea>' +
+      (screenName
+        ? '<div class="snw-screen-note"><span class="snw-screen-note-icon">' + SNW_SCREEN_ICON + '</span>' +
+            '<span>I’ll include which screen you were on: ' + escapeHtml(screenName) + '.</span></div>'
+        : '') +
       '<button type="button" class="snw-send" id="snw-send" disabled>Send</button>';
   }
 
-  function openSnwSheet() {
+  function openSnwSheet(screenName) {
     buildSnwSheet();
     // One sheet at a time, the same rule the Kitchen sheets follow.
     closeAskSheet();
     closeWeekSheet();
     closeKitchenSheet();
+    var screen = snwScreenName(screenName);
     var body = snwSheetEl.querySelector('#snw-body');
-    body.innerHTML = snwFormHtml();
+    body.innerHTML = snwFormHtml(screen);
     var what = body.querySelector('#snw-what');
     var send = body.querySelector('#snw-send');
     what.addEventListener('input', function () {
       send.disabled = !what.value.trim();
     });
     send.addEventListener('click', function () {
-      sendSnwReport(what.value, (body.querySelector('#snw-trying') || {}).value);
+      sendSnwReport(what.value, (body.querySelector('#snw-trying') || {}).value, screen);
     });
     snwScrimEl.hidden = false;
     snwSheetEl.hidden = false;
@@ -24021,7 +23963,7 @@
     snwSheetEl.hidden = true;
   }
 
-  function sendSnwReport(whatHappened, tryingToDo) {
+  function sendSnwReport(whatHappened, tryingToDo, screen) {
     var text = String(whatHappened || '').trim();
     if (!text) return;
 
@@ -24046,6 +23988,7 @@
           what_happened: text,
           trying_to_do: String(tryingToDo || '').trim(),
           where: location.pathname,
+          screen: String(screen || ''),
           error_shapes: snwShapes.slice(-5)
         })
       }).catch(function () { /* see above */ });
@@ -24057,7 +24000,7 @@
   // re-bound when a panel re-renders under it.
   document.addEventListener('click', function (e) {
     var target = e.target && e.target.closest && e.target.closest('[data-snw]');
-    if (target) openSnwSheet();
+    if (target) openSnwSheet(target.getAttribute('data-snw-screen') || '');
   });
 
   // ---------- Service worker registration ----------

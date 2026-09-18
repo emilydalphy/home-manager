@@ -14,11 +14,15 @@ to say. Three parts answer that, and this file guards all three:
      and gave each tab three of its own; see COACH_EXAMPLES in shell.js and
      tests/test_ask_sheet_named_intents.py's own header for the retirement
      note.)
-  2. **One how-and-why card** on Today, the first time the shell opens after
-     setup — the household has a plan and `households.coaching_seen_at` is
-     still null. "Got it" writes that column.
-  3. **A "Helpful tips" sheet**, behind a Preferences row and a "?" beside
+  2. **A "Helpful tips" sheet**, behind a Preferences row and a "?" beside
      the ask bar.
+
+There used to be a third — one how-and-why sheet the first time the shell
+opened after setup, dismissed once per household on the server
+(`households.coaching_seen_at`). It went on 2026-09-18 with the Week 1
+"Need a hand?" sheet (static/help-sheet.js, tests/test_help_sheet.py);
+the column stays in the schema (retired, never dropped) but nothing reads
+or writes it, and /api/coaching no longer reports it.
 
 Three kinds of test, and the split is the usual one for this repo:
 
@@ -52,69 +56,34 @@ SHELL_HTML = (REPO / "static" / "shell.html").read_text(encoding="utf-8")
 SHELL_CSS = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
 
 
-@pytest.fixture(autouse=True)
-def _forget_coaching():
-    """conftest keeps household id=1 between tests, so the dismissal it
-    carries would leak from whichever test wrote it into every test after."""
+# --- 1. the route ----------------------------------------------------------
+
+def test_the_retired_column_is_still_there_but_nothing_reports_it():
+    """The migration list is append-only (a column is never dropped), so
+    coaching_seen_at survives — and /api/coaching stopped saying it."""
     conn = get_conn()
-    try:
-        conn.execute("UPDATE households SET coaching_seen_at = NULL")
-        conn.commit()
-    finally:
-        conn.close()
-    yield
-
-
-# --- 1. the column, the route, and the write-once dismissal ---------------
-
-def test_the_migration_adds_the_column_once_and_survives_being_re_run():
-    conn = get_conn()
-    _run_migrations(conn)
     _run_migrations(conn)
     conn.commit()
     names = [row["name"] for row in conn.execute("PRAGMA table_info(households)")]
     conn.close()
     assert names.count("coaching_seen_at") == 1
+    assert "coaching_seen_at" not in tools.get_coaching_state()
 
 
-def test_a_household_fresh_out_of_setup_has_not_been_coached(signed_in):
+def test_a_household_fresh_out_of_setup(signed_in):
     state = signed_in.get("/api/coaching").json()
     assert state["household_id"] == 1
     assert state["has_plan"] is False
-    assert state["coaching_seen_at"] is None
 
 
-def test_the_card_only_becomes_due_once_there_is_a_plan_to_talk_about(signed_in):
-    """The card is the first thing after setup, and setup ends with a week —
-    so "has a plan" is how the shell knows setup actually finished rather
-    than being abandoned halfway."""
+def test_has_plan_says_whether_setup_actually_finished(signed_in):
     tools.create_weekly_plan("2026-09-07")
     assert signed_in.get("/api/coaching").json()["has_plan"] is True
 
 
-def test_got_it_records_that_the_household_read_it(signed_in):
-    assert signed_in.post("/api/coaching/seen").status_code == 200
-    assert signed_in.get("/api/coaching").json()["coaching_seen_at"] is not None
-
-
-def test_a_second_got_it_leaves_the_first_reading_alone(signed_in):
-    first = signed_in.post("/api/coaching/seen").json()["coaching_seen_at"]
-    again = signed_in.post("/api/coaching/seen").json()["coaching_seen_at"]
-    assert first is not None and again == first
-
-
-def test_the_dismissal_is_the_households_own_and_not_the_apps(signed_in):
-    """Second household, same server: one reading the card must not silence
-    it for the other. (Every table here carries household_id for exactly
-    this reason — see schema.sql's header.)"""
-    conn = get_conn()
-    conn.execute("INSERT INTO households (id, name) VALUES (2, 'Next door')")
-    conn.commit()
-    conn.close()
-    signed_in.post("/api/coaching/seen")
-    with tools.use_household(2):
-        assert tools.get_coaching_state()["coaching_seen_at"] is None
-    assert tools.get_coaching_state()["coaching_seen_at"] is not None
+def test_the_dismissal_route_is_gone(signed_in):
+    assert signed_in.post("/api/coaching/seen").status_code in (404, 405)
+    assert not hasattr(tools, "mark_coaching_seen")
 
 
 # --- 2. the front end, run rather than read -------------------------------
@@ -171,7 +140,7 @@ function makeEl() {
     }
   };
 }
-const ELS = { 'ask-examples': makeEl(), 'today-ask-examples': makeEl(), 'coach-card-slot': makeEl() };
+const ELS = { 'ask-examples': makeEl(), 'today-ask-examples': makeEl() };
 const document = { getElementById: function (id) { return ELS[id] || null; } };
 let askConversationStarted = false;
 const SENT = [], OPENED = [];
@@ -188,11 +157,7 @@ def _add_adult(name: str) -> int:
 
 
 def _examples_block() -> str:
-    return _slice("var COACH_VISITS_TO_SHOW = 3;", "  // ---------- the how-and-why card ----------")
-
-
-def _card_block() -> str:
-    return _slice("var COACH_CARD_LINES = [", "  // Both buttons dismiss it")
+    return _slice("var COACH_VISITS_TO_SHOW = 3;", "  // ---------- \"Morning text\" ----------")
 
 
 def _tips_block() -> str:
@@ -513,58 +478,14 @@ console.log(JSON.stringify({ html: ELS['ask-examples'].innerHTML, stored: STORE 
     assert out["html"] == "" and out["stored"] == {}
 
 
-@_needs_node
-def test_the_card_renders_only_for_a_household_with_a_plan_that_has_not_read_it():
-    script = (
-        _DOM_STUB + _card_block() + """
-const coachState = { ready: false, hasPlan: false, seen: true };
-function run(state) {
-  Object.assign(coachState, state);
-  ELS['coach-card-slot'] = makeEl();
-  renderCoachCard();
-  return ELS['coach-card-slot'].innerHTML.indexOf('Tap for the usual. Type for the rest.') !== -1;
-}
-console.log(JSON.stringify({
-  notReady: run({ ready: false, hasPlan: true, seen: false }),
-  noPlan: run({ ready: true, hasPlan: false, seen: false }),
-  alreadyRead: run({ ready: true, hasPlan: true, seen: true }),
-  due: run({ ready: true, hasPlan: true, seen: false })
-}));
-"""
-    )
-    assert _node(script) == {"notReady": False, "noPlan": False, "alreadyRead": False, "due": True}
-
-
-@_needs_node
-def test_the_sheet_says_its_three_lines_and_offers_two_ways_out():
-    """Since 2026-09-11 (Build 2 of the screen-by-screen redesign) this is a
-    SHEET shown once, not a card on Now: Emily cut the card ("'a quick word,
-    once' — what does that even mean? Remove it") and the copy with it.
-    Title and lines are the proposed draft from the copy document; they
-    change there, not here, when she hands it back."""
-    script = (
-        _DOM_STUB + _card_block() + """
-console.log(JSON.stringify(coachCardHtml()));
-"""
-    )
-    html = _node(script)
-    assert "A QUICK WORD" not in html
-    assert 'id="coach-sheet"' in html and 'id="coach-scrim"' in html
-    assert "Tap for the usual. Type for the rest." in html
-    # Tightened 2026-09-11 (copy cleanse): fewest words that still teach the
-    # three things, in the welcome flow's own register.
-    for line in [
-        "Buttons do the everyday things.",
-        "Everything else, type in the chat.",
-        "If I get it wrong, say so there.",
-    ]:
-        assert line in html, line
-    assert 'data-coach="got-it"' in html and ">Got it<" in html
-    assert 'data-coach="tips"' in html and ">More tips<" in html
-    # The sheet's Got it is its one apricot (a sheet has no other), and the
-    # scrim dismisses too.
-    assert 'class="dock-primary coach-got-it"' in html
-    assert '<div id="coach-scrim" data-coach="got-it"></div>' in html
+def test_the_one_time_sheet_is_gone():
+    """Neither the card on Now nor the sheet that replaced it: the Week 1
+    "Need a hand?" sheet says the same things where they are needed."""
+    for marker in ("coachCardHtml", "renderCoachCard", "COACH_CARD_LINES", "data-coach=",
+                   "coachState.seen", "Tap for the usual. Type for the rest."):
+        assert marker not in SHELL_JS, marker
+    assert "coach-card-slot" not in SHELL_HTML
+    assert "#coach-sheet" not in SHELL_CSS and ".coach-line" not in SHELL_CSS
 
 
 @_needs_node
