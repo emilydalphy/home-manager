@@ -578,6 +578,20 @@ it assumes about the household*.
 
 ## Decisions log (product direction, dated)
 
+- 2026-09-17/18 — Emily, core-loop feedback session ("make the one core loop stronger by
+  removing the fluff"): 18 cards on the board, mockups at
+  https://claude.ai/artifact/3kNwJnrCupMcFNgLcgQ2gU. Flow 1: welcome is four screens (purpose
+  line under the hello; "Here's how it works" replaces talk-to-me; the coaching moves to a
+  help icon); prep days unlimited, "I don't prep ahead" first; the loading screen reads the
+  answers back; the reveal is "Here's week 1" as swipeable day cards (breakfast → lunch →
+  dinner, Swap per row, one Approve). Flow 2: Check the week uses the same cards; "Swap the
+  meal"; "Approve · Open grocery list"; All set is one thing, then the freezer question as
+  its own screen, then the list; batch cooking is assumed from prep days and never asked.
+  Flow 0: Now → Today, grouped Shop / Cook, Morning · Afternoon · Evening tags, no "Open the
+  list". Flow 4: the recipe is name + servings + ingredients + steps + Start cooking; no
+  clocks in Cook; defrost leads are 1/2/3 nights by cut (USDA). Flow 3: sorting has one way;
+  the list is the checklist (no trip). Flow 5: Done + Swap inline on the Plan tab; Swap =
+  three picks, move a day, or tell me.
 - 2026-09-15 — Emily, during the flow 0 walk: "There is a lot that's been built, but I
   want to be really clear on if we even need everything. I want everything to have a
   clear purpose." Purpose-first: every surface, card, badge and button must be able to
