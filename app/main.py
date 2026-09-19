@@ -4,7 +4,7 @@ FastAPI backend for the Home Manager chat app.
 Run with:  uvicorn app.main:app --reload
 Then open: http://localhost:8000
 """
-from fastapi import FastAPI, HTTPException, File, Form, Request, UploadFile
+from fastapi import BackgroundTasks, FastAPI, HTTPException, File, Form, Request, UploadFile
 from fastapi.encoders import jsonable_encoder
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import (
@@ -34,10 +34,11 @@ from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exception_handlers import http_exception_handler
 
-from . import agent, backup, calendar_feed, households, ratelimit, recipe_import, recipe_photos, security
+from . import agent, backup, calendar_feed, feedback_email, households, ratelimit, recipe_import, recipe_photos, security
 from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
+from .tools import feedback as _feedback
 
 
 # Nothing else in the app configures logging, and an unconfigured logger
@@ -6040,7 +6041,7 @@ class FeedbackRequest(BaseModel):
 
 
 @app.post("/api/feedback")
-def submit_feedback(request: Request, req: FeedbackRequest):
+def submit_feedback(request: Request, req: FeedbackRequest, background: BackgroundTasks):
     """
     "Something not working?" — one person, one box, their own words.
 
@@ -6069,6 +6070,13 @@ def submit_feedback(request: Request, req: FeedbackRequest):
     never an error of its own: this is reached by someone who is already
     having a bad time, and a failure to report a failure must not become a
     second failure.
+
+    Once stored, the report is also emailed to Emily (app/feedback_email.py,
+    2026-09-19: "we need backend to track these") — as a background task,
+    after the 204 has gone back, so a slow mail server never shows up in
+    the form. The email is the one place the prose travels besides the
+    table, and it travels to a person, not a routine; the module's
+    docstring says why that distinction is the whole design.
     """
     try:
         _enforce_rate_limit(request, "feedback", record=False)
@@ -6078,18 +6086,38 @@ def submit_feedback(request: Request, req: FeedbackRequest):
         shapes = [
             _safe_client_detail(s) for s in (req.error_shapes or [])[:_MAX_FEEDBACK_SHAPES]
         ]
-        tools.record_feedback_report(
-            what_happened=req.what_happened,
-            trying_to_do=req.trying_to_do,
-            route_pattern=_safe_client_where(req.where),
-            app_version=_app_version(),
-            user_agent=request.headers.get("user-agent", ""),
-            error_shapes=shapes,
-            screen=_safe_feedback_screen(req.screen),
-        )
+        report = {
+            "what_happened": str(req.what_happened or "").strip()[:_feedback.MAX_WHAT_HAPPENED],
+            "trying_to_do": str(req.trying_to_do or "").strip()[:_feedback.MAX_TRYING_TO_DO],
+            "route_pattern": _safe_client_where(req.where),
+            "app_version": _app_version(),
+            "user_agent": request.headers.get("user-agent", "")[:_feedback.MAX_USER_AGENT],
+            "error_shapes": shapes,
+            "screen": _safe_feedback_screen(req.screen),
+        }
+        tools.record_feedback_report(**report)
+        if report["what_happened"]:
+            # Household name and id are read here, on the request, because
+            # the background task runs after the session context is gone.
+            report["household_id"] = tools.household_id()
+            report["household_name"] = _household_name(report["household_id"])
+            background.add_task(feedback_email.notify, report)
     except Exception:
         logger.exception("Filing a feedback report failed")
     return Response(status_code=204)
+
+
+def _household_name(hid: int) -> str:
+    """Best-effort; an email headed 'household 2' is still worth sending."""
+    try:
+        conn = get_conn()
+        try:
+            row = conn.execute("SELECT name FROM households WHERE id = ?", (hid,)).fetchone()
+        finally:
+            conn.close()
+        return (row["name"] if row else "") or ""
+    except Exception:
+        return ""
 
 
 @app.get("/api/feedback")
