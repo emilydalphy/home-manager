@@ -185,6 +185,53 @@ def _replacing_because(name: str, clashes: list[dict]) -> str:
     return f"{name} was dropped: it has {food}, which {who + ' can’t have' if who else 'this house can’t have'}."
 
 
+# ---------- what a person is told ----------
+
+
+def refusal_sentence(name: str, clashes: list[dict]) -> str:
+    """
+    "Tropical Fruit Cup has pineapple, which Emily can’t have — want me to
+    pick something else?" The one sentence chat's plan_meal and
+    swap_meal_in_plan decline in (DESIGN_SYSTEM §8: state the thing and
+    its way out, calmly). The model relays it as written.
+    """
+    food = _food_word(clashes)
+    who = _person(clashes)
+    cannot = f"{who} can’t have" if who else "this house can’t have"
+    return f"{name} has {food}, which {cannot} — want me to pick something else?"
+
+
+def refuse_if_clashing(name: str, ingredients: list[dict] | None = None, override: bool = False) -> None:
+    """
+    The gate in front of chat's own writes (meal_plans.plan_meal_for_chat,
+    weekly_plan.swap_meal_in_plan_for_chat). Matched on the ingredient
+    list — the dish's own when given, else its saved recipe's — and RAISES
+    weekly_plan.SlotRefused with refusal_sentence when it clashes, so
+    nothing is written and the model is handed the sentence to relay.
+
+    A raise, not a returned dict, for the reason swap_meal_in_plan_for_chat
+    gives at length: the agent dispatch packages a raise as is_error, and
+    only a non-error tool result counts as "the turn wrote something" — a
+    returned dict would let the model say "planned it" over a slot that
+    never changed.
+
+    `override` is the person's own "I know, do it anyway", said in their
+    words in this conversation (the tool description says so, and the model
+    may not set it on its own). It is the only way a clashing dish goes on
+    the week from chat, and it is a decision the person made, not a card
+    the app offered.
+    """
+    if override:
+        return
+    name = (name or "").strip()
+    if not name:
+        return
+    own = [i for i in (ingredients or []) if isinstance(i, dict) and (i.get("item") or "").strip()]
+    clashes = hard_clashes(name, ingredients=own or _recipes.saved_ingredients(name))
+    if clashes:
+        raise _weekly_plan.SlotRefused(refusal_sentence(name, clashes))
+
+
 # ---------- the re-pick ----------
 
 

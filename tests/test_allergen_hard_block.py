@@ -425,3 +425,208 @@ def test_the_chat_tool_tells_the_model_about_unsafe_candidates():
     schema = next(t for t in agent.TOOL_DEFINITIONS if t["name"] == "propose_plan_changes")
     assert "`unsafe`" in schema["description"]
     assert "outside the cuisine" in schema["description"]
+
+
+# ---------- round 2 (verifier, 2026-09-21): three gaps ----------
+#
+# 1. A reused SAVED recipe named without its list was matched on its name
+#    alone by the swap gate, so "Tropical Fruit Cup" (pineapple chunks) was
+#    offered by the three picks, written by Swap, and reported by the sweep
+#    as a fix. One shared helper now (recipes.saved_ingredients), and the
+#    sweep re-gates what the swap landed instead of trusting it.
+# 2. The alias table was thin: parmesan, calamari, miso, salmon and more
+#    slipped past. It lives in coordination._ALLERGEN_ALIASES and is
+#    hand-maintained; each family below has a test.
+# 3. Chat's own writes (plan_meal, swap_meal_in_plan) had no gate; the
+#    prompt only asked softly. Both decline a clashing dish now, and only
+#    the person's own "do it anyway" (override) gets past.
+
+from app.tools import recipes as _recipes_mod, weekly_plan as _wp
+
+
+@pytest.fixture
+def tropical(drafted):
+    """A saved recipe whose NAME is innocent and whose LIST is not."""
+    tools.add_recipe("Tropical Fruit Cup", ingredients=[{"item": "pineapple chunks", "qty": "1 bag"}],
+                     food_groups=["vegetable"])
+    return drafted
+
+
+def _reuse(name):
+    return {"meal_name": name, "is_new_recipe": False, "reason": "light", "ingredients": []}
+
+
+def test_the_saved_list_is_read_by_one_helper_everywhere(tropical):
+    assert _recipes_mod.saved_ingredients("tropical fruit cup") == [
+        {"item": "pineapple chunks", "qty": "1 bag"}] or \
+        _recipes_mod.saved_ingredients("tropical fruit cup")[0]["item"] == "pineapple chunks"
+    assert _recipes_mod.saved_ingredients("Nothing Saved") == []
+    assert allergen_gate.ingredients_for(_reuse("Tropical Fruit Cup"))[0]["item"] == "pineapple chunks"
+    assert sip._hard_clash(_reuse("Tropical Fruit Cup"))[0]["matched"] == "pineapple"
+
+
+def test_a_saved_recipe_with_a_clashing_list_is_never_one_of_the_three_picks(tropical):
+    entry = _slot(tropical, DAYS[3], "dinner")
+    out = tools.swap_options(tropical, entry["entry_id"], asker=lambda ctx: [
+        _reuse("Tropical Fruit Cup"), _safe("Chicken Souvlaki Bowls"), _safe("Beef Stir-Fry", "Chinese"),
+    ])
+    assert [o["meal"] for o in out["options"]] == ["Chicken Souvlaki Bowls", "Beef Stir-Fry"]
+
+
+def test_a_saved_recipe_with_a_clashing_list_is_never_written_by_swap(tropical):
+    entry = _slot(tropical, DAYS[3], "dinner")
+    out = tools.swap_meal_in_place(tropical, entry["entry_id"], picker=lambda ctx: _reuse("Tropical Fruit Cup"))
+    assert out["status"] == "refused"
+    assert _slot(tropical, DAYS[3], "dinner")["meal"] == "Chili"
+
+
+def test_the_change_card_reads_a_reused_recipe_off_its_saved_list(tropical):
+    out = tools.propose_plan_changes(tropical, [
+        {"date": DAYS[3], "slot": "dinner", "action": "change", "candidates": [_reuse("Tropical Fruit Cup")]},
+    ])
+    assert out["rows"][0]["candidates"] == [] and "pineapple" in out["rows"][0]["problem"]
+
+
+def test_the_sweep_never_reports_a_clasher_as_fixed(tropical, monkeypatch):
+    """A swap that somehow lands a clashing dish is matched again by the
+    sweep and opened, not counted as repicked."""
+    tools.add_recipe("Fruit Cup", ingredients=[{"item": "pineapple chunks", "qty": "1 bag"}])
+    tools.plan_meal(DAYS[2], "Fruit Cup", slot="snack", weekly_plan_id=tropical)
+    # Force the swap door to land the clasher, as the old name-only gate did.
+    monkeypatch.setattr(sip, "_hard_clash", lambda pick: [])
+    monkeypatch.setattr(allergen_gate._swap, "_hard_clash", lambda pick: [])
+
+    out = allergen_gate.sweep_plan(tropical, picker=lambda ctx: _reuse("Tropical Fruit Cup"))
+
+    assert out["dishes_repicked"] == 0
+    assert out["slots_opened"] == 1
+    names = _names(tropical)
+    assert "Tropical Fruit Cup" not in names and "Fruit Cup" not in names
+    assert tools.check_plan_conflicts(tropical)["settle"] is None
+
+
+# 2. the alias table
+
+@pytest.mark.parametrize("restriction, item", [
+    ("dairy allergy", "parmesan"), ("dairy allergy", "ghee"), ("dairy allergy", "paneer"),
+    ("dairy allergy", "butter"), ("dairy allergy", "double cream"), ("dairy allergy", "cheddar cheese"),
+    ("dairy allergy", "greek yogurt"),
+    ("egg allergy", "aioli"), ("egg allergy", "mayonnaise"), ("egg allergy", "meringue"),
+    ("shellfish allergy", "squid"), ("shellfish allergy", "calamari"), ("shellfish allergy", "prawns"),
+    ("shellfish allergy", "crab"), ("shellfish allergy", "lobster"), ("shellfish allergy", "clams"),
+    ("shellfish allergy", "mussels"), ("shellfish allergy", "scallops"),
+    ("gluten free", "barley"), ("gluten free", "rye"), ("gluten free", "soy sauce"),
+    ("gluten free", "couscous"), ("gluten free", "bulgur"), ("gluten free", "seitan"),
+    ("gluten free", "breadcrumbs"),
+    ("wheat allergy", "barley"), ("wheat allergy", "breadcrumbs"),
+    ("sesame allergy", "hummus"), ("sesame allergy", "tahini"),
+    ("soy allergy", "miso"), ("soy allergy", "tofu"), ("soy allergy", "edamame"),
+    ("soy allergy", "tempeh"), ("soy allergy", "soy sauce"),
+    ("fish allergy", "salmon"), ("fish allergy", "tuna"), ("fish allergy", "cod"),
+    ("fish allergy", "anchovies"), ("fish allergy", "fish sauce"),
+    ("peanut allergy", "satay"), ("peanut allergy", "peanut butter"),
+    ("nut allergy", "pesto"), ("nut allergy", "marzipan"), ("nut allergy", "praline"),
+])
+def test_the_widened_alias_table_reaches_real_ingredient_names(restriction, item):
+    tools.add_member("Emily")
+    tools.set_member_dietary_restrictions("Emily", [restriction])
+    assert allergen_gate.hard_clashes("Dinner", ingredients=[{"item": item, "qty": "1"}]), (restriction, item)
+
+
+@pytest.mark.parametrize("restriction, item", [
+    ("fish allergy", "shellfish stock"),      # whole-word: "fish" is not in "shellfish"
+    ("nut allergy", "coconut milk"),
+    ("nut allergy", "butternut squash"),
+    ("dairy allergy", "peanut butter"),
+    ("shellfish allergy", "salmon"),
+    ("sesame allergy", "sesame-free crackers"),  # "free" is a stopword, and the word itself still flags below
+])
+def test_whole_word_matching_still_holds(restriction, item):
+    tools.add_member("Emily")
+    tools.set_member_dietary_restrictions("Emily", [restriction])
+    if restriction == "sesame allergy":
+        assert allergen_gate.hard_clashes("Dinner", ingredients=[{"item": item, "qty": "1"}])
+    else:
+        assert allergen_gate.hard_clashes("Dinner", ingredients=[{"item": item, "qty": "1"}]) == [], (restriction, item)
+
+
+def test_tree_nuts_but_peanuts_are_fine_keeps_the_satay():
+    tools.add_member("Emily")
+    tools.add_fact("people", "allergic to tree nuts but peanuts are fine", hard=True)
+    assert allergen_gate.hard_clashes("Satay", ingredients=[{"item": "satay sauce", "qty": "1"}]) == []
+    assert allergen_gate.hard_clashes("Pesto Pasta", ingredients=[{"item": "pesto", "qty": "1"}])
+
+
+def test_a_dish_word_in_a_title_is_still_an_ordinary_title_lie():
+    """"with Pesto" over a recipe without it is corrected like any other
+    clause, not held for review as an allergen warning."""
+    from app.tools import plan_quality
+    assert "pesto" not in plan_quality._allergen_title_words()
+    assert "hummus" not in plan_quality._allergen_title_words()
+    assert "peanut" in plan_quality._allergen_title_words()
+
+
+# 3. chat's own writes
+
+def test_chats_plan_meal_declines_a_dish_someone_cant_have_and_writes_nothing(tropical):
+    with pytest.raises(_wp.SlotRefused) as caught:
+        tools.plan_meal_for_chat(DAYS[5], "Tropical Fruit Cup", slot="snack", weekly_plan_id=tropical)
+    assert str(caught.value) == (
+        "Tropical Fruit Cup has pineapple, which Emily can’t have — want me to pick something else?"
+    )
+    assert _slot(tropical, DAYS[5], "snack") is None
+    # By keyword too — the twin reads the dish either way.
+    with pytest.raises(_wp.SlotRefused):
+        tools.plan_meal_for_chat(meal_date=DAYS[5], meal="Tropical Fruit Cup", slot="snack", weekly_plan_id=tropical)
+    # A safe dish goes straight through.
+    out = tools.plan_meal_for_chat(DAYS[5], "Chili", slot="snack", weekly_plan_id=tropical)
+    assert out.get("entry_id") or out.get("meal") == "Chili"
+
+
+def test_chats_swap_declines_a_dish_someone_cant_have_and_writes_nothing(tropical):
+    with pytest.raises(_wp.SlotRefused, match="pineapple, which Emily can’t have"):
+        tools.swap_meal_in_plan_for_chat(tropical, DAYS[3], "Tropical Fruit Cup", slot="dinner")
+    assert _slot(tropical, DAYS[3], "dinner")["meal"] == "Chili"
+    with pytest.raises(_wp.SlotRefused):
+        tools.swap_meal_in_plan_for_chat(
+            weekly_plan_id=tropical, meal_date=DAYS[3], new_meal="Tropical Fruit Cup", slot="dinner",
+        )
+    assert _slot(tropical, DAYS[3], "dinner")["meal"] == "Chili"
+
+
+def test_the_gate_holds_on_an_approved_week_too(tropical):
+    tools.approve_weekly_plan(tropical, approved_by="Emily")
+    with pytest.raises(_wp.SlotRefused):
+        tools.swap_meal_in_plan_for_chat(tropical, DAYS[3], "Tropical Fruit Cup", slot="dinner")
+    assert _slot(tropical, DAYS[3], "dinner")["meal"] == "Chili"
+
+
+def test_the_persons_own_do_it_anyway_gets_past(tropical):
+    out = tools.swap_meal_in_plan_for_chat(tropical, DAYS[3], "Tropical Fruit Cup", slot="dinner", override=True)
+    assert out["meal"] == "Tropical Fruit Cup" if "meal" in out else True
+    assert _slot(tropical, DAYS[3], "dinner")["meal"] == "Tropical Fruit Cup"
+    tools.plan_meal_for_chat(DAYS[5], "Tropical Fruit Cup", slot="snack", weekly_plan_id=tropical, override=True)
+    assert _slot(tropical, DAYS[5], "snack")["meal"] == "Tropical Fruit Cup"
+
+
+def test_the_agents_tool_table_points_at_the_gated_twins_and_says_what_override_is():
+    assert agent.TOOL_FUNCTIONS["plan_meal"] is tools.plan_meal_for_chat
+    assert agent.TOOL_FUNCTIONS["swap_meal_in_plan"] is tools.swap_meal_in_plan_for_chat
+    for name in ("plan_meal", "swap_meal_in_plan"):
+        schema = next(t for t in agent.TOOL_DEFINITIONS if t["name"] == name)
+        override = schema["input_schema"]["properties"]["override"]
+        assert override["type"] == "boolean"
+        assert "in their own words" in override["description"]
+        assert "Never on your own initiative" in override["description"]
+        assert "override" not in schema["input_schema"]["required"]
+
+
+def test_the_chat_prompt_states_the_allergens_as_hard_exclusions():
+    source = open(agent.__file__, encoding="utf-8").read()
+    # The line-continuation prompt style folds "\\\n" into one line at
+    # runtime; read the source with those folds undone.
+    folded = source.replace("\\\n", "")
+    assert "`must_not_contain` — every member's dietary_restrictions and every hard household fact — is absolute" in folded
+    assert "want me to pick something else?" in folded
+    assert "pass override=true only if the person then says in their own words to do it anyway" in folded
+    assert "Keep it anyway" not in source

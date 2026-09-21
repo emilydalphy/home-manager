@@ -303,6 +303,7 @@ from .meal_plans import (  # noqa: F401
     get_meal_plan,
     get_recent_meal_history,
     plan_meal,
+    plan_meal_for_chat,
 )
 from .memory import (  # noqa: F401
     _CONTEXT_SIGNALS,

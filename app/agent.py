@@ -768,8 +768,16 @@ time as a series of questions. If get_meal_planning_setup_status shows onboardin
 false, help with what they actually asked, and point them at the setup screen once — "there's \
 a screen where you can set all of this at once, if you'd rather" — rather than starting an \
 interview they didn't ask for.
-- Use saved dietary restrictions and preferences to inform meal suggestions and recipe tags \
-going forward, without re-asking every time.
+- Use saved preferences to inform meal suggestions and recipe tags going forward, without \
+re-asking every time.
+- `must_not_contain` — every member's dietary_restrictions and every hard household fact — is \
+absolute, the same as it is for the week draft and for Swap. Never suggest, plan or swap in a \
+dish that has any of it in its ingredients, not in a sauce or a side served with it, and not \
+under a "-free" name; if what they asked for leaves no safe dish, offer one outside that cuisine \
+and say so. plan_meal and swap_meal_in_plan decline such a dish themselves and hand you the \
+sentence to relay ("X has pineapple, which Emily can't have — want me to pick something else?") \
+— relay it and offer another, and pass override=true only if the person then says in their own \
+words to do it anyway.
 - You still own everything the screens can't express: recipe choice, the per-slot reasons, \
 the explanation for a slot left open, and anything typed to you in chat.
 - When someone tells you something in chat that WOULD HAVE CHANGED an answer on those question \
@@ -1702,6 +1710,10 @@ TOOL_DEFINITIONS = [
                     "items": {"type": "string", "enum": ["protein", "carb", "vegetable"]},
                     "description": "Only used for freeform meals not tied to a saved recipe. Leave out if unclear.",
                 },
+                "override": {
+                    "type": "boolean",
+                    "description": "Defaults to false. The person's own \"I know, do it anyway\" for a dish that has something someone in the household can't have — set it ONLY when they said so in their own words in this conversation, after the tool declined once and you relayed why. Never on your own initiative, never on a first call.",
+                },
             },
             "required": ["meal_date", "meal"],
         },
@@ -1763,6 +1775,10 @@ TOOL_DEFINITIONS = [
                 "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"]},
                 "food_groups": {"type": "array", "items": {"type": "string", "enum": ["protein", "carb", "vegetable"]}},
                 "old_meal": {"type": "string", "description": "The exact name of the entry being replaced. Only needed when the slot holds more than one — a day's two snacks — and required in spirit there: without it both are replaced. Get the exact name from get_weekly_plan/get_week_menu rather than guessing."},
+                "override": {
+                    "type": "boolean",
+                    "description": "Defaults to false. The person's own \"I know, do it anyway\" for a dish that has something someone in the household can't have — set it ONLY when they said so in their own words in this conversation, after the tool declined once and you relayed why. Never on your own initiative, never on a first call.",
+                },
             },
             "required": ["weekly_plan_id", "meal_date", "new_meal"],
         },
@@ -6271,7 +6287,11 @@ TOOL_FUNCTIONS = {
     "log_recipe_note": tools.log_recipe_note,
     "log_cooking_deviation": tools.log_cooking_deviation,
     "flag_recipe_temporary": tools.flag_recipe_temporary,
-    "plan_meal": tools.plan_meal,
+    # The chat twin, not the bare function: a dish someone at the table
+    # can't have is declined here with the sentence to relay, and only the
+    # person's own "do it anyway" (override) gets past. The week draft
+    # composes the bare one after running the gate itself.
+    "plan_meal": tools.plan_meal_for_chat,
     "get_meal_plan": tools.get_meal_plan,
     "generate_weekly_plan": generate_weekly_plan,
     "set_week_constraints": tools.set_week_constraints,

@@ -6093,10 +6093,13 @@ def swap_meal_in_plan(
     return result
 
 
-def swap_meal_in_plan_for_chat(*args, **kwargs) -> dict:
+def swap_meal_in_plan_for_chat(*args, override: bool = False, **kwargs) -> dict:
     """
-    swap_meal_in_plan with the one refusal a PERSON is owed in front of it:
-    a night that has already gone by.
+    swap_meal_in_plan with the two refusals a PERSON is owed in front of
+    it: a night that has already gone by, and — since 2026-09-21 — a dish
+    somebody at the table can't have (allergen_gate.refuse_if_clashing,
+    which `override`, the person's own "do it anyway", is the only way
+    past).
 
     agent.TOOL_FUNCTIONS points at this rather than at the function itself,
     the shape grocery.add_grocery_item_for_chat already uses (2026-09-15).
@@ -6133,6 +6136,12 @@ def swap_meal_in_plan_for_chat(*args, **kwargs) -> dict:
     # this call's open — there is none, this is the first line.
     if isinstance(meal_date, str) and night_has_gone(meal_date):
         raise SlotRefused(NIGHT_GONE)
+    new_meal = kwargs.get("new_meal")
+    if new_meal is None and len(args) >= 3:
+        new_meal = args[2]
+    if isinstance(new_meal, str):
+        from . import allergen_gate as _allergen_gate
+        _allergen_gate.refuse_if_clashing(new_meal, override=override)
     return swap_meal_in_plan(*args, **kwargs)
 
 
