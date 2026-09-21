@@ -1137,6 +1137,12 @@ _ALLERGEN_TITLE_WORDS: set | None = None
 # reaches mayonnaise. Carving all of those out took "Steak with Garlic
 # Butter" off the rule entirely, which review caught as a missed control.
 _ALARMING_ALLERGEN_FAMILIES = ("nut", "nuts", "shellfish", "sesame")
+# Members of those families that are a DISH rather than the allergen's own
+# name (2026-09-21, when the alias table grew them): "with Pesto" or "with
+# Hummus" over a recipe without it is an ordinary title lie, not a warning,
+# and reads as one to nobody. The matcher still reaches them; the
+# title-correction rule simply doesn't treat them as sacred.
+_DISH_NOT_A_WARNING = frozenset({"pesto", "marzipan", "praline", "hummus", "satay"})
 
 
 def _allergen_title_words() -> set:
@@ -1164,7 +1170,7 @@ def _allergen_title_words() -> set:
         from .coordination import _ALLERGEN_ALIASES
         words = set(_ALLERGEN_ALIASES)
         for family in _ALARMING_ALLERGEN_FAMILIES:
-            words |= set(_ALLERGEN_ALIASES.get(family, ()))
+            words |= set(_ALLERGEN_ALIASES.get(family, ())) - _DISH_NOT_A_WARNING
         _ALLERGEN_TITLE_WORDS = {_stem(w) for word in words for w in re.findall(r"[a-z]+", word)}
     return _ALLERGEN_TITLE_WORDS
 

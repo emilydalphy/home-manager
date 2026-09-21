@@ -72,28 +72,48 @@ _CONFLICT_STOPWORDS = frozenset({
 # not a string trick. Whole-word matching still applies to each expansion,
 # which is what keeps "nut" off coconut, nutmeg and butternut squash.
 #
-# A STARTING LIST, not a complete one. It covers the common allergens a
-# household is likely to write down; add to it when a real miss shows up
-# rather than trying to enumerate every food in advance. Plurals are not
-# listed — _keyword_variants already handles those.
+# A HAND-MAINTAINED LIST, not a complete one, and this is the only place
+# it lives. It covers the common allergens a household is likely to write
+# down and the ingredient names a recipe is likely to list them under; add
+# to it when a real miss shows up rather than trying to enumerate every
+# food in advance. Widened on 2026-09-21 after the verifier of the
+# allergen hard-block found real model-written ingredients slipping past
+# ("parmesan" under a dairy note, "calamari" under shellfish, "miso" under
+# soy, and no fish family at all). Plurals are not listed —
+# _keyword_variants already handles those.
+#
+# Every entry is a claim that the ingredient CONTAINS the allergen as a
+# matter of course — pesto has pine nuts, hummus has tahini, soy sauce is
+# brewed with wheat — not that it might. A household that has said
+# otherwise ("…but peanuts are fine") is honoured by _match_terms, which
+# removes an excepted word from any family it sits in.
 _ALLERGEN_ALIASES: dict[str, set[str]] = {
     "nut": {"peanut", "walnut", "almond", "cashew", "pecan", "hazelnut",
-            "pistachio", "macadamia"},
+            "pistachio", "macadamia", "pesto", "marzipan", "praline"},
+    # Under its own key, not folded into "nut": "allergic to tree nuts but
+    # peanuts are fine" must keep satay, and _match_terms can only lift a
+    # word out of a family, not a dish made of it.
+    "peanut": {"satay"},
     "shellfish": {"shrimp", "prawn", "crab", "lobster", "clam", "mussel",
-                  "scallop", "oyster"},
+                  "scallop", "oyster", "squid", "calamari"},
+    "fish": {"salmon", "tuna", "cod", "haddock", "halibut", "trout",
+             "mackerel", "sardine", "anchovy", "tilapia", "fish sauce"},
     # "buttermilk" is here rather than left to "butter"/"milk": whole-word
     # matching reaches neither half of it, and it is unambiguously dairy —
     # the opposite call from "peanut butter", which is spelled with a dairy
     # word and contains none (see _COMPOUND_EXCEPTIONS).
     "dairy": {"milk", "cheese", "butter", "buttermilk", "cream", "yogurt",
-              "yoghurt", "whey"},
-    "gluten": {"flour", "bread", "pasta", "noodles", "couscous", "seitan"},
-    "wheat": {"flour", "bread", "pasta", "noodles", "couscous", "seitan"},
-    "egg": {"eggs", "mayonnaise", "mayo"},
-    "soy": {"soya", "tofu", "tempeh", "edamame", "soy sauce"},
-    "sesame": {"tahini"},
+              "yoghurt", "whey", "parmesan", "ghee", "paneer"},
+    "gluten": {"flour", "bread", "pasta", "noodles", "couscous", "seitan",
+               "barley", "rye", "bulgur", "breadcrumb", "soy sauce"},
+    "wheat": {"flour", "bread", "pasta", "noodles", "couscous", "seitan",
+              "barley", "rye", "bulgur", "breadcrumb", "soy sauce"},
+    "egg": {"eggs", "mayonnaise", "mayo", "aioli", "meringue"},
+    "soy": {"soya", "tofu", "tempeh", "edamame", "soy sauce", "miso"},
+    "sesame": {"tahini", "hummus"},
 }
 _ALLERGEN_ALIASES["nuts"] = _ALLERGEN_ALIASES["nut"]
+_ALLERGEN_ALIASES["peanuts"] = _ALLERGEN_ALIASES["peanut"]
 _ALLERGEN_ALIASES["eggs"] = _ALLERGEN_ALIASES["egg"]
 
 
