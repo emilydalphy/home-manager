@@ -7697,23 +7697,6 @@ span.cook-week-name { cursor: default; }
      end of the file takes it back with the rest of the docks. */
   padding: 14px 84px 10px 20px;
 }
-/* The clash, on its dish: urgent tint inside the row, the same two quiet
-   segments the old card had. */
-.rv-settle {
-  flex: 1 0 100%;
-  background: var(--urgent-tint);
-  border-radius: var(--radius-control);
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.rv-settle-note {
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.4;
-  color: var(--urgent-label);
-}
 /* ---------- SET: the All set screen ----------
    Spruce, the one finish in the loop that gets its own screen (§2b S5). */
 .wk-allset {
@@ -7869,7 +7852,6 @@ span.cook-week-name { cursor: default; }
 .wk-row.is-done .wk-row-name { color: var(--ink-done); text-decoration: line-through; }
 .wk-row-meta { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); }
 .wk-row-acts { display: flex; gap: 6px; flex: 0 0 auto; }
-.wk-row .rv-settle { margin-bottom: 6px; }
 .wk-mini {
   position: relative;
   height: 36px;
@@ -8279,55 +8261,6 @@ span.cook-week-name { cursor: default; }
 /* One dish, once, with the days it covers. Stacked rather than side by side
    because at 390px a dish name and a stepper on one line leaves the name
    two words wide. */
-/* ---------- "One thing to settle": a hard allergen clash ---------- */
-/* Urgent TINT, not the urgent fill — a clash needs a decision, and Rule 3
-   reserves the fill itself for something worse than that. The only card
-   allowed above the week card in a draft, and only when there is one. */
-.wk-settle-card {
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex-shrink: 0;
-  background: var(--urgent-tint);
-  border-color: var(--urgent-tint);
-}
-.wk-settle-title {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 17px;
-  letter-spacing: -0.02em;
-  color: var(--urgent-label);
-}
-.wk-settle-note {
-  font-family: var(--font-body);
-  font-size: 15px;
-  line-height: 1.45;
-  color: var(--ink);
-}
-/* Two segments, equal weight: neither swapping nor keeping is the app's
-   recommendation — the household's allergy is theirs to judge. Both quiet,
-   because the screen's one apricot is the Approve button below (Rule 5). */
-.wk-settle-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 2px; }
-.wk-settle-swap, .wk-settle-keep {
-  min-height: 46px;
-  padding: 0 10px;
-  border-radius: var(--radius-control);
-  border: 1.5px solid var(--hairline-strong);
-  background: var(--surface);
-  color: var(--ink);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 15px;
-  letter-spacing: -0.02em;
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.wk-settle-swap:hover, .wk-settle-keep:hover { background: var(--sand); }
-.wk-settle-keep { color: var(--ink-secondary); }
-
 /* ---------- the one quiet row under the card ---------- */
 .wk-foot {
   display: flex;
