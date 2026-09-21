@@ -19565,6 +19565,19 @@
   // design-tidy pass 2026-09-11); this keeps morningClock's own default
   // (blank reads as 7:00 am) at its two call sites.
   function morningClock(hhmm) { return humanTime(hhmm || '07:00'); }
+  // "five-thirty", "six", "seven" — the hour the way a person says it
+  // aloud, for the evening nudge's one line (2026-09-21). Only the shapes
+  // the dinner-window clock table produces get a word; anything else
+  // falls back to humanTime rather than to a wrong word.
+  var CLOCK_WORDS = ['twelve', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven'];
+  function clockWord(hhmm) {
+    var m = /^(\d{1,2}):(\d{2})$/.exec(hhmm || '');
+    if (!m) return humanTime(hhmm || '');
+    var hour = parseInt(m[1], 10) % 12, minute = parseInt(m[2], 10);
+    if (minute === 0) return CLOCK_WORDS[hour];
+    if (minute === 30) return CLOCK_WORDS[hour] + '-thirty';
+    return humanTime(hhmm);
+  }
   function prefsMorningLine() {
     var mt = typeof prefsState !== 'undefined' ? prefsState.morningText : null;
     if (!mt) return 'Reading it back…';
@@ -20071,7 +20084,7 @@
     var ev = prefsState.eveningNudge;
     var evByMember = {};
     (ev && ev.adults || []).forEach(function (a) { evByMember[a.member_id] = a; });
-    var evClock = ev && ev.clock ? humanTime(ev.clock) : '';
+    var evClock = ev && ev.clock ? clockWord(ev.clock) : '';
     body.innerHTML =
       '<label class="snw-label" for="morning-time">When</label>' +
       '<input type="time" id="morning-time" class="snw-input morning-time" value="' + escapeHtml(mt.time || '07:00') + '">' +
@@ -20086,10 +20099,16 @@
               (a.on ? 'On' : 'Off') +
             '</button>' +
           '</div>' +
-          (nudge ? '<div class="morning-adult-row morning-evening-row">' +
+          // Dimmed, and said so, while this adult's morning text is off:
+          // the nudge rides on that switch, and an "On" here that sends
+          // nothing must not read as active.
+          (nudge ? '<div class="morning-adult-row morning-evening-row' + (a.on ? '' : ' is-off') + '">' +
             '<span class="morning-evening-text">' +
               '<span class="morning-evening-title">Evening nudge</span>' +
-              '<span class="morning-evening-sub">' + escapeHtml(evClock ? 'Around ' + evClock + ', when it’s time to cook' : 'When it’s time to cook') + '</span>' +
+              '<span class="morning-evening-sub">' + escapeHtml(
+                !a.on ? 'Turns on with the morning text'
+                : evClock ? 'Around ' + evClock + ', when it’s time to cook'
+                : 'When it’s time to cook') + '</span>' +
             '</span>' +
             '<button type="button" class="morning-toggle" data-evening-toggle aria-pressed="' + (nudge.on ? 'true' : 'false') + '">' +
               (nudge.on ? 'On' : 'Off') +

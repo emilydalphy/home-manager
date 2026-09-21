@@ -7422,6 +7422,7 @@ span.cook-week-name { cursor: default; }
    44px toggle beside two lines of text instead of a number — the number
    is the row above's. */
 .morning-evening-row { min-height: 44px; }
+.morning-evening-row.is-off { opacity: 0.55; } /* this adult's morning text is off, so nothing goes */
 .morning-evening-text { display: flex; flex: 1 1 auto; flex-direction: column; gap: 2px; min-width: 0; }
 .morning-evening-title {
   font-family: var(--font-body);

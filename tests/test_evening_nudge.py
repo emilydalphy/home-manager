@@ -27,11 +27,14 @@ the one that takes the default has send_sms's channel monkeypatched.
 from __future__ import annotations
 
 import datetime as dt
+import json
 import re
+import shutil
 from datetime import datetime, time, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import nodeharness
 import pytest
 
 from app import db as app_db
@@ -476,6 +479,96 @@ def test_the_migration_is_present_and_members_are_wiped_between_tests():
     assert tools.get_evening_nudge_settings()["adults"][0]["on"] is True
 
 
+# ---------- the sheet's renderer, under node ----------
+
+_needs_node = pytest.mark.skipif(
+    shutil.which("node") is None, reason="node is needed to execute shell.js's own functions"
+)
+
+
+def _extract(name: str) -> str:
+    """Lift one brace-balanced `function name(...) {...}` out of shell.js."""
+    start = SHELL_JS.index(f"function {name}(")
+    i = SHELL_JS.index("{", start)
+    depth, j = 0, i
+    while True:
+        if SHELL_JS[j] == "{":
+            depth += 1
+        elif SHELL_JS[j] == "}":
+            depth -= 1
+            if depth == 0:
+                break
+        j += 1
+    return SHELL_JS[start: j + 1]
+
+
+def _var(name: str) -> str:
+    start = SHELL_JS.index(f"var {name} = [")
+    return SHELL_JS[start: SHELL_JS.index("];", start) + 2]
+
+
+_HARNESS = "\n".join([
+    _var("CLOCK_WORDS"), _extract("humanTime"), _extract("clockWord"), _extract("escapeHtml"),
+    _extract("renderMorningSheet"),
+    # A one-element DOM: the sheet's body is the only node the renderer touches.
+    "var body = { innerHTML: '' };",
+    "var morningSheetEl = { querySelector: function () { return body; } };",
+    "var prefsState = { morningText: null, eveningNudge: null };",
+])
+
+
+def _node(script: str):
+    res = nodeharness.run_node(_HARNESS + "\n" + script, timeout=30)
+    assert res.returncode == 0, f"node failed: {res.stderr}"
+    return json.loads(res.stdout.strip())
+
+
+@_needs_node
+@pytest.mark.parametrize("hhmm, word", [
+    ("17:00", "five"), ("17:30", "five-thirty"), ("18:00", "six"), ("19:00", "seven"),
+    ("12:00", "twelve"), ("17:15", "5:15 pm"),
+])
+def test_the_clock_is_said_as_a_person_would(hhmm, word):
+    assert _node(f"console.log(JSON.stringify(clockWord({json.dumps(hhmm)})));") == word
+
+
+def _render(morning_on: bool, nudge_on: bool = True, clock: str = "18:00") -> str:
+    return _node(
+        "prefsState.morningText = { time: '07:00', adults: [{ member_id: 7, name: 'Emily', phone: '+14165550100', on: "
+        + ("true" if morning_on else "false") + " }] };\n"
+        "prefsState.eveningNudge = { clock: " + json.dumps(clock) + ", adults: [{ member_id: 7, name: 'Emily', on: "
+        + ("true" if nudge_on else "false") + " }] };\n"
+        "renderMorningSheet();\nconsole.log(JSON.stringify(body.innerHTML));"
+    )
+
+
+@_needs_node
+def test_an_adult_with_the_morning_text_on_sees_the_hour_in_words():
+    html = _render(morning_on=True)
+    row = html[html.index("morning-evening-row"):]
+    assert "is-off" not in row.split(">", 1)[0]
+    assert "Around six, when it’s time to cook" in row
+    assert 'data-evening-toggle aria-pressed="true"' in row and ">On<" in row
+
+
+@_needs_node
+def test_an_adult_with_the_morning_text_off_sees_the_row_dimmed_and_told_why():
+    html = _render(morning_on=False)
+    row = html[html.index("morning-evening-row"):]
+    assert row.startswith("morning-evening-row is-off")
+    assert "Turns on with the morning text" in row
+    assert "Around" not in row
+
+
+@_needs_node
+def test_no_nudge_read_draws_no_nudge_row():
+    html = _node(
+        "prefsState.morningText = { time: '07:00', adults: [{ member_id: 7, name: 'Emily', phone: '', on: false }] };\n"
+        "renderMorningSheet();\nconsole.log(JSON.stringify(body.innerHTML));"
+    )
+    assert "morning-evening-row" not in html and "data-morning-toggle" in html
+
+
 def test_the_morning_sheet_carries_the_evening_switch():
     assert "fetch('/api/evening-nudge')" in SHELL_JS
     render = SHELL_JS[SHELL_JS.index("function renderMorningSheet()"):SHELL_JS.index("async function saveMorningSheet()")]
@@ -487,4 +580,5 @@ def test_the_morning_sheet_carries_the_evening_switch():
     # is drawn in tokens only.
     section = SHELL_CSS[SHELL_CSS.index('"Morning text" sheet'):SHELL_CSS.index("Meals — Week / Day / Meal")]
     assert ".morning-evening-row { min-height: 44px; }" in section
+    assert ".morning-evening-row.is-off { opacity: 0.55; }" in section
     assert not re.search(r"#[0-9a-fA-F]{3,6}\b", section)
