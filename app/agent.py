@@ -6842,7 +6842,9 @@ def _build_week_context_block(context: dict) -> dict | None:
         + state_line + "\n"
         "How changes work in this mode — the CHANGE CARD:\n"
         "- To change what's eaten on any slot, call propose_plan_changes ONCE with every row the "
-        "message asks for. Never call swap_meal_in_plan or plan_meal for a planned slot here: the "
+        "message asks for. \"All the breakfasts\", \"every dinner\", \"the whole week\" mean every "
+        "matching row above, in that one card — never one row and a question about the rest. "
+        "Never call swap_meal_in_plan or plan_meal for a planned slot here: the "
         "household saves from the card, and nothing is written until they do. (plan_meal is still "
         "right for an OPEN or EMPTY night — there is nothing on it to propose against.)\n"
         "- One candidate per row for a plain change; two to four when they asked for options or "
@@ -6864,6 +6866,36 @@ def _build_week_context_block(context: dict) -> dict | None:
         "— it isn't until they save."
     )
     return {"type": "text", "text": text}
+
+
+def _rest_of_week_lines(meal: dict) -> str:
+    """
+    The week the meal card sits in, one line per day, so a message that
+    widens the scope ("all the breakfasts") can be done in the same turn
+    with no lookup: swap_meal_in_plan needs each slot's date and the dish
+    that is there now, and until 2026-09-21 the block only carried the one
+    meal the card was about — which is half of why the model did that one
+    and offered to "handle the rest separately". Empty (not a failure)
+    when the week can't be read; the turn still knows its own meal.
+    """
+    try:
+        week = tools.describe_plan_for_chat(weekly_plan_id=meal.get("weekly_plan_id"))
+    except Exception:
+        logger.exception("Reading the rest of the week for the meal card failed; carrying on with the one meal")
+        return ""
+    if not week or not week.get("days"):
+        return ""
+    lines = []
+    for day in week["days"]:
+        parts = [
+            f"{s['slot']}: \"{s['meal']}\""
+            for s in day["slots"] if s.get("meal")
+        ]
+        if parts:
+            lines.append(f"- {day['weekday']} {day['date']}: " + "; ".join(parts))
+    if not lines:
+        return ""
+    return "The week this card is on, for a wider scope (slot: the dish there now):\n" + "\n".join(lines) + "\n"
 
 
 def _build_chat_context_block(context: dict | None) -> dict | None:
@@ -6899,6 +6931,13 @@ def _build_chat_context_block(context: dict | None) -> dict | None:
         "The week is still a draft, so nothing is on the grocery list yet and nothing changes "
         "there until they approve the week."
     )
+    # The whole-week reply, said once, in the sheet's own words (the C4
+    # board, 2026-09-20): what happened, then where the list stands.
+    whole_week_reply = (
+        "Done — every breakfast this week is boiled eggs and avocado toast. "
+        + ("The list's updated to match." if meal["approved"]
+           else "Nothing's on the list yet; the week's still a draft.")
+    )
     text = (
         f"This message was sent from the meal card for {when}: \"{meal['meal']}\" "
         f"(date {meal['date']}, slot '{meal['slot']}', weekly_plan_id {meal['weekly_plan_id']}). "
@@ -6909,7 +6948,23 @@ def _build_chat_context_block(context: dict | None) -> dict | None:
         "you already have it.\n"
         + (f"Its ingredients as saved: {ingredients}.\n" if ingredients else "")
         + f"{list_line}\n"
-        "Confirm ONCE, then act:\n"
+        # Emily, 2026-09-20, from Monday's breakfast row: "For all the
+        # breakfasts let's do boiled eggs and avocado toast" — and the
+        # reply argued scope ("this message is about Monday's breakfast, not
+        # the whole week's ... handle the rest separately"). The card is
+        # where the conversation started, not a fence around it.
+        "THE CARD IS A STARTING POINT, NOT A FENCE. If the message names a scope wider than "
+        "this one meal — \"all the breakfasts\", \"every dinner\", \"the whole week\", \"each "
+        "day\", \"for the week\", \"the rest of the week\" — they mean that whole scope, and the "
+        "ask is clear: do all of it in this turn. Never ask whether they meant only this one, "
+        "never do this one and offer to \"handle the rest separately\", and never end on a "
+        "\"do it?\" — call swap_meal_in_plan once per matching slot below (weekly_plan_id "
+        f"{meal['weekly_plan_id']}, that slot's meal_date, slot and old_meal; add_recipe the "
+        "dish first when it is their own idea; a day that has already gone by is left as it "
+        "is), then say what happened in one breath, in this shape with their dish and slot: "
+        f"\"{whole_week_reply}\" Nothing else — the card under your reply carries the count.\n"
+        + _rest_of_week_lines(meal)
+        + "Otherwise, for this one meal alone — Confirm ONCE, then act:\n"
         "- If what they want is clear enough to do, say the exact change back as a "
         "one-line proposal and stop there — \"Ground beef instead of turkey for "
         f"{day_word}'s burgers — do it?\" That is the only question. If it is genuinely "

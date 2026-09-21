@@ -468,7 +468,15 @@ def test_reopening_the_week_kept_an_entry_point():
 
 
 def test_the_next_step_chips_are_unchanged():
-    """Emily's design touches the Meals surfaces, not chat's handoff chips."""
+    """Emily's design touches the Meals surfaces, not chat's handoff chips.
+
+    UPDATED 2026-09-21 (Loop Board "Chat on the draft — do the whole-week
+    ask, then 'Back to your week'", Emily 2026-09-20: "It's confusing where
+    the user needs to go from here"): after a draft edit the chat offers ONE
+    primary "Back to your week" and no "See your week" / "Approve this
+    week" pair — the draft's own Approve is a tap away once they're back on
+    it. tests/test_tweak_the_week.py runs the function itself."""
     _assert_in("function computeNextStepChips(", SHELL_JS, "computeNextStepChips", "shell.js")
-    _assert_in("label: 'See your week'", SHELL_JS, "the See your week chip", "shell.js")
-    _assert_in("label: 'Approve this week'", SHELL_JS, "the Approve this week chip", "shell.js")
+    _assert_in("label: 'Back to your week'", SHELL_JS, "the Back to your week button", "shell.js")
+    _assert_gone("label: 'See your week'", SHELL_JS, "the See your week chip")
+    _assert_gone("label: 'Approve this week'", SHELL_JS, "the Approve this week chip")
