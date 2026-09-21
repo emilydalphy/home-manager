@@ -8830,6 +8830,36 @@ span.cook-week-name { cursor: default; }
 .gro-staple-btn:hover { color: var(--ink-strong); }
 .gro-staple-btn:disabled { opacity: .6; cursor: default; }
 
+/* ---------- "Freezing it?" (Loop Board 3e21f4c0, mockup F-C) ----------
+   The follow-up under a just-ticked meat/seafood line, inside the store
+   card: a celadon-tint block, one sentence, two 36px mini buttons (the
+   Plan root's .wk-mini; the ghost is the sand, edge-less one). Answered,
+   it folds to the one line. No apricot (Rule 5) — the tick was the
+   action, this is a note under it. Indented past the box so it reads as
+   the row's own. */
+.gro-freeze {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 2px 0 8px 34px;
+  padding: 10px 12px;
+  background: var(--celadon-tint);
+  border: 1.5px solid var(--celadon-edge);
+  border-radius: var(--radius-control);
+}
+.gro-freeze.is-answered { padding: 8px 12px; }
+.gro-freeze-text {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--celadon-label);
+}
+.gro-freeze-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.gro-freeze .wk-mini.is-ghost { background: var(--sand); border-color: transparent; }
+@media (hover: hover) { .gro-freeze .wk-mini.is-ghost:hover { background: var(--sand-deep); } }
+
 /* The row menu's foot: "Make it a staple" beside Remove, both quiet. */
 .gro-rowmenu-foot { display: flex; align-items: center; gap: 18px; }
 .gro-rowmenu-foot .gro-rowmenu-remove { width: auto; }

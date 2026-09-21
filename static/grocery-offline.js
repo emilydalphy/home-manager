@@ -32,6 +32,18 @@
 // status route is idempotent (see tools.mark_grocery_item), so a request
 // whose reply was lost in the store's dead zone is safe to send twice.
 //
+// One more kind of op since 2026-09-21 (Loop Board 3e21f4c0): the "Yes,
+// freezing it" answer under a just-ticked meat line, and its Put back —
+//   { id, kind: 'freezing', answer: 'freezer' | 'fridge', at }
+// posted to /api/grocery-list/<id>/freezing. It queues and replays exactly
+// like a status change (one per line, latest wins, spent when the server
+// answers), sits in the same queue so it goes out AFTER the tick it
+// followed, and is idempotent on the server for the same reason the
+// status route is. A status op and a freezing op for one line are two
+// different ops — a put-back of the row never cancels the freezer answer
+// (the server's "fridge" is what removes a move). applyPending ignores
+// it: nothing on the list's shape changes with the answer.
+//
 // This file has no DOM and no fetch of its own: shell.js hands it storage
 // and a post function, which is also what lets tests/test_grocery_offline.py
 // run it under node exactly as the browser does. Anything that needs Claude
@@ -49,6 +61,7 @@
   var SHOPS_PREFIX = 'pomona.grocery.shops.h';
   var HOUSEHOLD_KEY = 'pomona.grocery.household';
   var STATUSES = ['needed', 'in_cart', 'purchased'];
+  var FREEZING_ANSWERS = ['freezer', 'fridge'];
 
   // Move one item between the buckets of the list shape shell.js renders
   // (groLoadAllData: storeName -> { sections, purchased, inCart }). Mutates
@@ -165,13 +178,31 @@
       remove(COPY_PREFIX + id); remove(QUEUE_PREFIX + id); remove(SHOPS_PREFIX + id);
     }
 
-    // A queue entry is an object with an id and one of the three statuses;
-    // anything else (a null from a bad write, a shape from an older build)
-    // is dropped on read rather than left to jam replay forever.
+    // A queue entry is an object with an id and one of the three statuses
+    // (a tick, kind absent or 'status') or one of the two freezing answers
+    // (kind 'freezing'); anything else (a null from a bad write, a shape
+    // from an older build) is dropped on read rather than left to jam
+    // replay forever.
+    function isFreezing(op) { return !!op && op.kind === 'freezing'; }
     function validOp(op) {
-      return !!op && typeof op === 'object' &&
-        (typeof op.id === 'string' || typeof op.id === 'number') &&
-        STATUSES.indexOf(op.status) !== -1;
+      if (!op || typeof op !== 'object') return false;
+      if (typeof op.id !== 'string' && typeof op.id !== 'number') return false;
+      if (isFreezing(op)) return FREEZING_ANSWERS.indexOf(op.answer) !== -1;
+      return op.kind === undefined || op.kind === 'status' ? STATUSES.indexOf(op.status) !== -1 : false;
+    }
+    // Where an op goes and what it carries.
+    function opRequest(op) {
+      if (isFreezing(op)) return { url: '/api/grocery-list/' + op.id + '/freezing', body: { answer: op.answer } };
+      return { url: '/api/grocery-list/' + op.id + '/status', body: { status: op.status } };
+    }
+    // One entry per (kind, line): the newer one replaces the older and
+    // goes to the end, so across lines the order is the order the shopper
+    // made them.
+    function enqueue(op) {
+      var q = pending().filter(function (o) { return !(String(o.id) === String(op.id) && isFreezing(o) === isFreezing(op)); });
+      q.push(op);
+      writePending(q);
+      return op;
     }
     function pending() {
       var q = readJsonScoped(queueKey());
@@ -211,7 +242,9 @@
           if (carried.queue) {
             var ops = [];
             try { ops = JSON.parse(carried.queue); } catch (err) { ops = []; }
-            (Array.isArray(ops) ? ops : []).filter(validOp).forEach(function (op) { api.queueStatus(op.id, op.status); });
+            (Array.isArray(ops) ? ops : []).filter(validOp).forEach(function (op) {
+              if (isFreezing(op)) api.queueFreezing(op.id, op.answer); else api.queueStatus(op.id, op.status);
+            });
           }
         }
         return true;
@@ -266,23 +299,23 @@
       pending: pending,
       hasPending: function () { return pending().length > 0; },
 
-      // One entry per item: a newer change to the same row replaces the
-      // older one and goes to the end, so across items the order is the
-      // order the shopper made them.
+      // A tick: one entry per row (see enqueue).
       queueStatus: function (itemId, status) {
         if (STATUSES.indexOf(status) === -1) return null;
-        var q = pending().filter(function (op) { return String(op.id) !== String(itemId); });
-        var op = { id: String(itemId), status: status, at: now() };
-        q.push(op);
-        writePending(q);
-        return op;
+        return enqueue({ id: String(itemId), status: status, at: now() });
+      },
+      // "Yes, freezing it" / its Put back: one entry per row, latest wins,
+      // behind whatever ticks are already waiting.
+      queueFreezing: function (itemId, answer) {
+        if (FREEZING_ANSWERS.indexOf(answer) === -1) return null;
+        return enqueue({ id: String(itemId), kind: 'freezing', answer: answer, at: now() });
       },
 
       // The list as the shopper last saw it: the server's copy with this
       // device's unsent changes on top. Never mutates the stored copy.
       applyPending: function (data) {
         var out = clone(data);
-        pending().forEach(function (op) { applyStatus(out, op.id, op.status); });
+        pending().forEach(function (op) { if (!isFreezing(op)) applyStatus(out, op.id, op.status); });
         return out;
       },
       applyStatus: applyStatus,
@@ -299,11 +332,14 @@
           var q = pending();
           if (!q.length) return Promise.resolve(result);
           var op = q[0];
+          var req = opRequest(op);
           return Promise.resolve()
-            .then(function () { return post('/api/grocery-list/' + op.id + '/status', { status: op.status }); })
+            .then(function () { return post(req.url, req.body); })
             .then(function (res) {
               // Answered: spent, whichever way it went.
-              writePending(pending().filter(function (o) { return !(o.id === op.id && o.at === op.at); }));
+              writePending(pending().filter(function (o) {
+                return !(o.id === op.id && o.at === op.at && isFreezing(o) === isFreezing(op));
+              }));
               if (res && res.ok) result.sent += 1; else result.dropped += 1;
               return step();
             }, function () {

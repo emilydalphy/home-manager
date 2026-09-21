@@ -138,6 +138,9 @@ from .defrost import (  # noqa: F401
     meat_items_for_plan,
     confirm_frozen_items,
     mark_defrost_asked,
+    stamp_freezing_offers,
+    book_defrost_for_grocery_line,
+    FreezingNotOffered,
 )
 from .coordination import (  # noqa: F401
     check_meal_conflicts,

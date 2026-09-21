@@ -40,7 +40,7 @@ import re
 from datetime import date, datetime, time, timedelta
 
 from ..db import get_conn
-from ._shared import household_id
+from ._shared import household_id, require_household_row
 from . import attendance as _attendance
 # cooker is this module's clock as well as its name matcher (see the note
 # above get_defrost_today). The module alias replaces the `from .cooker
@@ -1033,3 +1033,242 @@ def mark_defrost_asked(weekly_plan_id: int) -> None:
     )
     conn.commit()
     conn.close()
+
+
+# ---------- "Freezing it?" — the question the Shop checklist asks ----------
+#
+# Loop Board 3e21f4c0 (2026-09-21): ticking a meat/seafood line bought is
+# the moment the household knows where that pack is going, and the freezer
+# step at approval could not ask about it (rule 3 of meat_items_for_plan:
+# it was still on the shopping list). So the list asks, once, under the
+# just-ticked row — "Freezing it? I'll remind you Saturday night to move
+# it to the fridge for Monday." — and a yes books the same defrost row
+# confirm_frozen_items writes for the freezer step: inventory_item_id
+# NULL (a fact about this plan, never an inventory write), keyed by the
+# meal's entry and the same _describe() string, so the two doors cannot
+# book one move twice and sync_defrost_tasks never sweeps it.
+#
+# Which meal a line is FOR is read off meal_plan_grocery_links, the
+# ledger plan_meal writes at ingest — the same record Today's shop move
+# reads (grocery.entry_ids_awaiting_a_shop) — never by matching names. A
+# line no meal recorded (loose "Add something" meat) has no cook date and
+# is not asked about. A line feeding two meals is asked about the FIRST
+# cook night (the mockup's one sentence), and the yes books that night.
+#
+# Deliberately separate from confirm_frozen_items (another branch is
+# changing that function at the time of writing): the helpers below share
+# its arithmetic (lead_hours_for_item, _move_date, _describe) and nothing
+# else.
+
+def _grocery_line_first_meal(conn, item_id: int) -> dict | None:
+    """
+    The first cook night a grocery line feeds, read off the ledger:
+    {entry_id, weekly_plan_id, date, meal, item} or None when no meal
+    recorded the line. A component-based plan's entries carry a
+    placeholder date (see schema.sql on meal_plan_entries.component_category)
+    and are left out; so is an entry with no plan, which the defrost row
+    could not be filed under.
+    """
+    row = conn.execute(
+        "SELECT l.item AS link_item, e.id AS entry_id, e.weekly_plan_id, e.date, "
+        "COALESCE(r.name, e.freeform_meal) AS meal "
+        "FROM meal_plan_grocery_links l "
+        "JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id "
+        "LEFT JOIN recipes r ON r.id = e.recipe_id "
+        "WHERE l.household_id = ? AND l.grocery_item_id = ? "
+        "AND e.household_id = ? AND e.weekly_plan_id IS NOT NULL "
+        "AND e.component_category IS NULL "
+        "ORDER BY e.date ASC, e.id ASC LIMIT 1",
+        (household_id(), item_id, household_id()),
+    ).fetchone()
+    if row is None or not row["date"]:
+        return None
+    return {
+        "entry_id": row["entry_id"], "weekly_plan_id": row["weekly_plan_id"],
+        "date": row["date"], "meal": row["meal"] or "dinner", "item": (row["link_item"] or "").strip(),
+    }
+
+
+_MOVE_DESCRIPTION_RE = re.compile(r"^move the (.+?) to the fridge", re.IGNORECASE)
+
+
+def _settled_move_for_entry(conn, entry_id: int, names: set[str]):
+    """
+    The pending-or-done defrost row already booked for this meal and this
+    ingredient, whichever door wrote it (the freezer step, the inventory
+    sync, this ask), or None. Matched on the row's own description rather
+    than a column, because that is the one thing every writer stamps the
+    same way (_describe); the plural tolerance is _matches_selected_item's.
+    """
+    rows = conn.execute(
+        "SELECT id, status, task_date, description FROM prep_tasks WHERE household_id = ? "
+        "AND task_type = 'defrost' AND meal_plan_entry_id = ? "
+        f"AND status IN ({','.join('?' * len(_SETTLED_DEFROST_STATUSES))}) ORDER BY id",
+        (household_id(), entry_id, *_SETTLED_DEFROST_STATUSES),
+    ).fetchall()
+    wanted = {n.strip().lower() for n in names if (n or "").strip()}
+    for row in rows:
+        m = _MOVE_DESCRIPTION_RE.match(row["description"] or "")
+        if m and _matches_selected_item(m.group(1), wanted):
+            return row
+    return None
+
+
+def _move_label(move_date_str: str, today: date) -> str:
+    """"Saturday night", or "tonight" when the move is today's."""
+    if date.fromisoformat(move_date_str) == today:
+        return "tonight"
+    return f"{_weekday_name(move_date_str)} night"
+
+
+def freezing_offer_for_grocery_line(line: dict, *, conn=None, today: date | None = None,
+                                    dinner_window: str | None = None) -> dict | None:
+    """
+    What the checklist may ask under this line once it is ticked, or None:
+    only a meat/seafood line (_is_meat_ingredient, on the line's own
+    category), only one a plan meal recorded (the ledger), only while the
+    move is still ahead on the household's clock, and never once a move
+    for that meal and ingredient is booked or done — by the freezer step,
+    the inventory sync, or an earlier yes here.
+
+    The dict is what the Shop screen needs to say its sentence and what
+    the route needs to book: entry_id, meal, cook_date, cook_weekday,
+    move_date, move_label ("Saturday night" / "tonight"), lead_hours.
+    """
+    if not _is_meat_ingredient(line):
+        return None
+    own_conn = conn is None
+    if today is None:
+        today = _cooker.household_today()
+    if dinner_window is None:
+        dinner_window = _rhythm.get_household_rhythm().get("dinner_window")
+    c = get_conn() if own_conn else conn
+    try:
+        meal = _grocery_line_first_meal(c, int(line["id"]))
+        if meal is None:
+            return None
+        item_name = meal["item"] or (line.get("item") or "").strip()
+        lead_hours, tier = lead_hours_for_item(item_name)
+        move_date_str = _move_date(meal["date"], lead_hours, dinner_window)
+        if date.fromisoformat(move_date_str) < today:
+            return None
+        if _settled_move_for_entry(c, meal["entry_id"], {item_name, line.get("item") or ""}) is not None:
+            return None
+    finally:
+        if own_conn:
+            c.close()
+    return {
+        "entry_id": meal["entry_id"], "weekly_plan_id": meal["weekly_plan_id"],
+        "item": item_name, "meal": meal["meal"],
+        "cook_date": meal["date"], "cook_weekday": _weekday_name(meal["date"]),
+        "move_date": move_date_str, "move_label": _move_label(move_date_str, today),
+        "lead_hours": lead_hours, "lead_tier": tier,
+    }
+
+
+def stamp_freezing_offers(items: list[dict]) -> list[dict]:
+    """
+    Mutates each needed grocery line in `items`, adding `freezing` (the
+    offer above) to the meat/seafood ones that have one. Everything else is
+    left untouched — no key at all, so an older copy of the list on a
+    phone reads the same as a fresh one. One clock and one rhythm read for
+    the whole list; one connection.
+    """
+    meat = [it for it in items if _is_meat_ingredient(it)]
+    if not meat:
+        return items
+    today = _cooker.household_today()
+    dinner_window = _rhythm.get_household_rhythm().get("dinner_window")
+    conn = get_conn()
+    try:
+        for it in meat:
+            offer = freezing_offer_for_grocery_line(it, conn=conn, today=today, dinner_window=dinner_window)
+            if offer is not None:
+                it["freezing"] = offer
+    finally:
+        conn.close()
+    return items
+
+
+class FreezingNotOffered(ValueError):
+    """The line is not one the checklist asks about: not meat/seafood, no
+    meal recorded it, too late to thaw for that meal, or the move is
+    already booked. The message is the plain reason."""
+
+
+def book_defrost_for_grocery_line(item_id: int, freezing: bool) -> dict:
+    """
+    The checklist's answer for one line. `freezing` True books the defrost
+    move for the first meal the line feeds — one prep_tasks row, the exact
+    shape confirm_frozen_items writes (inventory_item_id NULL, keyed by
+    entry and _describe), updated in place if it exists. False is "Put
+    back": the pending move this ask (or any door) booked for that meal
+    and ingredient is removed; a done one is left alone, and nothing to
+    remove is an ordinary answer. "Straight to the fridge" never reaches
+    here — it writes nothing.
+
+    Raises ValueError for a line this household does not have (the
+    route's 404) and FreezingNotOffered when the line is not askable (the
+    route's 400) — on a yes only; a put-back on an unaskable line is a
+    no-op, because the line stopped being askable the moment the yes
+    booked it.
+    """
+    # Both open a connection of their own — resolved before this
+    # function's, the module's rule (see get_defrost_today's note).
+    today = _cooker.household_today()
+    dinner_window = _rhythm.get_household_rhythm().get("dinner_window")
+    conn = get_conn()
+    try:
+        require_household_row(conn, "grocery_items", item_id, label="grocery list item")
+        line = conn.execute(
+            "SELECT id, item, category FROM grocery_items WHERE id = ? AND household_id = ?",
+            (item_id, household_id()),
+        ).fetchone()
+        line = dict(line)
+        if not freezing:
+            meal = _grocery_line_first_meal(conn, item_id)
+            removed = None
+            if meal is not None:
+                row = _settled_move_for_entry(conn, meal["entry_id"], {meal["item"], line["item"]})
+                if row is not None and row["status"] == "pending":
+                    conn.execute("DELETE FROM prep_tasks WHERE id = ?", (row["id"],))
+                    conn.commit()
+                    removed = row["id"]
+            return {"item_id": item_id, "freezing": False, "removed_prep_task_id": removed}
+
+        if not _is_meat_ingredient(line):
+            raise FreezingNotOffered("That's not something to thaw.")
+        meal = _grocery_line_first_meal(conn, item_id)
+        if meal is None:
+            raise FreezingNotOffered("No meal on the plan is waiting on that.")
+        item_name = meal["item"] or line["item"].strip()
+        # A yes sent twice — a double tap, or a replay whose first reply was
+        # lost in the store's dead zone — is the same yes: the move already
+        # booked is the answer, not a refusal. Same rule as the status route.
+        booked = _settled_move_for_entry(conn, meal["entry_id"], {item_name, line["item"]})
+        if booked is not None:
+            return {
+                "item_id": item_id, "freezing": True, "prep_task_id": booked["id"],
+                "task_date": booked["task_date"], "move_label": _move_label(booked["task_date"], today),
+                "item": item_name, "related_meal": meal["meal"], "date": meal["date"], "already_booked": True,
+            }
+        lead_hours, tier = lead_hours_for_item(item_name)
+        move_date_str = _move_date(meal["date"], lead_hours, dinner_window)
+        if date.fromisoformat(move_date_str) < today:
+            raise FreezingNotOffered(TOO_LATE_TO_THAW_NOTE)
+        description = _describe(item_name, meal["meal"], meal["date"])
+        cur = conn.execute(
+            "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, "
+            "related_meal, status, task_type, inventory_item_id, meal_plan_entry_id, quantity) "
+            "VALUES (?, ?, ?, ?, ?, 'pending', 'defrost', NULL, ?, '')",
+            (household_id(), meal["weekly_plan_id"], move_date_str, description, meal["meal"], meal["entry_id"]),
+        )
+        conn.commit()
+        return {
+            "item_id": item_id, "freezing": True, "prep_task_id": cur.lastrowid,
+            "task_date": move_date_str, "move_label": _move_label(move_date_str, today),
+            "item": item_name, "related_meal": meal["meal"], "date": meal["date"],
+            "lead_hours": lead_hours, "lead_tier": tier, "already_booked": False,
+        }
+    finally:
+        conn.close()
