@@ -415,6 +415,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-21 — Integration `core-loop-followups-2026-09-21`:** the four
+  branches below merged in one (`batch-components-auto` →
+  `evening-cook-nudge` → `shop-freezing-it` →
+  `freezer-at-approval-all-meat`), plus the seams between the two freezer
+  doors: `defrost._grocery_lines_by_item` is scoped to the plan
+  (`source_weekly_plan_id` = plan or NULL) and `frozen` is the plan's own
+  booked nights, so next week's yes no longer pre-selects this week's
+  chip; Shop's yes carries the line's quantity and both doors read one
+  `_MOVE_ITEM_RE`; a refused yes (4xx) puts Shop's question back; the
+  step reopened with an answer standing shows "Keep it as it is" (leaves,
+  writes nothing) instead of "Nothing frozen" — un-tapping a chip is the
+  way to cancel a move, whichever door booked it.
 - **2026-09-21 — The freezer step asks about EVERY meat in the week, and a
   yes takes the line off the list and books the move. Branch
   `freezer-at-approval-all-meat`, NOT merged at the time of writing.** Loop
@@ -492,9 +504,10 @@ why*, not duplicating the diff.
     `refreshGrocerySurfaces()` caller).
 - **2026-09-21 — Shop asks "Freezing it?" under a just-ticked meat line.
   Branch `shop-freezing-it` (Loop Board 3e21f4c0, mockup F-C).** The
-  freezer step at approval cannot ask about meat still on the shopping
-  list (meat_items_for_plan rule 3), and the tick is the moment the
-  household knows where the pack is going. So `groLineHtml` draws a
+  freezer step at approval asks about the week's meat before the shop
+  (the entry above); the tick is the second door, for a pack the
+  household only decides about once it is in the cart — the moment it
+  knows where the pack is going. So `groLineHtml` draws a
   celadon-tint block under a meat/seafood row the moment it is ticked —
   "Freezing it? I'll remind you Saturday night to move it to the fridge
   for Monday." + two `.wk-mini` buttons — and nowhere else: not on a
@@ -512,9 +525,9 @@ why*, not duplicating the diff.
   /api/grocery-list/{id}/freezing {answer:'freezer'}` →
   `defrost.book_defrost_for_grocery_line`, a NEW helper beside
   `confirm_frozen_items` (another branch was editing that one) writing
-  the identical row shape (inventory_item_id NULL, `_describe`, the
-  entry id), idempotent so a replayed yes returns the booked row rather
-  than 400; `answer:'fridge'` is the toast's Put back and deletes the
+  the identical row (inventory_item_id NULL, `_describe`, the entry id,
+  and since the integration the line's quantity), idempotent so a
+  replayed yes returns the booked row rather than 400; `answer:'fridge'` is the toast's Put back and deletes the
   pending row. "Straight to the fridge" posts nothing at all. Offline: a
   new op kind in `static/grocery-offline.js` (`queueFreezing`; `kind:
   'freezing'`, one per line, latest wins, replayed in the same queue

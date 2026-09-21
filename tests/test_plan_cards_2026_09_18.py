@@ -105,6 +105,7 @@ def _prelude() -> str:
         + _extract("allSetStepHtml", SHELL_JS) + "\n"
         + _extract("defrostAskChipHtml", SHELL_JS) + "\n"
         + _extract("defrostSelectedItems", SHELL_JS) + "\n"
+        + _extract("defrostAskItemsAlreadyAnswered", SHELL_JS) + "\n"
         + _extract("defrostMeaningLines", SHELL_JS) + "\n"
         + _extract("defrostMeaningHtml", SHELL_JS) + "\n"
         + _extract("freezerStepHtml", SHELL_JS) + "\n"

@@ -688,10 +688,13 @@ _STILL_TO_BUY_STATUSES = ("needed", "in_cart", "spice")
 # defrost move goes with it.
 FREEZER_REMOVED_BY = "freezer"
 
-# The item out of a _describe() string, for _release_frozen_item: the
-# task rows carry no item column, and the description is the one key this
-# module has always de-duped moves by.
-_MOVE_ITEM_RE = re.compile(r"^Move the (.+?) to the fridge — for ")
+# The item out of a _describe() string — for _release_frozen_item and
+# _settled_move_for_entry alike: the task rows carry no item column, and
+# the description is the one key this module has always de-duped moves
+# by. One pattern for both readers (2026-09-21 integration folded a
+# second, case-blind copy into this one), so the two doors that book a
+# move can never disagree about which row is whose.
+_MOVE_ITEM_RE = re.compile(r"^move the (.+?) to the fridge\b", re.IGNORECASE)
 
 # A defrost row that means the move is settled: booked, or done. NOT
 # 'skipped' — that is the household declining this one move on the Now
@@ -774,8 +777,10 @@ def _settled_nights(weekly_plan_id: int, by_item: dict[str, dict]) -> tuple[set[
         TOO_LATE_TO_THAW_NOTE instead, so asking about such a night can
         only ever produce a note — which is Emily's "tonight's already
         eaten shrimp", settled without guessing at a shelf.
-      * frozen — the moves THIS STEP already booked (inventory_item_id
-        NULL), pending or done. Until 2026-09-21 these were settled too,
+      * frozen — the moves the household booked by hand (inventory_item_id
+        NULL: this step's chips, or Shop's "Yes, freezing it" —
+        book_defrost_for_grocery_line writes the same row), pending or
+        done. Until 2026-09-21 these were settled too,
         and the chip vanished the moment it was tapped; the Plan tab's
         freezer row now reopens the step to CHANGE the answer, so a booked
         night is offered again with its chip already on, and deselecting
@@ -817,7 +822,7 @@ def _settled_nights(weekly_plan_id: int, by_item: dict[str, dict]) -> tuple[set[
     return settled, frozen
 
 
-def _grocery_lines_by_item(names) -> dict[str, list[dict]]:
+def _grocery_lines_by_item(names, weekly_plan_id: int) -> dict[str, list[dict]]:
     """
     Each of the plan's meats' grocery lines, keyed the way by_item is: the
     lines still to be bought (_STILL_TO_BUY_STATUSES), and the lines this
@@ -828,13 +833,22 @@ def _grocery_lines_by_item(names) -> dict[str, list[dict]]:
     the same way before and after it is tapped. Plural-tolerant, the way
     every name comparison in this module is: "Chicken Thigh" on the list is
     "Chicken Thighs" in the plan.
+
+    Scoped to THIS plan's lines (source_weekly_plan_id) plus the loose
+    ones no plan wrote (NULL — a hand-added "chicken thighs" is still the
+    line a tapped chip would take off). Never another plan's: with two
+    live weeks both cooking chicken thighs, next week's line set aside by
+    next week's freezer step is not this week's answer, and un-tapping
+    here must not put next week's line back (2026-09-21 integration).
     """
     conn = get_conn()
     rows = conn.execute(
-        "SELECT id, item, status, removed_by FROM grocery_items WHERE household_id = ? "
+        "SELECT id, item, status, removed_by, source_weekly_plan_id FROM grocery_items "
+        "WHERE household_id = ? "
+        "AND (source_weekly_plan_id = ? OR source_weekly_plan_id IS NULL) "
         f"AND ((status IN ({','.join('?' * len(_STILL_TO_BUY_STATUSES))}) AND excluded_from_list = 0) "
         "OR (status = 'removed' AND removed_by = ?))",
-        (household_id(), *_STILL_TO_BUY_STATUSES, FREEZER_REMOVED_BY),
+        (household_id(), weekly_plan_id, *_STILL_TO_BUY_STATUSES, FREEZER_REMOVED_BY),
     ).fetchall()
     conn.close()
     out: dict[str, list[dict]] = {key: [] for key in names}
@@ -895,7 +909,7 @@ def meat_items_for_plan(weekly_plan_id: int) -> list[dict]:
     by_item, need = _plan_need_by_item(weekly_plan_id)
     covered = _covered_at_home(need)
     settled, frozen_nights = _settled_nights(weekly_plan_id, by_item)
-    lines = _grocery_lines_by_item(by_item)
+    lines = _grocery_lines_by_item(by_item, weekly_plan_id)
     # Each night also says WHEN it would move to the fridge — the same
     # _move_date confirm_frozen_items books, so the freezer step's "What
     # that means" line ("Chicken thighs → off the shopping list · into the
@@ -908,7 +922,10 @@ def meat_items_for_plan(weekly_plan_id: int) -> list[dict]:
         if key in covered:
             continue
         lead_hours, _tier = lead_hours_for_item(entry["item"])
-        frozen = any(r["status"] == "removed" for r in lines[key])
+        # `frozen` is THIS plan's own booked moves (_settled_nights), never
+        # a name-matched grocery line: a line another plan's step set
+        # aside says nothing about this week's freezer.
+        frozen = False
         nights = []
         for n in entry["nights"]:
             description = _describe(entry["item"], n["meal"], n["date"])
@@ -1065,7 +1082,7 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
     # open connections of their own.
     from . import pre_shop as _pre_shop
 
-    lines = _grocery_lines_by_item(plan_names)
+    lines = _grocery_lines_by_item(plan_names, weekly_plan_id)
     set_aside: list[int] = []
     put_back: list[int] = []
     cancelled = 0
@@ -1214,9 +1231,6 @@ def _grocery_line_first_meal(conn, item_id: int) -> dict | None:
     }
 
 
-_MOVE_DESCRIPTION_RE = re.compile(r"^move the (.+?) to the fridge", re.IGNORECASE)
-
-
 def _settled_move_for_entry(conn, entry_id: int, names: set[str]):
     """
     The pending-or-done defrost row already booked for this meal and this
@@ -1233,7 +1247,7 @@ def _settled_move_for_entry(conn, entry_id: int, names: set[str]):
     ).fetchall()
     wanted = {n.strip().lower() for n in names if (n or "").strip()}
     for row in rows:
-        m = _MOVE_DESCRIPTION_RE.match(row["description"] or "")
+        m = _MOVE_ITEM_RE.match(row["description"] or "")
         if m and _matches_selected_item(m.group(1), wanted):
             return row
     return None
@@ -1346,7 +1360,7 @@ def book_defrost_for_grocery_line(item_id: int, freezing: bool) -> dict:
     try:
         require_household_row(conn, "grocery_items", item_id, label="grocery list item")
         line = conn.execute(
-            "SELECT id, item, category FROM grocery_items WHERE id = ? AND household_id = ?",
+            "SELECT id, item, category, quantity FROM grocery_items WHERE id = ? AND household_id = ?",
             (item_id, household_id()),
         ).fetchone()
         line = dict(line)
@@ -1382,11 +1396,16 @@ def book_defrost_for_grocery_line(item_id: int, freezing: bool) -> dict:
         if date.fromisoformat(move_date_str) < today:
             raise FreezingNotOffered(TOO_LATE_TO_THAW_NOTE)
         description = _describe(item_name, meal["meal"], meal["date"])
+        # The row carries the line's own amount ("1 lb"), the way the
+        # freezer step's row carries the recipe's — so a move booked from
+        # either door reads the same on Today's Cook group.
+        quantity = (line.get("quantity") or "").strip()
         cur = conn.execute(
             "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, "
             "related_meal, status, task_type, inventory_item_id, meal_plan_entry_id, quantity) "
-            "VALUES (?, ?, ?, ?, ?, 'pending', 'defrost', NULL, ?, '')",
-            (household_id(), meal["weekly_plan_id"], move_date_str, description, meal["meal"], meal["entry_id"]),
+            "VALUES (?, ?, ?, ?, ?, 'pending', 'defrost', NULL, ?, ?)",
+            (household_id(), meal["weekly_plan_id"], move_date_str, description, meal["meal"],
+             meal["entry_id"], quantity),
         )
         conn.commit()
         return {

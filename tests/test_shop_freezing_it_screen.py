@@ -258,6 +258,40 @@ settle(function () {
     assert out["posts"] == 0 and out["toasts"] == 0, "nothing written, nothing said"
 
 
+@needs_node
+def test_a_yes_the_server_refuses_puts_the_question_back_with_the_toast():
+    """A 4xx (the line stopped being askable, say) is not a saved answer:
+    the block cannot keep reading "In the freezer" over a move that was
+    never booked. It goes back to the open question; the no-signal path
+    (queued, replayed) is the other test and keeps the answer."""
+    out = _screen("""
+mockup();
+tick(1);
+var realFetch = fetch;
+fetch = function (url, opts) {
+  if (/\\/freezing$/.test(url)) {
+    return Promise.resolve({ ok: false, status: 400, json: function () { return Promise.resolve({ detail: 'no' }); } });
+  }
+  return realFetch(url, opts);
+};
+var toasts = TOASTS.length;
+clickIfRendered({ gro: 'freeze-yes', id: '1' });
+var rightAway = blockText(card(list(), 'Costco'));
+settle(function () {
+  var html = list();
+  console.log(JSON.stringify({ rightAway: rightAway, blocks: blocks(html), text: blockText(card(html, 'Costco')),
+    buttons: (html.match(/data-gro="freeze-/g) || []).length,
+    toasts: TOASTS.slice(toasts).map(function (t) { return t.msg; }),
+    queued: groOffline.pending().length, offline: groceryState.offline }));
+});
+""")
+    assert out["rightAway"] == "In the freezer — out Saturday night.", "optimistic, as a tick is"
+    assert out["blocks"] == ["1"] and out["text"].startswith("Freezing it?"), "and back to the question once refused"
+    assert out["buttons"] == 2
+    assert out["toasts"][-1] == "Couldn't save that — try again."
+    assert out["queued"] == 0 and out["offline"] is False, "a refusal is not a dead zone: nothing queued"
+
+
 # --- 3. no signal -----------------------------------------------------------------
 
 

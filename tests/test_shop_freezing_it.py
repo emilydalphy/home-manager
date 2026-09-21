@@ -22,7 +22,7 @@ import datetime
 
 from app import tools
 from app.db import get_conn
-from app.tools import defrost
+from app.tools import defrost, quantities
 from app.tools._shared import household_id
 from conftest import household_today
 
@@ -69,7 +69,7 @@ def _line(client, name):
 def _defrost_rows():
     conn = get_conn()
     rows = conn.execute(
-        "SELECT id, task_date, description, status, meal_plan_entry_id, inventory_item_id FROM prep_tasks "
+        "SELECT id, task_date, description, status, meal_plan_entry_id, inventory_item_id, quantity FROM prep_tasks "
         "WHERE household_id = ? AND task_type = 'defrost' ORDER BY id", (household_id(),),
     ).fetchall()
     conn.close()
@@ -112,12 +112,27 @@ def test_a_line_feeding_two_meals_is_asked_about_the_first_cook_night(signed_in)
 def test_a_line_whose_move_is_already_booked_has_no_offer(signed_in):
     """Answered on the freezer step (confirm_frozen_items + defrost_asked_at):
     the checklist never asks again — the per-item booked state is read, not
-    the timestamp alone."""
+    the timestamp alone. Since 2026-09-21 a tapped chip also sets the line
+    aside (removed_by 'freezer'), so it is looked up by id, whatever its
+    status, and the offer is asked of the line itself."""
     plan_id, dates = _plan_with([(3, "Chicken Skewers", "Chicken thighs")])
-    assert "freezing" in _line(signed_in, "Chicken thighs")
+    thighs = _line(signed_in, "Chicken thighs")
+    assert "freezing" in thighs
     defrost.confirm_frozen_items(plan_id, ["Chicken thighs"])
     defrost.mark_defrost_asked(plan_id)
-    assert "freezing" not in _line(signed_in, "Chicken thighs")
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id, item, category, status, removed_by FROM grocery_items WHERE id = ? AND household_id = ?",
+        (thighs["id"], household_id()),
+    ).fetchone()
+    conn.close()
+    assert row["status"] == "removed" and row["removed_by"] == defrost.FREEZER_REMOVED_BY
+    assert defrost.freezing_offer_for_grocery_line(dict(row)) is None
+    stamped = defrost.stamp_freezing_offers([dict(row)])
+    assert "freezing" not in stamped[0]
+    every = signed_in.get("/api/grocery-list/by-store?status=all").json()
+    listed = [it for store in every["stores"] for s in store["sections"] for it in s["items"] if it["id"] == thighs["id"]]
+    assert all("freezing" not in it for it in listed)
 
 
 def test_the_lead_follows_the_cut(signed_in):
@@ -146,11 +161,34 @@ def test_yes_books_the_defrost_move_dated_with_the_right_lead(signed_in):
     assert rows[0]["inventory_item_id"] is None, "a fact about the plan, never an inventory write"
     assert rows[0]["description"] == "Move the Chicken thighs to the fridge — for Thursday's Chicken Skewers."
     assert rows[0]["meal_plan_entry_id"] is not None
+    assert rows[0]["quantity"] == "2 lbs", "the line's own amount (as the list spells it), never ''"
+
+
+def test_the_two_doors_write_the_same_row(signed_in):
+    """A yes on Shop and a tapped chip on the freezer step book one and the
+    same row: same date, description, entry, NULL inventory id — and, since
+    the 2026-09-21 integration, the same quantity."""
+    plan_id, dates = _plan_with([(3, "Chicken Skewers", "Chicken thighs")])
+    thighs = _line(signed_in, "Chicken thighs")
+    signed_in.post(f"/api/grocery-list/{thighs['id']}/freezing", json={"answer": "freezer"})
+    shop_row = _defrost_rows()[0]
+    signed_in.post(f"/api/grocery-list/{thighs['id']}/freezing", json={"answer": "fridge"})
+    assert _defrost_rows() == []
+
+    defrost.confirm_frozen_items(plan_id, ["Chicken thighs"])
+
+    step_row = _defrost_rows()[0]
+    keys = ("task_date", "description", "status", "meal_plan_entry_id", "inventory_item_id")
+    assert {k: step_row[k] for k in keys} == {k: shop_row[k] for k in keys}
+    # The amount is the same amount — Shop carries the line's ("2 lbs"),
+    # the step the recipe's ("2 lb"); the list pluralises, the row does not.
+    parse = quantities._parse_quantity
+    assert parse(shop_row["quantity"]) == parse(step_row["quantity"]) == (2.0, "lb")
 
 
 def test_yes_twice_is_one_move_and_the_freezer_step_sees_it_as_booked(signed_in):
     """A replayed yes (offline queue) or a double tap books nothing twice,
-    and the freezer step's own list leaves the night off as settled."""
+    and the freezer step's own list shows the night as already frozen."""
     plan_id, dates = _plan_with([(3, "Chicken Skewers", "Chicken thighs")])
     item_id = _line(signed_in, "Chicken thighs")["id"]
     first = signed_in.post(f"/api/grocery-list/{item_id}/freezing", json={"answer": "freezer"}).json()
@@ -159,7 +197,11 @@ def test_yes_twice_is_one_move_and_the_freezer_step_sees_it_as_booked(signed_in)
     assert second.json()["already_booked"] is True
     assert len(_defrost_rows()) == 1
     signed_in.post(f"/api/grocery-list/{item_id}/status", json={"status": "purchased"})
-    assert defrost.meat_items_for_plan(plan_id) == [], "the freezer step has nothing left to ask about it"
+    # The freezer step still lists the item (2026-09-21: every meat in the
+    # week is offered, so the answer can be changed) — with the move this
+    # yes booked read as given, and no line left to take off the list.
+    step = defrost.meat_items_for_plan(plan_id)
+    assert [(e["item"], e["frozen"], e["on_list"]) for e in step] == [("Chicken thighs", True, False)]
 
 
 def test_put_back_removes_the_move_and_leaves_a_done_one_alone(signed_in):

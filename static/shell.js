@@ -4877,8 +4877,11 @@
     var body = { answer: answer };
     if (!groOffline) {
       groPostJson('/api/grocery-list/' + id + '/freezing', body).then(function (res) {
-        if (!res.ok) showToast("Couldn't save that — try again.");
-      }, function () { showToast(GRO_NO_SIGNAL_TOAST); });
+        if (!res.ok) groFreezeRefused(id, answer, "Couldn't save that — try again.");
+      }, function () {
+        // No queue to hold it, so the answer is gone with the signal.
+        groFreezeRefused(id, answer, GRO_NO_SIGNAL_TOAST);
+      });
       return;
     }
     if (navigator.onLine === false || groHasPending()) {
@@ -4889,13 +4892,26 @@
       return;
     }
     groPostJson('/api/grocery-list/' + id + '/freezing', body).then(function (res) {
-      if (!res.ok) showToast("Couldn't save that — try again.");
+      if (!res.ok) groFreezeRefused(id, answer, "Couldn't save that — try again.");
       groSetOffline(false);
     }, function (err) {
       if (!groIsNetworkError(err)) console.warn('Grocery freezing answer failed:', err);
       groOffline.queueFreezing(id, answer);
       groSetOffline(true);
     });
+  }
+
+  // A yes the server would not take (a 4xx: the line stopped being
+  // askable, the meal moved) was not saved, so the block cannot go on
+  // reading "In the freezer": it goes back to the open question, with
+  // the toast saying why. Not the no-signal path — there the answer is
+  // queued and replayed, and the block keeps the answer it will send.
+  function groFreezeRefused(id, answer, message) {
+    showToast(message);
+    var f = groceryState.freezing;
+    if (answer !== 'freezer' || !f || f.id !== String(id) || f.answer !== 'freezer') return;
+    f.answer = null;
+    renderGrocery();
   }
 
   function groFreezeAnswer(id, answer) {
@@ -13910,6 +13926,15 @@
     return (defrostAskState.items || []).filter(function (it) { return !!defrostAskState.selected[it.item]; });
   }
 
+  // Whether the step opened with an answer already standing: any item the
+  // server handed over with `frozen` on (a move booked from this step or
+  // from Shop's "Yes, freezing it"). Read off the items as they landed,
+  // not the chips as they stand now, so un-tapping does not swap the
+  // quiet button under the thumb.
+  function defrostAskItemsAlreadyAnswered(items) {
+    return (items || []).some(function (it) { return !!it.frozen; });
+  }
+
   // "Chicken thighs → off the shopping list · into the fridge Saturday
   // night, for Monday's dinner." — one line per (item, night), both halves
   // of what a tapped chip does (board F-A). The list half only where there
@@ -13962,9 +13987,21 @@
     } else {
       body = '<div class="defrost-ask-chips wk-freezer-chips">' + items.map(defrostAskChipHtml).join('') + '</div>' +
         defrostMeaningHtml();
+      // The quiet answer has two readings. Opened fresh (nothing booked
+      // yet), "Nothing frozen — I'm buying it all" is an answer and is
+      // written. Reopened with an answer already standing — a chip the
+      // household said yes to here, or a move Shop's "Yes, freezing it"
+      // booked — the quiet button is "Keep it as it is" and only leaves:
+      // it writes nothing, so a move booked at the shop cannot be
+      // cancelled by a glance at this step. Un-tapping the chip and
+      // "Add to the schedule" is the one way to cancel (latest answer
+      // wins, on purpose, through the same write).
+      var reopened = defrostAskItemsAlreadyAnswered(items);
       dock = '<div class="dock wk-freezer-dock">' +
         '<button type="button" class="dock-primary" id="wk-freezer-go">Add to the schedule · Open grocery list</button>' +
-        '<button type="button" class="wk-freezer-none-btn" id="wk-freezer-none">Nothing frozen — I’m buying it all</button>' +
+        (reopened
+          ? '<button type="button" class="wk-freezer-none-btn" id="wk-freezer-keep">Keep it as it is</button>'
+          : '<button type="button" class="wk-freezer-none-btn" id="wk-freezer-none">Nothing frozen — I’m buying it all</button>') +
       '</div>';
     }
     return '<button type="button" class="crumb" data-wk-back="week">‹ Plan</button>' +
@@ -14017,6 +14054,14 @@
     });
     var none = steps.querySelector('#wk-freezer-none');
     if (none) none.addEventListener('click', function () { submitDefrostAsk(panel, data, []); });
+    var keep = steps.querySelector('#wk-freezer-keep');
+    if (keep) keep.addEventListener('click', function () {
+      // Nothing written; the chips go back to the answer as given so the
+      // next open reads it, not a half-changed one.
+      defrostAskState.selected = {};
+      (defrostAskState.items || []).forEach(function (it) { if (it.frozen) defrostAskState.selected[it.item] = true; });
+      goMealsStep('week');
+    });
     var list = steps.querySelector('#wk-freezer-list');
     if (list) list.addEventListener('click', function () { goGroceryList(); });
   }

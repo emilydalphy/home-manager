@@ -27,6 +27,11 @@ What changed, and the section of this file for each:
   4. The screen: the two-part "What that means" line and its one-part
      fallback; the title, the line and the quiet answer; the root row's
      "from the freezer"; a chip that starts on when the step is reopened.
+
+Integration (2026-09-21, `core-loop-followups-2026-09-21`): the lines are
+read per plan and `frozen` is the plan's own booked move (section 3's
+two-live-plans test), and a step reopened with an answer standing shows
+"Keep it as it is" instead of "Nothing frozen" (section 4).
 """
 from __future__ import annotations
 
@@ -450,6 +455,58 @@ def test_a_put_back_on_one_week_leaves_another_weeks_move_alone():
     assert _moves(plan_id) == [] and len(_moves(later)) == 1
 
 
+def test_two_live_plans_sharing_a_meat_keep_their_freezer_answers_apart():
+    """CATCH (2026-09-21 integration) — with this week and next week both
+    cooking chicken thighs, a yes on next week's step must not pre-select
+    this week's chip (the lines are read per plan, and `frozen` is the
+    plan's own booked move), and un-tapping on this week must leave next
+    week's line set aside and its move booked."""
+    _meat()
+    this_week = _week()
+    this_line = _line(plan_id=this_week)
+    later_week = (_monday() + datetime.timedelta(days=14)).isoformat()
+    later = tools.create_weekly_plan(later_week)["weekly_plan_id"]
+    tools.plan_meal((_monday() + datetime.timedelta(days=17)).isoformat(), "Chicken Skewers",
+                    slot="dinner", weekly_plan_id=later)
+    # add_grocery_item would fold a second plan's amount onto this week's
+    # still-needed line (grocery._merge_target); the line next week's
+    # ingest lands once this week's is in the cart or bought is its own,
+    # so it is written that way here.
+    conn = db.get_conn()
+    later_line = conn.execute(
+        "INSERT INTO grocery_items (household_id, item, quantity, category, status, source_weekly_plan_id) "
+        "VALUES (?, 'Chicken Thighs', '1 lb', 'meat/seafood', 'needed', ?)",
+        (tools.household_id(), later),
+    ).lastrowid
+    conn.commit()
+    conn.close()
+
+    defrost.confirm_frozen_items(later, ["Chicken Thighs"])
+
+    assert _row(later_line) == ("removed", "freezer") and len(_moves(later)) == 1
+    assert _row(this_line)[0] == "needed"
+    assert _items(this_week) == [("Chicken Thighs", True, False)], "next week's yes is not this week's"
+    assert _items(later) == [("Chicken Thighs", True, True)]
+
+    # This week says nothing is frozen: an un-tap that finds nothing of
+    # its own to undo, and touches nothing of next week's.
+    result = defrost.confirm_frozen_items(this_week, [])
+
+    assert result["put_back"] == [] and result["cancelled"] == 0
+    assert _row(this_line)[0] == "needed"
+    assert _row(later_line) == ("removed", "freezer") and len(_moves(later)) == 1
+    assert _items(later) == [("Chicken Thighs", True, True)]
+
+    # And the other way round: this week's yes, then this week un-tapped,
+    # with next week's answer standing throughout.
+    defrost.confirm_frozen_items(this_week, ["Chicken Thighs"])
+    assert _row(this_line) == ("removed", "freezer") and len(_moves(this_week)) == 1
+    result = defrost.confirm_frozen_items(this_week, [])
+    assert result["put_back"] == [this_line] and result["cancelled"] == 1
+    assert _row(this_line)[0] == "needed" and _moves(this_week) == []
+    assert _row(later_line) == ("removed", "freezer") and len(_moves(later)) == 1
+
+
 def test_the_clock_is_still_read_before_the_write_opens():
     """The ordering guard test_defrost_household_clock pins, restated for
     the rewritten function: the plan walk and the clock both resolve
@@ -487,6 +544,7 @@ def _prelude() -> str:
         + _extract("slotWord", SHELL_JS) + "\n"
         + _extract("defrostAskChipHtml", SHELL_JS) + "\n"
         + _extract("defrostSelectedItems", SHELL_JS) + "\n"
+        + _extract("defrostAskItemsAlreadyAnswered", SHELL_JS) + "\n"
         + _extract("defrostMeaningLines", SHELL_JS) + "\n"
         + _extract("defrostMeaningHtml", SHELL_JS) + "\n"
         + _extract("freezerStepHtml", SHELL_JS) + "\n"
@@ -531,6 +589,46 @@ def test_the_step_has_the_title_the_line_the_apricot_answer_and_the_quiet_one():
     assert 'id="wk-freezer-none">Nothing frozen — I’m buying it all</button>' in html
     assert html.count("dock-primary") == 1, "one apricot per screen"
     assert "None — all fresh" not in html
+
+
+@_needs_node
+def test_the_quiet_button_is_keep_it_as_it_is_once_an_answer_stands_and_only_leaves():
+    """CATCH (2026-09-21 integration) — reopened with a move already
+    booked (a chip said yes to here, or Shop's "Yes, freezing it"), the
+    quiet button is "Keep it as it is": it writes nothing and goes back to
+    the week. Un-tapping the chip and "Add to the schedule" is the one way
+    to cancel a move. Read off the items as they landed, not the chips as
+    they stand, so un-tapping does not swap the button."""
+    fresh = _run(_prelude() + f"defrostAskState = {{ planId: 7, items: {json.dumps([_CHICKEN, _BEEF])}, selected: {{}} }};\n"
+                 "console.log(JSON.stringify(freezerStepHtml({ weekly_plan_id: 7 })));")
+    assert 'id="wk-freezer-none">Nothing frozen — I’m buying it all</button>' in fresh
+    assert "wk-freezer-keep" not in fresh
+
+    items = [dict(_CHICKEN, frozen=True), _BEEF]
+    out = _run(_prelude()
+               + _extract("wireFreezerStep", SHELL_JS) + "\n"
+               + "var went = []; function goMealsStep(step) { went.push(step); }\n"
+               + "var fetches = 0; async function fetch() { fetches++; return { ok: true, json: async function () { return {}; } }; }\n"
+               + "function renderMealsStep() {}\n"
+               + "async function submitDefrostAsk() { fetches++; }\n"
+               + "function goGroceryList() {}\n"
+               + f"defrostAskState = {{ planId: 7, items: {json.dumps(items)}, selected: {{ 'Chicken thighs': true }} }};\n"
+               + "var html = freezerStepHtml({ weekly_plan_id: 7 });\n"
+               # A half-changed answer (chicken un-tapped) then Keep: nothing written, the chips read back the answer as given.
+               + "defrostAskState.selected = {};\n"
+               + "var afterUntap = freezerStepHtml({ weekly_plan_id: 7 });\n"
+               + "var handlers = {}; var steps = { querySelectorAll: function () { return []; },"
+               + "  querySelector: function (sel) { return { addEventListener: function (ev, fn) { handlers[sel] = fn; } }; } };\n"
+               + "wireFreezerStep(null, steps, { weekly_plan_id: 7, week_start_date: '2026-09-21' });\n"
+               + "handlers['#wk-freezer-keep']();\n"
+               + "console.log(JSON.stringify({ html: html, afterUntap: afterUntap, went: went, fetches: fetches, selected: defrostAskState.selected }));")
+    assert 'id="wk-freezer-keep">Keep it as it is</button>' in out["html"]
+    assert "Nothing frozen" not in out["html"]
+    assert 'id="wk-freezer-go">Add to the schedule · Open grocery list</button>' in out["html"]
+    assert out["html"].count("dock-primary") == 1
+    assert 'id="wk-freezer-keep">Keep it as it is</button>' in out["afterUntap"], "the button does not swap under an un-tap"
+    assert out["went"] == ["week"] and out["fetches"] == 0, "Keep leaves and writes nothing"
+    assert out["selected"] == {"Chicken thighs": True}, "the chips read back the answer as given"
 
 
 @_needs_node
