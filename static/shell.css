@@ -7418,6 +7418,25 @@ span.cook-week-name { cursor: default; }
 .morning-adult { display: flex; flex-direction: column; gap: 6px; }
 .morning-adult-row { display: flex; align-items: center; gap: 10px; }
 .morning-adult-row .snw-input { flex: 1 1 auto; min-width: 0; }
+/* The evening nudge's row under each adult (2026-09-21): the same
+   44px toggle beside two lines of text instead of a number — the number
+   is the row above's. */
+.morning-evening-row { min-height: 44px; }
+.morning-evening-row.is-off { opacity: 0.55; } /* this adult's morning text is off, so nothing goes */
+.morning-evening-text { display: flex; flex: 1 1 auto; flex-direction: column; gap: 2px; min-width: 0; }
+.morning-evening-title {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.morning-evening-sub {
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+}
 .morning-toggle {
   flex: 0 0 auto;
   min-width: 64px;

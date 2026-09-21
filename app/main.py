@@ -805,6 +805,14 @@ class MorningTextRequest(BaseModel):
     time: str | None = None
 
 
+class EveningNudgeRequest(BaseModel):
+    """The same sheet's "Evening nudge" switch, one adult at a time. It has
+    no number or hour of its own: the number is the morning text's and the
+    hour is the dinner window's (see digest.evening_nudge_clock)."""
+    member_id: int
+    on: bool
+
+
 class RecipeIngredientIn(BaseModel):
     item: str
     qty: str = ""
@@ -1055,6 +1063,11 @@ async def start_morning_text_loop():
     Missing Twilio keys mean the loop never starts, and the log says so
     once. Nothing else changes: numbers can still be saved, the report
     still says texts are off.
+
+    The evening cook nudge (2026-09-21) is the second check on the same
+    tick rather than a loop of its own: same channel, same keys, same
+    reason to poll, and one place to disable. tools.run_evening_nudges_once
+    keeps its own once-a-day mark (members.evening_nudge_sent_on).
     """
     if os.environ.get("DISABLE_MORNING_TEXT") == "1":
         logger.info("Morning texts are disabled for this process (DISABLE_MORNING_TEXT=1)")
@@ -1079,6 +1092,15 @@ async def start_morning_text_loop():
                 # The loop must outlive any single bad pass — a Twilio
                 # outage at seven is not a reason to miss tomorrow.
                 logger.exception("Morning text pass failed; will try again in a few minutes")
+            try:
+                nudged = await run_in_threadpool(tools.run_evening_nudges_once)
+                if nudged:
+                    logger.info(
+                        "Evening nudges: %s",
+                        ", ".join(f"household {r['household_id']} member {r['member_id']} {r['status']}" for r in nudged),
+                    )
+            except Exception:
+                logger.exception("Evening nudge pass failed; will try again in a few minutes")
             await asyncio.sleep(tools.MORNING_TEXT_POLL_SECONDS)
 
     asyncio.create_task(_loop())
@@ -1862,6 +1884,30 @@ def morning_text_save(req: MorningTextRequest):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {**result, "settings": tools.get_morning_text_settings()}
+
+
+@app.get("/api/evening-nudge")
+def evening_nudge_settings():
+    """The "Evening nudge" rows of the same sheet read this."""
+    return tools.get_evening_nudge_settings()
+
+
+@app.post("/api/evening-nudge")
+def evening_nudge_save(req: EveningNudgeRequest):
+    """Flip one adult's evening nudge. Same guards as the morning text's
+    save: a foreign member id is a 404, a child's a 400."""
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id FROM members WHERE id = ? AND household_id = ?", (req.member_id, tools.household_id())
+    ).fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="No such person here.")
+    try:
+        result = tools.set_evening_nudge_for_member(req.member_id, on=req.on)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {**result, "settings": tools.get_evening_nudge_settings()}
 
 
 @app.post("/api/calendar/check")

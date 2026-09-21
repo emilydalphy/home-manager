@@ -61,6 +61,30 @@ work; Emily anchored the roadmap on it that day. On `main` now:
   refetches on focus/visibility and every five minutes (still behind
   `SHOW_NOTIF_BELL = false`). Preferences → "Morning text"; chat:
   `set_morning_text`.
+  - **2026-09-21 — Evening cook nudge** (branch `evening-cook-nudge`,
+    same module): one text at the START of the household's dinner window,
+    to the morning text's numbers — "Tonight: Chicken Skewers — 35 min.
+    Tap to start." + `/kitchen`, or "Move the chicken thighs to the fridge
+    first — then Chicken Skewers." when a fridge move / prep step is still
+    undone. Clock table `digest.EVENING_NUDGE_CLOCK_BY_WINDOW`: `5_6ish`
+    → 17:00, `6_8` → 18:00, `later` → 19:00, `all_over` / unset → 17:30
+    (`EVENING_NUDGE_DEFAULT_CLOCK`) — NOT `defrost._DINNER_CLOCK_BY_WINDOW`,
+    which is when dinner lands. Once a day per person via
+    `members.evening_nudge_sent_on` (household-local date, stamped on any
+    send attempt; a pass with nothing to say stamps nothing and the
+    90-minute `EVENING_NUDGE_LATE_WINDOW_MINUTES` is what stops the
+    checking). Switch `members.evening_nudge_on` (default 1; live only
+    while that adult's morning text is on), `GET/POST /api/evening-nudge`,
+    rows inside the Morning text sheet. The pass
+    (`run_evening_nudges_once`) runs on the SAME tick as the morning loop
+    in `start_morning_text_loop` — no second loop, same Twilio gate.
+    **Push is not built**: `send_evening_nudge(member, text)` is the one
+    seam a push sender slots into; today it is SMS via `send_digest`.
+    Silent by design on: no dinner / night off / open slot, nobody home
+    (`attendance.nobody_home` or need `away`), a **reheat (leftovers or
+    made-ahead) night — a reheat is a line, never a "Tap to start"** —
+    and once tonight's dinner is done or `cook_started_at` is set.
+    Tests: `tests/test_evening_nudge.py`.
 
 Suite: 2677 tests on the merged `main`. Everything above is `In progress`
 → `Done` on the Loop Board except "Reach me before the moment", which

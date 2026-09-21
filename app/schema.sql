@@ -1313,6 +1313,14 @@ CREATE TABLE IF NOT EXISTS morning_text_sends (
     UNIQUE(household_id, member_id, sent_on)
 );
 
+-- "Evening cook nudge" (Loop Board, 2026-09-21) rides the same numbers and
+-- the same loop, with two columns on members rather than a table of its
+-- own: `evening_nudge_on` (the per-person switch, on by default, live only
+-- while their morning text is on) and `evening_nudge_sent_on` (the
+-- household's LOCAL date of the last nudge, '' for never — the once-a-day
+-- check a restart inside the dinner window reads before sending). Both are
+-- added by db._MIGRATIONS, beside members.phone / morning_text_on.
+
 -- Real tracked pantry/fridge inventory (Phase 3), distinct from the grocery
 -- list — this is "what we currently have", captured primarily via chat
 -- mention ("picked up a rotisserie chicken", "used the last of the
