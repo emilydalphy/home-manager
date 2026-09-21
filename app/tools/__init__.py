@@ -573,6 +573,7 @@ from .usage import (  # noqa: F401
 )
 from .week_intake import (  # noqa: F401
     MOOD_GUIDANCE,
+    SURPRISE_MOOD,
     NIGHT_TAGS,
     ONBOARDING_CUISINES,
     RUSH_MAX_MINUTES,

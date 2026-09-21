@@ -63,7 +63,18 @@ MOOD_GUIDANCE = {
     "Something new": "include two or three dishes the household has not had before, alongside familiar ones, never a whole week of unknowns.",
     "Try a new cuisine": "pick one cuisine the household has not cooked recently (check what they usually eat) and build two dinners from it, with the rest of the week familiar.",
     "Keep it cheap": "favour inexpensive proteins and pantry staples, batch cooking, and ingredients that stretch across several meals.",
+    # The card at the top of the mood screen (Emily, 2026-09-21, "Surprise
+    # me is a card at the top"): a real answer, not the absence of one.
+    # Saved as the one mood so the planner is told, in so many words, that
+    # the household handed the lean over — and so the building screen and
+    # next week's prefill can read it back as what they chose.
+    "Surprise me": "the household asked to be surprised: no lean this week — pick from what they like, keep the week varied, and lead with something they haven't had lately.",
 }
+
+# The mood the Surprise me card records. Never combined with a steering
+# mood: the screen drops it the moment a mood chip is tapped, and a save
+# carrying both would be two answers to one question.
+SURPRISE_MOOD = "Surprise me"
 
 
 # The hard cap a `rush` night imposes, in minutes. Named rather than inlined
@@ -542,6 +553,49 @@ def _rhythm_packed_lunch_suggestions(week_start: str, day_count: int = 7) -> lis
     return suggestions
 
 
+def _last_period_intake(conn, week_start: str) -> dict | None:
+    """
+    The answers the household gave for the period BEFORE this one — the
+    current revision of the most recent intake whose week starts earlier
+    than `week_start` — or None for a first week.
+
+    What the intake's mood screen opens already knowing (Emily, 2026-09-15,
+    "one screen of what Pomona already knows": moods and cuisines are
+    asked every week and "it says 'I'll remember' but week 30 looks like
+    week 1"; reconciled into the 2026-09-21 one-question-a-screen intake
+    as a step that shows last week's answer already chosen and can be
+    continued past in one tap). Only the two answers that carry across
+    weeks travel: the night tags, guest counts and packed-lunch days are
+    about specific dates, and the typed note was about that week.
+    """
+    row = conn.execute(
+        "SELECT * FROM week_intake WHERE household_id = ? AND week_start < ? AND superseded_at IS NULL "
+        "ORDER BY week_start DESC, revision DESC LIMIT 1",
+        (household_id(), week_start),
+    ).fetchone()
+    if not row:
+        return None
+    return {
+        "week_start": row["week_start"],
+        "moods": json.loads(row["moods_json"]),
+        "cuisines": json.loads(row["cuisines_json"]),
+    }
+
+
+def _recent_dinners_on_record(week_start: str) -> bool:
+    """
+    Whether any dinner was planned in the weeks before this period — what
+    lets the building screen's "Nothing you had last week" line be true
+    (the generator's no-repeat rule reads the same recent_history) rather
+    than a promise made to a household with no last week.
+    """
+    from . import meal_plans as _meal_plans
+    return any(
+        (m.get("slot") == "dinner") and (m.get("date") or "") < week_start
+        for m in _meal_plans.get_recent_meal_history(weeks=3)
+    )
+
+
 def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
     """
     Everything the two question screens need to open already knowing what
@@ -579,6 +633,7 @@ def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
         (household_id(), week_start),
     ).fetchone()
     intake_row = _current_intake_row(conn, week_start)
+    last_intake = _last_period_intake(conn, week_start)
     conn.close()
 
     saved_cuisines = json.loads(prefs["cuisine_preferences_json"]) if prefs else []
@@ -620,6 +675,13 @@ def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
         # Loop Board "Onboarding: household rhythm..." — a suggestion only,
         # not an answer; see _rhythm_packed_lunch_suggestions.
         "rhythm_packed_lunch_suggestions": _rhythm_packed_lunch_suggestions(week_start, day_count),
+        # What the mood screen opens already knowing: the moods and cuisines
+        # the household chose for the period before this one, or None for a
+        # first week. See _last_period_intake.
+        "last_intake": last_intake,
+        # True once a dinner has been planned in the last three weeks — the
+        # building screen says "Nothing you had last week" only then.
+        "recent_dinners_on_record": _recent_dinners_on_record(week_start),
         # The period these questions are about, echoed back so the screen
         # can name it ("Sep 11-18") instead of calling every window "your
         # week" regardless of what the household actually picked.
