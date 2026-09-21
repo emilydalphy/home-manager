@@ -10050,7 +10050,7 @@
   function isRealCook(entry) {
     return !!(entry && entry.source !== 'leftovers' && entry.source !== 'takeout' && entry.meta);
   }
-  // pendingDayFocus: {date, slot} set by the chat's "See your week" chip,
+  // pendingDayFocus: {date, slot} set by the chat's "Back to your week" button,
   // drained by applyPendingDayFocus once the days for that week are
   // actually loaded. Null the rest of the time.
   // step / mealSlot: which of the three Meals steps is showing and, on the
@@ -10070,7 +10070,11 @@
     cookView: null,
     // Where the Meal step's crumb goes: 'day' (Week → Day → Meal, the
     // tiles' way in) or 'week' (a dish name tapped on the root's list).
-    mealBack: 'day'
+    mealBack: 'day',
+    // The draft's toggle: 'menu' (What we're eating) or 'days' (Which
+    // days), remembered for this page session and reset for a new draft
+    // (draftView; draftViewPlanId is the plan it was last set for).
+    draftView: 'menu', draftViewPlanId: null
   };
 
   async function buildWeekPanel(panel) {
@@ -10544,14 +10548,23 @@
     var title = named
       ? (relation === 'next' ? 'Next week' : 'This week')
       : range + periodYearSuffix(data.period_start_date || data.week_start_date, dayCount, today);
+    // A DRAFT is a moment, not a calendar position (Emily, 2026-09-21,
+    // board C2): "Here's your week." over the dates, with the DRAFT chip
+    // and "your turn" saying what is asked of the person. The dates in
+    // the line still say WHICH week; the title no longer has to. A
+    // custom-length period keeps its dates as the title — "your week"
+    // would be a small lie over three days.
+    if (state === 'draft' && isWeek) title = 'Here’s your week.';
     var eyebrow = named ? range : dayCount + ' days';
     var sub = [];
     // A DRAFT's line says whose turn it is, not the shape of the week:
     // the shape is what the rows underneath are for, and the one thing
     // the chip can't say on its own is that nothing happens until
-    // somebody here decides (Emily's approved design, 2026-09-08).
+    // somebody here decides (Emily's approved design, 2026-09-08). Since
+    // 2026-09-21 it is "your turn" alone: the chip already says Draft,
+    // and a line that said "a draft, your turn" under it said it twice.
     if (state === 'draft') {
-      sub.push('a draft, your turn');
+      sub.push('your turn');
     } else if (state === 'set') {
       var counts = weekCountsLabel(days);
       if (counts) sub.push(counts);
@@ -10564,6 +10577,108 @@
       sub: sub.join(' · '),
       badge: WEEK_BADGES[state] || ''
     };
+  }
+
+  // ---------- The band's own controls on the Plan root ----------
+  // Emily, 2026-09-21 (boards A2, C2, C3). Three things the generic band
+  // (rootBandHtml) does not know about, filled into it after it is built:
+  //
+  //  * the Re-plan pill, top right, on a draft AND on an approved week —
+  //    "I want to re-plan my week, but the option to do so is really
+  //    hidden" (it lived under More ···). One tap opens the intake with
+  //    last time's answers in place (startPlanningWeek → /plan-week, which
+  //    prefills from the week's current intake revision).
+  //  * the draft's opener — two short lines saying what it planned around
+  //    and one thing worth knowing (get_week_menu's draft_opener, built
+  //    server-side from the intake and the rows so it cannot describe a
+  //    week that wasn't made).
+  //  * the two-way toggle, What we're eating | Which days — the by-type
+  //    menu is the front door (Emily's decision D, 2026-09-15, and again
+  //    2026-09-21); the day cards sit behind it.
+  //
+  // weekBandExtras says WHAT (a plain object, so renderMealsStep can fold
+  // it into the band's rebuild key); fillWeekBandExtras draws and wires it.
+  // The toggle's side is remembered for the session only (weekState.
+  // draftView, in memory), and a NEW draft opens on What we're eating —
+  // weekState.draftViewPlanId is how a new plan id resets it.
+  var DRAFT_VIEWS = { menu: 'What we’re eating', days: 'Which days' };
+
+  function draftView(data) {
+    var id = data && data.weekly_plan_id;
+    if (weekState.draftViewPlanId !== id) {
+      weekState.draftViewPlanId = id;
+      weekState.draftView = 'menu';
+    }
+    return weekState.draftView === 'days' ? 'days' : 'menu';
+  }
+
+  function weekBandExtras(data) {
+    var state = weekPlanState(data);
+    if (state === 'none') return null;
+    var draft = state === 'draft';
+    return {
+      pill: true,
+      lead: draft ? (data.draft_opener || []).filter(Boolean) : [],
+      view: draft ? draftView(data) : null
+    };
+  }
+
+  function weekReplanPillHtml() {
+    return '<button type="button" class="wk-replan" id="wk-replan" aria-label="Re-plan this week">' +
+      WK_ICONS.swap + 'Re-plan</button>';
+  }
+
+  function weekDraftSegHtml(view) {
+    return '<div class="wk-draft-seg" role="tablist" aria-label="How to read the draft">' +
+      ['menu', 'days'].map(function (key) {
+        var on = key === view;
+        return '<button type="button" class="wk-draft-seg-btn' + (on ? ' is-on' : '') + '" role="tab" ' +
+          'aria-selected="' + (on ? 'true' : 'false') + '" data-wk-view="' + key + '">' +
+          escapeHtml(DRAFT_VIEWS[key]) + '</button>';
+      }).join('') +
+    '</div>';
+  }
+
+  function weekBandTailHtml(extras) {
+    if (!extras || !extras.view) return '';
+    return (extras.lead.length
+      ? '<p class="wk-draft-lead" id="wk-draft-lead">' + extras.lead.map(escapeHtml).join(' ') + '</p>'
+      : '') +
+      weekDraftSegHtml(extras.view);
+  }
+
+  function fillWeekBandExtras(panel, bandSlot, extras) {
+    if (!extras) return;
+    var band = bandSlot.querySelector('.root-band');
+    if (!band) return;
+    var tools = band.querySelector('.root-band-tools');
+    if (extras.pill && tools) tools.insertAdjacentHTML('afterbegin', weekReplanPillHtml());
+    var tail = weekBandTailHtml(extras);
+    if (tail) band.insertAdjacentHTML('beforeend', tail);
+    var pill = band.querySelector('#wk-replan');
+    if (pill) pill.addEventListener('click', function () { replanWeek(); });
+    band.querySelectorAll('[data-wk-view]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var to = btn.getAttribute('data-wk-view') === 'days' ? 'days' : 'menu';
+        if (to === weekState.draftView) return;
+        weekState.draftView = to;
+        renderMealsStep(panel);
+      });
+    });
+  }
+
+  // The one road into re-planning — the band's pill and the dock's quiet
+  // "Plan it differently" both come here: the intake for the week on
+  // screen, its own length, with the answers it was last drafted from
+  // already in place (static/plan-week.html prefills from the current
+  // intake revision), so re-planning is changing what's different.
+  function replanWeek() {
+    var data = weekState.data || {};
+    var dayCount = data.day_count ||
+      (planningPeriodDefault && planningPeriodDefault.day_count) || 7;
+    var start = data.period_start_date || data.week_start_date ||
+      (planningPeriodDefault && planningPeriodDefault.start_date) || thisWeekStartLocal();
+    startPlanningWeek(start, dayCount);
   }
 
   // A component-based household has no real day mapping underneath —
@@ -10843,14 +10958,29 @@
   // S7): who is out, how many are at the table, the holiday, a rush
   // night. Read off what the intake and attendance already store on the
   // dinner (get_week_menu's _decorate_with_needs), never guessed.
+  // Since 2026-09-21 (board C3) every meal is read, not only dinner: a
+  // bigger table at breakfast says "4 for breakfast", and somebody out
+  // at any meal is named once — the quiet mark for a day that's
+  // different.
   function reviewTileTags(day) {
     var tags = [];
     var entry = day.dinner || {};
     var away = entry.away_names || [];
     var present = entry.present_names || [];
     if (entry.need === 'away' || (away.length && !present.length)) tags.push('Away');
-    else if (away.length) tags.push(joinList(away) + ' out');
-    if (entry.guest_count) tags.push('Hosting · ' + (entry.serves || entry.guest_count));
+    else {
+      var out = [];
+      WEEK_SLOTS.forEach(function (slot) {
+        ((day[slot] || {}).away_names || []).forEach(function (name) {
+          if (out.indexOf(name) === -1) out.push(name);
+        });
+      });
+      if (out.length) tags.push(joinList(out) + ' out');
+    }
+    WEEK_SLOTS.forEach(function (slot) {
+      var e = day[slot] || {};
+      if (e.guest_count) tags.push((e.serves || e.guest_count) + ' for ' + slotWord(slot));
+    });
     if (day.holiday && day.holiday.name) tags.push(day.holiday.name);
     if (entry.need === 'quick') tags.push('Quick');
     return tags;
@@ -10869,6 +10999,29 @@
     return entry.meta || '';
   }
 
+  // The meta line with the one fact the slot was asked for ("35 min ·
+  // Mexican, as asked" — get_week_menu's `asked`, read off derived_from).
+  function wkRowMetaLine(entry, meta) {
+    var asked = entry && entry.state === 'planned' && entry.asked;
+    return [meta, asked].filter(Boolean).join(' · ');
+  }
+
+  // The stored reason, one tap away (Emily, 2026-09-15: "Pomona stores
+  // one per dish and shows none"). The meta line is the tap; the reason
+  // opens as a note floating over the next row (.wk-why-pop, absolute)
+  // rather than pushing rows around. Without a reason the line is plain
+  // text, so nothing offers a tap that does nothing.
+  function wkRowMetaHtml(entry, meta) {
+    var reason = entry && entry.state === 'planned' && String(entry.reason || '').trim();
+    if (!meta && !reason) return '';
+    if (!reason) return '<span class="wk-row-meta">' + escapeHtml(meta) + '</span>';
+    var why = reason.charAt(0).toUpperCase() + reason.slice(1);
+    return '<button type="button" class="wk-row-meta wk-row-why" data-wk-why="1" aria-expanded="false" ' +
+        'aria-label="' + escapeHtml((meta ? meta + ' — ' : '') + 'why this?') + '">' +
+        escapeHtml(meta || 'Why this?') + '</button>' +
+      '<span class="wk-why-pop" role="note" hidden>' + escapeHtml(why) + '</span>';
+  }
+
   // How many of the three real meals a day actually holds.
   function wkDayMealCount(day) {
     return WEEK_SLOTS.filter(function (s) {
@@ -10877,19 +11030,12 @@
     }).length;
   }
 
-  // The week's hard clash (data.settle, server-worded) when it is about
-  // THIS row — matched on the dish name and the date, and only on a draft
-  // (an approved week has settled it).
-  function wkSettleFor(day, entry) {
-    var data = typeof weekState !== 'undefined' && weekState.data;
-    var settle = data && data.settle;
-    if (!settle || !settle.note || !settle.meal || !entry || entry.state !== 'planned') return null;
-    if (weekPlanState(data) !== 'draft') return null;
-    if (settle.date && settle.date !== day.date) return null;
-    var a = String(settle.meal).trim().toLowerCase();
-    var b = String(mealDisplayName(entry) || '').trim().toLowerCase();
-    return a === b ? settle : null;
-  }
+  // There is no clash card on a row any more (Emily, 2026-09-20: "if there
+  // is a conflict for an allergy, just don't suggest anything that fits
+  // that"). A dish someone can't have is never drafted, swapped in or
+  // offered — app/tools/allergen_gate.py — so the row has nothing to
+  // settle, and the red card that used to overlap the rows under it went
+  // with the keep-it-anyway button it carried.
 
   // One 36px mini button. The visible box is 36px (the approved boards'
   // size); the tap target is the full 44px through .wk-mini's ::before
@@ -10926,8 +11072,7 @@
       quiet = ' is-quiet';
     } else { name = day.isPast ? 'Not planned' : 'Nothing yet'; quiet = ' is-quiet'; }
     var done = planned && !!entry.cooked;
-    var meta = wkRowMeta(entry);
-    var settle = wkSettleFor(day, entry);
+    var meta = wkRowMetaLine(entry, wkRowMeta(entry));
 
     var acts = '';
     if (planned) {
@@ -10956,22 +11101,10 @@
             ? '<button type="button" class="wk-row-name dish-link" data-wk-meal="' + slot + '">' +
                 escapeHtml(name) + '</button>'
             : '<span class="wk-row-name' + quiet + '">' + escapeHtml(name) + '</span>') +
-          (meta ? '<span class="wk-row-meta">' + escapeHtml(meta) + '</span>' : '') +
+          wkRowMetaHtml(entry, meta) +
         '</div>' +
         (acts ? '<div class="wk-row-acts">' + acts + '</div>' : '') +
       '</div>' +
-      // A HARD clash — an allergy, a must-avoid — sits on the dish it is
-      // about (Emily, 2026-09-11). Swap the meal is the row's own button
-      // above; keeping it costs the second, explicit Approve a real
-      // allergy clash is owed (approveWeek → needs_confirmation).
-      (settle
-        ? '<div class="rv-settle">' +
-            '<div class="rv-settle-note">' + escapeHtml(settle.note) + '</div>' +
-            '<div class="wk-settle-acts">' +
-              '<button type="button" class="wk-settle-keep" data-wk-settle-keep="1">Keep it anyway</button>' +
-            '</div>' +
-          '</div>'
-        : '') +
       (open
         ? '<div class="wk-slot-open" id="wk-open-' + slot + '" hidden>' + openSlotCardHtml(day.date, slot, entry) + '</div>'
         : '') +
@@ -10998,6 +11131,114 @@
           }).join('') + '</div>'
         : '') +
       (closed ? '' : WEEK_SLOTS.map(function (slot) { return wkMealRowHtml(day, slot, opts); }).join('')) +
+    '</div>';
+  }
+
+  // ---------- WHAT WE'RE EATING: the menu, by meal type ----------
+  // The draft's front door (Emily's decision D, 2026-09-15; her 2026-09-21
+  // feedback: "bring back the screen where I'm able to see just the meals
+  // that are selected, then be able to see the days"): Breakfasts,
+  // Lunches, Dinners (Snacks when there are any), one row per dish with
+  // the days it covers and one useful fact, Swap on every row, the reason
+  // a tap away. No day notes here — those live on Which days — and no
+  // steppers.
+  //
+  // A dish is the name it READS as (mealDisplayName), so a made-ahead
+  // night folds into the dish it reheats; only `planned` slots are dishes
+  // (an open slot is a question, a night nobody is home is not food).
+  var WK_MENU_LABELS = { breakfast: 'Breakfasts', lunch: 'Lunches', dinner: 'Dinners', snack: 'Snacks' };
+  var WK_MENU_NOUNS = { breakfast: 'mornings', lunch: 'lunches', dinner: 'nights', snack: 'days' };
+
+  function wkMenuGroups(days) {
+    var byType = {};
+    (days || []).forEach(function (day, i) {
+      if (day.before_plan_start) return;
+      var seen = WEEK_SLOTS.map(function (s) { return { type: s, key: s, entry: day[s] }; });
+      (day.snacks || []).forEach(function (e, n) { seen.push({ type: 'snack', key: snackSlotKey(n), entry: e }); });
+      seen.forEach(function (s) {
+        var entry = s.entry;
+        if (!entry || entry.state !== 'planned') return;
+        var name = mealDisplayName(entry);
+        if (!name) return;
+        var group = byType[s.type] ||
+          (byType[s.type] = { slot: s.type, label: WK_MENU_LABELS[s.type], dishes: [], index: {} });
+        var k = name.trim().toLowerCase();
+        var dish = group.index[k];
+        if (!dish) {
+          dish = group.index[k] = { slot: s.type, name: name, days: [] };
+          group.dishes.push(dish);
+        }
+        dish.days.push({ date: day.date, index: i, key: s.key, entry: entry, past: !!day.isPast });
+      });
+    });
+    return ['breakfast', 'lunch', 'dinner', 'snack'].map(function (t) { return byType[t]; }).filter(Boolean);
+  }
+
+  // "7 mornings" when a dish covers the whole period; a single weekday in
+  // full; runs of three or more collapsed ("Mon–Thu"); the rest listed.
+  function wkDaysPhrase(dish, days) {
+    var total = (days || []).filter(function (d) { return !d.before_plan_start; }).length;
+    var idx = dish.days.map(function (d) { return d.index; }).sort(function (a, b) { return a - b; });
+    if (total > 1 && idx.length === total) return total + ' ' + WK_MENU_NOUNS[dish.slot];
+    if (idx.length === 1) return dayName(days[idx[0]].date, { weekday: 'long' });
+    var out = [], i = 0;
+    while (i < idx.length) {
+      var j = i;
+      while (j + 1 < idx.length && idx[j + 1] === idx[j] + 1) j++;
+      var a = dayName(days[idx[i]].date, { weekday: 'short' });
+      var b = dayName(days[idx[j]].date, { weekday: 'short' });
+      out.push(j - i >= 2 ? a + '–' + b : (i === j ? a : a + ', ' + b));
+      i = j + 1;
+    }
+    return out.join(', ');
+  }
+
+  // The one useful fact beside the days: what it was asked for ("Mexican,
+  // as asked", "packs cold") when any of its days carries one, else the
+  // minutes. The first cooked day speaks for the dish.
+  function wkMenuFact(dish) {
+    for (var i = 0; i < dish.days.length; i++) {
+      if (dish.days[i].entry.asked) return dish.days[i].entry.asked;
+    }
+    for (var j = 0; j < dish.days.length; j++) {
+      var m = wkRowMeta(dish.days[j].entry);
+      if (m && m !== 'leftovers' && m !== 'takeout' && m.indexOf('from ') !== 0) return m;
+    }
+    return wkRowMeta(dish.days[0].entry);
+  }
+
+  // One row: the dish (the link into its Meal step), "Mon, Wed · Mexican,
+  // as asked" (the tap for the reason), Swap. Swap and the link act on the
+  // dish's first day still ahead — the same swap sheet and the same Meal
+  // step Which days uses, told which day through data-wk-day-index.
+  function wkMenuRowHtml(dish, days) {
+    var first = dish.days.filter(function (d) { return !d.past; })[0] || dish.days[0];
+    var entry = first.entry;
+    var meta = [wkDaysPhrase(dish, days), wkMenuFact(dish)].filter(Boolean).join(' · ');
+    var swap = first.past ? '' : wkMiniHtml('data-wk-swap-sheet="' + first.key + '"', 'wk-mini-swap', WK_ICONS.swap,
+      'Swap', 'Swap — ' + dish.name);
+    return '<div class="wk-row wk-menu-row" data-wk-day-index="' + first.index + '" data-wk-row="' + first.key + '">' +
+      '<div class="wk-row-main">' +
+        '<div class="wk-row-text">' +
+          '<button type="button" class="wk-row-name dish-link" data-wk-meal="' + first.key + '">' +
+            escapeHtml(dish.name) + '</button>' +
+          wkRowMetaHtml(entry, meta) +
+        '</div>' +
+        (swap ? '<div class="wk-row-acts">' + swap + '</div>' : '') +
+      '</div>' +
+    '</div>';
+  }
+
+  function wkMenuHtml(days) {
+    var groups = wkMenuGroups(days);
+    if (!groups.length) return '<div class="rv-body"><div class="rv-empty">Nothing planned yet.</div></div>';
+    return '<div class="wk-menu">' +
+      groups.map(function (group) {
+        return '<div class="shell-card wk-menu-card">' +
+          '<span class="wk-menu-head">' + escapeHtml(group.label) + '</span>' +
+          group.dishes.map(function (dish) { return wkMenuRowHtml(dish, days); }).join('') +
+        '</div>';
+      }).join('') +
     '</div>';
   }
 
@@ -11055,14 +11296,13 @@
       (data.week_start_date ? periodRangeLabel(data.week_start_date, dayCount) : '');
     var meals = days.reduce(function (n, d) { return n + wkDayMealCount(d); }, 0);
     var line = (range ? range + ' · ' : '') + meals + (meals === 1 ? ' meal' : ' meals');
+    // A DRAFT's root (Emily, 2026-09-21, boards C2/C3): the band is its
+    // head — the dates, the opener and the What we're eating | Which days
+    // toggle all live there — so nothing is repeated under it, and the
+    // "?" (Need a hand?) moves behind More ···. What we're eating is the
+    // menu by meal type; Which days the day cards as built 2026-09-18.
     var head = root
-      ? weekSuggestedNoteHtml(data) +
-        '<div class="wk-head wk-check-head is-root">' +
-          '<div class="wk-head-row">' +
-            '<div class="wk-sub">' + escapeHtml(line) + '</div>' +
-            wkHelpButtonHtml('Check the week') +
-          '</div>' +
-        '</div>'
+      ? weekSuggestedNoteHtml(data)
       : '<button type="button" class="crumb" data-wk-back="week">‹ Plan</button>' +
         '<div class="wk-head wk-check-head">' +
           '<div class="wk-head-row">' +
@@ -11073,6 +11313,13 @@
         '</div>';
     if (!days.length) {
       return head + '<div class="rv-body"><div class="rv-empty">Nothing planned yet.</div></div>' + reviewDecideHtml(data);
+    }
+    if (root && weekPlanState(data) === 'draft' && draftView(data) === 'menu') {
+      return head + wkMenuHtml(days) +
+        (weekReplacesNote(data)
+          ? '<div class="wk-notes"><div class="wk-note">' + escapeHtml(weekReplacesNote(data)) + '</div></div>'
+          : '') +
+        reviewDecideHtml(data);
     }
     return head +
       wkDayTabsHtml(days, selected) +
@@ -11087,13 +11334,9 @@
         ? '<div class="wk-notes"><div class="wk-note">' + escapeHtml(weekReplacesNote(data)) + '</div></div>'
         : '') +
       // The draft's rare actions — "Try again", "Change my answers" — sit
-      // behind the same "More ···" the week root carries (rule 2). The
+      // behind "More ···", which since 2026-09-21 rides in the dock's
+      // quiet row beside "Plan it differently" (reviewDecideHtml). The
       // deeper, approved-week form has its crumb and needs no foot.
-      (root
-        ? '<div class="wk-foot wk-foot-solo">' +
-            '<button type="button" class="wk-foot-more" id="wk-more" aria-haspopup="dialog">More ···</button>' +
-          '</div>'
-        : '') +
       reviewDecideHtml(data);
   }
 
@@ -11164,9 +11407,11 @@
   // The day a tap inside a card is about: the card's own (Check the week
   // shows every day at once), else the root's selected day.
   function wkDayForTap(el) {
-    var card = el && el.closest ? el.closest('[data-wk-card]') : null;
+    // A card of the carousel, or a row of the menu (which carries the
+    // dish's first day still ahead as data-wk-day-index).
+    var card = el && el.closest ? (el.closest('[data-wk-card]') || el.closest('[data-wk-day-index]')) : null;
     if (card) {
-      var i = Number(card.getAttribute('data-wk-card'));
+      var i = Number(card.getAttribute('data-wk-card') || card.getAttribute('data-wk-day-index'));
       if (weekState.days[i]) { weekState.selectedIndex = i; return weekState.days[i]; }
     }
     return mealsCurrentDay();
@@ -11200,7 +11445,16 @@
         // Empty and hidden until "Try again" is tapped in the More sheet —
         // the rebuild is a ~30-second call, and the rotating waiting line
         // (static/waiting-lines.js) has to be on the page you are looking at.
-        '<div class="week-redo-waiting waiting-line" id="week-redo-waiting" hidden></div>';
+        '<div class="week-redo-waiting waiting-line" id="week-redo-waiting" hidden></div>' +
+        // Under Approve, quietly (Emily, 2026-09-21, boards A2/C2): "Plan
+        // it differently" opens the intake with last time's answers in
+        // place — the same road as the band's Re-plan pill — and "More ···"
+        // keeps the rarer things (Try again, Change my answers, Drop this
+        // draft, See the whole week, Adjust your setup, Start over).
+        '<div class="wk-dock-quiet">' +
+          '<button type="button" class="wk-dock-link" id="wk-plan-differently">Plan it differently</button>' +
+          '<button type="button" class="wk-foot-more" id="wk-more" aria-haspopup="dialog">More ···</button>' +
+        '</div>';
     }
     if (!inner) return '';
     return '<div class="wk-decide dock">' + inner + '</div>';
@@ -12892,10 +13146,14 @@
       if (onRoot) {
         var parts = weekBandParts(weekBandData(data), weekState.days || []);
         if (onChores) parts = planChoresBandParts(parts);
-        var key = JSON.stringify(parts);
+        // The Re-plan pill, the draft's opener and its toggle ride in the
+        // band too (weekBandExtras) — on Meals only, never over Chores.
+        var extras = onChores ? null : weekBandExtras(data);
+        var key = JSON.stringify([parts, extras]);
         if (bandSlot.dataset.bandKey !== key) {
           bandSlot.innerHTML = rootBandHtml(parts);
           bandSlot.dataset.bandKey = key;
+          fillWeekBandExtras(panel, bandSlot, extras);
         }
       }
     }
@@ -13004,9 +13262,24 @@
     steps.querySelectorAll('[data-wk-help]').forEach(function (btn) {
       btn.addEventListener('click', function () { openWeekHelp(btn.getAttribute('data-wk-help')); });
     });
-    steps.querySelectorAll('[data-wk-settle-keep]').forEach(function (btn) {
-      btn.addEventListener('click', function () { approveWeek(panel, weekState.data || {}); });
+    // The reason a tap away (wkRowMetaHtml): one open at a time, and a
+    // second tap on the same line closes it.
+    steps.querySelectorAll('[data-wk-why]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var open = btn.getAttribute('aria-expanded') === 'true';
+        steps.querySelectorAll('[data-wk-why][aria-expanded="true"]').forEach(function (other) {
+          other.setAttribute('aria-expanded', 'false');
+          var p = other.nextElementSibling;
+          if (p && p.classList.contains('wk-why-pop')) p.hidden = true;
+        });
+        if (open) return;
+        btn.setAttribute('aria-expanded', 'true');
+        var pop = btn.nextElementSibling;
+        if (pop && pop.classList.contains('wk-why-pop')) pop.hidden = false;
+      });
     });
+    var differently = steps.querySelector('#wk-plan-differently');
+    if (differently) differently.addEventListener('click', function () { replanWeek(); });
     wireReviewCarousel(panel, steps);
     // "Everything out" opens to the amounts, in a person's units, and
     // closes again — a read, never a write, so it stays on this screen.
@@ -13671,29 +13944,22 @@
     '</button>';
   }
 
+  // Re-plan and the custom-range picker left this sheet on 2026-09-21
+  // (Emily: "the option to re-plan is really hidden"): re-planning is the
+  // band's pill and the dock's "Plan it differently" (replanWeek), and
+  // picking your own days is the intake's first question. What stays is
+  // the rare: Try again, Change my answers, Drop this draft, Reopen,
+  // Check the week, See the whole week, Adjust your setup, Start over —
+  // and, on a draft, Need a hand? (the "?" the draft's head used to carry).
   function renderMealsMoreSheet() {
     var rows = document.getElementById('meals-more-rows');
     if (!rows) return;
     var data = weekState.data || {};
     var hasPlan = !!data.weekly_plan_id;
-    var dayCount = data.day_count ||
-      (planningPeriodDefault && planningPeriodDefault.day_count) || 7;
-    var start = data.period_start_date || data.week_start_date ||
-      (planningPeriodDefault && planningPeriodDefault.start_date) || thisWeekStartLocal();
-    // With no plan on screen the row offers the suggested period, which
-    // from Friday is next week (see renderPlanWeekEntry) — say so.
-    var which = (!hasPlan && planningPeriodDefault && planningPeriodDefault.is_current_period === false)
-      ? 'next' : 'current';
     rows.innerHTML =
-      mealsMoreRowHtml('wk-more-replan',
-        planEntryLabel(dayCount, which, hasPlan), periodRangeLabel(start, dayCount)) +
-      // The custom-range picker, unchanged — same opener id, same picker
-      // id, same wirePeriodPicker. It only moved.
-      '<button type="button" class="wk-more-row" id="week-period-open" aria-expanded="false">' +
-        '<span class="wk-more-label">' + escapeHtml(PERIOD_PICKER_COPY.open) + '</span></button>' +
-      '<div class="week-period-picker" id="week-period-picker" hidden></div>' +
       (hasPlan && data.status !== 'approved'
-        ? mealsMoreRowHtml('wk-more-try-again', 'Try again', 'Same answers, a different week') +
+        ? mealsMoreRowHtml('wk-more-help', 'Need a hand?') +
+          mealsMoreRowHtml('wk-more-try-again', 'Try again', 'Same answers, a different week') +
           mealsMoreRowHtml('wk-more-change', 'Change my answers') +
           // A draft you have decided against, gone in one tap — otherwise
           // the only ways off it were approving it (which is the opposite
@@ -13730,7 +13996,7 @@
       var el = rows.querySelector('#' + id);
       if (el) el.addEventListener('click', fn);
     }
-    on('wk-more-replan', function () { closeMealsMoreSheet(); startPlanningWeek(start, dayCount); });
+    on('wk-more-help', function () { closeMealsMoreSheet(); openWeekHelp('Check the week'); });
     on('wk-more-try-again', function () { closeMealsMoreSheet(); tryAgain(panel, data); });
     on('wk-more-change', function () {
       closeMealsMoreSheet();
@@ -13742,9 +14008,6 @@
     on('wk-more-whole-week', function () { closeMealsMoreSheet(); openWeekSheet(); });
     on('wk-more-setup', function () { closeMealsMoreSheet(); openMealSetup(); });
     on('wk-more-reset', function () { closeMealsMoreSheet(); openResetDialog(); });
-    // The picker's own confirm navigates away to /plan-week, so it needs no
-    // dismissal of its own.
-    wirePeriodPicker(rows, start, dayCount);
   }
 
   function openMealsMoreSheet() {
@@ -14803,11 +15066,12 @@
     }
   }
 
-  // The one-clash-away state: the "One thing to settle" card above the week
-  // already names the clash (data.settle, rendered before anyone even
-  // tapped Approve), so this only has to offer the two ways through —
-  // approve past it, or back out and fix the plan first. Only
-  // submitWeekApproval's needs_confirmation branch ever calls this.
+  // The one-clash-away state. Since 2026-09-20 nothing Pomona picks can
+  // clash (app/tools/allergen_gate.py), so this is reached only by a dish
+  // the household planned by hand; the clash is said in a toast on the
+  // way in, and the two ways through are offered — approve past it, or
+  // back out and fix the plan first. Only submitWeekApproval's
+  // needs_confirmation branch ever calls this.
   //
   // It works on the decision row under the week card now (weekDecideHtml)
   // rather than inside the removed review band; everything else about it —
@@ -14819,9 +15083,12 @@
     var btn = card && card.querySelector('#week-approve-btn');
     if (!card || !btn) return;
 
-    // One label, whatever the dish: since 2026-09-11 the clash sits on the
-    // dish's own row in the review above, so the button needn't repeat a
-    // name that can run to six words.
+    // The clash is said HERE now. The row's own clash card went on
+    // 2026-09-20 (Pomona never drafts a dish someone can't have), so the
+    // only way a hard clash reaches approval is a dish the household put
+    // on the week by hand — and "I've seen the clash" has to be true
+    // before it is tapped.
+    if (approval.conflicts_note) showToast(approval.conflicts_note, null, 9000);
     var label = 'Approve anyway — I’ve seen the clash';
     btn.textContent = label;
     btn.disabled = false;
@@ -14833,9 +15100,8 @@
     freshBtn.addEventListener('click', function () {
       submitWeekApproval(panel, data, approvedBy, true);
     });
-    // "Keep it anyway" on the settle card comes through here too, and it is
-    // tapped ABOVE the week card while this button sits below it — so the
-    // confirm has to be brought to the eye rather than left offscreen.
+    // Brought to the eye: the tap that got here may have been anywhere on
+    // the screen, and the relabelled button has to be seen to be read.
     if (freshBtn.scrollIntoView) freshBtn.scrollIntoView({ block: 'center' });
 
     // A quiet way out — same idiom as "or tweak it with me" just below,
@@ -14891,7 +15157,7 @@
 
     renderMealsStep(panel);
     renderWeekSheetRows(days);
-    // Chat's "See your week" chip may have asked for a specific day before
+    // Chat's "Back to your week" button may have asked for a specific day before
     // this week's days existed — now they do. No-op unless one is pending.
     applyPendingDayFocus(panel);
   }
@@ -17927,14 +18193,17 @@
       var examples = typeof document !== 'undefined' && document.getElementById('ask-examples');
       if (examples && actions.length) { examples.innerHTML = ''; examples.hidden = true; }
       chipsEl.innerHTML = actions.map(function (q, i) {
-        return '<button type="button" class="ask-chip" data-i="' + i + '">' + escapeHtml(q.label) + '</button>';
+        // `primary` (computeNextStepChips' "Back to your week") is the
+        // sheet's one apricot button, full width, not a chip in the row.
+        return '<button type="button" class="ask-chip' + (q.primary ? ' ask-chip-primary' : '') +
+          '" data-i="' + i + '">' + escapeHtml(q.label) + '</button>';
       }).join('');
       chipsEl.querySelectorAll('.ask-chip').forEach(function (chip) {
         chip.addEventListener('click', function () {
           var action = actions[Number(chip.dataset.i)];
           // The post-change next-step chips (offerNextStepChips) navigate
           // directly rather than sending a message — "Open the list",
-          // "Plan my stops" and "See your week" are places to go, not
+          // "Plan my stops" and "Back to your week" are places to go, not
           // things to ask about.
           if (action.onClick) return action.onClick();
           // Everything else SENDS. There used to be a third branch here —
@@ -17967,7 +18236,7 @@
   // NOTE (2026-09-08): this pair was added by e2024a4 and then silently
   // lost from main in merge 2d69951 ("Merge custom-date-range"), which
   // took the other side of the conflicted region wholesale. Restored here
-  // alongside the "See your week" chip below, because that chip has
+  // alongside the "Back to your week" button below (then "See your week"), because it has
   // nowhere to live without it.
   //
   // Priority for the PRIMARY chip when a turn touched more than one area:
@@ -17975,13 +18244,17 @@
   // it just added) beats a plain grocery edit, which beats an unapproved
   // draft edit — the biggest life-cycle event wins.
   //
-  // "See your week" (Emily, 2026-09-08, Loop Board "Tweak-the-week chat:
-  // after a swap the flow dies") rides ahead of that primary whenever the
-  // turn edited a draft week: after a swap the receipt card says WEEK
-  // UPDATED but every other affordance here only sends another message,
-  // so there was no way to go LOOK at what just changed without hunting
-  // for the tab yourself. It goes FIRST because looking is free and
-  // reversible and approving is neither — see, then approve.
+  // A draft edit gets ONE way on: "Back to your week" (Emily, 2026-09-20,
+  // her phone, after "Done — every breakfast this week is …" with "See
+  // your week", "Approve this week" AND the card's "View" all on screen:
+  // "It's confusing where the user needs to go from here"). It is the
+  // sheet's primary — full width, the one apricot — and it lands on the
+  // first row that changed. "Approve this week" is gone from here: the
+  // draft's own Approve is a tap away once they're back on it, and
+  // approving from inside the chat was the second voice. (Before that,
+  // 2026-09-08: "See your week" ahead of "Approve this week", because
+  // after a swap every affordance in the sheet only sent another message
+  // and there was no way to go LOOK at what just changed.)
   function computeNextStepChips(actions) {
     var weekAction = null, groceryAction = null;
     (actions || []).forEach(function (a) {
@@ -17997,34 +18270,29 @@
     var chips = [];
     if (weekAction && !weekApproved) {
       chips.push({
-        label: 'See your week',
-        // The receipt card's own View does activateTab(action.tab) after
-        // closeAskSheet(); this does the same, plus the two things the
-        // card can't: it pins the Plan state (not Cook) and lands on the
-        // day that changed.
+        label: 'Back to your week',
+        primary: true,
+        // Closes the sheet, pins the Plan state (not Cook) and lands on
+        // the day that changed with the row ringed and scrolled to
+        // (focusChangedWeekDay) — the receipt card's View used to do only
+        // the first two.
         onClick: function () {
           closeAskSheet();
           focusChangedWeekDay(weekAction.date, weekAction.slot);
         }
       });
+      return chips;
     }
-    // Both of these close the sheet before they go, like "See your week"
-    // above and the receipt cards' own View: activateTab only switches the
-    // panel underneath, and on a phone the sheet covers that panel — so
-    // without the close the tap looked like nothing (Emily, 2026-09-13,
-    // already on Shop with the sheet open: "I'm clicking 'open the list'
-    // and it's not bringing me anywhere").
+    // Both of these close the sheet before they go, like "Back to your
+    // week" above and the receipt cards' own View: activateTab only
+    // switches the panel underneath, and on a phone the sheet covers that
+    // panel — so without the close the tap looked like nothing (Emily,
+    // 2026-09-13, already on Shop with the sheet open: "I'm clicking 'open
+    // the list' and it's not bringing me anywhere").
     if (weekApproved) {
       chips.push({ label: 'Open the list', onClick: function () { closeAskSheet(); activateTab('grocery', true); } });
     } else if (groceryAction) {
       chips.push({ label: 'Plan my stops', onClick: function () { closeAskSheet(); activateTab('grocery', true, { groScreen: 'plan' }); } });
-    } else if (weekAction) {
-      // The one wording for "there's a draft, go approve it". It used to
-      // be shared with the pre-conversation quick actions; ASK_INTENTS
-      // dropped it when it went fixed, and item 15's per-tab COACH_EXAMPLES
-      // that replaced ASK_INTENTS doesn't say it either, so this is the
-      // only place it lives.
-      chips.push({ label: 'Approve this week', msg: 'I’d like to approve this week’s plan.' });
     }
     return chips;
   }
@@ -18088,6 +18356,12 @@
     // Long enough to notice, short enough that it's gone before it can be
     // mistaken for a state the day is now in.
     setTimeout(function () { target.classList.remove('just-changed'); }, 2000);
+    // And on screen: after "Back to your week" the changed row is the
+    // reason they came back, so the page scrolls to it rather than
+    // leaving it under the fold on a long day (Emily, 2026-09-20).
+    if (typeof target.scrollIntoView === 'function') {
+      try { target.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { target.scrollIntoView(); }
+    }
   }
 
   function splitTableRow(line) {
@@ -18266,6 +18540,26 @@
         wrap.appendChild(held);
         return;
       }
+      // A draft edit's card is a receipt, not a door (Emily, 2026-09-20:
+      // "It's confusing where the user needs to go from here" — this
+      // card's View sat beside two chips that also went to the week).
+      // Tick, "Week updated", the count; the one way on is the primary
+      // Back to your week under it (computeNextStepChips). An approval's
+      // card keeps its View, because its chip goes to the list instead.
+      if (isDraftWeekAction(action)) {
+        var receipt = document.createElement('div');
+        receipt.className = 'ask-action-card is-receipt';
+        receipt.innerHTML =
+          '<span class="ask-action-tick" aria-hidden="true">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M5 12l4 4L19 7"/></svg>' +
+          '</span>' +
+          '<span class="ask-action-text">' +
+            '<span class="ask-action-kicker">' + escapeHtml(action.kicker) + '</span>' +
+            '<span class="ask-action-change">' + escapeHtml(action.change) + '</span>' +
+          '</span>';
+        wrap.appendChild(receipt);
+        return;
+      }
       var card = document.createElement('button');
       card.type = 'button';
       card.className = 'ask-action-card';
@@ -18283,6 +18577,13 @@
       wrap.appendChild(card);
     });
     return wrap;
+  }
+
+  // The one signal there is for "this turn edited the draft, not approved
+  // it": app/main.py's approval card is the only week card whose change
+  // text says "approved" — the same test computeNextStepChips makes.
+  function isDraftWeekAction(action) {
+    return !!(action && action.tab === 'week' && !/approved/i.test(action.change || ''));
   }
 
   // ---------- The change card ----------
@@ -18909,6 +19210,7 @@
     closeWeekSheet();
     closeMealsMoreSheet();
     if (context) setAskContext(context);
+    setAskBackLabel(askBackLabel(askContext));
     openSheet(askSheet, askScrim);
     if (!askSheetHistoryPushed) {
       window.history.pushState({ tab: currentTabKey(), askSheet: true }, '', window.location.pathname);
@@ -18922,6 +19224,26 @@
       askInput.focus();
     }
   }
+  // What the sheet's Back is called (Emily, 2026-09-20: "It's confusing
+  // where the user needs to go from here"). "Back to your week" when the
+  // sheet was opened about the week — from the Plan tab's ask bar
+  // (weekly_plan) or a meal card (planned_meal) — or simply over the Plan
+  // tab; plain "Back" anywhere else, where "your week" isn't what's
+  // underneath. Decided at open time: the tab underneath doesn't change
+  // while the sheet is up.
+  function askBackLabel(context) {
+    var kind = context && context.kind;
+    if (kind === 'planned_meal' || kind === 'weekly_plan') return 'Back to your week';
+    if (typeof currentTabKey === 'function' && currentTabKey() === 'week') return 'Back to your week';
+    return 'Back';
+  }
+  function setAskBackLabel(label) {
+    var el = document.getElementById('ask-sheet-back-label');
+    if (el) el.textContent = label;
+    var btn = document.getElementById('ask-sheet-back');
+    if (btn) btn.setAttribute('aria-label', label);
+  }
+
   // Every caller — scrim tap, the Back button, Escape, a sent message, and
   // the shell's popstate listener on the back gesture — just forgets the
   // pushed entry rather than calling history.back() on it: deliberately

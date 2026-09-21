@@ -366,27 +366,29 @@ def test_the_old_stacked_receipt_and_nudge_cards_are_gone(gone):
     _assert_gone(gone, SHELL_JS, "the old stacked receipt/nudge cards")
 
 
-def test_the_clash_renders_only_when_there_is_a_hard_clash():
-    """`data.settle` is None unless a HARD clash exists (coordination._settle
-    above), and the row's own guard renders nothing without it — a soft
-    conflict must never grow a card. Since 2026-09-11 the clash sits on the
-    dish's own row (wkSettleFor / wkMealRowHtml since 2026-09-18), not in
-    a card above the week."""
-    _assert_in("function wkSettleFor(", SHELL_JS, "the clash lookup", "shell.js")
-    _assert_in("if (!settle || !settle.note || !settle.meal || !entry || entry.state !== 'planned') return null;", SHELL_JS,
-               "the clash's guard", "shell.js")
-    _assert_in("Keep it anyway", SHELL_JS, "the keep-it-anyway segment", "shell.js")
-    _assert_in("var(--urgent-tint)", SHELL_CSS, "the clash's urgent tint", "shell.css")
+def test_the_clash_never_renders_a_card():
+    """`data.settle` is still computed server-side, and the screen no longer
+    draws anything from it. Since 2026-09-21 a dish someone can't have is
+    never drafted, swapped in or offered (app/tools/allergen_gate.py), so
+    the row's clash card and its "Keep it anyway" are gone (Emily,
+    2026-09-20). A soft conflict never grew a card and still doesn't."""
+    assert "wkSettleFor" not in SHELL_JS
+    assert "Keep it anyway" not in SHELL_JS
+    assert "data.settle" not in SHELL_JS
+    assert "rv-settle" not in SHELL_JS and "wk-settle" not in SHELL_JS
 
 
-def test_keeping_it_anyway_still_costs_the_confirm_tap():
-    """The hard-clash confirm is untouched: "Keep it anyway" posts the
-    ordinary approval, which comes back needs_confirmation, and
-    showApproveConfirm turns the Approve button into the confirm."""
+def test_a_hand_planned_clash_still_costs_the_confirm_tap_and_is_said_first():
+    """The approval-time confirm stays for the one way a hard clash can
+    still reach approval — a dish the household put on the week by hand.
+    Without the row card, the clash has to be SAID before "I've seen the
+    clash" can be true: showApproveConfirm toasts the note on the way in."""
     _assert_in("function showApproveConfirm(", SHELL_JS, "showApproveConfirm", "shell.js")
     _assert_in("function submitWeekApproval(", SHELL_JS, "submitWeekApproval", "shell.js")
     _assert_in("Approve anyway — I’ve seen the clash", SHELL_JS,
                "the confirm button's copy", "shell.js")
+    _assert_in("if (approval.conflicts_note) showToast(approval.conflicts_note, null, 9000);", SHELL_JS,
+               "the confirm saying the clash before asking", "shell.js")
     _assert_in("var card = panel.querySelector('.wk-decide');", SHELL_JS,
                "the confirm finding the button under the week card", "shell.js")
 
@@ -434,7 +436,8 @@ def _fn_body(name: str, source: str) -> str:
 
 
 def test_the_draft_subtitle_says_whose_turn_it_is():
-    _assert_in("'a draft, your turn'", SHELL_JS, "the draft subtitle", "shell.js")
+    # "a draft, your turn" until 2026-09-21: the chip already says Draft.
+    _assert_in("sub.push('your turn');", SHELL_JS, "the draft subtitle", "shell.js")
 
 
 def test_a_soft_conflict_is_a_line_under_the_card():
@@ -466,7 +469,15 @@ def test_reopening_the_week_kept_an_entry_point():
 
 
 def test_the_next_step_chips_are_unchanged():
-    """Emily's design touches the Meals surfaces, not chat's handoff chips."""
+    """Emily's design touches the Meals surfaces, not chat's handoff chips.
+
+    UPDATED 2026-09-21 (Loop Board "Chat on the draft — do the whole-week
+    ask, then 'Back to your week'", Emily 2026-09-20: "It's confusing where
+    the user needs to go from here"): after a draft edit the chat offers ONE
+    primary "Back to your week" and no "See your week" / "Approve this
+    week" pair — the draft's own Approve is a tap away once they're back on
+    it. tests/test_tweak_the_week.py runs the function itself."""
     _assert_in("function computeNextStepChips(", SHELL_JS, "computeNextStepChips", "shell.js")
-    _assert_in("label: 'See your week'", SHELL_JS, "the See your week chip", "shell.js")
-    _assert_in("label: 'Approve this week'", SHELL_JS, "the Approve this week chip", "shell.js")
+    _assert_in("label: 'Back to your week'", SHELL_JS, "the Back to your week button", "shell.js")
+    _assert_gone("label: 'See your week'", SHELL_JS, "the See your week chip")
+    _assert_gone("label: 'Approve this week'", SHELL_JS, "the Approve this week chip")

@@ -17,7 +17,9 @@ import threading
 import time
 from anthropic import Anthropic, APIConnectionError, APIStatusError, APITimeoutError
 from . import calendar_feed, tools
+from .tools import allergen_gate as _allergen_gate
 from .tools import plan_quality
+from .tools import meal_variety as _meal_variety
 from .tools import voice as _voice
 
 logger = logging.getLogger("home_manager")
@@ -529,6 +531,7 @@ def _stream_forced_tool_call(
     client: "Anthropic", *, label: str, max_tokens: int, tool_schema: dict,
     tool_name: str, content, result_key: str, effort_route: str = "generation",
     on_item=None, model: str | None = None, max_attempts: int = 3,
+    report_keys: tuple[str, ...] = (),
 ):
     """
     The streaming equivalent of `_create_with_retry` for a forced
@@ -542,7 +545,10 @@ def _stream_forced_tool_call(
 
     Returns exactly what `.create()` + reading
     `block.input.get(result_key, [])` would have -- callers that pass no
-    on_item can't tell this streamed at all.
+    on_item can't tell this streamed at all. With `report_keys`, the
+    result is a GeneratedDays whose `.report` carries those top-level
+    fields of the tool call (the model's own account of what it did with
+    the typed requests), still a plain list to every other reader.
     """
     delay = 0.75
     last_error: Exception | None = None
@@ -579,7 +585,12 @@ def _stream_forced_tool_call(
                 logger.warning("%s hit max_tokens; result may be incomplete", label)
             for block in response.content:
                 if block.type == "tool_use":
-                    return block.input.get(result_key, [])
+                    items = block.input.get(result_key, [])
+                    if report_keys:
+                        out = GeneratedDays(items)
+                        out.report = {k: block.input.get(k) or [] for k in report_keys}
+                        return out
+                    return items
             return []
         except (APIConnectionError, APITimeoutError) as e:
             last_error = e
@@ -767,8 +778,16 @@ time as a series of questions. If get_meal_planning_setup_status shows onboardin
 false, help with what they actually asked, and point them at the setup screen once — "there's \
 a screen where you can set all of this at once, if you'd rather" — rather than starting an \
 interview they didn't ask for.
-- Use saved dietary restrictions and preferences to inform meal suggestions and recipe tags \
-going forward, without re-asking every time.
+- Use saved preferences to inform meal suggestions and recipe tags going forward, without \
+re-asking every time.
+- `must_not_contain` — every member's dietary_restrictions and every hard household fact — is \
+absolute, the same as it is for the week draft and for Swap. Never suggest, plan or swap in a \
+dish that has any of it in its ingredients, not in a sauce or a side served with it, and not \
+under a "-free" name; if what they asked for leaves no safe dish, offer one outside that cuisine \
+and say so. plan_meal and swap_meal_in_plan decline such a dish themselves and hand you the \
+sentence to relay ("X has pineapple, which Emily can't have — want me to pick something else?") \
+— relay it and offer another, and pass override=true only if the person then says in their own \
+words to do it anyway.
 - You still own everything the screens can't express: recipe choice, the per-slot reasons, \
 the explanation for a slot left open, and anything typed to you in chat.
 - When someone tells you something in chat that WOULD HAVE CHANGED an answer on those question \
@@ -1701,6 +1720,10 @@ TOOL_DEFINITIONS = [
                     "items": {"type": "string", "enum": ["protein", "carb", "vegetable"]},
                     "description": "Only used for freeform meals not tied to a saved recipe. Leave out if unclear.",
                 },
+                "override": {
+                    "type": "boolean",
+                    "description": "Defaults to false. The person's own \"I know, do it anyway\" for a dish that has something someone in the household can't have — set it ONLY when they said so in their own words in this conversation, after the tool declined once and you relayed why. Never on your own initiative, never on a first call.",
+                },
             },
             "required": ["meal_date", "meal"],
         },
@@ -1762,13 +1785,17 @@ TOOL_DEFINITIONS = [
                 "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"]},
                 "food_groups": {"type": "array", "items": {"type": "string", "enum": ["protein", "carb", "vegetable"]}},
                 "old_meal": {"type": "string", "description": "The exact name of the entry being replaced. Only needed when the slot holds more than one — a day's two snacks — and required in spirit there: without it both are replaced. Get the exact name from get_weekly_plan/get_week_menu rather than guessing."},
+                "override": {
+                    "type": "boolean",
+                    "description": "Defaults to false. The person's own \"I know, do it anyway\" for a dish that has something someone in the household can't have — set it ONLY when they said so in their own words in this conversation, after the tool declined once and you relayed why. Never on your own initiative, never on a first call.",
+                },
             },
             "required": ["weekly_plan_id", "meal_date", "new_meal"],
         },
     },
     {
         "name": "propose_plan_changes",
-        "description": "Offer changes to the week as a CARD the household saves — nothing is written until they tap Save changes. Use this INSTEAD of swap_meal_in_plan/plan_meal whenever the subject block says the turn is about the week (kind weekly_plan). One row per slot: action 'change' with one candidate (a plain change: what was → what would be), 'change' with two to four candidates (things to tap — use this when they said 'something else' or asked for options), or 'keep' (a night they told you to leave, shown as Kept). Each candidate is a full dish the way submit_swap/add_recipe would write it — meal_name, a one-line reason (under ten words, warm, plain, why it fits), ingredients in store-bought units, instructions, food_groups, main_protein, prep/cook minutes — so it is cookable and shoppable the moment it is saved. The result echoes the card; reply with ONE line that matches it (the consequence if there is one), never a list of the rows. A row's `problem` means that slot has nothing to change: use plan_meal for an open or empty night instead. A row can be for a slot that was already proposed this conversation: a new call replaces the old card.",
+        "description": "Offer changes to the week as a CARD the household saves — nothing is written until they tap Save changes. Use this INSTEAD of swap_meal_in_plan/plan_meal whenever the subject block says the turn is about the week (kind weekly_plan). One row per slot: action 'change' with one candidate (a plain change: what was → what would be), 'change' with two to four candidates (things to tap — use this when they said 'something else' or asked for options), or 'keep' (a night they told you to leave, shown as Kept). Each candidate is a full dish the way submit_swap/add_recipe would write it — meal_name, a one-line reason (under ten words, warm, plain, why it fits), ingredients in store-bought units, instructions, food_groups, main_protein, prep/cook minutes — so it is cookable and shoppable the moment it is saved. The result echoes the card; reply with ONE line that matches it (the consequence if there is one), never a list of the rows. A row's `problem` means that slot has nothing to change: use plan_meal for an open or empty night instead. A candidate with a listed allergen or must-avoid in its ingredients is never shown: it comes back under `unsafe` (or as the row's `problem` when none survived) naming the dish and the ingredient — call again with a dish that doesn't have it, outside the cuisine they asked for if that's what it takes, and say so in your line. A row can be for a slot that was already proposed this conversation: a new call replaces the old card.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -2803,10 +2830,44 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                     "required": ["date", "slot", "meal_name", "is_new_recipe", "reasoning"],
                 },
             },
+            "honoured_requests": {
+                "type": "array",
+                "description": "Each request typed in intake.freeform that this plan honours, in the household's own words, with a two-to-four-word label for the draft's opening line. Never an exclusion (\"no fish\"), never anything they didn't type.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "words": {"type": "string", "description": "Their words for it, as typed — the same span as derived_from.freeform on the slots it shaped."},
+                        "label": {"type": "string", "description": "Two to four words: what it became, e.g. 'Mexican lunches', 'chicken-and-potato dinners', 'pizza Friday'."},
+                    },
+                    "required": ["words", "label"],
+                },
+            },
+            "unmet_requests": {
+                "type": "array",
+                "description": "Anything typed in intake.freeform that this plan could NOT honour, in the household's own words, with a reason of about five words. Empty when everything typed was honoured. Never an exclusion.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "words": {"type": "string", "description": "Their words for it, as typed."},
+                        "reason": {"type": "string", "description": "About five words, in Pomona's voice: 'nothing in stock says lamb'."},
+                    },
+                    "required": ["words", "reason"],
+                },
+            },
         },
         "required": ["days"],
     },
 }
+
+
+class GeneratedDays(list):
+    """
+    The model's `days`, plus what it REPORTED alongside them — the requests
+    it honoured and the ones it could not (the two top-level lists of
+    submit_weekly_plan). A list, so every caller and every test stub that
+    hands back a plain list of days keeps working; `report` is {} for those.
+    """
+    report: dict = {}
 
 
 def generate_weekly_plan_llm(context: dict) -> list[dict]:
@@ -2835,6 +2896,7 @@ def generate_weekly_plan_llm(context: dict) -> list[dict]:
     # instructions first with a cache breakpoint on them, and the
     # household-specific JSON after, lets everything before the JSON hit
     # cache on the second and later generation of any given week.
+    _variety_window = _meal_variety.variety_window_words()
     instructions = f"""Generate a full menu for this household's planning period — day_count days \
 starting at week_start_date, which is 7 days from a Monday only when that is what was asked for; \
 it can be any start day and any length, so plan the dates you are given and no others — \
@@ -2868,6 +2930,13 @@ actual effort level of what they are.
 a light lean toward seasonally appropriate ingredients and dishes (soups and roasting in winter, \
 grilling and salads in summer) when nothing else already decides the choice; it never overrides \
 a stated preference, a constraint, or the variety/novelty rules elsewhere in this list.
+- `must_not_contain` is absolute: the household's allergies and must-avoids, one line per \
+person, as they wrote them. Nothing you send may contain any of it — not in the dish, not in a \
+salsa or a side served with it, not under a "-free" name. The people it names EAT these meals. \
+If the cuisine or protein they asked for leaves you no safe dish, go outside it and say so in \
+that slot's reasoning ("no Mexican lunch without pineapple, so a Greek one") — never send a \
+dish that has the thing with a note on it. Every dish is checked against its ingredient list \
+before it is written, and a dish that fails is thrown away.
 - Respect every listed dietary restriction and allergy without exception. Avoid every \
 listed dislike.
 - household_facts are the household's own notes about themselves (the "What we know" screen). \
@@ -2901,10 +2970,12 @@ each other on the same test. Across DIFFERENT days, a repeated snack is fine and
 the guideline above) — this rule is only ever about one day's own plate. Anything caught here \
 after the fact gets traded onto another day automatically, which works but is a repair, not a \
 plan.
-- The no-repeat rule against recent_history is about DINNER, and loosely lunch — not \
-breakfast or snack. Check recent_history's `slot` field and avoid repeating any dinner (or a \
-near-identical variant) that appears there within the last 3 weeks; use the same judgment for \
-lunch when a genuinely comparable option shows up. Breakfast and snack repeating within the \
+- The no-repeat rule against recent_history is about DINNER and LUNCH — not \
+breakfast or snack. recent_history covers {_variety_window}, and a dinner or lunch (or a \
+near-identical variant) that appears there is NOT drafted again unless the household asked for \
+it this week — a favourite named in intake.freeform, "again please", a dish in intake.cuisines' \
+territory they clearly want back. Check recent_history's `slot` field; a household that keeps \
+seeing last week's dinners stops trusting the draft (Emily, 2026-09-20). Breakfast and snack repeating within the \
 current week is normal and expected (see the guideline above), and so is a breakfast/snack \
 idea persisting from a previous week — recent_history's breakfast/snack entries are \
 informational only, not something to avoid repeating. Separately, avoid repeating the same \
@@ -3087,6 +3158,25 @@ the week planned as if it hadn't been said — is the failure mode this guards a
 goal. The one thing that overrides the placement itself is a night tag that makes that exact \
 night impossible (see the tag-collision rule directly below) — never a scheduling preference of \
 your own.
+- HOW FAR A TYPED REQUEST REACHES. Scope every request in `intake.freeform` by these rules: a \
+meal type with no day named — "Mexican for lunch", "chicken breast, potatoes and veggies for \
+dinner" — means EVERY slot of that meal in the period: every lunch is Mexican, every dinner is \
+built on chicken and potatoes, with the variety rules still applying inside it (different \
+Mexican lunches, not one dish repeated). Satisfying it on Monday and planning the rest of the \
+week as if it hadn't been said is the failure this exists to stop (Emily, 2026-09-20: it did \
+exactly that). A count — "Mexican twice", "fish on 2 nights" — means that many, and you choose \
+the days. A day or a range — "pizza Friday", "Mexican for lunch Mon–Thu" — means those days \
+only. "No X", "nothing X", "without X", "skip X" is an EXCLUSION: honour it by leaving X out of \
+every slot it names, never by planning X, and never treat it as a request to place. \
+`intake.freeform_scope` lists only the requests whose reach is beyond doubt (a meal word, no \
+day, no count, no "no") with every date of that meal spelled out; the rest is yours to read. \
+THEN REPORT WHAT YOU DID: put the request's own words in derived_from.freeform on EVERY slot it \
+shaped; list each request you honoured in `honoured_requests` with a two-to-four-word label \
+for the draft's opening line ("Mexican lunches", "chicken-and-potato dinners", "pizza \
+Friday"); list anything typed that you could NOT honour in `unmet_requests`, in their words, \
+with a reason of about five words ("nothing in stock says lamb"). An exclusion is honoured \
+silently — never in either list. The draft's opening line is built from these two lists and \
+nothing else, so a request in neither is simply not mentioned: never pad them.
 - When something in `intake.freeform` collides with a night tag — they wrote "Friday is pizza \
 night" and also tagged Friday as a night nobody is home — this is the ONE exception to putting \
 an anchored request exactly where they said it: the TAG wins, and you must say so rather than \
@@ -3299,6 +3389,7 @@ Call submit_weekly_plan with the result."""
         result_key="days",
         effort_route="generation",
         on_item=on_day,
+        report_keys=("honoured_requests", "unmet_requests"),
     )
 
 
@@ -3384,6 +3475,10 @@ but stay close to this shape — it's a reasonable default, not a rigid rule). A
 own standalone thing (e.g. "hummus and carrots," "trail mix," "apple with peanut butter") — \
 distinct from treat (a dessert-y indulgence) and dip (a sauce/dip meant to accompany a meal), not \
 just a smaller version of either. Guidelines:
+- `must_not_contain` is absolute: the household's allergies and must-avoids, one line per \
+person, as they wrote them. Nothing you send may contain any of it — not in the item, not in a \
+dip or a side meant to go with it, not under a "-free" name. Every item is checked against its \
+ingredient list before it is written, and one that fails is thrown away.
 - Respect every listed dietary restriction and allergy without exception. Avoid every listed \
 dislike.
 - household_facts are the household's own notes about themselves (the "What we know" screen). \
@@ -3516,10 +3611,14 @@ Call submit_component_plan with the result."""
     )
 
 
-def _intake_generation_context(intake: dict) -> dict:
+def _intake_generation_context(intake: dict, dates: list[str] | None = None) -> dict:
     """
     Reshape a week_intake row into what the generator actually needs to
-    reason with. Two things are computed here rather than left to the model:
+    reason with. Three things are computed here rather than left to the model:
+
+    - `freeform_scope` — which dates each typed meal-type request reaches
+      (every one of that meal's slots when no day is named). `dates` is the
+      period being generated; see week_intake.freeform_meal_scopes.
 
     - `guest_totals` — the intake stores EXTRAS (what the steppers collect),
       but portions need the whole table. Adding household_snapshot to the
@@ -3554,6 +3653,10 @@ def _intake_generation_context(intake: dict) -> dict:
         ],
         "cuisines": intake.get("cuisines") or [],
         "freeform": intake.get("freeform") or "",
+        # What each typed request reaches — every slot of a meal when no
+        # day is named (week_intake.freeform_meal_scopes; the prompt's
+        # `intake.freeform_scope` bullet says what to do with it).
+        "freeform_scope": tools.freeform_meal_scopes(intake.get("freeform") or "", dates or []),
         "household": household,
     }
 
@@ -4216,6 +4319,14 @@ def _generate_weekly_plan(
         "week_start_date": content_start_date,
         "day_count": day_count,
         "constraints_notes": constraints_notes,
+        # The allergies and must-avoids as HARD EXCLUSIONS, one line per
+        # person, stated in their own key rather than left for the model
+        # to assemble out of members[].dietary_restrictions and the hard
+        # facts — the same `must_not_contain` the swap prompt states, so
+        # every door that picks food is told the same thing the same way.
+        # Telling is not preventing: allergen_gate.split_safe checks every
+        # dish that comes back before a word of it is written.
+        "must_not_contain": tools.swap_hard_exclusions(),
         "household_memory": effective_memory,
         # The household's own What-we-know notes (the `facts` table behind
         # the People/Taste/Rhythm tabs). These used to reach chat and the
@@ -4234,7 +4345,7 @@ def _generate_weekly_plan(
             for f in tools.get_facts()
         ],
         "intake": (
-            _intake_generation_context(intake) if intake
+            _intake_generation_context(intake, tools.period_dates(content_start_date, day_count)) if intake
             else _rhythm_only_generation_context(content_start_date, day_count)
         ),
         # Temporarily-excluded recipes (flag_recipe_temporary) are filtered out
@@ -4244,7 +4355,7 @@ def _generate_weekly_plan(
         # name (no ingredients/instructions) -- see list_recipes_for_planning
         # for the measured token cost this replaced.
         "saved_recipes": tools.list_recipes_for_planning(include_temporarily_excluded=False),
-        "recent_history": tools.get_recent_meal_history(weeks=3),
+        "recent_history": tools.get_recent_meal_history(weeks=_meal_variety.VARIETY_WINDOW_WEEKS),
         # Today's real date and season -- see the `today` bullet in the
         # generation prompt below.
         "today": _current_date_and_season(),
@@ -4352,6 +4463,24 @@ def _generate_weekly_plan(
             "have been cut off or hit an error. Nothing was saved; try generating the week again."
         )
     _honest_meal_names(items)
+
+    # Never draft a dish somebody at the table can't have (Emily,
+    # 2026-09-20). Every dish is matched on its NAME and its INGREDIENT
+    # LIST against the household's allergies and must-avoids BEFORE it is
+    # written; a clash is held back here and re-picked below, once the
+    # safe part of the week is on the plan to pick around. This used to
+    # happen only after the whole week was written, as a warning card the
+    # household could wave through — see app/tools/allergen_gate.py.
+    hard_avoidances = _allergen_gate.hard_avoidances()
+    items, held_back = _allergen_gate.split_safe(items, hard_avoidances)
+    if held_back and not items:
+        # Every dish the model sent clashed. Nothing to write and nothing
+        # to pick around; the same clean failure an empty generation gets.
+        raise ValueError(
+            "Every dish in this week's draft had something someone in the household can't "
+            "have. Nothing was saved; try generating the week again."
+        )
+    repick_budget = _allergen_gate.CallBudget()
 
     # The period is written down, not left implied — including for an
     # ordinary Monday week, where content_start_date == week_start_date and
@@ -4485,13 +4614,35 @@ def _generate_weekly_plan(
                     "were dropped: %s",
                     content_start_date, day_count, len(out_of_scope), ", ".join(out_of_scope),
                 )
+            # The slots held back above, each re-picked through the swap's
+            # own picker with the clashing dish on `avoid` — or handed back
+            # as an open question that says what couldn't be done. Written
+            # BEFORE _finish_week_slots so its gap audit finds the slot
+            # settled rather than filling it with a generic question.
+            for held in held_back:
+                if (held["item"].get("date") or "") not in in_scope:
+                    continue
+                try:
+                    _allergen_gate.repick_slot(plan_id, held, repick_budget, avoidances=hard_avoidances)
+                except Exception:
+                    # Logged, and the slot is left to the gap audit below,
+                    # which opens it as a question. Never the clashing dish.
+                    logger.exception(
+                        "Re-picking %s %s around an allergen failed; leaving it as an open question",
+                        held["item"].get("date"), held["item"].get("slot"),
+                    )
             _finish_week_slots(
                 plan_id, content_start_date, intake, effective_memory, day_count, skip_days=skip_days,
-                context=context,
+                context=context, repick_budget=repick_budget,
             )
 
         if intake:
             tools.attach_intake_to_plan(plan_id, intake["intake_id"])
+        # What the model said it did with the typed requests (GeneratedDays.
+        # report) — the draft's opening line is built from this and nothing
+        # else, so a request it neither honoured nor listed is not mentioned
+        # rather than guessed at (draft_opener).
+        tools.record_plan_requests(plan_id, getattr(items, "report", None) or {})
 
         # Clear out any 'needed' grocery items still sourced from the
         # PREVIOUS plan, so quantities from already-superseded weeks don't
@@ -4629,7 +4780,7 @@ def _log_plan_conflicts(plan_id: int, week_start_date: str) -> None:
 def _finish_week_slots(
     plan_id: int, week_start_date: str, intake: dict | None,
     household_memory: dict, day_count: int = 7, skip_days: int = 0,
-    context: dict | None = None,
+    context: dict | None = None, repick_budget=None,
 ) -> None:
     """
     Make the 21-slot guarantee true rather than merely asked for.
@@ -4839,11 +4990,23 @@ def _finish_week_slots(
     if context is not None:
         plan_quality.check_and_log(plan_id, context)
 
+    # The silent last line of defence (allergen_gate.sweep_plan): the
+    # plate pass above can attach a side, and the snack repair can move a
+    # dish, and neither was matched against the household's allergies on
+    # the way in. A side that carries one comes off the plate; a dish that
+    # still clashes is re-picked or handed back as an open question. It
+    # fixes and never asks — the household is never shown a dish they
+    # can't have with a button to keep it (Emily, 2026-09-20).
+    try:
+        _allergen_gate.sweep_plan(plan_id, budget=repick_budget)
+    except Exception:
+        logger.exception("Allergen sweep failed for plan %s; the week stands as generated", plan_id)
+
     # LAST, deliberately. The allergy/dietary check has to describe the week
     # as it finally stands — after the out-night and zero-count passes, the
-    # slot-needs pass, the open-slot audit and the quality pass above have
-    # all had their say. Anything that runs after this is a change the
-    # warning didn't see.
+    # slot-needs pass, the open-slot audit, the quality pass and the
+    # allergen sweep above have all had their say. Anything that runs after
+    # this is a change the log didn't see.
     _log_plan_conflicts(plan_id, week_start_date)
 
 
@@ -6204,7 +6367,11 @@ TOOL_FUNCTIONS = {
     "log_recipe_note": tools.log_recipe_note,
     "log_cooking_deviation": tools.log_cooking_deviation,
     "flag_recipe_temporary": tools.flag_recipe_temporary,
-    "plan_meal": tools.plan_meal,
+    # The chat twin, not the bare function: a dish someone at the table
+    # can't have is declined here with the sentence to relay, and only the
+    # person's own "do it anyway" (override) gets past. The week draft
+    # composes the bare one after running the gate itself.
+    "plan_meal": tools.plan_meal_for_chat,
     "get_meal_plan": tools.get_meal_plan,
     "generate_weekly_plan": generate_weekly_plan,
     "set_week_constraints": tools.set_week_constraints,
@@ -6755,7 +6922,9 @@ def _build_week_context_block(context: dict) -> dict | None:
         + state_line + "\n"
         "How changes work in this mode — the CHANGE CARD:\n"
         "- To change what's eaten on any slot, call propose_plan_changes ONCE with every row the "
-        "message asks for. Never call swap_meal_in_plan or plan_meal for a planned slot here: the "
+        "message asks for. \"All the breakfasts\", \"every dinner\", \"the whole week\" mean every "
+        "matching row above, in that one card — never one row and a question about the rest. "
+        "Never call swap_meal_in_plan or plan_meal for a planned slot here: the "
         "household saves from the card, and nothing is written until they do. (plan_meal is still "
         "right for an OPEN or EMPTY night — there is nothing on it to propose against.)\n"
         "- One candidate per row for a plain change; two to four when they asked for options or "
@@ -6777,6 +6946,36 @@ def _build_week_context_block(context: dict) -> dict | None:
         "— it isn't until they save."
     )
     return {"type": "text", "text": text}
+
+
+def _rest_of_week_lines(meal: dict) -> str:
+    """
+    The week the meal card sits in, one line per day, so a message that
+    widens the scope ("all the breakfasts") can be done in the same turn
+    with no lookup: swap_meal_in_plan needs each slot's date and the dish
+    that is there now, and until 2026-09-21 the block only carried the one
+    meal the card was about — which is half of why the model did that one
+    and offered to "handle the rest separately". Empty (not a failure)
+    when the week can't be read; the turn still knows its own meal.
+    """
+    try:
+        week = tools.describe_plan_for_chat(weekly_plan_id=meal.get("weekly_plan_id"))
+    except Exception:
+        logger.exception("Reading the rest of the week for the meal card failed; carrying on with the one meal")
+        return ""
+    if not week or not week.get("days"):
+        return ""
+    lines = []
+    for day in week["days"]:
+        parts = [
+            f"{s['slot']}: \"{s['meal']}\""
+            for s in day["slots"] if s.get("meal")
+        ]
+        if parts:
+            lines.append(f"- {day['weekday']} {day['date']}: " + "; ".join(parts))
+    if not lines:
+        return ""
+    return "The week this card is on, for a wider scope (slot: the dish there now):\n" + "\n".join(lines) + "\n"
 
 
 def _build_chat_context_block(context: dict | None) -> dict | None:
@@ -6812,6 +7011,13 @@ def _build_chat_context_block(context: dict | None) -> dict | None:
         "The week is still a draft, so nothing is on the grocery list yet and nothing changes "
         "there until they approve the week."
     )
+    # The whole-week reply, said once, in the sheet's own words (the C4
+    # board, 2026-09-20): what happened, then where the list stands.
+    whole_week_reply = (
+        "Done — every breakfast this week is boiled eggs and avocado toast. "
+        + ("The list's updated to match." if meal["approved"]
+           else "Nothing's on the list yet; the week's still a draft.")
+    )
     text = (
         f"This message was sent from the meal card for {when}: \"{meal['meal']}\" "
         f"(date {meal['date']}, slot '{meal['slot']}', weekly_plan_id {meal['weekly_plan_id']}). "
@@ -6822,7 +7028,23 @@ def _build_chat_context_block(context: dict | None) -> dict | None:
         "you already have it.\n"
         + (f"Its ingredients as saved: {ingredients}.\n" if ingredients else "")
         + f"{list_line}\n"
-        "Confirm ONCE, then act:\n"
+        # Emily, 2026-09-20, from Monday's breakfast row: "For all the
+        # breakfasts let's do boiled eggs and avocado toast" — and the
+        # reply argued scope ("this message is about Monday's breakfast, not
+        # the whole week's ... handle the rest separately"). The card is
+        # where the conversation started, not a fence around it.
+        "THE CARD IS A STARTING POINT, NOT A FENCE. If the message names a scope wider than "
+        "this one meal — \"all the breakfasts\", \"every dinner\", \"the whole week\", \"each "
+        "day\", \"for the week\", \"the rest of the week\" — they mean that whole scope, and the "
+        "ask is clear: do all of it in this turn. Never ask whether they meant only this one, "
+        "never do this one and offer to \"handle the rest separately\", and never end on a "
+        "\"do it?\" — call swap_meal_in_plan once per matching slot below (weekly_plan_id "
+        f"{meal['weekly_plan_id']}, that slot's meal_date, slot and old_meal; add_recipe the "
+        "dish first when it is their own idea; a day that has already gone by is left as it "
+        "is), then say what happened in one breath, in this shape with their dish and slot: "
+        f"\"{whole_week_reply}\" Nothing else — the card under your reply carries the count.\n"
+        + _rest_of_week_lines(meal)
+        + "Otherwise, for this one meal alone — Confirm ONCE, then act:\n"
         "- If what they want is clear enough to do, say the exact change back as a "
         "one-line proposal and stop there — \"Ground beef instead of turkey for "
         f"{day_word}'s burgers — do it?\" That is the only question. If it is genuinely "

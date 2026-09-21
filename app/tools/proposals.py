@@ -169,17 +169,42 @@ def propose_plan_changes(weekly_plan_id: int, rows: list[dict], line: str = "") 
             # finding out on approval.
             shoppable = [c for c in cands if c["ingredients"] or _recipe_exists(c["meal_name"])]
             dropped = [c["meal_name"] for c in cands if c not in shoppable]
+            # A dish somebody at the table can't have is not an option
+            # (Emily, 2026-09-20: "just don't suggest anything that fits
+            # that"). Matched on name AND ingredient list HERE, before the
+            # card is drawn — apply_proposal's gate on Save would refuse
+            # it too, but by then the household has been shown it. The
+            # model is told which dish and why, so its next offer is safe.
+            unsafe = []
+            safe = []
+            for c in shoppable:
+                # _hard_clash reads a reused dish off its saved list itself
+                # (recipes.saved_ingredients) — the same fallback every
+                # other door makes.
+                clash = _swap._hard_clash(c)
+                if clash:
+                    unsafe.append(_clash_line(c["meal_name"], clash))
+                else:
+                    safe.append(c)
+            shoppable = safe
             row["candidates"] = shoppable[:_MAX_CANDIDATES]
             # Everything this row has ever been offered, so Another can avoid
             # all of it even once the visible list is capped.
             row["offered"] = [c["meal_name"] for c in row["candidates"]]
             if not row["candidates"]:
-                row["problem"] = ("no dish was offered for this slot" if not dropped else
-                                  f"{', '.join(dropped)} came without ingredients — a new dish needs them to be cookable and shoppable")
-            elif dropped:
-                row["dropped"] = dropped
-            elif entry is None:
-                row["problem"] = "nothing is planned on that slot to change — plan it with plan_meal instead"
+                if unsafe:
+                    row["problem"] = ("; ".join(unsafe) +
+                                      " — offer something without it, outside the cuisine if that’s what it takes")
+                else:
+                    row["problem"] = ("no dish was offered for this slot" if not dropped else
+                                      f"{', '.join(dropped)} came without ingredients — a new dish needs them to be cookable and shoppable")
+            else:
+                if dropped:
+                    row["dropped"] = dropped
+                if unsafe:
+                    row["unsafe"] = unsafe
+                if entry is None:
+                    row["problem"] = "nothing is planned on that slot to change — plan it with plan_meal instead"
         elif entry is None:
             row["problem"] = "nothing is planned on that slot"
         if action == "change" and entry is None and row["candidates"]:
@@ -204,6 +229,16 @@ def propose_plan_changes(weekly_plan_id: int, rows: list[dict], line: str = "") 
     }
     bucket[pid] = proposal
     return public_view(proposal)
+
+
+def _clash_line(meal_name: str, clash: list[dict]) -> str:
+    """\"Pineapple Salsa has pineapple, which Emily can't have\" — what the
+    model is told about a candidate it may not offer."""
+    food = next((c.get("matched") for c in clash if c.get("matched")), None) \
+        or next((c.get("restriction") for c in clash if c.get("restriction")), None) \
+        or "something this house can’t have"
+    who = next((c.get("member") for c in clash if c.get("member")), None)
+    return f"{meal_name} has {food}, which {who + ' can’t have' if who else 'this house can’t have'}"
 
 
 def _recipe_exists(name: str) -> bool:

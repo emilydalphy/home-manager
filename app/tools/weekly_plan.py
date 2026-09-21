@@ -468,9 +468,15 @@ def plan_slot_open(
     }
 
 
-def drop_dish_from_day(weekly_plan_id: int, entry_id: int) -> dict:
+def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | None = None) -> dict:
     """
     Take one day away from a dish, and hand that slot back as a question.
+
+    `open_reason` is the question's own sentence. Left unset it is the
+    stepper's ("You cut … back, so this one is yours to fill"); the
+    allergen sweep (tools.allergen_gate.sweep_plan) passes its own, because
+    a slot opened over an allergy has to say so rather than claim the
+    household cut something back.
 
     The Review screen's stepper (Emily's approved design, 2026-09-09): a
     dish covering four mornings should come down to three without spending
@@ -634,7 +640,7 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int) -> dict:
             ),
         }
 
-    open_reason = f"You cut {dish} back, so this one is yours to fill."
+    open_reason = (open_reason or "").strip() or f"You cut {dish} back, so this one is yours to fill."
     # ONE connection, ONE commit, for all four steps — the same shape and
     # for the same reason as retire_overlapping_plans (2026-09-06). These
     # used to be four separate commits, and the gap between the delete and
@@ -1140,6 +1146,14 @@ def suggest_planning_period(from_date: str = "", plan_ahead: bool = True) -> dic
     week after it while the draft stays where it is on Plan. An 'as_we_go'
     household is never shifted: its period starts today by definition.
 
+    And it never starts before today (2026-09-21). The anchor says where
+    the household's week begins; once that day has passed, the suggestion
+    begins on today instead and keeps its length — a "ready by Friday"
+    household opening Plan on a Sunday is offered Sun–Sat, not the
+    Sat–Fri whose first dinner is already eaten. `is_current_period`
+    stays True: it is still this week, just the part of it that is left
+    to plan ahead of.
+
     `plan_ahead=False` asks for the current period regardless — for the
     one caller that is not choosing a default but resolving a choice the
     person already made: onboarding's "this week / next week" (main.py
@@ -1186,6 +1200,20 @@ def suggest_planning_period(from_date: str = "", plan_ahead: bool = True) -> dic
             if approved is None:
                 start = start + timedelta(days=day_count)
                 is_current = False
+        # Today, never yesterday (Emily, 2026-09-20, re-planning on a
+        # Sunday: "the days are showing from yesterday"). The anchor names
+        # where the household's week BEGINS, and mid-week that day has
+        # gone: a "ready by Friday" household opening Plan on Sunday was
+        # offered Sat 19–Fri 25 on Sep 20, and yesterday's dinner is
+        # already eaten. A suggestion is what to plan NEXT, so it starts on
+        # the first day still ahead — today — and keeps the household's
+        # horizon (seven days, or the anchor's own count), which is what
+        # the "Starting when?" screen shows as "Today · Sun 20 → Sat 26".
+        # Only the suggestion: plan_ahead=False callers are resolving a
+        # period the person already chose and do their own part-week
+        # arithmetic from the anchor start (main._first_plan_window).
+        if plan_ahead and start < today:
+            start = today
     return {
         "start_date": start.isoformat(),
         "day_count": day_count,
@@ -1714,6 +1742,49 @@ def discard_draft_plan(weekly_plan_id: int) -> dict:
         "week_label": label, "approved_week_label": approved_label,
         "was_already_retired": False,
     }
+
+
+def record_plan_requests(weekly_plan_id: int, report: dict | None) -> None:
+    """
+    Keep what the model reported doing with the typed requests when it
+    drafted this plan — `honoured_requests` and `unmet_requests` from
+    submit_weekly_plan, trimmed to their two fields each. Nothing is
+    written for an empty report (a stubbed model, an older prompt), so
+    the opener falls back to the slots' own derived_from.
+    """
+    report = report or {}
+    honoured = [
+        {"words": str(r.get("words") or "").strip(), "label": str(r.get("label") or "").strip()}
+        for r in (report.get("honoured_requests") or []) if isinstance(r, dict) and r.get("words")
+    ]
+    unmet = [
+        {"words": str(r.get("words") or "").strip(), "reason": str(r.get("reason") or "").strip()}
+        for r in (report.get("unmet_requests") or []) if isinstance(r, dict) and r.get("words")
+    ]
+    if not honoured and not unmet:
+        return
+    conn = get_conn()
+    conn.execute(
+        "UPDATE weekly_plans SET requests_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps({"honoured": honoured, "unmet": unmet}), weekly_plan_id, household_id()),
+    )
+    conn.commit()
+    conn.close()
+
+
+def plan_requests(weekly_plan_id: int) -> dict:
+    """The stored report, or {"honoured": [], "unmet": []} when there is none."""
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT requests_json FROM weekly_plans WHERE id = ? AND household_id = ?",
+        (weekly_plan_id, household_id()),
+    ).fetchone()
+    conn.close()
+    try:
+        data = json.loads(row["requests_json"]) if row and row["requests_json"] else {}
+    except (TypeError, ValueError):
+        data = {}
+    return {"honoured": data.get("honoured") or [], "unmet": data.get("unmet") or []}
 
 
 def attach_intake_to_plan(weekly_plan_id: int, intake_id: int) -> dict:
@@ -4544,6 +4615,20 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         meta = f"{total} min" if total else None
         return {"title": title, "meta": meta, "source": "plan", **common}
 
+    # The one short fact a row carries beside its days ("Mexican, as
+    # asked", "packs cold") — read off the entry's derived_from, so it is
+    # only ever said of a slot the household's own answer actually shaped
+    # (draft_opener.asked_fact). Added onto every planned slot after the
+    # fact so the three build_slot returns above stay as they are.
+    from . import draft_opener as _draft_opener  # lazy: it reads meal_variety, which reaches back here
+
+    def with_asked(built, row):
+        if built and built.get("state") == "planned":
+            built["asked"] = _draft_opener.asked_fact({
+                "slot_state": row["slot_state"], "derived_from": row["derived_from_json"],
+            })
+        return built
+
     by_date_slot = {}
     # Snacks are a LIST per day, not one entry: two different snacks a day
     # is the default (preferences.resolve_snacks_per_day), so keying them
@@ -4552,9 +4637,9 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     snacks_by_date: dict[str, list[dict]] = {}
     for r in sorted(rows, key=lambda row: row["id"]):
         if r["slot"] in slots:
-            by_date_slot[(r["date"], r["slot"])] = build_slot(r)
+            by_date_slot[(r["date"], r["slot"])] = with_asked(build_slot(r), r)
         elif r["slot"] == "snack":
-            built = build_slot(r)
+            built = with_asked(build_slot(r), r)
             if built:
                 snacks_by_date.setdefault(r["date"], []).append(built)
 
@@ -4632,6 +4717,12 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         # step's eyebrows ("Dinner · 6:30"). See _slot_clock_labels.
         "slot_times": _slot_clock_labels(),
         "headline": _week_headline(plan, days, intake),
+        # The draft's two opening lines — what it planned around and the
+        # one thing worth knowing (draft_opener.build_opener). Built from
+        # the rows and the intake, so it can't describe a week it didn't
+        # make. Only for a draft: an approved week's band is about the
+        # week, not the decision. Never fails the screen.
+        "draft_opener": _safe_draft_opener(rows, intake, plan, days) if plan["status"] != "approved" else [],
         # Told once, and only once — see PLATES_INTRO and
         # mark_plates_intro_shown. None on every week after the first one
         # where the app actually completed a plate, and None immediately if
@@ -4663,6 +4754,19 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         "next_period": next_period,
         **approval,
     }
+
+
+def _safe_draft_opener(rows, intake, plan, days) -> list[str]:
+    from . import draft_opener as _draft_opener  # lazy, see get_week_menu
+
+    try:
+        return _draft_opener.build_opener(
+            rows, intake, plan["period_start_date"], plan["day_count"], days, plan_id=plan["weekly_plan_id"],
+            report=plan_requests(plan["weekly_plan_id"]),
+        )
+    except Exception:
+        logger.exception("The draft's opening lines could not be built")
+        return []
 
 
 def _decorate_with_holidays(days: list[dict]) -> None:
@@ -6159,10 +6263,13 @@ def swap_meal_in_plan(
     return result
 
 
-def swap_meal_in_plan_for_chat(*args, **kwargs) -> dict:
+def swap_meal_in_plan_for_chat(*args, override: bool = False, **kwargs) -> dict:
     """
-    swap_meal_in_plan with the one refusal a PERSON is owed in front of it:
-    a night that has already gone by.
+    swap_meal_in_plan with the two refusals a PERSON is owed in front of
+    it: a night that has already gone by, and — since 2026-09-21 — a dish
+    somebody at the table can't have (allergen_gate.refuse_if_clashing,
+    which `override`, the person's own "do it anyway", is the only way
+    past).
 
     agent.TOOL_FUNCTIONS points at this rather than at the function itself,
     the shape grocery.add_grocery_item_for_chat already uses (2026-09-15).
@@ -6199,6 +6306,12 @@ def swap_meal_in_plan_for_chat(*args, **kwargs) -> dict:
     # this call's open — there is none, this is the first line.
     if isinstance(meal_date, str) and night_has_gone(meal_date):
         raise SlotRefused(NIGHT_GONE)
+    new_meal = kwargs.get("new_meal")
+    if new_meal is None and len(args) >= 3:
+        new_meal = args[2]
+    if isinstance(new_meal, str):
+        from . import allergen_gate as _allergen_gate
+        _allergen_gate.refuse_if_clashing(new_meal, override=override)
     return swap_meal_in_plan(*args, **kwargs)
 
 

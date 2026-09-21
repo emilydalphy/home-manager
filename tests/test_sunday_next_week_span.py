@@ -253,10 +253,12 @@ class TestAPlanWhoseDaysHavePassed:
         assert nxt["is_current_period"] is False
 
     def test_and_on_a_thursday_it_is_this_week(self, pin_today):
+        # This week, from today: the suggestion never starts before the
+        # household's today (2026-09-21), so the link offers Thu–Wed.
         _insert_plan("2026-08-24", 7)
         pin_today(THURSDAY)
         nxt = tools.get_week_menu()["next_period"]
-        assert (nxt["start_date"], nxt["day_count"]) == (THIS_MONDAY, 7)
+        assert (nxt["start_date"], nxt["day_count"]) == (THURSDAY, 7)
         assert nxt["is_current_period"] is True
 
 

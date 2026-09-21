@@ -45,6 +45,22 @@ def _full_week(week: str, meal: str = "Chili", **extra) -> list[dict]:
     ]
 
 
+def _hand_planned_week(week: str, meal: str) -> dict:
+    """
+    A week the HOUSEHOLD filled with `meal` on every slot — plan_meal by
+    hand, not generation. Since 2026-09-21 generation never writes a dish
+    that clashes (app/tools/allergen_gate.py; tests/test_allergen_hard_block.py),
+    so the approval-time confirm below is only ever reached by a dish the
+    household put on the week themselves. These tests build that week the
+    way it can actually come to exist.
+    """
+    plan = tools.create_weekly_plan(week)
+    for day in tools._week_dates(week):
+        for slot in tools.WEEK_SLOTS:
+            tools.plan_meal(day, meal, slot=slot, weekly_plan_id=plan["weekly_plan_id"])
+    return plan
+
+
 @pytest.fixture
 def kitchen():
     """A household with one member, one safe recipe, and one that isn't."""
@@ -276,35 +292,40 @@ class TestASideCanClashToo:
 
 # ---------- 3. it runs on its own ----------
 
-def test_a_generated_draft_carries_its_conflict_without_anyone_asking(kitchen, monkeypatch):
+def test_a_generated_draft_never_carries_the_clash_at_all(kitchen, monkeypatch):
     """
-    No chat turn, no tool call by the assistant — generation alone has to
-    produce the warning, because generation is the step that put the meal
-    on the table.
+    No chat turn, no tool call by the assistant — and no warning either,
+    because the dish never reaches the draft. Generation used to write the
+    week and then warn about it; since 2026-09-21 (Emily, 2026-09-20: "just
+    don't suggest anything that fits that") a clashing dish is held back
+    before it is written and the slot is re-picked. The full set of cases
+    lives in tests/test_allergen_hard_block.py; this pins the one that
+    replaced the old warning.
     """
     week = _week_start()
     tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+    days = _full_week(week, meal="Chili")
+    days[0]["meal_name"] = "Pineapple Chicken"
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: days)
+    from app.tools import allergen_gate
     monkeypatch.setattr(
-        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Pineapple Chicken")
+        allergen_gate._swap, "_pick_replacement",
+        lambda ctx: {"meal_name": "Chili", "is_new_recipe": False, "reason": "safe and quick"},
     )
 
     plan = agent.generate_weekly_plan(week)
 
     menu = tools.get_week_menu(plan["weekly_plan_id"])
-    assert menu["conflicts"], "the draft the Meals screen renders has to carry the clash"
-    assert {c["meal"] for c in menu["conflicts"]} == {"Pineapple Chicken"}
-    note = menu["conflicts_note"]
-    assert note and "pineapple" in note.lower()
-    assert "before you approve" in note
+    assert menu["conflicts"] == [], "the draft the Meals screen renders never carries a clash"
+    assert menu["settle"] is None
+    names = {m["meal"] for m in tools.get_weekly_plan(plan["weekly_plan_id"])["meals"]}
+    assert "Pineapple Chicken" not in names
 
 
 def test_an_approved_week_is_not_nagged_about_a_decision_already_made(kitchen, monkeypatch):
     week = _week_start()
     tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
-    monkeypatch.setattr(
-        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Pineapple Chicken")
-    )
-    plan = agent.generate_weekly_plan(week)
+    plan = _hand_planned_week(week, "Pineapple Chicken")
 
     # A hard clash needs the household's confirm tap (see the "confirm tap
     # for a hard clash" section below) — this test is about the note's
@@ -344,10 +365,7 @@ def test_a_clean_week_says_nothing_at_all(kitchen, monkeypatch):
 def test_a_hard_clash_blocks_approval_until_confirmed(kitchen, monkeypatch):
     week = _week_start()
     tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
-    monkeypatch.setattr(
-        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Pineapple Chicken")
-    )
-    plan = agent.generate_weekly_plan(week)
+    plan = _hand_planned_week(week, "Pineapple Chicken")
 
     result = tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
 
@@ -366,10 +384,7 @@ def test_a_hard_clash_blocks_approval_until_confirmed(kitchen, monkeypatch):
 def test_confirming_the_hard_clash_approves_it(kitchen, monkeypatch):
     week = _week_start()
     tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
-    monkeypatch.setattr(
-        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Pineapple Chicken")
-    )
-    plan = agent.generate_weekly_plan(week)
+    plan = _hand_planned_week(week, "Pineapple Chicken")
 
     result = tools.approve_weekly_plan(
         plan["weekly_plan_id"], approved_by="Emily", confirm_hard_conflicts=True
@@ -382,10 +397,7 @@ def test_confirming_the_hard_clash_approves_it(kitchen, monkeypatch):
 def test_a_soft_dislike_never_needs_a_confirm_tap(kitchen, monkeypatch):
     week = _week_start()
     tools.edit_preference("dislikes", ["pineapple"])
-    monkeypatch.setattr(
-        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Pineapple Chicken")
-    )
-    plan = agent.generate_weekly_plan(week)
+    plan = _hand_planned_week(week, "Pineapple Chicken")
 
     result = tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
 
@@ -411,10 +423,7 @@ def test_the_confirm_flag_only_matters_on_the_way_in_not_on_a_re_approval(kitche
     """
     week = _week_start()
     tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
-    monkeypatch.setattr(
-        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Pineapple Chicken")
-    )
-    plan = agent.generate_weekly_plan(week)
+    plan = _hand_planned_week(week, "Pineapple Chicken")
     tools.approve_weekly_plan(
         plan["weekly_plan_id"], approved_by="Emily", confirm_hard_conflicts=True
     )
@@ -436,10 +445,7 @@ def test_the_route_reports_needs_confirmation_without_the_success_fields(kitchen
 
     week = _week_start()
     tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
-    monkeypatch.setattr(
-        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Pineapple Chicken")
-    )
-    plan = agent.generate_weekly_plan(week)
+    plan = _hand_planned_week(week, "Pineapple Chicken")
 
     response = app_main.approve_week(week, app_main.WeekApproveRequest(approved_by="Emily"))
 
@@ -721,10 +727,7 @@ def test_approval_hands_back_a_sentence_worded_for_a_decision_already_made(kitch
     """
     week = _week_start()
     tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
-    monkeypatch.setattr(
-        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Pineapple Chicken")
-    )
-    plan = agent.generate_weekly_plan(week)
+    plan = _hand_planned_week(week, "Pineapple Chicken")
 
     result = tools.approve_weekly_plan(
         plan["weekly_plan_id"], approved_by="Emily", confirm_hard_conflicts=True
@@ -767,7 +770,10 @@ def test_a_component_based_week_is_conflict_checked_as_well(kitchen, monkeypatch
     tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
     monkeypatch.setattr(
         agent, "generate_component_plan_llm",
-        lambda ctx: [{"meal_name": "Pineapple Chicken", "category": "protein", "is_new_recipe": False}],
+        lambda ctx: [
+            {"meal_name": "Pineapple Chicken", "category": "protein", "is_new_recipe": False},
+            {"meal_name": "Chili", "category": "protein", "is_new_recipe": False},
+        ],
     )
     seen = {}
     real = tools.check_plan_conflicts
@@ -776,10 +782,14 @@ def test_a_component_based_week_is_conflict_checked_as_well(kitchen, monkeypatch
         lambda plan_id=None: seen.setdefault("result", real(plan_id)),
     )
 
-    agent.generate_weekly_plan(_week_start())
+    plan = agent.generate_weekly_plan(_week_start())
 
     assert "result" in seen, "generation itself has to run the check, not the assistant"
-    assert {c["meal"] for c in seen["result"]["conflicts"]} == {"Pineapple Chicken"}
+    # Since 2026-09-21 the clashing component is held back before it is
+    # written (allergen_gate.split_safe), so the check finds a clean pool.
+    assert seen["result"]["conflicts"] == []
+    names = {m["meal"] for m in tools.get_weekly_plan(plan["weekly_plan_id"])["meals"]}
+    assert names == {"Chili"}
 
 
 # ---------- 9. what the prompt is actually sent ----------
@@ -1008,10 +1018,7 @@ def test_an_approved_weeks_groceries_are_reported_as_a_clash(kitchen, monkeypatc
                      {"item": "strawberries", "qty": "1 punnet"}],
     )
     tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
-    monkeypatch.setattr(
-        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Fruit Salad")
-    )
-    plan = agent.generate_weekly_plan(week)
+    plan = _hand_planned_week(week, "Fruit Salad")
 
     result = tools.approve_weekly_plan(
         plan["weekly_plan_id"], approved_by="Emily", confirm_hard_conflicts=True
@@ -1241,10 +1248,7 @@ def test_a_crashed_allergy_check_asks_rather_than_waving_the_week_through(kitche
     """
     week = _week_start()
     tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
-    monkeypatch.setattr(
-        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Pineapple Chicken")
-    )
-    plan = agent.generate_weekly_plan(week)
+    plan = _hand_planned_week(week, "Pineapple Chicken")
     from app.tools import coordination as _coordination
 
     def boom(*_a, **_k):

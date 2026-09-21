@@ -110,9 +110,13 @@
          target, named the way she thinks of the gesture ("back" to the main
          screen, not "close" a dialog). The handle stays too, as a secondary
          affordance for anyone who already reaches for it. -->
+    <!-- The label names where back goes when the sheet knows (Emily,
+         2026-09-20, "It's confusing where the user needs to go from here"):
+         "Back to your week" when it was opened from the Plan tab or a meal
+         card; plain "Back" elsewhere. Set by askBackLabel() in shell.js. -->
     <button type="button" id="ask-sheet-back" class="ask-sheet-back" aria-label="Back">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="18" height="18"><path d="M15 5l-7 7 7 7"/></svg>
-      Back
+      <span id="ask-sheet-back-label">Back</span>
     </button>
     <!-- One title for every tab — the topic isn't always today (Emily,
          2026-09-11) — and the small way into Helpful tips beside it. -->

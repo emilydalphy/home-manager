@@ -254,6 +254,9 @@ _MIGRATIONS = [
     # key via ALTER TABLE, so an existing database gets the plain column and
     # a newly-created one gets the constrained version from schema.sql.
     ("weekly_plans", "intake_id", "INTEGER"),
+    # The model's own account of the typed requests it honoured and could
+    # not (2026-09-21, "The draft says what it did"); see schema.sql.
+    ("weekly_plans", "requests_json", "TEXT NOT NULL DEFAULT ''"),
     ("meal_plan_entries", "slot_state", "TEXT NOT NULL DEFAULT 'planned'"),
     ("meal_plan_entries", "open_reason", "TEXT NOT NULL DEFAULT ''"),
     ("meal_plan_entries", "derived_from_json", "TEXT NOT NULL DEFAULT '{}'"),

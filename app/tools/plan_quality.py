@@ -11,7 +11,8 @@ The generation prompt (see generate_weekly_plan_llm's instructions in
 agent.py) tells the model a long list of rules -- a `rush` night is capped
 at RUSH_MAX_MINUTES, a weeknight cap when the household has set one, don't
 run the same main_protein three nights straight, don't repeat a dinner
-already eaten in the last three weeks, write a real reason instead of
+already eaten inside the variety window (meal_variety.VARIETY_WINDOW_WEEKS),
+write a real reason instead of
 generic filler, surface at least one new recipe, use at most one open slot
 and never for breakfast/lunch. Nothing downstream ever checked whether the
 model actually did any of that -- see the VERIFIED FINDINGS this module
@@ -107,6 +108,7 @@ from . import recipes as _recipes
 from . import usage as _usage
 from ._shared import household_id
 from .week_intake import RUSH_MAX_MINUTES
+from .meal_variety import variety_window_words as _variety_window_words
 
 logger = logging.getLogger("home_manager")
 
@@ -349,7 +351,7 @@ def _dinner_repeat_in_history(entries: list[dict], context: dict) -> list[Violat
                 rule="dinner_repeat_in_history", severity="warn",
                 date=entry["date"], slot="dinner",
                 message=(
-                    f"'{entry['meal_name']}' on {entry['date']} also appears in the last 3 weeks "
+                    f"'{entry['meal_name']}' on {entry['date']} also appears in {_variety_window_words()} "
                     "of dinner history."
                 ),
             ))
@@ -1137,6 +1139,12 @@ _ALLERGEN_TITLE_WORDS: set | None = None
 # reaches mayonnaise. Carving all of those out took "Steak with Garlic
 # Butter" off the rule entirely, which review caught as a missed control.
 _ALARMING_ALLERGEN_FAMILIES = ("nut", "nuts", "shellfish", "sesame")
+# Members of those families that are a DISH rather than the allergen's own
+# name (2026-09-21, when the alias table grew them): "with Pesto" or "with
+# Hummus" over a recipe without it is an ordinary title lie, not a warning,
+# and reads as one to nobody. The matcher still reaches them; the
+# title-correction rule simply doesn't treat them as sacred.
+_DISH_NOT_A_WARNING = frozenset({"pesto", "marzipan", "praline", "hummus", "satay"})
 
 
 def _allergen_title_words() -> set:
@@ -1164,7 +1172,7 @@ def _allergen_title_words() -> set:
         from .coordination import _ALLERGEN_ALIASES
         words = set(_ALLERGEN_ALIASES)
         for family in _ALARMING_ALLERGEN_FAMILIES:
-            words |= set(_ALLERGEN_ALIASES.get(family, ()))
+            words |= set(_ALLERGEN_ALIASES.get(family, ())) - _DISH_NOT_A_WARNING
         _ALLERGEN_TITLE_WORDS = {_stem(w) for word in words for w in re.findall(r"[a-z]+", word)}
     return _ALLERGEN_TITLE_WORDS
 

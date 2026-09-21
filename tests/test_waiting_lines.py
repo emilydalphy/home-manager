@@ -25,10 +25,14 @@ import pytest
 STATIC = Path(__file__).resolve().parent.parent / "static"
 WAITING_JS = STATIC / "waiting-lines.js"
 
-# Every screen that shows a week-generation wait. onboarding is the
-# first-week reveal, plan-week is the drafting step, shell.js is the Meals
-# "Try again" rebuild.
-ENTRY_POINTS = ("onboarding.html", "plan-week.html", "shell.js")
+# Every screen that shows a week-generation wait AND says what it is doing
+# with a rotating line: onboarding is the first-week reveal, shell.js is the
+# Meals "Try again" rebuild. plan-week's drafting step left the list on
+# 2026-09-21 (Loop Board "Building your week is the onboarding screen"):
+# its status line moves a DAY at a time — "Drafting Monday…" — driven by
+# the stream's own day frames (draftDayLine in static/plan-week.html), so
+# it no longer rotates these lines and no longer loads the helper.
+ENTRY_POINTS = ("onboarding.html", "shell.js")
 
 _needs_node = pytest.mark.skipif(
     shutil.which("node") is None, reason="node is needed to run the helper's own code"
@@ -62,9 +66,12 @@ def test_every_wait_screen_uses_the_shared_helper():
 
 def test_the_pages_load_the_helper():
     """A page that calls it but never loads it silently falls back forever."""
-    for name in ("onboarding.html", "plan-week.html", "shell.html"):
+    for name in ("onboarding.html", "shell.html"):
         src = (STATIC / name).read_text()
         assert "/static/waiting-lines.js" in src, f"{name} never loads waiting-lines.js"
+    # And the one page that stopped using it stopped loading it too.
+    plan_week = (STATIC / "plan-week.html").read_text()
+    assert "PomonaWaiting" not in plan_week and "/static/waiting-lines.js" not in plan_week
 
 
 def test_styling_lives_in_one_css_block():

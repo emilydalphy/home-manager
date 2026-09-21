@@ -217,8 +217,11 @@ def test_plans_title_says_this_week_only_when_the_plan_covers_today():
     covering = _band(today, _plan_data("2026-09-14"))
     assert (covering["title"], covering["eyebrow"]) == ("This week", "Sep 14–20")
 
+    # A draft's title is the moment, not the calendar (board C2, 2026-09-21):
+    # the dates in its eyebrow still say which week it is.
     next_week = _band(today, _plan_data("2026-09-21", status="draft"))
-    assert (next_week["title"], next_week["eyebrow"], next_week["badge"]) == ("Next week", "Sep 21–27", "Draft")
+    assert (next_week["title"], next_week["eyebrow"], next_week["badge"]) == ("Here’s your week.", "Sep 21–27", "Draft")
+    assert _band(today, _plan_data("2026-09-22", status="approved"))["title"] == "Next week"
 
     # Seven days out is still "next week"; eight is not.
     assert _band(today, _plan_data("2026-09-22"))["title"] == "Next week"

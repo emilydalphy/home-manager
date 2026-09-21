@@ -69,6 +69,27 @@ from . import weekly_plan as _weekly_plan
 
 logger = logging.getLogger("home_manager")
 
+# How far back "you've had this recently" reaches, in weeks. ONE constant,
+# read by everything that has an opinion about repeats: the drafting
+# prompt's recent_history (agent.py), plan_quality's repeat check, and the
+# draft's own opening line ("Nine new dishes — nothing from the last two
+# weeks", draft_opener.py). Emily, 2026-09-20: "you're continuously giving
+# me the same food recommendations as previous weeks" — the window was
+# three weeks and lived in three places, none of which was enforced; two
+# weeks is the session's recommended default (2026-09-21), and a dish from
+# inside it is only drafted again when the household asked for it.
+VARIETY_WINDOW_WEEKS = 2
+
+
+def variety_window_words() -> str:
+    """The window as a person says it: "last week", "the last two weeks"."""
+    n = VARIETY_WINDOW_WEEKS
+    if n == 1:
+        return "last week"
+    words = {v: k for k, v in _COUNT_WORDS.items()}
+    return f"the last {words.get(n, n)} weeks"
+
+
 _COUNT_WORDS = {
     "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
 }

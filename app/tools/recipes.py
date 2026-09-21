@@ -461,6 +461,29 @@ def list_recipes_for_planning(include_temporarily_excluded: bool = False) -> lis
     ]
 
 
+def saved_ingredients(name: str) -> list[dict]:
+    """
+    This household's saved recipe's ingredient list, by name
+    (case-insensitively, the same rule existing_recipe_named applies), or
+    [] when there is no such recipe.
+
+    The ONE place a dish named without its list is read off its recipe
+    before the allergen matcher sees it. Three doors need it — the week
+    draft (allergen_gate), the swap and three-picks gate
+    (swap_in_place._hard_clash) and the chat's change card (proposals) —
+    and the verifier of 2026-09-21 found the swap gate matching a reused
+    "Tropical Fruit Cup" on its name alone while its list held pineapple.
+    One helper, so the three cannot drift apart again.
+    """
+    wanted = (name or "").strip().lower()
+    if not wanted:
+        return []
+    for r in list_recipes():
+        if (r.get("name") or "").strip().lower() == wanted:
+            return list(r.get("ingredients") or [])
+    return []
+
+
 def get_recipe(recipe_name: str) -> dict:
     """
     Get full detail for a single saved recipe by exact name — ingredients,

@@ -187,12 +187,16 @@ def test_save_lands_every_row_through_the_swaps_own_door_and_undo_puts_them_back
 
 
 def test_a_row_the_gate_refuses_is_reported_and_the_rest_still_land(week):
-    tools.set_member_dietary_restrictions("Emily", ["shellfish"])
     out = tools.propose_plan_changes(week, [
         {"date": DAY4, "slot": "dinner", "action": "change",
          "candidates": [_cand("Shrimp Tacos", 20, "shrimp", ingredients=[{"item": "Shrimp", "qty": "1 lb", "category": "meat/seafood"}])]},
         {"date": DAY1, "slot": "dinner", "action": "change", "candidates": [_cand("Grilled Pork Chops", 25, "pork")]},
     ])
+    # The allergy arrives BETWEEN the card being drawn and Save — the one
+    # way a clashing candidate can still reach the Save gate, since
+    # 2026-09-21 propose_plan_changes never shows one (see
+    # test_a_candidate_someone_cant_have_is_never_on_the_card).
+    tools.set_member_dietary_restrictions("Emily", ["shellfish"])
     applied = tools.apply_proposal(out["proposal_id"])
     assert applied["status"] == "applied"
     assert [r["meal"] for r in applied["refused"]] == ["Shrimp Tacos"]
@@ -396,11 +400,13 @@ def test_a_remembered_fact_is_a_chip_with_a_way_to_correct_it():
 # ---------- after the verifier (round 2) ----------
 
 def test_every_row_refused_is_said_as_refused_not_as_nothing_to_change(week):
-    tools.set_member_dietary_restrictions("Emily", ["shellfish"])
     out = tools.propose_plan_changes(week, [
         {"date": DAY4, "slot": "dinner", "action": "change",
          "candidates": [_cand("Shrimp Tacos", 20, "shrimp", ingredients=[{"item": "Shrimp", "qty": "1 lb", "category": "meat/seafood"}])]},
     ])
+    # Added after the card was drawn — see the note in
+    # test_a_row_the_gate_refuses_is_reported_and_the_rest_still_land.
+    tools.set_member_dietary_restrictions("Emily", ["shellfish"])
     applied = tools.apply_proposal(out["proposal_id"])
     assert applied["status"] == "refused"
     assert applied["refused"][0]["why"].startswith("clashes")

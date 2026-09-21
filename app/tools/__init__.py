@@ -29,6 +29,8 @@ from ._shared import (  # noqa: F401
     member_id,
     current_member,
     household_adults,
+    display_initials,
+    household_initials,
     acting_name,
     acting_member_id_for,
     set_current_member_id,
@@ -319,6 +321,7 @@ from .meal_plans import (  # noqa: F401
     get_meal_plan,
     get_recent_meal_history,
     plan_meal,
+    plan_meal_for_chat,
 )
 from .memory import (  # noqa: F401
     _CONTEXT_SIGNALS,
@@ -518,6 +521,7 @@ from .attendance import (  # noqa: F401
     remove_members_from_slot,
     resolve_member_ids,
     scale_ingredients,
+    set_day_attendance,
     set_guest_count,
     set_member_attendance,
     set_slot_attendance,
@@ -589,8 +593,12 @@ from .usage import (  # noqa: F401
 )
 from .week_intake import (  # noqa: F401
     MOOD_GUIDANCE,
+    SURPRISE_MOOD,
     NIGHT_TAGS,
     ONBOARDING_CUISINES,
+    KNOWN_CUISINES,
+    add_household_cuisine,
+    cuisine_suggestions,
     RUSH_MAX_MINUTES,
     _build_preferences_snapshot,
     _current_intake_row,
@@ -600,6 +608,7 @@ from .week_intake import (  # noqa: F401
     _rhythm_packed_lunch_suggestions,
     _week_dates,
     period_dates,
+    freeform_meal_scopes,
     get_week_intake,
     get_week_intake_history,
     get_week_intake_prefill,
@@ -607,6 +616,8 @@ from .week_intake import (  # noqa: F401
 )
 from .weekly_plan import (  # noqa: F401
     DAY_SLOTS,
+    plan_requests,
+    record_plan_requests,
     WEEK_SLOTS,
     _COMPONENT_CATEGORY_ORDER,
     _build_day_based_menu,
@@ -679,6 +690,10 @@ from .swap_in_place import (  # noqa: F401
     swap_meal_in_place,
     undo_meal_swap,
 )
+# The household's allergies and must-avoids as the one `must_not_contain`
+# list every food-picking prompt is handed — the swap's, the three picks',
+# the change card's and, since 2026-09-21, week generation's.
+from .swap_in_place import _hard_exclusions as swap_hard_exclusions  # noqa: F401
 # Three picks for one slot, chosen before anything is written — the Week 1
 # reveal's Swap and the Plan tab's Swap sheet (2026-09-18; the two were
 # built apart and reconciled onto this one module). A screen's own read

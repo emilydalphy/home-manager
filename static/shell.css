@@ -2114,6 +2114,26 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 }
 .ask-action-card .ask-action-change { font-family: var(--font-body); font-size: 16px; color: var(--ink); }
 .ask-action-card .ask-action-view { flex-shrink: 0; font-family: var(--font-body); font-weight: 700; font-size: 15px; color: var(--ink-strong); }
+/* A draft edit's card is a receipt (buildAskMessageEl, 2026-09-20): a
+   celadon tile with a tick and no View — settled, already true — and the
+   way on is the primary button under it, not the card. */
+.ask-action-card.is-receipt {
+  cursor: default;
+  background: var(--celadon-tint);
+  border-color: var(--celadon-edge);
+}
+.ask-action-card.is-receipt .ask-action-kicker { color: var(--celadon-label); }
+.ask-action-card .ask-action-tick {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--celadon);
+  color: var(--on-accent-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 /* ---------- The change card and the Remembered chip ----------
    Under an assistant reply (shell.js mountChangeCard / buildAskMessageEl;
@@ -2301,6 +2321,20 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   min-height: 44px;
 }
 .ask-chip:hover { background: var(--sand); }
+/* The sheet's one primary — "Back to your week" after a draft edit
+   (computeNextStepChips, 2026-09-20). Full width, apricot, dark ink on
+   it (hard rule 1); the only apricot fill in the sheet. */
+.ask-chip-primary {
+  flex: 1 1 100%;
+  min-height: 52px;
+  border-radius: var(--radius-control);
+  background: var(--apricot);
+  color: var(--on-accent-ink);
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: -.02em;
+}
+.ask-chip-primary:hover { background: var(--apricot); }
 
 /* The subject line above the composer — "About Tuesday's dinner · Turkey
    Burgers" — for a chat opened from a meal card (Emily, 2026-09-13). One
@@ -7716,23 +7750,6 @@ span.cook-week-name { cursor: default; }
      end of the file takes it back with the rest of the docks. */
   padding: 14px 84px 10px 20px;
 }
-/* The clash, on its dish: urgent tint inside the row, the same two quiet
-   segments the old card had. */
-.rv-settle {
-  flex: 1 0 100%;
-  background: var(--urgent-tint);
-  border-radius: var(--radius-control);
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.rv-settle-note {
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.4;
-  color: var(--urgent-label);
-}
 /* ---------- SET: the All set screen ----------
    Spruce, the one finish in the loop that gets its own screen (§2b S5). */
 .wk-allset {
@@ -7901,7 +7918,47 @@ span.cook-week-name { cursor: default; }
 .wk-row.is-done .wk-row-name { color: var(--ink-done); text-decoration: line-through; }
 .wk-row-meta { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); }
 .wk-row-acts { display: flex; gap: 6px; flex: 0 0 auto; }
-.wk-row .rv-settle { margin-bottom: 6px; }
+/* The reason a tap away (Emily, 2026-09-15: "Pomona stores one per dish
+   and shows none"; built 2026-09-21). The meta line is the tap — a
+   button dressed exactly as the line, with the 44px target through
+   ::before as .wk-mini does (rule 6) so the row keeps its height — and
+   the reason opens as a note floating over the next row (.wk-why-pop,
+   absolute inside the row) rather than pushing rows around. The pop is
+   --surface-raised with a --hairline rim and the panel shadow, the same
+   dress as the notification panel: a thing floating over content.
+   --ink on --surface-raised measures 13.9 light / 12.6 dark. */
+.wk-row { position: relative; }
+.wk-row-why {
+  position: relative;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  width: auto;
+  align-self: flex-start;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.wk-row-why::before { content: ""; position: absolute; inset: -14px -8px -14px 0; }
+.wk-row-why[aria-expanded="true"] { color: var(--ink); }
+.wk-why-pop {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% - 2px);
+  z-index: 3;
+  background: var(--surface-raised);
+  border: 1.5px solid var(--hairline);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-panel);
+  padding: 10px 12px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.wk-why-pop[hidden] { display: none; }
 .wk-mini {
   position: relative;
   height: 36px;
@@ -8039,6 +8096,116 @@ span.cook-week-name { cursor: default; }
 .wk-dots { display: flex; gap: 6px; justify-content: center; padding: 8px 0 0; }
 .wk-dot-page { width: 6px; height: 6px; border-radius: var(--radius-pill); background: var(--hairline-deep); }
 .wk-dot-page.is-on { background: var(--apricot); width: 18px; }
+
+/* ---------- The draft's front door (Emily, 2026-09-21, boards A2/C2/C3) ----------
+   Three things ride in the Plan root's band (fillWeekBandExtras in
+   shell.js): the Re-plan pill top right, the draft's two-line opener,
+   and the What we're eating | Which days toggle. Under it, What we're
+   eating is the menu by meal type (.wk-menu); Which days is the
+   carousel above, unchanged. Every value is a token already measured on
+   the surface it sits on:
+     .wk-replan      --on-accent-ink on --apricot-light (the board's
+                     .mini.ap on spruce): 9.1 light / 9.1 dark. The one
+                     apricot fill in the band; the dock's Approve is the
+                     screen's primary (rule 5) — the board makes this
+                     call, and it is noted as one.
+     .wk-draft-lead  --ivory-ink-muted on --spruce: 10.18 light / 8.17 dark.
+     .wk-draft-seg   the track is --spruce-raised (chips on spruce only,
+                     §1); an unselected half is --ivory-ink-muted on it
+                     (8.62 / 6.52); the selected half is --surface with
+                     --ink-strong (13.5 light; in dark a --surface pill on
+                     the raised spruce with --ink-strong, 12.2).
+     .wk-menu-head   the eyebrow, --ink-muted on --surface (§3).
+     .wk-dock-link   the screen's one italic line (§3), --ink-secondary on
+                     --ground: 4.6 light / 7.4 dark. */
+.wk-replan {
+  position: relative;
+  height: 36px;
+  padding: 0 12px 0 10px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: var(--apricot-light);
+  color: var(--on-accent-ink);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+/* The 44px target around the 36px box (rule 6), as .wk-mini does. */
+.wk-replan::before { content: ""; position: absolute; inset: -4px 0; }
+.wk-replan svg { width: 16px; height: 16px; flex: 0 0 auto; }
+.wk-replan:hover { background: var(--apricot); }
+.wk-draft-lead {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ivory-ink-muted);
+  margin: 8px 0 0;
+}
+.wk-draft-seg {
+  display: flex;
+  gap: 3px;
+  margin: 12px 0 0;
+  padding: 3px;
+  border-radius: var(--radius-control);
+  background: var(--spruce-raised);
+}
+.wk-draft-seg-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: none;
+  color: var(--ivory-ink-muted);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+.wk-draft-seg-btn.is-on { background: var(--surface); color: var(--ink-strong); }
+.wk-menu { display: flex; flex-direction: column; gap: 12px; padding: 14px 20px 0; }
+.wk-menu-card { padding: 12px 16px 6px; }
+.wk-menu-head {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  padding-bottom: 2px;
+}
+.wk-menu-head + .wk-row { border-top: 0; }
+.wk-menu-row .wk-row-main { min-height: 48px; }
+/* Swap on the menu wears the sand, edge-less dress the carousel's does. */
+.wk-menu .wk-mini { background: var(--sand); border-color: transparent; }
+@media (hover: hover) { .wk-menu .wk-mini:hover { background: var(--sand-deep); } }
+.wk-dock-quiet {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 2px;
+}
+.wk-dock-link {
+  min-height: 44px;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 17px;
+  color: var(--ink-secondary);
+}
+.wk-dock-link:hover { color: var(--ink); }
 
 /* ---------- the freezer step ---------- */
 .wk-freezer-body { padding: 0 20px; display: flex; flex-direction: column; gap: 18px; }
@@ -8311,55 +8478,6 @@ span.cook-week-name { cursor: default; }
 /* One dish, once, with the days it covers. Stacked rather than side by side
    because at 390px a dish name and a stepper on one line leaves the name
    two words wide. */
-/* ---------- "One thing to settle": a hard allergen clash ---------- */
-/* Urgent TINT, not the urgent fill — a clash needs a decision, and Rule 3
-   reserves the fill itself for something worse than that. The only card
-   allowed above the week card in a draft, and only when there is one. */
-.wk-settle-card {
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex-shrink: 0;
-  background: var(--urgent-tint);
-  border-color: var(--urgent-tint);
-}
-.wk-settle-title {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 17px;
-  letter-spacing: -0.02em;
-  color: var(--urgent-label);
-}
-.wk-settle-note {
-  font-family: var(--font-body);
-  font-size: 15px;
-  line-height: 1.45;
-  color: var(--ink);
-}
-/* Two segments, equal weight: neither swapping nor keeping is the app's
-   recommendation — the household's allergy is theirs to judge. Both quiet,
-   because the screen's one apricot is the Approve button below (Rule 5). */
-.wk-settle-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 2px; }
-.wk-settle-swap, .wk-settle-keep {
-  min-height: 46px;
-  padding: 0 10px;
-  border-radius: var(--radius-control);
-  border: 1.5px solid var(--hairline-strong);
-  background: var(--surface);
-  color: var(--ink);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 15px;
-  letter-spacing: -0.02em;
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.wk-settle-swap:hover, .wk-settle-keep:hover { background: var(--sand); }
-.wk-settle-keep { color: var(--ink-secondary); }
-
 /* ---------- the one quiet row under the card ---------- */
 .wk-foot {
   display: flex;
@@ -9224,11 +9342,15 @@ span.cook-week-name { cursor: default; }
 }
 .who-row:hover { border-color: var(--hairline-strong); }
 .who-row:disabled { opacity: .6; cursor: default; }
+/* The initial the server gives each adult (tools.display_initials): one
+   letter, or two or three when two people share one — Em / Et — so the
+   circle grows to fit rather than clipping. */
 .who-row-initial {
   flex: 0 0 auto;
-  width: 40px;
+  min-width: 40px;
   height: 40px;
-  border-radius: 50%;
+  padding: 0 9px;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;

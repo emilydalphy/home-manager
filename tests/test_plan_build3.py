@@ -39,13 +39,19 @@ def test_a_draft_root_is_the_review_with_no_crumb_and_approve_in_the_dock():
     assert "Tweak it with me" not in SHELL_JS
 
 
-def test_the_clash_sits_on_its_dish():
+def test_no_clash_card_sits_on_a_dish_any_more():
+    """Build 3 put the hard clash on its dish's row, with "Keep it anyway".
+    Emily, 2026-09-20: "if there is a conflict for an allergy, just don't
+    suggest anything that fits that" — so since 2026-09-21 a dish someone
+    can't have is never drafted (app/tools/allergen_gate.py), and the card,
+    its button, its lookup and its CSS are gone with it — including the
+    layout bug where the card overlapped the rows beneath it."""
     row = _fn("wkMealRowHtml")
-    assert "wkSettleFor(day, entry)" in row
-    assert 'class="rv-settle"' in row and "data-wk-settle-keep" in row
-    # Swap the meal is the row's own button, so no second "Swap the …".
+    assert "wkSettleFor" not in SHELL_JS
+    assert "rv-settle" not in row and "data-wk-settle-keep" not in SHELL_JS
+    assert "Keep it anyway" not in SHELL_JS
     assert "data-rv-settle-swap" not in SHELL_JS
-    assert ".rv-settle {" in SHELL_CSS
+    assert ".rv-settle" not in SHELL_CSS and ".wk-settle" not in SHELL_CSS
 
 
 def test_a_dish_name_opens_the_meal_step_with_a_crumb_back_to_the_week():
