@@ -346,6 +346,21 @@ class TestRhythmAnchoredDefault:
     def _set_anchor(self, value: str):
         tools.set_planning_anchor(value)
 
+    # The same hand pin TestReadyDayNudgeTiming uses below: weekly_plan's
+    # `date` AND the household's clock, or the pin means two dates under a
+    # straddling timezone (conftest.pin_household_clock).
+    class _FixedToday(datetime.date):
+        _value: "datetime.date | None" = None
+
+        @classmethod
+        def today(cls):
+            return cls._value
+
+    def _pin_today(self, monkeypatch, iso_date: str):
+        self._FixedToday._value = datetime.date.fromisoformat(iso_date)
+        monkeypatch.setattr(weekly_plan, "date", self._FixedToday)
+        pin_household_clock(monkeypatch)
+
     def test_a_household_ready_the_sunday_before_gets_a_monday(self):
         # 'sunday' is the exact old default's new name — ready the Sunday
         # before, Monday start.
@@ -355,20 +370,46 @@ class TestRhythmAnchoredDefault:
         assert datetime.date.fromisoformat(suggestion["start_date"]).weekday() == 0
         assert suggestion["day_count"] == 7
 
-    def test_ready_by_friday_starts_the_week_on_saturday(self):
+    def test_ready_by_friday_starts_the_week_on_saturday(self, monkeypatch):
         # Emily's own example: "ready by Friday" means the week starts the
-        # next morning.
+        # next morning. Since 2026-09-21 (today, never yesterday) that is
+        # the Saturday the period BEGINS on; opened mid-period, the
+        # suggestion starts on the household's today instead — pinned to a
+        # Saturday here so the anchor's own day is what is asserted.
         self._set_anchor("friday")
+        self._pin_today(monkeypatch, "2026-09-05")  # a Saturday
         suggestion = tools.suggest_planning_period()
+        assert suggestion["start_date"] == "2026-09-05"
         assert datetime.date.fromisoformat(suggestion["start_date"]).weekday() == 5  # Saturday
         assert suggestion["day_count"] == 7
         assert suggestion["planning_anchor"] == "friday"
 
-    def test_every_weekday_anchor_starts_the_day_after_itself(self):
+    def test_every_weekday_anchor_starts_the_day_after_itself(self, monkeypatch):
+        # On the anchor's own start day the suggestion begins there; on any
+        # later day of the period it begins today (never yesterday, Emily
+        # 2026-09-20). Pinned to the week of Sep 7–13, 2026 so each anchor's
+        # start day is a known date.
+        monday = datetime.date(2026, 9, 7)
         for i, weekday in enumerate(tools.PLANNING_ANCHOR_WEEKDAYS):
             self._set_anchor(weekday)
+            start = monday + datetime.timedelta(days=(i + 1) % 7)
+            self._pin_today(monkeypatch, start.isoformat())
             suggestion = tools.suggest_planning_period()
+            assert suggestion["start_date"] == start.isoformat(), weekday
             assert datetime.date.fromisoformat(suggestion["start_date"]).weekday() == (i + 1) % 7, weekday
+
+    def test_mid_period_the_suggestion_starts_today_never_yesterday(self, monkeypatch):
+        """FAILS ON MAIN: a "ready by Friday" household opening Plan on a
+        Sunday was offered Sat 19–Fri 25 on Sep 20 (Emily, 2026-09-20: "the
+        days are showing from yesterday"). The suggestion now begins on the
+        household's today and keeps the horizon."""
+        self._set_anchor("friday")
+        self._pin_today(monkeypatch, "2026-09-20")  # the Sunday, day two of a Sat–Fri period
+        suggestion = tools.suggest_planning_period()
+        assert suggestion["start_date"] == "2026-09-20"
+        assert suggestion["day_count"] == 7
+        assert suggestion["is_current_period"] is True
+        assert suggestion["label"] == "Sep 20–26"
 
     def test_a_household_that_plans_as_it_goes_gets_a_short_horizon(self):
         # Short horizons, not a Monday-shaped week from a different start:
