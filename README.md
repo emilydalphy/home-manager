@@ -822,6 +822,16 @@ and Fly.io work similarly):
    (the exact URL from step 5, no trailing slash). Without this, any link the
    assistant hands back in chat — like an Eater's self-service link — has no
    way to know its own domain and can't construct a working URL.
+7. Optional, but worth doing once testers are in: get an email every time
+   someone files a "Something not working?" report. Add these variables:
+   `FEEDBACK_EMAIL_TO` (where the reports go), `SMTP_HOST` (for Google
+   Workspace: `smtp.gmail.com`), `SMTP_USER` (the sending account),
+   `SMTP_PASSWORD` (an *app password* for that account, not its real one —
+   Google account → Security → 2-Step Verification → App passwords), and
+   optionally `SMTP_PORT` (default 587) and `SMTP_FROM` (default: the
+   sending account). With any of the four required ones missing, reports
+   are still saved and the log says which variable is unset; nothing
+   breaks. See `app/feedback_email.py`.
 
 This still has no login/accounts — treat the URL as private (don't share it
 publicly) until the auth work described below is done.
