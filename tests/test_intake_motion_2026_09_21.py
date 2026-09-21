@@ -276,6 +276,43 @@ class TestStartingWhen:
         assert "if (step === 1) $('cta').disabled = picking && !pick.end;" in _extract("paintCta")
         assert "if (pick.end) choosePeriod(pick.start, daysBetween(pick.start, pick.end) + 1);" in _extract("pickDay")
 
+    @_needs_node
+    def test_the_picker_opens_showing_today_and_scrolls_only_to_what_was_tapped(self):
+        """Verification find (2026-09-21): opening the picker scrolled the
+        strip to the range's far end, which put today — the first tappable
+        day — off-screen. Runs renderRangeCard against a strip narrower than
+        the range, before and after a tap."""
+        harness = (
+            "var weekStart = '2026-09-20'; var dayCount = 7; var horizon = 7; var who = '';\n"
+            + _var("PERIOD_STRIP_DAYS") +
+            "var pick = { start: '', end: '' }; var picking = false; var pickTapped = false;\n"
+            "function paintCta() {}\n"
+            "function choosePeriod(s, n) { weekStart = s; dayCount = n; }\n"
+            "var tiles = [];\n"
+            "var strip = { classList: { toggle: function () {} }, scrollLeft: 999, clientWidth: 300, _html: '',\n"
+            "  set innerHTML(h) { this._html = h; tiles = (h.match(/data-day=\"[^\"]+\"/g) || []).map(function (m, i) {\n"
+            "    return { dataset: { day: m.slice(10, -1) }, offsetLeft: i * 50, offsetWidth: 48, addEventListener: function () {} }; }); },\n"
+            "  get innerHTML() { return this._html; },\n"
+            "  querySelectorAll: function (sel) { if (sel === 'button[data-day]') return tiles;\n"
+            "    var on = (this._html.match(/class=\"dt( [^\"]*)?\"/g) || []);\n"
+            "    return tiles.filter(function (t, i) { return /\\bon\\b/.test(on[i]); }); } };\n"
+            "var els = { 'range-strip': strip, 'range-hint': { hidden: true, textContent: '' },\n"
+            "  'range-words': { textContent: '' }, 'range-count': { textContent: '' } };\n"
+            "function $(id) { return els[id]; }\n"
+            + _extract("chooseStartKey") + "\n" + _extract("pickDay") + "\n" + _extract("renderRangeCard") + "\n"
+            + "function renderStartChips() {}\n"
+            + "chooseStartKey('pick', { options: [{ key: 'pick', start: weekStart, days: dayCount }] });\n"
+            + "var opened = strip.scrollLeft;\n"
+            + "pickDay('2026-10-05');\n"
+            + "console.log(JSON.stringify({ opened: opened, afterTap: strip.scrollLeft, picking: picking }));\n"
+        )
+        got = json.loads(_node(harness))
+        assert got["picking"] is True
+        # On open: the start of the strip, where today is.
+        assert got["opened"] == 0
+        # After a tap on a day past the edge: scrolled so that day shows.
+        assert got["afterTap"] > 0
+
     def test_the_period_chosen_is_the_one_every_later_step_asks_about(self):
         # Leaving step 1 fetches the prefill for the chosen period (once).
         assert "if (!(await ensureLoaded())) return;" in _extract("advance")

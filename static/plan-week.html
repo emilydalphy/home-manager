@@ -1090,6 +1090,10 @@
   // a range is half-chosen (shell.js's wirePeriodPicker, same rules).
   var picking = false;
   var pick = { start: '', end: '' };
+  // Whether a day has been tapped since the strip opened: until then the
+  // strip shows its first days (today is the first tappable one), and
+  // only a tap scrolls it to what was tapped.
+  var pickTapped = false;
 
   function renderStartChips() {
     var opts = startOptions(todayIso(), horizon, weekStart, dayCount);
@@ -1111,6 +1115,7 @@
       // Opens on the range already showing — today's week, or whatever
       // the page arrived with — rather than on nothing at all.
       picking = true;
+      pickTapped = false;
       pick = { start: weekStart, end: addDaysIso(weekStart, Math.max(1, dayCount) - 1) };
     } else {
       picking = false;
@@ -1136,6 +1141,7 @@
   }
 
   function pickDay(day) {
+    pickTapped = true;
     if (!pick.end) {
       // A range is half-chosen. A day on or after the start closes it —
       // including the start itself, a legitimate one-day range. A day
@@ -1195,10 +1201,14 @@
     strip.querySelectorAll('button[data-day]').forEach(function (b) {
       b.addEventListener('click', function () { pickDay(b.dataset.day); });
     });
-    // The strip you are picking on should show the last thing you tapped.
+    // The strip you are picking on should show the last thing you tapped
+    // — and, before anything is tapped, today: it is the first tappable
+    // day, and scrolling to the range's far end on open put it off-screen.
     var edges = strip.querySelectorAll('.dt.on');
     var edge = edges[edges.length - 1];
-    if (picking && edge && edge.offsetLeft + edge.offsetWidth > strip.scrollLeft + strip.clientWidth) {
+    if (picking && !pickTapped) {
+      strip.scrollLeft = 0;
+    } else if (picking && edge && edge.offsetLeft + edge.offsetWidth > strip.scrollLeft + strip.clientWidth) {
       strip.scrollLeft = edge.offsetLeft + edge.offsetWidth - strip.clientWidth;
     }
     paintCta();
@@ -1268,7 +1278,7 @@
       // matters: the shopping list has already been built from it, and
       // anything new gets added, nothing taken off.
       $('joined').hidden = false;
-      $('joined').textContent = data.plan_status === 'approved'
+      $('joined').textContent = (data.plan_status === 'approved' || data.approved_overlap)
         ? data.week_label + ' is already approved and on your shopping list. Re-planning makes a ' +
           'new draft beside it — nothing changes until you approve that one. Anything already ' +
           'bought stays either way.'
@@ -1380,7 +1390,13 @@
   function outGroups(byDay, members) {
     byDay = byDay || {};
     var names = (members || []).map(function (m) { return m.name; });
-    var awaySlots = SHEET_SLOTS.filter(function (s) { return !!(byDay[s] && byDay[s].nobody_home); });
+    // A meal everyone is out for is nobody home whatever the guest count
+    // says: there is nobody to host them, and the day's save drops the
+    // count (attendance.set_day_attendance) so the meal is away.
+    var awaySlots = SHEET_SLOTS.filter(function (s) {
+      var att = byDay[s];
+      return !!att && (att.nobody_home || (names.length > 0 && (att.absent_names || []).length >= names.length));
+    });
     var rest = SHEET_SLOTS.filter(function (s) { return awaySlots.indexOf(s) === -1; });
     var groups = [];
     var homeAll = [];
@@ -1414,7 +1430,7 @@
         words.push(joinNames(grp.names) + ' out' + (grp.outs.length === SHEET_SLOTS.length ? '' : ' for ' + joinWords(grp.outs)));
       });
     }
-    if (g.guests) words.push('+' + g.guests + ' for dinner');
+    if (g.guests && g.awaySlots.indexOf('dinner') === -1) words.push('+' + g.guests + ' for dinner');
     return words;
   }
 
@@ -1423,11 +1439,19 @@
   // for Vic." Empty when nothing is marked.
   function daySummary(byDay, members) {
     var g = outGroups(byDay, members);
-    if (g.awaySlots.length === SHEET_SLOTS.length) return 'Nobody home — I’ll plan nothing and buy nothing.';
+    var guestsNobodyHome = g.guests > 0 && g.awaySlots.indexOf('dinner') !== -1;
+    if (g.awaySlots.length === SHEET_SLOTS.length && !guestsNobodyHome) return 'Nobody home — I’ll plan nothing and buy nothing.';
     var bits = [];
-    if (g.awaySlots.length) {
-      bits.push('Nobody home for ' + joinWords(g.awaySlots) + ' — I’ll plan nothing and buy nothing for ' +
-        (g.awaySlots.length === 1 ? 'it' : 'those') + '.');
+    // The true thing when guests are counted for a dinner nobody is home
+    // for: there is nobody to host them, so nothing is planned.
+    var plainAway = g.awaySlots.filter(function (s) { return !(s === 'dinner' && guestsNobodyHome); });
+    if (plainAway.length) {
+      bits.push('Nobody home for ' + joinWords(plainAway) + ' — I’ll plan nothing and buy nothing for ' +
+        (plainAway.length === 1 ? 'it' : 'those') + '.');
+    }
+    if (guestsNobodyHome) {
+      bits.push('Everyone’s out for dinner — ' + g.guests + ' guest' + (g.guests === 1 ? '' : 's') +
+        ' with nobody home, so I’ll plan nothing.');
     }
     if (g.groups.length) {
       var said = g.groups.map(function (grp) {
@@ -1437,7 +1461,7 @@
       }).join('. ');
       bits.push(said + (g.homeAll.length ? ' — I’ll plan for ' + joinNames(g.homeAll) + '.' : ' — I’ll plan each meal for whoever’s home.'));
     }
-    if (g.guests) {
+    if (g.guests && !guestsNobodyHome) {
       bits.push('Dinner for ' + (g.atDinner + g.guests) + ' with ' + g.guests + ' guest' + (g.guests === 1 ? '' : 's') + '.');
     }
     return bits.join(' ');
@@ -1553,7 +1577,7 @@
       out[slot] = {
         absent_names: absent,
         guest_count: guests,
-        nobody_home: size > 0 && absent.length >= size && !guests
+        nobody_home: size > 0 && absent.length >= size
       };
     });
     return out;
@@ -1711,7 +1735,12 @@
   function applySheetToAnswers(draft) {
     var d = draft.date;
     var tags = draft.tags.slice();
-    if (draft.guests > 0) {
+    // Guests for a dinner everyone is out for are nobody's to host: the
+    // day's save drops the count (attendance.set_day_attendance) and so
+    // does the intake's copy of it.
+    var size = attendance.members.length;
+    var hosted = draft.guests > 0 && !(size > 0 && (draft.absent.dinner || []).length >= size);
+    if (hosted) {
       tags.push('guests');
       answers.guest_counts[d] = { adults: draft.guests, children: 0 };
     } else {

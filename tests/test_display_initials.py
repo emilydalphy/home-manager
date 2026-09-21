@@ -46,6 +46,12 @@ SERVER = "".join(
     (["Sam", "Samantha"], ["Sam", "Sama"]),
     (["Sam", "Sam"], ["Sam", "Sam"]),
     (["emily", "ETHAN"], ["Em", "ET"]),
+    # Accents are folded for the comparison and kept in what is shown.
+    (["Émile", "Emma"], ["Émi", "Emm"]),
+    (["Émile", "Ethan"], ["Ém", "Et"]),
+    (["Émile", "Vic"], ["É", "V"]),
+    (["Zoë", "Zoe"], ["Zoë", "Zoe"]),
+    (["Ödön", "Olga"], ["Öd", "Ol"]),
     (["", "Bob"], ["?", "B"]),
     (["Emily"], ["E"]),
     ([], []),

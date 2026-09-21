@@ -197,6 +197,17 @@ class TestTheSummaryLine:
             "I’ll plan each meal for whoever’s home."
         )
 
+    def test_guests_for_a_dinner_nobody_is_home_for_is_said_plainly(self):
+        everyone = ["Emily", "Ethan", "Vic"]
+        by_day = _by_day(dinner=(everyone, False, 1))
+        assert self._summary(by_day) == "Everyone’s out for dinner — 1 guest with nobody home, so I’ll plan nothing."
+        by_day = _by_day(breakfast=(everyone, True, 0), lunch=(everyone, True, 0), dinner=(everyone, False, 2))
+        assert self._summary(by_day) == (
+            "Nobody home for breakfast and lunch — I’ll plan nothing and buy nothing for those. "
+            "Everyone’s out for dinner — 2 guests with nobody home, so I’ll plan nothing."
+        )
+        assert "whoever" not in self._summary(by_day)
+
     def test_out_all_day_but_not_alone(self):
         by_day = _by_day(breakfast=(["Emily"], False, 0), lunch=(["Emily"], False, 0), dinner=(["Emily"], False, 0))
         assert self._summary(by_day) == "Emily’s out all day — I’ll plan for Ethan and Vic."
@@ -218,6 +229,10 @@ class TestTheTileWords:
         assert self._words(_by_day(lunch=(everyone, True, 0), dinner=(["Emily", "Ethan"], False, 0))) == [
             "nobody home for lunch", "Emily and Ethan out for dinner",
         ]
+
+    def test_a_dinner_nobody_is_home_for_carries_no_guest_count(self):
+        everyone = ["Emily", "Ethan", "Vic"]
+        assert self._words(_by_day(dinner=(everyone, False, 1))) == ["nobody home for dinner"]
 
     def test_a_household_of_one(self):
         one = "[{id:1,name:'Emily',initial:'E'}]"
@@ -333,6 +348,14 @@ class TestDoneAndDiscard:
         # the rows, and only the sheet's own tags kept.
         assert got["thu"]["absent"]["dinner"] == ["Emily", "Ethan", "Vic"]
         assert got["thu"]["tags"] == ["rush"]
+
+    def test_guests_for_a_dinner_everyone_is_out_for_are_not_recorded(self):
+        body = (
+            "applySheetToAnswers({ date: '2026-09-25', absent: { dinner: ['Emily', 'Ethan', 'Vic'] }, guests: 2, tags: [] });\n"
+            "console.log(JSON.stringify(answers));\n"
+        )
+        got = json.loads(_node(self._harness(body)))
+        assert got["night_tags"] == {} and got["guest_counts"] == {}
 
     def test_applying_the_sheet_drops_out_and_guests_when_there_are_none(self):
         body = (
@@ -451,6 +474,11 @@ def test_an_unchanged_meal_is_not_rewritten_and_a_wrong_name_is_refused(three):
         tools.set_day_attendance(friday, {"dinner": "Emily"})
     # Guests are clamped to the stepper's range.
     assert tools.set_day_attendance(friday, {"dinner": {"guest_count": 40}})["slots"]["dinner"]["guest_count"] == 10
+    # Everyone out means nobody home, guests or not: the count is dropped
+    # and the meal is away — there is nobody to host them.
+    out = tools.set_day_attendance(friday, {"dinner": {"absent": ["Emily", "Ethan", "Vic"], "guest_count": 2}})
+    assert out["slots"]["dinner"]["guest_count"] == 0 and out["slots"]["dinner"]["nobody_home"] is True
+    assert tools.get_slot_need(friday, "dinner")["need"] == "away"
 
 
 def test_the_route_saves_the_sheet_and_refuses_what_it_cannot_read(signed_in, three):

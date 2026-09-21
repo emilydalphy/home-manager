@@ -397,6 +397,12 @@ def set_day_attendance(date_str: str, slots: dict, source: str = "sheet") -> dic
         guest_count = None
         if guests_given is not None:
             guest_count = max(0, min(10, int(guests_given)))
+        # Everyone out means nobody home, guests or not: there is nobody
+        # to host them, so the count is dropped and the meal is away. The
+        # sheet says so before Done ("Everyone's out for dinner — 1 guest
+        # with nobody home, so I'll plan nothing.").
+        if present_ids is not None and not present_ids and all_ids:
+            guest_count = 0
         unchanged_presence = present_ids is None or present_ids == current["present_member_ids"]
         unchanged_guests = guest_count is None or guest_count == current["guest_count"]
         if unchanged_presence and unchanged_guests:

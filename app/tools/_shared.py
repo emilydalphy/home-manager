@@ -152,6 +152,17 @@ def use_member(value: int | None) -> Iterator[int | None]:
 _ADULT_SQL = "LOWER(TRIM(age_group)) = 'adult'"
 
 
+def _fold_for_compare(name: str) -> str:
+    """The name with accents stripped and case folded, one character per
+    character of the original (combining marks dropped), so a prefix of
+    the fold is a prefix of the name."""
+    import unicodedata
+
+    return "".join(
+        ch for ch in unicodedata.normalize("NFKD", name) if not unicodedata.combining(ch)
+    ).lower()
+
+
 def display_initials(names: list[str]) -> list[str]:
     """
     The letter (or letters) each person is shown as wherever the app draws
@@ -167,12 +178,14 @@ def display_initials(names: list[str]) -> list[str]:
     name (or one name that is a prefix of another) get as many letters as
     it takes, up to the whole name.
 
-    Letters are compared case-insensitively and shown with the first
-    capitalised and the rest as typed. A blank name is "?". Positional:
-    the result lines up with `names`.
+    Letters are compared case-insensitively and with accents folded
+    (Émile and Emma clash on E, and come out Ém / Em — the accent stays
+    in what is shown), shown with the first capitalised and the rest as
+    typed. A blank name is "?". Positional: the result lines up with
+    `names`.
     """
     cleaned = [(n or "").strip() for n in names]
-    keys = [c.lower() for c in cleaned]
+    keys = [_fold_for_compare(c) for c in cleaned]
     out: list[str] = []
     for i, name in enumerate(cleaned):
         if not name:

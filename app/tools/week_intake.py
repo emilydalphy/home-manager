@@ -676,11 +676,89 @@ def _recent_dinners_on_record(week_start: str) -> bool:
     )
 
 
+# How far back an intake nobody has drafted from may have been FILED and
+# still be the one a period opens on: the overnight straddle (one adult
+# starts on Saturday night, the other opens it on Sunday, when the screen
+# starts from today) — never a set of answers abandoned weeks ago.
+IN_FLIGHT_REACH_DAYS = 7
+
+
+def _plan_for_period(week_start: str, day_count: int):
+    """
+    The live plan a period is ABOUT: the one whose days include the
+    period's first day, else an approved one it overlaps (the one that
+    re-planning would cost something), else any live plan it overlaps.
+    None when the period touches no plan.
+
+    Not "the plan filed under this date". The intake screen opens on today
+    even when the plan it re-plans started yesterday (plan-week.html's
+    clampStart, 2026-09-21: yesterday is eaten), so "Re-plan this week" on
+    an approved Sat–Fri plan asks about Sun–Sat, and an exact key found
+    no plan at all — the approved warning went unsaid, and "Change my
+    answers" opened blank. Returns the overlap record from
+    find_overlapping_plans plus the plan's intake_id.
+    """
+    overlapping = _weekly_plan.find_overlapping_plans(week_start, day_count)
+    if not overlapping:
+        return None
+    covering = [
+        o for o in overlapping
+        if o["period_start_date"] <= week_start <= _weekly_plan.period_end_date(o["period_start_date"], o["day_count"])
+    ]
+    approved = [o for o in overlapping if o["status"] == "approved"]
+    chosen = (covering or approved or overlapping)[-1]
+    conn = get_conn()
+    row = conn.execute("SELECT intake_id FROM weekly_plans WHERE id = ?", (chosen["weekly_plan_id"],)).fetchone()
+    conn.close()
+    return {**chosen, "intake_id": row["intake_id"] if row else None,
+            "approved_overlap": bool(approved)}
+
+
+def _intake_for_period(conn, week_start: str, day_count: int, plan) -> dict | None:
+    """
+    The answers a period opens on: the intake filed under its first day;
+    else the current revision of the intake its plan was drafted from (so
+    "Change my answers" on Tuesday still has Sunday's night tags, guests
+    and typed note); else an intake nobody has drafted from yet, filed
+    within IN_FLIGHT_REACH_DAYS before — the second adult joining the
+    first across midnight. Dated answers outside the period are left out,
+    since the save that follows would refuse them; the days still in range
+    keep every answer they had.
+    """
+    row = _current_intake_row(conn, week_start)
+    if row is None and plan and plan.get("intake_id"):
+        filed = conn.execute("SELECT week_start FROM week_intake WHERE id = ?", (plan["intake_id"],)).fetchone()
+        if filed:
+            row = _current_intake_row(conn, filed["week_start"])
+    if row is None and plan is None:
+        floor = (date.fromisoformat(week_start) - timedelta(days=IN_FLIGHT_REACH_DAYS)).isoformat()
+        row = conn.execute(
+            "SELECT * FROM week_intake wi WHERE household_id = ? AND week_start < ? AND week_start >= ? "
+            "AND superseded_at IS NULL "
+            "AND NOT EXISTS (SELECT 1 FROM weekly_plans wp WHERE wp.intake_id = wi.id) "
+            "ORDER BY week_start DESC, revision DESC LIMIT 1",
+            (household_id(), week_start, floor),
+        ).fetchone()
+    if row is None:
+        return None
+    intake = _intake_row_to_dict(row)
+    days = set(period_dates(week_start, day_count))
+    intake["night_tags"] = {d: t for d, t in intake["night_tags"].items() if d in days}
+    intake["guest_counts"] = {d: c for d, c in intake["guest_counts"].items() if d in days}
+    intake["packed_lunch_days"] = [d for d in intake["packed_lunch_days"] if d in days]
+    return intake
+
+
 def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
     """
     Everything the two question screens need to open already knowing what
     the app knows: per-day hints, the household's own saved cuisines, its
     composition for the guest maths, and any intake already in flight.
+
+    The plan and the intake are the ones that COVER the period's first
+    day, not ones filed under it (_plan_for_period, _intake_for_period):
+    since the screen never opens before today, a plan started yesterday
+    is found by the day it still holds.
 
     `in_flight` is the soft lock from DATA_MODEL.md → One intake in flight.
     Both adults are nudged on Sunday, so both can start; the second to open
@@ -707,17 +785,12 @@ def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
     prefs = conn.execute(
         "SELECT cuisine_preferences_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
     ).fetchone()
-    plan = conn.execute(
-        "SELECT id, status, intake_id FROM weekly_plans WHERE household_id = ? AND week_start_date = ? "
-        "ORDER BY created_at DESC, id DESC LIMIT 1",
-        (household_id(), week_start),
-    ).fetchone()
-    intake_row = _current_intake_row(conn, week_start)
+    plan = _plan_for_period(week_start, day_count)
+    intake = _intake_for_period(conn, week_start, day_count, plan)
     last_intake = _last_period_intake(conn, week_start)
     conn.close()
 
     saved_cuisines = json.loads(prefs["cuisine_preferences_json"]) if prefs else []
-    intake = _intake_row_to_dict(intake_row) if intake_row else None
     # "In flight" means somebody has answered something for this week that
     # hasn't been turned into a plan yet. Once a plan has been generated
     # from this revision, carrying on from it is a redo, not a join.
@@ -752,8 +825,12 @@ def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
         "intake": intake,
         "in_flight": in_flight,
         "plan_exists": bool(plan),
-        "plan_id": plan["id"] if plan else None,
+        "plan_id": plan["weekly_plan_id"] if plan else None,
         "plan_status": plan["status"] if plan else None,
+        # True when any approved plan holds a day of this period — the
+        # warning that re-planning makes a new draft beside it fires on
+        # this, whichever plan the period opens on.
+        "approved_overlap": bool(plan and plan["approved_overlap"]),
         # Loop Board "Onboarding: household rhythm..." — a suggestion only,
         # not an answer; see _rhythm_packed_lunch_suggestions.
         "rhythm_packed_lunch_suggestions": _rhythm_packed_lunch_suggestions(week_start, day_count),
