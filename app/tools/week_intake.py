@@ -76,6 +76,113 @@ def _week_dates(week_start: str) -> list[str]:
     return period_dates(week_start, 7)
 
 
+# ---------- what a typed request reaches ----------
+# Emily, 2026-09-20, from her phone: "I gave it a detailed description —
+# Mexican for lunch, chicken breast, potatoes and veggies for dinner — and
+# it didn't listen." Only Monday got both. The free-text answer reached the
+# drafting prompt as one opaque string with a rule to "put it exactly where
+# they said", and a request that names a MEAL and no DAY has no "where" for
+# that rule to bite on — so the model satisfied it once and moved on.
+#
+# freeform_meal_scopes makes the reach explicit, from their words: a
+# request about a meal with no day named applies to EVERY slot of that
+# meal in the period; one that names a day applies to that day; one that
+# says how many ("twice") leaves the picking to the planner. The result
+# rides into the generation context as intake.freeform_scope, next to the
+# words themselves (agent._intake_generation_context), and the prompt is
+# told what it means. Deterministic and testable — the scope is a fact
+# about the sentence, not a judgement call.
+
+_MEAL_WORDS = {
+    "breakfast": ("breakfast", "breakfasts", "brunch", "mornings"),
+    "lunch": ("lunch", "lunches", "lunchtime"),
+    "dinner": ("dinner", "dinners", "supper", "suppers", "night", "nights", "evenings"),
+    "snack": ("snack", "snacks"),
+}
+_MEAL_WORD_RE = re.compile(
+    r"\b(" + "|".join(w for words in _MEAL_WORDS.values() for w in words) + r")\b", re.IGNORECASE
+)
+_MEAL_OF_WORD = {w: meal for meal, words in _MEAL_WORDS.items() for w in words}
+
+_WEEKDAY_WORDS = {
+    "monday": 0, "mon": 0, "tuesday": 1, "tue": 1, "tues": 1, "wednesday": 2, "wed": 2,
+    "thursday": 3, "thu": 3, "thur": 3, "thurs": 3, "friday": 4, "fri": 4,
+    "saturday": 5, "sat": 5, "sunday": 6, "sun": 6,
+}
+_WEEKDAY_RE = re.compile(
+    r"\b(" + "|".join(sorted(_WEEKDAY_WORDS, key=len, reverse=True)) + r"|weekend|weekends|weeknights?|tonight)\b",
+    re.IGNORECASE,
+)
+# "twice", "two nights", "a couple of lunches", "3 dinners": they said how
+# many, not which — the planner picks the days.
+_HOW_MANY_RE = re.compile(
+    r"\b(once|twice|a couple of|a few|one|two|three|four|five|six|\d+)\s*(?:\w+\s+)?"
+    r"(?:times?|nights?|days?|mornings?|breakfasts?|lunches|dinners?|suppers?|snacks?)\b",
+    re.IGNORECASE,
+)
+_REQUEST_SPLIT_RE = re.compile(r"[.;!?\n]+")
+
+
+def _weekday_dates(clause: str, dates: list[str]) -> list[str]:
+    wanted: set[int] = set()
+    for m in _WEEKDAY_RE.finditer(clause):
+        w = m.group(1).lower()
+        if w in _WEEKDAY_WORDS:
+            wanted.add(_WEEKDAY_WORDS[w])
+        elif w.startswith("weekend"):
+            wanted.update((5, 6))
+        elif w.startswith("weeknight"):
+            wanted.update(range(5))
+        elif w == "tonight":
+            wanted.add(date.fromisoformat(dates[0]).weekday() if dates else -1)
+    return [d for d in dates if date.fromisoformat(d).weekday() in wanted]
+
+
+def _clauses_by_meal(request: str) -> list[tuple[str, str]]:
+    """
+    One (clause, meal) per meal word in a request, in order. "Mexican for
+    lunch, chicken breast, potatoes and veggies for dinner" is two: the
+    words up to and including each meal word belong to that meal; whatever
+    trails the last one ("for dinner I want chicken") stays with it.
+    """
+    matches = list(_MEAL_WORD_RE.finditer(request))
+    if not matches:
+        return []
+    out: list[tuple[str, str]] = []
+    start = 0
+    for i, m in enumerate(matches):
+        end = m.end() if i + 1 < len(matches) else len(request)
+        clause = request[start:end].strip(" ,;:-–—\t")
+        out.append((clause, _MEAL_OF_WORD[m.group(1).lower()]))
+        start = m.end()
+    return out
+
+
+def freeform_meal_scopes(text: str | None, dates: list[str]) -> list[dict]:
+    """
+    Each meal-type request in the household's own words, with the dates it
+    applies to. A request with no day named applies to every date; one that
+    names a day (or the weekend, or "tonight") applies to those; one that
+    says how many ("twice") applies to some, and the planner picks which.
+    A sentence that names no meal is not a meal-type request and is left to
+    the prompt's ordinary handling of intake.freeform.
+    """
+    scopes: list[dict] = []
+    for request in _REQUEST_SPLIT_RE.split(text or ""):
+        request = request.strip()
+        if not request:
+            continue
+        for clause, meal in _clauses_by_meal(request):
+            named = _weekday_dates(clause, dates)
+            if named:
+                scopes.append({"words": clause, "meal": meal, "applies_to": "named", "dates": named})
+            elif _HOW_MANY_RE.search(clause):
+                scopes.append({"words": clause, "meal": meal, "applies_to": "some", "dates": []})
+            else:
+                scopes.append({"words": clause, "meal": meal, "applies_to": "every", "dates": list(dates)})
+    return scopes
+
+
 def period_dates(start_date: str, day_count: int = 7) -> list[str]:
     """
     The ISO dates of a planning period: `day_count` days from `start_date`,

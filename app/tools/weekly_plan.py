@@ -4472,6 +4472,20 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         meta = f"{total} min" if total else None
         return {"title": title, "meta": meta, "source": "plan", **common}
 
+    # The one short fact a row carries beside its days ("Mexican, as
+    # asked", "packs cold") — read off the entry's derived_from, so it is
+    # only ever said of a slot the household's own answer actually shaped
+    # (draft_opener.asked_fact). Added onto every planned slot after the
+    # fact so the three build_slot returns above stay as they are.
+    from . import draft_opener as _draft_opener  # lazy: it reads meal_variety, which reaches back here
+
+    def with_asked(built, row):
+        if built and built.get("state") == "planned":
+            built["asked"] = _draft_opener.asked_fact({
+                "slot_state": row["slot_state"], "derived_from": row["derived_from_json"],
+            })
+        return built
+
     by_date_slot = {}
     # Snacks are a LIST per day, not one entry: two different snacks a day
     # is the default (preferences.resolve_snacks_per_day), so keying them
@@ -4480,9 +4494,9 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     snacks_by_date: dict[str, list[dict]] = {}
     for r in sorted(rows, key=lambda row: row["id"]):
         if r["slot"] in slots:
-            by_date_slot[(r["date"], r["slot"])] = build_slot(r)
+            by_date_slot[(r["date"], r["slot"])] = with_asked(build_slot(r), r)
         elif r["slot"] == "snack":
-            built = build_slot(r)
+            built = with_asked(build_slot(r), r)
             if built:
                 snacks_by_date.setdefault(r["date"], []).append(built)
 
@@ -4560,6 +4574,12 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         # step's eyebrows ("Dinner · 6:30"). See _slot_clock_labels.
         "slot_times": _slot_clock_labels(),
         "headline": _week_headline(plan, days, intake),
+        # The draft's two opening lines — what it planned around and the
+        # one thing worth knowing (draft_opener.build_opener). Built from
+        # the rows and the intake, so it can't describe a week it didn't
+        # make. Only for a draft: an approved week's band is about the
+        # week, not the decision. Never fails the screen.
+        "draft_opener": _safe_draft_opener(rows, intake, plan, days) if plan["status"] != "approved" else [],
         # Told once, and only once — see PLATES_INTRO and
         # mark_plates_intro_shown. None on every week after the first one
         # where the app actually completed a plate, and None immediately if
@@ -4591,6 +4611,18 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         "next_period": next_period,
         **approval,
     }
+
+
+def _safe_draft_opener(rows, intake, plan, days) -> list[str]:
+    from . import draft_opener as _draft_opener  # lazy, see get_week_menu
+
+    try:
+        return _draft_opener.build_opener(
+            rows, intake, plan["period_start_date"], plan["day_count"], days, plan_id=plan["weekly_plan_id"],
+        )
+    except Exception:
+        logger.exception("The draft's opening lines could not be built")
+        return []
 
 
 def _decorate_with_holidays(days: list[dict]) -> None:

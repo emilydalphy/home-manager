@@ -18,6 +18,7 @@ import time
 from anthropic import Anthropic, APIConnectionError, APIStatusError, APITimeoutError
 from . import calendar_feed, tools
 from .tools import plan_quality
+from .tools import meal_variety as _meal_variety
 from .tools import voice as _voice
 
 logger = logging.getLogger("home_manager")
@@ -2835,6 +2836,7 @@ def generate_weekly_plan_llm(context: dict) -> list[dict]:
     # instructions first with a cache breakpoint on them, and the
     # household-specific JSON after, lets everything before the JSON hit
     # cache on the second and later generation of any given week.
+    _variety_window = _meal_variety.variety_window_words()
     instructions = f"""Generate a full menu for this household's planning period — day_count days \
 starting at week_start_date, which is 7 days from a Monday only when that is what was asked for; \
 it can be any start day and any length, so plan the dates you are given and no others — \
@@ -2901,10 +2903,12 @@ each other on the same test. Across DIFFERENT days, a repeated snack is fine and
 the guideline above) — this rule is only ever about one day's own plate. Anything caught here \
 after the fact gets traded onto another day automatically, which works but is a repair, not a \
 plan.
-- The no-repeat rule against recent_history is about DINNER, and loosely lunch — not \
-breakfast or snack. Check recent_history's `slot` field and avoid repeating any dinner (or a \
-near-identical variant) that appears there within the last 3 weeks; use the same judgment for \
-lunch when a genuinely comparable option shows up. Breakfast and snack repeating within the \
+- The no-repeat rule against recent_history is about DINNER and LUNCH — not \
+breakfast or snack. recent_history covers {_variety_window}, and a dinner or lunch (or a \
+near-identical variant) that appears there is NOT drafted again unless the household asked for \
+it this week — a favourite named in intake.freeform, "again please", a dish in intake.cuisines' \
+territory they clearly want back. Check recent_history's `slot` field; a household that keeps \
+seeing last week's dinners stops trusting the draft (Emily, 2026-09-20). Breakfast and snack repeating within the \
 current week is normal and expected (see the guideline above), and so is a breakfast/snack \
 idea persisting from a previous week — recent_history's breakfast/snack entries are \
 informational only, not something to avoid repeating. Separately, avoid repeating the same \
@@ -3087,6 +3091,17 @@ the week planned as if it hadn't been said — is the failure mode this guards a
 goal. The one thing that overrides the placement itself is a night tag that makes that exact \
 night impossible (see the tag-collision rule directly below) — never a scheduling preference of \
 your own.
+- `intake.freeform_scope` spells out the REACH of each request in `intake.freeform`, worked out \
+from their own words. A request that names a MEAL and no DAY — "Mexican for lunch", "chicken \
+breast, potatoes and veggies for dinner" — has applies_to "every" and lists every date of that \
+meal in the period, and it means every one of them: every lunch is Mexican, every dinner is \
+built on chicken and potatoes. The variety rules still apply INSIDE it — different Mexican \
+lunches, different chicken-and-potato dinners, not one dish repeated — but a lunch that isn't \
+Mexican is a lunch that ignored them. Satisfying it on Monday and planning the rest of the week \
+as if it hadn't been said is exactly what this exists to stop. applies_to "named" lists only the \
+dates they named ("Friday is pizza night"); "some" means they said how many ("Mexican twice this \
+week") and you choose which days. Quote the request's words in derived_from.freeform on EVERY \
+slot it shaped, so the draft can say where it went.
 - When something in `intake.freeform` collides with a night tag — they wrote "Friday is pizza \
 night" and also tagged Friday as a night nobody is home — this is the ONE exception to putting \
 an anchored request exactly where they said it: the TAG wins, and you must say so rather than \
@@ -3516,10 +3531,14 @@ Call submit_component_plan with the result."""
     )
 
 
-def _intake_generation_context(intake: dict) -> dict:
+def _intake_generation_context(intake: dict, dates: list[str] | None = None) -> dict:
     """
     Reshape a week_intake row into what the generator actually needs to
-    reason with. Two things are computed here rather than left to the model:
+    reason with. Three things are computed here rather than left to the model:
+
+    - `freeform_scope` — which dates each typed meal-type request reaches
+      (every one of that meal's slots when no day is named). `dates` is the
+      period being generated; see week_intake.freeform_meal_scopes.
 
     - `guest_totals` — the intake stores EXTRAS (what the steppers collect),
       but portions need the whole table. Adding household_snapshot to the
@@ -3554,6 +3573,10 @@ def _intake_generation_context(intake: dict) -> dict:
         ],
         "cuisines": intake.get("cuisines") or [],
         "freeform": intake.get("freeform") or "",
+        # What each typed request reaches — every slot of a meal when no
+        # day is named (week_intake.freeform_meal_scopes; the prompt's
+        # `intake.freeform_scope` bullet says what to do with it).
+        "freeform_scope": tools.freeform_meal_scopes(intake.get("freeform") or "", dates or []),
         "household": household,
     }
 
@@ -4234,7 +4257,7 @@ def _generate_weekly_plan(
             for f in tools.get_facts()
         ],
         "intake": (
-            _intake_generation_context(intake) if intake
+            _intake_generation_context(intake, tools.period_dates(content_start_date, day_count)) if intake
             else _rhythm_only_generation_context(content_start_date, day_count)
         ),
         # Temporarily-excluded recipes (flag_recipe_temporary) are filtered out
@@ -4244,7 +4267,7 @@ def _generate_weekly_plan(
         # name (no ingredients/instructions) -- see list_recipes_for_planning
         # for the measured token cost this replaced.
         "saved_recipes": tools.list_recipes_for_planning(include_temporarily_excluded=False),
-        "recent_history": tools.get_recent_meal_history(weeks=3),
+        "recent_history": tools.get_recent_meal_history(weeks=_meal_variety.VARIETY_WINDOW_WEEKS),
         # Today's real date and season -- see the `today` bullet in the
         # generation prompt below.
         "today": _current_date_and_season(),

@@ -584,6 +584,7 @@ from .week_intake import (  # noqa: F401
     _rhythm_packed_lunch_suggestions,
     _week_dates,
     period_dates,
+    freeform_meal_scopes,
     get_week_intake,
     get_week_intake_history,
     get_week_intake_prefill,
