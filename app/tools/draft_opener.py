@@ -30,7 +30,10 @@ unmet gets no line at all.
            lunches — the slots the no-repeat rule is about — ("Nine new
            dishes — nothing from the last two weeks"), only said when
            there IS a window to compare against. Numbers are words up to
-           twelve, then numerals, on both lines.
+           twelve, then numerals, on both lines. With Surprise me as the
+           mood the comparison is everything they've ever had from Pomona
+           ("Nine new dishes — nothing you've had from me before"), since
+           surprise means new to them (Emily, 2026-09-21).
 
 `asked_fact` is the sibling of this for one row: the one short fact the
 dish carries beside its days ("Mexican, as asked", "packs cold"), read off
@@ -326,7 +329,8 @@ def _line_one(entries: list[dict], intake: dict | None, period: list[str], days:
     return build(ask, more, with_days)
 
 
-def _line_two(entries: list[dict], report: dict | None, recent: set[str] | None) -> str:
+def _line_two(entries: list[dict], report: dict | None, recent: set[str] | None,
+              surprise: bool = False) -> str:
     open_slots = [e for e in entries if e.get("slot_state") == "open"]
     if len(open_slots) == 1:
         return "One slot I’d like your call on."
@@ -341,6 +345,14 @@ def _line_two(entries: list[dict], report: dict | None, recent: set[str] | None)
         return ""
     back = [n for n in names if n.lower() in recent]
     new = len(names) - len(back)
+    if surprise:
+        # Surprise me means new to you (Emily, 2026-09-21): the comparison
+        # is everything they've ever had from Pomona, not the window.
+        if not back:
+            return f"{_cap(number_word(new))} new dishes — nothing you’ve had from me before."
+        if len(back) <= 2:
+            return f"{_cap(number_word(new))} new dishes; {_join(back)} you’ve had from me before."
+        return f"{_cap(number_word(new))} new dishes, {number_word(len(back))} you’ve had from me before."
     window = _meal_variety.variety_window_words()
     if not back:
         return f"{_cap(number_word(new))} new dishes — nothing from {window}."
@@ -361,5 +373,14 @@ def build_opener(rows, intake: dict | None, period_start: str, day_count: int, d
     period = _week_intake.period_dates(period_start, day_count)
     entries = _plan_entries(rows)
     first = _line_one(entries, intake, period, days, report)
-    second = _line_two(entries, report, recent_dish_names(period_start, plan_id))
+    surprise = _meal_variety.is_surprise_me(intake)
+    if surprise:
+        # Against everything they've had from Pomona, drafted or approved
+        # (meal_variety.household_dish_history) — None with no history at
+        # all, so a first week claims nothing.
+        had = {h["name"].lower() for h in _meal_variety.household_dish_history(exclude_plan_id=plan_id)}
+        recent = had or None
+    else:
+        recent = recent_dish_names(period_start, plan_id)
+    second = _line_two(entries, report, recent, surprise=surprise)
     return [line for line in (first, second) if line]

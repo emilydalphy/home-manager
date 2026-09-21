@@ -128,7 +128,7 @@ def _load_slot_entries(plan_id: int, slot: str) -> list[dict]:
     conn = get_conn()
     rows = conn.execute(
         """
-        SELECT mpe.id, mpe.date, mpe.slot_state, mpe.cooked_status, mpe.food_groups_json,
+        SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.cooked_status, mpe.food_groups_json,
                mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
@@ -284,3 +284,213 @@ def enforce_distinct_count(
     except Exception:
         logger.exception("Distinct %s count enforcement failed for plan %s; leaving the plan as generated", slot, plan_id)
     return result
+
+
+# ---------- Surprise me means new to you ----------
+#
+# Emily, 2026-09-21: "I put surprise me, but they seem similar to other
+# suggestions I've received before … I've had all these recipes before
+# through Pomona." With Surprise me as the mood, the two-week window is
+# not the rule: EVERY dinner and lunch this household has had from Pomona
+# — every plan, drafted or approved, all time — is handed to the drafting
+# prompt as don't-repeat (surprise_context), and a dish the model sends
+# anyway is re-picked quietly after generation (repick_repeats), the same
+# shape as the allergen re-pick. When Surprise me is off, nothing here
+# runs and the two-week window stays the default.
+
+# The slots the no-repeat rule is about (the prompt's own words: "DINNER
+# and LUNCH — not breakfast or snack").
+NO_REPEAT_SLOTS = ("dinner", "lunch")
+
+# How many past dish names the prompt is handed at most, NEWEST kept. A
+# household years in has more names than a prompt should carry, and the
+# ones that fall off the front are the oldest — exactly the ones the
+# prompt is told to reach for first if new ideas run thin.
+SURPRISE_HISTORY_CAP = 400
+
+# Words for the prompt and the log, in one place.
+SURPRISE_BECAUSE = "you asked to be surprised, and you've had it from me before"
+
+
+def is_surprise_me(intake: dict | None) -> bool:
+    """Did the household tap Surprise me for this week?"""
+    from .week_intake import SURPRISE_MOOD
+    return bool(intake) and SURPRISE_MOOD in (intake.get("moods") or [])
+
+
+def household_dish_history(exclude_plan_id: int | None = None) -> list[dict]:
+    """
+    Every dinner and lunch dish this household has had from Pomona, oldest
+    first — every plan, drafted or approved (a drafted dish was still
+    suggested to them, which is what "I've had these through Pomona"
+    means), all time. One row per distinct name, at its FIRST date, with
+    `recent` set when it also falls inside the two-week window (by its
+    latest date). A leftovers line is not a dish. `exclude_plan_id` leaves
+    one plan out — the draft being described, when this is read for its
+    own opening line.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        """
+        SELECT mpe.date, COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.freeform_meal
+        FROM meal_plan_entries mpe
+        JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id
+        LEFT JOIN recipes r ON r.id = mpe.recipe_id
+        WHERE mpe.household_id = ? AND mpe.slot IN (?, ?) AND mpe.slot_state = 'planned'
+          AND mpe.component_category IS NULL AND mpe.weekly_plan_id != ?
+          AND (mpe.recipe_id IS NOT NULL OR (mpe.freeform_meal IS NOT NULL AND mpe.freeform_meal != ''))
+        ORDER BY mpe.date ASC, mpe.id ASC
+        """,
+        (household_id(), *NO_REPEAT_SLOTS, exclude_plan_id or -1),
+    ).fetchall()
+    conn.close()
+    since = (datetime.date.today() - datetime.timedelta(weeks=VARIETY_WINDOW_WEEKS)).isoformat()
+    seen: dict[str, dict] = {}
+    for r in rows:
+        name = (r["meal"] or "").strip()
+        if not name or _LEFTOVER_LINE.search(r["freeform_meal"] or ""):
+            continue
+        key = name.lower()
+        entry = seen.setdefault(key, {"name": name, "date": r["date"], "recent": False})
+        if r["date"] >= since:
+            entry["recent"] = True
+    return list(seen.values())
+
+
+_LEFTOVER_LINE = re.compile(r"leftovers?\b|take[\s-]?out|delivery|order in", re.IGNORECASE)
+
+
+def surprise_context(intake: dict | None) -> dict | None:
+    """
+    What the drafting prompt is handed under `surprise_me` when the mood
+    is Surprise me, else None: `dont_repeat`, every dish they've had from
+    Pomona (oldest first, capped at SURPRISE_HISTORY_CAP newest), and
+    `never`, the ones from the last two weeks. None too when there is no
+    history at all — a first week has nothing to be new against.
+    """
+    if not is_surprise_me(intake):
+        return None
+    history = household_dish_history()
+    if not history:
+        return None
+    names = [h["name"] for h in history][-SURPRISE_HISTORY_CAP:]
+    return {
+        "dont_repeat": names,
+        "never": [h["name"] for h in history if h["recent"]],
+    }
+
+
+def _repick_entry(
+    plan_id: int, entry: dict, budget, *, avoid: list[str], because: str, reject,
+    derived_key: str, picker=None,
+) -> dict | None:
+    """
+    Re-pick ONE planned slot quietly through the swap's own picker — the
+    allergen re-pick's shape (allergen_gate.repick_slot), for a slot that
+    already has a row. Up to swap_in_place.MAX_PICK_ATTEMPTS calls against
+    `budget`; `reject(name)` says whether a pick is still no good (a repeat
+    of the history, say) on top of the allergen and taste gates every pick
+    passes. The winner replaces the row in the one transaction every swap
+    uses, with `derived_from[derived_key]` recording what it replaced and
+    why. Returns the new row's dict, or None when the slot stands as it was
+    — a repeat is a far better outcome than an open slot, so nothing here
+    ever hands a slot back as a question.
+    """
+    from . import swap_in_place as _swap
+    from . import plates as _plates
+
+    pick_one = picker or _swap._pick_replacement
+    slot_entry = {"date": entry["date"], "slot": entry["slot"], "meal": entry["meal"], "entry_id": entry["id"]}
+    tried = _swap._dedup([entry["meal"]] + list(avoid))
+    pick = None
+    for attempt in range(1, _swap.MAX_PICK_ATTEMPTS + 1):
+        if not budget.take():
+            logger.warning("Re-pick budget spent; %s %s stays as generated", entry["date"], entry["slot"])
+            return None
+        try:
+            context = _swap.build_swap_context(plan_id, slot_entry, tried)
+            context["replacing_because"] = f"{entry['meal']} was dropped: {because}."
+            candidate = pick_one(context) or {}
+        except Exception:
+            logger.exception("Re-pick for %s %s failed (attempt %d)", entry["date"], entry["slot"], attempt)
+            candidate = {}
+        name = (candidate.get("meal_name") or "").strip()
+        if not name:
+            return None
+        candidate["meal_name"] = name
+        why = _swap.pick_gate(candidate, slot_entry)
+        if why is None and reject(name):
+            why = "still one they've had"
+        if why is None:
+            pick = candidate
+            break
+        logger.info("Re-pick offered %r for %s %s: %s (attempt %d)", name, entry["date"], entry["slot"], why, attempt)
+        tried.append(name)
+    if pick is None:
+        return None
+    serves = _swap._table_for(entry["date"], entry["slot"])["serves"]
+    pick["meal_name"] = _swap.honest_meal_name(pick)
+    _swap._save_recipe_if_new(pick, serves)
+    derived = dict(json.loads(entry.get("derived_from_json") or "{}") or {})
+    derived[derived_key] = {"dropped": entry["meal"], "because": because}
+    return _weekly_plan._replace_slot_entries(
+        plan_id, [entry["id"]], entry["date"], entry["slot"], pick["meal_name"],
+        food_groups=[g for g in (pick.get("food_groups") or []) if g in _plates.ALL_GROUPS],
+        reasoning=(pick.get("reason") or "").strip(),
+        derived_from=derived,
+    )
+
+
+def repick_repeats(plan_id: int, surprise: dict | None, budget, picker=None) -> dict:
+    """
+    With Surprise me on: any dinner or lunch the model sent that the
+    household has had from Pomona before is re-picked quietly, with the
+    repeat (and every failed attempt) on `avoid`, so the draft is new to
+    them rather than the opener reporting "X back from before". Left as
+    generated: a dish they asked for in their own words (derived_from.
+    freeform), a night already cooked, and a reheat night or the batch it
+    eats from (re-picking one end of a chain strands the other). Never
+    raises; returns counts for the log and for tests.
+    """
+    out = {"repeats": 0, "repicked": 0, "left": []}
+    if not surprise:
+        return out
+    had = {n.strip().lower() for n in (surprise.get("dont_repeat") or [])}
+    if not had:
+        return out
+    try:
+        chains = _leftovers.plan_leftover_chains(plan_id)
+        for slot in NO_REPEAT_SLOTS:
+            for entry in _load_slot_entries(plan_id, slot):
+                if entry["slot_state"] != "planned" or not entry["meal"]:
+                    continue
+                if entry["meal"].strip().lower() not in had:
+                    continue
+                out["repeats"] += 1
+                derived = json.loads(entry["derived_from_json"] or "{}") or {}
+                if (derived.get("freeform") or "").strip() or (entry["cooked_status"] or "") == "done":
+                    out["left"].append(entry["meal"])
+                    continue
+                if entry["id"] in chains["leftovers"] or entry["id"] in chains["sources"]:
+                    out["left"].append(entry["meal"])
+                    continue
+                replaced = _repick_entry(
+                    plan_id, entry, budget,
+                    avoid=[], because=SURPRISE_BECAUSE,
+                    reject=lambda name: name.strip().lower() in had,
+                    derived_key="surprise_repick", picker=picker,
+                )
+                if replaced is None:
+                    out["left"].append(entry["meal"])
+                else:
+                    out["repicked"] += 1
+                    logger.info(
+                        "Surprise me: %s %s %r -> %r (had it from Pomona before)",
+                        entry["date"], slot, entry["meal"], replaced.get("meal") or replaced.get("meal_name"),
+                    )
+        if out["left"]:
+            logger.info("Surprise me: %d repeat(s) left as generated on plan %s: %s",
+                        len(out["left"]), plan_id, ", ".join(out["left"]))
+    except Exception:
+        logger.exception("Surprise-me re-pick failed for plan %s; the week stands as generated", plan_id)
+    return out

@@ -3028,6 +3028,13 @@ main_protein or cuisine too many days in a row for dinner — check recent_histo
 main_protein fields, not just meal names. Where recent_history gives a `rating` for a past \
 meal, treat it as a soft signal on how forgivable a repeat would be: reaching for something \
 rated 'liked' again is more forgivable than reaching for one rated 'disliked'.
+- `surprise_me`, when present, means the household tapped SURPRISE ME, and surprise means NEW \
+TO THEM: `surprise_me.dont_repeat` is every dinner and lunch they have ever had from this app, \
+oldest first, and none of it is drafted again — not the dish, not a near-identical variant under \
+another name. Reach for dishes this household has not had from you before. Only if you genuinely \
+run out of good new ideas may you repeat, and then from the START of that list (the oldest) — \
+never anything in `surprise_me.never`, which is {_variety_window}. Any repeat you send is swapped \
+out after you answer, so it is work thrown away. Breakfast and snack are not held to this.
 - Variety is about INGREDIENTS, not only dish names, proteins and cuisines. The same FRESH \
 ingredient — a vegetable or fruit, a fresh herb, a fresh dairy item — should appear in AT MOST \
 3 of the week's dinners. Two narrow exceptions: a genuine staple that quietly goes into \
@@ -4483,6 +4490,16 @@ def _generate_weekly_plan(
     held_lines = tools.held_generation_context()
     if held_lines:
         context["held_things"] = held_lines
+    # Surprise me means new to you (Emily, 2026-09-21: "I've had all these
+    # recipes before through Pomona"). With that mood, every dinner and
+    # lunch this household has ever had from Pomona rides along as
+    # don't-repeat, and a dish that comes back anyway is re-picked after
+    # generation (meal_variety.repick_repeats, from _finish_week_slots).
+    # Absent entirely for any other mood: the two-week window stays the
+    # default. See the `surprise_me` bullet above.
+    surprise = _meal_variety.surprise_context(intake)
+    if surprise:
+        context["surprise_me"] = surprise
 
     # Run the actual generation call BEFORE creating the weekly_plans row.
     # This used to be the other way around — create the plan, then generate
@@ -4975,6 +4992,18 @@ def _finish_week_slots(
     # does: a slot this reopens must be seen as present, not questioned a
     # second time as missing. See tools.repair_leftover_chains.
     tools.repair_leftover_chains(plan_id)
+
+    # Surprise me means new to you (Emily, 2026-09-21): a dinner or lunch
+    # the household has had from Pomona before is re-picked quietly, with
+    # the repeat on avoid, rather than the opener reporting it. Only when
+    # the mood was Surprise me (context["surprise_me"] is absent otherwise).
+    # AFTER repair_leftover_chains, so a chain is known and left whole;
+    # BEFORE the distinct-count pass, which reads the dishes that stay.
+    # See meal_variety.repick_repeats — it swallows its own failures.
+    _meal_variety.repick_repeats(
+        plan_id, (context or {}).get("surprise_me"),
+        repick_budget or _allergen_gate.CallBudget(),
+    )
 
     # "Four dinners a week" means four dishes, and the model is only ASKED
     # for that (Emily, 2026-09-13: "it's giving me 5 types of dinners when I
