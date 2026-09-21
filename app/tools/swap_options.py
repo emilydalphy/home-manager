@@ -31,6 +31,7 @@ import logging
 import time
 
 from ._shared import household_id
+from . import model_shapes as _model_shapes
 from . import swap_in_place as _swap
 from . import weekly_plan as _weekly_plan
 
@@ -99,7 +100,7 @@ def _ask_options(context: dict) -> list[dict]:
         logger.warning("swap_options hit max_tokens; the picks may be incomplete")
     for block in response.content:
         if getattr(block, "type", None) == "tool_use":
-            return list((block.input or {}).get("options") or [])
+            return _model_shapes.tool_list(block.input, "options", "swap_options")
     return []
 
 

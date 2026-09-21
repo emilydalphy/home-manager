@@ -18,6 +18,7 @@ import time
 from anthropic import Anthropic, APIConnectionError, APIStatusError, APITimeoutError
 from . import calendar_feed, tools
 from .tools import allergen_gate as _allergen_gate
+from .tools import model_shapes as _model_shapes
 from .tools import plan_quality
 from .tools import meal_variety as _meal_variety
 from .tools import voice as _voice
@@ -434,49 +435,6 @@ _WEEK_GEN_PROGRESS: contextvars.ContextVar = contextvars.ContextVar(
 
 
 
-def _coerce_result_list(raw, result_key: str, label: str) -> list:
-    """
-    The forced tool call promises `result_key` is an array of objects, and
-    every reader downstream (`_honest_meal_names`, the allergen gate, the
-    writers) treats each element as a dict. On 2026-09-21 a real draft came
-    back with something else in `days` — three generations in a row on one
-    household's long typed note — and `item.get("meal_name")` crashed on a
-    str, so the person saw "I couldn't save that just now" with nothing
-    said in the log about what the model had actually sent. The schema is
-    a strong hint to the model, not a guarantee, so this is the one place
-    the shape is checked: a JSON string is parsed, an object of lists is
-    flattened (a model keying the week by date), a lone object becomes a
-    one-item list, and anything that still isn't a dict is dropped with a
-    warning that names the shape — so the next time this happens the log
-    says what came back instead of where it fell over.
-    """
-    if isinstance(raw, str):
-        try:
-            parsed = json.loads(raw)
-        except ValueError:
-            logger.warning("%s: %s came back as a string that isn't JSON (%d chars): %r",
-                           label, result_key, len(raw), raw[:200])
-            return []
-        logger.warning("%s: %s came back JSON-encoded as a string; parsed it", label, result_key)
-        return _coerce_result_list(parsed, result_key, label)
-    if isinstance(raw, dict):
-        if raw and all(isinstance(v, list) for v in raw.values()):
-            logger.warning("%s: %s came back as an object of %d lists (keys %r); flattened it",
-                           label, result_key, len(raw), list(raw)[:4])
-            return _coerce_result_list([x for v in raw.values() for x in v], result_key, label)
-        logger.warning("%s: %s came back as one object, not a list; wrapped it", label, result_key)
-        return [raw]
-    if not isinstance(raw, list):
-        logger.warning("%s: %s came back as %s, not a list; treating as empty",
-                       label, result_key, type(raw).__name__)
-        return []
-    kept = [x for x in raw if isinstance(x, dict)]
-    if len(kept) != len(raw):
-        odd = [x for x in raw if not isinstance(x, dict)]
-        logger.warning("%s: dropped %d non-object element(s) from %s (first: %s %r)",
-                       label, len(odd), result_key, type(odd[0]).__name__, str(odd[0])[:200])
-    return kept
-
 
 class _ArrayItemScanner:
     """
@@ -630,7 +588,7 @@ def _stream_forced_tool_call(
                 logger.warning("%s hit max_tokens; result may be incomplete", label)
             for block in response.content:
                 if block.type == "tool_use":
-                    items = _coerce_result_list(block.input.get(result_key, []), result_key, label)
+                    items = _model_shapes.coerce_result_list(block.input.get(result_key, []), result_key, label)
                     if report_keys:
                         out = GeneratedDays(items)
                         out.report = {k: block.input.get(k) or [] for k in report_keys}
@@ -5194,7 +5152,7 @@ def generate_sides_llm(context: dict) -> list[dict]:
         logger.warning("generate_sides_llm hit max_tokens; the side may be incomplete")
     for block in response.content:
         if block.type == "tool_use":
-            return block.input.get("sides", [])
+            return _model_shapes.tool_list(block.input, "sides", "generate_sides_llm")
     return []
 
 
@@ -5579,7 +5537,7 @@ Call submit_prep_schedule with the result."""
         logger.warning("generate_prep_schedule_llm hit max_tokens; schedule may be incomplete")
     for block in response.content:
         if block.type == "tool_use":
-            return block.input.get("tasks", [])
+            return _model_shapes.tool_list(block.input, "tasks", "generate_prep_schedule_llm")
     return []
 
 
@@ -6037,7 +5995,7 @@ def _scan_image_for_items(image_b64: str, media_type: str, instructions: str) ->
     )
     for block in response.content:
         if block.type == "tool_use":
-            return block.input.get("items", [])
+            return _model_shapes.tool_list(block.input, "items", "scan_image_for_items")
     return []
 
 
