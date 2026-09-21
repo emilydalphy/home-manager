@@ -53,15 +53,23 @@ def test_the_question_screens_carry_one_named_crumb_out_of_the_flow():
     crumbs = re.findall(r'<button type="button" class="crumb" id="leave">([^<]*)</button>', flow)
     assert crumbs == ["&lsaquo; Plan"], "exactly one crumb, and it names the tab it goes to"
     # Above the first question, outside every step section — so it is on
-    # screen for all four questions AND the drafting screen, which hides
-    # the sections and the stepper's own Back.
+    # screen for all five questions AND the drafting screen, which hides
+    # the sections and the foot.
     assert flow.index('id="leave"') < flow.index('<section id="q1">')
     assert "$('leave').hidden" not in PAGE, "nothing ever hides the way out"
-    assert "$('leave').addEventListener('click', leaveFlow);" in PAGE
+    # Since 2026-09-21 (the onboarding motion) the one crumb is "‹ Plan" on
+    # the first step and while drafting, and the stepper's own "‹ Back" on
+    # the steps between — one way back per screen, never two.
+    assert "$('leave').addEventListener('click', crumbTap);" in PAGE
+    tap = _extract("crumbTap", PAGE)
+    assert "if (step === 1 || drafting) leaveFlow();" in tap and "else goBack();" in tap
+    assert "$('leave').innerHTML = n === 1 ? '&lsaquo; Plan' : '&lsaquo; Back';" in PAGE
+    assert "$('leave').innerHTML = '&lsaquo; Plan';" in _extract("showDraftProgress", PAGE)
+    assert 'id="back"' not in flow, "no second back beside the crumb"
 
 
 def test_the_crumb_is_a_plain_navigation_to_plan_never_the_browsers_back():
-    fn = PAGE[PAGE.index("function leaveFlow()"):PAGE.index("async function advance()")]
+    fn = _extract("leaveFlow", PAGE)
     code = re.sub(r"//[^\n]*", "", fn)
     assert "location.href = '/week';" in code
     assert "history.back()" not in code
@@ -70,7 +78,7 @@ def test_the_crumb_is_a_plain_navigation_to_plan_never_the_browsers_back():
 def test_leaving_saves_what_changed_on_the_current_screen_without_waiting():
     """Coming back should carry on from here — but a save that fails, or
     hangs, must never keep the household on the screen they are leaving."""
-    fn = PAGE[PAGE.index("function leaveFlow()"):PAGE.index("async function advance()")]
+    fn = _extract("leaveFlow", PAGE)
     assert "saveIntake(payload, true).catch(" in fn      # keepalive, not awaited
     assert "await" not in re.sub(r"//[^\n]*", "", fn)
     assert "keepalive: !!keepalive," in PAGE
@@ -78,12 +86,21 @@ def test_leaving_saves_what_changed_on_the_current_screen_without_waiting():
     # joined intake or an earlier draft.
     assert "if (answersSnapshot() === answersAtLoad) return null;" in PAGE
     assert "answersAtLoad = answersSnapshot();" in PAGE
+    # Since 2026-09-21 the payload is every answer, not the current
+    # screen's half — Back never loses one, so leaving from step 2 still
+    # carries a mood chosen on step 4.
+    payload = _extract("leavePayload", PAGE)
+    for key in ("night_tags: answers.night_tags", "packed_lunch_days: answers.packed_lunch_days",
+                "moods: answers.moods", "freeform: $('freeform').value.trim()"):
+        assert key in payload, key
 
 
 def test_the_drafting_screen_says_leaving_is_allowed_and_approves_nothing():
     section = PAGE[PAGE.index('<section id="draft-progress"'):PAGE.index("</main>")]
     assert 'class="draft-leave-note"' in section
-    assert "Nothing is approved until you say so." in section
+    # The one quiet line under the card (board C1, 2026-09-21): the whole
+    # of what leaving means, said once.
+    assert "No need to wait &mdash; the draft lands on Plan when it&rsquo;s done." in section
     # Leaving while drafting has nothing left to save: the answers went
     # with "Draft my week", and the server keeps building on its own thread.
     assert "if (!$('draft-progress').hidden) return null;" in PAGE

@@ -63,7 +63,18 @@ MOOD_GUIDANCE = {
     "Something new": "include two or three dishes the household has not had before, alongside familiar ones, never a whole week of unknowns.",
     "Try a new cuisine": "pick one cuisine the household has not cooked recently (check what they usually eat) and build two dinners from it, with the rest of the week familiar.",
     "Keep it cheap": "favour inexpensive proteins and pantry staples, batch cooking, and ingredients that stretch across several meals.",
+    # The card at the top of the mood screen (Emily, 2026-09-21, "Surprise
+    # me is a card at the top"): a real answer, not the absence of one.
+    # Saved as the one mood so the planner is told, in so many words, that
+    # the household handed the lean over — and so the building screen and
+    # next week's prefill can read it back as what they chose.
+    "Surprise me": "the household asked to be surprised: no lean this week — pick from what they like, keep the week varied, and lead with something they haven't had lately.",
 }
+
+# The mood the Surprise me card records. Never combined with a steering
+# mood: the screen drops it the moment a mood chip is tapped, and a save
+# carrying both would be two answers to one question.
+SURPRISE_MOOD = "Surprise me"
 
 
 # The hard cap a `rush` night imposes, in minutes. Named rather than inlined
@@ -578,6 +589,86 @@ ONBOARDING_CUISINES = [
     "Greek", "Chinese", "Middle Eastern", "American", "French",
 ]
 
+# The cuisines "Add a cuisine" can offer as you type (Loop Board "Add a
+# cuisine that isn't on your list", 2026-09-21) — a spelling to fill the
+# field with, never a fence: free text that matches nothing is still
+# added, as typed. Kept alphabetical so a new one has an obvious place.
+KNOWN_CUISINES = [
+    "American", "Argentinian", "Brazilian", "British", "Cajun", "Caribbean",
+    "Chinese", "Cuban", "Ethiopian", "Filipino", "French", "German", "Greek",
+    "Hawaiian", "Indian", "Indonesian", "Irish", "Israeli", "Italian",
+    "Jamaican", "Japanese", "Korean", "Lebanese", "Malaysian", "Mediterranean",
+    "Mexican", "Middle Eastern", "Moroccan", "Nepalese", "Pakistani",
+    "Persian", "Peruvian", "Polish", "Portuguese", "Russian", "Scandinavian",
+    "Southern", "Spanish", "Sri Lankan", "Szechuan", "Taiwanese", "Tex-Mex",
+    "Thai", "Turkish", "Ukrainian", "Vietnamese",
+]
+
+# The most letters a typed cuisine may run to — a chip, not a paragraph.
+CUISINE_MAX_LENGTH = 40
+
+
+def cuisine_suggestions(typed: str, limit: int = 3) -> list[str]:
+    """
+    The "Did you mean" row for what's been typed so far: known cuisines
+    that start with it first (Mex -> Mexican), then ones that contain it
+    (-> Tex-Mex), then ones that share its first two letters (->
+    Mediterranean), up to `limit`. Empty for an empty field. Case never
+    matters. The client asks this of the prefill's `known_cuisines`
+    rather than the server on every keystroke — see cuisineSuggestions in
+    static/plan-week.html, which mirrors this exactly; the test pins
+    the two to the same answers.
+    """
+    q = " ".join((typed or "").split()).lower()
+    if not q:
+        return []
+    starts = [c for c in KNOWN_CUISINES if c.lower().startswith(q)]
+    contains = [c for c in KNOWN_CUISINES if q in c.lower() and c not in starts]
+    close = [
+        c for c in KNOWN_CUISINES
+        if len(q) >= 2 and c.lower()[:2] == q[:2] and c not in starts and c not in contains
+    ]
+    return (starts + contains + close)[:limit]
+
+
+def _clean_cuisine(name: str) -> str:
+    """One line, single-spaced, capped, first letter up — as typed otherwise."""
+    cleaned = " ".join(str(name or "").split())[:CUISINE_MAX_LENGTH].strip()
+    if not cleaned:
+        raise ValueError("Type a cuisine first.")
+    return cleaned[0].upper() + cleaned[1:]
+
+
+def add_household_cuisine(name: str) -> dict:
+    """
+    Put a cuisine on the household's own list — the one the mood screen
+    reads (What we know's cuisine_preferences) — so it is there next week
+    without being asked. A known cuisine's spelling wins over the typed
+    one (mexican -> Mexican); a cuisine already on the list, in any case,
+    is not added twice, and the saved spelling is the one handed back. A
+    new cuisine goes FIRST, which is where the mood screen shows it.
+
+    Returns {"cuisine": the spelling saved, "added": whether it was new,
+    "cuisines": the whole list as it now stands}.
+    """
+    from . import preferences as _preferences
+
+    cleaned = _clean_cuisine(name)
+    known = {c.lower(): c for c in KNOWN_CUISINES}
+    canonical = known.get(cleaned.lower(), cleaned)
+    conn = get_conn()
+    prefs = conn.execute(
+        "SELECT cuisine_preferences_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
+    ).fetchone()
+    conn.close()
+    saved = [c for c in (json.loads(prefs["cuisine_preferences_json"]) if prefs else []) if isinstance(c, str)]
+    for existing in saved:
+        if existing.strip().lower() == canonical.lower():
+            return {"cuisine": existing, "added": False, "cuisines": saved}
+    cuisines = [canonical] + saved
+    _preferences.set_household_meal_preferences(cuisine_preferences=cuisines, mark_complete=False)
+    return {"cuisine": canonical, "added": True, "cuisines": cuisines}
+
 
 def _rhythm_packed_lunch_suggestions(week_start: str, day_count: int = 7) -> list[dict]:
     """
@@ -642,11 +733,132 @@ def _rhythm_packed_lunch_suggestions(week_start: str, day_count: int = 7) -> lis
     return suggestions
 
 
+def _last_period_intake(conn, week_start: str) -> dict | None:
+    """
+    The answers the household gave for the period BEFORE this one — the
+    current revision of the most recent intake whose week starts earlier
+    than `week_start` — or None for a first week.
+
+    What the intake's mood screen opens already knowing (Emily, 2026-09-15,
+    "one screen of what Pomona already knows": moods and cuisines are
+    asked every week and "it says 'I'll remember' but week 30 looks like
+    week 1"; reconciled into the 2026-09-21 one-question-a-screen intake
+    as a step that shows last week's answer already chosen and can be
+    continued past in one tap). Only the two answers that carry across
+    weeks travel: the night tags, guest counts and packed-lunch days are
+    about specific dates, and the typed note was about that week.
+    """
+    row = conn.execute(
+        "SELECT * FROM week_intake WHERE household_id = ? AND week_start < ? AND superseded_at IS NULL "
+        "ORDER BY week_start DESC, revision DESC LIMIT 1",
+        (household_id(), week_start),
+    ).fetchone()
+    if not row:
+        return None
+    return {
+        "week_start": row["week_start"],
+        "moods": json.loads(row["moods_json"]),
+        "cuisines": json.loads(row["cuisines_json"]),
+    }
+
+
+def _recent_dinners_on_record(week_start: str) -> bool:
+    """
+    Whether any dinner was planned in the weeks before this period — what
+    lets the building screen's "Nothing you had last week" line be true
+    (the generator's no-repeat rule reads the same recent_history) rather
+    than a promise made to a household with no last week.
+    """
+    from . import meal_plans as _meal_plans
+    return any(
+        (m.get("slot") == "dinner") and (m.get("date") or "") < week_start
+        for m in _meal_plans.get_recent_meal_history(weeks=3)
+    )
+
+
+# How far back an intake nobody has drafted from may have been FILED and
+# still be the one a period opens on: the overnight straddle (one adult
+# starts on Saturday night, the other opens it on Sunday, when the screen
+# starts from today) — never a set of answers abandoned weeks ago.
+IN_FLIGHT_REACH_DAYS = 7
+
+
+def _plan_for_period(week_start: str, day_count: int):
+    """
+    The live plan a period is ABOUT: the one whose days include the
+    period's first day, else an approved one it overlaps (the one that
+    re-planning would cost something), else any live plan it overlaps.
+    None when the period touches no plan.
+
+    Not "the plan filed under this date". The intake screen opens on today
+    even when the plan it re-plans started yesterday (plan-week.html's
+    clampStart, 2026-09-21: yesterday is eaten), so "Re-plan this week" on
+    an approved Sat–Fri plan asks about Sun–Sat, and an exact key found
+    no plan at all — the approved warning went unsaid, and "Change my
+    answers" opened blank. Returns the overlap record from
+    find_overlapping_plans plus the plan's intake_id.
+    """
+    overlapping = _weekly_plan.find_overlapping_plans(week_start, day_count)
+    if not overlapping:
+        return None
+    covering = [
+        o for o in overlapping
+        if o["period_start_date"] <= week_start <= _weekly_plan.period_end_date(o["period_start_date"], o["day_count"])
+    ]
+    approved = [o for o in overlapping if o["status"] == "approved"]
+    chosen = (covering or approved or overlapping)[-1]
+    conn = get_conn()
+    row = conn.execute("SELECT intake_id FROM weekly_plans WHERE id = ?", (chosen["weekly_plan_id"],)).fetchone()
+    conn.close()
+    return {**chosen, "intake_id": row["intake_id"] if row else None,
+            "approved_overlap": bool(approved)}
+
+
+def _intake_for_period(conn, week_start: str, day_count: int, plan) -> dict | None:
+    """
+    The answers a period opens on: the intake filed under its first day;
+    else the current revision of the intake its plan was drafted from (so
+    "Change my answers" on Tuesday still has Sunday's night tags, guests
+    and typed note); else an intake nobody has drafted from yet, filed
+    within IN_FLIGHT_REACH_DAYS before — the second adult joining the
+    first across midnight. Dated answers outside the period are left out,
+    since the save that follows would refuse them; the days still in range
+    keep every answer they had.
+    """
+    row = _current_intake_row(conn, week_start)
+    if row is None and plan and plan.get("intake_id"):
+        filed = conn.execute("SELECT week_start FROM week_intake WHERE id = ?", (plan["intake_id"],)).fetchone()
+        if filed:
+            row = _current_intake_row(conn, filed["week_start"])
+    if row is None and plan is None:
+        floor = (date.fromisoformat(week_start) - timedelta(days=IN_FLIGHT_REACH_DAYS)).isoformat()
+        row = conn.execute(
+            "SELECT * FROM week_intake wi WHERE household_id = ? AND week_start < ? AND week_start >= ? "
+            "AND superseded_at IS NULL "
+            "AND NOT EXISTS (SELECT 1 FROM weekly_plans wp WHERE wp.intake_id = wi.id) "
+            "ORDER BY week_start DESC, revision DESC LIMIT 1",
+            (household_id(), week_start, floor),
+        ).fetchone()
+    if row is None:
+        return None
+    intake = _intake_row_to_dict(row)
+    days = set(period_dates(week_start, day_count))
+    intake["night_tags"] = {d: t for d, t in intake["night_tags"].items() if d in days}
+    intake["guest_counts"] = {d: c for d, c in intake["guest_counts"].items() if d in days}
+    intake["packed_lunch_days"] = [d for d in intake["packed_lunch_days"] if d in days]
+    return intake
+
+
 def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
     """
     Everything the two question screens need to open already knowing what
     the app knows: per-day hints, the household's own saved cuisines, its
     composition for the guest maths, and any intake already in flight.
+
+    The plan and the intake are the ones that COVER the period's first
+    day, not ones filed under it (_plan_for_period, _intake_for_period):
+    since the screen never opens before today, a plan started yesterday
+    is found by the day it still holds.
 
     `in_flight` is the soft lock from DATA_MODEL.md → One intake in flight.
     Both adults are nudged on Sunday, so both can start; the second to open
@@ -673,16 +885,12 @@ def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
     prefs = conn.execute(
         "SELECT cuisine_preferences_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
     ).fetchone()
-    plan = conn.execute(
-        "SELECT id, status, intake_id FROM weekly_plans WHERE household_id = ? AND week_start_date = ? "
-        "ORDER BY created_at DESC, id DESC LIMIT 1",
-        (household_id(), week_start),
-    ).fetchone()
-    intake_row = _current_intake_row(conn, week_start)
+    plan = _plan_for_period(week_start, day_count)
+    intake = _intake_for_period(conn, week_start, day_count, plan)
+    last_intake = _last_period_intake(conn, week_start)
     conn.close()
 
     saved_cuisines = json.loads(prefs["cuisine_preferences_json"]) if prefs else []
-    intake = _intake_row_to_dict(intake_row) if intake_row else None
     # "In flight" means somebody has answered something for this week that
     # hasn't been turned into a plan yet. Once a plan has been generated
     # from this revision, carrying on from it is a redo, not a join.
@@ -712,14 +920,27 @@ def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
         "household_known": bool(household["adults"] or household["children"]),
         "cuisines": saved_cuisines or ONBOARDING_CUISINES,
         "cuisines_are_fallback": not saved_cuisines,
+        # What "Add a cuisine" can offer as you type — see cuisine_suggestions.
+        "known_cuisines": KNOWN_CUISINES,
         "intake": intake,
         "in_flight": in_flight,
         "plan_exists": bool(plan),
-        "plan_id": plan["id"] if plan else None,
+        "plan_id": plan["weekly_plan_id"] if plan else None,
         "plan_status": plan["status"] if plan else None,
+        # True when any approved plan holds a day of this period — the
+        # warning that re-planning makes a new draft beside it fires on
+        # this, whichever plan the period opens on.
+        "approved_overlap": bool(plan and plan["approved_overlap"]),
         # Loop Board "Onboarding: household rhythm..." — a suggestion only,
         # not an answer; see _rhythm_packed_lunch_suggestions.
         "rhythm_packed_lunch_suggestions": _rhythm_packed_lunch_suggestions(week_start, day_count),
+        # What the mood screen opens already knowing: the moods and cuisines
+        # the household chose for the period before this one, or None for a
+        # first week. See _last_period_intake.
+        "last_intake": last_intake,
+        # True once a dinner has been planned in the last three weeks — the
+        # building screen says "Nothing you had last week" only then.
+        "recent_dinners_on_record": _recent_dinners_on_record(week_start),
         # The period these questions are about, echoed back so the screen
         # can name it ("Sep 11-18") instead of calling every window "your
         # week" regardless of what the household actually picked.

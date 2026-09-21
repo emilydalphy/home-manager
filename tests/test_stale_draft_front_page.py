@@ -251,12 +251,17 @@ class TestFromFridayThisWeekMeansNextWeek:
         assert suggestion["is_current_period"] is False
 
     def test_thursday_still_offers_this_week(self, pin_today):
+        # Still THIS week (is_current_week) — but from today, never from
+        # the Monday already eaten (2026-09-21): Thu 10–Wed 16, seven days.
         pin_today(THURSDAY)
         nudge = tools.get_week_planning_nudge()
         assert nudge["show"] is True
-        assert nudge["week_start"] == THIS_MONDAY
+        assert nudge["week_start"] == THURSDAY
         assert nudge["is_current_week"] is True
-        assert tools.suggest_planning_period()["start_date"] == THIS_MONDAY
+        suggestion = tools.suggest_planning_period()
+        assert suggestion["start_date"] == THURSDAY
+        assert suggestion["day_count"] == 7
+        assert suggestion["is_current_period"] is True
 
     def test_a_draft_covering_today_is_not_an_approved_plan(self, pin_today):
         # The draft stays where it is on Plan (it covers today, and it is
@@ -274,11 +279,13 @@ class TestFromFridayThisWeekMeansNextWeek:
     def test_an_approved_week_keeps_today_and_is_offered_next_week(self, pin_today):
         approved = _insert_plan(THIS_MONDAY, "approved")
         pin_today(FRIDAY)
-        # Plan shows the approved week; the planning-period default stays
-        # on it (the "Re-plan this week" button still means this week).
+        # Plan shows the approved week; the planning-period default is
+        # still THIS week (not shifted to next), starting from today —
+        # never from a day already eaten (2026-09-21). The Re-plan door on
+        # a plan passes the plan's own dates, not this suggestion.
         assert tools.get_week_menu()["weekly_plan_id"] == approved
         suggestion = tools.suggest_planning_period()
-        assert suggestion["start_date"] == THIS_MONDAY
+        assert suggestion["start_date"] == FRIDAY
         assert suggestion["is_current_period"] is True
         # And Now offers the week after, as NEXT WEEK — the existing flag.
         nudge = tools.get_week_planning_nudge()
@@ -314,7 +321,11 @@ class TestFromFridayThisWeekMeansNextWeek:
         # offers Sep 12–18.
         tools.set_planning_anchor("friday")
         pin_today("2026-09-08")  # Tuesday, the period's fourth day
-        assert tools.suggest_planning_period()["start_date"] == "2026-09-05"
+        suggestion = tools.suggest_planning_period()
+        # Still the current period (not moved on) — offered from today,
+        # never from the Saturday already eaten (2026-09-21).
+        assert suggestion["start_date"] == "2026-09-08"
+        assert suggestion["is_current_period"] is True
         pin_today("2026-09-09")  # Wednesday, its fifth
         suggestion = tools.suggest_planning_period()
         assert suggestion["start_date"] == "2026-09-12"

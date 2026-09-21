@@ -13,55 +13,53 @@ PAGE = (REPO / "static" / "plan-week.html").read_text(encoding="utf-8")
 AGENT = (REPO / "app" / "agent.py").read_text(encoding="utf-8")
 
 
-def test_four_screens_one_question_each():
-    for i in range(1, 5):
-        assert 'id="q%d"' % i in PAGE and 'id="dot-%d"' % i in PAGE
-    assert "var STEP_COUNT = 4;" in PAGE
-    assert "Any days that are different this week?" in PAGE
-    assert "Any lunches on the go this week?" in PAGE
-    assert "What are you in the mood for?" in PAGE
-    assert "Anything else I should plan around?" in PAGE
+def test_five_screens_one_question_each():
+    # Five since 2026-09-21 ("Starting when?" first — Loop Board "The week
+    # intake in the onboarding motion"); the questions lost their "this
+    # week" now that the first screen settles which days.
+    for i in range(1, 6):
+        assert 'id="q%d"' % i in PAGE and 'id="bar-%d"' % i in PAGE
+    assert "var STEP_COUNT = 5;" in PAGE
+    assert "<h1>Starting when?</h1>" in PAGE
+    assert "<h1>Any days that are different?</h1>" in PAGE
+    assert "<h1>Any lunches on the go?</h1>" in PAGE
+    assert "<h1>What are you in the mood for?</h1>" in PAGE
+    assert "<h1>Anything else I should plan around?</h1>" in PAGE
     # The "Why I'm asking" panel and the block-body sentences are gone.
     assert "Why I&rsquo;m asking" not in PAGE
     assert "Which lunches leave the house?" not in PAGE
 
 
-def test_every_screen_has_a_quiet_skip_and_the_last_drafts():
-    assert "var SKIP_LABELS = { 1: 'Nothing different', 2: 'Nothing on the go', 3: 'Surprise me', 4: 'Nothing else' };" in PAGE
-    assert "$('skip').addEventListener('click', advance);" in PAGE
+def test_the_skippable_screens_have_a_quiet_line_and_the_last_drafts():
+    # Step 1 always has an answer and step 4's skip is the Surprise me
+    # card, so neither has a quiet line (2026-09-21).
+    assert "var SKIP_LABELS = { 2: 'Nothing different', 3: 'Nothing on the go', 5: 'Nothing else' };" in PAGE
+    # The quiet line advances — except while "Add a cuisine" is open, when
+    # it is that screen's "Never mind" (2026-09-21, board B4a).
+    assert "$('skip').addEventListener('click', function () { if (cuisineOpen) closeCuisineScreen(); else advance(); });" in PAGE
     assert "$('cta').textContent = 'Draft my week';" in PAGE
 
 
 def test_the_days_are_tiles_that_open_a_day_sheet_with_every_meal():
     assert 'id="day-tiles"' in PAGE and 'id="day-sheet"' in PAGE
     assert "function openDaySheet(date)" in PAGE
-    # Dinner keeps its tags, who's eating and the guest steppers; lunch and
-    # breakfast get who's eating and a guests count of their own.
-    assert "mealBlockHtml('lunch', 'Lunch')" in PAGE and "mealBlockHtml('breakfast', 'Breakfast')" in PAGE
-    assert "async function stepSlotGuests(dayEl, slot, delta)" in PAGE
-    assert "body: JSON.stringify({ date: d, slot: slot, guest_count: next })" in PAGE
-    # Presence is per slot now, not dinner-only.
-    assert "body: JSON.stringify({ date: d, slot: slot, member: name, present: wasOut })" in PAGE
-    assert "function attendanceFor(date, slot)" in PAGE
+    # Since the second pass (2026-09-21, board B1b) the sheet is a row per
+    # person with a pill per meal, and Done writes the whole day in one
+    # call — tests/test_day_sheet_row_per_person.py pins the rest.
+    assert "var SHEET_SLOTS = ['breakfast', 'lunch', 'dinner'];" in PAGE
+    assert "'/api/week/' + encodeURIComponent(weekStart) + '/day-attendance'" in PAGE
+    assert "function attendanceFor(date, slot)" not in PAGE
 
 
 def test_nothing_still_reaches_for_the_old_day_list():
     """The verifier's find (2026-09-11): saveAwayRange repainted #days, which
-    the tiles replaced, so a saved range showed a false error. And the
-    'Just this week?' button has to be wired in the sheet, not only in the
-    list it used to live in."""
+    the tiles replaced, so a saved range showed a false error."""
     assert "$('days')" not in PAGE
-    # The wiring moved on 2026-09-17 (`overnight/just-this-week-per-meal`) and
-    # this assertion moved with it. It used to pin the literal
-    # `offerToRemember(dayEl);`, which always answered DINNER: a day sheet
-    # holds three .presence-summary nodes and three .remember buttons, so a
-    # selector on the day returns the first, and the offer under lunch or
-    # breakfast did nothing. The claim this test makes is unchanged — the
-    # button is wired inside the SHEET, not in the list it used to live in —
-    # and the wiring now names the meal it was tapped under as well.
-    # tests/test_just_this_week_per_meal.py is where that behaviour is pinned.
-    assert "dayEl.querySelectorAll('.remember').forEach(" in PAGE
-    assert "offerToRemember(dayEl, block && block.dataset.slot);" in PAGE
+    # The per-meal "Just this week?" offer went with the per-meal rows
+    # (2026-09-21): it never persisted anything, and the row-per-person
+    # sheet has no per-meal block for it to sit under.
+    assert "offerToRemember" not in PAGE
+    assert "Just this week?" not in PAGE
 
 
 def test_mood_pills_map_to_guidance_the_planner_reads():

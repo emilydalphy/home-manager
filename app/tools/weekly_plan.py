@@ -1146,6 +1146,14 @@ def suggest_planning_period(from_date: str = "", plan_ahead: bool = True) -> dic
     week after it while the draft stays where it is on Plan. An 'as_we_go'
     household is never shifted: its period starts today by definition.
 
+    And it never starts before today (2026-09-21). The anchor says where
+    the household's week begins; once that day has passed, the suggestion
+    begins on today instead and keeps its length — a "ready by Friday"
+    household opening Plan on a Sunday is offered Sun–Sat, not the
+    Sat–Fri whose first dinner is already eaten. `is_current_period`
+    stays True: it is still this week, just the part of it that is left
+    to plan ahead of.
+
     `plan_ahead=False` asks for the current period regardless — for the
     one caller that is not choosing a default but resolving a choice the
     person already made: onboarding's "this week / next week" (main.py
@@ -1192,6 +1200,20 @@ def suggest_planning_period(from_date: str = "", plan_ahead: bool = True) -> dic
             if approved is None:
                 start = start + timedelta(days=day_count)
                 is_current = False
+        # Today, never yesterday (Emily, 2026-09-20, re-planning on a
+        # Sunday: "the days are showing from yesterday"). The anchor names
+        # where the household's week BEGINS, and mid-week that day has
+        # gone: a "ready by Friday" household opening Plan on Sunday was
+        # offered Sat 19–Fri 25 on Sep 20, and yesterday's dinner is
+        # already eaten. A suggestion is what to plan NEXT, so it starts on
+        # the first day still ahead — today — and keeps the household's
+        # horizon (seven days, or the anchor's own count), which is what
+        # the "Starting when?" screen shows as "Today · Sun 20 → Sat 26".
+        # Only the suggestion: plan_ahead=False callers are resolving a
+        # period the person already chose and do their own part-week
+        # arithmetic from the anchor start (main._first_plan_window).
+        if plan_ahead and start < today:
+            start = today
     return {
         "start_date": start.isoformat(),
         "day_count": day_count,

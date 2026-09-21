@@ -353,6 +353,71 @@ def set_member_attendance(date_str: str, slot: str, member: str, present: bool =
     return set_slot_attendance(date_str, slot, present_member_ids=ordered or [], source="toggle")
 
 
+def set_day_attendance(date_str: str, slots: dict, source: str = "sheet") -> dict:
+    """
+    One day's attendance in one write — what the day sheet's Done sends
+    (Loop Board "Different days: the day sheet is a row per person",
+    2026-09-21). `slots` is {slot: {"absent": [names], "guest_count": n}};
+    a slot left out is left alone, and so is a guest_count left out.
+    Absences are names (or ids), resolved against the household as it
+    stands; an unknown name is refused, never dropped.
+
+    Everyone marked absent for a meal makes that meal away — the same
+    write a single toggle would have made three times over, so nothing
+    downstream (the away need, the draft's planned_empty, the shopping
+    list) learns a second way to hear it. A slot the sheet hands back
+    unchanged is not rewritten: an untouched meal keeps its no-row
+    "ordinary" meaning rather than gaining an explicit row that says the
+    same thing.
+
+    Returns {"date", "slots": {slot: attendance}} for every slot named,
+    each with its summary line, so the sheet paints what was saved.
+    """
+    date.fromisoformat(date_str)
+    if not isinstance(slots, dict):
+        raise ValueError("slots must be an object keyed by meal.")
+    all_ids = _household_member_ids()
+    out: dict[str, dict] = {}
+    for slot, spec in slots.items():
+        _validate_slot(slot)
+        if not isinstance(spec, dict):
+            raise ValueError(f"The {slot} entry must be an object.")
+        absent_given = spec.get("absent")
+        guests_given = spec.get("guest_count")
+        current = get_slot_attendance(date_str, slot)
+        present_ids = None
+        if absent_given is not None:
+            if not isinstance(absent_given, list):
+                raise ValueError(f"absent for {slot} must be a list of names.")
+            # `resolve_member_ids([])` means the whole household, which is
+            # the opposite of "nobody is absent" — so an empty list is
+            # handled before it can reach that reading.
+            absent_ids = set(resolve_member_ids(absent_given)) if absent_given else set()
+            present_ids = [i for i in all_ids if i not in absent_ids]
+        guest_count = None
+        if guests_given is not None:
+            guest_count = max(0, min(10, int(guests_given)))
+        # Everyone out means nobody home, guests or not: there is nobody
+        # to host them, so the count is dropped and the meal is away. The
+        # sheet says so before Done ("Everyone's out for dinner — 1 guest
+        # with nobody home, so I'll plan nothing.").
+        if present_ids is not None and not present_ids and all_ids:
+            guest_count = 0
+        unchanged_presence = present_ids is None or present_ids == current["present_member_ids"]
+        unchanged_guests = guest_count is None or guest_count == current["guest_count"]
+        if unchanged_presence and unchanged_guests:
+            att = current
+        else:
+            att = set_slot_attendance(
+                date_str, slot,
+                present_member_ids=present_ids if present_ids is not None else None,
+                guest_count=guest_count, source=source,
+            )
+        att["summary"] = summary_line(att)
+        out[slot] = att
+    return {"date": date_str, "slots": out}
+
+
 def _household_member_ids() -> list[int]:
     conn = get_conn()
     rows = _member_rows(conn)
