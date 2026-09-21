@@ -77,7 +77,7 @@ def _node(body: str):
 def test_add_a_new_store_opens_the_stores_sheet_over_this_screen_and_arms_the_way_back():
     out = _node("""
 onSortAll();
-click({ gro: 'store-add', kind: 'sortall', id: '9', name: 'Tahini', from: '' });
+clickIfRendered({ gro: 'store-add', kind: 'sortall', id: '9', name: 'Tahini', from: '' });
 console.log(JSON.stringify({ sheet: SHEET, back: groceryState.storeReturn, step: groceryState.step, tabs: TAB_SWITCHES }));
 """)
     assert out["sheet"] == ["open:stores", "focus:store"], "the Stores section, landing in the add field"
@@ -94,7 +94,7 @@ def test_a_store_saved_in_the_sheet_is_the_answer_on_sort_all_and_writes_at_once
     (remember: false)."""
     out = _node("""
 onSortAll();
-click({ gro: 'store-add', kind: 'sortall', id: '9', name: 'Tahini', from: '' });
+clickIfRendered({ gro: 'store-add', kind: 'sortall', id: '9', name: 'Tahini', from: '' });
 groUsualStoreAdded('Farm Boy');
 settle(function () {
   console.log(JSON.stringify({ sheet: SHEET, assigns: posts('/api/grocery-list/9/store').map(function (p) { return p.body; }), renders: RENDERS, stores: groceryState.usualStores }));
@@ -126,7 +126,7 @@ def test_a_return_armed_on_another_step_is_not_used():
     written to the row they left behind."""
     out = _node("""
 onSortAll();
-click({ gro: 'store-add', kind: 'sortall', id: '9', name: 'Tahini', from: '' });
+clickIfRendered({ gro: 'store-add', kind: 'sortall', id: '9', name: 'Tahini', from: '' });
 groceryState.step = 'list';
 groUsualStoreAdded('Farm Boy');
 console.log(JSON.stringify({ back: groceryState.storeReturn, posts: POSTS.length, sheet: SHEET.slice(2) }));
@@ -140,7 +140,7 @@ console.log(JSON.stringify({ back: groceryState.storeReturn, posts: POSTS.length
 def test_closing_the_sheet_without_saving_forgets_the_way_back_and_keeps_the_screen():
     out = _node("""
 onSortAll();
-click({ gro: 'store-add', kind: 'sortall', id: '9', name: 'Tahini', from: '' });
+clickIfRendered({ gro: 'store-add', kind: 'sortall', id: '9', name: 'Tahini', from: '' });
 prefsState.memory = { usual_stores: ['Costco', 'Metro', 'Farm Boy'] };
 groStoresSheetClosed();
 console.log(JSON.stringify({ back: groceryState.storeReturn, step: groceryState.step, stores: groceryState.usualStores, posts: POSTS.length }));

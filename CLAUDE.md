@@ -391,6 +391,79 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-21 — The Grocery test harness could press a button the screen
+  never rendered. Branch `overnight/grocery-stub-click-if-rendered`, NOT
+  merged at the time of writing. TEST-ONLY — not one line of `app/` or
+  `static/` is touched.** Loop Board improvement, Phase 0, filed off the
+  2026-09-17 `two-shops-anywhere-trip` review, which found it, guarded its
+  own one test by reading the dock before tapping it, and said honestly
+  that every other test on the stub still had the hole.
+  - **Reproduced first, on a real screen fixture** (`test_shop_checklist`'s
+    own `_MOCKUP`), two shapes, both green on `f0f7238`: an ACTION the step
+    renders nowhere — a CARRY keep/drop tapped on LIST, which POSTed
+    `/api/grocery-list/3/carried-over` from a screen with no such button —
+    and an IDENTITY it renders nowhere, a tick on row 999, which POSTed
+    `purchased` and toasted "Changes saved · Put back" over a row on no
+    card. Both are now the guard file's first tests.
+  - **`clickIfRendered` builds the step's own HTML and refuses anything
+    that is not in it**, naming the control and the step: "the LIST screen
+    renders no [data-gro=\"carry-decide\"] at all". It is the region's own
+    renderers — `groCarryHtml` / `groSortAllHtml` / `groListHtml` plus
+    `groDockHtml` — chosen by `renderGrocery`'s own step and its own
+    fallbacks, never a hand-kept list of which control belongs where. There
+    is no DOM in the harness, so it MIRRORS that dispatch rather than
+    running it, and `test_grocery_stub_click_if_rendered.py` pins the mirror
+    against `renderGrocery`'s source so a fourth step renderer fails loudly
+    instead of quietly leaving its controls unguarded.
+  - **The crumb had to be in the screen too, and that was a defect in the
+    first cut of the helper rather than a finding.** `step-back` lives in
+    the panel scaffold, not in a step renderer, so the first version
+    refused a tap on a control SORT ALL really does draw. `screenHtml`
+    applies `renderGrocery`'s own one rule for it (`back.hidden =
+    !groHeadFor(data, step).back`). The head's mic and refresh buttons are
+    deliberately NOT modelled — `SHOW_GRO_HEADER_TOOLS` is false so they
+    render `hidden`; a test pins that flag as the tripwire.
+  - **`click()` is gone by name, `clickHandlerDirectly` is the old body
+    under a name that says what it does**, and a test requires a `//`
+    reason above every surviving use.
+  - **THE SWEEP: all 48 call sites across NINE files, and FIVE tests were
+    pressing a control the screen does not render at that step.** Three
+    harness artifacts, fixed in place with a note each: a set-aside chip
+    tapped inside a closed ⋯ (its passing sibling three tests up opens the
+    ⋯ first), a "Put it on the list" tapped for a row whose field was never
+    opened, and two spice boxes tapped through a fold the test above it
+    pins as closed by default. Two are legitimate direct-handler calls and
+    keep the old spelling: a deliberate stray tap proving a one-shop
+    household is never shown SORT ALL, and a double-tap on a row that has
+    left `groUnsorted` but is still on screen collapsing, which a harness
+    with no DOM cannot draw. **NO REAL SCREEN DEFECT was behind any of
+    them** — reported as the answer the sweep gave rather than the one it
+    was hoping for. No assertion was weakened; the three fixed tests assert
+    exactly what they asserted before.
+  - **Three files carried their own COPY of the stub** (`carry_over`,
+    `have_it_and_instead`, `spices`) and so their own copy of the hole;
+    they read the shared `CLICK` now, so `onGroceryClick` is dispatched
+    from exactly one place in `tests/`.
+  - **Noted, not fixed:** `test_grocery_have_it_and_instead.py`'s fake
+    panel answers `#gro-subst-<anything>`, including rows whose field was
+    never opened, where the browser would find no element and the handler
+    would do nothing. `clickIfRendered` is what stops a test leaning on it;
+    the fake is still more generous than a real panel.
+  - **Mutation-checked rather than assumed.** Making `screenHtml` see
+    nothing reddens **29** tests across the nine files, so the guard really
+    runs at the converted sites. Removing the identity half of the check
+    reddens **0 of those 29** and **2 of the guard file's own** — so the
+    "which row" half is pinned by the new file and by nothing else, which
+    is worth knowing before anyone simplifies it. Dropping the crumb from
+    the mirror reddens 2. Making `clickIfRendered` check nothing reddens 5.
+  - `tests/test_grocery_stub_click_if_rendered.py` (13). Suite **5600
+    passed, 1 failed** at `TZ=America/Toronto`, against a measured **5587
+    passed, 1 failed** on `f0f7238` — +13 is this file exactly, and the one
+    failure is the same pre-existing
+    `test_recipe_photo_import.py::test_the_cooker_view_and_the_week_menu_carry_the_credit_and_the_photo`,
+    reproduced on the stashed merge base and red when run alone, so it is
+    not this branch's and not an ordering artifact.
+
 - **2026-09-18 — The core loop, seven branches built in parallel off
   `417bb92`, integrated as ONE branch: `core-loop-2026-09-18`.** In merge
   order: `today-shop-cook` (Now → Today; Shop / Cook groups tagged Morning ·

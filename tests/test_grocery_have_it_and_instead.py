@@ -23,6 +23,7 @@ from pathlib import Path
 
 import nodeharness
 import pytest
+from shop_harness import CLICK
 
 from app import tools
 from app.db import get_conn
@@ -246,16 +247,19 @@ let FIELD_VALUE = '';
 // groPanel() is null in this harness, so subst-save reads its field from
 // here: the handler's `substPanel && ...` short-circuits to a null field.
 // We give it a panel with exactly one query.
+// Worth knowing (2026-09-21): this fake answers #gro-subst-<anything>,
+// including rows whose field was never opened, where the browser would
+// find no element and the handler would do nothing. clickIfRendered is
+// what now stops a test leaning on that — it refuses a save button the
+// screen has not drawn — but the fake panel itself is still more generous
+// than a real one.
 panels.grocery = { dataset: {}, querySelector: function (sel) {
   return sel.indexOf('#gro-subst-') === 0 ? { value: FIELD_VALUE, focus: function () {} } : null;
 } };
-function click(dataset) {
-  const el = { dataset: dataset, disabled: false, closest: function () { return null; },
-    classList: { toggle: function () {} }, setAttribute: function () {}, querySelectorAll: function () { return []; } };
-  onGroceryClick({ target: { closest: function () { return el; } } });
-  return el;
-}
-function settle(fn) { setTimeout(fn, 30); }
+// The click machinery is the shared one now (tests/shop_harness.CLICK),
+// appended after the region below: this file used to carry its own copy
+// of it, and with it the hole that copy had — a tap on a control the
+// screen never rendered ran the handler anyway.
 function setUp(n, shops) {
   const rows = [];
   for (let i = 1; i <= n; i++) rows.push({ id: i, item: 'Thing ' + i, quantity: '1', store: '', store_decided: 0 });
@@ -276,7 +280,7 @@ def _grocery_block() -> str:
 
 
 def _node(body: str):
-    res = nodeharness.run_node(_STUB + _grocery_block() + body, timeout=30)
+    res = nodeharness.run_node(_STUB + _grocery_block() + CLICK + body, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout.strip())
 
@@ -305,7 +309,7 @@ def test_have_it_drops_the_line_without_inventory_and_undoes():
     out = _node("""
 setUp(3);
 groceryState.step = 'sortall';
-click({ gro: 'have-it', id: '1', name: 'Thing 1' });
+clickIfRendered({ gro: 'have-it', id: '1', name: 'Thing 1' });
 settle(function () {
   tapUndo();
   settle(function () {
@@ -323,18 +327,23 @@ def test_use_something_else_opens_a_field_then_writes_the_swap_and_undoes():
     out = _node("""
 setUp(3);
 groceryState.step = 'sortall';
-click({ gro: 'subst-open', id: '1' });
+clickIfRendered({ gro: 'subst-open', id: '1' });
 const opened = groSortAllHtml(groceryState.data);
 FIELD_VALUE = '';
-click({ gro: 'subst-save', id: '1', have: '0', name: 'Thing 1' });
+clickIfRendered({ gro: 'subst-save', id: '1', have: '0', name: 'Thing 1' });
 const postsAfterBlank = POSTS.length;
 FIELD_VALUE = 'dry oregano';
-click({ gro: 'subst-save', id: '1', have: '0', name: 'Thing 1' });
+clickIfRendered({ gro: 'subst-save', id: '1', have: '0', name: 'Thing 1' });
 settle(function () {
   tapUndo();
   settle(function () {
     FIELD_VALUE = 'dry oregano';
-    click({ gro: 'subst-save', id: '2', have: '1', name: 'Thing 2' });
+    // Thing 2's field has to be opened before it has buttons to press —
+    // the save pair only renders under the row whose ⋯ is open. (Added
+    // 2026-09-21: this tap used to go straight into the handler with
+    // nothing of Thing 2's on the screen.)
+    clickIfRendered({ gro: 'subst-open', id: '2' });
+    clickIfRendered({ gro: 'subst-save', id: '2', have: '1', name: 'Thing 2' });
     settle(function () {
       console.log(JSON.stringify({ opened: opened, blank: postsAfterBlank, posts: POSTS,
         toasts: TOASTS.map(function (t) { return t.msg; }), substOpen: groceryState.substOpenId }));

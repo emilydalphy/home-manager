@@ -166,7 +166,7 @@ def test_a_tap_writes_that_one_row_at_once_and_it_leaves_the_queue():
 setUp(8);
 groceryState.step = 'sortall';
 const before = groUnsorted(groceryState.data).length;
-click({ gro: 'sortall-pick', id: '3', store: 'Costco' });
+clickIfRendered({ gro: 'sortall-pick', id: '3', store: 'Costco' });
 const leftAtOnce = groUnsorted(groceryState.data).length;
 const renderedAtOnce = RENDERS;
 settle(function () {
@@ -193,7 +193,7 @@ setUp(5);
 groceryState.step = 'sortall';
 const subs = [groHeadFor(groceryState.data, 'sortall').sub];
 ['1', '2', '3'].forEach(function (id) {
-  click({ gro: 'sortall-pick', id: id, store: 'Loblaws' });
+  clickIfRendered({ gro: 'sortall-pick', id: id, store: 'Loblaws' });
   subs.push(groHeadFor(groceryState.data, 'sortall').sub);
 });
 console.log(JSON.stringify(subs));
@@ -207,9 +207,14 @@ def test_a_second_tap_on_a_row_that_is_already_going_writes_nothing_more():
     out = _node("""
 setUp(4);
 groceryState.step = 'sortall';
-click({ gro: 'sortall-pick', id: '2', store: 'Costco' });
-click({ gro: 'sortall-pick', id: '2', store: 'Loblaws' });
-click({ gro: 'sortall-pick', id: '4', store: '' });
+clickIfRendered({ gro: 'sortall-pick', id: '2', store: 'Costco' });
+// Row 2 has left groUnsorted but is still ON the screen for 180ms,
+// collapsing (groSortAllRender keeps the node and adds is-leaving), which
+// is exactly the tap this test is about. screenHtml() draws the settled
+// screen — there is no DOM here to hold a leaving row — so the guard
+// cannot see it and this one goes straight into the handler.
+clickHandlerDirectly({ gro: 'sortall-pick', id: '2', store: 'Loblaws' });
+clickIfRendered({ gro: 'sortall-pick', id: '4', store: '' });
 settle(function () {
   console.log(JSON.stringify(POSTS.map(function (p) { return p.url; })));
 });
@@ -344,7 +349,7 @@ def test_each_pick_has_its_own_undo_that_restores_the_row_unanswered():
     out = _node("""
 setUp(4);
 groceryState.step = 'sortall';
-click({ gro: 'sortall-pick', id: '2', store: 'Costco' });
+clickIfRendered({ gro: 'sortall-pick', id: '2', store: 'Costco' });
 settle(function () {
   const toast = lastToast();
   const undoPayload = JSON.parse(JSON.stringify(groceryState.bulkUndo));
@@ -370,7 +375,7 @@ def test_the_any_chip_says_so_in_its_toast():
     out = _node("""
 setUp(2);
 groceryState.step = 'sortall';
-click({ gro: 'sortall-pick', id: '1', store: '' });
+clickIfRendered({ gro: 'sortall-pick', id: '1', store: '' });
 settle(function () { console.log(JSON.stringify(lastToast().msg)); });
 """)
     assert out == "Thing 1 → any store"
@@ -381,9 +386,9 @@ def test_undo_after_the_next_pick_undoes_the_latest_pick_only():
     out = _node("""
 setUp(4);
 groceryState.step = 'sortall';
-click({ gro: 'sortall-pick', id: '1', store: 'Costco' });
+clickIfRendered({ gro: 'sortall-pick', id: '1', store: 'Costco' });
 settle(function () {
-  click({ gro: 'sortall-pick', id: '2', store: 'Loblaws' });
+  clickIfRendered({ gro: 'sortall-pick', id: '2', store: 'Loblaws' });
   settle(function () {
     tapUndo();
     settle(function () {
@@ -409,8 +414,8 @@ fetch = function (url, opts) {
   if (url === '/api/grocery-list/1/store') return new Promise(function (r) { setTimeout(function () { r(p); }, 20); });
   return p;
 };
-click({ gro: 'sortall-pick', id: '1', store: 'Costco' });
-click({ gro: 'sortall-pick', id: '2', store: 'Loblaws' });
+clickIfRendered({ gro: 'sortall-pick', id: '1', store: 'Costco' });
+clickIfRendered({ gro: 'sortall-pick', id: '2', store: 'Loblaws' });
 setTimeout(function () {
   console.log(JSON.stringify({ toast: lastToast().msg, undo: groceryState.bulkUndo }));
 }, 80);
@@ -427,9 +432,9 @@ def test_the_last_row_makes_the_finish_line_and_the_way_back():
     out = _node("""
 setUp(2);
 groceryState.step = 'sortall';
-click({ gro: 'sortall-pick', id: '1', store: 'Costco' });
+clickIfRendered({ gro: 'sortall-pick', id: '1', store: 'Costco' });
 const dockMid = groDockHtml(groceryState.data, 'sortall');
-click({ gro: 'sortall-pick', id: '2', store: 'Costco' });
+clickIfRendered({ gro: 'sortall-pick', id: '2', store: 'Costco' });
 const body = new Body();
 groSortAllRender(body, groceryState.data);
 console.log(JSON.stringify({
@@ -458,9 +463,9 @@ def test_the_finish_stays_up_rather_than_folding_to_the_list_and_back_is_the_lis
     out = _node("""
 setUp(1);
 groceryState.step = 'sortall';
-click({ gro: 'sortall-pick', id: '1', store: 'Costco' });
+clickIfRendered({ gro: 'sortall-pick', id: '1', store: 'Costco' });
 const doneAfterPick = groceryState.sortAllDone;
-click({ gro: 'sortall-done' });
+clickIfRendered({ gro: 'sortall-done' });
 console.log(JSON.stringify({ doneAfterPick: doneAfterPick, step: groceryState.step, doneAfterBack: groceryState.sortAllDone }));
 """)
     assert out == {"doneAfterPick": True, "step": "list", "doneAfterBack": False}
@@ -494,7 +499,7 @@ def test_have_it_on_the_last_row_finishes_the_same_way():
     out = _node("""
 setUp(1);
 groceryState.step = 'sortall';
-click({ gro: 'have-it', id: '1', name: 'Thing 1' });
+clickIfRendered({ gro: 'have-it', id: '1', name: 'Thing 1' });
 // The harness has no panel, so loadGrocery leaves the data alone: stand in
 // for the server's re-read, in which the dropped row is no longer listed.
 groceryState.data.stores.Unassigned.sections[0].items = [];
@@ -512,7 +517,10 @@ def test_a_one_shop_household_never_reaches_this_screen():
     out = _node("""
 setUp(8, [], ['Costco']);
 groceryState.step = 'sortall';
-click({ gro: 'sortall-pick', id: '1', store: 'Costco' });
+// Straight into the handler on purpose: the whole claim is that this
+// household is never shown this screen, so there is no chip to tap and
+// clickIfRendered would (rightly) refuse it.
+clickHandlerDirectly({ gro: 'sortall-pick', id: '1', store: 'Costco' });
 console.log(JSON.stringify({ unsorted: groUnsorted(groceryState.data).length, posts: POSTS.length, html: groSortAllHtml(groceryState.data) }));
 """)
     assert out["unsorted"] == 0, "one shop: nothing is ever 'to sort' (Emily, 2026-09-09)"
