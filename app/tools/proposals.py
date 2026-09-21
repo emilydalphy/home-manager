@@ -178,8 +178,10 @@ def propose_plan_changes(weekly_plan_id: int, rows: list[dict], line: str = "") 
             unsafe = []
             safe = []
             for c in shoppable:
-                clash = _swap._hard_clash(c) if c["ingredients"] else _swap._hard_clash(
-                    dict(c, ingredients=_saved_ingredients(c["meal_name"])))
+                # _hard_clash reads a reused dish off its saved list itself
+                # (recipes.saved_ingredients) — the same fallback every
+                # other door makes.
+                clash = _swap._hard_clash(c)
                 if clash:
                     unsafe.append(_clash_line(c["meal_name"], clash))
                 else:
@@ -227,20 +229,6 @@ def propose_plan_changes(weekly_plan_id: int, rows: list[dict], line: str = "") 
     }
     bucket[pid] = proposal
     return public_view(proposal)
-
-
-def _saved_ingredients(name: str) -> list[dict]:
-    """The saved recipe's list, for a candidate the model named without
-    restating — the match is on ingredients, so a reused dish is read off
-    its own recipe rather than waved through on its name."""
-    wanted = (name or "").strip().lower()
-    try:
-        for r in _recipes.list_recipes():
-            if (r.get("name") or "").strip().lower() == wanted:
-                return list(r.get("ingredients") or [])
-    except Exception:
-        logger.exception("Could not read the saved recipe for %r", name)
-    return []
 
 
 def _clash_line(meal_name: str, clash: list[dict]) -> str:

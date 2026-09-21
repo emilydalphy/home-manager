@@ -492,10 +492,16 @@ def _hard_clash(pick: dict) -> list[dict]:
     dislike is worth a word, never worth refusing a swap the household
     asked for.
     """
+    # The list the pick came with, else the saved recipe's — a pick that
+    # reuses a dish by name (is_new_recipe false, no list) is matched on
+    # what that dish is made of, never on its name alone.
+    ingredients = _clean_ingredients(pick.get("ingredients")) or _recipes.saved_ingredients(
+        pick.get("meal_name") or ""
+    )
     try:
         hits = _coordination.check_meal_conflicts(
             pick.get("meal_name") or "",
-            ingredients=_clean_ingredients(pick.get("ingredients")),
+            ingredients=ingredients,
         )
     except Exception:
         logger.exception("Allergen check failed for a swap pick; refusing rather than guessing")

@@ -79,18 +79,6 @@ def hard_avoidances() -> list[dict]:
     return [a for a in _coordination._avoidances() if a.get("severity") == "hard"]
 
 
-def _saved_ingredients(name: str) -> list[dict]:
-    """The saved recipe's ingredient list, for an item the model reused by
-    name without restating it. Empty when there is no such recipe."""
-    wanted = (name or "").strip().lower()
-    if not wanted:
-        return []
-    for r in _recipes.list_recipes():
-        if (r.get("name") or "").strip().lower() == wanted:
-            return list(r.get("ingredients") or [])
-    return []
-
-
 def ingredients_for(item: dict) -> list[dict]:
     """What the dish is actually made of: the list the model sent, else the
     saved recipe's. The ingredient list is what the match is decided on, so
@@ -100,7 +88,7 @@ def ingredients_for(item: dict) -> list[dict]:
     own = [i for i in (item.get("ingredients") or []) if isinstance(i, dict) and (i.get("item") or "").strip()]
     if own:
         return own
-    return _saved_ingredients(item.get("meal_name") or "")
+    return _recipes.saved_ingredients(item.get("meal_name") or "")
 
 
 def hard_clashes(name: str, ingredients: list[dict] | None = None, sides: list[dict] | None = None,
@@ -353,14 +341,29 @@ def sweep_plan(weekly_plan_id: int, budget: CallBudget | None = None, picker=Non
                         logger.exception("Allergen sweep could not remove side %r from entry %s", side_name, entry_id)
             continue
         # The dish itself. swap_meal_in_place runs the same matcher before
-        # it writes, so a swap that comes back "swapped" is safe by
-        # construction; a refusal (or an empty budget) opens the slot.
+        # it writes; the result is matched AGAIN here rather than trusted,
+        # because "safe by construction" is the sentence the verifier of
+        # 2026-09-21 caught being false (a reused recipe matched on its
+        # name alone). A swap that lands clean is done; one that lands
+        # dirty, refuses, or would overspend the budget opens the slot.
         swapped = False
         if budget.left >= _swap.MAX_PICK_ATTEMPTS:
             budget.left -= _swap.MAX_PICK_ATTEMPTS
             try:
                 result = _swap.swap_meal_in_place(weekly_plan_id, entry_id, picker=picker)
-                swapped = result.get("status") == "swapped"
+                if result.get("status") == "swapped":
+                    new_name = (result.get("meal") or "").strip()
+                    still = hard_clashes(
+                        new_name, ingredients=_recipes.saved_ingredients(new_name), avoidances=avoidances,
+                    )
+                    if still:
+                        logger.error(
+                            "Allergen sweep's re-pick of %s %s landed %r, which has %s — opening the slot",
+                            meal.get("date"), meal.get("slot"), new_name, _food_word(still),
+                        )
+                        entry_id, name, dish_clash = result.get("entry_id", entry_id), new_name, still
+                    else:
+                        swapped = True
             except Exception:
                 logger.exception("Allergen sweep could not re-pick %s %s (%s)", meal.get("date"), meal.get("slot"), name)
         if swapped:
