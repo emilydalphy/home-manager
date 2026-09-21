@@ -344,10 +344,20 @@ def clear_plan_slot(weekly_plan_id: int, meal_date: str, slot: str, conn=None) -
         if own_conn:
             conn = get_conn()
         marks = ",".join("?" * len(rows))
-        # Prep rows for a meal that no longer exists go with it — the same
-        # reasoning _replace_slot_entries applies. (get_prep_schedule also
-        # drops any dangling row on read, so a path that forgets this
-        # still shows nothing stale.)
+        # Prep rows for a meal that no longer exists go with it.
+        #
+        # BOTH HALVES OF WHAT THIS COMMENT USED TO SAY WERE FALSE, and it
+        # is corrected here (2026-09-21) rather than left, because a false
+        # comment is what the next reader acts on — one already did.
+        # _replace_slot_entries does NOT apply the same reasoning: it
+        # deletes prep rows only when asked (delete_prep_rows), so every
+        # ordinary swap in the app leaves them standing. And a path that
+        # forgets this does NOT "still show nothing stale" — get_prep_schedule
+        # drops a dangling row on read and is the only reader that does.
+        # prep_sessions._prep_task_rows (the Cook tab's prep session),
+        # defrost.get_defrost_schedule (the chat answer to "what do I need
+        # to defrost?") and defrost.get_defrost_today all show it. Measured
+        # through real doors, not reasoned.
         conn.execute(
             f"DELETE FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id IN ({marks})",
             (household_id(), *[r["id"] for r in rows]),
@@ -5750,13 +5760,29 @@ def _replace_slot_entries(
     food_groups: list[str] | None = None,
     reasoning: str = "",
     derived_from: dict | None = None,
+    delete_prep_rows: bool = False,
 ) -> dict:
     """
     Take `old_entry_ids` off a day and put `new_meal` in their place, as
     ONE transaction — the write behind swap_meal_in_plan and
     resolve_open_slot, and through the first of those behind add_dish_day
     (the Check-the-week "+"), every chat swap, swap_in_place, and the
-    generation's snack repair.
+    generation's snack repair. Two more modules compose it directly:
+    holidays._plan_dish (the dish a household is bringing somewhere) and
+    meal_variety.enforce_distinct_count (the surplus-repeat repair). Both
+    did the same job by hand until 2026-09-21, and holidays' hand-rolled
+    pair was reproduced losing an approved week's shopping line; a second
+    implementation of this write is free to disagree with this one about
+    one household's list, which is what it was extracted to prevent.
+
+    `delete_prep_rows` takes the outgoing meals' prep rows with them, inside
+    this same transaction — what clear_plan_slot has always done, offered
+    here as an opt-in so holidays._plan_dish can keep doing it. It is OFF by
+    default, deliberately: a swap leaves those rows standing today, and a
+    ticked fridge move is a record of work somebody actually did, which
+    clear_plan_slot's own docstring calls "a real loss to know about".
+    Turning it on for everyone is a product decision about the whole app,
+    not a default to change while fixing two call sites.
 
     It used to be four commits in a row: unlink any leftover chain, reverse
     the old meal's groceries, DELETE the row, then plan_meal to INSERT the
@@ -5776,9 +5802,9 @@ def _replace_slot_entries(
     the same order the self-owned path always ran it. So does the re-buy
     for nights that were eating off a swapped-out source
     (_reingest_unlinked_entries). Nothing here opens a second connection —
-    tests/test_swap_atomic.py counts them — because SQLite gives one
-    writer at a time and a nested get_conn inside this transaction would
-    die of "database is locked".
+    tests/test_swap_atomic.py and test_replace_slot_entries_two_writes.py
+    count them — because SQLite gives one writer at a time and a nested
+    get_conn inside this transaction would die of "database is locked".
 
     The write lock is taken FIRST, with an explicit `BEGIN IMMEDIATE`, and
     that is not decoration. db.get_conn leaves sqlite3's legacy
@@ -5791,12 +5817,12 @@ def _replace_slot_entries(
     nothing else can write until this commits or rolls back, and every
     read here sees one consistent world.
 
-    The one read that cannot be inside is the caller's: swap_meal_in_plan
-    and resolve_open_slot resolve `old_entry_ids` on a connection of their
-    own before this opens. So the DELETE's rowcount is checked against the
-    ids it was given — a row that went away between the caller's read and
-    this lock is a concurrent change, and the answer is to roll back and
-    say so, not to plan a second meal on top of whatever replaced it.
+    The one read that cannot be inside is the caller's: every caller
+    resolves `old_entry_ids` on a connection of its own before this opens.
+    So the DELETE's rowcount is checked against the ids it was given — a
+    row that went away between the caller's read and this lock is a
+    concurrent change, and the answer is to roll back and say so, not to
+    plan a second meal on top of whatever replaced it.
     """
     from . import leftovers as _leftovers
 
@@ -5823,6 +5849,19 @@ def _replace_slot_entries(
             if rescale_source_id is not None and approved:
                 _rescale_leftover_source_grocery(rescale_source_id, old_id, conn=conn)
             _grocery._reverse_meal_grocery_contributions(old_id, conn=conn)
+        if delete_prep_rows and old_entry_ids:
+            # Before the entries go, and on this connection — the order
+            # clear_plan_slot uses, and the only way the pair is atomic.
+            # Three readers of prep_tasks do NOT drop a dangling row
+            # (prep_sessions._prep_task_rows, defrost.get_defrost_schedule
+            # and get_defrost_today), so leaving one here is a fridge move
+            # on the Cook tab, and an answer to "what do I need to
+            # defrost?", for a meal that is no longer planned.
+            marks = ",".join("?" * len(old_entry_ids))
+            conn.execute(
+                f"DELETE FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id IN ({marks})",
+                (household_id(), *old_entry_ids),
+            )
         # By id, not by (date, slot): a slot legitimately holding two
         # snacks must lose only the one being replaced. With no old_meal
         # this is every row in the slot, which is exactly what the by-slot

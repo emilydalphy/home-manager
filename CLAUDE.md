@@ -391,6 +391,161 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-21 — Two writes replaced a dinner by hand, and one lost an
+  approved week's groceries. Branch
+  `overnight/replace-slot-entries-two-writes`, NOT merged at the time of
+  writing.** Loop Board bug, Phase 0. `weekly_plan._replace_slot_entries`
+  exists so that replacing one meal with another is ONE transaction — what
+  `overnight/swap-atomic` closed on 2026-09-11 after reproducing a day left
+  with no row at all. Two call sites did the same job themselves:
+  `holidays._plan_dish` (reached by a real tap — answering a holiday "going
+  to someone's, bringing a dish") and `meal_variety.enforce_distinct_count`
+  (the surplus-repeat repair, generation-time).
+  - **Reproduced first, on an APPROVED week, `plan_meal` made to raise:**
+    `([(1, 'planned')], [('Black beans', '1 can', 'needed')])` became
+    `([], [])`. The dinner row gone, the slot in the absent state
+    `schema.sql` says cannot exist, and the approved week's shopping line
+    gone with it — for food the household may already have bought — under
+    an `answer_holiday` that raised and a screen saying nothing had been
+    saved. Strictly worse than the sibling `holidays._reopen` bug fixed on
+    2026-09-18, where nothing had reached the list. Reproduced through the
+    real door as well as directly.
+  - **The meal_variety half is worse than "generation-time only" suggests,
+    because that function swallows its own exceptions by design.** Measured:
+    the surplus night left with NO row and its grocery line reversed, while
+    the call returned `{'before': 5, 'after': 5, 'replaced': []}` — it
+    reported that nothing had happened, over a hole in the week.
+  - **Both route through `_replace_slot_entries` as `swap_meal_in_plan`
+    uses it.** A second hand-rolled transaction beside it is a second
+    implementation of the app's central plan write, free to disagree with
+    it about one household's list — which is what it was extracted to
+    prevent. It wants ids rather than a date: `meal_variety` already had
+    the row in hand (`night["id"]`), and `holidays._dinner_entry_ids` reads
+    them on a connection of its own ABOVE the write, because a nested
+    `get_conn` inside that transaction waits on SQLite's single writer and
+    dies as an intermittent "database is locked".
+  - **THE FIRST CUT LEFT A DANGLING PREP ROW AND ARGUED IT WAS HARMLESS
+    FROM ONE READER. It was a regression onto two live screens, found by
+    review, and the argument is the part worth keeping.** `clear_plan_slot`
+    deletes the replaced meal's `prep_tasks`; `_replace_slot_entries` does
+    not. The first cut checked `cooker.get_prep_schedule`, which filters a
+    dangling row on read, and stopped there. **Three other readers do not
+    filter, and two are live**: `prep_sessions._prep_task_rows` → the Cook
+    tab's prep session, `defrost.get_defrost_schedule` (a chat tool
+    `SYSTEM_PROMPT` routes "what do I need to defrost?" straight to), and
+    `defrost.get_defrost_today`. Driven through real doors with nothing
+    hand-inserted — shop the week, tap "Something in the freezer?", confirm
+    the chicken, then answer the holiday:
+
+    | | main | first cut |
+    |---|---|---|
+    | Cook tab's prep session | `[]` | `Move the Whole chicken to the fridge — for Monday's Roast Chicken.` |
+    | "what do I need to defrost?" | `[]` | the same sentence |
+    | prep rows on disk | 0 | 1 |
+
+    …tickable, for a roast chicken no longer on the plan.
+  - **The fix is `delete_prep_rows`, an opt-in on `_replace_slot_entries`,
+    default OFF, inside the same transaction — and the default is the whole
+    decision.** Only the holidays door asks for it, so its happy path is
+    byte-identical to main again. **Deliberately NOT the default for every
+    caller**: the identical stale row already exists on `main` through an
+    ordinary chat swap (measured), so changing that is a product decision
+    about the whole app — and turning it on everywhere would spread the
+    cost `clear_plan_slot`'s own docstring names, a ticked fridge move
+    destroyed with the meal. Its own card. `meal_variety` does not ask for
+    it either: it runs at generation time, before any prep row exists, so
+    asking would be a claim nothing can exercise.
+  - **A COMMENT IN `clear_plan_slot` (weekly_plan.py ~:347) WAS ALREADY
+    FALSE ON MAIN, IN BOTH HALVES, AND IS WHAT THE FIRST CUT ACTED ON.** It
+    said `_replace_slot_entries` "applies the same reasoning" (it does not
+    — it deletes prep rows only when asked, so every swap leaves them) and
+    that "a path that forgets this still shows nothing stale" (it does not
+    — `get_prep_schedule` is the ONLY reader that filters). Corrected in
+    this change, with the three readers named, because a false comment is
+    what the next reader acts on and one already did.
+  - **ONE HAPPY-PATH SHAPE IS NOT BYTE-IDENTICAL TO MAIN, and it is named
+    because this log's rule is that a new line on an already-shopped list
+    gets named.** When the holiday dinner is a leftovers SOURCE — a later
+    night reheats it — replacing it strands that night as an ordinary
+    planned meal that never had its own ingredients bought.
+    `_replace_slot_entries` runs `_reingest_unlinked_entries`, so it buys
+    for it: measured on an approved week, `main` `['Sweet potatoes']`
+    against this branch's `['Black beans', 'Sweet potatoes']`. Very likely
+    the RIGHT answer — it is what every swap has done since `swap-atomic`,
+    and `swap_meal_in_plan`'s docstring is written around exactly it — but
+    it puts a line on a list the week has already been shopped from. The
+    reverse shape (the holiday dinner as the reheat TARGET) is identical.
+  - **A second behaviour change, unreachable from the app today:**
+    `meal_variety` passed `add_ingredients_to_grocery_list=False` outright,
+    so on an APPROVED plan it reversed the surplus dish's line and bought
+    nothing for the night it filled — a week left under-bought. It buys now
+    (`ing0` "1 can" → "2 cans", measured). Only generation calls
+    `enforce_distinct_meal_count`, and it calls it on a draft
+    (`agent.py:4785`), where both answer identically; it is not a chat tool
+    and sits behind no route.
+  - **Cost went DOWN, and by more than expected: connections per call
+    13 → 4 for the holidays door and 7 → 3 for one replaced night**,
+    instrumented at `sqlite3.connect` globally rather than per module. One
+    transaction is cheaper than three functions each opening their own.
+  - **Found and NOT fixed, named so nobody reports them as new.** (1) A
+    concurrent delete between the caller's id read and the DELETE now
+    surfaces as an HTTP 500 whose generic text says the data is fine — and
+    the holiday ANSWER was committed before `_apply_effects` runs, so it is
+    saved with the dish unplanned, and a retry heals it. `main`'s behaviour
+    in the same race is worse in kind: it clobbers and plans on top. (2) A
+    degenerate duplicate-row input to `enforce_distinct_meal_count` now
+    leaves two rows where main's by-slot delete incidentally collapsed
+    them — unreachable at the only call site, and arguably the more honest
+    behaviour. (3) `app/agent.py:4702`/`:4726` are `clear_plan_slot` +
+    `plan_slot_EMPTY`, safe for the reason the away-night entry already
+    records (generation's `finally` calls `discard_failed_plan`). (4)
+    **`big_meal.py` has FIVE, not the two the ticket named** — `:795`,
+    `:907`, `:1755` (with `plan_meal`) and `:811`, `:919` (with
+    `plan_slot_open`) — and every `plan_meal` one passes
+    `add_ingredients_to_grocery_list=False` explicitly, so routing them
+    through this write would start buying for a hosting menu on an approved
+    week. A behaviour decision, not a refactor, and its own card. Pinned by
+    a test so the counts go red if they move.
+  - `tests/test_replace_slot_entries_two_writes.py` (28; **18 red against
+    main's `app/`, decomposed by a mechanical audit of the docstring labels
+    rather than from memory: 10 CATCH, 6 GUARD, 2 CHARACTERISATION**). The
+    six red GUARDs are red for reasons other than the ones they are named
+    after and each says which — two connection counters never reach the
+    marked function, the transaction-open one fails on its first assertion,
+    the id-resolution one errors on a name main has not got. One test has a
+    baseline other than main and says so: the prep-row CATCH is green there,
+    because main never had that bug. **Eleven mutations run, TEN bite** —
+    the two bugs put back (17 and 6 red), a nested `get_conn` (2), a commit
+    between the delete and the insert (11), always-buy (1), either site
+    handed no ids (6 and 2), the holidays door not asking for
+    `delete_prep_rows` (3), that parameter defaulting to True (2), and its
+    body removed (2). **The eleventh, `rollback()` deleted, reddens
+    NOTHING** — `finally: conn.close()` discards an open transaction
+    anyway, exactly as the `away-night-atomic` entry already records; it is
+    pre-existing and unpinned, and this branch neither adds nor removes it.
+  - **The happy path was diffed rather than asserted**: a whole-database
+    dump (entries with their reasoning/derived_from/food_groups, grocery
+    rows, the ledger and `prep_tasks`) across five scenarios — approved-week
+    holiday dish, the same answer twice, a draft, an empty dinner slot, and
+    the repeat repair at two targets — is **byte-identical** between main
+    and this branch. The two shapes that are not are the two named above,
+    and both took a deliberately constructed probe to surface.
+  - Suite **5615 passed, 1 failed** at `TZ=America/Toronto`, against a
+    measured **5587 passed, 1 failed** on the merge base in the same zone —
+    +28 is this file exactly, and **no existing test was changed, deleted
+    or weakened**. The one failure is the same test on both trees
+    (`test_recipe_photo_import.py::test_the_cooker_view_and_the_week_menu_
+    carry_the_credit_and_the_photo`, a date-shaped `IndexError` that fails
+    in isolation on main too).
+  - **And inside a VERIFIED straddle — `Pacific/Niue` 2026-09-20 against
+    Toronto 2026-09-21, both dates checked before AND after every run,
+    which is the check this log has had to add twice — this branch is 13
+    failed / 5603 passed against the merge base's own 13 (its 31 less the
+    18 this file contributes when run against main's `app/`). The two
+    failure sets are byte-identical, so the branch adds ZERO straddle
+    failures.** Every date in the new file is seeded off
+    `conftest.household_today()`; there is no `date.today()` in it.
+
 - **2026-09-18 — The core loop, seven branches built in parallel off
   `417bb92`, integrated as ONE branch: `core-loop-2026-09-18`.** In merge
   order: `today-shop-cook` (Now → Today; Shop / Cook groups tagged Morning ·

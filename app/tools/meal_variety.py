@@ -65,7 +65,6 @@ import re
 from ..db import get_conn
 from ._shared import household_id
 from . import leftovers as _leftovers
-from . import meal_plans as _meal_plans
 from . import weekly_plan as _weekly_plan
 
 logger = logging.getLogger("home_manager")
@@ -227,13 +226,24 @@ def enforce_distinct_count(
         for dish in surplus:
             for night in dish["nights"]:
                 fill = _spread_pick(kept, night["date"])
-                _weekly_plan.clear_plan_slot(plan_id, night["date"], slot)
-                _meal_plans.plan_meal(
-                    meal_date=night["date"],
-                    meal=fill["name"],
-                    slot=slot,
+                # ONE transaction per night, because it is the write every
+                # swap in the app goes through (weekly_plan.
+                # _replace_slot_entries) rather than the clear-then-plan pair
+                # this used to be. Reproduced before it changed, with
+                # plan_meal made to raise: the surplus night was left with NO
+                # row at all and its grocery line reversed, while this
+                # function swallowed the exception and reported `replaced:
+                # []` — a hole in the week nothing said anything about.
+                # By id, not by (date, slot): the row this loop is about is
+                # already in hand, and naming it is what lets that function
+                # check the delete landed before it plans anything on top.
+                _weekly_plan._replace_slot_entries(
+                    plan_id,
+                    [night["id"]],
+                    night["date"],
+                    slot,
+                    fill["name"],
                     food_groups=fill["food_groups"],
-                    weekly_plan_id=plan_id,
                     reasoning=reasoning,
                     derived_from={
                         "constraint": f"{slot}s_per_week:{target}",
