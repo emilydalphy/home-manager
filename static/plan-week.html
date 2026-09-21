@@ -2852,12 +2852,17 @@
       // A failure partway through drafting must not strand the household
       // on a spinner that will never resolve — back to the last step so
       // "Draft my week" is tappable again.
+      var wasDrafting = drafting;
       drafting = false;
       if (!$('draft-progress').hidden) {
         hideDraftProgress();
         showStep(STEP_COUNT);
       }
-      alert('I couldn’t save that just now — try again in a moment.');
+      // A draft that fell over is not a save that failed: say so, and
+      // that nothing changed, so "try again" reads as safe (rule 9).
+      alert(wasDrafting
+        ? 'That draft didn’t come together — nothing’s changed. Tap Draft my week to try again.'
+        : 'I couldn’t save that just now — try again in a moment.');
     } finally {
       if (!drafting) { btn.disabled = false; $('skip').disabled = false; paintCta(); }
     }
