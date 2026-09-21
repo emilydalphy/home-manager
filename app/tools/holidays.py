@@ -779,6 +779,29 @@ def _dish_entry(plan_id: int, d: str):
     return row if derived.get("holiday_dish") else None
 
 
+def _dinner_entry_ids(plan_id: int, d: str) -> list[int]:
+    """
+    Whatever is in that day's dinner slot, by id, ready to be replaced.
+
+    Read on a connection of its own, ABOVE the write — the arrangement
+    swap_meal_in_plan already uses, and for its reason: _replace_slot_entries
+    holds the write lock from its own first read, and a second connection
+    opened inside it waits on SQLite's single writer and dies as an
+    intermittent "database is locked".
+
+    Component rows are left out, exactly as clear_plan_slot leaves them out:
+    a component plan's dinner is not a day's dinner.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id FROM meal_plan_entries WHERE household_id = ? AND weekly_plan_id = ? "
+        "AND date = ? AND slot = 'dinner' AND component_category IS NULL ORDER BY id",
+        (household_id(), plan_id, d),
+    ).fetchall()
+    conn.close()
+    return [r["id"] for r in rows]
+
+
 def _plan_dish(saved: dict) -> bool:
     """
     Put the dish they're bringing into that day's dinner slot of the plan
@@ -789,8 +812,27 @@ def _plan_dish(saved: dict) -> bool:
     planned meal's do: at approval for a draft, now for an approved week.
     Returns False when no plan covers the day yet — generation calls
     apply_to_plan, which lands it then.
+
+    Clearing and planning is ONE transaction, because it is
+    weekly_plan._replace_slot_entries — the write every swap in the app
+    already goes through — rather than the two commits it used to be here.
+    Reproduced before that changed, on an APPROVED week with plan_meal made
+    to raise: `[(1, 'planned')], [('Black beans', '1 can', 'needed')]`
+    became `[], []`. The dinner row gone, the slot in the absent state
+    schema.sql says cannot exist, and the approved week's shopping line gone
+    with it — for food the household may already have bought — under an
+    answer_holiday that raised and a screen saying nothing had been saved.
+    A second hand-rolled transaction beside that function would have been a
+    second implementation of the app's central plan write, free to disagree
+    with it about one household's list; that is what it was extracted to
+    prevent.
+
+    What it no longer does, said out loud because it is a real difference:
+    clear_plan_slot deletes the outgoing meal's prep rows and
+    _replace_slot_entries does not, so a fridge move for the dinner this
+    replaces is left dangling. get_prep_schedule drops a dangling row on
+    read, and every chat swap in the app has always left them the same way.
     """
-    from . import meal_plans as _meal_plans
     from . import weekly_plan as _weekly_plan
 
     d, name = saved["date"], saved["holiday_name"]
@@ -799,11 +841,11 @@ def _plan_dish(saved: dict) -> bool:
         return False
     if _dish_entry(plan_id, d) is not None:
         return True
-    plan = _weekly_plan.get_weekly_plan(plan_id)
-    _weekly_plan.clear_plan_slot(plan_id, d, "dinner")
-    _meal_plans.plan_meal(
-        d, saved["bring_dish"], slot="dinner", weekly_plan_id=plan_id,
-        add_ingredients_to_grocery_list=(plan.get("status") == "approved"),
+    # No status read of our own: _replace_slot_entries asks the plan inside
+    # its own transaction and buys only for an approved week, which is the
+    # same answer get_weekly_plan used to give here one connection earlier.
+    _weekly_plan._replace_slot_entries(
+        plan_id, _dinner_entry_ids(plan_id, d), d, "dinner", saved["bring_dish"],
         reasoning=_dish_reason(name),
         derived_from={"holiday": name, "holiday_dish": True, "constraint": "bring_a_dish"},
     )

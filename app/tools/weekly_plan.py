@@ -5756,7 +5756,13 @@ def _replace_slot_entries(
     ONE transaction — the write behind swap_meal_in_plan and
     resolve_open_slot, and through the first of those behind add_dish_day
     (the Check-the-week "+"), every chat swap, swap_in_place, and the
-    generation's snack repair.
+    generation's snack repair. Two more modules compose it directly:
+    holidays._plan_dish (the dish a household is bringing somewhere) and
+    meal_variety.enforce_distinct_count (the surplus-repeat repair). Both
+    did the same job by hand until 2026-09-21, and holidays' hand-rolled
+    pair was reproduced losing an approved week's shopping line; a second
+    implementation of this write is free to disagree with this one about
+    one household's list, which is what it was extracted to prevent.
 
     It used to be four commits in a row: unlink any leftover chain, reverse
     the old meal's groceries, DELETE the row, then plan_meal to INSERT the
@@ -5776,9 +5782,9 @@ def _replace_slot_entries(
     the same order the self-owned path always ran it. So does the re-buy
     for nights that were eating off a swapped-out source
     (_reingest_unlinked_entries). Nothing here opens a second connection —
-    tests/test_swap_atomic.py counts them — because SQLite gives one
-    writer at a time and a nested get_conn inside this transaction would
-    die of "database is locked".
+    tests/test_swap_atomic.py and test_replace_slot_entries_two_writes.py
+    count them — because SQLite gives one writer at a time and a nested
+    get_conn inside this transaction would die of "database is locked".
 
     The write lock is taken FIRST, with an explicit `BEGIN IMMEDIATE`, and
     that is not decoration. db.get_conn leaves sqlite3's legacy
@@ -5791,12 +5797,12 @@ def _replace_slot_entries(
     nothing else can write until this commits or rolls back, and every
     read here sees one consistent world.
 
-    The one read that cannot be inside is the caller's: swap_meal_in_plan
-    and resolve_open_slot resolve `old_entry_ids` on a connection of their
-    own before this opens. So the DELETE's rowcount is checked against the
-    ids it was given — a row that went away between the caller's read and
-    this lock is a concurrent change, and the answer is to roll back and
-    say so, not to plan a second meal on top of whatever replaced it.
+    The one read that cannot be inside is the caller's: every caller
+    resolves `old_entry_ids` on a connection of its own before this opens.
+    So the DELETE's rowcount is checked against the ids it was given — a
+    row that went away between the caller's read and this lock is a
+    concurrent change, and the answer is to roll back and say so, not to
+    plan a second meal on top of whatever replaced it.
     """
     from . import leftovers as _leftovers
 
