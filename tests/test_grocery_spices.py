@@ -178,9 +178,16 @@ def test_bought_lately_is_not_offered_again(curry_week):
     assert "Ground cumin" not in {sp["item"] for sp in got["items"]}
     assert got["recently_bought"] == ["Ground cumin"]
     # Long enough ago — the staple's own clock, one source of truth — and
-    # it is offered again, ticked, as probably running low.
+    # it is offered again, ticked, as probably running low. Counted back from
+    # today, not written out: a literal date is only "long enough ago" while
+    # today stays ahead of it, and under `--today=2026-01-15` 2026-01-01 is a
+    # fortnight back against a 56-day cadence, so the rack rightly answered
+    # "at home" and this test asked for a spice nothing was offering.
     conn = get_conn()
-    conn.execute("UPDATE staples SET last_bought_at = '2026-01-01', next_due_at = '2026-02-26'")
+    conn.execute(
+        "UPDATE staples SET last_bought_at = ?, next_due_at = ?",
+        (_days_ago(120), _days_ago(30)),
+    )
     conn.commit()
     conn.close()
     got = tools.list_spices_this_week()

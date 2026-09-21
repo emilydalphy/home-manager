@@ -391,6 +391,110 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-21 — Three tests went red under a far-date pin, and all three
+  were the fixture rather than the app. Branch
+  `overnight/far-date-pin-cliffs`, NOT merged at the time of writing.
+  Test-only — `app/` and `observability_report.py` are byte-identical to the
+  merge base.** Loop Board bug, Phase 0: the card the
+  `live-clock-crosses-dst` entry filed when it ran the far-future sweep and
+  found it "not otherwise clean". The technique is the 2026-09-14
+  frozen-clock work's own — `pytest --today=<a date months out>` ages the
+  fixtures on purpose — and that sweep found two REAL bugs among five, which
+  is why "probably the harness" had to be SHOWN for each of these three by
+  driving the code, not assumed from the shape of it.
+  - **Re-measured on the merge base first, and the table still holds.** The
+    three files alone at `TZ=America/Toronto`: `--today=2026-01-15` **3
+    failed** (all three), `2026-07-04` **2** (not the spice — see below),
+    `2026-11-20` **0**, `2027-02-10` **0**, unpinned **0**. The entry above
+    records "3 at 2026-11-20"; it is **0** now, and that line is corrected
+    there rather than left to be re-hunted.
+  - **NO CI JOB CAN REACH THIS, and it is structural rather than an
+    oversight.** The four `clock` jobs pin by WEEKDAY NAME, which resolves to
+    the next such day ON OR AFTER today and so never reaches more than six
+    days out; `pytest` runs on today and `straddle` is unpinned. A fixed far
+    pin in CI would age exactly the way the fixtures it protects do, which is
+    why there isn't one.
+  - **THE DIRECTION IS THE TELL: only a pin in the PAST bites, which is how
+    two of these survived a far-FUTURE sweep.** A pinned run stamps rows with
+    the pinned instant, and each of these three then holds that stamp against
+    something that did not move with it. Forward, the stamp clears a `>=`
+    lower bound or sorts newest anyway; backward, it does not.
+  - **`test_inventory_two_places_pick.py` — the app's rule held at every step
+    and the FIXTURE inverted it.** Driven, not read: at `--today=2026-01-15`
+    SQLite's own `now` is `2026-01-15 14:00`, and the fixture seeded
+    `updated_at` with the literals `2026-09-10`/`2026-09-11` — eight months
+    in the app's FUTURE. So the add correctly merged into the newest row,
+    correctly stamped it `datetime('now')`, and THAT made it the older of the
+    two; the "used some" after it then correctly took from the other place.
+    `_find_row_by_name`'s "most recently written wins" was right in both
+    calls. Seeded off **SQLite's own clock** now (`datetime('now', '-N
+    days')`), which is the clock every write in `inventory.py` stamps with,
+    so a seed is behind those writes by construction. Deliberately NOT
+    `household_today()`: this column is a UTC instant ordered against another
+    UTC instant, with no calendar day in it to be wrong about — the reasoning
+    `mark_defrost_asked` already carries — so the household's clock would put
+    zone arithmetic into a comparison that has none, and on a one-day gap the
+    margin is the same size as the skew it would introduce.
+  - **`test_grocery_spices.py` — "long enough ago" was written as a date, and
+    a date is only long enough ago while today stays ahead of it.** It set
+    `last_bought_at = '2026-01-01'`, `next_due_at = '2026-02-26'` and expected
+    the jar to read as running low; under a January pin that is a fortnight
+    back against a 56-day cadence, so `_bought_lately` answered True and
+    `_due` False and the rack rightly left the spice off the card — measured
+    at the rule, not inferred from the failure. It is the file's own
+    `_days_ago(120)` / `_days_ago(30)` now, the idiom four other tests in it
+    already use. **Left on `date.today()` rather than converted to the
+    household's clock, deliberately**: `staples._today()` reads the SERVER's
+    clock (its own card, not touched here), so a server-clock seed agrees
+    with the app exactly and by construction, while a household seed would be
+    a day out from it under a straddle — right only because the margin is
+    months. That also keeps the change to one hunk, which a branch converting
+    this file's harness call sites in parallel can merge without a fight.
+  - **`test_food_quality_floor.py` — a SEPARATE PROCESS is a clock nothing
+    here pins, and it is the fourth one after the filesystem.** The test
+    spawns `observability_report.py`. The freeze reaches this process's
+    Python and its SQLite, so the finding was stamped `2026-01-15 14:00`; the
+    report then asked its own unfrozen `datetime('now')` for the last day,
+    opened its window at `2026-09-20`, and truthfully printed "Nothing
+    broke." `@pytest.mark.live_clock`, which is exactly what that exemption
+    is for — and it works because `sqlite_clock.install` is depth-counted, so
+    the inner pin re-points SQLite at the real instant and hands the
+    session's own pin back afterwards.
+  - **STRONGER, NOT MERELY GREEN, and that is measured rather than
+    asserted.** At `--today=2026-01-15` two of these failed whether the app
+    was right or wrong — **zero** discriminating power at that pin:
+    `test_add_then_use_agree_on_one_row` and
+    `test_food_problems_never_land_under_broken` each read `1 failed`
+    unmutated AND under a mutation of the very rule they are named for. After
+    the re-seed: `1 passed` unmutated, `1 failed` mutated, both. **Eight
+    mutations run in all and every one bites at a backward pin, a forward pin
+    AND unpinned**: the inventory `ORDER BY` dropped (the original
+    2026-09-13 bug, 5 red), `updated_at ASC` (6), the `id DESC` tie-break
+    reversed (1), `_bought_lately` always False (1), `_due` always False (1),
+    the FOOD line never printed (1), a food finding flipping the exit code
+    (1), and a food finding printed under BROKEN (1).
+  - **Numbers, read off the runs.** Whole suite at `TZ=America/Toronto`,
+    **1 failed everywhere and it is the same one every time** — the
+    pre-existing `test_recipe_photo_import` seed week that ran out on
+    2026-09-20, unrelated and fixed on another branch, subtracted from every
+    count here. Unpinned **5587 passed**; `--today=2026-01-15`, `2026-07-04`,
+    `2026-11-20` and all four weekday pins **5584 passed, 3 skipped** each.
+    Under a VERIFIED `Pacific/Kiritimati` straddle — process 2026-09-22
+    against household 2026-09-21, checked before AND after the run, and
+    production's own direction — **5587 passed**.
+  - **Found on the way and NOT fixed — its own card, and it is bigger than
+    this one.** Under a VERIFIED `Pacific/Niue` straddle (process 2026-09-20
+    against household 2026-09-21, checked both ends) `main` is **12 failed**
+    beyond the known one, in ten files this branch does not touch — proved
+    pre-existing rather than assumed: those ten are byte-identical to the
+    merge base, and run on their own they give **13 failed / 335 passed** on
+    this branch and **13 failed / 335 passed** with these three files
+    reverted. They are the class this repo already has a helper for:
+    `test_prep_days.py` and `test_planning_periods.py` build their week from
+    `datetime.date.today()`, the PROCESS's clock, so under a straddle they
+    ask the app about a week the household is not in. `straddle` is a
+    blocking CI job, so this is not latent. Note Kiritimati is clean and Niue
+    is not — the two lean opposite ways, and only the westward one bites.
 - **2026-09-18 — The core loop, seven branches built in parallel off
   `417bb92`, integrated as ONE branch: `core-loop-2026-09-18`.** In merge
   order: `today-shop-cook` (Now → Today; Shop / Cook groups tagged Morning ·
@@ -1035,7 +1139,12 @@ why*, not duplicating the diff.
     `test_food_quality_floor.py`, `test_grocery_spices.py` and
     `test_inventory_two_places_pick.py`, which give 3 failures at a January
     pin, 3 at 2026-11-20, 2 at 2026-07-04 and 0 at 2027-02-10 or 2030-06-01.
-    Not this branch's; their own card.
+    Not this branch's; their own card. **CLOSED 2026-09-21 on
+    `overnight/far-date-pin-cliffs` — all three were the fixture and none was
+    the app; see that entry at the top of this log. ONE of those figures has
+    since moved, re-measured on the merge base the night it was closed:
+    2026-11-20 is **0**, not 3, because `main` moved under it. The other
+    three still hold exactly.**
   - **Deliberately not done:** `_real_now`'s `_REAL_EPOCH_AT_PIN is None` arm
     is still unreachable from the only caller (`_marked_clock` checks
     `_pomona_freezer` first), untouched and unpinned as before. And
