@@ -291,8 +291,9 @@ def test_the_quiet_row_under_the_card():
 
 
 @pytest.mark.parametrize("action", [
-    "wk-more-replan",     # Re-plan this week
-    "week-period-open",   # Pick my own days (the existing picker, moved)
+    # "Re-plan this week" and "Pick my own days" left the sheet on
+    # 2026-09-21 — re-planning is the band's pill (wk-replan) and the
+    # intake's first question; see tests/test_draft_front_door.py.
     "wk-more-try-again",  # Try again
     "wk-more-change",     # Change my answers
     "wk-more-setup",      # Adjust your setup
@@ -311,9 +312,12 @@ def test_the_more_sheet_exists_as_a_sheet():
 
 def test_the_custom_days_picker_moved_rather_than_being_rebuilt():
     """Same opener id, same picker id, same wirePeriodPicker — it only
-    changed address."""
-    _assert_in("wirePeriodPicker(rows, start, dayCount)", SHELL_JS,
-               "the picker wired inside the More sheet", "shell.js")
+    changed address. Since 2026-09-21 it lives on the empty Plan's entry
+    alone (the More sheet's copy went with "Re-plan this week")."""
+    _assert_in("wirePeriodPicker(row, defaultStart, dayCount)", SHELL_JS,
+               "the picker wired on the plan-a-week entry", "shell.js")
+    _assert_not_in("wirePeriodPicker(rows, start, dayCount)", SHELL_JS,
+                   "the picker wired inside the More sheet")
     _assert_in("PERIOD_PICKER_COPY.open", SHELL_JS, "the picker's own copy", "shell.js")
 
 

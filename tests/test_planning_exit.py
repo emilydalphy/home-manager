@@ -126,7 +126,9 @@ def _review_root_html(status: str, root: bool) -> str:
         "function wkDotsHtml(){ return ''; }\n"
         "function wkHelpButtonHtml(){ return '<button id=\"wk-help\"></button>'; }\n"
         "function periodRangeLabel(){ return 'Sep 14–20'; }\n"
-        "function reviewDecideHtml(d){ return d.status === 'draft' ? '<div class=\"wk-decide dock\">approve</div>' : ''; }\n"
+        "function countOpenSlots(){ return 0; }\n"
+        "function draftView(){ return 'days'; }\n"
+        + _extract("reviewDecideHtml", SHELL_JS) + "\n"
         + _extract("escapeHtml", SHELL_JS) + "\n"
         + _extract("weekPlanState", SHELL_JS) + "\n"
         + _extract("weekReplacesNote", SHELL_JS) + "\n"
@@ -141,16 +143,17 @@ def _review_root_html(status: str, root: bool) -> str:
 
 
 @_needs_node
-def test_a_draft_root_offers_more_above_its_dock():
-    """FAILS ON MAIN: the draft root rendered the two views and Approve, and
-    nothing else — the More sheet's "Try again" and "Change my answers" rows
-    existed but no button on a draft opened the sheet."""
+def test_a_draft_root_offers_more_in_its_dock():
+    """FAILS ON MAIN (2026-09-11): the draft root rendered the two views and
+    Approve, and nothing else — the More sheet's "Try again" and "Change my
+    answers" rows existed but no button on a draft opened the sheet. Since
+    2026-09-21 More rides in the dock's quiet row under Approve, beside
+    "Plan it differently" (reviewDecideHtml) rather than in a foot above it."""
     html = _review_root_html("draft", root=True)
     assert html.count('id="wk-more"') == 1
     assert "More ···" in html
-    # Above the dock, like the week root's foot: a sticky strip's flow
-    # position has to be the end of the screen.
-    assert html.index('id="wk-more"') < html.index('class="wk-decide dock"')
+    assert html.index('class="wk-decide dock"') < html.index('id="wk-more"')
+    assert 'id="wk-plan-differently">Plan it differently</button>' in html
 
 
 @_needs_node

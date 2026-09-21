@@ -14395,3 +14395,66 @@ the browser against a throwaway DB copy on port 8022. Open for Emily: the
 hand-off lands on the list until the freezer step exists; tabs and Swap
 are 36px as drawn with an invisible pad to 44px; the swap sheet's close
 button reads "Keep it".
+
+### 2026-09-21 — The draft's front door: Re-plan in the band, What we're eating first, the draft says what it did. Branch `draft-front-door-2026-09-21`.
+
+Three Loop Board cards from Emily's 2026-09-20 phone round (boards A2,
+C2, C3), one branch. **Re-plan**: an `--apricot-light` pill top right of
+the Plan root's band on a draft and on an approved week
+(`weekBandExtras`/`fillWeekBandExtras`, filled into `rootBandHtml`'s
+output after it is built so the band builder stays button-free and
+`renderMealsStep` still calls it exactly once — the extras ride in the
+band's rebuild key); it and the dock's quiet "Plan it differently" both
+go through `replanWeek` → `startPlanningWeek` for the plan on screen,
+and `/plan-week` already prefills from the current intake revision, so
+re-planning is changing what's different. "Re-plan this week" and the
+custom-range picker left the More sheet (the picker still lives on the
+empty Plan's entry; "Starting when?" is the other branch's). **Two
+views**: a draft's band carries "Here's your week.", "your turn" (the
+chip says Draft — "a draft, your turn" said it twice), the opener and
+the What we're eating | Which days toggle (`weekState.draftView`, in
+memory for the page session, reset by plan id so a new draft opens on
+the menu). `wkMenuGroups` brings back the 2026-09-18-deleted
+by-type grouping without the steppers: every dish once, the days it
+covers (`wkDaysPhrase`: "7 mornings", "Mon–Thu", "Mon, Wed"), one fact,
+Swap on every row aimed at the dish's first day ahead (`wkDayForTap`
+reads `data-wk-day-index` as it reads `data-wk-card`). Which days is
+the carousel unchanged; both share `reviewDecideHtml`, whose dock now
+holds the quiet row (Plan it differently · More ···). The draft root's
+count line and "?" went — the band says the dates; "Need a hand?" is
+More's first row on a draft. **Says what it did**: the free-text answer
+reached the drafting prompt as one opaque string with "put it exactly
+where they said" — a request naming a MEAL and no DAY had no where, so
+"Mexican for lunch" got Monday. `week_intake.freeform_meal_scopes`
+makes the reach explicit (`intake.freeform_scope`: every date of that
+meal when no day is named, the named days, or "some" when they said
+how many) and the prompt is told what it means. The variety window is
+ONE constant, `meal_variety.VARIETY_WINDOW_WEEKS = 2` (was a bare
+`weeks=3` in agent.py, "3 weeks" in the prompt and in plan_quality's
+message; the prompt's rule is now "not drafted again unless asked
+for", dinner and lunch). `app/tools/draft_opener.py` builds the draft's
+two opening lines from the stored rows and the intake — never
+model-written, so they cannot describe a week that wasn't made: each
+typed request with the days whose `derived_from.freeform` cites it
+("Mexican for lunch Mon–Thu, as you asked"), days left free, a bigger
+table; then a slot for their call / a request nothing used ("I
+couldn't fit "…" in this week") / the novelty line against approved
+food in the window ("Nine new dishes — nothing from the last two
+weeks"; unsaid on a first week). `get_week_menu` carries
+`draft_opener` (drafts only) and `asked` per planned slot (`asked_fact`:
+"packs cold", "Mexican, as asked", "as asked"); the stored `reason` is a
+tap away on both views (`wkRowMetaHtml`: the meta line is the button,
+the note floats over the next row). `reviewTileTags` reads every meal:
+"4 for breakfast", "Vic out". Tests:
+`tests/test_draft_says_what_it_did.py` (13),
+`tests/test_draft_front_door.py` (15); five existing files updated for
+the design change; full suite 5655 → 5681, all green. Verified in the
+browser at 390px against a throwaway DB on port 8022 (model stubbed —
+the seed script is in the session scratchpad, not the repo). Judgment
+calls: the opener's first line is budgeted at 125 characters (the
+approved board's own length) and drops the table, then the free days,
+before shortening the echoed words — Emily's three-sentence example
+loses "Friday left free"; the `headline` field `_week_headline` builds
+is still sent and still unread by the shell; `test_week_set_covers_today`
+now expects a draft titled "Here's your week." (its "Next week" point
+is kept on an approved plan).
