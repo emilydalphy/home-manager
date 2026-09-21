@@ -338,7 +338,11 @@ def test_the_day_sheet_gains_no_second_apricot():
 
     The second half is red on the unmodified page: the "WHO" eyebrow beside
     the initials was --apricot-label, and it went with the word."""
-    assert PAGE.count("background: var(--apricot);") == 2   # .cta and .failed-retry
+    # Four fills since the 2026-09-21 intake motion: .cta and .failed-retry
+    # as before, plus the 4px progress bars (.bar.on) and the Surprise me
+    # card's star tile — neither a button, so the sheet still competes with
+    # one apricot action.
+    assert PAGE.count("background: var(--apricot);") == 4
     assert "--apricot" not in _extract("presenceHtml")
     presence_css = PAGE[PAGE.index("  .presence {"):PAGE.index("  .remember {")]
     assert "--apricot-label" not in presence_css

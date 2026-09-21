@@ -15,29 +15,35 @@
 <meta name="theme-color" content="#22422F" media="(prefers-color-scheme: dark)" />
 <style>
   /*
-    design_handoff_plan_the_week — the two question screens.
+    Plan a week — the intake, in the welcome flow's motion (Emily,
+    2026-09-20, from her phone: "the onboarding screens have a motion the
+    week planning should share"; built 2026-09-21, Loop Board "The week
+    intake in the onboarding motion — one question a screen").
 
     A standalone page rather than a tab in the shell, for the same reason
     onboarding.html is one: this is a focused sequence with a beginning and
     an end, and tab chrome invites leaving it half-answered. It hands back
-    to /week when it's done — and, since 2026-09-13, whenever the household
-    taps the "‹ Plan" crumb at the top (see leaveFlow), because a focused
-    sequence still needs a door that isn't finishing it.
+    to /week when it's done — and whenever the household taps the "‹ Plan"
+    crumb at the top (see leaveFlow), because a focused sequence still
+    needs a door that isn't finishing it.
 
-    Two devices carry the voice on every screen here, and both are load-
-    bearing rather than decorative (VOICE.md):
-      .why   — the plum panel naming the specific failure the answer
-               prevents. If you can't name that failure, the question
-               shouldn't be asked. (Question 1 dropped its panel on
-               2026-09-10, Emily's call under the no-fluff rule; question
-               2 still carries one.)
-      .ack   — the green "I'll…" line, appearing the moment an answer is
-               given, stating the concrete change it caused. This is how
-               personalisation becomes visible instead of claimed.
+    Every screen has the bones of onboarding's prep-days and dinner-time
+    screens (static/onboarding.html, .q-title/.q-line/.q-foot): one crumb,
+    the "Plan a week · n of 5" line with its five bars, the question in
+    the display face, at most one plain line under it, the chips, and at
+    the foot one full-width Continue with — where the step can be skipped
+    — one quiet italic line under it. Ivory ground throughout; the only
+    spruce screen is the drafting one, which is onboarding's "Cooking up
+    your first week…" (body.drafting, below).
+
+    Five steps: Starting when? · Any days that are different? · Any
+    lunches on the go? · What are you in the mood for? · Anything else I
+    should plan around? The day sheet, the holiday card and the away range
+    picker under step 2 are unchanged from the 2026-09-11 build and are
+    styled further down; a second pass rebuilds the day sheet.
   */
   :root {
     color-scheme: light;
-    --plum-panel: var(--celadon-tint);  /* the "Why I'm asking" fill */
     --ack-green: var(--celadon-label);   /* = theme.css --good-ink */
   }
   * { box-sizing: border-box; }
@@ -45,67 +51,175 @@
     font-family: var(--font-body);
     max-width: 640px;
     margin: 0 auto;
-    padding: 24px 20px 140px;   /* room for the fixed footer */
+    padding: 12px 20px 190px;   /* room for the fixed foot (Continue + the quiet line) */
     background: var(--ground);
     color: var(--ink);
+    transition: background-color var(--motion-base) var(--motion-ease);
   }
-  h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.55rem; color: var(--ink-strong); margin: 0 0 12px; line-height: 1.25; }
-  .eyebrow {
-    font-family: var(--font-body); font-weight: 700; font-size: 0.72rem;
-    letter-spacing: .1em; text-transform: uppercase; color: var(--ink-secondary);
-    margin-bottom: 6px;
-  }
-  .progress { display: flex; gap: 6px; margin-bottom: 18px; }
-  .step-sub { font-size: 0.95rem; line-height: 1.45; color: var(--ink-secondary); margin: -4px 0 16px; }
-  /* The days as tiles (2026-09-11): the weekday, the date, and a line for
-     whatever has been said about it. Tapping opens the day sheet. */
-  .day-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 16px; }
-  .day-tile {
-    min-height: 74px; padding: 10px 6px 8px; border-radius: 14px;
-    border: 1.5px solid var(--hairline); background: var(--surface-raised);
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
-    font-family: var(--font-body); cursor: pointer; text-align: center;
-  }
-  .day-tile:hover { border-color: var(--ink-strong); }
-  .day-tile.on { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); }
-  .day-tile-dow { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-secondary); }
-  .day-tile.on .day-tile-dow { color: var(--ivory-ink-muted, rgba(246,238,225,.85)); }
-  .day-tile-num { font-family: var(--font-display); font-weight: 700; font-size: 18px; line-height: 1.05; }
-  .day-tile-note { font-size: 11px; font-weight: 700; line-height: 1.2; min-height: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-  .meal-block { padding: 12px 0; border-top: 1.5px solid var(--hairline); }
-  .meal-block:first-child { border-top: 0; padding-top: 0; }
-  .meal-block .day-section-label { margin-bottom: 8px; }
-  .meal-block .day { margin: 0; padding: 0; border: 0; background: transparent; }
-  .footer-links { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  .back.skip { color: var(--apricot-label, var(--ink-secondary)); font-weight: 700; margin-left: auto; }
-  .dot { height: 4px; flex: 1; border-radius: 2px; background: var(--hairline); }
-  .dot.done { background: var(--spruce); }
-  /* The way out (Loop Board "Planning: a way out of the draft that isn't
-     approving it", 2026-09-13): shell.css's .crumb, copied here because this
-     page loads theme.css only. Same 44px target, 14px, 700, secondary ink;
-     the negative margins pull it into the body's 20px gutter so it sits
-     where a crumb sits in the shell. */
+  /* The drafting screen is spruce edge to edge, the way onboarding's
+     first-week reveal is (body.reveal-active there). */
+  body.drafting { background: var(--spruce); padding-bottom: 40px; }
+
+  /* ---------- The step chrome ---------- */
+  /* One way back, named for its parent (nav v2 rule 1): "‹ Plan" on the
+     first step and the drafting screen, "‹ Back" on every step between.
+     shell.css's .crumb, copied here because this page loads theme.css
+     only. Same 44px target, 14px, 700, secondary ink. */
   .crumb {
     display: inline-flex; align-items: center;
-    min-height: 44px; margin: -8px 0 4px -8px; padding: 0 8px;
+    min-height: 44px; margin: 0 0 2px -8px; padding: 0 8px;
     border: 0; background: none; cursor: pointer;
     font-family: var(--font-body); font-size: 14px; font-weight: 700;
     color: var(--ink-secondary);
   }
   .crumb:hover { color: var(--ink-strong); }
-  /* The one line under the spinner that says leaving is allowed. */
-  .draft-leave-note { font-size: 0.88rem; line-height: 1.5; color: var(--ink-secondary); margin: 0 0 16px; }
-
-  .why {
-    background: var(--plum-panel);
-    border-radius: 12px;
-    padding: 12px 14px;
-    font-size: 0.9rem;
-    line-height: 1.5;
-    color: var(--ink-strong);
-    margin-bottom: 22px;
+  body.drafting .crumb { color: var(--ivory-ink-muted); }
+  body.drafting .crumb:hover { color: var(--ivory-ink); }
+  /* "Plan a week · 2 of 5" — an eyebrow (the only uppercase in the
+     system) over the five bars, the ones done in apricot. */
+  .eyebrow {
+    font-family: var(--font-body); font-weight: 800; font-size: 10px;
+    letter-spacing: .15em; text-transform: uppercase; color: var(--ink-muted);
+    margin: 0 0 8px;
   }
-  .why b { font-weight: 700; }
+  .progress { display: flex; gap: 6px; margin: 0; }
+  .progress[hidden] { display: none; }
+  .bar { height: 4px; flex: 1; border-radius: var(--radius-pill); background: var(--hairline); }
+  .bar.on { background: var(--apricot); }
+  /* The question: onboarding's .q-title, one size down for a five-word
+     question that has to fit one line at 390px. */
+  h1 {
+    font-family: var(--font-display); font-weight: 700; font-size: 31px;
+    letter-spacing: -0.038em; line-height: 1.05; color: var(--ink);
+    margin: 18px 0 0; text-wrap: balance;
+  }
+  /* The one plain line under the question. Empty means none (S1: the
+     screen says its purpose in the title and one line, never a
+     paragraph). */
+  .step-sub {
+    font-family: var(--font-body); font-size: 17px; font-weight: 500;
+    line-height: 1.45; color: var(--ink-secondary); margin: 12px 0 0; text-wrap: pretty;
+  }
+  .step-sub:empty { display: none; }
+  .step-body { margin-top: 22px; display: flex; flex-direction: column; gap: 12px; }
+  /* A second eyebrow inside a step ("Or steer me · as many as you like",
+     "Cuisines you fancy") — the same size, in the ink that heads a group. */
+  .group-eyebrow { margin: 8px 0 0; }
+  .group-eyebrow:first-child { margin-top: 0; }
+
+  /* ---------- Chips ---------- */
+  /* The ivory chip: onboarding's .rhythm-chip — 44px, --surface on
+     --hairline-strong, 15px/600; a chosen one is spruce with ivory ink.
+     One family for the start-day chips, the lunch days, the moods and the
+     cuisines, so the intake reads as one screen repeated. */
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    min-height: 44px; padding: 0 16px;
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-body); font-size: 15px; font-weight: 600;
+    border-radius: var(--radius-pill);
+    border: 1.5px solid var(--hairline-strong);
+    background: var(--surface); color: var(--ink);
+    cursor: pointer;
+  }
+  .chip:hover { border-color: var(--ink-strong); }
+  .chip.on { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); font-weight: 700; }
+  /* The cuisines: the same chip a step down in size (14px) so the row
+     reads as the second question on the screen — still 44px tall, hard
+     rule 6, where the mockup drew them at 32. */
+  .chip.small { font-size: 14px; padding: 0 14px; }
+
+  /* ---------- Cards ---------- */
+  .card {
+    background: var(--surface); border: 1.5px solid var(--hairline);
+    border-radius: var(--radius-card); padding: 14px;
+  }
+  /* A card that is a tap (the away card, the Surprise me card): a 40px
+     icon tile, a title, one line, a chevron. */
+  .card-btn {
+    width: 100%; display: flex; align-items: center; gap: 12px;
+    text-align: left; cursor: pointer; font-family: var(--font-body);
+    color: var(--ink);
+  }
+  .card-btn-icon {
+    width: 40px; height: 40px; flex: 0 0 auto; border-radius: var(--radius-control);
+    background: var(--sand); color: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card-btn-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .card-btn-title { font-size: 15px; font-weight: 600; line-height: 1.3; color: var(--ink); }
+  .card-btn-line { font-size: 13px; font-weight: 500; line-height: 1.4; color: var(--ink-secondary); }
+  .card-btn-chevron { flex: 0 0 auto; color: var(--ink-secondary); display: flex; }
+  /* Surprise me (Emily, 2026-09-21, board B2): the first thing under the
+     mood question — an apricot edge, a star on an apricot tile, the one
+     line. Chosen, it keeps the edge and the tile says so with a tick. */
+  .surprise { border-color: var(--apricot); }
+  .surprise .card-btn-icon {
+    width: 44px; height: 44px; background: var(--apricot); color: var(--on-accent-ink);
+  }
+  .surprise .card-btn-title { font-size: 16px; font-weight: 700; }
+  .surprise.on { background: var(--celadon-tint); border-color: var(--celadon-edge); }
+  .surprise.on .card-btn-icon { background: var(--celadon); }
+  .surprise .surprise-tick { display: none; }
+  .surprise.on .surprise-tick { display: block; }
+  .surprise.on .surprise-star { display: none; }
+
+  /* ---------- Starting when? (board A3) ---------- */
+  /* The range in words, then the days as tiles, then the one fact. */
+  .range-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .range-words { font-family: var(--font-body); font-size: 16px; font-weight: 600; color: var(--ink); margin: 0; }
+  .range-count { font-size: 13px; font-weight: 500; color: var(--ink-secondary); white-space: nowrap; }
+  .range-hint { font-size: 13px; font-weight: 500; color: var(--ink-secondary); margin: 0; }
+  .range-hint[hidden] { display: none; }
+  .stripe {
+    display: flex; gap: 6px; margin: 10px 0 0;
+    overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    padding: 2px;   /* room for today's outline */
+  }
+  .stripe::-webkit-scrollbar { display: none; }
+  /* One day. Seven share the width; more than seven scroll sideways
+     (the strip on Plan's root does the same). A tile that is a BUTTON is
+     at least 44px wide (hard rule 6); the range card's tiles only show
+     the days and may squeeze to share a card's width. */
+  .dt {
+    flex: 1 1 0; min-width: 0; min-height: 52px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    padding: 8px 0 7px; border-radius: var(--radius-tile);
+    background: var(--surface); border: 1.5px solid var(--hairline);
+    color: var(--ink); font-family: var(--font-body); text-decoration: none;
+  }
+  button.dt { cursor: pointer; min-width: 44px; }
+  button.dt:hover { border-color: var(--ink-strong); }
+  .dt .dt-dow { font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-muted); }
+  .dt .dt-num { font-family: var(--font-display); font-weight: 700; font-size: 16px; line-height: 1.05; }
+  .dt.on { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); }
+  .dt.on .dt-dow { color: var(--apricot-light); }
+  .dt.in { background: var(--sand); border-color: var(--sand-deep); }
+  /* Today, said with a colour AND a word (S6): the outline here, TODAY in
+     the tile's eyebrow. */
+  .dt.today { outline: 2px solid var(--apricot); outline-offset: -2px; }
+  .dt.today .dt-dow { color: var(--apricot-label); }
+  .dt.on.today .dt-dow { color: var(--apricot-light); }
+  /* A day with something said about it (step 2): sand with the apricot
+     edge, and the note itself is the line under the strip. */
+  .dt.noted { background: var(--sand); border-color: var(--apricot); }
+  .dt.past { opacity: .62; }
+  .stripe.picking .dt { min-width: 48px; flex: 0 0 auto; }
+  .day-notes { display: flex; flex-direction: column; gap: 4px; margin: 0; }
+  .day-notes:empty { display: none; }
+  .day-note { font-size: 13px; font-weight: 500; color: var(--ink-secondary); margin: 0; }
+  .day-note b { font-weight: 700; color: var(--ink); }
+
+  /* Somebody else already started this week, or this week already has a
+     plan — DATA_MODEL.md's soft lock and DECISIONS.md #4, said once, on
+     the first screen about the days. */
+  .joined {
+    background: var(--celadon-tint); border: 1.5px solid var(--celadon-edge);
+    border-radius: var(--radius-control);
+    padding: 11px 13px; font-size: 13.5px; font-weight: 500; line-height: 1.45;
+    color: var(--ink-on-celadon);
+  }
+  .joined[hidden] { display: none; }
 
   .ack {
     color: var(--ack-green);
@@ -115,14 +229,6 @@
     margin-top: 8px;
   }
   .ack:empty { display: none; }
-
-  section.block { margin-bottom: 26px; }
-  .block-label {
-    font-family: var(--font-body); font-weight: 700; font-size: 0.78rem;
-    letter-spacing: .08em; text-transform: uppercase; color: var(--ink-strong);
-    margin-bottom: 5px;
-  }
-  .block-body { font-size: 0.88rem; line-height: 1.5; color: var(--ink-secondary); margin: 0 0 12px; }
 
   /* ---- Day rows (Q1) ---- */
   .day {
@@ -220,67 +326,61 @@
   .stepper button:disabled { opacity: .35; cursor: default; }
   .stepper output { min-width: 30px; text-align: center; font-weight: 700; font-size: 0.98rem; color: var(--ink-strong); }
 
-  /* ---- Chips (lunches, moods, cuisines) ---- */
-  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip {
-    padding: 10px 16px; min-height: 44px;
-    display: inline-flex; align-items: center;
-    font-family: var(--font-body); font-size: 0.85rem;
-    border-radius: var(--radius-pill);
-    border: 1px solid var(--hairline);
-    background: var(--surface-raised); color: var(--ink);
-    cursor: pointer;
-  }
-  .chip:hover { border-color: var(--ink-strong); }
-  .chip.on { background: var(--spruce); border-color: var(--spruce); color: var(--on-spruce-ink); }
-
-  .card {
-    background: var(--surface-raised); border: 1px solid var(--hairline);
-    border-radius: 14px; padding: 15px 16px;
-  }
-
+  /* The typed answer (step 5). 16px so a phone doesn't zoom the page on
+     focus — onboarding's text boxes carry the same note. */
   textarea {
-    width: 100%; min-height: 96px; resize: vertical;
-    padding: 12px 13px; border-radius: var(--radius-control);
-    border: 1px solid var(--hairline);
-    font-family: var(--font-body); font-size: 0.92rem; line-height: 1.5;
-    background: var(--surface-raised); color: var(--ink);
+    width: 100%; min-height: 120px; resize: vertical;
+    padding: 12px 16px; border-radius: var(--radius-control);
+    border: 1.5px solid var(--hairline-strong);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.5;
+    background: var(--surface); color: var(--ink);
   }
   textarea:focus { border-color: var(--ink-strong); outline: none; }
   textarea::placeholder { color: var(--ink-secondary); }
 
-  /* ---- Footer ---- */
-  /* Fixed rather than in flow: the CTA states what's been noted so far
-     ("Next — 3 nights noted"), which is only useful if it's visible while
-     the household is still tagging. */
+  /* ---------- The foot ---------- */
+  /* Fixed under the thumb like every dock in the app (§6, one dock), with
+     the ground fading in above it so the chips scroll under rather than
+     into it — onboarding's .q-foot. Inside, top to bottom: the one
+     apricot button and, on a step that can be skipped, the quiet italic
+     line (onboarding's .q-skip-quiet: the one approved italic on a
+     question screen). */
   .footer {
-    position: fixed; left: 0; right: 0; bottom: 0;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+    max-width: 640px; margin: 0 auto;
     background: var(--ground);
-    border-top: 1px solid var(--hairline);
-    padding: 13px 20px calc(13px + env(safe-area-inset-bottom, 0px));
+    padding: 12px 20px calc(16px + env(safe-area-inset-bottom, 0px));
   }
-  .footer-inner { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
+  .footer::before {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: 28px;
+    background: linear-gradient(to bottom, transparent, var(--ground)); pointer-events: none;
+  }
+  .footer[hidden] { display: none; }
+  .footer-inner { display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+  /* Continue / Draft my week: theme.css's .btn-primary as onboarding's
+     .q-next wears it — 54px, the display face, --shadow-action. */
   .cta {
-    width: 100%; font-family: var(--font-body); font-weight: 700;
+    width: 100%; min-height: 54px;
+    font-family: var(--font-display); font-weight: 700; font-size: 17px; letter-spacing: -0.02em;
     background: var(--apricot); color: var(--on-accent-ink);
-    border: none; padding: 14px 22px; min-height: 50px;
-    border-radius: var(--radius-control); font-size: 0.98rem; cursor: pointer;
+    border: none; padding: 0 22px; border-radius: var(--radius-action);
+    box-shadow: var(--shadow-action); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   }
   .cta:hover:not(:disabled) { background: var(--apricot-deep); }
-  .cta:disabled { opacity: .6; cursor: default; }
-  .back {
-    background: none; border: none; color: var(--ink-secondary);
-    font-family: var(--font-body); font-size: 0.85rem; cursor: pointer;
-    min-height: 40px; align-self: center;
+  .cta:disabled { opacity: .5; cursor: default; box-shadow: none; }
+  /* The sheets' own Done / Set this range keep the in-card size. */
+  .sheet-actions .cta { min-height: 50px; font-size: 16px; box-shadow: none; border-radius: var(--radius-control); }
+  .skip {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 44px; margin: 0; width: 100%; padding: 0;
+    background: none; border: 0; cursor: pointer;
+    font-family: var(--font-accent); font-style: italic; font-weight: 400;
+    font-size: 17px; color: var(--ink-secondary);
   }
-  .back:hover { color: var(--ink-strong); }
+  .skip:hover { color: var(--ink-strong); }
+  .skip[hidden] { display: none; }
 
-  /* Somebody else already started this week — DATA_MODEL.md's soft lock. */
-  .joined {
-    background: var(--plum-panel); border-radius: 12px;
-    padding: 12px 14px; font-size: 0.88rem; line-height: 1.5;
-    color: var(--ink-strong); margin-bottom: 18px;
-  }
   .loading { color: var(--ink-secondary); font-size: 0.92rem; padding: 40px 0; text-align: center; }
   /* The real-failure state (server unreachable, not "no week to plan" —
      that case is resolved before this ever shows, see resolveWeekStart).
@@ -299,41 +399,64 @@
   }
   .failed-retry:hover { background: var(--apricot-deep); }
 
-  /* ---- Drafting progress ----
-     Shown in place of Q1/Q2 once "draft my week" is tapped. Generating a
-     week is genuinely a ~30-second call (see the "Make chat responses
-     faster" ticket) -- this is what fills that time with something real
-     instead of a static button label, using theme.css's canonical tokens
-     (not the legacy aliases the rest of this older page still carries).
-  */
+  /* ---------- Drafting: "Cooking up your week…" (board C1) ----------
+     The same screen as onboarding's first-week reveal while it waits
+     (static/onboarding.html .reveal-*): the ground goes spruce
+     (body.drafting), the Pomona mark and wordmark, the dates as an
+     eyebrow, the title, a spinner line that moves a day at a time
+     (draftDayLine), the "What I'm using" card listing the answers the
+     draft is being built from, and the one quiet line saying leaving is
+     fine. Nothing here is a button but the crumb: the answers went with
+     "Draft my week", and the server keeps building on its own thread. */
+  .draft-screen { display: flex; flex-direction: column; gap: 18px; padding-top: 8px; }
+  .draft-head { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; padding-top: 20px; }
+  .draft-mark { color: var(--apricot-light); display: flex; }
+  .draft-mark svg { width: 56px; height: 56px; }
+  .draft-eyebrow {
+    font-family: var(--font-body); font-weight: 800; font-size: 10px;
+    letter-spacing: 0.15em; text-transform: uppercase; color: var(--apricot-light); margin: 0;
+  }
+  .draft-title {
+    font-family: var(--font-display); font-weight: 700; font-size: 32px;
+    letter-spacing: -0.038em; line-height: 1.05; color: var(--ivory-ink); margin: 0; text-wrap: balance;
+  }
   .draft-status {
     display: flex; align-items: center; gap: 10px;
-    font-family: var(--font-body); font-weight: 600; font-size: 0.95rem;
-    color: var(--ink); margin: 4px 0 16px;
+    font-family: var(--font-body); font-weight: 500; font-size: 15px; color: var(--ivory-ink-muted); margin: 0;
   }
   .draft-spinner {
     flex: none; width: 16px; height: 16px; border-radius: 999px;
-    border: 2px solid var(--hairline-strong); border-top-color: var(--apricot);
+    border: 2.5px solid var(--apricot-light); border-right-color: transparent;
     animation: draft-spin .8s linear infinite;
   }
   .draft-progress.done .draft-spinner { display: none; }
   @keyframes draft-spin { to { transform: rotate(360deg); } }
-  .draft-days { display: flex; flex-direction: column; gap: 10px; }
-  .draft-day {
-    display: flex; align-items: flex-start; gap: 10px;
-    background: var(--surface); border: 1.5px solid var(--hairline);
-    border-radius: var(--radius-card); padding: 12px 14px;
-    animation: draft-day-in .25s ease-out;
+  /* The line fades in on every change, the way the waiting line does. */
+  .draft-status-text.line-in { animation: draft-line-in .32s ease-out; }
+  @keyframes draft-line-in { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+  .using {
+    background: var(--spruce-raised); border-radius: var(--radius-card);
+    padding: 16px 18px 6px; text-align: left;
   }
-  @keyframes draft-day-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-  .draft-day-check {
-    flex: none; width: 20px; height: 20px; margin-top: 1px; border-radius: 999px;
-    background: var(--celadon); color: var(--on-accent-ink);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 800; line-height: 1;
+  .using[hidden] { display: none; }
+  .using-eyebrow {
+    font-family: var(--font-body); font-weight: 800; font-size: 10px;
+    letter-spacing: 0.15em; text-transform: uppercase; color: var(--apricot-light); margin: 0 0 4px;
   }
-  .draft-day-text { font-family: var(--font-body); font-size: 0.88rem; color: var(--ink); line-height: 1.4; }
-  .draft-day-label { color: var(--ink-secondary); font-weight: 700; }
+  .using-lead { font-family: var(--font-body); font-size: 15px; font-weight: 500; line-height: 1.4; color: var(--ivory-ink-muted); margin: 0 0 4px; }
+  .using-rows { display: flex; flex-direction: column; }
+  .using-row { display: flex; gap: 12px; align-items: center; padding: 11px 0; border-top: 1.5px solid var(--apricot-rule); }
+  .using-icon { color: var(--apricot-light); flex: none; display: flex; }
+  .using-icon svg { width: 20px; height: 20px; }
+  .using-text { font-family: var(--font-body); font-size: 15px; font-weight: 500; line-height: 1.4; color: var(--ivory-ink); margin: 0; }
+  .draft-leave-note {
+    font-family: var(--font-accent); font-style: italic; font-weight: 400;
+    font-size: 17px; line-height: 1.4; color: var(--ivory-ink-muted); text-align: center; margin: 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .draft-status-text.line-in { animation: none; }
+    body { transition: none; }
+  }
 
   /* ---------- Presence avatars (IntakeTrips mock) ----------
      The one-off gesture: one tap takes a person out of one meal. Canonical
@@ -387,25 +510,6 @@
   }
   .remember[hidden] { display: none; }
 
-  /* ---------- The trips gateway (opt-in context, Emily's decision) ---------- */
-  .away-gate {
-    width: 100%; min-height: 56px; margin-top: 14px; padding: 0 14px;
-    border-radius: var(--radius-ask); background: var(--surface);
-    border: 1.5px solid var(--hairline-strong);
-    display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer;
-  }
-  .away-gate-icon {
-    width: 32px; height: 32px; flex: 0 0 auto; border-radius: var(--radius-badge);
-    background: var(--sand); display: flex; align-items: center; justify-content: center;
-    color: var(--ink-secondary);
-  }
-  .away-gate-text { flex: 1 1 auto; display: flex; flex-direction: column; gap: 1px; }
-  .away-gate-title {
-    font-family: var(--font-body); font-size: 14.5px; font-weight: 800;
-    letter-spacing: -0.01em; color: var(--ink);
-  }
-  .away-gate-sub { font-size: 12px; font-weight: 500; color: var(--ink-secondary); }
-  .away-gate-chevron { flex: 0 0 auto; color: var(--ink-inactive); display: flex; }
   .away-set {
     margin-top: 10px; display: flex; flex-direction: column; gap: 6px;
   }
@@ -523,7 +627,6 @@
 @keyframes pw-pop-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
 </style>
 <script src="/static/error-reporter.js"></script>
-<script src="/static/waiting-lines.js"></script>
 </head>
 <body>
 
@@ -537,82 +640,141 @@
 <main id="flow" hidden>
   <!-- One way back, named for its parent (nav v2 rule 1). Outside the
        step sections so it is there on every screen, the drafting one
-       included; leaveFlow says what leaving does and doesn't do. -->
+       included. "‹ Plan" on the first step and while drafting (leaveFlow
+       says what leaving does and doesn't do); "‹ Back" on the steps
+       between, which is the stepper's own back — see crumbTap. -->
   <button type="button" class="crumb" id="leave">&lsaquo; Plan</button>
-  <div class="eyebrow" id="eyebrow"></div>
-  <div class="progress"><div class="dot" id="dot-1"></div><div class="dot" id="dot-2"></div><div class="dot" id="dot-3"></div><div class="dot" id="dot-4"></div></div>
+  <p class="eyebrow" id="eyebrow"></p>
+  <div class="progress" id="progress"><span class="bar" id="bar-1"></span><span class="bar" id="bar-2"></span><span class="bar" id="bar-3"></span><span class="bar" id="bar-4"></span><span class="bar" id="bar-5"></span></div>
 
-  <div class="joined" id="joined" hidden></div>
-
-  <!-- ---------- 1 of 4 · Days ----------
-       Four short screens, one question each (Emily, 2026-09-11, decision D;
-       DESIGN_SYSTEM §2b S1/S7). The days are tiles; tapping one opens the
-       day sheet, where every meal that day can be tagged — the "hosting
-       five for lunch" case that had nowhere to go before. -->
+  <!-- ---------- 1 of 5 · Starting when? (board A3) ----------
+       Today, never yesterday (Emily, 2026-09-20: "It's Sunday, but the
+       days are showing from yesterday"). Three chips — today, tomorrow,
+       or your own days — and a card that shows the range they make, in
+       words and as tiles. The period every later step asks about is
+       whatever this one settles on (choosePeriod). -->
   <section id="q1">
-    <h1>Any days that are different this week?</h1>
-    <p class="step-sub">Tap a day. Out, home late, guests &mdash; for any meal.</p>
-    <div class="day-tiles" id="day-tiles"></div>
-    <!-- The holidays in this period, asked once each (holidayBlockHtml). -->
-    <div id="holiday-blocks"></div>
-
-    <!-- Trips are OPT-IN CONTEXT, not part of the default flow (Emily's
-         decision, 2026-09-03): a light gateway that opens the range picker
-         only when it's relevant, rather than a question everyone answers. -->
-    <button type="button" class="away-gate" id="away-gate">
-      <span class="away-gate-icon">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="8" width="16" height="11" rx="2"></rect><path d="M9 8V6a3 3 0 0 1 6 0v2"></path><path d="M4 13h16"></path></svg>
-      </span>
-      <span class="away-gate-text">
-        <span class="away-gate-title">Anyone away this week?</span>
-        <span class="away-gate-sub">I&rsquo;ll skip planning and shopping while you&rsquo;re gone.</span>
-      </span>
-      <span class="away-gate-chevron">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6l6 6-6 6"></path></svg>
-      </span>
-    </button>
-    <div class="away-set" id="away-set"></div>
-  </section>
-
-  <!-- ---------- 2 of 4 · Lunches on the go ---------- -->
-  <section id="q2" hidden>
-    <h1>Any lunches on the go this week?</h1>
-    <p class="step-sub">I&rsquo;ll keep those to food that packs cold.</p>
-    <div class="chip-row" id="lunch-days"></div>
-    <div class="ack" id="lunch-ack"></div>
-  </section>
-
-  <!-- ---------- 3 of 4 · In the mood ---------- -->
-  <section id="q3" hidden>
-    <h1>What are you in the mood for?</h1>
-    <p class="step-sub">As many as you like. I won&rsquo;t make every night the same.</p>
-    <div class="chip-row" id="moods"></div>
-    <div class="ack" id="mood-ack"></div>
-    <section class="block" style="margin-top:22px">
-      <div class="block-label">Cuisines you fancy</div>
-      <p class="block-body" id="cuisine-body"></p>
-      <div class="chip-row" id="cuisines"></div>
-      <div class="ack" id="cuisine-ack"></div>
-    </section>
-  </section>
-
-  <!-- ---------- 4 of 4 · Anything else ---------- -->
-  <section id="q4" hidden>
-    <h1>Anything else I should plan around?</h1>
-    <textarea id="freeform" placeholder="Friday is pizza night. I want to use the lamb in the freezer."></textarea>
-  </section>
-
-  <!-- ---------- Drafting (shown once "draft my week" is tapped) ---------- -->
-  <section id="draft-progress" hidden>
-    <h1>Building your week</h1>
-    <div class="draft-status" id="draft-status">
-      <span class="draft-spinner" aria-hidden="true"></span>
-      <!-- Taken over by the rotating waiting line (static/waiting-lines.js)
-           as soon as drafting starts; this text is the fallback. -->
-      <span class="waiting-line" id="draft-status-text">Getting started&hellip;</span>
+    <h1>Starting when?</h1>
+    <p class="step-sub" id="start-sub"></p>
+    <div class="step-body">
+      <div class="chip-row" id="start-chips"></div>
+      <div class="card" id="range-card">
+        <div class="range-head">
+          <p class="range-words" id="range-words"></p>
+          <span class="range-count" id="range-count"></span>
+        </div>
+        <p class="range-hint" id="range-hint" hidden></p>
+        <div class="stripe" id="range-strip"></div>
+        <p class="day-note" id="range-note" style="margin-top:10px">Yesterday&rsquo;s already eaten &mdash; I won&rsquo;t plan or shop for it.</p>
+      </div>
     </div>
-    <p class="draft-leave-note">No need to wait here &mdash; I&rsquo;ll keep going, and the draft will be on Plan once it&rsquo;s done. Nothing is approved until you say so.</p>
-    <div class="draft-days" id="draft-days"></div>
+  </section>
+
+  <!-- ---------- 2 of 5 · Any days that are different? (board B0) ----------
+       The days as a strip of tiles; tapping one opens the day sheet, where
+       every meal that day can be tagged. What was said about a day is the
+       line under the strip, not squeezed into the tile. -->
+  <section id="q2" hidden>
+    <h1>Any days that are different?</h1>
+    <p class="step-sub">Tap a day. Out, home late, guests &mdash; for any meal.</p>
+    <div class="step-body">
+      <div class="joined" id="joined" hidden></div>
+      <div>
+        <div class="stripe" id="day-tiles" style="margin-top:0"></div>
+        <div class="day-notes" id="day-notes" style="margin-top:8px"></div>
+      </div>
+      <!-- The holidays in this period, asked once each (holidayBlockHtml). -->
+      <div id="holiday-blocks"></div>
+
+      <!-- Away for a stretch: opt-in context, not a question everyone
+           answers (Emily, 2026-09-03). The card's words are hers
+           (2026-09-21, through the copywriter); it opens the existing
+           range picker. -->
+      <button type="button" class="card card-btn" id="away-gate">
+        <span class="card-btn-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="8" width="16" height="11" rx="2"></rect><path d="M9 8V6a3 3 0 0 1 6 0v2"></path><path d="M4 13h16"></path></svg>
+        </span>
+        <span class="card-btn-text">
+          <span class="card-btn-title">Away for a few nights?</span>
+          <span class="card-btn-line">Tell me when you&rsquo;re travelling or gone for a stretch &mdash; I&rsquo;ll skip those meals altogether.</span>
+        </span>
+        <span class="card-btn-chevron">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+        </span>
+      </button>
+      <div class="away-set" id="away-set"></div>
+    </div>
+  </section>
+
+  <!-- ---------- 3 of 5 · Any lunches on the go? ----------
+       Pre-answered from the household's rhythm when it can be (the
+       lunch-location answers from setup, week_intake's
+       _rhythm_packed_lunch_suggestions): the suggested days open already
+       ticked, and Continue accepts them in one tap. -->
+  <section id="q3" hidden>
+    <h1>Any lunches on the go?</h1>
+    <p class="step-sub" id="lunch-sub">I&rsquo;ll keep those to food that packs cold.</p>
+    <div class="step-body">
+      <div class="chip-row" id="lunch-days"></div>
+    </div>
+  </section>
+
+  <!-- ---------- 4 of 5 · What are you in the mood for? (board B2) ----------
+       Surprise me first, as a card (Emily, 2026-09-20: "the location of
+       Surprise me makes it seem like it's not a viable option"); then the
+       moods, then the cuisines. Last week's picks open already chosen. -->
+  <section id="q4" hidden>
+    <h1>What are you in the mood for?</h1>
+    <p class="step-sub" id="mood-sub"></p>
+    <div class="step-body">
+      <button type="button" class="card card-btn surprise" id="surprise" aria-pressed="false">
+        <span class="card-btn-icon">
+          <svg class="surprise-star" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"></path></svg>
+          <svg class="surprise-tick" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>
+        </span>
+        <span class="card-btn-text">
+          <span class="card-btn-title">Surprise me</span>
+          <span class="card-btn-line">I&rsquo;ll pick from what you like and keep the week varied.</span>
+        </span>
+        <span class="card-btn-chevron">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+        </span>
+      </button>
+      <p class="eyebrow group-eyebrow">Or steer me &middot; as many as you like</p>
+      <div class="chip-row" id="moods"></div>
+      <p class="eyebrow group-eyebrow">Cuisines you fancy</p>
+      <div class="chip-row" id="cuisines"></div>
+    </div>
+  </section>
+
+  <!-- ---------- 5 of 5 · Anything else ---------- -->
+  <section id="q5" hidden>
+    <h1>Anything else I should plan around?</h1>
+    <div class="step-body">
+      <textarea id="freeform" placeholder="Friday is pizza night. I want to use the lamb in the freezer."></textarea>
+    </div>
+  </section>
+
+  <!-- ---------- Drafting (shown once "Draft my week" is tapped) ----------
+       Onboarding's "Cooking up your first week…" screen (board C1). The
+       Pomona mark is the one from static/shell.html, never redrawn. -->
+  <section id="draft-progress" class="draft-screen" hidden>
+    <div class="draft-head">
+      <div class="draft-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.4c-3.1 0-5.6-2.6-5.6-5.9 0-3.2 2.5-5.7 5.6-5.7s5.6 2.5 5.6 5.7c0 3.3-2.5 5.9-5.6 5.9z"></path><path d="M12 9V6.2"></path><path d="M12.5 7.1c.9-2.2 3.2-3.1 5.3-2.7.4 2.2-.7 4.3-2.8 4.7-1.4.3-2.5-.6-2.5-2z"></path><path d="M12 10.2c-1.1 1.6-1.1 6.3 0 8.2"></path></svg></div>
+      <p class="draft-eyebrow" id="draft-eyebrow"></p>
+      <h1 class="draft-title" id="draft-title" style="margin:0">Cooking up your week&hellip;</h1>
+      <div class="draft-status" id="draft-status">
+        <span class="draft-spinner" aria-hidden="true"></span>
+        <!-- Moves a day at a time as the draft comes in — draftDayLine. -->
+        <span class="draft-status-text" id="draft-status-text">Getting started&hellip;</span>
+      </div>
+    </div>
+    <div class="using" id="using" hidden>
+      <p class="using-eyebrow">What I&rsquo;m using</p>
+      <p class="using-lead">Here&rsquo;s what I&rsquo;m building this week from:</p>
+      <div class="using-rows" id="using-rows"></div>
+    </div>
+    <p class="draft-leave-note">No need to wait &mdash; the draft lands on Plan when it&rsquo;s done.</p>
   </section>
 </main>
 
@@ -620,11 +782,8 @@
 
 <div class="footer" id="footer" hidden>
   <div class="footer-inner">
-    <div class="footer-links">
-      <button type="button" class="back" id="back" hidden>&lsaquo; Back</button>
-      <button type="button" class="back skip" id="skip"></button>
-    </div>
     <button type="button" class="cta" id="cta"></button>
+    <button type="button" class="skip" id="skip"></button>
   </div>
 </div>
 
@@ -725,8 +884,12 @@
   function toastSaved() { showToast(CHANGES_SAVED); }
 
   // ---------- state ----------
-  // Both re-read (not just `var`-captured) inside resolveWeekStart below,
-  // for the one path that arrives with no ?week at all.
+  // The period being planned: where it starts and how many days it runs.
+  // Both begin as what the URL says (every door into this page names a
+  // week — startPlanningWeek in shell.js) and are settled by "Starting
+  // when?" (choosePeriod), which is the one place they change. A period
+  // that arrives starting before today opens on today instead: yesterday
+  // is eaten (Emily, 2026-09-20).
   var weekStart = new URLSearchParams(location.search).get('week') || '';
   // How many days this period runs. Absent means seven, so every link that
   // existed before planning periods (and any bookmarked one) still opens
@@ -738,9 +901,15 @@
     if (!raw || raw < 1) return 7;
     return Math.min(raw, 28);
   })();
+  // The household's horizon — what "Today" and "Tomorrow" count forward by.
+  // The URL's day count when it names one, else the server's suggestion
+  // (resolveWeekStart), else seven.
+  var horizon = dayCount;
   var who = new URLSearchParams(location.search).get('who') || '';
-  var data = null;                 // the prefill payload
+  var data = null;                 // the prefill payload, for the period loaded
+  var loadedFor = '';              // which "start|days" `data` was fetched for
   var step = 1;
+  var drafting = false;            // set once "Draft my week" is tapped; nothing submits twice
   // Who's at which meal. Its own store rather than part of `answers`,
   // because attendance is not an intake revision — it's a standing fact
   // about the week that chat, the Meals screen and this screen all read
@@ -792,8 +961,35 @@
   // wrong — and a wrong guess here writes an absence to the week. One
   // constant because the same row appears three times in a day sheet.
   var PRESENCE_QUESTION = 'Is anyone out?';
-  var STEP_COUNT = 4;
-  var SKIP_LABELS = { 1: 'Nothing different', 2: 'Nothing on the go', 3: 'Surprise me', 4: 'Nothing else' };
+  // Five screens, one question each (Emily, 2026-09-21): Starting when? ·
+  // Any days that are different? · Any lunches on the go? · What are you
+  // in the mood for? · Anything else I should plan around?
+  var STEP_COUNT = 5;
+  // The quiet italic line under Continue on the steps that can be skipped.
+  // Step 1 always has an answer (today, unless you say otherwise) and step
+  // 4's skip is the Surprise me card, so neither carries one.
+  var SKIP_LABELS = { 2: 'Nothing different', 3: 'Nothing on the go', 5: 'Nothing else' };
+  // The mood the Surprise me card records (week_intake.SURPRISE_MOOD — the
+  // same words, so the planner reads the guidance behind them). Never
+  // saved beside a steering mood: tapping a chip drops it, tapping the
+  // card drops the chips.
+  var SURPRISE_MOOD = 'Surprise me';
+  // What the start chips are called, and the picker's own hints
+  // (PERIOD_PICKER_COPY in shell.js, same words).
+  var START_COPY = {
+    today: 'Today', tomorrow: 'Tomorrow', pick: 'Pick my own days',
+    hintBoth: 'Tap the first day, then the last', hintEnd: 'Tap the last day'
+  };
+  // How far past today the picker's strip runs, and the ceiling on a
+  // range — shell.js's PERIOD_STRIP_DAYS / PERIOD_MAX_DAYS, kept in step
+  // because ?days is clamped to 28 above.
+  var PERIOD_STRIP_DAYS = 21;
+  var PERIOD_MAX_DAYS = 28;
+  // How long a draft usually takes, for the status line's own clock
+  // (draftDayLine): generation is a ~37-second call (see the "Make chat
+  // responses faster" ticket), so with nothing else to go on the line
+  // moves to the next day every EXPECTED_DRAFT_MS / dayCount.
+  var EXPECTED_DRAFT_MS = 36000;
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -802,16 +998,203 @@
   }
   function $(id) { return document.getElementById(id); }
 
+  // ---------- dates ----------
+  // Local date fields, never toISOString(): that is UTC and gets the day
+  // wrong either side of midnight (shell.js's todayLocalStr / addDaysLocal).
+  function isoLocal(d) {
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '-' + m + '-' + day;
+  }
+  function todayIso() { return isoLocal(new Date()); }
+  function addDaysIso(iso, n) {
+    var d = new Date(iso + 'T00:00:00');
+    d.setDate(d.getDate() + n);
+    return isoLocal(d);
+  }
+  function daysBetween(fromIso, toIso) {
+    // Rounded rather than floored: both ends are local midnight, so a DST
+    // boundary between them makes the difference 23 or 25 hours.
+    return Math.round((new Date(toIso + 'T00:00:00') - new Date(fromIso + 'T00:00:00')) / 86400000);
+  }
+  function weekdayName(iso, style) {
+    return new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { weekday: style || 'long' });
+  }
+  // "Sun 20" — the chip's and the range's way of naming a day.
+  function dayLabel(iso) {
+    return weekdayName(iso, 'short') + ' ' + new Date(iso + 'T00:00:00').getDate();
+  }
+  // "Sep 20–26": the client twin of the server's _format_period_range
+  // (shell.js's periodRangeLabel), for the drafting screen's eyebrow.
+  function periodRangeLabel(startIso, count) {
+    var start = new Date(startIso + 'T00:00:00');
+    var end = new Date(start.getTime());
+    end.setDate(end.getDate() + Math.max(1, count) - 1);
+    var startMonth = start.toLocaleDateString('en-US', { month: 'short' });
+    if (start.getTime() === end.getTime()) return startMonth + ' ' + start.getDate();
+    if (start.getMonth() === end.getMonth()) return startMonth + ' ' + start.getDate() + '–' + end.getDate();
+    return startMonth + ' ' + start.getDate() + '–' + end.toLocaleDateString('en-US', { month: 'short' }) + ' ' + end.getDate();
+  }
+
+  // ---------- Starting when? ----------
+  // The three answers, from today and the household's horizon. `chosen`
+  // says which chip is on: the range the page arrived with, when it is
+  // today's or tomorrow's; otherwise "Pick my own days", showing it.
+  function startOptions(today, count, currentStart, currentDays) {
+    var tomorrow = addDaysIso(today, 1);
+    var chosen = 'pick';
+    if (currentStart === today && currentDays === count) chosen = 'today';
+    else if (currentStart === tomorrow && currentDays === count) chosen = 'tomorrow';
+    return {
+      chosen: chosen,
+      options: [
+        { key: 'today', label: START_COPY.today + ' · ' + dayLabel(today), start: today, days: count },
+        { key: 'tomorrow', label: START_COPY.tomorrow + ' · ' + dayLabel(tomorrow), start: tomorrow, days: count },
+        { key: 'pick', label: START_COPY.pick, start: currentStart, days: currentDays }
+      ]
+    };
+  }
+
+  // A start before today becomes today; the length stays. Every door
+  // into this page passes through here (the Re-plan pill hands over the
+  // draft's own start, which on a Sunday was yesterday).
+  function clampStart(start, today) {
+    return (!start || start < today) ? today : start;
+  }
+
+  // The picker, while "Pick my own days" is on: `end` is '' exactly while
+  // a range is half-chosen (shell.js's wirePeriodPicker, same rules).
+  var picking = false;
+  var pick = { start: '', end: '' };
+
+  function renderStartChips() {
+    var opts = startOptions(todayIso(), horizon, weekStart, dayCount);
+    // While the strip is open, that chip is the one on — even if the
+    // range it opened on happens to be today's.
+    var chosen = picking ? 'pick' : opts.chosen;
+    $('start-chips').innerHTML = opts.options.map(function (o) {
+      return '<button type="button" class="chip' + (o.key === chosen ? ' on' : '') + '" data-start-key="' + o.key + '">' + esc(o.label) + '</button>';
+    }).join('');
+    $('start-chips').querySelectorAll('.chip').forEach(function (chip) {
+      chip.addEventListener('click', function () { chooseStartKey(chip.dataset.startKey, opts); });
+    });
+  }
+
+  function chooseStartKey(key, opts) {
+    var opt = opts.options.filter(function (o) { return o.key === key; })[0];
+    if (!opt) return;
+    if (key === 'pick') {
+      // Opens on the range already showing — today's week, or whatever
+      // the page arrived with — rather than on nothing at all.
+      picking = true;
+      pick = { start: weekStart, end: addDaysIso(weekStart, Math.max(1, dayCount) - 1) };
+    } else {
+      picking = false;
+      choosePeriod(opt.start, opt.days);
+    }
+    renderStartChips();
+    renderRangeCard();
+  }
+
+  // The one place the period changes. Nothing is fetched here: the steps
+  // that need the period's prefill load it when this step is left
+  // (ensureLoaded), so retapping chips costs nothing.
+  function choosePeriod(start, count) {
+    weekStart = start;
+    dayCount = Math.max(1, Math.min(count, PERIOD_MAX_DAYS));
+    // Keep the address honest, so a reload — or the shell's "?week=" on
+    // the way back — names the period actually chosen.
+    try {
+      var url = '/plan-week?week=' + encodeURIComponent(weekStart) + (dayCount !== 7 ? '&days=' + dayCount : '') +
+        (who ? '&who=' + encodeURIComponent(who) : '');
+      history.replaceState(null, '', url);
+    } catch (e) { /* the page still works without the address changing */ }
+  }
+
+  function pickDay(day) {
+    if (!pick.end) {
+      // A range is half-chosen. A day on or after the start closes it —
+      // including the start itself, a legitimate one-day range. A day
+      // BEFORE the start isn't an end; it's somebody restarting.
+      if (day < pick.start) {
+        pick.start = day;
+      } else {
+        var cap = addDaysIso(pick.start, PERIOD_MAX_DAYS - 1);
+        pick.end = day <= cap ? day : cap;
+      }
+    } else {
+      pick = { start: day, end: '' };
+    }
+    if (pick.end) choosePeriod(pick.start, daysBetween(pick.start, pick.end) + 1);
+    renderRangeCard();
+  }
+
+  // The card under the chips: the range in words, the tiles, the fact.
+  // While picking, the tiles are the strip to tap — today forward, three
+  // weeks — and the words follow the taps.
+  function renderRangeCard() {
+    var today = todayIso();
+    var strip = $('range-strip');
+    var hint = $('range-hint');
+    var first, last, tiles;
+    if (picking) {
+      first = pick.start; last = pick.end || pick.start;
+      hint.hidden = false;
+      hint.textContent = pick.end ? START_COPY.hintBoth : START_COPY.hintEnd;
+      var stop = addDaysIso(today, PERIOD_STRIP_DAYS - 1);
+      tiles = [];
+      for (var d = today; d <= stop; d = addDaysIso(d, 1)) tiles.push(d);
+    } else {
+      first = weekStart; last = addDaysIso(weekStart, Math.max(1, dayCount) - 1);
+      hint.hidden = true;
+      tiles = [];
+      for (var i = 0; i < dayCount; i++) tiles.push(addDaysIso(weekStart, i));
+    }
+    var count = daysBetween(first, last) + 1;
+    $('range-words').textContent = pick.end || !picking
+      ? dayLabel(first) + ' → ' + dayLabel(last)
+      : dayLabel(first) + ' → …';
+    $('range-count').textContent = count + (count === 1 ? ' day' : ' days');
+    strip.classList.toggle('picking', picking);
+    strip.innerHTML = tiles.map(function (d) {
+      var cls = 'dt';
+      if (picking) {
+        if (d === pick.start || d === pick.end) cls += ' on';
+        else if (d > pick.start && d <= last) cls += ' in';
+      } else if (d === first) cls += ' on';
+      if (d === today) cls += ' today';
+      var dow = d === today ? 'Today' : weekdayName(d, 'short');
+      return (picking ? '<button type="button" class="' + cls + '" data-day="' + d + '">' : '<span class="' + cls + '">') +
+        '<span class="dt-dow">' + esc(dow) + '</span><span class="dt-num">' + new Date(d + 'T00:00:00').getDate() + '</span>' +
+        (picking ? '</button>' : '</span>');
+    }).join('');
+    strip.querySelectorAll('button[data-day]').forEach(function (b) {
+      b.addEventListener('click', function () { pickDay(b.dataset.day); });
+    });
+    // The strip you are picking on should show the last thing you tapped.
+    var edges = strip.querySelectorAll('.dt.on');
+    var edge = edges[edges.length - 1];
+    if (picking && edge && edge.offsetLeft + edge.offsetWidth > strip.scrollLeft + strip.clientWidth) {
+      strip.scrollLeft = edge.offsetLeft + edge.offsetWidth - strip.clientWidth;
+    }
+    paintCta();
+  }
+
+  function renderStartStep() {
+    $('start-sub').textContent = 'It’s ' + weekdayName(todayIso()) + '. I’ll plan from today unless you say otherwise.';
+    renderStartChips();
+    renderRangeCard();
+  }
+
   // ---------- load ----------
   // Reached with no ?week when this page is opened directly — a bookmark
   // or a stale link that predates the ?week it now expects — rather than
-  // through the shell's own "Plan next week" button, which always names
-  // one (startPlanningWeek in shell.js). Retrying a request that never had
-  // a week to ask for would just fail the same way forever, so this asks
-  // the server for the SAME period the shell would have sent: the one
-  // source of "which week" (weekly_plan.suggest_planning_period, behind
-  // /api/week/planning-period). If even that can't be reached, there is
-  // nothing left to try — back to Plan rather than a dead "Try again".
+  // through the shell's own "Plan a week" buttons, which always name one
+  // (startPlanningWeek in shell.js). This asks the server for the SAME
+  // period the shell would have sent: the one source of "which week"
+  // (weekly_plan.suggest_planning_period, behind /api/week/planning-period,
+  // which never starts before today either). If even that can't be
+  // reached, there is nothing left to try — back to Plan.
   async function resolveWeekStart() {
     try {
       var res = await fetch('/api/week/planning-period');
@@ -820,6 +1203,7 @@
       if (!period || !period.start_date) throw new Error('planning period missing a start date');
       weekStart = period.start_date;
       dayCount = (period.day_count && period.day_count > 0) ? Math.min(period.day_count, 28) : 7;
+      horizon = dayCount;
       return true;
     } catch (err) {
       console.warn('Planning period lookup failed:', err);
@@ -827,17 +1211,20 @@
     }
   }
 
-  async function load() {
-    if (!weekStart && !(await resolveWeekStart())) { location.href = '/week'; return; }
-    try {
-      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/intake?day_count=' + dayCount);
-      if (!res.ok) throw new Error('prefill failed');
-      data = await res.json();
-    } catch (err) {
-      console.warn('Plan-the-week prefill failed:', err);
-      $('loading').hidden = true; $('failed').hidden = false;
-      return;
-    }
+  // The prefill for the period chosen: everything the later steps open
+  // already knowing. Fetched once per period — leaving "Starting when?"
+  // with the same period it arrived with fetches nothing.
+  async function loadPeriod() {
+    var key = weekStart + '|' + dayCount;
+    if (data && loadedFor === key) return true;
+    var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/intake?day_count=' + dayCount);
+    if (!res.ok) throw new Error('prefill failed');
+    data = await res.json();
+    loadedFor = key;
+    awayRanges = [];
+    answers = { night_tags: {}, guest_counts: {}, packed_lunch_days: [], moods: [], cuisines: [] };
+    $('freeform').value = '';
+    $('joined').hidden = true;
 
     // The soft lock. Both adults are nudged on Sunday, so both can start;
     // the second to arrive carries on from the first one's answers rather
@@ -848,20 +1235,13 @@
       $('joined').textContent = by
         ? by + ' started this ' + relativeTime(data.intake.created_at) + ' — I’ve carried on from where they got to.'
         : 'I’ve carried on from the answers already saved for this week.';
-      answers.night_tags = data.intake.night_tags || {};
-      answers.guest_counts = data.intake.guest_counts || {};
-      answers.packed_lunch_days = data.intake.packed_lunch_days || [];
-      answers.moods = data.intake.moods || [];
-      answers.cuisines = data.intake.cuisines || [];
-      $('freeform').value = data.intake.freeform || '';
+      takeAnswers(data.intake);
     } else if (data.plan_exists) {
       // DECISIONS.md #4 — re-planning a week that already has a plan is
       // allowed, but the household is told what it means BEFORE answering
-      // five minutes of questions, not after. The approved case is the one
-      // that matters: the shopping list has already been built from it, and
-      // the rule is the same as reopening — anything new gets added, and
-      // nothing is taken off, because removing something somebody may
-      // already have bought is worse than a slightly long list.
+      // the questions, not after. The approved case is the one that
+      // matters: the shopping list has already been built from it, and
+      // anything new gets added, nothing taken off.
       $('joined').hidden = false;
       $('joined').textContent = data.plan_status === 'approved'
         ? data.week_label + ' is already approved and on your shopping list. Re-planning makes a ' +
@@ -870,39 +1250,67 @@
         : data.week_label + ' already has a draft. Answering again replaces it, and nothing ' +
           'has reached your shopping list yet either way.';
       // The answers that produced that plan, so this reads as a revision
-      // rather than starting from nothing — "Change my answers" is the same
-      // door, and it would be strange for one to prefill and the other not.
-      if (data.intake) {
-        answers.night_tags = data.intake.night_tags || {};
-        answers.guest_counts = data.intake.guest_counts || {};
-        answers.packed_lunch_days = data.intake.packed_lunch_days || [];
-        answers.moods = data.intake.moods || [];
-        answers.cuisines = data.intake.cuisines || [];
-        $('freeform').value = data.intake.freeform || '';
-      }
+      // rather than starting from nothing.
+      if (data.intake) takeAnswers(data.intake);
+    }
+    // What Pomona already knows, shown as the answer already chosen
+    // (Emily, 2026-09-15 / 2026-09-21): the lunches from the household's
+    // rhythm, and last week's moods and cuisines. Only where this week
+    // has no answer of its own yet.
+    prefilled = { lunches: false, moods: false };
+    if (!answers.packed_lunch_days.length) {
+      var suggested = (data.rhythm_packed_lunch_suggestions || [])
+        .filter(function (s) { return s.suggested_packed; })
+        .map(function (s) { return s.date; });
+      if (suggested.length) { answers.packed_lunch_days = suggested; prefilled.lunches = true; }
+    }
+    if (!answers.moods.length && !answers.cuisines.length && data.last_intake &&
+        ((data.last_intake.moods || []).length || (data.last_intake.cuisines || []).length)) {
+      answers.moods = (data.last_intake.moods || []).slice();
+      answers.cuisines = (data.last_intake.cuisines || []).filter(function (c) {
+        return (data.cuisines || []).indexOf(c) !== -1;
+      });
+      prefilled.moods = true;
     }
 
     await loadAttendance();
     // What the screen opened with, so leaving without changing anything
     // saves nothing (leavePayload).
     answersAtLoad = answersSnapshot();
-
-    $('loading').hidden = true;
-    $('flow').hidden = false;
-    $('footer').hidden = false;
     renderDays();
     renderHolidayBlocks();
     renderAwaySet();
     renderLunchDays();
     renderMoods();
     renderCuisines();
-    showStep(1);
+    return true;
+  }
+  var prefilled = { lunches: false, moods: false };
+
+  function takeAnswers(intake) {
+    answers.night_tags = intake.night_tags || {};
+    answers.guest_counts = intake.guest_counts || {};
+    answers.packed_lunch_days = intake.packed_lunch_days || [];
+    answers.moods = intake.moods || [];
+    answers.cuisines = intake.cuisines || [];
+    $('freeform').value = intake.freeform || '';
   }
 
-  // Attendance is fetched separately from the intake prefill: it's a
-  // different store with a different lifecycle, and a household with no
-  // members recorded yet must still get a working intake screen — so a
-  // failure here degrades to "no avatars", never to a broken week.
+  async function load() {
+    if (!weekStart && !(await resolveWeekStart())) { location.href = '/week'; return; }
+    // Today, never yesterday — whichever door this came through.
+    weekStart = clampStart(weekStart, todayIso());
+    choosePeriod(weekStart, dayCount);
+    $('loading').hidden = true;
+    $('flow').hidden = false;
+    $('footer').hidden = false;
+    renderStartStep();
+    showStep(1);
+    // The common case — Continue with the period as offered — should not
+    // wait on a fetch, so it starts now and is awaited then.
+    loadPeriod().catch(function (err) { console.warn('Plan-the-week prefill failed:', err); });
+  }
+
   async function loadAttendance() {
     try {
       var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/attendance');
@@ -961,15 +1369,20 @@
     return bits.join(' · ');
   }
 
+  // The days as a strip of tiles (board B0): the weekday, the date, and —
+  // once something has been said about a day — sand with the apricot edge,
+  // with what was said as the line under the strip. Tapping opens the day
+  // sheet.
   function renderDays() {
+    var today = todayIso();
     $('day-tiles').innerHTML = data.days.map(function (day) {
-      return '<button type="button" class="day-tile" data-date="' + day.date + '">' +
-        '<span class="day-tile-dow">' + esc(day.short || day.weekday) + '</span>' +
-        '<span class="day-tile-num">' + day.day_of_month + '</span>' +
-        '<span class="day-tile-note"></span>' +
+      var isToday = day.date === today;
+      return '<button type="button" class="dt' + (isToday ? ' today' : '') + '" data-date="' + day.date + '">' +
+        '<span class="dt-dow">' + esc(isToday ? 'Today' : (day.short || day.weekday)) + '</span>' +
+        '<span class="dt-num">' + day.day_of_month + '</span>' +
       '</button>';
     }).join('');
-    $('day-tiles').querySelectorAll('.day-tile').forEach(function (tile) {
+    $('day-tiles').querySelectorAll('.dt').forEach(function (tile) {
       tile.addEventListener('click', function () { openDaySheet(tile.dataset.date); });
     });
     paintTiles();
@@ -977,16 +1390,19 @@
 
   function paintTiles() {
     if (!data) return;
+    var notes = [];
     data.days.forEach(function (day) {
       var tile = $('day-tiles').querySelector('[data-date="' + day.date + '"]');
       if (!tile) return;
       var note = dayNoteFor(day);
       // Filled only once the household has said something about the day
       // — a holiday's name alone is the calendar talking, not them.
-      tile.classList.toggle('on', !!dayNoteFor(day, true));
-      tile.querySelector('.day-tile-note').textContent = note;
+      var said = !!dayNoteFor(day, true);
+      tile.classList.toggle('noted', said);
       tile.title = note || (day.hint || '');
+      if (note) notes.push('<p class="day-note"><b>' + esc(day.weekday) + '</b> · ' + esc(note) + '</p>');
     });
+    $('day-notes').innerHTML = notes.join('');
   }
 
   // ---------- the day sheet ----------
@@ -1846,8 +2262,6 @@
   function renderLunchDays() {
     // One compact control, not a per-day tag: every lunch gets planned
     // either way, so the only question is which ones LEAVE THE HOUSE.
-    // Folding it into the day grid would double the tapping to collect
-    // one fact.
     $('lunch-days').innerHTML = data.days.map(function (day) {
       return '<button type="button" class="chip" data-date="' + day.date + '">' + esc(day.short) + '</button>';
     }).join('');
@@ -1860,6 +2274,10 @@
         paintLunchDays();
       });
     });
+    // Pre-answered from the rhythm: say so, once, in the one line.
+    $('lunch-sub').textContent = prefilled.lunches
+      ? 'I’ve ticked your usual days — I’ll keep those to food that packs cold.'
+      : 'I’ll keep those to food that packs cold.';
     paintLunchDays();
   }
 
@@ -1867,38 +2285,32 @@
     $('lunch-days').querySelectorAll('.chip').forEach(function (chip) {
       chip.classList.toggle('on', answers.packed_lunch_days.indexOf(chip.dataset.date) !== -1);
     });
-    var n = answers.packed_lunch_days.length;
-    // No echo under the chips: the screen's own line already says what a
-    // tapped day means (copy cleanse, 2026-09-11).
-    $('lunch-ack').textContent = '';
   }
 
-  // ---------- Q2 ----------
+  // ---------- moods and cuisines ----------
   function renderMoods() {
     $('moods').innerHTML = MOODS.map(function (m) {
       return '<button type="button" class="chip" data-value="' + esc(m) + '">' + esc(m) + '</button>';
     }).join('');
     wireChips($('moods'), answers.moods, function () {
-      // No echo: the line under the title already says it (copy cleanse, 2026-09-11).
-      $('mood-ack').textContent = '';
+      // A steering mood and Surprise me are never both: the moods win.
+      var i = answers.moods.indexOf(SURPRISE_MOOD);
+      if (i !== -1 && answers.moods.length > 1) answers.moods.splice(i, 1);
+      paintMoodScreen();
     });
+    $('mood-sub').textContent = prefilled.moods ? 'Last week’s picks, unless you change them.' : '';
+    paintMoodScreen();
   }
 
   function renderCuisines() {
     // Read from What We Know, never a fixed global list — the household
-    // never re-answers a question it has already answered, and the screen
-    // visibly reflects its own stored profile. The fallback only appears
-    // when nothing is saved yet, and taps on it are written back.
-    $('cuisine-body').textContent = data.cuisines_are_fallback
-      ? 'A starting point — I’ll remember whatever you tap.'
-      : 'Your usual ones. Whatever you tap comes first this week.';
+    // never re-answers a question it has already answered. The fallback
+    // only appears when nothing is saved yet, and taps on it are written
+    // back (advance).
     $('cuisines').innerHTML = data.cuisines.map(function (c) {
-      return '<button type="button" class="chip" data-value="' + esc(c) + '">' + esc(c) + '</button>';
+      return '<button type="button" class="chip small" data-value="' + esc(c) + '">' + esc(c) + '</button>';
     }).join('');
-    wireChips($('cuisines'), answers.cuisines, function () {
-      // No echo: the body line above the chips already says it (copy cleanse, 2026-09-11).
-      $('cuisine-ack').textContent = '';
-    });
+    wireChips($('cuisines'), answers.cuisines, function () {});
   }
 
   function wireChips(container, list, onChange) {
@@ -1912,7 +2324,6 @@
       });
     });
     paintChips(container, list);
-    onChange();
   }
 
   function paintChips(container, list) {
@@ -1921,31 +2332,52 @@
     });
   }
 
+  function paintMoodScreen() {
+    var on = answers.moods.indexOf(SURPRISE_MOOD) !== -1;
+    $('surprise').classList.toggle('on', on);
+    $('surprise').setAttribute('aria-pressed', on ? 'true' : 'false');
+    paintChips($('moods'), answers.moods);
+  }
+
+  // Surprise me: records the one mood and goes straight on. The cuisines
+  // stay as they are — steering the cuisine and being surprised on the
+  // dish are not in conflict.
+  function chooseSurprise() {
+    // In place: the mood chips hold this array (wireChips), so a new one
+    // would leave their taps writing to the old.
+    answers.moods.length = 0;
+    answers.moods.push(SURPRISE_MOOD);
+    paintMoodScreen();
+    advance();
+  }
+
   // ---------- steps ----------
   function showStep(n) {
     step = n;
     for (var i = 1; i <= STEP_COUNT; i++) {
       $('q' + i).hidden = n !== i;
-      $('dot-' + i).classList.toggle('done', n >= i);
+      $('bar-' + i).classList.toggle('on', n >= i);
     }
-    $('back').hidden = n === 1;
-    $('eyebrow').textContent = n + ' of ' + STEP_COUNT + ' · ' + (data.week_label || '');
+    $('eyebrow').textContent = 'Plan a week · ' + n + ' of ' + STEP_COUNT;
+    $('leave').innerHTML = n === 1 ? '&lsaquo; Plan' : '&lsaquo; Back';
     window.scrollTo(0, 0);
     paintCta();
   }
 
-  // The quiet skip is the honest fast path for a screen with nothing to
-  // say; it advances without changing an answer. It leaves the last screen
-  // rather than drafting, because drafting is the one apricot.
+  // Continue on every step; "Draft my week" on the last. The quiet line
+  // under it is the honest fast path for a screen with nothing to say —
+  // it advances without changing an answer, and disappears once the
+  // screen has one.
   function paintCta() {
     var skip = $('skip');
     if (step < STEP_COUNT) {
-      var noted = step === 1 ? data.days.filter(function (day) { return !!dayNoteFor(day, true); }).length : 0;
-      $('cta').textContent = step === 1 && noted
-        ? 'Next — ' + noted + (noted === 1 ? ' day noted' : ' days noted')
-        : 'Next';
-      skip.textContent = SKIP_LABELS[step];
-      skip.hidden = step === 1 && noted > 0;
+      $('cta').textContent = 'Continue';
+      // Half a range is not an answer; nothing else here touches the
+      // button's state (advance owns it while a save is in flight).
+      if (step === 1) $('cta').disabled = picking && !pick.end;
+      var noted = step === 2 && data ? data.days.filter(function (day) { return !!dayNoteFor(day, true); }).length : 0;
+      skip.textContent = SKIP_LABELS[step] || '';
+      skip.hidden = !SKIP_LABELS[step] || (step === 2 && noted > 0) || (step === 3 && answers.packed_lunch_days.length > 0);
     } else {
       $('cta').textContent = 'Draft my week';
       skip.textContent = SKIP_LABELS[step];
@@ -1954,11 +2386,14 @@
   }
 
   // Each screen saves its own answers as its own revision, so a second
-  // adult joining mid-way carries on from where the first got to.
+  // adult joining mid-way carries on from where the first got to. Step 1
+  // settles the period rather than an answer inside it, so it has nothing
+  // to write.
   async function saveStep(n) {
-    if (n === 1) return saveIntake({ night_tags: answers.night_tags, guest_counts: answers.guest_counts });
-    if (n === 2) return saveIntake({ packed_lunch_days: answers.packed_lunch_days });
-    if (n === 3) return saveIntake({ moods: answers.moods, cuisines: answers.cuisines });
+    if (n === 2) return saveIntake({ night_tags: answers.night_tags, guest_counts: answers.guest_counts });
+    if (n === 3) return saveIntake({ packed_lunch_days: answers.packed_lunch_days });
+    if (n === 4) return saveIntake({ moods: answers.moods, cuisines: answers.cuisines });
+    if (n === 5) return saveIntake({ freeform: $('freeform').value.trim() });
     return null;
   }
 
@@ -1978,56 +2413,142 @@
     return res.json();
   }
 
-  // ---------- drafting progress (streamed) ----------
-  // Swaps Q1/Q2 for a running list of days as the model plans them, in
-  // place of a single ~30-second spinner. See the "Make chat responses
-  // faster" ticket: the wait itself isn't shorter, but something real
-  // shows up within a couple of seconds instead of a blank button.
-  // The rotating waiting line beside the spinner (static/waiting-lines.js),
-  // the same component onboarding's first-week reveal uses. Held here so
-  // both the success and the failure path can stop it.
-  var draftWaiter = null;
+  // ---------- the drafting screen ----------
+  // The status line, a day at a time: "Drafting Sunday…" → "Drafting
+  // Monday…" → … The stream carries one "day" frame per meal the model
+  // decides, each with its date (main._stream_week_generation), and the
+  // line follows those — forward only, so a frame for Tuesday after one
+  // for Wednesday moves nothing. A stream that is quiet (the frames can
+  // arrive in a burst at the end when something between here and the
+  // server buffers the response — the line used to sit on one sentence
+  // for the whole wait) still moves: its own clock advances one day
+  // every EXPECTED_DRAFT_MS / dayCount and stops on the last day. A real
+  // frame resets that clock from where it lands.
+  function draftDayLine(dates, expectedMs, paint) {
+    var idx = -1;
+    var timer = null;
+    var perDay = dates.length ? Math.max(1500, Math.round(expectedMs / dates.length)) : expectedMs;
+    function show(i) {
+      if (i <= idx || i >= dates.length) return;
+      idx = i;
+      paint('Drafting ' + weekdayName(dates[idx]) + '…');
+    }
+    function arm() {
+      if (timer) clearTimeout(timer);
+      timer = null;
+      if (idx >= dates.length - 1) return;
+      timer = setTimeout(function () { show(idx + 1); arm(); }, perDay);
+    }
+    return {
+      start: function () { show(0); arm(); },
+      sawDate: function (iso) {
+        var i = dates.indexOf(iso);
+        if (i > idx) { show(i); arm(); }
+      },
+      stop: function () { if (timer) clearTimeout(timer); timer = null; },
+      index: function () { return idx; }
+    };
+  }
+  var dayLine = null;
 
-  function stopDraftWaiter() {
-    if (draftWaiter) { draftWaiter.stop(); draftWaiter = null; }
+  function paintDraftStatus(text) {
+    var el = $('draft-status-text');
+    el.textContent = text;
+    el.classList.remove('line-in');
+    void el.offsetWidth;
+    el.classList.add('line-in');
   }
 
-  function showDraftProgress() {
+  // "What I'm using" (board C1): the answers the draft is being built
+  // from, as plain lines — read from the SAVED intake the planner reads,
+  // never from the screen's own state, so a line here is always one the
+  // draft really has. Only answers that were given; an untouched step
+  // adds no line. `weekdayOf` names a date the household's way.
+  var USING_ICONS = {
+    home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path>',
+    bag: '<rect x="4" y="8" width="16" height="11" rx="2"></rect><path d="M9 8V6a3 3 0 0 1 6 0v2"></path><path d="M4 13h16"></path>',
+    pot: '<path d="M4 10h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM2 10h20M8 6c0-2 2-2 2-4M14 6c0-2 2-2 2-4"></path>',
+    star: '<path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"></path>',
+    note: '<path d="M5 4h10l4 4v12H5zM9 12h6M9 16h6"></path>',
+    fresh: '<path d="M12 3v18M3 12h18M6 6l12 12M18 6L6 18"></path>'
+  };
+  var USING_TAG_WORDS = {
+    out: 'nobody home', rush: 'short on time', unrushed: 'got time', guests: 'hosting guests', left: 'leftovers'
+  };
+  function joinWords(items) {
+    if (items.length <= 1) return items[0] || '';
+    if (items.length === 2) return items[0] + ' and ' + items[1];
+    return items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1];
+  }
+  function usingLines(intake, weekdayOf, recentDinners) {
+    var lines = [];
+    var tags = intake.night_tags || {};
+    var guests = intake.guest_counts || {};
+    var dates = Object.keys(tags).concat(Object.keys(guests)).filter(function (d, i, all) { return all.indexOf(d) === i; }).sort();
+    dates.forEach(function (d) {
+      var words = (tags[d] || []).filter(function (t) { return USING_TAG_WORDS[t]; }).map(function (t) { return USING_TAG_WORDS[t]; });
+      var gc = guests[d];
+      var extra = gc ? (gc.adults || 0) + (gc.children || 0) : 0;
+      if (extra) words.push('+' + extra + ' at the table');
+      if (words.length) lines.push({ icon: 'home', text: weekdayOf(d) + ' — ' + words.join(', ') });
+    });
+    var packed = (intake.packed_lunch_days || []).slice().sort().map(weekdayOf);
+    if (packed.length) {
+      lines.push({ icon: 'bag', text: (packed.length === 1 ? 'Lunch on the go ' : 'Lunches on the go ') + joinWords(packed) });
+    }
+    var moods = (intake.moods || []).filter(function (m) { return m !== SURPRISE_MOOD; });
+    var cuisines = intake.cuisines || [];
+    if ((intake.moods || []).indexOf(SURPRISE_MOOD) !== -1) {
+      lines.push({ icon: 'star', text: cuisines.length ? 'Surprise me — leaning ' + joinWords(cuisines) : 'Surprise me' });
+    } else if (moods.length || cuisines.length) {
+      lines.push({ icon: 'pot', text: moods.concat(cuisines).join(', ') });
+    }
+    var note = (intake.freeform || '').trim();
+    if (note) lines.push({ icon: 'note', text: '“' + note + '”' });
+    if (recentDinners) lines.push({ icon: 'fresh', text: 'No dinner you had last week' });
+    return lines;
+  }
+  function usingRowHtml(line) {
+    return '<div class="using-row"><div class="using-icon">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      USING_ICONS[line.icon] + '</svg></div><p class="using-text">' + esc(line.text) + '</p></div>';
+  }
+  function renderUsing(saved) {
+    var lines = usingLines(saved, function (d) {
+      var day = dayFor(d);
+      return day ? day.weekday : weekdayName(d);
+    }, !!(data && data.recent_dinners_on_record));
+    $('using-rows').innerHTML = lines.map(usingRowHtml).join('');
+    $('using').hidden = !lines.length;
+  }
+
+  function showDraftProgress(saved) {
     for (var i = 1; i <= STEP_COUNT; i++) $('q' + i).hidden = true;
-    
-    $('back').hidden = true;
+    // Nothing to press while drafting: the foot goes, the bars go, and
+    // the crumb is "‹ Plan" again — leaving is fine, the draft still lands.
+    $('footer').hidden = true;
+    $('progress').hidden = true;
+    $('eyebrow').textContent = '';
+    $('leave').innerHTML = '&lsaquo; Plan';
+    document.body.classList.add('drafting');
     var section = $('draft-progress');
     section.hidden = false;
     section.classList.remove('done');
-    $('draft-status-text').textContent = 'Getting started…';
-    $('draft-days').textContent = '';
-    stopDraftWaiter();
-    if (window.PomonaWaiting) {
-      draftWaiter = window.PomonaWaiting.startWaitingLines($('draft-status-text'), { stage: 'reading' });
-    }
+    $('draft-eyebrow').textContent = periodRangeLabel(weekStart, dayCount);
+    renderUsing(saved || {});
+    window.scrollTo(0, 0);
+    if (dayLine) dayLine.stop();
+    dayLine = draftDayLine(data.days.map(function (d) { return d.date; }), EXPECTED_DRAFT_MS, paintDraftStatus);
+    dayLine.start();
   }
 
-  function addDraftDay(day) {
-    var row = document.createElement('div');
-    row.className = 'draft-day';
-    var check = document.createElement('span');
-    check.className = 'draft-day-check';
-    check.setAttribute('aria-hidden', 'true');
-    check.textContent = '✓';
-    var text = document.createElement('span');
-    text.className = 'draft-day-text';
-    var label = document.createElement('span');
-    label.className = 'draft-day-label';
-    var dateLabel = day.date || '';
-    try {
-      dateLabel = new Date(day.date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long' });
-    } catch (e) { /* keep the raw date string */ }
-    label.textContent = dateLabel + (day.slot ? ' · ' + day.slot : '') + ' ';
-    text.appendChild(label);
-    text.appendChild(document.createTextNode(day.meal_name || day.category || ''));
-    row.appendChild(check);
-    row.appendChild(text);
-    $('draft-days').appendChild(row);
+  function hideDraftProgress() {
+    if (dayLine) dayLine.stop();
+    dayLine = null;
+    $('draft-progress').hidden = true;
+    document.body.classList.remove('drafting');
+    $('footer').hidden = false;
+    $('progress').hidden = false;
   }
 
   // Reads the streaming generate endpoint (Server-Sent Events) by hand
@@ -2055,16 +2576,9 @@
       });
       if (!dataLines.length) return;
       var body = JSON.parse(dataLines.join('\n'));
-      if (eventName === 'status') {
-        // The server sends one constant message here; what it really
-        // signals is "the request landed, context is being assembled",
-        // which is what the 'reading' lines say. The plain message stays
-        // as the fallback when the helper isn't loaded.
-        if (draftWaiter) draftWaiter.setStage('reading');
-        else $('draft-status-text').textContent = body.message || 'Working on it…';
-      } else if (eventName === 'day') {
-        if (draftWaiter) draftWaiter.setStage('filling');
-        addDraftDay(body);
+      if (eventName === 'day') {
+        // One frame per meal, each with its date: the line moves to that day.
+        if (dayLine && body && body.date) dayLine.sawDate(body.date);
       } else if (eventName === 'done') {
         plan = body;
       } else if (eventName === 'error') {
@@ -2072,6 +2586,8 @@
         err.status = body.status;
         throw err;
       }
+      // 'status' is one constant message ("the request landed"); the day
+      // line already says more than it would.
     }
 
     while (true) {
@@ -2083,11 +2599,9 @@
       for (var i = 0; i < frames.length; i++) handleFrame(frames[i]);
     }
     if (!plan) throw new Error('generate failed');
-    // Stop before writing the final line, or the next rotation would
-    // overwrite it four seconds later.
-    stopDraftWaiter();
+    if (dayLine) dayLine.stop();
     $('draft-progress').classList.add('done');
-    $('draft-status-text').textContent = 'Your week is ready.';
+    paintDraftStatus('Your week is ready.');
     return plan;
   }
 
@@ -2096,20 +2610,22 @@
   // (Emily, 2026-09-13, on her phone: "there's no 'back option out of the
   // plan' — you can only exit the process by approving the week"). This
   // page has no tab bar by design (see the note at the top), and on an
-  // installed PWA there is no browser chrome either, so until now the only
-  // door on it was "Draft my week". The "‹ Plan" crumb is that door: one,
-  // named for its parent (nav v2 rule 1), on every screen here including
-  // the drafting one — a plain navigation to the Plan tab, never
-  // history.back().
+  // installed PWA there is no browser chrome either. The "‹ Plan" crumb is
+  // the door: one, named for its parent (nav v2 rule 1), on the first
+  // step and the drafting screen — a plain navigation to the Plan tab,
+  // never history.back(). On the steps between, the same crumb is "‹ Back"
+  // (crumbTap), and leaving from there is two taps: back to the first
+  // step, then out.
   //
   // Leaving is not cancelling, and it approves nothing. The answers given
-  // so far stay: every screen's Next already writes its own revision, and
-  // this writes the current screen's on the way out (keepalive, so the
-  // request outlives the page), so coming back carries on from here — the
-  // same join the second adult gets. A week already drafting keeps
-  // drafting on the server (the generation runs on its own thread, see
-  // main._stream_week_generation) and lands as a DRAFT, on the Plan tab,
-  // with nothing bought and nothing scheduled until it is approved there.
+  // so far stay: every screen's Continue already writes its own revision,
+  // Back writes the screen it leaves (goBack), and this writes whatever
+  // changed on the way out (keepalive, so the request outlives the page),
+  // so coming back carries on from here — the same join the second adult
+  // gets. A week already drafting keeps drafting on the server (the
+  // generation runs on its own thread, see main._stream_week_generation)
+  // and lands as a DRAFT, on the Plan tab, with nothing bought and nothing
+  // scheduled until it is approved there.
   var answersAtLoad = '';
   function answersSnapshot() {
     return JSON.stringify(answers) + '\n' + $('freeform').value.trim();
@@ -2117,21 +2633,20 @@
 
   function leavePayload() {
     if (!$('draft-progress').hidden) return null;   // already saved, already drafting
+    if (!data) return null;                          // never got past "Starting when?"
     // Nothing changed since the screen opened — including a prefilled set
-    // from a joined intake or an earlier draft — so there is nothing to
-    // write, and no new revision to make the next visit narrate.
+    // from a joined intake, an earlier draft or what Pomona already knew —
+    // so there is nothing to write, and no new revision to make the next
+    // visit narrate.
     if (answersSnapshot() === answersAtLoad) return null;
-    if (step === 1) {
-      var noted = Object.keys(answers.night_tags).length || Object.keys(answers.guest_counts).length;
-      return noted ? { night_tags: answers.night_tags, guest_counts: answers.guest_counts } : null;
-    }
-    if (step === 2) return answers.packed_lunch_days.length ? { packed_lunch_days: answers.packed_lunch_days } : null;
-    if (step === 3) {
-      return (answers.moods.length || answers.cuisines.length)
-        ? { moods: answers.moods, cuisines: answers.cuisines } : null;
-    }
-    var freeform = $('freeform').value.trim();
-    return freeform ? { moods: answers.moods, cuisines: answers.cuisines, freeform: freeform } : null;
+    // Everything, not the current screen's half: Back never loses an
+    // answer, so a mood chosen on step 4 and left from step 2 goes too.
+    return {
+      night_tags: answers.night_tags, guest_counts: answers.guest_counts,
+      packed_lunch_days: answers.packed_lunch_days,
+      moods: answers.moods, cuisines: answers.cuisines,
+      freeform: $('freeform').value.trim()
+    };
   }
 
   function leaveFlow() {
@@ -2144,17 +2659,54 @@
     location.href = '/week';
   }
 
+  // Back saves the screen it leaves, so nothing said there is lost to a
+  // later "‹ Plan" from an earlier step. Best effort, like leaving.
+  function goBack() {
+    if (step <= 1) return;
+    if (data && answersSnapshot() !== answersAtLoad) {
+      saveStep(step).catch(function () { /* the next Continue writes it again */ });
+    }
+    showStep(step - 1);
+  }
+
+  function crumbTap() {
+    if (step === 1 || drafting) leaveFlow();
+    else goBack();
+  }
+
+  // Leaving "Starting when?" is the one step that may have to wait: the
+  // period's prefill was started on load, and only a period changed here
+  // fetches again. A fetch that fails shows the real-failure state with
+  // its two doors rather than a step with nothing on it.
+  async function ensureLoaded() {
+    try {
+      await loadPeriod();
+      return true;
+    } catch (err) {
+      console.warn('Plan-the-week prefill failed:', err);
+      $('flow').hidden = true; $('footer').hidden = true; $('failed').hidden = false;
+      return false;
+    }
+  }
+
   async function advance() {
+    if (drafting) return;
     var btn = $('cta');
     btn.disabled = true;
+    $('skip').disabled = true;
     try {
+      if (step === 1) {
+        if (!(await ensureLoaded())) return;
+        showStep(2);
+        return;
+      }
       if (step < STEP_COUNT) {
         await saveStep(step);
-        btn.disabled = false;
         showStep(step + 1);
         return;
       }
 
+      drafting = true;
       btn.textContent = 'Drafting your week…';
       var saved = await saveIntake({
         moods: answers.moods,
@@ -2171,44 +2723,43 @@
           body: JSON.stringify({ field: 'cuisine_preferences', value: answers.cuisines })
         }).catch(function () { /* the week still plans correctly without this */ });
       }
-      showDraftProgress();
+      showDraftProgress(saved);
       await streamGenerate({ intake_id: saved.intake_id, day_count: dayCount });
       // Land on the week that was just drafted, by name. Without the week
-      // in the URL, Meals asks for "the current plan" and gets whichever
+      // in the URL, Plan asks for "the current plan" and gets whichever
       // week contains today — so planning NEXT week ended with the freshly
       // drafted week invisible behind this one.
       location.href = '/week?drafted=' + encodeURIComponent(weekStart);
     } catch (err) {
       console.warn('Plan-the-week step failed:', err);
       // A failure partway through drafting must not strand the household
-      // on a spinner that will never resolve — back to Q2 so "draft my
-      // week" is tappable again.
-      stopDraftWaiter();
+      // on a spinner that will never resolve — back to the last step so
+      // "Draft my week" is tappable again.
+      drafting = false;
       if (!$('draft-progress').hidden) {
-        $('draft-progress').hidden = true;
-        $('q' + STEP_COUNT).hidden = false;
-        $('back').hidden = false;
+        hideDraftProgress();
+        showStep(STEP_COUNT);
       }
-      btn.disabled = false;
-      paintCta();
       alert('I couldn’t save that just now — try again in a moment.');
+    } finally {
+      if (!drafting) { btn.disabled = false; $('skip').disabled = false; paintCta(); }
     }
   }
 
   $('cta').addEventListener('click', advance);
   $('skip').addEventListener('click', advance);
-  $('back').addEventListener('click', function () { if (step > 1) showStep(step - 1); });
-  $('leave').addEventListener('click', leaveFlow);
-  // The failed state's own two doors. Retry re-runs load() as-is — by the
-  // time this is visible, weekStart is already resolved (a missing ?week
-  // is settled, one way or another, before load() can fail this way — see
-  // resolveWeekStart), so this only ever repeats the one fetch that
-  // actually failed. "‹ Plan" is a plain navigation, not leaveFlow: a
-  // failed load never reached the point of having answers to carry back.
-  $('failed-retry').addEventListener('click', function () {
+  $('surprise').addEventListener('click', chooseSurprise);
+  $('leave').addEventListener('click', crumbTap);
+  // The failed state's own two doors. Retry re-runs the one fetch that
+  // failed — the period's prefill — and carries on to the days. "‹ Plan"
+  // is a plain navigation, not leaveFlow: a failed load never reached the
+  // point of having answers to carry back.
+  $('failed-retry').addEventListener('click', async function () {
     $('failed').hidden = true;
     $('loading').hidden = false;
-    load();
+    var ok = await ensureLoaded();
+    $('loading').hidden = true;
+    if (ok) { $('flow').hidden = false; $('footer').hidden = false; showStep(2); }
   });
   $('failed-leave').addEventListener('click', function () { location.href = '/week'; });
   $('freeform').addEventListener('input', paintCta);
@@ -2216,7 +2767,7 @@
   $('day-done').addEventListener('click', closeDaySheet);
   $('day-sheet').addEventListener('click', function (e) { if (e.target === $('day-sheet')) closeDaySheet(); });
 
-  // The trips gateway and its sheet.
+  // The away card and its sheet.
   $('away-gate').addEventListener('click', openAwaySheet);
   $('away-close').addEventListener('click', closeAwaySheet);
   $('away-cancel').addEventListener('click', closeAwaySheet);
