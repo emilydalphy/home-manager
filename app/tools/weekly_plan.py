@@ -468,9 +468,15 @@ def plan_slot_open(
     }
 
 
-def drop_dish_from_day(weekly_plan_id: int, entry_id: int) -> dict:
+def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | None = None) -> dict:
     """
     Take one day away from a dish, and hand that slot back as a question.
+
+    `open_reason` is the question's own sentence. Left unset it is the
+    stepper's ("You cut … back, so this one is yours to fill"); the
+    allergen sweep (tools.allergen_gate.sweep_plan) passes its own, because
+    a slot opened over an allergy has to say so rather than claim the
+    household cut something back.
 
     The Review screen's stepper (Emily's approved design, 2026-09-09): a
     dish covering four mornings should come down to three without spending
@@ -634,7 +640,7 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int) -> dict:
             ),
         }
 
-    open_reason = f"You cut {dish} back, so this one is yours to fill."
+    open_reason = (open_reason or "").strip() or f"You cut {dish} back, so this one is yours to fill."
     # ONE connection, ONE commit, for all four steps — the same shape and
     # for the same reason as retire_overlapping_plans (2026-09-06). These
     # used to be four separate commits, and the gap between the delete and

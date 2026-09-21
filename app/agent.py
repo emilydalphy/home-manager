@@ -17,6 +17,7 @@ import threading
 import time
 from anthropic import Anthropic, APIConnectionError, APIStatusError, APITimeoutError
 from . import calendar_feed, tools
+from .tools import allergen_gate as _allergen_gate
 from .tools import plan_quality
 from .tools import voice as _voice
 
@@ -1768,7 +1769,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "propose_plan_changes",
-        "description": "Offer changes to the week as a CARD the household saves — nothing is written until they tap Save changes. Use this INSTEAD of swap_meal_in_plan/plan_meal whenever the subject block says the turn is about the week (kind weekly_plan). One row per slot: action 'change' with one candidate (a plain change: what was → what would be), 'change' with two to four candidates (things to tap — use this when they said 'something else' or asked for options), or 'keep' (a night they told you to leave, shown as Kept). Each candidate is a full dish the way submit_swap/add_recipe would write it — meal_name, a one-line reason (under ten words, warm, plain, why it fits), ingredients in store-bought units, instructions, food_groups, main_protein, prep/cook minutes — so it is cookable and shoppable the moment it is saved. The result echoes the card; reply with ONE line that matches it (the consequence if there is one), never a list of the rows. A row's `problem` means that slot has nothing to change: use plan_meal for an open or empty night instead. A row can be for a slot that was already proposed this conversation: a new call replaces the old card.",
+        "description": "Offer changes to the week as a CARD the household saves — nothing is written until they tap Save changes. Use this INSTEAD of swap_meal_in_plan/plan_meal whenever the subject block says the turn is about the week (kind weekly_plan). One row per slot: action 'change' with one candidate (a plain change: what was → what would be), 'change' with two to four candidates (things to tap — use this when they said 'something else' or asked for options), or 'keep' (a night they told you to leave, shown as Kept). Each candidate is a full dish the way submit_swap/add_recipe would write it — meal_name, a one-line reason (under ten words, warm, plain, why it fits), ingredients in store-bought units, instructions, food_groups, main_protein, prep/cook minutes — so it is cookable and shoppable the moment it is saved. The result echoes the card; reply with ONE line that matches it (the consequence if there is one), never a list of the rows. A row's `problem` means that slot has nothing to change: use plan_meal for an open or empty night instead. A candidate with a listed allergen or must-avoid in its ingredients is never shown: it comes back under `unsafe` (or as the row's `problem` when none survived) naming the dish and the ingredient — call again with a dish that doesn't have it, outside the cuisine they asked for if that's what it takes, and say so in your line. A row can be for a slot that was already proposed this conversation: a new call replaces the old card.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -2868,6 +2869,13 @@ actual effort level of what they are.
 a light lean toward seasonally appropriate ingredients and dishes (soups and roasting in winter, \
 grilling and salads in summer) when nothing else already decides the choice; it never overrides \
 a stated preference, a constraint, or the variety/novelty rules elsewhere in this list.
+- `must_not_contain` is absolute: the household's allergies and must-avoids, one line per \
+person, as they wrote them. Nothing you send may contain any of it — not in the dish, not in a \
+salsa or a side served with it, not under a "-free" name. The people it names EAT these meals. \
+If the cuisine or protein they asked for leaves you no safe dish, go outside it and say so in \
+that slot's reasoning ("no Mexican lunch without pineapple, so a Greek one") — never send a \
+dish that has the thing with a note on it. Every dish is checked against its ingredient list \
+before it is written, and a dish that fails is thrown away.
 - Respect every listed dietary restriction and allergy without exception. Avoid every \
 listed dislike.
 - household_facts are the household's own notes about themselves (the "What we know" screen). \
@@ -3384,6 +3392,10 @@ but stay close to this shape — it's a reasonable default, not a rigid rule). A
 own standalone thing (e.g. "hummus and carrots," "trail mix," "apple with peanut butter") — \
 distinct from treat (a dessert-y indulgence) and dip (a sauce/dip meant to accompany a meal), not \
 just a smaller version of either. Guidelines:
+- `must_not_contain` is absolute: the household's allergies and must-avoids, one line per \
+person, as they wrote them. Nothing you send may contain any of it — not in the item, not in a \
+dip or a side meant to go with it, not under a "-free" name. Every item is checked against its \
+ingredient list before it is written, and one that fails is thrown away.
 - Respect every listed dietary restriction and allergy without exception. Avoid every listed \
 dislike.
 - household_facts are the household's own notes about themselves (the "What we know" screen). \
@@ -4216,6 +4228,14 @@ def _generate_weekly_plan(
         "week_start_date": content_start_date,
         "day_count": day_count,
         "constraints_notes": constraints_notes,
+        # The allergies and must-avoids as HARD EXCLUSIONS, one line per
+        # person, stated in their own key rather than left for the model
+        # to assemble out of members[].dietary_restrictions and the hard
+        # facts — the same `must_not_contain` the swap prompt states, so
+        # every door that picks food is told the same thing the same way.
+        # Telling is not preventing: allergen_gate.split_safe checks every
+        # dish that comes back before a word of it is written.
+        "must_not_contain": tools.swap_hard_exclusions(),
         "household_memory": effective_memory,
         # The household's own What-we-know notes (the `facts` table behind
         # the People/Taste/Rhythm tabs). These used to reach chat and the
@@ -4353,6 +4373,24 @@ def _generate_weekly_plan(
         )
     _honest_meal_names(items)
 
+    # Never draft a dish somebody at the table can't have (Emily,
+    # 2026-09-20). Every dish is matched on its NAME and its INGREDIENT
+    # LIST against the household's allergies and must-avoids BEFORE it is
+    # written; a clash is held back here and re-picked below, once the
+    # safe part of the week is on the plan to pick around. This used to
+    # happen only after the whole week was written, as a warning card the
+    # household could wave through — see app/tools/allergen_gate.py.
+    hard_avoidances = _allergen_gate.hard_avoidances()
+    items, held_back = _allergen_gate.split_safe(items, hard_avoidances)
+    if held_back and not items:
+        # Every dish the model sent clashed. Nothing to write and nothing
+        # to pick around; the same clean failure an empty generation gets.
+        raise ValueError(
+            "Every dish in this week's draft had something someone in the household can't "
+            "have. Nothing was saved; try generating the week again."
+        )
+    repick_budget = _allergen_gate.CallBudget()
+
     # The period is written down, not left implied — including for an
     # ordinary Monday week, where content_start_date == week_start_date and
     # day_count == 7. Storing it even when it matches the old default is what
@@ -4485,9 +4523,26 @@ def _generate_weekly_plan(
                     "were dropped: %s",
                     content_start_date, day_count, len(out_of_scope), ", ".join(out_of_scope),
                 )
+            # The slots held back above, each re-picked through the swap's
+            # own picker with the clashing dish on `avoid` — or handed back
+            # as an open question that says what couldn't be done. Written
+            # BEFORE _finish_week_slots so its gap audit finds the slot
+            # settled rather than filling it with a generic question.
+            for held in held_back:
+                if (held["item"].get("date") or "") not in in_scope:
+                    continue
+                try:
+                    _allergen_gate.repick_slot(plan_id, held, repick_budget, avoidances=hard_avoidances)
+                except Exception:
+                    # Logged, and the slot is left to the gap audit below,
+                    # which opens it as a question. Never the clashing dish.
+                    logger.exception(
+                        "Re-picking %s %s around an allergen failed; leaving it as an open question",
+                        held["item"].get("date"), held["item"].get("slot"),
+                    )
             _finish_week_slots(
                 plan_id, content_start_date, intake, effective_memory, day_count, skip_days=skip_days,
-                context=context,
+                context=context, repick_budget=repick_budget,
             )
 
         if intake:
@@ -4629,7 +4684,7 @@ def _log_plan_conflicts(plan_id: int, week_start_date: str) -> None:
 def _finish_week_slots(
     plan_id: int, week_start_date: str, intake: dict | None,
     household_memory: dict, day_count: int = 7, skip_days: int = 0,
-    context: dict | None = None,
+    context: dict | None = None, repick_budget=None,
 ) -> None:
     """
     Make the 21-slot guarantee true rather than merely asked for.
@@ -4839,11 +4894,23 @@ def _finish_week_slots(
     if context is not None:
         plan_quality.check_and_log(plan_id, context)
 
+    # The silent last line of defence (allergen_gate.sweep_plan): the
+    # plate pass above can attach a side, and the snack repair can move a
+    # dish, and neither was matched against the household's allergies on
+    # the way in. A side that carries one comes off the plate; a dish that
+    # still clashes is re-picked or handed back as an open question. It
+    # fixes and never asks — the household is never shown a dish they
+    # can't have with a button to keep it (Emily, 2026-09-20).
+    try:
+        _allergen_gate.sweep_plan(plan_id, budget=repick_budget)
+    except Exception:
+        logger.exception("Allergen sweep failed for plan %s; the week stands as generated", plan_id)
+
     # LAST, deliberately. The allergy/dietary check has to describe the week
     # as it finally stands — after the out-night and zero-count passes, the
-    # slot-needs pass, the open-slot audit and the quality pass above have
-    # all had their say. Anything that runs after this is a change the
-    # warning didn't see.
+    # slot-needs pass, the open-slot audit, the quality pass and the
+    # allergen sweep above have all had their say. Anything that runs after
+    # this is a change the log didn't see.
     _log_plan_conflicts(plan_id, week_start_date)
 
 
