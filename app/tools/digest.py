@@ -34,6 +34,17 @@ every ``date.today()``.
 Numbers are keyed by member row (``members.phone``,
 ``members.morning_text_on``), read for adults only, so the per-adult login
 being built on another branch composes with this rather than replacing it.
+
+The EVENING NUDGE (Loop Board, 2026-09-21) rides the same path: one line at
+the start of the household's dinner window — "Tonight: lemon chicken &
+orzo — 35 min. Tap to start." — to the same numbers, unless the person
+switched it off (``members.evening_nudge_on``). ``build_evening_nudge``
+reads tonight off today_moves exactly as the morning text does;
+``run_evening_nudges_once`` is the pass the same in-process loop makes;
+``members.evening_nudge_sent_on`` (the household's local date) is what
+keeps a restart at 18:05 from sending twice. There is no push channel yet:
+``send_evening_nudge`` is the one seam a push sender slots into when the
+PWA / App Store work lands, and until then it is a text.
 """
 from __future__ import annotations
 
@@ -45,16 +56,19 @@ import re
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 from typing import Callable
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from ..db import get_conn
 from ._shared import PUBLIC_BASE_URL, household_id, use_household
+from . import attendance as _attendance
 from . import attention as _attention
 from . import cooker as _cooker
 from . import moves as _moves
 from . import notifications as _notifications
+from . import rhythm as _rhythm
+from . import slot_needs as _slot_needs
 
 logger = logging.getLogger("home_manager")
 
@@ -149,7 +163,8 @@ def _adult_rows(conn) -> list:
     # rather than silently left off the list.
     return conn.execute(
         """
-        SELECT id, name, phone, morning_text_on FROM members
+        SELECT id, name, phone, morning_text_on, evening_nudge_on, evening_nudge_sent_on
+        FROM members
         WHERE household_id = ? AND LOWER(age_group) IN ('adult', '') AND TRIM(name) != ''
         ORDER BY id
         """,
@@ -281,11 +296,14 @@ def set_morning_text_for_member(
 
 # ---------- the digest ----------
 
-def _app_link() -> str:
-    """Into Today. HOME_MANAGER_URL is the report's name for the live app;
+def _app_link(tab: str = "") -> str:
+    """Into Today, or into one tab by its path ("kitchen" for Cook — the
+    shell routes /kitchen to the Cook tab and nothing deeper: there is no
+    per-meal query the link could carry, and Cook's root already leads
+    with tonight). HOME_MANAGER_URL is the report's name for the live app;
     PUBLIC_BASE_URL is the app's own. Either; neither means no link."""
     base = (os.environ.get("HOME_MANAGER_URL") or PUBLIC_BASE_URL or "").strip().rstrip("/")
-    return (base + "/") if base else ""
+    return (base + "/" + tab.strip("/")) if base else ""
 
 
 def _tidy(text: str) -> str:
@@ -633,6 +651,275 @@ def run_morning_texts_once(
                 # theirs. Nothing was recorded for it, so the next pass
                 # tries again.
                 logger.exception("Morning text pass failed for household %s", hid)
+    return results
+
+
+# ---------- the evening nudge ----------
+#
+# Loop Board "Evening cook nudge" (2026-09-21). The morning text says what
+# the day needs; this is the one line at the moment the cook is due —
+# "Pomona, hold this" carried to the stove. It is deliberately the same
+# path as the morning text (same numbers, same channel, same loop), so
+# nothing here is a second notification system; when push lands it slots
+# into send_evening_nudge below and this module doesn't otherwise change.
+
+# When the nudge goes: the START of the household's dinner window
+# (rhythm.dinner_window), as against defrost._DINNER_CLOCK_BY_WINDOW, which
+# is when dinner LANDS and is what the plan counts backward from. A nudge
+# at the landing time is a nudge after the cook should have begun. 'all_over'
+# and an unanswered question have no window to start, so they take the
+# middle of the road — stated here as a default, not a household fact.
+EVENING_NUDGE_CLOCK_BY_WINDOW = {
+    "5_6ish": time(17, 0),
+    "6_8": time(18, 0),
+    "later": time(19, 0),
+}
+EVENING_NUDGE_DEFAULT_CLOCK = time(17, 30)
+
+# How long after the window opens the loop will still send. Ninety minutes
+# covers a container that was down at the hour; past that the cook is
+# under way or the night has moved on, and "Tap to start" at half past
+# eight is noise. Nothing is recorded for a night that never sent — see
+# _run_household_evening for why.
+EVENING_NUDGE_LATE_WINDOW_MINUTES = 90
+
+
+def evening_nudge_clock(dinner_window: str | None) -> time:
+    """The clock the nudge goes at for one dinner_window answer."""
+    return EVENING_NUDGE_CLOCK_BY_WINDOW.get((dinner_window or "").strip()) or EVENING_NUDGE_DEFAULT_CLOCK
+
+
+def _household_dinner_window() -> str | None:
+    try:
+        return _rhythm.get_household_rhythm().get("dinner_window")
+    except Exception:
+        logger.exception("Evening nudge: the rhythm could not be read; using the default clock")
+        return None
+
+
+def tonight_for_nudge(now_local: datetime) -> dict:
+    """
+    What the nudge would be about, and why not when it wouldn't.
+
+    Returns {"dinner": move | None, "first": move | None, "reason": str}.
+    `reason` is '' when there is a nudge to send, else the first thing that
+    rules it out: 'no_dinner' (nothing planned, a night off, an open slot,
+    a leftovers-only night), 'away' (nobody home for dinner — the
+    attendance answer or an 'away' need, whichever said so), 'done'
+    (tonight's dinner already ticked) or 'started' (the cook is under way).
+    `first` is an undone fridge move or prep step on today's timeline, when
+    there is one — the thing to do before the dish.
+
+    Read entirely off today_moves and the day's own tags, so this never
+    says anything Today wouldn't also show.
+    """
+    day = now_local.date()
+    iso = day.isoformat()
+    try:
+        att = _attendance.get_slot_attendance(iso, "dinner")
+        need = _slot_needs.get_slot_need(iso, "dinner").get("need")
+    except Exception:
+        logger.exception("Evening nudge: tonight's attendance could not be read; assuming everyone's home")
+        att, need = {"nobody_home": False}, "normal"
+    if att.get("nobody_home") or need == "away":
+        return {"dinner": None, "first": None, "reason": "away"}
+
+    payload = _moves.today_moves(day=day, now=now_local)
+    moves = payload["moves"]
+    dinner = next((m for m in moves if m["kind"] == "cook" and m["slot"] == "dinner"), None)
+    if dinner is None:
+        # A reheat night is a line, never the card (Emily, 2026-09-08) —
+        # and never a nudge to start cooking either.
+        return {"dinner": None, "first": None, "reason": "no_dinner"}
+    if dinner["done"]:
+        return {"dinner": dinner, "first": None, "reason": "done"}
+    if dinner.get("started_at"):
+        return {"dinner": dinner, "first": None, "reason": "started"}
+    first = next((m for m in moves if m["kind"] == "fridge" and not m["done"]), None) \
+        or next((m for m in moves if m["kind"] == "prep" and not m["done"]), None)
+    return {"dinner": dinner, "first": first, "reason": ""}
+
+
+def build_evening_nudge(now_local: datetime | None = None) -> str | None:
+    """
+    The nudge, or None when tonight doesn't want one. One breath:
+
+        Tonight: lemon chicken & orzo — 35 min. Tap to start. <link>
+        Move the chicken thighs to the fridge first — then lemon chicken & orzo. <link>
+
+    The dish is named as stored; the minutes are the plan's own total
+    (cooker.cook_total_minutes, via the move) and are left out when the
+    recipe has none. The link opens Cook, whose root leads with tonight.
+    `now_local` is the household's clock, as for build_morning_text.
+    """
+    now_local = now_local if now_local is not None else _cooker.household_now()
+    if now_local.tzinfo is not None:
+        now_local = now_local.replace(tzinfo=None)
+    tonight = tonight_for_nudge(now_local)
+    dinner = tonight["dinner"]
+    if dinner is None or tonight["reason"]:
+        return None
+    dish = _tidy(dinner["title"])
+    first = tonight["first"]
+    if first is not None:
+        text = f"{_tidy(first['title'])} first — then {dish}."
+    else:
+        minutes = int(dinner.get("duration_min") or 0)
+        text = f"Tonight: {dish} — {minutes} min. Tap to start." if minutes else f"Tonight: {dish}. Tap to start."
+    link = _app_link("kitchen")
+    return f"{text} {link}" if link else text
+
+
+def send_evening_nudge(member: dict, text: str) -> dict:
+    """
+    THE SEAM. One nudge to one person, however it gets there. Today that
+    is a text to members.phone through the morning text's own channel
+    (send_digest → send_sms); when push exists, this is the one function
+    that learns to prefer it — the loop, the builder and the settings
+    don't change. `member` is {member_id, name, phone}; returns
+    {status, detail} and never raises (send_digest guarantees that).
+    """
+    return send_digest("text", member.get("phone") or "", text)
+
+
+def get_evening_nudge_settings() -> dict:
+    """
+    Who gets the nudge, and when. Per adult, `on` is their own switch
+    (members.evening_nudge_on, on by default) and `active` is whether one
+    will actually go: their switch AND the morning text on with a number
+    — the nudge rides on the morning text's number and never has one of
+    its own. `clock` is 'HH:MM' local, from the dinner window.
+    """
+    conn = get_conn()
+    hh = _household_row(conn)
+    adults = _adult_rows(conn)
+    conn.close()
+    window = _household_dinner_window()
+    clock = evening_nudge_clock(window)
+    return {
+        "clock": f"{clock.hour:02d}:{clock.minute:02d}",
+        "dinner_window": window or "",
+        "timezone": hh["timezone"],
+        "adults": [
+            {
+                "member_id": r["id"],
+                "name": r["name"],
+                "on": bool(r["evening_nudge_on"]),
+                "morning_on": bool(r["morning_text_on"]) and bool(r["phone"]),
+                "active": bool(r["evening_nudge_on"]) and bool(r["morning_text_on"]) and bool(r["phone"]),
+            }
+            for r in adults
+        ],
+    }
+
+
+def set_evening_nudge_for_member(member_id: int, on: bool) -> dict:
+    """
+    Flip one adult's evening nudge, by member row — the Preferences sheet's
+    row beside the morning text's. Same guard as set_morning_text_for_member:
+    the id must be an adult in THIS household.
+    """
+    conn = get_conn()
+    if not any(r["id"] == member_id for r in _adult_rows(conn)):
+        conn.close()
+        raise ValueError("I don't have that person down as an adult here.")
+    conn.execute("UPDATE members SET evening_nudge_on = ? WHERE id = ?", (1 if on else 0, member_id))
+    conn.commit()
+    conn.close()
+    settings = get_evening_nudge_settings()
+    me = next((a for a in settings["adults"] if a["member_id"] == member_id), None)
+    return {
+        "member_id": member_id,
+        "name": me["name"] if me else "",
+        "on": bool(me and me["on"]),
+        "active": bool(me and me["active"]),
+        "clock": settings["clock"],
+        "configured": twilio_configured(),
+    }
+
+
+def _run_household_evening(now_utc: datetime, send: Callable[[dict, str], dict]) -> list[dict]:
+    """
+    One household's evening, already bound with use_household. Returns
+    what it sent (and nothing for a pass that sent nothing).
+
+    Only a send stamps members.evening_nudge_sent_on — a night with no
+    dinner at the hour is NOT stamped, so a dinner planned twenty minutes
+    into the window still gets its nudge on the next pass, and the late
+    window above is what stops the checking. A failed or keyless send IS
+    stamped, exactly as the morning text records and moves on: retrying a
+    refused number every five minutes is not a kindness.
+    """
+    conn = get_conn()
+    hh = _household_row(conn)
+    local_now = now_utc.astimezone(_zone(hh["timezone"]))
+    clock = evening_nudge_clock(_household_dinner_window())
+    due_at = local_now.replace(hour=clock.hour, minute=clock.minute, second=0, microsecond=0)
+    if local_now < due_at or local_now - due_at > timedelta(minutes=EVENING_NUDGE_LATE_WINDOW_MINUTES):
+        conn.close()
+        return []
+    sent_on = local_now.date().isoformat()
+
+    waiting = [
+        r for r in _adult_rows(conn)
+        if r["morning_text_on"] and r["phone"] and r["evening_nudge_on"] and r["evening_nudge_sent_on"] != sent_on
+    ]
+    if not waiting:
+        conn.close()
+        return []
+
+    text = build_evening_nudge(local_now.replace(tzinfo=None))
+    if not text:
+        conn.close()
+        return []
+
+    done: list[dict] = []
+    for r in waiting:
+        result = send({"member_id": r["id"], "name": r["name"], "phone": r["phone"]}, text)
+        status = result.get("status") or "failed"
+        conn.execute("UPDATE members SET evening_nudge_sent_on = ? WHERE id = ?", (sent_on, r["id"]))
+        conn.commit()
+        done.append({"member_id": r["id"], "status": status})
+        if status != "ok":
+            logger.warning(
+                "Evening nudge for household %s member %s: %s (%s)",
+                household_id(), r["id"], status, _redact(result.get("detail") or ""),
+            )
+    conn.close()
+    return done
+
+
+def run_evening_nudges_once(
+    now_utc: datetime | None = None,
+    send: Callable[[dict, str], dict] | None = None,
+) -> list[dict]:
+    """
+    One pass over every household, the evening twin of
+    run_morning_texts_once: the loop in app/main.py calls both on each
+    tick. A household inside its nudge window with an opted-in adult not
+    yet nudged today, and a dinner to start, gets its line.
+
+    `send` is the seam (tests hand in a stub); left out, it is
+    send_evening_nudge — text, and with no Twilio keys a recorded
+    skipped-no-keys rather than a send.
+    """
+    now_utc = now_utc or datetime.now(timezone.utc)
+    if now_utc.tzinfo is None:
+        now_utc = now_utc.replace(tzinfo=timezone.utc)
+    sender = send or send_evening_nudge
+
+    conn = get_conn()
+    households = [r["id"] for r in conn.execute("SELECT id FROM households ORDER BY id").fetchall()]
+    conn.close()
+
+    results: list[dict] = []
+    for hid in households:
+        with use_household(hid):
+            try:
+                for item in _run_household_evening(now_utc, sender):
+                    results.append({"household_id": hid, **item})
+            except Exception:
+                logger.exception("Evening nudge pass failed for household %s", hid)
     return results
 
 

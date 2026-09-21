@@ -480,6 +480,16 @@ _MIGRATIONS = [
     # inferred one.
     ("members", "phone", "TEXT NOT NULL DEFAULT ''"),
     ("members", "morning_text_on", "INTEGER NOT NULL DEFAULT 0"),
+    # Loop Board "Evening cook nudge" (2026-09-21): one line at the start
+    # of the dinner window, to the morning text's number. ON by default —
+    # it only ever goes to someone who already said yes to the morning
+    # text (the loop requires both), so the default is "the same switch"
+    # rather than a second yes. `evening_nudge_sent_on` is the household's
+    # LOCAL date the last nudge went (or was attempted) on, '' for never:
+    # the loop checks it before sending, so a restart inside the window
+    # never nudges twice. See digest.py's evening nudge section.
+    ("members", "evening_nudge_on", "INTEGER NOT NULL DEFAULT 1"),
+    ("members", "evening_nudge_sent_on", "TEXT NOT NULL DEFAULT ''"),
     # Where the household is, for its holidays (app/tools/holidays.py).
     # Both are ASSUMPTIONS for every existing household, the same way the
     # timezone above is: the beta households are in Ontario. Canada is the

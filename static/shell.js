@@ -19220,7 +19220,7 @@
   }
 
 
-  var prefsState = { memory: null, calendar: null, morningText: null, open: false };
+  var prefsState = { memory: null, calendar: null, morningText: null, eveningNudge: null, open: false };
 
   function prefsInvalidate() {
     prefsState.memory = null;
@@ -19730,6 +19730,14 @@
     } catch (err) {
       prefsState.morningText = null;
     }
+    // The evening nudge (2026-09-21) shares the sheet: its own read, so a
+    // failed one leaves the morning rows standing and the nudge rows off.
+    try {
+      var evRes = await fetch('/api/evening-nudge');
+      prefsState.eveningNudge = evRes.ok ? await evRes.json() : null;
+    } catch (err) {
+      prefsState.eveningNudge = null;
+    }
     if (prefsState.open) renderPrefsRows();
     if (morningSheetEl && !morningSheetEl.hidden) renderMorningSheet();
   }
@@ -20001,6 +20009,12 @@
   // an on/off. Numbers are saved by member row — see app/tools/digest.py.
   // Turning it on with no number is refused by the server with a plain
   // sentence, shown in place; nothing here guesses.
+  //
+  // The evening cook nudge (Loop Board, 2026-09-21) lives in the same
+  // sheet: one more switch under each adult, on by default, riding the
+  // morning text's number and the dinner window's hour. It is saved by
+  // its own route (/api/evening-nudge) so a refused number never takes
+  // the nudge's answer down with it.
 
   var morningSheetEl = null;
   var morningScrimEl = null;
@@ -20023,7 +20037,7 @@
         '<span class="kit-sheet-hairline"></span>' +
         '<button type="button" class="kit-sheet-close" id="morning-close" aria-label="Close">&times;</button>' +
       '</div>' +
-      '<p class="prefs-sub">One text each morning with what today needs.</p>' +
+      '<p class="prefs-sub">One text each morning with what today needs, and a nudge when it’s time to cook.</p>' +
       '<div class="morning-body" id="morning-body"></div>';
     document.body.appendChild(morningScrimEl);
     document.body.appendChild(morningSheetEl);
@@ -20034,7 +20048,7 @@
       if (e.key === 'Escape' && morningSheetEl && !morningSheetEl.hidden) closeMorningSheet();
     });
     morningSheetEl.addEventListener('click', function (e) {
-      var toggle = e.target && e.target.closest && e.target.closest('[data-morning-toggle]');
+      var toggle = e.target && e.target.closest && e.target.closest('[data-morning-toggle], [data-evening-toggle]');
       if (toggle) {
         var on = toggle.getAttribute('aria-pressed') !== 'true';
         toggle.setAttribute('aria-pressed', on ? 'true' : 'false');
@@ -20051,10 +20065,18 @@
     var mt = prefsState.morningText;
     if (!mt) { body.innerHTML = '<p class="snw-done">Reading it back…</p>'; return; }
     var adults = mt.adults || [];
+    // The nudge's own read, keyed by member: null (not loaded, or the read
+    // failed) draws no nudge row at all rather than a switch that saves
+    // to nowhere.
+    var ev = prefsState.eveningNudge;
+    var evByMember = {};
+    (ev && ev.adults || []).forEach(function (a) { evByMember[a.member_id] = a; });
+    var evClock = ev && ev.clock ? humanTime(ev.clock) : '';
     body.innerHTML =
       '<label class="snw-label" for="morning-time">When</label>' +
       '<input type="time" id="morning-time" class="snw-input morning-time" value="' + escapeHtml(mt.time || '07:00') + '">' +
       (adults.length ? adults.map(function (a) {
+        var nudge = evByMember[a.member_id];
         return '<div class="morning-adult" data-member-id="' + a.member_id + '">' +
           '<label class="snw-label" for="morning-phone-' + a.member_id + '">' + escapeHtml(a.name) + '</label>' +
           '<div class="morning-adult-row">' +
@@ -20064,6 +20086,15 @@
               (a.on ? 'On' : 'Off') +
             '</button>' +
           '</div>' +
+          (nudge ? '<div class="morning-adult-row morning-evening-row">' +
+            '<span class="morning-evening-text">' +
+              '<span class="morning-evening-title">Evening nudge</span>' +
+              '<span class="morning-evening-sub">' + escapeHtml(evClock ? 'Around ' + evClock + ', when it’s time to cook' : 'When it’s time to cook') + '</span>' +
+            '</span>' +
+            '<button type="button" class="morning-toggle" data-evening-toggle aria-pressed="' + (nudge.on ? 'true' : 'false') + '">' +
+              (nudge.on ? 'On' : 'Off') +
+            '</button>' +
+          '</div>' : '') +
         '</div>';
       }).join('') : '<p class="snw-done">Add who’s in the house first — the text goes to the adults.</p>') +
       (adults.length ? '<button type="button" class="snw-send" id="morning-save">Save</button>' : '') +
@@ -20093,10 +20124,26 @@
         var data = await res.json();
         // Every row is tried — one refused number must not leave the next
         // person's unsaved — and the first problem is what's reported.
-        if (!res.ok) { problem = problem || (data && data.detail) || 'That didn’t save. Try again in a moment.'; continue; }
-        last = data;
+        if (!res.ok) { problem = problem || (data && data.detail) || 'That didn’t save. Try again in a moment.'; }
+        else last = data;
       } catch (err) {
         problem = problem || 'That didn’t save. Try again in a moment.';
+      }
+      // The evening nudge, its own save — after the number, never instead
+      // of it, and a refused number above does not stop it.
+      var evToggle = row.querySelector('[data-evening-toggle]');
+      if (evToggle) {
+        try {
+          var evRes = await fetch('/api/evening-nudge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+            member_id: payload.member_id,
+            on: evToggle.getAttribute('aria-pressed') === 'true'
+          }) });
+          var evData = await evRes.json();
+          if (!evRes.ok) problem = problem || (evData && evData.detail) || 'That didn’t save. Try again in a moment.';
+          else if (evData && evData.settings) prefsState.eveningNudge = evData.settings;
+        } catch (err) {
+          problem = problem || 'That didn’t save. Try again in a moment.';
+        }
       }
     }
     if (save) save.disabled = false;
