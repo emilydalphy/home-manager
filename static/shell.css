@@ -7750,6 +7750,31 @@ span.cook-week-name { cursor: default; }
      end of the file takes it back with the rest of the docks. */
   padding: 14px 84px 10px 20px;
 }
+/* The Meal step's dock (mealDockHtml) on a week that isn't cooking yet —
+   Check the week, a draft: "Swap · I'll pick" is the row's apricot, "Tell
+   me what instead" its quiet link, and the chat icon sits at the row's
+   end. Three things in 286px at 390 (the dock's 84px clears the icon).
+   Measured 2026-09-21 with the real faces: the button 137px (109 of
+   text, 14 each side), the link 130px, the row's 14px gap — 281, one
+   row, and the Swap label is a real width that never wraps (Emily's
+   screenshot had it wrapped into a column, one word per line, by the
+   sheet button's width: 100% — see .wk-swap-else). On a narrower phone
+   the LINK is what gives, at a word ("Tell me what / instead", two 13px
+   lines inside its 44px), never the button. */
+.wk-meal-dock .dock-row .dock-primary.wk-act-swap {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+.wk-meal-dock .dock-row .dock-link.wk-swap-tell {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: normal;
+  text-align: left;
+  line-height: 1.25;
+}
 /* ---------- SET: the All set screen ----------
    Spruce, the one finish in the loop that gets its own screen (§2b S5). */
 .wk-allset {
@@ -8336,7 +8361,13 @@ span.cook-week-name { cursor: default; }
   cursor: pointer;
 }
 .wk-swap-quiet:hover { color: var(--ink-strong); }
-.wk-swap-tell {
+/* The sheet's "Something else — tell me": a full-width outline button.
+   Its own class — it was .wk-swap-tell until 2026-09-21, the same class as
+   the dock's and the swap line's quiet "Tell me what instead" link, so
+   this width: 100% reached the Meal step's dock and crushed "Swap · I'll
+   pick" into a 12px column at 390px (Emily's screenshot; Loop Board
+   "Recipe screen footer fits the phone"). */
+.wk-swap-else {
   width: 100%;
   min-height: 54px;
   border-radius: var(--radius-action);
@@ -8349,7 +8380,7 @@ span.cook-week-name { cursor: default; }
   letter-spacing: -.02em;
   cursor: pointer;
 }
-.wk-swap-tell:hover { border-color: var(--ink-strong); }
+.wk-swap-else:hover { border-color: var(--ink-strong); }
 /* ---------- the segmented control ----------
    Emily's approved design, 2026-09-09. Since 2026-09-18 only Plan | Chores
    uses it (the review's What we're eating / Which days went with the

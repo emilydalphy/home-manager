@@ -11649,7 +11649,7 @@
         ? '<button type="button" class="wk-swap-quiet" id="wk-swap-move">' +
             escapeHtml('Move the ' + dishShortName(st.name) + ' to another day') + '</button>'
         : '') +
-      '<button type="button" class="wk-swap-tell" id="wk-swap-tell">Something else — tell me</button>';
+      '<button type="button" class="wk-swap-else" id="wk-swap-tell">Something else — tell me</button>';
   }
 
   function drawSwapSheet() {
