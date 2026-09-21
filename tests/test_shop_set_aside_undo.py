@@ -128,7 +128,7 @@ def test_a_row_set_aside_says_so_with_an_undo_that_puts_it_back():
     out = _node("""
 listWith();
 groceryState.openRowId = '1';
-click({ gro: 'row-exclude', id: '1', name: 'Rice' });
+clickIfRendered({ gro: 'row-exclude', id: '1', name: 'Rice' });
 settle(function () {
   const toast = TOASTS[TOASTS.length - 1];
   const before = { msg: toast.msg, label: toast.action && toast.action.label, hold: toast.hold, open: groceryState.openRowId };
@@ -153,11 +153,16 @@ settle(function () {
 def test_a_failed_set_aside_says_so_and_offers_no_undo():
     out = _node("""
 listWith();
+// The chip lives inside the row's quiet ⋯, so the ⋯ has to be open for
+// there to be a chip to tap — the same line its sibling above carries.
+// (Added 2026-09-21: the tap used to go straight into the handler over a
+// closed menu, which clickIfRendered now refuses.)
+groceryState.openRowId = '1';
 fetch = function (url, opts) {
   POSTS.push({ url: url, body: {} });
   return Promise.resolve({ ok: false, status: 500, json: function () { return Promise.resolve({}); } });
 };
-click({ gro: 'row-exclude', id: '1', name: 'Rice' });
+clickIfRendered({ gro: 'row-exclude', id: '1', name: 'Rice' });
 settle(function () {
   const toast = TOASTS[TOASTS.length - 1];
   console.log(JSON.stringify({ msg: toast.msg, action: toast.action || null }));
@@ -175,7 +180,7 @@ def test_list_shows_what_is_set_aside_in_a_quiet_foot_with_one_tap_back():
     out = _node("""
 listWith([{ id: 7, item: 'Whole chicken', quantity: '1', category: 'meat' }, { id: 8, item: 'Sourdough', quantity: '', category: 'bakery' }]);
 const html = groListHtml(groceryState.data);
-click({ gro: 'elsewhere-back', id: '7', name: 'Whole chicken' });
+clickIfRendered({ gro: 'elsewhere-back', id: '7', name: 'Whole chicken' });
 settle(function () {
   console.log(JSON.stringify({ html: html, posts: posts('/api/grocery-list/7/'), toast: lastToast().msg }));
 });

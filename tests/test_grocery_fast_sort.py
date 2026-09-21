@@ -45,10 +45,10 @@ def test_the_sort_row_opens_sort_them_all_whatever_the_count():
     chooser (GRO_FAST_SORT_MIN)."""
     out = _node("""
 setUp(40);
-click({ gro: 'goto-sort' });
+clickIfRendered({ gro: 'goto-sort' });
 const many = groceryState.step;
 setUp(3);
-click({ gro: 'goto-sort' });
+clickIfRendered({ gro: 'goto-sort' });
 console.log(JSON.stringify({ many: many, few: groceryState.step }));
 """)
     assert out == {"many": "sortall", "few": "sortall"}
@@ -72,9 +72,9 @@ def test_the_crumb_is_sort_them_later():
     the list never opens SORT ALL on its own."""
     out = _node("""
 setUp(6);
-click({ gro: 'goto-sort' });
+clickIfRendered({ gro: 'goto-sort' });
 const opened = groceryState.step;
-click({ gro: 'step-back' });
+clickIfRendered({ gro: 'step-back' });
 console.log(JSON.stringify({ opened: opened, back: groceryState.step, head: groHeadFor(groceryState.data, 'sortall') }));
 """)
     assert out["opened"] == "sortall"

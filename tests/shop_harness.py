@@ -15,6 +15,17 @@ localStorage, the band's date), the region itself (`grocery_block()`), the
 click machinery (`CLICK`: onGroceryClick wants an event whose target can
 find a [data-gro] element and an element it can disable, not a document),
 and a small list fixture (`FIXTURE`).
+
+The click machinery has two spellings, and the difference is the point.
+`clickIfRendered(dataset, row)` is a TAP: it builds the current step's own
+HTML out of the region's renderers and refuses to dispatch a control that
+screen does not draw. `clickHandlerDirectly(dataset, row)` is the old
+`click()` — it fabricates an element and dispatches, no questions asked —
+kept for the few controls that genuinely live outside the step's body.
+Before 2026-09-21 there was only the second one, under the first one's
+name, so a test could press a button the screen had never rendered and
+the handler would run: an end-to-end walk could pass against a broken
+screen.
 """
 from __future__ import annotations
 
@@ -102,11 +113,125 @@ function fakeEl(dataset, row) {
     querySelectorAll: function () { return []; }
   };
 }
-function click(dataset, row) {
+
+// ---------- what is on the screen right now ----------
+//
+// renderGrocery() wants a real panel, and there is no DOM here, so the
+// step's HTML is built the way renderGrocery builds it: its own three
+// body renderers and its dock, chosen by the same step, after the same
+// "a step that stopped making sense under its own feet falls back to the
+// root" fallbacks. It is a MIRROR of that dispatch, not a second opinion
+// about which controls a step has — every string below comes out of the
+// region's own renderers.
+//
+// WHAT THE GUARD FILE PINS, AND WHAT IT DOES NOT. Its source marker reads
+// renderGrocery's own code (comments stripped) and asserts every line the
+// mirror copies is still there, so a fourth step renderer — or a moved
+// dispatch line — fails loudly rather than quietly leaving its controls
+// unguarded. That is PRESENCE, not COMPLETENESS: it cannot see something
+// renderGrocery has GAINED. A reviewer proved it on 2026-09-21 by adding
+// a fourth fallback to renderGrocery
+//     if (groceryState.step === 'sortall' && groceryState.substOpenId) …
+// after which groScreenStep() below disagreed with renderGrocery about
+// which step is on screen while all 13 guard tests stayed green. So: if
+// you add a rule to renderGrocery about WHICH SCREEN IS UP, come and add
+// it here too. Nothing will remind you.
+function groScreenStep() {
+  const data = groceryState.data;
+  let step = groceryState.step;
+  if (step === 'sortall' && !groUnsorted(data).length && !groceryState.sortAllDone) step = 'list';
+  if (step === 'carry' && !groceryState.carried.length) step = 'list';
+  if (step !== 'carry' && step !== 'sortall') step = 'list';
+  return step;
+}
+function screenHtml() {
+  const data = groceryState.data;
+  if (!data) return '';
+  const step = groScreenStep();
+  const body = step === 'carry' ? groCarryHtml(data)
+    : step === 'sortall' ? groSortAllHtml(data)
+    : groListHtml(data);
+  // The crumb belongs to no step renderer — it lives in the panel
+  // scaffold and renderGrocery shows or hides it by exactly this rule
+  // (`back.hidden = !groHeadFor(data, step).back`, and unconditionally on
+  // the root). It is as rendered as anything in the body, so a test can
+  // tap it where it is drawn and only there. The head's mic and refresh
+  // buttons sit beside it and are NOT modelled: SHOW_GRO_HEADER_TOOLS is
+  // false, so they render `hidden` and nothing can tap them — the guard
+  // test fails if that flag flips. The scan sheet is not modelled either:
+  // it is built at body level, outside this panel.
+  const back = step === 'list' ? '' : groHeadFor(data, step).back;
+  const crumb = back ? '<button class="crumb" id="gro-back" data-gro="step-back">' + back + '</button>' : '';
+  return crumb + body + groDockHtml(data, step);
+}
+
+// Every opening tag on the screen that carries this action.
+function groControlsFor(html, action) {
+  const out = [];
+  const re = /<[a-zA-Z][^>]*>/g;
+  let m;
+  // escapeHtml turns a > inside an attribute value into &gt;, so a tag
+  // never ends early.
+  while ((m = re.exec(html)) !== null) {
+    if (m[0].indexOf('data-gro="' + action + '"') !== -1) out.push(m[0]);
+  }
+  return out;
+}
+function groDataAttr(key) {
+  return 'data-' + key.replace(/[A-Z]/g, function (c) { return '-' + c.toLowerCase(); });
+}
+// null when this control really is on the screen; otherwise the sentence
+// to fail with.
+function groNotRendered(dataset) {
+  const action = dataset.gro;
+  const step = groScreenStep();
+  const tags = groControlsFor(screenHtml(), action);
+  if (!tags.length) {
+    return 'the ' + step.toUpperCase() + ' screen renders no [data-gro="' + action + '"] at all';
+  }
+  // Only the keys this action's markup actually expresses are a claim
+  // about the screen. A key the test supplies that no such element
+  // carries (a display name the handler reads off the dataset for a
+  // toast, say) is the caller's business, not the screen's.
+  const keys = Object.keys(dataset).filter(function (k) {
+    if (k === 'gro') return false;
+    const attr = groDataAttr(k) + '="';
+    return tags.some(function (t) { return t.indexOf(attr) !== -1; });
+  });
+  // Through escapeHtml, because the markup's own value went through it:
+  // a shop somebody typed as "M&S" is data-store="M&amp;S" on the chip,
+  // and comparing the raw string would refuse a control that really is on
+  // the screen — the guard blaming the screen for its own arithmetic.
+  const want = keys.map(function (k) { return groDataAttr(k) + '="' + escapeHtml(String(dataset[k])) + '"'; });
+  const hit = tags.some(function (t) {
+    return want.every(function (w) { return t.indexOf(w) !== -1; });
+  });
+  if (hit) return null;
+  return 'the ' + step.toUpperCase() + ' screen renders ' + tags.length + ' [data-gro="' + action +
+    '"], none of them ' + want.join(' ');
+}
+
+// THE ONE TO REACH FOR. Asserts the control is on the screen the
+// household is looking at before dispatching — so a test can only press
+// what the renderers actually drew. Fails loudly, naming the control and
+// the step it was not found in.
+function clickIfRendered(dataset, row) {
+  const complaint = groNotRendered(dataset);
+  if (complaint) throw new Error('clickIfRendered: ' + complaint);
+  return clickHandlerDirectly(dataset, row);
+}
+
+// The old click(): fabricates an element and dispatches straight into
+// onGroceryClick, with no check that anything rendered it. Named for what
+// it does, so a call site that means "call the handler directly" says so
+// and every other call site reads as a tap. Each surviving use carries a
+// one-line reason.
+function clickHandlerDirectly(dataset, row) {
   const el = fakeEl(dataset, row);
   onGroceryClick({ target: { closest: function () { return el; } } });
   return el;
 }
+
 // Handlers write, then re-read, then render — all through promises. Give
 // them a few turns of the loop before reading the state back.
 function settle(fn) { setTimeout(fn, 30); }

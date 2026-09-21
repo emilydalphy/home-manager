@@ -381,7 +381,7 @@ loadGrocery().then(function () {
   var asking = { step: groceryState.step, card: html.indexOf('gro-stores-prompt') !== -1,
     listUnder: html.indexOf('Milk') > html.indexOf('gro-stores-prompt') && html.indexOf('Rice') !== -1,
     dock: groDockHtml(groceryState.data, 'list') };
-  click({ gro: 'stores-prompt-done' });
+  clickIfRendered({ gro: 'stores-prompt-done' });
   settle(function () {
     var after = groListHtml(groceryState.data);
     console.log(JSON.stringify({ asking: asking, dismissed: groceryState.storesPromptDismissed,

@@ -21,6 +21,7 @@ from pathlib import Path
 
 import nodeharness
 import pytest
+from shop_harness import CLICK
 
 from app import tools
 from app.db import get_conn
@@ -385,12 +386,10 @@ var scrollEl = null;
 function activateTab() {}
 var coachState = { householdId: 1 };
 function emptyMomentHtml(icon, line) { return '<div class="empty-moment">' + line + '</div>'; }
-function click(dataset) {
-  const el = { dataset: dataset, disabled: false, closest: function () { return null; },
-    classList: { toggle: function () {} }, setAttribute: function () {}, querySelectorAll: function () { return []; } };
-  onGroceryClick({ target: { closest: function () { return el; } } });
-  return el;
-}
+// The click machinery is the shared one now (tests/shop_harness.CLICK),
+// appended after the region below: this file used to carry its own copy
+// of it, and with it the hole that copy had — a tap on a control the
+// screen never rendered ran the handler anyway.
 function setUp(rows, spices, shops) {
   groceryState.data = { stores: { Loblaws: { sections: rows.length ? [{ section: 'other', items: rows }] : [], purchased: [], inCart: [] } } };
   groceryState.usualStores = shops || ['Loblaws'];
@@ -408,7 +407,7 @@ def _grocery_block() -> str:
 
 
 def _node(body: str):
-    res = nodeharness.run_node(_STUB + _grocery_block() + body, timeout=30)
+    res = nodeharness.run_node(_STUB + _grocery_block() + CLICK + body, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout.strip())
 
@@ -442,8 +441,13 @@ console.log(JSON.stringify({ closed: closed, open: open }));
 def test_a_tick_and_an_untick_are_the_same_box():
     out = _node("""
 setUp([], %s);
-click({ gro: 'spice-tick', id: '7', ticked: '0' });
-click({ gro: 'spice-tick', id: '8', ticked: '1' });
+// The fold is closed by default (the test above pins that), so the boxes
+// are not on the screen until it is opened — open it the way a person
+// does. (Added 2026-09-21: the taps used to go straight into the handler
+// over a closed fold, which clickIfRendered now refuses.)
+clickIfRendered({ gro: 'spices-toggle' });
+clickIfRendered({ gro: 'spice-tick', id: '7', ticked: '0' });
+clickIfRendered({ gro: 'spice-tick', id: '8', ticked: '1' });
 setTimeout(function () { console.log(JSON.stringify(POSTS)); }, 30);
 """ % _SPICES)
     assert out == [

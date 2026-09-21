@@ -34,6 +34,7 @@ from pathlib import Path
 
 import nodeharness
 import pytest
+from shop_harness import CLICK
 
 from app import tools
 from app.db import get_conn
@@ -414,21 +415,10 @@ const window = {
 var scrollEl = null;
 function activateTab() {}
 var coachState = { householdId: 1 };
-function fakeEl(dataset, row) {
-  return {
-    dataset: dataset, disabled: false,
-    closest: function () { return row || null; },
-    classList: { toggle: function () {} },
-    setAttribute: function () {},
-    querySelectorAll: function () { return []; }
-  };
-}
-function click(dataset, row) {
-  const el = fakeEl(dataset, row);
-  onGroceryClick({ target: { closest: function () { return el; } } });
-  return el;
-}
-function settle(fn) { setTimeout(fn, 30); }
+// The click machinery is the shared one now (tests/shop_harness.CLICK),
+// appended after the region below: this file used to carry its own copy
+// of it, and with it the hole that copy had — a tap on a control the
+// screen never rendered ran the handler anyway.
 function listOf(n) {
   const rows = [];
   for (let i = 1; i <= n; i++) rows.push({ id: i, item: 'Thing ' + i, quantity: '1', store: '', store_decided: 0 });
@@ -453,7 +443,7 @@ def _grocery_block() -> str:
 
 
 def _node(body: str):
-    res = nodeharness.run_node(_STUB + _grocery_block() + body, timeout=30)
+    res = nodeharness.run_node(_STUB + _grocery_block() + CLICK + body, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout.strip())
 
@@ -489,11 +479,11 @@ def test_answering_the_last_one_moves_on_to_the_list():
     out = _node("""
 setUp(3, %s);
 groMaybeCarryFirst();
-click({ gro: 'carry-decide', decision: 'drop', id: '41', name: 'Chicken thighs' });
+clickIfRendered({ gro: 'carry-decide', decision: 'drop', id: '41', name: 'Chicken thighs' });
 settle(function () {
   const afterFirst = groceryState.step;
   CARRIED = [];
-  click({ gro: 'carry-decide', decision: 'keep', id: '42', name: 'Onion' });
+  clickIfRendered({ gro: 'carry-decide', decision: 'keep', id: '42', name: 'Onion' });
   settle(function () {
     console.log(JSON.stringify({ afterFirst: afterFirst, step: groceryState.step, posts: POSTS,
       toasts: TOASTS.map(function (t) { return [t.msg, t.action ? t.action.label : null]; }) }));
@@ -513,12 +503,12 @@ def test_undo_goes_to_the_undo_route_and_later_is_remembered_for_the_visit():
     out = _node("""
 setUp(3, %s);
 groMaybeCarryFirst();
-click({ gro: 'carry-decide', decision: 'keep', id: '41', name: 'Chicken thighs' });
+clickIfRendered({ gro: 'carry-decide', decision: 'keep', id: '41', name: 'Chicken thighs' });
 settle(function () {
   tapUndo();
   settle(function () {
     const undoPost = POSTS[POSTS.length - 1];
-    click({ gro: 'carry-later' });
+    clickIfRendered({ gro: 'carry-later' });
     const stepAfterLater = groceryState.step;
     groMaybeCarryFirst();
     console.log(JSON.stringify({ undo: undoPost, later: stepAfterLater, again: groceryState.step,

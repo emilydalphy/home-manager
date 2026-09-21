@@ -223,7 +223,7 @@ def test_ticking_a_row_writes_purchased_and_says_changes_saved_with_put_back():
     toast's Put back is 'needed' on the same route."""
     out = _list("""
 mockup();
-click({ gro: 'line-tick', id: '3', bought: '0' });
+clickIfRendered({ gro: 'line-tick', id: '3', bought: '0' });
 settle(function () {
   var afterTick = { posts: POSTS.map(function (p) { return [p.url, p.body.status]; }), toast: lastToast() };
   tapUndo();
@@ -243,7 +243,7 @@ settle(function () {
 def test_unticking_a_bought_row_puts_it_back_and_offers_undo():
     out = _list("""
 mockup();
-click({ gro: 'line-tick', id: '1', bought: '1' });
+clickIfRendered({ gro: 'line-tick', id: '1', bought: '1' });
 settle(function () {
   console.log(JSON.stringify({ posts: POSTS.map(function (p) { return [p.url, p.body.status]; }), toast: lastToast() }));
 });
@@ -264,13 +264,13 @@ window.PomonaGroceryOffline = require(""" + json.dumps(str(OFFLINE)) + """);
 """ + grocery_block() + """
 mockup();
 // Costco has four left: tick three, then the fourth.
-click({ gro: 'line-tick', id: '3', bought: '0' });
-click({ gro: 'line-tick', id: '4', bought: '0' });
-click({ gro: 'line-tick', id: '5', bought: '0' });
+clickIfRendered({ gro: 'line-tick', id: '3', bought: '0' });
+clickIfRendered({ gro: 'line-tick', id: '4', bought: '0' });
+clickIfRendered({ gro: 'line-tick', id: '5', bought: '0' });
 var beforeLast = closes().length;
-click({ gro: 'line-tick', id: '6', bought: '0' });
+clickIfRendered({ gro: 'line-tick', id: '6', bought: '0' });
 var costco = closes().map(function (p) { return p.body; });
-click({ gro: 'line-tick', id: '20', bought: '0' });
+clickIfRendered({ gro: 'line-tick', id: '20', bought: '0' });
 settle(function () {
   console.log(JSON.stringify({ beforeLast: beforeLast, costco: costco, all: closes().map(function (p) { return p.body; }),
     cardNow: cards(groListHtml(groceryState.data)) }));
@@ -342,7 +342,7 @@ mockup();
 groOffline.setHousehold(1);
 DEAD = true;
 navigator.onLine = false;
-click({ gro: 'line-tick', id: '3', bought: '0' });
+clickIfRendered({ gro: 'line-tick', id: '3', bought: '0' });
 settle(function () {
   var html = groListHtml(groceryState.data);
   var offline = {
