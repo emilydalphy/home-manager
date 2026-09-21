@@ -106,7 +106,7 @@ def test_with_no_prep_days_nothing_is_batched_and_nothing_asks():
 
     out = cook_ahead.apply_prep_day_batches(plan_id)
 
-    assert out == {"prep_days": False, "applied": [], "refused": []}
+    assert out == {"prep_days": False, "applied": [], "components": [], "refused": []}
     assert "make_double_for" not in _derived(ids[MON])
     assert "links_to" not in _derived(ids[TUE])
     assert tools.plan_leftover_chains(plan_id)["leftovers"] == {}

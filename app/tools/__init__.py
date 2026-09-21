@@ -99,6 +99,7 @@ from .chores import (  # noqa: F401
 # tapping, not the assistant's to make by inferring.
 from .cook_ahead import (  # noqa: F401
     apply_prep_day_batches,
+    batched_dishes,
     cook_ahead_options,
     cook_ahead_repeats,
     mark_cook_ahead_asked,
@@ -107,6 +108,7 @@ from .cook_ahead import (  # noqa: F401
 # One component in several dishes, cooked once (see batch_components.py):
 # the eggs a breakfast and a salad both hard-boil.
 from .batch_components import (  # noqa: F401
+    batched_components,
     set_batch_component,
     shared_components,
 )

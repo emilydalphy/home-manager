@@ -348,6 +348,21 @@ def apply_prep_day_batches(weekly_plan_id: int) -> dict:
     mean cooking on a day the dish isn't eaten, which the chain machinery
     (make_double_for on a planned entry) can't represent.
 
+    The same rule, one level down (2026-09-21, Loop Board "Batch a shared
+    ingredient automatically when the household preps"): a COMPONENT two
+    or more different dishes each cook the same way — the eggs a
+    breakfast and a salad both boil — is batched too, exactly as a "yes"
+    on the old ask's component block wrote it
+    (batch_components.set_batch_component with every dish ticked): one
+    prep row on the first dish's day, the later dishes reading "boiled
+    Monday" on their Cook screens. On the first dish's day, not the prep
+    day, for the same reason the repeated dish cooks on its first day —
+    the detector knows nothing about how long a boiled egg keeps, and a
+    row dated on a day no dish uses it is a row nobody can tick from a
+    cook screen. `components` reports what landed; a component already
+    batched (shared_components' `batched`) is left exactly as it is, so
+    running twice writes nothing twice.
+
     Called from approve_weekly_plan once the yes has really done something
     — never on a no-op re-approval. Not all-or-nothing: a repeat the
     chain refuses (a day claimed by another batch) is reported in
@@ -355,10 +370,12 @@ def apply_prep_day_batches(weekly_plan_id: int) -> dict:
     used.
     """
     from . import rhythm as _rhythm
+    from . import batch_components as _batch_components
 
     prep_days = _rhythm.get_household_rhythm().get("prep_days") or []
     applied: list[dict] = []
     refused: list[dict] = []
+    components: list[dict] = []
     if prep_days:
         for item in cook_ahead_repeats(weekly_plan_id):
             result = set_cook_ahead(item["first"]["entry_id"], [d["entry_id"] for d in item["later"]])
@@ -366,8 +383,50 @@ def apply_prep_day_batches(weekly_plan_id: int) -> dict:
                 refused.append({"source_entry_id": item["first"]["entry_id"], "dish": item["dish"], "note": result})
             else:
                 applied.append(dict(result, dish=item["dish"]))
+        for comp in _batch_components.shared_components(weekly_plan_id):
+            if comp["batched"]:
+                continue
+            result = _batch_components.set_batch_component(
+                weekly_plan_id, comp["key"], [u["entry_id"] for u in comp["uses"]]
+            )
+            if isinstance(result, str):
+                refused.append({"key": comp["key"], "label": comp["label"], "note": result})
+            else:
+                components.append(result)
     mark_cook_ahead_asked(weekly_plan_id)
-    return {"prep_days": bool(prep_days), "applied": applied, "refused": refused}
+    return {"prep_days": bool(prep_days), "applied": applied, "components": components, "refused": refused}
+
+
+def batched_dishes(weekly_plan_id: int) -> list[dict]:
+    """
+    Every dish on this plan cooked once for several days ON PURPOSE — a
+    chain whose covered days carry the cook_ahead flag, whether the
+    prep-day rule wrote it at approval or the household ticked it on the
+    Cook card. A leftovers night the planner wrote is not one: nobody
+    batched anything there, and the All set line (weekly_plan.
+    batched_line) is only allowed to claim what was actually batched.
+
+    [{source_entry_id, date, slot, dish, covered: [{entry_id, date, slot}]}]
+    in the week's order, covered days in theirs (plan_leftover_chains
+    already sorts a source's targets by date and slot).
+    """
+    out = []
+    for src in _leftovers.plan_leftover_chains(weekly_plan_id)["sources"].values():
+        covered = [
+            {"entry_id": t["entry_id"], "date": t["date"], "slot": t["slot"]}
+            for t in src["targets"] if t.get("cook_ahead")
+        ]
+        if not covered:
+            continue
+        out.append({
+            "source_entry_id": src["entry_id"],
+            "date": src["date"],
+            "slot": src["slot"],
+            "dish": (src.get("meal") or "").strip(),
+            "covered": covered,
+        })
+    out.sort(key=lambda g: (g["date"], g["slot"], g["dish"].lower()))
+    return out
 
 
 def attach_cook_ahead(weekly_plan_id: int, meals: list[dict]) -> None:
