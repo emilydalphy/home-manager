@@ -31,7 +31,7 @@ What changed, and the section of this file for each:
 Integration (2026-09-21, `core-loop-followups-2026-09-21`): the lines are
 read per plan and `frozen` is the plan's own booked move (section 3's
 two-live-plans test), and a step reopened with an answer standing shows
-"Keep it as it is" instead of "Nothing frozen" (section 4).
+"Keep as is" instead of "Nothing frozen" (section 4).
 """
 from __future__ import annotations
 
@@ -638,10 +638,10 @@ def test_the_step_has_the_title_the_line_the_apricot_answer_and_the_quiet_one():
 
 
 @_needs_node
-def test_the_quiet_button_is_keep_it_as_it_is_once_an_answer_stands_and_only_leaves():
+def test_the_quiet_button_is_keep_as_is_once_an_answer_stands_and_only_leaves():
     """CATCH (2026-09-21 integration) — reopened with a move already
     booked (a chip said yes to here, or Shop's "Yes, freezing it"), the
-    quiet button is "Keep it as it is": it writes nothing and goes back to
+    quiet button is "Keep as is": it writes nothing and goes back to
     the week. Un-tapping the chip and "Add to the schedule" is the one way
     to cancel a move. Read off the items as they landed, not the chips as
     they stand, so un-tapping does not swap the button."""
@@ -668,11 +668,11 @@ def test_the_quiet_button_is_keep_it_as_it_is_once_an_answer_stands_and_only_lea
                + "wireFreezerStep(null, steps, { weekly_plan_id: 7, week_start_date: '2026-09-21' });\n"
                + "handlers['#wk-freezer-keep']();\n"
                + "console.log(JSON.stringify({ html: html, afterUntap: afterUntap, went: went, fetches: fetches, selected: defrostAskState.selected }));")
-    assert 'id="wk-freezer-keep">Keep it as it is</button>' in out["html"]
+    assert 'id="wk-freezer-keep">Keep as is</button>' in out["html"]
     assert "Nothing frozen" not in out["html"]
     assert 'id="wk-freezer-go">Add to the schedule · Open grocery list</button>' in out["html"]
     assert out["html"].count("dock-primary") == 1
-    assert 'id="wk-freezer-keep">Keep it as it is</button>' in out["afterUntap"], "the button does not swap under an un-tap"
+    assert 'id="wk-freezer-keep">Keep as is</button>' in out["afterUntap"], "the button does not swap under an un-tap"
     assert out["went"] == ["week"] and out["fetches"] == 0, "Keep leaves and writes nothing"
     assert out["selected"] == {"Chicken thighs": True}, "the chips read back the answer as given"
 

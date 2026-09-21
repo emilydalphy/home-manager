@@ -1372,6 +1372,31 @@ def stamp_freezing_offers(items: list[dict]) -> list[dict]:
     return items
 
 
+def _plan_move_quantity(weekly_plan_id: int, entry_id: int, item_name: str, fallback: str) -> str:
+    """
+    The amount a move for (entry, item) carries — the very string
+    confirm_frozen_items writes (_batch_quantity over the plan's own
+    ingredient, so a night cooking for a later night's leftovers is
+    scaled the same way), so the two doors' rows are identical byte for
+    byte. Where the plan has no such ingredient to read (a freeform
+    meal, a recipe edited since the line was written) the grocery line's
+    own amount stands in, normalised through the app's one parser and
+    formatter (quantities._parse_quantity / _format_quantity) rather
+    than copied as the list spelt it.
+
+    Opens connections of its own (the plan walk) — call it with none of
+    this module's open, the get_defrost_today rule.
+    """
+    wanted = {item_name.strip().lower()}
+    for m, ing, ing_name, batch_factor in _iter_plan_meat_ingredients(weekly_plan_id):
+        if m.get("entry_id") == entry_id and _matches_selected_item(ing_name, wanted):
+            return _batch_quantity(ing, batch_factor)
+    parsed = _quantities._parse_quantity(fallback or "")
+    if parsed is None:
+        return (fallback or "").strip()
+    return _quantities._format_quantity(parsed[0], parsed[1])
+
+
 class FreezingNotOffered(ValueError):
     """The line is not one the checklist asks about: not meat/seafood, no
     meal recorded it, too late to thaw for that meal, or the move is
@@ -1438,11 +1463,16 @@ def book_defrost_for_grocery_line(item_id: int, freezing: bool) -> dict:
         move_date_str = _move_date(meal["date"], lead_hours, dinner_window)
         if date.fromisoformat(move_date_str) < today:
             raise FreezingNotOffered(TOO_LATE_TO_THAW_NOTE)
-        description = _describe(item_name, meal["meal"], meal["date"])
-        # The row carries the line's own amount ("1 lb"), the way the
-        # freezer step's row carries the recipe's — so a move booked from
-        # either door reads the same on Today's Cook group.
-        quantity = (line.get("quantity") or "").strip()
+    finally:
+        conn.close()
+
+    # The amount is the freezer step's own (_plan_move_quantity walks the
+    # plan, which opens connections of its own), so it is read between
+    # this function's read and its write — the same row from either door.
+    quantity = _plan_move_quantity(meal["weekly_plan_id"], meal["entry_id"], item_name, line.get("quantity") or "")
+    description = _describe(item_name, meal["meal"], meal["date"])
+    conn = get_conn()
+    try:
         cur = conn.execute(
             "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, "
             "related_meal, status, task_type, inventory_item_id, meal_plan_entry_id, quantity) "
@@ -1451,11 +1481,11 @@ def book_defrost_for_grocery_line(item_id: int, freezing: bool) -> dict:
              meal["entry_id"], quantity),
         )
         conn.commit()
-        return {
-            "item_id": item_id, "freezing": True, "prep_task_id": cur.lastrowid,
-            "task_date": move_date_str, "move_label": _move_label(move_date_str, today),
-            "item": item_name, "related_meal": meal["meal"], "date": meal["date"],
-            "lead_hours": lead_hours, "lead_tier": tier, "already_booked": False,
-        }
     finally:
         conn.close()
+    return {
+        "item_id": item_id, "freezing": True, "prep_task_id": cur.lastrowid,
+        "task_date": move_date_str, "move_label": _move_label(move_date_str, today),
+        "item": item_name, "related_meal": meal["meal"], "date": meal["date"],
+        "lead_hours": lead_hours, "lead_tier": tier, "already_booked": False,
+    }

@@ -13991,7 +13991,7 @@
       // yet), "Nothing frozen — I'm buying it all" is an answer and is
       // written. Reopened with an answer already standing — a chip the
       // household said yes to here, or a move Shop's "Yes, freezing it"
-      // booked — the quiet button is "Keep it as it is" and only leaves:
+      // booked — the quiet button is "Keep as is" and only leaves:
       // it writes nothing, so a move booked at the shop cannot be
       // cancelled by a glance at this step. Un-tapping the chip and
       // "Add to the schedule" is the one way to cancel (latest answer
@@ -14000,7 +14000,7 @@
       dock = '<div class="dock wk-freezer-dock">' +
         '<button type="button" class="dock-primary" id="wk-freezer-go">Add to the schedule · Open grocery list</button>' +
         (reopened
-          ? '<button type="button" class="wk-freezer-none-btn" id="wk-freezer-keep">Keep it as it is</button>'
+          ? '<button type="button" class="wk-freezer-none-btn" id="wk-freezer-keep">Keep as is</button>'
           : '<button type="button" class="wk-freezer-none-btn" id="wk-freezer-none">Nothing frozen — I’m buying it all</button>') +
       '</div>';
     }

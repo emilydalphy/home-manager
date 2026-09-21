@@ -427,8 +427,8 @@ why*, not duplicating the diff.
   is found through the ledger and is nobody's to take off: the move alone
   is booked and the item reads `on_list` False with `on_list_reason`
   `shared`; Shop's yes carries the line's quantity and both doors read one
-  `_MOVE_ITEM_RE`; a refused yes (4xx) puts Shop's question back; the
-  step reopened with an answer standing shows "Keep it as it is" (leaves,
+  `_MOVE_ITEM_RE`, and the shop door derives its amount from the plan the way the step does (byte-identical rows); a refused yes (4xx) puts Shop's question back; the
+  step reopened with an answer standing shows "Keep as is" (leaves,
   writes nothing) instead of "Nothing frozen" — un-tapping a chip is the
   way to cancel a move, whichever door booked it.
 - **2026-09-21 — The freezer step asks about EVERY meat in the week, and a

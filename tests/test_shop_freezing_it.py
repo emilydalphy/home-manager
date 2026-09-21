@@ -161,7 +161,7 @@ def test_yes_books_the_defrost_move_dated_with_the_right_lead(signed_in):
     assert rows[0]["inventory_item_id"] is None, "a fact about the plan, never an inventory write"
     assert rows[0]["description"] == "Move the Chicken thighs to the fridge — for Thursday's Chicken Skewers."
     assert rows[0]["meal_plan_entry_id"] is not None
-    assert rows[0]["quantity"] == "2 lbs", "the line's own amount (as the list spells it), never ''"
+    assert rows[0]["quantity"] == "2 lb", "the recipe's own amount, exactly as the freezer step writes it"
 
 
 def test_the_two_doors_write_the_same_row(signed_in):
@@ -178,12 +178,30 @@ def test_the_two_doors_write_the_same_row(signed_in):
     defrost.confirm_frozen_items(plan_id, ["Chicken thighs"])
 
     step_row = _defrost_rows()[0]
-    keys = ("task_date", "description", "status", "meal_plan_entry_id", "inventory_item_id")
-    assert {k: step_row[k] for k in keys} == {k: shop_row[k] for k in keys}
-    # The amount is the same amount — Shop carries the line's ("2 lbs"),
-    # the step the recipe's ("2 lb"); the list pluralises, the row does not.
-    parse = quantities._parse_quantity
-    assert parse(shop_row["quantity"]) == parse(step_row["quantity"]) == (2.0, "lb")
+    keys = ("task_date", "description", "status", "meal_plan_entry_id", "inventory_item_id", "quantity")
+    assert {k: step_row[k] for k in keys} == {k: shop_row[k] for k in keys}, "byte for byte, quantity included"
+    assert shop_row["quantity"] == "2 lb"
+
+
+def test_a_line_with_no_recipe_amount_to_read_carries_its_own_normalised(signed_in):
+    """A freeform meal recorded the line, so there is no recipe ingredient
+    for the shop door to read: the line's own amount stands in, through the
+    app's one parser and formatter rather than as the list spelt it."""
+    week, dates = _week()
+    plan_id = tools.create_weekly_plan(week)["weekly_plan_id"]
+    tools.plan_meal(dates[3], "Steak night", slot="dinner", weekly_plan_id=plan_id)
+    steak = tools.add_grocery_item("Steak", quantity="2 lbs", category="meat/seafood", source_weekly_plan_id=plan_id)["item_id"]
+    conn = get_conn()
+    entry = conn.execute("SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ?", (plan_id,)).fetchone()["id"]
+    conn.execute("INSERT INTO meal_plan_grocery_links (household_id, meal_plan_entry_id, grocery_item_id, item, quantity) "
+                 "VALUES (?, ?, ?, 'Steak', '2 lbs')", (household_id(), entry, steak))
+    conn.commit()
+    conn.close()
+
+    res = signed_in.post(f"/api/grocery-list/{steak}/freezing", json={"answer": "freezer"})
+
+    assert res.status_code == 200, res.text
+    assert _defrost_rows()[0]["quantity"] == quantities._format_quantity(*quantities._parse_quantity("2 lbs"))
 
 
 def test_yes_twice_is_one_move_and_the_freezer_step_sees_it_as_booked(signed_in):
