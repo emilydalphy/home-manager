@@ -544,7 +544,7 @@ class ChatAction(BaseModel):
     # on a `week` card, and absent whenever the change wasn't about one
     # specific day — a whole-week generation, an approval, a
     # component-based plan's swap, which has no date at all. The shell's
-    # "See your week" chip uses it to land on the day that changed instead
+    # "Back to your week" button uses it to land on the day that changed instead
     # of wherever the day rail happened to be pointing; with no date it
     # still shows the week, just without selecting a day.
     date: str | None = None
@@ -5222,6 +5222,9 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
             tool_names_by_id[block_id] = (name, args or {})
 
     by_category: dict[str, ChatAction] = {}
+    # Every day/slot a week write touched this turn, in call order — see
+    # _whole_week_card below for what more than one of them becomes.
+    week_days_touched: list[tuple[str, str]] = []
     for entry in new_entries:
         if entry.get("role") != "user":
             continue
@@ -5305,12 +5308,51 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
                 continue
             change = _humanize_change(name, args, result) or _CATEGORY_FALLBACK_CHANGES[category]
             day_date, day_slot = _changed_day(category, args)
+            if day_date:
+                week_days_touched.append((day_date, day_slot))
             by_category[category] = ChatAction(
                 kicker=_CATEGORY_KICKERS[category], change=change, tab=tab, href=href,
                 date=day_date, slot=day_slot, remembered=name in _REMEMBER_TOOLS,
             )
 
+    whole_week = _whole_week_card(week_days_touched)
+    # An approval in the same turn is the bigger event and keeps its card
+    # (the shell reads "approved" off it to offer the list).
+    if whole_week and "week" in by_category and "approved" not in by_category["week"].change.lower():
+        by_category["week"] = whole_week
+
     return list(by_category.values())
+
+
+_SLOT_PLURALS = {"breakfast": "breakfasts", "lunch": "lunches", "dinner": "dinners", "snack": "snacks"}
+
+
+def _whole_week_card(days_touched: list[tuple[str, str]]) -> ChatAction | None:
+    """
+    One card for a turn that changed the same kind of slot on several days
+    — "For all the breakfasts let's do boiled eggs and avocado toast"
+    (Emily, 2026-09-20). Seven swap_meal_in_plan calls used to leave the
+    LAST one's card standing ("Swapped in boiled eggs...", pointing at
+    Sunday), so the receipt said one breakfast changed and the way back
+    landed on the last day rather than the first. This says the count
+    ("7 breakfasts swapped", or "N meals swapped" across slots) and points
+    at the EARLIEST day, so the sheet's Back to your week lands on the
+    first change. None for a turn that touched fewer than two days — the
+    ordinary card already says what happened.
+    """
+    distinct = sorted(set(days_touched))
+    if len(distinct) < 2:
+        return None
+    slots = {slot for _date, slot in distinct}
+    if len(slots) == 1:
+        noun = _SLOT_PLURALS.get(next(iter(slots)), "meals")
+    else:
+        noun = "meals"
+    first_date, first_slot = distinct[0]
+    return ChatAction(
+        kicker=_CATEGORY_KICKERS["week"], change=f"{len(distinct)} {noun} swapped",
+        tab="week", href=None, date=first_date, slot=first_slot,
+    )
 
 
 def _finish_chat_turn(session_id: str, history: list, reply: str, updated_history: list) -> dict:
