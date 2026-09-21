@@ -650,7 +650,12 @@
        days are showing from yesterday"). Three chips — today, tomorrow,
        or your own days — and a card that shows the range they make, in
        words and as tiles. The period every later step asks about is
-       whatever this one settles on (choosePeriod). -->
+       whatever this one settles on (choosePeriod). From today or
+       tomorrow the range is the household's whole horizon (loadHorizon).
+       The card used to end on "Yesterday's already eaten — I won't plan
+       or shop for it"; the line went on 2026-09-21 (Emily's call) — the
+       strip starting on TODAY already says it, and the rule itself
+       (clampStart) is untouched. -->
   <section id="q1">
     <h1>Starting when?</h1>
     <p class="step-sub" id="start-sub"></p>
@@ -663,7 +668,6 @@
         </div>
         <p class="range-hint" id="range-hint" hidden></p>
         <div class="stripe" id="range-strip"></div>
-        <p class="day-note" id="range-note" style="margin-top:10px">Yesterday&rsquo;s already eaten &mdash; I won&rsquo;t plan or shop for it.</p>
       </div>
     </div>
   </section>
@@ -922,10 +926,18 @@
     if (!raw || raw < 1) return 7;
     return Math.min(raw, 28);
   })();
-  // The household's horizon — what "Today" and "Tomorrow" count forward by.
-  // The URL's day count when it names one, else the server's suggestion
-  // (resolveWeekStart), else seven.
-  var horizon = dayCount;
+  // The household's horizon — what "Today" and "Tomorrow" count forward by:
+  // seven days, or three for a household planning as it goes. The SERVER's
+  // number (suggest_planning_period, read in loadHorizon), never the URL's.
+  // It used to be the URL's day count, so the door that opened this page
+  // decided what a day meant here: a "Plan next week ›" cut short to one
+  // day by a draft beginning the next morning made "Today · Mon 21" read
+  // "Mon 21 → Mon 21 · 1 day", and the Re-plan pill on a five-day draft
+  // locked both chips to five (Emily, 2026-09-21, from her phone: "I
+  // should be able to get it to start the day I want, then select which
+  // days I want"). The range the page ARRIVED with still shows, under
+  // "Pick my own days" when it isn't today's or tomorrow's horizon.
+  var horizon = 7;
   var who = new URLSearchParams(location.search).get('who') || '';
   var data = null;                 // the prefill payload, for the period loaded
   var loadedFor = '';              // which "start|days" `data` was fetched for
@@ -1221,27 +1233,26 @@
   }
 
   // ---------- load ----------
-  // Reached with no ?week when this page is opened directly — a bookmark
-  // or a stale link that predates the ?week it now expects — rather than
-  // through the shell's own "Plan a week" buttons, which always name one
-  // (startPlanningWeek in shell.js). This asks the server for the SAME
-  // period the shell would have sent: the one source of "which week"
+  // The household's own period, from the one source of "which week"
   // (weekly_plan.suggest_planning_period, behind /api/week/planning-period,
-  // which never starts before today either). If even that can't be
-  // reached, there is nothing left to try — back to Plan.
-  async function resolveWeekStart() {
+  // which never starts before today either). Read on EVERY visit, for the
+  // horizon "Today" and "Tomorrow" count by — whichever door this came
+  // through, and whatever length that door named. Its start is used only
+  // when the URL names none: a bookmark or a stale link that predates the
+  // ?week the shell's own doors always send (startPlanningWeek in
+  // shell.js). Null when it can't be reached; the horizon then stays at
+  // seven, and a page with no week of its own has nothing left to try.
+  async function loadHorizon() {
     try {
       var res = await fetch('/api/week/planning-period');
       if (!res.ok) throw new Error('planning period lookup failed');
       var period = await res.json();
       if (!period || !period.start_date) throw new Error('planning period missing a start date');
-      weekStart = period.start_date;
-      dayCount = (period.day_count && period.day_count > 0) ? Math.min(period.day_count, 28) : 7;
-      horizon = dayCount;
-      return true;
+      horizon = (period.day_count && period.day_count > 0) ? Math.min(period.day_count, PERIOD_MAX_DAYS) : 7;
+      return period;
     } catch (err) {
       console.warn('Planning period lookup failed:', err);
-      return false;
+      return null;
     }
   }
 
@@ -1332,7 +1343,12 @@
   }
 
   async function load() {
-    if (!weekStart && !(await resolveWeekStart())) { location.href = '/week'; return; }
+    var period = await loadHorizon();
+    if (!weekStart) {
+      if (!period) { location.href = '/week'; return; }
+      weekStart = period.start_date;
+      dayCount = horizon;
+    }
     // Today, never yesterday — whichever door this came through.
     weekStart = clampStart(weekStart, todayIso());
     choosePeriod(weekStart, dayCount);
