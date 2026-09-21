@@ -265,6 +265,31 @@ def _option_view(index: int, pick: dict) -> dict:
     }
 
 
+def _saved_dish(name: str) -> dict | None:
+    """The household's own recipe of that name, or None. Imported here,
+    not at the top: the import block above is kept as it is on main so
+    hotfix-model-list-shapes (which adds a line to it) merges cleanly."""
+    from . import recipes as _recipes
+    return _recipes.existing_recipe_named(name)
+
+
+def _gate(pick: dict, entry: dict) -> str | None:
+    """swap_in_place.pick_gate, with one rule in front of it: a pick that
+    names a dish the household already has is judged on THAT recipe's
+    full list, never on the short list the model sent with the name.
+    The short list is six main items; the saved recipe is what will
+    actually be cooked (apply_pick saves nothing for a known name), and
+    the verifier of 2026-09-21 reproduced a saved bake with peanuts
+    offered — and planned — to a peanut-allergic house because the
+    model's four names left the peanuts out. pick_gate's own fallback to
+    the saved list only fires on an EMPTY list, which a trimmed pick
+    never has, so the swap is made here."""
+    from . import recipes as _recipes
+    if _saved_dish(pick.get("meal_name") or ""):
+        pick = dict(pick, ingredients=_recipes.saved_ingredients(pick["meal_name"]))
+    return _swap.pick_gate(pick, entry)
+
+
 def _gated(entry: dict, raw: list, avoid: list[str]) -> list[dict]:
     """The picks the household may actually have, in the order the model
     gave them, at most OPTION_COUNT, none repeating `avoid` or each other."""
@@ -277,7 +302,7 @@ def _gated(entry: dict, raw: list, avoid: list[str]) -> list[dict]:
         if not name or name.lower() in seen:
             continue
         pick = dict(pick, meal_name=name, ingredients=_as_ingredient_rows(pick.get("ingredients")))
-        why = _swap.pick_gate(pick, entry)
+        why = _gate(pick, entry)
         if why:
             logger.warning("swap_options dropped %r: %s", name, why)
             continue
@@ -338,13 +363,24 @@ def needs_write_out(pick: dict) -> bool:
     from — has to be written out before it can be planned. A pick that
     carries its steps, or reuses a dish the household already has, is
     applied as it is (apply_pick saves nothing for a name it knows)."""
-    if [s for s in (pick.get("instructions") or []) if (s or "").strip()]:
+    if _steps(pick):
         return False
-    # Imported here, not at the top: the import block above is kept as it
-    # is on main so hotfix-model-list-shapes (which adds a line to it)
-    # merges cleanly.
-    from . import recipes as _recipes
-    return not _recipes.existing_recipe_named(pick["meal_name"])
+    return not _saved_dish(pick["meal_name"])
+
+
+def _steps(recipe: dict) -> list[str]:
+    return [s for s in (recipe.get("instructions") or []) if (s or "").strip()]
+
+
+def write_out_is_complete(full: dict | None) -> bool:
+    """A written-out dish is planned only whole: a usable ingredient list
+    with a quantity on every line, and at least one step. Anything less
+    would land on the week as a recipe the Cooker can't cook from and the
+    grocery list can't shop for — refused instead, nothing written."""
+    rows = _swap._clean_ingredients((full or {}).get("ingredients"))
+    if not rows or any(not r["qty"] for r in rows):
+        return False
+    return bool(_steps(full or {}))
 
 
 # Calm, and it says what's true: the picks are still there to tap again.
@@ -379,7 +415,7 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
     pick = dict(cached["options"][index])
     if _weekly_plan.night_has_gone(entry["date"]):
         return {"status": "refused", "message": _weekly_plan.NIGHT_GONE}
-    why = _swap.pick_gate(pick, entry)
+    why = _gate(pick, entry)
     if why:
         return {"status": "refused", "message": f"I left it as it was — {pick['meal_name']} {why}."}
     if needs_write_out(pick):
@@ -390,8 +426,10 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
         except Exception:
             logger.exception("Writing out the chosen swap pick failed; nothing changed")
             return {"status": "refused", "message": WRITE_OUT_TROUBLE}
-        if not _swap._clean_ingredients((full or {}).get("ingredients")):
-            logger.warning("swap_option_writeout came back without ingredients for %r", pick["meal_name"])
+        if not write_out_is_complete(full):
+            logger.warning("swap_option_writeout came back incomplete for %r (ingredients=%d, steps=%d)",
+                           pick["meal_name"], len((full or {}).get("ingredients") or []),
+                           len(_steps(full or {})))
             return {"status": "refused", "message": WRITE_OUT_TROUBLE}
         # The name and the line are the ones the household tapped and read;
         # the recipe underneath them is the model's. (apply_pick still holds

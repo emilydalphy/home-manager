@@ -275,3 +275,82 @@ def test_the_route_still_reaches_choose_without_a_writer(signed_in, week, monkey
     res = signed_in.post(f"/api/week/{WEEK_START}/swap-choose", json={"entry_id": entry_id, "option": 0})
     assert res.status_code == 200 and res.json()["status"] == "swapped"
     assert seen["label"] == "swap_option_writeout"
+
+
+# ---------- verifier follow-ups (2026-09-21) ----------
+
+
+def _save_peanut_bake():
+    tools.add_recipe("Grandma's Skillet Bake",
+                     ingredients=[{"item": "Chicken thighs", "qty": "1 lb", "category": "meat/seafood"},
+                                  {"item": "Peanuts", "qty": "1 cup", "category": "pantry"},
+                                  {"item": "Rice", "qty": "2 cups", "category": "pantry"}],
+                     food_groups=["protein", "carb"], prep_time_minutes=10, cook_time_minutes=30)
+
+
+def test_a_saved_dish_is_gated_on_its_own_recipe_not_the_short_list(week):
+    """The allergen hole the verifier reproduced: a saved bake with
+    peanuts, a peanut allergy, and a trimmed pick for that name whose
+    four short names leave the peanuts out. The gate reads the recipe
+    that would actually be planned — so the pick is never offered."""
+    _save_peanut_bake()
+    tools.set_member_dietary_restrictions("Emily", ["peanut allergy"])
+    short = _option("Grandma's Skillet Bake", protein="Chicken thighs")
+    assert "Peanuts" not in short["ingredients"]
+    out = tools.swap_options(week, _entry_id(week, DAY1), asker=_asker(short, _option("Fish tacos", protein="Cod fillets")))
+    assert [o["meal"] for o in out["options"]] == ["Fish tacos"]
+
+
+def test_a_saved_dish_is_gated_again_on_its_own_recipe_at_the_tap(week):
+    """Offered while the house was fine with peanuts; the allergy is added
+    before the tap. The tap re-reads the saved recipe, not the short list."""
+    _save_peanut_bake()
+    entry_id = _entry_id(week, DAY1)
+    tools.swap_options(week, entry_id, asker=_asker(_option("Grandma's Skillet Bake", protein="Chicken thighs")))
+    tools.set_member_dietary_restrictions("Emily", ["peanut allergy"])
+    out = sop.choose_swap_option(week, entry_id, 0, writer=_writer())
+    assert out["status"] == "refused"
+    assert out["message"].startswith("I left it as it was — Grandma's Skillet Bake clashes with")
+
+
+def test_a_saved_dish_with_a_clean_recipe_still_goes_through(week):
+    """The rule cuts one way only: a saved dish whose real list is fine is
+    offered and planned, without a write-out (it needs none)."""
+    _save_peanut_bake()
+    tools.set_member_dietary_restrictions("Emily", ["shellfish allergy"])
+    entry_id = _entry_id(week, DAY1)
+    # The short list even names a prawn the recipe doesn't have — the
+    # recipe is the source of truth for a dish that exists.
+    out = tools.swap_options(week, entry_id, asker=_asker(_option("Grandma's Skillet Bake", protein="Prawns")))
+    assert [o["meal"] for o in out["options"]] == ["Grandma's Skillet Bake"]
+    write = _writer()
+    assert sop.choose_swap_option(week, entry_id, 0, writer=write)["status"] == "swapped"
+    assert write.calls == []
+
+
+@pytest.mark.parametrize("missing", ["instructions", "qty"])
+def test_a_write_out_without_steps_or_quantities_is_refused_not_planned_thin(week, missing):
+    """A write-out that answers with ingredients but no steps (or with
+    lines missing their quantities) would land as a recipe the Cooker
+    can't cook from. Refused — the same line, nothing written."""
+    entry_id = _entry_id(week, DAY1)
+    tools.swap_options(week, entry_id, asker=_asker(_option("Lemon chicken traybake")))
+    full = _writer()(None, _option("Lemon chicken traybake"))
+    if missing == "instructions":
+        full["instructions"] = ["", "  "]
+    else:
+        full["ingredients"][1]["qty"] = ""
+    out = sop.choose_swap_option(week, entry_id, 0, writer=_writer(full=full))
+    assert out == {"status": "refused", "message": sop.WRITE_OUT_TROUBLE}
+    assert tools.existing_recipe_named("Lemon chicken traybake") is None
+    # The picks are still on offer; a whole write-out then goes through.
+    assert sop.choose_swap_option(week, entry_id, 0, writer=_writer())["status"] == "swapped"
+
+
+def test_write_out_is_complete_is_the_one_rule():
+    good = _writer()(None, _option("x"))
+    assert sop.write_out_is_complete(good)
+    assert not sop.write_out_is_complete(None)
+    assert not sop.write_out_is_complete({"meal_name": "x"})
+    assert not sop.write_out_is_complete(dict(good, instructions=[]))
+    assert not sop.write_out_is_complete(dict(good, ingredients=[{"item": "Rice"}]))
