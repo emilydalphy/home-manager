@@ -3993,6 +3993,35 @@ def _weekday_label(date_str: str | None) -> str:
         return ""
 
 
+def _day_clock_flags(day: str, today_str: str) -> dict:
+    """
+    Whether a day is already over, and whether it is today — ON THE
+    HOUSEHOLD'S CLOCK, which is the whole point of this living here.
+
+    The screen used to work both out for itself, comparing the day against
+    the BROWSER's date (shell.js classifyDay, off todayLocalStr). The
+    server refuses a write into the past on households.timezone
+    (night_has_gone), and that column defaults to America/Toronto for every
+    household with nothing in the app prompting a change — so a phone west
+    of it disagrees with the server for as long as its own offset: three
+    hours a night in Vancouver, two in Denver, one in Chicago (the figures
+    add-a-night-refuses-the-past and swap-refuses-the-past both measured).
+    Reproduced here on a throwaway database: a Vancouver phone at 21:30
+    read its own tonight as today while the server had already rolled over
+    and refused every change to it.
+
+    Both flags together, deliberately. They are one line of arithmetic off
+    one date and a screen that took `is_past` from here and `is_today` from
+    the phone would say "Tonight" over a night it had just greyed every
+    control on — a new bug rather than a smaller one.
+
+    `today_str` is the caller's ONE reading of _household_today (see
+    get_week_menu), so this reads no clock of its own and costs no
+    connection: a day added to the payload can never cost another.
+    """
+    return {"is_past": day < today_str, "is_today": day == today_str}
+
+
 def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     """
     The weekly menu for the Week tab (design_handoff_shell/
@@ -4002,6 +4031,12 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     plan's week_start_date, one dict per day with `breakfast`/`lunch`/
     `dinner` keys — each either None (nothing planned, drives the "Pick"
     row) or `{title, meta, source}`.
+
+    Every day also carries `is_past` and `is_today` on the HOUSEHOLD's
+    clock (see _day_clock_flags): the screen greys its controls off those
+    rather than off the browser's date, so it and the server agree about
+    which nights are still changeable by construction rather than by each
+    doing its own arithmetic.
 
     `source`/`meta` have no backing column in meal_plan_entries, so most of
     them are derived with a keyword heuristic against the entry's freeform
@@ -4198,7 +4233,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             # component_based plans have no fixed day mapping and aren't
             # part-week-aware yet (see the day-based branch below for the
             # real field) — always False here so the key exists either way.
-            day = {"date": d, "before_plan_start": False}
+            day = {"date": d, "before_plan_start": False, **_day_clock_flags(d, today_str)}
             for s in slots + ("snack",):
                 title = row.get(s)
                 # `state` matters even here, where every slot is "planned"
@@ -4456,6 +4491,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     days = [
         {
             "date": d, "before_plan_start": d < content_start,
+            **_day_clock_flags(d, today_str),
             **{s: by_date_slot.get((d, s)) for s in slots},
             # Both shapes, deliberately: `snacks` is the honest one (a day
             # has two by default), `snack` the first of them for a caller

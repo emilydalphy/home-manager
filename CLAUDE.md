@@ -391,6 +391,287 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-21 — Whether a day is past is the SERVER's answer now, on the
+  household's clock: the screen was asking the phone. Branch
+  `overnight/week-payload-is-past`, NOT merged at the time of writing.**
+  Loop Board improvement, Phase 1. `classifyDay` (`static/shell.js`)
+  derived `isPast` and `isToday` as `day.date < todayStr` /
+  `day.date === todayStr` off `todayLocalStr()` — the BROWSER's date —
+  while every write on that screen is refused on `households.timezone`
+  (`weekly_plan.night_has_gone`), and that column is `America/Toronto` for
+  every household whether they live there or not, with nothing in the app
+  prompting a change. Reproduced on a throwaway DB before anything was
+  touched, with the household's clock frozen at a Toronto evening and the
+  "phone" a day behind it (a Vancouver phone at 21:30, across the Toronto
+  midnight — the band is the phone's own offset from the stored zone,
+  three hours in Vancouver, two in Denver, one in Chicago, which is what
+  `add-a-night-refuses-the-past` and `swap-refuses-the-past` each
+  measured): household today `2026-09-20`, phone today `2026-09-19`, and
+  for `2026-09-19` the screen said **`isPast=False isToday=True
+  status='Tonight'`** while `night_has_gone('2026-09-19')` said **True**
+  and the Day step's Swap answered **`{'status': 'refused', 'message':
+  'That night’s already gone.'}`**. After: `isPast=True isToday=False
+  status='Served'`, and every control on that night stands down.
+  - **`is_past` and `is_today` move TOGETHER, and that is the one judgment
+    call worth arguing about.** They are one line of arithmetic off one
+    date, on the same line of the same function, and a screen taking
+    `is_past` from the payload and `is_today` from the phone would say
+    **"Tonight" over a night it had just greyed every control on** — and
+    `wkTodayIndex` would open the carousel on it. A new bug rather than a
+    smaller one, which is this repo's own rule. There is a test that
+    forbids the pairing (`isPast && isToday`) rather than only asserting
+    the two values.
+  - **IT COSTS NOTHING, measured rather than argued — and SAY WHICH
+    INSTRUMENT, because the absolute number is the instrument's and only
+    the delta is the fact.** `get_week_menu` has resolved the household's
+    day ONCE at its entry point, before the first `get_conn`, since
+    2026-09-15, so `_day_clock_flags(day, today_str)` takes that reading
+    and reads no clock of its own. Household-clock reads per payload:
+    **1 → 1** in every shape. Connections: counting
+    `weekly_plan.get_conn` gives **19 → 19** (7-day), **18 → 18**
+    (14-day), **13 → 13** (component); counting **`sqlite3.connect`
+    globally** — which is what a module-level patch cannot slip past —
+    gives **28 → 28**, **29 → 29**, **22 → 22** on this seed, and a
+    reviewer measured **29/30/23** on theirs. Every instrument, every
+    seed: **zero growth**. (The +1 between 7 and 14 days is identical on
+    main, so it is not the flags' and not this branch's.) There is a test
+    on 7-day vs 14-day, and the mutation that makes the helper call
+    `_household_today()` itself takes a 7-day payload from 1 clock read
+    to 8 and reddens it. **The guard that the clock is read with NOTHING
+    of this call's open counts `sqlite3.connect`, not
+    `weekly_plan.get_conn`** — a module-level patch cannot see a
+    function-local `from ..db import get_conn`, which is a real shape here
+    (`_shared.py` does exactly that, and the 2026-09-11 approve-race work
+    found a stray connection through it that such a patch had missed).
+    Re-run against the widened instrument, the mutation that moves the
+    clock read below the first connection still reddens it, and the guard
+    also asserts the instrument counted something at all.
+  - **The flag sits beside `before_plan_start`, which answers a different
+    question and is untouched.** That one means "no rows were ever
+    written for this day" (a part-week's filing days); a day can be
+    `before_plan_start` and still ahead of the household. Pinned both
+    ways.
+  - **The client keeps the old comparison as a FALLBACK**, for a day the
+    screen is holding from before the flags existed — the same bargain
+    `_household_today` makes with an unreadable timezone: a wrong hour
+    beats a screen that thinks no day has ever gone by. Nothing in the app
+    produces such a day today: `spliceSwappedDay`'s fresh day comes from
+    `swap_in_place._refreshed_day`, which returns `get_week_menu`'s own
+    day dict.
+  - **ONE CONTROL GREYS, and it is the `open` branch of
+    `slotActionsHtml`.** The rebuilt Plan screen has no "+/−" stepper any
+    more (the 2026-09-18 core-loop re-cut took `reviewDishRowHtml`,
+    `canDrop` and `reviewAddDayOptions` with it), so the card's named call
+    sites no longer exist — which made it cleaner, not stale. What was
+    left offering a tap whose only possible answer is a refusal was the
+    `open` branch: it carried **no `day.isPast` term at all** while
+    `planned` (`if (day.isPast) return ''`) and `planned_empty` either
+    side of it both stood down, and its Swap reaches
+    `swap_in_place.swap_meal_in_place`, which refuses a past night
+    outright. Swap goes on a past night, and `swapLine` with it per its
+    own stated rule ("rides with the Swap button wherever it is offered,
+    and nowhere else"). **`Pick` STAYS**: `resolve_open_slot` is
+    deliberately NOT refused on a past night — whether settling an old
+    question is wrong at all is a product question, Emily's, still open
+    from 2026-09-17 — so it is a tap that does something. Greying is the
+    belt; the server still refuses in its own words for a stale screen, a
+    retried POST or chat.
+  - **`tonightDinnerEntry` moved with it.** It finds today's day in the
+    Plan payload and was finding it with the phone's date, so in the same
+    window the Grocery tab's shop-done handoff ("That's the shopping done.
+    Tonight it's X.") named LAST night's dinner. It reads the payload's
+    own `is_today` now. Same fallback.
+  - **AND THE FIRST CUT OF THAT MOVE MADE THE EXACT HALF-CONVERSION THIS
+    TICKET IS ABOUT, one function down. Found by review, fixed here.**
+    `tonightDinnerRecipeTarget` is the line immediately below it:
+    `recipeTargetForEntry(entry, todayLocalStr(), 'dinner')`. So the DISH
+    was the household's and the DATE stamped beside it was still the
+    phone's — the pairing `_day_clock_flags`' own docstring forbids,
+    introduced by the fix for it. Inert today, and only by luck:
+    `cookResolveFocusIndex` tries `entryId` first, and the `date + slot`
+    fallback underneath it would have gone looking for a meal on the wrong
+    night. The two readers now ask ONE function, `tonightDinnerDay`, and
+    the date is the day's own (`day.date`), never a second reading of any
+    clock. A test pins that the dish and the date name one night; the
+    mutation that puts `todayLocalStr()` back in that argument reddens it
+    and nothing else. **The first version of the sweep below filed that
+    very line under "reads today as a label or a selector", which is not
+    what it does** — corrected there too.
+  - **THE SWEEP, and what it found. Nineteen `todayLocalStr()` call sites
+    outside its own definition. FIVE compare it against a plan date on
+    this screen (or against this screen's payload); THREE are fixed and
+    two are named and left.** Fixed: `renderWeekMenu` and `spliceSwappedDay` (both through
+    `classifyDay`, which is the ONE place this screen derives past — a
+    test pins `day.date < todayStr` at exactly one occurrence, which is
+    what made this a one-line fix) and `tonightDinnerEntry`.
+    **Deliberately NOT fixed, each named rather than swept:**
+    - `weekBandParts` → `periodRelation(start, dayCount, today)`, the
+      Plan band's "This week" / "Next week". Same defect class and a
+      DIFFERENT question — which WEEK, not which day — with no per-day
+      flag to read, and it is shared with Now's badge. Its own card.
+    - `stripDays`, the "Pick my own days" strip's floor. On this screen,
+      but off a different payload (`/api/week/planning-period`), which
+      carries no per-day flags.
+    - `renderNeedsYou` (x2) — Now's band compares server-computed dates
+      (`get_needs_you_items`, already on the household's clock) against
+      the phone's today. The same defect one screen over.
+    - `choreMoveDays`, `choreGroupFor`, `choreAfterSkip` — and
+      `app/tools/chores.py` is a whole module still on the SERVER's clock
+      (16 reads, its own card since 2026-09-16), so both ends are wrong
+      there.
+    - `cookTonightIndex`, `renderKitchen`, `buildKitchenPanel` — Cook's
+      own tab.
+    - The three `planningPeriodFetchedOn` writes/reads
+      (`loadPlanningPeriodDefault`, `loadWeekMenu`) are a cache key — "was
+      this fetched today?" — not a past test. `renderTodayEmpty`,
+      `cookBandEyebrow`'s two callers and `choreAfterSkip`'s label read
+      today as a LABEL or a selector rather than comparing it against a
+      plan date. **`tonightDinnerRecipeTarget` was in that list on the
+      first pass and did not belong there** — it STAMPS today onto a
+      focus target, which is a claim about which night a meal is on; it
+      is fixed, see the bullet above.
+    - **`static/share.html`'s `todayIsoDate()` is
+      `new Date().toISOString().slice(0, 10)` — UTC**, so it is wrong for
+      EVERYBODY west of UTC in their own evening rather than only for a
+      phone west of the stored zone, and it decides which day the public
+      menu calls "Today's Table" and which one it opens on. Out of scope
+      (a public page with no app behind it, its own card), and the sweep
+      was asked for, so it is written down.
+    Everything else on the Plan screen — the swap sheet's move options,
+    `plateCanChange`, `mealDockHtml`, `mealIngredientsHtml`'s "Add
+    something", `wkMealRowHtml`'s swap mini, `renderWeekSheetRows`,
+    `defaultDayIndex` — reads `day.isPast`/`day.isToday` and so moves onto
+    the household's clock for free. **Counted: 24 reader occurrences
+    across 12 functions, on 22 lines (two lines read twice), one
+    derivation.** An earlier draft of this entry said 22 readers, which
+    was the LINE count wearing the occurrence count's name.
+  - **WHAT THIS COSTS A HOUSEHOLD WEST OF ITS STORED ZONE, MEASURED, AND
+    EMILY SHOULD SEE IT: the branch TAKES CONTROLS OFF the night they are
+    cooking.** Driven at Vancouver 21:30 against the Toronto default, an
+    approved week, dinner on every night:
+
+    | | main | this branch |
+    |---|---|---|
+    | carousel opens on | **2026-09-19** | **2026-09-20** |
+    | 2026-09-19 reads | `Tonight` | **`Served`** |
+    | ...Cook this | yes | **gone** |
+    | ...Swap (Day step + the root's mini) | yes | **gone** |
+    | ...Done | yes | yes |
+
+    "Add something", the plate rows' Change and the whole Meal-step dock
+    go with them (all four are `day.isPast`-gated). **Bounded**: `Done`
+    survives, the recipe is still readable, and the household is one tap
+    from the right night — and "Cook this" from Plan is a NAVIGATION, not
+    a write, so what is lost is a shortcut rather than an action. Against
+    that, the app previously let them tap it and the server let them cook.
+    **Sharper on the last evening of an approved week**, measured: the
+    band still says **"This week"** (periodRelation, below) over seven
+    days every one of which now reads **"Served"**, with the carousel
+    opening on the period's FIRST day. The honest fix is the stored zone.
+  - **AND IT TURNS A SCREEN-VS-SERVER DISAGREEMENT INTO A SCREEN-VS-SCREEN
+    ONE. Say it plainly: the app is half-converted right now.** This
+    repo's own 2026-09-14 rule is that when a clock moves, every window
+    that has to coincide with it moves in the same commit. Plan's day
+    cards moved; the Plan BAND (`periodRelation`) and the whole Cook tab
+    (`cookTonightIndex`, `cookBandEyebrow`) did not. Measured at the same
+    instant: **Cook heads 2026-09-19 "Cooking today — Bean Chili" while
+    Plan calls the same night "Served".** On main those two agreed — both
+    were wrong together, which is the state the 2026-09-13 needs-you entry
+    describes as at least self-consistent. Calling the band "a DIFFERENT
+    question" (below) is true of what it computes and is NOT a defence of
+    leaving it; the reason it is left is that it is a different payload
+    with no per-day flag on it, and the Cook tab is a different payload
+    again. **Both are their own cards**, filed, and this branch
+    deliberately does not widen to them — a Cook-tab conversion inside a
+    Plan-payload ticket is how a review stops being tractable.
+  - **Two smaller things named rather than fixed, both pre-existing.**
+    `Swap · I'll pick` on an `open` slot is refusal-only on EVERY night,
+    not just a past one — `swap_in_place._entry` raises "There's no meal
+    on that slot to swap." whenever `slot_state != 'planned'` — so greying
+    it on a past night is a strict narrowing of a control that never
+    worked there; and on a FUTURE open night `runSwapInPlace` prints its
+    generic `SWAP_TROUBLE` ("That didn't work just now — nothing
+    changed.") rather than the server's own sentence, because that
+    refusal is a plain `ValueError` and takes the 404 door. Left open:
+    both are one door over from this ticket.
+  - **THIS DOES NOT FIX THE MISCONFIGURATION UNDERNEATH IT, and should
+    not be read as doing so.** Every household's stored zone is Toronto
+    whether they live there or not, and nothing in the app asks. What
+    this buys is that the app is self-consistent: a household in
+    Vancouver is now told the same thing by the screen and by the server,
+    and what they are both told is three hours a night wrong. The honest
+    fix is the stored zone, and it is a larger question.
+  - `tests/test_week_payload_is_past.py` (25; **15 red against main, of
+    which only EIGHT are behaviour catches** — the other seven die on
+    something main has not got rather than on the claim they are named
+    for, six on `KeyError: 'is_past'` and one on `AttributeError:
+    _day_clock_flags`, and each says so in its own docstring; and one of
+    the eight is red there on an EARLIER assertion than the one it is
+    named for, and says that too. An earlier draft of this entry counted
+    `test_before_plan_start_is_untouched` among the catches, which in fact
+    dies on the same missing key — corrected rather than quietly, because
+    a red count that means less than it looks is the statistic this log
+    keeps having to unpick). One test was labelled
+    GUARD on the first pass and measured RED against main, so it is
+    relabelled a CATCH in its own words — the labelling error this log
+    keeps having to unpick. Both directions at one frozen UTC instant,
+    following `test_weekly_plan_household_clock.py`: Toronto 21:30 (the
+    household a day BEHIND, production's own direction) and Tokyo 08:30 (a
+    day AHEAD). **Seventeen mutations run against the final tree
+    and every one bites**, red counts read off the runs: the flags on the
+    server's clock (7), `<=` for `<` (7), the component branch dropping
+    them (1), the day-based branch dropping them (6), the helper reading
+    its own clock (2 — the cost guard and the no-clock guard), the clock
+    read moved below the first connection, counted at `sqlite3.connect`
+    (1), `classifyDay` ignoring the flags (4), the half-conversion —
+    `is_past` from the payload, `is_today` from the phone (4),
+    `classifyDay`'s fallback removed (2), the open branch offering swap
+    again (1), the open branch greyed WHOLE so `Pick` goes too (1),
+    `tonightDinnerDay` back on the phone (2), `tonightDinnerDay` losing
+    its fallback (1), a second `date < todayStr` derivation appearing on
+    the screen (1), the `planned` branch no longer standing down on a past
+    night (1), the focus target back on the phone's date (1), and
+    `tonightDinnerEntry` re-reading the clock for itself instead of asking
+    `tonightDinnerDay` — the half-conversion from the other side (2).
+  - **Numbers, read off the runs.** `TZ=America/Toronto` **5612 passed, 1
+    failed** — that one is
+    `test_recipe_photo_import.py::test_the_cooker_view_and_the_week_menu_carry_the_credit_and_the_photo`,
+    a hard-coded seed week that ran out on 2026-09-20, pre-existing on
+    main and already fixed on another branch; subtracting it, **0
+    failures of this branch's making**. All four CI weekday pins at
+    `TZ=America/Toronto`: monday, friday, saturday and sunday each **1
+    failed, 5609 passed, 3 skipped** — the same one failure. (The 3
+    skipped are the `live_clock` photo tests, which skip themselves under
+    a pin.)
+    **STRADDLES, with `date +%F` checked against Toronto's before AND
+    after every run — and which runs were genuinely straddling is stated
+    rather than assumed, because a timezone is not a straddle.**
+    `Pacific/Kiritimati` (process 2026-09-22 against household 2026-09-21,
+    **production's own direction** — the container ahead of the household)
+    **straddling, on the final tree: 1 failed / 5612 passed**, that one
+    failure being the photo test; and at the pre-review commit the same
+    zone gave **1 failed / 5611** against main's **1 failed / 5587**, the
+    failure lists byte-identical.
+    `Pacific/Niue` (the other direction) **straddled at the pre-review
+    commit — process 2026-09-20 against household 2026-09-21 — and gave 13
+    failed / 5599 passed against main's 13 failed / 5575 at the same zone,
+    the two failure lists byte-identical**, so that direction adds no
+    failure of this branch's either. **The final tree's Niue run was NOT
+    straddling** (Niue had rolled over to 2026-09-21, Toronto's own date)
+    and gave 1 failed / 5612 — green-in-that-zone evidence only, said so
+    rather than quoted as a third straddle. The review round's changes are
+    one client function, one test and one test's instrument; none of them
+    seeds a date, so the Niue straddle figure is not expected to have
+    moved — but it was measured at the earlier commit and that is where it
+    is claimed from. `Asia/Tokyo`, the third zone in CI's straddle matrix,
+    gave **1 failed / 5611** at a moment when Tokyo and Toronto shared a
+    date: also green-in-that-zone and not straddle evidence.
+  - **NOT verified in a browser.** No browser tooling was reachable from
+    this session, so the greying was checked by running
+    `slotActionsHtml` itself under node and by reading `.wk-acts` /
+    `.wk-act-primary` (a flex row whose primary is `flex: 1 1 auto`, so
+    one child fills it exactly as every other single-primary row does).
+    No CSS changed, no token moved, no apricot added or removed.
 - **2026-09-18 — The core loop, seven branches built in parallel off
   `417bb92`, integrated as ONE branch: `core-loop-2026-09-18`.** In merge
   order: `today-shop-cook` (Now → Today; Shop / Cook groups tagged Morning ·

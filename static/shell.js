@@ -5361,11 +5361,29 @@
     return entry ? entry.title : null;
   }
 
-  function tonightDinnerEntry() {
+  // The day the payload calls today (is_today, on the household's clock)
+  // rather than the one this phone calls today, for the reason classifyDay
+  // gives — otherwise the shop-done handoff names last night's dinner for
+  // the few hours a phone west of the stored zone and the server disagree
+  // about the date. Same fallback as there.
+  //
+  // It hands back the DAY, not just the dinner, because the two readers
+  // below need the same answer to two questions — which dish, and which
+  // date it is on — and those must come from one place. They did not, on
+  // this branch's first cut: the dish was the household's and the date
+  // beside it was still `todayLocalStr()`, which is the very pairing
+  // _day_clock_flags' own docstring forbids, one function down.
+  function tonightDinnerDay() {
     var data = weekState.data;
     if (!data || !data.days) return null;
     var todayStr = todayLocalStr();
-    var day = data.days.filter(function (d) { return d.date === todayStr; })[0];
+    return data.days.filter(function (d) {
+      return typeof d.is_today === 'boolean' ? d.is_today : d.date === todayStr;
+    })[0] || null;
+  }
+
+  function tonightDinnerEntry() {
+    var day = tonightDinnerDay();
     var entry = day && day.dinner;
     if (entry && entry.title && entry.state !== 'open' && entry.state !== 'planned_empty') return entry;
     return null;
@@ -5375,9 +5393,15 @@
   // `true` is the old "tonight, whatever the clock says that is" fallback,
   // used when Meals has never been opened this session and there is no
   // entry to name — the same shape every other cookFocus caller passes.
+  //
+  // The DATE is the day's own, never a second reading of the clock: the
+  // entry and the date it is filed under have to name one night, or
+  // cookResolveFocusIndex's date+slot fallback (under the entry-id match)
+  // goes looking for a meal on the wrong day.
   function tonightDinnerRecipeTarget() {
+    var day = tonightDinnerDay();
     var entry = tonightDinnerEntry();
-    return (entry && recipeTargetForEntry(entry, todayLocalStr(), 'dinner')) || true;
+    return (entry && recipeTargetForEntry(entry, day && day.date, 'dinner')) || true;
   }
 
   // The handoff for "that's the shopping done" (Emily, 2026-09-04's ask to
@@ -10067,8 +10091,26 @@
     // though the slot isn't empty — and a planned_empty night is NOT one,
     // which is the whole point of it being its own state.
     var hasOpen = WEEK_SLOTS.some(function (s) { return day[s] && day[s].state === 'open'; });
-    var isToday = day.date === todayStr;
-    var isPast = day.date < todayStr;
+    // THE HOUSEHOLD'S CLOCK, not this phone's, whenever the payload says
+    // (get_week_menu's is_past/is_today, _day_clock_flags). The server
+    // refuses a write into a night that has gone by on
+    // households.timezone, and that column is America/Toronto for every
+    // household whether they live there or not — so a phone west of it
+    // read its own tonight as today while the server had already rolled
+    // over and refused every change to it, for as long as its own offset:
+    // three hours a night in Vancouver, two in Denver, one in Chicago.
+    //
+    // Both off the same source or neither: taking one from the payload
+    // and the other from the phone would say "Tonight" over a night whose
+    // every control had just been greyed.
+    //
+    // The fallback is the old comparison, for a day this screen is holding
+    // from before the flags existed. A wrong hour beats a screen that
+    // thinks no day has ever gone by — the same bargain _household_today
+    // makes with an unreadable timezone.
+    var hasFlags = typeof day.is_past === 'boolean' && typeof day.is_today === 'boolean';
+    var isToday = hasFlags ? day.is_today : day.date === todayStr;
+    var isPast = hasFlags ? day.is_past : day.date < todayStr;
     // A past day's empty slot isn't an open decision any more — don't flag
     // it urgent or offer "Pick" for something that already happened.
     var needsDecision = !isPast && (hasEmpty || hasOpen);
@@ -11621,6 +11663,26 @@
       '</div>' + swapLine;
     }
     if (entry && entry.state === 'open') {
+      // Swap goes on a night that has gone by, and only Swap. The server
+      // refuses a swap into the past outright (night_has_gone), so the
+      // button could only ever print a refusal — and this branch was the
+      // one place on the screen still offering it, while the `planned` and
+      // `planned_empty` branches either side already stood down. Pick
+      // stays: resolve_open_slot is NOT refused on a past night (answering
+      // an old question may well be a repair — Emily's call, 2026-09-17,
+      // still open), so it is a tap that does something.
+      //
+      // Greying, never a substitute for the sentence: the server still
+      // refuses in its own words for a stale screen, a retried POST or
+      // chat. This is the belt.
+      //
+      // swapLine goes with it, per its own rule — it rides with the Swap
+      // button wherever that is offered and nowhere else.
+      if (day.isPast) {
+        return '<div class="wk-acts">' +
+          '<button type="button" class="' + primaryCls + '" data-wk-pick="' + slot + '">Pick</button>' +
+        '</div>';
+      }
       return '<div class="wk-acts">' +
         '<button type="button" class="' + primaryCls + '" data-wk-pick="' + slot + '">Pick</button>' +
         swap +
