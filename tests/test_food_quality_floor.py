@@ -225,12 +225,15 @@ def test_violations_are_persisted_not_just_logged():
 # @pytest.mark.live_clock in tests/conftest.py). The freeze reaches this
 # process's Python and its SQLite, so the finding below is stamped with the
 # pinned instant; observability_report.py then asks its own unfrozen
-# `datetime('now')` for the last day and rightly finds nothing, because a row
-# eight months old is not news from last night. Measured under
-# `--today=2026-01-15`: the row lands at 2026-01-15 14:00 and the report's
-# window opens at 2026-09-20. Only a pin in the PAST does it — a pin in the
-# future writes a created_at that clears a `>=` lower bound anyway, which is
-# why this went unseen until somebody pinned backwards.
+# `datetime('now')` for its recent window and rightly finds nothing, because
+# a row eight months old is not news from last night. Measured under
+# `--today=2026-01-15`, run on 2026-09-21: the row lands at 2026-01-15 14:00
+# and the report's window opens at 2026-09-14 — SEVEN days back, not the one
+# `--days 1` asks for, because collect() reads this feed as
+# `get_recent_plan_quality(days=max(days, 7))`. Either way the row is eight
+# months outside it. Only a pin in the PAST does this — a pin in the future
+# writes a created_at that clears a `>=` lower bound anyway, which is why it
+# went unseen until somebody pinned backwards.
 @pytest.mark.live_clock("observability_report.py runs in its own process, which no pin reaches")
 def test_food_problems_never_land_under_broken():
     """The report leads with BROKEN, and the whole value of that line is that
