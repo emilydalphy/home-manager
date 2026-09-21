@@ -1716,6 +1716,49 @@ def discard_draft_plan(weekly_plan_id: int) -> dict:
     }
 
 
+def record_plan_requests(weekly_plan_id: int, report: dict | None) -> None:
+    """
+    Keep what the model reported doing with the typed requests when it
+    drafted this plan — `honoured_requests` and `unmet_requests` from
+    submit_weekly_plan, trimmed to their two fields each. Nothing is
+    written for an empty report (a stubbed model, an older prompt), so
+    the opener falls back to the slots' own derived_from.
+    """
+    report = report or {}
+    honoured = [
+        {"words": str(r.get("words") or "").strip(), "label": str(r.get("label") or "").strip()}
+        for r in (report.get("honoured_requests") or []) if isinstance(r, dict) and r.get("words")
+    ]
+    unmet = [
+        {"words": str(r.get("words") or "").strip(), "reason": str(r.get("reason") or "").strip()}
+        for r in (report.get("unmet_requests") or []) if isinstance(r, dict) and r.get("words")
+    ]
+    if not honoured and not unmet:
+        return
+    conn = get_conn()
+    conn.execute(
+        "UPDATE weekly_plans SET requests_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps({"honoured": honoured, "unmet": unmet}), weekly_plan_id, household_id()),
+    )
+    conn.commit()
+    conn.close()
+
+
+def plan_requests(weekly_plan_id: int) -> dict:
+    """The stored report, or {"honoured": [], "unmet": []} when there is none."""
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT requests_json FROM weekly_plans WHERE id = ? AND household_id = ?",
+        (weekly_plan_id, household_id()),
+    ).fetchone()
+    conn.close()
+    try:
+        data = json.loads(row["requests_json"]) if row and row["requests_json"] else {}
+    except (TypeError, ValueError):
+        data = {}
+    return {"honoured": data.get("honoured") or [], "unmet": data.get("unmet") or []}
+
+
 def attach_intake_to_plan(weekly_plan_id: int, intake_id: int) -> dict:
     """
     Record which revision of the household's answers produced this plan.
@@ -4619,6 +4662,7 @@ def _safe_draft_opener(rows, intake, plan, days) -> list[str]:
     try:
         return _draft_opener.build_opener(
             rows, intake, plan["period_start_date"], plan["day_count"], days, plan_id=plan["weekly_plan_id"],
+            report=plan_requests(plan["weekly_plan_id"]),
         )
     except Exception:
         logger.exception("The draft's opening lines could not be built")

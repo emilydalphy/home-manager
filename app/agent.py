@@ -530,6 +530,7 @@ def _stream_forced_tool_call(
     client: "Anthropic", *, label: str, max_tokens: int, tool_schema: dict,
     tool_name: str, content, result_key: str, effort_route: str = "generation",
     on_item=None, model: str | None = None, max_attempts: int = 3,
+    report_keys: tuple[str, ...] = (),
 ):
     """
     The streaming equivalent of `_create_with_retry` for a forced
@@ -543,7 +544,10 @@ def _stream_forced_tool_call(
 
     Returns exactly what `.create()` + reading
     `block.input.get(result_key, [])` would have -- callers that pass no
-    on_item can't tell this streamed at all.
+    on_item can't tell this streamed at all. With `report_keys`, the
+    result is a GeneratedDays whose `.report` carries those top-level
+    fields of the tool call (the model's own account of what it did with
+    the typed requests), still a plain list to every other reader.
     """
     delay = 0.75
     last_error: Exception | None = None
@@ -580,7 +584,12 @@ def _stream_forced_tool_call(
                 logger.warning("%s hit max_tokens; result may be incomplete", label)
             for block in response.content:
                 if block.type == "tool_use":
-                    return block.input.get(result_key, [])
+                    items = block.input.get(result_key, [])
+                    if report_keys:
+                        out = GeneratedDays(items)
+                        out.report = {k: block.input.get(k) or [] for k in report_keys}
+                        return out
+                    return items
             return []
         except (APIConnectionError, APITimeoutError) as e:
             last_error = e
@@ -2804,10 +2813,44 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                     "required": ["date", "slot", "meal_name", "is_new_recipe", "reasoning"],
                 },
             },
+            "honoured_requests": {
+                "type": "array",
+                "description": "Each request typed in intake.freeform that this plan honours, in the household's own words, with a two-to-four-word label for the draft's opening line. Never an exclusion (\"no fish\"), never anything they didn't type.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "words": {"type": "string", "description": "Their words for it, as typed — the same span as derived_from.freeform on the slots it shaped."},
+                        "label": {"type": "string", "description": "Two to four words: what it became, e.g. 'Mexican lunches', 'chicken-and-potato dinners', 'pizza Friday'."},
+                    },
+                    "required": ["words", "label"],
+                },
+            },
+            "unmet_requests": {
+                "type": "array",
+                "description": "Anything typed in intake.freeform that this plan could NOT honour, in the household's own words, with a reason of about five words. Empty when everything typed was honoured. Never an exclusion.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "words": {"type": "string", "description": "Their words for it, as typed."},
+                        "reason": {"type": "string", "description": "About five words, in Pomona's voice: 'nothing in stock says lamb'."},
+                    },
+                    "required": ["words", "reason"],
+                },
+            },
         },
         "required": ["days"],
     },
 }
+
+
+class GeneratedDays(list):
+    """
+    The model's `days`, plus what it REPORTED alongside them — the requests
+    it honoured and the ones it could not (the two top-level lists of
+    submit_weekly_plan). A list, so every caller and every test stub that
+    hands back a plain list of days keeps working; `report` is {} for those.
+    """
+    report: dict = {}
 
 
 def generate_weekly_plan_llm(context: dict) -> list[dict]:
@@ -3091,17 +3134,25 @@ the week planned as if it hadn't been said — is the failure mode this guards a
 goal. The one thing that overrides the placement itself is a night tag that makes that exact \
 night impossible (see the tag-collision rule directly below) — never a scheduling preference of \
 your own.
-- `intake.freeform_scope` spells out the REACH of each request in `intake.freeform`, worked out \
-from their own words. A request that names a MEAL and no DAY — "Mexican for lunch", "chicken \
-breast, potatoes and veggies for dinner" — has applies_to "every" and lists every date of that \
-meal in the period, and it means every one of them: every lunch is Mexican, every dinner is \
-built on chicken and potatoes. The variety rules still apply INSIDE it — different Mexican \
-lunches, different chicken-and-potato dinners, not one dish repeated — but a lunch that isn't \
-Mexican is a lunch that ignored them. Satisfying it on Monday and planning the rest of the week \
-as if it hadn't been said is exactly what this exists to stop. applies_to "named" lists only the \
-dates they named ("Friday is pizza night"); "some" means they said how many ("Mexican twice this \
-week") and you choose which days. Quote the request's words in derived_from.freeform on EVERY \
-slot it shaped, so the draft can say where it went.
+- HOW FAR A TYPED REQUEST REACHES. Scope every request in `intake.freeform` by these rules: a \
+meal type with no day named — "Mexican for lunch", "chicken breast, potatoes and veggies for \
+dinner" — means EVERY slot of that meal in the period: every lunch is Mexican, every dinner is \
+built on chicken and potatoes, with the variety rules still applying inside it (different \
+Mexican lunches, not one dish repeated). Satisfying it on Monday and planning the rest of the \
+week as if it hadn't been said is the failure this exists to stop (Emily, 2026-09-20: it did \
+exactly that). A count — "Mexican twice", "fish on 2 nights" — means that many, and you choose \
+the days. A day or a range — "pizza Friday", "Mexican for lunch Mon–Thu" — means those days \
+only. "No X", "nothing X", "without X", "skip X" is an EXCLUSION: honour it by leaving X out of \
+every slot it names, never by planning X, and never treat it as a request to place. \
+`intake.freeform_scope` lists only the requests whose reach is beyond doubt (a meal word, no \
+day, no count, no "no") with every date of that meal spelled out; the rest is yours to read. \
+THEN REPORT WHAT YOU DID: put the request's own words in derived_from.freeform on EVERY slot it \
+shaped; list each request you honoured in `honoured_requests` with a two-to-four-word label \
+for the draft's opening line ("Mexican lunches", "chicken-and-potato dinners", "pizza \
+Friday"); list anything typed that you could NOT honour in `unmet_requests`, in their words, \
+with a reason of about five words ("nothing in stock says lamb"). An exclusion is honoured \
+silently — never in either list. The draft's opening line is built from these two lists and \
+nothing else, so a request in neither is simply not mentioned: never pad them.
 - When something in `intake.freeform` collides with a night tag — they wrote "Friday is pizza \
 night" and also tagged Friday as a night nobody is home — this is the ONE exception to putting \
 an anchored request exactly where they said it: the TAG wins, and you must say so rather than \
@@ -3314,6 +3365,7 @@ Call submit_weekly_plan with the result."""
         result_key="days",
         effort_route="generation",
         on_item=on_day,
+        report_keys=("honoured_requests", "unmet_requests"),
     )
 
 
@@ -4515,6 +4567,11 @@ def _generate_weekly_plan(
 
         if intake:
             tools.attach_intake_to_plan(plan_id, intake["intake_id"])
+        # What the model said it did with the typed requests (GeneratedDays.
+        # report) — the draft's opening line is built from this and nothing
+        # else, so a request it neither honoured nor listed is not mentioned
+        # rather than guessed at (draft_opener).
+        tools.record_plan_requests(plan_id, getattr(items, "report", None) or {})
 
         # Clear out any 'needed' grocery items still sourced from the
         # PREVIOUS plan, so quantities from already-superseded weeks don't

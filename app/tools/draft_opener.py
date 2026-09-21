@@ -8,24 +8,29 @@ typed instruction has to be visibly reflected when it was used and named
 when it couldn't be — never silently dropped — and the draft should say
 when nothing in it is a repeat of the last two weeks.
 
-Two short lines, built HERE from what was actually stored — the intake's
-answers and the plan's own rows — rather than written by the model at
-generation time. A model-written summary can describe a plan it did not
-make ("Mexican at lunch Mon–Thu" over a week with one Mexican lunch); a
-line built from the rows cannot. The cost is plainer prose: a request is
-echoed in the household's own words with the days it landed on, not
-rewritten.
+Two short lines, built HERE from what was stored — the model's own
+REPORT of what it did with the typed requests (weekly_plans.requests_json:
+the requests it honoured, each with a short label, and the ones it could
+not, each with a reason), the slots' derived_from, the intake and the
+rows — never from a guess about the words. A line that says a request
+was used when it wasn't, or wasn't when it was, costs more trust than a
+line that says nothing: a request the model neither cited nor listed as
+unmet gets no line at all.
 
-  Line 1 — what it planned around, in priority order and within a phone's
-           two-line budget: each typed request that shaped a slot, with
-           the days it reached ("Mexican for lunch Mon–Thu"); the cuisines
-           they tapped; the days left free; a bigger table. With nothing
-           special: "An ordinary week — seven dinners, none repeated."
+  Line 1 — what it planned around, from short labels ("Mexican lunches",
+           "chicken-and-potato dinners", "pizza Friday"), the days left
+           free and a bigger table, ending "as you asked"; capped at
+           LINE_BUDGET by dropping whole items from the end, never a
+           word. With nothing special: "An ordinary week — seven dinners,
+           none repeated." With items that don't fit at all: "I planned
+           around what you told me."
   Line 2 — the one thing worth knowing: a slot handed back for their call;
-           a typed request nothing used ("I couldn’t fit “…” in this
-           week"); else the novelty line ("Nine new dishes — nothing from
-           the last two weeks"), which is only said when there IS a
-           window to compare against.
+           a request the model reported it could not honour ("I couldn’t
+           fit “…” in this week"); else the novelty line over dinners and
+           lunches — the slots the no-repeat rule is about — ("Nine new
+           dishes — nothing from the last two weeks"), only said when
+           there IS a window to compare against. Numbers are words up to
+           twelve, then numerals, on both lines.
 
 `asked_fact` is the sibling of this for one row: the one short fact the
 dish carries beside its days ("Mexican, as asked", "packs cold"), read off
@@ -45,12 +50,12 @@ from ._shared import household_id
 from . import meal_variety as _meal_variety
 from . import week_intake as _week_intake
 
-# The approved board's own opener (C2, 2026-09-21) is 125 characters, and
-# that is the budget for the first line: about two and a half lines of
-# the band's 15px type at 390px. The second line is a short sentence by
-# construction. Over budget, the least important parts go first (the
-# table, the free days), then the requests' own words are shortened.
-LINE_BUDGET = 125
+# About two lines of the band's 15px type at 390px. The second line is a
+# short sentence by construction. Over budget, whole items go from the
+# end — never a truncated phrase, never a cut word.
+LINE_BUDGET = 110
+FALLBACK_LINE = "I planned around what you told me."
+_NOUN = {"breakfast": "breakfasts", "lunch": "lunches", "dinner": "dinners", "snack": "snacks"}
 
 _WORD_NUMBERS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight",
                  "nine", "ten", "eleven", "twelve"]
@@ -111,15 +116,6 @@ def _cited(request: str, span: str) -> bool:
         return False
     shared = len(a & b)
     return shared >= max(1, len(b) // 2) or shared >= max(1, len(a) // 2)
-
-
-def _requests(freeform: str) -> list[str]:
-    return [r.strip(" ,;") for r in _week_intake._REQUEST_SPLIT_RE.split(freeform or "") if r.strip(" ,;")]
-
-
-def _shorten(words: str, limit: int = 6) -> str:
-    parts = words.split()
-    return words if len(parts) <= limit else " ".join(parts[:limit]) + "…"
 
 
 def _derived(entry: dict) -> dict:
@@ -221,71 +217,126 @@ def _join(parts: list[str]) -> str:
     return ", ".join(parts[:-1]) + " and " + parts[-1]
 
 
-def _line_one(entries: list[dict], intake: dict | None, period: list[str], days: list[dict]) -> tuple[str, list[str]]:
-    """The first line and the requests nothing used."""
-    freeform = (intake or {}).get("freeform") or ""
-    requests = _requests(freeform)
-    used: list[tuple[str, str]] = []
-    unused: list[str] = []
-    for req in requests:
-        cited_dates = sorted({
-            e["date"] for e in entries
-            if e.get("slot_state", "planned") == "planned" and _cited(req, str(_derived(e).get("freeform") or ""))
-        })
-        if cited_dates:
-            used.append((req, days_phrase(cited_dates, period)))
+def _fallback_label(words: str, slots: set[str], single: bool = False) -> str:
+    """
+    A label for an honoured request the model gave no label for (an
+    older plan): its content words, at most four, and the meal noun when
+    one meal is named — "Mexican lunches", "chicken breast potatoes veggies
+    dinners", "Friday pizza dinner" for a one-day request. Plain, never a
+    cut word.
+    """
+    content = [w for w in re.findall(r"[A-Za-z0-9'\-]+", words) if w.lower() not in _STOPWORDS][:4]
+    label = " ".join(content)
+    if len(slots) == 1:
+        slot = next(iter(slots))
+        label = (label + " " + (slot if single else _NOUN[slot])).strip()
+    return label
+
+
+def _honoured_items(entries: list[dict], report: dict | None, period: list[str]) -> list[str]:
+    """
+    One short item per honoured request: the model's label (or a plain
+    one), plus the days when it did not reach the whole week. Which
+    requests count as honoured: those in the report's `honoured` list,
+    or — for a plan with no report — those some slot cites in
+    derived_from.freeform. A request in neither is not mentioned.
+    """
+    cited: dict[str, dict] = {}
+    for e in entries:
+        if e.get("slot_state", "planned") != "planned":
+            continue
+        span = str(_derived(e).get("freeform") or "").strip()
+        if span:
+            c = cited.setdefault(span.lower(), {"words": span, "dates": set(), "slots": set()})
+            c["dates"].add(e["date"])
+            c["slots"].add(e["slot"])
+    honoured = (report or {}).get("honoured") or []
+    if honoured:
+        found = []
+        for r in honoured:
+            words = str(r.get("words") or "").strip()
+            if not words:
+                continue
+            match = next((c for c in cited.values() if _cited(words, c["words"])), None)
+            found.append({
+                "label": str(r.get("label") or "").strip() or _fallback_label(
+                    words, match["slots"] if match else set(), single=bool(match and len(match["dates"]) == 1)),
+                "dates": sorted(match["dates"]) if match else [],
+            })
+    else:
+        found = [
+            {"label": _fallback_label(c["words"], c["slots"], single=len(c["dates"]) == 1), "dates": sorted(c["dates"])}
+            for c in cited.values()
+        ]
+    items = []
+    for f in found:
+        if not f["label"]:
+            continue
+        where = days_phrase(f["dates"], period) if f["dates"] else ""
+        if where and where not in ("all week", "every day") and where.lower() not in f["label"].lower():
+            items.append((f["label"], where))
         else:
-            unused.append(req)
+            items.append((f["label"], ""))
+    return items
 
-    def asked(shorten: bool) -> str:
-        return _join([f"{_shorten(r) if shorten else r} {w}".strip() for r, w in used]) + ", as you asked"
 
-    parts: list[str] = []
-    if used:
-        parts.append(asked(False))
-    cuisines = [c for c in ((intake or {}).get("cuisines") or []) if c and c.lower() not in freeform.lower()]
-    if cuisines:
-        parts.append(_join([_cap(c) for c in cuisines[:3]]) + " in the mix")
+def _line_one(entries: list[dict], intake: dict | None, period: list[str], days: list[dict],
+              report: dict | None) -> str:
+    asked = _honoured_items(entries, report, period)
+    extras: list[str] = []
     free = [d["date"] for d in days if (d.get("dinner") or {}).get("state") == "planned_empty"]
     if free:
-        parts.append(f"{days_phrase(free, period)} left free")
+        extras.append(f"{days_phrase(free, period)} left free")
     for d in days:
         for slot in ("breakfast", "lunch", "dinner"):
             e = d.get(slot) or {}
             if e.get("guest_count") and e.get("serves"):
-                parts.append(f"{number_word(e['serves'])} for {slot} {_WEEKDAY_LONG[date.fromisoformat(d['date']).weekday()]}")
+                extras.append(f"{number_word(e['serves'])} for {slot} {_WEEKDAY_LONG[date.fromisoformat(d['date']).weekday()]}")
                 break
 
-    if not parts:
+    if not asked and not extras:
         dinners = [e for e in entries if e["slot"] == "dinner" and _is_dish(e)]
         distinct = len({e["meal"].strip().lower() for e in dinners})
         nights = len({e["date"] for e in dinners})
         if not dinners:
-            return "Your week’s here.", unused
+            return "Your week’s here."
         if distinct == nights:
-            return f"An ordinary week — {number_word(distinct)} dinners, none repeated.", unused
-        return f"An ordinary week — {number_word(distinct)} dinners across {number_word(nights)} nights.", unused
+            return f"An ordinary week — {number_word(distinct)} dinners, none repeated."
+        return f"An ordinary week — {number_word(distinct)} dinners across {number_word(nights)} nights."
 
-    # Trim to the budget from the least important part backwards, then
-    # shorten the requests' own words if they alone run long.
-    def build(ps: list[str]) -> str:
-        return _cap(", ".join(ps)) + "."
-    while len(build(parts)) > LINE_BUDGET and len(parts) > 1:
-        parts.pop()
-    if len(build(parts)) > LINE_BUDGET and used:
-        parts[0] = asked(True)
-    return build(parts), unused
+    def build(ask: list[tuple[str, str]], more: list[str], with_days: bool) -> str:
+        parts = [f"{label} {where}".strip() if with_days else label for label, where in ask]
+        if parts:
+            parts[-1] = parts[-1] + ", as you asked"
+        return _cap(", ".join(parts + more)) + "."
+
+    # Over the budget: first the days go off the labels ("Mexican lunches"
+    # is still true without "Mon–Thu"), then whole items from the end —
+    # the extras first, then the requests. Never a cut phrase.
+    ask, more, with_days = list(asked), list(extras), True
+    while len(build(ask, more, with_days)) > LINE_BUDGET and (ask or more):
+        if with_days:
+            with_days = False
+        elif more:
+            more.pop()
+        else:
+            ask.pop()
+    if not ask and not more:
+        return FALLBACK_LINE
+    return build(ask, more, with_days)
 
 
-def _line_two(entries: list[dict], unused: list[str], recent: set[str] | None) -> str:
+def _line_two(entries: list[dict], report: dict | None, recent: set[str] | None) -> str:
     open_slots = [e for e in entries if e.get("slot_state") == "open"]
     if len(open_slots) == 1:
         return "One slot I’d like your call on."
     if open_slots:
         return f"{_cap(number_word(len(open_slots)))} slots I’d like your call on."
-    if unused:
-        return f"I couldn’t fit “{_shorten(unused[0], 8)}” in this week."
-    names = _dish_names(entries)
+    unmet = [str(r.get("words") or "").strip() for r in ((report or {}).get("unmet") or [])]
+    unmet = [u for u in unmet if u]
+    if unmet:
+        return f"I couldn’t fit “{unmet[0]}” in this week."
+    names = _dish_names([e for e in entries if e["slot"] in ("dinner", "lunch")])
     if recent is None or not names:
         return ""
     back = [n for n in names if n.lower() in recent]
@@ -299,15 +350,16 @@ def _line_two(entries: list[dict], unused: list[str], recent: set[str] | None) -
 
 
 def build_opener(rows, intake: dict | None, period_start: str, day_count: int, days: list[dict],
-                 plan_id: int | None = None) -> list[str]:
+                 plan_id: int | None = None, report: dict | None = None) -> list[str]:
     """
     The draft's two lines, for get_week_menu. `rows` are the plan's own
     entry rows (date, slot, meal, slot_state, derived_from_json,
     freeform_meal); `days` the decorated day dicts the screen gets (their
-    dinner state and headcounts are read here).
+    dinner state and headcounts are read here); `report` the stored
+    account of the typed requests (weekly_plan.plan_requests).
     """
     period = _week_intake.period_dates(period_start, day_count)
     entries = _plan_entries(rows)
-    first, unused = _line_one(entries, intake, period, days)
-    second = _line_two(entries, unused, recent_dish_names(period_start, plan_id))
+    first = _line_one(entries, intake, period, days, report)
+    second = _line_two(entries, report, recent_dish_names(period_start, plan_id))
     return [line for line in (first, second) if line]
