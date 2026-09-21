@@ -36,6 +36,12 @@ def _meat_recipe(name="Chicken Skewers", item="Chicken Thighs", qty="1 lb"):
     )
 
 
+# What confirm_frozen_items hands back when nothing on the plan changes
+# hands: no move booked, no note, no grocery line set aside or put back
+# (the list half arrived 2026-09-21 — tests/test_freezer_at_approval_all_meat.py).
+_NOTHING_WRITTEN = {"created": [], "notes": [], "set_aside": [], "put_back": [], "cancelled": 0}
+
+
 # ---------- meat_items_for_plan: the ask card's own chip list ----------
 
 def test_meat_items_for_plan_lists_the_plans_own_meat_ingredient_with_its_night():
@@ -118,7 +124,7 @@ def test_meat_items_for_plan_does_not_crash_for_a_component_based_plan(monkeypat
     conn.close()
 
     assert defrost.meat_items_for_plan(plan["weekly_plan_id"]) == []
-    assert defrost.confirm_frozen_items(plan["weekly_plan_id"], ["Grilled Chicken"]) == {"created": [], "notes": []}
+    assert defrost.confirm_frozen_items(plan["weekly_plan_id"], ["Grilled Chicken"]) == _NOTHING_WRITTEN
 
 
 # ---------- confirm_frozen_items: schedule from a household's own answer ----------
@@ -221,7 +227,7 @@ def test_confirming_an_unselected_item_creates_nothing():
     plan = tools.create_weekly_plan(week)
     tools.plan_meal(tools._week_dates(week)[3], "Chicken Skewers", slot="dinner", weekly_plan_id=plan["weekly_plan_id"])
 
-    assert defrost.confirm_frozen_items(plan["weekly_plan_id"], ["Ground Beef"]) == {"created": [], "notes": []}
+    assert defrost.confirm_frozen_items(plan["weekly_plan_id"], ["Ground Beef"]) == _NOTHING_WRITTEN
 
 
 def test_confirming_with_an_empty_list_is_the_all_fresh_answer_and_creates_nothing():
@@ -230,7 +236,7 @@ def test_confirming_with_an_empty_list_is_the_all_fresh_answer_and_creates_nothi
     plan = tools.create_weekly_plan(week)
     tools.plan_meal(tools._week_dates(week)[3], "Chicken Skewers", slot="dinner", weekly_plan_id=plan["weekly_plan_id"])
 
-    assert defrost.confirm_frozen_items(plan["weekly_plan_id"], []) == {"created": [], "notes": []}
+    assert defrost.confirm_frozen_items(plan["weekly_plan_id"], []) == _NOTHING_WRITTEN
 
 
 def test_confirming_a_meal_happening_today_is_too_late_and_creates_no_task():

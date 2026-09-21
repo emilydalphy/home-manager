@@ -13,11 +13,16 @@ Three things changed, and this file is one section each:
 
   1. cook_ahead._is_a_cook — the batch offer is only ever about a dish
      somebody actually cooks.
-  2. defrost's four rules — the freezer ask only lists what the app has no
-     other record of: what the fridge demonstrably covers, a move already
-     booked or done, a line still to buy, and a night it is too late to
+  2. defrost's rules — the freezer ask only lists what the app has no
+     other record of: what the fridge demonstrably covers, a move the app
+     booked itself off tracked inventory, and a night it is too late to
      thaw for. The first is _KitchenStock's answer, not a second one; the
-     middle two are per NIGHT.
+     other two are per NIGHT. (Until 2026-09-21 there were four: "a line
+     still to buy" left off, which emptied the ask at the one moment it is
+     shown. Section 3 below is now the reverse promise — the line is what
+     a tapped chip takes off — and a move THIS step booked is offered
+     again with its chip on, so the answer can be changed. See
+     tests/test_freezer_at_approval_all_meat.py.)
   3. shell.js — the ask card itself, since retired (2026-09-18): see
      section 3 below for what replaced it.
 
@@ -308,6 +313,14 @@ def _nights(plan_id):
             for i in defrost.meat_items_for_plan(plan_id)]
 
 
+def _on_list(plan_id):
+    return [(i["item"], i["on_list"]) for i in defrost.meat_items_for_plan(plan_id)]
+
+
+def _frozen(plan_id):
+    return [(i["item"], i["frozen"]) for i in defrost.meat_items_for_plan(plan_id)]
+
+
 def _sql(query, *args):
     conn = db.get_conn()
     conn.execute(query, args)
@@ -433,111 +446,123 @@ def test_a_row_with_no_location_on_it_is_read_the_way_every_screen_reads_it():
     assert _items(plan_id) == ["Cod Fillets"]
 
 
-# ---------- 3. a line still to buy ----------
+# ---------- 3. a line still to buy is asked about, and says so ----------
+# Reversed on 2026-09-21 (Loop Board "Freezer question at approval asks
+# about every meat in the week"): the whole chicken on the list IS the
+# question — "do you already have this frozen?" — and a yes takes the
+# line off. So a line to buy no longer silences, and each item says
+# whether it has one (`on_list`), which is what the step's "off the
+# shopping list" half is promised on.
 
-def test_something_still_on_the_shopping_list_is_not_asked_about():
-    """CATCH — the whole chicken. The app has just told her to go and buy
-    one; asking whether it is in her freezer is the app contradicting
-    itself on two consecutive screens."""
+def test_something_still_on_the_shopping_list_is_asked_about_and_says_so():
+    """CATCH — the whole chicken. Until 2026-09-21 this list was empty at
+    the one moment the step is shown, because approval had just put the
+    week's meat on the list."""
     _household()
     _meat("Roast Chicken", "Whole Chicken")
     plan_id = _meat_week((NEXT_THU, "Roast Chicken"))
     tools.add_grocery_item("Whole Chicken", quantity="1", category="meat/seafood")
 
-    assert _items(plan_id) == []
+    assert _on_list(plan_id) == [("Whole Chicken", True)]
 
 
 @pytest.mark.parametrize("status", ["needed", "in_cart", "spice"])
 def test_every_kind_of_line_still_to_buy_counts_as_on_the_list(status):
     """CATCH — a line waiting in the sorting queue is as much "you are
-    going to buy this" as a plain needed one."""
+    going to buy this" as a plain needed one, so a yes takes it off too."""
     _household()
     _meat()
     plan_id = _meat_week()
     tools.add_grocery_item("Chicken Thighs", quantity="1 lb", category="meat/seafood")
     _sql("UPDATE grocery_items SET status = ?", status)
 
-    assert _items(plan_id) == []
+    assert _on_list(plan_id) == [("Chicken Thighs", True)]
 
 
-def test_an_unanswered_carried_line_is_not_an_answer():
-    """CATCH against the first cut of this branch, which counted 'carried'
+def test_an_unanswered_carried_line_is_not_this_steps_to_answer():
+    """CATCH against the first cut of this rule, which counted 'carried'
     as on the list. A carried line is last week's line waiting for a keep
-    or a drop — nobody has said either — so it cannot stand in for the
-    household saying the food is not frozen."""
+    or a drop — the carry-over step's question — so this step neither
+    reads it as a line to take off nor sets it aside."""
     _household()
     _meat()
     plan_id = _meat_week()
     tools.add_grocery_item("Chicken Thighs", quantity="1 lb", category="meat/seafood")
     _sql("UPDATE grocery_items SET status = 'carried'")
 
-    assert _items(plan_id) == ["Chicken Thighs"]
+    assert _on_list(plan_id) == [("Chicken Thighs", False)]
 
 
 @pytest.mark.parametrize("status", ["purchased", "removed"])
 def test_a_line_already_bought_or_taken_off_is_not_on_the_list(status):
     """GUARD by mutation — widen the status clause to every row and this
     goes red. A purchased line is in the kitchen, not on the list, and a
-    removed one is nowhere; neither is a reason to stop asking. This is
-    also what gives the ask its home: after the shop, the line is
-    purchased and the question is finally answerable."""
+    removed one is nowhere; the question is still asked, with only the
+    fridge half to promise."""
     _household()
     _meat()
     plan_id = _meat_week()
     tools.add_grocery_item("Chicken Thighs", quantity="1 lb", category="meat/seafood")
     _sql("UPDATE grocery_items SET status = ?", status)
 
-    assert _items(plan_id) == ["Chicken Thighs"]
+    assert _on_list(plan_id) == [("Chicken Thighs", False)]
 
 
 def test_a_line_excluded_from_the_list_is_not_on_the_list():
-    """GUARD by mutation — "Somewhere else" takes a line off the list, so
-    it stops being a reason not to ask."""
+    """GUARD by mutation — "Getting it elsewhere" takes a line off the
+    list, and this step does not take it off twice."""
     _household()
     _meat()
     plan_id = _meat_week()
     tools.add_grocery_item("Chicken Thighs", quantity="1 lb", category="meat/seafood")
     _sql("UPDATE grocery_items SET excluded_from_list = 1")
 
-    assert _items(plan_id) == ["Chicken Thighs"]
+    assert _on_list(plan_id) == [("Chicken Thighs", False)]
 
 
 def test_a_plural_spelling_is_still_the_same_thing():
     """CATCH — the list line and the recipe line rarely agree about a
-    trailing s, and "Chicken Thigh" on the list must silence "Chicken
-    Thighs" in the plan. Same plural tolerance the rest of this module
-    already matches names with."""
+    trailing s, and "Chicken Thigh" on the list is "Chicken Thighs" in the
+    plan. Same plural tolerance the rest of this module already matches
+    names with."""
     _household()
     _meat()
     plan_id = _meat_week()
     tools.add_grocery_item("Chicken Thigh", quantity="1 lb", category="meat/seafood")
 
-    assert _items(plan_id) == []
+    assert _on_list(plan_id) == [("Chicken Thighs", True)]
 
 
 # ---------- 2 and 4: a move already settled, night by night ----------
+# A move THIS step booked is not settled any more (2026-09-21): the Plan
+# tab's freezer row reopens the step to change the answer, so the chip is
+# offered again, already on. A move the app booked itself off tracked
+# freezer inventory still is — the app knows, and a second yes would book
+# it twice (tests/test_freezer_at_approval_all_meat.py has that one).
 
-def test_a_move_already_booked_is_not_asked_about_again():
-    """CATCH — answering the ask writes the defrost rows, and the Cook
-    view's re-ask link then offered the same chips over again."""
+def test_a_move_already_booked_is_offered_again_with_its_chip_on():
+    """CATCH — answering writes the defrost rows; reopening the step must
+    show that answer rather than an empty list, or there is no way to take
+    it back."""
     _household()
     _meat()
     plan_id = _meat_week()
-    assert _items(plan_id) == ["Chicken Thighs"]
+    assert _frozen(plan_id) == [("Chicken Thighs", False)]
 
     defrost.confirm_frozen_items(plan_id, ["Chicken Thighs"])
-    assert _items(plan_id) == []
+    assert _frozen(plan_id) == [("Chicken Thighs", True)]
 
 
-def test_a_move_already_ticked_done_is_not_asked_about_again():
-    """CATCH — "already recorded as thawed", in Emily's own words."""
+def test_a_move_already_ticked_done_still_reads_as_frozen():
+    """CATCH — "already recorded as thawed", in Emily's own words: the
+    answer was yes, and the row says so whether or not the move is done."""
     _household()
     _meat()
     plan_id = _meat_week()
     defrost.confirm_frozen_items(plan_id, ["Chicken Thighs"])
     _sql("UPDATE prep_tasks SET status = 'done'")
 
-    assert _items(plan_id) == []
+    assert _frozen(plan_id) == [("Chicken Thighs", True)]
 
 
 def test_a_skipped_move_leaves_the_question_askable():
@@ -551,25 +576,28 @@ def test_a_skipped_move_leaves_the_question_askable():
     defrost.confirm_frozen_items(plan_id, ["Chicken Thighs"])
     _sql("UPDATE prep_tasks SET status = 'skipped'")
 
-    assert _items(plan_id) == ["Chicken Thighs"]
+    assert _frozen(plan_id) == [("Chicken Thighs", False)]
 
 
-def test_one_night_booked_does_not_silence_a_dinner_added_afterwards():
+def test_one_night_booked_keeps_every_night_and_a_dinner_added_afterwards_can_still_be_booked():
     """CATCH against the first cut, which keyed this by NAME: one booked
     night made the item unbookable for the whole rest of the week, so a
     second chicken dinner swapped in after the answer could never have its
-    thaw scheduled. The key is the (item, meal, night) description
-    confirm_frozen_items itself de-dupes with."""
+    thaw scheduled. Both nights are offered (the booked one is what makes
+    the chip read as on), and answering again books the new one."""
     _household()
     _meat()
     plan_id = _meat_week((NEXT_TUE, "Chicken Skewers"))
     defrost.confirm_frozen_items(plan_id, ["Chicken Thighs"])
     tools.plan_meal(NEXT_THU, "Chicken Skewers", slot="dinner", weekly_plan_id=plan_id)
 
-    assert _nights(plan_id) == [("Chicken Thighs", [NEXT_THU])]
+    assert _nights(plan_id) == [("Chicken Thighs", [NEXT_TUE, NEXT_THU])]
+    assert _frozen(plan_id) == [("Chicken Thighs", True)]
+    created = defrost.confirm_frozen_items(plan_id, ["Chicken Thighs"])["created"]
+    assert sorted(c["date"] for c in created) == [NEXT_TUE, NEXT_THU]
 
 
-def test_a_move_booked_on_a_different_week_does_not_silence_this_one():
+def test_a_move_booked_on_a_different_week_says_nothing_about_this_one():
     """GUARD by mutation — the task read is scoped to this plan."""
     _household()
     _meat()
@@ -581,7 +609,7 @@ def test_a_move_booked_on_a_different_week_does_not_silence_this_one():
     assert defrost.confirm_frozen_items(other, ["Chicken Thighs"])["created"]
     plan_id = _meat_week()
 
-    assert _items(plan_id) == ["Chicken Thighs"]
+    assert _frozen(plan_id) == [("Chicken Thighs", False)]
 
 
 # A period that starts TODAY and runs a week, so "tonight" and "four days
@@ -774,8 +802,9 @@ def test_something_not_in_this_weeks_plan_is_never_asked_about():
 
 
 def test_the_route_serves_the_narrowed_list(signed_in):
-    """CATCH — over the wire, the exact pair Emily was shown, plus the one
-    that must survive."""
+    """CATCH — over the wire: the shrimp the fridge covers is left off, and
+    the whole chicken on the list is asked about (with its line) beside
+    the one that always was."""
     _household()
     _meat("Shrimp Skewers", "Shrimp")
     _meat("Roast Chicken", "Whole Chicken")
@@ -787,34 +816,33 @@ def test_the_route_serves_the_narrowed_list(signed_in):
 
     body = signed_in.get(f"/api/week/{NEXT_WEEK}/defrost-items").json()
     assert body["weekly_plan_id"] == plan_id
-    assert [i["item"] for i in body["items"]] == ["Chicken Thighs"]
+    assert [(i["item"], i["on_list"], i["frozen"]) for i in body["items"]] == [
+        ("Chicken Thighs", False, False), ("Whole Chicken", True, False),
+    ]
 
 
-def test_after_an_approval_a_household_that_tracks_nothing_is_asked_nothing():
-    """CATCH — Emily's screen. Every surface that shows this ask renders
-    after an approval, and approval has just put the week's meat on the
-    shopping list, so there is nothing real to say."""
+def test_after_an_approval_a_household_that_tracks_nothing_is_asked_about_all_of_it():
+    """CATCH — Emily's screen, reversed on 2026-09-21. The step renders
+    right after approval, and approval has just put the week's meat on the
+    shopping list — which is now exactly the question: the chip is offered
+    WITH its line, and a yes takes the line off."""
     _household()
     _meat()
     plan_id = _meat_week()
-    assert _items(plan_id) == ["Chicken Thighs"]  # the premise: before the list exists
+    assert _on_list(plan_id) == [("Chicken Thighs", False)]  # the premise: before the list exists
 
     tools.approve_weekly_plan(plan_id)
-    assert _items(plan_id) == []
+    assert _on_list(plan_id) == [("Chicken Thighs", True)]
 
 
-def test_and_it_comes_back_the_moment_the_food_is_home():
-    """CATCH, and the answer to "where does this ask live now". Ticking the
-    line purchased takes it off the list and files it under the meat
-    category's default shelf — a guess — so the Cook tab's "Something in
-    the freezer?" link asks about exactly the thing in the kitchen whose
-    shelf nobody has told the app about. Driven over HTTP as well, on a
-    throwaway DB, 2026-09-15."""
+def test_and_it_stays_askable_once_the_food_is_home():
+    """CATCH — ticking the line purchased takes it off the list and files
+    it under the meat category's default shelf — a guess — so the step
+    still asks about it, now with only the fridge half to promise."""
     _household()
     _meat()
     plan_id = _meat_week((NEXT_TUE, "Chicken Skewers"), (NEXT_THU, "Chicken Skewers"))
     tools.approve_weekly_plan(plan_id)
-    assert _items(plan_id) == []
 
     conn = db.get_conn()
     line = conn.execute("SELECT id FROM grocery_items WHERE item LIKE 'Chicken%'").fetchone()["id"]
@@ -822,6 +850,7 @@ def test_and_it_comes_back_the_moment_the_food_is_home():
     tools.mark_grocery_item(line, "purchased")
 
     assert _nights(plan_id) == [("Chicken Thighs", [NEXT_TUE, NEXT_THU])]
+    assert _on_list(plan_id) == [("Chicken Thighs", False)]
 
 
 def test_when_the_app_knows_about_all_of_it_there_is_nothing_to_ask():

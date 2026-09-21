@@ -673,11 +673,25 @@ def _iter_plan_meat_ingredients(weekly_plan_id: int):
 # missed thaw, which is the direction this whole function is biased in.
 _INFERRED_LOCATION_SOURCES = _inventory.GUESSED_LOCATION_SOURCES
 
-# A grocery line that still means "you are going to buy this". Deliberately
-# an allow-list: 'purchased' and 'removed' are in the kitchen or nowhere,
-# and 'carried' is an UNANSWERED keep-or-drop line from last week, which is
-# not an answer to anything and must not silence a question.
+# A grocery line that still means "you are going to buy this" — what a
+# tapped freezer chip takes off the list. Deliberately an allow-list:
+# 'purchased' and 'removed' are in the kitchen or nowhere, and 'carried'
+# is an UNANSWERED keep-or-drop line from last week, which the carry-over
+# step owns and this one must not answer for it.
 _STILL_TO_BUY_STATUSES = ("needed", "in_cart", "spice")
+
+# The mark the freezer step leaves on a grocery line it sets aside — the
+# pre-shop drop's removed_by, beside 'already_have', 'staple' and the two
+# carried marks. The line lands under Shop's "Not needed this week" with
+# every other "have it" and comes back through the same undo
+# (pre_shop.undo_pre_shop_drop), which reads this mark to know the line's
+# defrost move goes with it.
+FREEZER_REMOVED_BY = "freezer"
+
+# The item out of a _describe() string, for _release_frozen_item: the
+# task rows carry no item column, and the description is the one key this
+# module has always de-duped moves by.
+_MOVE_ITEM_RE = re.compile(r"^Move the (.+?) to the fridge — for ")
 
 # A defrost row that means the move is settled: booked, or done. NOT
 # 'skipped' — that is the household declining this one move on the Now
@@ -747,23 +761,30 @@ def _covered_at_home(need: dict[str, tuple[float, str | None] | None]) -> set[st
     return {key for key, want in need.items() if stock.covers(key, want)}
 
 
-def _settled_nights(weekly_plan_id: int, by_item: dict[str, dict]) -> set[str]:
+def _settled_nights(weekly_plan_id: int, by_item: dict[str, dict]) -> tuple[set[str], set[str]]:
     """
-    The individual MOVES this ask has nothing left to say about, as the
-    very _describe() strings confirm_frozen_items de-dupes with — so the
-    ask and the write cannot drift about which move is which.
+    Two sets of the very _describe() strings confirm_frozen_items de-dupes
+    with — so the ask and the write cannot drift about which move is which.
 
-    Two kinds, and both are per NIGHT rather than per item, which is the
-    whole point: a chicken booked for Wednesday says nothing about the
-    second chicken dinner swapped in for Friday, and keying this by name
-    made that second thaw unbookable for the rest of the week.
-
-      * a defrost row already on this plan for that night, pending or done;
-      * a night it is already too late to thaw for. confirm_frozen_items
+      * settled — the MOVES this ask has nothing left to say about: a move
+        the app booked itself off tracked freezer inventory
+        (sync_defrost_tasks; inventory_item_id set), pending or done, and
+        a night it is already too late to thaw for. confirm_frozen_items
         refuses to write a task whose move date has gone by and hands back
         TOO_LATE_TO_THAW_NOTE instead, so asking about such a night can
         only ever produce a note — which is Emily's "tonight's already
         eaten shrimp", settled without guessing at a shelf.
+      * frozen — the moves THIS STEP already booked (inventory_item_id
+        NULL), pending or done. Until 2026-09-21 these were settled too,
+        and the chip vanished the moment it was tapped; the Plan tab's
+        freezer row now reopens the step to CHANGE the answer, so a booked
+        night is offered again with its chip already on, and deselecting
+        it is how the move is cancelled (see confirm_frozen_items).
+
+    Both are per NIGHT rather than per item, which is the whole point: a
+    chicken booked for Wednesday says nothing about the second chicken
+    dinner swapped in for Friday, and keying this by name made that second
+    thaw unbookable for the rest of the week.
 
     The too-late test reads the HOUSEHOLD's today because confirm_frozen_items
     does, and the two have to agree about what is still possible: an earlier
@@ -776,126 +797,171 @@ def _settled_nights(weekly_plan_id: int, by_item: dict[str, dict]) -> set[str]:
     """
     today = _cooker.household_today()
     conn = get_conn()
-    booked = {
-        (row["description"] or "")
-        for row in conn.execute(
-            "SELECT description FROM prep_tasks WHERE household_id = ? "
-            "AND weekly_plan_id = ? AND task_type = 'defrost' "
-            f"AND status IN ({','.join('?' * len(_SETTLED_DEFROST_STATUSES))})",
-            (household_id(), weekly_plan_id, *_SETTLED_DEFROST_STATUSES),
-        ).fetchall()
-    }
+    rows = conn.execute(
+        "SELECT description, inventory_item_id FROM prep_tasks WHERE household_id = ? "
+        "AND weekly_plan_id = ? AND task_type = 'defrost' "
+        f"AND status IN ({','.join('?' * len(_SETTLED_DEFROST_STATUSES))})",
+        (household_id(), weekly_plan_id, *_SETTLED_DEFROST_STATUSES),
+    ).fetchall()
     conn.close()
+    settled = {(r["description"] or "") for r in rows if r["inventory_item_id"] is not None}
+    frozen = {(r["description"] or "") for r in rows if r["inventory_item_id"] is None}
 
     dinner_window = _rhythm.get_household_rhythm().get("dinner_window")
-    settled = set(booked)
     for entry in by_item.values():
         lead_hours, _tier = lead_hours_for_item(entry["item"])
         for night in entry["nights"]:
             move = _move_date(night["date"], lead_hours, dinner_window)
             if date.fromisoformat(move) < today:
                 settled.add(_describe(entry["item"], night["meal"], night["date"]))
-    return settled
+    return settled, frozen
 
 
-def _still_to_buy(names: set[str]) -> set[str]:
+def _grocery_lines_by_item(names) -> dict[str, list[dict]]:
     """
-    The names with a grocery line still waiting to be bought. Emily,
-    2026-09-15: being asked "is this in your freezer?" about a whole
-    chicken the app has just told her to go and buy is the app
-    contradicting itself on two consecutive screens.
+    Each of the plan's meats' grocery lines, keyed the way by_item is: the
+    lines still to be bought (_STILL_TO_BUY_STATUSES), and the lines this
+    very step already set aside (removed_by FREEZER_REMOVED_BY). The first
+    kind is what a tapped chip takes off the list; the second is what a
+    deselected chip puts back — and both count as "on the list" for the
+    step's "What that means" line, so a chip reads "off the shopping list"
+    the same way before and after it is tapped. Plural-tolerant, the way
+    every name comparison in this module is: "Chicken Thigh" on the list is
+    "Chicken Thighs" in the plan.
     """
     conn = get_conn()
     rows = conn.execute(
-        "SELECT item FROM grocery_items WHERE household_id = ? "
-        f"AND status IN ({','.join('?' * len(_STILL_TO_BUY_STATUSES))}) "
-        "AND excluded_from_list = 0",
-        (household_id(), *_STILL_TO_BUY_STATUSES),
+        "SELECT id, item, status, removed_by FROM grocery_items WHERE household_id = ? "
+        f"AND ((status IN ({','.join('?' * len(_STILL_TO_BUY_STATUSES))}) AND excluded_from_list = 0) "
+        "OR (status = 'removed' AND removed_by = ?))",
+        (household_id(), *_STILL_TO_BUY_STATUSES, FREEZER_REMOVED_BY),
     ).fetchall()
     conn.close()
-    listed = {(row["item"] or "").strip().lower() for row in rows}
-    return {n for n in names if _matches_selected_item(n, listed)}
+    out: dict[str, list[dict]] = {key: [] for key in names}
+    for row in rows:
+        line = (row["item"] or "").strip().lower()
+        for key in out:
+            if _matches_selected_item(key, {line}):
+                out[key].append(dict(row))
+    return out
 
 
 def meat_items_for_plan(weekly_plan_id: int) -> list[dict]:
     """
-    The distinct meat/seafood ingredients this plan's own meals call for
-    and the app has no other record of, each with the night(s) it feeds —
-    the ask card's own chip list, and the GET route behind it.
+    Every distinct meat/seafood ingredient this plan's own meals call for,
+    each with the night(s) it feeds — the freezer step's own chip list, and
+    the GET route behind it. Each entry also says whether it has a grocery
+    line this week (`on_list`, so the step can promise "off the shopping
+    list" only where there is a line to take off) and whether the household
+    has already said it is frozen (`frozen`, so reopening the step shows
+    the answer as given).
 
-    Emily, walking flow 2 on 2026-09-15: the ask listed tonight's shrimp,
-    already out of the freezer and eaten, and a whole chicken that was on
-    the shopping list she had just been handed. Four things are left off
-    now, and the safe direction throughout is to ask one question too many
-    rather than miss a thaw — a missed thaw costs the dinner:
+    Emily, 2026-09-19: "it is for the user to be able to flag if they have
+    meat in the freezer, that needs to be defrosted in time to be cooked,
+    and takes the mental energy off the user by asking the question so
+    they don't need to think about it." So the question is asked about
+    ALL of the week's meat, at approval, and a yes does two things at once
+    (confirm_frozen_items): the line comes off the list and the move is
+    booked. Until 2026-09-21 a third rule left off any name with a grocery
+    line still to buy — "the app has just told her to go and buy it" —
+    which, since approval puts the whole week's meat on the list, made
+    this list EMPTY at the one moment the step is shown, and the ask lived
+    on only after the shop. That rule is gone: being on the list is now
+    the thing a tapped chip changes, not a reason to stay quiet.
 
-      1. a name the FRIDGE demonstrably covers (_covered_at_home);
-      2. a night whose move is already booked, or already done;
-      3. a name with a grocery line still to buy (_still_to_buy);
-      4. a night it is already too late to thaw for.
+    What is still left off, and the safe direction throughout is to ask one
+    question too many rather than miss a thaw — a missed thaw costs the
+    dinner:
 
-    2 and 4 are per NIGHT, so an item keeps the nights that are still open
-    and only drops out when every one of them is settled.
+      1. a name the FRIDGE demonstrably covers (_covered_at_home) — it is
+         thawed, and the ingest never put it on the list;
+      2. a night whose move the app booked itself off tracked freezer
+         inventory, pending or done (the app already knows it is frozen;
+         a second yes here would book the move twice);
+      3. a night it is already too late to thaw for.
+
+    2 and 3 are per NIGHT, so an item keeps the nights that are still open
+    and only drops out when every one of them is settled. A night this step
+    itself booked is NOT left off: it is offered again with `frozen` set,
+    which is how the Plan tab's freezer row reopens the answer to change it
+    (see _settled_nights).
 
     A night only appears here if it's a real cook night (see
     _iter_plan_meat_ingredients) — the leftover-chain reheat night is left
     off "which night(s)" the same way it's left off the scheduled task
     itself: the batch that covers it is cooked, and defrosted for, on the
     source night alone.
-
-    WHERE THE ASK LIVES NOW, said plainly, because rule 3 is the wide one.
-    Every surface that shows it renders after an approval, and approval has
-    just put this week's meat on the shopping list — so on a household that
-    tracks nothing this list is empty at that moment and the ask is not
-    shown at all. It comes back the moment the food is home: ticking a line
-    purchased takes it off the list, and the Cook tab's "Something in the
-    freezer?" link then asks about exactly the things in the kitchen whose
-    shelf nobody has told the app about. Measured end to end over HTTP on
-    2026-09-15 — [] right after approving, and the item with both its
-    nights after the shop.
     """
     by_item, need = _plan_need_by_item(weekly_plan_id)
-    known = _covered_at_home(need) | _still_to_buy(set(by_item))
-    settled = _settled_nights(weekly_plan_id, by_item)
+    covered = _covered_at_home(need)
+    settled, frozen_nights = _settled_nights(weekly_plan_id, by_item)
+    lines = _grocery_lines_by_item(by_item)
     # Each night also says WHEN it would move to the fridge — the same
     # _move_date confirm_frozen_items books, so the freezer step's "What
-    # that means" line ("Chicken thighs → into the fridge Saturday night,
-    # for Monday's dinner") and the task it writes can't name two nights.
+    # that means" line ("Chicken thighs → off the shopping list · into the
+    # fridge Saturday night, for Monday's dinner") and the task it writes
+    # can't name two nights.
     dinner_window = _rhythm.get_household_rhythm().get("dinner_window")
 
     out: list[dict] = []
     for key, entry in by_item.items():
-        if key in known:
+        if key in covered:
             continue
         lead_hours, _tier = lead_hours_for_item(entry["item"])
-        nights = [
-            dict(n, move_date=_move_date(n["date"], lead_hours, dinner_window),
-                 move_weekday=_weekday_name(_move_date(n["date"], lead_hours, dinner_window)))
-            for n in entry["nights"]
-            if _describe(entry["item"], n["meal"], n["date"]) not in settled
-        ]
+        frozen = any(r["status"] == "removed" for r in lines[key])
+        nights = []
+        for n in entry["nights"]:
+            description = _describe(entry["item"], n["meal"], n["date"])
+            if description in settled:
+                continue
+            move = _move_date(n["date"], lead_hours, dinner_window)
+            nights.append(dict(n, move_date=move, move_weekday=_weekday_name(move)))
+            if description in frozen_nights:
+                frozen = True
         if nights:
-            out.append({"item": entry["item"], "nights": nights})
+            out.append({"item": entry["item"], "nights": nights,
+                        "on_list": bool(lines[key]), "frozen": frozen})
     return sorted(out, key=lambda e: (e["item"].lower()))
 
 
 def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
     """
-    The household-confirmed twin of the inventory-matched candidates above
-    — "yes, that one's in the freezer" for a plan that was never tracking
-    it anywhere. `items` are plain ingredient names, exactly as shown by
-    meat_items_for_plan (its own "item" values); anything that doesn't
-    match one of THIS plan's own meat/seafood ingredients is silently
-    ignored rather than erroring, since a stale chip (the plan changed
-    after the ask card was drawn) is expected, not a bug report.
+    The household's whole answer to "Anything already in the freezer?" —
+    `items` are the chips that are ON, as plain ingredient names exactly as
+    meat_items_for_plan hands them out (its own "item" values); everything
+    else on the plan is, by that same answer, NOT frozen. Anything that
+    doesn't match one of THIS plan's own meat/seafood ingredients is
+    silently ignored rather than erroring, since a stale chip (the plan
+    changed after the step was drawn) is expected, not a bug report.
 
-    One prep_tasks row per (item, cook night) — same v1-simplification and
-    same leftovers handling as _candidates_from_plan (a reheat night is
-    never its own task; its cook night's quantity already covers it).
-    inventory_item_id is always NULL on what this creates — see the
-    module-level note above: confirming a freezer item here is a fact
-    about this one plan, never a write to inventory (Emily's "optional
-    bonus" stayed off).
+    A tapped chip means "I already have this, frozen", and that is two
+    facts, written together (Emily, 2026-09-21):
+
+      1. its grocery line(s) for this week come off the list — the SAME
+         write Shop's "Have it" makes (pre_shop.drop_grocery_item_pre_shop:
+         a soft remove that lands under "Not needed this week", tells a
+         staple "we have plenty", and never writes inventory — policy
+         2026-09-01), marked removed_by FREEZER_REMOVED_BY so the one undo
+         (pre_shop.undo_pre_shop_drop, "Actually, I need it") knows to take
+         the move below with it;
+      2. one prep_tasks row per (item, cook night), dated with the item's
+         own lead (lead_hours_for_item) — same v1-simplification and same
+         leftovers handling as _candidates_from_plan (a reheat night is
+         never its own task; its cook night's quantity already covers it).
+         inventory_item_id is always NULL on what this creates — see the
+         module-level note above: confirming a freezer item here is a fact
+         about this one plan, never a write to inventory.
+
+    An un-tapped chip that WAS on (the step reopened from the Plan tab's
+    freezer row to change the answer) is the same two facts reversed: the
+    line goes back on the list and the still-pending move is cancelled
+    (_release_frozen_item). A move already ticked done stays — the food is
+    in the fridge, whatever the list says. On a first answer nothing is
+    on, so "Nothing frozen — I'm buying it all" writes nothing at all here
+    (the route stamps defrost_asked_at and that is the whole answer).
+
+    Answering again with the same chips is idempotent: one row per
+    (entry, item), a line already set aside is left alone.
 
     A candidate whose move date has already passed is never inserted —
     only possible for a meal happening TODAY (_move_date always leaves at
@@ -915,48 +981,38 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
     So for four hours every evening — precisely when somebody taps
     "Something in the freezer?" — the household lost a thaw it could
     genuinely have started that night with about forty-five hours in hand,
-    and was told it was too late instead.
+    and was told it was too late instead. The ask leaves off a night that
+    is already too late (meat_items_for_plan, rule 3) on the same clock,
+    for the same reason — see _settled_nights.
 
-    When this was fixed the ask card read no clock at all, so the
-    disagreement was entirely on this side: the screen offered a chip and
-    the write refused it, which is DESIGN_SYSTEM.md's §8 rule 7 inverted.
-    The ask has since learned to leave off a night that is already too late
-    (meat_items_for_plan, rule 4), and it reads the household's clock for
-    that for the same reason — see _settled_nights. The too-late note stays — a cook happening today
-    really cannot be thawed for — but it is now only ever said about a
-    night that has genuinely run out of time on the clock the household
-    is living on.
-
-    Returns {"created": [...], "notes": [...]} — never raises for "nothing
+    Returns {"created": [...], "notes": [...], "set_aside": [...],
+    "put_back": [...], "cancelled": n} — never raises for "nothing
     matched" or "nothing to do"; both are ordinary answers here (see
     get_defrost_today's docstring for why this module treats an empty
     result as data, not an error).
     """
     selected_lower = {(i or "").strip().lower() for i in (items or []) if (i or "").strip()}
-    if not selected_lower:
-        return {"created": [], "notes": []}
 
     dinner_window = _rhythm.get_household_rhythm().get("dinner_window")
-    # Both of these open their own connection, so both are resolved before
-    # get_conn below — see get_defrost_today's note on the nested-connection
-    # hazard. That is a claim about THIS read and nothing wider: the
-    # function is NOT otherwise free of nested connections, and saying so
-    # would be false. With a leftover chain on the plan,
-    # _iter_plan_meat_ingredients -> leftovers.batch_for_source ->
-    # eaters_at -> attendance.get_slot_attendance opens one connection per
-    # counted night while this function's own is already mid-write —
-    # measured at two, identically on main, so none of them is new here.
-    # They are READS, which coexist with a RESERVED lock under SQLite's
-    # rollback journal; closing them means threading `conn` down through
-    # that chain, which is its own card. What this ordering buys is that
-    # the clock is not a third one.
+    # Every read below is resolved before get_conn — see get_defrost_today's
+    # note on the nested-connection hazard. The plan walk is materialised
+    # here for the same reason: with a leftover chain on the plan,
+    # _iter_plan_meat_ingredients -> leftovers.batch_for_source -> eaters_at
+    # -> attendance.get_slot_attendance opens one connection per counted
+    # night, and until 2026-09-21 the generator was consumed while this
+    # function's own connection was already mid-write. What the ordering
+    # buys is that the clock is not one more.
     today = _cooker.household_today()
+    plan_meats = list(_iter_plan_meat_ingredients(weekly_plan_id))
+    plan_names: dict[str, str] = {}
+    for _m, _ing, ing_name, _factor in plan_meats:
+        plan_names.setdefault(ing_name.lower(), ing_name)
 
     conn = get_conn()
     created: list[dict] = []
     notes: list[dict] = []
     seen_keys: set[tuple] = set()  # (ingredient name, entry_id) -- the same ingredient listed twice on one recipe shouldn't double-book
-    for m, ing, ing_name, batch_factor in _iter_plan_meat_ingredients(weekly_plan_id):
+    for m, ing, ing_name, batch_factor in plan_meats:
         if not _matches_selected_item(ing_name, selected_lower):
             continue
         entry_id = m.get("entry_id")
@@ -976,7 +1032,7 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
 
         description = _describe(ing_name, m["meal"], m["date"])
         quantity = _batch_quantity(ing, batch_factor)
-        # Answering again (Cook-view re-ask, a double tap, a retried POST)
+        # Answering again (a reopened step, a double tap, a retried POST)
         # must not book the same move twice: one row per (entry, item).
         existing = conn.execute(
             "SELECT id FROM prep_tasks WHERE household_id = ? AND weekly_plan_id = ? "
@@ -1004,7 +1060,76 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
         })
     conn.commit()
     conn.close()
-    return {"created": created, "notes": notes}
+
+    # The list half, after the write above has closed: both pre_shop writes
+    # open connections of their own.
+    from . import pre_shop as _pre_shop
+
+    lines = _grocery_lines_by_item(plan_names)
+    set_aside: list[int] = []
+    put_back: list[int] = []
+    cancelled = 0
+    for key, name in plan_names.items():
+        if _matches_selected_item(key, selected_lower):
+            for row in lines[key]:
+                if row["status"] != "removed":
+                    _pre_shop.drop_grocery_item_pre_shop(row["id"], author=FREEZER_REMOVED_BY)
+                    set_aside.append(row["id"])
+        else:
+            for row in lines[key]:
+                if row["status"] == "removed":
+                    # Takes the move with it (undo_pre_shop_drop reads the
+                    # mark), so a deselect is one write path — the same
+                    # one Shop's "Actually, I need it" runs.
+                    put_back.append(row["id"])
+                    cancelled += _pre_shop.undo_pre_shop_drop(row["id"]).get("moves_cancelled", 0)
+            # And the move alone where there was no line to put back
+            # (covered at home, never on the list) — a no-op otherwise.
+            cancelled += _release_frozen_item(name, weekly_plan_id)
+    return {"created": created, "notes": notes, "set_aside": set_aside,
+            "put_back": put_back, "cancelled": cancelled}
+
+
+def _release_frozen_item(item_name: str, weekly_plan_id: int | None = None) -> int:
+    """
+    Cancel the still-pending moves THIS STEP booked for one ingredient —
+    the household saying "actually, I don't have that frozen", either by
+    un-tapping the chip (confirm_frozen_items) or by putting its grocery
+    line back on the list (pre_shop.undo_pre_shop_drop, which calls here
+    only for a line the step set aside). Deleted rather than marked, the
+    way sync_defrost_tasks drops a move that is no longer true; a row
+    already ticked done is left alone — the food is in the fridge — and
+    so is anything the app booked off tracked inventory (inventory_item_id
+    set), which is the sync's to keep. Scoped to one plan when the caller
+    knows which; a grocery line with no source plan releases every plan's.
+    Returns how many were cancelled.
+    """
+    name = (item_name or "").strip().lower()
+    if not name:
+        return 0
+    wanted = {name}
+    conn = get_conn()
+    params: list = [household_id()]
+    scope = ""
+    if weekly_plan_id is not None:
+        scope = "AND weekly_plan_id = ? "
+        params.append(weekly_plan_id)
+    rows = conn.execute(
+        "SELECT id, description FROM prep_tasks WHERE household_id = ? " + scope +
+        "AND task_type = 'defrost' AND status = 'pending' AND inventory_item_id IS NULL "
+        "AND meal_plan_entry_id IS NOT NULL",
+        params,
+    ).fetchall()
+    doomed = []
+    for r in rows:
+        match = _MOVE_ITEM_RE.match(r["description"] or "")
+        if match and _matches_selected_item(match.group(1), wanted):
+            doomed.append((r["id"],))
+    if doomed:
+        conn.executemany("DELETE FROM prep_tasks WHERE id = ?", doomed)
+        conn.commit()
+    conn.close()
+    return len(doomed)
 
 
 def mark_defrost_asked(weekly_plan_id: int) -> None:

@@ -3625,26 +3625,26 @@ def approve_week(week_start: str, req: WeekApproveRequest):
 
 class DefrostConfirmRequest(BaseModel):
     # Plain ingredient names, exactly as handed back by GET .../defrost-items
-    # (meat_items_for_plan's own "item" values). Empty list is a real,
-    # complete answer ("None — all fresh"), not "nothing sent yet" — see
-    # confirm_week_defrost below.
+    # (meat_items_for_plan's own "item" values): the chips that are ON.
+    # Empty list is a real, complete answer ("Nothing frozen — I'm buying
+    # it all"), not "nothing sent yet" — see confirm_week_defrost below.
     items: list[str] = []
 
 
 @app.get("/api/week/{week_start}/defrost-items")
 def week_defrost_items(week_start: str):
     """
-    The plan's own meat/seafood ingredients that the app has no other
-    record of, each with the night(s) it feeds — the freezer-check ask
-    card's chip list (Loop Board "Defrost check: ask at approval").
+    Every meat/seafood ingredient the plan's own meals call for, each with
+    the night(s) it feeds, whether it has a grocery line this week and
+    whether the household has already said it is frozen — the freezer
+    step's chip list (Loop Board "Freezer question at approval asks about
+    every meat in the week", 2026-09-21).
 
-    Read-only, and it DOES read inventory now, which this sentence claimed
-    it never did until 2026-09-15: one of the four rules is whether the
-    fridge demonstrably covers the need. It still never writes one, and it
-    still works for a household that tracks nothing — which is most of
-    them, inventory being deferred policy. See
-    tools.defrost.meat_items_for_plan for all four rules and for where
-    this ask now lives.
+    Read-only, and it DOES read inventory: one of the rules is whether the
+    fridge demonstrably covers the need. It never writes one, and it works
+    for a household that tracks nothing — which is most of them, inventory
+    being deferred policy. See tools.defrost.meat_items_for_plan for the
+    rules, and for the one that is gone (a line still to buy).
     """
     plan_id = _plan_id_for_week(week_start)
     try:
@@ -3658,14 +3658,16 @@ def week_defrost_items(week_start: str):
 @app.post("/api/week/{week_start}/defrost-confirm")
 def confirm_week_defrost(week_start: str, req: DefrostConfirmRequest):
     """
-    The household's answer to the freezer-check ask card — which of this
-    week's meat/seafood ingredients are actually in the freezer, or none at
-    all. Schedules a defrost prep task per (item, cook night) via
-    tools.confirm_frozen_items, and always marks defrost_asked_at: an empty
-    `items` list ("None — all fresh") and a quiet dismiss both answer the
+    The household's answer to "Anything already in the freezer?" — which
+    of this week's meat/seafood ingredients they already have frozen, or
+    none at all. Each named item comes off the shopping list (the same
+    write Shop's "Have it" makes) and gets a defrost move per cook night;
+    an item that was on and is now off gets both reversed — see
+    tools.confirm_frozen_items. Always marks defrost_asked_at: an empty
+    `items` list ("Nothing frozen — I'm buying it all") answers the
     question for this plan just as completely as naming three items does,
-    so the automatic ask card is not shown again either way (re-asking
-    stays available from the Cook view's own link, which does not depend
+    so the step is not the next stop after approval either way (the Plan
+    tab's freezer row reopens it to change the answer, and does not depend
     on this column).
     """
     plan_id = _plan_id_for_week(week_start)
@@ -3675,7 +3677,7 @@ def confirm_week_defrost(week_start: str, req: DefrostConfirmRequest):
     except Exception as e:
         logger.exception("Defrost confirmation failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return {"weekly_plan_id": plan_id, "created": result["created"], "notes": result["notes"]}
+    return {"weekly_plan_id": plan_id, **result}
 
 
 class CookAheadChoiceRequest(BaseModel):

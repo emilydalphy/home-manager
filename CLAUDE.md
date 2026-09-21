@@ -415,6 +415,81 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-21 — The freezer step asks about EVERY meat in the week, and a
+  yes takes the line off the list and books the move. Branch
+  `freezer-at-approval-all-meat`, NOT merged at the time of writing.** Loop
+  Board card 3e21f4c0 (Emily, 2026-09-19: "it is for the user to be able to
+  flag if they have meat in the freezer … takes the mental energy off the
+  user by asking the question so they don't need to think about it";
+  option A, board F-A). Read this beside the 2026-09-15 "first cut of the
+  freezer ask" entry below, whose rule 3 this reverses.
+  - **Rule 3 (`_still_to_buy`) is gone from `meat_items_for_plan`.** It
+    left off any name with a grocery line still to buy, and since approval
+    puts the whole week's meat on the list, the step was EMPTY at the one
+    moment it is shown — the 2026-09-15 entry documents that as the
+    intended shape ("where the ask lives now": after the shop). Emily's
+    card says the opposite: being on the list IS the question. Each item
+    now carries `on_list` (a line to take off exists — still-to-buy, or
+    already set aside by this step) and `frozen` (the household already
+    said yes). Rule 1 (the fridge demonstrably covers it) and the too-late
+    rule stay; a move the app booked itself off tracked freezer inventory
+    (`inventory_item_id` set) still drops the night, because a chip there
+    would book it twice. **A move THIS step booked no longer drops the
+    night** — it is offered again with `frozen` on, which is how the Plan
+    root's freezer row reopens the step to CHANGE the answer; an un-tap is
+    the way back. (`_settled_nights` returns both sets.)
+  - **A tapped chip is two writes, and the list half is Shop's own "Have
+    it".** `confirm_frozen_items` books the move as before, then calls
+    `pre_shop.drop_grocery_item_pre_shop(line, author='freezer')` for each
+    line still to buy — the same soft remove (staple told "plenty", no
+    inventory write — policy 2026-09-01), marked `removed_by='freezer'`
+    (`defrost.FREEZER_REMOVED_BY`, beside 'already_have'/'staple'/the
+    carried marks) so it lands under Shop's "Not needed this week" (with a
+    "· from the freezer" note) and comes back through the ONE undo.
+    `pre_shop.undo_pre_shop_drop` reads that mark and calls
+    `defrost._release_frozen_item` (deletes the item's still-pending,
+    step-booked moves — never a done one, never an inventory-derived one —
+    scoped to the line's `source_weekly_plan_id`); the route returns
+    `moves_cancelled` and the shell toasts "Put back." and re-reads Plan
+    and Today when one went. `undo_pre_shop_drop` now also clears
+    `removed_by` (it never did), or a stale 'freezer' mark on a line back
+    on the list would read as the step's the next time anything
+    soft-removed it without saying who. Un-tapping on a reopened step runs
+    the same undo per line plus `_release_frozen_item` for the plan; a
+    first "Nothing frozen — I'm buying it all" writes nothing (stamps
+    `defrost_asked_at` only — tested). Re-tapping is idempotent.
+  - **The plan walk is materialised before the write connection opens**
+    (`list(_iter_plan_meat_ingredients(...))`), which closes the "two
+    nested reads mid-write with a leftover chain" note the old function
+    carried; the household clock is still read before `get_conn` (the
+    getsource guard in `test_defrost_household_clock` still bites, and the
+    new file restates it).
+  - **Screen:** title "Anything already in the freezer?", line "Tap what
+    you've got frozen. I'll take it off the shopping list and tell you when
+    to move it to the fridge.", quiet answer "Nothing frozen — I'm buying
+    it all"; "What that means" says "Chicken thighs → off the shopping
+    list · into the fridge Saturday night, for Monday's dinner." and only
+    the fridge half when `on_list` is false (`defrostMeaningLines`);
+    `ensureDefrostAskItems` seeds `selected` from `frozen` when the items
+    land (a stale tap from an earlier plan is dropped); the root row reads
+    "… — from the freezer"; `submitDefrostAsk` calls
+    `refreshGrocerySurfaces()` so an already-built Shop panel shows the
+    line gone. All set's button line is untouched — with every meat
+    listed, `nothingToAsk` is true only for a meatless week, which is what
+    the card asks for. **Left as it was, for Emily:** the quiet button
+    keeps `.wk-freezer-none-btn`'s Figtree 600 rather than the mockup's
+    italic Newsreader — §3 says the italic face is an accent line for a
+    fact, at most once per screen, and a button is not one.
+  - Tests: `tests/test_freezer_at_approval_all_meat.py` (33; 29 red
+    against main's app/static with the file dropped in — the 4 green are
+    guards for what did not change). `test_after_approve_real_questions.py`
+    section 3 is reversed (what was "not asked" is "asked, with its line")
+    and section 2's step-booked cases now read `frozen`;
+    `test_defrost_confirm.py`'s three empty-answer assertions take the
+    wider result shape; `test_plan_cards_2026_09_18.py` takes the new copy.
+    Suite 5655 → 5688 passed, 0 failed (one call-site count in
+    `test_shop_stale_after_chat` moved 2 → 3 for the new
+    `refreshGrocerySurfaces()` caller).
 - **2026-09-21 — Shop asks "Freezing it?" under a just-ticked meat line.
   Branch `shop-freezing-it` (Loop Board 3e21f4c0, mockup F-C).** The
   freezer step at approval cannot ask about meat still on the shopping

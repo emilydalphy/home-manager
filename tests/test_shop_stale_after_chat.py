@@ -1070,12 +1070,14 @@ def test_only_the_approve_button_and_start_over_ask_for_a_refill():
     assert "refreshGroceryPanel({ refill: true })" in _strip_comments(
         _function("refreshAfterReset"))
     # refreshGrocerySurfaces forwards rather than deciding, and exactly ONE
-    # of its four callers asks for a refill.
+    # of its five callers asks for a refill.
     body = _strip_comments(SHELL_JS)
     assert body.count("refreshGrocerySurfaces({ refill: true });") == 1
     # Three until 2026-09-18: the Review stepper's "−" and "+" went with the
-    # stepper; the swap sheet's pick took one of their places.
-    assert body.count("refreshGrocerySurfaces();") == 2
+    # stepper; the swap sheet's pick took one of their places. Three again
+    # from 2026-09-21: the freezer step's answer sets lines aside (or puts
+    # them back), so submitDefrostAsk re-reads Shop in the background too.
+    assert body.count("refreshGrocerySurfaces();") == 3
     # The chat door never refills.
     assert "refill" not in _strip_comments(_function("refreshStaleTabsFromActions"))
 

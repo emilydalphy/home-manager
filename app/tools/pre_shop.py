@@ -9,6 +9,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from ..db import get_conn
 from ._shared import acting_name, household_id, require_household_row
 from . import cooker as _cooker
+from . import defrost as _defrost
 from . import grocery as _grocery
 from . import inventory as _inventory
 from . import quantities as _quantities
@@ -300,11 +301,20 @@ def undo_pre_shop_drop(item_id: int) -> dict:
     inventory), never for one that merged into pre-existing stock — undoing
     a merge would need the pre-merge quantity, which nothing tracks, so
     that case leaves inventory untouched on undo by design.
+
+    A line the freezer step set aside (removed_by defrost.FREEZER_REMOVED_BY,
+    2026-09-21) comes back the same way — and its still-pending defrost
+    move goes with it (defrost._release_frozen_item): "Actually, I need
+    it" on that line means "it isn't in my freezer after all", and a
+    fridge move for food that is being bought fresh is a reminder for
+    something no longer true. One write path for the put-back, whichever
+    screen asks for it; `moves_cancelled` says how many went.
     """
     conn = get_conn()
     require_household_row(conn, "grocery_items", item_id, label="grocery list item")
     row = conn.execute(
-        "SELECT already_have_inventory_id, staple_id FROM grocery_items WHERE id = ? AND household_id = ?",
+        "SELECT item, already_have_inventory_id, staple_id, removed_by, source_weekly_plan_id "
+        "FROM grocery_items WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     ).fetchone()
     if row is not None and row["staple_id"]:
@@ -313,8 +323,12 @@ def undo_pre_shop_drop(item_id: int) -> dict:
         # back but the staple still believes the cupboard is full.
         from . import staples as _staples
         _staples.reverse_last_answer(conn, row["staple_id"])
+    # removed_by is cleared with the removal (it was not until 2026-09-21):
+    # a stale 'freezer' mark on a line back on the list would read as
+    # "set aside by the freezer step" to defrost._grocery_lines_by_item the
+    # next time anything else soft-removed the line without saying who.
     conn.execute(
-        "UPDATE grocery_items SET status = 'needed', already_have_reviewed = 1, "
+        "UPDATE grocery_items SET status = 'needed', already_have_reviewed = 1, removed_by = '', "
         "removed_at = NULL, already_have_inventory_id = NULL WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     )
@@ -322,7 +336,10 @@ def undo_pre_shop_drop(item_id: int) -> dict:
     conn.close()
     if row and row["already_have_inventory_id"]:
         _inventory.remove_inventory_item(row["already_have_inventory_id"])
-    return {"item_id": item_id, "status": "needed"}
+    moves_cancelled = 0
+    if row and row["removed_by"] == _defrost.FREEZER_REMOVED_BY:
+        moves_cancelled = _defrost._release_frozen_item(row["item"], row["source_weekly_plan_id"])
+    return {"item_id": item_id, "status": "needed", "moves_cancelled": moves_cancelled}
 
 
 def _household_day_start_utc(day: date, zone) -> str:
