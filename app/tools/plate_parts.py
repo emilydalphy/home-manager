@@ -11,14 +11,16 @@ part in between:
 
   * `parts_of_plate(...)` — the plate as the card shows it: protein, then
     vegetable and carb as the household's plate rule asks for them (see
-    plates.plate_rule: keto has no carb; breakfast and snack are lighter).
+    plates.plate_rule: keto has no carb, low carb a small one; breakfast
+    and snack are lighter).
     Each part is either named (the dish's own protein; a side by name), in
     the dish (covered by its food_groups, no separate name), or missing —
     which the card draws as a dashed "+ Add a carb". Read from what the
-    entry already holds; nothing new to enter. A low-carb household's
+    entry already holds; nothing new to enter. A no-carb household's
     rule leaves the carb off the plate the planner builds, but the card
-    still offers it (Emily, 2026-09-15): the chip is an option, not a
-    shortfall, and the planner never fills it on its own.
+    still offers it, reading "None" (Emily, 2026-09-15): the chip is an
+    option, not a shortfall, and the planner never fills it on its own.
+    A low-carb household's carb reads "Small" (Emily, 2026-09-21).
   * `part_options(...)` — the four proteins that would work IN THIS DISH,
     written for the dish, not from a list: a burger gets ground meats and
     a bean patty, never chicken thighs; a pan-fried chicken gets the CUT
@@ -87,7 +89,8 @@ _OPTIONS_CACHE: dict[tuple[int, int], dict] = {}
 # ---------- the plate as the card shows it ----------
 
 def parts_of_plate(slot: str, food_groups: list[str], main_protein: str | None,
-                sides: list[dict] | None, eating_style: str | None) -> list[dict]:
+                sides: list[dict] | None, eating_style: str | None,
+                carb_level: str | None = None) -> list[dict]:
     """
     The plate for one entry, in the order the card shows it. Pure; the
     week menu calls it with what its rows already carry.
@@ -98,23 +101,36 @@ def parts_of_plate(slot: str, food_groups: list[str], main_protein: str | None,
       source 'side'  — a side attached to the entry covers it (name is
                        the side's)
       missing True   — the rule asks for it and nothing covers it
+      empty True     — (carb, a household on none) nothing covers it and
+                       the rule doesn't ask; the card reads "None" and
+                       still offers the tap (Emily, 2026-09-15)
+
+    The carb reads by the household's level (plates.carb_level — Emily,
+    2026-09-21, "low carb is not no carb"): on `low`, a carb the dish
+    carries is "Small" and a side marked portion small says so; on
+    `none`, no carb reads "None"; a low-carb dish with no carb at all is
+    MISSING, never "In the dish" — the plate pass should have added one.
+    `carb_level` is passed when the caller has it (the week menu reads it
+    once, facts included); otherwise it is read off eating_style.
     """
-    rule = _plates.plate_rule(eating_style)
+    if carb_level is None:
+        carb_level = _plates.carb_level(eating_style)
+    rule = _plates.plate_rule(level=carb_level)
     if slot in _plates.LIGHT_SLOTS:
         # The lighter rule (plates.missing_groups): a breakfast held to
         # protein + veg + carb is a dinner at 7am.
         wanted = [r for r in rule if r == "protein"]
     else:
         # The card offers the carb even where the rule leaves it off. A
-        # low-carb household's rule (plates.plate_rule, decision 7a) is
+        # no-carb household's rule (plates.plate_rule, decision 7a) is
         # what the PLANNER follows — it never puts rice beside their
         # steak on its own — but the household still needs the one tap
         # when they want it: Emily, 2026-09-15, her own keto plan,
         # "for the kebab meal I would like an option to add a carb", and
         # the kofte's card had nowhere to say so. So the carb is drawn
-        # here as an offer, dashed and theirs to take, on the same terms
-        # as any other plate: only when the dish says what it covers
-        # (`known`), never when it would be a guess.
+        # here as an offer, reading "None" and theirs to take, on the
+        # same terms as any other plate: only when the dish says what it
+        # covers (`known`), never when it would be a guess.
         wanted = list(rule)
         if "carb" not in wanted:
             wanted.append("carb")
@@ -128,7 +144,10 @@ def parts_of_plate(slot: str, food_groups: list[str], main_protein: str | None,
     covered_by_side: dict[str, str] = {}
     for side in sides or []:
         for g in side.get("covers") or []:
-            covered_by_side.setdefault(g, side.get("name") or "")
+            name = side.get("name") or ""
+            if g == "carb" and side.get("portion") == "small" and name:
+                name = f"{name} (small)"
+            covered_by_side.setdefault(g, name)
     parts = []
     # A side that names no role (a sauce; a typed line the model could not
     # cost) is still on the plate and still shows — as its own chip, after
@@ -151,7 +170,12 @@ def parts_of_plate(slot: str, food_groups: list[str], main_protein: str | None,
         if role in covered_by_side:
             parts.append({"role": role, "word": ROLE_WORDS[role], "name": covered_by_side[role], "source": "side", "missing": False})
         elif role in groups:
-            parts.append({"role": role, "word": ROLE_WORDS[role], "name": None, "source": "dish", "missing": False})
+            # A low-carb plate's own carb is a half portion by rule.
+            name = "Small" if (role == "carb" and carb_level == "low") else None
+            parts.append({"role": role, "word": ROLE_WORDS[role], "name": name, "source": "dish", "missing": False})
+        elif known and role == "carb" and carb_level == "none":
+            parts.append({"role": role, "word": ROLE_WORDS[role], "name": "None", "source": None,
+                          "missing": False, "empty": True})
         elif known:
             parts.append({"role": role, "word": ROLE_WORDS[role], "name": None, "source": None, "missing": True})
     for name in extras:

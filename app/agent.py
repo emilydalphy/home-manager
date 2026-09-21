@@ -3280,9 +3280,17 @@ week — main dish AND every side ingredient, garnish, cooking fat, or flavoring
 that list, full stop, even if something else would genuinely taste better or round the dish out \
 more traditionally. When in doubt about whether an ingredient is covered by the list, leave it \
 out rather than assume it's a reasonable addition. This applies to every slot, not only dinner. \
-If eating_style is blank, ignore this entirely.
-- EVERY MEAL IS A FULL PLATE. Lunch and dinner must cover protein AND vegetable AND carb — \
-protein and vegetable only, no carb, if eating_style reads as keto or low-carb. Breakfast and \
+If eating_style is blank, ignore this entirely. ONE reading is fixed for you: how much carb the \
+style means is `household_memory.carb_level`, below — "low-carb" is a smaller carb, and low carb \
+is not no carb.
+- EVERY MEAL IS A FULL PLATE. Lunch and dinner must cover protein AND vegetable AND carb. HOW \
+MUCH carb is `household_memory.carb_level`, one of none / low / normal / lots, with \
+`household_memory.carb_guidance` spelling it out: "none" (keto, carnivore, "no carbs") is \
+protein and vegetable only, no carb; "low" is a SMALL carb on every lunch and dinner — half a \
+portion of potato, rice, tortilla or bread, written into the dish and its quantities — never \
+none (Emily, 2026-09-21: "my preferences say low carbs, it doesn't say no carbs"); "normal" is a \
+full portion; "lots" a generous one. Tell low from none every time: a low-carb dinner of chicken, \
+corn and zucchini with no carb at all is the failure this exists to stop. Breakfast and \
 snack are held to a lighter version of the same idea: at least TWO of the three groups, never \
 just a piece of fruit and never just a granola bar. If the dish itself doesn't cover that (a \
 plain roast chicken, a bowl of pasta), plan the side INTO the meal — put it in the meal_name, \
@@ -3579,8 +3587,10 @@ an ingredient is covered, leave it out rather than assume it's fine. This applie
 category in the pool, not just proteins. If eating_style is blank, ignore this entirely.
 - EVERY MEAL IS A FULL PLATE, and here that is a rule about the POOL rather than about any one \
 item. Every plate the household assembles from this pool has to reach protein AND vegetable AND \
-carb — protein and vegetable only, no carb, if eating_style reads as keto or low-carb — and \
-breakfast/snack items at least two of the three. So the pool must actually carry enough of each \
+carb — how much carb is `household_memory.carb_level` (none / low / normal / lots, spelled out in \
+`household_memory.carb_guidance`): "none" (keto) is protein and vegetable only, no carb items; \
+"low" still means carb items in the pool, in half portions — low-carb is not no carb; "lots" \
+means generous ones — and breakfast/snack items at least two of the three. So the pool must actually carry enough of each \
 category to pair up across the whole week, and no category may be left thin because the proteins \
 were more interesting to write. This does NOT license bundling categories into one item: keep \
 every item standalone exactly as the rule above says, and make the plate work by what the pool \
@@ -4344,6 +4354,13 @@ def _generate_weekly_plan(
     # snacks_per_week — see preferences.resolve_snacks_per_day for the
     # order it reads its answer in.
     effective_memory["snacks_per_day"] = tools.resolve_snacks_per_day(household_memory)
+    # How much carb the plate carries — none / low / normal / lots — read
+    # off everything the household said (eating_style, facts, notes) and
+    # resolved HERE, so the model is handed a level rather than left to
+    # decide whether "low-carb" means none (Emily, 2026-09-21: it doesn't).
+    # The plate pass below reads the same value. See plates.carb_level.
+    effective_memory["carb_level"] = tools.household_carb_level(household_memory.get("eating_style"))
+    effective_memory["carb_guidance"] = tools.CARB_GUIDANCE[effective_memory["carb_level"]]
 
     context = {
         "week_start_date": content_start_date,
@@ -5159,6 +5176,11 @@ you're writing more than four steps, it's too big.
 - Honour every dietary restriction and the eating_style exactly as strictly as the main dish \
 does, and avoid every listed dislike. A restriction is never negotiable to make a side work; \
 pick a different side.
+- `carb_portion` says how much carb this household's plate carries. When it is "small" and you \
+are asked for a carb, make it a HALF portion — half a potato a person, half a cup of cooked rice, \
+one small tortilla, one slice of bread — and write the quantities for that; a low-carb household \
+still gets the carb, just less of it. "none" never reaches you: that household isn't asked for a \
+carb at all.
 - Respect max_minutes when it's given: that is the whole meal's real cap for that night, so a \
 side has to fit comfortably inside what the main leaves of it. When it's tight, reach for \
 something with no cooking at all.
@@ -5414,7 +5436,13 @@ def _complete_plates_pass(plan_id: int, household_memory: dict, intake: dict | N
     """
     try:
         enabled = household_memory.get("complete_plates", True)
-        rule = tools.plate_rule(household_memory.get("eating_style"))
+        # The household's carb level (none / low / normal / lots), resolved
+        # once by _generate_weekly_plan onto the effective memory; read
+        # afresh for any caller that didn't. A low-carb plate WANTS a carb
+        # — a small one — so a zero-carb dinner is short here and gets one
+        # (Emily, 2026-09-21: "low carbs doesn't say no carbs").
+        level = household_memory.get("carb_level") or tools.household_carb_level(household_memory.get("eating_style"))
+        rule = tools.plate_rule(level=level)
         plan = tools.get_weekly_plan(plan_id)
         reheats = tools.plan_leftover_chains(plan_id)["leftovers"]
 
@@ -5472,6 +5500,7 @@ def _complete_plates_pass(plan_id: int, household_memory: dict, intake: dict | N
                     "dislikes": dislikes,
                     "dietary_restrictions": restrictions,
                     "eating_style": eating_style,
+                    "carb_portion": tools.carb_portion(level),
                     "max_minutes": _plate_minutes_cap(meal["date"], intake, household_memory),
                 })
             except Exception:

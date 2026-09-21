@@ -4,10 +4,11 @@ Every meal is a full plate — the rule, and the repair when it isn't.
 Emily, 2026-09-05, deciding a question this codebase had deliberately left
 open (see plan_quality's `full_plate`, which until now only WARNED):
 
-  - A plate is **protein + vegetable**, plus **carb** unless the household's
-    eating_style reads as low-carb/keto. Keto's full plate is protein +
-    vegetable, full stop — no "optional add-ons," that is a separate later
-    ticket and is deliberately not built here.
+  - A plate is **protein + vegetable**, plus **carb** unless the household
+    is on NO carb (keto, carnivore — carb_level "none"). Keto's full plate
+    is protein + vegetable, full stop. A LOW-carb household (Emily,
+    2026-09-21: "low carbs doesn't say no carbs") still gets the carb, a
+    small one — see carb_level and CARB_GUIDANCE below.
   - It applies to ALL four slots, not dinner alone. Breakfast and snack get
     a LIGHTER rule (see LIGHT_SLOTS below) because a breakfast held to
     protein+vegetable+carb is not a breakfast, it's a dinner at 7am.
@@ -99,58 +100,130 @@ LIGHT_SLOTS = ("breakfast", "snack")
 # adding a side to it.
 LIGHT_SLOT_MIN_GROUPS = 2
 
-# A household whose eating_style reads as low-carb doesn't get a carb
-# bolted onto its dinner. Written fresh for this ticket -- nothing in the
-# codebase classified eating_style before; it was passed to the model as
-# free text and the model did the interpreting. This is a deliberately
-# small keyword rule rather than a model call: it runs on every entry of
-# every generated week, the cost of being wrong is one unwanted side (which
-# the household can delete), and a phrase list anyone can read and correct
-# beats a judgement nobody can see. Substring matching on a lowercased,
-# punctuation-normalized style string, so "high-protein, low carb" and
-# "Keto (mostly)" both land.
-_LOW_CARB_PHRASES = (
-    "keto",
-    "ketogenic",
-    "low carb",
-    "lowcarb",
-    "no carb",
-    "zero carb",
-    "carnivore",
-    "atkins",
-    "banting",
+# How much carb this household's plate carries — FOUR levels, not two
+# (Emily, 2026-09-21: "my preferences say 'low carbs' but it doesn't say
+# 'no carbs'. Make sure you can tell the difference between low, a lot,
+# and none." Her dinners had come with no carb at all — chicken + corn +
+# zucchini; salmon + broccoli — because "low carb" and "keto" were one
+# bucket, and that bucket meant no carb).
+#
+#   none   — keto, carnivore, "no carbs": the plate is protein + vegetable.
+#   low    — "low carb", Atkins, "fewer carbs": every lunch and dinner still
+#            carries a carb, a SMALL one (half a portion of potato, rice,
+#            tortilla, bread).
+#   normal — nothing said: a full portion.
+#   lots   — "lots of carbs", "high carb", "carb heavy": a generous one.
+#
+# Read off the household's own words wherever they typed them — the
+# eating_style line, a What-we-know fact, the notes — by
+# household_carb_level below. The same deliberately literal keyword
+# stance is_low_carb always took: it answers "did they say one of these",
+# never "would a nutritionist agree", because the cost of being wrong is
+# one side on one plate and a phrase list anyone can read and correct
+# beats a judgement nobody can see. Existing "low carb" households read
+# as `low` from here on with no data edit — a mapping, not a migration.
+CARB_LEVELS = ("none", "low", "normal", "lots")
+
+_NONE_CARB = re.compile(
+    r"\b(?:keto|ketogenic|carnivore|carb[ -]?free)\b|(?<!not )\b(?:no|zero|without) carbs?\b"
 )
+_LOW_CARB = re.compile(
+    r"\b(?:low[ -]?carbs?|lowcarb|atkins|banting|fewer carbs?|less carbs?|lighter on carbs?|"
+    r"light on (?:the )?carbs?|reduced[ -]carbs?|cut(?:ting)? (?:back on |down on )?carbs?|"
+    r"easy on (?:the )?carbs?|not (?:too )?many carbs?|go easy on carbs?|carbs? (?:low|down|minimal|light))\b"
+)
+_LOTS_CARB = re.compile(
+    r"\b(?:lots of carbs?|plenty of carbs?|high[ -]carbs?|carb[ -]heavy|carb[ -]loading|"
+    r"big on carbs?|extra carbs?|more carbs?|love (?:our |my |the )?carbs?|heavy on (?:the )?carbs?)\b"
+)
+
+# What each level asks of a lunch or dinner, in words the prompts and the
+# side call share. `portion` is the marker a carb side carries.
+CARB_GUIDANCE = {
+    "none": "no carb on the plate: protein and vegetable, full stop.",
+    "low": "a SMALL carb on every lunch and dinner — half a portion of potato, rice, tortilla or bread "
+           "— never none: low carb is not no carb.",
+    "normal": "a full carb portion on every lunch and dinner.",
+    "lots": "a generous carb portion on every lunch and dinner — they like their carbs.",
+}
+CARB_PORTION = {"none": "none", "low": "small", "normal": "normal", "lots": "generous"}
+
+
+def _normalise(text: str | None) -> str:
+    text = (text or "").lower().replace("_", " ")
+    return " ".join(text.split())
+
+
+def carb_level(eating_style: str | None, *more_texts: str | None) -> str:
+    """
+    One of CARB_LEVELS, from the household's own words. `none` wins over
+    `low` ("keto, low carb" is keto), `low` over `lots`; nothing said is
+    `normal`. Pure — see household_carb_level for the one that reads the
+    row and the facts.
+    """
+    texts = [_normalise(t) for t in (eating_style, *more_texts) if t]
+    if any(_NONE_CARB.search(t) for t in texts):
+        return "none"
+    if any(_LOW_CARB.search(t) for t in texts):
+        return "low"
+    if any(_LOTS_CARB.search(t) for t in texts):
+        return "lots"
+    return "normal"
+
+
+def household_carb_level(eating_style: str | None = None) -> str:
+    """
+    The household's carb level, read from everywhere they may have said
+    it: eating_style (passed in, or read from meal_preferences), every
+    What-we-know fact, and the preferences notes. Never raises — a read
+    that fails is `normal`, the plain default.
+    """
+    try:
+        conn = get_conn()
+        row = conn.execute(
+            "SELECT eating_style, notes FROM meal_preferences WHERE household_id = ?", (household_id(),)
+        ).fetchone()
+        facts = conn.execute(
+            "SELECT text FROM facts WHERE household_id = ?", (household_id(),)
+        ).fetchall()
+        conn.close()
+    except Exception:
+        logger.exception("Could not read the household's carb level; treating it as normal")
+        return carb_level(eating_style)
+    style = eating_style if eating_style is not None else ((row["eating_style"] if row else "") or "")
+    return carb_level(style, (row["notes"] if row else "") or "", *[f["text"] for f in facts])
+
+
+def carb_portion(level: str) -> str:
+    return CARB_PORTION.get(level, "normal")
 
 
 def is_low_carb(eating_style: str | None) -> bool:
     """
-    Does this household's own eating_style read as low-carb/keto?
-
-    Deliberately literal. It answers only "did they say one of these
-    words", not "would a nutritionist call this low-carb" — a household
-    eating 40g of carbs a day and describing it as "clean eating" reads as
-    False here, and the honest consequence is that they get a carb on the
-    plate, which is the app's default and not a harm. The failure mode
-    worth avoiding is the other one: putting rice next to the steak of a
-    household that typed "keto" in the box.
+    Does this household's own eating_style read as low-carb or keto —
+    either of the two levels under normal? Kept for its callers; the
+    plate rule itself now asks carb_level, because these two levels want
+    different plates (see above).
     """
-    style = (eating_style or "").lower().replace("-", " ").replace("_", " ")
-    style = " ".join(style.split())  # collapse whitespace so "low  carb" matches
-    return any(phrase in style for phrase in _LOW_CARB_PHRASES)
+    return carb_level(eating_style) in ("none", "low")
 
 
-def plate_rule(eating_style: str | None) -> tuple[str, ...]:
+def plate_rule(eating_style: str | None = None, level: str | None = None) -> tuple[str, ...]:
     """
     The groups a full plate has to cover for this household, in the order
     they should be filled if more than one is missing.
 
-    protein + vegetable + carb ordinarily; protein + vegetable for a
-    low-carb/keto household (Emily, 2026-09-05, decision 7a). Returned as a
-    tuple rather than a set so a caller filling gaps does so in a stable,
-    sensible order — the protein first, since a plate missing its protein
-    is missing more than a plate missing its rice.
+    protein + vegetable + carb for everyone except a household on `none`
+    (keto, carnivore, "no carbs"), whose plate is protein + vegetable
+    (Emily, 2026-09-05, decision 7a — narrowed 2026-09-21 to none alone:
+    a low-carb plate still carries a small carb). `level` is one of
+    CARB_LEVELS when the caller has it; otherwise it is read off
+    eating_style. Returned as a tuple rather than a set so a caller
+    filling gaps does so in a stable, sensible order — the protein first.
     """
-    if is_low_carb(eating_style):
+    if level is None:
+        level = carb_level(eating_style)
+    if level == "none":
         return ("protein", "vegetable")
     return ("protein", "vegetable", "carb")
 
@@ -451,6 +524,7 @@ def complete_plate(entry_id: int, context: dict, side_generator=None) -> dict:
           "dislikes": ["mushrooms"],
           "dietary_restrictions": ["peanut allergy"],
           "eating_style": "high-protein, low-carb",
+          "carb_portion": "small",      # plates.carb_portion — low carb is not no carb
           "max_minutes": 20 | None,     # the night's real cap, if it has one
         }
 
@@ -496,6 +570,10 @@ def complete_plate(entry_id: int, context: dict, side_generator=None) -> dict:
         for group in side.get("covers") or []:
             if group in missing and group not in covered:
                 covered.append(group)
+        # A low-carb household's carb side is a half portion, and the
+        # plate says so ("Small" — plate_parts.parts_of_plate).
+        if context.get("carb_portion") == "small" and "carb" in (side.get("covers") or []):
+            side["portion"] = "small"
     attach_sides(entry_id, cleaned, covered)
     return {
         "entry_id": entry_id,
@@ -806,9 +884,12 @@ def suggest_additions(entry_id: int, eating_style: str | None = None, weekly_pla
         groups = json.loads(row["food_groups_json"] or "[]")
     except (TypeError, ValueError):
         groups = []
-    rule = plate_rule(eating_style)
+    level = household_carb_level(eating_style)
+    rule = plate_rule(level=level)
     missing = missing_groups({"slot": row["slot"], "food_groups": groups}, rule)
-    low_carb = is_low_carb(eating_style)
+    # Only a household on NONE sees the starches last; a low-carb plate
+    # carries a small one by rule now (Emily, 2026-09-21).
+    low_carb = level == "none"
 
     asked_for = (role or "").strip().lower()
 

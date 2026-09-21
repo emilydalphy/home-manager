@@ -294,6 +294,7 @@ def build_swap_context(weekly_plan_id: int, entry: dict, avoid: list[str] | None
     # the one answer the household has definitely already rejected.
     avoid_list = _dedup([entry["meal"]] + list(avoid or []))
 
+    carb = _plates.household_carb_level(memory.get("eating_style") or "")
     context = {
         "date": entry["date"],
         "weekday": _weekday(entry["date"]),
@@ -304,7 +305,9 @@ def build_swap_context(weekly_plan_id: int, entry: dict, avoid: list[str] | None
         "dislikes": memory.get("dislikes") or [],
         "eating_style": memory.get("eating_style") or "",
         "kitchen_kit": memory.get("kitchen_kit") or [],
-        "plate_rule": list(_plates.plate_rule(memory.get("eating_style"))),
+        "plate_rule": list(_plates.plate_rule(level=carb)),
+        "carb_portion": _plates.carb_portion(carb),
+        "carb_guidance": _plates.CARB_GUIDANCE[carb],
         "table": table,
         "night_tags": tags,
         "max_minutes": _minutes_cap(entry["date"], tags, memory),
@@ -385,7 +388,9 @@ eating it rules it out however many others like it. A dish under `loved:` is a n
 reason to repeat the week.
 - `plate_rule` is what a full plate covers here. Dinner and lunch cover all of it — plan the side \
 INTO the dish (in the name, the ingredients and the steps) rather than leaving the plate short. \
-Breakfast and snack cover at least two of those groups.
+Breakfast and snack cover at least two of those groups. `carb_guidance` says how much carb that \
+is: "small" (`carb_portion`) means a half portion of potato, rice, tortilla or bread on the \
+plate, never none — low carb is not no carb; "none" means no carb at all.
 - `table.serves` is how many actually eat this meal. Choose something that suits that number and \
 write every quantity for it — a dinner for one is what a person makes for themselves, not a \
 family tray divided.
