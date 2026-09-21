@@ -3245,11 +3245,15 @@ not everything you were shown.
 snacks_per_week (0-7) are counts of DISTINCT meals, not counts of days to plan. Every day still \
 gets all four. "4 breakfasts" means four different breakfast ideas spread across the seven \
 mornings, repeating as needed to fill the week — it does NOT mean three mornings with nothing. \
-Each count is a CEILING on distinct dishes, not a suggestion: with dinners_per_week 4, count the \
-different dinner dishes you have written before you submit, and if there are five, replace one \
-with a second night of another. Every dish over the count will be swapped for a repeat of a kept \
-one after you answer, so a fifth dish is work thrown away. A reheat night counts as the dish it \
-reheats, not as a new one. \
+Each count is a TARGET for distinct dishes over the day_count days you are planning — not a \
+cap and not a floor — and it has already been scaled to this period when it is shorter than a \
+week, so the number you are handed is the number to hit: with dinners_per_week 3 over four \
+days, exactly three different dinners, one of them on two nights. Count the different dishes \
+you have written for each meal before you submit. Too many, and the extras will be folded into \
+repeats of the ones you kept; too few, and the repeated nights will be re-picked into new \
+dishes — either way, after you answer, so anything off the number is work thrown away (Emily, \
+2026-09-21: "why isn't it following the guidelines we set"). A reheat night counts as the dish \
+it reheats, not as a new one. \
 This is what the setup screen promises the household in so many words: "I'd rather plan four \
 things you cook than seven you don't," and "one breakfast a week is a perfectly good answer" — \
 one idea, eaten all week, not one morning fed and six ignored. snacks_per_week follows the \
@@ -3258,7 +3262,8 @@ exact same rule (Loop Board "Onboarding / meal setup: add a Snacks & desserts co
 breakfast or lunch idea would be — with a light lean toward something dessert-like on a night \
 tagged `unrushed` or otherwise called out as special in constraints_notes/intake, rather than on \
 an ordinary weeknight. household_memory.snacks_per_day is the separate, per-DAY number: how many \
-snack entries each day gets (2 by default). The two counts work together — snacks_per_day says \
+snack entries each day gets (2 by default), and it is exact — every planned day gets that many, \
+no more, no fewer. The two counts work together — snacks_per_day says \
 how many snacks land on Tuesday, snacks_per_week how many distinct ideas the whole rotation \
 draws on — and the pool is never so small that one day has to repeat itself: give every day its \
 snacks_per_day snacks, all different from each other and from that day's other meals, even if \
@@ -4075,41 +4080,14 @@ def _attach_personal_context_for_subset_slots(attendance_ctx: dict) -> None:
 
 def _prorate_meal_count(preference: int, day_count: int) -> int:
     """
-    Scale a full-week meal-VARIETY target down to fit a part-week.
-
-    household_memory's dinners_per_week/breakfasts_per_week/lunches_per_week
-    are counts of DISTINCT meals across 7 days, not a count of days to plan
-    (see the generation prompt's own explanation of this) — "4 dinners"
-    means four different recipes repeated to fill the week, so a household
-    that said "cook twice, we'll eat leftovers the rest of the week" is
-    saying something about how OFTEN they want something new, not how many
-    days get fed.
-
-    That ratio, not the raw count, is what should survive a shorter week.
-    Carrying the raw number over unchanged breaks in both directions: a
-    household onboarding on a Wednesday with dinners_per_week=7 (something
-    different every night) would otherwise be told to plan 7 distinct
-    dinners into a 5-day week, and one with dinners_per_week=2 (mostly
-    leftovers) onboarding on a Saturday would be told "2 distinct dinners"
-    for a 2-day week — which, for 2 remaining days, means a different meal
-    both nights, exactly the opposite of what "we don't cook much" meant
-    over a full week.
-
-    The rule: prorated = round(preference * day_count / 7), floored at 1 to
-    keep any nonzero preference a real answer rather than rounding it away,
-    and capped at day_count since there cannot be more distinct meals than
-    days to cook them in. A preference of exactly 0 passes through
-    unchanged — that's handled as "plan none of this meal at all" elsewhere
-    (see _finish_week_slots's zero-count pass) and proration must not turn
-    a real "none, thanks" into "one, thanks" by flooring it up.
-
-    A full 7-day week (day_count >= 7) is returned unchanged; there's
-    nothing to prorate.
+    Scale a full-week meal-VARIETY target down to fit a part-week — the
+    rule lives in tools.meal_variety.prorate_meal_count (with the two
+    knobs that make it Emily's to flip: whether a count scales to the days
+    planned at all, and how it rounds), because the draft's opener reads
+    the same number back to say "three dinners this week, not four". Kept
+    here by name for its callers and tests.
     """
-    if day_count >= 7 or preference <= 0:
-        return preference
-    prorated = round(preference * day_count / 7)
-    return max(1, min(prorated, day_count))
+    return _meal_variety.prorate_meal_count(preference, day_count)
 
 
 _SEASON_BY_MONTH = {
@@ -5007,20 +4985,35 @@ def _finish_week_slots(
 
     # "Four dinners a week" means four dishes, and the model is only ASKED
     # for that (Emily, 2026-09-13: "it's giving me 5 types of dinners when I
-    # asked for 4"). This makes it true: any dish over the count goes, and
-    # a kept dish takes its nights. household_memory here is the effective
-    # memory, so a part-week's prorated count is the one enforced. AFTER
-    # repair_leftover_chains, so a reheat night is filed under the dish it
-    # reheats and the chains it reads are real; BEFORE the plates pass, so
-    # sides land on the dishes the week actually keeps. See
+    # asked for 4"; 2026-09-21: "why isn't it following the guidelines we
+    # set"). This makes it true, in both directions and for every count on
+    # the "Each week I plan" screen: a dish over the count folds into a
+    # repeat of a kept one; a repeated night under the count is re-picked
+    # into a new dish; and every day gets exactly its snacks a day.
+    # household_memory here is the effective memory, so a part-week's
+    # prorated count is the one enforced (meal_variety.prorate_meal_count).
+    # AFTER repair_leftover_chains, so a reheat night is filed under the
+    # dish it reheats and the chains it reads are real; BEFORE the plates
+    # pass, so sides land on the dishes the week actually keeps. See
     # tools.meal_variety for what goes, what stays and when it stands down.
-    tools.enforce_distinct_meal_count(
-        plan_id, household_memory.get("dinners_per_week"), slot="dinner",
-        asks=(
-            (context or {}).get("constraints_notes"),
-            ((context or {}).get("intake") or {}).get("freeform"),
-        ),
+    count_asks = (
+        (context or {}).get("constraints_notes"),
+        ((context or {}).get("intake") or {}).get("freeform"),
     )
+    count_budget = repick_budget or _allergen_gate.CallBudget()
+    # Only a number the household actually gave is a floor to reach
+    # (meal_counts_set / the snacks flags): a column default is still a
+    # ceiling, never a reason to spend model calls.
+    for slot, field in _meal_variety.COUNT_FIELDS.items():
+        tools.enforce_distinct_meal_count(
+            plan_id, household_memory.get(field), slot=slot, asks=count_asks, budget=count_budget,
+            fill_up=bool(household_memory.get("meal_counts_set")),
+        )
+    if household_memory.get("snacks_per_day_set") or household_memory.get("snacks_per_week_set"):
+        _meal_variety.enforce_snacks_per_day(
+            plan_id, household_memory.get("snacks_per_day"),
+            tools.period_dates(week_start_date, day_count), budget=count_budget,
+        )
 
     # "Every meal is a full plate" (Emily, 2026-09-05) — any planned meal
     # whose own food_groups fall short of the household's plate rule gets a

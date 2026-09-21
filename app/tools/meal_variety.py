@@ -60,6 +60,7 @@ from __future__ import annotations
 import datetime
 import json
 import logging
+import math
 import re
 
 from ..db import get_conn
@@ -79,6 +80,64 @@ logger = logging.getLogger("home_manager")
 # weeks is the session's recommended default (2026-09-21), and a dish from
 # inside it is only drafted again when the household asked for it.
 VARIETY_WINDOW_WEEKS = 2
+
+
+# ---------- "Each week I plan" numbers are targets, not caps ----------
+#
+# Emily, 2026-09-21. Her household: Dinners 4 · Breakfasts 3 · Lunches 3 ·
+# Snacks a day 2. A four-day draft (Tue–Fri) came back with 2 distinct
+# breakfasts, 4 lunches, 2 dinners: "Why isn't it following the guidelines
+# we set — fix it." Two things were wrong. The counts reached the model as
+# a CEILING (only "too many" was ever enforced, and only for dinners), and
+# a part-week's count was rounded to nearest (4 dinners over 4 days →
+# round(2.29) = 2), so the two dinners she got were, by the old rule,
+# correct.
+#
+# ASSUMPTION, built to be flipped in one place (Emily was asked; answer
+# pending): the settings are DISTINCT dishes per 7-day week, scaled to the
+# days planned and rounded UP — 4 dinners on a 4-day plan = ceil(4×4/7) =
+# 3 distinct dinners. "Snacks a day" is per day and never scaled. The two
+# knobs below are the whole of that assumption:
+#   PRORATE_TO_DAYS_PLANNED — False makes the number literal (4 dinners on
+#     a 4-day plan = 4 distinct dinners, capped at the days there are);
+#   PRORATE_ROUNDING — round() makes 4-over-4-days 2 again.
+PRORATE_TO_DAYS_PLANNED = True
+PRORATE_ROUNDING = math.ceil
+
+# The slots a per-week count applies to, with its household_memory field.
+COUNT_FIELDS = {"dinner": "dinners_per_week", "lunch": "lunches_per_week", "breakfast": "breakfasts_per_week"}
+
+
+def prorate_meal_count(preference: int, day_count: int) -> int:
+    """
+    Scale a full-week DISTINCT-dish target to the days actually planned.
+
+    household_memory's dinners_per_week/breakfasts_per_week/lunches_per_week
+    are counts of distinct dishes across 7 days, not days to plan — "4
+    dinners" means four different recipes repeated to fill the week — so
+    the ratio, not the raw number, is what survives a shorter period.
+    Rounded up (PRORATE_ROUNDING), floored at 1 so a real answer never
+    rounds away, capped at day_count since there cannot be more distinct
+    dishes than days to cook them. Zero passes through: "none, thanks" is
+    handled elsewhere (_finish_week_slots's zero-count pass) and must not
+    become "one, thanks". A full week (day_count >= 7) is unchanged.
+    """
+    if day_count >= 7 or preference <= 0:
+        return preference
+    if not PRORATE_TO_DAYS_PLANNED:
+        return max(1, min(preference, day_count))
+    prorated = PRORATE_ROUNDING(preference * day_count / 7)
+    return max(1, min(int(prorated), day_count))
+
+
+def count_targets(memory: dict, day_count: int) -> dict[str, int | None]:
+    """{slot: the distinct-dish target for this period} for the three
+    per-week counts, from the household's own settings; None where unset."""
+    out: dict[str, int | None] = {}
+    for slot, field in COUNT_FIELDS.items():
+        value = memory.get(field)
+        out[slot] = prorate_meal_count(int(value), day_count) if value is not None else None
+    return out
 
 
 def variety_window_words() -> str:
@@ -206,16 +265,25 @@ def _spread_pick(kept: list[dict], date: str) -> dict:
 
 def enforce_distinct_count(
     plan_id: int, target: int | None, slot: str = "dinner", asks: tuple[str | None, ...] = (),
+    budget=None, picker=None, fill_up: bool = True,
 ) -> dict:
     """
-    Cap one slot's distinct dishes at `target` for this plan — see the
-    module docstring for what goes, what stays and what fills the gap.
-    Returns {"before", "after", "replaced": [{"date", "dropped", "with"}]}
-    and never raises: a plan with one dish too many is a far better
-    outcome than a lost week, so any failure is logged and the plan is
-    left as it stands.
+    Make one slot's distinct dishes NUMBER `target` for this plan — see
+    the module docstring for what goes, what stays and what fills the gap.
+    Too many: the surplus dishes fold into repeats of the kept ones (no
+    model call). Too few (Emily, 2026-09-21: the count is a target, not a
+    cap): a repeated night is re-picked quietly into a dish the week does
+    not have yet, through the swap's own picker against `budget`, until
+    the number is met or the budget is spent — see _fill_up. `fill_up`
+    False keeps that half off: the caller passes the household's
+    meal_counts_set, because chasing a column default up to seven
+    distinct breakfasts would spend real calls on a number nobody chose.
+    Returns {"before", "after", "replaced": [{"date", "dropped", "with"}],
+    "added": [{"date", "dropped", "with"}]} and never raises: a plan with
+    one dish too many is a far better outcome than a lost week, so any
+    failure is logged and the plan is left as it stands.
     """
-    result = {"before": None, "after": None, "replaced": [], "skipped": None}
+    result = {"before": None, "after": None, "replaced": [], "added": [], "skipped": None}
     try:
         if not target or target <= 0:
             result["skipped"] = "no target"
@@ -227,7 +295,14 @@ def enforce_distinct_count(
         chains = _leftovers.plan_leftover_chains(plan_id)
         dishes = _group_dishes(_load_slot_entries(plan_id, slot), chains)
         result["before"] = result["after"] = len(dishes)
-        if len(dishes) <= target:
+        if len(dishes) < target:
+            if not fill_up:
+                result["skipped"] = "counts are defaults, not answers"
+                return result
+            result["added"] = _fill_up(plan_id, slot, dishes, target, budget, picker)
+            result["after"] = result["before"] + len(result["added"])
+            return result
+        if len(dishes) == target:
             return result
         surplus = _pick_surplus(dishes, target)
         if len(surplus) < len(dishes) - target:
@@ -285,6 +360,231 @@ def enforce_distinct_count(
         logger.exception("Distinct %s count enforcement failed for plan %s; leaving the plan as generated", slot, plan_id)
     return result
 
+
+
+def _fill_up(plan_id: int, slot: str, dishes: list[dict], target: int, budget, picker=None) -> list[dict]:
+    """
+    Too few distinct dishes: re-pick repeated nights into new ones until
+    the slot numbers `target`. The night that goes is the LAST night of
+    the dish covering the most nights (its first night carries the
+    model's reasoning; a later repeat is the one with the least claim),
+    never a protected night (asked for by name, or cooked), never a night
+    in a leftover chain (re-picking one end strands the other). Every
+    dish already on the slot is on `avoid`, and a pick that lands on one
+    of them anyway is refused. Each re-pick is at most
+    swap_in_place.MAX_PICK_ATTEMPTS calls against the shared budget;
+    when it runs dry, the week stands with fewer dishes than asked — a
+    repeat is a far better outcome than an open slot.
+    """
+    from . import allergen_gate as _allergen_gate
+
+    budget = budget or _allergen_gate.CallBudget()
+    added: list[dict] = []
+    have = {d["name"].strip().lower() for d in dishes}
+    # Nights that may be re-picked, most-repeated dish first, latest night
+    # first within it — recomputed each round because a re-pick changes
+    # the counts.
+    while len(have) < target:
+        candidates = [
+            d for d in dishes if len(d["nights"]) > 1 and not d["protected"] and not d["chained"]
+        ]
+        if not candidates:
+            break
+        dish = max(candidates, key=lambda d: (len(d["nights"]), d["nights"][0]["date"]))
+        night = dish["nights"][-1]
+        if night.get("id") is None:
+            break
+        entry = dict(night)
+        entry["slot"] = slot
+        entry["meal"] = dish["name"]
+        if budget.left <= 0:
+            logger.warning("Re-pick budget spent; plan %s keeps %d distinct %ss against a target of %d",
+                           plan_id, len(have), slot, target)
+            break
+        replaced = _repick_entry(
+            plan_id, entry, budget,
+            avoid=sorted(d["name"] for d in dishes),
+            because=f"you asked for {_display_word(target, slot)} this week, and this night was a repeat",
+            reject=lambda name: name.strip().lower() in have,
+            derived_key="count_repick", picker=picker,
+        )
+        if replaced is None:
+            # Nothing usable came back for this night; don't spend the
+            # rest of the budget circling it.
+            dish["nights"].pop()
+            dish["protected"] = True
+            continue
+        new_name = replaced.get("meal") or ""
+        dish["nights"].pop()
+        have.add(new_name.strip().lower())
+        dishes.append({"name": new_name, "nights": [{"date": night["date"], "id": replaced.get("entry_id")}],
+                       "protected": True, "chained": False, "food_groups": None})
+        added.append({"date": night["date"], "dropped": dish["name"], "with": new_name})
+        logger.info("Plan %s had too few distinct %ss (target %d): %s %r -> %r",
+                    plan_id, slot, target, night["date"], dish["name"], new_name)
+    return added
+
+
+def _load_snacks_by_day(plan_id: int) -> dict[str, list[dict]]:
+    by_day: dict[str, list[dict]] = {}
+    for e in _load_slot_entries(plan_id, "snack"):
+        by_day.setdefault(e["date"], []).append(e)
+    return by_day
+
+
+def _day_food(plan_id: int, dates: list[str]) -> dict[str, dict[str, str]]:
+    """Everything planned on each day, {lowercased: as written} — what a
+    snack on that day must not repeat."""
+    conn = get_conn()
+    rows = conn.execute(
+        """
+        SELECT mpe.date, mpe.slot, mpe.slot_state, COALESCE(r.name, mpe.freeform_meal) AS meal
+        FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id
+        WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.component_category IS NULL
+        """,
+        (plan_id, household_id()),
+    ).fetchall()
+    conn.close()
+    out: dict[str, dict[str, str]] = {d: {} for d in dates}
+    for r in rows:
+        if r["date"] in out and r["slot_state"] == "planned" and r["meal"]:
+            out[r["date"]].setdefault(r["meal"].strip().lower(), r["meal"].strip())
+    return out
+
+
+def _nobody_home(plan_id: int, date: str) -> bool:
+    """A day whose every real meal is planned_empty has nobody home; it
+    gets no snacks added."""
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT slot_state FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? "
+        "AND date = ? AND slot IN ('breakfast', 'lunch', 'dinner') AND component_category IS NULL",
+        (plan_id, household_id(), date),
+    ).fetchall()
+    conn.close()
+    return bool(rows) and all(r["slot_state"] == "planned_empty" for r in rows)
+
+
+def enforce_snacks_per_day(plan_id: int, per_day: int | None, dates: list[str], budget=None, picker=None) -> dict:
+    """
+    "Snacks a day" is exact (Emily, 2026-09-21): every planned day gets
+    `per_day` snack entries, no more, no fewer. Too many on a day: the
+    extras go — a duplicate of that day's other snack first, then the
+    latest-written — with any grocery line reversed. Too few: the gap is
+    filled from the week's own snacks first (an idea from another day
+    that repeats nothing on this one — no model call, and nothing the
+    generation's restriction handling never saw), and only when none fits
+    from one small picker call against `budget`. A day nobody is home
+    for is left alone. Never raises.
+    """
+    from . import allergen_gate as _allergen_gate
+    from . import meal_plans as _meal_plans
+    from . import grocery as _grocery
+    from . import plates as _plates
+    from . import swap_in_place as _swap
+
+    out = {"removed": [], "added": [], "left_short": []}
+    if not per_day or per_day <= 0 or not dates:
+        return out
+    budget = budget or _allergen_gate.CallBudget()
+    try:
+        by_day = _load_snacks_by_day(plan_id)
+        day_food = _day_food(plan_id, dates)
+        # Too many first, so the supply the fill-up draws on is the kept one.
+        for date in dates:
+            snacks = [e for e in by_day.get(date, []) if e["slot_state"] == "planned" and e["meal"]]
+            if len(snacks) <= per_day:
+                continue
+            keep: list[dict] = []
+            seen: set[str] = set()
+            extras: list[dict] = []
+            for e in snacks:
+                key = e["meal"].strip().lower()
+                if key in seen:
+                    extras.append(e)
+                else:
+                    seen.add(key)
+                    keep.append(e)
+            while len(keep) > per_day:
+                extras.append(keep.pop())
+            conn = get_conn()
+            for e in extras:
+                _grocery._reverse_meal_grocery_contributions(e["id"], conn=conn)
+                conn.execute("DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?", (e["id"], household_id()))
+                out["removed"].append({"date": date, "meal": e["meal"]})
+            conn.commit()
+            conn.close()
+            by_day[date] = keep
+            gone = {e["meal"].strip().lower() for e in extras} - {e["meal"].strip().lower() for e in keep}
+            day_food[date] = {k: v for k, v in day_food[date].items() if k not in gone}
+        # The week's own supply: every distinct snack, with how many days it is on.
+        supply: dict[str, dict] = {}
+        for date, snacks in by_day.items():
+            for e in snacks:
+                if e["slot_state"] != "planned" or not e["meal"]:
+                    continue
+                row = supply.setdefault(e["meal"].strip().lower(), {"name": e["meal"], "days": 0, "food_groups": None})
+                row["days"] += 1
+                if row["food_groups"] is None:
+                    groups = json.loads(e["food_groups_json"] or "[]")
+                    row["food_groups"] = groups or None
+        for date in dates:
+            snacks = [e for e in by_day.get(date, []) if e["slot_state"] == "planned" and e["meal"]]
+            short = per_day - len(snacks)
+            if short <= 0 or _nobody_home(plan_id, date):
+                continue
+            for _ in range(short):
+                fits = [r for k, r in supply.items() if k not in day_food[date]]
+                if fits:
+                    pick = min(fits, key=lambda r: (r["days"], r["name"]))
+                    name, groups, reason = pick["name"], pick["food_groups"], ""
+                    pick["days"] += 1
+                else:
+                    name, groups, reason = _pick_a_snack(plan_id, date, sorted(day_food[date].values()), budget, picker)
+                    if not name:
+                        out["left_short"].append(date)
+                        break
+                    supply[name.strip().lower()] = {"name": name, "days": 1, "food_groups": groups}
+                _meal_plans.plan_meal(
+                    meal_date=date, meal=name, slot="snack",
+                    food_groups=[g for g in (groups or []) if g in _plates.ALL_GROUPS] or None,
+                    weekly_plan_id=plan_id, reasoning=reason,
+                    derived_from={"constraint": f"snacks_per_day:{per_day}"},
+                )
+                day_food[date][name.strip().lower()] = name
+                out["added"].append({"date": date, "meal": name})
+        if out["removed"] or out["added"]:
+            logger.info("Plan %s snacks a day (%d): removed %d, added %d%s", plan_id, per_day,
+                        len(out["removed"]), len(out["added"]),
+                        f"; still short on {', '.join(out['left_short'])}" if out["left_short"] else "")
+    except Exception:
+        logger.exception("Snacks-per-day enforcement failed for plan %s; the week stands as generated", plan_id)
+    return out
+
+
+def _pick_a_snack(plan_id: int, date: str, avoid: list[str], budget, picker=None) -> tuple[str, list | None, str]:
+    """One small picker call for a snack on `date` that repeats nothing on
+    that day. Returns (name, food_groups, reason), or ("", None, "") when
+    nothing usable came back or the budget is spent."""
+    from . import swap_in_place as _swap
+
+    pick_one = picker or _swap._pick_replacement
+    if not budget.take():
+        return "", None, ""
+    slot_entry = {"date": date, "slot": "snack", "meal": "", "entry_id": None}
+    try:
+        context = _swap.build_swap_context(plan_id, slot_entry, avoid)
+        context["replacing_because"] = "this day is a snack short"
+        candidate = pick_one(context) or {}
+    except Exception:
+        logger.exception("Snack pick for %s failed", date)
+        return "", None, ""
+    name = (candidate.get("meal_name") or "").strip()
+    if not name or name.lower() in {a.lower() for a in avoid} or _swap.pick_gate(candidate, slot_entry):
+        return "", None, ""
+    candidate["meal_name"] = name
+    _swap._save_recipe_if_new(candidate, _swap._table_for(date, "snack")["serves"])
+    return name, candidate.get("food_groups"), (candidate.get("reason") or "").strip()
 
 # ---------- Surprise me means new to you ----------
 #

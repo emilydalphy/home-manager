@@ -4760,9 +4760,11 @@ def _safe_draft_opener(rows, intake, plan, days) -> list[str]:
     from . import draft_opener as _draft_opener  # lazy, see get_week_menu
 
     try:
+        from . import memory as _memory  # lazy, as above
         return _draft_opener.build_opener(
             rows, intake, plan["period_start_date"], plan["day_count"], days, plan_id=plan["weekly_plan_id"],
             report=plan_requests(plan["weekly_plan_id"]),
+            memory=_memory.get_household_memory(),
         )
     except Exception:
         logger.exception("The draft's opening lines could not be built")
