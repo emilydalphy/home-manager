@@ -326,8 +326,9 @@ def test_the_freezer_step_has_the_chips_the_meaning_card_and_the_two_answers():
     html = _run(_prelude() + f"defrostAskState = {{ planId: 7, items: {json.dumps(_ITEMS)}, selected: {{ 'Chicken thighs': true, 'Ground beef': true }} }};\n"
                 f"console.log(JSON.stringify(freezerStepHtml({json.dumps(_approved(_week()))})));")
     assert 'class="crumb" data-wk-back="week">‹ Plan</button>' in html
-    assert "<h1 class=\"wk-title\">Anything in the freezer?</h1>" in html
-    assert "Tap what’s frozen and I’ll tell you when to move it to the fridge." in html
+    # Board F-A (2026-09-21): the title and line say what a tap does.
+    assert "<h1 class=\"wk-title\">Anything already in the freezer?</h1>" in html
+    assert "Tap what you’ve got frozen. I’ll take it off the shopping list and tell you when to move it to the fridge." in html
     assert html.count('class="defrost-chip') == 3 and html.count("defrost-chip is-selected") == 2
     # A selected chip carries the snowflake; an unselected one does not.
     salmon = html[html.index('data-defrost-chip="Salmon"') - 60:html.index('data-defrost-chip="Salmon"') + 80]
@@ -337,7 +338,7 @@ def test_the_freezer_step_has_the_chips_the_meaning_card_and_the_two_answers():
     assert "Ground beef → into the fridge Tuesday night, for Thursday’s dinner." in html
     assert "Salmon →" not in html, "only what is tapped"
     assert 'id="wk-freezer-go">Add to the schedule · Open grocery list</button>' in html
-    assert 'id="wk-freezer-none">None — all fresh</button>' in html
+    assert 'id="wk-freezer-none">Nothing frozen — I’m buying it all</button>' in html
     assert html.count("dock-primary") == 1
 
 
@@ -364,7 +365,7 @@ def test_the_roots_freezer_row_asks_then_reads_the_answer():
     for row in html:
         assert 'data-wk-freezer="1"' in row and "wk-freezer-tile" in row and "wk-freezer-chev" in row
     assert "Anything in the freezer this week?" in ask and "is-answered" not in ask
-    assert "Chicken thighs, ground beef — in the schedule" in done and "is-answered" in done
+    assert "Chicken thighs, ground beef — from the freezer" in done and "is-answered" in done
     assert "Nothing frozen this week" in none
 
 

@@ -5206,7 +5206,8 @@
   }
 
   // ---------- Not needed this week ----------
-  // This week's "Have it" / "Don't need" / pre-shop "Drop it" decisions
+  // This week's "Have it" / "Don't need" / pre-shop "Drop it" decisions,
+  // and what the Plan tab's freezer step set aside as already frozen
   // (get_already_have_decisions), each with "Actually, I need it" — the
   // way back once the toast's Undo has gone. It was half of the old
   // wrap-up's "Already sorted this week" card; the other half, what's set
@@ -5227,8 +5228,12 @@
       (open
         ? '<div class="gro-flag-body">' +
             already.map(function (it) {
+              // A line the freezer step set aside says so — it came off
+              // the list for a reason the person gave on another tab, and
+              // "Actually, I need it" here also cancels its fridge move.
+              var why = it.removed_by === 'freezer' ? ' &middot; from the freezer' : '';
               return '<div class="gro-fix">' +
-                '<span>' + escapeHtml(it.item) + (it.quantity ? ' &middot; ' + escapeHtml(it.quantity) : '') + '</span>' +
+                '<span>' + escapeHtml(it.item) + (it.quantity ? ' &middot; ' + escapeHtml(it.quantity) : '') + why + '</span>' +
                 '<button type="button" class="secondary" data-gro="undo-already-have" data-id="' + String(it.id) + '">Actually, I need it</button>' +
               '</div>';
             }).join('') +
@@ -6491,13 +6496,28 @@
       // it to 'needed' is identical either way; the backend also deletes
       // the inventory row an already-have action created, but only when
       // that write didn't merge into pre-existing stock (see
-      // undo_pre_shop_drop / already_have_inventory_id).
-      case 'undo-already-have':
+      // undo_pre_shop_drop / already_have_inventory_id) — and, for a line
+      // the freezer step set aside, cancels that item's fridge move
+      // (`moves_cancelled`), so the Plan root's freezer row and Today's
+      // moves are re-read to stop naming it. "Put back." is the undo's own
+      // line (S10), the same one "Getting it elsewhere" says.
+      case 'undo-already-have': {
         el.disabled = true;
+        var undoneMoves = 0;
         groDo(function () {
-          return groPostEmpty('/api/grocery-list/' + id + '/pre-shop-undo');
-        }, "Couldn't undo that — try again.");
+          return groPostEmpty('/api/grocery-list/' + id + '/pre-shop-undo').then(function (body) {
+            undoneMoves = (body && body.moves_cancelled) || 0;
+          });
+        }, "Couldn't undo that — try again.").then(function (ok) {
+          if (!ok) return;
+          showToast('Put back.');
+          if (undoneMoves) {
+            if (panels.week && panels.week.dataset.built) loadWeekMenu(panels.week);
+            refreshTodayMoves();
+          }
+        });
         return;
+      }
 
       // LIST's "Getting elsewhere" foot section: the one-tap way back onto
       // the list for a thing set aside — the same /include the toast's
@@ -13698,19 +13718,30 @@
   }
 
   // ---------- The freezer step ----------
-  // "Anything in the freezer?" (Emily, 2026-09-18, board 11b): its own
-  // step of the Plan flow, reached from All set's one button, from the
-  // root's freezer row, from an approved week's "Open grocery list" when
-  // the question hasn't been answered for this plan. Until 2026-09-18
-  // this was an ask card folded into the root's receipt and opened on All
-  // set beside a batch-cook ask; both of those are gone, and so is the
-  // Cook screen's link here ("The recipe is the recipe", same day).
+  // "Anything already in the freezer?" (Emily, 2026-09-18, board 11b;
+  // 2026-09-21, board F-A): its own step of the Plan flow, reached from
+  // All set's one button, from the root's freezer row, from an approved
+  // week's "Open grocery list" when the question hasn't been answered for
+  // this plan. Until 2026-09-18 this was an ask card folded into the
+  // root's receipt and opened on All set beside a batch-cook ask; both of
+  // those are gone, and so is the Cook screen's link here ("The recipe is
+  // the recipe", same day).
+  //
+  // Since 2026-09-21 the chips are EVERY meat in the week, whether or not
+  // it is still on the shopping list — a tapped chip means "I already have
+  // this, frozen", and the save takes its line off the list (the same
+  // write as Shop's "Have it") and books the fridge move. Emily: "takes
+  // the mental energy off the user by asking the question so they don't
+  // need to think about it."
   //
   // `items` is null until fetched (or reset to null to force a fresh
   // fetch — see openFreezerStep), then the plan's own meat/seafood
-  // ingredients the app has no other record of (meat_items_for_plan),
-  // each with the nights it feeds and the night it would move to the
-  // fridge. `selected` is which chips are tapped, keyed by item name.
+  // ingredients (meat_items_for_plan), each with the nights it feeds, the
+  // night it would move to the fridge, whether it has a grocery line
+  // (`on_list`) and whether the household already said it is frozen
+  // (`frozen` — the chip starts on, so reopening the step shows the
+  // answer as given and an un-tap takes it back). `selected` is which
+  // chips are on, keyed by item name.
   var defrostAskState = { planId: null, items: null, selected: {} };
 
   function defrostAskChipHtml(it) {
@@ -13725,10 +13756,15 @@
     return (defrostAskState.items || []).filter(function (it) { return !!defrostAskState.selected[it.item]; });
   }
 
-  // "Chicken thighs → into the fridge Saturday night, for Monday's
-  // dinner." — one line per (item, night), off the move date the server
-  // computed (defrost.meat_items_for_plan carries move_date/move_weekday
-  // on every night, the same _move_date the task itself is booked on).
+  // "Chicken thighs → off the shopping list · into the fridge Saturday
+  // night, for Monday's dinner." — one line per (item, night), both halves
+  // of what a tapped chip does (board F-A). The list half only where there
+  // is a line to take off (`on_list`): a meat the fridge already covers,
+  // or one bought already, gets the fridge half alone rather than a
+  // promise about a line that isn't there. The night is the move date the
+  // server computed (defrost.meat_items_for_plan carries move_date/
+  // move_weekday on every night, the same _move_date the task itself is
+  // booked on).
   function defrostMeaningLines(items) {
     var lines = [];
     items.forEach(function (it) {
@@ -13736,7 +13772,8 @@
         var moveDay = n.move_weekday || (n.move_date ? dayName(n.move_date, { weekday: 'long' }) : '');
         var forDay = n.weekday || (n.date ? dayName(n.date, { weekday: 'long' }) : '');
         var what = n.slot ? slotWord(n.slot) : (n.meal || 'meal');
-        lines.push(it.item + ' → into the fridge ' + (moveDay ? moveDay + ' night' : 'the night before') +
+        lines.push(it.item + ' → ' + (it.on_list ? 'off the shopping list · ' : '') +
+          'into the fridge ' + (moveDay ? moveDay + ' night' : 'the night before') +
           ', for ' + forDay + '’s ' + what + '.');
       });
     });
@@ -13773,13 +13810,13 @@
         defrostMeaningHtml();
       dock = '<div class="dock wk-freezer-dock">' +
         '<button type="button" class="dock-primary" id="wk-freezer-go">Add to the schedule · Open grocery list</button>' +
-        '<button type="button" class="wk-freezer-none-btn" id="wk-freezer-none">None — all fresh</button>' +
+        '<button type="button" class="wk-freezer-none-btn" id="wk-freezer-none">Nothing frozen — I’m buying it all</button>' +
       '</div>';
     }
     return '<button type="button" class="crumb" data-wk-back="week">‹ Plan</button>' +
       '<div class="wk-head">' +
-        '<div class="wk-head-row"><h1 class="wk-title">Anything in the freezer?</h1></div>' +
-        '<div class="wk-sub">Tap what’s frozen and I’ll tell you when to move it to the fridge.</div>' +
+        '<div class="wk-head-row"><h1 class="wk-title">Anything already in the freezer?</h1></div>' +
+        '<div class="wk-sub">Tap what you’ve got frozen. I’ll take it off the shopping list and tell you when to move it to the fridge.</div>' +
       '</div>' +
       '<div class="wk-freezer-body">' + body + '</div>' +
       dock;
@@ -13800,6 +13837,11 @@
       var body = await res.json();
       if (defrostAskState.planId !== data.weekly_plan_id) return; // a newer plan loaded while this was in flight
       defrostAskState.items = body.items || [];
+      // The answer as given: a chip the household already said yes to
+      // starts on, so the step reopened from the root's freezer row reads
+      // back what is booked and an un-tap is how it is taken back.
+      defrostAskState.selected = {};
+      defrostAskState.items.forEach(function (it) { if (it.frozen) defrostAskState.selected[it.item] = true; });
     } catch (err) {
       console.warn('Defrost item lookup failed:', err);
       if (defrostAskState.planId === data.weekly_plan_id) defrostAskState.items = [];
@@ -13850,7 +13892,10 @@
         toastSaved();
       }
       await loadWeekMenu(panel); // refetches defrost_asked_at and the moves the root row reads
-      refreshTodayMoves();
+      // The answer moved lines off (or back onto) the list, so a Shop
+      // panel already built this page view is re-read before it is shown
+      // — and Today's moves with it, the fridge move being one of them.
+      refreshGrocerySurfaces();
       goGroceryList();
     } catch (err) {
       console.warn('Defrost confirmation failed:', err);
@@ -13872,7 +13917,9 @@
   // The root's freezer row (Emily, 2026-09-18, board 19): the question
   // until it is answered for this plan, then the answer — read off the
   // week itself (each entry's booked defrost move, the same rows Today's
-  // fridge move reads), so nothing here is remembered on the device.
+  // fridge move reads), so nothing here is remembered on the device. A
+  // put-back on Shop ("Actually, I need it") deletes the move, so the row
+  // stops naming that item the next time the week is read.
   function weekFrozenItems(days) {
     var seen = {}, out = [];
     (days || []).forEach(function (day) {
@@ -13896,7 +13943,7 @@
     if (!answered) line = 'Anything in the freezer this week?';
     else {
       var items = weekFrozenItems(days);
-      line = items.length ? items.join(', ') + ' — in the schedule' : 'Nothing frozen this week';
+      line = items.length ? items.join(', ') + ' — from the freezer' : 'Nothing frozen this week';
     }
     return '<button type="button" class="wk-freezer-row' + (answered ? ' is-answered' : '') + '" data-wk-freezer="1">' +
       '<span class="wk-freezer-tile">' + WK_ICONS.snow + '</span>' +
