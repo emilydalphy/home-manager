@@ -391,6 +391,41 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-21 — Shop asks "Freezing it?" under a just-ticked meat line.
+  Branch `shop-freezing-it` (Loop Board 3e21f4c0, mockup F-C).** The
+  freezer step at approval cannot ask about meat still on the shopping
+  list (meat_items_for_plan rule 3), and the tick is the moment the
+  household knows where the pack is going. So `groLineHtml` draws a
+  celadon-tint block under a meat/seafood row the moment it is ticked —
+  "Freezing it? I'll remind you Saturday night to move it to the fridge
+  for Monday." + two `.wk-mini` buttons — and nowhere else: not on a
+  non-meat tick, a loose line no meal recorded, a put-back or a re-tick
+  (`groceryState.freezingAsked`, page-view memory), never while another is
+  open (`groceryState.freezing`, one at a time), and it folds away on the
+  next tick or on leaving the tab (`groLeaveScreen`, called from
+  `activateTab`). The offer itself is the SERVER's: `/api/grocery-list`
+  and `/by-store` stamp `freezing` on each needed meat line
+  (`defrost.stamp_freezing_offers`) — the first cook night the line feeds
+  read off `meal_plan_grocery_links`, never a name match; the lead from
+  `lead_hours_for_item`; no offer once a pending/done defrost row for
+  that entry and ingredient exists (whichever door wrote it), or when the
+  move night has gone by. "Yes, freezing it" → `POST
+  /api/grocery-list/{id}/freezing {answer:'freezer'}` →
+  `defrost.book_defrost_for_grocery_line`, a NEW helper beside
+  `confirm_frozen_items` (another branch was editing that one) writing
+  the identical row shape (inventory_item_id NULL, `_describe`, the
+  entry id), idempotent so a replayed yes returns the booked row rather
+  than 400; `answer:'fridge'` is the toast's Put back and deletes the
+  pending row. "Straight to the fridge" posts nothing at all. Offline: a
+  new op kind in `static/grocery-offline.js` (`queueFreezing`; `kind:
+  'freezing'`, one per line, latest wins, replayed in the same queue
+  behind the tick it followed; `applyPending` ignores it). Today's Cook
+  group shows the move as any other defrost row (`moves._prep_moves`,
+  asserted, no change). Harness note: `activateTab`'s node harnesses
+  (`test_allset_week_path`, `test_tap_a_meal_opens_recipe`) stub every
+  function it calls, so `groLeaveScreen` joined their stub lines. Tests:
+  `tests/test_shop_freezing_it.py` (13, HTTP) and
+  `tests/test_shop_freezing_it_screen.py` (10, node). Suite 5655 → 5678.
 - **2026-09-21 — Two writes replaced a dinner by hand, and one lost an
   approved week's groceries. Branch
   `overnight/replace-slot-entries-two-writes`, NOT merged at the time of

@@ -946,6 +946,13 @@ class GroceryStatusRequest(BaseModel):
     status: str = "purchased"  # needed | in_cart | purchased
 
 
+class GroceryFreezingRequest(BaseModel):
+    # The Shop checklist's "Freezing it?" answer for one line: 'freezer'
+    # books the move, 'fridge' is Put back (removes it). "Straight to the
+    # fridge" never posts — it writes nothing.
+    answer: str = "freezer"  # freezer | fridge
+
+
 class GroceryStoreRequest(BaseModel):
     store: str = ""
     # False for a one-off move — the wrap-up's "Will grab elsewhere" (Emily,
@@ -4216,6 +4223,20 @@ def _stamp_shop_split(items: list[dict]) -> dict | None:
         return None
 
 
+def _stamp_freezing_offers(items: list[dict]) -> None:
+    """
+    The Shop checklist's "Freezing it?" follow-up (Loop Board 3e21f4c0,
+    2026-09-21): each needed meat/seafood line a plan meal recorded gets
+    `freezing` — the move night and the cook night, so the row can ask its
+    one sentence once it is ticked. See tools.defrost.stamp_freezing_offers
+    for the four rules. Never fails the list over it.
+    """
+    try:
+        tools.stamp_freezing_offers(items)
+    except Exception:
+        logger.exception("The freezing offers could not be read; the list is unchanged")
+
+
 @app.get("/api/grocery-list")
 def get_grocery_list_view(status: str = "needed"):
     """
@@ -4243,7 +4264,9 @@ def get_grocery_list_view(status: str = "needed"):
                 result["sections"] = [s for s in result["sections"] if s["items"]]
         result["multi_store"] = tools.is_multi_store_household()
         if status == "needed":
-            result["shop_split"] = _stamp_shop_split([it for s in result["sections"] for it in s["items"]])
+            needed = [it for s in result["sections"] for it in s["items"]]
+            result["shop_split"] = _stamp_shop_split(needed)
+            _stamp_freezing_offers(needed)
     except Exception as e:
         logger.exception("Grocery list lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -4273,9 +4296,9 @@ def get_grocery_list_by_store_view(status: str = "needed"):
                     if sections:
                         stores.append({"store": store["store"], "sections": sections})
                 result = {"stores": stores}
-            result["shop_split"] = _stamp_shop_split(
-                [it for store in result["stores"] for s in store["sections"] for it in s["items"]]
-            )
+            needed = [it for store in result["stores"] for s in store["sections"] for it in s["items"]]
+            result["shop_split"] = _stamp_shop_split(needed)
+            _stamp_freezing_offers(needed)
     except Exception as e:
         logger.exception("Grocery list by-store lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -4710,6 +4733,31 @@ def set_grocery_list_item_status(item_id: int, req: GroceryStatusRequest):
         logger.exception("Grocery list status update failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return result
+
+
+@app.post("/api/grocery-list/{item_id}/freezing")
+def set_grocery_list_item_freezing(item_id: int, req: GroceryFreezingRequest):
+    """
+    "Yes, freezing it" under a just-ticked meat/seafood line on the Shop
+    checklist (Loop Board 3e21f4c0): books the defrost move for the first
+    meal that line feeds, the same prep_tasks row the freezer step writes
+    (tools.defrost.book_defrost_for_grocery_line). 'fridge' is the toast's
+    Put back — the pending move goes. Idempotent both ways, because the
+    offline queue may replay it (static/grocery-offline.js). 400 for a
+    line the list never asks about: not meat, no meal recorded it, or too
+    late to thaw for that meal.
+    """
+    if req.answer not in ("freezer", "fridge"):
+        raise HTTPException(status_code=400, detail="answer must be 'freezer' or 'fridge'")
+    try:
+        return tools.book_defrost_for_grocery_line(item_id, freezing=req.answer == "freezer")
+    except tools.FreezingNotOffered as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Grocery freezing answer failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
 @app.post("/api/grocery-list/{item_id}/remove")

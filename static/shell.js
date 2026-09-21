@@ -516,6 +516,10 @@
     // version of this feature. (A no-op while COOK_VOICE_ENABLED is off.)
     if (key !== 'kitchen') stopCookVoice();
 
+    // Shop's "Freezing it?" question belongs to the row just ticked;
+    // leaving the screen is ignoring it (groLeaveScreen).
+    if (key !== 'grocery') groLeaveScreen();
+
     Object.keys(panels).forEach(function (k) {
       var isTarget = k === key;
       var wasActive = panels[k].classList.contains('active');
@@ -3219,7 +3223,9 @@
     tick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
     basket: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9.5h14V19a1.8 1.8 0 0 1-1.8 1.8H6.8A1.8 1.8 0 0 1 5 19z"/><path d="M3.5 5.5h17v4h-17z"/><path d="M12 9.5v11"/></svg>',
     dots: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5.5" r="0.6"/><circle cx="12" cy="12" r="0.6"/><circle cx="12" cy="18.5" r="0.6"/></svg>',
-    camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5h4l1.5-2.5h6L16.5 8.5h4V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19z"/><circle cx="12" cy="13.5" r="3.4"/></svg>'
+    camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5h4l1.5-2.5h6L16.5 8.5h4V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19z"/><circle cx="12" cy="13.5" r="3.4"/></svg>',
+    // The freezer step's snowflake (WK_ICONS.snow), at the mini button's size.
+    snow: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M12 3l-2 2M12 3l2 2M12 21l-2-2M12 21l2-2"/></svg>'
   };
 
   // The list head's mic and refresh buttons (see the head markup).
@@ -3445,7 +3451,18 @@
     // copy (see static/grocery-offline.js) and any ticks since are queued.
     // Cleared the moment a request gets through, so a shopper who was
     // never offline never sees the line this drives.
-    offline: false
+    offline: false,
+    // The one "Freezing it?" follow-up on the list (groFreezingHtml, Loop
+    // Board 3e21f4c0): { id, moveLabel, cookWeekday, answer } where answer
+    // is null while the question is open, 'freezer' after "Yes, freezing
+    // it", 'fridge' after "Straight to the fridge". One at a time on
+    // purpose — the next tick, a put-back, or leaving the screen collapses
+    // it silently (groTickLine, groLeaveScreen); it never blocks the list.
+    freezing: null,
+    // Rows this page view has already asked, by id: a put-back and a
+    // re-tick never ask twice. The server's offer (a line's `freezing`)
+    // comes back on every load; this is what makes it once.
+    freezingAsked: {}
   };
 
   var GRO_PS_CAP = 5;
@@ -4783,7 +4800,130 @@
         GRO_ICONS.dots + '</button>' +
     '</div>' +
     (staple && !bought ? groStapleLineHtml(it) : '') +
+    (groceryState.freezing && groceryState.freezing.id === id ? groFreezingHtml(groceryState.freezing) : '') +
     (open ? groRowMenuHtml(it, data) : '');
+  }
+
+  // ---------- "Freezing it?" (Loop Board 3e21f4c0, mockup F-C) ----------
+  // The follow-up under a just-ticked meat/seafood line, inside the store
+  // card, no sheet: a celadon-tint block with the one question and two
+  // 36px mini buttons. The sentence's two nights come from the server
+  // (the line's `freezing`: the defrost lead for that cut against the
+  // cook date of the first meal the line feeds — see
+  // tools.defrost.stamp_freezing_offers). Answered, it folds to one line.
+  // Quiet: no apricot — a tick is the screen's action, this is a note
+  // under it.
+  function groFreezingHtml(f) {
+    var id = String(f.id);
+    if (f.answer === 'freezer') {
+      return '<div class="gro-freeze is-answered" data-freeze-for="' + id + '">' +
+        '<p class="gro-freeze-text">In the freezer — out ' + escapeHtml(f.moveLabel) + '.</p></div>';
+    }
+    if (f.answer === 'fridge') {
+      return '<div class="gro-freeze is-answered" data-freeze-for="' + id + '">' +
+        '<p class="gro-freeze-text">In the fridge.</p></div>';
+    }
+    return '<div class="gro-freeze" data-freeze-for="' + id + '">' +
+      '<p class="gro-freeze-text">Freezing it? I’ll remind you ' + escapeHtml(f.moveLabel) +
+        ' to move it to the fridge for ' + escapeHtml(f.cookWeekday) + '.</p>' +
+      '<div class="gro-freeze-acts">' +
+        '<button type="button" class="wk-mini gro-freeze-yes" data-gro="freeze-yes" data-id="' + id + '">' +
+          GRO_ICONS.snow + 'Yes, freezing it</button>' +
+        '<button type="button" class="wk-mini is-ghost" data-gro="freeze-fridge" data-id="' + id + '">' +
+          'Straight to the fridge</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  // The line with this id, wherever the tick has filed it.
+  function groFindLine(id) {
+    var data = groceryState.data;
+    if (!data || !data.stores) return null;
+    var found = null;
+    Object.keys(data.stores).forEach(function (name) {
+      if (found) return;
+      var s = data.stores[name];
+      groStoreItems(s).concat(groBoughtItems(s)).forEach(function (it) {
+        if (!found && String(it.id) === String(id)) found = it;
+      });
+    });
+    return found;
+  }
+
+  // Opens the question under a row just ticked, when the server offered
+  // one for it and this page view hasn't asked yet; otherwise closes
+  // whatever was open. Only ever on a tick — a put-back and a re-tick
+  // reach here with nothing to open.
+  function groFreezingAfterTick(id, bought) {
+    var line = bought ? null : groFindLine(id);
+    var offer = line && line.freezing;
+    if (!offer || groceryState.freezingAsked[String(id)]) {
+      groceryState.freezing = null;
+      return;
+    }
+    groceryState.freezingAsked[String(id)] = true;
+    groceryState.freezing = {
+      id: String(id), moveLabel: offer.move_label || '', cookWeekday: offer.cook_weekday || '', answer: null
+    };
+  }
+
+  // The answer: on the screen now, on the server when it can be — the
+  // same shape as a tick (groTick). 'freezer' books the move through
+  // POST /api/grocery-list/{id}/freezing; 'fridge' is the toast's Put back,
+  // which removes it. With no signal, or something older still waiting,
+  // it is queued behind the ticks (groOffline.queueFreezing: one per line,
+  // latest wins) and replayed with them.
+  function groFreezeSend(id, answer) {
+    var body = { answer: answer };
+    if (!groOffline) {
+      groPostJson('/api/grocery-list/' + id + '/freezing', body).then(function (res) {
+        if (!res.ok) showToast("Couldn't save that — try again.");
+      }, function () { showToast(GRO_NO_SIGNAL_TOAST); });
+      return;
+    }
+    if (navigator.onLine === false || groHasPending()) {
+      groOffline.queueFreezing(id, answer);
+      if (navigator.onLine === false) groSetOffline(true);
+      else renderGroceryOfflineLine();
+      groReplayQueue();
+      return;
+    }
+    groPostJson('/api/grocery-list/' + id + '/freezing', body).then(function (res) {
+      if (!res.ok) showToast("Couldn't save that — try again.");
+      groSetOffline(false);
+    }, function (err) {
+      if (!groIsNetworkError(err)) console.warn('Grocery freezing answer failed:', err);
+      groOffline.queueFreezing(id, answer);
+      groSetOffline(true);
+    });
+  }
+
+  function groFreezeAnswer(id, answer) {
+    var f = groceryState.freezing;
+    if (!f || f.id !== String(id)) return;
+    f.answer = answer;
+    renderGrocery();
+    if (answer !== 'freezer') return; // "Straight to the fridge" writes nothing
+    groFreezeSend(id, 'freezer');
+    toastSaved({
+      label: 'Put back',
+      onClick: function () {
+        // The move goes, and the question is back where it was.
+        if (groceryState.freezing && groceryState.freezing.id === String(id)) {
+          groceryState.freezing.answer = null;
+          renderGrocery();
+        }
+        groFreezeSend(id, 'fridge');
+      }
+    });
+  }
+
+  // Leaving the Shop screen (activateTab) folds an open question away —
+  // it was for the row just ticked, and the household has moved on.
+  function groLeaveScreen() {
+    if (!groceryState.freezing) return;
+    groceryState.freezing = null;
+    if (groIsBuilt()) renderGrocery();
   }
 
   // The line under a staple Pomona put on the list itself (staple_id set):
@@ -5870,12 +6010,18 @@
   // rhythm on that one write exactly as it did.
   function groTickLine(id, bought) {
     var next = bought ? 'needed' : 'purchased';
+    // Before the tick moves the row, while its offer is still readable
+    // either way; groTick's render then draws the question under it.
+    groFreezingAfterTick(id, bought);
     groTick(id, next);
     groAnimateRowSettle(id);
     if (next === 'purchased') groRecordStopDone(id);
     toastSaved({
       label: bought ? 'Undo' : 'Put back',
       onClick: function () {
+        // Either way the row is changing hands again; the question under
+        // it (if it was this row's) goes with the tick it followed.
+        groceryState.freezing = null;
         groTick(id, bought ? 'purchased' : 'needed');
         groAnimateRowSettle(id);
         if (bought) groRecordStopDone(id);
@@ -6061,6 +6207,14 @@
       // ----- the list's own tick (see groTickLine) -----
       case 'line-tick':
         groTickLine(id, el.dataset.bought === '1');
+        return;
+
+      // ----- "Freezing it?" under a just-ticked meat line (groFreezingHtml) -----
+      case 'freeze-yes':
+        groFreezeAnswer(id, 'freezer');
+        return;
+      case 'freeze-fridge':
+        groFreezeAnswer(id, 'fridge');
         return;
 
       case 'add':

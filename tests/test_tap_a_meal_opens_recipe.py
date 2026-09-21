@@ -754,7 +754,7 @@ def test_the_back_link_adds_no_history_entries():
         "var calls = [];\n"
         "var cookState = { screen: 'focus', focusOrigin: "
         "{ label: 'Thursday', tab: 'week', mealsStep: 'meal', mealsDay: 3, mealsSlot: 'dinner' } };\n"
-        "function stopCookVoice(){}\n"
+        "function stopCookVoice(){} function groLeaveScreen(){}\n"
         "function renderCook(){}\n"
         "function openAskSheet(){ calls.push(['openAskSheet']); }\n"
         "function activateTab(k, push, opts){ calls.push(['activateTab', k, push, opts || null]); }\n"

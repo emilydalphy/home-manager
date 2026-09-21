@@ -178,7 +178,7 @@ def _activate_tab_harness(step: str, leave_for: str) -> str:
         "var window = { location: { pathname: '/week' }, history: { pushState: function () {}, replaceState: function () {} } };\n"
         "var cookState = { focusOrigin: null };\n"
         "var scrollEl = null;\n"
-        "function closeKitchenSheet() {} function stopCookVoice() {} function animateTabPanelIn() {}\n"
+        "function closeKitchenSheet() {} function stopCookVoice() {} function groLeaveScreen() {} function animateTabPanelIn() {}\n"
         "function setAskHintForTab() {} function coachOnTabShown() {} function groSetScreen() {}\n"
         "function buildTodayPanel() {} function buildWeekPanel() {} function buildGroceryPanel() {} function buildKitchenPanel() {}\n"
         "function kitchenEnterCook() {} function currentTabKey() { return 'week'; }\n"
