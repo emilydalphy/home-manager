@@ -470,6 +470,8 @@ _CALL_SITE_LABELS = {
     "run_agent_turn": "chat",
     "generate_weekly_plan_llm": "weekly plan generation",
     "generate_component_plan_llm": "weekly plan (swap/adjust a meal)",
+    "generate_recipe_details_llm": "recipes written at approval",
+    "generate_recipe_details_llm.warm": "recipes written at approval (cache warm-up)",
     "generate_prep_schedule_llm": "prep schedule",
     "generate_recipe_detail_llm": "recipe fill-in",
     "generate_recipe_detail_llm.repair": "recipe fill-in (measurement repair)",

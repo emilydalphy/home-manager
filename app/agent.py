@@ -7,6 +7,7 @@ Agent SDK, since our tool set is small and we want full control over the
 loop for a product we may eventually ship.
 """
 import contextvars
+import concurrent.futures
 import copy
 import datetime
 import logging
@@ -391,11 +392,18 @@ _DEFAULT_EFFORT = {
     "chat": "medium",       # run_agent_turn -- the everyday chat loop
     "generation": "high",   # a full week or component plan -- the hardest task in the app
     "utility": "medium",    # prep schedules, recipe fill-in, image scans, chore recs
+    # Writing one recipe the menu already chose (generate_recipe_details_llm).
+    # A well-specified writing job, not a planning one: the live run on
+    # 2026-09-21 at "high" spent roughly half of each recipe's 1,200-1,900
+    # output tokens thinking, at 11-18s a recipe. Medium is the step-down
+    # the cost guidance recommends where quality holds; env-overridable.
+    "recipes": "medium",
 }
 _EFFORT_ENV_VARS = {
     "chat": "CHAT_EFFORT",
     "generation": "GENERATION_EFFORT",
     "utility": "UTILITY_EFFORT",
+    "recipes": "RECIPE_EFFORT",
 }
 _VALID_EFFORTS = {"low", "medium", "high", "xhigh", "max"}
 
@@ -2753,7 +2761,7 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                     "properties": {
                         "date": {"type": "string", "description": "ISO date, e.g. 2026-08-10."},
                         "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"]},
-                        "meal_name": {"type": "string", "description": "Recipe name, existing or new. Leave blank ONLY when slot_state is 'open'."},
+                        "meal_name": {"type": "string", "description": "The dish's name and nothing else — 'Lemon-Garlic Tilapia with Green Beans', never 'Lighter night: Lemon-Garlic Tilapia…'. The why goes in reasoning, the how in dish_note. An existing saved recipe's exact name, or the new dish's. Leave blank ONLY when slot_state is 'open'."},
                         "is_new_recipe": {"type": "boolean"},
                         "slot_state": {
                             "type": "string",
@@ -2778,7 +2786,7 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                         },
                         "derived_from": {
                             "type": "object",
-                            "description": "Which inputs actually produced this slot. Record what genuinely drove it, not everything that was in context — this is what makes 'why did it plan that?' answerable later, and a wrong plan traceable to the input that caused it.",
+                            "description": "Which inputs actually produced this slot. Record what genuinely drove it, not everything that was in context — this is what makes 'why did it plan that?' answerable later, and a wrong plan traceable to the input that caused it. Include only the keys that apply; never an empty string or empty list for one that doesn't.",
                             "properties": {
                                 "tags": {"type": "array", "items": {"type": "string"}, "description": "Night tags that applied to this day, e.g. ['rush']."},
                                 "constraint": {"type": "string", "description": "The BINDING constraint, if any, e.g. 'max_minutes:20', 'packed_lunch', 'guests:6'."},
@@ -2788,39 +2796,23 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                                 "links_to": {"type": "string", "description": "For a leftovers night: the earlier date/slot whose batch this eats, e.g. '2026-09-02:dinner'."},
                             },
                         },
-                        "ingredients": {
-                            "type": "array",
-                            "description": "Required if is_new_recipe is true; omit/empty for an existing saved recipe.",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "item": {"type": "string"},
-                                    "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 can') — except eggs and garlic, which are the NUMBER the recipe uses ('4' eggs, '3 cloves' garlic), never '1 dozen' or '1 head'; the grocery list adds the week's eggs up and rounds to dozens itself, not a recipe-prep measurement like '2 cups shredded' — see the prompt guidance above on this."},
-                                    "category": {
-                                        "type": "string",
-                                        "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"],
-                                        "description": "Grocery store section (pantry = shelf-stable only; eggs/butter/tofu are dairy; fresh vegetables/herbs are produce).",
-                                    },
-                                },
-                                "required": ["item"],
-                            },
-                        },
+                        # No ingredients, no instructions, no servings here — on
+                        # purpose. This call chooses the week; a second pass
+                        # (generate_recipe_details_llm) writes each new recipe
+                        # out in full, in parallel, once the household approves.
+                        # Production measured 2026-09-21: the single call was
+                        # writing ~6,500 output tokens at ~140/s — 46s typical —
+                        # and five of nine drafts that month were never approved,
+                        # so more than half of that writing was thrown away.
                         "tags": {"type": "array", "items": {"type": "string"}},
                         "food_groups": {"type": "array", "items": {"type": "string", "enum": ["protein", "carb", "vegetable"]}},
                         "cuisine": {"type": "string"},
                         "main_protein": {"type": "string"},
-                        "instructions": {
-                            "type": "array", "items": {"type": "string"},
-                            "description": "Ordered cooking steps — fill in for a new recipe so it's actually cookable, not just a shopping list.",
-                        },
-                        "default_servings": {"type": "integer", "description": "What the ingredient quantities above are written for. Set it to this household's own table (attendance.default_serves), not a generic 4 — the grocery list scales per-portion amounts by eaters/default_servings, so a mismatch is what turns a clean recipe into odd fractions on the list. Defaults to 4 if omitted."},
                         "prep_time_minutes": {"type": "integer"},
                         "cook_time_minutes": {"type": "integer"},
-                        "advance_prep_notes": {"type": "string", "description": "Only for something genuinely worth planning around ahead of time — a marinate/soak/thaw/rise measured in hours (roughly 1+), or specifically overnight/the night before. e.g. 'marinate at least 4 hours ahead, can be done the night before'. A quick 10-30 minute step (a short marinate while you prep everything else, letting something come to room temp) is normal same-day cooking, NOT advance prep — leave this blank for those, even if the recipe technically says 'can marinate ahead.' Leave blank if nothing needs real advance prep."},
-                        "advance_prep_step_indices": {
-                            "type": "array",
-                            "items": {"type": "integer"},
-                            "description": "1-based position(s) within `instructions` of the specific step(s) that ARE the advance prep (e.g. [2] if step 2 is the make-ahead step). Only set alongside advance_prep_notes, and only when a specific step actually corresponds to it.",
+                        "dish_note": {
+                            "type": "string",
+                            "description": "For a NEW recipe only: one line, for the cook who writes it up later, naming what makes THIS dish this dish — the technique and the flavour base (e.g. 'sear the thighs skin-down, then braise in the tomato-fennel base; finish with orange zest'). Not a step list. Blank for a saved recipe.",
                         },
                         "reasoning": {
                             "type": "string",
@@ -2919,13 +2911,20 @@ you must not send an entry for those.) Guidelines:
 night after a heavier one, proteins that vary rather than repeat, a batch cooked once and eaten \
 again on purpose) — not seven independent daily decisions stapled together. Everything below is \
 in service of that shape.
-- Dinner gets full treatment same as always: a real, specific recipe with complete ingredients \
-and instructions. Breakfast, lunch, and snack should be genuinely real meals too, but \
-lower-effort by nature (a bowl of oatmeal, a sandwich, yogurt with fruit, hummus and veggies) — \
-they don't need elaborate multi-step instructions or advance prep, and it's normal and expected \
-for the same breakfast/lunch/snack idea to repeat 2-3 times across the week rather than forcing \
-a fully distinct one every day. Don't stretch these into restaurant-tier new recipes; match the \
-actual effort level of what they are.
+- YOU ARE CHOOSING THE WEEK, NOT WRITING THE RECIPES. Name each dish precisely enough that a \
+cook could write it up — "Chettinad-Style Pepper Chicken with Turmeric Cauliflower Rice", not \
+"chicken and rice" — and put what makes it that dish in `dish_note`. meal_name is the dish's \
+name and nothing else: never a reason, a note or a prefix in front of it ("Lighter after pepper \
+night: Tilapia" is wrong — that sentence belongs in reasoning). The ingredient list and \
+the steps for every new recipe are written in a separate pass once the household approves the \
+week; that pass is told the household's allergies, must-avoids, table size and kitchen, and \
+your dish_note. So decide here, describe there: no ingredient lists, no steps.
+- Dinner gets full treatment same as always: a real, specific, cookable dish. Breakfast, lunch, \
+and snack should be genuinely real meals too, but lower-effort by nature (a bowl of oatmeal, a \
+sandwich, yogurt with fruit, hummus and veggies) — they don't need advance prep, and it's \
+normal and expected for the same breakfast/lunch/snack idea to repeat 2-3 times across the \
+week rather than forcing a fully distinct one every day. Don't stretch these into \
+restaurant-tier new recipes; match the actual effort level of what they are.
 - `today` gives today's real date and the current season (e.g. "2026-09-04 (fall)") — use it as \
 a light lean toward seasonally appropriate ingredients and dishes (soups and roasting in winter, \
 grilling and salads in summer) when nothing else already decides the choice; it never overrides \
@@ -2935,8 +2934,8 @@ person, as they wrote them. Nothing you send may contain any of it — not in th
 salsa or a side served with it, not under a "-free" name. The people it names EAT these meals. \
 If the cuisine or protein they asked for leaves you no safe dish, go outside it and say so in \
 that slot's reasoning ("no Mexican lunch without pineapple, so a Greek one") — never send a \
-dish that has the thing with a note on it. Every dish is checked against its ingredient list \
-before it is written, and a dish that fails is thrown away.
+dish that has the thing with a note on it. Every dish is checked by name before it is written \
+and against its ingredient list when it is written up, and a dish that fails is thrown away.
 - Respect every listed dietary restriction and allergy without exception. Avoid every \
 listed dislike.
 - household_facts are the household's own notes about themselves (the "What we know" screen). \
@@ -3233,10 +3232,10 @@ its ingredients in the ingredient list, its steps in the instructions — and se
 what the whole plate then covers. A genuine one-pot dish that already covers the rule on its own \
 needs nothing added. Get this right here: anything short gets a side attached afterwards, which \
 works but is a repair, not the plan.
-- For each day, set is_new_recipe=true and fill in ingredients/tags/food_groups/cuisine/ \
-main_protein only if this is a recipe not already in saved_recipes. If you're reusing a \
-saved recipe, set is_new_recipe=false and just give its exact meal_name — don't re-invent \
-its ingredients.
+- For each day, set is_new_recipe=true and fill in tags/food_groups/cuisine/main_protein/ \
+prep_time_minutes/cook_time_minutes and a `dish_note` only if this is a recipe not already in \
+saved_recipes. If you're reusing a saved recipe, set is_new_recipe=false and just give its \
+exact meal_name — don't re-invent it.
 - When a new recipe names a specific cuisine or regional style (Chettinad, Sichuan, Yucatecan, \
 etc. — not just a broad label like "Indian" or "Mexican"), actually cook like that style, not \
 a generic version wearing its name: use the real spice/aromatic blend that style is known for \
@@ -3248,8 +3247,6 @@ approach with an ethnic ingredient bolted on. If you genuinely don't know a styl
 to do this properly, pick a broader, less specific cuisine label instead of naming a precise \
 regional style and getting it thin — a plausible-but-shallow "Chettinad" dish is worse than \
 an honestly-labeled "Indian-spiced" one.
-{COOK_DONT_ASSEMBLE}
-{WRITE_IT_DOWN}
 - For each day, also fill in reasoning: one short, specific sentence a household member \
 would actually find useful if they tapped "why this?" — name the real thing that drove the \
 choice (a stated protein/cuisine preference, filling a variety gap from recent_history, \
@@ -3260,62 +3257,8 @@ than padding it out.
 - cuisine and main_protein should be filled in for every day where reasonably inferable \
 (existing or new recipe) — this is what powers future variety checks, so don't leave it \
 blank just because the recipe already existed.
-- For every new-recipe ingredient, set category to the grocery store section it actually \
-belongs to (produce, dairy, meat/seafood, pantry, frozen, other) — pantry means shelf-stable \
-only; eggs, butter, and tofu are dairy; fresh vegetables/herbs are produce. This determines \
-which aisle it's grouped under when auto-added to the grocery list, so don't leave it blank \
-or default to pantry/other out of habit.
-- Set default_servings to THIS household's own table, not a generic 4: use \
-`attendance.default_serves` from the context above, which is how many people eat here \
-ordinarily. Then write every ingredient quantity for that many people. This is load-bearing for \
-the shopping list, which buys per portion — a recipe written for 4 in a household of 3 has \
-every quantity multiplied by three quarters on the way to the list, so "4 bell peppers" becomes \
-3 and a week of that arrives as odd fractions nobody wrote. Write it for the real table and the \
-list is simply what you wrote. (A slot listed in `attendance.slots_with_a_different_table` \
-still overrides this for that one meal — see the attendance bullet above.)
-- Write each ingredient's qty as how it's actually bought at the store, not how much ends up \
-used once prepped — "1 head" of cabbage, not "3 cups shredded"; "1 bunch" of cilantro, not "2 \
-tbsp chopped"; "1 lb" of carrots, not "1 cup diced". This is what shows up on the grocery list, \
-so it needs to read like a shopping list line, not a recipe measurement — any prep-specific \
-amount (how much of that head actually gets used) belongs in the instructions text instead \
-("shred half the head"), not in qty. Round up to the smallest sensible whole \
-unit a store actually sells (a head, a bunch, a bag, a lb, a can) rather than a \
-fractional recipe amount. TWO EXCEPTIONS, and they matter: eggs and garlic are written as the \
-NUMBER the recipe uses — qty "4" for Eggs, "3 cloves" for Garlic — never "1 dozen" or "1 head". \
-The grocery list adds up every meal's eggs and cloves for the week and rounds to whole dozens \
-and heads itself; a recipe that says "1 dozen" makes the list buy a carton per meal. The same discipline applies to the ingredient's item name itself, not \
-just qty — write it as the plain grocery-list name ("Baby spinach", "Carrots"), never with a \
-prep descriptor tacked on ("Baby spinach, chopped", "Carrots, julienned"). This matters beyond \
-phrasing: the grocery list merges lines by exact item name, so "Baby spinach" in one recipe and \
-"Baby spinach, chopped" in another become two separate lines that never combine — quietly \
-doubling what the household is told to buy. Prep instructions belong in the recipe's \
-instructions text, never in the ingredient name. One descriptor DOES belong in the name: the \
-kind, whenever the count only makes sense for that kind — "Persian cucumbers" with qty "6", \
-"Cherry tomatoes" with "1 pint", "Baby potatoes" with "1.5 lbs", "Mini sweet peppers" with "8". \
-A bare "Cucumbers", "Tomatoes", "Potatoes", "Peppers", "Onions" or "Apples" reads as the \
-ordinary full-size kind (an English cucumber, a beefsteak tomato, a russet, a bell pepper), so \
-"6 cucumbers" sends the shopper home with six English cucumbers — a crazy amount — when the \
-recipe meant six small Persian ones. Say which kind; the list shows exactly the name you write.
-- Ingredients used in only a small amount per recipe, where a single store-bought unit obviously \
-covers many uses across a whole week — spices, dried herbs, cooking oil, vinegar, soy sauce and \
-similar condiments, salt, pepper, sugar — should only carry a real qty on the FIRST recipe this \
-week that uses them; still list the ingredient (with its category) on every later recipe that \
-uses it too, but leave qty blank on those. Each recipe independently writing "1 jar"/"1 bottle" \
-for the same staple is exactly how a week's list ends up asking the household to buy 11 jars of \
-garlic powder or 9 bottles of olive oil — technically correct per recipe, absurd summed \
-together. This does NOT apply to ingredients genuinely consumed in real per-recipe portions even \
-when pantry-sourced — canned beans, rice, pasta, broth, flour for baking — those need their own \
-real qty every time they're used, since each use is an actual portion, not a pinch.
-- A sealed package written as a bought unit — "1 bag", "1 bottle", "1 jar", "1 tub" — is counted \
-once for the whole week no matter how many meals name it, so write it plainly on every recipe \
-that uses it and never try to compensate by writing a fraction of one ("1/6 bag") or by \
-splitting it across days. A breakfast planned six mornings that lists "1 bag" of spinach buys \
-one bag.
-- current_inventory lists what's already on hand. For an ingredient already covered there in a \
-comparable quantity, still include it in the recipe's ingredients list (the recipe should stay \
-accurate/reusable), but leave its category as normal — the household already has it, so it \
-doesn't need to be over-represented as a fresh grocery need; don't let already-stocked pantry \
-staples influence which recipes you pick either way.
+- current_inventory lists what's already on hand. Don't let already-stocked pantry staples \
+influence which dishes you pick either way; the recipe pass sees this list too.
 - near_expiring_inventory lists items already expired or expiring soon, most urgent first — \
 unlike current_inventory generally (which shouldn't sway recipe choice), actively favor at \
 least one recipe this week that uses up something on this list, especially anything already \
@@ -3330,25 +3273,6 @@ toward a chicken recipe rather than defaulting to something requiring a fresh pu
 soft lean, not a rule: don't force an odd combination, don't feel obligated to use every item on \
 the list, and don't let it override genuine variety/preference/novelty considerations — it only \
 matters as a tiebreaker-ish nudge among otherwise-reasonable options.
-- For any new recipe, fill in instructions (ordered cooking steps) so it's actually cookable \
-later, not just a shopping list — this powers the Cooker view. Also fill in default_servings \
-(the household's own table — see the bullet on that above), \
-prep_time_minutes/cook_time_minutes, and advance_prep_notes (e.g. "marinate at least 4 hours \
-ahead") whenever reasonably inferable — advance_prep_notes in particular feeds \
-generate_prep_schedule, so only set it when something is genuinely worth planning around ahead \
-of time (roughly an hour or more — a real marinate, thaw, soak, dough rising, overnight \
-anything), not a quick 10-30 minute step that just happens early in the recipe (a short \
-marinate while you prep everything else, letting something come to room temp) — that's normal \
-same-day cooking, not advance prep, and setting it anyway is misleading (it tells the household \
-this needs planning ahead when it really doesn't). Leave it blank for those, and don't skip it \
-out of habit when something clearly does need real advance time. Whenever you set \
-advance_prep_notes, also set \
-advance_prep_step_indices to the 1-based position(s) within `instructions` of the actual step(s) \
-that are the advance prep (e.g. instructions = ["Preheat oven...", "Make marinade and coat \
-chicken...", "Bake..."] with advance_prep_notes "marinate at least 4 hours ahead" should set \
-advance_prep_step_indices to [2]) — this lets the Cooker view show a clear "do ahead" vs "day of" \
-split instead of one flat numbered list. Leave it empty whenever advance_prep_notes is empty.
-
 - The per-slot `reasoning` line is read directly under the meal name on the draft screen, so \
 keep it to roughly 4-9 words — a phrase, not a sentence: "packs cold, no reheating needed", \
 "ten minutes, and the eggs are in", "after Monday's chili, something lighter". It must agree \
@@ -3391,6 +3315,425 @@ Call submit_weekly_plan with the result."""
         on_item=on_day,
         report_keys=("honoured_requests", "unmet_requests"),
     )
+
+
+# ---------- Week generation, phase 2: writing the recipes ----------
+# Until 2026-09-21 the week was one model call that chose every dish AND
+# wrote every new recipe out in full — ingredients with quantities and
+# store sections, ordered steps, tags, timings. Production measured that
+# call at ~6,500 output tokens, ~140 tokens a second: 46 seconds typical,
+# 66 at worst, ~12¢ a run. And five of the nine drafts that month were
+# never approved, so more than half of that writing was thrown away.
+#
+# Now generate_weekly_plan_llm chooses the week (a few dozen tokens a
+# slot — the draft is on screen in a fraction of the time) and saves each
+# new dish as a recipe row with details_pending=1. This pass writes those
+# recipes — one small call per recipe, run in parallel — and it runs when
+# the household APPROVES the week (tools.approve_weekly_plan asks for it
+# before it builds the grocery list), or when the Cook screen needs one
+# recipe sooner. A dish swapped out of the draft is never written up.
+#
+# The instructions block is static and carries the cache marker: the
+# parallel calls of one approval start within the same second, so every
+# call after the first reads it from cache.
+_RECIPE_DETAILS_TOOL = {
+    "name": "submit_recipe_details",
+    "description": "Submit the full write-up of one dish the week's menu chose.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "ingredients": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "item": {"type": "string", "description": "The plain grocery-list name ('Baby spinach', 'Carrots'), never with a prep descriptor ('Carrots, julienned'). Name the kind when the count only makes sense for that kind ('Persian cucumbers', 'Cherry tomatoes')."},
+                        "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 can') — except eggs and garlic, which are the NUMBER the recipe uses ('4' eggs, '3 cloves' garlic), never '1 dozen' or '1 head'; the grocery list adds the week's eggs up and rounds to dozens itself. Never a recipe-prep measurement like '2 cups shredded'."},
+                        "category": {
+                            "type": "string",
+                            "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"],
+                            "description": "Grocery store section (pantry = shelf-stable only; eggs/butter/tofu are dairy; fresh vegetables/herbs are produce).",
+                        },
+                    },
+                    "required": ["item", "qty", "category"],
+                },
+            },
+            "instructions": {
+                "type": "array", "items": {"type": "string"},
+                "description": "Ordered cooking steps, written so a person can cook from them — see the guidance.",
+            },
+            "default_servings": {"type": "integer", "description": "What the ingredient quantities are written for: the `serves` in the dish JSON, which is this household's own table. Not a generic 4."},
+            "prep_time_minutes": {"type": "integer"},
+            "cook_time_minutes": {"type": "integer"},
+            "advance_prep_notes": {"type": "string", "description": "Only for something genuinely worth planning around ahead of time — a marinate/soak/thaw/rise measured in hours (roughly 1+), or specifically overnight/the night before. e.g. 'marinate at least 4 hours ahead, can be done the night before'. A quick 10-30 minute step (a short marinate while you prep everything else, letting something come to room temp) is normal same-day cooking, NOT advance prep — leave this blank for those, even if the recipe technically says 'can marinate ahead.' Leave blank if nothing needs real advance prep."},
+            "advance_prep_step_indices": {
+                "type": "array",
+                "items": {"type": "integer"},
+                "description": "1-based position(s) within `instructions` of the specific step(s) that ARE the advance prep (e.g. [2] if step 2 is the make-ahead step). Only set alongside advance_prep_notes, and only when a specific step actually corresponds to it.",
+            },
+        },
+        "required": ["ingredients", "instructions", "default_servings"],
+    },
+}
+
+
+RECIPE_DETAILS_INSTRUCTIONS = f"""Write up ONE recipe for this household. The week's menu has already chosen the dish — \
+its name, cuisine, main protein, the food groups it covers, roughly how long it takes, and a \
+`dish_note` from the planner saying what makes this dish this dish. Your job is the recipe \
+itself: the ingredient list the grocery list is built from, and the steps the household cooks \
+from. Write exactly the dish that was named — don't rename it, don't turn a 20-minute weeknight \
+dinner into a project, and don't stretch a breakfast, lunch or snack into a restaurant recipe; \
+match the effort level of what it is.
+
+- `must_not_contain` is absolute: the household's allergies and must-avoids, one line per \
+person, as they wrote them. Nothing in this recipe may contain any of it — not in the dish, not \
+in a salsa or a sauce or a garnish, not under a "-free" name. The people it names EAT this. \
+Every ingredient list is checked against it after you write it, and a recipe that fails is \
+thrown away and the dish re-chosen.
+- `serves` is this household's own table, and default_servings must be exactly that number: \
+write every ingredient quantity for that many people. This is load-bearing for the shopping \
+list, which buys per portion — a recipe written for 4 in a household of 3 has every quantity \
+multiplied by three quarters on the way to the list, so "4 bell peppers" becomes 3 and a week \
+of that arrives as odd fractions nobody wrote. Write it for the real table and the list is \
+simply what you wrote.
+- When the dish names a specific cuisine or regional style (Chettinad, Sichuan, Yucatecan, \
+etc. — not just a broad label like "Indian" or "Mexican"), actually cook like that style, not \
+a generic version wearing its name: use the real spice/aromatic blend that style is known for \
+(a Chettinad dish leans on things like fennel seed, star anise, dried red chilies, and roasted \
+coriander/black pepper together, not a single token spice plus salt), and build the technique \
+around how that cuisine actually layers flavor (blooming whole spices in oil, a specific \
+masala/paste base, a particular order of aromatics) rather than a generic sear-and-serve \
+approach with an ethnic ingredient bolted on.
+{COOK_DONT_ASSEMBLE}
+{WRITE_IT_DOWN}
+- The recipe must contain what its name promises. A "Lemon Herb Chicken" has lemon and herbs \
+in the ingredients; a "Chettinad-Style Pepper Chicken" has black pepper and the Chettinad \
+blend. A title that names something the ingredient list doesn't carry is a recipe the \
+household can't check at a glance.
+- For every ingredient, set category to the grocery store section it actually belongs to \
+(produce, dairy, meat/seafood, pantry, frozen, other) — pantry means shelf-stable only; eggs, \
+butter, and tofu are dairy; fresh vegetables/herbs are produce. This determines which aisle \
+it's grouped under on the grocery list, so don't leave it blank or default to pantry/other out \
+of habit.
+- Write each ingredient's qty as how it's actually bought at the store, not how much ends up \
+used once prepped — "1 head" of cabbage, not "3 cups shredded"; "1 bunch" of cilantro, not "2 \
+tbsp chopped"; "1 lb" of carrots, not "1 cup diced". This is what shows up on the grocery list, \
+so it needs to read like a shopping list line, not a recipe measurement — any prep-specific \
+amount (how much of that head actually gets used) belongs in the instructions text instead \
+("shred half the head"), not in qty. Round up to the smallest sensible whole unit a store \
+actually sells (a head, a bunch, a bag, a lb, a can) rather than a fractional recipe amount. \
+TWO EXCEPTIONS, and they matter: eggs and garlic are written as the NUMBER the recipe uses — \
+qty "4" for Eggs, "3 cloves" for Garlic — never "1 dozen" or "1 head". The grocery list adds up \
+every meal's eggs and cloves for the week and rounds to whole dozens and heads itself; a recipe \
+that says "1 dozen" makes the list buy a carton per meal. The same discipline applies to the \
+ingredient's item name itself, not just qty — write it as the plain grocery-list name ("Baby \
+spinach", "Carrots"), never with a prep descriptor tacked on ("Baby spinach, chopped", \
+"Carrots, julienned"). This matters beyond phrasing: the grocery list merges lines by exact \
+item name, so "Baby spinach" in one recipe and "Baby spinach, chopped" in another become two \
+separate lines that never combine — quietly doubling what the household is told to buy. Prep \
+instructions belong in the recipe's instructions text, never in the ingredient name. One \
+descriptor DOES belong in the name: the kind, whenever the count only makes sense for that \
+kind — "Persian cucumbers" with qty "6", "Cherry tomatoes" with "1 pint", "Baby potatoes" with \
+"1.5 lbs", "Mini sweet peppers" with "8". A bare "Cucumbers", "Tomatoes", "Potatoes", \
+"Peppers", "Onions" or "Apples" reads as the ordinary full-size kind (an English cucumber, a \
+beefsteak tomato, a russet, a bell pepper), so "6 cucumbers" sends the shopper home with six \
+English cucumbers — a crazy amount — when the recipe meant six small Persian ones. Say which \
+kind; the list shows exactly the name you write.
+- Ingredients used in only a small amount, where a single store-bought unit obviously covers \
+many uses across a whole week — spices, dried herbs, cooking oil, vinegar, soy sauce and \
+similar condiments, salt, pepper, sugar — are written as the sealed unit they come in: "1 jar", \
+"1 bottle", "1 bag", "1 tub". Never a measurement ("2 tsp") and never a fraction of a package \
+("1/6 bottle"): other recipes this week are being written at the same time as this one, and the \
+grocery list counts a sealed package ONCE for the whole week no matter how many recipes name \
+it, so "1 bottle" of olive oil on six recipes buys one bottle. This does NOT apply to \
+ingredients genuinely consumed in real per-recipe portions even when pantry-sourced — canned \
+beans, rice, pasta, broth, flour for baking — those need their own real qty every time, since \
+each use is an actual portion, not a pinch.
+- A sealed package written as a bought unit — "1 bag", "1 bottle", "1 jar", "1 tub" — is counted \
+once for the whole week no matter how many meals name it, so write it plainly and never try to \
+compensate by splitting it. A breakfast planned six mornings that lists "1 bag" of spinach buys \
+one bag.
+- `current_inventory`, when present, lists what's already on hand. For an ingredient already \
+covered there in a comparable quantity, still include it in the ingredients list (the recipe \
+should stay accurate and reusable), category as normal — the household already has it, and \
+the grocery list is what decides whether to buy more.
+- `kitchen_kit`, when present, is what this household actually owns to cook with. Only call \
+for equipment on it; a method that needs a food processor they don't have is a recipe they \
+can't cook.
+- Fill in instructions as ordered cooking steps so it's actually cookable, not just a shopping \
+list — this powers the Cook screen. Also fill in prep_time_minutes and cook_time_minutes \
+(keep the planner's numbers unless the method genuinely needs different ones — the night's \
+time cap was set from them), and advance_prep_notes (e.g. "marinate at least 4 hours ahead") \
+whenever reasonably inferable — advance_prep_notes feeds the prep schedule, so only set it \
+when something is genuinely worth planning around ahead of time (roughly an hour or more — a \
+real marinate, thaw, soak, dough rising, overnight anything), not a quick 10-30 minute step \
+that just happens early in the recipe (a short marinate while you prep everything else, \
+letting something come to room temp) — that's normal same-day cooking, not advance prep, and \
+setting it anyway is misleading. Leave it blank for those. Whenever you set advance_prep_notes, \
+also set advance_prep_step_indices to the 1-based position(s) within `instructions` of the \
+actual step(s) that are the advance prep (e.g. instructions = ["Preheat oven...", "Make \
+marinade and coat chicken...", "Bake..."] with advance_prep_notes "marinate at least 4 hours \
+ahead" should set advance_prep_step_indices to [2]) — this lets the Cook screen show a clear \
+"do ahead" vs "day of" split instead of one flat numbered list. Leave it empty whenever \
+advance_prep_notes is empty.
+
+Call submit_recipe_details with the result."""
+
+
+def generate_recipe_details_llm(spec: dict) -> dict:
+    """
+    Write up one recipe the menu chose: `spec` is the dish as the planner
+    named it (name, slot, cuisine, main_protein, tags, food_groups,
+    dish_note, reasoning, the planner's minutes) plus what the writer has
+    to honour (serves, must_not_contain, kitchen_kit, current_inventory).
+    Returns the tool input — ingredients, instructions, default_servings,
+    timings, advance prep — or {} when the model sent nothing usable.
+    """
+    client = _client()
+    response = _create_with_retry(
+        client,
+        label="generate_recipe_details_llm",
+        model=MODEL,
+        # One recipe: a dozen-odd ingredients and eight to twelve written
+        # steps. 4096 is several times the realistic worst case.
+        max_tokens=4096,
+        tools=[_RECIPE_DETAILS_TOOL],
+        tool_choice={"type": "tool", "name": "submit_recipe_details"},
+        # The instructions ride in `system`, not in the user message, so the
+        # cache entry they write lives in the system tier — which a forced
+        # tool_choice leaves alone. That is what lets _warm_recipe_details_cache
+        # below warm it with a call that has no tool_choice at all.
+        system=[{"type": "text", "text": RECIPE_DETAILS_INSTRUCTIONS, "cache_control": {"type": "ephemeral"}}],
+        messages=[{"role": "user", "content": f"The dish (JSON):\n{json.dumps(spec, indent=2)}"}],
+        output_config=_effort_config("recipes"),
+    )
+    for block in response.content:
+        if block.type == "tool_use":
+            return block.input
+    return {}
+
+
+def _warm_recipe_details_cache() -> bool:
+    """
+    Write the recipe pass's instructions into the prompt cache before the
+    recipes fan out, with a `max_tokens: 0` request: the API runs the
+    prefill, writes the cache at the breakpoint, and answers with no
+    output — billed as one ordinary cache write and nothing else, in
+    about two seconds. Without it the first wave of parallel calls each
+    write the same 7,800-token block (the live run of 2026-09-21: eight
+    writes, ~16¢) or, with one real call sent ahead to warm it, the
+    approval waits a whole recipe's worth of time before the rest start.
+
+    `max_tokens: 0` is refused alongside a forced tool_choice, so this
+    request sends none — the entry it writes is in the system tier, which
+    the real calls' tool_choice does not invalidate. Same tools, same
+    system block, same effort: any of those differing would key a
+    different entry. False when the API refused it; the caller then falls
+    back to writing one recipe ahead of the rest.
+    """
+    client = _client()
+    try:
+        _create_with_retry(
+            client,
+            label="generate_recipe_details_llm.warm",
+            model=MODEL,
+            max_tokens=0,
+            tools=[_RECIPE_DETAILS_TOOL],
+            system=[{"type": "text", "text": RECIPE_DETAILS_INSTRUCTIONS, "cache_control": {"type": "ephemeral"}}],
+            messages=[{"role": "user", "content": "warmup"}],
+            output_config=_effort_config("recipes"),
+        )
+        return True
+    except Exception:
+        logger.exception("Warming the recipe pass's cache failed; writing one recipe ahead of the rest instead")
+        return False
+
+
+# How many recipes are written at once. One approval can need fifteen to
+# twenty (a first week for a household with no saved recipes); at ten
+# abreast that is two waves of a few seconds each rather than a minute
+# of one-after-another, without opening enough connections at once to
+# trip the API's concurrency limit on a single key.
+_RECIPE_DETAILS_WORKERS = 10
+
+
+def _recipe_details_spec(recipe: dict, slot: str, shared: dict) -> dict:
+    """The dish JSON one phase-2 call is given: the planner's own fields
+    for this recipe, plus the household facts every recipe needs."""
+    spec = {
+        "name": recipe["name"],
+        "slot": slot,
+        "cuisine": recipe.get("cuisine") or "",
+        "main_protein": recipe.get("main_protein") or "",
+        "tags": recipe.get("tags") or [],
+        "food_groups": recipe.get("food_groups") or [],
+        "dish_note": recipe.get("dish_note") or "",
+        "prep_time_minutes": recipe.get("prep_time_minutes"),
+        "cook_time_minutes": recipe.get("cook_time_minutes"),
+    }
+    spec.update(shared)
+    return spec
+
+
+def _shared_recipe_details_context() -> dict:
+    """What every recipe of an approval is told, built once: the table,
+    the must-avoids, the kitchen, and what's on hand."""
+    household_memory = tools.get_household_memory() or {}
+    shared = {
+        "serves": tools.default_table_size(),
+        "must_not_contain": tools.swap_hard_exclusions(),
+    }
+    if household_memory.get("eating_style"):
+        shared["eating_style"] = household_memory["eating_style"]
+    if household_memory.get("kitchen_kit"):
+        shared["kitchen_kit"] = household_memory["kitchen_kit"]
+    try:
+        inventory = tools.get_inventory()
+        if inventory:
+            shared["current_inventory"] = [
+                {"item": i.get("item"), "qty": i.get("qty")} for i in inventory if i.get("item")
+            ]
+    except Exception:
+        logger.exception("Could not read inventory for the recipe pass; writing recipes without it")
+    return shared
+
+
+def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances: list[dict]) -> dict:
+    """
+    Phase 2 for one recipe, start to finish: the model call, the allergen
+    check on what came back (once more with the clash named if it fails —
+    the writer was told, but being told is not the same as being
+    prevented), and the save. Returns {"name", "ok", "clash"}; never
+    raises, so one bad recipe can't stop the rest of an approval.
+    """
+    name = recipe["name"]
+    spec = _recipe_details_spec(recipe, slot, shared)
+    try:
+        for attempt in (1, 2):
+            detail = generate_recipe_details_llm(spec)
+            ingredients = [
+                i for i in (detail.get("ingredients") or [])
+                if isinstance(i, dict) and (i.get("item") or "").strip()
+            ]
+            if not ingredients or not detail.get("instructions"):
+                logger.warning("Recipe pass for %r came back without %s (attempt %d)",
+                               name, "ingredients" if not ingredients else "steps", attempt)
+                continue
+            clashes = _allergen_gate.hard_clashes(name, ingredients=ingredients, avoidances=avoidances)
+            if clashes:
+                food = _allergen_gate._food_word(clashes)
+                logger.warning("Recipe pass for %r wrote in a must-avoid (%s); %s",
+                               name, food, "retrying once" if attempt == 1 else "leaving it pending")
+                spec = {**spec, "previous_attempt_included": food,
+                        "note": "Your previous attempt included something on must_not_contain. Write it again without it."}
+                if attempt == 1:
+                    continue
+                return {"name": name, "ok": False, "clash": clashes}
+            tools.fill_recipe_details(
+                name,
+                ingredients=ingredients,
+                instructions=detail.get("instructions") or [],
+                default_servings=detail.get("default_servings") or shared.get("serves") or 4,
+                prep_time_minutes=detail.get("prep_time_minutes"),
+                cook_time_minutes=detail.get("cook_time_minutes"),
+                advance_prep_notes=detail.get("advance_prep_notes") or "",
+                advance_prep_step_indices=detail.get("advance_prep_step_indices") or [],
+            )
+            return {"name": name, "ok": True, "clash": []}
+        return {"name": name, "ok": False, "clash": []}
+    except Exception:
+        logger.exception("Recipe pass failed for %r; it stays pending", name)
+        return {"name": name, "ok": False, "clash": []}
+
+
+def fill_pending_recipes_for_plan(weekly_plan_id: int) -> dict:
+    """
+    Write up every recipe on this plan that the menu pass left pending —
+    in parallel, one call each — and say what happened: {"filled": [...],
+    "failed": [...], "clashed": [...]}. Nothing to do is {"filled": [],
+    ...} and no model call at all, which is what every approval of a
+    plan made of saved recipes costs.
+
+    A recipe that clashed with a must-avoid after two tries is handed to
+    the allergen gate's own re-pick — the same picker a clashing draft
+    slot gets — so the plate is never left holding a dish someone can't
+    eat. One that simply failed (an API error, an empty answer) stays
+    pending: the approval goes ahead, and the Cook screen's "Fill in this
+    recipe" writes it when it's needed.
+    """
+    pending = tools.pending_recipes_for_plan(weekly_plan_id)
+    result = {"filled": [], "failed": [], "clashed": []}
+    if not pending:
+        return result
+    shared = _shared_recipe_details_context()
+    avoidances = _allergen_gate.hard_avoidances()
+    started = time.perf_counter()
+
+    def _write(recipe):
+        return _write_one_pending_recipe(recipe, recipe.get("slot") or "dinner", shared, avoidances)
+
+    # Each worker runs inside a COPY of THIS thread's context, taken here
+    # on the calling thread (one copy per recipe — a Context can't be
+    # entered by two threads at once), the way main.py's streaming threads
+    # do. The household is a contextvar (tools._shared.household_id); a
+    # bare worker would see the default — household 1 — and write Julia's
+    # recipes into Emily's kitchen, or find no recipe to write. Caught in
+    # review before it shipped; pinned by test_menu_first_generation's
+    # two-household test, which fails with a copy taken on the worker.
+    def _write_in_context(task):
+        ctx, recipe = task
+        return ctx.run(_write, recipe)
+
+    # Warm the cache, then everything abreast. The instructions block is
+    # cached by prefix, and a cache entry only exists once one call has
+    # written it: the live run of 2026-09-21 fanned all eleven out at once
+    # and eight of them each WROTE the same 7,800-token block (62K
+    # cache-write tokens, ~16¢) before any could read it. A two-second
+    # `max_tokens: 0` warm-up (_warm_recipe_details_cache) turns every
+    # real call into a read; if the API refuses it, one real recipe goes
+    # ahead of the rest and warms it the slow way.
+    outcomes: list[dict] = []
+    rest = pending
+    if len(pending) > 1 and not _warm_recipe_details_cache():
+        outcomes.append(_write(pending[0]))
+        rest = pending[1:]
+    if len(rest) == 1 and not outcomes:
+        outcomes.append(_write(rest[0]))
+    elif rest:
+        tasks = [(contextvars.copy_context(), recipe) for recipe in rest]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=_RECIPE_DETAILS_WORKERS) as pool:
+            outcomes += list(pool.map(_write_in_context, tasks))
+    for recipe, outcome in zip(pending, outcomes):
+        if outcome["ok"]:
+            result["filled"].append(outcome["name"])
+        elif outcome["clash"]:
+            result["clashed"].append(outcome["name"])
+        else:
+            result["failed"].append(outcome["name"])
+    logger.info(
+        "Recipe pass for plan %s: %d written, %d failed, %d clashed, %.1fs for %d recipe(s)",
+        weekly_plan_id, len(result["filled"]), len(result["failed"]), len(result["clashed"]),
+        time.perf_counter() - started, len(pending),
+    )
+    known_clashes = {o["name"].lower(): o["clash"] for o in outcomes if o["clash"]}
+    if known_clashes:
+        # The sweep re-picks a clashing dish through the swap's own gated
+        # picker, or opens the slot — the same last line of defence a
+        # finished draft gets. It is told the clash, because the pending
+        # row has no ingredients on disk for it to find one in.
+        try:
+            _allergen_gate.sweep_plan(weekly_plan_id, known_clashes=known_clashes)
+        except Exception:
+            logger.exception("Re-picking around a must-avoid failed for plan %s; the slots are left as they were", weekly_plan_id)
+    if result["filled"]:
+        # The recipe-level quality rules (steps vs ingredients, plausible
+        # amounts, a title that promises something the list lacks) had
+        # nothing to read at draft time. Log-only, like every other rule.
+        try:
+            plan_quality.check_recipes_and_log(weekly_plan_id, result["filled"])
+        except Exception:
+            logger.exception("Recipe quality check after the recipe pass failed for plan %s", weekly_plan_id)
+    return result
 
 
 _GENERATE_COMPONENT_PLAN_TOOL = {
@@ -4525,26 +4868,37 @@ def _generate_weekly_plan(
     try:
 
         def _ensure_recipe_saved(meal_name, item):
-            if item.get("is_new_recipe") and item.get("ingredients"):
-                # Case-insensitively (tools.existing_recipe_named), which is
-                # the one rule now. Comparing names exactly let the model's
-                # "chicken tacos" write a second row beside a saved "Chicken
-                # Tacos" — a recipe nothing could then reach by name.
-                if not tools.existing_recipe_named(meal_name):
-                    tools.add_recipe(
-                        name=meal_name,
-                        ingredients=item.get("ingredients", []),
-                        tags=item.get("tags", []),
-                        food_groups=item.get("food_groups", []),
-                        cuisine=item.get("cuisine", ""),
-                        main_protein=item.get("main_protein", ""),
-                        instructions=item.get("instructions", []),
-                        default_servings=item.get("default_servings") or 4,
-                        prep_time_minutes=item.get("prep_time_minutes"),
-                        cook_time_minutes=item.get("cook_time_minutes"),
-                        advance_prep_notes=item.get("advance_prep_notes", ""),
-                        advance_prep_step_indices=item.get("advance_prep_step_indices", []),
-                    )
+            if not item.get("is_new_recipe"):
+                return
+            # Case-insensitively (tools.existing_recipe_named), which is
+            # the one rule now. Comparing names exactly let the model's
+            # "chicken tacos" write a second row beside a saved "Chicken
+            # Tacos" — a recipe nothing could then reach by name.
+            if tools.existing_recipe_named(meal_name):
+                return
+            # The menu pass sends no ingredients (see _GENERATE_WEEKLY_PLAN_TOOL):
+            # the dish is saved as a pending row — a real recipe the plan
+            # can reference, written up on approval by
+            # fill_pending_recipes_for_plan. The component planner and the
+            # tests' hand-written weeks still send full recipes, and those
+            # are saved whole exactly as before.
+            pending = not item.get("ingredients")
+            tools.add_recipe(
+                name=meal_name,
+                ingredients=item.get("ingredients", []),
+                tags=item.get("tags", []),
+                food_groups=item.get("food_groups", []),
+                cuisine=item.get("cuisine", ""),
+                main_protein=item.get("main_protein", ""),
+                instructions=item.get("instructions", []),
+                default_servings=item.get("default_servings") or 4,
+                prep_time_minutes=item.get("prep_time_minutes"),
+                cook_time_minutes=item.get("cook_time_minutes"),
+                advance_prep_notes=item.get("advance_prep_notes", ""),
+                advance_prep_step_indices=item.get("advance_prep_step_indices", []),
+                details_pending=pending,
+                dish_note=item.get("dish_note", "") if pending else "",
+            )
 
         if is_component_based:
             for item in items:
@@ -5395,9 +5749,10 @@ def _complete_plates_pass(plan_id: int, household_memory: dict, intake: dict | N
         eating_style = household_memory.get("eating_style") or ""
 
         completed = 0
-        for meal, missing in short[:MAX_PLATE_SIDE_CALLS]:
+
+        def _complete(meal, missing):
             try:
-                result = tools.complete_plate(meal["entry_id"], {
+                return tools.complete_plate(meal["entry_id"], {
                     "meal": meal["meal"],
                     "slot": meal["slot"],
                     "date": meal["date"],
@@ -5412,6 +5767,21 @@ def _complete_plates_pass(plan_id: int, household_memory: dict, intake: dict | N
                     "Completing the plate for %s %s (%s) failed; leaving the meal as generated",
                     meal["date"], meal["slot"], meal["meal"],
                 )
+                return None
+
+        # The side calls abreast, not one after another. Each is a model
+        # call of ~3s and there are up to six, and they ran back to back
+        # AFTER the menu came back: the live run of 2026-09-21 measured
+        # 12-18s of the draft's wall-clock in this loop alone, on a week
+        # whose menu had taken 36. Same context discipline as the recipe
+        # pass — a copy per task, taken on this thread, so each worker
+        # writes the side onto this household's plate.
+        todo = short[:MAX_PLATE_SIDE_CALLS]
+        tasks = [(contextvars.copy_context(), meal, missing) for meal, missing in todo]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_PLATE_SIDE_CALLS) as pool:
+            results = list(pool.map(lambda t: t[0].run(_complete, t[1], t[2]), tasks))
+        for (meal, missing), result in zip(todo, results):
+            if result is None:
                 continue
             if result["attached"]:
                 completed += 1
@@ -5882,6 +6252,17 @@ def measured_cooking_quantities(recipe: dict, proposed: list[dict], servings: in
     return {ing["item"]: ing["qty"] for ing in ingredients if ing["qty"]}
 
 
+def _pending_slot_for(recipe_name: str) -> str:
+    """The slot a pending recipe is planned in, for the recipe pass's
+    effort-level cue (a snack is written like a snack) — 'dinner' when it
+    isn't on a plan at all."""
+    try:
+        return tools.planned_slot_for_recipe(recipe_name) or "dinner"
+    except Exception:
+        logger.exception("Could not find the slot for %r; writing it as a dinner", recipe_name)
+        return "dinner"
+
+
 def fill_in_recipe(recipe_name: str) -> dict:
     """
     Generate and save a full step-by-step for a recipe that's missing one —
@@ -5900,6 +6281,19 @@ def fill_in_recipe(recipe_name: str) -> dict:
     recipe = tools.get_recipe(recipe_name)
     if recipe["instructions"]:
         return recipe
+    if recipe.get("details_pending"):
+        # A dish the menu pass chose and nobody has approved yet — the Cook
+        # screen reached it first. The recipe pass writes it (ingredients
+        # AND steps, the allergen check included), one recipe, right now,
+        # exactly as approval would have; approval then finds nothing left
+        # to write for this one.
+        slot = _pending_slot_for(recipe_name)
+        outcome = _write_one_pending_recipe(
+            recipe, slot, _shared_recipe_details_context(), _allergen_gate.hard_avoidances(),
+        )
+        if not outcome["ok"]:
+            raise ValueError("Couldn't write up this recipe just now — try again.")
+        return tools.get_recipe(recipe_name)
     detail = generate_recipe_detail_llm(recipe)
     if not detail.get("instructions"):
         raise ValueError("Couldn't generate instructions for this recipe — try again.")

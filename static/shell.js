@@ -15001,7 +15001,12 @@
   async function submitWeekApproval(panel, data, approvedBy, confirmHardConflicts) {
     var btn = panel.querySelector('#week-approve-btn');
     var restoreLabel = btn ? btn.textContent : 'Approve the week';
-    if (btn) { btn.disabled = true; btn.textContent = 'Approving…'; }
+    // Approval writes up the week's new recipes first (recipes_pending,
+    // from get_week_menu) — a few seconds per wave of them — and then
+    // builds the list. Say which wait this is; "Approving…" for ten
+    // seconds reads as stuck.
+    var pendingRecipes = data.recipes_pending || 0;
+    if (btn) { btn.disabled = true; btn.textContent = pendingRecipes ? 'Writing up the recipes…' : 'Approving…'; }
     try {
       var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/approve', {
         method: 'POST',
@@ -16513,7 +16518,13 @@
     var prepIdx = meal.advance_prep_step_indices || [];
     var body;
     if (!steps.length) {
-      body = '<p class="cook-dim recipe-empty">No steps saved yet' + (live ? '.' : ' — ask me for the recipe in the chat.') + '</p>' +
+      // A dish the week chose but hasn't written up yet (details_pending):
+      // approval writes it, so the plan's copy says that rather than
+      // sending anyone to the chat for a recipe that is on its way.
+      var emptyLine = meal.details_pending && !live
+        ? 'I’ll write this one up when you approve the week.'
+        : 'No steps saved yet' + (live ? '.' : ' — ask me for the recipe in the chat.');
+      body = '<p class="cook-dim recipe-empty">' + emptyLine + '</p>' +
         (live
           ? '<button type="button" class="cook-fill" data-cook="fill" data-recipe="' + escapeHtml(meal.meal || '') + '">Fill in this recipe</button>'
           : '');

@@ -60,7 +60,7 @@ def test_it_sits_in_the_cached_block_of_both_planners_right_after_its_sibling():
     # agent_function_source, not inspect.getsource: adjacency of two f-string
     # splice points is a fact about the file, not about the compiled prompt,
     # so it needs the text — from conftest's single cached read, ast-sliced.
-    for fn in (agent.generate_weekly_plan_llm, agent.generate_component_plan_llm):
+    for fn in (agent.generate_component_plan_llm,):
         body = agent_function_source(fn.__name__)
         ins_at = body.index('instructions = f"""')
         ctx_at = body.index("context_block")
@@ -74,6 +74,15 @@ def test_it_sits_in_the_cached_block_of_both_planners_right_after_its_sibling():
             "something has been wedged between the two quality blocks in %s" % fn.__name__
         )
         assert '"text": instructions, "cache_control"' in body
+    # The day-based planner's recipes are written by the recipe pass since
+    # 2026-09-21 (the menu pass sends no ingredients or steps), so the two
+    # blocks ride its instructions constant instead — still adjacent, still
+    # in that order, still the cached block of that call.
+    text = agent.RECIPE_DETAILS_INSTRUCTIONS
+    assert agent.COOK_DONT_ASSEMBLE + "\n" + agent.WRITE_IT_DOWN in text, (
+        "the two quality blocks are not adjacent, in order, in the recipe pass"
+    )
+    assert "{COOK_DONT_ASSEMBLE}" not in agent_function_source("generate_weekly_plan_llm")
 
 
 def test_it_is_defined_once_and_ships_no_unrendered_placeholder():

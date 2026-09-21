@@ -722,6 +722,21 @@ def _join_names(names: list[str]) -> str:
     return f"{', '.join(names[:-1])} and {names[-1]}"
 
 
+def default_table_size() -> int:
+    """
+    How many eat here ordinarily — the same number context_for_week
+    reports as `default_serves`, on its own for callers that want the
+    table and not a week (the recipe pass writes every new recipe's
+    quantities for it). At least 1: a household with no members on record
+    still cooks for someone.
+    """
+    conn = get_conn()
+    try:
+        return max(1, len(_member_rows(conn)))
+    finally:
+        conn.close()
+
+
 def context_for_week(week_start: str, day_count: int = 7) -> dict:
     """
     Attendance reshaped for the generator's context — the headcount half of

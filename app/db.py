@@ -210,6 +210,12 @@ _MIGRATIONS = [
     ("recipes", "source_book", "TEXT NOT NULL DEFAULT ''"),
     ("recipes", "source_author", "TEXT NOT NULL DEFAULT ''"),
     ("recipes", "source_page", "TEXT NOT NULL DEFAULT ''"),
+    # Week generation in two passes (2026-09-21): the menu pass saves a new
+    # dish as a row with details_pending=1 and the planner's one-line
+    # dish_note; the recipe pass writes its ingredients and steps on
+    # approval and clears the flag. See agent.fill_pending_recipes_for_plan.
+    ("recipes", "details_pending", "INTEGER NOT NULL DEFAULT 0"),
+    ("recipes", "dish_note", "TEXT NOT NULL DEFAULT ''"),
     # Phase 6: set explicitly at creation time (an atomic "does this household
     # have zero prior plans yet?" check at the moment of insert), never
     # inferred later by querying for the earliest plan row — see

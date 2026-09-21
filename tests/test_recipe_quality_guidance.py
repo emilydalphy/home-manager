@@ -158,7 +158,7 @@ def test_the_guidance_rides_in_the_cached_block():
     # the file's shape (a splice point inside an f-string survives no
     # compilation), so it needs the text — but from conftest's single cached
     # read, ast-sliced, rather than from a fresh linecache read per call.
-    for fn in (agent.generate_weekly_plan_llm, agent.generate_component_plan_llm):
+    for fn in (agent.generate_component_plan_llm,):
         body = agent_function_source(fn.__name__)
         ins_at = body.index('instructions = f"""')
         ctx_at = body.index("context_block")
@@ -169,6 +169,15 @@ def test_the_guidance_rides_in_the_cached_block():
         )
         # And the block it sits in is genuinely the cached one.
         assert '"text": instructions, "cache_control"' in body
+    # The day-based planner no longer writes recipes (the menu pass,
+    # 2026-09-21); the recipe pass does, from a module-level instructions
+    # constant that its call site caches. The guidance rides there, and the
+    # planner's own prompt no longer carries it at all — the draft would be
+    # paying for cooking technique it can't use.
+    assert "COOK, DON'T ASSEMBLE" in agent.RECIPE_DETAILS_INSTRUCTIONS
+    body = agent_function_source("generate_recipe_details_llm")
+    assert '"text": RECIPE_DETAILS_INSTRUCTIONS, "cache_control"' in body
+    assert "{COOK_DONT_ASSEMBLE}" not in agent_function_source("generate_weekly_plan_llm")
 
 
 def test_the_rush_cap_is_interpolated_not_left_as_a_literal_brace():
@@ -202,10 +211,11 @@ def test_both_planners_carry_it_not_just_the_day_based_one():
     households exactly where they started, which is the kind of half-fix
     plan_quality.py's own module docstring already records as a known gap in
     this codebase."""
-    for fn in (agent.generate_weekly_plan_llm, agent.generate_component_plan_llm):
-        assert "{COOK_DONT_ASSEMBLE}" in agent_function_source(fn.__name__), (
-            "%s never picks up the quality guidance" % fn.__name__
-        )
+    assert "{COOK_DONT_ASSEMBLE}" in agent_function_source("generate_component_plan_llm"), (
+        "generate_component_plan_llm never picks up the quality guidance"
+    )
+    # The day-based household's recipes come from the recipe pass now.
+    assert "COOK, DON'T ASSEMBLE" in agent.RECIPE_DETAILS_INSTRUCTIONS
 
 
 def test_the_guidance_is_defined_once():

@@ -327,9 +327,13 @@ def _prompt_text(fn) -> str:
 
 
 def test_the_generation_prompts_ask_for_the_kind_when_the_count_depends_on_it():
+    # The day-based planner no longer writes ingredients (the menu pass,
+    # 2026-09-21): its recipes are written by the recipe pass, whose
+    # instructions carry the rule instead. The component planner and the
+    # side call still write ingredients themselves.
     texts = {
-        fn.__name__: _prompt_text(fn)
-        for fn in (agent.generate_weekly_plan_llm, agent.generate_component_plan_llm)
+        "recipe pass": agent.RECIPE_DETAILS_INSTRUCTIONS,
+        "generate_component_plan_llm": _prompt_text(agent.generate_component_plan_llm),
     }
     texts["sides"] = agent._SIDE_INSTRUCTIONS
     for name, text in texts.items():
@@ -337,8 +341,19 @@ def test_the_generation_prompts_ask_for_the_kind_when_the_count_depends_on_it():
         assert 'bare "Cucumbers"' in text, name
 
 
-def test_the_day_based_prompt_says_why():
+def test_the_day_based_prompt_does_not_ask_for_ingredients_at_all():
+    """The menu pass chooses; the recipe pass writes. A rule about how to
+    write an ingredient line has no business in the prompt that sends
+    none — and if it comes back, the draft is paying for it again."""
     text = _prompt_text(agent.generate_weekly_plan_llm)
+    assert "Persian cucumbers" not in text
+    assert "no ingredient lists, no steps" in text
+    props = agent._GENERATE_WEEKLY_PLAN_TOOL["input_schema"]["properties"]["days"]["items"]["properties"]
+    assert "ingredients" not in props and "instructions" not in props
+
+
+def test_the_recipe_pass_says_why():
+    text = agent.RECIPE_DETAILS_INSTRUCTIONS
     assert "six English cucumbers" in text
     assert "the list shows exactly the name you write" in text
 

@@ -2010,6 +2010,108 @@ def repair_recipe_titles(apply: bool = False) -> list[dict]:
     return found
 
 
+# The rules that read a recipe rather than the week: what a step reaches
+# for, whether an amount is plausible, whether the title's promise is in
+# the list, and how the method is written. At draft time these have
+# nothing to read — the menu pass saves a new dish without ingredients or
+# steps (2026-09-21) — so check_recipes_and_log runs exactly these again
+# once the recipe pass has written them. The week-level rules (repeats,
+# caps, variety, plates) were checked at draft time and are not re-run,
+# so the morning report's FOOD count never carries them twice.
+_RECIPE_RULES = (
+    _ingredient_repeat,
+    _steps_match_ingredients,
+    _quantities_plausible,
+    _produce_variety_named,
+    _title_promises_an_ingredient,
+    _seasoning_never_mentioned,
+    _method_is_assembly,
+    _steps_have_no_cue,
+    _no_heat_named,
+    _longest_thing_not_first,
+    _minutes_vs_steps,
+)
+
+
+def _plan_intake(plan_id: int) -> dict:
+    """The intake the plan was generated from, or {} — read here rather
+    than through week_intake's by-week lookup, because by approval time a
+    newer revision for the same week may exist and this wants the one the
+    dishes were actually chosen from."""
+    from . import week_intake as _week_intake
+
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT wi.* FROM weekly_plans wp JOIN week_intake wi ON wi.id = wp.intake_id "
+            "WHERE wp.id = ? AND wp.household_id = ?",
+            (plan_id, household_id()),
+        ).fetchone()
+    finally:
+        conn.close()
+    return _week_intake._intake_row_to_dict(row) if row else {}
+
+
+def check_recipes_and_log(plan_id: int, recipe_names: list[str]) -> list[Violation]:
+    """
+    The recipe-level half of check_and_log, for the recipes the recipe
+    pass just wrote (agent.fill_pending_recipes_for_plan). Same contract:
+    read-only, log-only, never raises, and what it finds lands in the
+    morning report's FOOD section through record_plan_quality.
+
+    The context is rebuilt from what the household has on record rather
+    than from the generation's snapshot, which is gone by approval time:
+    the must-avoids from members and hard facts, the household's own
+    words from its notes and the plan's intake. Every rule here checks a
+    recipe against itself or against those, never against the week's
+    history, so nothing is lost by not having the snapshot.
+    """
+    wanted = {(n or "").strip().lower() for n in recipe_names if n}
+    if not wanted:
+        return []
+    try:
+        from . import household as _household, memory as _memory
+
+        entries = [
+            e for e in _load_plan_entries(plan_id)
+            if (e.get("meal_name") or "").strip().lower() in wanted
+        ]
+        if not entries:
+            return []
+        household_memory = _memory.get_household_memory() or {}
+        intake = _plan_intake(plan_id)
+        quality_context = {
+            "household_asks": " ".join(str(part) for part in (
+                intake.get("freeform") or "",
+                " ".join(intake.get("cuisines") or []),
+                " ".join(intake.get("moods") or []),
+                household_memory.get("notes") or "",
+            )).lower(),
+            "avoided": [
+                *(r for m in _household.list_members() for r in (m.get("dietary_restrictions") or [])),
+                *(household_memory.get("dislikes") or []),
+                *(f.get("text") or "" for f in _memory.get_facts() if f.get("hard")),
+            ],
+        }
+        violations: list[Violation] = []
+        for rule in _RECIPE_RULES:
+            violations += rule(entries, quality_context)
+        for v in violations:
+            logger.warning(
+                "Plan %s recipe quality [%s/%s]%s%s: %s",
+                plan_id, v.rule, v.severity,
+                f" {v.date}" if v.date else "", f" {v.slot}" if v.slot else "",
+                v.message,
+            )
+        _usage.record_plan_quality(plan_id, violations)
+        return violations
+    except Exception:
+        logger.exception(
+            "Recipe quality check failed for plan %s; the recipes themselves are unaffected", plan_id
+        )
+        return []
+
+
 def check_and_log(plan_id: int, generation_context: dict) -> list[Violation]:
     """
     Read plan `plan_id` back from the database, run check_week against it,

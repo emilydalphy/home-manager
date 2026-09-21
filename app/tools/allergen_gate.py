@@ -337,7 +337,10 @@ def repick_slot(
 # ---------- the silent sweep ----------
 
 
-def sweep_plan(weekly_plan_id: int, budget: CallBudget | None = None, picker=None) -> dict:
+def sweep_plan(
+    weekly_plan_id: int, budget: CallBudget | None = None, picker=None,
+    known_clashes: dict[str, list[dict]] | None = None,
+) -> dict:
     """
     The last line of defence over a finished week: anything the passes
     after generation put on the table that carries an allergen is taken
@@ -351,12 +354,20 @@ def sweep_plan(weekly_plan_id: int, budget: CallBudget | None = None, picker=Non
     generated must not be lost to its own safety net, and the worst state
     this can leave is an open question, never a clashing dish.
 
+    `known_clashes` — {lowercased dish name: clashes} — is for a dish the
+    recipe pass (agent.fill_pending_recipes_for_plan) could not write
+    without a must-avoid in it. Its row has no ingredients on disk, so the
+    matcher below would pass it on its name alone; the pass hands over
+    what it found instead, and the dish is re-picked or opened like any
+    other clash.
+
     Returns counts, for the log and for tests.
     """
     budget = budget or CallBudget()
+    known_clashes = {k.lower(): v for k, v in (known_clashes or {}).items() if v}
     out = {"sides_removed": 0, "dishes_repicked": 0, "slots_opened": 0}
     avoidances = hard_avoidances()
-    if not avoidances:
+    if not avoidances and not known_clashes:
         return out
     try:
         plan = _weekly_plan.get_weekly_plan(weekly_plan_id)
@@ -373,7 +384,9 @@ def sweep_plan(weekly_plan_id: int, budget: CallBudget | None = None, picker=Non
         sides = meal.get("sides") or []
         # The dish on its own first: a clean dish under a clashing side is
         # a side to remove, not a dinner to replace.
-        dish_clash = hard_clashes(name, ingredients=recipe.get("ingredients"), avoidances=avoidances)
+        dish_clash = known_clashes.get(name.lower()) or hard_clashes(
+            name, ingredients=recipe.get("ingredients"), avoidances=avoidances,
+        )
         if not dish_clash:
             for side in sides:
                 side_name = (side.get("name") or "").strip()

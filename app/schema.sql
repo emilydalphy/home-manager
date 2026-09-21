@@ -295,6 +295,17 @@ CREATE TABLE IF NOT EXISTS recipes (
     source_book TEXT NOT NULL DEFAULT '',
     source_author TEXT NOT NULL DEFAULT '',
     source_page TEXT NOT NULL DEFAULT '',
+    -- Week generation in two passes (2026-09-21). The menu pass chooses the
+    -- week and saves each new dish here with details_pending = 1 and the
+    -- planner's one-line dish_note ("sear the thighs, braise in the
+    -- tomato-fennel base"); ingredients_json and instructions_json stay
+    -- empty until the recipe pass writes them — on approval, in parallel,
+    -- one call per recipe — and clears the flag. A pending recipe is a
+    -- real recipe row (Cook can find it, the plan references it by id);
+    -- it just hasn't been written up yet, and nothing reaches the grocery
+    -- list from it until it has (approve_weekly_plan fills first).
+    details_pending INTEGER NOT NULL DEFAULT 0,
+    dish_note TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -1511,9 +1522,11 @@ CREATE INDEX IF NOT EXISTS idx_error_events_household_created
 -- reporting; this table is one row per ACTUAL call to
 -- client.messages.create, at every call site in the app -- chat included,
 -- but also the six other places chat_turns never saw: weekly-plan
--- generation, component-plan fill-in, prep-schedule generation, recipe
--- fill-in, photo scans (receipt/fridge/pantry), and chore
--- recommendations. That distinction matters because chat_turns alone only
+-- generation, component-plan fill-in, the recipe pass that writes a
+-- generated week's new recipes at approval (generate_recipe_details_llm,
+-- 2026-09-21), prep-schedule generation, recipe fill-in, photo scans
+-- (receipt/fridge/pantry), and chore recommendations. That distinction
+-- matters because chat_turns alone only
 -- ever priced the chat loop, and the app's single most expensive call
 -- (weekly-plan generation, ~18,000 uncached input tokens per run) was
 -- invisible to it -- see the "Get API token usage down" ticket.
@@ -1525,7 +1538,7 @@ CREATE INDEX IF NOT EXISTS idx_error_events_household_created
 --
 -- call_site is the `label` passed to agent._create_with_retry -- the one
 -- function every Anthropic call in the app actually goes through. That is
--- also why recording lives there instead of at each of the eleven call
+-- also why recording lives there instead of at each of the thirteen call
 -- sites separately: one instrumentation point covers all of them, and a
 -- call site added later is covered automatically instead of needing this
 -- table kept in sync by hand.
