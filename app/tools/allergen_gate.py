@@ -88,7 +88,17 @@ def ingredients_for(item: dict) -> list[dict]:
     own = [i for i in (item.get("ingredients") or []) if isinstance(i, dict) and (i.get("item") or "").strip()]
     if own:
         return own
-    return _recipes.saved_ingredients(item.get("meal_name") or "")
+    saved = _recipes.saved_ingredients(item.get("meal_name") or "")
+    if saved:
+        return saved
+    # A new dish from the menu pass (2026-09-21) carries no ingredient list
+    # yet — the recipe pass writes one at approval and is matched then. What
+    # it does carry is the planner's dish_note ("finish with crushed
+    # peanuts and lime"), which names the dish's defining ingredients; it
+    # is matched here as one line, so a clean name over a note that says
+    # the thing is held back at the draft, not at approval.
+    note = (item.get("dish_note") or "").strip()
+    return [{"item": note}] if note else []
 
 
 def hard_clashes(name: str, ingredients: list[dict] | None = None, sides: list[dict] | None = None,

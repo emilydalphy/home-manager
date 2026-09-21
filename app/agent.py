@@ -3646,6 +3646,22 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
         return {"name": name, "ok": False, "clash": []}
 
 
+# One recipe pass per plan at a time. Two adults tapping Approve together
+# each read "nothing approved yet" and each ran the pass (review,
+# 2026-09-21: the model called twice for one recipe, the quality rules
+# logged twice) — fill_recipe_details' own guard kept the data right, but
+# the second run was pure spend. The loser waits here and then finds
+# nothing pending. Keyed per household like the week-generation locks.
+_RECIPE_PASS_LOCKS: dict[tuple, threading.Lock] = {}
+_RECIPE_PASS_LOCKS_GUARD = threading.Lock()
+
+
+def _recipe_pass_lock(weekly_plan_id: int) -> threading.Lock:
+    key = (tools.household_id(), int(weekly_plan_id))
+    with _RECIPE_PASS_LOCKS_GUARD:
+        return _RECIPE_PASS_LOCKS.setdefault(key, threading.Lock())
+
+
 def fill_pending_recipes_for_plan(weekly_plan_id: int) -> dict:
     """
     Write up every recipe on this plan that the menu pass left pending —
@@ -3661,6 +3677,11 @@ def fill_pending_recipes_for_plan(weekly_plan_id: int) -> dict:
     pending: the approval goes ahead, and the Cook screen's "Fill in this
     recipe" writes it when it's needed.
     """
+    with _recipe_pass_lock(weekly_plan_id):
+        return _fill_pending_recipes_locked(weekly_plan_id)
+
+
+def _fill_pending_recipes_locked(weekly_plan_id: int) -> dict:
     pending = tools.pending_recipes_for_plan(weekly_plan_id)
     result = {"filled": [], "failed": [], "clashed": []}
     if not pending:

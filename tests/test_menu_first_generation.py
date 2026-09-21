@@ -522,3 +522,59 @@ def test_the_plate_pass_asks_for_its_sides_at_once_not_in_turn(household, menu_m
     assert seen["peak"] >= 2, "the side calls ran one at a time"
     with_sides = [m for m in tools.get_weekly_plan(plan["weekly_plan_id"])["meals"] if m.get("sides")]
     assert len(with_sides) == 6
+
+
+# ---------- review findings, pinned ----------
+
+def test_two_approvals_at_once_run_the_recipe_pass_once(household, menu_model, recipe_model):
+    """Review, 2026-09-21: two adults tapping Approve together each ran
+    the recipe pass. The data stayed right (fill_recipe_details guards
+    the row) but the model was called twice for one recipe. The loser
+    now waits for the winner and finds nothing pending."""
+    import time
+    week = _week_start()
+    menu_model(_menu_week(week))
+    plan = agent.generate_weekly_plan(week)
+    seen = recipe_model(delay=0.3)
+    errors = []
+
+    def approve():
+        try:
+            tools.approve_weekly_plan(plan["weekly_plan_id"])
+        except Exception as e:  # pragma: no cover - reported below
+            errors.append(e)
+
+    a, b = threading.Thread(target=approve), threading.Thread(target=approve)
+    a.start(); time.sleep(0.02); b.start()
+    a.join(); b.join()
+
+    assert not errors
+    assert len(seen["specs"]) == 1
+
+
+def test_a_new_dish_whose_note_names_the_allergen_is_held_back_at_the_draft(household, menu_model, monkeypatch):
+    """The menu pass sends no ingredients, so the draft's check was the
+    name alone (review, 2026-09-21). The planner's dish_note names the
+    dish's defining ingredients; it is matched too, so "Pad Thai" over a
+    note that says peanuts never reaches the draft."""
+    tools.set_member_dietary_restrictions("Ana", ["peanut allergy"])
+    week = _week_start()
+    days = []
+    for d in _menu_week(week):
+        if d["slot"] == "dinner":
+            d = {**d, "meal_name": "Pad Thai", "dish_note": "rice noodles in tamarind sauce, finish with crushed peanuts and lime"}
+        days.append(d)
+    menu_model(days)
+    # The re-pick's own model call, canned: a safe dish, with ingredients.
+    from app.tools import swap_in_place
+    monkeypatch.setattr(swap_in_place, "_pick_replacement", lambda context: {
+        "meal_name": "Chicken Fried Rice", "reason": "no peanuts",
+        "ingredients": [{"item": "Rice", "qty": "2 cups", "category": "pantry"}],
+        "food_groups": ["protein", "carb"],
+    })
+
+    plan = agent.generate_weekly_plan(week)
+
+    names = {m.get("meal") for m in plan["meals"] if m["slot"] == "dinner"}
+    assert "Pad Thai" not in names
+    assert not any(r["name"] == "Pad Thai" for r in tools.list_recipes())
