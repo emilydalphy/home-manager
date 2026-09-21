@@ -377,13 +377,18 @@
   .holiday-dish button:disabled, .holiday-host button:disabled { opacity: .45; cursor: default; }
 
   /* The typed answer (step 5). 16px so a phone doesn't zoom the page on
-     focus — onboarding's text boxes carry the same note. */
+     focus — onboarding's text boxes carry the same note. Selecting the
+     text is the person's, never the page's (Emily, 2026-09-21: long-press
+     → Select All is how a box gets cleared on a phone): nothing here or in
+     theme.css turns it off, and the box says so itself, so a stylesheet
+     added later can't take it away by inheritance. */
   textarea {
     width: 100%; min-height: 120px; resize: vertical;
     padding: 12px 16px; border-radius: var(--radius-control);
     border: 1.5px solid var(--hairline-strong);
     font-family: var(--font-body); font-size: 16px; line-height: 1.5;
     background: var(--surface); color: var(--ink);
+    -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
   }
   textarea:focus { border-color: var(--ink-strong); outline: none; }
   textarea::placeholder { color: var(--ink-secondary); }
@@ -1259,12 +1264,32 @@
   // The prefill for the period chosen: everything the later steps open
   // already knowing. Fetched once per period — leaving "Starting when?"
   // with the same period it arrived with fetches nothing.
+  // One fetch per period, shared: load() starts it without waiting and
+  // Continue on "Starting when?" waits for THAT one rather than starting a
+  // second (2026-09-21). Two in flight for the same period meant the slower
+  // answer landed last — after the screen had moved on — and re-ran the
+  // reset below over answers already being given, the typed box included
+  // (Emily, from her phone: the "Anything else" text would not stay
+  // selected to be cleared). An answer for a period no longer on screen
+  // is dropped for the same reason: only the period chosen now may write.
+  var inFlight = null;   // { key, promise } while a prefill is being fetched
   async function loadPeriod() {
     var key = weekStart + '|' + dayCount;
     if (data && loadedFor === key) return true;
+    if (inFlight && inFlight.key === key) return inFlight.promise;
+    var promise = fetchPeriod(key).finally(function () {
+      if (inFlight && inFlight.promise === promise) inFlight = null;
+    });
+    inFlight = { key: key, promise: promise };
+    return promise;
+  }
+
+  async function fetchPeriod(key) {
     var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/intake?day_count=' + dayCount);
     if (!res.ok) throw new Error('prefill failed');
-    data = await res.json();
+    var body = await res.json();
+    if (key !== weekStart + '|' + dayCount) return false;   // the period changed while this was in flight
+    data = body;
     loadedFor = key;
     awayRanges = [];
     answers = { night_tags: {}, guest_counts: {}, packed_lunch_days: [], moods: [], cuisines: [] };

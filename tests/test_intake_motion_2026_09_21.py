@@ -175,7 +175,7 @@ class TestOneQuestionAScreen:
         assert "moods: answers.moods" in leave and "night_tags: answers.night_tags" in leave
 
     def test_what_pomona_already_knows_opens_already_chosen(self):
-        load = _extract("loadPeriod")
+        load = _extract("fetchPeriod")   # the body of loadPeriod, one fetch per period (2026-09-21)
         # Lunches from the rhythm — the suggestion that existed but never
         # skipped the step (PRODUCT_FLOWS flow 2).
         assert ".filter(function (s) { return s.suggested_packed; })" in load
