@@ -32,6 +32,26 @@ def _row(inventory_id: int) -> dict | None:
     return dict(r) if r else None
 
 
+def _written(days_ago: int) -> str:
+    """An `updated_at` instant N days back, read off SQLite's own clock.
+
+    That is the clock every write in inventory.py stamps with
+    (`updated_at = datetime('now')`), so a seed taken from it is behind the
+    writes these tests make by construction — no zone arithmetic, because
+    there is no calendar day in this column to get wrong: the rule is one
+    UTC instant ordered against another. A literal date is what breaks,
+    and it breaks silently: under `--today=2026-01-15` a row seeded
+    2026-09-10 sits eight months in the app's FUTURE, so the row an add
+    merges into becomes the OLDEST the moment it is stamped and the "use"
+    that follows correctly walks off to the other place — the rule
+    inverted by the fixture rather than by the code.
+    """
+    conn = get_conn()
+    at = conn.execute("SELECT datetime('now', ?)", (f"-{days_ago} days",)).fetchone()[0]
+    conn.close()
+    return at
+
+
 def _insert(item: str, quantity: str, location: str, updated_at: str, category: str = "pantry") -> int:
     conn = get_conn()
     cur = conn.execute(
@@ -48,7 +68,7 @@ def _sauce_in_two_places(recent: str = "fridge"):
     """Two rows, the fridge one written a day after the pantry one unless
     told otherwise. Inserted pantry-first so the id order does not happen
     to agree with the recency order."""
-    stale, fresh = ("2026-09-10 10:00:00", "2026-09-11 10:00:00")
+    stale, fresh = (_written(2), _written(1))
     pantry = _insert("BBQ sauce", "1 bottle", "pantry", fresh if recent == "pantry" else stale)
     fridge = _insert("BBQ sauce", "1 bottle", "fridge", fresh if recent == "fridge" else stale)
     return pantry, fridge
@@ -58,7 +78,7 @@ def _sauce_in_two_places(recent: str = "fridge"):
 
 
 def test_one_matching_row_is_merged_into_as_before():
-    only = _insert("Olive oil", "1 bottle", "pantry", "2026-09-10 10:00:00")
+    only = _insert("Olive oil", "1 bottle", "pantry", _written(2))
     res = tools.update_inventory("olive oil", "add", quantity="1 bottle")
     assert res["item_id"] == only
     assert _row(only)["quantity"] == "2 bottles"
@@ -86,7 +106,7 @@ def test_the_pick_follows_recency_not_insertion_order():
 
 
 def test_a_tie_on_updated_at_goes_to_the_newer_row():
-    same = "2026-09-10 10:00:00"
+    same = _written(2)
     pantry = _insert("BBQ sauce", "1 bottle", "pantry", same)
     fridge = _insert("BBQ sauce", "1 bottle", "fridge", same)
     assert tools.update_inventory("BBQ sauce", "add", quantity="1 bottle")["item_id"] == fridge
