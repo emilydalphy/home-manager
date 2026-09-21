@@ -13940,6 +13940,11 @@
               '<span class="wk-allset-lbl">' + escapeHtml(x.label) + '</span></div>';
           }).join('') + '</div>'
         : '') +
+      // What approval batched, said once (weekly_plan.batched_line writes
+      // the sentence; nothing here composes it). Absent when nothing was.
+      (receipt.batched_line
+        ? '<p class="wk-allset-batched">' + escapeHtml(receipt.batched_line) + '</p>'
+        : '') +
       '<div class="dock wk-allset-dock">' +
         '<button type="button" class="dock-primary" id="wk-allset-next">' + escapeHtml(label) + '</button>' +
       '</div>' +

@@ -391,6 +391,35 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-21 — A shared component is batched at approval the way a
+  repeated dish already was, and All set says so once.** Branch
+  `batch-components-auto`. The 2026-09-18 ask's component blocks left with
+  it, so `batch_components.set_batch_component` had no caller from any
+  screen: the eggs two dishes both boil were detected and never batched.
+  `cook_ahead.apply_prep_day_batches` now also walks
+  `shared_components` (prep days ≥ 1, `batched` false) and writes each
+  with every dish ticked — one prep row on the FIRST dish's day, not the
+  prep day: the detector has no keeps/shelf info, and a row dated on a
+  day no dish uses it is one no cook screen can tick. Same
+  `cook_ahead_asked_at` stamp; idempotent (already-batched keys skipped,
+  and the rule only runs on a genuine approval). `week_receipt` gains
+  `batched_line` (`weekly_plan.batched_line`): one component → "I’ve
+  batched the eggs: one pot Tuesday covers Thursday."; one repeated dish
+  → "I’ve made Monday’s Turkey Chili big enough for Thursday too."; more →
+  "I’ve batched X and the rice — one cook each, covering 3 dinners." (the
+  count is the LATER meals fed, in the tiles' digits; slot noun when they
+  share one, else "meals"). Reads what stands on the plan
+  (`batched_components` + `cook_ahead.batched_dishes`, the cook_ahead-
+  flagged chains only — a planner leftovers night is not a batch), which
+  right after approval is what approval wrote; a swap that removes a
+  batch drops it from the line. `allSetStepHtml` prints
+  `receipt.batched_line` under the numbers (`.wk-allset-batched`) and
+  composes nothing. The approve response is unchanged (no ask, no
+  `cook_ahead` key). Undo is still Swap on Plan; the chat agent has no
+  cook-ahead/batch tool, so "don't batch the rice" can't un-batch a
+  component today — reported, not built.
+  - `tests/test_batch_components_auto.py` (15); `test_batch_from_prep_days`'
+    exact-shape assertion learned the new `components` key.
 - **2026-09-21 — Two writes replaced a dinner by hand, and one lost an
   approved week's groceries. Branch
   `overnight/replace-slot-entries-two-writes`, NOT merged at the time of

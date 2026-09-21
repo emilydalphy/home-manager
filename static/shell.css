@@ -7791,6 +7791,19 @@ span.cook-week-name { cursor: default; }
   text-transform: uppercase;
   color: var(--apricot-light);
 }
+/* The one line under the numbers that says what approval batched
+   ("I've batched the rice: one pot Sunday covers Tuesday and Thursday.").
+   Quieter than .wk-allset-line: --ivory-ink on --spruce at the body
+   size, same contrast as the line above it. */
+.wk-allset-batched {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  text-align: center;
+  margin: 0;
+  padding: 0 8px;
+  color: var(--ivory-ink);
+}
 .wk-allset-dock { margin: auto -20px 0; background: var(--spruce); border-top-color: var(--spruce-hover); }
 .tab-panel.is-allset { background: var(--spruce); }
 .tab-panel.is-allset #week-steps { flex: 1 0 auto; display: flex; flex-direction: column; }

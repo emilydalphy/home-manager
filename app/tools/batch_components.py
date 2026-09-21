@@ -475,6 +475,51 @@ def set_batch_component(weekly_plan_id: int, key: str, entry_ids: list[int]) -> 
     }
 
 
+def batched_components(weekly_plan_id: int) -> list[dict]:
+    """
+    The batches standing on this plan, read for the All set line
+    (weekly_plan.batched_line): [{key, verb, ingredient, label, date,
+    dish, covered: [{entry_id, date, slot, dish}]}] in cook-day order. `verb`
+    is the participle ("boiled"); `covered` is the later dishes only —
+    the cook day's own dish is `dish`. A stale row (its cook day or every
+    covered dish swapped away) is dropped on the way, as _batch_rows does.
+    """
+    rows = _batch_rows(weekly_plan_id)
+    if not rows:
+        return []
+    conn = get_conn()
+    slot_of = {
+        r["id"]: r["slot"] for r in conn.execute(
+            "SELECT id, slot FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ?",
+            (weekly_plan_id, household_id()),
+        ).fetchall()
+    }
+    conn.close()
+    out = []
+    for row in rows:
+        detail = row["detail"]
+        source_id = detail.get("source_entry_id") or row["meal_plan_entry_id"]
+        dishes = {d.get("entry_id"): d for d in (detail.get("dishes") or []) if isinstance(d, dict)}
+        covered = [
+            {"entry_id": e, "date": dishes[e].get("date") or "", "slot": slot_of.get(e, ""),
+             "dish": dishes[e].get("dish") or ""}
+            for e in (detail.get("covered_entry_ids") or []) if e in dishes and e in slot_of
+        ]
+        covered.sort(key=lambda c: (c["date"], c["entry_id"]))
+        verb, _, _ingredient_key = (detail.get("key") or row["description"]).partition(":")
+        out.append({
+            "key": detail.get("key") or "",
+            "verb": verb if _ingredient_key else "",
+            "ingredient": detail.get("ingredient") or "",
+            "label": detail.get("label") or row["description"],
+            "date": row["task_date"],
+            "dish": (dishes.get(source_id) or {}).get("dish") or row["related_meal"] or "",
+            "covered": covered,
+        })
+    out.sort(key=lambda b: (b["date"], b["label"].lower()))
+    return out
+
+
 def attach_batch_components(weekly_plan_id: int, meals: list[dict]) -> None:
     """
     Hang the week's batches on the Cook view's cards.

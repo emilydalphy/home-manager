@@ -3913,6 +3913,9 @@ def week_receipt(days: list[dict], weekly_plan_id: int, today: str = "") -> dict
                  cook left in the plan it drops to "Nothing to thaw this
                  week." rather than naming a day that isn't there.
 
+    ...and `batched_line`: what approval batched for the household, said
+    once on All set (see batched_line below) — "" when nothing was.
+
     `days` is get_week_menu's own day list, so an away night ("Out —
     nothing to cook", state planned_empty) and an open slot count as
     neither a meal nor a cook, and a reheat night counts as a meal only.
@@ -3991,7 +3994,76 @@ def week_receipt(days: list[dict], weekly_plan_id: int, today: str = "") -> dict
     return {
         "meals": meals, "recipes": recipes, "cooks": cooks, "list_count": list_count,
         "thaw_count": thaw_count, "title": title, "thaw_line": thaw_line,
+        "batched_line": batched_line(weekly_plan_id),
     }
+
+
+# What a batch of each kind is cooked in — "one pot Sunday covers Tuesday
+# and Thursday". Keyed by batch_components' participle; anything unlisted
+# is just "one cook".
+_BATCH_VESSEL = {
+    "boiled": "one pot", "poached": "one pot", "steamed": "one pot", "cooked": "one pot",
+    "braised": "one pot", "roasted": "one tray", "baked": "one tray",
+}
+
+_SLOT_PLURAL = {"breakfast": "breakfasts", "lunch": "lunches", "dinner": "dinners", "snack": "snacks"}
+
+
+def batched_line(weekly_plan_id: int) -> str:
+    """
+    The one quiet line under All set's numbers that says what approval
+    batched (Loop Board "Batch a shared ingredient automatically when the
+    household preps", 2026-09-21 — Emily's "show the value" note): nothing
+    was asked, so this is the only place the household hears that one
+    cook now covers several meals. Built here, not in the shell, so the
+    words live with the rule that earns them.
+
+      one component     "I’ve batched the rice: one pot Sunday covers
+                         Tuesday and Thursday."
+      one repeated dish "I’ve made Monday’s chili big enough for
+                         Thursday too."
+      more than one     "I’ve batched the rice and the eggs — one cook
+                         each, covering 3 dinners." — the count is the
+                         LATER meals the batches feed (the cooks the
+                         household is spared), in the tiles' own digits
+                         (_receipt_number), and the noun is their slot
+                         when they share one, else "meals".
+
+    Empty when nothing on the plan is batched, so the line is simply not
+    there. Reads what stands on the plan (batch_components.
+    batched_components, cook_ahead.batched_dishes — the chosen batches,
+    never the planner's own leftover nights), which right after an
+    approval is exactly what that approval wrote; a batch undone later
+    (a swap on the Plan tab) drops out of the sentence with it.
+    """
+    from . import batch_components as _batch_components
+    from . import cook_ahead as _cook_ahead
+    from . import leftovers as _leftovers
+
+    comps = [dict(c, kind="component") for c in _batch_components.batched_components(weekly_plan_id)]
+    dishes = [dict(d, kind="dish") for d in _cook_ahead.batched_dishes(weekly_plan_id)]
+    batches = [b for b in comps + dishes if b["covered"]]
+    if not batches:
+        return ""
+    batches.sort(key=lambda b: b["date"])
+
+    if len(batches) == 1:
+        b = batches[0]
+        # Two later dishes on one day (a lunch and a dinner that both use
+        # the rice) are one day to say.
+        days = _leftovers._join_days(list(dict.fromkeys(_weekday_label(c["date"]) for c in b["covered"])))
+        if b["kind"] == "component":
+            vessel = _BATCH_VESSEL.get(b["verb"], "one cook")
+            return f"I’ve batched the {b['ingredient']}: {vessel} {_weekday_label(b['date'])} covers {days}."
+        return f"I’ve made {_weekday_label(b['date'])}’s {b['dish']} big enough for {days} too."
+
+    names = _leftovers._join_days([
+        f"the {b['ingredient']}" if b["kind"] == "component" else b["dish"] for b in batches
+    ])
+    covered = [c for b in batches for c in b["covered"]]
+    slots = {c.get("slot") for c in covered}
+    noun = _SLOT_PLURAL.get(slots.pop(), "meals") if len(slots) == 1 else "meals"
+    return f"I’ve batched {names} — one cook each, covering {_receipt_number(len(covered))} {noun}."
 
 
 def _weekday_label(date_str: str | None) -> str:
