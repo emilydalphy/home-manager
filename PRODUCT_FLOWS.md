@@ -407,6 +407,109 @@ after approve). D (which view is the draft's front door): **"What we're eating" 
 Emily's answer, 2026-09-15, asked directly. The by-type menu is the front door; Which
 days stays behind the toggle. No card.
 
+**Feedback round 2026-09-20 (Emily, her phone, Sunday morning, re-planning a week
+that already had a draft — "Pomona Flow Feedback.pdf", 10 annotated screens).** Mockups
+for all of it: https://claude.ai/artifact/9dE1dRcbWKCQKchDEYJJBx (13 boards, three rows).
+Her framing: *the onboarding screens have a motion the week planning should share* —
+one question a screen, the "Cooking up your week" building screen, the day-card reveal.
+Observations, in her words, tagged to the step:
+
+- (entry) "I want to re-plan my week, but the option to do so is really hidden." Re-plan
+  lives under **More ···** in the draft's footer. → boards A1 (quiet "Plan it
+  differently" under Approve) / A2 (Re-plan pill in the band). → design card, her pick:
+  https://app.notion.com/p/3e21f4c0523181328524eb4ab10e46ff
+- (entry) "It's Sunday, but the days are showing from yesterday … I would need to
+  select my own day." Re-plan offered Sep 19–25 on Sep 20. → board A3: a first
+  question **Starting when?** — Today / Tomorrow / Pick my own days, range shown
+  underneath. → card (Bug, High)
+  https://app.notion.com/p/3e21f4c052318183866af4e1292d54e6
+- (step 1, day sheet) "This screen needs to be more focused. It's hard to understand
+  what exactly they need to answer." Six dinner tags + "Is anyone out?" per meal +
+  guest steppers. → boards B1a (one question, then who — only if needed) / B1b (who's
+  where — a row per person). → design card, her pick:
+  https://app.notion.com/p/3e21f4c0523181498728edb1ec28d9e3
+- (step 1, away card) "Confusing — it should be more about if they are going to be
+  away for a longer period." → board B0: *Away for a few nights? Two nights or more —
+  I'll skip those meals and the shopping for them.* → card (Medium)
+  https://app.notion.com/p/3e21f4c052318141aacfec131eeda77c
+- (step 3) "The location of Surprise me makes it seem like it's not a viable option.
+  Move it higher up." → boards B2 (a card at the top) / B3 (first chip, apricot).
+  → design card, her pick: https://app.notion.com/p/3e21f4c05231810dbc3bd83f83f1054c
+- (step 3) "I want Mexican this week, but because it's not under my preferred it's not
+  listed. There should be an easy way to add it." → board B4: **+ Add one** chip, a
+  short field with suggestions, remembered for next week. → card (Medium)
+  https://app.notion.com/p/3e21f4c0523181b0a5b1e91629345b3b
+- (step 6) "This building screen should use the same building screen as in the
+  onboarding." → board C1: *Cooking up your week…* with **What I'm using** listing her
+  answers, status line that actually advances. → card (Medium)
+  https://app.notion.com/p/3e21f4c0523181da86c7cfcc0a6cfbf5 (Folds the small "status
+  line never advances" friction above.)
+- (draft) "I gave it a detailed description — Mexican for lunch, chicken breast,
+  potatoes and veggies for dinner — and it didn't listen." Only Monday got both. Same
+  root as the existing High card *The draft says what it did with what you told it*
+  (https://app.notion.com/p/3dc1f4c0523181d38224d1773b1359aa); boards C2/C3 are its
+  design — the opening line names what it did with each answer. Card widened 2026-09-21,
+  not duplicated.
+- (draft) "Bring back the screen where I'm able to see just the meals that are
+  selected, then be able to see the days." The 2026-09-18 Week 1 build dropped the
+  by-type view. → board C2: **What we're eating** is the front door again, **Which
+  days** behind the toggle (matches her 2026-09-15 decision D). → card (Bug, High)
+  https://app.notion.com/p/3e21f4c052318179b68ce91ef06898f5
+- (draft) "You're continuously giving me the same food recommendations as previous
+  weeks." → shown on C1 ("Nothing you had last week") and C2 ("Nine new dishes"). → folded into the widened card *The draft says what it
+  did with what you told it* (2026-09-21).
+- (chat) "If I said I want to fix all the breakfasts then you should just do that."
+  Pomona argued scope ("this message is about Monday's breakfast…"). → board C4: does
+  the whole week, says so, one **Back to your week** button. → card (Bug, High)
+  https://app.notion.com/p/3e21f4c052318124bfabde48a9a2b374
+- (chat) "It's confusing where the user needs to go from here." After "Done", no
+  obvious way back to the draft. → same board C4, same card.
+- (draft) "If there is a conflict for an allergy, just don't suggest anything that
+  fits that. Also make sure the formatting is fixed." Al pastor tacos with pineapple
+  drafted for a pineapple allergy, red "Keep it anyway" card overlapping rows. → no
+  board: never draft or offer an allergen dish; the card and the overlap go away
+  together. → card (Bug, High)
+  https://app.notion.com/p/3e21f4c0523181e4b32bcb78f78e1d90
+
+**Decisions (Emily, 2026-09-21):** Re-plan = a pill in the band (A2); keep "Starting
+when?" (A3); day sheet = a row per person with *No breakfast / No lunch / No dinner* pills
+next to the initials (B1b, her wording); away card = *Away for a few nights? — Tell me
+when you're travelling or gone for a stretch — I'll skip those meals altogether* (hers,
+through the copywriter); Surprise me = a card at the top (B2); Add a cuisine = a pill →
+its own screen → a clear save → back with it chosen (B2 → B4a → B4b); building screen =
+the onboarding one (C1); What we're eating = meals only, no day notes (C2). Canvas
+trimmed to the chosen boards. Then: "once you've got them filed run the loop."
+
+**Cards filed 2026-09-21** (all Phase 1 — Beta, Meal planning design):
+- Re-plan is one tap from the draft — a pill in the band (High)
+  https://app.notion.com/p/3e21f4c0523181f6ae10c31f036dc783
+- Plan a week starts with "Starting when?" — today, never yesterday (High)
+  https://app.notion.com/p/3e21f4c052318167a4a9e523ecbaf869
+- The week intake in the onboarding motion — one question a screen (High)
+  https://app.notion.com/p/3e21f4c05231812ca168ec89c669df60 — reconciles the 2026-09-15
+  "one screen of what Pomona already knows" card (pre-filled steps, one-tap continue).
+- Different days: the day sheet is a row per person — No breakfast / No lunch / No dinner
+  (High) https://app.notion.com/p/3e21f4c052318103a29dd4b7ac7ed7af — supersedes "Who's
+  eating? → Is anyone out?".
+- Surprise me is a card at the top of the mood screen (Medium)
+  https://app.notion.com/p/3e21f4c0523181a38f8ff0bfbccc53b7
+- Add a cuisine that isn't on your list — one pill, one screen, remembered (Medium)
+  https://app.notion.com/p/3e21f4c0523181f28ed7de8cd5e0b393
+- Building your week is the onboarding screen — "What I'm using", and a status line that
+  moves (High) https://app.notion.com/p/3e21f4c0523181a2a92bf7f9349dbbf7
+- The draft: "What we're eating" is the front door again, "Which days" behind the toggle
+  (High) https://app.notion.com/p/3e21f4c05231814dba3dc3308664ebce
+- Chat on the draft: do the whole-week ask, then "Back to your week" (Bug, High)
+  https://app.notion.com/p/3e21f4c0523181db8c92fd2f97be0209
+- Never draft or offer a dish with a household allergen — no "Keep it anyway" (Bug, High)
+  https://app.notion.com/p/3e21f4c05231814e8e07e6795769fb46
+- Two people with the same initial — tell them apart wherever initials appear (Medium,
+  Needs Your Call: recommendation = shortest distinct prefix for the colliding people)
+  https://app.notion.com/p/3e21f4c052318166978dd15cd71a53ce
+- *Widened, not new:* The draft says what it did with what you told it (High) — typed
+  meal-type instructions apply across the week; a two-week variety window (session's
+  recommendation). https://app.notion.com/p/3dc1f4c0523181d38224d1773b1359aa
+
 - **For builders:** `static/plan-week.html` (the intake: steps 1–4, day sheet,
   `toggleAvatar`, `SKIP_LABELS`, the building screen), `app/tools/week_intake.py`
   (`_rhythm_packed_lunch_suggestions` — the lunch prefill that exists but doesn't skip
