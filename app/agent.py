@@ -4472,7 +4472,14 @@ def _generate_weekly_plan(
     # happen only after the whole week was written, as a warning card the
     # household could wave through — see app/tools/allergen_gate.py.
     hard_avoidances = _allergen_gate.hard_avoidances()
+    # split_safe hands back a plain list; the model's report of what it did
+    # with the typed requests (GeneratedDays.report, recorded below) rides
+    # on the original, so carry it across or the draft's opener falls back
+    # to plain labels and forgets every unmet request.
+    plan_report = getattr(items, "report", None) or {}
     items, held_back = _allergen_gate.split_safe(items, hard_avoidances)
+    items = GeneratedDays(items)
+    items.report = plan_report
     if held_back and not items:
         # Every dish the model sent clashed. Nothing to write and nothing
         # to pick around; the same clean failure an empty generation gets.

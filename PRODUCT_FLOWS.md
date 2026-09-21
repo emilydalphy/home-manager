@@ -407,6 +407,82 @@ after approve). D (which view is the draft's front door): **"What we're eating" 
 Emily's answer, 2026-09-15, asked directly. The by-type menu is the front door; Which
 days stays behind the toggle. No card.
 
+**Feedback round 2026-09-20 (Emily, her phone, Sunday morning, re-planning a week
+that already had a draft — "Pomona Flow Feedback.pdf", 10 annotated screens).** Mockups:
+https://claude.ai/artifact/9dE1dRcbWKCQKchDEYJJBx (trimmed to the chosen boards on
+2026-09-21). Her framing: *the onboarding screens have a motion the week planning should
+share* — one question a screen, the "Cooking up your week" building screen, the day-card
+reveal. Observations, in her words, tagged to the step:
+
+- (entry) "I want to re-plan my week, but the option to do so is really hidden." Re-plan
+  lived under **More ···** in the draft's footer. → board A2 (pill in the band). Chosen.
+- (entry) "It's Sunday, but the days are showing from yesterday … I would need to select
+  my own day." Re-plan offered Sep 19–25 on Sep 20. → board A3 **Starting when?** Kept.
+- (step 1, day sheet) "This screen needs to be more focused. It's hard to understand what
+  exactly they need to answer." → board B1b (a row per person; her wording for the
+  pills: *No breakfast / No lunch / No dinner*). Chosen.
+- (step 1, away card) "Confusing — it should be more about if they are going to be away
+  for a longer period." → *Away for a few nights? — Tell me when you're travelling or gone
+  for a stretch — I'll skip those meals altogether.* (hers, via the copywriter).
+- (step 3) "The location of Surprise me makes it seem like it's not a viable option."
+  → board B2 (a card at the top). Chosen.
+- (step 3) "I want Mexican this week, but because it's not under my preferred it's not
+  listed." → **+ Add one** pill → its own screen → *Add Mexican* → back with it chosen
+  (boards B2 → B4a → B4b).
+- (step 6) "This building screen should use the same building screen as in the
+  onboarding." → board C1. "Great."
+- (draft) "I gave it a detailed description — Mexican for lunch, chicken breast, potatoes
+  and veggies for dinner — and it didn't listen." Only Monday got both. → widened the
+  existing High card *The draft says what it did with what you told it*.
+- (draft) "Bring back the screen where I'm able to see just the meals that are selected,
+  then be able to see the days." → board C2 (*What we're eating* front door, meals only,
+  no day notes) + C3 (*Which days* behind the toggle).
+- (draft) "You're continuously giving me the same food recommendations as previous
+  weeks." → two-week variety window, said in the opener when true.
+- (chat) "If I said I want to fix all the breakfasts then you should just do that." and
+  "It's confusing where the user needs to go from here." → board C4.
+- (draft) "If there is a conflict for an allergy, just don't suggest anything that fits
+  that. Also make sure the formatting is fixed." → no board: never draft or offer an
+  allergen dish; the "Keep it anyway" card and its overlap go together.
+
+**Decisions (Emily, 2026-09-21):** as above, plus: C1 great; C2 meals only; "once you've
+got them filed run the loop." Assumptions built in for her to flip: Re-plan pre-fills last
+answers; two-week variety window; initials clash = shortest distinct prefix for the
+colliding people only; a child gets a row on the day sheet.
+
+**Cards filed 2026-09-21 and BUILT the same day** (all Phase 1 — Beta; every branch
+independently verified, two of them twice after a first FAIL; nothing pushed or merged):
+- `intake-motion-2026-09-21` (5728 tests): *Starting when?* (today,
+  never yesterday) https://app.notion.com/p/3e21f4c052318167a4a9e523ecbaf869 · the intake
+  in the onboarding motion https://app.notion.com/p/3e21f4c05231812ca168ec89c669df60 (folds
+  the 2026-09-15 "one screen of what Pomona already knows" card) · day sheet row per person
+  https://app.notion.com/p/3e21f4c052318103a29dd4b7ac7ed7af (supersedes "Who's eating? →
+  Is anyone out?") · Surprise me card https://app.notion.com/p/3e21f4c0523181a38f8ff0bfbccc53b7
+  · add a cuisine https://app.notion.com/p/3e21f4c0523181f28ed7de8cd5e0b393 · building
+  screen https://app.notion.com/p/3e21f4c0523181a2a92bf7f9349dbbf7 · initials clash
+  https://app.notion.com/p/3e21f4c052318166978dd15cd71a53ce (Needs Your Call on the rule).
+- `draft-front-door-2026-09-21` (5699): Re-plan pill
+  https://app.notion.com/p/3e21f4c0523181f6ae10c31f036dc783 · What we're eating front door
+  https://app.notion.com/p/3e21f4c05231814dba3dc3308664ebce · the draft says what it did
+  (widened) https://app.notion.com/p/3dc1f4c0523181d38224d1773b1359aa.
+- `chat-whole-week-2026-09-21` (5673): https://app.notion.com/p/3e21f4c0523181db8c92fd2f97be0209
+- `allergen-hard-block-2026-09-21` (5738): https://app.notion.com/p/3e21f4c05231814e8e07e6795769fb46
+
+**Found while building, for a later card:** a Friday with the current week approved
+returns a Fri–Thu window (`suggest_planning_period` clamps after the plan-ahead shift);
+the chat About chip keeps the old dish name until the sheet closes; the server still
+computes the unused `settle` field.
+
+**Merged to main 2026-09-21 evening** on Emily's "push and merge in the suggested order"
+(allergen → chat → draft → intake; one integration fix — the allergen gate dropped the
+draft's request report; 5873 tests green on main). Her two remaining calls the same
+message: a child gets a row on the day sheet — yes; the initials rule (shortest distinct
+prefix) — yes. A second chat had filed ten duplicate cards from this same feedback on
+2026-09-20 evening; archived as duplicates, each pointing at the built card.
+
+**Due next:** a re-walk of flow 2 on Emily's phone against the live app once the four
+branches are merged, to move it to `Refined`.
+
 - **For builders:** `static/plan-week.html` (the intake: steps 1–4, day sheet,
   `toggleAvatar`, `SKIP_LABELS`, the building screen), `app/tools/week_intake.py`
   (`_rhythm_packed_lunch_suggestions` — the lunch prefill that exists but doesn't skip
