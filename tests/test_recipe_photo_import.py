@@ -24,6 +24,7 @@ Layers, same split as the scan tests:
 """
 from __future__ import annotations
 
+import datetime
 import json
 import os
 import re
@@ -36,6 +37,8 @@ from app import agent, households, recipe_import as ri, recipe_photos, tools
 from app.db import get_conn
 from tests import nodeharness
 
+from conftest import household_today
+
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
 SHELL_CSS = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
@@ -44,8 +47,10 @@ SHELL_HTML = (REPO / "static" / "shell.html").read_text(encoding="utf-8")
 # Three real image headers. The server checks the bytes, not the header the
 # browser sent, and never decodes further (no imaging library) — so a valid
 # signature plus filler IS what a photo looks like to it.
-# The real clock, even on a `pytest --today=...` run. Nothing in this file is
-# about what day it is — but `recipe_photos.sweep_pending` compares
+# The real clock, even on a `pytest --today=...` run. Almost nothing in this
+# file is about what day it is — `_plan_the_recipe` is the exception, and it
+# counts off the household's own today for that reason. What forces the mark
+# is that `recipe_photos.sweep_pending` compares
 # `time.time()` against `os.path.getmtime`, and the filesystem is the one clock
 # the pin does not reach. Under a pin, a photo stashed a second ago reads as a
 # day old and is swept out from under the save. See the note on
@@ -644,17 +649,37 @@ def test_the_photo_directory_sits_beside_the_database_by_default(monkeypatch):
 # ---------- the JSON the screens consume ----------
 
 def _plan_the_recipe(name):
-    monday = "2026-09-14"
-    plan = tools.create_weekly_plan(week_start_date=monday)
+    """
+    A plan for the week the household is actually in, and the two days it
+    puts dinners on.
+
+    It used to hard-code 2026-09-14, which was fine for exactly as long as
+    that week lasted. `/api/cooker-view` with no id resolves the CURRENT
+    plan, and `get_cooker_view` collapses one whose last day has already
+    gone by (the 2026-09-13 stale-plan guard) — so the HTTP assertion below
+    read `meals[0]` off an empty list and the whole suite went red on
+    2026-09-21, the morning after that week ran out. Same class as the
+    stale seed week `frozen-clock-tests` had to fix in
+    test_tap_a_meal_opens_recipe.py; pushing the constant forward only
+    resets the timer.
+
+    Counted off the HOUSEHOLD's today, not the process's — this file runs
+    on the real clock (see pytestmark) and the two are a different day for
+    four hours of every UTC day.
+    """
+    today = household_today()
+    first = today - datetime.timedelta(days=today.weekday())  # the Monday of this week
+    second = first + datetime.timedelta(days=1)
+    plan = tools.create_weekly_plan(week_start_date=first.isoformat())
     plan_id = plan["weekly_plan_id"] if isinstance(plan, dict) else plan
-    tools.plan_meal(monday, name, slot="dinner", weekly_plan_id=plan_id)
-    tools.plan_meal("2026-09-15", "Takeout", slot="dinner", weekly_plan_id=plan_id)
-    return plan_id, monday
+    tools.plan_meal(first.isoformat(), name, slot="dinner", weekly_plan_id=plan_id)
+    tools.plan_meal(second.isoformat(), "Takeout", slot="dinner", weekly_plan_id=plan_id)
+    return plan_id, first.isoformat(), second.isoformat()
 
 
 def test_the_cooker_view_and_the_week_menu_carry_the_credit_and_the_photo(signed_in, monkeypatch):
     draft, saved = _read_then_save(signed_in, monkeypatch, JPEG)
-    plan_id, monday = _plan_the_recipe(draft["name"])
+    plan_id, monday, tuesday_str = _plan_the_recipe(draft["name"])
 
     view = tools.get_cooker_view(plan_id)
     meal = next(m for m in view["meals"] if m["meal"] == draft["name"])
@@ -667,7 +692,7 @@ def test_the_cooker_view_and_the_week_menu_carry_the_credit_and_the_photo(signed
     menu = tools.get_week_menu(plan_id)
     day = next(d for d in menu["days"] if d["date"] == monday)
     assert day["dinner"]["citation"]["text"] == "From Salt Fat Acid Heat, Samin Nosrat, p. 340"
-    tuesday = next(d for d in menu["days"] if d["date"] == "2026-09-15")
+    tuesday = next(d for d in menu["days"] if d["date"] == tuesday_str)
     assert tuesday["dinner"]["citation"] is None
 
     # Over HTTP too — the shapes the shell actually fetches.
@@ -677,7 +702,7 @@ def test_the_cooker_view_and_the_week_menu_carry_the_credit_and_the_photo(signed
 def test_a_link_recipe_on_the_plan_says_its_host(signed_in):
     tools.add_recipe("Chili", [{"item": "beans", "qty": "1 can"}], instructions=["Heat."],
                      source_url="https://www.seriouseats.com/best-chili")
-    plan_id, monday = _plan_the_recipe("Chili")
+    plan_id, monday, _second = _plan_the_recipe("Chili")
     meal = next(m for m in tools.get_cooker_view(plan_id)["meals"] if m["meal"] == "Chili")
     assert meal["citation"] == {"kind": "link", "url": "https://www.seriouseats.com/best-chili",
                                 "host": "seriouseats.com", "text": "From seriouseats.com"}
