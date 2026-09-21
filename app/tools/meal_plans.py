@@ -14,6 +14,29 @@ from . import recipes as _recipes
 from . import weekly_plan as _weekly_plan
 
 
+def plan_meal_for_chat(*args, override: bool = False, **kwargs) -> dict:
+    """
+    plan_meal with the one refusal a PERSON is owed in front of it: a dish
+    somebody at the table can't have (Emily, 2026-09-20). agent.TOOL_FUNCTIONS
+    points at this rather than at plan_meal itself, the shape
+    weekly_plan.swap_meal_in_plan_for_chat already has and for the same
+    reason: the callers that must NOT be refused — the week draft, its
+    re-pick, the sweep — compose the bare function and have already run
+    the gate themselves.
+
+    `override` is the person's own "do it anyway", and it is the only thing
+    that lets a clashing dish through here. See allergen_gate.refuse_if_clashing
+    for why this raises rather than answering with a dict.
+    """
+    from . import allergen_gate as _allergen_gate
+    meal = kwargs.get("meal")
+    if meal is None and len(args) >= 2:
+        meal = args[1]
+    if isinstance(meal, str):
+        _allergen_gate.refuse_if_clashing(meal, override=override)
+    return plan_meal(*args, **kwargs)
+
+
 def plan_meal(
     meal_date: str,
     meal: str,

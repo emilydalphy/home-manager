@@ -303,6 +303,7 @@ from .meal_plans import (  # noqa: F401
     get_meal_plan,
     get_recent_meal_history,
     plan_meal,
+    plan_meal_for_chat,
 )
 from .memory import (  # noqa: F401
     _CONTEXT_SIGNALS,
@@ -663,6 +664,10 @@ from .swap_in_place import (  # noqa: F401
     swap_meal_in_place,
     undo_meal_swap,
 )
+# The household's allergies and must-avoids as the one `must_not_contain`
+# list every food-picking prompt is handed — the swap's, the three picks',
+# the change card's and, since 2026-09-21, week generation's.
+from .swap_in_place import _hard_exclusions as swap_hard_exclusions  # noqa: F401
 # Three picks for one slot, chosen before anything is written — the Week 1
 # reveal's Swap and the Plan tab's Swap sheet (2026-09-18; the two were
 # built apart and reconciled onto this one module). A screen's own read

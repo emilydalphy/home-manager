@@ -10687,19 +10687,12 @@
     }).length;
   }
 
-  // The week's hard clash (data.settle, server-worded) when it is about
-  // THIS row — matched on the dish name and the date, and only on a draft
-  // (an approved week has settled it).
-  function wkSettleFor(day, entry) {
-    var data = typeof weekState !== 'undefined' && weekState.data;
-    var settle = data && data.settle;
-    if (!settle || !settle.note || !settle.meal || !entry || entry.state !== 'planned') return null;
-    if (weekPlanState(data) !== 'draft') return null;
-    if (settle.date && settle.date !== day.date) return null;
-    var a = String(settle.meal).trim().toLowerCase();
-    var b = String(mealDisplayName(entry) || '').trim().toLowerCase();
-    return a === b ? settle : null;
-  }
+  // There is no clash card on a row any more (Emily, 2026-09-20: "if there
+  // is a conflict for an allergy, just don't suggest anything that fits
+  // that"). A dish someone can't have is never drafted, swapped in or
+  // offered — app/tools/allergen_gate.py — so the row has nothing to
+  // settle, and the red card that used to overlap the rows under it went
+  // with the keep-it-anyway button it carried.
 
   // One 36px mini button. The visible box is 36px (the approved boards'
   // size); the tap target is the full 44px through .wk-mini's ::before
@@ -10737,7 +10730,6 @@
     } else { name = day.isPast ? 'Not planned' : 'Nothing yet'; quiet = ' is-quiet'; }
     var done = planned && !!entry.cooked;
     var meta = wkRowMeta(entry);
-    var settle = wkSettleFor(day, entry);
 
     var acts = '';
     if (planned) {
@@ -10770,18 +10762,6 @@
         '</div>' +
         (acts ? '<div class="wk-row-acts">' + acts + '</div>' : '') +
       '</div>' +
-      // A HARD clash — an allergy, a must-avoid — sits on the dish it is
-      // about (Emily, 2026-09-11). Swap the meal is the row's own button
-      // above; keeping it costs the second, explicit Approve a real
-      // allergy clash is owed (approveWeek → needs_confirmation).
-      (settle
-        ? '<div class="rv-settle">' +
-            '<div class="rv-settle-note">' + escapeHtml(settle.note) + '</div>' +
-            '<div class="wk-settle-acts">' +
-              '<button type="button" class="wk-settle-keep" data-wk-settle-keep="1">Keep it anyway</button>' +
-            '</div>' +
-          '</div>'
-        : '') +
       (open
         ? '<div class="wk-slot-open" id="wk-open-' + slot + '" hidden>' + openSlotCardHtml(day.date, slot, entry) + '</div>'
         : '') +
@@ -12814,9 +12794,6 @@
     steps.querySelectorAll('[data-wk-help]').forEach(function (btn) {
       btn.addEventListener('click', function () { openWeekHelp(btn.getAttribute('data-wk-help')); });
     });
-    steps.querySelectorAll('[data-wk-settle-keep]').forEach(function (btn) {
-      btn.addEventListener('click', function () { approveWeek(panel, weekState.data || {}); });
-    });
     wireReviewCarousel(panel, steps);
     // "Everything out" opens to the amounts, in a person's units, and
     // closes again — a read, never a write, so it stays on this screen.
@@ -14552,11 +14529,12 @@
     }
   }
 
-  // The one-clash-away state: the "One thing to settle" card above the week
-  // already names the clash (data.settle, rendered before anyone even
-  // tapped Approve), so this only has to offer the two ways through —
-  // approve past it, or back out and fix the plan first. Only
-  // submitWeekApproval's needs_confirmation branch ever calls this.
+  // The one-clash-away state. Since 2026-09-20 nothing Pomona picks can
+  // clash (app/tools/allergen_gate.py), so this is reached only by a dish
+  // the household planned by hand; the clash is said in a toast on the
+  // way in, and the two ways through are offered — approve past it, or
+  // back out and fix the plan first. Only submitWeekApproval's
+  // needs_confirmation branch ever calls this.
   //
   // It works on the decision row under the week card now (weekDecideHtml)
   // rather than inside the removed review band; everything else about it —
@@ -14568,9 +14546,12 @@
     var btn = card && card.querySelector('#week-approve-btn');
     if (!card || !btn) return;
 
-    // One label, whatever the dish: since 2026-09-11 the clash sits on the
-    // dish's own row in the review above, so the button needn't repeat a
-    // name that can run to six words.
+    // The clash is said HERE now. The row's own clash card went on
+    // 2026-09-20 (Pomona never drafts a dish someone can't have), so the
+    // only way a hard clash reaches approval is a dish the household put
+    // on the week by hand — and "I've seen the clash" has to be true
+    // before it is tapped.
+    if (approval.conflicts_note) showToast(approval.conflicts_note, null, 9000);
     var label = 'Approve anyway — I’ve seen the clash';
     btn.textContent = label;
     btn.disabled = false;
@@ -14582,9 +14563,8 @@
     freshBtn.addEventListener('click', function () {
       submitWeekApproval(panel, data, approvedBy, true);
     });
-    // "Keep it anyway" on the settle card comes through here too, and it is
-    // tapped ABOVE the week card while this button sits below it — so the
-    // confirm has to be brought to the eye rather than left offscreen.
+    // Brought to the eye: the tap that got here may have been anywhere on
+    // the screen, and the relabelled button has to be seen to be read.
     if (freshBtn.scrollIntoView) freshBtn.scrollIntoView({ block: 'center' });
 
     // A quiet way out — same idiom as "or tweak it with me" just below,

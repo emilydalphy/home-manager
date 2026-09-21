@@ -468,9 +468,15 @@ def plan_slot_open(
     }
 
 
-def drop_dish_from_day(weekly_plan_id: int, entry_id: int) -> dict:
+def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | None = None) -> dict:
     """
     Take one day away from a dish, and hand that slot back as a question.
+
+    `open_reason` is the question's own sentence. Left unset it is the
+    stepper's ("You cut … back, so this one is yours to fill"); the
+    allergen sweep (tools.allergen_gate.sweep_plan) passes its own, because
+    a slot opened over an allergy has to say so rather than claim the
+    household cut something back.
 
     The Review screen's stepper (Emily's approved design, 2026-09-09): a
     dish covering four mornings should come down to three without spending
@@ -634,7 +640,7 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int) -> dict:
             ),
         }
 
-    open_reason = f"You cut {dish} back, so this one is yours to fill."
+    open_reason = (open_reason or "").strip() or f"You cut {dish} back, so this one is yours to fill."
     # ONE connection, ONE commit, for all four steps — the same shape and
     # for the same reason as retire_overlapping_plans (2026-09-06). These
     # used to be four separate commits, and the gap between the delete and
@@ -6087,10 +6093,13 @@ def swap_meal_in_plan(
     return result
 
 
-def swap_meal_in_plan_for_chat(*args, **kwargs) -> dict:
+def swap_meal_in_plan_for_chat(*args, override: bool = False, **kwargs) -> dict:
     """
-    swap_meal_in_plan with the one refusal a PERSON is owed in front of it:
-    a night that has already gone by.
+    swap_meal_in_plan with the two refusals a PERSON is owed in front of
+    it: a night that has already gone by, and — since 2026-09-21 — a dish
+    somebody at the table can't have (allergen_gate.refuse_if_clashing,
+    which `override`, the person's own "do it anyway", is the only way
+    past).
 
     agent.TOOL_FUNCTIONS points at this rather than at the function itself,
     the shape grocery.add_grocery_item_for_chat already uses (2026-09-15).
@@ -6127,6 +6136,12 @@ def swap_meal_in_plan_for_chat(*args, **kwargs) -> dict:
     # this call's open — there is none, this is the first line.
     if isinstance(meal_date, str) and night_has_gone(meal_date):
         raise SlotRefused(NIGHT_GONE)
+    new_meal = kwargs.get("new_meal")
+    if new_meal is None and len(args) >= 3:
+        new_meal = args[2]
+    if isinstance(new_meal, str):
+        from . import allergen_gate as _allergen_gate
+        _allergen_gate.refuse_if_clashing(new_meal, override=override)
     return swap_meal_in_plan(*args, **kwargs)
 
 

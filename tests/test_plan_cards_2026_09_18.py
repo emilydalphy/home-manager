@@ -86,7 +86,6 @@ def _prelude() -> str:
         + _extract("reviewTileTags", SHELL_JS) + "\n"
         + _extract("wkRowMeta", SHELL_JS) + "\n"
         + _extract("wkDayMealCount", SHELL_JS) + "\n"
-        + _extract("wkSettleFor", SHELL_JS) + "\n"
         + _extract("wkMiniHtml", SHELL_JS) + "\n"
         + _extract("wkMealRowHtml", SHELL_JS) + "\n"
         + _extract("wkDayCardHtml", SHELL_JS) + "\n"
