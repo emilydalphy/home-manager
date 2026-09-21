@@ -56,7 +56,7 @@ def _prelude() -> str:
         + "var READY_CHECK = '<svg></svg>';\n"
         + "var GRO_ICONS = { chevRight: '<svg></svg>' };\n"
         + _DAYNAME_STUB
-        + "var weekState = { days: [], data: null, selectedIndex: 0, step: 'week' };\n"
+        + "var weekState = { days: [], data: null, selectedIndex: 0, step: 'week', draftView: 'menu', draftViewPlanId: null };\n"
         + "var defrostAskState = { planId: null, items: null, selected: {}, forceShow: false };\n"
         + "function periodRangeLabel(start, n) { return start + ' +' + n; }\n"
         + "function countOpenSlots() { return 0; }\n"
@@ -85,6 +85,16 @@ def _prelude() -> str:
         + _extract("reviewClosedLine", SHELL_JS) + "\n"
         + _extract("reviewTileTags", SHELL_JS) + "\n"
         + _extract("wkRowMeta", SHELL_JS) + "\n"
+        + _extract("wkRowMetaLine", SHELL_JS) + "\n"
+        + _extract("wkRowMetaHtml", SHELL_JS) + "\n"
+        + _extract("draftView", SHELL_JS) + "\n"
+        + _extract_var("WK_MENU_LABELS", SHELL_JS) + "\n"
+        + _extract_var("WK_MENU_NOUNS", SHELL_JS) + "\n"
+        + _extract("wkMenuGroups", SHELL_JS) + "\n"
+        + _extract("wkDaysPhrase", SHELL_JS) + "\n"
+        + _extract("wkMenuFact", SHELL_JS) + "\n"
+        + _extract("wkMenuRowHtml", SHELL_JS) + "\n"
+        + _extract("wkMenuHtml", SHELL_JS) + "\n"
         + _extract("wkDayMealCount", SHELL_JS) + "\n"
         + _extract("wkMiniHtml", SHELL_JS) + "\n"
         + _extract("wkMealRowHtml", SHELL_JS) + "\n"
@@ -230,12 +240,17 @@ def test_the_draft_dock_reads_approve_open_grocery_list_and_the_set_dock_open_gr
 
 @_needs_node
 def test_the_draft_root_keeps_the_band_as_its_head_so_it_has_no_crumb_and_no_second_title():
+    """Since 2026-09-21 the band carries the dates, the opener and the
+    What we're eating | Which days toggle, so the count line and the "?"
+    under it went too (tests/test_draft_front_door.py); Which days is the
+    carousel as built here, unchanged."""
     days = _week()
-    html = _run(_prelude() + f"weekState.days = {json.dumps(days)};\n"
+    html = _run(_prelude() + f"weekState.days = {json.dumps(days)}; weekState.draftView = 'days'; weekState.draftViewPlanId = 7;\n"
                 f"console.log(JSON.stringify(reviewStepHtml({json.dumps(_draft(days))}, weekState.days, true)));")
     assert "crumb" not in html
     assert "<h1" not in html
-    assert "Sept 21 – 27 · 7 meals" in html
+    assert "7 meals" not in html and 'id="wk-help"' not in html
+    assert 'id="wk-carousel"' in html and html.count('data-wk-card="') == 3
     assert 'id="wk-more"' in html, "the draft's rare actions stay behind More"
     assert 'id="week-approve-btn"' in html
 

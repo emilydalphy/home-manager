@@ -76,6 +76,106 @@ def _week_dates(week_start: str) -> list[str]:
     return period_dates(week_start, 7)
 
 
+# ---------- what a typed request reaches ----------
+# Emily, 2026-09-20, from her phone: "I gave it a detailed description —
+# Mexican for lunch, chicken breast, potatoes and veggies for dinner — and
+# it didn't listen." Only Monday got both. The free-text answer reached the
+# drafting prompt as one opaque string with a rule to "put it exactly where
+# they said", and a request that names a MEAL and no DAY has no "where" for
+# that rule to bite on — so the model satisfied it once and moved on.
+#
+# freeform_meal_scopes makes the reach explicit for the ONE case where a
+# sentence leaves no doubt: a meal word, no day, no count, no range, no
+# "no". Such a request applies to every slot of that meal in the period,
+# and the result rides into the generation context as intake.freeform_scope
+# next to the words themselves (agent._intake_generation_context). Every
+# other sentence — a count ("twice"), a day or range ("Mon–Thu"), an
+# exclusion ("no fish"), a ramble — is left to the model with the plain
+# rules the prompt spells out, and gets NO scope here: a regex is the wrong
+# tool for natural language, and a wrong scope handed to the model as fact
+# is worse than none (the verifier's table, 2026-09-21).
+
+_MEAL_WORDS = {
+    "breakfast": ("breakfast", "breakfasts", "brunch"),
+    "lunch": ("lunch", "lunches", "lunchtime"),
+    "dinner": ("dinner", "dinners", "supper", "suppers"),
+    "snack": ("snack", "snacks"),
+}
+_MEAL_WORD_RE = re.compile(
+    r"\b(" + "|".join(w for words in _MEAL_WORDS.values() for w in words) + r")\b", re.IGNORECASE
+)
+_MEAL_OF_WORD = {w: meal for meal, words in _MEAL_WORDS.items() for w in words}
+
+# Any of these in a sentence and the sentence is the model's to scope.
+_DAY_WORD_RE = re.compile(
+    r"\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun"
+    r"|weekend|weekends|weeknight|weeknights|weekday|weekdays|tonight|today|tomorrow|night|nights|evening|evenings"
+    r"|morning|mornings|day|days)\b",
+    re.IGNORECASE,
+)
+_COUNT_WORD_RE = re.compile(
+    r"\b(once|twice|thrice|one|two|three|four|five|six|seven|couple|few|several|some|every other|\d+|\d+x)\b",
+    re.IGNORECASE,
+)
+_NEGATION_RE = re.compile(
+    r"\b(no|not|nothing|never|none|without|skip|avoid|don't|dont|do not|less|fewer|only)\b|\bn't\b",
+    re.IGNORECASE,
+)
+_RANGE_RE = re.compile(r"[–\-]|\bto\b|\bthrough\b|\bthru\b", re.IGNORECASE)
+_REQUEST_SPLIT_RE = re.compile(r"[.;!?\n]+")
+# A request longer than this is a paragraph, not an instruction to scope.
+_MAX_REQUEST_WORDS = 16
+
+
+def _clauses_by_meal(request: str) -> list[tuple[str, str]]:
+    """
+    One (clause, meal) per meal word in a clean request, in order. "Mexican
+    for lunch, chicken breast, potatoes and veggies for dinner" is two: the
+    words up to and including each meal word belong to that meal; whatever
+    trails the last one ("for dinner I want chicken") stays with it.
+    """
+    matches = list(_MEAL_WORD_RE.finditer(request))
+    out: list[tuple[str, str]] = []
+    start = 0
+    for i, m in enumerate(matches):
+        end = m.end() if i + 1 < len(matches) else len(request)
+        clause = request[start:end].strip(" ,;:-–—\t")
+        if clause:
+            out.append((clause, _MEAL_OF_WORD[m.group(1).lower()]))
+        start = m.end()
+    return out
+
+
+def _unambiguous(request: str) -> bool:
+    words = request.split()
+    if not words or len(words) > _MAX_REQUEST_WORDS:
+        return False
+    if _DAY_WORD_RE.search(request) or _COUNT_WORD_RE.search(request):
+        return False
+    if _NEGATION_RE.search(request) or _RANGE_RE.search(request):
+        return False
+    return True
+
+
+def freeform_meal_scopes(text: str | None, dates: list[str]) -> list[dict]:
+    """
+    The meal-type requests whose reach is beyond doubt, each in the
+    household's own words with every date of that meal in the period.
+    Only a sentence with a meal word and no day, no count, no range and no
+    negation qualifies; anything else gets no entry and is the model's to
+    scope by the prompt's rules (never an exclusion — "no fish for dinner"
+    is left out, not handed over as a request).
+    """
+    scopes: list[dict] = []
+    for request in _REQUEST_SPLIT_RE.split(text or ""):
+        request = request.strip(" ,;")
+        if not request or not _unambiguous(request):
+            continue
+        for clause, meal in _clauses_by_meal(request):
+            scopes.append({"words": clause, "meal": meal, "applies_to": "every", "dates": list(dates)})
+    return scopes
+
+
 def period_dates(start_date: str, day_count: int = 7) -> list[str]:
     """
     The ISO dates of a planning period: `day_count` days from `start_date`,

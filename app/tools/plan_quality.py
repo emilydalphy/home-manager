@@ -11,7 +11,8 @@ The generation prompt (see generate_weekly_plan_llm's instructions in
 agent.py) tells the model a long list of rules -- a `rush` night is capped
 at RUSH_MAX_MINUTES, a weeknight cap when the household has set one, don't
 run the same main_protein three nights straight, don't repeat a dinner
-already eaten in the last three weeks, write a real reason instead of
+already eaten inside the variety window (meal_variety.VARIETY_WINDOW_WEEKS),
+write a real reason instead of
 generic filler, surface at least one new recipe, use at most one open slot
 and never for breakfast/lunch. Nothing downstream ever checked whether the
 model actually did any of that -- see the VERIFIED FINDINGS this module
@@ -107,6 +108,7 @@ from . import recipes as _recipes
 from . import usage as _usage
 from ._shared import household_id
 from .week_intake import RUSH_MAX_MINUTES
+from .meal_variety import variety_window_words as _variety_window_words
 
 logger = logging.getLogger("home_manager")
 
@@ -349,7 +351,7 @@ def _dinner_repeat_in_history(entries: list[dict], context: dict) -> list[Violat
                 rule="dinner_repeat_in_history", severity="warn",
                 date=entry["date"], slot="dinner",
                 message=(
-                    f"'{entry['meal_name']}' on {entry['date']} also appears in the last 3 weeks "
+                    f"'{entry['meal_name']}' on {entry['date']} also appears in {_variety_window_words()} "
                     "of dinner history."
                 ),
             ))

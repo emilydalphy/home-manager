@@ -436,7 +436,8 @@ def _fn_body(name: str, source: str) -> str:
 
 
 def test_the_draft_subtitle_says_whose_turn_it_is():
-    _assert_in("'a draft, your turn'", SHELL_JS, "the draft subtitle", "shell.js")
+    # "a draft, your turn" until 2026-09-21: the chip already says Draft.
+    _assert_in("sub.push('your turn');", SHELL_JS, "the draft subtitle", "shell.js")
 
 
 def test_a_soft_conflict_is_a_line_under_the_card():

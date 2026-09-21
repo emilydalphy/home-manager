@@ -346,6 +346,8 @@ function weekPlanState(data) { return (data && data.state) || 'none'; }
 function weekBandData(data) { return data; }
 function weekBandParts(data, days) { return { id: 'week-band', eyebrow: 'Sep 7–13', title: 'This week', sub: 'a draft, your turn', badge: 'Draft' }; }
 function rootBandHtml(parts) { return '<header class="root-band" data-parts=\\'' + JSON.stringify(parts) + '\\'></header>'; }
+function weekBandExtras() { return null; }
+function fillWeekBandExtras() {}
 function weekStepHtml() { return '<div class="wk-week-card">MEALS</div>'; }
 function renderPlanWeekEntry() {}
 function wireMealsStep() {}

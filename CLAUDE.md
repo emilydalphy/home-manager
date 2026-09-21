@@ -14395,3 +14395,91 @@ the browser against a throwaway DB copy on port 8022. Open for Emily: the
 hand-off lands on the list until the freezer step exists; tabs and Swap
 are 36px as drawn with an invisible pad to 44px; the swap sheet's close
 button reads "Keep it".
+
+### 2026-09-21 — The draft's front door: Re-plan in the band, What we're eating first, the draft says what it did. Branch `draft-front-door-2026-09-21`.
+
+Three Loop Board cards from Emily's 2026-09-20 phone round (boards A2,
+C2, C3), one branch. **Re-plan**: an `--apricot-light` pill top right of
+the Plan root's band on a draft and on an approved week
+(`weekBandExtras`/`fillWeekBandExtras`, filled into `rootBandHtml`'s
+output after it is built so the band builder stays button-free and
+`renderMealsStep` still calls it exactly once — the extras ride in the
+band's rebuild key); it and the dock's quiet "Plan it differently" both
+go through `replanWeek` → `startPlanningWeek` for the plan on screen,
+and `/plan-week` already prefills from the current intake revision, so
+re-planning is changing what's different. "Re-plan this week" and the
+custom-range picker left the More sheet (the picker still lives on the
+empty Plan's entry; "Starting when?" is the other branch's). **Two
+views**: a draft's band carries "Here's your week.", "your turn" (the
+chip says Draft — "a draft, your turn" said it twice), the opener and
+the What we're eating | Which days toggle (`weekState.draftView`, in
+memory for the page session, reset by plan id so a new draft opens on
+the menu). `wkMenuGroups` brings back the 2026-09-18-deleted
+by-type grouping without the steppers: every dish once, the days it
+covers (`wkDaysPhrase`: "7 mornings", "Mon–Thu", "Mon, Wed"), one fact,
+Swap on every row aimed at the dish's first day ahead (`wkDayForTap`
+reads `data-wk-day-index` as it reads `data-wk-card`). Which days is
+the carousel unchanged; both share `reviewDecideHtml`, whose dock now
+holds the quiet row (Plan it differently · More ···). The draft root's
+count line and "?" went — the band says the dates; "Need a hand?" is
+More's first row on a draft. **Says what it did**: the free-text answer
+reached the drafting prompt as one opaque string with "put it exactly
+where they said" — a request naming a MEAL and no DAY had no where, so
+"Mexican for lunch" got Monday. The prompt now carries the four rules
+(a meal with no day = every slot of that meal; a count = that many; a
+day or range = those days; "no X" = an exclusion, never a request) and
+asks the model to REPORT: `derived_from.freeform` on every slot a
+request shaped, plus two top-level lists on `submit_weekly_plan` —
+`honoured_requests` (words + a two-to-four-word label) and
+`unmet_requests` (words + a five-word reason). `_stream_forced_tool_call`
+hands those back as `GeneratedDays.report` (a list subclass, so every
+stub returning a plain list still works) and `record_plan_requests`
+stores them in the new `weekly_plans.requests_json`.
+`week_intake.freeform_meal_scopes` confirms only the one unambiguous
+case (a meal word, no day, no count, no range, no negation, ≤16 words →
+every slot of that meal) as `intake.freeform_scope`; anything else gets
+NO scope — the first version's regex over-applied ("Mexican for lunch
+twice" → every lunch; "pizza night Friday, tacos for lunch Tuesday" →
+the day migrated; "no fish for dinner" → a request), which the verifier
+caught, and a wrong scope handed to the model as fact is worse than
+none. The variety window is
+ONE constant, `meal_variety.VARIETY_WINDOW_WEEKS = 2` (was a bare
+`weeks=3` in agent.py, "3 weeks" in the prompt and in plan_quality's
+message; the prompt's rule is now "not drafted again unless asked
+for", dinner and lunch). `app/tools/draft_opener.py` builds the draft's
+two opening lines from the stored report and rows: line 1 from the
+model's short labels ("Mexican lunches Mon–Thu, chicken-and-potato
+dinners Mon–Thu, Sat, Sun, as you asked, Friday left free." — the days
+read off the slots that cite the request), capped at 110 characters by
+first dropping the day phrases, then whole items from the end, never a
+cut phrase, with "I planned around what you told me." when nothing
+fits, and "An ordinary week — seven dinners, none repeated." when
+nothing was asked; line 2 a slot for their call / the first
+`unmet_requests` entry ("I couldn't fit "…" in this week" — ONLY from
+the report: a request neither cited nor listed gets no line, since the
+first version announced "couldn't fit" for a request the model had
+used without citing) / the novelty line over dinners and lunches only
+(the slots the no-repeat rule is about; the first version counted
+breakfasts and snacks, making "nothing from the last two weeks" near
+unreachable) against approved food in the window, unsaid on a first
+week. Numbers are words to twelve, then numerals, on both lines. `get_week_menu` carries
+`draft_opener` (drafts only) and `asked` per planned slot (`asked_fact`:
+"packs cold", "Mexican, as asked", "as asked"); the stored `reason` is a
+tap away on both views (`wkRowMetaHtml`: the meta line is the button,
+the note floats over the next row). `reviewTileTags` reads every meal:
+"4 for breakfast", "Vic out". Tests:
+`tests/test_draft_says_what_it_did.py` (31, incl. the verifier's
+table of parser cases asserting NO scope),
+`tests/test_draft_front_door.py` (15); five existing files updated for
+the design change; full suite 5655 → 5699, all green. Verified in the
+browser at 390px against a throwaway DB on port 8022 (model stubbed —
+the seed script is in the session scratchpad, not the repo). Judgment
+calls: at 110 characters the first line can run to two and a half
+visual lines at 390px (Emily's own example does), and the pair to
+four — the card's "never longer than two lines" is met per sentence,
+not for the pair; a plan drafted before the report existed (or by a
+stubbed model) falls back to the slots' `derived_from` for line 1 and
+says nothing on line 2 about unmet requests; the `headline` field
+`_week_headline` builds is still sent and still unread by the shell; `test_week_set_covers_today`
+now expects a draft titled "Here's your week." (its "Next week" point
+is kept on an approved plan).

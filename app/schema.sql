@@ -513,6 +513,13 @@ CREATE TABLE IF NOT EXISTS weekly_plans (
     -- live plan, and on any plan retired before this column existed. The
     -- plan's period and meals are kept.
     retired_reason TEXT NOT NULL DEFAULT '',
+    -- What the model REPORTED doing with the household's typed requests
+    -- (intake.freeform) when it drafted this plan, as JSON:
+    -- {"honoured": [{"words", "label"}], "unmet": [{"words", "reason"}]}.
+    -- The draft's opening line (draft_opener) is built from this and from
+    -- the slots' own derived_from — never from a guess about the words.
+    -- '' on a plan drafted before this existed, or by a stubbed model.
+    requests_json TEXT NOT NULL DEFAULT '',
     constraints_notes TEXT NOT NULL DEFAULT '', -- freeform per-week asks, e.g. "out Thu/Fri, keep it under 30 min"
     -- Snapshotted from meal_preferences.planning_mode at creation time, so a
     -- past plan stays interpretable even if the household later switches
