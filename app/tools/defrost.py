@@ -822,6 +822,19 @@ def _settled_nights(weekly_plan_id: int, by_item: dict[str, dict]) -> tuple[set[
     return settled, frozen
 
 
+# A plan whose week is still ahead of or around the household: its lines
+# are still wanted. 'retired' is the one status a plan leaves the list by
+# (the same set cooker.list_prep_tasks reads).
+_LIVE_PLAN_STATUSES = ("draft", "approved")
+
+# Why an item's line cannot come off the list even though one exists —
+# the one reason today: another live plan's meal is counted into the same
+# line (the ingest folds two weeks' chicken onto one line while the first
+# is unbought — grocery._merge_target), so this week's yes must not take
+# next week's share off the list. The screen says the fridge half alone.
+ON_LIST_SHARED = "shared"
+
+
 def _grocery_lines_by_item(names, weekly_plan_id: int) -> dict[str, list[dict]]:
     """
     Each of the plan's meats' grocery lines, keyed the way by_item is: the
@@ -834,30 +847,55 @@ def _grocery_lines_by_item(names, weekly_plan_id: int) -> dict[str, list[dict]]:
     every name comparison in this module is: "Chicken Thigh" on the list is
     "Chicken Thighs" in the plan.
 
-    Scoped to THIS plan's lines (source_weekly_plan_id) plus the loose
+    Scoped to THIS plan's lines — stamped with it (source_weekly_plan_id),
+    or counted into by one of its meals (meal_plan_grocery_links: the
+    ingest restamps a merged line to the LATEST plan, so the stamp alone
+    would lose this week's line to next week's approval) — plus the loose
     ones no plan wrote (NULL — a hand-added "chicken thighs" is still the
-    line a tapped chip would take off). Never another plan's: with two
-    live weeks both cooking chicken thighs, next week's line set aside by
-    next week's freezer step is not this week's answer, and un-tapping
-    here must not put next week's line back (2026-09-21 integration).
+    line a tapped chip would take off). Never another plan's own line:
+    next week's line set aside by next week's step is not this week's
+    answer, and un-tapping here must not put it back (2026-09-21).
+
+    Each row carries `shared_with`: the OTHER live plans whose meals are
+    counted into the same line. Such a line is not this plan's to take off
+    (confirm_frozen_items books the move only) and does not make the item
+    `on_list` (meat_items_for_plan says why: ON_LIST_SHARED).
     """
     conn = get_conn()
+    live = ",".join("?" * len(_LIVE_PLAN_STATUSES))
     rows = conn.execute(
-        "SELECT id, item, status, removed_by, source_weekly_plan_id FROM grocery_items "
-        "WHERE household_id = ? "
-        "AND (source_weekly_plan_id = ? OR source_weekly_plan_id IS NULL) "
-        f"AND ((status IN ({','.join('?' * len(_STILL_TO_BUY_STATUSES))}) AND excluded_from_list = 0) "
-        "OR (status = 'removed' AND removed_by = ?))",
-        (household_id(), weekly_plan_id, *_STILL_TO_BUY_STATUSES, FREEZER_REMOVED_BY),
+        "SELECT g.id, g.item, g.status, g.removed_by, g.source_weekly_plan_id, "
+        "  (SELECT GROUP_CONCAT(DISTINCT e.weekly_plan_id) FROM meal_plan_grocery_links l "
+        "   JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id "
+        "   JOIN weekly_plans wp ON wp.id = e.weekly_plan_id "
+        "   WHERE l.grocery_item_id = g.id AND e.weekly_plan_id != ? "
+        f"  AND wp.status IN ({live})) AS shared_with "
+        "FROM grocery_items g WHERE g.household_id = ? "
+        "AND (g.source_weekly_plan_id = ? OR g.source_weekly_plan_id IS NULL "
+        "     OR EXISTS (SELECT 1 FROM meal_plan_grocery_links l "
+        "                JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id "
+        "                WHERE l.grocery_item_id = g.id AND e.weekly_plan_id = ?)) "
+        f"AND ((g.status IN ({','.join('?' * len(_STILL_TO_BUY_STATUSES))}) AND g.excluded_from_list = 0) "
+        "OR (g.status = 'removed' AND g.removed_by = ?))",
+        (weekly_plan_id, *_LIVE_PLAN_STATUSES, household_id(), weekly_plan_id, weekly_plan_id,
+         *_STILL_TO_BUY_STATUSES, FREEZER_REMOVED_BY),
     ).fetchall()
     conn.close()
     out: dict[str, list[dict]] = {key: [] for key in names}
     for row in rows:
         line = (row["item"] or "").strip().lower()
+        record = dict(row)
+        record["shared_with"] = [int(x) for x in (row["shared_with"] or "").split(",") if x]
         for key in out:
             if _matches_selected_item(key, {line}):
-                out[key].append(dict(row))
+                out[key].append(record)
     return out
+
+
+def _own_lines(lines: list[dict]) -> list[dict]:
+    """The lines a tapped chip may take off the list: not shared with
+    another live plan's meal."""
+    return [r for r in lines if not r["shared_with"]]
 
 
 def meat_items_for_plan(weekly_plan_id: int) -> list[dict]:
@@ -866,9 +904,10 @@ def meat_items_for_plan(weekly_plan_id: int) -> list[dict]:
     each with the night(s) it feeds — the freezer step's own chip list, and
     the GET route behind it. Each entry also says whether it has a grocery
     line this week (`on_list`, so the step can promise "off the shopping
-    list" only where there is a line to take off) and whether the household
-    has already said it is frozen (`frozen`, so reopening the step shows
-    the answer as given).
+    list" only where there is a line to take off — `on_list_reason` says
+    why not when a line exists but is another live plan's too,
+    ON_LIST_SHARED) and whether the household has already said it is
+    frozen (`frozen`, so reopening the step shows the answer as given).
 
     Emily, 2026-09-19: "it is for the user to be able to flag if they have
     meat in the freezer, that needs to be defrosted in time to be cooked,
@@ -936,8 +975,10 @@ def meat_items_for_plan(weekly_plan_id: int) -> list[dict]:
             if description in frozen_nights:
                 frozen = True
         if nights:
+            own = _own_lines(lines[key])
             out.append({"item": entry["item"], "nights": nights,
-                        "on_list": bool(lines[key]), "frozen": frozen})
+                        "on_list": bool(own), "frozen": frozen,
+                        "on_list_reason": None if own or not lines[key] else ON_LIST_SHARED})
     return sorted(out, key=lambda e: (e["item"].lower()))
 
 
@@ -1088,7 +1129,9 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
     cancelled = 0
     for key, name in plan_names.items():
         if _matches_selected_item(key, selected_lower):
-            for row in lines[key]:
+            # A line another live plan's meal is counted into stays: this
+            # week's yes is not next week's, and the move alone is booked.
+            for row in _own_lines(lines[key]):
                 if row["status"] != "removed":
                     _pre_shop.drop_grocery_item_pre_shop(row["id"], author=FREEZER_REMOVED_BY)
                     set_aside.append(row["id"])

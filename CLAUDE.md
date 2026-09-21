@@ -422,14 +422,19 @@ why*, not duplicating the diff.
   doors: `defrost._grocery_lines_by_item` is scoped to the plan
   (`source_weekly_plan_id` = plan or NULL) and `frozen` is the plan's own
   booked nights, so next week's yes no longer pre-selects this week's
-  chip; Shop's yes carries the line's quantity and both doors read one
+  chip; a line two live weeks share (the ingest folds next week's chicken
+  onto this week's unbought line and restamps it — `grocery._merge_target`)
+  is found through the ledger and is nobody's to take off: the move alone
+  is booked and the item reads `on_list` False with `on_list_reason`
+  `shared`; Shop's yes carries the line's quantity and both doors read one
   `_MOVE_ITEM_RE`; a refused yes (4xx) puts Shop's question back; the
   step reopened with an answer standing shows "Keep it as it is" (leaves,
   writes nothing) instead of "Nothing frozen" — un-tapping a chip is the
   way to cancel a move, whichever door booked it.
 - **2026-09-21 — The freezer step asks about EVERY meat in the week, and a
   yes takes the line off the list and books the move. Branch
-  `freezer-at-approval-all-meat`, NOT merged at the time of writing.** Loop
+  `freezer-at-approval-all-meat`, merged via the integration branch
+  `core-loop-followups-2026-09-21` (entry above).** Loop
   Board card 3e21f4c0 (Emily, 2026-09-19: "it is for the user to be able to
   flag if they have meat in the freezer … takes the mental energy off the
   user by asking the question so they don't need to think about it";
