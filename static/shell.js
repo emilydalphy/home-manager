@@ -9860,7 +9860,7 @@
   function isRealCook(entry) {
     return !!(entry && entry.source !== 'leftovers' && entry.source !== 'takeout' && entry.meta);
   }
-  // pendingDayFocus: {date, slot} set by the chat's "See your week" chip,
+  // pendingDayFocus: {date, slot} set by the chat's "Back to your week" button,
   // drained by applyPendingDayFocus once the days for that week are
   // actually loaded. Null the rest of the time.
   // step / mealSlot: which of the three Meals steps is showing and, on the
@@ -14640,7 +14640,7 @@
 
     renderMealsStep(panel);
     renderWeekSheetRows(days);
-    // Chat's "See your week" chip may have asked for a specific day before
+    // Chat's "Back to your week" button may have asked for a specific day before
     // this week's days existed — now they do. No-op unless one is pending.
     applyPendingDayFocus(panel);
   }
@@ -17676,14 +17676,17 @@
       var examples = typeof document !== 'undefined' && document.getElementById('ask-examples');
       if (examples && actions.length) { examples.innerHTML = ''; examples.hidden = true; }
       chipsEl.innerHTML = actions.map(function (q, i) {
-        return '<button type="button" class="ask-chip" data-i="' + i + '">' + escapeHtml(q.label) + '</button>';
+        // `primary` (computeNextStepChips' "Back to your week") is the
+        // sheet's one apricot button, full width, not a chip in the row.
+        return '<button type="button" class="ask-chip' + (q.primary ? ' ask-chip-primary' : '') +
+          '" data-i="' + i + '">' + escapeHtml(q.label) + '</button>';
       }).join('');
       chipsEl.querySelectorAll('.ask-chip').forEach(function (chip) {
         chip.addEventListener('click', function () {
           var action = actions[Number(chip.dataset.i)];
           // The post-change next-step chips (offerNextStepChips) navigate
           // directly rather than sending a message — "Open the list",
-          // "Plan my stops" and "See your week" are places to go, not
+          // "Plan my stops" and "Back to your week" are places to go, not
           // things to ask about.
           if (action.onClick) return action.onClick();
           // Everything else SENDS. There used to be a third branch here —
@@ -17716,7 +17719,7 @@
   // NOTE (2026-09-08): this pair was added by e2024a4 and then silently
   // lost from main in merge 2d69951 ("Merge custom-date-range"), which
   // took the other side of the conflicted region wholesale. Restored here
-  // alongside the "See your week" chip below, because that chip has
+  // alongside the "Back to your week" button below (then "See your week"), because it has
   // nowhere to live without it.
   //
   // Priority for the PRIMARY chip when a turn touched more than one area:
@@ -17724,13 +17727,17 @@
   // it just added) beats a plain grocery edit, which beats an unapproved
   // draft edit — the biggest life-cycle event wins.
   //
-  // "See your week" (Emily, 2026-09-08, Loop Board "Tweak-the-week chat:
-  // after a swap the flow dies") rides ahead of that primary whenever the
-  // turn edited a draft week: after a swap the receipt card says WEEK
-  // UPDATED but every other affordance here only sends another message,
-  // so there was no way to go LOOK at what just changed without hunting
-  // for the tab yourself. It goes FIRST because looking is free and
-  // reversible and approving is neither — see, then approve.
+  // A draft edit gets ONE way on: "Back to your week" (Emily, 2026-09-20,
+  // her phone, after "Done — every breakfast this week is …" with "See
+  // your week", "Approve this week" AND the card's "View" all on screen:
+  // "It's confusing where the user needs to go from here"). It is the
+  // sheet's primary — full width, the one apricot — and it lands on the
+  // first row that changed. "Approve this week" is gone from here: the
+  // draft's own Approve is a tap away once they're back on it, and
+  // approving from inside the chat was the second voice. (Before that,
+  // 2026-09-08: "See your week" ahead of "Approve this week", because
+  // after a swap every affordance in the sheet only sent another message
+  // and there was no way to go LOOK at what just changed.)
   function computeNextStepChips(actions) {
     var weekAction = null, groceryAction = null;
     (actions || []).forEach(function (a) {
@@ -17746,34 +17753,29 @@
     var chips = [];
     if (weekAction && !weekApproved) {
       chips.push({
-        label: 'See your week',
-        // The receipt card's own View does activateTab(action.tab) after
-        // closeAskSheet(); this does the same, plus the two things the
-        // card can't: it pins the Plan state (not Cook) and lands on the
-        // day that changed.
+        label: 'Back to your week',
+        primary: true,
+        // Closes the sheet, pins the Plan state (not Cook) and lands on
+        // the day that changed with the row ringed and scrolled to
+        // (focusChangedWeekDay) — the receipt card's View used to do only
+        // the first two.
         onClick: function () {
           closeAskSheet();
           focusChangedWeekDay(weekAction.date, weekAction.slot);
         }
       });
+      return chips;
     }
-    // Both of these close the sheet before they go, like "See your week"
-    // above and the receipt cards' own View: activateTab only switches the
-    // panel underneath, and on a phone the sheet covers that panel — so
-    // without the close the tap looked like nothing (Emily, 2026-09-13,
-    // already on Shop with the sheet open: "I'm clicking 'open the list'
-    // and it's not bringing me anywhere").
+    // Both of these close the sheet before they go, like "Back to your
+    // week" above and the receipt cards' own View: activateTab only
+    // switches the panel underneath, and on a phone the sheet covers that
+    // panel — so without the close the tap looked like nothing (Emily,
+    // 2026-09-13, already on Shop with the sheet open: "I'm clicking 'open
+    // the list' and it's not bringing me anywhere").
     if (weekApproved) {
       chips.push({ label: 'Open the list', onClick: function () { closeAskSheet(); activateTab('grocery', true); } });
     } else if (groceryAction) {
       chips.push({ label: 'Plan my stops', onClick: function () { closeAskSheet(); activateTab('grocery', true, { groScreen: 'plan' }); } });
-    } else if (weekAction) {
-      // The one wording for "there's a draft, go approve it". It used to
-      // be shared with the pre-conversation quick actions; ASK_INTENTS
-      // dropped it when it went fixed, and item 15's per-tab COACH_EXAMPLES
-      // that replaced ASK_INTENTS doesn't say it either, so this is the
-      // only place it lives.
-      chips.push({ label: 'Approve this week', msg: 'I’d like to approve this week’s plan.' });
     }
     return chips;
   }
@@ -17837,6 +17839,12 @@
     // Long enough to notice, short enough that it's gone before it can be
     // mistaken for a state the day is now in.
     setTimeout(function () { target.classList.remove('just-changed'); }, 2000);
+    // And on screen: after "Back to your week" the changed row is the
+    // reason they came back, so the page scrolls to it rather than
+    // leaving it under the fold on a long day (Emily, 2026-09-20).
+    if (typeof target.scrollIntoView === 'function') {
+      try { target.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { target.scrollIntoView(); }
+    }
   }
 
   function splitTableRow(line) {
@@ -18015,6 +18023,26 @@
         wrap.appendChild(held);
         return;
       }
+      // A draft edit's card is a receipt, not a door (Emily, 2026-09-20:
+      // "It's confusing where the user needs to go from here" — this
+      // card's View sat beside two chips that also went to the week).
+      // Tick, "Week updated", the count; the one way on is the primary
+      // Back to your week under it (computeNextStepChips). An approval's
+      // card keeps its View, because its chip goes to the list instead.
+      if (isDraftWeekAction(action)) {
+        var receipt = document.createElement('div');
+        receipt.className = 'ask-action-card is-receipt';
+        receipt.innerHTML =
+          '<span class="ask-action-tick" aria-hidden="true">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M5 12l4 4L19 7"/></svg>' +
+          '</span>' +
+          '<span class="ask-action-text">' +
+            '<span class="ask-action-kicker">' + escapeHtml(action.kicker) + '</span>' +
+            '<span class="ask-action-change">' + escapeHtml(action.change) + '</span>' +
+          '</span>';
+        wrap.appendChild(receipt);
+        return;
+      }
       var card = document.createElement('button');
       card.type = 'button';
       card.className = 'ask-action-card';
@@ -18032,6 +18060,13 @@
       wrap.appendChild(card);
     });
     return wrap;
+  }
+
+  // The one signal there is for "this turn edited the draft, not approved
+  // it": app/main.py's approval card is the only week card whose change
+  // text says "approved" — the same test computeNextStepChips makes.
+  function isDraftWeekAction(action) {
+    return !!(action && action.tab === 'week' && !/approved/i.test(action.change || ''));
   }
 
   // ---------- The change card ----------
@@ -18658,6 +18693,7 @@
     closeWeekSheet();
     closeMealsMoreSheet();
     if (context) setAskContext(context);
+    setAskBackLabel(askBackLabel(askContext));
     openSheet(askSheet, askScrim);
     if (!askSheetHistoryPushed) {
       window.history.pushState({ tab: currentTabKey(), askSheet: true }, '', window.location.pathname);
@@ -18671,6 +18707,26 @@
       askInput.focus();
     }
   }
+  // What the sheet's Back is called (Emily, 2026-09-20: "It's confusing
+  // where the user needs to go from here"). "Back to your week" when the
+  // sheet was opened about the week — from the Plan tab's ask bar
+  // (weekly_plan) or a meal card (planned_meal) — or simply over the Plan
+  // tab; plain "Back" anywhere else, where "your week" isn't what's
+  // underneath. Decided at open time: the tab underneath doesn't change
+  // while the sheet is up.
+  function askBackLabel(context) {
+    var kind = context && context.kind;
+    if (kind === 'planned_meal' || kind === 'weekly_plan') return 'Back to your week';
+    if (typeof currentTabKey === 'function' && currentTabKey() === 'week') return 'Back to your week';
+    return 'Back';
+  }
+  function setAskBackLabel(label) {
+    var el = document.getElementById('ask-sheet-back-label');
+    if (el) el.textContent = label;
+    var btn = document.getElementById('ask-sheet-back');
+    if (btn) btn.setAttribute('aria-label', label);
+  }
+
   // Every caller — scrim tap, the Back button, Escape, a sent message, and
   // the shell's popstate listener on the back gesture — just forgets the
   // pushed entry rather than calling history.back() on it: deliberately

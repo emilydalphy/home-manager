@@ -2114,6 +2114,26 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 }
 .ask-action-card .ask-action-change { font-family: var(--font-body); font-size: 16px; color: var(--ink); }
 .ask-action-card .ask-action-view { flex-shrink: 0; font-family: var(--font-body); font-weight: 700; font-size: 15px; color: var(--ink-strong); }
+/* A draft edit's card is a receipt (buildAskMessageEl, 2026-09-20): a
+   celadon tile with a tick and no View — settled, already true — and the
+   way on is the primary button under it, not the card. */
+.ask-action-card.is-receipt {
+  cursor: default;
+  background: var(--celadon-tint);
+  border-color: var(--celadon-edge);
+}
+.ask-action-card.is-receipt .ask-action-kicker { color: var(--celadon-label); }
+.ask-action-card .ask-action-tick {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--celadon);
+  color: var(--on-accent-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 /* ---------- The change card and the Remembered chip ----------
    Under an assistant reply (shell.js mountChangeCard / buildAskMessageEl;
@@ -2301,6 +2321,20 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   min-height: 44px;
 }
 .ask-chip:hover { background: var(--sand); }
+/* The sheet's one primary — "Back to your week" after a draft edit
+   (computeNextStepChips, 2026-09-20). Full width, apricot, dark ink on
+   it (hard rule 1); the only apricot fill in the sheet. */
+.ask-chip-primary {
+  flex: 1 1 100%;
+  min-height: 52px;
+  border-radius: var(--radius-control);
+  background: var(--apricot);
+  color: var(--on-accent-ink);
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: -.02em;
+}
+.ask-chip-primary:hover { background: var(--apricot); }
 
 /* The subject line above the composer — "About Tuesday's dinner · Turkey
    Burgers" — for a chat opened from a meal card (Emily, 2026-09-13). One

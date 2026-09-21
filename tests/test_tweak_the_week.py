@@ -12,13 +12,18 @@ Two decisions, tested at the two levels they live at.
     what they always were. No API call is made — the client is stubbed the
     same way tests/test_agent_turn_recording.py stubs it.
 
-(2) The chat offers a "See your week" chip beside "Approve this week"
-    after a turn that edited the draft, and nothing at all after a turn
-    that changed nothing. computeNextStepChips is pure (actions in, chip
-    descriptors out), so it is lifted out of static/shell.js and run under
-    node — the same harness idea as tests/test_leftovers_batch.py, which
-    exists because "assert the source mentions the word" is not a test of
-    what the screen does.
+(2) The chat offers ONE primary "Back to your week" after a turn that
+    edited the draft, and nothing at all after a turn that changed
+    nothing. (Until 2026-09-21 this was a "See your week" chip beside
+    "Approve this week" — Emily, 2026-09-20, with both of those and the
+    card's View on screen after "Done — every breakfast this week is …":
+    "It's confusing where the user needs to go from here". Loop Board
+    "Chat on the draft — do the whole-week ask, then 'Back to your
+    week'".) computeNextStepChips is pure (actions in, chip descriptors
+    out), so it is lifted out of static/shell.js and run under node — the
+    same harness idea as tests/test_leftovers_batch.py, which exists
+    because "assert the source mentions the word" is not a test of what
+    the screen does.
 
 Also covered: the ChatAction date/slot the chip navigates by
 (app/main.py _changed_day), including the calls that legitimately have no
@@ -168,6 +173,7 @@ def _week_card(name: str, args: dict, result: dict | None = None):
 
 
 THURSDAY = (datetime.date.today() + datetime.timedelta(days=3)).isoformat()
+MONDAY = datetime.date.today().isoformat()
 
 
 def test_a_swap_says_which_day_and_slot_it_changed():
@@ -213,6 +219,93 @@ def test_a_grocery_card_never_carries_a_day():
     assert grocery and grocery[0].date is None and grocery[0].slot is None
 
 
+# ---------- the whole-week card (Emily, 2026-09-20) ----------
+# "For all the breakfasts let's do boiled eggs and avocado toast" is seven
+# swap_meal_in_plan calls in one turn. The card used to be the LAST one's
+# ("Swapped in boiled eggs…", pointing at Sunday); it says the count now
+# and points at the first day, so Back to your week lands on the first
+# change. Loop Board "Chat on the draft — do the whole-week ask, then
+# 'Back to your week'".
+
+
+def _turn_with_swaps(swaps: list[tuple[str, str, str]]):
+    """(date, slot, new_meal) per call, in the order the model made them."""
+    assistant = {"role": "assistant", "content": []}
+    results = {"role": "user", "content": []}
+    for i, (date, slot, meal) in enumerate(swaps):
+        assistant["content"].append({
+            "type": "tool_use", "id": f"toolu_{i}", "name": "swap_meal_in_plan",
+            "input": {"weekly_plan_id": 1, "meal_date": date, "slot": slot, "new_meal": meal},
+        })
+        results["content"].append({
+            "type": "tool_result", "tool_use_id": f"toolu_{i}",
+            "content": json.dumps({"status": "ok"}), "is_error": False,
+        })
+    return [], [assistant, results]
+
+
+def _days(n: int, start_offset: int = 0) -> list[str]:
+    today = datetime.date.today()
+    return [(today + datetime.timedelta(days=start_offset + i)).isoformat() for i in range(n)]
+
+
+def test_seven_breakfast_swaps_become_one_card_that_says_the_count():
+    days = _days(7)
+    # Sent last-to-first on purpose: "first change" means the earliest day,
+    # not whichever call the model happened to make last.
+    before, after = _turn_with_swaps([(d, "breakfast", "Boiled eggs and avocado toast") for d in reversed(days)])
+    cards = app_main.summarize_chat_actions(before, after)
+    assert len(cards) == 1
+    card = cards[0]
+    assert card.kicker == "Week updated"
+    assert card.change == "7 breakfasts swapped"
+    assert (card.date, card.slot) == (days[0], "breakfast")
+
+
+def test_the_plural_is_the_slot_s_own():
+    days = _days(3)
+    before, after = _turn_with_swaps([(d, "lunch", "Wraps") for d in days])
+    assert app_main.summarize_chat_actions(before, after)[0].change == "3 lunches swapped"
+
+
+def test_swaps_across_slots_say_meals():
+    days = _days(2)
+    before, after = _turn_with_swaps([(days[0], "breakfast", "Eggs"), (days[1], "dinner", "Tacos")])
+    card = app_main.summarize_chat_actions(before, after)[0]
+    assert card.change == "2 meals swapped"
+    assert (card.date, card.slot) == (days[0], "breakfast")
+
+
+def test_one_swap_keeps_its_own_card():
+    """A single change already says what happened; the count is for many."""
+    card = _week_card("swap_meal_in_plan", {
+        "weekly_plan_id": 1, "meal_date": THURSDAY, "new_meal": "Beef Burgers", "slot": "dinner",
+    })
+    assert card.change == "Swapped in Beef Burgers"
+
+
+def test_two_swaps_on_the_same_day_are_not_a_whole_week():
+    """Both of Thursday's snacks changed: one day, so the ordinary card."""
+    before, after = _turn_with_swaps([(THURSDAY, "snack", "Apple"), (THURSDAY, "snack", "Trail mix")])
+    card = app_main.summarize_chat_actions(before, after)[0]
+    assert card.change == "Swapped in Trail mix"
+
+
+def test_an_approval_in_the_same_turn_keeps_the_approval_card():
+    """The shell reads "approved" off the week card to offer the list."""
+    days = _days(2)
+    before, after = _turn_with_swaps([(d, "breakfast", "Eggs") for d in days])
+    after[0]["content"].append({
+        "type": "tool_use", "id": "toolu_ok", "name": "approve_weekly_plan", "input": {"weekly_plan_id": 1},
+    })
+    after[1]["content"].append({
+        "type": "tool_result", "tool_use_id": "toolu_ok",
+        "content": json.dumps({"status": "approved", "groceries_added_count": 4}), "is_error": False,
+    })
+    week = [a for a in app_main.summarize_chat_actions(before, after) if a.tab == "week"][0]
+    assert "approved" in week.change
+
+
 # ---------- (2) the chips themselves, run rather than read ----------
 
 SHELL_JS = Path(__file__).resolve().parent.parent / "static" / "shell.js"
@@ -253,7 +346,7 @@ def _chips(actions: list[dict]) -> list[dict]:
         "console.log(JSON.stringify(chips.map(function (c) {\n"
         "  navCalls = [];\n"
         "  if (c.onClick) c.onClick();\n"
-        "  return { label: c.label, msg: c.msg || null, navigates: !!c.onClick, did: navCalls };\n"
+        "  return { label: c.label, msg: c.msg || null, primary: !!c.primary, navigates: !!c.onClick, did: navCalls };\n"
         "})));\n"
     )
     res = nodeharness.run_node(harness, timeout=30)
@@ -273,21 +366,31 @@ def test_a_turn_that_changed_nothing_offers_no_chips():
 
 
 @_needs_node
-def test_a_draft_edit_offers_seeing_the_week_before_approving_it():
+def test_a_draft_edit_offers_one_primary_back_to_your_week():
+    """One way on, and it is a button, not a pill: the sheet's primary.
+    No "Approve this week" — approving from inside the chat was the second
+    voice; the draft's own Approve is a tap away once they're back on it."""
     chips = _chips([_week_action()])
-    assert [c["label"] for c in chips] == ["See your week", "Approve this week"]
-    # Looking is free and reversible; approving is neither — so looking is
-    # first, and it navigates rather than sending yet another message.
+    assert [c["label"] for c in chips] == ["Back to your week"]
+    assert chips[0]["primary"] is True
     assert chips[0]["navigates"] is True
-    assert chips[1]["navigates"] is False
-    assert chips[1]["msg"] == "I’d like to approve this week’s plan."
+    assert chips[0]["msg"] is None
 
 
 @_needs_node
-def test_seeing_the_week_closes_the_sheet_and_lands_on_the_day_that_changed():
+def test_back_to_your_week_closes_the_sheet_and_lands_on_the_day_that_changed():
     did = _chips([_week_action()])[0]["did"]
     assert did[0] == ["closeAskSheet"], "the receipt stays readable until this is tapped"
     assert did[1] == ["focusChangedWeekDay", THURSDAY, "dinner"]
+
+
+@_needs_node
+def test_a_whole_week_change_lands_on_the_first_row_that_changed():
+    """"For all the breakfasts…": app/main.py's card points at the earliest
+    day (see test_seven_breakfast_swaps_become_one_card), and the button
+    goes where the card points."""
+    did = _chips([_week_action(change="7 breakfasts swapped", date=MONDAY, slot="breakfast")])[0]["did"]
+    assert did[1] == ["focusChangedWeekDay", MONDAY, "breakfast"]
 
 
 @_needs_node
@@ -334,9 +437,8 @@ def test_every_navigating_chip_closes_the_sheet_before_it_goes():
 
 
 @_needs_node
-def test_a_draft_edit_that_also_touched_the_list_still_offers_the_week():
-    """Both areas changed: the primary keeps its documented priority
-    (grocery over a draft edit), but the week is still what the household
-    was just looking at, so the look-at-it chip stays."""
+def test_a_draft_edit_that_also_touched_the_list_still_offers_only_the_week():
+    """Both areas changed: the week is what the household was just looking
+    at, and one way on is the point — the list's own card keeps its View."""
     chips = _chips([_week_action(), {"kicker": "LIST UPDATED", "change": "Added buns", "tab": "grocery"}])
-    assert [c["label"] for c in chips] == ["See your week", "Plan my stops"]
+    assert [c["label"] for c in chips] == ["Back to your week"]
