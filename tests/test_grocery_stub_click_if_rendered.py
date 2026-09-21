@@ -17,6 +17,12 @@ not draw. `clickHandlerDirectly` is the old spelling, kept under a name
 that says what it is, for the two taps that genuinely mean "call the
 handler directly".
 
+What the mirror test below can and cannot see is written out at the top of
+`shop_harness.CLICK` and is worth reading before trusting it: it pins that
+every line the mirror copies is STILL THERE, comments stripped, so a moved
+or added step renderer reddens it — and it cannot see a rule renderGrocery
+has GAINED about which screen is up.
+
 The first four tests here are the reproduction, kept as the guard: each
 one is a tap that used to run and now raises.
 
@@ -207,9 +213,50 @@ console.log(JSON.stringify(tried(function () {
 # --- 3. the mirror, pinned against renderGrocery's own source ---------------
 
 
-def _fn_source(name: str) -> str:
+def _strip_js_comments(src: str) -> str:
+    """`src` with every // comment taken off, string literals left alone.
+
+    Not fussiness: the first cut of the guard below searched the raw
+    source, and a reviewer satisfied it by changing renderGrocery's real
+    dispatch and leaving the old line above it as a comment —
+
+        // else body.innerHTML = groListHtml(data);
+        else body.innerHTML = groListHtmlV2(data);
+
+    — which passed. An assertion prose can satisfy is not an assertion;
+    this repo's log has had to unpick that three times. Same job as
+    `_code_of` in the Python guards, done by hand because there is no JS
+    parser here.
+    """
+    out = []
+    for line in src.splitlines():
+        quote = None
+        cut = len(line)
+        i = 0
+        while i < len(line):
+            c = line[i]
+            if quote:
+                if c == "\\":
+                    i += 2
+                    continue
+                if c == quote:
+                    quote = None
+            elif c in "'\"`":
+                quote = c
+            elif c == "/" and line[i + 1:i + 2] == "/":
+                cut = i
+                break
+            i += 1
+        kept = line[:cut].rstrip()
+        if kept:
+            out.append(kept)
+    return "\n".join(out)
+
+
+def _fn_code(name: str) -> str:
+    """One of shell.js's functions, comments off."""
     start = SHELL_JS.index("  function " + name + "(")
-    return SHELL_JS[start:SHELL_JS.index("\n  }\n", start)]
+    return _strip_js_comments(SHELL_JS[start:SHELL_JS.index("\n  }\n", start)])
 
 
 def test_the_helper_mirrors_render_grocerys_own_dispatch():
@@ -218,7 +265,7 @@ def test_the_helper_mirrors_render_grocerys_own_dispatch():
     than running it — and a fourth step renderer has to be added to the
     mirror, not quietly left unguarded. These are the lines the mirror is
     a copy of; if one of them moves, come and move the mirror with it."""
-    render = _fn_source("renderGrocery")
+    render = _fn_code("renderGrocery")
     for line in (
         "if (step === 'carry') body.innerHTML = groCarryHtml(data);",
         "else if (step === 'sortall') groSortAllRender(body, data);",
@@ -234,7 +281,7 @@ def test_the_helper_mirrors_render_grocerys_own_dispatch():
     ):
         assert fallback in render, f"renderGrocery's step fallback moved: {fallback!r}"
     # The card-less path of the sortall renderer is the HTML the mirror uses.
-    assert "body.innerHTML = groSortAllHtml(data);" in _fn_source("groSortAllRender")
+    assert "body.innerHTML = groSortAllHtml(data);" in _fn_code("groSortAllRender")
 
 
 def test_the_head_tools_are_still_hidden_so_the_mirror_may_leave_them_out():
@@ -293,3 +340,29 @@ def test_the_harness_is_a_module_and_not_collected():
     """shop_harness.py holds the helper; pytest must not try to run it."""
     tree = ast.parse((TESTS / "shop_harness.py").read_text(encoding="utf-8"))
     assert not [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name.startswith("test_")]
+
+
+@needs_node
+def test_a_shop_name_with_an_ampersand_is_compared_the_way_the_markup_writes_it():
+    """Attribute values in the markup have been through escapeHtml, so the
+    comparison has to be too. A household types its shops in ("+ Add a
+    store"), so "M&S" is reachable; before 2026-09-21 the guard built
+    data-store="M&S", never matched the chip's data-store="M&amp;S", and
+    refused a control that was on the screen. Both directions."""
+    out = run(_TRIED + """
+setUp(2, [], ['M&S', 'Costco']);
+groceryState.openRowId = '1';
+const pill = groListHtml(groceryState.data).indexOf('data-store="M&amp;S"') !== -1;
+const real = tried(function () { clickIfRendered({ gro: 'row-store', id: '1', store: 'M&S' }); });
+const made_up = tried(function () { clickIfRendered({ gro: 'row-store', id: '1', store: 'M&Q' }); });
+settle(function () {
+  console.log(JSON.stringify({ pill: pill, real: real, made_up: made_up,
+    posts: POSTS.map(function (p) { return [p.url, p.body.store]; }) }));
+});
+""")
+    assert out["pill"] is True, "the pill really is on the screen, under the escaped name"
+    assert out["real"] is None, "so the tap goes through"
+    assert out["posts"] == [["/api/grocery-list/1/store", "M&S"]], "…and writes the name the household typed"
+    assert 'none of them data-id="1" data-store="M&amp;Q"' in out["made_up"], (
+        "a shop that is not on the screen is still refused, and the message quotes the markup"
+    )

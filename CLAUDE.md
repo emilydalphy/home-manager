@@ -412,9 +412,33 @@ why*, not duplicating the diff.
     `groDockHtml` — chosen by `renderGrocery`'s own step and its own
     fallbacks, never a hand-kept list of which control belongs where. There
     is no DOM in the harness, so it MIRRORS that dispatch rather than
-    running it, and `test_grocery_stub_click_if_rendered.py` pins the mirror
-    against `renderGrocery`'s source so a fourth step renderer fails loudly
-    instead of quietly leaving its controls unguarded.
+    running it.
+  - **THE SOURCE MARKER PINS PRESENCE, NOT COMPLETENESS, and the first
+    version of this entry over-promised by saying the mirror cannot
+    quietly drift.** What is true, and a reviewer verified it: add a fourth
+    step RENDERER, or move one of the dispatch lines, and the marker
+    reddens. What is NOT true is the broader reassurance: the same reviewer
+    added a fourth FALLBACK to `renderGrocery` (`if (step === 'sortall' &&
+    groceryState.substOpenId) step = 'list'`), after which the mirror
+    disagreed with `renderGrocery` about which step is on screen while all
+    14 guard tests stayed green. A marker cannot see what the source has
+    GAINED. Said plainly in the harness comment as well, since that is
+    where the next person will be standing: a new rule about WHICH SCREEN
+    IS UP has to be copied by hand, and nothing will remind them.
+  - **THE MARKER WAS SATISFIABLE BY ITS OWN COMMENT until the review
+    round, which is the exact class this log records being bitten by three
+    times.** It sliced raw `SHELL_JS`; the reviewer changed the real
+    dispatch to `groListHtmlV2(data)` and left the old line above it as a
+    `//` comment, and it passed. It reads comment-stripped code now
+    (`_strip_js_comments`, the `_code_of` job done by hand because there is
+    no JS parser here), and that mutation reddens it — measured both ways.
+  - **Attribute values are compared THROUGH `escapeHtml`, and the first
+    cut did not**, so the guard could refuse a control the screen really
+    draws: a shop typed in as "M&S" is `data-store="M&amp;S"` on the chip
+    while the guard looked for `data-store="M&S"` — the guard blaming the
+    screen for its own arithmetic. No fixture reaches it (Costco, Loblaws,
+    Metro, Farm Boy), and households type shop names freely through "+ Add
+    a store", so it is reachable. Pinned in both directions.
   - **The crumb had to be in the screen too, and that was a defect in the
     first cut of the helper rather than a finding.** `step-back` lives in
     the panel scaffold, not in a step renderer, so the first version
@@ -439,7 +463,16 @@ why*, not duplicating the diff.
     with no DOM cannot draw. **NO REAL SCREEN DEFECT was behind any of
     them** — reported as the answer the sweep gave rather than the one it
     was hoping for. No assertion was weakened; the three fixed tests assert
-    exactly what they asserted before.
+    exactly what they asserted before, and reverting only the three setup
+    taps reddens exactly those three tests and nothing else.
+  - **Pre-existing and NOT this branch's, found by review and written down
+    rather than fixed:** `test_a_second_tap_on_a_row_that_is_already_going
+    _writes_nothing_more` is named for the `is-leaving` early return at
+    `shell.js:6024`, and that return never runs in this harness —
+    `closest()` answers null, so `pickRow` is null and the guard is
+    skipped. What actually stops the second write is `groSortAllAssign`'s
+    own `if (!item) return`. The test's CLAIM holds; the mechanism it is
+    named after is not the one being exercised.
   - **Three files carried their own COPY of the stub** (`carry_over`,
     `have_it_and_instead`, `spices`) and so their own copy of the hole;
     they read the shared `CLICK` now, so `onGroceryClick` is dispatched
@@ -449,16 +482,22 @@ why*, not duplicating the diff.
     never opened, where the browser would find no element and the handler
     would do nothing. `clickIfRendered` is what stops a test leaning on it;
     the fake is still more generous than a real panel.
-  - **Mutation-checked rather than assumed.** Making `screenHtml` see
-    nothing reddens **29** tests across the nine files, so the guard really
-    runs at the converted sites. Removing the identity half of the check
-    reddens **0 of those 29** and **2 of the guard file's own** — so the
-    "which row" half is pinned by the new file and by nothing else, which
-    is worth knowing before anyone simplifies it. Dropping the crumb from
-    the mirror reddens 2. Making `clickIfRendered` check nothing reddens 5.
-  - `tests/test_grocery_stub_click_if_rendered.py` (13). Suite **5600
+  - **Mutation-checked rather than assumed, six of them, every number
+    re-read after the review round.** Making `screenHtml` see nothing
+    reddens **29** of the nine files' 280, so the guard really runs at the
+    converted sites. Removing the identity half of the check reddens **0 of
+    those 29** and **3 of the guard file's 14** — so the "which row" half
+    is pinned by the new file and by nothing else, worth knowing before
+    anyone simplifies it. Dropping the crumb from the mirror reddens 2.
+    Making `clickIfRendered` check nothing reddens **6 of 14**. The review
+    round's two: the real dispatch changed with the old line left above it
+    as a comment reddens the marker now and **PASSED against the raw-source
+    version it replaced** (measured both ways, one command apart); and
+    comparing the raw attribute value again reddens the ampersand test and
+    only that.
+  - `tests/test_grocery_stub_click_if_rendered.py` (14). Suite **5601
     passed, 1 failed** at `TZ=America/Toronto`, against a measured **5587
-    passed, 1 failed** on `f0f7238` — +13 is this file exactly, and the one
+    passed, 1 failed** on `f0f7238` — +14 is this file exactly, and the one
     failure is the same pre-existing
     `test_recipe_photo_import.py::test_the_cooker_view_and_the_week_menu_carry_the_credit_and_the_photo`,
     reproduced on the stashed merge base and red when run alone, so it is

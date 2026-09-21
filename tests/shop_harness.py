@@ -108,7 +108,7 @@ function fakeEl(dataset, row) {
   return {
     dataset: dataset, disabled: false,
     closest: function () { return row || null; },
-    classList: { toggle: function () {}, add: function () {}, remove: function () {}, contains: function () { return false; } },
+    classList: { toggle: function () {} },
     setAttribute: function () {},
     querySelectorAll: function () { return []; }
   };
@@ -122,9 +122,20 @@ function fakeEl(dataset, row) {
 // "a step that stopped making sense under its own feet falls back to the
 // root" fallbacks. It is a MIRROR of that dispatch, not a second opinion
 // about which controls a step has — every string below comes out of the
-// region's own renderers. test_grocery_stub_click_if_rendered.py pins the
-// mirror against renderGrocery's own source, so a fourth step renderer
-// fails loudly rather than quietly leaving its controls unguarded.
+// region's own renderers.
+//
+// WHAT THE GUARD FILE PINS, AND WHAT IT DOES NOT. Its source marker reads
+// renderGrocery's own code (comments stripped) and asserts every line the
+// mirror copies is still there, so a fourth step renderer — or a moved
+// dispatch line — fails loudly rather than quietly leaving its controls
+// unguarded. That is PRESENCE, not COMPLETENESS: it cannot see something
+// renderGrocery has GAINED. A reviewer proved it on 2026-09-21 by adding
+// a fourth fallback to renderGrocery
+//     if (groceryState.step === 'sortall' && groceryState.substOpenId) …
+// after which groScreenStep() below disagreed with renderGrocery about
+// which step is on screen while all 13 guard tests stayed green. So: if
+// you add a rule to renderGrocery about WHICH SCREEN IS UP, come and add
+// it here too. Nothing will remind you.
 function groScreenStep() {
   const data = groceryState.data;
   let step = groceryState.step;
@@ -187,7 +198,11 @@ function groNotRendered(dataset) {
     const attr = groDataAttr(k) + '="';
     return tags.some(function (t) { return t.indexOf(attr) !== -1; });
   });
-  const want = keys.map(function (k) { return groDataAttr(k) + '="' + String(dataset[k]) + '"'; });
+  // Through escapeHtml, because the markup's own value went through it:
+  // a shop somebody typed as "M&S" is data-store="M&amp;S" on the chip,
+  // and comparing the raw string would refuse a control that really is on
+  // the screen — the guard blaming the screen for its own arithmetic.
+  const want = keys.map(function (k) { return groDataAttr(k) + '="' + escapeHtml(String(dataset[k])) + '"'; });
   const hit = tags.some(function (t) {
     return want.every(function (w) { return t.indexOf(w) !== -1; });
   });
