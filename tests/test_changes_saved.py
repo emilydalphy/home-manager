@@ -306,12 +306,13 @@ def test_plan_the_week_has_the_pop_up_and_every_silent_save_uses_it():
     assert '<div id="toast" class="toast" hidden></div>' in PLAN_WEEK
     assert "var CHANGES_SAVED = 'Changes saved';" in PLAN_WEEK
     assert PLAN_WEEK.count("function toastSaved()") == 1
-    # Guests stepper, who's-here toggle, holiday answer, away stretch.
-    assert PLAN_WEEK.count("toastSaved();") == 4
+    # The day sheet's Done (one write for who's out and the guests, since
+    # the row-per-person sheet of 2026-09-21 — the per-tap guest stepper
+    # and presence toggle went with it), holiday answer, away stretch.
+    assert PLAN_WEEK.count("toastSaved();") == 3
     # Each one is in the success branch of its save, not the catch.
-    for marker in ("paintSlotBlock(dayEl, slot);\n      toastSaved();",
-                   "paintPresence(dayEl, slot);\n      toastSaved();",
-                   "if (open) paintDay(open);\n      toastSaved();",
+    for marker in ("paintCta();\n      toastSaved();",
+                   "reseedSheet(date);\n      toastSaved();",
                    "closeAwaySheet();\n      toastSaved();"):
         assert marker in PLAN_WEEK, marker
 

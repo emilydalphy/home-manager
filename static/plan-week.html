@@ -38,9 +38,10 @@
 
     Five steps: Starting when? · Any days that are different? · Any
     lunches on the go? · What are you in the mood for? · Anything else I
-    should plan around? The day sheet, the holiday card and the away range
-    picker under step 2 are unchanged from the 2026-09-11 build and are
-    styled further down; a second pass rebuilds the day sheet.
+    should plan around? Under step 2, the day sheet is a row per person
+    (board B1b, second pass 2026-09-21) and the holiday card and the away
+    range picker are the 2026-09-11 build; under step 4, "+ Add one" at
+    the end of the cuisines opens its own screen (boards B4a/B4b).
   */
   :root {
     color-scheme: light;
@@ -128,6 +129,30 @@
      reads as the second question on the screen — still 44px tall, hard
      rule 6, where the mockup drew them at 32. */
   .chip.small { font-size: 14px; padding: 0 14px; }
+  /* "+ Add one" at the end of the cuisines (board B2): dashed apricot, an
+     offer rather than a state — nothing is on the list until the screen
+     it opens says so. */
+  .chip.add {
+    border: 1.5px dashed var(--apricot); background: transparent; color: var(--apricot-label);
+    font-weight: 700; gap: 5px;
+  }
+  .chip.add:hover { border-color: var(--apricot-deep); color: var(--apricot-label-hover); }
+  .chip.add svg { width: 15px; height: 15px; }
+
+  /* ---------- Add a cuisine (boards B4a / B4b) ---------- */
+  /* Its own screen in the motion: the field, already focused, and the
+     "Did you mean" row under it. 16px+ so a phone doesn't zoom on focus. */
+  .field {
+    width: 100%; min-height: 54px; padding: 0 16px;
+    border-radius: var(--radius-control); border: 1.5px solid var(--apricot);
+    font-family: var(--font-body); font-size: 17px; background: var(--surface); color: var(--ink);
+  }
+  .field:focus { outline: none; border-color: var(--apricot-deep); box-shadow: 0 0 0 3px var(--apricot-rule); }
+  .field::placeholder { color: var(--ink-placeholder); }
+  #did-you-mean:empty, #did-you-mean-label[hidden] { display: none; }
+  /* "Mexican's in. I'll remember it." — the away sheet's .covers card
+     (celadon tint, the tick), under the cuisines once one is added. */
+  .covers[hidden] { display: none; }
 
   /* ---------- Cards ---------- */
   .card {
@@ -230,36 +255,81 @@
   }
   .ack:empty { display: none; }
 
-  /* ---- Day rows (Q1) ---- */
-  .day {
-    background: var(--surface-raised);
-    border: 1px solid var(--hairline);
-    border-radius: 14px;
-    padding: 14px 15px;
-    margin-bottom: 10px;
-  }
-  .day-head { display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px; }
-  .day-name { font-family: var(--font-display); font-weight: 700; font-size: 1rem; color: var(--ink-strong); }
-  .day-date { font-size: 0.8rem; color: var(--ink-secondary); }
+  /* ---- The day sheet's insides (board B1b, 2026-09-21) ----
+     A row per person: their initial in a circle, then three pills — No
+     breakfast · No lunch · No dinner. A pill on = out for that meal. Under
+     the rows, one line says what it adds up to; then the guests row, the
+     dinner line, Done. Nothing here saves on tap: Done writes the day in
+     one call (saveDaySheet), × puts it back the way it was. */
+  .day-body { display: flex; flex-direction: column; gap: 12px; }
   /* What the app already knows about this day, so the household isn't
      re-answering something it has been told. Grey on purpose: it's context,
      not an answer. */
-  .day-hint { font-size: 0.82rem; color: var(--ink-secondary); font-style: italic; margin-bottom: 10px; }
-  /* Small captions naming what each row of controls is asking — added so
-     "Nothing special" (née "Regular night") isn't left to explain itself,
-     and so the presence row reads as a question rather than a stray row of
-     initials. The presence row's own caption is the only label it has now:
-     a "WHO" eyebrow used to sit beside the initials as well, and under a
-     question that means the opposite ("Is anyone out?") it was the word
-     doing the misreading. */
-  .day-section-label {
-    font-size: 10px; font-weight: 800; letter-spacing: 0.08em;
-    text-transform: uppercase; color: var(--ink-secondary); margin: 0 0 6px;
+  .day-hint { font-size: 0.82rem; color: var(--ink-secondary); font-style: italic; margin: 0; }
+  .who-rows { display: flex; flex-direction: column; gap: 6px; }
+  .who-line { display: flex; align-items: center; gap: 8px; min-height: 48px; }
+  /* The initial — not a control, so no 44px rule applies, but it matches
+     the pills' height so the row reads as one line. Grows to fit two or
+     three letters (Em / Et, Emi / Emm — the server's display_initials rule)
+     without the pills wrapping at 390px. */
+  .who-avatar {
+    min-width: 44px; height: 44px; padding: 0 8px; flex: 0 0 auto;
+    border-radius: var(--radius-pill); border: 1.5px solid var(--hairline-deep);
+    background: var(--surface); display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--font-display); font-weight: 700; font-size: 16px; letter-spacing: -0.01em;
+    color: var(--ink);
   }
-  .day-section-label.presence-section-label { margin-top: 10px; }
+  .who-avatar.add { border-style: dashed; color: var(--ink-secondary); }
+  .who-pills { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; min-width: 0; }
+  /* The small pill: sand until it's on, spruce when it is. 44px tall (hard
+     rule 6) where the mockup drew 32; the size is in the type and the
+     padding instead. */
+  .pill {
+    min-height: 44px; padding: 0 10px;
+    display: inline-flex; align-items: center; white-space: nowrap;
+    font-family: var(--font-body); font-size: 13px; font-weight: 600;
+    border-radius: var(--radius-pill); border: 1.5px solid var(--sand);
+    background: var(--sand); color: var(--ink); cursor: pointer;
+  }
+  .pill:hover { border-color: var(--ink-strong); }
+  .pill.on { background: var(--spruce); border-color: var(--spruce); color: var(--on-spruce-ink); font-weight: 700; }
+  /* Same two notes as .opt below: :focus-visible so a tap leaves nothing
+     behind, and outranked by theme.css's !important copy. */
+  .pill:focus-visible { outline: 2px solid var(--apricot); outline-offset: 2px; }
+  /* What the rows add up to — "Emily's out for lunch and dinner — I'll
+     plan for Vic." Indented to the pills, under the people it's about. */
+  /* Its one line of room is there before it says anything: the sheet is
+     anchored to the bottom, so a line appearing under a tap would push
+     every pill up under the finger. */
+  .who-summary { font-size: 13px; font-weight: 500; line-height: 1.45; min-height: 19px; color: var(--ink-secondary); margin: 0 0 0 52px; }
+  .who-summary.trouble { color: var(--urgent-label); }
+  /* The guests row once there's a count: the words, then the stepper. */
+  .guests-count { display: inline-flex; align-items: center; gap: 10px; }
+  .guests-count[hidden] { display: none; }
+  .stepper-label { font-size: 14px; font-weight: 600; color: var(--ink); }
+  .stepper { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .stepper button {
+    width: 44px; height: 44px; flex-shrink: 0;
+    border-radius: var(--radius-control); border: 1.5px solid var(--hairline-strong);
+    background: var(--surface); color: var(--ink-strong);
+    font-size: 1.1rem; font-family: var(--font-body); line-height: 1; cursor: pointer;
+  }
+  .stepper button:hover:not(:disabled) { background: var(--celadon-tint); }
+  .stepper button:disabled { opacity: .35; cursor: default; }
+  .stepper output { min-width: 28px; text-align: center; font-weight: 700; font-size: 1rem; color: var(--ink-strong); }
+  /* The dinner line under a hairline: Short on time · Got time · Leftovers. */
+  .sheet-section { padding-top: 12px; border-top: 1.5px solid var(--hairline); display: flex; flex-direction: column; gap: 8px; }
+  .day-section-label {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.13em;
+    text-transform: uppercase; color: var(--ink-muted); margin: 0;
+  }
+  /* Read by screen readers, drawn for nobody: the full name beside an
+     initial that is only ever an abbreviation. */
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  /* The holiday block's own pills (holidayBlockHtml). */
   .tag-row { display: flex; flex-wrap: wrap; gap: 7px; }
   .tag {
-    padding: 8px 13px; min-height: 38px;
+    padding: 8px 13px; min-height: 44px;
     display: inline-flex; align-items: center;
     font-family: var(--font-body); font-size: 0.8rem; font-weight: 500;
     border-radius: var(--radius-pill);
@@ -305,26 +375,6 @@
     font-family: var(--font-body); font-size: 0.85rem; font-weight: 600; cursor: pointer;
   }
   .holiday-dish button:disabled, .holiday-host button:disabled { opacity: .45; cursor: default; }
-
-  /* ---- Guest follow-up ---- */
-  .guests {
-    margin-top: 12px; padding: 13px 14px;
-    background: var(--ground); border-radius: 12px;
-  }
-  .guests h3 { font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; color: var(--ink-strong); margin: 0 0 4px; }
-  .guests p { font-size: 0.83rem; line-height: 1.45; color: var(--ink-secondary); margin: 0 0 11px; }
-  .stepper-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
-  .stepper-label { font-size: 0.88rem; color: var(--ink); }
-  .stepper { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
-  .stepper button {
-    width: 36px; height: 36px; flex-shrink: 0;
-    border-radius: 9px; border: 1px solid var(--ink-strong);
-    background: var(--surface-raised); color: var(--ink-strong);
-    font-size: 1.1rem; font-family: var(--font-body); line-height: 1; cursor: pointer;
-  }
-  .stepper button:hover:not(:disabled) { background: var(--celadon-tint); }
-  .stepper button:disabled { opacity: .35; cursor: default; }
-  .stepper output { min-width: 30px; text-align: center; font-weight: 700; font-size: 0.98rem; color: var(--ink-strong); }
 
   /* The typed answer (step 5). 16px so a phone doesn't zoom the page on
      focus — onboarding's text boxes carry the same note. */
@@ -458,58 +508,6 @@
     body { transition: none; }
   }
 
-  /* ---------- Presence avatars (IntakeTrips mock) ----------
-     The one-off gesture: one tap takes a person out of one meal. Canonical
-     tokens only — this block is new code, so it never reaches for the
-     legacy aliases the older rules above still use (DESIGN_SYSTEM §1). */
-  /* One element, not two: .presence was a row holding the "WHO" eyebrow and
-     a .presence-chips box, and with the eyebrow gone its gap and its
-     align-items applied to a single child. data-slot is read by nothing and
-     is kept anyway — three identical rows sit in one sheet and it is what
-     tells them apart in the DOM. */
-  .presence { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 2px; }
-  /* 44px square, per hard rule 6 — nothing tappable is smaller. */
-  .avatar {
-    width: 44px; height: 44px; flex: 0 0 auto; border-radius: var(--radius-pill);
-    border: 1.5px solid var(--spruce); background: var(--surface);
-    display: flex; align-items: center; justify-content: center;
-    font-family: var(--font-body); font-size: 15px; font-weight: 800;
-    color: var(--ink-strong); cursor: pointer; padding: 0;
-  }
-  .avatar.out {
-    border-color: var(--hairline); background: var(--sand);
-    color: var(--ink-inactive); text-decoration: line-through;
-  }
-  /* :focus-visible, never :focus — a tap must leave nothing behind on the
-     initial, because an apricot ring sitting on the person you just took
-     out reads as "selected" and says the opposite of what the tap did
-     (Emily, 2026-09-15). This IS the whole mechanism: measured in Chromium
-     141 on the real page, a touch tap and a mouse click each leave the
-     outline at 0px while Tab, Enter and Space each leave it at 3px. A
-     blur() in the tap handler was tried and removed — it changed no ring
-     and dropped focus onto <body>, outside #day-sheet's own
-     aria-modal dialog. Neither this session nor the review could name an
-     engine that paints the ring on tap; if one turns up, fix it here.
-     Outranked in practice by theme.css's focus block, which carries
-     !important and is what actually paints — the same is true of .opt
-     below. */
-  .avatar:focus-visible { outline: 2px solid var(--apricot); outline-offset: 2px; }
-  .presence-summary {
-    font-size: 13px; font-weight: 700; line-height: 1.4;
-    color: var(--celadon-label); margin-top: 6px;
-  }
-  .presence-summary:empty { display: none; }
-  /* The offer to remember a one-off as a standing pattern. Dashed, because
-     it is an offer rather than a state — nothing has been remembered yet. */
-  .remember {
-    min-height: 44px; padding: 0 14px; margin-top: 8px;
-    display: inline-flex; align-items: center; gap: 7px;
-    border-radius: var(--radius-pill); border: 1.5px dashed var(--hairline-strong);
-    background: transparent; font-family: var(--font-body);
-    font-size: 12.5px; font-weight: 700; color: var(--ink-secondary); cursor: pointer;
-  }
-  .remember[hidden] { display: none; }
-
   .away-set {
     margin-top: 10px; display: flex; flex-direction: column; gap: 6px;
   }
@@ -561,7 +559,7 @@
   }
   .opt.wide-label { font-size: 12.5px; font-weight: 600; }
   .opt.on { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); font-weight: 800; }
-  /* Same two notes as .avatar's rule above: :focus-visible so a tap leaves
+  /* Same two notes as .pill's rule above: :focus-visible so a tap leaves
      nothing behind, and outranked by theme.css's !important copy. */
   .opt:focus-visible { outline: 2px solid var(--apricot); outline-offset: 2px; }
   .who-row { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -743,7 +741,30 @@
       <p class="eyebrow group-eyebrow">Or steer me &middot; as many as you like</p>
       <div class="chip-row" id="moods"></div>
       <p class="eyebrow group-eyebrow">Cuisines you fancy</p>
+      <!-- The household's list, then "+ Add one" (renderCuisines). -->
       <div class="chip-row" id="cuisines"></div>
+      <div class="covers" id="cuisine-added" hidden role="status">
+        <span class="covers-tick">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>
+        </span>
+        <span class="covers-text" id="cuisine-added-text"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- Add a cuisine (boards B4a / B4b) ----------
+       Its own screen, reached from "+ Add one": the same bones as a step
+       (crumb, heading, one line, the foot) without the eyebrow and bars,
+       because it isn't a step — ‹ Back and "Never mind" both return to
+       the mood screen with nothing changed. -->
+  <section id="q-cuisine" hidden>
+    <h1>Add a cuisine</h1>
+    <p class="step-sub">Type it and I&rsquo;ll remember it for next week too.</p>
+    <div class="step-body">
+      <label for="cuisine-field" class="sr-only">Cuisine</label>
+      <input type="text" class="field" id="cuisine-field" maxlength="40" autocomplete="off" autocapitalize="words" enterkeyhint="done" placeholder="Mexican, Ethiopian, Tex-Mex&hellip;" />
+      <p class="eyebrow group-eyebrow" id="did-you-mean-label" hidden>Did you mean</p>
+      <div class="chip-row" id="did-you-mean"></div>
     </div>
   </section>
 
@@ -787,11 +808,11 @@
   </div>
 </div>
 
-<!-- The day sheet: one day, every meal on it. The dinner block is the
-     card the Days question used to be a list of (tags, who's eating, the
-     guest steppers); breakfast and lunch get who's-eating and a guests
-     count of their own, written straight to attendance, which is what
-     portions and the list read. -->
+<!-- The day sheet (board B1b): one day, a row per person — their initial,
+     then No breakfast · No lunch · No dinner; under the rows, what it adds
+     up to; a guests row; the dinner line; Done. Everything is held in
+     `sheet` until Done writes it (attendance for the meals, the intake for
+     the dinner tags and the guests), and × discards it. -->
 <div class="sheet-scrim" id="day-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="day-sheet-title">
   <div class="sheet">
     <div class="sheet-head">
@@ -924,18 +945,20 @@
     cuisines: []
   };
 
-  // Each tag's consequence, stated in the household's own terms the moment
-  // it's tapped. COPY.md → Acknowledgements. Always a bare "I'll…" — never
-  // "So I'll", which reads as the app justifying itself rather than getting
-  // on with it.
+  // The dinner tags this screen has a word for (week_intake.NIGHT_TAGS).
+  // Only rush / unrushed / left are pills on the day sheet (board B1b):
+  // "nobody home" is everyone out for every meal, said through
+  // attendance, and stays here only so an "out" tag saved by an older
+  // sheet, or by chat, still has a word on its tile. The guests tag is the
+  // guests row's count, and "normal" has no word — an ordinary day says
+  // nothing.
   var TAGS = [
-    { key: 'normal', label: 'Nothing special', ack: 'plan a normal dinner you cook that evening.' },
-    { key: 'out',    label: 'Nobody home',   ack: 'plan nothing and buy nothing for this night.' },
-    { key: 'rush',   label: 'Short on time', ack: 'keep it under 20 minutes, or make the night before stretch to cover it.' },
-    { key: 'unrushed', label: 'Got time tonight', ack: 'let this dinner take longer than a weeknight usually gets.' },
-    { key: 'guests', label: 'Hosting guests', ack: 'scale the recipe and the shopping to the bigger table.' },
-    { key: 'left',   label: 'Leftovers',     ack: 'cook enough the night before instead of planning something new.' }
+    { key: 'out',    label: 'nobody home' },
+    { key: 'rush',   label: 'Short on time' },
+    { key: 'unrushed', label: 'Got time' },
+    { key: 'left',   label: 'Leftovers' }
   ];
+  var SHEET_TAGS = ['rush', 'unrushed', 'left'];
   // The holiday's four answers, in the household's words, and what each
   // one means the moment it's tapped (holidays.ANSWER_LABELS /
   // ANSWER_ACKS on the server — same words). Never assumed: "not sure
@@ -946,21 +969,22 @@
     { key: 'just_us', label: 'Just us', ack: 'plan that day like any other.' },
     { key: 'unsure',  label: 'Not sure yet', ack: 'leave it for now and ask again closer to the day.' }
   ];
-  // The one pair that contradicts each other: tapping one clears the other,
-  // the same way the server refuses to save both (week_intake.py).
-  var OPPOSITES = { rush: 'unrushed', unrushed: 'rush' };
   // Each label maps to a fuller line of guidance on the server
   // (week_intake.MOOD_GUIDANCE) — the pill is what you tap, not what the
   // planner reads. Protein-heavy / Veggie-heavy / Fibre-focused and "Try a
   // new cuisine" were Emily's asks (2026-09-04, 2026-09-11).
   var MOODS = ['Something warm', 'Lighter than usual', 'Comfort food', 'On the grill',
     'Protein-heavy', 'Veggie-heavy', 'Fibre-focused', 'Something new', 'Try a new cuisine'];
-  // The question above the initials, and the reason it isn't "Who's eating?"
-  // any more (Emily, flow 0 walk, 2026-09-15): a tap TAKES SOMEBODY OUT, so
-  // a label asking who's in made the household learn the rule by getting it
-  // wrong — and a wrong guess here writes an absence to the week. One
-  // constant because the same row appears three times in a day sheet.
-  var PRESENCE_QUESTION = 'Is anyone out?';
+  // The three meals, in eating order, and the pill for each on a person's
+  // row (board B1b). A pill on means OUT for that meal — the question
+  // above the rows says so ("Who's out, and when?"), because a tap that
+  // takes somebody out under a label asking who's in made the household
+  // learn the rule by getting it wrong (Emily, 2026-09-15).
+  var SHEET_SLOTS = ['breakfast', 'lunch', 'dinner'];
+  var SLOT_PILL = { breakfast: 'No breakfast', lunch: 'No lunch', dinner: 'No dinner' };
+  var SHEET_QUESTION = 'Who’s out, and when?';
+  var GUESTS_PILL = 'Guests for dinner';
+  var GUESTS_MAX = 10;
   // Five screens, one question each (Emily, 2026-09-21): Starting when? ·
   // Any days that are different? · Any lunches on the go? · What are you
   // in the mood for? · Anything else I should plan around?
@@ -1225,6 +1249,7 @@
     answers = { night_tags: {}, guest_counts: {}, packed_lunch_days: [], moods: [], cuisines: [] };
     $('freeform').value = '';
     $('joined').hidden = true;
+    $('cuisine-added').hidden = true;
 
     // The soft lock. Both adults are nudged on Sunday, so both can start;
     // the second to arrive carries on from the first one's answers rather
@@ -1318,12 +1343,6 @@
       var body = await res.json();
       attendance.members = body.members || [];
       attendance.byDate = body.attendance || {};
-      Object.keys(attendance.byDate).forEach(function (d) {
-        Object.keys(attendance.byDate[d]).forEach(function (slot) {
-          var att = attendance.byDate[d][slot];
-          if (att && !att.summary) att.summary = localSummary(att, slot);
-        });
-      });
     } catch (err) {
       console.warn('Attendance load failed:', err);
       attendance.members = [];
@@ -1343,8 +1362,87 @@
     return 'yesterday';
   }
 
-  // ---------- Q1: the nights ----------
   // ---------- the days, as tiles ----------
+  // What a day's attendance adds up to, grouped so it can be said in a
+  // few words: which meals nobody is home for, who's out for which of the
+  // rest (people with the same pattern together), who's home for all of
+  // them, and the guests at dinner. `byDay` is {slot: {absent_names,
+  // nobody_home, guest_count}} — the server's shape for a saved day
+  // (attendance.byDate[d]) and the sheet's shape for the day being edited
+  // (draftByDay), so the tile and the sheet read one thing the same way.
+  // "Emily", "Emily and Vic", "Emily, Ethan and Vic".
+  function joinNames(names) {
+    if (names.length <= 1) return names.join('');
+    if (names.length === 2) return names[0] + ' and ' + names[1];
+    return names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+  }
+
+  function outGroups(byDay, members) {
+    byDay = byDay || {};
+    var names = (members || []).map(function (m) { return m.name; });
+    var awaySlots = SHEET_SLOTS.filter(function (s) { return !!(byDay[s] && byDay[s].nobody_home); });
+    var rest = SHEET_SLOTS.filter(function (s) { return awaySlots.indexOf(s) === -1; });
+    var groups = [];
+    var homeAll = [];
+    names.forEach(function (name) {
+      var outs = rest.filter(function (s) { return byDay[s] && (byDay[s].absent_names || []).indexOf(name) !== -1; });
+      if (!outs.length) { homeAll.push(name); return; }
+      var key = outs.join(',');
+      var found = groups.filter(function (g) { return g.key === key; })[0];
+      if (found) found.names.push(name);
+      else groups.push({ key: key, outs: outs, names: [name] });
+    });
+    var dinner = byDay.dinner || {};
+    return {
+      awaySlots: awaySlots, rest: rest, groups: groups, homeAll: homeAll,
+      guests: dinner.guest_count || 0,
+      atDinner: names.filter(function (n) { return !(dinner.absent_names || []).length || (dinner.absent_names || []).indexOf(n) === -1; }).length
+    };
+  }
+
+  // The tile's words for a day's attendance: "nobody home", "nobody home
+  // for lunch", "Emily out", "Emily and Vic out for dinner", "+2 for
+  // dinner". Empty for an ordinary day.
+  function attendanceWords(byDay, members) {
+    var g = outGroups(byDay, members);
+    var words = [];
+    if (g.awaySlots.length === SHEET_SLOTS.length) {
+      words.push('nobody home');
+    } else {
+      if (g.awaySlots.length) words.push('nobody home for ' + joinWords(g.awaySlots));
+      g.groups.forEach(function (grp) {
+        words.push(joinNames(grp.names) + ' out' + (grp.outs.length === SHEET_SLOTS.length ? '' : ' for ' + joinWords(grp.outs)));
+      });
+    }
+    if (g.guests) words.push('+' + g.guests + ' for dinner');
+    return words;
+  }
+
+  // The line under the sheet's rows — what the pills add up to, as one
+  // or two plain sentences. "Emily's out for lunch and dinner — I'll plan
+  // for Vic." Empty when nothing is marked.
+  function daySummary(byDay, members) {
+    var g = outGroups(byDay, members);
+    if (g.awaySlots.length === SHEET_SLOTS.length) return 'Nobody home — I’ll plan nothing and buy nothing.';
+    var bits = [];
+    if (g.awaySlots.length) {
+      bits.push('Nobody home for ' + joinWords(g.awaySlots) + ' — I’ll plan nothing and buy nothing for ' +
+        (g.awaySlots.length === 1 ? 'it' : 'those') + '.');
+    }
+    if (g.groups.length) {
+      var said = g.groups.map(function (grp) {
+        var who = joinNames(grp.names) + (grp.names.length === 1 ? '’s' : ' are');
+        var when = grp.outs.length === SHEET_SLOTS.length ? 'all day' : 'for ' + joinWords(grp.outs);
+        return who + ' out ' + when;
+      }).join('. ');
+      bits.push(said + (g.homeAll.length ? ' — I’ll plan for ' + joinNames(g.homeAll) + '.' : ' — I’ll plan each meal for whoever’s home.'));
+    }
+    if (g.guests) {
+      bits.push('Dinner for ' + (g.atDinner + g.guests) + ' with ' + g.guests + ' guest' + (g.guests === 1 ? '' : 's') + '.');
+    }
+    return bits.join(' ');
+  }
+
   // `answeredOnly` leaves out a holiday nobody has answered yet: the tile
   // still names the day, but "3 days noted" counts what the household
   // said, not what the calendar did.
@@ -1353,19 +1451,22 @@
     var bits = [];
     var holiday = holidayFor(d);
     if (holiday && !(answeredOnly && !(holiday.answer && holiday.answer.answer !== 'unsure'))) bits.push(holidayLabel(holiday));
+    var words = attendanceWords(attendance.byDate[d], attendance.members);
     var tags = answers.night_tags[d] || [];
-    TAGS.forEach(function (t) { if (tags.indexOf(t.key) !== -1 && t.key !== 'normal') bits.push(t.label); });
+    // An "out" tag from an older sheet or from chat: nobody home, unless
+    // attendance already says so.
+    if (tags.indexOf('out') !== -1 && words.indexOf('nobody home') === -1) bits.push('nobody home');
+    bits = bits.concat(words);
+    // The guests count as the intake holds it, when attendance has none
+    // (an intake joined from another device, before its Done reached
+    // attendance — or a hosted holiday's headcount).
     var gc = answers.guest_counts[d];
-    if (gc && (gc.adults || gc.children)) bits.push('+' + ((gc.adults || 0) + (gc.children || 0)));
-    ['breakfast', 'lunch'].forEach(function (slot) {
-      var att = attendanceFor(d, slot);
-      if (att && att.guest_count) bits.push(slot + ' +' + att.guest_count);
-      if (att && att.absent_names && att.absent_names.length) bits.push(joinNames(att.absent_names) + ' out (' + slot + ')');
+    var extra = gc ? (gc.adults || 0) + (gc.children || 0) : 0;
+    if (extra && !words.some(function (w) { return w.indexOf('for dinner') !== -1 && w.charAt(0) === '+'; })) bits.push('+' + extra + ' for dinner');
+    SHEET_TAGS.forEach(function (key) {
+      var t = TAGS.filter(function (x) { return x.key === key; })[0];
+      if (tags.indexOf(key) !== -1) bits.push(t.label.toLowerCase());
     });
-    var dinnerAtt = attendanceFor(d, 'dinner');
-    if (dinnerAtt && dinnerAtt.absent_names && dinnerAtt.absent_names.length && tags.indexOf('out') === -1) {
-      bits.push(joinNames(dinnerAtt.absent_names) + ' out');
-    }
     return bits.join(' · ');
   }
 
@@ -1410,358 +1511,266 @@
     return data.days.filter(function (d) { return d.date === date; })[0] || null;
   }
 
-  function mealBlockHtml(slot, label) {
-    if (!attendance.members.length) return '';
-    return '<div class="meal-block" data-slot="' + slot + '">' +
-      '<div class="day-section-label">' + esc(label) + '</div>' +
-      presenceHtml(slot) +
-      '<div class="guests-slot">' + stepperHtml('guests-' + slot, 'Guests') + '</div>' +
+  // What the open sheet holds, and nothing else does until Done: who's
+  // out for which meal, the guests at dinner, the dinner tags. Seeded
+  // from what's saved when the sheet opens (seedSheet), thrown away by ×
+  // (discardDaySheet), written in one go by Done (saveDaySheet) — so a
+  // tap made by accident never reaches the week (Emily, 2026-09-15:
+  // "guest counts tapped by accident save silently").
+  var sheet = null;
+
+  function seedSheet(date) {
+    var saved = attendance.byDate[date] || {};
+    var tags = answers.night_tags[date] || [];
+    var absent = {};
+    SHEET_SLOTS.forEach(function (slot) {
+      absent[slot] = ((saved[slot] || {}).absent_names || []).slice();
+    });
+    // An "out" tag from an older sheet, or from chat, meant nobody home
+    // for dinner; the rows say the same thing through attendance, and
+    // Done drops the tag (the attendance write carries it from then on).
+    if (tags.indexOf('out') !== -1) absent.dinner = attendance.members.map(function (m) { return m.name; });
+    var gc = answers.guest_counts[date];
+    var guests = (saved.dinner || {}).guest_count || 0;
+    if (!guests && gc) guests = (gc.adults || 0) + (gc.children || 0);
+    return {
+      date: date,
+      absent: absent,
+      guests: Math.min(GUESTS_MAX, Math.max(0, guests)),
+      tags: tags.filter(function (t) { return SHEET_TAGS.indexOf(t) !== -1; }),
+      saving: false
+    };
+  }
+
+  // The draft in the shape attendance.byDate[d] has, so the summary line
+  // and the tile read one function (outGroups).
+  function draftByDay(draft) {
+    var out = {};
+    var size = attendance.members.length;
+    SHEET_SLOTS.forEach(function (slot) {
+      var absent = draft.absent[slot] || [];
+      var guests = slot === 'dinner' ? draft.guests : 0;
+      out[slot] = {
+        absent_names: absent,
+        guest_count: guests,
+        nobody_home: size > 0 && absent.length >= size && !guests
+      };
+    });
+    return out;
+  }
+
+  function personRowHtml(m) {
+    var initial = m.initial || (m.name || '?').charAt(0).toUpperCase();
+    return '<div class="who-line" data-member="' + esc(m.name) + '">' +
+      '<span class="who-avatar" aria-hidden="true">' + esc(initial) + '</span>' +
+      '<span class="sr-only">' + esc(m.name) + '</span>' +
+      '<div class="who-pills">' +
+        SHEET_SLOTS.map(function (slot) {
+          return '<button type="button" class="pill" data-who="' + esc(m.name) + '" data-slot="' + slot + '" ' +
+            'aria-pressed="false" aria-label="' + esc(m.name) + ' — ' + esc(SLOT_PILL[slot].toLowerCase()) + '">' +
+            esc(SLOT_PILL[slot]) + '</button>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  }
+
+  function guestsRowHtml() {
+    return '<div class="who-line guests-line">' +
+      '<span class="who-avatar add" aria-hidden="true">+</span>' +
+      '<div class="who-pills">' +
+        '<button type="button" class="pill" id="guests-add">' + GUESTS_PILL + '</button>' +
+        '<span class="guests-count" id="guests-count" hidden>' +
+          '<span class="stepper-label">' + GUESTS_PILL + '</span>' +
+          '<span class="stepper">' +
+            '<button type="button" data-delta="-1" aria-label="One fewer guest">&minus;</button>' +
+            '<output id="guests-out" aria-live="polite">0</output>' +
+            '<button type="button" data-delta="1" aria-label="One more guest">+</button>' +
+          '</span>' +
+        '</span>' +
+      '</div>' +
     '</div>';
   }
 
   function openDaySheet(date) {
     var day = dayFor(date);
     if (!day) return;
+    sheet = seedSheet(date);
     $('day-sheet-title').textContent = day.weekday + ' ' + day.day_of_month;
+    var members = attendance.members;
     $('day-sheet-body').innerHTML =
-      '<div class="day" data-date="' + day.date + '">' +
-        (day.hint ? '<div class="day-hint">' + esc(day.hint) + '</div>' : '') +
+      '<div class="day-body" data-date="' + day.date + '">' +
+        (day.hint ? '<p class="day-hint">' + esc(day.hint) + '</p>' : '') +
         (holidayFor(day.date) ? holidayBlockHtml(holidayFor(day.date)) : '') +
-        '<div class="meal-block" data-slot="dinner">' +
-          '<div class="day-section-label">Dinner</div>' +
-          '<div class="tag-row">' +
-            TAGS.map(function (t) {
-              return '<button type="button" class="tag" data-tag="' + t.key + '">' + esc(t.label) + '</button>';
+        (members.length ? '<p class="sheet-lede" style="margin:0">' + SHEET_QUESTION + '</p>' : '') +
+        '<div class="who-rows">' +
+          members.map(personRowHtml).join('') +
+          '<p class="who-summary" id="who-summary"></p>' +
+          guestsRowHtml() +
+        '</div>' +
+        '<div class="sheet-section">' +
+          '<p class="day-section-label">Dinner</p>' +
+          '<div class="who-pills">' +
+            SHEET_TAGS.map(function (key) {
+              var t = TAGS.filter(function (x) { return x.key === key; })[0];
+              return '<button type="button" class="pill" data-tag="' + key + '" aria-pressed="false">' + esc(t.label) + '</button>';
             }).join('') +
           '</div>' +
-          presenceHtml('dinner') +
-          '<div class="ack"></div>' +
-          '<div class="guests" hidden></div>' +
         '</div>' +
-        mealBlockHtml('lunch', 'Lunch') +
-        mealBlockHtml('breakfast', 'Breakfast') +
       '</div>';
-    var dayEl = $('day-sheet-body').querySelector('.day');
-    dayEl.querySelectorAll('.tag:not(.holiday-answer)').forEach(function (btn) {
-      btn.addEventListener('click', function () { toggleTag(dayEl, btn.dataset.tag); });
+    var body = $('day-sheet-body');
+    wireHolidayBlock(body);
+    body.querySelectorAll('.pill[data-who]').forEach(function (btn) {
+      btn.addEventListener('click', function () { toggleWhoPill(btn.dataset.who, btn.dataset.slot); });
     });
-    wireHolidayBlock(dayEl);
-    dayEl.querySelectorAll('.avatar').forEach(function (btn) {
-      btn.addEventListener('click', function () { toggleAvatar(dayEl, btn); });
+    body.querySelector('#guests-add').addEventListener('click', function () { stepGuests(1); });
+    body.querySelectorAll('.stepper button').forEach(function (btn) {
+      btn.addEventListener('click', function () { stepGuests(Number(btn.dataset.delta)); });
     });
-    dayEl.querySelectorAll('.remember').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        // Which meal this offer was rendered under — the same read the
-        // guests steppers below already make. It used to say nothing, and
-        // offerToRemember answered "dinner" for all three.
-        var block = btn.closest('.meal-block');
-        offerToRemember(dayEl, block && block.dataset.slot);
-      });
+    body.querySelectorAll('.pill[data-tag]').forEach(function (btn) {
+      btn.addEventListener('click', function () { toggleDinnerTag(btn.dataset.tag); });
     });
-    dayEl.querySelectorAll('.guests-slot .stepper button').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var block = btn.closest('.meal-block');
-        stepSlotGuests(dayEl, block.dataset.slot, Number(btn.dataset.delta));
-      });
-    });
-    paintDay(dayEl);
+    paintSheet();
     $('day-sheet').hidden = false;
+    $('day-done').disabled = false;
   }
 
-  function closeDaySheet() {
+  function toggleWhoPill(name, slot) {
+    if (!sheet) return;
+    var list = sheet.absent[slot] || (sheet.absent[slot] = []);
+    var i = list.indexOf(name);
+    if (i === -1) list.push(name); else list.splice(i, 1);
+    paintSheet();
+  }
+
+  function stepGuests(delta) {
+    if (!sheet) return;
+    sheet.guests = Math.min(GUESTS_MAX, Math.max(0, sheet.guests + delta));
+    paintSheet();
+  }
+
+  // The one pair that contradicts each other: tapping one clears the
+  // other, the same way the server refuses to save both (week_intake.py).
+  var OPPOSITES = { rush: 'unrushed', unrushed: 'rush' };
+  function toggleDinnerTag(tag) {
+    if (!sheet) return;
+    var i = sheet.tags.indexOf(tag);
+    if (i !== -1) sheet.tags.splice(i, 1);
+    else sheet.tags = sheet.tags.filter(function (t) { return t !== OPPOSITES[tag]; }).concat([tag]);
+    paintSheet();
+  }
+
+  function paintSheet() {
+    if (!sheet) return;
+    var body = $('day-sheet-body');
+    body.querySelectorAll('.pill[data-who]').forEach(function (btn) {
+      var out = (sheet.absent[btn.dataset.slot] || []).indexOf(btn.dataset.who) !== -1;
+      btn.classList.toggle('on', out);
+      btn.setAttribute('aria-pressed', out ? 'true' : 'false');
+    });
+    var summary = body.querySelector('#who-summary');
+    if (summary && !summary.classList.contains('trouble')) summary.textContent = daySummary(draftByDay(sheet), attendance.members);
+    var add = body.querySelector('#guests-add');
+    var count = body.querySelector('#guests-count');
+    if (add) add.hidden = sheet.guests > 0;
+    if (count) {
+      count.hidden = !(sheet.guests > 0);
+      count.querySelector('output').textContent = sheet.guests;
+      count.querySelectorAll('button').forEach(function (btn) {
+        btn.disabled = Number(btn.dataset.delta) > 0 && sheet.guests >= GUESTS_MAX;
+      });
+    }
+    body.querySelectorAll('.pill[data-tag]').forEach(function (btn) {
+      var on = sheet.tags.indexOf(btn.dataset.tag) !== -1;
+      btn.classList.toggle('on', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  // A holiday answered from inside the sheet ("going to someone's" takes
+  // everyone out of dinner on the server) reseeds the rows from what was
+  // just saved — the household's own pills are kept as they were.
+  function reseedSheet(date) {
+    if (!sheet || sheet.date !== date) return;
+    var fresh = seedSheet(date);
+    sheet.absent.dinner = fresh.absent.dinner;
+    paintSheet();
+  }
+
+  // × and the scrim: the sheet goes, and so does everything tapped in it.
+  function discardDaySheet() {
+    sheet = null;
     $('day-sheet').hidden = true;
     paintTiles();
     paintCta();
   }
 
-  // Guests at breakfast or lunch: one count, straight to attendance for
-  // that slot (the same store the dinner steppers are synced into on save),
-  // so portions and the list see it the same way. Hosting five for lunch
-  // was the case with nowhere to go (Emily, 2026-09-11).
-  async function stepSlotGuests(dayEl, slot, delta) {
-    var d = dayEl.dataset.date;
-    var att = attendanceFor(d, slot) || ensureLocalAttendance(d, slot);
-    var next = Math.min(10, Math.max(0, (att.guest_count || 0) + delta));
-    if (next === (att.guest_count || 0)) return;
-    var previous = JSON.parse(JSON.stringify(attendance.byDate[d] || {}));
-    att.guest_count = next;
-    att.headcount = (att.present_names || []).length + next;
-    att.summary = localSummary(att, slot);
-    paintSlotBlock(dayEl, slot);
-    try {
-      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/attendance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: d, slot: slot, guest_count: next })
-      });
-      if (!res.ok) throw new Error('attendance save failed');
-      var saved = await res.json();
-      attendance.byDate[d] = attendance.byDate[d] || {};
-      attendance.byDate[d][slot] = saved;
-      paintSlotBlock(dayEl, slot);
-      toastSaved();
-    } catch (err) {
-      console.warn('Guest count save failed:', err);
-      attendance.byDate[d] = previous;
-      paintSlotBlock(dayEl, slot);
-      var summary = dayEl.querySelector('.meal-block[data-slot="' + slot + '"] .presence-summary');
-      if (summary) summary.textContent = 'I couldn’t save that just now — try again in a moment.';
-    }
-  }
-
-  function paintSlotBlock(dayEl, slot) {
-    var block = dayEl.querySelector('.meal-block[data-slot="' + slot + '"]');
-    if (!block) return;
-    var att = attendanceFor(dayEl.dataset.date, slot);
-    var n = att ? (att.guest_count || 0) : 0;
-    block.querySelectorAll('.guests-slot output').forEach(function (out) { out.textContent = n; });
-    block.querySelectorAll('.guests-slot .stepper button').forEach(function (btn) {
-      btn.disabled = Number(btn.dataset.delta) < 0 ? n <= 0 : n >= 10;
-    });
-    paintPresence(dayEl, slot);
-  }
-
-  // ---------- presence avatars: the one-off gesture ----------
-  // Emily's distinction (2026-09-03): an extended absence is the trips
-  // gateway below; ONE evening out is a single tap here, no form at all.
-  // One row per meal since Build 4 (2026-09-11) — this comment said
-  // "dinner only" for four days after mealBlockHtml started calling it for
-  // lunch and breakfast as well.
-  //
-  // The whole control is one function: the question, the initials, the
-  // caption under them and the offer, so the three rows in a day sheet
-  // cannot end up asking three different things. That is exactly what had
-  // happened — dinner carried a "Who's eating?" caption its own block
-  // wrote, and lunch and breakfast carried none.
-  function presenceHtml(slot) {
-    if (!attendance.members.length) return '';
-    return (
-      '<div class="day-section-label presence-section-label">' + PRESENCE_QUESTION + '</div>' +
-      '<div class="presence" data-slot="' + slot + '">' +
-        attendance.members.map(function (m) {
-          return '<button type="button" class="avatar" data-member="' + esc(m.name) + '" data-slot="' + slot + '" ' +
-            'aria-pressed="false" title="' + esc(m.name) + '">' + esc(initialFor(m)) + '</button>';
-        }).join('') +
-      '</div>' +
-      // The caption comes before the offer: it confirms the tap that was
-      // just made, and the offer only follows from it.
-      '<div class="presence-summary"></div>' +
-      '<button type="button" class="remember" hidden>' +
-        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
-        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-        '<path d="M17 2.1l4 4-4 4"></path><path d="M3 12.9V10a4 4 0 0 1 4-4h14"></path>' +
-        '<path d="M7 21.9l-4-4 4-4"></path><path d="M21 11.1V14a4 4 0 0 1-4 4H3"></path></svg>' +
-        'Just this week?' +
-      '</button>'
-    );
-  }
-
-  // First initial, unless two people share one — then enough letters to
-  // tell them apart, because an avatar you can't identify isn't a control.
-  function initialFor(member) {
-    var name = (member.name || '').trim();
-    if (!name) return '?';
-    var clash = attendance.members.filter(function (m) {
-      return m.id !== member.id && (m.name || '').trim().charAt(0).toUpperCase() === name.charAt(0).toUpperCase();
-    }).length > 0;
-    return (clash ? name.slice(0, 2) : name.charAt(0)).toUpperCase();
-  }
-
-  function attendanceFor(date, slot) {
-    var day = attendance.byDate[date] || {};
-    return day[slot || 'dinner'] || null;
-  }
-
-  function ensureLocalAttendance(date, slot) {
-    var day = attendance.byDate[date] || (attendance.byDate[date] = {});
-    return day[slot] || (day[slot] = {
-      absent_names: [], present_names: attendance.members.map(function (m) { return m.name; }),
-      headcount: attendance.members.length, guest_count: 0, summary: ''
-    });
-  }
-
-  function paintPresence(dayEl, slot) {
-    slot = slot || 'dinner';
-    var d = dayEl.dataset.date;
-    var att = attendanceFor(d, slot);
-    var awayNames = att ? att.absent_names || [] : [];
-    var block = dayEl.querySelector('.meal-block[data-slot="' + slot + '"]') || dayEl;
-    block.querySelectorAll('.avatar').forEach(function (btn) {
-      var out = awayNames.indexOf(btn.dataset.member) !== -1;
-      btn.classList.toggle('out', out);
-      // Pressed means OUT, matching the question above the row. It used to
-      // mean IN, which was right under "Who's eating?" and is the same
-      // contradiction Emily reported, one layer down: a screen reader said
-      // "V, toggle button, pressed" under a heading asking who is out.
-      btn.setAttribute('aria-pressed', out ? 'true' : 'false');
-      btn.title = btn.dataset.member + (out ? ' — out for ' + slot : ' — home for ' + slot);
-    });
-    var summary = block.querySelector('.presence-summary');
-    if (summary) summary.textContent = att && att.summary ? att.summary : '';
-    var remember = block.querySelector('.remember');
-    // The offer appears only once a toggle has actually created something
-    // worth remembering — progressive disclosure, same rule as the per-meal
-    // tags (Emily's decision, 2026-09-03).
-    if (remember) remember.hidden = !(att && awayNames.length && !att.remembered);
-  }
-
-  async function toggleAvatar(dayEl, btn) {
-    var d = dayEl.dataset.date;
-    var slot = btn.dataset.slot || 'dinner';
-    var name = btn.dataset.member;
-    var wasOut = btn.classList.contains('out');
-    var previous = attendance.byDate[d] ? JSON.parse(JSON.stringify(attendance.byDate[d])) : null;
-
-    // Update on tap, before the server confirms (DESIGN_SYSTEM §6 refresh
-    // policy). A failed save puts the row back and says so.
-    applyLocalToggle(d, slot, name, wasOut);
-    paintPresence(dayEl, slot);
-
-    try {
-      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/attendance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: d, slot: slot, member: name, present: wasOut })
-      });
-      if (!res.ok) throw new Error('attendance save failed');
-      var saved = await res.json();
-      attendance.byDate[d] = attendance.byDate[d] || {};
-      attendance.byDate[d][slot] = saved;
-      paintPresence(dayEl, slot);
-      toastSaved();
-    } catch (err) {
-      console.warn('Attendance save failed:', err);
-      if (previous) attendance.byDate[d] = previous; else delete attendance.byDate[d];
-      paintPresence(dayEl, slot);
-      var block = dayEl.querySelector('.meal-block[data-slot="' + slot + '"]') || dayEl;
-      var summary = block.querySelector('.presence-summary');
-      if (summary) summary.textContent = 'I couldn’t save that just now — try again in a moment.';
-    }
-  }
-
-  function applyLocalToggle(date, slot, name, becomingPresent) {
-    var att = ensureLocalAttendance(date, slot);
-    var absent = att.absent_names || [];
-    if (becomingPresent) absent = absent.filter(function (n) { return n !== name; });
-    else if (absent.indexOf(name) === -1) absent = absent.concat([name]);
-    att.absent_names = absent;
-    att.present_names = attendance.members
-      .map(function (m) { return m.name; })
-      .filter(function (n) { return absent.indexOf(n) === -1; });
-    att.headcount = att.present_names.length + (att.guest_count || 0);
-    att.summary = localSummary(att, slot);
-  }
-
-  // A local echo of the server's own sentence (attendance.summary_line).
-  // It covers the instant between a tap and its response — and every slot
-  // on the way in besides, because the week GET carries no summary of its
-  // own, so this is what a day sheet opens reading. So it says what the
-  // server says: the two used to differ on the one shape that has both an
-  // absence and a guest ("Vineeth’s out and 1 guest" here, "…out with 1
-  // guest" there), and a caption that rewords itself when it is re-saved
-  // is a caption nobody trusts. One difference is left and is not this
-  // page's to settle: the server writes straight apostrophes — in "'s out"
-  // and in "nobody's home" — where every sentence on this page writes curly
-  // ones.
-  function localSummary(att, slot) {
-    var meal = capitalize(slot || 'dinner');
-    var away = att.absent_names || [];
-    if (!away.length && !att.guest_count) return '';
-    if (!att.headcount) return meal + ' skipped — nobody’s home. Nothing planned, nothing bought.';
-    var bits = [];
-    if (away.length) bits.push(joinNames(away) + (away.length === 1 ? '’s out' : ' are out'));
-    if (att.guest_count) {
-      bits.push((bits.length ? 'with ' : '') + att.guest_count + ' guest' + (att.guest_count === 1 ? '' : 's'));
-    }
-    return meal + ' for ' + att.headcount + ' — ' + bits.join(' ') + '.';
-  }
-
-  function joinNames(names) {
-    if (names.length <= 1) return names.join('');
-    if (names.length === 2) return names[0] + ' and ' + names[1];
-    return names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
-  }
-
-  // HONEST GAP: this records the intent locally and says so, but does not
-  // yet write a standing rhythm rule. Persisting "Vineeth's out Thursday
-  // evenings" belongs to the RHYTHM layer (household_rhythm, a per-weekday
-  // override row) and needs its own decision about what a single week's
-  // tap is allowed to imply about every future week — which is Emily's
-  // call, not this ticket's. The affordance is here so the flow is real;
-  // the persistence is deliberately not faked.
-  // TODO(rhythm): wire to a household_rhythm per-weekday override once
-  // that promotion rule is decided.
-  function offerToRemember(dayEl, slot) {
-    var d = dayEl.dataset.date;
-    // Scoped to the meal it was tapped under, never to dayEl. A day sheet
-    // holds THREE .presence-summary nodes and THREE .remember buttons since
-    // Build 4, so a selector on the day returns dinner's every time, and
-    // this asked attendanceFor for 'dinner' besides. Measured in Chromium
-    // on the unmodified page: tapping the offer under lunch or breakfast
-    // did nothing at all on an ordinary day (no dinner attendance row yet,
-    // so the early return) and, once dinner had a row of its own, wrote
-    // DINNER's caption and hid DINNER's offer instead.
-    //
-    // No `|| dayEl` fallback, deliberately, unlike paintPresence and
-    // toggleAvatar above. Theirs is a dead defensive branch: the block is
-    // missing only when the household has no members on record, and then
-    // the day carries no presence markup at all for it to find. Here it
-    // would land on the dinner block and be exactly this bug again. A
-    // block we can't find is a tap we do nothing about.
-    var block = dayEl.querySelector('.meal-block[data-slot="' + slot + '"]');
-    var att = attendanceFor(d, slot);
-    if (!block || !att) return;
-    att.remembered = true;
-    var summary = block.querySelector('.presence-summary');
-    if (summary) {
-      summary.textContent = att.summary +
-        ' Just this week for now — ask me in chat to make it every week.';
-    }
-    var remember = block.querySelector('.remember');
-    if (remember) remember.hidden = true;
-  }
-
-  function toggleTag(dayEl, tag) {
-    var d = dayEl.dataset.date;
-    var current = answers.night_tags[d] || [];
-    if (current.indexOf(tag) !== -1) {
-      current = current.filter(function (t) { return t !== tag; });
-    } else if (tag === 'normal') {
-      // "Regular night" is exclusive — selecting it clears the others. It
-      // exists so someone working down the list can AFFIRM a night rather
-      // than skip it: an affirmed night is data, a skipped one is a guess.
-      current = ['normal'];
+  // The intake's own record of the day, from the sheet: the dinner tags,
+  // plus "guests" with the count when there are any (what the planner
+  // scales the table by, and what a hosted holiday reads as its
+  // headcount). "out" goes — the rows say it through attendance now.
+  function applySheetToAnswers(draft) {
+    var d = draft.date;
+    var tags = draft.tags.slice();
+    if (draft.guests > 0) {
+      tags.push('guests');
+      answers.guest_counts[d] = { adults: draft.guests, children: 0 };
     } else {
-      current = current.filter(function (t) { return t !== 'normal' && t !== OPPOSITES[tag]; }).concat([tag]);
+      delete answers.guest_counts[d];
     }
-    if (current.length) answers.night_tags[d] = current;
-    else delete answers.night_tags[d];
-    if (current.indexOf('guests') === -1) delete answers.guest_counts[d];
-    paintDay(dayEl);
-    paintCta();
+    if (tags.length) answers.night_tags[d] = tags; else delete answers.night_tags[d];
   }
 
-  function paintDay(dayEl) {
-    var d = dayEl.dataset.date;
-    var tags = answers.night_tags[d] || [];
-    // The dinner block's own pills and ack — the holiday block above it
-    // has a .tag row and an .ack of its own, painted by paintHolidayBlock.
-    var dinner = dayEl.querySelector('.meal-block[data-slot="dinner"]') || dayEl;
-    dinner.querySelectorAll('.tag').forEach(function (btn) {
-      btn.classList.toggle('on', tags.indexOf(btn.dataset.tag) !== -1);
+  // The payload Done sends — every meal, with who's out and, for dinner,
+  // the guests — in the shape /api/week/{week}/day-attendance reads.
+  function daySheetPayload(draft) {
+    var slots = {};
+    SHEET_SLOTS.forEach(function (slot) {
+      slots[slot] = { absent: (draft.absent[slot] || []).slice() };
     });
-    // Multiple tags join with "And I'll " — one sentence per consequence,
-    // so two answers read as two things happening rather than one blurred
-    // promise.
-    var acks = TAGS.filter(function (t) { return tags.indexOf(t.key) !== -1; }).map(function (t) { return t.ack; });
-    dinner.querySelector('.ack').textContent = acks.length
-      ? 'I’ll ' + acks.join(' And I’ll ')
-      : '';
-    renderGuests(dayEl, tags.indexOf('guests') !== -1);
-    paintPresence(dayEl, 'dinner');
-    paintSlotBlock(dayEl, 'lunch');
-    paintSlotBlock(dayEl, 'breakfast');
-    paintTiles();
+    slots.dinner.guest_count = draft.guests;
+    return { date: draft.date, slots: slots };
+  }
+
+  // Done: one write for the day. Nothing has been saved until here.
+  async function saveDaySheet() {
+    if (!sheet || sheet.saving) return;
+    var draft = sheet;
+    draft.saving = true;
+    $('day-done').disabled = true;
+    var summary = $('day-sheet-body').querySelector('#who-summary');
+    try {
+      if (attendance.members.length) {
+        var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/day-attendance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(daySheetPayload(draft))
+        });
+        if (!res.ok) throw new Error('day attendance save failed');
+        var saved = await res.json();
+        var byDay = attendance.byDate[draft.date] || {};
+        Object.keys(saved.slots || {}).forEach(function (slot) {
+          var att = saved.slots[slot];
+          if (att && att.everyone_home) delete byDay[slot]; else byDay[slot] = att;
+        });
+        if (Object.keys(byDay).length) attendance.byDate[draft.date] = byDay;
+        else delete attendance.byDate[draft.date];
+      }
+      applySheetToAnswers(draft);
+      sheet = null;
+      $('day-sheet').hidden = true;
+      paintTiles();
+      paintCta();
+      toastSaved();
+    } catch (err) {
+      console.warn('Day sheet save failed:', err);
+      draft.saving = false;
+      $('day-done').disabled = false;
+      if (summary) {
+        summary.classList.add('trouble');
+        summary.textContent = 'I couldn’t save that just now — try again in a moment.';
+        setTimeout(function () { summary.classList.remove('trouble'); paintSheet(); }, 2500);
+      }
+    }
   }
 
   // ---------- the holiday ----------
@@ -1842,10 +1851,13 @@
         // The Save is what builds the big meal: the count (the day's guest
         // steppers), the time and the guests' notes go together, so the
         // menu is planned for the real table from the start.
+        // The count is the sheet's own guests row when the sheet is open
+        // on this day (not yet Done), else what the intake holds.
         var gc = answers.guest_counts[block.dataset.holiday] || { adults: 0, children: 0 };
+        var count = sheet && sheet.date === block.dataset.holiday ? sheet.guests : (gc.adults || 0) + (gc.children || 0);
         answerHoliday(block.dataset.holiday, 'hosting', null, {
           on_table_at: hostTime.value, guest_notes: hostNotes.value,
-          headcount: (gc.adults || 0) + (gc.children || 0), build: true
+          headcount: count, build: true
         });
       });
       hostNotes.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); hostSave.click(); } });
@@ -1901,16 +1913,13 @@
                  on_table_at: hosting ? (hosting.on_table_at || '') : (same ? previous.on_table_at : ''),
                  guest_notes: hosting ? (hosting.guest_notes || '').trim() : (same ? previous.guest_notes : ''),
                  said: same ? previous.said : '' };
-    // "Hosting" is the intake's own Hosting-guests tag with the count —
-    // turn it on here so the day's guest steppers are one tap away, the
-    // way the tag itself would open them.
+    // "Hosting" is the intake's own Hosting-guests tag with the count;
+    // the sheet's guests row is where the count is set.
     var tags = (answers.night_tags[date] || []).filter(function (t) { return t !== 'guests' && t !== 'normal'; });
     if (answer === 'hosting') tags.push('guests');
     if (tags.length) answers.night_tags[date] = tags; else delete answers.night_tags[date];
     if (answer !== 'hosting') delete answers.guest_counts[date];
     paintHoliday(date);
-    var open = $('day-sheet-body').querySelector('.day[data-date="' + date + '"]');
-    if (open) paintDay(open);
     paintCta();
     var body = { date: date, answer: answer };
     if (dish != null) body.bring_dish = dish.trim();
@@ -1934,15 +1943,16 @@
                    on_table_at: saved.on_table_at || '', guest_notes: saved.guest_notes || '',
                    said: saved.big_meal_said || '' };
       if (saved.answer === 'hosting' && saved.headcount) {
-        // The server's count is the intake's own: keep the steppers in step.
+        // The server's count is the intake's own: keep the guests row in step.
         var c = answers.guest_counts[date] || { adults: 0, children: 0 };
         if ((c.adults || 0) + (c.children || 0) !== saved.headcount) answers.guest_counts[date] = { adults: saved.headcount, children: 0 };
+        if (sheet && sheet.date === date) sheet.guests = Math.min(GUESTS_MAX, saved.headcount);
       }
       // "Out" is nobody-home for that dinner on the server; read
-      // attendance back so the sheet's avatars say the same thing.
+      // attendance back so the sheet's rows say the same thing.
       await loadAttendance();
       paintHoliday(date);
-      if (open) paintDay(open);
+      reseedSheet(date);
       toastSaved();
     } catch (err) {
       console.warn('Holiday answer failed:', err);
@@ -1956,43 +1966,6 @@
         paintHoliday(date);
       }, 2500);
     }
-  }
-
-  // ---------- the guest follow-up ----------
-  function renderGuests(dayEl, show) {
-    var box = dayEl.querySelector('.guests');
-    box.hidden = !show;
-    if (!show) { box.innerHTML = ''; return; }
-    if (box.dataset.built === '1') { paintGuests(dayEl); return; }
-    box.dataset.built = '1';
-
-    // Two steppers, never one count plus an "adults / adults + kids"
-    // toggle: a single number can't say how many of EACH, which is exactly
-    // what portions and quantities need.
-    //
-    // When nobody's age group is on record the app can't add extras to a
-    // household it doesn't know, so the panel asks for the whole table
-    // instead — rather than confidently stating a wrong total.
-    var whole = !data.household_known;
-    box.innerHTML =
-      '<h3>' + (whole ? 'How many will there be?' : 'Who’s joining you?') + '</h3>' +
-      (whole ? '<p>I don’t know your household yet, so count the whole table.</p>' : '') +
-      stepperHtml('adults', whole ? 'Adults at the table' : 'Extra adults') +
-      stepperHtml('children', whole ? 'Children at the table' : 'Extra children') +
-      '<div class="ack"></div>';
-
-    box.querySelectorAll('.stepper button').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var d = dayEl.dataset.date;
-        var counts = answers.guest_counts[d] || { adults: 0, children: 0 };
-        // (the breakfast/lunch guest steppers are wired in openDaySheet)
-        var next = counts[btn.dataset.field] + Number(btn.dataset.delta);
-        counts[btn.dataset.field] = Math.min(10, Math.max(0, next));
-        answers.guest_counts[d] = counts;
-        paintGuests(dayEl);
-      });
-    });
-    paintGuests(dayEl);
   }
 
   // ---------- the trips gateway + range picker ----------
@@ -2186,10 +2159,8 @@
       // touches slots this screen didn't ask about (the two derived edges),
       // and a guess about those would be a guess shown as fact.
       await loadAttendance();
-      // The tiles carry the new absences; a day sheet left open repaints too.
+      // The tiles carry the new absences.
       paintTiles();
-      var openEl = $('day-sheet-body').querySelector('.day');
-      if (openEl) paintDay(openEl);
       renderAwaySet();
       $('away-another').hidden = false;
       closeAwaySheet();
@@ -2222,41 +2193,6 @@
   }
 
   function capitalize(s) { return String(s).charAt(0).toUpperCase() + String(s).slice(1); }
-
-  function stepperHtml(field, label) {
-    return (
-      '<div class="stepper-row">' +
-        '<span class="stepper-label">' + esc(label) + '</span>' +
-        '<span class="stepper">' +
-          '<button type="button" data-field="' + field + '" data-delta="-1" aria-label="One fewer ' + esc(label) + '">&minus;</button>' +
-          '<output data-out="' + field + '">0</output>' +
-          '<button type="button" data-field="' + field + '" data-delta="1" aria-label="One more ' + esc(label) + '">+</button>' +
-        '</span>' +
-      '</div>'
-    );
-  }
-
-  function paintGuests(dayEl) {
-    var d = dayEl.dataset.date;
-    var box = dayEl.querySelector('.guests');
-    var counts = answers.guest_counts[d] || { adults: 0, children: 0 };
-    box.querySelectorAll('output').forEach(function (out) { out.textContent = counts[out.dataset.out]; });
-    box.querySelectorAll('.stepper button').forEach(function (btn) {
-      var value = counts[btn.dataset.field];
-      btn.disabled = Number(btn.dataset.delta) < 0 ? value <= 0 : value >= 10;
-    });
-
-    var base = data.household_known ? data.household : { adults: 0, children: 0 };
-    var adults = base.adults + counts.adults;
-    var children = base.children + counts.children;
-    var total = adults + children;
-    // The acknowledgement states the resulting TABLE, not just a total, so
-    // a wrong tap is visible immediately.
-    box.querySelector('.ack').textContent = total
-      ? 'I’ll cook for ' + total + ' — ' + adults + (adults === 1 ? ' adult' : ' adults') +
-        ' and ' + children + (children === 1 ? ' child' : ' children') + ' — and shop for that.'
-      : '';
-  }
 
   // ---------- lunches ----------
   function renderLunchDays() {
@@ -2306,15 +2242,142 @@
     // Read from What We Know, never a fixed global list — the household
     // never re-answers a question it has already answered. The fallback
     // only appears when nothing is saved yet, and taps on it are written
-    // back (advance).
+    // back (advance). "+ Add one" at the end opens the screen for a
+    // cuisine that isn't here (board B2).
     $('cuisines').innerHTML = data.cuisines.map(function (c) {
       return '<button type="button" class="chip small" data-value="' + esc(c) + '">' + esc(c) + '</button>';
-    }).join('');
+    }).join('') +
+      '<button type="button" class="chip small add" id="cuisine-add">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>' +
+        'Add one' +
+      '</button>';
     wireChips($('cuisines'), answers.cuisines, function () {});
+    $('cuisine-add').addEventListener('click', openCuisineScreen);
+  }
+
+  function paintChips(container, list) {
+    container.querySelectorAll('.chip[data-value]').forEach(function (chip) {
+      chip.classList.toggle('on', list.indexOf(chip.dataset.value) !== -1);
+    });
+  }
+
+  // ---------- Add a cuisine (boards B4a / B4b) ----------
+  // The screen is open while `cuisineOpen`; the foot's button and quiet
+  // line belong to it then (paintCta), and the crumb closes it (crumbTap).
+  var cuisineOpen = false;
+  // The cuisines added this session, so the fallback write-back on "Draft
+  // my week" keeps them even if their chip was tapped off again — "I'll
+  // remember it" is a promise about the list, not about this week.
+  var addedCuisines = [];
+  var CUISINE_COPY = {
+    add: 'Add', addWhat: 'Add a cuisine', never: 'Never mind',
+    inLine: '’s in. I’ll remember it.', already: '’s already on your list — I’ve ticked it.'
+  };
+
+  // The "Did you mean" row: the known cuisines that start with what's
+  // typed, then the ones that contain it, then the ones that share its
+  // first two letters — week_intake.cuisine_suggestions, the same order,
+  // so the server and the screen would offer the same three.
+  function cuisineSuggestions(typed, known, limit) {
+    var q = String(typed || '').split(/\s+/).filter(Boolean).join(' ').toLowerCase();
+    if (!q) return [];
+    known = known || [];
+    var starts = known.filter(function (c) { return c.toLowerCase().indexOf(q) === 0; });
+    var contains = known.filter(function (c) { return c.toLowerCase().indexOf(q) !== -1 && starts.indexOf(c) === -1; });
+    var close = known.filter(function (c) {
+      return q.length >= 2 && c.toLowerCase().slice(0, 2) === q.slice(0, 2) && starts.indexOf(c) === -1 && contains.indexOf(c) === -1;
+    });
+    return starts.concat(contains, close).slice(0, limit || 3);
+  }
+
+  function cleanCuisine(typed) {
+    var t = String(typed || '').split(/\s+/).filter(Boolean).join(' ').slice(0, 40);
+    return t ? t.charAt(0).toUpperCase() + t.slice(1) : '';
+  }
+
+  function openCuisineScreen() {
+    cuisineOpen = true;
+    for (var i = 1; i <= STEP_COUNT; i++) $('q' + i).hidden = true;
+    $('q-cuisine').hidden = false;
+    $('progress').hidden = true;
+    $('eyebrow').textContent = '';
+    $('leave').innerHTML = '&lsaquo; Back';
+    $('cuisine-field').value = '';
+    paintCuisineScreen();
+    window.scrollTo(0, 0);
+    // The field is the screen: focused on open so the keyboard is up.
+    setTimeout(function () { $('cuisine-field').focus(); }, 0);
+  }
+
+  function closeCuisineScreen() {
+    cuisineOpen = false;
+    $('q-cuisine').hidden = true;
+    $('progress').hidden = false;
+    showStep(4);
+  }
+
+  function paintCuisineScreen() {
+    var typed = cleanCuisine($('cuisine-field').value);
+    var known = (data && data.known_cuisines) || [];
+    var offers = cuisineSuggestions(typed, known);
+    $('did-you-mean-label').hidden = !offers.length;
+    $('did-you-mean').innerHTML = offers.map(function (c) {
+      return '<button type="button" class="chip' + (c.toLowerCase() === typed.toLowerCase() ? ' on' : '') + '" data-offer="' + esc(c) + '">' + esc(c) + '</button>';
+    }).join('');
+    $('did-you-mean').querySelectorAll('[data-offer]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        $('cuisine-field').value = chip.dataset.offer;
+        paintCuisineScreen();
+        $('cuisine-field').focus();
+      });
+    });
+    paintCta();
+  }
+
+  var cuisineAdding = false;
+  async function addCuisine() {
+    var name = cleanCuisine($('cuisine-field').value);
+    if (!name || cuisineAdding) return;
+    cuisineAdding = true;
+    $('cta').disabled = true;
+    try {
+      var res = await fetch('/api/cuisines', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name })
+      });
+      if (!res.ok) throw new Error('cuisine add failed');
+      var saved = await res.json();
+      takeAddedCuisine(saved.cuisine, saved.added);
+      closeCuisineScreen();
+    } catch (err) {
+      console.warn('Cuisine add failed:', err);
+      $('did-you-mean-label').hidden = true;
+      $('did-you-mean').innerHTML = '<p class="day-note">I couldn’t save that just now — try again in a moment.</p>';
+    } finally {
+      cuisineAdding = false;
+      // Back on the mood screen, Continue is a button again; still on
+      // this screen, paintCta says whether "Add …" is.
+      $('cta').disabled = false;
+      paintCta();
+    }
+  }
+
+  // Back on the mood screen: the new cuisine is the first chip and already
+  // chosen, with the one green line under the row. One already on the
+  // list (in any spelling) is ticked where it is and the line says so.
+  function takeAddedCuisine(cuisine, added) {
+    var have = data.cuisines.filter(function (c) { return c.toLowerCase() === cuisine.toLowerCase(); })[0];
+    if (!have) { data.cuisines.unshift(cuisine); have = cuisine; }
+    if (addedCuisines.indexOf(have) === -1) addedCuisines.push(have);
+    if (answers.cuisines.indexOf(have) === -1) answers.cuisines.push(have);
+    renderCuisines();
+    $('cuisine-added-text').textContent = have + (added ? CUISINE_COPY.inLine : CUISINE_COPY.already);
+    $('cuisine-added').hidden = false;
   }
 
   function wireChips(container, list, onChange) {
-    container.querySelectorAll('.chip').forEach(function (chip) {
+    container.querySelectorAll('.chip[data-value]').forEach(function (chip) {
       chip.addEventListener('click', function () {
         var v = chip.dataset.value;
         var i = list.indexOf(v);
@@ -2324,12 +2387,6 @@
       });
     });
     paintChips(container, list);
-  }
-
-  function paintChips(container, list) {
-    container.querySelectorAll('.chip').forEach(function (chip) {
-      chip.classList.toggle('on', list.indexOf(chip.dataset.value) !== -1);
-    });
   }
 
   function paintMoodScreen() {
@@ -2370,6 +2427,16 @@
   // screen has one.
   function paintCta() {
     var skip = $('skip');
+    if (cuisineOpen) {
+      // "Add Mexican" — the word they typed or tapped — and nothing to
+      // press until there is one; "Never mind" goes back with nothing changed.
+      var name = cleanCuisine($('cuisine-field').value);
+      $('cta').textContent = name ? CUISINE_COPY.add + ' ' + name : CUISINE_COPY.addWhat;
+      $('cta').disabled = !name || cuisineAdding;
+      skip.textContent = CUISINE_COPY.never;
+      skip.hidden = false;
+      return;
+    }
     if (step < STEP_COUNT) {
       $('cta').textContent = 'Continue';
       // Half a range is not an answer; nothing else here touches the
@@ -2480,17 +2547,28 @@
     if (items.length === 2) return items[0] + ' and ' + items[1];
     return items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1];
   }
-  function usingLines(intake, weekdayOf, recentDinners) {
+  // `wordsByDate` is what attendance says about each day (attendanceWords
+  // — "nobody home", "Emily out for dinner", "+2 for dinner"), since the
+  // day sheet writes who's out to attendance rather than to the intake.
+  function usingLines(intake, weekdayOf, recentDinners, wordsByDate) {
     var lines = [];
     var tags = intake.night_tags || {};
     var guests = intake.guest_counts || {};
-    var dates = Object.keys(tags).concat(Object.keys(guests)).filter(function (d, i, all) { return all.indexOf(d) === i; }).sort();
+    wordsByDate = wordsByDate || {};
+    var dates = Object.keys(tags).concat(Object.keys(guests), Object.keys(wordsByDate))
+      .filter(function (d, i, all) { return all.indexOf(d) === i; }).sort();
     dates.forEach(function (d) {
-      var words = (tags[d] || []).filter(function (t) { return USING_TAG_WORDS[t]; }).map(function (t) { return USING_TAG_WORDS[t]; });
+      var said = (wordsByDate[d] || []).slice();
+      var counted = said.some(function (w) { return w.charAt(0) === '+'; });
+      var words = (tags[d] || [])
+        .filter(function (t) { return USING_TAG_WORDS[t] && !(t === 'guests' && counted); })
+        .map(function (t) { return USING_TAG_WORDS[t]; })
+        .filter(function (w) { return said.indexOf(w) === -1; });
       var gc = guests[d];
       var extra = gc ? (gc.adults || 0) + (gc.children || 0) : 0;
-      if (extra) words.push('+' + extra + ' at the table');
-      if (words.length) lines.push({ icon: 'home', text: weekdayOf(d) + ' — ' + words.join(', ') });
+      if (extra && !counted) words.push('+' + extra + ' at the table');
+      var all = said.concat(words);
+      if (all.length) lines.push({ icon: 'home', text: weekdayOf(d) + ' — ' + all.join(', ') });
     });
     var packed = (intake.packed_lunch_days || []).slice().sort().map(weekdayOf);
     if (packed.length) {
@@ -2513,11 +2591,19 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       USING_ICONS[line.icon] + '</svg></div><p class="using-text">' + esc(line.text) + '</p></div>';
   }
+  function attendanceWordsByDate() {
+    var out = {};
+    Object.keys(attendance.byDate).forEach(function (d) {
+      var words = attendanceWords(attendance.byDate[d], attendance.members);
+      if (words.length) out[d] = words;
+    });
+    return out;
+  }
   function renderUsing(saved) {
     var lines = usingLines(saved, function (d) {
       var day = dayFor(d);
       return day ? day.weekday : weekdayName(d);
-    }, !!(data && data.recent_dinners_on_record));
+    }, !!(data && data.recent_dinners_on_record), attendanceWordsByDate());
     $('using-rows').innerHTML = lines.map(usingRowHtml).join('');
     $('using').hidden = !lines.length;
   }
@@ -2670,7 +2756,8 @@
   }
 
   function crumbTap() {
-    if (step === 1 || drafting) leaveFlow();
+    if (cuisineOpen) closeCuisineScreen();
+    else if (step === 1 || drafting) leaveFlow();
     else goBack();
   }
 
@@ -2716,11 +2803,12 @@
       // A tap on the fallback cuisine list is an answer to "what do you
       // like", not just to "what about this week" — write it back so the
       // question is never asked cold again.
-      if (data.cuisines_are_fallback && answers.cuisines.length) {
+      var remembered = addedCuisines.concat(answers.cuisines).filter(function (c, i, all) { return all.indexOf(c) === i; });
+      if (data.cuisines_are_fallback && remembered.length) {
         await fetch('/api/memory/edit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ field: 'cuisine_preferences', value: answers.cuisines })
+          body: JSON.stringify({ field: 'cuisine_preferences', value: remembered })
         }).catch(function () { /* the week still plans correctly without this */ });
       }
       showDraftProgress(saved);
@@ -2746,8 +2834,14 @@
     }
   }
 
-  $('cta').addEventListener('click', advance);
-  $('skip').addEventListener('click', advance);
+  // While "Add a cuisine" is open the foot is its own: the button adds,
+  // the quiet line is "Never mind".
+  $('cta').addEventListener('click', function () { if (cuisineOpen) addCuisine(); else advance(); });
+  $('skip').addEventListener('click', function () { if (cuisineOpen) closeCuisineScreen(); else advance(); });
+  $('cuisine-field').addEventListener('input', paintCuisineScreen);
+  $('cuisine-field').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); addCuisine(); }
+  });
   $('surprise').addEventListener('click', chooseSurprise);
   $('leave').addEventListener('click', crumbTap);
   // The failed state's own two doors. Retry re-runs the one fetch that
@@ -2763,9 +2857,10 @@
   });
   $('failed-leave').addEventListener('click', function () { location.href = '/week'; });
   $('freeform').addEventListener('input', paintCta);
-  $('day-close').addEventListener('click', closeDaySheet);
-  $('day-done').addEventListener('click', closeDaySheet);
-  $('day-sheet').addEventListener('click', function (e) { if (e.target === $('day-sheet')) closeDaySheet(); });
+  // Done saves the day; × and the scrim put it back the way it was.
+  $('day-close').addEventListener('click', discardDaySheet);
+  $('day-done').addEventListener('click', saveDaySheet);
+  $('day-sheet').addEventListener('click', function (e) { if (e.target === $('day-sheet')) discardDaySheet(); });
 
   // The away card and its sheet.
   $('away-gate').addEventListener('click', openAwaySheet);
@@ -2778,7 +2873,9 @@
     if (e.target === $('away-sheet')) closeAwaySheet();
   });
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && !$('away-sheet').hidden) closeAwaySheet();
+    if (e.key !== 'Escape') return;
+    if (!$('away-sheet').hidden) closeAwaySheet();
+    else if (!$('day-sheet').hidden) discardDaySheet();
   });
 
   load();

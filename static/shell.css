@@ -9162,11 +9162,15 @@ span.cook-week-name { cursor: default; }
 }
 .who-row:hover { border-color: var(--hairline-strong); }
 .who-row:disabled { opacity: .6; cursor: default; }
+/* The initial the server gives each adult (tools.display_initials): one
+   letter, or two or three when two people share one — Em / Et — so the
+   circle grows to fit rather than clipping. */
 .who-row-initial {
   flex: 0 0 auto;
-  width: 40px;
+  min-width: 40px;
   height: 40px;
-  border-radius: 50%;
+  padding: 0 9px;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;

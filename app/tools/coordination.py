@@ -8,7 +8,7 @@ import logging
 import re
 from datetime import datetime
 from ..db import get_conn
-from ._shared import household_id
+from ._shared import household_id, household_initials
 from . import household as _household
 from . import memory as _memory
 from . import plates as _plates
@@ -1010,9 +1010,13 @@ def get_household_people() -> list[dict]:
         # "Adult", not "adult", so the exact match this used to do returned
         # an empty list for a real household — see db._backfill_member_colors
         # for the same fix and the fuller note.
-        "SELECT name, color FROM members WHERE household_id = ? AND LOWER(TRIM(age_group)) = 'adult' ORDER BY id ASC",
+        "SELECT id, name, color FROM members WHERE household_id = ? AND LOWER(TRIM(age_group)) = 'adult' ORDER BY id ASC",
         (household_id(),),
     ).fetchall()
+    # One rule for the letters (_shared.display_initials): two adults who
+    # share a first letter are told apart here the same way the day sheet
+    # and the "Who's this?" pick tell them apart.
+    initials = household_initials(conn)
     conn.close()
     # A color stored on the row (set by db._backfill_member_colors at the
     # next app restart after this adult was added) always wins; a
@@ -1028,5 +1032,5 @@ def get_household_people() -> list[dict]:
     out = []
     for i, r in enumerate(rows):
         color = r["color"] or (fallback_colors[i] if i < len(fallback_colors) else "#7E7360")
-        out.append({"name": r["name"], "initial": (r["name"].strip()[:1] or "?").upper(), "color": color})
+        out.append({"name": r["name"], "initial": initials.get(r["id"], "?"), "color": color})
     return out

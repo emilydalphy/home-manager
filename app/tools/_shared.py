@@ -152,12 +152,75 @@ def use_member(value: int | None) -> Iterator[int | None]:
 _ADULT_SQL = "LOWER(TRIM(age_group)) = 'adult'"
 
 
-def _member_row_dict(row) -> dict:
+def display_initials(names: list[str]) -> list[str]:
+    """
+    The letter (or letters) each person is shown as wherever the app draws
+    people as initials — the day sheet's rows, the "Who's this?" pick, the
+    grocery "added by" mark. One rule, in one place, so every surface
+    tells two people apart the same way (Loop Board "Two people with the
+    same initial", 2026-09-21).
+
+    The rule: one letter each, unless two people's first letters clash —
+    then the colliding people, and ONLY they, get the shortest prefix that
+    tells them apart. Emily / Ethan -> Em / Et; Emily / Emma -> Emi / Emm;
+    a household of Emily and Vic sees no change. Two people with the same
+    name (or one name that is a prefix of another) get as many letters as
+    it takes, up to the whole name.
+
+    Letters are compared case-insensitively and shown with the first
+    capitalised and the rest as typed. A blank name is "?". Positional:
+    the result lines up with `names`.
+    """
+    cleaned = [(n or "").strip() for n in names]
+    keys = [c.lower() for c in cleaned]
+    out: list[str] = []
+    for i, name in enumerate(cleaned):
+        if not name:
+            out.append("?")
+            continue
+        rivals = [k for j, k in enumerate(keys) if j != i and k and k[0] == keys[i][0]]
+        length = 1
+        if rivals:
+            # Grow until this prefix is unlike every rival's, or the name
+            # runs out — the whole name is the most it can ever show.
+            length = 2
+            while length < len(keys[i]) and any(r[:length] == keys[i][:length] for r in rivals):
+                length += 1
+        shown = name[:length]
+        out.append(shown[0].upper() + shown[1:])
+    return out
+
+
+def household_initials(conn=None) -> dict[int, str]:
+    """
+    Every member's display initial (display_initials), keyed by id, for
+    the household as it stands — children included, so a parent and a
+    child who share a letter are told apart on the day sheet, where both
+    have a row. Given a connection it only reads on it; without one it
+    opens and closes its own.
+    """
+    from ..db import get_conn
+
+    own = conn is None
+    if own:
+        conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, name FROM members WHERE household_id = ? ORDER BY id ASC", (household_id(),)
+    ).fetchall()
+    if own:
+        conn.close()
+    initials = display_initials([r["name"] or "" for r in rows])
+    return {r["id"]: initial for r, initial in zip(rows, initials)}
+
+
+def _member_row_dict(row, initials: dict[int, str] | None = None) -> dict:
     name = (row["name"] or "").strip()
+    if initials is None:
+        initials = household_initials()
     return {
         "id": row["id"],
         "name": name,
-        "initial": (name[:1] or "?").upper(),
+        "initial": initials.get(row["id"]) or (name[:1] or "?").upper(),
         "color": row["color"] or "",
     }
 
@@ -171,8 +234,9 @@ def household_adults() -> list[dict]:
         f"SELECT id, name, color FROM members WHERE household_id = ? AND {_ADULT_SQL} ORDER BY id ASC",
         (household_id(),),
     ).fetchall()
+    initials = household_initials(conn)
     conn.close()
-    return [_member_row_dict(r) for r in rows]
+    return [_member_row_dict(r, initials) for r in rows]
 
 
 def current_member() -> dict | None:

@@ -489,6 +489,86 @@ ONBOARDING_CUISINES = [
     "Greek", "Chinese", "Middle Eastern", "American", "French",
 ]
 
+# The cuisines "Add a cuisine" can offer as you type (Loop Board "Add a
+# cuisine that isn't on your list", 2026-09-21) — a spelling to fill the
+# field with, never a fence: free text that matches nothing is still
+# added, as typed. Kept alphabetical so a new one has an obvious place.
+KNOWN_CUISINES = [
+    "American", "Argentinian", "Brazilian", "British", "Cajun", "Caribbean",
+    "Chinese", "Cuban", "Ethiopian", "Filipino", "French", "German", "Greek",
+    "Hawaiian", "Indian", "Indonesian", "Irish", "Israeli", "Italian",
+    "Jamaican", "Japanese", "Korean", "Lebanese", "Malaysian", "Mediterranean",
+    "Mexican", "Middle Eastern", "Moroccan", "Nepalese", "Pakistani",
+    "Persian", "Peruvian", "Polish", "Portuguese", "Russian", "Scandinavian",
+    "Southern", "Spanish", "Sri Lankan", "Szechuan", "Taiwanese", "Tex-Mex",
+    "Thai", "Turkish", "Ukrainian", "Vietnamese",
+]
+
+# The most letters a typed cuisine may run to — a chip, not a paragraph.
+CUISINE_MAX_LENGTH = 40
+
+
+def cuisine_suggestions(typed: str, limit: int = 3) -> list[str]:
+    """
+    The "Did you mean" row for what's been typed so far: known cuisines
+    that start with it first (Mex -> Mexican), then ones that contain it
+    (-> Tex-Mex), then ones that share its first two letters (->
+    Mediterranean), up to `limit`. Empty for an empty field. Case never
+    matters. The client asks this of the prefill's `known_cuisines`
+    rather than the server on every keystroke — see cuisineSuggestions in
+    static/plan-week.html, which mirrors this exactly; the test pins
+    the two to the same answers.
+    """
+    q = " ".join((typed or "").split()).lower()
+    if not q:
+        return []
+    starts = [c for c in KNOWN_CUISINES if c.lower().startswith(q)]
+    contains = [c for c in KNOWN_CUISINES if q in c.lower() and c not in starts]
+    close = [
+        c for c in KNOWN_CUISINES
+        if len(q) >= 2 and c.lower()[:2] == q[:2] and c not in starts and c not in contains
+    ]
+    return (starts + contains + close)[:limit]
+
+
+def _clean_cuisine(name: str) -> str:
+    """One line, single-spaced, capped, first letter up — as typed otherwise."""
+    cleaned = " ".join(str(name or "").split())[:CUISINE_MAX_LENGTH].strip()
+    if not cleaned:
+        raise ValueError("Type a cuisine first.")
+    return cleaned[0].upper() + cleaned[1:]
+
+
+def add_household_cuisine(name: str) -> dict:
+    """
+    Put a cuisine on the household's own list — the one the mood screen
+    reads (What we know's cuisine_preferences) — so it is there next week
+    without being asked. A known cuisine's spelling wins over the typed
+    one (mexican -> Mexican); a cuisine already on the list, in any case,
+    is not added twice, and the saved spelling is the one handed back. A
+    new cuisine goes FIRST, which is where the mood screen shows it.
+
+    Returns {"cuisine": the spelling saved, "added": whether it was new,
+    "cuisines": the whole list as it now stands}.
+    """
+    from . import preferences as _preferences
+
+    cleaned = _clean_cuisine(name)
+    known = {c.lower(): c for c in KNOWN_CUISINES}
+    canonical = known.get(cleaned.lower(), cleaned)
+    conn = get_conn()
+    prefs = conn.execute(
+        "SELECT cuisine_preferences_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
+    ).fetchone()
+    conn.close()
+    saved = [c for c in (json.loads(prefs["cuisine_preferences_json"]) if prefs else []) if isinstance(c, str)]
+    for existing in saved:
+        if existing.strip().lower() == canonical.lower():
+            return {"cuisine": existing, "added": False, "cuisines": saved}
+    cuisines = [canonical] + saved
+    _preferences.set_household_meal_preferences(cuisine_preferences=cuisines, mark_complete=False)
+    return {"cuisine": canonical, "added": True, "cuisines": cuisines}
+
 
 def _rhythm_packed_lunch_suggestions(week_start: str, day_count: int = 7) -> list[dict]:
     """
@@ -667,6 +747,8 @@ def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
         "household_known": bool(household["adults"] or household["children"]),
         "cuisines": saved_cuisines or ONBOARDING_CUISINES,
         "cuisines_are_fallback": not saved_cuisines,
+        # What "Add a cuisine" can offer as you type — see cuisine_suggestions.
+        "known_cuisines": KNOWN_CUISINES,
         "intake": intake,
         "in_flight": in_flight,
         "plan_exists": bool(plan),

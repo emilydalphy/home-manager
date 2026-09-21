@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 from ..db import _ADULT_COLORS, get_conn
-from ._shared import current_member, household_id
+from ._shared import current_member, household_id, household_initials
 
 
 # Junk "no answer" values that sometimes get written into a restrictions
@@ -150,9 +150,17 @@ def list_members() -> list[dict]:
     rows = conn.execute(
         "SELECT id, name, dietary_restrictions_json FROM members WHERE household_id = ?", (household_id(),)
     ).fetchall()
+    # The letter(s) each person is drawn as — one rule for every surface
+    # (_shared.display_initials), so the day sheet and the "Who's this?"
+    # pick agree on who "Em" is.
+    initials = household_initials(conn)
     conn.close()
     return [
-        {"id": r["id"], "name": r["name"], "dietary_restrictions": json.loads(r["dietary_restrictions_json"])}
+        {
+            "id": r["id"], "name": r["name"],
+            "initial": initials.get(r["id"], "?"),
+            "dietary_restrictions": json.loads(r["dietary_restrictions_json"]),
+        }
         for r in rows
     ]
 

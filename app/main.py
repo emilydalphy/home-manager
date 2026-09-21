@@ -3349,6 +3349,22 @@ class SlotAttendanceRequest(BaseModel):
     guest_count: int | None = None
 
 
+class DayAttendanceRequest(BaseModel):
+    """
+    The day sheet's Done (Loop Board "Different days: the day sheet is a
+    row per person", 2026-09-21): one day, every meal, in one write.
+    `slots` is {slot: {"absent": [names], "guest_count": n}}; a slot or a
+    key left out is left as it was. See tools.set_day_attendance.
+    """
+    date: str
+    slots: dict
+
+
+class CuisineAddRequest(BaseModel):
+    """"Add a cuisine" on the mood screen — one name, remembered."""
+    name: str
+
+
 class AwayStretchRequest(BaseModel):
     """
     The trip range gesture. `member_names` empty/None means the whole
@@ -3424,6 +3440,39 @@ def set_week_attendance(week_start: str, req: SlotAttendanceRequest):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.exception("Attendance save failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/week/{week_start}/day-attendance")
+def set_week_day_attendance(week_start: str, req: DayAttendanceRequest):
+    """
+    Save one day's attendance from the day sheet in one call — who's out
+    for which meal, and how many guests for dinner. Nothing is written
+    until the sheet's Done sends this, which is what lets its × discard.
+    Returns each named slot as saved, with its summary line.
+    """
+    try:
+        datetime.date.fromisoformat(week_start)
+        return tools.set_day_attendance(req.date, req.slots)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Day attendance save failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/cuisines")
+def add_cuisine_route(req: CuisineAddRequest):
+    """
+    Put a cuisine on the household's own list, so it's on the mood screen
+    next week without being asked. See tools.add_household_cuisine.
+    """
+    try:
+        return tools.add_household_cuisine(req.name)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Cuisine add failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 

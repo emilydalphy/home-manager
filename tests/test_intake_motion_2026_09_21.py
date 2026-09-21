@@ -162,9 +162,10 @@ class TestOneQuestionAScreen:
         q2 = _section("q2")
         assert 'class="stripe" id="day-tiles"' in q2 and 'id="day-notes"' in q2
         assert 'id="holiday-blocks"' in q2 and 'id="away-set"' in q2
-        # The day sheet itself is untouched: same opener, same blocks.
+        # The day sheet opens from a tile; its insides are the second
+        # pass's (tests/test_day_sheet_row_per_person.py).
         assert "function openDaySheet(date)" in PAGE
-        assert "mealBlockHtml('lunch', 'Lunch')" in PAGE
+        assert "tile.addEventListener('click', function () { openDaySheet(tile.dataset.date); });" in PAGE
 
     def test_back_never_loses_an_answer_and_leaving_keeps_them(self):
         back = _extract("goBack")
