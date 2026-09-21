@@ -827,11 +827,25 @@ def _plan_dish(saved: dict) -> bool:
     with it about one household's list; that is what it was extracted to
     prevent.
 
-    What it no longer does, said out loud because it is a real difference:
-    clear_plan_slot deletes the outgoing meal's prep rows and
-    _replace_slot_entries does not, so a fridge move for the dinner this
-    replaces is left dangling. get_prep_schedule drops a dangling row on
-    read, and every chat swap in the app has always left them the same way.
+    The outgoing meal's prep rows still go with it — `delete_prep_rows`,
+    which clear_plan_slot did for free and _replace_slot_entries does only
+    when asked. Not tidiness, and the first cut of this change got it wrong
+    by arguing from ONE reader: get_prep_schedule drops a dangling row, so
+    it looked harmless. Three others do not. Reproduced through real doors
+    on a branch that left the row — shop the week, tap "Something in the
+    freezer?", confirm the chicken, then answer the holiday — and the Cook
+    tab's prep session and the chat answer to "what do I need to defrost?"
+    both went on saying "Move the Whole chicken to the fridge — for
+    Monday's Roast Chicken", tickably, for a roast chicken no longer on the
+    plan.
+
+    A known, deliberate cost, because it is the reason the parameter is
+    opt-in rather than the default: a fridge move somebody has already
+    TICKED is destroyed with the meal. That is clear_plan_slot's own
+    long-standing behaviour and its docstring calls it "a real loss to know
+    about" — this keeps it rather than changes it. An ordinary chat swap
+    leaves those rows standing and so has the stale-row problem instead;
+    that is the whole app's decision to make, not this door's.
     """
     from . import weekly_plan as _weekly_plan
 
@@ -848,6 +862,7 @@ def _plan_dish(saved: dict) -> bool:
         plan_id, _dinner_entry_ids(plan_id, d), d, "dinner", saved["bring_dish"],
         reasoning=_dish_reason(name),
         derived_from={"holiday": name, "holiday_dish": True, "constraint": "bring_a_dish"},
+        delete_prep_rows=True,
     )
     return True
 
