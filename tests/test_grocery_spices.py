@@ -19,6 +19,8 @@ import json
 import shutil
 from pathlib import Path
 
+from conftest import household_today
+
 import nodeharness
 import pytest
 from shop_harness import CLICK
@@ -33,7 +35,7 @@ SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
 
 
 def _monday(offset_weeks: int = 0) -> str:
-    today = datetime.date.today()
+    today = household_today()
     monday = today - datetime.timedelta(days=today.weekday())
     return (monday + datetime.timedelta(days=7 * offset_weeks)).isoformat()
 
@@ -209,7 +211,14 @@ def _rack_says(item: str, last_bought: str, next_due: str) -> None:
 
 
 def _days_ago(n: int) -> str:
-    return (datetime.date.today() - datetime.timedelta(days=n)).isoformat()
+    # The HOUSEHOLD's day. staples._today() moved onto the household's clock
+    # on 2026-09-22, so a server-clock seed here is a day out from what the
+    # app compares it against under a straddling runner. The 2026-09-21
+    # far-date-pin-cliffs entry left this file on date.today() on the
+    # explicit grounds that "a server-clock seed agrees with the app exactly
+    # and by construction" BECAUSE staples read the server's clock — that
+    # premise is now false, and the same sentence now argues for this.
+    return (household_today() - datetime.timedelta(days=n)).isoformat()
 
 
 def test_a_ticked_spice_that_came_home_is_a_spices_staple(curry_week):
@@ -220,7 +229,7 @@ def test_a_ticked_spice_that_came_home_is_a_spices_staple(curry_week):
     assert [g["label"] for g in grouped] == ["Spices"]
     (cumin,) = grouped[0]["staples"]
     assert cumin["item"] == "Ground cumin" and cumin["cadence_days"] == spices.RECENTLY_BOUGHT_DAYS
-    assert cumin["last_bought_at"] == datetime.date.today().isoformat()
+    assert cumin["last_bought_at"] == household_today().isoformat()
     assert cumin["due"] is False
 
 
@@ -249,7 +258,7 @@ def test_the_card_reads_the_staples_cadence_not_a_second_clock(curry_week):
     conn.execute("UPDATE staples SET cadence_days = 90, cadence_source = 'learned' WHERE item = 'Ground cumin'")
     conn.commit()
     conn.close()
-    _rack_says("Ground cumin", _days_ago(70), (datetime.date.today() + datetime.timedelta(days=20)).isoformat())
+    _rack_says("Ground cumin", _days_ago(70), (household_today() + datetime.timedelta(days=20)).isoformat())
     got = tools.list_spices_this_week()
     assert got["recently_bought"] == ["Ground cumin"]
     assert "Ground cumin" not in {sp["item"] for sp in got["items"]}
@@ -267,7 +276,7 @@ def test_unticking_a_pre_ticked_jar_is_we_have_plenty_and_a_retick_takes_it_back
     assert after["ticked"] is False and after["due"] is False
     (staple,) = tools.list_staples()
     assert staple["due"] is False
-    assert staple["next_due_at"] == (datetime.date.today() + datetime.timedelta(days=56)).isoformat()
+    assert staple["next_due_at"] == (household_today() + datetime.timedelta(days=56)).isoformat()
     assert "Ground cumin" not in _needed()
     # "Actually, I need it": the plenty is taken back, the jar is due again.
     tools.tick_spice(cumin["id"], True)

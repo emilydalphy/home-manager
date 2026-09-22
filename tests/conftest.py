@@ -643,6 +643,19 @@ def frozen_today():
 # a UTC container with a Toronto household. Seeding off the household closes
 # that gap so the pin stops being load-bearing.
 #
+# IT FAILS ONE DAY IN SEVEN, WHICH IS WHY IT READS AS A FLAKE RATHER THAN A
+# BUG (2026-09-22). A seed written as "the Monday of this week" is the common
+# shape, and the two clocks land in the SAME Monday-week on six days out of
+# seven — so the wrong clock gives the right answer almost always, and the
+# straddle job is green almost always. It is only wrong when the two dates
+# fall either side of a Monday. Measured, both directions: process Sun /
+# household Mon puts the seeded week SEVEN DAYS behind the one the app is in,
+# process Mon / household Sun puts it seven days ahead, and Mon/Tue, Tue/Mon
+# and Wed/Thu are all exact. So a file can seed off the wrong clock for months
+# and be caught only on the one weekday that exposes it — which is what
+# happened to the eight files re-seeded on 2026-09-22, and is the reason to
+# use this helper even when `date.today()` is demonstrably passing today.
+#
 # THIS IS NOT A SECOND CLOCK MECHANISM. It composes with --today /
 # @pytest.mark.today / frozen_today rather than competing with them: under a
 # pin every clock this function reads is already frozen, so it returns the

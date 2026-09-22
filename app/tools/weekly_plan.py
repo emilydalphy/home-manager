@@ -347,17 +347,32 @@ def clear_plan_slot(weekly_plan_id: int, meal_date: str, slot: str, conn=None) -
         # Prep rows for a meal that no longer exists go with it.
         #
         # BOTH HALVES OF WHAT THIS COMMENT USED TO SAY WERE FALSE, and it
-        # is corrected here (2026-09-21) rather than left, because a false
-        # comment is what the next reader acts on — one already did.
-        # _replace_slot_entries does NOT apply the same reasoning: it
-        # deletes prep rows only when asked (delete_prep_rows), so every
-        # ordinary swap in the app leaves them standing. And a path that
-        # forgets this does NOT "still show nothing stale" — get_prep_schedule
-        # drops a dangling row on read and is the only reader that does.
+        # was corrected on 2026-09-21 rather than left, because a false
+        # comment is what the next reader acts on — one already did. It
+        # said _replace_slot_entries "applies the same reasoning" and that
+        # a path forgetting this "still shows nothing stale". Neither was
+        # true: that write deleted prep rows only when asked, so every
+        # ordinary swap left them standing, and get_prep_schedule is the
+        # ONLY reader that drops a dangling row on read.
         # prep_sessions._prep_task_rows (the Cook tab's prep session),
         # defrost.get_defrost_schedule (the chat answer to "what do I need
-        # to defrost?") and defrost.get_defrost_today all show it. Measured
-        # through real doors, not reasoned.
+        # to defrost?"), defrost.get_defrost_today, _pending_thaw_count
+        # (the receipt's thaw line) and defrost's own settled-move reads
+        # all show it. Measured through real doors, not reasoned.
+        #
+        # Since 2026-09-22 the first half IS true again — every door of
+        # _replace_slot_entries releases the rows (_release_prep_rows).
+        # The second half is still false and always will be, so do not
+        # read "the swap covers it now" as "a new path need not".
+        #
+        # ONE THING _release_prep_rows DOES THAT THIS DOES NOT: a fridge
+        # move already TICKED becomes a held thing there, so the thawed
+        # meat outlives the meal. Here it is still destroyed with the
+        # meal — see the docstring above. This function's callers are a
+        # night nobody is home, a night called off, and generation's own
+        # tidying, and whether each of those should hold the meat too is a
+        # product question nobody has asked; the swap is the one Emily
+        # answered.
         conn.execute(
             f"DELETE FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id IN ({marks})",
             (household_id(), *[r["id"] for r in rows]),
@@ -6025,6 +6040,129 @@ def _settle_weekly_plan_approval(
     return result
 
 
+# What a held thawed ingredient says, and the one thing to ask about it.
+# Emily, 2026-09-21, on the thaw a swap strands: "Is there a way to delete
+# it but then also have it still note if it had been defrosted already if
+# they want to switch recipes for later in the week to use up the meat?"
+# The reminder goes — it named a dinner nobody is cooking — and the FACT
+# survives, because meat out of the freezer has a clock on it whatever the
+# plan says. Both are copy Emily can change in one line.
+THAWED_HOLD_TEXT = "{item} came out of the freezer {when} — the dinner it was for has changed."
+# The same thing with no day in it, for a row whose task_date held.when_label
+# cannot read. Saying less is the only honest option there — a held thing
+# that names the wrong day is worse than one that names none.
+THAWED_HOLD_TEXT_NO_DAY = "{item} is already out of the freezer — the dinner it was for has changed."
+THAWED_HOLD_ASK = "Plan a dinner later this week around the {item} I've already thawed."
+
+
+def _lower_lead(item: str) -> str:
+    """
+    "Whole chicken" mid-sentence is "whole chicken"; "BBQ pork" stays as
+    typed. An ingredient name is written however the recipe wrote it, and
+    the ask reads as the household's own sentence, so only a plain
+    Sentence-cased word is lowered.
+    """
+    if len(item) > 1 and item[1].isupper():
+        return item
+    return item[:1].lower() + item[1:]
+
+
+def _release_prep_rows(conn, entry_ids: list[int]) -> list[dict]:
+    """
+    Take the prep rows for meals that are leaving the plan, and keep the
+    one fact that outlives the meal.
+
+    Loop Board "After a swap, the Cook tab still says to thaw something
+    for a dinner that isn't on the plan any more" (Emily, 2026-09-21).
+    prep_tasks.meal_plan_entry_id carries no foreign key, and only ONE of
+    its readers drops a dangling row — cooker.get_prep_schedule. The other
+    five show it: prep_sessions._prep_task_rows (the Cook tab's prep
+    session), defrost.get_defrost_schedule (the chat answer to "what do I
+    need to defrost?"), _pending_thaw_count (the receipt's thaw line),
+    defrost.get_defrost_today, and defrost._settled_nights /
+    _settled_move_for_entry, which can quietly suppress a freezer chip the
+    household should still be offered. Deleting the rows at the source
+    covers all six by construction, rather than a filter per reader that
+    the seventh would miss.
+
+    A DONE defrost row is the one that must not just vanish: the meat is
+    already thawing, so the reminder is stale and the FACT is not. It
+    becomes a held thing (app/tools/held.py — the "Pomona, hold this"
+    strip on Today and the section under What we know), carrying the day
+    it came out and a one-tap way to plan a later dinner around it. Held,
+    not re-dated onto some other night: which night is the household's
+    call, and guessing one would be the app planning a dinner nobody
+    asked for.
+
+    Scoped to defrost. A done prep CUT ("chop the onions") for a dinner
+    that changed is a smaller loss — chopped onions keep, and a hold for
+    every ticked prep row would turn the strip into a log. Named rather
+    than left to be found.
+
+    Runs on the caller's connection and neither commits nor closes: the
+    delete and the hold belong to the swap's own transaction, or a
+    rolled-back swap leaves a hold for a dinner still on the plan.
+    Everything it reaches for takes that connection too (held.hold_thing,
+    and cooker.household_today under it) — a nested get_conn inside an
+    open write transaction is how this repo has twice earned an
+    intermittent "database is locked".
+    """
+    from . import defrost as _defrost
+    from . import held as _held
+
+    if not entry_ids:
+        return []
+    marks = ",".join("?" * len(entry_ids))
+    rows = conn.execute(
+        f"SELECT id, task_date, description, quantity, status, task_type FROM prep_tasks "
+        f"WHERE household_id = ? AND meal_plan_entry_id IN ({marks}) ORDER BY id",
+        (household_id(), *entry_ids),
+    ).fetchall()
+    if not rows:
+        return []
+    held: list[dict] = []
+    today = None
+    for row in rows:
+        if row["task_type"] != "defrost" or row["status"] != "done":
+            continue
+        item = _defrost.thawed_item(row["description"] or "")
+        if not item:
+            # A defrost row whose description this app did not write has no
+            # ingredient to name, so there is nothing honest to hold.
+            continue
+        if today is None:
+            today = _cooker_household_today(conn)
+        # The amount, when it says something: "Chicken thighs (2 lbs)" is
+        # worth knowing when you are planning a dinner around it, and
+        # "Whole chicken (1)" is noise — a bare count of a thing already
+        # named in the singular repeats itself.
+        quantity = (row["quantity"] or "").strip()
+        named = f"{item} ({quantity})" if quantity and not quantity.replace(".", "", 1).isdigit() else item
+        when = _held.when_label(row["task_date"], today)
+        said = (THAWED_HOLD_TEXT.format(item=named, when=when) if when
+                else THAWED_HOLD_TEXT_NO_DAY.format(item=named))
+        result = _held.hold_thing(
+            said,
+            ask_text=THAWED_HOLD_ASK.format(item=_lower_lead(item)),
+            member_id=None,
+            conn=conn,
+        )
+        if result.get("held"):
+            held.append({"held_id": result["id"], "item": item, "text": result["text"]})
+    conn.execute(
+        f"DELETE FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id IN ({marks})",
+        (household_id(), *entry_ids),
+    )
+    return held
+
+
+def _cooker_household_today(conn):
+    """The household's own day, read on an already-open connection — see cooker.household_zone's `conn`."""
+    from . import cooker as _cooker
+
+    return _cooker.household_today(conn=conn)
+
+
 def _replace_slot_entries(
     weekly_plan_id: int,
     old_entry_ids: list[int],
@@ -6035,7 +6173,6 @@ def _replace_slot_entries(
     food_groups: list[str] | None = None,
     reasoning: str = "",
     derived_from: dict | None = None,
-    delete_prep_rows: bool = False,
 ) -> dict:
     """
     Take `old_entry_ids` off a day and put `new_meal` in their place, as
@@ -6050,14 +6187,18 @@ def _replace_slot_entries(
     implementation of this write is free to disagree with this one about
     one household's list, which is what it was extracted to prevent.
 
-    `delete_prep_rows` takes the outgoing meals' prep rows with them, inside
-    this same transaction — what clear_plan_slot has always done, offered
-    here as an opt-in so holidays._plan_dish can keep doing it. It is OFF by
-    default, deliberately: a swap leaves those rows standing today, and a
-    ticked fridge move is a record of work somebody actually did, which
-    clear_plan_slot's own docstring calls "a real loss to know about".
-    Turning it on for everyone is a product decision about the whole app,
-    not a default to change while fixing two call sites.
+    The outgoing meals' prep rows go with them, inside this same
+    transaction — what clear_plan_slot has always done, and since
+    2026-09-22 what every door here does (_release_prep_rows). It was an
+    opt-in for one day: `delete_prep_rows` defaulted OFF because a ticked
+    fridge move destroyed with the meal is "a real loss to know about",
+    and that was a product decision this write did not get to make. Emily
+    made it — delete the reminder, HOLD the thawed ingredient — so the
+    opt-in is gone and the loss it was protecting is handled rather than
+    avoided. Leaving the rows was never the safe side: five of the six
+    readers of prep_tasks show a dangling row, so an ordinary swap left
+    the Cook tab asking for a chicken to be thawed for a dinner nobody was
+    cooking, tickable.
 
     It used to be four commits in a row: unlink any leftover chain, reverse
     the old meal's groceries, DELETE the row, then plan_meal to INSERT the
@@ -6124,19 +6265,13 @@ def _replace_slot_entries(
             if rescale_source_id is not None and approved:
                 _rescale_leftover_source_grocery(rescale_source_id, old_id, conn=conn)
             _grocery._reverse_meal_grocery_contributions(old_id, conn=conn)
-        if delete_prep_rows and old_entry_ids:
-            # Before the entries go, and on this connection — the order
-            # clear_plan_slot uses, and the only way the pair is atomic.
-            # Three readers of prep_tasks do NOT drop a dangling row
-            # (prep_sessions._prep_task_rows, defrost.get_defrost_schedule
-            # and get_defrost_today), so leaving one here is a fridge move
-            # on the Cook tab, and an answer to "what do I need to
-            # defrost?", for a meal that is no longer planned.
-            marks = ",".join("?" * len(old_entry_ids))
-            conn.execute(
-                f"DELETE FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id IN ({marks})",
-                (household_id(), *old_entry_ids),
-            )
+        # Before the entries go, and on this connection — the order
+        # clear_plan_slot uses, and the only way the pair is atomic. Five
+        # of the six readers of prep_tasks do NOT drop a dangling row, so
+        # leaving one here is a fridge move on the Cook tab, and an answer
+        # to "what do I need to defrost?", for a meal that is no longer
+        # planned. A thaw already TICKED is held rather than lost.
+        held_thawed = _release_prep_rows(conn, old_entry_ids)
         # By id, not by (date, slot): a slot legitimately holding two
         # snacks must lose only the one being replaced. With no old_meal
         # this is every row in the slot, which is exactly what the by-slot
@@ -6174,6 +6309,10 @@ def _replace_slot_entries(
             reingested = _reingest_unlinked_entries(weekly_plan_id, conn=conn)
             result["reingested_groceries_added"] = reingested["groceries_added"]
             result["reingested_already_have_skipped"] = reingested["already_have_skipped"]
+        # Only when there is something to say: the chat reads this to tell
+        # the household the meat did not go with the meal.
+        if held_thawed:
+            result["held_thawed"] = held_thawed
         conn.commit()
     except Exception:
         conn.rollback()

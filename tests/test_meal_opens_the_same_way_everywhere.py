@@ -37,6 +37,8 @@ from pathlib import Path
 import nodeharness
 import pytest
 
+from conftest import household_today
+
 from app import tools
 
 REPO = Path(__file__).resolve().parents[1]
@@ -49,7 +51,11 @@ _needs_node = pytest.mark.skipif(
 
 
 def _monday(offset_weeks: int = 0) -> str:
-    today = datetime.date.today()
+    # The HOUSEHOLD's Monday, not the process's: the seeded week has to be
+    # the week the app thinks it is in. Only wrong when the two clocks fall
+    # either side of a Monday, so it fails one day in seven and reads as a
+    # flake — see conftest.household_today.
+    today = household_today()
     monday = today - datetime.timedelta(days=today.weekday())
     return (monday + datetime.timedelta(days=7 * offset_weeks)).isoformat()
 

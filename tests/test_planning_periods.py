@@ -41,7 +41,11 @@ from app.tools import grocery, weekly_plan
 # ---------- helpers ----------
 
 def _monday(offset_weeks: int = 1) -> str:
-    today = datetime.date.today()
+    # The HOUSEHOLD's Monday, not the process's: the seeded week has to be
+    # the week the app thinks it is in. Only wrong when the two clocks fall
+    # either side of a Monday, so it fails one day in seven and reads as a
+    # flake — see conftest.household_today.
+    today = household_today()
     monday = today - datetime.timedelta(days=today.weekday())
     return (monday + datetime.timedelta(days=7 * offset_weeks)).isoformat()
 
@@ -199,7 +203,10 @@ class TestOrdinaryMondayWeekIsUnchanged:
         # Written the way a pre-period row was written: no content_start_date,
         # no day_count. _current_weekly_plan_row's window used to be a SQL
         # literal '+6 days'; this proves the replacement resolves identically.
-        today = datetime.date.today()
+        # The household's Monday: this asserts _current_weekly_plan_row finds
+        # the plan covering today, so the week has to contain the day the app
+        # calls today. See conftest.household_today.
+        today = household_today()
         monday = (today - datetime.timedelta(days=today.weekday())).isoformat()
         conn = get_conn()
         conn.execute(
@@ -437,6 +444,29 @@ class TestRhythmAnchoredDefault:
         assert suggestion["planning_anchor"] == "sunday"
         assert datetime.date.fromisoformat(suggestion["start_date"]).weekday() == 0
 
+    def test_mid_period_a_monday_household_is_offered_today_not_its_monday(
+        self, monkeypatch
+    ):
+        """The rule that made the two tests above weekday-dependent, pinned
+        in its own right so it cannot be reverted silently: a sunday-anchored
+        household opening Plan on the Wednesday of its own Mon-start period
+        is offered THAT WEDNESDAY, keeping the seven-day horizon — never the
+        Monday two days behind it (Emily, 2026-09-20: "the days are showing
+        from yesterday").
+
+        `is_monday_anchored` is the honest consequence and is asserted here
+        because nothing else asserts it False: it is computed straight off
+        the start day, so a period that no longer begins on a Monday must
+        stop claiming to.
+        """
+        self._set_anchor("sunday")
+        self._pin_today(monkeypatch, "2026-09-09")  # the Wednesday of Sep 7-13
+        suggestion = tools.suggest_planning_period()
+        assert suggestion["start_date"] == "2026-09-09"
+        assert suggestion["day_count"] == 7
+        assert suggestion["is_current_period"] is True
+        assert suggestion["is_monday_anchored"] is False
+
     def test_the_endpoint_serves_it(self, signed_in):
         self._set_anchor("as_we_go")
         res = signed_in.get("/api/week/planning-period")
@@ -658,7 +688,9 @@ class TestOverlapTakeover:
         # Under one-plan-per-day a retired plan has stopped being anybody's
         # answer to "what's for dinner". The fallback branch would otherwise
         # resurrect it whenever no plan covered today.
-        today = datetime.date.today().isoformat()
+        # The household's today — the plans are made to cover it and the
+        # assertion is about which one _current_weekly_plan_row resolves to.
+        today = household_date()
         old = self._plan(stub_model, today, 3)
         self._plan(stub_model, today, 7, meal="Katsu")
         assert _plan_row(old["weekly_plan_id"])["status"] == "retired"

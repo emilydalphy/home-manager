@@ -415,6 +415,568 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-22 — `main` was red on five weekdays out of seven, and TWO of the
+  four pinned CI jobs — `clock (friday)` and `clock (sunday)` — were red on
+  EVERY push. Branch
+  `overnight/anchored-suggestion-weekday-cliff`, NOT merged at the time of
+  writing. Test-only — not one line of `app/` is touched.** Four tests
+  across three files. THREE are one root cause; the FOURTH is a different one,
+  found by running the sweep this branch did on itself. Two of the three in
+  `test_planning_periods.py::TestRhythmAnchoredDefault` call
+  `suggest_planning_period()` UNPINNED and then assert the start day is a
+  Monday. Since "today, never yesterday" (Emily, 2026-09-20: "the days are
+  showing from yesterday") the suggestion begins on the household's own today
+  when Plan is opened mid-period, so that assertion is true only on a Monday —
+  or on a day the plan-ahead rule has already skipped to next week.
+  - **Measured at all seven pins, `TZ=America/Toronto`: monday, friday,
+    saturday and sunday 70 passed; tuesday, wednesday and thursday 2 failed.**
+    Unpinned on the real Tuesday, whole suite: **2 failed, 6211 passed** — and
+    identically at `TZ=UTC` and inside a VERIFIED `Pacific/Niue` straddle, so
+    it is not a straddle failure. Two agents measured the same counts in two
+    shells on `e5e8e9b` without seeing each other's numbers.
+  - **THE FIRST VERSION OF THIS ENTRY SAID "the matrix pins exactly the four
+    weekdays that pass, so CI cannot see it". THAT IS FALSE, and the
+    correction is the more useful finding.** A second agent measuring its own
+    baseline on another branch found a THIRD test of the same family in a
+    DIFFERENT file —
+    `test_weekly_plan_last_clock_reads.py::TestTheWeekTheAppOffers::test_the_monday_anchored_default_still_starts_on_a_monday`
+    — and it fails on **wednesday, thursday and FRIDAY**, one day later than
+    the other two because it runs behind `_behind(monkeypatch)`. Re-measured
+    here independently at all seven pins before believing it.
+    **Friday IS in the matrix**, and a weekday pin always resolves to the next
+    such day, so **`clock (friday)` has been red on `main` on every single
+    push since the change landed** — measured 1 failed / 6210 passed / 3
+    skipped. So CI was not blind to this family: it was red and was landed
+    over or ignored, which is worse and is the thing to fix about the process
+    rather than the code.
+  - **What IS true about the blind spot**, stated at the size it really is:
+    the two `test_planning_periods.py` tests fail on tuesday, wednesday and
+    thursday, and **none of those three is pinned by the matrix** — so those
+    two were caught only by the unpinned `pytest` job, on whatever day
+    somebody happened to push, and were green on Monday 2026-09-21 because
+    Monday was both a pinned day and the real one. Taken together: the family
+    spans five weekdays (tue, wed, thu from one file, wed, thu, fri from the
+    other), the matrix covers four weekdays and can see exactly one of those
+    five.
+  - **The app is right and the tests are stale**, measured rather than
+    assumed: sunday-anchored, `start` is `2026-09-07` on the Monday,
+    `2026-09-09` on the Wednesday (`is_monday_anchored` correctly False) and
+    `2026-09-14` on the Friday (plan-ahead skips to next week). The behaviour
+    is Emily's own 2026-09-20 decision.
+  - **The fix is the class's OWN idiom, not a new one.** Both tests are pinned
+    to a Monday, exactly as their sibling
+    `test_ready_by_friday_starts_the_week_on_saturday` was pinned to a Saturday
+    by the same 2026-09-21 change, under a comment saying why ("pinned to a
+    Saturday here so the anchor's own day is what is asserted"). **These two
+    were simply missed by it.**
+  - **PINNING A TEST CAN MAKE IT VACUOUS, SO THAT WAS MEASURED RATHER THAN
+    HOPED.** Two mutations, both run: removing `if plan_ahead and start <
+    today: start = today` reddens **2** (including the new guard below), and
+    breaking the anchor→start-day mapping (`+1` → `+2`) reddens **5**,
+    **including both re-pinned tests**. So they still catch exactly what they
+    were written to catch; the pin removed an assertion that is now false by
+    design and nothing else.
+  - **AND A FOURTH, DIFFERENT ROOT CAUSE, FOUND BY RUNNING THE SWEEP RATHER
+    THAN BY READING ANYTHING.** This branch's own whole-suite pin runs turned
+    up
+    `test_shop_freezing_it.py::test_a_meal_too_close_to_thaw_for_is_not_offered_and_a_yes_is_refused`
+    failing under `--today=sunday`, in a file this branch does not touch.
+    Re-measured on unmodified `main` at all seven pins: green on six, **1
+    failed on sunday** — and sunday IS in the matrix, so **`clock (sunday)`
+    has been red on main on every push too**. NOT the same cause as the other
+    three: it builds its plan from *this week's Monday* and then plans a meal
+    on TOMORROW, and on a Sunday `TODAY.weekday()` is 6, so the week ends
+    today and `plan_meal` rightly refuses the day after it ("2026-09-28 isn't
+    in weekly plan 12's period"). A week-boundary seed, not a stale
+    assertion. The plan is anchored on `TODAY` now — this test is about a
+    move night that has gone by, not about where a week begins, so it names
+    the days it actually needs. **Strictly stronger: the mutation that stops
+    a gone-by move night suppressing the offer reddens it on sunday as well
+    as on monday, where before it could not even run there.** 15 passed at
+    all seven pins and unpinned.
+  - **THE SWEEP IS THE TRANSFERABLE PART.** Three of these four were found by
+    running the whole suite at pins nobody runs, not by reading code — and
+    two `clock` jobs have been red for days without it. Anyone moving a dated
+    seed should run all SEVEN weekdays, not the four the matrix pins.
+  - **The third test is rewritten to assert its own docstring's claim.** It
+    said "moving the clock must not move where a week begins, only which week
+    it is" and then asserted a bare `weekday() == 0`, which tests the weekday
+    the suite ran on rather than the clock. It now asks the same question
+    twice — once letting the default read the household's day, once naming
+    that day through `from_date` — and requires the same answer, which IS
+    that claim and holds on all seven weekdays; plus that the start still
+    sits inside the household's own week. Its `is_monday_anchored is True`
+    went with it: that field is computed straight off the start day, so it is
+    the same stale claim in another form, and it is asserted against the
+    start day's own weekday now. **Non-vacuous, measured:** point
+    `weekly_plan._household_today` back at the server's clock and it goes red
+    on its own.
+  - **A third test is added to `test_planning_periods.py`, and it is the point
+    of the branch rather than decoration:** `test_mid_period_a_monday_household_is_offered_today_not_its_monday`
+    pins the rule that broke the other two — a sunday-anchored household
+    opening Plan on the Wednesday of its own Mon-start period is offered that
+    Wednesday, keeps the seven-day horizon, and reads `is_monday_anchored`
+    False. **Nothing anywhere asserted that field False**, and it is computed
+    straight off the start day, so a period that stops beginning on a Monday
+    must stop claiming to.
+  - **The lesson is already in this log and was not enough.** The 2026-09-17
+    `drop-dish-refuses-the-past` entry says "when a seed moves from a fixed
+    weekday to 'today', sweep for what BRANCHES on the weekday, not for what
+    asserts one — and run all four pins, which is the only thing that would
+    have caught it." Here **all four pins would NOT have caught it**, because
+    the three days it breaks on are not among them. The rule wants widening:
+    run all SEVEN, or accept that the matrix covers four.
+  - **DELIBERATELY NOT DONE, and it is Emily's call:** `.github/workflows/
+    tests.yml` is untouched. Adding tuesday/wednesday/thursday is three more
+    full suites (~6 min each) on every PR, and that workflow's own comments say
+    the four were chosen deliberately. A cheaper middle option, if she wants
+    one, is **wednesday alone** — mid-period for every weekday anchor, which is
+    the shape that breaks, at one job rather than three.
+  - **Numbers, read off the runs.** `tests/test_planning_periods.py` **71
+    passed at all seven weekday pins and unpinned**, against 70 passed / 2
+    failed on main at tuesday, wednesday, thursday and unpinned.
+    `tests/test_weekly_plan_last_clock_reads.py` **33 passed at all seven pins
+    and unpinned**, against 1 failed / 32 passed on main at wednesday,
+    thursday and friday. Whole suite unpinned at `TZ=America/Toronto` on the
+    real Tuesday: **6214 passed, 0 failed**, against a measured **2 failed,
+    6211 passed** on `e5e8e9b` — 6211 + the 2 fixed + the 1 added is 6214
+    exactly, so nothing else moved and no test was deleted or weakened.
+    `tests/test_shop_freezing_it.py` **15 passed at all seven pins and
+    unpinned**, against 1 failed / 14 passed on main at sunday.
+    Unpinned inside a VERIFIED `Pacific/Niue` straddle — Niue 2026-09-21
+    against Toronto 2026-09-22, dates checked either side — **6214 passed,
+    0 failed**.
+  - **THE WHOLE-SUITE PIN NUMBERS ARE RE-MEASURED AT `03c2120`, THE COMMIT
+    THAT SHIPS, AND THE FIRST VERSION OF THIS ENTRY QUOTED THEM FROM THE
+    FIRST COMMIT — which is the weaker claim, and reads as the stronger
+    one.** That run started before the second and third fixes landed, so it
+    recorded friday and sunday still red; the per-FILE evidence above really
+    was at all seven pins, but nothing had shown that the two later fixes
+    broke nothing ELSE at the pins they fix. Re-run on the final tree,
+    `TZ=America/Toronto`, whole suite: **monday, friday, saturday and sunday
+    each 6211 passed, 3 skipped, 0 failed**, and unpinned **6214 passed, 0
+    failed**. So both of the pinned jobs this branch exists to clear are
+    measured green on the commit being merged, and 6211 + the 2 fixed + the
+    1 added is 6214 exactly. Recorded this way rather than quietly swapped,
+    because a number carried forward from an earlier commit is exactly the
+    statistic this log keeps having to unpick.
+
+- **2026-09-22 — Eight test files seeded their week off the PROCESS's clock.
+  The card's COUNT was right and its FREQUENCY was wrong: the straddle job is
+  red one day in seven, not seven hours of every day. Branch
+  `overnight/straddle-seeds-household-clock`, NOT merged at the time of
+  writing. TEST-ONLY — `git diff app/ static/` is empty.** Loop Board bug,
+  Phase 0: the residue the 2026-09-21 `far-date-pin-cliffs` entry filed when it
+  measured `main` at 13 failed under a verified `Pacific/Niue` straddle and
+  correctly left it out of scope.
+  - **THE FREQUENCY CORRECTION, measured rather than reasoned, and it is the
+    finding worth keeping.** Every one of the eight seeds "the Monday of this
+    week" off `date.today()`. A straddle only puts the two clocks in different
+    MONDAY-WEEKS when it falls either side of a Monday; on the other six days
+    they share a Monday and the wrong clock gives the right answer. Probed by
+    setting `households.timezone` and freezing at chosen instants, both
+    directions:
+
+    | process | household | process Monday | household Monday | delta |
+    |---|---|---|---|---|
+    | Sun 09-20 | Mon 09-21 | 09-14 | 09-21 | **+7d** |
+    | Mon 09-21 | Tue 09-22 | 09-21 | 09-21 | 0 |
+    | Wed 09-23 | Thu 09-24 | 09-21 | 09-21 | 0 |
+    | Mon 09-21 | Sun 09-20 | 09-21 | 09-14 | **−7d** |
+    | Tue 09-22 | Mon 09-21 | 09-21 | 09-21 | 0 |
+
+    So the seven-hour Niue window the `far-date-pin-cliffs` entry measured is
+    real and its "green the other seventeen hours" is right, but reading it as
+    seven hours of EVERY day is not: it is seven hours of the Sunday→Monday
+    crossing. **Corroborated by that entry's own figure against today's**: it
+    measured 13 failed inside the window on 2026-09-20/21 (Sun/Mon — the
+    crossing); the same files inside today's window, 2026-09-21/22 (Mon/Tue —
+    not a crossing), read **2 failed / 251 passed**, and both of those are a
+    separate weekday cliff with no straddle in it. Same zone, same window,
+    different weekday, red against green.
+  - **A file can seed off the wrong clock for months and be caught on one
+    weekday**, which is why the rule is to use `conftest.household_today()`
+    even where `date.today()` is demonstrably passing today. That is now
+    written beside `household_today` itself rather than seven times over at
+    the call sites.
+  - **The fix keeps the Monday-of-the-week SHAPE and changes only the clock.**
+    `today = household_today()` in each helper, so MON is still a Monday and
+    no weekday branch can move under it — deliberately not "seed off today",
+    which is what broke `clock (saturday)` on 2026-09-17 when a Monday anchor
+    became "today" and `swap_in_place._minutes_cap`'s `weekday < 5` had no
+    weekday in any assertion. All four CI pins were run.
+  - **`test_planning_periods.py` was already half-converted** (its two
+    `suggest_planning_period` assertions moved to `household_date()` earlier);
+    its `_monday()` and two inline reads had not.
+  - **THE PIN CANNOT REPRODUCE THIS ON A NON-UTC PROCESS, and the reason
+    changed one tree ago.** Before `pin-hour-household-clock`, freezegun added
+    `tz_offset` on top of an already-aware conversion, so under any pin
+    `household_today()` collapsed onto the process's date and no pin could
+    straddle at all. `_fg_aware_now` closed that. What remains is narrower: a
+    pin is the process's LOCAL wall clock, so at `TZ=America/Toronto` — which
+    is what the four `clock` jobs use — both clocks land on the same date and
+    the pinned jobs stay blind to this class. At `TZ=UTC` a pin does straddle,
+    which is how the reproduction below was driven. Recorded because the older,
+    broader statement was true when it was written and is not now.
+  - **THE REPRODUCTION is production's own configuration**: `TZ=UTC
+    --today=2026-09-21T02:00` is a UTC container against a Toronto household in
+    the Toronto evening, on the one night it crosses a Monday. The eight files
+    there: **3 failed on `main`, 0 of them after** (control `--today=
+    2026-09-22T02:00`, Tue/Mon: 0 before, 0 after). In the other direction —
+    household AHEAD, the Niue CI shape, reproduced with a throwaway uncommitted
+    conftest hook — `main` is **11 failed across all eight files**, which is the
+    card's ~13 once `test_plan_chores.py` is excluded. So the card's count is
+    right and only its frequency was wrong.
+  - **AN APP BUG THE RE-SEED UNCOVERED, PROVEN AND DELIBERATELY NOT FIXED
+    HERE — `app/tools/grocery.py:1259`.** Not one of the eight turning out to
+    be an app bug: a separate defect the fix made visible.
+    `set_aside_carried_over_items` decides "has this plan's period STARTED"
+    with `date.today()` while `plan_period()` start dates are household-
+    relative. The re-seed moved a seeded plan from a week out to the
+    household's TOMORROW, and two `TestTakeoverIsAtomic` tests that had never
+    failed began to. Proved by pointing that ONE line at
+    `cooker.household_today()` and changing nothing else: `TestTakeoverIsAtomic`
+    2 failed → **5 passed**, the eight files at the crossing 2 failed → **253
+    passed**; then reverted, and `git diff app/` is empty. Its own docstring is
+    the specification it breaks ("a plan that hasn't begun yet is not a
+    leftover … asking them to keep-or-drop it would be asking about groceries
+    nobody has had the chance to buy"). Reachable in production's own
+    direction, from 20:00 Toronto. `grocery.py` is one of the two reads the
+    2026-09-18 `last-clock-pockets` AST sweep named and left; this is a
+    reproduction for one of them. Its own card.
+  - **TWO OF THE FOUR PINNED `clock` JOBS ARE RED ON `main`, by two different
+    roots, and neither is this branch's.** `clock (friday)`:
+    `test_weekly_plan_last_clock_reads.py::TestTheWeekTheAppOffers::
+    test_the_monday_anchored_default_still_starts_on_a_monday` (measured
+    wed/thu/fri, passes mon/tue/sat/sun). `clock (sunday)`:
+    `test_shop_freezing_it.py::test_a_meal_too_close_to_thaw_for_is_not_
+    offered_and_a_yes_is_refused` (sunday only; a Mon-start week plus a meal on
+    "tomorrow", which on a Sunday falls off the end and trips `plan_meal`'s
+    period guard). Both are weekday cliffs, both fail at `TZ=America/Toronto`
+    where the two clocks agree, so neither is the straddle class. Both fixed on
+    `overnight/anchored-suggestion-weekday-cliff`; they are subtracted
+    per-weekday below, never as a flat constant.
+  - **THE MATRIX HAS TWO BLIND SPOTS, NOT ONE, and that is a finding about the
+    tripwire rather than about these eight files.** The `clock` jobs pin four
+    weekdays of seven — monday, friday, saturday, sunday — so tue/wed/thu are
+    never exercised, which is where the `test_planning_periods` cliff lives and
+    why it shipped. And every pin runs at `TZ=America/Toronto`, where a pin
+    cannot straddle, so no pinned job can see the class this branch is about.
+    `.github/workflows/tests.yml` is deliberately UNTOUCHED — three more full
+    suites per PR is Emily's call.
+  - **EVERY FILE'S MUTATION WAS RUN, so none of the eight went green by asking
+    less.** Clean → mutated, whole file, `TZ=America/Toronto`:
+    `set_prep_days` drops the days 41→**22 red**; `set_cook_ahead` covers no
+    other night 18→**12**; `_scale_card_to_batch` never scales 30→**20**;
+    `drop_grocery_item_pre_shop` a no-op 15→**1**; `household_id()` always 1
+    29→**16**; `get_cooker_view` ignoring a named plan 15→**3**;
+    `plan_period` always a Monday week (2 pre-existing)→**31**;
+    `dishTargetForName` handing back the recorded target 35→**3**. The
+    pre-shop one is the thinnest at a single red and is named as such rather
+    than rounded up. `app/` and `static/` were restored after each.
+  - **Numbers, all read off the runs, BEFORE on `e5e8e9b` and AFTER on this
+    branch, with the three pre-existing failures named and subtracted
+    per-weekday rather than as a flat constant.** Every run identical
+    before and after; no test added, deleted or weakened (6213 collected
+    either side).
+
+    | run | before | after | the failures, which are not this branch's |
+    |---|---|---|---|
+    | `Pacific/Niue`, unpinned | 2F / 6211P | 2F / 6211P | the anchor cliff ×2 |
+    | `America/Toronto`, unpinned | 2F / 6211P | 2F / 6211P | the anchor cliff ×2 |
+    | `--today=monday` | 0F / 6210P / 3S | 0F / 6210P / 3S | — |
+    | `--today=friday` | 1F / 6209P / 3S | 1F / 6209P / 3S | `test_weekly_plan_last_clock_reads` |
+    | `--today=saturday` | 0F / 6210P / 3S | 0F / 6210P / 3S | — |
+    | `--today=sunday` | 1F / 6209P / 3S | 1F / 6209P / 3S | `test_shop_freezing_it` |
+    | `Pacific/Kiritimati`, unpinned | 2F / 6211P | 2F / 6211P | the anchor cliff ×2 |
+    | `Asia/Tokyo`, unpinned | 2F / 6211P | 2F / 6211P | the anchor cliff ×2 |
+
+    **WHICH OF THOSE WERE REAL STRADDLES, said rather than implied.** Only
+    `Pacific/Niue` — Niue 2026-09-21 Mon against Toronto 2026-09-22 Tue,
+    `date +%F` checked on both zones BEFORE and AFTER each run (08:25:06 →
+    08:31:08 UTC). `Kiritimati` and `Tokyo` both read 2026-09-22, Toronto's
+    own date, at the hour they ran: green-in-that-zone evidence and NOT
+    straddle evidence. They straddle Toronto later in its day (Kiritimati is
+    18h ahead, Tokyo 13h) and this session could not reach that hour. "A
+    timezone is not a straddle" is this log's own lesson and it is honoured
+    here rather than quoted.
+    **The Niue run shows no improvement, and that is the prediction rather
+    than a disappointment**: today's straddle is Mon/Tue, not a Monday
+    crossing, so by this entry's own arithmetic the seeds agreed either way.
+    The improvement is at the crossing, measured separately below.
+  - **THE CROSSING, where the change actually shows, current tree, the eight
+    files at `TZ=UTC --today=2026-09-21T02:00`:** `main` **3 failed / 250
+    passed** (all three in `test_meal_opens_the_same_way_everywhere.py`),
+    this branch **2 failed / 251 passed** — and those two are the
+    `grocery.py` app bug above, not a seed; with that one line pointed at the
+    household's clock it is **253 passed**. At the Tue/Mon control both trees
+    are 253 passed.
+  - **Not done, deliberately:** the ~95 other files carrying `date.today()`
+    were not swept (the 2026-09-15 entry's reasoning is unchanged — rewriting
+    95 files to fix eight is churn with its own bugs in it, and the straddle
+    job is what finds the next one); `.github/workflows/tests.yml` is
+    untouched; and neither of the two pre-existing weekday cliffs was fixed
+    here, both being somebody else's branch.
+- **2026-09-22 — Staples ran on the server's clock, so a staple due tomorrow
+  was written onto tonight's shopping list. Branch
+  `overnight/staples-household-clock`, NOT merged at the time of writing.**
+  Loop Board bug, the tail of the household-clock sweep and the pocket the
+  2026-09-18 `last-clock-pockets` entry named and left. The container runs UTC
+  and `households.timezone` defaults to `America/Toronto`, so from about 8pm
+  local the server's date is already tomorrow.
+  - **`sync_due_staples` is a WRITE and is called on every read of the grocery
+    list**, so the error was not a wrong badge: a staple whose `next_due_at`
+    was the household's TOMORROW was the server's TODAY and got pushed onto
+    the real list that evening — an extra line, in exactly the hours somebody
+    checks the list before a morning shop. `due` on the Staples card read a
+    day early for the same window. Both reproduced in both clock directions.
+  - **DRIVEN OVER TWO REAL uvicorn SERVERS ON THROWAWAY DATABASES, NO CLOCK
+    FAKED ANYWHERE** — the container is UTC and the household was set to
+    `Pacific/Niue`, so the server read 2026-09-22 and the household
+    2026-09-21 for real. One staple, due on the household's TOMORROW
+    (2026-09-22), then an ordinary read of the grocery list, which is what
+    calls `sync_due_staples`:
+
+    | | main | this branch |
+    |---|---|---|
+    | grocery list after the read | **`['Dish soap']`** | `(empty)` |
+    | Staples card | `due=True`, "probably running low" | `due=False`, "due tomorrow" |
+
+    Same database contents, same request, same instant; the only difference
+    is the two lines of code. That is the reported bug and the fix, through
+    the door a household actually uses rather than through a helper.
+  - **ELEVEN READS, ONE FUNCTION.** Every date this module reasons with goes
+    through `_today()`, so the conversion is one function rather than eleven
+    edits — and `_TODAY_OVERRIDE` still wins, which is load-bearing:
+    `tests/test_staples.py` pins a fixed Wednesday through it and travels
+    from there.
+  - **THE NAIVE CONVERSION COSTS A CONNECTION PER ROW, AND THAT IS THE ONLY
+    interesting thing in this branch. Measured, not reasoned.**
+    `cooker.household_today()` opens a connection to read the household's
+    timezone, and `_shape` — the row-shaper — called `_today()` twice per row.
+    With the one-line change and nothing else: **`list_staples` went 1 → 13
+    connections for six staples**, i.e. per row, which is the cost this repo
+    has twice gone out of its way to avoid. `add_staple` went 1 → 6.
+    `_shape` and `_due_words` take the day now, `list_staples` resolves it
+    once above its own `get_conn`, and `add_staple` reads it once and reuses
+    it. **After: `list_staples` 1 → 2 and `add_staple` 1 → 4, and both are
+    CONSTANT** — re-measured at 1 staple, 6 staples, and 11 staples with a
+    dozen purchased rows behind them, same numbers. `sync_due_staples` 1 → 2.
+  - **The clock is resolved BEFORE `get_conn`**, which is a runtime guard
+    rather than a comment: a nested connection inside an open write
+    transaction is how this repo has twice earned an intermittent "database
+    is locked". Pinned by a test that watches the depth at the moment the
+    clock is read, and by the mutation that moves the read below `get_conn`.
+  - **`cooker.household_today()` imported IN-FUNCTION, not at module scope.**
+    `spices` imports this module at module scope and this module imports
+    `spices` back, and `cooker` imports `quantities` at module scope — so a
+    new top-level edge from either file is a cycle waiting to happen, for a
+    value read once per call. Same shape `inventory.py` and
+    `notifications.py` took on 2026-09-18.
+  - **`quantities._estimate_expiration_date` moves in the same commit**, per
+    this file's own rule that a half-converted module is a new bug rather
+    than a smaller one. It is the WRITE side of the half-conversion the
+    2026-09-18 entry named: measured at Toronto 21:30, a dairy row landed a
+    day late. An explicit `from_date` still wins outright, pinned.
+  - **THE CARD SAID THE STALE COMMENT WAS WRONG AND IT IS NOT, which is worth
+    correcting rather than quietly fixing.** The comment accepting the skew
+    because it "errs toward staying quiet" is about a DIFFERENT comparison —
+    `date(removed_at) < today`, where `removed_at` is a UTC instant — and for
+    that one it is true, in both directions, before and after. What was wrong
+    was how it READ while `_today()` was the server's: as a blessing on the
+    module's clock generally, when the due test three lines above it errs the
+    other way. The comment now says which comparison it covers and names the
+    one it does not.
+  - **THE CONVERSION BROKE TWO TESTS IN ANOTHER FILE UNDER A STRADDLE, AND
+    ONLY A BEFORE/AFTER COMPARISON FOUND IT — the branch's own suite was
+    green at Toronto.** `tests/test_grocery_spices.py` asserted against
+    `datetime.date.today()`, so the moment `staples._today()` moved, the
+    test's clock and the app's disagreed: measured under a VERIFIED
+    `Pacific/Niue` straddle (Niue 2026-09-21 against Toronto 2026-09-22,
+    dates checked either side of BOTH runs), **main 2 failed / 6211 passed,
+    this branch 4 failed / 6220** — the extra two being
+    `test_a_ticked_spice_that_came_home_is_a_spices_staple` and
+    `test_unticking_a_pre_ticked_jar_is_we_have_plenty_and_a_retick_takes_it_back`.
+    `straddle` is a BLOCKING job, so that would have turned it red.
+    **The 2026-09-21 far-date-pin-cliffs entry predicted this exactly** and
+    left the file on the server's clock "because `staples._today()` reads
+    the SERVER's clock, so a server-clock seed agrees with the app by
+    construction". That premise was this branch's to invert, so the file
+    moves with it — all five reads onto `conftest.household_today()`, 139
+    passed at Toronto and at Niue — and that entry is corrected in place
+    rather than left to mislead the next reader.
+  - **Numbers on the commit that ships (`fc3dc38`), whole suite.**
+    `TZ=America/Toronto` **2 failed / 6222 passed**, and inside a VERIFIED
+    `Pacific/Niue` straddle (Niue 2026-09-21 against Toronto 2026-09-22,
+    `date +%F` in both zones before AND after the run) **2 failed / 6222
+    passed**. The two are byte-identical to main's own pre-existing pair —
+    `test_planning_periods.py::TestRhythmAnchoredDefault`, which is
+    `overnight/anchored-suggestion-weekday-cliff`'s to fix — so this branch
+    adds **zero** failures in either zone, which is the number that matters
+    because `straddle` blocks. Main collects 6213 and this branch 6224, so
+    **+11 is `tests/test_staples_household_clock.py` exactly** and no
+    existing test was deleted or weakened. The three staples-touching files
+    read **227 passed** at all seven weekday pins and in both zones.
+  - `tests/test_staples_household_clock.py` (11; **5 red against main's
+    `app/`**, of which **4 are behaviour catches** — the fifth is the
+    ordering guard and is red there for a reason other than the one it is
+    named after, because main reads no household clock in this module at all,
+    so it dies on an empty list rather than on a bad depth. Its docstring
+    says so and it is pinned by mutation instead). Both directions at one
+    frozen UTC instant, following `tests/test_last_clock_pockets.py`: Toronto
+    21:30 (the household a day BEHIND — production's own direction) and Tokyo
+    08:30 (a day AHEAD, the quiet direction, where a staple due on the
+    household's own today is withheld). **Six mutations run and every one
+    bites:** the server's clock back in `_today()` (4 red), the
+    `_TODAY_OVERRIDE` branch dropped (2), `list_staples` no longer threading
+    the day so the per-row read returns (1), the clock read moved below
+    `get_conn` (1), the expiry estimate back on the server's clock (1), and
+    the expiry estimate ignoring an explicit `from_date` (1).
+- **2026-09-22 — A swap takes its fridge move with it, and the thawed meat
+  outlives the meal. Branch `overnight/thaw-survives-a-swap`, NOT merged at
+  the time of writing.** Loop Board bug, Phase 1, High. The decision
+  `overnight/replace-slot-entries-two-writes` deferred on 2026-09-21 —
+  `delete_prep_rows` defaulting OFF because "a ticked fridge move destroyed
+  with the meal" was a product call that write did not get to make. Emily
+  made it (2026-09-21): *"Is there a way to delete it but then also have it
+  still note if it had been defrosted already if they want to switch
+  recipes for later in the week to use up the meat?"*
+  - **Reproduced first, over a real uvicorn on a throwaway DB, through the
+    Review "+"** (`POST /api/week/{w}/add-dish-day` → `swap_meal_in_plan` →
+    `_replace_slot_entries`), no hand-inserted row: approve a week with
+    Roast Chicken, shop it, answer "Something in the freezer?", then put
+    another dish on that night. On the merge base **every one of the five
+    unfiltered readers said the same thing after the swap as before it** —
+    the Cook tab's prep session, the chat answer to "what do I need to
+    defrost?", the receipt's thaw count, Today's defrost tile, and
+    `defrost._settled_nights`' "already answered" set — all still naming
+    *"Move the Whole chicken to the fridge — for Friday's Roast Chicken."*
+    for a chicken nobody was cooking, tickable. On the branch all five are
+    empty.
+  - **The fix is a delete at the SOURCE, not a filter per reader.**
+    `prep_tasks.meal_plan_entry_id` carries no foreign key and only
+    `cooker.get_prep_schedule` drops a dangling row on read, so covering
+    the readers one at a time is a list the seventh one falls off. The
+    `delete_prep_rows` opt-in is **gone**: every door of
+    `_replace_slot_entries` releases the rows now
+    (`weekly_plan._release_prep_rows`), which is what the 2026-09-21 entry
+    called "a product decision about the whole app" — and it has been made.
+    `holidays._plan_dish` stops asking for it by hand; `meal_variety` and
+    `resolve_open_slot` run at generation time or over a slot with no prep
+    rows, so they are covered for free and cost nothing.
+  - **A TICKED move is held, not lost, and that is the half that needed a
+    decision.** `held.hold_thing` (the "Pomona, hold this" strip on Today
+    and the section under What we know) gets the fact: *"Whole chicken came
+    out of the freezer today — the dinner it was for has changed."*, plus a
+    quiet "Use it this week" that sends one sentence into chat. An UNTICKED
+    move is simply deleted — nothing was thawing, so there is nothing to
+    keep. **No second holding mechanism**: one nullable column,
+    `held_things.ask_text` (schema.sql + `_MIGRATIONS`, default `''`), and
+    three keyword seams on `hold_thing` (`ask_text`, `member_id`, `conn`).
+  - **`member_id` is NULL, deliberately.** Nobody said it — Pomona noticed
+    it — and crediting whoever tapped Swap would put a name on a sentence
+    they never said, in a strip whose whole job is reading back what WAS
+    said. `SESSION_MEMBER` is the sentinel that keeps the chat's own
+    behaviour untouched.
+  - **It all runs inside the swap's one transaction**, so a rolled-back
+    swap leaves the move standing and holds nothing (tested with a forced
+    failure). That is why `cooker.household_zone`/`household_now`/
+    `household_today` and `held.hold_thing` each grew a `conn` — SQLite
+    gives one writer at a time and a nested `get_conn` here dies as an
+    intermittent "database is locked". Pinned by a connection count over
+    the whole of `_replace_slot_entries` across ten modules
+    (`app.db` included, since `_shared` imports `get_conn` locally):
+    **exactly one, unchanged**.
+  - **The day is the MOVE's, said the strip's way** — `held.when_label`
+    ("today" / "yesterday" / "Monday" / "Sep 12"), never a timestamp. A
+    move ticked ahead of its own date reads "today", which is when they
+    ticked it. The amount rides along only when it says something:
+    "Chicken thighs (2 lbs)" is worth knowing, "Whole chicken (1)" is
+    noise.
+  - **Scoped to a THAW.** A ticked prep CUT ("chop the onions") still goes
+    with the meal and is not held — chopped onions keep, and a hold for
+    every ticked prep row would turn the strip into a log.
+  - **A CHAT swap says something was held, or the strip is the
+    panels-build-once gotcha over again.** `summarize_chat_actions` writes
+    a SECOND card beside the week's when a result carries `held_thawed`
+    ("Holding · Whole chicken, already thawed") — the shape an approval
+    already uses for week + grocery, never instead of the week card, or the
+    tab that really changed would go stale to say so. Without it the row is
+    on disk and on no screen until Today is reloaded. The tool description
+    tells the model to say it in one line too.
+  - **Both freezer doors are covered, and that was checked rather than
+    argued**: the approval-time step (`confirm_frozen_items`) and Shop's
+    "Freezing it?" tick (`book_defrost_for_grocery_line`) write the
+    identical row, keyed by entry, so a delete by `meal_plan_entry_id`
+    catches either. There is a test on the Shop door specifically.
+  - **A KNOCK-ON worth naming: a big meal's own prep rows go with its
+    main.** `big_meal` writes `task_type='holiday'` rows keyed to the
+    main's entry ("Make the stuffing"), so swapping that dinner takes them
+    too. That is the right answer rather than a side effect —
+    `big_meal.menu_entry` already reads a main that has left its date as
+    "the menu is gone" (2026-09-13) — and it is what the dangling rows were
+    doing before. They are not HELD: the hold is scoped to a thaw.
+  - **`clear_plan_slot`'s comment is corrected a second time, in the same
+    change.** Its 2026-09-21 correction said the swap "deletes prep rows
+    only when asked… so every ordinary swap leaves them standing" — true
+    then, false now. The comment keeps the history (a reader needs to know
+    it used to be true), says the first half is true again, and says the
+    second half ("a path that forgets this still shows nothing stale") is
+    still false and always will be.
+  - **Found and NOT fixed, named so nobody reports them as new.** (1)
+    `clear_plan_slot` itself still destroys a ticked fridge move without
+    holding it — a night nobody is home, a night called off, generation's
+    own tidying. Same loss, three different product questions, and the swap
+    is the one Emily answered; written into the comment at the code. (2)
+    `reset.clear_weekly_plan` is the same shape one door over. (3) The
+    receipt's thaw line is COMPUTED and served but has not been drawn since
+    the 2026-09-18 core-loop re-cut, so `_pending_thaw_count` is a latent
+    reader rather than a live screen — fixed anyway, because the next
+    screen to read it should not inherit the bug. (4) "Use it this week" is
+    one constant for one producer; a second writer of `ask_text` meaning
+    something else wants its own label beside its own sentence.
+  - **Copy, all Emily's to change in one line** (`THAWED_HOLD_TEXT` /
+    `THAWED_HOLD_ASK` at the top of `_release_prep_rows`, `HELD_ASK_LABEL`
+    in shell.js): the held sentence, the chat sentence, and the link's
+    label.
+  - `tests/test_thaw_survives_a_swap.py` (26; **22 red against the merge
+    base's `app/` + `static/`, of which 13 are behaviour catches on the
+    assertion they are named for** — including a day holding TWO snacks,
+    where a swap about one of them must take only its own prep rows. Three more die on an `IndexError` off
+    an empty held list — which IS the bug, and is not the specific claim
+    they make, so each says so and is pinned by mutation instead; one is
+    red on the delete half rather than the isolation half it is named for;
+    and five are source or name markers. The 4 green either way each name
+    the mutation that pins them.) Three existing tests were updated
+    honestly rather than deleted, each with a note saying what moved:
+    `test_replace_slot_entries_two_writes`'s ticked-move characterisation
+    (now asserts the hold), its opt-in guard (now asserts the knob is
+    gone), and its `test_a_swap_still_leaves_its_prep_row_standing` —
+    **inverted exactly as its own docstring asked**. Plus
+    `test_defrost.py`'s stale-sweep test, whose claim is unchanged and now
+    holds one step earlier (the swap takes the row, so the sweep finds 0).
+  - Numbers, read off the runs at `TZ=America/Toronto`: merge base
+    **6211 passed, 2 failed**; this branch **6237 passed, 2 failed** — +26
+    is this file exactly, and the 2 are the same pre-existing
+    `test_planning_periods.py::TestRhythmAnchoredDefault` pair on both
+    trees (another builder's card). All four CI weekday pins run at the
+    same zone: **monday 6236 passed / 0 failed / 3 skipped**, **saturday
+    6236 / 0 / 3**, **friday 6235 / 1 / 3** and **sunday 6235 / 1 / 3** —
+    and each of those two failures was measured IDENTICAL on the merge
+    base at the same pin, so neither is this branch's:
+    `test_weekly_plan_last_clock_reads.py::TestTheWeekTheAppOffers::
+    test_the_monday_anchored_default_still_starts_on_a_monday` on friday,
+    `test_shop_freezing_it.py::
+    test_a_meal_too_close_to_thaw_for_is_not_offered_and_a_yes_is_refused`
+    on sunday.
+  - **Verified in a real Chromium at 390px, light and dark**, on a
+    throwaway DB: the row reads as above, "Use it this week" is 97×44,
+    there is no apricot FILL anywhere on the screen (rule 5 — both row
+    controls are `--apricot-label` links), no sideways scroll, and the tap
+    really puts `{"message": "Plan a dinner later this week around the
+    whole chicken I've already thawed."}` on the wire. Contrast measured
+    off computed styles: **5.20:1 light / 8.53:1 dark**, the pair
+    `.holding-done` already uses.
 - **2026-09-22 — Integration `shop-feedback-2026-09-22`: the five Shop cards
   from Emily's 2026-09-22 Shop mockups.** `shop-add-remember-label` then
   `shop-aisles-store-done` merged onto main 05e2e5a with `--no-ff`; no
@@ -1119,7 +1681,18 @@ why*, not duplicating the diff.
     clock (its own card, not touched here), so a server-clock seed agrees
     with the app exactly and by construction, while a household seed would be
     a day out from it under a straddle — right only because the margin is
-    months. That also keeps the change to one hunk, which a branch converting
+    months.
+    **[SUPERSEDED 2026-09-22 by `overnight/staples-household-clock`, which IS
+    the card this sentence defers to. `staples._today()` reads the
+    HOUSEHOLD's clock now, so the premise is inverted and this paragraph's
+    own argument runs the other way: the server-clock seed is the one that
+    is a day out. The whole file moved to `conftest.household_today()` on
+    that branch, and it had to — measured, two of its tests went red under a
+    verified `Pacific/Niue` straddle the moment the module moved, which is
+    what that branch's own comparison run caught. The reasoning is kept
+    exactly as written because it was right when written and shows precisely
+    which fact changed.]**
+    That also keeps the change to one hunk, which a branch converting
     this file's harness call sites in parallel can merge without a fight —
     confirmed on a real trial merge against `overnight/grocery-stub-click-if-
     rendered`, which conflicts on this log and not on the test. **The headroom

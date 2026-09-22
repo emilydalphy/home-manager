@@ -278,7 +278,13 @@ def test_a_meal_too_close_to_thaw_for_is_not_offered_and_a_yes_is_refused(signed
     """Tomorrow's dinner with a 48h cut: the move night has gone by."""
     _recipe("Chicken Skewers", "Chicken thighs")
     tomorrow = (TODAY + datetime.timedelta(days=1)).isoformat()
-    plan_id = tools.create_weekly_plan((TODAY - datetime.timedelta(days=TODAY.weekday())).isoformat())["weekly_plan_id"]
+    # Anchored on TODAY rather than on this week's Monday. The period has
+    # to CONTAIN tomorrow, and a Monday-anchored week does not on a Sunday
+    # — TODAY.weekday() is 6, so the week ends today and plan_meal refuses
+    # the day after it. That made `clock (sunday)` red on main on every
+    # push. This test is about a move night that has gone by, not about
+    # where a week begins, so it names the days it actually needs.
+    plan_id = tools.create_weekly_plan(TODAY.isoformat())["weekly_plan_id"]
     tools.plan_meal(tomorrow, "Chicken Skewers", slot="dinner", weekly_plan_id=plan_id,
                     add_ingredients_to_grocery_list=True)
     line = _line(signed_in, "Chicken thighs")
