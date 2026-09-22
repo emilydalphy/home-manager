@@ -39,7 +39,7 @@ unmet gets no line at all.
            Emily, 2026-09-21).
 
 `asked_fact` is the sibling of this for one row: the one short fact the
-dish carries beside its days ("Mexican, as asked", "packs cold"), read off
+dish carries beside its days ("Mexican, as asked", "travels well"), read off
 the entry's own derived_from rather than guessed from its name.
 
 The window is meal_variety.VARIETY_WINDOW_WEEKS — one constant for the
@@ -146,7 +146,9 @@ def asked_fact(entry: dict) -> str | None:
     d = _derived(entry)
     constraint = str(d.get("constraint") or "").lower()
     if "packed_lunch" in constraint:
-        return "packs cold"
+        # The rule since 2026-09-21 (board D2): travels well, fine cold or
+        # reheated — so the tag says the part that is always true.
+        return "travels well"
     for item in d.get("inputs") or []:
         item = str(item)
         if item.lower().startswith("cuisines:"):

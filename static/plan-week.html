@@ -38,11 +38,12 @@
 
     Five steps: Which days? · Any days that are different? · Any lunches
     on the go? · What are you in the mood for? · Anything else I should
-    plan around? Under step 1 the days are tiles you tap OFF (board D1,
-    2026-09-21); under step 2, the day sheet is a row per person (board
-    B1b, second pass 2026-09-21) and the holiday card and the away range
-    picker are the 2026-09-11 build; under step 4, "+ Add one" at the end
-    of the cuisines opens its own screen (boards B4a/B4b).
+    plan around? Under step 1 the days are tiles you
+    tap OFF (board D1, 2026-09-21); under step 2, the day sheet is a row
+    per person (board B1b, second pass 2026-09-21) and the holiday card
+    and the away range picker are the 2026-09-11 build; under step 3 the
+    "Nothing on the go" pill (board D2); under step 4, "+ Add one" at the
+    end of the cuisines opens its own screen (boards B4a/B4b).
   */
   :root {
     color-scheme: light;
@@ -727,16 +728,22 @@
     </div>
   </section>
 
-  <!-- ---------- 3 of 5 · Any lunches on the go? ----------
+  <!-- ---------- 3 of 5 · Any lunches on the go? (board D2) ----------
        Pre-answered from the household's rhythm when it can be (the
        lunch-location answers from setup, week_intake's
        _rhythm_packed_lunch_suggestions): the suggested days open already
-       ticked, and Continue accepts them in one tap. -->
+       ticked, and Continue accepts them in one tap. Under the days, the
+       "Nothing on the go" pill is the answer for a week with none — on
+       whenever no day is, so the screen always shows one answer chosen;
+       it replaced the quiet line under Continue (Emily, 2026-09-21). -->
   <section id="q3" hidden>
     <h1>Any lunches on the go?</h1>
-    <p class="step-sub" id="lunch-sub">I&rsquo;ll keep those to food that packs cold.</p>
+    <p class="step-sub" id="lunch-sub">I&rsquo;ll keep those to food that travels well.</p>
     <div class="step-body">
       <div class="chip-row" id="lunch-days"></div>
+      <div class="chip-row">
+        <button type="button" class="chip" id="lunch-none" aria-pressed="false">Nothing on the go</button>
+      </div>
     </div>
   </section>
 
@@ -1021,9 +1028,10 @@
   // in the mood for? · Anything else I should plan around?
   var STEP_COUNT = 5;
   // The quiet italic line under Continue on the steps that can be skipped.
-  // Step 1 always has an answer (today, unless you say otherwise) and step
-  // 4's skip is the Surprise me card, so neither carries one.
-  var SKIP_LABELS = { 2: 'Nothing different', 3: 'Nothing on the go', 5: 'Nothing else' };
+  // Step 1 always has an answer (today, unless you say otherwise), step 3's
+  // skip is the "Nothing on the go" pill (board D2) and step 4's is the
+  // Surprise me card, so none of those carries one.
+  var SKIP_LABELS = { 2: 'Nothing different', 5: 'Nothing else' };
   // The mood the Surprise me card records (week_intake.SURPRISE_MOOD — the
   // same words, so the planner reads the guidance behind them). Never
   // saved beside a steering mood: tapping a chip drops it, tapping the
@@ -2364,8 +2372,16 @@
     });
     // Pre-answered from the rhythm: say so, once, in the one line.
     $('lunch-sub').textContent = prefilled.lunches
-      ? 'I’ve ticked your usual days — I’ll keep those to food that packs cold.'
-      : 'I’ll keep those to food that packs cold.';
+      ? 'I’ve ticked your usual days — I’ll keep those to food that travels well.'
+      : 'I’ll keep those to food that travels well.';
+    paintLunchDays();
+  }
+
+  // "Nothing on the go" (board D2): clears the days and is the one thing
+  // on; tapping a day un-selects it. In place, like the moods: the chips'
+  // handlers hold this array.
+  function chooseNoLunches() {
+    answers.packed_lunch_days.length = 0;
     paintLunchDays();
   }
 
@@ -2373,6 +2389,9 @@
     $('lunch-days').querySelectorAll('.chip').forEach(function (chip) {
       chip.classList.toggle('on', answers.packed_lunch_days.indexOf(chip.dataset.date) !== -1);
     });
+    var none = !answers.packed_lunch_days.length;
+    $('lunch-none').classList.toggle('on', none);
+    $('lunch-none').setAttribute('aria-pressed', none ? 'true' : 'false');
   }
 
   // ---------- moods and cuisines ----------
@@ -2596,7 +2615,7 @@
       if (step === 1) $('cta').disabled = picking && !pick.end;
       var noted = step === 2 && data ? plannedDays().filter(function (day) { return !!dayNoteFor(day, true); }).length : 0;
       skip.textContent = SKIP_LABELS[step] || '';
-      skip.hidden = !SKIP_LABELS[step] || (step === 2 && noted > 0) || (step === 3 && answers.packed_lunch_days.length > 0);
+      skip.hidden = !SKIP_LABELS[step] || (step === 2 && noted > 0);
     } else {
       $('cta').textContent = 'Draft my week';
       skip.textContent = SKIP_LABELS[step];
@@ -3024,6 +3043,7 @@
     if (e.key === 'Enter') { e.preventDefault(); addCuisine(); }
   });
   $('surprise').addEventListener('click', chooseSurprise);
+  $('lunch-none').addEventListener('click', chooseNoLunches);
   $('leave').addEventListener('click', crumbTap);
   // The failed state's own two doors. Retry re-runs the one fetch that
   // failed — the period's prefill — and carries on to the days. "‹ Plan"
