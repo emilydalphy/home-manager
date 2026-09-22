@@ -1697,7 +1697,13 @@ CREATE TABLE IF NOT EXISTS held_things (
     text TEXT NOT NULL,                       -- their words, as said (a short paraphrase at most)
     said_on TEXT NOT NULL,                    -- ISO date on the household's own clock
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    resolved_at TEXT                          -- NULL while held; set by "Done with this" (resolve_held_thing)
+    resolved_at TEXT,                         -- NULL while held; set by "Done with this" (resolve_held_thing)
+    -- The one thing to ASK about this row, word for word, when Pomona held
+    -- it of its own accord rather than being told to: the sentence the
+    -- row's quiet link sends to chat. Empty for everything a person said,
+    -- which is every row the chat's own hold_thing writes — there is
+    -- nothing to offer beyond the words they already used.
+    ask_text TEXT NOT NULL DEFAULT ''
 );
 
 -- Seed a single default household so V1 works out of the box

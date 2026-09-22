@@ -827,11 +827,10 @@ def _plan_dish(saved: dict) -> bool:
     with it about one household's list; that is what it was extracted to
     prevent.
 
-    The outgoing meal's prep rows still go with it — `delete_prep_rows`,
-    which clear_plan_slot did for free and _replace_slot_entries does only
-    when asked. Not tidiness, and the first cut of this change got it wrong
+    The outgoing meal's prep rows go with it, which clear_plan_slot did
+    for free. Not tidiness, and the first cut of this change got it wrong
     by arguing from ONE reader: get_prep_schedule drops a dangling row, so
-    it looked harmless. Three others do not. Reproduced through real doors
+    it looked harmless. Five others do not. Reproduced through real doors
     on a branch that left the row — shop the week, tap "Something in the
     freezer?", confirm the chicken, then answer the holiday — and the Cook
     tab's prep session and the chat answer to "what do I need to defrost?"
@@ -839,13 +838,12 @@ def _plan_dish(saved: dict) -> bool:
     Monday's Roast Chicken", tickably, for a roast chicken no longer on the
     plan.
 
-    A known, deliberate cost, because it is the reason the parameter is
-    opt-in rather than the default: a fridge move somebody has already
-    TICKED is destroyed with the meal. That is clear_plan_slot's own
-    long-standing behaviour and its docstring calls it "a real loss to know
-    about" — this keeps it rather than changes it. An ordinary chat swap
-    leaves those rows standing and so has the stale-row problem instead;
-    that is the whole app's decision to make, not this door's.
+    It asked for that by hand (`delete_prep_rows=True`) for one day, while
+    an ordinary swap left the rows standing and had the stale-row problem
+    instead. Emily settled it on 2026-09-21 — delete the reminder, hold the
+    thawed ingredient — so every door does it now and the one cost that
+    kept it opt-in (a TICKED fridge move destroyed with the meal) is what
+    _release_prep_rows holds rather than loses.
     """
     from . import weekly_plan as _weekly_plan
 
@@ -862,7 +860,6 @@ def _plan_dish(saved: dict) -> bool:
         plan_id, _dinner_entry_ids(plan_id, d), d, "dinner", saved["bring_dish"],
         reasoning=_dish_reason(name),
         derived_from={"holiday": name, "holiday_dish": True, "constraint": "bring_a_dish"},
-        delete_prep_rows=True,
     )
     return True
 

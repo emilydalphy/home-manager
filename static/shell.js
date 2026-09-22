@@ -973,16 +973,49 @@
     slot.querySelectorAll('[data-held-done]').forEach(function (btn) {
       btn.addEventListener('click', function () { resolveHeld(btn.getAttribute('data-held-done')); });
     });
+    slot.querySelectorAll('[data-held-ask]').forEach(function (btn) {
+      btn.addEventListener('click', function () { askAboutHeld(btn.getAttribute('data-held-ask')); });
+    });
   }
 
+  // The label on that link. One constant, because there is one producer:
+  // a thaw whose dinner a swap took off the plan (weekly_plan's
+  // _release_prep_rows, the only thing that writes ask_text). A second
+  // producer meaning something else wants its own label alongside its own
+  // sentence — do not stretch this one to cover it.
+  var HELD_ASK_LABEL = 'Use it this week';
+
   function holdingRowHtml(h) {
+    // The row's own quiet way to act on what is held, under the words
+    // rather than beside "Done with this" — two nowrap links on one
+    // 390px row leave the text nothing. No apricot FILL either way
+    // (DESIGN_SYSTEM rule 5); both are apricot-label links, like the
+    // change card's "Another".
+    var ask = (h.ask_text || '').trim();
     return '<div class="holding-row" data-held-id="' + h.id + '">' +
       '<div class="holding-main">' +
         '<div class="holding-text">' + escapeHtml(h.text) + '</div>' +
         (heldMetaLine(h) ? '<div class="holding-meta">' + escapeHtml(heldMetaLine(h)) + '</div>' : '') +
+        (ask ? '<button type="button" class="holding-ask" data-held-ask="' + h.id + '">' +
+          escapeHtml(HELD_ASK_LABEL) + '</button>' : '') +
       '</div>' +
       '<button type="button" class="holding-done" data-held-done="' + h.id + '">Done with this</button>' +
     '</div>';
+  }
+
+  // One tap: open the chat and send the sentence the server wrote for
+  // this row. The example chips' own shape (renderAskExamples) — the
+  // household should not have to retype what Pomona already worked out.
+  // The held thing stays on the list; it comes off with "Done with this",
+  // once the dinner it names is actually planned.
+  function askAboutHeld(id) {
+    var items = heldState.items || [];
+    var item = null;
+    for (var i = 0; i < items.length; i++) if (String(items[i].id) === String(id)) item = items[i];
+    var text = item && (item.ask_text || '').trim();
+    if (!text) return;
+    openAskSheet();
+    sendAskMessage(text);
   }
 
   function refreshHolding() {
@@ -9858,6 +9891,8 @@
     body.addEventListener('click', function (e) {
       var done = e.target && e.target.closest && e.target.closest('[data-held-done]');
       if (done && body.contains(done)) return resolveHeld(done.getAttribute('data-held-done'));
+      var ask = e.target && e.target.closest && e.target.closest('[data-held-ask]');
+      if (ask && body.contains(ask)) return askAboutHeld(ask.getAttribute('data-held-ask'));
       var t = e.target && e.target.closest && e.target.closest('[data-wwk]');
       if (!t || !body.contains(t)) return;
       var what = t.getAttribute('data-wwk');

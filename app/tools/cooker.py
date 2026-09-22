@@ -740,7 +740,7 @@ def _release_inventory_depletion(entry_ids: list[int]) -> None:
 DEFAULT_TIMEZONE = "America/Toronto"  # the same default digest.py and holidays.py fall back to
 
 
-def household_zone() -> ZoneInfo:
+def household_zone(conn=None) -> ZoneInfo:
     """
     The zone the household lives in, for the caller that needs the zone
     itself rather than the time in it.
@@ -758,10 +758,22 @@ def household_zone() -> ZoneInfo:
     the same choice household_now has always made, and it lives here now
     rather than in two places, because a reader whose day started in a
     different zone from another reader's is the whole bug this is for.
+
+    `conn` is the arrangement plan_slot_open and clear_plan_slot already
+    have, and it is for one caller: weekly_plan._replace_slot_entries,
+    which holds an open write transaction while it dates a held thing.
+    SQLite gives one writer at a time and this app has twice earned an
+    intermittent "database is locked" from a nested get_conn, so a caller
+    inside a transaction reads the zone on ITS connection. Given one this
+    reads on it and neither commits nor closes; left unset, every other
+    call site behaves exactly as before.
     """
-    conn = get_conn()
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
     row = conn.execute("SELECT timezone FROM households WHERE id = ?", (household_id(),)).fetchone()
-    conn.close()
+    if own_conn:
+        conn.close()
     name = (row["timezone"] if row else None) or DEFAULT_TIMEZONE
     try:
         return ZoneInfo(name)
@@ -769,7 +781,7 @@ def household_zone() -> ZoneInfo:
         return ZoneInfo(DEFAULT_TIMEZONE)
 
 
-def household_now(now_utc: datetime | None = None) -> datetime:
+def household_now(now_utc: datetime | None = None, conn=None) -> datetime:
     """
     Now, on the household's own clock (households.timezone), as the naive
     local datetime the rest of this app's clocks are in — moves.py's
@@ -782,15 +794,17 @@ def household_now(now_utc: datetime | None = None) -> datetime:
     a name ZoneInfo can't make sense of, are household_zone's above — so a
     bad setting never stops a cook from starting, and never leaves this
     reader in a different zone from the one asking where a day begins.
+
+    `conn` rides straight through to household_zone — see its note.
     """
-    zone = household_zone()
+    zone = household_zone(conn=conn)
     now_utc = now_utc or datetime.now(timezone.utc)
     if now_utc.tzinfo is None:
         now_utc = now_utc.replace(tzinfo=timezone.utc)
     return now_utc.astimezone(zone).replace(tzinfo=None, microsecond=0)
 
 
-def household_today(now_utc: datetime | None = None) -> date:
+def household_today(now_utc: datetime | None = None, conn=None) -> date:
     """
     Today where the household lives, not where the container runs — the
     date half of household_now, for the caller below that only needs a
@@ -810,12 +824,13 @@ def household_today(now_utc: datetime | None = None) -> date:
 
     Opens a connection (household_now does), so resolve it ONCE per view
     and thread the answer down — never per card, and never inside an open
-    write transaction. A clock that can't be read falls back to the
+    write transaction. A caller that IS inside one passes its own `conn`
+    (see household_zone). A clock that can't be read falls back to the
     server's date: a wrong hour once a day beats a blank Cook tab, the
     same stance household_now itself takes towards an unreadable zone.
     """
     try:
-        return household_now(now_utc).date()
+        return household_now(now_utc, conn=conn).date()
     except Exception:
         logger.exception("Couldn't read the household's clock; falling back to the server's date")
         return date.today()

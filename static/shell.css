@@ -1882,6 +1882,28 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   white-space: nowrap;
 }
 .holding-done:hover { color: var(--apricot-label-hover); }
+/* The one thing to DO about a held thing, when Pomona knows what that is
+   (held_things.ask_text — today only a thaw stranded by a swap). Under
+   the words, not beside "Done with this": both are nowrap, and two of
+   them on one 390px row leave the text nothing. A link, not a fill —
+   the row already has one apricot-label button and the screen's apricot
+   belongs to the dock (rule 5). 44px of tap (rule 6) with the text sat
+   on the line it would have had anyway. */
+.holding-ask {
+  align-self: flex-start;
+  min-height: 44px;
+  margin-top: -6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--apricot-label);
+  text-align: left;
+}
+.holding-ask:hover { color: var(--apricot-label-hover); }
 /* The same rows inside What we know's "Holding for you" panel. */
 .holding-list { display: flex; flex-direction: column; }
 .holding-list .holding-row:first-child { padding-top: 0; }

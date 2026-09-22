@@ -290,6 +290,17 @@ def test_regenerating_defrost_tasks_preserves_done_status(chicken_recipe):
 
 
 def test_a_stale_defrost_task_is_removed_when_its_meal_is_swapped_away(chicken_recipe):
+    """
+    UPDATED 2026-09-22, and only in WHICH STEP does the removing.
+
+    This used to assert `sync_defrost_tasks(...)["removed"] == 1` — the
+    stale row survived the swap and the next sync swept it. The swap
+    releases its own prep rows now (weekly_plan._release_prep_rows), so by
+    the time sync runs there is nothing left to sweep and it reports 0.
+    The claim the test is named for is unchanged and is asserted twice as
+    hard: the row is gone straight after the swap, and still gone after a
+    sync.
+    """
     _freeze()
     tools.add_recipe("Toast", ingredients=[{"item": "Bread", "qty": "1 loaf"}])
     week = _week_start()
@@ -300,9 +311,10 @@ def test_a_stale_defrost_task_is_removed_when_its_meal_is_swapped_away(chicken_r
     assert len(tools.get_prep_schedule(plan["weekly_plan_id"])) == 1
 
     tools.swap_meal_in_plan(plan["weekly_plan_id"], d, "Toast", slot="dinner")
-    result = defrost.sync_defrost_tasks(plan["weekly_plan_id"])
 
-    assert result["removed"] == 1
+    assert tools.get_prep_schedule(plan["weekly_plan_id"]) == [], "the swap takes it"
+    result = defrost.sync_defrost_tasks(plan["weekly_plan_id"])
+    assert result["removed"] == 0, "so there is nothing left for the sweep to find"
     assert tools.get_prep_schedule(plan["weekly_plan_id"]) == []
 
 
