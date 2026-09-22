@@ -503,6 +503,18 @@ why*, not duplicating the diff.
     moves with it — all five reads onto `conftest.household_today()`, 139
     passed at Toronto and at Niue — and that entry is corrected in place
     rather than left to mislead the next reader.
+  - **Numbers on the commit that ships (`fc3dc38`), whole suite.**
+    `TZ=America/Toronto` **2 failed / 6222 passed**, and inside a VERIFIED
+    `Pacific/Niue` straddle (Niue 2026-09-21 against Toronto 2026-09-22,
+    `date +%F` in both zones before AND after the run) **2 failed / 6222
+    passed**. The two are byte-identical to main's own pre-existing pair —
+    `test_planning_periods.py::TestRhythmAnchoredDefault`, which is
+    `overnight/anchored-suggestion-weekday-cliff`'s to fix — so this branch
+    adds **zero** failures in either zone, which is the number that matters
+    because `straddle` blocks. Main collects 6213 and this branch 6224, so
+    **+11 is `tests/test_staples_household_clock.py` exactly** and no
+    existing test was deleted or weakened. The three staples-touching files
+    read **227 passed** at all seven weekday pins and in both zones.
   - `tests/test_staples_household_clock.py` (11; **5 red against main's
     `app/`**, of which **4 are behaviour catches** — the fifth is the
     ordering guard and is red there for a reason other than the one it is
