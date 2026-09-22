@@ -272,7 +272,7 @@ class TestStartingWhen:
         assert _node("console.log(dayLabel('2026-09-20') + ' → ' + dayLabel('2026-09-26'));") == "Sun 20 → Sat 26"
         assert _node("console.log(periodRangeLabel('2026-09-20', 7));") == "Sep 20–26"
         # "· tap a day to drop it" beside the count since board D1 (2026-09-21).
-        assert "$('range-count').textContent = count + (count === 1 ? ' day' : ' days') + (picking ? '' : ' · ' + START_COPY.drop);" in PAGE
+        assert "$('range-count').textContent = count + (count === 1 ? ' day' : ' days') + (picking || count === 1 ? '' : ' · ' + START_COPY.drop);" in PAGE
 
     def test_pick_my_own_days_opens_the_picker_in_place(self):
         pick = _extract("chooseStartKey")

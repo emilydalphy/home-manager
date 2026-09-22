@@ -18,6 +18,7 @@ import pytest
 
 from app import agent, tools
 from app.tools import week_intake
+from app.tools import swap_in_place as _sip
 
 
 def _week_start(offset_weeks: int = 1) -> str:
@@ -216,3 +217,88 @@ class TestTheDraft:
         ctx = agent._intake_generation_context({"skipped_days": ["2026-09-27", "2026-10-30"]}, ["2026-09-27"])
         assert ctx["skipped_days"] == ["2026-09-27"]
         assert agent._intake_generation_context({})["skipped_days"] == []
+
+
+# ==========================================================================
+# The counts scale to the days kept (verifier, 2026-09-21)
+# ==========================================================================
+
+def _slot(date, slot, name):
+    return {"date": date, "slot": slot, "meal_name": name, "is_new_recipe": True,
+            "ingredients": [{"item": f"{name} stuff", "qty": "1"}], "reasoning": f"{name} because",
+            "food_groups": ["protein", "vegetable", "carb"]}
+
+
+def _pick(name: str) -> dict:
+    return {
+        "meal_name": name, "reason": "something new",
+        "ingredients": [{"item": f"{name} stuff", "qty": "1", "category": "pantry"}],
+        "instructions": ["Cook.", "Serve."], "food_groups": ["protein", "vegetable", "carb"],
+        "prep_time_minutes": 10, "cook_time_minutes": 20,
+    }
+
+
+class TestTheCountsScaleToTheDaysKept:
+    """Emily's rule is "per 7-day week, scaled to the days planned", and a
+    dropped day is not planned: settings 4/3/3 on seven days with the
+    weekend dropped are a FIVE-day plan — ceil(4×5/7) = 3 dinners, 3
+    breakfasts, 3 lunches — not a seven-day one folded to 4/3/3. Found by
+    the verifier: the model's five distinct Mon–Fri dinners were folded to
+    four, "you asked for four dinners a week"."""
+
+    def test_the_targets_the_fold_and_the_note_follow_the_kept_days(self, monkeypatch):
+        tools.set_household_meal_preferences(dinners_per_week=4, breakfasts_per_week=3, lunches_per_week=3,
+                                             snacks_per_day=2, snacks_per_week=7)
+        week = _week_start()
+        days = tools._week_dates(week)
+        kept = days[:5]
+        intake = tools.save_week_intake(week, skipped_days=days[5:])
+
+        seen = {}
+        def fake(ctx):
+            seen["ctx"] = ctx
+            out = []
+            for i, d in enumerate(days):   # a disobedient model: every day, the dropped ones too
+                out.append(_slot(d, "breakfast", ["Oats", "Eggs", "Toast", "Oats", "Eggs", "Oats", "Eggs"][i]))
+                out.append(_slot(d, "lunch", ["Wrap", "Soup", "Salad", "Wrap", "Soup", "Wrap", "Soup"][i]))
+                out.append(_slot(d, "dinner", ["Chili", "Tacos", "Curry", "Stew", "Pasta", "Chili", "Tacos"][i]))
+                out.append(_slot(d, "snack", "Apple")); out.append(_slot(d, "snack", "Nuts"))
+            return out
+        monkeypatch.setattr(agent, "generate_weekly_plan_llm", fake)
+        picks = []
+        monkeypatch.setattr(_sip, "_pick_replacement", lambda ctx: (picks.append(ctx), _pick("Moussaka"))[1])
+
+        plan = agent.generate_weekly_plan(week, intake_id=intake["intake_id"], day_count=7)
+        plan_id = plan["weekly_plan_id"]
+
+        # The model was handed the five-day targets.
+        memory = seen["ctx"]["household_memory"]
+        assert (memory["dinners_per_week"], memory["breakfasts_per_week"], memory["lunches_per_week"]) == (3, 3, 3)
+        assert memory["snacks_per_day"] == 2
+
+        meals = [m for m in tools.get_weekly_plan(plan_id)["meals"] if m["slot_state"] == "planned"]
+        def distinct(slot):
+            return {m["meal"].lower() for m in meals if m["slot"] == slot}
+        # Five distinct dinners folded to three, not four.
+        assert len(distinct("dinner")) == 3
+        assert not any(m["date"] in days[5:] for m in meals), "nothing planned on a dropped day"
+        # Two on every kept day, none on a dropped one.
+        snacks = {}
+        for m in meals:
+            if m["slot"] == "snack":
+                snacks.setdefault(m["date"], []).append(m["meal"])
+        assert all(len(snacks.get(d, [])) == 2 for d in kept)
+        # The folded repeats say the true scale.
+        folded = {m["reasoning"] for m in meals if m["slot"] == "dinner" and m["reasoning"].startswith("On again")}
+        assert folded == {"On again — four dinners a week, scaled to a five-day plan"}
+        # And the opener's count note, when it speaks, names the five-day plan.
+        lines = tools.get_week_menu(plan_id)["draft_opener"]
+        assert not any("seven-day plan" in line for line in lines)
+        from app.tools import draft_opener as _draft_opener
+        note = _draft_opener.count_note(5, tools.get_household_memory())
+        assert note == "Three dinners this week, not four — it’s a five-day plan."
+
+    def test_a_full_week_with_nothing_dropped_is_unchanged(self):
+        assert agent._planned_day_count({"skipped_days": []}, "2026-09-21", 7) == 7
+        assert agent._planned_day_count({"skipped_days": ["2026-09-26", "2026-09-27", "2026-10-30"]}, "2026-09-21", 7) == 5
+        assert agent._planned_day_count(None, "2026-09-21", 3) == 3

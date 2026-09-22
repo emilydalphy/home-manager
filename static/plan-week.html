@@ -1269,10 +1269,12 @@
       hint.hidden = true;
       count = kept.length;
     }
+    // One day left reads "Fri 25 · 1 day", with no arrow to itself and
+    // no hint — nothing more can be dropped.
     $('range-words').textContent = pick.end || !picking
-      ? dayLabel(first) + ' → ' + dayLabel(last)
+      ? (first === last ? dayLabel(first) : dayLabel(first) + ' → ' + dayLabel(last))
       : dayLabel(first) + ' → …';
-    $('range-count').textContent = count + (count === 1 ? ' day' : ' days') + (picking ? '' : ' · ' + START_COPY.drop);
+    $('range-count').textContent = count + (count === 1 ? ' day' : ' days') + (picking || count === 1 ? '' : ' · ' + START_COPY.drop);
     strip.classList.toggle('picking', picking);
     strip.innerHTML = tiles.map(function (d) {
       var cls = 'dt';
@@ -2729,13 +2731,15 @@
   };
   // What each day note becomes in the sentence, for one day and for
   // several: "Tuesday is short on time" / "Tuesday and Thursday are short
-  // on time". `%s` is the day or days.
+  // on time". `%s` is the day or days; `rest` is the note when the day
+  // has already been named by an earlier note ("Tuesday is short on time
+  // and it’s leftovers").
   var USING_DAY_PHRASES = {
-    rush:     { one: '%s is short on time', many: '%s are short on time' },
-    left:     { one: '%s’s leftovers',      many: '%s are leftovers' },
-    unrushed: { one: '%s you’ve got time',  many: '%s you’ve got time' },
-    out:      { one: '%s nobody’s home',    many: '%s nobody’s home' },
-    guests:   { one: '%s you’ve got guests', many: '%s you’ve got guests' }
+    rush:     { one: '%s is short on time', many: '%s are short on time', rest: 'it’s short on time' },
+    left:     { one: '%s’s leftovers',      many: '%s are leftovers',     rest: 'it’s leftovers' },
+    unrushed: { one: '%s you’ve got time',  many: '%s you’ve got time',   rest: 'you’ve got time' },
+    out:      { one: '%s nobody’s home',    many: '%s nobody’s home',     rest: 'nobody’s home' },
+    guests:   { one: '%s you’ve got guests', many: '%s you’ve got guests', rest: 'you’ve got guests' }
   };
   function joinWords(items) {
     if (items.length <= 1) return items[0] || '';
@@ -2744,10 +2748,14 @@
   }
   // Clauses into one sentence: "A, B, and C." — the comma before the
   // last "and" because each clause has its own verb ("Wednesday's
-  // leftovers and Friday you've got time" reads as one thing).
+  // leftovers and Friday you've got time" reads as one thing). Two
+  // clauses take the comma too when one of them has an "and" inside.
   function joinClauses(items) {
     if (items.length <= 1) return items[0] || '';
-    if (items.length === 2) return items[0] + ' and ' + items[1];
+    if (items.length === 2) {
+      var inner = items.some(function (c) { return c.indexOf(' and ') !== -1; });
+      return items[0] + (inner ? ', and ' : ' and ') + items[1];
+    }
     return items.slice(0, -1).join(', ') + ', and ' + items[items.length - 1];
   }
   function sentence(s) {
@@ -2768,53 +2776,63 @@
     if (m) return m[1] + ' guest' + (m[1] === '1' ? '' : 's') + ' for ' + m[2];
     return words;
   }
-  // The different days as one sentence: the days sharing a note are
-  // named together ("Tuesday and Thursday are short on time"), the notes
-  // in the order their first day falls. `wordsByDate` is what attendance
-  // says about each day (attendanceWords), since the day sheet writes
-  // who's out to attendance rather than to the intake.
+  // The different days as one sentence, a day named once: its notes
+  // together ("Tuesday is short on time and Emily's out for dinner"),
+  // days with the same notes named together ("Tuesday and Thursday are
+  // short on time"), in date order. `wordsByDate` is what attendance says
+  // about each day (attendanceWords), since the day sheet writes who's
+  // out to attendance rather than to the intake.
   function usingDaysSentence(intake, weekdayOf, wordsByDate) {
     var tags = intake.night_tags || {};
     var guests = intake.guest_counts || {};
     wordsByDate = wordsByDate || {};
     var dates = Object.keys(tags).concat(Object.keys(guests), Object.keys(wordsByDate))
       .filter(function (d, i, all) { return all.indexOf(d) === i; }).sort();
-    var groups = {};     // key → { first, days: [], text(days) }
-    var order = [];
-    function add(key, d, phrase) {
-      if (!groups[key]) { groups[key] = { first: d, days: [], phrase: phrase }; order.push(key); }
-      if (groups[key].days.indexOf(d) === -1) groups[key].days.push(d);
-    }
+    // Each day's notes, in the order they are said: the dinner's own
+    // note first, then who's home, then the guests.
+    var notesByDay = {};
     dates.forEach(function (d) {
       var said = (wordsByDate[d] || []).slice();
       var nobody = said.indexOf('nobody home') !== -1 || (tags[d] || []).indexOf('out') !== -1;
       var counted = said.some(function (w) { return w.charAt(0) === '+'; });
       var gc = guests[d];
       var extra = gc ? (gc.adults || 0) + (gc.children || 0) : 0;
-      // The dinner's own note first, then who's home, then the guests.
+      var notes = [];
       (tags[d] || []).forEach(function (t) {
-        if (USING_DAY_PHRASES[t] && t !== 'out' && t !== 'guests') add(t, d, USING_DAY_PHRASES[t]);
+        if (USING_DAY_PHRASES[t] && t !== 'out' && t !== 'guests') notes.push({ key: t, phrase: USING_DAY_PHRASES[t] });
       });
-      if (nobody) add('out', d, USING_DAY_PHRASES.out);
+      if (nobody) notes.push({ key: 'out', phrase: USING_DAY_PHRASES.out });
       said.forEach(function (w) {
         if (w === 'nobody home') return;
         var human = humanAttendance(w);
-        add('att:' + human, d, { one: '%s ' + human, many: '%s ' + human });
+        notes.push({ key: 'att:' + human, phrase: { one: '%s ' + human, many: '%s ' + human, rest: human } });
       });
       if (!counted) {
         if (extra) {
-          var guestsPhrase = '%s you’ve got ' + extra + ' guest' + (extra === 1 ? '' : 's');
-          add('guests:' + extra, d, { one: guestsPhrase, many: guestsPhrase });
+          var got = 'you’ve got ' + extra + ' guest' + (extra === 1 ? '' : 's');
+          notes.push({ key: 'guests:' + extra, phrase: { one: '%s ' + got, many: '%s ' + got, rest: got } });
         } else if ((tags[d] || []).indexOf('guests') !== -1) {
-          add('guests', d, USING_DAY_PHRASES.guests);
+          notes.push({ key: 'guests', phrase: USING_DAY_PHRASES.guests });
         }
       }
+      if (notes.length) notesByDay[d] = notes;
     });
-    order.sort(function (a, b) { return groups[a].first < groups[b].first ? -1 : groups[a].first > groups[b].first ? 1 : 0; });
-    var clauses = order.map(function (key) {
-      var g = groups[key];
-      var names = g.days.sort().map(weekdayOf);
-      return (names.length === 1 ? g.phrase.one : g.phrase.many).replace('%s', joinWords(names));
+    // Days with the same notes are said together, in the order of their
+    // first day.
+    var groups = [];
+    Object.keys(notesByDay).sort().forEach(function (d) {
+      var key = notesByDay[d].map(function (n) { return n.key; }).join('|');
+      var found = groups.filter(function (g) { return g.key === key; })[0];
+      if (found) found.days.push(d);
+      else groups.push({ key: key, days: [d], notes: notesByDay[d] });
+    });
+    var clauses = groups.map(function (g) {
+      var names = joinWords(g.days.map(weekdayOf));
+      var parts = g.notes.map(function (n, i) {
+        if (i === 0) return (g.days.length === 1 ? n.phrase.one : n.phrase.many).replace('%s', names);
+        return n.phrase.rest;
+      });
+      return parts.length <= 2 ? parts.join(' and ') : parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
     });
     return clauses.length ? sentence(joinClauses(clauses)) : '';
   }

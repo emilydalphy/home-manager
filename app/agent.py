@@ -4430,6 +4430,16 @@ def _attach_personal_context_for_subset_slots(attendance_ctx: dict) -> None:
         logger.exception("Could not attach per-person taste context; generation continues with attendance alone")
 
 
+def _planned_day_count(intake: dict | None, period_start: str, day_count: int) -> int:
+    """How many of a period's days are planned: the period minus the days
+    tapped off "Which days?" (intake.skipped_days, inside the period).
+    Never below one — save_week_intake refuses a period with every day
+    dropped, so this is belt and braces."""
+    dates = tools.period_dates(period_start, day_count)
+    skipped = {d for d in ((intake or {}).get("skipped_days") or []) if d in dates}
+    return max(1, day_count - len(skipped))
+
+
 def _prorate_meal_count(preference: int, day_count: int) -> int:
     """
     Scale a full-week meal-VARIETY target down to fit a part-week — the
@@ -4685,10 +4695,16 @@ def _generate_weekly_plan(
     # told about it at all, in the prompt text or here in its context.
     effective_memory = dict(household_memory)
     effective_memory.pop("repeats_tolerance", None)
-    if day_count < 7:
+    # The days actually being planned: the period minus the days tapped off
+    # "Which days?" (2026-09-21, board D1). A dropped day is not planned, so
+    # it is not a day the counts scale to — Emily's rule is "per 7-day
+    # week, scaled to the days planned" — and a seven-day period with the
+    # weekend dropped is a five-day plan for every count below.
+    planned_count = _planned_day_count(intake, content_start_date, day_count)
+    if planned_count < 7:
         for field in ("dinners_per_week", "breakfasts_per_week", "lunches_per_week", "snacks_per_week"):
             if household_memory.get(field) is not None:
-                effective_memory[field] = _prorate_meal_count(household_memory[field], day_count)
+                effective_memory[field] = _prorate_meal_count(household_memory[field], planned_count)
     # How many DISTINCT snacks each day gets — two unless the household has
     # said otherwise (Julia, 2026-09-08). Per DAY, so it is the one count
     # here that a part-week doesn't prorate. Resolved once, into the
@@ -5050,7 +5066,7 @@ def _generate_weekly_plan(
                     )
             _finish_week_slots(
                 plan_id, content_start_date, intake, effective_memory, day_count, skip_days=skip_days,
-                context=context, repick_budget=repick_budget,
+                context=context, repick_budget=repick_budget, planned_count=planned_count,
             )
 
         if intake:
@@ -5197,7 +5213,7 @@ def _log_plan_conflicts(plan_id: int, week_start_date: str) -> None:
 def _finish_week_slots(
     plan_id: int, week_start_date: str, intake: dict | None,
     household_memory: dict, day_count: int = 7, skip_days: int = 0,
-    context: dict | None = None, repick_budget=None,
+    context: dict | None = None, repick_budget=None, planned_count: int | None = None,
 ) -> None:
     """
     Make the 21-slot guarantee true rather than merely asked for.
@@ -5256,6 +5272,11 @@ def _finish_week_slots(
     # slot — it would simply have been missing, which is the one thing the
     # 21-slot guarantee exists to make impossible.
     dates = tools.period_dates(week_start_date, day_count)
+    # The days planned (the period minus the dropped days) — what the
+    # counts were scaled to, so the folding and the fill-up below enforce
+    # the same number the model was given. See _planned_day_count.
+    if planned_count is None:
+        planned_count = _planned_day_count(intake, week_start_date, day_count)
     night_tags = (intake or {}).get("night_tags") or {}
     for day, tags in night_tags.items():
         if "out" not in tags or day not in dates:
@@ -5399,7 +5420,7 @@ def _finish_week_slots(
     # The household's own full-week numbers, for the repeat's line: the
     # effective memory carries the SCALED count, and "you asked for two
     # lunches" would be false on a four-day plan when she asked for three.
-    usual_counts = tools.get_household_memory() if day_count < 7 else household_memory
+    usual_counts = tools.get_household_memory() if planned_count < 7 else household_memory
     # Only a number the household actually gave is a floor to reach
     # (meal_counts_set / the snacks flags): a column default is still a
     # ceiling, never a reason to spend model calls. The flag is one for
@@ -5411,11 +5432,14 @@ def _finish_week_slots(
         tools.enforce_distinct_meal_count(
             plan_id, household_memory.get(field), slot=slot, asks=count_asks, budget=count_budget,
             fill_up=bool(household_memory.get("meal_counts_set")) and usual is not None and int(usual) < 7,
-            usual=usual, day_count=day_count, caps=caps,
+            usual=usual, day_count=planned_count, caps=caps,
         )
     if household_memory.get("snacks_per_day_set") or household_memory.get("snacks_per_week_set"):
+        # The kept days only: a dropped day's snacks were cleared above
+        # and must not be filled back in.
         _meal_variety.enforce_snacks_per_day(
-            plan_id, household_memory.get("snacks_per_day"), period, budget=count_budget, asks=count_asks,
+            plan_id, household_memory.get("snacks_per_day"), [d for d in period if d not in skipped_days],
+            budget=count_budget, asks=count_asks,
         )
 
     # "Every meal is a full plate" (Emily, 2026-09-05) — any planned meal

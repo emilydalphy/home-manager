@@ -166,7 +166,8 @@ class TestWhichDays:
         assert back["dropped"] == [] and back["count"] == "7 days · tap a day to drop it"
         every = json.loads(_node(_card_harness([f"2026-09-{d}" for d in range(21, 28)])))
         assert every["dropped"] == [f"2026-09-{d}" for d in range(21, 27)]
-        assert every["words"] == "Sun 27 → Sun 27" and every["count"] == "1 day · tap a day to drop it"
+        # One day left: no arrow to itself, no hint (nothing more to drop).
+        assert every["words"] == "Sun 27" and every["count"] == "1 day"
 
     def test_a_new_start_clears_the_drops_and_a_finished_pick_shows_the_range_as_toggles(self):
         chooser = _extract("chooseStartKey")
@@ -296,10 +297,23 @@ class TestGotIt:
         lines = _using(
             f"console.log(JSON.stringify(usingLines({json.dumps(intake)}, {_weekday_fn()}, false, {json.dumps(words)})));"
         )
+        # A day is named ONCE, its notes together (verifier, 2026-09-21:
+        # "Tuesday is short on time and Tuesday Emily's out for dinner"
+        # named it twice); days with the same notes are named together.
         assert lines[0]["text"] == (
-            "Tuesday and Thursday are short on time, Tuesday Emily’s out for dinner, "
-            "Wednesday’s leftovers, Friday you’ve got time, and Saturday nobody’s home."
+            "Tuesday is short on time and Emily’s out for dinner, Wednesday’s leftovers, "
+            "Thursday is short on time, Friday you’ve got time, and Saturday nobody’s home."
         )
+        # The verifier's own case, two clauses, one with an "and" inside.
+        pair = _using(
+            f"console.log(JSON.stringify(usingLines({{night_tags: {{'2026-09-22': ['rush'], '2026-09-24': ['unrushed']}}}}, {_weekday_fn()}, false, {{'2026-09-22': ['Emily out for dinner']}})));"
+        )
+        assert pair[0]["text"] == "Tuesday is short on time and Emily’s out for dinner, and Thursday you’ve got time."
+        # Three notes on one day.
+        three = _using(
+            f"console.log(JSON.stringify(usingLines({{night_tags: {{'2026-09-22': ['rush', 'guests']}}, guest_counts: {{'2026-09-22': {{adults: 2, children: 0}}}}}}, {_weekday_fn()}, false, {{'2026-09-22': ['Emily out for lunch']}})));"
+        )
+        assert three[0]["text"] == "Tuesday is short on time, Emily’s out for lunch and you’ve got 2 guests."
         # Two of a kind, and one alone.
         one = _using(f"console.log(JSON.stringify(usingLines({{night_tags: {{'2026-09-23': ['left']}}}}, {_weekday_fn()}, false)));")
         assert one == [{"icon": "home", "text": "Wednesday’s leftovers."}]
@@ -317,6 +331,11 @@ class TestGotIt:
             f"console.log(JSON.stringify(usingLines({json.dumps(intake)}, {_weekday_fn()}, false, {json.dumps(words)})));"
         )
         assert lines[0]["text"] == "Thursday Emily and Vic are out for lunch, Friday nobody’s home for lunch, and Saturday 3 guests for dinner."
+        # Two days with the same note are named together.
+        same = _using(
+            f"console.log(JSON.stringify(usingLines({{night_tags: {{'2026-09-22': ['rush'], '2026-09-24': ['rush']}}}}, {_weekday_fn()}, false, {{'2026-09-22': ['Emily out for dinner'], '2026-09-24': ['Emily out for dinner']}})));"
+        )
+        assert same[0]["text"] == "Tuesday and Thursday are short on time and Emily’s out for dinner."
 
     @_needs_node
     def test_lunches_mood_note_and_the_no_repeat_line(self):

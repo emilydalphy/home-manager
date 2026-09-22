@@ -249,7 +249,7 @@ class TestTheTileWords:
             "console.log(JSON.stringify(usingLines(intake, function (d) { return d === '2026-09-24' ? 'Thursday' : 'Friday'; }, false, words)));"
         )
         assert json.loads(_node(script)) == [
-            {"icon": "home", "text": "Thursday nobody’s home, Friday is short on time, Friday Emily’s out for lunch and dinner, and Friday 1 guest for dinner."},
+            {"icon": "home", "text": "Thursday nobody’s home, and Friday is short on time, Emily’s out for lunch and dinner and 1 guest for dinner."},
         ]
 
 

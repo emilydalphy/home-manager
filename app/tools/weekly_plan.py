@@ -4644,7 +4644,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         return {"title": title, "meta": meta, "source": "plan", **common}
 
     # The one short fact a row carries beside its days ("Mexican, as
-    # asked", "packs cold") — read off the entry's derived_from, so it is
+    # asked", "travels well") — read off the entry's derived_from, so it is
     # only ever said of a slot the household's own answer actually shaped
     # (draft_opener.asked_fact). Added onto every planned slot after the
     # fact so the three build_slot returns above stay as they are.
