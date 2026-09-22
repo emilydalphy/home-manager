@@ -146,6 +146,8 @@ def _review_root_html(status: str, root: bool) -> str:
         "function countOpenSlots(){ return 0; }\n"
         "function draftView(){ return 'days'; }\n"
         + _extract("reviewDecideHtml", SHELL_JS) + "\n"
+        + _extract("wkDockMoreHtml", SHELL_JS) + "\n"
+        + "var WK_ICONS = { more: '<svg></svg>' };\n"
         + _extract("escapeHtml", SHELL_JS) + "\n"
         + _extract("weekPlanState", SHELL_JS) + "\n"
         + _extract("weekReplacesNote", SHELL_JS) + "\n"
@@ -164,13 +166,13 @@ def test_a_draft_root_offers_more_in_its_dock():
     """FAILS ON MAIN (2026-09-11): the draft root rendered the two views and
     Approve, and nothing else — the More sheet's "Try again" and "Change my
     answers" rows existed but no button on a draft opened the sheet. Since
-    2026-09-21 More rides in the dock's quiet row under Approve, beside
-    "Plan it differently" (reviewDecideHtml) rather than in a foot above it."""
+    2026-09-21 More is the round icon button beside Approve, in the dock's
+    one row (reviewDecideHtml, board D4) rather than in a foot above it."""
     html = _review_root_html("draft", root=True)
     assert html.count('id="wk-more"') == 1
-    assert "More ···" in html
+    assert 'class="wk-dock-more" id="wk-more" aria-haspopup="dialog" aria-label="More"' in html
     assert html.index('class="wk-decide dock"') < html.index('id="wk-more"')
-    assert 'id="wk-plan-differently">Plan it differently</button>' in html
+    assert "Plan it differently" not in html, "the band's Re-plan pill is the one door to the intake"
 
 
 @_needs_node

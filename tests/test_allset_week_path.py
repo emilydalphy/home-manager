@@ -75,6 +75,8 @@ _PLAN_PRELUDE = (
     + _extract("weekPlanState", SHELL_JS) + "\n"
     + _extract("allSetStepHtml", SHELL_JS) + "\n"
     + _extract("reviewDecideHtml", SHELL_JS) + "\n"
+    + _extract("wkDockMoreHtml", SHELL_JS) + "\n"
+    + "var WK_ICONS = { more: '<svg></svg>' };\n"
 )
 
 _APPROVED = {
