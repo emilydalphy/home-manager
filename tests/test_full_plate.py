@@ -33,12 +33,25 @@ def _week_start() -> str:
 # ---------- the rule itself, with no database in sight ----------
 
 @pytest.mark.parametrize("style", [
-    "keto", "Keto", "ketogenic", "low-carb", "low carb", "LOW  CARB",
-    "high-protein, low-carb", "strict keto, no cheating", "carnivore", "Atkins",
+    "keto", "Keto", "ketogenic", "strict keto, no cheating", "carnivore", "no carbs please",
 ])
-def test_a_low_carb_eating_style_is_recognized(style):
+def test_a_no_carb_eating_style_gets_no_carb(style):
     assert plates.is_low_carb(style) is True
+    assert plates.carb_level(style) == "none"
     assert plates.plate_rule(style) == ("protein", "vegetable")
+
+
+@pytest.mark.parametrize("style", [
+    "low-carb", "low carb", "LOW  CARB", "high-protein, low-carb", "Atkins",
+    "High-protein, Low-carb, no red meat", "low carb but not no carb",
+])
+def test_a_low_carb_eating_style_still_gets_a_small_carb(style):
+    """Emily, 2026-09-21: "my preferences say 'low carbs' but it doesn't
+    say 'no carbs'." Low is a level of its own, and its plate has a carb."""
+    assert plates.is_low_carb(style) is True
+    assert plates.carb_level(style) == "low"
+    assert plates.plate_rule(style) == ("protein", "vegetable", "carb")
+    assert plates.carb_portion("low") == "small"
 
 
 @pytest.mark.parametrize("style", [
@@ -48,6 +61,7 @@ def test_a_low_carb_eating_style_is_recognized(style):
 def test_everything_else_still_gets_a_carb(style):
     assert plates.is_low_carb(style) is False
     assert plates.plate_rule(style) == ("protein", "vegetable", "carb")
+    assert plates.carb_level(style) == ("lots" if style and "lots" in style else "normal")
 
 
 def test_a_dinner_is_short_of_whatever_the_rule_names():
@@ -661,3 +675,4 @@ def test_both_generation_prompts_state_the_plate_rule():
     for source in (day_based, component):
         assert "EVERY MEAL IS A FULL PLATE" in source
         assert "low-carb" in source
+        assert "carb_level" in source and "not no carb" in source

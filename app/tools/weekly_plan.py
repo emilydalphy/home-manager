@@ -1137,13 +1137,20 @@ def suggest_planning_period(from_date: str = "", plan_ahead: bool = True) -> dic
     and the plan-week default all read this, and a test holds the nudge and
     this to the same answer.
 
-    And from PLAN_AHEAD_FROM_WEEKDAY on, an UNAPPROVED current period is
-    skipped in favour of the next one: on a Friday with no approved plan
-    covering today, "this week" is next week (`is_current_period` False,
-    so a screen can say "next week" rather than "this week"). Approved is
-    the test, not merely live — a draft covering today is exactly the
+    And from PLAN_AHEAD_FROM_WEEKDAY on, the current period is skipped in
+    favour of what comes next: on a Friday with no approved plan covering
+    today, "this week" is next week (`is_current_period` False, so a
+    screen can say "next week" rather than "this week"). Approved is the
+    test, not merely live — a draft covering today is exactly the
     unplanned week this rule is about, and the household is offered the
-    week after it while the draft stays where it is on Plan. An 'as_we_go'
+    week after it while the draft stays where it is on Plan. With an
+    APPROVED plan covering today, what comes next is the day after that
+    plan's last day (2026-09-21, the "Friday edge" found while building
+    the intake motion): until then the approved case stayed on the
+    current period and the today-clamp below turned it into Fri–Thu — a
+    window nobody asked for, straddling three days already approved and
+    four of the week the nudge and the Plan tab's own "Plan next week ›"
+    were both offering. Now all three name the same days. An 'as_we_go'
     household is never shifted: its period starts today by definition.
 
     And it never starts before today (2026-09-21). The anchor says where
@@ -1152,7 +1159,11 @@ def suggest_planning_period(from_date: str = "", plan_ahead: bool = True) -> dic
     household opening Plan on a Sunday is offered Sun–Sat, not the
     Sat–Fri whose first dinner is already eaten. `is_current_period`
     stays True: it is still this week, just the part of it that is left
-    to plan ahead of.
+    to plan ahead of. The length is the household's HORIZON, whatever the
+    start (Emily, 2026-09-21): a period offered from any day runs seven
+    days from it (three for as-we-go), never cut short at some other
+    plan's edge — that is the intake's overlap warning's job, not this
+    default's.
 
     `plan_ahead=False` asks for the current period regardless — for the
     one caller that is not choosing a default but resolving a choice the
@@ -1199,7 +1210,13 @@ def suggest_planning_period(from_date: str = "", plan_ahead: bool = True) -> dic
             conn.close()
             if approved is None:
                 start = start + timedelta(days=day_count)
-                is_current = False
+            else:
+                # This week is planned and mostly eaten: what is left to
+                # plan is what follows the approved plan — the same
+                # `following` the nudge and next_period_after offer.
+                cover_start, cover_days = plan_period(approved)
+                start = date.fromisoformat(period_end_date(cover_start, cover_days)) + timedelta(days=1)
+            is_current = False
         # Today, never yesterday (Emily, 2026-09-20, re-planning on a
         # Sunday: "the days are showing from yesterday"). The anchor names
         # where the household's week BEGINS, and mid-week that day has
@@ -1429,16 +1446,24 @@ def next_period_after(plan: dict, today: str = "") -> dict:
       — the day after IT may be weeks ago. Then the offer is simply the
       household's standing suggestion, this week or next by the Friday
       rule, and `is_current_period` says which so the link can say so.
-    - If another live plan already holds a day inside that stretch, the
-      offer stops the day before it and `shortened_reason` says why in one
-      line ("Sep 17–20 is already planned."), rather than quietly offering
-      a period whose generation would take those days over. A stretch
-      whose FIRST day is already held is offered whole with `is_planned`
-      True — that is a re-plan, and the link says "Re-plan"; the question
-      screen's own warning does the rest, as it always has.
+    - It is the WHOLE horizon, whatever else is already planned (Emily,
+      Monday 2026-09-21, from her phone). Until then a stretch with another
+      live plan part-way into it was cut short to stop the day before that
+      plan — which is how "Plan next week ›" under an ended week offered
+      her "Mon 21 → Mon 21 · 1 day" (a draft began on the Tuesday), and
+      how the intake it opened counted "Today" and "Tomorrow" by one day.
+      Her rule: from any start, the range is the household's horizon; the
+      one exception to "never one day" is a household whose horizon is
+      one day. A stretch whose FIRST day is already held is flagged with
+      `is_planned` True — that is a re-plan, and the link says "Re-plan".
+      Either way the question screen's own warning ("… already has a
+      draft. Answering again replaces it") says what generating over held
+      days costs, before anything is answered — that warning is where the
+      overlap belongs, not in a shorter offer.
 
-    Never shortened for a trip: a night away is a planned_empty slot inside
-    the week, not a reason to plan a shorter one (see _finish_week_slots).
+    Never shortened for a trip either: a night away is a planned_empty slot
+    inside the week, not a reason to plan a shorter one (see
+    _finish_week_slots).
 
     `today` is the household's day, passed in by get_week_menu, which has
     already resolved it — the clock is one connection-and-SELECT and this
@@ -1464,27 +1489,14 @@ def next_period_after(plan: dict, today: str = "") -> dict:
         is_current = False
     day_count = int(suggestion["day_count"]) or 7
 
-    is_planned = False
-    reason = None
     held = find_overlapping_plans(start.isoformat(), day_count, exclude_plan_id=plan_id)
-    if held:
-        first_held = min(held, key=lambda p: p["overlap_dates"][0])
-        first_day = date.fromisoformat(first_held["overlap_dates"][0])
-        if first_day == start:
-            is_planned = True
-        else:
-            day_count = (first_day - start).days
-            reason = (
-                f"{_format_period_range(first_held['period_start_date'], first_held['day_count'])} "
-                "is already planned."
-            )
+    is_planned = any(p["overlap_dates"][0] == start.isoformat() for p in held)
     return {
         "start_date": start.isoformat(),
         "day_count": day_count,
         "label": _format_period_range(start.isoformat(), day_count),
         "is_current_period": is_current,
         "is_planned": is_planned,
-        "shortened_reason": reason,
     }
 
 
@@ -4471,7 +4483,11 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         r["meal_plan_entry_id"]: {"date": r["task_date"], "note": r["description"]}
         for r in defrost_rows
     }
-    plate_rule = _plates.plate_rule(prefs["eating_style"] if prefs else "")
+    # One read of the household's carb level for the whole menu — their
+    # eating_style, facts and notes together (plates.household_carb_level;
+    # Emily, 2026-09-21: low carb is not no carb).
+    carb_level = _plates.household_carb_level(prefs["eating_style"] if prefs else "")
+    plate_rule = _plates.plate_rule(level=carb_level)
 
     # Every confirmed cook-once-eat-twice pairing on this plan (see
     # leftovers.py) — computed once for the whole week rather than per slot,
@@ -4555,6 +4571,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             "plate_parts": _plate_parts_mod.parts_of_plate(
                 row["slot"] or "dinner", json.loads(row["food_groups_json"] or "[]"),
                 row["main_protein"], sides, prefs["eating_style"] if prefs else "",
+                carb_level=carb_level,
             ),
             "defrost": defrost_by_entry.get(row["id"]),
             # Where the dish's recipe came from, said the one way every
@@ -4765,9 +4782,11 @@ def _safe_draft_opener(rows, intake, plan, days) -> list[str]:
     from . import draft_opener as _draft_opener  # lazy, see get_week_menu
 
     try:
+        from . import memory as _memory  # lazy, as above
         return _draft_opener.build_opener(
             rows, intake, plan["period_start_date"], plan["day_count"], days, plan_id=plan["weekly_plan_id"],
             report=plan_requests(plan["weekly_plan_id"]),
+            memory=_memory.get_household_memory(),
         )
     except Exception:
         logger.exception("The draft's opening lines could not be built")

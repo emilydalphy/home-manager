@@ -117,6 +117,14 @@ CREATE TABLE IF NOT EXISTS meal_preferences (
     -- one flag covering both would make the Preferences sheet read the
     -- wrong sentence back at whichever question was not the one asked.
     snacks_per_day_set INTEGER NOT NULL DEFAULT 0,
+    -- Whether dinners/breakfasts/lunches_per_week are ANSWERS or column
+    -- defaults (Emily, 2026-09-21: the counts are targets, not caps, and
+    -- the pass that re-picks a repeat into a new dish to reach one spends
+    -- model calls — it must not chase "7 distinct breakfasts" for a
+    -- household that never said so). Set to 1 when any of the three reaches
+    -- set_household_meal_preferences; backfilled for a household whose
+    -- stored counts are not all the default 7 (db._backfill_meal_counts_set).
+    meal_counts_set INTEGER NOT NULL DEFAULT 0,
     onboarding_complete INTEGER NOT NULL DEFAULT 0,
     -- design_handoff_plan_the_week. The settings the revisitable setup
     -- screen owns and the two onboarding steps collect. They are separate

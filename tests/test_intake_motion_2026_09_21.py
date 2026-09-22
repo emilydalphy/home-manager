@@ -175,7 +175,7 @@ class TestOneQuestionAScreen:
         assert "moods: answers.moods" in leave and "night_tags: answers.night_tags" in leave
 
     def test_what_pomona_already_knows_opens_already_chosen(self):
-        load = _extract("loadPeriod")
+        load = _extract("fetchPeriod")   # the body of loadPeriod, one fetch per period (2026-09-21)
         # Lunches from the rhythm — the suggestion that existed but never
         # skipped the step (PRODUCT_FLOWS flow 2).
         assert ".filter(function (s) { return s.suggested_packed; })" in load
@@ -203,7 +203,6 @@ class TestOneQuestionAScreen:
         # Contractions, always; no dashboard labels; nothing restating the chips.
         for line in (
             "It’s ' + weekdayName(todayIso()) + '. I’ll plan from today unless you say otherwise.",
-            "Yesterday&rsquo;s already eaten &mdash; I won&rsquo;t plan or shop for it.",
             "I&rsquo;ll keep those to food that packs cold.",
             "I&rsquo;ll pick from what you like and keep the week varied.",
             "No need to wait &mdash; the draft lands on Plan when it&rsquo;s done.",
@@ -225,7 +224,9 @@ class TestStartingWhen:
         q1 = _section("q1")
         assert q1.index("<h1>Starting when?</h1>") < q1.index('id="start-chips"') < q1.index('id="range-card"')
         assert 'id="range-words"' in q1 and 'id="range-strip"' in q1
-        assert "Yesterday&rsquo;s already eaten &mdash; I won&rsquo;t plan or shop for it." in q1
+        # The "Yesterday's already eaten" line under the strip went on
+        # 2026-09-21 (Emily's call); the rule behind it (clampStart) stays.
+        assert "already eaten" not in q1
         assert "today: 'Today', tomorrow: 'Tomorrow', pick: 'Pick my own days'" in PAGE
         # Today is outlined in apricot, and says so in a word (S6).
         assert ".dt.today { outline: 2px solid var(--apricot);" in PAGE

@@ -10815,8 +10815,9 @@
   }
 
   // The stretch "Plan next week ›" offers under a plan: the server's
-  // next_period (its start, its length, and — when it is shorter than the
-  // household's usual — the one-line reason why). The arithmetic fallback
+  // next_period (its start and its length — always the household's whole
+  // horizon, never cut short at another plan's edge, 2026-09-21). The
+  // arithmetic fallback
   // is the pre-2026-09-13 behaviour, kept only so a stale cached payload
   // still gets a working link.
   function nextPeriodFor(data, days) {
@@ -10827,7 +10828,7 @@
       (planningPeriodDefault && planningPeriodDefault.start_date) || thisWeekStartLocal();
     return {
       start_date: addDaysLocal(start, dayCount), day_count: dayCount,
-      is_current_period: false, is_planned: false, shortened_reason: null
+      is_current_period: false, is_planned: false
     };
   }
 
@@ -10867,12 +10868,10 @@
     var notes = [];
     if (data.plates_note && _dayHasPlateSides(day)) notes.push(data.plates_note);
     if (weekPlanState(data) === 'draft' && data.soft_note) notes.push(data.soft_note);
-    // Why the next stretch on offer is shorter than a week ("Sep 17–20 is
-    // already planned."), said once, right above the link it is about.
-    var next = data.next_period || {};
-    if (next.shortened_reason) {
-      notes.push(next.shortened_reason + ' Next up is ' + next.label + '.');
-    }
+    // The next stretch on offer is never shorter than the household's
+    // horizon (weekly_plan.next_period_after, 2026-09-21), so there is no
+    // "Sep 17–20 is already planned" note here any more: the intake's own
+    // warning says what re-planning held days costs, on the way in.
     if (!notes.length) return '';
     return '<div class="wk-notes">' + notes.map(function (n) {
       return '<div class="wk-note">' + escapeHtml(n) + '</div>';
@@ -11649,7 +11648,7 @@
         ? '<button type="button" class="wk-swap-quiet" id="wk-swap-move">' +
             escapeHtml('Move the ' + dishShortName(st.name) + ' to another day') + '</button>'
         : '') +
-      '<button type="button" class="wk-swap-tell" id="wk-swap-tell">Something else — tell me</button>';
+      '<button type="button" class="wk-swap-else" id="wk-swap-tell">Something else — tell me</button>';
   }
 
   function drawSwapSheet() {
@@ -11949,7 +11948,9 @@
   // the Meal step's row share this one word so they never disagree. Bug,
   // Emily 2026-09-15: the chip used to show only its role word here, which
   // on Roast Chicken's Protein chip read as blank — a chip with nothing on
-  // it looks broken, not quiet.
+  // it looks broken, not quiet. The server names the carb itself where the
+  // household's carb level decides the word: "Small" on a low-carb plate,
+  // "None" (part.empty) on a no-carb one — plate_parts.py, Emily 2026-09-21.
   var PLATE_NO_NAME = 'In the dish';
 
   function platePartChipHtml(part, slot) {
@@ -11959,10 +11960,12 @@
         PLATE_PLUS + 'Add a ' + escapeHtml(part.word.toLowerCase()) + '</button>';
     }
     var label = '<span class="plate-role">' + escapeHtml(part.word) + '</span>' + escapeHtml(part.name || PLATE_NO_NAME);
+    // A "None" carb (part.empty) is an offer to add one, and says so.
+    var verb = part.empty ? 'Add a ' : 'Change the ';
     return '<button type="button" class="plate-part" ' +
       'data-plate-part="' + escapeHtml(part.role === 'side' ? '' : part.role) + '" data-plate-slot="' + escapeHtml(slot) + '" ' +
       (part.source === 'side' && part.name ? 'data-plate-side="' + escapeHtml(part.name) + '" ' : '') +
-      'aria-label="' + escapeHtml('Change the ' + part.word.toLowerCase()) + '">' +
+      'aria-label="' + escapeHtml(verb + part.word.toLowerCase()) + '">' +
       label + PLATE_CARET + '</button>';
   }
 
@@ -11979,13 +11982,14 @@
       // The row has the role as its eyebrow already, so a part with no name
       // of its own says where it is rather than its word twice.
       var name = p.missing ? 'Nothing yet' : (p.name || PLATE_NO_NAME);
+      var verb = (p.missing || p.empty) ? 'Add' : 'Change';
       return '<div class="plate-row' + (p.missing ? ' is-missing' : '') + '">' +
         '<span class="plate-row-role">' + escapeHtml(p.word) + '</span>' +
         '<span class="plate-row-name">' + escapeHtml(name) + '</span>' +
         '<button type="button" class="plate-row-change" data-plate-part="' + escapeHtml(p.role === 'side' ? '' : p.role) + '" ' +
           'data-plate-slot="' + escapeHtml(slot) + '"' +
           (p.source === 'side' && p.name ? ' data-plate-side="' + escapeHtml(p.name) + '"' : '') + '>' +
-          (p.missing ? 'Add' : 'Change') + '</button>' +
+          verb + '</button>' +
       '</div>';
     }).join('');
     return '<section class="plate-rows-wrap" aria-label="The plate">' +
@@ -14708,8 +14712,9 @@
     // "the 3 after", not "the 3 days after" — the dates line right under it
     // says which three, so the second "days" is a word that isn't earning
     // its place.
-    // A one-day stretch (a next_period shortened to one day by a plan
-    // already holding the rest) is "the day after", not "the 1 after".
+    // A one-day stretch (a household whose horizon really is one day —
+    // next_period is never cut short any more, 2026-09-21) is "the day
+    // after", not "the 1 after".
     return verb + (which === 'current' ? 'the next ' + unit : 'the ' + (dayCount === 1 ? 'day' : dayCount) + ' after');
   }
 
@@ -18465,10 +18470,12 @@
   // 2026-09-15 (Loop Board: "Ask: the door says 'hold this', not 'meal
   // edits'") — a household walking the "Pomona, hold this" flow read that
   // line and translated their thought into a command because it only
-  // named plan edits. The sheet's own title already says "What's on your
-  // mind?" (shell.html), so this doesn't repeat it — it answers the next
-  // question instead: what happens to whatever you say.
-  var DEFAULT_ASK_GREETING = 'Say it however it comes — I’ll put it where it belongs.';
+  // named plan edits. Then "Say it however it comes — I'll put it where
+  // it belongs." until 2026-09-21, when Emily asked for this line, word
+  // for word (Loop Board "Chat greeting"). It carries the sheet's one
+  // exclamation mark (DESIGN_SYSTEM.md §8: at most one per screen) — no
+  // other line on the sheet gets one.
+  var DEFAULT_ASK_GREETING = 'Tell me what’s on your mind and how I can help!';
 
   function ensureAskSheetBuilt(greeting) {
     if (askBuilt) {
@@ -18486,9 +18493,8 @@
     }
     askBuilt = true;
     loadQuickActionChips();
-    // No exclamation mark, and an offer rather than an instruction — this
-    // is the first thing the assistant ever says, and it has to sit beside
-    // the same voice as the rest of the app.
+    // The first thing the assistant ever says, in the same voice as the
+    // rest of the app; the default's exclamation mark is the sheet's one.
     addAskMessage('assistant', greeting || DEFAULT_ASK_GREETING);
   }
 

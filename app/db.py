@@ -418,6 +418,10 @@ _MIGRATIONS = [
     # inventing a per-day answer for them from a per-week number would be
     # the exact "print a default back as a fact" bug this pair prevents.
     ("meal_preferences", "snacks_per_day_set", "INTEGER NOT NULL DEFAULT 0"),
+    # Whether the three per-week counts are answers (Emily, 2026-09-21,
+    # "Each week I plan" numbers are targets, not caps) — see schema.sql
+    # and _backfill_meal_counts_set below.
+    ("meal_preferences", "meal_counts_set", "INTEGER NOT NULL DEFAULT 0"),
     # Loop Board 19a (Emily, 2026-09-05): stores are asked just-in-time on
     # the Grocery tab's first real trip, not during onboarding — see the
     # Plan stops "Where do you usually shop?" card in shell.js. Empty means
@@ -845,6 +849,24 @@ def _backfill_allergy_notes_from_facts(conn):
             )
 
 
+def _backfill_meal_counts_set(conn):
+    """
+    A household whose stored dinners/breakfasts/lunches_per_week are not
+    all the column default (7) answered the question before
+    meal_counts_set existed. Idempotent: only ever flips 0 -> 1. A
+    household at 7/7/7 stays unflagged — it may have chosen that, but the
+    generation pass this gates (meal_variety._fill_up) spends model calls,
+    and "seven distinct breakfasts" is not a floor to enforce on a guess.
+    """
+    conn.execute(
+        """
+        UPDATE meal_preferences SET meal_counts_set = 1
+        WHERE meal_counts_set = 0
+          AND (dinners_per_week != 7 OR breakfasts_per_week != 7 OR lunches_per_week != 7)
+        """
+    )
+
+
 def _backfill_snacks_per_week_set(conn):
     """
     Households that answered the snacks question BEFORE snacks_per_week_set
@@ -901,6 +923,7 @@ def _run_migrations(conn):
     _migrate_planning_anchor_values(conn)
     _backfill_allergy_notes_from_facts(conn)
     _backfill_snacks_per_week_set(conn)
+    _backfill_meal_counts_set(conn)
     _migrate_chore_modes(conn)
     _backfill_chore_done_on(conn)
     _run_once_data_migrations(conn)

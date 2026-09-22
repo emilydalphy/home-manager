@@ -98,7 +98,7 @@ def test_the_plate_names_the_protein_and_marks_what_is_missing():
     assert parts[1]["source"] == "dish"
 
 
-def test_a_side_covers_its_part_by_name_and_keto_asks_for_no_carb():
+def test_a_side_covers_its_part_by_name_and_keto_reads_none_for_its_carb():
     parts = pp.parts_of_plate("dinner", ["protein"], "chicken", [{"name": "Roasted potatoes", "covers": ["carb"]}], "")
     by_role = {p["role"]: p for p in parts}
     assert by_role["carb"] == {"role": "carb", "word": "Carb", "name": "Roasted potatoes", "source": "side", "missing": False}
@@ -106,8 +106,11 @@ def test_a_side_covers_its_part_by_name_and_keto_asks_for_no_carb():
     # A keto household's rule has no carb — but the card still OFFERS one
     # (Emily, 2026-09-15: "for the kebab meal I would like an option to
     # add a carb"). Dashed, theirs to take; the planner never fills it.
+    # ...reading "None" rather than as a shortfall (Emily, 2026-09-21:
+    # "None" only for a household on none), still a tap to add one.
     keto = pp.parts_of_plate("dinner", ["protein", "vegetable"], "salmon", [], "keto, low carb")
-    assert [(p["role"], p["missing"]) for p in keto] == [("protein", False), ("vegetable", False), ("carb", True)]
+    assert [(p["role"], p["missing"]) for p in keto] == [("protein", False), ("vegetable", False), ("carb", False)]
+    assert keto[-1] == {"role": "carb", "word": "Carb", "name": "None", "source": None, "missing": False, "empty": True}
     # Once they take it, it reads like anyone else's carb.
     keto = pp.parts_of_plate("dinner", ["protein", "vegetable"], "salmon",
                              [{"name": "Roasted potatoes", "covers": ["carb"]}], "keto, low carb")
@@ -312,7 +315,7 @@ def test_the_parts_are_chips_with_a_dashed_missing_one_and_rows_on_the_meal_step
     assert "data-plate-side=" in SHELL_JS
     assert "function platePartsRowsHtml(" in SHELL_JS
     assert "platePartsRowsHtml(day, slot, entry) : '') +" in SHELL_JS
-    assert "(p.missing ? 'Add' : 'Change')" in SHELL_JS
+    assert "(p.missing || p.empty) ? 'Add' : 'Change'" in SHELL_JS
     # A reheat night or a grab-and-go snack has no plate to change.
     j = SHELL_JS.index("function plateCanChange(")
     guard = SHELL_JS[j:j + 500]

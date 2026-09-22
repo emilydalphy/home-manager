@@ -16,8 +16,12 @@ takeover remnant does the same), so the week after it was two days too.
 
 Now the server says: weekly_plan.next_period_after, carried on
 get_week_menu as `next_period`, sized by suggest_planning_period's
-day_count — the same length the nudge offers — and shortened only when
-another live plan already holds part of it, with the reason written down.
+day_count — the same length the nudge offers. It used to be shortened
+when another live plan held part of it, with the reason written down;
+that went on 2026-09-21 (Emily, from her phone: "Plan next week ›" under
+an ended week offered "Mon 21 → Mon 21 · 1 day" because a draft began the
+next morning). From any start, the offer is the household's whole horizon;
+the intake's own warning says what re-planning held days costs.
 
 "Today" is pinned the way tests/test_stale_draft_front_page.py pins it;
 the suite is date-dependent and this bug fires on a Sunday.
@@ -123,7 +127,7 @@ class TestASundayOffersTheWholeComingWeek:
         assert nxt["start_date"] == NEXT_MONDAY
         assert nxt["day_count"] == 7, "the week after a two-day plan is a week, not two more days"
         assert nxt["label"] == "Sep 14–20"
-        assert nxt["shortened_reason"] is None
+        assert "shortened_reason" not in nxt
         assert nxt["is_planned"] is False
         assert nxt["is_current_period"] is False
 
@@ -179,63 +183,90 @@ class TestASundayOffersTheWholeComingWeek:
         assert (menu["next_period"]["start_date"], menu["next_period"]["day_count"]) == (NEXT_MONDAY, 7)
 
 
-# ---------- a shorter span, with the reason on it ----------
+# ---------- never a shorter span (2026-09-21) ----------
 
-class TestAShorterSpanSaysWhy:
-    def test_days_already_planned_shorten_the_offer_and_say_so(self, pin_today):
+class TestTheOfferIsNeverCutShort:
+    """Emily, Monday 2026-09-21, from her phone: with a draft beginning on
+    the Tuesday, "Plan next week ›" under the ended week offered "Mon 21 →
+    Mon 21 · 1 day", and the intake it opened counted "Today" and
+    "Tomorrow" by one day. Her rule: from any start, the range is the
+    household's horizon — never one day unless the horizon is one day.
+    Every test here was red on main, where the stretch stopped the day
+    before the held plan and carried a `shortened_reason`."""
+
+    def test_days_already_planned_do_not_shorten_the_offer(self, pin_today):
         # This week on screen; Thu–Sun of next week already drafted. The
-        # offer stops at Wednesday and says why in one line, rather than
-        # quietly offering a week whose generation would take those four
-        # days over.
+        # offer is still the whole week from Monday; the intake's own
+        # warning names the draft on the way in.
         _insert_plan(THIS_MONDAY, 7)
         _insert_plan("2026-09-17", 4, status="draft")
         pin_today(SUNDAY)
         nxt = tools.get_week_menu()["next_period"]
-        assert (nxt["start_date"], nxt["day_count"]) == (NEXT_MONDAY, 3)
-        assert nxt["label"] == "Sep 14–16"
-        assert nxt["shortened_reason"] == "Sep 17–20 is already planned."
+        assert (nxt["start_date"], nxt["day_count"]) == (NEXT_MONDAY, 7)
+        assert nxt["label"] == "Sep 14–20"
+        assert "shortened_reason" not in nxt
         assert nxt["is_planned"] is False
 
-    def test_the_earliest_held_day_is_the_one_that_counts(self, pin_today):
+    def test_emilys_monday_a_draft_from_tomorrow_never_makes_today_one_day(self, pin_today):
+        # A draft holds Tue 22 – Sat 26; the plan on screen is the newer,
+        # approved week that ended yesterday (Sunday). Monday's offer is
+        # Mon 21 – Sun 27, seven days — not "Mon 21 → Mon 21 · 1 day".
+        _insert_plan("2026-09-22", 5, status="draft", week_start="2026-09-21")
+        ended = _insert_plan("2026-09-14", 7)
+        pin_today("2026-09-21")
+        menu = tools.get_week_menu()
+        assert menu["weekly_plan_id"] == ended
+        nxt = menu["next_period"]
+        assert (nxt["start_date"], nxt["day_count"]) == ("2026-09-21", 7)
+        assert nxt["label"] == "Sep 21–27"
+        assert nxt["is_current_period"] is True
+
+    def test_a_held_day_in_the_middle_does_not_shorten_it_either(self, pin_today):
         _insert_plan(THIS_MONDAY, 7)
-        _insert_plan("2026-09-19", 2, status="draft")   # Sat–Sun
         _insert_plan("2026-09-16", 1, status="approved")  # Wednesday, one day
         pin_today(SUNDAY)
         nxt = tools.get_week_menu()["next_period"]
-        assert (nxt["start_date"], nxt["day_count"]) == (NEXT_MONDAY, 2)
-        assert nxt["shortened_reason"] == "Sep 16 is already planned."
+        assert (nxt["start_date"], nxt["day_count"]) == (NEXT_MONDAY, 7)
 
     def test_a_stretch_already_planned_from_its_first_day_is_a_replan(self, pin_today):
         # Next week planned ahead in full: offered whole, flagged as a
-        # re-plan (the link says "Re-plan"), no reason line — nothing was
-        # shortened.
+        # re-plan (the link says "Re-plan").
         _insert_plan(THIS_MONDAY, 7)
         _insert_plan(NEXT_MONDAY, 7, status="draft")
         pin_today(SUNDAY)
         nxt = tools.get_week_menu()["next_period"]
         assert (nxt["start_date"], nxt["day_count"]) == (NEXT_MONDAY, 7)
         assert nxt["is_planned"] is True
-        assert nxt["shortened_reason"] is None
 
-    def test_a_retired_plan_does_not_shorten_anything(self, pin_today):
+    def test_a_retired_plan_is_not_a_replan(self, pin_today):
         _insert_plan(THIS_MONDAY, 7)
-        _insert_plan("2026-09-17", 4, status="retired")
+        _insert_plan(NEXT_MONDAY, 7, status="retired")
         pin_today(SUNDAY)
         nxt = tools.get_week_menu()["next_period"]
         assert nxt["day_count"] == 7
-        assert nxt["shortened_reason"] is None
+        assert nxt["is_planned"] is False
 
-    def test_another_households_plan_does_not_shorten_anything(self, pin_today):
+    def test_another_households_plan_is_not_a_replan(self, pin_today):
         conn = get_conn()
         conn.execute("INSERT INTO households (id, name) VALUES (2, 'Other')")
         conn.commit()
         conn.close()
         _insert_plan(THIS_MONDAY, 7)
-        _insert_plan("2026-09-17", 4, status="draft", household=2)
+        _insert_plan(NEXT_MONDAY, 7, status="draft", household=2)
         pin_today(SUNDAY)
         nxt = tools.get_week_menu()["next_period"]
         assert nxt["day_count"] == 7
-        assert nxt["shortened_reason"] is None
+        assert nxt["is_planned"] is False
+
+    def test_an_as_we_go_household_is_offered_its_three_days_whatever_is_held(self, pin_today):
+        # The horizon, not seven and not one: three days after the plan,
+        # with a draft holding the second of them.
+        tools.set_planning_anchor("as_we_go")
+        _insert_plan(THIS_MONDAY, 7)
+        _insert_plan("2026-09-15", 2, status="draft")
+        pin_today(SUNDAY)
+        nxt = tools.get_week_menu()["next_period"]
+        assert (nxt["start_date"], nxt["day_count"]) == (NEXT_MONDAY, 3)
 
 
 # ---------- a plan that has already ended ----------
@@ -277,5 +308,6 @@ class TestThePlanTabReadsTheServersAnswer:
         assert "addDaysLocal(start, dayCount)" not in handler
         assert "startPlanningWeek(period.start_date, period.day_count)" in handler
 
-    def test_the_reason_is_said_once_in_the_notes(self):
-        assert "next.shortened_reason" in SHELL_JS
+    def test_no_reason_line_is_left_on_the_plan_tab(self):
+        # The note above the link went with the shortening (2026-09-21).
+        assert "shortened_reason" not in SHELL_JS

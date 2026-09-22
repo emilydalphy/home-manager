@@ -302,6 +302,10 @@ def get_household_memory() -> dict:
         # since both are written by the one snacks answer.
         "snacks_per_day": prefs["snacks_per_day"] if prefs else 2,
         "snacks_per_day_set": bool(prefs["snacks_per_day_set"]) if prefs else False,
+        # Whether the three per-week counts are the household's answers
+        # (Emily, 2026-09-21) — what lets generation treat them as targets
+        # to reach, not only ceilings. See schema.sql on meal_counts_set.
+        "meal_counts_set": bool(prefs["meal_counts_set"]) if prefs else False,
         # design_handoff_plan_the_week. kitchen_kit is the highest-value
         # constraint the app wasn't collecting — it stops impossible
         # suggestions outright rather than filtering them afterwards. And
