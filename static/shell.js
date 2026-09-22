@@ -6259,7 +6259,15 @@
     }
     groRollUpAfterBeat(key);
   }
+  // Under prefers-reduced-motion the beat goes too: the card rolls up
+  // (redraws) at once, with no pause in front of an animation that
+  // isn't going to play.
+  function groReducedMotion() {
+    return typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
   function groRollUpAfterBeat(key) {
+    if (groReducedMotion()) { groRollUp(key); return; }
     setTimeout(function () { groRollUp(key); }, GRO_STORE_DONE_BEAT_MS);
   }
 
@@ -6285,16 +6293,15 @@
   // height to 0 over --motion-base on the leaving curve, fading — and
   // the list is redrawn with the card as one line at the foot, which
   // settles into place (groRolledArrive). One motion, two halves.
-  // Instant under prefers-reduced-motion: no fold, no settle, just the
-  // redraw — checked in code as well as by the 0ms tokens, the way
-  // groSortAllLeave does. Called off if the beat was cancelled (a
+  // Instant under prefers-reduced-motion: no beat (groRollUpAfterBeat),
+  // no fold, no settle, just the redraw — checked in code as well as by
+  // the 0ms tokens, the way groSortAllLeave does. Called off if the beat was cancelled (a
   // put-back), or the card is somehow no longer done.
   function groRollUp(key) {
     var data = groceryState.data;
     if (groceryState.doneBeat !== key) return;
     if (!data || !groCardDone(data, key)) { groceryState.doneBeat = null; return; }
-    var reduce = typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var reduce = groReducedMotion();
     if (groFreezingOnCard(data, key)) groceryState.doneOpen[key] = true;
     var panel = groPanel();
     var card = panel && groCardEl(panel, key);

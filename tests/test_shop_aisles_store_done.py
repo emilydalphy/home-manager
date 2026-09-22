@@ -443,7 +443,7 @@ console.log(JSON.stringify({ folding: folding, settled: settled, twice: RENDERS 
 
 
 @_needs_node
-def test_under_reduced_motion_the_roll_up_is_the_redraw_alone():
+def test_under_reduced_motion_the_roll_up_is_the_redraw_alone_with_no_beat_in_front_of_it():
     out = run(_HARNESS + _PANEL + """
 mockup();
 var costco = groceryState.data.stores.Costco;
@@ -455,9 +455,18 @@ var rowsEl = new Rows(312);
 var cardEl = new CardEl('Costco', rowsEl);
 panelWith([cardEl]);
 groRollUp('Costco');
-console.log(JSON.stringify({ classes: rowsEl.classes, height: rowsEl.style.height || null, renders: RENDERS, doneBeat: groceryState.doneBeat, cardClasses: cardEl.classes }));
+var instant = { classes: rowsEl.classes, height: rowsEl.style.height || null, renders: RENDERS, doneBeat: groceryState.doneBeat, cardClasses: cardEl.classes };
+// And the beat itself is skipped: the last tick rolls the card up at
+// once, on the same turn, rather than 600ms later.
+groceryState.data = null; mockup();
+delete panels['grocery'];   // no panel at all, as in every other tick test here
+finishCostco();
+var html = groListHtml(groceryState.data);
+console.log(JSON.stringify({ rolled: instant, atOnce: { doneBeat: groceryState.doneBeat, cards: cards(html), rolledUp: rolled(html), toast: lastToastFull() } }));
 """)
-    assert out == {"classes": [], "height": None, "renders": 1, "doneBeat": None, "cardClasses": []}, "no transition class either way: instant"
+    assert out["rolled"] == {"classes": [], "height": None, "renders": 1, "doneBeat": None, "cardClasses": []}, "no transition class either way: instant"
+    assert out["atOnce"] == {"doneBeat": None, "cards": ["Loblaws", "Anywhere"], "rolledUp": ["Done at Costco"],
+                             "toast": {"msg": "That’s Costco done — 6 things.", "action": "Put back", "icon": True}}, "no beat: rolled up on the tick"
 
 
 @_needs_node
@@ -514,8 +523,9 @@ def test_the_fold_uses_the_base_token_on_the_leaving_curve_and_is_off_under_redu
     # Reduced motion is honoured in code too, not only by the 0ms tokens.
     roll = SHELL_JS[SHELL_JS.index("  function groRollUp(key) {"):]
     roll = roll[:roll.index("\n  }\n") + 4]
-    assert "prefers-reduced-motion: reduce" in roll
+    assert "var reduce = groReducedMotion();" in roll
     assert "if (reduce || !rows || !rows.offsetHeight) { settle(); return; }" in roll
+    assert "window.matchMedia('(prefers-reduced-motion: reduce)').matches" in SHELL_JS[SHELL_JS.index("  function groReducedMotion() {"):][:200]
 
 
 def test_the_design_system_records_the_fifth_animation():
