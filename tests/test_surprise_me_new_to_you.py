@@ -144,7 +144,7 @@ def test_a_first_week_has_no_history_to_be_new_against(stub_model):
 
 def test_the_history_is_capped_at_the_newest_names(monkeypatch):
     monkeypatch.setattr(meal_variety, "SURPRISE_HISTORY_CAP", 3)
-    monkeypatch.setattr(meal_variety, "household_dish_history", lambda exclude_plan_id=None: [
+    monkeypatch.setattr(meal_variety, "household_dish_history", lambda exclude_plan_id=None, replacing=None: [
         {"name": n, "date": "2026-01-01", "recent": False} for n in ["A", "B", "C", "D", "E"]
     ])
     ctx = meal_variety.surprise_context({"moods": [tools.SURPRISE_MOOD]})
@@ -293,7 +293,7 @@ def test_the_surprise_line_counts_against_all_time_not_the_window(monkeypatch):
          "derived_from_json": None, "freeform_meal": None},
     ]
     # Chili was on a plan months ago — outside the window, inside the history.
-    monkeypatch.setattr(meal_variety, "household_dish_history", lambda exclude_plan_id=None: [
+    monkeypatch.setattr(meal_variety, "household_dish_history", lambda exclude_plan_id=None, replacing=None: [
         {"name": "Chili", "date": "2026-03-02", "recent": False},
     ])
     monkeypatch.setattr(draft_opener, "recent_dish_names", lambda period_start, plan_id: None)
@@ -302,3 +302,65 @@ def test_the_surprise_line_counts_against_all_time_not_the_window(monkeypatch):
     assert lines[-1] == "Two new dishes; Chili you’ve had from me before."
     lines = draft_opener.build_opener(rows, {"moods": ["Comfort food"]}, "2026-10-05", 2, days, plan_id=9)
     assert len(lines) == 1, "any other mood: the window line, and there is no window here"
+
+
+# ---------- the verifier's round (2026-09-21) ----------
+
+def test_a_dish_they_asked_for_by_name_is_not_scolded_as_a_repeat(past_week, stub_model, monkeypatch):
+    """"Chili again, as you asked." on line 1 and "Chili you've had from
+    me before." on line 2 is the draft arguing with itself."""
+    week = _monday(1)
+    tools.save_week_intake(week, moods=[tools.SURPRISE_MOOD], freeform="chili again please")
+    dates = tools._week_dates(week)
+    days = _week(week, ["Chili"] + NEW_DINNERS[1:])
+    next(d for d in days if d["date"] == dates[0] and d["slot"] == "dinner")["derived_from"] = {"freeform": "chili again please"}
+    stub_model(days)
+    picks = []
+    monkeypatch.setattr(sip, "_pick_replacement", lambda ctx: (picks.append(ctx), _pick("Moussaka"))[1])
+
+    plan = agent.generate_weekly_plan(week)
+    assert picks == []
+    lines = tools.get_week_menu(plan["weekly_plan_id"])["draft_opener"]
+    assert lines[-1] == "Seven new dishes — nothing you’ve had from me before."
+    assert not any("Chili you" in line for line in lines)
+
+
+def test_replanning_a_draft_does_not_count_the_draft_being_replaced(stub_model, monkeypatch):
+    """Emily's case: a Tue–Sat draft she sent back, re-planned from Tuesday
+    with Surprise me. The rejected draft's dishes are not food she had —
+    they are not on the list, and the re-pick never churns against them.
+    ASSUMPTION for Emily (verifier, 2026-09-21)."""
+    week = _monday(1)
+    dates = tools._week_dates(week)
+    tuesday = dates[1]
+    # The draft being replaced: Tue–Sat, five dinners.
+    first = [s for s in _week(week, NEW_DINNERS) if tuesday <= s["date"] <= dates[5]]
+    stub_model(first)
+    old = agent.generate_weekly_plan(week, day_count=5, period_start=tuesday)
+    assert old["weekly_plan_id"]
+    # Re-plan the same days with Surprise me; the model sends the same five.
+    tools.save_week_intake(week, moods=[tools.SURPRISE_MOOD])
+    seen = stub_model(first)
+    calls = []
+    monkeypatch.setattr(sip, "_pick_replacement", lambda ctx: (calls.append(ctx), _pick("Moussaka"))[1])
+
+    new = agent.generate_weekly_plan(week, day_count=5, period_start=tuesday)
+
+    assert "surprise_me" not in seen["ctx"], "the only history was the draft being replaced"
+    assert calls == [], "no churning against the draft being replaced"
+    assert {m["meal"] for m in tools.get_weekly_plan(new["weekly_plan_id"])["meals"] if m["slot"] == "dinner"} == set(NEW_DINNERS[1:6])
+    lines = tools.get_week_menu(new["weekly_plan_id"])["draft_opener"]
+    assert not any("had from me" in line for line in lines)
+
+
+def test_an_approved_week_inside_the_period_still_counts_as_had(stub_model, monkeypatch):
+    week = _monday(1)
+    dates = tools._week_dates(week)
+    stub_model(_week(week, PAST_DINNERS))
+    approved = agent.generate_weekly_plan(week)
+    conn = get_conn()
+    conn.execute("UPDATE weekly_plans SET status = 'approved' WHERE id = ?", (approved["weekly_plan_id"],))
+    conn.commit()
+    conn.close()
+    ctx = meal_variety.surprise_context({"moods": [tools.SURPRISE_MOOD]}, dates[1], 5)
+    assert set(ctx["dont_repeat"]) == set(PAST_DINNERS) | {"Chickpea salad"}
