@@ -11949,7 +11949,9 @@
   // the Meal step's row share this one word so they never disagree. Bug,
   // Emily 2026-09-15: the chip used to show only its role word here, which
   // on Roast Chicken's Protein chip read as blank — a chip with nothing on
-  // it looks broken, not quiet.
+  // it looks broken, not quiet. The server names the carb itself where the
+  // household's carb level decides the word: "Small" on a low-carb plate,
+  // "None" (part.empty) on a no-carb one — plate_parts.py, Emily 2026-09-21.
   var PLATE_NO_NAME = 'In the dish';
 
   function platePartChipHtml(part, slot) {
@@ -11959,10 +11961,12 @@
         PLATE_PLUS + 'Add a ' + escapeHtml(part.word.toLowerCase()) + '</button>';
     }
     var label = '<span class="plate-role">' + escapeHtml(part.word) + '</span>' + escapeHtml(part.name || PLATE_NO_NAME);
+    // A "None" carb (part.empty) is an offer to add one, and says so.
+    var verb = part.empty ? 'Add a ' : 'Change the ';
     return '<button type="button" class="plate-part" ' +
       'data-plate-part="' + escapeHtml(part.role === 'side' ? '' : part.role) + '" data-plate-slot="' + escapeHtml(slot) + '" ' +
       (part.source === 'side' && part.name ? 'data-plate-side="' + escapeHtml(part.name) + '" ' : '') +
-      'aria-label="' + escapeHtml('Change the ' + part.word.toLowerCase()) + '">' +
+      'aria-label="' + escapeHtml(verb + part.word.toLowerCase()) + '">' +
       label + PLATE_CARET + '</button>';
   }
 
@@ -11979,13 +11983,14 @@
       // The row has the role as its eyebrow already, so a part with no name
       // of its own says where it is rather than its word twice.
       var name = p.missing ? 'Nothing yet' : (p.name || PLATE_NO_NAME);
+      var verb = (p.missing || p.empty) ? 'Add' : 'Change';
       return '<div class="plate-row' + (p.missing ? ' is-missing' : '') + '">' +
         '<span class="plate-row-role">' + escapeHtml(p.word) + '</span>' +
         '<span class="plate-row-name">' + escapeHtml(name) + '</span>' +
         '<button type="button" class="plate-row-change" data-plate-part="' + escapeHtml(p.role === 'side' ? '' : p.role) + '" ' +
           'data-plate-slot="' + escapeHtml(slot) + '"' +
           (p.source === 'side' && p.name ? ' data-plate-side="' + escapeHtml(p.name) + '"' : '') + '>' +
-          (p.missing ? 'Add' : 'Change') + '</button>' +
+          verb + '</button>' +
       '</div>';
     }).join('');
     return '<section class="plate-rows-wrap" aria-label="The plate">' +

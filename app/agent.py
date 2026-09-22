@@ -2994,6 +2994,13 @@ main_protein or cuisine too many days in a row for dinner — check recent_histo
 main_protein fields, not just meal names. Where recent_history gives a `rating` for a past \
 meal, treat it as a soft signal on how forgivable a repeat would be: reaching for something \
 rated 'liked' again is more forgivable than reaching for one rated 'disliked'.
+- `surprise_me`, when present, means the household tapped SURPRISE ME, and surprise means NEW \
+TO THEM: `surprise_me.dont_repeat` is every dinner and lunch they have ever had from this app, \
+oldest first, and none of it is drafted again — not the dish, not a near-identical variant under \
+another name. Reach for dishes this household has not had from you before. Only if you genuinely \
+run out of good new ideas may you repeat, and then from the START of that list (the oldest) — \
+never anything in `surprise_me.never`, which is {_variety_window}. Any repeat you send is swapped \
+out after you answer, so it is work thrown away. Breakfast and snack are not held to this.
 - Variety is about INGREDIENTS, not only dish names, proteins and cuisines. The same FRESH \
 ingredient — a vegetable or fruit, a fresh herb, a fresh dairy item — should appear in AT MOST \
 3 of the week's dinners. Two narrow exceptions: a genuine staple that quietly goes into \
@@ -3204,11 +3211,15 @@ not everything you were shown.
 snacks_per_week (0-7) are counts of DISTINCT meals, not counts of days to plan. Every day still \
 gets all four. "4 breakfasts" means four different breakfast ideas spread across the seven \
 mornings, repeating as needed to fill the week — it does NOT mean three mornings with nothing. \
-Each count is a CEILING on distinct dishes, not a suggestion: with dinners_per_week 4, count the \
-different dinner dishes you have written before you submit, and if there are five, replace one \
-with a second night of another. Every dish over the count will be swapped for a repeat of a kept \
-one after you answer, so a fifth dish is work thrown away. A reheat night counts as the dish it \
-reheats, not as a new one. \
+Each count is a TARGET for distinct dishes over the day_count days you are planning — not a \
+cap and not a floor — and it has already been scaled to this period when it is shorter than a \
+week, so the number you are handed is the number to hit: with dinners_per_week 3 over four \
+days, exactly three different dinners, one of them on two nights. Count the different dishes \
+you have written for each meal before you submit. Too many, and the extras will be folded into \
+repeats of the ones you kept; too few, and the repeated nights will be re-picked into new \
+dishes — either way, after you answer, so anything off the number is work thrown away (Emily, \
+2026-09-21: "why isn't it following the guidelines we set"). A reheat night counts as the dish \
+it reheats, not as a new one. \
 This is what the setup screen promises the household in so many words: "I'd rather plan four \
 things you cook than seven you don't," and "one breakfast a week is a perfectly good answer" — \
 one idea, eaten all week, not one morning fed and six ignored. snacks_per_week follows the \
@@ -3217,7 +3228,8 @@ exact same rule (Loop Board "Onboarding / meal setup: add a Snacks & desserts co
 breakfast or lunch idea would be — with a light lean toward something dessert-like on a night \
 tagged `unrushed` or otherwise called out as special in constraints_notes/intake, rather than on \
 an ordinary weeknight. household_memory.snacks_per_day is the separate, per-DAY number: how many \
-snack entries each day gets (2 by default). The two counts work together — snacks_per_day says \
+snack entries each day gets (2 by default), and it is exact — every planned day gets that many, \
+no more, no fewer. The two counts work together — snacks_per_day says \
 how many snacks land on Tuesday, snacks_per_week how many distinct ideas the whole rotation \
 draws on — and the pool is never so small that one day has to repeat itself: give every day its \
 snacks_per_day snacks, all different from each other and from that day's other meals, even if \
@@ -3234,9 +3246,17 @@ week — main dish AND every side ingredient, garnish, cooking fat, or flavoring
 that list, full stop, even if something else would genuinely taste better or round the dish out \
 more traditionally. When in doubt about whether an ingredient is covered by the list, leave it \
 out rather than assume it's a reasonable addition. This applies to every slot, not only dinner. \
-If eating_style is blank, ignore this entirely.
-- EVERY MEAL IS A FULL PLATE. Lunch and dinner must cover protein AND vegetable AND carb — \
-protein and vegetable only, no carb, if eating_style reads as keto or low-carb. Breakfast and \
+If eating_style is blank, ignore this entirely. ONE reading is fixed for you: how much carb the \
+style means is `household_memory.carb_level`, below — "low-carb" is a smaller carb, and low carb \
+is not no carb.
+- EVERY MEAL IS A FULL PLATE. Lunch and dinner must cover protein AND vegetable AND carb. HOW \
+MUCH carb is `household_memory.carb_level`, one of none / low / normal / lots, with \
+`household_memory.carb_guidance` spelling it out: "none" (keto, carnivore, "no carbs") is \
+protein and vegetable only, no carb; "low" is a SMALL carb on every lunch and dinner — half a \
+portion of potato, rice, tortilla or bread, written into the dish and its quantities — never \
+none (Emily, 2026-09-21: "my preferences say low carbs, it doesn't say no carbs"); "normal" is a \
+full portion; "lots" a generous one. Tell low from none every time: a low-carb dinner of chicken, \
+corn and zucchini with no carb at all is the failure this exists to stop. Breakfast and \
 snack are held to a lighter version of the same idea: at least TWO of the three groups, never \
 just a piece of fruit and never just a granola bar. If the dish itself doesn't cover that (a \
 plain roast chicken, a bowl of pasta), plan the side INTO the meal — put it in the meal_name, \
@@ -3533,8 +3553,10 @@ an ingredient is covered, leave it out rather than assume it's fine. This applie
 category in the pool, not just proteins. If eating_style is blank, ignore this entirely.
 - EVERY MEAL IS A FULL PLATE, and here that is a rule about the POOL rather than about any one \
 item. Every plate the household assembles from this pool has to reach protein AND vegetable AND \
-carb — protein and vegetable only, no carb, if eating_style reads as keto or low-carb — and \
-breakfast/snack items at least two of the three. So the pool must actually carry enough of each \
+carb — how much carb is `household_memory.carb_level` (none / low / normal / lots, spelled out in \
+`household_memory.carb_guidance`): "none" (keto) is protein and vegetable only, no carb items; \
+"low" still means carb items in the pool, in half portions — low-carb is not no carb; "lots" \
+means generous ones — and breakfast/snack items at least two of the three. So the pool must actually carry enough of each \
 category to pair up across the whole week, and no category may be left thin because the proteins \
 were more interesting to write. This does NOT license bundling categories into one item: keep \
 every item standalone exactly as the rule above says, and make the plate work by what the pool \
@@ -4034,41 +4056,14 @@ def _attach_personal_context_for_subset_slots(attendance_ctx: dict) -> None:
 
 def _prorate_meal_count(preference: int, day_count: int) -> int:
     """
-    Scale a full-week meal-VARIETY target down to fit a part-week.
-
-    household_memory's dinners_per_week/breakfasts_per_week/lunches_per_week
-    are counts of DISTINCT meals across 7 days, not a count of days to plan
-    (see the generation prompt's own explanation of this) — "4 dinners"
-    means four different recipes repeated to fill the week, so a household
-    that said "cook twice, we'll eat leftovers the rest of the week" is
-    saying something about how OFTEN they want something new, not how many
-    days get fed.
-
-    That ratio, not the raw count, is what should survive a shorter week.
-    Carrying the raw number over unchanged breaks in both directions: a
-    household onboarding on a Wednesday with dinners_per_week=7 (something
-    different every night) would otherwise be told to plan 7 distinct
-    dinners into a 5-day week, and one with dinners_per_week=2 (mostly
-    leftovers) onboarding on a Saturday would be told "2 distinct dinners"
-    for a 2-day week — which, for 2 remaining days, means a different meal
-    both nights, exactly the opposite of what "we don't cook much" meant
-    over a full week.
-
-    The rule: prorated = round(preference * day_count / 7), floored at 1 to
-    keep any nonzero preference a real answer rather than rounding it away,
-    and capped at day_count since there cannot be more distinct meals than
-    days to cook them in. A preference of exactly 0 passes through
-    unchanged — that's handled as "plan none of this meal at all" elsewhere
-    (see _finish_week_slots's zero-count pass) and proration must not turn
-    a real "none, thanks" into "one, thanks" by flooring it up.
-
-    A full 7-day week (day_count >= 7) is returned unchanged; there's
-    nothing to prorate.
+    Scale a full-week meal-VARIETY target down to fit a part-week — the
+    rule lives in tools.meal_variety.prorate_meal_count (with the two
+    knobs that make it Emily's to flip: whether a count scales to the days
+    planned at all, and how it rounds), because the draft's opener reads
+    the same number back to say "three dinners this week, not four". Kept
+    here by name for its callers and tests.
     """
-    if day_count >= 7 or preference <= 0:
-        return preference
-    prorated = round(preference * day_count / 7)
-    return max(1, min(prorated, day_count))
+    return _meal_variety.prorate_meal_count(preference, day_count)
 
 
 _SEASON_BY_MONTH = {
@@ -4325,6 +4320,13 @@ def _generate_weekly_plan(
     # snacks_per_week — see preferences.resolve_snacks_per_day for the
     # order it reads its answer in.
     effective_memory["snacks_per_day"] = tools.resolve_snacks_per_day(household_memory)
+    # How much carb the plate carries — none / low / normal / lots — read
+    # off everything the household said (eating_style, facts, notes) and
+    # resolved HERE, so the model is handed a level rather than left to
+    # decide whether "low-carb" means none (Emily, 2026-09-21: it doesn't).
+    # The plate pass below reads the same value. See plates.carb_level.
+    effective_memory["carb_level"] = tools.household_carb_level(household_memory.get("eating_style"))
+    effective_memory["carb_guidance"] = tools.CARB_GUIDANCE[effective_memory["carb_level"]]
 
     context = {
         "week_start_date": content_start_date,
@@ -4449,6 +4451,16 @@ def _generate_weekly_plan(
     held_lines = tools.held_generation_context()
     if held_lines:
         context["held_things"] = held_lines
+    # Surprise me means new to you (Emily, 2026-09-21: "I've had all these
+    # recipes before through Pomona"). With that mood, every dinner and
+    # lunch this household has ever had from Pomona rides along as
+    # don't-repeat, and a dish that comes back anyway is re-picked after
+    # generation (meal_variety.repick_repeats, from _finish_week_slots).
+    # Absent entirely for any other mood: the two-week window stays the
+    # default. See the `surprise_me` bullet above.
+    surprise = _meal_variety.surprise_context(intake, content_start_date, day_count)
+    if surprise:
+        context["surprise_me"] = surprise
 
     # Run the actual generation call BEFORE creating the weekly_plans row.
     # This used to be the other way around — create the plan, then generate
@@ -4942,22 +4954,61 @@ def _finish_week_slots(
     # second time as missing. See tools.repair_leftover_chains.
     tools.repair_leftover_chains(plan_id)
 
+    # Surprise me means new to you (Emily, 2026-09-21): a dinner or lunch
+    # the household has had from Pomona before is re-picked quietly, with
+    # the repeat on avoid, rather than the opener reporting it. Only when
+    # the mood was Surprise me (context["surprise_me"] is absent otherwise).
+    # AFTER repair_leftover_chains, so a chain is known and left whole;
+    # BEFORE the distinct-count pass, which reads the dishes that stay.
+    # See meal_variety.repick_repeats — it swallows its own failures.
+    _meal_variety.repick_repeats(
+        plan_id, (context or {}).get("surprise_me"),
+        repick_budget or _allergen_gate.CallBudget(),
+    )
+
     # "Four dinners a week" means four dishes, and the model is only ASKED
     # for that (Emily, 2026-09-13: "it's giving me 5 types of dinners when I
-    # asked for 4"). This makes it true: any dish over the count goes, and
-    # a kept dish takes its nights. household_memory here is the effective
-    # memory, so a part-week's prorated count is the one enforced. AFTER
-    # repair_leftover_chains, so a reheat night is filed under the dish it
-    # reheats and the chains it reads are real; BEFORE the plates pass, so
-    # sides land on the dishes the week actually keeps. See
+    # asked for 4"; 2026-09-21: "why isn't it following the guidelines we
+    # set"). This makes it true, in both directions and for every count on
+    # the "Each week I plan" screen: a dish over the count folds into a
+    # repeat of a kept one; a repeated night under the count is re-picked
+    # into a new dish; and every day gets exactly its snacks a day.
+    # household_memory here is the effective memory, so a part-week's
+    # prorated count is the one enforced (meal_variety.prorate_meal_count).
+    # AFTER repair_leftover_chains, so a reheat night is filed under the
+    # dish it reheats and the chains it reads are real; BEFORE the plates
+    # pass, so sides land on the dishes the week actually keeps. See
     # tools.meal_variety for what goes, what stays and when it stands down.
-    tools.enforce_distinct_meal_count(
-        plan_id, household_memory.get("dinners_per_week"), slot="dinner",
-        asks=(
-            (context or {}).get("constraints_notes"),
-            ((context or {}).get("intake") or {}).get("freeform"),
-        ),
+    count_asks = (
+        (context or {}).get("constraints_notes"),
+        ((context or {}).get("intake") or {}).get("freeform"),
     )
+    count_budget = repick_budget or _allergen_gate.CallBudget()
+    period = tools.period_dates(week_start_date, day_count)
+    # Each night's real time cap (a rush tag, the weeknight cap), so a
+    # folded repeat never lands a braise on a rush night.
+    caps = {d: _plate_minutes_cap(d, intake, household_memory) for d in period}
+    # The household's own full-week numbers, for the repeat's line: the
+    # effective memory carries the SCALED count, and "you asked for two
+    # lunches" would be false on a four-day plan when she asked for three.
+    usual_counts = tools.get_household_memory() if day_count < 7 else household_memory
+    # Only a number the household actually gave is a floor to reach
+    # (meal_counts_set / the snacks flags): a column default is still a
+    # ceiling, never a reason to spend model calls. The flag is one for
+    # all three counts, so a slot still sitting at the default 7 (she set
+    # dinners to 4 and never touched breakfasts) is read as unanswered
+    # too — "seven distinct breakfasts" is not a floor anyone chose.
+    for slot, field in _meal_variety.COUNT_FIELDS.items():
+        usual = usual_counts.get(field)
+        tools.enforce_distinct_meal_count(
+            plan_id, household_memory.get(field), slot=slot, asks=count_asks, budget=count_budget,
+            fill_up=bool(household_memory.get("meal_counts_set")) and usual is not None and int(usual) < 7,
+            usual=usual, day_count=day_count, caps=caps,
+        )
+    if household_memory.get("snacks_per_day_set") or household_memory.get("snacks_per_week_set"):
+        _meal_variety.enforce_snacks_per_day(
+            plan_id, household_memory.get("snacks_per_day"), period, budget=count_budget, asks=count_asks,
+        )
 
     # "Every meal is a full plate" (Emily, 2026-09-05) — any planned meal
     # whose own food_groups fall short of the household's plate rule gets a
@@ -5103,6 +5154,11 @@ you're writing more than four steps, it's too big.
 - Honour every dietary restriction and the eating_style exactly as strictly as the main dish \
 does, and avoid every listed dislike. A restriction is never negotiable to make a side work; \
 pick a different side.
+- `carb_portion` says how much carb this household's plate carries. When it is "small" and you \
+are asked for a carb, make it a HALF portion — half a potato a person, half a cup of cooked rice, \
+one small tortilla, one slice of bread — and write the quantities for that; a low-carb household \
+still gets the carb, just less of it. "none" never reaches you: that household isn't asked for a \
+carb at all.
 - Respect max_minutes when it's given: that is the whole meal's real cap for that night, so a \
 side has to fit comfortably inside what the main leaves of it. When it's tight, reach for \
 something with no cooking at all.
@@ -5358,7 +5414,13 @@ def _complete_plates_pass(plan_id: int, household_memory: dict, intake: dict | N
     """
     try:
         enabled = household_memory.get("complete_plates", True)
-        rule = tools.plate_rule(household_memory.get("eating_style"))
+        # The household's carb level (none / low / normal / lots), resolved
+        # once by _generate_weekly_plan onto the effective memory; read
+        # afresh for any caller that didn't. A low-carb plate WANTS a carb
+        # — a small one — so a zero-carb dinner is short here and gets one
+        # (Emily, 2026-09-21: "low carbs doesn't say no carbs").
+        level = household_memory.get("carb_level") or tools.household_carb_level(household_memory.get("eating_style"))
+        rule = tools.plate_rule(level=level)
         plan = tools.get_weekly_plan(plan_id)
         reheats = tools.plan_leftover_chains(plan_id)["leftovers"]
 
@@ -5416,6 +5478,7 @@ def _complete_plates_pass(plan_id: int, household_memory: dict, intake: dict | N
                     "dislikes": dislikes,
                     "dietary_restrictions": restrictions,
                     "eating_style": eating_style,
+                    "carb_portion": tools.carb_portion(level),
                     "max_minutes": _plate_minutes_cap(meal["date"], intake, household_memory),
                 })
             except Exception:

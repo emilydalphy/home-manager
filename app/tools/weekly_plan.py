@@ -4466,7 +4466,11 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         r["meal_plan_entry_id"]: {"date": r["task_date"], "note": r["description"]}
         for r in defrost_rows
     }
-    plate_rule = _plates.plate_rule(prefs["eating_style"] if prefs else "")
+    # One read of the household's carb level for the whole menu — their
+    # eating_style, facts and notes together (plates.household_carb_level;
+    # Emily, 2026-09-21: low carb is not no carb).
+    carb_level = _plates.household_carb_level(prefs["eating_style"] if prefs else "")
+    plate_rule = _plates.plate_rule(level=carb_level)
 
     # Every confirmed cook-once-eat-twice pairing on this plan (see
     # leftovers.py) — computed once for the whole week rather than per slot,
@@ -4550,6 +4554,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             "plate_parts": _plate_parts_mod.parts_of_plate(
                 row["slot"] or "dinner", json.loads(row["food_groups_json"] or "[]"),
                 row["main_protein"], sides, prefs["eating_style"] if prefs else "",
+                carb_level=carb_level,
             ),
             "defrost": defrost_by_entry.get(row["id"]),
             # Where the dish's recipe came from, said the one way every
@@ -4760,9 +4765,11 @@ def _safe_draft_opener(rows, intake, plan, days) -> list[str]:
     from . import draft_opener as _draft_opener  # lazy, see get_week_menu
 
     try:
+        from . import memory as _memory  # lazy, as above
         return _draft_opener.build_opener(
             rows, intake, plan["period_start_date"], plan["day_count"], days, plan_id=plan["weekly_plan_id"],
             report=plan_requests(plan["weekly_plan_id"]),
+            memory=_memory.get_household_memory(),
         )
     except Exception:
         logger.exception("The draft's opening lines could not be built")

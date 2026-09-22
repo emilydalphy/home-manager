@@ -422,12 +422,19 @@ def set_household_meal_preferences(
     merged_snacks_per_day_set = 1 if snacks_per_day is not None else (
         (1 if existing["snacks_per_day_set"] else 0) if existing else 0
     )
+    # The three per-week counts share one answered-flag (Emily, 2026-09-21):
+    # any of them arriving explicitly is the household saying what a week
+    # of theirs looks like. See schema.sql's comment on meal_counts_set.
+    counts_arrived = any(v is not None for v in (dinners_per_week, breakfasts_per_week, lunches_per_week))
+    merged_meal_counts_set = 1 if counts_arrived else (
+        (1 if existing["meal_counts_set"] else 0) if existing else 0
+    )
 
     conn.execute(
         """
         INSERT INTO meal_preferences
-            (household_id, notes, protein_preferences_json, cuisine_preferences_json, cooking_time_preference, novelty_preference, eating_style, dinners_per_week, breakfasts_per_week, lunches_per_week, snacks_per_week, snacks_per_week_set, snacks_per_day, snacks_per_day_set, onboarding_complete, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            (household_id, notes, protein_preferences_json, cuisine_preferences_json, cooking_time_preference, novelty_preference, eating_style, dinners_per_week, breakfasts_per_week, lunches_per_week, snacks_per_week, snacks_per_week_set, snacks_per_day, snacks_per_day_set, meal_counts_set, onboarding_complete, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
         ON CONFLICT(household_id) DO UPDATE SET
             notes = excluded.notes,
             protein_preferences_json = excluded.protein_preferences_json,
@@ -442,6 +449,7 @@ def set_household_meal_preferences(
             snacks_per_week_set = excluded.snacks_per_week_set,
             snacks_per_day = excluded.snacks_per_day,
             snacks_per_day_set = excluded.snacks_per_day_set,
+            meal_counts_set = excluded.meal_counts_set,
             onboarding_complete = excluded.onboarding_complete,
             updated_at = datetime('now')
         """,
@@ -460,6 +468,7 @@ def set_household_meal_preferences(
             merged_snacks_per_week_set,
             merged_snacks_per_day,
             merged_snacks_per_day_set,
+            merged_meal_counts_set,
             1 if mark_complete else (existing["onboarding_complete"] if existing else 0),
         ),
     )
