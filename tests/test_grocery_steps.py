@@ -90,17 +90,21 @@ def test_list_renders_one_card_per_store_with_a_tick_per_row():
     _in("function groStoreLineItems(", SHELL_JS, "a card's rows", "shell.js")
     _in(".gro-line {", SHELL_CSS, "the row style", "shell.css")
     _in(".gro-store-count {", SHELL_CSS, "the count style", "shell.css")
-    # What went: the aisle eyebrows, the store avatar, the peek, the two
-    # loose cards.
-    _not_in("function groAisleGroupHtml(", SHELL_JS, "the aisle grouping", "shell.js")
-    _not_in("GRO_CATEGORY_LABELS", SHELL_JS, "the aisle labels", "shell.js")
+    # What went: the store avatar, the peek, the two loose cards. The
+    # aisle eyebrows went too on 2026-09-18 and came BACK on 2026-09-22
+    # (Emily's Costco mockup, Loop Board 3e31f4c0-5231-81c2 — rows grouped
+    # by aisle inside each store card: groAisleGroupsHtml / GRO_AISLE_LABELS
+    # / .gro-aisle, see tests/test_shop_aisles_store_done.py), so they are
+    # no longer pinned absent here; the OLD spellings still are.
+    _not_in("function groAisleGroupHtml(", SHELL_JS, "the old aisle grouping", "shell.js")
+    _not_in("GRO_CATEGORY_LABELS", SHELL_JS, "the old aisle labels", "shell.js")
+    _not_in("gro-aisle-spine", SHELL_CSS, "the old aisle spine", "shell.css")
     _not_in("gro-store-avatar", SHELL_JS, "the store avatar", "shell.js")
     _not_in("GRO_STORE_PALETTE", SHELL_JS, "the store palette", "shell.js")
     _not_in("function groLooseCardHtml(", SHELL_JS, "the headingless loose card", "shell.js")
     _not_in("function groUnsortedCardHtml(", SHELL_JS, "the Not sorted yet card", "shell.js")
     _not_in("GRO_CARD_PEEK", SHELL_JS, "the four-row peek", "shell.js")
     _not_in(".gro-listrow", SHELL_CSS, "the old list row style", "shell.css")
-    _not_in(".gro-aisle", SHELL_CSS, "the aisle style", "shell.css")
 
 
 def test_a_done_card_says_so_in_celadon():

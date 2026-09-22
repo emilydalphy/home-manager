@@ -1589,12 +1589,23 @@
   var CHANGES_SAVED = 'Changes saved';
   function toastSaved(action, holdMs) { showToast(CHANGES_SAVED, action || null, holdMs); }
 
-  function showToast(message, action, holdMs) {
+  function showToast(message, action, holdMs, opts) {
     // holdMs: for the rare toast that is a sentence rather than a
     // confirmation — an allergy warning after approval — 2.2 seconds is not
     // long enough to read one.
+    // opts.icon: an inline SVG string drawn before the words, in the
+    // toast's own colours (the tick on "That's Costco done — 13 things.",
+    // groStoreDoneMoment). Rare on purpose — a toast is words.
     if (!toastEl) return;
-    toastEl.textContent = message;
+    toastEl.textContent = '';
+    if (opts && opts.icon) {
+      var iconEl = document.createElement('span');
+      iconEl.className = 'toast-icon';
+      iconEl.setAttribute('aria-hidden', 'true');
+      iconEl.innerHTML = opts.icon;
+      toastEl.appendChild(iconEl);
+    }
+    toastEl.appendChild(document.createTextNode(message));
     if (action && action.label) {
       var actionBtn = document.createElement('button');
       actionBtn.type = 'button';
@@ -3166,10 +3177,15 @@
   //            (status 'purchased', the same route the old trip's "Done at
   //            Costco" wrote) on the screen at once, on the server when it
   //            can be (static/grocery-offline.js), with "Changes saved ·
-  //            Put back" as the way back. When every row on a card is
-  //            ticked its head reads "Done at Costco"; when every card is
-  //            done the list's finished moment (groShopDoneHtml) stands at
-  //            the top of it. Always the first screen (Emily, 2026-09-15:
+  //            Put back" as the way back. The rows sit under aisle
+  //            eyebrows (groAisleGroupsHtml, 2026-09-22). When the last
+  //            row on a card is ticked the toast says "That's Costco done
+  //            — 13 things.", the head reads "Done at Costco" for a beat,
+  //            and the card rolls up to one line below the stores still
+  //            to do (groStoreDoneMoment / groRollUp / groRolledCardHtml,
+  //            2026-09-22); when every card is done the list's finished
+  //            moment (groShopDoneHtml) stands at the top of it, above
+  //            the rolled-up rows. Always the first screen (Emily, 2026-09-15:
   //            "a store question never stands between me and what to
   //            buy"): the first-run "Where do you usually shop?" card sits
   //            at the TOP of the list, and SORT ALL is never entered on
@@ -3446,6 +3462,16 @@
     // (tools.list_grocery_list 'bought') keeps true until the next
     // approval rebuilds the list.
     shopDoneHandoffDismissed: false,
+    // A card with every row bought rolls up to one line at the foot of
+    // the list (groRolledCardHtml; Emily, 2026-09-22). Both page-view
+    // only, so a reload shows every done card rolled up. doneOpen: the
+    // rolled-up cards tapped open to see their rows, by card key (the
+    // store's name; '' is the Anywhere card). doneBeat: the card whose
+    // last tick just landed — held in its place with "Done at Costco" in
+    // its head for a beat before it rolls (groStoreDoneMoment); null
+    // otherwise.
+    doneOpen: {},
+    doneBeat: null,
     // Whether the last thing this screen tried to reach the server with
     // didn't get there. True means the list on screen is the phone's own
     // copy (see static/grocery-offline.js) and any ticks since are queued.
@@ -3777,20 +3803,51 @@
   // The rows a store's card draws and counts: its own, needed and bought,
   // plus the loose pile for the one-shop household and for the one-list
   // stand-in (GRO_ONE_LIST_STOP), whose whole card the pile is. In one
-  // stable order — the aisle the server walks them in, then the name — so
-  // a tick changes a row's look and never its place ("nothing else moves").
+  // stable order — the aisle the card walks them in (groAisleOrderFor),
+  // then the name — so a tick changes a row's look and never its place
+  // ("nothing else moves").
   function groStoreLineItems(data, name) {
     var s = data.stores[name];
     var items = s ? groStoreItems(s).concat(groBoughtItems(s)) : [];
     if (groSoleStore(data) === name || groIsStandIn(data, name)) items = items.concat(groLooseLineItems(data));
-    return groSortLines(items);
+    return groSortLines(items, groAisleOrderFor(data, name));
   }
+  // The aisles, as the server names them (app/tools/quantities.py
+  // _GROCERY_SECTION_ORDER — the one taxonomy the list has; there is no
+  // bakery in it, so bread is Other until the server has an aisle for it)
+  // and as the card labels them (Emily's Costco mockup, 2026-09-22:
+  // "Produce", "Meat & seafood", "Dairy & eggs"). "Other" is always the
+  // last aisle in a card, whatever the walking order says.
   var GRO_SECTION_ORDER = ['produce', 'dairy', 'meat/seafood', 'pantry', 'frozen', 'other'];
-  function groSortLines(items) {
-    function rank(it) {
-      var i = GRO_SECTION_ORDER.indexOf(it.category);
-      return i === -1 ? GRO_SECTION_ORDER.length : i;
-    }
+  var GRO_AISLE_LABELS = {
+    produce: 'Produce', dairy: 'Dairy & eggs', 'meat/seafood': 'Meat & seafood',
+    pantry: 'Pantry', frozen: 'Frozen', other: 'Other'
+  };
+  // A row's aisle: its category folded onto the taxonomy the way the
+  // server folds it (meat and seafood are one aisle; anything it doesn't
+  // know is Other).
+  function groAisleOf(it) {
+    var cat = (it && it.category) || 'other';
+    if (cat === 'meat' || cat === 'seafood') cat = 'meat/seafood';
+    return GRO_SECTION_ORDER.indexOf(cat) === -1 ? 'other' : cat;
+  }
+  // The order a card walks its aisles in: the store's own walking order
+  // when the list's payload carries one for it (a store's `aisle_order`,
+  // in the taxonomy's keys — nothing serves one today, so every card
+  // walks the default), else the taxonomy's default order. Other last
+  // either way; an aisle the store's order leaves out falls in after the
+  // ones it names, in default order.
+  function groAisleOrderFor(data, name) {
+    var s = data && name && data.stores[name];
+    var own = s && Array.isArray(s.aisle_order) ? s.aisle_order.filter(function (k) {
+      return k !== 'other' && GRO_SECTION_ORDER.indexOf(k) !== -1;
+    }) : [];
+    if (!own.length) return GRO_SECTION_ORDER;
+    return own.concat(GRO_SECTION_ORDER.filter(function (k) { return own.indexOf(k) === -1; }));
+  }
+  function groSortLines(items, order) {
+    order = order || GRO_SECTION_ORDER;
+    function rank(it) { return order.indexOf(groAisleOf(it)); }
     return items.slice().sort(function (a, b) {
       var d = rank(a) - rank(b);
       if (d) return d;
@@ -4547,12 +4604,19 @@
     // the first stop. A one-shop household's loose pile is already inside
     // that shop's own card (groStoreLineItems) — it has only one place it
     // could be bought — so no second card; the same for the one-list
-    // stand-in, whose whole card the pile is.
-    stops.forEach(function (name) {
-      if (groStoreLineItems(data, name).length) html += groStoreCardHtml(data, name);
-    });
+    // stand-in, whose whole card the pile is. A card with every row
+    // bought is rolled up to one line BELOW the cards still to do
+    // (groRolledCardHtml), in the same order — except for the beat after
+    // its last tick, when it stays where it was (groceryState.doneBeat).
     var folded = stops.some(function (name) { return groSoleStore(data) === name || groIsStandIn(data, name); });
-    if (loose.length && !folded) html += groAnywhereCardHtml(data, loose);
+    var keys = stops.filter(function (name) { return groStoreLineItems(data, name).length > 0; });
+    if (loose.length && !folded) keys.push(GRO_ANYWHERE_KEY);
+    var rolled = keys.filter(function (key) { return groCardRolled(data, key); });
+    keys.forEach(function (key) {
+      if (rolled.indexOf(key) !== -1) return;
+      html += key === GRO_ANYWHERE_KEY ? groAnywhereCardHtml(data, loose) : groStoreCardHtml(data, key);
+    });
+    rolled.forEach(function (key) { html += groRolledCardHtml(data, key); });
     return html + groListFootHtml();
   }
 
@@ -4710,15 +4774,20 @@
   // store's name in the display face, "N of M" at the right, and one row
   // per thing — a tickable box, the name, the amount. A bought row is
   // struck through in --ink-done; when every row is bought the head reads
-  // "Done at Costco" in --celadon-label. The rows are flat — no aisle
-  // eyebrows (the mockup has none) — but they keep the server's aisle
-  // order, so the card still walks the shop the way the list always has.
+  // "Done at Costco" in --celadon-label. The rows sit under aisle eyebrows
+  // — "Produce", "Meat & seafood" (groAisleGroupsHtml; Emily's Costco
+  // mockup, 2026-09-22, which brought the aisles back after the
+  // 2026-09-18 card had dropped them) — in the order the card walks its
+  // aisles (groAisleOrderFor), with Other last and no eyebrow over an
+  // empty aisle. The rows are in `.gro-card-rows`, one block, so a done
+  // card can fold them in one motion (groRollUp).
   // In the week of a big meal the household is hosting (data.shopSplit),
   // the rows read in groups — the rest of the week, then "For
   // Thanksgiving — buy by Friday" and "— buy fresh on Sunday" — each under
-  // one quiet heading (.gro-trip), so the list reads as two trips without
-  // a row appearing twice. The grouping key is the row's shop_timing,
-  // stamped by the server; nothing here decides what keeps.
+  // one quiet heading (.gro-trip) with its own run of aisles, so the list
+  // reads as two trips without a row appearing twice. The grouping key is
+  // the row's shop_timing, stamped by the server; nothing here decides
+  // what keeps.
   function groCardHtml(data, name, title, doneLabel, items, extraClass) {
     var bought = items.filter(groIsBought).length;
     var done = items.length > 0 && bought === items.length;
@@ -4728,14 +4797,34 @@
         '<span class="gro-store-name">' + escapeHtml(done ? doneLabel : title) + '</span>' +
         '<span class="gro-store-count">' + bought + ' of ' + items.length + '</span>' +
       '</div>' +
-      groCardRowsHtml(items, data) +
+      '<div class="gro-card-rows">' + groCardRowsHtml(items, data) + '</div>' +
     '</div>';
+  }
+
+  // The rows of a card under their aisle eyebrows. `items` arrive in
+  // aisle order already (groSortLines), so a run of the same aisle is
+  // one group; the eyebrow is the aisle's label, 10px/800 caps in
+  // --ink-muted (.gro-eyebrow, the one the staples card wears too), with
+  // a --hairline above every eyebrow but a card's first (shell.css).
+  function groAisleGroupsHtml(items, data) {
+    var html = '';
+    var last = null;
+    items.forEach(function (it) {
+      var aisle = groAisleOf(it);
+      if (aisle !== last) {
+        html += '<div class="gro-aisle" data-aisle="' + escapeHtml(aisle) + '">' +
+          '<span class="gro-eyebrow">' + escapeHtml(GRO_AISLE_LABELS[aisle] || aisle) + '</span></div>';
+        last = aisle;
+      }
+      html += groLineHtml(it, data);
+    });
+    return html;
   }
 
   function groCardRowsHtml(items, data) {
     var split = data && data.shopSplit;
     var tagged = split && items.some(function (it) { return !!it.shop_timing; });
-    function rows(subset) { return subset.map(function (it) { return groLineHtml(it, data); }).join(''); }
+    function rows(subset) { return groAisleGroupsHtml(subset, data); }
     if (!tagged) return rows(items);
     function pass(predicate, label) {
       var subset = items.filter(predicate);
@@ -4773,6 +4862,70 @@
   // unasked ones a store; the row's ⋯ does it one at a time.
   function groAnywhereCardHtml(data, items) {
     return groCardHtml(data, '', GRO_ANYWHERE_CARD, GRO_ANYWHERE_DONE, groSortLines(items), 'gro-anywhere');
+  }
+
+  // ---------- A done card, rolled up ----------
+  // A card's key: the store's name, or this for the Anywhere card — the
+  // loose pile is a card too, and it rolls up the same way.
+  var GRO_ANYWHERE_KEY = '';
+  // The rows a card draws, by key — the store's (groStoreLineItems) or
+  // the loose pile's, each in its aisle order.
+  function groCardLines(data, key) {
+    return key === GRO_ANYWHERE_KEY ? groSortLines(groLooseLineItems(data)) : groStoreLineItems(data, key);
+  }
+  // The card a row is drawn on, by key: found by the row's card so the
+  // loose pile counts at the card it sits on (a one-shop household's
+  // pile is inside that shop's card).
+  function groCardOf(data, id) {
+    var card = null;
+    groStoresOnList(data).forEach(function (name) {
+      if (card !== null) return;
+      if (groStoreLineItems(data, name).some(function (it) { return String(it.id) === String(id); })) card = name;
+    });
+    return card === null ? GRO_ANYWHERE_KEY : card;
+  }
+  // Every row on the card bought — and there is a row.
+  function groCardDone(data, key) {
+    var items = groCardLines(data, key);
+    return items.length > 0 && items.every(groIsBought);
+  }
+  // Whether the card is drawn rolled up: done, and not the one being
+  // held in place for its beat.
+  function groCardRolled(data, key) {
+    return groCardDone(data, key) && groceryState.doneBeat !== key;
+  }
+  function groCardDoneLabelFor(data, key) {
+    return key === GRO_ANYWHERE_KEY ? GRO_ANYWHERE_DONE : groCardDoneLabel(data, key);
+  }
+  // A done card as one line at the foot of the list (Emily's "a store
+  // done" mockup, 2026-09-22): a --celadon-tint row with a 32px round
+  // --celadon tick, "Done at Costco" in --celadon-label, "13 things · tap
+  // to see them", a chevron. A tap opens it in place — the ticked rows,
+  // struck, under the same line, where a put-back still works (it is the
+  // same row and the same tick) — and a second tap folds it. Page-view
+  // state (groceryState.doneOpen): a reload shows it rolled up. The row
+  // is a .gro-store so a put-back's settle finds the row where it always
+  // did; it has no .gro-store-name, so nothing counts it as a card still
+  // to do.
+  function groRolledCardHtml(data, key) {
+    var items = groCardLines(data, key);
+    var open = !!groceryState.doneOpen[key];
+    var label = groCardDoneLabelFor(data, key);
+    var count = groPlural(items.length, 'thing', 'things');
+    return '<div class="gro-store gro-rolled is-done' + (open ? ' is-open' : '') +
+        (key === GRO_ANYWHERE_KEY ? ' gro-anywhere' : '') + '"' +
+        (key ? ' data-store="' + escapeHtml(key) + '"' : '') + '>' +
+      '<button type="button" class="gro-rolled-head" data-gro="rolled-toggle" data-store="' + escapeHtml(key) + '" ' +
+        'aria-expanded="' + open + '" aria-label="' + escapeHtml(label + ', ' + count + (open ? ', hide them' : ', see them')) + '">' +
+        '<span class="gro-rolled-tick">' + GRO_ICONS.tick + '</span>' +
+        '<span class="gro-rolled-text">' +
+          '<span class="gro-rolled-title">' + escapeHtml(label) + '</span>' +
+          '<span class="gro-rolled-sub">' + count + (open ? '' : ' · tap to see them') + '</span>' +
+        '</span>' +
+        '<span class="gro-chev">' + (open ? GRO_ICONS.chevDown : GRO_ICONS.chevRight) + '</span>' +
+      '</button>' +
+      (open ? '<div class="gro-card-rows">' + groCardRowsHtml(items, data) + '</div>' : '') +
+    '</div>';
   }
 
   // One row of a card: the box, the name, the amount, and the quiet ⋯
@@ -6029,47 +6182,169 @@
   // 'purchased' at "Done at Costco": there is no stop to finish any more,
   // and mark_grocery_item does the kitchen add and teaches the staple's
   // rhythm on that one write exactly as it did.
+  // The freezing question is settled BEFORE the tick moves the row, while
+  // its offer is still readable either way; groTick's render then draws
+  // it under the row. In the way back, either way the row is changing
+  // hands again, so the question (if it was this row's) goes with the
+  // tick it followed — and undoing a put-back can finish the card again,
+  // which rolls it back up after its beat without the moment playing
+  // twice (groRollUpAfterBeat).
   function groTickLine(id, bought) {
     var next = bought ? 'needed' : 'purchased';
-    // Before the tick moves the row, while its offer is still readable
-    // either way; groTick's render then draws the question under it.
     groFreezingAfterTick(id, bought);
+    var finishing = groTickBookkeeping(id, bought);
     groTick(id, next);
     groAnimateRowSettle(id);
     if (next === 'purchased') groRecordStopDone(id);
-    toastSaved({
+    var wayBack = {
       label: bought ? 'Undo' : 'Put back',
       onClick: function () {
-        // Either way the row is changing hands again; the question under
-        // it (if it was this row's) goes with the tick it followed.
         groceryState.freezing = null;
+        var refinishing = groTickBookkeeping(id, !bought);
         groTick(id, bought ? 'purchased' : 'needed');
         groAnimateRowSettle(id);
         if (bought) groRecordStopDone(id);
+        if (refinishing !== null) groRollUpAfterBeat(refinishing);
       }
-    });
+    };
+    if (finishing === null) toastSaved(wayBack);
+    else groStoreDoneMoment(finishing, wayBack);
+  }
+
+  // What a tick means for the card it sits on, worked out BEFORE the
+  // tick moves the row (groTick renders at once, and the render has to
+  // know). Returns the key of the card this tick finishes — every other
+  // row on it already bought — or null. A put-back un-rolls a done card
+  // (its rows are drawn from the data, so the card is a to-do card
+  // again the moment one row is needed); it also forgets the card was
+  // tapped open and calls off a beat still pending, so the next time
+  // it finishes it starts rolled up, after its own beat.
+  function groTickBookkeeping(id, bought) {
+    var data = groceryState.data;
+    if (!data) return null;
+    var key = groCardOf(data, id);
+    if (bought) {
+      delete groceryState.doneOpen[key];
+      if (groceryState.doneBeat === key) groceryState.doneBeat = null;
+      return null;
+    }
+    var items = groCardLines(data, key);
+    var finishing = items.length > 0 && items.every(function (it) { return groIsBought(it) || String(it.id) === String(id); });
+    if (!finishing) return null;
+    groceryState.doneBeat = key;
+    return key;
+  }
+
+  // ---------- A store done (Emily, 2026-09-22) ----------
+  // The last tick on a card is a small moment, then a roll-up. The
+  // moment: "That's Costco done — 13 things." with the tick, and the
+  // card's head reading "Done at Costco" where it stands, for a beat.
+  // Then the card rolls up to one line and moves below the stores still
+  // to do (groRollUp — the app's fifth animation, DESIGN_SYSTEM.md §4).
+  // The toast keeps Put back (§2b S10: a tick is a decision, and its
+  // way back rides on the pop-up that says it took), and a put-back
+  // within the beat calls the roll-up off. Only a named shop is said
+  // aloud — the Anywhere card and the one-list stand-in are stops, not
+  // shops, and they roll up quietly after the usual "Changes saved".
+  var GRO_STORE_DONE_BEAT_MS = 600;
+  function groStoreDoneToast(key, count) {
+    return 'That’s ' + key + ' done — ' + groPlural(count, 'thing', 'things') + '.';
+  }
+  function groStoreDoneMoment(key, wayBack) {
+    var data = groceryState.data;
+    if (key && !groIsStandIn(data, key)) {
+      showToast(groStoreDoneToast(key, groCardLines(data, key).length), wayBack, null, { icon: GRO_ICONS.tick });
+    } else {
+      toastSaved(wayBack);
+    }
+    groRollUpAfterBeat(key);
+  }
+  function groRollUpAfterBeat(key) {
+    setTimeout(function () { groRollUp(key); }, GRO_STORE_DONE_BEAT_MS);
+  }
+
+  // The card's element on the screen, by key.
+  function groCardEl(panel, key) {
+    var els = panel ? panel.querySelectorAll('.gro-store') : [];
+    for (var i = 0; i < els.length; i++) {
+      var isAnywhere = els[i].classList.contains('gro-anywhere');
+      if (key === GRO_ANYWHERE_KEY ? isAnywhere : (!isAnywhere && els[i].getAttribute('data-store') === key)) return els[i];
+    }
+    return null;
+  }
+  // Whether the one "Freezing it?" question is open under a row of this
+  // card — a card that rolls up with a question inside it would hide
+  // the question, so that card moves down tapped open instead.
+  function groFreezingOnCard(data, key) {
+    var f = groceryState.freezing;
+    if (!f || f.answer) return false;
+    return groCardLines(data, key).some(function (it) { return String(it.id) === String(f.id); });
+  }
+
+  // The roll-up (animation 5): the card's rows fold to nothing —
+  // height to 0 over --motion-base on the leaving curve, fading — and
+  // the list is redrawn with the card as one line at the foot, which
+  // settles into place (groRolledArrive). One motion, two halves.
+  // Instant under prefers-reduced-motion: no fold, no settle, just the
+  // redraw — checked in code as well as by the 0ms tokens, the way
+  // groSortAllLeave does. Called off if the beat was cancelled (a
+  // put-back), or the card is somehow no longer done.
+  function groRollUp(key) {
+    var data = groceryState.data;
+    if (groceryState.doneBeat !== key) return;
+    if (!data || !groCardDone(data, key)) { groceryState.doneBeat = null; return; }
+    var reduce = typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (groFreezingOnCard(data, key)) groceryState.doneOpen[key] = true;
+    var panel = groPanel();
+    var card = panel && groCardEl(panel, key);
+    var rows = card && !groceryState.doneOpen[key] && card.querySelector('.gro-card-rows');
+    var settled = false;
+    var settle = function () {
+      if (settled) return;
+      settled = true;
+      groceryState.doneBeat = null;
+      if (groIsBuilt()) renderGrocery();
+      if (!reduce) groRolledArrive(key);
+    };
+    if (reduce || !rows || !rows.offsetHeight) { settle(); return; }
+    rows.classList.add('is-rolling');
+    rows.style.height = rows.offsetHeight + 'px';
+    void rows.offsetHeight; // commit the pinned height before folding it
+    rows.classList.add('is-rolled');
+    rows.addEventListener('transitionend', settle);
+    setTimeout(settle, 300); // a fallback if the transition never fires
+  }
+
+  // The second half: the freshly drawn rolled-up row starts a touch
+  // above its place and transparent, then eases in — the same
+  // opposite-state-then-reflow trick groAnimateRowSettle uses.
+  function groRolledArrive(key) {
+    var panel = groPanel();
+    var card = panel && groCardEl(panel, key);
+    if (!card || !card.classList.contains('gro-rolled')) return;
+    card.classList.add('is-arriving');
+    void card.offsetHeight;
+    card.classList.remove('is-arriving');
   }
 
   // What "Done at Costco" used to write and the last tick writes now: a
   // closed record of the stop (/api/shopping-trips/close, bookkeeping
   // nothing reads back yet — see tools.close_shopping_trip), once every
   // row on that card is bought. Read off the screen's own copy of the
-  // list, which the tick has already moved; found by the row's card so
-  // the loose pile counts at the card it is drawn on. The stand-in and
-  // the "Anywhere" card are stops, not shops, so they are recorded as no
-  // shop — inventing a store called "Your list" there would hand whatever
-  // reads trip history back one day a shop nobody has ever been to. Never
-  // through groDo (a failure here is not a failed tick) and never queued:
-  // with no signal the stop goes unrecorded, which costs nothing today.
+  // list, which the tick has already moved; found by the row's card
+  // (groCardOf) so the loose pile counts at the card it is drawn on. The
+  // stand-in and the "Anywhere" card are stops, not shops, so they are
+  // recorded as no shop — inventing a store called "Your list" there
+  // would hand whatever reads trip history back one day a shop nobody
+  // has ever been to. Never through groDo (a failure here is not a
+  // failed tick) and never queued: with no signal the stop goes
+  // unrecorded, which costs nothing today.
   function groRecordStopDone(id) {
     var data = groceryState.data;
     if (!data) return;
-    var card = null;
-    groStoresOnList(data).forEach(function (name) {
-      if (card) return;
-      if (groStoreLineItems(data, name).some(function (it) { return String(it.id) === String(id); })) card = name;
-    });
-    var items = card ? groStoreLineItems(data, card) : groLooseLineItems(data);
+    var card = groCardOf(data, id);
+    var items = groCardLines(data, card);
     if (!items.length || !items.every(groIsBought)) return;
     var recordAs = card && !groIsStandIn(data, card) ? card : '';
     groPostJson('/api/shopping-trips/close', { store: recordAs, item_count: items.length })
@@ -6229,6 +6504,16 @@
       case 'line-tick':
         groTickLine(id, el.dataset.bought === '1');
         return;
+
+      // A rolled-up done card (groRolledCardHtml): tap to see its rows,
+      // tap again to fold them. This page view only.
+      case 'rolled-toggle': {
+        var rolledKey = el.dataset.store || GRO_ANYWHERE_KEY;
+        if (groceryState.doneOpen[rolledKey]) delete groceryState.doneOpen[rolledKey];
+        else groceryState.doneOpen[rolledKey] = true;
+        renderGrocery();
+        return;
+      }
 
       // ----- "Freezing it?" under a just-ticked meat line (groFreezingHtml) -----
       case 'freeze-yes':
