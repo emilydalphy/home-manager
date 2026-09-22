@@ -509,12 +509,16 @@
     font-family: var(--font-body); font-weight: 800; font-size: 10px;
     letter-spacing: 0.15em; text-transform: uppercase; color: var(--apricot-light); margin: 0 0 4px;
   }
-  .using-lead { font-family: var(--font-body); font-size: 15px; font-weight: 500; line-height: 1.4; color: var(--ivory-ink-muted); margin: 0 0 4px; }
   .using-rows { display: flex; flex-direction: column; }
   .using-row { display: flex; gap: 12px; align-items: center; padding: 11px 0; border-top: 1.5px solid var(--apricot-rule); }
   .using-icon { color: var(--apricot-light); flex: none; display: flex; }
   .using-icon svg { width: 20px; height: 20px; }
-  .using-text { font-family: var(--font-body); font-size: 15px; font-weight: 500; line-height: 1.4; color: var(--ivory-ink); margin: 0; }
+  .using-text { font-family: var(--font-body); font-size: 15px; font-weight: 500; line-height: 1.4; color: var(--ivory-ink); margin: 0; min-width: 0; }
+  /* The typed note: two lines at most, then an ellipsis (board D3). */
+  .using-text.using-note {
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; overflow-wrap: anywhere;
+  }
   .draft-leave-note {
     font-family: var(--font-accent); font-style: italic; font-weight: 400;
     font-size: 17px; line-height: 1.4; color: var(--ivory-ink-muted); text-align: center; margin: 0;
@@ -821,8 +825,7 @@
       </div>
     </div>
     <div class="using" id="using" hidden>
-      <p class="using-eyebrow">What I&rsquo;m using</p>
-      <p class="using-lead">Here&rsquo;s what I&rsquo;m building this week from:</p>
+      <p class="using-eyebrow">Got it</p>
       <div class="using-rows" id="using-rows"></div>
     </div>
     <p class="draft-leave-note">No need to wait &mdash; the draft lands on Plan when it&rsquo;s done.</p>
@@ -2710,70 +2713,139 @@
     el.classList.add('line-in');
   }
 
-  // "What I'm using" (board C1): the answers the draft is being built
-  // from, as plain lines — read from the SAVED intake the planner reads,
-  // never from the screen's own state, so a line here is always one the
-  // draft really has. Only answers that were given; an untouched step
-  // adds no line. `weekdayOf` names a date the household's way.
+  // "Got it" (boards C1 → D3): the answers the draft is being built from,
+  // condensed — one human sentence a row, an icon beside each — and read
+  // from the SAVED intake the planner reads, never from the screen's own
+  // state, so a line here is always one the draft really has. Only
+  // answers that were given produce a row; an untouched step adds none.
+  // `weekdayOf` names a date the household's way.
   var USING_ICONS = {
     home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path>',
     bag: '<rect x="4" y="8" width="16" height="11" rx="2"></rect><path d="M9 8V6a3 3 0 0 1 6 0v2"></path><path d="M4 13h16"></path>',
     pot: '<path d="M4 10h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM2 10h20M8 6c0-2 2-2 2-4M14 6c0-2 2-2 2-4"></path>',
     star: '<path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"></path>',
-    note: '<path d="M5 4h10l4 4v12H5zM9 12h6M9 16h6"></path>',
-    fresh: '<path d="M12 3v18M3 12h18M6 6l12 12M18 6L6 18"></path>'
+    note: '<path d="M5 4h10l4 4v12H5zM9 12h6M9 16h6"></path>'
   };
-  var USING_TAG_WORDS = {
-    out: 'nobody home', rush: 'short on time', unrushed: 'got time', guests: 'hosting guests', left: 'leftovers'
+  // What each day note becomes in the sentence, for one day and for
+  // several: "Tuesday is short on time" / "Tuesday and Thursday are short
+  // on time". `%s` is the day or days.
+  var USING_DAY_PHRASES = {
+    rush:     { one: '%s is short on time', many: '%s are short on time' },
+    left:     { one: '%s’s leftovers',      many: '%s are leftovers' },
+    unrushed: { one: '%s you’ve got time',  many: '%s you’ve got time' },
+    out:      { one: '%s nobody’s home',    many: '%s nobody’s home' },
+    guests:   { one: '%s you’ve got guests', many: '%s you’ve got guests' }
   };
   function joinWords(items) {
     if (items.length <= 1) return items[0] || '';
     if (items.length === 2) return items[0] + ' and ' + items[1];
     return items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1];
   }
-  // `wordsByDate` is what attendance says about each day (attendanceWords
-  // — "nobody home", "Emily out for dinner", "+2 for dinner"), since the
-  // day sheet writes who's out to attendance rather than to the intake.
-  function usingLines(intake, weekdayOf, recentDinners, wordsByDate) {
-    var lines = [];
+  // Clauses into one sentence: "A, B, and C." — the comma before the
+  // last "and" because each clause has its own verb ("Wednesday's
+  // leftovers and Friday you've got time" reads as one thing).
+  function joinClauses(items) {
+    if (items.length <= 1) return items[0] || '';
+    if (items.length === 2) return items[0] + ' and ' + items[1];
+    return items.slice(0, -1).join(', ') + ', and ' + items[items.length - 1];
+  }
+  function sentence(s) {
+    s = String(s || '').trim();
+    if (!s) return '';
+    s = s.charAt(0).toUpperCase() + s.slice(1);
+    return /[.!?…”]$/.test(s) ? s : s + '.';
+  }
+  // "Emily out for dinner" → "Emily’s out for dinner"; "Emily and Vic
+  // out" → "Emily and Vic are out"; "nobody home for lunch" → "nobody’s
+  // home for lunch"; "+2 for dinner" → "2 guests for dinner".
+  function humanAttendance(words) {
+    var m = /^(.+?) out( for .+)?$/.exec(words);
+    if (m) return m[1] + (m[1].indexOf(' and ') !== -1 || m[1].indexOf(',') !== -1 ? ' are out' : '’s out') + (m[2] || '');
+    m = /^nobody home( for .+)?$/.exec(words);
+    if (m) return 'nobody’s home' + (m[1] || '');
+    m = /^\+(\d+) for (.+)$/.exec(words);
+    if (m) return m[1] + ' guest' + (m[1] === '1' ? '' : 's') + ' for ' + m[2];
+    return words;
+  }
+  // The different days as one sentence: the days sharing a note are
+  // named together ("Tuesday and Thursday are short on time"), the notes
+  // in the order their first day falls. `wordsByDate` is what attendance
+  // says about each day (attendanceWords), since the day sheet writes
+  // who's out to attendance rather than to the intake.
+  function usingDaysSentence(intake, weekdayOf, wordsByDate) {
     var tags = intake.night_tags || {};
     var guests = intake.guest_counts || {};
     wordsByDate = wordsByDate || {};
     var dates = Object.keys(tags).concat(Object.keys(guests), Object.keys(wordsByDate))
       .filter(function (d, i, all) { return all.indexOf(d) === i; }).sort();
+    var groups = {};     // key → { first, days: [], text(days) }
+    var order = [];
+    function add(key, d, phrase) {
+      if (!groups[key]) { groups[key] = { first: d, days: [], phrase: phrase }; order.push(key); }
+      if (groups[key].days.indexOf(d) === -1) groups[key].days.push(d);
+    }
     dates.forEach(function (d) {
       var said = (wordsByDate[d] || []).slice();
+      var nobody = said.indexOf('nobody home') !== -1 || (tags[d] || []).indexOf('out') !== -1;
       var counted = said.some(function (w) { return w.charAt(0) === '+'; });
-      var words = (tags[d] || [])
-        .filter(function (t) { return USING_TAG_WORDS[t] && !(t === 'guests' && counted); })
-        .map(function (t) { return USING_TAG_WORDS[t]; })
-        .filter(function (w) { return said.indexOf(w) === -1; });
       var gc = guests[d];
       var extra = gc ? (gc.adults || 0) + (gc.children || 0) : 0;
-      if (extra && !counted) words.push('+' + extra + ' at the table');
-      var all = said.concat(words);
-      if (all.length) lines.push({ icon: 'home', text: weekdayOf(d) + ' — ' + all.join(', ') });
+      // The dinner's own note first, then who's home, then the guests.
+      (tags[d] || []).forEach(function (t) {
+        if (USING_DAY_PHRASES[t] && t !== 'out' && t !== 'guests') add(t, d, USING_DAY_PHRASES[t]);
+      });
+      if (nobody) add('out', d, USING_DAY_PHRASES.out);
+      said.forEach(function (w) {
+        if (w === 'nobody home') return;
+        var human = humanAttendance(w);
+        add('att:' + human, d, { one: '%s ' + human, many: '%s ' + human });
+      });
+      if (!counted) {
+        if (extra) {
+          var guestsPhrase = '%s you’ve got ' + extra + ' guest' + (extra === 1 ? '' : 's');
+          add('guests:' + extra, d, { one: guestsPhrase, many: guestsPhrase });
+        } else if ((tags[d] || []).indexOf('guests') !== -1) {
+          add('guests', d, USING_DAY_PHRASES.guests);
+        }
+      }
     });
+    order.sort(function (a, b) { return groups[a].first < groups[b].first ? -1 : groups[a].first > groups[b].first ? 1 : 0; });
+    var clauses = order.map(function (key) {
+      var g = groups[key];
+      var names = g.days.sort().map(weekdayOf);
+      return (names.length === 1 ? g.phrase.one : g.phrase.many).replace('%s', joinWords(names));
+    });
+    return clauses.length ? sentence(joinClauses(clauses)) : '';
+  }
+  function lowerFirst(s) { return s.charAt(0).toLowerCase() + s.slice(1); }
+  function usingLines(intake, weekdayOf, recentDinners, wordsByDate) {
+    var lines = [];
+    var days = usingDaysSentence(intake, weekdayOf, wordsByDate);
+    if (days) lines.push({ icon: 'home', text: days });
     var packed = (intake.packed_lunch_days || []).slice().sort().map(weekdayOf);
     if (packed.length) {
-      lines.push({ icon: 'bag', text: (packed.length === 1 ? 'Lunch on the go ' : 'Lunches on the go ') + joinWords(packed) });
+      lines.push({ icon: 'bag', text: sentence((packed.length === 1 ? 'Lunch on the go ' : 'Lunches on the go ') + joinWords(packed)) });
     }
     var moods = (intake.moods || []).filter(function (m) { return m !== SURPRISE_MOOD; });
     var cuisines = intake.cuisines || [];
-    if ((intake.moods || []).indexOf(SURPRISE_MOOD) !== -1) {
-      lines.push({ icon: 'star', text: cuisines.length ? 'Surprise me — leaning ' + joinWords(cuisines) : 'Surprise me' });
+    var surprise = (intake.moods || []).indexOf(SURPRISE_MOOD) !== -1;
+    if (surprise) {
+      lines.push({ icon: 'pot', text: sentence(cuisines.length ? 'Surprise me, leaning ' + joinWords(cuisines) : 'Surprise me') });
     } else if (moods.length || cuisines.length) {
-      lines.push({ icon: 'pot', text: moods.concat(cuisines).join(', ') });
+      var picks = moods.map(function (m, i) { return i ? lowerFirst(m) : m; }).concat(cuisines);
+      lines.push({ icon: 'pot', text: sentence(joinWords(picks)) });
     }
     var note = (intake.freeform || '').trim();
-    if (note) lines.push({ icon: 'note', text: '“' + note + '”' });
-    if (recentDinners) lines.push({ icon: 'fresh', text: 'No dinner you had last week' });
+    if (note) lines.push({ icon: 'note', text: '“' + note + '”', note: true });
+    if (recentDinners) {
+      lines.push({ icon: 'star', text: surprise ? 'Nothing you’ve had from me before.' : 'No dinner you had last week.' });
+    }
     return lines;
   }
   function usingRowHtml(line) {
     return '<div class="using-row"><div class="using-icon">' +
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-      USING_ICONS[line.icon] + '</svg></div><p class="using-text">' + esc(line.text) + '</p></div>';
+      USING_ICONS[line.icon] + '</svg></div><p class="using-text' + (line.note ? ' using-note' : '') + '">' + esc(line.text) + '</p></div>';
   }
   function attendanceWordsByDate() {
     var out = {};

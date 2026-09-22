@@ -73,9 +73,9 @@ def _prelude() -> str:
     return (
         "function esc(s) { return String(s == null ? '' : s); }\n"
         + _var("SHEET_SLOTS") + _var("SLOT_PILL") + _var("SHEET_TAGS") + _var("GUESTS_MAX")
-        + _var("USING_TAG_WORDS") + _var("TAGS") + _var("SURPRISE_MOOD")
+        + _var("USING_DAY_PHRASES") + _var("TAGS") + _var("SURPRISE_MOOD")
         + "\n".join(_extract(n) for n in (
-            "joinNames", "joinWords", "outGroups", "attendanceWords", "daySummary",
+            "joinNames", "joinWords", "joinClauses", "sentence", "humanAttendance", "lowerFirst", "usingDaysSentence", "outGroups", "attendanceWords", "daySummary",
             "draftByDay", "daySheetPayload", "usingLines",
         )) + "\n"
     )
@@ -239,17 +239,17 @@ class TestTheTileWords:
         assert self._words(_by_day(lunch=(["Emily"], True, 0)), one) == ["nobody home for lunch"]
 
     def test_the_building_screen_reads_the_same_words(self):
-        # "What I'm using" (board C1) lists who's out from attendance, since
+        # "Got it" (boards C1 → D3) says who's out from attendance, since
         # the sheet no longer writes it to the intake — and a guest count
         # said by attendance is not said twice by the intake's copy of it.
+        # One sentence for the days since 2026-09-21 (board D3).
         script = (
             "var words = { '2026-09-25': ['Emily out for lunch and dinner', '+1 for dinner'], '2026-09-24': ['nobody home'] };\n"
             "var intake = { night_tags: { '2026-09-25': ['guests', 'rush'] }, guest_counts: { '2026-09-25': { adults: 1, children: 0 } } };\n"
-            "console.log(JSON.stringify(usingLines(intake, function (d) { return d; }, false, words)));"
+            "console.log(JSON.stringify(usingLines(intake, function (d) { return d === '2026-09-24' ? 'Thursday' : 'Friday'; }, false, words)));"
         )
         assert json.loads(_node(script)) == [
-            {"icon": "home", "text": "2026-09-24 — nobody home"},
-            {"icon": "home", "text": "2026-09-25 — Emily out for lunch and dinner, +1 for dinner, short on time"},
+            {"icon": "home", "text": "Thursday nobody’s home, Friday is short on time, Friday Emily’s out for lunch and dinner, and Friday 1 guest for dinner."},
         ]
 
 
