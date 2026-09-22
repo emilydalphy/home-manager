@@ -13,7 +13,8 @@ This file was tests/test_shop_wrap_up_answers.py until 2026-09-18: the
 wrap-up ("How did it go?") and its three answers went with the trip
 screens — the list is the checklist now, and a thing not bought simply
 stays on it — and what survived is the half about the sheet. The store
-route's `remember` flag stays too: SORT ALL writes this week only.
+route's `remember` flag stays too, for a one-week-only move; since
+2026-09-21 SORT ALL itself remembers (Loop Board 3e31f4c0-5231-81ca).
 
 Behaviour runs under node against shell.js's own functions
 (tests/shop_harness).
@@ -90,8 +91,8 @@ console.log(JSON.stringify({ sheet: SHEET, back: groceryState.storeReturn, step:
 def test_a_store_saved_in_the_sheet_is_the_answer_on_sort_all_and_writes_at_once():
     """SORT ALL writes each answer as it is given (the row leaves the
     screen), so a store arriving from the sheet is written the same way a
-    tapped chip is — this week only, like the rest of that screen
-    (remember: false)."""
+    tapped chip is — and remembered as the item's usual, like the rest of
+    that screen (remember: true, 2026-09-21)."""
     out = _node("""
 onSortAll();
 clickIfRendered({ gro: 'store-add', kind: 'sortall', id: '9', name: 'Tahini', from: '' });
@@ -101,7 +102,7 @@ settle(function () {
 });
 """)
     assert out["sheet"][-1] == "close"
-    assert out["assigns"] == [{"store": "Farm Boy", "remember": False}], "written at once, like a tapped chip"
+    assert out["assigns"] == [{"store": "Farm Boy", "remember": True}], "written at once, like a tapped chip"
     assert out["renders"] >= 1
     assert out["stores"] == ["Costco", "Metro", "Farm Boy"], "the list's own copy of the shops learns it"
 
@@ -182,7 +183,7 @@ def test_the_store_route_can_move_a_line_without_touching_the_remembered_store(s
     res = signed_in.post(f"/api/grocery-list/{item_id}/store", json={"store": "Metro", "remember": False})
     assert res.status_code == 200
     body = res.json()
-    assert body["remembered"] is False and body["needs_confirmation"] is False
+    assert body["remembered"] is False
     assert tools.get_item_store_preferences()["eggs"] == "Costco", "next week the eggs still go to Costco"
     at = {s["store"]: [it["item"] for sec in s["sections"] for it in sec["items"]] for s in tools.get_grocery_list_by_store()["stores"]}
     assert at.get("Metro") == ["eggs"], "but this week's line is at Metro"

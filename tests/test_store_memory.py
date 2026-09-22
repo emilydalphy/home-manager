@@ -92,47 +92,42 @@ def test_kitchen_remove_typical_item_does_not_clear_unrelated_preference():
     assert tools.get_item_store_preferences().get("olive oil") == "Trader Joe's"
 
 
-# ---------- 2. Grocery -> Kitchen (first-time confirm) ----------
+# ---------- 2. Grocery -> Kitchen (remembered at once) ----------
+#
+# Until 2026-09-21 the first store an item got came back with
+# needs_confirmation and a "Remember X at Trader Joe's?" toast; a toast
+# let expire meant the same question next week. Putting a thing under a
+# store IS the answer now (Loop Board 3e31f4c0-5231-81ca): remembered at
+# once, corrected from the row's ⋯.
 
-def test_first_time_grocery_assign_needs_confirmation_and_does_not_write_preference():
+def test_first_time_grocery_assign_remembers_the_store_at_once():
     added = tools.add_grocery_item("kombucha")
+    before = _pref_events_count()
     result = tools.set_grocery_item_store(added["item_id"], "Trader Joe's")
+    after = _pref_events_count()
 
-    assert result["needs_confirmation"] is True
-    assert result["remembered"] is False
-    assert "kombucha" not in tools.get_item_store_preferences()
-    # The row itself is still assigned immediately, regardless of confirmation.
+    assert result["remembered"] is True
+    assert "needs_confirmation" not in result
+    assert tools.get_item_store_preferences().get("kombucha") == "Trader Joe's"
+    memory = tools.get_household_memory()
+    assert "kombucha" in memory["store_typical_items"].get("Trader Joe's", [])
+    assert after == before + 1
     conn = get_conn()
     row = conn.execute("SELECT store FROM grocery_items WHERE id = ?", (added["item_id"],)).fetchone()
     conn.close()
     assert row["store"] == "Trader Joe's"
 
 
-def test_confirming_writes_preference_and_kitchen_typical_items_in_one_event():
+def test_a_remembered_item_is_placed_the_next_time_it_is_added():
     added = tools.add_grocery_item("kombucha")
     tools.set_grocery_item_store(added["item_id"], "Trader Joe's")
+    tools.remove_grocery_item(added["item_id"])
 
-    before = _pref_events_count()
-    result = tools.confirm_grocery_item_store_preference(added["item_id"])
-    after = _pref_events_count()
-
-    assert result["confirmed"] is True
-    assert tools.get_item_store_preferences().get("kombucha") == "Trader Joe's"
-    memory = tools.get_household_memory()
-    assert "kombucha" in memory["store_typical_items"].get("Trader Joe's", [])
-    assert after == before + 1
-
-
-def test_declining_confirmation_leaves_nothing_remembered():
-    added = tools.add_grocery_item("kombucha")
-    tools.set_grocery_item_store(added["item_id"], "Trader Joe's")
-    # "Just this once" — the shopper never calls confirm at all.
-    assert "kombucha" not in tools.get_item_store_preferences()
-
-    # Same item assigned again next time still offers the same confirmation.
-    added2 = tools.add_grocery_item("kombucha")
-    result2 = tools.set_grocery_item_store(added2["item_id"], "Trader Joe's")
-    assert result2["needs_confirmation"] is True
+    again = tools.add_grocery_item("kombucha")
+    conn = get_conn()
+    row = conn.execute("SELECT store FROM grocery_items WHERE id = ?", (again["item_id"],)).fetchone()
+    conn.close()
+    assert row["store"] == "Trader Joe's", "next week's list puts it straight under its store"
 
 
 def test_subsequent_assignment_of_known_item_updates_quietly():
@@ -143,10 +138,9 @@ def test_subsequent_assignment_of_known_item_updates_quietly():
     result = tools.set_grocery_item_store(added["item_id"], "Walmart")
     after = _pref_events_count()
 
-    assert result["needs_confirmation"] is False
     assert result["remembered"] is True
     assert tools.get_item_store_preferences().get("paper towels") == "Walmart"
-    assert after == before + 1  # still logged, just no confirmation step
+    assert after == before + 1
 
 
 def test_not_this_time_never_touches_the_preference():
@@ -156,7 +150,6 @@ def test_not_this_time_never_touches_the_preference():
     result = tools.set_grocery_item_store(added["item_id"], "")
 
     assert result["remembered"] is False
-    assert result["needs_confirmation"] is False
     assert tools.get_item_store_preferences().get("paper towels") == "Costco"
 
 
@@ -225,28 +218,22 @@ def test_memory_store_items_remove_endpoint_clears_matching_preference(signed_in
     assert "paper towels" not in tools.get_item_store_preferences()
 
 
-def test_grocery_store_confirm_endpoint_round_trip(signed_in):
+def test_grocery_store_endpoint_remembers_and_the_preferences_route_shows_it(signed_in):
     added = tools.add_grocery_item("kombucha")
     assign = signed_in.post(f"/api/grocery-list/{added['item_id']}/store", json={"store": "Trader Joe's"})
-    assert assign.json()["needs_confirmation"] is True
-
-    confirm = signed_in.post(f"/api/grocery-list/{added['item_id']}/store/confirm")
-    assert confirm.status_code == 200
-    assert confirm.json()["confirmed"] is True
+    assert assign.status_code == 200
+    assert assign.json()["remembered"] is True
     assert tools.get_item_store_preferences().get("kombucha") == "Trader Joe's"
 
     prefs = signed_in.get("/api/grocery-list/store-preferences")
     assert prefs.json()["preferences"].get("kombucha") == "Trader Joe's"
 
 
-def test_grocery_store_confirm_endpoint_noops_if_row_store_cleared(signed_in):
+def test_the_confirm_route_is_gone(signed_in):
     added = tools.add_grocery_item("kombucha")
     signed_in.post(f"/api/grocery-list/{added['item_id']}/store", json={"store": "Trader Joe's"})
-    signed_in.post(f"/api/grocery-list/{added['item_id']}/store", json={"store": ""})  # "not this time"
-
-    confirm = signed_in.post(f"/api/grocery-list/{added['item_id']}/store/confirm")
-    assert confirm.json()["confirmed"] is False
-    assert "kombucha" not in tools.get_item_store_preferences()
+    assert signed_in.post(f"/api/grocery-list/{added['item_id']}/store/confirm").status_code == 404
+    assert not hasattr(tools, "confirm_grocery_item_store_preference")
 
 
 # ---------- 6. Identity: singular/plural must not fork the memory ----------

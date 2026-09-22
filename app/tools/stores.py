@@ -188,32 +188,29 @@ def set_grocery_item_store(item_id: int, store: str, remember: bool = True, deci
     """
     Set which store a specific already-listed grocery item should be
     bought at — for assigning a store directly from a grocery list row
-    (e.g. the Grocery List view's triage screen) rather than a general "we
-    get X at Costco" chat mention (see set_item_store for that). By
-    default, assigning a real (non-empty) store also remembers it as this
-    item's usual store going forward — same underlying item_store_preferences
-    row set_item_store writes — so the next time this item name is added to
-    the list (a new week's plan, a chat mention, a manual add) it's already
-    tagged to that store instead of landing back in the unsorted "to sort"
-    queue. Picking "no particular store" (an empty store) never touches or
-    clears an existing preference — that's a one-off skip, not a decision
-    to forget where this item usually comes from. Pass remember=False to
-    set just this one row without touching the remembered preference at
-    all (used when re-displaying/correcting a row rather than the shopper
-    actively choosing a store for it).
+    (the Shop tab's add sheet, "Sort them all", a row's ⋯) rather than a
+    general "we get X at Costco" chat mention (see set_item_store for
+    that). By default, assigning a real (non-empty) store also remembers
+    it as this item's usual store going forward — the same
+    item_store_preferences row set_item_store writes — so the next time
+    this item name is added to the list (a new week's plan, a chat
+    mention, a manual add) it's already tagged to that store instead of
+    landing back in the unsorted "to sort" queue. Picking "no particular
+    store" (an empty store) never touches or clears an existing
+    preference — that's a one-off skip, not a decision to forget where
+    this item usually comes from. Pass remember=False to set just this
+    one row without touching the remembered preference at all (a
+    one-week-only move: this week the eggs come from Metro because
+    Costco was out).
 
-    The FIRST time this item gets a remembered store (no existing
-    item_store_preferences row for it yet), nothing is written to that
-    table here — the response comes back with needs_confirmation=True
-    instead, and remembered stays False. The Grocery List view is expected
-    to offer a one-tap "Remember for {store}?" per the learning etiquette
-    (observe -> infer -> confirm once -> remember) and, only if the shopper
-    taps yes, call confirm_grocery_item_store_preference to actually save
-    it. Doing nothing ("just this once") leaves this one row assigned for
-    this trip and asks again next time, exactly like today. Every later
-    assignment of an item that already has a preference updates it
-    immediately and quietly (remembered=True, needs_confirmation=False) —
-    asking every time would violate the etiquette.
+    Remembering is immediate and quiet (Loop Board 3e31f4c0-5231-81ca,
+    2026-09-21: "adding or sorting an item once remembers its store").
+    Until then the FIRST store an item got came back with
+    needs_confirmation and a "Remember X at Costco?" toast the shopper had
+    to tap; sorting forty things meant forty toasts, and a toast let
+    expire meant the same question next week. Putting a thing under a
+    store IS the answer now, and the row's ⋯ is the correction — the
+    response says so with remembered=True.
 
     decided (default True) records that a PERSON answered the "where does
     this go?" question for this row — see grocery_items.store_decided. It
@@ -233,7 +230,7 @@ def set_grocery_item_store(item_id: int, store: str, remember: bool = True, deci
     return _settle_grocery_item_store(staged)
 
 
-def _stage_grocery_item_store(conn, item_id: int, store: str, remember: bool, decided: bool) -> dict:
+def _stage_grocery_item_store(conn, item_id: int, store: str, remember: bool, decided: bool, forget: bool = False) -> dict:
     """
     The half of set_grocery_item_store that touches the database, on a
     connection somebody else owns and commits.
@@ -246,6 +243,10 @@ def _stage_grocery_item_store(conn, item_id: int, store: str, remember: bool, de
     connection through its helpers instead of trusting each to commit
     politely. The preference write that may follow is deliberately NOT done
     here for exactly that reason; see _settle_grocery_item_store.
+
+    `forget` is the undo's flag (set_grocery_items_stores): an empty store
+    with forget=True clears the item's remembered store as well as the
+    row's, so undoing a sort takes back what the sort remembered.
     """
     row = conn.execute(
         "SELECT id, item FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id())
@@ -256,23 +257,13 @@ def _stage_grocery_item_store(conn, item_id: int, store: str, remember: bool, de
         "UPDATE grocery_items SET store = ?, store_decided = ? WHERE id = ?",
         (store, 1 if decided else 0, item_id),
     )
-    already_known = False
-    if store and remember:
-        # Merge-key match, not exact text — "paper towel" already having a
-        # preference counts as "already known" for a row named "paper
-        # towels" too, same identity the grocery list itself uses.
-        wanted_key = _merge_key(row["item"])
-        pref_rows = conn.execute(
-            "SELECT item FROM item_store_preferences WHERE household_id = ?", (household_id(),)
-        ).fetchall()
-        already_known = any(_merge_key(p["item"]) == wanted_key for p in pref_rows)
     return {
         "item_id": item_id,
         "item": row["item"],
         "store": store,
         "found": True,
         "remember": remember,
-        "already_known": already_known,
+        "forget": forget,
     }
 
 
@@ -285,28 +276,41 @@ def _settle_grocery_item_store(staged: dict) -> dict:
     if not staged.get("found"):
         return {"item_id": staged["item_id"], "found": False}
     store = staged["store"]
-    remember = staged["remember"]
     remembered = False
-    needs_confirmation = False
-    if store and remember and staged["already_known"]:
-        # A correction to an item the household already has an opinion
-        # about — update it immediately, same as before this feature, and
-        # keep the Kitchen sheet in sync with wherever it now points.
+    forgotten = False
+    if store and staged["remember"]:
+        # Remembered at once, and the Kitchen sheet kept in step with
+        # wherever it now points (set_item_store syncs the typical list).
         set_item_store(staged["item"], store)
         remembered = True
-    elif store and remember and not staged["already_known"]:
-        needs_confirmation = True
+    elif not store and staged.get("forget"):
+        # An undo of a sort: the row goes back to unsorted and the usual
+        # store the sort wrote goes with it. Only when there is one to
+        # clear — set_item_store('') on nothing would still log an event.
+        if _pref_key(staged["item"]) is not None:
+            set_item_store(staged["item"], "")
+            forgotten = True
     return {
         "item_id": staged["item_id"],
         "item": staged["item"],
         "store": store,
         "found": True,
         "remembered": remembered,
-        "needs_confirmation": needs_confirmation,
+        "forgotten": forgotten,
     }
 
 
-def set_grocery_items_stores(assignments: list[dict], remember: bool = False) -> dict:
+def _pref_key(item: str) -> str | None:
+    """The stored spelling of `item`'s preference row, by merge key, or
+    None when nothing is remembered for it."""
+    wanted = _merge_key(item)
+    for name in get_item_store_preferences():
+        if _merge_key(name) == wanted:
+            return name
+    return None
+
+
+def set_grocery_items_stores(assignments: list[dict], remember: bool = False, forget: bool = False) -> dict:
     """
     Answer "where does this go?" for many listed items at once — one write
     per row, one request. Each assignment is {"item_id", "store", "decided"}
@@ -326,11 +330,15 @@ def set_grocery_items_stores(assignments: list[dict], remember: bool = False) ->
     a connection of its own — see _stage_grocery_item_store — and why the
     preference writes are done afterwards, outside the transaction.
 
-    remember defaults to False here, the opposite of the single-row call.
-    One tap must not become forty remembered opinions about where each of
-    those things is usually bought — that learning belongs to the deliberate
-    one-at-a-time choice, which still offers its "Remember for {store}?"
-    per item.
+    remember defaults to False here, the opposite of the single-row call:
+    a bulk write is a restore more often than a choice. The Shop tab's
+    "Sort them all" writes one row per tap through the single-row route
+    (remember=True since 2026-09-21 — putting a thing under a store is
+    the answer, Loop Board 3e31f4c0-5231-81ca), and its undo comes
+    through here with remember=True and forget=True: a row put back to a
+    real store is remembered there again, and a row put back to unsorted
+    has its usual store cleared, so the undo takes back the whole of what
+    the sort did.
 
     Bounded at MAX_BULK_STORE_ASSIGNMENTS. A grocery list is a few hundred
     rows at the outside; anything past that is not a household sorting its
@@ -355,6 +363,7 @@ def set_grocery_items_stores(assignments: list[dict], remember: bool = False) ->
                 a.get("store") or "",
                 remember,
                 bool(a.get("decided", True)),
+                forget,
             ))
         conn.commit()
     except Exception:
@@ -367,35 +376,6 @@ def set_grocery_items_stores(assignments: list[dict], remember: bool = False) ->
         if _settle_grocery_item_store(s).get("found"):
             updated += 1
     return {"updated": updated, "requested": len(assignments)}
-
-
-def confirm_grocery_item_store_preference(item_id: int) -> dict:
-    """
-    Finalize the one-tap "Remember for {store}?" confirmation that
-    set_grocery_item_store offers the first time an item gets assigned a
-    store (see needs_confirmation on that function) — writes the
-    item->store preference and adds the item to that store's typical-items
-    list on the Kitchen sheet, in one teaching event. Call this only when
-    the shopper actually taps "yes"; declining requires no call at all —
-    the store stays on this one grocery row for this trip only, and the
-    same offer comes back next time this item gets a store, since nothing
-    was ever saved. Reads whatever store is currently on the row rather
-    than taking one as an argument, so it can't accidentally save a
-    different store than the one the shopper saw on the toast. No-ops
-    (confirmed=False) if the row's store was cleared or the item removed
-    since the toast appeared.
-    """
-    conn = get_conn()
-    row = conn.execute(
-        "SELECT item, store FROM grocery_items WHERE id = ? AND household_id = ?",
-        (item_id, household_id()),
-    ).fetchone()
-    conn.close()
-    if not row or not row["store"]:
-        return {"item_id": item_id, "confirmed": False}
-    item, store = row["item"], row["store"]
-    set_item_store(item, store)
-    return {"item_id": item_id, "item": item, "store": store, "confirmed": True}
 
 
 def get_item_store_preferences() -> dict:

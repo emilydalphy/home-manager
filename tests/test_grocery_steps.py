@@ -186,7 +186,8 @@ def test_a_list_row_keeps_its_quiet_row_action():
     _in("groElsewherePillHtml('row-exclude', it)", SHELL_JS, "the Getting it elsewhere pill", "shell.js")
     _in("case 'row-exclude':", SHELL_JS, "its handler", "shell.js")
     _in("label: 'Undo',", SHELL_JS, "the remove undo", "shell.js")
-    _in("function groOfferRememberToast(", SHELL_JS, "\"usually here\" — the remember-this-store toast", "shell.js")
+    _not_in("function groOfferRememberToast(", SHELL_JS, "the remember-this-store toast (a store is remembered at once since 2026-09-21)", "shell.js")
+    _in("function groRememberLocally(", SHELL_JS, "the screen's copy of the usual stores kept in step", "shell.js")
     _in(".gro-rowmore", SHELL_CSS, "the ⋯ style", "shell.css")
     _in(".gro-rowmenu", SHELL_CSS, "the row menu style", "shell.css")
     rowmore = SHELL_CSS.split(".gro-rowmore {", 1)[1][:400]

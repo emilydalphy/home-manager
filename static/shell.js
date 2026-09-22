@@ -4022,29 +4022,20 @@
     return !!remembered && remembered === store;
   }
 
-  // Learning etiquette: the first time an item gets a store (a SORT pill),
-  // the backend doesn't remember it yet — it comes back with
-  // needs_confirmation instead (see stores.set_grocery_item_store). One
-  // light tap here is the "confirm" step; declining (letting the toast
-  // expire) leaves it a one-off, exactly like before this feature existed.
-  // A "yes" writes the preference AND adds the item to that store's
-  // typical-items list on the Kitchen sheet in one call
-  // (confirm_grocery_item_store_preference).
-  function groOfferRememberToast(item, store, itemId) {
-    showToast('Remember ' + item + ' at ' + store + '?', {
-      label: 'Yes, remember',
-      onClick: function () {
-        groDo(function () {
-          return groPostEmpty('/api/grocery-list/' + itemId + '/store/confirm');
-        }, "Couldn't save that — try again.").then(function (ok) {
-          if (ok) {
-            groceryState.itemStorePrefs[(item || '').trim().toLowerCase()] = store;
-            showToast('Got it — remembered for next time');
-            renderGrocery();
-          }
-        });
-      }
-    });
+  // Putting a thing under a store remembers it as the item's usual — at
+  // once, on the server (set_grocery_item_store, remember: true), from
+  // every door: the add sheet's pick, a "Sort them all" chip, a row's ⋯
+  // (Loop Board 3e31f4c0-5231-81ca, 2026-09-21). Until then the first
+  // store an item got came back with a "Remember X at Costco?" toast the
+  // shopper had to tap, and one let expire meant the same question next
+  // week. The screen's copy of the usual stores is kept in step here so
+  // the add sheet's pre-pick and the "usually here" tag are right without
+  // a round trip.
+  function groRememberLocally(itemName, store) {
+    var key = (itemName || '').trim().toLowerCase();
+    if (!key) return;
+    if (store) groceryState.itemStorePrefs[key] = store;
+    else delete groceryState.itemStorePrefs[key];
   }
 
   async function groLoadPreShopFlags() {
@@ -5269,13 +5260,19 @@
     item.store_decided = 1;
     if (!groUnsorted(data).length) groceryState.sortAllDone = true;
     renderGrocery();
+    // remember: true — sorting a thing once is where it usually comes
+    // from, and next week's list puts it there without asking (card
+    // 3e31f4c0-5231-81ca). The one-week-only move (a row's "Any", or a
+    // remember: false write) stays out of the usual.
     groDo(function () {
-      return groPost('/api/grocery-list/' + id + '/store', { store: store, remember: false });
+      return groPost('/api/grocery-list/' + id + '/store', { store: store, remember: true });
     }, "Couldn't sort that — try again.").then(function (ok) {
       if (!ok || seq !== groSortAllSeq) return;
+      groRememberLocally(item.item, store);
       // The undo is the bulk undo with one row in it: it restores the row
       // exactly (store and never-answered), so an undone row is back in
-      // the queue rather than sitting at "Any".
+      // the queue rather than sitting at "Any" — and takes back the
+      // remembered store with it (groRunBulkUndo's forget).
       groceryState.bulkUndo = previous;
       groOfferBulkUndo(item.item + ' → ' + (store || 'any store'));
     });
@@ -6094,13 +6091,19 @@
   // forty rows sat at a shop nobody chose with no way back. The server side
   // is all-or-nothing (set_grocery_items_stores commits once), so a failure
   // means nothing moved and this payload still describes the list exactly.
+  //
+  // remember + forget: the undo restores the usual store along with the
+  // row. A row put back to a real store is remembered there again; a row
+  // put back to no store has the usual the sort just wrote cleared, so
+  // "Undo" undoes the whole of what the tap did (tools.set_grocery_items_stores).
   function groRunBulkUndo() {
     var undo = groceryState.bulkUndo;
     if (!undo) return;
     groDo(function () {
-      return groPost('/api/grocery-list/store-bulk', { assignments: undo, remember: false });
+      return groPost('/api/grocery-list/store-bulk', { assignments: undo, remember: true, forget: true });
     }, "Couldn't undo that — try again.").then(function (ok) {
       if (ok) {
+        undo.forEach(function (a) { groRememberLocally(a.item, a.store); });
         groceryState.bulkUndo = null;
         // A retry that worked has to replace the failure toast, not sit
         // underneath it: the previous "tap Undo to try again" line stays up
@@ -6114,9 +6117,11 @@
     });
   }
 
+  // `item` rides along for the screen's own copy of the usual stores
+  // (groRememberLocally); the route ignores it.
   function groPreviousStores(items) {
     return items.map(function (it) {
-      return { item_id: it.id, store: it.store || '', decided: groItemDecided(it) };
+      return { item_id: it.id, item: it.item, store: it.store || '', decided: groItemDecided(it) };
     });
   }
 
@@ -6284,17 +6289,22 @@
       // to remove.
       case 'row-store': {
         var rowStore = el.dataset.store;
+        var rowItem = groFindLine(id);
+        // The row as it stands, for the toast's Put back: the same
+        // one-row bulk undo "Sort them all" uses, so the row AND the
+        // usual store go back together (groRunBulkUndo).
+        var rowWas = rowItem ? groPreviousStores([rowItem]) : null;
         el.disabled = true;
-        var rowStoreResult = null;
         groDo(function () {
-          return groPost('/api/grocery-list/' + id + '/store', { store: rowStore })
-            .then(function (r) { rowStoreResult = r; return r; });
+          return groPost('/api/grocery-list/' + id + '/store', { store: rowStore });
         }, "Couldn't move that — try again.").then(function (ok) {
           if (!ok) return;
+          if (rowItem && rowStore) groRememberLocally(rowItem.item, rowStore);
           groceryState.openRowId = null;
           renderGrocery();
-          if (rowStoreResult && rowStoreResult.needs_confirmation) {
-            groOfferRememberToast(rowStoreResult.item, rowStoreResult.store, id);
+          if (rowWas) {
+            groceryState.bulkUndo = rowWas;
+            toastSaved({ label: 'Put back', onClick: groRunBulkUndo }, GRO_UNDO_MS);
           }
         });
         return;

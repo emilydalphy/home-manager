@@ -233,11 +233,11 @@ def test_a_bulk_assign_does_not_remember_a_shop_for_every_item(signed_in):
     assert res.status_code == 200 and res.json()["updated"] == 1, "the write really happened"
     prefs = {p["item"].lower(): p["store"] for p in tools.get_item_store_preferences()}
     assert "tahini" not in prefs
-    # The single-row route, which IS a deliberate one-at-a-time choice, still
-    # offers to remember it — that etiquette is untouched.
+    # The single-row route, which IS a deliberate one-at-a-time choice,
+    # remembers it at once (2026-09-21: no confirm step).
     assert signed_in.post(
         f"/api/grocery-list/{item_id}/store", json={"store": "Costco"}
-    ).json()["needs_confirmation"] is True
+    ).json()["remembered"] is True
 
 
 def test_a_bulk_assign_that_fails_part_way_writes_nothing(signed_in, monkeypatch):
@@ -253,11 +253,11 @@ def test_a_bulk_assign_that_fails_part_way_writes_nothing(signed_in, monkeypatch
     real = stores_mod._stage_grocery_item_store
     calls = {"n": 0}
 
-    def flaky(conn, item_id, store, remember, decided):
+    def flaky(conn, item_id, store, remember, decided, forget=False):
         calls["n"] += 1
         if calls["n"] == 3:
             raise RuntimeError("connection dropped")
-        return real(conn, item_id, store, remember, decided)
+        return real(conn, item_id, store, remember, decided, forget)
 
     monkeypatch.setattr(stores_mod, "_stage_grocery_item_store", flaky)
 
