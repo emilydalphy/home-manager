@@ -783,7 +783,8 @@ def surprise_context(intake: dict | None, period_start: str | None = None, day_c
 
 def _repick_entry(
     plan_id: int, entry: dict, budget, *, avoid: list[str], because: str, reject,
-    derived_key: str, picker=None,
+    derived_key: str, picker=None, context_extra: dict | None = None, reject_pick=None,
+    derived_extra: dict | None = None,
 ) -> dict | None:
     """
     Re-pick ONE planned slot quietly through the swap's own picker — the
@@ -796,6 +797,12 @@ def _repick_entry(
     why. Returns the new row's dict, or None when the slot stands as it was
     — a repeat is a far better outcome than an open slot, so nothing here
     ever hands a slot back as a question.
+
+    `context_extra` rides into the swap context as it is (the typed-
+    ingredient pass hands `must_contain` this way — typed_requests); a
+    `reject_pick(candidate)` sees the WHOLE pick, ingredients included, and
+    answers with why it is no good or None; `derived_extra` is written onto
+    the new row's derived_from beside the `derived_key` note.
     """
     from . import swap_in_place as _swap
     from . import plates as _plates
@@ -811,6 +818,8 @@ def _repick_entry(
         try:
             context = _swap.build_swap_context(plan_id, slot_entry, tried)
             context["replacing_because"] = f"{entry['meal']} was dropped: {because}."
+            if context_extra:
+                context.update(context_extra)
             candidate = pick_one(context) or {}
         except Exception:
             logger.exception("Re-pick for %s %s failed (attempt %d)", entry["date"], entry["slot"], attempt)
@@ -822,6 +831,8 @@ def _repick_entry(
         why = _swap.pick_gate(candidate, slot_entry)
         if why is None and reject(name):
             why = "still one they've had"
+        if why is None and reject_pick is not None:
+            why = reject_pick(candidate)
         if why is None:
             pick = candidate
             break
@@ -834,6 +845,8 @@ def _repick_entry(
     _swap._save_recipe_if_new(pick, serves)
     derived = dict(json.loads(entry.get("derived_from_json") or "{}") or {})
     derived[derived_key] = {"dropped": entry["meal"], "because": because}
+    if derived_extra:
+        derived.update(derived_extra)
     return _weekly_plan._replace_slot_entries(
         plan_id, [entry["id"]], entry["date"], entry["slot"], pick["meal_name"],
         food_groups=[g for g in (pick.get("food_groups") or []) if g in _plates.ALL_GROUPS],

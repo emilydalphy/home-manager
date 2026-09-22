@@ -390,6 +390,9 @@ leaves you no good answer, pick a plainer dish rather than a clever one — neve
 the dish IS.
 - `avoid` is what has already been turned down for this slot, including the dish being replaced. \
 Don't come back with any of them, or with a near-identical variant of one.
+- `must_contain`, when present, is something the household asked to use this week ("I have some \
+corn — work it in"). It goes IN the dish: a real part of it, in the ingredient list and the steps, \
+never a garnish — and in the name where that reads naturally. A pick without it is thrown away.
 - `week_other_dishes` is the rest of this week. Don't repeat one, and don't repeat the protein or \
 cuisine of the nights either side of this one — the point of a swap is a different night, not the \
 same night renamed.

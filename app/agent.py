@@ -19,6 +19,7 @@ import time
 from anthropic import Anthropic, APIConnectionError, APIStatusError, APITimeoutError
 from . import calendar_feed, tools
 from .tools import allergen_gate as _allergen_gate
+from .tools import typed_requests as _typed_requests
 from .tools import model_shapes as _model_shapes
 from .tools import plan_quality
 from .tools import meal_variety as _meal_variety
@@ -3187,6 +3188,13 @@ only. "No X", "nothing X", "without X", "skip X" is an EXCLUSION: honour it by l
 every slot it names, never by planning X, and never treat it as a request to place. \
 `intake.freeform_scope` lists only the requests whose reach is beyond doubt (a meal word, no \
 day, no count, no "no") with every date of that meal spelled out; the rest is yours to read. \
+An INGREDIENT is a request too — "I have some corn so incorporate that into a meal", "use the \
+lamb in the freezer" — and it is honoured only when the ingredient is IN a dish: name it in that \
+dish's meal_name or dish_note and list it in the slot's derived_from.inventory, so the recipe is \
+written around it. `intake.must_use` lists the ones that are beyond doubt; a week with none of \
+them in any dish is the failure this exists to stop (Emily, 2026-09-21: "it didn't contain any \
+corn"). It is reported like every other request: honoured, or in `unmet_requests` — never \
+dropped in silence. \
 THEN REPORT WHAT YOU DID: put the request's own words in derived_from.freeform on EVERY slot it \
 shaped; list each request you honoured in `honoured_requests` with a two-to-four-word label \
 for the draft's opening line ("Mexican lunches", "chicken-and-potato dinners", "pizza \
@@ -3262,7 +3270,11 @@ plain roast chicken, a bowl of pasta), plan the side INTO the meal — put it in
 its ingredients in the ingredient list, its steps in the instructions — and set food_groups to \
 what the whole plate then covers. A genuine one-pot dish that already covers the rule on its own \
 needs nothing added. Get this right here: anything short gets a side attached afterwards, which \
-works but is a repair, not the plan.
+works but is a repair, not the plan. ONE EXCEPTION: a dish the household asked for BY NAME in \
+`intake.freeform` keeps the name they gave it — "Korean chicken pancake" is "Korean Chicken \
+Pancake", never "Korean Chicken Pancake with Cucumber Salad" (Emily, 2026-09-21: "a dish is what \
+its name says"). For that dish, set food_groups to what the dish itself covers and leave the \
+plate to be completed afterwards: a side is stored beside the dish, never folded into its name.
 - For each day, set is_new_recipe=true and fill in tags/food_groups/cuisine/main_protein/ \
 prep_time_minutes/cook_time_minutes and a `dish_note` only if this is a recipe not already in \
 saved_recipes. If you're reusing a saved recipe, set is_new_recipe=false and just give its \
@@ -3440,7 +3452,9 @@ approach with an ethnic ingredient bolted on.
 - The recipe must contain what its name promises. A "Lemon Herb Chicken" has lemon and herbs \
 in the ingredients; a "Chettinad-Style Pepper Chicken" has black pepper and the Chettinad \
 blend. A title that names something the ingredient list doesn't carry is a recipe the \
-household can't check at a glance.
+household can't check at a glance. `must_use`, when present, is an ingredient the household \
+typed to be used up this week and this dish was chosen to carry: it goes in the ingredient \
+list and the steps as a real part of the dish, never a garnish.
 - For every ingredient, set category to the grocery store section it actually belongs to \
 (produce, dairy, meat/seafood, pantry, frozen, other) — pantry means shelf-stable only; eggs, \
 butter, and tofu are dairy; fresh vegetables/herbs are produce. This determines which aisle \
@@ -3602,6 +3616,10 @@ def _recipe_details_spec(recipe: dict, slot: str, shared: dict) -> dict:
         "prep_time_minutes": recipe.get("prep_time_minutes"),
         "cook_time_minutes": recipe.get("cook_time_minutes"),
     }
+    if recipe.get("must_use"):
+        # The ingredient the household typed that this dish was chosen
+        # (or re-picked) to carry — typed_requests.plan_must_use.
+        spec["must_use"] = list(recipe["must_use"])
     spec.update(shared)
     return spec
 
@@ -3717,6 +3735,10 @@ def _fill_pending_recipes_locked(weekly_plan_id: int) -> dict:
     result = {"filled": [], "failed": [], "clashed": []}
     if not pending:
         return result
+    for recipe in pending:
+        must = _typed_requests.plan_must_use(weekly_plan_id, recipe["id"])
+        if must:
+            recipe["must_use"] = must
     shared = _shared_recipe_details_context()
     avoidances = _allergen_gate.hard_avoidances()
     started = time.perf_counter()
@@ -4054,6 +4076,11 @@ def _intake_generation_context(intake: dict, dates: list[str] | None = None) -> 
         # day is named (week_intake.freeform_meal_scopes; the prompt's
         # `intake.freeform_scope` bullet says what to do with it).
         "freeform_scope": tools.freeform_meal_scopes(intake.get("freeform") or "", dates or []),
+        # The ingredients they typed to be used up ("I have some corn") —
+        # week_intake.freeform_ingredient_requests; the prompt's `must_use`
+        # bullet says what to do with them, and typed_requests makes it
+        # true afterwards.
+        "must_use": [r["ingredient"] for r in tools.freeform_ingredient_requests(intake.get("freeform") or "")],
         "household": household,
     }
 
@@ -4850,6 +4877,15 @@ def _generate_weekly_plan(
             "have been cut off or hit an error. Nothing was saved; try generating the week again."
         )
     _honest_meal_names(items)
+    # A dish they asked for by name keeps that name; a side the model
+    # folded into it comes off here and goes back on as a side once the
+    # entries exist (typed_requests; Emily, 2026-09-21). The asks are the
+    # intake's own words plus the chat's constraints, as count_asks below.
+    # A component plan's items are parts, not plates, and never carry a side.
+    asks_text = " ".join(t for t in (constraints_notes, (intake or {}).get("freeform") or "") if t)
+    named_sides = [] if is_component_based else _typed_requests.trim_requested_dish_names(
+        items, asks_text, taken={(r.get("name") or "").strip().lower() for r in tools.list_recipes()},
+    )
 
     # Never draft a dish somebody at the table can't have (Emily,
     # 2026-09-20). Every dish is matched on its NAME and its INGREDIENT
@@ -5036,9 +5072,22 @@ def _generate_weekly_plan(
                         "Re-picking %s %s around an allergen failed; leaving it as an open question",
                         held["item"].get("date"), held["item"].get("slot"),
                     )
+            # The sides taken off a requested dish's name, back on as
+            # sides of the entries they belong to — BEFORE the plates
+            # pass, so it sees the plate they already complete.
+            if named_sides:
+                _typed_requests.attach_named_sides(plan_id, named_sides, context={
+                    "dislikes": effective_memory.get("dislikes") or [],
+                    "dietary_restrictions": sorted({
+                        r for member in effective_memory.get("members") or []
+                        for r in (member.get("dietary_restrictions") or [])
+                    }),
+                    "eating_style": effective_memory.get("eating_style") or "",
+                    "carb_portion": tools.carb_portion(effective_memory.get("carb_level") or "normal"),
+                })
             _finish_week_slots(
                 plan_id, content_start_date, intake, effective_memory, day_count, skip_days=skip_days,
-                context=context, repick_budget=repick_budget,
+                context=context, repick_budget=repick_budget, report=plan_report, asks=asks_text,
             )
 
         if intake:
@@ -5185,7 +5234,8 @@ def _log_plan_conflicts(plan_id: int, week_start_date: str) -> None:
 def _finish_week_slots(
     plan_id: int, week_start_date: str, intake: dict | None,
     household_memory: dict, day_count: int = 7, skip_days: int = 0,
-    context: dict | None = None, repick_budget=None,
+    context: dict | None = None, repick_budget=None, report: dict | None = None,
+    asks: str | None = None,
 ) -> None:
     """
     Make the 21-slot guarantee true rather than merely asked for.
@@ -5383,6 +5433,20 @@ def _finish_week_slots(
     if household_memory.get("snacks_per_day_set") or household_memory.get("snacks_per_week_set"):
         _meal_variety.enforce_snacks_per_day(
             plan_id, household_memory.get("snacks_per_day"), period, budget=count_budget, asks=count_asks,
+        )
+
+    # An ingredient they typed ("I have some corn") is in at least one
+    # dish, or one slot is re-picked with it on must_contain, or the
+    # report says it couldn't be fitted (Emily, 2026-09-21: "it didn't
+    # contain any corn"). AFTER the count pass, so the dish it lands is
+    # one the week keeps and the count stays as enforced; BEFORE the
+    # plates pass, so a re-picked plate gets its side like any other. The
+    # `report` is the model's own honoured/unmet lists, amended in place
+    # and stored by the caller (record_plan_requests). See typed_requests.
+    if report is not None:
+        _typed_requests.use_requested_ingredients(
+            plan_id, tools.freeform_ingredient_requests(asks or ""), report,
+            budget=repick_budget or _allergen_gate.CallBudget(),
         )
 
     # "Every meal is a full plate" (Emily, 2026-09-05) — any planned meal

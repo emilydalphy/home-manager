@@ -305,25 +305,32 @@ def _pizza_week(week):
     return _full_week(week, dinner=dinner)
 
 
-def test_a_request_the_model_reports_it_could_not_honour_is_named_not_dropped(stub_model):
+def test_a_request_the_model_reports_it_could_not_honour_is_named_not_dropped(stub_model, monkeypatch):
     week = _monday()
     tools.save_week_intake(week, freeform="Friday is pizza night. Use the lamb in the freezer.")
     stub_model(_pizza_week(week), report={
         "honoured_requests": [{"words": "Friday is pizza night", "label": "pizza Friday"}],
         "unmet_requests": [{"words": "Use the lamb in the freezer", "reason": "nothing in stock says lamb"}],
     })
+    # The lamb is a typed INGREDIENT (typed_requests), so the draft tries
+    # one re-pick with it on must_contain before agreeing it's unmet; the
+    # picker has nothing, so the line stands — in the app's words.
+    from app.tools import swap_in_place as sip
+    monkeypatch.setattr(sip, "_pick_replacement", lambda ctx: {})
     agent.generate_weekly_plan(week)
     lines = _menu_for(week)["draft_opener"]
     assert lines[0] == "Pizza Friday, as you asked."
-    assert lines[1] == "I couldn’t fit “Use the lamb in the freezer” in this week."
+    assert lines[1] == "I couldn’t fit the lamb in this week."
 
 
 def test_a_request_neither_cited_nor_reported_unmet_gets_no_line_at_all(stub_model):
     """Silence beats a false claim: with no report, a typed request that no
     slot cites is NOT announced as unfitted — the model may have used it
-    without saying so — and the day it did cite is still named."""
+    without saying so — and the day it did cite is still named. (A typed
+    INGREDIENT is the exception: the draft checks every dish for it and
+    says so either way — tests/test_dish_as_named.py.)"""
     week = _monday()
-    tools.save_week_intake(week, freeform="Friday is pizza night. Use the lamb in the freezer. No fish this week.")
+    tools.save_week_intake(week, freeform="Friday is pizza night. Something festive on Saturday. No fish this week.")
     stub_model(_pizza_week(week))
     agent.generate_weekly_plan(week)
     lines = _menu_for(week)["draft_opener"]

@@ -339,10 +339,13 @@ def _line_two(entries: list[dict], report: dict | None, recent: set[str] | None,
         return "One slot I’d like your call on."
     if open_slots:
         return f"{_cap(number_word(len(open_slots)))} slots I’d like your call on."
-    unmet = [str(r.get("words") or "").strip() for r in ((report or {}).get("unmet") or [])]
-    unmet = [u for u in unmet if u]
+    unmet = [r for r in ((report or {}).get("unmet") or []) if str(r.get("words") or "").strip()]
     if unmet:
-        return f"I couldn’t fit “{unmet[0]}” in this week."
+        # A typed ingredient nothing could carry (typed_requests): "the
+        # corn", in the app's own words; anything else in theirs.
+        if unmet[0].get("ingredient"):
+            return f"I couldn’t fit the {unmet[0]['ingredient']} in this week."
+        return f"I couldn’t fit “{str(unmet[0]['words']).strip()}” in this week."
     names = _dish_names([e for e in entries if e["slot"] in ("dinner", "lunch")])
     if surprise:
         # Surprise me means new to you (Emily, 2026-09-21): the comparison
