@@ -415,11 +415,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
-- **2026-09-22 — `main`'s suite was red on five weekdays out of seven, and the
-  pinned `clock (friday)` job was red on EVERY push. Branch
+- **2026-09-22 — `main` was red on five weekdays out of seven, and TWO of the
+  four pinned CI jobs — `clock (friday)` and `clock (sunday)` — were red on
+  EVERY push. Branch
   `overnight/anchored-suggestion-weekday-cliff`, NOT merged at the time of
-  writing. Test-only — not one line of `app/` is touched.** Three tests
-  across two files, one root cause. Two of them in
+  writing. Test-only — not one line of `app/` is touched.** Four tests
+  across three files. THREE are one root cause; the FOURTH is a different one,
+  found by running the sweep this branch did on itself. Two of the three in
   `test_planning_periods.py::TestRhythmAnchoredDefault` call
   `suggest_planning_period()` UNPINNED and then assert the start day is a
   Monday. Since "today, never yesterday" (Emily, 2026-09-20: "the days are
@@ -474,6 +476,28 @@ why*, not duplicating the diff.
     **including both re-pinned tests**. So they still catch exactly what they
     were written to catch; the pin removed an assertion that is now false by
     design and nothing else.
+  - **AND A FOURTH, DIFFERENT ROOT CAUSE, FOUND BY RUNNING THE SWEEP RATHER
+    THAN BY READING ANYTHING.** This branch's own whole-suite pin runs turned
+    up
+    `test_shop_freezing_it.py::test_a_meal_too_close_to_thaw_for_is_not_offered_and_a_yes_is_refused`
+    failing under `--today=sunday`, in a file this branch does not touch.
+    Re-measured on unmodified `main` at all seven pins: green on six, **1
+    failed on sunday** — and sunday IS in the matrix, so **`clock (sunday)`
+    has been red on main on every push too**. NOT the same cause as the other
+    three: it builds its plan from *this week's Monday* and then plans a meal
+    on TOMORROW, and on a Sunday `TODAY.weekday()` is 6, so the week ends
+    today and `plan_meal` rightly refuses the day after it ("2026-09-28 isn't
+    in weekly plan 12's period"). A week-boundary seed, not a stale
+    assertion. The plan is anchored on `TODAY` now — this test is about a
+    move night that has gone by, not about where a week begins, so it names
+    the days it actually needs. **Strictly stronger: the mutation that stops
+    a gone-by move night suppressing the offer reddens it on sunday as well
+    as on monday, where before it could not even run there.** 15 passed at
+    all seven pins and unpinned.
+  - **THE SWEEP IS THE TRANSFERABLE PART.** Three of these four were found by
+    running the whole suite at pins nobody runs, not by reading code — and
+    two `clock` jobs have been red for days without it. Anyone moving a dated
+    seed should run all SEVEN weekdays, not the four the matrix pins.
   - **The third test is rewritten to assert its own docstring's claim.** It
     said "moving the clock must not move where a week begins, only which week
     it is" and then asserted a bare `weekday() == 0`, which tests the weekday
@@ -517,10 +541,15 @@ why*, not duplicating the diff.
     real Tuesday: **6214 passed, 0 failed**, against a measured **2 failed,
     6211 passed** on `e5e8e9b` — 6211 + the 2 fixed + the 1 added is 6214
     exactly, so nothing else moved and no test was deleted or weakened.
-    `clock (monday)` **6211 passed, 3 skipped, 0 failed**. `clock (friday)`
-    was **1 failed, 6210 passed, 3 skipped** on the branch's first commit —
-    that one failure being the third test, which is why it is in this branch
-    at all.
+    `tests/test_shop_freezing_it.py` **15 passed at all seven pins and
+    unpinned**, against 1 failed / 14 passed on main at sunday.
+    Whole-suite pins on the branch's FIRST commit, `TZ=America/Toronto`:
+    monday and saturday **6211 passed, 3 skipped, 0 failed**; friday **1
+    failed** (the third test); sunday **1 failed** (the fourth). Both are
+    fixed by the commits after it, which is why they are in this branch at
+    all. Unpinned inside a VERIFIED `Pacific/Niue` straddle — Niue
+    2026-09-21 against Toronto 2026-09-22, dates checked either side —
+    **6214 passed, 0 failed**.
 
 - **2026-09-22 — Integration `shop-feedback-2026-09-22`: the five Shop cards
   from Emily's 2026-09-22 Shop mockups.** `shop-add-remember-label` then
