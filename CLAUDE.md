@@ -415,6 +415,75 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-22 — `main`'s suite was red on Tuesday, Wednesday and Thursday, and
+  the CI matrix pins the four weekdays that pass. Branch
+  `overnight/anchored-suggestion-weekday-cliff`, NOT merged at the time of
+  writing. Test-only — not one line of `app/` is touched.** Two tests in
+  `test_planning_periods.py::TestRhythmAnchoredDefault` call
+  `suggest_planning_period()` UNPINNED and then assert the start day is a
+  Monday. Since "today, never yesterday" (Emily, 2026-09-20: "the days are
+  showing from yesterday") the suggestion begins on the household's own today
+  when Plan is opened mid-period, so that assertion is true only on a Monday —
+  or on a day the plan-ahead rule has already skipped to next week.
+  - **Measured at all seven pins, `TZ=America/Toronto`: monday, friday,
+    saturday and sunday 70 passed; tuesday, wednesday and thursday 2 failed.**
+    Unpinned on the real Tuesday, whole suite: **2 failed, 6211 passed** — and
+    identically at `TZ=UTC` and inside a VERIFIED `Pacific/Niue` straddle, so
+    it is not a straddle failure. Two agents measured the same counts in two
+    shells on `e5e8e9b` without seeing each other's numbers.
+  - **CI cannot see it, and that is the finding worth more than the fix.**
+    The `clock` matrix pins monday, friday, saturday, sunday — **exactly the
+    four that pass**. The unpinned `pytest` job runs on the real day, so it is
+    green Mon/Fri/Sat/Sun and red Tue/Wed/Thu. It shipped green on Monday
+    2026-09-21 because Monday was both a pinned day and the real one. Three
+    days in seven, on both blocking jobs.
+  - **The app is right and the tests are stale**, measured rather than
+    assumed: sunday-anchored, `start` is `2026-09-07` on the Monday,
+    `2026-09-09` on the Wednesday (`is_monday_anchored` correctly False) and
+    `2026-09-14` on the Friday (plan-ahead skips to next week). The behaviour
+    is Emily's own 2026-09-20 decision.
+  - **The fix is the class's OWN idiom, not a new one.** Both tests are pinned
+    to a Monday, exactly as their sibling
+    `test_ready_by_friday_starts_the_week_on_saturday` was pinned to a Saturday
+    by the same 2026-09-21 change, under a comment saying why ("pinned to a
+    Saturday here so the anchor's own day is what is asserted"). **These two
+    were simply missed by it.**
+  - **PINNING A TEST CAN MAKE IT VACUOUS, SO THAT WAS MEASURED RATHER THAN
+    HOPED.** Two mutations, both run: removing `if plan_ahead and start <
+    today: start = today` reddens **2** (including the new guard below), and
+    breaking the anchor→start-day mapping (`+1` → `+2`) reddens **5**,
+    **including both re-pinned tests**. So they still catch exactly what they
+    were written to catch; the pin removed an assertion that is now false by
+    design and nothing else.
+  - **A third test is added, and it is the point of the branch rather than
+    decoration:** `test_mid_period_a_monday_household_is_offered_today_not_its_monday`
+    pins the rule that broke the other two — a sunday-anchored household
+    opening Plan on the Wednesday of its own Mon-start period is offered that
+    Wednesday, keeps the seven-day horizon, and reads `is_monday_anchored`
+    False. **Nothing anywhere asserted that field False**, and it is computed
+    straight off the start day, so a period that stops beginning on a Monday
+    must stop claiming to.
+  - **The lesson is already in this log and was not enough.** The 2026-09-17
+    `drop-dish-refuses-the-past` entry says "when a seed moves from a fixed
+    weekday to 'today', sweep for what BRANCHES on the weekday, not for what
+    asserts one — and run all four pins, which is the only thing that would
+    have caught it." Here **all four pins would NOT have caught it**, because
+    the three days it breaks on are not among them. The rule wants widening:
+    run all SEVEN, or accept that the matrix covers four.
+  - **DELIBERATELY NOT DONE, and it is Emily's call:** `.github/workflows/
+    tests.yml` is untouched. Adding tuesday/wednesday/thursday is three more
+    full suites (~6 min each) on every PR, and that workflow's own comments say
+    the four were chosen deliberately. A cheaper middle option, if she wants
+    one, is **wednesday alone** — mid-period for every weekday anchor, which is
+    the shape that breaks, at one job rather than three.
+  - **Numbers, read off the runs.** `tests/test_planning_periods.py` **71
+    passed at all seven weekday pins and unpinned**, against 70 passed / 2
+    failed on main at tuesday, wednesday, thursday and unpinned. Whole suite
+    unpinned at `TZ=America/Toronto` on the real Tuesday: **6214 passed, 0
+    failed**, against a measured **2 failed, 6211 passed** on `e5e8e9b` — 6211
+    + the 2 fixed + the 1 added is 6214 exactly, so nothing else moved and no
+    test was deleted or weakened.
+
 - **2026-09-22 — Integration `shop-feedback-2026-09-22`: the five Shop cards
   from Emily's 2026-09-22 Shop mockups.** `shop-add-remember-label` then
   `shop-aisles-store-done` merged onto main 05e2e5a with `--no-ff`; no

@@ -361,12 +361,23 @@ class TestRhythmAnchoredDefault:
         monkeypatch.setattr(weekly_plan, "date", self._FixedToday)
         pin_household_clock(monkeypatch)
 
-    def test_a_household_ready_the_sunday_before_gets_a_monday(self):
+    def test_a_household_ready_the_sunday_before_gets_a_monday(self, monkeypatch):
         # 'sunday' is the exact old default's new name — ready the Sunday
         # before, Monday start.
+        #
+        # Pinned to a Monday for the same reason the 'friday' sibling below
+        # is pinned to a Saturday: since "today, never yesterday" (Emily,
+        # 2026-09-20) the suggestion begins on the anchor's own start day
+        # only when today IS that day, so unpinned this asserted the
+        # anchor's mapping on four weekdays and something else on the other
+        # three. That sibling was pinned in the same change; these two were
+        # missed, and went red on main every Tuesday, Wednesday and
+        # Thursday from the day it shipped.
         self._set_anchor("sunday")
+        self._pin_today(monkeypatch, "2026-09-07")  # a Monday
         suggestion = tools.suggest_planning_period()
         assert suggestion["is_monday_anchored"] is True
+        assert suggestion["start_date"] == "2026-09-07"
         assert datetime.date.fromisoformat(suggestion["start_date"]).weekday() == 0
         assert suggestion["day_count"] == 7
 
@@ -423,12 +434,40 @@ class TestRhythmAnchoredDefault:
         assert suggestion["day_count"] == 3
         assert suggestion["planning_anchor"] == "as_we_go"
 
-    def test_a_household_that_never_answered_keeps_the_monday(self):
+    def test_a_household_that_never_answered_keeps_the_monday(self, monkeypatch):
         # The no-op property again: every household predating the anchor
-        # sees exactly the default this app has always offered.
+        # sees exactly the default this app has always offered. Pinned to a
+        # Monday for the reason given on the test above — the claim is
+        # about which day the DEFAULT anchor seeds, not about which day the
+        # household happens to open Plan on.
+        self._pin_today(monkeypatch, "2026-09-07")  # a Monday
         suggestion = tools.suggest_planning_period()
         assert suggestion["planning_anchor"] == "sunday"
+        assert suggestion["start_date"] == "2026-09-07"
         assert datetime.date.fromisoformat(suggestion["start_date"]).weekday() == 0
+
+    def test_mid_period_a_monday_household_is_offered_today_not_its_monday(
+        self, monkeypatch
+    ):
+        """The rule that made the two tests above weekday-dependent, pinned
+        in its own right so it cannot be reverted silently: a sunday-anchored
+        household opening Plan on the Wednesday of its own Mon-start period
+        is offered THAT WEDNESDAY, keeping the seven-day horizon — never the
+        Monday two days behind it (Emily, 2026-09-20: "the days are showing
+        from yesterday").
+
+        `is_monday_anchored` is the honest consequence and is asserted here
+        because nothing else asserts it False: it is computed straight off
+        the start day, so a period that no longer begins on a Monday must
+        stop claiming to.
+        """
+        self._set_anchor("sunday")
+        self._pin_today(monkeypatch, "2026-09-09")  # the Wednesday of Sep 7-13
+        suggestion = tools.suggest_planning_period()
+        assert suggestion["start_date"] == "2026-09-09"
+        assert suggestion["day_count"] == 7
+        assert suggestion["is_current_period"] is True
+        assert suggestion["is_monday_anchored"] is False
 
     def test_the_endpoint_serves_it(self, signed_in):
         self._set_anchor("as_we_go")
