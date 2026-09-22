@@ -5456,6 +5456,24 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
                     tab=None, href="/memory", held=True,
                 )
                 continue
+            # A swap can hold something without being asked to: the meal it
+            # took off the plan had a fridge move the household had already
+            # ticked, so the thawed ingredient outlived the meal
+            # (weekly_plan._release_prep_rows, 2026-09-22). A SECOND card
+            # beside the week's, the way an approval writes week + grocery
+            # — never instead of it, or the tab this turn really changed
+            # would go stale to say so. Without it the "Holding for you"
+            # strip is the panels-build-once gotcha all over again: the row
+            # is on disk and on no screen until Today is reloaded.
+            if isinstance(result, dict) and result.get("held_thawed"):
+                first = result["held_thawed"][0]
+                more = len(result["held_thawed"]) - 1
+                item = (first.get("item") or "One thing").strip()
+                by_category["held"] = ChatAction(
+                    kicker="Holding",
+                    change=f"{item} and {more} more, already thawed" if more else f"{item}, already thawed",
+                    tab=None, href="/memory", held=True,
+                )
             change = _humanize_change(name, args, result) or _CATEGORY_FALLBACK_CHANGES[category]
             day_date, day_slot = _changed_day(category, args)
             if day_date:

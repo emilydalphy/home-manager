@@ -44,13 +44,20 @@ HOLD_REPLY = "Holding that. I'll bring it up when it's useful."
 # Now strip.
 MAX_TEXT_LEN = 280
 
+# "the session's adult", told apart from an explicit `member_id=None`.
+# Something Pomona noticed on its OWN — a thaw stranded by a swap, see
+# weekly_plan._release_prep_rows — was said by nobody, and crediting
+# whoever happened to tap Swap would put a name on a sentence they never
+# said, in a strip whose whole job is reading back what WAS said.
+SESSION_MEMBER = object()
 
-def _today() -> date:
+
+def _today(conn=None) -> date:
     # The household's own day (cooker.household_today), lazily imported:
     # cooker imports a lot, and this module is imported by tools/__init__.
     from .cooker import household_today
 
-    return household_today()
+    return household_today(conn=conn)
 
 
 def when_label(said_on: str, today: date | None = None) -> str:
@@ -85,47 +92,79 @@ def _row_dict(row, today: date | None = None) -> dict:
         "said_by": (row["said_by"] or "").strip(),
         "said_on": row["said_on"],
         "when": when_label(row["said_on"], today),
+        # Blank for everything a person said; a sentence for a row Pomona
+        # wrote itself, which the strip offers as one quiet tap into chat.
+        "ask_text": (row["ask_text"] or "").strip(),
     }
 
 
 _SELECT = (
-    "SELECT h.id, h.text, h.member_id, h.said_on, m.name AS said_by "
+    "SELECT h.id, h.text, h.member_id, h.said_on, h.ask_text, m.name AS said_by "
     "FROM held_things h LEFT JOIN members m ON m.id = h.member_id "
 )
 
 
-def hold_thing(text: str) -> dict:
+def hold_thing(text: str, *, ask_text: str = "", member_id=SESSION_MEMBER, conn=None) -> dict:
     """
     Keep something the person said that Pomona can't act on yet, in their
     words. Returns the held row plus the one-line reply the chat should
     give. Blank text is refused (nothing is held, and the result says
     so). The same words already held and unresolved are not held twice —
     the existing row comes back with already_held=True.
+
+    Three keyword seams, all for the one caller that is NOT the chat —
+    weekly_plan._release_prep_rows, which holds a thawed ingredient whose
+    dinner a swap has just taken off the plan (Emily, 2026-09-21: delete
+    the reminder, keep the meat):
+
+    `ask_text` is the one thing to ask about this row, word for word, for
+    the quiet link beside it. The chat never sets it — a person's own
+    words already say everything there is to offer.
+
+    `member_id` says who said it, and defaults to the session's adult (the
+    verified pick, never a name the model typed). Pass None for something
+    Pomona noticed on its own: nobody said it.
+
+    `conn` is the arrangement plan_slot_open and clear_plan_slot already
+    have. Given a connection this reads and writes on it and neither
+    commits nor closes, so a caller holding an open write transaction does
+    not open a second one — SQLite gives one writer at a time. Left unset,
+    every other call site behaves exactly as before.
     """
     words = " ".join((text or "").split())
     if not words:
         return {"held": False, "reason": "Nothing to hold — the text was empty."}
     if len(words) > MAX_TEXT_LEN:
         words = words[: MAX_TEXT_LEN - 1].rstrip() + "…"
-    member = current_member()
-    member_id = member["id"] if member else None
-    today = _today()
-    conn = get_conn()
+    # The ask is a chat message, so it is bounded the same way the words
+    # are: it is built from an ingredient name, and nothing caps how long
+    # a recipe may write one.
+    ask = " ".join((ask_text or "").split())[:MAX_TEXT_LEN]
+    if member_id is SESSION_MEMBER:
+        member = current_member()
+        member_id = member["id"] if member else None
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
+    today = _today(conn=conn)
     existing = conn.execute(
         _SELECT + "WHERE h.household_id = ? AND h.resolved_at IS NULL AND LOWER(h.text) = LOWER(?) "
         "ORDER BY h.id DESC LIMIT 1",
         (household_id(), words),
     ).fetchone()
     if existing is not None:
-        conn.close()
+        if own_conn:
+            conn.close()
         return {"held": True, "already_held": True, "reply": HOLD_REPLY, **_row_dict(existing, today)}
     cur = conn.execute(
-        "INSERT INTO held_things (household_id, member_id, text, said_on) VALUES (?, ?, ?, ?)",
-        (household_id(), member_id, words, today.isoformat()),
+        "INSERT INTO held_things (household_id, member_id, text, said_on, ask_text) VALUES (?, ?, ?, ?, ?)",
+        (household_id(), member_id, words, today.isoformat(), ask),
     )
-    conn.commit()
+    if own_conn:
+        conn.commit()
     row = conn.execute(_SELECT + "WHERE h.id = ?", (cur.lastrowid,)).fetchone()
-    conn.close()
+    if own_conn:
+        conn.close()
     return {"held": True, "already_held": False, "reply": HOLD_REPLY, **_row_dict(row, today)}
 
 

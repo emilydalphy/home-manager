@@ -696,6 +696,20 @@ FREEZER_REMOVED_BY = "freezer"
 # move can never disagree about which row is whose.
 _MOVE_ITEM_RE = re.compile(r"^move the (.+?) to the fridge\b", re.IGNORECASE)
 
+
+def thawed_item(description: str) -> str:
+    """
+    The ingredient a defrost row is about, read back out of its own
+    sentence — the public door onto _MOVE_ITEM_RE, for the one reader
+    outside this module (weekly_plan._release_prep_rows, which holds a
+    thawed ingredient when a swap takes its dinner off the plan). A
+    description this module did not write answers "" and the caller says
+    something that needs no ingredient name.
+    """
+    match = _MOVE_ITEM_RE.match(description or "")
+    return match.group(1).strip() if match else ""
+
+
 # A defrost row that means the move is settled: booked, or done. NOT
 # 'skipped' — that is the household declining this one move on the Now
 # tile (see cooker.check_off_prep_step), which says nothing about whether

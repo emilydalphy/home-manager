@@ -513,7 +513,7 @@ def test_the_replaced_dinners_prep_rows_go_with_it(approved_holiday_with_a_thaw)
     audit trip over it.
 
     That cut left the prep row standing and argued it was harmless from ONE
-    reader: get_prep_schedule drops a dangling row. Three others do not, and
+    reader: get_prep_schedule drops a dangling row. Five others do not, and
     two of them are live screens. Reproduced through real doors, no
     hand-inserted rows — shop the week, tap "Something in the freezer?",
     confirm the chicken, then answer the holiday:
@@ -525,8 +525,11 @@ def test_the_replaced_dinners_prep_rows_go_with_it(approved_holiday_with_a_thaw)
     …tickable, for a roast chicken no longer on the plan. So this asserts
     the two live readers, not the one that was already safe.
 
-    Mutation: drop `delete_prep_rows=True` at the holidays call site, or
-    the parameter's body in _replace_slot_entries, and this fails.
+    Mutation: empty _release_prep_rows' body in _replace_slot_entries and
+    this fails. (Until 2026-09-22 the holidays door asked for this by hand
+    — `delete_prep_rows=True` — and the mutation named that argument; the
+    opt-in is gone and every door does it, so the call-site half of that
+    mutation no longer exists. Same claim, one knob fewer.)
     """
     pid, tg = approved_holiday_with_a_thaw
     assert _session_items(pid), "premise: the Cook tab really is showing the fridge move"
@@ -540,17 +543,19 @@ def test_the_replaced_dinners_prep_rows_go_with_it(approved_holiday_with_a_thaw)
     assert _prep_count() == 0, "and it is gone from disk, not merely hidden"
 
 
-def test_a_ticked_fridge_move_goes_with_the_meal_too(approved_holiday_with_a_thaw):
+def test_a_ticked_fridge_move_is_held_rather_than_lost(approved_holiday_with_a_thaw):
     """
-    CHARACTERISATION of the cost of the line above, named rather than
-    hidden: a fridge move somebody has already TICKED is destroyed with the
-    meal. That is clear_plan_slot's own long-standing behaviour — its
-    docstring calls it "a real loss to know about" — and this keeps it,
-    byte-identical to main, rather than changing it.
+    UPDATED 2026-09-22, and the update is the whole point of this pair.
 
-    It is also the reason `delete_prep_rows` is opt-in rather than the
-    default: turning it on for every swap in the app would spread this loss
-    to paths that do not have it today.
+    This test used to be a CHARACTERISATION of a cost: "a fridge move
+    somebody has already TICKED is destroyed with the meal", kept
+    byte-identical to clear_plan_slot's own long-standing behaviour, and
+    named as the reason `delete_prep_rows` was opt-in. Emily answered that
+    question (2026-09-21) — delete the reminder, HOLD the thawed
+    ingredient — so the row still goes and the fact no longer does.
+
+    The assertion it used to make (_prep_count() == 0) is kept, because
+    that half did not change.
     """
     pid, tg = approved_holiday_with_a_thaw
     task_id = _prep_ids()[0]
@@ -559,39 +564,49 @@ def test_a_ticked_fridge_move_goes_with_the_meal_too(approved_holiday_with_a_tha
 
     tools.answer_holiday(tg, "out", bring_dish="Casserole")
 
-    assert _prep_count() == 0, "the record of the work goes with the meal"
+    assert _prep_count() == 0, "the reminder goes with the meal"
+    texts = [h["text"] for h in tools.list_held_things()]
+    assert any("freezer" in t for t in texts), (
+        f"the thawed meat should outlive the meal, held: {texts}"
+    )
 
 
-def test_the_opt_in_is_off_for_every_other_caller():
+def test_every_door_releases_the_prep_rows_now():
     """
-    GUARD, pinned by mutation: flip `delete_prep_rows`'s default to True and
-    this fails. It is what keeps an ordinary chat swap behaving exactly as
-    it does on main — which has the opposite problem (a stale row), and
-    which is the whole app's decision rather than this ticket's.
+    GUARD, pinned by mutation: put `delete_prep_rows: bool = False` back on
+    _replace_slot_entries and gate the release on it, and this fails.
+
+    Until 2026-09-22 the opposite was pinned here — the opt-in defaulting
+    OFF, so an ordinary chat swap behaved exactly as main did (a stale
+    row). That was "the whole app's decision rather than this ticket's";
+    the decision was made, so the knob is gone and there is nothing left
+    for a caller to forget.
     """
     import inspect
 
     sig = inspect.signature(wp._replace_slot_entries)
-    assert sig.parameters["delete_prep_rows"].default is False
-    assert "delete_prep_rows=True" in _code_of(hol._plan_dish), "holidays asks for it"
-    assert "delete_prep_rows" not in _code_of(mv.enforce_distinct_count), (
-        "meal_variety runs at generation time, before any prep row exists — "
-        "asking for it would be a claim nothing can exercise"
+    assert "delete_prep_rows" not in sig.parameters, (
+        "the opt-in is gone — every door releases the rows"
     )
+    assert "_release_prep_rows(" in _code_of(wp._replace_slot_entries)
+    for fn, label in ((hol._plan_dish, "holidays"), (mv.enforce_distinct_count, "meal_variety")):
+        assert "delete_prep_rows" not in _code_of(fn), f"{label} still asks for a knob that is gone"
 
 
-def test_a_swap_still_leaves_its_prep_row_standing(approved_holiday_with_a_thaw):
+def test_a_swap_no_longer_leaves_its_prep_row_standing(approved_holiday_with_a_thaw):
     """
-    CHARACTERISATION, and the honest statement of this branch's scope: the
-    identical stale row already exists on main through an ordinary chat
-    swap, and this branch does not change it. Invert this when somebody
-    decides what the whole app should do about it.
+    INVERTED 2026-09-22, exactly as its own docstring asked.
+
+    It read: "the identical stale row already exists on main through an
+    ordinary chat swap, and this branch does not change it. Invert this
+    when somebody decides what the whole app should do about it." Somebody
+    did (Emily, 2026-09-21).
     """
     pid, tg = approved_holiday_with_a_thaw
     tools.swap_meal_in_plan(pid, tg, "Casserole", slot="dinner")
 
-    assert _prep_count() == 1, "a swap leaves it — same as main"
-    assert _chat_defrost(), "and chat still names it, for a dish no longer planned"
+    assert _prep_count() == 0, "an ordinary swap takes it with the meal now"
+    assert _chat_defrost() == [], "and chat no longer names a dish that is not planned"
 
 
 def test_the_repeat_repair_now_buys_for_the_night_it_fills_on_an_approved_week(approved_five_dinners):

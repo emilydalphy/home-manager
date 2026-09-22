@@ -415,6 +415,152 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-22 — A swap takes its fridge move with it, and the thawed meat
+  outlives the meal. Branch `overnight/thaw-survives-a-swap`, NOT merged at
+  the time of writing.** Loop Board bug, Phase 1, High. The decision
+  `overnight/replace-slot-entries-two-writes` deferred on 2026-09-21 —
+  `delete_prep_rows` defaulting OFF because "a ticked fridge move destroyed
+  with the meal" was a product call that write did not get to make. Emily
+  made it (2026-09-21): *"Is there a way to delete it but then also have it
+  still note if it had been defrosted already if they want to switch
+  recipes for later in the week to use up the meat?"*
+  - **Reproduced first, over a real uvicorn on a throwaway DB, through the
+    Review "+"** (`POST /api/week/{w}/add-dish-day` → `swap_meal_in_plan` →
+    `_replace_slot_entries`), no hand-inserted row: approve a week with
+    Roast Chicken, shop it, answer "Something in the freezer?", then put
+    another dish on that night. On the merge base **every one of the five
+    unfiltered readers said the same thing after the swap as before it** —
+    the Cook tab's prep session, the chat answer to "what do I need to
+    defrost?", the receipt's thaw count, Today's defrost tile, and
+    `defrost._settled_nights`' "already answered" set — all still naming
+    *"Move the Whole chicken to the fridge — for Friday's Roast Chicken."*
+    for a chicken nobody was cooking, tickable. On the branch all five are
+    empty.
+  - **The fix is a delete at the SOURCE, not a filter per reader.**
+    `prep_tasks.meal_plan_entry_id` carries no foreign key and only
+    `cooker.get_prep_schedule` drops a dangling row on read, so covering
+    the readers one at a time is a list the seventh one falls off. The
+    `delete_prep_rows` opt-in is **gone**: every door of
+    `_replace_slot_entries` releases the rows now
+    (`weekly_plan._release_prep_rows`), which is what the 2026-09-21 entry
+    called "a product decision about the whole app" — and it has been made.
+    `holidays._plan_dish` stops asking for it by hand; `meal_variety` and
+    `resolve_open_slot` run at generation time or over a slot with no prep
+    rows, so they are covered for free and cost nothing.
+  - **A TICKED move is held, not lost, and that is the half that needed a
+    decision.** `held.hold_thing` (the "Pomona, hold this" strip on Today
+    and the section under What we know) gets the fact: *"Whole chicken came
+    out of the freezer today — the dinner it was for has changed."*, plus a
+    quiet "Use it this week" that sends one sentence into chat. An UNTICKED
+    move is simply deleted — nothing was thawing, so there is nothing to
+    keep. **No second holding mechanism**: one nullable column,
+    `held_things.ask_text` (schema.sql + `_MIGRATIONS`, default `''`), and
+    three keyword seams on `hold_thing` (`ask_text`, `member_id`, `conn`).
+  - **`member_id` is NULL, deliberately.** Nobody said it — Pomona noticed
+    it — and crediting whoever tapped Swap would put a name on a sentence
+    they never said, in a strip whose whole job is reading back what WAS
+    said. `SESSION_MEMBER` is the sentinel that keeps the chat's own
+    behaviour untouched.
+  - **It all runs inside the swap's one transaction**, so a rolled-back
+    swap leaves the move standing and holds nothing (tested with a forced
+    failure). That is why `cooker.household_zone`/`household_now`/
+    `household_today` and `held.hold_thing` each grew a `conn` — SQLite
+    gives one writer at a time and a nested `get_conn` here dies as an
+    intermittent "database is locked". Pinned by a connection count over
+    the whole of `_replace_slot_entries` across ten modules
+    (`app.db` included, since `_shared` imports `get_conn` locally):
+    **exactly one, unchanged**.
+  - **The day is the MOVE's, said the strip's way** — `held.when_label`
+    ("today" / "yesterday" / "Monday" / "Sep 12"), never a timestamp. A
+    move ticked ahead of its own date reads "today", which is when they
+    ticked it. The amount rides along only when it says something:
+    "Chicken thighs (2 lbs)" is worth knowing, "Whole chicken (1)" is
+    noise.
+  - **Scoped to a THAW.** A ticked prep CUT ("chop the onions") still goes
+    with the meal and is not held — chopped onions keep, and a hold for
+    every ticked prep row would turn the strip into a log.
+  - **A CHAT swap says something was held, or the strip is the
+    panels-build-once gotcha over again.** `summarize_chat_actions` writes
+    a SECOND card beside the week's when a result carries `held_thawed`
+    ("Holding · Whole chicken, already thawed") — the shape an approval
+    already uses for week + grocery, never instead of the week card, or the
+    tab that really changed would go stale to say so. Without it the row is
+    on disk and on no screen until Today is reloaded. The tool description
+    tells the model to say it in one line too.
+  - **Both freezer doors are covered, and that was checked rather than
+    argued**: the approval-time step (`confirm_frozen_items`) and Shop's
+    "Freezing it?" tick (`book_defrost_for_grocery_line`) write the
+    identical row, keyed by entry, so a delete by `meal_plan_entry_id`
+    catches either. There is a test on the Shop door specifically.
+  - **A KNOCK-ON worth naming: a big meal's own prep rows go with its
+    main.** `big_meal` writes `task_type='holiday'` rows keyed to the
+    main's entry ("Make the stuffing"), so swapping that dinner takes them
+    too. That is the right answer rather than a side effect —
+    `big_meal.menu_entry` already reads a main that has left its date as
+    "the menu is gone" (2026-09-13) — and it is what the dangling rows were
+    doing before. They are not HELD: the hold is scoped to a thaw.
+  - **`clear_plan_slot`'s comment is corrected a second time, in the same
+    change.** Its 2026-09-21 correction said the swap "deletes prep rows
+    only when asked… so every ordinary swap leaves them standing" — true
+    then, false now. The comment keeps the history (a reader needs to know
+    it used to be true), says the first half is true again, and says the
+    second half ("a path that forgets this still shows nothing stale") is
+    still false and always will be.
+  - **Found and NOT fixed, named so nobody reports them as new.** (1)
+    `clear_plan_slot` itself still destroys a ticked fridge move without
+    holding it — a night nobody is home, a night called off, generation's
+    own tidying. Same loss, three different product questions, and the swap
+    is the one Emily answered; written into the comment at the code. (2)
+    `reset.clear_weekly_plan` is the same shape one door over. (3) The
+    receipt's thaw line is COMPUTED and served but has not been drawn since
+    the 2026-09-18 core-loop re-cut, so `_pending_thaw_count` is a latent
+    reader rather than a live screen — fixed anyway, because the next
+    screen to read it should not inherit the bug. (4) "Use it this week" is
+    one constant for one producer; a second writer of `ask_text` meaning
+    something else wants its own label beside its own sentence.
+  - **Copy, all Emily's to change in one line** (`THAWED_HOLD_TEXT` /
+    `THAWED_HOLD_ASK` at the top of `_release_prep_rows`, `HELD_ASK_LABEL`
+    in shell.js): the held sentence, the chat sentence, and the link's
+    label.
+  - `tests/test_thaw_survives_a_swap.py` (26; **22 red against the merge
+    base's `app/` + `static/`, of which 13 are behaviour catches on the
+    assertion they are named for** — including a day holding TWO snacks,
+    where a swap about one of them must take only its own prep rows. Three more die on an `IndexError` off
+    an empty held list — which IS the bug, and is not the specific claim
+    they make, so each says so and is pinned by mutation instead; one is
+    red on the delete half rather than the isolation half it is named for;
+    and five are source or name markers. The 4 green either way each name
+    the mutation that pins them.) Three existing tests were updated
+    honestly rather than deleted, each with a note saying what moved:
+    `test_replace_slot_entries_two_writes`'s ticked-move characterisation
+    (now asserts the hold), its opt-in guard (now asserts the knob is
+    gone), and its `test_a_swap_still_leaves_its_prep_row_standing` —
+    **inverted exactly as its own docstring asked**. Plus
+    `test_defrost.py`'s stale-sweep test, whose claim is unchanged and now
+    holds one step earlier (the swap takes the row, so the sweep finds 0).
+  - Numbers, read off the runs at `TZ=America/Toronto`: merge base
+    **6211 passed, 2 failed**; this branch **6237 passed, 2 failed** — +26
+    is this file exactly, and the 2 are the same pre-existing
+    `test_planning_periods.py::TestRhythmAnchoredDefault` pair on both
+    trees (another builder's card). All four CI weekday pins run at the
+    same zone: **monday 6236 passed / 0 failed / 3 skipped**, **saturday
+    6236 / 0 / 3**, **friday 6235 / 1 / 3** and **sunday 6235 / 1 / 3** —
+    and each of those two failures was measured IDENTICAL on the merge
+    base at the same pin, so neither is this branch's:
+    `test_weekly_plan_last_clock_reads.py::TestTheWeekTheAppOffers::
+    test_the_monday_anchored_default_still_starts_on_a_monday` on friday,
+    `test_shop_freezing_it.py::
+    test_a_meal_too_close_to_thaw_for_is_not_offered_and_a_yes_is_refused`
+    on sunday.
+  - **Verified in a real Chromium at 390px, light and dark**, on a
+    throwaway DB: the row reads as above, "Use it this week" is 97×44,
+    there is no apricot FILL anywhere on the screen (rule 5 — both row
+    controls are `--apricot-label` links), no sideways scroll, and the tap
+    really puts `{"message": "Plan a dinner later this week around the
+    whole chicken I've already thawed."}` on the wire. Contrast measured
+    off computed styles: **5.20:1 light / 8.53:1 dark**, the pair
+    `.holding-done` already uses.
+
 - **2026-09-22 — Integration `shop-feedback-2026-09-22`: the five Shop cards
   from Emily's 2026-09-22 Shop mockups.** `shop-add-remember-label` then
   `shop-aisles-store-done` merged onto main 05e2e5a with `--no-ff`; no
