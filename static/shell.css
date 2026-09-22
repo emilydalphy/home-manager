@@ -8309,6 +8309,9 @@ span.cook-week-name { cursor: default; }
 #wk-swap-sheet.is-open { translate: 0 0; }
 #wk-swap-scrim[hidden], #wk-swap-sheet[hidden] { display: none; }
 #wk-swap-body { display: flex; flex-direction: column; gap: 10px; }
+/* Held at the wait's height while the picks land (swapSheetHold): the
+   spare space sits above the title, so the cards and buttons stay put. */
+#wk-swap-body.is-held { justify-content: flex-end; }
 @media (min-width: 768px) {
   #wk-swap-sheet {
     left: 50%;
@@ -8344,6 +8347,56 @@ span.cook-week-name { cursor: default; }
   color: var(--ink-secondary);
 }
 .wk-swap-trouble { color: var(--ink); }
+/* The wait (Emily, 2026-09-21, board D5): a 16px apricot ring turning
+   beside the line, and three placeholder cards below in the picks' own
+   slots. The rows inside a placeholder are the real pick's two text lines
+   at their line-heights (15px × 1.3, 13px × 1.25, gap 2 — .wk-swap-pick-*)
+   so the card is the height a pick will be (68.75px at 390, measured)
+   and the picks land in place. The placeholder is a div, so it says
+   border-box itself — as a content-box the pick's min-height would sit
+   under the padding and make it 91px.
+   The shimmer is the sand-to-surface sweep the boards drew; under
+   prefers-reduced-motion both animations stop and the placeholders sit
+   still (theme.css's blanket rule would already shorten them to nothing —
+   this says so where they live). */
+.wk-swap-wait { display: flex; align-items: center; gap: 10px; }
+/* 13px, one line at 375 and 390 (299px of words in 309 / 324 — at 14px
+   it is 322 and wraps as soon as the ring's border is counted). One line
+   is what the sheet gives back when the picks land (swapSheetHold). */
+.wk-swap-wait .wk-swap-loading { flex: 1 1 auto; min-width: 0; font-size: 13px; }
+.wk-swap-spinner {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-pill);
+  border: 2.5px solid var(--apricot);
+  border-right-color: transparent;
+  animation: wkSwapSpin .9s linear infinite;
+}
+@keyframes wkSwapSpin { to { transform: rotate(360deg); } }
+.wk-swap-skel { box-sizing: border-box; cursor: default; }
+.wk-swap-skel-row { display: flex; align-items: center; height: calc(15px * 1.3); }
+.wk-swap-skel-row-why { height: calc(13px * 1.25); }
+.wk-swap-skel-line {
+  display: block;
+  height: 14px;
+  border-radius: 7px;
+  background: linear-gradient(90deg, var(--hairline) 25%, var(--ground) 50%, var(--hairline) 75%);
+  background-size: 200% 100%;
+  animation: wkSwapShimmer 1.2s linear infinite;
+}
+.wk-swap-skel-why { height: 11px; }
+.wk-swap-skel:nth-child(1) .wk-swap-skel-name { width: 62%; }
+.wk-swap-skel:nth-child(1) .wk-swap-skel-why { width: 38%; }
+.wk-swap-skel:nth-child(2) .wk-swap-skel-name { width: 54%; }
+.wk-swap-skel:nth-child(2) .wk-swap-skel-why { width: 44%; }
+.wk-swap-skel:nth-child(3) .wk-swap-skel-name { width: 70%; }
+.wk-swap-skel:nth-child(3) .wk-swap-skel-why { width: 30%; }
+@keyframes wkSwapShimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .wk-swap-spinner, .wk-swap-skel-line { animation: none; }
+}
 .wk-swap-picks { display: flex; flex-direction: column; gap: 10px; }
 .wk-swap-pick {
   width: 100%;
@@ -8364,7 +8417,9 @@ span.cook-week-name { cursor: default; }
 .wk-swap-pick:disabled { opacity: .6; cursor: default; }
 .wk-swap-pick-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .wk-swap-pick-name { font-family: var(--font-body); font-size: 15px; font-weight: 600; line-height: 1.3; }
-.wk-swap-pick-why { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); }
+/* line-height pinned (was the font's "normal"): the placeholder rows
+   (.wk-swap-skel-row-why) are drawn at this exact height. */
+.wk-swap-pick-why { font-family: var(--font-body); font-size: 13px; line-height: 1.25; color: var(--ink-secondary); }
 .wk-swap-pick-chev { flex: 0 0 auto; display: inline-flex; color: var(--ink-inactive); }
 .wk-swap-quiet {
   width: 100%;

@@ -11608,6 +11608,44 @@
       });
   }
 
+  // What the wait says (Emily, 2026-09-21, board D5 — she almost clicked
+  // away from a bare "Finding three…" line): the typical /swap-options
+  // time, in seconds, read by swapWaitLine. Railway's log has the call at
+  // 10.5–13 s before the picks-not-recipes change (commit 4838c73, which
+  // logs "picks kept and seconds" per call) and a few seconds since; set
+  // this to what that line typically reads now, and the sheet follows.
+  var SWAP_WAIT_SECONDS = 10;
+
+  // "about ten seconds" — the number in words for the ones a wait can
+  // reasonably be, digits past that.
+  function swapWaitLine() {
+    var words = { 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five', 6: 'six', 7: 'seven', 8: 'eight',
+      9: 'nine', 10: 'ten', 12: 'twelve', 15: 'fifteen', 20: 'twenty', 30: 'thirty' };
+    var n = SWAP_WAIT_SECONDS;
+    var word = words[n] || String(n);
+    return 'Finding three you could have — about ' + word + (n === 1 ? ' second.' : ' seconds.');
+  }
+
+  // The wait (board D5): a small spinner and the line, then three
+  // placeholder cards in the picks' own container — the same .wk-swap-pick
+  // box at a pick's exact height, so when the picks come back
+  // (drawSwapSheet, with swapSheetHold keeping the sheet's height) they
+  // land where the placeholders were. The shimmer is CSS
+  // (.wk-swap-skel-line) and goes still under prefers-reduced-motion.
+  function swapWaitHtml() {
+    var card = '<div class="wk-swap-pick wk-swap-skel" aria-hidden="true">' +
+      '<span class="wk-swap-pick-text">' +
+        '<span class="wk-swap-skel-row"><span class="wk-swap-skel-line wk-swap-skel-name"></span></span>' +
+        '<span class="wk-swap-skel-row wk-swap-skel-row-why"><span class="wk-swap-skel-line wk-swap-skel-why"></span></span>' +
+      '</span>' +
+    '</div>';
+    return '<div class="wk-swap-wait" role="status">' +
+        '<span class="wk-swap-spinner" aria-hidden="true"></span>' +
+        '<p class="wk-swap-loading">' + escapeHtml(swapWaitLine()) + '</p>' +
+      '</div>' +
+      '<div class="wk-swap-picks wk-swap-picks-waiting">' + card + card + card + '</div>';
+  }
+
   // One pick as /swap-options hands it out: {index, meal, reason, minutes}
   // — the index is what /swap-choose wants back.
   function swapPickHtml(opt) {
@@ -11652,7 +11690,7 @@
     if (st.trouble) {
       picks = '<p class="wk-swap-trouble">' + escapeHtml(st.trouble) + '</p>';
     } else if (!st.options) {
-      picks = '<p class="wk-swap-loading">Finding three you could have instead…</p>';
+      picks = swapWaitHtml();
     } else {
       picks = '<div class="wk-swap-picks">' + st.options.map(swapPickHtml).join('') + '</div>';
     }
@@ -11667,11 +11705,34 @@
       '<button type="button" class="wk-swap-else" id="wk-swap-tell">Something else — tell me</button>';
   }
 
+  // The sheet keeps its waiting height while the picks land (board D5,
+  // "same positions, no jump"): the wait line above the placeholders goes
+  // when the picks arrive, and in a sheet pinned to the bottom of the
+  // screen that alone would move every card down by the line's height.
+  // Held at the height the wait drew — the spare space goes above the
+  // title (#wk-swap-body.is-held) — the cards and the buttons stay exactly
+  // where the placeholders were. Released for every other state (nothing
+  // found, the move view): those are shorter on purpose. Measured only
+  // once the sheet is showing (openSwapSheet calls this after openSheet;
+  // a hidden sheet measures 0 and is skipped).
+  function swapSheetHold(st) {
+    var body = document.getElementById('wk-swap-body');
+    if (!st || !body) return;
+    var waiting = st.view === 'picks' && !st.options && !st.trouble;
+    var landed = st.view === 'picks' && !!st.options && !st.trouble;
+    if (waiting && body.offsetHeight) st.holdHeight = body.offsetHeight;
+    else if (!landed) st.holdHeight = 0;
+    var hold = landed && st.holdHeight ? st.holdHeight : 0;
+    body.style.minHeight = hold ? hold + 'px' : '';
+    body.classList.toggle('is-held', !!hold);
+  }
+
   function drawSwapSheet() {
     var st = swapSheetState;
     var body = document.getElementById('wk-swap-body');
     if (!st || !body) return;
     body.innerHTML = swapSheetBodyHtml(st);
+    swapSheetHold(st);
     body.querySelectorAll('[data-wk-swap-pick]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         runSwapPick(Number(btn.getAttribute('data-wk-swap-pick')));
@@ -11707,11 +11768,13 @@
     closeAskSheet();
     swapSheetState = {
       panel: panel, day: day, date: day.date, slot: slot, entry: entry, entryId: entry.entry_id,
-      name: mealDisplayName(entry), weekStart: weekStart, options: null, trouble: '', busy: false, view: 'picks'
+      name: mealDisplayName(entry), weekStart: weekStart, options: null, trouble: '', busy: false, view: 'picks',
+      holdHeight: 0
     };
     var thisOpen = swapSheetState;
     drawSwapSheet();
     openSheet(swapSheetEl, swapScrimEl);
+    swapSheetHold(thisOpen);
     try {
       var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-options', {
         method: 'POST',

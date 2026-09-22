@@ -120,6 +120,9 @@ def _prelude() -> str:
         + _extract("defrostMeaningHtml", SHELL_JS) + "\n"
         + _extract("freezerStepHtml", SHELL_JS) + "\n"
         + _extract("swapMoveOptions", SHELL_JS) + "\n"
+        + _extract_var("SWAP_WAIT_SECONDS", SHELL_JS) + "\n"
+        + _extract("swapWaitLine", SHELL_JS) + "\n"
+        + _extract("swapWaitHtml", SHELL_JS) + "\n"
         + _extract("swapPickHtml", SHELL_JS) + "\n"
         + _extract("swapSheetTitle", SHELL_JS) + "\n"
         + _extract("swapSheetBodyHtml", SHELL_JS) + "\n"
@@ -527,7 +530,7 @@ def test_the_move_view_lists_the_other_nights_and_a_breakfast_has_no_move_line()
     assert "Lemon chicken &amp; orzo" in move and "Your call" in move
     assert 'id="wk-swap-back"' in move
     assert "wk-swap-move" not in breakfast, "only a dinner moves between nights"
-    assert "Finding three you could have instead…" in breakfast
+    assert "Finding three you could have — about ten seconds." in breakfast, "the wait line (board D5, 2026-09-21)"
 
 
 def test_the_swap_sheet_is_a_sheet_and_the_picks_go_through_week_ones_routes():

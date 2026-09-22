@@ -112,3 +112,131 @@ def test_the_quiet_line_left_the_source_and_the_pill_is_the_one_door_to_the_inta
     assert SHELL_JS.count("{ replanWeek(); }") == 1
     assert "pill.addEventListener('click', function () { replanWeek(); })" in _extract("fillWeekBandExtras", SHELL_JS)
 
+
+# ---------------------------------------------------------------------------
+# D5. The swap sheet's wait
+# ---------------------------------------------------------------------------
+
+def _sheet(st: dict) -> str:
+    days = _week()
+    return _run(_prelude() + f"weekState.days = {json.dumps(days)};\n"
+                f"console.log(JSON.stringify(swapSheetBodyHtml({json.dumps(st)})));")
+
+
+def _waiting(**over) -> dict:
+    st = {"date": _TUE, "slot": "dinner", "name": "Black bean tacos", "view": "picks", "busy": False, "trouble": "", "options": None}
+    st.update(over)
+    return st
+
+
+@_needs_node
+def test_while_the_picks_are_found_the_sheet_shows_a_spinner_the_line_and_three_placeholders():
+    html = _sheet(_waiting())
+    assert '<div class="wk-swap-wait" role="status"><span class="wk-swap-spinner" aria-hidden="true"></span>' \
+           '<p class="wk-swap-loading">Finding three you could have — about ten seconds.</p></div>' in html
+    picks = re.search(r'<div class="wk-swap-picks wk-swap-picks-waiting">(.*?)</div>(?=<button)', html, re.S)
+    assert picks, "the placeholders sit in the picks' own container"
+    card = ('<div class="wk-swap-pick wk-swap-skel" aria-hidden="true"><span class="wk-swap-pick-text">'
+            '<span class="wk-swap-skel-row"><span class="wk-swap-skel-line wk-swap-skel-name"></span></span>'
+            '<span class="wk-swap-skel-row wk-swap-skel-row-why"><span class="wk-swap-skel-line wk-swap-skel-why"></span></span>'
+            '</span></div>')
+    assert picks.group(1) == card * 3
+    assert "Finding three you could have instead…" not in html
+    # The rest of the sheet is as it was: the move line, "Something else — tell me".
+    assert 'id="wk-swap-move">Move the tacos to another day</button>' in html
+    assert html.endswith('<button type="button" class="wk-swap-else" id="wk-swap-tell">Something else — tell me</button>')
+    assert html.index("wk-swap-picks-waiting") < html.index("wk-swap-move") < html.index("wk-swap-tell")
+
+
+@_needs_node
+def test_the_picks_take_the_placeholders_places_and_nothing_found_reads_as_before():
+    options = [{"index": 0, "meal": "Sausage pasta", "reason": "uses the sausages", "minutes": 30},
+               {"index": 1, "meal": "Quesadillas", "reason": "same tortillas", "minutes": 25},
+               {"index": 2, "meal": "Fried rice", "reason": "no shopping", "minutes": 15}]
+    found = _sheet(_waiting(options=options))
+    assert "wk-swap-skel" not in found and "wk-swap-wait" not in found and "wk-swap-spinner" not in found
+    assert found.count('class="wk-swap-pick" data-wk-swap-pick="') == 3
+    # Same container, same position in the sheet — after the title, before the move line.
+    assert found.index("wk-swap-title") < found.index('<div class="wk-swap-picks">') < found.index("wk-swap-move")
+    waiting = _sheet(_waiting())
+    assert waiting.index("wk-swap-title") < waiting.index('<div class="wk-swap-picks wk-swap-picks-waiting">') < waiting.index("wk-swap-move")
+    # Nothing to offer: the line stays what it was, with "tell me" under it.
+    empty = _sheet(_waiting(options=None, trouble="Nothing I’d put there instead — tell me what you’d like."))
+    assert '<p class="wk-swap-trouble">Nothing I’d put there instead — tell me what you’d like.</p>' in empty
+    assert "wk-swap-skel" not in empty and "wk-swap-spinner" not in empty
+    assert 'id="wk-swap-tell">Something else — tell me</button>' in empty
+    opened = _extract("openSwapSheet", SHELL_JS)
+    assert "'Nothing I’d put there instead — tell me what you’d like.'" in opened
+    assert "'I couldn’t think of options just now — tell me what you’d like instead.'" in opened
+
+
+@_needs_node
+def test_the_wait_line_reads_the_one_constant():
+    out = _run(_extract_var("SWAP_WAIT_SECONDS", SHELL_JS) + "\n" + _extract("swapWaitLine", SHELL_JS) + "\n"
+               + "var a = swapWaitLine(); SWAP_WAIT_SECONDS = 5; var b = swapWaitLine(); SWAP_WAIT_SECONDS = 45; var c = swapWaitLine();\n"
+               + "console.log(JSON.stringify([a, b, c]));")
+    assert out == ["Finding three you could have — about ten seconds.",
+                   "Finding three you could have — about five seconds.",
+                   "Finding three you could have — about 45 seconds."]
+    assert "var SWAP_WAIT_SECONDS = 10;" in SHELL_JS
+
+
+def test_the_placeholders_shimmer_by_css_and_sit_still_under_reduced_motion():
+    line = _rule(".wk-swap-skel-line")
+    assert "animation: wkSwapShimmer 1.2s linear infinite" in line
+    assert "background: linear-gradient(90deg, var(--hairline) 25%, var(--ground) 50%, var(--hairline) 75%)" in line
+    assert "@keyframes wkSwapShimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }" in SHELL_CSS
+    spinner = _rule(".wk-swap-spinner")
+    assert "width: 16px" in spinner and "height: 16px" in spinner and "box-sizing: border-box" in spinner
+    assert ".wk-swap-wait .wk-swap-loading { flex: 1 1 auto; min-width: 0; font-size: 13px; }" in SHELL_CSS
+    assert "border: 2.5px solid var(--apricot)" in spinner and "border-right-color: transparent" in spinner
+    assert "animation: wkSwapSpin .9s linear infinite" in spinner
+    assert "@keyframes wkSwapSpin { to { transform: rotate(360deg); } }" in SHELL_CSS
+    # The reduced-motion rule, where the animations live.
+    assert ("@media (prefers-reduced-motion: reduce) {\n"
+            "  .wk-swap-spinner, .wk-swap-skel-line { animation: none; }\n"
+            "}") in SHELL_CSS
+    # A placeholder is the height a pick will be: the two text rows at their line-heights.
+    assert ".wk-swap-skel-row { display: flex; align-items: center; height: calc(15px * 1.3); }" in SHELL_CSS
+    assert ".wk-swap-skel-row-why { height: calc(13px * 1.25); }" in SHELL_CSS
+    assert "line-height: 1.25" in _rule(".wk-swap-pick-why"), "the real line is pinned to the placeholder's height"
+    assert "box-sizing: border-box" in _rule(".wk-swap-skel")
+    section = SHELL_CSS[SHELL_CSS.index(".wk-swap-wait {"):SHELL_CSS.index(".wk-swap-picks {")]
+    assert re.search(r":\s*#[0-9a-fA-F]{3,6}\b", section) is None, "every colour goes through a token"
+
+
+@_needs_node
+def test_the_sheet_holds_its_waiting_height_while_the_picks_land_and_lets_go_otherwise():
+    """Measured in a browser at 390 (2026-09-21): the sheet is pinned to the
+    bottom of the screen, so when the wait line above the placeholders
+    went, every card moved down by its height. Held at the wait's height
+    with the spare space above the title, the sheet's edge, the three
+    cards and the buttons stayed exactly put (tops 472/551/629 before and
+    after); only the title settled 29px. Nothing found and the move view
+    are shorter on purpose and are not held."""
+    out = _run(
+        _extract("swapSheetHold", SHELL_JS) + "\n"
+        + "var body = { offsetHeight: 484, style: {}, cls: {}, classList: { toggle: function (c, on) { body.cls[c] = on; } } };\n"
+        + "var document = { getElementById: function (id) { return id === 'wk-swap-body' ? body : null; } };\n"
+        + "var st = { view: 'picks', options: null, trouble: '', holdHeight: 0 };\n"
+        + "var log = [];\n"
+        + "function snap(tag) { log.push([tag, st.holdHeight, body.style.minHeight, !!body.cls['is-held']]); }\n"
+        + "swapSheetHold(st); snap('waiting');\n"
+        + "body.offsetHeight = 0; st.holdHeight = 0; swapSheetHold(st); snap('hidden');\n"
+        + "body.offsetHeight = 484; swapSheetHold(st); body.offsetHeight = 455;\n"
+        + "st.options = [{ index: 0 }]; swapSheetHold(st); snap('landed');\n"
+        + "st.view = 'move'; swapSheetHold(st); snap('move');\n"
+        + "st.view = 'picks'; st.options = null; st.trouble = 'Nothing I’d put there instead — tell me what you’d like.'; swapSheetHold(st); snap('trouble');\n"
+        + "console.log(JSON.stringify(log));"
+    )
+    assert out == [
+        ["waiting", 484, "", False],
+        ["hidden", 0, "", False],
+        ["landed", 484, "484px", True],
+        ["move", 0, "", False],
+        ["trouble", 0, "", False],
+    ]
+    assert "#wk-swap-body.is-held { justify-content: flex-end; }" in SHELL_CSS
+    opened = _extract("openSwapSheet", SHELL_JS)
+    assert "openSheet(swapSheetEl, swapScrimEl);\n    swapSheetHold(thisOpen);" in opened, "measured once the sheet is showing"
+    assert "swapSheetHold(st);" in _extract("drawSwapSheet", SHELL_JS)
