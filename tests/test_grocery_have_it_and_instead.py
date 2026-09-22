@@ -23,6 +23,7 @@ from pathlib import Path
 
 import nodeharness
 import pytest
+from conftest import household_today
 from shop_harness import CLICK
 
 from app import tools
@@ -34,7 +35,11 @@ SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
 
 
 def _monday() -> str:
-    today = datetime.date.today()
+    # The HOUSEHOLD's Monday, not the process's: the seeded week has to be
+    # the week the app thinks it is in. Only wrong when the two clocks fall
+    # either side of a Monday, so it fails one day in seven and reads as a
+    # flake — see conftest.household_today.
+    today = household_today()
     return (today - datetime.timedelta(days=today.weekday())).isoformat()
 
 

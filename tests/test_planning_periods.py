@@ -41,7 +41,11 @@ from app.tools import grocery, weekly_plan
 # ---------- helpers ----------
 
 def _monday(offset_weeks: int = 1) -> str:
-    today = datetime.date.today()
+    # The HOUSEHOLD's Monday, not the process's: the seeded week has to be
+    # the week the app thinks it is in. Only wrong when the two clocks fall
+    # either side of a Monday, so it fails one day in seven and reads as a
+    # flake — see conftest.household_today.
+    today = household_today()
     monday = today - datetime.timedelta(days=today.weekday())
     return (monday + datetime.timedelta(days=7 * offset_weeks)).isoformat()
 
@@ -199,7 +203,10 @@ class TestOrdinaryMondayWeekIsUnchanged:
         # Written the way a pre-period row was written: no content_start_date,
         # no day_count. _current_weekly_plan_row's window used to be a SQL
         # literal '+6 days'; this proves the replacement resolves identically.
-        today = datetime.date.today()
+        # The household's Monday: this asserts _current_weekly_plan_row finds
+        # the plan covering today, so the week has to contain the day the app
+        # calls today. See conftest.household_today.
+        today = household_today()
         monday = (today - datetime.timedelta(days=today.weekday())).isoformat()
         conn = get_conn()
         conn.execute(
@@ -681,7 +688,9 @@ class TestOverlapTakeover:
         # Under one-plan-per-day a retired plan has stopped being anybody's
         # answer to "what's for dinner". The fallback branch would otherwise
         # resurrect it whenever no plan covered today.
-        today = datetime.date.today().isoformat()
+        # The household's today — the plans are made to cover it and the
+        # assertion is about which one _current_weekly_plan_row resolves to.
+        today = household_date()
         old = self._plan(stub_model, today, 3)
         self._plan(stub_model, today, 7, meal="Katsu")
         assert _plan_row(old["weekly_plan_id"])["status"] == "retired"
