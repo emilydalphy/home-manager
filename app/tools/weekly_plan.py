@@ -4347,6 +4347,11 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             p["name"] for p in _coordination.get_household_people()
         ]
         approval["grocery_preview"] = preview_plan_grocery_impact(plan["weekly_plan_id"])
+        # How many new recipes approving will write up first (the recipe
+        # pass, 2026-09-21) — so the Approve button can say what the wait
+        # is for instead of "Approving…" for ten seconds. 0 for a week made
+        # of saved recipes, where approval is as quick as it always was.
+        approval["recipes_pending"] = len(_recipes.pending_recipes_for_plan(plan["weekly_plan_id"]))
         # What approving THIS draft takes off an approved week — the days
         # and the sentence — so the screen can say it beside the Approve
         # button rather than after the fact. None in the ordinary case.
@@ -5477,6 +5482,25 @@ _CHECK_FAILED_NOTE = (
 )
 
 
+def _write_pending_recipes(weekly_plan_id: int) -> None:
+    """
+    Approval's first move since 2026-09-21: any dish the menu pass left
+    unwritten gets its ingredients and steps now, before the grocery list
+    is built from them and before the allergy check reads them. Imported
+    at call time, not import time: agent imports this package, and the
+    same convention as plates.complete_plate keeps the cycle from being
+    real. Never raises — a recipe that could not be written stays pending
+    (the Cook screen fills it when it's needed) and the approval goes
+    ahead with what it has; a lost approval over one recipe is the worse
+    outcome.
+    """
+    try:
+        from .. import agent as _agent
+        _agent.fill_pending_recipes_for_plan(weekly_plan_id)
+    except Exception:
+        logger.exception("Writing the pending recipes for plan %s failed; approving with what is written", weekly_plan_id)
+
+
 def approve_weekly_plan(
     weekly_plan_id: int, approved_by: str = "", confirm_hard_conflicts: bool = False
 ) -> dict:
@@ -5592,6 +5616,13 @@ def approve_weekly_plan(
         raise ValueError(f"No weekly plan with id {weekly_plan_id}.")
     was_already_approved = existing["status"] == "approved"
     conn.close()
+
+    # The recipes first, then everything that reads them: the allergy check
+    # below and the grocery ingest inside the transaction both work from
+    # ingredients, and a dish the menu pass chose has none until this
+    # writes them. Skipped for a re-approval, which adds nothing anyway.
+    if not was_already_approved:
+        _write_pending_recipes(weekly_plan_id)
 
     # Run before the approval work, so the warning (and the confirmation
     # gate just below) describe the plan that was actually approved, and a

@@ -1530,6 +1530,11 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
             "advance_prep_notes": recipe["advance_prep_notes"] if recipe else "",
             "advance_prep_step_indices": recipe["advance_prep_step_indices"] if recipe else [],
             "has_full_recipe": recipe is not None,
+            # True while the menu pass's dish waits for the recipe pass (see
+            # recipes.fill_recipe_details): a real recipe with nothing in it
+            # yet, which the plan's copy of this screen says plainly and cook
+            # mode's "Fill in this recipe" writes on the spot.
+            "details_pending": bool(recipe.get("details_pending")) if recipe else False,
             # Where the recipe came from, ready to say (recipes.recipe_citation)
             # and the cookbook page photo(s) it was read from, if any —
             # None / [] for a generated or typed dish (recipe photo import,

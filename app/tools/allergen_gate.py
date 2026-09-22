@@ -88,7 +88,17 @@ def ingredients_for(item: dict) -> list[dict]:
     own = [i for i in (item.get("ingredients") or []) if isinstance(i, dict) and (i.get("item") or "").strip()]
     if own:
         return own
-    return _recipes.saved_ingredients(item.get("meal_name") or "")
+    saved = _recipes.saved_ingredients(item.get("meal_name") or "")
+    if saved:
+        return saved
+    # A new dish from the menu pass (2026-09-21) carries no ingredient list
+    # yet — the recipe pass writes one at approval and is matched then. What
+    # it does carry is the planner's dish_note ("finish with crushed
+    # peanuts and lime"), which names the dish's defining ingredients; it
+    # is matched here as one line, so a clean name over a note that says
+    # the thing is held back at the draft, not at approval.
+    note = (item.get("dish_note") or "").strip()
+    return [{"item": note}] if note else []
 
 
 def hard_clashes(name: str, ingredients: list[dict] | None = None, sides: list[dict] | None = None,
@@ -337,7 +347,10 @@ def repick_slot(
 # ---------- the silent sweep ----------
 
 
-def sweep_plan(weekly_plan_id: int, budget: CallBudget | None = None, picker=None) -> dict:
+def sweep_plan(
+    weekly_plan_id: int, budget: CallBudget | None = None, picker=None,
+    known_clashes: dict[str, list[dict]] | None = None,
+) -> dict:
     """
     The last line of defence over a finished week: anything the passes
     after generation put on the table that carries an allergen is taken
@@ -351,12 +364,20 @@ def sweep_plan(weekly_plan_id: int, budget: CallBudget | None = None, picker=Non
     generated must not be lost to its own safety net, and the worst state
     this can leave is an open question, never a clashing dish.
 
+    `known_clashes` — {lowercased dish name: clashes} — is for a dish the
+    recipe pass (agent.fill_pending_recipes_for_plan) could not write
+    without a must-avoid in it. Its row has no ingredients on disk, so the
+    matcher below would pass it on its name alone; the pass hands over
+    what it found instead, and the dish is re-picked or opened like any
+    other clash.
+
     Returns counts, for the log and for tests.
     """
     budget = budget or CallBudget()
+    known_clashes = {k.lower(): v for k, v in (known_clashes or {}).items() if v}
     out = {"sides_removed": 0, "dishes_repicked": 0, "slots_opened": 0}
     avoidances = hard_avoidances()
-    if not avoidances:
+    if not avoidances and not known_clashes:
         return out
     try:
         plan = _weekly_plan.get_weekly_plan(weekly_plan_id)
@@ -373,7 +394,9 @@ def sweep_plan(weekly_plan_id: int, budget: CallBudget | None = None, picker=Non
         sides = meal.get("sides") or []
         # The dish on its own first: a clean dish under a clashing side is
         # a side to remove, not a dinner to replace.
-        dish_clash = hard_clashes(name, ingredients=recipe.get("ingredients"), avoidances=avoidances)
+        dish_clash = known_clashes.get(name.lower()) or hard_clashes(
+            name, ingredients=recipe.get("ingredients"), avoidances=avoidances,
+        )
         if not dish_clash:
             for side in sides:
                 side_name = (side.get("name") or "").strip()

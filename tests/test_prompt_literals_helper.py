@@ -228,7 +228,7 @@ def test_an_fstring_interpolation_is_not_a_literal():
     three that use agent_function_source instead. If this ever stops being
     true, those three can move over.
     """
-    fn = agent.generate_weekly_plan_llm
+    fn = agent.generate_component_plan_llm
     assert "{COOK_DONT_ASSEMBLE}" in agent_function_source(fn.__name__)
     assert "{COOK_DONT_ASSEMBLE}" not in prompt_literals(fn)
     # And the constant's own text is not pulled in either — a prompt-wording

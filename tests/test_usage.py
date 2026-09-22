@@ -472,6 +472,15 @@ def test_every_llm_call_site_passes_the_shared_model_constant():
         # the book's credit in a single vision call. See
         # agent.read_recipe_from_photos_llm and /api/recipes/import-photo.
         "read_recipe_from_photos_llm",
+        # The recipe pass (2026-09-21): the menu pass chooses the week, and
+        # this writes each new recipe out — ingredients and steps — one
+        # call per recipe, in parallel, when the week is approved. See
+        # agent.fill_pending_recipes_for_plan.
+        "generate_recipe_details_llm",
+        # Its two-second cache warm-up (a max_tokens=0 request billed as one
+        # cache write), sent before the recipes fan out. See
+        # agent._warm_recipe_details_cache.
+        "generate_recipe_details_llm.warm",
     ]
     # generate_weekly_plan_llm and generate_component_plan_llm route through
     # _stream_forced_tool_call instead of _create_with_retry directly (added

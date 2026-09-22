@@ -376,7 +376,13 @@ def test_the_generation_prompt_asks_for_ingredient_variety():
 def test_the_generation_prompt_asks_for_the_households_own_servings():
     """A new recipe is written for the table that will eat it, not a
     generic 4 — which is what stops the ingest having to rescale at all."""
-    for fn in (agent.generate_weekly_plan_llm, agent.generate_component_plan_llm):
-        text = _prompt_text(fn)
-        assert "attendance.default_serves" in text
-        assert "not a generic 4" in text
+    # The component planner writes its own recipes and is told the table
+    # by name; the day-based planner's recipes are written by the recipe
+    # pass, which is handed `serves` directly (agent._recipe_details_spec).
+    text = _prompt_text(agent.generate_component_plan_llm)
+    assert "attendance.default_serves" in text
+    assert "not a generic 4" in text
+    text = agent.RECIPE_DETAILS_INSTRUCTIONS
+    assert "default_servings must be exactly that number" in text
+    assert "`serves` is this household's own table" in text
+    assert "Not a generic 4" in agent._RECIPE_DETAILS_TOOL["input_schema"]["properties"]["default_servings"]["description"]

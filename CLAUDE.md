@@ -14664,3 +14664,40 @@ says nothing on line 2 about unmet requests; the `headline` field
 `_week_headline` builds is still sent and still unread by the shell; `test_week_set_covers_today`
 now expects a draft titled "Here's your week." (its "Next week" point
 is kept on an approved plan).
+
+**2026-09-21 — Week generation in two passes (branch
+`menu-first-generation-2026-09-21`).** Production numbers pulled that
+day (via `observability_report.py` with the Railway report token):
+week generation p50 46s / max 66s, ~12¢ a run, ~6,500 output tokens;
+five of nine drafts that month never approved. The single call that
+chose every dish AND wrote every new recipe is now two:
+`generate_weekly_plan_llm` chooses (its tool schema has no
+ingredients/instructions/servings/advance-prep fields; a new dish is
+saved by `_ensure_recipe_saved` as a `recipes` row with
+`details_pending=1` and the planner's one-line `dish_note`), and
+`generate_recipe_details_llm` writes each pending recipe — one call per
+recipe, in parallel, after a `max_tokens=0` cache warm-up
+(`_warm_recipe_details_cache`; the instructions ride in `system` so a
+forced `tool_choice` doesn't key a different cache entry) — when the
+week is approved (`weekly_plan._write_pending_recipes`, first thing in
+`approve_weekly_plan`, before the allergy check and the grocery ingest
+read ingredients) or when Cook's "Fill in this recipe" reaches one
+first (`fill_in_recipe`). Effort route `recipes` (default medium, env
+`RECIPE_EFFORT`). Recipe-level quality rules run again after the pass
+(`plan_quality.check_recipes_and_log`) and skip cleanly on an empty
+recipe at draft time. `_complete_plates_pass` runs its side calls
+abreast. **Measured, three live runs on a throwaway DB (~60¢):** the
+menu call is 36–39s at medium effort, 46s at high — the remaining
+output is 35 slots of bookkeeping (~3K tokens of JSON) plus thinking,
+NOT recipes, so the draft did not reach the card's 15s; a
+compact-output card (repeats sent once with their dates) follows.
+Approval takes +16s for a first week of 8 new recipes (29s before the
+warm-up), every recipe after the warm-up read from cache. Cost per first
+week ~$0.23 (8 new recipes, each written in full) vs ~$0.13 before;
+typical week roughly flat; discarded draft ~$0.09 vs $0.12. Two things
+caught in review: worker threads don't inherit the household contextvar
+(`contextvars.copy_context()` per task, taken on the calling thread —
+pinned by a two-household test), and with no ingredients at draft time
+the allergen gate matched a new dish by name alone (it now matches the
+`dish_note` too). Left as reported: `preview_plan_grocery_impact`
+undercounts a draft with new dishes; no screen reads it today.

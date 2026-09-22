@@ -34,6 +34,8 @@ def add_recipe(
     source_book: str = "",
     source_author: str = "",
     source_page: str = "",
+    details_pending: bool = False,
+    dish_note: str = "",
 ) -> dict:
     """
     Save a recipe. ingredients is a list of {"item": str, "qty": str}. tags
@@ -67,6 +69,10 @@ def add_recipe(
     came from ("Salt Fat Acid Heat", "Samin Nosrat", "212") — set them when
     the user names the book, even without the other two; leave blank
     otherwise. Every screen that shows the recipe says where it came from.
+    details_pending=True saves a dish the week's menu pass chose but has
+    not written up yet — no ingredients, no steps — with the planner's
+    dish_note kept for the recipe pass that will (see
+    agent.fill_pending_recipes_for_plan). Nothing else sets it.
 
     Before anything is written, every line's cooking amount is held to
     the per-serving ranges in _PLAUSIBLE_PER_SERVING at default_servings
@@ -109,14 +115,15 @@ def add_recipe(
     cur = conn.execute(
         "INSERT INTO recipes (household_id, name, notes, ingredients_json, tags_json, food_groups_json, cuisine, main_protein, "
         "instructions_json, default_servings, prep_time_minutes, cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json, "
-        "source_url, source_book, source_author, source_page) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "source_url, source_book, source_author, source_page, details_pending, dish_note) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             household_id(), name, notes, json.dumps(ingredients), json.dumps(tags or []),
             json.dumps(food_groups or []), cuisine, main_protein,
             json.dumps(instructions or []), default_servings, prep_time_minutes, cook_time_minutes,
             advance_prep_notes, json.dumps(advance_prep_step_indices or []), source_url or "",
             (source_book or "").strip(), (source_author or "").strip(), (source_page or "").strip(),
+            1 if details_pending else 0, (dish_note or "").strip(),
         ),
     )
     conn.commit()
@@ -127,6 +134,7 @@ def add_recipe(
         "recipe_id": recipe_id, "name": name, "tags": tags or [], "food_groups": food_groups or [],
         "cuisine": cuisine, "main_protein": main_protein, "instructions": instructions or [],
         "default_servings": default_servings, "advance_prep_step_indices": advance_prep_step_indices or [],
+        "details_pending": bool(details_pending),
         "source_url": source_url or "",
         "source_book": (source_book or "").strip(), "source_author": (source_author or "").strip(),
         "source_page": (source_page or "").strip(),
@@ -298,6 +306,122 @@ def update_recipe_details(
     return get_recipe(recipe_name)
 
 
+def fill_recipe_details(
+    recipe_name: str,
+    ingredients: list[dict],
+    instructions: list[str],
+    default_servings: int,
+    prep_time_minutes: int | None = None,
+    cook_time_minutes: int | None = None,
+    advance_prep_notes: str = "",
+    advance_prep_step_indices: list[int] | None = None,
+) -> dict:
+    """
+    The recipe pass's save: write a pending recipe out in full — the
+    ingredient list the grocery list is built from and the steps the Cook
+    screen shows — and clear details_pending. Every line's cooking amount
+    goes through settle_cooking_quantities exactly as add_recipe's does,
+    so a recipe written in two passes ends up in the same state as one
+    written in one. The planner's prep/cook minutes are kept when the
+    writer sent none.
+
+    Not update_recipe_details, which backfills steps onto a recipe that
+    already has ingredients and never touches them; this is the one door
+    that writes ingredients onto a saved row, and it only opens for a row
+    that is pending. A recipe already written up is left alone and
+    returned as is — two approvals racing, or Cook's fill-in landing after
+    the approval's, must not overwrite a good recipe with a second draft.
+    """
+    settled = settle_cooking_quantities(ingredients or [], default_servings)
+    conn = get_conn()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT id, details_pending FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+            (household_id(), recipe_name),
+        ).fetchone()
+        if not row:
+            conn.rollback()
+            raise ValueError(f"No saved recipe named '{recipe_name}'.")
+        if not row["details_pending"]:
+            conn.rollback()
+            return get_recipe(recipe_name)
+        conn.execute(
+            "UPDATE recipes SET ingredients_json = ?, instructions_json = ?, default_servings = ?, "
+            "prep_time_minutes = COALESCE(?, prep_time_minutes), "
+            "cook_time_minutes = COALESCE(?, cook_time_minutes), "
+            "advance_prep_notes = ?, advance_prep_step_indices_json = ?, details_pending = 0 "
+            "WHERE id = ?",
+            (
+                json.dumps(settled), json.dumps(instructions or []), int(default_servings or 4),
+                prep_time_minutes, cook_time_minutes, advance_prep_notes or "",
+                json.dumps(advance_prep_step_indices or []), row["id"],
+            ),
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    return get_recipe(recipe_name)
+
+
+def planned_slot_for_recipe(recipe_name: str) -> str | None:
+    """The slot this recipe is most recently planned in ('dinner',
+    'lunch', ...), or None when it is on no plan."""
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT mpe.slot FROM meal_plan_entries mpe JOIN recipes r ON r.id = mpe.recipe_id "
+            "WHERE r.household_id = ? AND LOWER(r.name) = LOWER(?) ORDER BY mpe.id DESC LIMIT 1",
+            (household_id(), recipe_name),
+        ).fetchone()
+    finally:
+        conn.close()
+    return (row["slot"] or None) if row else None
+
+
+def pending_recipes_for_plan(weekly_plan_id: int) -> list[dict]:
+    """
+    The recipes on this plan that the menu pass left unwritten, each once,
+    with the slot it is planned in (a dish planned for two dinners is one
+    recipe, written once). What agent.fill_pending_recipes_for_plan works
+    through on approval; [] for a plan made of saved recipes, which is
+    then no model call at all.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        """
+        SELECT r.id, r.name, r.cuisine, r.main_protein, r.tags_json, r.food_groups_json,
+               r.prep_time_minutes, r.cook_time_minutes, r.dish_note,
+               MIN(mpe.slot) AS slot
+        FROM meal_plan_entries mpe
+        JOIN recipes r ON r.id = mpe.recipe_id
+        WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND r.details_pending = 1
+        GROUP BY r.id
+        ORDER BY r.id
+        """,
+        (weekly_plan_id, household_id()),
+    ).fetchall()
+    conn.close()
+    return [
+        {
+            "id": r["id"],
+            "name": r["name"],
+            "slot": r["slot"] or "dinner",
+            "cuisine": r["cuisine"] or "",
+            "main_protein": r["main_protein"] or "",
+            "tags": json.loads(r["tags_json"] or "[]"),
+            "food_groups": json.loads(r["food_groups_json"] or "[]"),
+            "prep_time_minutes": r["prep_time_minutes"],
+            "cook_time_minutes": r["cook_time_minutes"],
+            "dish_note": r["dish_note"] or "",
+        }
+        for r in rows
+    ]
+
+
 def list_recipes(include_temporarily_excluded: bool = True) -> list[dict]:
     """
     List all saved recipes, including tags, food groups covered, how often
@@ -318,7 +442,7 @@ def list_recipes(include_temporarily_excluded: bool = True) -> list[dict]:
                times_cooked, last_cooked_date, rating, feedback_notes, cuisine, main_protein,
                temporarily_excluded, instructions_json, default_servings, prep_time_minutes,
                cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json, source_url,
-               source_book, source_author, source_page
+               source_book, source_author, source_page, details_pending, dish_note
         FROM recipes WHERE household_id = ?
         {exclusion_clause}
         ORDER BY (rating = 'liked') DESC, (rating = 'disliked') ASC, times_cooked DESC, name ASC
@@ -375,6 +499,11 @@ def list_recipes(include_temporarily_excluded: bool = True) -> list[dict]:
             # else happens day-of. Empty when nothing needs advance prep,
             # or for recipes saved before this was tracked.
             "advance_prep_step_indices": json.loads(r["advance_prep_step_indices_json"]),
+            # True for a dish the menu pass chose that the recipe pass has
+            # not written up yet (see fill_recipe_details): ingredients and
+            # instructions are empty on purpose, not by omission.
+            "details_pending": bool(r["details_pending"]),
+            "dish_note": r["dish_note"] or "",
             # The web page it was brought in from, or '' (recipe import).
             "source_url": r["source_url"] or "",
             # The cookbook it was photographed from, or '' (recipe photo import).

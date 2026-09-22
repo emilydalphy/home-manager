@@ -484,7 +484,10 @@ def test_a_second_save_of_the_same_draft_gets_no_photo_and_no_500(signed_in, mon
     assert res.status_code == 200, res.text
     assert res.json()["photo_urls"] == []
     assert res.json()["citation"]["text"] == "From Salt Fat Acid Heat"
-    assert str(photos_dir) not in res.text and "pending" not in res.text
+    # The pending FOLDER (recipe_photos._pending_dir) and its token, never
+    # the word alone: a recipe's own `details_pending` flag (the menu pass,
+    # 2026-09-21) is a documented field of the answer, not a leaked path.
+    assert str(photos_dir) not in res.text and "/pending" not in res.text and token not in res.text
     assert tools.get_recipe("Roast chicken, second tap")["photo_urls"] == []
     conn = get_conn()
     assert conn.execute("SELECT COUNT(*) AS c FROM recipe_photos").fetchone()["c"] == 0
