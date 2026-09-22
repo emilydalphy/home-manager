@@ -5052,7 +5052,7 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .gro-carry .gro-ps-actions { margin-top: 8px; }
 .gro-carry .gro-ps-btn-drop { border-color: var(--hairline-strong); }
 
-/* ---------- "Not needed this week" (groNotNeededHtml) ----------
+/* ---------- "Already had on hand" (groNotNeededHtml) ----------
    A closed celadon confirmation at the foot of LIST — this week's Have it
    / Don't need / Drop it decisions, each with "Actually, I need it". */
 .gro-flag {

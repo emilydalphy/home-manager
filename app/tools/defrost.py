@@ -682,7 +682,7 @@ _STILL_TO_BUY_STATUSES = ("needed", "in_cart", "spice")
 
 # The mark the freezer step leaves on a grocery line it sets aside — the
 # pre-shop drop's removed_by, beside 'already_have', 'staple' and the two
-# carried marks. The line lands under Shop's "Not needed this week" with
+# carried marks. The line lands under Shop's "Already had on hand" with
 # every other "have it" and comes back through the same undo
 # (pre_shop.undo_pre_shop_drop), which reads this mark to know the line's
 # defrost move goes with it.
@@ -997,7 +997,7 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
 
       1. its grocery line(s) for this week come off the list — the SAME
          write Shop's "Have it" makes (pre_shop.drop_grocery_item_pre_shop:
-         a soft remove that lands under "Not needed this week", tells a
+         a soft remove that lands under "Already had on hand", tells a
          staple "we have plenty", and never writes inventory — policy
          2026-09-01), marked removed_by FREEZER_REMOVED_BY so the one undo
          (pre_shop.undo_pre_shop_drop, "Actually, I need it") knows to take

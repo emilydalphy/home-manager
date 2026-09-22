@@ -4567,7 +4567,7 @@
   // The foot of LIST, only while something is set aside ("Getting it
   // elsewhere" on a row's ⋯): one row per thing, its amount, and "Put it
   // back" — the one tap that returns it to the list. Read off the same
-  // already-have summary the "Not needed this week" foot reads
+  // already-have summary the "Already had on hand" foot reads
   // (groceryState.alreadyHaveSummary, loaded with everything else).
   // The Staples card's shape on a plain surface; always open, because a
   // way back that's behind a "See" is two taps, and the whole point of
@@ -5300,8 +5300,8 @@
   //
   // "Have it" is a per-week answer, not an inventory record (policy
   // 2026-09-01: nobody does inventory work to finish the loop): it is the
-  // pre-shop "Drop it" — a soft-remove, listed under "Not needed this
-  // week" with its own undo — and never /already-have, which
+  // pre-shop "Drop it" — a soft-remove, listed under "Already had on
+  // hand" with its own undo — and never /already-have, which
   // writes to the kitchen's inventory. A staple's line dropped this way
   // tells the staple "we have plenty" (drop_grocery_item_pre_shop).
   //
@@ -5361,7 +5361,7 @@
       'aria-label="Add a new store for ' + escapeHtml(it.item) + '">Add a new store</button>';
   }
 
-  // ---------- Not needed this week ----------
+  // ---------- Already had on hand ----------
   // This week's "Have it" / "Don't need" / pre-shop "Drop it" decisions,
   // and what the Plan tab's freezer step set aside as already frozen
   // (get_already_have_decisions), each with "Actually, I need it" — the
@@ -5378,7 +5378,7 @@
     return '<div class="gro-flag">' +
       '<button type="button" class="gro-flag-head" data-gro="flag-toggle" data-key="already-have" aria-expanded="' + open + '">' +
         '<span class="gro-flag-badge">' + GRO_ICONS.tick + '</span>' +
-        '<span class="gro-flag-title">Not needed this week &middot; ' + already.length + '</span>' +
+        '<span class="gro-flag-title">Already had on hand &middot; ' + already.length + '</span>' +
         '<span class="gro-chev">' + (open ? GRO_ICONS.chevDown : GRO_ICONS.chevRight) + '</span>' +
       '</button>' +
       (open
@@ -6572,7 +6572,7 @@
 
       // "Wait, I already have this" — on SORT ALL or a LIST row's ⋯. The
       // pre-shop drop (soft-remove, undo from the toast and from the
-      // list's "Not needed this week" foot), never an inventory write —
+      // list's "Already had on hand" foot), never an inventory write —
       // see groHaveItPillHtml.
       case 'have-it': {
         var haveName = el.dataset.name || 'That';
@@ -6661,7 +6661,7 @@
         renderGrocery();
         return;
 
-      // "Actually, I need it" on the "Not needed this week" foot: the one
+      // "Actually, I need it" on the "Already had on hand" foot: the one
       // pre-shop-undo endpoint, whichever flow removed the row. Restoring
       // it to 'needed' is identical either way; the backend also deletes
       // the inventory row an already-have action created, but only when

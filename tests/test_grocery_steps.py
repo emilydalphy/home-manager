@@ -222,7 +222,7 @@ def test_the_stores_prompt_sits_on_top_of_the_list():
 
 
 def test_the_quiet_sections_keep_their_places():
-    """Pre-shop check, Getting elsewhere, Not needed this week, Spices,
+    """Pre-shop check, Getting elsewhere, Already had on hand, Spices,
     Staples — where they were."""
     _in("function groPreShopHtml(", SHELL_JS, "the pre-shop check", "shell.js")
     _in("function groElsewhereHtml(", SHELL_JS, "the set-aside foot", "shell.js")
