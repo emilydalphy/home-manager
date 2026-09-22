@@ -110,8 +110,20 @@ def _lookup_item_shelf_life_days(item: str, category: str | None) -> int:
 def _estimate_expiration_date(category: str, item: str = "", from_date: date | None = None) -> str:
     """ISO date estimate for when this item likely goes bad, starting from today (or from_date). Checks _ITEM_SHELF_LIFE_DAYS for an item-specific estimate first, falling back to the category-level default in _DEFAULT_SHELF_LIFE_DAYS."""
     days = _lookup_item_shelf_life_days(item, category)
-    base = from_date or date.today()
-    return (base + timedelta(days=days)).isoformat()
+    # The HOUSEHOLD's day, not the server's: this is a calendar date a
+    # person reads off an inventory row, and the container runs UTC while
+    # households.timezone defaults to America/Toronto — so on the server's
+    # clock a dairy row added at Toronto 21:30 landed a day late (measured
+    # 2026-09-21: 2026-09-29 where the household's own clock gives
+    # 2026-09-28). This is the WRITE side of the half-conversion the
+    # 2026-09-18 last-clock-pockets entry named and left; it moves with
+    # staples._today() rather than being left as a second pocket.
+    # In-function import: cooker imports this module at module scope, so a
+    # top-level edge back would be a cycle.
+    if from_date is None:
+        from . import cooker as _cooker
+        from_date = _cooker.household_today()
+    return (from_date + timedelta(days=days)).isoformat()
 
 
 def _resolved_expiration_update(

@@ -123,7 +123,41 @@ _TODAY_OVERRIDE: date | None = None
 
 
 def _today() -> date:
-    return _TODAY_OVERRIDE or date.today()
+    """
+    Today where the HOUSEHOLD lives, not where the container runs.
+
+    Every date this module reasons with comes through here — eleven call
+    sites — so a staple's due date, its cadence arithmetic and the "due"
+    flag on the Staples card all answer on one clock. The container runs
+    UTC and households.timezone defaults to America/Toronto, so from about
+    8pm local the server's date is already tomorrow.
+
+    This used to be `date.today()` under a comment accepting the skew
+    because it "errs toward staying quiet". It did the opposite, and that
+    is the part worth writing down: `sync_due_staples` is a WRITE, so a
+    staple whose next_due_at is the household's TOMORROW was the server's
+    TODAY and got pushed onto the real grocery list that evening — an
+    extra line, in the hours somebody checks the list before a morning
+    shop. Measured 2026-09-21 at Toronto 21:30: household 2026-09-21,
+    this function 2026-09-22, and a not-yet-due staple written onto the
+    list.
+
+    `cooker.household_today()`, imported in-function rather than at module
+    scope: `spices` imports this module at module scope and this module
+    imports `spices` back, so the package's import graph here is already
+    tight enough that a new top-level edge is not worth the risk for a
+    value read once per call. `defrost.py` reaches the same helper the
+    same way (see the 2026-09-18 last-clock-pockets entry, which named
+    this module as a remaining pocket and left it).
+
+    _TODAY_OVERRIDE still wins, and that is load-bearing:
+    tests/test_staples.py pins a fixed Wednesday through it and travels
+    from there.
+    """
+    if _TODAY_OVERRIDE:
+        return _TODAY_OVERRIDE
+    from . import cooker as _cooker
+    return _cooker.household_today()
 
 
 def _iso(d: date) -> str:
@@ -386,11 +420,16 @@ def _cadence_words(days: int) -> str:
     return "about every month" if months <= 1 else f"about every {months} months"
 
 
-def _due_words(next_due: str) -> str:
+def _due_words(next_due: str, today: date | None = None) -> str:
     d = _parse(next_due)
     if d is None:
         return ""
-    today = _today()
+    # Handed the day by _shape so a list of N staples reads the clock once
+    # rather than N times — _today() opens a connection to find the
+    # household's timezone, and this repo's rule is that such a read is
+    # never per row (see the 2026-09-16 weekly-plan-last-clock-reads
+    # entry, which resolved once and threaded down for the same reason).
+    today = today or _today()
     delta = (d - today).days
     if delta <= 0:
         return "probably running low"
@@ -420,7 +459,17 @@ def _find_by_name(conn, item: str):
     return next((r for r in rows if _grocery._merge_key(r["item"]) == wanted), None)
 
 
-def _shape(r) -> dict:
+def _shape(r, today: date | None = None) -> dict:
+    """
+    One staple row as the screens and the chat read it.
+
+    `today` is the household's day. Callers shaping MORE THAN ONE row must
+    pass it — resolved once, above their own get_conn — because _today()
+    reads households.timezone over a connection of its own and a per-row
+    read is the cost this repo has twice gone out of its way to avoid.
+    Left optional so the nine single-row callers stay one line.
+    """
+    today = today or _today()
     next_due = r["next_due_at"]
     section = section_for(r["item"], r["category"])
     return {
@@ -435,8 +484,8 @@ def _shape(r) -> dict:
         "cadence_words": _cadence_words(r["cadence_days"]),
         "last_bought_at": r["last_bought_at"],
         "next_due_at": next_due,
-        "due": bool(r["paused"] == 0 and next_due <= _iso(_today())),
-        "due_words": "paused" if r["paused"] else _due_words(next_due),
+        "due": bool(r["paused"] == 0 and next_due <= _iso(today)),
+        "due_words": "paused" if r["paused"] else _due_words(next_due, today),
         "skip_streak": r["skip_streak"],
         "paused": bool(r["paused"]),
     }
@@ -555,9 +604,13 @@ def add_staple(
     if not name:
         raise ValueError("A staple needs a name.")
     cat = _clean_category(category)
+    # Resolved before get_conn (see list_staples) and reused below rather
+    # than read again: two reads of the same clock in one call can answer
+    # two different days across midnight, and each costs a connection.
+    today_date = _today()
     conn = get_conn()
     existing = _find_by_name(conn, name)
-    today = _iso(_today())
+    today = _iso(today_date)
     if existing:
         staple_id = existing["id"]
         fields, params = [], []
@@ -581,7 +634,7 @@ def add_staple(
         source = "told" if every_days else "default"
         # Adding a staple you're not out of means you have some now, so
         # the first due date is a cadence away. Running low means today.
-        next_due = today if running_low else _iso(_today() + timedelta(days=cadence))
+        next_due = today if running_low else _iso(today_date + timedelta(days=cadence))
         cur = conn.execute(
             "INSERT INTO staples (household_id, item, category, quantity, cadence_days, cadence_source, "
             "last_bought_at, next_due_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -616,6 +669,11 @@ def list_staples() -> list[dict]:
     and whether it's paused. Use this to answer "what are our staples?" and
     before adding one that might already be there.
     """
+    # Before get_conn, and once: _today() opens its own connection to read
+    # households.timezone, so reading it per row would cost one per staple
+    # and reading it inside an open write transaction is how this repo has
+    # twice earned an intermittent "database is locked".
+    today = _today()
     conn = get_conn()
     seed_spice_staples(conn)
     rows = conn.execute(
@@ -623,7 +681,7 @@ def list_staples() -> list[dict]:
         (household_id(),),
     ).fetchall()
     conn.close()
-    return [_shape(r) for r in rows]
+    return [_shape(r, today) for r in rows]
 
 
 def list_staples_by_section() -> list[dict]:
@@ -1100,8 +1158,17 @@ def sync_due_staples() -> dict:
     # tomorrow at the earliest. Older removed lines are just leftovers of
     # earlier answers, and go.
     # One clock: the module's _today(), not SQLite's UTC date('now').
-    # removed_at is stamped in UTC, so near midnight a line can count as
-    # "today" for a few extra hours — which errs toward staying quiet.
+    # removed_at is stamped in UTC and _today() is the HOUSEHOLD's day, so
+    # west of UTC a line removed this evening carries tomorrow's UTC date
+    # and stays inside this window for longer. That direction is still
+    # quiet — an answered line is kept as answered, never re-offered — and
+    # it is the only comparison in this module the phrase covers.
+    #
+    # It is NOT a blessing on the module's clock generally, which is how
+    # it read while _today() was the server's: the due test right above
+    # (next_due_at <= today) errs the other way, and on the server's clock
+    # it wrote a not-yet-due staple onto the list in the evening. See
+    # _today() for the measurement.
     conn.execute(
         "DELETE FROM grocery_items WHERE household_id = ? AND staple_id IS NOT NULL AND status = 'removed' "
         "AND date(removed_at) < ?",
