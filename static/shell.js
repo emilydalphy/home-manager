@@ -6380,6 +6380,13 @@
   }
 
   async function groScanUploadPhoto(file) {
+    // The camera is reached from inside the add sheet (its field's camera
+    // button). Both sheets sit at body level at the same z-index and the
+    // add sheet comes later in shell.html, so left open it would paint
+    // over the review. It closes here, as the photo lands — not on the
+    // camera tap — so a picker the household backs out of hands them
+    // their sheet back with what they typed still in it.
+    groAddSheetClose();
     groScanOpenSheet();
     groScanRenderLoading();
     try {
@@ -6829,7 +6836,9 @@
       case 'scan-open':
         // Opens the hidden file input; the review sheet itself lives at
         // body level (see groScanUploadPhoto) since position:fixed has to
-        // sit outside this panel's stacking/scroll context.
+        // sit outside this panel's stacking/scroll context. The add sheet
+        // this button sits in stays up until the photo lands (a cancelled
+        // picker keeps the typing) — groScanUploadPhoto closes it.
         groScanOpenPicker();
         return;
 

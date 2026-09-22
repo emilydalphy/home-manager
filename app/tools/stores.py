@@ -57,9 +57,9 @@ def set_item_store(item: str, store: str, log_event: bool = True, sync_typical: 
     Pass an empty store to clear the preference.
 
     This is the single place an item->store preference actually gets
-    written or cleared (the Grocery List view's first-time-confirm flow
-    and the Kitchen "What we know" Stores sheet both funnel through it —
-    see confirm_grocery_item_store_preference and
+    written or cleared (the Shop tab's add sheet, "Sort them all" and a
+    row's ⋯ all funnel through it via set_grocery_item_store, and the
+    Kitchen "What we know" Stores sheet via
     preferences.add_store_typical_items) — so it's also the one place that
     keeps the Kitchen sheet's typical-items list and this preference from
     ever disagreeing (Loop Board "Stores: one bidirectional memory..."):

@@ -415,6 +415,46 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-22 — Integration `shop-feedback-2026-09-22`: the five Shop cards
+  from Emily's 2026-09-22 Shop mockups.** `shop-add-remember-label` then
+  `shop-aisles-store-done` merged onto main 05e2e5a with `--no-ff`; no
+  textual conflicts, and the merged `groTickLine` reads add-branch first
+  (the pending-add guard, then the ticked card captured as
+  `storeInView`) and aisles-branch after (`groTickBookkeeping` →
+  `groStoreDoneMoment`). The five: (1) *the add lives in the dock* — the
+  add row at the top of the list is gone; "+ Add something" is an outline
+  button in the root's dock beside the chat FAB and opens the body-level
+  `#gro-add-sheet` (`groAddSheetHtml`): the field with the camera in it,
+  "Where do you get it?" as one 44px chip per store plus Anywhere,
+  pre-picked card-in-view → the typed name's usual → the last add's store,
+  a celadon "I'll remember Costco for cilantro" line, one apricot "Add to
+  Costco"; the store rides on `/api/grocery-list/add` in the same request,
+  and with no signal the add queues like a tick (`grocery-offline.js`'s
+  `add` op). (2) *Adding or sorting once remembers* — the add sheet, a
+  "Sort them all" chip and the row's ⋯ all write the usual store at once
+  through `set_grocery_item_store(remember=True)`; the "Remember X at
+  Costco?" toast and `/store/confirm` are gone, the undo of a sort takes
+  the usual back with the row (`store-bulk` `forget`), and a one-week move
+  (`remember: false`) still leaves the usual alone. (3) The foot under the
+  cards reads *"Already had on hand · N"* (was "Not needed this week").
+  (4) *Aisle eyebrows* — rows inside every store card sit under 10px caps
+  eyebrows in walking order (`groAisleGroupsHtml`, `GRO_AISLE_LABELS`,
+  `groAisleOrderFor`; a store's own `aisle_order` when the payload carries
+  one). (5) *A store done* — the last tick on a card says "That's Costco
+  done — 13 things." with the tick, the head reads "Done at Costco" for a
+  600ms beat, then the card rolls up to one celadon line below the stores
+  still to do (`groRollUp` / `groRolledArrive`, the app's fifth animation,
+  DESIGN_SYSTEM §4; instant under reduced motion; put-back un-rolls it).
+  Integration fixes on top: the camera tapped inside the add sheet left
+  the sheet up over the scan review (both sit at body level at the same
+  z-index and the add sheet comes later in shell.html) — the add sheet
+  closes as the photo lands (`groScanUploadPhoto`), not on the tap, so a
+  picker backed out of keeps the typing; `stores.set_item_store`'s
+  docstring no longer names the deleted `confirm_grocery_item_store_preference`;
+  DESIGN_SYSTEM §2 rule 4 no longer says Shop's root has an add row and no
+  dock, and §7 records that a store the household chose is remembered
+  without a confirm step (visible flag + Put back, per its own silent-
+  learning rule).
 - **2026-09-21 — Integration `core-loop-followups-2026-09-21`:** the four
   branches below merged in one (`batch-components-auto` →
   `evening-cook-nudge` → `shop-freezing-it` →

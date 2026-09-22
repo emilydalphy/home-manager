@@ -369,6 +369,77 @@ def test_voice_and_the_photo_sheet_still_add_the_way_they_did():
     assert "'/api/grocery-list/confirm-scan'" in SHELL_JS
 
 
+# --- 4b. the camera from inside the sheet --------------------------------------------
+
+def _shell_fn(name: str) -> str:
+    """The shell's own top-level `function name(...) { ... }`, up to its
+    closing brace at the function's own indent."""
+    start = SHELL_JS.index("  function " + name + "(")
+    end = SHELL_JS.index("\n  }\n", start) + len("\n  }\n")
+    return SHELL_JS[start:end]
+
+
+# A document just wide enough for the two body-level sheets: each id is one
+# element with `hidden` and a classList; openSheet/closeSheet are the shell's
+# real ones (they only touch hidden/classList/offsetHeight/listeners). The
+# 'transitionend' listener never fires here — closeSheet's own setTimeout
+# fallback (motionMs + 50ms) finishes the close, so the test reads the sheets
+# back on a timer longer than that.
+_DOC = """
+var ELS = {};
+function el(id) {
+  if (!ELS[id]) ELS[id] = {
+    id: id, hidden: true, innerHTML: '', value: '', clicks: 0,
+    classList: (function () { var set = {}; return {
+      add: function (c) { set[c] = 1; }, remove: function (c) { delete set[c]; },
+      contains: function (c) { return !!set[c]; } }; })(),
+    click: function () { this.clicks += 1; },
+    addEventListener: function () {}, focus: function () {}, setSelectionRange: function () {},
+    querySelector: function () { return null; }, offsetHeight: 0
+  };
+  return ELS[id];
+}
+var document = { getElementById: el };
+function motionMs() { return 0; }
+""" + _shell_fn("openSheet") + _shell_fn("closeSheet")
+
+
+def _sheets(body: str):
+    res = nodeharness.run_node(STUB + _DOC + grocery_block() + CLICK + FIXTURE + _LIST + body, timeout=30)
+    assert res.returncode == 0, f"node failed: {res.stderr}"
+    return json.loads(res.stdout.strip())
+
+
+@needs_node
+def test_the_camera_tapped_inside_the_add_sheet_leaves_it_up_until_the_photo_lands_then_closes_it():
+    out = _sheets("""
+twoShops();
+groAddSheetOpen({ typed: 'cilan' });
+var before = { addOpen: !el('gro-add-sheet').hidden, typed: groceryState.addSheet && groceryState.addSheet.typed };
+// The sheet is at body level, outside the screen mirror clickIfRendered
+// checks — so the button is looked for in the sheet's own markup first.
+if (el('gro-add-body').innerHTML.indexOf('data-gro="scan-open"') === -1) throw new Error('the add sheet draws no camera');
+clickHandlerDirectly({ gro: 'scan-open' });
+var tapped = { picker: el('gro-scan-input').clicks, addOpen: !el('gro-add-sheet').hidden, typed: groceryState.addSheet && groceryState.addSheet.typed };
+groScanUploadPhoto({ name: 'list.jpg' });
+// closeSheet hides the element on its own fallback timer (motionMs + 50ms
+// here; no transitionend under node) — read after that, not at settle's 30ms.
+setTimeout(function () {
+  console.log(JSON.stringify({
+    before: before, tapped: tapped,
+    landed: { addOpen: !el('gro-add-sheet').hidden, addState: groceryState.addSheet, scanOpen: !el('gro-scan-sheet').hidden && el('gro-scan-sheet').classList.contains('is-open') }
+  }));
+  process.exit(0);
+}, 150);
+""")
+    assert out["before"] == {"addOpen": True, "typed": "cilan"}
+    assert out["tapped"] == {"picker": 1, "addOpen": True, "typed": "cilan"}, (
+        "the tap opens the picker and leaves the sheet up — backing out of the camera keeps the typing")
+    assert out["landed"]["addOpen"] is False and out["landed"]["addState"] is None, (
+        "the photo landing closes the add sheet — it sits later in shell.html at the same z-index and would paint over the review")
+    assert out["landed"]["scanOpen"] is True
+
+
 # --- 5. no signal -----------------------------------------------------------------
 
 
