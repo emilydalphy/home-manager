@@ -205,6 +205,22 @@ def test_the_placeholders_shimmer_by_css_and_sit_still_under_reduced_motion():
     assert re.search(r":\s*#[0-9a-fA-F]{3,6}\b", section) is None, "every colour goes through a token"
 
 
+def _hold_harness(script: str) -> str:
+    """swapSheetHold against a fake body: offsetHeight is what the wait
+    measured, style.minHeight and the is-held class are what it set."""
+    return (
+        _extract_var("SWAP_PLACEHOLDERS", SHELL_JS) + "\n"
+        + _extract("swapSheetHold", SHELL_JS) + "\n"
+        + "var body = { offsetHeight: 484, style: {}, cls: {}, classList: { toggle: function (c, on) { body.cls[c] = on; } } };\n"
+        + "var document = { getElementById: function (id) { return id === 'wk-swap-body' ? body : null; } };\n"
+        + "var st = { view: 'picks', options: null, trouble: '', holdHeight: 0 };\n"
+        + "var log = [];\n"
+        + "function snap(tag) { log.push([tag, st.holdHeight, body.style.minHeight, !!body.cls['is-held']]); }\n"
+        + script
+        + "console.log(JSON.stringify(log));"
+    )
+
+
 @_needs_node
 def test_the_sheet_holds_its_waiting_height_while_the_picks_land_and_lets_go_otherwise():
     """Measured in a browser at 390 (2026-09-21): the sheet is pinned to the
@@ -214,21 +230,14 @@ def test_the_sheet_holds_its_waiting_height_while_the_picks_land_and_lets_go_oth
     cards and the buttons stayed exactly put (tops 472/551/629 before and
     after); only the title settled 29px. Nothing found and the move view
     are shorter on purpose and are not held."""
-    out = _run(
-        _extract("swapSheetHold", SHELL_JS) + "\n"
-        + "var body = { offsetHeight: 484, style: {}, cls: {}, classList: { toggle: function (c, on) { body.cls[c] = on; } } };\n"
-        + "var document = { getElementById: function (id) { return id === 'wk-swap-body' ? body : null; } };\n"
-        + "var st = { view: 'picks', options: null, trouble: '', holdHeight: 0 };\n"
-        + "var log = [];\n"
-        + "function snap(tag) { log.push([tag, st.holdHeight, body.style.minHeight, !!body.cls['is-held']]); }\n"
-        + "swapSheetHold(st); snap('waiting');\n"
-        + "body.offsetHeight = 0; st.holdHeight = 0; swapSheetHold(st); snap('hidden');\n"
-        + "body.offsetHeight = 484; swapSheetHold(st); body.offsetHeight = 455;\n"
-        + "st.options = [{ index: 0 }]; swapSheetHold(st); snap('landed');\n"
-        + "st.view = 'move'; swapSheetHold(st); snap('move');\n"
-        + "st.view = 'picks'; st.options = null; st.trouble = 'Nothing I’d put there instead — tell me what you’d like.'; swapSheetHold(st); snap('trouble');\n"
-        + "console.log(JSON.stringify(log));"
-    )
+    out = _run(_hold_harness(
+        "swapSheetHold(st); snap('waiting');\n"
+        "body.offsetHeight = 0; st.holdHeight = 0; swapSheetHold(st); snap('hidden');\n"
+        "body.offsetHeight = 484; swapSheetHold(st); body.offsetHeight = 455;\n"
+        "st.options = [{ index: 0 }, { index: 1 }, { index: 2 }]; swapSheetHold(st); snap('landed');\n"
+        "st.view = 'move'; swapSheetHold(st); snap('move');\n"
+        "st.view = 'picks'; st.options = null; st.trouble = 'Nothing I’d put there instead — tell me what you’d like.'; swapSheetHold(st); snap('trouble');\n"
+    ))
     assert out == [
         ["waiting", 484, "", False],
         ["hidden", 0, "", False],
@@ -240,3 +249,25 @@ def test_the_sheet_holds_its_waiting_height_while_the_picks_land_and_lets_go_oth
     opened = _extract("openSwapSheet", SHELL_JS)
     assert "openSheet(swapSheetEl, swapScrimEl);\n    swapSheetHold(thisOpen);" in opened, "measured once the sheet is showing"
     assert "swapSheetHold(st);" in _extract("drawSwapSheet", SHELL_JS)
+
+
+@_needs_node
+@pytest.mark.parametrize("count, held", [(3, True), (2, False), (1, False), (0, False)])
+def test_the_hold_is_only_for_as_many_picks_as_there_were_placeholders(count, held):
+    """Found by the verifier (2026-09-21): the server's gate can hand back
+    one or two picks (swap_options._gated, after the dedup and the
+    allergen pass), and the hold kept three cards' height over them — the
+    pick and the buttons at the bottom of a sheet with ~450px of nothing
+    above the title. Three picks land in place, held; fewer sit at the
+    top at their own height; an empty list is the nothing-found line
+    (openSwapSheet sets trouble), never a hold."""
+    empty_to_trouble = "st.trouble = 'Nothing I’d put there instead — tell me what you’d like.'; st.options = null;\n" if count == 0 else ""
+    out = _run(_hold_harness(
+        "swapSheetHold(st); body.offsetHeight = 455;\n"
+        f"st.options = {json.dumps([{'index': i} for i in range(count)])};\n"
+        + empty_to_trouble
+        + "swapSheetHold(st); snap('landed');\n"
+    ))
+    assert out == [["landed", 484 if held else 0, "484px" if held else "", held]]
+    assert "var SWAP_PLACEHOLDERS = 3;" in SHELL_JS
+    assert "card.repeat(SWAP_PLACEHOLDERS)" in _extract("swapWaitHtml", SHELL_JS), "one count for the placeholders and the hold"

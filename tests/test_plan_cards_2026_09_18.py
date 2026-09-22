@@ -121,6 +121,7 @@ def _prelude() -> str:
         + _extract("freezerStepHtml", SHELL_JS) + "\n"
         + _extract("swapMoveOptions", SHELL_JS) + "\n"
         + _extract_var("SWAP_WAIT_SECONDS", SHELL_JS) + "\n"
+        + _extract_var("SWAP_PLACEHOLDERS", SHELL_JS) + "\n"
         + _extract("swapWaitLine", SHELL_JS) + "\n"
         + _extract("swapWaitHtml", SHELL_JS) + "\n"
         + _extract("swapPickHtml", SHELL_JS) + "\n"

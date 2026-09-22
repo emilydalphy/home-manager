@@ -11643,7 +11643,7 @@
         '<span class="wk-swap-spinner" aria-hidden="true"></span>' +
         '<p class="wk-swap-loading">' + escapeHtml(swapWaitLine()) + '</p>' +
       '</div>' +
-      '<div class="wk-swap-picks wk-swap-picks-waiting">' + card + card + card + '</div>';
+      '<div class="wk-swap-picks wk-swap-picks-waiting">' + card.repeat(SWAP_PLACEHOLDERS) + '</div>';
   }
 
   // One pick as /swap-options hands it out: {index, meal, reason, minutes}
@@ -11711,15 +11711,23 @@
   // screen that alone would move every card down by the line's height.
   // Held at the height the wait drew — the spare space goes above the
   // title (#wk-swap-body.is-held) — the cards and the buttons stay exactly
-  // where the placeholders were. Released for every other state (nothing
-  // found, the move view): those are shorter on purpose. Measured only
-  // once the sheet is showing (openSwapSheet calls this after openSheet;
-  // a hidden sheet measures 0 and is skipped).
+  // where the placeholders were. Only when as many picks land as there
+  // were placeholders (SWAP_PLACEHOLDERS): the server's gate can hand back
+  // one or two (swap_options._gated, after the dedup and the allergen
+  // pass), and holding three cards' height over one would leave the pick
+  // and the buttons at the bottom of a mostly empty sheet — fewer picks
+  // sit at the top at their own height. Released for every other state
+  // too (nothing found, the move view): those are shorter on purpose.
+  // Measured only once the sheet is showing (openSwapSheet calls this
+  // after openSheet; a hidden sheet measures 0 and is skipped).
+  var SWAP_PLACEHOLDERS = 3;
+
   function swapSheetHold(st) {
     var body = document.getElementById('wk-swap-body');
     if (!st || !body) return;
     var waiting = st.view === 'picks' && !st.options && !st.trouble;
-    var landed = st.view === 'picks' && !!st.options && !st.trouble;
+    var landed = st.view === 'picks' && !!st.options && !st.trouble &&
+      st.options.length === SWAP_PLACEHOLDERS;
     if (waiting && body.offsetHeight) st.holdHeight = body.offsetHeight;
     else if (!landed) st.holdHeight = 0;
     var hold = landed && st.holdHeight ? st.holdHeight : 0;
