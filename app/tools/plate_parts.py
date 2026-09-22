@@ -47,6 +47,7 @@ import logging
 import time
 
 from ._shared import household_id
+from . import model_shapes as _model_shapes
 from . import plates as _plates
 
 logger = logging.getLogger("home_manager")
@@ -256,7 +257,7 @@ def _ask_options(context: dict) -> list[dict]:
     )
     for block in response.content:
         if getattr(block, "type", None) == "tool_use":
-            return list((block.input or {}).get("options") or [])
+            return _model_shapes.tool_list(block.input, "options", "plate_side_options")
     return []
 
 
