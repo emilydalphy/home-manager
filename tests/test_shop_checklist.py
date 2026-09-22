@@ -86,6 +86,11 @@ function struck(cardHtml) {
   return (cardHtml.match(/<div class="gro-row gro-line done[^"]*" data-gro="line-tick" data-id="(\\d+)"/g) || [])
     .map(function (m) { return /data-id="(\\d+)"/.exec(m)[1]; });
 }
+// The done cards rolled up to one line at the foot (groRolledCardHtml,
+// 2026-09-22), by their line — "Done at Costco", "All bought".
+function rolled(html) {
+  return (html.match(/gro-rolled-title">([^<]*)</g) || []).map(function (m) { return /gro-rolled-title">([^<]*)</.exec(m)[1]; });
+}
 """
 
 
@@ -154,12 +159,12 @@ console.log(JSON.stringify({
   aisles: costco.indexOf('gro-eyebrow') !== -1
 }));
 """)
-    assert out["rows"] == ["1", "2", "4", "5", "3", "6"], "the server's aisle order, then the name — a tick never moves a row"
+    assert out["rows"] == ["1", "2", "4", "5", "3", "6"], "the card's aisle order, then the name — a tick never moves a row"
     assert out["struck"] == ["1", "2"]
     assert out["thighs"] is True and out["orzo"] is True
     assert out["qty"] is True
     assert out["menus"] == 6, "every row keeps its ⋯"
-    assert out["aisles"] is False, "flat rows, no aisle eyebrows (the mockup)"
+    assert out["aisles"] is True, "rows under aisle eyebrows (Emily's Costco mockup, 2026-09-22 — see test_shop_aisles_store_done)"
 
 
 @_needs_node
@@ -170,13 +175,26 @@ var costco = groceryState.data.stores.Costco;
 costco.sections.forEach(function (s) { s.items.forEach(function (it) { it.status = 'purchased'; costco.purchased.push(it); }); });
 costco.sections = [];
 var html = groListHtml(groceryState.data);
-console.log(JSON.stringify({ cards: cards(html), counts: counts(html), done: /class="gro-store is-done" data-store="Costco"/.test(html),
+groceryState.doneBeat = 'Costco';
+var beat = groListHtml(groceryState.data);
+console.log(JSON.stringify({ cards: cards(html), counts: counts(html), rolled: rolled(html),
+  done: /class="gro-store gro-rolled is-done" data-store="Costco"/.test(html),
+  below: html.indexOf('gro-rolled') > html.indexOf('gro-anywhere'),
+  beatCards: cards(beat), beatCounts: counts(beat), beatDone: /class="gro-store is-done" data-store="Costco"/.test(beat),
   stopsLeft: groStoresWithNeeded(groceryState.data), finished: groListDone(groceryState.data), shopDone: html.indexOf('gro-shop-done-card') !== -1 }));
 """)
-    assert out["cards"] == ["Done at Costco", "Loblaws", "Anywhere"]
-    assert out["counts"] == ["6 of 6", "0 of 3", "0 of 1"]
-    assert out["done"] is True
-    assert out["stopsLeft"] == ["Loblaws"], "a done card keeps its place; the band's stop count drops it"
+    # On a load (or any render outside the beat after its last tick) a done
+    # card is rolled up to one line below the cards still to do —
+    # test_shop_aisles_store_done has the rest of that behaviour.
+    assert out["cards"] == ["Loblaws", "Anywhere"]
+    assert out["counts"] == ["0 of 3", "0 of 1"]
+    assert out["rolled"] == ["Done at Costco"] and out["done"] is True and out["below"] is True
+    # For the beat after its last tick it stands where it was, reading
+    # "Done at Costco" in the head, "6 of 6" at the right.
+    assert out["beatCards"] == ["Done at Costco", "Loblaws", "Anywhere"]
+    assert out["beatCounts"] == ["6 of 6", "0 of 3", "0 of 1"]
+    assert out["beatDone"] is True
+    assert out["stopsLeft"] == ["Loblaws"], "the band's stop count drops a done card"
     assert out["finished"] is False and out["shopDone"] is False, "one store done is not the shopping done"
 
 
@@ -191,12 +209,14 @@ var u = groceryState.data.stores.Unassigned;
 u.sections[0].items.forEach(function (it) { it.status = 'purchased'; u.purchased.push(it); });
 u.sections = [];
 var after = groListHtml(groceryState.data);
-console.log(JSON.stringify({ before: cards(before), beforeRows: rows(card(before)), after: cards(after), afterCount: counts(after)[2] }));
+console.log(JSON.stringify({ before: cards(before), beforeRows: rows(card(before)), after: cards(after), afterRolled: rolled(after),
+  afterSub: /gro-rolled-sub">([^<]*)</.exec(after)[1] }));
 """)
     assert out["before"] == ["Costco", "Loblaws", "Anywhere"]
     assert out["beforeRows"] == ["21", "20"], "answered 'Any' and not-yet-asked alike, by name"
-    assert out["after"] == ["Costco", "Loblaws", "All bought"]
-    assert out["afterCount"] == "2 of 2"
+    assert out["after"] == ["Costco", "Loblaws"]
+    assert out["afterRolled"] == ["All bought"], "the loose pile's card rolls up like a store's"
+    assert out["afterSub"] == "2 things · tap to see them"
 
 
 @_needs_node
@@ -209,12 +229,14 @@ var u = groceryState.data.stores.Unassigned;
 u.sections[0].items.forEach(function (it) { it.status = 'purchased'; u.purchased.push(it); });
 u.sections = [];
 var done = groListHtml(groceryState.data);
-console.log(JSON.stringify({ cards: cards(html), counts: counts(html), band: groBandLine(groceryState.data), done: cards(done) }));
+console.log(JSON.stringify({ cards: cards(html), counts: counts(html), band: groBandLine(groceryState.data), done: cards(done), rolled: rolled(done),
+  moment: done.indexOf('gro-shop-done-card') !== -1 && done.indexOf('gro-shop-done-card') < done.indexOf('gro-rolled') }));
 """)
     assert out["cards"] == ["Your list"]
     assert out["counts"] == ["0 of 2"]
     assert out["band"] == "2 things."
-    assert out["done"] == ["Done shopping"]
+    assert out["done"] == [] and out["rolled"] == ["Done shopping"]
+    assert out["moment"] is True, "the finished moment stands above the rolled-up card"
 
 
 # --- 2. the tick ----------------------------------------------------------------
@@ -283,7 +305,10 @@ settle(function () {
     assert out["beforeLast"] == 0, "three of four ticked: the stop is not done"
     assert out["costco"] == [{"store": "Costco", "item_count": 6}]
     assert out["all"] == [{"store": "Costco", "item_count": 6}, {"store": "", "item_count": 1}], "the loose pile is recorded as no shop"
-    assert out["cardNow"] == ["Done at Costco", "Loblaws", "All bought"]
+    # 30ms on: the Anywhere card is in the beat after its last tick, so it
+    # stands where it was reading "All bought"; Costco's beat was handed
+    # on to it, so Costco is already rolled up (see rolled()).
+    assert out["cardNow"] == ["Loblaws", "All bought"]
 
 
 @_needs_node
@@ -303,7 +328,7 @@ console.log(JSON.stringify({
   finished: groListDone(groceryState.data), band: groBandLine(groceryState.data),
   moment: html.indexOf('gro-shop-done-card') !== -1 && html.indexOf('That’s the shopping done.') !== -1,
   first: html.indexOf('gro-shop-done-card') < html.indexOf('data-store="Costco"'),
-  cardsStay: cards(html), tonight: html.indexOf('data-gro="shop-done-tonight"') !== -1,
+  cardsStay: rolled(html), toDo: cards(html), tonight: html.indexOf('data-gro="shop-done-tonight"') !== -1,
   folded: folded.indexOf('gro-shop-done-dismissed') !== -1 && folded.indexOf('See tonight’s dinner') !== -1,
   dock: groDockHtml(groceryState.data, 'list')
 }));
@@ -311,7 +336,8 @@ console.log(JSON.stringify({
     assert out["finished"] is True
     assert out["band"] == "10 things, two stores."
     assert out["moment"] is True and out["first"] is True
-    assert out["cardsStay"] == ["Done at Costco", "Done at Loblaws", "All bought"], "the ticked cards stay under it, so a mis-tick can be put back"
+    assert out["cardsStay"] == ["Done at Costco", "Done at Loblaws", "All bought"], "the ticked cards stay under it, rolled up, so a mis-tick can be put back"
+    assert out["toDo"] == []
     assert out["tonight"] is True
     assert out["folded"] is True
     assert 'data-gro="add-open"' in out["dock"] and "dock-primary" not in out["dock"]

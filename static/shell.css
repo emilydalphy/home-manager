@@ -4733,6 +4733,64 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   justify-content: space-between;
   gap: 11px;
 }
+/* A done card rolled up to one line (groRolledCardHtml; Emily's "a store
+   done" mockup, 2026-09-22): --celadon-tint on --celadon-edge, a 32px
+   round --celadon tick, "Done at Costco" in --celadon-label over "13
+   things · tap to see them", a chevron. The head is the whole tap (56px
+   tall — Rule 6); opened, the rows unfold under it on a --celadon-edge
+   line. Contrast (Rule 8, computed off the tokens): the title AND the
+   sub are --celadon-label on --celadon-tint, 4.87:1 light / 5.92:1 dark
+   — the mockup's sub was --ink-secondary, which measures 3.98:1 on the
+   tint in light mode and fails, so the sub wears the label ink the
+   pre-shop banner's sub (.gro-ps-sub) already does; the tick is --spruce
+   on --celadon, 7.23:1 / 5.94:1 (Rule 1). */
+.gro-store.gro-rolled {
+  background: var(--celadon-tint);
+  border-color: var(--celadon-edge);
+  padding: 0 14px;
+}
+.gro-rolled-head {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+}
+.gro-rolled-tick {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-pill);
+  background: var(--celadon);
+  color: var(--spruce);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gro-rolled-tick svg { width: 18px; height: 18px; }
+.gro-rolled-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.gro-rolled-title {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--celadon-label);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gro-rolled-sub { font-family: var(--font-body); font-size: 13px; color: var(--celadon-label); }
+.gro-rolled-head .gro-chev { color: var(--celadon-label); }
+.gro-rolled-head .gro-chev svg { width: 18px; height: 18px; }
+.gro-rolled.is-open .gro-card-rows { border-top: 1.5px solid var(--celadon-edge); padding-bottom: 4px; }
+.gro-rolled.is-open .gro-card-rows > .gro-aisle:first-child { border-top: 0; }
+.gro-rolled .gro-aisle, .gro-rolled .gro-line { border-top-color: var(--celadon-edge); }
 /* A card's row (groLineHtml): the 22px box, the name at 15/500, the amount
    in --ink-secondary at the right, and one quiet ⋯ — the row's own actions
    (quantity, store, remove) live behind it, so a correction never costs a
@@ -4854,6 +4912,19 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .gro-dupe-merge:hover { color: var(--apricot-label-hover); }
 .gro-dupe-merge:disabled { opacity: .6; cursor: default; }
 
+/* The aisle eyebrow inside a store card (groAisleGroupsHtml; Emily's
+   Costco mockup, 2026-09-22): "PRODUCE", "MEAT & SEAFOOD" — the same
+   .gro-eyebrow the staples card wears — over its run of rows. A --hairline
+   above every eyebrow but the first in a card (or the first under a
+   big-meal trip heading, which draws its own line), and none on the row
+   directly under an eyebrow: the eyebrow is that row's separator. */
+.gro-aisle {
+  padding: 12px 0 2px;
+  border-top: 1.5px solid var(--hairline);
+}
+.gro-card-rows > .gro-aisle:first-child, .gro-trip + .gro-aisle { border-top: 0; }
+.gro-aisle + .gro-line { border-top: 0; }
+
 /* The big meal's two trips (Holidays slice 2): one quiet heading over a
    run of aisles inside a store card — "For Thanksgiving — buy by Friday".
    Ink-secondary, no accent: it's a label on the list, not a call to act. */
@@ -4868,7 +4939,7 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   font-size: 12px;
   color: var(--ink-secondary);
 }
-.gro-line + .gro-trip, .gro-staple-line + .gro-trip, .gro-rowmenu + .gro-trip { border-top: 1.5px solid var(--hairline-strong); margin-top: 6px; }
+.gro-line + .gro-trip, .gro-staple-line + .gro-trip, .gro-rowmenu + .gro-trip, .gro-freeze + .gro-trip { border-top: 1.5px solid var(--hairline-strong); margin-top: 6px; }
 
 /* ---------- Item row ---------- */
 .gro-row {
@@ -5176,6 +5247,13 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 /* The old ">=1100px wide screens" block (a wider gutter for Grocery) is gone
    (2026-09-11) — the column keeps its phone width and padding all the way
    up, per Emily's "phone in the room" decision. */
+
+/* The toast's optional icon (showToast's `opts.icon`): the tick before
+   "That's Costco done — 13 things." (groStoreDoneMoment). --celadon on the
+   dark toast, the colour a finished thing wears everywhere else: 7.34:1
+   on --toast-bg light, 4.74:1 dark (Rule 8, computed off the tokens). */
+.toast-icon { display: inline-flex; vertical-align: -4px; margin-right: 8px; color: var(--celadon); }
+.toast-icon svg { width: 18px; height: 18px; }
 
 /* The toast's optional action (see showToast's `action` arg) — today only the
    pre-shop check's "Undo". Apricot on the dark toast, same as every other
@@ -9153,7 +9231,7 @@ span.cook-week-name { cursor: default; }
 .gro-elsewhere-row .gro-staple-act { grid-area: back; }
 
 /* ===========================================================
-   Motion (Emily, 2026-09-11). Four animations in the whole app —
+   Motion (Emily, 2026-09-11). Five animations in the whole app —
    see DESIGN_SYSTEM.md §4 "Motion":
      1. Sheets slide up over a scrim that fades in; centred
         dialogs fade + scale instead of sliding.
@@ -9163,6 +9241,8 @@ span.cook-week-name { cursor: default; }
         same transitions on a second surface, not a fourth animation.
      4. A sorted row leaves SORT ALL (groSortAllLeave, shell.js; the
         2026-09-13 "row leaves the moment I sort it" ticket).
+     5. A done store card rolls up to one line (groRollUp, shell.js;
+        Emily approved it 2026-09-22, Tier 2).
    Tokens (--motion-fast/--motion-base/--motion-ease/--motion-ease-in)
    live in theme.css and collapse to 0ms under prefers-reduced-motion,
    so nothing in this section needs its own reduced-motion branch.
@@ -9318,6 +9398,37 @@ span.cook-week-name { cursor: default; }
   padding-bottom: 0;
   border-top-width: 0;
   opacity: 0;
+}
+
+/* ---- 5. A done store card rolls up (groRollUp, shell.js) ----
+   The last tick on a card, after its beat: the card's rows
+   (.gro-card-rows) fold — height pinned inline, then .is-rolled takes
+   it to 0 over --motion-base on the leaving curve, fading — and the
+   list is redrawn with the card as one line at its foot, which arrives
+   from 6px above, transparent, and settles over --motion-base
+   (.is-arriving is the opposite state groRolledArrive reflows from).
+   One motion in two halves; both tokens are 0ms under
+   prefers-reduced-motion, and groRollUp skips both classes there and
+   simply redraws. */
+.gro-card-rows.is-rolling {
+  overflow: hidden;
+  pointer-events: none;
+  box-sizing: border-box;
+  transition: height var(--motion-base) var(--motion-ease-in),
+              opacity var(--motion-base) var(--motion-ease-in);
+}
+.gro-card-rows.is-rolling.is-rolled {
+  height: 0 !important;
+  opacity: 0;
+}
+.gro-store.gro-rolled {
+  transition: opacity var(--motion-base) var(--motion-ease),
+              transform var(--motion-base) var(--motion-ease);
+}
+.gro-store.gro-rolled.is-arriving {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: none;
 }
 
 /* ---------- Desktop/tablet shell: body-level sheet widths ----------
