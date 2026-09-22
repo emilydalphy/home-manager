@@ -20,20 +20,23 @@ def test_five_screens_one_question_each():
     for i in range(1, 6):
         assert 'id="q%d"' % i in PAGE and 'id="bar-%d"' % i in PAGE
     assert "var STEP_COUNT = 5;" in PAGE
-    assert "<h1>Starting when?</h1>" in PAGE
+    # "Which days?" and the step-5 title are Emily's words (2026-09-21,
+    # boards D1 / her pick) — tests/test_intake_design_2026_09_21.py.
+    assert "<h1>Which days?</h1>" in PAGE
     assert "<h1>Any days that are different?</h1>" in PAGE
     assert "<h1>Any lunches on the go?</h1>" in PAGE
     assert "<h1>What are you in the mood for?</h1>" in PAGE
-    assert "<h1>Anything else I should plan around?</h1>" in PAGE
+    assert "<h1>Anything else you want to share for planning this week?</h1>" in PAGE
     # The "Why I'm asking" panel and the block-body sentences are gone.
     assert "Why I&rsquo;m asking" not in PAGE
     assert "Which lunches leave the house?" not in PAGE
 
 
 def test_the_skippable_screens_have_a_quiet_line_and_the_last_drafts():
-    # Step 1 always has an answer and step 4's skip is the Surprise me
-    # card, so neither has a quiet line (2026-09-21).
-    assert "var SKIP_LABELS = { 2: 'Nothing different', 3: 'Nothing on the go', 5: 'Nothing else' };" in PAGE
+    # Step 1 always has an answer, step 3's skip is the "Nothing on the go"
+    # pill (board D2) and step 4's is the Surprise me card, so none of
+    # those has a quiet line (2026-09-21).
+    assert "var SKIP_LABELS = { 2: 'Nothing different', 5: 'Nothing else' };" in PAGE
     # The quiet line advances — except while "Add a cuisine" is open, when
     # it is that screen's "Never mind" (2026-09-21, board B4a).
     assert "$('skip').addEventListener('click', function () { if (cuisineOpen) closeCuisineScreen(); else advance(); });" in PAGE

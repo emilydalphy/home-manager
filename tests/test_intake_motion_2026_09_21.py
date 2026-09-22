@@ -85,7 +85,7 @@ def _node(script: str, today: str = "2026-09-20") -> str:
         f"static now() {{ return new _RealDate('{today}T09:00:00').getTime(); }} }}\n"
         "Date = _Pinned;\n"
         "function esc(s) { return String(s == null ? '' : s); }\n"
-        + _var("START_COPY") + _var("SURPRISE_MOOD") + _var("PERIOD_MAX_DAYS") + _var("USING_ICONS") + _var("USING_TAG_WORDS")
+        + _var("START_COPY") + _var("SURPRISE_MOOD") + _var("PERIOD_MAX_DAYS") + _var("USING_ICONS") + _var("USING_DAY_PHRASES")
         + _date_helpers() + "\n"
         + script
     )
@@ -101,18 +101,21 @@ def _node(script: str, today: str = "2026-09-20") -> str:
 class TestOneQuestionAScreen:
     def test_five_steps_in_order_each_with_the_question_as_the_heading(self):
         flow = _flow()
+        # "Which days?" and the last title are the 2026-09-21 design pass
+        # (boards D1, Emily's pick) — tests/test_intake_design_2026_09_21.py.
         order = [
-            "<h1>Starting when?</h1>",
+            "<h1>Which days?</h1>",
             "<h1>Any days that are different?</h1>",
             "<h1>Any lunches on the go?</h1>",
             "<h1>What are you in the mood for?</h1>",
-            "<h1>Anything else I should plan around?</h1>",
+            "<h1>Anything else you want to share for planning this week?</h1>",
         ]
         positions = [flow.index(h) for h in order]
         assert positions == sorted(positions)
         assert "var STEP_COUNT = 5;" in PAGE
-        # Nothing restates which week: the first screen settles that.
-        for h in order:
+        # Nothing restates which week: the first screen settles that. The
+        # last title is Emily's exact wording (2026-09-21) and keeps hers.
+        for h in order[:-1]:
             assert "this week" not in h
 
     def test_the_bones_are_onboardings(self):
@@ -143,8 +146,10 @@ class TestOneQuestionAScreen:
         # The old dark tags-on-a-card look is gone from the steps.
         assert ".day-tile" not in PAGE and "--plum-panel" not in PAGE
 
-    def test_the_quiet_lines_are_the_three_and_surprise_me_left_the_foot(self):
-        assert "var SKIP_LABELS = { 2: 'Nothing different', 3: 'Nothing on the go', 5: 'Nothing else' };" in PAGE
+    def test_the_quiet_lines_are_the_two_and_surprise_me_left_the_foot(self):
+        # Two since board D2 (2026-09-21): "Nothing on the go" is a pill on
+        # the lunch screen, not a quiet line under Continue.
+        assert "var SKIP_LABELS = { 2: 'Nothing different', 5: 'Nothing else' };" in PAGE
         assert "'Surprise me'" not in _var("SKIP_LABELS")
 
     def test_the_away_card_carries_emilys_words_and_opens_the_existing_sheet(self):
@@ -183,11 +188,11 @@ class TestOneQuestionAScreen:
         # Last week's moods and cuisines.
         assert "answers.moods = (data.last_intake.moods || []).slice();" in load
         assert "prefilled.moods = true;" in load
-        assert "'I’ve ticked your usual days — I’ll keep those to food that packs cold.'" in PAGE
+        assert "'I’ve ticked your usual days — I’ll keep those to food that travels well.'" in PAGE
         assert "'Last week’s picks, unless you change them.'" in PAGE
-        # Continue on a pre-answered lunch step is one tap: the quiet line
-        # gives way once days are ticked.
-        assert "(step === 3 && answers.packed_lunch_days.length > 0)" in _extract("paintCta")
+        # Continue on a pre-answered lunch step is one tap: the pill under
+        # the days is off while days are ticked (board D2).
+        assert "$('lunch-none').classList.toggle('on', none);" in _extract("paintLunchDays")
 
     def test_the_server_tells_the_screen_last_weeks_answers(self):
         this_week = "2026-10-05"
@@ -202,8 +207,8 @@ class TestOneQuestionAScreen:
     def test_copy_passes_the_seven_rules(self):
         # Contractions, always; no dashboard labels; nothing restating the chips.
         for line in (
-            "It’s ' + weekdayName(todayIso()) + '. I’ll plan from today unless you say otherwise.",
-            "I&rsquo;ll keep those to food that packs cold.",
+            "Tap where to start, then the days you want me to plan.",
+            "I&rsquo;ll keep those to food that travels well.",
             "I&rsquo;ll pick from what you like and keep the week varied.",
             "No need to wait &mdash; the draft lands on Plan when it&rsquo;s done.",
         ):
@@ -220,14 +225,14 @@ class TestOneQuestionAScreen:
 # ==========================================================================
 
 class TestStartingWhen:
-    def test_the_first_screen_is_starting_when_with_three_chips_and_the_range_card(self):
+    def test_the_first_screen_is_which_days_with_three_chips_and_the_range_card(self):
         q1 = _section("q1")
-        assert q1.index("<h1>Starting when?</h1>") < q1.index('id="start-chips"') < q1.index('id="range-card"')
+        assert q1.index("<h1>Which days?</h1>") < q1.index('id="start-chips"') < q1.index('id="range-card"')
         assert 'id="range-words"' in q1 and 'id="range-strip"' in q1
         # The "Yesterday's already eaten" line under the strip went on
         # 2026-09-21 (Emily's call); the rule behind it (clampStart) stays.
         assert "already eaten" not in q1
-        assert "today: 'Today', tomorrow: 'Tomorrow', pick: 'Pick my own days'" in PAGE
+        assert "today: 'Today', tomorrow: 'Tomorrow', pick: 'Pick a date'" in PAGE
         # Today is outlined in apricot, and says so in a word (S6).
         assert ".dt.today { outline: 2px solid var(--apricot);" in PAGE
         assert "var dow = d === today ? 'Today' : weekdayName(d, 'short');" in PAGE
@@ -240,7 +245,7 @@ class TestStartingWhen:
         )
         opts = json.loads(out)
         assert opts["chosen"] == "today"
-        assert [o["label"] for o in opts["options"]] == ["Today · Sun 20", "Tomorrow · Mon 21", "Pick my own days"]
+        assert [o["label"] for o in opts["options"]] == ["Today · Sun 20", "Tomorrow · Mon 21", "Pick a date"]
         assert opts["options"][0]["start"] == "2026-09-20" and opts["options"][0]["days"] == 7
         assert opts["options"][1]["start"] == "2026-09-21"
 
@@ -266,7 +271,8 @@ class TestStartingWhen:
     def test_the_range_reads_in_words_with_its_day_count(self):
         assert _node("console.log(dayLabel('2026-09-20') + ' → ' + dayLabel('2026-09-26'));") == "Sun 20 → Sat 26"
         assert _node("console.log(periodRangeLabel('2026-09-20', 7));") == "Sep 20–26"
-        assert "$('range-count').textContent = count + (count === 1 ? ' day' : ' days');" in PAGE
+        # "· tap a day to drop it" beside the count since board D1 (2026-09-21).
+        assert "$('range-count').textContent = count + (count === 1 ? ' day' : ' days') + (picking ? '' : ' · ' + START_COPY.drop);" in PAGE
 
     def test_pick_my_own_days_opens_the_picker_in_place(self):
         pick = _extract("chooseStartKey")
@@ -275,7 +281,11 @@ class TestStartingWhen:
         assert "PERIOD_STRIP_DAYS" in strip and "hintBoth" in strip
         assert "var PERIOD_STRIP_DAYS = 21;" in PAGE and "var PERIOD_MAX_DAYS = 28;" in PAGE
         assert "if (step === 1) $('cta').disabled = picking && !pick.end;" in _extract("paintCta")
-        assert "if (pick.end) choosePeriod(pick.start, daysBetween(pick.start, pick.end) + 1);" in _extract("pickDay")
+        pick_day = _extract("pickDay")
+        assert "choosePeriod(pick.start, daysBetween(pick.start, pick.end) + 1);" in pick_day
+        # A finished pick closes the strip: the range shows as the days to
+        # keep or drop (board D1).
+        assert "picking = false;" in pick_day
 
     @_needs_node
     def test_the_picker_opens_showing_today_and_scrolls_only_to_what_was_tapped(self):
@@ -398,7 +408,9 @@ class TestBuildingYourWeek:
         section = _section("draft-progress")
         assert "Cooking up your week&hellip;" in section
         assert 'id="draft-eyebrow"' in section
-        assert "What I&rsquo;m using" in section and "Here&rsquo;s what I&rsquo;m building this week from:" in section
+        # "Got it", with no lead line, since board D3 (2026-09-21).
+        assert '<p class="using-eyebrow">Got it</p>' in section
+        assert "What I&rsquo;m using" not in section and "Here&rsquo;s what I&rsquo;m building this week from:" not in section
         assert "No need to wait &mdash; the draft lands on Plan when it&rsquo;s done." in section
         assert "document.body.classList.add('drafting');" in _extract("showDraftProgress")
         assert "body.drafting { background: var(--spruce);" in PAGE
@@ -463,31 +475,32 @@ class TestBuildingYourWeek:
             "moods": ["Comfort food"], "cuisines": ["Mexican"],
             "freeform": "Chicken, potatoes and veg for dinners",
         }
+        # Condensed and human since board D3 (2026-09-21) — the days as one
+        # sentence, each row an icon and a sentence; the full shape is in
+        # tests/test_intake_design_2026_09_21.py.
+        using = "\n".join(_extract(n) for n in (
+            "joinWords", "joinClauses", "sentence", "humanAttendance", "lowerFirst", "usingDaysSentence", "usingLines",
+        )) + "\n"
         script = (
-            _extract("joinWords") + "\n" + _extract("usingLines") + "\n"
+            using +
             f"const lines = usingLines({json.dumps(intake)}, (d) => weekdayName(d), true);\n"
             "console.log(JSON.stringify(lines));\n"
         )
         lines = json.loads(_node(script))
         assert lines == [
-            {"icon": "home", "text": "Friday — nobody home"},
-            {"icon": "home", "text": "Saturday — hosting guests, +3 at the table"},
-            {"icon": "bag", "text": "Lunches on the go Tuesday and Thursday"},
-            {"icon": "pot", "text": "Comfort food, Mexican"},
-            {"icon": "note", "text": "“Chicken, potatoes and veg for dinners”"},
-            {"icon": "fresh", "text": "No dinner you had last week"},
+            {"icon": "home", "text": "Friday nobody’s home and Saturday you’ve got 3 guests."},
+            {"icon": "bag", "text": "Lunches on the go Tuesday and Thursday."},
+            {"icon": "pot", "text": "Comfort food and Mexican."},
+            {"icon": "note", "text": "“Chicken, potatoes and veg for dinners”", "note": True},
+            {"icon": "star", "text": "No dinner you had last week."},
         ]
         # Untouched steps add no line; a first week has no "last week".
-        empty = json.loads(_node(
-            _extract("joinWords") + "\n" + _extract("usingLines") + "\n"
-            "console.log(JSON.stringify(usingLines({}, (d) => d, false)));"
-        ))
+        empty = json.loads(_node(using + "console.log(JSON.stringify(usingLines({}, (d) => d, false)));"))
         assert empty == []
         surprise = json.loads(_node(
-            _extract("joinWords") + "\n" + _extract("usingLines") + "\n"
-            "console.log(JSON.stringify(usingLines({moods: ['Surprise me'], cuisines: ['Thai']}, (d) => d, false)));"
+            using + "console.log(JSON.stringify(usingLines({moods: ['Surprise me'], cuisines: ['Thai']}, (d) => d, false)));"
         ))
-        assert surprise == [{"icon": "star", "text": "Surprise me — leaning Thai"}]
+        assert surprise == [{"icon": "pot", "text": "Surprise me, leaning Thai."}]
 
     def test_the_card_reads_the_saved_intake_the_planner_uses(self):
         adv = _extract("advance")
