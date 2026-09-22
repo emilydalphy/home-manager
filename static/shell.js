@@ -10815,8 +10815,9 @@
   }
 
   // The stretch "Plan next week ›" offers under a plan: the server's
-  // next_period (its start, its length, and — when it is shorter than the
-  // household's usual — the one-line reason why). The arithmetic fallback
+  // next_period (its start and its length — always the household's whole
+  // horizon, never cut short at another plan's edge, 2026-09-21). The
+  // arithmetic fallback
   // is the pre-2026-09-13 behaviour, kept only so a stale cached payload
   // still gets a working link.
   function nextPeriodFor(data, days) {
@@ -10827,7 +10828,7 @@
       (planningPeriodDefault && planningPeriodDefault.start_date) || thisWeekStartLocal();
     return {
       start_date: addDaysLocal(start, dayCount), day_count: dayCount,
-      is_current_period: false, is_planned: false, shortened_reason: null
+      is_current_period: false, is_planned: false
     };
   }
 
@@ -10867,12 +10868,10 @@
     var notes = [];
     if (data.plates_note && _dayHasPlateSides(day)) notes.push(data.plates_note);
     if (weekPlanState(data) === 'draft' && data.soft_note) notes.push(data.soft_note);
-    // Why the next stretch on offer is shorter than a week ("Sep 17–20 is
-    // already planned."), said once, right above the link it is about.
-    var next = data.next_period || {};
-    if (next.shortened_reason) {
-      notes.push(next.shortened_reason + ' Next up is ' + next.label + '.');
-    }
+    // The next stretch on offer is never shorter than the household's
+    // horizon (weekly_plan.next_period_after, 2026-09-21), so there is no
+    // "Sep 17–20 is already planned" note here any more: the intake's own
+    // warning says what re-planning held days costs, on the way in.
     if (!notes.length) return '';
     return '<div class="wk-notes">' + notes.map(function (n) {
       return '<div class="wk-note">' + escapeHtml(n) + '</div>';
@@ -14713,8 +14712,9 @@
     // "the 3 after", not "the 3 days after" — the dates line right under it
     // says which three, so the second "days" is a word that isn't earning
     // its place.
-    // A one-day stretch (a next_period shortened to one day by a plan
-    // already holding the rest) is "the day after", not "the 1 after".
+    // A one-day stretch (a household whose horizon really is one day —
+    // next_period is never cut short any more, 2026-09-21) is "the day
+    // after", not "the 1 after".
     return verb + (which === 'current' ? 'the next ' + unit : 'the ' + (dayCount === 1 ? 'day' : dayCount) + ' after');
   }
 

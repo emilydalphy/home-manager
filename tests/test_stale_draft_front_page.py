@@ -276,22 +276,38 @@ class TestFromFridayThisWeekMeansNextWeek:
         assert nudge["week_start"] == NEXT_MONDAY
         assert nudge["is_current_week"] is False
 
-    def test_an_approved_week_keeps_today_and_is_offered_next_week(self, pin_today):
+    def test_an_approved_week_is_offered_next_week_by_every_door(self, pin_today):
+        """The Friday edge (found 2026-09-21 while building the intake
+        motion, fixed the same day): with this week approved, the
+        suggestion used to stay on the current period and the today-clamp
+        turned it into Fri 11–Thu 17 — three days already approved and four
+        of the week Now and "Plan next week ›" were both offering. Now the
+        suggestion, the nudge and the link under the plan all name Sep
+        14–20, seven days. FAILED ON MAIN (start_date was FRIDAY)."""
         approved = _insert_plan(THIS_MONDAY, "approved")
         pin_today(FRIDAY)
-        # Plan shows the approved week; the planning-period default is
-        # still THIS week (not shifted to next), starting from today —
-        # never from a day already eaten (2026-09-21). The Re-plan door on
-        # a plan passes the plan's own dates, not this suggestion.
-        assert tools.get_week_menu()["weekly_plan_id"] == approved
+        menu = tools.get_week_menu()
+        assert menu["weekly_plan_id"] == approved
         suggestion = tools.suggest_planning_period()
-        assert suggestion["start_date"] == FRIDAY
-        assert suggestion["is_current_period"] is True
-        # And Now offers the week after, as NEXT WEEK — the existing flag.
+        assert suggestion["start_date"] == NEXT_MONDAY
+        assert suggestion["day_count"] == 7
+        assert suggestion["is_current_period"] is False
         nudge = tools.get_week_planning_nudge()
         assert nudge["show"] is True
         assert nudge["week_start"] == NEXT_MONDAY
         assert nudge["is_current_week"] is False
+        assert (menu["next_period"]["start_date"], menu["next_period"]["day_count"]) == (NEXT_MONDAY, 7)
+
+    def test_a_longer_approved_plan_is_followed_the_day_after_it_ends(self, pin_today):
+        # "Next" is the day after the APPROVED plan's last day, not the
+        # anchor's next Monday: a fortnight approved from Sep 7 is followed
+        # on Sep 21 — where the nudge already pointed.
+        _insert_plan(THIS_MONDAY, "approved", day_count=14)
+        pin_today(FRIDAY)
+        suggestion = tools.suggest_planning_period()
+        assert (suggestion["start_date"], suggestion["day_count"]) == ("2026-09-21", 7)
+        assert suggestion["is_current_period"] is False
+        assert tools.get_week_planning_nudge()["week_start"] == "2026-09-21"
 
     def test_an_approved_week_is_not_nudged_about_next_week_on_thursday(self, pin_today):
         _insert_plan(THIS_MONDAY, "approved")
