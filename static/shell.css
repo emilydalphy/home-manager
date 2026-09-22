@@ -7853,9 +7853,9 @@ span.cook-week-name { cursor: default; }
    the Approve button needs a little more room above it than Cook's strip
    does. Everything that makes it a dock comes from .dock. */
 .wk-decide {
-  /* Right padding clears the chat icon (see .dock); the desktop block at the
-     end of the file takes it back with the rest of the docks. */
-  padding: 14px 84px 10px 20px;
+  /* Right padding clears the chat icon (see .dock) with the one-row dock's
+     8px gap to it (.wk-dock-row: 54 + 16 + 8). */
+  padding: 14px 78px 10px 20px;
 }
 /* The Meal step's dock (mealDockHtml) on a week that isn't cooking yet —
    Check the week, a draft: "Swap · I'll pick" is the row's apricot, "Tell
@@ -8152,9 +8152,10 @@ span.cook-week-name { cursor: default; }
 .wk-freezer-text { flex: 1 1 auto; font-family: var(--font-body); font-size: 15px; font-weight: 600; line-height: 1.3; }
 .wk-freezer-chev { flex: 0 0 auto; display: inline-flex; color: var(--ink-inactive); }
 /* The approved root's dock: no apricot; "Plan next week" as an outline
-   secondary at the right, beside the chat FAB (the dock's own right
-   padding clears it). */
-.wk-root-dock { flex-direction: row; justify-content: flex-end; align-items: center; }
+   secondary at the right, then the round More (.wk-dock-more), beside the
+   chat FAB (the dock's own right padding clears it). */
+.wk-root-dock { padding-right: 78px; }  /* the row's 8px to the FAB, as .wk-decide */
+.wk-root-dock .wk-dock-row { justify-content: flex-end; }
 .wk-plan-next {
   min-height: 52px;
   padding: 0 18px;
@@ -8248,8 +8249,9 @@ span.cook-week-name { cursor: default; }
                      --ink-strong (13.5 light; in dark a --surface pill on
                      the raised spruce with --ink-strong, 12.2).
      .wk-menu-head   the eyebrow, --ink-muted on --surface (§3).
-     .wk-dock-link   the screen's one italic line (§3), --ink-secondary on
-                     --ground: 4.6 light / 7.4 dark. */
+     .wk-dock-more   --ink-strong on --surface inside a --hairline-strong
+                     ring, the outline-button vocabulary (.wk-plan-next,
+                     .wk-swap-else) as a 48px circle. */
 .wk-replan {
   position: relative;
   height: 36px;
@@ -8318,26 +8320,41 @@ span.cook-week-name { cursor: default; }
 /* Swap on the menu wears the sand, edge-less dress the carousel's does. */
 .wk-menu .wk-mini { background: var(--sand); border-color: transparent; }
 @media (hover: hover) { .wk-menu .wk-mini:hover { background: var(--sand-deep); } }
-.wk-dock-quiet {
-  display: flex;
+/* The dock as one row (Emily, 2026-09-21, board D4 — the two-row dock was
+   "too thick"): the primary fills the width, the round More sits beside
+   it, and the chat icon floats at the row's end. The quiet "Plan it
+   differently" line under Approve is gone — the band's Re-plan pill is
+   the one door to the intake.
+   Measured at 390px with the real face: "Approve · Open grocery list" is
+   214px of 17px display type. The row is 390 − 20 − 78 = 292 (.wk-decide
+   gives the FAB its 54 + 16 + the board's 8px gap, not .dock's 84):
+   More 48, the 8px gap, Approve 236 with 8px sides = 220 for the words,
+   one line. At 375 (the small phones) the button is 221 — 16px type
+   there (202px of words) rather than "Approve · Open grocery / list". A
+   longer label ("Approve anyway — I've seen the clash") still wraps to two
+   lines inside the button, as it always has (.week-approve-btn's
+   height: auto). */
+.wk-dock-row { display: flex; align-items: center; gap: 8px; }
+.wk-dock-row .week-approve-btn,
+.wk-dock-row .dock-primary { flex: 1 1 auto; width: auto; min-width: 0; }
+.wk-dock-row .week-approve-btn { padding: 10px 8px; }
+@media (max-width: 380px) { .wk-dock-row .week-approve-btn { font-size: 16px; } }
+.wk-dock-more {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--hairline-strong);
+  background: var(--surface);
+  color: var(--ink-strong);
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 2px;
-}
-.wk-dock-link {
-  min-height: 44px;
-  padding: 0 2px;
-  border: 0;
-  background: none;
+  justify-content: center;
   cursor: pointer;
-  font-family: var(--font-accent);
-  font-style: italic;
-  font-weight: 400;
-  font-size: 17px;
-  color: var(--ink-secondary);
 }
-.wk-dock-link:hover { color: var(--ink); }
+.wk-dock-more svg { width: 20px; height: 20px; }
+.wk-dock-more:hover { border-color: var(--ink-strong); }
 
 /* ---------- the freezer step ---------- */
 .wk-freezer-body { padding: 0 20px; display: flex; flex-direction: column; gap: 18px; }
@@ -8399,6 +8416,9 @@ span.cook-week-name { cursor: default; }
 #wk-swap-sheet.is-open { translate: 0 0; }
 #wk-swap-scrim[hidden], #wk-swap-sheet[hidden] { display: none; }
 #wk-swap-body { display: flex; flex-direction: column; gap: 10px; }
+/* Held at the wait's height while the picks land (swapSheetHold): the
+   spare space sits above the title, so the cards and buttons stay put. */
+#wk-swap-body.is-held { justify-content: flex-end; }
 @media (min-width: 768px) {
   #wk-swap-sheet {
     left: 50%;
@@ -8434,6 +8454,56 @@ span.cook-week-name { cursor: default; }
   color: var(--ink-secondary);
 }
 .wk-swap-trouble { color: var(--ink); }
+/* The wait (Emily, 2026-09-21, board D5): a 16px apricot ring turning
+   beside the line, and three placeholder cards below in the picks' own
+   slots. The rows inside a placeholder are the real pick's two text lines
+   at their line-heights (15px × 1.3, 13px × 1.25, gap 2 — .wk-swap-pick-*)
+   so the card is the height a pick will be (68.75px at 390, measured)
+   and the picks land in place. The placeholder is a div, so it says
+   border-box itself — as a content-box the pick's min-height would sit
+   under the padding and make it 91px.
+   The shimmer is the sand-to-surface sweep the boards drew; under
+   prefers-reduced-motion both animations stop and the placeholders sit
+   still (theme.css's blanket rule would already shorten them to nothing —
+   this says so where they live). */
+.wk-swap-wait { display: flex; align-items: center; gap: 10px; }
+/* 13px, one line at 375 and 390 (299px of words in 309 / 324 — at 14px
+   it is 322 and wraps as soon as the ring's border is counted). One line
+   is what the sheet gives back when the picks land (swapSheetHold). */
+.wk-swap-wait .wk-swap-loading { flex: 1 1 auto; min-width: 0; font-size: 13px; }
+.wk-swap-spinner {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-pill);
+  border: 2.5px solid var(--apricot);
+  border-right-color: transparent;
+  animation: wkSwapSpin .9s linear infinite;
+}
+@keyframes wkSwapSpin { to { transform: rotate(360deg); } }
+.wk-swap-skel { box-sizing: border-box; cursor: default; }
+.wk-swap-skel-row { display: flex; align-items: center; height: calc(15px * 1.3); }
+.wk-swap-skel-row-why { height: calc(13px * 1.25); }
+.wk-swap-skel-line {
+  display: block;
+  height: 14px;
+  border-radius: 7px;
+  background: linear-gradient(90deg, var(--hairline) 25%, var(--ground) 50%, var(--hairline) 75%);
+  background-size: 200% 100%;
+  animation: wkSwapShimmer 1.2s linear infinite;
+}
+.wk-swap-skel-why { height: 11px; }
+.wk-swap-skel:nth-child(1) .wk-swap-skel-name { width: 62%; }
+.wk-swap-skel:nth-child(1) .wk-swap-skel-why { width: 38%; }
+.wk-swap-skel:nth-child(2) .wk-swap-skel-name { width: 54%; }
+.wk-swap-skel:nth-child(2) .wk-swap-skel-why { width: 44%; }
+.wk-swap-skel:nth-child(3) .wk-swap-skel-name { width: 70%; }
+.wk-swap-skel:nth-child(3) .wk-swap-skel-why { width: 30%; }
+@keyframes wkSwapShimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .wk-swap-spinner, .wk-swap-skel-line { animation: none; }
+}
 .wk-swap-picks { display: flex; flex-direction: column; gap: 10px; }
 .wk-swap-pick {
   width: 100%;
@@ -8454,7 +8524,9 @@ span.cook-week-name { cursor: default; }
 .wk-swap-pick:disabled { opacity: .6; cursor: default; }
 .wk-swap-pick-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .wk-swap-pick-name { font-family: var(--font-body); font-size: 15px; font-weight: 600; line-height: 1.3; }
-.wk-swap-pick-why { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); }
+/* line-height pinned (was the font's "normal"): the placeholder rows
+   (.wk-swap-skel-row-why) are drawn at this exact height. */
+.wk-swap-pick-why { font-family: var(--font-body); font-size: 13px; line-height: 1.25; color: var(--ink-secondary); }
 .wk-swap-pick-chev { flex: 0 0 auto; display: inline-flex; color: var(--ink-inactive); }
 .wk-swap-quiet {
   width: 100%;
@@ -8624,17 +8696,16 @@ span.cook-week-name { cursor: default; }
   gap: 10px;
   padding: 6px 20px 4px;
 }
-/* weekStepHtml's own wk-foot (weekDecideHtml always returns '') and both
-   wk-foot-solo variants (weekStepHtml's "none" state, reviewStepHtml's
-   draft/set-less root) are the panel's own last child, same problem
+/* weekStepHtml's "none"-state wk-foot-solo (the approved root's More
+   moved into the dock row on 2026-09-21, board D4) is the panel's own
+   last child, same problem
    .wk-slots/.wk-meal-body/.gro-body already had: #shell-scroll has no
    bottom padding of its own, and the chat FAB floats over the scroll
    area's last ~66px from the non-scrolling strip after it (#ask-bar-dock,
    shell.html), so a trailing row with no clearance ends up under it —
    "More ···" showed only its M on a 390px phone scrolled to the bottom
-   (Loop Board 3da1f4c0-5231-81c9-8123-f230175d2310). reviewStepHtml's
-   wk-foot-solo is the one case that DOES get a real .dock after it
-   (reviewDecideHtml, for a draft/approved week) — that dock is sticky and
+   (Loop Board 3da1f4c0-5231-81c9-8123-f230175d2310). A wk-foot that DOES
+   get a real .dock after it needs none of this — that dock is sticky and
    already clears the FAB itself, so this skips it there rather than
    double-padding. 70px = the FAB's 54px + 16px inset, same formula as
    .wk-slots/.gro-body. */

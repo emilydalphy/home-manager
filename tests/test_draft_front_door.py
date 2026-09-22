@@ -10,9 +10,10 @@ against shell.js's own renderers under node:
      is three cards (Snacks when there are any), one row per dish with the
      days it covers and one fact, Swap on every row, no day notes and no
      steppers; Which days is the 2026-09-18 carousel unchanged; under both,
-     Approve · Open grocery list with "Plan it differently" and More in the
-     dock's quiet row. The toggle remembers its side for the session and a
-     new draft opens on What we're eating.
+     Approve · Open grocery list with the round More beside it in the
+     dock's one row (board D4, 2026-09-21 — the quiet "Plan it differently"
+     line went: it was the band's Re-plan pill twice). The toggle remembers
+     its side for the session and a new draft opens on What we're eating.
   3. The draft says what it did: the opener's two lines in the band, the
      stored reason one tap away on both views (never pushing rows around),
      the one fact beside the days, and the quiet mark on a day that's
@@ -133,12 +134,16 @@ console.log(JSON.stringify({{ tools: b.tools.html, calls: CALLS }}));""")
     assert out["calls"] == [["2026-09-21", 5]], "the plan's own start and length"
 
 
-def test_the_pill_and_the_quiet_line_are_the_one_road_and_re_plan_left_the_more_sheet():
+def test_the_pill_is_the_one_road_and_re_plan_left_the_more_sheet():
+    """Since 2026-09-21 (board D4) the dock's quiet "Plan it differently"
+    is gone too — it was the pill under a second name — so the pill is the
+    only caller of replanWeek."""
     fill = _extract("fillWeekBandExtras", SHELL_JS)
     assert "tools.insertAdjacentHTML('afterbegin', weekReplanPillHtml())" in fill
     assert "pill.addEventListener('click', function () { replanWeek(); })" in fill
     wiring = _extract("wireMealsStep", SHELL_JS)
-    assert "differently.addEventListener('click', function () { replanWeek(); })" in wiring
+    assert "'#wk-plan-differently'" not in wiring and ">Plan it differently<" not in SHELL_JS
+    assert SHELL_JS.count("{ replanWeek(); }") == 1, "one door: the band's pill"
     replan = _extract("replanWeek", SHELL_JS)
     assert "startPlanningWeek(start, dayCount)" in replan
     sheet = _extract("renderMealsMoreSheet", SHELL_JS)
@@ -247,9 +252,9 @@ def test_what_were_eating_is_one_card_per_meal_type_with_the_days_and_one_fact_a
     # No day notes, no steppers, no head line, no carousel.
     for gone in ("Out — nothing to cook", "wk-card-tags", "rv-step", "data-rv-", "wk-carousel", "wk-daytab", "7 meals", 'id="wk-help"'):
         assert gone not in html, gone
-    # Under it: Approve, the quiet line and More, in the dock.
+    # Under it: Approve and the round More, one row in the dock.
     assert 'id="week-approve-btn">Approve · Open grocery list</button>' in html
-    assert 'id="wk-plan-differently">Plan it differently</button>' in html
+    assert "Plan it differently" not in html
     assert 'id="wk-more"' in html and html.index("wk-decide dock") < html.index('id="wk-more"')
 
 
@@ -261,7 +266,7 @@ def test_which_days_is_the_carousel_as_built_with_the_same_dock_under_it():
     assert 'id="wk-carousel"' in html and html.count('data-wk-card="') == 3 and html.count("data-wk-daytab=") == 3
     assert "wk-menu" not in html
     assert 'id="week-approve-btn">Approve · Open grocery list</button>' in html
-    assert 'id="wk-plan-differently">Plan it differently</button>' in html and 'id="wk-more"' in html
+    assert "Plan it differently" not in html and 'id="wk-more"' in html
     # A row's fact rides beside its minutes here too.
     assert ">33 min · Mexican, as asked<" in html
 
@@ -279,15 +284,16 @@ def test_a_tap_inside_a_menu_row_is_about_the_dishs_first_day_ahead():
     assert out == [_WED, 2]
 
 
-def test_the_toggle_and_the_quiet_line_follow_the_system():
+def test_the_toggle_and_the_dock_more_follow_the_system():
     seg = SHELL_CSS[SHELL_CSS.index(".wk-draft-seg-btn {"):SHELL_CSS.index("}", SHELL_CSS.index(".wk-draft-seg-btn {"))]
     assert "min-height: 44px" in seg, "rule 6 — the board's 38px is not a tap target"
     assert ".wk-draft-seg-btn.is-on { background: var(--surface); color: var(--ink-strong); }" in SHELL_CSS
     track = SHELL_CSS[SHELL_CSS.index(".wk-draft-seg {"):SHELL_CSS.index("}", SHELL_CSS.index(".wk-draft-seg {"))]
     assert "background: var(--spruce-raised)" in track, "chips on spruce only"
-    link = SHELL_CSS[SHELL_CSS.index(".wk-dock-link {"):SHELL_CSS.index("}", SHELL_CSS.index(".wk-dock-link {"))]
-    assert "min-height: 44px" in link and "font-family: var(--font-accent)" in link
-    section = SHELL_CSS[SHELL_CSS.index("The draft's front door"):SHELL_CSS.index(".wk-dock-link:hover")]
+    more = SHELL_CSS[SHELL_CSS.index(".wk-dock-more {"):SHELL_CSS.index("}", SHELL_CSS.index(".wk-dock-more {"))]
+    assert "width: 48px" in more and "height: 48px" in more, "rule 6, with room to spare"
+    assert "border-radius: var(--radius-pill)" in more
+    section = SHELL_CSS[SHELL_CSS.index("The draft's front door"):SHELL_CSS.index(".wk-dock-more:hover")]
     assert re.search(r":\s*#[0-9a-fA-F]{3,6}\b", section) is None, "every colour goes through a token"
 
 
@@ -335,7 +341,7 @@ def test_a_day_thats_different_carries_a_quiet_mark_on_which_days():
 
 def test_the_words_pass_the_seven_rules():
     """Contractions, the thing not the feature, no dashboard labels."""
-    for literal in ("Here’s your week.", "What we’re eating", "Which days", "Plan it differently", "Re-plan",
+    for literal in ("Here’s your week.", "What we’re eating", "Which days", "Re-plan",
                     "Need a hand?", "your turn"):
         assert literal in SHELL_JS, literal
     assert "'a draft, your turn'" not in SHELL_JS, "the chip already says Draft"

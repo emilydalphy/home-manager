@@ -11266,8 +11266,9 @@
     });
   }
 
-  // The one road into re-planning — the band's pill and the dock's quiet
-  // "Plan it differently" both come here: the intake for the week on
+  // The one road into re-planning — the band's Re-plan pill (the dock's
+  // quiet "Plan it differently" said the same thing twice and went on
+  // 2026-09-21, board D4): the intake for the week on
   // screen, its own length, with the answers it was last drafted from
   // already in place (static/plan-week.html prefills from the current
   // intake revision), so re-planning is changing what's different.
@@ -11403,13 +11404,10 @@
       weekStripHtml(days, selected) +
       (days[selected] ? weekDayHtml(days[selected], selected, data) : '') +
       weekNotesHtml(data, days[selected]) +
-      // Everything rare is one tap away and nothing rare is on the page.
-      // ABOVE the dock (rule 2): a sticky strip's flow position has to be
-      // the end of the screen. Rule 2 puts rare actions behind the "···"
-      // rather than beside the dock's button.
-      '<div class="wk-foot wk-foot-solo">' +
-        '<button type="button" class="wk-foot-more" id="wk-more" aria-haspopup="dialog">More ···</button>' +
-      '</div>' +
+      // Everything rare is one tap away and nothing rare is on the page:
+      // the rare actions sit behind the dock's round More (weekDecideHtml,
+      // since 2026-09-21 board D4 — the same one-row dock as the draft's),
+      // no longer in a quiet row of their own above the dock.
       weekDecideHtml(data, next);
   }
 
@@ -11479,16 +11477,21 @@
 
   // The approved root's dock (Emily, 2026-09-18, board 19): no apricot —
   // nothing on a settled week is the one thing to press — and "Plan next
-  // week" as an outline secondary at the right, beside the chat FAB. A
-  // draft's root is the review (reviewDecideHtml carries its Approve), and
-  // an empty Plan has the plan-a-week entry, so neither reaches here.
+  // week" as an outline secondary at the right, then the round More
+  // (board D4, 2026-09-21: one row, the same shape as the draft's dock),
+  // beside the chat FAB. A draft's root is the review (reviewDecideHtml
+  // carries its Approve), and an empty Plan has the plan-a-week entry, so
+  // neither reaches here.
   function weekDecideHtml(data, next) {
     if (weekPlanState(data) !== 'set') return '';
     next = next || {};
     return '<div class="dock wk-root-dock">' +
-      '<button type="button" class="wk-plan-next" id="wk-plan-next">' +
-        escapeHtml(planEntryLabel(next.day_count || 7, next.is_current_period ? 'current' : 'next', next.is_planned)) +
-      '</button>' +
+      '<div class="wk-dock-row">' +
+        '<button type="button" class="wk-plan-next" id="wk-plan-next">' +
+          escapeHtml(planEntryLabel(next.day_count || 7, next.is_current_period ? 'current' : 'next', next.is_planned)) +
+        '</button>' +
+        wkDockMoreHtml() +
+      '</div>' +
     '</div>';
   }
 
@@ -11522,6 +11525,9 @@
     snow: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" ' +
       'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M12 3l-2 2M12 3l2 2M12 21l-2-2M12 21l2-2"/></svg>',
+    // The round More in the dock (rule 7, the filled-shape form, like the Plan tab dots).
+    more: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" stroke="none" aria-hidden="true">' +
+      '<circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
     help: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" ' +
       'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17h.01"/></svg>',
@@ -11932,9 +11938,9 @@
         ? '<div class="wk-notes"><div class="wk-note">' + escapeHtml(weekReplacesNote(data)) + '</div></div>'
         : '') +
       // The draft's rare actions — "Try again", "Change my answers" — sit
-      // behind "More ···", which since 2026-09-21 rides in the dock's
-      // quiet row beside "Plan it differently" (reviewDecideHtml). The
-      // deeper, approved-week form has its crumb and needs no foot.
+      // behind the dock's round More, beside Approve (reviewDecideHtml,
+      // board D4). The deeper, approved-week form has its crumb and needs
+      // no More of its own.
       reviewDecideHtml(data);
   }
 
@@ -12028,6 +12034,14 @@
   // goAfterWeekSet). An approved week's dock reads "Open grocery list"
   // and takes the same road minus the approval: the freezer step if it
   // has not been answered for this plan, else straight to the list.
+  //
+  // One row (Emily, 2026-09-21, board D4 — "too thick"): the primary
+  // fills the width, the round More (wkDockMoreHtml) sits beside it, and
+  // the chat icon floats at the row's end. The quiet "Plan it differently"
+  // line is gone — it was the band's Re-plan pill under a second name
+  // (both called replanWeek), and the pill stays the one door to the
+  // intake. More keeps the rarer things (Try again, Change my answers,
+  // Drop this draft, See the whole week, Adjust your setup, Start over).
   function reviewDecideHtml(data) {
     var state = weekPlanState(data);
     var inner = '';
@@ -12035,27 +12049,29 @@
       inner = '<button type="button" class="dock-primary" id="wk-review-go">Open grocery list</button>';
     } else if (state === 'draft') {
       var openCount = countOpenSlots(data);
-      inner = '<button type="button" class="btn-gold week-approve-btn" id="week-approve-btn">' +
-          (openCount
-            ? escapeHtml(approveWithOpenLabel(data, openCount))
-            : 'Approve · Open grocery list') +
-        '</button>' +
+      inner = '<div class="wk-dock-row">' +
+          '<button type="button" class="btn-gold week-approve-btn" id="week-approve-btn">' +
+            (openCount
+              ? escapeHtml(approveWithOpenLabel(data, openCount))
+              : 'Approve · Open grocery list') +
+          '</button>' +
+          wkDockMoreHtml() +
+        '</div>' +
         // Empty and hidden until "Try again" is tapped in the More sheet —
         // the rebuild is a ~30-second call, and the rotating waiting line
         // (static/waiting-lines.js) has to be on the page you are looking at.
-        '<div class="week-redo-waiting waiting-line" id="week-redo-waiting" hidden></div>' +
-        // Under Approve, quietly (Emily, 2026-09-21, boards A2/C2): "Plan
-        // it differently" opens the intake with last time's answers in
-        // place — the same road as the band's Re-plan pill — and "More ···"
-        // keeps the rarer things (Try again, Change my answers, Drop this
-        // draft, See the whole week, Adjust your setup, Start over).
-        '<div class="wk-dock-quiet">' +
-          '<button type="button" class="wk-dock-link" id="wk-plan-differently">Plan it differently</button>' +
-          '<button type="button" class="wk-foot-more" id="wk-more" aria-haspopup="dialog">More ···</button>' +
-        '</div>';
+        '<div class="week-redo-waiting waiting-line" id="week-redo-waiting" hidden></div>';
     }
     if (!inner) return '';
     return '<div class="wk-decide dock">' + inner + '</div>';
+  }
+
+  // The dock's More: a 48px round icon button (three dots), the same
+  // #wk-more that wireMealsStep opens the More sheet from. Rule 6's 44px
+  // with room to spare; the label is for the reader, the dots for the eye.
+  function wkDockMoreHtml() {
+    return '<button type="button" class="wk-dock-more" id="wk-more" aria-haspopup="dialog" aria-label="More">' +
+      WK_ICONS.more + '</button>';
   }
 
   // Where an approved week goes from "Open grocery list" (Check the week,
@@ -12191,6 +12207,44 @@
       });
   }
 
+  // What the wait says (Emily, 2026-09-21, board D5 — she almost clicked
+  // away from a bare "Finding three…" line): the typical /swap-options
+  // time, in seconds, read by swapWaitLine. Railway's log has the call at
+  // 10.5–13 s before the picks-not-recipes change (commit 4838c73, which
+  // logs "picks kept and seconds" per call) and a few seconds since; set
+  // this to what that line typically reads now, and the sheet follows.
+  var SWAP_WAIT_SECONDS = 10;
+
+  // "about ten seconds" — the number in words for the ones a wait can
+  // reasonably be, digits past that.
+  function swapWaitLine() {
+    var words = { 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five', 6: 'six', 7: 'seven', 8: 'eight',
+      9: 'nine', 10: 'ten', 12: 'twelve', 15: 'fifteen', 20: 'twenty', 30: 'thirty' };
+    var n = SWAP_WAIT_SECONDS;
+    var word = words[n] || String(n);
+    return 'Finding three you could have — about ' + word + (n === 1 ? ' second.' : ' seconds.');
+  }
+
+  // The wait (board D5): a small spinner and the line, then three
+  // placeholder cards in the picks' own container — the same .wk-swap-pick
+  // box at a pick's exact height, so when the picks come back
+  // (drawSwapSheet, with swapSheetHold keeping the sheet's height) they
+  // land where the placeholders were. The shimmer is CSS
+  // (.wk-swap-skel-line) and goes still under prefers-reduced-motion.
+  function swapWaitHtml() {
+    var card = '<div class="wk-swap-pick wk-swap-skel" aria-hidden="true">' +
+      '<span class="wk-swap-pick-text">' +
+        '<span class="wk-swap-skel-row"><span class="wk-swap-skel-line wk-swap-skel-name"></span></span>' +
+        '<span class="wk-swap-skel-row wk-swap-skel-row-why"><span class="wk-swap-skel-line wk-swap-skel-why"></span></span>' +
+      '</span>' +
+    '</div>';
+    return '<div class="wk-swap-wait" role="status">' +
+        '<span class="wk-swap-spinner" aria-hidden="true"></span>' +
+        '<p class="wk-swap-loading">' + escapeHtml(swapWaitLine()) + '</p>' +
+      '</div>' +
+      '<div class="wk-swap-picks wk-swap-picks-waiting">' + card.repeat(SWAP_PLACEHOLDERS) + '</div>';
+  }
+
   // One pick as /swap-options hands it out: {index, meal, reason, minutes}
   // — the index is what /swap-choose wants back.
   function swapPickHtml(opt) {
@@ -12235,7 +12289,7 @@
     if (st.trouble) {
       picks = '<p class="wk-swap-trouble">' + escapeHtml(st.trouble) + '</p>';
     } else if (!st.options) {
-      picks = '<p class="wk-swap-loading">Finding three you could have instead…</p>';
+      picks = swapWaitHtml();
     } else {
       picks = '<div class="wk-swap-picks">' + st.options.map(swapPickHtml).join('') + '</div>';
     }
@@ -12250,11 +12304,42 @@
       '<button type="button" class="wk-swap-else" id="wk-swap-tell">Something else — tell me</button>';
   }
 
+  // The sheet keeps its waiting height while the picks land (board D5,
+  // "same positions, no jump"): the wait line above the placeholders goes
+  // when the picks arrive, and in a sheet pinned to the bottom of the
+  // screen that alone would move every card down by the line's height.
+  // Held at the height the wait drew — the spare space goes above the
+  // title (#wk-swap-body.is-held) — the cards and the buttons stay exactly
+  // where the placeholders were. Only when as many picks land as there
+  // were placeholders (SWAP_PLACEHOLDERS): the server's gate can hand back
+  // one or two (swap_options._gated, after the dedup and the allergen
+  // pass), and holding three cards' height over one would leave the pick
+  // and the buttons at the bottom of a mostly empty sheet — fewer picks
+  // sit at the top at their own height. Released for every other state
+  // too (nothing found, the move view): those are shorter on purpose.
+  // Measured only once the sheet is showing (openSwapSheet calls this
+  // after openSheet; a hidden sheet measures 0 and is skipped).
+  var SWAP_PLACEHOLDERS = 3;
+
+  function swapSheetHold(st) {
+    var body = document.getElementById('wk-swap-body');
+    if (!st || !body) return;
+    var waiting = st.view === 'picks' && !st.options && !st.trouble;
+    var landed = st.view === 'picks' && !!st.options && !st.trouble &&
+      st.options.length === SWAP_PLACEHOLDERS;
+    if (waiting && body.offsetHeight) st.holdHeight = body.offsetHeight;
+    else if (!landed) st.holdHeight = 0;
+    var hold = landed && st.holdHeight ? st.holdHeight : 0;
+    body.style.minHeight = hold ? hold + 'px' : '';
+    body.classList.toggle('is-held', !!hold);
+  }
+
   function drawSwapSheet() {
     var st = swapSheetState;
     var body = document.getElementById('wk-swap-body');
     if (!st || !body) return;
     body.innerHTML = swapSheetBodyHtml(st);
+    swapSheetHold(st);
     body.querySelectorAll('[data-wk-swap-pick]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         runSwapPick(Number(btn.getAttribute('data-wk-swap-pick')));
@@ -12290,11 +12375,13 @@
     closeAskSheet();
     swapSheetState = {
       panel: panel, day: day, date: day.date, slot: slot, entry: entry, entryId: entry.entry_id,
-      name: mealDisplayName(entry), weekStart: weekStart, options: null, trouble: '', busy: false, view: 'picks'
+      name: mealDisplayName(entry), weekStart: weekStart, options: null, trouble: '', busy: false, view: 'picks',
+      holdHeight: 0
     };
     var thisOpen = swapSheetState;
     drawSwapSheet();
     openSheet(swapSheetEl, swapScrimEl);
+    swapSheetHold(thisOpen);
     try {
       var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-options', {
         method: 'POST',
@@ -13881,8 +13968,6 @@
         if (pop && pop.classList.contains('wk-why-pop')) pop.hidden = false;
       });
     });
-    var differently = steps.querySelector('#wk-plan-differently');
-    if (differently) differently.addEventListener('click', function () { replanWeek(); });
     wireReviewCarousel(panel, steps);
     // "Everything out" opens to the amounts, in a person's units, and
     // closes again — a read, never a write, so it stays on this screen.
@@ -14549,7 +14634,7 @@
 
   // Re-plan and the custom-range picker left this sheet on 2026-09-21
   // (Emily: "the option to re-plan is really hidden"): re-planning is the
-  // band's pill and the dock's "Plan it differently" (replanWeek), and
+  // band's pill (replanWeek), and
   // picking your own days is the intake's first question. What stays is
   // the rare: Try again, Change my answers, Drop this draft, Reopen,
   // Check the week, See the whole week, Adjust your setup, Start over —

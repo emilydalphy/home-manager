@@ -105,6 +105,7 @@ def _prelude() -> str:
         + _extract("reviewOpenIndex", SHELL_JS) + "\n"
         + _extract("reviewStepHtml", SHELL_JS) + "\n"
         + _extract("reviewDecideHtml", SHELL_JS) + "\n"
+        + _extract("wkDockMoreHtml", SHELL_JS) + "\n"
         + _extract("weekDecideHtml", SHELL_JS) + "\n"
         + _extract("weekSnackTileHtml", SHELL_JS) + "\n"
         + _extract("weekSnacksHtml", SHELL_JS) + "\n"
@@ -119,6 +120,10 @@ def _prelude() -> str:
         + _extract("defrostMeaningHtml", SHELL_JS) + "\n"
         + _extract("freezerStepHtml", SHELL_JS) + "\n"
         + _extract("swapMoveOptions", SHELL_JS) + "\n"
+        + _extract_var("SWAP_WAIT_SECONDS", SHELL_JS) + "\n"
+        + _extract_var("SWAP_PLACEHOLDERS", SHELL_JS) + "\n"
+        + _extract("swapWaitLine", SHELL_JS) + "\n"
+        + _extract("swapWaitHtml", SHELL_JS) + "\n"
         + _extract("swapPickHtml", SHELL_JS) + "\n"
         + _extract("swapSheetTitle", SHELL_JS) + "\n"
         + _extract("swapSheetBodyHtml", SHELL_JS) + "\n"
@@ -526,7 +531,7 @@ def test_the_move_view_lists_the_other_nights_and_a_breakfast_has_no_move_line()
     assert "Lemon chicken &amp; orzo" in move and "Your call" in move
     assert 'id="wk-swap-back"' in move
     assert "wk-swap-move" not in breakfast, "only a dinner moves between nights"
-    assert "Finding three you could have instead…" in breakfast
+    assert "Finding three you could have — about ten seconds." in breakfast, "the wait line (board D5, 2026-09-21)"
 
 
 def test_the_swap_sheet_is_a_sheet_and_the_picks_go_through_week_ones_routes():
@@ -556,7 +561,8 @@ def test_the_approved_root_has_no_apricot_and_plan_next_week_at_the_right():
     assert 'id="wk-plan-next">Plan next week</button>' in approved
     assert "dock-primary" not in approved and "btn-gold" not in approved
     assert draft == "", "a draft's root is the review, which carries Approve"
-    dock = SHELL_CSS[SHELL_CSS.index(".wk-root-dock {"):SHELL_CSS.index("}", SHELL_CSS.index(".wk-root-dock {"))]
+    # Since 2026-09-21 (board D4) the row also carries the round More.
+    dock = SHELL_CSS[SHELL_CSS.index(".wk-root-dock .wk-dock-row {"):SHELL_CSS.index("}", SHELL_CSS.index(".wk-root-dock .wk-dock-row {"))]
     assert "justify-content: flex-end" in dock
     btn = SHELL_CSS[SHELL_CSS.index(".wk-plan-next {"):SHELL_CSS.index("}", SHELL_CSS.index(".wk-plan-next {"))]
     assert "background: transparent" in btn and "border: 1.5px solid var(--hairline-strong)" in btn and "apricot" not in btn
