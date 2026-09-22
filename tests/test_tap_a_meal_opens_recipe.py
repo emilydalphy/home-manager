@@ -847,9 +847,16 @@ def _seed_week_for_swap():
     """
     from datetime import date, timedelta
 
+    from conftest import household_today
+
     from app import tools
 
-    today = date.today()
+    # The HOUSEHOLD's Monday. "A week containing today" has to mean the day
+    # the app calls today: under a straddling timezone the process's Monday
+    # can be LAST week's, and then retire_expired_drafts has already retired
+    # the plan this test's premise depends on — the very failure the
+    # docstring above describes, arriving by a different route.
+    today = household_today()
     monday = (today - timedelta(days=today.weekday())).isoformat()
     tuesday = (date.fromisoformat(monday) + timedelta(days=1)).isoformat()
     plan = tools.create_weekly_plan(week_start_date=monday)

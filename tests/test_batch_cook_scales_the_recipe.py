@@ -31,12 +31,18 @@ import datetime
 
 import pytest
 
+from conftest import household_today
+
 from app import tools
 from app.tools import weekly_plan as _weekly_plan
 
 
 def _monday() -> datetime.date:
-    today = datetime.date.today()
+    # The HOUSEHOLD's Monday, not the process's: the seeded week has to be
+    # the week the app thinks it is in. Only wrong when the two clocks fall
+    # either side of a Monday, so it fails one day in seven and reads as a
+    # flake — see conftest.household_today.
+    today = household_today()
     return today - datetime.timedelta(days=today.weekday())
 
 

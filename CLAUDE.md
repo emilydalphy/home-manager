@@ -415,6 +415,162 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-22 — Eight test files seeded their week off the PROCESS's clock.
+  The card's COUNT was right and its FREQUENCY was wrong: the straddle job is
+  red one day in seven, not seven hours of every day. Branch
+  `overnight/straddle-seeds-household-clock`, NOT merged at the time of
+  writing. TEST-ONLY — `git diff app/ static/` is empty.** Loop Board bug,
+  Phase 0: the residue the 2026-09-21 `far-date-pin-cliffs` entry filed when it
+  measured `main` at 13 failed under a verified `Pacific/Niue` straddle and
+  correctly left it out of scope.
+  - **THE FREQUENCY CORRECTION, measured rather than reasoned, and it is the
+    finding worth keeping.** Every one of the eight seeds "the Monday of this
+    week" off `date.today()`. A straddle only puts the two clocks in different
+    MONDAY-WEEKS when it falls either side of a Monday; on the other six days
+    they share a Monday and the wrong clock gives the right answer. Probed by
+    setting `households.timezone` and freezing at chosen instants, both
+    directions:
+
+    | process | household | process Monday | household Monday | delta |
+    |---|---|---|---|---|
+    | Sun 09-20 | Mon 09-21 | 09-14 | 09-21 | **+7d** |
+    | Mon 09-21 | Tue 09-22 | 09-21 | 09-21 | 0 |
+    | Wed 09-23 | Thu 09-24 | 09-21 | 09-21 | 0 |
+    | Mon 09-21 | Sun 09-20 | 09-21 | 09-14 | **−7d** |
+    | Tue 09-22 | Mon 09-21 | 09-21 | 09-21 | 0 |
+
+    So the seven-hour Niue window the `far-date-pin-cliffs` entry measured is
+    real and its "green the other seventeen hours" is right, but reading it as
+    seven hours of EVERY day is not: it is seven hours of the Sunday→Monday
+    crossing. **Corroborated by that entry's own figure against today's**: it
+    measured 13 failed inside the window on 2026-09-20/21 (Sun/Mon — the
+    crossing); the same files inside today's window, 2026-09-21/22 (Mon/Tue —
+    not a crossing), read **2 failed / 251 passed**, and both of those are a
+    separate weekday cliff with no straddle in it. Same zone, same window,
+    different weekday, red against green.
+  - **A file can seed off the wrong clock for months and be caught on one
+    weekday**, which is why the rule is to use `conftest.household_today()`
+    even where `date.today()` is demonstrably passing today. That is now
+    written beside `household_today` itself rather than seven times over at
+    the call sites.
+  - **The fix keeps the Monday-of-the-week SHAPE and changes only the clock.**
+    `today = household_today()` in each helper, so MON is still a Monday and
+    no weekday branch can move under it — deliberately not "seed off today",
+    which is what broke `clock (saturday)` on 2026-09-17 when a Monday anchor
+    became "today" and `swap_in_place._minutes_cap`'s `weekday < 5` had no
+    weekday in any assertion. All four CI pins were run.
+  - **`test_planning_periods.py` was already half-converted** (its two
+    `suggest_planning_period` assertions moved to `household_date()` earlier);
+    its `_monday()` and two inline reads had not.
+  - **THE PIN CANNOT REPRODUCE THIS ON A NON-UTC PROCESS, and the reason
+    changed one tree ago.** Before `pin-hour-household-clock`, freezegun added
+    `tz_offset` on top of an already-aware conversion, so under any pin
+    `household_today()` collapsed onto the process's date and no pin could
+    straddle at all. `_fg_aware_now` closed that. What remains is narrower: a
+    pin is the process's LOCAL wall clock, so at `TZ=America/Toronto` — which
+    is what the four `clock` jobs use — both clocks land on the same date and
+    the pinned jobs stay blind to this class. At `TZ=UTC` a pin does straddle,
+    which is how the reproduction below was driven. Recorded because the older,
+    broader statement was true when it was written and is not now.
+  - **THE REPRODUCTION is production's own configuration**: `TZ=UTC
+    --today=2026-09-21T02:00` is a UTC container against a Toronto household in
+    the Toronto evening, on the one night it crosses a Monday. The eight files
+    there: **3 failed on `main`, 0 of them after** (control `--today=
+    2026-09-22T02:00`, Tue/Mon: 0 before, 0 after). In the other direction —
+    household AHEAD, the Niue CI shape, reproduced with a throwaway uncommitted
+    conftest hook — `main` is **11 failed across all eight files**, which is the
+    card's ~13 once `test_plan_chores.py` is excluded. So the card's count is
+    right and only its frequency was wrong.
+  - **AN APP BUG THE RE-SEED UNCOVERED, PROVEN AND DELIBERATELY NOT FIXED
+    HERE — `app/tools/grocery.py:1259`.** Not one of the eight turning out to
+    be an app bug: a separate defect the fix made visible.
+    `set_aside_carried_over_items` decides "has this plan's period STARTED"
+    with `date.today()` while `plan_period()` start dates are household-
+    relative. The re-seed moved a seeded plan from a week out to the
+    household's TOMORROW, and two `TestTakeoverIsAtomic` tests that had never
+    failed began to. Proved by pointing that ONE line at
+    `cooker.household_today()` and changing nothing else: `TestTakeoverIsAtomic`
+    2 failed → **5 passed**, the eight files at the crossing 2 failed → **253
+    passed**; then reverted, and `git diff app/` is empty. Its own docstring is
+    the specification it breaks ("a plan that hasn't begun yet is not a
+    leftover … asking them to keep-or-drop it would be asking about groceries
+    nobody has had the chance to buy"). Reachable in production's own
+    direction, from 20:00 Toronto. `grocery.py` is one of the two reads the
+    2026-09-18 `last-clock-pockets` AST sweep named and left; this is a
+    reproduction for one of them. Its own card.
+  - **TWO OF THE FOUR PINNED `clock` JOBS ARE RED ON `main`, by two different
+    roots, and neither is this branch's.** `clock (friday)`:
+    `test_weekly_plan_last_clock_reads.py::TestTheWeekTheAppOffers::
+    test_the_monday_anchored_default_still_starts_on_a_monday` (measured
+    wed/thu/fri, passes mon/tue/sat/sun). `clock (sunday)`:
+    `test_shop_freezing_it.py::test_a_meal_too_close_to_thaw_for_is_not_
+    offered_and_a_yes_is_refused` (sunday only; a Mon-start week plus a meal on
+    "tomorrow", which on a Sunday falls off the end and trips `plan_meal`'s
+    period guard). Both are weekday cliffs, both fail at `TZ=America/Toronto`
+    where the two clocks agree, so neither is the straddle class. Both fixed on
+    `overnight/anchored-suggestion-weekday-cliff`; they are subtracted
+    per-weekday below, never as a flat constant.
+  - **THE MATRIX HAS TWO BLIND SPOTS, NOT ONE, and that is a finding about the
+    tripwire rather than about these eight files.** The `clock` jobs pin four
+    weekdays of seven — monday, friday, saturday, sunday — so tue/wed/thu are
+    never exercised, which is where the `test_planning_periods` cliff lives and
+    why it shipped. And every pin runs at `TZ=America/Toronto`, where a pin
+    cannot straddle, so no pinned job can see the class this branch is about.
+    `.github/workflows/tests.yml` is deliberately UNTOUCHED — three more full
+    suites per PR is Emily's call.
+  - **EVERY FILE'S MUTATION WAS RUN, so none of the eight went green by asking
+    less.** Clean → mutated, whole file, `TZ=America/Toronto`:
+    `set_prep_days` drops the days 41→**22 red**; `set_cook_ahead` covers no
+    other night 18→**12**; `_scale_card_to_batch` never scales 30→**20**;
+    `drop_grocery_item_pre_shop` a no-op 15→**1**; `household_id()` always 1
+    29→**16**; `get_cooker_view` ignoring a named plan 15→**3**;
+    `plan_period` always a Monday week (2 pre-existing)→**31**;
+    `dishTargetForName` handing back the recorded target 35→**3**. The
+    pre-shop one is the thinnest at a single red and is named as such rather
+    than rounded up. `app/` and `static/` were restored after each.
+  - **Numbers, all read off the runs, BEFORE on `e5e8e9b` and AFTER on this
+    branch, with the three pre-existing failures named and subtracted
+    per-weekday rather than as a flat constant.** Every run identical
+    before and after; no test added, deleted or weakened (6213 collected
+    either side).
+
+    | run | before | after | the failures, which are not this branch's |
+    |---|---|---|---|
+    | `Pacific/Niue`, unpinned | 2F / 6211P | 2F / 6211P | the anchor cliff ×2 |
+    | `America/Toronto`, unpinned | 2F / 6211P | 2F / 6211P | the anchor cliff ×2 |
+    | `--today=monday` | 0F / 6210P / 3S | 0F / 6210P / 3S | — |
+    | `--today=friday` | 1F / 6209P / 3S | 1F / 6209P / 3S | `test_weekly_plan_last_clock_reads` |
+    | `--today=saturday` | 0F / 6210P / 3S | 0F / 6210P / 3S | — |
+    | `--today=sunday` | 1F / 6209P / 3S | 1F / 6209P / 3S | `test_shop_freezing_it` |
+    | `Pacific/Kiritimati`, unpinned | 2F / 6211P | 2F / 6211P | the anchor cliff ×2 |
+    | `Asia/Tokyo`, unpinned | 2F / 6211P | 2F / 6211P | the anchor cliff ×2 |
+
+    **WHICH OF THOSE WERE REAL STRADDLES, said rather than implied.** Only
+    `Pacific/Niue` — Niue 2026-09-21 Mon against Toronto 2026-09-22 Tue,
+    `date +%F` checked on both zones BEFORE and AFTER each run (08:25:06 →
+    08:31:08 UTC). `Kiritimati` and `Tokyo` both read 2026-09-22, Toronto's
+    own date, at the hour they ran: green-in-that-zone evidence and NOT
+    straddle evidence. They straddle Toronto later in its day (Kiritimati is
+    18h ahead, Tokyo 13h) and this session could not reach that hour. "A
+    timezone is not a straddle" is this log's own lesson and it is honoured
+    here rather than quoted.
+    **The Niue run shows no improvement, and that is the prediction rather
+    than a disappointment**: today's straddle is Mon/Tue, not a Monday
+    crossing, so by this entry's own arithmetic the seeds agreed either way.
+    The improvement is at the crossing, measured separately below.
+  - **THE CROSSING, where the change actually shows, current tree, the eight
+    files at `TZ=UTC --today=2026-09-21T02:00`:** `main` **3 failed / 250
+    passed** (all three in `test_meal_opens_the_same_way_everywhere.py`),
+    this branch **2 failed / 251 passed** — and those two are the
+    `grocery.py` app bug above, not a seed; with that one line pointed at the
+    household's clock it is **253 passed**. At the Tue/Mon control both trees
+    are 253 passed.
+  - **Not done, deliberately:** the ~95 other files carrying `date.today()`
+    were not swept (the 2026-09-15 entry's reasoning is unchanged — rewriting
+    95 files to fix eight is churn with its own bugs in it, and the straddle
+    job is what finds the next one); `.github/workflows/tests.yml` is
+    untouched; and neither of the two pre-existing weekday cliffs was fixed
+    here, both being somebody else's branch.
 - **2026-09-22 — Integration `shop-feedback-2026-09-22`: the five Shop cards
   from Emily's 2026-09-22 Shop mockups.** `shop-add-remember-label` then
   `shop-aisles-store-done` merged onto main 05e2e5a with `--no-ff`; no
