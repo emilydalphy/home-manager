@@ -344,13 +344,22 @@ def _line_two(entries: list[dict], report: dict | None, recent: set[str] | None,
     if unmet:
         return f"I couldn’t fit “{unmet[0]}” in this week."
     names = _dish_names([e for e in entries if e["slot"] in ("dinner", "lunch")])
+    if surprise:
+        # Surprise me means new to you (Emily, 2026-09-21): the comparison
+        # is everything they've ever had from Pomona, not the window — but
+        # a dish they asked for by name this week ("chili again") is
+        # theirs, not a repeat: line 1 already credits it, and it is
+        # neither new nor "had" here (verifier, 2026-09-21).
+        asked = {
+            e["meal"].strip().lower() for e in entries
+            if _is_dish(e) and str(_derived(e).get("freeform") or "").strip()
+        }
+        names = [n for n in names if n.lower() not in asked]
     if recent is None or not names:
         return ""
     back = [n for n in names if n.lower() in recent]
     new = len(names) - len(back)
     if surprise:
-        # Surprise me means new to you (Emily, 2026-09-21): the comparison
-        # is everything they've ever had from Pomona, not the window.
         if not back:
             return f"{_cap(number_word(new))} new dishes — nothing you’ve had from me before."
         if len(back) <= 2:
@@ -364,13 +373,15 @@ def _line_two(entries: list[dict], report: dict | None, recent: set[str] | None,
     return f"{_cap(number_word(new))} new dishes, {number_word(len(back))} back from {window}."
 
 
-def count_note(day_count: int, memory: dict | None) -> str:
+def count_note(day_count: int, memory: dict | None, said: str = "") -> str:
     """
     "Three dinners this week, not four — it's a four-day plan." Said only
     when a count on the household's "Each week I plan" screen was scaled
     to a shorter period (meal_variety.prorate_meal_count) and came out
     different; dinners when they differ, else the first meal that does.
-    Nothing for a full week, or a household with no counts set.
+    Nothing for a full week, a household with no counts set, or when line
+    1 (`said`) already states that count ("three dinners across four
+    nights") — a number said twice reads as a stammer.
     """
     if not memory or day_count >= 7:
         return ""
@@ -381,6 +392,8 @@ def count_note(day_count: int, memory: dict | None) -> str:
         target = _meal_variety.prorate_meal_count(int(usual), day_count)
         if target != int(usual):
             noun = _NOUN[slot] if target != 1 else slot
+            if f"{number_word(target)} {noun}" in said.lower():
+                return ""
             return (f"{_cap(number_word(target))} {noun} this week, not {number_word(int(usual))} — "
                     f"it’s a {number_word(day_count)}-day plan.")
     return ""
@@ -410,5 +423,5 @@ def build_opener(rows, intake: dict | None, period_start: str, day_count: int, d
     else:
         recent = recent_dish_names(period_start, plan_id)
     second = _line_two(entries, report, recent, surprise=surprise)
-    third = count_note(day_count, memory)
+    third = count_note(day_count, memory, said=first)
     return [line for line in (first, second, third) if line]

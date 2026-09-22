@@ -97,7 +97,7 @@ def test_five_dishes_against_a_preference_of_four_become_four(recipes, stub_mode
     assert "Burgers" not in _distinct(plan["weekly_plan_id"])
     friday = dinners[4]
     assert friday[2] in {"Chili", "Salmon", "Kofte", "Halloumi Salad"}
-    assert friday[3] == "on again — you asked for four dinners a week"
+    assert friday[3] == "On again — you asked for four dinners a week"
     assert tools.audit_plan_slots(plan["weekly_plan_id"])["complete"] is True
 
 

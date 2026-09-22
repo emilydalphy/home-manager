@@ -385,7 +385,7 @@ def test_the_repeat_repair_still_records_why(approved_five_dinners):
     mv.enforce_distinct_count(pid, 4, slot="dinner")
 
     row = _entry_meta(pid, curry_night)
-    assert row["reasoning"] == "on again — you asked for four dinners a week"
+    assert row["reasoning"] == "On again — you asked for four dinners a week"
     assert row["derived"]["constraint"] == "dinners_per_week:4"
     assert row["derived"]["replaced"] == "Curry"
     assert row["derived"]["repeat_of"]

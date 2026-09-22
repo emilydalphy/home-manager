@@ -36,18 +36,24 @@ ones with the least claim to stay:
     than the tail does.
 
 Which kept dish fills a freed night: the one whose existing nights are
-furthest from it, so repeats spread out instead of landing back to back.
+furthest from it, so repeats spread out instead of landing back to back —
+and never one over that night's time cap (a `rush` night, the weeknight
+cap): a 120-minute braise does not land on a night tagged rush, and a
+quick dish sitting on a capped night is the last to be dropped. A freed
+night no kept dish fits is left as generated — one dish too many beats a
+braise on a rush night (verifier, 2026-09-21).
 
-WHAT THIS DELIBERATELY DOES NOT DO. It does not pull the count DOWN to
-fewer dishes than asked — fewer is a different, milder failure, and
-inventing a dish deterministically is not possible here. It does not
-touch breakfasts, lunches or snacks: the same rule applies to them in the
-prompt, but a lunch that reheats a dinner reads under the dinner's name,
-so whether it "counts" as a distinct lunch is a real question, and snacks
-have their own per-day repair. Dinners are the case that was reported, and
-the code takes the slot as a parameter so widening it is a one-line
-decision rather than a rewrite. And it stands down for a week whose own
-asks name a number of dinners ("five different dinners this week") — the
+SINCE 2026-09-21 (Emily: the counts are targets, not caps) this runs
+BOTH WAYS and for EVERY count on the "Each week I plan" screen. Too few
+distinct dishes: a repeated night is re-picked quietly into a new dish
+(_fill_up, through the swap's own picker, on the shared call budget) —
+only for a household whose counts are answers (meal_counts_set). Too
+many: the fold above. Breakfasts and lunches get the same pass as
+dinners (a lunch that reheats a dinner is filed under the dinner, as the
+Plan tab files it); snacks are held to "snacks a day", per day
+(enforce_snacks_per_day). It stands down, per slot, for a week whose own
+words name that slot's number ("five different dinners this week" stands
+down dinners and nothing else; "4 meals" stands down all three) — the
 standing preference is the default, not a cap on what they said today.
 See asks_for_a_count.
 
@@ -161,26 +167,64 @@ _COUNT_WORD = "|".join(_COUNT_WORDS)
 # "we have 4 kids eating dinner" and "we are 5 for dinner" all matched —
 # each one silently switching the whole pass off for that week. A number
 # of people or minutes is not a number of dishes.
-_COUNT_ASK = re.compile(
-    rf"\b(\d+|{_COUNT_WORD})\b"
-    r"(?:\s+(?:different|new|distinct|separate|unique|fresh|proper|main|big))?"
-    r"\s+(?:dinners|meals|dishes|recipes)\b",
-    re.IGNORECASE,
-)
+# The dish words a count can name, per slot. The generic ones ("4 meals",
+# "three dishes") stand every slot down; a slot's own word stands down
+# that slot alone ("just two lunches this week" is about lunches — the
+# dinners are still held to their number; verifier, 2026-09-21).
+_GENERIC_DISH_WORDS = "meals|dishes|recipes"
+_SLOT_DISH_WORDS = {"dinner": "dinners", "lunch": "lunches", "breakfast": "breakfasts", "snack": "snacks"}
 
 
-def asks_for_a_count(*texts: str | None) -> bool:
+def _count_ask(nouns: str) -> re.Pattern:
+    return re.compile(
+        rf"\b(\d+|{_COUNT_WORD})\b"
+        r"(?:\s+(?:different|new|distinct|separate|unique|fresh|proper|main|big))?"
+        rf"\s+(?:{nouns})\b",
+        re.IGNORECASE,
+    )
+
+
+_COUNT_ASK = _count_ask(f"dinners|{_GENERIC_DISH_WORDS}")
+_COUNT_ASKS = {slot: _count_ask(f"{word}|{_GENERIC_DISH_WORDS}") for slot, word in _SLOT_DISH_WORDS.items()}
+# Snacks are per day, and "two snacks a day" is not a count to stand down
+# for — it IS the setting. Only a per-week-shaped or generic snack count
+# stands the snack pass down.
+_COUNT_ASKS["snack"] = _count_ask(f"snacks(?!\s+(?:a|per|each)\s+day)|{_GENERIC_DISH_WORDS}")
+
+
+def asks_for_a_count(*texts: str | None, slot: str = "dinner") -> bool:
     """
-    Does the household's own wording for THIS week name a number of
-    dinners/meals/dishes? If so the standing preference is not the last
-    word, and the enforcing pass stands down rather than overrule them.
+    Does the household's own wording for THIS week name a number of this
+    slot's dishes (or of meals/dishes generally)? If so the standing
+    preference is not the last word, and the enforcing pass for that slot
+    stands down rather than overrule them.
     """
-    return any(_COUNT_ASK.search(t) for t in texts if t)
+    pattern = _COUNT_ASKS.get(slot, _COUNT_ASK)
+    return any(pattern.search(t) for t in texts if t)
+
+
+_PLURALS = {"dinner": "dinners", "lunch": "lunches", "breakfast": "breakfasts", "snack": "snacks", "dish": "dishes"}
 
 
 def _display_word(n: int, noun: str) -> str:
     words = {v: k for k, v in _COUNT_WORDS.items()}
-    return f"{words.get(n, n)} {noun}{'s' if n != 1 else ''}"
+    return f"{words.get(n, n)} {noun if n == 1 else _PLURALS.get(noun, noun + 's')}"
+
+
+def repeat_reason(target: int, slot: str, usual: int | None = None, day_count: int = 7) -> str:
+    """
+    The line under a folded repeat on the draft, and it has to be TRUE
+    (verifier, 2026-09-21: a four-day plan said "you asked for two
+    lunchs a week" — misspelt, and she asked for three). On a full week,
+    or a period where the number wasn't scaled: "On again — you asked for
+    three lunches a week." Where it was scaled: "On again — three lunches a
+    week, scaled to a four-day plan."
+    """
+    words = {v: k for k, v in _COUNT_WORDS.items()}
+    if usual is not None and usual != target and day_count < 7:
+        return (f"On again — {_display_word(usual, slot)} a week, scaled to a "
+                f"{words.get(day_count, day_count)}-day plan")
+    return f"On again — you asked for {_display_word(target, slot)} a week"
 
 
 def _load_slot_entries(plan_id: int, slot: str) -> list[dict]:
@@ -188,7 +232,8 @@ def _load_slot_entries(plan_id: int, slot: str) -> list[dict]:
     rows = conn.execute(
         """
         SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.cooked_status, mpe.food_groups_json,
-               mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal
+               mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal,
+               r.prep_time_minutes, r.cook_time_minutes
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.slot = ?
@@ -217,9 +262,11 @@ def _group_dishes(entries: list[dict], chains: dict) -> list[dict]:
         derived = json.loads(e["derived_from_json"] or "{}")
         dish = dishes.setdefault(key, {
             "name": name, "nights": [], "protected": False, "chained": False,
-            "food_groups": None,
+            "food_groups": None, "minutes": None,
         })
         dish["nights"].append(e)
+        if dish["minutes"] is None and not reheat and (e.get("prep_time_minutes") or e.get("cook_time_minutes")):
+            dish["minutes"] = int(e.get("prep_time_minutes") or 0) + int(e.get("cook_time_minutes") or 0)
         if (derived.get("freeform") or "").strip() or (e["cooked_status"] or "") == "done":
             dish["protected"] = True
         if reheat or e["id"] in chains["sources"]:
@@ -231,41 +278,60 @@ def _group_dishes(entries: list[dict], chains: dict) -> list[dict]:
     return list(dishes.values())
 
 
-def _pick_surplus(dishes: list[dict], target: int) -> list[dict]:
+def _fits(dish: dict, cap: int | None) -> bool:
+    """Whether a dish may land on a night with this time cap. Unknown
+    minutes (an older recipe with none recorded) can't be judged and are
+    let through, as the plate pass lets an unknown plate through."""
+    return cap is None or dish.get("minutes") is None or dish["minutes"] <= cap
+
+
+def _holds_a_capped_night(dish: dict, caps: dict[str, int | None]) -> bool:
+    """A dish that fits a capped night it is already on is the quick dish
+    that night needs — the last to drop (verifier, 2026-09-21)."""
+    return any(caps.get(n["date"]) is not None and _fits(dish, caps[n["date"]]) for n in dish["nights"])
+
+
+def _pick_surplus(dishes: list[dict], target: int, caps: dict[str, int | None] | None = None) -> list[dict]:
     """
     Which dishes go, so that what stays numbers `target`. Never a protected
-    dish; chained ones only after every unchained candidate is gone; the
+    dish; chained ones only after every unchained candidate is gone; a
+    dish holding a capped night it fits only after those; the
     latest-starting first within each tier.
     """
+    caps = caps or {}
     excess = len(dishes) - target
     unchained = [d for d in dishes if not d["protected"] and not d["chained"]]
     chained = [d for d in dishes if not d["protected"] and d["chained"]]
     # Latest first appearance first; entries are already in date order so
     # nights[0] is the first night.
+    # reverse=True, so the bool is flipped: a dish on a capped night it
+    # fits sorts LAST and goes only when nothing else can.
     candidates = (
-        sorted(unchained, key=lambda d: d["nights"][0]["date"], reverse=True)
-        + sorted(chained, key=lambda d: d["nights"][0]["date"], reverse=True)
+        sorted(unchained, key=lambda d: (not _holds_a_capped_night(d, caps), d["nights"][0]["date"]), reverse=True)
+        + sorted(chained, key=lambda d: (not _holds_a_capped_night(d, caps), d["nights"][0]["date"]), reverse=True)
     )
     return candidates[:excess]
 
 
-def _spread_pick(kept: list[dict], date: str) -> dict:
-    """The kept dish whose nights sit furthest from `date`; ties to the one
-    covering the fewest nights, then to the earlier dish."""
+def _spread_pick(kept: list[dict], date: str, cap: int | None = None) -> dict | None:
+    """The kept dish whose nights sit furthest from `date`, among those
+    that fit the night's time cap; ties to the one covering the fewest
+    nights, then to the earlier dish. None when nothing kept fits."""
     day = datetime.date.fromisoformat(date)
+    fitting = [(i, d) for i, d in enumerate(kept) if _fits(d, cap)]
+    if not fitting:
+        return None
 
     def distance(dish: dict) -> int:
         return min(abs((datetime.date.fromisoformat(n["date"]) - day).days) for n in dish["nights"])
 
-    return max(
-        enumerate(kept),
-        key=lambda pair: (distance(pair[1]), -len(pair[1]["nights"]), -pair[0]),
-    )[1]
+    return max(fitting, key=lambda pair: (distance(pair[1]), -len(pair[1]["nights"]), -pair[0]))[1]
 
 
 def enforce_distinct_count(
     plan_id: int, target: int | None, slot: str = "dinner", asks: tuple[str | None, ...] = (),
-    budget=None, picker=None, fill_up: bool = True,
+    budget=None, picker=None, fill_up: bool = True, usual: int | None = None, day_count: int = 7,
+    caps: dict[str, int | None] | None = None,
 ) -> dict:
     """
     Make one slot's distinct dishes NUMBER `target` for this plan — see
@@ -278,17 +344,22 @@ def enforce_distinct_count(
     False keeps that half off: the caller passes the household's
     meal_counts_set, because chasing a column default up to seven
     distinct breakfasts would spend real calls on a number nobody chose.
+    `usual` and `day_count` are the household's full-week number and the
+    period's length, for the repeat's line (repeat_reason); `caps` is
+    {date: max minutes or None} — a rush night, the weeknight cap — and a
+    repeat never lands on a night it is too long for.
     Returns {"before", "after", "replaced": [{"date", "dropped", "with"}],
     "added": [{"date", "dropped", "with"}]} and never raises: a plan with
     one dish too many is a far better outcome than a lost week, so any
     failure is logged and the plan is left as it stands.
     """
+    caps = caps or {}
     result = {"before": None, "after": None, "replaced": [], "added": [], "skipped": None}
     try:
         if not target or target <= 0:
             result["skipped"] = "no target"
             return result
-        if asks_for_a_count(*asks):
+        if asks_for_a_count(*asks, slot=slot):
             result["skipped"] = "week asks for its own count"
             logger.info("Distinct %s count not enforced for plan %s: the week's own words name a count", slot, plan_id)
             return result
@@ -304,7 +375,7 @@ def enforce_distinct_count(
             return result
         if len(dishes) == target:
             return result
-        surplus = _pick_surplus(dishes, target)
+        surplus = _pick_surplus(dishes, target, caps)
         if len(surplus) < len(dishes) - target:
             logger.warning(
                 "Plan %s has %d distinct %ss against a preference of %d, but only %d can be dropped "
@@ -317,11 +388,18 @@ def enforce_distinct_count(
         kept = [d for d in dishes if d["name"].strip().lower() not in surplus_keys]
         # Wording is an assumption (Emily's call — see the Loop Board card):
         # the line sits under the dish name on the draft, so it says only
-        # why the repeat is there.
-        reasoning = f"on again — you asked for {_display_word(target, slot)} a week"
+        # why the repeat is there — and the true number (repeat_reason).
+        reasoning = repeat_reason(target, slot, usual, day_count)
+        left_standing = 0
         for dish in surplus:
             for night in dish["nights"]:
-                fill = _spread_pick(kept, night["date"])
+                fill = _spread_pick(kept, night["date"], caps.get(night["date"]))
+                if fill is None:
+                    # Nothing kept fits this night's cap: the dish stands.
+                    left_standing += 1
+                    logger.info("Plan %s: %s %s %r kept — no shorter dish fits its %s-minute cap",
+                                plan_id, night["date"], slot, dish["name"], caps.get(night["date"]))
+                    continue
                 # ONE transaction per night, because it is the write every
                 # swap in the app goes through (weekly_plan.
                 # _replace_slot_entries) rather than the clear-then-plan pair
@@ -350,7 +428,7 @@ def enforce_distinct_count(
                 fill["nights"].append({"date": night["date"], "id": None})
                 fill["nights"].sort(key=lambda n: n["date"])
                 result["replaced"].append({"date": night["date"], "dropped": dish["name"], "with": fill["name"]})
-        result["after"] = len(kept)
+        result["after"] = len(kept) + left_standing
         logger.info(
             "Plan %s came back with %d distinct %ss against a preference of %d; replaced %s",
             plan_id, len(dishes), slot, target,
@@ -404,7 +482,7 @@ def _fill_up(plan_id: int, slot: str, dishes: list[dict], target: int, budget, p
         replaced = _repick_entry(
             plan_id, entry, budget,
             avoid=sorted(d["name"] for d in dishes),
-            because=f"you asked for {_display_word(target, slot)} this week, and this night was a repeat",
+            because=f"you asked for {_display_word(target, slot)} this period, and this night was a repeat",
             reject=lambda name: name.strip().lower() in have,
             derived_key="count_repick", picker=picker,
         )
@@ -465,7 +543,8 @@ def _nobody_home(plan_id: int, date: str) -> bool:
     return bool(rows) and all(r["slot_state"] == "planned_empty" for r in rows)
 
 
-def enforce_snacks_per_day(plan_id: int, per_day: int | None, dates: list[str], budget=None, picker=None) -> dict:
+def enforce_snacks_per_day(plan_id: int, per_day: int | None, dates: list[str], budget=None, picker=None,
+                           asks: tuple[str | None, ...] = ()) -> dict:
     """
     "Snacks a day" is exact (Emily, 2026-09-21): every planned day gets
     `per_day` snack entries, no more, no fewer. Too many on a day: the
@@ -483,8 +562,12 @@ def enforce_snacks_per_day(plan_id: int, per_day: int | None, dates: list[str], 
     from . import plates as _plates
     from . import swap_in_place as _swap
 
-    out = {"removed": [], "added": [], "left_short": []}
+    out = {"removed": [], "added": [], "left_short": [], "skipped": None}
     if not per_day or per_day <= 0 or not dates:
+        return out
+    if asks_for_a_count(*asks, slot="snack"):
+        out["skipped"] = "week asks for its own count"
+        logger.info("Snacks a day not enforced for plan %s: the week's own words name a snack count", plan_id)
         return out
     budget = budget or _allergen_gate.CallBudget()
     try:
@@ -618,7 +701,7 @@ def is_surprise_me(intake: dict | None) -> bool:
     return bool(intake) and SURPRISE_MOOD in (intake.get("moods") or [])
 
 
-def household_dish_history(exclude_plan_id: int | None = None) -> list[dict]:
+def household_dish_history(exclude_plan_id: int | None = None, replacing: tuple[str, str] | None = None) -> list[dict]:
     """
     Every dinner and lunch dish this household has had from Pomona, oldest
     first — every plan, drafted or approved (a drafted dish was still
@@ -628,11 +711,19 @@ def household_dish_history(exclude_plan_id: int | None = None) -> list[dict]:
     latest date). A leftovers line is not a dish. `exclude_plan_id` leaves
     one plan out — the draft being described, when this is read for its
     own opening line.
+
+    `replacing` is (period_start, period_end) when a draft is being
+    RE-PLANNED: a DRAFT's days inside that period are the draft about to
+    be taken over, and the household did not "have" a draft they sent
+    back — so those days are left out, and the re-pick never churns
+    against them (ASSUMPTION for Emily, verifier 2026-09-21; her case: a
+    Tue–Sat draft re-planned from Tuesday with Surprise me). An APPROVED
+    week's days in the period still count: that food was on the list.
     """
     conn = get_conn()
     rows = conn.execute(
         """
-        SELECT mpe.date, COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.freeform_meal
+        SELECT mpe.date, COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.freeform_meal, wp.status
         FROM meal_plan_entries mpe
         JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
@@ -644,6 +735,9 @@ def household_dish_history(exclude_plan_id: int | None = None) -> list[dict]:
         (household_id(), *NO_REPEAT_SLOTS, exclude_plan_id or -1),
     ).fetchall()
     conn.close()
+    if replacing:
+        start, end = replacing
+        rows = [r for r in rows if not (r["status"] == "draft" and start <= r["date"] <= end)]
     since = (datetime.date.today() - datetime.timedelta(weeks=VARIETY_WINDOW_WEEKS)).isoformat()
     seen: dict[str, dict] = {}
     for r in rows:
@@ -660,17 +754,24 @@ def household_dish_history(exclude_plan_id: int | None = None) -> list[dict]:
 _LEFTOVER_LINE = re.compile(r"leftovers?\b|take[\s-]?out|delivery|order in", re.IGNORECASE)
 
 
-def surprise_context(intake: dict | None) -> dict | None:
+def surprise_context(intake: dict | None, period_start: str | None = None, day_count: int = 7) -> dict | None:
     """
     What the drafting prompt is handed under `surprise_me` when the mood
     is Surprise me, else None: `dont_repeat`, every dish they've had from
     Pomona (oldest first, capped at SURPRISE_HISTORY_CAP newest), and
     `never`, the ones from the last two weeks. None too when there is no
-    history at all — a first week has nothing to be new against.
+    history at all — a first week has nothing to be new against. With
+    `period_start`, a draft's days inside the period being planned are
+    left out — they are the draft being replaced, not food they had (see
+    household_dish_history).
     """
     if not is_surprise_me(intake):
         return None
-    history = household_dish_history()
+    replacing = None
+    if period_start:
+        end = (datetime.date.fromisoformat(period_start) + datetime.timedelta(days=max(day_count, 1) - 1)).isoformat()
+        replacing = (period_start, end)
+    history = household_dish_history(replacing=replacing)
     if not history:
         return None
     names = [h["name"] for h in history][-SURPRISE_HISTORY_CAP:]

@@ -178,9 +178,14 @@ def test_emilys_four_day_draft_lands_on_her_numbers(emilys_counts, stub_model, p
     # The snack gap was filled from the week's own snacks — no call spent.
     assert not any(c["slot"] == "snack" for c in picker)
     assert tools.audit_plan_slots(plan_id)["complete"] is True
-    # And the opener says why it is three, not four.
+    # And the opener says the count once: line 1 already has "three
+    # dinners across four nights", so the count note stays unsaid.
     lines = tools.get_week_menu(plan_id)["draft_opener"]
-    assert lines[-1] == "Three dinners this week, not four — it’s a four-day plan."
+    assert lines[0] == "An ordinary week — three dinners across four nights."
+    assert not any("day plan" in line for line in lines)
+    # The folded lunches say the true number, spelt right.
+    lunch_rows = [m for m in tools.get_weekly_plan(plan_id)["meals"] if m["slot"] == "lunch" and m["date"] in dates[2:]]
+    assert {m["reasoning"] for m in lunch_rows} == {"On again — three lunches a week, scaled to a four-day plan"}
 
 
 def test_the_model_is_handed_the_scaled_targets(emilys_counts, stub_model):
@@ -327,3 +332,100 @@ def test_the_count_note_names_dinners_first_then_the_first_meal_that_differs():
     assert draft_opener.count_note(2, {"dinners_per_week": 1, "lunches_per_week": 3, "breakfasts_per_week": 1}) == \
         "One lunch this week, not three — it’s a two-day plan."
     assert draft_opener.count_note(4, None) == ""
+    # Said once: when line 1 already states the count, the note stays unsaid.
+    assert draft_opener.count_note(4, memory, said="An ordinary week — three dinners across four nights.") == ""
+    assert draft_opener.count_note(4, memory, said="Mexican lunches, as you asked.") == \
+        "Three dinners this week, not four — it’s a four-day plan."
+
+
+# ---------- the verifier's round (2026-09-21) ----------
+
+def test_the_repeat_line_says_the_true_number_and_spells_it_right():
+    assert meal_variety.repeat_reason(3, "lunch") == "On again — you asked for three lunches a week"
+    assert meal_variety.repeat_reason(2, "lunch", usual=3, day_count=4) == \
+        "On again — three lunches a week, scaled to a four-day plan"
+    assert meal_variety.repeat_reason(1, "dinner", usual=1, day_count=4) == "On again — you asked for one dinner a week"
+    assert meal_variety.repeat_reason(2, "dish", usual=2) == "On again — you asked for two dishes a week"
+
+
+def test_a_folded_repeat_never_lands_a_long_dish_on_a_rush_night(stub_model, picker):
+    """Sunday tagged rush holds a 30-minute stir fry; the household asked for
+    two dinners. The braise is the older dish, but the stir fry is the one
+    the rush night needs — it stays, and the braise never lands there."""
+    tools.set_household_meal_preferences(dinners_per_week=2)
+    week = _monday()
+    dates = tools._week_dates(week)
+    tools.add_recipe("Slow braise", ingredients=[{"item": "beef", "qty": "2 lb"}],
+                     prep_time_minutes=20, cook_time_minutes=100, food_groups=["protein", "vegetable", "carb"])
+    tools.add_recipe("Quick stir fry", ingredients=[{"item": "chicken", "qty": "1 lb"}],
+                     prep_time_minutes=5, cook_time_minutes=10, food_groups=["protein", "vegetable", "carb"])
+    tools.add_recipe("Roast", ingredients=[{"item": "lamb", "qty": "2 lb"}],
+                     prep_time_minutes=15, cook_time_minutes=90, food_groups=["protein", "vegetable", "carb"])
+    tools.save_week_intake(week, night_tags={dates[6]: ["rush"]})
+    days = _days(dates, breakfasts=["Oats"] * 7, lunches=["Wrap"] * 7,
+                 dinners=["Slow braise", "Roast", "Slow braise", "Roast", "Slow braise", "Roast", "Quick stir fry"],
+                 snacks=[["Apple", "Nuts"]] * 7)
+    for d in days:
+        if d["slot"] == "dinner":
+            d["is_new_recipe"] = False
+    stub_model(days)
+
+    plan = agent.generate_weekly_plan(week)
+    dinners = _by_slot(plan["weekly_plan_id"], "dinner")
+    assert dinners[dates[6]] == ["Quick stir fry"], "the rush night keeps its quick dish"
+    assert len(_distinct(plan["weekly_plan_id"], "dinner")) == 2
+    assert "roast" not in _distinct(plan["weekly_plan_id"], "dinner"), "the latest long dish is the one that went"
+
+
+def test_a_rush_night_no_kept_dish_fits_is_left_as_generated():
+    caps = {"2026-10-05": 20}
+    braise = {"name": "Braise", "nights": [{"date": "2026-10-01", "id": 1}], "protected": False, "chained": False,
+              "food_groups": None, "minutes": 120}
+    assert meal_variety._spread_pick([braise], "2026-10-05", caps["2026-10-05"]) is None
+    quick = dict(braise, name="Quick", minutes=15, nights=[{"date": "2026-10-02", "id": 2}])
+    assert meal_variety._spread_pick([braise, quick], "2026-10-05", 20) is quick
+    unknown = dict(braise, name="Unknown", minutes=None, nights=[{"date": "2026-10-03", "id": 3}])
+    assert meal_variety._spread_pick([braise, unknown], "2026-10-05", 20) is unknown, "unknown minutes can't be judged"
+
+
+@pytest.mark.parametrize("text,stands_down", [
+    ("just two dinners this week", {"dinner"}),
+    ("just two lunches this week", {"lunch"}),
+    ("three breakfasts this week please", {"breakfast"}),
+    ("only 4 meals this week", {"dinner", "lunch", "breakfast", "snack"}),
+    ("five different dishes", {"dinner", "lunch", "breakfast", "snack"}),
+    ("just three snacks this week", {"snack"}),
+    ("two snacks a day", set()),
+    ("we are 5 for dinner", set()),
+    ("under 30 minutes for dinner", set()),
+])
+def test_a_typed_count_stands_down_its_own_slot_only(text, stands_down):
+    got = {slot for slot in ("dinner", "lunch", "breakfast", "snack") if meal_variety.asks_for_a_count(text, slot=slot)}
+    assert got == stands_down
+
+
+def test_a_typed_dinner_count_leaves_the_lunches_held_to_their_number(emilys_counts, stub_model, picker):
+    week = _monday()
+    dates = tools._week_dates(week)
+    tools.save_week_intake(week, freeform="just two dinners this week, we're out a lot")
+    stub_model(_days(dates, breakfasts=["Oats", "Eggs", "Toast", "Oats", "Eggs", "Toast", "Oats"],
+                     lunches=["Wrap", "Soup", "Salad", "Sandwich", "Wrap", "Soup", "Salad"],   # 4 against 3
+                     dinners=["Chili", "Tacos"] * 3 + ["Chili"], snacks=[["Apple", "Nuts"]] * 7))
+    plan = agent.generate_weekly_plan(week)
+    assert len(_distinct(plan["weekly_plan_id"], "dinner")) == 2, "their own words win for dinners"
+    assert len(_distinct(plan["weekly_plan_id"], "lunch")) == 3, "the lunches still fold to three"
+
+
+def test_a_slot_left_at_the_default_seven_is_never_filled_up(stub_model, picker):
+    """She set dinners to 4 and never touched breakfasts: 7 breakfasts is
+    the column default, and the model is not sent chasing seven distinct
+    ones — but the four dinners are hers, and short means re-picked."""
+    tools.set_household_meal_preferences(dinners_per_week=4)
+    week = _monday()
+    dates = tools._week_dates(week)
+    stub_model(_days(dates, breakfasts=["Oats"] * 7, lunches=["Wrap"] * 7,
+                     dinners=["Chili", "Tacos"] * 3 + ["Chili"], snacks=[["Apple", "Nuts"]] * 7))
+    plan = agent.generate_weekly_plan(week)
+    assert {c["slot"] for c in picker} == {"dinner"}
+    assert len(_distinct(plan["weekly_plan_id"], "dinner")) == 4
+    assert _distinct(plan["weekly_plan_id"], "breakfast") == {"oats"}

@@ -4492,7 +4492,7 @@ def _generate_weekly_plan(
     # generation (meal_variety.repick_repeats, from _finish_week_slots).
     # Absent entirely for any other mood: the two-week window stays the
     # default. See the `surprise_me` bullet above.
-    surprise = _meal_variety.surprise_context(intake)
+    surprise = _meal_variety.surprise_context(intake, content_start_date, day_count)
     if surprise:
         context["surprise_me"] = surprise
 
@@ -5018,18 +5018,30 @@ def _finish_week_slots(
         ((context or {}).get("intake") or {}).get("freeform"),
     )
     count_budget = repick_budget or _allergen_gate.CallBudget()
+    period = tools.period_dates(week_start_date, day_count)
+    # Each night's real time cap (a rush tag, the weeknight cap), so a
+    # folded repeat never lands a braise on a rush night.
+    caps = {d: _plate_minutes_cap(d, intake, household_memory) for d in period}
+    # The household's own full-week numbers, for the repeat's line: the
+    # effective memory carries the SCALED count, and "you asked for two
+    # lunches" would be false on a four-day plan when she asked for three.
+    usual_counts = tools.get_household_memory() if day_count < 7 else household_memory
     # Only a number the household actually gave is a floor to reach
     # (meal_counts_set / the snacks flags): a column default is still a
-    # ceiling, never a reason to spend model calls.
+    # ceiling, never a reason to spend model calls. The flag is one for
+    # all three counts, so a slot still sitting at the default 7 (she set
+    # dinners to 4 and never touched breakfasts) is read as unanswered
+    # too — "seven distinct breakfasts" is not a floor anyone chose.
     for slot, field in _meal_variety.COUNT_FIELDS.items():
+        usual = usual_counts.get(field)
         tools.enforce_distinct_meal_count(
             plan_id, household_memory.get(field), slot=slot, asks=count_asks, budget=count_budget,
-            fill_up=bool(household_memory.get("meal_counts_set")),
+            fill_up=bool(household_memory.get("meal_counts_set")) and usual is not None and int(usual) < 7,
+            usual=usual, day_count=day_count, caps=caps,
         )
     if household_memory.get("snacks_per_day_set") or household_memory.get("snacks_per_week_set"):
         _meal_variety.enforce_snacks_per_day(
-            plan_id, household_memory.get("snacks_per_day"),
-            tools.period_dates(week_start_date, day_count), budget=count_budget,
+            plan_id, household_memory.get("snacks_per_day"), period, budget=count_budget, asks=count_asks,
         )
 
     # "Every meal is a full plate" (Emily, 2026-09-05) — any planned meal
