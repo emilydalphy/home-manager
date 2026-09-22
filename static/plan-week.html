@@ -36,12 +36,13 @@
     spruce screen is the drafting one, which is onboarding's "Cooking up
     your first week…" (body.drafting, below).
 
-    Five steps: Starting when? · Any days that are different? · Any
-    lunches on the go? · What are you in the mood for? · Anything else I
-    should plan around? Under step 2, the day sheet is a row per person
-    (board B1b, second pass 2026-09-21) and the holiday card and the away
-    range picker are the 2026-09-11 build; under step 4, "+ Add one" at
-    the end of the cuisines opens its own screen (boards B4a/B4b).
+    Five steps: Which days? · Any days that are different? · Any lunches
+    on the go? · What are you in the mood for? · Anything else I should
+    plan around? Under step 1 the days are tiles you tap OFF (board D1,
+    2026-09-21); under step 2, the day sheet is a row per person (board
+    B1b, second pass 2026-09-21) and the holiday card and the away range
+    picker are the 2026-09-11 build; under step 4, "+ Add one" at the end
+    of the cuisines opens its own screen (boards B4a/B4b).
   */
   :root {
     color-scheme: light;
@@ -193,7 +194,7 @@
   /* The range in words, then the days as tiles, then the one fact. */
   .range-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
   .range-words { font-family: var(--font-body); font-size: 16px; font-weight: 600; color: var(--ink); margin: 0; }
-  .range-count { font-size: 13px; font-weight: 500; color: var(--ink-secondary); white-space: nowrap; }
+  .range-count { font-size: 13px; font-weight: 500; color: var(--ink-secondary); white-space: nowrap; text-align: right; }
   .range-hint { font-size: 13px; font-weight: 500; color: var(--ink-secondary); margin: 0; }
   .range-hint[hidden] { display: none; }
   .stripe {
@@ -202,6 +203,11 @@
     padding: 2px;   /* room for today's outline */
   }
   .stripe::-webkit-scrollbar { display: none; }
+  /* The range card's seven toggles at 390px: every tile is a button, so
+     none may be under 44px wide (hard rule 6) — 7 × 44 + 6 × 4 = 332px
+     needs more than the card's padding leaves, so the strip runs out to
+     5px from the card's edge and the tiles sit 4px apart. */
+  #range-strip { gap: 4px; margin-left: -9px; margin-right: -9px; }
   /* One day. Seven share the width; more than seven scroll sideways
      (the strip on Plan's root does the same). A tile that is a BUTTON is
      at least 44px wide (hard rule 6); the range card's tiles only show
@@ -220,6 +226,10 @@
   .dt.on { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); }
   .dt.on .dt-dow { color: var(--apricot-light); }
   .dt.in { background: var(--sand); border-color: var(--sand-deep); }
+  /* A day tapped off "Which days?" (board D1): dashed and faded, still a
+     button — tapping again brings it back. */
+  .dt.off { opacity: .45; border-style: dashed; background: var(--surface); }
+  .dt.off:hover { opacity: .7; }
   /* Today, said with a colour AND a word (S6): the outline here, TODAY in
      the tile's eyebrow. */
   .dt.today { outline: 2px solid var(--apricot); outline-offset: -2px; }
@@ -650,20 +660,24 @@
   <p class="eyebrow" id="eyebrow"></p>
   <div class="progress" id="progress"><span class="bar" id="bar-1"></span><span class="bar" id="bar-2"></span><span class="bar" id="bar-3"></span><span class="bar" id="bar-4"></span><span class="bar" id="bar-5"></span></div>
 
-  <!-- ---------- 1 of 5 · Starting when? (board A3) ----------
+  <!-- ---------- 1 of 5 · Which days? (boards A3 → D1) ----------
        Today, never yesterday (Emily, 2026-09-20: "It's Sunday, but the
        days are showing from yesterday"). Three chips — today, tomorrow,
-       or your own days — and a card that shows the range they make, in
-       words and as tiles. The period every later step asks about is
-       whatever this one settles on (choosePeriod). From today or
-       tomorrow the range is the household's whole horizon (loadHorizon).
+       or a date of your own — and a card that shows the range they make,
+       in words and as tiles. From today or tomorrow the range is the
+       household's whole horizon (loadHorizon) — never five days assumed
+       (Emily, 2026-09-21) — and every tile is a toggle: tap a day to drop
+       it, tap again to bring it back (toggleDay). Dropped days are saved
+       with the intake as skipped_days and planned for nothing. The period
+       every later step asks about is whatever this one settles on
+       (choosePeriod); the steps after this one show only the days kept.
        The card used to end on "Yesterday's already eaten — I won't plan
        or shop for it"; the line went on 2026-09-21 (Emily's call) — the
        strip starting on TODAY already says it, and the rule itself
        (clampStart) is untouched. -->
   <section id="q1">
-    <h1>Starting when?</h1>
-    <p class="step-sub" id="start-sub"></p>
+    <h1>Which days?</h1>
+    <p class="step-sub" id="start-sub">Tap where to start, then the days you want me to plan.</p>
     <div class="step-body">
       <div class="chip-row" id="start-chips"></div>
       <div class="card" id="range-card">
@@ -1002,7 +1016,7 @@
   var SHEET_QUESTION = 'Who’s out, and when?';
   var GUESTS_PILL = 'Guests for dinner';
   var GUESTS_MAX = 10;
-  // Five screens, one question each (Emily, 2026-09-21): Starting when? ·
+  // Five screens, one question each (Emily, 2026-09-21): Which days? ·
   // Any days that are different? · Any lunches on the go? · What are you
   // in the mood for? · Anything else I should plan around?
   var STEP_COUNT = 5;
@@ -1018,8 +1032,9 @@
   // What the start chips are called, and the picker's own hints
   // (PERIOD_PICKER_COPY in shell.js, same words).
   var START_COPY = {
-    today: 'Today', tomorrow: 'Tomorrow', pick: 'Pick my own days',
-    hintBoth: 'Tap the first day, then the last', hintEnd: 'Tap the last day'
+    today: 'Today', tomorrow: 'Tomorrow', pick: 'Pick a date',
+    hintBoth: 'Tap the first day, then the last', hintEnd: 'Tap the last day',
+    drop: 'tap a day to drop it'
   };
   // How far past today the picker's strip runs, and the ceiling on a
   // range — shell.js's PERIOD_STRIP_DAYS / PERIOD_MAX_DAYS, kept in step
@@ -1111,6 +1126,37 @@
   // strip shows its first days (today is the first tappable one), and
   // only a tap scrolls it to what was tapped.
   var pickTapped = false;
+  // The days tapped OFF the range (board D1): { iso: true }. The screen's
+  // own state rather than part of `answers`, because it exists before the
+  // period's prefill has landed — and once it has, a saved set is only
+  // taken over a set nobody has touched yet (droppedTouched).
+  var dropped = {};
+  var droppedTouched = false;
+  function droppedList() { return Object.keys(dropped).sort(); }
+  // The period's days as ISO dates, in order.
+  function periodDays() {
+    var out = [];
+    for (var i = 0; i < Math.max(1, dayCount); i++) out.push(addDaysIso(weekStart, i));
+    return out;
+  }
+  // The days being planned: the period minus the dropped ones. Never
+  // empty — toggleDay refuses to drop the last one.
+  function keptDays() {
+    return periodDays().filter(function (d) { return !dropped[d]; });
+  }
+  // A tile tapped: off if on, on if off. At least one day stays.
+  function toggleDay(day) {
+    if (dropped[day]) delete dropped[day];
+    else if (keptDays().length > 1) dropped[day] = true;
+    else return;
+    droppedTouched = true;
+    renderRangeCard();
+  }
+  // A dropped day is one of the period's; a new range starts clean.
+  function keepDroppedInRange() {
+    var days = periodDays();
+    Object.keys(dropped).forEach(function (d) { if (days.indexOf(d) === -1) delete dropped[d]; });
+  }
 
   function renderStartChips() {
     var opts = startOptions(todayIso(), horizon, weekStart, dayCount);
@@ -1137,6 +1183,8 @@
     } else {
       picking = false;
       choosePeriod(opt.start, opt.days);
+      // Where to start is a fresh answer: the days come back with it.
+      dropped = {};
     }
     renderStartChips();
     renderRangeCard();
@@ -1172,18 +1220,27 @@
     } else {
       pick = { start: day, end: '' };
     }
-    if (pick.end) choosePeriod(pick.start, daysBetween(pick.start, pick.end) + 1);
+    if (pick.end) {
+      choosePeriod(pick.start, daysBetween(pick.start, pick.end) + 1);
+      // The range is chosen: the card shows it as the days to keep or
+      // drop (board D1). "Pick a date" again reopens the strip on it.
+      picking = false;
+      dropped = {};
+      renderStartChips();
+    }
     renderRangeCard();
   }
 
-  // The card under the chips: the range in words, the tiles, the fact.
+  // The card under the chips: the range in words, the tiles, the count.
   // While picking, the tiles are the strip to tap — today forward, three
-  // weeks — and the words follow the taps.
+  // weeks — and the words follow the taps. Otherwise every tile is a
+  // toggle (board D1): on = filled, dropped = dashed and faded, and the
+  // words and the count follow the days kept — "Mon 21 → Fri 25 · 5 days".
   function renderRangeCard() {
     var today = todayIso();
     var strip = $('range-strip');
     var hint = $('range-hint');
-    var first, last, tiles;
+    var first, last, tiles, count;
     if (picking) {
       first = pick.start; last = pick.end || pick.start;
       hint.hidden = false;
@@ -1191,32 +1248,38 @@
       var stop = addDaysIso(today, PERIOD_STRIP_DAYS - 1);
       tiles = [];
       for (var d = today; d <= stop; d = addDaysIso(d, 1)) tiles.push(d);
+      count = daysBetween(first, last) + 1;
     } else {
-      first = weekStart; last = addDaysIso(weekStart, Math.max(1, dayCount) - 1);
+      keepDroppedInRange();
+      tiles = periodDays();
+      var kept = keptDays();
+      first = kept[0]; last = kept[kept.length - 1];
       hint.hidden = true;
-      tiles = [];
-      for (var i = 0; i < dayCount; i++) tiles.push(addDaysIso(weekStart, i));
+      count = kept.length;
     }
-    var count = daysBetween(first, last) + 1;
     $('range-words').textContent = pick.end || !picking
       ? dayLabel(first) + ' → ' + dayLabel(last)
       : dayLabel(first) + ' → …';
-    $('range-count').textContent = count + (count === 1 ? ' day' : ' days');
+    $('range-count').textContent = count + (count === 1 ? ' day' : ' days') + (picking ? '' : ' · ' + START_COPY.drop);
     strip.classList.toggle('picking', picking);
     strip.innerHTML = tiles.map(function (d) {
       var cls = 'dt';
+      var pressed = '';
       if (picking) {
         if (d === pick.start || d === pick.end) cls += ' on';
         else if (d > pick.start && d <= last) cls += ' in';
-      } else if (d === first) cls += ' on';
+      } else {
+        cls += dropped[d] ? ' off' : ' on';
+        pressed = ' aria-pressed="' + (dropped[d] ? 'false' : 'true') + '"';
+      }
       if (d === today) cls += ' today';
       var dow = d === today ? 'Today' : weekdayName(d, 'short');
-      return (picking ? '<button type="button" class="' + cls + '" data-day="' + d + '">' : '<span class="' + cls + '">') +
+      return '<button type="button" class="' + cls + '" data-day="' + d + '"' + pressed + '>' +
         '<span class="dt-dow">' + esc(dow) + '</span><span class="dt-num">' + new Date(d + 'T00:00:00').getDate() + '</span>' +
-        (picking ? '</button>' : '</span>');
+        '</button>';
     }).join('');
     strip.querySelectorAll('button[data-day]').forEach(function (b) {
-      b.addEventListener('click', function () { pickDay(b.dataset.day); });
+      b.addEventListener('click', function () { if (picking) pickDay(b.dataset.day); else toggleDay(b.dataset.day); });
     });
     // The strip you are picking on should show the last thing you tapped
     // — and, before anything is tapped, today: it is the first tappable
@@ -1232,7 +1295,6 @@
   }
 
   function renderStartStep() {
-    $('start-sub').textContent = 'It’s ' + weekdayName(todayIso()) + '. I’ll plan from today unless you say otherwise.';
     renderStartChips();
     renderRangeCard();
   }
@@ -1293,6 +1355,16 @@
     loadedFor = key;
     awayRanges = [];
     answers = { night_tags: {}, guest_counts: {}, packed_lunch_days: [], moods: [], cuisines: [] };
+    // The dropped days saved for this period (a Re-plan, or a second
+    // adult joining) — unless the tiles have been tapped already, in
+    // which case what's on screen is the answer.
+    var savedSkipped = (((body.intake || {}).skipped_days) || []).slice().sort();
+    if (!droppedTouched) {
+      dropped = {};
+      savedSkipped.forEach(function (d) { dropped[d] = true; });
+      if (step === 1 && !picking) renderRangeCard();
+    }
+    skippedAtLoad = savedSkipped.join(',');
     $('freeform').value = '';
     $('joined').hidden = true;
     $('cuisine-added').hidden = true;
@@ -1357,6 +1429,15 @@
     return true;
   }
   var prefilled = { lunches: false, moods: false };
+  // The dropped days as saved for the period on screen, so Continue on
+  // "Which days?" writes a revision only when they changed.
+  var skippedAtLoad = '';
+
+  // The days the later steps are about: the period's, minus the dropped
+  // ones — a day left out has no dinner to tag and no lunch to pack.
+  function plannedDays() {
+    return ((data && data.days) || []).filter(function (day) { return !dropped[day.date]; });
+  }
 
   function takeAnswers(intake) {
     answers.night_tags = intake.night_tags || {};
@@ -1541,7 +1622,7 @@
   // sheet.
   function renderDays() {
     var today = todayIso();
-    $('day-tiles').innerHTML = data.days.map(function (day) {
+    $('day-tiles').innerHTML = plannedDays().map(function (day) {
       var isToday = day.date === today;
       return '<button type="button" class="dt' + (isToday ? ' today' : '') + '" data-date="' + day.date + '">' +
         '<span class="dt-dow">' + esc(isToday ? 'Today' : (day.short || day.weekday)) + '</span>' +
@@ -1557,7 +1638,7 @@
   function paintTiles() {
     if (!data) return;
     var notes = [];
-    data.days.forEach(function (day) {
+    plannedDays().forEach(function (day) {
       var tile = $('day-tiles').querySelector('[data-date="' + day.date + '"]');
       if (!tile) return;
       var note = dayNoteFor(day);
@@ -1899,7 +1980,8 @@
   function renderHolidayBlocks() {
     var host = $('holiday-blocks');
     if (!host) return;
-    host.innerHTML = ((data && data.holidays) || []).map(holidayBlockHtml).join('');
+    // A holiday on a day left out of the plan asks nothing.
+    host.innerHTML = ((data && data.holidays) || []).filter(function (h) { return !dropped[h.date]; }).map(holidayBlockHtml).join('');
     wireHolidayBlock(host);
   }
 
@@ -2085,7 +2167,7 @@
   }
 
   function openAwaySheet() {
-    var days = (data.days || []).map(function (d) { return d.date; });
+    var days = plannedDays().map(function (d) { return d.date; });
     if (!days.length) return;
     awayDraft = {
       who: [],                                   // empty = all of us
@@ -2103,7 +2185,7 @@
   }
 
   function buildAwaySheet() {
-    var days = (data.days || []);
+    var days = plannedDays();
 
     // WHO. Only worth asking when there's more than one person — a
     // one-person household has nothing to choose between, and an
@@ -2268,7 +2350,7 @@
   function renderLunchDays() {
     // One compact control, not a per-day tag: every lunch gets planned
     // either way, so the only question is which ones LEAVE THE HOUSE.
-    $('lunch-days').innerHTML = data.days.map(function (day) {
+    $('lunch-days').innerHTML = plannedDays().map(function (day) {
       return '<button type="button" class="chip" data-date="' + day.date + '">' + esc(day.short) + '</button>';
     }).join('');
     $('lunch-days').querySelectorAll('.chip').forEach(function (chip) {
@@ -2512,7 +2594,7 @@
       // Half a range is not an answer; nothing else here touches the
       // button's state (advance owns it while a save is in flight).
       if (step === 1) $('cta').disabled = picking && !pick.end;
-      var noted = step === 2 && data ? data.days.filter(function (day) { return !!dayNoteFor(day, true); }).length : 0;
+      var noted = step === 2 && data ? plannedDays().filter(function (day) { return !!dayNoteFor(day, true); }).length : 0;
       skip.textContent = SKIP_LABELS[step] || '';
       skip.hidden = !SKIP_LABELS[step] || (step === 2 && noted > 0) || (step === 3 && answers.packed_lunch_days.length > 0);
     } else {
@@ -2524,11 +2606,24 @@
 
   // Each screen saves its own answers as its own revision, so a second
   // adult joining mid-way carries on from where the first got to. Step 1
-  // settles the period rather than an answer inside it, so it has nothing
-  // to write.
+  // settles the period, and writes only when the days dropped from it
+  // changed — a revision saying "no days dropped" about a fresh week
+  // would only make the next visit narrate nothing.
   async function saveStep(n) {
+    if (n === 1) {
+      var skipped = droppedList();
+      if (skipped.join(',') === skippedAtLoad) return null;
+      var written = await saveIntake({ skipped_days: skipped });
+      skippedAtLoad = skipped.join(',');
+      return written;
+    }
     if (n === 2) return saveIntake({ night_tags: answers.night_tags, guest_counts: answers.guest_counts });
-    if (n === 3) return saveIntake({ packed_lunch_days: answers.packed_lunch_days });
+    if (n === 3) {
+      // A day left out has no lunch to pack.
+      var kept = plannedDays().map(function (d) { return d.date; });
+      answers.packed_lunch_days = answers.packed_lunch_days.filter(function (d) { return kept.indexOf(d) !== -1; });
+      return saveIntake({ packed_lunch_days: answers.packed_lunch_days });
+    }
     if (n === 4) return saveIntake({ moods: answers.moods, cuisines: answers.cuisines });
     if (n === 5) return saveIntake({ freeform: $('freeform').value.trim() });
     return null;
@@ -2690,11 +2785,16 @@
     var section = $('draft-progress');
     section.hidden = false;
     section.classList.remove('done');
-    $('draft-eyebrow').textContent = periodRangeLabel(weekStart, dayCount);
+    // The days being drafted — first kept to last kept, the dropped ones
+    // left out of the count and the line.
+    var kept = plannedDays().map(function (d) { return d.date; });
+    $('draft-eyebrow').textContent = kept.length
+      ? periodRangeLabel(kept[0], daysBetween(kept[0], kept[kept.length - 1]) + 1)
+      : periodRangeLabel(weekStart, dayCount);
     renderUsing(saved || {});
     window.scrollTo(0, 0);
     if (dayLine) dayLine.stop();
-    dayLine = draftDayLine(data.days.map(function (d) { return d.date; }), EXPECTED_DRAFT_MS, paintDraftStatus);
+    dayLine = draftDayLine(kept, EXPECTED_DRAFT_MS, paintDraftStatus);
     dayLine.start();
   }
 
@@ -2784,7 +2884,7 @@
   // scheduled until it is approved there.
   var answersAtLoad = '';
   function answersSnapshot() {
-    return JSON.stringify(answers) + '\n' + $('freeform').value.trim();
+    return JSON.stringify(answers) + '\n' + $('freeform').value.trim() + '\n' + droppedList().join(',');
   }
 
   function leavePayload() {
@@ -2799,7 +2899,7 @@
     // answer, so a mood chosen on step 4 and left from step 2 goes too.
     return {
       night_tags: answers.night_tags, guest_counts: answers.guest_counts,
-      packed_lunch_days: answers.packed_lunch_days,
+      packed_lunch_days: answers.packed_lunch_days, skipped_days: droppedList(),
       moods: answers.moods, cuisines: answers.cuisines,
       freeform: $('freeform').value.trim()
     };
@@ -2854,6 +2954,12 @@
     try {
       if (step === 1) {
         if (!(await ensureLoaded())) return;
+        // The days chosen reach the steps that ask about them, and the
+        // intake, before anything else is asked.
+        await saveStep(1);
+        renderDays();
+        renderHolidayBlocks();
+        renderLunchDays();
         showStep(2);
         return;
       }

@@ -4536,8 +4536,14 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         # absent returns None — and after a generation through
         # _finish_week_slots there shouldn't be any.
         if row["slot_state"] == "planned_empty":
+            # A day tapped off "Which days?" is not an out night: nobody is
+            # away, it was left out on purpose, and the screen says so in
+            # those words (2026-09-21, board D1). Read off derived_from,
+            # where _finish_week_slots wrote it.
+            derived = json.loads(row["derived_from_json"] or "{}")
+            skipped = derived.get("constraint") == _week_intake.SKIPPED_DAY_CONSTRAINT
             return {
-                "title": "Out — nothing to cook", "meta": None, "source": "empty",
+                "title": "Not planned" if skipped else "Out — nothing to cook", "meta": None, "source": "empty",
                 "state": "planned_empty", "reason": row["reasoning"], "entry_id": row["id"],
             }
         if row["slot_state"] == "open":

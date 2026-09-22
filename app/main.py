@@ -2561,6 +2561,10 @@ class WeekIntakeRequest(BaseModel):
     day_count: int = 7
     freeform: str | None = None
     created_by: str = ""
+    # The days tapped off "Which days?" (2026-09-21, board D1) — ISO dates
+    # inside the period. None means "not this screen's business", like the
+    # rest; [] means every day is in.
+    skipped_days: list | None = None
 
 
 class WeekGenerateRequest(BaseModel):
@@ -2756,6 +2760,7 @@ def save_week_intake_route(week_start: str, req: WeekIntakeRequest):
             freeform=req.freeform,
             created_by=req.created_by,
             day_count=req.day_count,
+            skipped_days=req.skipped_days,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

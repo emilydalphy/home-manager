@@ -2915,9 +2915,10 @@ THE ONE RULE THAT IS NOT NEGOTIABLE: every breakfast, lunch and dinner of every 
 back with an entry — 21 entries minimum, before snacks. A slot you leave out is a bug, not a \
 plan: the household approves the WEEK, and a week with holes in it isn't approvable. If you \
 genuinely cannot choose a meal without guessing, send that slot with slot_state='open' and a \
-real reason — never send nothing. (Dinners on nights the household is out are the one \
-exception, and they are handled outside this call: `skip_dinner_dates` below lists them, and \
-you must not send an entry for those.) Guidelines:
+real reason — never send nothing. (Dinners on nights the household is out, and every meal and \
+snack on a day in `intake.skipped_days`, are the exceptions, and they are handled outside this \
+call: `skip_dinner_dates` and `intake.skipped_days` below list them, and you must not send an \
+entry for those.) Guidelines:
 - A week should read as composed — a shape across the days that plays off itself (a lighter \
 night after a heavier one, proteins that vary rather than repeat, a batch cooked once and eaten \
 again on purpose) — not seven independent daily decisions stapled together. Everything below is \
@@ -3095,6 +3096,10 @@ character; `slot_needs.ready_made_slots` are the first meal back, which must NOT
 cook — lean on that slot's stored recommendation (a batch saved from earlier in the week, or \
 something to defrost) and name it in the reasoning. Each of these carries a `reason` written \
 for the household; keep your reasoning consistent with it rather than contradicting it.
+- `intake.skipped_days` are days the household left out of this plan on purpose — not away, \
+just not planned. Send NO entry for any meal or snack on those dates (they are enforced empty \
+regardless, so anything you put there is discarded), and don't lean a neighbouring day on \
+them (no leftovers from, or batch for, a skipped day).
 - `intake.packed_lunch_days` does NOT decide whether a lunch is planned. Every lunch is \
 planned either way. Those specific days are constrained to food that genuinely travels cold \
 and holds up till noon — no reheating, nothing that wilts or goes soggy in a bag. Say so in \
@@ -4024,8 +4029,15 @@ def _intake_generation_context(intake: dict, dates: list[str] | None = None) -> 
     - `skip_dinner_dates` — `out` nights are removed from the model's job
       entirely. A night nobody is home needs no decision, and the surest way
       to stop it being offered as one is to never mention it.
+    - `skipped_days` — the days tapped off "Which days?" (2026-09-21, board
+      D1), inside the period being generated. Listed for the model the way
+      `skip_dinner_dates` is, and enforced empty afterwards either way
+      (_finish_week_slots).
     """
     household = intake.get("household_snapshot") or {}
+    skipped_days = sorted(
+        d for d in (intake.get("skipped_days") or []) if dates is None or d in dates
+    )
     base_adults = household.get("adults", 0)
     base_children = household.get("children", 0)
     night_tags = intake.get("night_tags") or {}
@@ -4039,6 +4051,7 @@ def _intake_generation_context(intake: dict, dates: list[str] | None = None) -> 
     return {
         "night_tags": {d: t for d, t in night_tags.items() if "out" not in t},
         "skip_dinner_dates": sorted(d for d, t in night_tags.items() if "out" in t),
+        "skipped_days": skipped_days,
         "guest_extras": intake.get("guest_counts") or {},
         "guest_totals": guest_totals,
         "packed_lunch_days": intake.get("packed_lunch_days") or [],
@@ -4094,7 +4107,7 @@ def _rhythm_only_generation_context(week_start_date: str, day_count: int = 7) ->
     if not packed_days:
         return None
     return {
-        "night_tags": {}, "skip_dinner_dates": [], "guest_extras": {}, "guest_totals": {},
+        "night_tags": {}, "skip_dinner_dates": [], "skipped_days": [], "guest_extras": {}, "guest_totals": {},
         "packed_lunch_days": packed_days, "moods": [], "cuisines": [], "freeform": "",
         "household": {},
     }
@@ -5264,6 +5277,25 @@ def _finish_week_slots(
             derived_from={"tags": ["out"], "constraint": "nobody_home"},
         )
 
+    # A day tapped off "Which days?" (2026-09-21, board D1): every meal on
+    # it is written planned_empty, the snacks go, and the menu names it
+    # "Not planned" (weekly_plan.get_week_menu reads the constraint). The
+    # same clear-first rule as the out nights: the model was told, and
+    # being told is not being prevented.
+    # Each meal settles whole (slot_needs._settle_slot_empty: the clear and
+    # the empty row in one transaction); the snacks are cleared outright —
+    # a snack slot is not one of the three the guarantee covers, so an
+    # absence there is the intended state, not a gap.
+    from .tools import slot_needs as _slot_needs
+    skipped_days = [d for d in ((intake or {}).get("skipped_days") or []) if d in dates]
+    for day in skipped_days:
+        for slot in ("breakfast", "lunch", "dinner"):
+            _slot_needs._settle_slot_empty(
+                plan_id, day, slot, tools.SKIPPED_DAY_REASON,
+                derived_from={"constraint": tools.SKIPPED_DAY_CONSTRAINT},
+            )
+        tools.clear_plan_slot(plan_id, day, "snack")
+
     zero_counts = {
         "breakfast": household_memory.get("breakfasts_per_week"),
         "lunch": household_memory.get("lunches_per_week"),
@@ -5276,6 +5308,8 @@ def _finish_week_slots(
         for day in dates:
             if slot == "dinner" and "out" in night_tags.get(day, []):
                 continue  # already written as an out night, above
+            if day in skipped_days:
+                continue  # already written as a skipped day, above
             # Same reason as the out nights: a household that asked for no
             # breakfasts must not be sold breakfast ingredients because the
             # model planned some anyway.
