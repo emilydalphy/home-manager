@@ -187,6 +187,86 @@ def freeform_meal_scopes(text: str | None, dates: list[str]) -> list[dict]:
     return scopes
 
 
+# ---------- a typed INGREDIENT request ----------
+#
+# "I have some corn so incorporate that into a meal" (Emily, 2026-09-21:
+# no dish that week had corn in it, and nothing said so). The same stance
+# as freeform_meal_scopes above: only the shapes that are beyond doubt
+# get parsed — "I have some X", "there's X in the freezer", "use (up) the
+# X", "incorporate X" — and only when X is a food this app knows. A
+# sentence with a negation in it is left alone entirely ("I don't have
+# corn"; "use the lamb, not the chicken"), because a wrong must-use handed
+# on as fact is worse than none. Everything else is the model's to read.
+
+_ING_LEAD_RE = re.compile(
+    r"(?:\b(?:i|we)(?:'ve| have| got|'ve got| have got)\s+(?:got\s+)?"
+    r"(?:a lot of|lots of|loads of|plenty of|too much|too many|some|a few|a couple of|a bag of|"
+    r"a can of|a bunch of|a box of|a pack of|a packet of|a head of|a tub of|a jar of|half a|"
+    r"extra|leftover|spare|a|an|the)?"
+    r"|\b(?:there's|there is|there are)\s+(?:some|a few|a lot of|lots of|a|an|the)?"
+    r"|\b(?:use up|use|incorporate|work in|finish off|finish|include)\s+"
+    r"(?:the rest of the|the last of the|up the|all the|all of the|the|some|my|our|that|those|these)?)"
+    r"\s*(?P<item>[a-z][a-z\-']*(?:\s+[a-z][a-z\-']*){0,2})",
+    re.IGNORECASE,
+)
+# Where the ingredient's name stops. "corn so incorporate" → corn; "lamb in
+# the freezer" → lamb; "chicken breast this week" → chicken breast.
+_ING_STOP_WORDS = {
+    "so", "and", "that", "which", "to", "in", "for", "this", "from", "on", "at", "with", "into",
+    "i", "we", "it", "they", "needs", "need", "is", "are", "was", "were", "before", "left", "sitting",
+    "going", "as", "but", "or", "if", "because", "since", "up", "please", "too", "also", "again",
+    "somewhere", "somehow", "of", "by", "them", "those", "these", "there", "here", "week", "tonight",
+    "today", "tomorrow", "coming", "over", "leftover", "leftovers", "lying", "around", "already",
+    "still", "some", "more", "any", "a", "an", "the", "my", "our",
+}
+# Words that describe the ingredient without being it.
+_ING_MODIFIERS = {"fresh", "frozen", "leftover", "spare", "extra", "cooked", "raw", "ripe", "big", "little", "small",
+                  "large", "whole", "half", "lot", "lots", "bag", "can", "bunch", "box", "pack", "packet", "head",
+                  "tub", "jar", "few", "couple", "nice", "good", "great"}
+
+
+def _ingredient_words(item: str) -> list[str]:
+    words = []
+    for w in re.findall(r"[a-z][a-z\-']*", item.lower()):
+        if w in _ING_STOP_WORDS:
+            break
+        words.append(w)
+    while words and words[-1] in _ING_MODIFIERS:
+        words.pop()
+    while words and words[0] in _ING_MODIFIERS:
+        words.pop(0)
+    return words[:3]
+
+
+def freeform_ingredient_requests(text: str | None) -> list[dict]:
+    """
+    The ingredients the household typed that they want USED this week,
+    each with the sentence it came from: [{"words": "I have some corn so
+    incorporate that into a meal", "ingredient": "corn"}]. Only the
+    unmistakable shapes (see the note above), only foods this app knows,
+    never a sentence with a negation in it; "I have guests Friday" and
+    "I have some time on Sunday" yield nothing. One entry per ingredient.
+    """
+    from . import plan_quality as _plan_quality  # lazy: it pulls in the heavier half of the package
+    known = _plan_quality._known_food_words()
+    out: list[dict] = []
+    seen: set[str] = set()
+    for sentence in _REQUEST_SPLIT_RE.split(text or ""):
+        sentence = sentence.strip(" ,;")
+        if not sentence or _NEGATION_RE.search(sentence):
+            continue
+        for m in _ING_LEAD_RE.finditer(sentence):
+            words = _ingredient_words(m.group("item"))
+            if not words or not any(_plan_quality._stem(w) in known for w in words):
+                continue
+            ingredient = " ".join(words)
+            if ingredient in seen:
+                continue
+            seen.add(ingredient)
+            out.append({"words": sentence, "ingredient": ingredient})
+    return out
+
+
 def period_dates(start_date: str, day_count: int = 7) -> list[str]:
     """
     The ISO dates of a planning period: `day_count` days from `start_date`,

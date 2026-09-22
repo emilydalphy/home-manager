@@ -1765,13 +1765,20 @@ def record_plan_requests(weekly_plan_id: int, report: dict | None) -> None:
     the opener falls back to the slots' own derived_from.
     """
     report = report or {}
+    # `ingredient` rides along when the line is about a typed ingredient
+    # (typed_requests.use_requested_ingredients): the opener says "the
+    # corn", not the whole sentence they typed.
+    def _trim(r: dict, field: str) -> dict:
+        out = {"words": str(r.get("words") or "").strip(), field: str(r.get(field) or "").strip()}
+        if r.get("ingredient"):
+            out["ingredient"] = str(r["ingredient"]).strip()
+        return out
+
     honoured = [
-        {"words": str(r.get("words") or "").strip(), "label": str(r.get("label") or "").strip()}
-        for r in (report.get("honoured_requests") or []) if isinstance(r, dict) and r.get("words")
+        _trim(r, "label") for r in (report.get("honoured_requests") or []) if isinstance(r, dict) and r.get("words")
     ]
     unmet = [
-        {"words": str(r.get("words") or "").strip(), "reason": str(r.get("reason") or "").strip()}
-        for r in (report.get("unmet_requests") or []) if isinstance(r, dict) and r.get("words")
+        _trim(r, "reason") for r in (report.get("unmet_requests") or []) if isinstance(r, dict) and r.get("words")
     ]
     if not honoured and not unmet:
         return
