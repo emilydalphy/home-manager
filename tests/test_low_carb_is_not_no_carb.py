@@ -255,3 +255,61 @@ def test_the_swap_context_carries_the_portion(recipes, stub_week, stub_sides):
     })
     assert ctx["plate_rule"] == ["protein", "vegetable", "carb"]
     assert ctx["carb_portion"] == "small" and "not no carb" in ctx["carb_guidance"]
+
+
+# ---------- the verifier's round (2026-09-21) ----------
+
+@pytest.mark.parametrize("style,level", [
+    ("no-carb", "none"), ("zero-carb", "none"), ("carb-free", "none"), ("Keto-ish", "none"),
+    ("low-carb", "low"), ("Low-Carb, high-protein", "low"),
+    ("high-carb", "lots"), ("carb-heavy", "lots"),
+])
+def test_a_hyphen_reads_the_same_as_a_space(style, level):
+    assert plates.carb_level(style) == level
+    assert plates.carb_level(style.replace("-", " ")) == level
+
+
+@pytest.mark.parametrize("fact", [
+    "Vic tried keto in 2023 and hated it",
+    "I am not on keto anymore",
+    "we used to do low carb",
+    "stopped keto last year",
+    "Emily gave up on Atkins",
+    "no longer keto",
+])
+def test_a_fact_about_the_past_does_not_set_the_level(fact):
+    assert plates.carb_level("", fact) == "normal"
+    tools.add_fact("taste", fact)
+    assert plates.household_carb_level() == "normal"
+
+
+def test_a_present_fact_still_counts_and_the_eating_style_line_wins_over_facts():
+    assert plates.carb_level("", "we keep the carbs low") == "low"
+    assert plates.carb_level("", "we are on keto") == "none"
+    # Where they disagree, the eating-style line is the answer.
+    assert plates.carb_level("lots of carbs", "we are on keto") == "lots"
+    assert plates.carb_level("low carb", "we're keto now") == "low"
+    tools.edit_preference("eating_style", "Mediterranean, lots of carbs")
+    tools.add_fact("taste", "we are on keto")
+    assert plates.household_carb_level() == "lots"
+
+
+def test_the_none_chip_says_add_in_its_label():
+    from pathlib import Path
+    js = Path("static/shell.js").read_text()
+    assert "var verb = part.empty ? 'Add a ' : 'Change the ';" in js
+    assert "escapeHtml(verb + part.word.toLowerCase())" in js
+
+
+def test_the_swap_context_explains_the_carb_fields_in_the_context_itself(recipes, stub_week, stub_sides):
+    """The three-picks sheet reads this context under other instructions
+    (swap_options, being rewritten elsewhere): the meaning rides along."""
+    tools.edit_preference("eating_style", "low carb")
+    week = _monday()
+    stub_week(_week(week))
+    plan = agent.generate_weekly_plan(week)
+    entry = _entries(plan["weekly_plan_id"])[(tools._week_dates(week)[0], "dinner")]
+    ctx = sip.build_swap_context(plan["weekly_plan_id"], {
+        "date": entry["date"], "slot": "dinner", "meal": entry["meal"], "entry_id": entry["entry_id"],
+    })
+    assert "carb_portion" in ctx["carb_note"] and "not no carb" in ctx["carb_note"]

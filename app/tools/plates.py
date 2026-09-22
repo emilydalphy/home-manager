@@ -150,25 +150,55 @@ CARB_PORTION = {"none": "none", "low": "small", "normal": "normal", "lots": "gen
 
 
 def _normalise(text: str | None) -> str:
-    text = (text or "").lower().replace("_", " ")
+    # Hyphens fold to spaces, as is_low_carb always did: "no-carb",
+    # "zero-carb" and "carb-free" are the same words as with a space
+    # (verifier, 2026-09-21: dropping this read "no-carb" as a full plate).
+    text = (text or "").lower().replace("-", " ").replace("_", " ")
     return " ".join(text.split())
 
 
-def carb_level(eating_style: str | None, *more_texts: str | None) -> str:
-    """
-    One of CARB_LEVELS, from the household's own words. `none` wins over
-    `low` ("keto, low carb" is keto), `low` over `lots`; nothing said is
-    `normal`. Pure — see household_carb_level for the one that reads the
-    row and the facts.
-    """
-    texts = [_normalise(t) for t in (eating_style, *more_texts) if t]
+# A What-we-know fact about the PAST, or about someone else's diet, is not
+# the household's eating today: "Vic tried keto in 2023 and hated it", "I
+# am not on keto anymore" (verifier, 2026-09-21). A fact carrying any of
+# these is left out of the carb reading. Deliberately blunt — a fact
+# wrongly skipped costs the default plate, a fact wrongly read costs a
+# keto week nobody asked for.
+_NOT_NOW = re.compile(
+    r"\b(?:tried|used to|anymore|any more|no longer|not on|hated|hates|stopped|quit|gave up|"
+    r"back in|last year|years? ago|in (?:19|20)\d\d)\b"
+)
+
+
+def _is_about_now(text: str) -> bool:
+    return not _NOT_NOW.search(_normalise(text))
+
+
+def _level_of(texts: list[str]) -> str | None:
+    """The level these words name, or None when they name nothing.
+    `none` wins over `low` ("keto, low carb" is keto), `low` over `lots`."""
+    texts = [_normalise(t) for t in texts if t]
     if any(_NONE_CARB.search(t) for t in texts):
         return "none"
     if any(_LOW_CARB.search(t) for t in texts):
         return "low"
     if any(_LOTS_CARB.search(t) for t in texts):
         return "lots"
-    return "normal"
+    return None
+
+
+def carb_level(eating_style: str | None, *more_texts: str | None) -> str:
+    """
+    One of CARB_LEVELS, from the household's own words. The eating_style
+    line is the household's answer to the question and WINS where it says
+    anything; `more_texts` (What-we-know facts, the notes) are read only
+    when it doesn't, and only the ones about the household's eating now
+    (_is_about_now). Nothing said is `normal`. Pure — see
+    household_carb_level for the one that reads the row and the facts.
+    """
+    said = _level_of([eating_style])
+    if said:
+        return said
+    return _level_of([t for t in more_texts if t and _is_about_now(t)]) or "normal"
 
 
 def household_carb_level(eating_style: str | None = None) -> str:

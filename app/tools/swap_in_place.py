@@ -308,6 +308,17 @@ def build_swap_context(weekly_plan_id: int, entry: dict, avoid: list[str] | None
         "plate_rule": list(_plates.plate_rule(level=carb)),
         "carb_portion": _plates.carb_portion(carb),
         "carb_guidance": _plates.CARB_GUIDANCE[carb],
+        # Explained IN the context, not only in this module's INSTRUCTIONS:
+        # the three-picks sheet (swap_options) reads this same context
+        # under instructions of its own, and a field the model is never
+        # told the meaning of is a field it may read wrong whichever
+        # branch merges first (verifier, 2026-09-21).
+        "carb_note": (
+            "carb_portion is how much carb this household's plate carries: 'none' means no carb at "
+            "all; 'small' means a half portion of potato, rice, tortilla or bread — never none, low "
+            "carb is not no carb; 'normal' a full portion; 'generous' a big one. carb_guidance says "
+            "the same in a sentence."
+        ),
         "table": table,
         "night_tags": tags,
         "max_minutes": _minutes_cap(entry["date"], tags, memory),

@@ -11961,10 +11961,12 @@
         PLATE_PLUS + 'Add a ' + escapeHtml(part.word.toLowerCase()) + '</button>';
     }
     var label = '<span class="plate-role">' + escapeHtml(part.word) + '</span>' + escapeHtml(part.name || PLATE_NO_NAME);
+    // A "None" carb (part.empty) is an offer to add one, and says so.
+    var verb = part.empty ? 'Add a ' : 'Change the ';
     return '<button type="button" class="plate-part" ' +
       'data-plate-part="' + escapeHtml(part.role === 'side' ? '' : part.role) + '" data-plate-slot="' + escapeHtml(slot) + '" ' +
       (part.source === 'side' && part.name ? 'data-plate-side="' + escapeHtml(part.name) + '" ' : '') +
-      'aria-label="' + escapeHtml('Change the ' + part.word.toLowerCase()) + '">' +
+      'aria-label="' + escapeHtml(verb + part.word.toLowerCase()) + '">' +
       label + PLATE_CARET + '</button>';
   }
 
