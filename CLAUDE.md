@@ -543,13 +543,23 @@ why*, not duplicating the diff.
     exactly, so nothing else moved and no test was deleted or weakened.
     `tests/test_shop_freezing_it.py` **15 passed at all seven pins and
     unpinned**, against 1 failed / 14 passed on main at sunday.
-    Whole-suite pins on the branch's FIRST commit, `TZ=America/Toronto`:
-    monday and saturday **6211 passed, 3 skipped, 0 failed**; friday **1
-    failed** (the third test); sunday **1 failed** (the fourth). Both are
-    fixed by the commits after it, which is why they are in this branch at
-    all. Unpinned inside a VERIFIED `Pacific/Niue` straddle — Niue
-    2026-09-21 against Toronto 2026-09-22, dates checked either side —
-    **6214 passed, 0 failed**.
+    Unpinned inside a VERIFIED `Pacific/Niue` straddle — Niue 2026-09-21
+    against Toronto 2026-09-22, dates checked either side — **6214 passed,
+    0 failed**.
+  - **THE WHOLE-SUITE PIN NUMBERS ARE RE-MEASURED AT `03c2120`, THE COMMIT
+    THAT SHIPS, AND THE FIRST VERSION OF THIS ENTRY QUOTED THEM FROM THE
+    FIRST COMMIT — which is the weaker claim, and reads as the stronger
+    one.** That run started before the second and third fixes landed, so it
+    recorded friday and sunday still red; the per-FILE evidence above really
+    was at all seven pins, but nothing had shown that the two later fixes
+    broke nothing ELSE at the pins they fix. Re-run on the final tree,
+    `TZ=America/Toronto`, whole suite: **monday, friday, saturday and sunday
+    each 6211 passed, 3 skipped, 0 failed**, and unpinned **6214 passed, 0
+    failed**. So both of the pinned jobs this branch exists to clear are
+    measured green on the commit being merged, and 6211 + the 2 fixed + the
+    1 added is 6214 exactly. Recorded this way rather than quietly swapped,
+    because a number carried forward from an earlier commit is exactly the
+    statistic this log keeps having to unpick.
 
 - **2026-09-22 — Integration `shop-feedback-2026-09-22`: the five Shop cards
   from Emily's 2026-09-22 Shop mockups.** `shop-add-remember-label` then
