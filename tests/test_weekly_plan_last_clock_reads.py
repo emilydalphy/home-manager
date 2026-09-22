@@ -198,16 +198,48 @@ class TestTheWeekTheAppOffers:
             from_date=named.isoformat()
         )["start_date"] == named.isoformat()
 
-    def test_the_monday_anchored_default_still_starts_on_a_monday(self, monkeypatch):
+    def test_the_monday_anchored_default_reads_the_households_own_week(self, monkeypatch):
         """GUARD. The ordinary household — never asked, so 'sunday', so a
         Monday-start week. Moving the clock must not move where a week
-        begins, only which week it is."""
-        _behind(monkeypatch)
+        begins, only which week it is.
+
+        It used to assert the start day is a Monday, and that went red on
+        main every Wednesday, Thursday and Friday — including the pinned
+        `clock (friday)` job, on every push — from the day "today, never
+        yesterday" shipped (Emily, 2026-09-20: "the days are showing from
+        yesterday"). Since that change the suggestion begins on the
+        household's own today when Plan is opened mid-period, so a bare
+        weekday assertion tests the weekday the suite happened to run on
+        rather than this class's subject, which is the clock.
+
+        So it asserts the docstring's own claim directly: asking with the
+        household's day NAMED gives the same answer as letting the default
+        read it. That is "the clock chooses which week, never where one
+        begins", and it holds on all seven weekdays. Non-vacuous — point
+        the default back at the server's clock and the two answers differ.
+        """
+        household_today = _behind(monkeypatch)
 
         period = tools.suggest_planning_period()
         assert period["day_count"] == 7
-        assert date.fromisoformat(period["start_date"]).weekday() == 0
-        assert period["is_monday_anchored"] is True
+
+        named = tools.suggest_planning_period(from_date=household_today.isoformat())
+        assert period["start_date"] == named["start_date"]
+
+        # And it is still the household's OWN week that is offered, not a
+        # week the server's date wandered into: the start sits between the
+        # household's Monday and the Monday after it (today mid-period, or
+        # the next Monday once the plan-ahead rule has skipped forward).
+        monday = household_today - timedelta(days=household_today.weekday())
+        start = date.fromisoformat(period["start_date"])
+        assert monday <= start <= monday + timedelta(days=7)
+
+        # `is_monday_anchored` is computed straight off the start day, so
+        # it is the same stale claim in another form and goes with it: on
+        # the household's own Monday, and once the plan-ahead rule has
+        # skipped to the next one, it is True; mid-period the period
+        # honestly no longer begins on a Monday and says so.
+        assert period["is_monday_anchored"] is (start.weekday() == 0)
 
 
 # ---------- 2. get_week_planning_nudge, on ONE clock ----------

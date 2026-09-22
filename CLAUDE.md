@@ -415,10 +415,11 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
-- **2026-09-22 — `main`'s suite was red on Tuesday, Wednesday and Thursday, and
-  the CI matrix pins the four weekdays that pass. Branch
+- **2026-09-22 — `main`'s suite was red on five weekdays out of seven, and the
+  pinned `clock (friday)` job was red on EVERY push. Branch
   `overnight/anchored-suggestion-weekday-cliff`, NOT merged at the time of
-  writing. Test-only — not one line of `app/` is touched.** Two tests in
+  writing. Test-only — not one line of `app/` is touched.** Three tests
+  across two files, one root cause. Two of them in
   `test_planning_periods.py::TestRhythmAnchoredDefault` call
   `suggest_planning_period()` UNPINNED and then assert the start day is a
   Monday. Since "today, never yesterday" (Emily, 2026-09-20: "the days are
@@ -431,12 +432,30 @@ why*, not duplicating the diff.
     identically at `TZ=UTC` and inside a VERIFIED `Pacific/Niue` straddle, so
     it is not a straddle failure. Two agents measured the same counts in two
     shells on `e5e8e9b` without seeing each other's numbers.
-  - **CI cannot see it, and that is the finding worth more than the fix.**
-    The `clock` matrix pins monday, friday, saturday, sunday — **exactly the
-    four that pass**. The unpinned `pytest` job runs on the real day, so it is
-    green Mon/Fri/Sat/Sun and red Tue/Wed/Thu. It shipped green on Monday
-    2026-09-21 because Monday was both a pinned day and the real one. Three
-    days in seven, on both blocking jobs.
+  - **THE FIRST VERSION OF THIS ENTRY SAID "the matrix pins exactly the four
+    weekdays that pass, so CI cannot see it". THAT IS FALSE, and the
+    correction is the more useful finding.** A second agent measuring its own
+    baseline on another branch found a THIRD test of the same family in a
+    DIFFERENT file —
+    `test_weekly_plan_last_clock_reads.py::TestTheWeekTheAppOffers::test_the_monday_anchored_default_still_starts_on_a_monday`
+    — and it fails on **wednesday, thursday and FRIDAY**, one day later than
+    the other two because it runs behind `_behind(monkeypatch)`. Re-measured
+    here independently at all seven pins before believing it.
+    **Friday IS in the matrix**, and a weekday pin always resolves to the next
+    such day, so **`clock (friday)` has been red on `main` on every single
+    push since the change landed** — measured 1 failed / 6210 passed / 3
+    skipped. So CI was not blind to this family: it was red and was landed
+    over or ignored, which is worse and is the thing to fix about the process
+    rather than the code.
+  - **What IS true about the blind spot**, stated at the size it really is:
+    the two `test_planning_periods.py` tests fail on tuesday, wednesday and
+    thursday, and **none of those three is pinned by the matrix** — so those
+    two were caught only by the unpinned `pytest` job, on whatever day
+    somebody happened to push, and were green on Monday 2026-09-21 because
+    Monday was both a pinned day and the real one. Taken together: the family
+    spans five weekdays (tue, wed, thu from one file, wed, thu, fri from the
+    other), the matrix covers four weekdays and can see exactly one of those
+    five.
   - **The app is right and the tests are stale**, measured rather than
     assumed: sunday-anchored, `start` is `2026-09-07` on the Monday,
     `2026-09-09` on the Wednesday (`is_monday_anchored` correctly False) and
@@ -455,8 +474,21 @@ why*, not duplicating the diff.
     **including both re-pinned tests**. So they still catch exactly what they
     were written to catch; the pin removed an assertion that is now false by
     design and nothing else.
-  - **A third test is added, and it is the point of the branch rather than
-    decoration:** `test_mid_period_a_monday_household_is_offered_today_not_its_monday`
+  - **The third test is rewritten to assert its own docstring's claim.** It
+    said "moving the clock must not move where a week begins, only which week
+    it is" and then asserted a bare `weekday() == 0`, which tests the weekday
+    the suite ran on rather than the clock. It now asks the same question
+    twice — once letting the default read the household's day, once naming
+    that day through `from_date` — and requires the same answer, which IS
+    that claim and holds on all seven weekdays; plus that the start still
+    sits inside the household's own week. Its `is_monday_anchored is True`
+    went with it: that field is computed straight off the start day, so it is
+    the same stale claim in another form, and it is asserted against the
+    start day's own weekday now. **Non-vacuous, measured:** point
+    `weekly_plan._household_today` back at the server's clock and it goes red
+    on its own.
+  - **A third test is added to `test_planning_periods.py`, and it is the point
+    of the branch rather than decoration:** `test_mid_period_a_monday_household_is_offered_today_not_its_monday`
     pins the rule that broke the other two — a sunday-anchored household
     opening Plan on the Wednesday of its own Mon-start period is offered that
     Wednesday, keeps the seven-day horizon, and reads `is_monday_anchored`
@@ -478,11 +510,17 @@ why*, not duplicating the diff.
     the shape that breaks, at one job rather than three.
   - **Numbers, read off the runs.** `tests/test_planning_periods.py` **71
     passed at all seven weekday pins and unpinned**, against 70 passed / 2
-    failed on main at tuesday, wednesday, thursday and unpinned. Whole suite
-    unpinned at `TZ=America/Toronto` on the real Tuesday: **6214 passed, 0
-    failed**, against a measured **2 failed, 6211 passed** on `e5e8e9b` — 6211
-    + the 2 fixed + the 1 added is 6214 exactly, so nothing else moved and no
-    test was deleted or weakened.
+    failed on main at tuesday, wednesday, thursday and unpinned.
+    `tests/test_weekly_plan_last_clock_reads.py` **33 passed at all seven pins
+    and unpinned**, against 1 failed / 32 passed on main at wednesday,
+    thursday and friday. Whole suite unpinned at `TZ=America/Toronto` on the
+    real Tuesday: **6214 passed, 0 failed**, against a measured **2 failed,
+    6211 passed** on `e5e8e9b` — 6211 + the 2 fixed + the 1 added is 6214
+    exactly, so nothing else moved and no test was deleted or weakened.
+    `clock (monday)` **6211 passed, 3 skipped, 0 failed**. `clock (friday)`
+    was **1 failed, 6210 passed, 3 skipped** on the branch's first commit —
+    that one failure being the third test, which is why it is in this branch
+    at all.
 
 - **2026-09-22 — Integration `shop-feedback-2026-09-22`: the five Shop cards
   from Emily's 2026-09-22 Shop mockups.** `shop-add-remember-label` then
