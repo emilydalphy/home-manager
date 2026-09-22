@@ -11649,7 +11649,7 @@
         ? '<button type="button" class="wk-swap-quiet" id="wk-swap-move">' +
             escapeHtml('Move the ' + dishShortName(st.name) + ' to another day') + '</button>'
         : '') +
-      '<button type="button" class="wk-swap-tell" id="wk-swap-tell">Something else — tell me</button>';
+      '<button type="button" class="wk-swap-else" id="wk-swap-tell">Something else — tell me</button>';
   }
 
   function drawSwapSheet() {
@@ -18454,10 +18454,12 @@
   // 2026-09-15 (Loop Board: "Ask: the door says 'hold this', not 'meal
   // edits'") — a household walking the "Pomona, hold this" flow read that
   // line and translated their thought into a command because it only
-  // named plan edits. The sheet's own title already says "What's on your
-  // mind?" (shell.html), so this doesn't repeat it — it answers the next
-  // question instead: what happens to whatever you say.
-  var DEFAULT_ASK_GREETING = 'Say it however it comes — I’ll put it where it belongs.';
+  // named plan edits. Then "Say it however it comes — I'll put it where
+  // it belongs." until 2026-09-21, when Emily asked for this line, word
+  // for word (Loop Board "Chat greeting"). It carries the sheet's one
+  // exclamation mark (DESIGN_SYSTEM.md §8: at most one per screen) — no
+  // other line on the sheet gets one.
+  var DEFAULT_ASK_GREETING = 'Tell me what’s on your mind and how I can help!';
 
   function ensureAskSheetBuilt(greeting) {
     if (askBuilt) {
@@ -18475,9 +18477,8 @@
     }
     askBuilt = true;
     loadQuickActionChips();
-    // No exclamation mark, and an offer rather than an instruction — this
-    // is the first thing the assistant ever says, and it has to sit beside
-    // the same voice as the rest of the app.
+    // The first thing the assistant ever says, in the same voice as the
+    // rest of the app; the default's exclamation mark is the sheet's one.
     addAskMessage('assistant', greeting || DEFAULT_ASK_GREETING);
   }
 

@@ -392,11 +392,19 @@ _DEFAULT_EFFORT = {
     "chat": "medium",       # run_agent_turn -- the everyday chat loop
     "generation": "high",   # a full week or component plan -- the hardest task in the app
     "utility": "medium",    # prep schedules, recipe fill-in, image scans, chore recs
+    # The Swap sheet's three picks (tools.swap_options). Added 2026-09-21
+    # (Loop Board "Swap picks arrive faster"): the call names three dishes
+    # against constraints it is handed -- no recipe, no quantities -- and
+    # the household is sitting on a sheet waiting for them. Railway showed
+    # the old recipe-shaped call at 10.5-13s; low effort on the trimmed
+    # schema is the route to under five. PICKS_EFFORT overrides it.
+    "picks": "low",
 }
 _EFFORT_ENV_VARS = {
     "chat": "CHAT_EFFORT",
     "generation": "GENERATION_EFFORT",
     "utility": "UTILITY_EFFORT",
+    "picks": "PICKS_EFFORT",
 }
 _VALID_EFFORTS = {"low", "medium", "high", "xhigh", "max"}
 

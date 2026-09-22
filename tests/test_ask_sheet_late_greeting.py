@@ -81,8 +81,10 @@ RECIPES_GREETING = 'Ask me anything about the recipes we’ve saved.'
 # commit rather than deleting the test. Reworded 2026-09-15 (Loop Board:
 # "Ask: the door says 'hold this', not 'meal edits'") from "Tell me what
 # you'd like different and I'll rework it." — the old line only invited
-# plan edits.
-DEFAULT_ASK_GREETING = 'Say it however it comes — I’ll put it where it belongs.'
+# plan edits. Reworded again 2026-09-21 (Loop Board "Chat greeting") to
+# the line Emily asked for, word for word; test_ask_sheet_greeting.py pins
+# it from the source and checks it is the sheet's only exclamation mark.
+DEFAULT_ASK_GREETING = 'Tell me what’s on your mind and how I can help!'
 
 
 def _script(body: str) -> str:
