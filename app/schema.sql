@@ -451,6 +451,13 @@ CREATE TABLE IF NOT EXISTS week_intake (
     -- What We Know.
     guest_counts_json TEXT NOT NULL DEFAULT '{}',      -- {"2026-09-06": {"adults": 2, "children": 0}}
     packed_lunch_days_json TEXT NOT NULL DEFAULT '[]', -- ["2026-09-01"]
+    -- The days the household tapped OFF on "Which days?" (2026-09-21, board
+    -- D1): still inside the period, planned for nothing and shopped for
+    -- nothing — every meal on them is written planned_empty at generation
+    -- (agent._finish_week_slots), and the menu names them "Not planned".
+    -- Not an "away" (nobody is travelling) and not an `out` night (that is
+    -- dinner only): a day left out of the plan on purpose. ISO dates.
+    skipped_days_json TEXT NOT NULL DEFAULT '[]',      -- ["2026-09-27"]
 
     -- Q2.
     moods_json TEXT NOT NULL DEFAULT '[]',

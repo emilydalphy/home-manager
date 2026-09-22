@@ -77,6 +77,15 @@ MOOD_GUIDANCE = {
 SURPRISE_MOOD = "Surprise me"
 
 
+# What every meal on a day tapped off "Which days?" says for itself once
+# the week is drafted (2026-09-21, board D1). Written as the planned_empty
+# reason by agent._finish_week_slots, and the menu titles those slots "Not
+# planned" (weekly_plan.get_week_menu reads the constraint below) — never
+# "Away": nobody is travelling, the day was left out on purpose.
+SKIPPED_DAY_REASON = "Not planned — you left this day out."
+SKIPPED_DAY_CONSTRAINT = "skipped_day"
+
+
 # The hard cap a `rush` night imposes, in minutes. Named rather than inlined
 # because the acknowledgement copy, the generator prompt and the draft
 # screen's per-slot reasons all have to agree on the same number.
@@ -356,6 +365,7 @@ def _intake_row_to_dict(row) -> dict:
         "night_tags": json.loads(row["night_tags_json"]),
         "guest_counts": json.loads(row["guest_counts_json"]),
         "packed_lunch_days": json.loads(row["packed_lunch_days_json"]),
+        "skipped_days": json.loads(row["skipped_days_json"] or "[]"),
         "moods": json.loads(row["moods_json"]),
         "cuisines": json.loads(row["cuisines_json"]),
         "freeform": row["freeform"],
@@ -415,6 +425,7 @@ def save_week_intake(
     freeform: str | None = None,
     created_by: str = "",
     day_count: int = 7,
+    skipped_days: list | None = None,
 ) -> dict:
     """
     Record the household's answers for a week, as a NEW REVISION.
@@ -443,9 +454,29 @@ def save_week_intake(
     day of their own period at all — the save was refused outright, so
     question 1 could not be answered and the whole flow stopped. Found by
     running the round trip, not by reading the code.
+
+    skipped_days are the days tapped off "Which days?" (2026-09-21, board
+    D1): ISO dates inside the period, and never every day of it — a period
+    with nothing to plan is not a period. Whichever revision holds them,
+    the day-keyed answers for those days (night tags, guest counts, packed
+    lunches) are dropped from the revision saved: a day that isn't planned
+    has nothing to say about its dinner, and the building screen reads the
+    saved answers back as fact.
     """
     date.fromisoformat(week_start)  # fail loudly on a malformed week
     week_days = set(period_dates(week_start, day_count))
+    if skipped_days is not None:
+        if not isinstance(skipped_days, list) or not all(isinstance(d, str) for d in skipped_days):
+            raise ValueError("skipped_days must be a list of ISO dates.")
+        for day in skipped_days:
+            date.fromisoformat(day)
+            if day not in week_days:
+                raise ValueError(
+                    f"{day} isn't in the {day_count}-day period starting {week_start}."
+                )
+        skipped_days = sorted(set(skipped_days))
+        if len(skipped_days) >= len(week_days):
+            raise ValueError("At least one day has to stay in the plan.")
     for day, tags in (night_tags or {}).items():
         date.fromisoformat(day)  # keyed by ISO date, never by weekday
         # A tag on a date outside the PERIOD it's being saved for would
@@ -490,11 +521,18 @@ def save_week_intake(
             current = _current_intake_row(conn, week_start)
             base = _intake_row_to_dict(current) if current else {
                 "night_tags": {}, "guest_counts": {}, "packed_lunch_days": [],
-                "moods": [], "cuisines": [], "freeform": "",
+                "skipped_days": [], "moods": [], "cuisines": [], "freeform": "",
             }
 
             def pick(new, key, _base=base):
                 return _base[key] if new is None else new
+
+            # A day left out of the plan carries no answer about its meals,
+            # whichever save brought the two together (see the docstring).
+            skipped = set(pick(skipped_days, "skipped_days"))
+            night_tags_saved = {d: t for d, t in pick(night_tags, "night_tags").items() if d not in skipped}
+            guest_counts_saved = {d: c for d, c in pick(guest_counts, "guest_counts").items() if d not in skipped}
+            packed_saved = [d for d in pick(packed_lunch_days, "packed_lunch_days") if d not in skipped]
 
             household_snapshot = _household_composition()
             preferences_snapshot = _build_preferences_snapshot(conn)
@@ -509,9 +547,9 @@ def save_week_intake(
                 INSERT INTO week_intake (
                     household_id, week_start, revision, created_by,
                     night_tags_json, guest_counts_json, packed_lunch_days_json,
-                    moods_json, cuisines_json, freeform,
+                    skipped_days_json, moods_json, cuisines_json, freeform,
                     household_snapshot_json, preferences_snapshot_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     household_id(), week_start, revision,
@@ -519,9 +557,10 @@ def save_week_intake(
                     # one; else the name given; else whoever started the
                     # revision before (see _shared.acting_name).
                     (acting_name(created_by) or (current["created_by"] if current else "")).strip(),
-                    json.dumps(pick(night_tags, "night_tags")),
-                    json.dumps(pick(guest_counts, "guest_counts")),
-                    json.dumps(pick(packed_lunch_days, "packed_lunch_days")),
+                    json.dumps(night_tags_saved),
+                    json.dumps(guest_counts_saved),
+                    json.dumps(packed_saved),
+                    json.dumps(sorted(skipped)),
                     json.dumps(pick(moods, "moods")),
                     json.dumps(pick(cuisines, "cuisines")),
                     pick(freeform, "freeform"),
@@ -926,6 +965,7 @@ def _intake_for_period(conn, week_start: str, day_count: int, plan) -> dict | No
     intake["night_tags"] = {d: t for d, t in intake["night_tags"].items() if d in days}
     intake["guest_counts"] = {d: c for d, c in intake["guest_counts"].items() if d in days}
     intake["packed_lunch_days"] = [d for d in intake["packed_lunch_days"] if d in days]
+    intake["skipped_days"] = [d for d in intake.get("skipped_days") or [] if d in days]
     return intake
 
 

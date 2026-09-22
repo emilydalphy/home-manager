@@ -602,6 +602,8 @@ from .usage import (  # noqa: F401
 from .week_intake import (  # noqa: F401
     MOOD_GUIDANCE,
     SURPRISE_MOOD,
+    SKIPPED_DAY_REASON,
+    SKIPPED_DAY_CONSTRAINT,
     NIGHT_TAGS,
     ONBOARDING_CUISINES,
     KNOWN_CUISINES,

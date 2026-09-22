@@ -684,7 +684,13 @@ def test_the_other_hand_rolled_pairs_are_NOT_fixed_here():
     import inspect
 
     agent_src = inspect.getsource(__import__("app.agent", fromlist=["agent"]))
-    assert agent_src.count("tools.clear_plan_slot(") == 2
+    # Three since 2026-09-21: the skipped-day pass clears a dropped day's
+    # SNACKS with nothing to put in their place (a snack slot is outside
+    # the 21-slot guarantee, so an absence there is the intended state) —
+    # a lone clear, not a pair; its three meals go through
+    # slot_needs._settle_slot_empty, the one-transaction pair.
+    assert agent_src.count("tools.clear_plan_slot(") == 3
+    assert agent_src.count("_slot_needs._settle_slot_empty(") == 1
     big_meal_src = inspect.getsource(__import__("app.tools.big_meal", fromlist=["big_meal"]))
     assert big_meal_src.count("clear_plan_slot(") == 5
     assert big_meal_src.count("add_ingredients_to_grocery_list=False") == 3

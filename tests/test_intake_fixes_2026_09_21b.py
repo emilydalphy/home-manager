@@ -412,6 +412,9 @@ def _race_harness() -> str:
     return (
         "var weekStart = '2026-09-21'; var dayCount = 7; var horizon = 7;\n"
         "var data = null; var loadedFor = ''; var awayRanges = []; var answersAtLoad = ''; var prefilled = {};\n"
+        # "Which days?" (board D1): the dropped days the prefill may restore.
+        "var dropped = {}; var droppedTouched = false; var skippedAtLoad = ''; var step = 2; var picking = false;\n"
+        "function droppedList() { return Object.keys(dropped).sort(); } function renderRangeCard() {}\n"
         "var answers = { night_tags: {}, guest_counts: {}, packed_lunch_days: [], moods: [], cuisines: [] };\n"
         "var box = { value: '', focused: true };\n"
         "var els = { freeform: box }; function $(id) { return els[id] || (els[id] = { hidden: false, textContent: '' }); }\n"

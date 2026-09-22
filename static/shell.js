@@ -11798,7 +11798,7 @@
   }
 
   // The one useful fact beside the days: what it was asked for ("Mexican,
-  // as asked", "packs cold") when any of its days carries one, else the
+  // as asked", "travels well") when any of its days carries one, else the
   // minutes. The first cooked day speaks for the dish.
   function wkMenuFact(dish) {
     for (var i = 0; i < dish.days.length; i++) {

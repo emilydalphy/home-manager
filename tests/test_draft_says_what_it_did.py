@@ -15,7 +15,7 @@ widened 2026-09-21), the server half:
     used, named — never silently dropped; else "Nine new dishes — nothing
     from the last two weeks");
   * every planned row carries the one fact it was asked for ("Mexican, as
-    asked", "packs cold") beside its stored reason.
+    asked", "travels well") beside its stored reason.
 
 The screen half is in tests/test_draft_front_door.py.
 """
@@ -197,7 +197,7 @@ def test_days_phrase_collapses_runs_and_names_the_whole_week():
 def test_the_row_fact_is_read_off_what_the_household_asked_never_the_name():
     fact = draft_opener.asked_fact
     assert fact({"derived_from": {"inputs": ["cuisines:mexican"], "freeform": "Mexican for lunch"}}) == "Mexican, as asked"
-    assert fact({"derived_from": {"constraint": "packed_lunch"}}) == "packs cold"
+    assert fact({"derived_from": {"constraint": "packed_lunch"}}) == "travels well"
     assert fact({"derived_from": json.dumps({"freeform": "chicken and potatoes for dinner"})}) == "as asked"
     assert fact({"derived_from": {"inputs": ["mood:comfort_food"]}}) is None
     assert fact({"derived_from": None}) is None

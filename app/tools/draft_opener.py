@@ -39,7 +39,7 @@ unmet gets no line at all.
            Emily, 2026-09-21).
 
 `asked_fact` is the sibling of this for one row: the one short fact the
-dish carries beside its days ("Mexican, as asked", "packs cold"), read off
+dish carries beside its days ("Mexican, as asked", "travels well"), read off
 the entry's own derived_from rather than guessed from its name.
 
 The window is meal_variety.VARIETY_WINDOW_WEEKS — one constant for the
@@ -146,7 +146,9 @@ def asked_fact(entry: dict) -> str | None:
     d = _derived(entry)
     constraint = str(d.get("constraint") or "").lower()
     if "packed_lunch" in constraint:
-        return "packs cold"
+        # The rule since 2026-09-21 (board D2): travels well, fine cold or
+        # reheated — so the tag says the part that is always true.
+        return "travels well"
     for item in d.get("inputs") or []:
         item = str(item)
         if item.lower().startswith("cuisines:"):
@@ -380,11 +382,15 @@ def count_note(day_count: int, memory: dict | None, said: str = "") -> str:
     """
     "Three dinners this week, not four — it's a four-day plan." Said only
     when a count on the household's "Each week I plan" screen was scaled
-    to a shorter period (meal_variety.prorate_meal_count) and came out
+    to a shorter plan (meal_variety.prorate_meal_count) and came out
     different; dinners when they differ, else the first meal that does.
     Nothing for a full week, a household with no counts set, or when line
     1 (`said`) already states that count ("three dinners across four
     nights") — a number said twice reads as a stammer.
+
+    `day_count` is the number of days PLANNED — a seven-day period with
+    the weekend tapped off "Which days?" is a five-day plan here, the
+    same number the counts were scaled to (agent._planned_day_count).
     """
     if not memory or day_count >= 7:
         return ""
@@ -426,5 +432,6 @@ def build_opener(rows, intake: dict | None, period_start: str, day_count: int, d
     else:
         recent = recent_dish_names(period_start, plan_id)
     second = _line_two(entries, report, recent, surprise=surprise)
-    third = count_note(day_count, memory, said=first)
+    skipped = {d for d in ((intake or {}).get("skipped_days") or []) if d in period}
+    third = count_note(max(1, day_count - len(skipped)), memory, said=first)
     return [line for line in (first, second, third) if line]
