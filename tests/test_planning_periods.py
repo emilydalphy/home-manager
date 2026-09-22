@@ -361,9 +361,14 @@ class TestRhythmAnchoredDefault:
         monkeypatch.setattr(weekly_plan, "date", self._FixedToday)
         pin_household_clock(monkeypatch)
 
-    def test_a_household_ready_the_sunday_before_gets_a_monday(self):
+    def test_a_household_ready_the_sunday_before_gets_a_monday(self, monkeypatch):
         # 'sunday' is the exact old default's new name — ready the Sunday
-        # before, Monday start.
+        # before, Monday start. The clock is PINNED to a Sunday: since
+        # 2026-09-21 ("today, never yesterday") the anchor is only offered
+        # while it is still ahead, so on a Tuesday this rightly answers
+        # Tuesday — and an unpinned version of this test passed on a Monday
+        # and failed every other day of the week.
+        self._pin_today(monkeypatch, "2026-09-20")
         self._set_anchor("sunday")
         suggestion = tools.suggest_planning_period()
         assert suggestion["is_monday_anchored"] is True
@@ -423,9 +428,11 @@ class TestRhythmAnchoredDefault:
         assert suggestion["day_count"] == 3
         assert suggestion["planning_anchor"] == "as_we_go"
 
-    def test_a_household_that_never_answered_keeps_the_monday(self):
+    def test_a_household_that_never_answered_keeps_the_monday(self, monkeypatch):
         # The no-op property again: every household predating the anchor
-        # sees exactly the default this app has always offered.
+        # sees exactly the default this app has always offered — pinned to a
+        # Sunday for the same reason as the test above.
+        self._pin_today(monkeypatch, "2026-09-20")
         suggestion = tools.suggest_planning_period()
         assert suggestion["planning_anchor"] == "sunday"
         assert datetime.date.fromisoformat(suggestion["start_date"]).weekday() == 0
