@@ -415,6 +415,92 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-22 — Staples ran on the server's clock, so a staple due tomorrow
+  was written onto tonight's shopping list. Branch
+  `overnight/staples-household-clock`, NOT merged at the time of writing.**
+  Loop Board bug, the tail of the household-clock sweep and the pocket the
+  2026-09-18 `last-clock-pockets` entry named and left. The container runs UTC
+  and `households.timezone` defaults to `America/Toronto`, so from about 8pm
+  local the server's date is already tomorrow.
+  - **`sync_due_staples` is a WRITE and is called on every read of the grocery
+    list**, so the error was not a wrong badge: a staple whose `next_due_at`
+    was the household's TOMORROW was the server's TODAY and got pushed onto
+    the real list that evening — an extra line, in exactly the hours somebody
+    checks the list before a morning shop. `due` on the Staples card read a
+    day early for the same window. Both reproduced in both clock directions.
+  - **DRIVEN OVER TWO REAL uvicorn SERVERS ON THROWAWAY DATABASES, NO CLOCK
+    FAKED ANYWHERE** — the container is UTC and the household was set to
+    `Pacific/Niue`, so the server read 2026-09-22 and the household
+    2026-09-21 for real. One staple, due on the household's TOMORROW
+    (2026-09-22), then an ordinary read of the grocery list, which is what
+    calls `sync_due_staples`:
+
+    | | main | this branch |
+    |---|---|---|
+    | grocery list after the read | **`['Dish soap']`** | `(empty)` |
+    | Staples card | `due=True`, "probably running low" | `due=False`, "due tomorrow" |
+
+    Same database contents, same request, same instant; the only difference
+    is the two lines of code. That is the reported bug and the fix, through
+    the door a household actually uses rather than through a helper.
+  - **ELEVEN READS, ONE FUNCTION.** Every date this module reasons with goes
+    through `_today()`, so the conversion is one function rather than eleven
+    edits — and `_TODAY_OVERRIDE` still wins, which is load-bearing:
+    `tests/test_staples.py` pins a fixed Wednesday through it and travels
+    from there.
+  - **THE NAIVE CONVERSION COSTS A CONNECTION PER ROW, AND THAT IS THE ONLY
+    interesting thing in this branch. Measured, not reasoned.**
+    `cooker.household_today()` opens a connection to read the household's
+    timezone, and `_shape` — the row-shaper — called `_today()` twice per row.
+    With the one-line change and nothing else: **`list_staples` went 1 → 13
+    connections for six staples**, i.e. per row, which is the cost this repo
+    has twice gone out of its way to avoid. `add_staple` went 1 → 6.
+    `_shape` and `_due_words` take the day now, `list_staples` resolves it
+    once above its own `get_conn`, and `add_staple` reads it once and reuses
+    it. **After: `list_staples` 1 → 2 and `add_staple` 1 → 4, and both are
+    CONSTANT** — re-measured at 1 staple, 6 staples, and 11 staples with a
+    dozen purchased rows behind them, same numbers. `sync_due_staples` 1 → 2.
+  - **The clock is resolved BEFORE `get_conn`**, which is a runtime guard
+    rather than a comment: a nested connection inside an open write
+    transaction is how this repo has twice earned an intermittent "database
+    is locked". Pinned by a test that watches the depth at the moment the
+    clock is read, and by the mutation that moves the read below `get_conn`.
+  - **`cooker.household_today()` imported IN-FUNCTION, not at module scope.**
+    `spices` imports this module at module scope and this module imports
+    `spices` back, and `cooker` imports `quantities` at module scope — so a
+    new top-level edge from either file is a cycle waiting to happen, for a
+    value read once per call. Same shape `inventory.py` and
+    `notifications.py` took on 2026-09-18.
+  - **`quantities._estimate_expiration_date` moves in the same commit**, per
+    this file's own rule that a half-converted module is a new bug rather
+    than a smaller one. It is the WRITE side of the half-conversion the
+    2026-09-18 entry named: measured at Toronto 21:30, a dairy row landed a
+    day late. An explicit `from_date` still wins outright, pinned.
+  - **THE CARD SAID THE STALE COMMENT WAS WRONG AND IT IS NOT, which is worth
+    correcting rather than quietly fixing.** The comment accepting the skew
+    because it "errs toward staying quiet" is about a DIFFERENT comparison —
+    `date(removed_at) < today`, where `removed_at` is a UTC instant — and for
+    that one it is true, in both directions, before and after. What was wrong
+    was how it READ while `_today()` was the server's: as a blessing on the
+    module's clock generally, when the due test three lines above it errs the
+    other way. The comment now says which comparison it covers and names the
+    one it does not.
+  - `tests/test_staples_household_clock.py` (11; **5 red against main's
+    `app/`**, of which **4 are behaviour catches** — the fifth is the
+    ordering guard and is red there for a reason other than the one it is
+    named after, because main reads no household clock in this module at all,
+    so it dies on an empty list rather than on a bad depth. Its docstring
+    says so and it is pinned by mutation instead). Both directions at one
+    frozen UTC instant, following `tests/test_last_clock_pockets.py`: Toronto
+    21:30 (the household a day BEHIND — production's own direction) and Tokyo
+    08:30 (a day AHEAD, the quiet direction, where a staple due on the
+    household's own today is withheld). **Six mutations run and every one
+    bites:** the server's clock back in `_today()` (4 red), the
+    `_TODAY_OVERRIDE` branch dropped (2), `list_staples` no longer threading
+    the day so the per-row read returns (1), the clock read moved below
+    `get_conn` (1), the expiry estimate back on the server's clock (1), and
+    the expiry estimate ignoring an explicit `from_date` (1).
+
 - **2026-09-22 — Integration `shop-feedback-2026-09-22`: the five Shop cards
   from Emily's 2026-09-22 Shop mockups.** `shop-add-remember-label` then
   `shop-aisles-store-done` merged onto main 05e2e5a with `--no-ff`; no
