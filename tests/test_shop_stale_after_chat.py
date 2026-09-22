@@ -745,11 +745,13 @@ function el() {
   // A fake node that returns null from every querySelector is why the first
   // round of this work could not see the add-row loss at all: the capture/
   // restore pair that carries a half-typed "oat milk" across a re-render
-  // (groCaptureAddRow / groRestoreAddRow, and the two input helpers beside
-  // them) look their field up BY ID, so against a null-returning node they
-  // are no-ops and the loss is invisible. Round 2 special-cased
-  // #gro-add-item; round 3 generalised it, because a test now depends on
-  // this and the next one should not have to add its own case.
+  // (groCaptureStoresPromptInput / groRestoreStoresPromptInput and the
+  // subst pair beside them; the add row's pair too, until the add became
+  // a body-level sheet on 2026-09-21) look their field up BY ID, so
+  // against a null-returning node they are no-ops and the loss is
+  // invisible. Round 2 special-cased #gro-add-item; round 3 generalised
+  // it, because a test now depends on this and the next one should not
+  // have to add its own case.
   //
   // Any id this render actually wrote is findable, and the same object
   // comes back every time so a value set on it survives until the id stops
@@ -965,11 +967,13 @@ def test_a_background_refresh_does_not_take_the_household_to_another_screen():
         step `list` -> `carry`,  scrollTop 733 -> 0,
         and the half-typed "oat milk" in the add row GONE
 
-    — the add row because groFootHtml renders `#gro-add-item` on LIST only,
-    so groRestoreAddRow had nothing to put the text back into. That is the
-    exact loss renderGrocery's own capture/restore comment exists to
+    — the add row because groFootHtml rendered `#gro-add-item` on LIST
+    only, so its restore had nothing to put the text back into. That is
+    the exact loss renderGrocery's own capture/restore comment exists to
     prevent, arriving through a refresh nobody asked for, from a chat turn
-    or another tab's tap.
+    or another tab's tap. (Since 2026-09-21 the add is a sheet at body
+    level with its typing in groceryState.addSheet — out of the body's
+    reach, so the claim here is that a refresh leaves that state alone.)
 
     Nothing is lost by not navigating: LIST already carries
     groCarryRowHtml's "N things from last week · Keep or drop?" row, whose
@@ -982,11 +986,10 @@ groceryState.storesPromptDismissed = true;
 loadGrocery();
 setTimeout(function () {
   var body = GRO_NODES['#gro-body'];
-  var addRow = body.querySelector('#gro-add-item');
-  if (addRow) addRow.value = 'oat milk';
+  groceryState.addSheet = { typed: 'oat milk', store: 'Costco', picked: false };
   scrollEl.scrollTop = 733;
   var before = { step: groceryState.step, scroll: scrollEl.scrollTop,
-                 typed: addRow ? addRow.value : null,
+                 typed: groceryState.addSheet.typed,
                  hasAddRow: /id="gro-add-item"/.test(body.innerHTML) };
   // Now an approval sets last week's lines aside, and this household has
   // already said "later" to them once this page view.
@@ -995,22 +998,21 @@ setTimeout(function () {
   refreshGroceryPanel();
   setTimeout(function () {
     var b2 = GRO_NODES['#gro-body'];
-    var a2 = b2.querySelector('#gro-add-item');
     console.log(JSON.stringify({ before: before, after: {
       step: groceryState.step, scroll: scrollEl.scrollTop,
       deferred: groceryState.carryDeferred,
-      typed: a2 ? a2.value : null,
+      typed: groceryState.addSheet ? groceryState.addSheet.typed : null,
       hasAddRow: /id="gro-add-item"/.test(b2.innerHTML)
     }}));
   }, 60);
 }, 60);
 """)
     assert out["before"] == {"step": "list", "scroll": 733, "typed": "oat milk",
-                             "hasAddRow": True}, out["before"]
+                             "hasAddRow": False}, out["before"]
     assert out["after"]["step"] == "list", "a background refresh must not navigate"
     assert out["after"]["scroll"] == 733, "a background refresh must not scroll"
     assert out["after"]["typed"] == "oat milk", "it must not eat a half-typed add"
-    assert out["after"]["hasAddRow"] is True
+    assert out["after"]["hasAddRow"] is False, "the add field is the sheet's, never the list body's"
     assert out["after"]["deferred"] is True, (
         "'later' is the household's answer; a background re-read is not a "
         "reason to forget it"
@@ -1108,19 +1110,17 @@ groceryState.usualStores = ['Loblaws', 'Costco'];
 groceryState.storesPromptDismissed = true;
 loadGrocery();
 setTimeout(function () {
-  var body = GRO_NODES['#gro-body'];
-  var addRow = body.querySelector('#gro-add-item');
-  if (addRow) addRow.value = 'oat milk';
+  groceryState.addSheet = { typed: 'oat milk', store: 'Costco', picked: false };
   scrollEl.scrollTop = 733;
   CARRIED = [{ id: 9, item: 'Spinach', quantity: '1 bag' }];
   groceryState.carryDeferred = true;
   // What the three Review / open-slot call sites do: no opts at all.
   refreshGrocerySurfaces();
   setTimeout(function () {
-    var a2 = GRO_NODES['#gro-body'].querySelector('#gro-add-item');
     console.log(JSON.stringify({
       step: groceryState.step, scroll: scrollEl.scrollTop,
-      deferred: groceryState.carryDeferred, typed: a2 ? a2.value : null
+      deferred: groceryState.carryDeferred,
+      typed: groceryState.addSheet ? groceryState.addSheet.typed : null
     }));
   }, 60);
 }, 60);
@@ -1190,9 +1190,7 @@ groceryState.usualStores = ['Loblaws', 'Costco'];
 groceryState.storesPromptDismissed = true;
 loadGrocery();
 setTimeout(function () {
-  var body = GRO_NODES['#gro-body'];
-  var addRow = body.querySelector('#gro-add-item');
-  if (addRow) addRow.value = 'oat milk';
+  groceryState.addSheet = { typed: 'oat milk', store: 'Costco', picked: false };
   scrollEl.scrollTop = 733;
   // NOTHING deferred — there was nothing to defer until now. This is what
   // makes the assertion reach opts.background instead of stopping at
@@ -1201,10 +1199,10 @@ setTimeout(function () {
   groceryState.carryDeferred = false;
   refreshGroceryPanel();
   setTimeout(function () {
-    var a2 = GRO_NODES['#gro-body'].querySelector('#gro-add-item');
     console.log(JSON.stringify({
       step: groceryState.step, scroll: scrollEl.scrollTop,
-      deferred: groceryState.carryDeferred, typed: a2 ? a2.value : null
+      deferred: groceryState.carryDeferred,
+      typed: groceryState.addSheet ? groceryState.addSheet.typed : null
     }));
   }, 60);
 }, 60);

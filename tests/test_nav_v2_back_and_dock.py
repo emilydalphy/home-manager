@@ -211,23 +211,33 @@ def _gro_dock_body():
     return SHELL_JS[start:end]
 
 
-def test_shops_root_has_no_action_and_the_add_row_is_not_the_docks():
+def test_shops_root_has_no_action_and_the_add_button_is_an_outline():
     """Until 2026-09-18 "Start the trip" sat in the dock over the list. The
     list is the checklist now: the root has no single action (ticking a
-    row is it), so no dock — rule 2's own case — and the add row, a side
-    errand, opens the list rather than riding in a strip.
+    row is it). Since 2026-09-21 the dock holds "Add something" — an
+    outline button, a side errand kept in reach while the list scrolls —
+    and the add itself is a sheet (groAddSheetHtml), not a row in the
+    list.
     """
-    add = SHELL_JS[SHELL_JS.index("function groAddRowHtml("):SHELL_JS.index("function groDockHtml(")]
-    assert "gro-primary" not in add, "the add row renders no screen action"
-    assert "gro-add-item" in add
+    add = SHELL_JS[SHELL_JS.index("function groAddButtonHtml("):SHELL_JS.index("function groDockHtml(")]
+    assert "gro-primary" not in add and "dock-primary" not in add.split("function groAddSheetHtml(", 1)[0], (
+        "the dock's add button renders no screen action")
+    assert 'class="gro-add-open"' in add
+    assert "function groAddRowHtml(" not in SHELL_JS, "the add row is gone"
+    assert "gro-add-item" not in SHELL_JS[SHELL_JS.index("function groListHtml("):SHELL_JS.index("function groListFootHtml(")], (
+        "the list body renders no add field")
 
     dock = _gro_dock_body()
-    assert "gro-add-item" not in dock, "the add row is a second job; it is not the dock's"
+    assert "groAddButtonHtml()" in dock
+    assert "gro-add-item" not in dock, "the field is the sheet's, not the dock's"
     # One step has an action, and it puts exactly one fill in the dock:
     # SORT ALL's finish. LIST's "Go to Plan" over an empty list is the
     # shared .dock-primary.
     assert dock.count("gro-primary") == 1
     assert dock.count("dock-primary") == 1
+    outline = SHELL_CSS.split(".gro-add-open {", 1)[1][:600]
+    assert "background: transparent" in outline and "--apricot" not in outline
+    assert "min-height: 48px" in outline
 
 
 def test_the_dock_is_the_last_thing_in_its_container():
@@ -267,17 +277,23 @@ def test_a_screen_with_no_single_action_has_no_dock():
     design gave it "Start cooking" on 2026-09-13; a Cook night with nothing
     to cook still has none — see tests/test_cook_shelf.py.)
 
-    Shop's LIST is the standing example since 2026-09-18: the list is the
-    checklist, ticking a row is the action, so the root returns the empty
-    string — except over an empty list, where the empty moment's next
-    step, "Go to Plan", is the dock — and an empty dock collapses rather
+    Shop's LIST was the standing example from 2026-09-18: the list is the
+    checklist, ticking a row is the action, so the root had no action —
+    except over an empty list, where the empty moment's next step, "Go to
+    Plan", is the dock. Since 2026-09-21 the root's dock carries "Add
+    something" as an OUTLINE beside the chat FAB (Emily's S1 mockup): a
+    side errand that has to stay reachable while the list scrolls, not a
+    screen action, and not an apricot. SORT ALL with rows left is the
+    standing no-dock example now, and an empty dock collapses rather
     than leaving a bare hairline across the bottom of a screen with
     nothing to say.
     """
     dock = _gro_dock_body()
     assert "start-trip" not in dock
     assert "!groStoresPromptShouldShow() &&" in dock, "never over the shops question"
-    assert "return '';" in dock.split("data-gro=\"goto-plan\"", 1)[1][:80], "LIST renders no dock"
+    assert "return groAddButtonHtml();" in dock.split("data-gro=\"goto-plan\"", 1)[1][:120], "LIST's dock is the add button and nothing apricot"
+    sortall = dock.split("if (step === 'sortall') {", 1)[1]
+    assert "return '';" in sortall[:120], "SORT ALL with rows left renders no dock"
     assert ".gro-dock:empty { display: none; }" in SHELL_CSS
     # And the FAB is cleared by the body when there is no dock under it.
     assert ".gro-body:has(+ .gro-dock:empty) { padding-bottom: 70px; }" in SHELL_CSS

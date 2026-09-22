@@ -461,7 +461,7 @@ why*, not duplicating the diff.
     line still to buy — the same soft remove (staple told "plenty", no
     inventory write — policy 2026-09-01), marked `removed_by='freezer'`
     (`defrost.FREEZER_REMOVED_BY`, beside 'already_have'/'staple'/the
-    carried marks) so it lands under Shop's "Not needed this week" (with a
+    carried marks) so it lands under Shop's "Already had on hand" (with a
     "· from the freezer" note) and comes back through the ONE undo.
     `pre_shop.undo_pre_shop_drop` reads that mark and calls
     `defrost._release_frozen_item` (deletes the item's still-pending,

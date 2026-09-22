@@ -20,7 +20,7 @@ What changed, and the section of this file for each:
      (pre_shop.drop_grocery_item_pre_shop), marked removed_by 'freezer' —
      and the move booked with the item's own lead. "Nothing frozen" on a
      first answer writes nothing at all.
-  3. The way back: "Actually, I need it" on Shop's "Not needed this week"
+  3. The way back: "Actually, I need it" on Shop's "Already had on hand"
      foot (pre_shop.undo_pre_shop_drop) puts the line back AND cancels the
      move; reopening the step and un-tapping the chip does the same
      through confirm_frozen_items. Re-tapping is idempotent.
@@ -181,8 +181,8 @@ def test_the_still_to_buy_rule_is_gone_from_the_source():
 # ---------------------------------------------------------------------------
 
 def test_a_yes_sets_the_line_aside_the_way_have_it_does_and_books_the_move():
-    """CATCH — the card's centre. The line lands under "Not needed this
-    week" (status removed, the pre-shop drop's write) marked as the
+    """CATCH — the card's centre. The line lands under "Already had on
+    hand" (status removed, the pre-shop drop's write) marked as the
     freezer's, and the move is dated two nights ahead for a standard cut."""
     _meat()
     plan_id = _week()

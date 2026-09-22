@@ -44,6 +44,22 @@
 // (the server's "fridge" is what removes a move). applyPending ignores
 // it: nothing on the list's shape changes with the answer.
 //
+// And one more since 2026-09-21 (Loop Board 3e31f4c0-5231-817d): a thing
+// added from the "Add something" sheet with no signal —
+//   { id, kind: 'add', item, quantity, category, store?, at }
+// posted to /api/grocery-list/add (with remember: true when a store rides
+// along). Its id is a local one ('add-<time>-<n>') until the server gives
+// the line a real one on replay; applyPending draws it on the phone's
+// copy under the store it was given (applyAdd), status needed, so the
+// list shows it at once. One entry per add (no two adds are the same
+// op), in the queue's order with the ticks. A tick on the local row is
+// refused by the screen (isPendingAddId) — there is nothing on the
+// server to tick yet — and Put back on the toast takes the add out of
+// the queue again (unqueue). The route is not idempotent the way the
+// status route is: a request whose reply was lost lands the line, and a
+// resend merges into it (add_grocery_item consolidates same-name lines),
+// which for a shopping list is the right side to err on.
+//
 // This file has no DOM and no fetch of its own: shell.js hands it storage
 // and a post function, which is also what lets tests/test_grocery_offline.py
 // run it under node exactly as the browser does. Anything that needs Claude
@@ -62,6 +78,8 @@
   var HOUSEHOLD_KEY = 'pomona.grocery.household';
   var STATUSES = ['needed', 'in_cart', 'purchased'];
   var FREEZING_ANSWERS = ['freezer', 'fridge'];
+  var ADD_ID_PREFIX = 'add-';
+  var UNASSIGNED = 'Unassigned';
 
   // Move one item between the buckets of the list shape shell.js renders
   // (groLoadAllData: storeName -> { sections, purchased, inCart }). Mutates
@@ -114,6 +132,54 @@
       if (SECTION_ORDER.indexOf(store.sections[j].section) > rank) { at = j; break; }
     }
     store.sections.splice(at, 0, { section: cat, items: [item] });
+  }
+
+  // A queued add drawn onto the list shape: a needed row under the store
+  // it was given (the loose pile when it was given none), in its aisle,
+  // carrying the op's local id. Mutates and returns `data`. A store the
+  // list has no bucket for yet gets one — the card appears, which is what
+  // the add asked for.
+  function applyAdd(data, op) {
+    if (!data || !data.stores || !op) return data;
+    var name = op.store || UNASSIGNED;
+    if (!data.stores[name]) data.stores[name] = { sections: [], purchased: [], inCart: [] };
+    var already = findLine(data, op.id);
+    if (already) return data;
+    insertNeeded(data.stores[name], {
+      id: String(op.id), item: op.item, quantity: op.quantity || '', category: op.category || 'other',
+      store: op.store || '', store_decided: op.store === undefined ? 0 : 1, status: 'needed', pending: true
+    });
+    return data;
+  }
+  // Take one row off the list shape, wherever it sits. Mutates and returns
+  // `data`; a row not on it is left alone.
+  function removeLine(data, itemId) {
+    if (!data || !data.stores) return data;
+    var id = String(itemId);
+    Object.keys(data.stores).forEach(function (n) {
+      var s = data.stores[n];
+      (s.sections || []).forEach(function (sec) {
+        sec.items = (sec.items || []).filter(function (it) { return String(it.id) !== id; });
+      });
+      s.sections = (s.sections || []).filter(function (sec) { return sec.items.length; });
+      ['inCart', 'purchased'].forEach(function (b) {
+        s[b] = (s[b] || []).filter(function (it) { return String(it.id) !== id; });
+      });
+    });
+    return data;
+  }
+  function findLine(data, itemId) {
+    var id = String(itemId);
+    var names = Object.keys(data.stores);
+    for (var n = 0; n < names.length; n++) {
+      var s = data.stores[names[n]];
+      var secs = s.sections || [];
+      for (var i = 0; i < secs.length; i++) {
+        var items = secs[i].items || [];
+        for (var j = 0; j < items.length; j++) if (String(items[j].id) === id) return items[j];
+      }
+    }
+    return null;
   }
 
   function clone(v) { return JSON.parse(JSON.stringify(v)); }
@@ -179,31 +245,39 @@
     }
 
     // A queue entry is an object with an id and one of the three statuses
-    // (a tick, kind absent or 'status') or one of the two freezing answers
-    // (kind 'freezing'); anything else (a null from a bad write, a shape
-    // from an older build) is dropped on read rather than left to jam
-    // replay forever.
+    // (a tick, kind absent or 'status'), one of the two freezing answers
+    // (kind 'freezing'), or a named thing to add (kind 'add'); anything
+    // else (a null from a bad write, a shape from an older build) is
+    // dropped on read rather than left to jam replay forever.
     function isFreezing(op) { return !!op && op.kind === 'freezing'; }
+    function isAdd(op) { return !!op && op.kind === 'add'; }
     function validOp(op) {
       if (!op || typeof op !== 'object') return false;
       if (typeof op.id !== 'string' && typeof op.id !== 'number') return false;
       if (isFreezing(op)) return FREEZING_ANSWERS.indexOf(op.answer) !== -1;
+      if (isAdd(op)) return typeof op.item === 'string' && !!op.item.trim();
       return op.kind === undefined || op.kind === 'status' ? STATUSES.indexOf(op.status) !== -1 : false;
     }
     // Where an op goes and what it carries.
     function opRequest(op) {
       if (isFreezing(op)) return { url: '/api/grocery-list/' + op.id + '/freezing', body: { answer: op.answer } };
+      if (isAdd(op)) {
+        var body = { item: op.item, quantity: op.quantity || '', category: op.category || 'other' };
+        if (op.store !== undefined) { body.store = op.store; body.remember = true; }
+        return { url: '/api/grocery-list/add', body: body };
+      }
       return { url: '/api/grocery-list/' + op.id + '/status', body: { status: op.status } };
     }
     // One entry per (kind, line): the newer one replaces the older and
     // goes to the end, so across lines the order is the order the shopper
-    // made them.
+    // made them. (An add's id is its own, so no add ever replaces another.)
     function enqueue(op) {
-      var q = pending().filter(function (o) { return !(String(o.id) === String(op.id) && isFreezing(o) === isFreezing(op)); });
+      var q = pending().filter(function (o) { return !(String(o.id) === String(op.id) && (o.kind || 'status') === (op.kind || 'status')); });
       q.push(op);
       writePending(q);
       return op;
     }
+    var addSeq = 0;
     function pending() {
       var q = readJsonScoped(queueKey());
       return Array.isArray(q) ? q.filter(validOp) : [];
@@ -243,7 +317,9 @@
             var ops = [];
             try { ops = JSON.parse(carried.queue); } catch (err) { ops = []; }
             (Array.isArray(ops) ? ops : []).filter(validOp).forEach(function (op) {
-              if (isFreezing(op)) api.queueFreezing(op.id, op.answer); else api.queueStatus(op.id, op.status);
+              if (isFreezing(op)) api.queueFreezing(op.id, op.answer);
+              else if (isAdd(op)) enqueue(op);
+              else api.queueStatus(op.id, op.status);
             });
           }
         }
@@ -311,14 +387,40 @@
         return enqueue({ id: String(itemId), kind: 'freezing', answer: answer, at: now() });
       },
 
+      // A thing to add: its own entry, a local id until the server answers.
+      // `line` is the /add body — item, quantity, category, and store
+      // (present = the sheet asked; '' = Anywhere) when it was asked.
+      queueAdd: function (line) {
+        if (!line || typeof line.item !== 'string' || !line.item.trim()) return null;
+        var op = { id: ADD_ID_PREFIX + now() + '-' + (++addSeq), kind: 'add', item: line.item.trim(),
+          quantity: line.quantity || '', category: line.category || 'other', at: now() };
+        if (line.store !== undefined && line.store !== null) op.store = line.store;
+        return enqueue(op);
+      },
+      // Put back on a queued add: it never went, so it simply leaves the
+      // queue. True when something was removed.
+      unqueue: function (opId) {
+        var q = pending();
+        var kept = q.filter(function (o) { return String(o.id) !== String(opId); });
+        if (kept.length === q.length) return false;
+        writePending(kept);
+        return true;
+      },
+      isPendingAddId: function (id) { return String(id).indexOf(ADD_ID_PREFIX) === 0; },
+
       // The list as the shopper last saw it: the server's copy with this
       // device's unsent changes on top. Never mutates the stored copy.
       applyPending: function (data) {
         var out = clone(data);
-        pending().forEach(function (op) { if (!isFreezing(op)) applyStatus(out, op.id, op.status); });
+        pending().forEach(function (op) {
+          if (isAdd(op)) applyAdd(out, op);
+          else if (!isFreezing(op)) applyStatus(out, op.id, op.status);
+        });
         return out;
       },
       applyStatus: applyStatus,
+      applyAdd: applyAdd,
+      removeLine: removeLine,
 
       // post(url, body) -> Promise resolving to { ok, status } once the
       // server answered, rejecting only when it never did. Sequential, one

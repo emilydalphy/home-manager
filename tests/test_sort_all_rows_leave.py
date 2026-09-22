@@ -14,7 +14,9 @@ rows and moved the list under the thumb. This slice keeps that promise a
 different way:
 
   * a tap writes at once — the one-row /store route the queue uses, with
-    remember:false as the bulk path always had — and the row collapses out
+    remember:true since 2026-09-21 (sorting a thing once is where it
+    usually comes from, Loop Board 3e31f4c0-5231-81ca) — and the row
+    collapses out
     (groSortAllLeave: --motion-fast, --motion-ease-in, gone at once under
     prefers-reduced-motion);
   * the card is never rebuilt once it is up. groSortAllRender takes away
@@ -180,8 +182,8 @@ settle(function () {
     assert out["before"] == 8
     assert out["leftAtOnce"] == 7, "the row is out of the queue before the request comes back"
     assert out["renderedAtOnce"] >= 1, "…and the screen is redrawn (the collapse) right away"
-    assert out["posts"][0] == ["/api/grocery-list/3/store", {"store": "Costco", "remember": False}], (
-        "one row, the queue's own route, this week only — never the forty-row bulk route"
+    assert out["posts"][0] == ["/api/grocery-list/3/store", {"store": "Costco", "remember": True}], (
+        "one row, the queue's own route, remembered — never the forty-row bulk route"
     )
     assert not any("store-bulk" in p[0] for p in out["posts"])
 
@@ -365,8 +367,10 @@ settle(function () {
 });
 """)
     assert out["toast"] == {"msg": "Thing 2 → Costco", "action": "Undo", "hold": 8000}
-    assert out["undoPayload"] == [{"item_id": 2, "store": "", "decided": False}], "as the row was: never answered"
-    assert out["undoPost"] == [{"assignments": [{"item_id": 2, "store": "", "decided": False}], "remember": False}]
+    assert out["undoPayload"] == [{"item_id": 2, "item": "Thing 2", "store": "", "decided": False}], "as the row was: never answered"
+    assert out["undoPost"] == [{"assignments": [{"item_id": 2, "item": "Thing 2", "store": "", "decided": False}], "remember": True, "forget": True}], (
+        "the undo takes back the remembered store with the row"
+    )
     assert out["afterUndo"] == "Put back."
 
 
@@ -398,7 +402,7 @@ settle(function () {
   });
 });
 """)
-    assert out == [[{"item_id": 2, "store": "", "decided": False}]], "the toast is the latest pick's; Thing 1 stays sorted"
+    assert out == [[{"item_id": 2, "item": "Thing 2", "store": "", "decided": False}]], "the toast is the latest pick's; Thing 1 stays sorted"
 
 
 @_needs_node
@@ -421,7 +425,7 @@ setTimeout(function () {
 }, 80);
 """)
     assert out["toast"] == "Thing 2 → Loblaws", "the latest tap's toast, not the slowest answer's"
-    assert out["undo"] == [{"item_id": 2, "store": "", "decided": False}]
+    assert out["undo"] == [{"item_id": 2, "item": "Thing 2", "store": "", "decided": False}]
 
 
 # --- 4. the finish -----------------------------------------------------------
@@ -578,18 +582,18 @@ def test_one_pick_and_its_undo_over_http_leave_the_row_exactly_as_it_was(signed_
     rows = {it["id"]: it for it in tools.list_grocery_list()}
     assert (rows[item_id]["store"], rows[item_id]["store_decided"]) == ("", 0)
 
-    picked = signed_in.post(f"/api/grocery-list/{item_id}/store", json={"store": "Costco", "remember": False})
+    picked = signed_in.post(f"/api/grocery-list/{item_id}/store", json={"store": "Costco", "remember": True})
     assert picked.status_code == 200
-    assert picked.json()["needs_confirmation"] is False, "this week only: no 'Remember?' toast over the undo toast"
+    assert picked.json()["remembered"] is True, "sorted once: Costco is where halloumi comes from now"
     rows = {it["id"]: it for it in tools.list_grocery_list()}
     assert (rows[item_id]["store"], rows[item_id]["store_decided"]) == ("Costco", 1)
-    prefs = {p["item"].lower(): p["store"] for p in tools.get_item_store_preferences()}
-    assert "halloumi" not in prefs
+    assert tools.get_item_store_preferences().get("halloumi") == "Costco"
 
     undone = signed_in.post(
         "/api/grocery-list/store-bulk",
-        json={"assignments": [{"item_id": item_id, "store": "", "decided": False}], "remember": False},
+        json={"assignments": [{"item_id": item_id, "store": "", "decided": False}], "remember": True, "forget": True},
     )
     assert undone.status_code == 200 and undone.json()["updated"] == 1
     rows = {it["id"]: it for it in tools.list_grocery_list()}
     assert (rows[item_id]["store"], rows[item_id]["store_decided"]) == ("", 0), "back in the queue, not sitting at Any"
+    assert "halloumi" not in tools.get_item_store_preferences(), "and the remembered store went back with it"

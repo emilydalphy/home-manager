@@ -3205,10 +3205,10 @@
   // because groceryState.step starts there and nothing restores it.
   //
   // The per-row ⋯ (groRowMenuHtml — quantity, store, remove, on the routes
-  // the old menu used), the inline add row (groAddItem, one POST to
-  // /api/grocery-list/add) and the duplicate line (groDuplicatesHtml) are
-  // all still here: the ask bar is the escape hatch for anything wordier,
-  // but it is not the ONLY way to fix a row.
+  // the old menu used), the dock's "Add something" and its sheet
+  // (groAddItem, one POST to /api/grocery-list/add) and the duplicate line
+  // (groDuplicatesHtml) are all still here: the ask bar is the escape
+  // hatch for anything wordier, but it is not the ONLY way to fix a row.
   //
   // Same /api/grocery-list* endpoints as before, same request bodies. One
   // read is new: /api/grocery-list?status=bought — the rows ticked off
@@ -3224,6 +3224,7 @@
     basket: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9.5h14V19a1.8 1.8 0 0 1-1.8 1.8H6.8A1.8 1.8 0 0 1 5 19z"/><path d="M3.5 5.5h17v4h-17z"/><path d="M12 9.5v11"/></svg>',
     dots: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5.5" r="0.6"/><circle cx="12" cy="12" r="0.6"/><circle cx="12" cy="18.5" r="0.6"/></svg>',
     camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5h4l1.5-2.5h6L16.5 8.5h4V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19z"/><circle cx="12" cy="13.5" r="3.4"/></svg>',
+    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
     // The freezer step's snowflake (WK_ICONS.snow), at the mini button's size.
     snow: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M12 3l-2 2M12 3l2 2M12 21l-2-2M12 21l2-2"/></svg>'
   };
@@ -3380,6 +3381,15 @@
     // question instead of ending it — see storesPromptOpenKey.
     storesPromptOpen: false,
     itemStorePrefs: {},     // lowercased item name -> remembered store
+    // The "Add something" sheet while it is open (groAddSheetOpen):
+    // { typed, store, picked } — what is in the field, the chip that is
+    // on ('' = Anywhere), and whether a tap chose it (a tap holds; the
+    // typed-name lookup only moves a chip nobody chose). null when closed.
+    addSheet: null,
+    // The store whose card the list is scrolled to, or the card the last
+    // tick landed on — the add sheet's first guess at "where do you get
+    // it?" (groWatchStoreCards, groTickLine).
+    storeInView: null,
     preShopFlags: [],
     preShopOpen: false,
     preShopExpanded: false,
@@ -3926,10 +3936,11 @@
         '<p class="gro-offline" id="gro-offline" hidden></p>' +
         '<div class="gro-voice" id="gro-voice" hidden></div>' +
         '<div class="gro-body" id="gro-body"><p class="gro-empty">Loading&hellip;</p></div>' +
-        // The step's one action, in the dock (rule 2) — last in the markup
-        // because that is where a sticky footer's flow position has to be.
-        // (Until 2026-09-18 a .gro-foot sat between the two holding the
-        // add row; the add row opens the list now — groAddRowHtml.)
+        // The dock (rule 2) — last in the markup because that is where a
+        // sticky footer's flow position has to be. On the root it holds
+        // "Add something" (groAddButtonHtml, 2026-09-21; the add row that
+        // opened the list before that went with it), on the deeper steps
+        // their one action.
         '<div class="dock gro-dock" id="gro-dock"></div>' +
       '</div>';
 
@@ -3937,14 +3948,12 @@
     // every row after every render, which is what the page this replaces did —
     // is where a missed handler hides.
     panel.addEventListener('click', onGroceryClick);
-    // Enter in either add field adds the item, so the list can be filled
-    // without moving a hand to the button.
+    // Enter in the shops card's field adds the shop, so the card can be
+    // filled without moving a hand to the button. (The add sheet's field
+    // is wired where the sheet is — at body level, see the wiring block
+    // near the scan sheet.)
     panel.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter') return;
-      if (e.target.id === 'gro-add-item') {
-        e.preventDefault();
-        groAddItem();
-      }
       if (e.target.id === 'gro-stores-prompt-input') {
         e.preventDefault();
         panel.querySelector('[data-gro="stores-prompt-add"]').click();
@@ -4022,29 +4031,20 @@
     return !!remembered && remembered === store;
   }
 
-  // Learning etiquette: the first time an item gets a store (a SORT pill),
-  // the backend doesn't remember it yet — it comes back with
-  // needs_confirmation instead (see stores.set_grocery_item_store). One
-  // light tap here is the "confirm" step; declining (letting the toast
-  // expire) leaves it a one-off, exactly like before this feature existed.
-  // A "yes" writes the preference AND adds the item to that store's
-  // typical-items list on the Kitchen sheet in one call
-  // (confirm_grocery_item_store_preference).
-  function groOfferRememberToast(item, store, itemId) {
-    showToast('Remember ' + item + ' at ' + store + '?', {
-      label: 'Yes, remember',
-      onClick: function () {
-        groDo(function () {
-          return groPostEmpty('/api/grocery-list/' + itemId + '/store/confirm');
-        }, "Couldn't save that — try again.").then(function (ok) {
-          if (ok) {
-            groceryState.itemStorePrefs[(item || '').trim().toLowerCase()] = store;
-            showToast('Got it — remembered for next time');
-            renderGrocery();
-          }
-        });
-      }
-    });
+  // Putting a thing under a store remembers it as the item's usual — at
+  // once, on the server (set_grocery_item_store, remember: true), from
+  // every door: the add sheet's pick, a "Sort them all" chip, a row's ⋯
+  // (Loop Board 3e31f4c0-5231-81ca, 2026-09-21). Until then the first
+  // store an item got came back with a "Remember X at Costco?" toast the
+  // shopper had to tap, and one let expire meant the same question next
+  // week. The screen's copy of the usual stores is kept in step here so
+  // the add sheet's pre-pick and the "usually here" tag are right without
+  // a round trip.
+  function groRememberLocally(itemName, store) {
+    var key = (itemName || '').trim().toLowerCase();
+    if (!key) return;
+    if (store) groceryState.itemStorePrefs[key] = store;
+    else delete groceryState.itemStorePrefs[key];
   }
 
   async function groLoadPreShopFlags() {
@@ -4163,9 +4163,11 @@
   // leftovers waiting and
   // "later" already said, one refresh went step `list` -> `carry`,
   // scrollTop 733 -> 0, and took a half-typed "oat milk" in the add row
-  // with it — the add row is rendered on LIST only, so groRestoreAddRow
-  // had nothing to put it back into, which is the exact loss
-  // renderGrocery's own capture/restore comment exists to prevent.
+  // with it — the add row was rendered on LIST only, so its restore had
+  // nothing to put it back into, which is the exact loss renderGrocery's
+  // own capture/restore comment exists to prevent. (The add is a sheet at
+  // body level since 2026-09-21, so a re-render of the list cannot reach
+  // it at all; the rule stands for the fields the body still holds.)
   // Nothing is lost by not opening CARRY: LIST already carries
   // groCarryRowHtml's "N things from last week · Keep or drop?" row for
   // precisely this case — "the way back into CARRY once Later was said" —
@@ -4319,18 +4321,18 @@
       if (headFor.sub) sub.textContent = headFor.sub;
     }
 
-    // The body holds live inputs — LIST's add row, the shops card's
-    // "Somewhere else?" field, a row's "What instead?" — and a re-render
-    // it didn't ask for (the usual-stores fetch landing, another tab
-    // pushing a refresh, a tapped chip redrawing the card) must not eat a
-    // half-typed "oat milk", or the focus that was sitting in it.
-    var addRow = groCaptureAddRow(body);
+    // The body holds live inputs — the shops card's "Somewhere else?"
+    // field, a row's "What instead?" — and a re-render it didn't ask for
+    // (the usual-stores fetch landing, another tab pushing a refresh, a
+    // tapped chip redrawing the card) must not eat a half-typed "Farm
+    // Boy", or the focus that was sitting in it. (The add field lives in
+    // a sheet at body level, out of this body's reach.)
     var storesTyped = groCaptureStoresPromptInput(body);
     var substTyped = groCaptureSubstInput(body);
     if (step === 'carry') body.innerHTML = groCarryHtml(data);
     else if (step === 'sortall') groSortAllRender(body, data);
     else body.innerHTML = groListHtml(data);
-    groRestoreAddRow(body, addRow);
+    if (onRoot) groWatchStoreCards(body);
     groRestoreStoresPromptInput(body, storesTyped);
     groRestoreSubstInput(body, substTyped);
     // The empty moment fills the panel and centres itself (shell.css) —
@@ -4376,20 +4378,6 @@
     if (!saved.focused) return;
     input.focus();
     try { input.setSelectionRange(input.value.length, input.value.length); } catch (err) { /* not all inputs allow it */ }
-  }
-
-  function groCaptureAddRow(body) {
-    var item = body.querySelector('#gro-add-item');
-    if (!item) return null;
-    return { item: item.value, focused: document.activeElement === item };
-  }
-  function groRestoreAddRow(body, saved) {
-    if (!saved) return;
-    var item = body.querySelector('#gro-add-item');
-    if (item) item.value = saved.item;
-    if (!item || !saved.focused) return;
-    item.focus();
-    try { item.setSelectionRange(item.value.length, item.value.length); } catch (err) { /* not all inputs allow it */ }
   }
 
   // Title, subtitle and back link for each DEEPER step, in one place so the
@@ -4499,7 +4487,7 @@
   function groListHtml(data) {
     var stops = groStoresOnList(data);
     var loose = groLooseLineItems(data);
-    var html = groAddRowHtml() + groPreShopHtml();
+    var html = groPreShopHtml();
 
     // The first-run "Where do you usually shop?" card sits at the top of
     // the list, not in place of it (Emily, 2026-09-15). It used to be the
@@ -4567,7 +4555,7 @@
   // The foot of LIST, only while something is set aside ("Getting it
   // elsewhere" on a row's ⋯): one row per thing, its amount, and "Put it
   // back" — the one tap that returns it to the list. Read off the same
-  // already-have summary the "Not needed this week" foot reads
+  // already-have summary the "Already had on hand" foot reads
   // (groceryState.alreadyHaveSummary, loaded with everything else).
   // The Staples card's shape on a plain surface; always open, because a
   // way back that's behind a "See" is two taps, and the whole point of
@@ -4937,6 +4925,7 @@
   // Leaving the Shop screen (activateTab) folds an open question away —
   // it was for the row just ticked, and the household has moved on.
   function groLeaveScreen() {
+    if (groceryState.addSheet) groAddSheetClose();
     if (!groceryState.freezing) return;
     groceryState.freezing = null;
     if (groIsBuilt()) renderGrocery();
@@ -5269,13 +5258,19 @@
     item.store_decided = 1;
     if (!groUnsorted(data).length) groceryState.sortAllDone = true;
     renderGrocery();
+    // remember: true — sorting a thing once is where it usually comes
+    // from, and next week's list puts it there without asking (card
+    // 3e31f4c0-5231-81ca). The one-week-only move (a row's "Any", or a
+    // remember: false write) stays out of the usual.
     groDo(function () {
-      return groPost('/api/grocery-list/' + id + '/store', { store: store, remember: false });
+      return groPost('/api/grocery-list/' + id + '/store', { store: store, remember: true });
     }, "Couldn't sort that — try again.").then(function (ok) {
       if (!ok || seq !== groSortAllSeq) return;
+      groRememberLocally(item.item, store);
       // The undo is the bulk undo with one row in it: it restores the row
       // exactly (store and never-answered), so an undone row is back in
-      // the queue rather than sitting at "Any".
+      // the queue rather than sitting at "Any" — and takes back the
+      // remembered store with it (groRunBulkUndo's forget).
       groceryState.bulkUndo = previous;
       groOfferBulkUndo(item.item + ' → ' + (store || 'any store'));
     });
@@ -5300,8 +5295,8 @@
   //
   // "Have it" is a per-week answer, not an inventory record (policy
   // 2026-09-01: nobody does inventory work to finish the loop): it is the
-  // pre-shop "Drop it" — a soft-remove, listed under "Not needed this
-  // week" with its own undo — and never /already-have, which
+  // pre-shop "Drop it" — a soft-remove, listed under "Already had on
+  // hand" with its own undo — and never /already-have, which
   // writes to the kitchen's inventory. A staple's line dropped this way
   // tells the staple "we have plenty" (drop_grocery_item_pre_shop).
   //
@@ -5361,7 +5356,7 @@
       'aria-label="Add a new store for ' + escapeHtml(it.item) + '">Add a new store</button>';
   }
 
-  // ---------- Not needed this week ----------
+  // ---------- Already had on hand ----------
   // This week's "Have it" / "Don't need" / pre-shop "Drop it" decisions,
   // and what the Plan tab's freezer step set aside as already frozen
   // (get_already_have_decisions), each with "Actually, I need it" — the
@@ -5378,7 +5373,7 @@
     return '<div class="gro-flag">' +
       '<button type="button" class="gro-flag-head" data-gro="flag-toggle" data-key="already-have" aria-expanded="' + open + '">' +
         '<span class="gro-flag-badge">' + GRO_ICONS.tick + '</span>' +
-        '<span class="gro-flag-title">Not needed this week &middot; ' + already.length + '</span>' +
+        '<span class="gro-flag-title">Already had on hand &middot; ' + already.length + '</span>' +
         '<span class="gro-chev">' + (open ? GRO_ICONS.chevDown : GRO_ICONS.chevRight) + '</span>' +
       '</button>' +
       (open
@@ -5398,49 +5393,244 @@
     '</div>';
   }
 
-  // ---------- The add row ----------
-  // The first thing under the band on LIST (Emily's shopping-list mockup,
-  // 2026-09-18; until then it sat at the foot of the list, under every
-  // card). Adding one thing must not cost a model turn: this posts
-  // straight to /api/grocery-list/add — the same route
-  // groHandleVoiceCommand's "add oat milk" uses — so the cheap, common
-  // case stays cheap. The ask sheet is still there for anything wordier
-  // ("add oat milk and lemons, and drop the spinach"), which is what it is
-  // good at.
+  // ---------- "Add something": the dock's button and its sheet ----------
+  // Emily's S1 / S1b mockups (2026-09-21; Loop Board 3e31f4c0-5231-817d).
+  // Until then an add row — field, camera, Add — sat at the top of the
+  // list and scrolled away with it. It is an outline button in the dock
+  // now, the one strip that stays put while the list scrolls (rule 2),
+  // beside the chat FAB; and the add itself is a bottom sheet that asks
+  // the one thing the row never did: where do you get it? The answer
+  // rides with the add (the /add route's store, one request, one queued
+  // op with no signal) and is remembered as the item's usual (card
+  // 3e31f4c0-5231-81ca), so a thing added once lands in its store's card
+  // next week without a sort. Adding still costs no model turn — the
+  // same route groHandleVoiceCommand's "add oat milk" uses; the ask bar
+  // is there for anything wordier.
   //
-  // It stays out of the dock deliberately: the root has no dock — ticking
-  // a row is the action — and a strip holding a side errand would not be
-  // one (rule 2).
-  //
-  // The photo button (Loop Board, 2026-09-11 — "snap a photo of a written
-  // or on-screen list and have Pomona add it") rides along inside the same
-  // field as the manual add, the nearest existing "put something on the
-  // list" affordance. One wide text field with the camera sitting inside
-  // its own right end (absolute, 44×44 — see .gro-add-field) and a spruce
-  // Add after it (design-tidy pass 2026-09-11, item 7). Quantity comes
-  // from what's typed, via groParseAddInput ("2 lb carrots", "milk 2")
-  // rather than a box of its own; nothing recognizable in the text just
-  // means no quantity.
-  function groAddRowHtml() {
-    return '<div class="gro-add">' +
-        '<div class="gro-add-field">' +
-          '<input type="text" class="gro-add-item" id="gro-add-item" ' +
-            'placeholder="Add something" aria-label="Something to add to the list" />' +
-          '<button type="button" class="gro-scan-btn" id="gro-scan-btn" data-gro="scan-open" ' +
-            'title="Add from a photo of your list" aria-label="Add from a photo of your list">' +
-            GRO_ICONS.camera +
-          '</button>' +
-        '</div>' +
-        '<button type="button" class="gro-add-btn" id="gro-add-btn" data-gro="add">Add</button>' +
+  // The photo button (2026-09-11: snap a written list) rides inside the
+  // sheet's field, where it rode inside the row's — the same
+  // .gro-add-field / .gro-scan-btn, the same #gro-scan-input at body
+  // level. Quantity comes from what's typed (groParseAddInput: "2 lb
+  // carrots", "milk 2"), never a box of its own.
+  var GRO_ADD_LABEL = 'Add something';
+  var GRO_ADD_ANYWHERE = 'Anywhere';
+  var GRO_ADD_PLACEHOLDER = 'What do you need?';
+  var GRO_ADD_WHERE = 'Where do you get it?';
+  var GRO_ADD_TO_LIST = 'Add to the list';
+  // Where the last add went, so the sheet's third guess survives a reload.
+  var GRO_LAST_ADD_STORE_KEY = 'pomona.grocery.lastAddStore';
+  // How long after the last keystroke the typed name is looked up
+  // against the usual stores (groAddSheetTyped).
+  var GRO_ADD_LOOKUP_MS = 250;
+  var GRO_ADD_WAITING_TOAST = 'That one’s still on its way — tick it once we’re back.';
+
+  function groAddButtonHtml() {
+    return '<button type="button" class="gro-add-open" data-gro="add-open">' +
+      GRO_ICONS.plus + escapeHtml(GRO_ADD_LABEL) + '</button>';
+  }
+
+  // The sheet's body. Pure — a string from the state and the list — so
+  // the pre-pick and the copy can be checked without a document.
+  function groAddSheetHtml(state, data) {
+    state = state || {};
+    var stores = data ? groPillStores(data) : [];
+    // "Where do you get it?" needs more than one answer: a household with
+    // one shop or none is not asked (the same rule as sorting, groCanSort)
+    // and its add lands where every add of theirs lands.
+    var asks = stores.length > 1;
+    var store = asks ? (state.store || '') : '';
+    var typed = state.typed || '';
+    var html = '<div class="gro-add-field">' +
+        '<input type="text" class="gro-add-item" id="gro-add-item" value="' + escapeHtml(typed) + '" ' +
+          'placeholder="' + escapeHtml(GRO_ADD_PLACEHOLDER) + '" aria-label="Something to add to the list" ' +
+          'autocomplete="off" autocapitalize="none" enterkeyhint="done" />' +
+        '<button type="button" class="gro-scan-btn" id="gro-scan-btn" data-gro="scan-open" ' +
+          'title="Add from a photo of your list" aria-label="Add from a photo of your list">' +
+          GRO_ICONS.camera +
+        '</button>' +
       '</div>';
+    if (asks) {
+      html += '<p class="gro-add-q">' + escapeHtml(GRO_ADD_WHERE) + '</p>' +
+        '<div class="gro-pills open gro-add-chips">' +
+          stores.map(function (n) { return groAddChipHtml(n, n, n === store); }).join('') +
+          groAddChipHtml('', GRO_ADD_ANYWHERE, store === '') +
+        '</div>' +
+        '<p class="gro-add-note" id="gro-add-note">' + escapeHtml(groAddSheetNote(store, groAddSheetName(typed))) + '</p>';
+    }
+    html += '<button type="button" class="dock-primary gro-add-go" id="gro-add-go" data-gro="add">' +
+      escapeHtml(groAddSheetLabel(store)) + '</button>';
+    return html;
+  }
+  function groAddChipHtml(store, label, on) {
+    return '<button type="button" class="gro-pill' + (on ? ' gro-pill-on' : '') + '" data-gro="add-store" ' +
+      'data-store="' + escapeHtml(store) + '" aria-pressed="' + on + '">' + escapeHtml(label) + '</button>';
+  }
+  // The line under the chips: what the pick means, with the store and
+  // the thing named. "Anywhere" says where the row will sit and where
+  // the store can be given later; both point at the row's ⋯, which is
+  // the correction for either.
+  function groAddSheetNote(store, name) {
+    if (!store) return 'I’ll put it under ' + GRO_ADD_ANYWHERE + ' — tell me the store from the row’s ⋯ menu when you know.';
+    return 'I’ll remember ' + store + ' for ' + (name || 'it') + ' next time. Change it any time from the row’s ⋯ menu.';
+  }
+  function groAddSheetLabel(store) { return store ? 'Add to ' + store : GRO_ADD_TO_LIST; }
+  // The thing's name as the note says it: the typed text without its
+  // quantity, in lower case — "for cilantro", not "for 2 Cilantro".
+  function groAddSheetName(typed) {
+    var parsed = groParseAddInput(typed);
+    return (parsed.item || '').trim().toLowerCase();
+  }
+
+  // Which chip the sheet opens on, in the order the card gives: the
+  // store whose card the list is scrolled to (or the last tick landed
+  // on), else the usual store of the thing typed once it names a known
+  // item, else the store the last add went to, else Anywhere. A tap on
+  // a chip beats all three for the rest of the sheet (groAddSheetPick).
+  // Only a store the chips offer counts: a usual store the household has
+  // since stopped shopping at is no answer.
+  function groAddSheetPrePick(typed, data) {
+    var offered = data ? groPillStores(data) : [];
+    function ok(name) { return !!name && offered.indexOf(name) !== -1; }
+    if (ok(groceryState.storeInView)) return groceryState.storeInView;
+    var usual = groUsualStoreFor(groAddSheetName(typed));
+    if (ok(usual)) return usual;
+    var last = groReadLastAddStore();
+    if (ok(last)) return last;
+    return '';
+  }
+  // The remembered store for a name, on the screen's copy of the usual
+  // stores (groLoadStorePrefs). The keys are the names as the server
+  // spells them; a trailing s either way is forgiven, the nearest the
+  // screen gets to the server's merge key.
+  function groUsualStoreFor(name) {
+    var key = (name || '').trim().toLowerCase();
+    if (!key) return null;
+    var prefs = groceryState.itemStorePrefs || {};
+    if (prefs[key]) return prefs[key];
+    if (key.slice(-1) === 's' && prefs[key.slice(0, -1)]) return prefs[key.slice(0, -1)];
+    if (prefs[key + 's']) return prefs[key + 's'];
+    return null;
+  }
+  function groReadLastAddStore() {
+    try { return window.localStorage.getItem(GRO_LAST_ADD_STORE_KEY) || null; } catch (err) { return null; }
+  }
+  function groWriteLastAddStore(store) {
+    try {
+      if (store) window.localStorage.setItem(GRO_LAST_ADD_STORE_KEY, store);
+      else window.localStorage.removeItem(GRO_LAST_ADD_STORE_KEY);
+    } catch (err) { /* private mode: the guess is for this page view only */ }
+  }
+
+  // Which store's card the list is scrolled to, for the sheet's first
+  // guess. Watches the cards (groStoreCardHtml's .gro-store[data-store] —
+  // read here, never redrawn) after each render of the root; the card
+  // most recently seen crossing into view wins, the most visible one
+  // when several cross at once. No observer (an old browser, the node
+  // harness) means no guess from the scroll — the other two still stand.
+  var groCardWatcher = null;
+  function groWatchStoreCards(body) {
+    if (typeof IntersectionObserver === 'undefined' || !body || !body.querySelectorAll) return;
+    if (groCardWatcher) groCardWatcher.disconnect();
+    var cards = body.querySelectorAll('.gro-store[data-store]');
+    if (!cards.length) return;
+    groCardWatcher = new IntersectionObserver(function (entries) {
+      var best = null;
+      entries.forEach(function (en) {
+        if (en.isIntersecting && (!best || en.intersectionRatio > best.intersectionRatio)) best = en;
+      });
+      if (best) groceryState.storeInView = best.target.getAttribute('data-store');
+    }, { root: scrollEl || null, threshold: [0.25, 0.5, 0.75] });
+    for (var i = 0; i < cards.length; i++) groCardWatcher.observe(cards[i]);
+  }
+
+  // The sheet is at body level (shell.html, beside the scan sheet:
+  // position:fixed has to sit outside this panel's stacking context), so
+  // it is found by id, and only when there is a document to find it in.
+  function groAddSheetBody() {
+    return typeof document !== 'undefined' ? document.getElementById('gro-add-body') : null;
+  }
+  // `initial` is for a retry: the typed text and the pick put back after
+  // a write the server refused, so the typing is not lost with it.
+  function groAddSheetOpen(initial) {
+    var data = groceryState.data;
+    if (!data) return;
+    initial = initial || {};
+    var typed = initial.typed || '';
+    groceryState.addSheet = {
+      typed: typed,
+      store: initial.picked ? initial.store : groAddSheetPrePick(typed, data),
+      picked: !!initial.picked
+    };
+    var body = groAddSheetBody();
+    if (!body) return;
+    body.innerHTML = groAddSheetHtml(groceryState.addSheet, data);
+    openSheet(document.getElementById('gro-add-sheet'), document.getElementById('gro-add-scrim'));
+    var field = body.querySelector('#gro-add-item');
+    if (field) {
+      field.focus();
+      try { field.setSelectionRange(field.value.length, field.value.length); } catch (err) { /* not all inputs allow it */ }
+    }
+  }
+  function groAddSheetClose() {
+    groceryState.addSheet = null;
+    if (groAddLookupTimer) { clearTimeout(groAddLookupTimer); groAddLookupTimer = null; }
+    if (typeof document === 'undefined') return;
+    closeSheet(document.getElementById('gro-add-sheet'), document.getElementById('gro-add-scrim'));
+  }
+  // A keystroke: the note and the button follow at once; the usual-store
+  // lookup follows a beat later (GRO_ADD_LOOKUP_MS), and only moves a
+  // chip nobody has tapped.
+  var groAddLookupTimer = null;
+  function groAddSheetTyped(value) {
+    var st = groceryState.addSheet;
+    if (!st) return;
+    st.typed = value;
+    groAddSheetSync();
+    if (st.picked) return;
+    if (groAddLookupTimer) clearTimeout(groAddLookupTimer);
+    groAddLookupTimer = setTimeout(groAddSheetRepick, GRO_ADD_LOOKUP_MS);
+  }
+  function groAddSheetRepick() {
+    groAddLookupTimer = null;
+    var st = groceryState.addSheet;
+    if (!st || st.picked || !groceryState.data) return;
+    st.store = groAddSheetPrePick(st.typed, groceryState.data);
+    groAddSheetSync();
+  }
+  function groAddSheetPick(store) {
+    var st = groceryState.addSheet;
+    if (!st) return;
+    st.store = store || '';
+    st.picked = true;
+    groAddSheetSync();
+  }
+  // The parts of the sheet that follow the typing and the chip — which
+  // chip is on, the line under them, the button's label. The field is
+  // never redrawn: it is being typed into.
+  function groAddSheetSync() {
+    var st = groceryState.addSheet;
+    var body = groAddSheetBody();
+    if (!st || !body) return;
+    var chips = body.querySelectorAll('[data-gro="add-store"]');
+    for (var i = 0; i < chips.length; i++) {
+      var on = chips[i].getAttribute('data-store') === st.store;
+      chips[i].classList.toggle('gro-pill-on', on);
+      chips[i].setAttribute('aria-pressed', String(on));
+    }
+    var note = body.querySelector('#gro-add-note');
+    if (note) note.textContent = groAddSheetNote(st.store, groAddSheetName(st.typed));
+    var go = body.querySelector('#gro-add-go');
+    if (go) go.textContent = groAddSheetLabel(st.store);
   }
 
   // ---------- The dock: one apricot action per step (Rule 5) ----------
-  // The root has none (Emily, 2026-09-18: the list is the checklist, and
-  // nothing single is left to press — rule 2's "a screen with no single
-  // action has no dock"), except "Go to Plan" under the empty moment. The
-  // "See the week" link that used to ride beside "Start the trip" went
-  // with it: the week is one tap away on the tab bar.
+  // The root has no apricot (Emily, 2026-09-18: the list is the checklist,
+  // and nothing single is left to press), except "Go to Plan" under the
+  // empty moment; since 2026-09-21 it carries "Add something" as an
+  // outline beside the chat FAB (groAddButtonHtml) — a side errand that
+  // has to stay reachable while the list scrolls, not the screen's
+  // action. The "See the week" link that used to ride beside "Start the
+  // trip" went with it: the week is one tap away on the tab bar.
   function groDockHtml(data, step) {
     if (step === 'list') {
       // Nothing to buy at all: the empty moment's next step is the Plan
@@ -5449,11 +5639,13 @@
       // and not while spices wait unticked: there is a list then, it is
       // just all in one section, and "Go to Plan" would send someone away
       // from it.
+      // "Add something" rides along either way (2026-09-21): an empty
+      // list is still a list a person can put one thing on.
       if (!groStoresOnList(data).length && !groLooseLineItems(data).length && !groStoresPromptShouldShow() &&
           !groceryState.spices.items.length) {
-        return '<button type="button" class="dock-primary" data-gro="goto-plan">Go to Plan</button>';
+        return '<button type="button" class="dock-primary" data-gro="goto-plan">Go to Plan</button>' + groAddButtonHtml();
       }
-      return '';
+      return groAddButtonHtml();
     }
     // SORT ALL writes every answer as it is tapped, so there is nothing
     // to save and no button while rows are left — the crumb is the way
@@ -5825,45 +6017,124 @@
     return { item: raw, quantity: '' };
   }
 
-  // The LIST foot's inline add — one POST to /api/grocery-list/add, no model
-  // turn, exactly as the root's "Add an item" card and the voice session's
-  // "add oat milk" both do it. The server puts the new line under the
-  // store this household last chose for it, when it remembers one
-  // (item_store_preferences, add_grocery_item's preferred_store — the
-  // "Remember rice at Loblaws?" answer); otherwise it lands in the
-  // Unassigned bucket and shows on the list straight away under "Not
-  // sorted yet", with the "N things to sort" row counting it. Either way
-  // the list is what comes back, with the add box focused again — never
-  // the sort screen (2026-09-15; see groMaybeCarryFirst). The aisle is
-  // groGuessCategory's rather than a flat 'other'.
+  // The sheet's Add — one POST to /api/grocery-list/add, no model turn,
+  // exactly as the voice session's "add oat milk" does it, with the
+  // sheet's answer to "where do you get it?" in the same body (`store`:
+  // a shop, '' for Anywhere; absent when the household was not asked,
+  // and then the server puts the line under the item's usual store if
+  // it remembers one, else the loose pile). The sheet closes on the tap,
+  // the list comes back with the row in its store's card, and the toast
+  // says "Changes saved · Put back". The aisle is groGuessCategory's
+  // rather than a flat 'other'.
   async function groAddItem() {
-    var panel = groPanel();
-    if (!panel) return;
-    var itemInput = panel.querySelector('#gro-add-item');
-    var btn = panel.querySelector('#gro-add-btn');
-    if (!itemInput || !btn) return;
-    var typed = itemInput.value.trim();
-    if (!typed) { itemInput.focus(); return; }
+    var st = groceryState.addSheet;
+    var body = groAddSheetBody();
+    var field = body && body.querySelector('#gro-add-item');
+    var typed = ((field ? field.value : (st && st.typed)) || '').trim();
+    if (!typed) { if (field) field.focus(); return; }
     var parsed = groParseAddInput(typed);
     var name = parsed.item || typed;
-    var qty = parsed.quantity;
-    btn.disabled = true;
-    // Cleared BEFORE the write: groDo re-renders on the way out, and the
-    // foot's value-preserving re-render would otherwise put the typed text
-    // straight back into an emptied field.
-    itemInput.value = '';
-    var ok = await groDo(function () {
-      return groPost('/api/grocery-list/add', { item: name, quantity: qty, category: groGuessCategory(name) });
-    }, "Couldn't add that — try again.");
-    var freshItem = panel.querySelector('#gro-add-item');
-    var freshBtn = panel.querySelector('#gro-add-btn');
-    if (freshBtn) freshBtn.disabled = false;
-    if (!ok) {
-      // Nothing was saved, so the typing has to come back rather than vanish.
-      if (freshItem) freshItem.value = typed;
-      return;
+    var data = groceryState.data;
+    var asked = !!(data && groPillStores(data).length > 1 && st);
+    var store = asked ? (st.store || '') : null;
+    var picked = !!(st && st.picked);
+    groAddSheetClose();
+    if (store) groWriteLastAddStore(store);
+    return groAddLine({ typed: typed, picked: picked, item: name, quantity: parsed.quantity, category: groGuessCategory(name), store: store });
+  }
+
+  // The write: on the server when it can be, queued when it can't — the
+  // same shape as a tick (groTick). With no signal, or something older
+  // still waiting, the add joins the queue (groOffline.queueAdd) and the
+  // row is on the phone's copy at once under the store it was given, so
+  // a thing remembered in aisle four is on the list before the bars are.
+  // A write the server refused reopens the sheet with the typing in it.
+  function groAddLine(line) {
+    var payload = { item: line.item, quantity: line.quantity || '', category: line.category };
+    if (line.store !== null && line.store !== undefined) {
+      payload.store = line.store;
+      payload.remember = true;
     }
-    if (freshItem) freshItem.focus();
+    if (groOffline && (navigator.onLine === false || groHasPending())) {
+      groQueueAdd(payload);
+      if (navigator.onLine === false) groSetOffline(true);
+      return Promise.resolve(true);
+    }
+    // The line as it already stands, if it does: an add that merges into
+    // it is put back by restoring that, not by removing the line.
+    var was = groLineNamed(line.item);
+    var wasBefore = was ? { quantity: was.quantity || '', store: was.store || '' } : null;
+    return groPost('/api/grocery-list/add', payload).then(function (r) {
+      groSetOffline(false);
+      if (line.store) groRememberLocally(line.item, line.store);
+      return loadGrocery().then(function () { groAddedToast(r, wasBefore); return true; });
+    }, function (err) {
+      if (groOffline && groIsNetworkError(err)) {
+        groQueueAdd(payload);
+        groSetOffline(true);
+        return true;
+      }
+      console.warn('Grocery add failed:', err);
+      showToast("Couldn't add that — try again.");
+      groAddSheetOpen({ typed: line.typed, store: line.store, picked: line.picked });
+      return false;
+    });
+  }
+  function groLineNamed(name) {
+    var data = groceryState.data;
+    if (!data || !data.stores) return null;
+    var key = (name || '').trim().toLowerCase();
+    var hit = null;
+    groAllLines(data).forEach(function (it) {
+      if (!hit && !groIsBought(it) && (it.item || '').trim().toLowerCase() === key) hit = it;
+    });
+    return hit;
+  }
+  // "Changes saved · Put back": a new line is removed; a line the add
+  // merged into gets its old amount and store back.
+  function groAddedToast(r, wasBefore) {
+    var id = r && r.item_id;
+    if (!id) { toastSaved(); return; }
+    toastSaved({
+      label: 'Put back',
+      onClick: function () {
+        if (r.merged && wasBefore) {
+          groDo(function () {
+            return groPost('/api/grocery-list/' + id + '/update', { quantity: wasBefore.quantity })
+              .then(function () {
+                return groPost('/api/grocery-list/' + id + '/store', { store: wasBefore.store, remember: false });
+              });
+          }, "Couldn't put that back — try again.");
+          return;
+        }
+        groDo(function () { return groPostEmpty('/api/grocery-list/' + id + '/remove'); },
+          "Couldn't put that back — try again.");
+      }
+    }, GRO_UNDO_MS);
+  }
+  // Queued: the row is on the screen now under its store (applyAdd, a
+  // local id until the server gives it one), replayed behind whatever
+  // is already waiting. Put back takes it out of the queue again.
+  function groQueueAdd(payload) {
+    var op = groOffline.queueAdd(payload);
+    if (!op) return;
+    if (groceryState.data) {
+      groOffline.applyAdd(groceryState.data, op);
+      renderGrocery();
+    }
+    renderGroceryOfflineLine();
+    groReplayQueue();
+    toastSaved({
+      label: 'Put back',
+      onClick: function () {
+        if (!groOffline.unqueue(op.id)) return;
+        if (groceryState.data) {
+          groOffline.removeLine(groceryState.data, op.id);
+          renderGrocery();
+        }
+        renderGroceryOfflineLine();
+      }
+    }, GRO_UNDO_MS);
   }
 
   // ---------- Photo scan review (Loop Board, 2026-09-11) ----------
@@ -6030,6 +6301,11 @@
   // and mark_grocery_item does the kitchen add and teaches the staple's
   // rhythm on that one write exactly as it did.
   function groTickLine(id, bought) {
+    // A row still in the queue has no server id to tick against yet.
+    if (groOffline && groOffline.isPendingAddId(id)) { showToast(GRO_ADD_WAITING_TOAST); return; }
+    // The card this tick landed on is the add sheet's first guess.
+    var tickedLine = groFindLine(id);
+    if (tickedLine && tickedLine.store) groceryState.storeInView = tickedLine.store;
     var next = bought ? 'needed' : 'purchased';
     // Before the tick moves the row, while its offer is still readable
     // either way; groTick's render then draws the question under it.
@@ -6094,13 +6370,19 @@
   // forty rows sat at a shop nobody chose with no way back. The server side
   // is all-or-nothing (set_grocery_items_stores commits once), so a failure
   // means nothing moved and this payload still describes the list exactly.
+  //
+  // remember + forget: the undo restores the usual store along with the
+  // row. A row put back to a real store is remembered there again; a row
+  // put back to no store has the usual the sort just wrote cleared, so
+  // "Undo" undoes the whole of what the tap did (tools.set_grocery_items_stores).
   function groRunBulkUndo() {
     var undo = groceryState.bulkUndo;
     if (!undo) return;
     groDo(function () {
-      return groPost('/api/grocery-list/store-bulk', { assignments: undo, remember: false });
+      return groPost('/api/grocery-list/store-bulk', { assignments: undo, remember: true, forget: true });
     }, "Couldn't undo that — try again.").then(function (ok) {
       if (ok) {
+        undo.forEach(function (a) { groRememberLocally(a.item, a.store); });
         groceryState.bulkUndo = null;
         // A retry that worked has to replace the failure toast, not sit
         // underneath it: the previous "tap Undo to try again" line stays up
@@ -6114,9 +6396,11 @@
     });
   }
 
+  // `item` rides along for the screen's own copy of the usual stores
+  // (groRememberLocally); the route ignores it.
   function groPreviousStores(items) {
     return items.map(function (it) {
-      return { item_id: it.id, store: it.store || '', decided: groItemDecided(it) };
+      return { item_id: it.id, item: it.item, store: it.store || '', decided: groItemDecided(it) };
     });
   }
 
@@ -6238,6 +6522,12 @@
         groFreezeAnswer(id, 'fridge');
         return;
 
+      case 'add-open':
+        groAddSheetOpen();
+        return;
+      case 'add-store':
+        groAddSheetPick(el.dataset.store);
+        return;
       case 'add':
         // Straight to /api/grocery-list/add — see groAddItem. The ask bar
         // is still there, above the tab bar, for anything wordier.
@@ -6255,6 +6545,9 @@
       case 'row-menu':
         groceryState.openRowId = groceryState.openRowId === id ? null : id;
         groceryState.substOpenId = null;
+        // The card tapped is the add sheet's first guess (groAddSheetPrePick).
+        var menuLine = groFindLine(id);
+        if (menuLine && menuLine.store) groceryState.storeInView = menuLine.store;
         renderGrocery();
         return;
 
@@ -6284,17 +6577,22 @@
       // to remove.
       case 'row-store': {
         var rowStore = el.dataset.store;
+        var rowItem = groFindLine(id);
+        // The row as it stands, for the toast's Put back: the same
+        // one-row bulk undo "Sort them all" uses, so the row AND the
+        // usual store go back together (groRunBulkUndo).
+        var rowWas = rowItem ? groPreviousStores([rowItem]) : null;
         el.disabled = true;
-        var rowStoreResult = null;
         groDo(function () {
-          return groPost('/api/grocery-list/' + id + '/store', { store: rowStore })
-            .then(function (r) { rowStoreResult = r; return r; });
+          return groPost('/api/grocery-list/' + id + '/store', { store: rowStore });
         }, "Couldn't move that — try again.").then(function (ok) {
           if (!ok) return;
+          if (rowItem && rowStore) groRememberLocally(rowItem.item, rowStore);
           groceryState.openRowId = null;
           renderGrocery();
-          if (rowStoreResult && rowStoreResult.needs_confirmation) {
-            groOfferRememberToast(rowStoreResult.item, rowStoreResult.store, id);
+          if (rowWas) {
+            groceryState.bulkUndo = rowWas;
+            toastSaved({ label: 'Put back', onClick: groRunBulkUndo }, GRO_UNDO_MS);
           }
         });
         return;
@@ -6572,7 +6870,7 @@
 
       // "Wait, I already have this" — on SORT ALL or a LIST row's ⋯. The
       // pre-shop drop (soft-remove, undo from the toast and from the
-      // list's "Not needed this week" foot), never an inventory write —
+      // list's "Already had on hand" foot), never an inventory write —
       // see groHaveItPillHtml.
       case 'have-it': {
         var haveName = el.dataset.name || 'That';
@@ -6661,7 +6959,7 @@
         renderGrocery();
         return;
 
-      // "Actually, I need it" on the "Not needed this week" foot: the one
+      // "Actually, I need it" on the "Already had on hand" foot: the one
       // pre-shop-undo endpoint, whichever flow removed the row. Restoring
       // it to 'needed' is identical either way; the backend also deletes
       // the inventory row an already-have action created, but only when
@@ -17563,6 +17861,30 @@
     });
   }
   if (groScanScrimEl) groScanScrimEl.addEventListener('click', groScanCloseSheet);
+
+  // ---------- Grocery "Add something" sheet wiring ----------
+  // The same body-level pattern. Its controls carry data-gro and go
+  // through onGroceryClick like the panel's own (the sheet is outside the
+  // panel, so the panel's listener never sees them); typing and Enter are
+  // wired here.
+  var groAddSheetEl = document.getElementById('gro-add-sheet');
+  var groAddScrimEl = document.getElementById('gro-add-scrim');
+  if (groAddSheetEl) {
+    groAddSheetEl.addEventListener('click', onGroceryClick);
+    groAddSheetEl.addEventListener('input', function (e) {
+      if (e.target.id === 'gro-add-item') groAddSheetTyped(e.target.value);
+    });
+    groAddSheetEl.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' || e.target.id !== 'gro-add-item') return;
+      e.preventDefault();
+      groAddItem();
+    });
+  }
+  if (groAddScrimEl) groAddScrimEl.addEventListener('click', groAddSheetClose);
+  var groAddHandleEl = document.getElementById('gro-add-handle');
+  if (groAddHandleEl) groAddHandleEl.addEventListener('click', groAddSheetClose);
+  var groAddCloseBtnEl = document.getElementById('gro-add-close');
+  if (groAddCloseBtnEl) groAddCloseBtnEl.addEventListener('click', groAddSheetClose);
   var groScanHandleEl = document.getElementById('gro-scan-handle');
   if (groScanHandleEl) groScanHandleEl.addEventListener('click', groScanCloseSheet);
   var groScanCloseBtnEl = document.getElementById('gro-scan-close');

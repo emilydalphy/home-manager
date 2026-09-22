@@ -933,6 +933,16 @@ class GroceryAddRequest(BaseModel):
     # optional and defaults to the old unattributed "user" so every existing
     # caller of this endpoint keeps working unchanged.
     added_by: str = "user"
+    # The Shop tab's add sheet (2026-09-21, Loop Board 3e31f4c0-5231-817d):
+    # "Where do you get it?" answered in the same request as the add, so
+    # the line lands in that store's card at once and the pair replays as
+    # one op from the offline queue. None = not asked (a voice add, a chat
+    # add): the item's usual store applies as it always did. '' = the
+    # sheet's "Anywhere": under no store, decided. A real store is
+    # remembered as the item's usual (see tools.set_grocery_item_store)
+    # unless remember is False.
+    store: str | None = None
+    remember: bool = True
 
 
 class GroceryScanItem(BaseModel):
@@ -981,6 +991,9 @@ class GroceryStoreAssignment(BaseModel):
 class GroceryStoreBulkRequest(BaseModel):
     assignments: list[GroceryStoreAssignment] = []
     remember: bool = False
+    # True on the undo of a sort: a row put back to no store has its
+    # remembered store cleared too — see tools.set_grocery_items_stores.
+    forget: bool = False
 
 
 class GroceryPreShopRequest(BaseModel):
@@ -4726,7 +4739,7 @@ def set_grocery_list_stores_bulk(req: GroceryStoreBulkRequest):
     """
     try:
         result = tools.set_grocery_items_stores(
-            [a.model_dump() for a in req.assignments], remember=req.remember
+            [a.model_dump() for a in req.assignments], remember=req.remember, forget=req.forget
         )
     except ValueError as e:
         # Over the batch limit: the caller asked for something outside what
@@ -4738,28 +4751,20 @@ def set_grocery_list_stores_bulk(req: GroceryStoreBulkRequest):
     return result
 
 
-@app.post("/api/grocery-list/{item_id}/store/confirm")
-def confirm_grocery_list_item_store(item_id: int):
-    """
-    Finalize the one-tap 'Remember for {store}?' offer set_grocery_item_store
-    makes the first time an item gets a store (its needs_confirmation flag) —
-    saves the item->store preference and adds it to that store's typical-items
-    list on the Kitchen sheet. Only called when the shopper taps 'yes';
-    declining needs no call at all.
-    """
-    try:
-        result = tools.confirm_grocery_item_store_preference(item_id)
-    except Exception as e:
-        logger.exception("Grocery list store preference confirm failed")
-        raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return result
-
-
 @app.post("/api/grocery-list/add")
 def add_grocery_list_item(req: GroceryAddRequest):
-    """Add an item to the grocery list directly from the Grocery List view (not via chat)."""
+    """
+    Add an item to the grocery list directly from the Shop tab (not via
+    chat). With `store` given (the add sheet's pick), the line is put
+    under that store in the same request and — for a real store — the
+    store is remembered as the item's usual; '' is "Anywhere".
+    """
     try:
         result = tools.add_grocery_item(req.item, quantity=req.quantity, category=req.category, added_by=req.added_by)
+        if req.store is not None:
+            placed = tools.set_grocery_item_store(result["item_id"], req.store, remember=req.remember)
+            result["store"] = placed.get("store", "")
+            result["remembered"] = bool(placed.get("remembered"))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

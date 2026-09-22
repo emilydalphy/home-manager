@@ -97,7 +97,7 @@ def _list(body: str):
 
 
 @_needs_node
-def test_the_root_is_the_band_the_add_row_and_one_card_per_store_in_stop_order():
+def test_the_root_is_the_band_and_one_card_per_store_in_stop_order_with_add_in_the_dock():
     out = _list("""
 mockup();
 var html = groListHtml(groceryState.data);
@@ -105,6 +105,7 @@ console.log(JSON.stringify({
   band: [groBandEyebrow(groceryState.data), groBandLine(groceryState.data)],
   cards: cards(html), counts: counts(html),
   order: [html.indexOf('id="gro-add-item"'), html.indexOf('data-store="Costco"'), html.indexOf('data-store="Loblaws"'), html.indexOf('gro-anywhere')],
+  preShop: html.indexOf('gro-add'),
   dock: groDockHtml(groceryState.data, 'list'),
   crumb: groHeadFor(groceryState.data, 'list').back
 }));
@@ -113,8 +114,11 @@ console.log(JSON.stringify({
     assert out["cards"] == ["Costco", "Loblaws", "Anywhere"], "stop order, the loose pile last"
     assert out["counts"] == ["2 of 6", "0 of 3", "0 of 1"]
     a, b, c, d = out["order"]
-    assert 0 <= a < b < c < d, "the add row, then the cards"
-    assert out["dock"] == "", "no dock on the root — ticking a row is the action"
+    assert a == -1, "no add row at the top of the list (2026-09-21: it is the dock's button)"
+    assert 0 <= b < c < d, "the cards, in stop order"
+    assert out["preShop"] == -1
+    assert 'data-gro="add-open"' in out["dock"] and "Add something" in out["dock"], "the dock holds Add something"
+    assert "dock-primary" not in out["dock"] and "gro-primary" not in out["dock"], "and nothing apricot: ticking a row is the action"
 
 
 @_needs_node
@@ -310,7 +314,7 @@ console.log(JSON.stringify({
     assert out["cardsStay"] == ["Done at Costco", "Done at Loblaws", "All bought"], "the ticked cards stay under it, so a mis-tick can be put back"
     assert out["tonight"] is True
     assert out["folded"] is True
-    assert out["dock"] == ""
+    assert 'data-gro="add-open"' in out["dock"] and "dock-primary" not in out["dock"]
 
 
 # --- 3. the tick with no signal -----------------------------------------------

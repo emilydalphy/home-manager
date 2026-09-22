@@ -300,6 +300,22 @@
     <div id="gro-scan-body"></div>
   </div>
 
+  <!-- "Add something" (Shop's dock, 2026-09-21; static/shell.js
+       groAddSheetOpen). The field, the camera, "Where do you get it?" as
+       one chip per store, and one apricot "Add to Costco". Body level for
+       the same reason as the scan sheet above; the body is drawn by
+       groAddSheetHtml each time it opens. -->
+  <div id="gro-add-scrim" hidden></div>
+  <div id="gro-add-sheet" hidden role="dialog" aria-label="Add something">
+    <div class="ask-sheet-handle" id="gro-add-handle"></div>
+    <div class="kit-sheet-titlerow">
+      <span class="kit-sheet-title">Add something</span>
+      <span class="kit-sheet-hairline"></span>
+      <button type="button" class="kit-sheet-close" id="gro-add-close" aria-label="Close">&times;</button>
+    </div>
+    <div id="gro-add-body"></div>
+  </div>
+
   <!-- "Start over" confirm (Meals tab) — the self-service reset for a week
        that needs a do-over, backed by GET /api/reset/preview and
        POST /api/reset. Deliberately a two-checkbox dialog rather than a

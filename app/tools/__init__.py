@@ -573,7 +573,6 @@ from .staples import (  # noqa: F401
 from .stores import (  # noqa: F401
     _DEFAULT_AISLE_ORDER,
     close_shopping_trip,
-    confirm_grocery_item_store_preference,
     get_grocery_list_by_store,
     get_item_store_preferences,
     get_stores,

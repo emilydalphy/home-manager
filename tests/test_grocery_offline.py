@@ -533,7 +533,7 @@ def test_both_ticks_go_through_the_offline_path():
     trip's 'trip-toggle' / 'uncheck' until then) both go through groTick:
     'purchased' straight away rather than the trip's 'in_cart'."""
     tick = SHELL_JS.index("function groTickLine(")
-    body = SHELL_JS[tick:tick + 700]
+    body = SHELL_JS[tick:tick + 1100]
     assert "var next = bought ? 'needed' : 'purchased';" in body
     assert "groTick(id, next);" in body
     assert "groTick(id, bought ? 'purchased' : 'needed');" in body, "the toast's way back is the same tap the other way"

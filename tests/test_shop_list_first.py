@@ -51,13 +51,13 @@ _PATCH = """
 var RENDERS = 0;
 var FOCUSED = 0;
 renderGrocery = function () { RENDERS += 1; };
-var addInput = { value: '', focus: function () { FOCUSED += 1; }, setSelectionRange: function () {} };
-var addBtn = { disabled: false };
-panels['grocery'] = { dataset: { built: '1' }, querySelector: function (sel) {
-  if (sel === '#gro-add-item') return addInput;
-  if (sel === '#gro-add-btn') return addBtn;
-  return null;
-} };
+panels['grocery'] = { dataset: { built: '1' }, querySelector: function () { return null; } };
+// The add sheet, as groAddSheetOpen leaves it (no document here, so the
+// sheet's state is set the way the open sets it and the field's value
+// is the state's typed text).
+function typeIntoSheet(text, store) {
+  groceryState.addSheet = { typed: text, store: store === undefined ? '' : store, picked: store !== undefined };
+}
 var BY_STORE = { stores: [
   { store: 'Costco', sections: [{ section: 'pantry', items: [
     { id: 1, item: 'Rice', quantity: '1', store: 'Costco', store_decided: 1, category: 'pantry' }] }] },
@@ -172,34 +172,33 @@ loadGrocery().then(function () {
 
 
 @_needs_node
-def test_an_add_stays_on_the_list_and_focuses_the_add_box_again():
-    """groAddItem end to end: the POST, then groDo's re-read of the list
-    (loadGrocery), then focus. On the parent branch the re-read opened SORT
-    because the new thing had no store."""
+def test_an_add_stays_on_the_list_and_closes_the_sheet():
+    """groAddItem end to end: the POST (with the sheet's store), then the
+    re-read of the list (loadGrocery). On the parent branch the re-read
+    opened SORT because the new thing had no store."""
     out = _node("""
 loadGrocery().then(function () {
-  addInput.value = 'oat milk';
+  typeIntoSheet('oat milk', 'Metro');
   return groAddItem();
 }).then(function () {
   console.log(JSON.stringify({
-    step: groceryState.step, focused: FOCUSED, cleared: addInput.value,
+    step: groceryState.step, sheet: groceryState.addSheet,
     post: posts('/api/grocery-list/add')[0].body, renders: RENDERS
   }));
 });
 """)
     assert out["step"] == "list", "an add never switches step"
-    assert out["focused"] >= 1, "the add box is ready for the next thing"
-    assert out["cleared"] == ""
-    assert out["post"] == {"item": "oat milk", "quantity": "", "category": "dairy"}
+    assert out["sheet"] is None, "the sheet closes on Add"
+    assert out["post"] == {"item": "oat milk", "quantity": "", "category": "dairy", "store": "Metro", "remember": True}
     assert out["renders"] >= 2, "the list re-drew with the new thing on it"
 
 
 @_needs_node
 def test_an_add_from_the_list_carries_a_guessed_aisle_not_other():
     out = _node("""
-var bodies = [];
+groceryState.data = { stores: {} };
 ['2 lb carrots', 'chicken thighs', 'frozen peas', 'paper towels', 'bread'].forEach(function (typed) {
-  addInput.value = typed;
+  typeIntoSheet(typed);
   groAddItem();
 });
 settle(function () {
@@ -341,7 +340,7 @@ loadGrocery().then(function () {
     assert out["cards"] == ["Anywhere"]
     assert out["ticks"] == 2
     assert out["band"] == "2 things."
-    assert out["dock"] == "", "no dock on the root: ticking a row is the action"
+    assert "dock-primary" not in out["dock"] and 'data-gro="add-open"' in out["dock"], "no action on the root — ticking a row is it; the dock holds Add something"
 
 
 @_needs_node
@@ -393,7 +392,7 @@ loadGrocery().then(function () {
     assert out["asking"]["step"] == "list"
     assert out["asking"]["card"] is True
     assert out["asking"]["listUnder"] is True, "the list is under the card, not behind it"
-    assert out["asking"]["dock"] == "", "the card's button is the screen's one apricot while it is up (Rule 5); no dock"
+    assert "dock-primary" not in out["asking"]["dock"], "the card's button is the screen's one apricot while it is up (Rule 5)"
     assert out["dismissed"] is True and out["posted"] == 1
     assert out["cardAfter"] is False and out["listAfter"] is True
 

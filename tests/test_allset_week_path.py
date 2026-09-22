@@ -159,7 +159,10 @@ def test_the_shop_root_has_no_dock_and_no_see_the_week_link():
 setUp(0, [{ store: 'Costco', items: [{ id: 1, item: 'Rice', quantity: '1', store: 'Costco', store_decided: 1, status: 'needed' }] }]);
 console.log(JSON.stringify(groDockHtml(groceryState.data, 'list')));
 """)
-    assert out == ""
+    # Since 2026-09-21 the root's dock holds "Add something" — an outline,
+    # never an apricot — and still no trip and no week link.
+    assert "dock-primary" not in out and "gro-primary" not in out
+    assert 'data-gro="add-open"' in out
     assert 'data-gro="see-week"' not in SHELL_JS
     assert 'data-gro="start-trip"' not in SHELL_JS
 
