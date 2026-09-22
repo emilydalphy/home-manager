@@ -26,6 +26,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
 SHELL_CSS = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
+SHELL_HTML = (REPO / "static" / "shell.html").read_text(encoding="utf-8")
 
 
 def _in(needle: str, haystack: str, what: str, where: str) -> None:
@@ -139,31 +140,34 @@ def test_the_root_has_no_dock_and_the_tick_is_the_action():
     _in("groPostJson('/api/shopping-trips/close'", SHELL_JS, "the same route the trip closed a stop with", "shell.js")
 
 
-def test_the_add_row_opens_the_list():
-    """The inline add row POSTs /api/grocery-list/add directly — the same
-    route groHandleVoiceCommand's "add oat milk" uses. It is the first
-    thing under the band now (the mockup), not the foot of the list."""
-    _in("function groAddRowHtml(", SHELL_JS, "the add row", "shell.js")
-    _in("var html = groAddRowHtml() + groPreShopHtml();", SHELL_JS, "the add row opening LIST", "shell.js")
+def test_the_add_is_a_sheet_from_the_dock():
+    """The add POSTs /api/grocery-list/add directly — the same route
+    groHandleVoiceCommand's "add oat milk" uses. Since 2026-09-21 it is a
+    sheet opened from the dock's "Add something" (Emily's S1/S1b mockups;
+    tests/test_shop_add_sheet.py has the behaviour); the add row that
+    opened the list before that is gone, and with it the capture/restore
+    that carried its typing across a re-render — the sheet is at body
+    level, out of the list's reach."""
+    _not_in("function groAddRowHtml(", SHELL_JS, "the add row", "shell.js")
+    _not_in("function groCaptureAddRow(", SHELL_JS, "the add row's capture", "shell.js")
     _not_in("function groFootHtml(", SHELL_JS, "the foot", "shell.js")
     _not_in("id=\"gro-foot\"", SHELL_JS, "the foot's element", "shell.js")
-    _in("function groAddItem(", SHELL_JS, "the inline add", "shell.js")
+    _in("function groAddButtonHtml(", SHELL_JS, "the dock's button", "shell.js")
+    _in("data-gro=\"add-open\"", SHELL_JS, "its action", "shell.js")
+    _in("function groAddSheetHtml(", SHELL_JS, "the sheet", "shell.js")
+    _in("function groAddItem(", SHELL_JS, "the add", "shell.js")
     _in("function groParseAddInput(", SHELL_JS, "the typed-quantity parser", "shell.js")
     _in("'/api/grocery-list/add'", SHELL_JS, "the add route", "shell.js")
     _in("id=\"gro-add-item\"", SHELL_JS, "the name field", "shell.js")
     _in("data-gro=\"add\"", SHELL_JS, "the Add button", "shell.js")
     _in("case 'add':", SHELL_JS, "its handler", "shell.js")
-    _in("e.target.id === 'gro-add-item'", SHELL_JS, "the Enter-to-add wiring", "shell.js")
+    _in("e.key !== 'Enter' || e.target.id !== 'gro-add-item'", SHELL_JS, "the Enter-to-add wiring", "shell.js")
     _in("id=\"gro-scan-btn\"", SHELL_JS, "the camera", "shell.js")
+    _in('id="gro-add-sheet"', SHELL_HTML, "the sheet at body level", "shell.html")
     _in(".gro-add-field {", SHELL_CSS, "the field wrapping the camera button", "shell.css")
     field = SHELL_CSS.split(".gro-add-field {", 1)[1][:200]
     assert "position: relative" in field
-    add_btn = SHELL_CSS.split(".gro-add-btn {", 1)[1][:400]
-    assert "var(--spruce)" in add_btn and "var(--apricot)" not in add_btn, "the Add button is spruce (Rule 5)"
-    # A re-render must not eat a half-typed "oat milk": the add row is
-    # captured and restored across the body's re-render.
-    _in("var addRow = groCaptureAddRow(body);", SHELL_JS, "the add row captured before a re-render", "shell.js")
-    _in("groRestoreAddRow(body, addRow);", SHELL_JS, "and restored after", "shell.js")
+    _not_in(".gro-add-btn {", SHELL_CSS, "the row's Add button", "shell.css")
 
 
 def test_a_list_row_keeps_its_quiet_row_action():

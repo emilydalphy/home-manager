@@ -498,4 +498,4 @@ console.log(JSON.stringify({ cards: cards(html), band: groBandLine(groceryState.
 """)
     assert out["cards"] == ["Anywhere"]
     assert out["band"] == "2 things."
-    assert out["dock"] == ""
+    assert "dock-primary" not in out["dock"] and 'data-gro="add-open"' in out["dock"]

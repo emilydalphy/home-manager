@@ -322,7 +322,7 @@ console.log(JSON.stringify({
 }));
 """)
     assert out["cardWhileAsking"] is True and out["primaryCount"] == 1
-    assert out["dockWhileAsking"] == ""
+    assert "dock-primary" not in out["dockWhileAsking"], "the card's button is the one apricot; the dock's Add something is an outline"
     assert out["cardAfter"] is False and out["primaryAfter"] == 0
 
 

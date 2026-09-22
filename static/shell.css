@@ -4240,20 +4240,37 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 }
 .gro-primary:hover { background: var(--apricot-light); }
 .gro-primary:disabled { opacity: .6; cursor: default; box-shadow: none; }
-/* The inline add row under the trip button. Spruce, not apricot: adding one
-   thing is a side errand next to starting the trip, and a second apricot
-   would break Rule 5.
-   Changed 2026-09-11 (design-tidy pass, item 7): this used to be four
-   controls in one row (name / a 62px Qty box / Add / camera), which left
-   the one field that matters — the item name — too narrow to read what was
-   typed in it. Now it's one wide field (.gro-add-field) with the camera
-   sitting inside its own right end, and quantity comes from what's typed
-   (groParseAddInput) instead of a box of its own. */
-.gro-add {
+/* "Add something" (2026-09-21, Emily's S1 mockup): an outline button in
+   the root's dock, beside the chat FAB (the dock's own right padding
+   clears it). Outline, not apricot: adding one thing is a side errand,
+   and the root has no screen action (Rule 5). The inline add row this
+   replaces — field / camera / Add at the top of the list — went with it;
+   its field and camera live on in the sheet (.gro-add-field below). */
+.gro-add-open {
   display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding-top: 8px;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: var(--radius-action);
+  border: 1.5px solid var(--hairline-strong);
+  background: transparent;
+  color: var(--ink-strong);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  cursor: pointer;
 }
+.gro-add-open:hover { border-color: var(--ink-strong); }
+.gro-add-open svg { width: 18px; height: 18px; flex: 0 0 auto; }
+.gro-dock .dock-primary + .gro-add-open { margin-top: 8px; }
+/* The sheet's field: one wide field with the camera inside its right end
+   (Emily's S1b mockup). Formerly the list's add row (design-tidy pass
+   2026-09-11, item 7: one field that can be read, quantity from what's
+   typed rather than a box of its own). */
 .gro-add-field {
   position: relative;
   flex: 1 1 auto;
@@ -4262,35 +4279,21 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .gro-add-item {
   width: 100%;
   box-sizing: border-box;
-  min-height: 44px;
+  min-height: 52px;
   border: 1.5px solid var(--hairline-strong);
   border-radius: var(--radius-control);
   background: var(--ground);
   /* Right padding clears the 44px camera button living inside this field. */
-  padding: 0 48px 0 12px;
+  padding: 0 48px 0 14px;
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: 16px;
+  font-weight: 600;
   color: var(--ink);
 }
-.gro-add-btn {
-  flex: 0 0 auto;
-  min-height: 44px;
-  padding: 0 18px;
-  border: none;
-  border-radius: var(--radius-control);
-  background: var(--spruce);
-  color: var(--ivory-ink);
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-}
-.gro-add-btn:hover { background: var(--spruce-hover); }
-.gro-add-btn:disabled { opacity: .6; cursor: default; }
 /* The photo entry point (Loop Board, 2026-09-11: "snap a photo of a
-   written or on-screen list and have Pomona add it") now sits INSIDE the
-   add field's own right end — absolute against .gro-add-field, 44×44 (Rule
-   6) — rather than as a fifth control trailing the row. */
+   written or on-screen list and have Pomona add it") sits INSIDE the add
+   field's own right end — absolute against .gro-add-field, 44×44 (Rule
+   6) — rather than as a control trailing the row. */
 .gro-scan-btn {
   position: absolute;
   top: 50%;
@@ -4316,14 +4319,14 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    Same body-level scrim/sheet mechanics as #ask-sheet/#week-sheet
    (position:fixed has to sit outside the tab panel's own stacking/scroll
    context) — new code, so canonical tokens only, no legacy aliases. */
-#gro-scan-scrim {
+#gro-scan-scrim, #gro-add-scrim {
   position: fixed;
   inset: 0;
   background: var(--scrim);
   animation: fadeIn .18s ease;
   z-index: 40;
 }
-#gro-scan-sheet {
+#gro-scan-sheet, #gro-add-sheet {
   position: fixed;
   left: 0;
   right: 0;
@@ -4340,7 +4343,33 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   overflow-y: auto;
   animation: sheetUp .24s cubic-bezier(.2,.8,.2,1);
 }
-#gro-scan-scrim[hidden], #gro-scan-sheet[hidden] { display: none; }
+#gro-scan-scrim[hidden], #gro-scan-sheet[hidden], #gro-add-scrim[hidden], #gro-add-sheet[hidden] { display: none; }
+/* ---------- "Add something" sheet (groAddSheetHtml) ----------
+   The field (.gro-add-field above), "Where do you get it?", one 44px
+   .gro-pill per store plus Anywhere (the on chip is .gro-pill-on, the
+   same celadon-tint as every settled chip), one celadon line saying what
+   the pick means, and the sheet's one apricot (.dock-primary — the
+   dock's own is behind the scrim). */
+.gro-add-q {
+  margin: 4px 0 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.gro-add-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.gro-add-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-control);
+  background: var(--celadon-tint);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--celadon-label);
+}
+.gro-add-go { margin-top: 4px; }
 .gro-scan-sub {
   font-family: var(--font-body);
   font-size: 14px;
