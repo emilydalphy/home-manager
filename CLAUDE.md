@@ -485,6 +485,24 @@ why*, not duplicating the diff.
     module's clock generally, when the due test three lines above it errs the
     other way. The comment now says which comparison it covers and names the
     one it does not.
+  - **THE CONVERSION BROKE TWO TESTS IN ANOTHER FILE UNDER A STRADDLE, AND
+    ONLY A BEFORE/AFTER COMPARISON FOUND IT — the branch's own suite was
+    green at Toronto.** `tests/test_grocery_spices.py` asserted against
+    `datetime.date.today()`, so the moment `staples._today()` moved, the
+    test's clock and the app's disagreed: measured under a VERIFIED
+    `Pacific/Niue` straddle (Niue 2026-09-21 against Toronto 2026-09-22,
+    dates checked either side of BOTH runs), **main 2 failed / 6211 passed,
+    this branch 4 failed / 6220** — the extra two being
+    `test_a_ticked_spice_that_came_home_is_a_spices_staple` and
+    `test_unticking_a_pre_ticked_jar_is_we_have_plenty_and_a_retick_takes_it_back`.
+    `straddle` is a BLOCKING job, so that would have turned it red.
+    **The 2026-09-21 far-date-pin-cliffs entry predicted this exactly** and
+    left the file on the server's clock "because `staples._today()` reads
+    the SERVER's clock, so a server-clock seed agrees with the app by
+    construction". That premise was this branch's to invert, so the file
+    moves with it — all five reads onto `conftest.household_today()`, 139
+    passed at Toronto and at Niue — and that entry is corrected in place
+    rather than left to mislead the next reader.
   - `tests/test_staples_household_clock.py` (11; **5 red against main's
     `app/`**, of which **4 are behaviour catches** — the fifth is the
     ordering guard and is red there for a reason other than the one it is
@@ -1205,7 +1223,18 @@ why*, not duplicating the diff.
     clock (its own card, not touched here), so a server-clock seed agrees
     with the app exactly and by construction, while a household seed would be
     a day out from it under a straddle — right only because the margin is
-    months. That also keeps the change to one hunk, which a branch converting
+    months.
+    **[SUPERSEDED 2026-09-22 by `overnight/staples-household-clock`, which IS
+    the card this sentence defers to. `staples._today()` reads the
+    HOUSEHOLD's clock now, so the premise is inverted and this paragraph's
+    own argument runs the other way: the server-clock seed is the one that
+    is a day out. The whole file moved to `conftest.household_today()` on
+    that branch, and it had to — measured, two of its tests went red under a
+    verified `Pacific/Niue` straddle the moment the module moved, which is
+    what that branch's own comparison run caught. The reasoning is kept
+    exactly as written because it was right when written and shows precisely
+    which fact changed.]**
+    That also keeps the change to one hunk, which a branch converting
     this file's harness call sites in parallel can merge without a fight —
     confirmed on a real trial merge against `overnight/grocery-stub-click-if-
     rendered`, which conflicts on this log and not on the test. **The headroom
