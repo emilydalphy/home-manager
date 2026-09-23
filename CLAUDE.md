@@ -415,6 +415,145 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-23 — A repeated breakfast is ONE entry now, not five. Branch
+  `overnight/menu-repeats-once`, NOT merged at the time of writing.** The
+  direct follow-up to `menu-first-generation-2026-09-21`, whose own entry
+  says the remaining output is "35 slots of bookkeeping (~3K tokens of
+  JSON) plus thinking, NOT recipes, so the draft did not reach the card's
+  15s" and files a compact-output card. This is that card. An entry may
+  name several `dates`; the save path fans it back out into one plan row
+  per date before anything else sees it.
+  - **THE SAVING IS ENTIRELY THE HOUSEHOLD'S OWN DISTINCT-MEAL COUNTS, and
+    that bounds it — say it first rather than last.** A week comes back as
+    `7 dinners + one entry per distinct breakfast idea + per lunch idea +
+    per snack idea`. Measured across the shapes a real household can be in:
+    **35 entries** when nothing folds (7 distinct breakfasts, 7 lunches, 14
+    snacks — arithmetically possible and the column defaults permit it),
+    **21** at those defaults read as a ceiling the model fills, **16** at
+    what the prompt calls normal and expected (2-3 ideas each), **13** at
+    what the setup screen actually asks for, **11** at "one breakfast a
+    week is a perfectly good answer". The card predicted 18-22 and the
+    realistic band is 11-21. A household that genuinely wants seven
+    different breakfasts saves nothing, correctly.
+  - **THE NUMBERS ARE ESTIMATES AND THE WORD IS NOT DECORATION.** There is
+    no working Anthropic key in this sandbox, so `api_calls` seconds and
+    the real output-token count could not be read and were not. What was
+    measured is the JSON payload the model has to emit for one realistic
+    35-slot week written both ways, compact-separated, with the token
+    figure as chars/4: **10,131 -> 4,557 characters, ~2,532 -> ~1,139
+    output tokens, 55% off.** The test file's own smaller fixture measures
+    54%, and there is an assertion on it (`test_folding_a_realistic_week_
+    cuts_the_payload_by_more_than_a_third`) so the claim stays checkable
+    rather than living in a commit message.
+  - **WHAT THAT DOES *NOT* SAY, and it is the half that matters for the
+    15-second target.** Production measured 4,800-5,900 output tokens for
+    that call, and the JSON of an unfolded week estimates at ~2,532 — so
+    roughly half of what was being written was the model's THINKING, which
+    folding does not touch at all. Taking production's midpoint, the whole
+    call estimates at ~5,350 -> ~3,960 tokens, i.e. about **26% off the
+    call**, not 55%. Nobody should read the payload figure as the wall
+    clock. Whether it reaches 15s needs a real call.
+  - **DINNERS ARE NOT FOLDED IN THE PROMPT AND ARE HONOURED IN CODE, which
+    is not a contradiction.** A dinner carries the week's shape and its own
+    per-night reason ("lighter after Monday's chili"), so the prompt asks
+    for one entry per night even when the dish repeats. But a dinner that
+    arrives with several dates anyway is written to all of them: a repeated
+    dinner is something this app asks for elsewhere in the same prompt
+    ("with dinners_per_week 3 over four days, exactly three different
+    dinners, one of them on two nights"), and refusing the extra nights
+    would leave holes for the gap audit to turn into open questions about a
+    night the model had already answered. Telling is not preventing, and
+    the right answer to being disobeyed here is to take it, not to refuse.
+  - **TWO ENTRIES CLAIMING ONE (date, slot): THE MORE SPECIFIC ONE WINS** —
+    the entry naming fewer dates. That is what "oatmeal most mornings,
+    pancakes on Saturday" means, and it is the shape folding itself
+    creates. First-wins on a tie. `_dedupe_duplicate_slots` further down
+    already keeps the first-created ROW, which is an answer decided by
+    array order rather than by what the model meant, and it would delete
+    the one-off dish — which has nowhere else to go. It still runs, as
+    belt and braces.
+  - **SNACK IS KEYED BY ITS DISH AS WELL AS ITS DAY**, because a day
+    legitimately holds `snacks_per_day` of them: two DIFFERENT snacks on
+    one date are right and are kept, and only the same dish twice on one
+    day is dropped. Keying snacks like the three real meals halves every
+    day's snacks — measured, it reddens 5 tests.
+  - **`date` STAYS REQUIRED and `dates` is ADDITIVE.** The union is the
+    forgiving reading of the two ways the model could mean it ("A, plus the
+    repeats B and C" / "the repeats are A, B and C" land on the same
+    answer), and a union's failure mode is a day that gets a meal rather
+    than a day left with a hole — which here becomes a question about a
+    night the model had already decided. It also means the streamed item,
+    the scanner and every reader below the expansion see the shape they
+    always saw.
+  - **WHERE IT EXPANDS IS THE WHOLE OF ITS BLAST RADIUS, and the first cut
+    put it in the wrong place.** It was in `generate_weekly_plan_llm`, the
+    model-call wrapper — which every test in this repo stubs, so a stubbed
+    folded week went PAST the expansion rather than through it and the
+    end-to-end tests were green on a week that had ten of its twenty-one
+    slots handed back as open questions. Caught by writing the test, not by
+    reading the code. It is on the save path now (`_generate_weekly_plan`,
+    day-based branch only — a component plan's items are parts, not days,
+    and carry no date), which is where the card said to put it: the
+    honest-title pass, the allergen gate, the save loop and the 21-slot
+    audit all still see the one-entry-per-slot list they always saw.
+  - **The rows of a fold do NOT share one `derived_from`.** Not a style
+    point: the passes below mutate an entry's `derived_from` in place —
+    `typed_requests` writes `freeform` onto the slots a request shaped —
+    and two nights aliasing one dict is how one night's correction
+    silently becomes another night's. Deep-copied per row.
+  - **The screen is told about every day of a fold**, in the server's own
+    relay (`generate_weekly_plan_llm`'s `on_day` wrapper): the scanner
+    streams whole ENTRIES and an entry can now be three mornings, while
+    both readers of the `day` event — `plan-week.html`'s `sawDate` and
+    onboarding's `upsertRevealDay` — take `body.date` and paint that one
+    card. One event per date, in the model's order, and neither client
+    had to learn anything about folding. `static/` is untouched.
+  - **The prompt's own entry counts had to move with it or the model was
+    told two contradictory things**, which is the part of this most likely
+    to be got wrong by a later edit: "an ordinary day is 5 separate
+    entries" is 5 filled SLOTS now, and "21 entries minimum" is "all 21 of
+    them, whether that takes 21 entries or 8". `snacks_per_day` says
+    explicitly that it counts the days a fold covers, not the entries. And
+    the fold rule says never to list a day in `dates` that a rule above
+    said not to plan (`intake.skipped_days`, `slot_needs.away_slots`) —
+    folding is a briefer way of saying the same thing, never a way past a
+    rule. The out-night pass clears the slot first regardless, as always.
+  - **The `derived_from`/`reasoning` trim is PROMPT-ONLY and it is worth
+    knowing why.** Both are output tokens, so no code change can take them
+    back — what the schema and the prompt can do is ask for fewer, and both
+    now do ("a key with nothing in it is not a record of anything"; "a full
+    sentence is clipped on the screen, so the extra words are not read by
+    anyone"). Nothing trims the stored `derived_from`, deliberately: it
+    would change what four readers see for no measurable gain.
+  - `tests/test_menu_repeats_once.py` (30; **21 red against the mutation
+    that makes the expansion a no-op**, which is `main`'s behaviour — the
+    honest baseline here, since the file cannot be collected against a tree
+    with no `_expand_repeated_dates` in it at all). The nine green each say
+    in their own docstring which they are; two of them were WEAK on the
+    first pass and are named as such rather than quietly strengthened — the
+    audit test passed on an unexpanded week because the gap audit fills a
+    missing slot with an open question and those count as present, and the
+    snacks test counted the snacks without counting the DAYS, so "both
+    ideas on day one and nothing anywhere else" read as "every day that has
+    snacks has two". **Seven mutations run and every one bites**: the
+    expansion a no-op (21 red), snack keyed like the three real meals (5),
+    `date` left out of the union (2), dates within one entry not
+    de-duplicated (2), specificity reversed (1), `derived_from` shared by
+    reference (1), the streaming fan-out removed (1), the per-entry bound
+    removed (1).
+  - **Numbers, read off the runs.** `TZ=America/Toronto`, whole suite:
+    **6352 passed, 0 failed**, against a measured **6322 passed, 0 failed**
+    on the merge base in the same zone — +30 is this file exactly, and no
+    existing test was changed, deleted or weakened (`git diff main --
+    tests/` is one new file).
+  - **Not done, named rather than left to be found.** The component planner
+    is untouched and folds nothing (its items are parts, not days). Nothing
+    caps how many entries a week may come back as — the 21-slot audit is
+    still the only thing that checks the week is whole. And the real
+    question this card exists for, whether the draft now lands inside 15
+    seconds, cannot be answered from here at all: it needs one real
+    generation with the `api_calls` ledger read afterwards.
+
 - **2026-09-22 — `main` was red on five weekdays out of seven, and TWO of the
   four pinned CI jobs — `clock (friday)` and `clock (sunday)` — were red on
   EVERY push. Branch
