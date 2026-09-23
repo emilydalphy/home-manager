@@ -120,14 +120,67 @@ def test_a_low_carb_house_tapping_add_a_carb_sees_every_carb_first():
 
     offered = tools.suggest_additions(entry_id, eating_style="keto", weekly_plan_id=plan_id, role="carb")
 
+    # A role sheet is filtered to its own kind, server-side (Emily,
+    # 2026-09-22: her "Add a carb" sheet listed a salad, a sauce and a
+    # chimichurri alongside the two carbs — "some of these are not carb
+    # suggestions"). ROLE sheets show ONLY their kind.
     kinds = [o["kind"] for o in offered["options"]]
-    assert kinds[:3] == ["starch", "starch", "starch"]
-    names = [o["name"] for o in offered["options"][:3]]
-    assert set(names) == {"Roasted potatoes", "Rice", "Crusty bread"}
+    assert all(k == "starch" for k in kinds)
+    assert len(offered["options"]) >= 5
     assert len(offered["options"]) <= plates.MAX_ADDITIONS_OFFERED
-    # Opened for a veg, the greens lead instead — the same rule, any part.
+    # Opened for a veg, only vegetables — same rule, any part.
     offered = tools.suggest_additions(entry_id, weekly_plan_id=plan_id, role="vegetable")
-    assert offered["options"][0]["kind"] == "green"
+    assert offered["options"] and all(o["kind"] == "green" for o in offered["options"])
+
+
+def test_a_sweet_potato_dish_still_offers_roasted_potatoes():
+    """
+    Emily's Cajun Salmon night (2026-09-22): "Sweet Potato Mash" must not
+    hide "Roasted potatoes" as an already-there option — a dish with real
+    potatoes still does. Since the dish's own sweet potato is itself a
+    carb, no carb is missing here at all, so this only matters for the
+    general sheet or "Something else…", never the (now hidden) chip.
+    """
+    _members(2)
+    tools.add_recipe(
+        "Cajun Salmon with Green Beans and Sweet Potato Mash",
+        ingredients=[
+            {"item": "Salmon fillets", "qty": "4", "category": "meat/seafood"},
+            {"item": "Green beans", "qty": "1 lb", "category": "produce"},
+            {"item": "Sweet potato", "qty": "2", "category": "produce"},
+        ],
+        food_groups=["protein", "vegetable"], default_servings=4,
+    )
+    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
+    entry_id = tools.plan_meal(
+        MON, "Cajun Salmon with Green Beans and Sweet Potato Mash", slot="dinner", weekly_plan_id=plan_id,
+    )["entry_id"]
+    tools.approve_weekly_plan(plan_id)
+
+    offered = tools.suggest_additions(entry_id, weekly_plan_id=plan_id)
+
+    assert "Roasted potatoes" in {o["name"] for o in offered["options"]}
+
+
+def test_a_real_potato_dish_hides_roasted_potatoes():
+    _members(2)
+    tools.add_recipe(
+        "Herby Roast Chicken with Potatoes",
+        ingredients=[
+            {"item": "Chicken thighs", "qty": "4", "category": "meat/seafood"},
+            {"item": "Potatoes", "qty": "1.5 lb", "category": "produce"},
+        ],
+        food_groups=["protein", "carb"], default_servings=4,
+    )
+    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
+    entry_id = tools.plan_meal(
+        MON, "Herby Roast Chicken with Potatoes", slot="dinner", weekly_plan_id=plan_id,
+    )["entry_id"]
+    tools.approve_weekly_plan(plan_id)
+
+    offered = tools.suggest_additions(entry_id, weekly_plan_id=plan_id)
+
+    assert "Roasted potatoes" not in {o["name"] for o in offered["options"]}
 
 
 def test_something_already_added_is_not_offered_again():

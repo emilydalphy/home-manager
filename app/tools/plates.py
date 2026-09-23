@@ -633,6 +633,90 @@ def complete_plate(entry_id: int, context: dict, side_generator=None) -> dict:
 # model — generate_sides_llm, the call that already writes sides — so the
 # amounts and the step come back real rather than invented here.
 
+# ---------- the dish already has a carb (Emily, 2026-09-22) ----------
+#
+# Cajun Salmon with Green Beans and Sweet Potato Mash recorded food_groups
+# ["protein", "vegetable"] — the model-written classification left the
+# sweet potato mash off — so the plate rule read the plate as short a
+# carb everywhere it looked: the "+Add a carb" chip on the card, the "Add
+# a carb" sheet (which then offered Rice, Crusty bread and worse, sauces),
+# and the plate-completing pass, which would have bolted a carb SIDE onto
+# a dish that already has one. Rather than trust the model's food_groups
+# a second time, a small deterministic word list checked against the
+# dish's own name and its ingredients' names settles it independent of
+# what food_groups_json says — the same stance is_low_carb always took: a
+# list anyone can read and correct beats a judgement nobody can see.
+#
+# Pragmatic, not exhaustive. Deliberately left out: "corn" — the ticket's
+# own word list named it, but this app already has a settled, documented
+# call the other way (household_carb_level's CARB_LEVELS comment, Emily
+# 2026-09-21: "chicken + corn + zucchini" is her own example of a dinner
+# that carries NO carb — corn reads here as a vegetable, not a carb — and
+# test_low_carb_is_not_no_carb.py holds a whole dinner to that). Adding
+# "corn" to this list would have that dish's own carb side stop being
+# attached, silently reversing a decision Emily already made. If she wants
+# corn read as a carb after all, that's a rule she should make on purpose,
+# not a side effect of this fix.
+#
+# Two guards keep the rest honest:
+#   - word-boundary matching, so "potatoey" never hits — with "flatbread"
+#     named explicitly, since a word boundary sits only at the very ends
+#     of that one token and "\bbread\b" never finds a boundary in front
+#     of the "bread" buried inside it (found by the verifier, 2026-09-22);
+#   - a longer list, all found by the same verifying pass, of phrases
+#     that carry a starch WORD without being a carb on the plate:
+#     "rice vinegar" (an acid), "breadcrumbs"/"bread crumbs"/"breaded" (a
+#     coating), "cauliflower rice"/"broccoli rice" (a LOW-CARB SWAP FOR
+#     rice, not rice — the one this app must get right, since a household
+#     eating it is doing exactly what the carb rule already asks of a
+#     low-carb plate), "pasta sauce" (a jar of sauce, not pasta),
+#     "potato starch" (a thickener), "zucchini noodles"/"zoodles" (a
+#     zucchini, cut thin — the vegetable, not the carb it's standing in
+#     for), and "rice paper" (a wrapper, the way a tortilla or a bun's
+#     wrapper isn't counted as bread) — all stripped out before the word
+#     list is checked.
+_STARCH_WORDS_RE = re.compile(
+    r"\b(?:sweet potato|potato(?:es)?|rice|pasta|noodles?|orzo|bread|flatbread|pita|naan|"
+    r"tortillas?|couscous|quinoa|polenta|gnocchi|farro|barley|buns?|wraps?)\b"
+)
+_STARCH_FALSE_POSITIVES_RE = re.compile(
+    r"\brice vinegar\b|\bbread\s*crumbs?\b|\bbreaded\b|"
+    r"\bcauliflower rice\b|\bbroccoli rice\b|\bpasta sauce\b|\bpotato\s*starch\b|"
+    r"\bzucchini noodles?\b|\bzoodles?\b|\brice paper\b"
+)
+
+
+def has_starch(*texts: str | None) -> bool:
+    """
+    Deterministic: do these texts already name a carb — no model call, no
+    guess. See the module note above _STARCH_WORDS_RE for what this does
+    and doesn't catch.
+    """
+    text = " ".join(t for t in texts if t).lower()
+    if not text:
+        return False
+    text = _STARCH_FALSE_POSITIVES_RE.sub(" ", text)
+    return bool(_STARCH_WORDS_RE.search(text))
+
+
+def dish_has_carb(meal_name: str | None, ingredients: list[dict] | None) -> bool:
+    """
+    has_starch applied to a dish's own name and its ingredients' names —
+    not sides, not sauces: whether the DISH ITSELF already carries a
+    carb, the deterministic backstop for a food_groups_json that missed
+    one. Used wherever the plate rule decides carb is missing (the chip,
+    the sheet, and the plate-completing pass) — never on its own; a
+    dish with no recorded food groups at all stays unknown, exactly as
+    missing_groups already treats it, because this settles which group a
+    RECORDED plate is missing, not whether the plate was ever read.
+    """
+    names = [meal_name or ""]
+    for ing in ingredients or []:
+        if isinstance(ing, dict):
+            names.append(ing.get("item") or "")
+    return has_starch(*names)
+
+
 # Every catalogue side is written for this many people. The grocery ingest
 # scales it to who is actually eating (eaters ÷ ADDITION_SERVINGS, the
 # same arithmetic a recipe's default_servings gets), and the Cooker card
@@ -647,6 +731,10 @@ ADDITION_SERVINGS = 4
 # (broccoli beside broccolini is not an addition); see suggest_additions.
 ADDITIONS = [
     {
+        # "potato" is matched specially, not as a plain substring — see
+        # _addition_matches below. Sweet potato mash must not hide this
+        # (Emily's Cajun Salmon night, 2026-09-22); a dish with real
+        # potatoes still does.
         "key": "roasted-potatoes", "name": "Roasted potatoes", "kind": "starch",
         "covers": ["carb"], "minutes": 25, "hint": "25 minutes in the oven",
         "match": ["potato"],
@@ -669,9 +757,53 @@ ADDITIONS = [
     {
         "key": "crusty-bread", "name": "Crusty bread", "kind": "starch",
         "covers": ["carb"], "minutes": 2, "hint": "nothing to cook",
-        "match": ["bread", "baguette", "naan", "pita", "tortilla"],
+        "match": ["bread", "baguette"],
         "ingredients": [{"item": "Baguette", "qty": "1", "category": "other"}],
         "instructions": ["Slice the baguette and put it on the table."],
+    },
+    {
+        "key": "couscous", "name": "Couscous", "kind": "starch",
+        "covers": ["carb"], "minutes": 10, "hint": "10 minutes, mostly off the heat",
+        "match": ["couscous"],
+        "ingredients": [{"item": "Couscous", "qty": "1 box", "category": "pantry"}],
+        "instructions": [
+            "Bring water to a boil, stir in the couscous, cover and take off the heat.",
+            "Rest 5 minutes, then fluff with a fork.",
+        ],
+    },
+    {
+        "key": "quinoa", "name": "Quinoa", "kind": "starch",
+        "covers": ["carb"], "minutes": 20, "hint": "20 minutes on the stove",
+        "match": ["quinoa"],
+        "ingredients": [{"item": "Quinoa", "qty": "1 bag", "category": "pantry"}],
+        "instructions": [
+            "Rinse the quinoa, add it to a pot with 2 cups water and a pinch of salt.",
+            "Bring to a boil, cover, simmer 15 minutes, then rest 5 off the heat.",
+        ],
+    },
+    {
+        "key": "orzo", "name": "Orzo", "kind": "starch",
+        "covers": ["carb"], "minutes": 12, "hint": "12 minutes on the stove",
+        "match": ["orzo"],
+        "ingredients": [{"item": "Orzo", "qty": "1 box", "category": "pantry"}],
+        "instructions": [
+            "Boil salted water and add the orzo.",
+            "Cook 9-11 minutes until tender, then drain.",
+        ],
+    },
+    {
+        "key": "warm-pita", "name": "Warm pita", "kind": "starch",
+        "covers": ["carb"], "minutes": 3, "hint": "a few minutes, no real cooking",
+        "match": ["pita"],
+        "ingredients": [{"item": "Pita bread", "qty": "1 bag", "category": "other"}],
+        "instructions": ["Warm the pita in a dry pan or the oven, a minute a side."],
+    },
+    {
+        "key": "tortillas", "name": "Tortillas", "kind": "starch",
+        "covers": ["carb"], "minutes": 3, "hint": "a few minutes, no real cooking",
+        "match": ["tortilla"],
+        "ingredients": [{"item": "Tortillas", "qty": "1 pack", "category": "other"}],
+        "instructions": ["Warm the tortillas in a dry pan or the microwave."],
     },
     {
         "key": "green-salad", "name": "Green salad", "kind": "green",
@@ -880,6 +1012,29 @@ def _dish_words(row, sides: list[dict]) -> str:
     return " ".join(parts).lower()
 
 
+def _addition_matches(addition: dict, words: str) -> bool:
+    """
+    Does `words` (_dish_words: the dish's own name, its ingredients, and
+    its sides, already lowercased) already have this addition, so it
+    isn't offered a second time?
+
+    "potato" is handled apart from a plain substring check: "Sweet Potato
+    Mash" must not hide "Roasted potatoes" (Emily's Cajun Salmon night,
+    2026-09-22) — a dish naming sweet potato is not a dish that already
+    has (regular) potatoes — but a dish with real potatoes still does.
+    Every other addition's match list is still the plain substring check
+    it always was.
+    """
+    for w in addition["match"]:
+        if w == "potato":
+            if re.search(r"(?<!sweet )potato", words):
+                return True
+            continue
+        if w in words:
+            return True
+    return False
+
+
 def suggest_additions(entry_id: int, eating_style: str | None = None, weekly_plan_id: int | None = None,
                       role: str | None = None) -> dict:
     """
@@ -892,12 +1047,22 @@ def suggest_additions(entry_id: int, eating_style: str | None = None, weekly_pla
     theirs to choose from.
 
     `role` is the part the sheet was opened for ("carb" from the card's
-    "+ Add a carb" chip, "vegetable" from a Veg chip): that part's kind
-    comes first, ahead of the low-carb ordering and BEFORE the list is
-    cut to its six rows. Without it a low-carb household tapping "Add a
-    carb" got one starch and five things they didn't ask for (Emily,
-    2026-09-15) — the cap was taking the carbs off before the sheet
-    could put them first.
+    "+ Add a carb" chip, "vegetable" from a Veg chip): the sheet is
+    authoritative here and shows ONLY that kind — a role sheet titled
+    "Add a carb" offering a green salad or a sauce is the sheet lying
+    about its own title (Emily, 2026-09-22: her Cajun Salmon night's "Add
+    a carb" sheet listed Green salad, Steamed broccoli, Garlic yogurt
+    sauce and Chimichurri alongside the two carbs — "some of these are
+    not carb suggestions"). With no role (the general "What should go
+    with it?" sheet) everything is still offered, sauces included.
+
+    Whether carb is missing at all is starch-aware, not just a read of
+    food_groups_json: a dish whose own name or ingredients already carry
+    a carb (plates.dish_has_carb) counts as having one even when the
+    model's food_groups missed it — the same Cajun Salmon dish's sweet
+    potato mash. That backstop only applies once the dish has SOME
+    recorded food groups; one with none stays unknown, same as
+    missing_groups always treats it.
 
     Pure read. Returns {"entry_id", "meal", "options": [...], "added":
     [names already on the dish]}.
@@ -914,6 +1079,8 @@ def suggest_additions(entry_id: int, eating_style: str | None = None, weekly_pla
         groups = json.loads(row["food_groups_json"] or "[]")
     except (TypeError, ValueError):
         groups = []
+    if groups and "carb" not in groups and has_starch(words):
+        groups = groups + ["carb"]
     level = household_carb_level(eating_style)
     rule = plate_rule(level=level)
     missing = missing_groups({"slot": row["slot"], "food_groups": groups}, rule)
@@ -926,17 +1093,30 @@ def suggest_additions(entry_id: int, eating_style: str | None = None, weekly_pla
     def rank(a):
         group = _KIND_GROUP.get(a["kind"])
         return (
-            0 if asked_for and group == asked_for else 1,
             0 if group and group in missing else 1,
             3 if (low_carb and a["kind"] == "starch") else _KIND_ORDER.get(a["kind"], 9),
         )
 
+    # The general (no-role) sheet still shows every kind, sauces included
+    # — a bigger carb catalogue (Emily, 2026-09-22) must not let one kind's
+    # "missing" priority push every other kind off the six-row cap before
+    # it gets a look-in. A role sheet has no such cap: it's filtered to
+    # one kind already, so all of that kind's rows compete for the six.
+    per_kind_cap = None if asked_for else 3
+    kind_counts: dict[str, int] = {}
     options = []
     for a in sorted(ADDITIONS, key=rank):
+        # A role sheet is filtered to its own kind BEFORE the six-row cap,
+        # not merely sorted to the top of it — see the docstring above.
+        if asked_for and _KIND_GROUP.get(a["kind"]) != asked_for:
+            continue
         if _name_key(a["name"]) in already:
             continue
-        if any(w in words for w in a["match"]):
+        if _addition_matches(a, words):
             continue
+        if per_kind_cap and kind_counts.get(a["kind"], 0) >= per_kind_cap:
+            continue
+        kind_counts[a["kind"]] = kind_counts.get(a["kind"], 0) + 1
         options.append({
             "key": a["key"], "name": a["name"], "kind": a["kind"],
             "minutes": a["minutes"], "hint": a["hint"], "covers": list(a["covers"]),

@@ -6088,6 +6088,12 @@ def _complete_plates_pass(plan_id: int, household_memory: dict, intake: dict | N
                 unknown.append(f"{meal['date']} {meal['slot']} ({meal['meal']})")
                 continue
             missing = tools.plate_missing_groups(meal, rule)
+            if "carb" in missing and tools.plate_dish_has_carb(meal.get("meal"), meal.get("ingredients")):
+                # The dish's own name/ingredients already carry a carb the
+                # model's food_groups missed (Emily's Cajun Salmon/Sweet
+                # Potato Mash night, 2026-09-22) — don't bolt a second carb
+                # side onto a plate that already has one.
+                missing = [g for g in missing if g != "carb"]
             if missing:
                 short.append((meal, missing))
         if unknown:

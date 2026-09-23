@@ -374,6 +374,8 @@ from .plates import get_sides as get_plate_sides  # noqa: F401
 from .plates import has_food_groups as plate_has_food_groups  # noqa: F401
 from .plates import is_complete as plate_is_complete  # noqa: F401
 from .plates import missing_groups as plate_missing_groups  # noqa: F401
+from .plates import has_starch as plate_has_starch  # noqa: F401
+from .plates import dish_has_carb as plate_dish_has_carb  # noqa: F401
 from .pre_shop import (  # noqa: F401
     _PRE_SHOP_FRACTION_LEAD,
     _PRE_SHOP_FRACTION_TAIL,
