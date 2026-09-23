@@ -453,6 +453,26 @@ why*, not duplicating the diff.
     call estimates at ~5,350 -> ~3,960 tokens, i.e. about **26% off the
     call**, not 55%. Nobody should read the payload figure as the wall
     clock. Whether it reaches 15s needs a real call.
+  - **IT COSTS INPUT TOKENS, and the entry should name that rather than
+    only the saving.** The new schema property and the new prompt rule
+    grow the call's INPUT by ~553 estimated tokens — the instructions
+    block 37,588 -> 39,327 chars (~9,397 -> ~9,831, +4.6%) and the tool
+    schema 5,689 -> 6,164 (~1,422 -> ~1,541, +8.4%), measured by building
+    both off `main` and off this branch. The instructions carry the cache
+    marker, so it is a cache-write once and a cache read after; and output
+    is the expensive side, so ~+550 in against ~-1,390 out is net positive
+    either way. Said out loud because a compaction ticket that quietly
+    grows the prompt is how the next one starts from a worse baseline.
+  - **Driven end to end over a real uvicorn on a throwaway DB**, with the
+    one model call stubbed at `_stream_forced_tool_call` (there is no key,
+    so everything below it — the SSE relay, the save path, the expansion,
+    the audit — is the real code): 13 entries in, **35 `day` events out**,
+    each carrying one `date` and no `dates` key, which is exactly what both
+    clients read; the saved plan audits **complete, 21 present, 0 missing,
+    0 duplicated**; two snacks on every one of the seven days; **12** recipe
+    rows for 12 dishes rather than one per slot; and Wednesday's breakfast
+    reads back the entry's own "the oats are in, and mornings are quick"
+    with `{"tags": ["rush"]}` behind it.
   - **DINNERS ARE NOT FOLDED IN THE PROMPT AND ARE HONOURED IN CODE, which
     is not a contradiction.** A dinner carries the week's shape and its own
     per-night reason ("lighter after Monday's chili"), so the prompt asks
