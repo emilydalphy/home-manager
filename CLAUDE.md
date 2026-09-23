@@ -512,6 +512,622 @@ why*, not duplicating the diff.
   and the scrim/handle can't close it mid-write (`dismissSwapSheet`).
   `tests/test_menu_swap_whole_dish.py`.
 
+- **2026-09-23 — "Put back" after an add the server MERGED deleted the whole
+  line, and the amount that was already on it went too. Branch
+  `overnight/put-back-merged-line`, NOT merged at the time of writing.**
+  Loop Board bug. The list says "Bell peppers · 3", the Shop tab's add sheet
+  takes "Bell pepper · 2", Pomona correctly puts them on one line —
+  "Bell peppers · 5" — and the toast says "Changes saved · Put back". Tapping
+  it removed the row: the 3 that were already there went with the 2 just
+  added, silently.
+  - **Root cause is TWO HALVES DISAGREEING about one rule, not a missing
+    branch.** `groAddedToast` (`static/shell.js`) has always carried the right
+    branch — a merge is put back by restoring the line's own amount and store,
+    not by removing it — guarded on `wasBefore`, which came from
+    `groLineNamed`, an EXACT name match against the phone's copy of the list.
+    The server merges on `grocery._merge_key`, which ignores case, spacing and
+    a trailing s on the last word, deliberately, so a household never gets two
+    lines of peppers. So in exactly the case a merge happened the two
+    disagreed: server `merged: true`, client found nothing, `&& wasBefore`
+    failed, and the tap fell through to `DELETE .../remove`.
+  - **Reproduced before anything was touched, both halves.** Server, on a
+    throwaway DB: `add('Bell peppers','3')` → `merged: false, item_id: 1`;
+    `add('Bell pepper','2')` → `merged: true, item_id: 1, quantity: '5'`; then
+    the remove that tap fires leaves the list `[]`. Client, driving the real
+    `groAddLine` and the real toast's own `onClick` under node:
+    `groLineNamed('Bell pepper')` → null against a copy holding
+    "Bell peppers", and the tap puts `POST /api/grocery-list/1/remove` on the
+    wire. After: `POST /1/update {"quantity":"3"}` then
+    `POST /1/store {"store":"Loblaws","remember":false}`, and the list reads
+    "Bell peppers · 3".
+  - **THE MERGE RULE IS RIGHT AND IS NOT TOUCHED.** What moves is the client's
+    lookup: `groLinesById` reads the pre-write list by ROW ID, and the id is
+    the one the server already hands back (`item_id` — the line it merged
+    into). The other candidate was a copy of `_merge_key` in JS, and it was
+    refused on this repo's own evidence: a second implementation of a rule is
+    what this bug IS, and the log records being bitten by exactly that twice
+    before. One merge rule, on the server, and the client reads back the row
+    it names.
+  - **The snapshot is taken BEFORE the POST, and that is load-bearing.**
+    `loadGrocery()` replaces `groceryState.data` with the merged line, so a
+    lookup done after it would "restore" the 5 it was undoing. Pinned by the
+    mutation that moves the read below `loadGrocery` (2 red).
+  - **A merged add whose original line this phone has no copy of gets NO Put
+    back at all** — not the remove, which would destroy whatever was on that
+    line. Knowing a line changed and not knowing what it read before is
+    exactly when an undo must not touch it, so the toast says the change
+    saved and offers nothing.
+    **THE REACHABILITY STORY THIS ENTRY FIRST GAVE WAS THE RAREST OF THE
+    FOUR, and review found three deterministic single-device ones it had
+    missed.** It named only the cross-device race (the other adult adds
+    "Bell peppers" from their phone, this one adds "Bell pepper" before its
+    own list has caught up). The three that need no second phone at all,
+    each verified by probe: a **SPICE** row — `add_grocery_item` merges
+    into `status IN ('needed', 'spice')`, but spice rows live in
+    `groceryState.spices` rather than in `data.stores`, so their ids are
+    never in the snapshot; an **EXCLUDED** row ("somewhere else"), which
+    the candidate query ignores `excluded_from_list` for while the payload
+    filters it out; and a **pre-shop-flagged** row, which
+    `/api/grocery-list/by-store` strips before the shell sees it. All three
+    fail SAFE — nothing is destroyed, and main deleted the line in every
+    one of them — which is why this is a correction to the prose rather
+    than to the code. The comment at the call site says all of it now.
+  - **The two branches are EXCLUSIVE now (`if (r.merged)`), not
+    `merged && wasBefore`.** A guard that falls through to a delete when it
+    cannot find the old line is the bug, so the next person to loosen the
+    early return above should get a failed undo and a toast rather than a
+    deleted line. Measured: with `&& wasBefore` still there, the mutation that
+    drops it reddened NOTHING — it had become unpinnable belt-and-braces whose
+    only failure mode was the one being fixed.
+  - **`groLineNamed` is deleted rather than left standing.** It had exactly one
+    caller — this one — and leaving a by-name lookup in the file is leaving the
+    wrong rule there for the next person to reach for.
+  - **A SECOND, NARROWER THING THE SAME UNDO GETS WRONG, TRIED AND TAKEN BACK
+    OUT — the aisle.** `add_grocery_item` also overwrites the merged row's
+    CATEGORY with the one `groGuessCategory` picked for the words that were
+    typed, and Put back sends the amount and the store only, so the line can
+    come back at the right NUMBER in the WRONG SECTION of the shop.
+    **THE WORKED EXAMPLE THIS ENTRY FIRST GAVE WAS FALSE, and it is
+    corrected rather than dropped because a wrong measurement in this log
+    is what the next reader acts on.** It said "Bell peppers · 3 · produce"
+    plus a typed "Bell pepper" guessed as `other` comes back "3 · other" —
+    but `groGuessCategory("Bell pepper")` is **produce**, measured by
+    running the real function, so for the app's own headline example the
+    category does not move at all and that sequence cannot happen through
+    the sheet. The defect is real and wants a real pair: a recipe's
+    **"Orzo · 1 box · pantry"** with "orzo" typed into the sheet (guessed
+    `other`) merges to "2 boxes · other" and Put back leaves "1 box ·
+    **other**". Found by review, which ran the function rather than
+    reading it.
+    **AND THE RESIDUE IS FOUR FIELDS, NOT ONE.** Measured after a Put back
+    on a merged line: `quantity` and `store` come back; `category` does
+    not (above), `store_decided` does not (`0` → `1`, so a line that was
+    never sorted silently leaves the TO SORT queue for good, since
+    `groUnsorted` filters on exactly that flag), the
+    `item_store_preferences` row the add wrote is left standing, and
+    `source_weekly_plan_id` is not restored (a plan line becomes a
+    standing want `clear_stale_grocery_items` will never clear again).
+    Two of those have ready-made flags this undo does not use and a
+    fuller one would: `_stage_grocery_item_store(..., decided=False)`,
+    whose own docstring says it is "an undo of a bulk assign, which has to
+    restore the exact previous state", and `forget=True`. All four are
+    pre-existing in kind and all four are better than main's delete;
+    what was wrong was calling it one gap. Pre-existing; main's
+    exact-name path had them too. It looked like one extra field on the `/update` call this
+    already makes, was built that way, and was reverted for two reasons worth
+    recording: `update_grocery_item` leaves a field alone only for `None`, so
+    a copy of the list whose rows carry no `category` would BLANK it
+    outright — a new defect arriving inside the fix — and it broke
+    `tests/test_shop_add_sheet.py`'s own pin on that request's body, i.e. it
+    widened somebody else's contract, which is more than this card gets to
+    do. Characterised by name in the new file (invert that test when it is
+    fixed) and written into the comment at the call site. Its own card.
+  - **Checked and NOT a second instance: the OFFLINE add.** `groQueueAdd`'s own
+    Put back calls `groOffline.removeLine(op.id)`, and `applyAdd` inserts a new
+    local row under a local id rather than merging into anything, so that undo
+    can only ever take back the row it put on. The real merge happens on the
+    server at replay time, long after the 8-second toast.
+  - `tests/test_put_back_merged_line.py` (18; **7 red on `a2e3129`, of which
+    only FIVE are behaviour catches**. Of the other two red, one is a
+    source marker and one dies on `groLinesById is not defined`, a name main
+    has not got, and both say so. **And of the five, THREE fail with
+    `/remove` on the wire; the other two fail on a label assertion and
+    never reach a calls assertion** — the entry first said all five did.
+    The substance holds either way: main's own code really does fire
+    `POST /api/grocery-list/{id}/remove` in those cases, driven and
+    measured; those two tests simply are not what demonstrates it.) Section 1 RUNS `groAddLine` and the toast's
+    own `onClick` under node against a stubbed fetch and asserts which
+    requests the tap makes — the defect is a guard FALLING THROUGH, which a
+    source-marker test cannot see. Section 2 drives the real
+    `add_grocery_item` and the real tools, so the household-visible
+    before/after is measured rather than reasoned about. **Six mutations run
+    over this file AND `test_shop_add_sheet.py`, and every one bites:** the id
+    guard dropped (1 red), the snapshot emptied (7), the lookup moved below
+    `loadGrocery` (2), the merged-but-unknown return dropped (2), the restore
+    made unconditional (2), and the lookup put back on the typed name
+    (**4** for a faithful revert of the lookup alone, **5** if
+    `groLinesById` is deleted with it — the entry first said 6, which
+    review could not reproduce under either reading).
+  - **Numbers, read off the runs at `TZ=America/Toronto`, both measured here
+    rather than one of them derived: 6322 passed, 0 failed on the merge
+    base** and **6340 passed, 0 failed on the commit that ships**. +18 is
+    this file exactly, and **no existing test was changed, deleted or
+    weakened** — `git diff main -- tests/` is one new file. The aisle
+    widening's own run is recorded above as the reason it was reverted: it
+    read 1 failed / 6339 passed, and the failure was
+    `test_shop_add_sheet.py`'s pin on the `/update` body.
+  - **Found and NOT fixed, named so nobody reports it as new:** once an
+    OFFLINE add has replayed and the server merges it into an existing line,
+    there is no undo at all — the toast's Put back is live for eight seconds
+    while the row is still queued, and by replay time it is long gone. Same
+    for any add whose toast has timed out. Both are the undo's own stated
+    window rather than this bug.
+
+- **2026-09-23 — Approving a week at nine in the evening asked the household
+  to keep or drop NEXT week's shopping. Branch
+  `overnight/carried-over-household-clock`, NOT merged at the time of
+  writing.** Loop Board bug. `grocery.set_aside_carried_over_items` decides
+  which unbought lines are LEFTOVERS from a week that has begun, and it
+  compared `date.today()` — the container's — against dates that come out of
+  `plan_period`, i.e. days a planning period was written in, which are
+  household-relative. The container runs UTC and households default to
+  `America/Toronto`, so the two are a different day for **four hours of
+  every evening in EDT and five in EST** — the same figure this log's
+  other household-clock entries give, said with both halves. **The function's own docstring is the specification it broke**:
+  "a household that approves two weeks in advance is building next week's
+  list, and asking them to keep-or-drop it would be asking about groceries
+  nobody has had the chance to buy."
+  - **BOTH directions are real and both were reproduced on a throwaway DB
+    before anything was touched**, by driving the real function with
+    `cooker.datetime` frozen at one UTC instant. BEHIND (Toronto 21:30,
+    production's own direction every evening after eight): a plan beginning
+    the household's TOMORROW read as started — `set aside: ['Next week
+    onions']` where the right answer is `[]`. AHEAD (Tokyo 08:30): a plan
+    that began the household's TODAY read as not yet begun — `set aside: []`
+    where the right answer names the line, so last week's leftovers are left
+    standing and this week's amounts land on top of them, which is the
+    quantity inflation the function exists to prevent.
+  - **`_live_plan_ids` is the same defect one function up the file and is
+    the one with TEETH, so it moves in the same commit** — this repo's own
+    rule that a half-converted module is a new bug rather than a smaller
+    one. Its caller `clear_stale_grocery_items` is a blunt DELETE with no
+    ledger behind it, so on the server's clock a plan whose LAST day is the
+    household's today read as finished from about 8pm local and the
+    ingredients for the dinner they were still cooking went off the list.
+    After this, `grep 'date.today()' app/tools/grocery.py` is empty.
+  - **The clock is read on the CALLER's connection, and that is a hazard
+    rather than a tidiness rule.** `approve_weekly_plan` holds an open write
+    transaction across this call (`conn=conn`, with a comment saying why);
+    SQLite gives one writer at a time and a nested `get_conn` there is how
+    this app has twice earned an intermittent "database is locked".
+    `cooker.household_today` already takes a `conn` (grown on
+    `thaw-survives-a-swap`, 2026-09-22), so it rides straight through and
+    the connection count is unchanged. Pinned by a guard counting at
+    `sqlite3.connect` rather than at a module's own `get_conn` — a
+    function-local `from ..db import get_conn` is invisible to a
+    module-level patch and `_shared.py` has exactly that shape.
+  - **The import is lazy and that is forced, not stylistic:** `cooker`
+    imports `grocery` at module scope, so `from . import cooker` at the top
+    of this file would be a cycle. Same shape `inventory._today`,
+    `held._today` and `notifications` already use, for the same reason.
+  - `tests/test_carried_over_household_clock.py` (9; **5 red against main's
+    `app/`**, of which **4 are behaviour catches** and the fifth is the AST
+    sweep marker, red there for exactly the reason it is named after). Both
+    directions at one frozen UTC instant, following
+    `test_already_have_household_clock.py`.
+  - **ONE GUARD'S DOCSTRING NAMED A MUTATION THAT CANNOT FAIL, and it was
+    caught by RUNNING the mutations rather than by reasoning about them.**
+    It claimed dropping `source_weekly_plan_id IS NOT NULL` from the query
+    would redden the standing-want guard. It reddens **nothing**: SQLite
+    evaluates `NULL != 5` as NULL, so the `!= ?` beside it already filters a
+    standing want out, and `None` is never in `started` either. TWO
+    independent things hold that case up and no single-line mutation can
+    redden it; breaking BOTH does, and that was run. Corrected in the
+    docstring rather than quietly, because a guard mislabelled as pinned is
+    the statistic this log keeps having to unpick.
+  - **Three other mutations were run and each bites**: the clock read
+    opening its own connection (1 red — the nesting guard), `_live_plan_ids`
+    returning every plan (1), and the household clock 400 days in the past
+    (5).
+  - **THE EAST-OF-THE-STORED-ZONE CAVEAT, which this entry did not carry
+    until review asked for it and which all three of its siblings do.**
+    `households.timezone` is `America/Toronto` for every household whether
+    they live there or not, and nothing in the app prompts a change. For a
+    household WEST of it this branch is strictly better (Vancouver: main
+    wrong seven hours a night, this wrong three). For one EAST of it —
+    a UK household still stored as Toronto — `set_aside` now errs the
+    OTHER way for a few hours a day: leftovers not set aside, i.e. the
+    quantity inflation. **Materially milder than the `refuses-the-past`
+    siblings**, and worth saying why rather than just asserting it: those
+    blocked a real action, this one only fails to ask a question; and
+    `_live_plan_ids` errs toward KEEPING lines for that population, which
+    is the safe direction for a blunt DELETE. The honest fix is still the
+    stored zone, which is its own larger question. Reasoned from the
+    mechanism, not measured — there is no real east-of-Toronto household
+    to measure.
+  - **A SECOND VACUOUS ASSERTION, found by review, in the test named for
+    the half with teeth — and it is the same mistake this entry already
+    records catching once.** `test_tonights_own_week_is_still_live...`
+    seeded ONE plan and called `clear_stale_grocery_items(
+    current_weekly_plan_id=None)`. With a single plan on file that
+    function resolves `current_id` through `get_weekly_plan()` to THAT
+    plan, which then lands in `live` and is spared whatever
+    `_live_plan_ids` said — so the delete assertion passed on main too,
+    and only the `_live_plan_ids` line above it was a real catch. The
+    CLAIM was true (the reviewer reproduced the delete in the two-plan
+    shape); the test just did not seed it. It seeds two plans now, which
+    is also the realistic shape — what a household has on the evening
+    they take the nudge to plan next week while this week still has a
+    night in it. **Proved non-vacuous rather than assumed:** with the
+    first assertion neutered so the second is reached, it fails against
+    main with the line genuinely gone.
+  - **The AST sweep was quietly narrower than the guard it is modelled
+    on, and its title is broader than its reach.** It now carries
+    `("time", "time")` like `test_last_clock_pockets.py`'s, and says in
+    its own docstring the two things it does NOT cover: the eight SQL
+    `datetime('now')` reads in this module (all UTC instants compared
+    against UTC instants — correct, and they must not be "fixed"), and a
+    module-qualified `_dt.date.today()` spelling, which walks straight
+    past an Attribute-owner check. That second limitation is INHERITED
+    from the established guard rather than introduced here, and it was
+    measured: reverting both reads that way leaves the sweep green and
+    only the four behaviour tests catch it.
+  - **Numbers, read off the runs.** `TZ=America/Toronto` **6331 passed, 0
+    failed**, and inside a VERIFIED `Pacific/Niue` straddle — Niue
+    2026-09-22 against Toronto 2026-09-23, `date +%F` checked in both zones
+    BEFORE and AFTER the run — **6331 passed, 0 failed**. No existing test
+    was changed, deleted or weakened (`git diff main -- tests/` is this one
+    new file), so +9 is it exactly. All four CI weekday pins at
+    `TZ=America/Toronto`: monday, friday, saturday and sunday each **6328
+    passed, 3 skipped, 0 failed**, against a measured **6319 passed, 3
+    skipped, 0 failed** for `main` at the friday pin — so +9 is this file
+    exactly there too, and `clock (friday)` is green on `main` and on this
+    branch alike.
+  - **THE FIRST FRIDAY READING SAID "4 failed" AND WAS NOT A MEASUREMENT OF
+    THIS BRANCH AT ALL. Recorded rather than quietly replaced, because the
+    mistake is one an overnight run will make again.** That pin was run in
+    the MAIN CHECKOUT while an adversarial reviewer was working in the same
+    directory — and a reviewer's job here includes temporarily restoring
+    `main`'s version of a file to measure what is red against it. So the
+    suite under test was some superposition of two trees. The other three
+    pins in the same batch happened to miss that window and read clean,
+    which is exactly what makes this kind of number so believable and so
+    worthless. Re-run in a tree nobody else was touching, friday reads
+    6328/0 like the other three. **The rule: a test run in a working tree
+    another agent can write to is not evidence. Give every concurrent
+    reader its own worktree, or run the measurement when nothing else is
+    in the tree.**
+
+- **2026-09-23 — A chat turn records WHICH TOOLS it called. Names only,
+  never words. Branch `overnight/chat-records-what-was-asked`, NOT merged
+  at the time of writing — and it is LAYER 1 of a two-layer card, on
+  purpose.** Loop Board, Phase 0, raised to High by Emily on the grounds
+  that it cannot be backfilled: a chat turn costs about sixteen cents and
+  a tap about one, so every recurring ask that becomes a tap is both a
+  better experience and a much cheaper one — but only the asks we can SEE
+  can be built into taps, and nothing recorded what chat was for.
+  `chat_turns` held tokens and timing and nothing else.
+  - **One additive column, `chat_turns.tools_called_json`** (schema.sql +
+    `_MIGRATIONS`, `DEFAULT '[]'`, nothing backfilled): the tool names the
+    turn called, in call order, duplicates KEPT — a turn that swapped
+    three meals called the swap tool three times, and that is the signal
+    rather than noise. A turn that called nothing stays `[]`, which is
+    itself worth counting: somebody asked and the app only talked back.
+  - **The name is recorded ABOVE every branch of the dispatch loop, and
+    the order is the point rather than a detail.** A declined chores call,
+    a tool that crashed and a name this app has never heard of are all
+    still the thing the household WANTED, which is the question being
+    answered — "what is chat being used for", not "what succeeded".
+    Recording below any of those branches would silently stop counting
+    exactly the asks worth seeing. Pinned by a source test that asserts
+    the ORDER of three lines, comment-stripped.
+  - **No message text, and that rule is now swept rather than asserted.**
+    A test walks every text column of `chat_turns` for the words a person
+    typed. Same two reasons the table already had: the household's private
+    text is not ours to keep a second copy of, and this feed is printed
+    into an agent's context each morning, where free text from an
+    untrusted end is an injection channel rather than only a privacy
+    question.
+  - **`TOOLS_WITH_A_TAP` is a MAINTAINED list and its guard earned its
+    keep immediately.** It answers the cheapest question there is of this
+    data — how much of what people pay a chat turn for could already have
+    been a tap. The first draft named `resolve_open_slot` and
+    `set_slot_attendance`, which are functions in `tools/` that the model
+    has never been given: both would have sat there matching nothing and
+    the count would have read low for ever with nothing saying so. A test
+    checks every entry against `agent.TOOL_FUNCTIONS`, and it is what
+    caught them.
+  - **A row that cannot be read is COUNTED, not dropped.** `unreadable_turns`
+    is its own number, because a count that quietly shrinks is the exact
+    failure this card exists to stop.
+  - **LAYER 2 — the Haiku theme call — is deliberately NOT built, and that
+    is the one thing on this branch for Emily rather than a builder.**
+    There is no working Anthropic key in the overnight sandbox, so a model
+    call could not be verified at all, and an unverifiable outbound call
+    that costs money per chat turn is not something to merge unattended.
+    Layer 1 is the half that cannot be backfilled, so it ships alone and
+    starts the trend line tonight. The proposal is on the card.
+  - **A defect this work introduced and then fixed, written down because
+    the shape is easy to repeat:** the first cut inserted the report's new
+    helpers immediately before a `print(...)` line that turned out to be
+    the last statement of `_print_shape`, which SPLIT that function —
+    `ast` still parsed, the new helpers were still module-level, and the
+    two orphaned lines became the tail of the new function with `head`,
+    `n` and `stack` undefined. Nine tests went red on one `NameError`.
+    Inserting between two `def`s rather than before an arbitrary line is
+    the fix; "it parses" is not the same as "it is where you think".
+  - `tests/test_chat_records_what_was_asked.py` (18). **15 are red against
+    main's `app/` and that number is worth little** — the column and the
+    helper do not exist there, so it is the only kind of red a new feature
+    can have; the sixteenth, the no-text sweep, is GREEN on main and
+    should be, because main stores no text either. **Five mutations are
+    the real evidence and every one bites:** the dispatch loop recording
+    nothing (2 red, including the end-to-end one), the append moved below
+    the chores gate (1), `record_chat_turn` reading `values["tools_called"]`
+    directly (1), `_tool_names_json` dumping whatever it is handed (6),
+    and `TOOLS_WITH_A_TAP` widened to every tool (1). Two tests drive the
+    WHOLE chain — the real dispatch in `run_agent_turn`, then the real
+    recording site both chat routes share (`_finish_chat_turn`, reached by
+    the plain route and the streaming one alike) — with only the model
+    stubbed, because every other test hands `record_chat_turn` a tally by
+    hand and so proves the write rather than the chain.
+
+- **2026-09-23 — A new sitting starts from an empty conversation, and a
+  sitting carries twelve turns rather than forty. Branch
+  `overnight/fresh-sitting-less-history`, NOT merged at the time of
+  writing.** Loop Board, Phase 0, High — item 2 of the 2026-09-21 cost
+  research. `SESSIONS` in `app/main.py` is memory-only and held up to
+  FORTY user turns per signed session ACROSS DAYS, until the server
+  happened to restart, and every turn re-sent all of it — tool results
+  included, and a tool result here is a whole week's plan as JSON.
+  Measured in production: about 15K tokens of history per turn on top of
+  the ~37K briefing, with chat the biggest line on the month's bill. A
+  question on Tuesday was paying to re-read Sunday's conversation.
+  - **Nothing the household told Pomona is lost, and that is the whole
+    reason this is safe rather than merely cheap.** Pomona's memory lives
+    in the DATABASE — held things, facts, preferences, the plan, the
+    taste record — and never in the transcript. What goes is the WORDING
+    of a previous sitting, so it will not say "like you mentioned
+    yesterday". A test asserts that against the real tables rather than
+    in prose, because "the memory is in the database" is exactly the kind
+    of sentence that stays true until somebody moves something into the
+    transcript.
+  - **The four-hour rule is not invented here.** It is the same
+    `_NEW_SITTING_GAP` that already decided whether to run the proactive
+    check — which is the same question ("are we starting something, or
+    carrying on?"), asked for a different purpose. Both answers now come
+    from ONE reading of the clock, so they can never disagree about it.
+  - **One helper, `_chat_session_state`, because both chat routes were
+    computing the same three lines each.** Two copies of one rule is this
+    codebase's named recurring bug generator, and the rule just grew a
+    consequence. A source test pins that the old inline form is gone and
+    that exactly two call sites ask the function.
+  - **Twelve is a COST number and forty never was.** Forty was chosen as a
+    memory-growth cap on a session that can run for ever, and as that it
+    was fine. Real sittings are a handful of turns; the long tail was days
+    of accumulation, which the reset now handles on its own. So twelve
+    changes nothing inside an ordinary conversation and governs only the
+    runaway case.
+  - **Item 3 of the card — stubbing tool results older than the last few
+    turns — is deliberately NOT built.** The card itself marks it
+    "optional, measure first", and with the reset in place the thing it
+    was for (a long sitting dragging every past plan payload along) is
+    much rarer. It wants a measurement against real traffic after this
+    lands, not a guess before it.
+  - `tests/test_fresh_sitting_less_history.py` (9). **Seven are red
+    against main's `app/` and that number is worth much less than it
+    looks: only TWO are red for the reason they are named after** — the
+    route marker (main really does inline the three lines twice) and the
+    twelve-turn cap (main really is 40). The other five die on
+    `AttributeError: _chat_session_state`, a name main has not got, which
+    is the only kind of red a new function can have. **The real evidence
+    is five mutations, every one run and every one biting:** history
+    always empty (2 red), the reset given its own 30-minute threshold (1),
+    the streaming route inlining it again (1), a literal in
+    `trim_conversation`'s default (1), and a cut one message PAST the turn
+    boundary (2).
+  - **ONE OF THOSE MUTATIONS WAS BADLY CHOSEN AT FIRST AND REDDENED
+    NOTHING, which is worth recording rather than quietly fixing.** The
+    boundary guard was to be pinned by "cut at a fixed offset instead of a
+    turn boundary" — and with four messages per turn the offset that
+    mutation computed happened to land on a boundary anyway, so the suite
+    stayed green. A mutation that misses by luck says nothing about the
+    test; it says the mutation was badly chosen. `boundaries[-max_turns]
+    + 1` bites, and that is what the docstring names now.
+  - **The tool_use/tool_result pairing guard is asserted at the NEW number
+    rather than inherited from the old one**, deliberately: lowering the
+    cap makes cutting far more frequent, and a cut in the wrong place
+    makes the Anthropic API reject every subsequent turn in that sitting.
+  - **Numbers, read off the run.** `TZ=America/Toronto` **6331 passed, 0
+    failed**, against a measured **6322** on the merge base — +9 is this
+    one new test file exactly, and no existing test was changed, deleted
+    or weakened.
+  - **Not measured, and it is the card's own fourth criterion:** the
+    cache-write tokens per turn actually falling. That needs real traffic
+    through a real key, which the overnight sandbox has not got. The
+    mechanism is certain (less history is sent) and the SIZE of the win is
+    not measured here.
+
+- **2026-09-23 — A repeated breakfast is ONE entry now, not five. Branch
+  `overnight/menu-repeats-once`, NOT merged at the time of writing.** The
+  direct follow-up to `menu-first-generation-2026-09-21`, whose own entry
+  says the remaining output is "35 slots of bookkeeping (~3K tokens of
+  JSON) plus thinking, NOT recipes, so the draft did not reach the card's
+  15s" and files a compact-output card. This is that card. An entry may
+  name several `dates`; the save path fans it back out into one plan row
+  per date before anything else sees it.
+  - **THE SAVING IS ENTIRELY THE HOUSEHOLD'S OWN DISTINCT-MEAL COUNTS, and
+    that bounds it — say it first rather than last.** A week comes back as
+    `7 dinners + one entry per distinct breakfast idea + per lunch idea +
+    per snack idea`. Measured across the shapes a real household can be in:
+    **35 entries** when nothing folds (7 distinct breakfasts, 7 lunches, 14
+    snacks — arithmetically possible and the column defaults permit it),
+    **21** at those defaults read as a ceiling the model fills, **16** at
+    what the prompt calls normal and expected (2-3 ideas each), **13** at
+    what the setup screen actually asks for, **11** at "one breakfast a
+    week is a perfectly good answer". The card predicted 18-22 and the
+    realistic band is 11-21. A household that genuinely wants seven
+    different breakfasts saves nothing, correctly.
+  - **THE NUMBERS ARE ESTIMATES AND THE WORD IS NOT DECORATION.** There is
+    no working Anthropic key in this sandbox, so `api_calls` seconds and
+    the real output-token count could not be read and were not. What was
+    measured is the JSON payload the model has to emit for one realistic
+    35-slot week written both ways, compact-separated, with the token
+    figure as chars/4: **10,131 -> 4,557 characters, ~2,532 -> ~1,139
+    output tokens, 55% off.** The test file's own smaller fixture measures
+    54%, and there is an assertion on it (`test_folding_a_realistic_week_
+    cuts_the_payload_by_more_than_a_third`) so the claim stays checkable
+    rather than living in a commit message.
+  - **WHAT THAT DOES *NOT* SAY, and it is the half that matters for the
+    15-second target.** Production measured 4,800-5,900 output tokens for
+    that call, and the JSON of an unfolded week estimates at ~2,532 — so
+    roughly half of what was being written was the model's THINKING, which
+    folding does not touch at all. Taking production's midpoint, the whole
+    call estimates at ~5,350 -> ~3,960 tokens, i.e. about **26% off the
+    call**, not 55%. Nobody should read the payload figure as the wall
+    clock. Whether it reaches 15s needs a real call.
+  - **IT COSTS INPUT TOKENS, and the entry should name that rather than
+    only the saving.** The new schema property and the new prompt rule
+    grow the call's INPUT by ~553 estimated tokens — the instructions
+    block 37,588 -> 39,327 chars (~9,397 -> ~9,831, +4.6%) and the tool
+    schema 5,689 -> 6,164 (~1,422 -> ~1,541, +8.4%), measured by building
+    both off `main` and off this branch. The instructions carry the cache
+    marker, so it is a cache-write once and a cache read after; and output
+    is the expensive side, so ~+550 in against ~-1,390 out is net positive
+    either way. Said out loud because a compaction ticket that quietly
+    grows the prompt is how the next one starts from a worse baseline.
+  - **Driven end to end over a real uvicorn on a throwaway DB**, with the
+    one model call stubbed at `_stream_forced_tool_call` (there is no key,
+    so everything below it — the SSE relay, the save path, the expansion,
+    the audit — is the real code): 13 entries in, **35 `day` events out**,
+    each carrying one `date` and no `dates` key, which is exactly what both
+    clients read; the saved plan audits **complete, 21 present, 0 missing,
+    0 duplicated**; two snacks on every one of the seven days; **12** recipe
+    rows for 12 dishes rather than one per slot; and Wednesday's breakfast
+    reads back the entry's own "the oats are in, and mornings are quick"
+    with `{"tags": ["rush"]}` behind it.
+  - **DINNERS ARE NOT FOLDED IN THE PROMPT AND ARE HONOURED IN CODE, which
+    is not a contradiction.** A dinner carries the week's shape and its own
+    per-night reason ("lighter after Monday's chili"), so the prompt asks
+    for one entry per night even when the dish repeats. But a dinner that
+    arrives with several dates anyway is written to all of them: a repeated
+    dinner is something this app asks for elsewhere in the same prompt
+    ("with dinners_per_week 3 over four days, exactly three different
+    dinners, one of them on two nights"), and refusing the extra nights
+    would leave holes for the gap audit to turn into open questions about a
+    night the model had already answered. Telling is not preventing, and
+    the right answer to being disobeyed here is to take it, not to refuse.
+  - **TWO ENTRIES CLAIMING ONE (date, slot): THE MORE SPECIFIC ONE WINS** —
+    the entry naming fewer dates. That is what "oatmeal most mornings,
+    pancakes on Saturday" means, and it is the shape folding itself
+    creates. First-wins on a tie. `_dedupe_duplicate_slots` further down
+    already keeps the first-created ROW, which is an answer decided by
+    array order rather than by what the model meant, and it would delete
+    the one-off dish — which has nowhere else to go. It still runs, as
+    belt and braces.
+  - **SNACK IS KEYED BY ITS DISH AS WELL AS ITS DAY**, because a day
+    legitimately holds `snacks_per_day` of them: two DIFFERENT snacks on
+    one date are right and are kept, and only the same dish twice on one
+    day is dropped. Keying snacks like the three real meals halves every
+    day's snacks — measured, it reddens 5 tests.
+  - **`date` STAYS REQUIRED and `dates` is ADDITIVE.** The union is the
+    forgiving reading of the two ways the model could mean it ("A, plus the
+    repeats B and C" / "the repeats are A, B and C" land on the same
+    answer), and a union's failure mode is a day that gets a meal rather
+    than a day left with a hole — which here becomes a question about a
+    night the model had already decided. It also means the streamed item,
+    the scanner and every reader below the expansion see the shape they
+    always saw.
+  - **WHERE IT EXPANDS IS THE WHOLE OF ITS BLAST RADIUS, and the first cut
+    put it in the wrong place.** It was in `generate_weekly_plan_llm`, the
+    model-call wrapper — which every test in this repo stubs, so a stubbed
+    folded week went PAST the expansion rather than through it and the
+    end-to-end tests were green on a week that had ten of its twenty-one
+    slots handed back as open questions. Caught by writing the test, not by
+    reading the code. It is on the save path now (`_generate_weekly_plan`,
+    day-based branch only — a component plan's items are parts, not days,
+    and carry no date), which is where the card said to put it: the
+    honest-title pass, the allergen gate, the save loop and the 21-slot
+    audit all still see the one-entry-per-slot list they always saw.
+  - **The rows of a fold do NOT share one `derived_from`.** Not a style
+    point: the passes below mutate an entry's `derived_from` in place —
+    `typed_requests` writes `freeform` onto the slots a request shaped —
+    and two nights aliasing one dict is how one night's correction
+    silently becomes another night's. Deep-copied per row.
+  - **The screen is told about every day of a fold**, in the server's own
+    relay (`generate_weekly_plan_llm`'s `on_day` wrapper): the scanner
+    streams whole ENTRIES and an entry can now be three mornings, while
+    both readers of the `day` event — `plan-week.html`'s `sawDate` and
+    onboarding's `upsertRevealDay` — take `body.date` and paint that one
+    card. One event per date, in the model's order, and neither client
+    had to learn anything about folding. `static/` is untouched.
+  - **The prompt's own entry counts had to move with it or the model was
+    told two contradictory things**, which is the part of this most likely
+    to be got wrong by a later edit: "an ordinary day is 5 separate
+    entries" is 5 filled SLOTS now, and "21 entries minimum" is "all 21 of
+    them, whether that takes 21 entries or 8". `snacks_per_day` says
+    explicitly that it counts the days a fold covers, not the entries. And
+    the fold rule says never to list a day in `dates` that a rule above
+    said not to plan (`intake.skipped_days`, `slot_needs.away_slots`) —
+    folding is a briefer way of saying the same thing, never a way past a
+    rule. The out-night pass clears the slot first regardless, as always.
+  - **The `derived_from`/`reasoning` trim is PROMPT-ONLY and it is worth
+    knowing why.** Both are output tokens, so no code change can take them
+    back — what the schema and the prompt can do is ask for fewer, and both
+    now do ("a key with nothing in it is not a record of anything"; "a full
+    sentence is clipped on the screen, so the extra words are not read by
+    anyone"). Nothing trims the stored `derived_from`, deliberately: it
+    would change what four readers see for no measurable gain.
+  - `tests/test_menu_repeats_once.py` (30; **21 red against the mutation
+    that makes the expansion a no-op**, which is `main`'s behaviour — the
+    honest baseline here, since the file cannot be collected against a tree
+    with no `_expand_repeated_dates` in it at all). The nine green each say
+    in their own docstring that they are green either way, including the
+    one that reads most like a catch (`..._the_same_snack_twice_...`,
+    pinned instead by the mutation that keys a snack like the three real
+    meals). Two others were WEAK on the first pass and are named as such
+    rather than quietly strengthened — the
+    audit test passed on an unexpanded week because the gap audit fills a
+    missing slot with an open question and those count as present, and the
+    snacks test counted the snacks without counting the DAYS, so "both
+    ideas on day one and nothing anywhere else" read as "every day that has
+    snacks has two". **Seven mutations run and every one bites**: the
+    expansion a no-op (21 red), snack keyed like the three real meals (5),
+    `date` left out of the union (2), dates within one entry not
+    de-duplicated (2), specificity reversed (1), `derived_from` shared by
+    reference (1), the streaming fan-out removed (1), the per-entry bound
+    removed (1).
+  - **Numbers, read off the runs.** `TZ=America/Toronto`, whole suite:
+    **6352 passed, 0 failed**, against a measured **6322 passed, 0 failed**
+    on the merge base in the same zone — +30 is this file exactly, 6352
+    collected either way it is counted, and no existing test was changed,
+    deleted or weakened (`git diff main -- tests/` is one new file). The
+    four pinned CI jobs at the same zone: **monday 6349 / 3 skipped / 0
+    failed**, **friday 6347 / 5 / 0**, **saturday 6349 / 3 / 0**, **sunday
+    6349 / 3 / 0** — the skips are the self-skipping `live_clock` and
+    seeded-week families, which vary by the day the run lands on and are
+    not this branch's. And inside a VERIFIED `Pacific/Niue` straddle (Niue
+    2026-09-22 against Toronto 2026-09-23, `date +%F` in both zones before
+    AND after the run) the whole suite is **6352 passed, 0 failed** — the
+    number that matters, since `straddle` blocks. The new file alone is
+    green at all SEVEN weekday pins, in that straddle, and at
+    `Pacific/Kiritimati`, `Asia/Tokyo` and `UTC` (the last three
+    green-in-that-zone only: all three read Toronto's own date at the hour
+    they ran, so they are not straddle evidence and are not quoted as it).
+  - **Not done, named rather than left to be found.** The component planner
+    is untouched and folds nothing (its items are parts, not days). Nothing
+    caps how many entries a week may come back as — the 21-slot audit is
+    still the only thing that checks the week is whole. An `open` slot sent
+    WITH several dates becomes several open questions carrying one
+    `open_reason` — checked, not guessed — and that is deliberately left
+    alone: collapsing it to the first date would leave the other days as
+    holes for the gap audit to fill with its own generic question, which is
+    worse than the model's real one said twice, and `plan_quality`'s
+    open-slot budget already warns at more than one. And the real
+    question this card exists for, whether the draft now lands inside 15
+    seconds, cannot be answered from here at all: it needs one real
+    generation with the `api_calls` ledger read afterwards.
+
 - **2026-09-22 — `main` was red on five weekdays out of seven, and TWO of the
   four pinned CI jobs — `clock (friday)` and `clock (sunday)` — were red on
   EVERY push. Branch

@@ -6270,11 +6270,23 @@
       if (navigator.onLine === false) groSetOffline(true);
       return Promise.resolve(true);
     }
-    // The line as it already stands, if it does: an add that merges into
-    // it is put back by restoring that, not by removing the line.
-    var was = groLineNamed(line.item);
-    var wasBefore = was ? { quantity: was.quantity || '', store: was.store || '' } : null;
+    // The list as it stands BEFORE the write, keyed by row id: an add
+    // that merges into a line is put back by restoring that line's own
+    // amount and store, not by removing it, so both have to be read
+    // before the write changes them.
+    //
+    // BY ID, NEVER BY THE NAME THAT WAS TYPED. The server merges on
+    // grocery._merge_key, which ignores case, spacing and a trailing s
+    // on the last word — deliberately, so "Bell pepper" and "Bell
+    // peppers" are one thing to buy. An exact name match here therefore
+    // disagreed with it in exactly the case a merge happened: the server
+    // said merged, the phone found nothing, and Put back fell through to
+    // the remove below and took the amount that was already on the line
+    // with it. One merge rule in the app, on the server, and this reads
+    // back the row it names.
+    var before = groLinesById();
     return groPost('/api/grocery-list/add', payload).then(function (r) {
+      var wasBefore = before[String(r && r.item_id)] || null;
       groSetOffline(false);
       if (line.store) groRememberLocally(line.item, line.store);
       return loadGrocery().then(function () { groAddedToast(r, wasBefore); return true; });
@@ -6290,26 +6302,75 @@
       return false;
     });
   }
-  function groLineNamed(name) {
+  // Every line on the phone's copy, by id — what each one reads NOW, so
+  // an undo can put it back. Bought and in-cart rows are in it as well,
+  // and the reason is narrower than the first version of this comment
+  // claimed. It said a hit on one "can only come from an id this copy is
+  // stale about, and that is an id a merge would never name" — which
+  // contradicts itself, because a hit means the merge DID name it. The
+  // honest version: add_grocery_item only merges into 'needed' and
+  // 'spice', so a row this copy shows as bought is normally not a target
+  // at all; the one way it becomes one is if it was un-ticked
+  // server-side since this copy was read, and that is a legitimate merge
+  // whose restore is harmless (un-ticking does not change the quantity).
+  //
+  // What this map does NOT hold is the other side of the same coin, and
+  // it is worth knowing before trusting a hit here to mean "not merged":
+  // SPICE rows live in groceryState.spices rather than in data.stores,
+  // and excluded and pre-shop-flagged rows are filtered out of the
+  // payload before the shell ever sees them. All three are valid merge
+  // targets on the server and none is in here, so all three take the
+  // no-Put-back branch below. That is the safe answer — nothing is
+  // destroyed, where main deleted the line in every one of those cases —
+  // but it is a deterministic, single-device path, not the cross-device
+  // race the branch below is described by.
+  function groLinesById() {
     var data = groceryState.data;
-    if (!data || !data.stores) return null;
-    var key = (name || '').trim().toLowerCase();
-    var hit = null;
+    var out = {};
+    if (!data || !data.stores) return out;
     groAllLines(data).forEach(function (it) {
-      if (!hit && !groIsBought(it) && (it.item || '').trim().toLowerCase() === key) hit = it;
+      if (it && it.id != null) out[String(it.id)] = { quantity: it.quantity || '', store: it.store || '' };
     });
-    return hit;
+    return out;
   }
   // "Changes saved · Put back": a new line is removed; a line the add
   // merged into gets its old amount and store back.
+  //
+  // A merge this phone has no copy of the original line for gets NO Put
+  // back at all — not the remove, which would destroy whatever was
+  // already on that line. Reachable rather than defensive: the other
+  // adult adds "Bell peppers" from their phone, this one adds "Bell
+  // pepper" before its own list has caught up, and the server merges
+  // into a row that was never in this copy. Knowing a line changed and
+  // not knowing what it read before is exactly when an undo must not
+  // touch it, so the toast says the change saved and offers nothing.
   function groAddedToast(r, wasBefore) {
     var id = r && r.item_id;
     if (!id) { toastSaved(); return; }
+    if (r.merged && !wasBefore) { toastSaved(); return; }
     toastSaved({
       label: 'Put back',
       onClick: function () {
-        if (r.merged && wasBefore) {
+        // `merged` is the server's promise that a line was already there,
+        // and the early return above is what makes `wasBefore` certain by
+        // the time this runs — so the remove below is for a NEW line and
+        // a merged add can never reach it. Written as two exclusive
+        // branches rather than `merged && wasBefore`, because a guard
+        // that falls through to the delete when it cannot find the old
+        // line IS this bug, and the next person to loosen the return
+        // above should get a failed undo and a toast, not a deleted line.
+        if (r.merged) {
           groDo(function () {
+            // FOUND AND DELIBERATELY NOT FIXED, named here rather than
+            // left to be rediscovered: the add also overwrites the
+            // merged row's CATEGORY with the one groGuessCategory picked
+            // for the words that were typed, and this puts back the
+            // amount and the store only — so the line can come back at
+            // the right number in the wrong section of the shop.
+            // Pre-existing, and it is not one field on this request:
+            // update_grocery_item leaves a field alone only for null, so
+            // a copy of the list whose rows carry no category would
+            // blank it outright. Its own card.
             return groPost('/api/grocery-list/' + id + '/update', { quantity: wasBefore.quantity })
               .then(function () {
                 return groPost('/api/grocery-list/' + id + '/store', { store: wasBefore.store, remember: false });

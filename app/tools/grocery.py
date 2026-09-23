@@ -23,6 +23,29 @@ MAX_ITEM_NAME_LENGTH = 120
 MAX_QUANTITY_LENGTH = 40
 
 
+def _household_today(conn=None) -> date:
+    """
+    Today where the household lives, not where the container runs.
+
+    Lazily imported, and that is forced rather than stylistic: cooker
+    imports this module at module scope, so `from . import cooker` up
+    there would be a cycle. Same shape inventory._today and held._today
+    use, for the same reason.
+
+    Both readers below compare the household's own day against a date
+    that came out of plan_period — i.e. against the days a planning
+    period was written in, which are household-relative. The container
+    runs UTC and households default to America/Toronto, so reading the
+    server's date here put one half of that comparison in a zone nobody
+    lives in. `conn` rides through to household_today for the caller
+    that is already inside a write transaction; see
+    set_aside_carried_over_items.
+    """
+    from .cooker import household_today
+
+    return household_today(conn=conn)
+
+
 # Single-word names where the plural is a DIFFERENT product, not more of
 # the same one. "Pepper" is the black pepper in the cupboard; "peppers"
 # are the bell peppers in the fridge. Merging those puts a pantry staple
@@ -1125,9 +1148,19 @@ def _live_plan_ids(current_id: int | None) -> list[int]:
     every non-retired plan still holding a day from today onward. Empty only
     when the household has no plan at all, which is the one case that falls
     back to the pre-period query below unchanged.
+
+    "From today onward" is the household's day, for the reason
+    _household_today gives: period_end_date is household-relative and the
+    server's date is not. It moved in the same change as
+    set_aside_carried_over_items rather than after it, because a module
+    half on one clock is a new bug rather than a smaller one — and this is
+    the reader with teeth. The caller is a blunt DELETE with no ledger
+    behind it, so on the server's clock a plan whose LAST day is the
+    household's today read as finished from about 8pm local, and the
+    ingredients for the dinner they were still cooking went off the list.
     """
-    today = date.today().isoformat()
     conn = get_conn()
+    today = _household_today(conn=conn).isoformat()
     rows = conn.execute(
         "SELECT id, week_start_date, content_start_date, day_count, status "
         "FROM weekly_plans WHERE household_id = ?",
@@ -1252,11 +1285,33 @@ def set_aside_carried_over_items(weekly_plan_id: int, conn=None) -> list[dict]:
     left exactly where they are; a staple's suggestion has its own
     answers. Excluded lines ("somewhere else") and lines already in a
     cart are the shopper's, not the plan's, and stay too.
+
+    "Has already STARTED" is the HOUSEHOLD's day, and until 2026-09-23 it
+    was the container's. Every date on the other side of that comparison
+    is household-relative — plan_period reads the columns the planning
+    period was written in — so the server's date was the one half that
+    belonged to nobody, and it is wrong in both directions. The container
+    runs UTC and households default to America/Toronto, so from about 8pm
+    local the server is already on tomorrow: a plan beginning the
+    household's TOMORROW read as started, its unbought lines were set
+    aside, and the household approving a week that evening was asked to
+    keep or drop next week's shopping — the exact thing the paragraph
+    above says must never be asked. East of UTC it fails the other way: a
+    plan that began the household's TODAY reads as not yet begun, so last
+    week's leftovers are NOT set aside and this week's amounts land on
+    top of them, which is the quantity inflation this whole function
+    exists to prevent.
+
+    The clock is read on `conn` rather than on one of its own. The caller
+    that matters (approve_weekly_plan) is holding an open write
+    transaction, SQLite gives one writer at a time, and a nested get_conn
+    in that position is how this app has twice earned an intermittent
+    "database is locked".
     """
     own_conn = conn is None
     if own_conn:
         conn = get_conn()
-    today = date.today().isoformat()
+    today = _household_today(conn=conn).isoformat()
     started = set()
     for plan in conn.execute(
         "SELECT id, week_start_date, content_start_date, day_count, status FROM weekly_plans "

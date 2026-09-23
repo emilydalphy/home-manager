@@ -356,6 +356,44 @@ _MAX_SESSIONS_PER_HOUSEHOLD = 50
 _NEW_SITTING_GAP = 4 * 60 * 60
 
 
+def _chat_session_state(request) -> tuple[str, list, bool]:
+    """
+    Who is chatting, what they have said so far this sitting, and whether
+    this turn STARTS a sitting.
+
+    One function because both chat routes need the same three answers and
+    were computing them in three identical lines each -- two copies of one
+    rule is this codebase's named recurring bug generator, and the rule
+    just grew a consequence.
+
+    THE CONSEQUENCE: a new sitting now starts from an EMPTY history.
+    Before, SESSIONS held up to forty turns per signed session across
+    DAYS, until the server happened to restart, and every turn re-sent all
+    of it -- so a question on Tuesday paid to re-read Sunday's whole
+    conversation, tool results and all. That was measured in production as
+    about 15K tokens of history per turn on top of the ~37K briefing, and
+    chat was the biggest line on the month's bill.
+
+    Nothing the household told Pomona is lost by this, and that is the
+    whole reason it is safe: Pomona's memory lives in the DATABASE -- held
+    things, facts, preferences, the plan, the taste record -- and never in
+    the transcript. What goes is the WORDING of a conversation from a
+    previous sitting, so Pomona will not say "like you mentioned
+    yesterday". Anything it was actually asked to remember still comes
+    back, because it was never in the transcript to begin with.
+
+    The four-hour rule is not new and is not this function's to invent: it
+    is the same _NEW_SITTING_GAP that already decides whether to run the
+    proactive check, which is exactly the "are we starting something, or
+    carrying on?" question. The two answers now come from one reading of
+    the clock rather than two, so they can never disagree about it.
+    """
+    session_id = _chat_session_id(request)
+    is_new_sitting = time.time() - SESSION_TOUCHED.get(session_id, 0) > _NEW_SITTING_GAP
+    history = [] if is_new_sitting else SESSIONS.get(session_id, [])
+    return session_id, history, is_new_sitting
+
+
 def _session_household(session_key: str) -> str:
     """
     The household part of a chat session key.
@@ -5799,9 +5837,7 @@ def chat(req: ChatRequest, request: Request):
     # there is no reason to break them, but the real key comes from the
     # signed cookie so a caller can't choose whose history they land in.
     _enforce_rate_limit(request, "chat")
-    session_id = _chat_session_id(request)
-    history = SESSIONS.get(session_id, [])
-    is_new_sitting = time.time() - SESSION_TOUCHED.get(session_id, 0) > _NEW_SITTING_GAP
+    session_id, history, is_new_sitting = _chat_session_state(request)
     try:
         reply, updated_history = run_agent_turn(
             history, req.message,
@@ -5887,9 +5923,7 @@ def chat_stream(req: ChatRequest, request: Request):
     blob. See _stream_chat_turn for what this actually buys and why.
     """
     _enforce_rate_limit(request, "chat")
-    session_id = _chat_session_id(request)
-    history = SESSIONS.get(session_id, [])
-    is_new_sitting = time.time() - SESSION_TOUCHED.get(session_id, 0) > _NEW_SITTING_GAP
+    session_id, history, is_new_sitting = _chat_session_state(request)
     return _SSEResponse(
         _stream_chat_turn(
             session_id=session_id, message=req.message, history=history, proactive_check=is_new_sitting,

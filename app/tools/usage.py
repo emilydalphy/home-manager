@@ -27,6 +27,7 @@ are beta questions first and cost questions second:
 """
 from __future__ import annotations
 
+import json
 import statistics
 import time
 
@@ -109,6 +110,54 @@ def price_tokens(tokens: dict, model: str = _PRICED_MODEL) -> dict:
     return costs
 
 
+# Chat tools that ALSO exist as a tap somewhere in the app. The point of
+# the list is the cheapest question there is to ask of this data: how much
+# of what people pay a chat turn for could already have been one cent's
+# worth of tapping? A high count there is not a bug, it is a signpost --
+# either the tap is too hard to find or chat is simply the nicer door.
+#
+# A maintained list, deliberately, not something derived: there is nothing
+# in the code that links a tool to a control, and a wrong entry here costs
+# one number in a report rather than any behaviour. Each is named with the
+# screen it is on, so a future reader can check it rather than trust it.
+TOOLS_WITH_A_TAP = {
+    "swap_meal_in_plan",        # Plan -> a dish row -> Swap
+    "swap_dinner_nights",       # Plan -> the day tiles, dragged
+    "add_grocery_item",         # Shop -> "+ Add something"
+    "add_grocery_items",        # Shop -> the same sheet
+    "mark_grocery_item",        # Shop -> a row's tick
+    "remove_grocery_item",      # Shop -> a row's dots -> Remove
+    "check_off_meal",           # Cook -> "Mark it cooked"
+    "check_off_prep_step",      # Today -> a prep or fridge move's tick
+    "approve_weekly_plan",      # Plan -> Approve
+    "generate_weekly_plan",     # Plan -> Plan the week
+    "discard_draft_plan",       # Plan -> More -> Drop this draft
+    "take_the_night_off",       # Today -> Tonight still good? -> Not tonight
+    "set_member_attendance",    # Plan the week -> Is anyone out?
+}
+# Checked against agent.TOOL_FUNCTIONS by a test, and that test earned its
+# keep immediately: the first draft of this list named resolve_open_slot
+# and set_slot_attendance, which are functions in tools/ that the model
+# has never been given. Both would have sat here matching nothing, and the
+# count they feed would have read low for ever with nothing saying so.
+
+
+def _tool_names_json(names) -> str:
+    """
+    The turn's tool names as the JSON list the column stores.
+
+    Defensive about its input for record_chat_turn's own reason: this is
+    bookkeeping attached to a reply that already worked, so a tally that
+    arrived in an unexpected shape must cost an empty list, never the row.
+    Anything that isn't a string is dropped rather than coerced -- a tool
+    name is an identifier the app itself wrote, and something else turning
+    up here means the tally was wrong, not that it wants rescuing.
+    """
+    if not isinstance(names, (list, tuple)):
+        return "[]"
+    return json.dumps([n for n in names if isinstance(n, str)])
+
+
 def record_chat_turn(usage: dict | None = None) -> None:
     """
     Record that a chat turn happened, and what it cost. No message content
@@ -133,8 +182,10 @@ def record_chat_turn(usage: dict | None = None) -> None:
         conn = get_conn()
         conn.execute(
             "INSERT INTO chat_turns (household_id, rounds, input_tokens, cache_read_tokens, "
-            "cache_write_tokens, output_tokens, seconds) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (household_id(), *(values.get(f, 0) for f in _TURN_FIELDS)),
+            "cache_write_tokens, output_tokens, seconds, tools_called_json) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (household_id(), *(values.get(f, 0) for f in _TURN_FIELDS),
+             _tool_names_json(values.get("tools_called"))),
         )
         conn.commit()
     except Exception:
@@ -367,6 +418,66 @@ def get_usage_summary(days: int = 7) -> dict:
         conn.close()
 
 
+def _chat_tool_counts(conn, hid: int, since: str) -> dict:
+    """
+    What chat was FOR over the window: how many times each tool was called,
+    how many turns called nothing at all, and how many turns asked for
+    something that already has a tap.
+
+    Counted here rather than in the report because the report reads every
+    household through one HTTP call and should not be parsing JSON out of
+    rows; and counted from the stored names rather than from a live tally
+    so that it still answers for days the server has since restarted.
+
+    `talk_only` -- turns that called no tool -- is the number worth
+    watching beside the rest. A household asking and getting only
+    conversation back is either being answered well or is stuck, and
+    which one it is cannot be read from here; it is a prompt to go and
+    look, not a verdict.
+
+    Read defensively: `tools_called_json` is written by _tool_names_json
+    above and so is always a list of strings, but this function also runs
+    over rows written before that column existed (default '[]') and over
+    any row a future writer gets wrong. A row it cannot read is counted as
+    unreadable rather than dropped silently, because a count that quietly
+    shrinks is the failure this whole card exists to stop.
+    """
+    rows = conn.execute(
+        "SELECT tools_called_json FROM chat_turns "
+        f"WHERE household_id = ? AND created_at >= datetime('now', '{since}')",
+        (hid,),
+    ).fetchall()
+    counts: dict[str, int] = {}
+    talk_only = 0
+    tappable_turns = 0
+    unreadable = 0
+    for row in rows:
+        try:
+            names = json.loads(row["tools_called_json"] or "[]")
+        except (TypeError, ValueError):
+            unreadable += 1
+            continue
+        if not isinstance(names, list):
+            unreadable += 1
+            continue
+        names = [n for n in names if isinstance(n, str)]
+        if not names:
+            talk_only += 1
+            continue
+        for name in names:
+            counts[name] = counts.get(name, 0) + 1
+        if any(n in TOOLS_WITH_A_TAP for n in names):
+            tappable_turns += 1
+    return {
+        # Busiest first, then by name, so the line reads the same way twice
+        # running and a reader can compare two mornings.
+        "counts": dict(sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))),
+        "talk_only_turns": talk_only,
+        "turns_with_a_tap": tappable_turns,
+        "unreadable_turns": unreadable,
+    }
+
+
 def _summarize(conn, hid: int, days: int, since: str) -> dict:
     def _count(sql: str) -> int:
         return conn.execute(sql, (hid,)).fetchone()[0]
@@ -382,6 +493,8 @@ def _summarize(conn, hid: int, days: int, since: str) -> dict:
         (hid,),
     ).fetchone()
 
+    chat_tools = _chat_tool_counts(conn, hid, since)
+
     household_row = conn.execute(
         "SELECT last_active_at FROM households WHERE id = ?", (hid,)
     ).fetchone()
@@ -392,6 +505,7 @@ def _summarize(conn, hid: int, days: int, since: str) -> dict:
         # returning None reads as "never seen", which is the truth.
         "last_active_at": (household_row["last_active_at"] if household_row else None),
         "chat_turns": chat["turns"],
+        "chat_tools": chat_tools,
         "chat_rounds": chat["rounds"],
         "chat_seconds": round(chat["seconds"], 1),
         "tokens": {
