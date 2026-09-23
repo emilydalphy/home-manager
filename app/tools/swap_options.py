@@ -314,7 +314,8 @@ def _gated(entry: dict, raw: list, avoid: list[str]) -> list[dict]:
     return out
 
 
-def swap_options(weekly_plan_id: int, entry_id: int, avoid: list[str] | None = None, asker=None) -> dict:
+def swap_options(weekly_plan_id: int, entry_id: int, avoid: list[str] | None = None, asker=None,
+                 whole_dish: bool = False) -> dict:
     """
     Three other dishes for this slot, gated, nothing written. `asker` is
     the model call, injectable so tests never touch the real API.
@@ -322,10 +323,25 @@ def swap_options(weekly_plan_id: int, entry_id: int, avoid: list[str] | None = N
     Returns {entry_id, meal, options: [{index, meal, reason, minutes}],
     options_unavailable}. `options_unavailable` tells a failed call apart
     from a model that found nothing safe — both leave `options` empty.
+
+    `whole_dish` is the Swap on a "What we're eating" row (Emily,
+    2026-09-22): the pick will land on every day still ahead that the row
+    stands for (swap_in_place.dish_days), and the answer says which, as
+    `dates`, so the sheet can say "Swapping Thursday and Friday's lunch."
+    from the same list the write will use. The picks themselves are the
+    same three — asked, gated and cached against the tapped day.
     """
     entry = _swap._entry(weekly_plan_id, entry_id)
     if entry["slot_state"] != "planned" or not entry["meal"]:
         raise ValueError("There's no meal on that slot to swap.")
+    out = _swap_options(weekly_plan_id, entry, avoid, asker)
+    if whole_dish:
+        out["dates"] = [e["date"] for e in _swap.dish_days(weekly_plan_id, entry_id)]
+    return out
+
+
+def _swap_options(weekly_plan_id: int, entry: dict, avoid: list[str] | None, asker) -> dict:
+    entry_id = entry["entry_id"]
     key = (household_id(), entry_id)
     cached = _OPTIONS_CACHE.get(key)
     if cached and cached["meal"] == entry["meal"] and time.time() - cached["at"] < _OPTIONS_TTL:
@@ -388,7 +404,8 @@ def write_out_is_complete(full: dict | None) -> bool:
 WRITE_OUT_TROUBLE = "I couldn’t write that one up just now — nothing changed. Tap it again in a moment."
 
 
-def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=None) -> dict:
+def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=None,
+                       whole_dish: bool = False) -> dict:
     """
     Put the chosen option on the slot. The pick is the one the sheet was
     shown (from the sitting's cache), re-gated at the moment of writing —
@@ -398,6 +415,15 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
     a six-item list did not), and applied through swap_in_place.apply_pick.
     Returns the swap's own shape (`status` 'swapped' with the refreshed
     day) or 'refused' with a plain sentence.
+
+    `whole_dish` (a "What we're eating" row's Swap, Emily 2026-09-22):
+    the pick goes on every day swap_in_place.dish_days names, in one
+    write (apply_pick_to_days), and answers with `days` beside `day`.
+    Every one of those days is gated, not only the tapped one — a
+    Thursday table and a Friday table can be different people. The group
+    is worked out again here rather than taken from the sheet, so the
+    client can never send a set of days that isn't the dish. A dish on
+    one day left is the ordinary one-day swap, byte for byte.
     """
     entry = _swap._entry(weekly_plan_id, entry_id)
     if entry["slot_state"] != "planned" or not entry["meal"]:
@@ -416,7 +442,10 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
     pick = dict(cached["options"][index])
     if _weekly_plan.night_has_gone(entry["date"]):
         return {"status": "refused", "message": _weekly_plan.NIGHT_GONE}
-    why = _gate(pick, entry)
+    group = _swap.dish_days(weekly_plan_id, entry_id) if whole_dish else [entry]
+    if len(group) < 2:
+        group = [entry]
+    why = _gate_all(pick, group)
     if why:
         return {"status": "refused", "message": f"I left it as it was — {pick['meal_name']} {why}."}
     if needs_write_out(pick):
@@ -436,10 +465,24 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
         # the recipe underneath them is the model's. (apply_pick still holds
         # the name to its own ingredients — honest_meal_name.)
         pick = dict(full, meal_name=pick["meal_name"], reason=pick.get("reason") or full.get("reason") or "")
-        why = _swap.pick_gate(pick, entry)
+        why = _gate_all(pick, group, _swap.pick_gate)
         if why:
             return {"status": "refused", "message": f"I left it as it was — {pick['meal_name']} {why}."}
-    out = _swap.apply_pick(weekly_plan_id, entry, pick)
+    if len(group) > 1:
+        out = _swap.apply_pick_to_days(weekly_plan_id, group, pick)
+    else:
+        out = _swap.apply_pick(weekly_plan_id, entry, pick)
     out["status"] = "swapped"
-    forget_options(entry_id)
+    for member in group:
+        forget_options(member["entry_id"])
     return out
+
+
+def _gate_all(pick: dict, entries: list[dict], gate=None) -> str | None:
+    """The first reason any of `entries` can't have `pick`, or None.
+    One day's table is one gate; several days are several tables."""
+    for entry in entries:
+        why = (gate or _gate)(pick, entry)
+        if why:
+            return why
+    return None

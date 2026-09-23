@@ -151,7 +151,8 @@ def test_the_quiet_link_gives_at_a_word_and_never_mid_word():
 def test_the_sheets_full_width_button_no_longer_reaches_the_dock():
     """The bug: one class on two different buttons. The sheet's outline
     button is .wk-swap-else now; no .wk-swap-tell rule is full-width."""
-    assert 'class="wk-swap-else" id="wk-swap-tell">Something else — tell me</button>' in SHELL_JS
+    # `wait` is the disabled attribute while a pick is written (2026-09-22).
+    assert 'class="wk-swap-else" id="wk-swap-tell"\' + wait + \'>Something else — tell me</button>' in SHELL_JS
     assert 'class="wk-swap-tell" id="wk-swap-tell"' not in SHELL_JS
     assert "width: 100%" in _rule(".wk-swap-else")
     for m in re.finditer(r"([^{}]*\.wk-swap-tell[^{}]*)\{([^}]*)\}", _NO_COMMENTS):

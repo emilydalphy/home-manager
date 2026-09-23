@@ -8544,6 +8544,12 @@ span.cook-week-name { cursor: default; }
 }
 @media (hover: hover) { .wk-swap-pick:hover { background: var(--sand); } }
 .wk-swap-pick:disabled { opacity: .6; cursor: default; }
+/* The pick being written onto the week (Emily, 2026-09-22, "it looked
+   like it froze"): full strength, the sheet's own 16px spinner where the
+   chevron was and "Adding it to the week…" as its line; the others wait
+   at .wk-swap-pick:disabled's dim. */
+.wk-swap-pick.is-working:disabled { opacity: 1; }
+@media (hover: hover) { .wk-swap-pick:disabled:hover { background: var(--surface); } }
 .wk-swap-pick-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .wk-swap-pick-name { font-family: var(--font-body); font-size: 15px; font-weight: 600; line-height: 1.3; }
 /* line-height pinned (was the font's "normal"): the placeholder rows
@@ -8582,6 +8588,9 @@ span.cook-week-name { cursor: default; }
   cursor: pointer;
 }
 .wk-swap-else:hover { border-color: var(--ink-strong); }
+/* Waiting while a pick or a move is written (runSwapPick / runMoveNight). */
+.wk-swap-else:disabled, .wk-swap-quiet:disabled { opacity: .6; cursor: default; }
+.wk-swap-else:disabled:hover { border-color: var(--hairline-strong); }
 /* ---------- the segmented control ----------
    Emily's approved design, 2026-09-09. Since 2026-09-18 only Plan | Chores
    uses it (the review's What we're eating / Which days went with the

@@ -11854,7 +11854,15 @@
     var first = dish.days.filter(function (d) { return !d.past; })[0] || dish.days[0];
     var entry = first.entry;
     var meta = [wkDaysPhrase(dish, days), wkMenuFact(dish)].filter(Boolean).join(' · ');
-    var swap = first.past ? '' : wkMiniHtml('data-wk-swap-sheet="' + first.key + '"', 'wk-mini-swap', WK_ICONS.swap,
+    // Several days still ahead: Swap means the dish, on all of them
+    // (Emily, 2026-09-22 — it used to change the first day and leave the
+    // rest, "two meals instead of 1"). The dates ride along only so the
+    // sheet can name them at once; the server decides the days.
+    var ahead = dish.days.filter(function (d) { return !d.past; });
+    var dishAttr = ahead.length > 1
+      ? ' data-wk-swap-dish="' + escapeHtml(ahead.map(function (d) { return d.date; }).join(',')) + '"'
+      : '';
+    var swap = first.past ? '' : wkMiniHtml('data-wk-swap-sheet="' + first.key + '"' + dishAttr, 'wk-mini-swap', WK_ICONS.swap,
       'Swap', 'Swap — ' + dish.name);
     return '<div class="wk-row wk-menu-row" data-wk-day-index="' + first.index + '" data-wk-row="' + first.key + '">' +
       '<div class="wk-row-main">' +
@@ -12209,14 +12217,24 @@
     swapSheetEl.innerHTML = '<div class="ask-sheet-handle" id="wk-swap-handle"></div><div id="wk-swap-body"></div>';
     document.body.appendChild(swapScrimEl);
     document.body.appendChild(swapSheetEl);
-    swapScrimEl.addEventListener('click', closeSwapSheet);
-    document.getElementById('wk-swap-handle').addEventListener('click', closeSwapSheet);
+    swapScrimEl.addEventListener('click', dismissSwapSheet);
+    document.getElementById('wk-swap-handle').addEventListener('click', dismissSwapSheet);
   }
 
   function closeSwapSheet() {
     if (!swapSheetEl) return;
     closeSheet(swapSheetEl, swapScrimEl);
     swapSheetState = null;
+  }
+
+  // The scrim and the handle — the person's own ways out. Not while a pick
+  // (or a move) is being written: the write lands whether the sheet is
+  // there or not, and a sheet swiped away mid-write left the screen
+  // showing the old dish until the answer came back (Emily, 2026-09-22,
+  // "it looked like it froze"). The sheet says it's working instead.
+  function dismissSwapSheet() {
+    if (swapSheetState && swapSheetState.busy) return;
+    closeSwapSheet();
   }
 
   // "Instead of Black Bean Tacos?" — the dish as the plan names it.
@@ -12280,23 +12298,63 @@
       '<div class="wk-swap-picks wk-swap-picks-waiting">' + card.repeat(SWAP_PLACEHOLDERS) + '</div>';
   }
 
+  // What a tapped pick says while it's written onto the week (Emily,
+  // 2026-09-22: after a tap the sheet only greyed its buttons for the
+  // six-odd seconds the recipe takes to write out, and "it looked like it
+  // froze"). SWAP_WORKING_SLOW replaces it in place once the wait passes
+  // SWAP_WORKING_SLOW_MS, so a long write still reads as moving.
+  var SWAP_WORKING = 'Adding it to the week…';
+  var SWAP_WORKING_SLOW = 'Still writing out the recipe…';
+  var SWAP_WORKING_SLOW_MS = 8000;
+
   // One pick as /swap-options hands it out: {index, meal, reason, minutes}
-  // — the index is what /swap-choose wants back.
-  function swapPickHtml(opt) {
+  // — the index is what /swap-choose wants back. `st` is the sheet's
+  // state: once a pick is tapped (st.pending) that pick carries the
+  // spinner and SWAP_WORKING in place of its line and chevron, and every
+  // other pick waits, disabled and dimmed. (Called from map, so `st` can
+  // arrive as an index — anything without `busy` is "nothing tapped".)
+  function swapPickHtml(opt, st) {
+    var busy = !!(st && st.busy);
+    var working = busy && st.pending === opt.index;
     var bits = [];
     if (opt.minutes) bits.push(opt.minutes + ' min');
     if (opt.reason) bits.push(opt.reason);
-    return '<button type="button" class="wk-swap-pick" data-wk-swap-pick="' + opt.index + '">' +
+    var line = working ? SWAP_WORKING : bits.join(' · ');
+    return '<button type="button" class="wk-swap-pick' + (working ? ' is-working' : (busy ? ' is-waiting' : '')) +
+        '" data-wk-swap-pick="' + opt.index + '"' + (busy ? ' disabled' : '') +
+        (working ? ' aria-busy="true"' : '') + '>' +
       '<span class="wk-swap-pick-text">' +
         '<span class="wk-swap-pick-name">' + escapeHtml(opt.meal) + '</span>' +
-        (bits.length ? '<span class="wk-swap-pick-why">' + escapeHtml(bits.join(' · ')) + '</span>' : '') +
+        (line ? '<span class="wk-swap-pick-why"' + (working ? ' role="status"' : '') + '>' + escapeHtml(line) + '</span>' : '') +
       '</span>' +
-      '<span class="wk-swap-pick-chev">' + WK_ICONS.chev + '</span>' +
+      (working
+        ? '<span class="wk-swap-spinner" aria-hidden="true"></span>'
+        : '<span class="wk-swap-pick-chev">' + WK_ICONS.chev + '</span>') +
     '</button>';
   }
 
+  // "Swapping Thursday and Friday’s lunch." — said only when the Swap
+  // came from a menu row standing for more than one day (Emily,
+  // 2026-09-22), so the sheet says what the tap will change before it's
+  // tapped. Past three days the list stops helping: "Swapping all 5
+  // lunches." (the row above already said which).
+  var SWAP_SLOT_PLURALS = { breakfast: 'breakfasts', lunch: 'lunches', dinner: 'dinners', snack: 'snacks' };
+
+  function swapDaysLine(st) {
+    var dates = (st && st.dates) || [];
+    if (dates.length < 2) return '';
+    var slot = slotWord(st.slot);
+    if (dates.length > 3) return 'Swapping all ' + dates.length + ' ' + (SWAP_SLOT_PLURALS[slot] || slot + 's') + '.';
+    var names = dates.map(function (d) { return dayName(d, { weekday: 'long' }); });
+    return 'Swapping ' + joinList(names) + '’s ' + slot + '.';
+  }
+
   function swapSheetBodyHtml(st) {
-    var eyebrow = '<p class="wk-swap-eyebrow">' +
+    // A whole dish on several days names them in a line under the title
+    // (swapDaysLine) instead of one day in the eyebrow — the eyebrow would
+    // name only the first, which is the bug this replaced.
+    var daysLine = swapDaysLine(st);
+    var eyebrow = daysLine ? '' : '<p class="wk-swap-eyebrow">' +
       escapeHtml(dayName(st.date, { weekday: 'long' }) + ' · ' + slotWord(st.slot)) + '</p>';
     if (st.view === 'move') {
       var options = swapMoveOptions(st);
@@ -12326,17 +12384,21 @@
     } else if (!st.options) {
       picks = swapWaitHtml();
     } else {
-      picks = '<div class="wk-swap-picks">' + st.options.map(swapPickHtml).join('') + '</div>';
+      picks = '<div class="wk-swap-picks">' + st.options.map(function (o) { return swapPickHtml(o, st); }).join('') + '</div>';
     }
-    var canMove = swapMoveOptions(st).length > 0;
+    // Moving trades ONE night with another, so it isn't offered for a
+    // dish being swapped on several days.
+    var canMove = !daysLine && swapMoveOptions(st).length > 0;
+    var wait = st.busy ? ' disabled' : '';
     return eyebrow +
       '<h2 class="wk-swap-title" id="wk-swap-title">' + escapeHtml(swapSheetTitle(st)) + '</h2>' +
+      (daysLine ? '<p class="wk-swap-sub">' + escapeHtml(daysLine) + '</p>' : '') +
       picks +
       (canMove
-        ? '<button type="button" class="wk-swap-quiet" id="wk-swap-move">' +
+        ? '<button type="button" class="wk-swap-quiet" id="wk-swap-move"' + wait + '>' +
             escapeHtml('Move the ' + dishShortName(st.name) + ' to another day') + '</button>'
         : '') +
-      '<button type="button" class="wk-swap-else" id="wk-swap-tell">Something else — tell me</button>';
+      '<button type="button" class="wk-swap-else" id="wk-swap-tell"' + wait + '>Something else — tell me</button>';
   }
 
   // The sheet keeps its waiting height while the picks land (board D5,
@@ -12402,7 +12464,14 @@
     });
   }
 
-  async function openSwapSheet(panel, day, slot) {
+  // opts.wholeDish / opts.dates: the Swap on a "What we're eating" row
+  // standing for several days (wkMenuRowHtml's data-wk-swap-dish, Emily
+  // 2026-09-22). The pick then lands on every one of them — the server
+  // works out which from the entry (swap_in_place.dish_days) and answers
+  // with its own `dates`, which replace the row's guess before anything
+  // can be tapped. The Day step's Swap passes nothing: one day, as ever.
+  async function openSwapSheet(panel, day, slot, opts) {
+    opts = opts || {};
     var entry = daySlotEntry(day, slot);
     var weekStart = weekStartForSwap();
     if (!entry || entry.state !== 'planned' || entry.entry_id === null || entry.entry_id === undefined || !weekStart) return;
@@ -12411,7 +12480,8 @@
     swapSheetState = {
       panel: panel, day: day, date: day.date, slot: slot, entry: entry, entryId: entry.entry_id,
       name: mealDisplayName(entry), weekStart: weekStart, options: null, trouble: '', busy: false, view: 'picks',
-      holdHeight: 0
+      holdHeight: 0, wholeDish: !!opts.wholeDish, dates: opts.wholeDish && opts.dates ? opts.dates : [day.date],
+      pending: null
     };
     var thisOpen = swapSheetState;
     drawSwapSheet();
@@ -12421,12 +12491,15 @@
       var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-options', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: entry.entry_id, avoid: [] })
+        body: JSON.stringify(thisOpen.wholeDish
+          ? { entry_id: entry.entry_id, avoid: [], whole_dish: true }
+          : { entry_id: entry.entry_id, avoid: [] })
       });
       var out = null;
       if (res.ok) out = await res.json();
       else if (res.status === 404) out = { message: swapRouteMessage(await res.json().catch(function () { return null; })) };
       if (swapSheetState !== thisOpen) return;
+      if (out && out.dates && out.dates.length) thisOpen.dates = out.dates;
       if (!out || !out.options || !out.options.length) {
         // A 404 says why in its own words (a slot with no meal on it); an
         // empty list is the model finding nothing safe, or not answering.
@@ -12458,21 +12531,38 @@
     return body && typeof body.detail === 'string' ? body.detail : '';
   }
 
+  // The tap on a pick. While it's written (the recipe written out, then
+  // the week — ~6.5 s in production, Emily 2026-09-22 "it looked like it
+  // froze") the tapped pick shows the spinner and SWAP_WORKING, the rest
+  // wait dimmed, nothing else in the sheet can be tapped and the sheet
+  // can't be swiped away (dismissSwapSheet) — runMoveNight's busy state,
+  // with the pick itself saying what's happening.
   async function runSwapPick(index) {
     var st = swapSheetState;
     var picked = (st && st.options || []).filter(function (o) { return o.index === index; })[0];
     if (!st || st.busy || !picked) return;
     st.busy = true;
+    st.pending = index;
     var panel = st.panel, day = st.day, slot = st.slot;
-    swapSheetEl.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+    drawSwapSheet();
+    var slowTimer = setTimeout(function () {
+      if (swapSheetState !== st || !st.busy) return;
+      var line = swapSheetEl.querySelector('.wk-swap-pick.is-working .wk-swap-pick-why');
+      if (line) line.textContent = SWAP_WORKING_SLOW;
+    }, SWAP_WORKING_SLOW_MS);
+    function stopWorking() {
+      clearTimeout(slowTimer);
+      st.busy = false;
+      st.pending = null;
+    }
     try {
       var res = await fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/swap-choose', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: st.entryId, option: picked.index })
+        body: JSON.stringify({ entry_id: st.entryId, option: picked.index, whole_dish: !!st.wholeDish })
       });
       if (res.status === 404) {
-        st.busy = false;
+        stopWorking();
         st.trouble = swapRouteMessage(await res.json().catch(function () { return null; })) || SWAP_TROUBLE;
         drawSwapSheet();
         return;
@@ -12480,21 +12570,23 @@
       if (!res.ok) throw new Error('swap choose failed (' + res.status + ')');
       var out = await res.json();
       if (out.status !== 'swapped') {
-        st.busy = false;
+        stopWorking();
         st.trouble = out.message || SWAP_TROUBLE;
         drawSwapSheet();
         return;
       }
+      stopWorking();
       closeSwapSheet();
-      spliceSwappedDay(out.day);
+      // Every day the swap changed — one, or all of a whole dish's.
+      (out.days || [out.day]).forEach(spliceSwappedDay);
       renderMealsStep(panel);
       toastSaved({ label: 'Undo', onClick: function () { runSwapUndo(panel, wkFreshDay(day), slot); } }, SWAP_UNDO_MS);
       await loadWeekMenu(panel);
       if (weekState.data && weekState.data.status === 'approved') refreshGrocerySurfaces();
     } catch (err) {
       console.warn('Swap pick failed:', err);
+      stopWorking();
       if (swapSheetState === st) {
-        st.busy = false;
         st.trouble = SWAP_TROUBLE;
         drawSwapSheet();
       }
@@ -13972,7 +14064,9 @@
     steps.querySelectorAll('[data-wk-swap-sheet]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var day = wkDayForTap(btn);
-        if (day) openSwapSheet(panel, day, btn.getAttribute('data-wk-swap-sheet'));
+        var dish = btn.getAttribute('data-wk-swap-dish');
+        if (day) openSwapSheet(panel, day, btn.getAttribute('data-wk-swap-sheet'),
+          dish ? { wholeDish: true, dates: dish.split(',') } : null);
       });
     });
     steps.querySelectorAll('[data-wk-add-meal]').forEach(function (btn) {
@@ -14641,10 +14735,12 @@
       if (!res.ok) throw new Error('undo failed');
       var data = await res.json();
       swapState = null;
-      spliceSwappedDay(data.day);
+      // A whole dish swapped together comes back together (data.days).
+      (data.days || [data.day]).forEach(spliceSwappedDay);
       renderMealsStep(panel);
       showToast('Put back.');
       await loadWeekMenu(panel);
+      if (data.days && weekState.data && weekState.data.status === 'approved') refreshGrocerySurfaces();
     } catch (err) {
       console.warn('Undo failed:', err);
       swapState = { date: day.date, slot: slot, avoid: [], message: SWAP_TROUBLE };

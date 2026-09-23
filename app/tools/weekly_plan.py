@@ -6465,6 +6465,179 @@ def swap_meal_in_plan(
     return result
 
 
+# Keys on derived_from that say where an entry sits in a leftover chain.
+# replace_dish_on_days works these out against the group it is replacing;
+# everything else on derived_from is the caller's to carry.
+_CHAIN_KEYS = ("links_to", "make_double_for", "make_double_note", "cook_ahead")
+
+
+def replace_dish_on_days(weekly_plan_id: int, items: list[dict]) -> dict:
+    """
+    Put a new dish on SEVERAL slots of one plan at once, as ONE transaction
+    — the write behind a Swap tapped on a multi-day row of "What we're
+    eating" (Emily, 2026-09-22, on her phone: a lunch planned Thursday and
+    Friday was one row, its Swap changed Thursday only — "it didn't swap
+    it, it just added it so i have two meals instead of 1").
+
+    `items` is one dict per slot being replaced: {old_entry_id, date, slot,
+    new_meal, food_groups, reasoning, derived_from}. `derived_from` is what
+    the caller wants the new row to carry (the swap's undo note, the
+    group's token); its leftover-chain keys (_CHAIN_KEYS) are NOT taken
+    from it — they are worked out here, against the chains as this
+    transaction reads them, so the new dish keeps the old one's shape:
+
+      * a cook whose reheat nights are all in the group stays the cook and
+        feeds exactly those nights (make_double_for rewritten as
+        "date:slot" — the ids change, the nights don't);
+      * a reheat night whose cook is in the group stays a reheat of it
+        (links_to "date:slot", cook_ahead kept, so "Made ahead" still
+        reads "Made ahead");
+      * a reheat night whose cook is NOT in the group (the cook night has
+        gone by) becomes an ordinary night of the new dish, and its old
+        cook is told so (_unlink_leftover_target, as every swap does);
+      * a reheat night the group leaves behind (already cooked, so not
+        swapped) drops out of the new cook's batch and, on an approved
+        week, buys for itself (the _reingest_unlinked_entries rule);
+      * separate cooks stay separate cooks.
+
+    Why a function of its own and not N calls to swap_meal_in_plan — two
+    reasons. N transactions can leave the week half swapped (Thursday new,
+    Friday old: the bug over again, reached by a failure instead of by
+    design). And a chain cannot be carried across N swaps: the first swap
+    sees the reheat night still holding the old dish, unlinks the pair and
+    buys the new cook for one table, so the batch and the groceries would
+    both be wrong even when every call succeeded.
+
+    The order is _replace_slot_entries' own, widened to many rows: every
+    unlink (and its rescale) first, THEN every reversal — a rescale
+    re-ingests every entry cooking the source's recipe, so a reversal done
+    before it would be bought straight back — then the prep rows, the
+    deletes (count-checked, as there), the inserts, and on an approved
+    week ONE grocery ingest of the new rows (plus any reheat night the
+    group orphaned) through one buffer, after the chains are written, so
+    the cook buys for its whole batch and a reheat night buys nothing —
+    what approval itself would have bought. A draft's list is left alone,
+    as every draft swap leaves it.
+
+    Does NOT ask night_has_gone — the door does (swap_in_place.
+    apply_pick_to_days), as swap_meal_in_plan's docstring says every door
+    must. Returns {entry_ids (in `items` order), held_thawed?}.
+    """
+    from . import leftovers as _leftovers
+
+    if not items:
+        raise ValueError("Nothing to swap.")
+    for item in items:
+        if item["slot"] not in DAY_SLOTS:
+            raise ValueError(
+                f"'{item['slot']}' is not a slot a day has — expected one of {', '.join(DAY_SLOTS)}."
+            )
+    old_ids = [int(item["old_entry_id"]) for item in items]
+    group = set(old_ids)
+    if len(group) != len(old_ids):
+        raise ValueError("The same meal was named twice in one swap.")
+
+    conn = get_conn()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        plan_row = conn.execute(
+            "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?",
+            (weekly_plan_id, household_id()),
+        ).fetchone()
+        if not plan_row:
+            raise ValueError(f"No weekly plan {weekly_plan_id} in this household.")
+        approved = plan_row["status"] == "approved"
+        marks = ",".join("?" * len(old_ids))
+        present = {
+            r["id"] for r in conn.execute(
+                f"SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? "
+                f"AND id IN ({marks})",
+                (weekly_plan_id, household_id(), *old_ids),
+            ).fetchall()
+        }
+        if present != group:
+            raise RuntimeError("Part of that meal changed under this swap — nothing was changed; try again.")
+
+        chains = _leftovers.plan_leftover_chains(weekly_plan_id, conn=conn)
+        chain_fields: dict[int, dict] = {}
+        for old_id in old_ids:
+            fields: dict = {}
+            source = chains["sources"].get(old_id)
+            if source:
+                kept = [f"{t['date']}:{t['slot']}" for t in source["targets"] if t["entry_id"] in group]
+                if kept:
+                    fields["make_double_for"] = kept
+                    fields["make_double_note"] = _make_double_note_text(kept)
+            reheat = chains["leftovers"].get(old_id)
+            if reheat and reheat["source"]["entry_id"] in group:
+                fields["links_to"] = f"{reheat['source']['date']}:{reheat['source']['slot']}"
+                if reheat.get("cook_ahead"):
+                    fields["cook_ahead"] = True
+            chain_fields[old_id] = fields
+        # Reheat nights this group feeds now and will not feed after: they
+        # stay on the plan (not in the group) with nothing bought for them.
+        orphaned = [
+            t["entry_id"]
+            for old_id in old_ids if old_id in chains["sources"]
+            for t in chains["sources"][old_id]["targets"] if t["entry_id"] not in group
+        ]
+
+        for old_id in old_ids:
+            reheat = chains["leftovers"].get(old_id)
+            if reheat and reheat["source"]["entry_id"] in group:
+                # Both ends leave together: nothing to tell the cook, and a
+                # rescale here would re-buy a row about to be reversed.
+                continue
+            rescale_source_id = _unlink_leftover_target(weekly_plan_id, old_id, conn=conn)
+            if rescale_source_id is not None and approved:
+                _rescale_leftover_source_grocery(rescale_source_id, old_id, conn=conn)
+        for old_id in old_ids:
+            _grocery._reverse_meal_grocery_contributions(old_id, conn=conn)
+        held_thawed = _release_prep_rows(conn, old_ids)
+        deleted = sum(
+            conn.execute(
+                "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+                (old_id, household_id()),
+            ).rowcount
+            for old_id in old_ids
+        )
+        if deleted != len(old_ids):
+            raise RuntimeError(
+                f"Part of that meal changed under this swap ({deleted} of {len(old_ids)} "
+                "rows still there) — nothing was changed; try again."
+            )
+
+        new_ids: list[int] = []
+        for item, old_id in zip(items, old_ids):
+            derived = {k: v for k, v in (item.get("derived_from") or {}).items() if k not in _CHAIN_KEYS}
+            derived.update(chain_fields[old_id])
+            planned = _meal_plans.plan_meal(
+                item["date"], item["new_meal"], slot=item["slot"],
+                food_groups=item.get("food_groups"), weekly_plan_id=weekly_plan_id,
+                reasoning=item.get("reasoning") or "", derived_from=derived,
+                add_ingredients_to_grocery_list=False, conn=conn,
+            )
+            new_ids.append(planned["entry_id"])
+
+        if approved:
+            buy = set(new_ids) | set(orphaned)
+            rows = [r for r in _plan_grocery_candidate_entries(conn, weekly_plan_id) if r["id"] in buy]
+            if rows:
+                buffer = _recipes.WeekGroceryBuffer(weekly_plan_id, conn=conn)
+                _ingest_recipe_group_and_sides(rows, weekly_plan_id, buffer)
+                buffer.flush()
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    out = {"entry_ids": new_ids}
+    if held_thawed:
+        out["held_thawed"] = held_thawed
+    return out
+
+
 def swap_meal_in_plan_for_chat(*args, override: bool = False, **kwargs) -> dict:
     """
     swap_meal_in_plan with the two refusals a PERSON is owed in front of

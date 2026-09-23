@@ -45,13 +45,17 @@ One thing this shares with every other swap in the app, worth knowing
 before changing it: swap_meal_in_plan breaks a confirmed leftover chain and
 nothing re-confirms it, so undoing a swap of a batch-cooking night restores
 the dish but not the chain. That is pre-existing behaviour, not something
-this path adds — see swap_meal_in_plan's own docstring.
+this path adds — see swap_meal_in_plan's own docstring. The one exception
+is a dish swapped on every day it's planned at once (apply_pick_to_days,
+Emily 2026-09-22): its cook and reheat nights are replaced together, so
+the chain is carried to the new dish and back again on Undo.
 """
 from __future__ import annotations
 
 import datetime
 import json
 import logging
+import uuid
 
 from ..db import get_conn
 from ._shared import household_id
@@ -718,6 +722,9 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
         "reasoning": entry["reasoning"],
     }
     derived = dict(entry["derived_from"])
+    # A day swapped on its own after its dish was swapped as a whole
+    # (apply_pick_to_days) leaves that group: its Undo is its own now.
+    derived.pop("swap_group", None)
     derived["swapped_from"] = swapped_from
     derived["swapped_in_place_at"] = datetime.datetime.now().isoformat(timespec="seconds")
     # Undo carries the plate back the same way (undo_meal_swap).
@@ -778,6 +785,9 @@ def undo_meal_swap(weekly_plan_id: int, entry_id: int) -> dict:
     name = (previous.get("meal") or "").strip()
     if not name:
         raise ValueError("That meal hasn't been swapped, so there's nothing to put back.")
+    # Swapped as a whole dish: every day of it goes back, together.
+    if (entry["derived_from"] or {}).get("swap_group"):
+        return _undo_dish_swap(weekly_plan_id, entry)
 
     # A change that carried the plate's sides forward carries them back.
     sides = _plates.get_sides(entry_id) if (entry["derived_from"] or {}).get("carry_sides") else []
@@ -788,7 +798,7 @@ def undo_meal_swap(weekly_plan_id: int, entry_id: int) -> dict:
     if sides:
         _plates.carry_sides(sides, result["entry_id"])
     derived = {k: v for k, v in (entry["derived_from"] or {}).items()
-               if k not in ("swapped_from", "swapped_in_place_at", "carry_sides")}
+               if k not in _SWAP_NOTE_KEYS}
     _write_entry_note(result["entry_id"], previous.get("reasoning") or "", derived)
     return {
         "status": "restored",
@@ -798,6 +808,207 @@ def undo_meal_swap(weekly_plan_id: int, entry_id: int) -> dict:
         "meal": name,
         "day": _refreshed_day(weekly_plan_id, entry["date"]),
     }
+
+
+# What a swap writes on derived_from about itself, and what an undo takes
+# back off. `swap_group` is the token apply_pick_to_days puts on every day
+# of a dish it swapped together, so Undo on any one of them finds the rest.
+_SWAP_NOTE_KEYS = ("swapped_from", "swapped_in_place_at", "carry_sides", "swap_group")
+
+
+# ---------- a whole dish, on every day it's planned ----------
+
+
+def _menu_dish_name(slot: dict) -> str:
+    """The name a slot READS as on "What we're eating" — shell.js
+    mealDisplayName, exactly: a reheat night is the dish it reheats."""
+    leftover = slot.get("leftover_from") or {}
+    if leftover.get("meal"):
+        return leftover["meal"]
+    return slot.get("title") or ""
+
+
+def dish_days(weekly_plan_id: int, entry_id: int) -> list[dict]:
+    """
+    Every day still ahead that the menu row holding `entry_id` stands for,
+    as _entry dicts in date order — the tapped one always among them.
+
+    The grouping is the screen's own and has to be: "What we're eating"
+    (shell.js wkMenuGroups, Emily 2026-09-15 / 2026-09-21) draws one row
+    per DISH per meal type, and a Swap on that row has to change exactly
+    the days the row says ("Thu, Fri") — no more, no fewer. So this reads
+    the same payload the screen reads (get_week_menu) and groups it by the
+    same rule: days that aren't before the plan's start; breakfast, lunch
+    and dinner by their own slot and every snack as one "snack" type; only
+    `planned` slots; the name the slot READS as (_menu_dish_name —
+    a reheat night is its cook's dish), trimmed and compared
+    case-insensitively. Emily, 2026-09-22: that row's Swap changed the
+    first day only and left the dish on the others — two meals where she
+    wanted one.
+
+    Then two kinds of day are left where they are, because swapping them
+    would rewrite something that has already happened: a day the menu
+    marks `is_past` (the row's own Swap is only offered while a day is
+    ahead; night_has_gone is the same test on the same clock), and a slot
+    already ticked cooked (get_week_menu's `cooked` — "a day already
+    cooked is not a day to plan into"). The tapped entry itself is kept
+    whatever it is, so a row with one day ahead swaps that one day,
+    exactly as it always has.
+    """
+    entry = _entry(weekly_plan_id, entry_id)
+    try:
+        menu = _weekly_plan.get_week_menu(weekly_plan_id)
+    except Exception:
+        logger.exception("Could not read the week to find the rest of a dish; swapping the one day")
+        return [entry]
+    rows = []
+    for day in menu.get("days") or []:
+        if day.get("before_plan_start"):
+            continue
+        slots = [(s, day.get(s)) for s in ("breakfast", "lunch", "dinner")]
+        slots += [("snack", s) for s in (day.get("snacks") or [])]
+        for kind, slot in slots:
+            if not slot or slot.get("state") != "planned":
+                continue
+            name = _menu_dish_name(slot).strip().lower()
+            if name:
+                rows.append((kind, name, day, slot))
+    mine = next(((kind, name) for kind, name, _day, slot in rows if slot.get("entry_id") == entry_id), None)
+    if mine is None:
+        return [entry]
+    ids = [
+        slot["entry_id"] for kind, name, day, slot in rows
+        if (kind, name) == mine and (
+            slot["entry_id"] == entry_id
+            or (not day.get("is_past") and not slot.get("cooked"))
+        )
+    ]
+    return [entry if i == entry_id else _entry(weekly_plan_id, i) for i in ids]
+
+
+def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict) -> dict:
+    """
+    apply_pick for a dish planned on several days: the same chosen dish on
+    every one of `entries` (dish_days' answer), in ONE transaction
+    (weekly_plan.replace_dish_on_days — which also keeps a cook + reheat
+    shape a cook + reheat shape). Everything else is apply_pick's, per day:
+    the honest title, the recipe saved once, the undo note written once
+    per day and carrying the ORIGINAL forward. Every day also carries one
+    `swap_group` token, which is how Undo on any of them puts them all
+    back (undo_meal_swap -> _undo_dish_swap).
+
+    Like apply_pick, runs no gates — the caller does, for every day — and
+    refuses a day that has gone by as the backstop, before anything is
+    saved.
+    """
+    for entry in entries:
+        if _weekly_plan.night_has_gone(entry["date"]):
+            raise _weekly_plan.SlotRefused(_weekly_plan.NIGHT_GONE)
+    first = entries[0]
+    pick["meal_name"] = honest_meal_name(pick)
+    _save_recipe_if_new(pick, _table_for(first["date"], first["slot"])["serves"])
+    token = uuid.uuid4().hex
+    now = datetime.datetime.now().isoformat(timespec="seconds")
+    reason = (pick.get("reason") or "").strip()
+    food_groups = [g for g in (pick.get("food_groups") or []) if g in _plates.ALL_GROUPS]
+    items = []
+    for entry in entries:
+        swapped_from = entry["derived_from"].get("swapped_from") or {
+            "meal": entry["meal"],
+            "recipe_id": entry["recipe_id"],
+            "freeform_meal": entry["freeform_meal"],
+            "food_groups": entry["food_groups"],
+            "reasoning": entry["reasoning"],
+        }
+        derived = dict(entry["derived_from"])
+        derived.update({"swapped_from": swapped_from, "swapped_in_place_at": now,
+                        "carry_sides": False, "swap_group": token})
+        items.append({"old_entry_id": entry["entry_id"], "date": entry["date"], "slot": entry["slot"],
+                      "new_meal": pick["meal_name"], "food_groups": food_groups,
+                      "reasoning": reason, "derived_from": derived})
+    result = _weekly_plan.replace_dish_on_days(weekly_plan_id, items)
+    days = _refreshed_days(weekly_plan_id, [e["date"] for e in entries])
+    out = {
+        "entry_id": result["entry_ids"][0],
+        "entry_ids": result["entry_ids"],
+        "date": first["date"],
+        "dates": [e["date"] for e in entries],
+        "slot": first["slot"],
+        "meal": pick["meal_name"],
+        "replaced": first["meal"],
+        "reason": reason,
+        "can_undo": True,
+        "day": days[0] if days else None,
+        "days": days,
+    }
+    verdict = _weekly_plan._taste_verdict_for_slot(pick["meal_name"], first["date"], first["slot"])
+    if verdict:
+        out["taste_verdict"] = verdict
+    return out
+
+
+def _undo_dish_swap(weekly_plan_id: int, entry: dict) -> dict:
+    """
+    Put back every day of a dish swapped as a whole — each day its OWN
+    dish from before (a reheat night was its own row, and gets its own row
+    back), in one transaction, with the chain shape kept the same way the
+    swap kept it. Days of the group that have since gone by are left as
+    they are, like every other change to a night that's over; a day
+    swapped on its own since then has left the group (apply_pick drops
+    its token) and keeps its own Undo.
+    """
+    token = entry["derived_from"]["swap_group"]
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, derived_from_json FROM meal_plan_entries "
+        "WHERE weekly_plan_id = ? AND household_id = ? AND component_category IS NULL "
+        "ORDER BY date ASC, id ASC",
+        (weekly_plan_id, household_id()),
+    ).fetchall()
+    conn.close()
+    ids = [r["id"] for r in rows if (json.loads(r["derived_from_json"] or "{}") or {}).get("swap_group") == token]
+    members = [_entry(weekly_plan_id, i) for i in ids]
+    members = [m for m in members if m["entry_id"] == entry["entry_id"] or not _weekly_plan.night_has_gone(m["date"])]
+    items = []
+    for m in members:
+        previous = m["derived_from"].get("swapped_from") or {}
+        name = (previous.get("meal") or "").strip()
+        if not name:
+            continue
+        items.append({
+            "old_entry_id": m["entry_id"], "date": m["date"], "slot": m["slot"], "new_meal": name,
+            "food_groups": previous.get("food_groups") or [],
+            "reasoning": previous.get("reasoning") or "",
+            "derived_from": {k: v for k, v in m["derived_from"].items() if k not in _SWAP_NOTE_KEYS},
+        })
+    result = _weekly_plan.replace_dish_on_days(weekly_plan_id, items)
+    dates = [i["date"] for i in items]
+    days = _refreshed_days(weekly_plan_id, dates)
+    mine = next((d for d in days if d.get("date") == entry["date"]), days[0] if days else None)
+    return {
+        "status": "restored",
+        "entry_id": next((new for item, new in zip(items, result["entry_ids"])
+                          if item["old_entry_id"] == entry["entry_id"]), result["entry_ids"][0]),
+        "entry_ids": result["entry_ids"],
+        "date": entry["date"],
+        "dates": dates,
+        "slot": entry["slot"],
+        "meal": (entry["derived_from"].get("swapped_from") or {}).get("meal") or "",
+        "day": mine,
+        "days": days,
+    }
+
+
+def _refreshed_days(weekly_plan_id: int, dates: list[str]) -> list[dict]:
+    """_refreshed_day for several dates off ONE read of the week."""
+    try:
+        menu = _weekly_plan.get_week_menu(weekly_plan_id)
+    except Exception:
+        logger.exception("Could not re-read the week after a swap")
+        return []
+    wanted = list(dict.fromkeys(dates))
+    by_date = {d.get("date"): d for d in menu.get("days") or []}
+    return [by_date[d] for d in wanted if d in by_date]
 
 
 def _refreshed_day(weekly_plan_id: int, meal_date: str) -> dict | None:
