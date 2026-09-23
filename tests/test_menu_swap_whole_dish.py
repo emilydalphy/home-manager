@@ -170,15 +170,143 @@ def test_a_day_already_cooked_is_left_as_it_is(home):
     assert "days" not in out, "one day left to change is the ordinary one-day swap"
 
 
-def test_every_day_is_gated_not_only_the_tapped_one(home, monkeypatch):
-    _separate_cooks(home)
+def _veto_on(monkeypatch, day, dish=NEW):
     swap_in_place = importlib.import_module("app.tools.swap_in_place")
     real = swap_in_place.pick_gate
-    monkeypatch.setattr(swap_in_place, "pick_gate",
-                        lambda pick, entry: "Sam would rather not" if entry["date"] == D2 else real(pick, entry))
-    _opened, out = _swap_whole(home, D1, "lunch")
+    monkeypatch.setattr(swap_in_place, "pick_gate", lambda pick, entry: (
+        "Sam would rather not" if entry["date"] == day and pick.get("meal_name") == dish else real(pick, entry)))
+
+
+def test_every_day_is_gated_not_only_the_tapped_one(home, monkeypatch):
+    _separate_cooks(home)
+    entry_id = _id(home, D1, "lunch")
+    tools.swap_options(home, entry_id, asker=_asker(_pick()), whole_dish=True)
+    # The house changed between the sheet opening and the tap.
+    _veto_on(monkeypatch, D2)
+    out = tools.choose_swap_option(home, entry_id, 0, whole_dish=True)
     assert out["status"] == "refused" and "Sam would rather not" in out["message"]
     assert _meals(home, "lunch") == {PAST: SHRIMP, D1: SHRIMP, D2: SHRIMP}, "refused means nothing changed"
+
+
+def test_a_pick_one_of_the_days_cant_have_is_never_offered(home, monkeypatch):
+    _separate_cooks(home)
+    _veto_on(monkeypatch, D2)
+    opened = tools.swap_options(home, _id(home, D1, "lunch"),
+                                asker=_asker(_pick(), _pick("Fish Tacos", protein="Cod")), whole_dish=True)
+    assert [o["meal"] for o in opened["options"]] == ["Fish Tacos"]
+
+
+# ---------- the strictest of the days (Emily's standing rule, 2026-09-22) ----------
+
+
+def _recording_asker(*picks):
+    seen = []
+
+    def ask(context):
+        seen.append(context)
+        return [dict(p) for p in picks]
+
+    ask.contexts = seen
+    return ask
+
+
+def _quick(name="Ten-Minute Wraps"):
+    return dict(_pick(name), prep_time_minutes=5, cook_time_minutes=10)
+
+
+def _rush():
+    return importlib.import_module("app.tools.week_intake").RUSH_MAX_MINUTES
+
+
+def test_a_rush_friday_holds_the_picks_to_the_rush_cap(home):
+    _separate_cooks(home)
+    tools.save_week_intake(START, night_tags={D1: ["unrushed"], D2: ["rush"]})
+    ask = _recording_asker(_quick(), _pick())
+    opened = tools.swap_options(home, _id(home, D1, "lunch"), asker=ask, whole_dish=True)
+    context = ask.contexts[0]
+    assert context["max_minutes"] == _rush(), "the lowest cap of the days — an unrushed day doesn't lift a rush one"
+    assert context["night_tags"] == ["rush"], "'no cap tonight' is only said when it's true of every day"
+    assert context["dates"] == [D1, D2]
+    assert [o["meal"] for o in opened["options"]] == ["Ten-Minute Wraps"], "a 35-minute pick isn't offered"
+
+
+def test_a_one_day_swap_on_the_unrushed_day_keeps_its_own_cap(home):
+    _separate_cooks(home)
+    tools.save_week_intake(START, night_tags={D1: ["unrushed"], D2: ["rush"]})
+    ask = _recording_asker(_pick())
+    tools.swap_options(home, _id(home, D1, "lunch"), asker=ask)
+    assert ask.contexts[0]["max_minutes"] is None and ask.contexts[0]["night_tags"] == ["unrushed"]
+
+
+def test_the_weeknight_limit_counts_as_a_cap(home):
+    _separate_cooks(home)
+    tools.edit_preference("weeknight_max_minutes", 30)
+    ask = _recording_asker(_pick())
+    tools.swap_options(home, _id(home, D1, "lunch"), asker=ask, whole_dish=True)
+    on_a_weeknight = any(datetime.date.fromisoformat(d).weekday() < 5 for d in (D1, D2))
+    assert ask.contexts[0]["max_minutes"] == (30 if on_a_weeknight else None)
+
+
+def test_a_pick_over_fridays_cap_is_refused_and_nothing_is_written(home):
+    _separate_cooks(home)
+    entry_id = _id(home, D1, "lunch")
+    tools.swap_options(home, entry_id, asker=_asker(_pick()), whole_dish=True)
+    # The second day became a rush night after the sheet opened: the
+    # 35-minute pick is still on offer, and the tap holds every day to its
+    # own cap.
+    tools.save_week_intake(START, night_tags={D2: ["rush"]})
+    out = tools.choose_swap_option(home, entry_id, 0, whole_dish=True)
+    weekday = datetime.date.fromisoformat(D2).strftime("%A")
+    assert out["status"] == "refused"
+    assert out["message"] == f"I left it as it was — {NEW} takes 35 minutes, and {weekday} only has {_rush()}."
+    assert _meals(home, "lunch") == {PAST: SHRIMP, D1: SHRIMP, D2: SHRIMP}
+    assert NEW not in {r["name"] for r in tools.list_recipes()}, "no recipe saved either"
+
+
+def test_a_written_out_recipe_that_runs_long_is_refused_too(home):
+    _separate_cooks(home)
+    tools.save_week_intake(START, night_tags={D2: ["rush"]})
+    trimmed = {"meal_name": "Quick Noodles", "reason": "Fast.", "ingredients": ["Noodles"], "minutes": 15}
+    entry_id = _id(home, D1, "lunch")
+    opened = tools.swap_options(home, entry_id, asker=_asker(trimmed), whole_dish=True)
+    assert [o["meal"] for o in opened["options"]] == ["Quick Noodles"]
+    long = dict(_pick("Quick Noodles"), prep_time_minutes=15, cook_time_minutes=30)
+    out = tools.choose_swap_option(home, entry_id, 0, whole_dish=True, writer=lambda ctx, pick: long)
+    assert out["status"] == "refused" and "takes 45 minutes" in out["message"]
+    assert _meals(home, "lunch") == {PAST: SHRIMP, D1: SHRIMP, D2: SHRIMP}
+
+
+def test_apply_pick_to_days_refuses_a_day_over_its_cap_as_the_backstop(home):
+    _separate_cooks(home)
+    tools.save_week_intake(START, night_tags={D2: ["rush"]})
+    swap_in_place = importlib.import_module("app.tools.swap_in_place")
+    days = swap_in_place.dish_days(home, _id(home, D1, "lunch"))
+    with pytest.raises(ValueError, match="only has"):
+        swap_in_place.apply_pick_to_days(home, days, _pick())
+    assert _meals(home, "lunch") == {PAST: SHRIMP, D1: SHRIMP, D2: SHRIMP}
+
+
+def test_the_picks_are_asked_for_everyone_at_any_of_the_tables(home):
+    _separate_cooks(home)
+    tools.add_member("Rae")
+    tools.set_slot_attendance(D1, "lunch", present_member_ids=["Alex", "Sam"])
+    tools.set_slot_attendance(D2, "lunch", present_member_ids=["Alex", "Rae"], guest_count=2)
+    ask = _recording_asker(_pick())
+    tools.swap_options(home, _id(home, D1, "lunch"), asker=ask, whole_dish=True)
+    table = ask.contexts[0]["table"]
+    assert sorted(table["present"]) == ["Alex", "Rae", "Sam"] and table["away"] == []
+    assert table["guests"] == 2 and table["serves"] == 4
+
+
+def test_picks_asked_for_one_day_are_not_used_for_the_whole_dish(home):
+    _separate_cooks(home)
+    entry_id = _id(home, D1, "lunch")
+    tools.swap_options(home, entry_id, asker=_asker(_pick()))
+    with pytest.raises(ValueError, match="tap Swap again"):
+        tools.choose_swap_option(home, entry_id, 0, whole_dish=True)
+    ask = _recording_asker(_pick())
+    tools.swap_options(home, entry_id, asker=ask, whole_dish=True)
+    assert ask.contexts, "the whole-dish sheet asks again rather than reusing one day's picks"
 
 
 def test_a_failure_part_way_changes_no_day(home, monkeypatch):

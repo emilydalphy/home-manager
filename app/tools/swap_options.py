@@ -291,9 +291,14 @@ def _gate(pick: dict, entry: dict) -> str | None:
     return _swap.pick_gate(pick, entry)
 
 
-def _gated(entry: dict, raw: list, avoid: list[str]) -> list[dict]:
+def _gated(entry: dict, raw: list, avoid: list[str], group: list[dict] | None = None,
+           weekly_plan_id: int | None = None) -> list[dict]:
     """The picks the household may actually have, in the order the model
-    gave them, at most OPTION_COUNT, none repeating `avoid` or each other."""
+    gave them, at most OPTION_COUNT, none repeating `avoid` or each other.
+    For a whole dish (`group`, more than one day) every day's table is
+    gated, and a pick longer than any day's own cap is dropped — asked
+    under the lowest cap, but a pick that ignores it is still not shown."""
+    days = group if group and len(group) > 1 else [entry]
     out: list[dict] = []
     seen = {a.strip().lower() for a in avoid}
     for pick in raw or []:
@@ -303,7 +308,9 @@ def _gated(entry: dict, raw: list, avoid: list[str]) -> list[dict]:
         if not name or name.lower() in seen:
             continue
         pick = dict(pick, meal_name=name, ingredients=_as_ingredient_rows(pick.get("ingredients")))
-        why = _gate(pick, entry)
+        why = _gate_all(pick, days)
+        if not why and len(days) > 1:
+            why = _swap.cap_gate(weekly_plan_id, pick, days)
         if why:
             logger.warning("swap_options dropped %r: %s", name, why)
             continue
@@ -329,27 +336,45 @@ def swap_options(weekly_plan_id: int, entry_id: int, avoid: list[str] | None = N
     stands for (swap_in_place.dish_days), and the answer says which, as
     `dates`, so the sheet can say "Swapping Thursday and Friday's lunch."
     from the same list the write will use. The picks themselves are the
-    same three — asked, gated and cached against the tapped day.
+    same three, asked ONCE — but asked against the strictest of those
+    days (swap_in_place.build_dish_swap_context: the lowest time cap,
+    every day's tags, everyone at any of the tables — Emily's standing
+    rule, 2026-09-22: suggestions always fit the week's guidelines), and
+    gated against every day.
     """
     entry = _swap._entry(weekly_plan_id, entry_id)
     if entry["slot_state"] != "planned" or not entry["meal"]:
         raise ValueError("There's no meal on that slot to swap.")
-    out = _swap_options(weekly_plan_id, entry, avoid, asker)
+    group = _swap.dish_days(weekly_plan_id, entry_id) if whole_dish else [entry]
+    if len(group) < 2:
+        group = [entry]
+    out = _swap_options(weekly_plan_id, entry, avoid, asker, group)
     if whole_dish:
-        out["dates"] = [e["date"] for e in _swap.dish_days(weekly_plan_id, entry_id)]
+        out["dates"] = [e["date"] for e in group]
     return out
 
 
-def _swap_options(weekly_plan_id: int, entry: dict, avoid: list[str] | None, asker) -> dict:
+def _group_key(group: list[dict]) -> tuple:
+    return tuple(e["entry_id"] for e in group)
+
+
+def _swap_options(weekly_plan_id: int, entry: dict, avoid: list[str] | None, asker,
+                  group: list[dict]) -> dict:
     entry_id = entry["entry_id"]
     key = (household_id(), entry_id)
     cached = _OPTIONS_CACHE.get(key)
-    if cached and cached["meal"] == entry["meal"] and time.time() - cached["at"] < _OPTIONS_TTL:
+    # Picks asked for one day are not picks for three, and the other way
+    # round: the cache holds for the same set of days only.
+    if (cached and cached["meal"] == entry["meal"] and time.time() - cached["at"] < _OPTIONS_TTL
+            and cached.get("group", (entry_id,)) == _group_key(group)):
         return {"entry_id": entry_id, "meal": entry["meal"],
                 "options": [_option_view(i, p) for i, p in enumerate(cached["options"])],
                 "options_unavailable": cached["unavailable"]}
     tried = _swap._dedup([entry["meal"]] + list(avoid or []))
-    context = _swap.build_swap_context(weekly_plan_id, entry, tried)
+    if len(group) > 1:
+        context = _swap.build_dish_swap_context(weekly_plan_id, group, tried)
+    else:
+        context = _swap.build_swap_context(weekly_plan_id, entry, tried)
     ask = asker or _ask_options
     unavailable = False
     started = time.perf_counter()
@@ -359,13 +384,14 @@ def _swap_options(weekly_plan_id: int, entry: dict, avoid: list[str] | None, ask
         logger.exception("Asking for swap options failed; the sheet will offer the chat only")
         raw = []
         unavailable = True
-    options = _gated(entry, raw, tried)
+    options = _gated(entry, raw, tried, group, weekly_plan_id)
     # Next to agent's own per-call line ("llm call swap_options took …"):
     # the whole ask, gate included, and how many picks survived it.
     logger.info("swap_options for entry %s: %d of %d picks kept in %.2fs",
                 entry_id, len(options), len(raw or []), time.perf_counter() - started)
     _OPTIONS_CACHE[key] = {"at": time.time(), "meal": entry["meal"], "options": options,
-                           "unavailable": unavailable, "context": context}
+                           "unavailable": unavailable, "context": context,
+                           "group": _group_key(group)}
     return {"entry_id": entry_id, "meal": entry["meal"],
             "options": [_option_view(i, p) for i, p in enumerate(options)],
             "options_unavailable": unavailable}
@@ -445,7 +471,15 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
     group = _swap.dish_days(weekly_plan_id, entry_id) if whole_dish else [entry]
     if len(group) < 2:
         group = [entry]
+    # The picks on offer were asked for THESE days; if the dish's days have
+    # changed since the sheet opened, they may not fit the new ones.
+    if cached.get("group", (entry_id,)) != _group_key(group):
+        raise ValueError("Those picks aren't on offer any more — tap Swap again.")
     why = _gate_all(pick, group)
+    if not why and len(group) > 1:
+        # Every day held to its OWN cap — a rush Friday is 20 minutes even
+        # when Thursday has none (Emily's standing rule, 2026-09-22).
+        why = _swap.cap_gate(weekly_plan_id, pick, group)
     if why:
         return {"status": "refused", "message": f"I left it as it was — {pick['meal_name']} {why}."}
     if needs_write_out(pick):
@@ -466,6 +500,10 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
         # the name to its own ingredients — honest_meal_name.)
         pick = dict(full, meal_name=pick["meal_name"], reason=pick.get("reason") or full.get("reason") or "")
         why = _gate_all(pick, group, _swap.pick_gate)
+        if not why and len(group) > 1:
+            # The written-out recipe's own minutes, which can run past the
+            # line the pick was offered with.
+            why = _swap.cap_gate(weekly_plan_id, pick, group)
         if why:
             return {"status": "refused", "message": f"I left it as it was — {pick['meal_name']} {why}."}
     if len(group) > 1:

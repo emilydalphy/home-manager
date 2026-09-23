@@ -429,7 +429,15 @@ why*, not duplicating the diff.
   the new dish and buying one batch on an approved week. Every day carries
   `derived_from.swap_group`; `/swap-undo` on any of them restores all
   (`_undo_dish_swap`); a later one-day swap drops that day's token. Every
-  day is gated (a Thursday table and a Friday table can differ). The Day
+  day is gated (a Thursday table and a Friday table can differ), and the
+  picks are ASKED against the strictest of the days
+  (`build_dish_swap_context`, Emily's standing rule that suggestions fit
+  the week's guidelines): lowest cap (rush or weeknight limit; `unrushed`
+  lifts only its own day), every day's tags, everyone at any table. Each
+  day is then held to its OWN cap at the tap and after the write-out
+  (`cap_gate`, also the backstop in `apply_pick_to_days`) — refused,
+  nothing written: "I left it as it was — X takes 35 minutes, and Friday
+  only has 20." The options cache is per set of days. The Day
   step's Swap and a one-day-ahead row are the unchanged one-day swap. The
   sheet names the days ("Swapping Thursday and Friday’s lunch.", "Swapping
   all 5 lunches." past three) in place of the eyebrow and hides "Move the …"

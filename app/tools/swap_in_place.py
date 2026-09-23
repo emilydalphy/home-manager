@@ -886,6 +886,114 @@ def dish_days(weekly_plan_id: int, entry_id: int) -> list[dict]:
     return [entry if i == entry_id else _entry(weekly_plan_id, i) for i in ids]
 
 
+def _night_tags_for(weekly_plan_id: int) -> dict:
+    week_start = _week_start_of(weekly_plan_id)
+    intake = _week_intake.get_week_intake(week_start) if week_start else None
+    return (intake or {}).get("night_tags") or {}
+
+
+def day_caps(weekly_plan_id: int, entries: list[dict]) -> list[tuple[dict, int | None]]:
+    """Each day's own minutes cap (_minutes_cap), in `entries` order."""
+    memory = _memory.get_household_memory()
+    tags_by_date = _night_tags_for(weekly_plan_id)
+    return [(e, _minutes_cap(e["date"], tags_by_date.get(e["date"]) or [], memory)) for e in entries]
+
+
+def build_dish_swap_context(weekly_plan_id: int, entries: list[dict], avoid: list[str] | None = None) -> dict:
+    """
+    build_swap_context for a dish being swapped on several days at once
+    (apply_pick_to_days), held to the STRICTEST of those days — Emily's
+    standing rule, 2026-09-22: a suggestion always fits the week's
+    guidelines, so one pick that lands on Thursday AND Friday has to fit
+    both. The tapped day's context is the base; on top of it:
+
+      * `max_minutes` is the lowest cap any of the days has — a `rush`
+        night's or the weeknight limit. An `unrushed` night lifts only its
+        OWN cap (it contributes no cap, and never lifts another day's);
+      * `night_tags` is every day's tags together, except that `unrushed`
+        and `normal` are only said when every day says them — "no time
+        cap tonight" beside a rush night would contradict the cap above;
+      * `table` is everyone who eats on any of the days (present is the
+        union, `away` only those out for all of them, `serves` and
+        `guests` the largest), and `taste_verdicts` covers each day's own
+        table, so one person's veto on one of the days still counts;
+      * `dates` / `weekdays` say which days, and `week_other_dishes`
+        leaves out every one of them (they are the dish being replaced).
+
+    choose_swap_option re-checks each day against its OWN cap at the tap
+    (cap_gate) — the picks are asked under the lowest cap, but the recipe
+    written out afterwards can run longer than the line promised.
+    """
+    first = entries[0]
+    context = build_swap_context(weekly_plan_id, first, avoid)
+    tags_by_date = _night_tags_for(weekly_plan_id)
+    every = [tags_by_date.get(e["date"]) or [] for e in entries]
+    tags: list[str] = []
+    for day_tags in every:
+        for tag in day_tags:
+            if tag in ("unrushed", "normal") and not all(tag in t for t in every):
+                continue
+            if tag not in tags:
+                tags.append(tag)
+    caps = [cap for _e, cap in day_caps(weekly_plan_id, entries) if cap]
+    tables = [_table_for(e["date"], e["slot"]) for e in entries]
+    present: list[str] = []
+    for table in tables:
+        present += [n for n in table["present"] if n not in present]
+    away = [n for n in tables[0]["away"] if all(n in t["away"] for t in tables) and n not in present]
+    context.update({
+        "dates": [e["date"] for e in entries],
+        "weekdays": [_weekday(e["date"]) for e in entries],
+        "night_tags": tags,
+        "max_minutes": min(caps) if caps else None,
+        "table": {
+            "serves": max(t["serves"] for t in tables),
+            "present": present,
+            "away": away,
+            "guests": max(t["guests"] for t in tables),
+        },
+    })
+    context["week_other_dishes"] = [
+        line for line in _other_dishes(weekly_plan_id, first["entry_id"])
+        if not any(line.startswith(f"{_weekday(e['date'])} {e['slot']}:") for e in entries)
+    ]
+    taste: list[str] = []
+    for entry, table in zip(entries, tables):
+        for line in _taste_lines_for(entry["date"], entry["slot"], table):
+            if line not in taste:
+                taste.append(line)
+    if taste:
+        context["taste_verdicts"] = taste
+    else:
+        context.pop("taste_verdicts", None)
+    return context
+
+
+def _pick_minutes(pick: dict) -> int | None:
+    if pick.get("minutes") is not None:
+        try:
+            return int(pick["minutes"]) or None
+        except (TypeError, ValueError):
+            pass
+    total = int(pick.get("prep_time_minutes") or 0) + int(pick.get("cook_time_minutes") or 0)
+    return total or None
+
+
+def cap_gate(weekly_plan_id: int, pick: dict, entries: list[dict]) -> str | None:
+    """
+    Why `pick` takes too long for one of `entries`, each held to its OWN
+    cap (a rush Friday is 20 minutes even when Thursday has none), or
+    None. A pick that says no minutes at all isn't refused on a guess.
+    """
+    minutes = _pick_minutes(pick)
+    if not minutes:
+        return None
+    for entry, cap in day_caps(weekly_plan_id, entries):
+        if cap and minutes > cap:
+            return f"takes {minutes} minutes, and {_weekday(entry['date'])} only has {cap}"
+    return None
+
+
 def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict) -> dict:
     """
     apply_pick for a dish planned on several days: the same chosen dish on
@@ -904,6 +1012,11 @@ def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict) -> 
     for entry in entries:
         if _weekly_plan.night_has_gone(entry["date"]):
             raise _weekly_plan.SlotRefused(_weekly_plan.NIGHT_GONE)
+    # Each day's own time cap, as the backstop (choose_swap_option asks
+    # first, in its own words): nothing is saved or written past this.
+    too_long = cap_gate(weekly_plan_id, pick, entries)
+    if too_long:
+        raise _weekly_plan.SlotRefused(f"I left it as it was — {pick.get('meal_name') or 'that'} {too_long}.")
     first = entries[0]
     pick["meal_name"] = honest_meal_name(pick)
     _save_recipe_if_new(pick, _table_for(first["date"], first["slot"])["serves"])
