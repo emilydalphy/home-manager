@@ -596,6 +596,7 @@ from .usage import (  # noqa: F401
     get_recent_plan_quality,
     get_usage_summary,
     record_api_call,
+    record_chat_theme,
     record_chat_turn,
     record_error,
     record_plan_quality,

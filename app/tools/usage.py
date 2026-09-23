@@ -158,7 +158,7 @@ def _tool_names_json(names) -> str:
     return json.dumps([n for n in names if isinstance(n, str)])
 
 
-def record_chat_turn(usage: dict | None = None) -> None:
+def record_chat_turn(usage: dict | None = None) -> int | None:
     """
     Record that a chat turn happened, and what it cost. No message content
     -- see schema.sql on chat_turns for why.
@@ -175,12 +175,16 @@ def record_chat_turn(usage: dict | None = None) -> None:
     reply that already worked, and it must not be what fails. A broken
     write shows up in the logs instead -- agent.py's tool-failure logging
     is the same principle, since silence is the thing being fixed.
+
+    Returns the new row's id, or None when the write failed, so the theme
+    call (app/chat_themes.py) can land its label on this row a moment
+    later without holding the reply up.
     """
     values = usage or {}
     conn = None
     try:
         conn = get_conn()
-        conn.execute(
+        cur = conn.execute(
             "INSERT INTO chat_turns (household_id, rounds, input_tokens, cache_read_tokens, "
             "cache_write_tokens, output_tokens, seconds, tools_called_json) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -188,9 +192,38 @@ def record_chat_turn(usage: dict | None = None) -> None:
              _tool_names_json(values.get("tools_called"))),
         )
         conn.commit()
+        return cur.lastrowid
     except Exception:
         import logging
         logging.getLogger("home_manager").exception("Recording a chat turn failed")
+        return None
+    finally:
+        if conn is not None:
+            conn.close()
+
+
+def record_chat_theme(turn_id: int, theme: str) -> None:
+    """
+    Land a chat turn's theme on its row. Never raises -- it runs on a
+    background thread after the reply has gone, and there is nobody left
+    to hand an exception to.
+
+    Scoped to the current household as well as the id, so a wrong id can
+    only ever miss, never label another household's turn. The caller has
+    already checked `theme` against the fixed list; this is a plain write.
+    """
+    conn = None
+    try:
+        conn = get_conn()
+        conn.execute("PRAGMA busy_timeout = 500")
+        conn.execute(
+            "UPDATE chat_turns SET theme = ? WHERE id = ? AND household_id = ?",
+            (str(theme), int(turn_id), household_id()),
+        )
+        conn.commit()
+    except Exception:
+        import logging
+        logging.getLogger("home_manager").exception("Recording a chat theme failed")
     finally:
         if conn is not None:
             conn.close()
@@ -478,6 +511,22 @@ def _chat_tool_counts(conn, hid: int, since: str) -> dict:
     }
 
 
+def _chat_theme_counts(conn, hid: int, since_sql: str) -> dict[str, int]:
+    """
+    What chat was ABOUT, by theme label, busiest first -- layer 2 of the
+    same card as _chat_tool_counts above. Only turns that were classified:
+    '' means the flag was off or the call failed, and counting those as
+    anything would print zeros that read like a quiet household.
+    """
+    rows = conn.execute(
+        "SELECT theme, COUNT(*) AS n FROM chat_turns "
+        f"WHERE household_id = ? AND theme != '' AND created_at >= {since_sql} "
+        "GROUP BY theme",
+        (hid,),
+    ).fetchall()
+    return dict(sorted(((r["theme"], r["n"]) for r in rows), key=lambda kv: (-kv[1], kv[0])))
+
+
 def _summarize(conn, hid: int, days: int, since: str) -> dict:
     def _count(sql: str) -> int:
         return conn.execute(sql, (hid,)).fetchone()[0]
@@ -494,6 +543,13 @@ def _summarize(conn, hid: int, days: int, since: str) -> dict:
     ).fetchone()
 
     chat_tools = _chat_tool_counts(conn, hid, since)
+    # Same window as chat_tools for the household's own line, plus the
+    # calendar month so the report can roll themes up across households
+    # beside the month's cost.
+    chat_themes = {
+        "counts": _chat_theme_counts(conn, hid, f"datetime('now', '{since}')"),
+        "month_counts": _chat_theme_counts(conn, hid, "datetime('now', 'start of month')"),
+    }
 
     household_row = conn.execute(
         "SELECT last_active_at FROM households WHERE id = ?", (hid,)
@@ -506,6 +562,7 @@ def _summarize(conn, hid: int, days: int, since: str) -> dict:
         "last_active_at": (household_row["last_active_at"] if household_row else None),
         "chat_turns": chat["turns"],
         "chat_tools": chat_tools,
+        "chat_themes": chat_themes,
         "chat_rounds": chat["rounds"],
         "chat_seconds": round(chat["seconds"], 1),
         "tokens": {
