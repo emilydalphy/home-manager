@@ -3135,8 +3135,8 @@ entry with every one of those days listed in `dates` (its `date` first) — not 
 written out again for each morning. Oatmeal on five mornings is one entry with five dates. \
 It is written onto each of those days exactly as if you had sent it five times, with this \
 entry's own reasoning and derived_from on each, so nothing is lost by folding it — what is \
-saved is you writing the same decision out four more times, which is most of what a week \
-costs to draft. Two rules on it: the days must genuinely be the SAME dish (a different \
+saved is you writing the same decision out four more times, which on a real week is more \
+than half of everything you write. Two rules on it: the days must genuinely be the SAME dish (a different \
 topping is a different entry), and DINNER IS NOT FOLDED — dinners carry the shape of the \
 week, and each night's own reason ("lighter after Monday's chili") is read under the dish, \
 so send one entry per night even when the dish repeats. Leave `dates` out entirely for \
