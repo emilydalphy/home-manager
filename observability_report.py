@@ -552,6 +552,66 @@ def _print_shape(key: tuple, n: int) -> None:
         print(f"                 {stack}")
 
 
+# What a tool is FOR, in the words somebody would use about their own
+# evening. Only the tools that actually show up get a phrase; anything
+# else prints its own name, which is ugly and honest and tells you to come
+# and add it here rather than quietly reading as something it isn't.
+_CHAT_TOOL_PHRASES = {
+    "swap_meal_in_plan": "meal swaps",
+    "swap_dinner_nights": "nights moved",
+    "add_grocery_item": "list adds",
+    "add_grocery_items": "list adds",
+    "mark_grocery_item": "list ticks",
+    "remove_grocery_item": "list removals",
+    "generate_weekly_plan": "weeks planned",
+    "approve_weekly_plan": "weeks approved",
+    "check_off_meal": "meals ticked",
+    "add_recipe": "recipes saved",
+    "take_the_night_off": "nights off",
+    "hold_thing": "things held",
+    "add_fact": "things remembered",
+    "get_meal_plan": "what's for dinner",
+    "get_cooker_view": "cook help",
+    "list_grocery_list": "what's on the list",
+}
+
+
+def _chat_tool_phrase(name: str, count: int) -> str:
+    phrase = _CHAT_TOOL_PHRASES.get(name, name)
+    return f"{count} {phrase}"
+
+
+def _print_chat_tools(chat_tools: dict, turns: int) -> None:
+    """
+    One line saying what chat was used FOR, and one saying how much of it
+    could already have been a tap.
+
+    The second is the one with money behind it: a chat turn costs about 16
+    cents and a tap about one, so a high "already has a tap" count is the
+    cheapest improvement on the board -- either that control is too hard
+    to find or chat is simply the nicer door, and both are worth knowing.
+    It is a signpost, never a verdict: nothing here says the household was
+    stuck, only that they asked.
+
+    Tool NAMES only reach this function, never anything a person wrote, so
+    unlike the feedback and error sections below it needs no untrusted
+    fence -- see schema.sql on chat_turns.
+    """
+    counts = chat_tools.get("counts") or {}
+    if counts:
+        named = ", ".join(_chat_tool_phrase(n, c) for n, c in list(counts.items())[:6])
+        print(f"  Chat was for — {named}")
+    talk_only = chat_tools.get("talk_only_turns") or 0
+    if talk_only:
+        print(f"      {talk_only} of {turns} turns called nothing — just talk")
+    tappable = chat_tools.get("turns_with_a_tap") or 0
+    if tappable:
+        print(f"      {tappable} of {turns} turns asked for something that already has a tap")
+    unreadable = chat_tools.get("unreadable_turns") or 0
+    if unreadable:
+        print(f"      {unreadable} turns could not be read — worth a look")
+
+
 def _print_human(report: list[dict], days: int, source: str) -> None:
     print(f"(read from {source})")
     for h in report:
@@ -592,6 +652,10 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
         # a deployment older than this work answers without these keys,
         # and a morning report that crashes tells you less than one that
         # omits a line.
+        chat_tools = usage.get("chat_tools")
+        if chat_tools:
+            _print_chat_tools(chat_tools, usage["chat_turns"])
+
         month_cost = usage.get("month_to_date_cost")
         if month_cost:
             total = month_cost["total_cost"]["total"]
