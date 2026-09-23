@@ -125,6 +125,8 @@ def _prelude() -> str:
         + _extract("swapWaitLine", SHELL_JS) + "\n"
         + _extract("swapWaitHtml", SHELL_JS) + "\n"
         + _extract("swapPickHtml", SHELL_JS) + "\n"
+        # The whole-dish line (2026-09-22) — empty for a one-day sheet.
+        + _extract("swapDaysLine", SHELL_JS) + "\n"
         + _extract("swapSheetTitle", SHELL_JS) + "\n"
         + _extract("swapSheetBodyHtml", SHELL_JS) + "\n"
     )

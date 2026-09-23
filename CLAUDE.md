@@ -481,6 +481,37 @@ why*, not duplicating the diff.
     confirmed); the cook lands on the lunch and the dinner reads as a
     second cook.
 
+- **2026-09-22 — Swap on a "What we're eating" row swaps the whole dish.
+  Branch `menu-swap-whole-dish`, NOT merged at the time of writing.** Emily
+  on her phone: a lunch on Thu and Fri was one row, its Swap changed
+  Thursday only — "two meals instead of 1" — and the ~6.5 s write-out after
+  a tap "looked like it froze". Now the row's Swap sends `whole_dish: true`
+  to `/swap-options` and `/swap-choose`; the SERVER derives the days
+  (`swap_in_place.dish_days`: get_week_menu grouped exactly as shell.js
+  `wkMenuGroups` does — same meal type, snacks as one type, planned only,
+  the name the slot reads as, case-insensitive — minus `is_past` and
+  `cooked` days) and writes them in ONE transaction
+  (`weekly_plan.replace_dish_on_days`), carrying a cook + reheat chain to
+  the new dish and buying one batch on an approved week. Every day carries
+  `derived_from.swap_group`; `/swap-undo` on any of them restores all
+  (`_undo_dish_swap`); a later one-day swap drops that day's token. Every
+  day is gated (a Thursday table and a Friday table can differ), and the
+  picks are ASKED against the strictest of the days
+  (`build_dish_swap_context`, Emily's standing rule that suggestions fit
+  the week's guidelines): lowest cap (rush or weeknight limit; `unrushed`
+  lifts only its own day), every day's tags, everyone at any table. Each
+  day is then held to its OWN cap at the tap and after the write-out
+  (`cap_gate`, also the backstop in `apply_pick_to_days`) — refused,
+  nothing written: "I left it as it was — X takes 35 minutes, and Friday
+  only has 20." The options cache is per set of days. The Day
+  step's Swap and a one-day-ahead row are the unchanged one-day swap. The
+  sheet names the days ("Swapping Thursday and Friday’s lunch.", "Swapping
+  all 5 lunches." past three) in place of the eyebrow and hides "Move the …"
+  for a multi-day dish; a tapped pick shows the spinner and "Adding it to
+  the week…" ("Still writing out the recipe…" after 8 s), the rest dim,
+  and the scrim/handle can't close it mid-write (`dismissSwapSheet`).
+  `tests/test_menu_swap_whole_dish.py`.
+
 - **2026-09-22 — `main` was red on five weekdays out of seven, and TWO of the
   four pinned CI jobs — `clock (friday)` and `clock (sunday)` — were red on
   EVERY push. Branch

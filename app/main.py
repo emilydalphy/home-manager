@@ -3135,13 +3135,19 @@ class SwapOptionsRequest(BaseModel):
     sitting has already turned down for it."""
     entry_id: int
     avoid: list[str] | None = None
+    # The Swap on a "What we're eating" row (Emily, 2026-09-22): the pick
+    # goes on every day ahead the row stands for, and the server works
+    # those days out from entry_id (swap_in_place.dish_days) — the client
+    # says only that it means the whole dish, never which days.
+    whole_dish: bool = False
 
 
 class SwapChooseRequest(BaseModel):
     """A tap on one of the three picks — `option` is its index in the list
-    /swap-options handed back."""
+    /swap-options handed back. `whole_dish` as on SwapOptionsRequest."""
     entry_id: int
     option: int
+    whole_dish: bool = False
 
 
 @app.post("/api/week/{week_start}/swap-options")
@@ -3156,6 +3162,8 @@ def week_swap_options(week_start: str, req: SwapOptionsRequest):
     """
     plan_id = _plan_id_for_week(week_start)
     try:
+        if req.whole_dish:
+            return tools.swap_options(plan_id, req.entry_id, avoid=req.avoid, whole_dish=True)
         return tools.swap_options(plan_id, req.entry_id, avoid=req.avoid)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -3173,6 +3181,8 @@ def week_swap_choose(week_start: str, req: SwapChooseRequest):
     """
     plan_id = _plan_id_for_week(week_start)
     try:
+        if req.whole_dish:
+            return tools.choose_swap_option(plan_id, req.entry_id, req.option, whole_dish=True)
         return tools.choose_swap_option(plan_id, req.entry_id, req.option)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

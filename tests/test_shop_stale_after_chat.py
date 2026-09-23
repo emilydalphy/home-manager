@@ -1079,7 +1079,9 @@ def test_only_the_approve_button_and_start_over_ask_for_a_refill():
     # stepper; the swap sheet's pick took one of their places. Three again
     # from 2026-09-21: the freezer step's answer sets lines aside (or puts
     # them back), so submitDefrostAsk re-reads Shop in the background too.
-    assert body.count("refreshGrocerySurfaces();") == 3
+    # Four from 2026-09-22: Undo on a dish swapped on several days of an
+    # approved week puts every day's shopping back (runSwapUndo).
+    assert body.count("refreshGrocerySurfaces();") == 4
     # The chat door never refills.
     assert "refill" not in _strip_comments(_function("refreshStaleTabsFromActions"))
 
