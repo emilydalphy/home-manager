@@ -415,6 +415,78 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-23 — Approving a week at nine in the evening asked the household
+  to keep or drop NEXT week's shopping. Branch
+  `overnight/carried-over-household-clock`, NOT merged at the time of
+  writing.** Loop Board bug. `grocery.set_aside_carried_over_items` decides
+  which unbought lines are LEFTOVERS from a week that has begun, and it
+  compared `date.today()` — the container's — against dates that come out of
+  `plan_period`, i.e. days a planning period was written in, which are
+  household-relative. The container runs UTC and households default to
+  `America/Toronto`, so the two are a different day for four hours of every
+  evening. **The function's own docstring is the specification it broke**:
+  "a household that approves two weeks in advance is building next week's
+  list, and asking them to keep-or-drop it would be asking about groceries
+  nobody has had the chance to buy."
+  - **BOTH directions are real and both were reproduced on a throwaway DB
+    before anything was touched**, by driving the real function with
+    `cooker.datetime` frozen at one UTC instant. BEHIND (Toronto 21:30,
+    production's own direction every evening after eight): a plan beginning
+    the household's TOMORROW read as started — `set aside: ['Next week
+    onions']` where the right answer is `[]`. AHEAD (Tokyo 08:30): a plan
+    that began the household's TODAY read as not yet begun — `set aside: []`
+    where the right answer names the line, so last week's leftovers are left
+    standing and this week's amounts land on top of them, which is the
+    quantity inflation the function exists to prevent.
+  - **`_live_plan_ids` is the same defect one function up the file and is
+    the one with TEETH, so it moves in the same commit** — this repo's own
+    rule that a half-converted module is a new bug rather than a smaller
+    one. Its caller `clear_stale_grocery_items` is a blunt DELETE with no
+    ledger behind it, so on the server's clock a plan whose LAST day is the
+    household's today read as finished from about 8pm local and the
+    ingredients for the dinner they were still cooking went off the list.
+    After this, `grep 'date.today()' app/tools/grocery.py` is empty.
+  - **The clock is read on the CALLER's connection, and that is a hazard
+    rather than a tidiness rule.** `approve_weekly_plan` holds an open write
+    transaction across this call (`conn=conn`, with a comment saying why);
+    SQLite gives one writer at a time and a nested `get_conn` there is how
+    this app has twice earned an intermittent "database is locked".
+    `cooker.household_today` already takes a `conn` (grown on
+    `thaw-survives-a-swap`, 2026-09-22), so it rides straight through and
+    the connection count is unchanged. Pinned by a guard counting at
+    `sqlite3.connect` rather than at a module's own `get_conn` — a
+    function-local `from ..db import get_conn` is invisible to a
+    module-level patch and `_shared.py` has exactly that shape.
+  - **The import is lazy and that is forced, not stylistic:** `cooker`
+    imports `grocery` at module scope, so `from . import cooker` at the top
+    of this file would be a cycle. Same shape `inventory._today`,
+    `held._today` and `notifications` already use, for the same reason.
+  - `tests/test_carried_over_household_clock.py` (9; **5 red against main's
+    `app/`**, of which **4 are behaviour catches** and the fifth is the AST
+    sweep marker, red there for exactly the reason it is named after). Both
+    directions at one frozen UTC instant, following
+    `test_already_have_household_clock.py`.
+  - **ONE GUARD'S DOCSTRING NAMED A MUTATION THAT CANNOT FAIL, and it was
+    caught by RUNNING the mutations rather than by reasoning about them.**
+    It claimed dropping `source_weekly_plan_id IS NOT NULL` from the query
+    would redden the standing-want guard. It reddens **nothing**: SQLite
+    evaluates `NULL != 5` as NULL, so the `!= ?` beside it already filters a
+    standing want out, and `None` is never in `started` either. TWO
+    independent things hold that case up and no single-line mutation can
+    redden it; breaking BOTH does, and that was run. Corrected in the
+    docstring rather than quietly, because a guard mislabelled as pinned is
+    the statistic this log keeps having to unpick.
+  - **Three other mutations were run and each bites**: the clock read
+    opening its own connection (1 red — the nesting guard), `_live_plan_ids`
+    returning every plan (1), and the household clock 400 days in the past
+    (5).
+  - **Numbers, read off the runs.** `TZ=America/Toronto` **6331 passed, 0
+    failed**, and inside a VERIFIED `Pacific/Niue` straddle — Niue
+    2026-09-22 against Toronto 2026-09-23, `date +%F` checked in both zones
+    BEFORE and AFTER the run — **6331 passed, 0 failed**. No existing test
+    was changed, deleted or weakened (`git diff main -- tests/` is this one
+    new file), so +9 is it exactly.
+
 - **2026-09-22 — `main` was red on five weekdays out of seven, and TWO of the
   four pinned CI jobs — `clock (friday)` and `clock (sunday)` — were red on
   EVERY push. Branch
