@@ -252,14 +252,28 @@ def test_tonights_own_week_is_still_live_at_nine_in_the_evening(monkeypatch):
     the household's today is still being cooked from; on the server's clock
     it read as finished after eight and its ingredients were deleted off
     the list that evening.
+
+    TWO plans, and that is the correction rather than the setup. The first
+    draft of this test seeded only the ending one and called
+    `clear_stale_grocery_items(current_weekly_plan_id=None)` — and with a
+    single plan on file that function resolves `current_id` through
+    `get_weekly_plan()` to THAT plan, which then lands in `live` and is
+    spared whatever `_live_plan_ids` said. So the delete assertion passed
+    on main too: it was vacuous, and only the `_live_plan_ids` line above
+    it was a real catch. Found by review.
+
+    The two-plan shape is also the realistic one — it is what a household
+    has on the evening they take the nudge to plan next week while this
+    week still has a night in it.
     """
     household_today = _behind(monkeypatch)
     ending_today = _plan(household_today - timedelta(days=6))
+    next_week = _plan(household_today + timedelta(days=1))
     _line(ending_today, "Tonight's chicken")
 
-    assert ending_today in _grocery._live_plan_ids(None)
+    assert ending_today in _grocery._live_plan_ids(next_week)
 
-    _grocery.clear_stale_grocery_items(current_weekly_plan_id=None)
+    _grocery.clear_stale_grocery_items(current_weekly_plan_id=next_week)
     assert "Tonight's chicken" in _statuses()
 
 
@@ -331,8 +345,33 @@ def test_the_module_reads_no_server_clock_anywhere(monkeypatch):
     GUARD on the sweep, not on one reader.
 
     A module half on one clock is a new bug rather than a smaller one, and
-    this file had exactly two reads. Reads the source with comments
-    stripped, because the word survives in the prose above both fixes.
+    this file had exactly two PYTHON reads. Parsed rather than grepped, so
+    the word surviving in the prose above both fixes is not a false
+    positive — ast never sees a comment at all.
+
+    TWO THINGS THIS DOES NOT COVER, named because the test's title is
+    broader than its reach and this log has been bitten by a guard whose
+    scope was assumed:
+
+    1. The eight SQL `datetime('now')` reads in this module are NOT
+       swept, and must not be. Every one of them WRITES or compares a UTC
+       instant against another UTC instant — `removed_at`, `updated_at`,
+       `inventory_added_at`, `list_built_at`'s window. There is no
+       calendar day in any of them to be wrong about. The rule this file
+       is about is a household DAY compared against a plan date, and
+       there are exactly two of those (`:1175` and `:1321`), both
+       converted.
+
+    2. A module-qualified spelling — `_dt.date.today()` — walks straight
+       past this, because the owner is an Attribute rather than a Name.
+       Measured: reverting both reads that way leaves this green and only
+       the four behaviour tests catch it. That limitation is INHERITED —
+       `tests/test_last_clock_pockets.py`'s guard has the identical
+       restriction — so it is not novel here, but it is real.
+
+    The pair set matches that established guard exactly, `("time",
+    "time")` included, rather than being quietly narrower than the thing
+    it is modelled on.
     """
     import ast
     import inspect
@@ -344,9 +383,15 @@ def test_the_module_reads_no_server_clock_anywhere(monkeypatch):
         if not isinstance(node, ast.Call):
             continue
         fn = node.func
-        if isinstance(fn, ast.Attribute) and fn.attr in {"today", "now", "utcnow"}:
-            owner = fn.value
-            if isinstance(owner, ast.Name) and owner.id in {"date", "datetime", "time"}:
-                found.append(f"{owner.id}.{fn.attr}()")
+        if not isinstance(fn, ast.Attribute):
+            continue
+        owner = fn.value
+        if not isinstance(owner, ast.Name):
+            continue
+        if (owner.id, fn.attr) in {
+            ("date", "today"), ("datetime", "now"), ("datetime", "today"),
+            ("datetime", "utcnow"), ("time", "time"),
+        }:
+            found.append(f"{owner.id}.{fn.attr}()")
 
     assert found == [], f"server-clock reads left in grocery.py: {found}"

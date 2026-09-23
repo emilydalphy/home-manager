@@ -423,8 +423,9 @@ why*, not duplicating the diff.
   compared `date.today()` — the container's — against dates that come out of
   `plan_period`, i.e. days a planning period was written in, which are
   household-relative. The container runs UTC and households default to
-  `America/Toronto`, so the two are a different day for four hours of every
-  evening. **The function's own docstring is the specification it broke**:
+  `America/Toronto`, so the two are a different day for **four hours of
+  every evening in EDT and five in EST** — the same figure this log's
+  other household-clock entries give, said with both halves. **The function's own docstring is the specification it broke**:
   "a household that approves two weeks in advance is building next week's
   list, and asking them to keep-or-drop it would be asking about groceries
   nobody has had the chance to buy."
@@ -480,6 +481,49 @@ why*, not duplicating the diff.
     opening its own connection (1 red — the nesting guard), `_live_plan_ids`
     returning every plan (1), and the household clock 400 days in the past
     (5).
+  - **THE EAST-OF-THE-STORED-ZONE CAVEAT, which this entry did not carry
+    until review asked for it and which all three of its siblings do.**
+    `households.timezone` is `America/Toronto` for every household whether
+    they live there or not, and nothing in the app prompts a change. For a
+    household WEST of it this branch is strictly better (Vancouver: main
+    wrong seven hours a night, this wrong three). For one EAST of it —
+    a UK household still stored as Toronto — `set_aside` now errs the
+    OTHER way for a few hours a day: leftovers not set aside, i.e. the
+    quantity inflation. **Materially milder than the `refuses-the-past`
+    siblings**, and worth saying why rather than just asserting it: those
+    blocked a real action, this one only fails to ask a question; and
+    `_live_plan_ids` errs toward KEEPING lines for that population, which
+    is the safe direction for a blunt DELETE. The honest fix is still the
+    stored zone, which is its own larger question. Reasoned from the
+    mechanism, not measured — there is no real east-of-Toronto household
+    to measure.
+  - **A SECOND VACUOUS ASSERTION, found by review, in the test named for
+    the half with teeth — and it is the same mistake this entry already
+    records catching once.** `test_tonights_own_week_is_still_live...`
+    seeded ONE plan and called `clear_stale_grocery_items(
+    current_weekly_plan_id=None)`. With a single plan on file that
+    function resolves `current_id` through `get_weekly_plan()` to THAT
+    plan, which then lands in `live` and is spared whatever
+    `_live_plan_ids` said — so the delete assertion passed on main too,
+    and only the `_live_plan_ids` line above it was a real catch. The
+    CLAIM was true (the reviewer reproduced the delete in the two-plan
+    shape); the test just did not seed it. It seeds two plans now, which
+    is also the realistic shape — what a household has on the evening
+    they take the nudge to plan next week while this week still has a
+    night in it. **Proved non-vacuous rather than assumed:** with the
+    first assertion neutered so the second is reached, it fails against
+    main with the line genuinely gone.
+  - **The AST sweep was quietly narrower than the guard it is modelled
+    on, and its title is broader than its reach.** It now carries
+    `("time", "time")` like `test_last_clock_pockets.py`'s, and says in
+    its own docstring the two things it does NOT cover: the eight SQL
+    `datetime('now')` reads in this module (all UTC instants compared
+    against UTC instants — correct, and they must not be "fixed"), and a
+    module-qualified `_dt.date.today()` spelling, which walks straight
+    past an Attribute-owner check. That second limitation is INHERITED
+    from the established guard rather than introduced here, and it was
+    measured: reverting both reads that way leaves the sweep green and
+    only the four behaviour tests catch it.
   - **Numbers, read off the runs.** `TZ=America/Toronto` **6331 passed, 0
     failed**, and inside a VERIFIED `Pacific/Niue` straddle — Niue
     2026-09-22 against Toronto 2026-09-23, `date +%F` checked in both zones
