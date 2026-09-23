@@ -566,9 +566,21 @@ why*, not duplicating the diff.
     removed (1).
   - **Numbers, read off the runs.** `TZ=America/Toronto`, whole suite:
     **6352 passed, 0 failed**, against a measured **6322 passed, 0 failed**
-    on the merge base in the same zone — +30 is this file exactly, and no
-    existing test was changed, deleted or weakened (`git diff main --
-    tests/` is one new file).
+    on the merge base in the same zone — +30 is this file exactly, 6352
+    collected either way it is counted, and no existing test was changed,
+    deleted or weakened (`git diff main -- tests/` is one new file). The
+    four pinned CI jobs at the same zone: **monday 6349 / 3 skipped / 0
+    failed**, **friday 6347 / 5 / 0**, **saturday 6349 / 3 / 0**, **sunday
+    6349 / 3 / 0** — the skips are the self-skipping `live_clock` and
+    seeded-week families, which vary by the day the run lands on and are
+    not this branch's. And inside a VERIFIED `Pacific/Niue` straddle (Niue
+    2026-09-22 against Toronto 2026-09-23, `date +%F` in both zones before
+    AND after the run) the whole suite is **6352 passed, 0 failed** — the
+    number that matters, since `straddle` blocks. The new file alone is
+    green at all SEVEN weekday pins, in that straddle, and at
+    `Pacific/Kiritimati`, `Asia/Tokyo` and `UTC` (the last three
+    green-in-that-zone only: all three read Toronto's own date at the hour
+    they ran, so they are not straddle evidence and are not quoted as it).
   - **Not done, named rather than left to be found.** The component planner
     is untouched and folds nothing (its items are parts, not days). Nothing
     caps how many entries a week may come back as — the 21-slot audit is
