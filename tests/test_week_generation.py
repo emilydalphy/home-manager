@@ -458,7 +458,9 @@ def test_a_rush_night_reaches_the_generator_as_a_real_cap(recipe, stub_model):
     agent.generate_weekly_plan(week, intake_id=intake["intake_id"])
 
     assert seen["context"]["intake"]["night_tags"][wednesday] == ["rush"]
-    assert tools.RUSH_MAX_MINUTES == 20
+    # Emily, 2026-09-23: "Short on time" is 30 minutes or less, prep
+    # included (it was 20).
+    assert tools.RUSH_MAX_MINUTES == 30
 
 
 def test_an_unrushed_night_reaches_the_generator_and_the_quality_check(recipe, stub_model):
@@ -480,17 +482,20 @@ def test_an_unrushed_night_reaches_the_generator_and_the_quality_check(recipe, s
 
 def test_the_plate_pass_cap_is_lifted_by_an_unrushed_tag():
     """
-    _plate_minutes_cap is the number the side-dish pass hands its model.
-    Until now nothing tested it directly; the ordering (rush, then
-    unrushed, then the weeknight cap, then nothing) is the whole rule.
+    _meal_minutes_cap is the number the side-dish pass hands its model.
+    For a dinner the ordering (rush, then unrushed, then the weeknight
+    cap, then nothing) is the whole rule; since 2026-09-23 a rush night
+    with a LOWER weeknight cap keeps the lower one.
     """
     memory = {"weeknight_max_minutes": 30}
     tuesday, saturday = "2026-09-08", "2026-09-12"
-    assert agent._plate_minutes_cap(tuesday, {"night_tags": {}}, memory) == 30
-    assert agent._plate_minutes_cap(tuesday, {"night_tags": {tuesday: ["unrushed"]}}, memory) is None
-    assert agent._plate_minutes_cap(tuesday, {"night_tags": {tuesday: ["rush"]}}, memory) == tools.RUSH_MAX_MINUTES
-    assert agent._plate_minutes_cap(saturday, {"night_tags": {}}, memory) is None
-    assert agent._plate_minutes_cap(tuesday, None, {}) is None
+    cap = agent._meal_minutes_cap
+    assert cap(tuesday, "dinner", {"night_tags": {}}, memory) == 30
+    assert cap(tuesday, "dinner", {"night_tags": {tuesday: ["unrushed"]}}, memory) is None
+    assert cap(tuesday, "dinner", {"night_tags": {tuesday: ["rush"]}}, memory) == tools.RUSH_MAX_MINUTES
+    assert cap(tuesday, "dinner", {"night_tags": {tuesday: ["rush"]}}, {"weeknight_max_minutes": 15}) == 15
+    assert cap(saturday, "dinner", {"night_tags": {}}, memory) is None
+    assert cap(tuesday, "dinner", None, {}) is None
 
 
 def test_packed_lunch_days_reach_the_generator_without_unplanning_lunch(recipe, stub_model):

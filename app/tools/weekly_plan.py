@@ -17,6 +17,7 @@ from . import plates as _plates
 from . import plate_parts as _plate_parts_mod
 from . import recipes as _recipes
 from . import rhythm as _rhythm
+from . import time_caps as _time_caps
 from . import week_intake as _week_intake
 
 
@@ -444,9 +445,9 @@ def plan_slot_open(
 
     `open_reason` is a full sentence naming the CONSTRAINT that caused it,
     not an apology: "Wednesday I'd rather ask than guess: after Monday's
-    chili, everything I have under 20 minutes repeats something you've just
-    eaten." Naming the constraint is what makes the ask read as diligence
-    rather than failure.
+    chili, everything I have that takes 30 minutes or less repeats something
+    you've just eaten." Naming the constraint is what makes the ask read as
+    diligence rather than failure.
 
     An open slot is still a slot. What it must never be is absent — a
     silently missing slot is the bug this whole state exists to make
@@ -1865,9 +1866,10 @@ _LINKS_TO_ENTRY_ID_RE = re.compile(r"^entry_id:(\d+)$")
 # by the time this runs there's no real recipe recommendation behind any
 # of them, unlike the model's own open slots. "Takeout, don't plan it"
 # matches the exact phrase the generation schema already promises the
-# household for this kind of honest last resort.
+# household for this kind of honest last resort. "Something quick" says
+# the rush number, which is a dinner's (Emily, 2026-09-23: 30 minutes).
 _LEFTOVER_REPAIR_OPTIONS = [
-    {"label": "Something quick", "meta": "20 min or less"},
+    {"label": "Something quick", "meta": f"{_time_caps.RUSH_MAX_MINUTES} min or less"},
     {"label": "Cook something fresh", "meta": ""},
     {"label": "Takeout, don’t plan it", "meta": ""},
 ]

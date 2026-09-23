@@ -15671,6 +15671,25 @@ why*, not duplicating the diff.
   out and recounts from what it shows, so the same reminder never appears
   in two cards — the same rule Today's prep tile follows for defrost.
 
+- **Time caps are per meal, not per date; rush is 30, a weekday fresh lunch
+  is 20** (2026-09-23, Emily: "Short on time" is dinner in 30 minutes or
+  less, prep included; "if Im prepping chili for lunches, that's a great
+  meal to just reheat, but if Im cooking on the day, then it needs to be 20
+  mins or less"). Root cause of the old behaviour: every cap lookup was
+  keyed by DATE (agent `_plate_minutes_cap`, `swap_in_place._minutes_cap`),
+  so a lunch inherited that evening's dinner cap, and `rush` returned
+  before the weeknight cap was read, LOOSENING a stricter weeknight cap.
+  Now one helper, `tools/time_caps.minutes_cap(date, slot, tags, memory,
+  is_leftovers)`, read by the plate pass, the variety caps (per
+  `(date, slot)`; `caps_for_slot` still takes the old date-keyed dict), the
+  swap context and `cap_gate`, and plan_quality's new warn-only
+  `weekday_lunch_cap_respected`. Rules: dinner rush = min(30, weeknight cap
+  on Mon-Fri); lunch Mon-Fri = 20 unless either end of a leftovers chain
+  (`links_to` / `make_double_for`) or a `rhythm.prep_days` weekday; weekend
+  lunch, breakfast, snack = none. `RUSH_MAX_MINUTES` and
+  `WEEKDAY_LUNCH_MAX_MINUTES` live in `time_caps` (imports nothing from the
+  app) and are re-exported from `week_intake`.
+
 ## Deploying
 
 Push to `main` on GitHub; Railway auto-deploys from there. CI runs the smoke

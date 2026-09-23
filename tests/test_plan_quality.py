@@ -58,20 +58,20 @@ SUN = "2026-09-13"
 
 def test_rush_cap_fires_when_a_rush_night_runs_long():
     entries = [_entry(TUE, prep_time_minutes=15, cook_time_minutes=20)]  # 35 min
-    context = {"rush_max_minutes": 20, "rush_dates": {TUE}}
+    context = {"rush_max_minutes": 30, "rush_dates": {TUE}}
     violations = check_week(entries, context)
     assert "rush_cap_respected" in _rule_ids(violations)
 
 
 def test_rush_cap_does_not_fire_within_the_cap():
-    entries = [_entry(TUE, prep_time_minutes=5, cook_time_minutes=10)]  # 15 min
-    context = {"rush_max_minutes": 20, "rush_dates": {TUE}}
+    entries = [_entry(TUE, prep_time_minutes=10, cook_time_minutes=20)]  # 30 min: "or less"
+    context = {"rush_max_minutes": 30, "rush_dates": {TUE}}
     assert _rule_ids(check_week(entries, context)) == set()
 
 
 def test_rush_cap_ignores_a_night_that_was_never_tagged_rush():
     entries = [_entry(TUE, prep_time_minutes=30, cook_time_minutes=30)]
-    context = {"rush_max_minutes": 20, "rush_dates": set()}
+    context = {"rush_max_minutes": 30, "rush_dates": set()}
     assert "rush_cap_respected" not in _rule_ids(check_week(entries, context))
 
 
@@ -118,7 +118,7 @@ def test_weeknight_cap_defers_to_the_rush_check_on_a_rush_night():
     weeknight rule staying quiet about the same night isn't a miss, it's
     not double-counting the same violation under two rule names."""
     entries = [_entry(TUE, prep_time_minutes=90, cook_time_minutes=90)]
-    context = {"weeknight_max_minutes": 30, "rush_dates": {TUE}, "rush_max_minutes": 20}
+    context = {"weeknight_max_minutes": 45, "rush_dates": {TUE}, "rush_max_minutes": 30}
     assert "weeknight_cap_respected" not in _rule_ids(check_week(entries, context))
     assert "rush_cap_respected" in _rule_ids(check_week(entries, context))
 

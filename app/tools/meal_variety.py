@@ -72,6 +72,7 @@ import re
 from ..db import get_conn
 from ._shared import household_id
 from . import leftovers as _leftovers
+from . import time_caps as _time_caps
 from . import weekly_plan as _weekly_plan
 
 logger = logging.getLogger("home_manager")
@@ -346,14 +347,16 @@ def enforce_distinct_count(
     distinct breakfasts would spend real calls on a number nobody chose.
     `usual` and `day_count` are the household's full-week number and the
     period's length, for the repeat's line (repeat_reason); `caps` is
-    {date: max minutes or None} — a rush night, the weeknight cap — and a
-    repeat never lands on a night it is too long for.
+    the week's time caps — {(date, slot): max minutes or None}, read for
+    this slot through time_caps.caps_for_slot, which also takes the older
+    {date: minutes} shape — and a repeat never lands on a night it is too
+    long for.
     Returns {"before", "after", "replaced": [{"date", "dropped", "with"}],
     "added": [{"date", "dropped", "with"}]} and never raises: a plan with
     one dish too many is a far better outcome than a lost week, so any
     failure is logged and the plan is left as it stands.
     """
-    caps = caps or {}
+    caps = _time_caps.caps_for_slot(caps, slot)
     result = {"before": None, "after": None, "replaced": [], "added": [], "skipped": None}
     try:
         if not target or target <= 0:

@@ -67,6 +67,7 @@ from . import plates as _plates
 from . import plan_quality as _plan_quality
 from . import recipes as _recipes
 from . import taste_verdict as _taste_verdict
+from . import time_caps as _time_caps
 from . import week_intake as _week_intake
 from . import weekly_plan as _weekly_plan
 
@@ -259,24 +260,18 @@ def _other_dishes(weekly_plan_id: int, entry_id: int) -> list[str]:
     return lines
 
 
-def _minutes_cap(meal_date: str, tags: list[str], memory: dict) -> int | None:
+def _minutes_cap(entry: dict, tags: list[str], memory: dict) -> int | None:
     """
-    The real cap on this night's cooking, or None. Same order agent.py's
-    plate pass uses: a `rush` tag wins, an `unrushed` tag lifts the cap,
-    then the household's weeknight cap on a Monday-Friday. A weekend with
-    no rush tag has no cap, which is the truth rather than a number
-    invented to look precise.
+    The real cap on this meal's cooking, or None — time_caps.minutes_cap,
+    the same rule the generator's plate and variety passes use, for this
+    entry's own slot (Emily, 2026-09-23: a weekday lunch cooked that day is
+    20 minutes; a rush dinner 30). Either end of a leftovers chain — the
+    reheat (links_to) or the batch cook (make_double_for) — is not a cook
+    on the day, so it carries no lunch cap.
     """
-    if "rush" in tags:
-        return _week_intake.RUSH_MAX_MINUTES
-    if "unrushed" in tags:
-        return None
-    cap = memory.get("weeknight_max_minutes") or 0
-    try:
-        weekday = datetime.date.fromisoformat(meal_date).weekday()
-    except (TypeError, ValueError):
-        return None
-    return cap if (cap and weekday < 5) else None
+    derived = entry.get("derived_from") or {}
+    chained = bool(derived.get("links_to") or derived.get("make_double_for"))
+    return _time_caps.minutes_cap(entry["date"], entry.get("slot") or "dinner", tags, memory, is_leftovers=chained)
 
 
 def build_swap_context(weekly_plan_id: int, entry: dict, avoid: list[str] | None = None) -> dict:
@@ -325,7 +320,7 @@ def build_swap_context(weekly_plan_id: int, entry: dict, avoid: list[str] | None
         ),
         "table": table,
         "night_tags": tags,
-        "max_minutes": _minutes_cap(entry["date"], tags, memory),
+        "max_minutes": _minutes_cap(entry, tags, memory),
         "week_other_dishes": _other_dishes(weekly_plan_id, entry["entry_id"]),
     }
     taste = _taste_lines_for(entry["date"], entry["slot"], table)
@@ -893,10 +888,11 @@ def _night_tags_for(weekly_plan_id: int) -> dict:
 
 
 def day_caps(weekly_plan_id: int, entries: list[dict]) -> list[tuple[dict, int | None]]:
-    """Each day's own minutes cap (_minutes_cap), in `entries` order."""
+    """Each entry's own minutes cap (_minutes_cap, for its date AND slot),
+    in `entries` order."""
     memory = _memory.get_household_memory()
     tags_by_date = _night_tags_for(weekly_plan_id)
-    return [(e, _minutes_cap(e["date"], tags_by_date.get(e["date"]) or [], memory)) for e in entries]
+    return [(e, _minutes_cap(e, tags_by_date.get(e["date"]) or [], memory)) for e in entries]
 
 
 def build_dish_swap_context(weekly_plan_id: int, entries: list[dict], avoid: list[str] | None = None) -> dict:
@@ -982,7 +978,7 @@ def _pick_minutes(pick: dict) -> int | None:
 def cap_gate(weekly_plan_id: int, pick: dict, entries: list[dict]) -> str | None:
     """
     Why `pick` takes too long for one of `entries`, each held to its OWN
-    cap (a rush Friday is 20 minutes even when Thursday has none), or
+    cap (a rush Friday is 30 minutes even when Thursday has none), or
     None. A pick that says no minutes at all isn't refused on a guess.
     """
     minutes = _pick_minutes(pick)
