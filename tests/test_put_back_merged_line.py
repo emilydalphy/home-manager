@@ -70,6 +70,39 @@ from app.tools.grocery import _merge_key
 REPO = Path(__file__).resolve().parents[1]
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
 
+
+def _strip_js_comments(src: str) -> str:
+    """
+    Source with `//` and `/* */` removed, so a marker cannot be satisfied
+    by a comment that merely names the thing it is checking for.
+
+    Deliberately crude — it is not a JS parser and does not need to be.
+    It leaves string literals alone by only cutting at a `//` that is not
+    inside quotes on that line, which is enough for the one job here:
+    stopping a NAME in prose from standing in for a definition.
+    """
+    out = []
+    for line in src.splitlines():
+        quote = None
+        cut = len(line)
+        i = 0
+        while i < len(line) - 1:
+            ch = line[i]
+            if quote:
+                if ch == "\\":
+                    i += 2
+                    continue
+                if ch == quote:
+                    quote = None
+            elif ch in "\"'`":
+                quote = ch
+            elif ch == "/" and line[i + 1] == "/":
+                cut = i
+                break
+            i += 1
+        out.append(line[:cut])
+    return "\n".join(out)
+
 _needs_node = pytest.mark.skipif(
     shutil.which("node") is None,
     reason="node is needed to execute the shell's own functions",
@@ -362,8 +395,14 @@ def test_the_lookup_is_by_row_id_and_nothing_looks_a_line_up_by_typed_name():
     evidence. It is here because the whole bug was a second copy of a merge
     rule, and the cheapest way this comes back is somebody reaching for a
     by-name helper again."""
-    assert "function groLinesById(" in SHELL_JS
-    assert "groLineNamed" not in SHELL_JS
+    # Comment-stripped, the `_code_of` idiom this repo adopted on
+    # 2026-09-18 and again on 2026-09-21 after a marker was twice
+    # satisfied by prose that merely NAMED the thing it was checking for.
+    # This file's own prose above the function names it too, so the
+    # fail-open direction was real rather than theoretical.
+    code = _strip_js_comments(SHELL_JS)
+    assert "function groLinesById(" in code
+    assert "groLineNamed" not in code
 
 
 @_needs_node
@@ -431,10 +470,19 @@ def test_a_merge_only_ever_lands_on_a_line_still_to_buy():
 
 
 def test_what_the_household_saw_before_the_fix_and_what_they_see_now():
-    """CATCH, driven through the real tools rather than reasoned about:
-    the two paths Put back can take, over one merged line, and what each
-    leaves on the list. The remove is what main fired for these names —
-    3 that were already there, gone, silently."""
+    """DEMONSTRATION, not a catch — green on main, and relabelled after
+    review pointed out it was carrying a CATCH label it cannot earn.
+
+    It drives the real server tools and NO client code at all, so by
+    construction it cannot fail on this bug: it simply performs, by hand,
+    the two things Put back can ask the server to do, and shows what each
+    leaves on the list. That is worth keeping — it is the clearest
+    statement in this file of what the household actually lost — but it
+    proves nothing about the fix, and the file's own docstring promises
+    that every test says which it is.
+
+    What catches the bug is section 1, which runs the real `groAddLine`
+    and the real toast handler and asserts which requests the tap makes."""
     tools.add_grocery_item("Bell peppers", "3", "produce")
     merged = tools.add_grocery_item("Bell pepper", "2", "produce")
     assert [(r["item"], r["quantity"]) for r in tools.list_grocery_list()] == [("Bell peppers", "5")]

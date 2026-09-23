@@ -6279,10 +6279,27 @@
     });
   }
   // Every line on the phone's copy, by id — what each one reads NOW, so
-  // an undo can put it back. Bought and in-cart rows are in it as well:
-  // the server never merges into one (add_grocery_item only considers
-  // 'needed' and 'spice'), so a hit on one can only come from an id this
-  // copy is stale about, and that is an id a merge would never name.
+  // an undo can put it back. Bought and in-cart rows are in it as well,
+  // and the reason is narrower than the first version of this comment
+  // claimed. It said a hit on one "can only come from an id this copy is
+  // stale about, and that is an id a merge would never name" — which
+  // contradicts itself, because a hit means the merge DID name it. The
+  // honest version: add_grocery_item only merges into 'needed' and
+  // 'spice', so a row this copy shows as bought is normally not a target
+  // at all; the one way it becomes one is if it was un-ticked
+  // server-side since this copy was read, and that is a legitimate merge
+  // whose restore is harmless (un-ticking does not change the quantity).
+  //
+  // What this map does NOT hold is the other side of the same coin, and
+  // it is worth knowing before trusting a hit here to mean "not merged":
+  // SPICE rows live in groceryState.spices rather than in data.stores,
+  // and excluded and pre-shop-flagged rows are filtered out of the
+  // payload before the shell ever sees them. All three are valid merge
+  // targets on the server and none is in here, so all three take the
+  // no-Put-back branch below. That is the safe answer — nothing is
+  // destroyed, where main deleted the line in every one of those cases —
+  // but it is a deterministic, single-device path, not the cross-device
+  // race the branch below is described by.
   function groLinesById() {
     var data = groceryState.data;
     var out = {};
