@@ -415,6 +415,82 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-23 — A new sitting starts from an empty conversation, and a
+  sitting carries twelve turns rather than forty. Branch
+  `overnight/fresh-sitting-less-history`, NOT merged at the time of
+  writing.** Loop Board, Phase 0, High — item 2 of the 2026-09-21 cost
+  research. `SESSIONS` in `app/main.py` is memory-only and held up to
+  FORTY user turns per signed session ACROSS DAYS, until the server
+  happened to restart, and every turn re-sent all of it — tool results
+  included, and a tool result here is a whole week's plan as JSON.
+  Measured in production: about 15K tokens of history per turn on top of
+  the ~37K briefing, with chat the biggest line on the month's bill. A
+  question on Tuesday was paying to re-read Sunday's conversation.
+  - **Nothing the household told Pomona is lost, and that is the whole
+    reason this is safe rather than merely cheap.** Pomona's memory lives
+    in the DATABASE — held things, facts, preferences, the plan, the
+    taste record — and never in the transcript. What goes is the WORDING
+    of a previous sitting, so it will not say "like you mentioned
+    yesterday". A test asserts that against the real tables rather than
+    in prose, because "the memory is in the database" is exactly the kind
+    of sentence that stays true until somebody moves something into the
+    transcript.
+  - **The four-hour rule is not invented here.** It is the same
+    `_NEW_SITTING_GAP` that already decided whether to run the proactive
+    check — which is the same question ("are we starting something, or
+    carrying on?"), asked for a different purpose. Both answers now come
+    from ONE reading of the clock, so they can never disagree about it.
+  - **One helper, `_chat_session_state`, because both chat routes were
+    computing the same three lines each.** Two copies of one rule is this
+    codebase's named recurring bug generator, and the rule just grew a
+    consequence. A source test pins that the old inline form is gone and
+    that exactly two call sites ask the function.
+  - **Twelve is a COST number and forty never was.** Forty was chosen as a
+    memory-growth cap on a session that can run for ever, and as that it
+    was fine. Real sittings are a handful of turns; the long tail was days
+    of accumulation, which the reset now handles on its own. So twelve
+    changes nothing inside an ordinary conversation and governs only the
+    runaway case.
+  - **Item 3 of the card — stubbing tool results older than the last few
+    turns — is deliberately NOT built.** The card itself marks it
+    "optional, measure first", and with the reset in place the thing it
+    was for (a long sitting dragging every past plan payload along) is
+    much rarer. It wants a measurement against real traffic after this
+    lands, not a guess before it.
+  - `tests/test_fresh_sitting_less_history.py` (9). **Seven are red
+    against main's `app/` and that number is worth much less than it
+    looks: only TWO are red for the reason they are named after** — the
+    route marker (main really does inline the three lines twice) and the
+    twelve-turn cap (main really is 40). The other five die on
+    `AttributeError: _chat_session_state`, a name main has not got, which
+    is the only kind of red a new function can have. **The real evidence
+    is five mutations, every one run and every one biting:** history
+    always empty (2 red), the reset given its own 30-minute threshold (1),
+    the streaming route inlining it again (1), a literal in
+    `trim_conversation`'s default (1), and a cut one message PAST the turn
+    boundary (2).
+  - **ONE OF THOSE MUTATIONS WAS BADLY CHOSEN AT FIRST AND REDDENED
+    NOTHING, which is worth recording rather than quietly fixing.** The
+    boundary guard was to be pinned by "cut at a fixed offset instead of a
+    turn boundary" — and with four messages per turn the offset that
+    mutation computed happened to land on a boundary anyway, so the suite
+    stayed green. A mutation that misses by luck says nothing about the
+    test; it says the mutation was badly chosen. `boundaries[-max_turns]
+    + 1` bites, and that is what the docstring names now.
+  - **The tool_use/tool_result pairing guard is asserted at the NEW number
+    rather than inherited from the old one**, deliberately: lowering the
+    cap makes cutting far more frequent, and a cut in the wrong place
+    makes the Anthropic API reject every subsequent turn in that sitting.
+  - **Numbers, read off the run.** `TZ=America/Toronto` **6331 passed, 0
+    failed**, against a measured **6322** on the merge base — +9 is this
+    one new test file exactly, and no existing test was changed, deleted
+    or weakened.
+  - **Not measured, and it is the card's own fourth criterion:** the
+    cache-write tokens per turn actually falling. That needs real traffic
+    through a real key, which the overnight sandbox has not got. The
+    mechanism is certain (less history is sent) and the SIZE of the win is
+    not measured here.
+
 - **2026-09-22 — `main` was red on five weekdays out of seven, and TWO of the
   four pinned CI jobs — `clock (friday)` and `clock (sunday)` — were red on
   EVERY push. Branch
