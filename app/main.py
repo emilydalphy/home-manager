@@ -5677,7 +5677,11 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
                 if name == "hold_thing" and not result.get("held"):
                     continue
                 by_category["held"] = ChatAction(
-                    kicker="Holding" if name == "hold_thing" else "Done with this",
+                    # "Done", not "Done with this": the held row's own button
+                    # lost that phrase in the 2026-09-23 copy sweep (finding
+                    # 27), and this chip is the same action on another
+                    # surface — the sweep's finding named only the button.
+                    kicker="Holding" if name == "hold_thing" else "Done",
                     change=(words[:57] + "...") if len(words) > 60 else (words or "One thing"),
                     tab=None, href="/memory", held=True,
                 )
