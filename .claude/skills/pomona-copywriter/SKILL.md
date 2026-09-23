@@ -27,30 +27,38 @@ Cut first, then voice. Warmth added to a bloated line is still a bloated line.
 2. **Write the plainest true version.** The answer, not the question. The fact, not the feature.
 3. **Delete anything that survives removal.** Read each word. If the line loses nothing without it, it was never doing anything. Whole lines too — an empty slot is a fine outcome.
    Two things that look like filler and aren't: **orientation** ("To use it, open Plan…" — the lead-in tells the reader what the next sentence is for) and **manners** (a greeting, a thanks, a sign-off). Plain is the goal, not bare. Cut decoration, keep the connective tissue a person would say.
+   Orientation points the reader at what they do next. It is not a report on what I just filed away — "I'll remember T&T for it next time" is the narrating *I*, not orientation, and it goes. See rule 2.
 4. **Then make it human.** Contractions, kitchen-table phrasing, one breath per sentence.
 5. **Read it aloud.** If you'd pause for air, split it. If you wouldn't say it to a friend across the table, rewrite it.
 
-Three failures that shipped before Emily caught them, so check for them by name:
+Four failures that shipped before Emily caught them, so check for them by name:
 
 - **Restating the screen** — a subtitle that says in a sentence what the list below already shows.
 - **Filling a slot** — copy written because the template has a place for it.
 - **Explaining the label** — a line under "Approve and build my list" saying that approving builds the list.
+- **Narrating myself** (2026-09-22) — telling the reader what I'm about to remember, or wrapping an action in a phrase instead of naming it. Rule 2 has the four shapes it takes.
 
 ## The rules
 
 1. **Clear beats warm, every time.** If the reader has to work out what's being asked, the line failed, however nicely it reads. Ask the plain question. Her rewrite of a muddled ask: *"Do you want to batch cook this? Which meals should be included?"* — question, then the choice, nothing decorative between.
-2. **Their life, not the app's features.** "The shopping", not "grocery list management". "The what-are-we-eating-tonight", not "meal decisions".
-3. **Kitchen-table phrasing.** "My whole job is to take the mental load off you" — not "Pomona plans meals, manages groceries and tracks inventory."
-4. **Contractions, always.** I'm, you'll, nothing's, isn't. A line without one reads like a manual.
-5. **Short sentences. One breath each.**
-6. **Warm words over clever ones.** Playful lives in the rhythm, not in jokes. "Nice to meet you" beats a pun. Never a wink, never a joke at the reader's expense, never deadpan.
-7. **Never a dashboard label.** No "Get started", "Set up your profile", "Features", "Action required", "Task assigned".
-8. **Only what's true right now.** Never promise a feature that doesn't exist or pre-announce what's coming. If a brief asks for it, write the true version and flag the gap in one line.
-9. **Calm in trouble.** Errors and problems: state it plainly, pair it with the way out in the same breath, no exclamation marks, no "Oops". Keep stakes low and reversible where true ("nothing lost", "easy to change back").
-10. **Time as a person says it.** "On the table by a quarter past seven", not "Est. ready 7:15 PM".
-11. **Name the person when there is one.** "Trash night — Jamie's turn." The house has people in it.
-12. **One exclamation mark or emoji per screen at most, in the app.** Most screens: none. Never in error copy. (Emily's own emails: see "Who's talking".)
-13. **"Passphrase", never "password." The app is Pomona**, in every user-facing line.
+2. **A button says the action. A toast says what happened. Nothing announces what I was going to do anyway.** Ranks with rule 1, and for the same reason. (Emily, 2026-09-22: *"Can we make sure that copy throughout is more straight forward like this. I don't like the AI written style."*) This is a sharpening, not a reversal — the warmth stays. What goes is the narrating *I*: lines where I explain what I'm about to remember, soften an action into a phrase, or say back what the screen already shows. Four ways it creeps in, with the real lines she caught:
+   - **Announcing memory.** "I'll remember T&T for it next time. Change it any time from the row's ⋯ menu." → cut. The remembering stays; the announcement goes. If a choice is being kept, the person meets it again where it's used — that's the proof, not a sentence about the filing.
+   - **A euphemism where a verb belongs.** "Drop it" → "Remove from list". "Put back" → "Undo". "Buy it anyway" → "Still need to buy". A button is the verb for what it does, said the way a person would say it out loud. Not a mood, not a phrase.
+   - **A generic confirmation where the thing has a name.** "Changes saved" → "Carrots was added". If the app knows which item, the toast says which item.
+   - **A helper line restating the controls under it.** The buttons are right there and they already say what they do. Delete the line.
+3. **The house toast pattern: `<thing> was <verbed>`.** "Carrots was added." "T&T was saved." "Two items were moved." One clause, names the thing, past tense, no second sentence. The action beside it is the plain verb — **`Undo`**, never "Put back". If a toast can't name the thing it's confirming, the app doesn't know enough to be popping a toast.
+4. **Their life, not the app's features.** "The shopping", not "grocery list management". "The what-are-we-eating-tonight", not "meal decisions".
+5. **Kitchen-table phrasing.** "My whole job is to take the mental load off you" — not "Pomona plans meals, manages groceries and tracks inventory."
+6. **Contractions, always.** I'm, you'll, nothing's, isn't. A line without one reads like a manual.
+7. **Short sentences. One breath each.**
+8. **Warm words over clever ones.** Playful lives in the rhythm, not in jokes. "Nice to meet you" beats a pun. Never a wink, never a joke at the reader's expense, never deadpan.
+9. **Never a dashboard label.** No "Get started", "Set up your profile", "Features", "Action required", "Task assigned".
+10. **Only what's true right now.** Never promise a feature that doesn't exist or pre-announce what's coming. If a brief asks for it, write the true version and flag the gap in one line.
+11. **Calm in trouble.** Errors and problems: state it plainly, pair it with the way out in the same breath, no exclamation marks, no "Oops". Keep stakes low and reversible where true ("nothing lost", "easy to change back").
+12. **Time as a person says it.** "On the table by a quarter past seven", not "Est. ready 7:15 PM".
+13. **Name the person when there is one.** "Trash night — Jamie's turn." The house has people in it.
+14. **One exclamation mark or emoji per screen at most, in the app.** Most screens: none. Never in error copy. (Emily's own emails: see "Who's talking".)
+15. **"Passphrase", never "password." The app is Pomona**, in every user-facing line.
 
 ## Words that never earn their place
 
@@ -69,7 +77,7 @@ Also cut: any adjective the reader can't check ("delicious", "amazing", "intuiti
 - Match the register of the place it lives: a button is two or three words; a push notification is one breath and states what happened; an empty state says what's true and what one thing they can do; an email gets a subject line and one ask.
 - US spelling ("favorite", "color") — Emily's call, 2026-09-17. Don't ask again.
 
-Before sending, run the checklist once: four words · every word earns its place · clear beats warm · contractions · one breath · nothing promised · no dashboard labels · calm if it's trouble.
+Before sending, run the checklist once: four words · every word earns its place · clear beats warm · buttons are verbs, toasts name the thing, nothing announced · contractions · one breath · nothing promised · no dashboard labels · calm if it's trouble.
 
 ## Calibration
 
@@ -87,6 +95,11 @@ Her own edits are the reference. When in doubt, pick the plainer one.
 | "All required ingredients available" | "All in the fridge" | The answer, not the report |
 | "Open Plan, tap "Draft next week"…" (bare) | "To use it, open Plan, tap "Draft next week"…" | Orientation isn't fluff |
 | "Even 'it was fine' helps." / "Emily" | "Even 'it was fine' helps!" / "Thanks, Emily" | Her voice in an email: energy and manners stay |
+| "Buy it anyway" | "Still need to buy" | A button is the verb for what it does (2026-09-22) |
+| "Drop it" | "Remove from list" | Euphemism where a verb belongs |
+| "Put back" | "Undo" | The plain verb, not a phrase — the house word for reversing a toast |
+| "Changes saved" | "Carrots was added" | The app knew the item; the toast should say it |
+| "I'll remember T&T for it next time. Change it any time from the row's ⋯ menu." | cut | Announcing what I was going to do anyway — the remembering stays, the sentence goes |
 
 Three more, written to the rules:
 
