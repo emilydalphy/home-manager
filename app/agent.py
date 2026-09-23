@@ -2888,13 +2888,21 @@ class GeneratedDays(list):
 
 # ---------- one entry, several dates ----------
 # Production measured 2026-09-21: the menu call took 36-39s at medium
-# effort and wrote 4,800-5,900 output tokens for a 35-slot week. Recipes
-# were already out of it, so what is left is the bookkeeping — roughly
-# 150 tokens of date/slot/derived_from/tags/food_groups/cuisine/protein/
-# minutes/dish_note/reasoning per slot, 35 times over. Most of those 35
-# slots are not 35 decisions: the prompt has always asked for the same
+# effort and wrote 4,800-5,900 output tokens for a 35-slot week — about
+# 150 a slot. Recipes were already out of it, so what is left is
+# date/slot/derived_from/tags/food_groups/cuisine/protein/minutes/
+# dish_note/reasoning, written out 35 times over. Most of those 35 slots
+# are not 35 decisions: the prompt has always asked for the same
 # breakfast, lunch or snack idea to repeat two or three times across the
 # week, and every repeat was being written out again in full.
+#
+# Be precise about which half of that 150 this touches, because the two
+# get confused: measured here, the JSON of one realistic 35-slot week is
+# ~2,530 output tokens (chars/4) unfolded and ~1,140 folded — so roughly
+# 72 tokens a slot is the writing, and the rest of the 150 is the model's
+# thinking, which folding does not touch at all. Estimated against
+# production's midpoint that is about a quarter off the whole call, not
+# the 55% the payload alone drops by.
 #
 # So an entry may now name several `dates` and be written once. Dinners
 # are deliberately NOT folded in the prompt — they carry the week's shape,
