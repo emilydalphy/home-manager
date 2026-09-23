@@ -3,7 +3,9 @@ one branch (intake-design-2026-09-21), all in static/plan-week.html:
 
 1. Which days? — pick the start, then tap the days (board D1). The default
    is the household's horizon from the chosen start, never five days
-   assumed; the tiles are toggles that drop a day.
+   assumed; the tiles are toggles that drop a day. (Replaced 2026-09-22 by
+   Emily's calendar range — tests/test_which_days_calendar_2026_09_22.py;
+   what survives of this item is pinned below.)
 2. Lunches on the go (board D2): "travels well", and a "Nothing on the go"
    pill under the day chips instead of the quiet line.
 3. Building — "Got it", condensed and human (board D3, with her change:
@@ -74,7 +76,7 @@ def _node(script: str, today: str = "2026-09-21") -> str:
         f"static now() {{ return new _RealDate('{today}T09:00:00').getTime(); }} }}\n"
         "Date = _Pinned;\n"
         "function esc(s) { return String(s == null ? '' : s); }\n"
-        + _var("START_COPY") + _var("SURPRISE_MOOD") + _var("PERIOD_MAX_DAYS") + _var("PERIOD_STRIP_DAYS")
+        + _var("RANGE_COPY") + _var("SURPRISE_MOOD") + _var("PERIOD_MAX_DAYS") + _var("PERIOD_STRIP_DAYS")
         + _var("USING_ICONS") + _var("USING_DAY_PHRASES")
         + _date_helpers() + "\n"
         + script
@@ -84,126 +86,56 @@ def _node(script: str, today: str = "2026-09-21") -> str:
     return res.stdout.strip()
 
 
-# The range card, driven: a Monday, a seven-day horizon, no picker open.
-# The strip is a stand-in that keeps the tiles' classes and aria-pressed.
-def _card_harness(taps: list[str], start: str = "2026-09-21", count: int = 7) -> str:
-    return (
-        f"var weekStart = '{start}'; var dayCount = {count}; var horizon = 7; var who = '';\n"
-        "var pick = { start: '', end: '' }; var picking = false; var pickTapped = false;\n"
-        "function paintCta() {} function renderStartChips() {}\n"
-        "function choosePeriod(s, n) { weekStart = s; dayCount = n; }\n"
-        "var tiles = [];\n"
-        "var strip = { classList: { toggle: function () {} }, scrollLeft: 0, clientWidth: 300, _html: '',\n"
-        "  set innerHTML(h) { this._html = h; tiles = (h.match(/<button[^>]*>/g) || []).map(function (tag) {\n"
-        "    return { tag: tag, dataset: { day: /data-day=\"([^\"]+)\"/.exec(tag)[1] }, offsetLeft: 0, offsetWidth: 48, addEventListener: function () {} }; }); },\n"
-        "  get innerHTML() { return this._html; },\n"
-        "  querySelectorAll: function () { return tiles; } };\n"
-        "var els = { 'range-strip': strip, 'range-hint': { hidden: true, textContent: '' },\n"
-        "  'range-words': { textContent: '' }, 'range-count': { textContent: '' } };\n"
-        "function $(id) { return els[id]; }\n"
-        + "\n".join(_extract(n) for n in ("droppedList", "periodDays", "keptDays", "toggleDay", "keepDroppedInRange", "pickDay", "renderRangeCard")) + "\n"
-        + "var dropped = {}; var droppedTouched = false;\n"
-        + "renderRangeCard();\n"
-        + "".join(f"toggleDay('{d}');\n" for d in taps)
-        + "console.log(JSON.stringify({ words: els['range-words'].textContent, count: els['range-count'].textContent,\n"
-        + "  tiles: tiles.map(function (t) { return { day: t.dataset.day, on: /\\bon\\b/.test(t.tag), off: /\\boff\\b/.test(t.tag), pressed: /aria-pressed=\"true\"/.test(t.tag), today: /\\btoday\\b/.test(t.tag) }; }),\n"
-        + "  dropped: droppedList(), touched: droppedTouched }));\n"
-    )
-
-
 # ==========================================================================
 # 1. Which days? — pick the start, then tap the days (board D1)
 # ==========================================================================
 
 class TestWhichDays:
-    def test_the_heading_the_line_and_the_chips(self):
+    # The chips, the drop-a-day toggles and "tap a day to drop it" this
+    # class pinned went on 2026-09-22 (Emily: "tapping a day DROPS it —
+    # the opposite of every calendar"). Their replacements are pinned in
+    # tests/test_which_days_calendar_2026_09_22.py; what still holds of
+    # board D1 is below.
+
+    def test_the_heading_and_the_line(self):
         q1 = _section("q1")
         assert "<h1>Which days?</h1>" in q1
-        assert "Tap where to start, then the days you want me to plan." in q1
+        assert "Tap the first day, then the last." in q1
         assert "Starting when?" not in q1
-        assert "today: 'Today', tomorrow: 'Tomorrow', pick: 'Pick a date'" in PAGE
-        assert "drop: 'tap a day to drop it'" in PAGE
-        # The tiles are buttons with a pressed state; a dropped one is
-        # dashed and faded.
-        assert ".dt.off { opacity: .45; border-style: dashed;" in PAGE
-        assert "pressed = ' aria-pressed=\"' + (dropped[d] ? 'false' : 'true') + '\"';" in _extract("renderRangeCard")
+        shown = re.sub(r"//[^\n]*|/\*[\s\S]*?\*/|<!--[\s\S]*?-->", "", PAGE)
+        assert "drop it" not in shown
+        assert ".dt.off" not in PAGE
 
-    @_needs_node
-    def test_the_default_is_the_whole_horizon_from_the_start_never_five_days(self):
-        """Emily's one condition: "confirming it's not going to assume 5
-        days off the bat?" Seven tiles, all on, from today."""
-        got = json.loads(_node(_card_harness([])))
-        assert got["words"] == "Mon 21 → Sun 27"
-        assert got["count"] == "7 days · tap a day to drop it"
-        assert [t["day"] for t in got["tiles"]] == [f"2026-09-{d}" for d in range(21, 28)]
-        assert all(t["on"] and t["pressed"] and not t["off"] for t in got["tiles"])
-        assert got["tiles"][0]["today"] and not got["tiles"][1]["today"]
-        assert got["dropped"] == [] and got["touched"] is False
-        # An as-we-go household: three, from the same start.
-        three = json.loads(_node(_card_harness([], count=3)))
-        assert three["words"] == "Mon 21 → Wed 23" and three["count"] == "3 days · tap a day to drop it"
-
-    @_needs_node
-    def test_tapping_a_day_drops_it_and_the_words_follow(self):
-        got = json.loads(_node(_card_harness(["2026-09-26", "2026-09-27"])))
-        assert got["words"] == "Mon 21 → Fri 25"
-        assert got["count"] == "5 days · tap a day to drop it"
-        by = {t["day"]: t for t in got["tiles"]}
-        assert by["2026-09-26"]["off"] and not by["2026-09-26"]["pressed"] and not by["2026-09-26"]["on"]
-        assert by["2026-09-27"]["off"]
-        assert by["2026-09-25"]["on"] and by["2026-09-25"]["pressed"]
-        assert got["dropped"] == ["2026-09-26", "2026-09-27"] and got["touched"] is True
-        # A day in the middle: the ends stay, the count drops.
-        mid = json.loads(_node(_card_harness(["2026-09-23"])))
-        assert mid["words"] == "Mon 21 → Sun 27" and mid["count"] == "6 days · tap a day to drop it"
-        # Dropping the first day moves where the range starts.
-        first = json.loads(_node(_card_harness(["2026-09-21"])))
-        assert first["words"] == "Tue 22 → Sun 27"
-
-    @_needs_node
-    def test_tapping_again_brings_it_back_and_one_day_always_stays(self):
-        back = json.loads(_node(_card_harness(["2026-09-26", "2026-09-26"])))
-        assert back["dropped"] == [] and back["count"] == "7 days · tap a day to drop it"
-        every = json.loads(_node(_card_harness([f"2026-09-{d}" for d in range(21, 28)])))
-        assert every["dropped"] == [f"2026-09-{d}" for d in range(21, 27)]
-        # One day left: no arrow to itself, no hint (nothing more to drop).
-        assert every["words"] == "Sun 27" and every["count"] == "1 day"
-
-    def test_a_new_start_clears_the_drops_and_a_finished_pick_shows_the_range_as_toggles(self):
-        chooser = _extract("chooseStartKey")
-        assert "dropped = {};" in chooser
-        pick_day = _extract("pickDay")
-        assert "picking = false;" in pick_day and "dropped = {};" in pick_day and "renderStartChips();" in pick_day
-        strip = _extract("renderRangeCard")
-        assert "if (picking) pickDay(b.dataset.day); else toggleDay(b.dataset.day);" in strip
-
-    def test_the_drops_are_saved_with_the_intake_only_when_they_changed(self):
+    def test_the_old_screens_drops_are_cleared_by_the_first_continue(self):
+        # The intake still carries skipped_days (the server is untouched);
+        # this step sends none, and writes only when an older screen had
+        # saved some — the empty set over them.
+        assert "function droppedList() { return []; }" in PAGE
         save = _extract("saveStep")
         assert "if (n === 1) {" in save
         assert "if (skipped.join(',') === skippedAtLoad) return null;" in save
         assert "saveIntake({ skipped_days: skipped })" in save
         adv = _extract("advance")
         assert "await saveStep(1);" in adv
-        # Leaving carries them too, and Back never loses them.
+        # Leaving carries them too (the empty set), and Back never loses them.
         assert "skipped_days: droppedList()" in _extract("leavePayload")
         assert "droppedList().join(',')" in _extract("answersSnapshot")
-        # A Re-plan opens with the saved drops, unless the tiles were tapped first.
         fetch = _extract("fetchPeriod")
-        assert "if (!droppedTouched) {" in fetch
-        assert "savedSkipped.forEach(function (d) { dropped[d] = true; });" in fetch
         assert "skippedAtLoad = savedSkipped.join(',');" in fetch
+        assert "dropped[" not in fetch
 
     def test_the_later_steps_show_only_the_days_being_planned(self):
         # The strip on step 2, the lunch chips on step 3, the away sheet,
         # the holiday cards, the count behind "Nothing different", and the
         # drafting line all read the kept days.
-        assert "return ((data && data.days) || []).filter(function (day) { return !dropped[day.date]; });" in _extract("plannedDays")
+        # Every day of the period since 2026-09-22 — nothing is dropped.
+        assert "return (data && data.days) || [];" in _extract("plannedDays")
         assert "$('day-tiles').innerHTML = plannedDays().map(function (day) {" in _extract("renderDays")
         assert "plannedDays().forEach(function (day) {" in _extract("paintTiles")
         assert "$('lunch-days').innerHTML = plannedDays().map(function (day) {" in _extract("renderLunchDays")
         assert "var days = plannedDays().map(function (d) { return d.date; });" in _extract("openAwaySheet")
         assert "var days = plannedDays();" in _extract("buildAwaySheet")
-        assert "filter(function (h) { return !dropped[h.date]; })" in _extract("renderHolidayBlocks")
+        assert "host.innerHTML = ((data && data.holidays) || []).map(holidayBlockHtml).join('');" in _extract("renderHolidayBlocks")
         assert "plannedDays().filter(function (day) { return !!dayNoteFor(day, true); })" in _extract("paintCta")
         show = _extract("showDraftProgress")
         assert "var kept = plannedDays().map(function (d) { return d.date; });" in show

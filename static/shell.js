@@ -15464,10 +15464,13 @@
     confirm: 'Plan these days'
   };
 
-  // How far past today the strip runs — about three weeks, which is as far
-  // ahead as anyone has been observed to plan and still short enough to
-  // scroll by thumb.
-  var PERIOD_STRIP_DAYS = 21;
+  // How far past today the strip runs. It was 21 — about three weeks, as
+  // far ahead as anyone had been observed to plan. Since 2026-09-22 it is
+  // the whole 28-day ceiling, in step with plan-week.html's "Which days?"
+  // strip (Emily's calendar-range decision that day): a strip shorter
+  // than the longest range it can pick means a 28-day range can't be
+  // tapped out on it.
+  var PERIOD_STRIP_DAYS = 28;
   // The ceiling on a range, and it is not a design choice: /plan-week
   // clamps its `days` parameter to 1..28 (see static/plan-week.html), so a
   // longer range would arrive there silently shortened. Enforced here so

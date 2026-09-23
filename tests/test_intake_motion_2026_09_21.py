@@ -85,7 +85,7 @@ def _node(script: str, today: str = "2026-09-20") -> str:
         f"static now() {{ return new _RealDate('{today}T09:00:00').getTime(); }} }}\n"
         "Date = _Pinned;\n"
         "function esc(s) { return String(s == null ? '' : s); }\n"
-        + _var("START_COPY") + _var("SURPRISE_MOOD") + _var("PERIOD_MAX_DAYS") + _var("USING_ICONS") + _var("USING_DAY_PHRASES")
+        + _var("RANGE_COPY") + _var("SURPRISE_MOOD") + _var("PERIOD_MAX_DAYS") + _var("USING_ICONS") + _var("USING_DAY_PHRASES")
         + _date_helpers() + "\n"
         + script
     )
@@ -207,7 +207,7 @@ class TestOneQuestionAScreen:
     def test_copy_passes_the_seven_rules(self):
         # Contractions, always; no dashboard labels; nothing restating the chips.
         for line in (
-            "Tap where to start, then the days you want me to plan.",
+            "Tap the first day, then the last.",
             "I&rsquo;ll keep those to food that travels well.",
             "I&rsquo;ll pick from what you like and keep the week varied.",
             "No need to wait &mdash; the draft lands on Plan when it&rsquo;s done.",
@@ -225,38 +225,23 @@ class TestOneQuestionAScreen:
 # ==========================================================================
 
 class TestStartingWhen:
-    def test_the_first_screen_is_which_days_with_three_chips_and_the_range_card(self):
+    def test_the_first_screen_is_which_days_with_one_strip_and_no_chips(self):
+        # The Today / Tomorrow / Pick a date chips went on 2026-09-22
+        # (Emily: a second control on top of the strip); the range card is
+        # the whole step. tests/test_which_days_calendar_2026_09_22.py has
+        # the rest.
         q1 = _section("q1")
-        assert q1.index("<h1>Which days?</h1>") < q1.index('id="start-chips"') < q1.index('id="range-card"')
+        assert q1.index("<h1>Which days?</h1>") < q1.index('id="range-card"')
+        assert 'id="start-chips"' not in q1
         assert 'id="range-words"' in q1 and 'id="range-strip"' in q1
         # The "Yesterday's already eaten" line under the strip went on
         # 2026-09-21 (Emily's call); the rule behind it (clampStart) stays.
         assert "already eaten" not in q1
-        assert "today: 'Today', tomorrow: 'Tomorrow', pick: 'Pick a date'" in PAGE
+        shown = re.sub(r"//[^\n]*|/\*[\s\S]*?\*/|<!--[\s\S]*?-->", "", PAGE)
+        assert "Pick a date" not in shown
         # Today is outlined in apricot, and says so in a word (S6).
         assert ".dt.today { outline: 2px solid var(--apricot);" in PAGE
         assert "var dow = d === today ? 'Today' : weekdayName(d, 'short');" in PAGE
-
-    @_needs_node
-    def test_today_is_selected_by_default_and_the_chips_name_real_days(self):
-        out = _node(
-            _extract("startOptions") + "\n"
-            "console.log(JSON.stringify(startOptions('2026-09-20', 7, '2026-09-20', 7)));",
-        )
-        opts = json.loads(out)
-        assert opts["chosen"] == "today"
-        assert [o["label"] for o in opts["options"]] == ["Today · Sun 20", "Tomorrow · Mon 21", "Pick a date"]
-        assert opts["options"][0]["start"] == "2026-09-20" and opts["options"][0]["days"] == 7
-        assert opts["options"][1]["start"] == "2026-09-21"
-
-    @_needs_node
-    def test_tomorrow_and_a_custom_range_select_their_own_chip(self):
-        fn = _extract("startOptions")
-        assert json.loads(_node(fn + "\nconsole.log(JSON.stringify(startOptions('2026-09-20', 7, '2026-09-21', 7)));"))["chosen"] == "tomorrow"
-        assert json.loads(_node(fn + "\nconsole.log(JSON.stringify(startOptions('2026-09-20', 7, '2026-09-26', 7)));"))["chosen"] == "pick"
-        # The household's horizon, not always seven: an as-we-go household.
-        opts = json.loads(_node(fn + "\nconsole.log(JSON.stringify(startOptions('2026-09-20', 3, '2026-09-20', 3)));"))
-        assert opts["chosen"] == "today" and opts["options"][0]["days"] == 3
 
     @_needs_node
     def test_a_start_before_today_becomes_today_whichever_door_it_came_through(self):
@@ -271,58 +256,18 @@ class TestStartingWhen:
     def test_the_range_reads_in_words_with_its_day_count(self):
         assert _node("console.log(dayLabel('2026-09-20') + ' → ' + dayLabel('2026-09-26'));") == "Sun 20 → Sat 26"
         assert _node("console.log(periodRangeLabel('2026-09-20', 7));") == "Sep 20–26"
-        # "· tap a day to drop it" beside the count since board D1 (2026-09-21).
-        assert "$('range-count').textContent = count + (count === 1 ? ' day' : ' days') + (picking || count === 1 ? '' : ' · ' + START_COPY.drop);" in PAGE
+        # Just the count since 2026-09-22 — "· tap a day to drop it" went
+        # with the dropping; half a range says what's missing instead.
+        assert "$('range-count').textContent = range.end ? count + (count === 1 ? ' day' : ' days') : RANGE_COPY.lastDay;" in PAGE
 
-    def test_pick_my_own_days_opens_the_picker_in_place(self):
-        pick = _extract("chooseStartKey")
-        assert "picking = true;" in pick
-        strip = _extract("renderRangeCard")
-        assert "PERIOD_STRIP_DAYS" in strip and "hintBoth" in strip
-        assert "var PERIOD_STRIP_DAYS = 21;" in PAGE and "var PERIOD_MAX_DAYS = 28;" in PAGE
-        assert "if (step === 1) $('cta').disabled = picking && !pick.end;" in _extract("paintCta")
-        pick_day = _extract("pickDay")
-        assert "choosePeriod(pick.start, daysBetween(pick.start, pick.end) + 1);" in pick_day
-        # A finished pick closes the strip: the range shows as the days to
-        # keep or drop (board D1).
-        assert "picking = false;" in pick_day
-
-    @_needs_node
-    def test_the_picker_opens_showing_today_and_scrolls_only_to_what_was_tapped(self):
-        """Verification find (2026-09-21): opening the picker scrolled the
-        strip to the range's far end, which put today — the first tappable
-        day — off-screen. Runs renderRangeCard against a strip narrower than
-        the range, before and after a tap."""
-        harness = (
-            "var weekStart = '2026-09-20'; var dayCount = 7; var horizon = 7; var who = '';\n"
-            + _var("PERIOD_STRIP_DAYS") +
-            "var pick = { start: '', end: '' }; var picking = false; var pickTapped = false;\n"
-            "function paintCta() {}\n"
-            "function choosePeriod(s, n) { weekStart = s; dayCount = n; }\n"
-            "var tiles = [];\n"
-            "var strip = { classList: { toggle: function () {} }, scrollLeft: 999, clientWidth: 300, _html: '',\n"
-            "  set innerHTML(h) { this._html = h; tiles = (h.match(/data-day=\"[^\"]+\"/g) || []).map(function (m, i) {\n"
-            "    return { dataset: { day: m.slice(10, -1) }, offsetLeft: i * 50, offsetWidth: 48, addEventListener: function () {} }; }); },\n"
-            "  get innerHTML() { return this._html; },\n"
-            "  querySelectorAll: function (sel) { if (sel === 'button[data-day]') return tiles;\n"
-            "    var on = (this._html.match(/class=\"dt( [^\"]*)?\"/g) || []);\n"
-            "    return tiles.filter(function (t, i) { return /\\bon\\b/.test(on[i]); }); } };\n"
-            "var els = { 'range-strip': strip, 'range-hint': { hidden: true, textContent: '' },\n"
-            "  'range-words': { textContent: '' }, 'range-count': { textContent: '' } };\n"
-            "function $(id) { return els[id]; }\n"
-            + _extract("chooseStartKey") + "\n" + _extract("pickDay") + "\n" + _extract("renderRangeCard") + "\n"
-            + "function renderStartChips() {}\n"
-            + "chooseStartKey('pick', { options: [{ key: 'pick', start: weekStart, days: dayCount }] });\n"
-            + "var opened = strip.scrollLeft;\n"
-            + "pickDay('2026-10-05');\n"
-            + "console.log(JSON.stringify({ opened: opened, afterTap: strip.scrollLeft, picking: picking }));\n"
-        )
-        got = json.loads(_node(harness))
-        assert got["picking"] is True
-        # On open: the start of the strip, where today is.
-        assert got["opened"] == 0
-        # After a tap on a day past the edge: scrolled so that day shows.
-        assert got["afterTap"] > 0
+    def test_the_strip_is_the_picker(self):
+        # No picker to open since 2026-09-22: the step's one strip runs to
+        # the 28-day ceiling and a finished range is the period at once.
+        # (The scroll behaviour this class used to pin for the old picker
+        # is pinned for the strip in test_which_days_calendar_2026_09_22.)
+        assert "var PERIOD_STRIP_DAYS = 28;" in PAGE and "var PERIOD_MAX_DAYS = 28;" in PAGE
+        assert "if (step === 1) $('cta').disabled = !range.end;" in _extract("paintCta")
+        assert "if (range.end) choosePeriod(range.start, daysBetween(range.start, range.end) + 1);" in _extract("tapRangeDay")
 
     def test_the_period_chosen_is_the_one_every_later_step_asks_about(self):
         # Leaving step 1 fetches the prefill for the chosen period (once).

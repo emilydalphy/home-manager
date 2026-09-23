@@ -102,7 +102,7 @@ def _node(script: str, today: str = MONDAY) -> str:
         f"static now() {{ return new _RealDate('{today}T09:00:00').getTime(); }} }}\n"
         "Date = _Pinned;\n"
         "function esc(s) { return String(s == null ? '' : s); }\n"
-        + _var("START_COPY") + _var("PERIOD_STRIP_DAYS") + _var("PERIOD_MAX_DAYS")
+        + _var("RANGE_COPY") + _var("PERIOD_STRIP_DAYS") + _var("PERIOD_MAX_DAYS")
         + "\n".join(_extract(n) for n in ("isoLocal", "todayIso", "addDaysIso", "daysBetween", "weekdayName", "dayLabel"))
         + "\n" + script
     )
@@ -250,48 +250,42 @@ class TestTheChipsCountByTheHouseholdsHorizon:
         assert "horizon = (period.day_count && period.day_count > 0) ? Math.min(period.day_count, PERIOD_MAX_DAYS) : 7;" in horizon
         assert "function resolveWeekStart(" not in PAGE
 
+    # The Today / Tomorrow chips these tests drove went on 2026-09-22
+    # (Emily: one strip, the suggested range already chosen, tap the first
+    # day then the last). What still holds, and is pinned below: the
+    # horizon is the server's, and the screen opens on the range the door
+    # named — any length of it re-tapped on the one strip in two taps.
+
     @_needs_node
-    def test_a_five_day_door_no_longer_locks_today_and_tomorrow_to_five(self):
-        """FAILED ON MAIN: horizon was the URL's 5, so both chips made five
-        days. Arrived through the Re-plan pill on a Tue 22 – Sat 26 draft,
-        the server saying seven: Today is Mon 21 – Sun 27, Tomorrow is
-        Tue 22 – Mon 28, and the five days it arrived with sit under "Pick
-        my own days"."""
-        out = _node(_run_load("?week=2026-09-22&days=5", server_day_count=7))
-        got = json.loads(out)
+    def test_a_five_day_door_opens_on_its_five_days_and_the_horizon_stays_the_servers(self):
+        """Arrived through the Re-plan pill on a Tue 22 – Sat 26 draft, the
+        server saying seven: the strip opens with Tue 22 – Sat 26 chosen
+        (the door's range — the one to confirm or re-tap), and the horizon
+        is still seven, not the URL's five."""
+        got = json.loads(_node(_run_load("?week=2026-09-22&days=5", server_day_count=7)))
         assert got["horizon"] == 7
-        assert got["chosen"] == "pick"
-        assert got["today"] == {"start": MONDAY, "days": 7}
-        assert got["tomorrow"] == {"start": TUESDAY, "days": 7}
         assert (got["weekStart"], got["dayCount"]) == (TUESDAY, 5)
+        assert got["range"] == {"start": TUESDAY, "end": "2026-09-26"}
 
     @_needs_node
-    def test_a_one_day_door_never_makes_today_one_day(self):
-        got = json.loads(_node(_run_load("?week=2026-09-21&days=1", server_day_count=7)))
-        assert got["today"]["days"] == 7 and got["tomorrow"]["days"] == 7
-        assert got["chosen"] == "pick"
-
-    @_needs_node
-    def test_a_household_on_a_five_day_horizon_gets_five_from_either_chip(self):
+    def test_a_household_on_a_five_day_horizon_opens_on_five(self):
         # The shell's doors name the horizon's own length in the address
         # (startPlanningWeek adds &days= when it isn't seven).
         got = json.loads(_node(_run_load("?week=2026-09-21&days=5", server_day_count=5)))
         assert got["horizon"] == 5
-        assert got["chosen"] == "today"
-        assert got["today"] == {"start": MONDAY, "days": 5}
-        assert got["tomorrow"] == {"start": TUESDAY, "days": 5}
+        assert got["range"] == {"start": MONDAY, "end": FRIDAY}
 
     @_needs_node
     def test_with_no_week_in_the_address_the_servers_period_opens(self):
         got = json.loads(_node(_run_load("", server_day_count=3, server_start=MONDAY)))
         assert (got["weekStart"], got["dayCount"], got["horizon"]) == (MONDAY, 3, 3)
-        assert got["chosen"] == "today"
+        assert got["range"] == {"start": MONDAY, "end": "2026-09-23"}
 
     @_needs_node
     def test_when_the_server_cannot_be_reached_the_horizon_falls_back_to_seven(self):
         got = json.loads(_node(_run_load("?week=2026-09-22&days=5", server_day_count=None)))
         assert got["horizon"] == 7
-        assert got["today"]["days"] == 7
+        assert got["range"] == {"start": TUESDAY, "end": "2026-09-26"}
 
     def test_the_yesterday_line_is_gone_and_the_rule_is_not(self):
         q1 = _section("q1")
@@ -309,7 +303,7 @@ class TestTheChipsCountByTheHouseholdsHorizon:
 def _run_load(search: str, server_day_count, server_start: str = MONDAY) -> str:
     """The page's load() against a stubbed window: URL `search`, a server
     whose planning period says `server_day_count` (None = unreachable).
-    Prints the horizon, the chosen chip and what Today / Tomorrow make."""
+    Prints the horizon, the period and the range the strip opens with."""
     server = (
         "Promise.reject(new Error('down'))" if server_day_count is None
         else f"Promise.resolve({{ ok: true, json: function () {{ return Promise.resolve({{ start_date: '{server_start}', day_count: {server_day_count} }}); }} }})"
@@ -322,14 +316,12 @@ def _run_load(search: str, server_day_count, server_start: str = MONDAY) -> str:
         "return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ days: [] }); } }); }\n"
         "var els = {}; function $(id) { return els[id] || (els[id] = { hidden: false, textContent: '', innerHTML: '', classList: { toggle: function () {} }, querySelectorAll: function () { return []; } }); }\n"
         + _var("weekStart") + _block("  var dayCount = (function () {", "  })();\n") + _var("horizon") + _var("who")
-        + "var picking = false; var pick = { start: '', end: '' }; var step = 1;\n"
-        + _extract("clampStart") + "\n" + _extract("choosePeriod") + "\n" + _extract("startOptions") + "\n"
+        + "var range = { start: '', end: '' }; var step = 1;\n"
+        + _extract("clampStart") + "\n" + _extract("choosePeriod") + "\n" + _extract("openRange") + "\n"
         + _extract("loadHorizon") + "\n" + _extract("load") + "\n"
         + "function renderStartStep() {} function showStep() {} function loadPeriod() { return Promise.resolve(true); }\n"
         + "load().then(function () {\n"
-        + "  var opts = startOptions(todayIso(), horizon, weekStart, dayCount);\n"
-        + "  var by = {}; opts.options.forEach(function (o) { by[o.key] = { start: o.start, days: o.days }; });\n"
-        + "  process.stdout.write(JSON.stringify({ horizon: horizon, chosen: opts.chosen, today: by.today, tomorrow: by.tomorrow, weekStart: weekStart, dayCount: dayCount, href: location.href }));\n"
+        + "  process.stdout.write(JSON.stringify({ horizon: horizon, range: range, weekStart: weekStart, dayCount: dayCount, href: location.href }));\n"
         + "});\n"
     )
 
@@ -412,9 +404,9 @@ def _race_harness() -> str:
     return (
         "var weekStart = '2026-09-21'; var dayCount = 7; var horizon = 7;\n"
         "var data = null; var loadedFor = ''; var awayRanges = []; var answersAtLoad = ''; var prefilled = {};\n"
-        # "Which days?" (board D1): the dropped days the prefill may restore.
-        "var dropped = {}; var droppedTouched = false; var skippedAtLoad = ''; var step = 2; var picking = false;\n"
-        "function droppedList() { return Object.keys(dropped).sort(); } function renderRangeCard() {}\n"
+        # "Which days?": the saved dropped days the prefill notes (2026-09-22:
+        # noted to be cleared, never shown).
+        "var skippedAtLoad = ''; var step = 2;\n"
         "var answers = { night_tags: {}, guest_counts: {}, packed_lunch_days: [], moods: [], cuisines: [] };\n"
         "var box = { value: '', focused: true };\n"
         "var els = { freeform: box }; function $(id) { return els[id] || (els[id] = { hidden: false, textContent: '' }); }\n"

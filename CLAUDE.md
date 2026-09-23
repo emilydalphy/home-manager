@@ -15331,3 +15331,27 @@ pinned by a two-household test), and with no ingredients at draft time
 the allergen gate matched a new dish by name alone (it now matches the
 `dish_note` too). Left as reported: `preview_plan_grocery_impact`
 undercounts a draft with new dishes; no screen reads it today.
+
+**2026-09-22 — "Which days?" is a calendar's range (branch
+`which-days-calendar`).** Emily, planning Wed 23 → Wed 30 from her phone
+and unable to: tapping a day DROPPED it, the strip held only the
+period's seven days, and the Today / Tomorrow / Pick a date chips (with
+a second range picker behind the third) sat on top of it — "this view is
+still not intuitive… we need to fix this flow". Her option 1, in
+`static/plan-week.html`: one strip, today through the 28-day ceiling
+(`PERIOD_STRIP_DAYS` = 28 here AND in `shell.js`, in step), opening with
+the range the door named already chosen (default logic untouched:
+`load` → `clampStart` → `openRange`). Tap rules in the pure
+`rangeAfterTap`: a tap on a whole range starts a new one; the next tap
+on/after the first day closes it (the first day again = one day); a tap
+before the first day becomes the first; capped at 28. Header "Wed 23 →
+Wed 30" + "8 days"; half a range reads "Wed 23 → …" + "Tap the last
+day" and Continue is disabled. Ends `--celadon`, between
+`--celadon-tint`. No dropping days on step 1 any more:
+`droppedList()` survives returning `[]` (the submit/leave code reads
+it), so the first Continue over an intake saved with `skipped_days` by
+the old screen writes the empty set — the server's `skipped_days`
+support is untouched. Skipping a day is step 2's day sheet: every
+person out for every meal = "Nobody home — I'll plan nothing and buy
+nothing." (nothing new built). Tests:
+`tests/test_which_days_calendar_2026_09_22.py`.
