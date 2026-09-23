@@ -16,7 +16,7 @@ from fastapi.responses import (
     Response,
     StreamingResponse,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import asyncio
 import base64
 import contextvars
@@ -1410,13 +1410,12 @@ def onboarding_generate_first_plan_stream(req: FirstPlanRequest | None = None):
     """
     req = req or FirstPlanRequest()
     week_start, day_count, period_start = _first_plan_window(req.start == "next_week")
-    return StreamingResponse(
+    return _SSEResponse(
         _stream_week_generation(
             week_start=week_start, constraints_notes="", intake_id=None,
             day_count=day_count, period_start=period_start,
         ),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        what=f"First-plan stream for the week of {week_start}", carries_on="generation continues",
     )
 
 
@@ -2593,6 +2592,11 @@ class WeekGenerateRequest(BaseModel):
     # genuinely two different things.
     day_count: int = 7
     period_start: str | None = None
+    # The screen's own name for this one tap on "Draft my week" (2026-09-22),
+    # so that if the stream drops it can ask /generate/status how THIS draft
+    # ended. See agent._WEEK_GENERATION_RUNS. Optional: chat, onboarding and
+    # any older page send none and lose nothing.
+    run_token: str | None = Field(default=None, max_length=64)
 
 
 def _validated_period(week_start: str, req: WeekGenerateRequest) -> tuple[str, int]:
@@ -2851,9 +2855,87 @@ def _sse_event(event: str, data) -> str:
     return f"event: {event}\ndata: {json.dumps(jsonable_encoder(data))}\n\n"
 
 
+# How long a stream may sit silent before it sends a keep-alive (2026-09-22).
+# Between the first "status" frame and the first "day" frame a draft can be
+# quiet for 15-20 s while the model thinks, and on Emily's phone that night
+# the connection closed 17.6 s in -- something between the phone and the app
+# gave up on a response that had gone quiet. A comment line every few seconds
+# keeps bytes moving; the three hand-rolled SSE readers (plan-week.html,
+# onboarding.html, shell.js) all skip a frame with no `data:` line, which is
+# exactly what a comment frame is (the SSE spec's own keep-alive shape).
+_STREAM_HEARTBEAT_SECONDS = 5.0
+_SSE_HEARTBEAT = ": keep-alive\n\n"
+
+
+def _relay_stream_events(events: "queue.Queue", done, *, first_frame: str):
+    """
+    The shared back half of _stream_week_generation and _stream_chat_turn:
+    send `first_frame`, then relay (event, payload) pairs from the worker
+    thread's queue until it puts `done`, with a keep-alive comment whenever
+    the queue has been quiet for _STREAM_HEARTBEAT_SECONDS.
+    """
+    yield first_frame
+    while True:
+        try:
+            item = events.get(timeout=_STREAM_HEARTBEAT_SECONDS)
+        except queue.Empty:
+            yield _SSE_HEARTBEAT
+            continue
+        if item is done:
+            return
+        event_name, payload = item
+        yield _sse_event(event_name, payload)
+
+
+class _SSEResponse(StreamingResponse):
+    """
+    A text/event-stream response that says so in the log when the client
+    goes away before the stream finished (2026-09-22). Before this a dropped
+    draft left no trace in the app log at all; that night's only evidence
+    was Railway's edge log. The worker thread is not stopped by the client
+    leaving -- it finishes and saves on its own -- so the line says the work
+    carries on.
+
+    Hooked on StreamingResponse.listen_for_disconnect because that is where
+    Starlette itself learns of the disconnect: uvicorn speaks ASGI 2.3, and
+    for that Starlette runs the stream and a receive() loop side by side,
+    cancelling the stream the moment the loop sees `http.disconnect`.
+    Measured against a real uvicorn: a client that hung up 8 s in was seen
+    at 8.0 s. Two cheaper-looking hooks were tried first and both log late
+    or never: `except GeneratorExit` in the sync generator only fires when
+    the garbage collector closes it (29 s after a 12 s drop), and a
+    try/finally in an async wrapper is skipped because the cancel lands in
+    Starlette's send(), not in the iterator. If uvicorn ever moves to ASGI
+    2.4, Starlette stops listening and this line simply stops appearing;
+    nothing else changes.
+    """
+
+    def __init__(self, content, *, what: str, carries_on: str):
+        super().__init__(
+            content, media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+        self._what = what
+        self._carries_on = carries_on
+        self._started = time.monotonic()
+        self._finished = False
+
+    async def stream_response(self, send) -> None:
+        await super().stream_response(send)
+        self._finished = True
+
+    async def listen_for_disconnect(self, receive) -> None:
+        await super().listen_for_disconnect(receive)
+        if not self._finished:
+            logger.warning(
+                "%s closed by the client after %.1fs; %s",
+                self._what, time.monotonic() - self._started, self._carries_on,
+            )
+
+
 def _stream_week_generation(
     *, week_start: str, constraints_notes: str, intake_id,
-    day_count: int = 7, period_start: str | None = None,
+    day_count: int = 7, period_start: str | None = None, run_token: str | None = None,
 ):
     """
     Run generate_weekly_plan on a background thread and yield its progress
@@ -2891,11 +2973,17 @@ def _stream_week_generation(
             plan = generate_weekly_plan(
                 week_start, constraints_notes=constraints_notes, intake_id=intake_id,
                 day_count=day_count, period_start=period_start, confirm_takeover=True,
+                run_token=run_token,
             )
             events.put(("done", plan))
+        # Both logged since 2026-09-22: they used to go onto the stream and
+        # nowhere else, so a failed draft whose page never showed the error
+        # left nothing in the app log to find it by.
         except AssistantUnavailableError as e:
+            logger.warning("Streaming week generation for %s: Claude unavailable (503): %s", week_start, e)
             events.put(("error", {"status": 503, "detail": str(e)}))
         except ValueError as e:
+            logger.warning("Streaming week generation for %s refused (400): %s", week_start, e)
             events.put(("error", {"status": 400, "detail": str(e)}))
         except Exception as e:
             logger.exception("Streaming week generation failed")
@@ -2907,13 +2995,9 @@ def _stream_week_generation(
     ctx = contextvars.copy_context()
     threading.Thread(target=lambda: ctx.run(run), daemon=True).start()
 
-    yield _sse_event("status", {"message": "Drafting your week…"})
-    while True:
-        item = events.get()
-        if item is _DONE:
-            return
-        event_name, payload = item
-        yield _sse_event(event_name, payload)
+    yield from _relay_stream_events(
+        events, _DONE, first_frame=_sse_event("status", {"message": "Drafting your week…"}),
+    )
 
 
 @app.post("/api/week/{week_start}/generate/stream")
@@ -2934,14 +3018,60 @@ def generate_week_stream(week_start: str, req: WeekGenerateRequest):
     is a plain 400 rather than a 200 whose body immediately says no.
     """
     period_start, day_count = _validated_period(week_start, req)
-    return StreamingResponse(
+    return _SSEResponse(
         _stream_week_generation(
             week_start=week_start, constraints_notes=req.constraints_notes, intake_id=req.intake_id,
-            day_count=day_count, period_start=period_start,
+            day_count=day_count, period_start=period_start, run_token=req.run_token,
         ),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        what=f"Draft stream for the week of {week_start}", carries_on="generation continues",
     )
+
+
+def _run_for_client(run: dict | None) -> dict | None:
+    """A run record as the browser may see it: the error detail scrubbed
+    exactly as the stream's own `error` frame scrubs it (_sse_event)."""
+    if not run or not run.get("error"):
+        return run
+    status = run["error"]["status"]
+    return dict(run, error={
+        "status": status,
+        "detail": _client_safe_detail(status, run["error"]["detail"], line=THINK_TROUBLE_LINE),
+    })
+
+
+@app.get("/api/week/{week_start}/generate/status")
+def generate_week_status(week_start: str, run: str | None = None):
+    """
+    How a draft for this week is going, for a page that lost its stream
+    (2026-09-22 — see agent._WEEK_GENERATION_RUNS for the night that made
+    this necessary). Read-only, and household-scoped like every other week
+    route: the bookkeeping is keyed by the session's household, so another
+    household's draft for the same week is invisible here.
+
+    `?run=` is the run_token the page sent with its generate request.
+
+        {"week_start": "2026-09-21",
+         "running": true,          # any generation for this week, right now
+         "run":    {...} | null,   # the one with that token; null if none
+         "latest": {...} | null}   # the newest one, whoever started it
+
+    each record being {"run", "token", "state": "running" | "done" |
+    "failed", "started_at", "finished_at" (UTC ISO, null while running),
+    "plan_id" (when done), "error": {"status", "detail"} (when failed)}.
+    """
+    try:
+        datetime.date.fromisoformat(week_start)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="week_start must be an ISO date (YYYY-MM-DD).")
+    if run is not None and len(run) > 64:
+        raise HTTPException(status_code=400, detail="run must be 64 characters or fewer.")
+    status = agent.week_generation_status(week_start, run_token=run)
+    return {
+        "week_start": week_start,
+        "running": status["running"],
+        "run": _run_for_client(status["run"]),
+        "latest": _run_for_client(status["latest"]),
+    }
 
 
 class SwapInPlaceRequest(BaseModel):
@@ -5715,13 +5845,11 @@ def _stream_chat_turn(*, session_id: str, message: str, history: list, proactive
     ctx = contextvars.copy_context()
     threading.Thread(target=lambda: ctx.run(run), daemon=True).start()
 
-    yield _sse_event("status", {"message": "Thinking…"})
-    while True:
-        item = events.get()
-        if item is _DONE:
-            return
-        event_name, payload = item
-        yield _sse_event(event_name, payload)
+    # Same relay as the draft stream, heartbeat included: a chat turn that
+    # plans a week has the same quiet stretch before its first "day" frame.
+    yield from _relay_stream_events(
+        events, _DONE, first_frame=_sse_event("status", {"message": "Thinking…"}),
+    )
 
 
 @app.post("/api/chat/stream")
@@ -5735,13 +5863,12 @@ def chat_stream(req: ChatRequest, request: Request):
     session_id = _chat_session_id(request)
     history = SESSIONS.get(session_id, [])
     is_new_sitting = time.time() - SESSION_TOUCHED.get(session_id, 0) > _NEW_SITTING_GAP
-    return StreamingResponse(
+    return _SSEResponse(
         _stream_chat_turn(
             session_id=session_id, message=req.message, history=history, proactive_check=is_new_sitting,
             context=req.context,
         ),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        what="Chat stream", carries_on="the turn continues",
     )
 
 

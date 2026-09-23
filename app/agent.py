@@ -10,6 +10,7 @@ import contextvars
 import concurrent.futures
 import copy
 import datetime
+import itertools
 import logging
 import os
 import json
@@ -4155,6 +4156,116 @@ _WEEK_GENERATION_LOCKS_GUARD = threading.Lock()
 # plan it made, and the arguments it was asked for. Only ever written
 # while holding that key's lock.
 _WEEK_GENERATION_RESULTS: dict[tuple, dict] = {}
+# Every generation's own record, keyed the same way: when it started, whether
+# it is still going, and how it ended -- a plan id, or the error it hit.
+# Added 2026-09-22 after Emily's "That draft didn't come together" on her
+# phone at 21:41 for a draft that DID come together: the plan-week screen's
+# stream connection closed ~17.6 s in (Railway's edge log: `POST
+# .../generate/stream 200 17632ms`), the page read that as a failure, and
+# the server finished and saved plan 58 ten seconds later with nobody
+# listening. A page that loses its stream now asks
+# GET /api/week/{week_start}/generate/status how the generation ended, and
+# this is what answers.
+#
+# Why _WEEK_GENERATION_RESULTS isn't simply widened to carry this: its `seq`
+# means "a generation SUCCEEDED", and generate_weekly_plan's waiter compares
+# it to hand over the other caller's plan. Writing failures or starts into
+# it would make a waiter hand back plan_id None. This sits beside it, same
+# key, and never feeds that decision.
+#
+# `run_token` is the caller's own name for its request (the plan-week screen
+# makes one per tap), so "the draft I asked for" is an exact match, never a
+# guess from timestamps on two different clocks -- a phone's and Railway's.
+# The last few runs per key are kept, not just the newest, so a second
+# device's draft landing in between can't hide the first one's answer.
+#
+# In memory only, and that is enough: production is ONE process (the
+# Dockerfile's CMD is a bare `uvicorn app.main:app` -- no --workers, no
+# gunicorn), which is also what the per-key threading.Lock above already
+# relies on. A redeploy mid-draft loses the record along with the
+# generation itself, and the page then gives up at its cap with the
+# ordinary "didn't come together" line, which is the truth. If this ever
+# runs as several workers, both this and the lock need a shared store.
+_WEEK_GENERATION_RUNS: dict[tuple, list[dict]] = {}
+_WEEK_GENERATION_RUNS_GUARD = threading.Lock()
+_WEEK_GENERATION_RUNS_KEPT = 8
+_WEEK_GENERATION_RUN_NUMBERS = itertools.count(1)
+
+
+def _utc_now_iso() -> str:
+    return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+
+
+def _begin_week_generation_run(key: tuple, run_token: str | None) -> dict:
+    """Record that a generation for this household+week has started."""
+    with _WEEK_GENERATION_RUNS_GUARD:
+        run = {
+            "run": next(_WEEK_GENERATION_RUN_NUMBERS),
+            "token": run_token,
+            "state": "running",
+            "started_at": _utc_now_iso(),
+            "finished_at": None,
+            "plan_id": None,
+            "error": None,
+        }
+        runs = _WEEK_GENERATION_RUNS.setdefault(key, [])
+        runs.append(run)
+        del runs[:-_WEEK_GENERATION_RUNS_KEPT]
+        return run
+
+
+def _week_generation_error_status(e: BaseException) -> int:
+    """
+    The HTTP status this failure would have been, mapped exactly as
+    main.generate_week and main._stream_week_generation map it -- so the
+    status endpoint and the stream's own `error` frame never disagree about
+    what went wrong.
+    """
+    if isinstance(e, AssistantUnavailableError):
+        return 503
+    if isinstance(e, ValueError):
+        return 400
+    return 500
+
+
+def _end_week_generation_run(run: dict, *, plan_id=None, error: BaseException | None = None) -> None:
+    with _WEEK_GENERATION_RUNS_GUARD:
+        run["finished_at"] = _utc_now_iso()
+        if error is None:
+            run["state"] = "done"
+            run["plan_id"] = plan_id
+        else:
+            run["state"] = "failed"
+            run["error"] = {"status": _week_generation_error_status(error), "detail": str(error)}
+
+
+def week_generation_status(week_start_date: str, run_token: str | None = None) -> dict:
+    """
+    How generation for the current household's week is going, for
+    GET /api/week/{week_start}/generate/status (see _WEEK_GENERATION_RUNS
+    for why it exists).
+
+    `running` is whether ANY generation for this household+week is under
+    way right now, from any door (chat, onboarding, the plan screen).
+    `latest` is the newest run's record; `run` is the record whose token is
+    `run_token`, or None when there is no such run -- including when the
+    request never reached generate_weekly_plan at all. Copies, so a caller
+    can't reach in and change the bookkeeping.
+
+    Error details are returned raw here; main scrubs them the same way it
+    scrubs the stream's `error` frame.
+    """
+    key = (tools.household_id(), _week_lock_key(week_start_date))
+    with _WEEK_GENERATION_RUNS_GUARD:
+        runs = [dict(r) for r in _WEEK_GENERATION_RUNS.get(key, [])]
+    mine = None
+    if run_token:
+        mine = next((r for r in reversed(runs) if r["token"] == run_token), None)
+    return {
+        "running": any(r["state"] == "running" for r in runs),
+        "latest": runs[-1] if runs else None,
+        "run": mine,
+    }
 
 
 def _week_generation_lock(key: tuple) -> threading.Lock:
@@ -4191,6 +4302,7 @@ def generate_weekly_plan(
     skip_days: int = 0,
     period_start: str | None = None,
     confirm_takeover: bool = False,
+    run_token: str | None = None,
 ) -> dict:
     """
     Generate and save a full week's meal plan in one pass. See
@@ -4250,6 +4362,13 @@ def generate_weekly_plan(
     onboarding still speaks it and it means something slightly different —
     an offset INTO the filing week — but the two must not be combined; see
     _generate_weekly_plan.
+
+    run_token (2026-09-22) is only a label: the caller's own name for this
+    request, stored on its _WEEK_GENERATION_RUNS record so a page that lost
+    its stream can find out how THIS generation ended. It changes nothing
+    about what is generated, and it is not part of the duplicate-request
+    signature — two taps with different tokens asking for the same thing
+    are still one generation.
     """
     # Ask before the lock and before any work: it is a read, and a caller
     # that is about to be told "not without a yes" should not queue behind
@@ -4273,6 +4392,39 @@ def generate_weekly_plan(
             }
 
     key = (tools.household_id(), _week_lock_key(week_start_date))
+    # From here on this is a generation, and _WEEK_GENERATION_RUNS says so
+    # until it ends -- including the time spent waiting on another caller's
+    # lock, which from a waiting page's side is still "drafting". The
+    # needs_confirmation return above is not a run: nothing was attempted.
+    run = _begin_week_generation_run(key, run_token)
+    try:
+        plan = _generate_weekly_plan_once(
+            key, week_start_date,
+            constraints_notes=constraints_notes, day_count=day_count, intake_id=intake_id,
+            skip_days=skip_days, period_start=period_start,
+        )
+    except BaseException as e:
+        # BaseException, not Exception: a run left "running" forever would
+        # keep a waiting page polling to its cap for nothing.
+        _end_week_generation_run(run, error=e)
+        raise
+    # Recorded after the prep schedule and defrost sync, not when the plan
+    # row is saved, so "done" here means what the stream's `done` frame
+    # means: the whole call returned.
+    _end_week_generation_run(run, plan_id=plan.get("weekly_plan_id"))
+    return plan
+
+
+def _generate_weekly_plan_once(
+    key: tuple, week_start_date: str, *, constraints_notes: str, day_count: int,
+    intake_id: int | None, skip_days: int, period_start: str | None,
+) -> dict:
+    """
+    generate_weekly_plan's locked part and the prep that follows it, moved
+    out verbatim on 2026-09-22 so the wrapper can record how the run ended
+    (see _WEEK_GENERATION_RUNS) in one place. The lock semantics are
+    unchanged -- see generate_weekly_plan's docstring for them.
+    """
     signature = (constraints_notes, day_count, intake_id, skip_days, period_start)
     lock = _week_generation_lock(key)
     # Read before blocking, so "did a generation finish while I waited"

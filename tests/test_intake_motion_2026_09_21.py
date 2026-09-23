@@ -507,7 +507,9 @@ class TestBuildingYourWeek:
         # The lines are built from what the save RETURNED — the revision the
         # generate call is then pointed at — not from the screen's state.
         assert "showDraftProgress(saved);" in adv
-        assert "streamGenerate({ intake_id: saved.intake_id, day_count: dayCount })" in adv
+        # run_token rides along since 2026-09-22 (a dropped stream asks
+        # /generate/status about this tap by name — test_draft_stream_drop.py).
+        assert "streamGenerate({ intake_id: saved.intake_id, day_count: dayCount, run_token: runToken })" in adv
         assert "renderUsing(saved || {});" in _extract("showDraftProgress")
         assert "$('using').hidden = !lines.length;" in _extract("renderUsing")
 

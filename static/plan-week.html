@@ -1058,6 +1058,13 @@
   // responses faster" ticket), so with nothing else to go on the line
   // moves to the next day every EXPECTED_DRAFT_MS / dayCount.
   var EXPECTED_DRAFT_MS = 36000;
+  // When the stream drops before the draft is done (2026-09-22: Emily's
+  // phone lost the connection 17.6 s in and was told the draft failed; the
+  // server saved it ten seconds later), the page asks the server how the
+  // draft ended, every DRAFT_POLL_MS, and gives up DRAFT_WAIT_CAP_MS after
+  // "Draft my week" was tapped — over three times a usual draft.
+  var DRAFT_POLL_MS = 2000;
+  var DRAFT_WAIT_CAP_MS = 120000;
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -2921,12 +2928,35 @@
   // rather than via EventSource, since EventSource can't send a POST
   // body — the fetch Response's own ReadableStream carries the same
   // "event: X\ndata: Y\n\n" frames, just without a helper to parse them.
+  //
+  // Two kinds of trouble, told apart since 2026-09-22. An `error` frame is
+  // the server saying the draft failed: that throws as before, and the
+  // household is told. Losing the connection — the fetch or a read
+  // rejecting, or the stream ending with no `done` — says nothing about the
+  // draft, which runs on its own thread on the server and saves whether or
+  // not anyone is listening. That throws an error marked `lostContact`, and
+  // the caller asks the server how the draft ended (waitForDraft) instead
+  // of calling it a failure. The server's keep-alive frames (": keep-alive",
+  // no data line) fall through handleFrame's no-data return.
+  function lostContact(cause) {
+    var err = new Error('lost contact with the draft');
+    err.lostContact = true;
+    err.cause = cause;
+    return err;
+  }
+
   async function streamGenerate(payload) {
-    var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/generate/stream', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+    var res;
+    try {
+      res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/generate/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } catch (e) {
+      throw lostContact(e);
+    }
+    // A status the app answered with (a refused period) is its answer.
     if (!res.ok || !res.body) throw new Error('generate failed');
     var reader = res.body.getReader();
     var decoder = new TextDecoder();
@@ -2957,18 +2987,62 @@
     }
 
     while (true) {
-      var chunk = await reader.read();
+      var chunk;
+      try {
+        chunk = await reader.read();
+      } catch (e) {
+        throw lostContact(e);
+      }
       if (chunk.done) break;
       buffer += decoder.decode(chunk.value, { stream: true });
       var frames = buffer.split('\n\n');
       buffer = frames.pop();
       for (var i = 0; i < frames.length; i++) handleFrame(frames[i]);
     }
-    if (!plan) throw new Error('generate failed');
+    if (!plan) throw lostContact(null);
+    showDraftReady();
+    return plan;
+  }
+
+  function showDraftReady() {
     if (dayLine) dayLine.stop();
     $('draft-progress').classList.add('done');
     paintDraftStatus('Your week is ready.');
-    return plan;
+  }
+
+  function wait(ms) {
+    return new Promise(function (resolve) { setTimeout(resolve, ms); });
+  }
+
+  // One name per tap on "Draft my week", sent with the request and asked
+  // about by name afterwards (GET .../generate/status?run=), so the answer
+  // is about THIS draft and never an older one for the same week.
+  function newRunToken() {
+    return 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+  }
+
+  // After a lost stream: the drafting screen stays up, the line says it is
+  // still going (the day line's own clock stops — it would otherwise keep
+  // claiming days nothing has confirmed), and the server is asked every
+  // DRAFT_POLL_MS. Resolves true once the draft has landed; false if the
+  // server says it failed, or nothing has landed by DRAFT_WAIT_CAP_MS after
+  // `startedAt`. A status request that fails is simply asked again. "‹ Plan"
+  // still works throughout — crumbTap reads `drafting`, still true here.
+  async function waitForDraft(runToken, startedAt) {
+    if (dayLine) dayLine.stop();
+    paintDraftStatus('Still drafting…');
+    var url = '/api/week/' + encodeURIComponent(weekStart) + '/generate/status?run=' + encodeURIComponent(runToken);
+    while (Date.now() - startedAt < DRAFT_WAIT_CAP_MS) {
+      await wait(DRAFT_POLL_MS);
+      try {
+        var res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) continue;
+        var run = (await res.json()).run;
+        if (run && run.state === 'done') return true;
+        if (run && run.state === 'failed') return false;
+      } catch (e) { /* no answer this time — ask again */ }
+    }
+    return false;
   }
 
   // ---------- the way out ----------
@@ -3098,7 +3172,18 @@
         }).catch(function () { /* the week still plans correctly without this */ });
       }
       showDraftProgress(saved);
-      await streamGenerate({ intake_id: saved.intake_id, day_count: dayCount });
+      var runToken = newRunToken();
+      var startedAt = Date.now();
+      try {
+        await streamGenerate({ intake_id: saved.intake_id, day_count: dayCount, run_token: runToken });
+      } catch (err) {
+        // Only a lost connection is waited out; a real failure falls
+        // through to the alert below exactly as before.
+        if (!err || !err.lostContact) throw err;
+        console.warn('Plan-the-week lost the draft stream; asking how it ended:', err.cause || err);
+        if (!(await waitForDraft(runToken, startedAt))) throw new Error('draft did not land');
+        showDraftReady();
+      }
       // Land on the week that was just drafted, by name. Without the week
       // in the URL, Plan asks for "the current plan" and gets whichever
       // week contains today — so planning NEXT week ended with the freshly
