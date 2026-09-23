@@ -552,7 +552,13 @@ why*, not duplicating the diff.
   - **Not done, named rather than left to be found.** The component planner
     is untouched and folds nothing (its items are parts, not days). Nothing
     caps how many entries a week may come back as — the 21-slot audit is
-    still the only thing that checks the week is whole. And the real
+    still the only thing that checks the week is whole. An `open` slot sent
+    WITH several dates becomes several open questions carrying one
+    `open_reason` — checked, not guessed — and that is deliberately left
+    alone: collapsing it to the first date would leave the other days as
+    holes for the gap audit to fill with its own generic question, which is
+    worse than the model's real one said twice, and `plan_quality`'s
+    open-slot budget already warns at more than one. And the real
     question this card exists for, whether the draft now lands inside 15
     seconds, cannot be answered from here at all: it needs one real
     generation with the `api_calls` ledger read afterwards.
