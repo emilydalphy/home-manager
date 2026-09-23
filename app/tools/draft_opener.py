@@ -167,6 +167,7 @@ def _plan_entries(rows) -> list[dict]:
     for r in rows:
         meal = r["meal"] if "meal" in r.keys() else None
         out.append({
+            "id": r["id"] if "id" in r.keys() else None,
             "date": r["date"], "slot": r["slot"], "meal": meal,
             "slot_state": r["slot_state"] or "planned",
             "derived_from": r["derived_from_json"] if "derived_from_json" in r.keys() else None,
@@ -378,6 +379,50 @@ def _line_two(entries: list[dict], report: dict | None, recent: set[str] | None,
     return f"{_cap(number_word(new))} new dishes, {number_word(len(back))} back from {window}."
 
 
+def batch_line(entries: list[dict]) -> str:
+    """
+    One plain line when Pomona batch cooked part of the week (Emily,
+    2026-09-23: fewer recipes than meals means cooking double, and Pomona
+    does that planning itself and says what it did in one plain line):
+    "Two lunches, each cooked double." Counted per COOK, filed under the
+    cook's meal, from the nights carrying leftovers.BATCH_KEY — so a chain
+    the model wrote for its own reasons, or one the household made, is
+    not claimed here. A batch that covers more than two meals: "…, each
+    cooked once for several meals." Nothing when nothing was batched.
+    """
+    from . import leftovers as _leftovers
+
+    by_id = {e["id"]: e for e in entries if e.get("id") is not None}
+    by_date_slot = {(e["date"], e["slot"]): e for e in entries}
+    meals: dict[tuple, int] = {}
+    for e in entries:
+        derived = _derived(e)
+        if not derived.get(_leftovers.BATCH_KEY) or e.get("slot_state", "planned") != "planned":
+            continue
+        frozen = derived.get(_leftovers.FROM_FREEZER_KEY)
+        ref = str((frozen or {}).get("cook") if isinstance(frozen, dict) else derived.get("links_to") or "")
+        m = re.match(r"^entry_id:(\d+)$", ref)
+        if m:
+            cook = by_id.get(int(m.group(1)))
+        else:
+            m = re.match(r"^(\d{4}-\d{2}-\d{2}):(\w+)$", ref)
+            cook = by_date_slot.get((m.group(1), m.group(2))) if m else None
+        if cook is None:
+            continue
+        key = (cook["slot"], cook.get("id") or (cook["date"], cook["slot"]))
+        meals[key] = meals.get(key, 1) + 1
+    if not meals:
+        return ""
+    parts = []
+    for slot in ("breakfast", "lunch", "dinner", "snack"):
+        n = sum(1 for (s, _k) in meals if s == slot)
+        if n:
+            parts.append(f"{number_word(n)} {_NOUN[slot] if n != 1 else slot}")
+    how = "cooked double" if all(v == 2 for v in meals.values()) else "cooked once for several meals"
+    each = "each " if len(meals) > 1 else ""
+    return f"{_cap(_join(parts))}, {each}{how}."
+
+
 def count_note(day_count: int, memory: dict | None, said: str = "") -> str:
     """
     "Three dinners this week, not four — it's a four-day plan." Said only
@@ -434,4 +479,4 @@ def build_opener(rows, intake: dict | None, period_start: str, day_count: int, d
     second = _line_two(entries, report, recent, surprise=surprise)
     skipped = {d for d in ((intake or {}).get("skipped_days") or []) if d in period}
     third = count_note(max(1, day_count - len(skipped)), memory, said=first)
-    return [line for line in (first, second, third) if line]
+    return [line for line in (first, second, batch_line(entries), third) if line]

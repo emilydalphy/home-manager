@@ -13,6 +13,7 @@ fails on main, where none of it exists.
 from __future__ import annotations
 
 import datetime
+import json
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -259,9 +260,22 @@ def test_a_leftovers_night_is_offered_as_one_and_a_backwards_chain_is_not():
     conn.close()
     tools.plan_meal(THU, "Bean Chili", slot="dinner", weekly_plan_id=plan,
                     derived_from={"links_to": f"{TUE}:dinner"})
-    tools.plan_meal(SUN, "Chettinad-Style Pepper Chicken", slot="dinner", weekly_plan_id=plan,
-                    derived_from={"links_to": f"{TONIGHT}:dinner"})
     tools.repair_leftover_chains(plan)
+    # Sunday is four days after tonight. Since 2026-09-23 the generation's
+    # repair makes that a freezer portion (leftovers.MAX_LEFTOVER_DAYS), so
+    # the chain is written the way the Cook card's own picker still can
+    # (cook_ahead.set_cook_ahead is the household's call and has no limit):
+    # both halves, by hand. This test is about the backwards swap, not the
+    # distance.
+    sun = tools.plan_meal(SUN, "Chettinad-Style Pepper Chicken", slot="dinner", weekly_plan_id=plan,
+                          derived_from={"links_to": f"{TONIGHT}:dinner"})["entry_id"]
+    conn = get_conn()
+    conn.execute(
+        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE date = ? AND slot = 'dinner' AND id != ?",
+        (json.dumps({"make_double_for": [f"{SUN}:dinner"]}), TONIGHT, sun),
+    )
+    conn.commit()
+    conn.close()
     assert len(tools.plan_leftover_chains(plan)["leftovers"]) == 2, "both chains confirmed first"
     out = tools.tonight_check(now=AFTERNOON)
     by_date = {o["date"]: o for o in out["options"]}

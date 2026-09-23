@@ -339,7 +339,9 @@ def apply_prep_day_batches(weekly_plan_id: int) -> dict:
     appears is the cook and the later days are covered by that batch —
     exactly the chain a "yes" on the old ask wrote (set_cook_ahead, with
     every later day ticked), so servings and the shopping list scale as
-    they did then. With no prep days nothing is batched, and nothing is
+    they did then — except that no batch reaches more than three days past
+    its cook (Emily, 2026-09-23; _within_three_days): a later day starts a
+    batch of its own. With no prep days nothing is batched, and nothing is
     asked either way. cook_ahead_asked_at is set in both cases so no
     surface re-asks.
 
@@ -378,11 +380,14 @@ def apply_prep_day_batches(weekly_plan_id: int) -> dict:
     components: list[dict] = []
     if prep_days:
         for item in cook_ahead_repeats(weekly_plan_id):
-            result = set_cook_ahead(item["first"]["entry_id"], [d["entry_id"] for d in item["later"]])
-            if isinstance(result, str):
-                refused.append({"source_entry_id": item["first"]["entry_id"], "dish": item["dish"], "note": result})
-            else:
-                applied.append(dict(result, dish=item["dish"]))
+            for first, later in _within_three_days(item):
+                if not later:
+                    continue
+                result = set_cook_ahead(first["entry_id"], [d["entry_id"] for d in later])
+                if isinstance(result, str):
+                    refused.append({"source_entry_id": first["entry_id"], "dish": item["dish"], "note": result})
+                else:
+                    applied.append(dict(result, dish=item["dish"]))
         for comp in _batch_components.shared_components(weekly_plan_id):
             if comp["batched"]:
                 continue
@@ -395,6 +400,24 @@ def apply_prep_day_batches(weekly_plan_id: int) -> dict:
                 components.append(result)
     mark_cook_ahead_asked(weekly_plan_id)
     return {"prep_days": bool(prep_days), "applied": applied, "components": components, "refused": refused}
+
+
+def _within_three_days(item: dict) -> list[tuple[dict, list[dict]]]:
+    """
+    One repeated dish's days as batches no portion of which is eaten more
+    than leftovers.MAX_LEFTOVER_DAYS (3) days after it was cooked (Emily,
+    2026-09-23, the food-safety default): the first day cooks, and the
+    first day past three days on cooks again. [(cook day, days it covers)].
+    Until then one batch on Monday could cover Sunday.
+    """
+    batches: list[tuple[dict, list[dict]]] = [(item["first"], [])]
+    for day in sorted(item["later"], key=lambda d: d["date"]):
+        cook = batches[-1][0]
+        if _leftovers.days_apart(cook["date"], day["date"]) <= _leftovers.MAX_LEFTOVER_DAYS:
+            batches[-1][1].append(day)
+        else:
+            batches.append((day, []))
+    return batches
 
 
 def batched_dishes(weekly_plan_id: int) -> list[dict]:

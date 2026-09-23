@@ -43,7 +43,10 @@ def _day(offset: int) -> str:
     return (_monday() + datetime.timedelta(days=offset)).isoformat()
 
 
-MON, TUE, WED, FRI = _day(0), _day(1), _day(2), _day(4)
+# THU was THU (_day(4)) until 2026-09-23: a chain more than three days
+# apart is repaired into a freezer portion now (leftovers.MAX_LEFTOVER_DAYS),
+# and this file is about the swap, not the distance.
+MON, TUE, WED, THU = _day(0), _day(1), _day(2), _day(3)
 
 # add_dish_day refuses a target night that has already gone by (2026-09-16),
 # on the household's clock — so the "+" tests below plan from the
@@ -134,10 +137,10 @@ def _plain_plan(approve: bool = True, day: str = MON) -> tuple[int, int]:
 
 def _chain_plan() -> tuple[int, int, int, int]:
     """
-    An approved Monday-cooks / Wednesday-and-Friday-reheat chain — the
+    An approved Monday-cooks / Wednesday-and-Thursday-reheat chain — the
     shape that puts _unlink_leftover_target, the source's grocery rescale
     and (for a swap OF the source) _reingest_unlinked_entries inside the
-    swap. Returns (plan, mon, wed, fri).
+    swap. Returns (plan, mon, wed, thu).
     """
     _household()
     _recipes()
@@ -147,13 +150,13 @@ def _chain_plan() -> tuple[int, int, int, int]:
         WED, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id,
         derived_from={"links_to": f"{MON}:dinner"},
     )["entry_id"]
-    fri = tools.plan_meal(
-        FRI, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id,
+    thu = tools.plan_meal(
+        THU, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id,
         derived_from={"links_to": f"{MON}:dinner"},
     )["entry_id"]
     tools.repair_leftover_chains(plan_id)
     tools.approve_weekly_plan(plan_id, "Emily")
-    return plan_id, mon, wed, fri
+    return plan_id, mon, wed, thu
 
 
 def _grocery_by_item() -> dict:
@@ -280,7 +283,7 @@ def test_a_failure_after_the_grocery_reversal_puts_the_list_back(monkeypatch):
 
 def test_a_failure_after_the_chain_unlink_leaves_the_chain_intact(monkeypatch):
     """Swapping a reheat night: the cook night was told first, and then the swap died."""
-    plan_id, mon, wed, fri = _chain_plan()
+    plan_id, mon, wed, thu = _chain_plan()
     before = _snapshot()
     missing = tools.audit_plan_slots(plan_id)["missing"]
 
@@ -291,7 +294,7 @@ def test_a_failure_after_the_chain_unlink_leaves_the_chain_intact(monkeypatch):
     _assert_untouched(before, plan_id, WED, "dinner", missing)
     chains = tools.plan_leftover_chains(plan_id)
     assert wed in chains["leftovers"]
-    assert sorted(t["entry_id"] for t in chains["sources"][mon]["targets"]) == sorted([wed, fri])
+    assert sorted(t["entry_id"] for t in chains["sources"][mon]["targets"]) == sorted([wed, thu])
     assert _grocery_by_item() == {"beef": "3 lbs", "lettuce": "3 heads"}
 
 
@@ -301,7 +304,7 @@ def test_a_failure_inside_the_source_rescale_leaves_the_list_and_chain_intact(mo
     raised. Here it joins the transaction, so a failure inside it is not a
     night's over-buying to live with — it is nothing at all.
     """
-    plan_id, mon, wed, fri = _chain_plan()
+    plan_id, mon, wed, thu = _chain_plan()
     before = _snapshot()
     missing = tools.audit_plan_slots(plan_id)["missing"]
 
@@ -323,7 +326,7 @@ def test_a_failure_inside_the_rebuy_for_stranded_reheat_nights_rolls_the_swap_ba
     transaction — so a failure there takes the whole swap back with it
     rather than leaving Wednesday and Friday as cooks with nothing bought.
     """
-    plan_id, mon, wed, fri = _chain_plan()
+    plan_id, mon, wed, thu = _chain_plan()
     before = _snapshot()
     missing = tools.audit_plan_slots(plan_id)["missing"]
 
@@ -556,7 +559,7 @@ def test_the_swap_opens_exactly_one_connection_for_its_transaction(monkeypatch, 
         plan_id, entry_id = _plain_plan()
         target_day = MON
     else:
-        plan_id, mon, wed, fri = _chain_plan()
+        plan_id, mon, wed, thu = _chain_plan()
         target_day = WED if shape == "a reheat night" else MON
 
     opened = _count_get_conn(monkeypatch)
@@ -723,7 +726,7 @@ def test_swapping_a_reheat_night_still_rescales_the_source():
     numbers test_the_ordinary_unlink_still_rescales_for_every_other_caller
     records for this swap on the drop-dish side.
     """
-    plan_id, mon, wed, fri = _chain_plan()
+    plan_id, mon, wed, thu = _chain_plan()
     assert _grocery_by_item() == {"beef": "3 lbs", "lettuce": "3 heads"}
 
     tools.swap_meal_in_plan(plan_id, WED, "Soup", slot="dinner")
@@ -732,12 +735,12 @@ def test_swapping_a_reheat_night_still_rescales_the_source():
     assert on_list["beef"] == "2 lbs"
     assert on_list["lettuce"] == "2 heads"
     assert on_list["stock"] == "1 l"
-    assert [t["entry_id"] for t in tools.plan_leftover_chains(plan_id)["sources"][mon]["targets"]] == [fri]
+    assert [t["entry_id"] for t in tools.plan_leftover_chains(plan_id)["sources"][mon]["targets"]] == [thu]
 
 
 def test_swapping_the_cook_night_still_buys_for_the_nights_it_fed():
     """_reingest_unlinked_entries, inside the transaction now, still does its job."""
-    plan_id, mon, wed, fri = _chain_plan()
+    plan_id, mon, wed, thu = _chain_plan()
 
     out = tools.swap_meal_in_plan(plan_id, MON, "Soup", slot="dinner")
 

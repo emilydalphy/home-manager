@@ -13,12 +13,13 @@ as test_plan_quality's integration tests.
 from __future__ import annotations
 
 import datetime
+import json
 
 import pytest
 
 from app import agent, tools
 from app.db import get_conn
-from app.tools import meal_variety
+from app.tools import leftovers, meal_variety
 
 
 def _monday(offset_weeks: int = 1) -> str:
@@ -72,11 +73,28 @@ def _dinners(plan_id: int) -> list[tuple[str, str, str, str]]:
         (plan_id,),
     ).fetchall()
     conn.close()
-    return [(r["date"], r["slot_state"], r["meal"], r["reasoning"]) for r in rows]
+    return [(r["date"], r["slot_state"], _dish(r["meal"], r["derived_from_json"]), r["reasoning"]) for r in rows]
+
+
+def _dish(meal: str | None, derived_json: str | None) -> str | None:
+    """The dish a night is, as the Plan tab files it: a night eating a
+    portion from the freezer is that dish (2026-09-23)."""
+    frozen = (json.loads(derived_json or "{}") or {}).get(leftovers.FROM_FREEZER_KEY)
+    return frozen["dish"] if isinstance(frozen, dict) else meal
 
 
 def _distinct(plan_id: int) -> set[str]:
     return {m for _, state, m, _ in _dinners(plan_id) if state == "planned"}
+
+
+def _links(plan_id: int) -> dict[str, str]:
+    """{leftovers night: the night it eats from} for every confirmed chain."""
+    chains = tools.plan_leftover_chains(plan_id)
+    return {v["date"]: v["source"]["date"] for v in chains["leftovers"].values()}
+
+
+def _days_apart(a: str, b: str) -> int:
+    return (datetime.date.fromisoformat(b) - datetime.date.fromisoformat(a)).days
 
 
 # ---------- the reported bug ----------
@@ -92,12 +110,15 @@ def test_five_dishes_against_a_preference_of_four_become_four(recipes, stub_mode
     dinners = _dinners(plan["weekly_plan_id"])
     assert len(dinners) == 7 and all(state == "planned" for _, state, _, _ in dinners)
     assert len(_distinct(plan["weekly_plan_id"])) == 4
-    # The dish that first appeared latest is the one that went, and the
-    # night it held now says why it repeats.
+    # The dish that first appeared latest is the one that went. Its night
+    # is leftovers of the nearest cook (Emily, 2026-09-23: fewer dishes
+    # than nights means batch cooking) — Thursday's Halloumi Salad, made
+    # double — not a second cooking of a kept dish, which is what the
+    # "On again — you asked for four dinners a week" line used to sit on.
     assert "Burgers" not in _distinct(plan["weekly_plan_id"])
     friday = dinners[4]
-    assert friday[2] in {"Chili", "Salmon", "Kofte", "Halloumi Salad"}
-    assert friday[3] == "On again — you asked for four dinners a week"
+    assert friday[2] == "Halloumi Salad"
+    assert _links(plan["weekly_plan_id"])[friday[0]] == dinners[3][0]
     assert tools.audit_plan_slots(plan["weekly_plan_id"])["complete"] is True
 
 
@@ -123,17 +144,30 @@ def test_the_default_of_seven_never_touches_a_week(recipes, stub_model):
     assert len(_distinct(plan["weekly_plan_id"])) == 7
 
 
-def test_repeats_are_spread_out_rather_than_back_to_back(recipes, stub_model):
-    """Two dishes asked for, seven delivered: the survivors alternate."""
+def test_two_dishes_over_seven_nights_are_two_batches_eaten_within_three_days(recipes, stub_model):
+    """
+    Two dishes asked for, seven delivered. This used to alternate them as
+    seven separate cooks (Chili, Salmon, Chili, …) — each night bought and
+    cooked on its own. Since Emily's 2026-09-23 decision ("If I want 2
+    types of lunches, but need 4 lunches, you should assume Im making
+    double of each"), two dishes over seven nights is two cooks, the rest
+    leftovers, none more than three days after its cook. Two cooks can't
+    reach seven nights while alternating, so the cooks are re-laid:
+    Chili Monday for Mon–Thu, Salmon Friday for Fri–Sun.
+    """
     tools.set_household_meal_preferences(dinners_per_week=2)
     week = _monday()
     stub_model(_week(week, DINNERS))
 
     plan = agent.generate_weekly_plan(week)
 
-    meals = [m for _, _, m, _ in _dinners(plan["weekly_plan_id"])]
-    assert set(meals) == {"Chili", "Salmon"}
-    assert meals == ["Chili", "Salmon", "Chili", "Salmon", "Chili", "Salmon", "Chili"]
+    dinners = _dinners(plan["weekly_plan_id"])
+    meals = [m for _, _, m, _ in dinners]
+    assert meals == ["Chili"] * 4 + ["Salmon"] * 3
+    links = _links(plan["weekly_plan_id"])
+    cooks = [d for d, *_ in dinners if d not in links]
+    assert cooks == [dinners[0][0], dinners[4][0]], "two cooks, one per dish"
+    assert all(1 <= _days_apart(src, night) <= 3 for night, src in links.items())
 
 
 # ---------- what is never dropped ----------
@@ -219,7 +253,13 @@ def test_a_chained_dish_goes_whole_when_nothing_else_can(recipes, stub_model):
     dinners = _dinners(plan["weekly_plan_id"])
     assert all(state == "planned" for _, state, _, _ in dinners)
     assert "Kofte" not in _distinct(plan["weekly_plan_id"])
-    assert tools.plan_leftover_chains(plan["weekly_plan_id"])["leftovers"] == {}
+    # Kofte's own chain went with it. The chains standing now are the
+    # batch cooking the three kept dishes do (2026-09-23): this used to
+    # assert there were no chains at all, when the freed nights were
+    # second cookings.
+    chains = tools.plan_leftover_chains(plan["weekly_plan_id"])
+    assert all(v["source"]["meal"] != "Kofte" for v in chains["leftovers"].values())
+    assert all(1 <= _days_apart(src, night) <= 3 for night, src in _links(plan["weekly_plan_id"]).items())
 
 
 def test_when_every_dish_is_protected_nothing_is_dropped(recipes, stub_model, caplog):

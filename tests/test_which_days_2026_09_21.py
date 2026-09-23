@@ -288,9 +288,18 @@ class TestTheCountsScaleToTheDaysKept:
             if m["slot"] == "snack":
                 snacks.setdefault(m["date"], []).append(m["meal"])
         assert all(len(snacks.get(d, [])) == 2 for d in kept)
-        # The folded repeats say the true scale.
-        folded = {m["reasoning"] for m in meals if m["slot"] == "dinner" and m["reasoning"].startswith("On again")}
-        assert folded == {"On again — four dinners a week, scaled to a five-day plan"}
+        # The folded nights are leftovers of the kept dishes now (Emily,
+        # 2026-09-23: fewer dishes than nights means batch cooking), within
+        # three days of their cook, on the kept days only. This used to pin
+        # the "On again — four dinners a week, scaled to a five-day plan"
+        # line the old second cookings carried.
+        chains = tools.plan_leftover_chains(plan_id)
+        dinner_links = [v for v in chains["leftovers"].values() if v["slot"] == "dinner"]
+        assert len(dinner_links) == 2, "five kept nights, three dishes: two nights of leftovers"
+        for v in dinner_links:
+            assert v["date"] in kept
+            gap = (datetime.date.fromisoformat(v["date"]) - datetime.date.fromisoformat(v["source"]["date"])).days
+            assert 1 <= gap <= 3
         # And the opener's count note, when it speaks, names the five-day plan.
         lines = tools.get_week_menu(plan_id)["draft_opener"]
         assert not any("seven-day plan" in line for line in lines)

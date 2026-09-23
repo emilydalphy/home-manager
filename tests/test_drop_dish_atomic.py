@@ -59,7 +59,10 @@ def _day(offset: int) -> str:
     return (START + datetime.timedelta(days=offset)).isoformat()
 
 
-COOK, REHEAT, LATE_REHEAT = _day(0), _day(2), _day(4)
+# The late reheat is three days after the cook: since 2026-09-23 a chain
+# further apart is repaired into a freezer portion (leftovers.MAX_LEFTOVER_DAYS),
+# and this file is about the drop, not the distance. It was _day(4).
+COOK, REHEAT, LATE_REHEAT = _day(0), _day(2), _day(3)
 
 # The "+"-recorded test at the foot of the file, same anchor.
 ADD_SRC, ADD_TGT = _day(0), _day(1)
@@ -126,7 +129,7 @@ def _plain_plan() -> tuple[int, int]:
 
 def _chain_plan() -> tuple[int, int, int, int]:
     """
-    An approved cook-once / reheat-twice chain (offsets 0, 2 and 4 from
+    An approved cook-once / reheat-twice chain (offsets 0, 2 and 3 from
     the household's today) — the shape
     that makes _unlink_leftover_target (and its approved-plan grocery
     rescale) part of a drop at all. Returns (plan, cook, reheat, late_reheat).

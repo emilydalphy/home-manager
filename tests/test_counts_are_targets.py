@@ -108,7 +108,12 @@ def _by_slot(plan_id: int, slot: str) -> dict[str, list[str]]:
 
 
 def _distinct(plan_id: int, slot: str) -> set[str]:
-    return {n.lower() for names in _by_slot(plan_id, slot).values() for n in names}
+    """The slot's distinct dishes as the Plan tab counts them: a reheat —
+    leftovers, or a portion from the freezer (2026-09-23) — is the dish it
+    reheats."""
+    dishes = meal_variety._group_dishes(meal_variety._load_slot_entries(plan_id, slot),
+                                        tools.plan_leftover_chains(plan_id))
+    return {d["name"].lower() for d in dishes}
 
 
 # ---------- the assumption, in one place ----------
@@ -183,9 +188,21 @@ def test_emilys_four_day_draft_lands_on_her_numbers(emilys_counts, stub_model, p
     lines = tools.get_week_menu(plan_id)["draft_opener"]
     assert lines[0] == "An ordinary week — three dinners across four nights."
     assert not any("day plan" in line for line in lines)
-    # The folded lunches say the true number, spelt right.
-    lunch_rows = [m for m in tools.get_weekly_plan(plan_id)["meals"] if m["slot"] == "lunch" and m["date"] in dates[2:]]
-    assert {m["reasoning"] for m in lunch_rows} == {"On again — three lunches a week, scaled to a four-day plan"}
+    # The folded lunches are leftovers now, not second cookings (Emily,
+    # 2026-09-23: "If I want 2 types of lunches, but need 4 lunches, you
+    # should assume Im making double of each"): Thursday eats Wednesday's
+    # Soup, Friday eats Tuesday's Wrap — each cooked double. This used to
+    # pin the "On again — three lunches a week, scaled to a four-day plan"
+    # line those second cookings carried; a leftovers night says what it
+    # is in its own headline.
+    chains = tools.plan_leftover_chains(plan_id)
+    lunch_links = {v["date"]: v["source"] for v in chains["leftovers"].values() if v["slot"] == "lunch"}
+    assert {d: (s["date"], s["meal"]) for d, s in lunch_links.items()} == {
+        dates[2]: (dates[1], "Soup"), dates[3]: (dates[0], "Wrap"),
+    }
+    # And the draft says so, once: the two breakfasts and the one dinner
+    # left repeating (after the re-pick) are batches too.
+    assert lines[1] == "Two breakfasts, two lunches and one dinner, each cooked double.", lines
 
 
 def test_the_model_is_handed_the_scaled_targets(emilys_counts, stub_model):
@@ -340,14 +357,6 @@ def test_the_count_note_names_dinners_first_then_the_first_meal_that_differs():
 
 # ---------- the verifier's round (2026-09-21) ----------
 
-def test_the_repeat_line_says_the_true_number_and_spells_it_right():
-    assert meal_variety.repeat_reason(3, "lunch") == "On again — you asked for three lunches a week"
-    assert meal_variety.repeat_reason(2, "lunch", usual=3, day_count=4) == \
-        "On again — three lunches a week, scaled to a four-day plan"
-    assert meal_variety.repeat_reason(1, "dinner", usual=1, day_count=4) == "On again — you asked for one dinner a week"
-    assert meal_variety.repeat_reason(2, "dish", usual=2) == "On again — you asked for two dishes a week"
-
-
 def test_a_folded_repeat_never_lands_a_long_dish_on_a_rush_night(stub_model, picker):
     """Sunday tagged rush holds a 30-minute stir fry; the household asked for
     two dinners. The braise is the older dish, but the stir fry is the one
@@ -377,16 +386,42 @@ def test_a_folded_repeat_never_lands_a_long_dish_on_a_rush_night(stub_model, pic
     assert "roast" not in _distinct(plan["weekly_plan_id"], "dinner"), "the latest long dish is the one that went"
 
 
-def test_a_rush_night_no_kept_dish_fits_is_left_as_generated():
-    rush = tools.RUSH_MAX_MINUTES  # 30 since Emily, 2026-09-23
-    caps = {"2026-10-05": rush}
-    braise = {"name": "Braise", "nights": [{"date": "2026-10-01", "id": 1}], "protected": False, "chained": False,
-              "food_groups": None, "minutes": 120}
-    assert meal_variety._spread_pick([braise], "2026-10-05", caps["2026-10-05"]) is None
-    quick = dict(braise, name="Quick", minutes=15, nights=[{"date": "2026-10-02", "id": 2}])
-    assert meal_variety._spread_pick([braise, quick], "2026-10-05", rush) is quick
-    unknown = dict(braise, name="Unknown", minutes=None, nights=[{"date": "2026-10-03", "id": 3}])
-    assert meal_variety._spread_pick([braise, unknown], "2026-10-05", rush) is unknown, "unknown minutes can't be judged"
+def test_caps_are_read_by_date_or_by_date_and_slot():
+    """The fold reads `caps` through one accessor, so it works with today's
+    {date: minutes} and with a slot-aware {(date, slot): minutes}."""
+    assert meal_variety._cap_at({"2026-10-05": 20}, "2026-10-05", "dinner") == 20
+    assert meal_variety._cap_at({("2026-10-05", "lunch"): 20}, "2026-10-05", "lunch") == 20
+    assert meal_variety._cap_at({("2026-10-05", "lunch"): 20}, "2026-10-05", "dinner") is None
+    assert meal_variety._cap_at({("2026-10-05", "dinner"): None}, "2026-10-05", "dinner") is None
+    assert meal_variety._cap_at(None, "2026-10-05", "dinner") is None
+
+
+def _night(i, date, dish):
+    return {"entry": {}, "id": i, "date": date, "slot": "dinner", "dish": dish, "meal": dish["name"],
+            "derived": {}, "reheat_of": None, "source": False, "done": False}
+
+
+def _dish(name, minutes):
+    return {"name": name, "nights": [], "protected": False, "chained": False, "food_groups": None,
+            "minutes": minutes}
+
+
+def test_a_moved_cook_never_lands_on_a_night_too_short_for_it():
+    """Re-laying the cooks (2026-09-23) puts each on a night its time cap
+    allows. Replaces the old _spread_pick pin: there is no second cooking
+    to place any more, only a cook to move."""
+    braise, quick = _dish("Braise", 120), _dish("Quick", 15)
+    dates = [f"2026-10-0{d}" for d in range(1, 8)]
+    nights = [_night(i, d, braise if i == 0 else quick if i == 1 else _dish(f"Other {i}", 30))
+              for i, d in enumerate(dates)]
+    kept = [braise, quick]
+    # Friday (the 5th night) is where the second run would start; a 20-minute cap there.
+    caps = {dates[4]: 20}
+    decisions, missed = meal_variety._plan_batches(nights, kept, caps, "dinner", [], relay=True)
+    assert not missed
+    cooks = {d["night"]["date"]: d["cook"]["dish"]["name"] for d in decisions if d["kind"] == "cook"}
+    assert cooks[dates[4]] == "Quick", "the braise is too long for Friday's cap; the quick dish cooks there"
+    assert cooks[dates[0]] == "Braise"
 
 
 @pytest.mark.parametrize("text,stands_down", [

@@ -86,6 +86,40 @@ def _resolve(links_to: str, by_date_slot: dict, by_id: dict):
 # counting those portions rather than quietly cooking less.
 FREEZER_EXTRA_KEY = "freezer_extra"
 
+# Leftovers are eaten within this many days of the cook (Emily,
+# 2026-09-23, the food-safety default). A later night either starts a
+# batch of its own or eats a portion frozen on the cook night. One
+# constant for every place that writes or checks a chain: the fold
+# (meal_variety), the repeated-dates expansion (agent._expand_repeated_
+# dates), the chain repair (weekly_plan.repair_leftover_chains) and the
+# prep-day batches (cook_ahead.apply_prep_day_batches).
+MAX_LEFTOVER_DAYS = 3
+
+# On a night Pomona turned into leftovers because the household asked for
+# fewer recipes than meals (Emily, 2026-09-23, "Decision E": "If I want 2
+# types of lunches, but need 4 lunches, you should assume Im making double
+# of each of the recipes. thats the batch cooking point"). The chain itself
+# is the ordinary one (links_to / make_double_for); this only says Pomona
+# made it, so the draft's opener can say so in one line.
+BATCH_KEY = "batch_leftovers"
+
+# On a night that eats a portion frozen on an earlier cook: the cook's
+# "entry_id:N". The night itself is a freeform "Leftovers from the
+# freezer — Monday’s Chili" row, which buys nothing (freeform never
+# reaches the list) and reads as a reheat on every screen (the leftovers
+# regex); the cook carries the portion as FREEZER_EXTRA_KEY, so the batch
+# is bought and cooked big enough.
+FROM_FREEZER_KEY = "from_freezer"
+
+
+def days_apart(earlier: str, later: str) -> int:
+    return (date.fromisoformat(later) - date.fromisoformat(earlier)).days
+
+
+def freezer_night_name(dish: str, cook_date: str) -> str:
+    """"Leftovers from the freezer — Monday’s Chili"."""
+    return f"Leftovers from the freezer — {_weekday(cook_date)}’s {dish}"
+
 
 def freezer_servings(derived) -> int:
     """How many portions of this entry's cook are meant for the freezer —

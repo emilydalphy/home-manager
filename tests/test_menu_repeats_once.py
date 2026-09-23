@@ -138,9 +138,14 @@ def test_every_row_of_a_fold_carries_the_entrys_reasoning_and_derived_from():
     ])
 
     assert [r["reasoning"] for r in out] == ["quick, and the oats are in"] * 2
+    # Wednesday also says it eats Monday's batch (Emily, 2026-09-23: the
+    # same dish on several days is one cook) — on top of, never instead of,
+    # what the entry said.
     assert [r["derived_from"] for r in out] == [
         {"tags": ["rush"], "inputs": ["mood:easy"]},
-    ] * 2
+        {"tags": ["rush"], "inputs": ["mood:easy"], "links_to": "2026-09-28:breakfast",
+         "batch_leftovers": True, "cook_ahead": True},
+    ]
 
 
 def test_the_rows_of_a_fold_do_not_share_one_derived_from():
@@ -157,7 +162,8 @@ def test_the_rows_of_a_fold_do_not_share_one_derived_from():
 
     out[0]["derived_from"]["inputs"].append("held:nana")
 
-    assert out[1]["derived_from"] == {"inputs": ["cuisines:thai"]}
+    assert out[1]["derived_from"]["inputs"] == ["cuisines:thai"]
+    assert out[1]["derived_from"]["links_to"] == "2026-09-28:lunch", "Tuesday eats Monday's batch (2026-09-23)"
 
 
 def test_an_entry_with_no_dates_is_left_exactly_as_it_was():
