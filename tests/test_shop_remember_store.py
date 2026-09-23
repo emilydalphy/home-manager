@@ -178,7 +178,7 @@ settle(function () {
 });
 """)
     assert out["moved"] == [{"store": "Loblaws"}], "the route's default remembers; no remember:false"
-    assert out["toast"] == {"msg": "Changes saved", "action": "Put back", "hold": 8000}
+    assert out["toast"] == {"msg": "Eggs was moved to Loblaws", "action": "Undo", "hold": 8000}
     assert out["prefs"] == {"eggs": "Loblaws"}, "the screen's copy of the usual follows at once"
     assert out["undo"] == [{
         "assignments": [{"item_id": 7, "item": "Eggs", "store": "Costco", "decided": True}],

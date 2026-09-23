@@ -335,7 +335,10 @@ var panels = {};
 var scrollEl = null;
 var TOASTS = [];
 function showToast(m) { TOASTS.push(m); }
-function toastSaved() { TOASTS.push('Changes saved'); }
+// Chores is paused (Emily, 2026-09-18) and its ticks were left exactly as
+// they were by the copy sweep of 2026-09-23 — so they pass the shared
+// helper nothing and get its plain word.
+function toastSaved(said) { TOASTS.push(said || 'Saved'); }
 function dayName(dateStr, opts) { return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', opts); }
 var LOADS = [];
 function loadChores(p) { LOADS.push('now'); }
@@ -722,7 +725,7 @@ Promise.resolve().then(function () { return Promise.resolve(); }).then(function 
     assert out["posts"][1] == {"url": "/api/chores/11/status", "body": {"status": "pending"}}
     assert out["snaps"][2]["binsDone"] is True
     # The tick that landed says so (S10, 2026-09-13); the one that failed says that.
-    assert out["toasts"] == ["Changes saved", "That didn’t save. Try it again in a moment."]
+    assert out["toasts"] == ["Saved", "That didn’t save. Try it again in a moment."]
     # The successful tick told Now's card; the failed one did not.
     assert out["loads"] == ["now"]
 

@@ -725,7 +725,8 @@ def test_actually_i_need_it_says_put_back_and_re_reads_the_week_when_a_move_went
     start = SHELL_JS.index("case 'undo-already-have':")
     handler = SHELL_JS[start:SHELL_JS.index("case 'elsewhere-back':", start)]
     assert "/pre-shop-undo" in handler
-    assert "showToast('Put back.')" in handler
+    # The line names the row it put back (copy sweep finding 3).
+    assert "showToast(groBackOnListLine(backName))" in handler
     assert "body.moves_cancelled" in handler
     assert "loadWeekMenu(panels.week)" in handler and "refreshTodayMoves()" in handler
 

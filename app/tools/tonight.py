@@ -1281,7 +1281,10 @@ def tonight_night_off_undo(day: str | None = None, now: datetime | None = None) 
     dish = record.get("dish") or ""
     return {
         "status": "restored", "date": today, "dish": dish or None,
-        "said": f"{dish} is back on tonight." if dish else "Put back.",
+        # The good version is the one above; the fallback says the same
+        # thing without a name rather than the old subjectless "Put back."
+        # (copy sweep 2026-09-23, finding 3).
+        "said": f"{dish} is back on tonight." if dish else "It’s back on tonight.",
     }
 
 

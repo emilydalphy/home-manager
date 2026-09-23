@@ -4553,13 +4553,6 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   color: var(--ink);
   margin: 0;
 }
-.gro-stores-prompt-sub {
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.45;
-  color: var(--ink-secondary);
-  margin: 0;
-}
 .gro-stores-prompt-add { display: flex; gap: 8px; align-items: center; }
 .gro-stores-prompt-input {
   flex: 1 1 auto;

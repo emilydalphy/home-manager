@@ -15,7 +15,7 @@ Now:
     Undo that posts /include (groSetAside / groPutBack), the shape Remove's
     undo already had;
   * LIST carries a "Getting elsewhere · N" foot section (groElsewhereHtml)
-    with "Put it back" on each row — the same /include, one tap;
+    with "Back on the list" on each row — the same /include, one tap;
   * the header count and Now's "Shop for tonight · N items" both read
     needed rows with excluded_from_list = 0, so they agree before and
     after, and after the undo.
@@ -104,7 +104,10 @@ def test_the_chip_and_the_foot_wording_are_one_line_changes():
     """The card leaves the words to Emily — they sit together as constants."""
     assert "var GRO_ELSEWHERE_CHIP = 'Getting it elsewhere';" in SHELL_JS
     assert "var GRO_ELSEWHERE_SECTION = 'Getting elsewhere';" in SHELL_JS
-    assert "var GRO_ELSEWHERE_BACK = 'Put it back';" in SHELL_JS
+    # "Back on the list", not "Put it back" and not "Undo": this button is
+    # not an undo, it is a standing way back on a row set aside days ago
+    # (copy sweep 2026-09-23, finding 2).
+    assert "var GRO_ELSEWHERE_BACK = 'Back on the list';" in SHELL_JS
     # And nothing renders the chip's words directly.
     assert SHELL_JS.count(">Getting it elsewhere<") == 0
     assert SHELL_JS.count("escapeHtml(GRO_ELSEWHERE_CHIP)") == 1, "one renderer"
@@ -145,7 +148,7 @@ settle(function () {
     assert out["before"]["hold"] == 8000, "the tab's own undo window, same as Remove's"
     assert out["before"]["open"] is None, "the ⋯ closes"
     assert out["posts"] == ["/api/grocery-list/1/exclude", "/api/grocery-list/1/include"]
-    assert out["after"] == "Put back."
+    assert out["after"] == "Rice is back on the list."
     assert out["removed"] == 0, "set aside is never a delete"
 
 
@@ -190,14 +193,14 @@ settle(function () {
     assert "Getting elsewhere &middot; 2" in foot
     assert foot.count('data-gro="elsewhere-back"') == 2
     assert 'data-gro="elsewhere-back" data-id="7" data-name="Whole chicken"' in foot
-    assert foot.count(">Put it back</button>") == 2
+    assert foot.count(">Back on the list</button>") == 2
     assert 'aria-label="Put Whole chicken back on the list"' in foot
     assert '<span class="gro-qty">1</span>' in foot
     assert "flag-toggle" not in foot and "staples-toggle" not in foot, "not a fold — the rows are in view"
     # Below the store cards.
     assert html.index("gro-elsewhere") > html.index('data-store="Costco"')
     assert out["posts"] == ["/api/grocery-list/7/include"]
-    assert out["toast"] == "Put back."
+    assert out["toast"] == "Whole chicken is back on the list."
 
 
 @_needs_node
@@ -226,7 +229,7 @@ def test_the_foot_is_quiet_and_its_tap_is_44px():
 
 def test_the_foot_is_the_one_way_back():
     """The wrap-up's "Actually, get it here" went with the wrap-up
-    (2026-09-18); the foot's "Put it back" is the way back, on the same
+    (2026-09-18); the foot's "Back on the list" is the way back, on the same
     /include the toast's Undo runs."""
     assert "undo-elsewhere" not in SHELL_JS
     assert "case 'elsewhere-back':" in SHELL_JS

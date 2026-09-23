@@ -932,9 +932,11 @@
 
   // ---------- the pop-up ----------
   // shell.js's showToast, without the action button (nothing on this
-  // screen offers an undo yet). One sentence for every save that lands
-  // (S10): the same words the shell uses, so the app has one voice for it.
-  var CHANGES_SAVED = 'Changes saved';
+  // screen offers an undo yet). The same shape the shell uses, so the app
+  // has one voice for it (S10): since 2026-09-23 the line names what was
+  // saved — "Thursday was saved", not "Changes saved" for all three of
+  // them (copy sweep finding 1; the shell's savedLine is the twin).
+  var SAVED_PLAIN = 'Saved';
   var toastEl = document.getElementById('toast');
   var toastTimer = null;
   function showToast(message) {
@@ -947,7 +949,12 @@
     if (toastTimer) clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { toastEl.hidden = true; }, 2200);
   }
-  function toastSaved() { showToast(CHANGES_SAVED); }
+  function savedLine(thing, verbed) {
+    var name = String(thing === null || thing === undefined ? '' : thing).trim();
+    if (!name) return SAVED_PLAIN;
+    return name + ' was ' + (verbed || 'saved');
+  }
+  function toastSaved(said) { showToast(said || SAVED_PLAIN); }
 
   // ---------- state ----------
   // The period being planned: where it starts and how many days it runs.
@@ -1875,7 +1882,7 @@
       $('day-sheet').hidden = true;
       paintTiles();
       paintCta();
-      toastSaved();
+      toastSaved(savedLine(weekdayName(draft.date), 'saved'));
     } catch (err) {
       console.warn('Day sheet save failed:', err);
       draft.saving = false;
@@ -2068,7 +2075,7 @@
       await loadAttendance();
       paintHoliday(date);
       reseedSheet(date);
-      toastSaved();
+      toastSaved(savedLine(h.name, 'saved'));
     } catch (err) {
       console.warn('Holiday answer failed:', err);
       h.answer = previous;
@@ -2278,8 +2285,14 @@
       paintTiles();
       renderAwaySet();
       $('away-another').hidden = false;
+      // Who was marked away, when the stretch named anybody — the same
+      // names the "Covers…" line under the sheet was reading back. Taken
+      // before the sheet closes, which clears the draft.
+      var awayWho = (awayDraft && awayDraft.who || []).slice();
       closeAwaySheet();
-      toastSaved();
+      toastSaved(awayWho.length
+        ? joinNames(awayWho) + (awayWho.length === 1 ? ' was' : ' were') + ' marked away'
+        : savedLine('Your time away', 'saved'));
     } catch (err) {
       console.warn('Away range save failed:', err);
       $('away-covers-text').textContent = 'I couldn’t save that just now — try again in a moment.';

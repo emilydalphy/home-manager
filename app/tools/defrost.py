@@ -1014,7 +1014,7 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
          a soft remove that lands under "Already had on hand", tells a
          staple "we have plenty", and never writes inventory — policy
          2026-09-01), marked removed_by FREEZER_REMOVED_BY so the one undo
-         (pre_shop.undo_pre_shop_drop, "Actually, I need it") knows to take
+         (pre_shop.undo_pre_shop_drop, "Put back on the list") knows to take
          the move below with it;
       2. one prep_tasks row per (item, cook night), dated with the item's
          own lead (lead_hours_for_item) — same v1-simplification and same
@@ -1154,7 +1154,7 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
                 if row["status"] == "removed":
                     # Takes the move with it (undo_pre_shop_drop reads the
                     # mark), so a deselect is one write path — the same
-                    # one Shop's "Actually, I need it" runs.
+                    # one Shop's "Put back on the list" runs.
                     put_back.append(row["id"])
                     cancelled += _pre_shop.undo_pre_shop_drop(row["id"]).get("moves_cancelled", 0)
             # And the move alone where there was no line to put back

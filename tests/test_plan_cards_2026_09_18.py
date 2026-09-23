@@ -415,7 +415,7 @@ def test_the_after_approve_hand_off_waits_for_the_freezer_items_and_says_approve
     assert "await ensureDefrostAskItems(panel, weekState.data);" in landing
     assert "ask = !!(defrostAskState.items && defrostAskState.items.length);" in landing
     assert "if (ask) goMealsStep('freezer', { replace: true });" in landing
-    assert "else { goGroceryList(); showToast('Approved. Here’s your list.'); }" in landing
+    assert "else { goGroceryList(); showToast('Your week was approved'); }" in landing
 
 
 # ---------------------------------------------------------------------------
@@ -465,7 +465,9 @@ def test_a_done_row_strikes_through_and_its_button_turns_celadon_with_put_back()
     dinner = html[html.index('<div class="wk-row is-done"'):]
     assert 'data-wk-done="dinner" aria-pressed="true"' in dinner
     assert "wk-mini-done is-done" in dinner
-    assert 'aria-label="Put back Black bean tacos"' in dinner
+    # "Put back " was the same euphemism, heard only by a screen reader
+    # (copy sweep finding 22): it says what the tap leaves true instead.
+    assert 'aria-label="Not cooked yet — Black bean tacos"' in dinner
     assert "is-done" not in lunch and 'aria-pressed="false"' in lunch
     done_css = SHELL_CSS[SHELL_CSS.index(".wk-mini-done.is-done {"):SHELL_CSS.index("}", SHELL_CSS.index(".wk-mini-done.is-done {"))]
     assert "background: var(--celadon)" in done_css and "color: var(--on-accent-ink)" in done_css
@@ -549,7 +551,8 @@ def test_the_swap_sheet_is_a_sheet_and_the_picks_go_through_week_ones_routes():
     picked = _extract("runSwapPick", SHELL_JS)
     assert "'/swap-choose'" in picked and "option: picked.index" in picked
     assert "/swap-pick'" not in SHELL_JS and "swap-options?entry_id" not in SHELL_JS, "the duplicate routes are gone"
-    assert "toastSaved({ label: 'Undo', onClick: function () { runSwapUndo(panel, wkFreshDay(day), slot); } }, SWAP_UNDO_MS);" in SHELL_JS
+    assert "toastSaved(savedLine(picked.meal, 'swapped in')," in SHELL_JS
+    assert "{ label: 'Undo', onClick: function () { runSwapUndo(panel, wkFreshDay(day), slot); } }, SWAP_UNDO_MS);" in SHELL_JS
     assert "'/api/cooker/check-meal'" in _extract("runMealDone", SHELL_JS), "Done is the same server tick Today's move uses"
 
 

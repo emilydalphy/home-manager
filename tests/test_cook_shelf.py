@@ -278,7 +278,9 @@ def test_a_reheat_night_is_the_card_with_mark_eaten_in_the_dock():
     assert ">Leftovers — Tuesday’s Bulgogi Wraps<" in out["html"]
     assert ">Reheat — cooked on Tuesday.<" in out["html"]
     assert ">On the table<" in out["html"] and ">Start<" not in out["html"]
-    assert 'data-cook="check-meal" data-entry-id="7" data-next="done">Mark eaten</button>' in out["dock"]
+    # data-name is what the un-tick's toast reads back (copy sweep finding 1).
+    assert 'data-cook="check-meal" data-entry-id="7" data-next="done" ' in out["dock"]
+    assert '>Mark eaten</button>' in out["dock"]
 
 
 @_needs_node
