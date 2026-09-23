@@ -19,9 +19,14 @@ and ask — not the person, and not by way of the day sheet. Three answers:
   grocery lines ride along by entry id, and the list itself is not touched.
 - **Not tonight — we're going out** (Loop Board, Emily 2026-09-14: "a night
   off doesn't mean fighting the app into swapping for a dish I'm not going
-  to cook either"). One answer, no follow-up question. tonight_night_off
-  moves the dish to the next free night of this plan when there is one and
-  drops it when there isn't, and either way leaves tonight `planned_empty`
+  to cook either"). One answer, no follow-up question, and never a refusal
+  (Emily, 2026-09-22: "the job of Pomona is to do all that planning work").
+  tonight_night_off moves the dish to the next free night of this plan
+  when there is one; a dish cooked double for later nights is cooked on the
+  first of them instead, with tonight's share frozen; a leftovers night or a
+  dinner already cooked goes in the freezer; anything else comes off the
+  week — see _night_off_plan. Every shape but that last one can be undone
+  exactly (tonight_night_off_undo). Tonight is left `planned_empty`
   — a night that needs no decision, so nothing anywhere reads it as missed,
   skipped or overdue. Whatever was already bought for a dropped dish and
   won't keep is flagged "use soon" rather than silently going off in the
@@ -197,10 +202,10 @@ def tonight_check(now: datetime | None = None) -> dict:
     screen still draws something for: `night_off` is True, `use_soon`
     lists anything already bought for the dropped dish that won't keep,
     and the card states the night rather than asking again.
-    `night_off_moves_to` / `night_off_blocked_message` are the "Not tonight
-    — we're going out" row's own preview: where that answer would put
-    tonight's dish, or the sentence it would refuse with — both from the
-    same functions tonight_night_off uses, never a second reading. A day with no dinner
+    `night_off_line` (with `night_off_moves_to` for the night the dish
+    would land on) is the "Not tonight — we're going out" row's own
+    preview, from _night_off_plan — the decision tonight_night_off follows,
+    never a second reading. A day with no dinner
     planned is `reason` 'unplanned' with `dinner` None: Now's existing
     "Tonight needs a dinner" card already leads there, so this card stays
     out of its way rather than asking a second question about the same
@@ -237,12 +242,14 @@ def tonight_check(now: datetime | None = None) -> dict:
         # (§8 rule 7: a control whose effect you have to guess has failed),
         # and by the same dry run the answer itself will use.
         "night_off_moves_to": None, "night_off_moves_to_weekday": None,
-        # … and when the answer would be REFUSED, the sentence it would be
-        # refused with, so the row states that instead of a promise it
-        # cannot keep. The preview used to run without this check, so a
-        # dinner cooked double for a later night read "comes off the week"
-        # and then refused on the tap — §8 rule 7 inverted, not served.
-        "night_off_blocked": False, "night_off_blocked_message": None,
+        # … and the row's whole sub-line, written here rather than on the
+        # screen (2026-09-22): "Seared Garlic Chicken Thighs moves to
+        # Wednesday. The extra goes in the freezer." It comes from
+        # _night_off_plan, the same decision the tap follows, so the row
+        # never promises what the tap won't do. There is no refusal to
+        # preview any more — the night off always has an answer (Emily,
+        # 2026-09-22), so night_off_blocked / _message are gone.
+        "night_off_line": "",
     }
 
     conn = get_conn()
@@ -325,6 +332,13 @@ def tonight_check(now: datetime | None = None) -> dict:
         }
 
     out["dinner"] = _describe(tonight_row)
+    if _cooked_night_off(tonight_row):
+        # Cooked, and then called off — the dish went in the freezer and
+        # the row stays as the record of the cook (tonight_night_off's
+        # 'freeze_cooked'). Still a night off, and Now says so.
+        out["reason"] = "night_off"
+        out["night_off"] = True
+        return out
     if (tonight_row["cooked_status"] or "") == "done":
         out["reason"] = "cooked"
         return out
@@ -335,19 +349,18 @@ def tonight_check(now: datetime | None = None) -> dict:
     else:
         out["ask"] = True
 
-    free = _next_free_night(plan, rows, today)
-    if free:
-        out["night_off_moves_to"] = free
-        out["night_off_moves_to_weekday"] = _weekly_plan._weekday_of(free)
-    else:
-        # Exactly the check the answer itself makes, in the same words —
-        # one function, so the card and the write cannot disagree about
-        # what the tap will do. Only reachable with nowhere to move the
-        # dish to: a chain the swap could keep intact IS a free night.
-        blocked = _chain_refusal(tonight_row)
-        if blocked:
-            out["night_off_blocked"] = True
-            out["night_off_blocked_message"] = blocked
+    # Exactly the decision the answer itself makes — one function, so the
+    # card and the write cannot disagree about what the tap will do.
+    conn = get_conn()
+    try:
+        step = _night_off_plan(conn, plan, rows, tonight_row, today)
+    finally:
+        conn.close()
+    out["night_off_line"] = step["line"]
+    moves_to = step.get("free") or (step.get("target") or {}).get("date")
+    if moves_to:
+        out["night_off_moves_to"] = moves_to
+        out["night_off_moves_to_weekday"] = _weekly_plan._weekday_of(moves_to)
 
     # The other nights, later first, each proven swappable by a dry run.
     later = [r for r in rows if r["date"] > today]
@@ -583,34 +596,314 @@ def _settle_night_off(plan_id: int, today: str, use_soon: list[str], conn) -> No
     )
 
 
-def _chain_refusal(row) -> str | None:
-    """
-    The sentence a night off is refused with when tonight's dinner was
-    cooked double for a later night — or None when it feeds nobody.
+# ---- the plan a night off follows, shared by the row and the tap ----
+#
+# Emily, 2026-09-22, after the sheet refused her with "…also feeds
+# Wednesday's dinner — change that first and I'll take tonight off": "the
+# job of Pomona is to do all that planning work. Fix this so that it can
+# find a solution on its own." A standing rule since: the night off does the
+# knock-on planning itself and never answers "go change X first". Every
+# shape of tonight now has an answer, and _night_off_plan is the ONE place
+# that decides which — the row's sub-line reads it before the tap and the
+# tap follows it, so the two cannot say different things.
 
-    ONE function, because the card has to say it before the tap and the
-    write has to say it on the tap, and those two disagreeing is exactly
-    the defect this exists to close: the sheet promised "Bean Chili comes
-    off the week" over a dish it would then refuse to take off. Reading the
-    chain is weekly_plan.chain_fed_nights, shared with the Review
-    stepper's own refusal, so the two cannot name different nights.
+# Where the undo record lives: on the derived_from of the row that stands
+# on tonight afterwards (the planned_empty night, or a cooked dinner that
+# stays where it is). Written once by the tap, read once by Undo.
+NIGHT_OFF_UNDO_KEY = "night_off_undo"
+
+# inventory_items.source for a portion a night off put in the freezer — so
+# the row says where it came from, and Undo can tell it is its own.
+NIGHT_OFF_FROZEN_SOURCE = "night_off"
+
+# How long a cooked dish keeps in the freezer, for the row's use-by date.
+# Set here rather than read off quantities' item table: that table keys on
+# words ("chicken" → two days), which is fresh-food shelf life, and a
+# cooked, frozen dish named "Seared Garlic Chicken Thighs" would inherit it.
+FROZEN_COOKED_KEEPS_DAYS = 90
+
+
+def _fed_label(target: dict) -> str:
+    """"Wednesday", or "Wednesday’s lunch" for a night the chain feeds at
+    another meal — chain_fed_nights' own way of naming one."""
+    weekday = _weekly_plan._weekday_of(target["date"])
+    return weekday if target["slot"] == "dinner" else f"{weekday}’s {target['slot']}"
+
+
+def _night_off_plan(conn, plan, rows, tonight_row, today: str) -> dict:
     """
-    dish = _dish_name(row) or "Tonight’s dinner"
-    try:
-        fed = _weekly_plan.chain_fed_nights(row["derived_from_json"])
-    except ValueError:
-        # A token nobody can read is still a night being fed. Refuse
-        # without naming one rather than raise — this is an answer.
-        return (
-            f"{dish} also feeds a later night — change that first and I’ll "
-            "take tonight off."
-        )
-    if not fed:
-        return None
-    return (
-        f"{dish} also feeds {_weekly_plan._join_with_and(fed)} — change that "
-        "first and I’ll take tonight off."
+    What "Not tonight — we're going out" will do with tonight, decided once
+    and read twice (tonight_check's sub-line, tonight_night_off's write).
+
+    `kind`, in the order it is decided:
+      - 'settle'        nothing to keep: an open dinner, or none at all.
+      - 'freeze_cooked' tonight's dinner is already ticked cooked. It stays
+                        on the plan (the tick is a record, and a chain may
+                        still be eating from it); tonight's share goes in
+                        the freezer.
+      - 'freeze_reheat' tonight is itself a leftovers night. That portion
+                        goes in the freezer, and its cook night's batch
+                        keeps its size with the portion counted as the
+                        freezer's (leftovers.FREEZER_EXTRA_KEY). The freezer
+                        and not a later free night, deliberately: leftovers
+                        already days old pushed further down the week is a
+                        food-safety guess this app should not make for
+                        anybody, and the freezer is always true.
+      - 'move'          a later night is free — the dish moves there
+                        (unchanged since 2026-09-15).
+      - 'cook_on_fed'   the dish was cooked double for later nights and no
+                        night is free (Emily's option A, 2026-09-22): the
+                        cook moves onto the FIRST night it was feeding, at
+                        the same size, replacing that night's leftovers; any
+                        later fed nights keep their leftovers, now from the
+                        new cook night; the portion tonight would have eaten
+                        goes in the freezer. Groceries untouched.
+      - 'drop'          feeds nobody, nowhere to move — comes off the week.
+
+    `line` is the row's sub-line, a statement of what the tap will do (§8
+    rule 7). `conn` may be the tap's own transaction or a plain read
+    connection — this only reads.
+    """
+    from . import leftovers as _leftovers
+
+    dish = _dish_name(tonight_row) if tonight_row is not None else ""
+    state = (tonight_row["slot_state"] or "planned") if tonight_row is not None else None
+    if tonight_row is None or state != "planned" or not dish:
+        return {"kind": "settle", "dish": "", "line": ""}
+    if (tonight_row["cooked_status"] or "") == "done":
+        return {"kind": "freeze_cooked", "dish": dish, "line": f"The {dish} goes in the freezer."}
+
+    chains = _leftovers.plan_leftover_chains(plan["id"], conn=conn)
+    reheat = chains["leftovers"].get(tonight_row["id"])
+    if reheat:
+        return {
+            "kind": "freeze_reheat", "dish": dish, "source_id": reheat["source"]["entry_id"],
+            "line": f"The {dish} leftovers go in the freezer.",
+        }
+
+    free = _next_free_night(plan, rows, today, conn=conn)
+    if free is not None:
+        return {
+            "kind": "move", "dish": dish, "free": free,
+            "line": f"{dish} moves to {_weekly_plan._weekday_of(free)}.",
+        }
+
+    source = chains["sources"].get(tonight_row["id"])
+    # In EATING order, not plan_leftover_chains' (date, slot) string sort,
+    # which puts Wednesday's dinner before Wednesday's lunch: the cook has
+    # to land on the first meal that eats from it, or the next one would
+    # be a reheat of a batch not yet cooked.
+    slots = list(_weekly_plan.DAY_SLOTS)
+    targets = sorted(
+        (t for t in (source or {}).get("targets") or [] if t["date"] > today),
+        key=lambda t: (t["date"], slots.index(t["slot"]) if t["slot"] in slots else len(slots)),
     )
+    if targets:
+        first = targets[0]
+        return {
+            "kind": "cook_on_fed", "dish": dish, "target": first, "rest": targets[1:],
+            "line": f"{dish} moves to {_fed_label(first)}. The extra goes in the freezer.",
+        }
+    return {"kind": "drop", "dish": dish, "line": f"{dish} comes off the week."}
+
+
+def _said(kind: str, dish: str, plan_step: dict | None = None, use_soon: list[str] | None = None) -> str:
+    """The toast after the tap — what changed, in one breath (§8: toasts
+    name the thing). Built here so the sheet and chat say the same."""
+    said = "Tonight’s off."
+    if kind == "move" or kind == "cook_on_fed":
+        where = plan_step.get("free") if kind == "move" else None
+        label = _weekly_plan._weekday_of(where) if where else _fed_label(plan_step["target"])
+        said += f" {dish} moved to {label}."
+    elif kind == "drop":
+        said += f" {dish} is off the week."
+    elif kind == "freeze_reheat":
+        said += f" The {dish} leftovers go in the freezer."
+    elif kind == "freeze_cooked":
+        said += f" The {dish} goes in the freezer."
+    if use_soon:
+        said += f" Use the {_weekly_plan._join_with_and(use_soon)} soon."
+    return said
+
+
+# ---- the undo record ----
+
+def _row_dicts(conn, sql: str, params) -> list[dict]:
+    return [{k: r[k] for k in r.keys()} for r in conn.execute(sql, params).fetchall()]
+
+
+def _touched_ids(rows_all, direct: set[int], refs: list[str]) -> set[int]:
+    """The rows a night off may rewrite: the ones it moves or deletes by
+    name, plus every row whose derived_from names one of the nights
+    involved — a chain reference ("2026-09-23:dinner") is rewritten in
+    place, and Undo has to be able to put those back too. Over-inclusion
+    is harmless (a snapshot of a row that didn't change restores to
+    itself); under-inclusion is an Undo that leaves a chain pointing at the
+    wrong night."""
+    touched = set(direct)
+    for r in rows_all:
+        text = r["derived_from_json"] or ""
+        if any(f'"{ref}"' in text for ref in refs):
+            touched.add(r["id"])
+    return touched
+
+
+def _snapshot(conn, entry_ids: set[int]) -> dict:
+    """Every column of every row a night off is about to touch, with the
+    grocery links and prep rows hanging off them — taken BEFORE the first
+    write, on the tap's own transaction."""
+    ids = sorted(entry_ids)
+    if not ids:
+        return {"entries": [], "links": [], "prep": []}
+    marks = ",".join("?" * len(ids))
+    hh = household_id()
+    return {
+        "entries": _row_dicts(
+            conn, f"SELECT * FROM meal_plan_entries WHERE household_id = ? AND id IN ({marks})", (hh, *ids)),
+        "links": _row_dicts(
+            conn, f"SELECT * FROM meal_plan_grocery_links WHERE household_id = ? AND meal_plan_entry_id IN ({marks})",
+            (hh, *ids)),
+        "prep": _row_dicts(
+            conn, f"SELECT * FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id IN ({marks})", (hh, *ids)),
+    }
+
+
+_FINGERPRINT_COLS = ("date", "slot", "slot_state", "cooked_status", "derived_from_json")
+
+
+def _fingerprint(conn, entry_ids, holder_id: int) -> list[list]:
+    """What the touched rows look like right after the tap. Undo puts the
+    week back only while they still look exactly like this — the same
+    "written once, read once" rule the nights swap's moved_from token
+    keeps: an Undo tapped after somebody cooked, swapped or moved one of
+    these nights must not quietly undo THEIR change too. The holder's own
+    derived_from carries this record, so it is compared without it."""
+    ids = sorted(set(entry_ids) | {holder_id})
+    marks = ",".join("?" * len(ids))
+    out = []
+    for r in conn.execute(
+        f"SELECT id, {', '.join(_FINGERPRINT_COLS)} FROM meal_plan_entries "
+        f"WHERE household_id = ? AND id IN ({marks}) ORDER BY id",
+        (household_id(), *ids),
+    ).fetchall():
+        cols = _FINGERPRINT_COLS[:-1] if r["id"] == holder_id else _FINGERPRINT_COLS
+        out.append([r["id"], *[r[c] for c in cols]])
+    return out
+
+
+def _stamp_undo(conn, holder_id: int, record: dict) -> None:
+    row = conn.execute(
+        "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (holder_id, household_id()),
+    ).fetchone()
+    derived = json.loads(row["derived_from_json"] or "{}")
+    derived[NIGHT_OFF_UNDO_KEY] = record
+    conn.execute(
+        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
+        (json.dumps(derived), holder_id),
+    )
+
+
+def _freeze_portion(conn, dish: str, servings: int, cooked_on: str) -> dict:
+    """
+    Record a cooked dish in the freezer — an inventory_items row at
+    location 'freezer', the app's one idea of "what's in the freezer"
+    (slot_needs' ready-made recommendation and generation's
+    current_inventory both read it).
+
+    Always a FRESH row, never merged into one already there under the same
+    name: Undo takes back exactly the row this wrote, and a merge would
+    leave it guessing how much of the quantity was its own.
+    """
+    from datetime import timedelta
+
+    item = f"{dish} (cooked)"
+    quantity = f"{servings} serving{'s' if servings != 1 else ''}" if servings > 0 else ""
+    keeps = (date.fromisoformat(cooked_on) + timedelta(days=FROZEN_COOKED_KEEPS_DAYS)).isoformat()
+    cur = conn.execute(
+        "INSERT INTO inventory_items (household_id, item, quantity, source, expiration_date, category, location) "
+        "VALUES (?, ?, ?, ?, ?, 'frozen', 'freezer')",
+        (household_id(), item, quantity, NIGHT_OFF_FROZEN_SOURCE, keeps),
+    )
+    inv_id = cur.lastrowid
+    rev = conn.execute("SELECT rev FROM inventory_items WHERE id = ?", (inv_id,)).fetchone()["rev"]
+    return {"id": inv_id, "rev": rev, "item": item, "quantity": quantity}
+
+
+def _shrink_chain_into_freezer(conn, source_id: int, gone_ref: str, servings: int, inv_id: int,
+                               night_off_from: str) -> None:
+    """
+    A cook stops feeding one night (`gone_ref`, "YYYY-MM-DD:slot") and
+    keeps its size: that night's share is counted as the freezer's instead
+    (leftovers.FREEZER_EXTRA_KEY), so the Cook card, the fridge-move
+    quantities and any later grocery rescale go on counting the portion
+    that was bought for. The make_double_note is re-said by the same
+    function _unlink_leftover_target uses, so the note never reads
+    differently depending on which path last touched it.
+    """
+    from . import leftovers as _leftovers
+
+    row = conn.execute(
+        "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (source_id, household_id()),
+    ).fetchone()
+    derived = json.loads(row["derived_from_json"] or "{}")
+    fed = derived.get("make_double_for") or []
+    if isinstance(fed, str):
+        fed = [fed]
+    fed = [t for t in fed if str(t).strip() != gone_ref]
+    if fed:
+        derived["make_double_for"] = fed
+        derived["make_double_note"] = _weekly_plan._make_double_note_text(fed)
+    else:
+        derived.pop("make_double_for", None)
+        derived.pop("make_double_note", None)
+    extra = dict(derived.get(_leftovers.FREEZER_EXTRA_KEY) or {})
+    extra["servings"] = _leftovers.freezer_servings(derived) + max(0, servings)
+    extra["inventory_item_ids"] = [*(extra.get("inventory_item_ids") or []), inv_id]
+    extra["night_off"] = night_off_from
+    derived[_leftovers.FREEZER_EXTRA_KEY] = extra
+    conn.execute(
+        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
+        (json.dumps(derived), source_id),
+    )
+
+
+def _delete_entry(conn, entry_id: int) -> None:
+    """Take one row off the plan WITHOUT touching the grocery list — its
+    prep rows with it (the order clear_plan_slot uses), its grocery links
+    by the table's own cascade. Only for rows whose food is not going
+    anywhere: a reheat whose portion is frozen, a leftovers night the cook
+    itself now lands on. Everything removed is in the undo snapshot."""
+    conn.execute(
+        "DELETE FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id = ?",
+        (household_id(), entry_id),
+    )
+    conn.execute(
+        "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (entry_id, household_id()),
+    )
+
+
+def _tonight_holder(conn, plan_id: int, today: str):
+    return conn.execute(
+        "SELECT * FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? "
+        "AND date = ? AND slot = 'dinner' AND component_category IS NULL ORDER BY id DESC",
+        (plan_id, household_id(), today),
+    ).fetchall()
+
+
+def _cooked_night_off(row) -> bool:
+    """Tonight was cooked and then called off ('freeze_cooked'): the row
+    stays planned and done, and carries the marker instead of a
+    planned_empty row standing in for it."""
+    if row is None or (row["cooked_status"] or "") != "done":
+        return False
+    try:
+        derived = json.loads(row["derived_from_json"] or "{}")
+    except (TypeError, ValueError):
+        return False
+    return (derived.get(NIGHT_OFF_CONSTRAINT) or {}).get("constraint") == NIGHT_OFF_CONSTRAINT
 
 
 def tonight_night_off(day: str | None = None, now: datetime | None = None) -> dict:
@@ -619,32 +912,35 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None) -> di
     second question: takeout, leftovers, cereal, out — the app doesn't ask
     which, because none of them changes what it has to do.
 
-    What happens to the dish:
+    What happens to the dish is _night_off_plan's decision, and it never
+    refuses (Emily, 2026-09-22 — "the job of Pomona is to do all that
+    planning work"; the "change that first" answer this used to give for a
+    dinner cooked double for a later night is gone):
       - it MOVES to the next free night of this plan when there is one
-        (_next_free_night, through the same swap_dinner_nights the sheet's
-        other rows use — so its groceries, its cooked tick, its leftover
-        chain and its defrost reminders all travel with it and the shopping
-        list is not touched);
+        (through the same swap_dinner_nights the sheet's other rows use —
+        its groceries, cooked tick, leftover chain and defrost reminders all
+        travel with it, and the list is not touched);
+      - a dinner cooked double for later nights, with no free night, is
+        COOKED ON THE FIRST NIGHT IT WAS FEEDING instead, at the same size,
+        and tonight's share goes in the freezer — groceries untouched;
+      - a leftovers night's portion, and a dinner already cooked, go in
+        the freezer;
       - otherwise it is DROPPED, which reverses whatever it put on the list
         that is still waiting to be bought and leaves alone anything already
         in a cart or through the till. What was bought and won't keep comes
         back as `use_soon`, and is queued on the attention list so it
         surfaces past this one card.
-    Either way tonight ends `planned_empty` — see _settle_night_off.
+    Tonight ends `planned_empty` (see _settle_night_off) — except a dinner
+    already cooked, whose row stays as the record it is.
 
-    Moving is the default when a free night exists because it keeps both
-    the food and the plan. **To make it always drop instead, pass None for
-    `free` below** — one line.
+    `said` is the toast, `can_undo` whether tonight_night_off_undo can put
+    the week back exactly: every shape except the drop, whose grocery
+    reversal cannot be un-said. `frozen` names what went in the freezer.
 
-    Refusals are answers, not errors: `status` 'refused' with a `message`
-    written for the household, and nothing written. A dinner already cooked,
-    and a dinner cooked double for a later night with nowhere to move to (a
-    drop would leave that night holding a reheat with no batch behind it —
-    drop_dish_from_day refuses the same thing for the same reason). The
-    card runs that same check before the tap (_chain_refusal, read by both)
-    so the row never promises something this would then decline.
+    Refusals are still answers, not errors, but only for a tonight with no
+    plan to change (no plan covering it, or a component-based one).
 
-    `already` means the night was ALREADY empty and nothing was written —
+    `already` means the night was ALREADY off and nothing was written —
     a second tap, the other phone, or a night nobody was ever home for.
     `already_reason` says which, because "that's already a night off" about
     a trip is the app telling the household something untrue.
@@ -662,9 +958,10 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None) -> di
         raise ValueError("That isn't a date I recognise.")
 
     out = {
-        "status": "night_off", "date": today, "week_start": None,
+        "status": "night_off", "date": today, "week_start": None, "kind": None,
         "dish": None, "moved_to": None, "moved_to_weekday": None,
         "use_soon": [], "already": False, "already_reason": None,
+        "frozen": None, "said": "Tonight’s off.", "can_undo": False,
     }
     use_soon: list[str] = []
     dish = ""
@@ -705,66 +1002,38 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None) -> di
         tonight_row = next((r for r in rows if r["date"] == today), None)
         state = (tonight_row["slot_state"] or "planned") if tonight_row is not None else None
 
-        if state == "planned_empty":
+        if state == "planned_empty" or _cooked_night_off(tonight_row):
             # Already settled — a second tap, the other phone, or a night
             # nobody was ever home for. Nothing is written; saying which of
             # those it is keeps the assistant from calling a trip a night
             # off.
             conn.rollback()
             out["already"] = True
-            out["already_reason"] = (
-                NIGHT_OFF_CONSTRAINT if _night_off_row(tonight_row) else "away"
-            )
-            out["use_soon"] = _row_use_soon(tonight_row)
+            is_off = _night_off_row(tonight_row) or _cooked_night_off(tonight_row)
+            out["already_reason"] = NIGHT_OFF_CONSTRAINT if is_off else "away"
+            out["use_soon"] = _row_use_soon(tonight_row) if state == "planned_empty" else []
+            out["said"] = "Tonight’s already off." if is_off else "Nobody’s home tonight anyway."
             return out
 
-        if tonight_row is not None and (tonight_row["cooked_status"] or "") == "done":
-            conn.rollback()
-            return {
-                "status": "refused", "date": today,
-                "message": (
-                    f"{_dish_name(tonight_row) or 'That one'} is already ticked off as cooked — "
-                    "I’ll leave tonight as it is."
-                ),
-            }
+        step = _night_off_plan(conn, plan, rows, tonight_row, today)
+        kind = step["kind"]
+        dish = step["dish"]
+        out["kind"] = kind
+        out["dish"] = dish or None
 
-        dish = _dish_name(tonight_row) if tonight_row is not None else ""
-        if tonight_row is None or state != "planned" or not dish:
-            # Nothing to keep: an open dinner, or a night the plan never
-            # filled. Saying "we're going out" still settles it, which is
-            # the point — otherwise Now goes on asking "Tonight needs a
-            # dinner".
-            _settle_night_off(plan_id, today, [], conn)
+        if kind == "drop":
+            # Nothing to move it to and nothing it feeds — the dish comes
+            # off the week. No undo: its groceries are reversed here.
+            use_soon = _fresh_bought_for(tonight_row["id"], conn=conn)
+            _settle_night_off(plan_id, today, use_soon, conn)
             conn.commit()
-            return out
-
-        out["dish"] = dish
-        free = _next_free_night(plan, rows, today, conn=conn)
-        if free is not None:
-            moved = _weekly_plan._apply_dinner_nights_swap(
-                plan_id, today, free, undo=False, conn=conn,
-            )
-            if moved.get("status") == "refused":
-                # Under the lock the swap's own rules are the last word —
-                # the dry run that chose this night ran inside this very
-                # transaction, so this is a night that changed between the
-                # household opening the sheet and tapping it.
-                conn.rollback()
-                return {"status": "refused", "date": today, "message": moved.get("message") or ""}
-            _settle_night_off(plan_id, today, [], conn)
-            out["moved_to"] = free
-            out["moved_to_weekday"] = _weekly_plan._weekday_of(free)
+            out["said"] = _said(kind, dish, step, use_soon)
+        else:
+            _night_off_with_undo(conn, plan, rows, tonight_row, today, step, out)
             conn.commit()
-            return out
-
-        # Nothing to move it to — the dish comes off the week.
-        blocked = _chain_refusal(tonight_row)
-        if blocked:
-            conn.rollback()
-            return {"status": "refused", "date": today, "message": blocked}
-        use_soon = _fresh_bought_for(tonight_row["id"], conn=conn)
-        _settle_night_off(plan_id, today, use_soon, conn)
-        conn.commit()
+    except _Refused as refused:
+        conn.rollback()
+        return {"status": "refused", "date": today, "message": str(refused)}
     except Exception:
         conn.rollback()
         raise
@@ -778,6 +1047,261 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None) -> di
     if use_soon:
         _queue_use_soon(dish, use_soon)
     return out
+
+
+class _Refused(Exception):
+    """A write the swap's own rules declined under the lock — the week
+    changed between the household opening the sheet and tapping it."""
+
+
+def _night_off_with_undo(conn, plan, rows, tonight_row, today: str, step: dict, out: dict) -> None:
+    """Every shape but the drop, on the tap's open transaction: snapshot,
+    write, fingerprint, and leave the undo record on tonight's row."""
+    from . import leftovers as _leftovers
+
+    plan_id = plan["id"]
+    kind = step["kind"]
+    dish = step["dish"]
+    tonight_ref = f"{today}:dinner"
+    all_rows = conn.execute(
+        "SELECT id, derived_from_json FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? "
+        "AND component_category IS NULL",
+        (plan_id, household_id()),
+    ).fetchall()
+    direct: set[int] = {tonight_row["id"]} if tonight_row is not None else set()
+    refs = [tonight_ref]
+    if kind == "move":
+        free_row = next((r for r in rows if r["date"] == step["free"]), None)
+        if free_row is not None:
+            direct.add(free_row["id"])
+        refs.append(f"{step['free']}:dinner")
+    elif kind == "cook_on_fed":
+        direct |= {step["target"]["entry_id"], *[t["entry_id"] for t in step["rest"]]}
+        refs.append(f"{step['target']['date']}:{step['target']['slot']}")
+    elif kind == "freeze_reheat":
+        direct.add(step["source_id"])
+    touched = _touched_ids(all_rows, direct, refs)
+    snap = _snapshot(conn, touched)
+
+    frozen = None
+    holder_id = None
+    if kind == "settle":
+        _settle_night_off(plan_id, today, [], conn)
+    elif kind == "move":
+        moved = _weekly_plan._apply_dinner_nights_swap(
+            plan_id, today, step["free"], undo=False, conn=conn,
+        )
+        if moved.get("status") == "refused":
+            # Under the lock the swap's own rules are the last word — the
+            # dry run that chose this night ran inside this very
+            # transaction, so this is a night that changed between the
+            # household opening the sheet and tapping it.
+            raise _Refused(moved.get("message") or "")
+        _settle_night_off(plan_id, today, [], conn)
+        out["moved_to"] = step["free"]
+        out["moved_to_weekday"] = _weekly_plan._weekday_of(step["free"])
+    elif kind == "cook_on_fed":
+        target = step["target"]
+        new_ref = f"{target['date']}:{target['slot']}"
+        servings = _leftovers.eaters_at(today, "dinner", conn=conn)
+        frozen = _freeze_portion(conn, dish, servings, target["date"])
+        # The leftovers entry on the first fed night goes — the cook lands
+        # there instead. Its grocery links (a reheat buys nothing, so
+        # normally none) go by cascade; nothing on the list is reversed.
+        _delete_entry(conn, target["entry_id"])
+        conn.execute(
+            "UPDATE meal_plan_entries SET date = ?, slot = ? WHERE id = ? AND household_id = ?",
+            (target["date"], target["slot"], tonight_row["id"], household_id()),
+        )
+        # Tonight's share becomes the freezer's, and the first fed night
+        # is no longer a target (it is the cook now).
+        _shrink_chain_into_freezer(conn, tonight_row["id"], new_ref, servings, frozen["id"], today)
+        # Any other row naming tonight's dinner by date ("2026-09-23:dinner")
+        # now names the night the cook moved to — the later fed nights'
+        # links_to, above all. _rewrite_chain_ref, the nights swap's own.
+        mapping = {tonight_ref: new_ref}
+        for r in conn.execute(
+            "SELECT id, derived_from_json FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? "
+            "AND component_category IS NULL",
+            (plan_id, household_id()),
+        ).fetchall():
+            derived = json.loads(r["derived_from_json"] or "{}")
+            if "links_to" not in derived:
+                continue
+            new = _weekly_plan._rewrite_chain_ref(derived["links_to"], mapping)
+            if new != derived["links_to"]:
+                derived["links_to"] = new
+                conn.execute(
+                    "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
+                    (json.dumps(derived), r["id"]),
+                )
+        _weekly_plan._shift_defrost_tasks(conn, plan_id, tonight_row["id"], today, target["date"])
+        _settle_night_off(plan_id, today, [], conn)
+        out["moved_to"] = target["date"]
+        out["moved_to_weekday"] = _weekly_plan._weekday_of(target["date"])
+    elif kind == "freeze_reheat":
+        servings = _leftovers.eaters_at(today, "dinner", conn=conn)
+        frozen = _freeze_portion(conn, dish, servings, today)
+        _shrink_chain_into_freezer(conn, step["source_id"], tonight_ref, servings, frozen["id"], today)
+        _delete_entry(conn, tonight_row["id"])
+        _settle_night_off(plan_id, today, [], conn)
+    elif kind == "freeze_cooked":
+        servings = _leftovers.eaters_at(today, "dinner", conn=conn)
+        frozen = _freeze_portion(conn, dish, servings, today)
+        derived = json.loads(tonight_row["derived_from_json"] or "{}")
+        derived[NIGHT_OFF_CONSTRAINT] = {"constraint": NIGHT_OFF_CONSTRAINT, "inventory_item_id": frozen["id"]}
+        conn.execute(
+            "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
+            (json.dumps(derived), tonight_row["id"]),
+        )
+        holder_id = tonight_row["id"]
+
+    if holder_id is None:
+        holder = next(
+            (r for r in _tonight_holder(conn, plan_id, today) if (r["slot_state"] or "") == "planned_empty"),
+            None,
+        )
+        holder_id = holder["id"]
+    record = {
+        "kind": kind, "dish": dish, **snap,
+        "after": _fingerprint(conn, touched, holder_id),
+        "inventory": {"id": frozen["id"], "rev": frozen["rev"]} if frozen else None,
+    }
+    _stamp_undo(conn, holder_id, record)
+    out["can_undo"] = True
+    out["frozen"] = {"item": frozen["item"], "quantity": frozen["quantity"]} if frozen else None
+    out["said"] = _said(kind, dish, step)
+
+
+def tonight_night_off_undo(day: str | None = None, now: datetime | None = None) -> dict:
+    """
+    Undo on the night-off toast: put tonight, and every night the answer
+    touched, back exactly as they were — the dish on its night, the chain
+    as it read, the leftovers night it replaced, its fridge moves on their
+    old dates, and the freezer row it wrote gone. The grocery list is not
+    touched, because none of the undoable shapes touched it.
+
+    Only while nothing has changed since: the rows it touched must still
+    look exactly as the tap left them, and the freezer row must be
+    untouched (inventory_items.rev — the proof a grocery untick already
+    relies on). Otherwise nothing is written and `status` is 'refused'
+    with a sentence, the same answer-not-error rule as the tap.
+
+    One transaction, lock first, for the reason tonight_night_off gives.
+    """
+    now = now or _household_now()
+    today = day or now.date().isoformat()
+    try:
+        date.fromisoformat(today)
+    except (TypeError, ValueError):
+        raise ValueError("That isn't a date I recognise.")
+    nothing = {"status": "refused", "date": today, "message": "There’s nothing to put back."}
+    changed = {
+        "status": "refused", "date": today,
+        "message": "Tonight’s changed since, so I’ve left it as it is.",
+    }
+
+    conn = get_conn()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        plan = _plan_covering(conn, today)
+        if plan is None:
+            conn.rollback()
+            return nothing
+        holder, record = None, None
+        for r in _tonight_holder(conn, plan["id"], today):
+            try:
+                rec = json.loads(r["derived_from_json"] or "{}").get(NIGHT_OFF_UNDO_KEY)
+            except (TypeError, ValueError):
+                rec = None
+            if rec:
+                holder, record = r, rec
+                break
+        if holder is None:
+            conn.rollback()
+            return nothing
+
+        snap_ids = {e["id"] for e in record.get("entries") or []}
+        touched = {fp[0] for fp in record.get("after") or []} - {holder["id"]}
+        if _fingerprint(conn, touched, holder["id"]) != record.get("after"):
+            conn.rollback()
+            return changed
+        inv = record.get("inventory")
+        if inv:
+            row = conn.execute(
+                "SELECT rev FROM inventory_items WHERE id = ? AND household_id = ?",
+                (inv["id"], household_id()),
+            ).fetchone()
+            if row is None or row["rev"] != inv["rev"]:
+                conn.rollback()
+                return changed
+            conn.execute("DELETE FROM inventory_items WHERE id = ?", (inv["id"],))
+
+        hh = household_id()
+        if holder["id"] not in snap_ids:
+            _delete_entry(conn, holder["id"])
+        if snap_ids:
+            marks = ",".join("?" * len(snap_ids))
+            conn.execute(
+                f"DELETE FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id IN ({marks})",
+                (hh, *sorted(snap_ids)),
+            )
+        entry_cols = _columns(conn, "meal_plan_entries")
+        for e in record.get("entries") or []:
+            cols = [c for c in e if c in entry_cols]
+            exists = conn.execute(
+                "SELECT 1 FROM meal_plan_entries WHERE id = ? AND household_id = ?", (e["id"], hh),
+            ).fetchone()
+            if exists:
+                sets = ", ".join(f"{c} = ?" for c in cols if c != "id")
+                conn.execute(
+                    f"UPDATE meal_plan_entries SET {sets} WHERE id = ?",
+                    (*[e[c] for c in cols if c != "id"], e["id"]),
+                )
+            else:
+                conn.execute(
+                    f"INSERT INTO meal_plan_entries ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))})",
+                    tuple(e[c] for c in cols),
+                )
+        _reinsert(conn, "prep_tasks", record.get("prep") or [])
+        # A link comes back only if its grocery line is still there — the
+        # list is the household's, and a line they deleted since stays
+        # deleted rather than being linked into a meal again.
+        links = [
+            l for l in record.get("links") or []
+            if conn.execute("SELECT 1 FROM grocery_items WHERE id = ?", (l["grocery_item_id"],)).fetchone()
+        ]
+        _reinsert(conn, "meal_plan_grocery_links", links, ignore=True)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    dish = record.get("dish") or ""
+    return {
+        "status": "restored", "date": today, "dish": dish or None,
+        "said": f"{dish} is back on tonight." if dish else "Put back.",
+    }
+
+
+def _columns(conn, table: str) -> set[str]:
+    return {r["name"] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+
+
+def _reinsert(conn, table: str, rows: list[dict], ignore: bool = False) -> None:
+    """Put snapshot rows back with their own ids. Columns are checked
+    against the table itself rather than trusted off the record."""
+    if not rows:
+        return
+    known = _columns(conn, table)
+    verb = "INSERT OR IGNORE" if ignore else "INSERT"
+    for r in rows:
+        cols = [c for c in r if c in known]
+        conn.execute(
+            f"{verb} INTO {table} ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))})",
+            tuple(r[c] for c in cols),
+        )
 
 
 def _queue_use_soon(dish: str, items: list[str]) -> None:
@@ -806,5 +1330,6 @@ def _queue_use_soon(dish: str, items: list[str]) -> None:
 __all__ = [
     "TONIGHT_ASK_HOUR", "TONIGHT_OPTION_LIMIT", "NIGHT_OFF_CONSTRAINT",
     "NIGHT_OFF_REASON", "USE_SOON_KIND",
-    "tonight_check", "tonight_keep", "tonight_night_off", "tonight_ok_key",
+    "tonight_check", "tonight_keep", "tonight_night_off", "tonight_night_off_undo",
+    "tonight_ok_key",
 ]

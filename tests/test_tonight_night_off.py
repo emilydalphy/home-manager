@@ -501,9 +501,12 @@ def test_a_fridge_move_already_done_stays_done_when_the_dish_moves():
 
 # --------------------------------------------------------------- refusals
 
-def test_a_dinner_already_cooked_is_refused_in_words_and_nothing_changes():
-    """CATCH. A tick is a record of something that happened, and no answer
-    about tonight gets to delete one."""
+def test_a_dinner_already_cooked_stays_on_the_plan_and_goes_in_the_freezer():
+    """CATCH. Rewritten 2026-09-22 (it used to assert a refusal, "already
+    ticked off as cooked — I'll leave tonight as it is"): Emily's standing
+    rule is that the night off never refuses. A tick is still a record of
+    something that happened, so the row is NOT deleted and nothing on the
+    list moves — tonight's share goes in the freezer instead."""
     plan = _plan()
     _full_week(plan)
     conn = get_conn()
@@ -515,15 +518,18 @@ def test_a_dinner_already_cooked_is_refused_in_words_and_nothing_changes():
     conn.close()
     before = _grocery_snapshot()
     out = _tonight.tonight_night_off(now=AFTERNOON)
-    assert out["status"] == "refused"
-    assert "already ticked off as cooked" in out["message"]
+    assert out["status"] == "night_off" and out["kind"] == "freeze_cooked"
+    assert out["frozen"]["item"] == f"{DISHES[2]} (cooked)"
     assert _dinner_row(TONIGHT)["meal"] == DISHES[2]
     assert _grocery_snapshot() == before
 
 
-def test_a_dinner_cooked_double_for_a_later_night_is_refused():
-    """CATCH. Dropping it would leave that night holding a reheat with no
-    batch behind it — drop_dish_from_day refuses the same thing."""
+def test_a_half_written_chain_is_not_a_chain_and_the_dish_comes_off():
+    """CATCH. Rewritten 2026-09-22 (it used to assert the "change that
+    first" refusal). A source that names Friday when Friday's row does not
+    point back is only a claim — plan_leftover_chains honours neither half
+    — so Friday is an ordinary dinner and dropping tonight strands no
+    reheat. The real chain is test_tonight_night_off_self_solving's."""
     plan = _plan()
     _full_week(plan)
     entry = _dinner_row(TONIGHT)["id"]
@@ -535,9 +541,9 @@ def test_a_dinner_cooked_double_for_a_later_night_is_refused():
     conn.commit()
     conn.close()
     out = _tonight.tonight_night_off(now=AFTERNOON)
-    assert out["status"] == "refused"
-    assert "Friday" in out["message"]
-    assert _dinner_row(TONIGHT)["meal"] == DISHES[2]
+    assert out["status"] == "night_off" and out["kind"] == "drop"
+    assert _dinner_row(TONIGHT)["slot_state"] == "planned_empty"
+    assert _dinner_row(FRI)["meal"] == DISHES[4]
 
 
 def test_no_plan_covering_tonight_is_an_answer_not_a_crash():
@@ -684,31 +690,33 @@ def test_the_preview_says_nothing_to_move_to_on_a_full_week():
     _full_week(plan)
     out = tools.tonight_check(now=AFTERNOON)
     assert out["night_off_moves_to"] is None
-    assert out["night_off_blocked"] is False
+    # 2026-09-22: the sub-line is the server's sentence now, and there is no
+    # blocked state left to report (night_off_blocked is gone).
+    assert out["night_off_line"] == f"{DISHES[2]} comes off the week."
+    assert "night_off_blocked" not in out
 
 
-def test_the_preview_never_promises_something_the_tap_would_refuse():
-    """CATCH. §8 rule 7 inverted: with tonight's dish cooked double for a
-    later night and nowhere to move it, the row read "Dish comes off the
-    week" and then refused on the tap. The card and the write run the same
-    check now, and say the same sentence."""
+def test_the_preview_says_what_the_tap_does_for_a_dinner_cooked_double():
+    """CATCH. Rewritten 2026-09-22: this used to pin the preview and the tap
+    agreeing on a REFUSAL. There is no refusal now — the card and the write
+    read one decision (_night_off_plan), and the tap does what the row
+    said: the cook moves onto the night it was feeding."""
     plan = _plan()
-    _full_week(plan)
-    conn = get_conn()
-    conn.execute(
-        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE household_id = ? AND date = ? AND slot = 'dinner'",
-        (json.dumps({"make_double_for": [f"{FRI}:dinner"]}), tools.household_id(), TONIGHT),
-    )
-    conn.commit()
-    conn.close()
+    for day, dish in zip(DAYS, DISHES):
+        _recipe(dish)
+        if day == FRI:
+            tools.plan_meal(day, DISHES[2], slot="dinner", weekly_plan_id=plan,
+                            derived_from={"links_to": f"{TONIGHT}:dinner"})
+            continue
+        tools.plan_meal(day, dish, slot="dinner", weekly_plan_id=plan)
+    tools.repair_leftover_chains(plan)
+    tools.approve_weekly_plan(plan)
     preview = tools.tonight_check(now=AFTERNOON)
-    assert preview["night_off_moves_to"] is None
-    assert preview["night_off_blocked"] is True
+    assert preview["night_off_moves_to"] == FRI
+    assert preview["night_off_line"] == f"{DISHES[2]} moves to Friday. The extra goes in the freezer."
     tapped = _tonight.tonight_night_off(now=AFTERNOON)
-    assert tapped["status"] == "refused"
-    # One sentence, one source.
-    assert preview["night_off_blocked_message"] == tapped["message"]
-    assert "Friday" in tapped["message"]
+    assert tapped["status"] == "night_off" and tapped["kind"] == "cook_on_fed"
+    assert tapped["moved_to"] == preview["night_off_moves_to"]
 
 
 # ------------------------------------------------------- the learned hint
@@ -940,8 +948,9 @@ def test_the_sheet_offers_the_answer_alongside_the_swaps():
     with, and with none, since a night off needs nothing to trade with."""
     assert "tonightNightOffRowHtml" in SHELL_JS
     assert "Not tonight — we’re going out" in SHELL_JS
-    # Appended to the options stack AND to the nothing-to-offer branch.
-    assert SHELL_JS.count("tonightNightOffRowHtml(data)") >= 2
+    # Appended to the options stack AND leading the nothing-to-offer branch
+    # (the latter as `tonightNightOffRowHtml(data, true)` since 2026-09-22).
+    assert SHELL_JS.count("tonightNightOffRowHtml(data") >= 2
     assert "runTonightNightOff" in SHELL_JS
     assert "/api/today/tonight/night-off" in SHELL_JS
     assert "runTonightNightOff" in SHELL_HTML or "tonight-night-off" in SHELL_JS
@@ -968,9 +977,10 @@ def test_the_rows_sub_line_and_the_toast_name_the_dish_the_same_way():
     start = SHELL_JS.index("function tonightNightOffRowHtml")
     block = SHELL_JS[start:start + 1200]
     assert "tonightDishName" not in block
-    assert "data.dinner.meal" in block
-    # And it prefers the server's refusal sentence over its own promise.
-    assert "night_off_blocked_message" in block
+    # 2026-09-22: the sub-line is the server's whole sentence, written
+    # beside the decision the tap follows, so the screen names the dish
+    # exactly the way the toast (also the server's) does.
+    assert "night_off_line" in block
 
 
 def test_the_row_never_writes_its_own_version_of_a_refusal():
@@ -1038,9 +1048,10 @@ console.log(JSON.stringify([
     out = nodeharness.run_node(script, timeout=30)
     away_said, real_said, fresh_said = json.loads(out.stdout)
 
-    assert "Night off" not in away_said, "a trip is not a night off"
+    assert "off" not in away_said, "a trip is not a night off"
     assert away_said == "Nobody’s home tonight anyway."
     # The two that ARE nights off still say so, so the guard is narrow.
-    assert real_said.startswith("Night off.")
-    assert fresh_said.startswith("Night off.")
-    assert "moves to Thursday" in fresh_said
+    # (2026-09-22: "Tonight’s off." is Emily's wording; it was "Night off.")
+    assert real_said == "Tonight’s already off."
+    assert fresh_said.startswith("Tonight’s off.")
+    assert "moved to Thursday" in fresh_said

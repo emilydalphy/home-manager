@@ -74,6 +74,34 @@ def _resolve(links_to: str, by_date_slot: dict, by_id: dict):
     return None
 
 
+# The portions a cook makes on purpose for the freezer, on the entry's own
+# derived_from — {"servings": 3, ...}. Written by tonight.tonight_night_off
+# (Emily, 2026-09-22: "the job of Pomona is to do all that planning work")
+# when a night off moves a batch onto the night it was feeding, or takes a
+# reheat night's portion out of a chain: the batch stays the SAME SIZE (the
+# groceries for it are already bought or on the list), and whatever the
+# called-off night would have eaten goes in the freezer instead. Read by
+# every batch reader through batch_for_source / batch_for_entry, so the Cook
+# card, the fridge-move quantities and any later grocery rescale all keep
+# counting those portions rather than quietly cooking less.
+FREEZER_EXTRA_KEY = "freezer_extra"
+
+
+def freezer_servings(derived) -> int:
+    """How many portions of this entry's cook are meant for the freezer —
+    0 for nearly every entry. Takes the parsed derived_from or its JSON."""
+    if isinstance(derived, str) or derived is None:
+        try:
+            derived = json.loads(derived or "{}")
+        except (TypeError, ValueError):
+            return 0
+    extra = (derived or {}).get(FREEZER_EXTRA_KEY) or {}
+    try:
+        return max(0, int(extra.get("servings") or 0)) if isinstance(extra, dict) else 0
+    except (TypeError, ValueError):
+        return 0
+
+
 def plan_leftover_chains(weekly_plan_id: int, conn=None) -> dict:
     """
     Every confirmed cook-once-eat-twice chain on this plan.
@@ -84,7 +112,15 @@ def plan_leftover_chains(weekly_plan_id: int, conn=None) -> dict:
                                         "targets": [{"entry_id","date","slot"}, ...]}},
         "leftovers": {leftover_entry_id: {"entry_id", "date", "slot",
                                           "source": {"entry_id","date","slot","meal"}}},
+        "freezer":   {entry_id: servings},   # only when any; FREEZER_EXTRA_KEY
       }
+
+    `freezer` (2026-09-22) lists every planned cook carrying portions for
+    the freezer, chained or not; a SOURCE also carries its own count as
+    `freezer_servings`, which batch_for_source adds to the batch. A cook
+    whose only extra is the freezer is NOT a source — it feeds no night,
+    and every reader of `sources` means "feeds a night" — so a batch reader
+    asks batch_for_entry, which covers both.
 
     Targets are sorted by (date, slot) so a source that feeds two nights
     always reads in the order the nights actually fall. Both maps are
@@ -121,10 +157,14 @@ def plan_leftover_chains(weekly_plan_id: int, conn=None) -> dict:
 
     sources: dict[int, dict] = {}
     leftovers: dict[int, dict] = {}
+    freezer: dict[int, int] = {}
     for r in rows:
         if r["slot_state"] != "planned":
             continue
         derived = json.loads(r["derived_from_json"] or "{}")
+        extra = freezer_servings(derived)
+        if extra and (r["recipe_id"] or r["freeform_meal"]):
+            freezer[r["id"]] = extra
         links_to = (derived.get("links_to") or "").strip()
         if not links_to:
             continue
@@ -157,6 +197,10 @@ def plan_leftover_chains(weekly_plan_id: int, conn=None) -> dict:
             "meal": source["meal"], "note": source_derived.get("make_double_note") or "",
             "cook_ahead": False, "targets": [],
         })
+        # Only when there is any: the shape every other plan has always
+        # had is left exactly as it was (callers read it with .get).
+        if freezer_servings(source_derived):
+            entry["freezer_servings"] = freezer_servings(source_derived)
         entry["cook_ahead"] = entry["cook_ahead"] or chosen_ahead
         entry["targets"].append({
             "entry_id": r["id"], "date": r["date"], "slot": r["slot"], "cook_ahead": chosen_ahead,
@@ -172,7 +216,12 @@ def plan_leftover_chains(weekly_plan_id: int, conn=None) -> dict:
 
     for entry in sources.values():
         entry["targets"].sort(key=lambda t: (t["date"], t["slot"]))
-    return {"sources": sources, "leftovers": leftovers}
+    out = {"sources": sources, "leftovers": leftovers}
+    if freezer:
+        # Present only when some cook carries portions for the freezer —
+        # the two-key shape is what every plan without one has always had.
+        out["freezer"] = freezer
+    return out
 
 
 def eaters_at(date_str: str, slot: str, conn=None) -> int:
@@ -208,8 +257,51 @@ def batch_for_source(source: dict, conn=None) -> dict:
         {**t, "eaters": eaters_at(t["date"], t["slot"], conn=conn)}
         for t in source["targets"]
     ]
-    total = cook_eaters + sum(t["eaters"] for t in targets)
-    return {"servings": total, "cook_eaters": cook_eaters, "targets": targets}
+    # Portions for the freezer (FREEZER_EXTRA_KEY) are part of the batch:
+    # they were bought for, and the cook makes them — they just aren't
+    # eaten on a night of this plan.
+    extra = int(source.get("freezer_servings") or 0)
+    total = cook_eaters + sum(t["eaters"] for t in targets) + extra
+    out = {"servings": total, "cook_eaters": cook_eaters, "targets": targets}
+    if extra:
+        out["freezer"] = extra
+    return out
+
+
+def batch_for_entry(entry_id: int, chains: dict, conn=None) -> dict | None:
+    """
+    The batch one cook has to make, or None when it is an ordinary cook for
+    its own table (or a reheat, which cooks nothing).
+
+    A chain SOURCE answers batch_for_source. A cook that feeds no night but
+    carries portions for the freezer (chains["freezer"], 2026-09-22) is a
+    batch too — its own table plus the freezer's share — and this is the
+    one place that says so, so the Cook card, the fridge-move quantities
+    and the grocery ingest cannot disagree about how much it makes.
+    """
+    source = (chains.get("sources") or {}).get(entry_id)
+    if source:
+        return batch_for_source(source, conn=conn)
+    extra = int((chains.get("freezer") or {}).get(entry_id) or 0)
+    if not extra:
+        return None
+    own_conn = conn is None
+    c = get_conn() if own_conn else conn
+    try:
+        row = c.execute(
+            "SELECT date, slot FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (entry_id, household_id()),
+        ).fetchone()
+    finally:
+        if own_conn:
+            c.close()
+    if row is None:
+        return None
+    cook_eaters = eaters_at(row["date"], row["slot"], conn=conn)
+    return {
+        "servings": cook_eaters + extra, "cook_eaters": cook_eaters,
+        "targets": [], "freezer": extra,
+    }
 
 
 def _join_days(days: list[str]) -> str:
@@ -233,8 +325,15 @@ def covers_note(source: dict, servings: int, today: str | None = None) -> str:
     """
     today = today or date.today().isoformat()
     cook_label = "tonight" if source["date"] == today else _weekday(source["date"])
+    # Portions for the freezer are said, not hidden inside the number: a
+    # cook told "for 6" at a table of 3 with no reason given halves it.
+    extra = int(source.get("freezer_servings") or 0)
+    frozen = f", plus {extra} for the freezer" if extra else ""
+    if not source.get("targets"):
+        # A cook whose only extra is the freezer (batch_for_entry).
+        return f"Cooking for {servings} — covers {cook_label}{frozen}."
     days = _join_days([_weekday(t["date"]) for t in source["targets"]])
-    return f"Cooking for {servings} — covers {cook_label} and leftovers on {days}."
+    return f"Cooking for {servings} — covers {cook_label} and leftovers on {days}{frozen}."
 
 
 def cook_ahead_note(source: dict, servings: int) -> str:
@@ -252,7 +351,9 @@ def cook_ahead_note(source: dict, servings: int) -> str:
     yet.
     """
     days = _join_days([_weekday(source["date"])] + [_weekday(t["date"]) for t in source["targets"]])
-    return f"Cooking for {servings} — enough for {days}."
+    extra = int(source.get("freezer_servings") or 0)
+    frozen = f", plus {extra} for the freezer" if extra else ""
+    return f"Cooking for {servings} — enough for {days}{frozen}."
 
 
 def leftovers_headline(source_meal: str, source_date: str) -> str:

@@ -2601,15 +2601,16 @@ def _add_recipe_ingredients_for_entries(
             # the cook night it eats from shares this very group.
             if entry_id in chains["leftovers"]:
                 continue
-            source = chains["sources"].get(entry_id)
             # `chain_scale=False` is a big-meal dish's path (weekly_plan's
             # side ingests, via _entry_side_groups): a dish on a hosted
             # holiday's table belongs to that table alone — the batch that
             # feeds the reheat night is the main, not the stuffing beside
             # it — so a reheat night buys nothing new for it. Every other
             # side, and every recipe, follows the chain.
-            if source and chain_scale:
-                batch = _leftovers.batch_for_source(source, conn=entry_conn)
+            # batch_for_entry: a chain source, or a cook carrying portions
+            # for the freezer (leftovers.FREEZER_EXTRA_KEY, 2026-09-22).
+            batch = _leftovers.batch_for_entry(entry_id, chains, conn=entry_conn) if chain_scale else None
+            if batch:
                 if batch["servings"] > 0 and batch["cook_eaters"] > 0:
                     scale *= batch["servings"] / batch["cook_eaters"]
         contributing_ids.append(entry_id)

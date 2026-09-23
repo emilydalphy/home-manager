@@ -367,7 +367,12 @@ def test_the_sheet_offers_a_swap_not_a_delete_and_names_leftovers():
     assert 'id="tonight-sheet"' in SHELL_HTML
     assert "function openTonightSheet(" in SHELL_JS
     assert "What should tonight be instead?" in SHELL_HTML
-    assert "Nothing else on this week’s plan can move to tonight." in SHELL_JS
+    # With nothing to swap with, the sheet used to say "Nothing else on this
+    # week’s plan can move to tonight." over an "Open today in the plan"
+    # button. Emily, 2026-09-22: the night off leads instead, alone — the
+    # line and the button sent her off to do the planning herself.
+    assert 'class="tonight-none"' not in SHELL_JS
+    assert "tonight-open-plan" not in SHELL_JS
     assert "'leftovers from '" in SHELL_JS
     # One tap commits through the existing nights swap — no new write path.
     assert "/swap-nights'" in SHELL_JS

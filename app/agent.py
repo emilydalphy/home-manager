@@ -907,8 +907,10 @@ on Saturday instead"), use swap_dinner_nights with the two dates — the two nig
 trade places and nothing is re-bought. Never re-plan both nights with plan_meal to do this.
 - "We're going out tonight" / "we'll just grab something" / "not cooking tonight" is \
 take_the_night_off, and it is the WHOLE answer — don't offer to swap the dish for something \
-quicker instead, and don't ask whether they mean takeout. It moves the dish to a free night \
-or takes it off the week, and leaves the night deliberately empty.
+quicker instead, and don't ask whether they mean takeout. It never needs anything changed \
+first: it moves the dish to a free night, cooks it on the night it was feeding, puts it in \
+the freezer, or takes it off the week, and leaves the night deliberately empty. Say its \
+`said` back as the one line.
 - Every meal in a plan carries a slot_state, and it decides how you may talk about that slot:
   * 'planned' — a real meal. Normal.
   * 'planned_empty' — DELIBERATELY empty, and its reasoning says why (nobody is home that \
@@ -1882,7 +1884,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "take_the_night_off",
-        "description": "\"We're going out tonight\" / \"we'll grab something\" / \"nobody's cooking tonight\" — settle tonight in one call, with no follow-up question. Takeout, leftovers or cereal all mean the same thing here, so don't ask which. Tonight's dish moves to the next free night of the plan when there is one (`moved_to` says which), otherwise it comes off the week and `use_soon` names anything already bought for it that won't keep — say that back in one line if it isn't empty. Either way the night ends deliberately empty: never call it a gap, never offer to fill it, never describe the week as short because of it. `already` true means nothing changed because the night was already empty — `already_reason` 'night_off' is a night off somebody already took (say so plainly, don't take it again), 'away' is a night nobody was home for anyway (say THAT, never \"night off\"). A status of 'refused' means nothing changed and `message` says why (already cooked; or cooked double for a later night, which has to change first) — say that sentence back rather than retrying. Pass `day` only for a day other than today. For a trip or a night nobody is home at all, use set_slot_need or set_away_stretch instead — those are about who's in the house, this is about not cooking.",
+        "description": "\"We're going out tonight\" / \"we'll grab something\" / \"nobody's cooking tonight\" — settle tonight in one call, with no follow-up question. Takeout, leftovers or cereal all mean the same thing here, so don't ask which. Tonight's dish moves to the next free night of the plan when there is one (`moved_to` says which), otherwise it comes off the week and `use_soon` names anything already bought for it that won't keep — say that back in one line if it isn't empty. Either way the night ends deliberately empty: never call it a gap, never offer to fill it, never describe the week as short because of it. `already` true means nothing changed because the night was already empty — `already_reason` 'night_off' is a night off somebody already took (say so plainly, don't take it again), 'away' is a night nobody was home for anyway (say THAT, never \"night off\"). It never asks for anything to be changed first: a dish cooked double for a later night, with no free night, is cooked on the first night it was feeding instead (same size, `moved_to` says which) and tonight's share goes in the freezer; a leftovers night, or a dinner already cooked, goes in the freezer (`frozen` names it). `said` is the line to say back. A status of 'refused' means there is no plan covering that night and nothing changed — say `message` back rather than retrying. Pass `day` only for a day other than today. For a trip or a night nobody is home at all, use set_slot_need or set_away_stretch instead — those are about who's in the house, this is about not cooking.",
         "input_schema": {
             "type": "object",
             "properties": {

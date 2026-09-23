@@ -6690,6 +6690,39 @@ def _rewrite_chain_ref(ref, mapping: dict[str, str]):
     return mapping.get(ref.strip(), ref)
 
 
+def _shift_defrost_tasks(conn, weekly_plan_id: int, entry_id: int, old_date: str, new_date: str) -> int:
+    """
+    Move one dinner's freezer-to-fridge reminders by exactly the number of
+    days the dinner itself moved, status untouched, and re-say the weekday
+    in their sentence. Returns how many rows moved.
+
+    Lifted out of _apply_dinner_nights_swap (2026-09-22) so the night off's
+    "cook it on the night it was feeding" (tonight.tonight_night_off, Emily
+    2026-09-22) moves a dinner's reminders by the SAME rule a nights swap
+    does rather than a second copy of it. Runs on the caller's connection
+    and transaction; neither commits nor closes.
+    """
+    delta = (date.fromisoformat(new_date) - date.fromisoformat(old_date)).days
+    old_wd, new_wd = _weekday_of(old_date), _weekday_of(new_date)
+    tasks = conn.execute(
+        "SELECT id, task_date, description FROM prep_tasks "
+        "WHERE household_id = ? AND weekly_plan_id = ? AND task_type = 'defrost' "
+        "AND meal_plan_entry_id = ?",
+        (household_id(), weekly_plan_id, entry_id),
+    ).fetchall()
+    for t in tasks:
+        moved_to = (date.fromisoformat(t["task_date"]) + timedelta(days=delta)).isoformat()
+        # defrost._describe: "… — for Thursday's skewers." Only the
+        # weekday changes, so only the weekday is re-said.
+        said = (t["description"] or "").replace(f"for {old_wd}’s", f"for {new_wd}’s") \
+            .replace(f"for {old_wd}'s", f"for {new_wd}'s")
+        conn.execute(
+            "UPDATE prep_tasks SET task_date = ?, description = ? WHERE id = ?",
+            (moved_to, said, t["id"]),
+        )
+    return len(tasks)
+
+
 def _apply_dinner_nights_swap(
     weekly_plan_id: int, date_a: str, date_b: str, *, undo: bool, dry_run: bool = False,
     conn=None,
@@ -6859,25 +6892,7 @@ def _apply_dinner_nights_swap(
                 )
         prep_moved = 0
         for r in moving:
-            delta = (date.fromisoformat(new_date[r["id"]]) - date.fromisoformat(r["date"])).days
-            old_wd, new_wd = _weekday_of(r["date"]), _weekday_of(new_date[r["id"]])
-            tasks = conn.execute(
-                "SELECT id, task_date, description FROM prep_tasks "
-                "WHERE household_id = ? AND weekly_plan_id = ? AND task_type = 'defrost' "
-                "AND meal_plan_entry_id = ?",
-                (household_id(), weekly_plan_id, r["id"]),
-            ).fetchall()
-            for t in tasks:
-                moved_to = (date.fromisoformat(t["task_date"]) + timedelta(days=delta)).isoformat()
-                # defrost._describe: "… — for Thursday's skewers." Only the
-                # weekday changes, so only the weekday is re-said.
-                said = (t["description"] or "").replace(f"for {old_wd}’s", f"for {new_wd}’s") \
-                    .replace(f"for {old_wd}'s", f"for {new_wd}'s")
-                conn.execute(
-                    "UPDATE prep_tasks SET task_date = ?, description = ? WHERE id = ?",
-                    (moved_to, said, t["id"]),
-                )
-                prep_moved += 1
+            prep_moved += _shift_defrost_tasks(conn, weekly_plan_id, r["id"], r["date"], new_date[r["id"]])
         if own_conn:
             conn.commit()
     except Exception:

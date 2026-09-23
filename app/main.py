@@ -2497,6 +2497,23 @@ def today_tonight_night_off(req: TonightKeepRequest):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+@app.post("/api/today/tonight/night-off-undo")
+def today_tonight_night_off_undo(req: TonightKeepRequest):
+    """
+    Undo on the night-off toast (Emily, 2026-09-22): puts tonight and every
+    night the answer touched back exactly as they were, and takes back what
+    it put in the freezer. `status` 'restored', or 'refused' with a sentence
+    when the week has changed since. See tools.tonight_night_off_undo.
+    """
+    try:
+        return tools.tonight_night_off_undo(req.date)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Undoing tonight's night off failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.get("/api/week-menu")
 def week_menu(weekly_plan_id: int | None = None):
     """

@@ -1103,30 +1103,6 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   color: var(--ink-strong);
   flex-shrink: 0;
 }
-/* Nothing to offer: one plain sentence and the way to the day itself. */
-.tonight-none {
-  margin: 8px 0 0;
-  padding: 0 18px;
-  font-family: var(--font-body);
-  font-size: 15px;
-  font-weight: 500;
-  line-height: 1.4;
-  color: var(--ink);
-}
-.tonight-plan-link {
-  align-self: flex-start;
-  min-height: 44px;
-  margin: 2px 6px 0;
-  padding: 0 12px;
-  border: 0;
-  background: none;
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--ink-strong);
-  cursor: pointer;
-}
-
 /* "Not tonight — we're going out" (Emily, 2026-09-14): the sheet's last
    row, and a different KIND of answer from the swaps above it — so it sits
    under a hairline of its own rather than in the .tonight-options stack.
@@ -1139,6 +1115,13 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   margin-top: 12px;
   padding: 12px 2px 0;
   border-top: 1.5px solid var(--hairline);
+}
+/* With no nights to swap with, the night off IS the sheet (Emily,
+   2026-09-22) — it leads, with nothing above it to set it apart from. */
+.tonight-off-row.is-lead {
+  margin-top: 4px;
+  padding-top: 0;
+  border-top: 0;
 }
 .tonight-option.is-night-off {
   background: var(--celadon-tint);
