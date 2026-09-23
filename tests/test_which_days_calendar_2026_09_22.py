@@ -324,7 +324,11 @@ class TestTheServerTakesEightDays:
     def test_generation_is_asked_for_the_days_chosen(self):
         # The page hands generation the step's own count (the drafting
         # code is not run here: a real generation is a model call).
-        assert "await streamGenerate({ intake_id: saved.intake_id, day_count: dayCount });" in _extract("advance")
+        # Pinned on the day count alone, not the whole call: the dropped-
+        # stream fix (branch fix-draft-stream-drop, same night) adds a
+        # run_token to the same object, and this test is about the days.
+        assert re.search(r"await streamGenerate\(\{ intake_id: saved\.intake_id, day_count: dayCount[,\s}]",
+                         _extract("advance"))
         week = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
         req = app_main.WeekGenerateRequest(intake_id=1, day_count=8)
         assert app_main._validated_period(week, req) == (week, 8)
