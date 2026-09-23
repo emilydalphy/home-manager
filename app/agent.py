@@ -2767,11 +2767,23 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
         "properties": {
             "days": {
                 "type": "array",
-                "description": "One entry per planned day/slot.",
+                "description": "The week's slots. One entry per slot, EXCEPT a breakfast/lunch/snack idea that repeats — that is one entry naming every day it lands on in `dates`.",
                 "items": {
                     "type": "object",
                     "properties": {
-                        "date": {"type": "string", "description": "ISO date, e.g. 2026-08-10."},
+                        "date": {"type": "string", "description": "ISO date, e.g. 2026-08-10. For a repeated idea, the FIRST day it lands on."},
+                        # One entry, several days. A repeated breakfast,
+                        # lunch or snack is one decision, and writing it
+                        # out three times was ~150 tokens of bookkeeping a
+                        # time for nothing (see _expand_repeated_dates).
+                        # The server fans this back out into one plan row
+                        # per date before anything else sees it, so every
+                        # reader below still gets one entry per slot.
+                        "dates": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "ONLY for a breakfast, lunch or snack idea that repeats: every day it lands on, this entry's `date` first. Send the entry ONCE with all of them rather than one entry per morning. Leave it out entirely for a one-off, and for dinner.",
+                        },
                         "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"]},
                         "meal_name": {"type": "string", "description": "The dish's name and nothing else — 'Lemon-Garlic Tilapia with Green Beans', never 'Lighter night: Lemon-Garlic Tilapia…'. The why goes in reasoning, the how in dish_note. An existing saved recipe's exact name, or the new dish's. Leave blank ONLY when slot_state is 'open'."},
                         "is_new_recipe": {"type": "boolean"},
@@ -2874,6 +2886,185 @@ class GeneratedDays(list):
     report: dict = {}
 
 
+# ---------- one entry, several dates ----------
+# Production measured 2026-09-21: the menu call took 36-39s at medium
+# effort and wrote 4,800-5,900 output tokens for a 35-slot week — about
+# 150 a slot. Recipes were already out of it, so what is left is
+# date/slot/derived_from/tags/food_groups/cuisine/protein/minutes/
+# dish_note/reasoning, written out 35 times over. Most of those 35 slots
+# are not 35 decisions: the prompt has always asked for the same
+# breakfast, lunch or snack idea to repeat two or three times across the
+# week, and every repeat was being written out again in full.
+#
+# Be precise about which half of that 150 this touches, because the two
+# get confused: measured here, the JSON of one realistic 35-slot week is
+# ~2,530 output tokens (chars/4) unfolded and ~1,140 folded — so roughly
+# 72 tokens a slot is the writing, and the rest of the 150 is the model's
+# thinking, which folding does not touch at all. Estimated against
+# production's midpoint that is about a quarter off the whole call, not
+# the 55% the payload alone drops by.
+#
+# So an entry may now name several `dates` and be written once. Dinners
+# are deliberately NOT folded in the prompt — they carry the week's shape,
+# and each night's own reasoning ("lighter after Monday's chili") and its
+# own tags are the thing the household reads — but a dinner that arrives
+# with several dates anyway is honoured rather than refused, because a
+# repeated dinner is something this app actually asks for elsewhere
+# ("with dinners_per_week 3 over four days, exactly three different
+# dinners, one of them on two nights"), and dropping the extra nights
+# would leave holes for the gap audit to turn into questions about a
+# night the model had already answered.
+#
+# A period is at most tools.MAX_PERIOD_DAYS days, so one entry can never
+# legitimately name more dates than that; the same number rather than a
+# second one, so a wider period can't leave this quietly clipping the
+# last days of a fold.
+_MAX_DATES_PER_ENTRY = tools.MAX_PERIOD_DAYS
+
+
+def _entry_dates(item: dict) -> list[str]:
+    """
+    Every date one generated entry claims, `date` first and in order, with
+    no repeats.
+
+    `date` stays required in the schema and stays the entry's first date,
+    so the streamed item, the scanner and every reader below the expansion
+    see the shape they always saw. `dates` is additive: the union is the
+    forgiving reading of the two ways the model could mean it ("A, plus
+    the repeats B and C" and "the repeats are A, B and C" land on the same
+    answer), and the failure mode of a union is a day that gets a meal
+    rather than a day left with a hole — the safe direction here, since a
+    hole becomes a question about a night the model had already decided.
+    """
+    dates: list[str] = []
+    raw = item.get("dates")
+    # A model that means one day sometimes sends the bare string. Anything
+    # that is neither a string nor a sequence of them (a number, an object)
+    # is not a date list and is read as no dates at all — `date` alone then
+    # carries the entry, which is the shape every entry had before folding.
+    if isinstance(raw, str):
+        raw = [raw]
+    elif not isinstance(raw, (list, tuple)):
+        raw = []
+    first = item.get("date")
+    for value in [first] + list(raw):
+        if not isinstance(value, str):
+            continue
+        value = value.strip()
+        if value and value not in dates:
+            dates.append(value)
+        if len(dates) >= _MAX_DATES_PER_ENTRY:
+            break
+    return dates
+
+
+def _expand_repeated_dates(items):
+    """
+    One entry naming several dates becomes one entry per date, each
+    carrying that entry's own reasoning and derived_from, so everything
+    downstream — the honest-title pass, the allergen gate, the save loop,
+    the 21-slot audit — sees exactly the one-entry-per-slot list it has
+    always seen. The fold is a wire format, not a data model.
+
+    Two collision rules, both of which the prompt asks for and therefore
+    neither of which can be trusted to hold:
+
+    * TWO ENTRIES CLAIMING ONE (date, slot). The MORE SPECIFIC one wins —
+      the entry naming fewer dates — because that is what "oatmeal most
+      mornings, pancakes on Saturday" means, and it is the shape folding
+      itself creates. First-wins on a tie. Keeping the repeat instead
+      would silently delete the one-off dish, which has nowhere else to
+      go; `_dedupe_duplicate_slots` further down would then keep whichever
+      row was written first, which is an answer decided by array order
+      rather than by what the model meant.
+    * SNACK is the exception, because a day legitimately holds
+      snacks_per_day of them: two DIFFERENT snacks on one date are right
+      and are kept. Only the same dish twice on one day is dropped — that
+      one is a real rule ("the day's two snacks must differ from each
+      other") and `plan_quality.repair_snack_clashes` would otherwise pay
+      for it later with a trade.
+
+    Nothing here checks the period: a date outside it is dropped by
+    `_generate_weekly_plan`'s own in-scope pass, with the warning it
+    already logs, rather than by a second copy of that rule here.
+
+    Entry ORDER is the model's throughout. `_honest_meal_names` renames in
+    order and carries each rename forward across the pass, so reordering
+    would change which of two colliding names gets corrected.
+    """
+    if not isinstance(items, list):
+        return items
+    # Who claims what, decided by specificity before anything is emitted.
+    # Emission itself stays in the model's order (see above), so this is a
+    # claim map rather than a sort of the output.
+    claimed: dict[tuple, int] = {}
+    per_entry: list[list[str]] = [_entry_dates(item) if isinstance(item, dict) else [] for item in items]
+    order = sorted(range(len(items)), key=lambda i: (len(per_entry[i]) or 99, i))
+    folded = 0
+    for i in order:
+        item = items[i]
+        if not isinstance(item, dict):
+            continue
+        slot = item.get("slot") or "dinner"
+        name = (item.get("meal_name") or "").strip().lower()
+        for date in per_entry[i]:
+            # A snack is keyed by its dish as well as its day: a second,
+            # different snack on the same date is the household's second
+            # snack, not a collision.
+            key = (date, slot, name) if slot == "snack" else (date, slot)
+            claimed.setdefault(key, i)
+
+    out: list[dict] = []
+    for i, item in enumerate(items):
+        if not isinstance(item, dict):
+            out.append(item)
+            continue
+        dates = per_entry[i]
+        if not dates:
+            # No usable date at all. Passed through untouched so the save
+            # loop's own `if not meal_date: continue` stays the one place
+            # that decides what an entry with no date means.
+            out.append(item)
+            continue
+        slot = item.get("slot") or "dinner"
+        name = (item.get("meal_name") or "").strip().lower()
+        mine = [
+            d for d in dates
+            if claimed.get((d, slot, name) if slot == "snack" else (d, slot)) == i
+        ]
+        if len(dates) > 1:
+            folded += 1
+        for date in mine:
+            row = dict(item)
+            row.pop("dates", None)
+            row["date"] = date
+            # Not shared by reference: the passes below mutate an entry's
+            # derived_from (the typed-request reporter writes `freeform`
+            # onto the slots a request shaped), and two nights aliasing one
+            # dict is how one night's correction silently becomes another's.
+            if isinstance(item.get("derived_from"), dict):
+                row["derived_from"] = copy.deepcopy(item["derived_from"])
+            out.append(row)
+    if folded:
+        logger.info(
+            "Week generation folded %d repeated entr%s into %d slots",
+            folded, "y" if folded == 1 else "ies", len(out),
+        )
+    dropped = sum(len(per_entry[i]) for i in range(len(items))) - len(
+        [r for r in out if isinstance(r, dict) and r.get("date")]
+    )
+    if dropped > 0:
+        logger.warning(
+            "Week generation returned %d slot(s) already claimed by another entry; they were dropped",
+            dropped,
+        )
+    if isinstance(items, GeneratedDays):
+        expanded = GeneratedDays(out)
+        expanded.report = items.report
+        return expanded
+    return out
+
+
 def generate_weekly_plan_llm(context: dict) -> list[dict]:
     """
     Given household context (preferences, dislikes, member restrictions,
@@ -2907,14 +3098,15 @@ it can be any start day and any length, so plan the dates you are given and no o
 breakfast, lunch, dinner, AND snacks every day, not dinner alone, so the week reads as a real \
 day-by-day menu rather than just a dinner list. household_memory.snacks_per_day says how many \
 snacks each day gets (2 unless the household has said otherwise), so an ordinary day is 5 \
-separate entries — breakfast, lunch, dinner and TWO snack entries, same date, slot 'snack' for \
-both. The day's snacks must be DIFFERENT foods from each other, not one idea sent twice. This \
+filled slots — breakfast, lunch, dinner and TWO snacks, slot 'snack' for both. The day's snacks \
+must be DIFFERENT foods from each other, not one idea sent twice. This \
 holds unless constraints_notes says otherwise (e.g. "just dinners this week" means skip \
 breakfast/lunch/snack entirely for the week — honor that exactly).
 
 THE ONE RULE THAT IS NOT NEGOTIABLE: every breakfast, lunch and dinner of every day must come \
-back with an entry — 21 entries minimum, before snacks. A slot you leave out is a bug, not a \
-plan: the household approves the WEEK, and a week with holes in it isn't approvable. If you \
+back covered — all 21 of them, before snacks, whether that takes 21 entries or 8. A slot left \
+uncovered is a bug, not a plan: the household approves the WEEK, and a week with holes in \
+it isn't approvable. If you \
 genuinely cannot choose a meal without guessing, send that slot with slot_state='open' and a \
 real reason — never send nothing. (Dinners on nights the household is out, and every meal and \
 snack on a day in `intake.skipped_days`, are the exceptions, and they are handled outside this \
@@ -2938,6 +3130,19 @@ sandwich, yogurt with fruit, hummus and veggies) — they don't need advance pre
 normal and expected for the same breakfast/lunch/snack idea to repeat 2-3 times across the \
 week rather than forcing a fully distinct one every day. Don't stretch these into \
 restaurant-tier new recipes; match the actual effort level of what they are.
+- SEND A REPEAT ONCE. When one breakfast, lunch or snack idea covers several days, that is ONE \
+entry with every one of those days listed in `dates` (its `date` first) — not the same dish \
+written out again for each morning. Oatmeal on five mornings is one entry with five dates. \
+It is written onto each of those days exactly as if you had sent it five times, with this \
+entry's own reasoning and derived_from on each, so nothing is lost by folding it — what is \
+saved is you writing the same decision out four more times, which on a real week is more \
+than half of everything you write. Two rules on it: the days must genuinely be the SAME dish (a different \
+topping is a different entry), and DINNER IS NOT FOLDED — dinners carry the shape of the \
+week, and each night's own reason ("lighter after Monday's chili") is read under the dish, \
+so send one entry per night even when the dish repeats. Leave `dates` out entirely for \
+anything that lands on one day, and never list a day in `dates` that you were told not to \
+plan (a day in `intake.skipped_days`, or a meal in `slot_needs.away_slots`) — folding is a \
+way of saying the same thing more briefly, never a way past a rule above.
 - `today` gives today's real date and the current season (e.g. "2026-09-04 (fall)") — use it as \
 a light lean toward seasonally appropriate ingredients and dishes (soups and roasting in winter, \
 grilling and salads in summer) when nothing else already decides the choice; it never overrides \
@@ -3217,7 +3422,10 @@ that lies about itself, and the household loses the ability to trust any of the 
 - Set `derived_from` on every entry: which tags applied, the binding constraint if there was \
 one, which mood/cuisine inputs drove it, the quoted span of their freeform text if that's what \
 drove it, and any inventory it was chosen to use up. Record what actually drove the choice, \
-not everything you were shown.
+not everything you were shown — and send ONLY the keys that did. A key with nothing in it \
+("constraint": "", "tags": []) is not a record of anything: leave it out. An ordinary \
+untagged night's derived_from is often one key, or none at all, and that is the right answer \
+rather than a thin one.
 - household_memory's dinners_per_week / breakfasts_per_week / lunches_per_week / \
 snacks_per_week (0-7) are counts of DISTINCT meals, not counts of days to plan. Every day still \
 gets all four. "4 breakfasts" means four different breakfast ideas spread across the seven \
@@ -3239,8 +3447,9 @@ exact same rule (Loop Board "Onboarding / meal setup: add a Snacks & desserts co
 breakfast or lunch idea would be — with a light lean toward something dessert-like on a night \
 tagged `unrushed` or otherwise called out as special in constraints_notes/intake, rather than on \
 an ordinary weeknight. household_memory.snacks_per_day is the separate, per-DAY number: how many \
-snack entries each day gets (2 by default), and it is exact — every planned day gets that many, \
-no more, no fewer. The two counts work together — snacks_per_day says \
+snacks each day gets (2 by default), and it is exact — every planned day gets that many, \
+no more, no fewer (counting the days a folded entry's `dates` covers, not the entries). The \
+two counts work together — snacks_per_day says \
 how many snacks land on Tuesday, snacks_per_week how many distinct ideas the whole rotation \
 draws on — and the pool is never so small that one day has to repeat itself: give every day its \
 snacks_per_day snacks, all different from each other and from that day's other meals, even if \
@@ -3322,9 +3531,11 @@ the list, and don't let it override genuine variety/preference/novelty considera
 matters as a tiebreaker-ish nudge among otherwise-reasonable options.
 - The per-slot `reasoning` line is read directly under the meal name on the draft screen, so \
 keep it to roughly 4-9 words — a phrase, not a sentence: "travels well, good cold or reheated", \
-"ten minutes, and the eggs are in", "after Monday's chili, something lighter". It must agree \
+"ten minutes, and the eggs are in", "after Monday's chili, something lighter". A full sentence \
+is clipped on the screen, so the extra words are not read by anyone. It must agree \
 with what you put in derived_from; the two are the same explanation, one short and one \
-structured.
+structured. A folded entry carries ONE reasoning line for all its days — write the reason the \
+idea earns its place in the week, not a different one per morning.
 - Leaving a slot `open` is a real option, not a failure mode — but it is a LAST resort, and it \
 has to be earned. Use it only when every choice you can see would break something the \
 household told you (repeat a meal they just ate, blow a `rush` cap, ignore a dislike), so \
@@ -3346,6 +3557,33 @@ Call submit_weekly_plan with the result."""
     # snack are individually lighter-weight than dinner).
     context_block = f"Household context (JSON):\n{json.dumps(context, indent=2)}"
     on_day = _WEEK_GEN_PROGRESS.get(None)
+    if on_day is not None:
+        # The scanner streams whole ENTRIES, and an entry can now be three
+        # mornings. The screen fills days, not entries — both readers take
+        # `body.date` and paint that one card — so the fan-out happens here
+        # rather than in either of them: one "day" event per date, in the
+        # order the model wrote them, and neither client had to learn
+        # anything about folding.
+        _raw_on_day = on_day
+
+        def on_day(item):
+            if not isinstance(item, dict):
+                _raw_on_day(item)
+                return
+            for date in _entry_dates(item) or [None]:
+                if date is None:
+                    _raw_on_day(item)
+                    continue
+                one = dict(item)
+                one.pop("dates", None)
+                one["date"] = date
+                _raw_on_day(one)
+
+    # NOT expanded here: this wrapper's job is "what the model said", and
+    # every test in this repo that stubs it hands back a plain list of
+    # one-entry-per-slot days. The fold is unpacked on the save path
+    # (_generate_weekly_plan), so a stubbed week written the folded way
+    # goes through the real expansion rather than past it.
     return _stream_forced_tool_call(
         client,
         label="generate_weekly_plan_llm",
@@ -4898,7 +5136,14 @@ def _generate_weekly_plan(
     if is_component_based:
         items = generate_component_plan_llm(context)
     else:
-        items = generate_weekly_plan_llm(context)
+        # One entry can name several days (see _expand_repeated_dates): a
+        # repeated breakfast, lunch or snack is one decision and is sent
+        # once. Unpacked HERE, before a single pass below sees it, so the
+        # honest-title pass, the allergen gate, the save loop and the
+        # 21-slot audit all get the one-entry-per-slot list they have
+        # always had. The component planner's items are parts rather than
+        # days and carry no date, so it is deliberately not run over them.
+        items = _expand_repeated_dates(generate_weekly_plan_llm(context))
     if not items:
         raise ValueError(
             "Generating this week's plan didn't come back with any meals — the model call may "
