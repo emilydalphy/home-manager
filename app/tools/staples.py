@@ -942,7 +942,7 @@ def reverse_last_answer(conn, staple_id: int) -> bool:
     pause, and make it due today. Touches no grocery line — the caller
     decides what happens to the row. Returns False, changing nothing, when
     there is no answer to take back. Shared by undo_staple_decision and
-    the pre-shop screen's own undo (a person saying "Actually, I need it"
+    the pre-shop screen's own undo (a person saying "Put back on the list"
     on a staple's line means the staple was wrong to say plenty).
     """
     r = _row(conn, staple_id)

@@ -3590,7 +3590,7 @@
     openFlagKey: null,
     voiceSession: null,
     voiceLog: [],
-    // Page-view only — "I'll come back to it" on the finished moment
+    // Page-view only — "Not now" on the finished moment
     // (every card done) just collapses the offer for this visit, no
     // persistence. The moment itself is read off the list (groListDone):
     // every row bought and none left, which the bought window
@@ -4164,7 +4164,7 @@
     // (Plan's freezer step), it reads the same `after=approve` and lands
     // the household there instead; until then the list is the next step.
     if (new URLSearchParams(window.location.search).get('after') === 'approve') {
-      showToast('Approved. Here’s your list.');
+      showToast('Your week was approved');
       window.history.replaceState({ tab: 'grocery' }, '', window.location.pathname);
     }
   }
@@ -4570,7 +4570,7 @@
       return {
         back: '‹ Shop',
         title: 'Still on the list from last week',
-        sub: groPlural(groceryState.carried.length, 'thing', 'things') + ' · keep or drop?'
+        sub: groPlural(groceryState.carried.length, 'thing', 'things') + ' · still need them?'
       };
     }
     // 'sortall' — the only other step. "Where does this go?" was the
@@ -4802,7 +4802,7 @@
       '</button>';
     if (open) {
       html += '<div class="gro-staples-body gro-spices-body">' +
-        '<p class="gro-spices-line">All the spices the recipes need. Tick the ones you need to buy.</p>' +
+        '<p class="gro-spices-line">All the spices this week&rsquo;s recipes need.</p>' +
         items.map(function (sp) {
           var id = String(sp.id);
           return '<div class="gro-row gro-spice-row" data-gro="spice-tick" data-id="' + id + '" data-ticked="' + (sp.ticked ? '1' : '0') + '">' +
@@ -5033,7 +5033,7 @@
         '<span class="gro-rolled-tick">' + GRO_ICONS.tick + '</span>' +
         '<span class="gro-rolled-text">' +
           '<span class="gro-rolled-title">' + escapeHtml(label) + '</span>' +
-          '<span class="gro-rolled-sub">' + count + (open ? '' : ' · tap to see them') + '</span>' +
+          '<span class="gro-rolled-sub">' + count + '</span>' +
         '</span>' +
         '<span class="gro-chev">' + (open ? GRO_ICONS.chevDown : GRO_ICONS.chevRight) + '</span>' +
       '</button>' +
@@ -5650,7 +5650,7 @@
   // ---------- Already had on hand ----------
   // This week's "Have it" / "Don't need" / pre-shop "Drop it" decisions,
   // and what the Plan tab's freezer step set aside as already frozen
-  // (get_already_have_decisions), each with "Actually, I need it" — the
+  // (get_already_have_decisions), each with "Put back on the list" — the
   // way back once the toast's Undo has gone. It was half of the old
   // wrap-up's "Already sorted this week" card; the other half, what's set
   // aside, is groElsewhereHtml above it. A confirmation, not a warning,
@@ -5672,11 +5672,11 @@
             already.map(function (it) {
               // A line the freezer step set aside says so — it came off
               // the list for a reason the person gave on another tab, and
-              // "Actually, I need it" here also cancels its fridge move.
+              // "Put back on the list" here also cancels its fridge move.
               var why = it.removed_by === 'freezer' ? ' &middot; from the freezer' : '';
               return '<div class="gro-fix">' +
                 '<span>' + escapeHtml(it.item) + (it.quantity ? ' &middot; ' + escapeHtml(it.quantity) : '') + why + '</span>' +
-                '<button type="button" class="secondary" data-gro="undo-already-have" data-id="' + String(it.id) + '">Actually, I need it</button>' +
+                '<button type="button" class="secondary" data-gro="undo-already-have" data-id="' + String(it.id) + '">Put back on the list</button>' +
               '</div>';
             }).join('') +
           '</div>'
@@ -6133,7 +6133,7 @@
         '<div class="gro-shop-done-line">' + line + '</div>' +
         '<div class="gro-shop-done-actions">' +
           '<button type="button" class="btn-gold" data-gro="shop-done-tonight">Show me tonight</button>' +
-          '<button type="button" class="btn-sand" data-gro="shop-done-later">I’ll come back to it</button>' +
+          '<button type="button" class="btn-sand" data-gro="shop-done-later">Not now</button>' +
         '</div>' +
       '</div>'
     );
@@ -6253,7 +6253,6 @@
     return (
       '<div class="shell-card gro-stores-prompt">' +
         '<p class="gro-stores-prompt-title">Where do you usually shop?</p>' +
-        '<p class="gro-stores-prompt-sub">I&rsquo;ll sort the list by store and plan your stops.</p>' +
         '<div class="gro-pills open">' + chips + '</div>' +
         '<div class="gro-stores-prompt-add">' +
           '<input type="text" class="gro-stores-prompt-input" id="gro-stores-prompt-input" ' +
@@ -6620,9 +6619,9 @@
       '</div>';
   }
 
-  // Voice per DESIGN_SYSTEM §8: state what happened, then the one thing to
-  // check — "untick anything I got wrong" is the review step in one line,
-  // not a restated header.
+  // Voice per DESIGN_SYSTEM §8 and the copy sweep's rule 2 (2026-09-23):
+  // the tickboxes below already show what was read, so the line is the one
+  // thing to do — "Untick anything that's wrong" — with no narrating I.
   function groScanRenderReview() {
     var body = document.getElementById('gro-scan-body');
     if (!body) return;
@@ -6633,7 +6632,7 @@
       return;
     }
     body.innerHTML =
-      '<p class="gro-scan-sub">Here&rsquo;s what I read &mdash; untick anything I got wrong.</p>' +
+      '<p class="gro-scan-sub">Untick anything that&rsquo;s wrong.</p>' +
       '<div class="gro-scan-list">' +
         groScanState.items.map(function (it, i) {
           return '<div class="gro-scan-row' + (it.keep === false ? ' unchecked' : '') + '" data-idx="' + i + '">' +
@@ -7286,7 +7285,7 @@
           if (stDecision === 'plenty') {
             line = stName + ' off the list — I\u2019ll ask again in ' + groCadenceSpan(stResult.cadence_days);
           } else if (stResult.just_paused) {
-            line = stName + ' paused — three trips skipped. It\u2019s under Staples if you want it back.';
+            line = stName + ' was paused — three trips skipped';
           } else {
             line = stName + ' off the list — I\u2019ll ask again next week';
           }
@@ -7411,7 +7410,7 @@
         groDo(function () {
           return groPostEmpty('/api/grocery-list/pre-shop/keep-all');
         }, "Couldn't update those — try again.").then(function (ok) {
-          if (ok) showToast('Kept all — nothing dropped');
+          if (ok) showToast('Everything stays on the list.');
         });
         return;
 
@@ -7572,7 +7571,7 @@
         renderGrocery();
         return;
 
-      // "Actually, I need it" on the "Already had on hand" foot: the one
+      // "Put back on the list" on the "Already had on hand" foot: the one
       // pre-shop-undo endpoint, whichever flow removed the row. Restoring
       // it to 'needed' is identical either way; the backend also deletes
       // the inventory row an already-have action created, but only when
@@ -11099,7 +11098,7 @@
         ask = !!(defrostAskState.items && defrostAskState.items.length);
       }
       if (ask) goMealsStep('freezer', { replace: true });
-      else { goGroceryList(); showToast('Approved. Here’s your list.'); }
+      else { goGroceryList(); showToast('Your week was approved'); }
     }
   }
 
@@ -11305,7 +11304,7 @@
       '<div class="ready-made-actions">' +
         '<button type="button" class="ready-made-confirm" data-date="' + day.date + '">' +
           READY_CHECK + '<span>Confirm</span></button>' +
-        '<button type="button" class="ready-made-other" data-date="' + day.date + '">Choose differently</button>' +
+        '<button type="button" class="ready-made-other" data-date="' + day.date + '">Pick another</button>' +
       '</div>' +
       (rec.alternative
         ? '<div class="ready-made-alt">' + escapeHtml(rec.alternative.sentence) + '</div>'
@@ -14557,7 +14556,7 @@
     });
     steps.querySelectorAll('.ready-made-other').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        // "Choose differently" declines the earmark and hands the question
+        // "Pick another" declines the earmark and hands the question
         // to chat, which is where an actual alternative gets chosen — the
         // engine stores one recommendation, not a menu to pick from.
         confirmReadyMade(panel, btn.dataset.date, false);
@@ -15551,7 +15550,7 @@
   // until it is answered for this plan, then the answer — read off the
   // week itself (each entry's booked defrost move, the same rows Today's
   // fridge move reads), so nothing here is remembered on the device. A
-  // put-back on Shop ("Actually, I need it") deletes the move, so the row
+  // put-back on Shop ("Put back on the list") deletes the move, so the row
   // stops naming that item the next time the week is read.
   function weekFrozenItems(days) {
     var seen = {}, out = [];

@@ -240,7 +240,7 @@ setTimeout(function () {
     a = out["after"]
     assert a["cards"] == ["Loblaws", "Anywhere"] and a["rolled"] == ["Done at Costco"] and a["doneBeat"] is None
     assert a["below"] is True, "rolled up below the stores still to do"
-    assert a["sub"] == "6 things · tap to see them"
+    assert a["sub"] == "6 things", "the count alone — the chevron says it opens"
     assert a["tick"] is True and a["chevron"] is True and a["tap"] is True
 
 

@@ -438,9 +438,13 @@ console.log(JSON.stringify({ closed: closed, open: open }));
 """ % _SPICES)
     assert "Spices this week" in out["closed"]
     assert "2 spices · 1 to buy" in out["closed"]
-    assert "Tick the ones you need" not in out["closed"], "closed by default: less scrolling"
+    assert "All the spices" not in out["closed"], "closed by default: less scrolling"
     html = out["open"]
-    assert "All the spices the recipes need. Tick the ones you need to buy." in html
+    # Copy sweep finding 7 (2026-09-23): the line says what the list IS — every
+    # spice the week needs, not only the missing ones. The second sentence
+    # ("Tick the ones you need to buy") described the boxes right below it.
+    assert "All the spices this week&rsquo;s recipes need." in html
+    assert "Tick the ones you need to buy" not in html
     assert 'data-id="7" data-ticked="0"' in html and 'data-id="8" data-ticked="1"' in html
     assert "Bought lately, so not listed: Smoked paprika" in html
     assert html.index("Spices this week") > html.index("Chicken thighs"), "after the stops, before Staples"

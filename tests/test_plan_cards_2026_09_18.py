@@ -415,7 +415,7 @@ def test_the_after_approve_hand_off_waits_for_the_freezer_items_and_says_approve
     assert "await ensureDefrostAskItems(panel, weekState.data);" in landing
     assert "ask = !!(defrostAskState.items && defrostAskState.items.length);" in landing
     assert "if (ask) goMealsStep('freezer', { replace: true });" in landing
-    assert "else { goGroceryList(); showToast('Approved. Here’s your list.'); }" in landing
+    assert "else { goGroceryList(); showToast('Your week was approved'); }" in landing
 
 
 # ---------------------------------------------------------------------------

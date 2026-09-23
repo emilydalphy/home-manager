@@ -210,13 +210,18 @@ u.sections[0].items.forEach(function (it) { it.status = 'purchased'; u.purchased
 u.sections = [];
 var after = groListHtml(groceryState.data);
 console.log(JSON.stringify({ before: cards(before), beforeRows: rows(card(before)), after: cards(after), afterRolled: rolled(after),
-  afterSub: /gro-rolled-sub">([^<]*)</.exec(after)[1] }));
+  afterSub: /gro-rolled-sub">([^<]*)</.exec(after)[1],
+  afterLabel: /class="gro-rolled-head"[^>]*aria-label="([^"]*)"/.exec(after)[1] }));
 """)
     assert out["before"] == ["Costco", "Loblaws", "Anywhere"]
     assert out["beforeRows"] == ["21", "20"], "answered 'Any' and not-yet-asked alike, by name"
     assert out["after"] == ["Costco", "Loblaws"]
     assert out["afterRolled"] == ["All bought"], "the loose pile's card rolls up like a store's"
-    assert out["afterSub"] == "2 things · tap to see them"
+    # Copy sweep finding 8 (2026-09-23): the count alone. The whole card is a
+    # button with a chevron, so "tap to see them" described its own control —
+    # and a screen reader is still told the card opens.
+    assert out["afterSub"] == "2 things"
+    assert out["afterLabel"] == "All bought, 2 things, see them"
 
 
 @_needs_node

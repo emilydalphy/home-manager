@@ -35,7 +35,9 @@ console.log(JSON.stringify({ closed: closed, open: open }));
     assert "Not needed" not in out["closed"] and "Not needed" not in out["open"]
     # The rows and the freezer tag are exactly as they were.
     assert "Chicken thighs &middot; 2 lb &middot; from the freezer" in out["open"]
-    assert out["open"].count("Actually, I need it") == 2
+    # Copy sweep finding 11 (2026-09-23): the way back is the action, not a phrase.
+    assert out["open"].count("Put back on the list") == 2
+    assert "Actually, I need it" not in out["open"]
 
 
 def test_the_old_label_is_gone_from_the_app():
