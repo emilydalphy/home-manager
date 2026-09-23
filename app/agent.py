@@ -24,6 +24,7 @@ from .tools import typed_requests as _typed_requests
 from .tools import model_shapes as _model_shapes
 from .tools import plan_quality
 from .tools import meal_variety as _meal_variety
+from .tools import leftovers as _leftovers_mod
 from .tools import voice as _voice
 
 logger = logging.getLogger("home_manager")
@@ -2961,6 +2962,13 @@ def _entry_dates(item: dict) -> list[str]:
     return dates
 
 
+def _days_between(earlier: str, later: str) -> int:
+    try:
+        return (datetime.date.fromisoformat(later) - datetime.date.fromisoformat(earlier)).days
+    except (TypeError, ValueError):
+        return 10 ** 6  # an unreadable date is never "within three days"
+
+
 def _expand_repeated_dates(items):
     """
     One entry naming several dates becomes one entry per date, each
@@ -2994,6 +3002,23 @@ def _expand_repeated_dates(items):
     Entry ORDER is the model's throughout. `_honest_meal_names` renames in
     order and carries each rename forward across the pass, so reordering
     would change which of two colliding names gets corrected.
+
+    ONE COOK, NOT SEVERAL (Emily, 2026-09-23: "If I want 2 types of
+    lunches, but need 4 lunches, you should assume Im making double of
+    each of the recipes. thats the batch cooking point"). The same dish on
+    several days is cooked on the first of them; each later day within
+    leftovers.MAX_LEFTOVER_DAYS (3) of that cook carries
+    derived_from.links_to "YYYY-MM-DD:slot" naming it, and the first day
+    more than three days on starts a second batch. repair_leftover_chains
+    confirms each link after the save (it writes the cook's
+    make_double_for), so the shopping buys one scaled batch per cook. A
+    breakfast day is also marked cook_ahead, the one way that repair takes
+    a breakfast source ("Made ahead — Monday's Oats"). Every slot, prep
+    days or not — except SNACKS: a day holds two of them, and "date:snack"
+    can't say which one a link means (cook_ahead._source_ref), so a
+    repeated snack stays one row per day as before. The prep-day batching
+    at approval (cook_ahead.apply_prep_day_batches) leaves any dish with a
+    chain alone, so nothing is chained twice.
     """
     if not isinstance(items, list):
         return items
@@ -3037,6 +3062,16 @@ def _expand_repeated_dates(items):
         ]
         if len(dates) > 1:
             folded += 1
+        # Which day cooks for which (see "ONE COOK" above), decided over
+        # the days in date order; the rows still go out in the model's.
+        cook_for: dict[str, str] = {}
+        if len(mine) > 1 and slot != "snack":
+            cook = None
+            for date in sorted(mine):
+                if cook is not None and _days_between(cook, date) <= _leftovers_mod.MAX_LEFTOVER_DAYS:
+                    cook_for[date] = cook
+                else:
+                    cook = date
         for date in mine:
             row = dict(item)
             row.pop("dates", None)
@@ -3047,6 +3082,13 @@ def _expand_repeated_dates(items):
             # dict is how one night's correction silently becomes another's.
             if isinstance(item.get("derived_from"), dict):
                 row["derived_from"] = copy.deepcopy(item["derived_from"])
+            if date in cook_for:
+                derived = dict(row.get("derived_from") or {})
+                derived["links_to"] = f"{cook_for[date]}:{slot}"
+                derived[_leftovers_mod.BATCH_KEY] = True
+                if slot == "breakfast":
+                    derived["cook_ahead"] = True
+                row["derived_from"] = derived
             out.append(row)
     if folded:
         logger.info(
@@ -3137,7 +3179,8 @@ restaurant-tier new recipes; match the actual effort level of what they are.
 entry with every one of those days listed in `dates` (its `date` first) — not the same dish \
 written out again for each morning. Oatmeal on five mornings is one entry with five dates. \
 It is written onto each of those days exactly as if you had sent it five times, with this \
-entry's own reasoning and derived_from on each, so nothing is lost by folding it — what is \
+entry's own reasoning and derived_from on each (and cooked once: the later days within three \
+days of the first eat that batch), so nothing is lost by folding it — what is \
 saved is you writing the same decision out four more times, which on a real week is more \
 than half of everything you write. Two rules on it: the days must genuinely be the SAME dish (a different \
 topping is a different entry), and DINNER IS NOT FOLDED — dinners carry the shape of the \
@@ -3363,11 +3406,11 @@ the old repeats question, 2026-09-05) decides the SHAPE of the week, so honour i
 rather than as a preference: "love_them" means deliberately build in two or three \
 cook-once-eat-twice pairs (a bigger batch one night, its leftovers the next) and favor \
 batch-friendly recipes; "fine_sometimes" means at most one such pair, no strong lean either \
-way otherwise; "fresh_each_night" means no leftover nights at all unless a night tag explicitly \
-asks for one — every dinner is cooked fresh that night. This does NOT mean seven distinct \
-dinners: the same dish can still repeat across the week (that's what dinners_per_week already \
-governs), it's specifically that a dinner is never a reheat of an earlier one. Blank means \
-unknown — use your normal judgement.
+way otherwise; "fresh_each_night" means don't add leftover nights of your own unless a night \
+tag asks for one. It does not overrule the counts: when dinners_per_week is less than the \
+nights you are planning, the household chose fewer dinners than nights, and the extra nights \
+are leftovers of a batch cooked within the three days before (see the counts rule below). \
+Blank means unknown — use your normal judgement.
 - household_memory's `weeknight_max_minutes`, when non-zero, is a real cap on Monday-Friday \
 dinners in prep+cook minutes. A `rush` tag overrides it downwards; an `unrushed` tag lifts it \
 for that one night. Nothing else moves it.
@@ -3432,13 +3475,18 @@ rather than a thin one.
 - household_memory's dinners_per_week / breakfasts_per_week / lunches_per_week / \
 snacks_per_week (0-7) are counts of DISTINCT meals, not counts of days to plan. Every day still \
 gets all four. "4 breakfasts" means four different breakfast ideas spread across the seven \
-mornings, repeating as needed to fill the week — it does NOT mean three mornings with nothing. \
+mornings — it does NOT mean three mornings with nothing. Fewer recipes than meals means batch \
+cooking (Emily, 2026-09-23: "If I want 2 types of lunches, but need 4 lunches, you should \
+assume Im making double of each of the recipes"): each recipe is cooked once, bigger, and its \
+other meals are leftovers eaten within three days of the cook. Two lunch recipes over four \
+days is each cooked double. Lean toward recipes that keep and reheat well for those meals, and \
+never plan a second fresh cook of a dish the household asked for — once asked, cooked once. \
 Each count is a TARGET for distinct dishes over the day_count days you are planning — not a \
 cap and not a floor — and it has already been scaled to this period when it is shorter than a \
 week, so the number you are handed is the number to hit: with dinners_per_week 3 over four \
 days, exactly three different dinners, one of them on two nights. Count the different dishes \
 you have written for each meal before you submit. Too many, and the extras will be folded into \
-repeats of the ones you kept; too few, and the repeated nights will be re-picked into new \
+leftovers of the ones you kept; too few, and the repeated nights will be re-picked into new \
 dishes — either way, after you answer, so anything off the number is work thrown away (Emily, \
 2026-09-21: "why isn't it following the guidelines we set"). A reheat night counts as the dish \
 it reheats, not as a new one. \

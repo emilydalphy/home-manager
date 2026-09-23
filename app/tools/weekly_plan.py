@@ -1937,6 +1937,10 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
       requirement nobody asked for.)
     - the source is not itself a leftovers entry (chaining leftovers off
       leftovers is exactly as backwards as the bug this exists to catch).
+    - the two are at most leftovers.MAX_LEFTOVER_DAYS (3) days apart
+      (Emily, 2026-09-23: leftovers are eaten within 3 days of the cook —
+      the food-safety default). See below for what happens to one that
+      isn't: it is NOT reopened.
 
     On failure, the week is never reordered — reordering a night the
     household already saw a reasoning for is its own kind of surprise.
@@ -1944,6 +1948,19 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
     question, the same shape as any other open slot, with the failure kept
     on derived_from.repaired/original_links_to rather than silently
     dropped, so it stays traceable.
+
+    A chain that is fine in every way except that it is more than three
+    days apart is turned into a FREEZER PORTION rather than reopened
+    (_freeze_instead): the cook makes that night's portion extra and
+    freezes it (leftovers.FREEZER_EXTRA_KEY, which every batch reader
+    already counts, so the shopping still buys it once, on the cook), and
+    the night reads "Leftovers from the freezer — Monday’s Chili". Chosen
+    over reopening because nothing about that plan is wrong except how
+    long the food sits in the fridge, and a reopened slot hands the
+    household a question Pomona can answer itself (Emily, 2026-09-23: it
+    does the planning work and says what it did). Reopening stays the
+    answer for the broken chains above, where there is genuinely nothing
+    to reheat.
 
     On success, the SOURCE (the earlier cook) gets a note recorded on its
     own derived_from_json — no schema change needed for it — so the
@@ -1968,6 +1985,7 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
 
     repaired = []
     confirmed = []
+    frozen = []
     for r in rows:
         if r["slot"] not in WEEK_SLOTS or r["slot_state"] != "planned":
             continue
@@ -1994,6 +2012,13 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
             source_derived = json.loads(source["derived_from_json"] or "{}")
             if (source_derived.get("links_to") or "").strip():
                 issue = "another leftovers night, not an actual cook"
+
+        if issue is None and (
+            date.fromisoformat(r["date"]) - date.fromisoformat(source["date"])
+        ).days > _leftovers_mod().MAX_LEFTOVER_DAYS:
+            _freeze_instead(r, source, derived, links_to)
+            frozen.append({"date": r["date"], "slot": r["slot"], "source_entry_id": source["id"]})
+            continue
 
         if issue:
             day_name = date.fromisoformat(r["date"]).strftime("%A")
@@ -2052,7 +2077,84 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
             weekly_plan_id, len(repaired),
             ", ".join(f"{x['date']} {x['slot']} ({x['issue']})" for x in repaired),
         )
-    return {"repaired": repaired, "confirmed": confirmed}
+    if frozen:
+        logger.info(
+            "Week plan %s had %d leftovers night(s) more than %d days after the cook; "
+            "each is a freezer portion now: %s",
+            weekly_plan_id, len(frozen), _leftovers_mod().MAX_LEFTOVER_DAYS,
+            ", ".join(f"{x['date']} {x['slot']}" for x in frozen),
+        )
+    return {"repaired": repaired, "confirmed": confirmed, "frozen": frozen}
+
+
+def _leftovers_mod():
+    from . import leftovers as _leftovers  # lazy: leftovers reaches back here
+    return _leftovers
+
+
+def freeze_a_portion(conn, cook_id: int, night_date: str, night_slot: str) -> None:
+    """
+    The cook at `cook_id` makes one more night's portion, for the freezer:
+    FREEZER_EXTRA_KEY's servings grow by that night's headcount, and the
+    night is listed under `for` so the portion can be traced to the night
+    that eats it. On `conn`; the caller commits. Shared by the chain
+    repair (_freeze_instead) and the fold (meal_variety), the two places
+    that turn a too-far leftovers night into a frozen one.
+    """
+    _leftovers = _leftovers_mod()
+    row = conn.execute(
+        "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (cook_id, household_id()),
+    ).fetchone()
+    if row is None:
+        return
+    derived = json.loads(row["derived_from_json"] or "{}")
+    extra = dict(derived.get(_leftovers.FREEZER_EXTRA_KEY) or {})
+    extra["servings"] = _leftovers.freezer_servings(derived) + max(
+        0, _leftovers.eaters_at(night_date, night_slot, conn=conn)
+    )
+    extra["for"] = sorted({*(extra.get("for") or []), f"{night_date}:{night_slot}"})
+    derived[_leftovers.FREEZER_EXTRA_KEY] = extra
+    conn.execute(
+        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps(derived), cook_id, household_id()),
+    )
+
+
+def _freeze_instead(row, source, derived: dict, links_to: str) -> None:
+    """
+    repair_leftover_chains' answer for a leftovers night more than three
+    days after its cook: the night becomes "Leftovers from the freezer —
+    Monday’s Chili" (a freeform row, so it buys nothing and reads as a
+    reheat), and the cook makes that portion extra for the freezer. In
+    place, in one transaction — this runs on a freshly generated draft,
+    where there is no shopping line or prep row to move.
+    """
+    _leftovers = _leftovers_mod()
+    meal = (source["freeform_meal"] or "").strip()
+    if source["recipe_id"]:
+        conn = get_conn()
+        name_row = conn.execute("SELECT name FROM recipes WHERE id = ?", (source["recipe_id"],)).fetchone()
+        conn.close()
+        meal = name_row["name"] if name_row else meal
+    night = {k: v for k, v in derived.items() if k != "links_to"}
+    night[_leftovers.FROM_FREEZER_KEY] = {"cook": f"entry_id:{source['id']}", "dish": meal}
+    night["repaired"] = "leftovers_too_far"
+    night["original_links_to"] = links_to
+    conn = get_conn()
+    try:
+        freeze_a_portion(conn, source["id"], row["date"], row["slot"])
+        conn.execute(
+            "UPDATE meal_plan_entries SET recipe_id = NULL, freeform_meal = ?, derived_from_json = ? "
+            "WHERE id = ? AND household_id = ?",
+            (_leftovers.freezer_night_name(meal, source["date"]), json.dumps(night), row["id"], household_id()),
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def _make_double_note_text(targets: list[str]) -> str:

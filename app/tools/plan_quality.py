@@ -364,6 +364,11 @@ def _reasoning_is_specific(entries: list[dict], context: dict) -> list[Violation
         if not _is_planned(entry):
             continue
         reasoning = (entry.get("reasoning") or "").strip()
+        # A leftovers night's reason is its cook: the batch the fold wrote
+        # (2026-09-23) carries none of its own, and its headline ("Leftovers
+        # — Monday's Pasta") says why it's there. Not a missing reason.
+        if not reasoning and (entry.get("links_to") or (entry.get("meal_name") or "").startswith("Leftovers")):
+            continue
         if not reasoning:
             violations.append(Violation(
                 rule="reasoning_is_specific", severity="warn",

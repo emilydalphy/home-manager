@@ -384,11 +384,18 @@ def test_the_repeat_repair_still_records_why(approved_five_dinners):
     pid, curry_night = approved_five_dinners
     mv.enforce_distinct_count(pid, 4, slot="dinner")
 
+    # Since 2026-09-23 the freed night is LEFTOVERS of the nearest kept
+    # cook (Emily: fewer recipes than meals means cooking double), so it
+    # records the chain and the batch instead of the old "On again — you
+    # asked for four dinners a week" line and `repeat_of` a second cooking
+    # carried; the headline ("Leftovers — Monday's Pasta") says the rest.
     row = _entry_meta(pid, curry_night)
-    assert row["reasoning"] == "On again — you asked for four dinners a week"
-    assert row["derived"]["constraint"] == "dinners_per_week:4"
+    assert row["reasoning"] is None or row["reasoning"] == ""
+    assert row["derived"]["constraint"] == "batch_leftovers"
+    assert row["derived"]["count"] == "dinners_per_week:4"
     assert row["derived"]["replaced"] == "Curry"
-    assert row["derived"]["repeat_of"]
+    assert row["derived"]["links_to"].startswith("entry_id:")
+    assert row["derived"]["batch_leftovers"] is True
 
 
 # ---------- the mechanics that make it hold ----------
@@ -479,7 +486,10 @@ def test_neither_site_replaces_a_dinner_by_hand_any_more():
     a comment naming the old pair cannot satisfy it — this repo's own notes
     have had to unpick that three times.
     """
-    for fn in (hol._plan_dish, mv.enforce_distinct_count):
+    # meal_variety's write moved from enforce_distinct_count into
+    # _write_batches on 2026-09-23 (the fold makes leftovers now); the
+    # rule it is held to is the same.
+    for fn in (hol._plan_dish, mv._write_batches):
         code = _code_of(fn)
         assert "_replace_slot_entries" in code, f"{fn.__name__} should go through the shared write"
         assert "clear_plan_slot" not in code, f"{fn.__name__} still clears the slot by hand"
@@ -609,31 +619,32 @@ def test_a_swap_no_longer_leaves_its_prep_row_standing(approved_holiday_with_a_t
     assert _chat_defrost() == [], "and chat no longer names a dish that is not planned"
 
 
-def test_the_repeat_repair_now_buys_for_the_night_it_fills_on_an_approved_week(approved_five_dinners):
+def test_the_repeat_repair_buys_one_batch_on_the_cook_on_an_approved_week(approved_five_dinners):
     """
-    CHARACTERISATION of the other behaviour change, and it is unreachable
-    from the app today.
+    CHANGED 2026-09-23, and said plainly because it changes a number.
 
-    meal_variety passed add_ingredients_to_grocery_list=False outright, so
-    on an APPROVED plan it reversed the surplus dish's line and bought
-    nothing for the night it filled — a week left under-bought.
-    _replace_slot_entries buys when the plan is approved, so it does now.
-
-    Only generation calls enforce_distinct_meal_count, and it calls it on a
-    draft (see agent._finish_week_slots), where both answer identically and
-    the draft test above says so. The function is exported publicly, though,
-    so this is what a direct call gets. It is the criterion's own wording —
-    "add_ingredients_to_grocery_list only firing on an approved week" — and
-    the more correct of the two answers, which is why it is characterised
-    rather than worked around.
+    This pinned "2 cans": the freed night was a second, independent
+    cooking of a kept dish, bought on its own — one can for each night,
+    each rounded up separately. Emily's decision that day: fewer recipes
+    than meals means cooking double, bought once. The freed night (Curry's)
+    is now leftovers of the nearest kept cook, Pasta the night before; the
+    leftovers night buys nothing and the cook is re-bought as one batch of
+    two portions. This household is one adult and Pasta serves four, so
+    one can still covers the batch — the old second can was the double
+    buying this fixes.
     """
-    pid, _curry = approved_five_dinners
+    pid, curry_night = approved_five_dinners
     assert _list_rows()[0] == ("ing0", "1 can"), "premise: one can of Chili's ingredient"
 
     mv.enforce_distinct_count(pid, 4, slot="dinner")
 
-    assert ("ing0", "2 cans") in _list_rows(), "the second night of Chili is bought for"
+    assert ("ing3", "1 can") in _list_rows(), "Pasta is bought once, as the batch"
+    assert ("ing0", "1 can") in _list_rows(), "Chili is untouched"
     assert not any(item == "ing4" for item, _q in _list_rows()), "Curry's line came off"
+    chains = tools.plan_leftover_chains(pid)
+    reheat = next(v for v in chains["leftovers"].values() if v["date"] == curry_night)
+    assert reheat["source"]["meal"] == "Pasta"
+    assert not any(entry == reheat["entry_id"] for entry, _g, _q in _ledger()), "the leftovers night buys nothing"
 
 
 def test_a_holiday_dinner_that_was_a_LEFTOVERS_SOURCE_re_buys_for_the_night_it_stranded(recipe):

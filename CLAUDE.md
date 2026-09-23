@@ -16094,3 +16094,30 @@ support is untouched. Skipping a day is step 2's day sheet: every
 person out for every meal = "Nobody home — I'll plan nothing and buy
 nothing." (nothing new built). Tests:
 `tests/test_which_days_calendar_2026_09_22.py`.
+
+**2026-09-23 — Fewer recipes than meals means batch cooking (branch
+`double-batch-meal-types`).** Emily's "Decision E": "If I want 2 types of
+lunches, but need 4 lunches, you should assume Im making double of each
+of the recipes. thats the batch cooking point"; with it, a dish asked for
+once is cooked once (prod plan 61 got a second Korean Chicken Pancake
+from the old fold), leftovers are eaten within 3 days (else frozen), and
+Pomona says what it did in one plain line. `meal_variety.
+enforce_distinct_count` no longer writes a second cooking of a kept dish
+(`_spread_pick` is gone): every night of a slot with more nights than its
+target is a cook, leftovers of a cook 1–3 days earlier (smallest batch,
+then nearest; a lunch may eat the dinner the evening before when that
+dinner is already one of the lunches), or — only when re-laying the
+movable cooks into even runs (`_plan_batches(relay=True)`) can't reach
+it — a freezer portion on the nearest earlier cook. Both chain halves
+are written the way `repair_leftover_chains` writes them; on an approved
+week the recipe group is re-bought as one batch
+(`_rescale_leftover_source_grocery`). `caps` is read only through
+`_cap_at` (date- or (date, slot)-keyed). `agent._expand_repeated_dates`
+links a repeated entry's later days to its first within 3 days, then
+starts a new cook (not snacks: "date:snack" is ambiguous). `leftovers.
+MAX_LEFTOVER_DAYS` = 3 is checked by `repair_leftover_chains` (a too-far
+chain becomes "Leftovers from the freezer — Monday’s Chili" + the cook's
+`freezer_extra`, NOT a reopened question) and by `cook_ahead.
+apply_prep_day_batches` (`_within_three_days`). Draft opener line:
+`draft_opener.batch_line` — "Two lunches, each cooked double." Tests:
+`tests/test_double_batch_meal_types.py`.
