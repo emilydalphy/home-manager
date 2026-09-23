@@ -427,8 +427,9 @@ why*, not duplicating the diff.
   pop-up to name what changed. **The rules themselves did not move** — the
   visible flag, the undo, the Save-then-pop-up are all still required, and
   all still Emily's. The code has NOT caught up: `CHANGES_SAVED` /
-  `toastSaved()` still says "Changes saved" for 27 actions and four toasts
-  still say "Put back" — findings 1 and 2 of `COPY_SWEEP_2026-09-23.md`,
+  `toastSaved()` still says "Changes saved" for 27 actions and "Put back" is
+  still the undo's word on a run of toasts — findings 1, 2, 3, 17, 23 and 24
+  of `COPY_SWEEP_2026-09-23.md`,
   recorded as drift in S10 so nobody copies it. Audit of the rest of
   `DESIGN_SYSTEM.md`, `PRODUCT_FLOWS.md` and this file found no third place
   teaching the old style; two judgment calls (the Remembered chip's "Not

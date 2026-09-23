@@ -189,9 +189,10 @@ run rather than a vibe. They apply to every screen, mockup or built.*
   rules 2 and 3. The rule itself is unchanged and still hers from 2026-09-13: a Save, a
   pop-up, an Undo. **The code has not caught up** — `CHANGES_SAVED` / `toastSaved()` in
   `shell.js` still says "Changes saved" for 27 different actions, `plan-week.html` says the
-  same words, and four toasts still say "Put back". That is drift to be fixed, findings 1
-  and 2 of `COPY_SWEEP_2026-09-23.md`, not the pattern to copy — don't write a new caller of
-  the old wording.)* **Test:** after any decision, can you point at the
+  same words, and "Put back" is still the undo's word in a run of toasts across Shop, Plan
+  and Today. That is drift to be fixed — findings 1, 2, 3, 17, 23 and 24 of
+  `COPY_SWEEP_2026-09-23.md` — not the pattern to copy, so don't write a new caller of the
+  old wording.)* **Test:** after any decision, can you point at the
   button you pressed to make it, and the line that told you it took? First pass landed
   2026-09-13 on branch `worktree-changes-saved` (Swap · I'll pick, chat changes, What we
   know, chore ticks and undo, Cook's prep/attention/usage/un-cook, Plan the week's
