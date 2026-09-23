@@ -9,6 +9,7 @@ from datetime import date, timedelta
 from ..db import get_conn
 from ._shared import household_id
 from . import recipes as _recipes
+from . import plates as _plates
 # Module, not name: weekly_plan imports meal_plans back, and importing the
 # module resolves that cycle at call time instead of exploding at import.
 from . import weekly_plan as _weekly_plan
@@ -201,6 +202,14 @@ def plan_meal(
         )
 
     missing = [g for g in ["protein", "carb", "vegetable"] if g not in entry_food_groups]
+    # The same deterministic backstop the card and the "Add a carb" sheet
+    # use (plates.dish_has_carb, Emily 2026-09-22): a dish whose own name
+    # or ingredients already carry a carb the model's food_groups missed
+    # isn't short one here either — the chat assistant's hint and the
+    # card have to agree, or the assistant ends up "fixing" a plate that
+    # was never actually short.
+    if "carb" in missing and _plates.dish_has_carb(meal, recipe_ingredients):
+        missing = [g for g in missing if g != "carb"]
     return {
         "entry_id": entry_id,
         "date": meal_date,

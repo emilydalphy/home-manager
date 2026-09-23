@@ -118,6 +118,7 @@ def test_a_meal_with_no_recorded_groups_is_left_alone_rather_than_guessed_at():
     "Naan and curry",
     "Farro salad",
     "Chicken gnocchi soup",
+    "Hummus with warm flatbread",
 ])
 def test_has_starch_catches_the_obvious_cases(text):
     assert plates.has_starch(text) is True
@@ -150,14 +151,26 @@ def test_corn_is_deliberately_not_a_starch_word():
     "Panko breadcrumbs coating",
     "Bread crumbs on top",
     "Breaded chicken cutlet",
+    "Cauliflower rice bowl",
+    "Broccoli rice with lemon",
+    "Grilled chicken with pasta sauce",
+    "Potato starch coating for the fried chicken",
+    "Zucchini noodles with pesto",
+    "Zoodles with marinara",
+    "Rice paper spring rolls",
 ])
 def test_has_starch_guards_against_the_known_false_positives(text):
     """
-    "rice vinegar" (an acid), "corn starch"/"cornstarch" (a thickener) and
-    "breadcrumbs"/"bread crumbs"/"breaded" (a coating) all carry a starch
-    WORD without being a carb on the plate — pragmatic guards, not an
-    exhaustive list. Each of these strings carries no OTHER starch word,
-    so a true positive here would be the guard failing.
+    "rice vinegar" (an acid), "breadcrumbs"/"bread crumbs"/"breaded" (a
+    coating), "cauliflower rice"/"broccoli rice" (a low-carb SWAP for
+    rice — the one this app must get right, since a household eating it
+    is doing exactly what the low-carb rule already asks), "pasta sauce"
+    (a jar of sauce, not pasta), "potato starch" (a thickener), "zucchini
+    noodles"/"zoodles" (the vegetable standing in for the carb) and "rice
+    paper" (a wrapper) all carry a starch WORD without being a carb on
+    the plate — pragmatic guards, not an exhaustive list (verifier,
+    2026-09-22). Each of these strings carries no OTHER starch word, so a
+    true positive here would be the guard failing.
     """
     assert plates.has_starch(text) is False
 
@@ -767,6 +780,33 @@ def test_the_assistants_own_read_of_the_menu_doesnt_burn_the_telling(
 # `_prompt_literals` used to be defined here and is now
 # `conftest.prompt_literals`, shared with the other files that assert on a
 # prompt's wording — the whole reason it exists is in that module's comment.
+
+
+def test_plan_meal_agrees_with_the_card_about_a_carb_it_already_has():
+    """
+    Emily's verifier, 2026-09-22: the chat assistant's own hint
+    (food_groups_missing, read after tools.plan_meal — see agent.py's
+    system prompt) has to agree with the card. A freeform "tacos" line
+    (no recipe, food_groups passed by hand) with a tortilla word in the
+    name is not missing a carb either — the same plates.dish_has_carb
+    backstop the chip and the sheet use.
+    """
+    out = tools.plan_meal(
+        (datetime.date.today() + datetime.timedelta(days=1)).isoformat(),
+        "Beef tacos with warm tortillas",
+        slot="dinner", food_groups=["protein", "vegetable"],
+    )
+    assert out["food_groups_covered"] == ["protein", "vegetable"]
+    assert "carb" not in out["food_groups_missing"]
+    assert set(out["food_groups_missing"]) == set()
+
+    # A dish with no carb word at all is still genuinely missing one.
+    out2 = tools.plan_meal(
+        (datetime.date.today() + datetime.timedelta(days=2)).isoformat(),
+        "Grilled chicken and green beans",
+        slot="dinner", food_groups=["protein", "vegetable"],
+    )
+    assert out2["food_groups_missing"] == ["carb"]
 
 
 def test_both_generation_prompts_state_the_plate_rule():

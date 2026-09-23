@@ -367,20 +367,41 @@ def test_changing_a_dish_sourced_vegetable_replaces_it_not_adds(week):
     assert [p for p in back["plate_parts"] if p["role"] == "vegetable"][0]["name"] == "Green beans"
 
 
-def test_changing_a_side_sourced_carb_replaces_it_never_stacks(week, monkeypatch):
-    """The sibling case: a carb added from the sheet (a side, not the
-    dish) — "Change" swaps it for the new one, one call, never two carbs
-    on the plate at once."""
+def test_a_side_sourced_part_refuses_change_part_theres_one_door(week):
+    """
+    A carb added from the sheet (a side, not the dish) has exactly ONE
+    door for "Change": the client's own "Add something" flow, which
+    already replaces a side one-for-one with its own one-tap Undo
+    (runMealAddUndo). change_part/part_options refuse a side-sourced part
+    plainly rather than offering a second door the client never actually
+    calls (verifier, 2026-09-22).
+    """
     entry_id = _dinner(week, DAY2)["entry_id"]
     tools.add_component(entry_id, key="rice")
-    before = _dinner(week, DAY2)
-    assert [s["name"] for s in before["sides"]] == ["Rice"]
 
-    out = pp.change_part(week, entry_id, "carb", "Roasted potatoes", asker=lambda c: (_ for _ in ()).throw(AssertionError("no model call for a side swap")))
+    with pytest.raises(ValueError, match="take it off and add a new one"):
+        pp.change_part(week, entry_id, "carb", "Roasted potatoes", asker=lambda c: {})
+    with pytest.raises(ValueError, match="take it off and add a new one"):
+        pp.part_options(week, entry_id, role="carb", asker=lambda c: [])
+    # Untouched — the refusal wrote nothing.
+    assert [s["name"] for s in _dinner(week, DAY2)["sides"]] == ["Rice"]
 
-    assert out["status"] == "changed"
+
+def test_a_side_sourced_carb_still_replaces_one_for_one_through_add(week):
+    """
+    The one door that DOES work for a side: plates.add_component +
+    remove_component (what the client's runMealAdd already calls in
+    sequence) — one new side on, the old one off, never both at once.
+    """
+    entry_id = _dinner(week, DAY2)["entry_id"]
+    tools.add_component(entry_id, key="rice")
+    assert [s["name"] for s in _dinner(week, DAY2)["sides"]] == ["Rice"]
+
+    tools.remove_component(entry_id, "Rice")
+    tools.add_component(entry_id, key="roasted-potatoes")
+
     after = _dinner(week, DAY2)
-    assert [s["name"] for s in after["sides"]] == ["Roasted potatoes"], "the rice came off, not stacked"
+    assert [s["name"] for s in after["sides"]] == ["Roasted potatoes"]
     assert after["title"] == "Turkey burgers", "the dish itself never changed"
 
 

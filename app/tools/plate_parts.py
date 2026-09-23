@@ -44,15 +44,17 @@ part in between:
     swap does: a saved recipe, the plan updated, the grocery list in step
     on an approved week, and "Undo" through undo_meal_swap.
     A part a SIDE covers (source "side" — something the household added
-    from the "Add a carb/vegetable" sheet) is simpler: the old side comes
-    off (plates.remove_component) and the new choice goes on
-    (plates.add_component) — the same two functions "Add something" and
-    its Undo already use, so groceries reverse and re-add exactly as they
-    do there. It never stacks a second side alongside the first.
-    Either way, "Change" only ever applies to a part that's IN the plate
-    already (named, by the dish or a side); a MISSING part keeps opening
-    the catalogue add-sheet (plates.suggest_additions/add_component),
-    unchanged.
+    from the "Add a carb/vegetable" sheet) is a DIFFERENT part of the
+    plate entirely and this function refuses it: the client's own "Add
+    something" sheet already replaces a side one-for-one (the new side
+    goes on, the old one comes off — plates.add_component,
+    plates.remove_component — with its own one-tap Undo), so a side has
+    exactly one door, not two (verifier, 2026-09-22, after an earlier
+    version of this module opened a second one that the client never
+    actually called).
+    "Change" only ever applies to a part the DISH covers; a MISSING part
+    or a SIDE-covered one keeps going through the catalogue add-sheet
+    (plates.suggest_additions/add_component/remove_component), unchanged.
 """
 from __future__ import annotations
 
@@ -429,10 +431,12 @@ def part_options(weekly_plan_id: int, entry_id: int, role: str = "protein", aske
     second time. `asker` is the model call, injectable for tests — always
     called as `asker(context)`, one argument, regardless of role.
 
-    Only ever opens on a part that's actually ON the plate (the dish's own
-    protein — always there — or a named vegetable/carb, dish- or
-    side-sourced); a MISSING vegetable or carb still opens the catalogue
-    add-sheet (plates.suggest_additions/add_component), not this.
+    Only ever opens on a part the DISH ITSELF covers (the protein always
+    is one; a vegetable/carb only when source is "dish"). A MISSING
+    vegetable or carb, or one that's a SIDE the household already added,
+    both go through the catalogue add-sheet instead
+    (plates.suggest_additions/add_component/remove_component) — see
+    change_part for why a side stays that one path rather than two.
     """
     if role not in ROLES:
         raise ValueError(f"No such part {role!r} — protein, vegetable or carb.")
@@ -447,6 +451,10 @@ def part_options(weekly_plan_id: int, entry_id: int, role: str = "protein", aske
         current, source = _current_part(entry, recipe, role, _plates.get_sides(entry_id))
         if source is None:
             raise ValueError(f"There's no {role} on this plate yet — add one instead.")
+        if source == "side":
+            raise ValueError(
+                f"That {role} is a side you added — take it off and add a new one instead."
+            )
     key = (household_id(), entry_id, role)
     cached = _OPTIONS_CACHE.get(key)
     if cached and cached["meal"] == entry["meal"] and time.time() - cached["at"] < _OPTIONS_TTL:
@@ -628,62 +636,28 @@ def _recipes_list() -> list[dict]:
 REFUSAL = "I couldn’t make that change — the dish is as it was. Try a different protein, or tell me in the chat."
 
 
-def _change_side_part(weekly_plan_id: int, entry: dict, role: str, current_name: str, choice: str) -> dict:
-    """
-    "Change" on a vegetable or carb that's a SIDE, not the dish itself:
-    take the old one off and put the new one on — the same two doors
-    "Add something" and its Undo already use (plates.remove_component,
-    plates.add_component), so groceries reverse and re-add exactly as
-    they do there, and it never stacks a second side alongside the first.
-
-    `choice` is a catalogue addition's name when it matches one (costed,
-    timed, no model call); anything else goes through add_component's
-    free-text path, which asks the model for amounts and a step the way
-    "Add something"'s own typed line always has.
-
-    Undo: call this again with `choice` set back to `current_name` — the
-    same two doors run in reverse, which is what the screen's "Undo"
-    action does (there is no separate swap record to roll back, the way
-    a dish-sourced change has through undo_meal_swap; a side is simpler
-    both ways).
-    """
-    entry_id = entry["entry_id"]
-    _plates.remove_component(entry_id, current_name, weekly_plan_id=weekly_plan_id)
-    addition = _plates.addition_by_name(choice)
-    if addition is not None:
-        added = _plates.add_component(entry_id, key=addition["key"], weekly_plan_id=weekly_plan_id)
-    else:
-        added = _plates.add_component(entry_id, text=choice, weekly_plan_id=weekly_plan_id)
-    forget_options(entry_id)
-    _swap = _swap_mod()
-    return {
-        "status": "changed", "entry_id": entry_id, "role": role,
-        "choice": added.get("name") or choice, "previous": current_name,
-        "meal": entry["meal"], "replaced": current_name,
-        "reason": (added.get("note") or "").strip(), "can_undo": True,
-        "day": _swap._refreshed_day(weekly_plan_id, entry["date"]),
-    }
-
-
 def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, asker=None) -> dict:
     """
-    Put the chosen protein, vegetable or carb into the dish. `choice` is
-    an option's name or what the household typed.
+    Put the chosen protein, vegetable or carb into the dish by rewriting
+    the recipe around it. `choice` is an option's name or what the
+    household typed.
 
-    Only ever changes a part that's already ON the plate: a MISSING
-    vegetable or carb (the dashed "+ Add a carb" chip) isn't this — that
-    still opens the catalogue add-sheet (plates.suggest_additions/
-    add_component). A part the DISH itself covers gets its recipe
-    rewritten around the new choice (below); a part a SIDE covers gets
-    that side swapped out for a new one (_change_side_part) — either way
-    it REPLACES, never adds alongside.
+    Only ever reaches a part the DISH ITSELF covers (source "dish") — a
+    MISSING vegetable or carb (the dashed "+ Add a carb" chip) isn't this,
+    and nor is a part that's a SIDE the household already added: both of
+    those go through the catalogue add-sheet instead
+    (plates.suggest_additions/add_component/remove_component — the
+    client's own "Add something" flow already replaces a side one-for-one
+    there, with its own one-tap Undo; this function's job is the OTHER
+    half, the part that lives in the recipe, which that flow can't touch).
+    A caller that reaches here for a side-covered part is refused plainly
+    rather than silently doing the wrong thing — verifier, 2026-09-22:
+    the two paths must not both exist for the same case.
 
     Returns swap_in_place's own result shape (`status` 'changed' with the
     refreshed day, the new entry, the reason; or 'refused' with a plain
-    message and nothing written) so the screen handles a dish-sourced
-    change exactly as it handles a swap — Undo included; a side-sourced
-    change carries `previous` instead, its own, simpler Undo (see
-    _change_side_part).
+    message and nothing written) so the screen handles it exactly as it
+    handles a swap — Undo included, through undo_meal_swap.
     """
     if role not in ROLES:
         raise ValueError(f"No such part {role!r} — protein, vegetable or carb.")
@@ -713,7 +687,9 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
         if source is None:
             raise ValueError(f"There's no {role} on this plate yet — add one instead.")
         if source == "side":
-            return _change_side_part(weekly_plan_id, entry, role, current, choice)
+            raise ValueError(
+                f"That {role} is a side you added — take it off and add a new one instead."
+            )
     context = _options_context(entry, recipe, role, current)
     context[f"new_{role}"] = choice
     context["serves"] = _swap._table_for(entry["date"], entry["slot"])["serves"]

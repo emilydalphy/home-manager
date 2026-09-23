@@ -659,18 +659,30 @@ def complete_plate(entry_id: int, context: dict, side_generator=None) -> dict:
 # not a side effect of this fix.
 #
 # Two guards keep the rest honest:
-#   - word-boundary matching only, so "potatoey" never hits;
-#   - a short list of phrases that carry a starch WORD without being a
-#     carb on the plate — "rice vinegar" (an acid, not rice) and
-#     "breadcrumbs"/"bread crumbs"/"breaded" (a coating on something
-#     else, not a side of bread) — stripped out before the word list is
-#     checked.
+#   - word-boundary matching, so "potatoey" never hits — with "flatbread"
+#     named explicitly, since a word boundary sits only at the very ends
+#     of that one token and "\bbread\b" never finds a boundary in front
+#     of the "bread" buried inside it (found by the verifier, 2026-09-22);
+#   - a longer list, all found by the same verifying pass, of phrases
+#     that carry a starch WORD without being a carb on the plate:
+#     "rice vinegar" (an acid), "breadcrumbs"/"bread crumbs"/"breaded" (a
+#     coating), "cauliflower rice"/"broccoli rice" (a LOW-CARB SWAP FOR
+#     rice, not rice — the one this app must get right, since a household
+#     eating it is doing exactly what the carb rule already asks of a
+#     low-carb plate), "pasta sauce" (a jar of sauce, not pasta),
+#     "potato starch" (a thickener), "zucchini noodles"/"zoodles" (a
+#     zucchini, cut thin — the vegetable, not the carb it's standing in
+#     for), and "rice paper" (a wrapper, the way a tortilla or a bun's
+#     wrapper isn't counted as bread) — all stripped out before the word
+#     list is checked.
 _STARCH_WORDS_RE = re.compile(
-    r"\b(?:sweet potato|potato(?:es)?|rice|pasta|noodles?|orzo|bread|pita|naan|"
+    r"\b(?:sweet potato|potato(?:es)?|rice|pasta|noodles?|orzo|bread|flatbread|pita|naan|"
     r"tortillas?|couscous|quinoa|polenta|gnocchi|farro|barley|buns?|wraps?)\b"
 )
 _STARCH_FALSE_POSITIVES_RE = re.compile(
-    r"\brice vinegar\b|\bbread\s*crumbs?\b|\bbreaded\b"
+    r"\brice vinegar\b|\bbread\s*crumbs?\b|\bbreaded\b|"
+    r"\bcauliflower rice\b|\bbroccoli rice\b|\bpasta sauce\b|\bpotato\s*starch\b|"
+    r"\bzucchini noodles?\b|\bzoodles?\b|\brice paper\b"
 )
 
 
