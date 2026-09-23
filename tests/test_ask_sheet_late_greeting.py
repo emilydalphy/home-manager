@@ -74,7 +74,10 @@ function askMessageTargets() { targetCalls++; return []; }
 function loadQuickActionChips() {}
 """
 
-RECIPES_GREETING = 'Ask me anything about the recipes we’ve saved.'
+# Cook's own opener (copy sweep finding 28, 2026-09-23 — was "Ask me
+# anything about the recipes we've saved.", which said the row's label
+# back at the person).
+RECIPES_GREETING = 'What are you looking for in our recipes?'
 # Plan's own default opener (DEFAULT_ASK_GREETING in shell.js) — asserted
 # verbatim, the same rule test_coaching.py's header states for user-facing
 # copy: if it's deliberately reworded, update this constant in the same

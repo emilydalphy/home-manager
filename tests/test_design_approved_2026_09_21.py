@@ -11,7 +11,7 @@ against shell.js's own renderers under node:
   D5  The swap sheet's wait is obvious: three shimmering placeholder cards,
       a small spinner and "Finding three you could have — about ten
       seconds." while /swap-options runs; the picks land in the same
-      positions; "Something else — tell me" stays throughout; the
+      positions; "Ask for something else" stays throughout; the
       nothing-found line is unchanged. Static placeholders under
       prefers-reduced-motion.
 """
@@ -142,9 +142,9 @@ def test_while_the_picks_are_found_the_sheet_shows_a_spinner_the_line_and_three_
             '</span></div>')
     assert picks.group(1) == card * 3
     assert "Finding three you could have instead…" not in html
-    # The rest of the sheet is as it was: the move line, "Something else — tell me".
+    # The rest of the sheet is as it was: the move line, "Ask for something else".
     assert 'id="wk-swap-move">Move the tacos to another day</button>' in html
-    assert html.endswith('<button type="button" class="wk-swap-else" id="wk-swap-tell">Something else — tell me</button>')
+    assert html.endswith('<button type="button" class="wk-swap-else" id="wk-swap-tell">Ask for something else</button>')
     assert html.index("wk-swap-picks-waiting") < html.index("wk-swap-move") < html.index("wk-swap-tell")
 
 
@@ -164,7 +164,7 @@ def test_the_picks_take_the_placeholders_places_and_nothing_found_reads_as_befor
     empty = _sheet(_waiting(options=None, trouble="Nothing I’d put there instead — tell me what you’d like."))
     assert '<p class="wk-swap-trouble">Nothing I’d put there instead — tell me what you’d like.</p>' in empty
     assert "wk-swap-skel" not in empty and "wk-swap-spinner" not in empty
-    assert 'id="wk-swap-tell">Something else — tell me</button>' in empty
+    assert 'id="wk-swap-tell">Ask for something else</button>' in empty
     opened = _extract("openSwapSheet", SHELL_JS)
     assert "'Nothing I’d put there instead — tell me what you’d like.'" in opened
     assert "'I couldn’t think of options just now — tell me what you’d like instead.'" in opened

@@ -6,7 +6,7 @@ one branch (intake-design-2026-09-21), all in static/plan-week.html:
    assumed; the tiles are toggles that drop a day. (Replaced 2026-09-22 by
    Emily's calendar range — tests/test_which_days_calendar_2026_09_22.py;
    what survives of this item is pinned below.)
-2. Lunches on the go (board D2): "travels well", and a "Nothing on the go"
+2. Lunches on the go (board D2): the days, and a "Nothing on the go"
    pill under the day chips instead of the quiet line.
 3. Building — "Got it", condensed and human (board D3, with her change:
    keep the icon rows, fewer of them, each a sentence).
@@ -159,11 +159,16 @@ class TestWhichDays:
 class TestLunchesOnTheGo:
     def test_the_line_and_the_pill(self):
         q3 = _section("q3")
-        assert "I&rsquo;ll keep those to food that travels well." in q3
+        # The sub starts empty and only ever says what was ticked for you.
+        # "I'll keep those to food that travels well" is gone (copy sweep
+        # finding 20, 2026-09-23): it announced what I'd do with the answer,
+        # and the menu row says "travels well" beside those lunches anyway.
+        assert '<p class="step-sub" id="lunch-sub"></p>' in q3
+        assert "travels well" not in q3
         assert "packs cold" not in PAGE
         assert q3.index('id="lunch-days"') < q3.index('id="lunch-none"')
         assert '<button type="button" class="chip" id="lunch-none" aria-pressed="false">Nothing on the go</button>' in q3
-        assert "'I’ve ticked your usual days — I’ll keep those to food that travels well.'" in PAGE
+        assert "prefilled.lunches ? 'I’ve ticked your usual days.' : ''" in PAGE
 
     def test_the_pill_clears_the_days_and_a_day_unselects_the_pill(self):
         assert "answers.packed_lunch_days.length = 0;" in _extract("chooseNoLunches")

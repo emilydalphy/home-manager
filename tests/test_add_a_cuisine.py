@@ -8,7 +8,7 @@ you mean" row as you type (Mex → Mexican · Tex-Mex · Mediterranean). The
 button reads "Add Mexican" and does nothing until there's something to
 add; "Never mind" goes back with nothing changed. On Add, the new cuisine
 is the first chip on the mood screen and already chosen, with one green
-line: "Mexican's in. I'll remember it." Next week it is on the list
+line: "Mexican's in." Next week it is on the list
 without being asked (What we know's cuisine_preferences), and the draft
 honours it the way the existing ones are honoured.
 """
@@ -116,7 +116,7 @@ class TestThePillAndTheScreen:
         q4 = _section("q4")
         assert '<div class="covers" id="cuisine-added" hidden role="status">' in q4
         assert q4.index('id="cuisines"') < q4.index('id="cuisine-added"')
-        assert "inLine: '’s in. I’ll remember it.'" in PAGE
+        assert "inLine: '’s in.'" in PAGE
 
 
 # ==========================================================================
@@ -160,7 +160,7 @@ class TestDidYouMean:
         got = json.loads(_node(script))
         assert got["first"] == {
             "cuisines": ["Mexican", "Indian", "Thai"], "chosen": ["Thai", "Mexican"],
-            "line": "Mexican’s in. I’ll remember it.", "shown": True,
+            "line": "Mexican’s in.", "shown": True,
         }
         # One already on the list is ticked where it is, not added twice.
         assert got["second"]["cuisines"] == ["Mexican", "Indian", "Thai"]
@@ -171,7 +171,7 @@ class TestDidYouMean:
     def test_the_fallback_write_back_keeps_what_was_added(self):
         # A household with no saved list yet writes its taps back on "Draft
         # my week"; a cuisine added this session goes with them even if its
-        # chip was tapped off again — "I'll remember it" is about the list.
+        # chip was tapped off again — adding one joins the standing list.
         advance = _extract("advance")
         assert "var remembered = addedCuisines.concat(answers.cuisines)" in advance
         assert "body: JSON.stringify({ field: 'cuisine_preferences', value: remembered })" in advance

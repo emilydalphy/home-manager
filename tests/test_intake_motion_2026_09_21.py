@@ -188,7 +188,7 @@ class TestOneQuestionAScreen:
         # Last week's moods and cuisines.
         assert "answers.moods = (data.last_intake.moods || []).slice();" in load
         assert "prefilled.moods = true;" in load
-        assert "'I’ve ticked your usual days — I’ll keep those to food that travels well.'" in PAGE
+        assert "prefilled.lunches ? 'I’ve ticked your usual days.' : ''" in PAGE
         assert "'Last week’s picks, unless you change them.'" in PAGE
         # Continue on a pre-answered lunch step is one tap: the pill under
         # the days is off while days are ticked (board D2).
@@ -208,7 +208,6 @@ class TestOneQuestionAScreen:
         # Contractions, always; no dashboard labels; nothing restating the chips.
         for line in (
             "Tap the first day, then the last.",
-            "I&rsquo;ll keep those to food that travels well.",
             "I&rsquo;ll pick from what you like and keep the week varied.",
             "No need to wait &mdash; the draft lands on Plan when it&rsquo;s done.",
         ):

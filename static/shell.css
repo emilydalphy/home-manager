@@ -1821,7 +1821,7 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    chores card's own quiet shape — the same 10px eyebrow (.chores-header
    h2), hairline rows, no apricot fill, no dock: a held thing is not
    urgent by definition (Rule 3), and the card is a nudge, not a takeover
-   (§2b S3). "Done with this" is the row's one action: apricot-label text
+   (§2b S3). "Done" is the row's one action: apricot-label text
    in its own 44px row (Rule 6), the same quiet link the Remembered chip's
    "Not quite" is. The slot is display:none while empty, like the
    needs-you band, so a day with nothing held leaves no gap. */
@@ -1867,7 +1867,7 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .holding-done:hover { color: var(--apricot-label-hover); }
 /* The one thing to DO about a held thing, when Pomona knows what that is
    (held_things.ask_text — today only a thaw stranded by a swap). Under
-   the words, not beside "Done with this": both are nowrap, and two of
+   the words, not beside "Done": both are nowrap, and two of
    them on one 390px row leave the text nothing. A link, not a fill —
    the row already has one apricot-label button and the screen's apricot
    belongs to the dock (rule 5). 44px of tap (rule 6) with the text sat
@@ -8533,9 +8533,9 @@ span.cook-week-name { cursor: default; }
   cursor: pointer;
 }
 .wk-swap-quiet:hover { color: var(--ink-strong); }
-/* The sheet's "Something else — tell me": a full-width outline button.
+/* The sheet's "Ask for something else": a full-width outline button.
    Its own class — it was .wk-swap-tell until 2026-09-21, the same class as
-   the dock's and the swap line's quiet "Tell me what instead" link, so
+   the dock's and the swap line's quiet "Ask for something else" link, so
    this width: 100% reached the Meal step's dock and crushed "Swap · I'll
    pick" into a 12px column at 390px (Emily's screenshot; Loop Board
    "Recipe screen footer fits the phone"). */

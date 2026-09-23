@@ -5,12 +5,13 @@ footer fits the phone", Emily, 2026-09-21).
 Her screenshot at 390px, on a meal opened from Check the week: the Meal
 step's dock (mealDockHtml, the branch for a week that isn't cooking yet)
 showed "Swap · I'll pick" wrapped into a column about 40px wide on the
-left, "Tell me what instead" centred, and the chat icon on the right.
+left, "Ask for something else" centred, and the chat icon on the right.
 
 The cause was a class collision, not a lack of room. The swap SHEET's
-"Something else — tell me" and the dock's quiet "Tell me what instead"
-both carried `wk-swap-tell`, and the sheet's rule — `width: 100%`, a
-full-width outline button — reached the dock's link: it took the whole
+way out and the dock's quiet one — both called "Ask for something else"
+since the copy sweep of 2026-09-23 — both carried `wk-swap-tell`, and
+the sheet's rule — `width: 100%`, a full-width outline button —
+reached the dock's link: it took the whole
 row, and the apricot Swap (flex 1 1 auto, min-width 0) was squeezed to
 12px and wrapped one word per line. Measured in a browser with the real
 faces before the fix: Swap 12px wide, link 286px.
@@ -104,7 +105,7 @@ def _render_dock(cookable: bool) -> str:
 @_needs_node
 def test_the_footer_is_one_row_of_swap_and_its_quiet_link():
     """Check the week's meal (the week isn't cooking yet): the Swap is the
-    row's apricot, "Tell me what instead" its one quiet link, and nothing
+    row's apricot, "Ask for something else" its one quiet link, and nothing
     else is in the row — the chat icon floats at the dock's end on its own
     (the dock's 84px right padding keeps the row clear of it)."""
     html = _render_dock(cookable=False)
@@ -112,7 +113,7 @@ def test_the_footer_is_one_row_of_swap_and_its_quiet_link():
     buttons = re.findall(r"<button[^>]*>.*?</button>", row)
     assert len(buttons) == 2, buttons
     assert f'class="dock-primary wk-act-swap" data-wk-swap="dinner">{LABEL}</button>' in buttons[0]
-    assert 'class="dock-link wk-swap-tell" data-wk-tell="dinner">Tell me what instead</button>' in buttons[1]
+    assert 'class="dock-link wk-swap-tell" data-wk-tell="dinner">Ask for something else</button>' in buttons[1]
     assert html.startswith('<div class="wk-decide dock wk-meal-dock">'), "the rules below key off .wk-meal-dock"
     # Nothing else on the dock: the swap line only appears once a swap is
     # under way (its idle state stays on the Day step's cards).
@@ -152,7 +153,7 @@ def test_the_sheets_full_width_button_no_longer_reaches_the_dock():
     """The bug: one class on two different buttons. The sheet's outline
     button is .wk-swap-else now; no .wk-swap-tell rule is full-width."""
     # `wait` is the disabled attribute while a pick is written (2026-09-22).
-    assert 'class="wk-swap-else" id="wk-swap-tell"\' + wait + \'>Something else — tell me</button>' in SHELL_JS
+    assert 'class="wk-swap-else" id="wk-swap-tell"\' + wait + \'>Ask for something else</button>' in SHELL_JS
     assert 'class="wk-swap-tell" id="wk-swap-tell"' not in SHELL_JS
     assert "width: 100%" in _rule(".wk-swap-else")
     for m in re.finditer(r"([^{}]*\.wk-swap-tell[^{}]*)\{([^}]*)\}", _NO_COMMENTS):

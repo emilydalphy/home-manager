@@ -7,7 +7,7 @@ ended up going to the in-laws for dinner last night" got "Noted — …" and
 nothing was saved. This file pins the fix end to end:
 
     1. the tool (app/tools/held.py) keeps the person's words, who said it
-       and when, per household; blank text is refused; "Done with this"
+       and when, per household; blank text is refused; the row's "Done"
        takes it off and Undo puts it back;
     2. the routes the two screens read (GET /api/held, /done, /restore);
     3. the weekly planner is handed the held things as context, and is

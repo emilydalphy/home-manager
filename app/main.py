@@ -528,7 +528,7 @@ class ChatContext(BaseModel):
     What the household is looking at as they send a message — the subject
     of the turn, sent by the shell when chat is opened FROM something
     rather than from the ask bar. Today one kind: `planned_meal`, from a
-    meal card's "Tell me what instead" (Loop Board, Emily 2026-09-13).
+    meal card's "Ask for something else" (Loop Board, Emily 2026-09-13).
     entry_id is the card's row; date and slot let the server find the meal
     again after a swap has replaced that row. The server resolves all of
     it against the household's own live plan (tools.describe_planned_meal)
@@ -3196,7 +3196,7 @@ def week_swap_options(week_start: str, req: SwapOptionsRequest):
     carousel", 2026-09-18). Household-scoped like every other week route:
     an entry from elsewhere is a 404. A 200 with an empty `options` list
     and `options_unavailable` true means the model call failed; the sheet
-    keeps its "Something else — tell me" line either way.
+    keeps its "Ask for something else" line either way.
     """
     plan_id = _plan_id_for_week(week_start)
     try:
@@ -4767,7 +4767,7 @@ def list_held_view():
 
 @app.post("/api/held/{held_id}/done")
 def resolve_held_view(held_id: int):
-    """"Done with this" — take one held thing off the list."""
+    """The held row's "Done" — take one held thing off the list."""
     try:
         return tools.resolve_held_thing(held_id)
     except ValueError as e:
@@ -4779,7 +4779,7 @@ def resolve_held_view(held_id: int):
 
 @app.post("/api/held/{held_id}/restore")
 def restore_held_view(held_id: int):
-    """The Undo on "Done with this" — put it back on the list."""
+    """The Undo on the held row's "Done" — put it back on the list."""
     try:
         return tools.restore_held_thing(held_id)
     except ValueError as e:
