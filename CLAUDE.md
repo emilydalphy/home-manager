@@ -432,6 +432,55 @@ why*, not duplicating the diff.
   `StreamingResponse.listen_for_disconnect` (`_SSEResponse`): GeneratorExit
   and an async try/finally were both measured to log late or never.
 
+- **2026-09-22 — "Not tonight — we're going out" never refuses any more.
+  Branch `night-off-self-solving`, NOT merged at the time of writing.** Emily
+  tapped it on a dinner cooked double for Wednesday's leftovers, no free
+  night, and got "…also feeds Wednesday's dinner — change that first". Her
+  rule: "the job of Pomona is to do all that planning work" — no "go change X
+  first", ever. `tonight._night_off_plan` is now the ONE decision, read by
+  the row's sub-line (`tonight_check.night_off_line`, server-written) and by
+  the tap: already cooked → row stays, tonight's share to the freezer; a
+  reheat night → its portion to the freezer (deliberately not a later free
+  night: days-old leftovers pushed further out is a food-safety guess); a
+  free night → move (unchanged); cooked double, no free night → **cook moves
+  onto the first fed meal at the same size, replacing that leftovers row,
+  later fed nights re-linked via `_rewrite_chain_ref`, tonight's share to
+  the freezer, groceries untouched** (Emily's option A); else drop
+  (unchanged). `_chain_refusal` and `night_off_blocked*` are gone.
+  - **"Same size" is `derived_from.freezer_extra` on the cook**
+    (`leftovers.FREEZER_EXTRA_KEY`). `plan_leftover_chains` adds a
+    `freezer` map (only when non-empty) and `freezer_servings` on a source;
+    `batch_for_source` counts it and the new `batch_for_entry` covers a cook
+    whose only extra is the freezer — the Cook card ("Cooking for 6 —
+    covers Friday, plus 3 for the freezer."), both defrost walkers and the
+    grocery ingest read that. The agent's prep-schedule context
+    (`agent.py` ~6160) still reads `batch_for_source` only — a freezer-only
+    cook's prep is sized for its table there.
+  - **The freezer row** is a fresh `inventory_items` row, `location
+    'freezer'`, `category 'frozen'`, `source 'night_off'`, item "<dish>
+    (cooked)", quantity "N servings" (N = tonight's headcount), use-by +90
+    days — written AT THE TAP, even when the cook is days away. Never
+    merged, so Undo removes exactly it. Nothing plans it back in
+    automatically: generation sees it only as `current_inventory`, and
+    `slot_needs._recommend_ready_made` may offer it for a ready-made night;
+    defrost never matches it (it matches recipe ingredients by name).
+  - **Undo** (`tonight_night_off_undo`, `POST
+    /api/today/tonight/night-off-undo`) for every shape but the drop: a
+    full-column snapshot of every touched row (+ their prep rows and grocery
+    links) is stored on tonight's row under `night_off_undo`, with a
+    fingerprint of what the tap left; Undo refuses in a sentence if any of
+    those rows or the freezer row's `rev` changed since. The drop still has
+    none (its grocery reversal can't be un-said).
+  - Sheet: with no swap options the night-off row leads (`.is-lead`); the
+    "Nothing else…" line, "Open today in the plan" and its handler/CSS are
+    gone. After the tap: one toast (server's `said`), sheet closed first.
+  - **Left:** `weekly_plan.drop_dish_from_day` (the Review stepper's "−")
+    still refuses with "…change that first and I'll take this one off" —
+    the next candidate for the same rule. A chain feeding a same-day lunch
+    AND dinner can't be re-rooted cleanly (same-day chains are never
+    confirmed); the cook lands on the lunch and the dinner reads as a
+    second cook.
+
 - **2026-09-22 — `main` was red on five weekdays out of seven, and TWO of the
   four pinned CI jobs — `clock (friday)` and `clock (sunday)` — were red on
   EVERY push. Branch

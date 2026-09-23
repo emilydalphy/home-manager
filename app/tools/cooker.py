@@ -1223,9 +1223,29 @@ def _apply_leftover_chains(weekly_plan_id: int, meals: list[dict], recipes_by_na
     validated is left exactly as it was.
     """
     chains = _leftovers.plan_leftover_chains(weekly_plan_id)
+    by_entry = {m["entry_id"]: m for m in meals}
+
+    # A cook that feeds no night but makes portions for the freezer
+    # (leftovers.FREEZER_EXTRA_KEY — a night off moved it here, Emily
+    # 2026-09-22). Same chip, same scaling, same kind of note as a chain
+    # source, so the cook makes the batch the groceries were bought for
+    # rather than a table's worth.
+    for entry_id in chains.get("freezer") or {}:
+        if entry_id in chains["sources"]:
+            continue  # the source pass below counts the freezer too
+        card = by_entry.get(entry_id)
+        batch = _leftovers.batch_for_entry(entry_id, chains)
+        if card is None or not batch or batch["servings"] <= 0:
+            continue
+        card["covers"] = []
+        _scale_card_to_batch(card, batch["servings"])
+        card["covers_note"] = _leftovers.covers_note(
+            {"date": card["date"], "targets": [], "freezer_servings": batch["freezer"]},
+            batch["servings"],
+        )
+
     if not chains["sources"]:
         return
-    by_entry = {m["entry_id"]: m for m in meals}
 
     for source in chains["sources"].values():
         card = by_entry.get(source["entry_id"])
@@ -1678,7 +1698,12 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         # stepper (cookDetailHtml, shell.js) actually reads, so correcting
         # it alone is enough to make the two numbers agree.
         chains = _leftovers.plan_leftover_chains(plan_id) if plan_id is not None else {"sources": {}, "leftovers": {}}
-        chained_entry_ids = set(chains["sources"].keys()) | set(chains["leftovers"].keys())
+        chained_entry_ids = (
+            set(chains["sources"].keys()) | set(chains["leftovers"].keys())
+            # A cook with portions for the freezer is already scaled to its
+            # batch by _apply_leftover_chains (2026-09-22).
+            | set((chains.get("freezer") or {}).keys())
+        )
         for m in meals:
             if m["entry_id"] in chained_entry_ids:
                 continue

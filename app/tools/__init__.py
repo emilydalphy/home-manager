@@ -744,4 +744,5 @@ from .tonight import (  # noqa: F401
     tonight_check,
     tonight_keep,
     tonight_night_off,
+    tonight_night_off_undo,
 )

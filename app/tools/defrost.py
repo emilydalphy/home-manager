@@ -284,9 +284,9 @@ def _candidates_from_plan(plan: dict, freezer_items: list[dict], dinner_window: 
         if entry_id in chains["leftovers"]:
             continue
         batch_factor = 1.0
-        source = chains["sources"].get(entry_id)
-        if source:
-            batch = _leftovers.batch_for_source(source)
+        # A chain source, or a cook with portions for the freezer (2026-09-22).
+        batch = _leftovers.batch_for_entry(entry_id, chains) if entry_id else None
+        if batch:
             if batch["servings"] > 0 and batch["cook_eaters"] > 0:
                 batch_factor = batch["servings"] / batch["cook_eaters"]
         for ing in recipe.get("ingredients") or []:
@@ -647,9 +647,9 @@ def _iter_plan_meat_ingredients(weekly_plan_id: int):
         if entry_id in chains["leftovers"]:
             continue
         batch_factor = 1.0
-        source = chains["sources"].get(entry_id)
-        if source:
-            batch = _leftovers.batch_for_source(source)
+        # A chain source, or a cook with portions for the freezer (2026-09-22).
+        batch = _leftovers.batch_for_entry(entry_id, chains) if entry_id else None
+        if batch:
             if batch["servings"] > 0 and batch["cook_eaters"] > 0:
                 batch_factor = batch["servings"] / batch["cook_eaters"]
         for ing in recipe.get("ingredients") or []:
