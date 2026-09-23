@@ -517,7 +517,7 @@ def test_the_swap_sheet_shows_the_eyebrow_the_title_three_picks_and_the_two_line
     assert 'data-wk-swap-pick="0"' in html and 'data-wk-swap-pick="2"' in html, "the pick's own index, what /swap-choose wants back"
     assert "30 min · uses the sausages" in html and "25 min · same tortillas" in html and "15 min · no shopping" in html
     assert 'id="wk-swap-move">Move the tacos to another day</button>' in html
-    assert 'id="wk-swap-tell">Something else — tell me</button>' in html
+    assert 'id="wk-swap-tell">Ask for something else</button>' in html
     assert html.index("wk-swap-picks") < html.index("wk-swap-move") < html.index("wk-swap-tell")
 
 

@@ -217,9 +217,10 @@ def test_the_moves_screen_and_the_tonight_card_name_the_same_day(monkeypatch):
 
 def test_a_cook_the_screen_offers_can_actually_be_started(monkeypatch):
     """
-    CATCH. Now offered a cook and /api/cooker/start refused it — "That's
-    Monday's — I'll note the start when you cook it Monday" — because the
-    two read different clocks. start_cooking has always read the
+    CATCH. Now offered a cook and /api/cooker/start refused it — "That
+    one's for Monday." (the refusal read "That's Monday's — I'll note the
+    start when you cook it Monday" until the copy sweep of 2026-09-23) —
+    because the two read different clocks. start_cooking has always read the
     household's; the screen is the half that was wrong.
     """
     _seed()

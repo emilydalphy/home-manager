@@ -1782,7 +1782,7 @@ CREATE TABLE IF NOT EXISTS holiday_answers (
 -- true: it is shown on Now and under What we know, handed to the weekly
 -- planner as context (app/tools/held.py, generation_context), and never
 -- nagged about — a thing that never becomes useful just sits in the list
--- until someone taps "Done with this". Household-scoped, not per member:
+-- until someone taps the row's "Done". Household-scoped, not per member:
 -- the other adult sees the same list. See app/tools/held.py.
 CREATE TABLE IF NOT EXISTS held_things (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1791,7 +1791,7 @@ CREATE TABLE IF NOT EXISTS held_things (
     text TEXT NOT NULL,                       -- their words, as said (a short paraphrase at most)
     said_on TEXT NOT NULL,                    -- ISO date on the household's own clock
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    resolved_at TEXT,                         -- NULL while held; set by "Done with this" (resolve_held_thing)
+    resolved_at TEXT,                         -- NULL while held; set by the row's "Done" (resolve_held_thing)
     -- The one thing to ASK about this row, word for word, when Pomona held
     -- it of its own accord rather than being told to: the sentence the
     -- row's quiet link sends to chat. Empty for everything a person said,

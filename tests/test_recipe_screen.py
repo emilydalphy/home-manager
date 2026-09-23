@@ -371,7 +371,7 @@ def test_the_meal_step_is_the_crumb_the_title_the_count_the_cards_and_the_dock()
     # The dock: Start cooking as the one action, the swap as the quiet link.
     assert 'class="dock-primary" data-wk-cook="dinner" data-wk-start="1">Start cooking<' in html
     assert 'class="dock-link wk-act-swap" data-wk-swap="dinner">Swap · I’ll pick<' in html
-    assert "Tell me what instead" not in html
+    assert "Ask for something else" not in html
 
 
 @_needs_node

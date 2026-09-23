@@ -1,6 +1,7 @@
 """
 Loop Board "'Tell me what instead' knows which meal you tapped it on, and
-acts on one yes" (Emily, 2026-09-13, on the Tuesday burgers).
+acts on one yes" (the button is called "Ask for something else" since the
+copy sweep of 2026-09-23) (Emily, 2026-09-13, on the Tuesday burgers).
 
 Three layers, tested where each lives:
 

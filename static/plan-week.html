@@ -153,7 +153,7 @@
   .field:focus { outline: none; border-color: var(--apricot-deep); box-shadow: 0 0 0 3px var(--apricot-rule); }
   .field::placeholder { color: var(--ink-placeholder); }
   #did-you-mean:empty, #did-you-mean-label[hidden] { display: none; }
-  /* "Mexican's in. I'll remember it." — the away sheet's .covers card
+  /* "Mexican's in." — the away sheet's .covers card
      (celadon tint, the tick), under the cuisines once one is added. */
   .covers[hidden] { display: none; }
 
@@ -754,7 +754,7 @@
        it replaced the quiet line under Continue (Emily, 2026-09-21). -->
   <section id="q3" hidden>
     <h1>Any lunches on the go?</h1>
-    <p class="step-sub" id="lunch-sub">I&rsquo;ll keep those to food that travels well.</p>
+    <p class="step-sub" id="lunch-sub"></p>
     <div class="step-body">
       <div class="chip-row" id="lunch-days"></div>
       <div class="chip-row">
@@ -2338,10 +2338,14 @@
         paintLunchDays();
       });
     });
-    // Pre-answered from the rhythm: say so, once, in the one line.
-    $('lunch-sub').textContent = prefilled.lunches
-      ? 'I’ve ticked your usual days — I’ll keep those to food that travels well.'
-      : 'I’ll keep those to food that travels well.';
+    // Pre-answered from the rhythm: say so, once, in the one line. What
+    // the ticks are FOR ("I'll keep those to food that travels well") used
+    // to hang off this line and is gone (copy sweep finding 20, 2026-09-23):
+    // it announced what I'd do with the answer, and the person meets it
+    // where it is used — "travels well" is the fact the menu row carries
+    // beside those lunches (wkMenuFact). An empty sub is a supported state
+    // here: .step-sub:empty is display:none, as the moods' sub already is.
+    $('lunch-sub').textContent = prefilled.lunches ? 'I’ve ticked your usual days.' : '';
     paintLunchDays();
   }
 
@@ -2405,12 +2409,12 @@
   // line belong to it then (paintCta), and the crumb closes it (crumbTap).
   var cuisineOpen = false;
   // The cuisines added this session, so the fallback write-back on "Draft
-  // my week" keeps them even if their chip was tapped off again — "I'll
-  // remember it" is a promise about the list, not about this week.
+  // my week" keeps them even if their chip was tapped off again — a cuisine
+  // added here joins the standing list, not just this week's plan.
   var addedCuisines = [];
   var CUISINE_COPY = {
     add: 'Add', addWhat: 'Add a cuisine', never: 'Never mind',
-    inLine: '’s in. I’ll remember it.', already: '’s already on your list — I’ve ticked it.'
+    inLine: '’s in.', already: '’s already on your list — I’ve ticked it.'
   };
 
   // The "Did you mean" row: the known cuisines that start with what's

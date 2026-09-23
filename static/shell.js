@@ -932,7 +932,7 @@
   // on it yet (app/tools/held.py, GET /api/held): the person's own words,
   // who said it, when. One card in the gutter, the chores card's quiet
   // shape — an eyebrow and rows, no apricot, no dock — shown only while
-  // something is held. "Done with this" takes a row off for the whole
+  // something is held. The row's "Done" takes it off for the whole
   // household (POST /api/held/{id}/done) and says so, with Undo (S10).
   // The same list, in full, is the "Holding for you" section under What
   // we know (wwkHoldingHtml); both read heldState (declared with the
@@ -987,7 +987,7 @@
 
   function holdingRowHtml(h) {
     // The row's own quiet way to act on what is held, under the words
-    // rather than beside "Done with this" — two nowrap links on one
+    // rather than beside "Done" — two nowrap links on one
     // 390px row leave the text nothing. No apricot FILL either way
     // (DESIGN_SYSTEM rule 5); both are apricot-label links, like the
     // change card's "Another".
@@ -999,14 +999,14 @@
         (ask ? '<button type="button" class="holding-ask" data-held-ask="' + h.id + '">' +
           escapeHtml(HELD_ASK_LABEL) + '</button>' : '') +
       '</div>' +
-      '<button type="button" class="holding-done" data-held-done="' + h.id + '">Done with this</button>' +
+      '<button type="button" class="holding-done" data-held-done="' + h.id + '">Done</button>' +
     '</div>';
   }
 
   // One tap: open the chat and send the sentence the server wrote for
   // this row. The example chips' own shape (renderAskExamples) — the
   // household should not have to retype what Pomona already worked out.
-  // The held thing stays on the list; it comes off with "Done with this",
+  // The held thing stays on the list; it comes off with the row's "Done",
   // once the dinner it names is actually planned.
   function askAboutHeld(id) {
     var items = heldState.items || [];
@@ -1133,7 +1133,7 @@
     // point on Plan is permanent, so nothing is actually lost.
     wrap.innerHTML =
       '<div class="shell-card plan-nudge-card plan-nudge-dismissed">' +
-        '<div class="plan-nudge-body">It’ll be waiting under Plan — I won’t ask again this week.</div>' +
+        '<div class="plan-nudge-body">It’ll be waiting under Plan.</div>' +
         '<button type="button" class="plan-nudge-link" id="plan-nudge-later">Plan the week →</button>' +
       '</div>';
     wrap.querySelector('#plan-nudge-later').addEventListener('click', function () {
@@ -8794,7 +8794,7 @@
     if (what === 'recipes') {
       // Cook's own opener, not Plan's "I'll rework it" — this row isn't
       // about changing the week, it's a question about what's saved.
-      openAskSheet('What recipes do we have saved?', null, 'Ask me anything about the recipes we’ve saved.');
+      openAskSheet('What recipes do we have saved?', null, 'What are you looking for in our recipes?');
       return;
     }
     if (what === 'recipe-link') {
@@ -11061,14 +11061,14 @@
     await loadWeekMenu(panel);
 
     if (drafted && !afterApprove) {
-      showToast('Here’s your week — change anything before you approve it.');
+      showToast('Here’s your week.');
     }
     // FIRST_RUN.md step 5: onboarding redirects here with ?firstplan=1
     // right after generating the household's first real week — land on
     // This Week (already the case) and show the arrival toast once, then
     // scrub the param so a refresh doesn't re-show it.
     if (window.location.search.indexOf('firstplan=1') !== -1) {
-      showToast("Here's a first pass — change anything and I'll re-plan around it.");
+      showToast('Here’s your first week.');
     }
     // The reveal's "or tweak it with me" quiet link (Loop Board "Redesign
     // the post-onboarding first week screen") redirects here with
@@ -11076,7 +11076,7 @@
     // the ask sheet with a prefill rather than a toast, since the person
     // already said they want to change something rather than just look.
     // ?about=<Monday dinner> names the slot the Week 1 swap sheet's
-    // "Something else — tell me" was tapped under (2026-09-18), so the
+    // "Ask for something else" was tapped under (2026-09-18), so the
     // prefill starts on the meal they meant rather than on the whole week.
     if (window.location.search.indexOf('tweak=1') !== -1) {
       var about = (new URLSearchParams(window.location.search).get('about') || '').trim().slice(0, 60);
@@ -11619,7 +11619,7 @@
   // arrangement as a schedule. Under the band, above the card.
   function weekSuggestedNoteHtml(data) {
     return data.menu_is_suggested
-      ? '<div class="week-suggested-note">One example arrangement — your household assembles freely.</div>'
+      ? '<div class="week-suggested-note">One way to put it together — take what you like.</div>'
       : '';
   }
 
@@ -12489,7 +12489,7 @@
   // ---------- The swap sheet ----------
   // Emily, 2026-09-18 (board 19b "swap picks"): Swap opens a sheet with
   // THREE dishes to choose from (dish + a reason line), the quiet "Move
-  // the tacos to another day", and "Something else — tell me" into chat
+  // the tacos to another day", and "Ask for something else" into chat
   // with the slot as its subject. Nothing is written until a pick is
   // tapped (§2b S10); then that one meal swaps, "Changes saved", Undo on
   // the pop-up. The same sheet serves "Swap the meal" on Check the week
@@ -12702,7 +12702,7 @@
         ? '<button type="button" class="wk-swap-quiet" id="wk-swap-move"' + wait + '>' +
             escapeHtml('Move the ' + dishShortName(st.name) + ' to another day') + '</button>'
         : '') +
-      '<button type="button" class="wk-swap-else" id="wk-swap-tell"' + wait + '>Something else — tell me</button>';
+      '<button type="button" class="wk-swap-else" id="wk-swap-tell"' + wait + '>Ask for something else</button>';
   }
 
   // The sheet keeps its waiting height while the picks land (board D5,
@@ -13185,7 +13185,7 @@
   function swapLineHtml(day, slot) {
     var state = swapStateFor(day.date, slot);
     var tell = '<button type="button" class="wk-swap-tell" data-wk-tell="' + slot + '">' +
-      'Tell me what instead</button>';
+      'Ask for something else</button>';
     if (state && state.busy) {
       return '<div class="wk-swap-line"><span class="wk-swap-working">Finding something else…</span></div>';
     }
@@ -13208,7 +13208,7 @@
   // step's card, the Meal step's dock). "I'll pick" is the half Emily
   // asked for (2026-09-13: "when you click the 'swap' button, it goes with
   // something totally different ... it should make that clear"): the app
-  // chooses the dish, as against "Tell me what instead" beside it, where
+  // chooses the dish, as against "Ask for something else" beside it, where
   // the household does. One label, so the two never say different things
   // about the same call.
   var SWAP_LABEL = 'Swap · I’ll pick';
@@ -13821,7 +13821,7 @@
           escapeHtml(label) + '</button>' +
         '<button type="button" class="dock-link wk-act-swap" data-wk-swap="' + slot + '">' + SWAP_LABEL + '</button>'
       : '<button type="button" class="dock-primary wk-act-swap" data-wk-swap="' + slot + '">' + SWAP_LABEL + '</button>' +
-        '<button type="button" class="dock-link wk-swap-tell" data-wk-tell="' + slot + '">Tell me what instead</button>';
+        '<button type="button" class="dock-link wk-swap-tell" data-wk-tell="' + slot + '">Ask for something else</button>';
     return '<div class="wk-decide dock wk-meal-dock">' +
       '<div class="dock-row">' + row + '</div>' +
       // The swap line only once there is something on it — the call going
@@ -19907,7 +19907,7 @@
     if (state.saved) {
       foot = '<div class="ask-change-foot"><span class="ask-change-done">Saved.</span></div>';
     } else if (state.left) {
-      foot = '<div class="ask-change-foot"><span class="ask-change-done">' + (state.putBack ? 'Put back.' : 'Left as it was.') + '</span></div>';
+      foot = '<div class="ask-change-foot"><span class="ask-change-done">' + (state.putBack ? 'Back as it was.' : 'Left as it was.') + '</span></div>';
     } else {
       var canSave = proposal.rows.some(function (r) { return r.action === 'change' && r.candidates && r.candidates.length && !r.problem; });
       // Not while Another is still finding: a save that races the re-pick

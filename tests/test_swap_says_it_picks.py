@@ -75,7 +75,7 @@ def test_the_words_follow_the_voice_rules():
     # can't have, the week's other dishes, the night's time cap).
     assert "I’ll" in LABEL
     assert "random" not in LABEL.lower()
-    assert "Tell me what instead" in SHELL_JS
+    assert "Ask for something else" in SHELL_JS
 
 
 def _card(swap_state) -> str:
@@ -101,11 +101,11 @@ def test_the_card_says_who_picks_on_each_way_out():
     html = _card(None)
     assert f'class="wk-act wk-act-swap" data-wk-swap="dinner">{LABEL}<' in html
     assert 'data-wk-cook="dinner">Cook this · 25 min<' in html
-    assert 'data-wk-tell="dinner">Tell me what instead<' in html
+    assert 'data-wk-tell="dinner">Ask for something else<' in html
     # The app's pick comes first in the row, the household's own ask on
     # the quiet line under it — read top to bottom, "I'll pick" then
     # "tell me what instead" is the choice Emily asked to see.
-    assert html.index(LABEL) < html.index("Tell me what instead")
+    assert html.index(LABEL) < html.index("Ask for something else")
 
 
 @_needs_node
@@ -115,7 +115,7 @@ def test_after_a_swap_the_new_dish_can_be_undone_or_swapped_again():
     html = _card(swapped)
     assert "Lighter than the burgers, and nothing to thaw." in html
     assert 'data-wk-undo="dinner">Undo<' in html
-    assert 'data-wk-tell="dinner">Tell me what instead<' in html
+    assert 'data-wk-tell="dinner">Ask for something else<' in html
     # ...and the swap is still offered, so "not that one either" is one tap.
     assert f'data-wk-swap="dinner">{LABEL}<' in html
     # While the call is out, the line says so and offers nothing to tap.
