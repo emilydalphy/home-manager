@@ -415,6 +415,23 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-22 — "That draft didn't come together" for a draft that did.
+  Branch `fix-draft-stream-drop`, NOT merged at the time of writing.** Emily's
+  phone, 21:41 ET: the plan-week stream's connection closed 17.6 s in
+  (Railway edge log `POST .../generate/stream 200 17632ms`), `reader.read()`
+  rejected, `streamGenerate` threw, the page alerted — and the server's
+  thread saved plan 58 ten seconds later. Three changes: (1) every SSE
+  stream sends `: keep-alive` after 5 s of silence (`_relay_stream_events`,
+  shared by the draft and chat streams); (2) `agent._WEEK_GENERATION_RUNS`
+  records each generation's start and outcome by the page's `run_token`,
+  read by `GET /api/week/{week_start}/generate/status?run=`; (3) plan-week
+  tells an `error` frame (real failure → the old alert) from a lost
+  connection (→ "Still drafting…", poll every 2 s, give up at 120 s from the
+  tap). In memory only because production is one uvicorn process — the
+  per-week lock already assumes that. Client-disconnect logging hooks
+  `StreamingResponse.listen_for_disconnect` (`_SSEResponse`): GeneratorExit
+  and an async try/finally were both measured to log late or never.
+
 - **2026-09-22 — `main` was red on five weekdays out of seven, and TWO of the
   four pinned CI jobs — `clock (friday)` and `clock (sunday)` — were red on
   EVERY push. Branch
