@@ -415,6 +415,157 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-23 — "Put back" after an add the server MERGED deleted the whole
+  line, and the amount that was already on it went too. Branch
+  `overnight/put-back-merged-line`, NOT merged at the time of writing.**
+  Loop Board bug. The list says "Bell peppers · 3", the Shop tab's add sheet
+  takes "Bell pepper · 2", Pomona correctly puts them on one line —
+  "Bell peppers · 5" — and the toast says "Changes saved · Put back". Tapping
+  it removed the row: the 3 that were already there went with the 2 just
+  added, silently.
+  - **Root cause is TWO HALVES DISAGREEING about one rule, not a missing
+    branch.** `groAddedToast` (`static/shell.js`) has always carried the right
+    branch — a merge is put back by restoring the line's own amount and store,
+    not by removing it — guarded on `wasBefore`, which came from
+    `groLineNamed`, an EXACT name match against the phone's copy of the list.
+    The server merges on `grocery._merge_key`, which ignores case, spacing and
+    a trailing s on the last word, deliberately, so a household never gets two
+    lines of peppers. So in exactly the case a merge happened the two
+    disagreed: server `merged: true`, client found nothing, `&& wasBefore`
+    failed, and the tap fell through to `DELETE .../remove`.
+  - **Reproduced before anything was touched, both halves.** Server, on a
+    throwaway DB: `add('Bell peppers','3')` → `merged: false, item_id: 1`;
+    `add('Bell pepper','2')` → `merged: true, item_id: 1, quantity: '5'`; then
+    the remove that tap fires leaves the list `[]`. Client, driving the real
+    `groAddLine` and the real toast's own `onClick` under node:
+    `groLineNamed('Bell pepper')` → null against a copy holding
+    "Bell peppers", and the tap puts `POST /api/grocery-list/1/remove` on the
+    wire. After: `POST /1/update {"quantity":"3"}` then
+    `POST /1/store {"store":"Loblaws","remember":false}`, and the list reads
+    "Bell peppers · 3".
+  - **THE MERGE RULE IS RIGHT AND IS NOT TOUCHED.** What moves is the client's
+    lookup: `groLinesById` reads the pre-write list by ROW ID, and the id is
+    the one the server already hands back (`item_id` — the line it merged
+    into). The other candidate was a copy of `_merge_key` in JS, and it was
+    refused on this repo's own evidence: a second implementation of a rule is
+    what this bug IS, and the log records being bitten by exactly that twice
+    before. One merge rule, on the server, and the client reads back the row
+    it names.
+  - **The snapshot is taken BEFORE the POST, and that is load-bearing.**
+    `loadGrocery()` replaces `groceryState.data` with the merged line, so a
+    lookup done after it would "restore" the 5 it was undoing. Pinned by the
+    mutation that moves the read below `loadGrocery` (2 red).
+  - **A merged add whose original line this phone has no copy of gets NO Put
+    back at all** — not the remove, which would destroy whatever was on that
+    line. Knowing a line changed and not knowing what it read before is
+    exactly when an undo must not touch it, so the toast says the change
+    saved and offers nothing.
+    **THE REACHABILITY STORY THIS ENTRY FIRST GAVE WAS THE RAREST OF THE
+    FOUR, and review found three deterministic single-device ones it had
+    missed.** It named only the cross-device race (the other adult adds
+    "Bell peppers" from their phone, this one adds "Bell pepper" before its
+    own list has caught up). The three that need no second phone at all,
+    each verified by probe: a **SPICE** row — `add_grocery_item` merges
+    into `status IN ('needed', 'spice')`, but spice rows live in
+    `groceryState.spices` rather than in `data.stores`, so their ids are
+    never in the snapshot; an **EXCLUDED** row ("somewhere else"), which
+    the candidate query ignores `excluded_from_list` for while the payload
+    filters it out; and a **pre-shop-flagged** row, which
+    `/api/grocery-list/by-store` strips before the shell sees it. All three
+    fail SAFE — nothing is destroyed, and main deleted the line in every
+    one of them — which is why this is a correction to the prose rather
+    than to the code. The comment at the call site says all of it now.
+  - **The two branches are EXCLUSIVE now (`if (r.merged)`), not
+    `merged && wasBefore`.** A guard that falls through to a delete when it
+    cannot find the old line is the bug, so the next person to loosen the
+    early return above should get a failed undo and a toast rather than a
+    deleted line. Measured: with `&& wasBefore` still there, the mutation that
+    drops it reddened NOTHING — it had become unpinnable belt-and-braces whose
+    only failure mode was the one being fixed.
+  - **`groLineNamed` is deleted rather than left standing.** It had exactly one
+    caller — this one — and leaving a by-name lookup in the file is leaving the
+    wrong rule there for the next person to reach for.
+  - **A SECOND, NARROWER THING THE SAME UNDO GETS WRONG, TRIED AND TAKEN BACK
+    OUT — the aisle.** `add_grocery_item` also overwrites the merged row's
+    CATEGORY with the one `groGuessCategory` picked for the words that were
+    typed, and Put back sends the amount and the store only, so the line can
+    come back at the right NUMBER in the WRONG SECTION of the shop.
+    **THE WORKED EXAMPLE THIS ENTRY FIRST GAVE WAS FALSE, and it is
+    corrected rather than dropped because a wrong measurement in this log
+    is what the next reader acts on.** It said "Bell peppers · 3 · produce"
+    plus a typed "Bell pepper" guessed as `other` comes back "3 · other" —
+    but `groGuessCategory("Bell pepper")` is **produce**, measured by
+    running the real function, so for the app's own headline example the
+    category does not move at all and that sequence cannot happen through
+    the sheet. The defect is real and wants a real pair: a recipe's
+    **"Orzo · 1 box · pantry"** with "orzo" typed into the sheet (guessed
+    `other`) merges to "2 boxes · other" and Put back leaves "1 box ·
+    **other**". Found by review, which ran the function rather than
+    reading it.
+    **AND THE RESIDUE IS FOUR FIELDS, NOT ONE.** Measured after a Put back
+    on a merged line: `quantity` and `store` come back; `category` does
+    not (above), `store_decided` does not (`0` → `1`, so a line that was
+    never sorted silently leaves the TO SORT queue for good, since
+    `groUnsorted` filters on exactly that flag), the
+    `item_store_preferences` row the add wrote is left standing, and
+    `source_weekly_plan_id` is not restored (a plan line becomes a
+    standing want `clear_stale_grocery_items` will never clear again).
+    Two of those have ready-made flags this undo does not use and a
+    fuller one would: `_stage_grocery_item_store(..., decided=False)`,
+    whose own docstring says it is "an undo of a bulk assign, which has to
+    restore the exact previous state", and `forget=True`. All four are
+    pre-existing in kind and all four are better than main's delete;
+    what was wrong was calling it one gap. Pre-existing; main's
+    exact-name path had them too. It looked like one extra field on the `/update` call this
+    already makes, was built that way, and was reverted for two reasons worth
+    recording: `update_grocery_item` leaves a field alone only for `None`, so
+    a copy of the list whose rows carry no `category` would BLANK it
+    outright — a new defect arriving inside the fix — and it broke
+    `tests/test_shop_add_sheet.py`'s own pin on that request's body, i.e. it
+    widened somebody else's contract, which is more than this card gets to
+    do. Characterised by name in the new file (invert that test when it is
+    fixed) and written into the comment at the call site. Its own card.
+  - **Checked and NOT a second instance: the OFFLINE add.** `groQueueAdd`'s own
+    Put back calls `groOffline.removeLine(op.id)`, and `applyAdd` inserts a new
+    local row under a local id rather than merging into anything, so that undo
+    can only ever take back the row it put on. The real merge happens on the
+    server at replay time, long after the 8-second toast.
+  - `tests/test_put_back_merged_line.py` (18; **7 red on `a2e3129`, of which
+    only FIVE are behaviour catches**. Of the other two red, one is a
+    source marker and one dies on `groLinesById is not defined`, a name main
+    has not got, and both say so. **And of the five, THREE fail with
+    `/remove` on the wire; the other two fail on a label assertion and
+    never reach a calls assertion** — the entry first said all five did.
+    The substance holds either way: main's own code really does fire
+    `POST /api/grocery-list/{id}/remove` in those cases, driven and
+    measured; those two tests simply are not what demonstrates it.) Section 1 RUNS `groAddLine` and the toast's
+    own `onClick` under node against a stubbed fetch and asserts which
+    requests the tap makes — the defect is a guard FALLING THROUGH, which a
+    source-marker test cannot see. Section 2 drives the real
+    `add_grocery_item` and the real tools, so the household-visible
+    before/after is measured rather than reasoned about. **Six mutations run
+    over this file AND `test_shop_add_sheet.py`, and every one bites:** the id
+    guard dropped (1 red), the snapshot emptied (7), the lookup moved below
+    `loadGrocery` (2), the merged-but-unknown return dropped (2), the restore
+    made unconditional (2), and the lookup put back on the typed name
+    (**4** for a faithful revert of the lookup alone, **5** if
+    `groLinesById` is deleted with it — the entry first said 6, which
+    review could not reproduce under either reading).
+  - **Numbers, read off the runs at `TZ=America/Toronto`, both measured here
+    rather than one of them derived: 6322 passed, 0 failed on the merge
+    base** and **6340 passed, 0 failed on the commit that ships**. +18 is
+    this file exactly, and **no existing test was changed, deleted or
+    weakened** — `git diff main -- tests/` is one new file. The aisle
+    widening's own run is recorded above as the reason it was reverted: it
+    read 1 failed / 6339 passed, and the failure was
+    `test_shop_add_sheet.py`'s pin on the `/update` body.
+  - **Found and NOT fixed, named so nobody reports it as new:** once an
+    OFFLINE add has replayed and the server merges it into an existing line,
+    there is no undo at all — the toast's Put back is live for eight seconds
+    while the row is still queued, and by replay time it is long gone. Same
+    for any add whose toast has timed out. Both are the undo's own stated
+    window rather than this bug.
+
 - **2026-09-22 — `main` was red on five weekdays out of seven, and TWO of the
   four pinned CI jobs — `clock (friday)` and `clock (sunday)` — were red on
   EVERY push. Branch
