@@ -7981,7 +7981,12 @@ def run_agent_turn(
     # than accumulated across turns so a caller always reads the turn it
     # just ran, never a stale one from an earlier request.
     usage = {"rounds": 0, "input_tokens": 0, "cache_read_tokens": 0,
-             "cache_write_tokens": 0, "output_tokens": 0, "seconds": 0.0}
+             "cache_write_tokens": 0, "output_tokens": 0, "seconds": 0.0,
+             # Tool NAMES, in call order, duplicates kept -- what this turn
+             # was actually FOR. See schema.sql on chat_turns. It is a list
+             # among counters, which record_chat_turn handles separately;
+             # nothing the person wrote is ever added to it.
+             "tools_called": []}
     LAST_TURN_USAGE.set(usage)
 
     # Wall-clock accounting for the whole turn, split three ways: time
@@ -8153,6 +8158,14 @@ def run_agent_turn(
             if block.type != "tool_use":
                 continue
             fn = TOOL_FUNCTIONS.get(block.name)
+            # Recorded here, above every branch below, so the tally is what
+            # the model ASKED FOR rather than what it got. A declined
+            # chores call and a tool that crashed are both still the thing
+            # the household wanted, and that is the question this answers
+            # -- "what is chat being used for", not "what succeeded". An
+            # unknown name is recorded too: the model reaching for a tool
+            # this app hasn't got is the sharpest signal on the list.
+            usage["tools_called"].append(block.name)
             # The per-household Chores switch, checked before the tool runs
             # and outside the try below on purpose: a declined call is an
             # answer, not a crash, so it is neither logged as a failure nor

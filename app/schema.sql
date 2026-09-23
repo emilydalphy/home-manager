@@ -1463,6 +1463,22 @@ CREATE TABLE IF NOT EXISTS chat_turns (
     cache_write_tokens INTEGER NOT NULL DEFAULT 0,
     output_tokens INTEGER NOT NULL DEFAULT 0,
     seconds REAL NOT NULL DEFAULT 0,
+    -- WHICH TOOLS this turn called, in the order it called them, as a JSON
+    -- list of names: ["swap_meal_in_plan", "add_grocery_item"]. Names only.
+    -- Nothing the person wrote goes in here, which is the same rule the
+    -- rest of this table already follows and the reason this is a list of
+    -- tool names rather than the message that produced them.
+    --
+    -- It is here to answer one question: what are people using chat FOR? A
+    -- chat turn costs about 16 cents and a tap about one, so every
+    -- recurring ask that becomes a tap is both a better experience and a
+    -- much cheaper one -- but only the asks we can SEE can be built into
+    -- taps. Duplicates are kept: a turn that swapped three meals called
+    -- the swap tool three times, and that is the signal, not noise.
+    --
+    -- A turn that called nothing stays '[]', which is itself worth
+    -- counting -- it means somebody asked and the app only talked back.
+    tools_called_json TEXT NOT NULL DEFAULT '[]',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

@@ -701,6 +701,80 @@ why*, not duplicating the diff.
     reader its own worktree, or run the measurement when nothing else is
     in the tree.**
 
+- **2026-09-23 — A chat turn records WHICH TOOLS it called. Names only,
+  never words. Branch `overnight/chat-records-what-was-asked`, NOT merged
+  at the time of writing — and it is LAYER 1 of a two-layer card, on
+  purpose.** Loop Board, Phase 0, raised to High by Emily on the grounds
+  that it cannot be backfilled: a chat turn costs about sixteen cents and
+  a tap about one, so every recurring ask that becomes a tap is both a
+  better experience and a much cheaper one — but only the asks we can SEE
+  can be built into taps, and nothing recorded what chat was for.
+  `chat_turns` held tokens and timing and nothing else.
+  - **One additive column, `chat_turns.tools_called_json`** (schema.sql +
+    `_MIGRATIONS`, `DEFAULT '[]'`, nothing backfilled): the tool names the
+    turn called, in call order, duplicates KEPT — a turn that swapped
+    three meals called the swap tool three times, and that is the signal
+    rather than noise. A turn that called nothing stays `[]`, which is
+    itself worth counting: somebody asked and the app only talked back.
+  - **The name is recorded ABOVE every branch of the dispatch loop, and
+    the order is the point rather than a detail.** A declined chores call,
+    a tool that crashed and a name this app has never heard of are all
+    still the thing the household WANTED, which is the question being
+    answered — "what is chat being used for", not "what succeeded".
+    Recording below any of those branches would silently stop counting
+    exactly the asks worth seeing. Pinned by a source test that asserts
+    the ORDER of three lines, comment-stripped.
+  - **No message text, and that rule is now swept rather than asserted.**
+    A test walks every text column of `chat_turns` for the words a person
+    typed. Same two reasons the table already had: the household's private
+    text is not ours to keep a second copy of, and this feed is printed
+    into an agent's context each morning, where free text from an
+    untrusted end is an injection channel rather than only a privacy
+    question.
+  - **`TOOLS_WITH_A_TAP` is a MAINTAINED list and its guard earned its
+    keep immediately.** It answers the cheapest question there is of this
+    data — how much of what people pay a chat turn for could already have
+    been a tap. The first draft named `resolve_open_slot` and
+    `set_slot_attendance`, which are functions in `tools/` that the model
+    has never been given: both would have sat there matching nothing and
+    the count would have read low for ever with nothing saying so. A test
+    checks every entry against `agent.TOOL_FUNCTIONS`, and it is what
+    caught them.
+  - **A row that cannot be read is COUNTED, not dropped.** `unreadable_turns`
+    is its own number, because a count that quietly shrinks is the exact
+    failure this card exists to stop.
+  - **LAYER 2 — the Haiku theme call — is deliberately NOT built, and that
+    is the one thing on this branch for Emily rather than a builder.**
+    There is no working Anthropic key in the overnight sandbox, so a model
+    call could not be verified at all, and an unverifiable outbound call
+    that costs money per chat turn is not something to merge unattended.
+    Layer 1 is the half that cannot be backfilled, so it ships alone and
+    starts the trend line tonight. The proposal is on the card.
+  - **A defect this work introduced and then fixed, written down because
+    the shape is easy to repeat:** the first cut inserted the report's new
+    helpers immediately before a `print(...)` line that turned out to be
+    the last statement of `_print_shape`, which SPLIT that function —
+    `ast` still parsed, the new helpers were still module-level, and the
+    two orphaned lines became the tail of the new function with `head`,
+    `n` and `stack` undefined. Nine tests went red on one `NameError`.
+    Inserting between two `def`s rather than before an arbitrary line is
+    the fix; "it parses" is not the same as "it is where you think".
+  - `tests/test_chat_records_what_was_asked.py` (18). **15 are red against
+    main's `app/` and that number is worth little** — the column and the
+    helper do not exist there, so it is the only kind of red a new feature
+    can have; the sixteenth, the no-text sweep, is GREEN on main and
+    should be, because main stores no text either. **Five mutations are
+    the real evidence and every one bites:** the dispatch loop recording
+    nothing (2 red, including the end-to-end one), the append moved below
+    the chores gate (1), `record_chat_turn` reading `values["tools_called"]`
+    directly (1), `_tool_names_json` dumping whatever it is handed (6),
+    and `TOOLS_WITH_A_TAP` widened to every tool (1). Two tests drive the
+    WHOLE chain — the real dispatch in `run_agent_turn`, then the real
+    recording site both chat routes share (`_finish_chat_turn`, reached by
+    the plain route and the streaming one alike) — with only the model
+    stubbed, because every other test hands `record_chat_turn` a tally by
+    hand and so proves the write rather than the chain.
+
 - **2026-09-22 — `main` was red on five weekdays out of seven, and TWO of the
   four pinned CI jobs — `clock (friday)` and `clock (sunday)` — were red on
   EVERY push. Branch
