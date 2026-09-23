@@ -949,6 +949,74 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Was the "Maybe already home" check RIGHT? (Loop Board, Emily 2026-09-22:
+-- "track the number of times people say they actually want to keep it on vs
+-- they do have it ... so that we can measure the accuracy".)
+--
+-- The pre-shop check quietly takes a line off what the household shops
+-- from. When it is wrong that is a missing ingredient at dinner, which is
+-- the worst thing this app can do — so the rate has to be a number, not a
+-- hunch, and a number needs a denominator: how many times the card ASKED,
+-- not only how many times somebody answered.
+--
+-- ONE ROW PER FLAGGED GROCERY LINE, holding its CURRENT answer, so the four
+-- counts partition cleanly and nothing has to be subtracted from anything:
+-- raised-and-unanswered, kept, dropped, put-back. A line dropped and then
+-- put back reads as 'undone' and not also as 'dropped', because "the flag
+-- was right" and "the flag was wrong and they caught it" are different
+-- facts and only one of them is true of that line.
+--
+-- WHY A TABLE AND NOT COLUMNS ON grocery_items, which was the cheaper
+-- shape and is the wrong one: grocery rows are HARD-DELETED when the week
+-- turns over — clear_stale_grocery_items drops the old plan's 'needed'
+-- lines (every kept one) and approve_weekly_plan's list-wipe drops its
+-- 'removed' ones (every dropped one). The report's window is seven days
+-- and a week turns over inside it, so counts living on those rows would
+-- shrink every week, by an amount that depends on which day the report
+-- ran, and nothing would say so. This table outlives the line it is about.
+-- grocery_item_id is therefore deliberately NOT a foreign key and has no
+-- ON DELETE CASCADE: it identifies the line while it exists (ids are
+-- AUTOINCREMENT, so a deleted line's id is never handed to another row)
+-- and means nothing but a distinct line once it is gone.
+--
+-- Nothing prunes this table and nothing needs to: unlike error_events it
+-- cannot burst — one row per grocery line the card ever raised, which is
+-- a few a week — so a year of it is under a thousand rows of six small
+-- columns. If that ever stops being true, the report never asks past 30
+-- days and anything older can go.
+--
+-- COUNTS ONLY. No item name, no quantity, no word anybody typed: these
+-- rows are summarised into /api/health-report, which is read into an
+-- agent's context under an instruction to act on what it reads. See
+-- main.health_report's docstring for why that boundary is not merely a
+-- privacy preference.
+CREATE TABLE IF NOT EXISTS pre_shop_decisions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    -- The grocery_items row the card raised. See above: no REFERENCES.
+    grocery_item_id INTEGER NOT NULL,
+    -- When the card FIRST raised this line, stamped once and never again
+    -- (see pre_shop._record_flags_raised). get_pre_shop_flags is computed
+    -- on read and runs on every Shop-tab load, so stamping per read would
+    -- count the same question a dozen times and make the accuracy rate
+    -- look far better than it is.
+    flagged_at TEXT NOT NULL DEFAULT (datetime('now')),
+    -- '' until somebody answers: 'kept' ("Buy it anyway"), 'kept_all'
+    -- ("Keep all N"), 'dropped' ("Drop it"), 'undone' (dropped, then put
+    -- back — a flag the household caught being wrong). Keep and keep-all
+    -- are stored apart and added together in the report, because which
+    -- button they reached for is a real difference and the report only has
+    -- room for one number.
+    decision TEXT NOT NULL DEFAULT '',
+    -- When that answer was given; NULL while decision is ''. UTC, like
+    -- every other stamp here, so the report's rolling window compares an
+    -- instant against an instant.
+    decided_at TEXT,
+    -- One row per line, so a second raise updates nothing and a second
+    -- answer overwrites the first.
+    UNIQUE (household_id, grocery_item_id)
+);
+
 -- Per-meal ledger of exactly which grocery_items line (and how much of it)
 -- a given meal_plan_entries row contributed, recorded at plan_meal() time
 -- whenever a recipe's ingredients get auto-added to the grocery list. This

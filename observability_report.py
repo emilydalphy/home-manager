@@ -677,6 +677,27 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
                 f"latency p50={plan_gen['p50_seconds']}s max={plan_gen['max_seconds']}s"
             )
 
+        # Was the "Maybe already home" check right? (Emily, 2026-09-22.)
+        # Counts only, never a line's name — these come straight out of
+        # /api/health-report, which is read into an agent's context.
+        #
+        # "flagged" is lines the card HELD OFF THE LIST in the window,
+        # counted once each however many times the screen was reloaded;
+        # the three answers are lines, not taps, so they can never exceed
+        # it, and a line that was dropped and then put back counts as
+        # "put back" and not also as "dropped". The four therefore read as
+        # a partition, with the remainder being cards nobody answered.
+        # `.get` like everything else here: a deployment older than this
+        # work answers without the key, and one missing line beats a crash.
+        pre_shop = usage.get("pre_shop") or {}
+        if any(pre_shop.get(k) for k in ("flagged", "kept", "dropped", "undone")):
+            print(
+                f"  Maybe already home: {pre_shop.get('flagged', 0)} flagged · "
+                f"{pre_shop.get('dropped', 0)} dropped · "
+                f"{pre_shop.get('kept', 0)} kept · "
+                f"{pre_shop.get('undone', 0)} put back"
+            )
+
         # What the week got wrong about the FOOD. Its own section, below
         # errors and usage and never folded into BROKEN: a dull dinner is a
         # real problem and it is not an outage, and the whole value of the
