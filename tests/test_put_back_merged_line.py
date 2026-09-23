@@ -1,11 +1,18 @@
 """
-"Put back" after an add that MERGED must restore the line, never delete it.
+Undo after an add that MERGED must restore the line, never delete it.
+
+Written when the toast's action was still labelled "Put back" (2026-09-21
+bug write-up below is left as it was reported); the add path's toast was
+relabelled "Undo" on 2026-09-23 (Loop Board 3e31f4c0-5231-81b5, "the Add
+sheet says too much") and every assertion here follows that rename — the
+mechanics this file actually tests (restore-vs-delete on a merge) did not
+change.
 
 Loop Board bug. The list says "Bell peppers · 3", you add "Bell pepper · 2"
 from the Shop tab's add sheet, Pomona correctly puts them on one line —
-"Bell peppers · 5" — and the toast says "Changes saved · Put back". Tapping
-Put back removed the whole line: the 3 that were already on the list went
-with the 2 just added, silently, and nothing said so.
+"Bell peppers · 5" — and the toast offered a way back. Tapping it removed
+the whole line: the 3 that were already on the list went with the 2 just
+added, silently, and nothing said so.
 
 ROOT CAUSE, and it is a disagreement between two halves rather than a
 missing branch. `groAddedToast` (static/shell.js) has always had the right
@@ -131,13 +138,17 @@ function bandDateLabel() { return 'Wednesday, Sep 17'; }
 function emptyMomentHtml() { return ''; }
 function snwLink() { return ''; }
 function activateTab() {}
-var PLAIN_TOASTS = [];
-function showToast(msg) { PLAIN_TOASTS.push(msg); }
-// The real toastSaved is far outside this region (it is the shell's, not
-// the Grocery tab's). What matters here is what it is HANDED: an action
-// with a label and an onClick, or nothing at all.
+// groAddedToast (2026-09-23) calls showToast directly rather than going
+// through toastSaved — the add path names the thing that was added
+// ("Carrots was added") rather than the generic "Changes saved" — so
+// this is the one stub that matters here. What this file's assertions
+// read off TOASTS is the action: an Undo with a label and an onClick, or
+// nothing at all. toastSaved is kept as a thin wrapper over the same
+// stub for any other call site this region's code still has (a tick,
+// say) that this file's tests never reach.
 var TOASTS = [];
-function toastSaved(action, holdMs) { TOASTS.push({ action: action || null, holdMs: holdMs || null }); }
+function showToast(msg, action, holdMs) { TOASTS.push({ msg: msg, action: action || null, holdMs: holdMs || null }); }
+function toastSaved(action, holdMs) { showToast('Changes saved', action, holdMs); }
 var coachState = { householdId: 1 };
 var scrollEl = { scrollTop: 0 };
 const STORE = new Map();
@@ -155,7 +166,7 @@ var document = { activeElement: null, createElement: function () { return null; 
   getElementById: function () { return null; } };
 var panels = { grocery: null };
 // Every request the tab puts on the wire, in order, with its body — which
-// is the whole assertion in this file: Put back either restores a line or
+// is the whole assertion in this file: Undo either restores a line or
 // removes it, and those are two different URLs.
 var CALLS = [];
 var SERVER_ADD = {};
@@ -229,10 +240,10 @@ OLIVE = ("{ id: 9, item: 'Olive  oil', quantity: '1 bottle', category: 'pantry',
 
 
 def _restores(got, item_id, quantity, store):
-    """Put back restored the line: its amount, then its store. Never a
+    """Undo restored the line: its amount, then its store. Never a
     remove — which is the whole point, so it is asserted rather than
     implied by the other two."""
-    assert got["label"] == "Put back"
+    assert got["label"] == "Undo"
     assert got["calls"] == [
         'POST /api/grocery-list/%d/update {"quantity":"%s"}' % (item_id, quantity),
         'POST /api/grocery-list/%d/store {"store":"%s","remember":false}' % (item_id, store),
@@ -300,7 +311,7 @@ def test_a_case_only_difference_does_too():
 
 @_needs_node
 def test_a_genuinely_new_line_is_still_removed_outright():
-    """GUARD — nothing was merged into, so Put back means take it off the
+    """GUARD — nothing was merged into, so Undo means take it off the
     list. GREEN ON MAIN; pinned by the mutation that restores
     unconditionally, which turns this into two writes to a row that had no
     'before'."""
@@ -308,12 +319,12 @@ def test_a_genuinely_new_line_is_still_removed_outright():
       drive({ before: [%s], typed: 'Kale',
               server: { item_id: 42, item: 'Kale', quantity: '1 bag', merged: false } }).then(out);
     """ % PEPPERS)
-    assert got["label"] == "Put back"
+    assert got["label"] == "Undo"
     assert got["calls"] == ["POST /api/grocery-list/42/remove"]
 
 
 @_needs_node
-def test_a_merge_into_a_line_this_phone_never_had_offers_no_put_back_at_all():
+def test_a_merge_into_a_line_this_phone_never_had_offers_no_undo_at_all():
     """CATCH — the other adult put "Leeks" on the list from their phone;
     this one adds "Leek" before its own copy has caught up, and the server
     merges into a row that was never in this copy. RED ON MAIN, where the
@@ -350,7 +361,7 @@ def test_a_merged_add_never_falls_through_to_the_delete_however_it_is_reached():
     assert got["offered"][:2] == [None, None]
     # The third knows: the line was blank and unsorted, which is a state to
     # restore, not a reason to delete.
-    assert got["offered"][2] == "Put back"
+    assert got["offered"][2] == "Undo"
     assert not any("/remove" in c for c in got["calls"]), got["calls"]
 
 

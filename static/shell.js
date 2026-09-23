@@ -5664,8 +5664,7 @@
         '<div class="gro-pills open gro-add-chips">' +
           stores.map(function (n) { return groAddChipHtml(n, n, n === store); }).join('') +
           groAddChipHtml('', GRO_ADD_ANYWHERE, store === '') +
-        '</div>' +
-        '<p class="gro-add-note" id="gro-add-note">' + escapeHtml(groAddSheetNote(store, groAddSheetName(typed))) + '</p>';
+        '</div>';
     }
     html += '<button type="button" class="dock-primary gro-add-go" id="gro-add-go" data-gro="add">' +
       escapeHtml(groAddSheetLabel(store)) + '</button>';
@@ -5675,17 +5674,10 @@
     return '<button type="button" class="gro-pill' + (on ? ' gro-pill-on' : '') + '" data-gro="add-store" ' +
       'data-store="' + escapeHtml(store) + '" aria-pressed="' + on + '">' + escapeHtml(label) + '</button>';
   }
-  // The line under the chips: what the pick means, with the store and
-  // the thing named. "Anywhere" says where the row will sit and where
-  // the store can be given later; both point at the row's ⋯, which is
-  // the correction for either.
-  function groAddSheetNote(store, name) {
-    if (!store) return 'I’ll put it under ' + GRO_ADD_ANYWHERE + ' — tell me the store from the row’s ⋯ menu when you know.';
-    return 'I’ll remember ' + store + ' for ' + (name || 'it') + ' next time. Change it any time from the row’s ⋯ menu.';
-  }
   function groAddSheetLabel(store) { return store ? 'Add to ' + store : GRO_ADD_TO_LIST; }
-  // The thing's name as the note says it: the typed text without its
-  // quantity, in lower case — "for cilantro", not "for 2 Cilantro".
+  // The typed text without its quantity, in lower case — "cilantro", not
+  // "2 Cilantro" — so it can be looked up against a remembered store
+  // (groAddSheetPrePick) the same way regardless of how much was typed.
   function groAddSheetName(typed) {
     var parsed = groParseAddInput(typed);
     return (parsed.item || '').trim().toLowerCase();
@@ -5815,8 +5807,8 @@
     groAddSheetSync();
   }
   // The parts of the sheet that follow the typing and the chip — which
-  // chip is on, the line under them, the button's label. The field is
-  // never redrawn: it is being typed into.
+  // chip is on, and the button's label. The field is never redrawn: it
+  // is being typed into.
   function groAddSheetSync() {
     var st = groceryState.addSheet;
     var body = groAddSheetBody();
@@ -5827,8 +5819,6 @@
       chips[i].classList.toggle('gro-pill-on', on);
       chips[i].setAttribute('aria-pressed', String(on));
     }
-    var note = body.querySelector('#gro-add-note');
-    if (note) note.textContent = groAddSheetNote(st.store, groAddSheetName(st.typed));
     var go = body.querySelector('#gro-add-go');
     if (go) go.textContent = groAddSheetLabel(st.store);
   }
@@ -6234,7 +6224,11 @@
   // and then the server puts the line under the item's usual store if
   // it remembers one, else the loose pile). The sheet closes on the tap,
   // the list comes back with the row in its store's card, and the toast
-  // says "Changes saved · Put back". The aisle is groGuessCategory's
+  // names the thing that just happened — "Carrots was added" — with
+  // Undo (groAddedToast; Emily, 2026-09-23: the sheet used to announce
+  // the remembering itself with a celadon note under the chips — "I'll
+  // remember Costco for it" — which is gone, since the row landing in
+  // that store's card already shows it). The aisle is groGuessCategory's
   // rather than a flat 'other'.
   async function groAddItem() {
     var st = groceryState.addSheet;
@@ -6333,23 +6327,33 @@
     });
     return out;
   }
-  // "Changes saved · Put back": a new line is removed; a line the add
-  // merged into gets its old amount and store back.
+  // The name the add path's own toast says was added — the server's own
+  // wording for the line (`r.item`), never re-derived from what was
+  // typed: for a merge that's the line's existing name, not the typed
+  // one, which is the name that is actually now on the list (Emily,
+  // 2026-09-23 — "X was added", nothing else; Undo takes its place).
+  function groAddedMessage(name) {
+    return (name || 'It') + ' was added';
+  }
+  // "X was added · Undo": a new line is removed; a line the add merged
+  // into gets its old amount and store back — the same restore "Put
+  // back" always did here, just under the add path's own wording now.
   //
-  // A merge this phone has no copy of the original line for gets NO Put
-  // back at all — not the remove, which would destroy whatever was
-  // already on that line. Reachable rather than defensive: the other
-  // adult adds "Bell peppers" from their phone, this one adds "Bell
-  // pepper" before its own list has caught up, and the server merges
-  // into a row that was never in this copy. Knowing a line changed and
-  // not knowing what it read before is exactly when an undo must not
-  // touch it, so the toast says the change saved and offers nothing.
+  // A merge this phone has no copy of the original line for gets NO Undo
+  // at all — not the remove, which would destroy whatever was already on
+  // that line. Reachable rather than defensive: the other adult adds
+  // "Bell peppers" from their phone, this one adds "Bell pepper" before
+  // its own list has caught up, and the server merges into a row that
+  // was never in this copy. Knowing a line changed and not knowing what
+  // it read before is exactly when an undo must not touch it, so the
+  // toast still names the add and offers nothing to take back.
   function groAddedToast(r, wasBefore) {
     var id = r && r.item_id;
-    if (!id) { toastSaved(); return; }
-    if (r.merged && !wasBefore) { toastSaved(); return; }
-    toastSaved({
-      label: 'Put back',
+    var message = groAddedMessage(r && r.item);
+    if (!id) { showToast(message); return; }
+    if (r.merged && !wasBefore) { showToast(message); return; }
+    showToast(message, {
+      label: 'Undo',
       onClick: function () {
         // `merged` is the server's promise that a line was already there,
         // and the early return above is what makes `wasBefore` certain by
@@ -6385,7 +6389,10 @@
   }
   // Queued: the row is on the screen now under its store (applyAdd, a
   // local id until the server gives it one), replayed behind whatever
-  // is already waiting. Put back takes it out of the queue again.
+  // is already waiting. Undo takes it out of the queue again. `payload`
+  // has no server-given name to echo back — it carries the typed one
+  // (already stripped of its quantity, groAddItem) — which is what the
+  // row on screen is under anyway until the server's own copy lands.
   function groQueueAdd(payload) {
     var op = groOffline.queueAdd(payload);
     if (!op) return;
@@ -6395,8 +6402,8 @@
     }
     renderGroceryOfflineLine();
     groReplayQueue();
-    toastSaved({
-      label: 'Put back',
+    showToast(groAddedMessage(payload.item), {
+      label: 'Undo',
       onClick: function () {
         if (!groOffline.unqueue(op.id)) return;
         if (groceryState.data) {
@@ -6546,12 +6553,16 @@
       if (!res.ok) throw new Error('save failed');
       var result = await res.json().catch(function () { return {}; });
       groScanCloseSheet();
-      var addedCount = (result.added || []).length;
+      // Same wording as a single typed add when there's only one to name
+      // ("Carrots was added"); more than one stays plain and grammatical
+      // rather than counting "items" — "2 things were added".
+      var addedNames = result.added || [];
       var mergedCount = (result.merged_with_existing || []).length;
       var parts = [];
-      if (addedCount) parts.push(groPlural(addedCount, 'item', 'items') + ' added');
-      if (mergedCount) parts.push(groPlural(mergedCount, 'item', 'items') + ' combined with what was already on the list');
-      showToast(parts.length ? parts.join(', ') + '.' : 'Added to the list.');
+      if (addedNames.length === 1) parts.push(groAddedMessage(addedNames[0]));
+      else if (addedNames.length > 1) parts.push(addedNames.length + ' things were added');
+      if (mergedCount) parts.push(groPlural(mergedCount, 'thing', 'things') + ' combined with what was already on the list');
+      showToast(parts.length ? parts.join(', ') : 'Added to the list');
       await loadGrocery();
     } catch (err) {
       console.warn('Grocery list confirm-scan failed:', err);
