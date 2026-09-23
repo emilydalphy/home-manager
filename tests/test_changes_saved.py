@@ -80,7 +80,16 @@ def test_the_sentence_is_defined_once_and_every_site_uses_the_helper():
 
 def test_the_rule_is_written_down_where_the_others_are():
     assert "S10 · A decision is saved on purpose, and the app says so." in DESIGN
+    # Since 2026-09-23 S10 asks the pop-up to NAME what changed (Emily's
+    # 2026-09-22 correction: "Changes saved" → "Carrots was added",
+    # "Put back" → "Undo"). The rule — a Save, a pop-up, an Undo — is the
+    # same; only the words moved.
+    assert "`<thing> was <verbed>`" in DESIGN
+    assert '"Carrots was added"' in DESIGN
+    # ...and it still records that the code hasn't caught up, so nobody
+    # reads the old wording as the pattern.
     assert '"Changes saved"' in DESIGN
+    assert "COPY_SWEEP_2026-09-23.md" in DESIGN
 
 
 # ---------- What we know ----------
