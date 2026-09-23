@@ -485,7 +485,26 @@ why*, not duplicating the diff.
     2026-09-22 against Toronto 2026-09-23, `date +%F` checked in both zones
     BEFORE and AFTER the run — **6331 passed, 0 failed**. No existing test
     was changed, deleted or weakened (`git diff main -- tests/` is this one
-    new file), so +9 is it exactly.
+    new file), so +9 is it exactly. All four CI weekday pins at
+    `TZ=America/Toronto`: monday, friday, saturday and sunday each **6328
+    passed, 3 skipped, 0 failed**, against a measured **6319 passed, 3
+    skipped, 0 failed** for `main` at the friday pin — so +9 is this file
+    exactly there too, and `clock (friday)` is green on `main` and on this
+    branch alike.
+  - **THE FIRST FRIDAY READING SAID "4 failed" AND WAS NOT A MEASUREMENT OF
+    THIS BRANCH AT ALL. Recorded rather than quietly replaced, because the
+    mistake is one an overnight run will make again.** That pin was run in
+    the MAIN CHECKOUT while an adversarial reviewer was working in the same
+    directory — and a reviewer's job here includes temporarily restoring
+    `main`'s version of a file to measure what is red against it. So the
+    suite under test was some superposition of two trees. The other three
+    pins in the same batch happened to miss that window and read clean,
+    which is exactly what makes this kind of number so believable and so
+    worthless. Re-run in a tree nobody else was touching, friday reads
+    6328/0 like the other three. **The rule: a test run in a working tree
+    another agent can write to is not evidence. Give every concurrent
+    reader its own worktree, or run the measurement when nothing else is
+    in the tree.**
 
 - **2026-09-22 — `main` was red on five weekdays out of seven, and TWO of the
   four pinned CI jobs — `clock (friday)` and `clock (sunday)` — were red on
