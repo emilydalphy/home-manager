@@ -161,7 +161,10 @@ def test_the_rows_of_a_fold_do_not_share_one_derived_from():
 
 
 def test_an_entry_with_no_dates_is_left_exactly_as_it_was():
-    """A one-off is the common case and must cost nothing."""
+    """
+    A one-off is the common case and must cost nothing. GREEN either way —
+    an expansion that does nothing satisfies it too; that is the point.
+    """
     one = _entry("2026-09-28", "dinner", "Chili", derived_from={"tags": ["normal"]})
 
     out = agent._expand_repeated_dates([one])
@@ -270,6 +273,11 @@ def test_the_same_snack_twice_on_one_day_is_written_once():
     """
     "The day's two snacks must differ from each other" is a real rule;
     repair_snack_clashes would otherwise pay for this later with a trade.
+
+    GREEN either way, and it reads like a catch, so say so: an unexpanded
+    list of these two entries happens to satisfy both assertions. What
+    pins it is the mutation that keys a snack by (date, slot) like the
+    three real meals, which reddens it.
     """
     out = agent._expand_repeated_dates([
         _entry("2026-09-28", "snack", "Apple", dates=["2026-09-28", "2026-09-29"]),
@@ -351,6 +359,7 @@ def test_a_wildly_long_dates_list_is_bounded():
 
 
 def test_a_non_list_or_non_dict_is_passed_through_untouched():
+    """GREEN either way. A guard on never raising over a shape."""
     assert agent._expand_repeated_dates("not a list") == "not a list"
     assert agent._expand_repeated_dates([None, 3]) == [None, 3]
 
@@ -358,7 +367,8 @@ def test_a_non_list_or_non_dict_is_passed_through_untouched():
 def test_an_entry_with_no_date_at_all_is_left_for_the_save_loop():
     """
     The save loop's own `if not meal_date: continue` stays the one place
-    that decides what a dateless entry means.
+    that decides what a dateless entry means. GREEN either way — a guard
+    on the expansion NOT deciding it.
     """
     one = {"slot": "dinner", "meal_name": "Chili", "reasoning": "x"}
 
@@ -608,6 +618,8 @@ def test_a_folded_weeks_report_survives_the_expansion(monkeypatch, recipes):
 # ---------- the prompt and the schema ----------
 
 def test_the_schema_offers_dates_and_still_requires_date(monkeypatch):
+    """A source marker: red against a tree with no `dates` in the schema,
+    green against one that has it and expands nothing."""
     item = agent._GENERATE_WEEKLY_PLAN_TOOL["input_schema"]["properties"]["days"]["items"]
 
     assert "dates" in item["properties"]
@@ -617,6 +629,9 @@ def test_the_schema_offers_dates_and_still_requires_date(monkeypatch):
 
 
 def test_the_prompt_asks_for_a_repeat_once_and_keeps_dinners_per_night(monkeypatch):
+    """The other source marker, and the one that matters most to a later
+    edit: the two sentences that used to count ENTRIES would now be a
+    second, contradictory instruction to the model."""
     captured = {}
 
     def _fake_stream(client, **kwargs):

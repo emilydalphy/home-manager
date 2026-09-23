@@ -529,8 +529,11 @@ why*, not duplicating the diff.
     that makes the expansion a no-op**, which is `main`'s behaviour — the
     honest baseline here, since the file cannot be collected against a tree
     with no `_expand_repeated_dates` in it at all). The nine green each say
-    in their own docstring which they are; two of them were WEAK on the
-    first pass and are named as such rather than quietly strengthened — the
+    in their own docstring that they are green either way, including the
+    one that reads most like a catch (`..._the_same_snack_twice_...`,
+    pinned instead by the mutation that keys a snack like the three real
+    meals). Two others were WEAK on the first pass and are named as such
+    rather than quietly strengthened — the
     audit test passed on an unexpanded week because the gap audit fills a
     missing slot with an open question and those count as present, and the
     snacks test counted the snacks without counting the DAYS, so "both
