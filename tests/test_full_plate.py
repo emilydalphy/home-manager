@@ -104,6 +104,77 @@ def test_a_meal_with_no_recorded_groups_is_left_alone_rather_than_guessed_at():
     assert plates.has_food_groups(entry) is False
 
 
+# ---------- the deterministic starch check (Emily, 2026-09-22) ----------
+
+@pytest.mark.parametrize("text", [
+    "Cajun Salmon with Green Beans and Sweet Potato Mash",
+    "Roasted potatoes",
+    "Chicken and rice bowl",
+    "Turkey burgers with a side of buns",
+    "Beef and bean burrito with warm tortillas",
+    "Couscous salad",
+    "Quinoa bowl",
+    "Orzo with lemon",
+    "Naan and curry",
+    "Farro salad",
+    "Chicken gnocchi soup",
+])
+def test_has_starch_catches_the_obvious_cases(text):
+    assert plates.has_starch(text) is True
+
+
+@pytest.mark.parametrize("text", [
+    "Grilled chicken thighs with green beans",
+    "Steak with garlic butter",
+    "Greek salad with feta",
+])
+def test_has_starch_is_false_with_no_carb_word(text):
+    assert plates.has_starch(text) is False
+
+
+def test_corn_is_deliberately_not_a_starch_word():
+    """
+    Emily, 2026-09-21: "chicken + corn + zucchini" is her own example of a
+    dinner with NO carb at all — this app already reads corn as a
+    vegetable (see household_carb_level's CARB_LEVELS comment and
+    test_low_carb_is_not_no_carb.py). The starch check leaves "corn" out
+    on purpose so it doesn't silently reverse that call.
+    """
+    assert plates.has_starch("Chicken with corn and zucchini") is False
+
+
+@pytest.mark.parametrize("text", [
+    "Cucumber salad dressed in rice vinegar",
+    "Cornstarch slurry to thicken the sauce",
+    "Corn starch thickened gravy",
+    "Panko breadcrumbs coating",
+    "Bread crumbs on top",
+    "Breaded chicken cutlet",
+])
+def test_has_starch_guards_against_the_known_false_positives(text):
+    """
+    "rice vinegar" (an acid), "corn starch"/"cornstarch" (a thickener) and
+    "breadcrumbs"/"bread crumbs"/"breaded" (a coating) all carry a starch
+    WORD without being a carb on the plate — pragmatic guards, not an
+    exhaustive list. Each of these strings carries no OTHER starch word,
+    so a true positive here would be the guard failing.
+    """
+    assert plates.has_starch(text) is False
+
+
+def test_dish_has_carb_reads_the_dish_not_the_sides():
+    assert plates.dish_has_carb(
+        "Cajun Salmon with Green Beans and Sweet Potato Mash",
+        [{"item": "Salmon fillets"}, {"item": "Green beans"}, {"item": "Sweet potato"}],
+    ) is True
+    assert plates.dish_has_carb(
+        "Grilled chicken thighs", [{"item": "Chicken thighs"}, {"item": "Green beans"}],
+    ) is False
+    # A freeform meal with no recipe behind it has no ingredients to read
+    # — the dish's own name is still checked.
+    assert plates.dish_has_carb("Rice and beans", None) is True
+
+
 # ---------- generation: the pass over a finished week ----------
 
 SALAD = {
@@ -205,6 +276,40 @@ def test_a_protein_only_dinner_gets_a_side(recipes, stub_week, stub_sides):
     assert len(calls) == 1
     assert calls[0]["meal"] == "Grilled chicken thighs"
     assert calls[0]["missing"] == ["vegetable", "carb"]
+
+
+def test_a_dish_whose_own_carb_the_model_missed_gets_no_side(recipes, stub_week, stub_sides):
+    """
+    Emily, 2026-09-22, phone: "Cajun Salmon with Green Beans and Sweet
+    Potato Mash" recorded food_groups protein+vegetable only — the
+    model-written classification missed the sweet potato mash — so the
+    plate-completing pass thought it was short a carb and would have
+    bolted a carb side onto a plate that already had one. The
+    deterministic starch check (plates.dish_has_carb) catches it from the
+    dish's own name/ingredients regardless of what food_groups_json says.
+    """
+    tools.add_recipe(
+        "Cajun Salmon with Green Beans and Sweet Potato Mash",
+        ingredients=[
+            {"item": "Salmon fillets", "qty": "4", "category": "meat/seafood"},
+            {"item": "Green beans", "qty": "1 lb", "category": "produce"},
+            {"item": "Sweet potato", "qty": "2", "category": "produce"},
+        ],
+        food_groups=["protein", "vegetable"],
+        prep_time_minutes=10, cook_time_minutes=25,
+    )
+    week = _week_start()
+    tuesday = tools._week_dates(week)[1]
+    stub_week(_week(
+        week, overrides={(tuesday, "dinner"): "Cajun Salmon with Green Beans and Sweet Potato Mash"},
+    ))
+    calls = stub_sides()
+
+    plan = agent.generate_weekly_plan(week)
+
+    entry = _entries(plan["weekly_plan_id"])[(tuesday, "dinner")]
+    assert [c for c in calls if c["meal"] == "Cajun Salmon with Green Beans and Sweet Potato Mash"] == []
+    assert entry["sides"] == []
 
 
 def test_a_one_pot_dinner_is_left_exactly_as_it_was(recipes, stub_week, stub_sides):

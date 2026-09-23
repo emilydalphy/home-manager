@@ -3665,7 +3665,7 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
         f"""
         SELECT mpe.id, mpe.date, mpe.slot, COALESCE(r.name, mpe.freeform_meal) AS meal,
                mpe.food_groups_json, mpe.component_category, mpe.cooked_status, mpe.reasoning,
-               mpe.slot_state, mpe.open_reason, mpe.sides_json
+               mpe.slot_state, mpe.open_reason, mpe.sides_json, r.ingredients_json
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ?
@@ -3679,6 +3679,12 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
         {
             "entry_id": m["id"], "date": m["date"], "slot": m["slot"], "meal": m["meal"],
             "food_groups": json.loads(m["food_groups_json"]),
+            # The dish's own ingredients — not the sides — so a caller
+            # deciding whether carb is missing can check the dish itself
+            # deterministically (plates.dish_has_carb) rather than trust
+            # food_groups_json alone; see _complete_plates_pass. None for a
+            # freeform or component meal with no recipe behind it.
+            "ingredients": json.loads(m["ingredients_json"]) if m["ingredients_json"] else None,
             "component_category": m["component_category"],
             "cooked_status": m["cooked_status"],
             "reasoning": m["reasoning"] or None,
@@ -4474,7 +4480,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
                mpe.slot_state, mpe.open_reason, mpe.reasoning, mpe.derived_from_json,
                mpe.food_groups_json, mpe.sides_json, mpe.cooked_status,
                r.prep_time_minutes, r.cook_time_minutes,
-               r.tags_json, r.instructions_json, r.main_protein,
+               r.tags_json, r.instructions_json, r.main_protein, r.ingredients_json,
                r.source_url, r.source_book, r.source_author, r.source_page,
                (SELECT COUNT(*) FROM recipe_photos rp WHERE rp.recipe_id = r.id) AS photo_count
         FROM meal_plan_entries mpe
@@ -4521,6 +4527,25 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     from . import leftovers as _leftovers
     chains = _leftovers.plan_leftover_chains(plan["weekly_plan_id"])
 
+    def _effective_food_groups(row) -> list[str]:
+        """
+        The row's food_groups_json, with a deterministic backstop: a dish
+        whose own name or ingredients already carry a carb counts as
+        having one even when the model's food_groups missed it
+        (plates.dish_has_carb) — Emily's Cajun Salmon with Green Beans and
+        Sweet Potato Mash (2026-09-22), recorded protein+vegetable only,
+        so the "+Add a carb" chip and the plate note both read it as
+        short a carb it already had. Only applied once the dish has SOME
+        recorded groups; one with none stays unknown, same as
+        missing_groups always treats it.
+        """
+        groups = json.loads(row["food_groups_json"] or "[]")
+        if groups and "carb" not in groups:
+            ingredients = json.loads(row["ingredients_json"] or "[]") if row["ingredients_json"] else []
+            if _plates.dish_has_carb(row["meal"], ingredients):
+                groups = groups + ["carb"]
+        return groups
+
     def plate_note(row, sides) -> str:
         """
         The one short line about this plate: "with a green salad" when the
@@ -4544,7 +4569,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             return label
         if row["slot"] != "dinner":
             return ""
-        entry = {"slot": row["slot"], "food_groups": json.loads(row["food_groups_json"] or "[]")}
+        entry = {"slot": row["slot"], "food_groups": _effective_food_groups(row)}
         if not (_plates.has_food_groups(entry) and _plates.is_complete(entry, plate_rule)):
             return ""
         tags = json.loads(row["tags_json"] or "[]")
@@ -4590,14 +4615,14 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             # the thaw it needs (or doesn't). Both are already stored —
             # this only stops the Meals screen having to ask a second
             # endpoint for what it needs to describe one meal.
-            "food_groups": json.loads(row["food_groups_json"] or "[]"),
+            "food_groups": _effective_food_groups(row),
             # The plate as parts — protein, veg, carb — for the card's
             # chips and the Meal step's rows (Emily, 2026-09-13, "Shaping
             # the Draft" Flows A and B): what each part is, whether a side
             # or the dish covers it, and what is missing. plate_parts.py.
             "main_protein": row["main_protein"] or "",
             "plate_parts": _plate_parts_mod.parts_of_plate(
-                row["slot"] or "dinner", json.loads(row["food_groups_json"] or "[]"),
+                row["slot"] or "dinner", _effective_food_groups(row),
                 row["main_protein"], sides, prefs["eating_style"] if prefs else "",
                 carb_level=carb_level,
             ),

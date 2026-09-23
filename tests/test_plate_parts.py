@@ -136,8 +136,13 @@ def test_a_dish_with_nothing_recorded_is_unknown_not_short():
 def test_the_week_menu_carries_the_parts_on_a_planned_slot(week):
     dinner = _dinner(week, DAY2)
     assert dinner["main_protein"] == "turkey"
+    # The dish's own "Burger buns" is a carb the recipe's food_groups
+    # never recorded — the same class of gap as Emily's Cajun Salmon/Sweet
+    # Potato Mash night (2026-09-22): plates.dish_has_carb catches it
+    # deterministically, so the plate isn't reported short a carb it
+    # already has.
     assert [(p["role"], p["name"], p["missing"]) for p in dinner["plate_parts"]] == [
-        ("protein", "Turkey", False), ("vegetable", None, False), ("carb", None, True),
+        ("protein", "Turkey", False), ("vegetable", None, False), ("carb", None, False),
     ]
     assert all(not p["missing"] for p in _dinner(week, DAY1)["plate_parts"])
 
