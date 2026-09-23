@@ -566,6 +566,141 @@ why*, not duplicating the diff.
     for any add whose toast has timed out. Both are the undo's own stated
     window rather than this bug.
 
+- **2026-09-23 — Approving a week at nine in the evening asked the household
+  to keep or drop NEXT week's shopping. Branch
+  `overnight/carried-over-household-clock`, NOT merged at the time of
+  writing.** Loop Board bug. `grocery.set_aside_carried_over_items` decides
+  which unbought lines are LEFTOVERS from a week that has begun, and it
+  compared `date.today()` — the container's — against dates that come out of
+  `plan_period`, i.e. days a planning period was written in, which are
+  household-relative. The container runs UTC and households default to
+  `America/Toronto`, so the two are a different day for **four hours of
+  every evening in EDT and five in EST** — the same figure this log's
+  other household-clock entries give, said with both halves. **The function's own docstring is the specification it broke**:
+  "a household that approves two weeks in advance is building next week's
+  list, and asking them to keep-or-drop it would be asking about groceries
+  nobody has had the chance to buy."
+  - **BOTH directions are real and both were reproduced on a throwaway DB
+    before anything was touched**, by driving the real function with
+    `cooker.datetime` frozen at one UTC instant. BEHIND (Toronto 21:30,
+    production's own direction every evening after eight): a plan beginning
+    the household's TOMORROW read as started — `set aside: ['Next week
+    onions']` where the right answer is `[]`. AHEAD (Tokyo 08:30): a plan
+    that began the household's TODAY read as not yet begun — `set aside: []`
+    where the right answer names the line, so last week's leftovers are left
+    standing and this week's amounts land on top of them, which is the
+    quantity inflation the function exists to prevent.
+  - **`_live_plan_ids` is the same defect one function up the file and is
+    the one with TEETH, so it moves in the same commit** — this repo's own
+    rule that a half-converted module is a new bug rather than a smaller
+    one. Its caller `clear_stale_grocery_items` is a blunt DELETE with no
+    ledger behind it, so on the server's clock a plan whose LAST day is the
+    household's today read as finished from about 8pm local and the
+    ingredients for the dinner they were still cooking went off the list.
+    After this, `grep 'date.today()' app/tools/grocery.py` is empty.
+  - **The clock is read on the CALLER's connection, and that is a hazard
+    rather than a tidiness rule.** `approve_weekly_plan` holds an open write
+    transaction across this call (`conn=conn`, with a comment saying why);
+    SQLite gives one writer at a time and a nested `get_conn` there is how
+    this app has twice earned an intermittent "database is locked".
+    `cooker.household_today` already takes a `conn` (grown on
+    `thaw-survives-a-swap`, 2026-09-22), so it rides straight through and
+    the connection count is unchanged. Pinned by a guard counting at
+    `sqlite3.connect` rather than at a module's own `get_conn` — a
+    function-local `from ..db import get_conn` is invisible to a
+    module-level patch and `_shared.py` has exactly that shape.
+  - **The import is lazy and that is forced, not stylistic:** `cooker`
+    imports `grocery` at module scope, so `from . import cooker` at the top
+    of this file would be a cycle. Same shape `inventory._today`,
+    `held._today` and `notifications` already use, for the same reason.
+  - `tests/test_carried_over_household_clock.py` (9; **5 red against main's
+    `app/`**, of which **4 are behaviour catches** and the fifth is the AST
+    sweep marker, red there for exactly the reason it is named after). Both
+    directions at one frozen UTC instant, following
+    `test_already_have_household_clock.py`.
+  - **ONE GUARD'S DOCSTRING NAMED A MUTATION THAT CANNOT FAIL, and it was
+    caught by RUNNING the mutations rather than by reasoning about them.**
+    It claimed dropping `source_weekly_plan_id IS NOT NULL` from the query
+    would redden the standing-want guard. It reddens **nothing**: SQLite
+    evaluates `NULL != 5` as NULL, so the `!= ?` beside it already filters a
+    standing want out, and `None` is never in `started` either. TWO
+    independent things hold that case up and no single-line mutation can
+    redden it; breaking BOTH does, and that was run. Corrected in the
+    docstring rather than quietly, because a guard mislabelled as pinned is
+    the statistic this log keeps having to unpick.
+  - **Three other mutations were run and each bites**: the clock read
+    opening its own connection (1 red — the nesting guard), `_live_plan_ids`
+    returning every plan (1), and the household clock 400 days in the past
+    (5).
+  - **THE EAST-OF-THE-STORED-ZONE CAVEAT, which this entry did not carry
+    until review asked for it and which all three of its siblings do.**
+    `households.timezone` is `America/Toronto` for every household whether
+    they live there or not, and nothing in the app prompts a change. For a
+    household WEST of it this branch is strictly better (Vancouver: main
+    wrong seven hours a night, this wrong three). For one EAST of it —
+    a UK household still stored as Toronto — `set_aside` now errs the
+    OTHER way for a few hours a day: leftovers not set aside, i.e. the
+    quantity inflation. **Materially milder than the `refuses-the-past`
+    siblings**, and worth saying why rather than just asserting it: those
+    blocked a real action, this one only fails to ask a question; and
+    `_live_plan_ids` errs toward KEEPING lines for that population, which
+    is the safe direction for a blunt DELETE. The honest fix is still the
+    stored zone, which is its own larger question. Reasoned from the
+    mechanism, not measured — there is no real east-of-Toronto household
+    to measure.
+  - **A SECOND VACUOUS ASSERTION, found by review, in the test named for
+    the half with teeth — and it is the same mistake this entry already
+    records catching once.** `test_tonights_own_week_is_still_live...`
+    seeded ONE plan and called `clear_stale_grocery_items(
+    current_weekly_plan_id=None)`. With a single plan on file that
+    function resolves `current_id` through `get_weekly_plan()` to THAT
+    plan, which then lands in `live` and is spared whatever
+    `_live_plan_ids` said — so the delete assertion passed on main too,
+    and only the `_live_plan_ids` line above it was a real catch. The
+    CLAIM was true (the reviewer reproduced the delete in the two-plan
+    shape); the test just did not seed it. It seeds two plans now, which
+    is also the realistic shape — what a household has on the evening
+    they take the nudge to plan next week while this week still has a
+    night in it. **Proved non-vacuous rather than assumed:** with the
+    first assertion neutered so the second is reached, it fails against
+    main with the line genuinely gone.
+  - **The AST sweep was quietly narrower than the guard it is modelled
+    on, and its title is broader than its reach.** It now carries
+    `("time", "time")` like `test_last_clock_pockets.py`'s, and says in
+    its own docstring the two things it does NOT cover: the eight SQL
+    `datetime('now')` reads in this module (all UTC instants compared
+    against UTC instants — correct, and they must not be "fixed"), and a
+    module-qualified `_dt.date.today()` spelling, which walks straight
+    past an Attribute-owner check. That second limitation is INHERITED
+    from the established guard rather than introduced here, and it was
+    measured: reverting both reads that way leaves the sweep green and
+    only the four behaviour tests catch it.
+  - **Numbers, read off the runs.** `TZ=America/Toronto` **6331 passed, 0
+    failed**, and inside a VERIFIED `Pacific/Niue` straddle — Niue
+    2026-09-22 against Toronto 2026-09-23, `date +%F` checked in both zones
+    BEFORE and AFTER the run — **6331 passed, 0 failed**. No existing test
+    was changed, deleted or weakened (`git diff main -- tests/` is this one
+    new file), so +9 is it exactly. All four CI weekday pins at
+    `TZ=America/Toronto`: monday, friday, saturday and sunday each **6328
+    passed, 3 skipped, 0 failed**, against a measured **6319 passed, 3
+    skipped, 0 failed** for `main` at the friday pin — so +9 is this file
+    exactly there too, and `clock (friday)` is green on `main` and on this
+    branch alike.
+  - **THE FIRST FRIDAY READING SAID "4 failed" AND WAS NOT A MEASUREMENT OF
+    THIS BRANCH AT ALL. Recorded rather than quietly replaced, because the
+    mistake is one an overnight run will make again.** That pin was run in
+    the MAIN CHECKOUT while an adversarial reviewer was working in the same
+    directory — and a reviewer's job here includes temporarily restoring
+    `main`'s version of a file to measure what is red against it. So the
+    suite under test was some superposition of two trees. The other three
+    pins in the same batch happened to miss that window and read clean,
+    which is exactly what makes this kind of number so believable and so
+    worthless. Re-run in a tree nobody else was touching, friday reads
+    6328/0 like the other three. **The rule: a test run in a working tree
+    another agent can write to is not evidence. Give every concurrent
+    reader its own worktree, or run the measurement when nothing else is
+    in the tree.**
+
 - **2026-09-22 — `main` was red on five weekdays out of seven, and TWO of the
   four pinned CI jobs — `clock (friday)` and `clock (sunday)` — were red on
   EVERY push. Branch
