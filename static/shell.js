@@ -5807,8 +5807,8 @@
     groAddSheetSync();
   }
   // The parts of the sheet that follow the typing and the chip — which
-  // chip is on, the line under them, the button's label. The field is
-  // never redrawn: it is being typed into.
+  // chip is on, and the button's label. The field is never redrawn: it
+  // is being typed into.
   function groAddSheetSync() {
     var st = groceryState.addSheet;
     var body = groAddSheetBody();
