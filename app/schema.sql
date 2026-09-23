@@ -1479,6 +1479,16 @@ CREATE TABLE IF NOT EXISTS chat_turns (
     -- A turn that called nothing stays '[]', which is itself worth
     -- counting -- it means somebody asked and the app only talked back.
     tools_called_json TEXT NOT NULL DEFAULT '[]',
+    -- WHAT THE PERSON ASKED ABOUT, as one label off a fixed list
+    -- (app/chat_themes.py THEMES): "swap a meal", "app confusion", ...
+    -- Written a moment AFTER the row, by a small Haiku call off the reply's
+    -- path, and only when CHAT_THEMES=1. '' means not classified -- the
+    -- flag was off, or the call failed -- never "other", which is a real
+    -- answer. The label is validated against the list before it is
+    -- written, so the only thing that can land here is one of those
+    -- thirteen strings; the message the label was read from is never
+    -- stored, same rule as the rest of this table.
+    theme TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

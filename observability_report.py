@@ -477,6 +477,7 @@ _CALL_SITE_LABELS = {
     "generate_recipe_detail_llm.repair": "recipe fill-in (measurement repair)",
     "_scan_image_for_items": "photo scan (receipt/fridge/pantry)",
     "generate_chore_recommendations": "chore recommendations",
+    "chat_theme": "chat themes (what chat was about)",
 }
 
 # Emily's target, set 2026-09-03: all-in API cost under this, per
@@ -612,6 +613,63 @@ def _print_chat_tools(chat_tools: dict, turns: int) -> None:
         print(f"      {unreadable} turns could not be read — worth a look")
 
 
+def _theme_phrase(counts: dict) -> str:
+    return ", ".join(f"{n} {theme}" for theme, n in counts.items())
+
+
+def _print_chat_themes(chat_themes: dict, month_cost: dict | None) -> None:
+    """
+    One line saying what chat was ABOUT, from the theme labels (layer 2 of
+    the card _print_chat_tools is layer 1 of), and what labelling it cost.
+
+    Silent when nothing was labelled: with CHAT_THEMES off every row is
+    unlabelled, and a line of zeros would read as a household that asked
+    nothing. Labels come off a fixed list (app/chat_themes.THEMES) and are
+    validated before they are stored, so like the tool names they need no
+    untrusted fence.
+    """
+    counts = chat_themes.get("counts") or {}
+    if not counts:
+        return
+    print(f"  Chat was about — {_theme_phrase(counts)}")
+    site = ((month_cost or {}).get("by_call_site") or {}).get("chat_theme")
+    if site:
+        print(
+            f"      theme calls this month: {_money(site['cost']['total'])} "
+            f"({site['calls']} calls)"
+        )
+
+
+def _print_themes_across(report: list[dict]) -> None:
+    """
+    Month-to-date themes summed across every household, beside what the
+    theme calls cost in total -- the "what do people use chat for" answer
+    for the app rather than for one house. Only this script holds every
+    household at once (see the BROKEN rollup below), and it is holding
+    labels off a fixed list, not anything anybody wrote. Silent when no
+    household has a labelled turn this month.
+    """
+    totals: dict[str, int] = {}
+    cost, calls = 0.0, 0
+    for h in report:
+        if h.get("unreachable"):
+            continue
+        usage = h.get("usage") or {}
+        for theme, n in ((usage.get("chat_themes") or {}).get("month_counts") or {}).items():
+            totals[theme] = totals.get(theme, 0) + int(n)
+        site = ((usage.get("month_to_date_cost") or {}).get("by_call_site") or {}).get("chat_theme")
+        if site:
+            cost += site["cost"]["total"]
+            calls += site["calls"]
+    if not totals:
+        return
+    ordered = dict(sorted(totals.items(), key=lambda kv: (-kv[1], kv[0])))
+    print("\n=== CHAT THEMES, ALL HOUSEHOLDS, MONTH-TO-DATE ===")
+    print(f"  {_theme_phrase(ordered)}")
+    if calls:
+        print(f"  theme calls: {_money(cost)} ({calls} calls)")
+
+
 def _print_human(report: list[dict], days: int, source: str) -> None:
     print(f"(read from {source})")
     for h in report:
@@ -657,6 +715,10 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
             _print_chat_tools(chat_tools, usage["chat_turns"])
 
         month_cost = usage.get("month_to_date_cost")
+        chat_themes = usage.get("chat_themes")
+        if chat_themes:
+            _print_chat_themes(chat_themes, month_cost)
+
         if month_cost:
             total = month_cost["total_cost"]["total"]
             flag = "OVER" if total > _MONTHLY_TARGET_DOLLARS else "under"
@@ -747,6 +809,9 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
         for key, counts in sorted(shared.items(), key=lambda kv: -sum(kv[1]))[:8]:
             _print_shape(key, sum(counts))
             print(f"                 across {len(counts)} households")
+
+    # After the cross-household breakage on purpose: what broke leads.
+    _print_themes_across(report)
 
 
 def main() -> int:

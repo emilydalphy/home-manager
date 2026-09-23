@@ -415,6 +415,49 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-23 — A chat turn records what it was ABOUT: one theme label,
+  never the words. Branch `chat-theme-per-turn`, NOT merged at the time of
+  writing. OFF until Railway has `CHAT_THEMES=1`.** Layer 2 of "Chat: record
+  what people ask for" (layer 1, the tool names, is the entry below); Emily
+  approved it and the thirteen-label list as proposed. `app/chat_themes.py`:
+  one `claude-haiku-4-5-20251001` call per message (`max_tokens` 12, message
+  cut at 600 chars, SDK `max_retries=0`, 8 s timeout), label validated
+  against `THEMES` — anything off the list is `"other"` — and written to the
+  new `chat_turns.theme` (`DEFAULT ''`). `''` means nobody looked (flag off,
+  call failed) and is never counted; `"other"` is a real answer.
+  - **Off the reply's path.** `_finish_chat_turn` (both routes) writes the
+    row, then `label_turn_later` starts a daemon thread in a copied context
+    — the same shape as the chat stream's thread — which classifies and
+    UPDATEs by row id AND household. `record_chat_turn` now returns the id.
+    Flag off → no thread, no call. Any failure → a WARNING with the
+    exception class only, row stays `''`.
+  - **The message is untrusted input.** Fenced in `<message>` tags with any
+    fence tags inside it stripped, instructions in the system prompt, output
+    validated; the label has nowhere to go but the column. Message text is
+    stored nowhere — the layer-1 sweep now also runs over a labelled turn
+    and over `api_calls`.
+  - **Priced as `chat_theme` in `api_calls`** via `_create_with_retry(label=
+    "chat_theme", max_attempts=1)`; the Haiku rate was already in
+    `_RATES_PER_MTOK`. Report: a per-household "Chat was about — 2 swap a
+    meal, 1 app confusion" line plus that month's theme-call cost, and a
+    "CHAT THEMES, ALL HOUSEHOLDS, MONTH-TO-DATE" rollup after the breakage
+    rollup. All silent when nothing is labelled — zeros would read as a
+    household that asked nothing.
+  - **Stubs hid a TypeError on every real call.** The first cut passed
+    `temperature=0`; the installed SDK (anthropic 1.2.0) has no such
+    parameter, so every real call raised, was swallowed as designed, and
+    every stubbed test stayed green. Running the real client (against a
+    bogus key: it now reaches Anthropic and gets a 401) is what found it.
+    A test now checks every argument sent against the real SDK's
+    signature. No working key was available, so a real classification has
+    NOT been verified — the first labelled rows on Railway are that check.
+  - `tests/test_chat_theme_per_turn.py` (43). Fourteen mutations, each
+    bites: flag forced on, call run inline, list check removed, failure
+    stored as "other", fence not stripped, no truncation, recording site
+    unwired, priced under chat's label, report/rollup printing when empty,
+    UPDATE not household-scoped, `''` counted, thread exception escaping,
+    `temperature` re-added.
+
 - **2026-09-22 — "That draft didn't come together" for a draft that did.
   Branch `fix-draft-stream-drop`, NOT merged at the time of writing.** Emily's
   phone, 21:41 ET: the plan-week stream's connection closed 17.6 s in

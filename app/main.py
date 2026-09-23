@@ -34,7 +34,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exception_handlers import http_exception_handler
 
-from . import agent, backup, calendar_feed, feedback_email, households, ratelimit, recipe_import, recipe_photos, security
+from . import agent, backup, calendar_feed, chat_themes, feedback_email, households, ratelimit, recipe_import, recipe_photos, security
 from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
@@ -5723,6 +5723,22 @@ def _whole_week_card(days_touched: list[tuple[str, str]]) -> ChatAction | None:
     )
 
 
+def _turn_user_message(history: list, updated_history: list) -> str | None:
+    """
+    The message this turn answered: the first entry run_agent_turn added,
+    which is always the person's own words as a plain string. Read from the
+    history rather than passed in so both chat routes get it through the
+    one call they already share, with nothing new to remember at either.
+    """
+    try:
+        entry = updated_history[len(history)]
+    except (IndexError, TypeError):
+        return None
+    if isinstance(entry, dict) and entry.get("role") == "user" and isinstance(entry.get("content"), str):
+        return entry["content"]
+    return None
+
+
 def _finish_chat_turn(session_id: str, history: list, reply: str, updated_history: list) -> dict:
     """
     Everything both /api/chat and its streaming twin do once
@@ -5760,7 +5776,11 @@ def _finish_chat_turn(session_id: str, history: list, reply: str, updated_histor
     # Claude had already been paid for and the reply was in hand. The
     # whole point of this line is that it cannot break the turn it
     # records.
-    tools.record_chat_turn(agent.LAST_TURN_USAGE.get({}))
+    turn_id = tools.record_chat_turn(agent.LAST_TURN_USAGE.get({}))
+    # What the message was ABOUT, as one label, when CHAT_THEMES=1 — on its
+    # own thread, so the reply below never waits for it. The message goes
+    # to that call and nowhere else; see app/chat_themes.py.
+    chat_themes.label_turn_later(turn_id, _turn_user_message(history, updated_history))
     return {
         "reply": reply, "actions": actions,
         "proposal": _proposal_from_turn(history, updated_history),
