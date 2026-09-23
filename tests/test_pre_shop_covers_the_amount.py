@@ -6,11 +6,17 @@ bug, reproduced over HTTP 2026-09-14).
 pre_shop.get_pre_shop_flags asked inventory one question — "is this name
 in there with a non-blank quantity?" — and then rendered BOTH amounts in
 the sentence it showed, so the card could read "You want 3 lbs. Fridge
-shows 2 lbs." while holding that line off the shop-from list. The flag is
-not a remark: /api/grocery-list's "needed" view filters flagged ids out,
-so a week shopped normally (every ticked line writes an inventory row)
-sent the whole of the next week's list behind the card and opened the Shop
-tab empty.
+shows 2 lbs." while holding that line off the shop-from list. The flag
+was not a remark: /api/grocery-list's "needed" view FILTERED flagged ids
+out, so a week shopped normally (every ticked line writes an inventory
+row) sent the whole of the next week's list behind the card and opened
+the Shop tab empty.
+
+(That filter is gone since 2026-09-23 — a flagged line stays on the list
+and carries the flag on its own row, see tests/test_shop_flag_on_the_row.py.
+Nothing below asserts the filter; the tests here are all about WHICH
+lines get flagged, which is unchanged and, since the sentence is now read
+in two places rather than one, no less worth getting right.)
 
 It is the same defect the parent branch just fixed one step earlier in
 recipes._add_recipe_ingredients_for_entries, so the answer is the same
@@ -288,10 +294,13 @@ def test_a_line_the_card_cannot_phrase_spends_nothing():
 def test_shopping_one_week_does_not_empty_the_next_weeks_list(signed_in):
     """END TO END, over the real routes: shop a week (every ticked line
     writes an inventory row), eat some of it, approve the same three
-    dinners again. The list has to have something on it. CATCH — red on
-    0633cdd, where /api/grocery-list?status=needed came back with zero
-    sections and all six lines sat behind the card under sentences saying
-    there was not enough."""
+    dinners again. The list has to have something on it, and nothing on it
+    should be flagged. CATCH — red on 0633cdd, where
+    /api/grocery-list?status=needed came back with zero sections and all
+    six lines sat behind the card under sentences saying there was not
+    enough. (Since 2026-09-23 a flag no longer takes a line off that view
+    at all, so the `flags == []` half below is what still carries this —
+    the wrong sentence would now be on every row instead of hiding it.)"""
     import datetime
 
     recipes = [

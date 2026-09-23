@@ -256,21 +256,29 @@ def get_pre_shop_flags() -> list[dict]:
     can't be reduced to one confident phrase, or whose full sentence would
     run past ~60 characters, is left off entirely rather than shown
     garbled (PRE_SHOP_CHECK.md's "if it can't be said in one sentence,
-    don't flag the item"). Also powers the /api/grocery-list and
-    /api/grocery-list/by-store "needed" views' exclusion filter, so a
-    flagged item never appears twice and never silently vanishes from
-    both places at once.
+    don't flag the item"). Also read by main.py's _stamp_pre_shop_flags,
+    which puts the same sentence on the line's own row in the
+    /api/grocery-list and /api/grocery-list/by-store "needed" views — so
+    the flag reaches the household while they are sorting, not only from
+    the banner at the top (Emily, 2026-09-22).
 
-    THAT EXCLUSION IS WHY THE AMOUNT HAS TO BE COMPARED. A flag is not a
-    remark — it takes the line off what the household shops from until
-    somebody taps through the card. Until 2026-09-14 this asked inventory
-    the same question the grocery ingest did, "is this name in there with
-    a non-blank quantity?", and threw the quantity away; the sentence then
-    rendered both amounts, so the card could read "You want 3 lbs. Fridge
-    shows 2 lbs." while holding that line off the list. A week shopped
-    normally writes an inventory row per ticked line, so the week after it
-    the whole list went behind the card and the Shop tab opened empty.
-    Reproduced over HTTP before this was touched.
+    THE AMOUNT HAS TO BE COMPARED, and that was true when a flag was far
+    more dangerous than it is now. Until 2026-09-23 those two views
+    EXCLUDED a flagged id outright, so a flag did not merely annotate a
+    line — it took the line off what the household shops from until
+    somebody tapped through the card. Until 2026-09-14, on top of that,
+    this asked inventory the same question the grocery ingest did, "is
+    this name in there with a non-blank quantity?", and threw the quantity
+    away; the sentence then rendered both amounts, so the card could read
+    "You want 3 lbs. Fridge shows 2 lbs." while holding that line off the
+    list. A week shopped normally writes an inventory row per ticked line,
+    so the week after it the whole list went behind the card and the Shop
+    tab opened empty. Reproduced over HTTP before this was touched.
+
+    The line stays on the list now, so a wrong flag costs a wrong celadon
+    block rather than a missing dinner — but it is still read back to the
+    household in words, from two places, so the comparison below stays
+    exactly as strict.
 
     An amount is now compared, through recipes._KitchenStock — the same
     class the ingest uses, so the two cannot disagree about one kitchen.

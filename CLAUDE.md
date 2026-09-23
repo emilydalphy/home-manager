@@ -554,6 +554,49 @@ why*, not duplicating the diff.
   the week…" ("Still writing out the recipe…" after 8 s), the rest dim,
   and the scrim/handle can't close it mid-write (`dismissSwapSheet`).
   `tests/test_menu_swap_whole_dish.py`.
+- **2026-09-23 — "Maybe already home" rides on the row it is about, and its
+  buttons say what they do. Branch `shop-already-home-on-the-row`, NOT
+  merged at the time of writing.** Loop Board `3e31f4c0-5231-81d8` (High) +
+  `3e31f4c0-5231-818c` (Medium). Emily, 2026-09-22: "this suggestion was
+  good, but it was hidden so much I didn't even notice it when I was
+  sorting my grocery list."
+  - **The card understated it. The banner was not the first place the flag
+    appeared, it was the only place the LINE appeared.** Both `needed`
+    views (`/api/grocery-list`, `/api/grocery-list/by-store`) filtered
+    every flagged id out, so the flagged carrot was off its store card and
+    off "Sort them all" entirely — no row anywhere could have carried the
+    question. Nothing in 6406 tests pinned that filter.
+  - **`_stamp_pre_shop_flags` replaces both filters** (`app/main.py`), the
+    same shape as `_stamp_freezing_offers`: the line stays and gains
+    `pre_shop` (sentence + both labels + location). Appearing in two places
+    is now deliberate, and the two cannot drift — the banner and the stamp
+    are one `get_pre_shop_flags()` read, so a decision from either door
+    clears both on the next load.
+  - **`groFlagHtml` draws it** under the row on a store card and above the
+    chips in "Sort them all" (`static/shell.js`), in the `.gro-freeze`
+    shape: celadon tint, an eyebrow naming the check (§2b S6), the
+    server's sentence, two 36px `.wk-mini` buttons. No apricot; nothing
+    gates the row. `ps-decide` is one case for both doors; a drop on SORT
+    ALL goes through `groAdvanceSort` so the last one still makes the
+    finish.
+  - **The class is `.gro-athome`, not `.gro-flag`** — `.gro-flag` was
+    already the "Already had on hand" card at the foot of LIST, and the
+    first cut collided with it (celadon poured over that card, and
+    `el.closest('.gro-flag')` answered with it). Caught by a test asserting
+    the new block's CSS had no literal hex in it, which is not what it was
+    written to catch.
+  - **The counts move, on purpose.** A flagged line is on the list until
+    somebody removes it, so the band counts it ("21 things" becomes 23 on
+    Emily's screenshot) and a remove takes it back off. This also closes
+    the Now-vs-Shop stop-count drift recorded above.
+  - **Words (Emily, verbatim):** "Buy it anyway" → **"Still need to buy"**,
+    "Drop it" → **"Remove from list"**, foot "Keep all 2" → "Keep all 2 on
+    the list", and the helper line "Dropping one takes it off today's
+    list." cut entirely (her call, 2026-09-23). Both labels are one pair of
+    constants so a future rewrite cannot land in one door and not the
+    other.
+  - 17 tests in `tests/test_shop_flag_on_the_row.py`, 11 red on the parent
+    commit. Suite 6406 → 6423.
 
 - **2026-09-23 — "Put back" after an add the server MERGED deleted the whole
   line, and the amount that was already on it went too. Branch
@@ -611,7 +654,10 @@ why*, not duplicating the diff.
     never in the snapshot; an **EXCLUDED** row ("somewhere else"), which
     the candidate query ignores `excluded_from_list` for while the payload
     filters it out; and a **pre-shop-flagged** row, which
-    `/api/grocery-list/by-store` strips before the shell sees it. All three
+    `/api/grocery-list/by-store` stripped before the shell saw it. *(That
+    third one is gone since 2026-09-23 — the by-store view stamps the flag
+    onto the row instead of removing the row, so a flagged line is in the
+    snapshot like any other. The first two stand.)* All three
     fail SAFE — nothing is destroyed, and main deleted the line in every
     one of them — which is why this is a correction to the prose rather
     than to the code. The comment at the call site says all of it now.
@@ -5650,10 +5696,12 @@ why*, not duplicating the diff.
     the Shop tab's most-used-shop fallback rather than keeping a second copy
     of it. **And the docstring's "quieter than the Shop tab but never louder"
     was FALSE and is corrected**: the pre-shop "maybe already home" filter
-    lives in `main.py`'s grocery routes, not in `list_grocery_list`, so a stop
-    whose only row is flagged is counted here and not there — Now can read "2
-    stops" over a Shop tab showing one. Said plainly rather than promised
-    away (§8).
+    lived in `main.py`'s grocery routes, not in `list_grocery_list`, so a stop
+    whose only row was flagged was counted here and not there — Now could read
+    "2 stops" over a Shop tab showing one. Said plainly rather than promised
+    away (§8). *(Fixed as a side effect on 2026-09-23: there is no filter any
+    more — the flag is stamped onto the row and the row stays on the list, so
+    both sides count the same stops. See that day's entry.)*
   - **Two misses the ledger rule has, named so nobody reports them as new:** an
     ingredient the kitchen check skipped at ingest and the household then
     hand-added, and a freeform or hand-shopped chat-planned meal. Both are the
