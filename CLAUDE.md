@@ -415,6 +415,27 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-23 — The design system stopped teaching the copy Emily
+  corrected. Branch `design-system-plain-copy`, docs only, NOT merged at the
+  time of writing.** `DESIGN_SYSTEM.md` §7 held up the celadon "I'll remember
+  Costco for it" line and the "Changes saved · Put back" pop-up as the
+  reference pattern, and §2b S10 *mandated* those words — both written the
+  day before her 2026-09-22 correction, so they would have re-grown the
+  style on the next screen anyone built. §7 now teaches the shipped
+  replacements (the row landing in its store card is the flag, "<thing> was
+  <verbed>" is the confirmation, the undo is called Undo) and S10 asks the
+  pop-up to name what changed. **The rules themselves did not move** — the
+  visible flag, the undo, the Save-then-pop-up are all still required, and
+  all still Emily's. The code has NOT caught up: `CHANGES_SAVED` /
+  `toastSaved()` still says "Changes saved" at 23 call sites (the sweep's 27
+  predates the add sheet's three landing) and "Put back" is
+  still the undo's word on a run of toasts — findings 1, 2, 3, 17, 23 and 24
+  of `COPY_SWEEP_2026-09-23.md`,
+  recorded as drift in S10 so nobody copies it. Audit of the rest of
+  `DESIGN_SYSTEM.md`, `PRODUCT_FLOWS.md` and this file found no third place
+  teaching the old style; two judgment calls (the Remembered chip's "Not
+  quite", and §8 not yet carrying the 2026-09-22 rule) are Tier 2 and left
+  for Emily.
 - **2026-09-23 — A chat turn records what it was ABOUT: one theme label,
   never the words. Branch `chat-theme-per-turn`, NOT merged at the time of
   writing. OFF until Railway has `CHAT_THEMES=1`.** Layer 2 of "Chat: record
@@ -1791,7 +1812,10 @@ why*, not duplicating the diff.
   `#gro-add-sheet` (`groAddSheetHtml`): the field with the camera in it,
   "Where do you get it?" as one 44px chip per store plus Anywhere,
   pre-picked card-in-view → the typed name's usual → the last add's store,
-  a celadon "I'll remember Costco for cilantro" line, one apricot "Add to
+  a celadon "I'll remember Costco for cilantro" line (**gone since
+  2026-09-23**, branch `shop-add-sheet-plain` — Emily, "it should auto
+  remember anyways"; the add's toast reads "Carrots was added · Undo" now),
+  one apricot "Add to
   Costco"; the store rides on `/api/grocery-list/add` in the same request,
   and with no signal the add queues like a tick (`grocery-offline.js`'s
   `add` op). (2) *Adding or sorting once remembers* — the add sheet, a
@@ -1817,8 +1841,10 @@ why*, not duplicating the diff.
   docstring no longer names the deleted `confirm_grocery_item_store_preference`;
   DESIGN_SYSTEM §2 rule 4 no longer says Shop's root has an add row and no
   dock, and §7 records that a store the household chose is remembered
-  without a confirm step (visible flag + Put back, per its own silent-
-  learning rule).
+  without a confirm step (visible flag + undo, per its own silent-
+  learning rule; §7's words were re-cut on 2026-09-23 — the flag is the row
+  landing in its store card, the toast names the thing, the undo is called
+  Undo).
 - **2026-09-21 — Integration `core-loop-followups-2026-09-21`:** the four
   branches below merged in one (`batch-components-auto` →
   `evening-cook-nudge` → `shop-freezing-it` →

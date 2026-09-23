@@ -136,6 +136,18 @@ def test_the_rule_is_written_down_where_the_others_are():
     # The words S10 quotes are not asserted here on purpose — see this
     # file's docstring. The rule is what this test guards.
     assert "Save (or Done)" in DESIGN
+    # Since 2026-09-23 S10 asks the pop-up to NAME what changed (Emily's
+    # 2026-09-22 correction: "Changes saved" → "Carrots was added",
+    # "Put back" → "Undo"). The rule — a Save, a pop-up, an Undo — is the
+    # same; only the words moved.
+    assert "`<thing> was <verbed>`" in DESIGN
+    assert '"Carrots was added"' in DESIGN
+    # ...and it still records the wording it replaced, so nobody reads
+    # the old line as the pattern. (When the doc half landed the code
+    # half was still on its own branch; both are in now, so this is a
+    # record of what changed rather than a note that it hasn't.)
+    assert '"Changes saved"' in DESIGN
+    assert "COPY_SWEEP_2026-09-23.md" in DESIGN
 
 
 # ---------- What we know ----------
