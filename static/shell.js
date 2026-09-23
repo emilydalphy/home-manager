@@ -4973,6 +4973,10 @@
         'aria-expanded="' + open + '" aria-label="More for ' + escapeHtml(it.item) + '">' +
         GRO_ICONS.dots + '</button>' +
     '</div>' +
+    // "Maybe already home", on the row it is about (groFlagHtml). First
+    // of the row's three possible notes because it is the only one that
+    // is a question about whether to buy the thing at all.
+    groFlagHtml(it) +
     (staple && !bought ? groStapleLineHtml(it) : '') +
     (groceryState.freezing && groceryState.freezing.id === id ? groFreezingHtml(groceryState.freezing) : '') +
     (open ? groRowMenuHtml(it, data) : '');
@@ -5299,6 +5303,10 @@
           '<span class="gro-sortall-name">' + escapeHtml(it.item) + '</span>' +
           (it.quantity ? '<span class="gro-qty">' + escapeHtml(it.quantity) + '</span>' : '') +
         '</div>' +
+        // Above the chips, not below them: the kitchen may already have
+        // this, and that is worth reading BEFORE choosing which shop to
+        // buy it at. It still gates nothing — every chip below is live.
+        groFlagHtml(it) +
         '<div class="gro-pills open gro-sortall-pills">' + chips +
           groHaveItPillHtml(it) + groSubstPillHtml(it) +
         '</div>' +
@@ -5310,8 +5318,12 @@
   // stays exactly as it is (a redraw would be invisible, and a redraw of
   // a row somebody is typing into is not).
   function groSortAllRowSig(it, pillStores) {
+    // The flag's sentence is part of the row's look, so it belongs in the
+    // signature: a "Still need to buy" answered from the row leaves the
+    // line where it is (only a drop takes it off the screen), and without
+    // this the block it was answered in would sit there answered.
     return [it.item, it.quantity || '', groceryState.substOpenId === String(it.id) ? 'subst' : '',
-      pillStores.join('|')].join('||');
+      (it.pre_shop && it.pre_shop.sentence) || '', pillStores.join('|')].join('||');
   }
 
   function groSortAllHtml(data) {
@@ -5847,6 +5859,21 @@
   // The kitchen may already have some of this: a compact celadon banner with
   // a "Check", folded until asked. Same flags, same keep/drop per item, same
   // Keep all, same undo.
+  //
+  // Since 2026-09-22 it is no longer the ONLY place the flag is (Loop
+  // Board 3e31f4c0-5231-81d8) — groFlagHtml puts the same sentence and
+  // the same two buttons on the line's own row, on the store cards and in
+  // "Sort them all". This banner stays for the check-it-all-before-I-
+  // leave pass.
+  //
+  // THE TWO SAY THE SAME WORDS BECAUSE THEY READ THE SAME TWO NAMES.
+  // Emily, 2026-09-22: "The options should be more straight forward like
+  // 'Still need to buy' or 'Remove from list'" — her words, verbatim, and
+  // a copy change that landed in one place and not the other would be
+  // exactly the drift a second set of buttons invites.
+  var GRO_PS_KEEP_LABEL = 'Still need to buy';
+  var GRO_PS_DROP_LABEL = 'Remove from list';
+  var GRO_PS_TITLE = 'Maybe already home';
   function groPreShopHtml() {
     var flags = groceryState.preShopFlags;
     if (!flags.length) return '';
@@ -5858,14 +5885,17 @@
       '<button type="button" class="gro-ps-head" data-gro="ps-toggle" aria-expanded="' + open + '">' +
         GRO_ICONS.basket +
         '<span class="gro-ps-text">' +
-          '<span class="gro-ps-title">Maybe already home</span>' +
+          '<span class="gro-ps-title">' + GRO_PS_TITLE + '</span>' +
           '<span class="gro-ps-sub">' + groPlural(flags.length, 'thing', 'things') + '</span>' +
         '</span>' +
         '<span class="gro-ps-check">' + (open ? 'Hide' : 'Check') + '</span>' +
       '</button>';
     if (open) {
+      // No helper line. It used to read "Dropping one takes it off
+      // today's list." and Emily cut it on 2026-09-23: the buttons say
+      // what they do now, and a line explaining a label is §8's
+      // "explaining what the label already says".
       html += '<div class="gro-ps-body">' +
-        '<p class="gro-ps-helper">Dropping one takes it off today&rsquo;s list.</p>' +
         shown.map(function (f) {
           var title = f.onHandLocation ? ' title="In the ' + escapeHtml(f.onHandLocation) + '"' : '';
           return '<div class="gro-ps-row">' +
@@ -5873,9 +5903,9 @@
             '<p class="gro-ps-sentence"' + title + '>' + escapeHtml(f.sentence) + '</p>' +
             '<div class="gro-ps-actions">' +
               '<button type="button" class="gro-ps-btn gro-ps-btn-keep" data-gro="ps-decide" data-decision="keep" ' +
-                'data-id="' + f.itemId + '" data-name="' + escapeHtml(f.name) + '">Buy it anyway</button>' +
+                'data-id="' + f.itemId + '" data-name="' + escapeHtml(f.name) + '">' + GRO_PS_KEEP_LABEL + '</button>' +
               '<button type="button" class="gro-ps-btn gro-ps-btn-drop" data-gro="ps-decide" data-decision="drop" ' +
-                'data-id="' + f.itemId + '" data-name="' + escapeHtml(f.name) + '">Drop it</button>' +
+                'data-id="' + f.itemId + '" data-name="' + escapeHtml(f.name) + '">' + GRO_PS_DROP_LABEL + '</button>' +
             '</div>' +
           '</div>';
         }).join('') +
@@ -5883,11 +5913,64 @@
           (remaining > 0
             ? '<button type="button" class="gro-ps-more" data-gro="ps-more">+' + remaining + ' more like this</button>'
             : '<span></span>') +
-          '<button type="button" class="gro-ps-keepall" data-gro="ps-keepall">Keep all ' + flags.length + '</button>' +
+          '<button type="button" class="gro-ps-keepall" data-gro="ps-keepall">Keep all ' + flags.length +
+            ' on the list</button>' +
         '</div>' +
       '</div>';
     }
     return html + '</div>';
+  }
+
+  // ---------- The same flag, on the row itself ----------
+  // Emily, 2026-09-22, sorting her list with the banner above folded shut:
+  // "this suggestion was good, but it was hidden so much I didn't even
+  // notice it when I was sorting my grocery list. It's something we need
+  // to bring to the user's attention while they're doing through the
+  // list." So the flag goes where the decision is being made — under the
+  // line on its store card, and under the line's head in "Sort them all".
+  //
+  // The shape is the "Freezing it?" follow-up's (.gro-freeze, 2026-09-21):
+  // a celadon-tint block indented past the tick box, one sentence, two
+  // 36px .wk-mini buttons. A row is a row — this is a note under one, not
+  // a second card, and it carries no apricot (Rule 5; ticking the row is
+  // still the screen's action).
+  //
+  // The class is .gro-athome, NOT .gro-flag — that name was already taken
+  // by the "Already had on hand" card at the foot of LIST
+  // (groNotNeededHtml), and sharing it would have poured this block's
+  // celadon fill over that card and made el.closest('.gro-flag') below
+  // answer with it.
+  //
+  // IT NEVER GATES THE ROW. The tick beside it and the store chips under
+  // it work exactly as they did — the flag rides along, and a line sorted
+  // or ticked with the question unanswered simply keeps the question,
+  // here and in the banner, until somebody answers it.
+  //
+  // Not on a bought row: the answer to "maybe already home" is moot once
+  // it is in the trolley, and the struck row is a receipt, not a question.
+  // The eyebrow is the banner's own title (GRO_PS_TITLE) so the row says
+  // WHY it is tinted (§2b S6) in the words the household already knows
+  // this check by.
+  function groFlagHtml(it) {
+    var f = it && it.pre_shop;
+    if (!f || groIsBought(it)) return '';
+    var id = String(it.id);
+    var name = escapeHtml(it.item);
+    // The shelf, when one shelf is the whole of it — the same hover the
+    // banner's sentence carries, and for the same reason (pre_shop.py's
+    // _pre_shop_on_hand: a total spread over two shelves belongs to
+    // neither, and the server sends null for it).
+    var title = f.onHandLocation ? ' title="In the ' + escapeHtml(f.onHandLocation) + '"' : '';
+    return '<div class="gro-athome" data-athome-for="' + id + '">' +
+      '<p class="gro-eyebrow gro-athome-eyebrow">' + GRO_PS_TITLE + '</p>' +
+      '<p class="gro-athome-text"' + title + '>' + escapeHtml(f.sentence || '') + '</p>' +
+      '<div class="gro-athome-acts">' +
+        '<button type="button" class="wk-mini" data-gro="ps-decide" data-decision="keep" ' +
+          'data-id="' + id + '" data-name="' + name + '">' + GRO_PS_KEEP_LABEL + '</button>' +
+        '<button type="button" class="wk-mini is-ghost" data-gro="ps-decide" data-decision="drop" ' +
+          'data-id="' + id + '" data-name="' + name + '">' + GRO_PS_DROP_LABEL + '</button>' +
+      '</div>' +
+    '</div>';
   }
 
   // Tonight's dinner name, read from whatever the Meals tab has already
@@ -7167,11 +7250,24 @@
         var decision = el.dataset.decision;
         var itemName = el.dataset.name || 'That';
         var psId = id;
-        el.closest('.gro-ps-row').querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+        // ONE case for both doors (2026-09-22): the banner's .gro-ps-row
+        // and the row's own .gro-athome. Same write, same toast, same
+        // undo — the only difference is which block's buttons go quiet
+        // while it is in flight, and a row that is neither (nothing found)
+        // still disables the button that was pressed.
+        var psBlock = el.closest('.gro-ps-row') || el.closest('.gro-athome');
+        if (psBlock) psBlock.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+        else el.disabled = true;
+        // Answered on SORT ALL, the same way "Have it" is: a drop takes
+        // the row off that screen, and the last one has to make the
+        // finish ("All sorted.") rather than dumping the household back
+        // on the list with no way of knowing they got there.
+        var psOnSortScreen = groceryState.step === 'sortall';
         groDo(function () {
           return groPost('/api/grocery-list/' + psId + '/pre-shop', { decision: decision, author: 'user' });
         }, "Couldn't update that — try again.").then(function (ok) {
           if (!ok) return;
+          if (psOnSortScreen && decision === 'drop') groAdvanceSort();
           if (decision === 'keep') {
             showToast(itemName + ' stays on the list');
           } else {

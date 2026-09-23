@@ -4390,6 +4390,51 @@ def _stamp_freezing_offers(items: list[dict]) -> None:
         logger.exception("The freezing offers could not be read; the list is unchanged")
 
 
+def _stamp_pre_shop_flags(items: list[dict]) -> None:
+    """
+    The "maybe already home" check, stamped onto the LINE IT IS ABOUT
+    (Loop Board 3e31f4c0-5231-81d8, Emily 2026-09-22: "this suggestion was
+    good, but it was hidden so much I didn't even notice it when I was
+    sorting my grocery list").
+
+    Until now these two views did the opposite: they FILTERED a flagged
+    line out of 'needed' so it could not "appear twice". The cost of that
+    was bigger than the docstring it was written in admitted — the pinned
+    card was not merely the first place the flag appeared, it was the only
+    place the LINE appeared at all. A flagged carrot was off its store
+    card and off "Sort them all" entirely, so the household sorting its
+    list never met the question at the moment it was deciding about that
+    carrot. The flag rides on the row now, which means the row has to be
+    on the list to carry it.
+
+    Appearing twice is therefore deliberate, and the two readings cannot
+    disagree: the pinned card and this stamp are the same
+    get_pre_shop_flags() call, so a line resolved from either place loses
+    its flag in both on the next read.
+
+    `pre_shop` carries the humanised sentence the card shows and the two
+    labels it is built from, so the row never touches raw pack quantities
+    — see tools.pre_shop.get_pre_shop_flags, which is where that wording
+    is decided. Never fails the list over it, the way the two stamps above
+    don't.
+    """
+    try:
+        flags = {f["itemId"]: f for f in tools.get_pre_shop_flags()}
+    except Exception:
+        logger.exception("The pre-shop flags could not be read; the list is unchanged")
+        return
+    for it in items:
+        flag = flags.get(it.get("id"))
+        if not flag:
+            continue
+        it["pre_shop"] = {
+            "sentence": flag["sentence"],
+            "wantedLabel": flag["wantedLabel"],
+            "onHandLabel": flag["onHandLabel"],
+            "onHandLocation": flag["onHandLocation"],
+        }
+
+
 @app.get("/api/grocery-list")
 def get_grocery_list_view(status: str = "needed"):
     """
@@ -4399,27 +4444,18 @@ def get_grocery_list_view(status: str = "needed"):
     rows ticked off since the list was last built — see
     tools.list_grocery_list).
     For 'needed', items flagged by get_pre_shop_flags (not yet reviewed)
-    are left out here too — they're shown separately in the Grocery
-    screen's pinned "Maybe already home" pre-shop check instead, so
-    nothing appears twice.
+    stay on the list and carry their flag as `pre_shop` — see
+    _stamp_pre_shop_flags for why they used to be filtered out here and
+    why they no longer are.
     """
     try:
         result = tools.get_grocery_list_by_section(status=status)
-        if status == "needed":
-            already_have_ids = {it["itemId"] for it in tools.get_pre_shop_flags()}
-            if already_have_ids:
-                result = {
-                    "sections": [
-                        {"section": s["section"], "items": [it for it in s["items"] if it["id"] not in already_have_ids]}
-                        for s in result["sections"]
-                    ]
-                }
-                result["sections"] = [s for s in result["sections"] if s["items"]]
         result["multi_store"] = tools.is_multi_store_household()
         if status == "needed":
             needed = [it for s in result["sections"] for it in s["items"]]
             result["shop_split"] = _stamp_shop_split(needed)
             _stamp_freezing_offers(needed)
+            _stamp_pre_shop_flags(needed)
     except Exception as e:
         logger.exception("Grocery list lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -4430,28 +4466,18 @@ def get_grocery_list_view(status: str = "needed"):
 def get_grocery_list_by_store_view(status: str = "needed"):
     """
     Grocery list split into store groups (see set_item_store) — powers the
-    Grocery List view's 'By store' toggle. Same pre-shop-flag filtering as
+    Grocery List view's 'By store' toggle. Same pre-shop-flag stamping as
     the main /api/grocery-list endpoint for status='needed', so a flagged
-    item doesn't show here while also sitting in the pre-shop check block.
+    item's own row carries the flag on the Shop tab's store cards and in
+    "Sort them all" — see _stamp_pre_shop_flags.
     """
     try:
         result = tools.get_grocery_list_by_store(status=status)
         if status == "needed":
-            already_have_ids = {it["itemId"] for it in tools.get_pre_shop_flags()}
-            if already_have_ids:
-                stores = []
-                for store in result["stores"]:
-                    sections = [
-                        {"section": s["section"], "items": [it for it in s["items"] if it["id"] not in already_have_ids]}
-                        for s in store["sections"]
-                    ]
-                    sections = [s for s in sections if s["items"]]
-                    if sections:
-                        stores.append({"store": store["store"], "sections": sections})
-                result = {"stores": stores}
             needed = [it for store in result["stores"] for s in store["sections"] for it in s["items"]]
             result["shop_split"] = _stamp_shop_split(needed)
             _stamp_freezing_offers(needed)
+            _stamp_pre_shop_flags(needed)
     except Exception as e:
         logger.exception("Grocery list by-store lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")

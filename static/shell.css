@@ -4669,13 +4669,8 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   cursor: pointer;
 }
 .gro-ps-body { border-top: 1.5px solid var(--celadon-edge); padding: 4px 0 10px; }
-.gro-ps-helper {
-  font-family: var(--font-body);
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--celadon-label);
-  margin: 10px 0 6px;
-}
+/* .gro-ps-helper is gone with its line ("Dropping one takes it off
+   today's list.") — Emily, 2026-09-23. The buttons say it now. */
 .gro-ps-row { border-top: 1.5px solid var(--celadon-edge); padding: 12px 0 10px; }
 .gro-ps-row:first-of-type { border-top: none; }
 .gro-ps-name { font-family: var(--font-body); font-weight: 700; font-size: 16px; color: var(--ink); margin: 0 0 2px; }
@@ -4961,7 +4956,8 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   font-size: 12px;
   color: var(--ink-secondary);
 }
-.gro-line + .gro-trip, .gro-staple-line + .gro-trip, .gro-rowmenu + .gro-trip, .gro-freeze + .gro-trip { border-top: 1.5px solid var(--hairline-strong); margin-top: 6px; }
+.gro-line + .gro-trip, .gro-staple-line + .gro-trip, .gro-rowmenu + .gro-trip, .gro-freeze + .gro-trip,
+.gro-athome + .gro-trip { border-top: 1.5px solid var(--hairline-strong); margin-top: 6px; }
 
 /* ---------- Item row ---------- */
 .gro-row {
@@ -9208,6 +9204,43 @@ span.cook-week-name { cursor: default; }
 .gro-freeze-acts { display: flex; flex-wrap: wrap; gap: 8px; }
 .gro-freeze .wk-mini.is-ghost { background: var(--sand); border-color: transparent; }
 @media (hover: hover) { .gro-freeze .wk-mini.is-ghost:hover { background: var(--sand-deep); } }
+
+/* ---------- "Maybe already home", on the row ----------
+   (Loop Board 3e31f4c0-5231-81d8, Emily 2026-09-22 — the banner at the
+   top was the only place the flag lived, and she scrolled past it.) The
+   same block as "Freezing it?" above, for the same reason: it is a note
+   under a row, not a second card. The eyebrow names the check (§2b S6 —
+   cover the tint and the word still tells you), the sentence is the
+   server's own (tools/pre_shop.py), and the two 36px .wk-mini buttons are
+   the banner's two buttons in its quieter weights. No apricot: ticking
+   the row is still the screen's action (Rule 5). Named .gro-athome
+   because .gro-flag is already the "Already had on hand" card at the foot
+   of LIST — a name collision here would have tinted that card celadon. */
+.gro-athome {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 2px 0 8px 34px;
+  padding: 10px 12px;
+  background: var(--celadon-tint);
+  border: 1.5px solid var(--celadon-edge);
+  border-radius: var(--radius-control);
+}
+.gro-athome-eyebrow { color: var(--celadon-label); }
+.gro-athome-text {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--celadon-label);
+}
+.gro-athome-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.gro-athome .wk-mini.is-ghost { background: var(--sand); border-color: transparent; }
+@media (hover: hover) { .gro-athome .wk-mini.is-ghost:hover { background: var(--sand-deep); } }
+/* On "Sort them all" there is no tick box to clear, so the block sits
+   flush with the name above it and the chips below. */
+.gro-sortall-row .gro-athome { margin: 0 0 8px; }
 
 /* The row menu's foot: "Make it a staple" beside Remove, both quiet. */
 .gro-rowmenu-foot { display: flex; align-items: center; gap: 18px; }
