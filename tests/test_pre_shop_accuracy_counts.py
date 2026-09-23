@@ -227,6 +227,27 @@ def test_the_freezer_step_setting_a_line_aside_is_not_a_pre_shop_drop():
     assert counts["flagged"] == 1, "the card still asked; nobody answered"
 
 
+def test_clearing_the_flag_on_an_already_dropped_line_does_not_overwrite_the_drop():
+    """
+    Found by the build verifier, 2026-09-23. mark_grocery_item_already_
+    have_reviewed clears a flag; it does not put anything back on the
+    list. The chat tool and the old "Already have this?" confirm can both
+    call it on a line that is already dropped — and filing that line as
+    "the household kept it" would be a wrong answer inside the one number
+    this ledger exists to produce. Only undo_pre_shop_drop takes a drop
+    back, and it records 'undone'.
+    """
+    item_id = _flagged_line("Butter")
+    tools.drop_grocery_item_pre_shop(item_id, author="user")
+
+    tools.mark_grocery_item_already_have_reviewed(item_id)
+
+    assert _ledger(item_id)["decision"] == "dropped", "the line is still off the list"
+    counts = _counts()
+    assert counts["dropped"] == 1
+    assert counts["kept"] == 0
+
+
 def test_undoing_a_freezer_set_aside_is_not_a_put_back():
     """The other half of the same rule — nothing was dropped to take back."""
     item_id = _flagged_line("Butter")
@@ -295,17 +316,23 @@ def test_the_counts_are_scoped_to_the_household():
     item_id = _flagged_line("Butter")
     tools.drop_grocery_item_pre_shop(item_id, author="user")
 
+    # try/finally, not two bare statements: run against a build without
+    # this table the second INSERT raises, and a leaked open connection
+    # then costs every later test SQLite's busy timeout on every table the
+    # clean_state fixture wipes — minutes of stall instead of one red test.
     conn = get_conn()
-    conn.execute(
-        "INSERT INTO households (id, name) VALUES (2, 'Someone else') "
-        "ON CONFLICT(id) DO NOTHING"
-    )
-    conn.execute(
-        "INSERT INTO pre_shop_decisions (household_id, grocery_item_id, decision, decided_at) "
-        "VALUES (2, 9999, 'dropped', datetime('now'))"
-    )
-    conn.commit()
-    conn.close()
+    try:
+        conn.execute(
+            "INSERT INTO households (id, name) VALUES (2, 'Someone else') "
+            "ON CONFLICT(id) DO NOTHING"
+        )
+        conn.execute(
+            "INSERT INTO pre_shop_decisions (household_id, grocery_item_id, decision, decided_at) "
+            "VALUES (2, 9999, 'dropped', datetime('now'))"
+        )
+        conn.commit()
+    finally:
+        conn.close()
 
     assert _counts()["dropped"] == 1, "the other household's decision is not ours"
 

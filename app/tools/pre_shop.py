@@ -610,7 +610,21 @@ def mark_grocery_item_already_have_reviewed(item_id: int) -> dict:
         "UPDATE grocery_items SET already_have_reviewed = 1 WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     )
-    _record_decision(conn, item_id, KEPT)
+    # ...but only when the line is actually still on the list. This clears
+    # a flag; it does not put anything back. Called on a line that is
+    # already dropped — which the chat tool and the old "Already have
+    # this?" confirm can both do, since neither looks at status — it would
+    # otherwise overwrite that line's 'dropped' with 'kept' and file a
+    # line still sitting off the shopping list as the household having
+    # disagreed with the check. That is a wrong answer inside the one
+    # number this whole ledger exists to produce. undo_pre_shop_drop is
+    # the only thing that takes a drop back, and it records 'undone'.
+    still_on_the_list = conn.execute(
+        "SELECT 1 FROM grocery_items WHERE id = ? AND household_id = ? AND status != 'removed'",
+        (item_id, household_id()),
+    ).fetchone()
+    if still_on_the_list:
+        _record_decision(conn, item_id, KEPT)
     conn.commit()
     conn.close()
     return {"item_id": item_id, "already_have_reviewed": True}
