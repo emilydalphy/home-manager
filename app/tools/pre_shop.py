@@ -4,6 +4,7 @@ and the wording used to ask about it.
 """
 from __future__ import annotations
 
+import logging
 import math
 from datetime import date, datetime, time, timedelta, timezone
 from ..db import get_conn
@@ -14,6 +15,101 @@ from . import grocery as _grocery
 from . import inventory as _inventory
 from . import quantities as _quantities
 from . import recipes as _recipes
+
+logger = logging.getLogger("home_manager")
+
+
+# ---------- was the check right? the accuracy ledger ----------
+#
+# Emily, 2026-09-22: "track the number of times people say they actually
+# want to keep it on vs they do have it ... so that we can measure the
+# accuracy." Until this, only the DROP was countable — it writes status,
+# removed_by and removed_at. A keep set already_have_reviewed = 1 and
+# nothing else: no timestamp, so keeps could not be counted over a window,
+# and no record that a flag had ever been RAISED, so a card nobody
+# answered looked exactly like one that was never shown. A rate with no
+# denominator is not a rate.
+#
+# See schema.sql on pre_shop_decisions for the shape and why it is a table
+# rather than columns on the grocery line.
+
+KEPT, KEPT_ALL, DROPPED, UNDONE = "kept", "kept_all", "dropped", "undone"
+
+
+def _record_flags_raised(item_ids: list[int]) -> None:
+    """
+    Remember that the card ASKED about these lines — once per line, ever.
+
+    WHAT "FLAGGED" HONESTLY MEANS, because it is the denominator and a
+    denominator that drifts makes the whole number a lie: one grocery line
+    that the "Maybe already home" card held off the shopping list, counted
+    the FIRST time it was held. get_pre_shop_flags is computed on read and
+    runs on every Shop-tab load and on every /api/grocery-list read that
+    has to exclude the flagged rows, so counting a raise per read would
+    count one question a dozen times and flatter the accuracy rate by as
+    much. INSERT OR IGNORE against the UNIQUE (household, line) is what
+    makes the re-reads free.
+
+    It also means "flagged" counts questions ASKED, not questions ANSWERED
+    — which is the point: a line raised and never answered is a card the
+    household walked past, and it should be visible as the gap between
+    flagged and the three answers rather than disappear.
+
+    Never raises. This is bookkeeping wrapped around a real read; a locked
+    database must cost a statistic, not the shopping list. (Same rule
+    usage.record_chat_turn follows, for the same reason.)
+    """
+    if not item_ids:
+        return
+    conn = None
+    try:
+        conn = get_conn()
+        conn.executemany(
+            "INSERT OR IGNORE INTO pre_shop_decisions (household_id, grocery_item_id) VALUES (?, ?)",
+            [(household_id(), int(i)) for i in item_ids],
+        )
+        conn.commit()
+    except Exception:
+        logger.exception("Recording pre-shop flags raised failed")
+    finally:
+        if conn is not None:
+            conn.close()
+
+
+def _record_decision(conn, item_id: int, decision: str, *, only_when: str | None = None) -> None:
+    """
+    Record which way one raised flag went. Takes the caller's OPEN
+    connection and does not commit: the decision and the thing it decided
+    have to land together or not at all, and a nested get_conn inside an
+    open one is how this repo has twice earned an intermittent "database
+    is locked".
+
+    ONLY EVER UPDATES A ROW THAT IS ALREADY THERE, which is the whole
+    honesty of the count. Both write paths this hangs off are shared with
+    flows that are not the pre-shop card at all: the Shop tab's "Wait, I
+    already have this" on any list row posts the same drop, and
+    mark_grocery_item_already_have_reviewed is also a chat tool and the
+    older "Already have this?" section's confirm button. A decision on a
+    line the card never raised is not an answer to a question it never
+    asked, and counting it would mean kept + dropped could exceed flagged.
+
+    `only_when` narrows it further to a line currently in one state —
+    used by the undo, so that cancelling the freezer step's set-aside
+    (defrost.py calls the same drop and the same undo) is not filed as the
+    household catching a wrong flag.
+    """
+    try:
+        sql = (
+            "UPDATE pre_shop_decisions SET decision = ?, decided_at = datetime('now') "
+            "WHERE household_id = ? AND grocery_item_id = ?"
+        )
+        params: list = [decision, household_id(), int(item_id)]
+        if only_when is not None:
+            sql += " AND decision = ?"
+            params.append(only_when)
+        conn.execute(sql, params)
+    except Exception:
+        logger.exception("Recording a pre-shop decision failed")
 
 
 def _kitchen_stock() -> "_recipes._KitchenStock":
@@ -247,6 +343,10 @@ def get_pre_shop_flags() -> list[dict]:
             "onHandLocation": (match.get("location") or None) if on_hand_rows <= 1 else None,
             "sentence": sentence,
         })
+    # Every line above is one the card is about to hold off the shopping
+    # list, which is the honest moment to count the question as asked —
+    # see _record_flags_raised for why it is stamped once and not per read.
+    _record_flags_raised([f["itemId"] for f in flags])
     return flags
 
 
@@ -275,11 +375,21 @@ def drop_grocery_item_pre_shop(item_id: int, author: str = "") -> dict:
     if _staple_row is not None and _staple_row["staple_id"]:
         from . import staples as _staples
         _staples.note_line_removed(conn, _staple_row, how="plenty")
-    conn.execute(
+    who = acting_name(author) or ""
+    changed = conn.execute(
         "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
         "WHERE id = ? AND household_id = ? AND status != 'removed'",
-        (acting_name(author) or "", item_id, household_id()),
-    )
+        (who, item_id, household_id()),
+    ).rowcount
+    # Counted only when this call actually dropped something (the function
+    # is idempotent, and a second tap is not a second decision) and only
+    # when a person made it: the freezer step calls this route too
+    # (defrost.py, author=FREEZER_REMOVED_BY) to set a line aside because
+    # it is in the freezer, which is a different question with a different
+    # right answer and must not land in the accuracy count. A line the
+    # card never raised is ignored inside _record_decision.
+    if changed and who != _defrost.FREEZER_REMOVED_BY:
+        _record_decision(conn, item_id, DROPPED)
     conn.commit()
     conn.close()
     return {"item_id": item_id, "status": "removed"}
@@ -332,6 +442,13 @@ def undo_pre_shop_drop(item_id: int) -> dict:
         "removed_at = NULL, already_have_inventory_id = NULL WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     )
+    # A drop the household took back is a flag that was WRONG, and the one
+    # kind of wrong this app can actually observe — so it is counted, in
+    # its own bucket rather than left inside 'dropped'. `only_when` keeps
+    # it to a line this card actually dropped: this same function is the
+    # undo for the freezer set-aside and for a Review-screen "Have it",
+    # neither of which recorded a drop to take back.
+    _record_decision(conn, item_id, UNDONE, only_when=DROPPED)
     conn.commit()
     conn.close()
     if row and row["already_have_inventory_id"]:
@@ -452,7 +569,15 @@ def get_already_have_decisions() -> list[dict]:
 
 
 def keep_all_pre_shop_flags() -> dict:
-    """'Keep all {n}' — resolves every currently flagged pre-shop item as keep, in one write."""
+    """
+    'Keep all {n}' — resolves every currently flagged pre-shop item as keep, in one write.
+
+    Recorded as 'kept_all' rather than 'kept': one tap that dismisses five
+    cards is not five people disagreeing with five flags, and the accuracy
+    number reads differently if the two are told apart. The report adds
+    them together; the column keeps the difference for whenever that
+    question gets asked.
+    """
     flags = get_pre_shop_flags()
     conn = get_conn()
     for f in flags:
@@ -460,6 +585,7 @@ def keep_all_pre_shop_flags() -> dict:
             "UPDATE grocery_items SET already_have_reviewed = 1 WHERE id = ? AND household_id = ?",
             (f["itemId"], household_id()),
         )
+        _record_decision(conn, f["itemId"], KEPT_ALL)
     conn.commit()
     conn.close()
     return {"resolved_count": len(flags)}
@@ -471,6 +597,12 @@ def mark_grocery_item_already_have_reviewed(item_id: int) -> dict:
     needed despite the inventory match (e.g. running low) — moves it back
     into the normal To-buy list and stops it from being flagged again for
     this same listing. Does not touch quantity/status; only clears the flag.
+
+    Also the pre-shop card's "Buy it anyway" (POST /api/grocery-list/{id}
+    /pre-shop with decision 'keep'), which is why the keep is counted here
+    — and why it is counted only for a line the card actually raised, since
+    this same function is a chat tool and the older "Already have this?"
+    section's confirm button. See _record_decision.
     """
     conn = get_conn()
     require_household_row(conn, "grocery_items", item_id, label="grocery list item")
@@ -478,6 +610,21 @@ def mark_grocery_item_already_have_reviewed(item_id: int) -> dict:
         "UPDATE grocery_items SET already_have_reviewed = 1 WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     )
+    # ...but only when the line is actually still on the list. This clears
+    # a flag; it does not put anything back. Called on a line that is
+    # already dropped — which the chat tool and the old "Already have
+    # this?" confirm can both do, since neither looks at status — it would
+    # otherwise overwrite that line's 'dropped' with 'kept' and file a
+    # line still sitting off the shopping list as the household having
+    # disagreed with the check. That is a wrong answer inside the one
+    # number this whole ledger exists to produce. undo_pre_shop_drop is
+    # the only thing that takes a drop back, and it records 'undone'.
+    still_on_the_list = conn.execute(
+        "SELECT 1 FROM grocery_items WHERE id = ? AND household_id = ? AND status != 'removed'",
+        (item_id, household_id()),
+    ).fetchone()
+    if still_on_the_list:
+        _record_decision(conn, item_id, KEPT)
     conn.commit()
     conn.close()
     return {"item_id": item_id, "already_have_reviewed": True}

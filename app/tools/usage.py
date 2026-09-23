@@ -527,6 +527,80 @@ def _chat_theme_counts(conn, hid: int, since_sql: str) -> dict[str, int]:
     return dict(sorted(((r["theme"], r["n"]) for r in rows), key=lambda kv: (-kv[1], kv[0])))
 
 
+def _pre_shop_counts(conn, hid: int, since: str) -> dict:
+    """
+    Was the "Maybe already home" check RIGHT? (Emily, 2026-09-22.)
+
+    The pre-shop check takes a line off the list the household actually
+    shops from. Wrong, it costs them an ingredient at dinner — so the rate
+    has to be measurable, and the only honest way to measure it is with
+    the denominator beside the answers.
+
+    FOUR COUNTS, over the same rolling window as everything else in this
+    summary:
+
+      flagged  — grocery lines the card HELD OFF THE LIST, counted at the
+                 first time each was held, never per read (see
+                 pre_shop._record_flags_raised: the flags are computed on
+                 every list load, so a per-read count would be a dozen
+                 times the truth). Questions asked, not answered: the gap
+                 between this and the other three is cards nobody replied
+                 to, which is a thing worth seeing rather than a thing to
+                 hide.
+      kept     — "Buy it anyway" and "Keep all N" together. The household
+                 saying the check was wrong.
+      dropped  — "Drop it", and still dropped. The check was right.
+      undone   — dropped, then put back. The check was wrong and they
+                 caught it. Its own bucket, NOT also inside `dropped`, so
+                 the three answers partition the answered flags and
+                 nothing has to be subtracted from anything.
+
+    Each count is LINES, one row per line (schema.sql on
+    pre_shop_decisions), so the answers can never exceed the flags.
+
+    Both sides of every comparison are UTC instants — flagged_at and
+    decided_at are datetime('now'), the boundary is datetime('now', '-N
+    days') — so this is an instant against an instant and introduces no
+    household-day arithmetic. The household's own clock matters where a
+    DAY is the unit (pre_shop._household_day_start_utc, which turns a
+    household date into the instant it began); it does not apply to a
+    rolling window that never names a date.
+
+    A line first flagged before the window and answered inside it counts
+    as an answer with no flag, so the four numbers can fail to add up over
+    a short window. Left as it is deliberately: re-stamping the flag at
+    decision time would count one question twice, and moving the window
+    for one of the four would make it a different window from the rest of
+    the report.
+    """
+    # SUM(CASE ...) rather than COUNT(*) FILTER: the FILTER clause wants
+    # SQLite 3.30+, this box has 3.53 and the deployment's base image is
+    # somebody else's decision. Nothing else in app/ uses FILTER either.
+    row = conn.execute(
+        "SELECT "
+        f"  SUM(CASE WHEN flagged_at >= datetime('now', '{since}') THEN 1 ELSE 0 END) AS flagged, "
+        "  SUM(CASE WHEN decision IN ('kept', 'kept_all') "
+        f"       AND decided_at >= datetime('now', '{since}') THEN 1 ELSE 0 END) AS kept, "
+        "  SUM(CASE WHEN decision = 'dropped' "
+        f"       AND decided_at >= datetime('now', '{since}') THEN 1 ELSE 0 END) AS dropped, "
+        "  SUM(CASE WHEN decision = 'undone' "
+        f"       AND decided_at >= datetime('now', '{since}') THEN 1 ELSE 0 END) AS undone "
+        "FROM pre_shop_decisions WHERE household_id = ?",
+        (hid,),
+    ).fetchone()
+    # SUM over no rows is NULL, not 0 — a household that has never seen
+    # the card must report zeros, not nulls the printer would render as
+    # "None flagged".
+    if row is None or row["flagged"] is None:
+        return {"flagged": 0, "kept": 0, "dropped": 0, "undone": 0}
+    return {
+        "flagged": row["flagged"],
+        "kept": row["kept"],
+        "dropped": row["dropped"],
+        "undone": row["undone"],
+    }
+
+
 def _summarize(conn, hid: int, days: int, since: str) -> dict:
     def _count(sql: str) -> int:
         return conn.execute(sql, (hid,)).fetchone()[0]
@@ -594,6 +668,10 @@ def _summarize(conn, hid: int, days: int, since: str) -> dict:
         "grocery_items_currently_purchased": _count(
             "SELECT COUNT(*) FROM grocery_items WHERE household_id = ? AND status = 'purchased'"
         ),
+        # Was the "Maybe already home" check right? A real rate over the
+        # same window as everything above -- see _pre_shop_counts for what
+        # each of the four honestly counts.
+        "pre_shop": _pre_shop_counts(conn, hid, since),
     }
     # Tokens are what happened; this is what they cost. Derived here so the
     # figure always reflects today's rate table rather than whatever was

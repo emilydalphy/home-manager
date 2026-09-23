@@ -52,6 +52,10 @@ _TABLES = [
     # before both.
     "slot_attendance", "slot_needs", "away_stretches", "household_rhythm",
     "meal_plan_grocery_links", "prep_tasks", "meal_plan_entries", "weekly_plans", "week_intake",
+    # pre_shop_decisions deliberately outlives the grocery line it is
+    # about (schema.sql), so nothing cascades it away — it is wiped here
+    # by name like every other table.
+    "pre_shop_decisions",
     "grocery_substitutions", "grocery_items", "inventory_items", "member_recipe_feedback", "recipe_notes", "recipe_photos", "recipes",
     "chore_instances", "chores", "chores_profile", "attention_items",
     "member_notes", "member_share_links", "share_links", "facts",
