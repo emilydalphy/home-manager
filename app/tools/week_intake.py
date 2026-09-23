@@ -13,6 +13,7 @@ from ._shared import acting_name, household_id
 from . import rhythm as _rhythm
 from . import weekly_plan as _weekly_plan
 from . import holidays as _holidays
+from .time_caps import RUSH_MAX_MINUTES, WEEKDAY_LUNCH_MAX_MINUTES  # noqa: F401
 
 
 # The answers to the two question screens, as a first-class object rather
@@ -31,8 +32,9 @@ NIGHT_TAGS = {
     # list. The only deliberately empty slot in a week.
     "out": "plan nothing and buy nothing for this night.",
     # Not a vague "busy" flag: a hard cap on cook time AND a trigger for
-    # cook-once-eat-twice.
-    "rush": "keep it under 20 minutes, or make the night before stretch to cover it.",
+    # cook-once-eat-twice. Dinner only, 30 minutes including prep (Emily,
+    # 2026-09-23) — RUSH_MAX_MINUTES, see time_caps.
+    "rush": f"dinner in {RUSH_MAX_MINUTES} minutes or less, prep included, or make the night before stretch to cover it.",
     # Opens the guest follow-up. Scales recipe AND shopping quantities.
     "guests": "scale the recipe and the shopping to the bigger table.",
     # No new dinner; the previous night's batch is increased instead.
@@ -86,10 +88,14 @@ SKIPPED_DAY_REASON = "Not planned — you left this day out."
 SKIPPED_DAY_CONSTRAINT = "skipped_day"
 
 
-# The hard cap a `rush` night imposes, in minutes. Named rather than inlined
-# because the acknowledgement copy, the generator prompt and the draft
-# screen's per-slot reasons all have to agree on the same number.
-RUSH_MAX_MINUTES = 20
+# The hard cap a `rush` night imposes, in minutes, and the weekday
+# fresh-lunch cap beside it. Named rather than inlined because the
+# acknowledgement copy, the generator prompt and the draft screen's
+# per-slot reasons all have to agree on the same number. Both are written
+# in time_caps (it imports nothing from the app, so weekly_plan can read
+# them at import time without a cycle through this module) and are
+# re-exported here, at the top, where every caller has always found
+# RUSH_MAX_MINUTES.
 
 
 def _week_dates(week_start: str) -> list[str]:
@@ -501,7 +507,7 @@ def save_week_intake(
         # leave the generator with no way to tell which the household meant.
         if "normal" in tags and len(tags) > 1:
             raise ValueError("'normal' is exclusive — a regular night can't also carry another tag.")
-        # `rush` caps the night at RUSH_MAX_MINUTES; `unrushed` lifts the
+        # `rush` caps the dinner at RUSH_MAX_MINUTES; `unrushed` lifts the
         # cap. Holding both would make the generator pick which promise to
         # break, and the household was shown both.
         if "rush" in tags and "unrushed" in tags:

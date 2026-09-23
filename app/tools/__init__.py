@@ -602,6 +602,7 @@ from .usage import (  # noqa: F401
     record_plan_quality,
     touch_household_active,
 )
+from .time_caps import minutes_cap, caps_for_slot  # noqa: F401
 from .week_intake import (  # noqa: F401
     MOOD_GUIDANCE,
     SURPRISE_MOOD,
@@ -613,6 +614,7 @@ from .week_intake import (  # noqa: F401
     add_household_cuisine,
     cuisine_suggestions,
     RUSH_MAX_MINUTES,
+    WEEKDAY_LUNCH_MAX_MINUTES,
     _build_preferences_snapshot,
     _current_intake_row,
     _household_composition,

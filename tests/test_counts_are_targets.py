@@ -378,14 +378,15 @@ def test_a_folded_repeat_never_lands_a_long_dish_on_a_rush_night(stub_model, pic
 
 
 def test_a_rush_night_no_kept_dish_fits_is_left_as_generated():
-    caps = {"2026-10-05": 20}
+    rush = tools.RUSH_MAX_MINUTES  # 30 since Emily, 2026-09-23
+    caps = {"2026-10-05": rush}
     braise = {"name": "Braise", "nights": [{"date": "2026-10-01", "id": 1}], "protected": False, "chained": False,
               "food_groups": None, "minutes": 120}
     assert meal_variety._spread_pick([braise], "2026-10-05", caps["2026-10-05"]) is None
     quick = dict(braise, name="Quick", minutes=15, nights=[{"date": "2026-10-02", "id": 2}])
-    assert meal_variety._spread_pick([braise, quick], "2026-10-05", 20) is quick
+    assert meal_variety._spread_pick([braise, quick], "2026-10-05", rush) is quick
     unknown = dict(braise, name="Unknown", minutes=None, nights=[{"date": "2026-10-03", "id": 3}])
-    assert meal_variety._spread_pick([braise, unknown], "2026-10-05", 20) is unknown, "unknown minutes can't be judged"
+    assert meal_variety._spread_pick([braise, unknown], "2026-10-05", rush) is unknown, "unknown minutes can't be judged"
 
 
 @pytest.mark.parametrize("text,stands_down", [

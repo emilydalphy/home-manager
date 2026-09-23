@@ -9,7 +9,8 @@ module today -- that is a known gap, not coverage.
 
 The generation prompt (see generate_weekly_plan_llm's instructions in
 agent.py) tells the model a long list of rules -- a `rush` night is capped
-at RUSH_MAX_MINUTES, a weeknight cap when the household has set one, don't
+at RUSH_MAX_MINUTES, a weeknight cap when the household has set one, a
+weekday lunch cooked that day at WEEKDAY_LUNCH_MAX_MINUTES, don't
 run the same main_protein three nights straight, don't repeat a dinner
 already eaten inside the variety window (meal_variety.VARIETY_WINDOW_WEEKS),
 write a real reason instead of
@@ -68,6 +69,7 @@ row already scoped to one plan):
         "cook_time_minutes": 20 | None,
         "is_new_recipe": False,
         "links_to": "2026-09-02:dinner" | None,
+        "make_double_for": ["2026-09-03:lunch"] | None,  # a batch cook's later meals
         "ingredients": [{"item": "Bell peppers", "category": "produce"}, ...],
         "instructions": ["Preheat the oven to 400F...", ...],
         "default_servings": 4 | None,     # what the ingredient amounts are written for
@@ -77,10 +79,11 @@ context shape (what check_week expects -- distinct from the larger
 generation context check_and_log is handed; see check_and_log for how one
 becomes the other):
     {
-        "rush_max_minutes": 20,
+        "rush_max_minutes": 30,
         "rush_dates": {"2026-09-10"},      # dates tagged `rush` this week
         "unrushed_dates": {"2026-09-12"},  # dates tagged `unrushed`: no weeknight cap
         "weeknight_max_minutes": 30 | None | 0,
+        "prep_days": [{"weekday": "sunday"}],  # rhythm.prep_days: no lunch cap that day
         "recent_history": [
             {"date": ..., "slot": ..., "meal": ..., "cuisine": ...,
              "main_protein": ..., "rating": ...},
@@ -108,6 +111,7 @@ from . import recipes as _recipes
 from . import usage as _usage
 from ._shared import household_id
 from .week_intake import RUSH_MAX_MINUTES
+from . import time_caps as _time_caps
 from .meal_variety import variety_window_words as _variety_window_words
 
 logger = logging.getLogger("home_manager")
@@ -251,19 +255,26 @@ def _is_planned(entry: dict) -> bool:
 def _rush_cap_respected(entries: list[dict], context: dict) -> list[Violation]:
     rush_dates = context.get("rush_dates") or set()
     rush_max = context.get("rush_max_minutes", RUSH_MAX_MINUTES)
+    weeknight_cap = context.get("weeknight_max_minutes") or 0
     violations = []
     for entry in entries:
         if entry.get("slot") != "dinner" or not _is_planned(entry):
             continue
         if entry["date"] not in rush_dates:
             continue
+        # A lower weeknight cap stays the cap on a rush weeknight (Emily,
+        # 2026-09-23 — the tag only tightens), and the weeknight rule
+        # below skips rush nights, so this is the one place it's held.
+        cap = rush_max
+        if weeknight_cap and _weekday_name(entry["date"]) in _WEEKDAYS:
+            cap = min(rush_max, weeknight_cap)
         total = _minutes(entry)
-        if total is not None and total > rush_max:
+        if total is not None and total > cap:
             violations.append(Violation(
                 rule="rush_cap_respected", severity="warn",
                 date=entry["date"], slot="dinner",
                 message=(
-                    f"{entry['date']} was tagged `rush` (capped at {rush_max} minutes) but "
+                    f"{entry['date']} was tagged `rush` (capped at {cap} minutes) but "
                     f"'{entry['meal_name']}' comes to {total} minutes of prep+cook."
                 ),
             ))
@@ -294,6 +305,40 @@ def _weeknight_cap_respected(entries: list[dict], context: dict) -> list[Violati
                 message=(
                     f"{entry['date']} is a weeknight (household cap {cap} minutes) but "
                     f"'{entry['meal_name']}' comes to {total} minutes of prep+cook."
+                ),
+            ))
+    return violations
+
+
+def _weekday_lunch_cap_respected(entries: list[dict], context: dict) -> list[Violation]:
+    """
+    Every Monday-Friday lunch cooked that day is WEEKDAY_LUNCH_MAX_MINUTES
+    or less (Emily, 2026-09-23). A lunch that reheats an earlier cook, the
+    batch cook other meals reheat, and a lunch on a prep day have no cap —
+    time_caps.minutes_cap decides, the same rule the generator and the
+    swap sheet use. Warn only, like the dinner caps above.
+    """
+    memory = {"rhythm": {"prep_days": context.get("prep_days") or []}}
+    fed = {e.get("links_to") for e in entries if e.get("links_to")}
+    violations = []
+    for entry in entries:
+        if entry.get("slot") != "lunch" or not _is_planned(entry):
+            continue
+        chained = bool(
+            entry.get("links_to") or entry.get("make_double_for")
+            or f"{entry['date']}:lunch" in fed
+        )
+        cap = _time_caps.minutes_cap(entry["date"], "lunch", [], memory, is_leftovers=chained)
+        if not cap:
+            continue
+        total = _minutes(entry)
+        if total is not None and total > cap:
+            violations.append(Violation(
+                rule="weekday_lunch_cap_respected", severity="warn",
+                date=entry["date"], slot="lunch",
+                message=(
+                    f"{entry['date']} is a weekday lunch cooked that day (capped at {cap} minutes) "
+                    f"but '{entry['meal_name']}' comes to {total} minutes of prep+cook."
                 ),
             ))
     return violations
@@ -1694,6 +1739,7 @@ def check_week(plan_entries: list[dict], context: dict) -> list[Violation]:
     violations: list[Violation] = []
     violations += _rush_cap_respected(plan_entries, context)
     violations += _weeknight_cap_respected(plan_entries, context)
+    violations += _weekday_lunch_cap_respected(plan_entries, context)
     violations += _no_protein_run(plan_entries, context)
     violations += _dinner_repeat_in_history(plan_entries, context)
     violations += _reasoning_is_specific(plan_entries, context)
@@ -1779,6 +1825,7 @@ def _load_plan_entries(plan_id: int) -> list[dict]:
             # doesn't count either way.
             "is_new_recipe": r["times_cooked"] == 0 if r["times_cooked"] is not None else False,
             "links_to": derived_from.get("links_to"),
+            "make_double_for": derived_from.get("make_double_for"),
             # A freeform meal has no recipe row and therefore no ingredient
             # list — no data, which _ingredient_repeat treats as nothing to
             # count rather than as a clean week.
@@ -2140,6 +2187,7 @@ def check_and_log(plan_id: int, generation_context: dict) -> list[Violation]:
             "rush_dates": {d for d, tags in night_tags.items() if "rush" in tags},
             "unrushed_dates": {d for d, tags in night_tags.items() if "unrushed" in tags},
             "weeknight_max_minutes": memory.get("weeknight_max_minutes"),
+            "prep_days": (memory.get("rhythm") or {}).get("prep_days") or [],
             "recent_history": generation_context.get("recent_history") or [],
             # What the household said they wanted, in their own words, so
             # _ingredient_repeat can let a requested ingredient off. Their

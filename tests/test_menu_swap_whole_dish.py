@@ -48,12 +48,16 @@ _needs_node = pytest.mark.skipif(shutil.which("node") is None, reason="node runs
 
 
 def _pick(name=NEW, protein="Chicken thighs"):
+    # 20 minutes: a weekday lunch cooked that day is 20 minutes or less
+    # (Emily, 2026-09-23), and most of this file swaps lunches that are
+    # separate cooks, on whatever days the suite runs. The cap tests below
+    # use _long() on dinners.
     return {
         "meal_name": name, "reason": "Lighter, and nothing to thaw.",
         "ingredients": [{"item": protein, "qty": "1 lb", "category": "meat/seafood"},
                         {"item": "Lemons", "qty": "2", "category": "produce"}],
         "instructions": ["Roast it."], "food_groups": ["protein", "vegetable", "carb"],
-        "main_protein": protein, "prep_time_minutes": 10, "cook_time_minutes": 25, "default_servings": 2,
+        "main_protein": protein, "prep_time_minutes": 10, "cook_time_minutes": 10, "default_servings": 2,
     }
 
 
@@ -77,10 +81,11 @@ def home():
 
 def _separate_cooks(plan_id, slot="lunch"):
     """Shrimp at lunch yesterday (gone by), tomorrow and the day after —
-    three separate cooks — and Chili for dinner tomorrow."""
+    three separate cooks — and Chili for dinner tomorrow. With
+    slot="dinner" the two swap places: Shrimp for dinner, Chili at lunch."""
     for day in (PAST, D1, D2):
         tools.plan_meal(day, SHRIMP, slot=slot, weekly_plan_id=plan_id, reasoning="you like it")
-    tools.plan_meal(D1, "Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.plan_meal(D1, "Chili", slot="lunch" if slot == "dinner" else "dinner", weekly_plan_id=plan_id)
 
 
 def _cook_and_reheat(plan_id):
@@ -214,15 +219,19 @@ def _quick(name="Ten-Minute Wraps"):
     return dict(_pick(name), prep_time_minutes=5, cook_time_minutes=10)
 
 
+def _long(name=NEW):
+    return dict(_pick(name), prep_time_minutes=10, cook_time_minutes=25)
+
+
 def _rush():
     return importlib.import_module("app.tools.week_intake").RUSH_MAX_MINUTES
 
 
 def test_a_rush_friday_holds_the_picks_to_the_rush_cap(home):
-    _separate_cooks(home)
+    _separate_cooks(home, slot="dinner")
     tools.save_week_intake(START, night_tags={D1: ["unrushed"], D2: ["rush"]})
-    ask = _recording_asker(_quick(), _pick())
-    opened = tools.swap_options(home, _id(home, D1, "lunch"), asker=ask, whole_dish=True)
+    ask = _recording_asker(_quick(), _long())
+    opened = tools.swap_options(home, _id(home, D1, "dinner"), asker=ask, whole_dish=True)
     context = ask.contexts[0]
     assert context["max_minutes"] == _rush(), "the lowest cap of the days — an unrushed day doesn't lift a rush one"
     assert context["night_tags"] == ["rush"], "'no cap tonight' is only said when it's true of every day"
@@ -231,26 +240,26 @@ def test_a_rush_friday_holds_the_picks_to_the_rush_cap(home):
 
 
 def test_a_one_day_swap_on_the_unrushed_day_keeps_its_own_cap(home):
-    _separate_cooks(home)
+    _separate_cooks(home, slot="dinner")
     tools.save_week_intake(START, night_tags={D1: ["unrushed"], D2: ["rush"]})
-    ask = _recording_asker(_pick())
-    tools.swap_options(home, _id(home, D1, "lunch"), asker=ask)
+    ask = _recording_asker(_long())
+    tools.swap_options(home, _id(home, D1, "dinner"), asker=ask)
     assert ask.contexts[0]["max_minutes"] is None and ask.contexts[0]["night_tags"] == ["unrushed"]
 
 
 def test_the_weeknight_limit_counts_as_a_cap(home):
-    _separate_cooks(home)
+    _separate_cooks(home, slot="dinner")
     tools.edit_preference("weeknight_max_minutes", 30)
-    ask = _recording_asker(_pick())
-    tools.swap_options(home, _id(home, D1, "lunch"), asker=ask, whole_dish=True)
+    ask = _recording_asker(_long())
+    tools.swap_options(home, _id(home, D1, "dinner"), asker=ask, whole_dish=True)
     on_a_weeknight = any(datetime.date.fromisoformat(d).weekday() < 5 for d in (D1, D2))
     assert ask.contexts[0]["max_minutes"] == (30 if on_a_weeknight else None)
 
 
 def test_a_pick_over_fridays_cap_is_refused_and_nothing_is_written(home):
-    _separate_cooks(home)
-    entry_id = _id(home, D1, "lunch")
-    tools.swap_options(home, entry_id, asker=_asker(_pick()), whole_dish=True)
+    _separate_cooks(home, slot="dinner")
+    entry_id = _id(home, D1, "dinner")
+    tools.swap_options(home, entry_id, asker=_asker(_long()), whole_dish=True)
     # The second day became a rush night after the sheet opened: the
     # 35-minute pick is still on offer, and the tap holds every day to its
     # own cap.
@@ -259,31 +268,31 @@ def test_a_pick_over_fridays_cap_is_refused_and_nothing_is_written(home):
     weekday = datetime.date.fromisoformat(D2).strftime("%A")
     assert out["status"] == "refused"
     assert out["message"] == f"I left it as it was — {NEW} takes 35 minutes, and {weekday} only has {_rush()}."
-    assert _meals(home, "lunch") == {PAST: SHRIMP, D1: SHRIMP, D2: SHRIMP}
+    assert _meals(home, "dinner") == {PAST: SHRIMP, D1: SHRIMP, D2: SHRIMP}
     assert NEW not in {r["name"] for r in tools.list_recipes()}, "no recipe saved either"
 
 
 def test_a_written_out_recipe_that_runs_long_is_refused_too(home):
-    _separate_cooks(home)
+    _separate_cooks(home, slot="dinner")
     tools.save_week_intake(START, night_tags={D2: ["rush"]})
     trimmed = {"meal_name": "Quick Noodles", "reason": "Fast.", "ingredients": ["Noodles"], "minutes": 15}
-    entry_id = _id(home, D1, "lunch")
+    entry_id = _id(home, D1, "dinner")
     opened = tools.swap_options(home, entry_id, asker=_asker(trimmed), whole_dish=True)
     assert [o["meal"] for o in opened["options"]] == ["Quick Noodles"]
-    long = dict(_pick("Quick Noodles"), prep_time_minutes=15, cook_time_minutes=30)
+    long = dict(_long("Quick Noodles"), prep_time_minutes=15, cook_time_minutes=30)
     out = tools.choose_swap_option(home, entry_id, 0, whole_dish=True, writer=lambda ctx, pick: long)
     assert out["status"] == "refused" and "takes 45 minutes" in out["message"]
-    assert _meals(home, "lunch") == {PAST: SHRIMP, D1: SHRIMP, D2: SHRIMP}
+    assert _meals(home, "dinner") == {PAST: SHRIMP, D1: SHRIMP, D2: SHRIMP}
 
 
 def test_apply_pick_to_days_refuses_a_day_over_its_cap_as_the_backstop(home):
-    _separate_cooks(home)
+    _separate_cooks(home, slot="dinner")
     tools.save_week_intake(START, night_tags={D2: ["rush"]})
     swap_in_place = importlib.import_module("app.tools.swap_in_place")
-    days = swap_in_place.dish_days(home, _id(home, D1, "lunch"))
+    days = swap_in_place.dish_days(home, _id(home, D1, "dinner"))
     with pytest.raises(ValueError, match="only has"):
-        swap_in_place.apply_pick_to_days(home, days, _pick())
-    assert _meals(home, "lunch") == {PAST: SHRIMP, D1: SHRIMP, D2: SHRIMP}
+        swap_in_place.apply_pick_to_days(home, days, _long())
+    assert _meals(home, "dinner") == {PAST: SHRIMP, D1: SHRIMP, D2: SHRIMP}
 
 
 def test_the_picks_are_asked_for_everyone_at_any_of_the_tables(home):
