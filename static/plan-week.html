@@ -38,8 +38,9 @@
 
     Five steps: Which days? · Any days that are different? · Any lunches
     on the go? · What are you in the mood for? · Anything else you want
-    to share for planning this week? Under step 1 the days are tiles you
-    tap OFF (board D1, 2026-09-21); under step 2, the day sheet is a row
+    to share for planning this week? Under step 1 one strip of days where
+    you tap the first day, then the last (Emily, 2026-09-22 — it replaced
+    the tap-OFF tiles of board D1); under step 2, the day sheet is a row
     per person (board B1b, second pass 2026-09-21) and the holiday card
     and the away range picker are the 2026-09-11 build; under step 3 the
     "Nothing on the go" pill (board D2); under step 4, "+ Add one" at the
@@ -191,24 +192,25 @@
   .surprise.on .surprise-tick { display: block; }
   .surprise.on .surprise-star { display: none; }
 
-  /* ---------- Starting when? (board A3) ---------- */
-  /* The range in words, then the days as tiles, then the one fact. */
+  /* ---------- Which days? (Emily, 2026-09-22) ---------- */
+  /* The range in words and its count, then the one strip of days. */
   .range-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
   .range-words { font-family: var(--font-body); font-size: 16px; font-weight: 600; color: var(--ink); margin: 0; }
   .range-count { font-size: 13px; font-weight: 500; color: var(--ink-secondary); white-space: nowrap; text-align: right; }
-  .range-hint { font-size: 13px; font-weight: 500; color: var(--ink-secondary); margin: 0; }
-  .range-hint[hidden] { display: none; }
   .stripe {
     display: flex; gap: 6px; margin: 10px 0 0;
     overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
     padding: 2px;   /* room for today's outline */
   }
   .stripe::-webkit-scrollbar { display: none; }
-  /* The range card's seven toggles at 390px: every tile is a button, so
-     none may be under 44px wide (hard rule 6) — 7 × 44 + 6 × 4 = 332px
-     needs more than the card's padding leaves, so the strip runs out to
-     5px from the card's edge and the tiles sit 4px apart. */
+  /* The range card's strip: today through the 28-day ceiling, one
+     scrolling row (Emily, 2026-09-22). Every tile is a button, so none
+     is under 44px wide (hard rule 6) and none shrinks to share the
+     width — twenty-eight squeezed into a card would be 8px each. The
+     strip runs out to 5px from the card's edge and the tiles sit 4px
+     apart, as the seven toggles it replaced did. */
   #range-strip { gap: 4px; margin-left: -9px; margin-right: -9px; }
+  #range-strip .dt { flex: 0 0 auto; min-width: 46px; }
   /* One day. Seven share the width; more than seven scroll sideways
      (the strip on Plan's root does the same). A tile that is a BUTTON is
      at least 44px wide (hard rule 6); the range card's tiles only show
@@ -224,23 +226,24 @@
   button.dt:hover { border-color: var(--ink-strong); }
   .dt .dt-dow { font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-muted); }
   .dt .dt-num { font-family: var(--font-display); font-weight: 700; font-size: 16px; line-height: 1.05; }
-  .dt.on { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); }
-  .dt.on .dt-dow { color: var(--apricot-light); }
-  .dt.in { background: var(--sand); border-color: var(--sand-deep); }
-  /* A day tapped off "Which days?" (board D1): dashed and faded, still a
-     button — tapping again brings it back. */
-  .dt.off { opacity: .45; border-style: dashed; background: var(--surface); }
-  .dt.off:hover { opacity: .7; }
+  /* "Which days?" (Emily, 2026-09-22): the first and last day are
+     celadon — settled, chosen — and the days between the lighter
+     celadon tint, like any calendar's range. Spruce ink on the celadon
+     fill (hard rule 1); the words above the strip say what the colour
+     means ("Wed 23 → Wed 30 · 8 days", S6). */
+  .dt.on { background: var(--celadon); border-color: var(--celadon); color: var(--on-accent-ink); }
+  .dt.on .dt-dow { color: var(--on-accent-ink); }
+  .dt.in { background: var(--celadon-tint); border-color: var(--celadon-edge); color: var(--ink-on-celadon); }
+  .dt.in .dt-dow { color: var(--celadon-label); }
   /* Today, said with a colour AND a word (S6): the outline here, TODAY in
      the tile's eyebrow. */
   .dt.today { outline: 2px solid var(--apricot); outline-offset: -2px; }
   .dt.today .dt-dow { color: var(--apricot-label); }
-  .dt.on.today .dt-dow { color: var(--apricot-light); }
+  .dt.on.today .dt-dow { color: var(--on-accent-ink); }
   /* A day with something said about it (step 2): sand with the apricot
      edge, and the note itself is the line under the strip. */
   .dt.noted { background: var(--sand); border-color: var(--apricot); }
   .dt.past { opacity: .62; }
-  .stripe.picking .dt { min-width: 48px; flex: 0 0 auto; }
   .day-notes { display: flex; flex-direction: column; gap: 4px; margin: 0; }
   .day-notes:empty { display: none; }
   .day-note { font-size: 13px; font-weight: 500; color: var(--ink-secondary); margin: 0; }
@@ -665,33 +668,42 @@
   <p class="eyebrow" id="eyebrow"></p>
   <div class="progress" id="progress"><span class="bar" id="bar-1"></span><span class="bar" id="bar-2"></span><span class="bar" id="bar-3"></span><span class="bar" id="bar-4"></span><span class="bar" id="bar-5"></span></div>
 
-  <!-- ---------- 1 of 5 · Which days? (boards A3 → D1) ----------
-       Today, never yesterday (Emily, 2026-09-20: "It's Sunday, but the
-       days are showing from yesterday"). Three chips — today, tomorrow,
-       or a date of your own — and a card that shows the range they make,
-       in words and as tiles. From today or tomorrow the range is the
-       household's whole horizon (loadHorizon) — never five days assumed
-       (Emily, 2026-09-21) — and every tile is a toggle: tap a day to drop
-       it, tap again to bring it back (toggleDay). Dropped days are saved
-       with the intake as skipped_days and planned for nothing. The period
-       every later step asks about is whatever this one settles on
-       (choosePeriod); the steps after this one show only the days kept.
+  <!-- ---------- 1 of 5 · Which days? (boards A3 → D1 → Emily, 2026-09-22) ----------
+       One strip of days, like any calendar: it opens with Pomona's
+       suggested range already chosen — the range the door into this page
+       named (startPlanningWeek in shell.js: the household's own period,
+       from suggest_planning_period / next_period_after), started no
+       earlier than today (clampStart) — so most weeks are one tap on
+       Continue. To change it: tap the first day, then the last, and the
+       days between fill in (rangeAfterTap has the rules). The strip runs
+       from today to the 28-day ceiling and scrolls sideways.
+       Why it changed (Emily, 2026-09-22, planning Wed 23 → Wed 30 from
+       her phone and unable to): "this view is still not intuitive. it's
+       confusing what to click… we need to fix this flow". Tapping a day
+       DROPPED it — the opposite of every calendar; the strip showed only
+       the period's seven days, so Wed 30 wasn't there to tap; and the
+       Today / Tomorrow / Pick a date chips were a second control on top
+       of the strip, with the range picker behind "Pick a date" that she
+       never found. All three are gone: no chips, no second picker, and
+       no dropping a day here. A day nobody is home for is said on the
+       next step, in the day sheet (everyone out for every meal reads
+       "Nobody home — I'll plan nothing and buy nothing."). The server's
+       skipped_days is untouched, so intakes saved with dropped days
+       still read; this step simply sends none (droppedList).
        The card used to end on "Yesterday's already eaten — I won't plan
        or shop for it"; the line went on 2026-09-21 (Emily's call) — the
        strip starting on TODAY already says it, and the rule itself
        (clampStart) is untouched. -->
   <section id="q1">
     <h1>Which days?</h1>
-    <p class="step-sub" id="start-sub">Tap where to start, then the days you want me to plan.</p>
+    <p class="step-sub" id="start-sub">Tap the first day, then the last.</p>
     <div class="step-body">
-      <div class="chip-row" id="start-chips"></div>
       <div class="card" id="range-card">
         <div class="range-head">
           <p class="range-words" id="range-words"></p>
           <span class="range-count" id="range-count"></span>
         </div>
-        <p class="range-hint" id="range-hint" hidden></p>
-        <div class="stripe" id="range-strip"></div>
+        <div class="stripe" id="range-strip" role="group" aria-label="Days to plan"></div>
       </div>
     </div>
   </section>
@@ -955,9 +967,11 @@
     if (!raw || raw < 1) return 7;
     return Math.min(raw, 28);
   })();
-  // The household's horizon — what "Today" and "Tomorrow" count forward by:
-  // seven days, or three for a household planning as it goes. The SERVER's
-  // number (suggest_planning_period, read in loadHorizon), never the URL's.
+  // The household's horizon — how many days a period runs when the page
+  // arrives naming none: seven, or three for a household planning as it
+  // goes. The SERVER's number (suggest_planning_period, read in
+  // loadHorizon), never the URL's. (Until 2026-09-22 it was also what the
+  // "Today" and "Tomorrow" chips counted forward by; the chips are gone.)
   // It used to be the URL's day count, so the door that opened this page
   // decided what a day meant here: a "Plan next week ›" cut short to one
   // day by a draft beginning the next morning made "Today · Mon 21" read
@@ -1041,17 +1055,18 @@
   // saved beside a steering mood: tapping a chip drops it, tapping the
   // card drops the chips.
   var SURPRISE_MOOD = 'Surprise me';
-  // What the start chips are called, and the picker's own hints
-  // (PERIOD_PICKER_COPY in shell.js, same words).
-  var START_COPY = {
-    today: 'Today', tomorrow: 'Tomorrow', pick: 'Pick a date',
-    hintBoth: 'Tap the first day, then the last', hintEnd: 'Tap the last day',
-    drop: 'tap a day to drop it'
-  };
-  // How far past today the picker's strip runs, and the ceiling on a
-  // range — shell.js's PERIOD_STRIP_DAYS / PERIOD_MAX_DAYS, kept in step
-  // because ?days is clamped to 28 above.
-  var PERIOD_STRIP_DAYS = 21;
+  // "Which days?"'s one live word: where the count sits while a first
+  // day is tapped and the last isn't yet (PERIOD_PICKER_COPY.hintEnd in
+  // shell.js, same words). The Today / Tomorrow / Pick a date chips and
+  // "tap a day to drop it" went with the chips (Emily, 2026-09-22).
+  var RANGE_COPY = { lastDay: 'Tap the last day' };
+  // How far past today the strip runs, and the ceiling on a range —
+  // shell.js's PERIOD_STRIP_DAYS / PERIOD_MAX_DAYS, kept in step because
+  // ?days is clamped to 28 above. The strip reaches the whole ceiling
+  // (Emily, 2026-09-22): at 21 days a range could be longer than the
+  // strip it is picked on, and at seven — the period's own days, which is
+  // all this step showed before — next Wednesday wasn't there to tap.
+  var PERIOD_STRIP_DAYS = 28;
   var PERIOD_MAX_DAYS = 28;
   // How long a draft usually takes, for the status line's own clock
   // (draftDayLine): generation is a ~37-second call (see the "Make chat
@@ -1104,25 +1119,7 @@
     return startMonth + ' ' + start.getDate() + '–' + end.toLocaleDateString('en-US', { month: 'short' }) + ' ' + end.getDate();
   }
 
-  // ---------- Starting when? ----------
-  // The three answers, from today and the household's horizon. `chosen`
-  // says which chip is on: the range the page arrived with, when it is
-  // today's or tomorrow's; otherwise "Pick my own days", showing it.
-  function startOptions(today, count, currentStart, currentDays) {
-    var tomorrow = addDaysIso(today, 1);
-    var chosen = 'pick';
-    if (currentStart === today && currentDays === count) chosen = 'today';
-    else if (currentStart === tomorrow && currentDays === count) chosen = 'tomorrow';
-    return {
-      chosen: chosen,
-      options: [
-        { key: 'today', label: START_COPY.today + ' · ' + dayLabel(today), start: today, days: count },
-        { key: 'tomorrow', label: START_COPY.tomorrow + ' · ' + dayLabel(tomorrow), start: tomorrow, days: count },
-        { key: 'pick', label: START_COPY.pick, start: currentStart, days: currentDays }
-      ]
-    };
-  }
-
+  // ---------- Which days? ----------
   // A start before today becomes today; the length stays. Every door
   // into this page passes through here (the Re-plan pill hands over the
   // draft's own start, which on a Sunday was yesterday).
@@ -1130,81 +1127,71 @@
     return (!start || start < today) ? today : start;
   }
 
-  // The picker, while "Pick my own days" is on: `end` is '' exactly while
-  // a range is half-chosen (shell.js's wirePeriodPicker, same rules).
-  var picking = false;
-  var pick = { start: '', end: '' };
-  // Whether a day has been tapped since the strip opened: until then the
-  // strip shows its first days (today is the first tappable one), and
-  // only a tap scrolls it to what was tapped.
-  var pickTapped = false;
-  // The days tapped OFF the range (board D1): { iso: true }. The screen's
-  // own state rather than part of `answers`, because it exists before the
-  // period's prefill has landed — and once it has, a saved set is only
-  // taken over a set nobody has touched yet (droppedTouched).
-  var dropped = {};
-  var droppedTouched = false;
-  function droppedList() { return Object.keys(dropped).sort(); }
-  // The period's days as ISO dates, in order.
-  function periodDays() {
+  // The range on the strip. `end` is '' exactly while a range is
+  // half-chosen — a first day tapped, the last not yet — which is also
+  // the whole of Continue's disabled condition on this step. It opens
+  // whole: the period the page arrived with (load → openRange).
+  var range = { start: '', end: '' };
+  function openRange() {
+    range = { start: weekStart, end: addDaysIso(weekStart, Math.max(1, dayCount) - 1) };
+  }
+
+  // What one tap on the strip does to the range (Emily, 2026-09-22: "tap
+  // the first day, then the last day; everything between fills in"). The
+  // rules — the least surprising ones, and the same as the custom-range
+  // picker on the Plan tab (wirePeriodPicker in shell.js):
+  //   - A whole range is showing (as it is when the screen opens): the
+  //     tap starts a new one. That day is the first day; the last is
+  //     still to come. So a third tap starts over.
+  //   - Half a range, and a day on or after the first: that is the last
+  //     day. The first day itself is a real one-day range ("just
+  //     tomorrow"), not a mis-tap to swallow.
+  //   - Half a range, and a day BEFORE the first: nobody means a range
+  //     that runs backwards — they meant to start earlier. That day
+  //     becomes the first, and the last is still to come.
+  //   - Never longer than `maxDays` (PERIOD_MAX_DAYS): a last day past
+  //     the ceiling is the ceiling. The strip ends there anyway.
+  // Pure — no screen, no state — so it can be run on its own.
+  function rangeAfterTap(current, day, maxDays) {
+    if (!current || !current.start || current.end) return { start: day, end: '' };
+    if (day < current.start) return { start: day, end: '' };
+    var cap = addDaysIso(current.start, Math.max(1, maxDays) - 1);
+    return { start: current.start, end: day <= cap ? day : cap };
+  }
+
+  // The strip's days: today through the ceiling — and, for a period that
+  // arrived running past that (a week planned three weeks out), through
+  // its last day, so the range the screen opens with is all on it.
+  function rangeStripDays(today, rangeEnd) {
+    var stop = addDaysIso(today, PERIOD_STRIP_DAYS - 1);
+    if (rangeEnd && rangeEnd > stop) stop = rangeEnd;
     var out = [];
-    for (var i = 0; i < Math.max(1, dayCount); i++) out.push(addDaysIso(weekStart, i));
+    for (var d = today; d <= stop; d = addDaysIso(d, 1)) out.push(d);
     return out;
   }
-  // The days being planned: the period minus the dropped ones. Never
-  // empty — toggleDay refuses to drop the last one.
-  function keptDays() {
-    return periodDays().filter(function (d) { return !dropped[d]; });
-  }
-  // A tile tapped: off if on, on if off. At least one day stays.
-  function toggleDay(day) {
-    if (dropped[day]) delete dropped[day];
-    else if (keptDays().length > 1) dropped[day] = true;
-    else return;
-    droppedTouched = true;
-    renderRangeCard();
-  }
-  // A dropped day is one of the period's; a new range starts clean.
-  function keepDroppedInRange() {
-    var days = periodDays();
-    Object.keys(dropped).forEach(function (d) { if (days.indexOf(d) === -1) delete dropped[d]; });
-  }
 
-  function renderStartChips() {
-    var opts = startOptions(todayIso(), horizon, weekStart, dayCount);
-    // While the strip is open, that chip is the one on — even if the
-    // range it opened on happens to be today's.
-    var chosen = picking ? 'pick' : opts.chosen;
-    $('start-chips').innerHTML = opts.options.map(function (o) {
-      return '<button type="button" class="chip' + (o.key === chosen ? ' on' : '') + '" data-start-key="' + o.key + '">' + esc(o.label) + '</button>';
-    }).join('');
-    $('start-chips').querySelectorAll('.chip').forEach(function (chip) {
-      chip.addEventListener('click', function () { chooseStartKey(chip.dataset.startKey, opts); });
-    });
-  }
+  // The days dropped from the period. None, ever, since 2026-09-22:
+  // this step no longer drops days (Emily chose a calendar's range over
+  // tap-to-drop), and a day nobody is home for is said in step 2's day
+  // sheet. Kept as a function rather than deleted because the intake
+  // still carries skipped_days — saveStep(1), leavePayload and
+  // answersSnapshot all send this — and sending an empty list is what
+  // clears a set saved by the old screen: the range on the strip is
+  // exactly the days that get planned.
+  function droppedList() { return []; }
 
-  function chooseStartKey(key, opts) {
-    var opt = opts.options.filter(function (o) { return o.key === key; })[0];
-    if (!opt) return;
-    if (key === 'pick') {
-      // Opens on the range already showing — today's week, or whatever
-      // the page arrived with — rather than on nothing at all.
-      picking = true;
-      pickTapped = false;
-      pick = { start: weekStart, end: addDaysIso(weekStart, Math.max(1, dayCount) - 1) };
-    } else {
-      picking = false;
-      choosePeriod(opt.start, opt.days);
-      // Where to start is a fresh answer: the days come back with it.
-      dropped = {};
-    }
-    renderStartChips();
-    renderRangeCard();
+  // A tile tapped. A finished range becomes the period at once
+  // (choosePeriod), so Continue, the address and the prefill all follow
+  // it; half a range changes nothing yet.
+  function tapRangeDay(day) {
+    range = rangeAfterTap(range, day, PERIOD_MAX_DAYS);
+    if (range.end) choosePeriod(range.start, daysBetween(range.start, range.end) + 1);
+    paintRange();
   }
 
   // The one place the period changes. Nothing is fetched here: the steps
   // that need the period's prefill load it when this step is left
-  // (ensureLoaded), so retapping chips costs nothing.
+  // (ensureLoaded), so retapping days costs nothing.
   function choosePeriod(start, count) {
     weekStart = start;
     dayCount = Math.max(1, Math.min(count, PERIOD_MAX_DAYS));
@@ -1217,99 +1204,55 @@
     } catch (e) { /* the page still works without the address changing */ }
   }
 
-  function pickDay(day) {
-    pickTapped = true;
-    if (!pick.end) {
-      // A range is half-chosen. A day on or after the start closes it —
-      // including the start itself, a legitimate one-day range. A day
-      // BEFORE the start isn't an end; it's somebody restarting.
-      if (day < pick.start) {
-        pick.start = day;
-      } else {
-        var cap = addDaysIso(pick.start, PERIOD_MAX_DAYS - 1);
-        pick.end = day <= cap ? day : cap;
-      }
-    } else {
-      pick = { start: day, end: '' };
-    }
-    if (pick.end) {
-      choosePeriod(pick.start, daysBetween(pick.start, pick.end) + 1);
-      // The range is chosen: the card shows it as the days to keep or
-      // drop (board D1). "Pick a date" again reopens the strip on it.
-      picking = false;
-      dropped = {};
-      renderStartChips();
-    }
-    renderRangeCard();
-  }
-
-  // The card under the chips: the range in words, the tiles, the count.
-  // While picking, the tiles are the strip to tap — today forward, three
-  // weeks — and the words follow the taps. Otherwise every tile is a
-  // toggle (board D1): on = filled, dropped = dashed and faded, and the
-  // words and the count follow the days kept — "Mon 21 → Fri 25 · 5 days".
+  // The strip, built once per visit to the step: the tiles never change,
+  // only which are chosen (paintRange), so a tap never rebuilds the row
+  // under the thumb or loses its scroll. Opens scrolled so the range's
+  // first day is in view — today, most weeks, which is the strip's start.
   function renderRangeCard() {
     var today = todayIso();
     var strip = $('range-strip');
-    var hint = $('range-hint');
-    var first, last, tiles, count;
-    if (picking) {
-      first = pick.start; last = pick.end || pick.start;
-      hint.hidden = false;
-      hint.textContent = pick.end ? START_COPY.hintBoth : START_COPY.hintEnd;
-      var stop = addDaysIso(today, PERIOD_STRIP_DAYS - 1);
-      tiles = [];
-      for (var d = today; d <= stop; d = addDaysIso(d, 1)) tiles.push(d);
-      count = daysBetween(first, last) + 1;
-    } else {
-      keepDroppedInRange();
-      tiles = periodDays();
-      var kept = keptDays();
-      first = kept[0]; last = kept[kept.length - 1];
-      hint.hidden = true;
-      count = kept.length;
-    }
-    // One day left reads "Fri 25 · 1 day", with no arrow to itself and
-    // no hint — nothing more can be dropped.
-    $('range-words').textContent = pick.end || !picking
-      ? (first === last ? dayLabel(first) : dayLabel(first) + ' → ' + dayLabel(last))
-      : dayLabel(first) + ' → …';
-    $('range-count').textContent = count + (count === 1 ? ' day' : ' days') + (picking || count === 1 ? '' : ' · ' + START_COPY.drop);
-    strip.classList.toggle('picking', picking);
-    strip.innerHTML = tiles.map(function (d) {
-      var cls = 'dt';
-      var pressed = '';
-      if (picking) {
-        if (d === pick.start || d === pick.end) cls += ' on';
-        else if (d > pick.start && d <= last) cls += ' in';
-      } else {
-        cls += dropped[d] ? ' off' : ' on';
-        pressed = ' aria-pressed="' + (dropped[d] ? 'false' : 'true') + '"';
-      }
-      if (d === today) cls += ' today';
+    strip.innerHTML = rangeStripDays(today, range.end || range.start).map(function (d) {
       var dow = d === today ? 'Today' : weekdayName(d, 'short');
-      return '<button type="button" class="' + cls + '" data-day="' + d + '"' + pressed + '>' +
+      return '<button type="button" class="dt' + (d === today ? ' today' : '') + '" data-day="' + d + '" aria-pressed="false">' +
         '<span class="dt-dow">' + esc(dow) + '</span><span class="dt-num">' + new Date(d + 'T00:00:00').getDate() + '</span>' +
         '</button>';
     }).join('');
     strip.querySelectorAll('button[data-day]').forEach(function (b) {
-      b.addEventListener('click', function () { if (picking) pickDay(b.dataset.day); else toggleDay(b.dataset.day); });
+      b.addEventListener('click', function () { tapRangeDay(b.dataset.day); });
     });
-    // The strip you are picking on should show the last thing you tapped
-    // — and, before anything is tapped, today: it is the first tappable
-    // day, and scrolling to the range's far end on open put it off-screen.
-    var edges = strip.querySelectorAll('.dt.on');
-    var edge = edges[edges.length - 1];
-    if (picking && !pickTapped) {
-      strip.scrollLeft = 0;
-    } else if (picking && edge && edge.offsetLeft + edge.offsetWidth > strip.scrollLeft + strip.clientWidth) {
-      strip.scrollLeft = edge.offsetLeft + edge.offsetWidth - strip.clientWidth;
-    }
+    paintRange();
+    // Scrolled only when the first day wouldn't show otherwise: a range
+    // from today or tomorrow opens at the strip's start, with today in
+    // view beside it.
+    var first = strip.querySelector('[data-day="' + range.start + '"]');
+    var left = first ? first.offsetLeft - strip.offsetLeft : 0;
+    strip.scrollLeft = first && left + first.offsetWidth > strip.clientWidth ? Math.max(0, left - 8) : 0;
+  }
+
+  // The words and the tiles for the range as it stands: "Wed 23 → Wed 30"
+  // with "8 days" beside it; the first and last day celadon, the days
+  // between the lighter tint. Half a range reads "Wed 23 → …" with "Tap
+  // the last day" where the count goes. One day reads "Wed 23" and "1 day"
+  // — no arrow to itself.
+  function paintRange() {
+    var last = range.end || range.start;
+    var count = range.end ? daysBetween(range.start, range.end) + 1 : 0;
+    $('range-words').textContent = !range.end
+      ? dayLabel(range.start) + ' → …'
+      : (range.start === range.end ? dayLabel(range.start) : dayLabel(range.start) + ' → ' + dayLabel(range.end));
+    $('range-count').textContent = range.end ? count + (count === 1 ? ' day' : ' days') : RANGE_COPY.lastDay;
+    $('range-strip').querySelectorAll('button[data-day]').forEach(function (b) {
+      var d = b.dataset.day;
+      var edge = d === range.start || d === range.end;
+      var inside = !edge && d > range.start && d < last;
+      b.classList.toggle('on', edge);
+      b.classList.toggle('in', inside);
+      b.setAttribute('aria-pressed', edge || inside ? 'true' : 'false');
+    });
     paintCta();
   }
 
   function renderStartStep() {
-    renderStartChips();
     renderRangeCard();
   }
 
@@ -1369,15 +1312,12 @@
     loadedFor = key;
     awayRanges = [];
     answers = { night_tags: {}, guest_counts: {}, packed_lunch_days: [], moods: [], cuisines: [] };
-    // The dropped days saved for this period (a Re-plan, or a second
-    // adult joining) — unless the tiles have been tapped already, in
-    // which case what's on screen is the answer.
+    // The dropped days saved for this period by the screen before
+    // 2026-09-22 (a Re-plan of an intake made then). Not shown and not
+    // kept: this step has no dropped days any more (droppedList), so
+    // Continue writes the empty set over them — the days on the strip are
+    // the days planned — and a period saved with none writes nothing.
     var savedSkipped = (((body.intake || {}).skipped_days) || []).slice().sort();
-    if (!droppedTouched) {
-      dropped = {};
-      savedSkipped.forEach(function (d) { dropped[d] = true; });
-      if (step === 1 && !picking) renderRangeCard();
-    }
     skippedAtLoad = savedSkipped.join(',');
     $('freeform').value = '';
     $('joined').hidden = true;
@@ -1447,10 +1387,11 @@
   // "Which days?" writes a revision only when they changed.
   var skippedAtLoad = '';
 
-  // The days the later steps are about: the period's, minus the dropped
-  // ones — a day left out has no dinner to tag and no lunch to pack.
+  // The days the later steps are about: the period's, every one of them
+  // — "Which days?" chooses a range and drops nothing inside it (Emily,
+  // 2026-09-22). Still the one name every later step reads its days by.
   function plannedDays() {
-    return ((data && data.days) || []).filter(function (day) { return !dropped[day.date]; });
+    return (data && data.days) || [];
   }
 
   function takeAnswers(intake) {
@@ -1472,6 +1413,8 @@
     // Today, never yesterday — whichever door this came through.
     weekStart = clampStart(weekStart, todayIso());
     choosePeriod(weekStart, dayCount);
+    // Pomona's suggestion, already chosen: the period the door named.
+    openRange();
     $('loading').hidden = true;
     $('flow').hidden = false;
     $('footer').hidden = false;
@@ -1994,8 +1937,7 @@
   function renderHolidayBlocks() {
     var host = $('holiday-blocks');
     if (!host) return;
-    // A holiday on a day left out of the plan asks nothing.
-    host.innerHTML = ((data && data.holidays) || []).filter(function (h) { return !dropped[h.date]; }).map(holidayBlockHtml).join('');
+    host.innerHTML = ((data && data.holidays) || []).map(holidayBlockHtml).join('');
     wireHolidayBlock(host);
   }
 
@@ -2618,7 +2560,7 @@
       $('cta').textContent = 'Continue';
       // Half a range is not an answer; nothing else here touches the
       // button's state (advance owns it while a save is in flight).
-      if (step === 1) $('cta').disabled = picking && !pick.end;
+      if (step === 1) $('cta').disabled = !range.end;
       var noted = step === 2 && data ? plannedDays().filter(function (day) { return !!dayNoteFor(day, true); }).length : 0;
       skip.textContent = SKIP_LABELS[step] || '';
       skip.hidden = !SKIP_LABELS[step] || (step === 2 && noted > 0);
@@ -2631,9 +2573,10 @@
 
   // Each screen saves its own answers as its own revision, so a second
   // adult joining mid-way carries on from where the first got to. Step 1
-  // settles the period, and writes only when the days dropped from it
-  // changed — a revision saying "no days dropped" about a fresh week
-  // would only make the next visit narrate nothing.
+  // settles the period, and writes only to clear days an older screen
+  // dropped (droppedList is always empty since 2026-09-22) — a revision
+  // saying "no days dropped" about a fresh week would only make the next
+  // visit narrate nothing.
   async function saveStep(n) {
     if (n === 1) {
       var skipped = droppedList();
