@@ -427,7 +427,8 @@ why*, not duplicating the diff.
   pop-up to name what changed. **The rules themselves did not move** — the
   visible flag, the undo, the Save-then-pop-up are all still required, and
   all still Emily's. The code has NOT caught up: `CHANGES_SAVED` /
-  `toastSaved()` still says "Changes saved" for 27 actions and "Put back" is
+  `toastSaved()` still says "Changes saved" at 23 call sites (the sweep's 27
+  predates the add sheet's three landing) and "Put back" is
   still the undo's word on a run of toasts — findings 1, 2, 3, 17, 23 and 24
   of `COPY_SWEEP_2026-09-23.md`,
   recorded as drift in S10 so nobody copies it. Audit of the rest of
