@@ -8245,7 +8245,20 @@ def run_agent_turn(
 # run_agent_turn call. Tool-result continuations within a turn also use
 # {"role": "user"}, but their content is a list of tool_result blocks, not a
 # string, so they're never mistaken for a boundary here.
-MAX_CONVERSATION_TURNS = 40
+# Twelve, not forty (2026-09-23). Forty was a memory-growth cap on a
+# session that can run for ever, and as that it was fine; what it was
+# never chosen as is a COST number, and it is one. Every turn re-sends the
+# whole conversation, tool results included, and a tool result here is a
+# whole week's plan as JSON -- measured in production at about 15K tokens
+# of history per turn on top of the ~37K briefing, which was the biggest
+# line on the month's bill.
+#
+# Twelve turns is far more than a sitting in this app actually runs to
+# (real sittings are a handful of turns; the long tail was days of
+# accumulation, which the new-sitting reset below now handles on its own),
+# so within any ordinary conversation nothing is lost. What this number
+# governs is only the runaway case.
+MAX_CONVERSATION_TURNS = 12
 
 
 def trim_conversation(history: list[dict], max_turns: int = MAX_CONVERSATION_TURNS) -> list[dict]:
