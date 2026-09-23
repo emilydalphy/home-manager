@@ -9,12 +9,22 @@ stays put while the list scrolls. Tapping it opens a bottom sheet: the
 field (focused) with the camera inside it, "Where do you get it?" as one
 44px chip per store plus Anywhere, pre-picked — the store whose card the
 list is scrolled to, else the usual store of the thing typed once it
-names a known item, else the store the last add went to — a celadon line
-saying what the pick means, and one apricot "Add to Costco" ("Add to the
-list" for Anywhere). Add writes the line straight into that store in the
-same request (the /add route's store, remembered as the item's usual),
-the sheet closes, the list re-renders, "Changes saved · Put back". With
-no signal the add queues like a tick and the row shows at once.
+names a known item, else the store the last add went to — and one
+apricot "Add to Costco" ("Add to the list" for Anywhere). Add writes the
+line straight into that store in the same request (the /add route's
+store, remembered as the item's usual), the sheet closes, the list
+re-renders, and the toast names the thing that was just added — "Carrots
+was added" — with Undo. With no signal the add queues like a tick and
+the row shows at once, with the same wording.
+
+Until 2026-09-23 the sheet also carried a celadon line under the chips
+spelling out what the pick would do ("I'll remember Costco for it next
+time") and the toast after Add said the generic "Changes saved · Put
+back". Emily cut the line — the row landing under that store's card
+already shows the remembering took, so the line was saying something the
+screen already said — and asked the toast to just name the thing added,
+with Undo in place of Put back. The remembering itself (teaching the
+item's usual store) is unchanged; only the announcement of it went.
 
 Behaviour runs under node against shell.js's own functions
 (tests/shop_harness), with the real static/grocery-offline.js for the
@@ -91,17 +101,17 @@ def test_the_dock_button_is_an_outline_of_48px_and_the_sheet_is_at_body_level():
     assert 'id="gro-add-sheet" hidden role="dialog" aria-label="Add something"' in SHELL_HTML
     assert 'id="gro-add-body"' in SHELL_HTML and 'id="gro-add-scrim"' in SHELL_HTML
     assert "#gro-scan-sheet, #gro-add-sheet {" in SHELL_CSS, "the same sheet mechanics as the photo sheet"
-    note = SHELL_CSS.split(".gro-add-note {", 1)[1][:400]
-    assert "var(--celadon-tint)" in note and "var(--celadon-label)" in note
-    # The row's CSS went with the row.
+    # The row's CSS went with the row; the celadon note's own CSS went
+    # with the note (2026-09-23 — Emily, "remove the blue text box").
     assert ".gro-add-btn" not in SHELL_CSS and ".gro-add {" not in SHELL_CSS
+    assert ".gro-add-note" not in SHELL_CSS
 
 
 # --- 2. the sheet ---------------------------------------------------------------
 
 
 @needs_node
-def test_the_sheet_is_the_field_the_camera_the_chips_the_line_and_one_apricot():
+def test_the_sheet_is_the_field_the_camera_the_chips_and_one_apricot():
     out = _node("""
 var data = twoShops();
 console.log(JSON.stringify({
@@ -118,20 +128,20 @@ console.log(JSON.stringify({
     assert '<button type="button" class="gro-pill gro-pill-on" data-gro="add-store" data-store="Costco" aria-pressed="true">Costco</button>' in c
     assert 'class="gro-pill" data-gro="add-store" data-store="Loblaws" aria-pressed="false">Loblaws</button>' in c
     assert 'class="gro-pill" data-gro="add-store" data-store="" aria-pressed="false">Anywhere</button>' in c
-    assert ('<p class="gro-add-note" id="gro-add-note">I’ll remember Costco for cilantro next time. '
-            'Change it any time from the row’s ⋯ menu.</p>') in c
     assert '<button type="button" class="dock-primary gro-add-go" id="gro-add-go" data-gro="add">Add to Costco</button>' in c
     assert c.count("dock-primary") == 1
+    # The celadon note under the chips is gone (2026-09-23, Emily: "remove
+    # the blue text box" — the remembering doesn't need an announcement).
+    assert "gro-add-note" not in c and "I’ll remember" not in c
 
     a = out["anywhere"]
     assert 'data-store="" aria-pressed="true">Anywhere</button>' in a
-    assert "I’ll put it under Anywhere — tell me the store from the row’s ⋯ menu when you know." in a
     assert 'data-gro="add">Add to the list</button>' in a
-    assert "for cilantro" not in a
+    assert "I’ll put it under" not in a and "gro-add-note" not in a
 
     e = out["empty"]
-    assert "I’ll remember Loblaws for it next time." in e, "nothing typed yet: the line still reads"
     assert 'data-gro="add">Add to Loblaws</button>' in e
+    assert "gro-add-note" not in e
 
 
 @needs_node
@@ -260,7 +270,7 @@ def test_the_cards_are_watched_with_an_intersection_observer_that_is_only_read()
 
 
 @needs_node
-def test_add_posts_the_store_with_the_line_closes_the_sheet_and_offers_put_back():
+def test_add_posts_the_store_with_the_line_closes_the_sheet_and_names_what_was_added():
     out = _node("""
 var data = twoShops();
 fetch = function (url, opts) {
@@ -284,10 +294,12 @@ groAddItem().then(function () {
     assert out["posts"][0] == ["/api/grocery-list/add", {
         "item": "cilantro", "quantity": "2 bunches", "category": "other", "store": "Costco", "remember": True}]
     assert out["sheet"] is None, "the sheet closed on the tap"
-    assert out["toast"] == {"msg": "Changes saved", "action": "Put back", "hold": 8000}
+    # The name is the server's own (`r.item`), and Undo is the toast's
+    # only action (2026-09-23 — no more "Changes saved · Put back").
+    assert out["toast"] == {"msg": "cilantro was added", "action": "Undo", "hold": 8000}
     assert out["last"] == "Costco", "the next sheet's third guess"
     assert out["prefs"] == {"cilantro": "Costco"}, "the screen's copy of the usual stores follows"
-    assert out["posts"][-1][0] == "/api/grocery-list/77/remove", "Put back removes the line"
+    assert out["posts"][-1][0] == "/api/grocery-list/77/remove", "Undo removes the line"
 
 
 @needs_node
@@ -308,7 +320,7 @@ groAddItem().then(function () {
 
 
 @needs_node
-def test_put_back_on_a_merged_line_restores_its_old_amount_and_store():
+def test_undo_on_a_merged_line_restores_its_old_amount_and_store():
     out = _node("""
 var data = twoShops();
 fetch = function (url, opts) {
@@ -367,6 +379,104 @@ def test_voice_and_the_photo_sheet_still_add_the_way_they_did():
     assert "groAddSheetEl.addEventListener('click', onGroceryClick);" in SHELL_JS, (
         "the sheet's camera and chips go through the same handler as the panel's controls")
     assert "'/api/grocery-list/confirm-scan'" in SHELL_JS
+
+
+@needs_node
+def test_picking_a_store_still_teaches_its_usual_with_no_note_to_say_so():
+    """Card 3e31f4c0-5231-81b5 ("the Add sheet says too much"): the
+    celadon note that used to announce the remembering is gone (see the
+    sheet-body tests above), but the remembering itself is untouched —
+    picking Costco for cilantro still teaches Costco as cilantro's usual
+    store, silently, the same write the note used to describe rather than
+    cause."""
+    out = _node("""
+var data = twoShops();
+fetch = function (url, opts) {
+  POSTS.push({ url: url, body: JSON.parse((opts && opts.body) || '{}') });
+  var body = url === '/api/grocery-list/add' ? { item_id: 77, item: 'cilantro', merged: false } : {};
+  return Promise.resolve({ ok: true, status: 200, json: function () { return Promise.resolve(body); } });
+};
+var html = groAddSheetHtml({ typed: 'Cilantro', store: 'Costco' }, data);
+groceryState.addSheet = { typed: 'Cilantro', store: 'Costco', picked: true };
+groAddItem().then(function () {
+  console.log(JSON.stringify({
+    html: html,
+    remembered: POSTS[0].body.remember,
+    prefs: groceryState.itemStorePrefs
+  }));
+});
+""")
+    assert "gro-add-note" not in out["html"] and "I’ll remember" not in out["html"], (
+        "no announcement in the markup")
+    assert out["remembered"] is True, "the write still asks the server to remember it"
+    assert out["prefs"] == {"cilantro": "Costco"}, "and the screen's own copy still follows, unannounced"
+
+
+# --- 4a. the toast names what happened -----------------------------------------
+
+# groScanSave (photo-scan confirm) needs its own tiny `document` — the real
+# one lives outside grocery_block() and this path only ever reaches a save
+# button that may not exist in this harness, so a `querySelector` that
+# always answers "not there" is enough; nothing here opens or closes a
+# sheet through it. `loadGrocery` is stubbed too: the real one is also
+# outside grocery_block() and reads back a full list this test has no
+# stake in.
+_SCAN_DOC = """
+var document = { getElementById: function () { return null; }, querySelector: function () { return null; } };
+function loadGrocery() { return Promise.resolve(); }
+"""
+
+
+@needs_node
+def test_scan_confirm_names_what_was_added_and_pluralizes_things_not_items():
+    """Multi-add (Loop Board 3e31f4c0-5231-81b5, acceptance criterion 7):
+    one added item is named the same way a typed add is; more than one
+    stays plain — "2 things were added" — rather than counting "items"."""
+    script = (
+        STUB + _SCAN_DOC + grocery_block() + CLICK + FIXTURE
+        + """
+var RESPONSES = {};
+fetch = function (url, opts) {
+  POSTS.push({ url: url, body: JSON.parse((opts && opts.body) || '{}') });
+  var body = url === '/api/grocery-list/confirm-scan' ? RESPONSES.next : {};
+  return Promise.resolve({ ok: true, status: 200, json: function () { return Promise.resolve(body); } });
+};
+function scan(items, response) {
+  groScanState.items = items;
+  RESPONSES.next = response;
+  TOASTS.length = 0;
+  return groScanSave().then(function () { return TOASTS[TOASTS.length - 1].msg; });
+}
+(async function () {
+  var one = await scan(
+    [{ item: 'Carrots', quantity: '', category: 'produce', keep: true }],
+    { added: ['Carrots'], merged_with_existing: [] }
+  );
+  var two = await scan(
+    [{ item: 'Carrots', quantity: '', category: 'produce', keep: true },
+     { item: 'Milk', quantity: '', category: 'dairy', keep: true }],
+    { added: ['Carrots', 'Milk'], merged_with_existing: [] }
+  );
+  var mergedOnly = await scan(
+    [{ item: 'Eggs', quantity: '', category: 'dairy', keep: true }],
+    { added: [], merged_with_existing: ['Eggs'] }
+  );
+  var mixed = await scan(
+    [{ item: 'Carrots', quantity: '', category: 'produce', keep: true },
+     { item: 'Milk', quantity: '', category: 'dairy', keep: true }],
+    { added: ['Carrots'], merged_with_existing: ['Milk'] }
+  );
+  console.log(JSON.stringify({ one: one, two: two, mergedOnly: mergedOnly, mixed: mixed }));
+})();
+"""
+    )
+    res = nodeharness.run_node(script, timeout=30)
+    assert res.returncode == 0, f"node failed: {res.stderr}"
+    out = json.loads(res.stdout.strip())
+    assert out["one"] == "Carrots was added", "one thing: named the same way a typed add is"
+    assert out["two"] == "2 things were added", "more than one: a plain count, not \"items\""
+    assert out["mergedOnly"] == "1 thing combined with what was already on the list"
+    assert out["mixed"] == "Carrots was added, 1 thing combined with what was already on the list"
 
 
 # --- 4b. the camera from inside the sheet --------------------------------------------
@@ -490,7 +600,7 @@ groAddItem().then(function () {
     assert out["offline"]["onCard"] is True, "on the screen at once, under its store"
     assert out["offline"]["queued"] == [["add", "cilantro", "Costco"]]
     assert out["offline"]["posts"] == 0
-    assert out["offline"]["toast"]["msg"] == "Changes saved" and out["offline"]["toast"]["action"] == "Put back"
+    assert out["offline"]["toast"]["msg"] == "cilantro was added" and out["offline"]["toast"]["action"] == "Undo"
     assert out["offline"]["offlineFlag"] is True
     assert out["sent"] == [["/api/grocery-list/add", {
         "item": "cilantro", "quantity": "", "category": "other", "store": "Costco", "remember": True}]]
@@ -498,7 +608,7 @@ groAddItem().then(function () {
 
 
 @needs_node
-def test_put_back_on_a_queued_add_takes_it_out_of_the_queue_and_off_the_screen():
+def test_undo_on_a_queued_add_takes_it_out_of_the_queue_and_off_the_screen():
     out = _offline("""
 twoShops();
 groOffline.setHousehold(1);
