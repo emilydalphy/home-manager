@@ -12685,6 +12685,11 @@
     var verb = part.empty ? 'Add a ' : 'Change the ';
     return '<button type="button" class="plate-part" ' +
       'data-plate-part="' + escapeHtml(part.role === 'side' ? '' : part.role) + '" data-plate-slot="' + escapeHtml(slot) + '" ' +
+      // `data-plate-source`: 'dish' or 'side' — tells openMealAddSheet
+      // whether "Change" rewrites the recipe (a dish part) or swaps a
+      // side (see openMealAddSheet's `mode`). `data-plate-side` stays
+      // side-only, for the sheet's own "take it off" line.
+      (part.source ? 'data-plate-source="' + escapeHtml(part.source) + '" ' : '') +
       (part.source === 'side' && part.name ? 'data-plate-side="' + escapeHtml(part.name) + '" ' : '') +
       'aria-label="' + escapeHtml(verb + part.word.toLowerCase()) + '">' +
       label + PLATE_CARET + '</button>';
@@ -12709,6 +12714,7 @@
         '<span class="plate-row-name">' + escapeHtml(name) + '</span>' +
         '<button type="button" class="plate-row-change" data-plate-part="' + escapeHtml(p.role === 'side' ? '' : p.role) + '" ' +
           'data-plate-slot="' + escapeHtml(slot) + '"' +
+          (p.source ? ' data-plate-source="' + escapeHtml(p.source) + '"' : '') +
           (p.source === 'side' && p.name ? ' data-plate-side="' + escapeHtml(p.name) + '"' : '') + '>' +
           verb + '</button>' +
       '</div>';
@@ -14025,7 +14031,8 @@
         if (!day) return;
         openMealAddSheet(panel, day, btn.getAttribute('data-plate-slot'), {
           role: btn.getAttribute('data-plate-part'),
-          side: btn.getAttribute('data-plate-side') || ''
+          side: btn.getAttribute('data-plate-side') || '',
+          source: btn.getAttribute('data-plate-source') || ''
         });
       });
     });
@@ -14303,14 +14310,14 @@
         '</span>' +
       '</button>';
     }).join('');
-    var quiet = st.mode === 'protein' ? 'Leave it as it is'
+    var quiet = st.mode === 'change' ? 'Leave it as it is'
       : (st.side ? 'Take ' + st.side.toLowerCase() + ' off' : (st.role ? 'No ' + (st.roleWord || st.role).toLowerCase() + ' tonight' : 'Leave it as it is'));
     // The model sits this one out sometimes — a failed call and a
     // genuinely-empty answer look the same here (offer.options: []; see
     // options_unavailable in plate_parts.part_options for which one it
     // was). Either way the sheet still works: say so, once, above the
     // typed line, rather than leaving a bare list of nothing.
-    var noOptionsNote = (st.mode === 'protein' && !options.length)
+    var noOptionsNote = (st.mode === 'change' && !options.length)
       ? '<p class="wk-add-empty-note">I couldn’t think of options just now — type one, or leave it.</p>'
       : '';
     return '<div class="wk-add-options">' + rows + '</div>' +
@@ -14326,13 +14333,22 @@
       '</div>';
   }
 
-  // `part` (optional): {role, side} from a plate chip or row. role
-  // 'protein' opens "Change the protein" with options written for this
-  // dish (GET part-options); a veg or carb opens "Add something" with the
-  // catalogue narrowed to that part (its kind first, the rest after —
-  // they asked for a carb, but the picker is theirs); `side` is the side
-  // already on the plate for that part, which the quiet line offers to
-  // take off. No part: the plain "Add something" the Meal step has had.
+  // `part` (optional): {role, side, source} from a plate chip or row.
+  // role 'protein' always, and a vegetable/carb whose `source` is 'dish'
+  // (named by the recipe's own ingredients, or bare "In the dish" —
+  // either way it lives IN the recipe, not as a side) open "Change the
+  // <part>" with options written for this dish and the recipe rewritten
+  // around the pick (GET/POST part-options, change-part — the same door
+  // the protein has always used; Emily, 2026-09-22: her Cajun salmon
+  // night's "Change" on the veg had ADDED a side instead of replacing
+  // the dish's own green beans). A vegetable/carb whose `source` is
+  // 'side' (something already added from this sheet), or one that's
+  // MISSING altogether, opens "Add something" with the catalogue
+  // narrowed to that part (its kind first, the rest after — they asked
+  // for a carb, but the picker is theirs); `side` is the side already on
+  // the plate for that part, which the quiet line offers to take off, or
+  // which Save takes off in favour of the new one (never both at once).
+  // No part: the plain "Add something" the Meal step has had.
   var PART_WORDS = { protein: 'protein', vegetable: 'veg', carb: 'carb' };
   var PART_COVERS = { vegetable: 'vegetable', carb: 'carb', protein: 'protein' };
 
@@ -14343,7 +14359,8 @@
     if (!entry || entry.entry_id === null || entry.entry_id === undefined || !weekStart) return;
     closeAskSheet();
     var role = (part && part.role) || '';
-    var mode = role === 'protein' ? 'protein' : 'add';
+    var source = (part && part.source) || '';
+    var mode = (role === 'protein' || source === 'dish') ? 'change' : 'add';
     mealAddState = {
       panel: panel, date: day.date, slot: slot, entryId: entry.entry_id, weekStart: weekStart, busy: false,
       mode: mode, role: role, roleWord: PART_WORDS[role] || '', side: (part && part.side) || '',
@@ -14352,7 +14369,7 @@
     var thisOpen = mealAddState;
     var title = document.querySelector('#wk-add-sheet .kit-sheet-title');
     if (title) {
-      title.textContent = mode === 'protein' ? 'Change the protein'
+      title.textContent = mode === 'change' ? ('Change the ' + (mealAddState.roleWord || 'protein'))
         : (role ? (mealAddState.side ? 'Change the ' + mealAddState.roleWord : 'Add a ' + mealAddState.roleWord) : 'What should go with it?');
     }
     var line = document.getElementById('wk-add-line');
@@ -14360,12 +14377,12 @@
       line.textContent = dayName(day.date, { weekday: 'long' }) + '’s ' + slotWord(slot) + ' · ' + mealDisplayName(entry);
     }
     var rows = document.getElementById('wk-add-rows');
-    if (rows) rows.innerHTML = '<p class="wk-add-loading">' + (mode === 'protein' ? 'Finding what would work…' : 'One moment…') + '</p>';
+    if (rows) rows.innerHTML = '<p class="wk-add-loading">' + (mode === 'change' ? 'Finding what would work…' : 'One moment…') + '</p>';
     openSheet(mealAddSheet, mealAddScrim);
     var offer = null;
     try {
-      var url = mode === 'protein'
-        ? '/api/week/' + encodeURIComponent(weekStart) + '/part-options?entry_id=' + encodeURIComponent(entry.entry_id) + '&role=protein'
+      var url = mode === 'change'
+        ? '/api/week/' + encodeURIComponent(weekStart) + '/part-options?entry_id=' + encodeURIComponent(entry.entry_id) + '&role=' + encodeURIComponent(role || 'protein')
         : '/api/week/' + encodeURIComponent(weekStart) + '/additions?entry_id=' + encodeURIComponent(entry.entry_id) +
           // The part the chip was tapped for leads the list server-side,
           // before its six-row cap — a low-carb house tapping "Add a
@@ -14436,7 +14453,7 @@
   function runMealAddSave() {
     var st = mealAddState;
     if (!st || !st.selected || st.busy) return;
-    if (st.mode === 'protein') {
+    if (st.mode === 'change') {
       var choice = st.selected.text || (st.selected.option && st.selected.option.name);
       if (choice) runMealChangePart(choice);
       return;
@@ -14469,23 +14486,26 @@
     }
   }
 
-  // "Change the protein" → Save: the recipe rewritten around the pick,
-  // through the swap's own gates and apply (plate_parts.change_part), so
-  // the card answers exactly as a swap does — the reason on its line, an
-  // Undo that is the swap's own — and the pop-up says it saved (S10).
+  // "Change the protein/veg/carb" → Save: the recipe rewritten around the
+  // pick, through the swap's own gates and apply (plate_parts.
+  // change_part), so the card answers exactly as a swap does — the
+  // reason on its line, an Undo that is the swap's own — and the pop-up
+  // says it saved (S10). Only ever reached for a part the DISH itself
+  // covers (mode 'change' — see openMealAddSheet); a side-sourced part
+  // still goes through runMealAdd's add-then-remove.
   async function runMealChangePart(choice) {
     var st = mealAddState;
     if (!st || st.busy) return;
     st.busy = true;
     var save = document.getElementById('wk-add-save');
-    if (save) { save.disabled = true; save.textContent = 'Changing…'; }
+    if (save) { save.disabled = true; save.textContent = 'Changing it in the recipe…'; }
     var panel = st.panel;
     var dayDate = st.date, slot = st.slot;
     try {
       var res = await fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/change-part', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: st.entryId, role: 'protein', choice: choice })
+        body: JSON.stringify({ entry_id: st.entryId, role: st.role || 'protein', choice: choice })
       });
       var out = await res.json().catch(function () { return null; });
       // A failed request gets the swap's own line (SWAP_TROUBLE), never

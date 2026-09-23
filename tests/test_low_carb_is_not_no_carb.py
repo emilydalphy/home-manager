@@ -168,10 +168,12 @@ def test_a_low_carb_household_never_gets_a_zero_carb_dinner(recipes, stub_week, 
     parts = {p["role"]: p for p in _menu_dinner(plan_id, dates[0])["plate_parts"]}
     assert parts["carb"]["name"] == "Half a roasted potato each (small)"
     assert parts["carb"]["source"] == "side" and parts["carb"]["missing"] is False
-    # And the lunch that carries its own carb reads "Small".
+    # And the lunch that carries its own carb reads it by name, qualified
+    # small — not the bare word "Small" (Emily, 2026-09-22: naming it
+    # matters as much for a small portion as a full one).
     menu = tools.get_week_menu(plan_id)
     lunch = next(d for d in menu["days"] if d["date"] == dates[0])["lunch"]
-    assert {p["role"]: p["name"] for p in lunch["plate_parts"]}["carb"] == "Small"
+    assert {p["role"]: p["name"] for p in lunch["plate_parts"]}["carb"] == "Rice · small"
 
 
 def test_a_no_carb_household_never_gets_a_carb(recipes, stub_week, stub_sides):

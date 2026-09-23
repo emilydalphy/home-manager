@@ -140,9 +140,10 @@ def test_the_week_menu_carries_the_parts_on_a_planned_slot(week):
     # never recorded — the same class of gap as Emily's Cajun Salmon/Sweet
     # Potato Mash night (2026-09-22): plates.dish_has_carb catches it
     # deterministically, so the plate isn't reported short a carb it
-    # already has.
+    # already has, and it's named off that same ingredient rather than
+    # left as a bare "In the dish".
     assert [(p["role"], p["name"], p["missing"]) for p in dinner["plate_parts"]] == [
-        ("protein", "Turkey", False), ("vegetable", None, False), ("carb", None, False),
+        ("protein", "Turkey", False), ("vegetable", "Coleslaw mix", False), ("carb", "Burger buns", False),
     ]
     assert all(not p["missing"] for p in _dinner(week, DAY1)["plate_parts"])
 
@@ -208,12 +209,32 @@ def test_options_unavailable_is_false_when_the_model_genuinely_finds_nothing(wee
     assert out["options_unavailable"] is False
 
 
-def test_only_the_protein_is_changed_here(week):
+def test_an_unknown_role_is_refused(week):
     entry_id = _dinner(week, DAY2)["entry_id"]
-    with pytest.raises(ValueError, match="add_component"):
-        pp.part_options(week, entry_id, role="carb", asker=lambda c: [])
-    with pytest.raises(ValueError, match="add_component"):
-        pp.change_part(week, entry_id, "carb", "Rice", asker=lambda c: {})
+    with pytest.raises(ValueError, match="No such part"):
+        pp.part_options(week, entry_id, role="dessert", asker=lambda c: [])
+    with pytest.raises(ValueError, match="No such part"):
+        pp.change_part(week, entry_id, "dessert", "Rice", asker=lambda c: {})
+
+
+def test_a_missing_part_is_not_a_change_its_still_add():
+    """
+    "Change" only ever applies to a part that's already on the plate
+    (Emily, 2026-09-22): a MISSING vegetable or carb keeps opening the
+    catalogue add-sheet — this is what part_options/change_part check
+    before spending a model call, pure and needing no database plan.
+    """
+    assert pp._current_part(
+        {"food_groups": ["protein"]}, {"ingredients": []}, "carb", [],
+    ) == ("", None)
+    assert pp._current_part(
+        {"food_groups": ["protein", "carb"]},
+        {"ingredients": [{"item": "Rice", "category": "pantry"}]}, "carb", [],
+    ) == ("Rice", "dish")
+    assert pp._current_part(
+        {"food_groups": ["protein"]}, {"ingredients": []}, "carb",
+        [{"name": "Steamed rice", "covers": ["carb"]}],
+    ) == ("Steamed rice", "side")
 
 
 # ---------- the change ----------
@@ -269,9 +290,98 @@ def test_a_model_that_comes_back_with_nothing_is_refused_not_guessed(week):
 def test_a_change_forgets_the_cached_options_for_that_slot(week):
     entry_id = _dinner(week, DAY2)["entry_id"]
     pp.part_options(week, entry_id, asker=lambda c: [{"name": "Ground beef"}])
-    assert (tools.household_id(), entry_id) in pp._OPTIONS_CACHE
+    assert (tools.household_id(), entry_id, "protein") in pp._OPTIONS_CACHE
     pp.change_part(week, entry_id, "protein", "Ground beef", asker=lambda c: _variant())
-    assert (tools.household_id(), entry_id) not in pp._OPTIONS_CACHE
+    assert (tools.household_id(), entry_id, "protein") not in pp._OPTIONS_CACHE
+
+
+def test_changing_a_dish_sourced_vegetable_replaces_it_not_adds(week):
+    """
+    The real bug (Emily, 2026-09-22): "Cajun Salmon with Green Beans and
+    Sweet Potato Mash" — the green beans are the DISH's own, not a side.
+    "Change" on the veg must rewrite the recipe around the new one, the
+    same way a protein change does, not bolt on a second vegetable.
+    """
+    tools.add_recipe(
+        "Cajun Salmon with Green Beans and Sweet Potato Mash",
+        ingredients=[
+            {"item": "Salmon fillets", "qty": "4", "category": "meat/seafood"},
+            {"item": "Green beans", "qty": "1 lb", "category": "produce"},
+            {"item": "Sweet potato", "qty": "2", "category": "produce"},
+        ],
+        food_groups=["protein", "vegetable"], main_protein="salmon",
+        prep_time_minutes=10, cook_time_minutes=25,
+    )
+    plan_id = tools.create_weekly_plan(WEEK_START)["weekly_plan_id"]
+    tools.plan_meal(DAY2, "Cajun Salmon with Green Beans and Sweet Potato Mash", slot="dinner", weekly_plan_id=plan_id)
+    entry_id = _dinner(plan_id, DAY2)["entry_id"]
+    before = _dinner(plan_id, DAY2)
+    assert [p for p in before["plate_parts"] if p["role"] == "vegetable"][0]["name"] == "Green beans"
+    assert [p for p in before["plate_parts"] if p["role"] == "carb"][0]["name"] == "Sweet potato"
+
+    seen = []
+
+    def asker(context):
+        seen.append(context)
+        assert context["current_vegetable"] == "Green beans"
+        return {
+            "meal_name": "Cajun Salmon with Broccoli and Sweet Potato Mash",
+            "reason": "Broccoli instead of green beans — same time.",
+            "ingredients": [
+                {"item": "Salmon fillets", "qty": "4", "category": "meat/seafood"},
+                {"item": "Broccoli", "qty": "1 head", "category": "produce"},
+                {"item": "Sweet potato", "qty": "2", "category": "produce"},
+            ],
+            "instructions": ["Season and pan-sear the salmon.", "Steam the broccoli.", "Mash the sweet potato."],
+            "food_groups": ["protein", "vegetable", "carb"], "main_protein": "salmon",
+            "prep_time_minutes": 10, "cook_time_minutes": 25, "default_servings": 4,
+        }
+
+    out = pp.change_part(plan_id, entry_id, "vegetable", "Broccoli", asker=asker)
+
+    assert out["status"] == "changed"
+    assert out["meal"] == "Cajun Salmon with Broccoli and Sweet Potato Mash"
+    assert out["replaced"] == "Cajun Salmon with Green Beans and Sweet Potato Mash"
+    after = _dinner(plan_id, DAY2)
+    assert after["title"] == "Cajun Salmon with Broccoli and Sweet Potato Mash"
+    assert [p for p in after["plate_parts"] if p["role"] == "vegetable"][0]["name"] == "Broccoli"
+    # The protein and the carb are untouched — this replaced one part.
+    assert [p for p in after["plate_parts"] if p["role"] == "protein"][0]["name"] == "Salmon"
+    assert [p for p in after["plate_parts"] if p["role"] == "carb"][0]["name"] == "Sweet potato"
+    assert after["sides"] == []
+    saved = tools.get_recipe("Cajun Salmon with Broccoli and Sweet Potato Mash")
+    assert any(i["item"] == "Broccoli" for i in saved["ingredients"])
+    assert not any(i["item"] == "Green beans" for i in saved["ingredients"])
+    # Groceries reflect the new dish.
+    tools.approve_weekly_plan(plan_id)
+    groc = {i["item"].lower() for i in tools.list_grocery_list()}
+    assert "broccoli" in groc
+
+    # ...and Undo puts the green beans back, the same way a protein
+    # change's Undo does.
+    entry = sip._entry(plan_id, out["entry_id"])
+    assert entry["derived_from"]["swapped_from"]["meal"] == "Cajun Salmon with Green Beans and Sweet Potato Mash"
+    tools.undo_meal_swap(plan_id, out["entry_id"])
+    back = _dinner(plan_id, DAY2)
+    assert back["title"] == "Cajun Salmon with Green Beans and Sweet Potato Mash"
+    assert [p for p in back["plate_parts"] if p["role"] == "vegetable"][0]["name"] == "Green beans"
+
+
+def test_changing_a_side_sourced_carb_replaces_it_never_stacks(week, monkeypatch):
+    """The sibling case: a carb added from the sheet (a side, not the
+    dish) — "Change" swaps it for the new one, one call, never two carbs
+    on the plate at once."""
+    entry_id = _dinner(week, DAY2)["entry_id"]
+    tools.add_component(entry_id, key="rice")
+    before = _dinner(week, DAY2)
+    assert [s["name"] for s in before["sides"]] == ["Rice"]
+
+    out = pp.change_part(week, entry_id, "carb", "Roasted potatoes", asker=lambda c: (_ for _ in ()).throw(AssertionError("no model call for a side swap")))
+
+    assert out["status"] == "changed"
+    after = _dinner(week, DAY2)
+    assert [s["name"] for s in after["sides"]] == ["Roasted potatoes"], "the rice came off, not stacked"
+    assert after["title"] == "Turkey burgers", "the dish itself never changed"
 
 
 def test_another_households_meal_is_not_changeable(week):
@@ -286,8 +396,8 @@ def test_another_households_meal_is_not_changeable(week):
 
 def test_the_routes_offer_and_change(signed_in, week, monkeypatch):
     entry_id = _dinner(week, DAY2)["entry_id"]
-    monkeypatch.setattr(pp, "_ask_options", lambda ctx: [{"name": "Ground beef", "note": ""}])
-    monkeypatch.setattr(pp, "_ask_variant", lambda ctx: _variant())
+    monkeypatch.setattr(pp, "_ask_options", lambda ctx, role="protein": [{"name": "Ground beef", "note": ""}])
+    monkeypatch.setattr(pp, "_ask_variant", lambda ctx, role="protein": _variant())
     res = signed_in.get(f"/api/week/{WEEK_START}/part-options?entry_id={entry_id}&role=protein")
     assert res.status_code == 200
     assert res.json()["options"] == [{"name": "Ground beef", "note": ""}]
@@ -347,13 +457,33 @@ def test_a_blank_part_reads_as_in_the_dish_on_both_the_chip_and_the_row():
     assert "p.missing ? 'Nothing yet' : (p.name || PLATE_NO_NAME)" in rows
 
 
+def test_a_dish_sourced_veg_or_carb_routes_through_change_not_add():
+    """
+    Emily, 2026-09-22: her "Change" on the Cajun salmon plate's veg ADDED
+    steamed broccoli instead of replacing the dish's own green beans —
+    because the client only ever routed 'protein' through the recipe-
+    rewrite flow; a named-but-not-a-side vegetable/carb fell through to
+    the plain "Add something" sheet, which can only add. `data-plate-
+    source` tells the sheet which part it's looking at; 'dish' takes the
+    same door the protein always has (mode 'change' — part-options,
+    change-part), 'side' still takes the add-then-remove door.
+    """
+    i = SHELL_JS.index("  function platePartChipHtml(part, slot) {")
+    chip = SHELL_JS[i:SHELL_JS.index("  function plateRowHtml(")]
+    assert "data-plate-source=" in chip
+    j = SHELL_JS.index("  async function openMealAddSheet(")
+    sheet = SHELL_JS[j:SHELL_JS.index("  function drawMealAddRows(")]
+    assert "var mode = (role === 'protein' || source === 'dish') ? 'change' : 'add';" in sheet
+    assert "'&role=' + encodeURIComponent(role || 'protein')" in sheet
+
+
 def test_the_protein_sheet_says_so_when_it_has_nothing_to_offer():
     # Whether the AI call failed or genuinely found nothing, the sheet
     # still works — the free-text box is always there — so one calm line
     # above it says so rather than leaving a bare, unexplained empty list.
     i = SHELL_JS.index("  function mealAddRowsHtml(offer, st) {")
     sheet = SHELL_JS[i:SHELL_JS.index("  var MEAL_ADD_TROUBLE")]
-    assert "st.mode === 'protein' && !options.length" in sheet
+    assert "st.mode === 'change' && !options.length" in sheet
     assert "I couldn’t think of options just now — type one, or leave it." in sheet
     assert sheet.index("wk-add-empty-note") < sheet.index('id="wk-add-free"')
     assert ".wk-add-empty-note" in SHELL_CSS
@@ -364,7 +494,7 @@ def test_the_sheet_selects_then_saves_and_the_protein_goes_through_the_swaps_und
     sheet = SHELL_JS[i:SHELL_JS.index("  var MEAL_ADD_TROUBLE")]
     assert 'id="wk-add-save"' in sheet and "(st.selected ? '' : ' disabled')" in sheet
     assert "'Leave it as it is'" in sheet and "'No ' + (st.roleWord" in sheet and "'Take ' + st.side.toLowerCase() + ' off'" in sheet
-    assert "/part-options?entry_id=" in sheet and "'Change the protein'" in sheet
+    assert "/part-options?entry_id=" in sheet and "'Change the ' + (mealAddState.roleWord" in sheet
     assert "st.selected = { index: i, option: st.offer.options[i] };" in sheet
     k = SHELL_JS.index("  async function runMealChangePart(choice) {")
     change = SHELL_JS[k:k + 3200]

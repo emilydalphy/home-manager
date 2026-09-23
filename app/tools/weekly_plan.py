@@ -4625,6 +4625,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
                 row["slot"] or "dinner", _effective_food_groups(row),
                 row["main_protein"], sides, prefs["eating_style"] if prefs else "",
                 carb_level=carb_level,
+                ingredients=json.loads(row["ingredients_json"] or "[]") if row["ingredients_json"] else None,
             ),
             "defrost": defrost_by_entry.get(row["id"]),
             # Where the dish's recipe came from, said the one way every
