@@ -140,15 +140,20 @@ function snwLink() { return ''; }
 function activateTab() {}
 // groAddedToast (2026-09-23) calls showToast directly rather than going
 // through toastSaved — the add path names the thing that was added
-// ("Carrots was added") rather than the generic "Changes saved" — so
-// this is the one stub that matters here. What this file's assertions
-// read off TOASTS is the action: an Undo with a label and an onClick, or
-// nothing at all. toastSaved is kept as a thin wrapper over the same
-// stub for any other call site this region's code still has (a tick,
-// say) that this file's tests never reach.
+// ("Carrots was added") — so this is the one stub that matters here.
+// What this file's assertions read off TOASTS is the action: an Undo
+// with a label and an onClick, or nothing at all. The save-toast
+// helpers are kept as thin stubs for any other call site this region's
+// code still has (a tick, say) that this file's tests never reach; they
+// take the caller's own sentence, the way the real ones have since the
+// copy sweep of 2026-09-23.
 var TOASTS = [];
 function showToast(msg, action, holdMs) { TOASTS.push({ msg: msg, action: action || null, holdMs: holdMs || null }); }
-function toastSaved(action, holdMs) { showToast('Changes saved', action, holdMs); }
+var SAVED_PLAIN = 'Saved';
+function savedName(t) { return String(t == null ? '' : t).trim(); }
+function savedLine(t, v) { return savedName(t) ? savedName(t) + ' was ' + (v || 'saved') : SAVED_PLAIN; }
+function savedCount(n, v) { return n + (n === 1 ? ' thing was ' : ' things were ') + (v || 'saved'); }
+function toastSaved(said, action, holdMs) { showToast(said || SAVED_PLAIN, action, holdMs); }
 var coachState = { householdId: 1 };
 var scrollEl = { scrollTop: 0 };
 const STORE = new Map();

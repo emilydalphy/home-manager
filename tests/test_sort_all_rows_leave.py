@@ -371,7 +371,7 @@ settle(function () {
     assert out["undoPost"] == [{"assignments": [{"item_id": 2, "item": "Thing 2", "store": "", "decided": False}], "remember": True, "forget": True}], (
         "the undo takes back the remembered store with the row"
     )
-    assert out["afterUndo"] == "Put back."
+    assert out["afterUndo"] == "Thing 2 was put back"
 
 
 @_needs_node

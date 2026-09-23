@@ -233,7 +233,7 @@ setTimeout(function () {
     tap: /data-gro="rolled-toggle" data-store="Costco" aria-expanded="false"/.test(after) } }));
 }, 700);
 """)
-    assert out["during"]["toast"] == {"msg": "That’s Costco done — 6 things.", "action": "Put back", "icon": True}
+    assert out["during"]["toast"] == {"msg": "That’s Costco done — 6 things.", "action": "Undo", "icon": True}
     assert out["during"]["cards"] == ["Done at Costco", "Loblaws", "Anywhere"], "for the beat the card stands where it was"
     assert out["during"]["counts"][0] == "6 of 6" and out["during"]["head"] is True
     assert out["during"]["rolled"] == [] and out["during"]["doneBeat"] == "Costco"
@@ -255,7 +255,7 @@ mockup();
 clickIfRendered({ gro: 'line-tick', id: '3', bought: '0' });
 console.log(JSON.stringify({ toast: lastToastFull(), doneBeat: groceryState.doneBeat }));
 """)
-    assert out == {"toast": {"msg": "Changes saved", "action": "Put back", "icon": False}, "doneBeat": None}
+    assert out == {"toast": {"msg": "Orzo was ticked off", "action": "Undo", "icon": False}, "doneBeat": None}
 
 
 @_needs_node
@@ -317,7 +317,7 @@ console.log(JSON.stringify({ cards: cards(html), counts: counts(html), rolled: r
     assert out["cards"] == ["Costco", "Loblaws", "Anywhere"] and out["rolled"] == []
     assert out["counts"][0] == "5 of 6" and out["above"] is True, "a to-do card again, back in stop order"
     assert out["struck"] == ["1", "2", "4", "5", "3"]
-    assert out["toast"] == {"msg": "Changes saved", "action": "Undo", "icon": False}
+    assert out["toast"] == {"msg": "Tortillas is back on the list", "action": "Undo", "icon": False}
     assert out["posts"] == ["purchased", "needed"], "the same row, the same tick, the other way"
     assert out["doneOpen"] == {}, "the next time it finishes it starts rolled up"
 
@@ -343,8 +343,9 @@ setTimeout(function () {
 
 @_needs_node
 def test_the_anywhere_card_and_the_one_list_stand_in_roll_up_quietly():
-    """They are stops, not shops: no "That's X done" — the ordinary
-    "Changes saved · Put back" — but the same roll-up after the beat."""
+    """They are stops, not shops: no "That's X done" — the tick's own
+    ordinary line ("Foil was ticked off · Undo") — but the same roll-up
+    after the beat."""
     out = _node("""
 mockup();
 clickIfRendered({ gro: 'line-tick', id: '20', bought: '0' });
@@ -360,8 +361,8 @@ setTimeout(function () {
     moment: html.indexOf('gro-shop-done-card') !== -1 && html.indexOf('gro-shop-done-card') < html.indexOf('gro-rolled') } }));
 }, 700);
 """)
-    assert out["anywhere"] == {"toast": {"msg": "Changes saved", "action": "Put back", "icon": False}, "doneBeat": "", "cards": ["Costco", "Loblaws", "All bought"]}
-    assert out["standIn"] == {"toast": {"msg": "Changes saved", "action": "Put back", "icon": False}, "doneBeat": "Your list", "cards": ["Done shopping"]}
+    assert out["anywhere"] == {"toast": {"msg": "Foil was ticked off", "action": "Undo", "icon": False}, "doneBeat": "", "cards": ["Costco", "Loblaws", "All bought"]}
+    assert out["standIn"] == {"toast": {"msg": "Thing 2 was ticked off", "action": "Undo", "icon": False}, "doneBeat": "Your list", "cards": ["Done shopping"]}
     assert out["later"] == {"cards": [], "rolled": ["Done shopping"], "moment": True}
 
 
@@ -466,7 +467,7 @@ console.log(JSON.stringify({ rolled: instant, atOnce: { doneBeat: groceryState.d
 """)
     assert out["rolled"] == {"classes": [], "height": None, "renders": 1, "doneBeat": None, "cardClasses": []}, "no transition class either way: instant"
     assert out["atOnce"] == {"doneBeat": None, "cards": ["Loblaws", "Anywhere"], "rolledUp": ["Done at Costco"],
-                             "toast": {"msg": "That’s Costco done — 6 things.", "action": "Put back", "icon": True}}, "no beat: rolled up on the tick"
+                             "toast": {"msg": "That’s Costco done — 6 things.", "action": "Undo", "icon": True}}, "no beat: rolled up on the tick"
 
 
 @_needs_node

@@ -1049,7 +1049,8 @@
     try {
       var res = await fetch('/api/held/' + encodeURIComponent(id) + '/done', { method: 'POST' });
       if (!res.ok) throw new Error('held done ' + res.status);
-      toastSaved({ label: 'Undo', onClick: function () { restoreHeld(gone, index); } });
+      toastSaved(savedLine(gone.text, 'ticked off'),
+        { label: 'Undo', onClick: function () { restoreHeld(gone, index); } });
     } catch (err) {
       console.warn('Held thing resolve failed:', err);
       heldState.items = items;
@@ -1066,7 +1067,11 @@
     try {
       var res = await fetch('/api/held/' + encodeURIComponent(item.id) + '/restore', { method: 'POST' });
       if (!res.ok) throw new Error('held restore ' + res.status);
-      showToast('Put back');
+      // Finding 23 of the copy sweep: "Put back" was a euphemism with no
+      // subject. The row is back on the list and this says which row.
+      showToast(savedName(item.text)
+        ? savedName(item.text) + ' is back on your list.'
+        : 'It’s back on your list.');
     } catch (err) {
       console.warn('Held thing restore failed:', err);
       heldState.items = items.filter(function (h) { return h !== item; });
@@ -1617,10 +1622,53 @@
   // rather than something to notice.
   // The words every decision ends on (DESIGN_SYSTEM.md §2b S10, Emily
   // 2026-09-13: "a little pop up should show up saying changes saved").
-  // One constant so the sentence is the same on every screen, and so a
-  // test can ask "did this save say so" without knowing the wording.
-  var CHANGES_SAVED = 'Changes saved';
-  function toastSaved(action, holdMs) { showToast(CHANGES_SAVED, action || null, holdMs); }
+  //
+  // Until 2026-09-23 that was ONE sentence — "Changes saved" — answering
+  // twenty-seven different actions: a tick, a freeze, a swap, a night
+  // moved, a held thing finished, a preference saved. Emily, 2026-09-22:
+  // *"I don't like the AI written style."* Every one of those callers
+  // knows the name of the thing it just changed, so now it says it:
+  // the house toast pattern, `<thing> was <verbed>`
+  // (.claude/skills/pomona-copywriter/SKILL.md rule 3).
+  //
+  // THE SEAM IS STILL ONE FUNCTION, deliberately. Every save toast goes
+  // through toastSaved, so a test can still ask "did this save say so"
+  // without knowing the wording; what changed is that the caller hands it
+  // the sentence, and savedLine/savedCount build it so the grammar lives
+  // in one place. A caller with genuinely nothing to name — the chat's
+  // own turn, whose action cards already name what changed — passes
+  // nothing and gets SAVED_PLAIN, which beats saying nothing twice.
+  //
+  // No full stop on the house line: it matches the add toast that shipped
+  // ahead of it ("Carrots was added", groAddedMessage). A toast that is a
+  // real sentence rather than the pattern keeps its own punctuation.
+  var SAVED_PLAIN = 'Saved';
+  // A held thing is a whole sentence in the household's own words
+  // ("Ask Mel whether the cottage weekend is still on"), so a long name
+  // is cut to one breath rather than dropped — the pop-up is one line.
+  var SAVED_NAME_MAX = 44;
+  function savedName(thing) {
+    var words = String(thing === null || thing === undefined ? '' : thing).trim();
+    if (!words) return '';
+    if (words.length <= SAVED_NAME_MAX) return words;
+    var cut = words.slice(0, SAVED_NAME_MAX).replace(/\s+\S*$/, '');
+    return (cut || words.slice(0, SAVED_NAME_MAX)).replace(/[\s,;:.]+$/, '') + '…';
+  }
+  // "Carrots was ticked off". Nameless falls back to the plain word
+  // rather than to a sentence with a hole in it.
+  function savedLine(thing, verbed) {
+    var name = savedName(thing);
+    if (!name) return SAVED_PLAIN;
+    return name + ' was ' + (verbed || 'saved');
+  }
+  // "2 things were moved" — more than one thing stays plain and
+  // grammatical rather than listing names the toast has no room for.
+  function savedCount(n, verbed) {
+    return n + (n === 1 ? ' thing was ' : ' things were ') + (verbed || 'saved');
+  }
+  function toastSaved(said, action, holdMs) {
+    showToast(said || SAVED_PLAIN, action || null, holdMs);
+  }
 
   function showToast(message, action, holdMs, opts) {
     // holdMs: for the rare toast that is a sentence rather than a
@@ -2412,7 +2460,9 @@
       if (away && away.meal) said += ' ' + away.meal + ' on ' + dayName(otherDate, { weekday: 'long' }) + '.';
       showToast(said, {
         label: 'Undo',
-        onClick: function () { return undoTonightSwap(panel, tonightDate, otherDate); }
+        onClick: function () {
+          return undoTonightSwap(panel, tonightDate, otherDate, away && away.meal);
+        }
       }, 6000);
       afterTonightSwap(panel);
     } catch (err) {
@@ -2460,7 +2510,7 @@
       var tonightDate = data.date;
       showToast(tonightNightOffSaid(out), out.can_undo ? {
         label: 'Undo',
-        onClick: function () { return undoTonightNightOff(panel, tonightDate); }
+        onClick: function () { return undoTonightNightOff(panel, tonightDate, out.dish); }
       } : null, 6000);
       // listMoved: the one thing a night off can change that a nights swap
       // never does — a dropped dish puts back whatever it had put on the
@@ -2512,7 +2562,11 @@
   // the server puts every night the answer touched back exactly as it was
   // and takes back what it put in the freezer, or says in a sentence that
   // the week has changed since and leaves it alone.
-  async function undoTonightNightOff(panel, tonightDate) {
+  // `dish` is what the night off moved, carried from the answer that
+  // offered this undo — the server's own `said` is used when it wrote
+  // one, and this names the dish when it didn't (copy sweep finding 24;
+  // "Put back." was a fragment with no subject).
+  async function undoTonightNightOff(panel, tonightDate, dish) {
     try {
       var res = await fetch('/api/today/tonight/night-off-undo', {
         method: 'POST',
@@ -2521,7 +2575,8 @@
       });
       if (!res.ok) throw new Error('undo failed (' + res.status + ')');
       var out = await res.json();
-      showToast(out.status === 'restored' ? (out.said || 'Put back.') : (out.message || TONIGHT_SWAP_TROUBLE));
+      var backOn = dish ? dish + ' is back on tonight.' : 'It’s back on tonight.';
+      showToast(out.status === 'restored' ? (out.said || backOn) : (out.message || TONIGHT_SWAP_TROUBLE));
       // Nothing an undoable night off did touched the list, so Shop is left
       // alone; Kitchen (the freezer row) is re-read by the kitchen branch.
       afterTonightSwap(panel);
@@ -2531,7 +2586,10 @@
     }
   }
 
-  async function undoTonightSwap(panel, tonightDate, otherDate) {
+  // `wasTonights` is the dish the swap sent away — the one coming back to
+  // tonight — carried from the toast that offered this undo, so the line
+  // names it instead of saying "Put back." (copy sweep finding 24).
+  async function undoTonightSwap(panel, tonightDate, otherDate, wasTonights) {
     var data = panel._tonight;
     if (!data || !data.week_start) return;
     try {
@@ -2541,7 +2599,9 @@
         body: JSON.stringify({ date_a: tonightDate, date_b: otherDate })
       });
       if (!res.ok) throw new Error('undo failed (' + res.status + ')');
-      showToast('Put back.');
+      showToast(wasTonights
+        ? wasTonights + ' is back on tonight.'
+        : 'Tonight and ' + dayName(otherDate, { weekday: 'long' }) + ' are back as they were.');
       afterTonightSwap(panel);
     } catch (err) {
       console.warn('Undoing tonight’s swap failed:', err);
@@ -2645,7 +2705,12 @@
       // did. See moves.py's `tickable` note and moveTickHtml above.
       var updated = ((fresh && fresh.moves) || []).filter(function (m) { return m.id === moveId; })[0];
       if (updated && updated.done === done) {
-        showToast(done ? 'Ticked off.' : 'Back on the list.');
+        // Copy sweep finding 26: both halves knew the move's own name and
+        // neither said it. The server's re-derived row is the one to read
+        // — it is the row this toast is claiming to have moved.
+        var moveName = savedName(updated.title || move.title);
+        if (done) showToast(savedLine(moveName, 'ticked off'));
+        else showToast(moveName ? moveName + ' is back on the list' : 'Back on the list');
       }
       // The same rows are the Cook screen's check-offs — keep the two from
       // showing different answers to the same question.
@@ -3323,7 +3388,10 @@
   // section's title (" · N" is appended), and the row's way back.
   var GRO_ELSEWHERE_CHIP = 'Getting it elsewhere';
   var GRO_ELSEWHERE_SECTION = 'Getting elsewhere';
-  var GRO_ELSEWHERE_BACK = 'Put it back';
+  // Not an undo — it is a standing button on a row set aside days ago —
+  // so it says where the tap puts the thing rather than borrowing the
+  // toast's Undo (copy sweep finding 2).
+  var GRO_ELSEWHERE_BACK = 'Back on the list';
 
   // The card at the foot of LIST's store cards holding the things with no
   // store — answered "Any" or not yet asked (Emily, 2026-09-18: "loose
@@ -5071,7 +5139,7 @@
 
   // The answer: on the screen now, on the server when it can be — the
   // same shape as a tick (groTick). 'freezer' books the move through
-  // POST /api/grocery-list/{id}/freezing; 'fridge' is the toast's Put back,
+  // POST /api/grocery-list/{id}/freezing; 'fridge' is the toast's Undo,
   // which removes it. With no signal, or something older still waiting,
   // it is queued behind the ticks (groOffline.queueFreezing: one per line,
   // latest wins) and replayed with them.
@@ -5123,8 +5191,9 @@
     renderGrocery();
     if (answer !== 'freezer') return; // "Straight to the fridge" writes nothing
     groFreezeSend(id, 'freezer');
-    toastSaved({
-      label: 'Put back',
+    var frozen = groFindLine(id);
+    toastSaved(savedLine(frozen && frozen.item, 'put in the freezer'), {
+      label: 'Undo',
       onClick: function () {
         // The move goes, and the question is back where it was.
         if (groceryState.freezing && groceryState.freezing.id === String(id)) {
@@ -6665,8 +6734,9 @@
   // ---------- A tick on the list ----------
   // The box is the whole answer, both ways. A tick marks the thing bought
   // — on the screen now, on the server when it can be (groTick: queued
-  // with no signal, static/grocery-offline.js) — and says "Changes saved
-  // · Put back" (S10); Put back is the same tap the other way. The row
+  // with no signal, static/grocery-offline.js) — and says "Carrots was
+  // ticked off · Undo" (S10, reworded 2026-09-23); Undo is the same tap
+  // the other way, and says "Carrots is back on the list". The row
   // settles rather than snapping (groAnimateRowSettle, animation 3).
   // 'purchased' straight away, not the trip's old 'in_cart' then
   // 'purchased' at "Done at Costco": there is no stop to finish any more,
@@ -6692,7 +6762,10 @@
     groAnimateRowSettle(id);
     if (next === 'purchased') groRecordStopDone(id);
     var wayBack = {
-      label: bought ? 'Undo' : 'Put back',
+      // Undo both ways (copy sweep finding 2): eighteen other toasts in
+      // this file already said Undo, and "Put back" was the one Emily
+      // pulled out by name.
+      label: 'Undo',
       onClick: function () {
         groceryState.freezing = null;
         var refinishing = groTickBookkeeping(id, !bought);
@@ -6702,8 +6775,14 @@
         if (refinishing !== null) groRollUpAfterBeat(refinishing);
       }
     };
-    if (finishing === null) toastSaved(wayBack);
-    else groStoreDoneMoment(finishing, wayBack);
+    // The tick's own words: which line, and which way it went. `bought`
+    // is the state BEFORE the tap, so a true one is a line coming back.
+    var tickedName = tickedLine && tickedLine.item;
+    var said = bought
+      ? (savedName(tickedName) ? savedName(tickedName) + ' is back on the list' : 'Back on the list')
+      : savedLine(tickedName, 'ticked off');
+    if (finishing === null) toastSaved(said, wayBack);
+    else groStoreDoneMoment(finishing, wayBack, said);
   }
 
   // What a tick means for the card it sits on, worked out BEFORE the
@@ -6736,21 +6815,22 @@
   // card's head reading "Done at Costco" where it stands, for a beat.
   // Then the card rolls up to one line and moves below the stores still
   // to do (groRollUp — the app's fifth animation, DESIGN_SYSTEM.md §4).
-  // The toast keeps Put back (§2b S10: a tick is a decision, and its
-  // way back rides on the pop-up that says it took), and a put-back
+  // The toast keeps its Undo (§2b S10: a tick is a decision, and its
+  // way back rides on the pop-up that says it took), and an undo
   // within the beat calls the roll-up off. Only a named shop is said
   // aloud — the Anywhere card and the one-list stand-in are stops, not
-  // shops, and they roll up quietly after the usual "Changes saved".
+  // shops, and they roll up quietly after the tick's own line
+  // ("Carrots was ticked off"), which the caller hands in as `said`.
   var GRO_STORE_DONE_BEAT_MS = 600;
   function groStoreDoneToast(key, count) {
     return 'That’s ' + key + ' done — ' + groPlural(count, 'thing', 'things') + '.';
   }
-  function groStoreDoneMoment(key, wayBack) {
+  function groStoreDoneMoment(key, wayBack, said) {
     var data = groceryState.data;
     if (key && !groIsStandIn(data, key)) {
       showToast(groStoreDoneToast(key, groCardLines(data, key).length), wayBack, null, { icon: GRO_ICONS.tick });
     } else {
-      toastSaved(wayBack);
+      toastSaved(said, wayBack);
     }
     groRollUpAfterBeat(key);
   }
@@ -6890,7 +6970,11 @@
         // for the rest of its window otherwise, contradicting the list it is
         // sitting on. The chip is already inert by then, so it is the words
         // that mislead.
-        showToast(undo.length === 1 ? 'Put back.' : 'Put back where they were.', null, GRO_UNDO_MS);
+        // Copy sweep finding 3: the app knew which rows it had just put
+        // back and said neither the name nor the number.
+        showToast(undo.length === 1
+          ? savedLine(undo[0].item, 'put back')
+          : savedCount(undo.length, 'put back'), null, GRO_UNDO_MS);
         return;
       }
       groOfferBulkUndo('Couldn’t undo that — tap Undo to try again.');
@@ -7091,7 +7175,7 @@
       case 'row-store': {
         var rowStore = el.dataset.store;
         var rowItem = groFindLine(id);
-        // The row as it stands, for the toast's Put back: the same
+        // The row as it stands, for the toast's Undo: the same
         // one-row bulk undo "Sort them all" uses, so the row AND the
         // usual store go back together (groRunBulkUndo).
         var rowWas = rowItem ? groPreviousStores([rowItem]) : null;
@@ -7105,7 +7189,10 @@
           renderGrocery();
           if (rowWas) {
             groceryState.bulkUndo = rowWas;
-            toastSaved({ label: 'Put back', onClick: groRunBulkUndo }, GRO_UNDO_MS);
+            // "Any" is the pill's own word for no particular shop, so the
+            // toast uses it rather than inventing a second name for it.
+            toastSaved(savedLine(rowItem && rowItem.item, 'moved to ' + (rowStore || 'Any')),
+              { label: 'Undo', onClick: groRunBulkUndo }, GRO_UNDO_MS);
           }
         });
         return;
@@ -7493,18 +7580,25 @@
       // undo_pre_shop_drop / already_have_inventory_id) — and, for a line
       // the freezer step set aside, cancels that item's fridge move
       // (`moves_cancelled`), so the Plan root's freezer row and Today's
-      // moves are re-read to stop naming it. "Put back." is the undo's own
-      // line (S10), the same one "Getting it elsewhere" says.
+      // moves are re-read to stop naming it. The line names the row it
+      // put back (S10, copy sweep finding 3) — the same one "Getting it
+      // elsewhere" says. The name comes off the summary this section is
+      // drawn from (groNotNeededHtml), not off the row's own card: an
+      // already-have row has been filtered out of the list payload by
+      // the time it reaches the shell, so groFindLine cannot see it.
       case 'undo-already-have': {
         el.disabled = true;
         var undoneMoves = 0;
+        var backName = ((groceryState.alreadyHaveSummary || {}).already_have || [])
+          .filter(function (it) { return String(it.id) === String(id); })
+          .map(function (it) { return it.item; })[0];
         groDo(function () {
           return groPostEmpty('/api/grocery-list/' + id + '/pre-shop-undo').then(function (body) {
             undoneMoves = (body && body.moves_cancelled) || 0;
           });
         }, "Couldn't undo that — try again.").then(function (ok) {
           if (!ok) return;
-          showToast('Put back.');
+          showToast(groBackOnListLine(backName));
           if (undoneMoves) {
             if (panels.week && panels.week.dataset.built) loadWeekMenu(panels.week);
             refreshTodayMoves();
@@ -7518,7 +7612,7 @@
       // Undo runs, and it says so the same way.
       case 'elsewhere-back':
         el.disabled = true;
-        groPutBack(id);
+        groPutBack(id, el.dataset.name);
         return;
     }
   }
@@ -7540,7 +7634,7 @@
       if (after) after();
       showToast(aside + ' set aside — getting it elsewhere.', {
         label: 'Undo',
-        onClick: function () { groPutBack(id); }
+        onClick: function () { groPutBack(id, name); }
       }, GRO_UNDO_MS);
       return true;
     });
@@ -7548,13 +7642,18 @@
 
   // /include is the exact undo of /exclude (include_grocery_item): the
   // same row, same store, same quantity, back where it was. Shared by the
-  // toast's Undo and the foot section's "Put it back", so the two can't
-  // say different things. "Put back." is the undo's own line (S10).
-  function groPutBack(id) {
+  // toast's Undo and the foot section's "Back on the list", so the two
+  // can't say different things. The line names the row (S10, copy sweep
+  // finding 3): "Carrots is back on the list."
+  function groBackOnListLine(name) {
+    var said = savedName(name);
+    return said ? said + ' is back on the list.' : 'It’s back on the list.';
+  }
+  function groPutBack(id, name) {
     return groDo(function () {
       return groPostEmpty('/api/grocery-list/' + id + '/include');
     }, "Couldn't put that back — try again.").then(function (ok) {
-      if (ok) showToast('Put back.');
+      if (ok) showToast(groBackOnListLine(name));
       return ok;
     });
   }
@@ -8105,6 +8204,7 @@
       '<div class="cook-week-row">' +
         '<button type="button" class="cook-box' + (row.done ? ' checked' : '') + '" ' +
           'data-cook="check-meal" data-entry-id="' + row.entryId + '" data-next="' + (row.done ? 'pending' : 'done') + '" ' +
+          'data-name="' + escapeHtml(row.title) + '" ' +
           'aria-label="' + escapeHtml(checkLabel) + '">' + COOK_ICONS.check + '</button>' +
         name +
         '<span class="cook-badge' + (row.done || row.isReheat ? '' : ' cook-badge-warm') + '">' +
@@ -8576,7 +8676,8 @@
           icon + text + '<span class="cook-ready-chev">' + GRO_ICONS.chevRight + '</span></button>';
       }
       return '<div class="' + cls + '">' + icon + text +
-        '<button type="button" class="cook-box" data-cook="check-prep" data-prep-id="' + mv.task.id + '" data-next="done" aria-label="Mark done">' +
+        '<button type="button" class="cook-box" data-cook="check-prep" data-prep-id="' + mv.task.id + '" data-next="done" ' +
+          'data-name="' + escapeHtml(mv.task.description || '') + '" aria-label="Mark done">' +
           COOK_ICONS.check + '</button>' +
       '</div>';
     }).join('') + '</div>';
@@ -8591,7 +8692,8 @@
   function cookRootDockHtml(row) {
     if (!row || row.done) return '';
     if (row.isReheat) {
-      return '<button type="button" class="dock-primary" data-cook="check-meal" data-entry-id="' + row.entryId + '" data-next="done">' +
+      return '<button type="button" class="dock-primary" data-cook="check-meal" data-entry-id="' + row.entryId + '" data-next="done" ' +
+        'data-name="' + escapeHtml(row.title || '') + '">' +
         escapeHtml(REHEAT_ACTION_LABEL) + '</button>';
     }
     return '<button type="button" class="dock-primary" data-cook="start-tonight" data-idx="' + row.idx + '">Start cooking</button>';
@@ -9279,10 +9381,13 @@
       if (seq === wwkState.seq) redraw(sectionKey);
       if (prefsState.open) renderPrefsRows();
       wwkFlashSaved(sectionKey);
-      // The section's own "Saved" flash stays (it names WHICH section);
-      // the pop-up is the app-wide word for it (S10). Every What we know
-      // edit lands here — preferences, rhythm, eating style, facts, stores.
-      toastSaved();
+      // The section's own "Saved" flash stays; the pop-up is the app-wide
+      // word for it (S10) and now names the same section out loud —
+      // "Your rhythm was saved" (copy sweep finding 1). Every What we
+      // know edit lands here: preferences, rhythm, eating style, facts,
+      // stores.
+      var section = wwkSection(sectionKey);
+      toastSaved(savedLine(section && section.title, 'saved'));
       return true;
     } catch (err) {
       console.warn('What we know save failed:', err);
@@ -11912,7 +12017,9 @@
       var tick = opts.done
         ? wkMiniHtml('data-wk-done="' + slot + '" aria-pressed="' + (done ? 'true' : 'false') + '"',
             'wk-mini-done' + (done ? ' is-done' : ''), WK_ICONS.tick, 'Done',
-            (done ? 'Put back ' : 'Done — ') + name)
+            // Only ever heard, never seen — and still the same euphemism
+            // (copy sweep finding 22). It says what the tap leaves true.
+            (done ? 'Not cooked yet — ' : 'Done — ') + name)
         : '';
       acts = tick + swap;
     } else if (open) {
@@ -12359,7 +12466,12 @@
       });
       if (!res.ok) throw new Error('check-meal failed (' + res.status + ')');
       delete mealDoneBusy[entry.entry_id];
-      if (done) toastSaved(); else showToast('Put back.');
+      // The row knows its dish, both ways (copy sweep findings 1 and 17).
+      var dishName = mealDisplayName(entry);
+      if (done) toastSaved(savedLine(dishName, 'ticked off'));
+      else showToast(savedName(dishName)
+        ? savedName(dishName) + ' isn’t cooked yet.'
+        : 'Not cooked yet.');
       // The same rows are Today's moves and Cook's check-offs — keep the
       // three from showing different answers to the same question.
       refreshTodayMoves();
@@ -12772,7 +12884,11 @@
       // Every day the swap changed — one, or all of a whole dish's.
       (out.days || [out.day]).forEach(spliceSwappedDay);
       renderMealsStep(panel);
-      toastSaved({ label: 'Undo', onClick: function () { runSwapUndo(panel, wkFreshDay(day), slot); } }, SWAP_UNDO_MS);
+      // "Chicken Skewers was swapped in" — the pick's own name, and "in"
+      // rather than the sweep's bare "swapped" because the dish named is
+      // the one arriving, not the one leaving (rule 1: clear beats warm).
+      toastSaved(savedLine(picked.meal, 'swapped in'),
+        { label: 'Undo', onClick: function () { runSwapUndo(panel, wkFreshDay(day), slot); } }, SWAP_UNDO_MS);
       await loadWeekMenu(panel);
       if (weekState.data && weekState.data.status === 'approved') refreshGrocerySurfaces();
     } catch (err) {
@@ -12813,7 +12929,9 @@
       closeSwapSheet();
       (out.days || []).forEach(spliceSwappedDay);
       renderMealsStep(panel);
-      toastSaved({ label: 'Undo', onClick: function () { runMoveNightUndo(panel, weekStart, dateA, otherDate); } }, SWAP_UNDO_MS);
+      // Two nights traded places, so the toast names both of them.
+      toastSaved(wkNightsLine(dateA, otherDate) + ' were swapped',
+        { label: 'Undo', onClick: function () { runMoveNightUndo(panel, weekStart, dateA, otherDate); } }, SWAP_UNDO_MS);
       await loadWeekMenu(panel);
       refreshTodayMoves();
     } catch (err) {
@@ -12827,6 +12945,12 @@
     }
   }
 
+  // "Thursday and Friday" — the two nights a move traded, for the toasts
+  // on both sides of it (copy sweep findings 1 and 17).
+  function wkNightsLine(dateA, dateB) {
+    return dayName(dateA, { weekday: 'long' }) + ' and ' + dayName(dateB, { weekday: 'long' });
+  }
+
   async function runMoveNightUndo(panel, weekStart, dateA, dateB) {
     try {
       var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-nights-undo', {
@@ -12838,7 +12962,7 @@
       var out = await res.json();
       (out.days || []).forEach(spliceSwappedDay);
       renderMealsStep(panel);
-      showToast('Put back.');
+      showToast(wkNightsLine(dateA, dateB) + ' are back as they were.');
       await loadWeekMenu(panel);
       refreshTodayMoves();
     } catch (err) {
@@ -14535,10 +14659,11 @@
       };
       spliceSwappedDay(data.day);
       renderMealsStep(panel);
-      // S10 (Emily, 2026-09-13): the card's own line says what changed;
-      // this says it was saved, and offers the same Undo the line does —
-      // two doors to one undo, the same eight seconds.
-      toastSaved({ label: 'Undo', onClick: function () { runSwapUndo(panel, day, slot); } }, SWAP_UNDO_MS);
+      // S10 (Emily, 2026-09-13): the card's own line says why it changed;
+      // this names the dish that landed, and offers the same Undo the
+      // line does — two doors to one undo, the same eight seconds.
+      toastSaved(savedLine(mealDisplayName(daySlotEntry(data.day, slot)), 'swapped in'),
+        { label: 'Undo', onClick: function () { runSwapUndo(panel, day, slot); } }, SWAP_UNDO_MS);
       // Then the rest of the week, quietly: a swap can change the badge,
       // the subtitle, the draft's clash line and Kitchen's reading of the
       // same week. loadWeekMenu is the one place that keeps all of those
@@ -14763,7 +14888,7 @@
       if (!res.ok) throw new Error('remove failed (' + res.status + ')');
       closeMealAddSheet();
       await loadWeekMenu(st.panel);
-      toastSaved();
+      toastSaved(savedLine(name, 'taken off'));
     } catch (err) {
       console.warn('Taking the side off failed:', err);
       showToast('That didn’t save — try again.');
@@ -14812,7 +14937,11 @@
       renderMealsStep(panel);
       await loadWeekMenu(panel);
       var day = mealsCurrentDay();
-      toastSaved({ label: 'Undo', onClick: function () { if (day) runSwapUndo(panel, day, slot); } }, SWAP_UNDO_MS);
+      // The part the person picked, not the whole dish: "Chicken thighs
+      // was swapped in" is what they just chose, and the card's line
+      // carries the reason the recipe changed around it.
+      toastSaved(savedLine(choice, 'swapped in'),
+        { label: 'Undo', onClick: function () { if (day) runSwapUndo(panel, day, slot); } }, SWAP_UNDO_MS);
       swapUndoTimer = setTimeout(function () {
         swapUndoTimer = null;
         if (swapStateFor(dayDate, slot)) { swapState = null; renderMealsStep(panel); }
@@ -14879,13 +15008,13 @@
       await loadWeekMenu(panel);
       var said = 'Added ' + String(out.name || '').toLowerCase() + '.';
       if (out.note) said += ' ' + out.note;
-      // S10 (2026-09-13): the pop-up says it saved, with Undo; what was
-      // added and when it starts is the card's own line, where it stays.
+      // S10 (2026-09-13): the pop-up names what went on, with Undo; when
+      // it starts is the card's own line, where it stays.
       clearSwapUndoTimer();
       swapState = { date: st.date, slot: st.slot, avoid: [], message: said };
       renderMealsStep(panel);
       var replaced = (st.side && st.side.toLowerCase() !== String(out.name || '').toLowerCase()) ? st.side : '';
-      toastSaved({
+      toastSaved(savedLine(out.name, 'added'), {
         label: 'Undo',
         onClick: function () { return runMealAddUndo(panel, st, out.name, replaced); }
       }, out.note ? 9000 : SWAP_UNDO_MS);
@@ -14950,7 +15079,13 @@
       // A whole dish swapped together comes back together (data.days).
       (data.days || [data.day]).forEach(spliceSwappedDay);
       renderMealsStep(panel);
-      showToast('Put back.');
+      // The dish that has just come back, and the night it is back on
+      // (copy sweep finding 17) — read off the day the server returned.
+      var backDay = (data.days || []).filter(function (d) { return d && d.date === day.date; })[0] || data.day;
+      var backDish = backDay ? mealDisplayName(daySlotEntry(backDay, slot)) : '';
+      showToast(savedName(backDish)
+        ? savedName(backDish) + ' is back on ' + dayName(day.date, { weekday: 'long' }) + '.'
+        : 'Back as it was.');
       await loadWeekMenu(panel);
       if (data.days && weekState.data && weekState.data.status === 'approved') refreshGrocerySurfaces();
     } catch (err) {
@@ -15381,7 +15516,12 @@
         // Calm and plain (DESIGN_SYSTEM §8) — the note already IS the fact
         // plus its way out, so it's shown as-is, held long enough to read.
         showToast(notes[0], null, 9000);
+      } else if (items.length === 1) {
+        toastSaved(savedLine(items[0], 'put in the freezer'));
+      } else if (items.length) {
+        toastSaved(savedCount(items.length, 'put in the freezer'));
       } else {
+        // "Nothing's frozen" is a real answer with no thing to name.
         toastSaved();
       }
       await loadWeekMenu(panel); // refetches defrost_asked_at and the moves the root row reads
@@ -16792,7 +16932,8 @@
         : '') +
       '<div class="cook-hero-actions">' +
         '<button type="button" class="cook-hero-action" ' +
-          'data-cook="check-meal" data-entry-id="' + meal.entry_id + '" data-next="' + (isDone ? 'pending' : 'done') + '">' +
+          'data-cook="check-meal" data-entry-id="' + meal.entry_id + '" data-next="' + (isDone ? 'pending' : 'done') + '" ' +
+          'data-name="' + escapeHtml(meal.leftovers_headline || meal.meal || '') + '">' +
           '<span>' + escapeHtml(isDone ? REHEAT_UNDO_LABEL : REHEAT_ACTION_LABEL) + '</span>' + (isDone ? '' : ICONS.arrow) +
         '</button>' +
       '</div>';
@@ -16910,6 +17051,7 @@
         ? '<button type="button" class="cook-box' + (isDone ? ' checked' : '') + '" ' +
             'data-cook="check-prep" data-prep-id="' + item.prep_task_id + '" ' +
             'data-next="' + (isDone ? 'pending' : 'done') + '" ' +
+            'data-name="' + escapeHtml(item.title || '') + '" ' +
             'aria-label="' + escapeHtml(label) + '">' + COOK_ICONS.check + '</button>'
         : '<span class="cook-box' + (isDone ? ' checked' : '') + '">' + COOK_ICONS.check + '</span>');
     var name = canOpen
@@ -17247,6 +17389,7 @@
           return '<div class="cook-prep-card' + (isDone ? ' is-done' : '') + '">' +
             '<button type="button" class="cook-box' + (isDone ? ' checked' : '') + '" ' +
               'data-cook="check-prep" data-prep-id="' + t.id + '" data-next="' + (isDone ? 'pending' : 'done') + '" ' +
+              'data-name="' + escapeHtml(t.description || '') + '" ' +
               'aria-label="' + (isDone ? 'Mark not done' : 'Mark done') + '">' + COOK_ICONS.check + '</button>' +
             '<span class="cook-prep-date">' + escapeHtml(cookDateLabel(t.task_date)) + '</span>' +
             '<span class="cook-prep-text">' + escapeHtml(t.description) + '</span>' +
@@ -17461,7 +17604,8 @@
   function cookDockCookedHtml(meal) {
     var isDone = meal.cooked_status === 'done';
     return '<button type="button" class="cook-hero-action cook-focus-check' + (isDone ? ' is-done' : '') + '" ' +
-      'data-cook="focus-check" data-entry-id="' + meal.entry_id + '" data-next="' + (isDone ? 'pending' : 'done') + '">' +
+      'data-cook="focus-check" data-entry-id="' + meal.entry_id + '" data-next="' + (isDone ? 'pending' : 'done') + '" ' +
+      'data-name="' + escapeHtml(meal.meal || '') + '">' +
       '<span>' + (isDone ? 'Mark not cooked' : 'Done — on the table') + '</span>' +
     '</button>';
   }
@@ -17904,6 +18048,16 @@
   // something to ask about. Reheat nights ("Mark eaten") are excluded:
   // there's no separate cook to rate, the dish was already rated the
   // night it was actually made.
+  // Un-ticking a cook, in the tick's own words: "Chicken Skewers isn't
+  // cooked yet" — the same thing the row's screen-reader label says
+  // (copy sweep findings 1 and 22). Every box that can be un-ticked
+  // carries `data-name`; a box drawn without one falls back to the plain
+  // word rather than to a sentence with a hole in it.
+  function cookNotCookedLine(el) {
+    var name = savedName(el.getAttribute('data-name'));
+    return name ? name + ' isn’t cooked yet' : SAVED_PLAIN;
+  }
+
   function toastMealLogged() {
     showToast('Logged — that’ll steer next week.', {
       label: 'Rate it',
@@ -17925,9 +18079,11 @@
       refreshCookAttention();
       refreshPlanSurfacesAfterCook();
       // The same two lines the focused screen's tick uses (cookFocusCheckMeal):
-      // a cook gets "Logged…", an un-cook says it saved (S10).
+      // a cook gets "Logged…", an un-cook names the dish it just put back
+      // to not-cooked (S10, copy sweep finding 1 — the box carries the
+      // name it is drawn beside, `data-name`).
       if (justCooked) toastMealLogged();
-      else toastSaved();
+      else toastSaved(cookNotCookedLine(el));
     } catch (err) {
       el.disabled = false;
       showToast('That didn’t save — try again.');
@@ -17958,9 +18114,10 @@
       refreshCookAttention();
       refreshPlanSurfacesAfterCook();
       // "Mark it cooked" has its own line ("Logged — that'll steer next
-      // week"); "Mark not cooked" had none until S10.
+      // week"); "Mark not cooked" had none until S10, and said which dish
+      // from 2026-09-23.
       if (next === 'done') toastMealLogged();
-      else toastSaved();
+      else toastSaved(cookNotCookedLine(el));
     } catch (err) {
       el.disabled = false;
       showToast('That didn’t save — try again.');
@@ -17970,12 +18127,17 @@
   async function cookCheckPrep(el) {
     el.disabled = true;
     try {
+      var prepNext = el.getAttribute('data-next');
       renderCookFrom(await cookPost('/api/cooker/check-prep', {
         prep_task_id: parseInt(el.getAttribute('data-prep-id'), 10),
-        status: el.getAttribute('data-next')
+        status: prepNext
       }));
       refreshPlanSurfacesAfterCook();
-      toastSaved();
+      // The box carries the task it sits beside ("Defrost the chicken").
+      var prepName = savedName(el.getAttribute('data-name'));
+      toastSaved(prepNext === 'done'
+        ? savedLine(prepName, 'ticked off')
+        : (prepName ? prepName + ' isn’t done yet' : SAVED_PLAIN));
     } catch (err) {
       el.disabled = false;
       showToast('That didn’t save — try again.');
@@ -18167,15 +18329,28 @@
     }
   }
 
+  // What a "How did it go?" row is about, read off the row BEFORE the
+  // answer removes it from the list (copy sweep finding 1). The
+  // depletion rows carry the ingredient; anything else falls back to the
+  // plain word rather than reading out the whole summary sentence.
+  function cookAttentionName(id) {
+    var found = (cookState.attention || [])
+      .filter(function (it) { return String(it.id) === String(id); })[0];
+    return savedName(found && found.detail && found.detail.ingredient);
+  }
+
   async function cookResolveAttention(el) {
     el.disabled = true;
     try {
-      var data = await cookPost('/api/attention/' + el.getAttribute('data-attn-id') + '/resolve', {
+      var attnId = el.getAttribute('data-attn-id');
+      var attnName = cookAttentionName(attnId);
+      var dismissed = el.getAttribute('data-status') === 'dismissed';
+      var data = await cookPost('/api/attention/' + attnId + '/resolve', {
         status: el.getAttribute('data-status')
       });
       cookState.attention = data.items || [];
       renderCook();
-      toastSaved();
+      toastSaved(savedLine(attnName, dismissed ? 'skipped' : 'marked handled'));
     } catch (err) {
       el.disabled = false;
       showToast('That didn’t save — try again.');
@@ -18187,12 +18362,13 @@
     var input = document.querySelector('[data-attn-input="' + id + '"]');
     el.disabled = true;
     try {
+      var usedName = cookAttentionName(id);
       var data = await cookPost('/api/attention/' + id + '/use', {
         amount_used: input ? input.value.trim() : ''
       });
       cookState.attention = data.items || [];
       renderCook();
-      toastSaved();
+      toastSaved(savedLine(usedName, 'logged'));
     } catch (err) {
       el.disabled = false;
       showToast('Couldn’t log that — try again.');
@@ -19829,8 +20005,17 @@
             state.saved = true;
             state.proposal = out.proposal || state.proposal;
             draw();
-            (out.proposal && out.proposal.applied || []).forEach(function (a) { markRecentlyChanged(a.date, a.slot); });
-            toastSaved({ label: 'Undo', onClick: function () { undoChangeCard(state); } }, SWAP_UNDO_MS);
+            var applied = (out.proposal && out.proposal.applied) || [];
+            applied.forEach(function (a) { markRecentlyChanged(a.date, a.slot); });
+            // One night changed says the dish and the night; several say
+            // how many, because the card's own rows list them.
+            var appliedSaid = applied.length === 1 && applied[0].meal
+              ? savedLine(applied[0].meal, 'put on ' + dayName(applied[0].date, { weekday: 'long' }))
+              : (applied.length
+                ? applied.length + (applied.length === 1 ? ' night was' : ' nights were') + ' changed'
+                : '');
+            toastSaved(appliedSaid,
+              { label: 'Undo', onClick: function () { undoChangeCard(state); } }, SWAP_UNDO_MS);
             if (panels.week && panels.week.dataset.built) loadWeekMenu(panels.week);
             else refreshDishIndex();
           })
@@ -19854,7 +20039,7 @@
         state.left = true;
         state.putBack = true;
         state.cards.forEach(function (card) { card.innerHTML = changeCardHtml(state.proposal, state); });
-        showToast('Put back.');
+        showToast('The week is back as it was.');
         if (panels.week && panels.week.dataset.built) loadWeekMenu(panels.week);
       })
       .catch(function () { showToast('Couldn’t undo that — try it again in a moment.'); });
@@ -20201,7 +20386,12 @@
       // the turn actually wrote something — a plain answer stays plain.
       // ...unless the turn came back with a change card: then the week
       // is not saved yet, and a fact it remembered alongside has its own
-      // chip. The card's Save changes is what says "Changes saved".
+      // chip. The card's Save changes is what says it saved.
+      // This is the ONE save toast with nothing of its own to name, and
+      // deliberately so: the action cards sitting right under the reply
+      // already say which screen changed and what changed on it, so
+      // repeating it here would be the fourth anti-pattern (a line
+      // restating the thing below it). Plain "Saved" (SAVED_PLAIN).
       if (data.actions && data.actions.length && !data.proposal) toastSaved();
     } catch (err) {
       loadingWraps.forEach(function (w) { w.remove(); });

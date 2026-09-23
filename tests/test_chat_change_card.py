@@ -371,7 +371,11 @@ def test_the_card_is_drawn_under_the_reply_and_saves_with_the_pop_up():
     i = SHELL_JS.index("function wireChangeCard(")
     body = SHELL_JS[i:SHELL_JS.index("function undoChangeCard(")]
     assert "/apply'" in body and "/another'" in body and "/choose'" in body
-    assert "toastSaved({ label: 'Undo', onClick: function () { undoChangeCard(state); } }, SWAP_UNDO_MS);" in body
+    # The pop-up names what the save actually put on the week
+    # (copy sweep finding 1): one night says the dish and the night,
+    # several say how many, because the card's rows list them.
+    assert "toastSaved(appliedSaid," in body
+    assert "{ label: 'Undo', onClick: function () { undoChangeCard(state); } }, SWAP_UNDO_MS);" in body
     assert "markRecentlyChanged(a.date, a.slot)" in body
     assert "loadWeekMenu(panels.week)" in body
     # Every control the card draws is wired, and none of the copy asks a question.

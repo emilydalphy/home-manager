@@ -139,7 +139,9 @@ def test_the_root_has_no_dock_and_the_tick_is_the_action():
     _in("function groTickLine(", SHELL_JS, "the tick", "shell.js")
     _in("case 'line-tick':", SHELL_JS, "its handler", "shell.js")
     _in("groTick(id, next);", SHELL_JS, "the tick going through the offline path", "shell.js")
-    _in("label: bought ? 'Undo' : 'Put back',", SHELL_JS, "the toast's way back", "shell.js")
+    # Undo both ways since 2026-09-23 (copy sweep finding 2) — it used to
+    # read "Put back" on the tick and "Undo" on the un-tick.
+    _in("label: 'Undo',", SHELL_JS, "the toast's way back", "shell.js")
     _in("function groRecordStopDone(", SHELL_JS, "the stop record on the last tick", "shell.js")
     _in("groPostJson('/api/shopping-trips/close'", SHELL_JS, "the same route the trip closed a stop with", "shell.js")
 
