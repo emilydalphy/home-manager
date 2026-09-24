@@ -24,6 +24,7 @@ from .tools import typed_requests as _typed_requests
 from .tools import model_shapes as _model_shapes
 from .tools import plan_quality
 from .tools import meal_variety as _meal_variety
+from .tools import leftovers as _leftovers_mod
 from .tools import voice as _voice
 
 logger = logging.getLogger("home_manager")
@@ -69,9 +70,9 @@ stages. A dinner — and any other slot genuinely cooked rather than put togethe
 as the second one. This is the most common way a week that satisfies every rule above still \
 disappoints the household: nothing is wrong with it and nobody wants to eat it again.
   The moves that matter most cost NO EXTRA TIME, so this is NOT a licence to write longer \
-recipes. Every time cap above stays exactly as hard as it was — a `rush` night is still \
-{tools.RUSH_MAX_MINUTES} minutes, weeknight_max_minutes is still a real ceiling. Cook better in the minutes \
-the slot already has:
+recipes. Every time cap above stays exactly as hard as it was — a `rush` dinner is still \
+{tools.RUSH_MAX_MINUTES} minutes, weeknight_max_minutes is still a real ceiling, a weekday lunch cooked that \
+day is still {tools.WEEKDAY_LUNCH_MAX_MINUTES} minutes. Cook better in the minutes the slot already has:
   * BROWN SOMETHING. Searing meat, putting fish in skin-side down, or roasting vegetables \
 before they meet a sauce takes the same minutes as baking them together and is where most of \
 the flavor comes from. Everything-on-one-sheet-pan is the single most reliable way to make a \
@@ -649,7 +650,7 @@ make, and it never makes them feel managed.
 Five rules:
 1. Offer, don't instruct. "Shall I put Sep 1-7 together for you?" — not "Plan your week." \
 "I'd like your call on this one" — not "Action needed."
-2. First person singular, and you do the work. "I'll keep it under 20 minutes." "I've put 22 \
+2. First person singular, and you do the work. "I'll keep it to 30 minutes or less." "I've put 22 \
 items on your list." You carry the load; the household decides.
 3. Every question states what it buys them, before they answer it. Never a bare field.
 4. Every answer is acknowledged with its consequence. That's how personalisation becomes \
@@ -2817,7 +2818,7 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                         },
                         "open_reason": {
                             "type": "string",
-                            "description": "Required when slot_state is 'open'. A full sentence naming the CONSTRAINT that caused it, so the ask reads as diligence rather than failure — e.g. \"Wednesday I'd rather ask than guess: after Monday's chili, everything I have under 20 minutes repeats something you've just eaten.\" Never an apology, never 'I couldn't think of anything'.",
+                            "description": "Required when slot_state is 'open'. A full sentence naming the CONSTRAINT that caused it, so the ask reads as diligence rather than failure — e.g. \"Wednesday I'd rather ask than guess: after Monday's chili, everything I have that takes 30 minutes or less repeats something you've just eaten.\" Never an apology, never 'I couldn't think of anything'.",
                         },
                         "open_options": {
                             "type": "array",
@@ -2836,7 +2837,7 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                             "description": "Which inputs actually produced this slot. Record what genuinely drove it, not everything that was in context — this is what makes 'why did it plan that?' answerable later, and a wrong plan traceable to the input that caused it. Include only the keys that apply; never an empty string or empty list for one that doesn't.",
                             "properties": {
                                 "tags": {"type": "array", "items": {"type": "string"}, "description": "Night tags that applied to this day, e.g. ['rush']."},
-                                "constraint": {"type": "string", "description": "The BINDING constraint, if any, e.g. 'max_minutes:20', 'packed_lunch', 'guests:6'."},
+                                "constraint": {"type": "string", "description": "The BINDING constraint, if any, e.g. 'max_minutes:30', 'packed_lunch', 'guests:6'."},
                                 "inputs": {"type": "array", "items": {"type": "string"}, "description": "e.g. ['cuisines:thai', 'mood:comfort_food'], or 'calendar:Soccer practice' when a calendar commitment drove it."},
                                 "freeform": {"type": "string", "description": "The quoted span of the household's own words that drove this slot, if any."},
                                 "inventory": {"type": "array", "items": {"type": "string"}, "description": "Stock items this slot was chosen to use up."},
@@ -2981,6 +2982,13 @@ def _entry_dates(item: dict) -> list[str]:
     return dates
 
 
+def _days_between(earlier: str, later: str) -> int:
+    try:
+        return (datetime.date.fromisoformat(later) - datetime.date.fromisoformat(earlier)).days
+    except (TypeError, ValueError):
+        return 10 ** 6  # an unreadable date is never "within three days"
+
+
 def _expand_repeated_dates(items):
     """
     One entry naming several dates becomes one entry per date, each
@@ -3014,6 +3022,23 @@ def _expand_repeated_dates(items):
     Entry ORDER is the model's throughout. `_honest_meal_names` renames in
     order and carries each rename forward across the pass, so reordering
     would change which of two colliding names gets corrected.
+
+    ONE COOK, NOT SEVERAL (Emily, 2026-09-23: "If I want 2 types of
+    lunches, but need 4 lunches, you should assume Im making double of
+    each of the recipes. thats the batch cooking point"). The same dish on
+    several days is cooked on the first of them; each later day within
+    leftovers.MAX_LEFTOVER_DAYS (3) of that cook carries
+    derived_from.links_to "YYYY-MM-DD:slot" naming it, and the first day
+    more than three days on starts a second batch. repair_leftover_chains
+    confirms each link after the save (it writes the cook's
+    make_double_for), so the shopping buys one scaled batch per cook. A
+    breakfast day is also marked cook_ahead, the one way that repair takes
+    a breakfast source ("Made ahead — Monday's Oats"). Every slot, prep
+    days or not — except SNACKS: a day holds two of them, and "date:snack"
+    can't say which one a link means (cook_ahead._source_ref), so a
+    repeated snack stays one row per day as before. The prep-day batching
+    at approval (cook_ahead.apply_prep_day_batches) leaves any dish with a
+    chain alone, so nothing is chained twice.
     """
     if not isinstance(items, list):
         return items
@@ -3057,6 +3082,16 @@ def _expand_repeated_dates(items):
         ]
         if len(dates) > 1:
             folded += 1
+        # Which day cooks for which (see "ONE COOK" above), decided over
+        # the days in date order; the rows still go out in the model's.
+        cook_for: dict[str, str] = {}
+        if len(mine) > 1 and slot != "snack":
+            cook = None
+            for date in sorted(mine):
+                if cook is not None and _days_between(cook, date) <= _leftovers_mod.MAX_LEFTOVER_DAYS:
+                    cook_for[date] = cook
+                else:
+                    cook = date
         for date in mine:
             row = dict(item)
             row.pop("dates", None)
@@ -3067,6 +3102,13 @@ def _expand_repeated_dates(items):
             # dict is how one night's correction silently becomes another's.
             if isinstance(item.get("derived_from"), dict):
                 row["derived_from"] = copy.deepcopy(item["derived_from"])
+            if date in cook_for:
+                derived = dict(row.get("derived_from") or {})
+                derived["links_to"] = f"{cook_for[date]}:{slot}"
+                derived[_leftovers_mod.BATCH_KEY] = True
+                if slot == "breakfast":
+                    derived["cook_ahead"] = True
+                row["derived_from"] = derived
             out.append(row)
     if folded:
         logger.info(
@@ -3102,6 +3144,8 @@ def generate_weekly_plan_llm(context: dict) -> list[dict]:
     # copy and the draft screen's per-slot reasons can't drift to different
     # numbers — see tools.RUSH_MAX_MINUTES.
     rush_max = tools.RUSH_MAX_MINUTES
+    # The weekday fresh-lunch cap, same reason (Emily, 2026-09-23).
+    lunch_max = tools.WEEKDAY_LUNCH_MAX_MINUTES
     # Split into a static instructions block and a dynamic context block
     # (below, at the call site) rather than one f-string with the
     # household JSON inlined at the top. The instructions are identical
@@ -3157,7 +3201,8 @@ restaurant-tier new recipes; match the actual effort level of what they are.
 entry with every one of those days listed in `dates` (its `date` first) — not the same dish \
 written out again for each morning. Oatmeal on five mornings is one entry with five dates. \
 It is written onto each of those days exactly as if you had sent it five times, with this \
-entry's own reasoning and derived_from on each, so nothing is lost by folding it — what is \
+entry's own reasoning and derived_from on each (and cooked once: the later days within three \
+days of the first eat that batch), so nothing is lost by folding it — what is \
 saved is you writing the same decision out four more times, which on a real week is more \
 than half of everything you write. Two rules on it: the days must genuinely be the SAME dish (a different \
 topping is a different entry), and DINNER IS NOT FOLDED — dinners carry the shape of the \
@@ -3253,7 +3298,9 @@ means don't plan those days; "under 30 minutes on weeknights" means quick weekni
 their standing preferences wherever the two disagree — standing preferences say what they'll \
 eat, the intake says what they want THIS week. Each night tag has exactly one consequence, and \
 you must actually deliver it, because the household was told what each one would do:
-  * `rush` on a date — that dinner is capped at {rush_max} MINUTES of prep+cook, hard. The \
+  * `rush` on a date — that dinner is capped at {rush_max} MINUTES of prep+cook, hard, or at \
+`weeknight_max_minutes` on a Monday-Friday when that is lower. Dinner only: it does not change \
+that day's breakfast or lunch. The \
 alternative the household was offered is equally good and often better: scale the PREVIOUS \
 night's dinner up and make this one eat its leftovers. Either satisfies the tag; a 45-minute \
 braise does not.
@@ -3383,14 +3430,21 @@ the old repeats question, 2026-09-05) decides the SHAPE of the week, so honour i
 rather than as a preference: "love_them" means deliberately build in two or three \
 cook-once-eat-twice pairs (a bigger batch one night, its leftovers the next) and favor \
 batch-friendly recipes; "fine_sometimes" means at most one such pair, no strong lean either \
-way otherwise; "fresh_each_night" means no leftover nights at all unless a night tag explicitly \
-asks for one — every dinner is cooked fresh that night. This does NOT mean seven distinct \
-dinners: the same dish can still repeat across the week (that's what dinners_per_week already \
-governs), it's specifically that a dinner is never a reheat of an earlier one. Blank means \
-unknown — use your normal judgement.
+way otherwise; "fresh_each_night" means don't add leftover nights of your own unless a night \
+tag asks for one. It does not overrule the counts: when dinners_per_week is less than the \
+nights you are planning, the household chose fewer dinners than nights, and the extra nights \
+are leftovers of a batch cooked within the three days before (see the counts rule below). \
+Blank means unknown — use your normal judgement.
 - household_memory's `weeknight_max_minutes`, when non-zero, is a real cap on Monday-Friday \
-dinners in prep+cook minutes. A `rush` tag overrides it downwards; an `unrushed` tag lifts it \
-for that one night. Nothing else moves it.
+dinners in prep+cook minutes. A `rush` tag never raises it: a rush weeknight is {rush_max} \
+minutes or this cap, whichever is lower. An `unrushed` tag lifts it for that one night. Nothing \
+else moves it.
+- Every Monday-Friday lunch that is cooked that day is capped at {lunch_max} minutes of \
+prep+cook, hard. A lunch that eats an earlier cook (derived_from.links_to set), a lunch cooked \
+as a batch that later lunches eat, and a lunch on one of the household's prep days \
+(household_memory.rhythm.prep_days) have no cap: those are the place for a longer dish that \
+reheats well, like chili, a stew or a curry. Weekend lunches and every breakfast have no fixed \
+cap. The night tags and `weeknight_max_minutes` are about dinner and don't apply to lunch.
 - `intake.moods` lean the week without making every night the same — a lean, not a theme. \
 `intake.mood_guidance` spells out what each of those moods asks for; follow those lines, they \
 are what the household meant by the two-word label. \
@@ -3452,13 +3506,18 @@ rather than a thin one.
 - household_memory's dinners_per_week / breakfasts_per_week / lunches_per_week / \
 snacks_per_week (0-7) are counts of DISTINCT meals, not counts of days to plan. Every day still \
 gets all four. "4 breakfasts" means four different breakfast ideas spread across the seven \
-mornings, repeating as needed to fill the week — it does NOT mean three mornings with nothing. \
+mornings — it does NOT mean three mornings with nothing. Fewer recipes than meals means batch \
+cooking (Emily, 2026-09-23: "If I want 2 types of lunches, but need 4 lunches, you should \
+assume Im making double of each of the recipes"): each recipe is cooked once, bigger, and its \
+other meals are leftovers eaten within three days of the cook. Two lunch recipes over four \
+days is each cooked double. Lean toward recipes that keep and reheat well for those meals, and \
+never plan a second fresh cook of a dish the household asked for — once asked, cooked once. \
 Each count is a TARGET for distinct dishes over the day_count days you are planning — not a \
 cap and not a floor — and it has already been scaled to this period when it is shorter than a \
 week, so the number you are handed is the number to hit: with dinners_per_week 3 over four \
 days, exactly three different dinners, one of them on two nights. Count the different dishes \
 you have written for each meal before you submit. Too many, and the extras will be folded into \
-repeats of the ones you kept; too few, and the repeated nights will be re-picked into new \
+leftovers of the ones you kept; too few, and the repeated nights will be re-picked into new \
 dishes — either way, after you answer, so anything off the number is work thrown away (Emily, \
 2026-09-21: "why isn't it following the guidelines we set"). A reheat night counts as the dish \
 it reheats, not as a new one. \
@@ -5884,9 +5943,22 @@ def _finish_week_slots(
     )
     count_budget = repick_budget or _allergen_gate.CallBudget()
     period = tools.period_dates(week_start_date, day_count)
-    # Each night's real time cap (a rush tag, the weeknight cap), so a
-    # folded repeat never lands a braise on a rush night.
-    caps = {d: _plate_minutes_cap(d, intake, household_memory) for d in period}
+    # Each meal's real time cap, per (date, slot) — a rush dinner, the
+    # weeknight cap, a weekday lunch cooked that day — so a folded repeat
+    # never lands a braise on a rush night or a 45-minute lunch on a
+    # Tuesday. Per slot since Emily, 2026-09-23: keyed by date alone, a
+    # lunch was held to that evening's dinner cap. Either end of a
+    # leftovers chain is a batch, not a cook on the day, so it has no
+    # lunch cap (time_caps.minutes_cap).
+    chains = tools.plan_leftover_chains(plan_id)
+    chained = {
+        (c["date"], c["slot"])
+        for c in list(chains["sources"].values()) + list(chains["leftovers"].values())
+    }
+    caps = {
+        (d, slot): _meal_minutes_cap(d, slot, intake, household_memory, is_leftovers=(d, slot) in chained)
+        for d in period for slot in _meal_variety.COUNT_FIELDS
+    }
     # The household's own full-week numbers, for the repeat's line: the
     # effective memory carries the SCALED count, and "you asked for two
     # lunches" would be false on a four-day plan when she asked for three.
@@ -6281,26 +6353,17 @@ MAX_PLATE_SIDE_CALLS = 6
 _PLATE_SLOT_PRIORITY = {"dinner": 0, "lunch": 1, "breakfast": 2, "snack": 3}
 
 
-def _plate_minutes_cap(meal_date: str, intake: dict | None, household_memory: dict) -> int | None:
+def _meal_minutes_cap(
+    meal_date: str, slot: str, intake: dict | None, household_memory: dict, is_leftovers: bool = False,
+) -> int | None:
     """
-    The real cap on how long this night's cooking may take, or None.
-
-    A `rush` tag wins (it's this week's explicit answer and it's the
-    tightest), an `unrushed` tag lifts the cap outright (the one tag that
-    raises a limit — the two are mutually exclusive at save time), then a
-    weeknight cap if the household set one and the date is Monday-Friday.
-    Weekend nights with no rush tag have no cap, which is the truth rather
-    than a number invented to look precise.
+    The real cap on how long this meal's cooking may take, or None: the
+    date's night tags read off the intake, then tools.minutes_cap, the one
+    rule the swap sheet uses too (Emily, 2026-09-23 — per slot, so a lunch
+    is no longer held to that evening's dinner cap).
     """
     tags = ((intake or {}).get("night_tags") or {}).get(meal_date) or []
-    if "rush" in tags:
-        return tools.RUSH_MAX_MINUTES
-    if "unrushed" in tags:
-        return None
-    weeknight_cap = household_memory.get("weeknight_max_minutes") or 0
-    if weeknight_cap and datetime.date.fromisoformat(meal_date).weekday() < 5:
-        return weeknight_cap
-    return None
+    return tools.minutes_cap(meal_date, slot, tags, household_memory, is_leftovers=is_leftovers)
 
 
 def _complete_plates_pass(plan_id: int, household_memory: dict, intake: dict | None) -> None:
@@ -6338,7 +6401,8 @@ def _complete_plates_pass(plan_id: int, household_memory: dict, intake: dict | N
         level = household_memory.get("carb_level") or tools.household_carb_level(household_memory.get("eating_style"))
         rule = tools.plate_rule(level=level)
         plan = tools.get_weekly_plan(plan_id)
-        reheats = tools.plan_leftover_chains(plan_id)["leftovers"]
+        chains = tools.plan_leftover_chains(plan_id)
+        reheats = chains["leftovers"]
 
         short = []
         unknown = []
@@ -6402,7 +6466,10 @@ def _complete_plates_pass(plan_id: int, household_memory: dict, intake: dict | N
                     "dietary_restrictions": restrictions,
                     "eating_style": eating_style,
                     "carb_portion": tools.carb_portion(level),
-                    "max_minutes": _plate_minutes_cap(meal["date"], intake, household_memory),
+                    "max_minutes": _meal_minutes_cap(
+                        meal["date"], meal["slot"], intake, household_memory,
+                        is_leftovers=meal.get("entry_id") in chains["sources"],
+                    ),
                 })
             except Exception:
                 logger.exception(

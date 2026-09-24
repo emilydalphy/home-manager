@@ -477,7 +477,7 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
         raise ValueError("Those picks aren't on offer any more — tap Swap again.")
     why = _gate_all(pick, group)
     if not why and len(group) > 1:
-        # Every day held to its OWN cap — a rush Friday is 20 minutes even
+        # Every day held to its OWN cap — a rush Friday is 30 minutes even
         # when Thursday has none (Emily's standing rule, 2026-09-22).
         why = _swap.cap_gate(weekly_plan_id, pick, group)
     if why:

@@ -16652,6 +16652,25 @@ why*, not duplicating the diff.
   out and recounts from what it shows, so the same reminder never appears
   in two cards — the same rule Today's prep tile follows for defrost.
 
+- **Time caps are per meal, not per date; rush is 30, a weekday fresh lunch
+  is 20** (2026-09-23, Emily: "Short on time" is dinner in 30 minutes or
+  less, prep included; "if Im prepping chili for lunches, that's a great
+  meal to just reheat, but if Im cooking on the day, then it needs to be 20
+  mins or less"). Root cause of the old behaviour: every cap lookup was
+  keyed by DATE (agent `_plate_minutes_cap`, `swap_in_place._minutes_cap`),
+  so a lunch inherited that evening's dinner cap, and `rush` returned
+  before the weeknight cap was read, LOOSENING a stricter weeknight cap.
+  Now one helper, `tools/time_caps.minutes_cap(date, slot, tags, memory,
+  is_leftovers)`, read by the plate pass, the variety caps (per
+  `(date, slot)`; `caps_for_slot` still takes the old date-keyed dict), the
+  swap context and `cap_gate`, and plan_quality's new warn-only
+  `weekday_lunch_cap_respected`. Rules: dinner rush = min(30, weeknight cap
+  on Mon-Fri); lunch Mon-Fri = 20 unless either end of a leftovers chain
+  (`links_to` / `make_double_for`) or a `rhythm.prep_days` weekday; weekend
+  lunch, breakfast, snack = none. `RUSH_MAX_MINUTES` and
+  `WEEKDAY_LUNCH_MAX_MINUTES` live in `time_caps` (imports nothing from the
+  app) and are re-exported from `week_intake`.
+
 ## Deploying
 
 Push to `main` on GitHub; Railway auto-deploys from there. CI runs the smoke
@@ -17075,3 +17094,30 @@ support is untouched. Skipping a day is step 2's day sheet: every
 person out for every meal = "Nobody home — I'll plan nothing and buy
 nothing." (nothing new built). Tests:
 `tests/test_which_days_calendar_2026_09_22.py`.
+
+**2026-09-23 — Fewer recipes than meals means batch cooking (branch
+`double-batch-meal-types`).** Emily's "Decision E": "If I want 2 types of
+lunches, but need 4 lunches, you should assume Im making double of each
+of the recipes. thats the batch cooking point"; with it, a dish asked for
+once is cooked once (prod plan 61 got a second Korean Chicken Pancake
+from the old fold), leftovers are eaten within 3 days (else frozen), and
+Pomona says what it did in one plain line. `meal_variety.
+enforce_distinct_count` no longer writes a second cooking of a kept dish
+(`_spread_pick` is gone): every night of a slot with more nights than its
+target is a cook, leftovers of a cook 1–3 days earlier (smallest batch,
+then nearest; a lunch may eat the dinner the evening before when that
+dinner is already one of the lunches), or — only when re-laying the
+movable cooks into even runs (`_plan_batches(relay=True)`) can't reach
+it — a freezer portion on the nearest earlier cook. Both chain halves
+are written the way `repair_leftover_chains` writes them; on an approved
+week the recipe group is re-bought as one batch
+(`_rescale_leftover_source_grocery`). `caps` is read only through
+`_cap_at` (date- or (date, slot)-keyed). `agent._expand_repeated_dates`
+links a repeated entry's later days to its first within 3 days, then
+starts a new cook (not snacks: "date:snack" is ambiguous). `leftovers.
+MAX_LEFTOVER_DAYS` = 3 is checked by `repair_leftover_chains` (a too-far
+chain becomes "Leftovers from the freezer — Monday’s Chili" + the cook's
+`freezer_extra`, NOT a reopened question) and by `cook_ahead.
+apply_prep_day_batches` (`_within_three_days`). Draft opener line:
+`draft_opener.batch_line` — "Two lunches, each cooked double." Tests:
+`tests/test_double_batch_meal_types.py`.
