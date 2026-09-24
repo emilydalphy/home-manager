@@ -285,16 +285,19 @@ def test_a_side_the_batch_had_swallowed_comes_back_and_the_reply_says_so():
 def test_one_day_of_a_longer_batch_is_freed_and_the_rest_stays():
     _household()
     _chili()
-    plan_id, ids = _plan((MON, "Turkey Chili", "dinner"), (THU, "Turkey Chili", "dinner"),
-                         (FRI, "Turkey Chili", "dinner"))
-    assert [c["date"] for c in cook_ahead.batched_dishes(plan_id)[0]["covered"]] == [THU, FRI]
+    # Wednesday and Thursday, not Thursday and Friday: a batch covers at
+    # most three days after its cook (the 2026-09-23 food-safety rule), so
+    # a Monday cook no longer reaches Friday.
+    plan_id, ids = _plan((MON, "Turkey Chili", "dinner"), (WED, "Turkey Chili", "dinner"),
+                         (THU, "Turkey Chili", "dinner"))
+    assert [c["date"] for c in cook_ahead.batched_dishes(plan_id)[0]["covered"]] == [WED, THU]
 
-    out = tools.unbatch("chili", THU)
+    out = tools.unbatch("chili", WED)
 
     assert out["status"] == "unbatched"
-    assert [c["date"] for c in cook_ahead.batched_dishes(plan_id)[0]["covered"]] == [FRI]
-    assert "links_to" not in _derived(ids[(THU, "dinner")])
-    assert "links_to" in _derived(ids[(FRI, "dinner")])
+    assert [c["date"] for c in cook_ahead.batched_dishes(plan_id)[0]["covered"]] == [THU]
+    assert "links_to" not in _derived(ids[(WED, "dinner")])
+    assert "links_to" in _derived(ids[(THU, "dinner")])
 
 
 def test_naming_the_day_that_cooks_takes_the_whole_batch_apart():
