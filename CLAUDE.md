@@ -976,6 +976,60 @@ why*, not duplicating the diff.
     the same line the way down left it, not to a byte-identical one. Same
     property every other caller of that function already has; said out loud
     rather than promised away.
+- **2026-09-24 — A grocery line could be moved to a status nothing looks
+  for, and the line was gone from the shop without being removed from it.
+  Branch `overnight/grocery-item-routes-pinned`, NOT merged at the time of
+  writing.** Found by writing the ROUTE tests for the thirteen untested
+  `/api/grocery-list/{item_id}/…` routes rather than from a report.
+  `mark_grocery_item` took any string and wrote it: reproduced before
+  anything was touched, `status="teleported"` answered 200 and the line
+  then matched no view's WHERE clause — off the needed list, off the
+  trolley, off the bought list, and with no screen able to put it back.
+  Nothing crashed, which is what makes it the expensive kind.
+  - **The THIRD instance of one class, fixed the way the other two were.**
+    `check_off_meal` had it (2026-09-16, `InvalidMealStatus`) and
+    `set_chore_instance_status` had it (`InvalidChoreStatus`); this is
+    `InvalidGroceryStatus`, a `ValueError` subclass so the route's 404
+    handler would swallow it, which is why its `except` must come first —
+    the same ordering trap, pinned by a test that asks for both codes in
+    one breath. 422 rather than 400 for the reason the cooked tick's entry
+    gives: the route already answered 422 for a non-string status, from
+    pydantic, so 400 would give one client mistake two codes.
+  - **THE ARGUMENT FOR GUARDING IT IS STRONGER HERE THAN IT WAS THERE, and
+    that is the part worth keeping.** The screens send only the three and
+    the chat tool's schema enumerates them, exactly as they did for the
+    cooked tick — but the sibling vocabulary is BIGGER, not smaller:
+    `removed`, `carried`, `excluded` and `spice` are all real statuses of
+    this column, each set by its own function with its own bookkeeping
+    beside it (`removed_by`, `carried_from_plan_id`, the staple's "we have
+    plenty", the pre-shop undo). Reaching one of those through this door
+    sets the status and skips all of it. So `GROCERY_SHOPPER_STATUSES` is
+    deliberately the shopper's three and not every value the column takes,
+    and four of the seven refusal cases in the test are those real
+    statuses rather than typos.
+  - **The check is above `get_conn`**, so a bad status never opens a
+    connection and never takes the write lock, and a caller that never
+    reaches the route — chat, a script — is held to the same three. Pinned
+    by a test that calls the tool directly, and by the mutation that moves
+    the check below the connection.
+  - **Nothing heals a row already written with a fourth word.** Reaching
+    it needed a hand-made request, so the count in the wild is likely
+    zero; this closes the door rather than sweeping up behind it. Same
+    stance the cooked-tick entry took.
+  - `tests/test_grocery_item_routes.py` (35), pinning the cluster as well
+    as the guard: update, remove, exclude/include, already-have, the 404
+    on every one of them, the 401 on every one of them, and the household
+    scope over HTTP with a mutation beside it proving the isolation test
+    can actually fail (force the household to 1 and the other household
+    DOES reach the line) — this repo has been bitten by isolation tests
+    that never crossed a boundary, including on another branch the same
+    night. Three mutations run and each bites: the guard removed (9 red),
+    the 422 `except` moved below the 404 (8), the guard moved below
+    `get_conn` (9). Suite **6663 passed, 0 failed** at
+    `TZ=America/Toronto`, against a measured 6628 on main — +35 is this
+    file exactly, and no existing test was changed or weakened, which is
+    the evidence that the new refusal breaks nothing that was relying on
+    the old permissiveness.
 
 - **2026-09-23 — A chat turn records what it was ABOUT: one theme label,
   never the words. Branch `chat-theme-per-turn`, NOT merged at the time of

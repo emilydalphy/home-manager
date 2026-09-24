@@ -1776,6 +1776,40 @@ def _restore_inventory_from_receipt(conn, receipt_json: str | None) -> str:
     return RESTORED
 
 
+# The three statuses the SHOPPER moves a line between. Deliberately not
+# every value the column takes: 'removed', 'carried', 'excluded' and
+# 'spice' are real statuses, and each is set by its own function with its
+# own bookkeeping beside it (removed_by, carried_from_plan_id, the
+# staple's "we have plenty", the pre-shop undo). Reaching one of those
+# through this door would set the status and none of the rest.
+GROCERY_SHOPPER_STATUSES = ("needed", "in_cart", "purchased")
+
+
+class InvalidGroceryStatus(ValueError):
+    """
+    A status outside GROCERY_SHOPPER_STATUSES. Same marker shape as
+    cooker.InvalidMealStatus and chores.InvalidChoreStatus, and here for
+    the same reason: it IS a ValueError subclass, so the route's 404
+    handler would swallow it, and "that request doesn't make sense" is a
+    different answer from "no such line".
+
+    Reproduced 2026-09-24 before this existed: mark_grocery_item("Rice",
+    status="teleported") answered 200 and wrote it. Nothing crashed. The
+    line was then in a status no view's WHERE clause looks for — off the
+    needed list, off the trolley, off the bought list, gone from the
+    shop without being removed from it, and with no screen able to put
+    it back.
+
+    The screens cannot produce one (groTick sends the three, and the
+    offline queue replays what it recorded) and the chat tool's schema
+    enumerates them. That was true of check_off_meal too and it was
+    guarded anyway, on this app's own rule that telling the generator
+    something is not the same as preventing it — and here the sibling
+    vocabulary is bigger, not smaller: four other real statuses sit one
+    function over.
+    """
+
+
 def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
     """
     Update a grocery item's status (needed/in_cart/purchased). Marking
@@ -1789,6 +1823,14 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
     inventory_added / inventory_restored). See _restore_inventory_from_
     receipt for the argument.
     """
+    # Before get_conn, so a bad status never opens a connection and never
+    # takes the write lock — and so a caller that never reaches the route
+    # (chat, a script) is held to the same three.
+    if status not in GROCERY_SHOPPER_STATUSES:
+        raise InvalidGroceryStatus(
+            f"{status!r} isn't a status a grocery line can be moved to. "
+            f"Use one of: {', '.join(GROCERY_SHOPPER_STATUSES)}."
+        )
     conn = get_conn()
     added = None
     restored = None

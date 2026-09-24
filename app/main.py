@@ -5121,6 +5121,13 @@ def set_grocery_list_item_status(item_id: int, req: GroceryStatusRequest):
     """Move an item between needed/in_cart/purchased — checking something off as purchased also adds it to tracked inventory automatically."""
     try:
         result = tools.mark_grocery_item(item_id, status=req.status)
+    except tools.InvalidGroceryStatus as e:
+        # A status outside the shopper's three is a bad request, not a
+        # missing row. InvalidGroceryStatus IS a ValueError subclass, so
+        # this except must come first or the 404 below swallows it —
+        # same shape, and same ordering trap, as the cooker and chore
+        # status routes.
+        raise HTTPException(status_code=422, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

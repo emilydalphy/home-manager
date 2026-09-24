@@ -204,6 +204,8 @@ from .digest import (  # noqa: F401
     twilio_configured,
 )
 from .grocery import (  # noqa: F401
+    GROCERY_SHOPPER_STATUSES,
+    InvalidGroceryStatus,
     _reverse_meal_grocery_contributions,
     _subtract_quantity,
     _try_consolidate_quantity,
