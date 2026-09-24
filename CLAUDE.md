@@ -533,7 +533,24 @@ why*, not duplicating the diff.
     One of the 32 is a SWEEP rather than a case — it walks every
     `sheet.absent` / `sheet.guests` write in the file and fails on one made
     from a function that does not keep the copy in step, so a fifth writer
-    cannot be added silently. Suite **6660 passed, 0 failed** at
+    cannot be added silently.
+    **IT DID NOT, UNTIL REVIEW WIDENED IT, and this is the most useful
+    correction on the branch: the sweep reached four of the eight writes
+    and NEITHER of the two shapes that matter.** It was
+    `sheet\.(absent|guests)\s*(=|\.push|\.splice)`, which cannot match an
+    INDEXED write — `sheet.absent[slot] = []`, the shape both real
+    absent-writers use and the shape blocker 1 came from — and its
+    attribution was `rfind("  function ")`, which cannot see `async
+    function`. Measured, each applied and reverted: a fifth writer doing an
+    indexed write passed the whole file, and a fifth writer inside a new
+    async function passed the whole file. It is also why `paintHoliday`,
+    which writes nothing at all, was in the allow-list — `answerHoliday` is
+    async, so its own write was being attributed to the plain function
+    above it. The sweep matches an assignment in every shape this file
+    writes one now, reads `async function` too, asserts it still finds
+    exactly eight, and `paintHoliday`/`paintSheet`/`seedSheet` are out of
+    the allow-list because none of them writes. Both mutation shapes
+    redden it. Suite **6660 passed, 0 failed** at
     `TZ=America/Toronto`, against 6628 collected on main — +32 is this file
     exactly, and `git diff main -- tests/` shows ONE ADDED FILE and nothing
     else, so no existing test was changed or weakened. (The earlier version

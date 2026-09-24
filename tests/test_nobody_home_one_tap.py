@@ -323,9 +323,16 @@ class TestTheCopyCannotGoStale:
         assert got["summary"] == "Dinner for 5 with 2 guests."
 
     def test_the_same_thing_by_the_longer_path_that_leaves_the_control_dark(self):
-        """The copy going stale while the control reads OFF: on, tap one
-        person back in (dark), add guests, tap them out again (it lights,
-        guests still there), undo."""
+        """On, tap one person back in (dark), add guests, tap them out
+        again (it lights, guests still there), undo.
+
+        A GUARD, not a catch, and its first docstring said "the copy going
+        stale while the control reads OFF" — which it cannot show, because
+        toggleWhoPill NULLS the copy, so there is nothing left to go stale
+        by the time the guests are added. Measured on review: the
+        `stepGuests stops telling the copy` mutation reddens two tests and
+        this is not one of them. What it does pin is that the longer path
+        ends where the short one does."""
         got = _json(
             "var sheet = blank();\n"
             "toggleNobodyHome();\n"
@@ -384,13 +391,38 @@ class TestTheCopyCannotGoStale:
         for name, call in writers.items():
             assert call in _extract(name), f"{name} does not keep the copy in step"
         # And nothing else touches them outside the toggle and the painters.
+        #
+        # WIDENED after review, 2026-09-24, because the first cut of this
+        # sweep reached four of the writes in the file and NEITHER of the
+        # two shapes that matter. It was
+        # `sheet\.(absent|guests)\s*(=|\.push|\.splice)`, which does not
+        # match an INDEXED write — `sheet.absent[slot] = []`, the shape
+        # both real absent-writers use and the shape that caused blocker 1
+        # — and attribution was `rfind("  function ")`, which cannot see
+        # `async function`. Measured: a fifth writer doing an indexed write,
+        # and a fifth writer inside a new async function, each passed the
+        # whole file. It is also why `paintHoliday`, which writes nothing
+        # at all, was in the allow-list: `answerHoliday` is async, so its
+        # own write was attributed to the plain function above it.
         allowed = {"toggleWhoPill", "toggleNobodyHome", "stepGuests", "reseedSheet",
-                   "answerHoliday", "holdSheetChange", "paintSheet", "seedSheet",
-                   "paintHoliday"}
+                   "answerHoliday"}
         body = PAGE[PAGE.index("  function seedSheet(date)"):]
-        for m in re.finditer(r"sheet\.(absent|guests)\s*(=|\.push|\.splice)", body):
-            fn = body.rfind("  function ", 0, m.start())
-            named = re.match(r"  function (\w+)", body[fn:]).group(1)
+        # An ASSIGNMENT, in any of the shapes this file writes one:
+        # `sheet.guests =`, `sheet.absent.dinner =`, `sheet.absent[slot] =`,
+        # and the mutating array calls. `=(?!=)` so a comparison is not a
+        # write, and the optional index/property is the whole point — see
+        # the note above.
+        hits = list(re.finditer(
+            r"sheet\.(?:absent|guests)(?:\s*\[[^\]]*\]|\.\w+)?\s*(?:=(?!=)|\+=|-=|\.push\b|\.splice\b)",
+            body))
+        assert len(hits) == 8, (
+            f"the sweep found {len(hits)} writes, not the 8 that are there — "
+            "it has drifted off the file rather than found something"
+        )
+        for m in hits:
+            fn = max(body.rfind("  function ", 0, m.start()),
+                     body.rfind("  async function ", 0, m.start()))
+            named = re.match(r"  (?:async )?function (\w+)", body[fn:]).group(1)
             assert named in allowed, f"{named} writes the sheet without telling the copy"
 
 
