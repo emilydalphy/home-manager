@@ -579,6 +579,33 @@ why*, not duplicating the diff.
     unchecked; it is the Remembered chip's own class at the same 44px, and
     the renderer itself is driven under node.
 
+  - **A BLOCKER, found by review of this branch and fixed here: a component
+    batch was resolved across EVERY plan the household has.**
+    `batch_source_id` re-found the component's source row with a
+    household-only query ordered by id, so with two approved weeks sharing
+    a component key — eggs, rice, this card's own examples, reached by the
+    app's own "Plan next week ›" — un-batching THIS week resolved the
+    source to NEXT week's entry. Three harms, all reproduced through that
+    ordinary sequence: this week's own source never got the objection;
+    next week silently declined a batch nobody objected to; and the card's
+    Undo answered **"Pick at least two dishes to make them at once."**, the
+    one sentence `clear_batch_component`'s own docstring says must never be
+    shown to somebody undoing a batch, with the batch not put back. The
+    card's whole premise is that silent learning needs a visible undo right
+    where it shows, so a dead Undo is the feature failing rather than a
+    rough edge.
+    **Nothing was read across HOUSEHOLDS — the miss was across PLANS**, and
+    the value was already computed and thrown away:
+    `batch_components.batched_components` derives `source_id` off the
+    plan-scoped `_batch_rows(weekly_plan_id)` and did not return it. It
+    does now, `batch_source_id` reads it, and the query is gone.
+    **ALL 40 TESTS PASSED OVER IT, and that is the lesson worth keeping:**
+    `_plan` builds exactly one plan and every test used it, so no fixture
+    in the file ever crossed a plan boundary. Same shape as an isolation
+    test that passes because it never crossed the one it names — in its
+    cross-plan form rather than the cross-household form this file already
+    guards. Two tests now build a second week; both go red with the old
+    query put back.
 - **2026-09-23 — A chat turn records what it was ABOUT: one theme label,
   never the words. Branch `chat-theme-per-turn`, NOT merged at the time of
   writing. OFF until Railway has `CHAT_THEMES=1`.** Layer 2 of "Chat: record

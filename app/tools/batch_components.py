@@ -538,6 +538,13 @@ def batched_components(weekly_plan_id: int) -> list[dict]:
             "label": detail.get("label") or row["description"],
             "date": row["task_date"],
             "dish": (dishes.get(source_id) or {}).get("dish") or row["related_meal"] or "",
+            # The entry this batch is cooked on. Derived here, off
+            # _batch_rows(weekly_plan_id), so it is scoped to THIS plan by
+            # construction. It used to be computed and dropped, and
+            # batch_undo then re-found it with a household-only query
+            # taking the newest row for the key across every plan — see
+            # that function for what that cost.
+            "source_entry_id": source_id,
             "covered": covered,
         })
     out.sort(key=lambda b: (b["date"], b["label"].lower()))

@@ -703,3 +703,83 @@ def test_the_receipt_card_mounts_an_undo_when_the_action_carries_one():
 def test_the_card_only_mounts_an_undo_when_there_is_a_payload():
     src = _shell()
     assert "if (action.undo && action.undo.payload) mountActionUndo(receipt, action);" in src
+
+
+# ==========================================================================
+# Two weeks on file (found by review, 2026-09-24)
+# ==========================================================================
+#
+# Nothing above this line builds more than one plan. `_plan` creates one
+# and every test uses it, so no fixture in this file ever crossed a plan
+# boundary — and a component batch was being resolved across every plan
+# the household has, taking the most recently inserted row for the key.
+# All 40 tests passed over it. That is the same shape as an isolation test
+# that passes because the fixture never crossed the boundary it names, in
+# its cross-PLAN form rather than the cross-household one the file already
+# guards.
+#
+# Two approved weeks sharing a component key is the app's own
+# "Plan next week ›" plus eggs or rice — this card's own examples.
+
+def _second_week():
+    """Next week, same two egg dishes, approved. Its prep row is newer."""
+    nxt = (_monday() + datetime.timedelta(days=7)).isoformat()
+    plan_id = tools.create_weekly_plan(nxt)["weekly_plan_id"]
+    ids = {}
+    for offset, dish, slot in ((1, "Egg Salad", "lunch"), (2, "Breakfast Bowl", "breakfast")):
+        day = (_monday() + datetime.timedelta(days=7 + offset)).isoformat()
+        ids[(day, slot)] = tools.plan_meal(day, dish, slot=slot, weekly_plan_id=plan_id)["entry_id"]
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+    return plan_id, ids
+
+
+def test_unbatching_this_week_does_not_reach_into_next_weeks_plan():
+    """
+    The objection belongs on the week the household said it about.
+
+    Before the fix, `batch_source_id` found the component's source with a
+    household-only query ordered by id — so next week's row, being newer,
+    won, and un-batching THIS week wrote `no_batch_components` onto NEXT
+    week's entry. Three harms, all reproduced: this week's own source
+    never got the objection; next week silently declined a batch nobody
+    objected to; and the card's Undo answered "Pick at least two dishes to
+    make them at once.", which is the one sentence
+    clear_batch_component's docstring says must never be shown to somebody
+    undoing a batch.
+    """
+    plan_a, ids_a = _batched_week()
+    plan_b, ids_b = _second_week()
+
+    out = tools.unbatch("the eggs")
+    assert out["status"] == "unbatched", out
+
+    # The source it named is THIS week's, not next week's.
+    a_ids = set(ids_a.values())
+    b_ids = set(ids_b.values())
+    named = {e for c in out["undo"]["components"] for e in c["entry_ids"]}
+    assert named & a_ids, "it did not touch the week it was asked about"
+    assert not (named & b_ids), f"it reached into next week's plan: {named & b_ids}"
+
+    # Next week still batches when it is approved again.
+    assert batch_undo.declined_component_keys(plan_b) == set(), (
+        "next week was told not to batch something nobody objected to"
+    )
+    # And this week's own source carries the objection.
+    assert batch_undo.declined_component_keys(plan_a), (
+        "the week that was asked about was never marked"
+    )
+
+
+def test_the_undo_button_still_works_with_two_weeks_on_file():
+    """
+    The harm a household would actually meet: tap the Undo on the card and
+    get a refusal written for somebody making a batch, with the batch not
+    put back.
+    """
+    plan_a, _ = _batched_week()
+    _second_week()
+
+    out = tools.unbatch("the eggs")
+    back = tools.rebatch(out["undo"])
+    assert back["status"] != "refused", back
+    assert batch_components.batched_components(plan_a), "the batch was not put back"

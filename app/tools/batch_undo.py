@@ -271,6 +271,7 @@ def batches_on_plan(weekly_plan_id: int) -> list[dict]:
             "verb": batch["verb"],
             "cook_date": batch["date"],
             "cook_dish": batch["dish"],
+            "source_entry_id": batch["source_entry_id"],
             "covered": [
                 {"entry_id": c["entry_id"], "date": c["date"], "dish": c["dish"]}
                 for c in batch["covered"]
@@ -370,16 +371,30 @@ def _free_component_dishes(weekly_plan_id: int, batch: dict, free_ids: list[int]
 
 
 def batch_source_id(batch: dict) -> int | None:
-    if batch["kind"] == "dish":
-        return batch["source_entry_id"]
-    conn = get_conn()
-    row = conn.execute(
-        "SELECT meal_plan_entry_id FROM prep_tasks WHERE household_id = ? AND task_type = ? "
-        "AND json_extract(detail_json, '$.key') = ? ORDER BY id DESC LIMIT 1",
-        (household_id(), _batch_components.BATCH_TASK_TYPE, batch["key"]),
-    ).fetchone()
-    conn.close()
-    return row["meal_plan_entry_id"] if row else None
+    """
+    The entry a batch is cooked on — the row the household's "don't batch
+    this" objection is written onto.
+
+    BOTH KINDS NOW ANSWER FROM THE PLAN THE BATCH BELONGS TO. The
+    component half used to re-find it with a household-only query taking
+    `ORDER BY id DESC LIMIT 1`, i.e. the most recently inserted row for
+    that key across EVERY plan the household has — and a household with
+    two approved weeks sharing a component key (eggs, rice, the card's
+    own examples) is the app's own "Plan next week ›", not an exotic
+    shape. Found by review, 2026-09-24, reproduced through that ordinary
+    sequence: un-batching THIS week resolved the source to NEXT week's
+    entry, so the objection landed on next week (which then silently
+    declined a batch nobody objected to), this week's own source never
+    got it, and the card's Undo button answered "Pick at least two dishes
+    to make them at once." — the one sentence clear_batch_component's
+    docstring says must never be shown to somebody undoing a batch.
+
+    Nothing was being read across HOUSEHOLDS; the miss was across PLANS,
+    which is why 40 tests passed over it — `_plan` builds exactly one, so
+    no fixture crossed the boundary. The same shape as an isolation test
+    that passes because it never crossed the one it names.
+    """
+    return batch.get("source_entry_id")
 
 
 # ---------- the sentences ----------
