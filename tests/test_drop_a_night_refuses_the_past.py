@@ -233,8 +233,16 @@ def _mark_cooked(day: str) -> None:
 
 def _feeds(source_day: str, fed_day: str, slot: str = "dinner") -> None:
     """Make `source_day`'s dinner a leftover-chain SOURCE cooked double for
-    `fed_day` — the source side of the pairing, which is what
-    chain_fed_nights reads."""
+    `fed_day`.
+
+    THE SOURCE HALF ONLY — no `links_to` on the fed row — so
+    `plan_leftover_chains` never HONOURS this pairing, and the chain
+    branch of drop_dish_from_day cannot fire on anything seeded here.
+    That is fine for what this file tests (the refusals above the chain
+    branch) and it is the reason the neighbouring docstring was corrected
+    on 2026-09-24: a test in this file cannot pin where the chain branch
+    sits relative to them. `chain_fed_nights`, which this docstring used
+    to name, no longer exists."""
     conn = get_conn()
     conn.execute(
         "UPDATE meal_plan_entries SET derived_from_json = ? "
@@ -408,14 +416,21 @@ class TestWhichRefusalWins:
         assert "already been cooked" in out["message"]
 
     def test_a_past_chain_source_says_the_night_is_gone_not_change_that_first(self):
-        """
-        CATCH, and the reason the past check sits ABOVE the chain one. It
-        used to be that the chain refusal named a remedy — "change that
-        first and I'll take this one off" — which on a night already over
-        cannot work. Since 2026-09-24 the chain branch WRITES instead, so
-        the ordering matters more: below the past check, a night that has
-        gone by would have its week re-planned around it.
-        """
+        """A past night that is also a chain source says the night has gone,
+    not "change that first".
+
+    The ORDERING claim this docstring used to argue for — that the chain
+    branch sits below the past check — is NOT pinned by this test and
+    cannot be: `_feeds` writes only the source half, so the chain is
+    never honoured here and the chain branch never runs. Measured on
+    review, 2026-09-24: moving the chain branch above the cooked and past
+    checks reddens two tests, both in
+    test_drop_dish_self_solving.py, and not this one. The claim IS
+    guarded, by that file's
+    test_a_night_that_has_gone_by_is_still_refused, which uses a properly
+    confirmed chain. What this test pins is the SENTENCE: of the two true
+    things about such a night, the one that names a remedy must not be
+    the answer a night nobody can act on gets."""
         plan = _seed(_day(-2), _day(-1))
         _feeds(_day(-2), _day(-1))
 

@@ -503,10 +503,17 @@ why*, not duplicating the diff.
     stepper out of `static/shell.js`; nothing in `static/` posts
     `drop-dish-day` at all. So `said`, `can_undo` and `undo_entry_id` are a
     contract waiting for a screen, and the only live caller of this
-    function today is `allergen_gate.sweep_plan` (which passes its own
-    `open_reason` and never hits the chain branch on a draft it has just
-    generated). **`static/` is byte-identical** — no design work, no
-    tokens, nothing visual.
+    function today is `allergen_gate.sweep_plan`, which passes its own
+    `open_reason`. **THE PARENTHETICAL THAT USED TO SIT HERE — "and never
+    hits the chain branch on a draft it has just generated" — IS FALSE,
+    and the bullet immediately below narrates the outcome of it doing
+    exactly that.** `agent.py` runs `tools.repair_leftover_chains(plan_id)`
+    before `_allergen_gate.sweep_plan(...)`, and repair CONFIRMS both
+    halves, so a freshly generated draft carries honoured chains by the
+    time the sweep runs. Corrected rather than deleted because a future
+    session reading it would have ruled the sweep out of scope wrongly,
+    and the log is the thing sessions act on. **`static/` is
+    byte-identical** — no design work, no tokens, nothing visual.
   - **THE ONE CALLER THAT IS NOT A PERSON IS THE ALLERGEN SWEEP, and what
     this does to it was MEASURED rather than reasoned about — same seed,
     both trees.** A peanut dish cooked Thursday and reheated Friday's
@@ -518,6 +525,25 @@ why*, not duplicating the diff.
     is clean either way** — a different night, not a worse week. That the
     sweep cannot clear a whole chain in one pass is older than this branch
     and is its own card.
+  - **THE MOVE DELETES A FED NIGHT THAT HAS BEEN TICKED COOKED, WITHOUT
+    SAYING SO — found by review, reproduced, and NOT fixed here.** The
+    `cooked_status` refusal this branch leans on guards **the row being
+    dropped**, never **the row the cook lands on**, and
+    `move_cook_onto_fed_night` → `delete_plan_entry` takes the latter
+    without a word. Measured, same seed, both trees: tick a FUTURE reheat
+    done, then step the cook night down — `main` refuses the whole thing
+    ("…also feeds Friday's lunch — change that first") and the tick
+    survives; here the cook moves and the ticked row is simply gone. So
+    the guard test's own docstring ("a tick is a record of something that
+    happened, and no arithmetic on a plan gets to delete one") is true of
+    one row and not of the other, and should be read that way.
+    Three things bound it, which is why it is written down rather than
+    fixed under a different ticket's name: the already-merged night off
+    does **exactly the same** on the same seed (this is the shared move
+    behaving consistently, not a new class), Undo restores the row with
+    its `cooked_status`, and there is no screen for the "−" at all today.
+    `check_off_meal` has no date guard, so ticking a future reheat is
+    reachable by a mis-tap or by saying so in chat. Its own card.
   - `tests/test_drop_dish_self_solving.py` (26), driving the real functions
     on a real database — no source markers, because the risk in an answer
     that moves a cook, deletes a row, re-points a chain and re-quantifies a

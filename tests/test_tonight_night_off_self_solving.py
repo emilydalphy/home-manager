@@ -266,8 +266,8 @@ def test_two_taps_at_once_move_the_cook_once():
 
 def test_a_chain_that_feeds_a_lunch_first_cooks_at_that_lunch():
     """The first meal it feeds is Thursday's LUNCH (then Friday's dinner):
-    the cook lands on the lunch, the row says so in chain_fed_nights' own
-    words, and Friday is still a reheat of it."""
+    the cook lands on the lunch, the row says so in
+    fed_nights_in_eating_order's own words, and Friday is still a reheat of it."""
     _members()
     plan = tools.create_weekly_plan(WEEK)["weekly_plan_id"]
     for day in DAYS:
