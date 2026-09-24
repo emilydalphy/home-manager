@@ -461,6 +461,197 @@ why*, not duplicating the diff.
     `TZ=America/Toronto`, against a measured 6628 on main — +11 is this file
     exactly.
 
+- **2026-09-24 — The chat can take a batch apart again: "don't batch the
+  rice", "cook the chili fresh on Thursday", "no batch cooking this week".
+  Branch `overnight/chat-can-unbatch`, NOT merged at the time of writing.**
+  Loop Board improvement, Phase 1. Emily, 2026-09-21: silent learning needs
+  a visible undo right where it shows. Batching has been ASSUMED from prep
+  days since 2026-09-18/21 — nobody is asked, the week is approved, All set
+  says what happened — and the chat had no batch or cook-ahead tool at all,
+  so the only way out was Swap on the Plan tab, which changes the DISH
+  rather than how it is cooked.
+  - **Reproduced first, on a throwaway DB, and the measurement is one
+    line**: `[n for n in agent.TOOL_FUNCTIONS if "batch" in n]` is `[]` on
+    `main`. Approving a three-member week with a Sunday prep day and Turkey
+    Chili on Monday and Thursday really does batch it (Monday's Cook card
+    reads 6 servings, Thursday reads 3 and `is_leftovers`, plus a "Boil the
+    eggs for Wednesday's Breakfast Bowl too — 10 in all" prep row for two
+    dishes that both hard-boil), and nothing a household could say moved
+    any of it.
+  - **ONE tool, `unbatch(what, day)`, and ONE module, `app/tools/
+    batch_undo.py`, over BOTH shapes of batch** — a repeated dish (a
+    leftover chain, cook_ahead.py) and a shared component (a `prep_tasks`
+    row, batch_components.py) — because "don't batch the rice" is said
+    without knowing which kind the rice is. `what` blank is the whole week;
+    `day` is "cook it fresh on Thursday" and frees that one day, unless it
+    is the day that COOKS, which frees the batch.
+  - **NOTHING HERE PRUNES A CHAIN.** Un-batching a dish is
+    `cook_ahead.set_cook_ahead(source, the days that are left)` — the very
+    write that made the batch, run backwards — so the source's note, the
+    released day's `links_to` and `cook_ahead` flag and the sibling a chip
+    stands for are all handled by the one function that already knows about
+    them. A component is `batch_components.clear_batch_component` (new, and
+    it is `set_batch_component`'s own DELETE on its own: passing an empty
+    list refuses, correctly, with "Pick at least two dishes" — a sentence
+    about MAKING a batch, said to somebody undoing one).
+  - **THE GROCERY HALF OF THE TICKET IS ALREADY TRUE, and saying so is more
+    useful than pretending it was fixed.** A batch changes what is COOKED,
+    not what is eaten: a batched source's share is exactly the sum of the
+    shares of the days it feeds and the recipe-week is rounded once either
+    way, so the LINES are invariant — measured, byte-identical before and
+    after on the reported shape. The approval-time batch also lands AFTER
+    the grocery ingest, so the ingredients were never taken off in the first
+    place. What DOES differ is the LEDGER, and whether it is in the batched
+    shape depends on history (any later rescale — a swap on that recipe —
+    moves the whole amount onto the cook night). So the whole recipe-week is
+    reversed and re-ingested through
+    `weekly_plan._rescale_leftover_source_grocery(source, 0)` — **nothing
+    excluded**, which is what puts the freed day back in the group; passing
+    the freed entry as `unlinked_entry_id` the way `clear_plan_slot` does
+    is exactly wrong here, because that entry is staying.
+  - **ONE line really does move, and it is a pre-existing defect made
+    visible.** A fed night contributes nothing while it is a reheat —
+    INCLUDING ITS SIDE — so a Thursday reheat of Monday's chili with a
+    fresh green salad has no lettuce on the list at all. Reproduced on
+    `main` (approve with the chain already in place: `['Ground turkey 1.5
+    lbs']`, no Lettuce). Un-batching puts it back. `list_changed` compares
+    the lines either side and the reply appends "Your list has changed to
+    match." only when it really did, so the app never claims a change it
+    did not make.
+  - **THE UNDO IS NOT SYMMETRIC, ON PURPOSE, AND THAT WAS FOUND BY
+    MEASURING RATHER THAN ARGUED.** `rebatch` re-runs `set_cook_ahead` /
+    `set_batch_component` and touches the grocery list NOT AT ALL. The
+    first cut rescaled there too, for symmetry, and it took the lettuce
+    above straight back OFF the list — an undo leaving the household worse
+    off than the state it was undoing to. Making a batch has never changed
+    what has to be bought (cook_ahead.py's own docstring), so putting one
+    back has nothing to put right.
+  - **The undo is the payload, not a snapshot.** Re-batching IS a batch, so
+    there is nothing to restore that making it again does not produce, and
+    a batch the week has moved under refuses in its OWN words
+    (`set_cook_ahead`'s) rather than forcing a stale shape back. Every id
+    goes through a household-scoped write, so a payload naming another
+    household's plan writes nothing — tested.
+  - **The choice is remembered on the ENTRIES, not in a new table**:
+    `derived_from.no_batch` on a freed day, `derived_from.
+    no_batch_components: [key]` on every dish that was in a component
+    batch. `apply_prep_day_batches` reads both and reports what it skipped
+    as `declined`, so reopening and re-approving a week does not quietly
+    put back the very thing they said no to. A row swapped away takes its
+    own objection with it, which is right — a new row is a new decision —
+    and there is a test driving a real `swap_meal_in_plan` to say so. No
+    migration, nothing backfilled.
+  - **THE MODULE IS `batch_undo.py` AND NOT `unbatch.py`, and the reason is
+    worth a line because it cost a run to find.** `app/tools/__init__.py`
+    re-exports the FUNCTION `unbatch`, which hangs it off the package under
+    the module's own name — so `from . import unbatch as _unbatch` inside
+    `cook_ahead.py` got the function, and `apply_prep_day_batches` died on
+    `AttributeError` inside `approve_weekly_plan`'s own `except`, i.e.
+    silently, with the week approved and nothing batched. The package's
+    convention (import the MODULE, not the name) cannot survive a module
+    whose name is also an exported function's.
+  - **The card is the tool's own sentence**, built beside the data
+    (`_dish_said` / `_component_said`, the same reason `week_receipt` builds
+    its counted sentences) so the card and the reply can never disagree
+    about which night now cooks for itself. Tagged `week`, which is what
+    re-reads Plan AND — through `refreshStaleTabsFromActions`' own
+    unconditional `week` branch — Shop. A status other than 'unbatched'
+    wrote nothing and gets NO card, so an ambiguity or a refusal is the
+    assistant's line alone.
+  - **`ChatAction` grew `undo`**, and the button is deliberately
+    `.ask-remembered-fix` — the Remembered chip's own class — rather than a
+    second one styled to match it: same 44px target, same apricot label,
+    and the two cannot drift. `POST /api/week/unbatch-undo` answers 200
+    with a status either way; a refusal is a sentence to read on the card,
+    not an error (the shape `set_cook_ahead` and `drop_dish_from_day`
+    already answer in). The button is spent on the tap — an undo of an undo
+    is the thing itself, and offering one under a sentence that now says
+    the opposite would be the app claiming something untrue.
+  - **A PLANNER'S OWN LEFTOVERS NIGHT IS NOT A BATCH and is left alone.**
+    Nobody batched that — the week was planned around cooking once and
+    eating twice — so it is not in `batched_dishes` (which reads the
+    `cook_ahead` flag) and this tool answers 'nothing' about it. Changing
+    one is `swap_meal_in_plan`'s job. Pinned, and the mutation that widens
+    `batched_dishes` past the flag reddens this test AND an existing one.
+  - **Ambiguity asks rather than guesses**: two batches answering to one
+    word ("the eggs", with both a boiled-eggs and a poached-eggs batch on
+    the plan) comes back 'ambiguous' with "Which one — Boiled eggs and
+    Poached eggs?" and writes nothing.
+  - `tests/test_chat_can_unbatch.py` (35 tests, 40 cases with the
+    parametrize). **Red against main's `app/` + `static/` is 39 of 40 and
+    is worth nothing**: the file calls `tools.unbatch`, so all but one die
+    on a name main has not got rather than on the claim they are named
+    for. (The one that passes is the precondition guard — main really does
+    batch both kinds at approval.) **The evidence is FOURTEEN mutations,
+    every one run and every one biting**: the memory not read at all (3
+    red), a dish un-batch remembering nothing (4), a component un-batch
+    remembering nothing (1), the freed days never taken off the chain (13),
+    two matches guessed between instead of asked about (1), the undo
+    rescaling the groceries (1), a component batch left standing as a batch
+    of one (4), the un-batch skipping the rescale (2), a card drawn for a
+    turn that wrote nothing (1), `list_changed` always true (4), a
+    planner's leftovers night counted as a batch (2), the undo leaving the
+    memory standing (1), the card carrying no undo payload (1), and the
+    button never mounted on the receipt (1).
+  - **Three existing tests were updated honestly rather than deleted**,
+    each with a note saying what moved: `test_batch_from_prep_days` and
+    `test_batch_components_auto` pin `apply_prep_day_batches`' exact return
+    shape, which gained `declined`; `test_streaming_endpoints` pins the
+    serialized `ChatAction` dict, which gained `undo`. No assertion was
+    weakened.
+  - **Numbers, both read off the runs at `TZ=America/Toronto`: 6668
+    passed, 0 failed**, against a measured **6628 passed, 0 failed** on
+    `main` — +40 is this one new file's 40 cases exactly (35 test
+    functions, one of them parametrized six ways), and no existing test was
+    deleted or weakened.
+  - **NOT DONE, named so nobody reports them as new.** (1) A chained
+    night's SIDE is never bought at all — reproduced on `main`, out of
+    scope here, its own card; this branch only puts it right when the batch
+    is undone. (2) There is no way to MAKE a batch from chat: the Cook
+    card's chips are still the only door in, which is the 2026-09-07
+    decision that a choice about which mornings to cook for is the
+    household's to make by tapping. (3) `_rescale_leftover_source_grocery`
+    called the way its own callers call it — with the freed entry excluded
+    and that entry's own ledger rows left standing — leaves a line reading
+    "12 oz + 1.5 lbs"; pre-existing, only reachable by a caller that then
+    fails to delete the entry, and this branch does not use it that way.
+    (4) Un-batching is not one transaction: `set_cook_ahead` commits per
+    entry (pre-existing), the memory flags commit per entry, and the
+    rescale is a third write. A failure part-way degrades to "the chain is
+    not honoured", which `plan_leftover_chains` reads as no chain, rather
+    than to data loss — but it is not atomic and is not claimed to be.
+  - **NOT verified in a browser.** No browser tooling was reachable from
+    this session, so the Undo button's LAYOUT on the receipt card is
+    unchecked; it is the Remembered chip's own class at the same 44px, and
+    the renderer itself is driven under node.
+
+  - **A BLOCKER, found by review of this branch and fixed here: a component
+    batch was resolved across EVERY plan the household has.**
+    `batch_source_id` re-found the component's source row with a
+    household-only query ordered by id, so with two approved weeks sharing
+    a component key — eggs, rice, this card's own examples, reached by the
+    app's own "Plan next week ›" — un-batching THIS week resolved the
+    source to NEXT week's entry. Three harms, all reproduced through that
+    ordinary sequence: this week's own source never got the objection;
+    next week silently declined a batch nobody objected to; and the card's
+    Undo answered **"Pick at least two dishes to make them at once."**, the
+    one sentence `clear_batch_component`'s own docstring says must never be
+    shown to somebody undoing a batch, with the batch not put back. The
+    card's whole premise is that silent learning needs a visible undo right
+    where it shows, so a dead Undo is the feature failing rather than a
+    rough edge.
+    **Nothing was read across HOUSEHOLDS — the miss was across PLANS**, and
+    the value was already computed and thrown away:
+    `batch_components.batched_components` derives `source_id` off the
+    plan-scoped `_batch_rows(weekly_plan_id)` and did not return it. It
+    does now, `batch_source_id` reads it, and the query is gone.
+    **ALL 40 TESTS PASSED OVER IT, and that is the lesson worth keeping:**
+    `_plan` builds exactly one plan and every test used it, so no fixture
+    in the file ever crossed a plan boundary. Same shape as an isolation
+    test that passes because it never crossed the one it names — in its
+    cross-plan form rather than the cross-household form this file already
+    guards. Two tests now build a second week; both go red with the old
+    query put back.
 - **2026-09-23 — A chat turn records what it was ABOUT: one theme label,
   never the words. Branch `chat-theme-per-turn`, NOT merged at the time of
   writing. OFF until Railway has `CHAT_THEMES=1`.** Layer 2 of "Chat: record

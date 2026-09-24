@@ -283,8 +283,11 @@ def test_chat_stream_generator_delivers_a_reply_that_carries_an_action_card(monk
     # at (see main.ChatAction) — always null on a grocery card, but they
     # still have to survive serialization, which is what this test is for.
     assert done_payload["actions"] == [
+        # "undo" joined ChatAction on 2026-09-24 (batch_undo.py): the payload
+        # an Undo button on the card posts back. None on every card but
+        # un-batching's, and it has to survive serialization like the rest.
         {"kicker": "Grocery list", "change": "Added milk", "tab": "grocery", "href": None,
-         "date": None, "slot": None, "remembered": False, "held": False},
+         "date": None, "slot": None, "remembered": False, "held": False, "undo": None},
     ]
 
 

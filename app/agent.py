@@ -912,6 +912,11 @@ quicker instead, and don't ask whether they mean takeout. It never needs anythin
 first: it moves the dish to a free night, cooks it on the night it was feeding, puts it in \
 the freezer, or takes it off the week, and leaves the night deliberately empty. Say its \
 `said` back as the one line.
+- "Don\u2019t batch the rice" / "cook the chili fresh on Thursday" / "no batch cooking this \
+week" is `unbatch`. Pomona batches on its own when the household preps ahead, so this is the \
+only way back out \u2014 never answer it with a swap, and never say it can\u2019t be undone. Say its \
+`said` back as the one line and nothing else; if the status is \u2018ambiguous\u2019, ask `said` and \
+wait.
 - Every meal in a plan carries a slot_state, and it decides how you may talk about that slot:
   * 'planned' — a real meal. Normal.
   * 'planned_empty' — DELIBERATELY empty, and its reasoning says why (nobody is home that \
@@ -1890,6 +1895,18 @@ TOOL_DEFINITIONS = [
             "type": "object",
             "properties": {
                 "day": {"type": "string", "description": "YYYY-MM-DD. Omit for tonight, which is almost always what's meant."},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "unbatch",
+        "description": "\"Don't batch the rice\" / \"cook the chili fresh on Thursday\" / \"no batch cooking this week\" \u2014 take apart a batch the app made on its own. Pomona batches automatically when the household preps ahead: a dish on two days is cooked once on the first, and a component two dishes both make (the eggs a breakfast and a salad both boil) is made once. This is the way back out. `what` names the dish or the thing being cooked as they said it (\"the rice\", \"the chili\", \"the eggs\"); leave it out entirely for \"no batch cooking this week\". `day` (YYYY-MM-DD) is for \"cook it fresh on Thursday\" \u2014 it frees that one day and leaves the rest of the batch alone. Say the result's `said` back as the whole reply, one line, no list of what changed. A status of 'ambiguous' means more than one batch answers to those words and `said` is the question to ask \u2014 ask it and stop. 'nothing' means there is no such batch, and `said` says so; don't retry with different words. 'refused' means nothing changed and `said` is why. The choice is remembered for this plan, so approving the week again will not put it back \u2014 don't promise otherwise. Not for changing WHAT is eaten (swap_meal_in_plan) or for moving a dinner to another night (swap_dinner_nights).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "what": {"type": "string", "description": "The dish or the thing being cooked, in their words. Omit for every batch on the week."},
+                "day": {"type": "string", "description": "YYYY-MM-DD, only when they named one day to cook fresh."},
             },
             "required": [],
         },
@@ -7407,6 +7424,7 @@ TOOL_FUNCTIONS = {
     "swap_component_in_plan": tools.swap_component_in_plan,
     "swap_dinner_nights": tools.swap_dinner_nights,
     "take_the_night_off": tools.tonight_night_off,
+    "unbatch": tools.unbatch,
     "approve_weekly_plan": tools.approve_weekly_plan,
     "discard_draft_plan": tools.discard_draft_plan,
     "generate_prep_schedule": generate_prep_schedule,

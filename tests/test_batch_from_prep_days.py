@@ -106,7 +106,12 @@ def test_with_no_prep_days_nothing_is_batched_and_nothing_asks():
 
     out = cook_ahead.apply_prep_day_batches(plan_id)
 
-    assert out == {"prep_days": False, "applied": [], "components": [], "refused": []}
+    assert out == {"prep_days": False, "applied": [], "components": [], "refused": [],
+                   # `declined` joined the shape on 2026-09-24 (batch_undo.py):
+                   # what the rule left alone because the household had already
+                   # un-batched it. Empty here — with no prep days nothing is
+                   # considered in the first place.
+                   "declined": []}
     assert "make_double_for" not in _derived(ids[MON])
     assert "links_to" not in _derived(ids[TUE])
     assert tools.plan_leftover_chains(plan_id)["leftovers"] == {}

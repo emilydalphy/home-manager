@@ -363,6 +363,11 @@ def apply_prep_day_batches(weekly_plan_id: int) -> dict:
     batched (shared_components' `batched`) is left exactly as it is, so
     running twice writes nothing twice.
 
+    A batch the household has already un-batched is left alone, however
+    many times the week is approved (`declined` names what was skipped and
+    why) — see batch_undo.py. That memory lives on the entries themselves,
+    not here.
+
     Called from approve_weekly_plan once the yes has really done something
     — never on a no-op re-approval. Not all-or-nothing: a repeat the
     chain refuses (a day claimed by another batch) is reported in
@@ -371,20 +376,39 @@ def apply_prep_day_batches(weekly_plan_id: int) -> dict:
     """
     from . import rhythm as _rhythm
     from . import batch_components as _batch_components
+    from . import batch_undo as _batch_undo
 
     prep_days = _rhythm.get_household_rhythm().get("prep_days") or []
     applied: list[dict] = []
     refused: list[dict] = []
     components: list[dict] = []
+    declined: list[dict] = []
     if prep_days:
+        # A batch the household already took apart is not offered back.
+        # Re-approving a week (reopen, then approve again) is a genuine
+        # approval, so without this the rule would quietly put back the
+        # very thing they said no to — "the automatic batching never traps
+        # me" is the whole point of batch_undo.py, and a choice that lasts one
+        # approval is not a choice. Read off the entries themselves
+        # (derived_from.no_batch / .no_batch_components), so a day swapped
+        # away takes its own objection with it.
+        no_batch_days = _batch_undo.declined_dish_entry_ids(weekly_plan_id)
+        no_batch_keys = _batch_undo.declined_component_keys(weekly_plan_id)
         for item in cook_ahead_repeats(weekly_plan_id):
-            result = set_cook_ahead(item["first"]["entry_id"], [d["entry_id"] for d in item["later"]])
+            later = [d["entry_id"] for d in item["later"] if d["entry_id"] not in no_batch_days]
+            if not later:
+                declined.append({"kind": "dish", "dish": item["dish"]})
+                continue
+            result = set_cook_ahead(item["first"]["entry_id"], later)
             if isinstance(result, str):
                 refused.append({"source_entry_id": item["first"]["entry_id"], "dish": item["dish"], "note": result})
             else:
                 applied.append(dict(result, dish=item["dish"]))
         for comp in _batch_components.shared_components(weekly_plan_id):
             if comp["batched"]:
+                continue
+            if comp["key"] in no_batch_keys:
+                declined.append({"kind": "component", "key": comp["key"], "label": comp["label"]})
                 continue
             result = _batch_components.set_batch_component(
                 weekly_plan_id, comp["key"], [u["entry_id"] for u in comp["uses"]]
@@ -394,7 +418,8 @@ def apply_prep_day_batches(weekly_plan_id: int) -> dict:
             else:
                 components.append(result)
     mark_cook_ahead_asked(weekly_plan_id)
-    return {"prep_days": bool(prep_days), "applied": applied, "components": components, "refused": refused}
+    return {"prep_days": bool(prep_days), "applied": applied, "components": components,
+            "refused": refused, "declined": declined}
 
 
 def batched_dishes(weekly_plan_id: int) -> list[dict]:
