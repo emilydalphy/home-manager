@@ -27,13 +27,13 @@ aliases left to avoid.
 All values below are lifted directly from `theme.css`. "Dark" = the
 `@media (prefers-color-scheme: dark)` block. By default the app follows the
 phone. Since 2026-09-24, **Settings → Appearance** lets each device choose
-Match my phone (the default), Light or Dark — a `.wk-seg` radio group under
+Auto (follows the phone — the default), Light or Dark — a `.wk-seg` radio group under
 the Morning text row in the gear's sheet (`appearanceRowHtml` in
 `shell.js`). The choice is saved per device in localStorage
 (`pomona-appearance`) and applied by one identical script in the `<head>`
 of every page that loads `theme.css` (not `share.html`, which stays light
 for every recipient) before first paint: it sets `data-theme="light"` or
-`"dark"` on `<html>`, or no attribute for Match my phone, and points the
+`"dark"` on `<html>`, or no attribute for Auto, and points the
 `theme-color` meta tags at the forced value. How the CSS follows: every
 dark block is guarded with `:root:not([data-theme="light"])` (component
 rules as `:where(…)`, so specificity doesn't change) and is followed by a

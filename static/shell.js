@@ -21391,7 +21391,7 @@
   }
 
   // ---------- Appearance (2026-09-24) ----------
-  // Light / Dark / Match my phone, saved on this device only. The page's
+  // Light / Dark / Auto, saved on this device only. The page's
   // <head> script (the same one on every page that loads theme.css) reads
   // the saved choice before first paint and defines window.pomonaAppearance,
   // which sets data-theme on <html> and points the theme-color meta tags at
@@ -21399,7 +21399,7 @@
   // Plan root's .wk-seg, as a radio group.
   var APPEARANCE_STORE_KEY = 'pomona-appearance';
   var APPEARANCE_OPTIONS = [
-    { key: 'phone', label: 'Match my phone' },
+    { key: 'phone', label: 'Auto' },
     { key: 'light', label: 'Light' },
     { key: 'dark', label: 'Dark' }
   ];

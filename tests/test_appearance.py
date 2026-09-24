@@ -1,8 +1,8 @@
-"""Settings → Appearance: Match my phone / Light / Dark (2026-09-24).
+"""Settings → Appearance: Auto / Light / Dark (2026-09-24).
 
 The choice is saved per device (localStorage) and applied by one small
 script in the <head> of every page that loads theme.css, which puts
-data-theme="light" or "dark" on <html> (or nothing, for Match my phone)
+data-theme="light" or "dark" on <html> (or nothing, for Auto)
 before the first paint. What this file pins:
 
   - every `@media (prefers-color-scheme: dark)` block is followed by a
@@ -161,7 +161,7 @@ def test_the_settings_row():
     assert "appearanceRowHtml() +" in js
     assert "'<span class=\"prefs-row-title\" id=\"prefs-appearance-title\">Appearance</span>'" in js
     labels = re.findall(r"\{ key: '(phone|light|dark)', label: '([^']+)' \}", js)
-    assert labels == [("phone", "Match my phone"), ("light", "Light"), ("dark", "Dark")]
+    assert labels == [("phone", "Auto"), ("light", "Light"), ("dark", "Dark")]
     # The existing segmented control, not a new component.
     assert '<div class="wk-seg" role="radiogroup"' in js
     # Every storage touch is wrapped.
