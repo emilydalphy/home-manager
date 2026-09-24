@@ -1785,6 +1785,7 @@
     var list = sheet.absent[slot] || (sheet.absent[slot] = []);
     var i = list.indexOf(name);
     if (i === -1) list.push(name); else list.splice(i, 1);
+    dropHomeBefore();
     paintSheet();
   }
 
@@ -1808,8 +1809,11 @@
   // for has nobody to host them, and the day's save drops the count
   // anyway (attendance.set_day_attendance), so leaving a stepper reading
   // 2 would be the sheet promising something Done would throw away.
-  // The copy is only ever read while the control is on, and a turn-on
-  // always takes a fresh one, so nothing has to clear it on the way past.
+  // The copy has to be KEPT IN STEP by everything else that changes the
+  // sheet (holdSheetChange below) — it describes the day as it was before
+  // the control was tapped, and that day can change under it while the
+  // control is on. An earlier cut of this argued the copy could never go
+  // stale; it could, twice over, and both were reproduced end to end.
   function toggleNobodyHome() {
     if (!sheet) return;
     var names = attendance.members.map(function (m) { return m.name; });
@@ -1832,9 +1836,44 @@
     paintSheet();
   }
 
+  // "Nobody home all day" holds a copy of the day it replaced, and that
+  // day can change under it — so every OTHER thing that writes the open
+  // sheet says so here. Two blockers came out of assuming it could not,
+  // both reproduced against a real server before this was written:
+  //
+  //   - A HOLIDAY answered while the control was on was REVERSED by the
+  //     undo. "Going to someone's" makes the server mark everyone out of
+  //     that dinner and reseedSheet pulls it in; the copy still said the
+  //     row was empty, the undo won, and the week planned and shopped a
+  //     Thanksgiving dinner with the answer still on record.
+  //   - A GUEST COUNT typed while the control was on was destroyed by the
+  //     undo: "everybody's home, two friends for dinner" came back as
+  //     "everybody's home, nobody coming".
+  //
+  // Rows tapped BY HAND are dropped rather than refreshed. Editing a pill
+  // is the household answering for one person, and once they have, "put
+  // back what the control replaced" stops naming anything — so the undo
+  // from there is plainly everyone home, which is what the control already
+  // does for a day taken all-away by hand.
+  function dropHomeBefore() {
+    if (sheet) sheet.homeBefore = null;
+  }
+
+  // An answer that has to OUTLIVE the undo — a guest count, or a row the
+  // server wrote — is copied forward instead, so the undo gives back the
+  // day as it now stands rather than as it stood before the tap.
+  function holdSheetChange(fields) {
+    if (!sheet || !sheet.homeBefore) return;
+    if (fields.guests) sheet.homeBefore.guests = sheet.guests;
+    (fields.slots || []).forEach(function (slot) {
+      sheet.homeBefore.absent[slot] = (sheet.absent[slot] || []).slice();
+    });
+  }
+
   function stepGuests(delta) {
     if (!sheet) return;
     sheet.guests = Math.min(GUESTS_MAX, Math.max(0, sheet.guests + delta));
+    holdSheetChange({ guests: true });
     paintSheet();
   }
 
@@ -1892,6 +1931,9 @@
     if (!sheet || sheet.date !== date) return;
     var fresh = seedSheet(date);
     sheet.absent.dinner = fresh.absent.dinner;
+    // The server has just answered for that dinner. The undo must give it
+    // back, not the empty row that was there before the control was tapped.
+    holdSheetChange({ slots: ['dinner'] });
     paintSheet();
   }
 
@@ -2150,7 +2192,10 @@
         // The server's count is the intake's own: keep the guests row in step.
         var c = answers.guest_counts[date] || { adults: 0, children: 0 };
         if ((c.adults || 0) + (c.children || 0) !== saved.headcount) answers.guest_counts[date] = { adults: saved.headcount, children: 0 };
-        if (sheet && sheet.date === date) sheet.guests = Math.min(GUESTS_MAX, saved.headcount);
+        if (sheet && sheet.date === date) {
+          sheet.guests = Math.min(GUESTS_MAX, saved.headcount);
+          holdSheetChange({ guests: true });
+        }
       }
       // "Out" is nobody-home for that dinner on the server; read
       // attendance back so the sheet's rows say the same thing.

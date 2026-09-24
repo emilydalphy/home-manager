@@ -66,11 +66,15 @@ def _prelude(members: str = THREE) -> str:
     return (
         "function esc(s) { return String(s == null ? '' : s); }\n"
         + _var("SHEET_SLOTS") + _var("SLOT_PILL") + _var("GUESTS_MAX") + _var("NOBODY_HOME_PILL")
+        + _var("SHEET_TAGS")
         + "\n".join(_extract(n) for n in (
             "joinNames", "joinWords", "outGroups", "attendanceWords", "daySummary",
-            "draftByDay", "daySheetPayload", "allDayAway", "toggleNobodyHome", "toggleWhoPill",
+            "draftByDay", "daySheetPayload", "allDayAway", "dropHomeBefore",
+            "holdSheetChange", "toggleNobodyHome", "toggleWhoPill", "stepGuests",
+            "seedSheet", "reseedSheet",
         ))
         + f"\nvar attendance = {{ members: {members}, byDate: {{}} }};\n"
+        + "var answers = { night_tags: {}, guest_counts: {} };\n"
         + "function paintSheet() {}\n"
         + "function blank(d) { return { date: d || '2026-09-25', absent: { breakfast: [], lunch: [], dinner: [] },"
           " guests: 0, tags: [], homeBefore: null, saving: false }; }\n"
@@ -218,7 +222,9 @@ class TestOneTapUndoesIt:
         lose "Emily's out for lunch" — the whole-day control would have
         eaten it on the way past."""
         got = _json(
-            "var sheet = blank(); sheet.absent.lunch.push('Emily');\n"
+            # Tapped, not pushed: the copy is taken at the turn-on, so a
+            # hand edit BEFORE it is captured and one after it is not.
+            "var sheet = blank(); toggleWhoPill('Emily', 'lunch');\n"
             "toggleNobodyHome();\n"
             "var away = daySummary(draftByDay(sheet), attendance.members);\n"
             "toggleNobodyHome();\n"
@@ -256,6 +262,136 @@ class TestOneTapUndoesIt:
         )
         assert got["held"]["absent"]["dinner"] == ["Vic"]
         assert got["after"] is None
+
+
+# ==========================================================================
+# The copy is kept in step with everything else that writes the sheet
+#
+# Both of these were shipped and both were reproduced end to end against a
+# real server before they were fixed. Nothing in the first cut of this file
+# mutated the sheet AFTER a turn-on and BEFORE the undo — the one
+# arrangement in which either can appear.
+# ==========================================================================
+
+@_needs_node
+class TestTheCopyCannotGoStale:
+    def test_the_undo_does_not_reverse_a_holiday_answered_while_it_was_on(self):
+        """BLOCKER: "Going to someone's" makes the server mark everyone out
+        of that dinner, and reseedSheet pulls it into the open sheet. The
+        copy still said the row was empty, so the undo won — the household
+        was going out for Thanksgiving, the answer was still on record, and
+        the week planned and shopped a dinner for it.
+
+        Driven through reseedSheet itself, off attendance.byDate, which is
+        exactly what answerHoliday leaves behind for it."""
+        script = (
+            "var sheet = blank('2026-10-12');\n"
+            "toggleNobodyHome();\n"
+            # The server answers: everyone out of that dinner, nothing else.
+            "attendance.byDate['2026-10-12'] = { dinner: { absent_names: ['Emily', 'Ethan', 'Vic'],"
+            " nobody_home: true, guest_count: 0 } };\n"
+            "reseedSheet('2026-10-12');\n"
+            "toggleNobodyHome();\n"
+            "console.log(JSON.stringify({ absent: sheet.absent,"
+            " payload: daySheetPayload(sheet),"
+            " summary: daySummary(draftByDay(sheet), attendance.members) }));\n"
+        )
+        got = _json(script)
+        # The day is no longer all-away — but the dinner they answered for
+        # survives the undo, and Done still sends it.
+        assert got["absent"]["dinner"] == ["Emily", "Ethan", "Vic"]
+        assert got["absent"]["breakfast"] == [] and got["absent"]["lunch"] == []
+        assert got["payload"]["slots"]["dinner"]["absent"] == ["Emily", "Ethan", "Vic"]
+        assert got["summary"] == "Nobody home for dinner — I’ll plan nothing and buy nothing for it."
+
+    def test_the_undo_does_not_destroy_a_guest_count_typed_while_it_was_on(self):
+        """BLOCKER, four taps: control on (which zeroes the guests), then
+        "Guests for dinner" — the row is still live — then +, then the
+        control off. The household meant "everybody's home, two friends for
+        dinner" and got "everybody's home, nobody coming"."""
+        got = _json(
+            "var sheet = blank();\n"
+            "toggleNobodyHome();\n"
+            "stepGuests(1); stepGuests(1);\n"
+            "var typed = sheet.guests;\n"
+            "toggleNobodyHome();\n"
+            "console.log(JSON.stringify({ typed: typed, after: sheet.guests,"
+            " summary: daySummary(draftByDay(sheet), attendance.members) }));\n"
+        )
+        assert got["typed"] == 2
+        assert got["after"] == 2
+        assert got["summary"] == "Dinner for 5 with 2 guests."
+
+    def test_the_same_thing_by_the_longer_path_that_leaves_the_control_dark(self):
+        """The copy going stale while the control reads OFF: on, tap one
+        person back in (dark), add guests, tap them out again (it lights,
+        guests still there), undo."""
+        got = _json(
+            "var sheet = blank();\n"
+            "toggleNobodyHome();\n"
+            "toggleWhoPill('Vic', 'lunch');\n"
+            "var dark = allDayAway(sheet);\n"
+            "stepGuests(1); stepGuests(1);\n"
+            "toggleWhoPill('Vic', 'lunch');\n"
+            "var relit = allDayAway(sheet);\n"
+            "toggleNobodyHome();\n"
+            "console.log(JSON.stringify({ dark: dark, relit: relit, guests: sheet.guests }));\n"
+        )
+        assert got["dark"] is False and got["relit"] is True
+        assert got["guests"] == 2
+
+    def test_a_guest_count_the_server_wrote_survives_the_undo_too(self):
+        """answerHoliday's hosting branch writes the headcount straight onto
+        the open sheet; the same rule covers it."""
+        got = _json(
+            "var sheet = blank();\n"
+            "toggleNobodyHome();\n"
+            # what answerHoliday does for a hosting answer of 6
+            "sheet.guests = Math.min(GUESTS_MAX, 6); holdSheetChange({ guests: true });\n"
+            "toggleNobodyHome();\n"
+            "console.log(JSON.stringify(sheet.guests));\n"
+        )
+        assert got == 6
+
+    def test_a_row_tapped_by_hand_drops_the_copy_rather_than_refreshing_it(self):
+        """Editing a pill is the household answering for one person, so
+        "put back what the control replaced" stops naming anything — the
+        undo from there is plainly everyone home."""
+        got = _json(
+            "var sheet = blank();\n"
+            "toggleWhoPill('Emily', 'lunch');\n"
+            "toggleNobodyHome();\n"
+            "toggleWhoPill('Vic', 'dinner');\n"
+            "var held = sheet.homeBefore;\n"
+            "SHEET_SLOTS.forEach(function (s) { sheet.absent[s] = ['Emily', 'Ethan', 'Vic']; });\n"
+            "toggleNobodyHome();\n"
+            "console.log(JSON.stringify({ held: held, absent: sheet.absent }));\n"
+        )
+        assert got["held"] is None
+        assert got["absent"] == {"breakfast": [], "lunch": [], "dinner": []}
+
+    def test_every_other_writer_of_the_open_sheet_says_so(self):
+        """The rule is only true if nothing writes sheet.absent or
+        sheet.guests without telling the copy. Four do, and each is named
+        here — a fifth wants adding to this list and to one of the two
+        helpers."""
+        writers = {
+            "toggleWhoPill": "dropHomeBefore()",
+            "stepGuests": "holdSheetChange({ guests: true })",
+            "reseedSheet": "holdSheetChange({ slots: ['dinner'] })",
+            "answerHoliday": "holdSheetChange({ guests: true })",
+        }
+        for name, call in writers.items():
+            assert call in _extract(name), f"{name} does not keep the copy in step"
+        # And nothing else touches them outside the toggle and the painters.
+        allowed = {"toggleWhoPill", "toggleNobodyHome", "stepGuests", "reseedSheet",
+                   "answerHoliday", "holdSheetChange", "paintSheet", "seedSheet",
+                   "paintHoliday"}
+        body = PAGE[PAGE.index("  function seedSheet(date)"):]
+        for m in re.finditer(r"sheet\.(absent|guests)\s*(=|\.push|\.splice)", body):
+            fn = body.rfind("  function ", 0, m.start())
+            named = re.match(r"  function (\w+)", body[fn:]).group(1)
+            assert named in allowed, f"{named} writes the sheet without telling the copy"
 
 
 # ==========================================================================

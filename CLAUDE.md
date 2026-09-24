@@ -447,6 +447,49 @@ why*, not duplicating the diff.
     `sheet.homeBefore` holds what the turn-on replaced; the turn-off puts
     it back exactly, then drops it. Reached all-away by hand there is no
     copy, and the undo is plainly "everyone home", which is what was there.
+  - **THE FIRST CUT ARGUED THAT COPY COULD NEVER GO STALE. IT COULD, TWICE
+    OVER, AND BOTH WERE SHIPPED — found by review, reproduced end to end
+    against a real server, fixed on the same branch.** The comment's
+    reasoning was true about never CLEARING the copy and missed the thing
+    that matters: the day the copy describes can CHANGE while the control
+    is on. Four things write the open sheet and only the control was
+    telling the copy.
+    - **A HOLIDAY ANSWERED WHILE THE CONTROL WAS ON WAS REVERSED BY THE
+      UNDO.** Five taps on a Thanksgiving in the period: open the day, tap
+      the control, answer "Going to someone's" (the server saves
+      `holiday_answers.answer='out'` and marks everyone out of that dinner,
+      which `reseedSheet` pulls into the open sheet), tap the control again
+      — the documented one-tap undo — and Done. Measured against a baseline
+      where the control is never tapped: baseline `slot_attendance` dinner
+      `absent=[1,2,3]`, `slot_needs` dinner `away`, `holiday_answers=out`;
+      shipped branch `absent=[]`, **no `slot_needs` row at all**, and
+      `holiday_answers=out` still standing. So the household said they were
+      going out, the answer was on record, and the week would have planned
+      and shopped a Thanksgiving dinner with nothing on any screen saying
+      the two disagreed. Unreachable on `main` (no whole-day control); one
+      tap here, on the control whose whole stated job is to undo what it
+      just did.
+    - **A GUEST COUNT TYPED WHILE THE CONTROL WAS ON WAS DESTROYED.** Four
+      taps: control on (which zeroes the guests, so the copy holds 0), then
+      "Guests for dinner" — the row is still live — then +, then the
+      control off. 2 guests back to 0: the household meant "everybody's
+      home, two friends for dinner" and got "everybody's home, nobody
+      coming". Also reachable by a longer path that shows the copy going
+      stale while the control reads OFF (on, tap one person back in, add
+      guests, tap them back out so it lights again, undo).
+    - **The fix makes that sentence true instead of asserted: every other
+      writer of the open sheet now says so**, through one of two helpers.
+      `toggleWhoPill` DROPS the copy (`dropHomeBefore`) — editing a pill is
+      the household answering for one person, and once they have, "put back
+      what the control replaced" stops naming anything, so the undo from
+      there is plainly everyone home, which is what the control already
+      does for a day taken all-away by hand. `stepGuests`, `reseedSheet`'s
+      dinner row and `answerHoliday`'s headcount REFRESH it
+      (`holdSheetChange`), because those are answers that must outlive the
+      undo — a clear there would throw away the partial-absence restore the
+      copy exists for. After it, blocker 1's branch state is byte-identical
+      to the baseline and blocker 2 keeps its 2 guests, both re-measured
+      the same way.
   - **The guests go out with the day and come back with the undo.** A
     dinner nobody is home for has nobody to host them, and
     `attendance.set_day_attendance` drops the count for an away meal
@@ -467,27 +510,64 @@ why*, not duplicating the diff.
     13.54:1 / 11.12:1 on, nothing in the sheet under 44px, exactly one
     apricot fill (`day-done`), no sideways scroll — and Done really does
     leave the tile reading "nobody home".
-  - `tests/test_nobody_home_one_tap.py` (26). **All 26 are red against
+  - `tests/test_nobody_home_one_tap.py` (32). **All 32 are red against
     main and that number is worth nothing** — main has no such control, so
-    every one dies on a name it has not got (15 in the node prelude on
-    `NOBODY_HOME_PILL`, 6 on `_extract`, 4 reaching an assertion about a
-    string that is simply absent). **ZERO are behaviour catches**, which is
-    the only kind of red a new control can have, and the evidence is
-    mutation instead: nine run, every one bites — only dinner emptied (11
-    red), no copy taken (1), guests left standing (1), guests not given
-    back (1), the state kept as a flag (2), the empty-household guard
-    dropped (1), the control offered with nobody on record (1), `paintSheet`
-    not reading the state (2), `aria-pressed` not painted (1). Suite
-    **6654 passed, 0 failed** at `TZ=America/Toronto`, against 6628
-    collected on main — +26 is this file exactly, and `git diff main --
-    tests/` is empty, so no existing test was changed or weakened.
+    every one dies on a name it has not got: **21** in the node prelude on
+    `NOBODY_HOME_PILL`, **6** on `_extract`, **5** reaching an assertion
+    about a string that is simply absent. (An earlier version of this
+    entry gave that split as 15/6/4, which is 25 of 26 and does not sum;
+    re-measured per test on the finished file.) **ZERO are behaviour
+    catches**, which is the only kind of red a new control can have, so the
+    evidence is mutation instead. **Fifteen run and every one bites.**
+    Nine on the control itself: only dinner emptied (**15** red), no copy
+    taken (2), guests left standing on the way out (1), guests not given
+    back (1), the state kept as a flag rather than derived (3), the
+    empty-household guard dropped (1), the control offered with nobody on
+    record (1), `paintSheet` not reading the state (2), `aria-pressed` not
+    painted (1). Six on keeping the copy in step, including **both
+    shipped blockers put back**: `reseedSheet` stops telling the copy (2 —
+    the holiday test and the writer sweep), `stepGuests` stops telling it
+    (2 — the guest test and the sweep), `toggleWhoPill` stops dropping it
+    (2), `answerHoliday`'s headcount stops telling it (1),
+    `holdSheetChange` refreshing nothing (2), `dropHomeBefore` a no-op (1).
+    One of the 32 is a SWEEP rather than a case — it walks every
+    `sheet.absent` / `sheet.guests` write in the file and fails on one made
+    from a function that does not keep the copy in step, so a fifth writer
+    cannot be added silently. Suite **6660 passed, 0 failed** at
+    `TZ=America/Toronto`, against 6628 collected on main — +32 is this file
+    exactly, and `git diff main -- tests/` shows ONE ADDED FILE and nothing
+    else, so no existing test was changed or weakened. (The earlier version
+    of this line called that diff "empty", which contradicted the sentence
+    beside it.)
+  - **The test that would have caught both blockers did not exist, and
+    that is the lesson.** Nothing in the first cut of the file mutated the
+    sheet AFTER a turn-on and BEFORE the undo — the one arrangement in
+    which either bug can appear — and `test_reaching_it_by_hand_reads_as_on`
+    asserted `copy is None` on a FRESH sheet only, which is the one
+    arrangement in which it cannot. Both sequences are cases now, driven
+    through `reseedSheet` and `stepGuests` rather than described.
   - **Found in passing and NOT fixed, named so nobody reports it as new:**
     the pre-existing all-away state that this control now produces in one
     tap can also be reached with guests already counted, and there
     `daySummary` says "Everyone's out for dinner — 2 guests with nobody
     home, so I'll plan nothing." rather than the tile's "nobody home"
-    sentence. Correct and unchanged; only reachable by hand-tapping the
-    nine pills with a count set, since the control clears it.
+    sentence. Correct and unchanged. **THIS ENTRY ORIGINALLY SAID IT WAS
+    "only reachable by hand-tapping the nine pills with a count set, since
+    the control clears it", AND THAT IS FALSE** — reproduced in TWO taps
+    (control on, then "Guests for dinner", whose row stays live while the
+    control is on). It was the same hole as the guest-count blocker above,
+    written down here as a non-issue; the blocker is fixed and this
+    sentence is corrected rather than deleted, because a wrong reachability
+    claim in this log is what the next reader acts on.
+  - **REPORTED, NOT FIXED, and deliberately so:** answering a holiday
+    "Hosting" while the control is on takes the control DARK while
+    breakfast and lunch stay all-away — `reseedSheet` clears the dinner row
+    from the server's answer, so the day is no longer everybody-out-of-
+    everything. It is honest (the summary correctly reads "Nobody home for
+    breakfast and lunch — I'll plan nothing and buy nothing for those") and
+    it is arguably `reseedSheet`'s own pre-existing behaviour that the new
+    control makes visible rather than anything this branch introduced. Left
+    as it is.
 
 - **2026-09-23 — A chat turn records what it was ABOUT: one theme label,
   never the words. Branch `chat-theme-per-turn`, NOT merged at the time of
