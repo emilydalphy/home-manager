@@ -825,7 +825,8 @@ def _cooked_night_off(row) -> bool:
     return (derived.get(NIGHT_OFF_CONSTRAINT) or {}).get("constraint") == NIGHT_OFF_CONSTRAINT
 
 
-def tonight_night_off(day: str | None = None, now: datetime | None = None) -> dict:
+def tonight_night_off(day: str | None = None, now: datetime | None = None,
+                      confirm_cooked: bool | str = False) -> dict:
     """
     "Not tonight — we're going out." Settles tonight in one answer, with no
     second question: takeout, leftovers, cereal, out — the app doesn't ask
@@ -858,6 +859,15 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None) -> di
 
     Refusals are still answers, not errors, but only for a tonight with no
     plan to change (no plan covering it, or a component-based one).
+
+    ONE question, and only one (Emily, 2026-09-24, option B — ask first):
+    'cook_on_fed' deletes the leftovers row on the night the cook lands
+    on, and when that row has been ticked cooked the tick would go without
+    a word. Without `confirm_cooked` that shape writes nothing and answers
+    `needs_confirmation` with the question (`message`, also `said`) and
+    the button's word (`confirm_label`); the same call with
+    `confirm_cooked` goes ahead exactly as before, Undo included. Read
+    under the same lock as everything else here.
 
     `already` means the night was ALREADY off and nothing was written —
     a second tap, the other phone, or a night nobody was ever home for.
@@ -939,6 +949,16 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None) -> di
         dish = step["dish"]
         out["kind"] = kind
         out["dish"] = dish or None
+
+        if (kind == "cook_on_fed"
+                and not _weekly_plan.cooked_move_confirmed(confirm_cooked, step["target"])
+                and _weekly_plan.fed_night_is_cooked(conn, step["target"])):
+            # The night the cook would land on is ticked cooked — ask
+            # before deleting that record. Nothing has been written; the
+            # lock taken above is what makes this reading the current one.
+            conn.rollback()
+            asked = _weekly_plan.cooked_fed_night_question(step["target"], dish)
+            return {**out, **asked, "said": asked["message"]}
 
         if kind == "drop":
             # Nothing to move it to and nothing it feeds — the dish comes

@@ -2521,18 +2521,28 @@ def today_tonight_keep(req: TonightKeepRequest):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+class NightOffRequest(TonightKeepRequest):
+    """The night-off tap. `confirm_cooked` is the household's yes to the one
+    question it can ask — the night tonight's cook would move onto is
+    already marked cooked (Emily, 2026-09-24, option B) — and is only ever
+    true on the tap after a needs_confirmation answer."""
+    confirm_cooked: bool | str = False
+
+
 @app.post("/api/today/tonight/night-off")
-def today_tonight_night_off(req: TonightKeepRequest):
+def today_tonight_night_off(req: NightOffRequest):
     """
     "Not tonight — we're going out." Settles tonight in one answer: the
     dish moves to the next free night of this plan, or comes off the week
     with anything already bought for it that won't keep handed back as
     `use_soon`. See tools.tonight_night_off for every rule. A 200 can still
     say no — `status` 'refused' carries the sentence to show and nothing was
-    written.
+    written — or ask first: `status` 'needs_confirmation' carries the
+    question (`message`) and nothing was written until the same call comes
+    back with `confirm_cooked`.
     """
     try:
-        return tools.tonight_night_off(req.date)
+        return tools.tonight_night_off(req.date, confirm_cooked=req.confirm_cooked)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -3407,6 +3417,10 @@ def week_swap_nights_undo(week_start: str, req: SwapNightsRequest):
 
 class DropDishDayRequest(BaseModel):
     entry_id: int
+    # The household's yes to "Friday's already marked cooked. Move the …
+    # there anyway?" — only ever true on the tap AFTER a needs_confirmation
+    # answer (Emily, 2026-09-24, option B). See tools.drop_dish_from_day.
+    confirm_cooked: bool | str = False
 
 
 @app.post("/api/week/{week_start}/drop-dish-day")
@@ -3421,7 +3435,7 @@ def week_drop_dish_day(week_start: str, req: DropDishDayRequest):
     """
     plan_id = _plan_id_for_week(week_start)
     try:
-        return tools.drop_dish_from_day(plan_id, req.entry_id)
+        return tools.drop_dish_from_day(plan_id, req.entry_id, confirm_cooked=req.confirm_cooked)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

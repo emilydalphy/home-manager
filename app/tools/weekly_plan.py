@@ -484,7 +484,8 @@ def plan_slot_open(
     }
 
 
-def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | None = None) -> dict:
+def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | None = None,
+                       confirm_cooked: bool | str = False) -> dict:
     """
     Take one day away from a dish, and hand that slot back as a question.
 
@@ -542,6 +543,17 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | No
     "−" was left alone then so that branch stayed the size of its ticket;
     this is the other half. See the comparison below for what going
     through wrote, and for why the clock it reads is the household's.
+
+    `confirm_cooked` is the household's explicit yes to the one question
+    this can ask (Emily, 2026-09-24, option B — ask first). When the dish
+    was cooked double for later nights its cook moves onto the first of
+    them, and that night's leftovers row goes. If that row has been ticked
+    cooked, the move would delete the tick without a word — so without
+    this flag nothing is written and the answer is `needs_confirmation`,
+    carrying the question (`message`) and the button's word
+    (`confirm_label`). Never set on a first call, and never by a caller
+    that is not a person (allergen_gate.sweep_plan leaves it off). See
+    _drop_by_cooking_on_the_fed_night for where it is read.
     """
     # The household's day, resolved BEFORE the first connection below is
     # opened rather than beside the comparison it is for.
@@ -690,6 +702,7 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | No
         # something no other "−" does.
         return _drop_by_cooking_on_the_fed_night(
             weekly_plan_id, entry_id, meal_date, slot, dish, fed[0], open_reason,
+            confirm_cooked=confirm_cooked,
         )
     # ONE connection, ONE commit, for all four steps — the same shape and
     # for the same reason as retire_overlapping_plans (2026-09-06). These
@@ -789,7 +802,7 @@ DROP_DISH_CHANGED = "That dish changed just now, so I’ve left the week as it i
 
 def _drop_by_cooking_on_the_fed_night(
     weekly_plan_id: int, entry_id: int, meal_date: str, slot: str,
-    dish: str, target: dict, open_reason: str,
+    dish: str, target: dict, open_reason: str, confirm_cooked: bool | str = False,
 ) -> dict:
     """
     One fewer night of a dish that was cooked double for later ones: the
@@ -827,6 +840,16 @@ def _drop_by_cooking_on_the_fed_night(
             conn.rollback()
             return changed
         target = fed[0]
+
+        # The night the cook lands on has been ticked cooked: the move
+        # deletes that row, tick and all. Asked, never done silently
+        # (Emily, 2026-09-24, option B). Read HERE, under the lock and on
+        # this connection, rather than beside the first decision — a tick
+        # the other phone made a second ago is exactly the one this has to
+        # see. Nothing has been written yet.
+        if not cooked_move_confirmed(confirm_cooked, target) and fed_night_is_cooked(conn, target):
+            conn.rollback()
+            return cooked_fed_night_question(target, dish, {"date": meal_date, "slot": slot})
 
         old_ref = f"{meal_date}:{slot}"
         new_ref = f"{target['date']}:{target['slot']}"
@@ -7141,6 +7164,70 @@ def fed_night_label(target: dict) -> str:
     night off's sub-line and toast and by the Review stepper's "−"."""
     return _weekday_of(target["date"]) if target["slot"] == "dinner" \
         else f"{_weekday_of(target['date'])}’s {target['slot']}"
+
+
+# The one question moving a cook onto a fed night can ask: that night's
+# leftovers row has been ticked cooked, and the move deletes it (Emily,
+# 2026-09-24, option B — "ask first"). Both doors ask it in these words:
+# tonight.tonight_night_off and drop_dish_from_day.
+COOKED_FED_NIGHT = "fed_night_cooked"
+COOKED_FED_NIGHT_CONFIRM_LABEL = "Move it"
+
+
+def fed_night_is_cooked(conn, target: dict) -> bool:
+    """Whether the row a cook would land on has been ticked cooked. Read on
+    the caller's connection, so a caller holding the write lock sees the
+    tick as it stands under that lock."""
+    row = conn.execute(
+        "SELECT cooked_status FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (target["entry_id"], household_id()),
+    ).fetchone()
+    return row is not None and (row["cooked_status"] or "") == "done"
+
+
+def cooked_move_confirmed(confirm_cooked, target: dict) -> bool:
+    """
+    Whether the household's yes covers THIS night. `confirm_cooked` is
+    either True (chat: the model asked in words and the household said yes)
+    or the "YYYY-MM-DD:slot" the question was about (the screen sends back
+    the night it showed). A yes to Friday is not a yes to Saturday: if the
+    week moved between the question and the tap and a different ticked
+    night is now the target, the answer is the question again, about that
+    night — never a silent delete of one nobody was asked about.
+    """
+    if confirm_cooked is True:
+        return True
+    if isinstance(confirm_cooked, str) and confirm_cooked:
+        return confirm_cooked == f"{target['date']}:{target['slot']}"
+    return False
+
+
+def cooked_fed_night_question(target: dict, dish: str, extra: dict | None = None) -> dict:
+    """
+    The `needs_confirmation` answer both doors give when the night a cook
+    would move onto has already been ticked cooked. Nothing was written;
+    the same call again with `confirm_cooked` goes ahead as it always did,
+    and Undo still puts the ticked row back.
+
+    The dish is named rather than "it" (copy rule 1, clear beats warm): on
+    the night off "it" could be tonight's dinner or the leftovers already
+    sitting on that night.
+    """
+    label = fed_night_label(target)
+    night = f"{label}’s" if target["slot"] == "dinner" else f"{label} is"
+    return {
+        **(extra or {}),
+        "status": "needs_confirmation",
+        "reason": COOKED_FED_NIGHT,
+        "dish": dish,
+        "cooked_date": target["date"],
+        "cooked_slot": target["slot"],
+        # What a screen sends back as `confirm_cooked` to say yes to THIS
+        # night and no other (cooked_move_confirmed).
+        "confirm_night": f"{target['date']}:{target['slot']}",
+        "message": f"{night} already marked cooked. Move the {dish} there anyway?",
+        "confirm_label": COOKED_FED_NIGHT_CONFIRM_LABEL,
+    }
 
 
 def fed_nights_in_eating_order(source: dict | None, after: str) -> list[dict]:

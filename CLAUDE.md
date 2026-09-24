@@ -415,6 +415,23 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-24 — Now carries no score: the band's "N of M done" and the
+  Cook card's "N of M" are gone. Branch `now-no-counts`.** Emily's call the
+  same day, from three mockups (keep both / remove both / top only): "go
+  with recommended and remove". Closes the contradiction the card "Now
+  tells today's story for the household" held open: the 2026-09-15 walk
+  said no fraction anywhere on Now, and the 2026-09-18 re-cut put "0 of 2
+  done" back on Cook. The ticks on the rows are the progress; a count
+  repeated them as a scoreboard, and Pomona keeps no scores.
+  - `renderTodayMoves` gives the band `sub: ''` (the `[hidden]` rule keeps
+    it from leaving a gap). `dayGroupHtml` leaves out the count span when
+    it's empty, and Cook passes `''`. Shop's "N stops" stays, because it
+    tells you where you're going, not a score. The client's `data.done`
+    recount went with it. The server still sends `done`/`total`: the API
+    tests pin them and nothing reads them on screen.
+  - Guards: `test_the_two_blocks_are_gone` now fails if either count's
+    expression comes back. Suite **6867 passed**.
+
 - **2026-09-24 — The three /api/attention routes had no test at all, and two
   of them take a row id off the wire. Branch
   `overnight/attention-routes-pinned`, NOT merged at the time of writing.
@@ -976,6 +993,64 @@ why*, not duplicating the diff.
     the same line the way down left it, not to a byte-identical one. Same
     property every other caller of that function already has; said out loud
     rather than promised away.
+- **2026-09-24 — Moving a cook onto a night already ticked cooked now ASKS
+  FIRST, on both doors. Branch `ticked-cooked-ask-first`, NOT merged at
+  the time of writing.** The card the `drop-dish-self-solving` entry above
+  names in its "TICKED COOKED" bullet. Emily's decision, 2026-09-24:
+  **option B — ask first** (the card's other option, carry the tick across,
+  was not chosen). `move_cook_onto_fed_night` itself is untouched: it still
+  deletes the landed-on row, because once the household has said yes that
+  IS the move, and Undo still restores the row with its `cooked_status`.
+  - **One check, two doors, read under the lock.** `weekly_plan.fed_night_is_cooked`
+    reads the target's tick on the caller's connection;
+    `cooked_fed_night_question` builds the answer both doors give. The "−"
+    reads it in `_drop_by_cooking_on_the_fed_night` AFTER `BEGIN IMMEDIATE`
+    and after the re-decision, so `DROP_DISH_CHANGED` still wins over the
+    question; the night off reads it inside `tonight_night_off`'s existing
+    locked transaction, only for `kind == 'cook_on_fed'` (the only shape
+    that reaches the move). Nothing is written before either check; both
+    roll back. A test ticks the row AT the moment the lock is asked for,
+    and a mutation that moves the check above the BEGIN goes red.
+  - **The answer:** `status: 'needs_confirmation'`, `reason:
+    'fed_night_cooked'`, `message`, `confirm_label` ("Move it"),
+    `cooked_date`/`cooked_slot`, and `confirm_night` ("YYYY-MM-DD:slot").
+    The night off also sets `said` to the question so chat says the
+    question, not a toast.
+  - **The yes is bound to a NIGHT, not a boolean, for the screen** (added
+    on review). `confirm_cooked` is `True` (chat — the model asked in words)
+    or the `confirm_night` the question was about (the sheet sends that
+    back); `cooked_move_confirmed` checks it against the target under the
+    lock. A yes to Friday is not a yes to Saturday: if the week moved
+    between question and tap, the new night is asked about in turn.
+  - **Wiring.** Routes: `DropDishDayRequest.confirm_cooked`, and a new
+    `NightOffRequest` (subclass of `TonightKeepRequest`, so keep/undo are
+    untouched). Chat: `take_the_night_off` gained `confirm_cooked` and its
+    description, plus the system prompt's night-off line, say to ask
+    `message` and pass the flag only after a yes. Server-side nothing stops
+    a model sending it on the first call — same trust model as
+    `confirm_hard_conflicts`. Client: the ONLY live screen is the tonight
+    sheet's night-off row; on `needs_confirmation` it stays open and the
+    row becomes the question (sub-line = `message`, go-label = "Move it"),
+    the same relabel-and-swap-handler idiom as `showApproveConfirm`. The way
+    out is the sheet's own close — reopening redraws the ordinary row. **The
+    "−" still has no screen**, so its side is the API contract only.
+  - **The allergen sweep never says yes.** It checked `== "refused"` and
+    counted anything else as `slots_opened`; it now checks `!= "dropped"`,
+    so a question is logged like a refusal and the week is left alone.
+  - **Wording, for Emily to check:** "Friday’s already marked cooked. Move
+    the Seared Garlic Chicken Thighs there anyway?" (lunch: "Friday’s lunch
+    is already marked cooked. …"). Her suggestion was "…— move it
+    anyway?"; the dish is named because on the night off "it" could be
+    tonight's dinner or Friday's leftovers (copywriter rule 1).
+  - **Not done, named:** the sheet's pre-tap sub-line still reads "X moves
+    to Friday. The extra goes in the freezer." when Friday is ticked; the
+    question arrives on the tap. No browser check — the sheet needs a
+    sign-in with a passphrase, which the agent does not type; the JS is
+    pinned by an ordered source-marker test only (no JS harness here).
+  - `tests/test_ticked_cooked_ask_first.py` (16): **13 red on `main`**, the 3
+    green are GUARDs (an unticked fed night is not asked about, on each
+    door; `DROP_DISH_CHANGED` still comes first). Suite at
+    `TZ=America/Toronto`: **6866 passed, 0 failed.**
 - **2026-09-24 — A grocery line could be moved to a status nothing looks
   for, and the line was gone from the shop without being removed from it.
   Branch `overnight/grocery-item-routes-pinned`, NOT merged at the time of

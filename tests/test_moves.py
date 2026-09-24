@@ -665,7 +665,6 @@ SHELL_CSS = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
     "function toggleTodayMove(",
     "/api/today/moves",               # one fetch, not four
     "WEEK_STATE_LABELS[data.week_state]",  # Week set / Draft — the band's chip since 2026-09-11
-    "' of ' + moves.length + ' done'",
 ])
 def test_today_renders_the_strip_and_its_ticks(marker):
     assert marker in SHELL_JS, f"Today is missing {marker!r} from static/shell.js"
@@ -673,7 +672,7 @@ def test_today_renders_the_strip_and_its_ticks(marker):
 
 @pytest.mark.parametrize("dead", [
     "id=\"today-next-up\"", "function nextUpCardHtml(", ">NEXT UP<",
-    "<h2 class=\"rest-title\">", "rest-done-head", "function moveRowHtml(",
+    "<h2 class=\"rest-title\">", "rest-done-head", "function moveRowHtml(", "' of ' + moves.length + ' done'", "' of ' + cooks.length",
 ])
 def test_the_two_blocks_are_gone(dead):
     assert dead not in SHELL_JS, f"{dead!r} is back — the day strip replaced it (2026-09-13)"

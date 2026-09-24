@@ -444,7 +444,12 @@ def sweep_plan(
             dropped = _weekly_plan.drop_dish_from_day(
                 weekly_plan_id, entry_id, open_reason=open_reason(meal.get("slot") or "dinner", dish_clash),
             )
-            if dropped.get("status") == "refused":
+            # Anything but 'dropped' left the week as it was: a refusal, or
+            # (since 2026-09-24) `needs_confirmation`, which the "−" answers
+            # when moving a cook would delete a night already ticked cooked.
+            # The sweep is not a person and never says yes to that on
+            # anyone's behalf, so it is logged the way a refusal is.
+            if dropped.get("status") != "dropped":
                 logger.error("Allergen sweep could not take %r off %s %s: %s", name, meal.get("date"), meal.get("slot"), dropped.get("message"))
             else:
                 out["slots_opened"] += 1

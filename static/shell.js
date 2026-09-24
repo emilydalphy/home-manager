@@ -674,7 +674,7 @@
   //                band top-left where the date eyebrow was; the eyebrow's
   //                text (the date, or the context) joins the sub-line
   //                instead, " · " before whatever the line already says:
-  //                "Sunday, Sep 13 · 2 of 5 done".
+  //                "Sunday, Sep 13 · 60 things · 1 stop".
   //   'mark'     — B (in the back pocket): the mark before the date
   //                eyebrow; the eyebrow keeps the date.
   //   'none'     — the band as it was before 2026-09-13.
@@ -827,7 +827,8 @@
     panel.innerHTML =
       '<div class="today-content">' +
         // The root band (rootBandHtml): the date as its eyebrow, the
-        // week's state as its chip, "N of M done" as its one line. Today
+        // week's state as its chip, and no line (no score on Now since
+        // 2026-09-24). Today
         // has no deeper step, so the gear is never hidden here.
         rootBandHtml({
           id: 'today-band',
@@ -1175,7 +1176,7 @@
 
   function setTodayHeading(panel, count, isError, isUrgent) {
     // The needs-you count no longer has a line of its own on Today — the
-    // line under the title is "N of M done", written by renderTodayMoves —
+    // band under the title carries no line at all since 2026-09-24 —
     // but it still drives the tab badge, which is the one place a count of
     // unanswered questions is worth carrying. A failed lookup badges zero
     // rather than badging a guess.
@@ -1876,7 +1877,7 @@
       '<div class="day-group-head">' +
         '<span class="day-group-icon">' + g.icon + '</span>' +
         '<span class="day-group-title">' + g.title + '</span>' +
-        '<span class="day-group-count">' + escapeHtml(count) + '</span>' +
+        (count ? '<span class="day-group-count">' + escapeHtml(count) + '</span>' : '') +
       '</div>' +
       rows +
     '</div>';
@@ -1895,8 +1896,8 @@
         shops.map(function (m) { return todayShopRowsHtml(m, stateOf(m)); }).join(''));
     }
     if (cooks.length) {
-      var done = cooks.filter(function (m) { return m.done; }).length;
-      html += dayGroupHtml('cook', done + ' of ' + cooks.length,
+      // No count on Cook: the ticks are the progress (same call as the band).
+      html += dayGroupHtml('cook', '',
         cooks.map(function (m) { return dayStripNodeHtml(m, stateOf(m)); }).join(''));
     }
     return html;
@@ -1971,12 +1972,13 @@
     panel._moves = data;
     var moves = data.moves || [];
 
-    // The band: "3 of 4 done" is the day's one line. A day with no moves
-    // has no line here — the tomorrow card or the empty moment below says
-    // what there is to say, and the band must not say it a second time.
+    // The band carries the week's chip and no line. Now tells the day's
+    // story, not a score: the ticks on the rows already say what's done,
+    // and "3 of 4 done" repeated them as a count (Emily, 2026-09-24,
+    // closing the 2026-09-15 no-fractions rule against the 09-18 re-cut).
     setRootBand(panel, 'today-band', {
       badge: WEEK_STATE_LABELS[data.week_state] || '',
-      sub: moves.length ? (data.done || 0) + ' of ' + moves.length + ' done' : ''
+      sub: ''
     });
     var holidayEl = panel.querySelector('#today-holiday');
     if (holidayEl) {
@@ -2433,7 +2435,14 @@
   // Undo rides on it whenever the server says the week can be put back
   // exactly (`can_undo` — every shape but a dropped dish, whose groceries
   // are reversed and cannot be un-said).
-  async function runTonightNightOff(panel) {
+  //
+  // `confirmCooked` is only ever set on the tap AFTER the server answered
+  // needs_confirmation (Emily, 2026-09-24, option B — ask first): the
+  // night tonight's cook would move onto is already marked cooked, and
+  // moving onto it replaces that record. It is the night the question was
+  // about (`confirm_night`), so the yes covers that night and no other.
+  // Never set on a first tap.
+  async function runTonightNightOff(panel, confirmCooked) {
     var data = panel._tonight;
     if (!data || panel._tonightSwapping) return;
     panel._tonightSwapping = true;
@@ -2443,10 +2452,16 @@
       var res = await fetch('/api/today/tonight/night-off', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: data.date })
+        body: JSON.stringify({ date: data.date, confirm_cooked: confirmCooked || false })
       });
       if (!res.ok) throw new Error('night off failed (' + res.status + ')');
       var out = await res.json();
+      if (out.status === 'needs_confirmation') {
+        // Nothing was written. The sheet stays open and the night-off row
+        // becomes the question — see showNightOffConfirm.
+        showNightOffConfirm(panel, out);
+        return;
+      }
       closeTonightSheet();
       if (out.status !== 'night_off') {
         // A 200 that says no — only a night with no plan covering it now,
@@ -2477,6 +2492,32 @@
       panel._tonightSwapping = false;
       buttons.forEach(function (b) { b.disabled = false; });
     }
+  }
+
+  // The one question a night off can ask (Emily, 2026-09-24, option B):
+  // the night tonight's cook would move onto is already marked cooked. The
+  // same idiom as showApproveConfirm — the row that was tapped is
+  // relabelled in place and its handler swapped, so the second, explicit
+  // tap is what sends confirm_cooked. The question is the server's
+  // sentence (weekly_plan.cooked_fed_night_question), the button its
+  // `confirm_label`. The way out is the sheet's own close: nothing has
+  // been written, and reopening the sheet redraws the ordinary row.
+  function showNightOffConfirm(panel, out) {
+    var btn = tonightSheet && tonightSheet.querySelector('#tonight-night-off');
+    if (!btn) return;
+    var fresh = btn.cloneNode(true);
+    btn.parentNode.replaceChild(fresh, btn);
+    var when = fresh.querySelector('.tonight-option-when');
+    if (!when) {
+      when = document.createElement('span');
+      when.className = 'tonight-option-when';
+      fresh.querySelector('.tonight-option-text').appendChild(when);
+    }
+    when.textContent = out.message || '';
+    var go = fresh.querySelector('.tonight-option-go');
+    if (go) go.textContent = out.confirm_label || 'Move it';
+    fresh.disabled = false;
+    fresh.addEventListener('click', function () { runTonightNightOff(panel, out.confirm_night || false); });
   }
 
   // What actually happened, in one breath: the night, then where the dish
@@ -2627,7 +2668,6 @@
     // Optimistic: the node settles into (or out of) done on the tap, before
     // the server confirms — §6, "the common case never waits".
     move.done = done;
-    data.done = (data.moves || []).filter(function (m) { return m.done; }).length;
     renderTodayMoves(panel, data);
     todayAnimateNodeSettle(panel, moveId, fromState);
     try {
@@ -2653,8 +2693,7 @@
     } catch (err) {
       console.warn('Could not save that tick:', err);
       move.done = was;
-      data.done = (data.moves || []).filter(function (m) { return m.done; }).length;
-      renderTodayMoves(panel, data);
+        renderTodayMoves(panel, data);
       showToast('That didn’t save — try again.');
     }
   }
