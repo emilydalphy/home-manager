@@ -379,8 +379,8 @@ def clear_plan_slot(weekly_plan_id: int, meal_date: str, slot: str, conn=None) -
             (household_id(), *[r["id"] for r in rows]),
         )
         conn.execute(
-            f"DELETE FROM meal_plan_entries WHERE id IN ({marks})",
-            tuple(r["id"] for r in rows),
+            f"DELETE FROM meal_plan_entries WHERE id IN ({marks}) AND household_id = ?",
+            (*[r["id"] for r in rows], household_id()),
         )
         if own_conn:
             conn.commit()
@@ -2251,8 +2251,23 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
         else:
             target = f"{r['date']}:{r['slot']}"
             conn = get_conn()
+            # Scoped by household as well as by id. The id here can only
+            # have come from the household-filtered read at the top of
+            # this function, so nothing reaches this statement with a
+            # foreign id today — the guard is being made a property of the
+            # statement rather than of whoever calls it. The rule the
+            # package is built on is that scoping is not something a
+            # caller does (see _shared.household_id), and a statement
+            # quietly relying on a caller having already done it is how
+            # that stops being true.
+            #
+            # tests/test_leftover_chain_household_filter.py sweeps the
+            # whole module for the same shape, so a new one cannot appear
+            # without a test going red — read that file's docstring for
+            # what the sweep can and cannot see before relying on it.
             existing = conn.execute(
-                "SELECT derived_from_json FROM meal_plan_entries WHERE id = ?", (source["id"],)
+                "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+                (source["id"], household_id()),
             ).fetchone()
             source_derived = json.loads(existing["derived_from_json"] or "{}") if existing else {}
             # A list, not a scalar: one cook can feed more than one leftovers
@@ -2273,8 +2288,8 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
             )
             source_derived["make_double_for"] = targets
             conn.execute(
-                "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
-                (json.dumps(source_derived), source["id"]),
+                "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+                (json.dumps(source_derived), source["id"], household_id()),
             )
             conn.commit()
             conn.close()
@@ -2391,8 +2406,8 @@ def _unlink_leftover_target(weekly_plan_id: int, entry_id: int, conn=None) -> in
             source_derived.pop("make_double_note", None)
 
         conn.execute(
-            "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
-            (json.dumps(source_derived), source["id"]),
+            "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+            (json.dumps(source_derived), source["id"], household_id()),
         )
         if own_conn:
             conn.commit()
@@ -2526,8 +2541,9 @@ def _dedupe_duplicate_slots(weekly_plan_id: int, duplicated: list[dict]) -> None
             _grocery._reverse_meal_grocery_contributions(row["id"])
         if extras:
             conn.execute(
-                "DELETE FROM meal_plan_entries WHERE id IN (%s)" % ",".join("?" * len(extras)),
-                tuple(r["id"] for r in extras),
+                "DELETE FROM meal_plan_entries WHERE id IN (%s) AND household_id = ?"
+                % ",".join("?" * len(extras)),
+                (*[r["id"] for r in extras], household_id()),
             )
         logger.warning(
             "Week plan %s had %d entries for %s %s; kept the first, removed %d duplicate(s)",
@@ -7537,7 +7553,10 @@ def swap_component_in_plan(
         # ingredients on the list rather than piling the new ones on top.
         _grocery._reverse_meal_grocery_contributions(match["id"])
         conn = get_conn()
-        deleted = conn.execute("DELETE FROM meal_plan_entries WHERE id = ?", (match["id"],))
+        deleted = conn.execute(
+            "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (match["id"], household_id()),
+        )
         conn.commit()
         removed = deleted.rowcount
         conn.close()
