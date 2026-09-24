@@ -197,6 +197,11 @@ def test_the_sign_in_screen_is_readable():
     light_only = re.sub(
         r"@media \(prefers-color-scheme:\s*dark\)\s*\{.*?\n  \}", "", login, flags=re.DOTALL
     )
+    # ...and the forced-dark twin of that block (Settings → Appearance,
+    # 2026-09-24), which is the same dark rules again outside the media query.
+    light_only = re.sub(
+        r':where\(:root\[data-theme="dark"\]\)[^{]*\{[^}]*\}', "", light_only
+    )
     alphas = re.findall(r"color:\s*rgba\(246,\s*238,\s*225,\s*(0?\.\d+)\)", light_only)
     # Exactly the lines this test knows: the "Enter your passphrase to come
     # in." sub-line under the tagline was cut on 2026-09-11 (copy cleanse —

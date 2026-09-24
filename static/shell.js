@@ -21374,6 +21374,7 @@
         '</span>' +
         ICONS.arrow +
       '</button>' +
+      appearanceRowHtml() +
       // The second group: a way out of a bad moment, and the way out of the
       // app. Same quiet tile the Kitchen tab used to carry — one component,
       // one place it is defined.
@@ -21387,6 +21388,54 @@
           '</span>' +
         '</button>' +
       '</div>';
+  }
+
+  // ---------- Appearance (2026-09-24) ----------
+  // Light / Dark / Match my phone, saved on this device only. The page's
+  // <head> script (the same one on every page that loads theme.css) reads
+  // the saved choice before first paint and defines window.pomonaAppearance,
+  // which sets data-theme on <html> and points the theme-color meta tags at
+  // the forced colour. This row just saves and calls it. The control is the
+  // Plan root's .wk-seg, as a radio group.
+  var APPEARANCE_STORE_KEY = 'pomona-appearance';
+  var APPEARANCE_OPTIONS = [
+    { key: 'phone', label: 'Match my phone' },
+    { key: 'light', label: 'Light' },
+    { key: 'dark', label: 'Dark' }
+  ];
+
+  function appearanceChoice() {
+    var saved = null;
+    try { saved = window.localStorage.getItem(APPEARANCE_STORE_KEY); } catch (err) { /* private mode */ }
+    return saved === 'light' || saved === 'dark' ? saved : 'phone';
+  }
+
+  function setAppearance(key) {
+    try {
+      if (key === 'light' || key === 'dark') window.localStorage.setItem(APPEARANCE_STORE_KEY, key);
+      else window.localStorage.removeItem(APPEARANCE_STORE_KEY);
+    } catch (err) { /* private mode: applies for this page view only */ }
+    if (typeof window.pomonaAppearance === 'function') window.pomonaAppearance(key);
+    document.querySelectorAll('.prefs-appearance .wk-seg-btn').forEach(function (btn) {
+      var on = btn.getAttribute('data-appearance') === key;
+      btn.classList.toggle('is-on', on);
+      btn.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+  }
+
+  function appearanceRowHtml() {
+    var current = appearanceChoice();
+    return '<div class="prefs-appearance">' +
+      '<span class="prefs-row-title" id="prefs-appearance-title">Appearance</span>' +
+      '<div class="wk-seg" role="radiogroup" aria-labelledby="prefs-appearance-title">' +
+        APPEARANCE_OPTIONS.map(function (o) {
+          var on = o.key === current;
+          return '<button type="button" class="wk-seg-btn' + (on ? ' is-on' : '') + '" role="radio" ' +
+            'aria-checked="' + (on ? 'true' : 'false') + '" data-appearance="' + o.key + '">' +
+            escapeHtml(o.label) + '</button>';
+        }).join('') +
+      '</div>' +
+    '</div>';
   }
 
   var PREFS_SIGNOUT_ICON =
@@ -21499,6 +21548,11 @@
         window.location.href = '/logout';
       }
     }
+  });
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target && e.target.closest && e.target.closest('.prefs-appearance [data-appearance]');
+    if (btn) setAppearance(btn.getAttribute('data-appearance'));
   });
 
   // ---------- Onboarding coaching (Emily + Julia, 2026-09-08) ----------

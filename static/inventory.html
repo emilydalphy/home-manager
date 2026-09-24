@@ -6,6 +6,30 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:wght@400;500;600;700;800&family=Newsreader:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/theme.css">
+<!-- Settings → Appearance: this device's Light / Dark / Match my phone, applied before first paint. Same script on every page that loads theme.css (not share.html); tests/test_appearance.py keeps the copies identical. -->
+<script>
+(function () {
+  var root = document.documentElement;
+  function apply(choice) {
+    var t = choice === 'light' || choice === 'dark' ? choice : null;
+    if (t) root.setAttribute('data-theme', t); else root.removeAttribute('data-theme');
+    var metas = document.querySelectorAll('meta[name="theme-color"][media]');
+    var forced = null, i, m;
+    for (i = 0; i < metas.length; i++) {
+      m = metas[i];
+      if (!m.hasAttribute('data-own')) m.setAttribute('data-own', m.getAttribute('content'));
+      if (t && m.getAttribute('media').indexOf(t) !== -1) forced = m.getAttribute('data-own');
+    }
+    for (i = 0; i < metas.length; i++) metas[i].setAttribute('content', forced || metas[i].getAttribute('data-own'));
+  }
+  var saved = null;
+  try { saved = window.localStorage.getItem('pomona-appearance'); } catch (e) { /* private mode */ }
+  apply(saved);
+  window.pomonaAppearance = apply;
+  // A choice made in another tab, or in the shell around an embedded page.
+  window.addEventListener('storage', function (e) { if (e.key === 'pomona-appearance') apply(e.newValue); });
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Inventory — Pomona</title>
 <style>
@@ -147,24 +171,24 @@
     /* Tint washes: a 12-16% dark-red / apricot over a light card reads as a
        soft flag. Over the dark ground the same mix is invisible, so the wash
        inverts to the accent's own dark value at a higher alpha. */
-    .inv-soon-btn[aria-pressed="true"],
-    .inv-flag.soon { background: rgba(230, 112, 91, .20); }
-    .inv-flag.low { background: rgba(233, 161, 108, .20); }
-    .inv-scan-low-badge { background: rgba(233, 161, 108, .22); }
+    :where(:root:not([data-theme="light"])) .inv-soon-btn[aria-pressed="true"],
+    :where(:root:not([data-theme="light"])) .inv-flag.soon { background: rgba(230, 112, 91, .20); }
+    :where(:root:not([data-theme="light"])) .inv-flag.low { background: rgba(233, 161, 108, .20); }
+    :where(:root:not([data-theme="light"])) .inv-scan-low-badge { background: rgba(233, 161, 108, .22); }
     /* A 15% black hairline disappears on a dark ground. */
-    .inv-add-row input, .inv-add-row select,
-    .inv-scan-item-row1 input, .inv-scan-item-row2 select {
+    :where(:root:not([data-theme="light"])) .inv-add-row input, :where(:root:not([data-theme="light"])) .inv-add-row select,
+    :where(:root:not([data-theme="light"])) .inv-scan-item-row1 input, :where(:root:not([data-theme="light"])) .inv-scan-item-row2 select {
       border-color: var(--hairline-strong);
       background: var(--surface);
       color: var(--ink);
     }
     /* The three status dots. --urgent and --apricot already follow the
        theme; only the neutral "fine" dot needed its own dark step. */
-    .inv-dot { background: var(--ink-inactive); }
+    :where(:root:not([data-theme="light"])) .inv-dot { background: var(--ink-inactive); }
     /* Same UA-default placeholder problem as the shell — no ::placeholder
        rule exists here either, so these fell through to Chrome's #757575
        (3.21:1 on the dark card). Light is untouched and keeps the UA grey. */
-    input::placeholder, textarea::placeholder { color: var(--ink-placeholder); }
+    :where(:root:not([data-theme="light"])) input::placeholder, :where(:root:not([data-theme="light"])) textarea::placeholder { color: var(--ink-placeholder); }
 
     /* Ivory text on a spruce fill. These say `color: var(--ground)`, and
        --oat-cream is an alias for --ground, which INVERTS: in dark it is
@@ -173,11 +197,29 @@
        #F6EEE1 against --ground's #FBF6EE, so swapping the declaration
        outright would have nudged light mode. Overriding here instead keeps
        light byte-identical. */
-    .inv-add-row button, .inv-scan-save, .inv-loc-pill.active,
-    .inv-action-add { color: var(--ivory-ink); }
-    #inv-toast { box-shadow: 0 6px 20px rgba(0,0,0,.6); }
-    #inv-scrim, .inv-scan-scrim-el { background: var(--scrim); }
+    :where(:root:not([data-theme="light"])) .inv-add-row button, :where(:root:not([data-theme="light"])) .inv-scan-save, :where(:root:not([data-theme="light"])) .inv-loc-pill.active,
+    :where(:root:not([data-theme="light"])) .inv-action-add { color: var(--ivory-ink); }
+    :where(:root:not([data-theme="light"])) #inv-toast { box-shadow: 0 6px 20px rgba(0,0,0,.6); }
+    :where(:root:not([data-theme="light"])) #inv-scrim, :where(:root:not([data-theme="light"])) .inv-scan-scrim-el { background: var(--scrim); }
   }
+  /* Forced dark (Settings → Appearance → Dark): the twin of the block above.
+     tests/test_appearance.py checks the two match. */
+  :where(:root[data-theme="dark"]) .inv-soon-btn[aria-pressed="true"],
+  :where(:root[data-theme="dark"]) .inv-flag.soon { background: rgba(230, 112, 91, .20); }
+  :where(:root[data-theme="dark"]) .inv-flag.low { background: rgba(233, 161, 108, .20); }
+  :where(:root[data-theme="dark"]) .inv-scan-low-badge { background: rgba(233, 161, 108, .22); }
+  :where(:root[data-theme="dark"]) .inv-add-row input, :where(:root[data-theme="dark"]) .inv-add-row select,
+  :where(:root[data-theme="dark"]) .inv-scan-item-row1 input, :where(:root[data-theme="dark"]) .inv-scan-item-row2 select {
+    border-color: var(--hairline-strong);
+    background: var(--surface);
+    color: var(--ink);
+  }
+  :where(:root[data-theme="dark"]) .inv-dot { background: var(--ink-inactive); }
+  :where(:root[data-theme="dark"]) input::placeholder, :where(:root[data-theme="dark"]) textarea::placeholder { color: var(--ink-placeholder); }
+  :where(:root[data-theme="dark"]) .inv-add-row button, :where(:root[data-theme="dark"]) .inv-scan-save, :where(:root[data-theme="dark"]) .inv-loc-pill.active,
+  :where(:root[data-theme="dark"]) .inv-action-add { color: var(--ivory-ink); }
+  :where(:root[data-theme="dark"]) #inv-toast { box-shadow: 0 6px 20px rgba(0,0,0,.6); }
+  :where(:root[data-theme="dark"]) #inv-scrim, :where(:root[data-theme="dark"]) .inv-scan-scrim-el { background: var(--scrim); }
 </style>
 <script src="/static/error-reporter.js"></script>
 </head>

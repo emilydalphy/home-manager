@@ -2621,8 +2621,13 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
        1.2:1 against both field and column — a seam, not a color contrast,
        which is the same job it does on the hero panel elsewhere in this
        file. */
-    #shell-app { border: 1.5px solid var(--spruce-edge); box-sizing: border-box; }
+    :where(:root:not([data-theme="light"])) #shell-app { border: 1.5px solid var(--spruce-edge); box-sizing: border-box; }
   }
+}
+/* Forced dark (Settings → Appearance → Dark) — the twin of the block above.
+   Must match it rule for rule; tests/test_appearance.py checks. */
+@media (min-width: 768px) {
+  :where(:root[data-theme="dark"]) #shell-app { border: 1.5px solid var(--spruce-edge); box-sizing: border-box; }
 }
 
 @media (min-width: 1024px) {
@@ -7151,7 +7156,18 @@ span.cook-week-name { cursor: default; }
 
    Everything here lives inside the media query, so light mode is untouched
    by construction: there is no rule below that a light-mode browser applies.
+
+   Settings → Appearance (2026-09-24): every selector carries
+   :where(:root:not([data-theme="light"])) so a phone in dark mode with
+   Light chosen stays fully light, and the block is followed by its twin
+   under :where(:root[data-theme="dark"]) for Dark chosen on a light phone.
+   :where() adds no specificity, so the cascade is exactly what it was.
+   Change one, change the other — tests/test_appearance.py checks they match.
    ========================================================================== */
+@keyframes askMicPulseDark {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(230, 112, 91, .45); }
+  50% { box-shadow: 0 0 0 6px rgba(230, 112, 91, 0); }
+}
 @media (prefers-color-scheme: dark) {
 
   /* --- The hero panel's edge ---
@@ -7159,32 +7175,31 @@ span.cook-week-name { cursor: default; }
      lifts on a lighter fill (--spruce goes to #22422F) plus a hairline.
      An inset ring rather than a border: it follows the panel's radius and
      costs no layout, and these panels are joined to the top edge. */
-  .dinner-hero, .day-hero, .cook-hero {
+  :where(:root:not([data-theme="light"])) .dinner-hero, :where(:root:not([data-theme="light"])) .day-hero, :where(:root:not([data-theme="light"])) .cook-hero {
     box-shadow: var(--shadow-hero), inset 0 0 0 1.5px var(--spruce-edge);
   }
 
   /* The dark hero is a LIGHTER spruce, so the quiet ivories that sit on it
      lose contrast. .58 falls to 4.40:1 there; .66 restores it to 5.20:1. */
-  .hero-dish-out, .hero-dish-blank { color: rgba(246, 238, 225, .66); }
+  :where(:root:not([data-theme="light"])) .hero-dish-out, :where(:root:not([data-theme="light"])) .hero-dish-blank { color: rgba(246, 238, 225, .66); }
 
   /* --- Scrims and sheet shadows left at their own alphas ---
      Tokenising these would have moved light mode by a few percent of
      opacity, so they get a dark value here instead. A spruce wash over an
      already-dark ground barely dims anything; black does. */
-  #ask-scrim { background: var(--scrim); }
-  #notif-scrim { background: var(--scrim); }
-  #ask-sheet { box-shadow: var(--shadow-sheet); }
+  :where(:root:not([data-theme="light"])) #ask-scrim { background: var(--scrim); }
+  :where(:root:not([data-theme="light"])) #notif-scrim { background: var(--scrim); }
+  :where(:root:not([data-theme="light"])) #ask-sheet { box-shadow: var(--shadow-sheet); }
   /* --- Accent fills whose ink flips ---
      --urgent becomes a LIGHT accent on dark (see theme.css), so the ivory
-     text these carried has to become --on-accent-ink with it. */
-  .ask-composer-mic.active { color: var(--urgent-ink); }
-  @keyframes askMicPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(230, 112, 91, .45); }
-    50% { box-shadow: 0 0 0 6px rgba(230, 112, 91, 0); }
-  }
+     text these carried has to become --on-accent-ink with it. The pulse
+     switches to askMicPulseDark (defined just above this block): a
+     @keyframes can't carry a data-theme guard, so it's named, not
+     redefined in here. */
+  :where(:root:not([data-theme="light"])) .ask-composer-mic.active { color: var(--urgent-ink); animation-name: askMicPulseDark; }
 
   /* --- Literals with no token twin --- */
-  .gro-box { border-color: var(--hairline-strong); }
+  :where(:root:not([data-theme="light"])) .gro-box { border-color: var(--hairline-strong); }
 
   /*
     THE OTHER ALIAS HAZARD, and the one this file missed on the first sweep.
@@ -7198,7 +7213,7 @@ span.cook-week-name { cursor: default; }
     Overridden rather than swapped because --ivory-ink (#F6EEE1) is not
     byte-identical to --ground (#FBF6EE) in light. 9.39:1 here.
   */
-  .notif-row-action { color: var(--ivory-ink); }
+  :where(:root:not([data-theme="light"])) .notif-row-action { color: var(--ivory-ink); }
 
   /*
     PLACEHOLDERS. This file sets no ::placeholder rule at all, so every input
@@ -7209,8 +7224,8 @@ span.cook-week-name { cursor: default; }
     --ink-placeholder is the token that exists for exactly this job.
     4.87:1 on --surface, 5.62:1 on --ground, 4.70:1 on --surface-raised.
   */
-  input::placeholder,
-  textarea::placeholder { color: var(--ink-placeholder); }
+  :where(:root:not([data-theme="light"])) input::placeholder,
+  :where(:root:not([data-theme="light"])) textarea::placeholder { color: var(--ink-placeholder); }
 
   /* The completed-chore tick used to need its own dark-mode rule here
      (.chore-row.done .chore-checkbox, --on-accent-ink, 8.46:1). Since
@@ -7218,6 +7233,21 @@ span.cook-week-name { cursor: default; }
      above already sets --on-accent-ink in both modes — RULE ONE, dark ink
      on a light accent — so there is nothing left to override. */
 }
+/* Forced dark (Settings → Appearance → Dark): the twin of the block above,
+   rule for rule. tests/test_appearance.py checks the two match. */
+:where(:root[data-theme="dark"]) .dinner-hero, :where(:root[data-theme="dark"]) .day-hero, :where(:root[data-theme="dark"]) .cook-hero {
+  box-shadow: var(--shadow-hero), inset 0 0 0 1.5px var(--spruce-edge);
+}
+:where(:root[data-theme="dark"]) .hero-dish-out, :where(:root[data-theme="dark"]) .hero-dish-blank { color: rgba(246, 238, 225, .66); }
+:where(:root[data-theme="dark"]) #ask-scrim { background: var(--scrim); }
+:where(:root[data-theme="dark"]) #notif-scrim { background: var(--scrim); }
+:where(:root[data-theme="dark"]) #ask-sheet { box-shadow: var(--shadow-sheet); }
+:where(:root[data-theme="dark"]) .ask-composer-mic.active { color: var(--urgent-ink); animation-name: askMicPulseDark; }
+:where(:root[data-theme="dark"]) .gro-box { border-color: var(--hairline-strong); }
+:where(:root[data-theme="dark"]) .notif-row-action { color: var(--ivory-ink); }
+:where(:root[data-theme="dark"]) input::placeholder,
+:where(:root[data-theme="dark"]) textarea::placeholder { color: var(--ink-placeholder); }
+
 
 /* ---------- "Something not working?" (Emily's option a, 2026-09-08) ----------
    A quiet tile at the bottom of Kitchen, a small in-prose link on the
@@ -7360,6 +7390,20 @@ span.cook-week-name { cursor: default; }
    app — sits under a rule as its own pair, reusing the quiet tile the
    Kitchen tab used to carry rather than defining a second one. */
 .prefs-group2 { border-top: 1.5px solid var(--hairline); margin-top: 10px; padding-bottom: 2px; }
+/* Appearance (2026-09-24): a .prefs-row-title over the Plan root's .wk-seg,
+   three halves instead of two. It follows the last .prefs-row, which has no
+   rule under it (:last-of-type), so it carries its own rule on top; the
+   group below brings the one under it. The seg keeps its own track and
+   44px halves; only its screen-edge margin goes, since .prefs-rows already
+   carries the gutter. */
+.prefs-appearance {
+  border-top: 1.5px solid var(--hairline);
+  padding: 11px 2px 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.prefs-appearance .wk-seg { margin: 0; }
 
 .snw-tile, .prefs-tile {
   width: 100%;

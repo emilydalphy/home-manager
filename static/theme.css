@@ -39,10 +39,10 @@
   component rules. Everything styled through a token therefore follows the
   phone's system setting for free.
 
-  There is deliberately NO manual light/dark toggle this stage. The app
-  follows the OS. A toggle means persisting a preference, an in-app control,
-  and a decision about what "system" means as a third state — that is later
-  polish, and Emily hasn't been asked which she wants.
+  Settings → Appearance (2026-09-24) adds a per-device choice: Match my
+  phone (the default — exactly the media query below), Light or Dark. It
+  works through data-theme on <html>; see THE OPT-OUT and FORCED DARK at
+  the bottom of this file.
 
   Two rules that make dark work, both from the brand guide:
     - Elevation in dark is a LIGHTER FILL plus a HAIRLINE, not a shadow.
@@ -612,8 +612,11 @@ summary:focus-visible,
    the shell had already replaced, reachable only by typing their /static/
    URL, carrying ~180 light literals between them that were pinned rather
    than half-converted. Deleted along with the pages, not tokenised.)
-   This is also the hook a future manual toggle would use, which is why it
-   is an attribute rather than something share.html-specific.
+   The same attribute carries the in-app choice (Settings → Appearance,
+   2026-09-24): a small script in each page's <head> sets data-theme="light"
+   or "dark" from what this device saved, or leaves it off for "Match my
+   phone". Light lands here as the opt-out; Dark is the FORCED DARK copy
+   just below this block.
    ========================================================================== */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -743,3 +746,63 @@ summary:focus-visible,
     --toast-ink: #F3EBDD;
   }
 }
+
+/* FORCED DARK — Settings → Appearance → Dark (2026-09-24).
+   A media query can't sit in a selector list, so "the phone is dark" and
+   "Dark was chosen" can't share one rule: this is a copy of the block
+   above, value for value, applied whatever the phone says. The block above
+   stays the source of truth — change a value there, then here.
+   tests/test_appearance.py fails if the two ever differ. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground:         #101F19;
+  --surface:        #172C22;
+  --spruce:         #22422F;
+  --spruce-raised:  #2E5140;
+  --celadon-tint:   #1C3B2C;
+  --spruce-edge:    #2C4B38;
+  --field:          #0B1712;
+  --spruce-hover:   #32573F;
+  --surface-raised: #192F24;
+  --ink:              #F3EBDD;
+  --ink-on-celadon:   #F3EBDD;
+  --ivory-ink:        #F3EBDD;
+  --ivory-ink-muted:  #E4DCCE;
+  --ink-secondary:    #BFB6A5;
+  --ink-muted:        #BFB6A5;
+  --ink-placeholder:  #9C9384;
+  --ink-inactive:     #9C9384;
+  --ink-done:       #A9A091;
+  --ink-done-soft:  #9C9384;
+  --ink-strong:     #F3EBDD;
+  --apricot:        #E9A16C;
+  --apricot-light:  #F2B98E;
+  --apricot-deep:   #E9A16C;
+  --apricot-label:  #F2B98E;
+  --apricot-label-hover: #F7D2B4;
+  --apricot-rule:   rgba(233, 161, 108, .30);
+  --celadon:        #A9C4B0;
+  --celadon-edge:   #2E5240;
+  --celadon-label:  #97BDA4;
+  --on-accent-ink:  #14261D;
+  --hairline:        #26382E;
+  --hairline-strong: #33473B;
+  --hairline-deep:   #33473B;
+  --sand:       #223328;
+  --sand-deep:  #33473B;
+  --urgent:        #E6705B;
+  --urgent-ink:    #14261D;
+  --urgent-tint:   #3B1D16;
+  --urgent-label:  #F0A594;
+  --shadow-hero:   0 26px 48px -30px rgba(0, 0, 0, .75);
+  --shadow-action: 0 16px 28px -18px rgba(233, 161, 108, .45);
+  --shadow-card:   none;
+  --shadow-sheet:  0 -8px 30px rgba(0, 0, 0, .55);
+  --shadow-dialog: 0 18px 44px rgba(0, 0, 0, .60);
+  --shadow-panel:  0 12px 32px rgba(0, 0, 0, .60);
+  --shadow-toast:  0 6px 20px rgba(0, 0, 0, .50);
+  --scrim: rgba(0, 0, 0, .66);
+  --toast-bg:  #2E5140;
+  --toast-ink: #F3EBDD;
+}
+
