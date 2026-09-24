@@ -415,6 +415,23 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-24 — Now carries no score: the band's "N of M done" and the
+  Cook card's "N of M" are gone. Branch `now-no-counts`.** Emily's call the
+  same day, from three mockups (keep both / remove both / top only): "go
+  with recommended and remove". Closes the contradiction the card "Now
+  tells today's story for the household" held open: the 2026-09-15 walk
+  said no fraction anywhere on Now, and the 2026-09-18 re-cut put "0 of 2
+  done" back on Cook. The ticks on the rows are the progress; a count
+  repeated them as a scoreboard, and Pomona keeps no scores.
+  - `renderTodayMoves` gives the band `sub: ''` (the `[hidden]` rule keeps
+    it from leaving a gap). `dayGroupHtml` leaves out the count span when
+    it's empty, and Cook passes `''`. Shop's "N stops" stays, because it
+    tells you where you're going, not a score. The client's `data.done`
+    recount went with it. The server still sends `done`/`total`: the API
+    tests pin them and nothing reads them on screen.
+  - Guards: `test_the_two_blocks_are_gone` now fails if either count's
+    expression comes back. Suite **6867 passed**.
+
 - **2026-09-24 — The three /api/attention routes had no test at all, and two
   of them take a row id off the wire. Branch
   `overnight/attention-routes-pinned`, NOT merged at the time of writing.
