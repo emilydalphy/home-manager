@@ -415,6 +415,52 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-24 — The three /api/attention routes had no test at all, and two
+  of them take a row id off the wire. Branch
+  `overnight/attention-routes-pinned`, NOT merged at the time of writing.
+  TEST-ONLY — `git diff main -- app/ static/` is empty.** Found by listing
+  every route in `main.py` and checking which are named nowhere in `tests/`:
+  16 are not, and this trio is the one worth closing first, because it backs
+  a live screen (the Cook attention banner) and `/resolve` and `/use` are
+  both addressed by a client-supplied `attention_items.id`.
+  - **They are CORRECT today — measured, not assumed.** `/resolve` refuses
+    another household's id with a 404 (`require_household_row`), `/use`
+    answers 200 with `applied: False` and touches neither the row nor their
+    tracked food, and the queue read is household-scoped. The tests exist so
+    that stays true, not because anything was broken.
+  - **THE ISOLATION TESTS PASSED FOR THE WRONG REASON ON THE FIRST RUN, and
+    the trap is worth more than the tests.** Signing a TestClient in sets the
+    household for a REQUEST; a tool called straight from a test runs outside
+    one, on the ContextVar's default. So seeding "the other household's" row
+    with a bare `tools.add_attention_item` writes it into household 1, and
+    the test then proves nothing while going green. `tools.use_household(...)`
+    is what makes the seed real — said at the helper, since the next
+    isolation test in this repo will reach for the same thing.
+  - **Three mutations bite and the fourth does not, which is recorded rather
+    than quietly left**: dropping `require_household_row` from
+    `resolve_attention_item` (1 red), the household filter from `/use`'s
+    select (1), and from the queue read (1). Removing the `AND household_id =
+    ?` on `resolve_attention_item`'s own UPDATE reddens NOTHING, because the
+    guard two lines above has already refused a foreign id — the same
+    defence-in-depth shape as the leftover-chain work, unreachable by any
+    behavioural test. It should stay; a reader counting this file's evidence
+    should know it is not covered by it.
+  - **One real gap CHARACTERISED rather than fixed, with the test written to
+    be inverted when it is**: `POST /api/attention/{id}/resolve` takes ANY
+    status string. `schema.sql` documents the column as
+    `pending | resolved | dismissed` and every reader filters on `pending`,
+    so a third word takes the row out of the queue like a real answer while
+    recording something no screen has a name for. Exactly the shape of the
+    cooked-tick bug fixed on 2026-09-16, one door over. **Nothing is lost
+    today** — both real answers also remove it from the only list that reads
+    it, and `add_attention_item`'s reopen path treats any non-pending status
+    alike — so it is a door to close rather than a fire, and the chat tool's
+    own schema already enumerates the two words, which is pinned separately.
+    Its own card.
+  - `tests/test_attention_routes.py` (11). Suite **6639 passed, 0 failed** at
+    `TZ=America/Toronto`, against a measured 6628 on main — +11 is this file
+    exactly.
+
 - **2026-09-23 — A chat turn records what it was ABOUT: one theme label,
   never the words. Branch `chat-theme-per-turn`, NOT merged at the time of
   writing. OFF until Railway has `CHAT_THEMES=1`.** Layer 2 of "Chat: record
