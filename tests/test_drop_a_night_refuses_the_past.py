@@ -409,10 +409,12 @@ class TestWhichRefusalWins:
 
     def test_a_past_chain_source_says_the_night_is_gone_not_change_that_first(self):
         """
-        CATCH, and the reason the new check sits ABOVE the chain one. The
-        chain refusal names a remedy — "change that first and I'll take this
-        one off" — and on a night that is already over that remedy cannot
-        work, so it must never be the answer a past night gets.
+        CATCH, and the reason the past check sits ABOVE the chain one. It
+        used to be that the chain refusal named a remedy — "change that
+        first and I'll take this one off" — which on a night already over
+        cannot work. Since 2026-09-24 the chain branch WRITES instead, so
+        the ordering matters more: below the past check, a night that has
+        gone by would have its week re-planned around it.
         """
         plan = _seed(_day(-2), _day(-1))
         _feeds(_day(-2), _day(-1))
@@ -422,17 +424,31 @@ class TestWhichRefusalWins:
         assert out["message"] == REFUSAL
         assert "change that first" not in out["message"]
 
-    def test_a_live_chain_source_still_names_the_night_that_depends_on_it(self):
-        """GUARD. The chain refusal is unchanged for every night it was
-        ever the right answer for. Green either way; pinned by the mutation
-        above, which reddens it by answering REFUSAL here instead."""
+    def test_a_live_chain_source_is_not_refused_at_all_any_more(self):
+        """
+        INVERTED 2026-09-24. This used to assert the chain REFUSAL on a
+        night still ahead of today — the counterweight to the test above,
+        which asserts a PAST chain source gets the past-night sentence
+        instead. The chain refusal is gone: a dish that feeds a later night
+        is re-planned onto that night rather than refused (Emily's standing
+        rule, no "go change X first").
+
+        The ordering claim the test above is named for therefore matters
+        MORE than it did, not less: below the past check, this night would
+        be re-planned rather than refused, i.e. the app would rewrite a
+        week around a night nobody can cook on. Note _feeds writes only the
+        SOURCE half of the pairing, which plan_leftover_chains declines to
+        honour — so the fed night is an ordinary cook of its own and there
+        is nothing to move onto it. That is the ordinary drop, and it is the
+        right answer: nothing is left holding a reheat of a batch nobody
+        cooks.
+        """
         plan = _seed(_day(1), _day(2))
         _feeds(_day(1), _day(2))
 
         out = tools.drop_dish_from_day(plan, _ids(_day(1))[0])
 
-        assert out["status"] == "refused"
-        assert "change that first" in out["message"]
+        assert out["status"] == "dropped"
 
 
 # ------------------------------- 4. the household's clock, not the server's

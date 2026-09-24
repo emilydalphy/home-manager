@@ -668,6 +668,7 @@ from .weekly_plan import (  # noqa: F401
     describe_planned_meal,
     discard_draft_plan,
     drop_dish_from_day,
+    drop_dish_undo,
     _dedupe_duplicate_slots,
     repair_leftover_chains,
     get_meal_planning_preferences,

@@ -415,6 +415,140 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-24 — The "−" on a batch-cooked dish re-plans the night that was
+  eating off it, instead of saying "change that first". Branch
+  `overnight/drop-dish-self-solving`, NOT merged at the time of writing.**
+  Loop Board improvement, Phase 0 — and the follow-up the night off's own
+  entry filed two days earlier in so many words ("**Left:**
+  `weekly_plan.drop_dish_from_day` … still refuses with '…change that first
+  and I'll take this one off' — the next candidate for the same rule").
+  Emily's standing rule of 2026-09-22: "the job of Pomona is to do all that
+  planning work" — no "go change X first", ever.
+  - **Reproduced first, through the real tool on a throwaway DB.** A dinner
+    cooked double for two later LUNCHES (the shape that puts the SOURCE
+    last in its own meal-type group, so the Review stepper's "−" targets
+    the cook rather than a reheat): `status refused`, "Beef Chili on
+    Thursday also feeds Friday's lunch and Saturday's lunch — change that
+    first and I'll take this one off", and **nothing written** — every row
+    and the whole shopping list byte-identical after. After: the cook is on
+    Friday's lunch, Saturday still reheats it, Thursday reads `open`, and
+    the approved week's line goes **2 cans → 1 can** and back to 2 on Undo.
+  - **THE ANSWER IS THE NIGHT OFF'S, NOT A THIRD ONE** (acceptance
+    criterion 2, and the card's own "decision needed from Emily" — cook it
+    on the fed night, or leave that night to fill — is answered by reusing
+    rather than by deciding again). `cook_on_fed`, Emily's option A: the
+    cook moves onto the FIRST night it was feeding, the later fed nights
+    keep their leftovers now from the new cook night, and the stepped-down
+    night comes back as a question like every other "−" leaves one.
+  - **What is SHARED is the decision and the move; what is not is the
+    freezer, and that is the whole of the difference.** Two new functions
+    in `weekly_plan.py`, read by both answers:
+    `fed_nights_in_eating_order` (targets later than the night in question,
+    sorted so a Friday LUNCH beats a Friday dinner — `plan_leftover_chains`
+    sorts by (date, slot) as strings, and a cook has to land on the first
+    meal that EATS from it) and `move_cook_onto_fed_night` (delete the
+    target's leftovers row, shift the cook, re-point every `links_to` that
+    named the old night, carry the fridge moves by `_shift_defrost_tasks`).
+    `delete_plan_entry` moved here from tonight.py with them. The night off
+    is a night nobody is eating, so its batch keeps its size and the share
+    is frozen; the "−" is the household asking for one FEWER night, so the
+    batch really shrinks — `_unlink_leftover_target` takes the new cook
+    night off `make_double_for` (the one place that prunes a chain and
+    re-says its note) and the rescale after the commit brings an approved
+    line down with it. **Freezing a portion of a meal nobody has cooked,
+    for a night the household has just asked to fill with something else,
+    would be the "−" doing something no other "−" does.**
+  - **LIFTED, not imported: `app/tools/plan_undo.py`.** The snapshot /
+    fingerprint / stamp / restore machinery was private to tonight.py and
+    is table-generic; `tonight` imports `weekly_plan`, so weekly_plan
+    reaching back into tonight would have been the dependency upside down
+    for the sake of one function. plan_undo imports neither at module scope
+    (only `_shared`), and `restore` reaches `weekly_plan.delete_plan_entry`
+    lazily. tonight.py's own four private wrappers are gone; its call sites
+    say `_plan_undo.x(...)`, and `_fed_label` and `_delete_entry` stay as
+    one-line delegates because they are that module's own vocabulary with
+    several call sites each.
+  - **The undo's handle is a TOKEN, not a date, and that is the one place
+    this deliberately differs from the night off.** Tonight is always
+    tonight's dinner, so `tonight_night_off_undo` can find its own holder;
+    a "−" lands on any night and any slot, and a day legitimately holds two
+    snacks. So the result carries `undo_entry_id` — the `open` row it left
+    behind, which is also where the record is stamped — and
+    `drop_dish_undo(plan, entry_id)` takes it. `POST
+    /api/week/{week_start}/drop-dish-day-undo`.
+  - **The decision is taken AGAIN under the lock.** `BEGIN IMMEDIATE`
+    before the first read, and the chain is re-read on that connection: the
+    night this answer chose was chosen on a connection of its own, and a
+    chain the other phone has broken since is a different week. Refused in
+    a sentence (`DROP_DISH_CHANGED`) rather than written on top of somebody
+    else's change. The ordinary "−" path is untouched and still runs
+    without an explicit BEGIN, exactly as it did.
+  - **`chain_fed_nights` is DELETED.** Its docstring said "two callers now
+    refuse on it"; after this, zero do, and its own formatting job is
+    `fed_night_label` now. The trigger moved with it, from the raw
+    `make_double_for` to the chain `plan_leftover_chains` actually HONOURS
+    (both halves agreeing) — which is a real behaviour change and the right
+    one: a source naming a night that never said it was reheating is not a
+    chain, that night is an ordinary cook buying its own ingredients, and
+    there is nothing to move onto it. Such a drop is refused on `main` and
+    goes through here.
+  - **The two refusals that remain are untouched and their ORDER matters
+    MORE than it did**: a night already cooked, and a night that has gone
+    by. Both sit above the chain branch, which now WRITES — so below them a
+    night that is over would have its week re-planned around it, where
+    before it merely got a sentence naming a remedy nobody could act on.
+    The comment in `test_drop_a_night_refuses_the_past.py` says so.
+  - **NO CLIENT, and that is worth knowing before looking for one.** The
+    2026-09-18 core-loop re-cut took `reviewDishRowHtml` and the whole
+    stepper out of `static/shell.js`; nothing in `static/` posts
+    `drop-dish-day` at all. So `said`, `can_undo` and `undo_entry_id` are a
+    contract waiting for a screen, and the only live caller of this
+    function today is `allergen_gate.sweep_plan` (which passes its own
+    `open_reason` and never hits the chain branch on a draft it has just
+    generated). **`static/` is byte-identical** — no design work, no
+    tokens, nothing visual.
+  - **THE ONE CALLER THAT IS NOT A PERSON IS THE ALLERGEN SWEEP, and what
+    this does to it was MEASURED rather than reasoned about — same seed,
+    both trees.** A peanut dish cooked Thursday and reheated Friday's
+    lunch: `main` refuses the cook night ("…change that first"), then drops
+    the reheat, and the week keeps the allergen on THURSDAY; here the cook
+    moves onto Friday's lunch, Thursday opens, and the sweep's own later
+    pass finds that reheat row gone and logs it. **One allergen night
+    survives either way, `slots_opened` is 1 either way, `audit_plan_slots`
+    is clean either way** — a different night, not a worse week. That the
+    sweep cannot clear a whole chain in one pass is older than this branch
+    and is its own card.
+  - `tests/test_drop_dish_self_solving.py` (26), driving the real functions
+    on a real database — no source markers, because the risk in an answer
+    that moves a cook, deletes a row, re-points a chain and re-quantifies a
+    shopping line is what it DOES. Three existing tests were corrected
+    honestly rather than deleted, each with a note saying what moved: the
+    two that pinned the chain refusal are inverted, and
+    `test_review_plus_and_counts.py`'s one-line "mirror image, for the
+    record" aside was removed rather than rewritten — a refusal wrote
+    nothing, and the answer replacing it moves a cook, which that test
+    cannot do before its own "+" and still be about the "+".
+    **23 of the 26 are red against `main`, and that number is decomposed in
+    the file's own header rather than quoted**: 11 are behaviour catches on
+    the assertion they are named for, 10 die on a name (or a result key, or
+    a route) main has not got, and 2 are red at an EARLIER assertion than
+    their own and say so. **NINE mutations are the real evidence and every
+    one bites**: the chain branch removed, i.e. main's refusal back (17
+    red), the batch never shrinking (1), targets sorted by string rather
+    than eating order (2), the decision not re-taken under the lock (1), a
+    commit between the move and the question (1), prep dropped from the
+    undo's restore (1), the undo's fingerprint check removed (1), the
+    cook's fridge moves left behind (1), and an approved week never
+    rescaled (1).
+  - **A defect found and NOT fixed, named so nobody reports it as new:**
+    the undo's exactness is exact for the plan rows and one recompute for
+    the shopping line. `_rescale_leftover_source_grocery` reverses and
+    re-ingests the whole recipe group, and it leaves a line already in a
+    cart or through the till alone — so a week half-shopped comes back to
+    the same line the way down left it, not to a byte-identical one. Same
+    property every other caller of that function already has; said out loud
+    rather than promised away.
+
 - **2026-09-23 — A chat turn records what it was ABOUT: one theme label,
   never the words. Branch `chat-theme-per-turn`, NOT merged at the time of
   writing. OFF until Railway has `CHAT_THEMES=1`.** Layer 2 of "Chat: record

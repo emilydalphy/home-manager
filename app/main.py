@@ -3423,6 +3423,35 @@ def week_drop_dish_day(week_start: str, req: DropDishDayRequest):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+class DropDishDayUndoRequest(BaseModel):
+    """`entry_id` is the `open` row the "−" left behind — `undo_entry_id` on
+    its own result. A handle rather than a date, because a "−" can land on
+    any night and any slot, and a day legitimately holds two snacks."""
+    entry_id: int
+
+
+@app.post("/api/week/{week_start}/drop-dish-day-undo")
+def week_drop_dish_day_undo(week_start: str, req: DropDishDayUndoRequest):
+    """
+    Undo on the "−" toast, for the one shape of it that re-plans another
+    night: a dish cooked double for later ones, whose cook moved onto the
+    first night it was feeding.
+
+    A 200 can still say no. `status` 'refused' carries a sentence written
+    for the household — nothing to put back, or the night has changed
+    since — and it is the shape both halves of the stepper already answer a
+    refusal in, so a screen needs one branch rather than three.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.drop_dish_undo(plan_id, req.entry_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Undoing a dropped day failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 class AddDishDayRequest(BaseModel):
     """
     `entry_id` is a night the dish already covers; `target_entry_id` is the
