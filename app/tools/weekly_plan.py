@@ -4514,13 +4514,16 @@ def batched_line(weekly_plan_id: int) -> str:
             return f"I’ve batched the {b['ingredient']}: {vessel} {_weekday_label(b['date'])} covers {days}."
         return f"I’ve made {_weekday_label(b['date'])}’s {b['dish']} big enough for {days} too."
 
-    names = _leftovers._join_days([
+    # A dish cooked twice (the three-day leftover rule) is named once.
+    labels = list(dict.fromkeys(
         f"the {b['ingredient']}" if b["kind"] == "component" else b["dish"] for b in batches
-    ])
+    ))
+    names = _leftovers._join_days(labels)
     covered = [c for b in batches for c in b["covered"]]
     slots = {c.get("slot") for c in covered}
     noun = _SLOT_PLURAL.get(slots.pop(), "meals") if len(slots) == 1 else "meals"
-    return f"I’ve batched {names} — one cook each, covering {_receipt_number(len(covered))} {noun}."
+    cooks = "one cook each" if len(labels) == len(batches) else f"{_receipt_number(len(batches))} cooks"
+    return f"I’ve batched {names} — {cooks}, covering {_receipt_number(len(covered))} {noun}."
 
 
 def _weekday_label(date_str: str | None) -> str:

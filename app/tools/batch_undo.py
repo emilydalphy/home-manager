@@ -324,6 +324,12 @@ def _resolve(batches: list[dict], what: str, day: str) -> tuple[list[dict], str]
     if best == 0:
         return [], ""
     hits = [b for b, s in scored if s == best]
+    # One dish cooked twice in a week (the three-day leftover rule splits
+    # a long run into two batches) is still one dish: "don't batch the
+    # chili" means both cooks, and "Which one — Turkey Chili and Turkey
+    # Chili?" is a question nobody can answer.
+    if len(hits) > 1 and all(b["kind"] == "dish" for b in hits) and len({b["label"] for b in hits}) == 1:
+        return hits, ""
     if len(hits) > 1:
         names = _leftovers._join_days([b["label"] for b in hits])
         return [], f"Which one — {names}?"

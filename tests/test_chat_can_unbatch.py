@@ -786,3 +786,35 @@ def test_the_undo_button_still_works_with_two_weeks_on_file():
     back = tools.rebatch(out["undo"])
     assert back["status"] != "refused", back
     assert batch_components.batched_components(plan_a), "the batch was not put back"
+
+
+# ---------- one dish, two cooks (the three-day leftover rule, merged 2026-09-24) ----------
+
+SAT = _day(5)
+
+
+def test_dont_batch_a_dish_cooked_twice_takes_both_cooks_apart_without_asking():
+    """Mon, Wed, Fri, Sat is two batches of the same chili (Monday's can't
+    reach Friday). "Don't batch the chili" means both; asking "Which one —
+    Turkey Chili and Turkey Chili?" left the household with no answer."""
+    _household()
+    _chili()
+    plan_id, _ = _plan((MON, "Turkey Chili", "dinner"), (WED, "Turkey Chili", "dinner"),
+                       (FRI, "Turkey Chili", "dinner"), (SAT, "Turkey Chili", "dinner"))
+    assert len(cook_ahead.batched_dishes(plan_id)) == 2
+
+    out = tools.unbatch("chili")
+
+    assert out["status"] == "unbatched", out
+    assert cook_ahead.batched_dishes(plan_id) == []
+
+
+def test_the_all_set_line_names_a_dish_cooked_twice_once():
+    from app.tools import weekly_plan
+    _household()
+    _chili()
+    plan_id, _ = _plan((MON, "Turkey Chili", "dinner"), (WED, "Turkey Chili", "dinner"),
+                       (FRI, "Turkey Chili", "dinner"), (SAT, "Turkey Chili", "dinner"))
+    line = weekly_plan.batched_line(plan_id)
+    assert line.count("Turkey Chili") == 1, line
+    assert "2 cooks" in line and "one cook each" not in line, line
