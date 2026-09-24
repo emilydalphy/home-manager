@@ -596,6 +596,12 @@ class ChatAction(BaseModel):
     # (or let go of) something on the "Holding for you" list. The shell
     # draws it as the Holding chip, with a way to the list.
     held: bool = False
+    # A card whose change can be taken back from the card itself: the
+    # payload POST /api/week/unbatch-undo needs to put it back, and the
+    # label on the button. Silent learning needs a visible undo right
+    # where it shows (Emily, 2026-09-21) — an undo the household has to
+    # find on another tab is not one. Only unbatch sets it today.
+    undo: dict | None = None
 
 
 class ChatResponse(BaseModel):
@@ -4040,6 +4046,37 @@ def confirm_week_cook_ahead(week_start: str, req: WeekCookAheadConfirmRequest):
     }
 
 
+class UnbatchUndoRequest(BaseModel):
+    """
+    The payload unbatch handed back with its change card — which batches
+    to make again. Not an opaque token: every id in it goes back through
+    the household-scoped writes that made the batch in the first place
+    (tools.rebatch), so a payload naming another household's plan writes
+    nothing and comes back refused, exactly as a hand-made
+    /api/cooker/cook-ahead would.
+    """
+    weekly_plan_id: int
+    dishes: list[dict] = []
+    components: list[dict] = []
+
+
+@app.post("/api/week/unbatch-undo")
+def week_unbatch_undo(req: UnbatchUndoRequest):
+    """
+    Undo on the un-batch card: put the batch back.
+
+    Answers 200 with a status either way, never a 4xx for a refusal — a
+    batch the week has moved under is a sentence to read on the card, not
+    an error (the shape set_cook_ahead and drop_dish_from_day already
+    answer in).
+    """
+    try:
+        return tools.rebatch(req.model_dump())
+    except Exception as e:
+        logger.exception("Un-batch undo failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.get("/api/week/{week_start}/prep-sessions")
 def week_prep_sessions(week_start: str):
     """
@@ -5395,7 +5432,7 @@ _CHORE_TOOLS = {
 # changes that day's dinner (out empties it, hosting builds the big meal
 # into it) and the big-meal tools change the dishes on it, so Plan is the
 # screen that goes stale. One line, by test_week_seven_tiles's source check.
-_WEEK_TOOLS = {"plan_meal", "generate_weekly_plan", "set_week_constraints", "swap_meal_in_plan", "swap_component_in_plan", "swap_dinner_nights", "take_the_night_off", "approve_weekly_plan", "discard_draft_plan", "answer_holiday", "set_big_meal_dish", "remove_big_meal_dish", "set_big_meal_prep_day", "propose_big_meal"}
+_WEEK_TOOLS = {"plan_meal", "generate_weekly_plan", "set_week_constraints", "swap_meal_in_plan", "swap_component_in_plan", "swap_dinner_nights", "take_the_night_off", "unbatch", "approve_weekly_plan", "discard_draft_plan", "answer_holiday", "set_big_meal_dish", "remove_big_meal_dish", "set_big_meal_prep_day", "propose_big_meal"}
 _KITCHEN_TOOLS = {
     "add_recipe", "update_recipe_details", "mark_recipe_feedback", "log_recipe_note", "log_cooking_deviation",
     "flag_recipe_temporary", "generate_prep_schedule", "check_off_prep_step", "check_off_meal",
@@ -5668,6 +5705,24 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
                         kicker=_CATEGORY_KICKERS["grocery"], change=grocery_change,
                         tab="grocery", href=None,
                     )
+                continue
+            # Un-batching says what it did in the one sentence the tool
+            # built beside the data (batch_undo._dish_said / _component_said),
+            # so the card and the reply can never disagree about which
+            # night now cooks for itself — the same reason week_receipt
+            # builds its own counted sentences. A status other than
+            # 'unbatched' wrote nothing, so it gets no card at all and the
+            # assistant's own line carries the question or the refusal.
+            if name == "unbatch":
+                if not isinstance(result, dict) or result.get("status") != "unbatched":
+                    continue
+                by_category["week"] = ChatAction(
+                    kicker=_CATEGORY_KICKERS["week"],
+                    change=(result.get("said") or "").strip() or _CATEGORY_FALLBACK_CHANGES["week"],
+                    tab="week", href=None,
+                    undo={"label": "Undo", "kind": "unbatch", "payload": result.get("undo")}
+                    if result.get("undo") else None,
+                )
                 continue
             # A held thing is neither a screen change nor a fact about the
             # household: it is the person's own words, kept. The chip says

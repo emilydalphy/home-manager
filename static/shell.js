@@ -19628,6 +19628,14 @@
             '<span class="ask-action-kicker">' + escapeHtml(action.kicker) + '</span>' +
             '<span class="ask-action-change">' + escapeHtml(action.change) + '</span>' +
           '</span>';
+        // A change the card can take back (unbatch, 2026-09-21: silent
+        // learning needs a visible undo right where it shows). The same
+        // quiet button the Remembered chip's "Not quite" is — one class,
+        // so the two can't drift — never a second apricot. It is spent on
+        // the tap: an undo of an undo is the thing itself, and offering
+        // one from a card whose sentence now says the opposite would be
+        // the app claiming something untrue.
+        if (action.undo && action.undo.payload) mountActionUndo(receipt, action);
         wrap.appendChild(receipt);
         return;
       }
@@ -19655,6 +19663,44 @@
   // text says "approved" — the same test computeNextStepChips makes.
   function isDraftWeekAction(action) {
     return !!(action && action.tab === 'week' && !/approved/i.test(action.change || ''));
+  }
+
+  // "Undo" on an action card. The payload is the server's own — the
+  // batches to make again — and the route re-runs the writes that made
+  // them, so nothing about which night cooks is decided here.
+  function mountActionUndo(card, action) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ask-remembered-fix ask-action-undo';
+    btn.textContent = action.undo.label || 'Undo';
+    btn.addEventListener('click', async function () {
+      if (btn.disabled) return;
+      btn.disabled = true;
+      try {
+        var res = await fetch('/api/week/unbatch-undo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(action.undo.payload),
+        });
+        var out = await res.json();
+        if (!res.ok || out.status !== 'rebatched') {
+          // The week moved under it. The server wrote the sentence; this
+          // says it and leaves the card as it is.
+          showToast((out && out.said) || 'That didn\u2019t work just now \u2014 nothing changed.');
+          btn.disabled = false;
+          return;
+        }
+        btn.remove();
+        showToast(out.said || 'Put back.');
+        // The same two screens the card's own tab would have refreshed —
+        // an undo moves the plan and the list exactly as the change did.
+        refreshStaleTabsFromActions([{ tab: 'week' }]);
+      } catch (e) {
+        showToast('No signal \u2014 try that once you\u2019re back.');
+        btn.disabled = false;
+      }
+    });
+    card.appendChild(btn);
   }
 
   // ---------- The change card ----------

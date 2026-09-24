@@ -475,6 +475,30 @@ def set_batch_component(weekly_plan_id: int, key: str, entry_ids: list[int]) -> 
     }
 
 
+def clear_batch_component(weekly_plan_id: int, key: str) -> int:
+    """
+    Take a component batch off this plan — the row itself, not a smaller
+    version of it. Returns how many rows went.
+
+    set_batch_component already deletes this plan's row for a key before
+    writing the new one; this is that DELETE on its own, for the one
+    caller that has nothing to write in its place (batch_undo.py). It is not
+    set_batch_component with an empty list: that refuses, correctly, with
+    "Pick at least two dishes" — a sentence about making a batch, said to
+    somebody undoing one.
+    """
+    conn = get_conn()
+    cur = conn.execute(
+        "DELETE FROM prep_tasks WHERE weekly_plan_id = ? AND household_id = ? AND task_type = ? "
+        "AND json_extract(detail_json, '$.key') = ?",
+        (weekly_plan_id, household_id(), BATCH_TASK_TYPE, key),
+    )
+    conn.commit()
+    removed = cur.rowcount
+    conn.close()
+    return removed if removed and removed > 0 else 0
+
+
 def batched_components(weekly_plan_id: int) -> list[dict]:
     """
     The batches standing on this plan, read for the All set line

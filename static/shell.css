@@ -2128,6 +2128,11 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   border-color: var(--celadon-edge);
 }
 .ask-action-card.is-receipt .ask-action-kicker { color: var(--celadon-label); }
+/* "Undo" on a receipt card (unbatch, 2026-09-21). Deliberately the
+   Remembered chip's own button class rather than a second one styled to
+   match it — same 44px target, same apricot label, and the two cannot
+   drift apart. It only ever nowraps and holds its width. */
+.ask-action-undo { flex-shrink: 0; white-space: nowrap; }
 .ask-action-card .ask-action-tick {
   flex-shrink: 0;
   width: 26px;

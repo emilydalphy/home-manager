@@ -111,8 +111,22 @@ from .cook_ahead import (  # noqa: F401
 # the eggs a breakfast and a salad both hard-boil.
 from .batch_components import (  # noqa: F401
     batched_components,
+    clear_batch_component,
     set_batch_component,
     shared_components,
+)
+# Taking a batch apart again (see batch_undo.py). `unbatch` IS an agent
+# tool, unlike the two above: making a batch is a set of chips to tap, but
+# "don't batch the rice" is a sentence somebody says, and until this there
+# was nowhere for it to land. The module is batch_undo and not unbatch
+# because this line would otherwise hang the FUNCTION off the package
+# under the module's own name, and `from . import unbatch` anywhere in the
+# package would then quietly get the function — the one shape the package
+# convention (import the module, not the name) cannot survive.
+from .batch_undo import (  # noqa: F401
+    batches_on_plan,
+    rebatch,
+    unbatch,
 )
 from .cooker import (  # noqa: F401
     _find_inventory_match,
