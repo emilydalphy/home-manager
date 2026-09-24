@@ -7194,8 +7194,18 @@ def move_cook_onto_fed_night(conn, weekly_plan_id: int, entry_id: int,
         if new != derived["links_to"]:
             derived["links_to"] = new
             conn.execute(
-                "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
-                (json.dumps(derived), r["id"]),
+                # Scoped, like the read four lines above it. The id came
+                # out of a household-filtered SELECT, so nothing was
+                # leaking — but the guard belongs on the statement rather
+                # than on whoever wrote the read, which is the whole point
+                # of the sweep in test_leftover_chain_household_filter.py.
+                # That sweep is what caught this: it is green on this
+                # branch alone and RED on a tree that also carries
+                # overnight/leftover-chain-household-filter, because that
+                # branch is what makes the module's other writes scoped
+                # and this one the odd one out.
+                "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+                (json.dumps(derived), r["id"], household_id()),
             )
     _shift_defrost_tasks(conn, weekly_plan_id, entry_id, old_date, target["date"])
 
