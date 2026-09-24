@@ -192,9 +192,9 @@ def test_shops_band_says_this_week_and_counts_the_list():
 
 def test_the_band_says_one_thing_once():
     """The band's line and the empty moment must never say the same thing."""
-    # Now: no line on a day with no moves.
+    # Now: no line at all — no "3 of 4 done" score (Emily, 2026-09-24).
     moves = _function("renderTodayMoves")
-    assert "sub: moves.length ? (data.done || 0) + ' of ' + moves.length + ' done' : ''" in moves
+    assert "sub: ''" in moves and "' done'" not in moves
     # Cook: no line on a day with nothing to cook; the day is the eyebrow.
     sub = _function("kitchenSubtitle")
     assert "return rows.length ? 'nothing left to cook today' : '';" in sub

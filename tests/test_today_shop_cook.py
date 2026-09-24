@@ -194,7 +194,7 @@ def _groups(strip: str) -> list[tuple[str, str, str]]:
     return re.findall(
         r'<div class="shell-card day-group day-group-(shop|cook)"><div class="day-group-head">'
         r'<span class="day-group-icon"><svg.*?</svg></span><span class="day-group-title">([^<]*)</span>'
-        r'<span class="day-group-count">([^<]*)</span></div>',
+        r'(?:<span class="day-group-count">([^<]*)</span>)?</div>',
         strip,
     )
 
@@ -212,7 +212,7 @@ def test_two_groups_shop_then_cook_and_the_states_read_off_done_and_featured():
     out = _node(_prelude() + "console.log(JSON.stringify(render(" + json.dumps(_payload("cook:13")) + ")));")
     strip = out["strip"]
     assert strip.startswith('<div class="day-groups">')
-    assert _groups(strip) == [("shop", "Shop", "1 stop"), ("cook", "Cook", "1 of 4")]
+    assert _groups(strip) == [("shop", "Shop", "1 stop"), ("cook", "Cook", "")]
     nodes = _nodes(strip)
     assert [n[1] for n in nodes] == ["shop:2026-09-13", "reheat:11", "cook:12", "cook:13", "fridge:4"], (
         "the shop in its card; then Cook top to bottom down the day: breakfast, lunch, dinner, the fridge move (by tonight)"
@@ -222,7 +222,9 @@ def test_two_groups_shop_then_cook_and_the_states_read_off_done_and_featured():
         "shop:2026-09-13": "later", "reheat:11": "done", "cook:12": "later",
         "cook:13": "now", "fridge:4": "later",
     }
-    assert out["sub"] == "1 of 5 done"
+    # No score on Now (Emily, 2026-09-24): the band carries no line.
+    assert out["sub"] == ""
+    assert "day-group-count\">0 of" not in strip and " of 5" not in strip
     # The head: the bag / the pot in a 32px sand tile (CSS), the title in
     # the display face, the count at the right.
     head = strip.split('<div class="day-group-head">', 1)[1].split("</div>", 1)[0]
@@ -255,7 +257,7 @@ def test_the_shop_card_draws_one_row_per_store_stop_and_opens_the_list():
 def test_a_group_with_nothing_in_it_is_not_drawn():
     moves = [m for m in _day() if m["kind"] != "shop"]
     out = _node(_prelude() + "console.log(JSON.stringify(render(" + json.dumps(_payload("cook:13", moves)) + ")));")
-    assert _groups(out["strip"]) == [("cook", "Cook", "1 of 4")]
+    assert _groups(out["strip"]) == [("cook", "Cook", "")]
     only_shop = [m for m in _day() if m["kind"] == "shop"]
     out = _node(_prelude() + "console.log(JSON.stringify(render(" + json.dumps(_payload(None, only_shop)) + ")));")
     assert _groups(out["strip"]) == [("shop", "Shop", "1 stop")]
@@ -372,7 +374,7 @@ def test_nothing_left_today_names_tomorrow_after_the_strip():
     out = _node(_prelude() + "console.log(JSON.stringify(render(" + json.dumps(_payload(None, moves, tomorrow=tomorrow)) + ")));")
     strip = out["strip"]
     assert "is-now" not in strip and strip.count('"day-node is-done"') == 4
-    assert _groups(strip) == [("cook", "Cook", "4 of 4")]
+    assert _groups(strip) == [("cook", "Cook", "")]
     assert strip.index("</div></div>") < strip.index('class="shell-card tomorrow-card"'), "the tomorrow card sits after the groups"
     assert 'data-move-dish="cook:20">Pancakes</button>' in strip
     assert out["dockHidden"] is True

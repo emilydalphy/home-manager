@@ -845,7 +845,8 @@ def _week_state(view: dict, day: date) -> str:
 def today_moves(day: str | date | None = None, now: datetime | None = None) -> dict:
     """
     The whole Today payload: the day's moves, which one is the card, the
-    "N of M done" count, the week-state badge, and — for the days with
+    done/total counts (no longer shown on Now since 2026-09-24, kept for
+    the API), the week-state badge, and — for the days with
     nothing left on them — tomorrow's first move.
 
     With neither argument this is the household's today and now — the
