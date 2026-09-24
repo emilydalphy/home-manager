@@ -415,6 +415,99 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-24 — A browser error with no location says WHY it has no
+  location. Branch `overnight/client-error-network-reason`, NOT merged at
+  the time of writing.** Loop Board bug, Phase 1. The 2026-09-11 shape work
+  covers an error that carries a stack; this is the case it says in its own
+  entry it could not. A `fetch` that never reached the server rejects with a
+  TypeError the ENGINE built, and in Safari it carries no frames at all — so
+  Julia's row on 2026-09-18 was `client · / · browser error · TypeError` with
+  an empty `source` and an empty `stack_shape`, which is **exactly what a
+  real bug rejecting with a TypeError also records**. The morning report could
+  not say "her phone" or "your code", and the row was wiped in the reset.
+  - **The message is what the classification is made FROM and is still never
+    what is stored.** Emily's 2026-09-10 rule is untouched: `_NETWORK_FAILURE_MESSAGES`
+    is a CLOSED SET of six exact strings a browser writes for a failed request
+    (Safari's `Load failed`, Chrome's `Failed to fetch`, Firefox's
+    `NetworkError when attempting to fetch resource.`, and three more),
+    matched by EQUALITY, turned into one token, and dropped. A pattern would
+    let a sentence through by ending in the right words; a substring match
+    reddens a test that exists to say so.
+  - **The browser's claim is not believed — the message is.** Both ends match
+    the same list, and the server's match is the one that counts, for the
+    reason every other field here is re-derived: this is the untrusted end. A
+    hand-made POST saying `reason: "network"` over a hostile message lands as
+    `unknown`, and the hostile text is discarded as it always was. There is a
+    test with an injection-shaped message on exactly that path.
+  - **Only ever for the frameless case.** With frames there is a location
+    already, and a reason on top would be a second, vaguer answer to a
+    question the stack has answered properly. `request_shape` is tied to
+    `reason` in one function so the two can never disagree — a row with a
+    stack carries neither.
+  - **Where the route comes from at all, and the one risky thing in this
+    branch: `window.fetch` is wrapped.** The rejection carries no url and this
+    app has over a hundred fetch call sites, none of which should have to know
+    the reporter exists. The wrapper tags the error object with the route and
+    **re-throws the original rejection untouched**, so every caller sees
+    exactly what it saw before — there are two node tests on precisely that
+    (`err === original`, and a successful fetch passing through unchanged),
+    because a wrapper that changed what a caller sees would break the app far
+    more thoroughly than the gap it closes. Tagging the ERROR rather than
+    remembering "the last request that failed" in a variable is deliberate: a
+    variable would still be sitting there, stale, when an unrelated rejection
+    arrived later and took the blame for it.
+  - **A route PATTERN, never a url** — `/api/week/{}/approve`. Same rule
+    `where_` already follows, for the same reason: a path is somewhere a date,
+    a member id or a live share token can be sitting. Any segment that is not
+    a plain route word is `{}` before it leaves the browser, and the server
+    re-checks the shape and drops anything else rather than trimming it.
+  - **A blip is kept out of the totals and the exit code, UNTIL IT CLUSTERS.**
+    `usage.NETWORK_CLUSTER_THRESHOLD = 5` — a judgement, not a measurement:
+    more than a lift or a tunnel, fewer than an evening. Below it they are
+    their own report line (the voice-drift stance) and `total` does not see
+    them, so one tester walking into a lift never reads as an outage; at or
+    above it they count like anything else and the line says CLUSTERED,
+    because a phone that cannot reach the app all evening is worth waking up
+    to even though each row is "just" a dropped request.
+  - **Both new fields are in record_error's dedupe key**, which matters more
+    here than anywhere else it has mattered: these rows are a bare "TypeError
+    on /" with nothing else to tell two of them apart, so without it a blip and
+    a real bug on the same page fold into one row and the count names neither.
+    Same reason they are in `observability_report._error_shapes`' key — and
+    `_print_shape` unpacks that key positionally, so it moved with it.
+  - **Two columns, `reason` and `request_shape`, not backfilled**, and the
+    report reads every shape field with `.get` so a deployment older than them
+    prints one line less rather than crashing — the rule that file already
+    followed. There is a test that builds Emily's shape of database (schema.sql
+    minus the two columns) and runs the real `_MIGRATIONS` over it.
+  - `tests/test_client_error_network_reason.py` (27). **Red-against-main is
+    not a meaningful number for this file and is not quoted: the columns do
+    not exist there, so the fixture database has no `reason` column and the
+    row reads error rather than fail.** The evidence is **seven mutations,
+    every one measured to bite**: the reason forced empty (16 red), the
+    closed-list match loosened to a substring (1), the client's claim believed
+    without the message (2), the network split removed from the totals (3),
+    the two fields dropped from the dedupe key (19), the report's network line
+    removed (2), and the reason dropped from the report's shape key (1). Suite
+    **6654 passed, 0 failed** at `TZ=America/Toronto`, against a 6628 baseline
+    on main — +26 is this file, and `git diff main -- tests/` is one new file,
+    so no existing test was changed or weakened. (The file is 27 tests; 26 is
+    the count that ran when the suite figure was read, before the vacuous
+    report test below was replaced by two real ones.)
+  - **One of these tests was vacuous when first written and is recorded rather
+    than quietly fixed**, because it is the exact shape this repo keeps being
+    bitten by: it built the report's sentence itself and then asserted the
+    sentence contained it, which cannot fail. It drives `_print_human` now and
+    asserts on what that prints — including that a single blip prints
+    "Nothing broke." rather than BROKEN, which is the whole point of the line.
+  - **Deliberately NOT done, and named so nobody reports it as new.** Chrome's
+    `Failed to fetch` usually DOES carry a stack pointing at the call site, so
+    on Chrome this records a location the ordinary way and no reason — which is
+    right, and means the reason field will be mostly a Safari and iOS signal.
+    Retrying a failed fetch or showing the tester an offline state is a product
+    decision and the card puts it out of scope. Nothing is backfilled: the row
+    that prompted this was wiped on 2026-09-19 and its values live on the card.
+
 - **2026-09-23 — A chat turn records what it was ABOUT: one theme label,
   never the words. Branch `chat-theme-per-turn`, NOT merged at the time of
   writing. OFF until Railway has `CHAT_THEMES=1`.** Layer 2 of "Chat: record

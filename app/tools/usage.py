@@ -721,6 +721,12 @@ _MAX_WHERE = 120
 _MAX_ERROR_TYPE = 40
 _MAX_SOURCE = 80
 _MAX_STACK = 240
+# When a run of dropped requests stops being a blip and becomes the news.
+# See get_recent_errors -- five is a judgement, not a measurement.
+NETWORK_CLUSTER_THRESHOLD = 5
+
+_MAX_REASON = 20
+_MAX_REQUEST = 80
 
 # How long an identical shape keeps counting into one row rather than
 # starting a new one. 24 hours, because the report reads a day at a time: a
@@ -769,6 +775,8 @@ def record_error(
     error_type: str = "",
     source: str = "",
     stack_shape: str = "",
+    reason: str = "",
+    request_shape: str = "",
 ) -> None:
     """
     Record that something broke. Never raises.
@@ -778,11 +786,13 @@ def record_error(
     turn "something went wrong" into "something went wrong twice, and the
     second one is ours". Everything is best-effort and swallowed.
 
-    The last three are the SHAPE of a browser error -- a type, a script file
-    and line, a few stack frames -- and they are optional because the other
-    three callers (a status code, a tool name, a bucket) have no shape to
-    give. They must already be sanitised: the caller with an untrusted end
-    is the one that knows what a valid shape looks like.
+    The last five are the SHAPE of a browser error -- a type, a script file
+    and line, a few stack frames, and, for the one case none of those can
+    describe, why there is no location and which route was being fetched.
+    They are optional because the other three callers (a status code, a tool
+    name, a bucket) have no shape to give. They must already be sanitised:
+    the caller with an untrusted end is the one that knows what a valid
+    shape looks like.
 
     An identical shape seen again inside _DEDUPE_WINDOW bumps that row's
     occurrences instead of writing a second one. A render loop fires these
@@ -809,10 +819,18 @@ def record_error(
             str(error_type)[:_MAX_ERROR_TYPE],
             str(source)[:_MAX_SOURCE],
             str(stack_shape)[:_MAX_STACK],
+            str(reason)[:_MAX_REASON],
+            str(request_shape)[:_MAX_REQUEST],
         )
         existing = conn.execute(
             "SELECT id FROM error_events WHERE household_id = ? AND kind = ? AND where_ = ? "
             "AND detail = ? AND error_type = ? AND source = ? AND stack_shape = ? "
+            # In the dedupe key on purpose: the row this was built for is a
+            # bare "TypeError on /" with nothing else to tell two of them
+            # apart, so without these a network blip and a real bug on the
+            # same page would fold into one row and the count would say
+            # neither.
+            "AND reason = ? AND request_shape = ? "
             f"AND created_at >= datetime('now', '{_DEDUPE_WINDOW}') "
             "ORDER BY id DESC LIMIT 1",
             row,
@@ -827,7 +845,8 @@ def record_error(
             conn.execute(
                 "INSERT INTO error_events "
                 "(household_id, kind, where_, detail, error_type, source, stack_shape, "
-                " last_seen_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+                " reason, request_shape, last_seen_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
                 row,
             )
             _prune(conn, hid)
@@ -932,6 +951,20 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
     is worth a line in the morning report, but it is not breakage, and
     it must not turn the report's exit code into "something broke".
 
+    A browser error whose `reason` is 'network' -- a request that never
+    reached the server, recognised by the browser's own message (see
+    main._NETWORK_FAILURE_MESSAGES) -- is set aside under `network` the same
+    way, for the same reason: one tester walking into a lift is not an
+    outage, and it must not turn the exit code into "something broke".
+
+    UNLESS THEY CLUSTER. At NETWORK_CLUSTER_THRESHOLD or more in the window
+    they are counted like anything else and stay in `recent`, because at
+    that point they have stopped being a blip and started being the news --
+    a tester whose phone cannot reach the app all evening has a problem
+    worth waking up to, even though every individual row is "just" a
+    dropped request. Five is a judgement, not a measurement: it is more
+    than a lift or a tunnel and fewer than an evening.
+
     The counts are SUM(occurrences), not COUNT(*) -- eleven of one failure
     is eleven failures however many rows record_error folded them into, and
     a count that shrank when deduping landed would have read as the app
@@ -965,7 +998,7 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
             dict(r)
             for r in conn.execute(
                 "SELECT kind, where_ AS location, detail, error_type, source, stack_shape, "
-                "occurrences, last_seen_at, created_at FROM error_events "
+                "reason, request_shape, occurrences, last_seen_at, created_at FROM error_events "
                 f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
                 "AND kind != 'voice' "
                 # Newest first means most recently SEEN, not most recently
@@ -977,12 +1010,39 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
                 (hid, limit),
             ).fetchall()
         ]
+        network = {
+            r["request_shape"]: r["n"]
+            for r in conn.execute(
+                "SELECT request_shape, SUM(occurrences) AS n FROM error_events "
+                f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
+                "AND kind != 'voice' AND reason = 'network' "
+                "GROUP BY request_shape ORDER BY n DESC",
+                (hid,),
+            ).fetchall()
+        }
+        network_total = sum(network.values())
+        if network_total and network_total < NETWORK_CLUSTER_THRESHOLD:
+            # Below the threshold they are a blip, so they come back out of
+            # the counts and the rows -- deliberately AFTER the queries
+            # rather than as another WHERE clause, so the two can never
+            # disagree about which rows are the network ones.
+            by_kind = {
+                k: n - (network_total if k == "client" else 0)
+                for k, n in by_kind.items()
+            }
+            by_kind = {k: n for k, n in by_kind.items() if n > 0}
+            recent = [r for r in recent if r.get("reason") != "network"]
         return {
             "days": days,
             "total": sum(by_kind.values()),
             "by_kind": by_kind,
             "recent": recent,
             "voice_drift": {"total": sum(voice_flags.values()), "by_flags": voice_flags},
+            "network": {
+                "total": network_total,
+                "by_request": network,
+                "clustered": network_total >= NETWORK_CLUSTER_THRESHOLD,
+            },
         }
     finally:
         conn.close()

@@ -6388,6 +6388,71 @@ def _safe_client_detail(detail: str) -> str:
     return "browser error"
 
 
+# The browser's OWN words for "the request never got there", as an exact,
+# closed set. A native fetch failure is a TypeError the engine built, and it
+# carries no stack — so the record is a bare "TypeError", which is also what
+# a real bug rejecting with a TypeError looks like. Julia hit exactly that on
+# 2026-09-18 and the morning report could not say which it was.
+#
+# Matched here as well as in static/error-reporter.js, and this is the side
+# that counts: the browser is the untrusted end, so a client that says
+# "network" without a message to back it up is not believed, and one that
+# sends nothing still gets classified. Exact equality, never a pattern —
+# the message itself is discarded either way (Emily, 2026-09-10: keep the
+# shape, never the words), so the only thing that survives is which of these
+# it was, as one token.
+_NETWORK_FAILURE_MESSAGES = frozenset({
+    "Load failed",                                     # Safari
+    "Failed to fetch",                                 # Chrome, Edge
+    "NetworkError when attempting to fetch resource.",  # Firefox
+    "The network connection was lost.",                # Safari, iOS
+    "cancelled",                                       # Safari, navigated away
+    "The Internet connection appears to be offline.",  # Safari, iOS
+})
+
+_CLIENT_REASONS = frozenset({"network", "unknown"})
+
+# A route PATTERN: "/api/week/{}/approve". Fixed segments and {} where a
+# value was, which is what the reporter reduces a url to. Nothing here may
+# carry a date, an id or a share token, so a segment that is not a plain
+# route word has already become {} before it arrives — this only checks the
+# shape that survived.
+_REQUEST_SHAPE_RE = re.compile(r"^/(?:(?:\{\}|[A-Za-z][A-Za-z0-9_-]{0,29})(?:/|$)){0,8}$")
+
+
+def _safe_client_reason(reason: str, detail: str, stack_shape: str) -> str:
+    """
+    Why a browser error has no location, when it has none.
+
+    Only ever set for an error with NO stack frames: with frames there is a
+    location already and nothing to explain. The browser's claim is checked
+    against the message rather than taken — "network" is believed only when
+    the message really is one of the strings a browser writes for a failed
+    request, so a hand-made POST cannot label a bug as a blip.
+    """
+    if stack_shape:
+        return ""
+    text = " ".join(str(detail or "").split())
+    if text in _NETWORK_FAILURE_MESSAGES:
+        return "network"
+    claimed = " ".join(str(reason or "").split())[:20]
+    return "unknown" if claimed in _CLIENT_REASONS else ""
+
+
+def _safe_client_request(request: str, reason: str) -> str:
+    """
+    Which route failed, as a pattern — never which row. See _REQUEST_SHAPE_RE.
+
+    Only kept alongside a `reason`, so the two always agree: a row with a
+    stack has a location already, and a route on it would be a second,
+    vaguer answer to a question the stack has answered properly.
+    """
+    if not reason:
+        return ""
+    text = _redact_share_token(" ".join(str(request or "").split())[:80])
+    return text if _REQUEST_SHAPE_RE.match(text) else ""
+
+
 def _safe_client_where(where: str) -> str:
     text = _redact_share_token(" ".join(str(where or "").split())[:_MAX_CLIENT_WHERE])
     return text if _PATH_SHAPE_RE.match(text) else "(unrecognised)"
@@ -6403,6 +6468,11 @@ class ClientErrorRequest(BaseModel):
     type: str = ""
     source: str = ""
     stack: list[str] = []
+    # Why there is no location, and which route was being fetched when
+    # there is none. Re-derived like everything else — see
+    # _safe_client_reason.
+    reason: str = ""
+    request: str = ""
 
 
 @app.post("/api/client-error")
@@ -6432,13 +6502,19 @@ def report_client_error(request: Request, req: ClientErrorRequest):
         _enforce_rate_limit(request, "client_error", record=False)
     except HTTPException:
         return Response(status_code=204)
+    # Derived once: the reason is only ever set when there are no frames,
+    # so it has to see what the stack reduced to rather than what arrived.
+    stack_shape = _safe_client_stack(req.stack)
+    reason = _safe_client_reason(req.reason, req.detail, stack_shape)
     tools.record_error(
         "client",
         where=_safe_client_where(req.where),
         detail=_safe_client_detail(req.detail),
         error_type=_safe_client_error_type(req.type),
         source=_safe_client_source(req.source),
-        stack_shape=_safe_client_stack(req.stack),
+        stack_shape=stack_shape,
+        reason=reason,
+        request_shape=_safe_client_request(req.request, reason),
     )
     return Response(status_code=204)
 
