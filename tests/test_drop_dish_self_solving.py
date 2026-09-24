@@ -581,9 +581,13 @@ class TestWhichNightTheCookLandsOn:
 
 class TestTheOtherRefusalsAreUntouched:
     def test_a_night_already_cooked_is_still_refused(self):
-        """GUARD, and the ordering with it: a tick is a record of something
+        """
+        GUARD, and the ordering with it: a tick is a record of something
         that happened, and no arithmetic on a plan gets to delete one — now
-        least of all, since the chain branch below it WRITES."""
+        least of all, since the chain branch below it WRITES. Green against
+        main, which refuses this too; pinned by the mutation that moves the
+        chain branch above the cooked check.
+        """
         _people()
         _recipe()
         plan = _plan()
@@ -598,10 +602,13 @@ class TestTheOtherRefusalsAreUntouched:
 
     def test_a_night_that_has_gone_by_is_still_refused(self):
         """
-        CATCH on the ordering. The past check sits ABOVE the chain branch,
-        and that mattered before because the chain refusal named a remedy
-        nobody could act on; it matters MORE now, because below it a night
-        that is over would have the week re-planned around it.
+        GUARD on the ordering, and green against main, which refuses this
+        too — so read it as a mutation check rather than a catch. The past
+        check sits ABOVE the chain branch, and that mattered before because
+        the chain refusal named a remedy nobody could act on; it matters
+        MORE now, because below it a night that is over would have the week
+        re-planned around it. Pinned by the mutation that moves the chain
+        branch above the past check.
         """
         _people()
         _recipe()

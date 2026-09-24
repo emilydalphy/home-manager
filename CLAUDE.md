@@ -532,14 +532,24 @@ why*, not duplicating the diff.
     the file's own header rather than quoted**: 11 are behaviour catches on
     the assertion they are named for, 10 die on a name (or a result key, or
     a route) main has not got, and 2 are red at an EARLIER assertion than
-    their own and say so. **NINE mutations are the real evidence and every
+    their own and say so. The other 3 are green either way and each names
+    the mutation that pins it. **TEN mutations are the real evidence and every
     one bites**: the chain branch removed, i.e. main's refusal back (17
     red), the batch never shrinking (1), targets sorted by string rather
     than eating order (2), the decision not re-taken under the lock (1), a
     commit between the move and the question (1), prep dropped from the
     undo's restore (1), the undo's fingerprint check removed (1), the
-    cook's fridge moves left behind (1), and an approved week never
-    rescaled (1).
+    cook's fridge moves left behind (1), an approved week never rescaled
+    (1), and the chain branch moved ABOVE the cooked and past checks (3,
+    which is what pins the two ordering guards).
+  - **Numbers, read off the runs at `TZ=America/Toronto`: 6654 passed, 0
+    failed** on the whole suite. An earlier run of the same tree read 4
+    failed, and all four were `inspect.getsource` line-number drift — the
+    flake the 2026-09-16 `tests-read-agent-once` entry describes — because
+    `app/tools/weekly_plan.py` was edited WHILE that suite ran. Recorded
+    rather than quietly replaced: a test run in a tree somebody is still
+    writing to is not evidence, including when the somebody is you and the
+    edit is a comment.
   - **A defect found and NOT fixed, named so nobody reports it as new:**
     the undo's exactness is exact for the plan rows and one recompute for
     the shopping line. `_rescale_leftover_source_grocery` reverses and
