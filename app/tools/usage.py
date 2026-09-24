@@ -1021,13 +1021,33 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
             ).fetchall()
         }
         network_total = sum(network.values())
+        network_by_kind = {
+            r["kind"]: r["n"]
+            for r in conn.execute(
+                "SELECT kind, SUM(occurrences) AS n FROM error_events "
+                f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
+                "AND kind != 'voice' AND reason = 'network' GROUP BY kind",
+                (hid,),
+            ).fetchall()
+        }
         if network_total and network_total < NETWORK_CLUSTER_THRESHOLD:
             # Below the threshold they are a blip, so they come back out of
             # the counts and the rows -- deliberately AFTER the queries
             # rather than as another WHERE clause, so the two can never
             # disagree about which rows are the network ones.
+            #
+            # Subtracted PER KIND, read from the rows themselves, rather
+            # than taken off "client" on the assumption that every network
+            # row is one. Nothing enforces that: `reason` and `kind` are
+            # independent columns, and only report_client_error passes a
+            # reason today. Found on review of this branch -- one real
+            # client error beside three network rows recorded under any
+            # other kind gave `by_kind {'server': 3}`, i.e. 1 - 3 = -2,
+            # filtered out by the `n > 0` below, and the real error was
+            # GONE from the morning report. That is the exact direction
+            # this whole block exists to prevent.
             by_kind = {
-                k: n - (network_total if k == "client" else 0)
+                k: n - network_by_kind.get(k, 0)
                 for k, n in by_kind.items()
             }
             by_kind = {k: n for k, n in by_kind.items() if n > 0}

@@ -58,6 +58,17 @@
     // member's name or a live share token can be sitting.
     loc = loc.split('?')[0].split('/').pop();
     if (!/^[A-Za-z0-9_.\-]{1,60}:\d{1,7}(:\d{1,7})?$/.test(loc)) return '';
+    // This file is never the answer to "where did it happen". Chrome
+    // builds a fetch TypeError's stack at the CALL SITE, and since the
+    // wrapper below became the call site, the top frame of every dropped
+    // request was `window.fetch@error-reporter.js` — so `source`, which
+    // the morning report prints in its head line, named the error
+    // reporter for exactly the errors this reporter exists to explain.
+    // Measured against main: `shell.js:6:33` became
+    // `error-reporter.js:151:30`. Dropping our own frames restores it,
+    // and is right beyond the wrapper too: a frame inside the reporter
+    // locates the reporter, never the app.
+    if (loc.indexOf('error-reporter.js:') === 0) return '';
     return (/^[A-Za-z0-9_$.]{1,40}$/.test(fn) ? fn + '@' : '') + loc;
   }
 
@@ -152,7 +163,15 @@
       } catch (err) {
         throw err;
       }
-      if (!result || typeof result.then !== 'function') return result;
+      // .then AND .catch: a thenable with only .then is a promise to the
+      // language and not to this line, and calling .catch on one would
+      // throw synchronously out of fetch — turning a reporting nicety
+      // into a broken request. Unreachable today (nothing else in this
+      // app wraps fetch, and native fetch returns a real Promise), which
+      // is exactly why it is worth costing one clause rather than an
+      // outage nobody can explain.
+      if (!result || typeof result.then !== 'function' ||
+          typeof result.catch !== 'function') return result;
       return result.catch(function (err) {
         try {
           if (err && typeof err === 'object' && !err.pomonaRoute) {

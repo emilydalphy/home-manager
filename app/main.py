@@ -6413,10 +6413,19 @@ _NETWORK_FAILURE_MESSAGES = frozenset({
 _CLIENT_REASONS = frozenset({"network", "unknown"})
 
 # A route PATTERN: "/api/week/{}/approve". Fixed segments and {} where a
-# value was, which is what the reporter reduces a url to. Nothing here may
-# carry a date, an id or a share token, so a segment that is not a plain
-# route word has already become {} before it arrives — this only checks the
-# shape that survived.
+# value was, which is what the reporter reduces a url to.
+#
+# READ THE NEXT SENTENCE BEFORE LOOSENING ANYTHING HERE. This shape check
+# is NOT what keeps a secret out of the column, and an earlier version of
+# this comment said it was: a 22-character secrets.token_urlsafe(16) is a
+# "plain route word" by the pattern below whenever it starts with a letter
+# (about 46% of them), and a one-word member name always is. Measured on
+# review, 2026-09-24: "/share/kJ3lmQ8xZabcdefghijkl" and
+# "/api/members/Sophia/share-link" both survive this regex untouched. What
+# actually redacts them is _redact_share_token, applied in
+# _safe_client_request below — so a future token-bearing route that its
+# prefix list does not know about is stored in full. This only rejects a
+# string that is not route-SHAPED at all.
 _REQUEST_SHAPE_RE = re.compile(r"^/(?:(?:\{\}|[A-Za-z][A-Za-z0-9_-]{0,29})(?:/|$)){0,8}$")
 
 

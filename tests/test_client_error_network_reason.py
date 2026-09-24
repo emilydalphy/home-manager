@@ -477,6 +477,38 @@ def test_a_rejection_with_frames_sends_no_reason():
 
 
 @_needs_node
+def test_a_TAGGED_rejection_with_frames_still_sends_no_reason_and_no_route():
+    """
+    The test above looks like it pins both halves and pins one. Its error
+    was never through the wrapper, so `pomonaRoute` is unset and
+    `request` is "" whichever way the rule is written — measured on
+    review: the mutation "send the route even when there are frames"
+    reddens NOTHING there.
+
+    This is the arrangement in which it can fail: a real dropped request
+    (so the wrapper really tagged it) that ALSO carries frames. The rule
+    is that frames win — a stack already says where it happened, so there
+    is nothing for a reason to explain and no need to name the route to
+    find it.
+    """
+    fire = """
+fetchBehaviour = () => {
+  const e = new TypeError('Failed to fetch');
+  e.stack = 'TypeError: Failed to fetch\\n    at loadTheWeek (https://pomona.example/static/shell.js:6207:15)';
+  return Promise.reject(e);
+};
+window.fetch('/api/week/2026-09-21/approve').catch((err) => {
+  listeners.unhandledrejection[0]({ reason: err });
+});
+"""
+    sent = json.loads(_run(fire, "\nsetTimeout(() => console.log(JSON.stringify(sent)), 10);"))[0]
+    # The wrapper DID tag it — this is the case the other test cannot reach.
+    assert sent["stack"] == ["loadTheWeek@shell.js:6207:15"]
+    assert sent["reason"] == ""
+    assert sent["request"] == ""
+
+
+@_needs_node
 def test_the_reporter_never_sends_the_message_that_classified_it():
     """
     Belt and braces on the browser side of the 2026-09-10 rule: the server
@@ -492,3 +524,171 @@ def test_the_reporter_never_sends_the_message_that_classified_it():
     assert sent["reason"] == "unknown"
     for field in ("type", "source", "reason", "request"):
         assert "Ignore" not in sent[field], field
+
+
+# ---------------------------------------------------------------------------
+# The wrapper's own frame (found by review of this branch, 2026-09-24)
+# ---------------------------------------------------------------------------
+
+@_needs_node
+def test_the_wrapper_does_not_become_the_place_the_error_happened():
+    """
+    BLOCKER found on review of this branch's first cut, and the whole
+    reason this file grew a stack-shaped test at all.
+
+    Chrome builds a fetch TypeError's stack at the CALL SITE. The wrapper
+    added by this branch IS the call site, so its own frame went on top of
+    every dropped request: `source` — the field the 2026-09-11 shape work
+    exists to fill, and the one `observability_report._print_shape` puts
+    in its head line — went from naming the screen that made the request
+    to naming `error-reporter.js`. Measured against main in a real
+    Chromium: `shell.js:6:33` became `error-reporter.js:151:30`. Every
+    fetch rejection then shared one head line, so the morning report read
+    as "the error reporter is broken, N times".
+
+    The suite was blind to it because every other test here hand-writes
+    `err.stack`, so nothing ever saw a stack the wrapper had actually
+    been through. This one uses the shape Chrome really produces.
+    """
+    fire = """
+const chromeStack = [
+  'TypeError: Failed to fetch',
+  '    at window.fetch (https://pomona.example/static/error-reporter.js:151:30)',
+  '    at loadTheWeek (https://pomona.example/static/shell.js:6207:15)',
+  '    at renderWeek (https://pomona.example/static/shell.js:7001:9)',
+].join('\\n');
+const err = new TypeError('Failed to fetch');
+err.stack = chromeStack;
+listeners['unhandledrejection'][0]({ reason: err });
+"""
+    sent = json.loads(_run(fire))
+    assert len(sent) == 1
+    shape = sent[0]
+    assert "error-reporter.js" not in json.dumps(shape), (
+        "the reporter named itself as the place the error happened"
+    )
+    # The caller is the answer, and it is the HEAD of the stack rather
+    # than merely present somewhere further down it.
+    assert shape["source"] == "shell.js:6207:15"
+    assert shape["stack"][0] == "loadTheWeek@shell.js:6207:15"
+    assert shape["stack"][1] == "renderWeek@shell.js:7001:9"
+    # It still has frames, so it is not a "no location" case and says
+    # nothing about why.
+    assert shape.get("reason", "") == ""
+
+
+@_needs_node
+def test_a_reporter_frame_is_dropped_wherever_it_sits_not_only_on_top():
+    """
+    The rule is "a frame inside the reporter locates the reporter, never
+    the app", not "trim the first line" — so it holds for the plain
+    window.onerror path too, and for a stack where our frame is in the
+    middle. Without this, the fix could be written as a head-only trim and
+    nothing would notice.
+    """
+    fire = """
+const err = new TypeError('boom');
+err.stack = [
+  'TypeError: boom',
+  '    at renderWeek (https://pomona.example/static/shell.js:7001:9)',
+  '    at report (https://pomona.example/static/error-reporter.js:88:5)',
+  '    at loadTheWeek (https://pomona.example/static/shell.js:6207:15)',
+].join('\\n');
+listeners['unhandledrejection'][0]({ reason: err });
+"""
+    shape = json.loads(_run(fire))[0]
+    assert shape["stack"] == ["renderWeek@shell.js:7001:9", "loadTheWeek@shell.js:6207:15"]
+
+
+@_needs_node
+def test_a_thenable_without_catch_does_not_break_the_request():
+    """
+    The guard was `typeof result.then === 'function'` and the call was
+    `result.catch(...)`, so a thenable with only .then threw synchronously
+    out of window.fetch — a reporting nicety breaking the request it was
+    watching. Unreachable in this app (nothing else wraps fetch), which is
+    why it is pinned here rather than argued about: the cost of being
+    wrong is an outage nobody can explain.
+    """
+    fire = """
+fetchBehaviour = () => ({ then: function (fn) { fn('thenable-ok'); return this; } });
+let outcome = 'never ran';
+try {
+  const r = window.fetch('/api/whoami');
+  outcome = (r && typeof r.then === 'function') ? 'passed through' : 'mangled';
+} catch (e) {
+  outcome = 'threw: ' + e.message;
+}
+"""
+    out = _run(fire, "\nconsole.log(JSON.stringify(outcome));")
+    assert json.loads(out) == "passed through"
+
+
+# ---------------------------------------------------------------------------
+# What actually keeps a secret out of the column (found by review, 2026-09-24)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("path, why", [
+    ("/share/kJ3lmQ8xZabcdefghijkl", "a live share token"),
+    ("/api/member-share/AbCdEf0123456789xyzABC", "a member share token"),
+    ("/api/members/Sophia/share-link", "a member's name"),
+])
+def test_a_clean_token_is_redacted_and_not_merely_rejected_for_its_shape(signed_in, path, why):
+    """
+    The file's only other share case is "/api/share/SECRETTOKEN123456; DROP
+    TABLE x", and the `;` and the space are what stop it — so it is the
+    SHAPE check failing, and redaction was pinned by nothing at all.
+    Measured on review: take _redact_share_token out of
+    _safe_client_request and the whole 6600-test suite still passes while
+    all three paths below land in the column verbatim, in a table printed
+    into an agent's context every morning.
+
+    These are token-shaped the way the real ones are — a
+    secrets.token_urlsafe(16) that starts with a letter is a "plain route
+    word" to _REQUEST_SHAPE_RE — so the shape check cannot save them and
+    only the redaction can.
+    """
+    res = signed_in.post("/api/client-error", json={
+        "where": "/week", "detail": "Load failed",
+        "type": "TypeError", "source": "", "stack": [],
+        "reason": "network", "request": path,
+    })
+    assert res.status_code in (200, 204), res.text
+    rows = tools.get_recent_errors(days=1)
+    stored = [r.get("request_shape", "") for r in rows["recent"]] + [
+        k for k in rows.get("network", {}).get("by_request", {})
+    ]
+    blob = " ".join(stored)
+    secret = path.rsplit("/", 1)[-1] if "share-link" not in path else "Sophia"
+    assert secret not in blob, f"{why} was stored verbatim: {blob!r}"
+
+
+def test_a_network_row_of_another_kind_cannot_subtract_a_real_client_error_away():
+    """
+    The blip subtraction used to take the WHOLE network count off `client`,
+    on the assumption that every network row is a client one. Nothing
+    enforces that — `reason` and `kind` are independent columns — and the
+    failure direction is the bad one: measured on review, one real client
+    error beside three network rows of another kind gave
+    `by_kind {'server': 3}` and a `total` of 3, i.e. the real error was
+    subtracted to -2 and then filtered out by the `n > 0` guard. Gone from
+    the morning report entirely, which is precisely what
+    test_a_blip_beside_a_real_error_leaves_the_real_one_counted exists to
+    prevent, reached from the other side.
+
+    Not reachable over HTTP today (only report_client_error passes a
+    reason, and it hard-codes kind="client"), so this is a latent trap
+    rather than a live bug — which is exactly why it needs a test rather
+    than a comment.
+    """
+    tools.record_error("client", "/week", "a real one", error_type="TypeError")
+    for i in range(3):
+        tools.record_error(
+            "server", f"/api/thing/{i}", "browser error",
+            error_type="TypeError", reason="network", request_shape="/api/{}",
+        )
+    out = tools.get_recent_errors(days=1)
+    assert out["by_kind"].get("client") == 1, (
+        f"the real client error was subtracted away: {out['by_kind']}"
+    )
+    assert out["total"] == 1
