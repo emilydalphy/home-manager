@@ -2017,8 +2017,19 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
         else:
             target = f"{r['date']}:{r['slot']}"
             conn = get_conn()
+            # Scoped by household as well as by id, like every other read
+            # of this table in the module. The id can only have come from
+            # the household-filtered read at the top of this function, so
+            # nothing reaches these four statements with a foreign id
+            # today — this is the guard being a property of the statement
+            # rather than of whoever calls it. The rule the package is
+            # built on is that scoping is not something a caller does
+            # (see _shared.household_id), and four statements quietly
+            # relying on a caller having already done it is how that stops
+            # being true.
             existing = conn.execute(
-                "SELECT derived_from_json FROM meal_plan_entries WHERE id = ?", (source["id"],)
+                "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+                (source["id"], household_id()),
             ).fetchone()
             source_derived = json.loads(existing["derived_from_json"] or "{}") if existing else {}
             # A list, not a scalar: one cook can feed more than one leftovers
@@ -2039,8 +2050,8 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
             )
             source_derived["make_double_for"] = targets
             conn.execute(
-                "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
-                (json.dumps(source_derived), source["id"]),
+                "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+                (json.dumps(source_derived), source["id"], household_id()),
             )
             conn.commit()
             conn.close()
@@ -2188,8 +2199,8 @@ def _unlink_leftover_target(weekly_plan_id: int, entry_id: int, conn=None) -> in
             source_derived.pop("make_double_note", None)
 
         conn.execute(
-            "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
-            (json.dumps(source_derived), source["id"]),
+            "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+            (json.dumps(source_derived), source["id"], household_id()),
         )
         if own_conn:
             conn.commit()
@@ -7216,7 +7227,10 @@ def swap_component_in_plan(
         # ingredients on the list rather than piling the new ones on top.
         _grocery._reverse_meal_grocery_contributions(match["id"])
         conn = get_conn()
-        deleted = conn.execute("DELETE FROM meal_plan_entries WHERE id = ?", (match["id"],))
+        deleted = conn.execute(
+            "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (match["id"], household_id()),
+        )
         conn.commit()
         removed = deleted.rowcount
         conn.close()
