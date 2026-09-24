@@ -233,13 +233,18 @@ def test_stepping_one_snack_down_leaves_the_day_s_OTHER_snack_alone():
     assert not any(t == "Apple and peanut butter" for t, _ in titles), titles
 
 
-def test_a_dish_that_feeds_another_night_is_refused_rather_than_dropped():
+def test_a_dish_that_feeds_another_night_is_cooked_on_that_night_instead():
     """
-    Taking away a night that was cooked double leaves the night it fed
-    holding a real recipe nobody planned to cook, with the doubled batch's
-    groceries just reversed out from under it. _unlink_leftover_target
-    covers the reverse direction only, so this refuses and names the night
-    that depends on it — nothing written.
+    INVERTED 2026-09-24. This used to assert the refusal — "Beef Chili on
+    Monday also feeds Tuesday — change that first and I'll take this one
+    off" — and nothing written. Emily's standing rule of 2026-09-22 is that
+    there is no such answer ("the job of Pomona is to do all that planning
+    work"), so the "−" re-plans the fed night itself, by the same rule the
+    night off follows for the identical shape: the cook moves onto the
+    first night it was feeding and the stepped-down night comes back as a
+    question. The gap the old refusal was protecting against — a night left
+    holding a reheat of a batch nobody cooks — is closed by the move rather
+    than by declining to move.
     """
     plan = _plan()
     tools.plan_meal(D1, "Beef Chili", slot="dinner", weekly_plan_id=plan)
@@ -249,10 +254,14 @@ def test_a_dish_that_feeds_another_night_is_refused_rather_than_dropped():
 
     out = tools.drop_dish_from_day(plan, source)
 
-    assert out["status"] == "refused"
-    assert "also feeds" in out["message"]
-    assert _slot_state(D1, "dinner") == "planned", "nothing may be written on a refusal"
+    assert out["status"] == "dropped"
+    assert out["moved_to"] == D2
+    assert "change that first" not in out.get("said", "")
+    assert _slot_state(D1, "dinner") == "open"
+    # The cook is on Tuesday now — the row that was reheating there is gone,
+    # and the dish is on exactly one night rather than none.
     assert _slot_state(D2, "dinner") == "planned"
+    assert _rows_on(D2, "dinner") == 1
 
 
 def test_the_route_takes_one_day_off_a_dish(signed_in):

@@ -233,8 +233,16 @@ def _mark_cooked(day: str) -> None:
 
 def _feeds(source_day: str, fed_day: str, slot: str = "dinner") -> None:
     """Make `source_day`'s dinner a leftover-chain SOURCE cooked double for
-    `fed_day` — the source side of the pairing, which is what
-    chain_fed_nights reads."""
+    `fed_day`.
+
+    THE SOURCE HALF ONLY — no `links_to` on the fed row — so
+    `plan_leftover_chains` never HONOURS this pairing, and the chain
+    branch of drop_dish_from_day cannot fire on anything seeded here.
+    That is fine for what this file tests (the refusals above the chain
+    branch) and it is the reason the neighbouring docstring was corrected
+    on 2026-09-24: a test in this file cannot pin where the chain branch
+    sits relative to them. `chain_fed_nights`, which this docstring used
+    to name, no longer exists."""
     conn = get_conn()
     conn.execute(
         "UPDATE meal_plan_entries SET derived_from_json = ? "
@@ -408,12 +416,21 @@ class TestWhichRefusalWins:
         assert "already been cooked" in out["message"]
 
     def test_a_past_chain_source_says_the_night_is_gone_not_change_that_first(self):
-        """
-        CATCH, and the reason the new check sits ABOVE the chain one. The
-        chain refusal names a remedy — "change that first and I'll take this
-        one off" — and on a night that is already over that remedy cannot
-        work, so it must never be the answer a past night gets.
-        """
+        """A past night that is also a chain source says the night has gone,
+    not "change that first".
+
+    The ORDERING claim this docstring used to argue for — that the chain
+    branch sits below the past check — is NOT pinned by this test and
+    cannot be: `_feeds` writes only the source half, so the chain is
+    never honoured here and the chain branch never runs. Measured on
+    review, 2026-09-24: moving the chain branch above the cooked and past
+    checks reddens two tests, both in
+    test_drop_dish_self_solving.py, and not this one. The claim IS
+    guarded, by that file's
+    test_a_night_that_has_gone_by_is_still_refused, which uses a properly
+    confirmed chain. What this test pins is the SENTENCE: of the two true
+    things about such a night, the one that names a remedy must not be
+    the answer a night nobody can act on gets."""
         plan = _seed(_day(-2), _day(-1))
         _feeds(_day(-2), _day(-1))
 
@@ -422,17 +439,31 @@ class TestWhichRefusalWins:
         assert out["message"] == REFUSAL
         assert "change that first" not in out["message"]
 
-    def test_a_live_chain_source_still_names_the_night_that_depends_on_it(self):
-        """GUARD. The chain refusal is unchanged for every night it was
-        ever the right answer for. Green either way; pinned by the mutation
-        above, which reddens it by answering REFUSAL here instead."""
+    def test_a_live_chain_source_is_not_refused_at_all_any_more(self):
+        """
+        INVERTED 2026-09-24. This used to assert the chain REFUSAL on a
+        night still ahead of today — the counterweight to the test above,
+        which asserts a PAST chain source gets the past-night sentence
+        instead. The chain refusal is gone: a dish that feeds a later night
+        is re-planned onto that night rather than refused (Emily's standing
+        rule, no "go change X first").
+
+        The ordering claim the test above is named for therefore matters
+        MORE than it did, not less: below the past check, this night would
+        be re-planned rather than refused, i.e. the app would rewrite a
+        week around a night nobody can cook on. Note _feeds writes only the
+        SOURCE half of the pairing, which plan_leftover_chains declines to
+        honour — so the fed night is an ordinary cook of its own and there
+        is nothing to move onto it. That is the ordinary drop, and it is the
+        right answer: nothing is left holding a reheat of a batch nobody
+        cooks.
+        """
         plan = _seed(_day(1), _day(2))
         _feeds(_day(1), _day(2))
 
         out = tools.drop_dish_from_day(plan, _ids(_day(1))[0])
 
-        assert out["status"] == "refused"
-        assert "change that first" in out["message"]
+        assert out["status"] == "dropped"
 
 
 # ------------------------------- 4. the household's clock, not the server's

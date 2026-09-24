@@ -50,6 +50,7 @@ from ..db import get_conn
 from ._shared import household_id
 from . import notifications as _notifications
 from . import week_intake as _week_intake
+from . import plan_undo as _plan_undo
 from . import weekly_plan as _weekly_plan
 
 logger = logging.getLogger(__name__)
@@ -624,10 +625,9 @@ FROZEN_COOKED_KEEPS_DAYS = 90
 
 
 def _fed_label(target: dict) -> str:
-    """"Wednesday", or "Wednesday’s lunch" for a night the chain feeds at
-    another meal — chain_fed_nights' own way of naming one."""
-    weekday = _weekly_plan._weekday_of(target["date"])
-    return weekday if target["slot"] == "dinner" else f"{weekday}’s {target['slot']}"
+    """How this app names a night a chain feeds. Lifted into weekly_plan on
+    2026-09-24 so the Review stepper's "−" says it the same way."""
+    return _weekly_plan.fed_night_label(target)
 
 
 def _night_off_plan(conn, plan, rows, tonight_row, today: str) -> dict:
@@ -689,15 +689,10 @@ def _night_off_plan(conn, plan, rows, tonight_row, today: str) -> dict:
         }
 
     source = chains["sources"].get(tonight_row["id"])
-    # In EATING order, not plan_leftover_chains' (date, slot) string sort,
-    # which puts Wednesday's dinner before Wednesday's lunch: the cook has
-    # to land on the first meal that eats from it, or the next one would
-    # be a reheat of a batch not yet cooked.
-    slots = list(_weekly_plan.DAY_SLOTS)
-    targets = sorted(
-        (t for t in (source or {}).get("targets") or [] if t["date"] > today),
-        key=lambda t: (t["date"], slots.index(t["slot"]) if t["slot"] in slots else len(slots)),
-    )
+    # In EATING order — see fed_nights_in_eating_order, which the Review
+    # stepper's "−" reads too so the two can never disagree about which
+    # night a cook with nowhere free to go lands on.
+    targets = _weekly_plan.fed_nights_in_eating_order(source, today)
     if targets:
         first = targets[0]
         return {
@@ -728,81 +723,12 @@ def _said(kind: str, dish: str, plan_step: dict | None = None, use_soon: list[st
 
 # ---- the undo record ----
 
-def _row_dicts(conn, sql: str, params) -> list[dict]:
-    return [{k: r[k] for k in r.keys()} for r in conn.execute(sql, params).fetchall()]
-
-
-def _touched_ids(rows_all, direct: set[int], refs: list[str]) -> set[int]:
-    """The rows a night off may rewrite: the ones it moves or deletes by
-    name, plus every row whose derived_from names one of the nights
-    involved — a chain reference ("2026-09-23:dinner") is rewritten in
-    place, and Undo has to be able to put those back too. Over-inclusion
-    is harmless (a snapshot of a row that didn't change restores to
-    itself); under-inclusion is an Undo that leaves a chain pointing at the
-    wrong night."""
-    touched = set(direct)
-    for r in rows_all:
-        text = r["derived_from_json"] or ""
-        if any(f'"{ref}"' in text for ref in refs):
-            touched.add(r["id"])
-    return touched
-
-
-def _snapshot(conn, entry_ids: set[int]) -> dict:
-    """Every column of every row a night off is about to touch, with the
-    grocery links and prep rows hanging off them — taken BEFORE the first
-    write, on the tap's own transaction."""
-    ids = sorted(entry_ids)
-    if not ids:
-        return {"entries": [], "links": [], "prep": []}
-    marks = ",".join("?" * len(ids))
-    hh = household_id()
-    return {
-        "entries": _row_dicts(
-            conn, f"SELECT * FROM meal_plan_entries WHERE household_id = ? AND id IN ({marks})", (hh, *ids)),
-        "links": _row_dicts(
-            conn, f"SELECT * FROM meal_plan_grocery_links WHERE household_id = ? AND meal_plan_entry_id IN ({marks})",
-            (hh, *ids)),
-        "prep": _row_dicts(
-            conn, f"SELECT * FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id IN ({marks})", (hh, *ids)),
-    }
-
-
-_FINGERPRINT_COLS = ("date", "slot", "slot_state", "cooked_status", "derived_from_json")
-
-
-def _fingerprint(conn, entry_ids, holder_id: int) -> list[list]:
-    """What the touched rows look like right after the tap. Undo puts the
-    week back only while they still look exactly like this — the same
-    "written once, read once" rule the nights swap's moved_from token
-    keeps: an Undo tapped after somebody cooked, swapped or moved one of
-    these nights must not quietly undo THEIR change too. The holder's own
-    derived_from carries this record, so it is compared without it."""
-    ids = sorted(set(entry_ids) | {holder_id})
-    marks = ",".join("?" * len(ids))
-    out = []
-    for r in conn.execute(
-        f"SELECT id, {', '.join(_FINGERPRINT_COLS)} FROM meal_plan_entries "
-        f"WHERE household_id = ? AND id IN ({marks}) ORDER BY id",
-        (household_id(), *ids),
-    ).fetchall():
-        cols = _FINGERPRINT_COLS[:-1] if r["id"] == holder_id else _FINGERPRINT_COLS
-        out.append([r["id"], *[r[c] for c in cols]])
-    return out
-
-
-def _stamp_undo(conn, holder_id: int, record: dict) -> None:
-    row = conn.execute(
-        "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
-        (holder_id, household_id()),
-    ).fetchone()
-    derived = json.loads(row["derived_from_json"] or "{}")
-    derived[NIGHT_OFF_UNDO_KEY] = record
-    conn.execute(
-        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
-        (json.dumps(derived), holder_id),
-    )
-
+# The snapshot / fingerprint / stamp machinery moved to plan_undo on
+# 2026-09-24, when the Review stepper's "−" grew the same need (it moves a
+# cook onto a fed night too, so it has the same "and here is how to take it
+# back"). These names stay as the module's own way of saying it; the rules
+# are one implementation, in plan_undo, for the reason this file's log
+# gives more often than any other.
 
 def _freeze_portion(conn, dish: str, servings: int, cooked_on: str) -> dict:
     """
@@ -875,14 +801,7 @@ def _delete_entry(conn, entry_id: int) -> None:
     by the table's own cascade. Only for rows whose food is not going
     anywhere: a reheat whose portion is frozen, a leftovers night the cook
     itself now lands on. Everything removed is in the undo snapshot."""
-    conn.execute(
-        "DELETE FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id = ?",
-        (household_id(), entry_id),
-    )
-    conn.execute(
-        "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",
-        (entry_id, household_id()),
-    )
+    _weekly_plan.delete_plan_entry(conn, entry_id)
 
 
 def _tonight_holder(conn, plan_id: int, today: str):
@@ -1080,8 +999,8 @@ def _night_off_with_undo(conn, plan, rows, tonight_row, today: str, step: dict, 
         refs.append(f"{step['target']['date']}:{step['target']['slot']}")
     elif kind == "freeze_reheat":
         direct.add(step["source_id"])
-    touched = _touched_ids(all_rows, direct, refs)
-    snap = _snapshot(conn, touched)
+    touched = _plan_undo.touched_ids(all_rows, direct, refs)
+    snap = _plan_undo.snapshot(conn, touched)
 
     frozen = None
     holder_id = None
@@ -1108,34 +1027,17 @@ def _night_off_with_undo(conn, plan, rows, tonight_row, today: str, step: dict, 
         # The leftovers entry on the first fed night goes — the cook lands
         # there instead. Its grocery links (a reheat buys nothing, so
         # normally none) go by cascade; nothing on the list is reversed.
-        _delete_entry(conn, target["entry_id"])
-        conn.execute(
-            "UPDATE meal_plan_entries SET date = ?, slot = ? WHERE id = ? AND household_id = ?",
-            (target["date"], target["slot"], tonight_row["id"], household_id()),
+        # The leftovers row on the first fed night goes, the cook lands
+        # there, and every other row naming tonight by date re-points at it.
+        # weekly_plan owns that move since 2026-09-24, because the Review
+        # stepper's "−" makes it too and a second copy of it is how the two
+        # would come to disagree about whether a fridge move travels.
+        _weekly_plan.move_cook_onto_fed_night(
+            conn, plan_id, tonight_row["id"], today, "dinner", target,
         )
         # Tonight's share becomes the freezer's, and the first fed night
         # is no longer a target (it is the cook now).
         _shrink_chain_into_freezer(conn, tonight_row["id"], new_ref, servings, frozen["id"], today)
-        # Any other row naming tonight's dinner by date ("2026-09-23:dinner")
-        # now names the night the cook moved to — the later fed nights'
-        # links_to, above all. _rewrite_chain_ref, the nights swap's own.
-        mapping = {tonight_ref: new_ref}
-        for r in conn.execute(
-            "SELECT id, derived_from_json FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? "
-            "AND component_category IS NULL",
-            (plan_id, household_id()),
-        ).fetchall():
-            derived = json.loads(r["derived_from_json"] or "{}")
-            if "links_to" not in derived:
-                continue
-            new = _weekly_plan._rewrite_chain_ref(derived["links_to"], mapping)
-            if new != derived["links_to"]:
-                derived["links_to"] = new
-                conn.execute(
-                    "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
-                    (json.dumps(derived), r["id"]),
-                )
-        _weekly_plan._shift_defrost_tasks(conn, plan_id, tonight_row["id"], today, target["date"])
         _settle_night_off(plan_id, today, [], conn)
         out["moved_to"] = target["date"]
         out["moved_to_weekday"] = _weekly_plan._weekday_of(target["date"])
@@ -1164,10 +1066,10 @@ def _night_off_with_undo(conn, plan, rows, tonight_row, today: str, step: dict, 
         holder_id = holder["id"]
     record = {
         "kind": kind, "dish": dish, **snap,
-        "after": _fingerprint(conn, touched, holder_id),
+        "after": _plan_undo.fingerprint(conn, touched, holder_id),
         "inventory": {"id": frozen["id"], "rev": frozen["rev"]} if frozen else None,
     }
-    _stamp_undo(conn, holder_id, record)
+    _plan_undo.stamp(conn, holder_id, NIGHT_OFF_UNDO_KEY, record)
     out["can_undo"] = True
     out["frozen"] = {"item": frozen["item"], "quantity": frozen["quantity"]} if frozen else None
     out["said"] = _said(kind, dish, step)
@@ -1210,10 +1112,7 @@ def tonight_night_off_undo(day: str | None = None, now: datetime | None = None) 
             return nothing
         holder, record = None, None
         for r in _tonight_holder(conn, plan["id"], today):
-            try:
-                rec = json.loads(r["derived_from_json"] or "{}").get(NIGHT_OFF_UNDO_KEY)
-            except (TypeError, ValueError):
-                rec = None
+            rec = _plan_undo.read(r, NIGHT_OFF_UNDO_KEY)
             if rec:
                 holder, record = r, rec
                 break
@@ -1221,9 +1120,7 @@ def tonight_night_off_undo(day: str | None = None, now: datetime | None = None) 
             conn.rollback()
             return nothing
 
-        snap_ids = {e["id"] for e in record.get("entries") or []}
-        touched = {fp[0] for fp in record.get("after") or []} - {holder["id"]}
-        if _fingerprint(conn, touched, holder["id"]) != record.get("after"):
+        if not _plan_undo.still_as_left(conn, record, holder["id"]):
             conn.rollback()
             return changed
         inv = record.get("inventory")
@@ -1237,41 +1134,7 @@ def tonight_night_off_undo(day: str | None = None, now: datetime | None = None) 
                 return changed
             conn.execute("DELETE FROM inventory_items WHERE id = ?", (inv["id"],))
 
-        hh = household_id()
-        if holder["id"] not in snap_ids:
-            _delete_entry(conn, holder["id"])
-        if snap_ids:
-            marks = ",".join("?" * len(snap_ids))
-            conn.execute(
-                f"DELETE FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id IN ({marks})",
-                (hh, *sorted(snap_ids)),
-            )
-        entry_cols = _columns(conn, "meal_plan_entries")
-        for e in record.get("entries") or []:
-            cols = [c for c in e if c in entry_cols]
-            exists = conn.execute(
-                "SELECT 1 FROM meal_plan_entries WHERE id = ? AND household_id = ?", (e["id"], hh),
-            ).fetchone()
-            if exists:
-                sets = ", ".join(f"{c} = ?" for c in cols if c != "id")
-                conn.execute(
-                    f"UPDATE meal_plan_entries SET {sets} WHERE id = ?",
-                    (*[e[c] for c in cols if c != "id"], e["id"]),
-                )
-            else:
-                conn.execute(
-                    f"INSERT INTO meal_plan_entries ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))})",
-                    tuple(e[c] for c in cols),
-                )
-        _reinsert(conn, "prep_tasks", record.get("prep") or [])
-        # A link comes back only if its grocery line is still there — the
-        # list is the household's, and a line they deleted since stays
-        # deleted rather than being linked into a meal again.
-        links = [
-            l for l in record.get("links") or []
-            if conn.execute("SELECT 1 FROM grocery_items WHERE id = ?", (l["grocery_item_id"],)).fetchone()
-        ]
-        _reinsert(conn, "meal_plan_grocery_links", links, ignore=True)
+        _plan_undo.restore(conn, record, holder["id"])
         conn.commit()
     except Exception:
         conn.rollback()
@@ -1283,25 +1146,6 @@ def tonight_night_off_undo(day: str | None = None, now: datetime | None = None) 
         "status": "restored", "date": today, "dish": dish or None,
         "said": f"{dish} is back on tonight." if dish else "Put back.",
     }
-
-
-def _columns(conn, table: str) -> set[str]:
-    return {r["name"] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
-
-
-def _reinsert(conn, table: str, rows: list[dict], ignore: bool = False) -> None:
-    """Put snapshot rows back with their own ids. Columns are checked
-    against the table itself rather than trusted off the record."""
-    if not rows:
-        return
-    known = _columns(conn, table)
-    verb = "INSERT OR IGNORE" if ignore else "INSERT"
-    for r in rows:
-        cols = [c for c in r if c in known]
-        conn.execute(
-            f"{verb} INTO {table} ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))})",
-            tuple(r[c] for c in cols),
-        )
 
 
 def _queue_use_soon(dish: str, items: list[str]) -> None:

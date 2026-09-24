@@ -378,22 +378,27 @@ def test_the_dish_a_reheat_row_adds_is_actually_bought_for():
 
 def test_breaking_a_chain_names_the_night_that_was_eating_off_it():
     """
-    The stepper going DOWN refuses to take away a night other nights are
-    eating off, and says which night. Going UP onto that same night was
-    allowed and said nothing — the chain gone, the fed night quietly an
-    ordinary cook. The DATA was right either way (swap_meal_in_plan re-buys
-    for it), so the fix is to say so rather than to refuse: one screen must
-    not refuse the mirror of what it silently allows.
+    Going UP onto a night other nights are eating off was allowed and said
+    nothing — the chain gone, the fed night quietly an ordinary cook. The
+    DATA was right (swap_meal_in_plan re-buys for it), so the fix was to
+    say so rather than to refuse: one screen must not refuse the mirror of
+    what it silently allows.
+
+    UPDATED 2026-09-24. The mirror this used to record in an aside — the
+    stepper going DOWN refusing that night and naming the one eating off
+    it — is gone: "−" re-plans the fed night itself now (Emily's standing
+    rule, no "go change X first"). The aside went with it rather than
+    being rewritten, because a refusal wrote nothing and the answer that
+    replaced it moves the cook, which is not something this test can do
+    before its own "+" and still be about the "+". That half lives in
+    tests/test_drop_dish_self_solving.py now. The claim this test is named
+    for is untouched.
     """
     plan = _plan()
     tools.add_recipe("Beef Bulgogi", ingredients=[{"item": "Beef", "qty": "2 lb"}])
     tools.plan_meal(D0, "Chicken Tacos", slot="dinner", weekly_plan_id=plan)
     _chain(plan, D1, "Beef Bulgogi", D2, "Leftover bulgogi",
            cook_slot="dinner", reheat_slot="dinner")
-    # The mirror image, for the record: taking the cook night away is refused.
-    refusal = tools.drop_dish_from_day(plan, _ids(D1, "dinner")[0])
-    assert refusal["status"] == "refused"
-
     out = tools.add_dish_day(plan, _ids(D0, "dinner")[0], _ids(D1, "dinner")[0])
 
     assert out["unchained"] == [{"date": D2, "slot": "dinner"}], out["unchained"]
