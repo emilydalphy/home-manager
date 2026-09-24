@@ -415,6 +415,79 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-24 — Six statements reached a meal_plan_entries row by id alone,
+  and the first sweep written to stop a seventh could be defeated by a
+  REFORMAT. Branch `overnight/leftover-chain-household-filter`, NOT merged
+  at the time of writing.** Loop Board bug, Phase 0. The card named one
+  statement (`repair_leftover_chains`' read-back); the module held six.
+  - **SEVERITY, MEASURED AND DELIBERATELY SMALL.** None of the six is
+    reachable with a foreign id — in every case the id has already come out
+    of a household-filtered read a few lines above. Driven with another
+    household's ids against both trees, through `repair_leftover_chains`,
+    `_unlink_leftover_target`, `swap_component_in_plan` and
+    `clear_plan_slot`: nothing crossed on either. So this closes a hole in
+    the GUARD and not a leak in the app, and the commit message, the code
+    comment and the test docstrings all say the smaller thing.
+    What was wrong is that the scoping had become a property of whoever
+    called the statement instead of the statement, and `_shared.household_id`
+    exists precisely so a caller is never the thing that has to remember.
+  - **Reproduced first**: handed another household's entry id, the
+    statements as they stood read its `derived_from_json`, rewrote it and
+    deleted the row.
+  - **THE FIRST SWEEP WAS DEFEATED BY A PURE REFORMAT, and that is the part
+    of this worth reading.** It read the file's quoted runs line by line and
+    rebuilt Python's implicit concatenation by hand, so it could only see a
+    statement written the way the four happened to be written. An
+    independent review rewrote one of the four — `swap_component_in_plan`'s
+    delete — as a triple-quoted block with the guard removed, and the
+    **whole 6633-test suite stayed green**. Nine other shapes defeated it
+    too, and two of them are live in this very module: a triple-quoted SQL
+    block (ten of them here) and a statement built with `+`. It also could
+    not cross a SQL string literal, so `SET reasoning = '' WHERE id = ?` was
+    invisible, and it reported a CORRECTLY guarded statement as an offender
+    whenever the params tuple shared the last literal's line.
+  - **It is `ast` now, which is both shorter and right.** Python's own
+    parser already joins adjacent literals into one Constant — the line
+    reader was reimplementing that badly. `_sql_text` walks Constant,
+    JoinedStr, `+` and `%`, so every shape above is seen; the sweep goes
+    from 33 statements found to **42**, reports **6** offenders on main and
+    **0** here, and the reviewer's reformat is caught. Every defeating shape
+    is now a parametrized test case, the guarded shapes are tested in the
+    other direction so the false positive cannot come back, and **the one
+    thing it still cannot see — a statement assembled through a local
+    variable — is a test that ASSERTS the limitation**, so whoever teaches
+    it dataflow gets a red test and deletes a limitation rather than
+    discovering one.
+  - **TWO OF THE SIX WERE FOUND BY THAT REVIEW AND ARE THE REASON THE
+    HEADLINE CHANGED from "id = ?" to "a row id"**: `clear_plan_slot`'s
+    `DELETE ... WHERE id IN ({marks})` and `_dedupe_duplicate_slots`'. The
+    first is conspicuous — the statement four lines above it is guarded.
+    The first version of this file's docstring claimed the class was closed
+    in this module while both were still open, which is exactly the
+    over-claim this log keeps having to unpick, caught by review rather than
+    by me.
+  - **One test was mislabelled and is relabelled rather than quietly
+    changed.** `test_the_same_statements_with_the_guard_touch_nothing` was
+    introduced as "the fix, stated as behaviour". It is green on main and
+    drives hand-written SQL through `conn.execute`, so what it shows is that
+    a guard clause does what a guard clause does — worth having beside the
+    reproduction, and not evidence the fix landed. The sweep carries that.
+  - **Not swept, reported instead: the same class is 73 statements across 14
+    files and 12 tables** (`tonight.py` 8, `defrost.py` 8, `grocery.py` 9,
+    `staples.py` 8, `digest.py` 6, and so on), every one traced and none
+    reachable. Its own card, with the map on it. `app/db.py`'s five are
+    startup migrations that run across every household ON PURPOSE and must
+    never be scoped — whatever sweep covers the package has to exempt them
+    deliberately or it will be switched off the first time it goes red for
+    the right reason.
+  - `tests/test_leftover_chain_household_filter.py` (21). Suite **6649
+    passed, 0 failed** at `TZ=America/Toronto`, against a measured **6628**
+    on main — +21 is this file exactly and `git diff main -- tests/` is one
+    new file, so no existing test was changed or weakened. Four mutations
+    reverting each `id = ?` statement individually each redden the sweep and
+    nothing else; the reviewer measured that before the `id IN` pair and the
+    ast rewrite landed.
+
 - **2026-09-23 — A chat turn records what it was ABOUT: one theme label,
   never the words. Branch `chat-theme-per-turn`, NOT merged at the time of
   writing. OFF until Railway has `CHAT_THEMES=1`.** Layer 2 of "Chat: record

@@ -378,8 +378,8 @@ def clear_plan_slot(weekly_plan_id: int, meal_date: str, slot: str, conn=None) -
             (household_id(), *[r["id"] for r in rows]),
         )
         conn.execute(
-            f"DELETE FROM meal_plan_entries WHERE id IN ({marks})",
-            tuple(r["id"] for r in rows),
+            f"DELETE FROM meal_plan_entries WHERE id IN ({marks}) AND household_id = ?",
+            (*[r["id"] for r in rows], household_id()),
         )
         if own_conn:
             conn.commit()
@@ -2017,16 +2017,20 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
         else:
             target = f"{r['date']}:{r['slot']}"
             conn = get_conn()
-            # Scoped by household as well as by id, like every other read
-            # of this table in the module. The id can only have come from
-            # the household-filtered read at the top of this function, so
-            # nothing reaches these four statements with a foreign id
-            # today — this is the guard being a property of the statement
-            # rather than of whoever calls it. The rule the package is
-            # built on is that scoping is not something a caller does
-            # (see _shared.household_id), and four statements quietly
-            # relying on a caller having already done it is how that stops
-            # being true.
+            # Scoped by household as well as by id. The id here can only
+            # have come from the household-filtered read at the top of
+            # this function, so nothing reaches this statement with a
+            # foreign id today — the guard is being made a property of the
+            # statement rather than of whoever calls it. The rule the
+            # package is built on is that scoping is not something a
+            # caller does (see _shared.household_id), and a statement
+            # quietly relying on a caller having already done it is how
+            # that stops being true.
+            #
+            # tests/test_leftover_chain_household_filter.py sweeps the
+            # whole module for the same shape, so a new one cannot appear
+            # without a test going red — read that file's docstring for
+            # what the sweep can and cannot see before relying on it.
             existing = conn.execute(
                 "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
                 (source["id"], household_id()),
@@ -2334,8 +2338,9 @@ def _dedupe_duplicate_slots(weekly_plan_id: int, duplicated: list[dict]) -> None
             _grocery._reverse_meal_grocery_contributions(row["id"])
         if extras:
             conn.execute(
-                "DELETE FROM meal_plan_entries WHERE id IN (%s)" % ",".join("?" * len(extras)),
-                tuple(r["id"] for r in extras),
+                "DELETE FROM meal_plan_entries WHERE id IN (%s) AND household_id = ?"
+                % ",".join("?" * len(extras)),
+                (*[r["id"] for r in extras], household_id()),
             )
         logger.warning(
             "Week plan %s had %d entries for %s %s; kept the first, removed %d duplicate(s)",
