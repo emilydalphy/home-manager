@@ -280,6 +280,14 @@
      re-answering something it has been told. Grey on purpose: it's context,
      not an answer. */
   .day-hint { font-size: 0.82rem; color: var(--ink-secondary); font-style: italic; margin: 0; }
+  /* "Nobody home all day", under the question and above the rows. Its own
+     row rather than a fourth pill on somebody's line, and flush left
+     rather than in the pills' column (the rows indent by 52px), because it
+     answers for the day and not for a person. The pill inside it carries
+     the 44px and the sand-to-spruce state — measured in Chromium at 390px,
+     153x44, its label 11.60:1 light / 11.28:1 dark off and 13.54:1 /
+     11.12:1 on, and the sheet's one apricot is still Done. */
+  .allday-row { display: flex; }
   .who-rows { display: flex; flex-direction: column; gap: 6px; }
   .who-line { display: flex; align-items: center; gap: 8px; min-height: 48px; }
   /* The initial — not a control, so no 44px rule applies, but it matches
@@ -1038,6 +1046,14 @@
   var SHEET_SLOTS = ['breakfast', 'lunch', 'dinner'];
   var SLOT_PILL = { breakfast: 'No breakfast', lunch: 'No lunch', dinner: 'No dinner' };
   var SHEET_QUESTION = 'Who’s out, and when?';
+  // The whole day in one tap, for the day everybody is away: a household
+  // of three used to reach it by touching all nine pills (Emily,
+  // 2026-09-22, "as easy as possible on the user"). It writes the same
+  // absences those nine taps wrote — it is a shortcut through the rows,
+  // never a second way of saying the day is off — so the summary line and
+  // the tile say what they already said for an all-away day, and Done
+  // sends the payload it already sent.
+  var NOBODY_HOME_PILL = 'Nobody home all day';
   var GUESTS_PILL = 'Guests for dinner';
   var GUESTS_MAX = 10;
   // Five screens, one question each (Emily, 2026-09-21): Which days? ·
@@ -1648,6 +1664,8 @@
       absent: absent,
       guests: Math.min(GUESTS_MAX, Math.max(0, guests)),
       tags: tags.filter(function (t) { return SHEET_TAGS.indexOf(t) !== -1; }),
+      // What "Nobody home all day" replaced, while it is on (toggleNobodyHome).
+      homeBefore: null,
       saving: false
     };
   }
@@ -1684,6 +1702,18 @@
     '</div>';
   }
 
+  // Under the question, above the rows: the answer to "who's out" when it
+  // is everybody. Left-aligned to the sheet rather than to the pills'
+  // column, because it is about the day and not about one person, and a
+  // .pill like every other toggle in here — so the sand-to-spruce "on"
+  // reads the same, and tapping it again is the undo (one grammar, and
+  // 44px comes with it).
+  function nobodyHomeRowHtml() {
+    return '<div class="allday-row">' +
+      '<button type="button" class="pill" id="nobody-home" aria-pressed="false">' + NOBODY_HOME_PILL + '</button>' +
+    '</div>';
+  }
+
   function guestsRowHtml() {
     return '<div class="who-line guests-line">' +
       '<span class="who-avatar add" aria-hidden="true">+</span>' +
@@ -1712,6 +1742,10 @@
         (day.hint ? '<p class="day-hint">' + esc(day.hint) + '</p>' : '') +
         (holidayFor(day.date) ? holidayBlockHtml(holidayFor(day.date)) : '') +
         (members.length ? '<p class="sheet-lede" style="margin:0">' + SHEET_QUESTION + '</p>' : '') +
+        // With nobody on record there are no rows to shortcut past, and
+        // the state itself is unreachable (draftByDay needs a household
+        // size to call a meal away), so the control is not offered.
+        (members.length ? nobodyHomeRowHtml() : '') +
         '<div class="who-rows">' +
           members.map(personRowHtml).join('') +
           '<p class="who-summary" id="who-summary"></p>' +
@@ -1732,6 +1766,8 @@
     body.querySelectorAll('.pill[data-who]').forEach(function (btn) {
       btn.addEventListener('click', function () { toggleWhoPill(btn.dataset.who, btn.dataset.slot); });
     });
+    var allDay = body.querySelector('#nobody-home');
+    if (allDay) allDay.addEventListener('click', toggleNobodyHome);
     body.querySelector('#guests-add').addEventListener('click', function () { stepGuests(1); });
     body.querySelectorAll('.stepper button').forEach(function (btn) {
       btn.addEventListener('click', function () { stepGuests(Number(btn.dataset.delta)); });
@@ -1749,12 +1785,95 @@
     var list = sheet.absent[slot] || (sheet.absent[slot] = []);
     var i = list.indexOf(name);
     if (i === -1) list.push(name); else list.splice(i, 1);
+    dropHomeBefore();
     paintSheet();
+  }
+
+  // Whether the day is already everybody out of everything — DERIVED from
+  // the rows rather than kept as a flag of its own, so the shortcut and
+  // the pills can never disagree about what the day says. Tapping one
+  // person back in turns the control off on its own.
+  function allDayAway(draft) {
+    var names = attendance.members.map(function (m) { return m.name; });
+    if (!names.length) return false;
+    return SHEET_SLOTS.every(function (slot) {
+      var out = draft.absent[slot] || [];
+      return names.every(function (n) { return out.indexOf(n) !== -1; });
+    });
+  }
+
+  // One tap out, one tap back. Going out takes a copy of what was there
+  // first, so the tap back restores it exactly — without that, marking a
+  // day off and changing your mind would quietly lose a "Emily's out for
+  // lunch" already tapped. The guests go with it: a dinner nobody is home
+  // for has nobody to host them, and the day's save drops the count
+  // anyway (attendance.set_day_attendance), so leaving a stepper reading
+  // 2 would be the sheet promising something Done would throw away.
+  // The copy has to be KEPT IN STEP by everything else that changes the
+  // sheet (holdSheetChange below) — it describes the day as it was before
+  // the control was tapped, and that day can change under it while the
+  // control is on. An earlier cut of this argued the copy could never go
+  // stale; it could, twice over, and both were reproduced end to end.
+  function toggleNobodyHome() {
+    if (!sheet) return;
+    var names = attendance.members.map(function (m) { return m.name; });
+    if (allDayAway(sheet)) {
+      var before = sheet.homeBefore;
+      SHEET_SLOTS.forEach(function (slot) {
+        sheet.absent[slot] = before ? (before.absent[slot] || []).slice() : [];
+      });
+      if (before) sheet.guests = before.guests;
+      sheet.homeBefore = null;
+    } else {
+      var kept = { absent: {}, guests: sheet.guests };
+      SHEET_SLOTS.forEach(function (slot) {
+        kept.absent[slot] = (sheet.absent[slot] || []).slice();
+        sheet.absent[slot] = names.slice();
+      });
+      sheet.homeBefore = kept;
+      sheet.guests = 0;
+    }
+    paintSheet();
+  }
+
+  // "Nobody home all day" holds a copy of the day it replaced, and that
+  // day can change under it — so every OTHER thing that writes the open
+  // sheet says so here. Two blockers came out of assuming it could not,
+  // both reproduced against a real server before this was written:
+  //
+  //   - A HOLIDAY answered while the control was on was REVERSED by the
+  //     undo. "Going to someone's" makes the server mark everyone out of
+  //     that dinner and reseedSheet pulls it in; the copy still said the
+  //     row was empty, the undo won, and the week planned and shopped a
+  //     Thanksgiving dinner with the answer still on record.
+  //   - A GUEST COUNT typed while the control was on was destroyed by the
+  //     undo: "everybody's home, two friends for dinner" came back as
+  //     "everybody's home, nobody coming".
+  //
+  // Rows tapped BY HAND are dropped rather than refreshed. Editing a pill
+  // is the household answering for one person, and once they have, "put
+  // back what the control replaced" stops naming anything — so the undo
+  // from there is plainly everyone home, which is what the control already
+  // does for a day taken all-away by hand.
+  function dropHomeBefore() {
+    if (sheet) sheet.homeBefore = null;
+  }
+
+  // An answer that has to OUTLIVE the undo — a guest count, or a row the
+  // server wrote — is copied forward instead, so the undo gives back the
+  // day as it now stands rather than as it stood before the tap.
+  function holdSheetChange(fields) {
+    if (!sheet || !sheet.homeBefore) return;
+    if (fields.guests) sheet.homeBefore.guests = sheet.guests;
+    (fields.slots || []).forEach(function (slot) {
+      sheet.homeBefore.absent[slot] = (sheet.absent[slot] || []).slice();
+    });
   }
 
   function stepGuests(delta) {
     if (!sheet) return;
     sheet.guests = Math.min(GUESTS_MAX, Math.max(0, sheet.guests + delta));
+    holdSheetChange({ guests: true });
     paintSheet();
   }
 
@@ -1777,6 +1896,15 @@
       btn.classList.toggle('on', out);
       btn.setAttribute('aria-pressed', out ? 'true' : 'false');
     });
+    // By id, like every other control in this sheet: a class lookup across
+    // the body answers with whichever came first in the DOM, which is how
+    // an offer under one meal came to act on another (2026-09-17).
+    var allDay = body.querySelector('#nobody-home');
+    if (allDay) {
+      var away = allDayAway(sheet);
+      allDay.classList.toggle('on', away);
+      allDay.setAttribute('aria-pressed', away ? 'true' : 'false');
+    }
     var summary = body.querySelector('#who-summary');
     if (summary && !summary.classList.contains('trouble')) summary.textContent = daySummary(draftByDay(sheet), attendance.members);
     var add = body.querySelector('#guests-add');
@@ -1803,6 +1931,9 @@
     if (!sheet || sheet.date !== date) return;
     var fresh = seedSheet(date);
     sheet.absent.dinner = fresh.absent.dinner;
+    // The server has just answered for that dinner. The undo must give it
+    // back, not the empty row that was there before the control was tapped.
+    holdSheetChange({ slots: ['dinner'] });
     paintSheet();
   }
 
@@ -2061,7 +2192,10 @@
         // The server's count is the intake's own: keep the guests row in step.
         var c = answers.guest_counts[date] || { adults: 0, children: 0 };
         if ((c.adults || 0) + (c.children || 0) !== saved.headcount) answers.guest_counts[date] = { adults: saved.headcount, children: 0 };
-        if (sheet && sheet.date === date) sheet.guests = Math.min(GUESTS_MAX, saved.headcount);
+        if (sheet && sheet.date === date) {
+          sheet.guests = Math.min(GUESTS_MAX, saved.headcount);
+          holdSheetChange({ guests: true });
+        }
       }
       // "Out" is nobody-home for that dinner on the server; read
       // attendance back so the sheet's rows say the same thing.
