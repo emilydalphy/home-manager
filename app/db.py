@@ -157,6 +157,8 @@ def get_conn():
 # Lightweight migrations for columns added after the initial schema, so
 # existing local databases pick them up without deleting the file.
 _MIGRATIONS = [
+    ("error_events", "reason", "TEXT NOT NULL DEFAULT ''"),
+    ("error_events", "request_shape", "TEXT NOT NULL DEFAULT ''"),
     ("chat_turns", "tools_called_json", "TEXT NOT NULL DEFAULT '[]'"),
     ("chat_turns", "theme", "TEXT NOT NULL DEFAULT ''"),
     ("held_things", "ask_text", "TEXT NOT NULL DEFAULT ''"),

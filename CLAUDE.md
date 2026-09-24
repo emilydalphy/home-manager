@@ -652,6 +652,162 @@ why*, not duplicating the diff.
     cross-plan form rather than the cross-household form this file already
     guards. Two tests now build a second week; both go red with the old
     query put back.
+- **2026-09-24 — A browser error with no location says WHY it has no
+  location. Branch `overnight/client-error-network-reason`, NOT merged at
+  the time of writing.** Loop Board bug, Phase 1. The 2026-09-11 shape work
+  covers an error that carries a stack; this is the case it says in its own
+  entry it could not. A `fetch` that never reached the server rejects with a
+  TypeError the ENGINE built, and in Safari it carries no frames at all — so
+  Julia's row on 2026-09-18 was `client · / · browser error · TypeError` with
+  an empty `source` and an empty `stack_shape`, which is **exactly what a
+  real bug rejecting with a TypeError also records**. The morning report could
+  not say "her phone" or "your code", and the row was wiped in the reset.
+  - **The message is what the classification is made FROM and is still never
+    what is stored.** Emily's 2026-09-10 rule is untouched: `_NETWORK_FAILURE_MESSAGES`
+    is a CLOSED SET of six exact strings a browser writes for a failed request
+    (Safari's `Load failed`, Chrome's `Failed to fetch`, Firefox's
+    `NetworkError when attempting to fetch resource.`, and three more),
+    matched by EQUALITY, turned into one token, and dropped. A pattern would
+    let a sentence through by ending in the right words; a substring match
+    reddens a test that exists to say so.
+  - **The browser's claim is not believed — the message is.** Both ends match
+    the same list, and the server's match is the one that counts, for the
+    reason every other field here is re-derived: this is the untrusted end. A
+    hand-made POST saying `reason: "network"` over a hostile message lands as
+    `unknown`, and the hostile text is discarded as it always was. There is a
+    test with an injection-shaped message on exactly that path.
+  - **Only ever for the frameless case.** With frames there is a location
+    already, and a reason on top would be a second, vaguer answer to a
+    question the stack has answered properly. `request_shape` is tied to
+    `reason` in one function so the two can never disagree — a row with a
+    stack carries neither.
+  - **Where the route comes from at all, and the one risky thing in this
+    branch: `window.fetch` is wrapped.** The rejection carries no url and this
+    app has over a hundred fetch call sites, none of which should have to know
+    the reporter exists. The wrapper tags the error object with the route and
+    **re-throws the original rejection untouched**, so every caller sees
+    exactly what it saw before — there are two node tests on precisely that
+    (`err === original`, and a successful fetch passing through unchanged),
+    because a wrapper that changed what a caller sees would break the app far
+    more thoroughly than the gap it closes.
+    **THAT SENTENCE IS LITERALLY TRUE AND IT HID A REGRESSION, which is the
+    most useful thing on this branch to have written down.** What changed was
+    not what the caller sees but what the REPORTER then derives from it.
+    Chrome builds a fetch TypeError's stack at the CALL SITE, and the wrapper
+    is the call site — so `window.fetch@error-reporter.js` went on top of
+    every dropped request's stack and `source`, the field
+    `observability_report._print_shape` prints in its head line, stopped
+    naming the screen that made the request. Measured against main in a real
+    Chromium: `shell.js:6:33` became `error-reporter.js:151:30`, and the
+    morning report read `TypeError on /onboarding error-reporter.js:151:30`
+    — the error reporter named as the place it happened, for exactly the
+    errors this reporter exists to explain. A regression against main for
+    Chrome/Edge/Android, i.e. most usage. **All 6655 tests passed over it**,
+    because every other test here hand-writes `err.stack` and so nothing
+    ever saw a stack the wrapper had actually been through.
+    `frameShape` drops any frame in `error-reporter.js` now — the rule being
+    "a frame inside the reporter locates the reporter, never the app", so it
+    holds wherever the frame sits and not only on top — and three tests
+    pin it, two of which go red with the fix reverted. Tagging the ERROR rather than
+    remembering "the last request that failed" in a variable is deliberate: a
+    variable would still be sitting there, stale, when an unrelated rejection
+    arrived later and took the blame for it.
+  - **A route PATTERN, never a url** — `/api/week/{}/approve`. Same rule
+    `where_` already follows, for the same reason: a path is somewhere a date,
+    a member id or a live share token can be sitting. The server re-checks the
+    shape and DROPS anything that is not route-shaped rather than trimming it.
+    **THE SENTENCE THIS BULLET USED TO CARRY — "any segment that is not a
+    plain route word is `{}` before it leaves the browser" — IS FALSE, and
+    the comment beside `_REQUEST_SHAPE_RE` said the same false thing. Review
+    measured it, 2026-09-24.** A 22-character `secrets.token_urlsafe(16)` IS
+    a plain route word to that pattern whenever it starts with a letter
+    (about 46% of tokens), and a one-word member name always is:
+    `/share/kJ3lmQ8xZabcdefghijkl` and `/api/members/Sophia/share-link` both
+    survive the shape check untouched. What actually keeps them out of the
+    column is `_redact_share_token`, and **nothing pinned it** — take that
+    one call out and the whole suite passed while all three probe paths
+    landed verbatim in a table printed into an agent's context each morning.
+    Three parametrized tests pin it now, with tokens shaped the way the real
+    ones are; the mutation reddens all three. The residue, said plainly: a
+    future token-bearing route that `_SHARE_PATH_RE`/`_MEMBER_PATH_RE` do not
+    know about is stored in full. `/api/chat/proposals/{id}/apply` already
+    is — defensible, since that id is an in-memory, household-scoped,
+    non-credential key — and it shows the mechanism.
+  - **A blip is kept out of the totals and the exit code, UNTIL IT CLUSTERS.**
+    `usage.NETWORK_CLUSTER_THRESHOLD = 5` — a judgement, not a measurement:
+    more than a lift or a tunnel, fewer than an evening. Below it they are
+    their own report line (the voice-drift stance) and `total` does not see
+    them, so one tester walking into a lift never reads as an outage; at or
+    above it they count like anything else and the line says CLUSTERED,
+    because a phone that cannot reach the app all evening is worth waking up
+    to even though each row is "just" a dropped request.
+    **The subtraction is PER KIND, read off the rows, and the first cut took
+    the whole network count off `client` on the assumption that every network
+    row is one.** Nothing enforces that — `reason` and `kind` are independent
+    columns — and the failure direction is the bad one: measured on review,
+    one real client error beside three network rows of another kind gave
+    `by_kind {'server': 3}`, i.e. `1 - 3 = -2`, filtered out by the `n > 0`
+    guard, and the real error was GONE from the report. Not reachable over
+    HTTP today (only `report_client_error` passes a reason and it hard-codes
+    `kind="client"`), which is why it needed a test rather than a comment.
+    **And a calibration fact the threshold's own reasoning did not have:**
+    `report()`'s `lastKey` dedupe is `where + '|' + detail`, and a dropped
+    request is always the same pair, so twenty failing fetches on one screen
+    send ONE beacon. The evening case the threshold is written around
+    therefore clusters across page loads (an installed PWA relaunches
+    constantly, and the server bumps `occurrences`) and never within a
+    sitting.
+  - **Both new fields are in record_error's dedupe key**, which matters more
+    here than anywhere else it has mattered: these rows are a bare "TypeError
+    on /" with nothing else to tell two of them apart, so without it a blip and
+    a real bug on the same page fold into one row and the count names neither.
+    Same reason they are in `observability_report._error_shapes`' key — and
+    `_print_shape` unpacks that key positionally, so it moved with it.
+  - **Two columns, `reason` and `request_shape`, not backfilled**, and the
+    report reads every shape field with `.get` so a deployment older than them
+    prints one line less rather than crashing — the rule that file already
+    followed. There is a test that builds Emily's shape of database (schema.sql
+    minus the two columns) and runs the real `_MIGRATIONS` over it.
+  - `tests/test_client_error_network_reason.py` (27). **Red-against-main is
+    not a meaningful number for this file and is not quoted: the columns do
+    not exist there, so the fixture database has no `reason` column and the
+    row reads error rather than fail.** The evidence is **seven mutations,
+    every one measured to bite**: the reason forced empty (16 red), the
+    closed-list match loosened to a substring (1), the client's claim believed
+    without the message (2), the network split removed from the totals (3),
+    the two fields dropped from the dedupe key (19), the report's network line
+    removed (2), and the reason dropped from the report's shape key (1). Suite
+    **6655 passed, 0 failed** at `TZ=America/Toronto`, against a measured 6628
+    on main — so **+27**, this file exactly, and `git diff main -- tests/` is
+    one new file, so no existing test was changed or weakened. (An earlier
+    draft said 6654 and +26; that was read before the 27th test landed, and
+    review re-measured both trees.) The review round added six more, for the
+    wrapper's own frame, the thenable guard, the clean-token redaction and
+    the per-kind subtraction.
+  - **A SECOND vacuous assertion, found by review rather than by me, and it
+    is the same lesson one test over.**
+    `test_a_rejection_with_frames_sends_no_reason` asserted
+    `sent["request"] == ""` over an error that had never been through the
+    wrapper — so `pomonaRoute` was unset and `request` was `""` whichever way
+    the rule was written. Measured: the mutation "send the route even when
+    there are frames" reddened NOTHING there. A sibling now drives a real
+    rejected fetch THROUGH the wrapper and then fires the handler, which is
+    the only arrangement in which that half can fail. The `reason == ""` half
+    of the original always did bite.
+  - **One of these tests was vacuous when first written and is recorded rather
+    than quietly fixed**, because it is the exact shape this repo keeps being
+    bitten by: it built the report's sentence itself and then asserted the
+    sentence contained it, which cannot fail. It drives `_print_human` now and
+    asserts on what that prints — including that a single blip prints
+    "Nothing broke." rather than BROKEN, which is the whole point of the line.
+  - **Deliberately NOT done, and named so nobody reports it as new.** Chrome's
+    `Failed to fetch` usually DOES carry a stack pointing at the call site, so
+    on Chrome this records a location the ordinary way and no reason — which is
+    right, and means the reason field will be mostly a Safari and iOS signal.
+    Retrying a failed fetch or showing the tester an offline state is a product
+    decision and the card puts it out of scope. Nothing is backfilled: the row
+    that prompted this was wiped on 2026-09-19 and its values live on the card.
+
 - **2026-09-23 — A chat turn records what it was ABOUT: one theme label,
   never the words. Branch `chat-theme-per-turn`, NOT merged at the time of
   writing. OFF until Railway has `CHAT_THEMES=1`.** Layer 2 of "Chat: record

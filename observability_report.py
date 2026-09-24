@@ -522,6 +522,8 @@ def _error_shapes(errors: dict) -> dict[tuple, int]:
             row.get("error_type", ""),
             row.get("source", ""),
             row.get("stack_shape", ""),
+            row.get("reason", ""),
+            row.get("request_shape", ""),
         )
         # occurrences is 1 for every row written before repeats were
         # counted, and for every row from an older deployment.
@@ -538,7 +540,7 @@ def _print_shape(key: tuple, n: int) -> None:
     names. No message reaches here, which is the whole reason this output is
     safe to read into an agent's context.
     """
-    kind, where, detail, error_type, source, stack = key
+    kind, where, detail, error_type, source, stack, reason, request = key
     # error_type is the better name for the thing when there is one; detail
     # is what the other three kinds have and what a row written before the
     # shape columns existed has.
@@ -548,6 +550,14 @@ def _print_shape(key: tuple, n: int) -> None:
         head += f" on {where}"
     if source:
         head += f"  {source}"
+    # Why it has no location, when it has none. Printed right after the
+    # type because on these rows the type IS the whole record otherwise --
+    # "TypeError on /" reads as a bug and "TypeError on / — network,
+    # /api/week/{}" does not.
+    if reason:
+        head += f"  — {reason}"
+        if request:
+            head += f" {request}"
     print(head + (f"  (x{n})" if n > 1 else ""))
     if stack:
         print(f"                 {stack}")
@@ -687,6 +697,28 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
                 _print_shape(key, n)
         else:
             print("  Nothing broke.")
+
+        # Requests that never reached the server — the browser's own
+        # "Load failed" / "Failed to fetch", matched against a closed list
+        # (main._NETWORK_FAILURE_MESSAGES). Its own line because a bare
+        # "TypeError on /" reads exactly like a bug and usually is not one:
+        # this is the line that says "her phone, not your code". Under
+        # BROKEN as well once they cluster — see
+        # tools.usage.NETWORK_CLUSTER_THRESHOLD — at which point the
+        # count above already includes them and this line says where.
+        # .get because a deployment older than this work answers without
+        # the key.
+        network = errors.get("network") or {}
+        if network.get("total"):
+            where = ", ".join(
+                f"{req or '(unknown route)'} x{n}" for req, n in list(network["by_request"].items())[:4]
+            )
+            n = network["total"]
+            print(
+                f"  {'Network — ' if not network.get('clustered') else 'Network, CLUSTERED — '}"
+                f"{n} request{'' if n == 1 else 's'} never reached the server "
+                f"in the last {days}d: {where}"
+            )
 
         # Chat replies that drifted from the voice rules (builder words, two
         # questions, too long — agent._note_voice_drift). Its own line, never

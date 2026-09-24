@@ -58,6 +58,17 @@
     // member's name or a live share token can be sitting.
     loc = loc.split('?')[0].split('/').pop();
     if (!/^[A-Za-z0-9_.\-]{1,60}:\d{1,7}(:\d{1,7})?$/.test(loc)) return '';
+    // This file is never the answer to "where did it happen". Chrome
+    // builds a fetch TypeError's stack at the CALL SITE, and since the
+    // wrapper below became the call site, the top frame of every dropped
+    // request was `window.fetch@error-reporter.js` — so `source`, which
+    // the morning report prints in its head line, named the error
+    // reporter for exactly the errors this reporter exists to explain.
+    // Measured against main: `shell.js:6:33` became
+    // `error-reporter.js:151:30`. Dropping our own frames restores it,
+    // and is right beyond the wrapper too: a frame inside the reporter
+    // locates the reporter, never the app.
+    if (loc.indexOf('error-reporter.js:') === 0) return '';
     return (/^[A-Za-z0-9_$.]{1,40}$/.test(fn) ? fn + '@' : '') + loc;
   }
 
@@ -73,6 +84,104 @@
       if (shape) out.push(shape);
     }
     return out;
+  }
+
+  // The browser's OWN words for "the request never got there". A native
+  // fetch failure is a TypeError the engine made, and it carries no stack
+  // at all — so without this the whole record is a bare "TypeError", which
+  // is what a real bug that rejects with a TypeError looks like too. Julia
+  // hit exactly that on 2026-09-18 and the morning report could not say
+  // which it was.
+  //
+  // A CLOSED LIST of exact strings, never a pattern: the message is the one
+  // field that must never be stored (Emily, 2026-09-10 — keep the shape,
+  // never the words), so it is matched here, turned into a token, and
+  // dropped. The server checks the same list against the same message for
+  // the same reason every other field is re-derived there — this end is the
+  // untrusted one. Adding a string here without adding it there buys
+  // nothing.
+  var NETWORK_MESSAGES = [
+    'Load failed',                                   // Safari
+    'Failed to fetch',                               // Chrome, Edge
+    'NetworkError when attempting to fetch resource.', // Firefox
+    'The network connection was lost.',              // Safari, iOS
+    'cancelled',                                     // Safari, navigated away
+    'The Internet connection appears to be offline.' // Safari, iOS
+  ];
+
+  function isNetworkMessage(text) {
+    var msg = String(text || '');
+    for (var i = 0; i < NETWORK_MESSAGES.length; i++) {
+      if (msg === NETWORK_MESSAGES[i]) return true;
+    }
+    return false;
+  }
+
+  // Which ROUTE failed, never which row. "/api/week/2026-09-21/approve"
+  // becomes "/api/week/{}/approve" — the same rule the server already
+  // follows for `where_`, and for the same reason: a path is somewhere a
+  // date, a member id or a live share token can be sitting. A segment is
+  // kept only if it reads as a fixed part of a route; anything else is a
+  // value and becomes {}.
+  function routePattern(url) {
+    var path;
+    try {
+      path = new URL(String(url || ''), location.href).pathname;
+    } catch (err) {
+      path = String(url || '').split('?')[0];
+    }
+    if (path.indexOf('/') !== 0) return '';
+    var out = [];
+    var parts = path.split('/');
+    for (var i = 1; i < parts.length && out.length < 8; i++) {
+      var seg = parts[i];
+      if (!seg) continue;
+      out.push(/^[A-Za-z][A-Za-z0-9_-]{0,29}$/.test(seg) && !/^\d/.test(seg) ? seg : '{}');
+    }
+    return '/' + out.join('/');
+  }
+
+  // Tag a failed request's own error with the route it was for, so the
+  // rejection handler below can say which one it was. Wrapping fetch is
+  // the only way to learn that: the rejection carries no url, and this app
+  // has well over a hundred fetch call sites, none of which should have to
+  // know the reporter exists.
+  //
+  // The wrapper NEVER changes what a caller sees. It re-throws the original
+  // rejection, untouched, so a screen's own error handling behaves exactly
+  // as before; a caller that catches its own failure reports nothing, which
+  // is right — a handled failure is not news. Tagging the error rather than
+  // remembering "the last one that failed" in a variable is deliberate:
+  // a variable would still be sitting there, stale, when some unrelated
+  // rejection arrived later and took the blame for it.
+  if (window.fetch) {
+    var nativeFetch = window.fetch;
+    window.fetch = function (input, init) {
+      var result;
+      try {
+        result = nativeFetch.apply(this, arguments);
+      } catch (err) {
+        throw err;
+      }
+      // .then AND .catch: a thenable with only .then is a promise to the
+      // language and not to this line, and calling .catch on one would
+      // throw synchronously out of fetch — turning a reporting nicety
+      // into a broken request. Unreachable today (nothing else in this
+      // app wraps fetch, and native fetch returns a real Promise), which
+      // is exactly why it is worth costing one clause rather than an
+      // outage nobody can explain.
+      if (!result || typeof result.then !== 'function' ||
+          typeof result.catch !== 'function') return result;
+      return result.catch(function (err) {
+        try {
+          if (err && typeof err === 'object' && !err.pomonaRoute) {
+            var target = (input && input.url) ? input.url : input;
+            err.pomonaRoute = routePattern(target);
+          }
+        } catch (tagErr) { /* reporting must never break a request */ }
+        throw err;
+      });
+    };
   }
 
   function report(where, detail, shape) {
@@ -93,6 +202,10 @@
         type: String(shape.type || '').slice(0, 40),
         source: String(shape.source || '').slice(0, 80),
         stack: shape.stack || [],
+        // Why there is no location, when there is none. Empty whenever the
+        // stack answered the question on its own.
+        reason: String(shape.reason || '').slice(0, 20),
+        request: String(shape.request || '').slice(0, 80),
       });
 
       // sendBeacon survives the page being closed or navigated away, which
@@ -173,10 +286,22 @@
     // and no line of its own, so before the stack the whole record of a
     // rejected fetch was "browser error" on whatever page you were on.
     var frames = stackShape(reason);
+    // No frames is the case this cannot otherwise explain. Say WHY it has
+    // no location — a request that never arrived, or genuinely unknown —
+    // so the morning report can tell a tester's phone losing signal from a
+    // bug. With frames there is a location already and nothing to explain.
+    var reasonToken = '';
+    var route = '';
+    if (!frames.length) {
+      reasonToken = isNetworkMessage(detail) ? 'network' : 'unknown';
+      route = (reason && reason.pomonaRoute) || '';
+    }
     report(location.pathname, detail, {
       type: reason && reason.name ? reason.name : '',
       source: frames.length ? frames[0].split('@').pop() : '',
       stack: frames,
+      reason: reasonToken,
+      request: route,
     });
   });
 })();
