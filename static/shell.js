@@ -2433,7 +2433,14 @@
   // Undo rides on it whenever the server says the week can be put back
   // exactly (`can_undo` — every shape but a dropped dish, whose groceries
   // are reversed and cannot be un-said).
-  async function runTonightNightOff(panel) {
+  //
+  // `confirmCooked` is only ever set on the tap AFTER the server answered
+  // needs_confirmation (Emily, 2026-09-24, option B — ask first): the
+  // night tonight's cook would move onto is already marked cooked, and
+  // moving onto it replaces that record. It is the night the question was
+  // about (`confirm_night`), so the yes covers that night and no other.
+  // Never set on a first tap.
+  async function runTonightNightOff(panel, confirmCooked) {
     var data = panel._tonight;
     if (!data || panel._tonightSwapping) return;
     panel._tonightSwapping = true;
@@ -2443,10 +2450,16 @@
       var res = await fetch('/api/today/tonight/night-off', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: data.date })
+        body: JSON.stringify({ date: data.date, confirm_cooked: confirmCooked || false })
       });
       if (!res.ok) throw new Error('night off failed (' + res.status + ')');
       var out = await res.json();
+      if (out.status === 'needs_confirmation') {
+        // Nothing was written. The sheet stays open and the night-off row
+        // becomes the question — see showNightOffConfirm.
+        showNightOffConfirm(panel, out);
+        return;
+      }
       closeTonightSheet();
       if (out.status !== 'night_off') {
         // A 200 that says no — only a night with no plan covering it now,
@@ -2477,6 +2490,32 @@
       panel._tonightSwapping = false;
       buttons.forEach(function (b) { b.disabled = false; });
     }
+  }
+
+  // The one question a night off can ask (Emily, 2026-09-24, option B):
+  // the night tonight's cook would move onto is already marked cooked. The
+  // same idiom as showApproveConfirm — the row that was tapped is
+  // relabelled in place and its handler swapped, so the second, explicit
+  // tap is what sends confirm_cooked. The question is the server's
+  // sentence (weekly_plan.cooked_fed_night_question), the button its
+  // `confirm_label`. The way out is the sheet's own close: nothing has
+  // been written, and reopening the sheet redraws the ordinary row.
+  function showNightOffConfirm(panel, out) {
+    var btn = tonightSheet && tonightSheet.querySelector('#tonight-night-off');
+    if (!btn) return;
+    var fresh = btn.cloneNode(true);
+    btn.parentNode.replaceChild(fresh, btn);
+    var when = fresh.querySelector('.tonight-option-when');
+    if (!when) {
+      when = document.createElement('span');
+      when.className = 'tonight-option-when';
+      fresh.querySelector('.tonight-option-text').appendChild(when);
+    }
+    when.textContent = out.message || '';
+    var go = fresh.querySelector('.tonight-option-go');
+    if (go) go.textContent = out.confirm_label || 'Move it';
+    fresh.disabled = false;
+    fresh.addEventListener('click', function () { runTonightNightOff(panel, out.confirm_night || false); });
   }
 
   // What actually happened, in one breath: the night, then where the dish
