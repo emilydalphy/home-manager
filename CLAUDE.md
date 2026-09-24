@@ -415,6 +415,80 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-24 — A day everybody is away is one tap, not nine. Branch
+  `overnight/nobody-home-one-tap`, NOT merged at the time of writing.**
+  Loop Board improvement (Emily's standing rule, 2026-09-22: as easy as
+  possible on the user). Step 2's day sheet is a row per person with three
+  pills each, so marking a day off meant touching every initial under
+  breakfast, lunch and dinner — **measured on the page's own functions
+  before anything was changed: 9 taps for a household of three, 3 per
+  person.** One `.pill` above the rows, "Nobody home all day", does it in
+  1.
+  - **It is a SHORTCUT THROUGH THE ROWS, never a second way of saying the
+    day is off.** It writes `sheet.absent` and nothing else — no tag, no
+    flag, nothing in `night_tags` — so the summary line, the tile's words
+    and Done's payload are the ones an all-away day already produced. The
+    equivalence is measured rather than argued: a test drives nine
+    per-person taps and one control tap into two drafts and requires the
+    absences, the summary, the tile and the payload to be the same object.
+    That is also why acceptance criterion 2 ("the tile reads the same way
+    the existing all-away state does") needed no new copy — `daySummary`'s
+    own sentence falls out.
+  - **On/off is DERIVED, not kept.** `allDayAway(draft)` asks the rows;
+    there is no "this day is off" boolean to drift from them. So tapping
+    one person back in turns the control off by itself, and reaching
+    all-away by hand lights it — the two controls cannot disagree about
+    what the day says. The mutation that turns it back into a flag reddens
+    two tests.
+  - **The undo takes a copy first, and that is the half worth reading.**
+    Without it, marking a day off and changing your mind DESTROYS whatever
+    partial answer was already there ("Emily's out for lunch" gone) — a
+    silent loss on the undo path, the class this log keeps recording.
+    `sheet.homeBefore` holds what the turn-on replaced; the turn-off puts
+    it back exactly, then drops it. Reached all-away by hand there is no
+    copy, and the undo is plainly "everyone home", which is what was there.
+  - **The guests go out with the day and come back with the undo.** A
+    dinner nobody is home for has nobody to host them, and
+    `attendance.set_day_attendance` drops the count for an away meal
+    anyway — so leaving a stepper reading 2 would be the sheet promising
+    something Done would throw away. Clearing it is also what makes
+    criterion 2's sentence hold: `daySummary` has a different, equally
+    true sentence for guests-with-nobody-home, and the control's own path
+    never reaches it.
+  - **Not offered with nobody on record** (no rows to shortcut past, and
+    `draftByDay` needs a household size before it will call a meal away),
+    and painted BY ID rather than by a class lookup across the sheet body
+    — the 2026-09-17 bug class this sheet already carries a warning about.
+  - **Not a second apricot** (hard rule 5): it takes `.pill`'s
+    sand-to-spruce like every other toggle in the sheet, so 44px comes with
+    it and the sheet's one primary is still Done. Verified in a real
+    Chromium at 390px, light and dark, on a throwaway DB: 153x44, flush
+    left at the sheet's gutter, label 11.60:1 light / 11.28:1 dark off and
+    13.54:1 / 11.12:1 on, nothing in the sheet under 44px, exactly one
+    apricot fill (`day-done`), no sideways scroll — and Done really does
+    leave the tile reading "nobody home".
+  - `tests/test_nobody_home_one_tap.py` (26). **All 26 are red against
+    main and that number is worth nothing** — main has no such control, so
+    every one dies on a name it has not got (15 in the node prelude on
+    `NOBODY_HOME_PILL`, 6 on `_extract`, 4 reaching an assertion about a
+    string that is simply absent). **ZERO are behaviour catches**, which is
+    the only kind of red a new control can have, and the evidence is
+    mutation instead: nine run, every one bites — only dinner emptied (11
+    red), no copy taken (1), guests left standing (1), guests not given
+    back (1), the state kept as a flag (2), the empty-household guard
+    dropped (1), the control offered with nobody on record (1), `paintSheet`
+    not reading the state (2), `aria-pressed` not painted (1). Suite
+    **6654 passed, 0 failed** at `TZ=America/Toronto`, against 6628
+    collected on main — +26 is this file exactly, and `git diff main --
+    tests/` is empty, so no existing test was changed or weakened.
+  - **Found in passing and NOT fixed, named so nobody reports it as new:**
+    the pre-existing all-away state that this control now produces in one
+    tap can also be reached with guests already counted, and there
+    `daySummary` says "Everyone's out for dinner — 2 guests with nobody
+    home, so I'll plan nothing." rather than the tile's "nobody home"
+    sentence. Correct and unchanged; only reachable by hand-tapping the
+    nine pills with a count set, since the control clears it.
+
 - **2026-09-23 — A chat turn records what it was ABOUT: one theme label,
   never the words. Branch `chat-theme-per-turn`, NOT merged at the time of
   writing. OFF until Railway has `CHAT_THEMES=1`.** Layer 2 of "Chat: record
