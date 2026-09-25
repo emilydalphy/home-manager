@@ -34,7 +34,7 @@ STATIC = REPO / "static"
 
 THEMED_PAGES = [
     "shell.html", "login.html", "onboarding.html", "plan-week.html",
-    "meal-setup.html", "chores-setup.html", "member-share.html",
+    "chores-setup.html", "member-share.html",
     "not-found.html", "inventory.html", "join.html",
 ]
 DARK_FILES = ["theme.css", "shell.css", "login.html", "inventory.html"]

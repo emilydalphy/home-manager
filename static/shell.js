@@ -9076,14 +9076,16 @@
     { key: 'adult', label: 'Adult' }, { key: 'teen', label: 'Teen' },
     { key: 'child', label: 'Child' }, { key: 'toddler', label: 'Little one' }
   ];
-  // The rhythm answers, in onboarding's words (its LUNCH_LOCATION_OPTIONS /
-  // MEALS_TOGETHER_OPTIONS / COOKING_ROLE_OPTIONS / DINNER_WINDOW_OPTIONS /
-  // PLANNING_ANCHOR_OPTIONS / PREP_DAY_OPTIONS / PREP_MINUTES_OPTIONS).
-  var WWK_LUNCH = [{ key: 'home', label: 'Home' }, { key: 'out', label: 'Out' }, { key: 'varies', label: 'Varies' }];
-  var WWK_MEALS_TOGETHER = [
-    { key: 'dinner_only', label: 'Dinner only' }, { key: 'dinner_and_breakfast', label: 'Dinner + breakfast' },
-    { key: 'most_meals', label: 'Most meals' }, { key: 'varies', label: 'Varies' }
-  ];
+  // The rhythm answers, in onboarding's words (its COOKING_ROLE_OPTIONS /
+  // DINNER_WINDOW_OPTIONS / PLANNING_ANCHOR_OPTIONS / PREP_DAY_OPTIONS /
+  // PREP_MINUTES_OPTIONS).
+  // Lunch: 'out' is still the stored key (app/tools/rhythm.py, and
+  // week_intake's packed-lunch suggestion reads it); only the word on the
+  // chip changed, to the weekly step's own "on the go" (Emily, 2026-09-25).
+  var WWK_LUNCH = [{ key: 'home', label: 'Home' }, { key: 'out', label: 'On the go' }, { key: 'varies', label: 'Varies' }];
+  // "Meals eaten together" left Your rhythm on 2026-09-25 (Emily, §2b S4:
+  // nothing in the planner reads meals_together). The stored answer and
+  // /api/onboarding/rhythm's field stay, for households that gave one.
   var WWK_COOKING_ROLE = [
     { key: 'one_person', label: 'Mostly one person' }, { key: 'turns', label: 'We take turns' },
     { key: 'whoever_free', label: 'Whoever’s free' }
@@ -9126,6 +9128,29 @@
   // Snacks are a DAY's worth of sittings (Julia, 2026-09-08), so their own
   // row and their own ceiling (memory.edit_preference's 6).
   var WWK_SNACKS = { field: 'snacks_per_day', label: 'Snacks a day', max: 6 };
+  // Cuisines you like (Emily, 2026-09-25): the same fifteen chips
+  // onboarding's "Cuisines you like" step shows (static/onboarding.html's
+  // CUISINES), so the list isn't only a "+ Add". A chip is on when the
+  // household's cuisine_preferences holds it (any case); tapping it adds or
+  // takes it off that one stored list. Anything typed that isn't one of
+  // these stays a chip with its own ×.
+  var WWK_CUISINES = [
+    'Italian', 'Mexican', 'American', 'Indian',
+    'Japanese', 'Thai', 'Chinese', 'Korean', 'Vietnamese',
+    'Greek', 'Lebanese', 'Turkish',
+    'French', 'Spanish', 'Ethiopian'
+  ];
+  // Folded in from the old /meal-setup page (Emily, 2026-09-25): the three
+  // answers it held that this sheet didn't. Same keys and labels it used
+  // (meal_preferences.table_style), same 0-120 in tens for the weeknight
+  // limit (weeknight_max_minutes, 0 = no limit; app/tools/time_caps.py
+  // holds Monday-Friday dinners to it).
+  var WWK_TABLE_STYLES = [
+    { key: 'everyone_same', label: 'Everyone eats the same thing' },
+    { key: 'kids_differ', label: 'The children often eat something else' },
+    { key: 'plate_your_own', label: 'We put it out and everyone plates their own' }
+  ];
+  var WWK_WEEKNIGHT = { step: 10, max: 120 };
 
   // The sections, in the Preferences sheet's order, plus "Won't eat"
   // between the people and their rhythm (the household's dislikes had no
@@ -9523,6 +9548,12 @@
       (sub ? ' <span class="wwk-lead-sub">' + escapeHtml(sub) + '</span>' : '') + '</p>';
   }
 
+  // One plain line under a lead-in, saying what the answer does (Emily,
+  // 2026-09-25) — only where the label alone doesn't.
+  function wwkNote(text) {
+    return '<p class="wwk-note">' + escapeHtml(text) + '</p>';
+  }
+
   // The freeform facts of one category ("Sam's away most Tuesdays"), each
   // editable in place — save on blur or Enter, × to forget — plus a way to
   // add one. Folded into the section that owns the category rather than
@@ -9881,7 +9912,17 @@
     var html = '';
     html += wwkLead('When dinner lands') + '<div class="wwk-chips">' +
       WWK_DINNER_WINDOW.map(function (o) { return wwkChip(o.label, 'data-wwk="rhythm" data-field="dinner_window" data-value="' + o.key + '"', r.dinner_window === o.key ? 'on' : ''); }).join('') + '</div>';
-    html += wwkLead('Plan ready by') + '<div class="wwk-chips">' +
+    // From the old /meal-setup page (2026-09-25): the planner holds
+    // Monday-Friday dinners to it (app/tools/time_caps.py).
+    html += wwkLead('On a weeknight') +
+      wwkNote('The longest a Monday-to-Friday dinner takes, start to finish.') +
+      wwkWeeknightHtml(mem.weeknight_max_minutes);
+    // The line under each of these two says what the answer does (Emily,
+    // 2026-09-25): the anchor sets the weekly questions' days
+    // (week_intake), and an on-the-go lunch pre-ticks that day for a
+    // packed lunch on the weekly lunch step (plan-week.html's "Any lunches
+    // on the go?").
+    html += wwkLead('Plan ready by') + wwkNote('Sets which days I suggest each week.') + '<div class="wwk-chips">' +
       WWK_PLANNING_ANCHOR.map(function (o) { return wwkChip(o.label, 'data-wwk="rhythm" data-field="planning_anchor" data-value="' + o.key + '"', r.planning_anchor === o.key ? 'on' : ''); }).join('') + '</div>';
     html += wwkLead('Who cooks') + '<div class="wwk-chips">' +
       WWK_COOKING_ROLE.map(function (o) { return wwkChip(o.label, 'data-wwk="rhythm" data-field="cooking_role" data-value="' + o.key + '"', role === o.key ? 'on' : ''); }).join('') + '</div>';
@@ -9889,16 +9930,49 @@
       html += '<div class="wwk-chips">' +
         members.map(function (n) { return wwkChip(n, 'data-wwk="cooking-who" data-value="' + escapeHtml(n) + '"', who === n ? 'on' : ''); }).join('') + '</div>';
     }
-    html += wwkLead('Meals eaten together') + '<div class="wwk-chips">' +
-      WWK_MEALS_TOGETHER.map(function (o) { return wwkChip(o.label, 'data-wwk="rhythm" data-field="meals_together" data-value="' + o.key + '"', r.meals_together === o.key ? 'on' : ''); }).join('') + '</div>';
-    html += wwkLead('Lunch, on a normal day');
+    html += wwkLead('Lunch, on a normal day') + wwkNote('On-the-go days are pre-ticked for packed lunches each week.');
     members.forEach(function (n) {
       var standing = ((r.lunch_location || {})[n] || {}).standing || '';
       html += '<div class="wwk-chips wwk-chips-named"><span class="wwk-chips-name">' + escapeHtml(n) + '</span>' +
         WWK_LUNCH.map(function (o) { return wwkChip(o.label, 'data-wwk="lunch" data-member="' + escapeHtml(n) + '" data-value="' + o.key + '"', standing === o.key ? 'on' : ''); }).join('') + '</div>';
     });
+    // From the old /meal-setup page (2026-09-25): the week's standing
+    // shape in their words, which the weekly intake hands the planner
+    // (meal_preferences.typical_week, week_intake). Saves on blur.
+    html += wwkLead('A normal week at yours') +
+      '<textarea class="snw-input wwk-text" rows="3" data-wwk-input="typical_week" ' +
+        'placeholder="Tuesdays are tee-ball so we eat at 5. Fridays are usually takeout." aria-label="A normal week at yours">' +
+        escapeHtml(mem.typical_week || '') + '</textarea>';
     html += wwkFactsHtml('rhythm');
     return html;
+  }
+
+  // The weeknight limit's stepper: the same 44px-target stepper as the
+  // counts (wwkStepperHtml), in tens of minutes, 0 to 120. 0 is a real
+  // answer — no limit — so the row says so rather than showing a bare 0.
+  function wwkWeeknightHtml(value) {
+    var n = typeof value === 'number' ? value : 0;
+    return '<div class="wwk-count-row">' +
+      '<span class="wwk-count-label">' + (n ? n + ' minutes at most' : 'No limit') + '</span>' +
+      '<span class="cook-serves">' +
+        '<button type="button" class="cook-serves-btn" data-wwk="weeknight" data-delta="-' + WWK_WEEKNIGHT.step + '" aria-label="Ten minutes less"' + (n <= 0 ? ' disabled' : '') + '>&minus;</button>' +
+        '<span class="cook-serves-count">' + n + '</span>' +
+        '<button type="button" class="cook-serves-btn" data-wwk="weeknight" data-delta="' + WWK_WEEKNIGHT.step + '" aria-label="Ten minutes more"' + (n >= WWK_WEEKNIGHT.max ? ' disabled' : '') + '>+</button>' +
+      '</span>' +
+    '</div>';
+  }
+
+  function wwkSetWeeknight(delta) {
+    var current = typeof wwkMem().weeknight_max_minutes === 'number' ? wwkMem().weeknight_max_minutes : 0;
+    var next = Math.max(0, Math.min(WWK_WEEKNIGHT.max, current + delta));
+    if (next === current) return;
+    wwkSavePreference('rhythm', 'weeknight_max_minutes', next, function () { wwkMem().weeknight_max_minutes = next; });
+  }
+
+  function wwkSaveTypicalWeek(text) {
+    if ((wwkMem().typical_week || '') === text) return;
+    // Empty is a real answer — it clears it.
+    wwkSavePreference('rhythm', 'typical_week', text, function () { wwkMem().typical_week = text; }, true);
   }
 
   function wwkSetRhythm(field, value) {
@@ -10010,11 +10084,18 @@
     html += wwkLead('How meals lean') +
       '<input type="text" class="snw-input wwk-text" data-wwk-input="eating_style" value="' + escapeHtml(mem.eating_style || '') + '" ' +
         'placeholder="High-protein, low-carb — in your own words" aria-label="How meals lean">';
-    html += wwkLead('Excited about') + '<div class="wwk-chips" data-list="cuisine">' +
-      (mem.cuisine_preferences || []).map(function (c) {
+    html += wwkLead('Cuisines you like') + '<div class="wwk-chips" data-list="cuisine">' +
+      WWK_CUISINES.map(function (c) {
+        return wwkChip(c, 'data-wwk="cuisine" data-value="' + escapeHtml(c) + '"', wwkCuisineStored(mem, c) !== null ? 'on' : '');
+      }).join('') +
+      (mem.cuisine_preferences || []).filter(function (c) { return !wwkIsPresetCuisine(c); }).map(function (c) {
         return wwkFactChip(c, 'data-wwk="cuisine-remove" data-value="' + escapeHtml(c) + '"', 'Take ' + c + ' off the list');
       }).join('') +
       wwkAddChip('data-wwk="add" data-kind="cuisine"') + '</div>';
+    // From the old /meal-setup page (2026-09-25); the weekly intake hands
+    // it to the planner (meal_preferences.table_style, week_intake).
+    html += wwkLead('At the table') + '<div class="wwk-chips">' +
+      WWK_TABLE_STYLES.map(function (o) { return wwkChip(o.label, 'data-wwk="table-style" data-value="' + o.key + '"', mem.table_style === o.key ? 'on' : ''); }).join('') + '</div>';
     html += wwkLead('Proteins', 'tap once for a favourite, twice to skip it') + '<div class="wwk-chips">' +
       WWK_PROTEINS.map(function (label) {
         return wwkChip(label, 'data-wwk="protein" data-value="' + label.toLowerCase() + '"', wwkProteinState(mem, label.toLowerCase()).state);
@@ -10030,7 +10111,10 @@
       '</span>' +
       '<span class="wwk-toggle-verb">' + (platesOn ? 'Stop' : 'Start') + '</span>' +
     '</button>';
-    html += wwkLead('Each week I plan');
+    // The counts are how many DIFFERENT dishes of each kind a week — a
+    // target since 373f009 (app/tools/meal_variety.py) — so the rest of
+    // the week is repeats and leftovers (Emily, 2026-09-25).
+    html += wwkLead('Different dishes a week') + wwkNote('Fewer means more leftovers and batch cooking.');
     WWK_COUNTS.forEach(function (c) { html += wwkStepperHtml(c, mem[c.field]); });
     html += wwkStepperHtml(WWK_SNACKS, mem.snacks_per_day);
     html += wwkLead('In your kitchen') + '<div class="wwk-chips">' +
@@ -10123,6 +10207,29 @@
     var current = wwkMem().kitchen_kit || [];
     var next = current.indexOf(key) !== -1 ? current.filter(function (k) { return k !== key; }) : current.concat([key]);
     wwkSavePreference('taste', 'kitchen_kit', next, function () { wwkMem().kitchen_kit = next; });
+  }
+
+  // The stored spelling of a preset cuisine, matched in any case ("thai"
+  // saved by the chat still lights the Thai chip), or null.
+  function wwkCuisineStored(mem, name) {
+    var lower = String(name).toLowerCase();
+    var hit = (mem.cuisine_preferences || []).filter(function (c) { return String(c).toLowerCase() === lower; });
+    return hit.length ? hit[0] : null;
+  }
+  function wwkIsPresetCuisine(name) {
+    var lower = String(name).toLowerCase();
+    return WWK_CUISINES.some(function (c) { return c.toLowerCase() === lower; });
+  }
+  // A preset chip: on takes the stored entry off the list, off adds it.
+  function wwkToggleCuisine(name) {
+    var stored = wwkCuisineStored(wwkMem(), name);
+    if (stored !== null) return wwkListRemove('taste', 'cuisine_preferences', 'cuisine_preferences', stored);
+    return wwkListAdd('taste', 'cuisine_preferences', 'cuisine_preferences', name);
+  }
+
+  function wwkSetTableStyle(key) {
+    if (wwkMem().table_style === key) return;
+    wwkSavePreference('taste', 'table_style', key, function () { wwkMem().table_style = key; });
   }
 
   function wwkSaveEatingStyle(text) {
@@ -10496,6 +10603,9 @@
         case 'restriction-remove': return wwkRemoveRestriction(member, value);
         case 'dislike-remove': return wwkListRemove('wont-eat', 'dislikes', 'dislikes', value);
         case 'cuisine-remove': return wwkListRemove('taste', 'cuisine_preferences', 'cuisine_preferences', value);
+        case 'cuisine': return wwkToggleCuisine(value);
+        case 'table-style': return wwkSetTableStyle(value);
+        case 'weeknight': return wwkSetWeeknight(parseInt(t.getAttribute('data-delta'), 10));
         case 'rhythm': return wwkSetRhythm(t.getAttribute('data-field'), value);
         case 'cooking-who': return wwkSetCookingWho(value);
         case 'lunch': return wwkSetLunch(member, value);
@@ -10558,6 +10668,7 @@
       if (wwkRedrawing || !t.isConnected) return;
       var kind = t.getAttribute('data-wwk-input');
       if (kind === 'eating_style') return wwkSaveEatingStyle(t.value.trim());
+      if (kind === 'typical_week') return wwkSaveTypicalWeek(t.value.trim());
       if (kind === 'fact') return wwkUpdateFact(t.getAttribute('data-id'), t.value.trim());
       if (kind === 'add') return wwkCommitAdd(t);
       if (kind === 'cal-url') { wwkCal.url = t.value; return; }
@@ -16289,16 +16400,16 @@
         '<button type="button" class="week-period-open" id="week-period-open" aria-expanded="false">Pick my own days</button>' +
         '<div class="week-period-picker" id="week-period-picker" hidden></div>' +
       '</div>' +
-      // The standing way in to the setup screen. The receipt offers it too,
-      // at the moment a week has just landed and its shortcomings are
-      // freshest — but a household shouldn't have to approve something to
-      // reach its own settings.
+      // The standing way in to the household's settings — a household
+      // shouldn't have to approve something to reach them. Since
+      // 2026-09-25 (Emily) that is the Preferences sheet: the old
+      // /meal-setup page was folded into it and only redirects now.
       '<button type="button" class="week-setup-link" id="week-setup-standing">' +
         'Adjust your setup →</button>';
     row.querySelectorAll('.week-plan-btn').forEach(function (btn) {
       btn.addEventListener('click', function () { startPlanningWeek(btn.dataset.week, dayCount); });
     });
-    row.querySelector('#week-setup-standing').addEventListener('click', openMealSetup);
+    row.querySelector('#week-setup-standing').addEventListener('click', openPrefsSheet);
     wirePeriodPicker(row, defaultStart, dayCount);
   }
 
@@ -21390,6 +21501,14 @@
     // panel reads the same params (buildWeekPanel) and goes from there.
     var afterApprove = window.location.search.indexOf('after=approve') !== -1;
     activateTab(afterApprove ? 'week' : currentTabKey(), false);
+    // ?prefs=open: the old /meal-setup page's address (and /onboarding on a
+    // household already set up) lands here with the Preferences sheet up —
+    // the settings that page held live there now (Emily, 2026-09-25). The
+    // param is scrubbed so a refresh doesn't open it again.
+    if (new URLSearchParams(window.location.search).get('prefs') === 'open') {
+      window.history.replaceState({ tab: currentTabKey() }, '', window.location.pathname);
+      openPrefsSheet();
+    }
     // The first read goes through the same gate as every later one, so a
     // page opened in a background tab reads the feed when it is first
     // looked at rather than on load and again on arrival.

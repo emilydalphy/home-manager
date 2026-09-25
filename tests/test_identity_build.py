@@ -407,7 +407,7 @@ def test_plan_wears_the_week_as_a_row_and_the_bullseye_is_gone():
 
 SWEPT_FILES = [
     "shell.js", "shell.html", "login.html", "onboarding.html", "plan-week.html",
-    "meal-setup.html", "chores-setup.html", "share.html", "member-share.html", "inventory.html",
+    "chores-setup.html", "share.html", "member-share.html", "inventory.html",
 ]
 
 

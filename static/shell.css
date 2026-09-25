@@ -5700,6 +5700,17 @@ button.cook-ready-row { cursor: pointer; }
   margin: 8px 0 0;
 }
 .wwk-lead-sub { font-weight: 500; color: var(--ink-inactive); }
+/* One plain line under a lead-in saying what the answer does ("Sets which
+   days I suggest each week.") — the lead's size at body weight, tucked up
+   under it (the panel's 8px gap would float it free of its lead). */
+.wwk-note {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+  margin: -6px 0 0;
+}
 .wwk-empty {
   font-family: var(--font-body);
   font-size: 14px;
@@ -5853,6 +5864,7 @@ button.wwk-chip-text { cursor: pointer; min-height: 34px; }
 /* ---- text ----
    .snw-input is the app's one text field (16px, so iOS never zooms). */
 .wwk-text { min-height: 44px; }
+textarea.wwk-text { resize: vertical; }
 .wwk-add-input { flex: 1 1 160px; max-width: 320px; }
 .wwk-fact-row { display: flex; align-items: center; gap: 6px; }
 .wwk-fact-row .snw-input { flex: 1 1 auto; min-width: 0; }

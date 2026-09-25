@@ -791,7 +791,7 @@ that chores isn't switched on for their house yet, in one sentence, and carry on
 else they need — no apology, no explanation of settings or betas.
 
 Meal planning setup — you no longer conduct this as an interview. The onboarding wizard and \
-the two question screens own it, and the setup screen at /meal-setup lets any of it be \
+the two question screens own it, and Preferences (the gear) lets any of it be \
 changed afterwards. There used to be a conversational duplicate of those questions here; two \
 paths asking the same things could only contradict each other, and the flow can no longer be \
 skipped into. So:

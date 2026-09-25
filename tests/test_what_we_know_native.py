@@ -174,10 +174,15 @@ def test_a_selected_age_group_reads_as_selected_whatever_case_it_was_stored_in()
 def test_copy_is_kitchen_table_not_form_labels():
     for label in ("Age group", "Dietary restrictions", "Eating style", "Not set yet"):
         assert f"'{label}'" not in WWK and f">{label}<" not in WWK, f"form label {label!r} survived"
+    # Reworded 2026-09-25 (Emily, Preferences alignment): "Excited about" ->
+    # "Cuisines you like", "Each week I plan" -> "Different dishes a week",
+    # and "Meals eaten together" left (nothing reads it); "On a weeknight",
+    # "At the table" and "A normal week at yours" came in from /meal-setup.
     for lead in ("Never on the plate", "When dinner lands", "Plan ready by", "Who cooks",
-                 "Meals eaten together", "Lunch, on a normal day", "Roughly how long",
-                 "How meals lean", "Excited about", "Rounding out meals", "Each week I plan",
-                 "In your kitchen", "Anything else", "Paste a whole list"):
+                 "Lunch, on a normal day", "Roughly how long",
+                 "How meals lean", "Cuisines you like", "Rounding out meals", "Different dishes a week",
+                 "In your kitchen", "Anything else", "Paste a whole list",
+                 "On a weeknight", "At the table", "A normal week at yours"):
         assert lead in WWK, f"lead-in {lead!r} missing"
     assert "Tap anything to change it. It saves as you go." in WWK, "the one line under the title"
     assert "Things I never suggest" in WWK, "an empty Won't eat says what it does, not 'Not set yet'"
@@ -247,13 +252,18 @@ CHECKLIST = {
     "lunches per week": ("field: 'lunches_per_week'", "data-wwk=\"count\""),
     "snacks a day": ("field: 'snacks_per_day'", "max: 6"),
     "kitchen kit": ("data-wwk=\"kit\"", "wwkSavePreference('taste', 'kitchen_kit'"),
+    "cuisine preset chip": ("data-wwk=\"cuisine\"", "function wwkToggleCuisine(name)"),
+    "table style": ("data-wwk=\"table-style\"", "wwkSavePreference('taste', 'table_style'"),
     # Rhythm
     "lunch location": ("data-wwk=\"lunch\"", "lunch_location: {}"),
-    "meals together": ("data-field=\"meals_together\"", "/api/onboarding/rhythm"),
+    # "meals together" left 2026-09-25 (§2b S4: nothing reads it); its
+    # stored answer stays. See tests/test_preferences_align.py.
     "cooking role": ("data-field=\"cooking_role\"", "wwkState.pendingCookWho = true;"),
     "cooking role who": ("data-wwk=\"cooking-who\"", "cooking_role: 'one_person', cooking_role_who: name"),
     "dinner window": ("data-field=\"dinner_window\"", "/api/onboarding/rhythm"),
     "planning anchor": ("data-field=\"planning_anchor\"", "/api/onboarding/rhythm"),
+    "weeknight limit": ("data-wwk=\"weeknight\"", "wwkSavePreference('rhythm', 'weeknight_max_minutes'"),
+    "typical week": ("data-wwk-input=\"typical_week\"", "wwkSavePreference('rhythm', 'typical_week'"),
     "leftovers stance": ("data-field=\"leftovers_stance\"", "field === 'leftovers_stance' ? 'taste' : 'rhythm'"),
     # WWK_MAX_PREP_DAYS left with the two-day cap (2026-09-18, Card 4 — "any
     # number of days can be on"); the save path is wwkTogglePrepDay's own

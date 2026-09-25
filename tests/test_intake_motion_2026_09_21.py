@@ -307,7 +307,7 @@ class TestSurpriseMeCard:
         card = q4.index('id="surprise"')
         assert q4.index("<h1>What are you in the mood for?</h1>") < card
         assert card < q4.index("Or steer me &middot; as many as you like") < q4.index('id="moods"')
-        assert q4.index('id="moods"') < q4.index("Cuisines you fancy") < q4.index('id="cuisines"')
+        assert q4.index('id="moods"') < q4.index("Cuisines you like") < q4.index('id="cuisines"')
         assert '<span class="card-btn-title">Surprise me</span>' in q4
         assert "I&rsquo;ll pick from what you like and keep the week varied." in q4
         assert 'class="card card-btn surprise"' in q4
