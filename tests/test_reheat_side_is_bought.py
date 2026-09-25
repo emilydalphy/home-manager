@@ -127,8 +127,16 @@ def test_the_reheated_dish_itself_is_still_bought_only_once():
     """GUARD — the half of the exclusion that was always right, and the
     thing a careless fix breaks: the chili is bought for the batch on the
     cook night and not again on the reheat night. Pinned by the mutation
-    that drops the leftovers check entirely (`reheat_buys_it` ignored, or
-    the `continue` removed), which takes the turkey to 4.5 lbs."""
+    that removes the leftovers `continue` outright, which takes the turkey
+    to 4.5 lbs.
+
+    NOT by "`reheat_buys_it` ignored" — measured on review, that mutation
+    makes the check STRICTER (every reheat dropped again, i.e. main), so
+    the turkey stays at 3 lbs and this test stays green. The two were
+    named as one in the first draft of this docstring and they are
+    opposite: ignoring the flag reddens 7 tests here and none of them is
+    this one; removing the `continue` reddens 11 and this is among
+    them."""
     _household()
     _chili()
     plan_id, _cook, reheat = _chain()
@@ -177,10 +185,26 @@ def test_a_side_on_the_cook_night_is_still_bought_exactly_once():
     assert _links(reheat) == []
 
 
-def test_a_side_on_each_end_of_the_chain_buys_each_of_them_once():
+def test_a_side_on_each_end_of_the_chain_buys_the_cooks_for_two_and_the_reheats_for_one():
     """CATCH — the two halves together, which is where a fix that shared
     one flag between the dish and the side would show up as either a
-    missing salad or a doubled one."""
+    missing salad or a doubled one.
+
+    It is named for what it measures rather than for what would be tidy,
+    because the number is not obviously the right one and a reader should
+    see that. Three heads buy TWO salads: the cook night's own salad is
+    scaled to cover the night it feeds (the 2026-09-13 round-2 decision,
+    untouched here) and Thursday's own salad is bought on top. Un-batch
+    the same week and the app settles on two, so the approved state is one
+    head heavier than the app's own answer once the chain is gone.
+
+    Reachable only by a deliberate tap — the plate pass never puts a side
+    on a reheat (agent._complete_plates_pass) — so it is a household that
+    asked for a salad on Thursday being sold one, over a cook-night salad
+    they were never shown on Thursday's plate. Whether the cook night's
+    side should still cover a fed night that has a side of its own is the
+    open half of the 2026-09-13 decision and is NOT this card's to
+    settle."""
     _household()
     _chili()
     plan_id, cook, reheat = _chain()
@@ -398,3 +422,105 @@ def test_the_side_groups_say_which_sides_are_cooked_on_the_night():
     groups = _weekly_plan._entry_side_groups(row)
 
     assert [(servings, cooked) for _ings, servings, cooked in groups] == [(None, True), (7, False)]
+
+
+# ---------- found on review, characterised rather than fixed ----------
+
+def test_a_freeform_reheats_side_is_still_not_bought_and_is_NOT_fixed_here():
+    """CHARACTERISATION — the residue, so nobody reports it as new. This
+    fix reaches a reheat backed by a RECIPE, which is the shape every
+    batch the app writes has (meal_variety._write_batches and
+    agent._expand_repeated_dates both re-plan the same dish, so the reheat
+    row carries the cook's recipe_id). A reheat written as freeform text
+    ("Leftover chili" — the shape submit_weekly_plan's own schema still
+    allows) is not reached, and the reason is one door up:
+    _plan_grocery_candidate_entries is `JOIN recipes r ON r.id =
+    mpe.recipe_id`, so a freeform entry is not a candidate at all.
+
+    That is wider than this card and pre-existing: measured on main and
+    here, a freeform entry's side buys nothing whether it is chained or
+    not. Invert this when that JOIN becomes a LEFT JOIN."""
+    _household()
+    _chili()
+    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
+    cook = tools.plan_meal(MON, "Turkey Chili", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    reheat = tools.plan_meal(THU, "Leftover chili", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    conn = get_conn()
+    conn.execute(
+        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
+        (json.dumps({"links_to": f"{MON}:dinner"}), reheat),
+    )
+    conn.execute(
+        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
+        (json.dumps({"make_double_for": [f"{THU}:dinner"]}), cook),
+    )
+    conn.commit()
+    conn.close()
+    assert list(tools.plan_leftover_chains(plan_id)["leftovers"]) == [reheat]
+    _plates.attach_sides(reheat, [SALAD], ["vegetable"])
+
+    tools.approve_weekly_plan(plan_id)
+
+    assert "Lettuce" not in _list()
+    # And it is the candidate query rather than the chain: the same
+    # freeform entry with no chain at all buys nothing for its side either.
+    assert _links(reheat) == []
+
+
+def test_taking_the_night_off_on_a_reheat_strands_its_sides_line_and_is_NOT_fixed_here():
+    """CHARACTERISATION — the one thing this fix makes newly possible and
+    does not clean up after. weekly_plan.delete_plan_entry takes a row
+    off the plan WITHOUT touching the grocery list, and its own docstring
+    says it is "only for rows whose food is not going anywhere: a
+    leftovers night the cook itself now lands on, a reheat whose portion
+    is frozen". That precondition was true of every reheat until this
+    card: a reheat owned no shopping, so cascading its links away cost
+    nothing. A reheat with a side of its own owns some.
+
+    So taking the night off on a reheat (tonight._delete_entry, kind
+    `freeze_reheat`) leaves the lettuce on the list with no ledger row
+    behind it — bounded (one line, still removable by hand, and
+    clear_stale_grocery_items takes it with the week) and not a loss of
+    anything the household said. tonight_night_off_undo puts the link
+    back, because the undo snapshot carries meal_plan_grocery_links.
+
+    Deliberately not fixed here: reversing before the delete would leave
+    that snapshot pointing at a grocery_items row that no longer exists,
+    which is worse than the extra line. weekly_plan.move_cook_onto_fed_
+    night is the second caller with the same shape, reached by reading
+    rather than measured. Its own card."""
+    today = household_today()
+    # The period is anchored on YESTERDAY, not on the household's Monday:
+    # the cook has to be the night before tonight, and on a Monday that
+    # night falls outside a Monday-start week — the weekday cliff CI's
+    # `clock` matrix exists to catch.
+    yesterday = today - datetime.timedelta(days=1)
+    plan_id = tools.create_weekly_plan(yesterday.isoformat())["weekly_plan_id"]
+    _household()
+    _chili()
+    cook = tools.plan_meal(
+        yesterday.isoformat(), "Turkey Chili", slot="dinner", weekly_plan_id=plan_id,
+    )["entry_id"]
+    reheat = tools.plan_meal(
+        today.isoformat(), "Turkey Chili", slot="dinner", weekly_plan_id=plan_id,
+    )["entry_id"]
+    tools.set_cook_ahead(cook, [reheat])
+    _plates.attach_sides(reheat, [SALAD], ["vegetable"])
+    tools.approve_weekly_plan(plan_id)
+    assert _list()["Lettuce"] == "1 head"
+
+    assert tools.tonight_night_off()["kind"] == "freeze_reheat"
+
+    # The line is still there and now answers to nobody.
+    assert _list()["Lettuce"] == "1 head"
+    conn = get_conn()
+    behind = conn.execute(
+        "SELECT COUNT(*) AS n FROM meal_plan_grocery_links l "
+        "JOIN grocery_items g ON g.id = l.grocery_item_id WHERE g.item = 'Lettuce'"
+    ).fetchone()["n"]
+    conn.close()
+    assert behind == 0, "the stranding is what this test is for; if it is 1, fix the docstring too"
+
+    # The undo does put it back, which is what bounds it.
+    tools.tonight_night_off_undo()
+    assert _links(reheat) == ["Lettuce"]

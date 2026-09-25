@@ -5791,7 +5791,10 @@ def _entry_side_groups(row) -> list[tuple[list[dict], int | None, bool]]:
       Thursday's leftovers is a different dish, cooked that evening, and
       nothing else on the week buys it — so yes, at that night's own
       headcount (batch_for_entry finds no batch on a reheat, so the
-      chain factor is a no-op there). A big-meal dish is the holiday
+      chain factor is a no-op there — but that is true of today's DATA
+      and not enforced; see the note beside batch_for_entry in
+      recipes._add_recipe_ingredients_for_entries for the two shapes
+      that would make it false). A big-meal dish is the holiday
       table's, so still no.
 
     Before 2026-09-25 the second question was never asked: the ingest

@@ -2622,6 +2622,24 @@ def _add_recipe_ingredients_for_entries(
             # side, and every recipe, follows the chain.
             # batch_for_entry: a chain source, or a cook carrying portions
             # for the freezer (leftovers.FREEZER_EXTRA_KEY, 2026-09-22).
+            #
+            # A REHEAT reaching here (reheat_buys_it, for its side) still
+            # asks batch_for_entry, and "it finds no batch on a reheat" is
+            # true of today's DATA rather than of this code — worth saying,
+            # because two shapes would make it false and neither is checked
+            # here. A leftovers row carrying FREEZER_EXTRA_KEY is listed in
+            # chains["freezer"] as readily as a cook is, and a row that both
+            # links_to an earlier night and names a later one back is in
+            # chains["sources"] AND chains["leftovers"] at once. Measured
+            # 2026-09-25: force either and the reheat's salad is bought for
+            # the batch rather than for the night. Neither is reachable —
+            # both FREEZER_EXTRA_KEY writers (weekly_plan.freeze_a_portion,
+            # tonight._shrink_chain_into_freezer) stamp the COOK — and a
+            # guard was tried and taken back out, because the source-and-
+            # reheat shape has an arguable right answer (a salad really is
+            # cooked fresh on the reheat night, so it could cover a later
+            # one) and narrowing it on a review pass would be deciding that
+            # unmeasured.
             batch = _leftovers.batch_for_entry(entry_id, chains, conn=entry_conn) if chain_scale else None
             if batch:
                 if batch["servings"] > 0 and batch["cook_eaters"] > 0:
