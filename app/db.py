@@ -529,6 +529,11 @@ _MIGRATIONS = [
     # never nudges twice. See digest.py's evening nudge section.
     ("members", "evening_nudge_on", "INTEGER NOT NULL DEFAULT 1"),
     ("members", "evening_nudge_sent_on", "TEXT NOT NULL DEFAULT ''"),
+    # When this adult first used Pomona as themselves (UTC, datetime('now')
+    # shape) — redeeming an invite link, "Who's this?", or inviting someone.
+    # NULL = not yet, which is what puts "Invite Vineeth" in Preferences.
+    # See app/invites.py.
+    ("members", "joined_at", "TEXT"),
     # Where the household is, for its holidays (app/tools/holidays.py).
     # Both are ASSUMPTIONS for every existing household, the same way the
     # timezone above is: the beta households are in Ontario. Canada is the

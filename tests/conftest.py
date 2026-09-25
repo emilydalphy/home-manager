@@ -73,7 +73,7 @@ _TABLES = [
     "pre_shop_decisions",
     "grocery_substitutions", "grocery_items", "inventory_items", "member_recipe_feedback", "recipe_notes", "recipe_photos", "recipes",
     "chore_instances", "chores", "chores_profile", "attention_items",
-    "member_notes", "member_share_links", "share_links", "facts",
+    "member_notes", "member_share_links", "share_links", "household_invites", "facts",
     "preference_events", "notification_dismissals", "item_store_preferences",
     "shopping_trips", "stores", "meal_preferences", "pets", "members",
     "chat_turns", "api_calls", "error_events", "plan_quality_events", "feedback_reports",

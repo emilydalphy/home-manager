@@ -22,6 +22,10 @@ LIMITS = {
     "scan": [(10, 60), (60, 3600)],
     # Sign-in attempts, so the shared password can't be brute-forced.
     "login": [(8, 300), (40, 3600)],
+    # Opening an invite link (POST /api/join). The same ceiling as a
+    # sign-in: a token is 256 random bits and can't be guessed anyway, but
+    # an unthrottled public route that hands out sessions is still one.
+    "join": [(8, 300), (40, 3600)],
     # The cross-household health report. One caller, once a night, so this
     # is generous for it and mean to anyone guessing at its token — which
     # is the only other reason to call it.

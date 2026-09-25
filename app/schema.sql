@@ -35,7 +35,11 @@ CREATE TABLE IF NOT EXISTS members (
     -- Blank until backfilled — see db._backfill_member_colors, run once
     -- when this column is first added.
     color TEXT NOT NULL DEFAULT '',
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    -- When this adult first used Pomona as themselves; NULL until then.
+    -- See app/invites.py (mark_joined) and the ("members", "joined_at")
+    -- migration in app/db.py.
+    joined_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS pets (
@@ -1509,6 +1513,26 @@ CREATE TABLE IF NOT EXISTS household_credentials (
     password_hash TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- One-time invite links: "Invite Vineeth" in Preferences or at the end of
+-- setup (Loop Board, Emily 2026-09-25). Opening the link signs that adult
+-- in to this household without the passphrase. Only the SHA-256 of the
+-- token is kept — the token itself exists in the link and nowhere else.
+-- One use (used_at), seven days (expires_at, UTC), and once one link for
+-- a person is used, their other unused links retire (revoked_at). All
+-- minting and redeeming lives in app/invites.py, outside app/tools/, so
+-- the chat agent can never make one.
+CREATE TABLE IF NOT EXISTS household_invites (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    member_id INTEGER NOT NULL REFERENCES members(id),
+    token_hash TEXT NOT NULL UNIQUE,
+    invited_by_member_id INTEGER,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    used_at TEXT,
+    revoked_at TEXT
 );
 
 -- One row per chat turn. Deliberately NO message content -- this exists to

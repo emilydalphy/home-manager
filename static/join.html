@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pomona</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Figtree:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/theme.css">
+<link rel="icon" href="/static/icons/icon-192.png" />
+<!-- Exact --spruce light/dark (theme.css); a <meta> tag's content attribute cannot reference a CSS var(). -->
+<meta name="theme-color" content="#1B3328" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#22422F" media="(prefers-color-scheme: dark)" />
+<!-- Settings → Appearance: this device's Light / Dark / Auto, applied before first paint. Same script on every page that loads theme.css (not share.html); tests/test_appearance.py keeps the copies identical. -->
+<script>
+(function () {
+  var root = document.documentElement;
+  function apply(choice) {
+    var t = choice === 'light' || choice === 'dark' ? choice : null;
+    if (t) root.setAttribute('data-theme', t); else root.removeAttribute('data-theme');
+    var metas = document.querySelectorAll('meta[name="theme-color"][media]');
+    var forced = null, i, m;
+    for (i = 0; i < metas.length; i++) {
+      m = metas[i];
+      if (!m.hasAttribute('data-own')) m.setAttribute('data-own', m.getAttribute('content'));
+      if (t && m.getAttribute('media').indexOf(t) !== -1) forced = m.getAttribute('data-own');
+    }
+    for (i = 0; i < metas.length; i++) metas[i].setAttribute('content', forced || metas[i].getAttribute('data-own'));
+  }
+  var saved = null;
+  try { saved = window.localStorage.getItem('pomona-appearance'); } catch (e) { /* private mode */ }
+  apply(saved);
+  window.pomonaAppearance = apply;
+  // A choice made in another tab, or in the shell around an embedded page.
+  window.addEventListener('storage', function (e) { if (e.key === 'pomona-appearance') apply(e.newValue); });
+})();
+</script>
+<style>
+  /*
+    The invite link's landing page (Loop Board "Invite my partner from
+    inside the app", Emily 2026-09-25). The link is /join#<token>: the
+    fragment never reaches the server, so this page reads it, takes it out
+    of the address bar at once, and POSTs it to /api/join. On success the
+    session cookie is set and the page goes to "/" — signed in to the
+    household as the adult named in the invite, with no passphrase and no
+    "Who's this?". On anything else it says the link has run out and to
+    ask for a new one: never a sign-in error.
+
+    Same small centred layout as not-found.html, all through tokens.
+  */
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 16px;
+  }
+  .jn-wrap { max-width: 340px; width: 100%; text-align: center; }
+  .jn-mark { width: 40px; height: 40px; color: var(--apricot-label); display: block; margin: 0 auto 16px; }
+  .jn-line { font-size: 21px; margin: 0 0 8px; }
+  .jn-sub { color: var(--ink-secondary); font-size: 15px; line-height: 1.45; margin: 0 0 20px; }
+  .jn-state[hidden], .jn-open[hidden] { display: none; }
+  .jn-open { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 24px; text-decoration: none; }
+</style>
+</head>
+<body>
+<main class="jn-wrap">
+  <!-- The Pomona mark — a logo, so it keeps its own 1.8 stroke
+       (DESIGN_SYSTEM.md §2 rule 7). -->
+  <svg class="jn-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 20.4c-3.1 0-5.6-2.6-5.6-5.9 0-3.2 2.5-5.7 5.6-5.7s5.6 2.5 5.6 5.7c0 3.3-2.5 5.9-5.6 5.9z"/>
+    <path d="M12 9V6.2"/>
+    <path d="M12.5 7.1c.9-2.2 3.2-3.1 5.3-2.7.4 2.2-.7 4.3-2.8 4.7-1.4.3-2.5-.6-2.5-2z"/>
+    <path d="M12 10.2c-1.1 1.6-1.1 6.3 0 8.2"/>
+  </svg>
+  <div class="jn-state" id="jn-working" role="status">
+    <h1 class="jn-line">Getting you in&hellip;</h1>
+  </div>
+  <div class="jn-state" id="jn-gone" hidden>
+    <h1 class="jn-line">This link has run out.</h1>
+    <p class="jn-sub">Invite links work once, within a week. Ask whoever sent it for a new one.</p>
+    <!-- Only when this browser is already signed in (a second tap on a
+         link already used on this phone): the way into the app. -->
+    <a class="btn-primary jn-open" id="jn-open" href="/" hidden>Open Pomona</a>
+  </div>
+  <div class="jn-state" id="jn-trouble" hidden>
+    <h1 class="jn-line">That didn&rsquo;t go through.</h1>
+    <p class="jn-sub" id="jn-trouble-sub">Check your connection and try again.</p>
+    <button type="button" class="btn-primary jn-open" id="jn-retry">Try again</button>
+  </div>
+</main>
+<script>
+(function () {
+  var token = (window.location.hash || '').replace(/^#/, '');
+  // Out of the address bar and the history entry straight away: the link
+  // is spent in a moment, but a copy of it sitting in the URL is still a
+  // copy nobody needs.
+  if (token && window.history && window.history.replaceState) {
+    try { window.history.replaceState(null, '', '/join'); } catch (e) { /* keep going */ }
+  }
+
+  function show(id) {
+    ['jn-working', 'jn-gone', 'jn-trouble'].forEach(function (key) {
+      document.getElementById(key).hidden = key !== id;
+    });
+  }
+
+  function trouble(line) {
+    document.getElementById('jn-trouble-sub').textContent = line;
+    show('jn-trouble');
+  }
+
+  async function runOut() {
+    show('jn-gone');
+    // Already signed in on this browser? Then the way forward is the app
+    // itself, not another link.
+    try {
+      var res = await fetch('/api/whoami', { credentials: 'same-origin' });
+      if (res.ok) document.getElementById('jn-open').hidden = false;
+    } catch (e) { /* signed out or offline: the message stands on its own */ }
+  }
+
+  async function join() {
+    if (!token) { runOut(); return; }
+    show('jn-working');
+    var res;
+    try {
+      res = await fetch('/api/join', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: token })
+      });
+    } catch (e) {
+      trouble('Check your connection and try again.');
+      return;
+    }
+    if (res.ok) { window.location.replace('/'); return; }
+    if (res.status === 429) { trouble('That’s a lot of tries at once. Give it a few minutes, then try again.'); return; }
+    if (res.status >= 500) { trouble('Something went wrong on my side. Try again in a moment.'); return; }
+    runOut();
+  }
+
+  document.getElementById('jn-retry').addEventListener('click', join);
+  join();
+})();
+</script>
+</body>
+</html>

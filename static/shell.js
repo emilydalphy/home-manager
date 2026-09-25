@@ -9171,7 +9171,7 @@
   // Preferences sheet's own (loadPrefsCalendar) — one place it is fetched.
   async function loadWhatWeKnow() {
     try {
-      var reads = await Promise.all([fetch('/api/memory'), fetch('/api/facts'), loadPrefsCalendar(), fetch('/api/held')]);
+      var reads = await Promise.all([fetch('/api/memory'), fetch('/api/facts'), loadPrefsCalendar(), fetch('/api/held'), loadInviteAdults()]);
       if (reads[0].ok) prefsState.memory = await reads[0].json();
       if (reads[1].ok) wwkState.facts = ((await reads[1].json()).facts) || [];
       if (reads[3] && reads[3].ok) heldState.items = ((await reads[3].json()).held) || [];
@@ -9528,6 +9528,7 @@
       var name = m.name;
       html += '<div class="wwk-person">' +
         '<p class="wwk-person-name">' + escapeHtml(name) + '</p>' +
+        inviteRowHtml(inviteAdultNamed(name)) +
         '<div class="wwk-chips" role="group" aria-label="' + escapeHtml(name) + ' is">' +
           WWK_AGE_GROUPS.map(function (o) {
             // Older households carry "Adult" rather than "adult" (the
@@ -9548,9 +9549,228 @@
       '</div>';
     });
     if (!(mem.members || []).length) html += '<p class="wwk-empty">Nobody yet — set up the household first.</p>';
+    else html += inviteNewHtml();
     html += wwkFactsHtml('people');
     return html;
   }
+
+  // ---------- Invite the other adult (Loop Board, Emily 2026-09-25) ----------
+  //
+  // Next to each adult in Who's here who hasn't joined yet: "Invite
+  // Vineeth". It makes a one-time link (POST /api/household/invites —
+  // app/invites.py; one use, seven days) and hands it to the phone's share
+  // sheet with a short message in the inviter's own voice. No share sheet
+  // (a laptop): the link is copied and the toast says so. Once they've
+  // joined the row reads "Joined Sep 27" with a quiet "Send a new link"
+  // (a new phone, a lost message). Under the people, "+ Invite another
+  // adult" asks for a first name only and adds them as an adult.
+  //
+  // The link is /join#<token> — the token in the fragment, which never
+  // reaches the server's logs (static/join.html POSTs it).
+  var inviteState = {
+    adults: null,     // GET /api/household/invites — adults + joined
+    newOpen: false,   // "+ Invite another adult" turned into its field
+    busy: false,
+    ready: {}         // member id -> link made, waiting for a second tap to share
+  };
+
+  // The message that goes with the link. It's the inviter talking to their
+  // partner, not Pomona announcing itself — so first person, plain, and it
+  // says the one thing the other person needs to know about the link.
+  var INVITE_MESSAGE = 'I’ve set us up on Pomona for our meals and shopping. ' +
+    'This link gets you in on your phone. It works once, within a week.';
+
+  async function loadInviteAdults() {
+    try {
+      var res = await fetch('/api/household/invites');
+      if (res.ok) inviteState.adults = ((await res.json()).adults) || [];
+    } catch (err) {
+      console.warn('Invite lookup failed:', err);
+    }
+    return inviteState.adults;
+  }
+
+  function inviteAdultNamed(name) {
+    var key = String(name || '').trim().toLowerCase();
+    return (inviteState.adults || []).filter(function (a) {
+      return String(a.name || '').trim().toLowerCase() === key;
+    })[0] || null;
+  }
+
+  function inviteRowHtml(adult) {
+    // You, children and anyone not read back yet get no row.
+    if (!adult || adult.is_you) return '';
+    var id = String(adult.id);
+    var ready = inviteState.ready[id];
+    if (ready && ready.how === 'share') {
+      // The link is made but the share sheet needs a fresh tap (Safari
+      // only opens it straight from a tap, and the link took a moment).
+      return '<div class="wwk-invite">' +
+        '<button type="button" class="wwk-invite-btn" data-invite="share" data-member-id="' + id + '">' +
+          'Send ' + escapeHtml(adult.name) + '’s link</button>' +
+      '</div>';
+    }
+    if (ready) {
+      // Neither a share sheet nor the clipboard would take it: the link
+      // itself, selectable, with a Copy that runs straight from a tap.
+      return '<div class="wwk-invite wwk-input-row">' +
+        '<input type="text" class="snw-input wwk-text" readonly value="' + escapeHtml(ready.url) + '" ' +
+          'aria-label="' + escapeHtml(adult.name) + '’s link" data-invite-link="' + id + '">' +
+        '<button type="button" class="wwk-invite-btn" data-invite="copy" data-member-id="' + id + '">Copy link</button>' +
+      '</div>';
+    }
+    if (adult.joined) {
+      return '<div class="wwk-invite">' +
+        '<span class="wwk-invite-note">Joined' + (adult.joined_label ? ' ' + escapeHtml(adult.joined_label) : '') + '</span>' +
+        '<button type="button" class="wwk-invite-again" data-invite="send" data-member-id="' + id + '">Send a new link</button>' +
+      '</div>';
+    }
+    return '<div class="wwk-invite">' +
+      '<button type="button" class="wwk-invite-btn" data-invite="send" data-member-id="' + id + '">' +
+        'Invite ' + escapeHtml(adult.name) + '</button>' +
+    '</div>';
+  }
+
+  function inviteNewHtml() {
+    if (inviteState.adults === null) return '';
+    if (!inviteState.newOpen) {
+      return '<div class="wwk-chips wwk-invite-new">' +
+        wwkAddChip('data-invite="new-open"', 'Invite another adult') +
+      '</div>';
+    }
+    return '<div class="wwk-invite-new">' +
+      '<div class="wwk-input-row">' +
+        '<input type="text" class="snw-input wwk-text" id="invite-new-name" maxlength="40" autocomplete="off" ' +
+          'placeholder="Their first name" aria-label="Their first name">' +
+        '<button type="button" class="wwk-invite-btn" data-invite="new-send">Invite</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function inviteRerender() {
+    if (wwkState.open) wwkRenderSection('people');
+  }
+
+  // Share sheet if there is one; otherwise copy. Returns 'shared',
+  // 'copied', 'cancelled', 'needs-tap' (the browser wants the share
+  // straight from a tap, and this one came after a network wait) or
+  // 'show' (nothing would take it — the row shows the link itself).
+  async function inviteHandOff(name, url) {
+    if (navigator.share) {
+      try {
+        await navigator.share({ text: INVITE_MESSAGE, url: url });
+        return 'shared';
+      } catch (err) {
+        if (err && err.name === 'AbortError') return 'cancelled';
+        if (err && err.name === 'NotAllowedError') return 'needs-tap';
+        // Anything else: fall through to copying.
+      }
+    }
+    if (await inviteCopy(name, url)) return 'copied';
+    return 'show';
+  }
+
+  async function inviteCopy(name, url) {
+    if (!(navigator.clipboard && navigator.clipboard.writeText)) return false;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch (e) {
+      return false;
+    }
+    showToast(savedLine(name + '’s link', 'copied'));
+    return true;
+  }
+
+  async function inviteSend(body, fallbackName) {
+    if (inviteState.busy) return;
+    inviteState.busy = true;
+    try {
+      var res = await fetch('/api/household/invites', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+      });
+      var data = null;
+      try { data = await res.json(); } catch (e) { /* below */ }
+      if (!res.ok) {
+        showToast((data && typeof data.detail === 'string') ? data.detail : 'That didn’t work. Try it again.');
+        return;
+      }
+      var member = data.member || { id: body.member_id, name: fallbackName || '' };
+      var url = window.location.origin + data.path;
+      // The share sheet first, as close to the tap as it can be — Safari
+      // only opens it within a moment of one. Re-reading comes after.
+      var outcome = await inviteHandOff(member.name, url);
+      if (outcome === 'needs-tap') inviteState.ready[String(member.id)] = { url: url, how: 'share' };
+      else if (outcome === 'show') inviteState.ready[String(member.id)] = { url: url, how: 'copy' };
+      if (body.name) {
+        // A new adult: Who's here gains a person, so the answers are re-read.
+        inviteState.newOpen = false;
+        prefsInvalidate();
+      }
+      await loadInviteAdults();
+      inviteRerender();
+    } catch (err) {
+      console.warn('Invite failed:', err);
+      showToast('That didn’t work. Try it again.');
+    } finally {
+      inviteState.busy = false;
+    }
+  }
+
+  document.addEventListener('click', function (e) {
+    var target = e.target && e.target.closest && e.target.closest('[data-invite]');
+    if (!target) return;
+    var what = target.getAttribute('data-invite');
+    var id = target.getAttribute('data-member-id');
+    if (what === 'send') {
+      var adult = (inviteState.adults || []).filter(function (a) { return String(a.id) === id; })[0];
+      inviteSend({ member_id: parseInt(id, 10) }, adult && adult.name);
+    } else if (what === 'share' || what === 'copy') {
+      var ready = inviteState.ready[id];
+      var who = (inviteState.adults || []).filter(function (a) { return String(a.id) === id; })[0];
+      var whoName = who ? who.name : '';
+      if (!ready) return;
+      if (what === 'share') {
+        delete inviteState.ready[id];
+        inviteRerender();
+        inviteHandOff(whoName, ready.url).then(function (outcome) {
+          if (outcome === 'show') { inviteState.ready[id] = { url: ready.url, how: 'copy' }; inviteRerender(); }
+        });
+        return;
+      }
+      inviteCopy(whoName, ready.url).then(function (ok) {
+        if (ok) { delete inviteState.ready[id]; inviteRerender(); return; }
+        // The clipboard still said no: select the link so a long-press
+        // or Cmd-C copies it by hand.
+        var field = document.querySelector('[data-invite-link="' + id + '"]');
+        if (field) { field.focus(); field.select(); }
+      });
+    } else if (what === 'new-open') {
+      inviteState.newOpen = true;
+      inviteRerender();
+      var input = document.getElementById('invite-new-name');
+      if (input) input.focus();
+    } else if (what === 'new-send') {
+      var field = document.getElementById('invite-new-name');
+      var name = field ? field.value.trim() : '';
+      if (!name) { if (field) field.focus(); return; }
+      inviteSend({ name: name }, name);
+    }
+  });
+
+  // The button says who: "Invite" becomes "Invite Vineeth" as the name is
+  // typed. Enter sends.
+  document.addEventListener('input', function (e) {
+    if (!e.target || e.target.id !== 'invite-new-name') return;
+    var btn = e.target.parentNode && e.target.parentNode.querySelector('[data-invite="new-send"]');
+    var name = e.target.value.trim();
+    if (btn) btn.textContent = name ? 'Invite ' + name : 'Invite';
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || !e.target || e.target.id !== 'invite-new-name') return;
+    e.preventDefault();
+    var btn = e.target.parentNode && e.target.parentNode.querySelector('[data-invite="new-send"]');
+    if (btn) btn.click();
+  });
 
   function wwkSetAge(name, key) {
     wwkCommit('people', function () {

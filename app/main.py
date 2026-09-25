@@ -34,7 +34,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exception_handlers import http_exception_handler
 
-from . import agent, backup, calendar_feed, chat_themes, feedback_email, households, ratelimit, recipe_import, recipe_photos, security
+from . import agent, backup, calendar_feed, chat_themes, feedback_email, households, invites, ratelimit, recipe_import, recipe_photos, security
 from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
@@ -7135,6 +7135,12 @@ def whoami(request: Request):
     member = tools.current_member()
     adults = tools.household_adults()
     first_open = tools.first_open_state(member)
+    if member is not None and tools.member_id() is not None:
+        # A device that carries its own pick is somebody using Pomona as
+        # themselves — the "joined" Preferences shows in place of Invite.
+        # Only on a pick: the overnight report reads this route with none,
+        # and must not mark a lone adult as having joined on its say-so.
+        invites.mark_joined(current, member["id"])
     return {
         "household_id": current,
         "household_name": row["name"] if row else "",
@@ -7180,6 +7186,7 @@ def whoami_pick(req: WhoamiPickRequest, request: Request):
     value = security.with_member(cookie, req.member_id)
     if value is None:
         value = security.issue_session(tools.household_id(), req.member_id)
+    invites.mark_joined(tools.household_id(), req.member_id)
     with tools.use_member(req.member_id):
         member = tools.current_member()
         first_open = tools.first_open_state(member)
@@ -7225,6 +7232,109 @@ def first_open_seen():
         return tools.mark_first_open_seen()
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+# ---------- Invite the other adult (Loop Board, Emily 2026-09-25) ----------
+#
+# A one-time link that signs one adult in to this household without the
+# passphrase. Minting needs a signed-in session of the household (these
+# /api/household routes are not public, so auth_middleware has bound it);
+# redeeming is public, because the whole point is that the person opening
+# it has no session yet. Everything that touches a token is in
+# app/invites.py — outside app/tools/, so the chat agent can never mint one.
+
+
+def _session_adult_id() -> int | None:
+    """The adult this session resolves to (verified), or None."""
+    member = tools.current_member()
+    return member["id"] if member else None
+
+
+@app.get("/api/household/invites")
+def household_invites():
+    """Every adult here, and whether each has joined — Preferences' and setup's invite rows."""
+    return {"adults": invites.household_adults_status(tools.household_id(), _session_adult_id())}
+
+
+class InviteRequest(BaseModel):
+    # One or the other: an adult already in the household, or the first
+    # name of one who isn't yet (added as an adult, nothing else asked).
+    member_id: int | None = Field(None, ge=1, le=2**63 - 1)  # SQLite binds 64-bit ints only
+    name: str | None = Field(None, max_length=200)
+
+
+@app.post("/api/household/invites")
+def create_household_invite(req: InviteRequest):
+    """
+    Make a fresh one-time link for an adult in this household.
+
+    Returns the link as a PATH with the token in its fragment
+    ("/join#<token>"); the page puts its own origin in front. The token is
+    in this response and in the link, and nowhere else — not the database
+    (a hash), not the log.
+    """
+    household = tools.household_id()
+    # Who's inviting, read BEFORE anyone is added: in a one-adult house the
+    # lone adult resolves with no pick, and adding a second would leave
+    # nobody resolving at all.
+    inviter = _session_adult_id()
+    try:
+        if req.member_id is not None:
+            member_id = req.member_id
+        elif (req.name or "").strip():
+            member_id = invites.add_adult(household, req.name)
+        else:
+            raise invites.InviteError("Who are you inviting?")
+        token = invites.mint_invite(household, member_id, invited_by=inviter)
+    except invites.InviteError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    adult = next(
+        (a for a in invites.household_adults_status(household, inviter) if a["id"] == member_id),
+        None,
+    )
+    return {"member": adult, "path": f"/join#{token}"}
+
+
+@app.get("/join")
+def join_page():
+    """The invite link's landing page — public; static/join.html reads the fragment and POSTs it."""
+    return FileResponse(os.path.join(static_dir, "join.html"))
+
+
+class JoinRequest(BaseModel):
+    token: str = Field("", max_length=256)
+
+
+@app.post("/api/join")
+def join_household(req: JoinRequest, request: Request):
+    """
+    Spend an invite link: sign this browser in to the invite's household,
+    as the adult it names — the same signed cookie /login plus "Who's this?"
+    would have produced, so the shell opens without asking either question.
+
+    Any failure is one answer, 410, whatever the reason (unknown, used,
+    replaced by a newer link, past seven days): the page says "ask for a
+    new one" and says nothing that would help anybody guess at tokens.
+    Rate-limited like /login. Whatever session the browser had before is
+    replaced — the link, not the old cookie, says who this is.
+    """
+    _enforce_rate_limit(request, "join")
+    spent = invites.redeem_invite(req.token)
+    if spent is None:
+        logger.warning("Invite link refused from %s", ratelimit.caller_id(request))
+        raise HTTPException(status_code=410, detail="This link has run out.")
+    household_id, member_id = spent
+    response = JSONResponse({"joined": True})
+    response.set_cookie(
+        security.COOKIE_NAME,
+        security.issue_session(household_id, member_id),
+        max_age=security.COOKIE_MAX_AGE,
+        httponly=True,
+        samesite="lax",
+        secure=_is_https(request),
+        path="/",
+    )
+    return response
 
 
 @app.get("/healthz")

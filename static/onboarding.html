@@ -619,6 +619,18 @@
     padding: 0 16px; min-height: 44px; border-radius: var(--radius-control); cursor: pointer;
   }
   .invite-btn.copied { background: var(--celadon); color: var(--on-accent-ink); }
+  .invite-btn:disabled { cursor: default; }
+  .invite-choice { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+  .invite-quiet {
+    background: none; border: none; color: var(--ivory-ink-muted);
+    font-family: var(--font-body); font-weight: 700; font-size: 14px;
+    min-height: 44px; padding: 0 8px; cursor: pointer;
+  }
+  .invite-new { display: flex; gap: 8px; align-items: stretch; margin-top: 10px; }
+  /* The question pages' own text box (input[type=text] above), light on
+     the spruce card the way sign-in's field sits on its card. */
+  .invite-new .invite-input { flex: 1 1 auto; min-width: 0; width: auto; }
+  .invite-new .invite-btn { flex: 0 0 auto; white-space: nowrap; }
   /* The reveal's foot: the question foot on spruce. Its two states
      (#reveal-actions, #reveal-error-actions) are each a foot of their own
      and only one is ever shown, so no empty strip sits at the bottom
@@ -2592,38 +2604,169 @@ function wireRevealSwapSheet() {
 }
 
 // ---------- the invite ----------
-async function renderInviteOffer(memberNames) {
+// Loop Board "Invite my partner from inside the app" (Emily, 2026-09-25 —
+// a one-time invite link). The end of setup asks one thing: does anyone
+// else help run the house? "Just me" and that's all — nothing else is
+// asked. "Yes" offers "Invite Vineeth" for each other adult already on the
+// list, or asks for a first name when there isn't one (added as an adult,
+// nothing more). The link is one use, seven days (app/invites.py) and goes
+// out through the phone's share sheet with a short message in the
+// inviter's voice; with no share sheet it's copied. The same invite is in
+// Preferences → Who's here afterwards (static/shell.js).
+//
+// This replaced the reveal's "Bring the rest of the house in?" card, which
+// handed out each person's what-they-eat link (member-share) — two invite
+// cards on one finish would be one too many, and the old card's "it's
+// under Preferences later too" wasn't true.
+const INVITE_MESSAGE = 'I’ve set us up on Pomona for our meals and shopping. ' +
+  'This link gets you in on your phone. It works once, within a week.';
+
+async function inviteHandOff(name, url) {
+  if (navigator.share) {
+    try {
+      await navigator.share({ text: INVITE_MESSAGE, url: url });
+      return 'shared';
+    } catch (err) {
+      if (err && err.name === 'AbortError') return 'cancelled';
+      if (err && err.name === 'NotAllowedError') return 'needs-tap';
+    }
+  }
+  return (await inviteCopy(name, url)) ? 'copied' : 'show';
+}
+
+async function inviteCopy(name, url) {
+  if (!(navigator.clipboard && navigator.clipboard.writeText)) return false;
+  try { await navigator.clipboard.writeText(url); } catch (e) { return false; }
+  revealToast(name + '’s link was copied');
+  return true;
+}
+
+// Neither a share sheet nor the clipboard would take it: the link itself,
+// selectable, in place of the button, with a Copy that runs from a tap.
+function showInviteLink(btn, made) {
+  const wrap = document.createElement('div');
+  wrap.className = 'invite-new';
+  wrap.innerHTML = `<input type="text" class="invite-input" readonly aria-label="${escapeHtmlLocal(made.name)}’s link">
+    <button type="button" class="invite-btn">Copy link</button>`;
+  const field = wrap.querySelector('input');
+  field.value = made.url;
+  const copy = wrap.querySelector('button');
+  copy.addEventListener('click', async () => {
+    if (await inviteCopy(made.name, made.url)) markInvited(copy, made.name);
+    else { field.focus(); field.select(); }
+  });
+  // The name box's row goes (the name is on the new field's label); an
+  // adult's row keeps its name and gets the link underneath.
+  const form = btn.closest('.invite-new');
+  if (form) { form.replaceWith(wrap); return; }
+  const row = btn.closest('.invite-row');
+  btn.remove();
+  (row || btn).after(wrap);
+}
+
+async function mintInvite(body) {
+  const res = await fetch('/api/household/invites', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  });
+  let data = null;
+  try { data = await res.json(); } catch (e) { /* below */ }
+  if (!res.ok) throw new Error((data && typeof data.detail === 'string') ? data.detail : 'That didn’t work. Try it again.');
+  return { name: (data.member && data.member.name) || body.name || '', url: window.location.origin + data.path };
+}
+
+// One button's whole life: make the link, hand it off, say what happened.
+// A browser that wants the share sheet straight from a tap (Safari, after
+// the network wait) gets a second button that does exactly that.
+async function inviteFromButton(btn, body) {
+  // Once a link is waiting for its tap, this button belongs to the
+  // onclick below — making another link here would be a second key.
+  if (btn.disabled || btn.dataset.ready) return;
+  btn.disabled = true;
+  try {
+    const made = await mintInvite(body);
+    const outcome = await inviteHandOff(made.name, made.url);
+    if (outcome === 'needs-tap') {
+      btn.dataset.ready = '1';
+      btn.textContent = 'Send ' + made.name + '’s link';
+      btn.disabled = false;
+      btn.onclick = async () => {
+        btn.onclick = null;
+        const again = await inviteHandOff(made.name, made.url);
+        if (again === 'shared' || again === 'copied') markInvited(btn, made.name);
+        else if (again === 'show') showInviteLink(btn, made);
+      };
+      return;
+    }
+    if (outcome === 'shared' || outcome === 'copied') markInvited(btn, made.name);
+    else if (outcome === 'show') showInviteLink(btn, made);
+    else btn.disabled = false;
+  } catch (err) {
+    revealToast(err.message || 'That didn’t work. Try it again.');
+    btn.disabled = false;
+  }
+}
+
+function markInvited(btn, name) {
+  btn.textContent = name + ' is invited';
+  btn.classList.add('copied');
+  btn.disabled = true;
+}
+
+async function renderInviteOffer() {
   const section = document.getElementById('invite-section');
-  if (memberNames.length <= 1) { section.innerHTML = ''; return; }
   section.innerHTML = `
     <div class="invite-card">
-      <h2>Bring the rest of the house in?</h2>
-      <p class="hint">Each person gets a link to add what they eat. Optional, and it&rsquo;s under Preferences later too.</p>
-      <div id="invite-rows"></div>
+      <h2>Does anyone else help run the house?</h2>
+      <div class="invite-choice">
+        <button type="button" class="invite-btn" id="invite-yes">Yes</button>
+        <button type="button" class="invite-quiet" id="invite-no">Just me</button>
+      </div>
+      <div id="invite-rows" hidden></div>
     </div>`;
-  const rowsDiv = document.getElementById('invite-rows');
-  memberNames.forEach(name => {
-    const row = document.createElement('div');
-    row.className = 'invite-row';
-    row.innerHTML = `<span class="name">${escapeHtmlLocal(name)}</span>
-      <button type="button" class="invite-btn" data-name="${escapeHtmlLocal(name)}">Get link</button>`;
-    rowsDiv.appendChild(row);
-  });
-  rowsDiv.querySelectorAll('.invite-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      try {
-        const res = await fetch('/api/members/' + encodeURIComponent(btn.dataset.name) + '/share-link');
-        if (!res.ok) throw new Error('Could not get link');
-        const data = await res.json();
-        await navigator.clipboard.writeText(data.link).catch(() => {});
-        btn.textContent = 'Copied';
-        btn.classList.add('copied');
-        setTimeout(() => { btn.textContent = 'Get link'; btn.classList.remove('copied'); }, 2200);
-      } catch (err) {
-        btn.textContent = "Couldn't get link";
-      }
+  document.getElementById('invite-no').onclick = () => { section.innerHTML = ''; };
+  document.getElementById('invite-yes').onclick = async () => {
+    let adults = [];
+    try {
+      const res = await fetch('/api/household/invites');
+      if (res.ok) adults = ((await res.json()).adults || []).filter(a => !a.is_you);
+    } catch (err) { /* fall through to asking for a name */ }
+    section.querySelector('.invite-choice').remove();
+    const rowsDiv = document.getElementById('invite-rows');
+    rowsDiv.hidden = false;
+    if (adults.length) {
+      adults.forEach(a => {
+        const row = document.createElement('div');
+        row.className = 'invite-row';
+        row.innerHTML = `<span class="name">${escapeHtmlLocal(a.name)}</span>
+          <button type="button" class="invite-btn">Invite ${escapeHtmlLocal(a.name)}</button>`;
+        const btn = row.querySelector('button');
+        btn.addEventListener('click', () => inviteFromButton(btn, { member_id: a.id }));
+        rowsDiv.appendChild(row);
+      });
+      return;
+    }
+    rowsDiv.innerHTML = `
+      <div class="invite-new">
+        <input type="text" class="invite-input" id="invite-name" maxlength="40" autocomplete="off"
+          placeholder="Their first name" aria-label="Their first name">
+        <button type="button" class="invite-btn" id="invite-send">Invite</button>
+      </div>`;
+    const input = document.getElementById('invite-name');
+    const send = document.getElementById('invite-send');
+    input.addEventListener('input', () => {
+      if (send.disabled || send.dataset.ready) return;
+      const name = input.value.trim();
+      send.textContent = name ? 'Invite ' + name : 'Invite';
     });
-  });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); send.click(); } });
+    send.addEventListener('click', () => {
+      if (send.dataset.ready) return;
+      const name = input.value.trim();
+      if (!name) { input.focus(); return; }
+      inviteFromButton(send, { name: name }).then(() => { if (send.disabled) input.disabled = true; });
+    });
+    input.focus();
+  };
 }
 
 // ---------- the stream ----------
@@ -2785,7 +2928,7 @@ async function generateFirstPlanAndReveal(answers) {
       actions.style.display = 'flex';
     }
   }
-  await renderInviteOffer(answers.member_names || []);
+  await renderInviteOffer();
 }
 
 // ---------- Navigation ----------
