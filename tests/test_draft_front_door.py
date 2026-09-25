@@ -238,7 +238,7 @@ def test_what_were_eating_is_one_card_per_meal_type_with_the_days_and_one_fact_a
                 f"console.log(JSON.stringify(reviewStepHtml({json.dumps(_draft(days))}, weekState.days, true)));")
     heads = re.findall(r'<span class="wk-menu-head">([^<]+)</span>', html)
     assert heads == ["Breakfasts", "Lunches", "Dinners", "Snacks"]
-    assert html.count('class="wk-row wk-menu-row"') == 6, "each dish once: 1 breakfast, 2 lunches, 2 dinners, 1 snack"
+    assert html.count('class="wk-row wk-menu-row has-foot"') == 6, "each dish once: 1 breakfast, 2 lunches, 2 dinners, 1 snack"
     # The days it covers and the one fact.
     assert ">3 mornings · 12 min<" in html
     assert ">Mon, Wed · Mexican, as asked<" in html
@@ -247,7 +247,7 @@ def test_what_were_eating_is_one_card_per_meal_type_with_the_days_and_one_fact_a
     assert ">Monday · chicken" not in html and ">Monday · as asked<" in html
     # Swap on every row, through the same swap sheet, aimed at the dish's first day ahead.
     assert html.count("Swap</button>") == 6
-    assert re.search(r'data-wk-day-index="0" data-wk-row="lunch".*?data-wk-meal="lunch">Chicken al pastor tacos</button>.*?data-wk-swap-sheet="lunch"', html, re.S)
+    assert re.search(r'data-wk-day-index="0" data-wk-row="lunch".*?data-wk-meal="lunch">Chicken al pastor tacos<svg class="wk-row-chev".*?</button>.*?data-wk-swap-sheet="lunch"', html, re.S)
     assert 'data-wk-swap-sheet="snack"' in html
     # No day notes, no steppers, no head line, no carousel.
     for gone in ("Out — nothing to cook", "wk-card-tags", "rv-step", "data-rv-", "wk-carousel", "wk-daytab", "7 meals", 'id="wk-help"'):
@@ -302,31 +302,27 @@ def test_the_toggle_and_the_dock_more_follow_the_system():
 # ---------------------------------------------------------------------------
 
 @_needs_node
-def test_the_reason_is_one_tap_away_and_nothing_shows_without_one():
+def test_the_reason_is_plain_text_after_the_time_and_nothing_shows_without_one():
+    """Emily, 2026-09-25 (option 1A): the reason used to be a tap on the
+    meta line that popped a note; it is said on the line now, as text."""
     out = _run(_prelude() + """
 console.log(JSON.stringify({
-  withReason: wkRowMetaHtml({ state: 'planned', reason: 'you said you love salmon' }, '35 min'),
+  withReason: wkRowMetaHtml({ state: 'planned', reason: 'you said you love salmon.' }, '35 min'),
   noReason: wkRowMetaHtml({ state: 'planned', reason: null }, '35 min'),
   noMeta: wkRowMetaHtml({ state: 'planned', reason: 'a quick one' }, ''),
+  asked: wkRowMetaHtml({ state: 'planned', asked: 'Mexican, as asked', reason: 'Mexican, as you asked' }, '35 min · Mexican, as asked'),
   nothing: wkRowMetaHtml({ state: 'planned' }, '')
 }));""")
-    with_reason = out["withReason"]
-    assert with_reason.startswith('<button type="button" class="wk-row-meta wk-row-why" data-wk-why="1" aria-expanded="false"')
-    assert ">35 min</button>" in with_reason, "nothing beyond the fact is shown by default"
-    assert '<span class="wk-why-pop" role="note" hidden>You said you love salmon</span>' in with_reason
-    assert out["noReason"] == '<span class="wk-row-meta">35 min</span>', "no reason, no tap"
-    assert ">Why this?</button>" in out["noMeta"]
+    assert out["withReason"] == '<span class="wk-row-meta">35 min · You said you love salmon</span>'
+    assert out["noReason"] == '<span class="wk-row-meta">35 min</span>'
+    assert out["noMeta"] == '<span class="wk-row-meta">A quick one</span>'
+    assert out["asked"] == '<span class="wk-row-meta">35 min · Mexican, as asked</span>', "the asked fact already says why"
     assert out["nothing"] == ""
 
 
-def test_the_reason_floats_over_the_next_row_rather_than_pushing_rows_around():
-    pop = SHELL_CSS[SHELL_CSS.index(".wk-why-pop {"):SHELL_CSS.index("}", SHELL_CSS.index(".wk-why-pop {"))]
-    assert "position: absolute" in pop and "z-index: 3" in pop
-    assert ".wk-row { position: relative; }" in SHELL_CSS
-    assert '.wk-row-why::before { content: ""; position: absolute; inset: -14px -8px -14px 0; }' in SHELL_CSS, "44px tap, same row height"
-    wiring = _extract("wireMealsStep", SHELL_JS)
-    assert "steps.querySelectorAll('[data-wk-why]')" in wiring
-    assert "[data-wk-why][aria-expanded=\"true\"]" in wiring, "one open at a time"
+def test_the_reason_pop_and_its_wiring_are_gone():
+    for gone in ("wk-why-pop", "wk-row-why", "data-wk-why"):
+        assert gone not in SHELL_JS and gone not in SHELL_CSS, gone
 
 
 @_needs_node

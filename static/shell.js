@@ -11903,7 +11903,17 @@
       '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17h.01"/></svg>',
     chev: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" ' +
       'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-      '<path d="M9 6l6 6-6 6"/></svg>'
+      '<path d="M9 6l6 6-6 6"/></svg>',
+    // The small chevron after the dish name on a row (Emily, 2026-09-25,
+    // 1A): the title is the way into the recipe, and now it looks it.
+    // (No apostrophes in these comments: tests slice this var by quotes.)
+    titleChev: '<svg class="wk-row-chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" ' +
+      'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M9 6l6 6-6 6"/></svg>',
+    // Tweak it: two sliders.
+    tweak: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ' +
+      'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>'
   };
 
   // A day with nothing to cook on it — every one of its three real meals is
@@ -11980,20 +11990,21 @@
     return [meta, asked].filter(Boolean).join(' · ');
   }
 
-  // The stored reason, one tap away (Emily, 2026-09-15: "Pomona stores
-  // one per dish and shows none"). The meta line is the tap; the reason
-  // opens as a note floating over the next row (.wk-why-pop, absolute)
-  // rather than pushing rows around. Without a reason the line is plain
-  // text, so nothing offers a tap that does nothing.
+  // The meta line, with the stored reason said after it as plain text
+  // ("30 min · Lighter than the chops") — Emily, 2026-09-25 (option 1A):
+  // the reason used to be a tap on this line that popped a note, and the
+  // dotted underline it needed read as a second link beside the dish.
+  // Nothing on this line is a button now; the reason is a fragment of the
+  // line, so a closing full stop comes off. A slot that carries what it
+  // was asked for ("Mexican, as asked") already says why — its reason
+  // mostly says the same again ("Mexican for lunch, as you asked"), so
+  // the line keeps the shorter fact and leaves the reason off.
   function wkRowMetaHtml(entry, meta) {
-    var reason = entry && entry.state === 'planned' && String(entry.reason || '').trim();
-    if (!meta && !reason) return '';
-    if (!reason) return '<span class="wk-row-meta">' + escapeHtml(meta) + '</span>';
-    var why = reason.charAt(0).toUpperCase() + reason.slice(1);
-    return '<button type="button" class="wk-row-meta wk-row-why" data-wk-why="1" aria-expanded="false" ' +
-        'aria-label="' + escapeHtml((meta ? meta + ' — ' : '') + 'why this?') + '">' +
-        escapeHtml(meta || 'Why this?') + '</button>' +
-      '<span class="wk-why-pop" role="note" hidden>' + escapeHtml(why) + '</span>';
+    var reason = entry && entry.state === 'planned' && !entry.asked &&
+      String(entry.reason || '').trim().replace(/\.+$/, '');
+    var why = reason ? reason.charAt(0).toUpperCase() + reason.slice(1) : '';
+    var line = [meta, why].filter(Boolean).join(' · ');
+    return line ? '<span class="wk-row-meta">' + escapeHtml(line) + '</span>' : '';
   }
 
   // How many of the three real meals a day actually holds.
@@ -12020,11 +12031,14 @@
   }
 
   // One row of a day card: the slot as an eyebrow, the dish as the link
-  // into its Meal step, the one-line meta, and the buttons at the right.
+  // into its Meal step, then the one-line meta with the buttons at its
+  // right (Emily, 2026-09-25, 1A).
   //
-  // opts.done      — Done beside Swap (the Plan root); Check the week has
-  //                  Swap alone.
-  // opts.swapLabel — "Swap" on the root, "Swap the meal" on Check the week.
+  // opts.done      — Done beside Swap (the Plan root); Which days / Check
+  //                  the week has Swap and Tweak it instead.
+  // opts.swapLabel — "Swap" (it was "Swap the meal" on Check the week
+  //                  until 2026-09-25; 1A's line holds "Swap" and "Tweak
+  //                  it" beside the time).
   //
   // What a row offers depends on what the slot is (CLAUDE.md: a slot is
   // never absent, it is one of three states): a planned meal gets the
@@ -12059,14 +12073,25 @@
             // (copy sweep finding 22). It says what the tap leaves true.
             (done ? 'Not cooked yet — ' : 'Done — ') + name)
         : '';
-      acts = tick + swap;
+      // "Tweak it" (Emily, 2026-09-25, 1A): the plate's parts in one
+      // sheet (openTweakSheet), only where the plate can change at all
+      // (plateCanChange). Not beside Done — the approved root's rows keep
+      // Done and Swap, which is all a 375px line holds next to the time.
+      var tweak = !opts.done && typeof plateCanChange === 'function' && plateCanChange(day, slot, entry)
+        ? wkMiniHtml('data-wk-tweak="' + slot + '"', 'wk-mini-tweak', WK_ICONS.tweak, 'Tweak it', 'Tweak it — ' + name)
+        : '';
+      acts = tick + swap + tweak;
     } else if (open) {
       acts = wkMiniHtml('data-wk-pick="' + slot + '"', '', '', 'Pick', 'Pick ' + slotWord(slot));
     } else if (!entry && !day.isPast) {
       acts = wkMiniHtml('data-wk-ask="' + slot + '"', '', '', 'Pick', 'Pick ' + slotWord(slot));
     }
 
-    return '<div class="wk-row' + (done ? ' is-done' : '') + '" data-wk-row="' + slot + '">' +
+    // A planned meal (Emily, 2026-09-25, 1A): the dish with a chevron —
+    // the title is the way into the recipe — and under it one line, the
+    // time (and reason) as plain text with the buttons at its right. Any
+    // other slot keeps its one button beside the name.
+    return '<div class="wk-row' + (planned ? ' has-foot' : '') + (done ? ' is-done' : '') + '" data-wk-row="' + slot + '">' +
       '<div class="wk-row-main">' +
         '<div class="wk-row-text">' +
           '<span class="wk-row-eyebrow">' + escapeHtml(slotEyebrowLabel(day, slot)) +
@@ -12075,12 +12100,15 @@
           '</span>' +
           (planned
             ? '<button type="button" class="wk-row-name dish-link" data-wk-meal="' + slot + '">' +
-                escapeHtml(name) + '</button>'
-            : '<span class="wk-row-name' + quiet + '">' + escapeHtml(name) + '</span>') +
-          wkRowMetaHtml(entry, meta) +
+                escapeHtml(name) + WK_ICONS.titleChev + '</button>'
+            : '<span class="wk-row-name' + quiet + '">' + escapeHtml(name) + '</span>' + wkRowMetaHtml(entry, meta)) +
         '</div>' +
-        (acts ? '<div class="wk-row-acts">' + acts + '</div>' : '') +
+        (!planned && acts ? '<div class="wk-row-acts">' + acts + '</div>' : '') +
       '</div>' +
+      (planned
+        ? '<div class="wk-row-foot">' + wkRowMetaHtml(entry, meta) +
+            (acts ? '<div class="wk-row-acts">' + acts + '</div>' : '') + '</div>'
+        : '') +
       (open
         ? '<div class="wk-slot-open" id="wk-open-' + slot + '" hidden>' + openSlotCardHtml(day.date, slot, entry) + '</div>'
         : '') +
@@ -12116,7 +12144,7 @@
   // that are selected, then be able to see the days"): Breakfasts,
   // Lunches, Dinners (Snacks when there are any), one row per dish with
   // the days it covers and one useful fact, Swap on every row, the reason
-  // a tap away. No day notes here — those live on Which days — and no
+  // said after the fact. No day notes here — those live on Which days — and no
   // steppers.
   //
   // A dish is the name it READS as (mealDisplayName), so a made-ahead
@@ -12183,8 +12211,9 @@
     return wkRowMeta(dish.days[0].entry);
   }
 
-  // One row: the dish (the link into its Meal step), "Mon, Wed · Mexican,
-  // as asked" (the tap for the reason), Swap. Swap and the link act on the
+  // One row: the dish (the link into its Meal step, with its chevron),
+  // then "Mon, Wed · Mexican, as asked" with the reason after it as plain
+  // text, Swap and Tweak it at its right. Swap and the link act on the
   // dish's first day still ahead — the same swap sheet and the same Meal
   // step Which days uses, told which day through data-wk-day-index.
   function wkMenuRowHtml(dish, days) {
@@ -12201,14 +12230,35 @@
       : '';
     var swap = first.past ? '' : wkMiniHtml('data-wk-swap-sheet="' + first.key + '"' + dishAttr, 'wk-mini-swap', WK_ICONS.swap,
       'Swap', 'Swap — ' + dish.name);
-    return '<div class="wk-row wk-menu-row" data-wk-day-index="' + first.index + '" data-wk-row="' + first.key + '">' +
+    // "Tweak it" (Emily, 2026-09-25, 1A) changes ONE entry's plate — the
+    // part sheets write to one entry_id — so it is offered only where the
+    // dish is one cook still ahead. A dish cooked on several days ahead
+    // (seven mornings of oats) would change on its first day and not the
+    // rest — "two meals instead of 1", the bug the whole-dish Swap fixed
+    // (2026-09-22) — so there it is left to Which days, a day at a time.
+    // A reheat night isn't a cook of its own and doesn't count.
+    var cooksAhead = ahead.filter(function (d) {
+      return !(d.entry.leftover_from && d.entry.leftover_from.date) && d.entry.source !== 'leftovers';
+    });
+    var tweak = !first.past && cooksAhead.length === 1 && cooksAhead[0] === first &&
+      typeof plateCanChange === 'function' && days[first.index] && plateCanChange(days[first.index], first.key, entry)
+      ? wkMiniHtml('data-wk-tweak="' + first.key + '"', 'wk-mini-tweak', WK_ICONS.tweak, 'Tweak it', 'Tweak it — ' + dish.name)
+      : '';
+    // "Changed" (S6) when any of the dish's days was just changed. The
+    // menu row has no slot eyebrow of its own, so the pill gets one.
+    var changed = typeof wasRecentlyChanged === 'function' &&
+      dish.days.some(function (d) { return wasRecentlyChanged(d.date, d.key); });
+    var acts = swap + tweak;
+    return '<div class="wk-row wk-menu-row has-foot" data-wk-day-index="' + first.index + '" data-wk-row="' + first.key + '">' +
       '<div class="wk-row-main">' +
         '<div class="wk-row-text">' +
+          (changed ? '<span class="wk-row-eyebrow"><span class="wk-changed">Changed</span></span>' : '') +
           '<button type="button" class="wk-row-name dish-link" data-wk-meal="' + first.key + '">' +
-            escapeHtml(dish.name) + '</button>' +
-          wkRowMetaHtml(entry, meta) +
+            escapeHtml(dish.name) + WK_ICONS.titleChev + '</button>' +
         '</div>' +
-        (swap ? '<div class="wk-row-acts">' + swap + '</div>' : '') +
+      '</div>' +
+      '<div class="wk-row-foot">' + wkRowMetaHtml(entry, meta) +
+        (acts ? '<div class="wk-row-acts">' + acts + '</div>' : '') +
       '</div>' +
     '</div>';
   }
@@ -12308,7 +12358,7 @@
     return head +
       wkDayTabsHtml(days, selected) +
       '<div class="wk-carousel" id="wk-carousel" tabindex="0" aria-label="The week, one day at a time">' +
-        days.map(function (day, i) { return wkDayCardHtml(day, i, { done: false, swapLabel: 'Swap the meal' }); }).join('') +
+        days.map(function (day, i) { return wkDayCardHtml(day, i, { done: false, swapLabel: 'Swap' }); }).join('') +
       '</div>' +
       wkDotsHtml(days.length, selected) +
       // What approving this draft replaces of an approved week — under the
@@ -12530,8 +12580,8 @@
   // the tacos to another day", and "Ask for something else" into chat
   // with the slot as its subject. Nothing is written until a pick is
   // tapped (§2b S10); then that one meal swaps, "Changes saved", Undo on
-  // the pop-up. The same sheet serves "Swap the meal" on Check the week
-  // and "Swap" on the Plan root's rows.
+  // the pop-up. The same sheet serves "Swap" on Check the week and on
+  // the Plan root's rows.
   //
   // The picks are the Week 1 screen's own (app/tools/swap_options.py —
   // one route to ask, POST /swap-options, and one to choose, POST
@@ -14441,20 +14491,12 @@
     steps.querySelectorAll('[data-wk-help]').forEach(function (btn) {
       btn.addEventListener('click', function () { openWeekHelp(btn.getAttribute('data-wk-help')); });
     });
-    // The reason a tap away (wkRowMetaHtml): one open at a time, and a
-    // second tap on the same line closes it.
-    steps.querySelectorAll('[data-wk-why]').forEach(function (btn) {
+    // "Tweak it" on a row (Emily, 2026-09-25, 1A): the plate's parts in
+    // one sheet, for the row's own day (wkDayForTap).
+    steps.querySelectorAll('[data-wk-tweak]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        var open = btn.getAttribute('aria-expanded') === 'true';
-        steps.querySelectorAll('[data-wk-why][aria-expanded="true"]').forEach(function (other) {
-          other.setAttribute('aria-expanded', 'false');
-          var p = other.nextElementSibling;
-          if (p && p.classList.contains('wk-why-pop')) p.hidden = true;
-        });
-        if (open) return;
-        btn.setAttribute('aria-expanded', 'true');
-        var pop = btn.nextElementSibling;
-        if (pop && pop.classList.contains('wk-why-pop')) pop.hidden = false;
+        var day = wkDayForTap(btn);
+        if (day) openTweakSheet(panel, day, btn.getAttribute('data-wk-tweak'));
       });
     });
     wireReviewCarousel(panel, steps);
@@ -14798,6 +14840,106 @@
   // the plate for that part, which the quiet line offers to take off, or
   // which Save takes off in favour of the new one (never both at once).
   // No part: the plain "Add something" the Meal step has had.
+  // ---------- "Tweak it": the plate's parts in one sheet ----------
+  // Emily, 2026-09-25 (option 1A of the Plan-rows mockup). A row's "Tweak
+  // it" opens this: the dish as its head (the slot and day as an eyebrow,
+  // the dish's name), then the plate's parts as the Meal step's own rows
+  // (platePartsRowsHtml's shape — the role, the part, Change or Add), a
+  // part the plate is missing as the Day card's dashed "+ Add a carb"
+  // chip (platePartChipHtml), and "Leave it as it is". Nothing is changed
+  // here: a part's button closes this sheet and opens the part's own
+  // sheet (openMealAddSheet — "Change the protein", "Add a carb", "Take X
+  // off"), which saves and pops the toast with Undo as it always has
+  // (S10). When that sheet closes the person is back on the row, which
+  // wears "Changed" for eight seconds (markRow → markRecentlyChanged, S6).
+  //
+  // Built once, body level, like the swap sheet.
+  var tweakSheetEl = null;
+  var tweakScrimEl = null;
+
+  function buildTweakSheet() {
+    if (tweakSheetEl) return;
+    tweakScrimEl = document.createElement('div');
+    tweakScrimEl.id = 'wk-tweak-scrim';
+    tweakScrimEl.hidden = true;
+    tweakSheetEl = document.createElement('div');
+    tweakSheetEl.id = 'wk-tweak-sheet';
+    tweakSheetEl.hidden = true;
+    tweakSheetEl.setAttribute('role', 'dialog');
+    tweakSheetEl.setAttribute('aria-modal', 'true');
+    tweakSheetEl.setAttribute('aria-labelledby', 'wk-tweak-title');
+    tweakSheetEl.innerHTML = '<div class="ask-sheet-handle" id="wk-tweak-handle"></div><div id="wk-tweak-body"></div>';
+    document.body.appendChild(tweakScrimEl);
+    document.body.appendChild(tweakSheetEl);
+    tweakScrimEl.addEventListener('click', closeTweakSheet);
+    document.getElementById('wk-tweak-handle').addEventListener('click', closeTweakSheet);
+  }
+
+  function closeTweakSheet() {
+    if (!tweakSheetEl) return;
+    closeSheet(tweakSheetEl, tweakScrimEl);
+  }
+
+  // The sheet's markup, pure — the parts' buttons carry the same
+  // data-plate-* attributes as the Meal step's rows, so the tap hands
+  // openMealAddSheet exactly what the Meal step would.
+  function tweakSheetBodyHtml(day, slot, entry) {
+    var parts = (entry && entry.plate_parts) || [];
+    var rows = parts.filter(function (p) { return !p.missing; }).map(function (p) {
+      var name = p.name || PLATE_NO_NAME;
+      var verb = p.empty ? 'Add' : 'Change';
+      var aria = (p.empty ? 'Add a ' : 'Change the ') + String(p.word || '').toLowerCase();
+      return '<div class="plate-row">' +
+        '<span class="plate-row-role">' + escapeHtml(p.word) + '</span>' +
+        '<span class="plate-row-name">' + escapeHtml(name) + '</span>' +
+        '<button type="button" class="plate-row-change" data-plate-part="' + escapeHtml(p.role === 'side' ? '' : p.role) + '" ' +
+          'data-plate-slot="' + escapeHtml(slot) + '"' +
+          (p.source ? ' data-plate-source="' + escapeHtml(p.source) + '"' : '') +
+          (p.source === 'side' && p.name ? ' data-plate-side="' + escapeHtml(p.name) + '"' : '') +
+          ' aria-label="' + escapeHtml(aria) + '">' + verb + '</button>' +
+      '</div>';
+    }).join('');
+    var adds = parts.filter(function (p) { return p.missing; })
+      .map(function (p) { return platePartChipHtml(p, slot); }).join('');
+    return '<h2 class="wk-swap-title" id="wk-tweak-title">Tweak it</h2>' +
+      '<div class="wk-tweak-head">' +
+        '<p class="wk-swap-eyebrow">' + escapeHtml(slotEyebrowLabel(day, slot) + ' · ' + dayName(day.date, { weekday: 'long' })) + '</p>' +
+        '<p class="wk-tweak-dish">' + escapeHtml(mealDisplayName(entry)) + '</p>' +
+      '</div>' +
+      (rows ? '<div class="plate-rows">' + rows + '</div>' : '') +
+      (adds ? '<div class="plate wk-tweak-adds">' + adds + '</div>' : '') +
+      '<button type="button" class="wk-swap-quiet" id="wk-tweak-leave">Leave it as it is</button>';
+  }
+
+  function openTweakSheet(panel, day, slot) {
+    var entry = daySlotEntry(day, slot);
+    if (!plateCanChange(day, slot, entry)) return;
+    buildTweakSheet();
+    closeAskSheet();
+    var body = document.getElementById('wk-tweak-body');
+    body.innerHTML = tweakSheetBodyHtml(day, slot, entry);
+    body.querySelectorAll('[data-plate-part]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        closeTweakSheet();
+        openMealAddSheet(panel, day, slot, {
+          role: btn.getAttribute('data-plate-part'),
+          side: btn.getAttribute('data-plate-side') || '',
+          source: btn.getAttribute('data-plate-source') || '',
+          markRow: true
+        });
+      });
+    });
+    var leave = document.getElementById('wk-tweak-leave');
+    if (leave) leave.addEventListener('click', closeTweakSheet);
+    openSheet(tweakSheetEl, tweakScrimEl);
+  }
+
+  // A save that started from a row's "Tweak it" marks that row "Changed"
+  // (S6) before the week re-draws under it.
+  function mealAddMarkRow(st) {
+    if (st && st.markRow && typeof markRecentlyChanged === 'function') markRecentlyChanged(st.date, st.slot);
+  }
+
   var PART_WORDS = { protein: 'protein', vegetable: 'veg', carb: 'carb' };
   var PART_COVERS = { vegetable: 'vegetable', carb: 'carb', protein: 'protein' };
 
@@ -14813,7 +14955,7 @@
     mealAddState = {
       panel: panel, date: day.date, slot: slot, entryId: entry.entry_id, weekStart: weekStart, busy: false,
       mode: mode, role: role, roleWord: PART_WORDS[role] || '', side: (part && part.side) || '',
-      selected: null, offer: null
+      selected: null, offer: null, markRow: !!(part && part.markRow)
     };
     var thisOpen = mealAddState;
     var title = document.querySelector('#wk-add-sheet .kit-sheet-title');
@@ -14925,6 +15067,7 @@
       });
       if (!res.ok) throw new Error('remove failed (' + res.status + ')');
       closeMealAddSheet();
+      mealAddMarkRow(st);
       await loadWeekMenu(st.panel);
       toastSaved(savedLine(name, 'taken off'));
     } catch (err) {
@@ -14970,6 +15113,7 @@
       // eight seconds — the swap-undo route puts back the dish that was
       // there before (apply_pick wrote swapped_from).
       clearSwapUndoTimer();
+      mealAddMarkRow(st);
       swapState = { date: dayDate, slot: slot, avoid: [], reason: out.reason || '', canUndo: true };
       spliceSwappedDay(out.day);
       renderMealsStep(panel);
@@ -15043,6 +15187,7 @@
       // The plan changed under the meal (a new side on its entry): the
       // week and its cooker view are read again, and the step re-draws
       // with the addition on the overview and the ingredients.
+      mealAddMarkRow(st);
       await loadWeekMenu(panel);
       var said = 'Added ' + String(out.name || '').toLowerCase() + '.';
       if (out.note) said += ' ' + out.note;
@@ -20149,7 +20294,10 @@
   function markRecentlyChanged(date, slot) {
     recentlyChanged[date + ':' + slot] = Date.now() + SWAP_UNDO_MS;
     setTimeout(function () {
-      if (panels.week && panels.week.dataset.built && weekState.step === 'week') renderMealsStep(panels.week);
+      // The root, or Check the week — both draw the rows that wear it.
+      if (panels.week && panels.week.dataset.built && (weekState.step === 'week' || weekState.step === 'review')) {
+        renderMealsStep(panels.week);
+      }
     }, SWAP_UNDO_MS + 50);
   }
   function wasRecentlyChanged(date, slot) {
