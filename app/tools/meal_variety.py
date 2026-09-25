@@ -1128,7 +1128,8 @@ def surprise_context(intake: dict | None, period_start: str | None = None, day_c
 def _repick_entry(
     plan_id: int, entry: dict, budget, *, avoid: list[str], because: str, reject,
     derived_key: str, picker=None, context_extra: dict | None = None, reject_pick=None,
-    derived_extra: dict | None = None,
+    derived_extra: dict | None = None, reason_line: str | None = None,
+    also: list[dict] | None = None,
 ) -> dict | None:
     """
     Re-pick ONE planned slot quietly through the swap's own picker — the
@@ -1147,6 +1148,22 @@ def _repick_entry(
     `reject_pick(candidate)` sees the WHOLE pick, ingredients included, and
     answers with why it is no good or None; `derived_extra` is written onto
     the new row's derived_from beside the `derived_key` note.
+    `reason_line` is the sentence to put under the dish in place of the
+    pick's own reason — for a pass whose answer to "why is this here" is
+    about the dish that LEFT rather than the one that arrived
+    (repick_recent_repeats). Left unset, the pick speaks for itself.
+
+    `also` is the dish's OTHER nights, when what is being replaced is a
+    whole dish rather than one slot: the model is asked once and every
+    night takes the answer, written through weekly_plan.replace_dish_on_days
+    — one transaction, and the function that already knows how to carry a
+    cook + reheat shape across a swap. Doing it as N swaps is the thing
+    that function's own docstring warns against: the first would see the
+    reheat night still holding the old dish, unlink the pair, and buy the
+    new cook for one table.
+
+    The returned dict is the write's own, with `meal` always on it: what
+    was picked, so a caller can say what landed whichever write was used.
     """
     from . import swap_in_place as _swap
     from . import plates as _plates
@@ -1191,12 +1208,28 @@ def _repick_entry(
     derived[derived_key] = {"dropped": entry["meal"], "because": because}
     if derived_extra:
         derived.update(derived_extra)
-    return _weekly_plan._replace_slot_entries(
-        plan_id, [entry["id"]], entry["date"], entry["slot"], pick["meal_name"],
-        food_groups=[g for g in (pick.get("food_groups") or []) if g in _plates.ALL_GROUPS],
-        reasoning=(pick.get("reason") or "").strip(),
-        derived_from=derived,
-    )
+    groups = [g for g in (pick.get("food_groups") or []) if g in _plates.ALL_GROUPS]
+    reasoning = reason_line if reason_line is not None else (pick.get("reason") or "").strip()
+    if also:
+        written = _weekly_plan.replace_dish_on_days(plan_id, [
+            {"old_entry_id": night["id"], "date": night["date"], "slot": night["slot"],
+             "new_meal": pick["meal_name"], "food_groups": groups, "reasoning": reasoning,
+             "derived_from": dict(json.loads(night.get("derived_from_json") or "{}") or {},
+                                  **{derived_key: {"dropped": entry["meal"], "because": because}},
+                                  **(derived_extra or {}))}
+            for night in [entry] + list(also)
+        ])
+    else:
+        written = _weekly_plan._replace_slot_entries(
+            plan_id, [entry["id"]], entry["date"], entry["slot"], pick["meal_name"],
+            food_groups=groups, reasoning=reasoning, derived_from=derived,
+        )
+    # replace_dish_on_days answers {"entry_ids": [...]} and nothing else, so
+    # on that path what was picked has to be said here or the caller cannot
+    # know it without reading the plan back. _replace_slot_entries already
+    # answers with `meal`, and this writes the same value over it, so the
+    # single-slot path is unchanged for every existing caller.
+    return dict(written, meal=pick["meal_name"])
 
 
 def repick_repeats(plan_id: int, surprise: dict | None, budget, picker=None) -> dict:
@@ -1251,4 +1284,274 @@ def repick_repeats(plan_id: int, surprise: dict | None, budget, picker=None) -> 
                         len(out["left"]), plan_id, ", ".join(out["left"]))
     except Exception:
         logger.exception("Surprise-me re-pick failed for plan %s; the week stands as generated", plan_id)
+    return out
+
+
+# ---------- a dinner or lunch from the last two weeks ----------
+#
+# The drafting prompt has said it for as long as the window has been
+# written down: "The no-repeat rule against recent_history is about DINNER
+# and LUNCH — not breakfast or snack." plan_quality has DETECTED the
+# breach since the same day, at severity "warn", and the draft's own
+# opening line has REPORTED it in the household's face ("… Chili back from
+# the last two weeks") — and nothing anywhere ever put it right. Emily,
+# 2026-09-20: "you're continuously giving me the same food recommendations
+# as previous weeks." Telling the generator something is not the same as
+# preventing it, which is the rule every pass in _finish_week_slots exists
+# for; this is that pass for the no-repeat rule, and it runs for every
+# household every week rather than only under Surprise me.
+#
+# THE WINDOW IS draft_opener.recent_dish_names, READ RATHER THAN
+# RE-DERIVED, and that is the whole reason this is safe to run always: the
+# repair and the opening line ask ONE function what the last two weeks
+# hold, so the line cannot report a repeat this pass decided to ignore.
+# (Approved plans only — a draft nobody approved was never last week's
+# food — other plans only, and dates strictly before this period. All
+# three of those are that function's rules, not this one's.) A second
+# reading of "the last two weeks" here is free to disagree with the
+# sentence the household actually reads, which is exactly what this card
+# was raised about.
+#
+# What it cannot do it leaves alone and logs, per the rule this module
+# already follows twice: a week carrying one repeat is a far better
+# outcome than a lost week.
+
+# The sentence under the replacement. ONE constant, Emily's to change.
+# Her suggested default was "Swapped in — you had [dish] last week." — the
+# window is two weeks, so half the dishes it would name were not had last
+# week, and §8 does not let the app say a thing that isn't. The window's
+# own words (variety_window_words) are the same sentence, true either way.
+REPEAT_REASON = "Swapped in — you had {dish} in {window}."
+
+# Punctuation out, case down, and a trailing filler word off the end:
+# "Taco Night" and "tacos night" both read as the dish. Emily, 2026-09-25,
+# on what "a near-identical variant" means for this first pass: "exact name
+# plus a light normalisation … Do NOT build fuzzy matching." Two dishes
+# that merely share words ("Chicken Tacos", "Chicken Taco Bowls") are two
+# dishes, and a rule reading them as one would drop a dinner nobody
+# repeated — the expensive direction, since the household never asked for
+# the dish that replaced it.
+#
+# It is deliberately a SUPERSET of the opener's own comparison, which
+# lowercases and strips and does nothing else. That keeps the two in step
+# in the one direction that matters: anything the OPENER would call a
+# repeat, this pass has already seen and replaced. Widening it further is
+# safe for the line and costs a dish; narrowing it past the opener's is
+# what would make the line lie.
+_REPEAT_FILLER_TAIL = ("night", "nights")
+_REPEAT_PUNCT = re.compile(r"[^\w\s]+")
+
+
+def repeat_key(name: str | None) -> str:
+    words = _REPEAT_PUNCT.sub(" ", (name or "").lower()).split()
+    while words and words[-1] in _REPEAT_FILLER_TAIL:
+        words.pop()
+    return " ".join(words)
+
+
+# A dish word too common to read as a request on its own: "salad on
+# Tuesday" is not "keep the Greek salad". The full name still protects
+# ("greek salad please"), so this list only decides what the LAST word of a
+# name may stand in for.
+_TOO_GENERIC_TO_ASK_BY = {
+    "salad", "soup", "bowl", "bowls", "stew", "curry", "bake", "dinner",
+    "lunch", "meal", "meals", "dish", "dishes", "night", "leftovers",
+}
+
+
+# A row another pass wrote BECAUSE the household said so. `holiday_dish`
+# is the dish they told Pomona they were taking to a holiday
+# (holidays._plan_dish) — their words as plainly as derived_from.freeform
+# is, and the model never stamps it, since that row is not the model's.
+# Measured before it was added: a household bringing a chili they had
+# eaten eight days earlier had it swapped away for a dish nobody named.
+_THEIR_OWN_KEYS = ("freeform", "holiday_dish")
+
+
+def theirs_by_hand(dish: dict) -> bool:
+    """Does any night of this dish carry another pass's record that the
+    household asked for it? _group_dishes' `protected` reads `freeform`
+    and a cooked night and is shared with the count pass; this is the
+    same question widened for this one only, so nothing else's behaviour
+    moves with it."""
+    for night in dish["nights"]:
+        derived = json.loads(night.get("derived_from_json") or "{}") or {}
+        if any(derived.get(key) for key in _THEIR_OWN_KEYS):
+            return True
+    return False
+
+
+def asked_for_by_name(name: str, texts: tuple[str | None, ...] = ()) -> bool:
+    """
+    Did the household's own words for THIS week name this dish?
+
+    The model is asked to stamp derived_from.freeform on a slot a request
+    shaped, and _group_dishes already protects a dish that carries one —
+    but this module's own first rule is that telling the generator
+    something is not the same as preventing it, and a dish they typed and
+    the model failed to mark is exactly the dish that must not be swapped
+    away. So the text is read too: the whole name inside it ("chili on
+    Monday" keeps Chili), or the name's last word as a whole word when
+    that word says anything at all ("chili again please" keeps Bean chili).
+
+    It errs toward KEEPING, deliberately and in both halves. A dish left
+    standing is a repeat the household reads a line about; a dish taken
+    away is one they asked for and did not get.
+    """
+    key = repeat_key(name)
+    if not key:
+        return False
+    tail = key.split()[-1]
+    for text in texts:
+        said = repeat_key(text)
+        if not said:
+            continue
+        if re.search(rf"\b{re.escape(key)}\b", said):
+            return True
+        if len(tail) >= 4 and tail not in _TOO_GENERIC_TO_ASK_BY and re.search(rf"\b{re.escape(tail)}\b", said):
+            return True
+    return False
+
+
+def _replaceable(dish: dict, chains: dict) -> list[dict] | None:
+    """
+    Every night this dish holds, when the whole dish can go at once — else
+    None, and it is left as generated and logged.
+
+    A cook-once-eat-twice chain goes as a WHOLE or not at all: re-picking
+    the batch night and leaving the nights eating from it is a reheat of
+    nothing, which is a worse plan than the repeat it was fixing. The
+    write (weekly_plan.replace_dish_on_days) carries the shape across —
+    the cook stays the cook and feeds exactly the same nights — but only
+    for a chain that is entirely inside the group handed to it, so that is
+    what this checks.
+
+    Two shapes are refused rather than guessed at, each because the
+    replacement would have to answer something this pass has no answer to:
+      * a night eating a portion frozen on an earlier cook. `from_freezer`
+        is not one of weekly_plan._CHAIN_KEYS, so it would be carried
+        across verbatim and point at a row that has gone;
+      * a chain reaching out of this dish — a lunch eating the evening
+        before's dinner, or a cook feeding a night filed under some other
+        dish. The other end is a different slot's business, and the two
+        ends are looked at on different passes, so taking one would leave
+        the other reheating a dish nobody is cooking.
+    """
+    nights = dish["nights"]
+    ids = {n["id"] for n in nights}
+    for night in nights:
+        derived = json.loads(night.get("derived_from_json") or "{}") or {}
+        if derived.get(_leftovers.FROM_FREEZER_KEY):
+            return None
+        reheat = chains["leftovers"].get(night["id"])
+        if reheat and reheat["source"]["entry_id"] not in ids:
+            return None
+        fed = {t["entry_id"] for t in (chains["sources"].get(night["id"]) or {}).get("targets") or []}
+        if fed - ids:
+            return None
+    return nights
+
+
+def _replace_whole_dish(plan_id: int, dish: dict, nights: list[dict], budget, picker,
+                        refuse: set[str], because: str) -> str | None:
+    """
+    Put ONE new dish on every night this one holds, in one transaction.
+
+    The model is asked once, for the dish's first night, and the rest take
+    the same answer: they were the same dish, and paying for a second pick
+    would spend the shared budget to make the week less coherent rather
+    than more. It also keeps the week the shape the model composed, so the
+    distinct-count pass after this still sees one dish on N nights.
+    """
+    new = _repick_entry(
+        plan_id, nights[0], budget,
+        avoid=[], because=because,
+        reject=lambda name: repeat_key(name) in refuse,
+        derived_key="repeat_repick", picker=picker,
+        reason_line=REPEAT_REASON.format(dish=dish["name"], window=variety_window_words()),
+        also=nights[1:] or None,
+    )
+    return None if new is None else new["meal"]
+
+
+def repick_recent_repeats(plan_id: int, period_start: str | None, budget, picker=None,
+                          asks: tuple[str | None, ...] = ()) -> dict:
+    """
+    Every dinner and lunch on this draft that the household ate inside the
+    variety window is replaced with one they did not — the whole dish, all
+    its nights together, through the swap's own picker and the one write
+    every swap in the app uses, so the grocery list follows.
+
+    Left exactly as generated, each logged by name: a dish they asked for
+    in their own words (derived_from.freeform, the dish they said they are
+    taking to a holiday, or their typed words — theirs_by_hand and
+    asked_for_by_name), a night already cooked, a chain this pass cannot
+    move whole (_replaceable), and any dish the picker could not better
+    inside swap_in_place.MAX_PICK_ATTEMPTS or the shared call budget. The
+    budget is the generation's, shared with the allergen re-pick and the
+    count passes after this: at most allergen_gate.MAX_REPICK_CALLS model
+    calls for the whole week, which is what bounds a week the model filled
+    entirely with last fortnight's dinners.
+
+    Breakfast and snack are NOT checked, on purpose: the prompt asks for
+    them to repeat, and a household eating the same oats every morning is
+    the rhythm working rather than a rule being broken (NO_REPEAT_SLOTS).
+
+    Never raises: counts come back for the log and for tests, and any
+    failure leaves the plan as the model wrote it.
+    """
+    from . import draft_opener as _draft_opener
+
+    out = {"repeats": 0, "repicked": 0, "left": []}
+    if not period_start:
+        return out
+    try:
+        recent = _draft_opener.recent_dish_names(period_start, plan_id)
+        had = {k for k in (repeat_key(n) for n in (recent or ())) if k}
+        if not had:
+            return out
+        refuse = set(had)
+        because = f"you had it in {variety_window_words()}"
+        chains = _leftovers.plan_leftover_chains(plan_id)
+        for slot in NO_REPEAT_SLOTS:
+            for dish in _group_dishes(_load_slot_entries(plan_id, slot), chains):
+                if repeat_key(dish["name"]) not in had:
+                    continue
+                out["repeats"] += 1
+                # Their words beat the rule, exactly as they beat the
+                # dinners-per-week count. Three readings of "they asked
+                # for this", because no one of them is complete: the
+                # model's own stamp and a cooked night (`protected`),
+                # another pass's record that they said so (theirs_by_hand),
+                # and their typed words, for a request the model was told
+                # to mark and did not.
+                if dish["protected"] or theirs_by_hand(dish) or asked_for_by_name(dish["name"], asks):
+                    out["left"].append(dish["name"])
+                    continue
+                nights = _replaceable(dish, chains)
+                if nights is None:
+                    out["left"].append(dish["name"])
+                    continue
+                name = _replace_whole_dish(plan_id, dish, nights, budget, picker, refuse, because)
+                if name is None:
+                    out["left"].append(dish["name"])
+                    continue
+                out["repicked"] += 1
+                # What this pass has just put on the week joins what the
+                # picker must not offer again — two repeats answered with
+                # one dish is a new duplicate — but NOT what counts as a
+                # repeat: a later slot honestly holding that dish was not
+                # eaten in the window, and the line under it would say
+                # they had it when they did not (§8).
+                refuse.add(repeat_key(name))
+                logger.info("No repeat: plan %s %s %r -> %r (%s)", plan_id, slot, dish["name"], name, because)
+                # The chain map is what this pass reads to decide which
+                # nights belong to a dish; the write above moved rows, so
+                # the dishes still to judge are read against a fresh one.
+                chains = _leftovers.plan_leftover_chains(plan_id)
+        if out["left"]:
+            logger.info("No repeat: %d dish(es) left as generated on plan %s: %s",
+                        len(out["left"]), plan_id, ", ".join(out["left"]))
+    except Exception:
+        logger.exception("No-repeat enforcement failed for plan %s; the week stands as generated", plan_id)
     return out
