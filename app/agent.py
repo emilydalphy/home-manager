@@ -5924,6 +5924,42 @@ def _finish_week_slots(
         repick_budget or _allergen_gate.CallBudget(),
     )
 
+    # The household's own words for this week, read by the two passes
+    # below — one to know a dish they asked for by name, the other to know
+    # a count they asked for. Hoisted above the first of them rather than
+    # read twice.
+    count_asks = (
+        (context or {}).get("constraints_notes"),
+        ((context or {}).get("intake") or {}).get("freeform"),
+    )
+
+    # A dinner or lunch from the last two weeks is replaced, not merely
+    # logged (Emily, 2026-09-20: "you're continuously giving me the same
+    # food recommendations as previous weeks"). The prompt has asked for
+    # this rule for as long as the window has existed; plan_quality warned
+    # about the breach and the draft's opening line reported it, and
+    # nothing put it right. Same place and same reasoning as the Surprise
+    # me pass above — AFTER repair_leftover_chains so a chain is real and
+    # goes whole, BEFORE the count pass, which reads the dishes that stay
+    # — and, when Surprise me IS on, it finds nothing left: that pass
+    # compares against everything they have ever had, which contains this
+    # window. week_start_date is the CONTENT start, which is what the
+    # window is measured back from (draft_opener.recent_dish_names).
+    # It spends the generation's shared re-pick budget, as every pass here
+    # does, and — unlike the Surprise me pass above — it runs for every
+    # household, so it really can leave the allergen sweep at the end of
+    # this function with nothing left. Named rather than papered over: a
+    # sweep with no budget OPENS the clashing slot instead of re-picking it
+    # (allergen_gate.sweep_plan), which is the safe direction, and every
+    # dish this pass puts on the week has been through swap_in_place.
+    # pick_gate — the same allergen and taste gate — before it was written.
+    # See meal_variety.repick_recent_repeats — it swallows its own failures.
+    _meal_variety.repick_recent_repeats(
+        plan_id, week_start_date,
+        repick_budget or _allergen_gate.CallBudget(),
+        asks=count_asks,
+    )
+
     # "Four dinners a week" means four dishes, and the model is only ASKED
     # for that (Emily, 2026-09-13: "it's giving me 5 types of dinners when I
     # asked for 4"; 2026-09-21: "why isn't it following the guidelines we
@@ -5937,10 +5973,6 @@ def _finish_week_slots(
     # dish it reheats and the chains it reads are real; BEFORE the plates
     # pass, so sides land on the dishes the week actually keeps. See
     # tools.meal_variety for what goes, what stays and when it stands down.
-    count_asks = (
-        (context or {}).get("constraints_notes"),
-        ((context or {}).get("intake") or {}).get("freeform"),
-    )
     count_budget = repick_budget or _allergen_gate.CallBudget()
     period = tools.period_dates(week_start_date, day_count)
     # Each meal's real time cap, per (date, slot) — a rush dinner, the

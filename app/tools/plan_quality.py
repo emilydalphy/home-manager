@@ -112,7 +112,7 @@ from . import usage as _usage
 from ._shared import household_id
 from .week_intake import RUSH_MAX_MINUTES
 from . import time_caps as _time_caps
-from .meal_variety import variety_window_words as _variety_window_words
+from .meal_variety import NO_REPEAT_SLOTS as _NO_REPEAT_SLOTS, variety_window_words as _variety_window_words
 
 logger = logging.getLogger("home_manager")
 
@@ -382,22 +382,41 @@ def _protein_run_violation(run: list[dict]) -> Violation:
 
 
 def _dinner_repeat_in_history(entries: list[dict], context: dict) -> list[Violation]:
-    history_names = {
-        (h.get("meal") or "").strip().lower()
-        for h in (context.get("recent_history") or [])
-        if h.get("slot") == "dinner" and h.get("meal")
+    """
+    A dinner or lunch the household ate inside the variety window.
+
+    LUNCH as well as dinner since 2026-09-25: the prompt's own rule has
+    always been "DINNER and LUNCH — not breakfast or snack"
+    (meal_variety.NO_REPEAT_SLOTS), and this read only ever checked
+    dinner, so a lunch back from last week was breached, drafted and
+    reported by the opener with nothing here saying so. The comparison is
+    within a slot — last week's dinner repeated as this week's lunch is a
+    household using up a dish, not the rule being broken.
+
+    Still warn-only, and since the same day it is mostly the report of a
+    repair rather than of a repeat: meal_variety.repick_recent_repeats
+    replaces what it can before this ever runs, so what is left here is
+    the residue that pass names out loud — a dish they asked for, a night
+    already cooked, a chain it could not move whole, a picker that found
+    nothing better. Worth reading in the morning for exactly that reason.
+    """
+    history = [h for h in (context.get("recent_history") or []) if h.get("meal")]
+    by_slot = {
+        slot: {(h.get("meal") or "").strip().lower() for h in history if h.get("slot") == slot}
+        for slot in _NO_REPEAT_SLOTS
     }
     violations = []
     for entry in entries:
-        if entry.get("slot") != "dinner" or not _is_planned(entry):
+        slot = entry.get("slot")
+        if slot not in by_slot or not _is_planned(entry):
             continue
-        if entry["meal_name"].strip().lower() in history_names:
+        if entry["meal_name"].strip().lower() in by_slot[slot]:
             violations.append(Violation(
                 rule="dinner_repeat_in_history", severity="warn",
-                date=entry["date"], slot="dinner",
+                date=entry["date"], slot=slot,
                 message=(
                     f"'{entry['meal_name']}' on {entry['date']} also appears in {_variety_window_words()} "
-                    "of dinner history."
+                    f"of {slot} history."
                 ),
             ))
     return violations

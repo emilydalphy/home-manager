@@ -261,7 +261,22 @@ def test_the_repick_spends_the_shared_budget_and_stops(past_week, stub_model, mo
     assert all(m["slot_state"] == "planned" for m in tools.get_weekly_plan(plan["weekly_plan_id"])["meals"])
 
 
-def test_without_surprise_me_a_repeat_from_last_week_is_reported_not_repicked(past_week, stub_model, monkeypatch):
+def test_without_surprise_me_a_repeat_from_the_window_is_repicked_too(past_week, stub_model, monkeypatch):
+    """
+    INVERTED 2026-09-25, and named for what it now claims. It used to be
+    test_without_surprise_me_a_repeat_from_last_week_is_reported_not_repicked
+    and asserted "Seven new dishes; Chili back from the last two weeks."
+    That WAS the app: outside Surprise me the no-repeat rule was asked for
+    in the prompt, warned about in plan_quality and reported in the opener,
+    and never enforced. meal_variety.repick_recent_repeats enforces it for
+    every household now, so the claim moves rather than the test going.
+
+    What still distinguishes Surprise me is the WIDTH of the comparison —
+    everything they have ever had from Pomona, drafted or approved —
+    against this window: two weeks, approved plans only. The tests above
+    are what pin that difference; this one only pins that the window's own
+    repeats no longer stand.
+    """
     week = _monday(1)
     tools.save_week_intake(week, moods=["Something warm"])
     dinners = list(NEW_DINNERS)
@@ -269,16 +284,17 @@ def test_without_surprise_me_a_repeat_from_last_week_is_reported_not_repicked(pa
     stub_model(_week(week, dinners))
     picks = []
     monkeypatch.setattr(sip, "_pick_replacement", lambda ctx: (picks.append(ctx), _pick("Moussaka"))[1])
-    # Last week has to be approved for the window line to count it.
+    # Last week has to be approved for the window to count it.
     conn = get_conn()
     conn.execute("UPDATE weekly_plans SET status = 'approved' WHERE id = ?", (past_week["weekly_plan_id"],))
     conn.commit()
     conn.close()
 
     plan = agent.generate_weekly_plan(week)
-    assert picks == []
+    assert len(picks) == 1 and picks[0]["slot"] == "dinner"
+    assert "surprised" not in picks[0]["replacing_because"], "that is the other pass's sentence"
     assert tools.get_week_menu(plan["weekly_plan_id"])["draft_opener"][-1] == \
-        "Seven new dishes; Chili back from the last two weeks."
+        "Eight new dishes — nothing from the last two weeks."
 
 
 # ---------- the opener, on its own ----------
