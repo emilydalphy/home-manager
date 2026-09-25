@@ -20924,6 +20924,10 @@
     // question is asked next time, and every write still records what it
     // recorded before this existed.
     await ensureWhoPicked();
+    // The other adult's first open: the welcome goes over the shell while
+    // the tabs build under it, so "Show me today" lands on a Today that's
+    // already there. Not awaited — nothing below waits on it.
+    if (shellWho.first_open) openFirstOpen();
     // The onboarding reveal's Approve hands into the shell with
     // ?after=approve (its URL is /grocery?after=approve&drafted=<Monday>,
     // 2026-09-18): whatever tab the path names, the week just approved is
@@ -20953,7 +20957,7 @@
   // the "{name} approved the week" notification is no longer shown to the
   // adult who approved. Each adult having their own secret is a later
   // slice; this trusts the device.
-  var shellWho = { member: null, adults: [], chores_enabled: false, loaded: false };
+  var shellWho = { member: null, adults: [], chores_enabled: false, first_open: false, set_up_by: '', loaded: false };
   var whoScreenEl = null;
   var whoResolve = null;
 
@@ -20968,6 +20972,9 @@
       // Missing on an older server reads as off — the safe side for a
       // beta that is meals-only by default.
       shellWho.chores_enabled = !!data.chores_enabled;
+      // The other adult's first open (openFirstOpen, below).
+      shellWho.first_open = !!data.first_open;
+      shellWho.set_up_by = data.set_up_by || '';
       shellWho.loaded = true;
       return data;
     } catch (err) {
@@ -21060,6 +21067,8 @@
       if (!res.ok) throw new Error('pick failed');
       var data = await res.json();
       shellWho.member = data.member || null;
+      shellWho.first_open = !!data.first_open;
+      shellWho.set_up_by = data.set_up_by || shellWho.set_up_by || '';
       closeWhoScreen(shellWho.member);
       // The feed is addressed now (the approver is not told they
       // approved), so it is re-read for whoever this is. The Preferences
@@ -21093,8 +21102,246 @@
     var target = e.target && e.target.closest && e.target.closest('[data-who="switch"]');
     if (!target) return;
     closePrefsSheet();
-    openWhoScreen(true);
+    // Switching to an adult who hasn't been through the welcome shows it
+    // to them — it follows whoever the session is, not the device.
+    openWhoScreen(true).then(function (picked) {
+      if (picked && shellWho.first_open) openFirstOpen();
+    });
   });
+
+  // ---------- The other adult's first open (2026-09-25) ----------
+  //
+  // Loop Board "First open for the adult who didn't set Pomona up": the
+  // first time an adult who didn't do the setup opens Pomona, one short
+  // welcome in the setup welcome's voice (onboarding.html's intro screens —
+  // spruce, big type, one apricot at the foot): their name, who set things
+  // up, what's already there, one button into Today. Once per adult, ever:
+  // the flag is on their member row (app/tools/first_open.py has the rule
+  // for who never sees it), set when they leave it (POST
+  // /api/first-open/seen) — so a reload mid-welcome shows it again rather
+  // than losing it, and a new phone doesn't show it twice.
+  //
+  // Emily's open choice between two shapes, one switch:
+  //   'preview' (A, the default) — this week in three rows: the next
+  //             dinners, the list's count, what's still to decide.
+  //   'line'    (B) — one line about what Pomona does, straight to Today.
+  var FIRST_OPEN_STYLE = 'preview';
+
+  // Adding Pomona to the home screen, offered once, inside the welcome
+  // (which is itself once). Chrome/Android hands over a real install
+  // prompt (beforeinstallprompt, kept here the moment it fires); Safari has
+  // none, so it gets the two taps said plainly. Already installed = no
+  // offer at all.
+  var deferredInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+  });
+
+  function runningFromHomeScreen() {
+    try {
+      if (window.navigator.standalone === true) return true;
+      return !!(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    } catch (err) { return false; }
+  }
+
+  function isIosDevice() {
+    var ua = window.navigator.userAgent || '';
+    return /iPhone|iPad|iPod/.test(ua) ||
+      (/Macintosh/.test(ua) && typeof document !== 'undefined' && 'ontouchend' in document);
+  }
+
+  var FIRST_OPEN_ICONS = {
+    pot: ICONS.pot,
+    bag: ICONS.bag,
+    ask:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.5a2.5 2.5 0 0 1 4.8 1c0 1.7-2.4 2.2-2.4 3.6"/><path d="M12 17.2v.01"/></svg>'
+  };
+
+  var firstOpenEl = null;
+
+  function firstOpenDayWord(d) {
+    if (d.is_tonight) return 'Tonight';
+    if (d.is_tomorrow) return 'Tomorrow';
+    return d.weekday;
+  }
+
+  function firstOpenLaterPhrase(d) {
+    return d.title + (d.is_tomorrow ? ' tomorrow' : ' on ' + d.weekday);
+  }
+
+  // The rows under the greeting (option A). Every line is only what's true
+  // right now: no week → says so and what happens next.
+  function firstOpenRows(preview) {
+    var rows = [];
+    var dinners = preview.dinners || [];
+    if (dinners.length) {
+      var first = dinners[0];
+      var later = dinners.slice(1).map(firstOpenLaterPhrase);
+      rows.push({
+        icon: 'pot',
+        title: firstOpenDayWord(first) + ': ' + first.title,
+        body: later.length ? 'Then ' + later.join(' and ') + '.' : ''
+      });
+    } else if (preview.week_state === 'none') {
+      rows.push({
+        icon: 'pot',
+        title: 'No week planned yet',
+        body: 'Plan one from Today. I’ll draft the dinners, and the list builds from them.'
+      });
+    } else {
+      rows.push({
+        icon: 'pot',
+        title: 'No more dinners on this week’s plan',
+        body: 'Plan the next one from Today and I’ll draft it.'
+      });
+    }
+    if (preview.week_state !== 'none' || preview.list_count > 0) {
+      var n = preview.list_count || 0;
+      rows.push({
+        icon: 'bag',
+        title: 'The shopping list',
+        body: n === 0 ? 'Nothing to buy right now.' : n + (n === 1 ? ' thing' : ' things') + ' to buy.'
+      });
+    }
+    var decide = (preview.decisions || []).map(function (t) { return t + '.'; });
+    if (preview.week_state === 'draft') decide.push('This week’s a draft, waiting for a yes on Plan.');
+    if (decide.length) {
+      rows.push({ icon: 'ask', title: 'Still to decide', body: decide.join(' ') });
+    }
+    return rows;
+  }
+
+  function firstOpenRowHtml(r) {
+    return '<div class="fo-row">' +
+      '<span class="fo-row-icon">' + FIRST_OPEN_ICONS[r.icon] + '</span>' +
+      '<span class="fo-row-text">' +
+        '<span class="fo-row-title">' + escapeHtml(r.title) + '</span>' +
+        (r.body ? '<span class="fo-row-body">' + escapeHtml(r.body) + '</span>' : '') +
+      '</span>' +
+    '</div>';
+  }
+
+  function firstOpenHomeHtml() {
+    if (runningFromHomeScreen()) return '';
+    return '<div class="fo-home" id="fo-home">' +
+      '<p class="fo-home-q" id="fo-home-q">Add Pomona to your home screen?</p>' +
+      '<div class="fo-home-actions" id="fo-home-actions">' +
+        '<button type="button" class="fo-home-add" id="fo-home-add">Add to home screen</button>' +
+        '<button type="button" class="fo-home-later" id="fo-home-later">Not now</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function firstOpenHtml(preview) {
+    var name = shellWho.member ? shellWho.member.name : '';
+    var setUpBy = shellWho.set_up_by && (!shellWho.member || shellWho.set_up_by !== shellWho.member.name)
+      ? shellWho.set_up_by + '’s set up your household.'
+      : 'Your household’s set up.';
+    var lead;
+    var rowsHtml = '';
+    if (FIRST_OPEN_STYLE === 'preview' && preview) {
+      lead = setUpBy + ' I’m Pomona, your home manager. ' +
+        (preview.week_state === 'none' ? 'Here’s where things stand.' : 'Here’s your week so far.');
+      rowsHtml = '<div class="fo-rows">' + firstOpenRows(preview).map(firstOpenRowHtml).join('') + '</div>';
+    } else {
+      lead = setUpBy + ' I’m Pomona, your home manager. I plan the meals and build the shopping list, so it isn’t all on one of you.';
+    }
+    return '<div class="fo-inner' + (rowsHtml ? '' : ' is-line') + '">' +
+      '<div class="fo-body">' +
+        '<span class="fo-mark">' + markSvg() + '</span>' +
+        '<h1 class="fo-title" id="fo-title">Hi' + (name ? ', ' + escapeHtml(name) : '') + '.</h1>' +
+        '<p class="fo-lead">' + escapeHtml(lead) + '</p>' +
+        rowsHtml +
+      '</div>' +
+      '<div class="fo-foot">' +
+        firstOpenHomeHtml() +
+        '<button type="button" class="fo-next" id="fo-next">Show me today' + ICONS.arrow + '</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function wireFirstOpenHome() {
+    var add = firstOpenEl.querySelector('#fo-home-add');
+    var later = firstOpenEl.querySelector('#fo-home-later');
+    if (!add || !later) return;
+    later.addEventListener('click', function () {
+      var home = firstOpenEl.querySelector('#fo-home');
+      if (home) home.remove();
+    });
+    add.addEventListener('click', function () {
+      if (deferredInstallPrompt) {
+        var promptEvent = deferredInstallPrompt;
+        deferredInstallPrompt = null;
+        try {
+          var shown = promptEvent.prompt();
+          if (shown && shown.catch) shown.catch(function () { /* refused; the row goes either way */ });
+        } catch (err) { /* the browser said no; the row goes either way */ }
+        var home = firstOpenEl.querySelector('#fo-home');
+        if (home) home.remove();
+        return;
+      }
+      // No prompt to hand over (Safari, or a browser that keeps it in its
+      // menu): say the taps, and leave "Not now" as the way to close it.
+      var q = firstOpenEl.querySelector('#fo-home-q');
+      q.textContent = isIosDevice()
+        ? 'Tap Share, then Add to Home Screen.'
+        : 'Open your browser’s menu and choose Add to Home Screen.';
+      add.remove();
+      later.textContent = 'Done';
+    });
+  }
+
+  var firstOpenPending = false;
+
+  async function openFirstOpen() {
+    if (firstOpenEl || firstOpenPending) return;
+    firstOpenPending = true;
+    var preview = null;
+    if (FIRST_OPEN_STYLE === 'preview') {
+      try {
+        var res = await fetch('/api/first-open');
+        if (res.ok) preview = await res.json();
+      } catch (err) {
+        // No preview is still a welcome: it falls back to the one line.
+        console.warn('First-open preview failed:', err);
+      }
+    }
+    firstOpenPending = false;
+    closeAskSheet();
+    closeWeekSheet();
+    firstOpenEl = document.createElement('div');
+    firstOpenEl.id = 'first-open';
+    firstOpenEl.className = 'first-open-screen';
+    firstOpenEl.setAttribute('role', 'dialog');
+    firstOpenEl.setAttribute('aria-modal', 'true');
+    firstOpenEl.setAttribute('aria-labelledby', 'fo-title');
+    firstOpenEl.innerHTML = firstOpenHtml(preview);
+    document.body.appendChild(firstOpenEl);
+    document.body.classList.add('first-open-active');
+    wireFirstOpenHome();
+    var next = firstOpenEl.querySelector('#fo-next');
+    next.addEventListener('click', closeFirstOpen);
+    next.focus();
+  }
+
+  async function closeFirstOpen() {
+    if (!firstOpenEl) return;
+    var next = firstOpenEl.querySelector('#fo-next');
+    if (next) next.disabled = true;
+    try {
+      await fetch('/api/first-open/seen', { method: 'POST' });
+    } catch (err) {
+      // Not saved means they'll see it once more next time — never a
+      // wall in the way of Today.
+      console.warn('Marking the welcome seen failed:', err);
+    }
+    shellWho.first_open = false;
+    firstOpenEl.remove();
+    firstOpenEl = null;
+    document.body.classList.remove('first-open-active');
+    activateTab('today', true);
+  }
 
   // ---------- Preferences: what Pomona knows about your household ----------
   //

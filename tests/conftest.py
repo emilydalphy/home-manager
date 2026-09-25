@@ -116,6 +116,9 @@ def clean_state():
             "UPDATE households SET timezone = 'America/Toronto', morning_text_time = '07:00', "
             "country = 'CA', province = 'ON', chores_enabled = 0 WHERE id = 1"
         )
+        # Who set the household up (first-open welcome) is on the household
+        # row too, and names a member the wipe above just deleted.
+        conn.execute("UPDATE households SET set_up_by_member_id = NULL WHERE id = 1")
     except Exception:
         pass
     conn.execute("PRAGMA foreign_keys = ON")

@@ -286,6 +286,14 @@ from .held import (  # noqa: F401
     resolve_held_thing,
     restore_held_thing,
 )
+# The other adult's first open (2026-09-25): the once-per-adult welcome,
+# who set the household up, and the preview it shows. See first_open.py.
+from .first_open import (  # noqa: F401
+    first_open_preview,
+    first_open_state,
+    mark_first_open_seen,
+    record_setup_adult,
+)
 from .household import (  # noqa: F401
     _NON_RESTRICTION_VALUES,
     _get_or_create_member,
