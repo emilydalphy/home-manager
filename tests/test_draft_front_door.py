@@ -149,10 +149,17 @@ def test_the_pill_is_the_one_road_and_re_plan_left_the_more_sheet():
     sheet = _extract("renderMealsMoreSheet", SHELL_JS)
     for gone in ("wk-more-replan", "week-period-open", "PERIOD_PICKER_COPY", "wirePeriodPicker", "planEntryLabel"):
         assert gone not in sheet, gone
-    for kept in ("'wk-more-try-again', 'Try again'", "'wk-more-change', 'Change my answers'",
-                 "'wk-more-discard', 'Drop this draft'", "'wk-more-whole-week', 'See the whole week'",
-                 "'wk-more-setup', 'Adjust your setup'", "'wk-more-reset', 'Start over'",
-                 "'wk-more-help', 'Need a hand?'"):
+    # Mockup "10C" (2026-09-25): "Drop this draft" was renamed "Keep my
+    # approved week" and every row now carries an icon and a
+    # what-happens-next line — see test_the_more_sheet_is_icon_rows_
+    # under_two_eyebrows below for the fuller check.
+    for kept in ("'wk-more-try-again', WK_ICONS.redo, 'Try again'",
+                 "'wk-more-change', WK_ICONS.pencil, 'Change my answers'",
+                 "'wk-more-discard', WK_ICONS.bin, 'Keep my approved week'",
+                 "'wk-more-whole-week', WK_ICONS.calendar, 'See the whole week'",
+                 "'wk-more-setup', WK_ICONS.tweak, 'Adjust your setup'",
+                 "'wk-more-reset', WK_ICONS.resetArrow, 'Start over'",
+                 "'wk-more-help', WK_ICONS.help, 'Need a hand?'"):
         assert kept in sheet, kept
 
 

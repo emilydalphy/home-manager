@@ -1050,17 +1050,23 @@ class GroceryPreShopRequest(BaseModel):
 
 class ResetRequest(BaseModel):
     """
-    Which of the two self-service resets to run — see POST /api/reset.
-    Both default to False so a malformed or empty body deletes nothing;
-    the route rejects "neither" rather than treating it as "both".
+    Which of the self-service resets to run — see POST /api/reset. All
+    three default to False so a malformed or empty body deletes nothing;
+    the route rejects "none of them" rather than treating it as "all".
     """
     meal_plan: bool = False
     grocery_list: bool = False
+    # "This week's answers" (the More sheet's "Start over", 2026-09-25):
+    # clears the intake for the plan's own week_start_date — the answers
+    # to that week's planning questions, and nothing under Preferences.
+    # See tools.clear_week_intake.
+    week_answers: bool = False
     # The plan the Plan tab is showing — the one "clear this week's meal
-    # plan" means. Sent by the dialog from its own preview, so the plan
-    # counted is the plan cleared (Loop Board, 2026-09-13: the default
-    # resolver cleared last week's draft under an approved week). Left
-    # unset only by an older client; then the default resolver answers.
+    # plan" (and, now, "this week's answers") means. Sent by the dialog
+    # from its own preview, so the plan counted is the plan cleared (Loop
+    # Board, 2026-09-13: the default resolver cleared last week's draft
+    # under an approved week). Left unset only by an older client; then
+    # the default resolver answers.
     weekly_plan_id: int | None = None
 
 
@@ -4212,9 +4218,10 @@ def add_prep_cut_view(req: PrepCutRequest):
 def reset_preview(weekly_plan_id: int | None = None):
     """
     Counts for the Meals tab's "Start over" confirm dialog — how many
-    planned meals and how many still-needed grocery items a reset would
-    remove — so the dialog can name real numbers and grey out a choice
-    that would do nothing. Read-only; see tools.get_reset_preview.
+    planned meals, how many still-needed grocery items, and whether this
+    week's planning questions have an answer on file — so the dialog can
+    name real numbers and grey out a choice that would do nothing.
+    Read-only; see tools.get_reset_preview.
     weekly_plan_id is the plan the tab is showing — the dialog always
     sends it, so the plan counted here is the plan the reset clears.
     """
@@ -4229,31 +4236,41 @@ def reset_preview(weekly_plan_id: int | None = None):
 def reset(req: ResetRequest):
     """
     The self-service reset behind the Meals tab's "Start over" dialog:
-    clear this week's meal plan, clear the grocery list, or both. Narrow on
-    purpose — it touches nothing else the household owns (recipes, chores,
-    members, inventory, memory). Wiping all of that is reset_household.py,
-    an admin script with no in-app entry point.
+    clear this week's meal plan, clear the grocery list, clear this week's
+    intake answers, or any mix of the three. Narrow on purpose — it
+    touches nothing else the household owns (recipes, chores, members,
+    inventory, memory, and never Preferences/household setup). Wiping all
+    of that is reset_household.py, an admin script with no in-app entry
+    point.
 
-    Order matters when both are asked for: the plan goes first, so its
-    per-meal grocery reversals (tools.clear_weekly_plan) are already
-    reflected in what the list clear then removes — the other way round
-    would reverse contributions against rows that no longer exist.
+    Order matters when both plan and list are asked for: the plan goes
+    first, so its per-meal grocery reversals (tools.clear_weekly_plan) are
+    already reflected in what the list clear then removes — the other way
+    round would reverse contributions against rows that no longer exist.
+    week_answers is independent of both — it never touches meal_plan_entries
+    or grocery_items — so its order relative to them doesn't matter.
     """
-    if not req.meal_plan and not req.grocery_list:
+    if not req.meal_plan and not req.grocery_list and not req.week_answers:
         raise HTTPException(status_code=400, detail="Nothing selected to reset.")
-    result = {"meal_plan": None, "grocery_list": None}
+    result = {"meal_plan": None, "grocery_list": None, "week_answers": None}
     try:
         if req.meal_plan:
             result["meal_plan"] = tools.clear_weekly_plan(req.weekly_plan_id)
         if req.grocery_list:
             result["grocery_list"] = tools.clear_grocery_list(status="needed")
+        if req.week_answers:
+            preview = tools.get_reset_preview(req.weekly_plan_id)
+            week_start = preview.get("week_start_date")
+            if week_start:
+                result["week_answers"] = tools.clear_week_intake(week_start)
     except Exception as e:
         logger.exception("Reset failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     logger.info(
-        "Self-service reset: meal_plan=%s grocery_list=%s",
+        "Self-service reset: meal_plan=%s grocery_list=%s week_answers=%s",
         result["meal_plan"] and result["meal_plan"]["meals_cleared"],
         result["grocery_list"] and result["grocery_list"]["removed_count"],
+        result["week_answers"] and result["week_answers"]["cleared"],
     )
     return result
 

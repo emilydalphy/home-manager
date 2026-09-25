@@ -191,8 +191,8 @@ def test_the_more_button_on_the_draft_is_wired_and_the_sheet_has_the_draft_rows(
     assert "openMealsMoreSheet()" in wiring
     sheet = _extract("renderMealsMoreSheet", SHELL_JS)
     assert "hasPlan && data.status !== 'approved'" in sheet
-    assert "'wk-more-try-again', 'Try again'" in sheet
-    assert "'wk-more-change', 'Change my answers'" in sheet
+    assert "'wk-more-try-again', WK_ICONS.redo, 'Try again'" in sheet
+    assert "'wk-more-change', WK_ICONS.pencil, 'Change my answers'" in sheet
 
 
 def test_the_tab_bar_is_never_hidden_by_the_plan_tab():

@@ -12171,7 +12171,40 @@
     // Tweak: two sliders.
     tweak: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ' +
       'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-      '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>'
+      '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>',
+    // The More sheets own icons (mockup 10C, Emily approved 2026-09-25):
+    // (No apostrophes in these comments: tests slice this var by quotes.)
+    // one per row, all 18px inside the 32px --celadon-tint tile.
+    // Try again — two curved arrows forming a cycle.
+    redo: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" ' +
+      'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M17 2.1l4 4-4 4"/><path d="M3 12.7a9 9 0 0 1 15-6.6l3 2.9"/>' +
+      '<path d="M7 21.9l-4-4 4-4"/><path d="M21 11.3a9 9 0 0 1-15 6.6l-3-3"/></svg>',
+    // Change my answers — a pencil.
+    pencil: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" ' +
+      'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+    // Keep my approved week — the draft goes in the bin, the week stays.
+    bin: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" ' +
+      'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M4 7h16"/><path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/>' +
+      '<path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/><path d="M10 11v6M14 11v6"/></svg>',
+    // Reopen the week — an unlocked padlock: it can be changed again.
+    unlock: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" ' +
+      'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>',
+    // Check the week — a checklist, one line per day.
+    checklist: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" ' +
+      'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6.5l1 1 2-2M4 12.5l1 1 2-2M4 18.5l1 1 2-2"/></svg>',
+    // See the whole week — a calendar.
+    calendar: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" ' +
+      'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9.5h18M8 3v4M16 3v4"/></svg>',
+    // Start over — a single reset arrow curling back.
+    resetArrow: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" ' +
+      'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M3 11a9 9 0 1 1 2.6 6.4"/><path d="M3 5v6h6"/></svg>'
   };
 
   // A day with nothing to cook on it — every one of its three real meals is
@@ -15543,59 +15576,91 @@
   var mealsMoreScrim = document.getElementById('meals-more-scrim');
   var mealsMoreSheet = document.getElementById('meals-more-sheet');
 
-  function mealsMoreRowHtml(id, label, sub) {
+  // Mockup "10C" (Emily, approved 2026-09-25): every row is an icon, a
+  // title, and one line saying exactly what happens or where it goes —
+  // not the vaguer sub-lines this sheet carried before. `icon` is one of
+  // WK_ICONS; `what` is required (every row says what it does), unlike
+  // the old optional `sub`.
+  function mealsMoreRowHtml(id, icon, label, what) {
     return '<button type="button" class="wk-more-row" id="' + id + '">' +
-      '<span class="wk-more-label">' + escapeHtml(label) + '</span>' +
-      (sub ? '<span class="wk-more-sub">' + escapeHtml(sub) + '</span>' : '') +
+      '<span class="wk-more-icon">' + icon + '</span>' +
+      '<span class="wk-more-text">' +
+        '<span class="wk-more-label">' + escapeHtml(label) + '</span>' +
+        '<span class="wk-more-sub">' + escapeHtml(what) + '</span>' +
+      '</span>' +
+      '<span class="wk-more-chev">' + WK_ICONS.chev + '</span>' +
     '</button>';
+  }
+
+  function mealsMoreGroupHtml(eyebrow, rowsHtml) {
+    if (!rowsHtml) return '';
+    return '<div class="wk-more-group">' +
+      '<span class="wk-more-eyebrow">' + escapeHtml(eyebrow) + '</span>' +
+      rowsHtml +
+    '</div>';
   }
 
   // Re-plan and the custom-range picker left this sheet on 2026-09-21
   // (Emily: "the option to re-plan is really hidden"): re-planning is the
-  // band's pill (replanWeek), and
-  // picking your own days is the intake's first question. What stays is
-  // the rare: Try again, Change my answers, Drop this draft, Reopen,
-  // Check the week, See the whole week, Adjust your setup, Start over —
-  // and, on a draft, Need a hand? (the "?" the draft's head used to carry).
+  // band's pill (replanWeek), and picking your own days is the intake's
+  // first question. What stays is the rare: Try again, Change my answers,
+  // Keep my approved week (a draft over an approved week only), Reopen,
+  // Check the week (an approved week only), See the whole week, Adjust
+  // your setup, Start over, Need a hand? — two eyebrows: the week on
+  // screen's own rare moves ("This draft"/"This week"), then everything
+  // else that doesn't belong to one week in particular.
   function renderMealsMoreSheet() {
     var rows = document.getElementById('meals-more-rows');
     if (!rows) return;
     var data = weekState.data || {};
     var hasPlan = !!data.weekly_plan_id;
-    rows.innerHTML =
-      (hasPlan && data.status !== 'approved'
-        ? mealsMoreRowHtml('wk-more-help', 'Need a hand?') +
-          mealsMoreRowHtml('wk-more-try-again', 'Try again', 'Same answers, a different week') +
-          mealsMoreRowHtml('wk-more-change', 'Change my answers') +
-          // A draft you have decided against, gone in one tap — otherwise
-          // the only ways off it were approving it (which is the opposite
-          // of what you meant) or drafting something else over it. The
-          // sub-line is the whole reason it's an easy yes: an approved week
-          // underneath is untouched, and a draft has never put anything on
-          // the list. data.replaces is present exactly when there is an
-          // approved week under this draft (get_week_menu's approval block).
-          mealsMoreRowHtml('wk-more-discard', 'Drop this draft',
-            data.replaces ? 'Your approved week stays as it is' : "Nothing's on your list from it")
-        : '') +
+    var isDraft = hasPlan && data.status !== 'approved';
+    var isApproved = hasPlan && data.status === 'approved';
+
+    var weekRows = '';
+    if (isDraft) {
+      weekRows =
+        mealsMoreRowHtml('wk-more-try-again', WK_ICONS.redo, 'Try again',
+          'Plans different meals from the same answers. This draft is replaced.') +
+        mealsMoreRowHtml('wk-more-change', WK_ICONS.pencil, 'Change my answers',
+          "Takes you back to this week's questions, filled in. I plan again when you're done.") +
+        // A draft you have decided against, gone in one tap — otherwise the
+        // only ways off it were approving it (the opposite of what you
+        // meant) or drafting something else over it. Shown only when there
+        // is an approved week underneath to keep: data.replaces is present
+        // exactly then (get_week_menu's approval block) — with nothing
+        // approved under it, "keep" has nothing to name, and Try again or
+        // Change my answers are already the ways off a bare draft.
+        (data.replaces
+          ? mealsMoreRowHtml('wk-more-discard', WK_ICONS.bin, 'Keep my approved week',
+              'Throws this draft away. Your approved week and grocery list stay as they are.')
+          : '');
+    } else if (isApproved) {
       // Reopening followed the receipt's own buttons in here (Emily's
       // approved design, 2026-09-08: the receipt is a receipt, and once
       // it's dismissed a settled week is header + card + foot). Not
       // "un-approve": it lets the week be edited again and never takes
-      // anything off the shopping list — re-approving only adds what's new,
-      // and removing something somebody may already have bought is worse
-      // than a slightly long list.
-      (hasPlan && data.status === 'approved'
-        ? mealsMoreRowHtml('wk-more-reopen', 'Reopen the week', 'Your list stays as it is')
-        : '') +
-      // A draft carries "Check the week" on the page itself; an APPROVED
-      // week has no decision row for it to sit in, and this step is for
-      // every week rather than only for one about to be approved.
-      (hasPlan && data.status === 'approved'
-        ? mealsMoreRowHtml('wk-more-check', 'Check the week')
-        : '') +
-      mealsMoreRowHtml('wk-more-whole-week', 'See the whole week', 'With the link to share it') +
-      mealsMoreRowHtml('wk-more-setup', 'Adjust your setup') +
-      mealsMoreRowHtml('wk-more-reset', 'Start over');
+      // anything off the shopping list — re-approving only adds what's
+      // new, and removing something somebody may already have bought is
+      // worse than a slightly long list.
+      weekRows =
+        mealsMoreRowHtml('wk-more-reopen', WK_ICONS.unlock, 'Reopen the week',
+          "Opens it up to change again. Nothing comes off your grocery list.") +
+        mealsMoreRowHtml('wk-more-check', WK_ICONS.checklist, 'Check the week',
+          'Every dinner, day by day, so you can look it over.');
+    }
+
+    rows.innerHTML =
+      mealsMoreGroupHtml(isDraft ? 'This draft' : 'This week', weekRows) +
+      mealsMoreGroupHtml('Everything else',
+        mealsMoreRowHtml('wk-more-whole-week', WK_ICONS.calendar, 'See the whole week',
+          'Every meal on one page, with a link you can send.') +
+        mealsMoreRowHtml('wk-more-setup', WK_ICONS.tweak, 'Adjust your setup',
+          'Opens your household settings: meal counts, cooking time, kitchen.') +
+        mealsMoreRowHtml('wk-more-reset', WK_ICONS.resetArrow, 'Start over',
+          'Clears the meal plan, the grocery list or this week’s answers. You pick, and confirm first.') +
+        mealsMoreRowHtml('wk-more-help', WK_ICONS.help, 'Need a hand?',
+          'Tips for changing the week, and a way to send Emily a note.'));
 
     var panel = panels['week'];
     function on(id, fn) {
@@ -15612,7 +15677,12 @@
     on('wk-more-reopen', function () { closeMealsMoreSheet(); reopenWeek(panel, data); });
     on('wk-more-check', function () { closeMealsMoreSheet(); goMealsStep('review'); });
     on('wk-more-whole-week', function () { closeMealsMoreSheet(); openWeekSheet(); });
-    on('wk-more-setup', function () { closeMealsMoreSheet(); openMealSetup(); });
+    // Adjust your setup opens the Preferences sheet — the household's
+    // settings behind the header gear (openPrefsSheet) — never the
+    // /meal-setup page and never chat (Emily, mockup 10C: "this must take
+    // the user to the settings screen"). Close More first: one sheet at a
+    // time, the rule every other sheet here follows.
+    on('wk-more-setup', function () { closeMealsMoreSheet(); openPrefsSheet(); });
     on('wk-more-reset', function () { closeMealsMoreSheet(); openResetDialog(); });
   }
 
@@ -19259,6 +19329,7 @@
   var resetDialog = document.getElementById('reset-dialog');
   var resetMealCb = document.getElementById('reset-meal-plan');
   var resetGroceryCb = document.getElementById('reset-grocery-list');
+  var resetAnswersCb = document.getElementById('reset-week-answers');
   var resetConfirmBtn = document.getElementById('reset-confirm');
   var resetSubmitting = false;
   // The plan the preview counted, and the one the reset then clears — the
@@ -19283,7 +19354,8 @@
 
   function syncResetConfirmBtn() {
     if (!resetConfirmBtn) return;
-    resetConfirmBtn.disabled = resetSubmitting || (!resetMealCb.checked && !resetGroceryCb.checked);
+    resetConfirmBtn.disabled = resetSubmitting ||
+      (!resetMealCb.checked && !resetGroceryCb.checked && !resetAnswersCb.checked);
   }
 
   async function openResetDialog() {
@@ -19294,10 +19366,13 @@
     resetConfirmBtn.textContent = 'Start over';
     var mealSub = document.getElementById('reset-meal-plan-sub');
     var grocerySub = document.getElementById('reset-grocery-list-sub');
+    var answersSub = document.getElementById('reset-week-answers-sub');
     mealSub.textContent = 'Checking…';
     grocerySub.textContent = 'Checking…';
+    answersSub.textContent = 'Checking…';
     resetMealCb.disabled = true;
     resetGroceryCb.disabled = true;
+    resetAnswersCb.disabled = true;
     resetConfirmBtn.disabled = true;
     openSheet(resetDialog, resetScrim);
 
@@ -19324,14 +19399,23 @@
         'The list is already empty.',
         'Removes ' + plural(data.grocery_count, 'item', 'items') + ' still to buy.' + groceryTail
       );
+      // This week's answers to the planning questions — never household
+      // setup (Preferences), only what this one week's intake collected.
+      setResetOptionState(
+        resetAnswersCb, answersSub, data.intake_count,
+        "You haven't answered this week's questions yet.",
+        "Clears what you told me for this week's questions" + weekName + ". Your household settings stay as they are."
+      );
     } catch (err) {
       console.warn('Reset preview failed:', err);
       // Don't offer a delete we couldn't size up — the counts are the whole
       // point of confirming, so fail closed rather than guessing.
       mealSub.textContent = "Couldn't check right now.";
       grocerySub.textContent = "Couldn't check right now.";
+      answersSub.textContent = "Couldn't check right now.";
       resetMealCb.checked = false;
       resetGroceryCb.checked = false;
+      resetAnswersCb.checked = false;
     }
     syncResetConfirmBtn();
   }
@@ -19345,7 +19429,8 @@
     if (resetSubmitting) return;
     var doMealPlan = resetMealCb.checked;
     var doGroceryList = resetGroceryCb.checked;
-    if (!doMealPlan && !doGroceryList) return;
+    var doWeekAnswers = resetAnswersCb.checked;
+    if (!doMealPlan && !doGroceryList && !doWeekAnswers) return;
     resetSubmitting = true;
     resetConfirmBtn.textContent = 'Starting over…';
     syncResetConfirmBtn();
@@ -19353,27 +19438,30 @@
       var res = await fetch('/api/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ meal_plan: doMealPlan, grocery_list: doGroceryList, weekly_plan_id: resetPlanId })
+        body: JSON.stringify({
+          meal_plan: doMealPlan, grocery_list: doGroceryList, week_answers: doWeekAnswers,
+          weekly_plan_id: resetPlanId
+        })
       });
       if (!res.ok) throw new Error('reset failed');
       var data = await res.json();
       closeResetDialog();
       refreshAfterReset(doMealPlan, doGroceryList);
-      // Counting both clears separately would under-report the list: with
-      // both selected the plan goes first, so its ingredients are already
-      // gone by the time the list clear runs and only whatever a person had
-      // added themselves is left for it to remove ("4 meals and 1 grocery
-      // item" for a list that just went from 9 to 0). Name the list rather
-      // than a number when both ran.
-      var summary;
-      if (data.meal_plan && data.grocery_list) {
-        summary = 'Cleared ' + plural(data.meal_plan.meals_cleared, 'meal', 'meals') + ' and the grocery list';
-      } else if (data.meal_plan) {
-        summary = 'Cleared ' + plural(data.meal_plan.meals_cleared, 'meal', 'meals');
-      } else {
-        summary = 'Cleared ' + plural(data.grocery_list.removed_count, 'grocery item', 'grocery items');
+      // Counting the plan and the list separately would under-report the
+      // list: with both selected the plan goes first, so its ingredients
+      // are already gone by the time the list clear runs and only
+      // whatever a person had added themselves is left for it to remove
+      // ("4 meals and 1 grocery item" for a list that just went from 9 to
+      // 0). Name the list rather than a number when both ran.
+      var parts = [];
+      if (data.meal_plan) parts.push(plural(data.meal_plan.meals_cleared, 'meal', 'meals'));
+      if (data.grocery_list) {
+        parts.push(data.meal_plan ? 'the grocery list' : plural(data.grocery_list.removed_count, 'grocery item', 'grocery items'));
       }
-      showToast(summary + '. Fresh start.');
+      if (data.week_answers && data.week_answers.cleared) parts.push("this week's answers");
+      var summary = parts.length === 1 ? parts[0]
+        : parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
+      showToast('Cleared ' + summary + '. Fresh start.');
     } catch (err) {
       console.warn('Reset failed:', err);
       resetConfirmBtn.textContent = "Couldn't do that — try again";
@@ -19408,6 +19496,7 @@
     resetConfirmBtn.addEventListener('click', runReset);
     resetMealCb.addEventListener('change', syncResetConfirmBtn);
     resetGroceryCb.addEventListener('change', syncResetConfirmBtn);
+    resetAnswersCb.addEventListener('change', syncResetConfirmBtn);
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && !resetDialog.hidden) closeResetDialog();
     });

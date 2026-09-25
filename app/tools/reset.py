@@ -7,6 +7,7 @@ from ..db import get_conn
 from ._shared import household_id
 from . import grocery as _grocery
 from . import weekly_plan as _weekly_plan
+from . import week_intake as _week_intake
 
 
 # "This week needs a do-over" without going through chat and without
@@ -129,11 +130,21 @@ def get_reset_preview(weekly_plan_id: int | None = None) -> dict:
     which is the whole list as the Grocery screen means it: everything
     still to buy, whether a meal plan put it there or a person did.
     Anything already in a cart or bought stays, and isn't counted here.
+
+    intake_count is 0 or 1 — whether this week's planning questions have
+    an answer on file at all (tools.get_week_intake) — for the third
+    "Start over" option, "This week's answers". It rides on the same
+    plan's week_start_date as the other two counts, so it is the SAME
+    week the dialog is about, never some other week's questions. A
+    household with no plan on file yet (week_start_date is None) has no
+    week for this option to name, so it answers 0 and the row stays
+    disabled, same as the other two counts do at zero.
     """
     conn = get_conn()
     plan = _resolve_plan(conn, weekly_plan_id)
     meal_count = 0
     week_label = None
+    week_start_date = plan["week_start_date"] if plan else None
     if plan:
         meal_count = conn.execute(
             "SELECT COUNT(*) AS n FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ?",
@@ -146,13 +157,17 @@ def get_reset_preview(weekly_plan_id: int | None = None) -> dict:
         (household_id(),),
     ).fetchone()["n"]
     conn.close()
+    intake_count = 0
+    if week_start_date:
+        intake_count = 1 if _week_intake.get_week_intake(week_start_date) else 0
     return {
         "weekly_plan_id": plan["id"] if plan else None,
-        "week_start_date": plan["week_start_date"] if plan else None,
+        "week_start_date": week_start_date,
         "week_label": week_label,
         "plan_status": plan["status"] if plan else None,
         "meal_count": meal_count,
         "grocery_count": grocery_count,
+        "intake_count": intake_count,
     }
 
 
