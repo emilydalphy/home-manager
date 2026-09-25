@@ -174,10 +174,13 @@ def test_the_band_carries_the_opener_and_the_toggle_with_what_were_eating_select
     out = _run(_band_prelude() + f"""
 var extras = weekBandExtras({json.dumps(data)});
 console.log(JSON.stringify({{ extras: extras, tail: weekBandTailHtml(extras), set: weekBandTailHtml(weekBandExtras({json.dumps(_approved(days))})) }}));""")
+    # draft_opener is still computed and still on extras.lead (declutter,
+    # 2026-09-25: Emily asked the summary paragraph off the draft's band —
+    # only the display goes; the underlying field still feeds anything
+    # else that reads it), but weekBandTailHtml no longer draws it.
     assert out["extras"]["view"] == "menu" and out["extras"]["lead"] == data["draft_opener"]
     tail = out["tail"]
-    assert '<p class="wk-draft-lead" id="wk-draft-lead">Mexican for lunch Mon–Thu, as you asked. Nine new dishes — nothing from the last two weeks.</p>' in tail
-    assert tail.index("wk-draft-lead") < tail.index("wk-draft-seg"), "the opener above the toggle"
+    assert "wk-draft-lead" not in tail, "the opener paragraph is no longer shown"
     assert re.search(r'class="wk-draft-seg-btn is-on" role="tab" aria-selected="true" data-wk-view="menu">What we’re eating<', tail)
     assert re.search(r'class="wk-draft-seg-btn" role="tab" aria-selected="false" data-wk-view="days">Which days<', tail)
     assert tail.count("wk-draft-seg-btn") == 2

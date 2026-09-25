@@ -286,9 +286,33 @@ def test_every_fact_the_old_page_edited_is_still_editable(fact):
 
 
 def test_the_freeform_facts_live_in_the_section_that_owns_their_category():
-    assert "wwkFactsHtml('people')" in _function("wwkPeopleHtml")
+    # Who's here (2026-09-25 declutter): the household's own facts are set
+    # off from the per-person blocks and labelled for the household — see
+    # test_the_household_facts_are_set_off_from_the_last_person below.
+    assert "wwkFactsHtml('people', { household: true, lead: 'Anything else for the household' })" in _function("wwkPeopleHtml")
     assert "wwkFactsHtml('rhythm')" in _function("wwkRhythmHtml")
     assert "wwkFactsHtml('taste')" in _function("wwkTasteHtml")
+
+
+def test_the_household_facts_are_set_off_from_the_last_person():
+    """The 'Anything else' block under Who's here used to fall straight out
+    of the members loop with no separation and the quiet .wwk-lead weight,
+    so it read as belonging to whichever person rendered last. It's now a
+    household-level block: the sheet's own top-level section-header weight
+    (.prefs-row-title's 15px/800/-0.015em/--ink, matched by
+    .wwk-household-lead) and a rule above it, the same way one person is
+    set off from the next (.wwk-person + .wwk-person)."""
+    fn = _function("wwkFactsHtml")
+    assert "opts.household" in fn
+    assert "'<p class=\"wwk-household-lead\">'" in fn
+    assert "'<div class=\"wwk-household-facts\">' + html + '</div>'" in fn
+    title_rule = SHELL_CSS[SHELL_CSS.index(".prefs-row-title {"):SHELL_CSS.index("}", SHELL_CSS.index(".prefs-row-title {"))]
+    lead_rule = SHELL_CSS[SHELL_CSS.index(".wwk-household-lead {"):SHELL_CSS.index("}", SHELL_CSS.index(".wwk-household-lead {"))]
+    for prop in ("font-size: 15px", "font-weight: 800", "letter-spacing: -0.015em"):
+        assert prop in title_rule and prop in lead_rule, f"{prop} should match the sheet's section-header weight"
+    assert ".wwk-household-facts {" in SHELL_CSS
+    facts_rule = SHELL_CSS[SHELL_CSS.index(".wwk-household-facts {"):SHELL_CSS.index("}", SHELL_CSS.index(".wwk-household-facts {"))]
+    assert "border-top: 1.5px solid var(--hairline)" in facts_rule, "a visible separation from the last person"
 
 
 # --- 5. the lines, run for real -----------------------------------------------
