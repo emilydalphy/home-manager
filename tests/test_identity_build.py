@@ -275,7 +275,9 @@ def test_plan_and_cook_pass_through_the_same_band_builder():
     assert "setRootBand(panel, 'kit-band', { eyebrow: cookBandEyebrow(todayIso) });" in kitchen
     assert "setRootBand(panel, 'kit-band', { sub: kitchenSubtitle(rows, meals, todayIso) });" in kitchen
     shop = _function("renderGrocery")
-    assert "setRootBand(panel, 'gro-band', { eyebrow: groBandEyebrow(data), sub: groBandLine(data) });" in shop
+    # The band's subtitle was removed 2026-09-25 (declutter) — see
+    # tests/test_root_band.py.
+    assert "setRootBand(panel, 'gro-band', { eyebrow: '', sub: '' });" in shop
 
 
 def test_the_band_brand_css_is_the_canvas_sizes_from_tokens():

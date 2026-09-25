@@ -276,11 +276,18 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
             lead = "made ahead" if made_ahead else "leftovers from"
             source_date = source.get("date")
             provenance = f"{lead} {_weekday(source_date)}" if source_date else lead
+            # A made-ahead portion eaten cold is not reheated (Emily,
+            # 2026-09-25), so the line drops the word: "made ahead
+            # Wednesday · 3:30". cooker._apply_leftover_chains decides it
+            # (leftovers.served_cold); the kind stays "reheat" because what
+            # the move DOES — tick it once it's eaten — is the same.
+            served_cold = bool(meal.get("served_cold"))
+            how = "" if served_cold else " · reheat"
             moves.append({
                 "id": f"reheat:{meal['entry_id']}",
                 "kind": "reheat",
                 "title": meal.get("meal") or headline or "Leftovers",
-                "detail": f"{provenance} · reheat · {_clock(at.time())}",
+                "detail": f"{provenance}{how} · {_clock(at.time())}",
                 "reason": meal.get("reheat_note") or "",
                 "date": day_str,
                 "slot": slot,
@@ -295,7 +302,8 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
                 "task_id": None,
                 "duration_min": 0,
                 "time_label": _slot_time_label(slot, at),
-                "meta": f"{provenance} · reheat",
+                "meta": f"{provenance}{how}",
+                "served_cold": served_cold,
                 "chips": [],
             })
             continue

@@ -3,7 +3,8 @@ The four Plan cards of 2026-09-18 (Emily's approved boards 11, 11b, 12,
 19 and 19b), run against shell.js's own renderers under node:
 
   1. Check the week — day tabs, a swipeable carousel of day cards, rows
-     in Breakfast → Lunch → Dinner order with "Swap the meal", the "?"
+     in Breakfast → Lunch → Dinner order with "Swap" (it read "Swap the meal"
+     until 2026-09-25), the "?"
      help button, and the dock's "Approve · Open grocery list".
   2. All set is one thing — the tick, one line, two numbers, ONE button —
      and the freezer step with its chips and "What that means" card; the
@@ -195,17 +196,20 @@ def test_check_the_week_opens_with_the_crumb_title_line_tabs_cards_and_dots():
 
 
 @_needs_node
-def test_each_card_has_the_day_the_count_and_rows_in_meal_order_with_swap_the_meal():
+def test_each_card_has_the_day_the_count_and_rows_in_meal_order_with_swap():
+    # "Swap the meal" until 2026-09-25: 1A's row line holds "Swap" and
+    # "Tweak" beside the time.
     days = _week()
     html = _run(_prelude() + f"weekState.days = {json.dumps(days)};\n"
-                f"console.log(JSON.stringify(wkDayCardHtml({json.dumps(days[0])}, 0, {{ done: false, swapLabel: 'Swap the meal' }})));")
+                f"console.log(JSON.stringify(wkDayCardHtml({json.dumps(days[0])}, 0, {{ done: false, swapLabel: 'Swap' }})));")
     assert '<span class="wk-card-day">Monday</span>' in html
     assert '<span class="wk-card-count">3 meals</span>' in html
     order = [html.index(x) for x in ("Breakfast", "Lunch", "Dinner")]
     assert order == sorted(order)
-    assert html.count("Swap the meal</button>") == 3
+    assert html.count(">Swap</button>") == 3
+    assert "swapLabel: 'Swap the meal'" not in SHELL_JS
     assert html.count('data-wk-swap-sheet="') == 3
-    assert 'data-wk-meal="dinner">Lemon chicken &amp; orzo</button>' in html, "the dish is the existing recipe link"
+    assert 'data-wk-meal="dinner">Lemon chicken &amp; orzo<svg class="wk-row-chev"' in html, "the dish is the existing recipe link"
     assert '<span class="wk-row-meta">35 min</span>' in html
     assert "data-wk-done" not in html, "Check the week has no Done — that is the root's"
 
@@ -216,7 +220,7 @@ def test_a_made_ahead_row_says_from_monday_and_an_open_row_offers_pick():
     html = _run(_prelude() + f"weekState.days = {json.dumps(days)};\n"
                 f"console.log(JSON.stringify([wkDayCardHtml({json.dumps(days[1])}, 1, {{}}), wkDayCardHtml({json.dumps(days[2])}, 2, {{}})]));")
     tue, wed = html
-    assert 'data-wk-meal="breakfast">Overnight oats</button>' in tue, "the dish, not the whole made-ahead sentence"
+    assert 'data-wk-meal="breakfast">Overnight oats<svg class="wk-row-chev"' in tue, "the dish, not the whole made-ahead sentence"
     assert '<span class="wk-row-meta">from Monday</span>' in tue
     assert '<span class="wk-row-meta">leftovers</span>' in tue
     assert 'data-wk-pick="dinner"' in wed and ">Pick</button>" in wed
@@ -459,10 +463,10 @@ def test_a_done_row_strikes_through_and_its_button_turns_celadon_with_put_back()
     html = _run(_prelude() + f"weekState.days = {json.dumps(days)};\n"
                 f"console.log(JSON.stringify(wkDayCardHtml({json.dumps(days[1])}, 1, {{ done: true, swapLabel: 'Swap' }})));")
     import re
-    assert re.findall(r'<div class="wk-row( is-done)?" data-wk-row="(\w+)"', html) == [
+    assert re.findall(r'<div class="wk-row has-foot( is-done)?" data-wk-row="(\w+)"', html) == [
         ("", "breakfast"), ("", "lunch"), (" is-done", "dinner")]
-    lunch = html[html.index('data-wk-row="lunch"'):html.index('<div class="wk-row is-done"')]
-    dinner = html[html.index('<div class="wk-row is-done"'):]
+    lunch = html[html.index('data-wk-row="lunch"'):html.index('<div class="wk-row has-foot is-done"')]
+    dinner = html[html.index('<div class="wk-row has-foot is-done"'):]
     assert 'data-wk-done="dinner" aria-pressed="true"' in dinner
     assert "wk-mini-done is-done" in dinner
     # "Put back " was the same euphemism, heard only by a screen reader
@@ -542,7 +546,7 @@ def test_the_swap_sheet_is_a_sheet_and_the_picks_go_through_week_ones_routes():
     """The three picks are the Week 1 screen's (app/tools/swap_options.py):
     POST /swap-options to ask, POST /swap-choose with the pick's index to
     take one — the Plan sheet and the first-week screen are one feature."""
-    sheet = SHELL_CSS[SHELL_CSS.index("#wk-swap-sheet {"):SHELL_CSS.index("}", SHELL_CSS.index("#wk-swap-sheet {"))]
+    sheet = SHELL_CSS[SHELL_CSS.index("#wk-swap-sheet, #wk-tweak-sheet {"):SHELL_CSS.index("}", SHELL_CSS.index("#wk-swap-sheet, #wk-tweak-sheet {"))]
     assert "background: var(--surface)" in sheet
     assert "border-radius: var(--radius-hero) var(--radius-hero) 0 0" in sheet
     assert "box-shadow: var(--shadow-sheet)" in sheet

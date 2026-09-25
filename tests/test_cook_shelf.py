@@ -423,10 +423,15 @@ def test_recipes_add_from_a_link_and_inventory_are_behind_one_more_link():
     assert "cook-empty-link" in link, "the 44px in-prose link (rule 6)"
     rows = _function("cookMoreRowsHtml")
     assert rows.count('class="kit-row"') == 4  # + "Add from a cookbook" (recipe photo import, 2026-09-13)
-    for needle in ('data-kit="recipes"', ">Ask about our recipes<", 'data-kit="recipe-link"', ">Add from a link<",
+    for needle in ('data-kit="recipes"', ">Ask about our recipes<", 'data-kit="recipe-link"',
+                   'kit-row-title">Add from a link',
                    'data-kit="recipe-photo"', ">Add from a cookbook<",
                    'data-sheet="inventory"', 'kit-row-title">Inventory'):
         assert needle in rows, needle
+    # "Add from a link" carries the same neutral "In development" pill as
+    # Inventory's row (RECIPE_LINK_IN_DEVELOPMENT, same pattern as
+    # INVENTORY_IN_DEVELOPMENT — see the comment by both constants).
+    assert rows.count('pill pill-neutral kit-row-pill">In development</span>') == 2
     assert "dock-primary" not in rows and "btn-primary" not in rows
     assert 'id="cook-more-sheet"' in SHELL_HTML and 'id="cook-more-scrim"' in SHELL_HTML
     assert 'id="cook-more-rows"' in SHELL_HTML

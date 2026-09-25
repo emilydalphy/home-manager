@@ -1027,11 +1027,9 @@ once they've said yes; never set it on your own initiative.
 - If the user asks why a meal was suggested, or why something hasn't come up in a while, use \
 explain_meal_choice rather than guessing — it returns the actual rating/notes/history behind it.
 - Near the start of a new conversation (not every message), call get_attention_items once — it \
-covers the feedback nudge (a recently-cooked, unrated meal) plus anything queued from \
-check_off_meal's inventory depletion (an ambiguous ingredient match, or a quantity that couldn't \
-be reconciled). If it returns anything, work ONE low-key mention into your reply rather than a \
-separate prompt or a checklist ("by the way, how'd the salmon turn out Tuesday? Also, should I \
-take that garlic off the tracked garlic bulb, or was that something else?") — don't raise more \
+covers the feedback nudge (a recently-cooked, unrated meal) plus any other queued note. If it \
+returns anything, work ONE low-key mention into your reply rather than a separate prompt or a \
+checklist ("by the way, how'd the salmon turn out Tuesday?") — don't raise more \
 than a couple of items at once even if more are pending, and don't bring it up again later in the \
 same conversation once mentioned. Once the user answers a queued item, call resolve_attention_item \
 with its id (status='resolved' if handled, 'dismissed' if it's not relevant) — the feedback-nudge \
@@ -1039,9 +1037,8 @@ entry has id=None and doesn't need this, it clears itself once the meal gets a r
 - check_off_meal (marking a meal cooked) automatically tries to deplete its ingredients from \
 tracked inventory. A confident match (the ingredient name matches a tracked item) depletes \
 silently — fine to mention briefly if it's naturally relevant ("that used up the rest of the \
-chicken"), no need to announce every one. Anything less certain doesn't guess: an ambiguous name \
-match or an unreconcilable quantity gets queued into get_attention_items instead, surfaced the \
-same way as above.
+chicken"), no need to announce every one. Anything less certain (a loose name match, or a recipe \
+that gives no amount) is left as it is — never ask the user how much of something they used.
 - If the household shops at more than one store ("we get bulk stuff at Costco"), use \
 set_item_store to remember it per item, and get_grocery_list_by_store instead of \
 get_grocery_list_by_section once more than one store is in play.
@@ -1992,7 +1989,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "check_off_meal",
-        "description": "Mark a specific planned meal as cooked (status='done') or back to pending. Find the entry_id via get_weekly_plan or get_plan_progress. Marking done also tries to deplete its ingredients from tracked inventory — confident matches happen silently (mention briefly if relevant, e.g. 'used up the last of the chicken'), anything uncertain is queued into get_attention_items rather than guessed at (returned in the result as inventory_queued_for_review).",
+        "description": "Mark a specific planned meal as cooked (status='done') or back to pending. Find the entry_id via get_weekly_plan or get_plan_progress. Marking done also tries to deplete its ingredients from tracked inventory — confident matches happen silently (mention briefly if relevant, e.g. 'used up the last of the chicken'), anything uncertain (a loose name match, or no amount in the recipe) is left as it is, never asked about.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -2037,12 +2034,12 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "get_feedback_nudge",
-        "description": "Check whether there's a good moment to gently ask about something recently cooked that's never been rated. Prefer get_attention_items instead in most cases — it includes this same check plus anything else pending (like low-confidence inventory-depletion matches) in one call.",
+        "description": "Check whether there's a good moment to gently ask about something recently cooked that's never been rated. Prefer get_attention_items instead in most cases — it includes this same check plus anything else pending in one call.",
         "input_schema": {"type": "object", "properties": {}},
     },
     {
         "name": "get_attention_items",
-        "description": "The unified 'needs your attention' list — a recently-cooked, unrated meal (the feedback nudge) plus any low-confidence ingredient-to-inventory matches from checking a meal off as cooked. Call this once near the start of a conversation (not every message) and, if it returns anything, work it into your response in one low-key way rather than an interrogation checklist — e.g. 'by the way, the garlic in last night's dinner — should I take that off the tracked garlic bulb, or was that something else?' Use resolve_attention_item once the user's answered.",
+        "description": "The unified 'needs your attention' list — a recently-cooked, unrated meal (the feedback nudge) plus any other queued note. Never includes questions about how much of an ingredient was used. Call this once near the start of a conversation (not every message) and, if it returns anything, work it into your response in one low-key way rather than an interrogation checklist — e.g. 'by the way, how did last night's salmon go?' Use resolve_attention_item once the user's answered.",
         "input_schema": {"type": "object", "properties": {}},
     },
     {

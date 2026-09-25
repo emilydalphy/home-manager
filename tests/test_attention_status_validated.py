@@ -38,7 +38,7 @@ from app.tools import attention as _attention
 
 def _queue(summary="Did you use the lettuce?"):
     return tools.add_attention_item(
-        "inventory_depletion",
+        "use_soon",
         summary,
         {"entry_id": 1, "ingredient": "Lettuce", "needs_amount_used": True},
     )["id"]

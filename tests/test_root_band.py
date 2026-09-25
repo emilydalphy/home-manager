@@ -146,10 +146,14 @@ def test_shop_shows_the_band_on_the_root_and_the_crumb_and_head_on_steps():
     render = _function("renderGrocery")
     assert "var onRoot = step === 'list';" in render
     assert "band.hidden = !onRoot;" in render and "head.hidden = onRoot;" in render
-    # The eyebrow is "This week" and the line counts the list — "14 things,
-    # two stores." (Emily's shopping-list mockup, 2026-09-18); the line is
-    # empty with nothing on the list.
-    assert "setRootBand(panel, 'gro-band', { eyebrow: groBandEyebrow(data), sub: groBandLine(data) });" in render
+    # The band's subtitle ("This week · 14 things, two stores.", Emily's
+    # shopping-list mockup 2026-09-18) was removed 2026-09-25 (declutter):
+    # the per-store counts on each card already say what's left, so the
+    # band now carries no eyebrow or sub-line. groBandEyebrow/groBandLine
+    # still exist and are still tested directly
+    # (test_shops_band_says_this_week_and_counts_the_list below) — they're
+    # just no longer wired into the band.
+    assert "setRootBand(panel, 'gro-band', { eyebrow: '', sub: '' });" in render
 
 
 @_needs_node

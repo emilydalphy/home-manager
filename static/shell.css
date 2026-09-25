@@ -2207,6 +2207,10 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   display: inline-flex;
   align-items: center;
 }
+/* "Changed" on the week's rows (S6) with room to breathe — Emily,
+   2026-09-25: the pill in the 1A mockup read cramped. 3px 8px around the
+   caps, the height from its own line rather than a fixed 18px. */
+.wk-changed { height: auto; padding: 3px 8px; line-height: 1.2; }
 /* Rule 6: a 44px target for a small word, without a 44px row. */
 .ask-change-another {
   flex: 0 0 auto;
@@ -5759,6 +5763,26 @@ button.cook-ready-row { cursor: pointer; }
   margin-left: 8px;
 }
 
+/* Who's here's household-level "Anything else" (declutter, 2026-09-25):
+   set off from the last person the same way one person is set off from
+   the next (.wwk-person + .wwk-person), and labelled with the sheet's
+   own top-level section-header weight (.prefs-row-title: 15px/800/
+   -0.015em/--ink) rather than the quiet .wwk-lead treatment, so it never
+   again reads as belonging to whichever person happens to render last. */
+.wwk-household-facts {
+  border-top: 1.5px solid var(--hairline);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+.wwk-household-lead {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  margin: 0;
+}
+
 /* ---- chips ----
    The app's selectable chip — the same recipe as .defrost-chip:
    surface + hairline at rest, and selected is celadon-tint,
@@ -7851,7 +7875,7 @@ span.cook-week-name { cursor: default; }
   line-height: 1.45;
   color: var(--ink-secondary);
 }
-.wk-slot-eyebrow .wk-changed { margin-top: 0; margin-left: 6px; vertical-align: middle; }
+.wk-slot-eyebrow .wk-changed { margin-top: 0; margin-left: 10px; vertical-align: middle; }
 
 /* Snacks two-up (Emily, 2026-09-14, "S4"): the eyebrow on the ground —
    --ink-strong, since --ink-muted is 4.33 there (the Review tiles' head
@@ -8108,7 +8132,10 @@ span.cook-week-name { cursor: default; }
   text-transform: uppercase;
   color: var(--ink-muted);
 }
-.wk-row-eyebrow .wk-changed { margin-top: 0; margin-left: 6px; vertical-align: middle; }
+.wk-row-eyebrow .wk-changed { margin-top: 0; margin-left: 10px; vertical-align: middle; }
+/* A menu row's eyebrow holds the pill alone (it has no slot word), so
+   the pill starts the line and the gap goes under it instead. */
+.wk-menu-row .wk-row-eyebrow .wk-changed { margin-left: 0; margin-bottom: 4px; }
 .wk-row-name {
   font-family: var(--font-body);
   font-size: 15px;
@@ -8126,47 +8153,39 @@ span.cook-week-name { cursor: default; }
 .wk-row.is-done .wk-row-name { color: var(--ink-done); text-decoration: line-through; }
 .wk-row-meta { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); }
 .wk-row-acts { display: flex; gap: 6px; flex: 0 0 auto; }
-/* The reason a tap away (Emily, 2026-09-15: "Pomona stores one per dish
-   and shows none"; built 2026-09-21). The meta line is the tap — a
-   button dressed exactly as the line, with the 44px target through
-   ::before as .wk-mini does (rule 6) so the row keeps its height — and
-   the reason opens as a note floating over the next row (.wk-why-pop,
-   absolute inside the row) rather than pushing rows around. The pop is
-   --surface-raised with a --hairline rim and the panel shadow, the same
-   dress as the notification panel: a thing floating over content.
-   --ink on --surface-raised measures 13.9 light / 12.6 dark. */
+/* A planned row (Emily, 2026-09-25, option 1A): the dish with a small
+   --apricot-label chevron after its last word — the title is the way into
+   the recipe, and now it looks it; the text keeps --ink and the whole
+   title stays the 44px target (.dish-link::after). Under it one line:
+   the time, and the stored reason after it, as plain text (the reason was
+   a tap on this line with a dotted underline until 2026-09-25 — nothing
+   on the line is a button now), with the row's sand buttons at its right.
+   A line too long to share with the buttons (a reason, "Mon, Wed ·
+   Mexican, as asked") takes the width and the buttons wrap under it,
+   still at the right, rather than squeezing the words into a 100px column
+   at 375px.
+   --apricot-label on --surface: 5.3 light / 9.9 dark. */
 .wk-row { position: relative; }
-.wk-row-why {
-  position: relative;
-  text-align: left;
-  background: none;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-  width: auto;
-  align-self: flex-start;
-  text-decoration: underline dotted;
-  text-underline-offset: 3px;
+.wk-row.has-foot { padding-top: 10px; }
+.wk-row.has-foot .wk-row-main { min-height: 0; }
+.wk-row-chev {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-left: 3px;
+  vertical-align: -1px;
+  color: var(--apricot-label);
 }
-.wk-row-why::before { content: ""; position: absolute; inset: -14px -8px -14px 0; }
-.wk-row-why[aria-expanded="true"] { color: var(--ink); }
-.wk-why-pop {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: calc(100% - 2px);
-  z-index: 3;
-  background: var(--surface-raised);
-  border: 1.5px solid var(--hairline);
-  border-radius: var(--radius-control);
-  box-shadow: var(--shadow-panel);
-  padding: 10px 12px;
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.4;
-  color: var(--ink);
+.wk-row-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin-top: -4px;
+  padding-bottom: 4px;
 }
-.wk-why-pop[hidden] { display: none; }
+.wk-row-foot .wk-row-meta { flex: 1 1 auto; min-width: 0; line-height: 1.35; }
+.wk-row-foot .wk-row-acts { margin-left: auto; }
 .wk-mini {
   position: relative;
   height: 36px;
@@ -8190,10 +8209,16 @@ span.cook-week-name { cursor: default; }
 @media (hover: hover) { .wk-mini:hover { background: var(--sand); } }
 .wk-mini:disabled { opacity: .6; cursor: default; }
 .wk-mini-done.is-done { background: var(--celadon); border-color: var(--celadon); color: var(--on-accent-ink); }
-/* The sand, edge-less variant: Check the week's "Swap the meal" and the
+/* The sand, edge-less variant: Check the week's "Swap" and the
    root's "+ Add a meal" (the boards' .mini.ghost). */
-.wk-carousel .wk-mini, .wk-mini-add { background: var(--sand); border-color: transparent; }
-@media (hover: hover) { .wk-carousel .wk-mini:hover, .wk-mini-add:hover { background: var(--sand-deep); } }
+/* The row line's buttons are sand too (1A: "Swap" and "Tweak"; Done
+   and Swap on the approved root) — a done tick keeps its celadon. */
+.wk-carousel .wk-mini, .wk-mini-add,
+.wk-row-foot .wk-mini:not(.is-done) { background: var(--sand); border-color: transparent; }
+@media (hover: hover) {
+  .wk-carousel .wk-mini:hover, .wk-mini-add:hover,
+  .wk-row-foot .wk-mini:not(.is-done):hover { background: var(--sand-deep); }
+}
 .wk-mini-add { align-self: flex-start; }
 
 /* The root's freezer row: a celadon-tint snowflake tile, the question (or
@@ -8462,7 +8487,7 @@ span.cook-week-name { cursor: default; }
 .wk-freezer-none-btn:hover { color: var(--ink-strong); }
 
 /* ---------- the swap sheet (Emily, 2026-09-18, board 19b) ---------- */
-#wk-swap-scrim {
+#wk-swap-scrim, #wk-tweak-scrim {
   position: fixed;
   inset: 0;
   background: var(--scrim);
@@ -8470,8 +8495,8 @@ span.cook-week-name { cursor: default; }
   opacity: 0;
   transition: opacity var(--motion-base) var(--motion-ease);
 }
-#wk-swap-scrim.is-open { opacity: 1; }
-#wk-swap-sheet {
+#wk-swap-scrim.is-open, #wk-tweak-scrim.is-open { opacity: 1; }
+#wk-swap-sheet, #wk-tweak-sheet {
   position: fixed;
   left: 0;
   right: 0;
@@ -8489,14 +8514,15 @@ span.cook-week-name { cursor: default; }
   translate: 0 100%;
   transition: translate var(--motion-base) var(--motion-ease);
 }
-#wk-swap-sheet.is-open { translate: 0 0; }
-#wk-swap-scrim[hidden], #wk-swap-sheet[hidden] { display: none; }
-#wk-swap-body { display: flex; flex-direction: column; gap: 10px; }
+#wk-swap-sheet.is-open, #wk-tweak-sheet.is-open { translate: 0 0; }
+#wk-swap-scrim[hidden], #wk-swap-sheet[hidden],
+#wk-tweak-scrim[hidden], #wk-tweak-sheet[hidden] { display: none; }
+#wk-swap-body, #wk-tweak-body { display: flex; flex-direction: column; gap: 10px; }
 /* Held at the wait's height while the picks land (swapSheetHold): the
    spare space sits above the title, so the cards and buttons stay put. */
 #wk-swap-body.is-held { justify-content: flex-end; }
 @media (min-width: 768px) {
-  #wk-swap-sheet {
+  #wk-swap-sheet, #wk-tweak-sheet {
     left: 50%;
     right: auto;
     transform: translateX(-50%);
@@ -8622,6 +8648,22 @@ span.cook-week-name { cursor: default; }
   cursor: pointer;
 }
 .wk-swap-quiet:hover { color: var(--ink-strong); }
+/* "Tweak" (Emily, 2026-09-25, 1A): the swap sheet's geometry above;
+   under its title the dish as the head (the slot and day as an eyebrow,
+   the name at card-title size), then the Meal step's own .plate-rows and
+   the Day card's dashed chips for a part the plate is missing. Its
+   buttons open the part sheets — no Save of its own, nothing to commit. */
+.wk-tweak-head { display: flex; flex-direction: column; gap: 3px; }
+.wk-tweak-dish {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -.02em;
+  line-height: 1.25;
+  color: var(--ink);
+}
+.wk-tweak-adds { padding-top: 0; }
 /* The sheet's "Ask for something else": a full-width outline button.
    Its own class — it was .wk-swap-tell until 2026-09-21, the same class as
    the dock's and the swap line's quiet "Ask for something else" link, so
@@ -9152,57 +9194,58 @@ span.cook-week-name { cursor: default; }
   font-size: 10px;
   letter-spacing: .14em;
   text-transform: uppercase;
-  color: var(--ink-muted);
+  color: var(--apricot-label);
 }
-.tips-group-line {
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.45;
+.tips-group-headline {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
   color: var(--ink);
 }
 .tips-group-example {
   font-family: var(--font-body);
-  font-weight: 600;
+  font-weight: 500;
   font-size: 14px;
-  color: var(--celadon-label);
-}
-.tips-closers {
-  list-style: none;
-  margin: 0;
-  padding: 12px 0 0;
-  border-top: 1px solid var(--hairline);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.tips-closers li {
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.45;
   color: var(--ink-secondary);
 }
-.tips-after {
-  background: var(--celadon-tint);
-  border: 1px solid var(--celadon-edge);
-  border-radius: var(--radius-control);
-  padding: 12px 14px;
+/* The bottom card: the same shape family as .snw-tile/.prefs-row (icon,
+   two lines, a way to tap it), with a chevron since it opens the SNW
+   sheet over this one rather than acting in place. */
+.tips-help-row {
+  width: 100%;
+  min-height: 58px; /* Rule 6 */
+  margin-top: 4px;
+  border: none;
+  border-top: 1.5px solid var(--hairline);
+  background: none;
+  padding: 14px 2px 6px;
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
 }
-.tips-after-label {
+.tips-help-row:hover { background: var(--surface); }
+.tips-help-icon { display: flex; flex: 0 0 auto; width: 22px; height: 22px; color: var(--celadon-label); }
+.tips-help-icon svg { display: block; width: 22px; height: 22px; }
+.tips-help-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tips-help-title {
   font-family: var(--font-body);
+  font-size: 15px;
   font-weight: 800;
-  font-size: 10px;
-  letter-spacing: .14em;
-  color: var(--celadon-label);
+  letter-spacing: -0.015em;
+  color: var(--ink);
 }
-.tips-after-line {
+.tips-help-sub {
   font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.45;
-  color: var(--ink-on-celadon);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-inactive);
 }
+.tips-help-chev { display: flex; flex: 0 0 auto; }
+.tips-help-chev svg { width: 17px; height: 17px; color: var(--ink-inactive); }
 
 /* ---------- Staples (app/tools/staples.py) ----------
    A line Pomona put on the list because a staple is probably due carries

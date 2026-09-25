@@ -258,7 +258,7 @@ var REFRESHED = 0;
 def _swap_region() -> str:
     """The swap's state and its two handlers, nothing that draws."""
     return (
-        "var swapState = null;\nvar swapUndoTimer = null;\nvar SWAP_UNDO_MS = 8000;\n"
+        "var swapState = null;\nvar swapUndoTimer = null;\nvar SWAP_UNDO_MS = 8000;\nvar recentlyChanged = {};\n"
         "var SWAP_TROUBLE = 'That didn’t work just now — nothing changed.';\n"
         + _function("swapStateFor") + _function("clearSwapUndoTimer") + _function("weekStartForSwap")
         + _function("mealDisplayName")

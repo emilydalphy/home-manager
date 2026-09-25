@@ -167,6 +167,15 @@
   // reversal.
   var INVENTORY_IN_DEVELOPMENT = true;
 
+  // "Add from a link" (recipe import, 2026-09-11) is also still being
+  // built — same reasoning and same treatment as Inventory above: a
+  // quiet neutral "In development" pill at its entry point (the row in
+  // Cook's More sheet, cookMoreRowsHtml), reusing the same
+  // .pill/.pill-neutral/.kit-row-pill markup Inventory uses. The feature
+  // itself is untouched either way: paste a link, read it, review, save
+  // all still work. Flipping this back to false removes the pill.
+  var RECIPE_LINK_IN_DEVELOPMENT = true;
+
   // The notifications bell and its feed left the app with the Today
   // redesign (Emily, 2026-09-08). Today is a timeline of moves now, and
   // everything time-bound the feed used to carry — a dinner to cook, a
@@ -4501,7 +4510,7 @@
       back.hidden = true;
       head.hidden = true;
       band.hidden = false;
-      setRootBand(panel, 'gro-band', { eyebrow: groBandEyebrow(null), sub: '' });
+      setRootBand(panel, 'gro-band', { eyebrow: '', sub: '' });
       body.classList.remove('is-empty');
       body.innerHTML = groceryState.loadError === 'no-signal'
         ? '<p class="gro-empty">' + escapeHtml(GRO_NO_COPY_LINE) + '</p>'
@@ -4530,8 +4539,13 @@
     var onRoot = step === 'list';
     band.hidden = !onRoot;
     head.hidden = onRoot;
+    // The band's "This week · N things, two stores." subtitle is gone
+    // (declutter, 2026-09-25: Emily asked it off Shop's header — the
+    // per-store counts on each card already say how much is left).
+    // groBandEyebrow/groBandLine are kept (and still exercised by their
+    // own tests) but no longer wired into the band.
     if (onRoot) {
-      setRootBand(panel, 'gro-band', { eyebrow: groBandEyebrow(data), sub: groBandLine(data) });
+      setRootBand(panel, 'gro-band', { eyebrow: '', sub: '' });
       back.hidden = true;
     } else {
       var headFor = groHeadFor(data, step);
@@ -8139,7 +8153,10 @@
         // "Cook" / "Reheat" while it is still ahead of you, and the past
         // tense of whichever it was once it is done — a reheat night was
         // never cooked, it was eaten (REHEAT_ACTION_LABEL says so too).
-        badge: done ? (isReheat ? 'eaten' : 'cooked') : (isReheat ? 'Reheat' : 'Cook')
+        // Made ahead and eaten cold (served_cold, cooker.py) is "Prepped":
+        // it's ready to go, nothing to warm (Emily, 2026-09-25).
+        badge: done ? (isReheat ? 'eaten' : 'cooked')
+          : (isReheat ? (meal.served_cold ? 'Prepped' : 'Reheat') : 'Cook')
       });
     });
     return rows;
@@ -8149,7 +8166,7 @@
   // 6:30" for a reheat — both read off the move rather than restated here,
   // so the words match the ones Today uses for the same meal.
   function kitchenTodayLine(meal, move, isReheat, done) {
-    if (isReheat) return move ? move.detail : 'reheat';
+    if (isReheat) return move ? move.detail : (meal.served_cold ? '' : 'reheat');
     var bits = [];
     ((move && move.chips) || []).forEach(function (chip) {
       // A cook that is already done has no start-by left to make: the
@@ -8869,7 +8886,10 @@
       // the review-before-save sheet (recipe import, 2026-09-11).
       '<button type="button" class="kit-row" data-kit="recipe-link">' +
         '<span class="kit-row-icon">' + KITCHEN_ICONS.link + '</span>' +
-        '<span class="kit-row-text"><span class="kit-row-title">Add from a link</span></span>' +
+        '<span class="kit-row-text"><span class="kit-row-title">Add from a link' +
+        (RECIPE_LINK_IN_DEVELOPMENT ?
+          ' <span class="pill pill-neutral kit-row-pill">In development</span>' : '') +
+        '</span></span>' +
         '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
       '</button>' +
       // ...or from a photograph of a cookbook page — the same sheet, the
@@ -9507,9 +9527,24 @@
   // editable in place — save on blur or Enter, × to forget — plus a way to
   // add one. Folded into the section that owns the category rather than
   // kept as a list of their own.
-  function wwkFactsHtml(category) {
+  //
+  // `opts.household` (Who's here only, declutter 2026-09-25): this block
+  // used to read as the last person's own "Anything else", since it fell
+  // right out of the members loop with no separation and the same quiet
+  // lead-in weight as "Never on the plate" above it. These facts are
+  // household-level (category 'people' has no member on the row), so the
+  // lead gets its own label and the same header treatment the sheet's
+  // top-level sections use (.prefs-row-title, via .wwk-household-lead),
+  // set off from the last person by a rule the way one person is set off
+  // from the next (.wwk-household-facts). Data and behaviour unchanged —
+  // this only changes how the block reads.
+  function wwkFactsHtml(category, opts) {
+    opts = opts || {};
     var facts = (wwkState.facts || []).filter(function (f) { return f.category === category; });
-    var html = wwkLead('Anything else');
+    var lead = opts.household
+      ? '<p class="wwk-household-lead">' + escapeHtml(opts.lead || 'Anything else') + '</p>'
+      : wwkLead(opts.lead || 'Anything else');
+    var html = lead;
     facts.forEach(function (f) {
       html += '<div class="wwk-fact-row">' +
         '<input type="text" class="snw-input wwk-text" data-wwk-input="fact" data-id="' + f.id + '" value="' + escapeHtml(f.text) + '" aria-label="Something I know">' +
@@ -9517,7 +9552,7 @@
       '</div>';
     });
     html += '<div class="wwk-chips">' + wwkAddChip('data-wwk="add" data-kind="fact" data-category="' + category + '"', 'Something else') + '</div>';
-    return html;
+    return opts.household ? '<div class="wwk-household-facts">' + html + '</div>' : html;
   }
 
   // ---------- Who's here ----------
@@ -9550,7 +9585,7 @@
     });
     if (!(mem.members || []).length) html += '<p class="wwk-empty">Nobody yet — set up the household first.</p>';
     else html += inviteNewHtml();
-    html += wwkFactsHtml('people');
+    html += wwkFactsHtml('people', { household: true, lead: 'Anything else for the household' });
     return html;
   }
 
@@ -11828,12 +11863,15 @@
     '</div>';
   }
 
+  // The opener paragraph (extras.lead — get_week_menu's draft_opener) is
+  // no longer shown here (declutter, 2026-09-25: Emily asked the summary
+  // paragraph off the draft's band, keeping the date line, Re-plan and
+  // the What we're eating | Which days toggle). draft_opener itself is
+  // still computed server-side and still on the data — this just stops
+  // drawing it.
   function weekBandTailHtml(extras) {
     if (!extras || !extras.view) return '';
-    return (extras.lead.length
-      ? '<p class="wk-draft-lead" id="wk-draft-lead">' + extras.lead.map(escapeHtml).join(' ') + '</p>'
-      : '') +
-      weekDraftSegHtml(extras.view);
+    return weekDraftSegHtml(extras.view);
   }
 
   function fillWeekBandExtras(panel, bandSlot, extras) {
@@ -12123,7 +12161,17 @@
       '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17h.01"/></svg>',
     chev: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" ' +
       'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-      '<path d="M9 6l6 6-6 6"/></svg>'
+      '<path d="M9 6l6 6-6 6"/></svg>',
+    // The small chevron after the dish name on a row (Emily, 2026-09-25,
+    // 1A): the title is the way into the recipe, and now it looks it.
+    // (No apostrophes in these comments: tests slice this var by quotes.)
+    titleChev: '<svg class="wk-row-chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" ' +
+      'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M9 6l6 6-6 6"/></svg>',
+    // Tweak: two sliders.
+    tweak: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ' +
+      'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>'
   };
 
   // A day with nothing to cook on it — every one of its three real meals is
@@ -12200,20 +12248,21 @@
     return [meta, asked].filter(Boolean).join(' · ');
   }
 
-  // The stored reason, one tap away (Emily, 2026-09-15: "Pomona stores
-  // one per dish and shows none"). The meta line is the tap; the reason
-  // opens as a note floating over the next row (.wk-why-pop, absolute)
-  // rather than pushing rows around. Without a reason the line is plain
-  // text, so nothing offers a tap that does nothing.
+  // The meta line, with the stored reason said after it as plain text
+  // ("30 min · Lighter than the chops") — Emily, 2026-09-25 (option 1A):
+  // the reason used to be a tap on this line that popped a note, and the
+  // dotted underline it needed read as a second link beside the dish.
+  // Nothing on this line is a button now; the reason is a fragment of the
+  // line, so a closing full stop comes off. A slot that carries what it
+  // was asked for ("Mexican, as asked") already says why — its reason
+  // mostly says the same again ("Mexican for lunch, as you asked"), so
+  // the line keeps the shorter fact and leaves the reason off.
   function wkRowMetaHtml(entry, meta) {
-    var reason = entry && entry.state === 'planned' && String(entry.reason || '').trim();
-    if (!meta && !reason) return '';
-    if (!reason) return '<span class="wk-row-meta">' + escapeHtml(meta) + '</span>';
-    var why = reason.charAt(0).toUpperCase() + reason.slice(1);
-    return '<button type="button" class="wk-row-meta wk-row-why" data-wk-why="1" aria-expanded="false" ' +
-        'aria-label="' + escapeHtml((meta ? meta + ' — ' : '') + 'why this?') + '">' +
-        escapeHtml(meta || 'Why this?') + '</button>' +
-      '<span class="wk-why-pop" role="note" hidden>' + escapeHtml(why) + '</span>';
+    var reason = entry && entry.state === 'planned' && !entry.asked &&
+      String(entry.reason || '').trim().replace(/\.+$/, '');
+    var why = reason ? reason.charAt(0).toUpperCase() + reason.slice(1) : '';
+    var line = [meta, why].filter(Boolean).join(' · ');
+    return line ? '<span class="wk-row-meta">' + escapeHtml(line) + '</span>' : '';
   }
 
   // How many of the three real meals a day actually holds.
@@ -12240,11 +12289,14 @@
   }
 
   // One row of a day card: the slot as an eyebrow, the dish as the link
-  // into its Meal step, the one-line meta, and the buttons at the right.
+  // into its Meal step, then the one-line meta with the buttons at its
+  // right (Emily, 2026-09-25, 1A).
   //
-  // opts.done      — Done beside Swap (the Plan root); Check the week has
-  //                  Swap alone.
-  // opts.swapLabel — "Swap" on the root, "Swap the meal" on Check the week.
+  // opts.done      — Done beside Swap (the Plan root); Which days / Check
+  //                  the week has Swap and Tweak instead.
+  // opts.swapLabel — "Swap" (it was "Swap the meal" on Check the week
+  //                  until 2026-09-25; 1A's line holds "Swap" and "Tweak
+  //                  it" beside the time).
   //
   // What a row offers depends on what the slot is (CLAUDE.md: a slot is
   // never absent, it is one of three states): a planned meal gets the
@@ -12279,14 +12331,25 @@
             // (copy sweep finding 22). It says what the tap leaves true.
             (done ? 'Not cooked yet — ' : 'Done — ') + name)
         : '';
-      acts = tick + swap;
+      // "Tweak" (Emily, 2026-09-25, 1A): the plate's parts in one
+      // sheet (openTweakSheet), only where the plate can change at all
+      // (plateCanChange). Not beside Done — the approved root's rows keep
+      // Done and Swap, which is all a 375px line holds next to the time.
+      var tweak = !opts.done && typeof plateCanChange === 'function' && plateCanChange(day, slot, entry)
+        ? wkMiniHtml('data-wk-tweak="' + slot + '"', 'wk-mini-tweak', WK_ICONS.tweak, 'Tweak', 'Tweak — ' + name)
+        : '';
+      acts = tick + swap + tweak;
     } else if (open) {
       acts = wkMiniHtml('data-wk-pick="' + slot + '"', '', '', 'Pick', 'Pick ' + slotWord(slot));
     } else if (!entry && !day.isPast) {
       acts = wkMiniHtml('data-wk-ask="' + slot + '"', '', '', 'Pick', 'Pick ' + slotWord(slot));
     }
 
-    return '<div class="wk-row' + (done ? ' is-done' : '') + '" data-wk-row="' + slot + '">' +
+    // A planned meal (Emily, 2026-09-25, 1A): the dish with a chevron —
+    // the title is the way into the recipe — and under it one line, the
+    // time (and reason) as plain text with the buttons at its right. Any
+    // other slot keeps its one button beside the name.
+    return '<div class="wk-row' + (planned ? ' has-foot' : '') + (done ? ' is-done' : '') + '" data-wk-row="' + slot + '">' +
       '<div class="wk-row-main">' +
         '<div class="wk-row-text">' +
           '<span class="wk-row-eyebrow">' + escapeHtml(slotEyebrowLabel(day, slot)) +
@@ -12295,12 +12358,15 @@
           '</span>' +
           (planned
             ? '<button type="button" class="wk-row-name dish-link" data-wk-meal="' + slot + '">' +
-                escapeHtml(name) + '</button>'
-            : '<span class="wk-row-name' + quiet + '">' + escapeHtml(name) + '</span>') +
-          wkRowMetaHtml(entry, meta) +
+                escapeHtml(name) + WK_ICONS.titleChev + '</button>'
+            : '<span class="wk-row-name' + quiet + '">' + escapeHtml(name) + '</span>' + wkRowMetaHtml(entry, meta)) +
         '</div>' +
-        (acts ? '<div class="wk-row-acts">' + acts + '</div>' : '') +
+        (!planned && acts ? '<div class="wk-row-acts">' + acts + '</div>' : '') +
       '</div>' +
+      (planned
+        ? '<div class="wk-row-foot">' + wkRowMetaHtml(entry, meta) +
+            (acts ? '<div class="wk-row-acts">' + acts + '</div>' : '') + '</div>'
+        : '') +
       (open
         ? '<div class="wk-slot-open" id="wk-open-' + slot + '" hidden>' + openSlotCardHtml(day.date, slot, entry) + '</div>'
         : '') +
@@ -12336,7 +12402,7 @@
   // that are selected, then be able to see the days"): Breakfasts,
   // Lunches, Dinners (Snacks when there are any), one row per dish with
   // the days it covers and one useful fact, Swap on every row, the reason
-  // a tap away. No day notes here — those live on Which days — and no
+  // said after the fact. No day notes here — those live on Which days — and no
   // steppers.
   //
   // A dish is the name it READS as (mealDisplayName), so a made-ahead
@@ -12403,8 +12469,9 @@
     return wkRowMeta(dish.days[0].entry);
   }
 
-  // One row: the dish (the link into its Meal step), "Mon, Wed · Mexican,
-  // as asked" (the tap for the reason), Swap. Swap and the link act on the
+  // One row: the dish (the link into its Meal step, with its chevron),
+  // then "Mon, Wed · Mexican, as asked" with the reason after it as plain
+  // text, Swap and Tweak at its right. Swap and the link act on the
   // dish's first day still ahead — the same swap sheet and the same Meal
   // step Which days uses, told which day through data-wk-day-index.
   function wkMenuRowHtml(dish, days) {
@@ -12421,14 +12488,35 @@
       : '';
     var swap = first.past ? '' : wkMiniHtml('data-wk-swap-sheet="' + first.key + '"' + dishAttr, 'wk-mini-swap', WK_ICONS.swap,
       'Swap', 'Swap — ' + dish.name);
-    return '<div class="wk-row wk-menu-row" data-wk-day-index="' + first.index + '" data-wk-row="' + first.key + '">' +
+    // "Tweak" (Emily, 2026-09-25, 1A) changes ONE entry's plate — the
+    // part sheets write to one entry_id — so it is offered only where the
+    // dish is one cook still ahead. A dish cooked on several days ahead
+    // (seven mornings of oats) would change on its first day and not the
+    // rest — "two meals instead of 1", the bug the whole-dish Swap fixed
+    // (2026-09-22) — so there it is left to Which days, a day at a time.
+    // A reheat night isn't a cook of its own and doesn't count.
+    var cooksAhead = ahead.filter(function (d) {
+      return !(d.entry.leftover_from && d.entry.leftover_from.date) && d.entry.source !== 'leftovers';
+    });
+    var tweak = !first.past && cooksAhead.length === 1 && cooksAhead[0] === first &&
+      typeof plateCanChange === 'function' && days[first.index] && plateCanChange(days[first.index], first.key, entry)
+      ? wkMiniHtml('data-wk-tweak="' + first.key + '"', 'wk-mini-tweak', WK_ICONS.tweak, 'Tweak', 'Tweak — ' + dish.name)
+      : '';
+    // "Changed" (S6) when any of the dish's days was just changed. The
+    // menu row has no slot eyebrow of its own, so the pill gets one.
+    var changed = typeof wasRecentlyChanged === 'function' &&
+      dish.days.some(function (d) { return wasRecentlyChanged(d.date, d.key); });
+    var acts = swap + tweak;
+    return '<div class="wk-row wk-menu-row has-foot" data-wk-day-index="' + first.index + '" data-wk-row="' + first.key + '">' +
       '<div class="wk-row-main">' +
         '<div class="wk-row-text">' +
+          (changed ? '<span class="wk-row-eyebrow"><span class="wk-changed">Changed</span></span>' : '') +
           '<button type="button" class="wk-row-name dish-link" data-wk-meal="' + first.key + '">' +
-            escapeHtml(dish.name) + '</button>' +
-          wkRowMetaHtml(entry, meta) +
+            escapeHtml(dish.name) + WK_ICONS.titleChev + '</button>' +
         '</div>' +
-        (swap ? '<div class="wk-row-acts">' + swap + '</div>' : '') +
+      '</div>' +
+      '<div class="wk-row-foot">' + wkRowMetaHtml(entry, meta) +
+        (acts ? '<div class="wk-row-acts">' + acts + '</div>' : '') +
       '</div>' +
     '</div>';
   }
@@ -12520,23 +12608,19 @@
     }
     if (root && weekPlanState(data) === 'draft' && draftView(data) === 'menu') {
       return head + wkMenuHtml(days) +
-        (weekReplacesNote(data)
-          ? '<div class="wk-notes"><div class="wk-note">' + escapeHtml(weekReplacesNote(data)) + '</div></div>'
-          : '') +
         reviewDecideHtml(data);
     }
     return head +
       wkDayTabsHtml(days, selected) +
       '<div class="wk-carousel" id="wk-carousel" tabindex="0" aria-label="The week, one day at a time">' +
-        days.map(function (day, i) { return wkDayCardHtml(day, i, { done: false, swapLabel: 'Swap the meal' }); }).join('') +
+        days.map(function (day, i) { return wkDayCardHtml(day, i, { done: false, swapLabel: 'Swap' }); }).join('') +
       '</div>' +
       wkDotsHtml(days.length, selected) +
-      // What approving this draft replaces of an approved week — under the
-      // cards, above the dock (Emily, 2026-09-13: a draft changes nothing
-      // until it is approved, so the cost is said here, once).
-      (weekPlanState(data) === 'draft' && weekReplacesNote(data)
-        ? '<div class="wk-notes"><div class="wk-note">' + escapeHtml(weekReplacesNote(data)) + '</div></div>'
-        : '') +
+      // weekReplacesNote's "Once it's approved, I'd replace…" sentence
+      // used to sit here, above the dock (declutter, 2026-09-25: Emily
+      // asked it off the draft screen). data.replaces is still computed
+      // server-side and still drives the approve confirmation flow — only
+      // this standing display goes.
       // The draft's rare actions — "Try again", "Change my answers" — sit
       // behind the dock's round More, beside Approve (reviewDecideHtml,
       // board D4). The deeper, approved-week form has its crumb and needs
@@ -12750,8 +12834,8 @@
   // the tacos to another day", and "Ask for something else" into chat
   // with the slot as its subject. Nothing is written until a pick is
   // tapped (§2b S10); then that one meal swaps, "Changes saved", Undo on
-  // the pop-up. The same sheet serves "Swap the meal" on Check the week
-  // and "Swap" on the Plan root's rows.
+  // the pop-up. The same sheet serves "Swap" on Check the week and on
+  // the Plan root's rows.
   //
   // The picks are the Week 1 screen's own (app/tools/swap_options.py —
   // one route to ask, POST /swap-options, and one to choose, POST
@@ -14661,20 +14745,12 @@
     steps.querySelectorAll('[data-wk-help]').forEach(function (btn) {
       btn.addEventListener('click', function () { openWeekHelp(btn.getAttribute('data-wk-help')); });
     });
-    // The reason a tap away (wkRowMetaHtml): one open at a time, and a
-    // second tap on the same line closes it.
-    steps.querySelectorAll('[data-wk-why]').forEach(function (btn) {
+    // "Tweak" on a row (Emily, 2026-09-25, 1A): the plate's parts in
+    // one sheet, for the row's own day (wkDayForTap).
+    steps.querySelectorAll('[data-wk-tweak]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        var open = btn.getAttribute('aria-expanded') === 'true';
-        steps.querySelectorAll('[data-wk-why][aria-expanded="true"]').forEach(function (other) {
-          other.setAttribute('aria-expanded', 'false');
-          var p = other.nextElementSibling;
-          if (p && p.classList.contains('wk-why-pop')) p.hidden = true;
-        });
-        if (open) return;
-        btn.setAttribute('aria-expanded', 'true');
-        var pop = btn.nextElementSibling;
-        if (pop && pop.classList.contains('wk-why-pop')) pop.hidden = false;
+        var day = wkDayForTap(btn);
+        if (day) openTweakSheet(panel, day, btn.getAttribute('data-wk-tweak'));
       });
     });
     wireReviewCarousel(panel, steps);
@@ -15018,6 +15094,106 @@
   // the plate for that part, which the quiet line offers to take off, or
   // which Save takes off in favour of the new one (never both at once).
   // No part: the plain "Add something" the Meal step has had.
+  // ---------- "Tweak": the plate's parts in one sheet ----------
+  // Emily, 2026-09-25 (option 1A of the Plan-rows mockup). A row's "Tweak
+  // it" opens this: the dish as its head (the slot and day as an eyebrow,
+  // the dish's name), then the plate's parts as the Meal step's own rows
+  // (platePartsRowsHtml's shape — the role, the part, Change or Add), a
+  // part the plate is missing as the Day card's dashed "+ Add a carb"
+  // chip (platePartChipHtml), and "Leave it as it is". Nothing is changed
+  // here: a part's button closes this sheet and opens the part's own
+  // sheet (openMealAddSheet — "Change the protein", "Add a carb", "Take X
+  // off"), which saves and pops the toast with Undo as it always has
+  // (S10). When that sheet closes the person is back on the row, which
+  // wears "Changed" for eight seconds (markRow → markRecentlyChanged, S6).
+  //
+  // Built once, body level, like the swap sheet.
+  var tweakSheetEl = null;
+  var tweakScrimEl = null;
+
+  function buildTweakSheet() {
+    if (tweakSheetEl) return;
+    tweakScrimEl = document.createElement('div');
+    tweakScrimEl.id = 'wk-tweak-scrim';
+    tweakScrimEl.hidden = true;
+    tweakSheetEl = document.createElement('div');
+    tweakSheetEl.id = 'wk-tweak-sheet';
+    tweakSheetEl.hidden = true;
+    tweakSheetEl.setAttribute('role', 'dialog');
+    tweakSheetEl.setAttribute('aria-modal', 'true');
+    tweakSheetEl.setAttribute('aria-labelledby', 'wk-tweak-title');
+    tweakSheetEl.innerHTML = '<div class="ask-sheet-handle" id="wk-tweak-handle"></div><div id="wk-tweak-body"></div>';
+    document.body.appendChild(tweakScrimEl);
+    document.body.appendChild(tweakSheetEl);
+    tweakScrimEl.addEventListener('click', closeTweakSheet);
+    document.getElementById('wk-tweak-handle').addEventListener('click', closeTweakSheet);
+  }
+
+  function closeTweakSheet() {
+    if (!tweakSheetEl) return;
+    closeSheet(tweakSheetEl, tweakScrimEl);
+  }
+
+  // The sheet's markup, pure — the parts' buttons carry the same
+  // data-plate-* attributes as the Meal step's rows, so the tap hands
+  // openMealAddSheet exactly what the Meal step would.
+  function tweakSheetBodyHtml(day, slot, entry) {
+    var parts = (entry && entry.plate_parts) || [];
+    var rows = parts.filter(function (p) { return !p.missing; }).map(function (p) {
+      var name = p.name || PLATE_NO_NAME;
+      var verb = p.empty ? 'Add' : 'Change';
+      var aria = (p.empty ? 'Add a ' : 'Change the ') + String(p.word || '').toLowerCase();
+      return '<div class="plate-row">' +
+        '<span class="plate-row-role">' + escapeHtml(p.word) + '</span>' +
+        '<span class="plate-row-name">' + escapeHtml(name) + '</span>' +
+        '<button type="button" class="plate-row-change" data-plate-part="' + escapeHtml(p.role === 'side' ? '' : p.role) + '" ' +
+          'data-plate-slot="' + escapeHtml(slot) + '"' +
+          (p.source ? ' data-plate-source="' + escapeHtml(p.source) + '"' : '') +
+          (p.source === 'side' && p.name ? ' data-plate-side="' + escapeHtml(p.name) + '"' : '') +
+          ' aria-label="' + escapeHtml(aria) + '">' + verb + '</button>' +
+      '</div>';
+    }).join('');
+    var adds = parts.filter(function (p) { return p.missing; })
+      .map(function (p) { return platePartChipHtml(p, slot); }).join('');
+    return '<h2 class="wk-swap-title" id="wk-tweak-title">Tweak</h2>' +
+      '<div class="wk-tweak-head">' +
+        '<p class="wk-swap-eyebrow">' + escapeHtml(slotEyebrowLabel(day, slot) + ' · ' + dayName(day.date, { weekday: 'long' })) + '</p>' +
+        '<p class="wk-tweak-dish">' + escapeHtml(mealDisplayName(entry)) + '</p>' +
+      '</div>' +
+      (rows ? '<div class="plate-rows">' + rows + '</div>' : '') +
+      (adds ? '<div class="plate wk-tweak-adds">' + adds + '</div>' : '') +
+      '<button type="button" class="wk-swap-quiet" id="wk-tweak-leave">Leave it as it is</button>';
+  }
+
+  function openTweakSheet(panel, day, slot) {
+    var entry = daySlotEntry(day, slot);
+    if (!plateCanChange(day, slot, entry)) return;
+    buildTweakSheet();
+    closeAskSheet();
+    var body = document.getElementById('wk-tweak-body');
+    body.innerHTML = tweakSheetBodyHtml(day, slot, entry);
+    body.querySelectorAll('[data-plate-part]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        closeTweakSheet();
+        openMealAddSheet(panel, day, slot, {
+          role: btn.getAttribute('data-plate-part'),
+          side: btn.getAttribute('data-plate-side') || '',
+          source: btn.getAttribute('data-plate-source') || '',
+          markRow: true
+        });
+      });
+    });
+    var leave = document.getElementById('wk-tweak-leave');
+    if (leave) leave.addEventListener('click', closeTweakSheet);
+    openSheet(tweakSheetEl, tweakScrimEl);
+  }
+
+  // A save that started from a row's "Tweak" marks that row "Changed"
+  // (S6) before the week re-draws under it.
+  function mealAddMarkRow(st) {
+    if (st && st.markRow && typeof markRecentlyChanged === 'function') markRecentlyChanged(st.date, st.slot);
+  }
+
   var PART_WORDS = { protein: 'protein', vegetable: 'veg', carb: 'carb' };
   var PART_COVERS = { vegetable: 'vegetable', carb: 'carb', protein: 'protein' };
 
@@ -15033,7 +15209,7 @@
     mealAddState = {
       panel: panel, date: day.date, slot: slot, entryId: entry.entry_id, weekStart: weekStart, busy: false,
       mode: mode, role: role, roleWord: PART_WORDS[role] || '', side: (part && part.side) || '',
-      selected: null, offer: null
+      selected: null, offer: null, markRow: !!(part && part.markRow)
     };
     var thisOpen = mealAddState;
     var title = document.querySelector('#wk-add-sheet .kit-sheet-title');
@@ -15145,6 +15321,7 @@
       });
       if (!res.ok) throw new Error('remove failed (' + res.status + ')');
       closeMealAddSheet();
+      mealAddMarkRow(st);
       await loadWeekMenu(st.panel);
       toastSaved(savedLine(name, 'taken off'));
     } catch (err) {
@@ -15190,6 +15367,7 @@
       // eight seconds — the swap-undo route puts back the dish that was
       // there before (apply_pick wrote swapped_from).
       clearSwapUndoTimer();
+      mealAddMarkRow(st);
       swapState = { date: dayDate, slot: slot, avoid: [], reason: out.reason || '', canUndo: true };
       spliceSwappedDay(out.day);
       renderMealsStep(panel);
@@ -15263,6 +15441,7 @@
       // The plan changed under the meal (a new side on its entry): the
       // week and its cooker view are read again, and the step re-draws
       // with the addition on the overview and the ingredients.
+      mealAddMarkRow(st);
       await loadWeekMenu(panel);
       var said = 'Added ' + String(out.name || '').toLowerCase() + '.';
       if (out.note) said += ' ' + out.note;
@@ -15310,6 +15489,8 @@
         });
         if (!back.ok) throw new Error('put back failed (' + back.status + ')');
       }
+      // Undone, so the row no longer wears "Changed".
+      delete recentlyChanged[st.date + ':' + st.slot];
       await loadWeekMenu(panel);
       showToast('Taken back off.');
     } catch (err) {
@@ -15334,6 +15515,7 @@
       if (!res.ok) throw new Error('undo failed');
       var data = await res.json();
       swapState = null;
+      delete recentlyChanged[day.date + ':' + slot]; // undone: no "Changed"
       // A whole dish swapped together comes back together (data.days).
       (data.days || [data.day]).forEach(spliceSwappedDay);
       renderMealsStep(panel);
@@ -18151,12 +18333,16 @@
   }
 
   // ---------- Cook: the attention banner ----------
-  // Carried over from cooker.html whole: the three shapes an attention item
-  // can take (a plain one that can be resolved or dismissed, an
-  // inventory-usage one that wants an amount, and the feedback nudge that
-  // wants a rating) all still exist and still hit the same endpoints.
+  // Carried over from cooker.html: a plain item that can be resolved or
+  // dismissed, and the feedback nudge that wants a rating. The third shape,
+  // "How much Garlic did you use?" with an amount box, is gone (Emily,
+  // 2026-09-25: "Assume I made what the recipe called for here, don't ask
+  // me") — the server stopped queuing and returning those, and the filter
+  // below keeps a payload from before that off the card too.
   function cookAttentionHtml() {
-    var items = cookState.attention || [];
+    var items = (cookState.attention || []).filter(function (it) {
+      return it.kind !== 'inventory_depletion';
+    });
     if (!items.length) return '';
     // Folded behind a count, same move as Grocery's "Maybe already home"
     // (groPreShopHtml) — quiet by default, one tap opens it, per the
@@ -18175,18 +18361,6 @@
     if (!open) return html + '</div>';
     html += '<div class="cook-attention-body">';
     html += items.map(function (it) {
-        var needsAmount = it.id != null && it.detail && it.detail.needs_amount_used;
-        if (needsAmount) {
-          return '<div class="cook-attn-item is-stacked" data-attn-id="' + it.id + '">' +
-            '<span class="cook-attn-summary">' + escapeHtml(it.summary) + '</span>' +
-            '<span class="cook-attn-row">' +
-              '<input type="text" class="cook-attn-input" data-attn-input="' + it.id + '" ' +
-                'placeholder="e.g. 1 cup, or leave blank for all of it" aria-label="Amount used" />' +
-              '<button type="button" class="cook-attn-go" data-cook="attn-use" data-attn-id="' + it.id + '">Log it</button>' +
-              '<button type="button" class="cook-attn-skip" data-cook="attn-resolve" data-attn-id="' + it.id + '" data-status="dismissed">Skip</button>' +
-            '</span>' +
-          '</div>';
-        }
         if (it.kind === 'feedback_nudge') {
           var mealName = (it.detail && it.detail.meal) || '';
           return '<div class="cook-attn-item is-stacked" data-attn-meal="' + escapeHtml(mealName) + '">' +
@@ -19345,6 +19519,17 @@
   var lastAssistantAskText = null;
   var askSending = false;
   var askConversationStarted = false;
+  // Whether the CURRENT text sitting in #ask-input got there because an
+  // opener (a preset row like Cook's "Ask about our recipes", or a meal
+  // card's "For tonight's dinner, I'd like ") set it programmatically,
+  // rather than because the household typed it. Set true wherever
+  // openAskSheet writes a prefill, set false the moment the household
+  // types a single keystroke (askInput's 'input' listener below) — from
+  // then on it's their own unsent words, not a preset, and openAskSheet
+  // leaves it alone. See openAskSheet's use of it, and the bug it fixes:
+  // a preset prefill left sitting in the shared textarea used to survive
+  // into the next, unrelated chat open on another tab.
+  var askDraftIsPreset = false;
   // ---------- What this conversation is about ----------
   // Set when chat is opened FROM something — a meal card's "Tell me what
   // instead" (Loop Board, Emily 2026-09-13) — and sent with every message
@@ -20369,7 +20554,10 @@
   function markRecentlyChanged(date, slot) {
     recentlyChanged[date + ':' + slot] = Date.now() + SWAP_UNDO_MS;
     setTimeout(function () {
-      if (panels.week && panels.week.dataset.built && weekState.step === 'week') renderMealsStep(panels.week);
+      // The root, or Check the week — both draw the rows that wear it.
+      if (panels.week && panels.week.dataset.built && (weekState.step === 'week' || weekState.step === 'review')) {
+        renderMealsStep(panels.week);
+      }
     }, SWAP_UNDO_MS + 50);
   }
   function wasRecentlyChanged(date, slot) {
@@ -20771,6 +20959,22 @@
   // first build, since the thread can already exist from an earlier
   // opener by the time this one runs.
   function openAskSheet(prefill, context, greeting) {
+    // A thread nobody has actually sent a message in yet
+    // (askConversationStarted only flips true on the first real send, in
+    // sendAskMessage) hasn't started a conversation — it's just whatever a
+    // preset opener left behind (Cook's "Ask about our recipes", a meal
+    // card's "For tonight's dinner, I'd like ", etc.) after the household
+    // closed the sheet without sending. Reopening chat from somewhere else
+    // in that state should look like a fresh open, not a continuation of
+    // an abandoned preset, so the thread resets here. A thread that DID
+    // get a real message stays exactly as the shared-thread design
+    // intends (see ensureAskSheetBuilt's comment) — this only ever
+    // touches an unstarted one.
+    // Only on a fresh open: when the sheet is already up (an example chip
+    // calls this on its way to sending), the preset greeting on screen is
+    // the one the household is answering, so it stays.
+    var askAlreadyOpen = askSheet && askSheet.classList.contains('is-open');
+    if (!askConversationStarted && askBuilt && !askAlreadyOpen) resetAskThread();
     ensureAskSheetBuilt(greeting);
     closeWeekSheet();
     closeMealsMoreSheet();
@@ -20783,11 +20987,36 @@
     }
     if (prefill) {
       askInput.value = prefill;
+      askDraftIsPreset = true;
       autoGrowAskInput(askInput);
       askInput.focus();
     } else {
+      // No prefill from this opener. If what's sitting in the box is a
+      // leftover preset from an earlier, abandoned open, it's not the
+      // household's own words — clear it. A genuinely typed draft
+      // (askDraftIsPreset false) is the household's own unsent text and
+      // is left exactly where it is, the same per-viewer convenience any
+      // other draft field in the app gets.
+      if (askDraftIsPreset) {
+        askInput.value = '';
+        askDraftIsPreset = false;
+        autoGrowAskInput(askInput);
+      }
       askInput.focus();
     }
+  }
+
+  // Clears the sheet back to nothing-said-yet: only ever called for a
+  // thread that never had a real message sent in it (see openAskSheet).
+  // Leaves the composer's text alone — that's openAskSheet's call, based
+  // on askDraftIsPreset — this just clears the messages so
+  // ensureAskSheetBuilt rebuilds with whatever greeting this open wants
+  // instead of stacking under (or silently reusing) a preset's leftover
+  // bubble.
+  function resetAskThread() {
+    askBuilt = false;
+    lastAssistantAskText = null;
+    if (askMessagesEl) askMessagesEl.innerHTML = '';
   }
   // What the sheet's Back is called (Emily, 2026-09-20: "It's confusing
   // where the user needs to go from here"). "Back to your week" when the
@@ -20854,7 +21083,12 @@
     autoGrowAskInput(askInput); // shrink back to one line
     sendAskMessage(message);
   });
-  askInput.addEventListener('input', function () { autoGrowAskInput(askInput); });
+  askInput.addEventListener('input', function () {
+    // A real keystroke: whatever is here now is the household's own
+    // words, not a leftover preset — see askDraftIsPreset.
+    askDraftIsPreset = false;
+    autoGrowAskInput(askInput);
+  });
 
   // ---------- Voice dictation (restored per testing feedback) ----------
   // Ported from static/index.html's mic button, which the ask-sheet's
@@ -22648,23 +22882,24 @@
   // ---------- "Helpful tips" ----------
   //
   // One screen, no scroll on a phone if it can be helped: four groups, one
-  // real example each, and the line that answers the question nobody asks
-  // out loud — what actually happens when you press send.
+  // bold headline and one real example each — and, at the foot, the one
+  // other door out of a stuck moment: send Emily a note (mockup "6A",
+  // Emily-approved 2026-09-25, with her correction that Cook is where the
+  // week's own recipes are followed, not where dinner gets decided).
 
-  var TIPS_OPENING = 'Say it however it comes out.';
+  var TIPS_OPENING = 'Tap the Pomona button on any screen, then type or talk.';
 
   var TIPS_GROUPS = [
-    { tab: 'Today', example: 'What’s next tonight?', line: 'The day in front of you — what’s cooking, who’s out, what still needs doing.' },
-    { tab: 'Plan', example: 'Swap Thursday for something lighter', line: 'The week’s plan — swaps, away nights, what you’re in the mood for.' },
-    { tab: 'Shop', example: 'Add oat milk and lemons', line: 'The list — adding, dropping, what you already have at home.' },
-    { tab: 'Cook', example: 'What can I make with the chicken thighs?', line: 'Tonight’s cooking — what’s in the house, and how long you’ve got.' }
+    { tab: 'Today', headline: 'Check what’s next', example: 'What’s for dinner tonight?' },
+    { tab: 'Plan', headline: 'Change the week', example: 'Swap Thursday for something lighter' },
+    { tab: 'Shop', headline: 'Add or remove things', example: 'Add oat milk and lemons' },
+    { tab: 'Cook', headline: 'Follow tonight’s recipe', example: 'How long does the chicken go in for?' }
   ];
 
-  var TIPS_CLOSERS = [
-    'The more you tell me about your week, the better the plan fits.'
-  ];
-
-  var TIPS_AFTER_SEND = 'I’ll say what changed, and the screen updates. If I couldn’t, I’ll say that too.';
+  // Circle-question — the one non-brand icon in this sheet, celadon per
+  // the mockup: this card is a nudge to a quiet way out, not an action.
+  var TIPS_HELP_ICON =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17h.01"/></svg>';
 
   var tipsSheetEl = null;
   var tipsScrimEl = null;
@@ -22692,17 +22927,22 @@
         TIPS_GROUPS.map(function (g) {
           return '<div class="tips-group">' +
             '<div class="tips-group-tab">' + escapeHtml(g.tab) + '</div>' +
-            '<div class="tips-group-line">' + escapeHtml(g.line) + '</div>' +
+            '<div class="tips-group-headline">' + escapeHtml(g.headline) + '</div>' +
             '<div class="tips-group-example">&ldquo;' + escapeHtml(g.example) + '&rdquo;</div>' +
           '</div>';
         }).join('') +
-        '<ul class="tips-closers">' +
-          TIPS_CLOSERS.map(function (line) { return '<li>' + escapeHtml(line) + '</li>'; }).join('') +
-        '</ul>' +
-        '<div class="tips-after">' +
-          '<div class="tips-after-label">AFTER YOU SEND</div>' +
-          '<div class="tips-after-line">' + escapeHtml(TIPS_AFTER_SEND) + '</div>' +
-        '</div>' +
+        // The other door, at the foot: the same in-app report form every
+        // other entry point opens (openSnwSheet/snwFormHtml), tagged with
+        // this sheet's own name so the note carries where it came from. No
+        // email address anywhere here — Emily reads these in the app.
+        '<button type="button" class="tips-help-row" data-snw="open" data-snw-screen="Helpful tips">' +
+          '<span class="tips-help-icon">' + TIPS_HELP_ICON + '</span>' +
+          '<span class="tips-help-text">' +
+            '<span class="tips-help-title">Need help with something?</span>' +
+            '<span class="tips-help-sub">Send Emily a note</span>' +
+          '</span>' +
+          '<span class="tips-help-chev">' + ICONS.arrow + '</span>' +
+        '</button>' +
       '</div>';
     // Body level, like every other sheet here: position:fixed has to sit
     // outside the tab panel's stacking and scroll context.
@@ -22908,6 +23148,9 @@
     closeAskSheet();
     closeWeekSheet();
     closeKitchenSheet();
+    // Helpful tips' "Need help with something?" opens this form; the tips
+    // sheet goes so it can't sit on top of the form.
+    closeTipsSheet();
     var screen = snwScreenName(screenName);
     var body = snwSheetEl.querySelector('#snw-body');
     body.innerHTML = snwFormHtml(screen);
