@@ -5678,15 +5678,20 @@ def _ingest_recipe_group_and_sides(
         already_have.extend(have)
 
     for entry in entries:
-        for side_ingredients, side_servings, chain_scale in _entry_side_groups(entry):
+        for side_ingredients, side_servings, cooked_on_the_night in _entry_side_groups(entry):
             added, have = _recipes._add_recipe_ingredients_for_entries(
                 [entry["id"]], side_ingredients, weekly_plan_id,
                 default_servings=side_servings, buffer=buffer,
                 # A big-meal dish belongs to the holiday table alone: a
-                # reheat night buys nothing new for it. Every other side
-                # follows its dish through the chain exactly as it always
-                # has (_entry_side_groups decides which is which).
-                chain_scale=chain_scale,
+                # reheat night buys nothing new for it, and the cook
+                # night's batch is the main rather than the stuffing.
+                # Every other side is cooked on the night it sits on, so
+                # it follows its dish through the chain on a cook night
+                # AND is bought on a reheat night, where it is a different
+                # dish made that evening (_entry_side_groups decides
+                # which is which).
+                chain_scale=cooked_on_the_night,
+                reheat_buys_it=cooked_on_the_night,
             )
             added_items.extend(added)
             already_have.extend(have)
@@ -5759,9 +5764,9 @@ def _entry_sides(row) -> list[dict]:
 def _entry_side_groups(row) -> list[tuple[list[dict], int | None, bool]]:
     """
     One entry's sides for the grocery ingest, as (ingredients, servings,
-    chain_scale) groups — one group per distinct (servings, big-meal)
-    pair, order preserved, empty groups dropped (an entry with no sides
-    yields []).
+    cooked_on_the_night) groups — one group per distinct (servings,
+    big-meal) pair, order preserved, empty groups dropped (an entry with
+    no sides yields []).
 
     `servings` is what the side was written for, and anchors the ingest
     the way a recipe's default_servings does: a side the household added
@@ -5772,12 +5777,27 @@ def _entry_side_groups(row) -> list[tuple[list[dict], int | None, bool]]:
     was written for (app/tools/big_meal.py), so a stuffing written for
     seven isn't bought three and a half times over.
 
-    `chain_scale` is False for a big-meal dish only — the one kind of
-    side that belongs to the holiday table alone, so a reheat night
-    buys nothing new for it. A big-meal dish is the only side written
-    with a `role` (big_meal.clean_dish); a household side carries
-    `added_by` instead and a plate side neither, and both follow their
-    dish through the leftover chain the way they always have.
+    `cooked_on_the_night` is False for a big-meal dish only — the one
+    kind of side that belongs to the holiday table alone rather than to
+    the night it sits on (plates.is_big_meal_dish, which is where that
+    one-line rule lives). It answers both grocery questions a leftover
+    chain asks of a side, and the two really are one question:
+
+    - on the COOK night, does the batch scale it? A household or plate
+      side is cooked alongside the doubled dish and covers the night it
+      feeds, so yes; a stuffing written for the holiday table is already
+      sized for that table, so no.
+    - on a REHEAT night, is it bought at all? A green salad beside
+      Thursday's leftovers is a different dish, cooked that evening, and
+      nothing else on the week buys it — so yes, at that night's own
+      headcount (batch_for_entry finds no batch on a reheat, so the
+      chain factor is a no-op there). A big-meal dish is the holiday
+      table's, so still no.
+
+    Before 2026-09-25 the second question was never asked: the ingest
+    dropped every leftovers entry whatever it was buying, so a side on a
+    reheat night was silently skipped and the household was shown a
+    plate with no lettuce on the list for it.
     """
     groups: dict[tuple[int | None, bool], list[dict]] = {}
     for side in _entry_sides(row):
@@ -5790,7 +5810,7 @@ def _entry_side_groups(row) -> list[tuple[list[dict], int | None, bool]]:
             servings = None
         if servings is not None and servings <= 0:
             servings = None
-        big_meal_dish = bool(side.get("role"))
+        big_meal_dish = _plates.is_big_meal_dish(side)
         groups.setdefault((servings, big_meal_dish), []).extend(_plates.side_ingredients([side]))
     return [(ings, servings, not big) for (servings, big), ings in groups.items() if ings]
 
@@ -6350,15 +6370,19 @@ def _settle_weekly_plan_approval(
             # default_servings would — so a stuffing written for seven
             # isn't bought three and a half times over (_entry_side_groups).
             for entry in entries:
-                for side_ingredients, side_servings, chain_scale in _entry_side_groups(entry):
+                for side_ingredients, side_servings, cooked_on_the_night in _entry_side_groups(entry):
                     added, have = _recipes._add_recipe_ingredients_for_entries(
                         [entry["id"]], side_ingredients, weekly_plan_id,
                         default_servings=side_servings, buffer=buffer, conn=conn,
                         # A big-meal dish belongs to the holiday table
                         # alone: a reheat night buys nothing new for it.
-                        # Every other side follows its dish through the
-                        # chain exactly as it always has.
-                        chain_scale=chain_scale,
+                        # Every other side is cooked on the night it sits
+                        # on — so it follows its dish through the chain on
+                        # a cook night, and on a reheat night it is bought,
+                        # because the salad beside the leftovers is a
+                        # different dish and nothing else buys it.
+                        chain_scale=cooked_on_the_night,
+                        reheat_buys_it=cooked_on_the_night,
                     )
                     added_items.extend(added)
                     already_have.extend(have)

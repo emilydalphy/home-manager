@@ -2418,7 +2418,7 @@ def _add_recipe_ingredients_to_grocery_list(
 def _add_recipe_ingredients_for_entries(
     entry_ids: list[int], recipe_ingredients: list[dict], weekly_plan_id: int | None,
     default_servings: int | None = None, buffer: "WeekGroceryBuffer | None" = None,
-    conn=None, chain_scale: bool = True,
+    conn=None, chain_scale: bool = True, reheat_buys_it: bool = False,
 ) -> tuple[list[str], list[str]]:
     """
     Put ONE RECIPE's ingredients onto the grocery list for every meal in
@@ -2498,14 +2498,18 @@ def _add_recipe_ingredients_for_entries(
     the other night to zero. A LEFTOVERS entry contributes NOTHING at all
     — its dinner was already bought on the night it is actually cooked,
     and buying the same recipe twice was the shopping half of the bug
-    Emily reported on 2026-09-04. The SOURCE entry buys for the whole
-    chain: its factor is multiplied by (everyone the batch feeds ÷ the
-    people at the cook night's own table), so a Tuesday cook for three
-    that also feeds a Thursday for three shops for six. The two factors
-    compose rather than fight: each is relative to a different baseline
-    (the household, then that night's table), so a chain with no
-    attendance rows anywhere doubles exactly, and one with someone away on
-    Thursday buys for five.
+    Emily reported on 2026-09-04. `reheat_buys_it` is the one exception,
+    and it is asked about the INGREDIENTS rather than about the night: a
+    side cooked fresh beside the reheated dish is not the dish, so the
+    batch on the cook night says nothing about it and nothing else on the
+    week buys it (see weekly_plan._entry_side_groups). The SOURCE entry
+    buys for the whole chain: its factor is multiplied by (everyone the
+    batch feeds ÷ the people at the cook night's own table), so a Tuesday
+    cook for three that also feeds a Thursday for three shops for six.
+    The two factors compose rather than fight: each is relative to a
+    different baseline (the household, then that night's table), so a
+    chain with no attendance rows anywhere doubles exactly, and one with
+    someone away on Thursday buys for five.
 
     Grouping by recipe-week is what makes that chain check a FILTER rather
     than an early return, and the distinction matters: a chain reuses one
@@ -2599,7 +2603,16 @@ def _add_recipe_ingredients_for_entries(
             # A reheat night buys nothing and links to nothing — it drops
             # out of the group entirely rather than returning early, since
             # the cook night it eats from shares this very group.
-            if entry_id in chains["leftovers"]:
+            #
+            # `reheat_buys_it=True` is the one exception, and it is about
+            # WHAT is being bought rather than about the night: a side
+            # cooked fresh beside the reheated dish (a green salad next to
+            # Thursday's chili) is a different dish, made that evening, and
+            # nothing else on the week buys it. The chain says the CHILI
+            # was already cooked; it says nothing about the salad. Without
+            # this the side was silently dropped here and the household was
+            # shown a plate they had no lettuce for (Loop Board, 2026-09-25).
+            if entry_id in chains["leftovers"] and not reheat_buys_it:
                 continue
             # `chain_scale=False` is a big-meal dish's path (weekly_plan's
             # side ingests, via _entry_side_groups): a dish on a hosted

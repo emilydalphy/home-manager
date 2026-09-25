@@ -944,6 +944,24 @@ def scale_side_ingredients(side: dict, target_servings: int | None) -> list[dict
     return out
 
 
+def is_big_meal_dish(side: dict | None) -> bool:
+    """
+    Is this side a dish on a hosted holiday's big meal, rather than a side
+    the app attached or the household added?
+
+    A big-meal dish is the only side written with a `role`
+    (big_meal.clean_dish); a household side carries `added_by` instead and
+    a plate side neither. It is the one kind that belongs to the holiday
+    table alone rather than to the night it sits on, which is what decides
+    both grocery questions a leftover chain asks of a side — whether the
+    cook night's batch scales it, and whether a reheat night buys it at
+    all. Asked here rather than re-read at each ingest, so those two
+    answers cannot drift apart across the three call sites
+    (weekly_plan._entry_side_groups, twice, and _buy_side_now below).
+    """
+    return bool(isinstance(side, dict) and side.get("role"))
+
+
 def side_ingest_groups(sides: list[dict] | None) -> list[tuple[list[dict], int | None]]:
     """
     A list of sides as (ingredients, servings) groups for the grocery
@@ -1184,9 +1202,16 @@ def _buy_side_now(row, side: dict) -> list[str]:
     from . import recipes as _recipes
     before = _link_ids(row["id"])
     added_all: list[str] = []
+    # Same rule as the approval-time ingest (weekly_plan._entry_side_
+    # groups), read from the side itself so the two cannot answer
+    # differently: everything but a big-meal dish is cooked on the night
+    # it sits on, so a reheat night buys it — which is the whole of "add a
+    # green salad to Thursday's leftovers" landing on the list at all.
+    cooked_on_the_night = not is_big_meal_dish(side)
     for ingredients, servings in side_ingest_groups([side]):
         added, _have = _recipes._add_recipe_ingredients_for_entries(
             [row["id"]], ingredients, row["weekly_plan_id"], default_servings=servings,
+            chain_scale=cooked_on_the_night, reheat_buys_it=cooked_on_the_night,
         )
         added_all.extend(added)
     # Remember exactly which ledger rows this addition wrote, so Undo can
