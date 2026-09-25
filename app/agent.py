@@ -2034,7 +2034,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "get_feedback_nudge",
-        "description": "Check whether there's a good moment to gently ask about something recently cooked that's never been rated. Prefer get_attention_items instead in most cases — it includes this same check plus anything else pending (like low-confidence inventory-depletion matches) in one call.",
+        "description": "Check whether there's a good moment to gently ask about something recently cooked that's never been rated. Prefer get_attention_items instead in most cases — it includes this same check plus anything else pending in one call.",
         "input_schema": {"type": "object", "properties": {}},
     },
     {

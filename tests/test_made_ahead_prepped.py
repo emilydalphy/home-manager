@@ -121,3 +121,9 @@ def test_served_cold_rule():
 def test_cook_row_badge_says_prepped_for_a_cold_made_ahead_row():
     src = SHELL_JS.read_text()
     assert "(meal.served_cold ? 'Prepped' : 'Reheat')" in src
+
+
+def test_a_snack_whose_notes_say_warm_up_still_reheats():
+    """Found in review: "warm up" in a snack's notes must win over the snack slot."""
+    from app.tools import leftovers
+    assert leftovers.served_cold({"notes": "Warm up before serving for best texture."}, "snack") is False

@@ -460,6 +460,6 @@ def reheat_note(recipe: dict | None) -> str:
         return ""
     for sentence in [s.strip() for s in notes.replace("\n", ". ").split(".") if s.strip()]:
         low = sentence.lower()
-        if "reheat" in low or "warm through" in low or "warms up" in low:
+        if "reheat" in low or "warm through" in low or "warms up" in low or "warm up" in low:
             return sentence if sentence.endswith(("!", "?")) else sentence + "."
     return ""
