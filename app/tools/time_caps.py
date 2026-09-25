@@ -27,6 +27,11 @@ The rules, per slot:
   or it is the batch cook that feeds later meals), or one on a household
   prep day, has no cap. Weekend lunches have none. Night tags don't
   touch lunch: "short on time" was asked about dinner.
+  When the week's intake says how that lunch is made (step 3, "Weekday
+  lunches", 2026-09-25 — `lunch_kind`), that answer decides: "cooked"
+  is WEEKDAY_LUNCH_MAX_MINUTES even on a prep weekday (the household
+  said this one is cooked on the day), "prepped" and "leftovers" have no
+  cap. A reheat (`is_leftovers`) still has none: nothing is cooked on it.
 - breakfast and snack: no cap.
 
 A dish's minutes are the recipe's prep + cook, as the model estimated
@@ -79,13 +84,15 @@ def minutes_cap(
     tags: list[str] | None,
     memory: dict | None,
     is_leftovers: bool = False,
+    lunch_kind: str | None = None,
 ) -> int | None:
     """
     The real cap on this meal's prep + cook, or None. See the module
     docstring for the rules. `tags` are that date's night tags; `memory`
     is household memory (weeknight_max_minutes, rhythm.prep_days);
     `is_leftovers` is True for either end of a leftovers chain — the
-    reheat, or the batch cook that feeds it.
+    reheat, or the batch cook that feeds it. `lunch_kind` is the week's
+    answer for this lunch ("prepped" / "leftovers" / "cooked"), or None.
     """
     slot = slot or "dinner"
     tags = tags or []
@@ -108,6 +115,10 @@ def minutes_cap(
     if slot == "lunch":
         if weekday >= 5 or is_leftovers:
             return None
+        if lunch_kind in ("prepped", "leftovers"):
+            return None
+        if lunch_kind == "cooked":
+            return WEEKDAY_LUNCH_MAX_MINUTES
         if _WEEKDAY_NAMES[weekday] in prep_weekdays(memory):
             return None
         return WEEKDAY_LUNCH_MAX_MINUTES

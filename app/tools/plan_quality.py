@@ -112,6 +112,7 @@ from . import usage as _usage
 from ._shared import household_id
 from .week_intake import RUSH_MAX_MINUTES
 from . import time_caps as _time_caps
+from . import weekday_lunches as _weekday_lunches
 from .meal_variety import NO_REPEAT_SLOTS as _NO_REPEAT_SLOTS, variety_window_words as _variety_window_words
 
 logger = logging.getLogger("home_manager")
@@ -319,6 +320,9 @@ def _weekday_lunch_cap_respected(entries: list[dict], context: dict) -> list[Vio
     swap sheet use. Warn only, like the dinner caps above.
     """
     memory = {"rhythm": {"prep_days": context.get("prep_days") or []}}
+    # How the week's intake says each weekday lunch is made (step 3,
+    # 2026-09-25): "cooked" keeps the cap even on a prep day.
+    kinds = context.get("lunch_kinds") or {}
     fed = {e.get("links_to") for e in entries if e.get("links_to")}
     violations = []
     for entry in entries:
@@ -328,7 +332,8 @@ def _weekday_lunch_cap_respected(entries: list[dict], context: dict) -> list[Vio
             entry.get("links_to") or entry.get("make_double_for")
             or f"{entry['date']}:lunch" in fed
         )
-        cap = _time_caps.minutes_cap(entry["date"], "lunch", [], memory, is_leftovers=chained)
+        cap = _time_caps.minutes_cap(entry["date"], "lunch", [], memory, is_leftovers=chained,
+                                     lunch_kind=kinds.get(entry["date"]))
         if not cap:
             continue
         total = _minutes(entry)
@@ -2212,6 +2217,7 @@ def check_and_log(plan_id: int, generation_context: dict) -> list[Violation]:
             "unrushed_dates": {d for d, tags in night_tags.items() if "unrushed" in tags},
             "weeknight_max_minutes": memory.get("weeknight_max_minutes"),
             "prep_days": (memory.get("rhythm") or {}).get("prep_days") or [],
+            "lunch_kinds": _weekday_lunches.kinds_by_date(intake_ctx),
             "recent_history": generation_context.get("recent_history") or [],
             # What the household said they wanted, in their own words, so
             # _ingredient_repeat can let a requested ingredient off. Their

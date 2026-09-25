@@ -13,6 +13,7 @@ from ._shared import acting_name, household_id
 from . import rhythm as _rhythm
 from . import weekly_plan as _weekly_plan
 from . import holidays as _holidays
+from . import weekday_lunches as _weekday_lunches
 from .time_caps import RUSH_MAX_MINUTES, WEEKDAY_LUNCH_MAX_MINUTES  # noqa: F401
 
 
@@ -372,6 +373,9 @@ def _intake_row_to_dict(row) -> dict:
         "guest_counts": json.loads(row["guest_counts_json"]),
         "packed_lunch_days": json.loads(row["packed_lunch_days_json"]),
         "skipped_days": json.loads(row["skipped_days_json"] or "[]"),
+        # Step 3, "Weekday lunches" — {} when not answered. The shape is
+        # tools/weekday_lunches.normalize's; see that module.
+        "weekday_lunches": _weekday_lunches.load(row["weekday_lunches_json"]),
         "moods": json.loads(row["moods_json"]),
         "cuisines": json.loads(row["cuisines_json"]),
         "freeform": row["freeform"],
@@ -432,6 +436,7 @@ def save_week_intake(
     created_by: str = "",
     day_count: int = 7,
     skipped_days: list | None = None,
+    weekday_lunches: dict | None = None,
 ) -> dict:
     """
     Record the household's answers for a week, as a NEW REVISION.
@@ -468,9 +473,21 @@ def save_week_intake(
     lunches) are dropped from the revision saved: a day that isn't planned
     has nothing to say about its dinner, and the building screen reads the
     saved answers back as fact.
+
+    weekday_lunches is step 3's answer (2026-09-25): {"days": [{"date",
+    "kind"}], "prep_days": [...]} from the screen, stored in the shape
+    tools/weekday_lunches.normalize writes. A new answer is checked
+    strictly; one carried forward from the revision before is re-read
+    against this revision's period and skipped days, and a day that no
+    longer fits is dropped rather than refusing the save.
     """
     date.fromisoformat(week_start)  # fail loudly on a malformed week
-    week_days = set(period_dates(week_start, day_count))
+    period = period_dates(week_start, day_count)
+    week_days = set(period)
+    if weekday_lunches is not None:
+        # Strict, before anything is read: a malformed answer is the
+        # client error it is, not a revision.
+        _weekday_lunches.normalize(weekday_lunches, period, skipped_days or [])
     if skipped_days is not None:
         if not isinstance(skipped_days, list) or not all(isinstance(d, str) for d in skipped_days):
             raise ValueError("skipped_days must be a list of ISO dates.")
@@ -528,6 +545,7 @@ def save_week_intake(
             base = _intake_row_to_dict(current) if current else {
                 "night_tags": {}, "guest_counts": {}, "packed_lunch_days": [],
                 "skipped_days": [], "moods": [], "cuisines": [], "freeform": "",
+                "weekday_lunches": {},
             }
 
             def pick(new, key, _base=base):
@@ -539,6 +557,9 @@ def save_week_intake(
             night_tags_saved = {d: t for d, t in pick(night_tags, "night_tags").items() if d not in skipped}
             guest_counts_saved = {d: c for d, c in pick(guest_counts, "guest_counts").items() if d not in skipped}
             packed_saved = [d for d in pick(packed_lunch_days, "packed_lunch_days") if d not in skipped]
+            lunches_saved = _weekday_lunches.normalize(
+                pick(weekday_lunches, "weekday_lunches"), period, sorted(skipped), strict=False,
+            )
 
             household_snapshot = _household_composition()
             preferences_snapshot = _build_preferences_snapshot(conn)
@@ -554,8 +575,9 @@ def save_week_intake(
                     household_id, week_start, revision, created_by,
                     night_tags_json, guest_counts_json, packed_lunch_days_json,
                     skipped_days_json, moods_json, cuisines_json, freeform,
-                    household_snapshot_json, preferences_snapshot_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    household_snapshot_json, preferences_snapshot_json,
+                    weekday_lunches_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     household_id(), week_start, revision,
@@ -572,6 +594,7 @@ def save_week_intake(
                     pick(freeform, "freeform"),
                     json.dumps(household_snapshot),
                     json.dumps(preferences_snapshot),
+                    json.dumps(lunches_saved),
                 ),
             )
             conn.commit()
@@ -869,9 +892,13 @@ def _last_period_intake(conn, week_start: str) -> dict | None:
     asked every week and "it says 'I'll remember' but week 30 looks like
     week 1"; reconciled into the 2026-09-21 one-question-a-screen intake
     as a step that shows last week's answer already chosen and can be
-    continued past in one tap). Only the two answers that carry across
-    weeks travel: the night tags, guest counts and packed-lunch days are
-    about specific dates, and the typed note was about that week.
+    continued past in one tap). Only the answers that carry across weeks
+    travel: the night tags and guest counts are about specific dates, and
+    the typed note was about that week. The weekday lunches (step 3,
+    2026-09-25) travel BY WEEKDAY — `weekday_lunches` is
+    tools/weekday_lunches.carryover's shape, with the on-the-go days as
+    weekdays too — so this week's dates can be laid out from last week's
+    Tuesdays, and so the "Same as last week?" page can show them.
     """
     row = conn.execute(
         "SELECT * FROM week_intake WHERE household_id = ? AND week_start < ? AND superseded_at IS NULL "
@@ -884,6 +911,10 @@ def _last_period_intake(conn, week_start: str) -> dict | None:
         "week_start": row["week_start"],
         "moods": json.loads(row["moods_json"]),
         "cuisines": json.loads(row["cuisines_json"]),
+        "weekday_lunches": _weekday_lunches.carryover(
+            _weekday_lunches.load(row["weekday_lunches_json"]),
+            json.loads(row["packed_lunch_days_json"] or "[]"),
+        ),
     }
 
 
@@ -972,6 +1003,9 @@ def _intake_for_period(conn, week_start: str, day_count: int, plan) -> dict | No
     intake["guest_counts"] = {d: c for d, c in intake["guest_counts"].items() if d in days}
     intake["packed_lunch_days"] = [d for d in intake["packed_lunch_days"] if d in days]
     intake["skipped_days"] = [d for d in intake.get("skipped_days") or [] if d in days]
+    intake["weekday_lunches"] = _weekday_lunches.normalize(
+        intake.get("weekday_lunches"), period_dates(week_start, day_count), intake["skipped_days"], strict=False,
+    )
     return intake
 
 
@@ -1060,6 +1094,15 @@ def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
         # Loop Board "Onboarding: household rhythm..." — a suggestion only,
         # not an answer; see _rhythm_packed_lunch_suggestions.
         "rhythm_packed_lunch_suggestions": _rhythm_packed_lunch_suggestions(week_start, day_count),
+        # Step 3, "Weekday lunches": the household's standing prep days
+        # (rhythm.prep_days, lowercase weekday names, in week order from
+        # Sunday) — where the prep-day chips start when neither this week
+        # nor last week has an answer.
+        "rhythm_prep_days": [
+            d for d in _weekday_lunches.PREP_WEEKDAYS
+            if d in {(p.get("weekday") if isinstance(p, dict) else str(p)).lower()
+                     for p in (_rhythm.get_household_rhythm().get("prep_days") or [])}
+        ],
         # What the mood screen opens already knowing: the moods and cuisines
         # the household chose for the period before this one, or None for a
         # first week. See _last_period_intake.

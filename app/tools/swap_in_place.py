@@ -69,6 +69,7 @@ from . import recipes as _recipes
 from . import taste_verdict as _taste_verdict
 from . import time_caps as _time_caps
 from . import week_intake as _week_intake
+from . import weekday_lunches as _weekday_lunches
 from . import weekly_plan as _weekly_plan
 
 logger = logging.getLogger("home_manager")
@@ -260,18 +261,21 @@ def _other_dishes(weekly_plan_id: int, entry_id: int) -> list[str]:
     return lines
 
 
-def _minutes_cap(entry: dict, tags: list[str], memory: dict) -> int | None:
+def _minutes_cap(entry: dict, tags: list[str], memory: dict, lunch_kind: str | None = None) -> int | None:
     """
     The real cap on this meal's cooking, or None — time_caps.minutes_cap,
     the same rule the generator's plate and variety passes use, for this
     entry's own slot (Emily, 2026-09-23: a weekday lunch cooked that day is
     20 minutes; a rush dinner 30). Either end of a leftovers chain — the
     reheat (links_to) or the batch cook (make_double_for) — is not a cook
-    on the day, so it carries no lunch cap.
+    on the day, so it carries no lunch cap. `lunch_kind` is how the week's
+    intake says this weekday lunch is made (step 3, 2026-09-25): a lunch
+    "cooked" that day stays at 20 minutes even on a prep day.
     """
     derived = entry.get("derived_from") or {}
     chained = bool(derived.get("links_to") or derived.get("make_double_for"))
-    return _time_caps.minutes_cap(entry["date"], entry.get("slot") or "dinner", tags, memory, is_leftovers=chained)
+    return _time_caps.minutes_cap(entry["date"], entry.get("slot") or "dinner", tags, memory,
+                                  is_leftovers=chained, lunch_kind=lunch_kind)
 
 
 def build_swap_context(weekly_plan_id: int, entry: dict, avoid: list[str] | None = None) -> dict:
@@ -320,7 +324,7 @@ def build_swap_context(weekly_plan_id: int, entry: dict, avoid: list[str] | None
         ),
         "table": table,
         "night_tags": tags,
-        "max_minutes": _minutes_cap(entry, tags, memory),
+        "max_minutes": _minutes_cap(entry, tags, memory, _lunch_kind(intake, entry)),
         "week_other_dishes": _other_dishes(weekly_plan_id, entry["entry_id"]),
     }
     taste = _taste_lines_for(entry["date"], entry["slot"], table)
@@ -881,18 +885,29 @@ def dish_days(weekly_plan_id: int, entry_id: int) -> list[dict]:
     return [entry if i == entry_id else _entry(weekly_plan_id, i) for i in ids]
 
 
-def _night_tags_for(weekly_plan_id: int) -> dict:
+def _intake_for(weekly_plan_id: int) -> dict | None:
     week_start = _week_start_of(weekly_plan_id)
-    intake = _week_intake.get_week_intake(week_start) if week_start else None
-    return (intake or {}).get("night_tags") or {}
+    return _week_intake.get_week_intake(week_start) if week_start else None
+
+
+def _night_tags_for(weekly_plan_id: int) -> dict:
+    return (_intake_for(weekly_plan_id) or {}).get("night_tags") or {}
+
+
+def _lunch_kind(intake: dict | None, entry: dict) -> str | None:
+    if (entry.get("slot") or "dinner") != "lunch":
+        return None
+    return _weekday_lunches.kinds_by_date(intake).get(entry.get("date"))
 
 
 def day_caps(weekly_plan_id: int, entries: list[dict]) -> list[tuple[dict, int | None]]:
     """Each entry's own minutes cap (_minutes_cap, for its date AND slot),
     in `entries` order."""
     memory = _memory.get_household_memory()
-    tags_by_date = _night_tags_for(weekly_plan_id)
-    return [(e, _minutes_cap(e, tags_by_date.get(e["date"]) or [], memory)) for e in entries]
+    intake = _intake_for(weekly_plan_id)
+    tags_by_date = (intake or {}).get("night_tags") or {}
+    return [(e, _minutes_cap(e, tags_by_date.get(e["date"]) or [], memory, _lunch_kind(intake, e)))
+            for e in entries]
 
 
 def build_dish_swap_context(weekly_plan_id: int, entries: list[dict], avoid: list[str] | None = None) -> dict:

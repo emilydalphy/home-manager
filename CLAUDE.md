@@ -17494,3 +17494,38 @@ chain becomes "Leftovers from the freezer — Monday’s Chili" + the cook's
 apply_prep_day_batches` (`_within_three_days`). Draft opener line:
 `draft_opener.batch_line` — "Two lunches, each cooked double." Tests:
 `tests/test_double_batch_meal_types.py`.
+
+**2026-09-25 — Plan a week step 3 is "Weekday lunches" (branch
+`weekday-lunches-step`, mockup A1).** Step 3 of `static/plan-week.html`
+("Any lunches on the go?" + the "Nothing on the go" pill) is now three
+− / + counts that add up to the period's Mon–Fri lunches (Made on a prep
+day · Leftovers from dinner · Cooked that day, "20 minutes or less"), a
+"Which day will you cook?" chip row (only with a cooked lunch), a "Prep
+day" chip row (only with a prepped lunch; starts from `rhythm.prep_days`,
+changeable for the week), the old on-the-go days as "Taking it with you"
+(still `packed_lunch_days`), and a day-by-day list where a tap cycles the
+day. One client state, `lunch.kinds` {date: kind}; every control converts
+one day (`lunchStep`, `lunchCycle`, the cook chips), so counts, chips and
+list never disagree. A prepped lunch more than 3 days after every prep day
+brings in the day before it as a prep day (`ensurePrepReach`) — on lunch
+changes only, never on a prep-chip tap. A period with no weekday lunch
+skips the step (`skipsStep`). Stored on `week_intake.weekday_lunches_json`
+in the one shape `tools/weekday_lunches.normalize` writes (`counts`,
+`prep_days`, `days[{date, weekday, kind, prep_day | from_dinner}]`; `{}` =
+unanswered). Next week opens on it by weekday: `last_intake.
+weekday_lunches` is `weekday_lunches.carryover` ({counts, prep_days,
+kinds by weekday, on_the_go weekdays}) — the "Same as last week?" card
+reads the same thing. Planning: `time_caps.minutes_cap(lunch_kind=…)` —
+"cooked" is 20 even on a prep weekday, "prepped"/"leftovers" uncapped
+(agent `_meal_minutes_cap`, swap_in_place, plan_quality all pass it); a
+prompt bullet on `intake.weekday_lunches.days`; and
+`weekday_lunches.apply_to_plan` in `_finish_week_slots` right after
+`repair_leftover_chains` makes it true with the fold's own writers
+(`_replace_slot_entries`, `meal_variety._write_cook_sides`): a leftovers
+lunch becomes the evening-before dinner reheated (dinner's
+make_double_for), prepped lunches sharing a prep date become one dish
+cooked on the FIRST lunch (cook_ahead links; a chain can't cook on a day
+the dish isn't eaten) with the prep day on its derived_from + reasoning,
+and one >3 days after its prep day eats a freezer portion. With an answer,
+the lunch distinct-count pass stands down. Tests:
+`tests/test_weekday_lunches.py`.

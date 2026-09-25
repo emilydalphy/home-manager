@@ -86,7 +86,13 @@ def test_19_the_suggested_week_note_sounds_like_a_person():
 
 
 def test_20_the_lunch_step_names_what_was_ticked_and_nothing_else():
-    assert "prefilled.lunches ? 'I’ve ticked your usual days.' : ''" in PLAN_WEEK
+    # Since 2026-09-25 (step 3 is "Weekday lunches", mockup A1) the one
+    # line under the question is how many lunches and which days —
+    # "5 lunches, Monday to Friday." (lunchesSentence) — and "I've ticked
+    # your usual days" went with the old screen: the whole step opens
+    # filled in, so the line would be true of every row on it.
+    assert "I’ve ticked your usual days." not in PLAN_WEEK
+    assert "$('lunch-sub').textContent = lunchesSentence(dates);" in PLAN_WEEK
     assert "travels well" not in _code_lines(PLAN_WEEK)
     # An empty sub is a real state on this screen, not a gap: .step-sub
     # collapses when it has nothing in it (the moods' sub already ships

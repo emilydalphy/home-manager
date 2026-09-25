@@ -458,6 +458,13 @@ CREATE TABLE IF NOT EXISTS week_intake (
     -- Not an "away" (nobody is travelling) and not an `out` night (that is
     -- dinner only): a day left out of the plan on purpose. ISO dates.
     skipped_days_json TEXT NOT NULL DEFAULT '[]',      -- ["2026-09-27"]
+    -- Step 3, "Weekday lunches" (2026-09-25): how each Monday-to-Friday
+    -- lunch gets made — prepped on a prep day, leftovers from the dinner
+    -- before, or cooked that day. '{}' = not answered. The one shape is
+    -- written by tools/weekday_lunches.normalize and documented there:
+    -- {"counts": {...}, "prep_days": ["sunday"], "days": [{"date", "weekday",
+    -- "kind", "prep_day" | "from_dinner"}]}.
+    weekday_lunches_json TEXT NOT NULL DEFAULT '{}',
 
     -- Q2.
     moods_json TEXT NOT NULL DEFAULT '[]',

@@ -2658,6 +2658,9 @@ class WeekIntakeRequest(BaseModel):
     # inside the period. None means "not this screen's business", like the
     # rest; [] means every day is in.
     skipped_days: list | None = None
+    # Step 3, "Weekday lunches" (2026-09-25): {"days": [{"date", "kind"}],
+    # "prep_days": [...]}; {} clears it. See tools/weekday_lunches.py.
+    weekday_lunches: dict | None = None
 
 
 class WeekGenerateRequest(BaseModel):
@@ -2859,6 +2862,7 @@ def save_week_intake_route(week_start: str, req: WeekIntakeRequest):
             created_by=req.created_by,
             day_count=req.day_count,
             skipped_days=req.skipped_days,
+            weekday_lunches=req.weekday_lunches,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -380,6 +380,9 @@ _MIGRATIONS = [
     # "Which days?" (2026-09-21, board D1): the days tapped off the period.
     # '[]' on every existing revision — nothing was ever left out before.
     ("week_intake", "skipped_days_json", "TEXT NOT NULL DEFAULT '[]'"),
+    # Step 3, "Weekday lunches" (2026-09-25): prepped / leftovers / cooked
+    # per weekday lunch. '{}' on every existing revision — not answered.
+    ("week_intake", "weekday_lunches_json", "TEXT NOT NULL DEFAULT '{}'"),
     # Loop Board "Cook: the real start time moves the clock" (Emily,
     # 2026-09-13): when "Start cooking" was actually tapped, on the
     # household's clock — see schema.sql. NULL on every existing row:

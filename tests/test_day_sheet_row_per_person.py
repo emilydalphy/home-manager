@@ -73,10 +73,12 @@ def _prelude() -> str:
     return (
         "function esc(s) { return String(s == null ? '' : s); }\n"
         + _var("SHEET_SLOTS") + _var("SLOT_PILL") + _var("SHEET_TAGS") + _var("GUESTS_MAX")
-        + _var("USING_DAY_PHRASES") + _var("TAGS") + _var("SURPRISE_MOOD")
+        + _var("USING_DAY_PHRASES") + _var("TAGS") + _var("SURPRISE_MOOD") + _var("PREP_WEEKDAYS")
         + "\n".join(_extract(n) for n in (
             "joinNames", "joinWords", "joinClauses", "sentence", "humanAttendance", "lowerFirst", "usingDaysSentence", "outGroups", "attendanceWords", "daySummary",
             "draftByDay", "daySheetPayload", "usingLines",
+            # Step 3's line in usingLines (weekday lunches, 2026-09-25).
+            "lunchUsingLine", "titleDay", "isoWeekday",
         )) + "\n"
     )
 
