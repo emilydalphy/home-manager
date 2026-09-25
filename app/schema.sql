@@ -1622,6 +1622,14 @@ CREATE TABLE IF NOT EXISTS error_events (
     -- Which route was being fetched, as a PATTERN: /api/week/{}/approve.
     -- Never a url -- same rule where_ follows, for the same reason.
     request_shape TEXT NOT NULL DEFAULT '',
+    -- What the person was doing just before a browser error, oldest first:
+    -- "from /login → / → GET /api/coaching 200 → leaving page". Every step
+    -- is from a closed vocabulary -- a route this app registered (values as
+    -- {}), one of the app's own screen keys, a method and status, or
+    -- "leaving page" -- re-derived server-side (main._safe_client_trail).
+    -- Never a button label, never anything typed. Not in the dedupe key; a
+    -- repeat keeps the latest non-empty trail. '' on every other kind.
+    trail TEXT NOT NULL DEFAULT '',
     -- Repeats are counted, not stored one row each: a render loop fires
     -- these as fast as it paints, and one broken screen filling the table
     -- evicts every other error in it. Deduped against an identical shape

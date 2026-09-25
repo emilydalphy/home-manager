@@ -515,23 +515,42 @@ def _error_shapes(errors: dict) -> dict[tuple, int]:
     """
     shapes: dict[tuple, int] = {}
     for row in errors.get("recent") or []:
-        key = (
-            row.get("kind", ""),
-            row.get("location", ""),
-            row.get("detail", ""),
-            row.get("error_type", ""),
-            row.get("source", ""),
-            row.get("stack_shape", ""),
-            row.get("reason", ""),
-            row.get("request_shape", ""),
-        )
+        key = _shape_key(row)
         # occurrences is 1 for every row written before repeats were
         # counted, and for every row from an older deployment.
         shapes[key] = shapes.get(key, 0) + int(row.get("occurrences") or 1)
     return shapes
 
 
-def _print_shape(key: tuple, n: int) -> None:
+def _shape_key(row: dict) -> tuple:
+    return (
+        row.get("kind", ""),
+        row.get("location", ""),
+        row.get("detail", ""),
+        row.get("error_type", ""),
+        row.get("source", ""),
+        row.get("stack_shape", ""),
+        row.get("reason", ""),
+        row.get("request_shape", ""),
+    )
+
+
+def _latest_rows(errors: dict) -> dict[tuple, dict]:
+    """
+    The most recently seen row for each shape — where the trail comes from.
+
+    The trail is deliberately NOT part of the shape key: it differs every
+    time by nature, and keying on it would split one bug into a line per
+    visit. So a shape prints ONE trail, the freshest, which is the row
+    first in `recent` (it is ordered most-recently-seen first).
+    """
+    latest: dict[tuple, dict] = {}
+    for row in errors.get("recent") or []:
+        latest.setdefault(_shape_key(row), row)
+    return latest
+
+
+def _print_shape(key: tuple, n: int, latest: dict | None = None) -> None:
     """
     One error, printed as what it is and where it is.
 
@@ -561,6 +580,15 @@ def _print_shape(key: tuple, n: int) -> None:
     print(head + (f"  (x{n})" if n > 1 else ""))
     if stack:
         print(f"                 {stack}")
+    # What the person was doing just before, for a browser error that has
+    # one (2026-09-25). Every step is closed-vocabulary, re-derived by
+    # main._safe_client_trail — routes, screen keys, statuses — so it is as
+    # safe to print here as the stack above it. A row from before the
+    # trail existed, or from an older deployment, prints nothing extra.
+    if latest and kind == "client":
+        trail = latest.get("trail") or ""
+        if trail:
+            print(f"                 trail: {trail}")
 
 
 # What a tool is FOR, in the words somebody would use about their own
@@ -693,8 +721,9 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
         if errors["total"]:
             kinds = ", ".join(f"{n} {k}" for k, n in errors["by_kind"].items())
             print(f"  BROKEN — {errors['total']} in the last {days}d: {kinds}")
+            latest = _latest_rows(errors)
             for key, n in sorted(_error_shapes(errors).items(), key=lambda kv: -kv[1])[:8]:
-                _print_shape(key, n)
+                _print_shape(key, n, latest.get(key))
         else:
             print("  Nothing broke.")
 

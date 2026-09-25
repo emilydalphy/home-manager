@@ -415,6 +415,32 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-25 — A browser error says what happened around it. Branch
+  `error-insight-2026-09-25`, NOT merged at the time of writing.** Three
+  Loop Board cards, one commit each. Motivating row: Julia's 2026-09-24
+  21:57 UTC `TypeError on /`, reason=unknown, no source, no stack — Railway's
+  logs showed it fired mid-redirect (`/login?next=/` → `/` → `/onboarding`)
+  with GET /api/coaching in the same second.
+  - **The trail (card 1).** `error_events.trail`: up to the last 8 steps,
+    oldest first — `from /login → / → GET /api/coaching 200 → leaving page`.
+    Steps are pages, screens (`view week.day`), requests (method, route
+    pattern, status or `failed`) and `leaving page` (beforeunload +
+    pagehide). **Button labels were refused** — they carry recipe and member
+    names. The reporter hooks the history API (every screen change in the
+    shell and onboarding already goes through pushState/replaceState with a
+    state object naming the screen) and the existing fetch wrapper; no call
+    was added to shell.js. **Server-side, pages and requests must match a
+    route in FastAPI's own `app.routes`** and are stored as that route with
+    every parameter as `{}` — stronger than the `where_` rule, because a
+    share token or one-word name in a parameter position cannot survive it
+    (`_REQUEST_SHAPE_RE` lets both through; see its comment). Screens must be
+    in `main._TRAIL_VIEWS` — **extend it when a new Plan/Shop/onboarding step
+    appears**, or that screen is silently dropped from trails. Anything else
+    is dropped whole. **Not in the dedupe key** (it differs every visit);
+    a repeat keeps the LATEST non-empty trail. Report prints it on the line
+    under each BROKEN browser error; JSON and /api/health-report carry it.
+    `tests/test_client_error_trail.py`.
+
 - **2026-09-23 — The design system stopped teaching the copy Emily
   corrected. Branch `design-system-plain-copy`, docs only, NOT merged at the
   time of writing.** `DESIGN_SYSTEM.md` §7 held up the celadon "I'll remember

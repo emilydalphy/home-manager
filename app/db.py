@@ -487,6 +487,11 @@ _MIGRATIONS = [
     # '' on an existing row, read as "only ever seen at created_at" — which
     # is exactly what a row with occurrences = 1 means.
     ("error_events", "last_seen_at", "TEXT NOT NULL DEFAULT ''"),
+    # Loop Board "A browser error says what the person was doing just before
+    # it" (2026-09-25). '' on every existing row, which is the truth: no
+    # trail was ever captured for them, and the report prints them exactly
+    # as before.
+    ("error_events", "trail", "TEXT NOT NULL DEFAULT ''"),
     # "Reach me before the moment" (Loop Board, 2026-09-11) — the morning
     # text. The household's clock and the hour it wants the text; see
     # schema.sql's comment on morning_text_sends for the whole model. The

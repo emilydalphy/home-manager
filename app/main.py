@@ -6591,6 +6591,139 @@ def _safe_client_where(where: str) -> str:
     return text if _PATH_SHAPE_RE.match(text) else "(unrecognised)"
 
 
+# ---------- the trail: what the person was doing just before ----------
+#
+# Julia's 2026-09-24 21:57 UTC row was "TypeError on /", reason=unknown, no
+# source, no stack. Railway's logs showed it fired while the page was being
+# redirected (/login?next=/ → / → /onboarding) with GET /api/coaching in the
+# same second — an evening's reading to find what a trail on the row would
+# have said at a glance. So a browser error now carries up to the last
+# _MAX_TRAIL_STEPS steps: pages, screens, requests, and the page leaving.
+#
+# The same rule as every other field here, and stricter: a step is stored
+# only if it re-derives into a CLOSED vocabulary on this side, and is
+# dropped whole otherwise (never trimmed into something that looks valid).
+#   - Pages and requests must match a route THIS APP REGISTERED — FastAPI's
+#     own table, the one the share-token tripwire reads — and are stored as
+#     that route with every parameter as {}. That is stronger than the
+#     where_ rule: a share token or a one-word member name in a path
+#     survives _REQUEST_SHAPE_RE (see its comment) but cannot survive this,
+#     because a parameter position is {} whatever arrived in it.
+#   - Screens must be one of _TRAIL_VIEWS, the app's own screen keys.
+#   - Methods, statuses and "leaving page" are fixed tokens.
+# Button labels were considered and refused: they carry recipe and member
+# names, and there is no closed list of them to check against.
+_MAX_TRAIL_STEPS = 8
+_TRAIL_ARROW = " → "
+
+# The screen keys the reporter reads off history state objects (see
+# viewName in static/error-reporter.js). Written out rather than derived
+# because the server cannot read the browser's code, and a key missing
+# here costs one dropped step, never a stored surprise. Extend when a new
+# step appears in shell.js's goMealsStep / goGroceryStep or onboarding's
+# ALL_STEPS.
+_TRAIL_VIEWS = frozenset(
+    ["today", "week", "grocery", "kitchen", "ask"]
+    + [f"week.{s}" for s in ("day", "meal", "review", "allset", "freezer", "chores")]
+    + [f"grocery.{s}" for s in ("carry", "sortall")]
+    + [
+        f"onboarding.{s}"
+        for s in (
+            "intro-hello", "intro-help", "intro-talk", "intro-know", "household",
+            "meals", "restrictions", "eating-style", "wont-eat", "excited-about",
+            "leftovers", "prep", "dinner-time", "kit-repeats", "reveal",
+        )
+    ]
+)
+_TRAIL_METHODS = frozenset({"GET", "POST", "PUT", "PATCH", "DELETE"})
+_TRAIL_LEAVING = "leaving page"
+_TRAIL_REQUEST_RE = re.compile(r"^([A-Z]{3,6}) (/\S{0,120}) (\d{3}|failed)$")
+_TRAIL_PAGE_RE = re.compile(r"^(from )?(/\S{0,120})$")
+
+# Built on first use rather than at import: routes are registered all the
+# way down this file, and a table read at this line would miss every one
+# below it.
+_route_templates: list[tuple[str, ...]] | None = None
+
+
+def _app_route_templates() -> list[tuple[str, ...]]:
+    global _route_templates
+    if _route_templates is None:
+        seen = set()
+        for route in app.routes:
+            path = getattr(route, "path", "") or ""
+            if not path.startswith("/"):
+                continue
+            seen.add(tuple("{}" if seg.startswith("{") else seg for seg in path.split("/") if seg))
+        # Most fixed segments first, so /api/week/current wins over
+        # /api/week/{} when both would match.
+        _route_templates = sorted(seen, key=lambda t: -sum(1 for s in t if s != "{}"))
+    return _route_templates
+
+
+def _route_of(path: str) -> str:
+    """
+    The registered route a path belongs to, parameters as {} — or "".
+
+    Accepts either a real path or the reporter's pattern (a {} already where
+    a value was). A literal segment must equal the route's fixed segment
+    exactly; anything in a parameter position becomes {} whatever it was.
+    """
+    parts = [seg for seg in path.split("?")[0].split("#")[0].split("/") if seg]
+    for template in _app_route_templates():
+        if len(template) != len(parts):
+            continue
+        if all(t == "{}" or t == p for t, p in zip(template, parts)):
+            return "/" + "/".join(template)
+    return ""
+
+
+def _safe_trail_step(raw: str) -> str:
+    text = " ".join(str(raw or "").split())[:160]
+    if text == _TRAIL_LEAVING:
+        return text
+    if text.startswith("view "):
+        name = text[5:]
+        return text if name in _TRAIL_VIEWS else ""
+    m = _TRAIL_REQUEST_RE.match(text)
+    if m:
+        method, path, status = m.groups()
+        route = _route_of(path)
+        if method not in _TRAIL_METHODS or not route.startswith("/api/"):
+            return ""
+        if status != "failed" and not 100 <= int(status) <= 599:
+            return ""
+        return f"{method} {route} {status}"
+    m = _TRAIL_PAGE_RE.match(text)
+    if m:
+        route = _route_of(m.group(2))
+        # A page is a page: an /api route here is not something a person
+        # was looking at, and is dropped rather than relabelled.
+        if not route or route.startswith("/api/"):
+            return ""
+        return (m.group(1) or "") + route
+    return ""
+
+
+def _safe_client_trail(steps: list[str]) -> str:
+    """
+    The trail as one line, oldest first: "/ → GET /api/coaching 200 → leaving page".
+
+    The LAST _MAX_TRAIL_STEPS that arrived are considered (the reporter
+    keeps no more, and a longer list is a hand-made POST), and each is
+    re-derived by _safe_trail_step or dropped. Consecutive repeats that
+    only became identical after reduction fold into one.
+    """
+    out: list[str] = []
+    for raw in list(steps or [])[-_MAX_TRAIL_STEPS:]:
+        if not isinstance(raw, str):
+            continue
+        safe = _safe_trail_step(raw)
+        if safe and (not out or out[-1] != safe):
+            out.append(safe)
+    return _TRAIL_ARROW.join(out)
+
+
 class ClientErrorRequest(BaseModel):
     where: str = ""
     detail: str = ""
@@ -6606,6 +6739,10 @@ class ClientErrorRequest(BaseModel):
     # _safe_client_reason.
     reason: str = ""
     request: str = ""
+    # The last few steps before it — see _safe_client_trail. Typed loosely
+    # on purpose: a list with one non-string in it must cost that step, not
+    # turn the whole report into a 422 that records nothing.
+    trail: list = []
 
 
 @app.post("/api/client-error")
@@ -6621,7 +6758,8 @@ def report_client_error(request: Request, req: ClientErrorRequest):
     problems with one appearance.
 
     What lands is the SHAPE and never the wording: a type off a fixed list,
-    a script file and line, a few stack frames. Every field is re-derived
+    a script file and line, a few stack frames, and a trail of the steps
+    just before it (_safe_client_trail). Every field is re-derived
     here rather than trusted, and repeats fold into one row's occurrences
     — see _safe_client_error_type above and tools.record_error.
 
@@ -6648,6 +6786,7 @@ def report_client_error(request: Request, req: ClientErrorRequest):
         stack_shape=stack_shape,
         reason=reason,
         request_shape=_safe_client_request(req.request, reason),
+        trail=_safe_client_trail(req.trail),
     )
     return Response(status_code=204)
 

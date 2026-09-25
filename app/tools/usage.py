@@ -727,6 +727,10 @@ NETWORK_CLUSTER_THRESHOLD = 5
 
 _MAX_REASON = 20
 _MAX_REQUEST = 80
+# Eight steps of at most a method, a route pattern and a status each. A
+# ceiling, not a target: main._safe_client_trail has already dropped
+# anything that is not a closed-vocabulary step.
+_MAX_TRAIL = 800
 
 # How long an identical shape keeps counting into one row rather than
 # starting a new one. 24 hours, because the report reads a day at a time: a
@@ -777,6 +781,7 @@ def record_error(
     stack_shape: str = "",
     reason: str = "",
     request_shape: str = "",
+    trail: str = "",
 ) -> None:
     """
     Record that something broke. Never raises.
@@ -798,6 +803,14 @@ def record_error(
     occurrences instead of writing a second one. A render loop fires these
     as fast as it paints, and the prune evicts oldest-first -- so without
     this, one broken screen quietly deletes every other error in the table.
+
+    `trail` -- the last few steps before a browser error, already reduced
+    by main._safe_client_trail -- is deliberately NOT in that key. It is
+    different every time by nature (a request that took 200 then 304, one
+    more screen visited), so keying on it would turn "the same bug, 12
+    times" back into 12 rows. On a repeat the row keeps the LATEST
+    non-empty trail instead: the freshest account of how somebody reached
+    a bug that is still happening, beside a count that says how often.
     """
     conn = None
     try:
@@ -822,6 +835,7 @@ def record_error(
             str(reason)[:_MAX_REASON],
             str(request_shape)[:_MAX_REQUEST],
         )
+        trail = str(trail)[:_MAX_TRAIL]
         existing = conn.execute(
             "SELECT id FROM error_events WHERE household_id = ? AND kind = ? AND where_ = ? "
             "AND detail = ? AND error_type = ? AND source = ? AND stack_shape = ? "
@@ -836,18 +850,22 @@ def record_error(
             row,
         ).fetchone()
         if existing:
+            # The latest trail wins, but an empty one never erases a real
+            # one: a repeat from a page still running last week's reporter
+            # has no trail to give, and that is not news about the bug.
             conn.execute(
                 "UPDATE error_events SET occurrences = occurrences + 1, "
-                "last_seen_at = datetime('now') WHERE id = ?",
-                (existing["id"],),
+                "last_seen_at = datetime('now'), "
+                "trail = CASE WHEN ? != '' THEN ? ELSE trail END WHERE id = ?",
+                (trail, trail, existing["id"]),
             )
         else:
             conn.execute(
                 "INSERT INTO error_events "
                 "(household_id, kind, where_, detail, error_type, source, stack_shape, "
-                " reason, request_shape, last_seen_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
-                row,
+                " reason, request_shape, trail, last_seen_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+                row + (trail,),
             )
             _prune(conn, hid)
         conn.commit()
@@ -998,7 +1016,7 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
             dict(r)
             for r in conn.execute(
                 "SELECT kind, where_ AS location, detail, error_type, source, stack_shape, "
-                "reason, request_shape, occurrences, last_seen_at, created_at FROM error_events "
+                "reason, request_shape, trail, occurrences, last_seen_at, created_at FROM error_events "
                 f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
                 "AND kind != 'voice' "
                 # Newest first means most recently SEEN, not most recently
