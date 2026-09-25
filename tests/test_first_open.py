@@ -334,3 +334,92 @@ def test_the_welcome_adds_no_animation():
     block = SHELL_CSS[start:start + 6000]
     assert "animation" not in block.split("No animation")[1]
     assert "transition" not in block
+
+
+# ---------- setup is recorded when onboarding finishes ----------
+
+def _onboard(c, members):
+    res = c.post("/api/onboarding/household", json={"members": members, "pets": [], "goals": ""})
+    assert res.status_code == 200
+
+
+def _members_by_name() -> dict:
+    conn = get_conn()
+    rows = conn.execute("SELECT id, name, first_open_seen_at FROM members").fetchall()
+    conn.close()
+    return {r["name"]: dict(r) for r in rows}
+
+
+def _set_up_by():
+    conn = get_conn()
+    value = conn.execute("SELECT set_up_by_member_id FROM households WHERE id = 1").fetchone()[0]
+    conn.close()
+    return value
+
+
+def test_finishing_onboarding_records_the_first_adult_typed(client):
+    _sign_in(client)
+    _onboard(client, [
+        {"name": "Kid", "age_group": "child"},
+        {"name": "Emily", "age_group": "Adult"},
+        {"name": "Vineeth", "age_group": "Adult"},
+    ])
+    people = _members_by_name()
+    assert _set_up_by() == people["Emily"]["id"]
+    assert people["Emily"]["first_open_seen_at"] == "set-up"
+    assert people["Vineeth"]["first_open_seen_at"] == ""
+
+
+def test_partner_opening_the_app_before_the_inviter_still_gets_the_welcome(client):
+    """The race an invite link opens: onboarding has finished on Emily's
+    phone, but Vineeth's session reaches the main app before hers does. He
+    must not be recorded as the one who set it up."""
+    _sign_in(client)
+    _onboard(client, [
+        {"name": "Emily", "age_group": "Adult"},
+        {"name": "Vineeth", "age_group": "Adult"},
+    ])
+    people = _members_by_name()
+
+    phone, body = _open_as(people["Vineeth"]["id"])  # partner first
+    assert body["first_open"] is True
+    assert body["set_up_by"] == "Emily"
+    assert phone.get("/api/whoami").json()["first_open"] is True
+
+    # Emily reaches the main app afterwards: no welcome for her.
+    picked = client.post("/api/whoami/pick", json={"member_id": people["Emily"]["id"]}).json()
+    assert picked["first_open"] is False
+    assert picked["set_up_by"] == "Emily"
+
+
+def test_the_adult_in_the_session_at_setup_is_the_one_recorded():
+    emily = _adult("Emily")
+    vineeth = _adult("Vineeth")
+    c, _ = _open_as(vineeth)
+    # Undo what the pick's fallback just recorded, as if Vineeth's session
+    # were simply the one finishing onboarding.
+    conn = get_conn()
+    conn.execute("UPDATE households SET set_up_by_member_id = NULL WHERE id = 1")
+    conn.execute("UPDATE members SET first_open_seen_at = ''")
+    conn.commit()
+    conn.close()
+    _onboard(c, [{"name": "Emily", "age_group": "Adult"}, {"name": "Vineeth", "age_group": "Adult"}])
+    assert _set_up_by() == vineeth
+    _, body = _open_as(emily)
+    assert body["first_open"] is True
+    assert body["set_up_by"] == "Vineeth"
+
+
+def test_a_second_pass_through_onboarding_never_moves_the_record(client):
+    _sign_in(client)
+    _onboard(client, [{"name": "Emily", "age_group": "Adult"}, {"name": "Vineeth", "age_group": "Adult"}])
+    people = _members_by_name()
+    vineeth_client, _ = _open_as(people["Vineeth"]["id"])
+    _onboard(vineeth_client, [{"name": "Vineeth", "age_group": "Adult"}])
+    assert _set_up_by() == people["Emily"]["id"]
+
+
+def test_onboarding_with_no_adults_leaves_the_fallback_in_charge(client):
+    _sign_in(client)
+    _onboard(client, [{"name": "Kid", "age_group": "child"}])
+    assert _set_up_by() is None

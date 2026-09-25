@@ -18,13 +18,17 @@ WHO NEVER SEES IT — the rule, stated once because three places lean on it:
      only way to be sure Emily, her partner and the beta testers never get
      a welcome out of nowhere. The cost: an existing household's partner
      who has genuinely never opened Pomona won't see it either.
-  2. The adult who set things up. That is the FIRST adult of a household
-     to open the shell (the first /api/whoami that resolves to an adult):
-     onboarding ends by landing its own person in the shell, so the
-     person who answered the questions is the first one there. They are
-     recorded as `households.set_up_by_member_id` and stamped 'set-up' in
-     the same moment, without a welcome. A one-adult household is this
-     case every time — current_member() resolves to that adult at once.
+  2. The adult who set things up, recorded as
+     `households.set_up_by_member_id` and stamped 'set-up'. Recorded WHEN
+     SETUP FINISHES (record_setup_adult, called from POST
+     /api/onboarding/household, which onboarding sends only at the end):
+     the session's adult if one is picked, else the first adult typed in
+     onboarding. That is before any invite link can exist, so a partner
+     opening the app first can't take their place. Only for a household
+     with no such record (made before this, or by a script) does the
+     fallback apply: the FIRST adult to open the shell (the first
+     /api/whoami that resolves to an adult) is recorded then. A one-adult
+     household is always the setter-up either way.
      For households that existed before this, the migration records the
      adult who approved the most recent week (by member id), else the
      first adult by creation order — the name the welcome says for an
@@ -118,6 +122,69 @@ def first_open_state(member: dict | None = None) -> dict:
             conn.commit()
             return {"show": False, "set_up_by": member["name"]}
         return {"show": True, "set_up_by": _setup_adult_name(conn, set_up_by)}
+    finally:
+        conn.close()
+
+
+def record_setup_adult(candidate_ids: list[int] | None = None) -> int | None:
+    """
+    Record who set the household up at the moment setup finishes — the
+    sturdy half of rule 2 (coordinator follow-up, 2026-09-25). Onboarding
+    writes its people only when setup is finished (finishSetupAndReveal →
+    POST /api/onboarding/household), so this runs then, before any invite
+    link can exist, and a partner opening the app first can never be
+    recorded in the setter-up's place.
+
+    Who: the adult in the session, if one is picked and is an adult of this
+    household; otherwise the first ADULT among `candidate_ids` (the members
+    that request just saved, in the order they were typed), else the
+    household's first adult by creation order. Only when nobody is recorded
+    yet — a second pass through onboarding never moves it. That adult is
+    stamped as never needing the welcome. Returns the recorded id, or None
+    when there's no adult to record (first_open_state's "first to open the
+    main app" rule then stays the fallback).
+    """
+    conn = get_conn()
+    try:
+        hh = conn.execute(
+            "SELECT set_up_by_member_id FROM households WHERE id = ?", (household_id(),)
+        ).fetchone()
+        if hh is None or hh["set_up_by_member_id"] is not None:
+            return None
+        adult_sql = "LOWER(TRIM(age_group)) = 'adult'"
+        chosen = None
+        member = current_member()
+        if member:
+            chosen = member["id"]
+        if chosen is None:
+            for mid in candidate_ids or []:
+                row = conn.execute(
+                    f"SELECT id FROM members WHERE id = ? AND household_id = ? AND {adult_sql}",
+                    (mid, household_id()),
+                ).fetchone()
+                if row is not None:
+                    chosen = row["id"]
+                    break
+        if chosen is None:
+            row = conn.execute(
+                f"SELECT id FROM members WHERE household_id = ? AND {adult_sql} ORDER BY id ASC LIMIT 1",
+                (household_id(),),
+            ).fetchone()
+            chosen = row["id"] if row else None
+        if chosen is None:
+            return None
+        claimed = conn.execute(
+            "UPDATE households SET set_up_by_member_id = ? WHERE id = ? AND set_up_by_member_id IS NULL",
+            (chosen, household_id()),
+        ).rowcount
+        if not claimed:
+            return None
+        conn.execute(
+            "UPDATE members SET first_open_seen_at = ? WHERE id = ? AND first_open_seen_at = ''",
+            (SEEN_SET_UP, chosen),
+        )
+        conn.commit()
+        return chosen
     finally:
         conn.close()
 

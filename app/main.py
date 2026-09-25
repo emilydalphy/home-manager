@@ -1186,12 +1186,19 @@ def onboarding_status():
 def onboarding_household(req: HouseholdOnboardingRequest):
     """Save household basics: members (+ age group), pets, and goals. Called directly by the onboarding wizard — no LLM round-trip needed for structured form data."""
     try:
+        saved_ids = []
         for m in req.members:
             if not m.name.strip():
                 continue
-            tools.add_member(m.name.strip())
+            added = tools.add_member(m.name.strip())
+            if isinstance(added, dict) and added.get("member_id") is not None:
+                saved_ids.append(added["member_id"])
             if m.age_group:
                 tools.set_member_age_group(m.name.strip(), m.age_group)
+        # Setup is finishing (onboarding posts its people only at the end):
+        # record who set the household up now, before any invite link can
+        # exist — see tools/first_open.py, rule 2.
+        tools.record_setup_adult(saved_ids)
         for p in req.pets:
             if not p.name.strip():
                 continue

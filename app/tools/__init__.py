@@ -292,6 +292,7 @@ from .first_open import (  # noqa: F401
     first_open_preview,
     first_open_state,
     mark_first_open_seen,
+    record_setup_adult,
 )
 from .household import (  # noqa: F401
     _NON_RESTRICTION_VALUES,
