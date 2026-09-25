@@ -5712,6 +5712,46 @@ button.cook-ready-row { cursor: pointer; }
   color: var(--ink);
   margin: 0;
 }
+/* Invite the other adult (2026-09-25): under an adult's name in Who's
+   here. "Invite Vineeth" is an outline button — not apricot, nothing in
+   this sheet is urgent — and once they've joined it's a quiet line with
+   "Send a new link" as plain --apricot-label text. 44px targets (Rule 6). */
+.wwk-invite { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; }
+.wwk-invite-btn {
+  background: var(--surface);
+  color: var(--ink-strong);
+  border: 1.5px solid var(--hairline-strong);
+  border-radius: var(--radius-control);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  min-height: 44px;
+  padding: 0 16px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.wwk-invite-btn:hover { background: var(--sand); }
+.wwk-invite-note {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-secondary);
+}
+.wwk-invite-again {
+  background: none;
+  border: none;
+  padding: 0 4px;
+  min-height: 44px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--apricot-label);
+  cursor: pointer;
+}
+.wwk-invite-again:hover { color: var(--apricot-label-hover); }
+.wwk-invite-new { padding-top: 6px; }
+.wwk-invite.wwk-input-row { flex-wrap: nowrap; }
 .wwk-store-count {
   font-weight: 500;
   font-size: 12.5px;
