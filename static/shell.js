@@ -22447,6 +22447,9 @@
     closeAskSheet();
     closeWeekSheet();
     closeKitchenSheet();
+    // Helpful tips' "Need help with something?" opens this form; the tips
+    // sheet goes so it can't sit on top of the form.
+    closeTipsSheet();
     var screen = snwScreenName(screenName);
     var body = snwSheetEl.querySelector('#snw-body');
     body.innerHTML = snwFormHtml(screen);

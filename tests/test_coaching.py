@@ -586,3 +586,12 @@ def test_the_tips_sheet_reuses_the_preferences_sheets_own_rules():
     # text" sheet ("Reach me before the moment") shares the same frame.
     assert "#prefs-scrim,\n#tips-scrim,\n#morning-scrim {" in SHELL_CSS
     assert "#prefs-sheet,\n#tips-sheet,\n#morning-sheet {" in SHELL_CSS
+
+
+def test_opening_the_report_form_closes_the_tips_sheet():
+    """Found in review: from Helpful tips, "Need help with something?" could
+    open the report form underneath the still-open tips sheet."""
+    src = (Path(__file__).resolve().parent.parent / "static" / "shell.js").read_text(encoding="utf-8")
+    start = src.index("function openSnwSheet(")
+    body = src[start:src.index("var screen = snwScreenName", start)]
+    assert "closeTipsSheet();" in body
