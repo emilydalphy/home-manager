@@ -267,3 +267,14 @@ def test_the_design_system_says_what_the_reason_is_now():
     assert "| The reason, said on the line |" in DESIGN
     assert "| Plan row (1A) |" in DESIGN
     assert "Tweak it" in DESIGN
+
+
+def test_undo_takes_the_changed_pill_off_the_row():
+    """Found in review: after Undo the row kept saying "Changed" for the rest
+    of its eight seconds. Both undo paths now drop the row's mark."""
+    import re
+    src = (Path(__file__).resolve().parent.parent / "static" / "shell.js").read_text(encoding="utf-8")
+    for fn in ("runMealAddUndo", "runSwapUndo"):
+        start = src.index("async function " + fn + "(")
+        body = src[start:src.index("\n  }\n", start)]
+        assert re.search(r"delete recentlyChanged\[", body), fn

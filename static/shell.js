@@ -15235,6 +15235,8 @@
         });
         if (!back.ok) throw new Error('put back failed (' + back.status + ')');
       }
+      // Undone, so the row no longer wears "Changed".
+      delete recentlyChanged[st.date + ':' + st.slot];
       await loadWeekMenu(panel);
       showToast('Taken back off.');
     } catch (err) {
@@ -15259,6 +15261,7 @@
       if (!res.ok) throw new Error('undo failed');
       var data = await res.json();
       swapState = null;
+      delete recentlyChanged[day.date + ':' + slot]; // undone: no "Changed"
       // A whole dish swapped together comes back together (data.days).
       (data.days || [data.day]).forEach(spliceSwappedDay);
       renderMealsStep(panel);

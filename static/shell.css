@@ -8149,7 +8149,7 @@ span.cook-week-name { cursor: default; }
 @media (hover: hover) { .wk-mini:hover { background: var(--sand); } }
 .wk-mini:disabled { opacity: .6; cursor: default; }
 .wk-mini-done.is-done { background: var(--celadon); border-color: var(--celadon); color: var(--on-accent-ink); }
-/* The sand, edge-less variant: Check the week's "Swap the meal" and the
+/* The sand, edge-less variant: Check the week's "Swap" and the
    root's "+ Add a meal" (the boards' .mini.ghost). */
 /* The row line's buttons are sand too (1A: "Swap" and "Tweak it"; Done
    and Swap on the approved root) — a done tick keeps its celadon. */
