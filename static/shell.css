@@ -2190,7 +2190,8 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .ask-change-working { color: var(--ink-secondary); }
 .ask-change-reason { font-size: 13px; font-weight: 500; color: var(--ink-secondary); }
 .ask-change-kept,
-.wk-changed {
+.wk-changed,
+.wk-from-last {
   flex: 0 0 auto;
   height: 18px;
   padding: 0 7px;
@@ -8069,6 +8070,10 @@ span.cook-week-name { cursor: default; }
   color: var(--ink-muted);
 }
 .wk-row-eyebrow .wk-changed { margin-top: 0; margin-left: 6px; vertical-align: middle; }
+/* "From last week" (2026-09-25, tools/bring_over.py): on its own line
+   under the row's meta, on a day row and a What we're eating row alike. */
+.wk-from-last-line { display: block; margin-top: 4px; }
+.wk-from-last-line .wk-from-last { margin-top: 0; }
 .wk-row-name {
   font-family: var(--font-body);
   font-size: 15px;

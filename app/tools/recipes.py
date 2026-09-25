@@ -12,6 +12,7 @@ from ._shared import household_id
 from . import grocery as _grocery
 from . import household as _household
 from . import quantities as _quantities
+from . import bring_over as _bring_over
 
 logger = logging.getLogger("home_manager")
 
@@ -2584,11 +2585,31 @@ def _add_recipe_ingredients_for_entries(
     scale_for_entry: dict[int, float] = {}
     contributing_ids: list[int] = []
     chains_by_plan: dict[int, dict] = {}
+    # "Bring over from last week" (Emily, 2026-09-25): a meal brought over
+    # doesn't buy again what last week's list already bought for it —
+    # the lowercased ingredient names its original nights' grocery lines
+    # hold that are ticked purchased (bring_over.bought_items). Read here,
+    # at the one choke point every ingest goes through (approval, the
+    # re-buy after a swap, a meal planned in chat), so none of them buys it
+    # twice; and because a skipped ingredient records no link, the re-buy
+    # after a swap asks again and gets the same answer.
+    bought_by_entry: dict[int, set[str]] = {}
     for entry_id in entry_ids:
         entry_row = entry_conn.execute(
-            "SELECT date, slot, weekly_plan_id FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            "SELECT date, slot, weekly_plan_id, derived_from_json FROM meal_plan_entries "
+            "WHERE id = ? AND household_id = ?",
             (entry_id, household_id()),
         ).fetchone()
+        if entry_row and entry_row["derived_from_json"]:
+            try:
+                derived = json.loads(entry_row["derived_from_json"] or "{}") or {}
+            except (TypeError, ValueError):
+                derived = {}
+            brought = derived.get(_bring_over.KEY) if isinstance(derived, dict) else None
+            if isinstance(brought, dict) and brought.get("entry_ids"):
+                bought = _bring_over.bought_items(brought["entry_ids"], conn=entry_conn)
+                if bought:
+                    bought_by_entry[entry_id] = bought
         scale = (
             _attendance.servings_scale_factor(
                 entry_row["date"], entry_row["slot"], default_servings, conn=entry_conn,
@@ -2675,10 +2696,7 @@ def _add_recipe_ingredients_for_entries(
     # The amount is compared now; it used to be selected on and discarded.
     # See _KitchenStock.
     stock = buffer.kitchen_stock()
-    # Every meal in this group added together — the same sum the buffer
-    # arrives at one share at a time, so the kitchen is asked about the
-    # week's amount and not one night's.
-    week_scale = sum(scale_for_entry[e] for e in contributing_ids)
+    all_contributing_ids = contributing_ids
 
     for ing in recipe_ingredients:
         # A recipe (AI-drafted, or hand-typed and mis-parsed) can carry a
@@ -2692,6 +2710,19 @@ def _add_recipe_ingredients_for_entries(
         if not (ing.get("item") or "").strip():
             logger.debug("Skipping a blank ingredient name for entries %s: %r", entry_ids, ing)
             continue
+        # The meals this ingredient is bought for: every contributing one
+        # but a brought-over meal whose own line was bought last week.
+        contributing_ids = [
+            e for e in all_contributing_ids
+            if ing["item"].strip().lower() not in bought_by_entry.get(e, ())
+        ]
+        if not contributing_ids:
+            already_have.append(ing["item"])
+            continue
+        # Every meal in this group added together — the same sum the
+        # buffer arrives at one share at a time, so the kitchen is asked
+        # about the week's amount and not one night's.
+        week_scale = sum(scale_for_entry[e] for e in contributing_ids)
         # The recipe's own wording decides the path, before any headcount
         # scaling — scaling can only ever turn a package into the same
         # package (you cannot buy two thirds of a jar), so asking the

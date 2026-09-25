@@ -493,6 +493,16 @@ days, guests, holidays, anything else. Dates move forward. A first week asks all
 questions. A slot above the rows is kept for the next card, "Bring over from last week".
 Card: https://app.notion.com/p/3e41f4c05231817f823ac9c7185903cd
 
+**2026-09-25 — "Bring over from last week" (option A; branch `bring-over-uncooked`, on
+top of `same-as-last-week`, not merged).** At the top of "Same as last week?": BRING OVER
+FROM LAST WEEK — *You didn't get to these. Tick any you want this week.* — last week's
+uncooked dinners and lunches, one row per dish, *Was Tuesday* (· *groceries bought* only
+when every line for it was ticked bought), nothing ticked; hidden when there are none.
+Ticked meals land on the earliest night that fits (Pomona picks), stay dinner/lunch, are
+exempt from the no-repeat rule, show *From last week* on the draft, and what last week's
+list bought for them isn't bought again. Card:
+https://app.notion.com/p/3e61f4c0523181c2b6a9ff77f5650f76
+
 - **For builders:** `static/plan-week.html` (the intake: steps 1–4, day sheet,
   `toggleAvatar`, `SKIP_LABELS`, the building screen), `app/tools/week_intake.py`
   (`_rhythm_packed_lunch_suggestions` — the lunch prefill that exists but doesn't skip

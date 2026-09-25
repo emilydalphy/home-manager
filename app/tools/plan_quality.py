@@ -413,7 +413,7 @@ def _dinner_repeat_in_history(entries: list[dict], context: dict) -> list[Violat
     violations = []
     for entry in entries:
         slot = entry.get("slot")
-        if slot not in by_slot or not _is_planned(entry):
+        if slot not in by_slot or not _is_planned(entry) or entry.get("brought_over"):
             continue
         if entry["meal_name"].strip().lower() in by_slot[slot]:
             violations.append(Violation(
@@ -1855,6 +1855,9 @@ def _load_plan_entries(plan_id: int) -> list[dict]:
             "is_new_recipe": r["times_cooked"] == 0 if r["times_cooked"] is not None else False,
             "links_to": derived_from.get("links_to"),
             "make_double_for": derived_from.get("make_double_for"),
+            # A meal brought over from last week (bring_over.KEY) is in
+            # last week's history by definition, and on purpose.
+            "brought_over": bool(derived_from.get("brought_over")),
             # A freeform meal has no recipe row and therefore no ingredient
             # list — no data, which _ingredient_repeat treats as nothing to
             # count rather than as a clean week.

@@ -2661,6 +2661,10 @@ class WeekIntakeRequest(BaseModel):
     # Step 3, "Weekday lunches" (2026-09-25): {"days": [{"date", "kind"}],
     # "prep_days": [...]}; {} clears it. See tools/weekday_lunches.py.
     weekday_lunches: dict | None = None
+    # "Bring over from last week" (2026-09-25): the ticked rows of the
+    # prefill's last_week_uncooked, as [{"entry_ids": [...]}]; [] clears
+    # it. See tools/bring_over.py.
+    brought_over: list | None = None
 
 
 class WeekGenerateRequest(BaseModel):
@@ -2863,6 +2867,7 @@ def save_week_intake_route(week_start: str, req: WeekIntakeRequest):
             day_count=req.day_count,
             skipped_days=req.skipped_days,
             weekday_lunches=req.weekday_lunches,
+            brought_over=req.brought_over,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -155,7 +155,9 @@ def _slot_to_repick(entries: list[dict], chains: dict) -> dict | None:
                     derived = json.loads(e["derived_from_json"] or "{}") or {}
                 except (TypeError, ValueError):
                     derived = {}
-                if (derived.get("freeform") or "").strip() or (e["cooked_status"] or "") == "done":
+                # Their own words, or a meal they brought over from last
+                # week (meal_variety.theirs): never the slot re-picked.
+                if _meal_variety.theirs(derived) or (e["cooked_status"] or "") == "done":
                     continue
                 if e["id"] in chains["leftovers"] or e["id"] in chains["sources"]:
                     continue

@@ -12078,6 +12078,14 @@
                 escapeHtml(name) + '</button>'
             : '<span class="wk-row-name' + quiet + '">' + escapeHtml(name) + '</span>') +
           wkRowMetaHtml(entry, meta) +
+          // "From last week" (Emily, 2026-09-25): a meal brought over from
+          // last week's uncooked ones (get_week_menu's `brought_over` —
+          // tools/bring_over.py), so the draft says why it's there (S6).
+          // The same small celadon label as "Changed", on its own line
+          // under the meta, as on a What we're eating row.
+          (planned && entry.brought_over
+            ? '<span class="wk-from-last-line"><span class="wk-from-last">From last week</span></span>'
+            : '') +
         '</div>' +
         (acts ? '<div class="wk-row-acts">' + acts + '</div>' : '') +
       '</div>' +
@@ -12207,6 +12215,10 @@
           '<button type="button" class="wk-row-name dish-link" data-wk-meal="' + first.key + '">' +
             escapeHtml(dish.name) + '</button>' +
           wkRowMetaHtml(entry, meta) +
+          // "From last week" (2026-09-25) — see wkMealRowHtml.
+          (dish.days.some(function (d) { return d.entry && d.entry.brought_over; })
+            ? '<span class="wk-from-last-line"><span class="wk-from-last">From last week</span></span>'
+            : '') +
         '</div>' +
         (swap ? '<div class="wk-row-acts">' + swap + '</div>' : '') +
       '</div>' +

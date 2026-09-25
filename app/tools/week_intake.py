@@ -14,6 +14,7 @@ from . import rhythm as _rhythm
 from . import weekly_plan as _weekly_plan
 from . import holidays as _holidays
 from . import weekday_lunches as _weekday_lunches
+from . import bring_over as _bring_over
 from .time_caps import RUSH_MAX_MINUTES, WEEKDAY_LUNCH_MAX_MINUTES  # noqa: F401
 
 
@@ -376,6 +377,9 @@ def _intake_row_to_dict(row) -> dict:
         # Step 3, "Weekday lunches" — {} when not answered. The shape is
         # tools/weekday_lunches.normalize's; see that module.
         "weekday_lunches": _weekday_lunches.load(row["weekday_lunches_json"]),
+        # "Bring over from last week" (2026-09-25) — [] when nothing was.
+        # The shape is tools/bring_over.resolve's; see that module.
+        "brought_over": json.loads(row["brought_over_json"] or "[]"),
         "moods": json.loads(row["moods_json"]),
         "cuisines": json.loads(row["cuisines_json"]),
         "freeform": row["freeform"],
@@ -437,6 +441,7 @@ def save_week_intake(
     day_count: int = 7,
     skipped_days: list | None = None,
     weekday_lunches: dict | None = None,
+    brought_over: list | None = None,
 ) -> dict:
     """
     Record the household's answers for a week, as a NEW REVISION.
@@ -480,8 +485,15 @@ def save_week_intake(
     strictly; one carried forward from the revision before is re-read
     against this revision's period and skipped days, and a day that no
     longer fits is dropped rather than refusing the save.
+
+    brought_over is "Bring over from last week" (2026-09-25): the rows of
+    get_week_intake_prefill's `last_week_uncooked` the household ticked,
+    each naming its entry_ids. What is stored is rebuilt from that offer
+    (tools/bring_over.resolve), never taken from the request; [] clears it.
     """
     date.fromisoformat(week_start)  # fail loudly on a malformed week
+    if brought_over is not None:
+        brought_over = _bring_over.resolve(brought_over, week_start)
     period = period_dates(week_start, day_count)
     week_days = set(period)
     if weekday_lunches is not None:
@@ -545,7 +557,7 @@ def save_week_intake(
             base = _intake_row_to_dict(current) if current else {
                 "night_tags": {}, "guest_counts": {}, "packed_lunch_days": [],
                 "skipped_days": [], "moods": [], "cuisines": [], "freeform": "",
-                "weekday_lunches": {},
+                "weekday_lunches": {}, "brought_over": [],
             }
 
             def pick(new, key, _base=base):
@@ -576,8 +588,8 @@ def save_week_intake(
                     night_tags_json, guest_counts_json, packed_lunch_days_json,
                     skipped_days_json, moods_json, cuisines_json, freeform,
                     household_snapshot_json, preferences_snapshot_json,
-                    weekday_lunches_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    weekday_lunches_json, brought_over_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     household_id(), week_start, revision,
@@ -595,6 +607,7 @@ def save_week_intake(
                     json.dumps(household_snapshot),
                     json.dumps(preferences_snapshot),
                     json.dumps(lunches_saved),
+                    json.dumps(pick(brought_over, "brought_over")),
                 ),
             )
             conn.commit()
@@ -1063,6 +1076,9 @@ def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
     plan = _plan_for_period(week_start, day_count)
     intake = _intake_for_period(conn, week_start, day_count, plan)
     last_intake = _last_period_intake(conn, week_start)
+    # "Bring over from last week" (2026-09-25): shown on "Same as last
+    # week?" only, so only looked up when that page will open.
+    last_week_uncooked = _bring_over.last_week_uncooked(conn, week_start) if last_intake else []
     conn.close()
 
     saved_cuisines = json.loads(prefs["cuisine_preferences_json"]) if prefs else []
@@ -1122,6 +1138,10 @@ def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
         # the household chose for the period before this one, or None for a
         # first week. See _last_period_intake.
         "last_intake": last_intake,
+        # Last week's dinners and lunches nobody ticked cooked — the "Bring
+        # over from last week" list at the top of "Same as last week?"
+        # (Emily, 2026-09-25). [] hides it. See tools/bring_over.py.
+        "last_week_uncooked": last_week_uncooked,
         # True once a dinner has been planned in the last three weeks — the
         # building screen says "Nothing you had last week" only then.
         "recent_dinners_on_record": _recent_dinners_on_record(week_start),

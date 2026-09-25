@@ -383,6 +383,11 @@ _MIGRATIONS = [
     # Step 3, "Weekday lunches" (2026-09-25): prepped / leftovers / cooked
     # per weekday lunch. '{}' on every existing revision — not answered.
     ("week_intake", "weekday_lunches_json", "TEXT NOT NULL DEFAULT '{}'"),
+    # "Bring over from last week" (Emily, 2026-09-25): last week's
+    # uncooked dinners and lunches ticked on "Same as last week?", as
+    # [{entry_ids, meal, recipe_id, slot, date}] — see tools/bring_over.py.
+    # '[]' on every existing revision — nothing was brought over before.
+    ("week_intake", "brought_over_json", "TEXT NOT NULL DEFAULT '[]'"),
     # Loop Board "Cook: the real start time moves the clock" (Emily,
     # 2026-09-13): when "Start cooking" was actually tapped, on the
     # household's clock — see schema.sql. NULL on every existing row:

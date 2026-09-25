@@ -26,6 +26,7 @@ from .tools import plan_quality
 from .tools import meal_variety as _meal_variety
 from .tools import leftovers as _leftovers_mod
 from .tools import weekday_lunches as _weekday_lunches
+from .tools import bring_over as _bring_over
 from .tools import voice as _voice
 
 logger = logging.getLogger("home_manager")
@@ -3377,6 +3378,11 @@ for the household; keep your reasoning consistent with it rather than contradict
 just not planned. Send NO entry for any meal or snack on those dates (they are enforced empty \
 regardless, so anything you put there is discarded), and don't lean a neighbouring day on \
 them (no leftovers from, or batch for, a skipped day).
+- `intake.brought_over`, when present, lists meals the household didn't get to last week and \
+chose to have this week, each already placed on a `date` and `slot`. Those slots are decided: \
+send NO entry for them (anything you put there is replaced), don't plan those dishes on any \
+other day, and don't make them a leftovers night or a batch for another day. They count \
+toward the week's dinners and lunches — plan the rest of the week around them.
 - `intake.packed_lunch_days` does NOT decide whether a lunch is planned. Every lunch is \
 planned either way. Those specific days are constrained to food that travels well and is fine \
 cold or reheated — nothing that wilts or goes soggy in a bag. Say so in that slot's reasoning.
@@ -5371,6 +5377,28 @@ def _generate_weekly_plan(
     surprise = _meal_variety.surprise_context(intake, content_start_date, day_count)
     if surprise:
         context["surprise_me"] = surprise
+    # "Bring over from last week" (Emily, 2026-09-25): the meals ticked on
+    # "Same as last week?" are placed HERE, before the model is asked —
+    # Pomona picks the night with the planner's own rules (the earliest
+    # night that is cooked at home and fits its time cap; see
+    # bring_over.choose_nights) — so the model can be told those slots are
+    # taken and plan around them. _finish_week_slots writes them
+    # (bring_over.apply_to_plan), whatever the model sent. A component
+    # plan has no nights to put them on.
+    brought_over = []
+    if intake and intake.get("brought_over") and household_memory.get("planning_mode") != "component_based":
+        brought_over, _missed = _bring_over.choose_nights(
+            intake["brought_over"], tools.period_dates(content_start_date, day_count), intake,
+            slot_needs=context["slot_needs"],
+            holidays=tools.holidays_for_period(content_start_date, day_count),
+            zero_slots={
+                slot for slot, field in (("dinner", "dinners_per_week"), ("lunch", "lunches_per_week"))
+                if household_memory.get(field) == 0
+            },
+            cap_for=lambda d, slot: _meal_minutes_cap(d, slot, intake, effective_memory),
+        )
+        if brought_over and isinstance(context.get("intake"), dict):
+            context["intake"]["brought_over"] = _bring_over.prompt_lines(brought_over)
 
     # Run the actual generation call BEFORE creating the weekly_plans row.
     # This used to be the other way around — create the plan, then generate
@@ -5614,7 +5642,7 @@ def _generate_weekly_plan(
             _finish_week_slots(
                 plan_id, content_start_date, intake, effective_memory, day_count, skip_days=skip_days,
                 context=context, repick_budget=repick_budget, report=plan_report, asks=asks_text,
-                planned_count=planned_count,
+                planned_count=planned_count, brought_over=brought_over,
             )
 
         if intake:
@@ -5763,6 +5791,7 @@ def _finish_week_slots(
     household_memory: dict, day_count: int = 7, skip_days: int = 0,
     context: dict | None = None, repick_budget=None, report: dict | None = None,
     asks: str | None = None, planned_count: int | None = None,
+    brought_over: list[dict] | None = None,
 ) -> None:
     """
     Make the 21-slot guarantee true rather than merely asked for.
@@ -5907,6 +5936,19 @@ def _finish_week_slots(
     # out for without a dish is an away slot that pass already wrote — and
     # BEFORE the audit, so the slot reads as filled, not missing.
     tools.apply_holiday_answers_to_plan(plan_id, week_start_date, day_count=day_count)
+
+    # "Bring over from last week" (Emily, 2026-09-25): each meal the
+    # household ticked goes on the night bring_over.choose_nights picked
+    # before generation, clearing whatever the model sent there (it was
+    # told not to; told is not prevented). AFTER the away, out and holiday
+    # passes, whose nights choose_nights already kept clear; BEFORE the
+    # dedupe, the chain repair and the audit, so the slot reads as filled.
+    # Its derived_from.brought_over is what the repick and count passes
+    # below read as the household's own choice (meal_variety.theirs) — a
+    # dish from last week is exactly what the no-repeat rule would
+    # otherwise swap away. Swallows its own failures.
+    if brought_over:
+        _bring_over.apply_to_plan(plan_id, brought_over)
 
     # Two rows claiming one slot is how a night nobody is home ends up with
     # groceries bought for it — audit_plan_slots has always computed this,

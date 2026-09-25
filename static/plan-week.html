@@ -483,6 +483,32 @@
   }
   .same-row.changed .same-label { color: var(--celadon-label); }
   .bring-over[hidden] { display: none; }
+  /* ---------- Bring over from last week (Emily, 2026-09-25, option A) ----------
+     Above the rows: the page's group eyebrow, one plain line, then a card
+     with a row per meal — Shop's tick box (.gro-box in shell.css: 26px,
+     the --hairline-deep rim, celadon with the tick when on), the dish,
+     and "Was Tuesday" dim under it. The whole row is the tap (44px+). */
+  .bring-over { display: flex; flex-direction: column; gap: 8px; }
+  .bring-sub { font-size: 13px; font-weight: 500; line-height: 1.45; color: var(--ink-secondary); margin: -4px 0 2px; }
+  .bring-rows { display: flex; flex-direction: column; padding: 2px 14px; }
+  .bring-row {
+    display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px;
+    padding: 10px 0; border: 0; border-top: 1.5px solid var(--hairline); background: none;
+    font-family: var(--font-body); text-align: left; color: var(--ink); cursor: pointer;
+  }
+  .bring-row:first-child { border-top: 0; }
+  .bring-row:focus-visible { outline: 2px solid var(--apricot); outline-offset: -2px; }
+  .bring-box {
+    width: 26px; height: 26px; flex: 0 0 auto; border-radius: 9px;
+    border: 1.5px solid var(--hairline-deep); background: var(--ground);
+    display: inline-flex; align-items: center; justify-content: center; color: var(--on-accent-ink);
+  }
+  .bring-box svg { width: 15px; height: 15px; visibility: hidden; }
+  .bring-row[aria-checked="true"] .bring-box { background: var(--celadon); border-color: var(--celadon); }
+  .bring-row[aria-checked="true"] .bring-box svg { visibility: visible; }
+  .bring-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .bring-name { font-size: 15px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+  .bring-was { font-size: 13px; font-weight: 500; color: var(--ink-secondary); }
 
   /* The typed answer (step 5). 16px so a phone doesn't zoom the page on
      focus — onboarding's text boxes carry the same note. Selecting the
@@ -776,9 +802,10 @@
     <p class="step-sub">Tap Change on anything that&rsquo;s different.</p>
     <div class="step-body">
       <div class="joined" id="same-joined" hidden></div>
-      <!-- BRING OVER FROM LAST WEEK — the next card's section, above the
-           rows. Empty and hidden on this build; renderBringOver() is the
-           one function that fills it, called every time this page shows. -->
+      <!-- BRING OVER FROM LAST WEEK (Emily, 2026-09-25, option A): last
+           week's uncooked dinners and lunches, a tick each, above the rows.
+           renderBringOver() is the one function that fills it, called every
+           time this page shows; hidden when last week left nothing. -->
       <div class="bring-over" id="bring-over" hidden></div>
       <div class="card same-rows" id="same-rows"></div>
     </div>
@@ -1148,7 +1175,8 @@
     packed_lunch_days: [],
     weekday_lunches: {},           // step 3 as saved: {days: [{date, kind, ...}], prep_days}
     moods: [],
-    cuisines: []
+    cuisines: [],
+    brought_over: []               // "Bring over from last week": the ticked rows' keys (bringKey)
   };
 
   // The dinner tags this screen has a word for (week_intake.NIGHT_TAGS).
@@ -1221,6 +1249,17 @@
     { key: 'mood',      step: 4, label: 'Mood' },
     { key: 'freeform',  step: 5, label: 'Anything else' }
   ];
+  // "Bring over from last week" (Emily, 2026-09-25): her words from the
+  // mockup she chose. `bought` is only said when every grocery line that
+  // meal put on the list was ticked bought (bring_over.last_week_uncooked).
+  var BRING_COPY = {
+    label: 'Bring over from last week',
+    sub: 'You didn\u2019t get to these. Tick any you want this week.',
+    was: 'Was ',
+    bought: 'groceries bought'
+  };
+  var TICK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
   var SAME_COPY = {
     eyebrow: 'Plan a week',
     go: 'Plan this week',
@@ -1500,7 +1539,7 @@
     data = body;
     loadedFor = key;
     awayRanges = [];
-    answers = { night_tags: {}, guest_counts: {}, packed_lunch_days: [], weekday_lunches: {}, moods: [], cuisines: [] };
+    answers = { night_tags: {}, guest_counts: {}, packed_lunch_days: [], weekday_lunches: {}, moods: [], cuisines: [], brought_over: [] };
     lunch = { kinds: {}, prepDays: [], ready: false };
     // The dropped days saved for this period by the screen before
     // 2026-09-22 (a Re-plan of an intake made then). Not shown and not
@@ -1599,6 +1638,7 @@
     answers.weekday_lunches = intake.weekday_lunches || {};
     answers.moods = intake.moods || [];
     answers.cuisines = intake.cuisines || [];
+    answers.brought_over = bringTicksFrom(intake.brought_over);
     $('freeform').value = intake.freeform || '';
   }
 
@@ -3309,13 +3349,61 @@
     });
   }
 
-  // The hook for the next card, "Bring over from last week": whatever it
-  // offers goes in #bring-over, above the rows. The page already holds
-  // `data` (the prefill: last_intake, days, rhythm) and `answers`, and
-  // "Plan this week" sends samePayload() — anything brought over that the
-  // planner should read rides in that one save.
+  // "Bring over from last week" (Emily, 2026-09-25, option A): last
+  // week's dinners and lunches nobody ticked cooked (the prefill's
+  // last_week_uncooked, one row per dish), each a tick box, NOTHING ticked
+  // for them. A tick is answers.brought_over (the row's key), so leaving
+  // saves it like any answer and "Plan this week" sends it in
+  // samePayload(); Pomona picks the night at drafting
+  // (bring_over.choose_nights). Hidden when last week left nothing.
+  function bringKey(item) { return (item.entry_ids || []).join(','); }
+
+  function bringOffer() { return (data && data.last_week_uncooked) || []; }
+
   function renderBringOver() {
-    $('bring-over').hidden = !$('bring-over').innerHTML;
+    var offer = bringOffer();
+    var box = $('bring-over');
+    if (!offer.length) { box.innerHTML = ''; box.hidden = true; return; }
+    box.innerHTML =
+      '<p class="eyebrow group-eyebrow">' + esc(BRING_COPY.label) + '</p>' +
+      '<p class="bring-sub">' + esc(BRING_COPY.sub) + '</p>' +
+      '<div class="card bring-rows">' + offer.map(function (item) {
+        var key = bringKey(item);
+        var on = answers.brought_over.indexOf(key) !== -1;
+        var was = BRING_COPY.was + item.weekday + (item.groceries_bought ? ' \u00b7 ' + BRING_COPY.bought : '');
+        return '<button type="button" class="bring-row" role="checkbox" aria-checked="' + (on ? 'true' : 'false') +
+          '" data-key="' + esc(key) + '">' +
+          '<span class="bring-box">' + TICK_SVG + '</span>' +
+          '<span class="bring-text"><span class="bring-name">' + esc(item.meal) + '</span>' +
+          '<span class="bring-was">' + esc(was) + '</span></span></button>';
+      }).join('') + '</div>';
+    box.hidden = false;
+    box.querySelectorAll('.bring-row').forEach(function (row) {
+      row.addEventListener('click', function () {
+        var key = row.dataset.key;
+        var at = answers.brought_over.indexOf(key);
+        if (at === -1) answers.brought_over.push(key); else answers.brought_over.splice(at, 1);
+        row.setAttribute('aria-checked', at === -1 ? 'true' : 'false');
+      });
+    });
+  }
+
+  // The ticked rows as the save wants them: each by the entry_ids it was
+  // offered with — the server rebuilds the rest from its own offer.
+  function bringPayload() {
+    return bringOffer().filter(function (item) {
+      return answers.brought_over.indexOf(bringKey(item)) !== -1;
+    }).map(function (item) { return { entry_ids: item.entry_ids }; });
+  }
+
+  // A saved answer's rows, back as ticks on this visit's offer (a row
+  // is the same dish when any of its nights is).
+  function bringTicksFrom(saved) {
+    return bringOffer().filter(function (item) {
+      return (saved || []).some(function (s) {
+        return (s.entry_ids || []).some(function (id) { return item.entry_ids.indexOf(id) !== -1; });
+      });
+    }).map(bringKey);
   }
 
   function showSame() {
@@ -3380,6 +3468,7 @@
       moods: answers.moods.slice(),
       cuisines: answers.cuisines.slice(),
       freeform: $('freeform').value,
+      brought_over: answers.brought_over.slice(),
       lunches: lunch.ready ? {
         kinds: byWeekday,
         prep_days: lunch.prepDays.slice(),
@@ -3398,6 +3487,10 @@
     answers.cuisines.length = 0;
     kept.cuisines.forEach(function (c) { answers.cuisines.push(c); });
     $('freeform').value = kept.freeform;
+    // Last week is the same last week whatever the new days are, so a
+    // tick stays ticked while its row is still on offer.
+    var offered = bringOffer().map(bringKey);
+    answers.brought_over = (kept.brought_over || []).filter(function (k) { return offered.indexOf(k) !== -1; });
     if (kept.lunches) {
       // This visit's lunches, by weekday, in the one shape step 3 lays
       // new dates out from (lunchPrefill reads last_intake.weekday_lunches).
@@ -3416,7 +3509,8 @@
       packed_lunch_days: answers.packed_lunch_days.filter(function (d) { return kept.indexOf(d) !== -1; }),
       skipped_days: droppedList(),
       moods: answers.moods, cuisines: answers.cuisines,
-      freeform: $('freeform').value.trim()
+      freeform: $('freeform').value.trim(),
+      brought_over: bringPayload()
     };
     if (currentLunchDates().length) {
       reconcileLunches();
@@ -3977,7 +4071,8 @@
       night_tags: answers.night_tags, guest_counts: answers.guest_counts,
       packed_lunch_days: answers.packed_lunch_days, skipped_days: droppedList(),
       moods: answers.moods, cuisines: answers.cuisines,
-      freeform: $('freeform').value.trim()
+      freeform: $('freeform').value.trim(),
+      brought_over: bringPayload()
     };
     // Step 3's answer only once the screen has laid it out; before that
     // the saved one stands.

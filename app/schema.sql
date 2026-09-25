@@ -465,6 +465,14 @@ CREATE TABLE IF NOT EXISTS week_intake (
     -- {"counts": {...}, "prep_days": ["sunday"], "days": [{"date", "weekday",
     -- "kind", "prep_day" | "from_dinner"}]}.
     weekday_lunches_json TEXT NOT NULL DEFAULT '{}',
+    -- "Bring over from last week" (2026-09-25): the meals from the period
+    -- before that were never cooked and that the household ticked on "Same
+    -- as last week?" to have this week. Written by tools/bring_over.resolve
+    -- from the entries themselves (never from what the screen sent):
+    -- [{"entry_ids": [..], "meal", "recipe_id", "slot", "date"}], date being
+    -- the first night it was planned for last week. The generator picks the
+    -- night (bring_over.choose_nights). '[]' = nothing brought over.
+    brought_over_json TEXT NOT NULL DEFAULT '[]',
 
     -- Q2.
     moods_json TEXT NOT NULL DEFAULT '[]',
