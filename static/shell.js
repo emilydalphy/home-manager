@@ -11948,7 +11948,7 @@
     titleChev: '<svg class="wk-row-chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" ' +
       'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M9 6l6 6-6 6"/></svg>',
-    // Tweak it: two sliders.
+    // Tweak: two sliders.
     tweak: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ' +
       'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>'
@@ -12073,7 +12073,7 @@
   // right (Emily, 2026-09-25, 1A).
   //
   // opts.done      — Done beside Swap (the Plan root); Which days / Check
-  //                  the week has Swap and Tweak it instead.
+  //                  the week has Swap and Tweak instead.
   // opts.swapLabel — "Swap" (it was "Swap the meal" on Check the week
   //                  until 2026-09-25; 1A's line holds "Swap" and "Tweak
   //                  it" beside the time).
@@ -12111,12 +12111,12 @@
             // (copy sweep finding 22). It says what the tap leaves true.
             (done ? 'Not cooked yet — ' : 'Done — ') + name)
         : '';
-      // "Tweak it" (Emily, 2026-09-25, 1A): the plate's parts in one
+      // "Tweak" (Emily, 2026-09-25, 1A): the plate's parts in one
       // sheet (openTweakSheet), only where the plate can change at all
       // (plateCanChange). Not beside Done — the approved root's rows keep
       // Done and Swap, which is all a 375px line holds next to the time.
       var tweak = !opts.done && typeof plateCanChange === 'function' && plateCanChange(day, slot, entry)
-        ? wkMiniHtml('data-wk-tweak="' + slot + '"', 'wk-mini-tweak', WK_ICONS.tweak, 'Tweak it', 'Tweak it — ' + name)
+        ? wkMiniHtml('data-wk-tweak="' + slot + '"', 'wk-mini-tweak', WK_ICONS.tweak, 'Tweak', 'Tweak — ' + name)
         : '';
       acts = tick + swap + tweak;
     } else if (open) {
@@ -12251,7 +12251,7 @@
 
   // One row: the dish (the link into its Meal step, with its chevron),
   // then "Mon, Wed · Mexican, as asked" with the reason after it as plain
-  // text, Swap and Tweak it at its right. Swap and the link act on the
+  // text, Swap and Tweak at its right. Swap and the link act on the
   // dish's first day still ahead — the same swap sheet and the same Meal
   // step Which days uses, told which day through data-wk-day-index.
   function wkMenuRowHtml(dish, days) {
@@ -12268,7 +12268,7 @@
       : '';
     var swap = first.past ? '' : wkMiniHtml('data-wk-swap-sheet="' + first.key + '"' + dishAttr, 'wk-mini-swap', WK_ICONS.swap,
       'Swap', 'Swap — ' + dish.name);
-    // "Tweak it" (Emily, 2026-09-25, 1A) changes ONE entry's plate — the
+    // "Tweak" (Emily, 2026-09-25, 1A) changes ONE entry's plate — the
     // part sheets write to one entry_id — so it is offered only where the
     // dish is one cook still ahead. A dish cooked on several days ahead
     // (seven mornings of oats) would change on its first day and not the
@@ -12280,7 +12280,7 @@
     });
     var tweak = !first.past && cooksAhead.length === 1 && cooksAhead[0] === first &&
       typeof plateCanChange === 'function' && days[first.index] && plateCanChange(days[first.index], first.key, entry)
-      ? wkMiniHtml('data-wk-tweak="' + first.key + '"', 'wk-mini-tweak', WK_ICONS.tweak, 'Tweak it', 'Tweak it — ' + dish.name)
+      ? wkMiniHtml('data-wk-tweak="' + first.key + '"', 'wk-mini-tweak', WK_ICONS.tweak, 'Tweak', 'Tweak — ' + dish.name)
       : '';
     // "Changed" (S6) when any of the dish's days was just changed. The
     // menu row has no slot eyebrow of its own, so the pill gets one.
@@ -14525,7 +14525,7 @@
     steps.querySelectorAll('[data-wk-help]').forEach(function (btn) {
       btn.addEventListener('click', function () { openWeekHelp(btn.getAttribute('data-wk-help')); });
     });
-    // "Tweak it" on a row (Emily, 2026-09-25, 1A): the plate's parts in
+    // "Tweak" on a row (Emily, 2026-09-25, 1A): the plate's parts in
     // one sheet, for the row's own day (wkDayForTap).
     steps.querySelectorAll('[data-wk-tweak]').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -14874,7 +14874,7 @@
   // the plate for that part, which the quiet line offers to take off, or
   // which Save takes off in favour of the new one (never both at once).
   // No part: the plain "Add something" the Meal step has had.
-  // ---------- "Tweak it": the plate's parts in one sheet ----------
+  // ---------- "Tweak": the plate's parts in one sheet ----------
   // Emily, 2026-09-25 (option 1A of the Plan-rows mockup). A row's "Tweak
   // it" opens this: the dish as its head (the slot and day as an eyebrow,
   // the dish's name), then the plate's parts as the Meal step's own rows
@@ -14935,7 +14935,7 @@
     }).join('');
     var adds = parts.filter(function (p) { return p.missing; })
       .map(function (p) { return platePartChipHtml(p, slot); }).join('');
-    return '<h2 class="wk-swap-title" id="wk-tweak-title">Tweak it</h2>' +
+    return '<h2 class="wk-swap-title" id="wk-tweak-title">Tweak</h2>' +
       '<div class="wk-tweak-head">' +
         '<p class="wk-swap-eyebrow">' + escapeHtml(slotEyebrowLabel(day, slot) + ' · ' + dayName(day.date, { weekday: 'long' })) + '</p>' +
         '<p class="wk-tweak-dish">' + escapeHtml(mealDisplayName(entry)) + '</p>' +
@@ -14968,7 +14968,7 @@
     openSheet(tweakSheetEl, tweakScrimEl);
   }
 
-  // A save that started from a row's "Tweak it" marks that row "Changed"
+  // A save that started from a row's "Tweak" marks that row "Changed"
   // (S6) before the week re-draws under it.
   function mealAddMarkRow(st) {
     if (st && st.markRow && typeof markRecentlyChanged === 'function') markRecentlyChanged(st.date, st.slot);
