@@ -415,6 +415,68 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-25 — The share-token redaction is a MAINTAINED LIST, and it now
+  polices itself. Branch `overnight/share-token-tripwire`, NOT merged at the
+  time of writing. TEST-ONLY — `git diff main -- app/ static/` is empty.**
+  Loop Board bug, Phase 0. The residue the 2026-09-24
+  `client-error-network-reason` entry named in its own words: "a future
+  token-bearing route that `_SHARE_PATH_RE`/`_MEMBER_PATH_RE` do not know
+  about is stored in full."
+  - **IT IS NOT REPORTING A LEAK, and that is the first thing to know.**
+    Measured: 198 routes, 80 with a path parameter, **7 route entries** whose
+    parameter name says token or person — and all 7 are covered today
+    (`/share/{token}`, `/api/share/{token}`, `/member-share/{token}`,
+    `/api/member-share/{token}` ×3, `/api/members/{name}/share-link`). The
+    file exists so the EIGHTH cannot arrive quietly.
+  - **THE TRIPWIRE OPTION, not the inversion, and the reason is scope.** The
+    card offered both. Inverting the reduction — a segment is `{}` unless it
+    is a known route word — changes what is stored for EVERY route and loses
+    diagnostic detail from rows that are perfectly safe, to fix a problem
+    that is about the NEXT route rather than a current one. The tripwire is
+    test-only and makes the maintained list self-policing, which is the
+    actual complaint.
+  - **It reads `app.routes`, FastAPI's own table, NOT the source of
+    `app/main.py`.** The 2026-09-24 leftover-chain sweep was defeated by a
+    pure REFORMAT, and its entry is emphatic that a sweep which can only see
+    one spelling is worth little. A route registered any way at all is in
+    that table.
+  - **It matches on the parameter's NAME, never a value** (`token`, `share`,
+    `name`, `secret`, `key`, `passphrase`): a value cannot be inspected at
+    import time, and the whole point is to catch a route before anybody has
+    sent a real one through it. The failure message names the route, shows
+    what would have been stored, and names the two regexes to teach —
+    because whoever trips this will have just added a route and will have no
+    idea a redaction list exists.
+  - **The guard on the guard is the other half.** A sweep that quietly stops
+    matching passes for ever and says nothing; this repo has recorded that
+    exact failure twice. A second test asserts the sweep still finds at
+    least 7 and still names two specific paths.
+  - **ONE CLAIM IN THE FIRST CUT WAS MADE AT THE WRONG LEVEL and is worth a
+    line, because it is the same mistake in miniature.**
+    `test_the_shape_check_is_not_what_protects_them` asserted
+    `_REQUEST_SHAPE_RE.match()` over bare SEGMENTS (`"Sophia"`), and that
+    regex is a WHOLE-PATH check — anchored, eating the leading slash — so it
+    correctly refuses a bare segment and the test failed for a reason that
+    had nothing to do with its claim. Asserted over the paths
+    `_safe_client_where` really hands it (`/share/<token>`,
+    `/api/members/Sophia/share-link`) the claim holds exactly: both sail
+    through untouched. A test measured at the wrong level is not evidence
+    either way.
+  - `tests/test_share_token_tripwire.py` (9). **Red-against-main is zero and
+    is not quoted**: every route it covers is covered on main too, which is
+    the point. The evidence is **two mutations, both run and both biting**: a
+    new `/api/invite/{invite_token}/accept` registered the ordinary way
+    reddens the tripwire with the offending path named (1), and blinding
+    `SENSITIVE_PARAM_WORDS` reddens the guard-on-the-guard (1). Suite **6947
+    passed, 0 failed** at `TZ=America/Toronto` with the report vars unset,
+    against a measured 6938 on main — +9 is this file exactly, and `git diff
+    main -- tests/` is one added file, so no existing test was changed or
+    weakened.
+  - **What it still cannot see, named rather than left to be found:** a route
+    whose parameter is named something the word list does not know
+    (`{t}`, `{ref}`), and a secret that arrives as a QUERY STRING rather than
+    a path segment — `_safe_client_where` stores the path only, so the second
+    is out of reach by construction rather than by this file's diligence.
 - **2026-09-25 — The salad beside a reheat is bought; the chili it sits next
   to is not. Branch `overnight/reheat-side-is-bought`, NOT merged at the time
   of writing.** Loop Board bug. A leftovers night is deliberately excluded
