@@ -137,7 +137,8 @@ taste, the defrost flow, and streaming chat.
 
 The **Plan the Week** flow is still the shape of weekly planning: a nudge,
 two question screens (`/plan-week`), a 21-slot draft on Meals, and an
-Approve button, plus a revisitable setup screen at `/meal-setup`. Read
+Approve button; the old setup screen at `/meal-setup` was folded into
+Preferences on 2026-09-25 and now redirects to `/week?prefs=open`. Read
 `design_handoff_plan_the_week/` before touching weekly planning, approval,
 or the assistant's voice.
 

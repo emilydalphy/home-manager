@@ -198,8 +198,8 @@ anchor per meal type, not a cluttered one-off per message.
    6 months, maintenance") — but there is **no Chores tab**. Chores are Phase 2
    and have no first-class screen yet.
 
-   You can revisit meal-planning settings at `/meal-setup`, and rerun the
-   full setup wizard at `/onboarding`.
+   Meal-planning settings live in Preferences (the gear). `/meal-setup` and a
+   re-run of `/onboarding` both redirect there (2026-09-25).
 
 ### How chore scheduling works
 
