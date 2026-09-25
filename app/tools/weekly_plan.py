@@ -37,6 +37,57 @@ WEEK_SLOTS = ("breakfast", "lunch", "dinner")
 DAY_SLOTS = WEEK_SLOTS + ("snack",)
 
 
+class InvalidSlot(ValueError):
+    """
+    A slot outside DAY_SLOTS handed to one of the three functions that WRITE
+    a meal_plan_entries row. The fifth instance of the family that produced
+    cooker.InvalidMealStatus, chores.InvalidChoreStatus,
+    grocery.InvalidGroceryStatus and attention.InvalidAttentionStatus, and
+    the widest of the five: a bad STATUS leaves a row nothing reads, while a
+    bad SLOT leaves a row one tab acts on and another cannot see.
+
+    Measured 2026-09-25 before the guard, on a throwaway database:
+    plan_meal(today, "Brunch Hash", "brunch") was accepted and wrote a
+    `planned` row with a real recipe_id. The Cook view showed it, Today's
+    moves showed it as a cook — so the household was told to cook it — and
+    the Plan tab did not, because get_week_menu only builds the four slots a
+    day has. audit_plan_slots did not count it either. Meanwhile
+    attendance.set_slot_attendance and slot_needs.set_slot_need both refused
+    the same word, so the meal could never be marked away or capped: real
+    enough to be cooked, not real enough to be planned.
+
+    Reachable the way the cooked tick is reachable. plan_meal_for_chat is in
+    agent.TOOL_FUNCTIONS and its schema DOES enumerate the four — and this
+    app's own rule is that telling the generator something is not the same
+    as preventing it. "Plan a brunch for Sunday" is a plausible sentence.
+
+    Its own marker type rather than a plain ValueError, so a route can answer
+    422 ("that request doesn't make sense") rather than the 404 that means
+    "no such plan". It IS a ValueError subclass, which is exactly why an
+    except for it must come BEFORE the plain one; ordering is load-bearing.
+
+    Nothing heals a row already written with a fifth word — reaching it needs
+    a model or a script rather than a tap, and a migration inventing history
+    is worse than leaving the handful there may be.
+
+    Note the VOCABULARY was already single-sourced before this: both
+    attendance._validate_slot and slot_needs._validate_slot build their own
+    _ALL_SLOTS from WEEK_SLOTS above, so they cannot disagree with DAY_SLOTS
+    about which slots exist. What was duplicated is only the refusal, and
+    what was missing is any refusal at all on the write side. Folding those
+    two onto validate_slot is a tidy-up rather than a fix and is left alone
+    here, so this branch touches no module it does not have to.
+    """
+
+
+def validate_slot(slot: str) -> None:
+    """Refuse a slot a day cannot hold. Call it ABOVE get_conn."""
+    if slot not in DAY_SLOTS:
+        raise InvalidSlot(
+            f"{slot!r} isn't a meal of the day. Use one of: {', '.join(DAY_SLOTS)}."
+        )
+
+
 def _household_today() -> date:
     """
     Today where the household lives, not where the container runs.
@@ -417,6 +468,10 @@ def plan_slot_empty(
     commits nor closes — the caller owns both. Left unset, every other call
     site behaves exactly as before.
     """
+    # Above the connection, like every sibling guard: a slot a day cannot
+    # hold must not reach a write, and a caller that passed its own conn
+    # must not have its open transaction spent on one either.
+    validate_slot(slot)
     own_conn = conn is None
     if own_conn:
         conn = get_conn()
@@ -464,6 +519,10 @@ def plan_slot_open(
     """
     if not (open_reason or "").strip():
         raise ValueError("An open slot needs a reason naming the constraint that caused it.")
+    # Above the connection, like every sibling guard: a slot a day cannot
+    # hold must not reach a write, and a caller that passed its own conn
+    # must not have its open transaction spent on one either.
+    validate_slot(slot)
     own_conn = conn is None
     if own_conn:
         conn = get_conn()

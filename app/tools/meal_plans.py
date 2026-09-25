@@ -101,6 +101,16 @@ def plan_meal(
     all written on it and nothing here commits or closes; the caller owns
     both. Left unset, every other call site behaves exactly as before.
     """
+    # A slot is one of the four meals of a day. Guarded here rather than
+    # left to the caller because this is the function that WRITES the row,
+    # and the two modules that already refuse a fifth word
+    # (attendance, slot_needs) can only refuse it AFTER something has
+    # planned a meal onto it. Above every read, so nothing is opened for a
+    # slot that cannot exist. Component-mode callers omit slot entirely and
+    # take the "dinner" default, so this does not narrow them — checked, not
+    # assumed (agent.py's component branch and swap_component_in_plan).
+    _weekly_plan.validate_slot(slot)
+
     own_conn = conn is None
     if own_conn:
         conn = get_conn()
