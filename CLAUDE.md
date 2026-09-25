@@ -415,6 +415,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-25 — A swapped-out repeat carries no note.** Emily chose "no
+  note" over "in the last two weeks" and "last week / two weeks ago"
+  (mockups https://claude.ai/artifact/UKeqDuk8Pyi7owCXv7uhmf).
+  `meal_variety.REPEAT_REASON` is `""`, so the week row's time is plain text
+  with nothing to tap; `derived_from.repeat_repick` still records what left.
+  Why: avoiding a repeat is the app doing its job, and nothing announces that.
+
 - **2026-09-25 — A browser error says what happened around it. Branch
   `error-insight-2026-09-25`, NOT merged at the time of writing.** Three
   Loop Board cards, one commit each. Motivating row: Julia's 2026-09-24

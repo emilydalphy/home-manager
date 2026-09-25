@@ -360,33 +360,25 @@ def test_a_night_already_cooked_is_never_touched(last_week, stub_model, picker):
     assert _at(plan_id, dates[0], "dinner")["meal"] == "Bean chili"
 
 
-# ---------- the sentence under the dish ----------
+# ---------- no note under the dish ----------
 
-def test_the_replacement_says_why_it_is_there(last_week, stub_model, picker):
-    """CATCH — on `main` the reason under Monday is the model's own
-    "Bean chili because", for a dish nobody replaced."""
+def test_the_replacement_carries_no_note(last_week, stub_model, picker):
+    """Emily, 2026-09-25: "no note". The swapped-in dish has an empty
+    reason, so the week row offers nothing to tap; what it replaced is
+    still on the record for anything reading the plan back."""
     week = _monday(0)
     dates = tools._week_dates(week)
     stub_model(_week(week, ["Bean chili"] + FRESH_DINNERS[1:]))
     plan = agent.generate_weekly_plan(week)
 
     monday = _at(plan["weekly_plan_id"], dates[0], "dinner")
-    assert monday["reasoning"] == "Swapped in — you had Bean chili in the last two weeks."
-    # And the record of what it replaced, for anything reading the plan back.
+    assert monday["meal"] != "Bean chili"
+    assert (monday["reasoning"] or "") == ""
     assert _derived(monday["entry_id"])["repeat_repick"]["dropped"] == "Bean chili"
 
 
-def test_the_sentence_never_says_last_week_of_a_dish_from_the_week_before():
-    """
-    NAME (REPEAT_REASON does not exist on `main`). Emily's suggested
-    default was "you had [dish] last week"; the window is two weeks, so
-    for half of what it names that would be untrue, and §8 does not let
-    the app say a thing that isn't. One constant, hers to change.
-    """
-    line = meal_variety.REPEAT_REASON.format(dish="Bean chili", window=meal_variety.variety_window_words())
-    assert line == "Swapped in — you had Bean chili in the last two weeks."
-    assert "last week" not in line
-    assert "!" not in line, "VOICE.md: no exclamation marks"
+def test_the_note_is_empty_by_decision():
+    assert meal_variety.REPEAT_REASON == ""
 
 
 # ---------- the opening line stays truthful ----------

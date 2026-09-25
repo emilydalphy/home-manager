@@ -1316,12 +1316,14 @@ def repick_repeats(plan_id: int, surprise: dict | None, budget, picker=None) -> 
 # already follows twice: a week carrying one repeat is a far better
 # outcome than a lost week.
 
-# The sentence under the replacement. ONE constant, Emily's to change.
-# Her suggested default was "Swapped in — you had [dish] last week." — the
-# window is two weeks, so half the dishes it would name were not had last
-# week, and §8 does not let the app say a thing that isn't. The window's
-# own words (variety_window_words) are the same sentence, true either way.
-REPEAT_REASON = "Swapped in — you had {dish} in {window}."
+# The replacement carries NO note (Emily, 2026-09-25, choosing between
+# "in the last two weeks", "last week / two weeks ago" and none: "no note").
+# Avoiding a repeat is the app doing its job, and her plain-copy rule is
+# that nothing announces what the app does anyway. So the reason is the
+# empty string, not the pick's own reason either: with no reason the week
+# row's time stays plain text with nothing to tap (wkRowMetaHtml). What was
+# replaced is still recorded, in derived_from["repeat_repick"].
+REPEAT_REASON = ""
 
 # Punctuation out, case down, and a trailing filler word off the end:
 # "Taco Night" and "tacos night" both read as the dish. Emily, 2026-09-25,
@@ -1468,7 +1470,7 @@ def _replace_whole_dish(plan_id: int, dish: dict, nights: list[dict], budget, pi
         avoid=[], because=because,
         reject=lambda name: repeat_key(name) in refuse,
         derived_key="repeat_repick", picker=picker,
-        reason_line=REPEAT_REASON.format(dish=dish["name"], window=variety_window_words()),
+        reason_line=REPEAT_REASON,
         also=nights[1:] or None,
     )
     return None if new is None else new["meal"]
