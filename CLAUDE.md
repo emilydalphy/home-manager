@@ -415,6 +415,122 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-25 — The salad beside a reheat is bought; the chili it sits next
+  to is not. Branch `overnight/reheat-side-is-bought`, NOT merged at the time
+  of writing.** Loop Board bug. A leftovers night is deliberately excluded
+  from the grocery ingest — it eats an earlier night's batch — and that
+  reasoning was only ever about the DISH. It was being applied to the night's
+  SIDE, which is a different dish, cooked fresh that evening, and which
+  nothing else on the week buys.
+  - **Root cause is one `continue` asked about the wrong thing.**
+    `recipes._add_recipe_ingredients_for_entries` dropped every leftovers
+    entry out of `contributing_ids` whatever ingredients it had been handed,
+    and the side pass calls it once per entry with that entry's own sides —
+    so the salad got the dish's answer to a question about the salad.
+    `reheat_buys_it` is now asked about the INGREDIENTS rather than about the
+    night; `plates.is_big_meal_dish` is the one place the "a big-meal dish is
+    the only side written with a `role`" rule lives, and all three ingest
+    call sites derive the flag from it.
+  - **Driven end to end on a throwaway DB through a real approval**, Monday's
+    Turkey Chili cooked double for Thursday with a green salad on Thursday:
+    `main` `{'Ground turkey': '3 lbs'}`, this branch
+    `{'Ground turkey': '3 lbs', 'Lettuce': '1 head'}` with the ledger reading
+    `[(cook, 'Ground turkey', '3 lbs'), (reheat, 'Lettuce', '1 head')]` — an
+    unrounded share per contributing entry, so clearing the reheat takes the
+    lettuce off AND re-rounds the chili back to 1.5 lbs, and a second
+    approval changes nothing.
+  - **It also closes a promise-vs-delivery drift nobody filed, and that is
+    worth knowing because `_plan_grocery_candidate_entries`' own docstring
+    exists to prevent exactly it.** Same seeded week: the draft screen
+    promises `would_add_count: 2` on both trees; `main` then delivers
+    `groceries_added_count: 1` and goes on promising 2 for ever, because a
+    reheat that never held a link is a candidate for ever. Here it delivers
+    2 and the preview drops to 0.
+  - **The mirror case is unchanged and that was measured, not reasoned**: a
+    side on the COOK night alone is `Lettuce: 2 heads` and one ledger row on
+    the cook on both trees, and a big-meal dish on the cook night is
+    byte-identical (`Bread cubes: 1.75 cups` either side).
+  - **THE ADMITTED WIDENING IN `_buy_side_now` IS A BUG FIX AND THE NUMBERS
+    SAY SO.** That function used to pass `chain_scale=True` always; it now
+    derives it. Same 4-serving stuffing on the same chain-source cook night,
+    two eaters: APPROVAL buys **2 cups** on both trees, `_buy_side_now` on
+    `main` buys **4 cups**, and on this branch **2 cups**. The two doors
+    disagreed by exactly the batch factor and now agree. Reachable through
+    `plate_parts.change_part` → `carry_sides` on a holiday entry.
+  - **Found on review and NOT fixed, each named so nobody reports it as new.**
+    1. **A FREEFORM reheat's side is still not bought**, and the reason is a
+       door up: `_plan_grocery_candidate_entries` is `JOIN recipes r ON
+       r.id = mpe.recipe_id`, so a freeform entry is not a candidate at all
+       — chained or not, on `main` or here. Measured both ways. Every batch
+       the app itself writes re-plans the same dish (`meal_variety.
+       _write_batches`, `agent._expand_repeated_dates`), so the reheat row
+       carries a recipe_id and this fix reaches it; a night the model wrote
+       as "Leftover chili" in free text it does not. Its own card; invert
+       `test_a_freeform_reheats_side_is_still_not_bought_and_is_NOT_fixed_here`
+       when that JOIN becomes a LEFT JOIN.
+    2. **Taking the night off on a reheat strands its side's LINE.**
+       `weekly_plan.delete_plan_entry` takes a row off the plan without
+       touching the grocery list, and its own docstring says it is "only for
+       rows whose food is not going anywhere". That precondition was true of
+       every reheat until this card — a reheat owned no shopping — and a
+       reheat with a side owns some. Measured: after `tonight_night_off`
+       (kind `freeze_reheat`) the lettuce is still on the list with **zero**
+       ledger rows behind it. Bounded — one line, removable by hand,
+       `clear_stale_grocery_items` takes it with the week, and
+       `tonight_night_off_undo` puts the link back because the undo snapshot
+       carries `meal_plan_grocery_links`. Deliberately not fixed: reversing
+       before the delete would leave that snapshot pointing at a
+       `grocery_items` row that no longer exists, which is worse than the
+       extra line. `weekly_plan.move_cook_onto_fed_night` is the second
+       caller with the same shape, reached by reading rather than measured.
+    3. **A side on BOTH ends of a chain buys three heads for two salads** —
+       the cook night's own salad is still scaled to cover the night it
+       feeds (the 2026-09-13 round-2 decision, untouched) and the reheat's
+       is bought on top. Un-batch the same week and the app settles on two,
+       so the approved state is one head heavier than the app's own answer
+       once the chain is gone. Reachable only by a deliberate tap (the plate
+       pass never puts a side on a reheat), and whether a cook night's side
+       should still cover a fed night that has a side of its own is the open
+       half of that decision rather than this card's.
+  - **Two latent shapes that would make the comment "batch_for_entry finds no
+    batch on a reheat" false, and a guard that was tried and taken back
+    out.** A leftovers row carrying `FREEZER_EXTRA_KEY` is in
+    `chains["freezer"]` as readily as a cook, and a row that both `links_to`
+    an earlier night and names a later one back is in `chains["sources"]`
+    AND `chains["leftovers"]` at once — force either and the reheat's salad
+    is bought for the batch (measured: 3 heads and 2 heads respectively
+    where the night wants 1). Neither is reachable: both
+    `FREEZER_EXTRA_KEY` writers stamp the COOK. A `not is_reheat` guard was
+    written and reverted, because the source-and-reheat shape has an
+    arguable right answer — a salad really is cooked fresh on the reheat
+    night, so it could cover a later one — and settling that on a review
+    pass would be deciding it unmeasured. Said at the code instead.
+  - `tests/test_reheat_side_is_bought.py` (18). **8 red against main's
+    `app/`, of which 7 are behaviour catches** — re-measured on review, and
+    all 7 fail on the assertion they are named for (the missing lettuce);
+    the eighth dies on `AttributeError: is_big_meal_dish` and says so.
+    **Five mutations re-measured and every one bites**: the leftovers check
+    removed outright (11 red), `reheat_buys_it` ignored (7), `reheat_buys_it`
+    forced True at both approval-time side ingests (2),
+    `_entry_side_groups` unable to tell a big-meal dish apart (3),
+    `is_big_meal_dish` widened to any side carrying `servings` (3), and
+    `_buy_side_now` passing `chain_scale=False` (1). **One guard's docstring
+    named a mutation that does not bite and is corrected rather than
+    quietly**: it said the reheated dish's own guard was pinned by
+    "`reheat_buys_it` ignored, or the `continue` removed". Those are
+    opposite — ignoring the flag makes the check STRICTER, i.e. main, so the
+    turkey stays at 3 lbs and that test stays green; only removing the
+    `continue` takes it to 4.5.
+  - Suite **6956 passed, 0 failed** at `TZ=America/Toronto` with
+    `HOME_MANAGER_URL`/`REPORT_TOKEN` unset, against a measured **6938** on
+    `main` in the same shape — +18 is this one new file exactly, and
+    `git diff main -- tests/` is one added file, so no existing test was
+    changed or weakened. (Those two variables being set in a dev shell
+    reddens 14 report-reading tests that have nothing to do with this
+    branch; unset them before quoting a number.)
+  - **Not verified in a browser** — nothing visual changed; the drives above
+    go through the tools the routes call (`week_add_component` is a one-line
+    wrapper over `plates.add_component`), not over HTTP.
 - **2026-09-25 — A slot is one of the four meals of a day. Branch
   `overnight/a-slot-is-one-of-four`, NOT merged at the time of writing.**
   The FIFTH instance of the family that produced `InvalidMealStatus`
