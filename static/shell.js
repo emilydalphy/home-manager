@@ -167,6 +167,16 @@
   // reversal.
   var INVENTORY_IN_DEVELOPMENT = true;
 
+  // "Add from a link" (recipe import, 2026-09-11) is also still being
+  // built — same reasoning and same treatment as Inventory above: a
+  // quiet neutral "In development" pill at its entry point (the row in
+  // Cook's More sheet, cookMoreRowsHtml) plus a matching note inside the
+  // sheet it opens (rli sheet, buildRecipeLinkSheet), reusing the same
+  // .pill/.pill-neutral/.kit-row-pill markup Inventory uses. The feature
+  // itself is untouched either way: paste a link, read it, review, save
+  // all still work. Flipping this back to false removes both.
+  var RECIPE_LINK_IN_DEVELOPMENT = true;
+
   // The notifications bell and its feed left the app with the Today
   // redesign (Emily, 2026-09-08). Today is a timeline of moves now, and
   // everything time-bound the feed used to carry — a dinner to cook, a
@@ -8869,7 +8879,10 @@
       // the review-before-save sheet (recipe import, 2026-09-11).
       '<button type="button" class="kit-row" data-kit="recipe-link">' +
         '<span class="kit-row-icon">' + KITCHEN_ICONS.link + '</span>' +
-        '<span class="kit-row-text"><span class="kit-row-title">Add from a link</span></span>' +
+        '<span class="kit-row-text"><span class="kit-row-title">Add from a link' +
+        (RECIPE_LINK_IN_DEVELOPMENT ?
+          ' <span class="pill pill-neutral kit-row-pill">In development</span>' : '') +
+        '</span></span>' +
         '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
       '</button>' +
       // ...or from a photograph of a cookbook page — the same sheet, the
@@ -19125,6 +19138,17 @@
   var lastAssistantAskText = null;
   var askSending = false;
   var askConversationStarted = false;
+  // Whether the CURRENT text sitting in #ask-input got there because an
+  // opener (a preset row like Cook's "Ask about our recipes", or a meal
+  // card's "For tonight's dinner, I'd like ") set it programmatically,
+  // rather than because the household typed it. Set true wherever
+  // openAskSheet writes a prefill, set false the moment the household
+  // types a single keystroke (askInput's 'input' listener below) — from
+  // then on it's their own unsent words, not a preset, and openAskSheet
+  // leaves it alone. See openAskSheet's use of it, and the bug it fixes:
+  // a preset prefill left sitting in the shared textarea used to survive
+  // into the next, unrelated chat open on another tab.
+  var askDraftIsPreset = false;
   // ---------- What this conversation is about ----------
   // Set when chat is opened FROM something — a meal card's "Tell me what
   // instead" (Loop Board, Emily 2026-09-13) — and sent with every message
@@ -20551,6 +20575,18 @@
   // first build, since the thread can already exist from an earlier
   // opener by the time this one runs.
   function openAskSheet(prefill, context, greeting) {
+    // A thread nobody has actually sent a message in yet
+    // (askConversationStarted only flips true on the first real send, in
+    // sendAskMessage) hasn't started a conversation — it's just whatever a
+    // preset opener left behind (Cook's "Ask about our recipes", a meal
+    // card's "For tonight's dinner, I'd like ", etc.) after the household
+    // closed the sheet without sending. Reopening chat from somewhere else
+    // in that state should look like a fresh open, not a continuation of
+    // an abandoned preset, so the thread resets here. A thread that DID
+    // get a real message stays exactly as the shared-thread design
+    // intends (see ensureAskSheetBuilt's comment) — this only ever
+    // touches an unstarted one.
+    if (!askConversationStarted && askBuilt) resetAskThread();
     ensureAskSheetBuilt(greeting);
     closeWeekSheet();
     closeMealsMoreSheet();
@@ -20563,11 +20599,36 @@
     }
     if (prefill) {
       askInput.value = prefill;
+      askDraftIsPreset = true;
       autoGrowAskInput(askInput);
       askInput.focus();
     } else {
+      // No prefill from this opener. If what's sitting in the box is a
+      // leftover preset from an earlier, abandoned open, it's not the
+      // household's own words — clear it. A genuinely typed draft
+      // (askDraftIsPreset false) is the household's own unsent text and
+      // is left exactly where it is, the same per-viewer convenience any
+      // other draft field in the app gets.
+      if (askDraftIsPreset) {
+        askInput.value = '';
+        askDraftIsPreset = false;
+        autoGrowAskInput(askInput);
+      }
       askInput.focus();
     }
+  }
+
+  // Clears the sheet back to nothing-said-yet: only ever called for a
+  // thread that never had a real message sent in it (see openAskSheet).
+  // Leaves the composer's text alone — that's openAskSheet's call, based
+  // on askDraftIsPreset — this just clears the messages so
+  // ensureAskSheetBuilt rebuilds with whatever greeting this open wants
+  // instead of stacking under (or silently reusing) a preset's leftover
+  // bubble.
+  function resetAskThread() {
+    askBuilt = false;
+    lastAssistantAskText = null;
+    if (askMessagesEl) askMessagesEl.innerHTML = '';
   }
   // What the sheet's Back is called (Emily, 2026-09-20: "It's confusing
   // where the user needs to go from here"). "Back to your week" when the
@@ -20634,7 +20695,12 @@
     autoGrowAskInput(askInput); // shrink back to one line
     sendAskMessage(message);
   });
-  askInput.addEventListener('input', function () { autoGrowAskInput(askInput); });
+  askInput.addEventListener('input', function () {
+    // A real keystroke: whatever is here now is the household's own
+    // words, not a leftover preset — see askDraftIsPreset.
+    askDraftIsPreset = false;
+    autoGrowAskInput(askInput);
+  });
 
   // ---------- Voice dictation (restored per testing feedback) ----------
   // Ported from static/index.html's mic button, which the ask-sheet's
