@@ -8151,7 +8151,7 @@ span.cook-week-name { cursor: default; }
 .wk-mini-done.is-done { background: var(--celadon); border-color: var(--celadon); color: var(--on-accent-ink); }
 /* The sand, edge-less variant: Check the week's "Swap" and the
    root's "+ Add a meal" (the boards' .mini.ghost). */
-/* The row line's buttons are sand too (1A: "Swap" and "Tweak it"; Done
+/* The row line's buttons are sand too (1A: "Swap" and "Tweak"; Done
    and Swap on the approved root) — a done tick keeps its celadon. */
 .wk-carousel .wk-mini, .wk-mini-add,
 .wk-row-foot .wk-mini:not(.is-done) { background: var(--sand); border-color: transparent; }
@@ -8588,7 +8588,7 @@ span.cook-week-name { cursor: default; }
   cursor: pointer;
 }
 .wk-swap-quiet:hover { color: var(--ink-strong); }
-/* "Tweak it" (Emily, 2026-09-25, 1A): the swap sheet's geometry above;
+/* "Tweak" (Emily, 2026-09-25, 1A): the swap sheet's geometry above;
    under its title the dish as the head (the slot and day as an eyebrow,
    the name at card-title size), then the Meal step's own .plate-rows and
    the Day card's dashed chips for a part the plate is missing. Its

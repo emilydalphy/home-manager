@@ -6,11 +6,11 @@ renderers under node:
      title is the way into the recipe) and keeps its --ink.
   2. Under it, one line: the time as plain text, the reason after it
      (no dotted underline, no tap, no pop), and the row's sand buttons at
-     its right — Swap and a new "Tweak it" on a draft / Check the week,
+     its right — Swap and a new "Tweak" on a draft / Check the week,
      Done and Swap on the approved root.
-  3. "Tweak it" only where plateCanChange() says the plate can change, and
+  3. "Tweak" only where plateCanChange() says the plate can change, and
      on a What we're eating row only for a dish that is one cook ahead.
-  4. The "Tweak it" sheet: the dish as its head, the plate's parts as rows
+  4. The "Tweak" sheet: the dish as its head, the plate's parts as rows
      with Change / Add, a missing part as the dashed chip, "Leave it as it
      is" — and its buttons hand off to the existing part sheets, which
      mark the row "Changed" (S6) when they save.
@@ -93,13 +93,13 @@ def test_a_draft_row_has_the_chevron_title_then_the_time_line_with_swap_and_twea
     foot = dinner[dinner.index('<div class="wk-row-foot">'):]
     assert '<span class="wk-row-meta">30 min · Lighter than the chops</span>' in foot
     assert "data-wk-why" not in html and "wk-why-pop" not in html and "wk-row-why" not in html
-    # Swap (same handler as ever) then Tweak it, both mini buttons on that line.
+    # Swap (same handler as ever) then Tweak, both mini buttons on that line.
     acts = foot[foot.index('<div class="wk-row-acts">'):]
     assert acts.index('data-wk-swap-sheet="dinner"') < acts.index('data-wk-tweak="dinner"')
     assert 'class="wk-mini wk-mini-swap"' in acts and 'class="wk-mini wk-mini-tweak"' in acts
-    assert ">Swap</button>" in acts and "Tweak it</button>" in acts
-    assert 'aria-label="Tweak it — Lemon chicken &amp; orzo"' in acts
-    # A plate with no parts on record can't change: no Tweak it.
+    assert ">Swap</button>" in acts and "Tweak</button>" in acts
+    assert 'aria-label="Tweak — Lemon chicken &amp; orzo"' in acts
+    # A plate with no parts on record can't change: no Tweak.
     assert 'data-wk-tweak="lunch"' not in html and 'data-wk-swap-sheet="lunch"' in html
     assert 'data-wk-tweak="breakfast"' in html
 
@@ -151,7 +151,7 @@ def test_a_menu_row_has_the_chevron_the_line_and_tweak_it_only_for_one_cook_ahea
     html = _run(_plate_prelude() + f"weekState.days = {json.dumps(days)};\n"
                 f"console.log(JSON.stringify(wkMenuHtml({json.dumps(days)})));")
     assert html.count('class="wk-row wk-menu-row has-foot"') >= 3
-    # Oats are cooked on two mornings ahead: Tweak it would change one of them.
+    # Oats are cooked on two mornings ahead: Tweak would change one of them.
     oats = _row(html, "breakfast")
     assert 'data-wk-swap-sheet="breakfast"' in oats and "data-wk-tweak" not in oats
     # Salmon is cooked once; Tuesday's reheat doesn't count as a second cook.
@@ -183,7 +183,7 @@ def test_the_tweak_sheet_is_the_dish_then_its_parts_then_the_quiet_way_out():
     entry["plate_parts"].append({"role": "side", "word": "Side", "name": "Salsa verde", "source": "side", "missing": False})
     day = _day(_TUE, dinner=entry)
     html = _run(_plate_prelude() + f"console.log(JSON.stringify(tweakSheetBodyHtml({json.dumps(day)}, 'dinner', {json.dumps(entry)})));")
-    assert html.startswith('<h2 class="wk-swap-title" id="wk-tweak-title">Tweak it</h2>')
+    assert html.startswith('<h2 class="wk-swap-title" id="wk-tweak-title">Tweak</h2>')
     assert '<p class="wk-swap-eyebrow">Dinner · Tuesday</p>' in html
     assert '<p class="wk-tweak-dish">Lemon chicken &amp; orzo</p>' in html
     rows = re.findall(r'<div class="plate-row"><span class="plate-row-role">([^<]+)</span>'
@@ -257,7 +257,7 @@ def test_the_row_css_uses_tokens_and_keeps_the_targets():
     assert "flex-wrap: wrap" in _rule(".wk-row-foot")
     block = SHELL_CSS[SHELL_CSS.index("/* A planned row (Emily, 2026-09-25"):SHELL_CSS.index(".wk-mini {")]
     assert re.search(r"#[0-9a-fA-F]{3,6}\b", block) is None
-    tweak = SHELL_CSS[SHELL_CSS.index('/* "Tweak it" (Emily, 2026-09-25'):SHELL_CSS.index(".wk-tweak-adds")]
+    tweak = SHELL_CSS[SHELL_CSS.index('/* "Tweak" (Emily, 2026-09-25'):SHELL_CSS.index(".wk-tweak-adds")]
     assert re.search(r"#[0-9a-fA-F]{3,6}\b", tweak) is None
     assert "#wk-tweak-scrim[hidden], #wk-tweak-sheet[hidden] { display: none; }" in SHELL_CSS
 
@@ -266,7 +266,7 @@ def test_the_design_system_says_what_the_reason_is_now():
     assert "The reason a tap away |" not in DESIGN
     assert "| The reason, said on the line |" in DESIGN
     assert "| Plan row (1A) |" in DESIGN
-    assert "Tweak it" in DESIGN
+    assert "Tweak" in DESIGN
 
 
 def test_undo_takes_the_changed_pill_off_the_row():

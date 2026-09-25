@@ -198,7 +198,7 @@ def test_check_the_week_opens_with_the_crumb_title_line_tabs_cards_and_dots():
 @_needs_node
 def test_each_card_has_the_day_the_count_and_rows_in_meal_order_with_swap():
     # "Swap the meal" until 2026-09-25: 1A's row line holds "Swap" and
-    # "Tweak it" beside the time.
+    # "Tweak" beside the time.
     days = _week()
     html = _run(_prelude() + f"weekState.days = {json.dumps(days)};\n"
                 f"console.log(JSON.stringify(wkDayCardHtml({json.dumps(days[0])}, 0, {{ done: false, swapLabel: 'Swap' }})));")
