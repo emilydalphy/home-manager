@@ -294,6 +294,36 @@ def test_a_repeat_they_typed_but_the_model_forgot_to_mark_is_kept_too(last_week,
     assert picker == []
 
 
+def test_the_dish_they_said_they_are_bringing_to_a_holiday_is_kept(last_week, stub_model, picker):
+    """
+    CATCH against the mutation rather than against `main`. Reproduced
+    before it was closed: a household taking a chili they ate eight days
+    earlier to a holiday had it swapped away for a dish nobody named.
+
+    holidays._plan_dish writes that row itself, so the model never stamps
+    derived_from.freeform on it — their words as plainly, recorded
+    somewhere else. Driven by writing the row the way that pass writes it,
+    since a holiday inside an arbitrary test week cannot be arranged.
+    """
+    week = _monday(0)
+    dates = tools._week_dates(week)
+    stub_model(_week(week, FRESH_DINNERS))
+    plan = agent.generate_weekly_plan(week)
+    plan_id = plan["weekly_plan_id"]
+    from app.tools import weekly_plan as wp
+    wp._replace_slot_entries(
+        plan_id, [_at(plan_id, dates[2], "dinner")["entry_id"]], dates[2], "dinner", "Bean chili",
+        reasoning="You're bringing it.",
+        derived_from={"holiday": "Thanksgiving", "holiday_dish": True, "constraint": "bring_a_dish"},
+    )
+
+    before = len(picker)
+    out = meal_variety.repick_recent_repeats(plan_id, week, allergen_gate.CallBudget())
+    assert out["repeats"] == 1 and out["repicked"] == 0 and out["left"] == ["Bean chili"]
+    assert len(picker) == before
+    assert _at(plan_id, dates[2], "dinner")["meal"] == "Bean chili"
+
+
 def test_a_night_already_cooked_is_never_touched(last_week, stub_model, picker):
     """
     NAME — it calls repick_recent_repeats, which `main` has not got. It

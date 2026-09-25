@@ -1359,6 +1359,28 @@ _TOO_GENERIC_TO_ASK_BY = {
 }
 
 
+# A row another pass wrote BECAUSE the household said so. `holiday_dish`
+# is the dish they told Pomona they were taking to a holiday
+# (holidays._plan_dish) — their words as plainly as derived_from.freeform
+# is, and the model never stamps it, since that row is not the model's.
+# Measured before it was added: a household bringing a chili they had
+# eaten eight days earlier had it swapped away for a dish nobody named.
+_THEIR_OWN_KEYS = ("freeform", "holiday_dish")
+
+
+def theirs_by_hand(dish: dict) -> bool:
+    """Does any night of this dish carry another pass's record that the
+    household asked for it? _group_dishes' `protected` reads `freeform`
+    and a cooked night and is shared with the count pass; this is the
+    same question widened for this one only, so nothing else's behaviour
+    moves with it."""
+    for night in dish["nights"]:
+        derived = json.loads(night.get("derived_from_json") or "{}") or {}
+        if any(derived.get(key) for key in _THEIR_OWN_KEYS):
+            return True
+    return False
+
+
 def asked_for_by_name(name: str, texts: tuple[str | None, ...] = ()) -> bool:
     """
     Did the household's own words for THIS week name this dish?
@@ -1461,8 +1483,9 @@ def repick_recent_repeats(plan_id: int, period_start: str | None, budget, picker
     every swap in the app uses, so the grocery list follows.
 
     Left exactly as generated, each logged by name: a dish they asked for
-    in their own words (derived_from.freeform, or their typed words say so
-    — asked_for_by_name), a night already cooked, a chain this pass cannot
+    in their own words (derived_from.freeform, the dish they said they are
+    taking to a holiday, or their typed words — theirs_by_hand and
+    asked_for_by_name), a night already cooked, a chain this pass cannot
     move whole (_replaceable), and any dish the picker could not better
     inside swap_in_place.MAX_PICK_ATTEMPTS or the shared call budget. The
     budget is the generation's, shared with the allergen re-pick and the
@@ -1496,10 +1519,13 @@ def repick_recent_repeats(plan_id: int, period_start: str | None, budget, picker
                     continue
                 out["repeats"] += 1
                 # Their words beat the rule, exactly as they beat the
-                # dinners-per-week count: `protected` is the model's own
-                # record (freeform) plus a night already cooked, and the
-                # text read is the belt for a request it failed to mark.
-                if dish["protected"] or asked_for_by_name(dish["name"], asks):
+                # dinners-per-week count. Three readings of "they asked
+                # for this", because no one of them is complete: the
+                # model's own stamp and a cooked night (`protected`),
+                # another pass's record that they said so (theirs_by_hand),
+                # and their typed words, for a request the model was told
+                # to mark and did not.
+                if dish["protected"] or theirs_by_hand(dish) or asked_for_by_name(dish["name"], asks):
                     out["left"].append(dish["name"])
                     continue
                 nights = _replaceable(dish, chains)
