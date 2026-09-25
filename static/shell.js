@@ -16609,6 +16609,44 @@
     await submitWeekApproval(panel, data, approvedBy, false);
   }
 
+  // "Wednesday", "Wednesday and Friday", "Wednesday to Friday" — same
+  // shape as weekly_plan.py's _weekday_span, kept in words because the
+  // toast this feeds is a sentence, not a label.
+  function weekdaySpan(weekdays) {
+    if (weekdays.length === 1) return weekdays[0];
+    if (weekdays.length === 2) return weekdays[0] + ' and ' + weekdays[1];
+    return weekdays[0] + ' to ' + weekdays[weekdays.length - 1];
+  }
+
+  // What approving THIS draft just took off an approved week, said as the
+  // house toast pattern (DESIGN_SYSTEM §2b S10): `<thing> was <verbed>`.
+  // `replaces` is get_week_menu's own preview (preview_approved_takeover,
+  // app/tools/weekly_plan.py) — read before the tap, off the same days the
+  // approve endpoint is about to act on, so it names the true span and
+  // meals rather than a guess. Returns null when there is nothing to say:
+  // no approved week overlapped, or it overlapped but held no meals (the
+  // "nothing's planned for those days" case — see `meal_count`).
+  //
+  // No Undo on this one: reopening the draft this approval just became
+  // (`/api/week/.../reopen`, tools.reopen_weekly_plan) only un-approves
+  // THIS plan — it never restores the OTHER, approved plan that
+  // retire_overlapping_plans shortened or retired. There is no server path
+  // that gives those days back, so none is offered here (Emily's rule:
+  // don't build the undo, say there isn't one).
+  function weekTakeoverToastNote(replaces) {
+    if (!replaces || !replaces.meal_count) return null;
+    var days = replaces.days || [];
+    var meals = [];
+    days.forEach(function (d) { (d.meals || []).forEach(function (m) { meals.push(m); }); });
+    if (!meals.length) return null;
+    var single = days.length === 1 && meals.length === 1;
+    var allDinner = meals.every(function (m) { return m.slot === 'dinner'; });
+    var noun = allDinner ? (single ? 'dinner' : 'dinners') : (single ? 'meal' : 'meals');
+    var verb = single ? 'was' : 'were';
+    var span = weekdaySpan(days.map(function (d) { return d.weekday; }));
+    return span + '’s ' + noun + ' ' + verb + ' replaced';
+  }
+
   // Posts the approval. `confirmHardConflicts` is only ever true right
   // after the household has tapped the "Approve anyway" button that
   // showApproveConfirm renders below — never inferred, never set on the
@@ -16653,8 +16691,16 @@
         label: 'Open the list',
         onClick: function () { activateTab('grocery', true, { groScreen: 'plan' }); }
       };
+      // `data.replaces` was read before this tap (get_week_menu's own
+      // preview, off the same days the approve endpoint just acted on) —
+      // see weekTakeoverToastNote. Only ever set for a draft that actually
+      // took an approved week's days; null the rest of the time, so this
+      // changes nothing about the toast on an ordinary approval.
+      var takeoverNote = weekTakeoverToastNote(data.replaces);
       if (approval.conflicts_note) {
-        showToast('Approved. ' + approval.conflicts_note, openListAction, 9000);
+        showToast('Approved. ' + approval.conflicts_note + (takeoverNote ? ' ' + takeoverNote + '.' : ''), openListAction, 9000);
+      } else if (takeoverNote) {
+        showToast('Approved. ' + takeoverNote + '. I’ll get your list together.', openListAction, 9000);
       } else {
         showToast('Approved. I’ll get your list together.', openListAction);
       }
