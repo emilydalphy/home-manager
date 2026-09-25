@@ -653,6 +653,8 @@ from .weekly_plan import (  # noqa: F401
     plan_requests,
     record_plan_requests,
     WEEK_SLOTS,
+    validate_slot,
+    InvalidSlot,
     _COMPONENT_CATEGORY_ORDER,
     _build_day_based_menu,
     _build_suggested_schedule,

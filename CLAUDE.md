@@ -415,6 +415,81 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-25 — A slot is one of the four meals of a day. Branch
+  `overnight/a-slot-is-one-of-four`, NOT merged at the time of writing.**
+  The FIFTH instance of the family that produced `InvalidMealStatus`
+  (2026-09-16), `InvalidChoreStatus`, `InvalidGroceryStatus` and
+  `InvalidAttentionStatus` (earlier the same night) — and the widest of the
+  five, because a bad STATUS leaves a row nothing reads while a bad SLOT
+  leaves a row one tab acts on and another cannot see.
+  - **Found by driving a real week on a throwaway database and getting
+    `plan_meal`'s own arguments the wrong way round.** Nothing stopped it,
+    which is the finding. `plan_meal(today, "Brunch Hash", "brunch")` was
+    accepted and wrote a `planned` row with a real `recipe_id`.
+  - **What each surface then did with it, measured:** the Cook view drew a
+    card, `today_moves` showed it as a cook — so the household was TOLD TO
+    COOK IT — the Plan tab showed nothing (`get_week_menu` only builds the
+    four slots a day has), and `audit_plan_slots` reported `present: 1` for
+    a day holding two planned rows. `attendance.set_slot_attendance` and
+    `slot_needs.set_slot_need` both refused the same word, so that meal
+    could never be marked away or capped. Real enough to be cooked; not
+    real enough to be planned, changed, or said no to.
+  - **Three writers, all guarded above the connection**
+    (`meal_plans.plan_meal`, `weekly_plan.plan_slot_open`,
+    `plan_slot_empty`). Above the connection matters MORE here than in the
+    status siblings: the two `plan_slot_*` functions take a CALLER's
+    connection, often one holding an open write transaction, and spending
+    that on a slot that cannot exist is worse than leaking one of your own.
+  - **NO ROUTE HANDLER, deliberately, and it was checked rather than
+    assumed.** Every route taking a slot off the wire either validates it
+    itself (`resolve_week_slot` answers 400) or hands it to a function that
+    already refuses (`set_week_attendance`,
+    `confirm_slot_recommendation`). The one door is `plan_meal_for_chat`,
+    whose schema DOES enumerate the four — the cooked tick's situation
+    exactly. An `except InvalidSlot` on a route nothing can reach would be
+    dead code, and this log already records regretting one piece of
+    unpinnable belt-and-braces.
+  - **The VOCABULARY was already single-sourced and only the REFUSAL was
+    duplicated.** `attendance._validate_slot` and `slot_needs._validate_slot`
+    both build their `_ALL_SLOTS` from `WEEK_SLOTS`, so none of the three
+    can disagree about which slots exist. What was missing was any refusal
+    on the WRITE side. Folding those two onto `validate_slot` is a tidy-up
+    rather than a fix and is left alone, so this branch touches no module it
+    does not have to.
+  - **Component mode was the one way this could have been unsafe, and it was
+    traced rather than assumed:** both component callers (`agent.py`'s
+    component branch and `swap_component_in_plan`) omit `slot` entirely and
+    take the `"dinner"` default. Test on it.
+  - **`test_day_slot_order.py`'s unknown-slot test is updated honestly
+    rather than deleted.** Its claim — an unknown slot sorts to the END of
+    the day rather than alphabetically into the middle of it — is unchanged
+    and still worth having, because rows like that exist on disk from before
+    this guard and were deliberately not migrated. It writes the row
+    straight into the table now, which is the only way one can come about.
+    **Proved not weakened: restore the original alphabetical sort and that
+    file still goes 5 red.**
+  - `tests/test_a_slot_is_one_of_four.py` (13). **5 red against main and
+    only ONE is a behaviour catch** — the one written to be one, which
+    swallows the call and then asks the SCREENS, so on main it runs to
+    completion and fails on the disagreement itself. The other four die on a
+    name main has not got. **Five mutations, each biting:** `plan_meal`'s
+    guard removed (2 red), the guard written against `WEEK_SLOTS` instead of
+    `DAY_SLOTS` so a real snack is refused (1), the guard moved below
+    `conn = get_conn()` (1), `plan_slot_open`'s removed (1),
+    `plan_slot_empty`'s removed (1). **A sixth mutation reddened nothing and
+    was re-run rather than believed** — it moved the guard past an
+    assignment rather than past `get_conn()` itself, which is no mutation at
+    all; a mutation that misses says the mutation was badly chosen, not that
+    the test is toothless.
+  - Suite **6951 passed, 0 failed** at `TZ=America/Toronto`. Counts taken
+    with `HOME_MANAGER_URL`/`REPORT_TOKEN` unset — see
+    `overnight/tests-ignore-report-env`.
+  - **Found in passing and NOT fixed:** `POST /api/week/{week}/resolve-slot`
+    validates against `WEEK_SLOTS` (three) rather than `DAY_SLOTS`, so an
+    open SNACK cannot be settled from that route — and an open snack is
+    reachable (the 2026-09-10 entry records three routes to one). Its own
+    card, and it belongs to the `resolve_open_slot` question that is waiting
+    on Emily.
 - **2026-09-25 — Answering a queued question takes no third word. Branch
   `overnight/attention-status-validated`, NOT merged at the time of
   writing.** The fourth instance of one class, fixed the way the other

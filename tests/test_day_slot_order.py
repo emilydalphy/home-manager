@@ -33,6 +33,28 @@ def _meals_on(plan_id: int, day: str = DAY) -> list[str]:
     return [m["meal"] for m in tools.get_weekly_plan(plan_id)["meals"] if m["date"] == day]
 
 
+def _a_legacy_row_on_an_unknown_slot(plan_id: int, day: str = DAY) -> None:
+    """
+    A row on a slot the app has never heard of, written the way one can only
+    exist now: straight into the table. Since 2026-09-25 the three functions
+    that write a meal refuse anything outside DAY_SLOTS, and rows already on
+    disk were deliberately left alone rather than migrated — so this is not a
+    contrivance, it is the shape of the thing the sort below has to cope with.
+    """
+    from app.db import get_conn
+    from app.tools._shared import household_id
+
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO meal_plan_entries "
+        "(household_id, date, slot, freeform_meal, weekly_plan_id, slot_state) "
+        "VALUES (?, ?, 'brunch', 'Eggs benedict', ?, 'planned')",
+        (household_id(), day, plan_id),
+    )
+    conn.commit()
+    conn.close()
+
+
 def _scrambled_day(plan_id: int, day: str = DAY) -> None:
     """One full day, written in an order no day is ever eaten in."""
     tools.plan_meal(day, "Chili", slot="dinner", weekly_plan_id=plan_id)
@@ -82,10 +104,21 @@ def test_a_slot_the_app_does_not_know_sorts_last_rather_than_disappearing():
     An unexpected slot is still somebody's food. It goes to the end of the
     day — alphabetically 'brunch' would have landed between breakfast and
     dinner, which is a confident wrong answer.
+
+    WHAT MOVED, 2026-09-25: this used to write the row with plan_meal. It
+    cannot any more — plan_meal, plan_slot_open and plan_slot_empty all
+    refuse a slot outside DAY_SLOTS now (weekly_plan.InvalidSlot), because a
+    row on a slot no screen builds showed on Cook and on Today's moves and
+    was invisible on Plan. The CLAIM here is unchanged and still worth
+    having: rows like this exist on disk from before that guard, and were
+    deliberately not migrated, so the sort still has to put them somewhere
+    sensible rather than alphabetically in the middle of the day. It is
+    written the only way such a row can now come about — straight into the
+    table, which is exactly what a legacy row is.
     """
     plan_id = _plan()
     _scrambled_day(plan_id)
-    tools.plan_meal(DAY, "Eggs benedict", slot="brunch", weekly_plan_id=plan_id)
+    _a_legacy_row_on_an_unknown_slot(plan_id)
 
     assert _slots_on(plan_id) == ["breakfast", "lunch", "dinner", "snack", "brunch"]
     assert "Eggs benedict" in _meals_on(plan_id)
