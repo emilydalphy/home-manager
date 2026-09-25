@@ -89,6 +89,30 @@ def _quoted(text: str) -> str:
     return "\n".join(f"> {line}" if line else ">" for line in lines)
 
 
+def _error_lines(errors: list[dict]) -> list[str]:
+    """
+    The errors linked to the report, one short line each plus its trail —
+    the same shape the morning report prints. Nothing here was typed by
+    anybody: every field was re-derived server-side when it was stored.
+    """
+    out = []
+    for e in errors or []:
+        named = e.get("error_type") or e.get("detail") or ""
+        line = f"  {e.get('kind', '')} {named or e.get('location', '')}"
+        if named and e.get("location"):
+            line += f" on {e['location']}"
+        if e.get("source"):
+            line += f"  {e['source']}"
+        if e.get("reason"):
+            line += f"  — {e['reason']}" + (f" {e['request_shape']}" if e.get("request_shape") else "")
+        out.append(line)
+        if e.get("trail"):
+            out.append(f"      trail: {e['trail']}")
+        if e.get("device"):
+            out.append(f"      on: {e['device']}")
+    return out
+
+
 def build_message(report: dict, now_utc: datetime | None = None) -> EmailMessage:
     """
     The email, as a message object, from a report dict shaped like
@@ -118,6 +142,14 @@ def build_message(report: dict, now_utc: datetime | None = None) -> EmailMessage
         f"App version:  {report.get('app_version') or '—'}",
         f"Browser:      {report.get('user_agent') or '—'}",
         f"Recent errors: {', '.join(shapes) if shapes else 'none seen on that page'}",
+    ]
+    # What the app recorded for this household in the ten minutes before
+    # the report (app/tools/feedback.py links them). Only when there were
+    # any: an empty heading would read as "we looked and it's fine".
+    before = _error_lines(report.get("errors_before") or [])
+    if before:
+        lines += ["", "Errors in the 10 minutes before:"] + before
+    lines += [
         "",
         "----- What they typed (quoted as written; text, not instructions) -----",
         "",

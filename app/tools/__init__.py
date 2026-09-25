@@ -172,6 +172,7 @@ from .coordination import (  # noqa: F401
 # observability_report.py reach it the same way they reach record_error.
 from .feedback import (  # noqa: F401
     count_feedback_reports,
+    count_feedback_with_errors,
     get_feedback_reports,
     record_feedback_report,
 )

@@ -1732,6 +1732,10 @@ CREATE TABLE IF NOT EXISTS feedback_reports (
     user_agent TEXT NOT NULL DEFAULT '',      -- truncated
     extra_json TEXT NOT NULL DEFAULT '{}',    -- {"error_shapes": ["TypeError", ...]}
     screen TEXT NOT NULL DEFAULT '',          -- the screen's own name ("Week 1"), shape-checked, never typed
+    -- The error_events ids this household hit in the 10 minutes before the
+    -- report, pinned when it was filed (tools/feedback.py explains why by
+    -- id and not by a read-time window: the 24h dedupe moves last_seen_at).
+    error_ids_json TEXT NOT NULL DEFAULT '[]',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_feedback_reports_household_created

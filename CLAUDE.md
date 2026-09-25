@@ -458,6 +458,22 @@ why*, not duplicating the diff.
     strings (apostrophes, non-breaking spaces), and a near-miss buys
     nothing; `lang = fr` beside `reason=unknown` is now how the report shows
     the case. `tests/test_client_error_device.py`.
+  - **A note shows the errors just before it (card 3).** When a feedback
+    report is filed, this household's errors (any kind except `voice`) SEEN
+    in the 10 minutes before it (`COALESCE(NULLIF(last_seen_at,''),
+    created_at)`, so a bug first filed at breakfast and hit again a minute
+    ago counts) are **linked BY ID** into `feedback_reports.error_ids_json`.
+    By id, not a read-time query, because the 24h dedupe moves last_seen_at:
+    the same bug repeating an hour after the note would fall out of a
+    read-time window and the one link that mattered would vanish. Household
+    scoped at the write AND the read. Old reports read as `[]`, never
+    re-linked. `--feedback` prints them under each note in the report's own
+    shape (trail and `on:` lines included), ABOVE the untrusted fence, which
+    is unchanged. The default report and /api/health-report get a NUMBER
+    only: `2 'something not working' notes waiting (1 with errors just
+    before)`. The email lists them too (small change, done). A linked row
+    shows its latest trail/device, which may be from a repeat after the
+    note — named, accepted. `tests/test_feedback_linked_errors.py`.
 
 - **2026-09-23 — The design system stopped teaching the copy Emily
   corrected. Branch `design-system-plain-copy`, docs only, NOT merged at the

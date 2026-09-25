@@ -6995,7 +6995,10 @@ def submit_feedback(request: Request, req: FeedbackRequest, background: Backgrou
             "error_shapes": shapes,
             "screen": _safe_feedback_screen(req.screen),
         }
-        tools.record_feedback_report(**report)
+        # The household's errors from the ten minutes before, linked by id
+        # as the report is filed (tools/feedback.py says why by id). Shapes
+        # only; handed to the email so it can say what broke just before.
+        report["errors_before"] = tools.record_feedback_report(**report) or []
         if report["what_happened"]:
             # Household name and id are read here, on the request, because
             # the background task runs after the session context is gone.
@@ -7069,6 +7072,9 @@ def observability(days: int = 1):
             "errors": tools.get_recent_errors(days=days),
             "usage": tools.get_usage_summary(days=max(days, 7)),
             "feedback_waiting": tools.count_feedback_reports(days=max(days, 7)),
+            # How many of those sit next to an error from the ten minutes
+            # before them — a number, same rule as the one above.
+            "feedback_with_errors": tools.count_feedback_with_errors(days=max(days, 7)),
             # What the last few weeks of plans got wrong about the FOOD, which
             # is not the same question as what broke — see the report, where
             # it prints in its own section rather than under BROKEN. Seven

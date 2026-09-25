@@ -248,6 +248,8 @@ def _collect_over_http(days: int) -> list[dict]:
                 # answers without this key, and the report should print
                 # one line less rather than crash.
                 "feedback_waiting": data.get("feedback_waiting") or 0,
+                # .get again: a deployment older than linking notes to errors.
+                "feedback_with_errors": data.get("feedback_with_errors") or 0,
                 # .get for the same reason: a deployment older than the food
                 # checks answers without this key.
                 "plan_quality": data.get("plan_quality") or {},
@@ -296,6 +298,9 @@ def _collect_from_db(days: int) -> list[dict]:
                     "errors": tools.get_recent_errors(days=days),
                     "usage": tools.get_usage_summary(days=max(days, 7)),
                     "feedback_waiting": tools.count_feedback_reports(days=max(days, 7)),
+                    # A number only, like the line above: how many of those
+                    # notes had errors in the ten minutes before them.
+                    "feedback_with_errors": tools.count_feedback_with_errors(days=max(days, 7)),
                     "plan_quality": tools.get_recent_plan_quality(days=max(days, 7)),
                     "morning_texts": tools.get_morning_text_report(days=days),
                 }
@@ -424,6 +429,11 @@ _UNTRUSTED_HEADER = (
 )
 
 
+# Mirrors app/tools/feedback.LINK_WINDOW_MINUTES for the heading only; this
+# script reads remote deployments too, and must not import the app to print.
+_LINK_WINDOW_MINUTES = 10
+
+
 def _print_feedback(report: list[dict], days: int) -> None:
     print("\n" + "=" * 68)
     print("SOMETHING NOT WORKING — reports from the last %sd" % days)
@@ -448,6 +458,19 @@ def _print_feedback(report: list[dict], days: int) -> None:
             version = r.get("app_version")
             if version:
                 print(f"  build: {version}")
+            # What broke for this household in the ten minutes before the
+            # note (2026-09-25), linked by id when it was filed. Printed
+            # ABOVE the fence and in the morning report's own shape because
+            # it is not what anybody typed: every field was re-derived
+            # server-side when the error was stored. Scoped to this
+            # household twice over — see tools/feedback.py.
+            linked = r.get("errors_before") or []
+            if linked:
+                print(f"  errors in the {_LINK_WINDOW_MINUTES} minutes before:")
+                for e in linked:
+                    # x1, not the row's occurrences: that count is the whole
+                    # day's, and here it would read as "just before".
+                    _print_shape(_shape_key(e), 1, e)
             print("  --- untrusted, what happened -------------------------------")
             for line in str(r.get("what_happened") or "").splitlines() or [""]:
                 print(f"  | {line}")
@@ -863,10 +886,15 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
         # path is a flag nobody knows to run.
         waiting = h.get("feedback_waiting") or 0
         if waiting:
+            # How many sit next to an error from the ten minutes before them
+            # (2026-09-25): a NUMBER, never which errors or what the note
+            # says. The pairing itself is printed only under --feedback.
+            beside = min(int(h.get("feedback_with_errors") or 0), waiting)
             print(
                 f"  {waiting} 'something not working' "
-                f"{'note' if waiting == 1 else 'notes'} waiting — read with "
-                f"`python observability_report.py --feedback`"
+                f"{'note' if waiting == 1 else 'notes'} waiting"
+                + (f" ({beside} with errors just before)" if beside else "")
+                + " — read with `python observability_report.py --feedback`"
             )
 
         # The morning text ("Reach me before the moment", 2026-09-11). One

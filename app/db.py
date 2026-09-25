@@ -405,6 +405,12 @@ _MIGRATIONS = [
     # "Help icon: Need a hand? sheet", 2026-09-18). '' for a report filed
     # before the column existed, or from a screen that doesn't name itself.
     ("feedback_reports", "screen", "TEXT NOT NULL DEFAULT ''"),
+    # Loop Board "A 'Something not working?' note shows the errors that
+    # happened in the minutes before it" (2026-09-25). '[]' on every
+    # existing report: the link is made at filing time, and a report filed
+    # before this was never linked — re-linking it now would be guessing
+    # through rows the dedupe has since moved.
+    ("feedback_reports", "error_ids_json", "TEXT NOT NULL DEFAULT '[]'"),
     # ...and whether that number is an answer or the default. The column
     # above is NOT NULL DEFAULT 3, so nothing in the row could tell the two
     # apart, and the Preferences sheet's "How you eat" line duly told a
