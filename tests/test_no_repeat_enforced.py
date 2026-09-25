@@ -27,11 +27,11 @@ which it is:
                  this leaves this one alone because it was told to. Pinned
                  by mutation, never by redness.
 
-Measured against `main`'s app/ with this file dropped in: 26 red, 12
-green. Of the 26, ELEVEN fail on the assertion they are named for, TWO
-are red on the bug by an indirect route and say so, and THIRTEEN die on a
+Measured against `main`'s app/ with this file dropped in: 28 red, 12
+green. Of the 28, ELEVEN fail on the assertion they are named for, TWO
+are red on the bug by an indirect route and say so, and FIFTEEN die on a
 name `main` has not got. The number that means anything is the eleven,
-and the mutations each green test names.
+and the sixteen mutations the green ones name.
 
 Every test stubs the model: the week's generation at
 agent.generate_weekly_plan_llm, the re-pick at
