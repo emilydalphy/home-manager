@@ -741,9 +741,9 @@ def test_DEFECT_that_crash_leaks_the_write_lock_and_wedges_the_next_write(crash_
     ("SQLite objects created in a thread can only be used in that same
     thread"). It is released when that thread is handed its next piece of
     work — so whether anything else suffers depends entirely on which worker
-    the next request lands on. Under TestClient there is one worker, so the
-    next request reuses it and clears it before the handler runs (pinned
-    below as 200). Under uvicorn the pool has many, and four runs against a
+    the next request lands on. Under TestClient the handler also runs on a
+    thread pool, so even here the next write is sometimes fine and sometimes
+    500 (not asserted, see below). Under uvicorn the pool is larger, and four runs against a
     real server on a throwaway database gave four different answers: the
     next write fine; the next write lost after waiting out sqlite3's full
     5-second busy timeout (measured 5.53s, then 500); five concurrent writes
@@ -763,10 +763,11 @@ def test_DEFECT_that_crash_leaks_the_write_lock_and_wedges_the_next_write(crash_
     assert crash_probe["error_events"] == 0, (
         "WRONG — the failure is invisible to the app's own observability feed"
     )
-    assert crash_probe["next_write_status"] == 200, (
-        "the single-threaded case, pinned so the paragraph above stays checkable — "
-        "a 500 here would mean even one worker no longer recovers"
-    )
+    # next_write_status is deliberately NOT asserted. TestClient runs sync
+    # handlers on a thread pool too, so the next request may or may not land on
+    # the wedged worker: measured 2026-09-25 on Emily's Mac, 200 and 500 came
+    # back in roughly equal measure across runs. Pinning either made the suite
+    # flaky. The mechanism and the missing error_events row above hold every time.
 
 
 def test_log_deviation_and_fill_recipe_take_no_vocabulary_off_the_wire(signed_in):
