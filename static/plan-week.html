@@ -177,7 +177,7 @@
   .field:focus { outline: none; border-color: var(--apricot-deep); box-shadow: 0 0 0 3px var(--apricot-rule); }
   .field::placeholder { color: var(--ink-placeholder); }
   #did-you-mean:empty, #did-you-mean-label[hidden] { display: none; }
-  /* "Mexican's in. I'll remember it." — the away sheet's .covers card
+  /* "Mexican's in." — the away sheet's .covers card
      (celadon tint, the tick), under the cuisines once one is added. */
   .covers[hidden] { display: none; }
 
@@ -786,7 +786,7 @@
        it replaced the quiet line under Continue (Emily, 2026-09-21). -->
   <section id="q3" hidden>
     <h1>Any lunches on the go?</h1>
-    <p class="step-sub" id="lunch-sub">I&rsquo;ll keep those to food that travels well.</p>
+    <p class="step-sub" id="lunch-sub"></p>
     <div class="step-body">
       <div class="chip-row" id="lunch-days"></div>
       <div class="chip-row">
@@ -964,9 +964,11 @@
 
   // ---------- the pop-up ----------
   // shell.js's showToast, without the action button (nothing on this
-  // screen offers an undo yet). One sentence for every save that lands
-  // (S10): the same words the shell uses, so the app has one voice for it.
-  var CHANGES_SAVED = 'Changes saved';
+  // screen offers an undo yet). The same shape the shell uses, so the app
+  // has one voice for it (S10): since 2026-09-23 the line names what was
+  // saved — "Thursday was saved", not "Changes saved" for all three of
+  // them (copy sweep finding 1; the shell's savedLine is the twin).
+  var SAVED_PLAIN = 'Saved';
   var toastEl = document.getElementById('toast');
   var toastTimer = null;
   function showToast(message) {
@@ -979,7 +981,12 @@
     if (toastTimer) clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { toastEl.hidden = true; }, 2200);
   }
-  function toastSaved() { showToast(CHANGES_SAVED); }
+  function savedLine(thing, verbed) {
+    var name = String(thing === null || thing === undefined ? '' : thing).trim();
+    if (!name) return SAVED_PLAIN;
+    return name + ' was ' + (verbed || 'saved');
+  }
+  function toastSaved(said) { showToast(said || SAVED_PLAIN); }
 
   // ---------- state ----------
   // The period being planned: where it starts and how many days it runs.
@@ -2030,7 +2037,7 @@
       $('day-sheet').hidden = true;
       paintTiles();
       paintCta();
-      toastSaved();
+      toastSaved(savedLine(weekdayName(draft.date), 'saved'));
     } catch (err) {
       console.warn('Day sheet save failed:', err);
       draft.saving = false;
@@ -2226,7 +2233,7 @@
       await loadAttendance();
       paintHoliday(date);
       reseedSheet(date);
-      toastSaved();
+      toastSaved(savedLine(h.name, 'saved'));
     } catch (err) {
       console.warn('Holiday answer failed:', err);
       h.answer = previous;
@@ -2436,8 +2443,14 @@
       paintTiles();
       renderAwaySet();
       $('away-another').hidden = false;
+      // Who was marked away, when the stretch named anybody — the same
+      // names the "Covers…" line under the sheet was reading back. Taken
+      // before the sheet closes, which clears the draft.
+      var awayWho = (awayDraft && awayDraft.who || []).slice();
       closeAwaySheet();
-      toastSaved();
+      toastSaved(awayWho.length
+        ? joinNames(awayWho) + (awayWho.length === 1 ? ' was' : ' were') + ' marked away'
+        : savedLine('Your time away', 'saved'));
     } catch (err) {
       console.warn('Away range save failed:', err);
       $('away-covers-text').textContent = 'I couldn’t save that just now — try again in a moment.';
@@ -2483,10 +2496,14 @@
         paintLunchDays();
       });
     });
-    // Pre-answered from the rhythm: say so, once, in the one line.
-    $('lunch-sub').textContent = prefilled.lunches
-      ? 'I’ve ticked your usual days — I’ll keep those to food that travels well.'
-      : 'I’ll keep those to food that travels well.';
+    // Pre-answered from the rhythm: say so, once, in the one line. What
+    // the ticks are FOR ("I'll keep those to food that travels well") used
+    // to hang off this line and is gone (copy sweep finding 20, 2026-09-23):
+    // it announced what I'd do with the answer, and the person meets it
+    // where it is used — "travels well" is the fact the menu row carries
+    // beside those lunches (wkMenuFact). An empty sub is a supported state
+    // here: .step-sub:empty is display:none, as the moods' sub already is.
+    $('lunch-sub').textContent = prefilled.lunches ? 'I’ve ticked your usual days.' : '';
     paintLunchDays();
   }
 
@@ -2550,12 +2567,12 @@
   // line belong to it then (paintCta), and the crumb closes it (crumbTap).
   var cuisineOpen = false;
   // The cuisines added this session, so the fallback write-back on "Draft
-  // my week" keeps them even if their chip was tapped off again — "I'll
-  // remember it" is a promise about the list, not about this week.
+  // my week" keeps them even if their chip was tapped off again — a cuisine
+  // added here joins the standing list, not just this week's plan.
   var addedCuisines = [];
   var CUISINE_COPY = {
     add: 'Add', addWhat: 'Add a cuisine', never: 'Never mind',
-    inLine: '’s in. I’ll remember it.', already: '’s already on your list — I’ve ticked it.'
+    inLine: '’s in.', already: '’s already on your list — I’ve ticked it.'
   };
 
   // The "Did you mean" row: the known cuisines that start with what's

@@ -536,7 +536,7 @@ class TestTheDayAndMealMarkup:
         assert "'/swap-undo'" in SHELL_JS
 
     def test_the_wordier_path_is_kept_as_a_quiet_link(self):
-        assert "Tell me what instead" in SHELL_JS
+        assert "Ask for something else" in SHELL_JS
         # Since 2026-09-13 the link opens chat ABOUT the meal (see
         # tests/test_tell_me_instead_context.py); the old prefilled
         # sentence is kept only for a slot with no real meal to be about.
@@ -554,7 +554,7 @@ class TestTheDayAndMealMarkup:
         assert "min-height: 44px;" in block  # Rule 6
 
     def test_the_copy_has_no_exclamation_marks(self):
-        for line in ("Finding something else…", "Tell me what instead",
+        for line in ("Finding something else…", "Ask for something else",
                      "That didn’t work just now — nothing changed."):
             assert line in SHELL_JS
             assert "!" not in line

@@ -6,8 +6,8 @@ Shop's root is the band ("This week · 14 things, two stores."), the add
 row, then one card per store in the household's stop order — the name,
 "N of M" at the right, one tickable row per thing — and a final
 "Anywhere" card for the loose things. A tick marks the thing bought on
-the screen at once and on the server when it can be, says "Changes saved
-· Put back", and when every row on a card is ticked the head reads "Done
+the screen at once and on the server when it can be, says "Orzo was ticked
+off · Undo", and when every row on a card is ticked the head reads "Done
 at Costco". When every card is done the list's finished moment stands at
 the top of it. The trip screens — "Start the trip", "Where are we
 headed?", the stop-by-stop list with a trolley, "Where next?", the
@@ -210,13 +210,18 @@ u.sections[0].items.forEach(function (it) { it.status = 'purchased'; u.purchased
 u.sections = [];
 var after = groListHtml(groceryState.data);
 console.log(JSON.stringify({ before: cards(before), beforeRows: rows(card(before)), after: cards(after), afterRolled: rolled(after),
-  afterSub: /gro-rolled-sub">([^<]*)</.exec(after)[1] }));
+  afterSub: /gro-rolled-sub">([^<]*)</.exec(after)[1],
+  afterLabel: /class="gro-rolled-head"[^>]*aria-label="([^"]*)"/.exec(after)[1] }));
 """)
     assert out["before"] == ["Costco", "Loblaws", "Anywhere"]
     assert out["beforeRows"] == ["21", "20"], "answered 'Any' and not-yet-asked alike, by name"
     assert out["after"] == ["Costco", "Loblaws"]
     assert out["afterRolled"] == ["All bought"], "the loose pile's card rolls up like a store's"
-    assert out["afterSub"] == "2 things · tap to see them"
+    # Copy sweep finding 8 (2026-09-23): the count alone. The whole card is a
+    # button with a chevron, so "tap to see them" described its own control —
+    # and a screen reader is still told the card opens.
+    assert out["afterSub"] == "2 things"
+    assert out["afterLabel"] == "All bought, 2 things, see them"
 
 
 @_needs_node
@@ -243,10 +248,12 @@ console.log(JSON.stringify({ cards: cards(html), counts: counts(html), band: gro
 
 
 @_needs_node
-def test_ticking_a_row_writes_purchased_and_says_changes_saved_with_put_back():
+def test_ticking_a_row_writes_purchased_and_names_the_thing_with_an_undo():
     """Through groTick, straight to 'purchased' on the row's own status
     route — the one the trip's "Done at Costco" used to write — and the
-    toast's Put back is 'needed' on the same route."""
+    toast's Undo is 'needed' on the same route. The toast names the row
+    both ways (copy sweep 2026-09-23, finding 1): "Orzo was ticked off",
+    then "Orzo is back on the list"."""
     out = _list("""
 mockup();
 clickIfRendered({ gro: 'line-tick', id: '3', bought: '0' });
@@ -259,9 +266,11 @@ settle(function () {
 });
 """)
     assert out["afterTick"]["posts"] == [["/api/grocery-list/3/status", "purchased"]]
-    assert out["afterTick"]["toast"] == {"msg": "Changes saved", "action": "Put back"}
-    assert out["posts"][1] == ["/api/grocery-list/3/status", "needed"], "Put back is the same tap the other way"
-    assert out["toast"]["msg"] == "Changes saved"
+    assert out["afterTick"]["toast"] == {"msg": "Orzo was ticked off", "action": "Undo"}
+    assert out["posts"][1] == ["/api/grocery-list/3/status", "needed"], "Undo is the same tap the other way"
+    # The Undo chip puts the row back without a second pop-up of its own
+    # (it always has), so the last toast is still the tick's line.
+    assert out["toast"]["msg"] == "Orzo was ticked off"
     assert "in_cart" not in json.dumps(out["posts"]), "nothing is parked in a trolley any more"
 
 
@@ -275,7 +284,7 @@ settle(function () {
 });
 """)
     assert out["posts"] == [["/api/grocery-list/1/status", "needed"]]
-    assert out["toast"] == {"msg": "Changes saved", "action": "Undo"}
+    assert out["toast"] == {"msg": "Chicken thighs is back on the list", "action": "Undo"}
 
 
 @_needs_node
@@ -394,7 +403,7 @@ settle(function () {
     assert out["offline"]["count"] == "3 of 6"
     assert out["offline"]["queued"] == [["3", "purchased"]], "the queue captured the tick"
     assert out["offline"]["posts"] == 0
-    assert out["offline"]["toast"]["msg"] == "Changes saved"
+    assert out["offline"]["toast"]["msg"] == "Orzo was ticked off"
     assert out["offline"]["offlineFlag"] is True
     assert out["sent"][0] == ["/api/grocery-list/3/status", "purchased"], "sent when signal returned"
     assert out["left"] == 0

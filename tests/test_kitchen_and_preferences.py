@@ -156,7 +156,10 @@ def test_ask_about_our_recipes_opens_the_chat_with_its_own_greeting():
     args = match.group(1)
     assert "'What recipes do we have saved?'" in args
     assert "rework it" not in args, "must not fall through to Plan's rework-it greeting"
-    assert "Ask me anything about the recipes we" in args
+    # Its own opener, and a real question rather than the row's label said
+    # back (copy sweep finding 28, 2026-09-23).
+    assert "'What are you looking for in our recipes?'" in args
+    assert "Ask me anything" not in args
 
 
 def test_what_we_know_and_the_snw_tile_left_the_kitchen_tab():

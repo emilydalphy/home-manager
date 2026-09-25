@@ -7154,7 +7154,7 @@ def swap_meal_in_plan_for_chat(*args, override: bool = False, **kwargs) -> dict:
 def describe_planned_meal(entry_id: int | None = None, meal_date: str | None = None,
                           slot: str | None = None) -> dict | None:
     """
-    The one planned meal a chat turn is ABOUT, for "Tell me what instead"
+    The one planned meal a chat turn is ABOUT, for "Ask for something else"
     on a meal card (Emily, 2026-09-13: she tapped the link beside the
     burgers and chat had no idea which meal she meant). Household-scoped,
     read-only, and None rather than an error for anything it can't find —

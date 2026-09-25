@@ -45,6 +45,18 @@ needs_node = pytest.mark.skipif(
 )
 
 
+def toast_core() -> str:
+    """The shell's own save-toast helpers — SAVED_PLAIN, savedName,
+    savedLine, savedCount and toastSaved (static/shell.js). Sliced out of
+    the file rather than retyped in the stub, so a rewording there is a
+    rewording here and a test can never pass against wording the app
+    stopped using. (It was retyped until 2026-09-23, when "Changes saved"
+    became "<thing> was <verbed>" and the two copies disagreed.)"""
+    start = SHELL_JS.index("  var SAVED_PLAIN = 'Saved';")
+    end = SHELL_JS.index("\n  function showToast(", start)
+    return SHELL_JS[start:end] + "\n"
+
+
 def grocery_block() -> str:
     """The whole Grocery region INCLUDING onGroceryClick, up to the
     hands-free voice code (which wants a SpeechRecognition engine)."""
@@ -71,8 +83,6 @@ function purchases() { return POSTS.filter(function (p) { return p.body && p.bod
 const panels = {};
 const TOASTS = [];
 function showToast(msg, action, hold) { TOASTS.push({ msg: msg, action: action, hold: hold }); }
-var CHANGES_SAVED = 'Changes saved';
-function toastSaved(action, holdMs) { showToast(CHANGES_SAVED, action || null, holdMs); }
 function lastToast() {
   const t = TOASTS[TOASTS.length - 1];
   return t ? { msg: t.msg, action: t.action ? t.action.label : null, hold: t.hold } : null;
@@ -101,7 +111,7 @@ var coachState = { householdId: 1 };
 var BAND_IDENTITY = 'wordmark';
 function bandDateLabel() { return 'Friday, Sep 18'; }
 function emptyMomentHtml(icon, sentence, detail) { return '<div class="empty-moment">' + sentence + '</div>'; }
-"""
+""" + toast_core()
 
 CLICK = """
 function fakeEl(dataset, row) {

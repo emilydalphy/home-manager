@@ -436,7 +436,7 @@ def undo_pre_shop_drop(item_id: int) -> dict:
         (item_id, household_id()),
     ).fetchone()
     if row is not None and row["staple_id"]:
-        # "Actually, I need it" on a staple's line: the staple was wrong to
+        # "Put back on the list" on a staple's line: the staple was wrong to
         # say plenty, so its last answer goes too — otherwise the line is
         # back but the staple still believes the cupboard is full.
         from . import staples as _staples

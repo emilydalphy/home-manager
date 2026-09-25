@@ -7982,7 +7982,9 @@ _TWEAK_REPLY_BLOCK = {
 }
 
 
-# ---------- "Tell me what instead" knows which meal ----------
+# ---------- "Ask for something else" knows which meal ----------
+# (The button was called "Tell me what instead" until the copy sweep
+# of 2026-09-23; the card it came from still has the old name.)
 # Loop Board "'Tell me what instead' knows which meal you tapped it on, and
 # acts on one yes" (Emily, 2026-09-13, on the Tuesday burgers: "when I
 # clicked it to tell it what I wanted it to do, it didn't have the context
@@ -8484,7 +8486,7 @@ def run_agent_turn(
     if _is_tweak_context(user_message):
         system_blocks.append(_TWEAK_REPLY_BLOCK)
 
-    # The meal a "Tell me what instead" turn is about, and the confirm-once
+    # The meal an "Ask for something else" turn is about, and the confirm-once
     # rule for changing it. Resolved fresh each turn against the live plan.
     context_block = _build_chat_context_block(context)
     if context_block:

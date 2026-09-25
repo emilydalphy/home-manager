@@ -432,7 +432,7 @@ def test_a_meal_cook_cannot_hold_yet_gets_no_way_into_cook_mode():
     html = _meal_screen("week", False)
     assert "data-wk-cook" not in html
     assert 'class="dock-primary wk-act-swap" data-wk-swap="dinner">' in html
-    assert 'data-wk-tell="dinner">Tell me what instead<' in html
+    assert 'data-wk-tell="dinner">Ask for something else<' in html
     # The same meal once Cook holds it (Monday): the start is back.
     html = _meal_screen("week", True)
     assert 'class="dock-primary" data-wk-cook="dinner" data-wk-start="1">Start cooking<' in html
@@ -467,7 +467,7 @@ def test_the_day_steps_card_follows_the_same_rule():
     assert "data-wk-cook" not in got["later"]
     # The swap takes the row on its own, full width, and the chat line stays.
     assert 'class="wk-act wk-act-primary" data-wk-swap="dinner">' in got["later"]
-    assert "Tell me what instead" in got["later"]
+    assert "Ask for something else" in got["later"]
 
 
 @_needs_node

@@ -7,7 +7,7 @@ ended up going to the in-laws for dinner last night" got "Noted — …" and
 nothing was saved. This file pins the fix end to end:
 
     1. the tool (app/tools/held.py) keeps the person's words, who said it
-       and when, per household; blank text is refused; "Done with this"
+       and when, per household; blank text is refused; the row's "Done"
        takes it off and Undo puts it back;
     2. the routes the two screens read (GET /api/held, /done, /restore);
     3. the weekly planner is handed the held things as context, and is
@@ -410,5 +410,7 @@ def test_done_with_that_through_the_chat(monkeypatch):
     assert tools.list_held_things() == []
     actions = summarize_chat_actions([], conversation)
     assert len(actions) == 1 and actions[0].held is True
-    assert actions[0].kicker == "Done with this"
+    # "Done" since the 2026-09-23 copy sweep — the held row's own button
+    # lost "Done with this" (finding 27) and this chip is the same action.
+    assert actions[0].kicker == "Done"
     assert actions[0].change == "ask the dentist about the retainer"

@@ -969,7 +969,7 @@ def start_cooking(entry_id: int, now_utc: datetime | None = None) -> dict:
         conn.close()
         when = _weekday_word(row["date"])
         return {"status": "refused", "entry_id": entry_id,
-                "message": f"That’s {when}’s — I’ll note the start when you cook it {when}."}
+                "message": f"That one’s for {when}."}
     if row["recipe_id"] is None and (row["freeform_meal"] or "").strip().lower().startswith("leftover"):
         conn.close()
         return {"status": "refused", "entry_id": entry_id, "message": "Nothing to start on a reheat night."}

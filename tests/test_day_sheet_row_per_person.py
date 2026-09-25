@@ -268,7 +268,12 @@ class TestDoneAndDiscard:
             "var painted = { tiles: 0, cta: 0, toast: 0 };\n"
             "function paintTiles() { painted.tiles++; }\n"
             "function paintCta() { painted.cta++; }\n"
-            "function toastSaved() { painted.toast++; }\n"
+            # The pop-up names the day it saved since 2026-09-23 (copy
+            # sweep finding 1), so the stub takes the sentence and the two
+            # helpers that build it.
+            "function toastSaved(said) { painted.toast++; painted.said = said; }\n"
+            "function weekdayName(iso) { return 'Friday'; }\n"
+            "function savedLine(thing, verbed) { return thing ? thing + ' was ' + verbed : 'Saved'; }\n"
             "function paintSheet() {}\n"
             "var els = { 'day-sheet': { hidden: false }, 'day-done': { disabled: false },\n"
             "  'day-sheet-body': { querySelector: function () { return null; } } };\n"
@@ -305,7 +310,7 @@ class TestDoneAndDiscard:
         assert got["answers"]["night_tags"] == {"2026-09-25": ["rush", "guests"]}
         assert got["answers"]["guest_counts"] == {"2026-09-25": {"adults": 2, "children": 0}}
         assert got["hidden"] is True and got["sheet"] is None
-        assert got["painted"] == {"tiles": 1, "cta": 1, "toast": 1}
+        assert got["painted"] == {"tiles": 1, "cta": 1, "toast": 1, "said": "Friday was saved"}
 
     def test_discard_writes_nothing_and_changes_nothing(self):
         body = (

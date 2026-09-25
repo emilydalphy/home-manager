@@ -274,7 +274,7 @@ def test_approve_is_the_apps_own_approve_route_and_hands_off_to_the_list():
     assert "'/grocery?after=approve'" in _fn("revealAfterApproveUrl")
     # The other end: Shop reads it, says it took, and scrubs it.
     assert "get('after') === 'approve'" in SHELL_JS
-    assert "showToast('Approved. Here’s your list.');" in SHELL_JS
+    assert "showToast('Your week was approved');" in SHELL_JS
 
 
 def test_a_failed_week_keeps_try_again_and_take_me_in_anyway():

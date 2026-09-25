@@ -18,7 +18,7 @@ No category, no due date, no reminder. It is shown (Now's "Holding for
 you" strip, the "Holding for you" section under What we know), handed to
 the weekly planner as context so it can raise it at the right moment
 ("You mentioned Nana's coming the 28th — that's a Monday"), and taken off
-the list with one tap ("Done with this"). It is never a nag: a thing that
+the list with one tap (the row's "Done"). It is never a nag: a thing that
 never becomes useful just sits there. Household-scoped, like everything
 else in this package — the other adult sees the same list.
 
@@ -181,7 +181,7 @@ def list_held_things() -> list[dict]:
 
 
 def resolve_held_thing(held_id: int) -> dict:
-    """"Done with this" — take one held thing off the list. Nothing is deleted, so a mis-tap can be put back (restore_held_thing)."""
+    """The held row's "Done" — take one held thing off the list. Nothing is deleted, so a mis-tap can be put back (restore_held_thing)."""
     conn = get_conn()
     require_household_row(conn, "held_things", held_id, label="held thing")
     conn.execute(
@@ -195,7 +195,7 @@ def resolve_held_thing(held_id: int) -> dict:
 
 
 def restore_held_thing(held_id: int) -> dict:
-    """The Undo on "Done with this": put a resolved thing back on the list."""
+    """The Undo on the held row's "Done": put a resolved thing back on the list."""
     conn = get_conn()
     require_household_row(conn, "held_things", held_id, label="held thing")
     conn.execute(

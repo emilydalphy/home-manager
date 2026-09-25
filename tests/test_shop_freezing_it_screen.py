@@ -7,7 +7,8 @@ region (tests/shop_harness): the block appears under a meat row the
 moment it is ticked, inside the store card, with the sentence and the two
 mini buttons; never on a non-meat tick, a loose line, a put-back or a
 re-tick; only one open at a time; Yes folds it to "In the freezer — out
-Saturday night." and posts the route with "Changes saved · Put back";
+Saturday night." and posts the route with "Chicken thighs was put in the
+freezer · Undo";
 Straight to the fridge folds it to "In the fridge." and posts nothing;
 leaving the screen folds it away. The offline half runs the real
 static/grocery-offline.js in the seat it has in the browser. The server
@@ -179,7 +180,7 @@ def test_the_ticks_own_put_back_toast_folds_the_question_too():
 mockup();
 tick(1);
 var open = blocks(list());
-tapUndo(); // the tick's "Changes saved · Put back"
+tapUndo(); // the tick's "Chicken thighs was ticked off · Undo"
 settle(function () {
   console.log(JSON.stringify({ open: open, after: blocks(list()), posts: POSTS.map(function (p) { return [p.url, p.body.status]; }) }));
 });
@@ -233,7 +234,7 @@ settle(function () {
     assert out["afterYes"]["text"] == "In the freezer — out Saturday night."
     assert out["afterYes"]["buttons"] == 0, "folded to the one line"
     assert out["afterYes"]["posts"] == [["/api/grocery-list/1/freezing", {"answer": "freezer"}]]
-    assert out["afterYes"]["toast"] == {"msg": "Changes saved", "action": "Put back"}
+    assert out["afterYes"]["toast"] == {"msg": "Chicken thighs was put in the freezer", "action": "Undo"}
     assert out["afterPutBack"]["posts"][-1] == ["/api/grocery-list/1/freezing", {"answer": "fridge"}], "Put back removes the move"
     assert out["afterPutBack"]["buttons"] == 2 and out["afterPutBack"]["text"].startswith("Freezing it?"), "and the question is back"
 
@@ -327,7 +328,7 @@ settle(function () {
     assert out["offline"]["text"] == "In the freezer — out Saturday night.", "answered on the screen at once"
     assert out["offline"]["queued"] == [["1", "status", "purchased"], ["1", "freezing", "freezer"]]
     assert out["offline"]["posts"] == 0
-    assert out["offline"]["toast"] == {"msg": "Changes saved", "action": "Put back"}
+    assert out["offline"]["toast"] == {"msg": "Chicken thighs was put in the freezer", "action": "Undo"}
     assert out["sent"] == [
         ["/api/grocery-list/1/status", {"status": "purchased"}],
         ["/api/grocery-list/1/freezing", {"answer": "freezer"}],
