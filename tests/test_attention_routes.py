@@ -40,7 +40,8 @@ def _sign_in(client, password):
 
 def _queue(summary="Did you use the lettuce?", detail=None, household=None):
     """
-    One queued item, written the way check_off_meal writes them.
+    One queued item. A use_soon note (tonight.USE_SOON_KIND): inventory
+    usage questions are hidden from the queue since 2026-09-25.
 
     `household` is not a convenience: signing a TestClient in sets the
     household for a REQUEST, and a tool called straight from a test runs
@@ -52,9 +53,9 @@ def _queue(summary="Did you use the lettuce?", detail=None, household=None):
     write = tools.add_attention_item
     detail = detail or {"entry_id": 1, "ingredient": "Lettuce", "needs_amount_used": True}
     if household is None:
-        return write("inventory_depletion", summary, detail)["id"]
+        return write("use_soon", summary, detail)["id"]
     with tools.use_household(household):
-        return write("inventory_depletion", summary, detail)["id"]
+        return write("use_soon", summary, detail)["id"]
 
 
 def _statuses():

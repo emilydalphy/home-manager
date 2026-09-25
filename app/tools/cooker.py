@@ -11,7 +11,6 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from ..db import get_conn
 from ._shared import household_id, require_household_row
 from . import attendance as _attendance
-from . import attention as _attention
 from . import batch_components as _batch_components
 from . import cook_ahead as _cook_ahead
 from . import grocery as _grocery
@@ -195,14 +194,12 @@ def deplete_inventory_for_meal(entry_id: int) -> dict:
     new remaining total (the recipe already told us what was used; there's
     just nothing more precise to write back for what's left, so the
     tracked row is simply left as-is rather than interrupting to ask about
-    something already answered). The only things actually queued into
-    get_attention_items for review are genuine unknowns: an ambiguous name
-    match ("garlic" vs a tracked "garlic bulb"), or a confident match where
-    the recipe itself doesn't say how much of the ingredient was used —
-    guessing "all of it" there risks wrongly zeroing out inventory that's
-    still mostly there, so it's worth a quick check instead. Freeform meals
-    (no saved recipe) have no ingredient list, so there's nothing to
-    deplete or flag.
+    something already answered). Nothing is ever asked (2026-09-25): an
+    ambiguous name match ("garlic" vs a tracked "garlic bulb"), or a
+    confident match where the recipe doesn't say how much was used, leaves
+    the tracked row as it is and is reported under `left_alone` — see the
+    comment in the loop. Freeform meals (no saved recipe) have no
+    ingredient list, so there's nothing to deplete.
 
     A leftovers night depletes nothing. The ingredients were used on the
     night the batch was actually cooked and depleted then; taking them out
@@ -231,44 +228,40 @@ def deplete_inventory_for_meal(entry_id: int) -> dict:
         return {"entry_id": entry_id, "depleted": [], "queued_for_review": []}
 
     inventory = _inventory.get_inventory()
-    depleted, queued = [], []
+    # queued_for_review stays on the result for the callers that read it,
+    # but it is always empty now: nothing here asks the household anything.
+    depleted, queued, left_alone = [], [], []
     for ing in ingredients:
         ing_name = (ing.get("item") or "").strip()
         if not ing_name:
             continue
         match, confident = _find_inventory_match(ing_name, inventory)
         if not match:
-            continue  # nothing tracked for this ingredient — nothing to deplete or flag
-        if not confident:
-            summary = (
-                f"Used {ing_name} for {entry['meal_name']} — closest thing tracked is "
-                f"\"{match['item']}\" ({match['quantity'] or 'no quantity tracked'}). Deplete that, "
-                f"or was this something else?"
-            )
-            _attention.add_attention_item("inventory_depletion", summary, {
-                "entry_id": entry_id, "meal": entry["meal_name"], "ingredient": ing_name,
-                "candidate_item_id": match["id"], "candidate_item": match["item"],
-            })
-            queued.append({"ingredient": ing_name, "candidate": match["item"]})
-            continue
+            continue  # nothing tracked for this ingredient — nothing to deplete
         qty_used = (ing.get("qty") or "").strip()
-        if not qty_used:
-            # The recipe doesn't say how much of this ingredient was used
-            # (freeform, e.g. "salt to taste") — genuinely unclear, and
-            # assuming "used all of it" here could wrongly wipe out
-            # inventory that's still mostly there, so this is worth a
-            # quick check rather than a guess.
-            tracked_qty = match["quantity"] or "no amount tracked"
-            summary = (
-                f"How much {ing_name} did you use for {entry['meal_name']}? "
-                f"(tracking \"{match['item']}\" — {tracked_qty})"
-            )
-            _attention.add_attention_item("inventory_depletion", summary, {
-                "entry_id": entry_id, "meal": entry["meal_name"], "ingredient": ing_name,
-                "candidate_item_id": match["id"], "candidate_item": match["item"],
-                "needs_amount_used": True,
+        if not confident or not qty_used:
+            # NOT ASKED (Emily, 2026-09-25, on Cook's "How did it go?" card
+            # asking "How much Garlic did you use for ...? (tracking
+            # "Garlic" — 2 heads)": "Assume I made what the recipe called
+            # for here, don't ask me. It's a lot on the user."). Inventory is
+            # background; nobody does inventory work to finish a cook. Until
+            # then these two cases each queued an inventory_depletion
+            # attention item — "how much did you use?" when the recipe gives
+            # no amount, and "was this the tracked X?" for a loose match.
+            #
+            # The assumption is the recipe's own amount. When the recipe
+            # gives one and the match is confident, it is taken below, as it
+            # always was. When it gives none ("garlic", "salt to taste")
+            # there is no amount to assume, and "all of it" would zero a
+            # shelf that is mostly still there — so the row is left exactly
+            # as it is, which is what "Skip" on the old question did. A loose
+            # match is left alone for the same reason: an amount off the
+            # wrong row is worse than none. get_attention_items also hides
+            # any of these questions queued before this change.
+            left_alone.append({
+                "ingredient": ing_name, "item": match["item"],
+                "reason": "no_amount" if confident else "unsure_match",
             })
-            queued.append({"ingredient": ing_name, "candidate": match["item"]})
             continue
         # The recipe told us exactly how much was used, so this always
         # counts as depleted (not queued) even if the *existing* tracked
@@ -278,7 +271,7 @@ def deplete_inventory_for_meal(entry_id: int) -> dict:
         # was actually updated or just left as-is.
         result = _use_inventory_row_by_id(match["id"], qty_used)
         depleted.append({"ingredient": ing_name, "item": match["item"], "result": result})
-    return {"entry_id": entry_id, "depleted": depleted, "queued_for_review": queued}
+    return {"entry_id": entry_id, "depleted": depleted, "queued_for_review": queued, "left_alone": left_alone}
 
 
 def check_off_meal(entry_id: int, status: str = "done") -> dict:
@@ -287,9 +280,8 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
     (status='done') or back to pending. Use get_weekly_plan/get_plan_progress
     to find the entry_id. Marking a meal done also attempts to deplete its
     ingredients from tracked inventory (see deplete_inventory_for_meal) —
-    confident matches happen silently; anything uncertain is queued into
-    get_attention_items rather than guessed at, and both are reported back
-    in the result so it can be mentioned if relevant.
+    a confident match with a recipe amount comes off silently; anything
+    less certain is left as it is rather than guessed at or asked about.
 
     THIS IS WHERE A RECIPE'S COOK COUNT MOVES. recipes.times_cooked and
     last_cooked_date ("you've made this 4 times", "last cooked in
@@ -1283,7 +1275,15 @@ def _apply_leftover_chains(weekly_plan_id: int, meals: list[dict], recipes_by_na
             if leftover.get("cook_ahead")
             else _leftovers.leftovers_headline(src["meal"], src["date"])
         )
-        card["reheat_note"] = _leftovers.reheat_note(recipes_by_name.get((src["meal"] or "").lower()))
+        src_recipe = recipes_by_name.get((src["meal"] or "").lower())
+        card["reheat_note"] = _leftovers.reheat_note(src_recipe)
+        # Made ahead and eaten cold — cucumber and tzatziki out of the
+        # fridge — is "Prepped", not "Reheat" (Emily, 2026-09-25). Only a
+        # made-ahead portion: a leftovers night keeps its own words. See
+        # leftovers.served_cold for the rule.
+        card["served_cold"] = bool(leftover.get("cook_ahead")) and _leftovers.served_cold(
+            src_recipe, card.get("slot")
+        )
         card["servings"] = _leftovers.eaters_at(leftover["date"], leftover["slot"]) or None
         # A reheat is not a cook. Emptied rather than left in place so no
         # screen can render this night as a second cook of the same dish

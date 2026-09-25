@@ -8139,7 +8139,10 @@
         // "Cook" / "Reheat" while it is still ahead of you, and the past
         // tense of whichever it was once it is done — a reheat night was
         // never cooked, it was eaten (REHEAT_ACTION_LABEL says so too).
-        badge: done ? (isReheat ? 'eaten' : 'cooked') : (isReheat ? 'Reheat' : 'Cook')
+        // Made ahead and eaten cold (served_cold, cooker.py) is "Prepped":
+        // it's ready to go, nothing to warm (Emily, 2026-09-25).
+        badge: done ? (isReheat ? 'eaten' : 'cooked')
+          : (isReheat ? (meal.served_cold ? 'Prepped' : 'Reheat') : 'Cook')
       });
     });
     return rows;
@@ -8149,7 +8152,7 @@
   // 6:30" for a reheat — both read off the move rather than restated here,
   // so the words match the ones Today uses for the same meal.
   function kitchenTodayLine(meal, move, isReheat, done) {
-    if (isReheat) return move ? move.detail : 'reheat';
+    if (isReheat) return move ? move.detail : (meal.served_cold ? '' : 'reheat');
     var bits = [];
     ((move && move.chips) || []).forEach(function (chip) {
       // A cook that is already done has no start-by left to make: the
@@ -17931,12 +17934,16 @@
   }
 
   // ---------- Cook: the attention banner ----------
-  // Carried over from cooker.html whole: the three shapes an attention item
-  // can take (a plain one that can be resolved or dismissed, an
-  // inventory-usage one that wants an amount, and the feedback nudge that
-  // wants a rating) all still exist and still hit the same endpoints.
+  // Carried over from cooker.html: a plain item that can be resolved or
+  // dismissed, and the feedback nudge that wants a rating. The third shape,
+  // "How much Garlic did you use?" with an amount box, is gone (Emily,
+  // 2026-09-25: "Assume I made what the recipe called for here, don't ask
+  // me") — the server stopped queuing and returning those, and the filter
+  // below keeps a payload from before that off the card too.
   function cookAttentionHtml() {
-    var items = cookState.attention || [];
+    var items = (cookState.attention || []).filter(function (it) {
+      return it.kind !== 'inventory_depletion';
+    });
     if (!items.length) return '';
     // Folded behind a count, same move as Grocery's "Maybe already home"
     // (groPreShopHtml) — quiet by default, one tap opens it, per the
@@ -17955,18 +17962,6 @@
     if (!open) return html + '</div>';
     html += '<div class="cook-attention-body">';
     html += items.map(function (it) {
-        var needsAmount = it.id != null && it.detail && it.detail.needs_amount_used;
-        if (needsAmount) {
-          return '<div class="cook-attn-item is-stacked" data-attn-id="' + it.id + '">' +
-            '<span class="cook-attn-summary">' + escapeHtml(it.summary) + '</span>' +
-            '<span class="cook-attn-row">' +
-              '<input type="text" class="cook-attn-input" data-attn-input="' + it.id + '" ' +
-                'placeholder="e.g. 1 cup, or leave blank for all of it" aria-label="Amount used" />' +
-              '<button type="button" class="cook-attn-go" data-cook="attn-use" data-attn-id="' + it.id + '">Log it</button>' +
-              '<button type="button" class="cook-attn-skip" data-cook="attn-resolve" data-attn-id="' + it.id + '" data-status="dismissed">Skip</button>' +
-            '</span>' +
-          '</div>';
-        }
         if (it.kind === 'feedback_nudge') {
           var mealName = (it.detail && it.detail.meal) || '';
           return '<div class="cook-attn-item is-stacked" data-attn-meal="' + escapeHtml(mealName) + '">' +

@@ -42,6 +42,7 @@ points back.
 from __future__ import annotations
 
 import json
+import re
 from datetime import date
 
 from ..db import get_conn
@@ -402,6 +403,45 @@ def made_ahead_headline(source_meal: str, source_date: str) -> str:
     on Monday morning isn't leftovers by Wednesday, it's what Wednesday
     was always going to be."""
     return f"Made ahead — {_weekday(source_date)}’s {source_meal}"
+
+
+def served_cold(recipe: dict | None, slot: str | None) -> bool:
+    """
+    Is a made-ahead portion eaten as it comes out of the fridge, with no
+    reheating? (Emily, 2026-09-25, on "Made ahead — Wednesday's Cucumber
+    Slices with Tzatziki" wearing a Reheat pill: "The snacks don't need to
+    be reheated they're cold. Just cause they're made ahead doesn't mean
+    they need to be reheated.")
+
+    Recipes carry no serve-temperature field, so this reads the best
+    signals already on the row, conservatively — a dish only counts as cold
+    on positive evidence, and anything unclear keeps "Reheat":
+
+      - The recipe's own notes talk about reheating (reheat_note) -> hot.
+        That is the household's or the recipe's own word, and it wins.
+      - A snack -> cold. A made-ahead snack is grabbed from the fridge;
+        even a baked one (a muffin, an oat bar) is eaten as it is.
+      - A method that exists and never applies heat -> cold. The same
+        heat vocabulary plan_quality uses to tell a cold plate from a
+        cooked one (_APPLIES_HEAT_WORDS): no oven, pan, pot, boil, roast...
+      - cook_time_minutes recorded as exactly 0 -> cold (a no-cook
+        recipe). None means "not known", not zero.
+    """
+    if reheat_note(recipe):
+        return False
+    if (slot or "").strip().lower() == "snack":
+        return True
+    if not recipe:
+        return False
+    steps = [s for s in (recipe.get("instructions") or []) if str(s).strip()]
+    if steps:
+        # Imported here, not at module top: plan_quality imports half the
+        # tools package, and leftovers is imported early by most of it.
+        from .plan_quality import _APPLIES_HEAT_WORDS
+        words = set(re.findall(r"[a-zé]+", " ".join(str(s) for s in steps).lower()))
+        if not (words & _APPLIES_HEAT_WORDS):
+            return True
+    return recipe.get("cook_time_minutes") == 0
 
 
 def reheat_note(recipe: dict | None) -> str:
