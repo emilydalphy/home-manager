@@ -16463,6 +16463,17 @@
     pendingScrollTop: false,    // this render is a screen change, not a re-paint — reset scroll instead of preserving it
     ticks: null,                // the ticked ingredients and steps for the plan named by ticksFor — see cookReadTicks
     serves: {},                 // mealKey -> { servings, ingredients, unscaled_items, ... } — the cook's own serving count. Stored beside the ticks and read back with them (see cookReadTicks), so a load, a tab switch and a reload all leave it standing
+    // entry_id -> { item: true } — which prep cuts the cook ticked for a meal.
+    // Declared HERE rather than made on first use, because both readers
+    // (cookPrepCutPicks and cookAddPrepCuts) index it directly and neither
+    // can create it. It was missing until 2026-09-25: cookState.prepCutPicks
+    // was undefined, so the first read threw a TypeError out of
+    // cookPrepCutHtml, up through cookRecipeHtml into renderCook, and took
+    // the whole Cook screen down — seven times in one day on a real
+    // household, from three entry points. Page-view state on purpose, like
+    // voiceStepCursor: cookAddPrepCuts clears the entry once its Save
+    // lands, so there is nothing worth carrying across a load.
+    prepCutPicks: {},
     servesSeq: 0,               // sequence token, so a superseded /scale reply loses instead of racing
     ticksFor: null,             // which weekly_plan_id `ticks` was read for
     voiceSession: null,

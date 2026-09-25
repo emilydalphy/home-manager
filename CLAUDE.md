@@ -415,6 +415,55 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-25 — The Cook screen was crashing in production, on a state key
+  that was read twice and declared nowhere. Branch
+  `overnight/cook-prep-cut-picks-crash`, NOT merged at the time of writing.**
+  `cookState.prepCutPicks` was `undefined`, so `cookState.prepCutPicks[meal
+  .entry_id]` threw a `TypeError` out of `cookPrepCutHtml`, up through
+  `cookRecipeHtml` into `renderCook`, uncaught — **not a missing chip, the
+  whole Cook screen failing to render.**
+  - **FOUND BY THE MORNING ERROR REPORT, on the first day it could reach the
+    live app, and that is the headline.** Seven `TypeError`s on one real
+    household in one day, from three entry points — `cookEnterFocus` (×4) and
+    `loadKitchen` on `/week` (×2) and on `/kitchen` (×1) — all on one line.
+    Every earlier run of that report in this environment exited 2 ("couldn't
+    look"), which is why it went unseen. **The report is the only channel
+    that finds this class at all**: it needs a household with prep-cut
+    options on a meal, which no test fixture had.
+  - **Pre-existing, and checked rather than assumed.** The same four
+    references and the same missing declaration are on `b9d6721`, the commit
+    before the 2026-09-25 merge — so it is NOT that merge's doing. It arrived
+    with `9330a10` ("Cook: the recipe is the recipe, and the cooker has no
+    clock").
+  - **Why it was not constant:** `cookPrepCutHtml` returns early when a meal
+    has no prep-cut options, so only a meal that HAS some reaches the bad
+    line. That is also why no test caught it.
+  - **The fix is the declaration, not a guard at the call site**, because
+    there are TWO readers (`cookPrepCutPicks` and `cookAddPrepCuts`) and
+    neither can create it — a guard in one would leave the other throwing.
+    Page-view state, like `voiceStepCursor`: `cookAddPrepCuts` clears the
+    entry once its Save lands, so nothing is worth carrying across a load.
+  - **TWO MISTAKES OF MY OWN, both caught by running rather than reading, and
+    both recorded because each is a trap this file already names.** (1) The
+    explaining comment named `cookPrepCutToggle` and `cookPrepCutSave` —
+    **two functions that do not exist**; the other reader is
+    `cookAddPrepCuts`, and my `awk` had missed it because it is an `async
+    function`. (2) The reader sweep matched **its own comment** — the
+    "satisfiable by its own comment" trap this log records being bitten by
+    three times, arriving inside the test written to guard a different one.
+    It skips comment lines now.
+  - **`node -e` is forbidden here and the existing guard said so.** The first
+    cut used it and turned `test_node_harness_size.py` red — that guard
+    working, exactly as written. It goes through `tests/nodeharness.py` now.
+  - `tests/test_cook_prep_cut_picks_crash.py` (4). **3 red against `main`, and
+    only ONE is a behaviour catch on its own claim** — the reproduction of
+    the production `TypeError`. The second is red for the same crash rather
+    than for the per-meal claim it is named after, and says so; the third is
+    a source marker. The fourth is a sweep, green either way, there so a
+    THIRD reader is noticed rather than inheriting a promise made about two.
+    Suite **7191 passed, 0 failed** at `TZ=America/Toronto` against a
+    measured **7187** on main — +4 is this file exactly.
+
 - **2026-09-25 — A swapped-out repeat carries no note.** Emily chose "no
   note" over "in the last two weeks" and "last week / two weeks ago"
   (mockups https://claude.ai/artifact/UKeqDuk8Pyi7owCXv7uhmf).
