@@ -104,7 +104,8 @@ function setAskBackLabel() {}
 function askBackLabel() { return 'Back'; }
 function currentTabKey() { return 'grocery'; } // e.g. the Shop tab
 function autoGrowAskInput() {}
-var askSheet = { hidden: true };
+var askSheetOpen = false;
+var askSheet = { hidden: true, classList: { contains: function (c) { return c === 'is-open' && askSheetOpen; } } };
 var askScrim = {};
 var askMessagesEl = { innerHTML: '' };
 var askInput = { value: '', focus: function () {} };
@@ -190,3 +191,18 @@ console.log(JSON.stringify({ greeting: lastAssistantAskText }));
     assert out["greeting"] == 'Here’s what I found.', (
         "a thread that actually had a reply must not be reset by a later open"
     )
+
+
+@_needs_node
+def test_an_example_chip_tapped_under_a_preset_keeps_the_preset_greeting():
+    """Found in review: the example chips call openAskSheet() on their way
+    to sending, while the sheet is already open. The preset greeting on
+    screen is the one being answered, so it must not flash back to the
+    default before the chip's message goes."""
+    out = _node(_script("""
+openAskSheet('%s', null, '%s');
+askSheetOpen = true; // the sheet is up
+openAskSheet(); // what the example-chip handler does before sendAskMessage
+console.log(JSON.stringify({ greeting: lastAssistantAskText }));
+""" % (RECIPES_PREFILL, RECIPES_GREETING)))
+    assert out["greeting"] == RECIPES_GREETING

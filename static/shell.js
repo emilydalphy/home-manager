@@ -170,11 +170,10 @@
   // "Add from a link" (recipe import, 2026-09-11) is also still being
   // built — same reasoning and same treatment as Inventory above: a
   // quiet neutral "In development" pill at its entry point (the row in
-  // Cook's More sheet, cookMoreRowsHtml) plus a matching note inside the
-  // sheet it opens (rli sheet, buildRecipeLinkSheet), reusing the same
+  // Cook's More sheet, cookMoreRowsHtml), reusing the same
   // .pill/.pill-neutral/.kit-row-pill markup Inventory uses. The feature
   // itself is untouched either way: paste a link, read it, review, save
-  // all still work. Flipping this back to false removes both.
+  // all still work. Flipping this back to false removes the pill.
   var RECIPE_LINK_IN_DEVELOPMENT = true;
 
   // The notifications bell and its feed left the app with the Today
@@ -20586,7 +20585,11 @@
     // get a real message stays exactly as the shared-thread design
     // intends (see ensureAskSheetBuilt's comment) — this only ever
     // touches an unstarted one.
-    if (!askConversationStarted && askBuilt) resetAskThread();
+    // Only on a fresh open: when the sheet is already up (an example chip
+    // calls this on its way to sending), the preset greeting on screen is
+    // the one the household is answering, so it stays.
+    var askAlreadyOpen = askSheet && askSheet.classList.contains('is-open');
+    if (!askConversationStarted && askBuilt && !askAlreadyOpen) resetAskThread();
     ensureAskSheetBuilt(greeting);
     closeWeekSheet();
     closeMealsMoreSheet();
