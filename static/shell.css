@@ -9754,7 +9754,7 @@ body.first-open-active { overflow: hidden; }
 .fo-body { display: flex; flex-direction: column; gap: 18px; padding-top: 24px; }
 /* Option B: the one line sits lower, like the setup welcome's hello. */
 .fo-inner.is-line .fo-body { padding-top: 96px; }
-.fo-mark { color: var(--apricot); display: flex; }
+.fo-mark { color: var(--apricot-light); display: flex; } /* the mark on spruce, as in the band */
 .fo-mark .pomona-mark { width: 56px; height: 56px; }
 .fo-title {
   font-family: var(--font-display);

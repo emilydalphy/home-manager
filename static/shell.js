@@ -21273,7 +21273,10 @@
       if (deferredInstallPrompt) {
         var promptEvent = deferredInstallPrompt;
         deferredInstallPrompt = null;
-        try { promptEvent.prompt(); } catch (err) { /* the browser said no; the row goes either way */ }
+        try {
+          var shown = promptEvent.prompt();
+          if (shown && shown.catch) shown.catch(function () { /* refused; the row goes either way */ });
+        } catch (err) { /* the browser said no; the row goes either way */ }
         var home = firstOpenEl.querySelector('#fo-home');
         if (home) home.remove();
         return;
@@ -21289,8 +21292,11 @@
     });
   }
 
+  var firstOpenPending = false;
+
   async function openFirstOpen() {
-    if (firstOpenEl) return;
+    if (firstOpenEl || firstOpenPending) return;
+    firstOpenPending = true;
     var preview = null;
     if (FIRST_OPEN_STYLE === 'preview') {
       try {
@@ -21301,6 +21307,7 @@
         console.warn('First-open preview failed:', err);
       }
     }
+    firstOpenPending = false;
     closeAskSheet();
     closeWeekSheet();
     firstOpenEl = document.createElement('div');
