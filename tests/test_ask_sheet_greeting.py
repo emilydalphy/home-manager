@@ -38,8 +38,7 @@ _needs_node = pytest.mark.skipif(
 
 def test_the_default_greeting_is_the_line_emily_asked_for():
     assert f"var DEFAULT_ASK_GREETING = '{GREETING}';" in SHELL_JS
-    # The old line is gone from the sheet — the tips screen's own opener
-    # ("Say it however it comes out.") is a different screen and stays.
+    # The old line is gone from the sheet — a different screen's opener.
     assert "Say it however it comes — I’ll put it where it belongs." not in SHELL_JS
 
 

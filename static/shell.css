@@ -9132,57 +9132,58 @@ span.cook-week-name { cursor: default; }
   font-size: 10px;
   letter-spacing: .14em;
   text-transform: uppercase;
-  color: var(--ink-muted);
+  color: var(--apricot-label);
 }
-.tips-group-line {
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.45;
+.tips-group-headline {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
   color: var(--ink);
 }
 .tips-group-example {
   font-family: var(--font-body);
-  font-weight: 600;
+  font-weight: 500;
   font-size: 14px;
-  color: var(--celadon-label);
-}
-.tips-closers {
-  list-style: none;
-  margin: 0;
-  padding: 12px 0 0;
-  border-top: 1px solid var(--hairline);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.tips-closers li {
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.45;
   color: var(--ink-secondary);
 }
-.tips-after {
-  background: var(--celadon-tint);
-  border: 1px solid var(--celadon-edge);
-  border-radius: var(--radius-control);
-  padding: 12px 14px;
+/* The bottom card: the same shape family as .snw-tile/.prefs-row (icon,
+   two lines, a way to tap it), with a chevron since it opens the SNW
+   sheet over this one rather than acting in place. */
+.tips-help-row {
+  width: 100%;
+  min-height: 58px; /* Rule 6 */
+  margin-top: 4px;
+  border: none;
+  border-top: 1.5px solid var(--hairline);
+  background: none;
+  padding: 14px 2px 6px;
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
 }
-.tips-after-label {
+.tips-help-row:hover { background: var(--surface); }
+.tips-help-icon { display: flex; flex: 0 0 auto; width: 22px; height: 22px; color: var(--celadon-label); }
+.tips-help-icon svg { display: block; width: 22px; height: 22px; }
+.tips-help-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tips-help-title {
   font-family: var(--font-body);
+  font-size: 15px;
   font-weight: 800;
-  font-size: 10px;
-  letter-spacing: .14em;
-  color: var(--celadon-label);
+  letter-spacing: -0.015em;
+  color: var(--ink);
 }
-.tips-after-line {
+.tips-help-sub {
   font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.45;
-  color: var(--ink-on-celadon);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-inactive);
 }
+.tips-help-chev { display: flex; flex: 0 0 auto; }
+.tips-help-chev svg { width: 17px; height: 17px; color: var(--ink-inactive); }
 
 /* ---------- Staples (app/tools/staples.py) ----------
    A line Pomona put on the list because a staple is probably due carries

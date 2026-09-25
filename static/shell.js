@@ -22264,23 +22264,24 @@
   // ---------- "Helpful tips" ----------
   //
   // One screen, no scroll on a phone if it can be helped: four groups, one
-  // real example each, and the line that answers the question nobody asks
-  // out loud — what actually happens when you press send.
+  // bold headline and one real example each — and, at the foot, the one
+  // other door out of a stuck moment: send Emily a note (mockup "6A",
+  // Emily-approved 2026-09-25, with her correction that Cook is where the
+  // week's own recipes are followed, not where dinner gets decided).
 
-  var TIPS_OPENING = 'Say it however it comes out.';
+  var TIPS_OPENING = 'Tap the Pomona button on any screen, then type or talk.';
 
   var TIPS_GROUPS = [
-    { tab: 'Today', example: 'What’s next tonight?', line: 'The day in front of you — what’s cooking, who’s out, what still needs doing.' },
-    { tab: 'Plan', example: 'Swap Thursday for something lighter', line: 'The week’s plan — swaps, away nights, what you’re in the mood for.' },
-    { tab: 'Shop', example: 'Add oat milk and lemons', line: 'The list — adding, dropping, what you already have at home.' },
-    { tab: 'Cook', example: 'What can I make with the chicken thighs?', line: 'Tonight’s cooking — what’s in the house, and how long you’ve got.' }
+    { tab: 'Today', headline: 'Check what’s next', example: 'What’s for dinner tonight?' },
+    { tab: 'Plan', headline: 'Change the week', example: 'Swap Thursday for something lighter' },
+    { tab: 'Shop', headline: 'Add or remove things', example: 'Add oat milk and lemons' },
+    { tab: 'Cook', headline: 'Follow tonight’s recipe', example: 'How long does the chicken go in for?' }
   ];
 
-  var TIPS_CLOSERS = [
-    'The more you tell me about your week, the better the plan fits.'
-  ];
-
-  var TIPS_AFTER_SEND = 'I’ll say what changed, and the screen updates. If I couldn’t, I’ll say that too.';
+  // Circle-question — the one non-brand icon in this sheet, celadon per
+  // the mockup: this card is a nudge to a quiet way out, not an action.
+  var TIPS_HELP_ICON =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17h.01"/></svg>';
 
   var tipsSheetEl = null;
   var tipsScrimEl = null;
@@ -22308,17 +22309,22 @@
         TIPS_GROUPS.map(function (g) {
           return '<div class="tips-group">' +
             '<div class="tips-group-tab">' + escapeHtml(g.tab) + '</div>' +
-            '<div class="tips-group-line">' + escapeHtml(g.line) + '</div>' +
+            '<div class="tips-group-headline">' + escapeHtml(g.headline) + '</div>' +
             '<div class="tips-group-example">&ldquo;' + escapeHtml(g.example) + '&rdquo;</div>' +
           '</div>';
         }).join('') +
-        '<ul class="tips-closers">' +
-          TIPS_CLOSERS.map(function (line) { return '<li>' + escapeHtml(line) + '</li>'; }).join('') +
-        '</ul>' +
-        '<div class="tips-after">' +
-          '<div class="tips-after-label">AFTER YOU SEND</div>' +
-          '<div class="tips-after-line">' + escapeHtml(TIPS_AFTER_SEND) + '</div>' +
-        '</div>' +
+        // The other door, at the foot: the same in-app report form every
+        // other entry point opens (openSnwSheet/snwFormHtml), tagged with
+        // this sheet's own name so the note carries where it came from. No
+        // email address anywhere here — Emily reads these in the app.
+        '<button type="button" class="tips-help-row" data-snw="open" data-snw-screen="Helpful tips">' +
+          '<span class="tips-help-icon">' + TIPS_HELP_ICON + '</span>' +
+          '<span class="tips-help-text">' +
+            '<span class="tips-help-title">Need help with something?</span>' +
+            '<span class="tips-help-sub">Send Emily a note</span>' +
+          '</span>' +
+          '<span class="tips-help-chev">' + ICONS.arrow + '</span>' +
+        '</button>' +
       '</div>';
     // Body level, like every other sheet here: position:fixed has to sit
     // outside the tab panel's stacking and scroll context.
@@ -22524,6 +22530,9 @@
     closeAskSheet();
     closeWeekSheet();
     closeKitchenSheet();
+    // Helpful tips' "Need help with something?" opens this form; the tips
+    // sheet goes so it can't sit on top of the form.
+    closeTipsSheet();
     var screen = snwScreenName(screenName);
     var body = snwSheetEl.querySelector('#snw-body');
     body.innerHTML = snwFormHtml(screen);
