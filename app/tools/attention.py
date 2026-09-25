@@ -10,6 +10,38 @@ from . import coordination as _coordination
 from . import inventory as _inventory
 
 
+ATTENTION_STATUSES = ("resolved", "dismissed")
+
+
+class InvalidAttentionStatus(ValueError):
+    """
+    A status outside ATTENTION_STATUSES handed to resolve_attention_item.
+    Same marker shape as cooker.InvalidMealStatus, chores.InvalidChoreStatus
+    and grocery.InvalidGroceryStatus: a ValueError subclass, so the route's
+    except for it MUST come before the plain one or the 404 that means "no
+    such item" swallows a refusal that means "that isn't an answer".
+
+    The set is the two answers THIS DOOR gives, deliberately not every value
+    the column takes. schema.sql documents it as `pending | resolved |
+    dismissed`, and `pending` is add_attention_item's to write — its reopen
+    path sets the status back and clears resolved_at in the same statement,
+    while this function stamps resolved_at unconditionally. So a 'pending'
+    let through here would leave a waiting question carrying the time it was
+    answered, which is the sort of half-written row the guard exists to stop.
+
+    Reaching it needs a hand-made request: the screens send the two, and the
+    chat tool's own schema enumerates them (there is a test pinning that
+    enum, so if it is ever dropped this stops being the only door). Measured
+    2026-09-24 before the guard: {"status": "banana"} answered 200, the row
+    read banana, and it left the queue exactly as a real answer would —
+    recording something no screen has a name for. Nothing is lost by it
+    today, which is why this closes a door rather than puts out a fire, and
+    nothing heals a row already written that way; a migration inventing
+    history is worse than leaving the handful that can only have come from
+    somebody's curl.
+    """
+
+
 # The first real multi-item "needs your attention" surface — until now the
 # only precedent (get_feedback_nudge) was a single computed check with
 # nothing persisted. Built for inventory-depletion matches that are too
@@ -94,6 +126,14 @@ def add_attention_item(kind: str, summary: str, detail: dict | None = None) -> d
 
 def resolve_attention_item(item_id: int, status: str = "resolved") -> dict:
     """Mark a queued attention item 'resolved' (handled) or 'dismissed' (not relevant/skip it) — either way it stops showing up in get_attention_items."""
+    # Above get_conn on purpose: a status that is not an answer never opens a
+    # connection and never takes the write lock, and a caller that skips the
+    # route entirely — chat, a script — is held to the same two words.
+    if status not in ATTENTION_STATUSES:
+        raise InvalidAttentionStatus(
+            f"{status!r} isn't an answer to a queued item. "
+            f"Use one of: {', '.join(ATTENTION_STATUSES)}."
+        )
     conn = get_conn()
     require_household_row(conn, "attention_items", item_id, label="attention item")
     conn.execute(

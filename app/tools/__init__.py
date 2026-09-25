@@ -42,6 +42,8 @@ from .attention import (  # noqa: F401
     get_attention_items,
     record_attention_item_usage,
     resolve_attention_item,
+    ATTENTION_STATUSES,
+    InvalidAttentionStatus,
 )
 from .chores import (  # noqa: F401
     _FREQUENCY_DAYS,

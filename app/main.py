@@ -2226,6 +2226,16 @@ def resolve_attention(item_id: int, req: ResolveAttentionRequest):
     try:
         tools.resolve_attention_item(item_id, req.status)
         items = tools.get_attention_items()
+    except tools.InvalidAttentionStatus as e:
+        # A word that isn't an answer is a bad request, not a missing row —
+        # 422, not the 404 below, which is require_household_row's "No
+        # attention item with id N." InvalidAttentionStatus IS a ValueError
+        # subclass, so this except must come first or the 404 swallows it.
+        # Same shape and same reasoning as the cooked-tick, chore-status and
+        # grocery-status routes; this route already answered 422 for a
+        # non-string status, from pydantic, so 400 would give one client
+        # mistake two codes.
+        raise HTTPException(status_code=422, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

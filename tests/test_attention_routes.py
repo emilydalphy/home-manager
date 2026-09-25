@@ -8,12 +8,12 @@ screen, an id off the wire, nothing pinning it) is what makes the gap worth
 closing rather than the routes being especially fragile: measured, they are
 correct today, and these tests are here so they stay that way.
 
-What is NOT correct today is the third thing this file records, and it is
-deliberately a characterisation rather than a fix: /resolve takes any
-status string at all. That is the same shape as the cooked-tick bug fixed
-on 2026-09-16 ("A cooked tick takes no third word"), one door over, and
-fixing it is a product call about a status code rather than something to
-smuggle into a test file. Its own card.
+The third thing this file recorded was a characterisation rather than a fix:
+/resolve took any status string at all, the same shape as the cooked-tick
+bug fixed on 2026-09-16 ("A cooked tick takes no third word"), one door
+over. That card was worked on 2026-09-25 and the test below is INVERTED
+rather than deleted, so the history reads. The rest of the guard lives in
+tests/test_attention_status_validated.py.
 """
 from __future__ import annotations
 
@@ -244,23 +244,21 @@ def test_the_chat_tool_can_only_ever_send_one_of_the_two_words():
     assert schema["properties"]["status"]["enum"] == ["resolved", "dismissed"]
 
 
-def test_the_route_still_takes_a_third_word_and_that_is_a_known_gap(signed_in):
+def test_the_route_takes_no_third_word(signed_in):
     """
-    CHARACTERISATION, and the behaviour it records is WRONG — invert this
-    when the card is done.
+    INVERTED 2026-09-25, and the sentence above it is the point: this test
+    used to assert a 200 and a row reading `banana`. It was written as a
+    characterisation with "invert this when the card is done" in its own
+    docstring, and this is that.
 
     schema.sql documents the column as `pending | resolved | dismissed` and
-    every reader filters on `status = 'pending'`, so a third word takes the
-    row out of the queue like a real answer while recording something no
-    screen has a name for. It is the exact shape of the cooked-tick bug
-    fixed on 2026-09-16, which answers 422 through a marker exception.
-
-    Nothing is lost today — both real answers also remove it from the only
-    list that reads it, and add_attention_item's reopen path treats any
-    non-pending status alike — so this is a door to close, not a fire.
+    every reader filters on `status = 'pending'`, so a third word used to
+    take the row out of the queue like a real answer while recording
+    something no screen has a name for. It refuses now, the row is left
+    exactly where it was, and the question is still waiting to be answered.
     """
     item_id = _queue()
     res = signed_in.post(f"/api/attention/{item_id}/resolve", json={"status": "banana"})
-    assert res.status_code == 200, "the route accepts it today"
-    assert _statuses() == [(DEFAULT_HOUSEHOLD_ID, "Did you use the lettuce?", "banana")]
-    assert item_id not in [i["id"] for i in signed_in.get("/api/attention").json()["items"]]
+    assert res.status_code == 422
+    assert _statuses() == [(DEFAULT_HOUSEHOLD_ID, "Did you use the lettuce?", "pending")]
+    assert item_id in [i["id"] for i in signed_in.get("/api/attention").json()["items"]]

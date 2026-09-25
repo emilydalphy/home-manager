@@ -415,6 +415,57 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-25 — Answering a queued question takes no third word. Branch
+  `overnight/attention-status-validated`, NOT merged at the time of
+  writing.** The fourth instance of one class, fixed the way the other
+  three were: `cooker.InvalidMealStatus` (2026-09-16),
+  `chores.InvalidChoreStatus`, `grocery.InvalidGroceryStatus`. Reproduced
+  before anything was touched, on a throwaway DB through the real tool:
+  `resolve_attention_item(id, "banana")` returned `{'status': 'banana'}`,
+  the row on disk read `banana`, and `get_attention_items()` came back
+  empty — so the question left the queue looking answered while recording
+  a word no screen has a name for (`schema.sql` documents the column as
+  `pending | resolved | dismissed` and every reader filters on `pending`).
+  - **`ATTENTION_STATUSES` is the two answers THIS DOOR gives, deliberately
+    not every value the column takes.** `pending` is `add_attention_item`'s
+    to write — its reopen path sets the status back and clears
+    `resolved_at` in the SAME statement, while `resolve_attention_item`
+    stamps `resolved_at` unconditionally, so a `pending` let through here
+    would leave a waiting question carrying the time it was answered. Same
+    reasoning as `GROCERY_SHOPPER_STATUSES` being the shopper's three
+    rather than the whole column. Pinned by its own test.
+  - **The check is above `get_conn`** (a word that is not an answer never
+    opens a connection or takes the write lock, and a caller that skips the
+    route — chat, a script — is held to the same two), and the route's
+    `except` sits **before** the plain `ValueError`, or the 404 that means
+    "no such item" swallows it. Ordering is load-bearing; there is a test
+    asking for both codes in one breath.
+  - **NO ROUTE IS THE ONLY DOOR AND THAT IS WHY THE GUARD WAS STILL
+    NEEDED.** The chat tool's schema already enumerates the two — which is
+    exactly the cooked tick's situation, and that entry's reasoning
+    applies: telling the generator something is not the same as preventing
+    it.
+  - `tests/test_attention_routes.py`'s characterisation is **INVERTED
+    rather than deleted**, as its own docstring asked, and the file header
+    corrected with it, so the history reads. Rows already written with a
+    third word are not migrated — reaching this needed a hand-made request,
+    and a migration inventing history is worse than leaving them.
+  - `tests/test_attention_status_validated.py` (9 functions, 10 cases).
+    **7 red against main and that number is worth less than it looks:**
+    only TWO reach the assertion they are named for (a 200 where a 422
+    belongs); the other five die on `AttributeError: … has no attribute
+    'InvalidAttentionStatus'`, the only kind of red a test of a new symbol
+    can have. Every docstring says which it is. **Four mutations run, each
+    bites:** the guard removed (6 red), the check moved below `get_conn`
+    (1), the 422 `except` moved below the 404 (3), `ATTENTION_STATUSES`
+    narrowed to one word (4). Suite **6948 passed, 0 failed** at
+    `TZ=America/Toronto` against a measured **6938** on main — +10 is this
+    file exactly.
+  - **All counts here were taken with `HOME_MANAGER_URL` and `REPORT_TOKEN`
+    UNSET.** With them set — which is the overnight environment's own
+    configuration since 2026-09-24 — 14 unrelated report-reading tests
+    fail. That is its own card and its own branch
+    (`overnight/tests-ignore-report-env`); do not read it as this one's.
 - **2026-09-25 — The suite means the same thing whatever the environment
   holds: two variables were turning 14 tests red. Branch
   `overnight/tests-ignore-report-env`, NOT merged at the time of writing.
