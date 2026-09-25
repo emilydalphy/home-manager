@@ -12,6 +12,9 @@ from . import inventory as _inventory
 
 ATTENTION_STATUSES = ("resolved", "dismissed")
 
+# Kinds get_attention_items never returns. See the comment there.
+HIDDEN_ATTENTION_KINDS = ("inventory_depletion",)
+
 
 class InvalidAttentionStatus(ValueError):
     """
@@ -240,9 +243,8 @@ def get_attention_items() -> list[dict]:
     """
     The unified "needs your attention" list — combines the feedback nudge
     (a recently-cooked meal with no rating yet, see get_feedback_nudge)
-    with persisted queue items (currently: low-confidence
-    ingredient-to-inventory matches from checking a meal off as cooked, see
-    check_off_meal). Check this proactively near the start of a
+    with persisted queue items (e.g. tonight.tonight_night_off's "use
+    soon" note; never inventory-usage questions, see below). Check this proactively near the start of a
     conversation, the same way get_expiring_soon/get_cross_location_duplicates
     are checked, and work anything pending into the reply in one low-key
     way — not an interrogation checklist. Each item has an `id` (None for
@@ -266,10 +268,19 @@ def get_attention_items() -> list[dict]:
             "summary": f"How did {nudge['meal']} go?",
             "detail": {"meal": nudge["meal"], "cooked_at": nudge["cooked_at"]},
         })
+    # Inventory-usage questions ("How much Garlic did you use for ...?")
+    # are never shown (Emily, 2026-09-25: "Assume I made what the recipe
+    # called for here, don't ask me"). cooker.deplete_inventory_for_meal no
+    # longer queues them; this hides the ones queued before it stopped, on
+    # every surface that reads the queue — Cook's card, chat, the morning
+    # text. Hidden rather than rewritten to 'dismissed': the rows stay as
+    # they were, and nothing the old answer path did is guessed at.
     conn = get_conn()
     rows = conn.execute(
-        "SELECT id, kind, summary, detail_json, created_at FROM attention_items WHERE household_id = ? AND status = 'pending' ORDER BY created_at ASC",
-        (household_id(),),
+        "SELECT id, kind, summary, detail_json, created_at FROM attention_items "
+        "WHERE household_id = ? AND status = 'pending' AND kind NOT IN ({}) "
+        "ORDER BY created_at ASC".format(",".join("?" * len(HIDDEN_ATTENTION_KINDS))),
+        (household_id(), *HIDDEN_ATTENTION_KINDS),
     ).fetchall()
     conn.close()
     for r in rows:
