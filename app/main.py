@@ -3938,6 +3938,28 @@ def approve_week(week_start: str, req: WeekApproveRequest):
             # approval was stopped for that reason (fail closed).
             "check_failed": result.get("check_failed", False),
         }
+    # What THIS approval actually took off an approved week, if anything —
+    # the real thing, from retire_overlapping_plans (via approve_weekly_plan's
+    # `took_over`), not the preview get_week_menu showed before the tap. The
+    # household could have swapped a meal, or another adult could have
+    # approved something else, in the gap between loading the screen and
+    # tapping Approve, so shell.js's toast reads THIS over the preview and
+    # only falls back to the preview when this is None (see
+    # weekTakeoverToastNote). `took_over` is absent on a no-op re-approval
+    # (approve_weekly_plan's guard never runs the takeover for one), hence
+    # the .get.
+    took_over = result.get("took_over") or {}
+    surrendered_dates = took_over.get("surrendered_dates") or []
+    replaced = (
+        {
+            "dates": sorted(surrendered_dates),
+            # Flat, one entry per real meal actually removed — enough for
+            # the toast to know "dinners" from "meals" without naming any
+            # of them (see _release_plan_days.meal_slots_removed).
+            "meal_slots": took_over.get("meal_slots_removed", []),
+        }
+        if surrendered_dates else None
+    )
     return {
         "week_start": week_start,
         "weekly_plan_id": result["weekly_plan_id"],
@@ -3953,6 +3975,7 @@ def approve_week(week_start: str, req: WeekApproveRequest):
         # the draft's warning.
         "conflicts": result["conflicts"],
         "conflicts_note": result["conflicts_note"],
+        "replaced": replaced,
     }
 
 
