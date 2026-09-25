@@ -17529,3 +17529,37 @@ the dish isn't eaten) with the prep day on its derived_from + reasoning,
 and one >3 days after its prep day eats a freezer portion. With an answer,
 the lunch distinct-count pass stands down. Tests:
 `tests/test_weekday_lunches.py`.
+
+**2026-09-25 — Plan a week opens on "Same as last week?" from the second
+week on (branch `same-as-last-week`, on top of `weekday-lunches-step`;
+mockup option A).** `static/plan-week.html` has a step 0, `<section
+id="same">`: "Same as last week?" / "Tap Change on anything that's
+different.", then one card of rows (`SAME_ROWS`: Days · Weekday lunches ·
+Taking lunch with you · Different days · Mood · Anything else), each row a
+button that opens only its question (`openChange` sets `editing`; the CTA
+reads Done, no skip line, no bars, crumb "‹ Back"), and Done/‹ Back save
+that step as Continue would and come back (`finishChange` → `showSame`).
+A row whose words differ from the first render (`sameBaseline`) is
+celadon-tinted with "· Changed" on its eyebrow. "Plan this week" is
+`advance()` at step 0: ONE `saveIntake(samePayload())` with every answer,
+then the same drafting path; a failed draft returns to the page. Which
+screen opens is decided in `load()` by `sameAsLastWeek()`, which now
+AWAITS the prefill ("One moment…" stays up): `data.last_intake` present →
+the page, else "Which days?" as before. Carried over = what `fetchPeriod`
+already carried (lunches/prep days by weekday, on-the-go days, moods +
+cuisines) plus the day count: `last_intake.day_count` (new, from the
+latest non-retired plan drafted from any revision of that week —
+`_last_period_intake`; the intake never stored a length) replaces the
+door's count only when the URL had no `&days=` (`DAYS_IN_ADDRESS`) and
+this period has no plan or intake of its own. Dates are always the door's.
+Changing Days refetches the new period, which resets answers — so
+`keepAcrossPeriods`/`restoreAcrossPeriods` carry moods, cuisines, the
+note, in-range tags/guests and the lunches by weekday (written into
+`data.last_intake.weekday_lunches`, the shape `lunchPrefill` already
+reads). Leaving an untouched page saves nothing (`answersAtLoad` is
+retaken after the first render lays out the lunches). The joined line is
+copied onto the page (`#same-joined`), except for this visit's own saves
+(`savedThisVisit`). **The hook for "Bring over from last week"** is
+`#bring-over` (above the rows) + `renderBringOver()` (called on every
+`showSame`); anything it adds rides in `samePayload()`. Tests:
+`tests/test_same_as_last_week.py`.

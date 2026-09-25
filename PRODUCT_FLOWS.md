@@ -483,6 +483,16 @@ prefix) — yes. A second chat had filed ten duplicate cards from this same feed
 **Due next:** a re-walk of flow 2 on Emily's phone against the live app once the four
 branches are merged, to move it to `Refined`.
 
+**2026-09-25 — "Same as last week?" (Emily chose option A; branch `same-as-last-week`,
+not merged).** From the second planned week on, Plan a week opens on one page of last
+week's answers — Days · Weekday lunches · Taking lunch with you · Different days · Mood ·
+Anything else — each with Change (opens only that question, Done comes back; a changed
+row reads "· Changed"), and **Plan this week** drafts from them. Carried: day count,
+lunches + prep day, lunches taken out, mood and cuisines. Empty every week: different
+days, guests, holidays, anything else. Dates move forward. A first week asks all five
+questions. A slot above the rows is kept for the next card, "Bring over from last week".
+Card: https://app.notion.com/p/3e41f4c05231817f823ac9c7185903cd
+
 - **For builders:** `static/plan-week.html` (the intake: steps 1–4, day sheet,
   `toggleAvatar`, `SKIP_LABELS`, the building screen), `app/tools/week_intake.py`
   (`_rhythm_packed_lunch_suggestions` — the lunch prefill that exists but doesn't skip

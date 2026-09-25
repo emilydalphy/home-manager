@@ -899,6 +899,9 @@ def _last_period_intake(conn, week_start: str) -> dict | None:
     tools/weekday_lunches.carryover's shape, with the on-the-go days as
     weekdays too — so this week's dates can be laid out from last week's
     Tuesdays, and so the "Same as last week?" page can show them.
+
+    Its presence is what opens Plan a week on "Same as last week?" rather
+    than the five questions: a first week (None here) always asks them all.
     """
     row = conn.execute(
         "SELECT * FROM week_intake WHERE household_id = ? AND week_start < ? AND superseded_at IS NULL "
@@ -907,8 +910,20 @@ def _last_period_intake(conn, week_start: str) -> dict | None:
     ).fetchone()
     if not row:
         return None
+    # How many days that period ran, off the plan drafted from it — the
+    # "Same as last week?" page carries it over (Emily, 2026-09-25, option
+    # A). The intake itself never stored a length; the latest live plan
+    # drafted from any revision of that week is the one that did. None when
+    # nothing was drafted from it (answers given, never planned).
+    plan = conn.execute(
+        "SELECT * FROM weekly_plans WHERE household_id = ? AND status != 'retired' AND intake_id IN "
+        "(SELECT id FROM week_intake WHERE household_id = ? AND week_start = ?) ORDER BY id DESC LIMIT 1",
+        (household_id(), household_id(), row["week_start"]),
+    ).fetchone()
+    day_count = _weekly_plan.plan_period(plan)[1] if plan else 0
     return {
         "week_start": row["week_start"],
+        "day_count": day_count or None,
         "moods": json.loads(row["moods_json"]),
         "cuisines": json.loads(row["cuisines_json"]),
         "weekday_lunches": _weekday_lunches.carryover(

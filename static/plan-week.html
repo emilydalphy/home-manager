@@ -452,6 +452,38 @@
   .lunch-day-what { flex: 1 1 auto; font-size: 15px; font-weight: 600; line-height: 1.35; }
   .lunch-note { font-size: 13px; font-weight: 500; color: var(--ink-secondary); margin: 8px 0 0; }
 
+  /* ---------- Same as last week? (Emily, 2026-09-25, option A) ----------
+     Last week's answers in one card, a row each: the question as an
+     eyebrow, the answer under it, "Change" at the right. The whole row is
+     the tap (44px and up). A row changed this visit is celadon-tinted —
+     the house colour for "Changed" (.wk-changed in shell.css) — and its
+     eyebrow says so in words (S6). */
+  .same-rows { display: flex; flex-direction: column; padding: 2px 14px; overflow: hidden; }
+  .same-row {
+    display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px;
+    padding: 10px 0; border: 0; border-top: 1.5px solid var(--hairline); background: none;
+    font-family: var(--font-body); text-align: left; color: var(--ink); cursor: pointer;
+  }
+  .same-row:first-child { border-top: 0; }
+  .same-row:focus-visible { outline: 2px solid var(--apricot); outline-offset: -2px; }
+  .same-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .same-label {
+    font-size: 10px; font-weight: 800; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--ink-muted);
+  }
+  .same-value {
+    font-size: 15px; font-weight: 600; line-height: 1.35; white-space: pre-line; overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .same-change { flex: 0 0 auto; font-size: 14px; font-weight: 700; color: var(--apricot-label); }
+  .same-row:hover .same-change { color: var(--apricot-label-hover); }
+  .same-row.changed {
+    background: var(--celadon-tint); margin: 0 -14px; padding-left: 14px; padding-right: 14px;
+    width: calc(100% + 28px);
+  }
+  .same-row.changed .same-label { color: var(--celadon-label); }
+  .bring-over[hidden] { display: none; }
+
   /* The typed answer (step 5). 16px so a phone doesn't zoom the page on
      focus — onboarding's text boxes carry the same note. Selecting the
      text is the person's, never the page's (Emily, 2026-09-21: long-press
@@ -729,6 +761,28 @@
   <button type="button" class="crumb" id="leave">&lsaquo; Plan</button>
   <p class="eyebrow" id="eyebrow"></p>
   <div class="progress" id="progress"><span class="bar" id="bar-1"></span><span class="bar" id="bar-2"></span><span class="bar" id="bar-3"></span><span class="bar" id="bar-4"></span><span class="bar" id="bar-5"></span></div>
+
+  <!-- ---------- Same as last week? (Emily, 2026-09-25, option A) ----------
+       From the second planned week on, Plan a week opens here instead of
+       on "Which days?": last week's answers as rows, each a tap on
+       Change that opens only that question (openChange) and comes back
+       here (finishChange), a changed row tinted with "· Changed" on its
+       label (S6), and "Plan this week" drafting from the answers as they
+       stand (advance, step 0). What carries over and what starts empty:
+       see sameAsLastWeek / fetchPeriod. A first week (no last_intake)
+       never sees this page — it asks all five questions. -->
+  <section id="same" hidden>
+    <h1>Same as last week?</h1>
+    <p class="step-sub">Tap Change on anything that&rsquo;s different.</p>
+    <div class="step-body">
+      <div class="joined" id="same-joined" hidden></div>
+      <!-- BRING OVER FROM LAST WEEK — the next card's section, above the
+           rows. Empty and hidden on this build; renderBringOver() is the
+           one function that fills it, called every time this page shows. -->
+      <div class="bring-over" id="bring-over" hidden></div>
+      <div class="card same-rows" id="same-rows"></div>
+    </div>
+  </section>
 
   <!-- ---------- 1 of 5 · Which days? (boards A3 → D1 → Emily, 2026-09-22) ----------
        One strip of days, like any calendar: it opens with Pomona's
@@ -1052,6 +1106,10 @@
     if (!raw || raw < 1) return 7;
     return Math.min(raw, 28);
   })();
+  // Whether the door named a length itself. Only a door that didn't
+  // (a plain seven) lets "Same as last week?" carry last week's day count
+  // over (sameAsLastWeek) — a Re-plan pill or a picked range meant its own.
+  var DAYS_IN_ADDRESS = new URLSearchParams(location.search).has('days');
   // The household's horizon — how many days a period runs when the page
   // arrives naming none: seven, or three for a household planning as it
   // goes. The SERVER's number (suggest_planning_period, read in
@@ -1069,7 +1127,14 @@
   var who = new URLSearchParams(location.search).get('who') || '';
   var data = null;                 // the prefill payload, for the period loaded
   var loadedFor = '';              // which "start|days" `data` was fetched for
-  var step = 1;
+  var step = 1;                    // 0 is "Same as last week?", 1–5 the questions
+  // The question "Change" opened from "Same as last week?", while it's
+  // open; 0 otherwise. Its Continue reads Done and comes back to the page.
+  var editing = 0;
+  // What each row of "Same as last week?" said when the page first showed
+  // — a row that says something else now is marked changed.
+  var sameBaseline = null;
+  var savedThisVisit = false;      // any intake save has landed since the page opened
   var drafting = false;            // set once "Draft my week" is tapped; nothing submits twice
   // Who's at which meal. Its own store rather than part of `answers`,
   // because attendance is not an intake revision — it's a standing fact
@@ -1144,6 +1209,29 @@
   // always has one (the counts open filled in) and step 4's skip is the
   // Surprise me card, so none of those carries one.
   var SKIP_LABELS = { 2: 'Nothing different', 5: 'Nothing else' };
+  // "Same as last week?" (Emily, 2026-09-25, option A, from the mockup
+  // she chose): a row per answer, in the mockup's order, each naming the
+  // question its Change opens. Both lunch rows open step 3 — "Taking it
+  // with you" is a group on that screen.
+  var SAME_ROWS = [
+    { key: 'days',      step: 1, label: 'Days' },
+    { key: 'lunches',   step: 3, label: 'Weekday lunches' },
+    { key: 'packed',    step: 3, label: 'Taking lunch with you' },
+    { key: 'different', step: 2, label: 'Different days' },
+    { key: 'mood',      step: 4, label: 'Mood' },
+    { key: 'freeform',  step: 5, label: 'Anything else' }
+  ];
+  var SAME_COPY = {
+    eyebrow: 'Plan a week',
+    go: 'Plan this week',
+    done: 'Done',
+    change: 'Change',
+    changed: 'Changed',
+    nothingMarked: 'Nothing marked',
+    nothingAdded: 'Nothing added',
+    noPacked: 'None',
+    noMood: 'Nothing picked'
+  };
   // The mood the Surprise me card records (week_intake.SURPRISE_MOOD — the
   // same words, so the planner reads the guidance behind them). Never
   // saved beside a steering mood: tapping a chip drops it, tapping the
@@ -1526,10 +1614,16 @@
     choosePeriod(weekStart, dayCount);
     // Pomona's suggestion, already chosen: the period the door named.
     openRange();
+    // From the second week on, the page opens on last week's answers
+    // (Emily, 2026-09-25). Knowing which needs the prefill, so "One
+    // moment…" stays up until it's here; a first week, or a prefill that
+    // failed, opens on "Which days?" as before.
+    var same = await sameAsLastWeek();
     $('loading').hidden = true;
     $('flow').hidden = false;
     $('footer').hidden = false;
     renderStartStep();
+    if (same) { showSame(); return; }
     showStep(1);
     // The common case — Continue with the period as offered — should not
     // wait on a fetch, so it starts now and is awaited then.
@@ -3101,15 +3195,253 @@
     advance();
   }
 
+  // ---------- Same as last week? (Emily, 2026-09-25, option A) ----------
+  // Whether this visit opens on last week's answers: yes whenever the
+  // household answered the questions for an earlier period (last_intake),
+  // so a first week always asks all five. Loads the period's prefill to
+  // find out — the same one fetch the questions use.
+  //
+  // What carries over is what fetchPeriod already lays out from last week
+  // — the lunches and prep days by weekday, the days lunch travels, the
+  // moods and cuisines — plus, here, how many days were planned: last
+  // week's count, when the door named no length of its own (a Re-plan pill
+  // or a picked range did) and this period has no plan or answers yet.
+  // The dates are always the door's: they move forward. What starts empty
+  // is everything about one particular week — the different days, guests,
+  // holidays and "anything else" — because fetchPeriod never carries those.
+  async function sameAsLastWeek() {
+    try { await loadPeriod(); } catch (err) { console.warn('Plan-the-week prefill failed:', err); return false; }
+    var last = data && data.last_intake;
+    if (!last) return false;
+    if (!DAYS_IN_ADDRESS && !data.plan_exists && !data.intake && last.day_count && last.day_count !== dayCount) {
+      choosePeriod(weekStart, last.day_count);
+      openRange();
+      try { await loadPeriod(); } catch (err) { console.warn('Plan-the-week prefill failed:', err); return false; }
+    }
+    return true;
+  }
+
+  // "3 prepped Sunday, 1 leftovers, 1 cooked Friday" — the mockup's
+  // words. `days` is [{date, kind, prep_day}], one per weekday lunch.
+  // The cooked days are named when there are one or two, "on the day"
+  // past that (lunchUsingLine's rule).
+  function lunchSummary(days) {
+    var counts = { prepped: 0, leftovers: 0, cooked: 0 };
+    (days || []).forEach(function (d) { if (counts[d.kind] !== undefined) counts[d.kind] += 1; });
+    var prepDays = PREP_WEEKDAYS.filter(function (w) {
+      return (days || []).some(function (d) { return d.kind === 'prepped' && d.prep_day === w; });
+    });
+    var cookedDays = [];
+    (days || []).forEach(function (d) {
+      if (d.kind !== 'cooked') return;
+      var w = titleDay(isoWeekday(d.date));
+      if (cookedDays.indexOf(w) === -1) cookedDays.push(w);
+    });
+    var parts = [];
+    if (counts.prepped) parts.push(counts.prepped + ' prepped' + (prepDays.length ? ' ' + joinWords(prepDays.map(titleDay)) : ''));
+    if (counts.leftovers) parts.push(counts.leftovers + ' leftovers');
+    if (counts.cooked) parts.push(counts.cooked + ' cooked ' + (cookedDays.length <= 2 ? joinWords(cookedDays) : 'on the day'));
+    return parts.join(', ');
+  }
+
+  // Every row's words, from the answers as they stand. Pure — the screen
+  // hands it what it holds (sameValues) — so it runs on its own. A lunch
+  // row is null for a period with no weekday lunch (step 3 is skipped
+  // then too), and the row isn't drawn.
+  //   s = { start, count, lunchDays: [{date, kind, prep_day}] | null,
+  //         packed: ['Mon', …] | null, dayNotes: [{day, note}],
+  //         moods: [], cuisines: [], freeform: '' }
+  function sameRowValues(s) {
+    var count = Math.max(1, s.count);
+    var end = addDaysIso(s.start, count - 1);
+    var picks = (s.moods || []).concat(s.cuisines || []);
+    return {
+      days: (count === 1 ? dayLabel(s.start) : dayLabel(s.start) + ' → ' + dayLabel(end)) +
+        ' · ' + count + (count === 1 ? ' day' : ' days'),
+      lunches: s.lunchDays ? lunchSummary(s.lunchDays) : null,
+      packed: s.packed ? (s.packed.length ? s.packed.join(', ') : SAME_COPY.noPacked) : null,
+      different: (s.dayNotes || []).length
+        ? s.dayNotes.map(function (n) { return n.day + ': ' + n.note; }).join('\n')
+        : SAME_COPY.nothingMarked,
+      mood: picks.length ? picks.join(', ') : SAME_COPY.noMood,
+      freeform: (s.freeform || '').trim() || SAME_COPY.nothingAdded
+    };
+  }
+
+  // What the screen holds, for sameRowValues. Laying out the lunches here
+  // is the same reconcileLunches step 3 opens with, so the row and the
+  // step never disagree.
+  function sameValues() {
+    var lunchDays = currentLunchDates();
+    var hasLunch = lunchDays.length > 0;
+    if (hasLunch) reconcileLunches();
+    var dayName = function (iso) { return dayCount > 7 ? dayLabel(iso) : weekdayName(iso, 'short'); };
+    return sameRowValues({
+      start: weekStart,
+      count: dayCount,
+      lunchDays: hasLunch ? lunchDays.map(function (d) {
+        var found = lunch.kinds[d] === 'prepped' ? prepDayFor(d, lunch.prepDays) : null;
+        return { date: d, kind: lunch.kinds[d], prep_day: found ? found.day : '' };
+      }) : null,
+      packed: hasLunch ? answers.packed_lunch_days.filter(function (d) { return lunchDays.indexOf(d) !== -1; })
+        .sort().map(dayName) : null,
+      dayNotes: plannedDays().map(function (day) {
+        return { day: dayCount > 7 ? day.weekday + ' ' + day.day_of_month : day.weekday, note: dayNoteFor(day) };
+      }).filter(function (n) { return !!n.note; }),
+      moods: answers.moods,
+      cuisines: answers.cuisines,
+      freeform: $('freeform').value
+    });
+  }
+
+  function renderSame() {
+    var values = sameValues();
+    if (!sameBaseline) sameBaseline = values;
+    $('same-rows').innerHTML = SAME_ROWS.filter(function (r) { return values[r.key] !== null; }).map(function (r) {
+      var changed = values[r.key] !== sameBaseline[r.key];
+      return '<button type="button" class="same-row' + (changed ? ' changed' : '') + '" data-step="' + r.step + '">' +
+        '<span class="same-text"><span class="same-label">' + esc(r.label + (changed ? ' · ' + SAME_COPY.changed : '')) + '</span>' +
+        '<span class="same-value">' + esc(values[r.key]) + '</span></span>' +
+        '<span class="same-change">' + esc(SAME_COPY.change) + '</span></button>';
+    }).join('');
+    $('same-rows').querySelectorAll('.same-row').forEach(function (row) {
+      row.addEventListener('click', function () { openChange(Number(row.dataset.step)); });
+    });
+  }
+
+  // The hook for the next card, "Bring over from last week": whatever it
+  // offers goes in #bring-over, above the rows. The page already holds
+  // `data` (the prefill: last_intake, days, rhythm) and `answers`, and
+  // "Plan this week" sends samePayload() — anything brought over that the
+  // planner should read rides in that one save.
+  function renderBringOver() {
+    $('bring-over').hidden = !$('bring-over').innerHTML;
+  }
+
+  function showSame() {
+    step = 0;
+    editing = 0;
+    for (var i = 1; i <= STEP_COUNT; i++) $('q' + i).hidden = true;
+    $('same').hidden = false;
+    $('eyebrow').textContent = SAME_COPY.eyebrow;
+    $('progress').hidden = true;
+    $('leave').innerHTML = '&lsaquo; Plan';
+    // The soft lock / re-plan line fetchPeriod wrote for step 2, said here
+    // first since this is the first screen.
+    $('same-joined').textContent = $('joined').textContent;
+    $('same-joined').hidden = $('joined').hidden;
+    renderBringOver();
+    var first = !sameBaseline;
+    renderSame();
+    // Leaving a page nobody changed saves nothing: the answers as laid
+    // out here (the lunches included) are the ones it opened with.
+    if (first) answersAtLoad = answersSnapshot();
+    window.scrollTo(0, 0);
+    paintCta();
+  }
+
+  // Change: that one question, laid out as it opens on the way through.
+  function openChange(n) {
+    editing = n;
+    if (n === 1) { openRange(); renderStartStep(); }
+    if (n === 2) { renderDays(); renderHolidayBlocks(); }
+    if (n === 3) renderLunchStep();
+    if (n === 4) paintMoodScreen();
+    showStep(n);
+  }
+
+  // Done (or ‹ Back) on a question opened from "Same as last week?": save
+  // it the way Continue would, then back to the page. New days fetch the
+  // new period's prefill, which starts every answer over — so what isn't
+  // tied to a date is carried across (keepAcrossPeriods).
+  async function finishChange() {
+    var n = step;
+    if (n === 1) {
+      if (!range.end) { openRange(); paintRange(); }
+      if (weekStart + '|' + dayCount !== loadedFor) {
+        var kept = keepAcrossPeriods();
+        if (!(await ensureLoaded())) return;
+        restoreAcrossPeriods(kept);
+        // The answers "already saved for this week" are the ones just given
+        // on this page — not somebody else's to be told about.
+        if (savedThisVisit) $('joined').hidden = true;
+      }
+    }
+    await saveStep(n);
+    showSame();
+  }
+
+  function keepAcrossPeriods() {
+    var byWeekday = {};
+    Object.keys(lunch.kinds).forEach(function (d) { byWeekday[isoWeekday(d)] = lunch.kinds[d]; });
+    return {
+      night_tags: answers.night_tags,
+      guest_counts: answers.guest_counts,
+      moods: answers.moods.slice(),
+      cuisines: answers.cuisines.slice(),
+      freeform: $('freeform').value,
+      lunches: lunch.ready ? {
+        kinds: byWeekday,
+        prep_days: lunch.prepDays.slice(),
+        on_the_go: answers.packed_lunch_days.map(isoWeekday)
+      } : null
+    };
+  }
+
+  function restoreAcrossPeriods(kept) {
+    var days = plannedDays().map(function (d) { return d.date; });
+    Object.keys(kept.night_tags).forEach(function (d) { if (days.indexOf(d) !== -1) answers.night_tags[d] = kept.night_tags[d]; });
+    Object.keys(kept.guest_counts).forEach(function (d) { if (days.indexOf(d) !== -1) answers.guest_counts[d] = kept.guest_counts[d]; });
+    // In place: the chips hold these arrays (wireChips).
+    answers.moods.length = 0;
+    kept.moods.forEach(function (m) { answers.moods.push(m); });
+    answers.cuisines.length = 0;
+    kept.cuisines.forEach(function (c) { answers.cuisines.push(c); });
+    $('freeform').value = kept.freeform;
+    if (kept.lunches) {
+      // This visit's lunches, by weekday, in the one shape step 3 lays
+      // new dates out from (lunchPrefill reads last_intake.weekday_lunches).
+      data.last_intake = Object.assign({}, data.last_intake, { weekday_lunches: kept.lunches });
+      answers.packed_lunch_days = days.filter(function (d) { return kept.lunches.on_the_go.indexOf(isoWeekday(d)) !== -1; });
+    }
+    renderMoods();
+    renderCuisines();
+  }
+
+  // "Plan this week": every answer in one save, the way leaving does.
+  function samePayload() {
+    var kept = plannedDays().map(function (d) { return d.date; });
+    var payload = {
+      night_tags: answers.night_tags, guest_counts: answers.guest_counts,
+      packed_lunch_days: answers.packed_lunch_days.filter(function (d) { return kept.indexOf(d) !== -1; }),
+      skipped_days: droppedList(),
+      moods: answers.moods, cuisines: answers.cuisines,
+      freeform: $('freeform').value.trim()
+    };
+    if (currentLunchDates().length) {
+      reconcileLunches();
+      payload.weekday_lunches = lunchPayload();
+    }
+    return payload;
+  }
+
   // ---------- steps ----------
   function showStep(n) {
     step = n;
+    $('same').hidden = true;
     for (var i = 1; i <= STEP_COUNT; i++) {
       $('q' + i).hidden = n !== i;
       $('bar-' + i).classList.toggle('on', n >= i);
     }
     $('eyebrow').textContent = 'Plan a week · ' + n + ' of ' + STEP_COUNT;
     $('leave').innerHTML = n === 1 ? '&lsaquo; Plan' : '&lsaquo; Back';
+    // One question opened from "Same as last week?" isn't one of five,
+    // and its crumb goes back to that page.
+    $('progress').hidden = !!editing;
+    if (editing) {
+      $('eyebrow').textContent = SAME_COPY.eyebrow;
+      $('leave').innerHTML = '&lsaquo; Back';
+    }
     window.scrollTo(0, 0);
     paintCta();
   }
@@ -3128,6 +3460,19 @@
       $('cta').disabled = !name || cuisineAdding;
       skip.textContent = CUISINE_COPY.never;
       skip.hidden = false;
+      return;
+    }
+    // "Same as last week?" has the one button; a question opened from it
+    // has Done, and no quiet skip line — Done with nothing changed is it.
+    if (step === 0) {
+      $('cta').textContent = SAME_COPY.go;
+      skip.hidden = true;
+      return;
+    }
+    if (editing) {
+      $('cta').textContent = SAME_COPY.done;
+      if (step === 1) $('cta').disabled = !range.end;
+      skip.hidden = true;
       return;
     }
     if (step < STEP_COUNT) {
@@ -3192,6 +3537,7 @@
       body: JSON.stringify(Object.assign({ created_by: who, day_count: dayCount }, payload))
     });
     if (!res.ok) throw new Error('intake save failed');
+    savedThisVisit = true;
     return res.json();
   }
 
@@ -3436,6 +3782,7 @@
 
   function showDraftProgress(saved) {
     for (var i = 1; i <= STEP_COUNT; i++) $('q' + i).hidden = true;
+    $('same').hidden = true;
     // Nothing to press while drafting: the foot goes, the bars go, and
     // the crumb is "‹ Plan" again — leaving is fine, the draft still lands.
     $('footer').hidden = true;
@@ -3663,6 +4010,8 @@
 
   function crumbTap() {
     if (cuisineOpen) closeCuisineScreen();
+    else if (editing && !drafting) advance();   // back to "Same as last week?", keeping what was said
+    else if (step === 0) leaveFlow();
     else if (step === 1 || drafting) leaveFlow();
     else goBack();
   }
@@ -3688,6 +4037,7 @@
     btn.disabled = true;
     $('skip').disabled = true;
     try {
+      if (editing) { await finishChange(); return; }
       if (step === 1) {
         if (!(await ensureLoaded())) return;
         // The days chosen reach the steps that ask about them, and the
@@ -3698,7 +4048,7 @@
         showStep(2);
         return;
       }
-      if (step < STEP_COUNT) {
+      if (step >= 1 && step < STEP_COUNT) {
         await saveStep(step);
         var to = step + 1;
         if (skipsStep(to)) to += 1;
@@ -3711,7 +4061,9 @@
 
       drafting = true;
       btn.textContent = 'Drafting your week…';
-      var saved = await saveIntake({
+      // From "Same as last week?" (step 0) nothing has been saved on the
+      // way, so every answer goes in this one save.
+      var saved = await saveIntake(step === 0 ? samePayload() : {
         moods: answers.moods,
         cuisines: answers.cuisines,
         freeform: $('freeform').value.trim()
@@ -3752,15 +4104,19 @@
       // "Draft my week" is tappable again.
       var wasDrafting = drafting;
       drafting = false;
+      var fromSame = step === 0;
       if (!$('draft-progress').hidden) {
         hideDraftProgress();
-        showStep(STEP_COUNT);
+        if (fromSame) showSame();
+        else showStep(STEP_COUNT);
       }
       // A draft that fell over is not a save that failed: say so, and
       // that nothing changed, so "try again" reads as safe (rule 9).
-      alert(wasDrafting
-        ? 'That draft didn’t come together — nothing’s changed. Tap Draft my week to try again.'
-        : 'I couldn’t save that just now — try again in a moment.');
+      alert(!wasDrafting
+        ? 'I couldn’t save that just now — try again in a moment.'
+        : fromSame
+          ? 'That draft didn’t come together — nothing’s changed. Tap Plan this week to try again.'
+          : 'That draft didn’t come together — nothing’s changed. Tap Draft my week to try again.');
     } finally {
       if (!drafting) { btn.disabled = false; $('skip').disabled = false; paintCta(); }
     }

@@ -208,6 +208,8 @@ class TestOneQuestionAScreen:
         prefill = tools.get_week_intake_prefill(this_week)
         assert prefill["last_intake"] == {
             "week_start": "2026-09-28", "moods": ["Comfort food"], "cuisines": ["Thai"],
+            # Nothing drafted from it, so no length to carry (2026-09-25).
+            "day_count": None,
             # Step 3 unanswered that week (2026-09-25): nothing to carry.
             "weekday_lunches": None,
         }
