@@ -314,7 +314,7 @@ def test_backfill_runs_once_per_database(tmp_path):
 
     _db._run_migrations(conn)
     conn.commit()
-    assert conn.execute("PRAGMA user_version").fetchone()[0] == _db._DATA_VERSION_COOK_COUNTERS
+    assert conn.execute("PRAGMA user_version").fetchone()[0] >= _db._DATA_VERSION_COOK_COUNTERS
     assert conn.execute("SELECT times_cooked FROM recipes WHERE name = 'Chili'").fetchone()[0] == 2
 
     # History the rows no longer carry: the household ate Chili on a night

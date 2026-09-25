@@ -597,6 +597,16 @@ _MIGRATIONS = [
     # (Loop Board, 2026-09-15) — see schema.sql's comment on
     # grocery_items.staple_offer_made. 0 on every existing row.
     ("grocery_items", "staple_offer_made", "INTEGER NOT NULL DEFAULT 0"),
+    # Loop Board "First open for the adult who didn't set Pomona up"
+    # (2026-09-25) — see app/tools/first_open.py for the whole rule. '' =
+    # hasn't seen the welcome; anything else = has, or never will. Every
+    # member existing when this ships is stamped by the run-once
+    # _mark_existing_members_first_open_seen below, so nobody already
+    # using Pomona gets a welcome out of nowhere.
+    ("members", "first_open_seen_at", "TEXT NOT NULL DEFAULT ''"),
+    # The adult who set the household up: the first adult to open the
+    # shell. NULL until someone does (or the run-once backfill names one).
+    ("households", "set_up_by_member_id", "INTEGER"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people
@@ -963,11 +973,13 @@ def _run_migrations(conn):
 # (version, function); a database at version n runs every entry above n,
 # in order, and is stamped with the last one it ran. Add to the END.
 _DATA_VERSION_COOK_COUNTERS = 1
+_DATA_VERSION_FIRST_OPEN = 2
 
 
 def _run_once_data_migrations(conn):
     steps = [
         (_DATA_VERSION_COOK_COUNTERS, _backfill_recipe_cook_counters_from_ticks),
+        (_DATA_VERSION_FIRST_OPEN, _mark_existing_members_first_open_seen),
     ]
     current = conn.execute("PRAGMA user_version").fetchone()[0]
     for version, step in steps:
@@ -978,6 +990,52 @@ def _run_once_data_migrations(conn):
         # placeholders. `version` is one of the module constants above.
         conn.execute(f"PRAGMA user_version = {int(version)}")
         current = version
+
+
+def _mark_existing_members_first_open_seen(conn):
+    """
+    Loop Board "First open for the adult who didn't set Pomona up"
+    (2026-09-25). Nobody already using Pomona is shown the first-open
+    welcome: every member on record when this ships is stamped as having
+    seen it. Being picked at "Who's this?" is kept only in a cookie, so
+    "has this adult opened Pomona before?" can't be read back from the
+    database — stamping everyone is the one rule that's sure. (Members of
+    any age: a child later re-marked adult was here before too.)
+
+    It also names who set each household up, so a new adult added later is
+    told "Emily's set up your household": the adult who approved the most
+    recent week, by member id, else the household's first adult by
+    creation order. Runs once (PRAGMA user_version); on a fresh database it
+    finds nothing and does nothing.
+    """
+    conn.execute(
+        "UPDATE members SET first_open_seen_at = 'before-first-open' WHERE first_open_seen_at = ''"
+    )
+    households = conn.execute(
+        "SELECT id FROM households WHERE set_up_by_member_id IS NULL"
+    ).fetchall()
+    for household in households:
+        hid = household["id"]
+        approver = conn.execute(
+            "SELECT wp.approved_by_member_id AS mid FROM weekly_plans wp "
+            "JOIN members m ON m.id = wp.approved_by_member_id AND m.household_id = wp.household_id "
+            "WHERE wp.household_id = ? AND wp.approved_by_member_id IS NOT NULL "
+            "AND LOWER(TRIM(m.age_group)) = 'adult' "
+            "ORDER BY wp.approved_at DESC, wp.id DESC LIMIT 1",
+            (hid,),
+        ).fetchone()
+        chosen = approver["mid"] if approver else None
+        if chosen is None:
+            first = conn.execute(
+                "SELECT id FROM members WHERE household_id = ? AND LOWER(TRIM(age_group)) = 'adult' "
+                "ORDER BY id ASC LIMIT 1",
+                (hid,),
+            ).fetchone()
+            chosen = first["id"] if first else None
+        if chosen is not None:
+            conn.execute(
+                "UPDATE households SET set_up_by_member_id = ? WHERE id = ?", (chosen, hid)
+            )
 
 
 def _is_leftovers_night_json(derived_from_json) -> bool:

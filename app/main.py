@@ -7127,6 +7127,7 @@ def whoami(request: Request):
     conn.close()
     member = tools.current_member()
     adults = tools.household_adults()
+    first_open = tools.first_open_state(member)
     return {
         "household_id": current,
         "household_name": row["name"] if row else "",
@@ -7134,6 +7135,12 @@ def whoami(request: Request):
         "adults": adults,
         "needs_pick": member is None and len(adults) > 1,
         "chores_enabled": bool(row and row["chores_enabled"]),
+        # The other adult's first open (tools/first_open.py): true once, for
+        # an adult who didn't set the household up, until they leave the
+        # welcome. `set_up_by` is the name the welcome says. Reading this is
+        # also how the household's first adult is recorded as its setter-up.
+        "first_open": first_open["show"],
+        "set_up_by": first_open["set_up_by"],
     }
 
 
@@ -7168,7 +7175,12 @@ def whoami_pick(req: WhoamiPickRequest, request: Request):
         value = security.issue_session(tools.household_id(), req.member_id)
     with tools.use_member(req.member_id):
         member = tools.current_member()
-    response = JSONResponse({"member": member})
+        first_open = tools.first_open_state(member)
+    response = JSONResponse({
+        "member": member,
+        "first_open": first_open["show"],
+        "set_up_by": first_open["set_up_by"],
+    })
     response.set_cookie(
         security.COOKIE_NAME,
         value,
@@ -7179,6 +7191,33 @@ def whoami_pick(req: WhoamiPickRequest, request: Request):
         path="/",
     )
     return response
+
+
+@app.get("/api/first-open")
+def first_open_preview():
+    """
+    What the other adult's first-open welcome shows under the greeting:
+    the live week's next few dinners, the shopping list's count, and the
+    dinners still waiting for a call (tools.first_open_preview). Read only
+    when /api/whoami said `first_open` — never on an ordinary open.
+    """
+    try:
+        return tools.first_open_preview()
+    except Exception as e:
+        logger.exception("First-open preview failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/first-open/seen")
+def first_open_seen():
+    """
+    The session's adult has left the welcome — never show it again, on any
+    device (the flag is on their member row). 400 when nobody is picked.
+    """
+    try:
+        return tools.mark_first_open_seen()
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.get("/healthz")

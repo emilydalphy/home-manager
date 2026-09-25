@@ -9721,6 +9721,149 @@ span.cook-week-name { cursor: default; }
 }
 .who-error[hidden] { display: none; }
 
+/* ---------- The other adult's first open (2026-09-25) ----------
+   Loop Board "First open for the adult who didn't set Pomona up". One
+   screen, once per adult, in the setup welcome's own look
+   (onboarding.html's .intro-screen: spruce ground, Bricolage at the hero
+   scale, the rows' spruce-raised icon tiles in apricot-light, one apricot
+   at the foot). Full screen for the same reason "Who's this?" is: it comes
+   before the app, not over something already being read. Every colour is
+   a canonical token, so dark mode follows (--spruce lifts to its dark
+   value, as it does on sign-in and the welcome). No animation — the five
+   in §4 are the whole set. Built by shell.js (openFirstOpen). */
+.first-open-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 61; /* over "Who's this?" (60), which it follows */
+  background: var(--spruce);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: max(28px, env(safe-area-inset-top, 0px) + 20px) 20px max(24px, env(safe-area-inset-bottom, 0px) + 16px);
+  box-sizing: border-box;
+}
+body.first-open-active { overflow: hidden; }
+.fo-inner {
+  max-width: 440px;
+  margin: 0 auto;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 28px;
+}
+.fo-body { display: flex; flex-direction: column; gap: 18px; padding-top: 24px; }
+/* Option B: the one line sits lower, like the setup welcome's hello. */
+.fo-inner.is-line .fo-body { padding-top: 96px; }
+.fo-mark { color: var(--apricot); display: flex; }
+.fo-mark .pomona-mark { width: 56px; height: 56px; }
+.fo-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 40px;
+  letter-spacing: -0.038em;
+  line-height: 1.05;
+  color: var(--ivory-ink);
+  margin: 0;
+  text-wrap: pretty;
+}
+.fo-lead {
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--ivory-ink-muted);
+  margin: 0;
+  text-wrap: pretty;
+}
+.fo-rows { display: flex; flex-direction: column; gap: 22px; margin-top: 10px; }
+.fo-row { display: flex; gap: 16px; align-items: flex-start; }
+.fo-row-icon {
+  flex: 0 0 44px; width: 44px; height: 44px;
+  border-radius: var(--radius-control);
+  background: var(--spruce-raised);
+  color: var(--apricot-light);
+  display: flex; align-items: center; justify-content: center;
+}
+.fo-row-icon svg { width: 22px; height: 22px; }
+.fo-row-text { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; padding-top: 2px; }
+.fo-row-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--ivory-ink);
+}
+.fo-row-body {
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--ivory-ink-muted);
+  text-wrap: pretty;
+}
+.fo-foot { display: flex; flex-direction: column; gap: 16px; }
+/* The home-screen offer: a quiet tile on spruce, no accent fill — the
+   apricot below is the screen's one action (Rule 5). */
+.fo-home {
+  background: var(--spruce-raised);
+  border-radius: var(--radius-card);
+  padding: 14px 14px 8px;
+}
+.fo-home-q {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ivory-ink);
+  margin: 0 0 6px;
+}
+.fo-home-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.fo-home-add, .fo-home-later {
+  min-height: 44px; /* Rule 6 */
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+}
+.fo-home-add {
+  padding: 0 16px;
+  border: 1.5px solid var(--ivory-ink-muted);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--ivory-ink);
+}
+.fo-home-later {
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  color: var(--ivory-ink-muted);
+}
+.fo-home-add:hover, .fo-home-later:hover { color: var(--ivory-ink); }
+.fo-next {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  background: var(--apricot);
+  color: var(--on-accent-ink);
+  border: none;
+  border-radius: var(--radius-action);
+  padding: 15px 22px;
+  min-height: 54px;
+  width: 100%;
+  box-shadow: var(--shadow-action);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  cursor: pointer;
+}
+.fo-next:hover { background: var(--apricot-deep); }
+.fo-next:disabled { opacity: .7; cursor: default; }
+.fo-next svg { width: 18px; height: 18px; }
+
 /* The old ">=1024px" rule that gave the dock its clearance back is gone
    (2026-09-11): the chat FAB sits over the dock's right end at every width
    now (there is no more Ask column for it to make way for — see
