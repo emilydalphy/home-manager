@@ -492,6 +492,13 @@ _MIGRATIONS = [
     # trail was ever captured for them, and the report prints them exactly
     # as before.
     ("error_events", "trail", "TEXT NOT NULL DEFAULT ''"),
+    # Loop Board "A browser error says which kind of device, browser,
+    # language and Pomona version it happened on" (2026-09-25). '' on every
+    # existing row: none of it was captured, and guessing would be inventing.
+    ("error_events", "device", "TEXT NOT NULL DEFAULT ''"),
+    ("error_events", "display_mode", "TEXT NOT NULL DEFAULT ''"),
+    ("error_events", "lang", "TEXT NOT NULL DEFAULT ''"),
+    ("error_events", "app_version", "TEXT NOT NULL DEFAULT ''"),
     # "Reach me before the moment" (Loop Board, 2026-09-11) — the morning
     # text. The household's clock and the hour it wants the text; see
     # schema.sql's comment on morning_text_sends for the whole model. The

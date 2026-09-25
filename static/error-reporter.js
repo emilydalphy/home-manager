@@ -300,6 +300,17 @@
   } catch (err) { /* no referrer is the common case */ }
   try { step(routePattern(location.pathname)); } catch (err) { /* see the header */ }
 
+  // "app" when the page is running from the home screen, "tab" otherwise.
+  // iOS says so on navigator.standalone; everything else answers the
+  // display-mode media query.
+  function displayMode() {
+    try {
+      if (navigator && navigator.standalone === true) return 'app';
+      if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return 'app';
+      return 'tab';
+    } catch (err) { return ''; }
+  }
+
   function report(where, detail, shape) {
     try {
       if (sent >= MAX_REPORTS) return;
@@ -324,6 +335,15 @@
         request: String(shape.request || '').slice(0, 80),
         // What the person was doing just before — see the trail above.
         trail: trail.slice(),
+        // Where, never who (2026-09-25): installed to the home screen or a
+        // browser tab, the browser's language, and whether it is a
+        // touchscreen — the last only because an iPad asking for desktop
+        // sites sends a Mac's User-Agent. The device and browser come from
+        // the User-Agent header, which the server reads itself; the raw
+        // string is never sent in the body or stored.
+        display: displayMode(),
+        lang: String((navigator && navigator.language) || '').slice(0, 20),
+        touch: !!(navigator && navigator.maxTouchPoints > 1),
       });
 
       // sendBeacon survives the page being closed or navigated away, which

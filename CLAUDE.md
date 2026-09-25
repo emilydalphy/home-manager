@@ -440,6 +440,24 @@ why*, not duplicating the diff.
     a repeat keeps the LATEST non-empty trail. Report prints it on the line
     under each BROKEN browser error; JSON and /api/health-report carry it.
     `tests/test_client_error_trail.py`.
+  - **Device, display, language, version (card 2).** `error_events.device`
+    is a bucket built server-side from the User-Agent HEADER out of two
+    closed lists (`main._UA_PLATFORMS` / `_UA_BROWSERS`: `iPhone · Safari`,
+    `Windows · Edge`, `other`); **the raw UA is never stored** on this table
+    (feedback_reports still keeps its truncated one, unchanged). An iPad
+    asking for desktop sites sends a Mac UA, so the reporter sends a
+    `touch` boolean and a touch-first Mac is bucketed as an iPad. An iPhone
+    home-screen app sends no `Safari/` token and is still `iPhone · Safari`.
+    `display_mode` app|tab, `lang` two letters (navigator.language, then
+    Accept-Language), `app_version` from `_app_version()` — the exact source
+    feedback_reports uses. **None are in the dedupe key**: the key is where
+    in the code it broke, and the same TypeError on two phones should count
+    2 on one row, not 1 twice. Latest non-empty wins, so a bug seen on every
+    device shows only the last one — the named cost. **NETWORK_MESSAGES was
+    NOT extended for French**: I could not confirm Safari's exact localised
+    strings (apostrophes, non-breaking spaces), and a near-miss buys
+    nothing; `lang = fr` beside `reason=unknown` is now how the report shows
+    the case. `tests/test_client_error_device.py`.
 
 - **2026-09-23 — The design system stopped teaching the copy Emily
   corrected. Branch `design-system-plain-copy`, docs only, NOT merged at the

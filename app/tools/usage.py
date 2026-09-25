@@ -731,6 +731,10 @@ _MAX_REQUEST = 80
 # ceiling, not a target: main._safe_client_trail has already dropped
 # anything that is not a closed-vocabulary step.
 _MAX_TRAIL = 800
+_MAX_DEVICE = 40
+_MAX_DISPLAY_MODE = 8
+_MAX_LANG = 2
+_MAX_APP_VERSION = 80
 
 # How long an identical shape keeps counting into one row rather than
 # starting a new one. 24 hours, because the report reads a day at a time: a
@@ -782,6 +786,10 @@ def record_error(
     reason: str = "",
     request_shape: str = "",
     trail: str = "",
+    device: str = "",
+    display_mode: str = "",
+    lang: str = "",
+    app_version: str = "",
 ) -> None:
     """
     Record that something broke. Never raises.
@@ -811,6 +819,17 @@ def record_error(
     times" back into 12 rows. On a repeat the row keeps the LATEST
     non-empty trail instead: the freshest account of how somebody reached
     a bug that is still happening, beside a count that says how often.
+
+    `device`, `display_mode`, `lang` and `app_version` (where a browser
+    error happened: "iPhone · Safari", "app", "fr", the deploy's short SHA)
+    are kept out of the key for the same reason and the same way -- the
+    latest non-empty value wins. The key is WHERE IN THE CODE it broke; the
+    same TypeError on two phones is one bug, and splitting it by phone would
+    make the count say "1" twice instead of "2". The cost, named: a row
+    whose bug happens on every device shows only the device it was last
+    seen on. A deploy is included in that rule on purpose -- the same shape
+    seen again after a deploy reads "still happening on <new sha>", which is
+    the most useful thing that line can say.
     """
     conn = None
     try:
@@ -836,6 +855,12 @@ def record_error(
             str(request_shape)[:_MAX_REQUEST],
         )
         trail = str(trail)[:_MAX_TRAIL]
+        where_seen = (
+            str(device)[:_MAX_DEVICE],
+            str(display_mode)[:_MAX_DISPLAY_MODE],
+            str(lang)[:_MAX_LANG],
+            str(app_version)[:_MAX_APP_VERSION],
+        )
         existing = conn.execute(
             "SELECT id FROM error_events WHERE household_id = ? AND kind = ? AND where_ = ? "
             "AND detail = ? AND error_type = ? AND source = ? AND stack_shape = ? "
@@ -853,19 +878,25 @@ def record_error(
             # The latest trail wins, but an empty one never erases a real
             # one: a repeat from a page still running last week's reporter
             # has no trail to give, and that is not news about the bug.
+            latest = (trail,) + where_seen
             conn.execute(
                 "UPDATE error_events SET occurrences = occurrences + 1, "
                 "last_seen_at = datetime('now'), "
-                "trail = CASE WHEN ? != '' THEN ? ELSE trail END WHERE id = ?",
-                (trail, trail, existing["id"]),
+                + ", ".join(
+                    f"{col} = CASE WHEN ? != '' THEN ? ELSE {col} END"
+                    for col in ("trail", "device", "display_mode", "lang", "app_version")
+                )
+                + " WHERE id = ?",
+                tuple(v for value in latest for v in (value, value)) + (existing["id"],),
             )
         else:
             conn.execute(
                 "INSERT INTO error_events "
                 "(household_id, kind, where_, detail, error_type, source, stack_shape, "
-                " reason, request_shape, trail, last_seen_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
-                row + (trail,),
+                " reason, request_shape, trail, device, display_mode, lang, app_version, "
+                " last_seen_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+                row + (trail,) + where_seen,
             )
             _prune(conn, hid)
         conn.commit()
@@ -1016,7 +1047,8 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
             dict(r)
             for r in conn.execute(
                 "SELECT kind, where_ AS location, detail, error_type, source, stack_shape, "
-                "reason, request_shape, trail, occurrences, last_seen_at, created_at FROM error_events "
+                "reason, request_shape, trail, device, display_mode, lang, app_version, "
+                "occurrences, last_seen_at, created_at FROM error_events "
                 f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
                 "AND kind != 'voice' "
                 # Newest first means most recently SEEN, not most recently

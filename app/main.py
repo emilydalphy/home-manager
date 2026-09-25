@@ -6724,6 +6724,96 @@ def _safe_client_trail(steps: list[str]) -> str:
     return _TRAIL_ARROW.join(out)
 
 
+# ---------- which kind of device, browser, language and build ----------
+#
+# "TypeError on /" on Emily's Mac and the same line on a tester's iPhone
+# home-screen app are two different evenings of work, and the row could
+# not say which. So a browser error now records, all re-derived here:
+#
+#   device        a coarse bucket from the User-Agent HEADER — "iPhone ·
+#                 Safari", "Windows · Edge", "other" — built from two
+#                 closed lists. The raw User-Agent is never stored: it is a
+#                 fingerprint, and the bucket is all the report needs.
+#   display_mode  "app" (installed to the home screen) or "tab"; the
+#                 browser's claim, but a closed pair.
+#   lang          the browser language as two lowercase letters. Ottawa
+#                 testers may run French phones, and Safari's network
+#                 message is localised — _NETWORK_FAILURE_MESSAGES is
+#                 English-only, so a French phone's dropped connection
+#                 records as reason=unknown. This is what lets the report
+#                 say so.
+#   app_version   the deploy that was live, from _app_version() — the same
+#                 source feedback_reports.app_version has always used.
+#
+# None of these are in the dedupe key: see tools.record_error.
+_UA_PLATFORMS = (
+    # Order matters. An iPhone says "like Mac OS X" and an Android phone
+    # says "Linux", so the specific ones are asked first.
+    ("iPad", ("iPad",)),
+    ("iPhone", ("iPhone", "iPod")),
+    ("Android", ("Android",)),
+    ("ChromeOS", ("CrOS",)),
+    ("Mac", ("Macintosh", "Mac OS X")),
+    ("Windows", ("Windows",)),
+    ("Linux", ("Linux",)),
+)
+_UA_BROWSERS = (
+    # Also order-sensitive: Edge and Opera and Samsung all say "Chrome",
+    # and every Chrome says "Safari".
+    ("in-app browser", ("FBAN", "FBAV", "Instagram")),
+    ("Edge", ("Edg/", "EdgA/", "EdgiOS/")),
+    ("Opera", ("OPR/", "OPiOS/")),
+    ("Samsung Internet", ("SamsungBrowser/",)),
+    ("Firefox", ("Firefox/", "FxiOS/")),
+    ("Chrome", ("Chrome/", "CriOS/")),
+    ("Safari", ("Safari/",)),
+)
+_CLIENT_DISPLAY_MODES = frozenset({"app", "tab"})
+_LANG_RE = re.compile(r"^[a-z]{2}$")
+
+
+def _device_bucket(user_agent: str, touch: bool = False) -> str:
+    """
+    "iPhone · Safari", built from two closed lists and nothing else.
+
+    `touch` is the browser saying it has a touchscreen. It matters once:
+    iPadOS asks for desktop sites by default and then sends a Mac's
+    User-Agent word for word, so a Mac that is touch-first is an iPad.
+    """
+    ua = str(user_agent or "")[:512]
+    platform = next((name for name, marks in _UA_PLATFORMS if any(m in ua for m in marks)), "")
+    if not platform:
+        return "other"
+    if platform == "Mac" and touch:
+        platform = "iPad"
+    browser = next((name for name, marks in _UA_BROWSERS if any(m in ua for m in marks)), "")
+    # A page added to the iPhone home screen runs without the "Safari/"
+    # token at all — the very case this column most needs to name.
+    if not browser and platform in ("iPhone", "iPad", "Mac") and "AppleWebKit/" in ua:
+        browser = "Safari"
+    return f"{platform} · {browser or 'other'}"
+
+
+def _safe_client_display(mode) -> str:
+    text = str(mode or "").strip()
+    return text if text in _CLIENT_DISPLAY_MODES else ""
+
+
+def _safe_client_lang(lang, accept_language: str = "") -> str:
+    """
+    Two lowercase letters or nothing — "fr" from "fr-CA", never "fr-CA".
+
+    The browser's navigator.language first; the Accept-Language header when
+    it sent none. A three-letter primary tag ("fil") is dropped rather than
+    cut down to two letters that would name a different language.
+    """
+    for raw in (lang, str(accept_language or "").split(",")[0].split(";")[0]):
+        primary = str(raw or "").strip().replace("_", "-").split("-")[0].lower()
+        if _LANG_RE.match(primary):
+            return primary
+    return ""
+
+
 class ClientErrorRequest(BaseModel):
     where: str = ""
     detail: str = ""
@@ -6743,6 +6833,15 @@ class ClientErrorRequest(BaseModel):
     # on purpose: a list with one non-string in it must cost that step, not
     # turn the whole report into a 422 that records nothing.
     trail: list = []
+    # "app" (home screen) or "tab"; the browser's language; whether it has a
+    # touchscreen (only ever used to tell an iPad from a Mac). See
+    # _device_bucket and the block above it.
+    # All three loosely typed for the same reason as `trail`: a hand-made
+    # value of the wrong type costs that field ("" / False), never a 422
+    # that records nothing.
+    display: object = ""
+    lang: object = ""
+    touch: object = False
 
 
 @app.post("/api/client-error")
@@ -6787,6 +6886,10 @@ def report_client_error(request: Request, req: ClientErrorRequest):
         reason=reason,
         request_shape=_safe_client_request(req.request, reason),
         trail=_safe_client_trail(req.trail),
+        device=_device_bucket(request.headers.get("user-agent", ""), req.touch is True),
+        display_mode=_safe_client_display(req.display),
+        lang=_safe_client_lang(req.lang, request.headers.get("accept-language", "")),
+        app_version=_app_version(),
     )
     return Response(status_code=204)
 

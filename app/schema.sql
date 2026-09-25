@@ -1630,6 +1630,16 @@ CREATE TABLE IF NOT EXISTS error_events (
     -- Never a button label, never anything typed. Not in the dedupe key; a
     -- repeat keeps the latest non-empty trail. '' on every other kind.
     trail TEXT NOT NULL DEFAULT '',
+    -- Where a browser error happened, never who: a coarse bucket derived
+    -- server-side from the User-Agent header ("iPhone · Safari", "other" --
+    -- the raw header is never stored), "app" (home screen) or "tab", the
+    -- browser language as two letters, and the deploy's version (the same
+    -- source as feedback_reports.app_version; '' locally). Not in the
+    -- dedupe key; a repeat keeps the latest non-empty values.
+    device TEXT NOT NULL DEFAULT '',
+    display_mode TEXT NOT NULL DEFAULT '',   -- app | tab | ''
+    lang TEXT NOT NULL DEFAULT '',           -- en | fr | ...
+    app_version TEXT NOT NULL DEFAULT '',
     -- Repeats are counted, not stored one row each: a render loop fires
     -- these as fast as it paints, and one broken screen filling the table
     -- evicts every other error in it. Deduped against an identical shape

@@ -589,6 +589,30 @@ def _print_shape(key: tuple, n: int, latest: dict | None = None) -> None:
         trail = latest.get("trail") or ""
         if trail:
             print(f"                 trail: {trail}")
+        seen_on = _seen_on(latest)
+        if seen_on:
+            print(f"                 on: {seen_on}")
+
+
+# How display_mode reads to a person. Anything else was never stored.
+_DISPLAY_WORDS = {"app": "home-screen app", "tab": "browser tab"}
+
+
+def _seen_on(row: dict) -> str:
+    """
+    "iPhone · Safari · home-screen app · fr · build 7983d7f1a2b3" — where
+    a browser error was last seen (2026-09-25), or "" for a row from before
+    these columns. Every part is from a closed list or a server-side value:
+    the device bucket is built from the User-Agent header by
+    main._device_bucket and the raw header is never stored.
+    """
+    parts = [
+        row.get("device") or "",
+        _DISPLAY_WORDS.get(row.get("display_mode") or "", ""),
+        row.get("lang") or "",
+        f"build {row['app_version']}" if row.get("app_version") else "",
+    ]
+    return " · ".join(p for p in parts if p)
 
 
 # What a tool is FOR, in the words somebody would use about their own
