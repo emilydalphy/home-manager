@@ -3705,8 +3705,10 @@ def week_attendance(week_start: str):
     """
     Everything the presence UI needs for one week in a single round trip:
     the household's people (so avatars can be drawn before anything is
-    tapped), the meals whose attendance differs from everyone-being-home,
-    and the derived slot needs those produced.
+    tapped), the meals whose attendance differs from everyone-being-home —
+    each carrying its own `summary` sentence, so a screen can render on
+    open the words it would be told after a tap rather than writing a
+    second copy of them — and the derived slot needs those produced.
 
     Deliberately NOT plan-scoped — attendance is declared at intake time,
     usually before a plan for that week exists at all, exactly like
@@ -3746,7 +3748,10 @@ def set_week_attendance(week_start: str, req: SlotAttendanceRequest):
             result = tools.set_guest_count(req.date, req.slot, req.guest_count)
         if result is None:
             raise HTTPException(status_code=400, detail="Send either a member to toggle or a guest_count.")
-        result["summary"] = tools.attendance_summary_line(result)
+        # `summary` rides on the attendance dict itself now (see
+        # attendance._attendance_dict), so this route no longer writes the
+        # sentence — it only adds the derived need, which is a different
+        # question and a different table.
         result["slot_need"] = tools.get_slot_need(req.date, req.slot)
         return result
     except HTTPException:

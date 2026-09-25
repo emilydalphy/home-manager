@@ -184,7 +184,11 @@ def test_the_day_card_summary_names_who_is_missing(couple):
     thursday = _week_start()
     att = tools.set_member_attendance(thursday, "dinner", "Vineeth", present=False)
 
-    assert tools.attendance_summary_line(att) == "Dinner for 1 — Vineeth's out."
+    # Curly apostrophe since 2026-09-25: summary_line writes the sentence the
+    # way every other line in the app writes it, now that the browser copy
+    # which wrote it curly is gone and the server is the only writer. The
+    # claim is unchanged — only the glyph moved.
+    assert tools.attendance_summary_line(att) == "Dinner for 1 — Vineeth’s out."
 
 
 def test_an_unknown_name_is_an_error_rather_than_a_silent_no_op(couple):
@@ -786,7 +790,9 @@ def test_tapping_an_avatar_returns_the_line_the_card_should_show(signed_in, coup
     assert res.status_code == 200
     body = res.json()
     assert body["headcount"] == 1
-    assert body["summary"] == "Dinner for 1 — Vineeth's out."
+    # Curly apostrophe since 2026-09-25 — see the note on
+    # test_the_day_card_summary_names_who_is_missing. Same claim, one glyph.
+    assert body["summary"] == "Dinner for 1 — Vineeth’s out."
     assert body["slot_need"]["need"] == "normal"
 
 

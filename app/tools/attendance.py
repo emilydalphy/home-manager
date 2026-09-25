@@ -147,7 +147,7 @@ def _attendance_dict(rows, row, date_str: str, slot: str) -> dict:
     absent = [i for i in all_ids if i in absent_stored]
     present = [i for i in all_ids if i not in absent_stored]
     headcount = len(present) + guests
-    return {
+    att = {
         "date": date_str,
         "slot": slot,
         "present_member_ids": present,
@@ -163,6 +163,30 @@ def _attendance_dict(rows, row, date_str: str, slot: str) -> dict:
         "source": source,
         "away_stretch_id": stretch_id,
     }
+    # The sentence a screen shows under this meal, stamped HERE because
+    # this is the one place an attendance dict is built — both reads
+    # (get_slot_attendance, get_week_attendance) come through it, so no
+    # caller has to remember to ask for the words and no two callers can
+    # be handed different ones.
+    #
+    # It used to be stamped by the WRITE paths instead — set_day_attendance
+    # and the single-slot POST route each added it to what they were about
+    # to return — which left the week GET as the only door without it. The
+    # day sheet therefore could not render the line on open and kept a
+    # second copy of the rule in JavaScript to fill the gap; that copy
+    # drifted (it joined an absence and a guest with "and" where this says
+    # "with"), so the caption reworded itself the moment it was re-saved.
+    # The copy is gone, and the hole it was written for is closed here so
+    # the next reader is never tempted to write another.
+    #
+    # Free, which is what makes doing it on every read defensible:
+    # summary_line reads this dict and opens no connection of its own, so
+    # a week's worth of slots costs exactly what it cost before. That
+    # matters more than it looks — get_slot_attendance is read per meal
+    # inside the grocery ingest's own write transaction, where a nested
+    # connection is the "database is locked" trap.
+    att["summary"] = summary_line(att)
+    return att
 
 
 def get_slot_attendance(date_str: str, slot: str, conn=None) -> dict:
@@ -413,7 +437,10 @@ def set_day_attendance(date_str: str, slots: dict, source: str = "sheet") -> dic
                 present_member_ids=present_ids if present_ids is not None else None,
                 guest_count=guest_count, source=source,
             )
-        att["summary"] = summary_line(att)
+        # No summary_line call here: _attendance_dict has already written
+        # it, on the read this branch returns and on the read set_slot_
+        # attendance ends with. Stamping it a second time is how the words
+        # ended up with three authors and only two of them on the wire.
         out[slot] = att
     return {"date": date_str, "slots": out}
 
@@ -691,17 +718,26 @@ def _shopper_quantity(amount: float, unit: str | None) -> str:
 def summary_line(att: dict) -> str:
     """
     The one-line answer a day card shows under its presence avatars —
-    "Dinner for 1 — Vineeth's out." Written the way a person would say it
+    "Dinner for 1 — Vineeth’s out." Written the way a person would say it
     (DESIGN_SYSTEM.md §7), naming whoever is actually missing rather than
     reporting a count in the abstract.
+
+    The apostrophes are CURLY, like every other sentence the app says —
+    big_meal's "I’ve got the main", tonight's "Nobody’s home tonight
+    anyway", and all of the day sheet. They were straight here for as long
+    as this line had a second implementation in the browser, and the two
+    spellings of one sentence were visible within seconds of each other on
+    one screen. COPY_SWEEP_2026-09-23 records a straight apostrophe
+    elsewhere as an anomaly worth listing; this was the same anomaly, and
+    it is the server that moved because the server is now the only writer.
     """
     slot_label = att["slot"].capitalize()
     if att["nobody_home"]:
-        return f"{slot_label} skipped — nobody's home. Nothing planned, nothing bought."
+        return f"{slot_label} skipped — nobody’s home. Nothing planned, nothing bought."
     bits = []
     if att["absent_names"]:
         names = _join_names(att["absent_names"])
-        verb = "'s out" if len(att["absent_names"]) == 1 else " are out"
+        verb = "’s out" if len(att["absent_names"]) == 1 else " are out"
         bits.append(f"{names}{verb}")
     if att["guest_count"]:
         n = att["guest_count"]
