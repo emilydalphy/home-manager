@@ -5719,6 +5719,26 @@ button.cook-ready-row { cursor: pointer; }
   margin-left: 8px;
 }
 
+/* Who's here's household-level "Anything else" (declutter, 2026-09-25):
+   set off from the last person the same way one person is set off from
+   the next (.wwk-person + .wwk-person), and labelled with the sheet's
+   own top-level section-header weight (.prefs-row-title: 15px/800/
+   -0.015em/--ink) rather than the quiet .wwk-lead treatment, so it never
+   again reads as belonging to whichever person happens to render last. */
+.wwk-household-facts {
+  border-top: 1.5px solid var(--hairline);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+.wwk-household-lead {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  margin: 0;
+}
+
 /* ---- chips ----
    The app's selectable chip — the same recipe as .defrost-chip:
    surface + hairline at rest, and selected is celadon-tint,

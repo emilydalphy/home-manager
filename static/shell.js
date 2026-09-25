@@ -4501,7 +4501,7 @@
       back.hidden = true;
       head.hidden = true;
       band.hidden = false;
-      setRootBand(panel, 'gro-band', { eyebrow: groBandEyebrow(null), sub: '' });
+      setRootBand(panel, 'gro-band', { eyebrow: '', sub: '' });
       body.classList.remove('is-empty');
       body.innerHTML = groceryState.loadError === 'no-signal'
         ? '<p class="gro-empty">' + escapeHtml(GRO_NO_COPY_LINE) + '</p>'
@@ -4530,8 +4530,13 @@
     var onRoot = step === 'list';
     band.hidden = !onRoot;
     head.hidden = onRoot;
+    // The band's "This week · N things, two stores." subtitle is gone
+    // (declutter, 2026-09-25: Emily asked it off Shop's header — the
+    // per-store counts on each card already say how much is left).
+    // groBandEyebrow/groBandLine are kept (and still exercised by their
+    // own tests) but no longer wired into the band.
     if (onRoot) {
-      setRootBand(panel, 'gro-band', { eyebrow: groBandEyebrow(data), sub: groBandLine(data) });
+      setRootBand(panel, 'gro-band', { eyebrow: '', sub: '' });
       back.hidden = true;
     } else {
       var headFor = groHeadFor(data, step);
@@ -9507,9 +9512,24 @@
   // editable in place — save on blur or Enter, × to forget — plus a way to
   // add one. Folded into the section that owns the category rather than
   // kept as a list of their own.
-  function wwkFactsHtml(category) {
+  //
+  // `opts.household` (Who's here only, declutter 2026-09-25): this block
+  // used to read as the last person's own "Anything else", since it fell
+  // right out of the members loop with no separation and the same quiet
+  // lead-in weight as "Never on the plate" above it. These facts are
+  // household-level (category 'people' has no member on the row), so the
+  // lead gets its own label and the same header treatment the sheet's
+  // top-level sections use (.prefs-row-title, via .wwk-household-lead),
+  // set off from the last person by a rule the way one person is set off
+  // from the next (.wwk-household-facts). Data and behaviour unchanged —
+  // this only changes how the block reads.
+  function wwkFactsHtml(category, opts) {
+    opts = opts || {};
     var facts = (wwkState.facts || []).filter(function (f) { return f.category === category; });
-    var html = wwkLead('Anything else');
+    var lead = opts.household
+      ? '<p class="wwk-household-lead">' + escapeHtml(opts.lead || 'Anything else') + '</p>'
+      : wwkLead(opts.lead || 'Anything else');
+    var html = lead;
     facts.forEach(function (f) {
       html += '<div class="wwk-fact-row">' +
         '<input type="text" class="snw-input wwk-text" data-wwk-input="fact" data-id="' + f.id + '" value="' + escapeHtml(f.text) + '" aria-label="Something I know">' +
@@ -9517,7 +9537,7 @@
       '</div>';
     });
     html += '<div class="wwk-chips">' + wwkAddChip('data-wwk="add" data-kind="fact" data-category="' + category + '"', 'Something else') + '</div>';
-    return html;
+    return opts.household ? '<div class="wwk-household-facts">' + html + '</div>' : html;
   }
 
   // ---------- Who's here ----------
@@ -9548,7 +9568,7 @@
       '</div>';
     });
     if (!(mem.members || []).length) html += '<p class="wwk-empty">Nobody yet — set up the household first.</p>';
-    html += wwkFactsHtml('people');
+    html += wwkFactsHtml('people', { household: true, lead: 'Anything else for the household' });
     return html;
   }
 
@@ -11608,12 +11628,15 @@
     '</div>';
   }
 
+  // The opener paragraph (extras.lead — get_week_menu's draft_opener) is
+  // no longer shown here (declutter, 2026-09-25: Emily asked the summary
+  // paragraph off the draft's band, keeping the date line, Re-plan and
+  // the What we're eating | Which days toggle). draft_opener itself is
+  // still computed server-side and still on the data — this just stops
+  // drawing it.
   function weekBandTailHtml(extras) {
     if (!extras || !extras.view) return '';
-    return (extras.lead.length
-      ? '<p class="wk-draft-lead" id="wk-draft-lead">' + extras.lead.map(escapeHtml).join(' ') + '</p>'
-      : '') +
-      weekDraftSegHtml(extras.view);
+    return weekDraftSegHtml(extras.view);
   }
 
   function fillWeekBandExtras(panel, bandSlot, extras) {
@@ -12300,9 +12323,6 @@
     }
     if (root && weekPlanState(data) === 'draft' && draftView(data) === 'menu') {
       return head + wkMenuHtml(days) +
-        (weekReplacesNote(data)
-          ? '<div class="wk-notes"><div class="wk-note">' + escapeHtml(weekReplacesNote(data)) + '</div></div>'
-          : '') +
         reviewDecideHtml(data);
     }
     return head +
@@ -12311,12 +12331,11 @@
         days.map(function (day, i) { return wkDayCardHtml(day, i, { done: false, swapLabel: 'Swap the meal' }); }).join('') +
       '</div>' +
       wkDotsHtml(days.length, selected) +
-      // What approving this draft replaces of an approved week — under the
-      // cards, above the dock (Emily, 2026-09-13: a draft changes nothing
-      // until it is approved, so the cost is said here, once).
-      (weekPlanState(data) === 'draft' && weekReplacesNote(data)
-        ? '<div class="wk-notes"><div class="wk-note">' + escapeHtml(weekReplacesNote(data)) + '</div></div>'
-        : '') +
+      // weekReplacesNote's "Once it's approved, I'd replace…" sentence
+      // used to sit here, above the dock (declutter, 2026-09-25: Emily
+      // asked it off the draft screen). data.replaces is still computed
+      // server-side and still drives the approve confirmation flow — only
+      // this standing display goes.
       // The draft's rare actions — "Try again", "Change my answers" — sit
       // behind the dock's round More, beside Approve (reviewDecideHtml,
       // board D4). The deeper, approved-week form has its crumb and needs
