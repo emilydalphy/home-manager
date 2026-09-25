@@ -490,37 +490,51 @@ def test_the_one_time_sheet_is_gone():
 
 @_needs_node
 def test_the_tips_sheet_is_one_screen_of_at_most_ten_lines():
+    """Mockup "6A" (Emily-approved 2026-09-25, with her correction that Cook
+    follows the week's own recipes rather than deciding what to cook): one
+    opening line, four groups (a headline plus one example each), and the
+    closer/AFTER YOU SEND lines are gone — replaced by the help card, which
+    isn't a copy line so it doesn't count toward the budget."""
     script = (
         _DOM_STUB + _tips_block() + """
 console.log(JSON.stringify({
   opening: TIPS_OPENING,
-  groups: TIPS_GROUPS,
-  closers: TIPS_CLOSERS,
-  after: TIPS_AFTER_SEND
+  groups: TIPS_GROUPS
 }));
 """
     )
     tips = _node(script)
-    lines = 1 + len(tips["groups"]) + len(tips["closers"]) + 1
+    lines = 1 + len(tips["groups"])
     assert lines <= 10, f"the tips sheet is {lines} lines"
     # Renamed 2026-09-09 (Emily): the tips sheet names each tab, so it
     # follows the tab bar (and the first tab back to Today, 2026-09-17).
     # Words only — the keys behind them are unchanged.
     assert [g["tab"] for g in tips["groups"]] == ["Today", "Plan", "Shop", "Cook"]
+    assert [g["headline"] for g in tips["groups"]] == [
+        "Check what’s next",
+        "Change the week",
+        "Add or remove things",
+        "Follow tonight’s recipe",
+    ]
     assert [g["example"] for g in tips["groups"]] == [
-        "What’s next tonight?",
+        "What’s for dinner tonight?",
         "Swap Thursday for something lighter",
         "Add oat milk and lemons",
-        "What can I make with the chicken thighs?",
+        "How long does the chicken go in for?",
     ]
-    assert tips["after"] == (
-        "I’ll say what changed, and the screen updates. If I couldn’t, I’ll say that too."
-    )
-    # The second sentence ("There's no right way to phrase it.") restated the
-    # first and was cut 2026-09-11 (copy cleanse); so was the closer that
-    # repeated the coach card's title.
-    assert tips["opening"] == "Say it however it comes out."
-    assert tips["closers"] == ["The more you tell me about your week, the better the plan fits."]
+    assert tips["opening"] == "Tap the Pomona button on any screen, then type or talk."
+
+
+def test_the_tips_sheet_ends_with_the_help_card_not_an_email_address():
+    """The mockup's bottom card opens the existing "Something not working?"
+    form (the same POST /api/feedback path every other entry point uses),
+    tagged with this sheet's own name — and never shows or links an email
+    address (Emily: in-app submission only)."""
+    assert 'class="tips-help-row" data-snw="open" data-snw-screen="Helpful tips"' in SHELL_JS
+    assert "Need help with something?" in SHELL_JS
+    assert "Send Emily a note" in SHELL_JS
+    tips_sheet = SHELL_JS[SHELL_JS.index("function buildTipsSheet"):SHELL_JS.index("function openTipsSheet")]
+    assert "@" not in tips_sheet
 
 
 # --- 3. the wiring that has no pure function to run -----------------------
