@@ -21,6 +21,21 @@ os.environ["DISABLE_BACKUPS"] = "1"
 # Same for the morning-text loop (app/tools/digest.py) — tests that want it
 # call run_morning_texts_once directly with a stubbed sender.
 os.environ["DISABLE_MORNING_TEXT"] = "1"
+# The three variables observability_report.py reads to decide whether to ask
+# the LIVE app or a local database file. They are legitimately set in the
+# overnight environment so the morning error check can run — and with them
+# set, fourteen tests that exercise the local-file, half-configured and
+# refused-passphrase paths went red, because they assumed the variables were
+# absent rather than saying so (measured 2026-09-25: 14 failed / 6934 passed
+# with them set, all green with them unset).
+#
+# Cleared here rather than in each of the fourteen, for the reason TZ taught
+# this suite twice over: a test whose result depends on who ran it is not a
+# test. Every test that is ABOUT these variables already sets them itself
+# with monkeypatch.setenv, so nothing loses coverage — what goes is the
+# inheriting.
+for _report_var in ("HOME_MANAGER_URL", "REPORT_TOKEN", "HOME_MANAGER_PASSPHRASES"):
+    os.environ.pop(_report_var, None)
 
 import ast as _ast  # noqa: E402  (agent_function_source, below)
 import contextlib  # noqa: E402
