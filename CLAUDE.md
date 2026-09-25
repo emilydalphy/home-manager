@@ -415,6 +415,49 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-25 — The suite means the same thing whatever the environment
+  holds: two variables were turning 14 tests red. Branch
+  `overnight/tests-ignore-report-env`, NOT merged at the time of writing.
+  TEST-ONLY — `git diff main -- app/ static/` is empty.**
+  `observability_report.py` reads `HOME_MANAGER_URL`, `REPORT_TOKEN` and
+  `HOME_MANAGER_PASSPHRASES` to decide whether to ask the LIVE app or a
+  local database file. All three are legitimately set in the overnight
+  environment so the morning error check can run — and with them set,
+  fourteen tests that exercise the local-file, half-configured and
+  refused-passphrase paths went red, because they assumed the variables
+  were absent rather than saying so.
+  - **The numbers, and the last two are the point.** main with them set:
+    **14 failed, 6924 passed**. main with them unset: **6938 passed**.
+    Branch with them SET: **6941 passed**. Branch with them UNSET: **6941
+    passed**. Those last two being the same number is the whole branch.
+  - The fourteen: `test_observability.py` (5), `test_chat_theme_per_turn.py`
+    (4), `test_client_error_shape.py` (3), `test_chat_voice.py` (1),
+    `test_morning_text.py` (1) — every one report-reading code, none of it
+    touching the app.
+  - **Cleared at MODULE scope in conftest, above the imports**, the way
+    `DB_PATH`, `DISABLE_BACKUPS` and `DISABLE_MORNING_TEXT` already are, and
+    in ONE place rather than in each of the fourteen — the same class `TZ`
+    taught this suite twice over (the 2026-09-14 `moves-household-clock`
+    entry and the `straddle` job): a test whose result depends on who ran it
+    is not a test. **Nothing loses coverage**: every test that is genuinely
+    ABOUT these variables already sets them itself with
+    `monkeypatch.setenv` (`test_morning_report_token.py`,
+    `test_health_report.py`, `test_evening_nudge.py`). What goes is the
+    inheriting, not the setting.
+  - **Why it is worth a branch rather than a note.** From 2026-09-24 every
+    overnight run begins by measuring fourteen red tests and having to work
+    out afresh that they are not real — and a genuine fifteenth hides among
+    them. It is also SLOW: the report tests try to reach `example.invalid`
+    through the agent proxy, which denies the CONNECT after a wait, so a
+    suite run in that environment takes noticeably longer as well as lying.
+  - `tests/test_report_env_is_not_inherited.py` (3): the rule stated
+    directly; the other half (a test that sets one itself still gets it);
+    and the ordering, read off `conftest.py` rather than asserted at
+    runtime, because by the time a test executes there is nothing left to
+    observe.
+  - **Independently hit the same night by two other builders on unrelated
+    branches**, which is how it was known not to be one session's mistake.
+
 - **2026-09-24 — Now carries no score: the band's "N of M done" and the
   Cook card's "N of M" are gone. Branch `now-no-counts`.** Emily's call the
   same day, from three mockups (keep both / remove both / top only): "go
