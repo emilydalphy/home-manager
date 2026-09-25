@@ -21241,7 +21241,8 @@
     var lead;
     var rowsHtml = '';
     if (FIRST_OPEN_STYLE === 'preview' && preview) {
-      lead = setUpBy + ' I’m Pomona, your home manager. Here’s your week so far.';
+      lead = setUpBy + ' I’m Pomona, your home manager. ' +
+        (preview.week_state === 'none' ? 'Here’s where things stand.' : 'Here’s your week so far.');
       rowsHtml = '<div class="fo-rows">' + firstOpenRows(preview).map(firstOpenRowHtml).join('') + '</div>';
     } else {
       lead = setUpBy + ' I’m Pomona, your home manager. I plan the meals and build the shopping list, so it isn’t all on one of you.';
