@@ -7213,7 +7213,7 @@ def household_invites():
 class InviteRequest(BaseModel):
     # One or the other: an adult already in the household, or the first
     # name of one who isn't yet (added as an adult, nothing else asked).
-    member_id: int | None = None
+    member_id: int | None = Field(None, ge=1, le=2**63 - 1)  # SQLite binds 64-bit ints only
     name: str | None = Field(None, max_length=200)
 
 
@@ -7228,6 +7228,10 @@ def create_household_invite(req: InviteRequest):
     (a hash), not the log.
     """
     household = tools.household_id()
+    # Who's inviting, read BEFORE anyone is added: in a one-adult house the
+    # lone adult resolves with no pick, and adding a second would leave
+    # nobody resolving at all.
+    inviter = _session_adult_id()
     try:
         if req.member_id is not None:
             member_id = req.member_id
@@ -7235,11 +7239,11 @@ def create_household_invite(req: InviteRequest):
             member_id = invites.add_adult(household, req.name)
         else:
             raise invites.InviteError("Who are you inviting?")
-        token = invites.mint_invite(household, member_id, invited_by=_session_adult_id())
+        token = invites.mint_invite(household, member_id, invited_by=inviter)
     except invites.InviteError as e:
         raise HTTPException(status_code=400, detail=str(e))
     adult = next(
-        (a for a in invites.household_adults_status(household, _session_adult_id()) if a["id"] == member_id),
+        (a for a in invites.household_adults_status(household, inviter) if a["id"] == member_id),
         None,
     )
     return {"member": adult, "path": f"/join#{token}"}

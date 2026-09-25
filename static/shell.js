@@ -9696,15 +9696,17 @@
       }
       var member = data.member || { id: body.member_id, name: fallbackName || '' };
       var url = window.location.origin + data.path;
+      // The share sheet first, as close to the tap as it can be — Safari
+      // only opens it within a moment of one. Re-reading comes after.
+      var outcome = await inviteHandOff(member.name, url);
+      if (outcome === 'needs-tap') inviteState.ready[String(member.id)] = { url: url, how: 'share' };
+      else if (outcome === 'show') inviteState.ready[String(member.id)] = { url: url, how: 'copy' };
       if (body.name) {
         // A new adult: Who's here gains a person, so the answers are re-read.
         inviteState.newOpen = false;
         prefsInvalidate();
       }
       await loadInviteAdults();
-      var outcome = await inviteHandOff(member.name, url);
-      if (outcome === 'needs-tap') inviteState.ready[String(member.id)] = { url: url, how: 'share' };
-      else if (outcome === 'show') inviteState.ready[String(member.id)] = { url: url, how: 'copy' };
       inviteRerender();
     } catch (err) {
       console.warn('Invite failed:', err);

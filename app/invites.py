@@ -25,9 +25,11 @@ The link is a credential, so it is handled like one:
 - **Scoped.** An invite names one household and one ADULT in it. Redeeming
   re-checks both at the moment of use — an adult since re-marked as a
   child, or removed, is not signed in as anyone.
-- **Minting a fresh link retires the older unused ones** for the same
-  person, so "send a new link" (a new phone, a lost message) never leaves
-  a second live key lying around in someone's messages.
+- **Using one link retires every other unused link** for the same person,
+  so once they're in, no second key is left lying around in someone's
+  messages. Minting deliberately does NOT retire the older one: tapping
+  Invite again and then cancelling the share sheet must not quietly kill
+  the link already sitting in their messages (verifier, 2026-09-25).
 
 The token travels in the link's FRAGMENT (`/join#<token>`), never its path
 or query: a browser does not send the fragment to the server at all, so it
@@ -174,11 +176,6 @@ def mint_invite(household_id: int, member_id: int, *, invited_by: int | None = N
         token = secrets.token_urlsafe(32)
         now = _now()
         conn.execute(
-            "UPDATE household_invites SET revoked_at = ? "
-            "WHERE household_id = ? AND member_id = ? AND used_at IS NULL AND revoked_at IS NULL",
-            (_stamp(now), int(household_id), int(member_id)),
-        )
-        conn.execute(
             "INSERT INTO household_invites "
             "(household_id, member_id, token_hash, invited_by_member_id, created_at, expires_at) "
             "VALUES (?, ?, ?, ?, ?, ?)",
@@ -230,6 +227,14 @@ def redeem_invite(token: str) -> tuple[int, int] | None:
             "WHERE id = ? AND used_at IS NULL AND revoked_at IS NULL",
             (_stamp(now), row["id"]),
         ).rowcount
+        if spent == 1:
+            # They're in: every other unused link for them retires now.
+            conn.execute(
+                "UPDATE household_invites SET revoked_at = ? "
+                "WHERE household_id = ? AND member_id = ? AND id != ? "
+                "AND used_at IS NULL AND revoked_at IS NULL",
+                (_stamp(now), row["household_id"], row["member_id"], row["id"]),
+            )
         conn.commit()
         if spent != 1:
             return None

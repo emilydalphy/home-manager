@@ -1519,8 +1519,8 @@ CREATE TABLE IF NOT EXISTS household_credentials (
 -- setup (Loop Board, Emily 2026-09-25). Opening the link signs that adult
 -- in to this household without the passphrase. Only the SHA-256 of the
 -- token is kept — the token itself exists in the link and nowhere else.
--- One use (used_at), seven days (expires_at, UTC), and minting a new link
--- for the same person retires the older unused one (revoked_at). All
+-- One use (used_at), seven days (expires_at, UTC), and once one link for
+-- a person is used, their other unused links retire (revoked_at). All
 -- minting and redeeming lives in app/invites.py, outside app/tools/, so
 -- the chat agent can never make one.
 CREATE TABLE IF NOT EXISTS household_invites (

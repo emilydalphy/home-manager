@@ -208,13 +208,40 @@ def test_an_unknown_or_malformed_token_is_the_same_answer(client):
         assert phone.post("/api/join", json={"token": "x" * 257}).status_code == 422
 
 
-def test_a_new_link_retires_the_old_unused_one(home):
+def test_a_new_link_leaves_the_sent_one_working_until_either_is_used(home):
+    """
+    Tapping Invite again (and maybe cancelling the share sheet) must not
+    kill the link already in their messages; once one is used, the rest
+    retire.
+    """
     old = _token(_invite(home["client"], member_id=home["Vineeth"])["path"])
     new = _token(_invite(home["client"], member_id=home["Vineeth"])["path"])
-    assert old != new
+    spare = _token(_invite(home["client"], member_id=home["Vineeth"])["path"])
+    assert len({old, new, spare}) == 3
     with _fresh_client() as phone:
-        assert phone.post("/api/join", json={"token": old}).status_code == 410
-        assert phone.post("/api/join", json={"token": new}).status_code == 200
+        assert phone.post("/api/join", json={"token": old}).status_code == 200
+    for token in (new, spare):
+        with _fresh_client() as phone:
+            assert phone.post("/api/join", json={"token": token}).status_code == 410
+
+
+def test_inviting_by_name_in_a_one_adult_house_remembers_who_sent_it(client):
+    only = _member("Emily")
+    _sign_in(client)  # no pick: the lone adult resolves on her own
+    body = _invite(client, name="Vineeth")
+    conn = get_conn()
+    row = conn.execute("SELECT invited_by_member_id FROM household_invites").fetchone()
+    joined = conn.execute("SELECT joined_at FROM members WHERE id = ?", (only,)).fetchone()["joined_at"]
+    conn.close()
+    assert row["invited_by_member_id"] == only
+    assert joined is not None
+    assert body["member"]["is_you"] is False
+
+
+def test_an_impossible_member_id_is_a_plain_refusal(home):
+    for bad in (2**70, 0, -3):
+        res = home["client"].post("/api/household/invites", json={"member_id": bad})
+        assert res.status_code in (400, 422), (bad, res.status_code)
 
 
 def test_someone_no_longer_an_adult_is_not_signed_in(home):
@@ -382,3 +409,6 @@ def test_setup_asks_whether_anyone_else_helps_run_the_house():
     assert "Just me" in html
     assert "fetch('/api/household/invites'" in html
     assert "<h2>Bring the rest of the house in?</h2>" not in html
+    # A button waiting for its share tap must not mint a second link on
+    # that tap (verifier, 2026-09-25): the first handler steps aside.
+    assert "if (btn.disabled || btn.dataset.ready) return;" in html

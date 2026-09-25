@@ -2678,12 +2678,15 @@ async function mintInvite(body) {
 // A browser that wants the share sheet straight from a tap (Safari, after
 // the network wait) gets a second button that does exactly that.
 async function inviteFromButton(btn, body) {
-  if (btn.disabled) return;
+  // Once a link is waiting for its tap, this button belongs to the
+  // onclick below — making another link here would be a second key.
+  if (btn.disabled || btn.dataset.ready) return;
   btn.disabled = true;
   try {
     const made = await mintInvite(body);
     const outcome = await inviteHandOff(made.name, made.url);
     if (outcome === 'needs-tap') {
+      btn.dataset.ready = '1';
       btn.textContent = 'Send ' + made.name + '’s link';
       btn.disabled = false;
       btn.onclick = async () => {
@@ -2751,12 +2754,13 @@ async function renderInviteOffer() {
     const input = document.getElementById('invite-name');
     const send = document.getElementById('invite-send');
     input.addEventListener('input', () => {
-      if (send.disabled) return;
+      if (send.disabled || send.dataset.ready) return;
       const name = input.value.trim();
       send.textContent = name ? 'Invite ' + name : 'Invite';
     });
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); send.click(); } });
     send.addEventListener('click', () => {
+      if (send.dataset.ready) return;
       const name = input.value.trim();
       if (!name) { input.focus(); return; }
       inviteFromButton(send, { name: name }).then(() => { if (send.disabled) input.disabled = true; });
