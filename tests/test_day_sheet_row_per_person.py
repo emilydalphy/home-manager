@@ -396,7 +396,9 @@ def test_set_day_attendance_writes_each_named_meal(three):
     assert out["date"] == friday and set(out["slots"]) == {"breakfast", "lunch", "dinner"}
     assert out["slots"]["lunch"]["absent_names"] == ["Emily"]
     assert out["slots"]["dinner"]["guest_count"] == 2 and out["slots"]["dinner"]["headcount"] == 4
-    assert out["slots"]["dinner"]["summary"] == "Dinner for 4 — Emily's out with 2 guests."
+    # Curly apostrophe since 2026-09-25: one writer, one spelling — the page
+    # has said "Emily’s" all along. Same claim, one glyph.
+    assert out["slots"]["dinner"]["summary"] == "Dinner for 4 — Emily’s out with 2 guests."
     # An untouched meal is not given a row of its own.
     assert out["slots"]["breakfast"]["explicit"] is False
     assert tools.get_slot_attendance(friday, "lunch")["absent_names"] == ["Emily"]
@@ -489,7 +491,8 @@ def test_the_route_saves_the_sheet_and_refuses_what_it_cannot_read(signed_in, th
     })
     assert res.status_code == 200, res.text
     body = res.json()
-    assert body["slots"]["dinner"]["summary"] == "Dinner for 3 — Emily's out with 1 guest."
+    # Curly apostrophe since 2026-09-25 — see the note above. Same claim.
+    assert body["slots"]["dinner"]["summary"] == "Dinner for 3 — Emily’s out with 1 guest."
     assert body["slots"]["lunch"]["everyone_home"] is False
     bad = signed_in.post(f"/api/week/{week}/day-attendance", json={"date": friday, "slots": {"dinner": {"absent": ["Zed"]}}})
     assert bad.status_code == 400
