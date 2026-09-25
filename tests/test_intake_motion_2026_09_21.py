@@ -86,7 +86,10 @@ def _node(script: str, today: str = "2026-09-20") -> str:
         "Date = _Pinned;\n"
         "function esc(s) { return String(s == null ? '' : s); }\n"
         + _var("RANGE_COPY") + _var("SURPRISE_MOOD") + _var("PERIOD_MAX_DAYS") + _var("USING_ICONS") + _var("USING_DAY_PHRASES")
+        + _var("PREP_WEEKDAYS")
         + _date_helpers() + "\n"
+        # Step 3's line in "Got it" (weekday lunches, 2026-09-25).
+        + _extract("lunchUsingLine") + "\n" + _extract("titleDay") + "\n" + _extract("isoWeekday") + "\n"
         + script
     )
     res = nodeharness.run_node(harness, timeout=30)
@@ -106,7 +109,9 @@ class TestOneQuestionAScreen:
         order = [
             "<h1>Which days?</h1>",
             "<h1>Any days that are different?</h1>",
-            "<h1>Any lunches on the go?</h1>",
+            # Step 3 is "Weekday lunches" since 2026-09-25 (mockup A1) —
+            # tests/test_weekday_lunches.py.
+            "<h1>Weekday lunches</h1>",
             "<h1>What are you in the mood for?</h1>",
             "<h1>Anything else you want to share for planning this week?</h1>",
         ]
@@ -174,7 +179,9 @@ class TestOneQuestionAScreen:
 
     def test_back_never_loses_an_answer_and_leaving_keeps_them(self):
         back = _extract("goBack")
-        assert "saveStep(step)" in back and "showStep(step - 1)" in back
+        # One step back — two when step 3 has no weekday lunch to ask
+        # about (2026-09-25).
+        assert "saveStep(step)" in back and "var to = step - 1;" in back and "showStep(to);" in back
         assert "if (n === 5) return saveIntake({ freeform: $('freeform').value.trim() });" in PAGE
         leave = _extract("leavePayload")
         assert "moods: answers.moods" in leave and "night_tags: answers.night_tags" in leave
@@ -188,18 +195,24 @@ class TestOneQuestionAScreen:
         # Last week's moods and cuisines.
         assert "answers.moods = (data.last_intake.moods || []).slice();" in load
         assert "prefilled.moods = true;" in load
-        assert "prefilled.lunches ? 'I’ve ticked your usual days.' : ''" in PAGE
         assert "'Last week’s picks, unless you change them.'" in PAGE
-        # Continue on a pre-answered lunch step is one tap: the pill under
-        # the days is off while days are ticked (board D2).
-        assert "$('lunch-none').classList.toggle('on', none);" in _extract("paintLunchDays")
+        # Step 3 opens filled in from last week (2026-09-25): the lunches
+        # by weekday, and the on-the-go days before the rhythm's guess.
+        assert "lunchPrefill(dates, (data.last_intake || {}).weekday_lunches, lunchOk, data.rhythm_prep_days)" in PAGE
+        assert load.index("carriedLunches.on_the_go") < load.index("rhythm_packed_lunch_suggestions")
 
     def test_the_server_tells_the_screen_last_weeks_answers(self):
         this_week = "2026-10-05"
         tools.save_week_intake("2026-09-28", moods=["Comfort food"], cuisines=["Thai"])
         tools.save_week_intake("2026-09-21", moods=["On the grill"], cuisines=["Greek"])
         prefill = tools.get_week_intake_prefill(this_week)
-        assert prefill["last_intake"] == {"week_start": "2026-09-28", "moods": ["Comfort food"], "cuisines": ["Thai"]}
+        assert prefill["last_intake"] == {
+            "week_start": "2026-09-28", "moods": ["Comfort food"], "cuisines": ["Thai"],
+            # Nothing drafted from it, so no length to carry (2026-09-25).
+            "day_count": None,
+            # Step 3 unanswered that week (2026-09-25): nothing to carry.
+            "weekday_lunches": None,
+        }
         # A first week has nothing to carry.
         assert tools.get_week_intake_prefill("2026-09-14")["last_intake"] is None
         assert prefill["recent_dinners_on_record"] is False

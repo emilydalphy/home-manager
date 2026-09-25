@@ -77,8 +77,10 @@ def _node(script: str, today: str = "2026-09-21") -> str:
         "Date = _Pinned;\n"
         "function esc(s) { return String(s == null ? '' : s); }\n"
         + _var("RANGE_COPY") + _var("SURPRISE_MOOD") + _var("PERIOD_MAX_DAYS") + _var("PERIOD_STRIP_DAYS")
-        + _var("USING_ICONS") + _var("USING_DAY_PHRASES")
+        + _var("USING_ICONS") + _var("USING_DAY_PHRASES") + _var("PREP_WEEKDAYS")
         + _date_helpers() + "\n"
+        # Step 3's line in "Got it" (weekday lunches, 2026-09-25).
+        + _extract("lunchUsingLine") + "\n" + _extract("titleDay") + "\n" + _extract("isoWeekday") + "\n"
         + script
     )
     res = nodeharness.run_node(harness, timeout=30)
@@ -132,7 +134,9 @@ class TestWhichDays:
         assert "return (data && data.days) || [];" in _extract("plannedDays")
         assert "$('day-tiles').innerHTML = plannedDays().map(function (day) {" in _extract("renderDays")
         assert "plannedDays().forEach(function (day) {" in _extract("paintTiles")
-        assert "$('lunch-days').innerHTML = plannedDays().map(function (day) {" in _extract("renderLunchDays")
+        # Step 3 (weekday lunches since 2026-09-25) reads the period's
+        # weekdays off plannedDays.
+        assert "function currentLunchDates() { return lunchDates(plannedDays(), nobodyHomeFor); }" in PAGE
         assert "var days = plannedDays().map(function (d) { return d.date; });" in _extract("openAwaySheet")
         assert "var days = plannedDays();" in _extract("buildAwaySheet")
         assert "host.innerHTML = ((data && data.holidays) || []).map(holidayBlockHtml).join('');" in _extract("renderHolidayBlocks")
@@ -142,7 +146,9 @@ class TestWhichDays:
         assert "dayLine = draftDayLine(kept, EXPECTED_DRAFT_MS, paintDraftStatus);" in show
         # Continue on step 1 repaints them for the days just chosen.
         adv = _extract("advance")
-        assert adv.index("await saveStep(1);") < adv.index("renderDays();") < adv.index("renderLunchDays();") < adv.index("showStep(2);")
+        assert adv.index("await saveStep(1);") < adv.index("renderDays();") < adv.index("showStep(2);")
+        # Step 3 lays itself out as it opens, from the days as they are then.
+        assert "if (to === 3) renderLunchStep();" in adv
         # A lunch ticked on a day since dropped is not saved.
         assert "answers.packed_lunch_days = answers.packed_lunch_days.filter(function (d) { return kept.indexOf(d) !== -1; });" in _extract("saveStep")
 
@@ -157,26 +163,23 @@ class TestWhichDays:
 # ==========================================================================
 
 class TestLunchesOnTheGo:
-    def test_the_line_and_the_pill(self):
+    # Board D2's step ("Any lunches on the go?", a "Nothing on the go"
+    # pill) became step 3's "Taking it with you" row on 2026-09-25
+    # (Loop Board "Plan a week step 3: weekday lunches", mockup A1). The
+    # new step is pinned in tests/test_weekday_lunches.py; what still
+    # holds of D2 is below.
+    def test_the_on_the_go_days_are_a_row_on_the_lunch_step(self):
         q3 = _section("q3")
-        # The sub starts empty and only ever says what was ticked for you.
-        # "I'll keep those to food that travels well" is gone (copy sweep
-        # finding 20, 2026-09-23): it announced what I'd do with the answer,
-        # and the menu row says "travels well" beside those lunches anyway.
-        assert '<p class="step-sub" id="lunch-sub"></p>' in q3
+        assert '<p class="eyebrow group-eyebrow">Taking it with you</p>' in q3
+        assert '<div class="chip-row" id="lunch-days"></div>' in q3
         assert "travels well" not in q3
         assert "packs cold" not in PAGE
-        assert q3.index('id="lunch-days"') < q3.index('id="lunch-none"')
-        assert '<button type="button" class="chip" id="lunch-none" aria-pressed="false">Nothing on the go</button>' in q3
-        assert "prefilled.lunches ? 'I’ve ticked your usual days.' : ''" in PAGE
+        assert "lunch-none" not in PAGE
 
-    def test_the_pill_clears_the_days_and_a_day_unselects_the_pill(self):
-        assert "answers.packed_lunch_days.length = 0;" in _extract("chooseNoLunches")
-        paint = _extract("paintLunchDays")
-        assert "var none = !answers.packed_lunch_days.length;" in paint
-        assert "$('lunch-none').classList.toggle('on', none);" in paint
-        assert "$('lunch-none').setAttribute('aria-pressed', none ? 'true' : 'false');" in paint
-        assert "$('lunch-none').addEventListener('click', chooseNoLunches);" in PAGE
+    def test_a_day_toggles_in_the_packed_days(self):
+        render = _extract("renderLunchStep")
+        assert "var i = answers.packed_lunch_days.indexOf(d);" in render
+        assert "if (i === -1) answers.packed_lunch_days.push(d);" in render
 
     def test_the_foot_is_continue_only(self):
         assert "var SKIP_LABELS = { 2: 'Nothing different', 5: 'Nothing else' };" in PAGE

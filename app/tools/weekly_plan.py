@@ -5111,6 +5111,14 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             built["asked"] = _draft_opener.asked_fact({
                 "slot_state": row["slot_state"], "derived_from": row["derived_from_json"],
             })
+            # "From last week" on the row (Emily, 2026-09-25): a meal the
+            # household brought over from last week, so the draft says why
+            # it's there (tools/bring_over.py).
+            try:
+                derived = json.loads(row["derived_from_json"] or "{}") or {}
+            except (TypeError, ValueError):
+                derived = {}
+            built["brought_over"] = bool(isinstance(derived, dict) and derived.get("brought_over"))
         return built
 
     by_date_slot = {}

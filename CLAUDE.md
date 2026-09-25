@@ -17561,3 +17561,124 @@ chain becomes "Leftovers from the freezer — Monday’s Chili" + the cook's
 apply_prep_day_batches` (`_within_three_days`). Draft opener line:
 `draft_opener.batch_line` — "Two lunches, each cooked double." Tests:
 `tests/test_double_batch_meal_types.py`.
+
+**2026-09-25 — Plan a week step 3 is "Weekday lunches" (branch
+`weekday-lunches-step`, mockup A1).** Step 3 of `static/plan-week.html`
+("Any lunches on the go?" + the "Nothing on the go" pill) is now three
+− / + counts that add up to the period's Mon–Fri lunches (Made on a prep
+day · Leftovers from dinner · Cooked that day, "20 minutes or less"), a
+"Which day will you cook?" chip row (only with a cooked lunch), a "Prep
+day" chip row (only with a prepped lunch; starts from `rhythm.prep_days`,
+changeable for the week), the old on-the-go days as "Taking it with you"
+(still `packed_lunch_days`), and a day-by-day list where a tap cycles the
+day. One client state, `lunch.kinds` {date: kind}; every control converts
+one day (`lunchStep`, `lunchCycle`, the cook chips), so counts, chips and
+list never disagree. A prepped lunch more than 3 days after every prep day
+brings in the day before it as a prep day (`ensurePrepReach`) — on lunch
+changes only, never on a prep-chip tap. A period with no weekday lunch
+skips the step (`skipsStep`). Stored on `week_intake.weekday_lunches_json`
+in the one shape `tools/weekday_lunches.normalize` writes (`counts`,
+`prep_days`, `days[{date, weekday, kind, prep_day | from_dinner}]`; `{}` =
+unanswered). Next week opens on it by weekday: `last_intake.
+weekday_lunches` is `weekday_lunches.carryover` ({counts, prep_days,
+kinds by weekday, on_the_go weekdays}) — the "Same as last week?" card
+reads the same thing. Planning: `time_caps.minutes_cap(lunch_kind=…)` —
+"cooked" is 20 even on a prep weekday, "prepped"/"leftovers" uncapped
+(agent `_meal_minutes_cap`, swap_in_place, plan_quality all pass it); a
+prompt bullet on `intake.weekday_lunches.days`; and
+`weekday_lunches.apply_to_plan` in `_finish_week_slots` right after
+`repair_leftover_chains` makes it true with the fold's own writers
+(`_replace_slot_entries`, `meal_variety._write_cook_sides`): a leftovers
+lunch becomes the evening-before dinner reheated (dinner's
+make_double_for), prepped lunches sharing a prep date become one dish
+cooked on the FIRST lunch (cook_ahead links; a chain can't cook on a day
+the dish isn't eaten) with the prep day on its derived_from + reasoning,
+and one >3 days after its prep day eats a freezer portion. With an answer,
+the lunch distinct-count pass stands down. Tests:
+`tests/test_weekday_lunches.py`.
+
+**2026-09-25 — Plan a week opens on "Same as last week?" from the second
+week on (branch `same-as-last-week`, on top of `weekday-lunches-step`;
+mockup option A).** `static/plan-week.html` has a step 0, `<section
+id="same">`: "Same as last week?" / "Tap Change on anything that's
+different.", then one card of rows (`SAME_ROWS`: Days · Weekday lunches ·
+Taking lunch with you · Different days · Mood · Anything else), each row a
+button that opens only its question (`openChange` sets `editing`; the CTA
+reads Done, no skip line, no bars, crumb "‹ Back"), and Done/‹ Back save
+that step as Continue would and come back (`finishChange` → `showSame`).
+A row whose words differ from the first render (`sameBaseline`) is
+celadon-tinted with "· Changed" on its eyebrow. "Plan this week" is
+`advance()` at step 0: ONE `saveIntake(samePayload())` with every answer,
+then the same drafting path; a failed draft returns to the page. Which
+screen opens is decided in `load()` by `sameAsLastWeek()`, which now
+AWAITS the prefill ("One moment…" stays up): `data.last_intake` present →
+the page, else "Which days?" as before. Carried over = what `fetchPeriod`
+already carried (lunches/prep days by weekday, on-the-go days, moods +
+cuisines) plus the day count: `last_intake.day_count` (new, from the
+latest non-retired plan drafted from any revision of that week —
+`_last_period_intake`; the intake never stored a length) replaces the
+door's count only when the URL had no `&days=` (`DAYS_IN_ADDRESS`) and
+this period has no plan or intake of its own. Dates are always the door's.
+Changing Days refetches the new period, which resets answers — so
+`keepAcrossPeriods`/`restoreAcrossPeriods` carry moods, cuisines, the
+note, in-range tags/guests and the lunches by weekday (written into
+`data.last_intake.weekday_lunches`, the shape `lunchPrefill` already
+reads). Leaving an untouched page saves nothing (`answersAtLoad` is
+retaken after the first render lays out the lunches). The joined line is
+copied onto the page (`#same-joined`), except for this visit's own saves
+(`savedThisVisit`). **The hook for "Bring over from last week"** is
+`#bring-over` (above the rows) + `renderBringOver()` (called on every
+`showSame`); anything it adds rides in `samePayload()`. Tests:
+`tests/test_same_as_last_week.py`.
+
+**2026-09-25 — "Bring over from last week" (branch `bring-over-uncooked`, on
+top of `same-as-last-week`; mockup option A, Emily picked it and "Pomona
+picks the night").** New module `app/tools/bring_over.py`, one function per
+stage. **The offer** (`last_week_uncooked`, prefill key
+`last_week_uncooked`, looked up only when `last_intake` exists): the plan
+drafted from last_intake's week when APPROVED, else the latest approved plan
+starting before this period; its dinners + lunches still `cooked_status
+'pending'`, dated before min(period start, household today), a real dish,
+never a reheat (confirmed chain, `links_to`, `from_freezer`, freeform
+leftovers/takeout); one row per dish name (dinners first), "Was <first
+night>". `groceries_bought` = every grocery line the ledger links to it is
+`purchased` (≥1 line) — the only time the page says "· groceries bought".
+**The answer**: `week_intake.brought_over_json` (additive migration),
+`save_week_intake(brought_over=[{"entry_ids": [...]}])` → `resolve`
+rebuilds each row FROM THE OFFER (a choice not on offer is dropped; a bad
+shape is a 400); carried by later revisions like any answer; `[]` clears.
+**The night**: `choose_nights` runs in `_generate_weekly_plan` BEFORE the
+model call — earliest period night, dinners before lunches, skipping
+out/`left` tags, skipped days, away + ready_made slot needs, holiday days
+answered out/hosting, a zero count, a time cap the recipe's prep+cook
+exceeds (`_meal_minutes_cap`), and for lunches weekday kinds
+prepped/leftovers (weekday_lunches.apply_to_plan rewrites those); packed
+days only as a lunch's last resort; nowhere → left out and logged. The
+model gets `intake.brought_over` [{date, slot, meal}] + a prompt bullet
+("send NO entry for them"); NOT a top-level context key (the whole context
+is JSON-dumped into the prompt). `_finish_week_slots(brought_over=...)`
+writes them right after the holiday pass via `_replace_slot_entries`
+(clear-first), derived_from `{"brought_over": {"from_date", "entry_ids"},
+"constraint": "brought_over"}`, reason "Brought over from last week — it
+was on Tuesday." **Exemptions**, all through `meal_variety.theirs(derived)`
+(freeform OR brought_over): `_group_dishes` `protected` (so the no-repeat
+pass, the count fold, the fill-up and the relay leave it),
+`repick_repeats` (Surprise me), `_THEIR_OWN_KEYS`, typed_requests'
+`_slot_to_repick`; plan_quality's history-repeat warn skips it; the
+opener's novelty line leaves it out. The allergen sweep does NOT exempt
+it, on purpose. **The draft**: `get_week_menu` rows carry
+`brought_over`; shell.js shows a `.wk-from-last` "From last week" label
+(the `.wk-changed` style) on its own line under the meta, on day rows
+(`wkMealRowHtml`) and What we're eating rows — inline, not a helper
+function, because several node harnesses extract a fixed list of shell.js
+functions and a new callee breaks them. **The list**:
+`recipes._add_recipe_ingredients_for_entries` (every ingest: approval,
+re-buy after a swap, chat plan_meal) reads each entry's
+`derived_from.brought_over.entry_ids` → `bring_over.bought_items` (the
+ledger's item names on lines now `purchased`) and drops that entry from
+that ingredient only; nothing left → `already_have`, no link, so a later
+`_reingest_unlinked_entries` asks again and gets the same answer. Page:
+`#bring-over` (`renderBringOver`, `bringPayload`, `bringTicksFrom`),
+`answers.brought_over` = ticked row keys (so leaving saves it, and
+`keepAcrossPeriods` carries it across a Days change); `samePayload` and
+`leavePayload` send it. Tests: `tests/test_bring_over.py`.

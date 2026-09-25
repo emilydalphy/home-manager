@@ -320,6 +320,8 @@ def _run_load(search: str, server_day_count, server_start: str = MONDAY) -> str:
         + _extract("clampStart") + "\n" + _extract("choosePeriod") + "\n" + _extract("openRange") + "\n"
         + _extract("loadHorizon") + "\n" + _extract("load") + "\n"
         + "function renderStartStep() {} function showStep() {} function loadPeriod() { return Promise.resolve(true); }\n"
+        # A first week: "Same as last week?" is its own test file.
+        + "function sameAsLastWeek() { return Promise.resolve(false); } function showSame() {}\n"
         + "load().then(function () {\n"
         + "  process.stdout.write(JSON.stringify({ horizon: horizon, range: range, weekStart: weekStart, dayCount: dayCount, href: location.href }));\n"
         + "});\n"
@@ -357,14 +359,19 @@ class TestSelectAllInTheAnythingElseBox:
         assert "-webkit-user-select: text; user-select: text; -webkit-touch-callout: default;" in rule
 
     def test_the_only_writes_to_the_box_are_the_prefill_for_a_period(self):
-        # `$('freeform').value =` is written in exactly two places: the
-        # reset when a period's prefill lands, and takeAnswers (called
-        # only from that same prefill). Nothing writes it on input, on
-        # save, or on a timer.
+        # `$('freeform').value =` is written in exactly three places: the
+        # reset when a period's prefill lands, takeAnswers (called only
+        # from that same prefill), and — since "Same as last week?"
+        # (2026-09-25) — restoreAcrossPeriods, which puts the typed note
+        # back right after new days' prefill reset it (finishChange, only
+        # when the period changed). Nothing writes it on input, on save,
+        # or on a timer.
         writes = [m.start() for m in re.finditer(r"\$\('freeform'\)\.value = ", PAGE)]
-        assert len(writes) == 2
+        assert len(writes) == 3
         assert "$('freeform').value = '';" in _extract("fetchPeriod")
         assert "$('freeform').value = intake.freeform || '';" in _extract("takeAnswers")
+        assert "$('freeform').value = kept.freeform;" in _extract("restoreAcrossPeriods")
+        assert _extract("finishChange").index("ensureLoaded()") < _extract("finishChange").index("restoreAcrossPeriods(kept)")
         assert PAGE.count("takeAnswers(") == 3   # the definition and its two calls inside fetchPeriod
         assert "takeAnswers(" not in _extract("paintCta") and "takeAnswers(" not in _extract("saveIntake")
         assert "setInterval(" not in PAGE

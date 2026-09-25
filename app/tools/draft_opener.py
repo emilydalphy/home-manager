@@ -349,7 +349,13 @@ def _line_two(entries: list[dict], report: dict | None, recent: set[str] | None,
         if unmet[0].get("ingredient"):
             return f"I couldn’t fit the {unmet[0]['ingredient']} in this week."
         return f"I couldn’t fit “{str(unmet[0]['words']).strip()}” in this week."
-    names = _dish_names([e for e in entries if e["slot"] in ("dinner", "lunch")])
+    # A meal brought over from last week (bring_over.KEY, Emily
+    # 2026-09-25) is neither new nor a repeat the rule missed: the day row
+    # says "From last week", and counting it here would report it as "back
+    # from the last two weeks" — true, and exactly what they asked for.
+    names = _dish_names([
+        e for e in entries if e["slot"] in ("dinner", "lunch") and not _derived(e).get("brought_over")
+    ])
     if surprise:
         # Surprise me means new to you (Emily, 2026-09-21): the comparison
         # is everything they've ever had from Pomona, not the window — but

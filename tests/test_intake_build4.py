@@ -24,7 +24,8 @@ def test_five_screens_one_question_each():
     # boards D1 / her pick) — tests/test_intake_design_2026_09_21.py.
     assert "<h1>Which days?</h1>" in PAGE
     assert "<h1>Any days that are different?</h1>" in PAGE
-    assert "<h1>Any lunches on the go?</h1>" in PAGE
+    # Step 3 is "Weekday lunches" since 2026-09-25 (mockup A1).
+    assert "<h1>Weekday lunches</h1>" in PAGE
     assert "<h1>What are you in the mood for?</h1>" in PAGE
     assert "<h1>Anything else you want to share for planning this week?</h1>" in PAGE
     # The "Why I'm asking" panel and the block-body sentences are gone.

@@ -242,7 +242,7 @@ def _rule(selector: str) -> str:
 
 def test_the_changed_pill_has_room_and_a_gap():
     assert ".wk-changed { height: auto; padding: 3px 8px; line-height: 1.2; }" in SHELL_CSS
-    shared = SHELL_CSS[SHELL_CSS.index(".ask-change-kept,\n.wk-changed {"):]
+    shared = SHELL_CSS[SHELL_CSS.index(".ask-change-kept,\n.wk-changed"):]
     shared = shared[:shared.index("}")]
     assert "font-size: 10px" in shared and "font-weight: 800" in shared and "text-transform: uppercase" in shared
     assert "border-radius: var(--radius-badge-sm)" in shared

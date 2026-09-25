@@ -73,6 +73,7 @@ import re
 
 from ..db import get_conn
 from ._shared import household_id
+from . import bring_over as _bring_over
 from . import leftovers as _leftovers
 from . import weekly_plan as _weekly_plan
 
@@ -232,6 +233,20 @@ def _load_slot_entries(plan_id: int, slot: str) -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def theirs(derived: dict | None) -> bool:
+    """
+    Whether a slot is on the week because the household said so, in a way
+    every repair pass here must leave standing: their own typed words for
+    it (derived_from.freeform, stamped by the model), or a meal they ticked
+    to bring over from last week (bring_over.KEY, Emily 2026-09-25) — a
+    dish from last week is exactly what the no-repeat rule would otherwise
+    swap away, and a dish they chose is never the one the count pass
+    folds. Cooked nights are protected alongside this by each caller.
+    """
+    derived = derived if isinstance(derived, dict) else {}
+    return bool(str(derived.get("freeform") or "").strip() or derived.get(_bring_over.KEY))
+
+
 def _group_dishes(entries: list[dict], chains: dict) -> list[dict]:
     """
     The period's distinct dishes for one slot, in order of first
@@ -257,7 +272,7 @@ def _group_dishes(entries: list[dict], chains: dict) -> list[dict]:
         dish["nights"].append(e)
         if dish["minutes"] is None and not reheat and (e.get("prep_time_minutes") or e.get("cook_time_minutes")):
             dish["minutes"] = int(e.get("prep_time_minutes") or 0) + int(e.get("cook_time_minutes") or 0)
-        if (derived.get("freeform") or "").strip() or (e["cooked_status"] or "") == "done":
+        if theirs(derived) or (e["cooked_status"] or "") == "done":
             dish["protected"] = True
         if reheat or frozen or e["id"] in chains["sources"]:
             dish["chained"] = True
@@ -1259,7 +1274,7 @@ def repick_repeats(plan_id: int, surprise: dict | None, budget, picker=None) -> 
                     continue
                 out["repeats"] += 1
                 derived = json.loads(entry["derived_from_json"] or "{}") or {}
-                if (derived.get("freeform") or "").strip() or (entry["cooked_status"] or "") == "done":
+                if theirs(derived) or (entry["cooked_status"] or "") == "done":
                     out["left"].append(entry["meal"])
                     continue
                 if entry["id"] in chains["leftovers"] or entry["id"] in chains["sources"]:
@@ -1367,7 +1382,7 @@ _TOO_GENERIC_TO_ASK_BY = {
 # is, and the model never stamps it, since that row is not the model's.
 # Measured before it was added: a household bringing a chili they had
 # eaten eight days earlier had it swapped away for a dish nobody named.
-_THEIR_OWN_KEYS = ("freeform", "holiday_dish")
+_THEIR_OWN_KEYS = ("freeform", "holiday_dish", "brought_over")
 
 
 def theirs_by_hand(dish: dict) -> bool:
