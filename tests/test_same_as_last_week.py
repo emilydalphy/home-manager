@@ -155,7 +155,7 @@ def _same_section() -> str:
 class TestThePage:
     def test_the_page_says_it_in_the_mockups_words_with_the_hook_above_the_rows(self):
         same = _same_section()
-        assert "<h1>Same as last week?</h1>" in same
+        assert '<h1 id="same-title">Same as last week?</h1>' in same
         assert '<p class="step-sub">Tap Change on anything that&rsquo;s different.</p>' in same
         order = ['id="same-joined"', 'id="bring-over"', 'id="same-rows"']
         assert [same.index(x) for x in order] == sorted(same.index(x) for x in order)
@@ -171,6 +171,13 @@ class TestThePage:
         for line in ("go: 'Plan this week'", "done: 'Done'", "change: 'Change'", "changed: 'Changed'",
                      "nothingMarked: 'Nothing marked'", "nothingAdded: 'Nothing added'"):
             assert line in copy, line
+
+    def test_replanning_an_answered_week_says_this_week_so_far(self):
+        # Emily, 2026-09-25: a week that already has answers (or a plan)
+        # shows its own answers, so the title isn't "Same as last week?".
+        show = _extract("showSame")
+        assert "$('same-title').textContent = (data && (data.intake || data.plan_exists))" in show
+        assert "? 'This week so far' : 'Same as last week?';" in show
 
     def test_rows_are_44px_taps_and_colours_go_through_tokens(self):
         css = PAGE[PAGE.index("/* ---------- Same as last week?"):PAGE.index("/* The typed answer (step 5)")]

@@ -798,7 +798,7 @@
        see sameAsLastWeek / fetchPeriod. A first week (no last_intake)
        never sees this page — it asks all five questions. -->
   <section id="same" hidden>
-    <h1>Same as last week?</h1>
+    <h1 id="same-title">Same as last week?</h1>
     <p class="step-sub">Tap Change on anything that&rsquo;s different.</p>
     <div class="step-body">
       <div class="joined" id="same-joined" hidden></div>
@@ -3418,6 +3418,11 @@
     // first since this is the first screen.
     $('same-joined').textContent = $('joined').textContent;
     $('same-joined').hidden = $('joined').hidden;
+    // Re-planning a week that already has answers (or a plan) shows that
+    // week's own answers, not last week's — so the title says so (Emily,
+    // 2026-09-25: "This week so far").
+    $('same-title').textContent = (data && (data.intake || data.plan_exists))
+      ? 'This week so far' : 'Same as last week?';
     renderBringOver();
     var first = !sameBaseline;
     renderSame();
