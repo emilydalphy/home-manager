@@ -578,3 +578,14 @@ class TestThePage:
         assert "d.entry && d.entry.brought_over" in SHELL
         css = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
         assert ".wk-changed,\n.wk-from-last {" in css
+
+
+def test_a_brought_over_row_says_last_week_once():
+    """The "From last week" label says why the meal is there; the stored
+    reason ("Brought over from last week — it was on Tuesday") printed in
+    the row's foot since the 1A rows (2026-09-25) said it twice."""
+    from pathlib import Path
+    js = (Path(__file__).resolve().parent.parent / "static" / "shell.js").read_text(encoding="utf-8")
+    start = js.index("function wkRowMetaHtml(")
+    body = js[start:js.index("\n  }\n", start)]
+    assert "!entry.brought_over" in body

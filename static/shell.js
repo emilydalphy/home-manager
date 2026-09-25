@@ -12256,9 +12256,12 @@
   // line, so a closing full stop comes off. A slot that carries what it
   // was asked for ("Mexican, as asked") already says why — its reason
   // mostly says the same again ("Mexican for lunch, as you asked"), so
-  // the line keeps the shorter fact and leaves the reason off.
+  // the line keeps the shorter fact and leaves the reason off. A meal
+  // brought over from last week likewise: its "From last week" label
+  // already says why, and its reason ("Brought over from last week —
+  // it was on Tuesday") would say "last week" a second time.
   function wkRowMetaHtml(entry, meta) {
-    var reason = entry && entry.state === 'planned' && !entry.asked &&
+    var reason = entry && entry.state === 'planned' && !entry.asked && !entry.brought_over &&
       String(entry.reason || '').trim().replace(/\.+$/, '');
     var why = reason ? reason.charAt(0).toUpperCase() + reason.slice(1) : '';
     var line = [meta, why].filter(Boolean).join(' · ');
