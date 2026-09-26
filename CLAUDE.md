@@ -416,6 +416,211 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-26 — "Short on time" is held to by CODE now: a rush night's dinner
+  was 24 to 35 minutes against her own 20-minute cap, five times last month.
+  Branch `overnight/rush-cap-enforced`, NOT merged at the time of writing.**
+  Loop Board bug, Phase 0. Another instance of this file's own recurring
+  lesson — telling the generator something is not the same as preventing it —
+  and the one where the app had ALREADY built the enforcement at the other
+  door: `swap_in_place.cap_gate` has refused an over-cap pick since
+  2026-09-22 in the app's own words ("I left it as it was — X takes 35
+  minutes, and Friday only has 20"), and generation refused nothing.
+  - **The cap was told, measured, and enforced nowhere in between.** Told
+    three times in `agent.py`'s prompts (the rush paragraph, the weeknight
+    paragraph, the plate pass's `max_minutes`, one of which says *hard*);
+    `_meal_minutes_cap` fed the variety pass and the brought-over placement,
+    i.e. it CHOSE which night a dish landed on and never refused one the
+    model had chosen; `plan_quality._rush_cap_respected` warned afterwards,
+    at severity `warn`, into the morning report and no screen the household
+    sees. Emily's 30-day window: 12 warnings, 5 distinct dinners, 3 distinct
+    rush nights, +20% to +75% over.
+  - **Reproduced first, on a throwaway DB, before anything was touched**, on
+    her own table: `weeknight_max_minutes = 20`, Tue/Wed/Thu tagged `rush`,
+    dinners of 35 / 29 / 32 on those nights and the week's other two long
+    dishes (28, 24) sitting on the uncapped weekend. Before: **3 nights over
+    cap, 3 `rush_cap_respected` warnings**. After: **0 and 0** — two free
+    trades and three re-picks, with 3 of the shared 6-call budget left.
+  - **`app/tools/cap_enforce.py` is the enforcement and `time_caps` stays the
+    rule.** That module imports nothing from the app on purpose, so every
+    reader can use it; this one writes. One rule, one enforcer.
+  - **STAGE 1 IS FREE AND IS THE WHOLE POINT OF THE ORDER.** The week's own
+    dinners are traded between its own nights, greedily on (violations, total
+    overrun), through `weekly_plan.swap_dinner_nights` — the Plan tab's
+    seven-tiles write, which re-dates the rows IN PLACE (ids kept, so
+    groceries, the cooked tick and the plate's sides ride along), moves the
+    defrost reminders with them and **touches the shopping list not at all**.
+    A long dish with a free Saturday costs nothing: measured, one trade, zero
+    model calls, and a test whose picker RAISES if it is reached.
+  - **Greedy rather than an optimal assignment, and the claim is bounded.**
+    For the shape this card is about — one cap Monday to Friday, none at the
+    weekend — greedy provably reaches the floor: it stops only when every
+    uncapped night holds an over-cap dish or every over-cap dish is already
+    on one. Asserted rather than trusted. With several different caps it is a
+    heuristic and is not claimed to be more. **And the floor on Emily's own
+    seed is 3, not 0** (five dishes over 20, two uncapped nights), so
+    re-arrangement alone could never have closed this card — which is the
+    honest reason stage 2 exists.
+  - **STAGE 2 SPENDS THE GENERATION'S EXISTING BUDGET AND ADDS NO CEILING.**
+    `meal_variety._repick_entry` — the picker every other re-pick pass uses —
+    against `allergen_gate.CallBudget`'s six calls for the WHOLE generation,
+    which this pass shares rather than doubling. The cap is the pick's own
+    refusal (`reject_pick`), because `pick_gate` is the allergen and taste
+    gate and has never included the clock. **The cost, said out loud rather
+    than hidden behind the unchanged ceiling:** a generation that previously
+    spent 0 of those 6 may now spend up to 6, at roughly $0.006–0.009 a
+    warm pick (the `swap_in_place` entry's own figure), so about 4c worst
+    case per generated week. Running LAST among the re-pick passes means a
+    week whose budget the earlier passes have spent gets stage 1 only and
+    keeps the warn — the same safe direction the allergen sweep documents.
+  - **A NIGHT IS NEVER HANDED BACK AS `open`, which is the card's own
+    instruction.** Nothing quicker coming back leaves the night as
+    generated and logs it; Emily's 20 may be tighter than she meant, and a
+    plainer dinner beats an empty night.
+  - **WHERE IT RUNS IS THE SAFETY ARGUMENT.** After every pass that can move
+    or replace a dinner (the chain repair, both repick passes, the count
+    fold, the typed-ingredient pass) — so ONE place answers for the whole
+    week instead of four passes each growing a cap check — and BEFORE the
+    plates pass (a side is sized for the night the dish finally sits on),
+    BEFORE `plan_quality.check_and_log` (the tripwire measures the result)
+    and BEFORE `allergen_gate.sweep_plan` (a clash a move creates is caught
+    by the one pass that exists to catch exactly that).
+  - **A TRADE IS REFUSED WHEN IT WOULD PUT A DISH IN FRONT OF SOMEONE WHO HAS
+    SAID NO TO IT**, and that is the only gate a move can break: who is at
+    the table is per night, so `_taste_verdict_for_slot` is checked both ways
+    before the swap. The allergen answer is household-wide and invariant
+    under a move (`coordination.check_meal_conflicts` takes no date), so it
+    cannot change — and anything a move does create is the sweep's.
+  - **LEFT ALONE, each for its own reason:** a night the household spoke for
+    (`meal_variety.theirs` — their typed words, or a meal brought over) and a
+    night already cooked, because a cap is not a reason to overrule a choice;
+    a reheat night AND the cook that feeds it, because nothing is cooked on a
+    reheat and moving one end can stretch the gap past
+    `leftovers.MAX_LEFTOVER_DAYS`, which `repair_leftover_chains` would then
+    tear down; a dish whose recipe records no minutes, which cannot be judged;
+    `planned_empty` and `open` slots; and LUNCH, whose cap is the week's own
+    answer now and whose door (`swap_dinner_nights`) is dinner-only.
+  - **THE `reasoning` DECISION WAS MADE BY MEASUREMENT AFTER THE FIRST ANSWER
+    WAS MEASURABLY WORSE, and it is the most useful thing here to have
+    written down.** Reading Emily's 2026-09-25 "no note" call
+    (`meal_variety.REPEAT_REASON`) as the precedent, both a moved and a
+    re-picked dinner were first given an EMPTY reason — and
+    `plan_quality._reasoning_is_specific` fires "has no reasoning at all" for
+    every blank row it sees (it exempts a leftovers night and nothing else).
+    Measured on the seeded week: **3 cap warnings traded for 5 reasoning
+    warnings** — no quieter a morning report and a less actionable one. So a
+    re-pick keeps THE PICK'S OWN reason (`_repick_entry`'s default, and what
+    every caller but one uses: her decision was about not ANNOUNCING the
+    repeat, and a dish's own "quick on the night" announces nothing about the
+    cap), and a MOVE — which keeps its dish and therefore keeps a sentence the
+    model wrote about a night it is no longer on — gets one short sentence
+    that is true either way, `MOVE_REASON`. Final count: 3 cap warnings and 0
+    reasoning warnings become 0 and 0. Worth being exact, since
+    `REPEAT_REASON` looks like a licence: measured on CLEAN main by driving
+    the real `_repick_entry` with `reason_line=REPEAT_REASON` and then
+    `plan_quality.check_week`, it leaves `reasoning=''` and produces that
+    same warning for every dish the no-repeat pass re-picks. Pre-existing,
+    hers, and not a reason to add more.
+  - **A WEEK WITH NO CAP AND NO TAG IS BYTE-IDENTICAL, PROVED RATHER THAN
+    ASSERTED.** Nine tables (`weekly_plans`, `meal_plan_entries`, `recipes`,
+    `grocery_items`, `meal_plan_grocery_links`, `prep_tasks`, `week_intake`,
+    `recipe_notes`, `plan_quality_events`) dumped and SHA-256'd from two runs
+    of the same seed, pass on and pass no-opped: identical, and zero picker
+    calls. Same for a capped week whose dinners already fit — the common case.
+  - `tests/test_rush_cap_enforced.py` (33), **and the red-against-main
+    number is a property of the STUB rather than of this file, so it is
+    measured twice and both are given.** Against `origin/main` ITSELF the
+    file cannot be collected at all — it imports `app.tools.cap_enforce`,
+    which is not there — so zero tests run and there is no count to quote.
+    *Stub A*, the module present but not wired into `agent.py`: 32 red / 1
+    green, and **28 of those 32 die on `AttributeError: agent._cap_enforce`,
+    i.e. in the fixture, never reaching an assertion** — recorded so nobody
+    quotes it, because it is the flattering number and it is worthless.
+    *Stub B*, main's BEHAVIOUR — everything present and wired, only the two
+    enforcement stages no-opped, so the single difference from this branch is
+    that nothing enforces the cap: **22 red / 11 green, and all 22 fail on
+    the assertion they are named for**, on a named message or a value
+    comparison, with no `AttributeError` and no `KeyError` anywhere. That is
+    the behaviour evidence. The 11 green are the left-alone, nothing-to-do
+    and characterisation guards — main leaves everything alone too, so green
+    is correct there rather than reassuring, and each is pinned by one of the
+    mutations below; two of them are green only because stub B carries this
+    branch's own `agent.py`, and against real main they are red on the
+    missing call site. One of the 22 is red for a reason other than its own
+    name (`test_another_households_over_cap_dinner...` fails at its
+    PRECONDITION, "this household's week was still fixed") and says so.
+  - **24 MUTATIONS, and the three that did not bite first time are recorded
+    rather than quietly fixed, because that is the lesson.** `targets = [] or
+    sorted(...)` is not a mutation at all (`[]` is falsy, so it evaluates to
+    the sort) and left 30 green; "unknown minutes let through as movable"
+    cannot show at the week level, because a dish with no minutes is never a
+    violation either way, so the test asserts the rule directly now; and the
+    third is left UNPINNED on purpose and said so in both the code and the
+    test — keeping the outgoing dish in this pass's own avoid set is defence
+    in depth, since `_repick_entry` prepends `entry["meal"]` to `tried`
+    itself and any other night is covered by the cap refusal, so discarding
+    it leaves every test green. Every other mutation bites: the whole pass
+    no-opped (13 red), stage 1 off (4), stage 2 off (9), the cap not the
+    pick's refusal (1), every night movable (3), `theirs()` dropped (1),
+    reheat/source dropped (2), unknown minutes movable (1), night tags
+    ignored (2), the taste veto dropped (1), a trade offered whether it
+    improves the week or not (10), overrun dropped from the objective (1),
+    targets by date rather than worst overrun (1), the moved row's stale
+    reasoning left standing (1), the re-picked row left blank (1), the avoid
+    list emptied (1), `because` dropped (1), the night opened instead (2),
+    the call site removed (22), the call moved below the plates pass and the
+    quality log (1), a budget of its own (2), the household filter dropped
+    from `_load_dinners` (1), and the trade going through swap_meal_in_plan
+    rather than re-dating the rows in place (2).
+  - **THE HOUSEHOLD FILTER IS DEFENCE IN DEPTH AND THE END-TO-END ISOLATION
+    TEST CANNOT SEE IT**, which is said rather than counted: `_load_dinners`
+    is scoped by `weekly_plan_id` too, so dropping `household_id()` left the
+    whole file green. What pins it is handing the pass another household's
+    plan id directly — the one way a foreign row could reach those
+    statements.
+  - **FOUND WHILE MEASURING AND DELIBERATELY NOT FIXED — it is why "the
+    tripwire goes to zero" is a claim about a week with no leftovers chain in
+    it.** `time_caps.minutes_cap` consults `is_leftovers` for LUNCH only, so
+    for DINNER a 90-minute batch on a capped Monday AND the Tuesday that
+    merely reheats it both read as over cap and both warn — on main and here
+    — while `_weekday_lunch_cap_respected`, one rule down in the same file,
+    already exempts a chain. This pass correctly leaves both alone ("it is a
+    batch, not a cook on the day"). Exempting a chained dinner inside
+    `minutes_cap` would also lift the cap on `swap_in_place`'s gate, where a
+    swap onto a reheat night breaks the chain and the replacement really is
+    cooked that day: two different questions on one (date, slot). **Its own
+    card, and Emily's decision — is a deliberate 90-minute Monday batch a
+    breach at all?** `test_a_chain_on_a_weeknight_still_warns_and_is_NOT_
+    fixed_here` characterises it; invert it when it is settled.
+  - **THE BIGGEST HOLE, measured through generation rather than reasoned, and
+    it is the card's own instruction biting: generation's OWN FOLD puts a
+    repeated over-cap dinner out of reach.** A household asking for fewer
+    dinners than nights gets repeats, and `meal_variety`'s fold turns a
+    repeat within three days into a cook-once-eat-twice chain — and both ends
+    of a chain are exempt here. So a 35-minute dinner cooked on a rush
+    Tuesday and reheated on the Wednesday is reached by NEITHER stage and
+    plan_quality warns about both. The reheat end is plainly right (nothing
+    is cooked on it); **the COOK end is Emily's call** — the household really
+    is cooking 35 minutes on a night they said was short on time, and it is
+    deliberate batching, which is the point of asking for fewer dinners. What
+    would close it is moving a chain WHOLE, both nights together, which
+    `swap_dinner_nights` cannot do and which risks stretching the gap past
+    `leftovers.MAX_LEFTOVER_DAYS`. Its own card.
+    **The other half of the measurement, which is why this still ships:** a
+    repeat spread FURTHER than three days is not chained and IS reached. On
+    Emily's own shape — three dinners over seven nights, the repeat four days
+    apart, three rush weeknights, cap 20 — the pass takes the week to zero
+    with one free trade and three re-picks.
+  - **Also not done, named:** lunch (above); `swap_dinner_nights` writes its
+    own `moved_from` token, so two trades of one night leave that token
+    naming the intermediate hop — its own documented semantics ("Undo is the
+    LAST move"), and nothing offers Undo on a generated draft; and the
+    earlier re-pick passes still do not hold their own picks to the clock,
+    which is covered by construction rather than individually, because this
+    runs last.
+  - **Not verified in a browser**: nothing visual changed, `static/` is
+    byte-identical, and what the household sees of this is a different dish
+    on a night and one sentence behind a tap.
+
 - **2026-09-25 — A swapped-out repeat carries no note.** Emily chose "no
   note" over "in the last two weeks" and "last week / two weeks ago"
   (mockups https://claude.ai/artifact/UKeqDuk8Pyi7owCXv7uhmf).
