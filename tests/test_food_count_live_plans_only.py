@@ -64,9 +64,25 @@ def test_a_retired_drafts_violations_are_not_counted():
 
 def test_a_row_whose_plan_is_gone_is_not_counted():
     """CATCH — fails on main. plan_quality_events.weekly_plan_id carries no
-    foreign key, so a plan deleted outright (reset_household.py) leaves
-    orphan rows behind. The JOIN drops them, which is the same judgement as
-    the retired case: no plan, no week, no fact."""
+    foreign key, so a plan deleted outright leaves orphan rows behind. They
+    are dropped, which is the same judgement as the retired case: no plan,
+    no week, no fact.
+
+    AND THE WAY THAT HAPPENS IN PRODUCTION IS WORTH NAMING, because it makes
+    the exclusion the stronger answer rather than merely the tidier one.
+    Traced 2026-09-26: agent._generate_weekly_plan calls _finish_week_slots
+    (which calls plan_quality.check_and_log) INSIDE the try whose finally
+    calls tools.discard_failed_plan — so a generation that gets far enough to
+    log the week's violations and then fails writes those rows and then
+    deletes the plan from under them. They describe a week that never
+    existed: even less the household's food than a retired draft's. NOT
+    reset_household.py, which an earlier version of this docstring named and
+    which deletes every household-scoped table including this one, so it
+    leaves no orphans at all.
+
+    tests/test_food_quality_floor.py's two record-and-read tests used to pass
+    the literal id 99 and so relied on an orphan being counted; both name a
+    real plan now, with a note there saying what moved."""
     pid = _plan("approved")
     usage.record_plan_quality(pid, [_v()])
     conn = get_conn()

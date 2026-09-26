@@ -491,6 +491,28 @@ why*, not duplicating the diff.
     through `tools.use_household` with a second read proving it really
     crossed the boundary — the trap this log records an isolation test
     falling into before, where it passed while proving nothing.
+  - **TWO EXISTING TESTS RELIED ON AN ORPHAN ROW BEING COUNTED, and the whole
+    suite is what found them — the new file alone was green.**
+    `test_food_quality_floor.py`'s two record-and-read tests passed the
+    literal plan id `99`, which no plan ever had, so reading the week's
+    violations through `weekly_plans` made both read 0. Their claims — that a
+    violation is persisted rather than only logged, and that a food finding
+    prints in its own section without flipping the exit code — are unchanged
+    and are about neither joins nor orphans; the id was incidental. Both name
+    a real plan now, with a note at a shared helper saying what moved, and
+    both still redden under the mutation that makes `record_plan_quality` a
+    no-op, so the fixtures are not vacuous.
+  - **Tracing that turned up the REAL way an orphan happens, which makes the
+    exclusion the stronger answer rather than the tidier one.**
+    `agent._generate_weekly_plan` calls `_finish_week_slots` — which calls
+    `plan_quality.check_and_log` — INSIDE the try whose `finally` calls
+    `tools.discard_failed_plan`, and that helper deletes `meal_plan_entries`
+    and `weekly_plans` and not `plan_quality_events`. So a generation that
+    gets far enough to log the week's violations and then fails leaves rows
+    describing a week that never existed: even less the household's food than
+    a retired draft's. **NOT `reset_household.py`**, which the new file's own
+    docstring first named and which deletes every household-scoped table
+    including this one, so it leaves no orphans at all — corrected in place.
 
 - **2026-09-25 — A swapped-out repeat carries no note.** Emily chose "no
   note" over "in the last two weeks" and "last week / two weeks ago"

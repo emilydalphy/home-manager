@@ -207,6 +207,30 @@ def test_all_three_are_registered_in_check_week():
 # Being seen — Emily's actual answer
 # --------------------------------------------------------------------------
 
+def _a_real_plan() -> int:
+    """A plan that exists, for the two tests below to record violations
+    against.
+
+    Both used to pass the literal id 99, which no plan ever had. That was
+    incidental — they needed some id — and it stopped working on
+    2026-09-26, when get_recent_plan_quality started reading the week's
+    violations through weekly_plans so that a DISCARDED draft's findings
+    stop being counted as the week the household cooked. An event whose
+    plan is not on file is now left out, and that is the fix working
+    rather than something to route around: the one way to produce such a
+    row in the app is meal_plans.discard_failed_plan, which deletes the
+    row after a generation FAILED part-way — a week nobody ever got, which
+    is even less the household's food than a retired draft is.
+
+    So the fixture names a real plan and the two claims below are
+    unchanged: that a violation is persisted rather than only logged, and
+    that a food finding prints in its own section without flipping the
+    exit code. The orphan case is pinned on purpose in
+    tests/test_food_count_live_plans_only.py, not here.
+    """
+    return tools.create_weekly_plan("2026-09-07")["weekly_plan_id"]
+
+
 def test_violations_are_persisted_not_just_logged():
     """"Tell you in the morning report" needs a row somewhere. Until
     2026-09-10 check_and_log only wrote to a logger."""
@@ -214,7 +238,7 @@ def test_violations_are_persisted_not_just_logged():
     food = [v for v in vs if v.rule in FOOD_RULES]
     assert food, "fixture should produce something to store"
 
-    tools.record_plan_quality(99, food)
+    tools.record_plan_quality(_a_real_plan(), food)
     got = tools.get_recent_plan_quality(days=7)
     assert got["total"] == len(food)
     assert "dish_named_for_an_absence" in got["by_rule"]
@@ -243,7 +267,7 @@ def test_food_problems_never_land_under_broken():
     So the food findings print in their own section, and the exit code stays
     0 — exit 1 is the overnight routine's signal to lead with breakage.
     """
-    tools.record_plan_quality(99, q.check_week([PINEAPPLE_FREE], AVOIDS))
+    tools.record_plan_quality(_a_real_plan(), q.check_week([PINEAPPLE_FREE], AVOIDS))
 
     import app.db as db
     proc = subprocess.run(
