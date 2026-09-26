@@ -10,45 +10,47 @@ three refuses another household's recipe, refuses an unknown one, and refuses
 an unsigned caller, and fill-recipe is idempotent and does not leak Anthropic's
 own 401 text to the browser. Most of this file is here so that stays true.
 
-WHAT IS NOT CORRECT is the last section, and it is deliberately a
-characterisation rather than a fix. /api/recipe-feedback takes ANY rating
-string and writes it to recipes.rating — the SIXTH instance of the class this
-repo has now fixed five times (the cooked tick 2026-09-16, chore status,
-grocery status, attention status, and a meal slot). It is worse than its five
-siblings in three measured ways, all pinned below:
+THE LAST SECTION WAS A CHARACTERISATION AND IS NOW A GUARD. When this file
+was written, /api/recipe-feedback took ANY rating string and wrote it to
+recipes.rating — the SIXTH instance of the class this repo had then fixed five
+times (the cooked tick 2026-09-16, chore status, grocery status, attention
+status, and a meal slot). It was worse than its five siblings in three
+measured ways, all of them now inverted below rather than deleted:
 
-  * it DESTROYS the rating that was there, rather than adding a row nobody
+  * it DESTROYED the rating that was there, rather than adding a row nobody
     reads;
   * on a solo night (the last time the recipe was cooked, exactly one member
-    was home) the per-person write that follows hits
+    was home) the per-person write that follows hit
     member_recipe_feedback's own CHECK(rating IN ('liked','disliked')) and
-    the route answers 500 "your data is fine" — which is measurably false,
-    because the household rating has already been committed and lost;
-  * that crash leaves _maybe_auto_attribute_solo_night's connection open
-    (no try/finally), still holding SQLite's write lock — so the app's own
-    record_error cannot write and error_events stays EMPTY. Measured on a
-    real uvicorn across five runs, error_events was 0 every single time:
-    the one failure the morning report most needs to see is the one it
-    cannot see. How much ELSE the held lock takes down varies (see the
-    leak test) — from nothing, through one write lost after a 5.5-second
-    hang, to six writes over 24 seconds all failing.
+    the route answered 500 "your data is fine" — which was measurably false,
+    because the household rating had already been committed and lost;
+  * that crash left _maybe_auto_attribute_solo_night's connection open (no
+    try/finally), still holding SQLite's write lock — so the app's own
+    record_error could not write and error_events stayed EMPTY. Measured on
+    a real uvicorn across five runs, error_events was 0 every single time:
+    the one failure the morning report most needs to see was the one it
+    could not see. How much ELSE the held lock took down varied — from
+    nothing, through one write lost after a 5.5-second hang, to six writes
+    over 24 seconds all failing.
 
-Not fixed here, on purpose, and the reasons are in the report and on the card:
-a vocabulary guard alone closes the trigger and leaves the leaked connection —
-which is the half nothing can see — and `rating` has a third legitimate state
-(None, meaning notes-only) plus a documented '' in the column, so what may
-arrive off the wire is a product call rather than a one-line copy of the five
-siblings. Invert the tests marked DEFECT when the card is done.
+FIXED 2026-09-26 on branch overnight/recipe-rating-validated, in both halves,
+because closing the wire alone would have left the worse one standing:
+recipes.RECIPE_RATINGS + InvalidRecipeRating checked above get_conn, a 422 on
+the route placed BEFORE its plain-ValueError 400, and a try/finally on both of
+_maybe_auto_attribute_solo_night's connections. The inverted tests keep their
+old names and old numbers in their docstrings, so what was wrong stays
+readable; tests/test_recipe_rating_validated.py carries the guard's own fuller
+coverage, including the ordering of those two except clauses.
 
-THE EVIDENCE IS MUTATION, NOT REDNESS. app/ and static/ are byte-identical to
-main on this branch, so nothing here can be red against main by construction.
-Ten mutations were run and every one bit: adding the vocabulary guard — i.e.
-doing the card — reddens EXACTLY the five DEFECT tests and nothing else (22
-still pass), which is what says they are the ones to invert; and adding a
-try/finally to _maybe_auto_attribute_solo_night reddens ONLY the leak test and
-none of the vocabulary ones, which is what says the two halves of this defect
-are independent and that closing the wire alone would leave the worse half
-standing. The other eight: the household filter dropped from
+WHAT THE EVIDENCE WAS WHEN THIS FILE WAS A CHARACTERISATION, kept because it
+is what said which tests to invert: app/ and static/ were byte-identical to
+main on that branch, so nothing here could be red against main by
+construction, and ten mutations were run instead. Adding the vocabulary guard
+— i.e. doing the card — reddened EXACTLY the five DEFECT tests and nothing
+else (22 still passed), which is what said they were the ones to invert; and
+adding a try/finally to _maybe_auto_attribute_solo_night reddened ONLY the
+leak test and none of the vocabulary ones, which is what said the two halves
+were independent. The other eight: the household filter dropped from
 mark_recipe_feedback (2 red), from log_cooking_deviation (1), and from
 list_recipes (1); _client_safe_detail letting a 500 through (2) and scrubbing
 503 as well (1); the fill route losing its 503 branch (1); fill losing its
@@ -468,64 +470,85 @@ def test_a_failed_fill_leaves_the_recipe_exactly_as_it_was(signed_in, monkeypatc
 
 
 # ---------------------------------------------------------------------------
-# DEFECT — /api/recipe-feedback takes any rating string at all.
+# FIXED 2026-09-26 (branch overnight/recipe-rating-validated). These three
+# were characterisations of the sixth instance of a class this repo had fixed
+# five times; they are INVERTED in place rather than deleted, so the history
+# reads and so the exact behaviour that was wrong stays written down.
 #
-# The sixth instance of a class this repo has fixed five times. Every test
-# below records behaviour that is WRONG; invert them when the card is done.
+# Each one now asserts the refusal where it used to assert the write. Their
+# old bodies are quoted in the docstrings, because "what this used to do" is
+# the whole reason the test exists. The two crash characterisations further
+# down are inverted the same way, off the same subprocess probe.
 # ---------------------------------------------------------------------------
 
-def test_DEFECT_any_word_at_all_is_accepted_as_a_rating_and_written(signed_in):
+def test_a_word_that_is_not_a_verdict_is_refused_and_nothing_is_written(signed_in):
     """
-    WRONG. The column's own comment says '' | 'liked' | 'disliked'
-    (schema.sql), the chat tool's schema enumerates ['liked','disliked'],
-    and the Cook screen sends only those two (data-rating in shell.js) —
-    but nothing between the wire and the UPDATE checks.
+    WAS test_DEFECT_any_word_at_all_is_accepted_as_a_rating_and_written, and
+    it asserted 200 with the row reading `teleported`.
 
-    Invert to 422 + InvalidRecipeRating when the card is done, the way
-    InvalidGroceryStatus / InvalidMealStatus / InvalidChoreStatus read.
+    The column's own comment says '' | 'liked' | 'disliked' (schema.sql), the
+    chat tool's schema enumerates ['liked','disliked'], and the Cook screen
+    sends only those two (data-rating in shell.js) — and now something
+    between the wire and the UPDATE checks. 422 + InvalidRecipeRating, the
+    way InvalidGroceryStatus / InvalidMealStatus / InvalidChoreStatus read.
     """
     _chili()
 
     res = signed_in.post("/api/recipe-feedback", json={"recipe_name": "Bean Chili", "rating": "teleported"})
 
-    assert res.status_code == 200, "WRONG — a word no screen looks for should be refused"
-    assert res.json()["rating"] == "teleported"
-    assert _rating_of()[0] == "teleported"
+    assert res.status_code == 422
+    assert "teleported" in res.json()["detail"]
+    assert _rating_of()[0] == "", "nothing written — the refusal is above get_conn"
 
 
-def test_DEFECT_a_third_word_destroys_the_rating_that_was_there(signed_in):
+def test_a_third_word_can_no_longer_destroy_the_rating_that_was_there(signed_in):
     """
-    WRONG, and the half that makes this worse than its five siblings: the
-    grocery/chore/attention versions of this bug put a row into a state
-    nothing reads. This OVERWRITES a verdict the household actually gave,
-    and nothing anywhere keeps the old one.
+    WAS test_DEFECT_a_third_word_destroys_the_rating_that_was_there, and it
+    asserted the row came back reading `Liked` with the recipe silently no
+    longer counting as rated.
+
+    This is the half that made it worse than its five siblings: the
+    grocery/chore/attention versions of that bug put a row into a state
+    nothing reads, where this OVERWROTE a verdict the household actually
+    gave, committed, with nothing anywhere keeping the old one. A capital
+    letter is still a different word to every reader — which is why it is
+    refused rather than quietly folded.
     """
     _chili()
     signed_in.post("/api/recipe-feedback", json={"recipe_name": "Bean Chili", "rating": "liked"})
     assert _rating_of()[0] == "liked"
 
-    signed_in.post("/api/recipe-feedback", json={"recipe_name": "Bean Chili", "rating": "Liked"})
+    res = signed_in.post("/api/recipe-feedback", json={"recipe_name": "Bean Chili", "rating": "Liked"})
 
-    assert _rating_of()[0] == "Liked", "WRONG — even a capital letter is a different word to every reader"
-    assert _rated_count() == 0, "WRONG — the recipe has silently stopped counting as rated"
+    assert res.status_code == 422
+    assert _rating_of()[0] == "liked", "the verdict the household gave survives"
+    assert _rated_count() == 1, "and it still counts as rated"
 
 
-def test_DEFECT_a_third_word_makes_the_recipe_invisible_to_the_readers_that_matter(signed_in):
+def test_the_readers_that_matter_keep_seeing_the_verdict(signed_in):
     """
-    WRONG. Measured against the three real readers of recipes.rating:
+    WAS test_DEFECT_a_third_word_makes_the_recipe_invisible_to_the_readers_
+    that_matter, and it asserted the recipe dropped out of the completeness
+    count and came back as a planning candidate.
+
+    The three real readers of recipes.rating, and what a third word used to
+    do to each:
       * memory.py:221 counts rating IN ('liked','disliked') for the
-        'what we know' completeness score — the recipe drops out of it;
-      * list_recipes ORDER BY (rating='liked') DESC sorts it as unrated;
-      * weekly_plan.py's candidate query is rating != 'disliked', so it
-        stays a candidate — the one safe direction of the three.
+        'what we know' completeness score — the recipe dropped out of it;
+      * list_recipes ORDER BY (rating='liked') DESC sorted it as unrated;
+      * weekly_plan.py's candidate query is rating != 'disliked', so a dish
+        the household had explicitly rejected became a candidate again.
+    All three now go on reading the verdict, because the refusal never
+    reaches the UPDATE.
     """
     _chili()
     signed_in.post("/api/recipe-feedback", json={"recipe_name": "Bean Chili", "rating": "disliked"})
     assert _rated_count() == 1
 
-    signed_in.post("/api/recipe-feedback", json={"recipe_name": "Bean Chili", "rating": "not for us"})
+    res = signed_in.post("/api/recipe-feedback", json={"recipe_name": "Bean Chili", "rating": "not for us"})
 
-    assert _rated_count() == 0, "WRONG — no longer rated, as far as the completeness score knows"
+    assert res.status_code == 422
+    assert _rated_count() == 1, "still rated, as far as the completeness score knows"
     conn = get_conn()
     try:
         candidates = [
@@ -536,7 +559,7 @@ def test_DEFECT_a_third_word_makes_the_recipe_invisible_to_the_readers_that_matt
         ]
     finally:
         conn.close()
-    assert candidates == ["Bean Chili"], "a dish the household rejected is a planning candidate again"
+    assert candidates == [], "the dish the household rejected stays rejected"
 
 
 # ---------------------------------------------------------------------------
@@ -611,35 +634,69 @@ out["rating_before"] = rating()
 out["member_taste_before"] = tools.get_member_taste("Emily")["liked_recipes"]
 out["open_transactions_before"] = open_transactions()
 
+# Is the write lock genuinely held, or is there merely an object lying around?
+# Asked with no patience at all (timeout=0), so the answer is about the lock
+# rather than about how long anyone is willing to wait for it.
+def write_lock_free():
+    probe = sqlite3.connect(os.environ["DB_PATH"], timeout=0)
+    try:
+        probe.execute("BEGIN IMMEDIATE")
+        probe.rollback()
+        return True, ""
+    except sqlite3.OperationalError as e:
+        return False, str(e)
+    finally:
+        probe.close()
+
+def error_event_rows():
+    c = get_conn()
+    try:
+        return [
+            dict(r) for r in c.execute(
+                "SELECT kind, where_, error_type FROM error_events ORDER BY id"
+            ).fetchall()
+        ]
+    finally:
+        c.close()
+
+# PART ONE — the refusal. The same solo-night sequence that used to answer 500
+# over a destroyed rating.
 bad = client.post("/api/recipe-feedback", json={"recipe_name": "Bean Chili", "rating": "teleported"})
 out["bad_status"] = bad.status_code
 out["bad_detail"] = bad.json()["detail"]
 out["rating_after"] = rating()
 out["member_taste_after"] = tools.get_member_taste("Emily")["liked_recipes"]
 out["open_transactions_after"] = open_transactions()
-
-c = get_conn()
-try:
-    out["error_events"] = c.execute("SELECT COUNT(*) FROM error_events").fetchone()[0]
-finally:
-    c.close()
-
-# Is the write lock genuinely still held, or is there merely an object lying
-# around? Asked from this thread with no patience at all, so the answer is
-# about the lock rather than about how long anyone waits for it.
-probe = sqlite3.connect(os.environ["DB_PATH"], timeout=0)
-try:
-    probe.execute("BEGIN IMMEDIATE")
-    out["write_lock_free"] = True
-    probe.rollback()
-except sqlite3.OperationalError as e:
-    out["write_lock_free"] = False
-    out["write_lock_error"] = str(e)
-finally:
-    probe.close()
-
+out["error_events"] = len(error_event_rows())
+free, err = write_lock_free()
+out["write_lock_free"] = free
+out["write_lock_error"] = err
 nxt = client.post("/api/grocery-list/add", json={"item": "Milk", "quantity": "1"})
 out["next_write_status"] = nxt.status_code
+
+# PART TWO — the NEXT unexpected failure of that same INSERT, which the
+# vocabulary guard on the wire does nothing about.
+#
+# RECIPE_RATINGS is widened to let a third word past the guard, exactly the way
+# a future edit to that one line would. member_recipe_feedback.rating still
+# carries CHECK(rating IN ('liked','disliked')), so the per-person INSERT still
+# raises with the connection open — which is the original crash path, reached
+# without pretending the guard is the only thing standing between this function
+# and a leaked write lock. What is measured is what the try/finally buys: the
+# lock comes back, and record_error can therefore write, so the failure is
+# VISIBLE to the morning report instead of silent.
+from app.tools import recipes as _recipes
+_recipes.RECIPE_RATINGS = ("liked", "disliked", "teleported")
+
+crash = client.post("/api/recipe-feedback", json={"recipe_name": "Bean Chili", "rating": "teleported"})
+out["crash_status"] = crash.status_code
+out["crash_open_transactions"] = open_transactions()
+free2, err2 = write_lock_free()
+out["crash_write_lock_free"] = free2
+out["crash_write_lock_error"] = err2
+out["crash_error_events"] = error_event_rows()
+after = client.post("/api/grocery-list/add", json={"item": "Oat milk", "quantity": "1"})
+out["crash_next_write_status"] = after.status_code
 
 print("PROBE" + json.dumps(out))
 """
@@ -696,78 +753,92 @@ def test_the_crash_probes_own_control_is_a_good_rating_on_the_same_night(crash_p
     assert crash_probe["open_transactions_before"] == 0
 
 
-def test_DEFECT_on_a_solo_night_a_third_word_is_a_500_that_says_your_data_is_fine(crash_probe):
+def test_on_a_solo_night_a_third_word_is_refused_before_anything_is_written(crash_probe):
     """
-    WRONG, and the loudest of the set.
+    WAS test_DEFECT_on_a_solo_night_a_third_word_is_a_500_that_says_your_
+    data_is_fine, and it asserted 500, the branded "your data is fine"
+    sentence, and a household rating reading `teleported` while the
+    per-person row still said `liked`.
 
-    The household-level UPDATE is COMMITTED, and only then does
-    _maybe_auto_attribute_solo_night try to put the same word into
-    member_recipe_feedback, whose column really does carry
-    CHECK(rating IN ('liked', 'disliked')) — schema.sql:408. SQLite raises,
-    the route's bare `except Exception` answers 500, and _client_safe_detail
-    replaces the message with "your data is fine", which is not true: the
-    verdict the household gave has already been destroyed, and the per-person
-    row still holds the old one, so the two now disagree about one recipe.
+    What used to happen, kept because it is the reason the guard is above
+    get_conn rather than anywhere else: the household-level UPDATE was
+    COMMITTED, and only THEN did _maybe_auto_attribute_solo_night try to put
+    the same word into member_recipe_feedback, whose column really does carry
+    CHECK(rating IN ('liked','disliked')) — schema.sql:408. SQLite raised, the
+    route's bare `except Exception` answered 500, and _client_safe_detail
+    replaced the message with "your data is fine", which was not true: the
+    verdict the household gave had already been destroyed, and the per-person
+    row still held the old one, so the two disagreed about one recipe.
 
-    Invert when the card is done: a refused rating should be a 422 that
-    writes nothing at all.
+    Now: 422, and the two rows still agree because neither was touched.
     """
-    assert crash_probe["bad_status"] == 500
-    assert crash_probe["bad_detail"].endswith("your data is fine. Try again in a minute.")
-    assert crash_probe["rating_after"] == "teleported", "WRONG — the data is NOT fine; 'liked' is gone"
+    assert crash_probe["bad_status"] == 422
+    assert "teleported" in crash_probe["bad_detail"]
+    assert crash_probe["rating_after"] == "liked", "the verdict survives"
     assert crash_probe["member_taste_after"] == ["Bean Chili"], (
-        "and the per-person row still says liked, so the two disagree about one recipe"
+        "and the per-person row still agrees with it"
+    )
+    assert crash_probe["next_write_status"] == 200, (
+        "and the household's next write is not paying for any of it"
     )
 
 
-def test_DEFECT_that_crash_leaks_the_write_lock_and_wedges_the_next_write(crash_probe):
+def test_the_refusal_leaks_no_connection_and_holds_no_lock(crash_probe):
     """
-    WRONG, and it is the half a vocabulary guard on the wire would NOT fix —
-    any other failure of that INSERT does the same thing.
+    WAS the first half of test_DEFECT_that_crash_leaks_the_write_lock_and_
+    wedges_the_next_write, which asserted one connection still inside a
+    transaction and a BEGIN IMMEDIATE refused outright.
 
-    _maybe_auto_attribute_solo_night opens a connection, runs the INSERT that
-    raises, and has no try/finally, so the connection is left open holding
-    SQLite's write lock. What is asserted here is the mechanism — one
-    connection still inside a transaction, and a BEGIN IMMEDIATE from another
-    thread refused outright — plus the consequence the app cannot recover
-    from: tools.record_error cannot write, so error_events stays EMPTY. The
-    one failure the morning report most needs to see is the one it cannot
-    see.
-
-    WHAT THE HELD LOCK THEN COSTS IS NOT DETERMINISTIC, and that is worth
-    writing down rather than asserting the convenient half. The reference is
-    live on the worker thread's exception state, not in a cycle, so
-    gc.collect() does not free it and no other thread may even close it
-    ("SQLite objects created in a thread can only be used in that same
-    thread"). It is released when that thread is handed its next piece of
-    work — so whether anything else suffers depends entirely on which worker
-    the next request lands on. Under TestClient the handler also runs on a
-    thread pool, so even here the next write is sometimes fine and sometimes
-    500 (not asserted, see below). Under uvicorn the pool is larger, and four runs against a
-    real server on a throwaway database gave four different answers: the
-    next write fine; the next write lost after waiting out sqlite3's full
-    5-second busy timeout (measured 5.53s, then 500); five concurrent writes
-    all fine; and six writes over 24 seconds every one of them 500. So the
-    honest bound is "at least a lost write and a five-second hang, sometimes
-    far more, never nothing that anyone can see" — which is why the two
-    assertions here are the mechanism and the missing error_events row,
-    both of which held in every run.
+    Nothing is open and nothing is held, which is what a request that decided
+    not to write should leave behind.
     """
-    assert crash_probe["open_transactions_after"] == 1, (
-        "WRONG — a connection is still open inside a transaction after the request ended"
+    assert crash_probe["open_transactions_after"] == 0
+    assert crash_probe["write_lock_free"] is True, crash_probe["write_lock_error"]
+    assert crash_probe["error_events"] == 0, "a refusal is not a breakage"
+
+
+def test_the_next_failure_of_that_insert_gives_the_lock_back_and_is_VISIBLE(crash_probe):
+    """
+    WAS the second half of that same DEFECT test — the one that asserted
+    error_events stayed EMPTY — and it is the half a vocabulary guard on the
+    wire does NOT fix, which is why this probe forces the failure rather than
+    relying on the guard being the only thing in the way.
+
+    RECIPE_RATINGS is widened in the probe to let a third word past the wire,
+    exactly the way a future edit to that one line would; the per-person
+    INSERT still hits its own CHECK and still raises with the connection open.
+    Before the try/finally that connection was left holding SQLite's write
+    lock, on a worker thread no other thread may even close ("SQLite objects
+    created in a thread can only be used in that same thread") and that
+    gc.collect() will not free, because the reference is live on that thread's
+    exception state rather than in a cycle. Measured on a real uvicorn
+    2026-09-26: the household's next write waited out sqlite3's full 5-second
+    busy timeout (5.03s) and then 500'd, and tools.record_error could not
+    write either.
+
+    THE SYMPTOM IS WHAT THIS ASSERTS, because the symptom is what a test can
+    see: error_events gets a row, FOR THIS ROUTE. That matters more than the
+    count — in the original measurement error_events did eventually reach 1,
+    but the row was for /api/grocery-list/add, the collateral write; the
+    failure that caused all of it recorded nothing at all, so the morning
+    report would have shown a grocery error and no way to learn what broke.
+    """
+    assert crash_probe["crash_status"] == 500, (
+        "the forced failure is still a failure — the point is that it is now a visible one"
     )
-    assert crash_probe["write_lock_free"] is False, (
-        "WRONG — and it is holding the write lock, not merely sitting there"
+    assert crash_probe["crash_open_transactions"] == 0, (
+        "the connection is closed on the way out, however the function leaves"
     )
-    assert "locked" in crash_probe["write_lock_error"]
-    assert crash_probe["error_events"] == 0, (
-        "WRONG — the failure is invisible to the app's own observability feed"
+    assert crash_probe["crash_write_lock_free"] is True, crash_probe["crash_write_lock_error"]
+
+    rows = crash_probe["crash_error_events"]
+    assert rows, "WAS EMPTY — the one failure the morning report most needs to see"
+    assert any(r["where_"] == "/api/recipe-feedback" for r in rows), (
+        f"and it is recorded against the route that actually broke: {rows}"
     )
-    # next_write_status is deliberately NOT asserted. TestClient runs sync
-    # handlers on a thread pool too, so the next request may or may not land on
-    # the wedged worker: measured 2026-09-25 on Emily's Mac, 200 and 500 came
-    # back in roughly equal measure across runs. Pinning either made the suite
-    # flaky. The mechanism and the missing error_events row above hold every time.
+    assert crash_probe["crash_next_write_status"] == 200, (
+        "and the household's next write is not paying for it either"
+    )
 
 
 def test_log_deviation_and_fill_recipe_take_no_vocabulary_off_the_wire(signed_in):
