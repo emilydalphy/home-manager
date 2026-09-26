@@ -13358,8 +13358,9 @@
       // Under the title on every Swap sheet, one day or the whole dish
       // (Emily, 2026-09-26, verbatim): a pick that's nearly right is still
       // worth taking — Tweak is one tap away afterwards. Not on the Tweak
-      // sheet, and not on the move view.
-      '<p class="wk-swap-tweak-note">If one’s close but not quite right, you can always tweak it after.</p>' +
+      // sheet, and not on the move view — nor when no picks came back
+      // (st.trouble): there is no "one" to be close.
+      (st.trouble ? '' : '<p class="wk-swap-tweak-note">If one’s close but not quite right, you can always tweak it after.</p>') +
       picks +
       (canMove
         ? '<button type="button" class="wk-swap-quiet" id="wk-swap-move"' + wait + '>' +

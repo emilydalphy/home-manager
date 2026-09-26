@@ -67,10 +67,12 @@ def test_the_swap_sheet_says_you_can_tweak_it_after_on_one_day_and_whole_dish_sh
             "options": [{"index": 0, "meal": "Fajitas", "reason": "same tortillas", "minutes": 25}]}
     whole = dict(base, dates=[_TUE, _WED])
     move = dict(base, view="move")
+    trouble = dict(base, options=None, trouble="I couldn’t think of options just now.")
     out = _run(_prelude() + f"weekState.days = [];\nconsole.log(JSON.stringify(["
                f"swapSheetBodyHtml({json.dumps(base)}), swapSheetBodyHtml({json.dumps(whole)}),"
-               f" swapSheetBodyHtml({json.dumps(move)})]));")
-    one, dish, moving = out
+               f" swapSheetBodyHtml({json.dumps(move)}), swapSheetBodyHtml({json.dumps(trouble)})]));")
+    one, dish, moving, no_picks = out
+    assert TWEAK_LINE not in no_picks, "no picks came back: there is no one to be close"
     line = f'<p class="wk-swap-tweak-note">{TWEAK_LINE}</p>'
     for html in (one, dish):
         assert line in html
