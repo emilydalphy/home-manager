@@ -440,9 +440,13 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
     # fact about the cook that just happened, and every reader already
     # says "Cooked." over it rather than a clock.
     started_at = "cook_started_at" if status == "done" else "NULL"
+    # A meal marked cooked is no longer a skipped one ("We skipped it" on
+    # Today's yesterday card, yesterday_check.py) — whichever answer came
+    # last is the true one.
+    skipped = ", skipped_at = NULL" if status == "done" else ""
     conn.executemany(
         f"UPDATE meal_plan_entries SET cooked_status = ?, cooked_at = {cooked_at}, "
-        f"cook_started_at = {started_at} WHERE id = ? AND household_id = ?",
+        f"cook_started_at = {started_at}{skipped} WHERE id = ? AND household_id = ?",
         [(status, eid, household_id()) for eid in linked_ids],
     )
     # Once per BATCH, like the depletion below: a component batch with a

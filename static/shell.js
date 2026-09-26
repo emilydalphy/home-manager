@@ -868,6 +868,12 @@
           // night of the plan (renderTonightAsk). Empty — and so
           // display:none — every other hour, and on a day whose dinner
           // is still open (the needs-you band's own card leads then).
+          // The morning after (Emily, 2026-09-25): "Did you have it?"
+          // about yesterday's meals nobody ticked (renderYesterdayCheck).
+          // First, because it is about a day already gone — answered in a
+          // tap and out of the way before today starts. Empty — and so
+          // display:none — on any day with nothing to ask.
+          '<div id="yesterday-check" class="today-area-yesterday"></div>' +
           '<div id="tonight-ask" class="today-area-tonight"></div>' +
           // Tonight's open dinner (or a question about another day) stays
           // above the strip: when tonight's dinner is undecided, deciding
@@ -928,6 +934,7 @@
       loadPlanWeekNudge(panel),
       loadNeedsYou(panel),
       loadTonightAsk(panel),
+      loadYesterdayCheck(panel),
       loadTodayMoves(panel),
       loadHolding(panel),
       // The Chores switch again: skip the call, not just the render — no
@@ -2336,6 +2343,112 @@
       console.warn('Could not remember tonight’s yes:', err);
       renderTonightAsk(panel, data);
       showToast('That didn’t save — try again.');
+    }
+  }
+
+  // ---------- Yesterday: did you have it? ----------
+  // Loop Board "Today: next morning, ask 'Did you have it?' about any meal
+  // left unticked" (Emily, 2026-09-25; the bottom of the "Bring it over"
+  // mockup). The server decides what to ask (app/tools/yesterday_check.py,
+  // GET /api/today/yesterday): yesterday's meals and snacks on the
+  // household's own clock, never reheats, never one already answered. One
+  // card, one row per meal, each with its own two answers. "We had it" is
+  // the cooked tick itself; "We skipped it" records the skip and leaves
+  // the meal where it is (so next week's bring-over list still offers it).
+  // A row goes on the tap; the card goes with its last row. Ignored, it is
+  // gone when the day turns over — the server only ever asks about
+  // yesterday.
+  //
+  // Rule 5: Today's one apricot is the dock, so "We had it" is spruce and
+  // "We skipped it" an outline — the .ny-actions pair the tonight card
+  // uses, and in its order: the yes on the left, as the tonight card
+  // right under it has "Yes" (the mockup drew them the other way round;
+  // two cards stacked with their yes on opposite sides invites a mis-tap).
+  async function loadYesterdayCheck(panel) {
+    try {
+      var res = await fetch('/api/today/yesterday');
+      if (!res.ok) throw new Error('yesterday lookup failed');
+      renderYesterdayCheck(panel, await res.json());
+    } catch (err) {
+      // No card is the safe failure: nothing about yesterday changes by
+      // not being asked.
+      console.warn('Yesterday lookup failed:', err);
+      renderYesterdayCheck(panel, null);
+    }
+  }
+
+  function refreshYesterdayCheck() {
+    if (panels.today && panels.today.dataset.built) loadYesterdayCheck(panels.today);
+  }
+
+  // "Lemon salmon traybake. Did you have it?" — a name that already ends
+  // in its own full stop or question mark doesn't get a second one.
+  function yesterdayQuestion(meal) {
+    var name = String(meal || '').trim();
+    return name + (/[.!?]$/.test(name) ? '' : '.') + ' Did you have it?';
+  }
+
+  function renderYesterdayCheck(panel, data) {
+    var slot = panel.querySelector('#yesterday-check');
+    if (!slot) return;
+    panel._yesterday = data;
+    var meals = (data && data.meals) || [];
+    if (!meals.length) { slot.innerHTML = ''; return; }
+    slot.innerHTML =
+      '<div class="shell-card needs-you-card yesterday-card" data-card-type="yesterday_check">' +
+        '<div class="ny-kicker">Yesterday</div>' +
+        meals.map(function (m) {
+          return '<div class="yesterday-row" data-yesterday-entry="' + m.entry_id + '">' +
+            '<div class="ny-title">' + escapeHtml(yesterdayQuestion(m.meal)) + '</div>' +
+            '<div class="ny-actions">' +
+              '<button type="button" class="btn-gold" data-yesterday-answer="had">We had it</button>' +
+              '<button type="button" class="btn-sand" data-yesterday-answer="skipped">We skipped it</button>' +
+            '</div>' +
+          '</div>';
+        }).join('') +
+      '</div>';
+    slot.querySelectorAll('[data-yesterday-answer]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var row = btn.closest('[data-yesterday-entry]');
+        answerYesterday(panel, Number(row.getAttribute('data-yesterday-entry')), btn.getAttribute('data-yesterday-answer'));
+      });
+    });
+  }
+
+  // Optimistic (§6, the common case never waits): the row leaves on the
+  // tap, and the card with it when it was the last. A failed save puts it
+  // back and says so. The toast names the meal (S10); there is no Undo,
+  // because Today's own cooked tick has none either.
+  async function answerYesterday(panel, entryId, answer) {
+    var data = panel._yesterday;
+    if (!data || !data.meals) return;
+    var meal = data.meals.filter(function (m) { return m.entry_id === entryId; })[0];
+    if (!meal) return;
+    var before = data.meals.slice();
+    renderYesterdayCheck(panel, Object.assign({}, data, {
+      meals: before.filter(function (m) { return m !== meal; })
+    }));
+    try {
+      var res = await fetch('/api/today/yesterday/answer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_id: entryId, answer: answer })
+      });
+      if (res.status === 409) {
+        // Answered on the other phone, or the day turned over: the fresh
+        // card is the truth, and there is nothing to say about it.
+        loadYesterdayCheck(panel);
+        return;
+      }
+      if (!res.ok) throw new Error('yesterday answer failed (' + res.status + ')');
+      renderYesterdayCheck(panel, await res.json());
+      showToast(savedLine(meal.meal, answer === 'had' ? 'marked cooked' : 'marked skipped'));
+      // A cooked tick moves what Plan and Cook show (and the pantry).
+      if (answer === 'had') refreshStaleTabsFromActions([{ tab: 'week' }, { tab: 'kitchen' }]);
+    } catch (err) {
+      console.warn('Could not save yesterday’s answer:', err);
+      renderYesterdayCheck(panel, Object.assign({}, data, { meals: before }));
+      showToast('That didn’t save. Try it again.');
     }
   }
 
@@ -21070,6 +21183,9 @@
         // update_inventory and friends all land on the Kitchen tab, which
         // re-reads the cooker view and the inventory tile together.
         refreshKitchenPanel();
+        // check_off_meal from chat ("we had the salmon last night") answers
+        // the yesterday card's row too — re-read it so it stops asking.
+        refreshYesterdayCheck();
         // check_off_prep_step is also how a fridge move gets ticked from
         // chat ("mark the chicken thighs done") — same table, same tool,
         // just called from a different surface than Today's own ticks.

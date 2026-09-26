@@ -2512,6 +2512,47 @@ def today_move_done(move_id: str, req: MoveDoneRequest, date: str | None = None)
     return payload
 
 
+@app.get("/api/today/yesterday")
+def today_yesterday():
+    """
+    Today's "Did you have it?" card, the morning after: yesterday's meals
+    and snacks nobody ticked cooked or skipped, in eating order. [] means
+    no card. See tools/yesterday_check.py.
+    """
+    try:
+        return tools.yesterday_check()
+    except Exception as e:
+        logger.exception("Yesterday's check failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+class YesterdayAnswerRequest(BaseModel):
+    """One row of the yesterday card: "We had it" ('had') or "We skipped
+    it" ('skipped')."""
+    entry_id: int
+    answer: str
+
+
+@app.post("/api/today/yesterday/answer")
+def today_yesterday_answer(req: YesterdayAnswerRequest):
+    """
+    Answer one row. 'had' is the cooked tick itself (check_off_meal);
+    'skipped' records the skip and leaves the meal otherwise as it was.
+    Returns the fresh card, plus the dish's name for the toast. 409 when
+    the row isn't being asked about any more (answered on the other phone,
+    or the day turned over) — the screen redraws from the fresh card.
+    """
+    try:
+        return tools.answer_yesterday(req.entry_id, req.answer)
+    except tools.NotAskedAbout as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        logger.exception("Yesterday's answer failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.get("/api/today/tonight")
 def today_tonight():
     """

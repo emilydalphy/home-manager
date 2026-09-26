@@ -771,6 +771,13 @@ from .proposals import (  # noqa: F401
     propose_plan_changes,
     undo_proposal,
 )
+# Today's "Did you have it?" card, the morning after (Emily, 2026-09-25):
+# a screen's own read and one answer per row. Not agent tools.
+from .yesterday_check import (  # noqa: F401
+    NotAskedAbout,
+    answer_yesterday,
+    yesterday_check,
+)
 # Now's "Tonight: X. Still good?" card, its swap-from-the-plan sheet
 # (Emily, 2026-09-13) and its third answer, "Not tonight — we're going
 # out" (Emily, 2026-09-14). tonight_check and tonight_keep are a screen's
