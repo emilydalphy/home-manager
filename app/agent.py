@@ -28,6 +28,7 @@ from .tools import leftovers as _leftovers_mod
 from .tools import weekday_lunches as _weekday_lunches
 from .tools import bring_over as _bring_over
 from .tools import freezer_portions as _freezer_portions
+from .tools import cap_enforce as _cap_enforce
 from .tools import voice as _voice
 
 logger = logging.getLogger("home_manager")
@@ -6152,6 +6153,32 @@ def _finish_week_slots(
             plan_id, tools.freeform_ingredient_requests(asks or ""), report,
             budget=repick_budget or _allergen_gate.CallBudget(),
         )
+
+    # "Short on time" is held to rather than only asked for (Emily,
+    # 2026-09-26: five dinners on three rush nights, 24 to 35 minutes
+    # against her 20-minute cap). The prompt says it three times, the
+    # plate pass reads it, plan_quality warns about it afterwards, and
+    # until this nothing between those enforced it — while the swap door
+    # has refused an over-cap pick since 2026-09-22 (swap_in_place.
+    # cap_gate). This trades the week's own dinners between its own nights
+    # first, which spends nothing, and only re-picks what no night can
+    # take. See tools/cap_enforce.py — it swallows its own failures, and
+    # it never hands a night back as a question.
+    #
+    # LAST of the re-pick passes, deliberately: every pass above can move
+    # or replace a dinner and none of them holds its pick to the clock
+    # (pick_gate is the allergen and taste gate), so running here is what
+    # makes one place answer for the whole week rather than four passes
+    # each growing a cap check. BEFORE the plates pass, so a side is
+    # written for the night the dish finally sits on and against that
+    # night's own max_minutes; BEFORE plan_quality.check_and_log, which is
+    # the tripwire that says whether this worked; and BEFORE the allergen
+    # sweep, so a clash a move creates is caught by the one pass that
+    # exists to catch exactly that.
+    _cap_enforce.enforce_minutes_caps(
+        plan_id, intake, household_memory,
+        budget=repick_budget or _allergen_gate.CallBudget(),
+    )
 
     # "Every meal is a full plate" (Emily, 2026-09-05) — any planned meal
     # whose own food_groups fall short of the household's plate rule gets a
