@@ -921,7 +921,10 @@ def _intake_covering(d: str) -> tuple[dict | None, str, int]:
     candidates: list[tuple[str, int]] = []
     if plan_id is not None:
         conn = get_conn()
-        row = conn.execute("SELECT * FROM weekly_plans WHERE id = ?", (plan_id,)).fetchone()
+        row = conn.execute(
+            "SELECT * FROM weekly_plans WHERE id = ? AND household_id = ?",
+            (plan_id, household_id()),
+        ).fetchone()
         conn.close()
         if row is not None:
             start, days = _weekly_plan.plan_period(row)
