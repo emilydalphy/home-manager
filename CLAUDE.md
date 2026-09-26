@@ -466,11 +466,19 @@ why*, not duplicating the diff.
     than for the per-meal claim it is named after, and says so; the third is
     a source marker. The fourth is a sweep, green either way, there so a
     THIRD reader is noticed rather than inheriting a promise made about two.
-    Suite **7117 passed, 0 failed** at `TZ=America/Toronto` on this branch,
-    against a measured **7113** collected on `main` — +4 is this file exactly.
-    (The 7191/7187 pair in the stacked branch's own copy of this entry was
-    measured there, where four other new test files ride along; it is not
-    this branch's number and is corrected rather than carried forward.)
+    Suite **7441 passed, 0 failed** at `TZ=America/Toronto` on this branch,
+    against a measured **7437** collected on `main` (`6f6a5b3`) — +4 is this
+    file exactly. **Two earlier pairs of numbers for this same fix are wrong
+    and are named rather than quietly replaced, because each was measured
+    against a tree that was not `main`.** The stacked branch's own copy of
+    this entry says 7191/7187, measured there, where four other new test
+    files ride along. This branch's first cut said 7117/7113, measured
+    against a local `main` that was **49 commits stale** — the orchestrator
+    read `git checkout main`'s "up to date" as current when the fetch that
+    would have moved it had not run yet. Both are void; the pair above is the
+    only one taken on the real `main`. The lesson is the cheap one: `git
+    fetch` BEFORE reading "up to date", and re-measure after any rebase
+    rather than carrying a figure forward.
 
 - **2026-09-25 — A swapped-out repeat carries no note.** Emily chose "no
   note" over "in the last two weeks" and "last week / two weeks ago"
