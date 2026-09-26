@@ -48,7 +48,7 @@ MAIN_PY = (REPO / "app" / "main.py").read_text()
 # literal is a review failure — new tokens are defined inside it).
 LIVE_FILES = [
     "shell.css", "shell.js", "shell.html", "login.html", "onboarding.html",
-    "plan-week.html", "meal-setup.html", "share.html", "member-share.html",
+    "plan-week.html", "share.html", "member-share.html",
     "chores-setup.html", "inventory.html",
     # The "Need a hand?" sheet (2026-09-18): a script that draws markup and
     # injects its own stylesheet, so it answers to the same rules a page does.

@@ -16,9 +16,9 @@ The fix: GET /onboarding now checks the same `has_members` signal
 /api/onboarding/status reports and shell.js's own boot check
 (checkOnboarding, static/shell.js) uses to decide whether to *send* someone
 to onboarding in the first place. A household that already has members is
-sent on to /meal-setup instead — the revisitable version of the same
-questions (design_handoff_plan_the_week §7) — rather than being handed the
-blank wizard again.
+sent on to the Preferences sheet instead (/week?prefs=open — it was
+/meal-setup until that page was folded into Preferences, 2026-09-25) —
+rather than being handed the blank wizard again.
 
 The two tests below are the server-side half of the card and fail on main
 (where GET /onboarding always 200s with the wizard, no matter how set up the
@@ -46,7 +46,7 @@ from __future__ import annotations
 from app import tools
 
 
-def test_rerunning_onboarding_on_a_finished_household_redirects_to_meal_setup(signed_in):
+def test_rerunning_onboarding_on_a_finished_household_redirects_to_preferences(signed_in):
     """
     has_members becomes true the moment the household step is saved — the
     same signal the shell's own boot check reads to decide whether to send
@@ -59,7 +59,7 @@ def test_rerunning_onboarding_on_a_finished_household_redirects_to_meal_setup(si
     })
     res = signed_in.get("/onboarding", follow_redirects=False)
     assert res.status_code == 303
-    assert res.headers["location"] == "/meal-setup"
+    assert res.headers["location"] == "/week?prefs=open"
 
 
 def test_onboarding_still_opens_for_a_household_that_has_not_set_up_yet(signed_in):

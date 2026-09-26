@@ -6175,6 +6175,11 @@ def kitchen_page():
     return FileResponse(os.path.join(static_dir, "shell.html"))
 
 
+# The app shell on Plan with the Preferences sheet open (shell.js's boot
+# reads ?prefs=open, opens the sheet and scrubs the param).
+PREFERENCES_URL = "/week?prefs=open"
+
+
 @app.get("/onboarding")
 def onboarding_page():
     """
@@ -6185,11 +6190,10 @@ def onboarding_page():
     the link again (a bookmark, a shared link, the browser's own back/forward)
     started the wizard from blank, and add_member's get-or-create is by NAME —
     so a re-run that changed a spelling ("Emily" -> "Em") added a second
-    person rather than editing the first. Sent to /meal-setup instead, the
-    revisitable version of the same questions.
-    Assumption: /meal-setup is the right landing spot for "I've already set
-    up, let me change something" — Emily may prefer prefilling /onboarding
-    itself and letting them edit in place instead of bouncing away from it.
+    person rather than editing the first. Sent to the Preferences sheet
+    instead (PREFERENCES_URL), where every answer can be changed — it
+    was /meal-setup until that page was folded into Preferences
+    (Emily, 2026-09-25).
     """
     try:
         already_set_up = tools.get_household_setup_status().get("has_members", False)
@@ -6200,7 +6204,7 @@ def onboarding_page():
         logger.exception("Onboarding page status check failed")
         already_set_up = False
     if already_set_up:
-        return RedirectResponse(url="/meal-setup", status_code=303)
+        return RedirectResponse(url=PREFERENCES_URL, status_code=303)
     return FileResponse(os.path.join(static_dir, "onboarding.html"))
 
 
@@ -6218,11 +6222,14 @@ def plan_week_page():
 @app.get("/meal-setup")
 def meal_setup_page():
     """
-    The revisitable meal-planning setup (design_handoff_plan_the_week §7).
-    Everything onboarding asked, editable afterwards without going through
-    chat — plus an embedded chat for the things a stepper can't express.
+    The old revisitable meal-planning setup page (design_handoff_plan_the_
+    week §7). Folded into the Preferences sheet on 2026-09-25 (Emily): every
+    setting it held lives there now (the weeknight limit, "At the table"
+    and "A normal week at yours" moved; the counts, kitchen, won't-eat and
+    cuisines were already there). The address still answers — a bookmark,
+    an old link, a stale tab — by landing on Preferences instead of a 404.
     """
-    return FileResponse(os.path.join(static_dir, "meal-setup.html"))
+    return RedirectResponse(url=PREFERENCES_URL, status_code=303)
 
 
 @app.get("/chores-setup")

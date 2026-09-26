@@ -418,7 +418,7 @@ console.log(JSON.stringify(labels));
         "eating-style": "‹ Never on the plate",
         "wont-eat": "‹ How you eat",
         "excited-about": "‹ Never recommend",
-        "leftovers": "‹ What you're into",
+        "leftovers": "‹ Cuisines you like",
         "prep": "‹ Leftovers",
         "dinner-time": "‹ Meal prep",
         "kit-repeats": "‹ Dinner time",
