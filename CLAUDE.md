@@ -827,6 +827,62 @@ why*, not duplicating the diff.
     chores tools when `chores_enabled` is false, which is exactly why the
     gate's refusal is reachable rather than routine. But it is what a
     paused house still pays for, and it belongs to item 2.
+- **2026-09-26 — Two modules in `app/tools/` are shadowed by a function of
+  their own name, and the package now refuses a third. Branch
+  `overnight/module-name-collision-guard`, NOT merged at the time of
+  writing. TEST-ONLY — `git diff main -- app/ static/` is empty.**
+  `__init__.py` re-exports every tool function, so when a module and one of
+  its own exported functions share a name the re-export WINS: `from . import
+  <name>` hands back the FUNCTION and the first attribute access on it
+  raises `AttributeError`, inside whatever `except` happens to be open.
+  - **The class was already paid for once, and the payment was SILENT.** The
+    2026-09-24 `chat-can-unbatch` entry records it in its own words: the
+    module had to be renamed `batch_undo.py` because the re-exported
+    `unbatch` shadowed `unbatch.py`, and `apply_prep_day_batches` died on
+    `AttributeError` inside `approve_weekly_plan`'s own `except` — the week
+    approved, nothing batched, nothing said.
+  - **Two modules have re-introduced it, and BOTH WERE ADDED AFTER that
+    lesson was written down** — `swap_options.py` (function `swap_options`)
+    and `yesterday_check.py` (function `yesterday_check`). That is the
+    argument for a test rather than a third prose note: a rule in a file
+    nobody greps before naming a module does not prevent the next one.
+  - **NEITHER IS LIVE, measured rather than assumed.** No module inside
+    `app/` does `from . import swap_options` or `from . import
+    yesterday_check`, so nothing is broken today; `app/main.py` reaches the
+    functions through the package, which is what it wants. A landmine, not a
+    leak — the same honest framing the `id`-scoping card uses, and the
+    reason this is filed Low.
+  - **An allowlist that may only SHRINK**, `KNOWN_COLLISIONS`, because
+    renaming the two modules moves import paths in `app/` and `tests/` and
+    is a separate mechanical change with its own review. Same staging the
+    73-statement card chose. The guard-on-the-guard asserts the allowlist is
+    EXACTLY the real collisions, so a renamed module leaving a stale entry
+    behind cannot wave the next one through.
+  - **Read with `ast`, never grepped**, for the reason
+    `test_leftover_chain_household_filter.py` gives at length: a text sweep
+    in this repo was defeated by a pure reformat.
+  - **Found by TRIPPING it, not by reading `__init__.py`** — driving the
+    brand-new "Did you have it?" flow on a throwaway database and getting
+    `AttributeError: 'function' object has no attribute 'yesterday_check'`.
+    Worth recording that the module was otherwise CLEAN on all three of the
+    families it was being checked for: it validates its answer vocabulary
+    against `ANSWERS`, it scopes its `UPDATE` by `household_id()`, and it
+    reads `cooker.household_today()` rather than the server's clock.
+  - `tests/test_module_name_collisions.py` (5). **Red-against-main is ZERO
+    and is not quoted**: the collisions are on `main` too and are
+    allowlisted, which is the point. The evidence is **three mutations, all
+    run and all biting**: a NEW colliding module added (`app/tools/
+    unbatch.py`) reddens 2 — the rule and the allowlist — which is the one
+    that matters, since it proves a third collision is caught; emptying the
+    allowlist reddens 2; blinding the re-export reader reddens 3. Suite
+    **7442 passed, 0 failed** at `TZ=America/Toronto`, against **7437**
+    collected on `main` (`6f6a5b3`) — +5 is this file exactly.
+  - **Not done, deliberately:** the two renames. Suggested if wanted —
+    `swap_options.py` → `swap_option_picks.py`, `yesterday_check.py` →
+    `yesterday_ask.py`; both are internal module paths, so no route, no tool
+    name and no stored data changes. Renaming the FUNCTIONS instead is the
+    wider blast radius (`agent.TOOL_FUNCTIONS`, `TOOL_DEFINITIONS`,
+    `app/main.py`, the tests).
 
 - **2026-09-25 — A swapped-out repeat carries no note.** Emily chose "no
   note" over "in the last two weeks" and "last week / two weeks ago"
