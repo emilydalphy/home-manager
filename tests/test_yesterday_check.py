@@ -31,18 +31,28 @@ def _today() -> datetime.date:
 
 
 def _setup(approved: bool = True):
-    """An approved plan whose week holds yesterday (and the day before),
-    whatever weekday today is. Returns (plan_id, today, yesterday ISO)."""
+    """An approved plan covering the day before yesterday, yesterday AND
+    today — the only three days this file ever plans on — whatever weekday
+    today is. Returns (plan_id, today, yesterday ISO).
+
+    NOT a Monday-anchored week, and that is the whole point. On a Monday,
+    yesterday and the day before sit in LAST week while today sits in this
+    one, so no seven-day week starting on a Monday can hold all three, and
+    plan_meal's period guard correctly refuses the meal on today — which is
+    what made `clock (monday)` red. The app was right and the seed was
+    wrong; naming the days the tests actually need is the fix CLAUDE.md's
+    own weekday-cliff entries prescribe (see the 2026-09-17
+    drop-dish-refuses-the-past entry, and the 2026-09-22 shop_freezing_it
+    one, which is the same class on the sunday pin).
+
+    A 3-day period, not 7, for the same reason: every extra day is a day
+    some future weekday could fall the wrong side of. content_start_date is
+    left unset with day_count set, which plan_period resolves to
+    (week_start_date, 3) — see its docstring on the sentinel pair."""
     today = _today()
     yday = today - datetime.timedelta(days=1)
-    # Start the week two days before yesterday's Monday if yesterday is a
-    # Monday, so the day before yesterday is on the same plan too.
-    monday = yday - datetime.timedelta(days=yday.weekday())
-    if yday.weekday() == 0:
-        monday -= datetime.timedelta(days=7)
-        plan = tools.create_weekly_plan(monday.isoformat(), day_count=14)["weekly_plan_id"]
-    else:
-        plan = tools.create_weekly_plan(monday.isoformat())["weekly_plan_id"]
+    start = yday - datetime.timedelta(days=1)
+    plan = tools.create_weekly_plan(start.isoformat(), day_count=3)["weekly_plan_id"]
     if approved:
         conn = get_conn()
         conn.execute("UPDATE weekly_plans SET status = 'approved' WHERE id = ?", (plan,))

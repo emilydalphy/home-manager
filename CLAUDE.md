@@ -416,6 +416,55 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-26 — `clock (monday)` was RED on `main`, and the app was right: two
+  tests seeded a week that cannot hold today. Branch
+  `overnight/yesterday-check-monday-pin`, NOT merged at the time of writing.
+  TEST-ONLY — `git diff main -- app/ static/` is empty.** Found by running the
+  four pinned CI weekday jobs over tonight's merged work and then, when monday
+  came back **2 failed / 7467 passed**, running the same pin against a clean
+  `main` in its own worktree and getting the **identical** 2 failures — so
+  `main` itself is red at that pin and has been since `did-you-have-it`
+  merged.
+  - **The failures are `tests/test_yesterday_check.py`'s
+    `test_never_asks_about_today_or_further_back_than_yesterday` and
+    `test_only_rows_the_card_is_asking_about_can_be_answered`**, and both need
+    a meal on TODAY as well as on yesterday. Its shared `_setup()` built a
+    Monday-anchored seven-day week around YESTERDAY — so on a Monday,
+    yesterday (Sunday) and the day before (Saturday) are in LAST week while
+    today is in THIS one, no seven-day week starting on a Monday holds all
+    three, and `plan_meal`'s period guard correctly refuses the meal on today.
+    Nothing is wrong with "Did you have it?".
+  - **The fix is the one this log already prescribes twice: name the days the
+    tests actually need.** `create_weekly_plan((yday - 1).isoformat(),
+    day_count=3)` — the day before yesterday, yesterday and today, which is
+    every date the whole file ever plans on — and the 14-day
+    "yesterday-is-a-Monday" special case is gone with the weekday branch that
+    needed it. **3 days rather than 7 deliberately**: every extra day is a day
+    some future weekday could fall the wrong side of. `content_start_date` is
+    left unset with `day_count` set, which `plan_period` resolves to
+    `(week_start_date, 3)`.
+  - **THE RE-SEED WAS PROVED NOT TO HAVE MADE THE TWO TESTS TOOTHLESS, which
+    is the half this log keeps having to insist on.** On `main` those two died
+    INSIDE the fixture and so never reached the claim they are named for;
+    after the re-seed each fails for its own reason at the monday pin. Three
+    mutations of `app/tools/yesterday_check.py`, each run and each restored:
+    the card's window widened to two days back (**9 red** across the file at
+    monday, sunday and thursday alike), the card asking about TODAY instead of
+    yesterday (**2 red** — both re-seeded tests), and the `NotAskedAbout`
+    guard removed (**1 red** — the second one). So the file is STRONGER, not
+    merely green.
+  - `tests/test_yesterday_check.py` reads **17 passed at all seven weekday
+    pins and unpinned** at `TZ=America/Toronto`, against `main`'s 2 failed /
+    15 passed at monday.
+  - **The wider class was swept and deliberately NOT chased.** 80 test files
+    derive a weekday and plan meals; almost every one anchors THIS week's
+    Monday and plans inside it, which is right on every weekday, and
+    `clock (friday)` is green. Rewriting 80 files to fix two is churn with its
+    own bugs in it — the pins are what find the next one. The three weekdays
+    the matrix does NOT pin (tue/wed/thu) were run over the whole suite as a
+    check, per the 2026-09-22 entry's own "run all SEVEN, not the four the
+    matrix pins".
+
 - **2026-09-25 — A swapped-out repeat carries no note.** Emily chose "no
   note" over "in the last two weeks" and "last week / two weeks ago"
   (mockups https://claude.ai/artifact/UKeqDuk8Pyi7owCXv7uhmf).
