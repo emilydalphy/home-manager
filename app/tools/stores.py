@@ -96,8 +96,9 @@ def set_item_store(item: str, store: str, log_event: bool = True, sync_typical: 
     if store:
         if match:
             conn.execute(
-                "UPDATE item_store_preferences SET item = ?, store = ? WHERE id = ?",
-                (item.strip().lower(), store, match["id"]),
+                "UPDATE item_store_preferences SET item = ?, store = ? "
+                "WHERE id = ? AND household_id = ?",
+                (item.strip().lower(), store, match["id"], household_id()),
             )
         else:
             conn.execute(
@@ -107,7 +108,10 @@ def set_item_store(item: str, store: str, log_event: bool = True, sync_typical: 
         _apply_store_to_matching_rows(conn, item, store)
     else:
         if match:
-            conn.execute("DELETE FROM item_store_preferences WHERE id = ?", (match["id"],))
+            conn.execute(
+                "DELETE FROM item_store_preferences WHERE id = ? AND household_id = ?",
+                (match["id"], household_id()),
+            )
         _apply_store_to_matching_rows(conn, item, "")
     conn.commit()
     conn.close()
@@ -254,8 +258,9 @@ def _stage_grocery_item_store(conn, item_id: int, store: str, remember: bool, de
     if not row:
         return {"item_id": item_id, "found": False}
     conn.execute(
-        "UPDATE grocery_items SET store = ?, store_decided = ? WHERE id = ?",
-        (store, 1 if decided else 0, item_id),
+        "UPDATE grocery_items SET store = ?, store_decided = ? "
+        "WHERE id = ? AND household_id = ?",
+        (store, 1 if decided else 0, item_id, household_id()),
     )
     return {
         "item_id": item_id,

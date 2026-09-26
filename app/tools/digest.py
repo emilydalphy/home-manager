@@ -257,16 +257,28 @@ def set_morning_text_for_member(
         raise ValueError("I don't have that person down as an adult here.")
     new_phone = normalise_phone(phone) if phone is not None else None
     if new_phone is not None:
-        conn.execute("UPDATE members SET phone = ? WHERE id = ?", (new_phone, member_id))
+        conn.execute(
+            "UPDATE members SET phone = ? WHERE id = ? AND household_id = ?",
+            (new_phone, member_id, household_id()),
+        )
         if new_phone == "":
-            conn.execute("UPDATE members SET morning_text_on = 0 WHERE id = ?", (member_id,))
+            conn.execute(
+                "UPDATE members SET morning_text_on = 0 WHERE id = ? AND household_id = ?",
+                (member_id, household_id()),
+            )
     if on is not None:
         if on:
-            current = conn.execute("SELECT phone FROM members WHERE id = ?", (member_id,)).fetchone()["phone"]
+            current = conn.execute(
+                "SELECT phone FROM members WHERE id = ? AND household_id = ?",
+                (member_id, household_id()),
+            ).fetchone()["phone"]
             if not current:
                 conn.close()
                 raise ValueError("I need a mobile number before I can text you — which number should it go to?")
-        conn.execute("UPDATE members SET morning_text_on = ? WHERE id = ?", (1 if on else 0, member_id))
+        conn.execute(
+            "UPDATE members SET morning_text_on = ? WHERE id = ? AND household_id = ?",
+            (1 if on else 0, member_id, household_id()),
+        )
     if time is not None:
         conn.execute(
             "UPDATE households SET morning_text_time = ? WHERE id = ?",
@@ -823,7 +835,10 @@ def set_evening_nudge_for_member(member_id: int, on: bool) -> dict:
     if not any(r["id"] == member_id for r in _adult_rows(conn)):
         conn.close()
         raise ValueError("I don't have that person down as an adult here.")
-    conn.execute("UPDATE members SET evening_nudge_on = ? WHERE id = ?", (1 if on else 0, member_id))
+    conn.execute(
+        "UPDATE members SET evening_nudge_on = ? WHERE id = ? AND household_id = ?",
+        (1 if on else 0, member_id, household_id()),
+    )
     conn.commit()
     conn.close()
     settings = get_evening_nudge_settings()
@@ -877,7 +892,10 @@ def _run_household_evening(now_utc: datetime, send: Callable[[dict, str], dict])
     for r in waiting:
         result = send({"member_id": r["id"], "name": r["name"], "phone": r["phone"]}, text)
         status = result.get("status") or "failed"
-        conn.execute("UPDATE members SET evening_nudge_sent_on = ? WHERE id = ?", (sent_on, r["id"]))
+        conn.execute(
+            "UPDATE members SET evening_nudge_sent_on = ? WHERE id = ? AND household_id = ?",
+            (sent_on, r["id"], household_id()),
+        )
         conn.commit()
         done.append({"member_id": r["id"], "status": status})
         if status != "ok":

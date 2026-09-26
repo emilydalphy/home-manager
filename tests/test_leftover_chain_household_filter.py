@@ -25,25 +25,24 @@ the statements as they stood really did read, rewrite and delete another
 household's row. That is what they would do the first time somebody
 resolved an id some other way.
 
-The sweep at the bottom is the part that earns its keep, and it is on its
-second design. The first read the file's quoted runs line by line, and an
-independent review defeated it with a PURE REFORMAT — rewriting one of the
-four fixed statements as a triple-quoted block took the guard off with the
-whole 6633-test suite still green. It is built on `ast` now, which is both
-shorter and sees the shapes a line reader cannot; every shape that defeated
-the old one is a test case, and the one shape it still cannot see is a test
-case too, so it stays true rather than being described.
+THE SWEEP THAT USED TO BE AT THE BOTTOM OF THIS FILE HAS MOVED, 2026-09-26,
+to tests/test_household_scope_sweep.py, which generalises it from this one
+module and one table to every household-owned table across the whole of
+app/ — there is exactly one sweep in tests/, not two. Its second sentence is
+still worth reading wherever it lives: the FIRST design read this file's
+quoted runs line by line, and an independent review defeated it with a PURE
+REFORMAT — rewriting one of the four fixed statements as a triple-quoted
+block took the guard off with the whole 6633-test suite still green. It is
+built on `ast` now; every shape that defeated the old one is a test case,
+and the shapes it still cannot see are test cases too, so they stay true
+rather than being described.
 """
-import ast
 import json
-import os
-import re
 
 import pytest
 
 from app import households
 from app.db import get_conn
-from app.tools import weekly_plan
 from app.tools._shared import DEFAULT_HOUSEHOLD_ID
 
 
@@ -159,199 +158,19 @@ def test_the_same_statements_with_the_guard_touch_nothing(two_households):
 
 
 # --------------------------------------------------------------------------
-# The sweep — the part that catches the NEXT one.
+# The sweep MOVED, 2026-09-26, and there is now exactly one in tests/.
+#
+# tests/test_household_scope_sweep.py generalises it from this one module and
+# one table to every household-owned table across the whole of app/. The ast
+# reader, all twelve shape cases, the guarded-statement cases, the
+# comment-cannot-count case and the local-variable blind spot went with it
+# unchanged — they are tests OF the reader, so they belong beside it — and
+# that file restates this one's narrower claim by name
+# (test_the_claim_the_single_module_sweep_used_to_make_still_holds), so
+# nothing here is uncovered.
+#
+# What stays in this file is the pair of characterisations below: what the
+# unguarded statements really did when handed a foreign id, and what the
+# guarded ones do. They are the measured basis for the severity note at the
+# top and are green on main and on the branch alike.
 # --------------------------------------------------------------------------
-
-_MODULE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                       "app", "tools", "weekly_plan.py")
-
-# A statement that reaches meal_plan_entries and keys on a row id, with or
-# without a table alias in front of it, singly or by a list. The household
-# guard may sit on either side, so the check is whether the column appears
-# anywhere in the same statement rather than in a fixed position.
-_BY_ID = re.compile(
-    r"\b(?:FROM|UPDATE|INTO)\s+meal_plan_entries\b.*?\bWHERE\b.*?"
-    r"(?:\b\w+\.)?\bid\s*(?:=\s*[?:]|IN\s*\()",
-    re.IGNORECASE | re.DOTALL,
-)
-
-
-def _sql_text(node: ast.AST) -> str:
-    """
-    The SQL a node evaluates to, as near as can be read without running it.
-
-    Built on ast rather than on the file's lines, and that is the whole
-    lesson of this helper. The first version read quoted runs line by line
-    and rebuilt Python's implicit concatenation by hand — which meant it
-    could only see a statement written the one way the four sites happened
-    to be written. An independent review defeated it with a PURE REFORMAT:
-    rewriting one of the four as a triple-quoted block took the household
-    guard off with the whole 6633-test suite still green. Python's own
-    parser already joins adjacent literals into a single Constant, so
-    asking it is both shorter and catches the shapes a line reader cannot.
-
-    Handles: plain and triple-quoted strings, implicit concatenation
-    (already one Constant by the time ast sees it), f-strings, `+`
-    concatenation, and %-formatting. An interpolated value becomes {} —
-    what it holds cannot be known here, and a statement is judged on the
-    text around it.
-    """
-    if isinstance(node, ast.Constant):
-        return node.value if isinstance(node.value, str) else ""
-    if isinstance(node, ast.JoinedStr):
-        return "".join(_sql_text(v) if isinstance(v, ast.Constant) else "{}" for v in node.values)
-    if isinstance(node, ast.BinOp) and isinstance(node.op, (ast.Add, ast.Mod)):
-        return _sql_text(node.left) + " " + _sql_text(node.right)
-    return ""
-
-
-def _statements(source: str) -> list[str]:
-    """Every argument to a .execute()/.executemany() call that mentions the table."""
-    tree = ast.parse(source)
-    out = []
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
-            continue
-        if node.func.attr not in ("execute", "executemany", "executescript"):
-            continue
-        if not node.args:
-            continue
-        text = " ".join(_sql_text(node.args[0]).split())
-        if "meal_plan_entries" in text:
-            out.append(text)
-    return out
-
-
-def test_no_statement_reaches_a_meal_plan_entry_by_id_alone():
-    """
-    THE GUARD. Not "the six sites are fixed" — that would go quiet the day
-    a seventh appears. Every statement in the module that addresses
-    meal_plan_entries by a row id must name household_id too.
-
-    Red against main: six statements. Four by `id = ?`
-    (repair_leftover_chains' read-back and its write, _unlink_leftover_target's
-    write, swap_component_in_plan's delete) and two by `id IN (...)`
-    (clear_plan_slot's delete, _dedupe_duplicate_slots' delete) — the second
-    pair found by the review of the first, and conspicuous because in
-    clear_plan_slot the statement four lines above it is guarded.
-    """
-    source = open(_MODULE, encoding="utf-8").read()
-    offenders = [
-        stmt for stmt in _statements(source)
-        if _BY_ID.search(stmt) and "household_id" not in stmt
-    ]
-    assert offenders == [], (
-        "these statements reach a meal_plan_entries row by id with no household "
-        "guard — scope them like their neighbours:\n  " + "\n  ".join(offenders)
-    )
-
-
-# Every shape this sweep is claimed to see, and the ones it does not. The
-# review that found the reformat hole defeated the old sweep with ten
-# shapes; these are the same ten, so a future change to _sql_text is
-# measured against them rather than argued about.
-_SEEN = {
-    "one line": 'conn.execute("DELETE FROM meal_plan_entries WHERE id = ?", (x,))',
-    "implicit concatenation": (
-        'conn.execute(\n'
-        '    "DELETE FROM meal_plan_entries "\n'
-        '    "WHERE id = ?",\n'
-        '    (x,),\n'
-        ')'
-    ),
-    "triple quoted": 'conn.execute("""\nDELETE FROM meal_plan_entries WHERE id = ?\n""", (x,))',
-    "f-string": 'conn.execute(f"DELETE FROM meal_plan_entries WHERE id IN ({marks})", ids)',
-    "plus concatenation": 'conn.execute(head + "FROM meal_plan_entries WHERE id = ?", (x,))',
-    "percent formatting": (
-        'conn.execute("DELETE FROM meal_plan_entries WHERE id IN (%s)" % marks, ids)'
-    ),
-    "aliased id": (
-        'conn.execute("SELECT 1 FROM meal_plan_entries mpe WHERE mpe.id = ?", (x,))'
-    ),
-    "id IN a list": 'conn.execute("DELETE FROM meal_plan_entries WHERE id IN (?, ?)", ids)',
-    "lowercase sql": 'conn.execute("delete from meal_plan_entries where id = ?", (x,))',
-    "a sql literal before the id": (
-        'conn.execute("UPDATE meal_plan_entries SET reasoning = \'\' WHERE id = ?", (x,))'
-    ),
-    "named parameter": 'conn.execute("DELETE FROM meal_plan_entries WHERE id = :id", d)',
-    "params on the last literal line": (
-        'conn.execute(\n'
-        '    "DELETE FROM meal_plan_entries "\n'
-        '    "WHERE id = ?", (x,),\n'
-        ')'
-    ),
-}
-
-
-@pytest.mark.parametrize("name", sorted(_SEEN))
-def test_the_sweep_sees_every_shape_this_module_could_use(name):
-    """
-    Each of these removed the guard and went unseen by the line-based
-    sweep this replaced; two of them (a triple-quoted block, `+`
-    concatenation) are shapes weekly_plan.py already uses elsewhere, so
-    the hole was not hypothetical — a pure reformat of one of the four
-    fixed statements passed the whole suite.
-    """
-    found = _statements(_SEEN[name])
-    assert found, f"the sweep did not find the statement at all: {name}"
-    assert any(_BY_ID.search(f) and "household_id" not in f for f in found), (
-        f"the sweep read {name} as guarded when it is not: {found}"
-    )
-
-
-@pytest.mark.parametrize("guarded", [
-    'conn.execute("DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?", (x, h))',
-    ('conn.execute(\n'
-     '    "DELETE FROM meal_plan_entries WHERE id = ? "\n'
-     '    "AND household_id = ?",\n'
-     '    (x, h),\n'
-     ')'),
-    'conn.execute(f"DELETE FROM meal_plan_entries WHERE id IN ({m}) AND household_id = ?", a)',
-    'conn.execute("""\nDELETE FROM meal_plan_entries\nWHERE id = ? AND household_id = ?\n""", (x, h))',
-])
-def test_a_guarded_statement_is_not_reported(guarded):
-    """
-    The other direction, and it is not decoration: the sweep this replaced
-    reported a CORRECTLY guarded statement as an offender whenever the
-    params tuple shared the final literal's line, telling whoever
-    reformatted next to add a guard that was already there.
-    """
-    offenders = [s for s in _statements(guarded) if _BY_ID.search(s) and "household_id" not in s]
-    assert offenders == [], offenders
-
-
-def test_a_guard_hiding_in_a_comment_does_not_count():
-    """
-    CLAUDE.md records three separate source tests that were satisfiable by
-    their own prose. ast reads the statement, not the file, so a comment
-    cannot reach it — pinned rather than assumed.
-    """
-    commented = (
-        'conn.execute(  # household_id checked above\n'
-        '    "DELETE FROM meal_plan_entries WHERE id = ?",  # see household_id\n'
-        '    (x,),\n'
-        ')'
-    )
-    offenders = [s for s in _statements(commented) if _BY_ID.search(s) and "household_id" not in s]
-    assert len(offenders) == 1, offenders
-
-
-def test_what_the_sweep_still_cannot_see():
-    """
-    Written down rather than left for the next person, which is the half
-    of this that the review said was cheaper than the code: a statement
-    assembled through a LOCAL VARIABLE is invisible, because knowing what
-    it holds needs dataflow this does not do.
-
-    It is asserted rather than described so that it stays true — if a
-    later _sql_text learns to follow a variable, this test goes red and
-    whoever did it gets to delete a limitation instead of discovering one.
-    """
-    via_variable = (
-        'sql = "DELETE FROM meal_plan_entries WHERE id = ?"\n'
-        'conn.execute(sql, (x,))'
-    )
-    assert _statements(via_variable) == [], (
-        "the sweep can follow a variable now — take this limitation out of "
-        "the docstring above and off the card"
-    )

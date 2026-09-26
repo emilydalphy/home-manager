@@ -591,8 +591,9 @@ def save_week_intake(
             revision = (max_revision or 0) + 1
             if current:
                 conn.execute(
-                    "UPDATE week_intake SET superseded_at = datetime('now') WHERE id = ?",
-                    (current["id"],),
+                    "UPDATE week_intake SET superseded_at = datetime('now') "
+                    "WHERE id = ? AND household_id = ?",
+                    (current["id"], household_id()),
                 )
             cursor = conn.execute(
                 """
@@ -625,7 +626,10 @@ def save_week_intake(
             )
             conn.commit()
             intake_id = cursor.lastrowid
-            row = conn.execute("SELECT * FROM week_intake WHERE id = ?", (intake_id,)).fetchone()
+            row = conn.execute(
+                "SELECT * FROM week_intake WHERE id = ? AND household_id = ?",
+                (intake_id, household_id()),
+            ).fetchone()
             saved = _intake_row_to_dict(row)
             _sync_guest_attendance(saved)
             return saved
@@ -667,8 +671,9 @@ def clear_week_intake(week_start: str) -> dict:
         conn.close()
         return {"week_start": week_start, "cleared": False}
     conn.execute(
-        "UPDATE week_intake SET superseded_at = datetime('now') WHERE id = ?",
-        (current["id"],),
+        "UPDATE week_intake SET superseded_at = datetime('now') "
+        "WHERE id = ? AND household_id = ?",
+        (current["id"], household_id()),
     )
     conn.commit()
     conn.close()
@@ -1041,7 +1046,10 @@ def _plan_for_period(week_start: str, day_count: int):
     approved = [o for o in overlapping if o["status"] == "approved"]
     chosen = (covering or approved or overlapping)[-1]
     conn = get_conn()
-    row = conn.execute("SELECT intake_id FROM weekly_plans WHERE id = ?", (chosen["weekly_plan_id"],)).fetchone()
+    row = conn.execute(
+        "SELECT intake_id FROM weekly_plans WHERE id = ? AND household_id = ?",
+        (chosen["weekly_plan_id"], household_id()),
+    ).fetchone()
     conn.close()
     return {**chosen, "intake_id": row["intake_id"] if row else None,
             "approved_overlap": bool(approved)}
@@ -1060,7 +1068,10 @@ def _intake_for_period(conn, week_start: str, day_count: int, plan) -> dict | No
     """
     row = _current_intake_row(conn, week_start)
     if row is None and plan and plan.get("intake_id"):
-        filed = conn.execute("SELECT week_start FROM week_intake WHERE id = ?", (plan["intake_id"],)).fetchone()
+        filed = conn.execute(
+            "SELECT week_start FROM week_intake WHERE id = ? AND household_id = ?",
+            (plan["intake_id"], household_id()),
+        ).fetchone()
         if filed:
             row = _current_intake_row(conn, filed["week_start"])
     if row is None and plan is None:

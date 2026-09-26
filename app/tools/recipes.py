@@ -350,8 +350,11 @@ def update_recipe_details(
         params.append(json.dumps(advance_prep_step_indices))
 
     if fields:
-        params.append(existing["id"])
-        conn.execute(f"UPDATE recipes SET {', '.join(fields)} WHERE id = ?", params)
+        params.extend([existing["id"], household_id()])
+        conn.execute(
+            f"UPDATE recipes SET {', '.join(fields)} WHERE id = ? AND household_id = ?",
+            params,
+        )
         conn.commit()
     conn.close()
     return get_recipe(recipe_name)
@@ -402,11 +405,11 @@ def fill_recipe_details(
             "prep_time_minutes = COALESCE(?, prep_time_minutes), "
             "cook_time_minutes = COALESCE(?, cook_time_minutes), "
             "advance_prep_notes = ?, advance_prep_step_indices_json = ?, details_pending = 0 "
-            "WHERE id = ?",
+            "WHERE id = ? AND household_id = ?",
             (
                 json.dumps(settled), json.dumps(instructions or []), int(default_servings or 4),
                 prep_time_minutes, cook_time_minutes, advance_prep_notes or "",
-                json.dumps(advance_prep_step_indices or []), row["id"],
+                json.dumps(advance_prep_step_indices or []), row["id"], household_id(),
             ),
         )
         conn.commit()
@@ -1672,8 +1675,8 @@ def save_cooking_quantities(recipe_name: str, cook_quantities: dict[str, str]) -
     # as anything else before they are written down (Emily, 2026-09-13).
     ingredients = settle_cooking_quantities(ingredients, row["default_servings"])
     conn.execute(
-        "UPDATE recipes SET ingredients_json = ? WHERE id = ?",
-        (json.dumps(ingredients), row["id"]),
+        "UPDATE recipes SET ingredients_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps(ingredients), row["id"], household_id()),
     )
     conn.commit()
     conn.close()
@@ -1788,11 +1791,14 @@ def mark_recipe_feedback(recipe_name: str, rating: str | None = None, notes: str
 
     if rating is not None:
         conn.execute(
-            "UPDATE recipes SET rating = ?, feedback_notes = ? WHERE id = ?",
-            (rating, merged_notes, recipe["id"]),
+            "UPDATE recipes SET rating = ?, feedback_notes = ? WHERE id = ? AND household_id = ?",
+            (rating, merged_notes, recipe["id"], household_id()),
         )
     else:
-        conn.execute("UPDATE recipes SET feedback_notes = ? WHERE id = ?", (merged_notes, recipe["id"]))
+        conn.execute(
+            "UPDATE recipes SET feedback_notes = ? WHERE id = ? AND household_id = ?",
+            (merged_notes, recipe["id"], household_id()),
+        )
     conn.commit()
     conn.close()
 
@@ -2074,8 +2080,8 @@ def flag_recipe_temporary(recipe_name: str, excluded: bool = True) -> dict:
         conn.close()
         raise ValueError(f"No recipe named '{recipe_name}'. Save it first with add_recipe.")
     conn.execute(
-        "UPDATE recipes SET temporarily_excluded = ? WHERE id = ?",
-        (1 if excluded else 0, recipe["id"]),
+        "UPDATE recipes SET temporarily_excluded = ? WHERE id = ? AND household_id = ?",
+        (1 if excluded else 0, recipe["id"], household_id()),
     )
     conn.commit()
     conn.close()

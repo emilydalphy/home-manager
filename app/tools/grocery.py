@@ -555,7 +555,10 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
                 (household_id(), link["grocery_item_id"], *reversing_ids),
             ).fetchone()["n"]
             if not still_wanted and grocery_row["source_weekly_plan_id"] is not None:
-                conn.execute("DELETE FROM grocery_items WHERE id = ?", (grocery_row["id"],))
+                conn.execute(
+                    "DELETE FROM grocery_items WHERE id = ? AND household_id = ?",
+                    (grocery_row["id"], household_id()),
+                )
                 removed_items.append(grocery_row["item"])
         elif live:
             is_standing_want = grocery_row["source_weekly_plan_id"] is None
@@ -604,13 +607,22 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
             if fully_removed:
                 if is_standing_want:
                     if new_qty != (grocery_row["quantity"] or ""):
-                        conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ?", (new_qty, grocery_row["id"]))
+                        conn.execute(
+                            "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
+                            (new_qty, grocery_row["id"], household_id()),
+                        )
                         trimmed_items.append(grocery_row["item"])
                 else:
-                    conn.execute("DELETE FROM grocery_items WHERE id = ?", (grocery_row["id"],))
+                    conn.execute(
+                        "DELETE FROM grocery_items WHERE id = ? AND household_id = ?",
+                        (grocery_row["id"], household_id()),
+                    )
                     removed_items.append(grocery_row["item"])
             elif new_qty != (grocery_row["quantity"] or ""):
-                conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ?", (new_qty, grocery_row["id"]))
+                conn.execute(
+                    "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
+                    (new_qty, grocery_row["id"], household_id()),
+                )
                 trimmed_items.append(grocery_row["item"])
     if not narrowed:
         conn.execute("DELETE FROM meal_plan_grocery_links WHERE household_id = ? AND meal_plan_entry_id = ?", (household_id(), entry_id))
@@ -668,7 +680,10 @@ def _recompute_plan_line_from_ledger(item_id: int, conn=None) -> None:
     if summed:
         new_qty = _quantities._with_note(summed, _quantities._quantity_note(row["quantity"] or ""))
         if new_qty != (row["quantity"] or ""):
-            conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ?", (new_qty, row["id"]))
+            conn.execute(
+                "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
+                (new_qty, row["id"], household_id()),
+            )
     if own_conn:
         conn.commit()
         conn.close()
@@ -783,15 +798,19 @@ def add_grocery_item(
             "source_weekly_plan_id = CASE WHEN ? THEN NULL ELSE ? END, "
             # Fills in a store the row doesn't have yet, without
             # overwriting one already chosen for this line.
-            "store = CASE WHEN store = '' THEN ? ELSE store END WHERE id = ?",
+            "store = CASE WHEN store = '' THEN ? ELSE store END "
+            "WHERE id = ? AND household_id = ?",
             (merged_qty, category, 1 if keep_standing else 0, source_weekly_plan_id,
-             preferred_store, existing["id"]),
+             preferred_store, existing["id"], household_id()),
         )
         # A person asking for a spice by name wants it bought: their add
         # ticks the pending line onto the list. A plan's add leaves it in
         # the section, unticked, whatever the quantity now reads.
         if existing["status"] == "spice" and source_weekly_plan_id is None:
-            conn.execute("UPDATE grocery_items SET status = 'needed' WHERE id = ?", (existing["id"],))
+            conn.execute(
+                "UPDATE grocery_items SET status = 'needed' WHERE id = ? AND household_id = ?",
+                (existing["id"], household_id()),
+            )
         item_id = existing["id"]
         # The name already on the list, not the one just asked for: the
         # row keeps its own wording, so saying "item" back means the line
@@ -1135,7 +1154,10 @@ def repair_grocery_quantities(status: str = "needed") -> dict:
         for seg in segments:
             cleaned, _ = _try_consolidate_quantity(cleaned, seg)
         if cleaned != qty:
-            conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ?", (cleaned, r["id"]))
+            conn.execute(
+                "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
+                (cleaned, r["id"], household_id()),
+            )
             fixed.append({"item": r["item"], "before": qty, "after": cleaned})
     conn.commit()
     conn.close()
@@ -1240,7 +1262,10 @@ def clear_stale_grocery_items(current_weekly_plan_id: int | None = None) -> dict
         ).fetchall()
     removed = [r["item"] for r in rows]
     if rows:
-        conn.executemany("DELETE FROM grocery_items WHERE id = ?", [(r["id"],) for r in rows])
+        conn.executemany(
+            "DELETE FROM grocery_items WHERE id = ? AND household_id = ?",
+            [(r["id"], household_id()) for r in rows],
+        )
         conn.commit()
     conn.close()
     return {"removed_count": len(removed), "removed_items": removed}
@@ -1642,7 +1667,10 @@ def undo_substitution(item_id: int) -> dict:
                 "UPDATE grocery_items SET item = ? WHERE id = ? AND household_id = ?",
                 (sub["original_item"], item_id, household_id()),
             )
-    conn.execute("DELETE FROM grocery_substitutions WHERE id = ?", (sub["id"],))
+    conn.execute(
+        "DELETE FROM grocery_substitutions WHERE id = ? AND household_id = ?",
+        (sub["id"], household_id()),
+    )
     conn.commit()
     conn.close()
     return {"item_id": item_id, "item": sub["original_item"], "status": "needed"}
@@ -1957,8 +1985,8 @@ def update_grocery_item(item_id: int, quantity: str | None = None, category: str
     new_quantity = quantity if quantity is not None else row["quantity"]
     new_category = category if category is not None else row["category"]
     conn.execute(
-        "UPDATE grocery_items SET quantity = ?, category = ? WHERE id = ?",
-        (new_quantity, new_category, item_id),
+        "UPDATE grocery_items SET quantity = ?, category = ? WHERE id = ? AND household_id = ?",
+        (new_quantity, new_category, item_id, household_id()),
     )
     conn.commit()
     conn.close()
