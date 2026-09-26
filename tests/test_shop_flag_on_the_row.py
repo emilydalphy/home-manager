@@ -321,8 +321,9 @@ def test_the_old_words_are_gone_from_the_app():
     # what it used to read survives, which is why this looks for the class
     # rather than the words.
     assert "gro-ps-helper" not in SHELL_JS
-    # ">Drop it<" rather than "Drop it": shell.html's discard-draft dialog
-    # is a different button on a different screen and keeps its words.
+    # ">Drop it<" rather than "Drop it": nothing in shell.js ever carried
+    # this markup — the discard-draft dialog's button lived in shell.html
+    # instead, and read "Keep my week" from mockup 10C (2026-09-25) on.
     assert ">Drop it</button>" not in SHELL_JS
 
 

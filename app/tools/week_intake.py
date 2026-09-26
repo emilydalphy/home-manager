@@ -575,7 +575,20 @@ def save_week_intake(
 
             household_snapshot = _household_composition()
             preferences_snapshot = _build_preferences_snapshot(conn)
-            revision = (current["revision"] + 1) if current else 1
+            # NOT current["revision"] + 1: current is the highest UNSUPERSEDED
+            # revision, and clear_week_intake can supersede the current row
+            # with no replacement (Loop Board, 2026-09-25 review) — the next
+            # save after a clear would then see current = None and try
+            # revision 1 again, which the UNIQUE (household_id, week_start,
+            # revision) index already holds (superseded, but still there),
+            # 500ing every save for that week forever. The next revision is
+            # always one past the highest revision EVER written for this
+            # week, superseded or not.
+            max_revision = conn.execute(
+                "SELECT MAX(revision) AS m FROM week_intake WHERE household_id = ? AND week_start = ?",
+                (household_id(), week_start),
+            ).fetchone()["m"]
+            revision = (max_revision or 0) + 1
             if current:
                 conn.execute(
                     "UPDATE week_intake SET superseded_at = datetime('now') WHERE id = ?",
@@ -624,6 +637,42 @@ def save_week_intake(
                 raise
         finally:
             conn.close()
+
+
+def clear_week_intake(week_start: str) -> dict:
+    """
+    "Start over"'s third option (app/tools/reset.py, POST /api/reset):
+    clears this ONE week's answers to the planning questions, and nothing
+    else. Household setup — meal_preferences, members, the kitchen kit,
+    everything the Preferences sheet holds — was never in week_intake and
+    is untouched; this only ever reaches the rows this module itself
+    writes, keyed to this one week_start.
+
+    Not a delete: the current revision is marked superseded_at with no
+    replacement inserted, the same half of save_week_intake's
+    read-modify-write that retires an old revision, just without a new
+    one landing on top of it. get_week_intake(week_start) then answers
+    None — "nobody has started" — exactly as if the questions had never
+    been opened for this week, while every earlier revision stays on the
+    table for history's sake, append-only as ever.
+
+    A week with no revision on file yet returns cleared: False — there
+    was nothing to clear — same shape as get_reset_preview's other counts
+    answering 0.
+    """
+    date.fromisoformat(week_start)  # fail loudly on a malformed week
+    conn = get_conn()
+    current = _current_intake_row(conn, week_start)
+    if not current:
+        conn.close()
+        return {"week_start": week_start, "cleared": False}
+    conn.execute(
+        "UPDATE week_intake SET superseded_at = datetime('now') WHERE id = ?",
+        (current["id"],),
+    )
+    conn.commit()
+    conn.close()
+    return {"week_start": week_start, "cleared": True}
 
 
 def _sync_guest_attendance(intake: dict) -> None:

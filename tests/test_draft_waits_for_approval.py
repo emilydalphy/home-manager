@@ -574,24 +574,28 @@ class TestDroppingADraft:
 
 
 def test_the_more_sheet_offers_the_row_on_a_draft_only():
-    """Source markers for the Plan tab's More sheet — the row, its two
-    sub-lines and the confirm it goes through."""
+    """Source markers for the Plan tab's More sheet's "Keep my approved
+    week" row (renamed from "Drop this draft", mockup 10C, 2026-09-25) —
+    the row, its one line, and the confirm it goes through. Shown only
+    when an approved week sits under this draft (data.replaces); with
+    nothing approved under it, the row is gone outright rather than
+    carrying a different line."""
     import pathlib
     shell = (pathlib.Path(__file__).resolve().parents[1] / "static" / "shell.js").read_text()
     sheet = shell.split("function renderMealsMoreSheet()", 1)[1].split("\n  function ", 1)[0]
-    assert "'wk-more-discard', 'Drop this draft'" in sheet
-    assert "Your approved week stays as it is" in sheet
-    assert "Nothing's on your list from it" in sheet
-    # In the draft-only block, beside Try again / Change my answers — an
+    assert "'wk-more-discard', WK_ICONS.bin, 'Keep my approved week'" in sheet
+    assert "Throws this draft away. Your approved week and grocery list stay as they are." in sheet
+    assert "data.replaces" in sheet
+    # In the draft-only branch, beside Try again / Change my answers — an
     # approved week never gets the row.
-    draft_block = sheet.split("hasPlan && data.status !== 'approved'", 1)[1].split(": '') +", 1)[0]
+    draft_block = sheet.split("if (isDraft) {", 1)[1].split("} else if (isApproved) {", 1)[0]
     assert "wk-more-discard" in draft_block
     assert "discardDraft(panel, data)" in sheet
     # Asked once before anything is retired.
     drop = shell.split("async function discardDraft(", 1)[1].split("\n  function ", 1)[0]
     assert "await askAboutDroppingDraft(label)" in drop
     assert "'/discard'" in drop
-    assert "Dropped. ' + out.approved_week_label + ' is still your week." in drop
+    assert "out.approved_week_label + ' is still your week.'" in drop
     # A refusal is the server's sentence, never the generic line.
     assert "out.status === 'refused'" in drop
     assert "showToast(out.message || DISCARD_TROUBLE)" in drop

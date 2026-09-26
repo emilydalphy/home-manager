@@ -506,6 +506,8 @@ from .recipes import (  # noqa: F401
     validate_measured_quantities,
 )
 from .reset import (  # noqa: F401
+    check_week_answers_clearable,
+    clear_week_answers,
     clear_weekly_plan,
     get_reset_preview,
 )
@@ -652,6 +654,7 @@ from .week_intake import (  # noqa: F401
     period_dates,
     freeform_meal_scopes,
     freeform_ingredient_requests,
+    clear_week_intake,
     get_week_intake,
     get_week_intake_history,
     get_week_intake_prefill,

@@ -13,8 +13,8 @@ are the rest:
    and the server's again underneath suggest_planning_period. One now.
 3. `next_period_after` — whether "Plan next week ›" offers the day after
    this plan or falls back to the standing suggestion.
-4. `discard_draft_plan` — which approved week the "Dropped. Sep 14–20 is
-   still your week." toast names, when a draft straddles two.
+4. `discard_draft_plan` — which approved week the "Sep 14–20 is still your
+   week." toast names, when a draft straddles two.
 5. `week_receipt` — the weekday in "Nothing to thaw before Thursday."
 6. `get_week_menu`'s component_based branch — whether an empty dinner gets
    the two-quick-dinner "Pick" rows. The day-based branch of the same
