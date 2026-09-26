@@ -190,7 +190,8 @@ def set_member_dietary_restrictions(name: str, restrictions: list[str], replace:
         merged = list(restrictions)
     else:
         existing_row = conn.execute(
-            "SELECT dietary_restrictions_json FROM members WHERE id = ?", (member_id,)
+            "SELECT dietary_restrictions_json FROM members WHERE id = ? AND household_id = ?",
+            (member_id, household_id()),
         ).fetchone()
         existing = json.loads(existing_row["dietary_restrictions_json"]) if existing_row else []
         existing = [r for r in existing if r.strip().lower() not in _NON_RESTRICTION_VALUES]
@@ -201,8 +202,8 @@ def set_member_dietary_restrictions(name: str, restrictions: list[str], replace:
                 merged.append(r)
                 seen_lower.add(r.strip().lower())
     conn.execute(
-        "UPDATE members SET dietary_restrictions_json = ? WHERE id = ?",
-        (json.dumps(merged), member_id),
+        "UPDATE members SET dietary_restrictions_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps(merged), member_id, household_id()),
     )
     conn.commit()
     conn.close()
@@ -234,9 +235,15 @@ def set_member_age_group(name: str, age_group: str) -> dict:
     conn = get_conn()
     try:
         member_id = _get_or_create_member(conn, name)
-        conn.execute("UPDATE members SET age_group = ? WHERE id = ?", (age_group, member_id))
+        conn.execute(
+            "UPDATE members SET age_group = ? WHERE id = ? AND household_id = ?",
+            (age_group, member_id, household_id()),
+        )
         if (age_group or "").strip().lower() == "adult":
-            row = conn.execute("SELECT color FROM members WHERE id = ?", (member_id,)).fetchone()
+            row = conn.execute(
+                "SELECT color FROM members WHERE id = ? AND household_id = ?",
+                (member_id, household_id()),
+            ).fetchone()
             if not row["color"]:
                 taken = {
                     r["color"]
@@ -247,7 +254,10 @@ def set_member_age_group(name: str, age_group: str) -> dict:
                 }
                 available = [c for c in _ADULT_COLORS if c not in taken]
                 if available:
-                    conn.execute("UPDATE members SET color = ? WHERE id = ?", (available[0], member_id))
+                    conn.execute(
+                        "UPDATE members SET color = ? WHERE id = ? AND household_id = ?",
+                        (available[0], member_id, household_id()),
+                    )
         conn.commit()
     finally:
         conn.close()
