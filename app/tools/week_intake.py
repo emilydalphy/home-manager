@@ -542,7 +542,20 @@ def save_week_intake(
 
             household_snapshot = _household_composition()
             preferences_snapshot = _build_preferences_snapshot(conn)
-            revision = (current["revision"] + 1) if current else 1
+            # NOT current["revision"] + 1: current is the highest UNSUPERSEDED
+            # revision, and clear_week_intake can supersede the current row
+            # with no replacement (Loop Board, 2026-09-25 review) — the next
+            # save after a clear would then see current = None and try
+            # revision 1 again, which the UNIQUE (household_id, week_start,
+            # revision) index already holds (superseded, but still there),
+            # 500ing every save for that week forever. The next revision is
+            # always one past the highest revision EVER written for this
+            # week, superseded or not.
+            max_revision = conn.execute(
+                "SELECT MAX(revision) AS m FROM week_intake WHERE household_id = ? AND week_start = ?",
+                (household_id(), week_start),
+            ).fetchone()["m"]
+            revision = (max_revision or 0) + 1
             if current:
                 conn.execute(
                     "UPDATE week_intake SET superseded_at = datetime('now') WHERE id = ?",

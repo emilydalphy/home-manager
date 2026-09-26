@@ -4249,6 +4249,13 @@ def reset(req: ResetRequest):
     round would reverse contributions against rows that no longer exist.
     week_answers is independent of both — it never touches meal_plan_entries
     or grocery_items — so its order relative to them doesn't matter.
+
+    week_answers clears the intake AND the day-attendance-sheet/guests-chip/
+    away-stretch attendance and the holiday answers for this one week (see
+    tools.clear_week_answers) — refused with a 400 when this week's answers
+    are shared with a second live plan on the same week_start_date, rather
+    than guessed at (the preview's intake_shared already told the dialog to
+    hide the option in that state; this is the belt to that braces).
     """
     if not req.meal_plan and not req.grocery_list and not req.week_answers:
         raise HTTPException(status_code=400, detail="Nothing selected to reset.")
@@ -4259,10 +4266,9 @@ def reset(req: ResetRequest):
         if req.grocery_list:
             result["grocery_list"] = tools.clear_grocery_list(status="needed")
         if req.week_answers:
-            preview = tools.get_reset_preview(req.weekly_plan_id)
-            week_start = preview.get("week_start_date")
-            if week_start:
-                result["week_answers"] = tools.clear_week_intake(week_start)
+            result["week_answers"] = tools.clear_week_answers(req.weekly_plan_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.exception("Reset failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -4270,7 +4276,7 @@ def reset(req: ResetRequest):
         "Self-service reset: meal_plan=%s grocery_list=%s week_answers=%s",
         result["meal_plan"] and result["meal_plan"]["meals_cleared"],
         result["grocery_list"] and result["grocery_list"]["removed_count"],
-        result["week_answers"] and result["week_answers"]["cleared"],
+        result["week_answers"] and result["week_answers"]["intake"],
     )
     return result
 

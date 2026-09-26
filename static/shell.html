@@ -392,21 +392,26 @@
     <button type="button" class="dialog-cancel-link" id="dinner-confirm-cancel">Never mind</button>
   </div>
 
-  <!-- "Drop this draft" confirm (Plan tab's More sheet) — Loop Board
-       2026-09-13. One question, plainly: dropping a draft is cheap and
-       reversible by re-planning, but it is still the household's week
-       leaving the screen, so it is asked rather than assumed. A real
-       dialog rather than a bare confirm() for the same reason the two
-       above are: the sentence under the question is what makes it an easy
-       yes — nothing of a draft's ever reached the shopping list. Body
-       level, like every other dialog here. -->
+  <!-- "Keep your approved week?" confirm (Plan tab's More sheet, behind
+       "Keep my approved week" — renamed from "Drop this draft", mockup
+       10C, 2026-09-25). Loop Board 2026-09-13's original call still holds:
+       dropping a draft is cheap and reversible by re-planning, but it is
+       still the household's week leaving the screen, so it is asked
+       rather than assumed. A real dialog rather than a bare confirm() for
+       the same reason the two above are: the sentence under the question
+       is what makes it an easy yes — the approved week underneath is
+       untouched. This row (and so this dialog) only ever opens when there
+       IS an approved week under the draft (data.replaces), which is why
+       the question is framed as keeping that week rather than a bare
+       "drop this draft" with nothing to weigh it against. Body level,
+       like every other dialog here. -->
   <div id="discard-draft-scrim" hidden></div>
   <div id="discard-draft-dialog" hidden data-motion="dialog" role="dialog" aria-modal="true" aria-labelledby="discard-draft-title">
-    <h2 class="reset-title" id="discard-draft-title">Drop this draft?</h2>
-    <p class="reset-note" id="discard-draft-note">Nothing from it is on your list.</p>
+    <h2 class="reset-title" id="discard-draft-title">Keep your approved week?</h2>
+    <p class="reset-note" id="discard-draft-note">This draft goes. Your approved week stays as it is.</p>
     <div class="reset-actions">
       <button type="button" class="btn-outline-plum" id="discard-draft-cancel">Cancel</button>
-      <button type="button" class="btn-gold" id="discard-draft-confirm">Drop it</button>
+      <button type="button" class="btn-gold" id="discard-draft-confirm">Keep my week</button>
     </div>
   </div>
 

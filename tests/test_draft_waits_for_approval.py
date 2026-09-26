@@ -595,7 +595,7 @@ def test_the_more_sheet_offers_the_row_on_a_draft_only():
     drop = shell.split("async function discardDraft(", 1)[1].split("\n  function ", 1)[0]
     assert "await askAboutDroppingDraft(label)" in drop
     assert "'/discard'" in drop
-    assert "Dropped. ' + out.approved_week_label + ' is still your week." in drop
+    assert "out.approved_week_label + ' is still your week.'" in drop
     # A refusal is the server's sentence, never the generic line.
     assert "out.status === 'refused'" in drop
     assert "showToast(out.message || DISCARD_TROUBLE)" in drop

@@ -1540,10 +1540,14 @@
     });
   }
 
-  // ---------- "Drop this draft?" confirm ----------
-  // Resolves to true (drop it) or false (cancelled, nothing happens). Same
-  // scrim/dialog treatment as the two confirms above, and the same "only
-  // one open at a time" rule as the sheets.
+  // ---------- "Keep your approved week?" confirm ----------
+  // Behind the More sheet's "Keep my approved week" row (renamed from
+  // "Drop this draft", mockup 10C, 2026-09-25) — shown only when an
+  // approved week sits under this draft, so the question is always about
+  // keeping THAT week, not a bare "drop this draft" with nothing to weigh
+  // it against. Resolves to true (drop the draft) or false (cancelled,
+  // nothing happens). Same scrim/dialog treatment as the two confirms
+  // above, and the same "only one open at a time" rule as the sheets.
   var discardDraftScrim = document.getElementById('discard-draft-scrim');
   var discardDraftDialog = document.getElementById('discard-draft-dialog');
   var discardDraftResolve = null;
@@ -1562,8 +1566,8 @@
     if (!discardDraftDialog) return Promise.resolve(false);
     closeAskSheet();
     closeWeekSheet();
-    document.getElementById('discard-draft-title').textContent =
-      label ? 'Drop the ' + label + ' draft?' : 'Drop this draft?';
+    document.getElementById('discard-draft-note').textContent =
+      'This draft goes. ' + (label ? label : 'Your approved week') + ' stays as it is.';
     openSheet(discardDraftDialog, discardDraftScrim);
     document.getElementById('discard-draft-confirm').focus();
     return new Promise(function (resolve) { discardDraftResolve = resolve; });
@@ -12758,7 +12762,8 @@
   // line is gone — it was the band's Re-plan pill under a second name
   // (both called replanWeek), and the pill stays the one door to the
   // intake. More keeps the rarer things (Try again, Change my answers,
-  // Drop this draft, See the whole week, Adjust your setup, Start over).
+  // Keep my approved week, See the whole week, Adjust your setup, Start
+  // over — renamed and regrouped under mockup 10C, 2026-09-25).
   function reviewDecideHtml(data) {
     var state = weekPlanState(data);
     var inner = '';
@@ -16287,8 +16292,8 @@
       weekState.showWeekStart = null;
       await loadWeekMenu(panel);
       showToast(out.approved_week_label
-        ? 'Dropped. ' + out.approved_week_label + ' is still your week.'
-        : 'Dropped.');
+        ? out.approved_week_label + ' is still your week.'
+        : 'Your approved week is still there.');
       refreshTodayMoves();
     } catch (err) {
       console.warn('Dropping the draft failed:', err);
@@ -19352,6 +19357,52 @@
     subEl.textContent = isEmpty ? emptyText : filledText;
   }
 
+  // Two things set "This week's answers" apart from the other two options,
+  // so it gets its own state function rather than reusing the one above
+  // (2026-09-25 review):
+  //   1. It never auto-checks. The other two default to checked because a
+  //      household reaching for Start over usually means the plan and the
+  //      list — clearing typed answers to this week's questions is a
+  //      different, bigger ask, and ticking it should be a deliberate
+  //      second tap.
+  //   2. It can be DISABLED for a reason that isn't "there's nothing to
+  //      clear" — a draft sharing this week with an approved plan
+  //      (data.intake_shared): week_intake, slot_attendance and
+  //      holiday_answers are all keyed by date/week_start rather than by
+  //      plan id, so clearing them would reach into the approved week's
+  //      answers too (its rush caps, its away days). Refused outright
+  //      rather than guessed at — see tools.clear_week_answers.
+  function joinWithAnd(parts) {
+    if (parts.length === 0) return '';
+    if (parts.length === 1) return parts[0];
+    return parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
+  }
+
+  function setResetAnswersOptionState(cb, subEl, data) {
+    var row = cb.closest('.reset-option');
+    var hasAnything = !!(data.intake_count || data.attendance_count || data.holiday_count);
+    var disabled = data.intake_shared || !hasAnything;
+    row.classList.toggle('is-empty', disabled);
+    cb.disabled = disabled;
+    cb.checked = false;
+    if (data.intake_shared) {
+      subEl.textContent = "These answers also belong to your approved week, so I can't clear them on their own.";
+      return;
+    }
+    if (!hasAnything) {
+      subEl.textContent = "You haven't answered this week's questions yet.";
+      return;
+    }
+    // Precisely what's on file for this week, not a blanket claim — only
+    // the categories that actually have something answered.
+    var parts = [];
+    if (data.intake_count) parts.push('the planning questions');
+    if (data.attendance_count) parts.push("who's in for meals");
+    if (data.holiday_count) parts.push(data.holiday_count === 1 ? 'the holiday you answered' : 'the holidays you answered');
+    var weekName = data.week_label ? ' (' + data.week_label + ')' : '';
+    subEl.textContent = 'Clears ' + joinWithAnd(parts) + weekName + '. Your household settings stay as they are.';
+  }
+
   function syncResetConfirmBtn() {
     if (!resetConfirmBtn) return;
     resetConfirmBtn.disabled = resetSubmitting ||
@@ -19399,13 +19450,11 @@
         'The list is already empty.',
         'Removes ' + plural(data.grocery_count, 'item', 'items') + ' still to buy.' + groceryTail
       );
-      // This week's answers to the planning questions — never household
-      // setup (Preferences), only what this one week's intake collected.
-      setResetOptionState(
-        resetAnswersCb, answersSub, data.intake_count,
-        "You haven't answered this week's questions yet.",
-        "Clears what you told me for this week's questions" + weekName + ". Your household settings stay as they are."
-      );
+      // This week's answers to the planning questions, who's in for meals
+      // and the holidays answered — never household setup (Preferences).
+      // Never auto-checked, and disabled outright when this week is shared
+      // with another live plan — see setResetAnswersOptionState.
+      setResetAnswersOptionState(resetAnswersCb, answersSub, data);
     } catch (err) {
       console.warn('Reset preview failed:', err);
       // Don't offer a delete we couldn't size up — the counts are the whole
@@ -19458,10 +19507,18 @@
       if (data.grocery_list) {
         parts.push(data.meal_plan ? 'the grocery list' : plural(data.grocery_list.removed_count, 'grocery item', 'grocery items'));
       }
-      if (data.week_answers && data.week_answers.cleared) parts.push("this week's answers");
-      var summary = parts.length === 1 ? parts[0]
-        : parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
-      showToast('Cleared ' + summary + '. Fresh start.');
+      // clear_week_answers always returns an object when asked for, even
+      // when there was nothing this week to clear (no plan on file) — so
+      // "did it actually clear anything" is its own check, never a bare
+      // truthiness of data.week_answers.
+      var wa = data.week_answers;
+      var weekAnswersCleared = !!(wa && ((wa.intake && wa.intake.cleared) || wa.attendance_cleared || wa.holidays_cleared));
+      if (weekAnswersCleared) parts.push("this week's answers");
+      // joinWithAnd(parts) can come back '' — nothing was actually cleared
+      // (every count was already zero when the request went out) — and
+      // "Cleared . Fresh start." must never render.
+      var joined = joinWithAnd(parts);
+      showToast(joined ? ('Cleared ' + joined + '. Fresh start.') : "There was nothing to clear.");
     } catch (err) {
       console.warn('Reset failed:', err);
       resetConfirmBtn.textContent = "Couldn't do that — try again";

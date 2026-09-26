@@ -506,6 +506,7 @@ from .recipes import (  # noqa: F401
     validate_measured_quantities,
 )
 from .reset import (  # noqa: F401
+    clear_week_answers,
     clear_weekly_plan,
     get_reset_preview,
 )
