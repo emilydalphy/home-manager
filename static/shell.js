@@ -8235,12 +8235,6 @@
 
   // ---------- Kitchen root: today's cooks ----------
 
-  // One row per meal that happens TODAY, cooks and reheats alike, in slot
-  // order as the plan gives them. `move` is the matching entry from
-  // /api/today/moves, which is where the start-by arithmetic lives — the
-  // row falls back to the plan's own facts when there is no move for it
-  // (a day that is not today's, a plan the moves engine has not caught up
-  // with) rather than inventing a clock.
   // A prepped-lunch batch is cooked on its PREP day, not on the lunch day
   // its cook entry sits on (app/tools/weekday_lunches.py — a chain cannot
   // hold a cook on a day the dish isn't eaten, so the cook lives on the
@@ -8258,6 +8252,12 @@
     return (p && p.date && meal.date && p.date < meal.date) ? p : null;
   }
 
+  // One row per meal that happens TODAY, cooks and reheats alike, in slot
+  // order as the plan gives them. `move` is the matching entry from
+  // /api/today/moves, which is where the start-by arithmetic lives — the
+  // row falls back to the plan's own facts when there is no move for it
+  // (a day that is not today's, a plan the moves engine has not caught up
+  // with) rather than inventing a clock.
   function kitchenTodayRows(meals, moves, todayIso) {
     var byEntry = {};
     (moves || []).forEach(function (m) {

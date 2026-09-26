@@ -856,3 +856,34 @@ class TestWhatItCosts:
         assert len(weekday_lunches.prepped_batches(many)) >= 3, "the seed grew no batches"
         assert _count(lambda: weekday_lunches.prepped_batches(many)) == 1
         assert _count(lambda: weekday_lunches.prepped_batches(many, window=[dates[0], dates[-1]])) == 1
+
+
+class TestTheFreezerLunchStillNamesTheCookDay:
+    def test_a_frozen_portion_is_named_for_the_cook_entry_and_is_NOT_fixed_here(
+            self, two_adults, stub_model):
+        """CHARACTERISATION, green on main and green here. A prepped lunch more
+        than three days past its prep day eats a portion frozen on the cook
+        (leftovers.MAX_LEFTOVER_DAYS), and its row's own freeform name is
+        written at plan time as "Leftovers from the freezer — Monday's Chili" —
+        the COOK entry's day, not the prep day. So that one row still names a
+        day this change tells the household nothing is cooked on.
+
+        Deliberately not fixed. It is a WRITE at generation time rather than a
+        read, `leftovers.freezer_night_name` names the cook entry's date
+        everywhere in this app, and changing it only here would leave two
+        conventions for one sentence. Its own card; invert this when it moves.
+
+        It also carries no `prepped_ahead`: it is not a chain target, so
+        nothing links it back to the cook."""
+        sun = _next_weekday("sunday")
+        # Sunday prep; Thursday's lunch is four days out.
+        plan_id, dates = _plan(
+            stub_model, sun, {1: "prepped", 2: "prepped", 3: "prepped", 4: "prepped"},
+            ["sunday"], lunches=["S0", "Chili", "A", "B", "C", "S5", "S6"],
+        )
+        cards = _lunch_cards(plan_id)
+        frozen = cards[dates[4]]
+        assert frozen["meal"].startswith("Leftovers from the freezer — Monday’s"), frozen["meal"]
+        assert frozen.get("prepped_ahead") is None
+        # The days inside three days of the prep day DO read as prepped.
+        assert cards[dates[1]]["prepped_ahead"]["weekday"] == "Sunday"
