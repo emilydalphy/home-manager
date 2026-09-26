@@ -159,7 +159,9 @@ def test_a_menu_row_has_the_chevron_the_line_and_tweak_it_only_for_one_cook_ahea
     salmon = salmon[:salmon.index('data-wk-row="')]
     assert 'data-wk-tweak="dinner"' in salmon
     assert '<svg class="wk-row-chev"' in salmon
-    assert ">Mon, Tue · Mexican, as asked</span>" in salmon, "the asked fact, and its echo of a reason left off"
+    # Title, days and time only (Emily, 2026-09-26): the asked fact stays
+    # on Which days' rows, the reason is not said on the menu at all.
+    assert ">Mon, Tue · 30 min</span>" in salmon, "days, then the time — no asked fact, no reason"
     assert html.count('data-wk-tweak="dinner"') == 2
 
 

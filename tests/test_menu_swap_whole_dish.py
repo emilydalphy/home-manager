@@ -485,7 +485,7 @@ def test_the_routes_carry_whole_dish_through(signed_in, home, monkeypatch):
 def _sheet_harness(body: str) -> str:
     fns = ["escapeHtml", "dayName", "slotWord", "isSnackSlot", "joinList", "swapDaysLine",
            "swapPickHtml", "swapSheetBodyHtml", "swapMoveOptions", "swapSheetTitle", "dishShortName",
-           "swapWaitLine", "swapWaitHtml", "wkMenuRowHtml", "wkMiniHtml", "wkDaysPhrase", "wkMenuFact",
+           "swapWaitLine", "swapWaitHtml", "wkMenuRowHtml", "wkMiniHtml", "wkDaysPhrase", "wkMenuDaysPhrase", "wkMenuFact",
            "wkRowMetaHtml", "wkRowMeta"]
     stubs = (
         "var WK_ICONS = { chev: '<svg></svg>', swap: '' };\n"

@@ -634,6 +634,193 @@ def swap_meal_in_place(
     return out
 
 
+# ---------- a blank day, planned ----------
+
+# Said when the day has nothing to fill (every meal already planned, or the
+# empty ones are away nights). Plain, and it names the state of the plan.
+FILL_NOTHING = "There’s nothing on that day for me to plan."
+
+# The note the one-slot pick is handed when there is no dish to replace —
+# the swap prompt's INSTRUCTIONS talk about a replacement, and a field the
+# model isn't told the meaning of is a field it may read wrong.
+_FILL_NOTE = (
+    "Nothing is planned on this slot yet: the household left the day out of the week and has "
+    "now asked for it to be planned. `replacing` is empty — pick one dish for the slot, and "
+    "make `reason` say why it suits the day, not what it replaces."
+)
+
+
+# Said when the day isn't one of this week's days at all.
+FILL_NOT_THIS_WEEK = "That day isn’t part of this week’s plan."
+
+
+def _fillable_slots(weekly_plan_id: int, meal_date: str) -> list[dict]:
+    """
+    The meals of one BLANK day that "Build a plan" may fill (Emily,
+    2026-09-26): a slot the household left out ("Which days?" tapped the
+    day off — planned_empty with the skipped_day constraint). Never a
+    planned or open slot, never an away night or a night the household is
+    out (a different planned_empty), and never a meal they asked for none
+    of (weekly_plan.unwanted_meal_slots — a skipped day's rows for those
+    are written before generation's zero-count pass, so they carry the
+    skipped constraint too). Those were answers, not gaps.
+
+    Only a slot WITH its left-out row: the write's stale check
+    (_replace_slot_entries) compares the rows it deletes with the rows it
+    was given, so a slot with no row would give two concurrent taps
+    nothing to disagree about and plan it twice. A day with no rows at all
+    renders as "Nothing yet" with its own Pick per slot, not as blank.
+    Snacks are not touched; a skipped day's snacks were cleared on purpose.
+    """
+    from . import slot_needs as _slot_needs
+
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, slot, slot_state, derived_from_json FROM meal_plan_entries "
+        "WHERE weekly_plan_id = ? AND date = ? AND household_id = ? AND component_category IS NULL",
+        (weekly_plan_id, meal_date, household_id()),
+    ).fetchall()
+    unwanted = _weekly_plan.unwanted_meal_slots(conn)
+    conn.close()
+    # A DAY, not a slot: a day with any meal on it (or any question handed
+    # back) is not blank, and its gaps are the per-slot Pick's job.
+    if any(r["slot_state"] in ("planned", "open") for r in rows if r["slot"] in _weekly_plan.WEEK_SLOTS):
+        return []
+    out = []
+    for slot in _weekly_plan.WEEK_SLOTS:
+        if slot in unwanted:
+            continue
+        mine = [r for r in rows if (r["slot"] or "dinner") == slot]
+        skipped = bool(mine) and all(
+            r["slot_state"] == "planned_empty"
+            and (json.loads(r["derived_from_json"] or "{}") or {}).get("constraint")
+            == _week_intake.SKIPPED_DAY_CONSTRAINT
+            for r in mine
+        )
+        if not skipped:
+            continue
+        if _slot_needs.get_slot_need(meal_date, slot).get("need") == "away":
+            continue
+        out.append({"slot": slot, "old_ids": [r["id"] for r in mine]})
+    return out
+
+
+def _in_plan_period(weekly_plan_id: int, meal_date: str) -> bool:
+    conn = get_conn()
+    owner = conn.execute(
+        "SELECT * FROM weekly_plans WHERE id = ? AND household_id = ?",
+        (weekly_plan_id, household_id()),
+    ).fetchone()
+    conn.close()
+    if not owner:
+        return False
+    period_start, period_days = _weekly_plan.plan_period(owner)
+    return period_start <= meal_date <= _weekly_plan.period_end_date(period_start, period_days)
+
+
+def fill_empty_day(weekly_plan_id: int, meal_date: str, picker=None) -> dict:
+    """
+    Plan a blank day of a week that has meals on its other days — the
+    "Build a plan" button on a Which days card (Emily, 2026-09-26). Only
+    the day's left-out meals are filled (_fillable_slots); nothing already
+    planned anywhere in the week is touched.
+
+    One slot at a time, through the machinery a Swap already trusts: the
+    same one-slot context (build_swap_context, so the rest of the week —
+    including the meals filled a moment ago — is what the pick must not
+    repeat), the same picker and allergen/taste gates as
+    swap_meal_in_place, the same recipe save, and the same one-transaction
+    write (_replace_slot_entries) — so a draft's list is left alone and an
+    approved week's is kept in step, as every swap does.
+
+    Everything that can refuse is asked BEFORE any model call: a day
+    outside the plan's period, a day gone by, a day with nothing to fill.
+
+    Returns {status: 'filled', filled: [{slot, meal, reason}], day,
+    partial} or {status: 'refused', message} with nothing written. Each
+    slot is its own transaction, so a slot that fails (both picks clash,
+    or an error part-way — the model, the write) is left exactly as it was
+    and the meals already filled stay: `partial` is true and the reply
+    still carries the day, so the screen shows what did land. Only when
+    NOTHING was filled does an error propagate.
+
+    Not asked: whether today's breakfast or lunch hour has already passed.
+    There is no shared per-slot "has gone" test (night_has_gone is
+    per-day; moves.py's slot clock is private to Today's move list), so
+    filling today fills all of today's left-out meals.
+
+    `picker` is the model call, injectable so tests never touch the API.
+    """
+    pick_one = picker or _pick_replacement
+    if not _in_plan_period(weekly_plan_id, meal_date):
+        return {"status": "refused", "message": FILL_NOT_THIS_WEEK}
+    if _weekly_plan.night_has_gone(meal_date):
+        return {"status": "refused", "message": _weekly_plan.NIGHT_GONE}
+    slots = _fillable_slots(weekly_plan_id, meal_date)
+    if not slots:
+        return {"status": "refused", "message": FILL_NOTHING}
+
+    filled = []
+    missed = False
+    for item in slots:
+        try:
+            done = _fill_one_slot(weekly_plan_id, meal_date, item, pick_one)
+        except Exception:
+            if not filled:
+                raise
+            logger.exception("fill_empty_day: %s %s failed after %d filled", meal_date, item["slot"], len(filled))
+            done = None
+        if done:
+            filled.append(done)
+        else:
+            missed = True
+
+    if not filled:
+        return {"status": "refused", "message": REFUSAL}
+    return {"status": "filled", "filled": filled, "partial": missed,
+            "day": _refreshed_day(weekly_plan_id, meal_date)}
+
+
+def _fill_one_slot(weekly_plan_id: int, meal_date: str, item: dict, pick_one) -> dict | None:
+    """One left-out slot: pick, gate, save, write. None when both picks
+    were turned away (nothing written)."""
+    entry = {
+        "entry_id": None, "date": meal_date, "slot": item["slot"], "meal": "",
+        "recipe_id": None, "freeform_meal": None, "food_groups": [], "reasoning": "",
+        "slot_state": "planned_empty", "derived_from": {},
+    }
+    tried: list[str] = []
+    pick = None
+    for _attempt in range(MAX_PICK_ATTEMPTS):
+        context = build_swap_context(weekly_plan_id, entry, tried)
+        context["note"] = _FILL_NOTE
+        candidate = pick_one(context) or {}
+        name = (candidate.get("meal_name") or "").strip()
+        if not name:
+            logger.warning("fill_empty_day came back with no dish for %s %s", meal_date, item["slot"])
+            break
+        candidate["meal_name"] = name
+        if not _hard_clash(candidate):
+            verdict = _weekly_plan._taste_verdict_for_slot(name, meal_date, item["slot"])
+            if not (verdict and verdict.get("verdict") == "avoid"):
+                pick = candidate
+                break
+        tried.append(name)
+    if not pick:
+        return None
+    serves = _table_for(meal_date, item["slot"])["serves"]
+    pick["meal_name"] = honest_meal_name(pick)
+    _save_recipe_if_new(pick, serves)
+    reason = (pick.get("reason") or "").strip()
+    _weekly_plan._replace_slot_entries(
+        weekly_plan_id, item["old_ids"], meal_date, item["slot"], pick["meal_name"],
+        food_groups=[g for g in (pick.get("food_groups") or []) if g in _plates.ALL_GROUPS],
+        reasoning=reason,
+        derived_from={"constraint": "filled_empty_day"},
+    )
+    return {"slot": item["slot"], "meal": pick["meal_name"], "reason": reason}
+
+
 def honest_meal_name(pick: dict) -> str:
     """A picked dish's name, with anything its own ingredients don't back up
     taken off it.

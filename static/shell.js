@@ -12701,20 +12701,50 @@
   // real-life words for the day when there are any, then the three rows.
   // `i` is the day's index into weekState.days, carried on the card so a
   // tap inside it knows which day it is about wherever the card sits.
+  // A blank day Pomona can still plan (Emily, 2026-09-26): closed (every
+  // meal deliberately empty), not gone by, not away — the same away test
+  // awayLineFor and reviewTileTags' 'Away' make — and left out on purpose
+  // (get_week_menu's `skipped`: a day tapped off "Which days?"), which is
+  // exactly what swap_in_place.fill_empty_day will fill. A night the
+  // household is out, or a meal they asked for none of, was an answer and
+  // gets no button. Which days / Check the week only (not the approved
+  // root's Done rows).
+  function wkDayCanBuild(day, opts) {
+    if (!day || day.isPast || day.before_plan_start || (opts && opts.done)) return false;
+    if (!reviewDayIsClosed(day)) return false;
+    var meals = WEEK_SLOTS.map(function (s) { return day[s]; });
+    if (meals.some(function (e) { return e && e.need === 'away'; })) return false;
+    if (reviewTileTags(day).indexOf('Away') !== -1) return false;
+    // `can_fill`: left out AND a meal the household wants at all (a skipped
+    // day's breakfast is not fillable when they asked for no breakfasts).
+    return meals.some(function (e) { return e && e.can_fill; });
+  }
+
   function wkDayCardHtml(day, i, opts) {
     var closed = reviewDayIsClosed(day);
+    var build = wkDayCanBuild(day, opts);
     var n = wkDayMealCount(day);
     var tags = reviewTileTags(day);
+    // A day that can be built says "0 meals" in its head, like any other
+    // day's count — its "Not planned" line would only say again what the
+    // body's sentence says.
+    var count = closed && !build ? reviewClosedLine(day) : n + (n === 1 ? ' meal' : ' meals');
     return '<div class="shell-card wk-day-card' + (day.isToday ? ' is-today' : '') + (day.isPast ? ' is-past' : '') +
-        '" data-wk-card="' + i + '">' +
+        (build ? ' is-blank' : '') + '" data-wk-card="' + i + '">' +
       '<div class="wk-card-head">' +
         '<span class="wk-card-day">' + escapeHtml(dayName(day.date, { weekday: 'long' })) + '</span>' +
-        '<span class="wk-card-count">' + escapeHtml(closed ? reviewClosedLine(day) : n + (n === 1 ? ' meal' : ' meals')) + '</span>' +
+        '<span class="wk-card-count">' + escapeHtml(count) + '</span>' +
       '</div>' +
       (tags.length
         ? '<div class="wk-card-tags">' + tags.map(function (t) {
             return '<span class="wk-card-tag">' + escapeHtml(t) + '</span>';
           }).join('') + '</div>'
+        : '') +
+      (build
+        ? '<div class="wk-card-blank">' +
+            '<p>Nothing planned yet! Want to get a plan built?</p>' +
+            '<button type="button" class="btn-primary wk-build-day" data-wk-build-day="' + escapeHtml(day.date) + '">Build a plan</button>' +
+          '</div>'
         : '') +
       (closed ? '' : WEEK_SLOTS.map(function (slot) { return wkMealRowHtml(day, slot, opts); }).join('')) +
     '</div>';
@@ -12779,29 +12809,42 @@
     return out.join(', ');
   }
 
-  // The one useful fact beside the days: what it was asked for ("Mexican,
-  // as asked", "travels well") when any of its days carries one, else the
-  // minutes. The first cooked day speaks for the dish.
+  // The one fact beside the days: the cook time (Emily, 2026-09-26 — a
+  // menu row is the dish, its days and its time, nothing else). What a
+  // slot was asked for ("Mexican, as asked") stays on Which days' rows
+  // (wkRowMetaLine); the reason is not said here at all. The first
+  // cooked day with minutes speaks for the dish; a dish with no minutes
+  // keeps the word the minutes' place has always held ("takeout",
+  // "leftovers"), and otherwise says nothing after the days.
   function wkMenuFact(dish) {
-    for (var i = 0; i < dish.days.length; i++) {
-      if (dish.days[i].entry.asked) return dish.days[i].entry.asked;
-    }
     for (var j = 0; j < dish.days.length; j++) {
       var m = wkRowMeta(dish.days[j].entry);
       if (m && m !== 'leftovers' && m !== 'takeout' && m.indexOf('from ') !== 0) return m;
     }
-    return wkRowMeta(dish.days[0].entry);
+    var first = wkRowMeta(dish.days[0].entry);
+    return first === 'leftovers' || first === 'takeout' ? first : '';
+  }
+
+  // The days a menu row names (Emily, 2026-09-26): a dish whose days are
+  // all behind us reads "Had Thu, Fri" / "Had Wednesday"; a dish with
+  // some behind and some ahead names only the days still ahead.
+  function wkMenuDaysPhrase(dish, days) {
+    var ahead = dish.days.filter(function (d) { return !d.past; });
+    if (!ahead.length) return 'Had ' + wkDaysPhrase(dish, days);
+    if (ahead.length === dish.days.length) return wkDaysPhrase(dish, days);
+    return wkDaysPhrase({ slot: dish.slot, days: ahead }, days);
   }
 
   // One row: the dish (the link into its Meal step, with its chevron),
-  // then "Mon, Wed · Mexican, as asked" with the reason after it as plain
-  // text, Swap and Tweak at its right. Swap and the link act on the
+  // then "Mon, Wed · 30 min", Swap and Tweak at its right. A dish that is
+  // all behind us is greyed (is-past) and says "Had …", with no buttons. Swap and the link act on the
   // dish's first day still ahead — the same swap sheet and the same Meal
   // step Which days uses, told which day through data-wk-day-index.
   function wkMenuRowHtml(dish, days) {
     var first = dish.days.filter(function (d) { return !d.past; })[0] || dish.days[0];
     var entry = first.entry;
-    var meta = [wkDaysPhrase(dish, days), wkMenuFact(dish)].filter(Boolean).join(' · ');
+    var allPast = dish.days.every(function (d) { return d.past; });
+    var meta = [wkMenuDaysPhrase(dish, days), wkMenuFact(dish)].filter(Boolean).join(' · ');
     // Several days still ahead: Swap means the dish, on all of them
     // (Emily, 2026-09-22 — it used to change the first day and leave the
     // rest, "two meals instead of 1"). The dates ride along only so the
@@ -12831,7 +12874,7 @@
     var changed = typeof wasRecentlyChanged === 'function' &&
       dish.days.some(function (d) { return wasRecentlyChanged(d.date, d.key); });
     var acts = swap + tweak;
-    return '<div class="wk-row wk-menu-row has-foot" data-wk-day-index="' + first.index + '" data-wk-row="' + first.key + '">' +
+    return '<div class="wk-row wk-menu-row has-foot' + (allPast ? ' is-past' : '') + '" data-wk-day-index="' + first.index + '" data-wk-row="' + first.key + '">' +
       '<div class="wk-row-main">' +
         '<div class="wk-row-text">' +
           (changed ? '<span class="wk-row-eyebrow"><span class="wk-changed">Changed</span></span>' : '') +
@@ -12843,7 +12886,7 @@
             : '') +
         '</div>' +
       '</div>' +
-      '<div class="wk-row-foot">' + wkRowMetaHtml(entry, meta) +
+      '<div class="wk-row-foot">' + (meta ? '<span class="wk-row-meta">' + escapeHtml(meta) + '</span>' : '') +
         (acts ? '<div class="wk-row-acts">' + acts + '</div>' : '') +
       '</div>' +
     '</div>';
@@ -13368,6 +13411,12 @@
     return eyebrow +
       '<h2 class="wk-swap-title" id="wk-swap-title">' + escapeHtml(swapSheetTitle(st)) + '</h2>' +
       (daysLine ? '<p class="wk-swap-sub">' + escapeHtml(daysLine) + '</p>' : '') +
+      // Under the title on every Swap sheet, one day or the whole dish
+      // (Emily, 2026-09-26, verbatim): a pick that's nearly right is still
+      // worth taking — Tweak is one tap away afterwards. Not on the Tweak
+      // sheet, and not on the move view — nor when no picks came back
+      // (st.trouble): there is no "one" to be close.
+      (st.trouble ? '' : '<p class="wk-swap-tweak-note">If one’s close but not quite right, you can always tweak it after.</p>') +
       picks +
       (canMove
         ? '<button type="button" class="wk-swap-quiet" id="wk-swap-move"' + wait + '>' +
@@ -15193,6 +15242,14 @@
           btn.getAttribute('data-wk-ask') + ', I’d like ');
       });
     });
+    // "Build a plan" on a blank day card (Emily, 2026-09-26): see runBuildDay.
+    steps.querySelectorAll('[data-wk-build-day]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var day = wkDayForTap(btn);
+        if (!day) return;
+        runBuildDay(panel, btn, day);
+      });
+    });
     // "Pick" on an open slot reveals the resolver the app already had — the
     // question and its options, unchanged, in the day they belong to
     // instead of stacked at the bottom of the root.
@@ -15343,6 +15400,60 @@
       console.warn('Swap failed:', err);
       swapState = { date: day.date, slot: slot, avoid: carried, message: SWAP_TROUBLE };
       renderMealsStep(panel);
+    }
+  }
+
+  // "Build a plan" on a blank Which days card (Emily, 2026-09-26). It
+  // fills ONLY empty days and never touches a planned meal:
+  //  - a week with meals on other days: POST fill-day plans this one day's
+  //    left-out meals (swap_in_place.fill_empty_day — the Swap's own
+  //    one-slot picker and gates, one slot at a time), then the day is
+  //    spliced in and the week reloaded, as a swap does;
+  //  - a week with nothing planned at all: there is nothing to keep, so
+  //    it is the intake for the week (replanWeek — the Re-plan pill's
+  //    road), which plans the whole week properly rather than seven
+  //    days of one-off picks.
+  var BUILD_DAY_WORKING = 'Planning ';
+
+  function wkWeekHasMeals(days) {
+    return (days || []).some(function (d) { return wkDayMealCount(d) > 0; });
+  }
+
+  async function runBuildDay(panel, btn, day) {
+    if (!wkWeekHasMeals(weekState.days)) { replanWeek(); return; }
+    var weekStart = weekStartForSwap();
+    if (!weekStart || btn.disabled) return;
+    var dayWord = dayName(day.date, { weekday: 'long' });
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    btn.textContent = BUILD_DAY_WORKING + dayWord + '…';
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/fill-day', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: day.date })
+      });
+      if (!res.ok) throw new Error('fill-day failed');
+      var data = await res.json();
+      if (data.status !== 'filled') {
+        showToast(data.message || SWAP_TROUBLE);
+        renderMealsStep(panel);
+        return;
+      }
+      spliceSwappedDay(data.day);
+      renderMealsStep(panel);
+      // Each meal is its own write, so a day can come back part-planned
+      // (`partial`): say what landed rather than claiming the whole day.
+      toastSaved(data.partial
+        ? (data.filled || []).length + ((data.filled || []).length === 1 ? ' meal' : ' meals') + ' planned for ' + dayWord
+        : savedLine(dayWord, 'planned'));
+      await loadWeekMenu(panel);
+    } catch (err) {
+      console.warn('Build a plan failed:', err);
+      showToast(SWAP_TROUBLE);
+      // Reload anyway: the server may have written some of the day before
+      // it failed, and the screen should show what is really there.
+      try { await loadWeekMenu(panel); } catch (e) { renderMealsStep(panel); }
     }
   }
 
