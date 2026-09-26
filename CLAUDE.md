@@ -539,6 +539,145 @@ why*, not duplicating the diff.
     the matrix does NOT pin (tue/wed/thu) were run over the whole suite as a
     check, per the 2026-09-22 entry's own "run all SEVEN, not the four the
     matrix pins".
+- **2026-09-26 — Rating a recipe takes one of two verdicts, and the crash that
+  used to follow a third word no longer hides itself from the morning report.
+  Branch `overnight/recipe-rating-validated`, NOT merged at the time of
+  writing.** Loop Board bug. The SIXTH instance of the family that produced
+  `InvalidMealStatus` (2026-09-16), `InvalidChoreStatus`,
+  `InvalidGroceryStatus`, `InvalidAttentionStatus` and `InvalidSlot`
+  (2026-09-25) — and the worst of the six, in TWO INDEPENDENT ways. Fixing the
+  wire alone would have left the worse one standing, which is why both halves
+  are in one commit.
+  - **Reproduced first, over HTTP against a real uvicorn on a throwaway DB,
+    before anything was touched.** `POST /api/recipe-feedback` passed `rating`
+    straight to `mark_recipe_feedback`, which wrote it with no check.
+  - **DEFECT 1 — the verdict is DESTROYED, not merely mis-set.** The five
+    siblings wrote a word no screen reads and lost nothing. Measured: a recipe
+    rated `liked`, re-rated `teleported`, answered **HTTP 200** and came back
+    carrying `teleported`. The UPDATE commits, so the answer the household gave
+    is gone. `memory.py`'s "what we know" count went **1 → 0**, `list_recipes`
+    sorts it as unrated, and — since the planner's filter is `rating !=
+    'disliked'` — **a dish the household had explicitly rejected was a
+    planning candidate again** (measured: both recipes in the candidate list).
+    `Liked` with a capital did all of that too; it is a different word to every
+    one of those three readers.
+  - **DEFECT 2 — the one that matters most, and the half a wire guard would
+    not have closed.** When the recipe's last cook was a SOLO NIGHT,
+    `mark_recipe_feedback` goes on to write the same word per-person, and
+    `member_recipe_feedback.rating` carries `CHECK(rating IN ('liked',
+    'disliked'))`. Measured, in order: the route answered **500 "your data is
+    fine"** over a rating it had ALREADY destroyed (the household row read
+    `teleported` while the per-person row still read `liked`, so the two
+    disagreed about one recipe); `_maybe_auto_attribute_solo_night` had no
+    `try/finally`, so the connection was **left open holding SQLite's write
+    lock** (`BEGIN IMMEDIATE` from another thread: "database is locked"); and
+    `record_error` therefore could not write, so **`error_events` held nothing
+    for that failure**. The household's next write then waited out sqlite3's
+    full busy timeout — **5.029 s** — and 500'd, and THAT is the row
+    `error_events` eventually got: `where_='/api/grocery-list/add'`. **The
+    crash that caused all of it recorded nothing at all**, so the morning
+    report would have shown a grocery error with no way to learn what broke.
+  - **The fix is the siblings' shape, and the guard is above `get_conn` for
+    three reasons rather than two.** `recipes.RECIPE_RATINGS` +
+    `InvalidRecipeRating(ValueError)`, checked before a connection is opened:
+    a word that is not a verdict never takes the write lock, a caller that
+    skips the route (chat, a script) is held to the same two words, **and — new
+    here — the UPDATE commits, so a check below it would be checking a rating
+    it had already destroyed.** Re-exported from `app/tools/__init__.py`, which
+    is the package's public face; without that the route's `except` is an
+    `AttributeError` at request time, i.e. a 500 in place of the 422.
+  - **The route answers 422, with its `except` BEFORE the plain `ValueError`.**
+    Ordering is load-bearing: the marker IS a `ValueError`, so the other way
+    round the 400 that means "No recipe named 'X'" swallows a refusal that
+    means "that isn't a verdict". Pinned by a test that asks for **both codes
+    in one breath** — separate tests could both pass with the ordering wrong.
+    422 rather than the card's 400 for the reason the attention sibling gives:
+    this route already answered 422 for a non-string rating, from pydantic, so
+    400 would give one client mistake two codes.
+  - **`_maybe_auto_attribute_solo_night` closes both its connections however
+    it leaves.** Mechanical, and the half with the teeth: the leak belongs to
+    that INSERT, not to the wire, so ANY future failure of it did the same
+    thing. **Pinned by a test that WIDENS `RECIPE_RATINGS` in a subprocess to
+    force the identical crash past the new guard** — because a test that
+    leaned on the guard being the only thing in the way would prove nothing
+    about the `finally`. Measured on that forced crash: **0 open transactions,
+    write lock free, and `error_events` carrying a row for
+    `/api/recipe-feedback`** — the route that actually broke.
+  - **THE ONE PRODUCT DECISION, and it is one line to reverse.** `liked` and
+    `disliked` only; **`''` is refused** even though `schema.sql` documents it
+    as a third state of the column. Nothing in the app sends it, and
+    `member_recipe_feedback.rating` cannot hold it at all — so on a solo night
+    the household half of that write would land and the per-person half would
+    raise, which is the exact shape of this bug. "Clear a verdict we already
+    gave" is better refused than half-supported. `rating=None` keeps meaning
+    exactly what it meant (leave the rating alone, just add notes) and is
+    checked FIRST — pinned, because a vocabulary check written for words would
+    otherwise turn every notes-only call into a refusal.
+  - **`attribute_recipe_feedback` was checked, as the card asked, and did NOT
+    have the hole** — it already refused a third word before any of this. What
+    moved is only where the two words live: its own hard-coded
+    `("liked", "disliked")` was a second copy of one rule, so changing
+    `RECIPE_RATINGS` would have moved one door and not the other. It raises the
+    marker now, which is behaviour-neutral (a `ValueError` subclass) and
+    reachable from chat only, so there is no `except` ordering to get right
+    there.
+  - **Nothing is migrated.** Reaching a row with a third word needed a
+    hand-made request, so the count in the wild is probably zero; a migration
+    inventing history is worse than leaving the handful that can only have come
+    from somebody's curl. Pinned, so nobody adds a well-meaning backfill later:
+    such a row reads back exactly as found, and a real verdict over the top
+    still heals it.
+  - **The five characterisations in `tests/test_cook_and_feedback_routes.py`
+    are INVERTED, not deleted**, each keeping its old name and its old measured
+    numbers in its docstring, so what was wrong stays readable. That file's
+    module docstring is rewritten the same way, including the mutation evidence
+    that said which five to invert. One of them split in two (the refusal
+    leaking nothing, and the forced failure being visible), so that file is 27
+    → 28.
+  - `tests/test_recipe_rating_validated.py` (17). **11 red against main's
+    `app/`, and only TWO of those are behaviour catches** — the two route
+    tests, which read `assert 200 == 422` and `assert (200, 400) == (422,
+    400)` there. The other nine die on `AttributeError: module 'app.tools'
+    has no attribute 'InvalidRecipeRating'` (eight) or `'RECIPE_RATINGS'`
+    (one) — the only kind of red a test of a new symbol can have, and not
+    evidence of anything. Each says which it is. The six green either way
+    name the mutation that pins them instead. **The inverted file is the
+    other half of the evidence and it is symmetrical: against main's `app/`
+    exactly the 6 inverted tests go red and the same 22 pass** that the
+    original note recorded passing when the guard was added as a mutation.
+  - **NINE mutations run, in a worktree of their own, and every one bites.**
+    Scope is the seven test files that name this code (control **179
+    passed**): the vocabulary guard removed (**12** red), the 422 `except`
+    moved below the plain one (**6**), the `try/finally` removed (**1**),
+    the check moved below `get_conn` (**1**), the `rating is not None` term
+    dropped (**3**), `RECIPE_RATINGS` narrowed to one word (**29**), the
+    package re-export dropped (**16 failed + 4 errors**), the sibling put
+    back on its own hard-coded tuple (**1**), and
+    `_maybe_auto_attribute_solo_night` emptied (**7**).
+    **THE ONE THAT MATTERS MOST IS THE `try/finally` AT 1**, and it is the
+    number to read rather than the largest: it reddens the leak test ALONE
+    and none of the vocabulary ones, which is what proves the two halves
+    are independent — i.e. that closing the wire would have left the worse
+    half standing, exactly as the characterisation predicted.
+  - **Numbers, read off the runs at `TZ=America/Toronto`: 7455 passed, 0
+    failed**, against a measured **7437 passed, 0 failed** on `main`
+    (`6f6a5b3`) in a worktree of its own. **+18 is 17 for the new file plus
+    ONE for the char file going 27 → 28**, where a single characterisation
+    split into two (the refusal leaking nothing, and the forced failure
+    being visible) — so nothing else moved and no existing test was
+    deleted or weakened.
+  - **THIS BRANCH WAS FIRST BUILT ON A 49-COMMIT-STALE `main` and was
+    rebased, and it is worth a line because of what made the rebase clean:
+    CLAUDE.md was deliberately left untouched until after it.** The
+    Decision log is where a branch and `main` always collide, and there was
+    nothing to collide. Every figure above was re-measured against the real
+    `main` rather than carried forward; the four functions this touches are
+    byte-identical between the stale base and `6f6a5b3` (checked), so the
+    defect reproduced identically on both — but the numbers quoted are the
+    real main's.
+  - **Not verified in a browser** — nothing visual changed; the whole
+    reproduction and the whole verification are over HTTP and through the
+    tools.
 
 - **2026-09-25 — A swapped-out repeat carries no note.** Emily chose "no
   note" over "in the last two weeks" and "last week / two weeks ago"

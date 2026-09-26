@@ -4413,6 +4413,15 @@ def record_recipe_feedback(req: RecipeFeedbackRequest):
     """Rate a recipe (liked/disliked, with optional notes) directly from the Cooker view's feedback-nudge banner item — the inline alternative to answering 'how'd it go?' back in chat."""
     try:
         result = tools.mark_recipe_feedback(req.recipe_name, rating=req.rating, notes=req.notes)
+    except tools.InvalidRecipeRating as e:
+        # A word that isn't a verdict is a bad request, not a missing recipe —
+        # 422, not the 400 below, which means "No recipe named 'X'".
+        # InvalidRecipeRating IS a ValueError subclass, so this except must
+        # come FIRST or that 400 swallows it. Same shape and same reasoning as
+        # the cooked-tick, chore-status, grocery-status and attention-status
+        # routes; this route already answers 422 for a non-string rating, from
+        # pydantic, so 400 would give one client mistake two codes.
+        raise HTTPException(status_code=422, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

@@ -144,6 +144,56 @@ def add_recipe(
 
 
 
+RECIPE_RATINGS = ("liked", "disliked")
+
+
+class InvalidRecipeRating(ValueError):
+    """
+    A word outside RECIPE_RATINGS handed to mark_recipe_feedback as a rating.
+
+    The same marker shape as cooker.InvalidMealStatus,
+    chores.InvalidChoreStatus, grocery.InvalidGroceryStatus and
+    attention.InvalidAttentionStatus: a ValueError subclass, so the route's
+    except for it MUST come before the plain one, or the 400 that means "no
+    recipe by that name" swallows a refusal that means "that isn't a
+    verdict".
+
+    THE TWO WORDS ARE WHAT THIS DOOR ACCEPTS, not every value the column
+    takes, and the difference is deliberate. schema.sql documents
+    recipes.rating as `'' | 'liked' | 'disliked'`, where '' is "no verdict
+    yet" — a starting state, written by the column's own DEFAULT and by
+    nothing else. Nothing in the app sends it: the Cook screen's buttons
+    send the two, the chat tool's schema enumerates the two, and
+    member_recipe_feedback.rating — which a solo night writes the same word
+    into — carries CHECK(rating IN ('liked','disliked')) and cannot hold it
+    at all. So "clear a verdict we already gave" is a feature nobody has
+    asked for, and it is better refused outright than half-supported down a
+    path where the household half of the write would land and the
+    per-person half would raise. rating=None keeps meaning exactly what it
+    has always meant — leave the rating alone, just add notes — and is
+    checked before this.
+
+    Emily changes the vocabulary by changing RECIPE_RATINGS, in one line.
+
+    WHY THIS ONE IS WORSE THAN ITS FIVE SIBLINGS, measured on a real
+    uvicorn 2026-09-26 before the guard. The other five wrote a word no
+    screen reads and lost nothing. Here a recipe rated 'liked' and re-rated
+    'teleported' came back carrying 'teleported': the verdict the household
+    gave is COMMITTED over and gone, it stops counting as rated in the
+    "what we know" score, it sorts as unrated in list_recipes, and — since
+    the planner's filter is `rating != 'disliked'` — a dish the household
+    explicitly rejected becomes a planning candidate again. Even 'Liked'
+    with a capital is a different word to every one of those readers.
+
+    And when the recipe's last cook was a solo night, the per-person write
+    that follows hits that CHECK and raises, so the route answered 500
+    "your data is fine" over a rating it had already destroyed. Nothing
+    heals a row already carrying a third word: reaching one needed a
+    hand-made request, and a migration inventing history is worse than
+    leaving the handful that can only have come from somebody's curl.
+    """
+
+
 class DuplicateRecipeName(ValueError):
     """
     A save that would give one household two recipes under one name.
@@ -1709,6 +1759,19 @@ def mark_recipe_feedback(recipe_name: str, rating: str | None = None, notes: str
     result's solo_auto_attribution key names who this fired for, if anyone,
     so a caller can mention it if it seems worth surfacing.
     """
+    # Above get_conn on purpose: a word that is not a verdict never opens a
+    # connection and never takes the write lock, and a caller that skips the
+    # route entirely — chat, a script — is held to the same two words. It also
+    # has to be above the UPDATE for the reason this guard exists at all: that
+    # statement COMMITS, so by the time the per-person write further down
+    # raises on the same word, the rating the household gave is already gone.
+    # rating=None is checked first because it is not a rating at all, it is
+    # "leave the rating alone, just add notes" — see RECIPE_RATINGS.
+    if rating is not None and rating not in RECIPE_RATINGS:
+        raise InvalidRecipeRating(
+            f"{rating!r} isn't a verdict on a recipe. "
+            f"Use one of: {', '.join(RECIPE_RATINGS)}."
+        )
     conn = get_conn()
     recipe = conn.execute(
         "SELECT id, feedback_notes FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) "
@@ -1764,19 +1827,35 @@ def _maybe_auto_attribute_solo_night(recipe_id: int, recipe_name: str, rating: s
     """
     from . import attendance as _attendance
 
+    # try/finally on both connections, and the second one is why. The INSERT
+    # below writes into member_recipe_feedback.rating, which carries
+    # CHECK(rating IN ('liked','disliked')), so it CAN raise — and without a
+    # finally the connection was left open holding SQLite's write lock, on a
+    # worker thread that no other thread may even close ("SQLite objects
+    # created in a thread can only be used in that same thread") and that
+    # gc.collect() will not free, because the reference is live on that
+    # thread's exception state rather than in a cycle. Measured 2026-09-26 on
+    # a real uvicorn: the household's very next write waited out sqlite3's
+    # full 5-second busy timeout and then 500'd, and tools.record_error could
+    # not write either — error_events held nothing at all for the crash, so
+    # the one failure the morning report most needs to see was the one it
+    # could not see. mark_recipe_feedback's vocabulary guard closes today's
+    # trigger; this is what makes the NEXT unexpected failure in here visible
+    # instead of silent.
     conn = get_conn()
-    entry = conn.execute(
-        """
-        SELECT date, slot FROM meal_plan_entries
-        WHERE household_id = ? AND recipe_id = ? AND cooked_status = 'done'
-        ORDER BY COALESCE(cooked_at, created_at) DESC, id DESC LIMIT 1
-        """,
-        (household_id(), recipe_id),
-    ).fetchone()
-    if not entry:
+    try:
+        entry = conn.execute(
+            """
+            SELECT date, slot FROM meal_plan_entries
+            WHERE household_id = ? AND recipe_id = ? AND cooked_status = 'done'
+            ORDER BY COALESCE(cooked_at, created_at) DESC, id DESC LIMIT 1
+            """,
+            (household_id(), recipe_id),
+        ).fetchone()
+    finally:
         conn.close()
+    if not entry:
         return None
-    conn.close()
 
     att = _attendance.get_slot_attendance(entry["date"], entry["slot"])
     if att["guest_count"] or len(att["present_member_ids"]) != 1:
@@ -1785,24 +1864,25 @@ def _maybe_auto_attribute_solo_night(recipe_id: int, recipe_name: str, rating: s
     member_name = att["present_names"][0]
 
     conn = get_conn()
-    existing = conn.execute(
-        "SELECT source FROM member_recipe_feedback WHERE household_id = ? AND recipe_id = ? AND member_id = ?",
-        (household_id(), recipe_id, member_id),
-    ).fetchone()
-    if existing and existing["source"] == "explicit":
+    try:
+        existing = conn.execute(
+            "SELECT source FROM member_recipe_feedback WHERE household_id = ? AND recipe_id = ? AND member_id = ?",
+            (household_id(), recipe_id, member_id),
+        ).fetchone()
+        if existing and existing["source"] == "explicit":
+            return None  # a stated fact outranks a guess — never clobber it silently
+        conn.execute(
+            """
+            INSERT INTO member_recipe_feedback (household_id, recipe_id, member_id, rating, source)
+            VALUES (?, ?, ?, ?, 'solo_auto')
+            ON CONFLICT(household_id, recipe_id, member_id) DO UPDATE SET
+                rating = excluded.rating, source = 'solo_auto', updated_at = datetime('now')
+            """,
+            (household_id(), recipe_id, member_id, rating),
+        )
+        conn.commit()
+    finally:
         conn.close()
-        return None  # a stated fact outranks a guess — never clobber it silently
-    conn.execute(
-        """
-        INSERT INTO member_recipe_feedback (household_id, recipe_id, member_id, rating, source)
-        VALUES (?, ?, ?, ?, 'solo_auto')
-        ON CONFLICT(household_id, recipe_id, member_id) DO UPDATE SET
-            rating = excluded.rating, source = 'solo_auto', updated_at = datetime('now')
-        """,
-        (household_id(), recipe_id, member_id, rating),
-    )
-    conn.commit()
-    conn.close()
     _household._log_preference_event(f"member:{member_name}:recipe:{recipe_name}", "write")
     return member_name
 
@@ -1846,9 +1926,20 @@ def attribute_recipe_feedback(
         raise ValueError(
             f"'{recipe_name}' has no rating yet to attribute to {member_name} — pass rating explicitly."
         )
-    if resolved_rating not in ("liked", "disliked"):
+    # This door ALREADY refused a third word before mark_recipe_feedback's
+    # guard existed — checked 2026-09-26, it is not a sixth instance. What
+    # changed is only where the two words live: its own hard-coded tuple was a
+    # second copy of one rule, so changing RECIPE_RATINGS would have moved one
+    # door and not the other. InvalidRecipeRating is a ValueError subclass, so
+    # every caller that was catching this still catches it; this function is
+    # reachable from chat only (no route), so there is no except ordering to
+    # get right here the way there is on /api/recipe-feedback.
+    if resolved_rating not in RECIPE_RATINGS:
         conn.close()
-        raise ValueError("rating must be 'liked' or 'disliked'.")
+        raise InvalidRecipeRating(
+            f"{resolved_rating!r} isn't a verdict on a recipe. "
+            f"Use one of: {', '.join(RECIPE_RATINGS)}."
+        )
 
     member_id = _household._get_or_create_member(conn, member_name)
     conn.execute(
