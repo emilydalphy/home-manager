@@ -678,6 +678,155 @@ why*, not duplicating the diff.
   - **Not verified in a browser** — nothing visual changed; the whole
     reproduction and the whole verification are over HTTP and through the
     tools.
+- **2026-09-26 — A house with Chores paused was still being SENT all
+  thirteen chores schemas on every turn. Branch
+  `overnight/paused-module-tools-off`, NOT merged at the time of writing.**
+  Loop Board "Chat: slim the 37K-token briefing", **item 3 only** — and
+  half of item 3; see the inventory bullet below. Measured from production
+  on 2026-09-21: a chat turn costs ~16¢, and **$1.42 of a $1.78 month was
+  cache WRITES**, because the fixed briefing is re-cached on nearly every
+  turn (turns are further apart than the cache TTL, so the prefix is
+  written rather than read). The 2026-09-12 switch already DECLINED a
+  chores tool CALL at the one dispatch gate in `run_agent_turn`; it never
+  stopped the DEFINITIONS going out, so the tester's house paid for a
+  schema on every turn and was shown tools it would then be refused.
+  - **Measured on the code as it stands rather than taken from the card.**
+    **133** tools (card said 132), **100,519** chars of tool JSON ≈
+    **25,130 tokens** (card ~25,200), `SYSTEM_PROMPT` **49,372** chars ≈
+    **12,343 tokens** (card ~12,200), so the briefing is **~37,473
+    tokens** before a word of the conversation. The 13 chores definitions
+    are **11,769 chars ≈ 2,942 tokens — 11.71% of the tool block and
+    7.85% of the whole briefing**, so a paused house's briefing goes
+    37,473 → **34,530**. chars/4, this repo's own estimator.
+  - **THE FIRST CUT OF THIS WAS MEASURED ON A 49-COMMIT-STALE `main` AND
+    THE NUMBERS ARE RE-TAKEN, which is worth a line because the answer is
+    the opposite of what the re-measure was expected to show.** The branch
+    was cut from `7983d7f`; the real base is `6f6a5b3`, and between them
+    landed weekday lunches, "Same as last week?", bring-over,
+    `yesterday_check.py`, the Plan More-sheet re-cut and the invite link.
+    Not one of them added a chat tool: the name set is **identical, 133
+    either side, nothing added and nothing removed**, so `yesterday_check`
+    and the rest are routes, screens and modules rather than tools. What
+    moved was small and DOWNWARD — the tool JSON by **-161 chars** and the
+    prompt by **-230** — so the stale figures were 0.16% high rather than
+    low. **The 13 chores schemas are byte-identical across the rebase**
+    (same sha256, same 11,770 pretty-printed chars), so the saving itself
+    never moved; only the totals it is a percentage of. Recorded rather
+    than quietly corrected, because "the briefing grew, so re-measure"
+    was the right instinct and the measurement said no.
+  - **One function, `agent.tools_for_request()`, read once per turn.**
+    `TOOL_DEFINITIONS` and `TOOL_FUNCTIONS` stay complete — what changes is
+    which definitions are SENT, never which tools exist, because the
+    chores-setup routes, `set_chores_enabled.py` and every schema test in
+    `tests/` reach them directly. Switched on it returns `TOOL_DEFINITIONS`
+    **itself**, not a copy, so "on is exactly what it always was" is
+    literally true and is asserted with `is`.
+  - **It reads `CHORES_TOOLS`, deliberately, rather than a second list.**
+    That set's own comment already says "any new chores tool belongs in
+    this set, full stop" — and it now decides BOTH what is sent and what is
+    refused, so a fourteenth chores tool is gated in both places by the one
+    edit and the two halves can never drift about which tools Chores owns.
+    A copy of the names in `tools_for_request` reddens the guard test.
+  - **THE DISPATCH GATE STAYS, and neither half is a substitute for the
+    other.** Not sending a definition is the cheap half and covers only
+    what this request can see; refusing the call is the correct half, and
+    covers what this cannot — a conversation whose history was built while
+    the switch was on, a retried request, a switch flipped mid-turn, and a
+    model working from `SYSTEM_PROMPT`'s chores walk-through, **which is
+    still there** (shortening it is item 2). Without the gate a model that
+    names a tool it was never shown gets "Unknown tool add_chore" instead
+    of one plain sentence. Said in the docstring, and pinned by a test that
+    asserts the tool was NOT offered and is refused anyway.
+  - **Read once per turn, not once per round**, because
+    `tools.chores_enabled()` opens a connection of its own and the answer
+    cannot have moved inside one turn — a read per round would be a SQLite
+    connection per round. The gate re-reads per call, which is what makes a
+    mid-turn flip take effect on the tool that is running. Pinned by a test
+    whose tool flips the switch between rounds and requires round two to
+    carry what round one carried.
+  - **A caching consequence, named rather than left to be found.** The tool
+    block renders before `system`, so two households with different
+    switches no longer share a cache prefix — the comment above
+    `system_blocks` said that breakpoint "also covers TOOL_DEFINITIONS" and
+    is corrected in the same change. It costs nothing today (the measured
+    problem is that the prefix is being written, not read, so there was no
+    sharing to lose), but a second module gated this way multiplies the
+    number of distinct prefixes rather than lengthening any one of them.
+  - **THE INVENTORY HALF IS DELIBERATELY NOT BUILT, so item 3 ships half
+    done and the card stays open for it.** Four reasons, in order of
+    weight. (1) **There is no flag.** `INVENTORY_IN_DEVELOPMENT` is a
+    client-side JS constant in `static/shell.js` and `static/inventory.html`
+    — there is no `households` column, nothing on `/api/whoami`, and
+    `grep -rn "inventory_enabled" app/` is empty. The card's own words are
+    "they come back with the flag"; with no flag, stripping them is a
+    one-way removal of capability that only a deploy could reverse. (2)
+    **Inventory WORKS**, and is written to by paths a household uses every
+    week — the grocery tick (`_add_to_inventory`), all three photo scans
+    (`/api/inventory/confirm-scan`) — and read by the pre-shop "maybe
+    already home" flags, `deplete_inventory_for_meal` and the generation
+    context. A label saying "don't rely on this yet" is not a household
+    saying "we don't have this". (3) **The app INJECTS inventory findings
+    into the model's own context**: `agent._build_proactive_check_block`
+    calls `tools.get_expiring_soon()` at the start of a sitting, so
+    stripping the tools would tell the model the milk is going off and
+    remove everything that could act on it. (4) There is no sentence to say
+    — `tools.CHORES_OFF_MESSAGE` exists because a house really has Chores
+    off, and inventing an inventory twin would tell a household a working
+    feature is switched off. The 9 inventory-named tools are ~6,070 chars ≈
+    **1,518 tokens** if anybody does want them gated later; the other
+    inventory-MENTIONING tools (`check_off_meal`, `mark_grocery_item`,
+    `add_staple`, `get_attention_items`, `get_prep_schedule`) are core meal
+    loop and could never go.
+  - **Items 1 and 2 are untouched and were not attempted.** Item 1
+    (deferred tool loading) needs a live API call to confirm the feature on
+    this model, and there is no working key in the overnight sandbox; item
+    2 (shortening the system prompt) is a judgement-heavy prompt rewrite
+    that cannot be verified without a model, and this file's own rule is
+    that telling the generator something is not the same as preventing it.
+  - **Driven end to end over real HTTP** on a throwaway DB against a real
+    uvicorn on port 8972, with only the model call stubbed (it records each
+    request's tool names): sign in, one `/api/chat` turn with the switch
+    off, `set_chores_enabled.py on --household 1`, one more turn. **120
+    tools / 88,750 chars off against 133 / 100,519 on**, the difference
+    exactly the gated set, nothing else lost, and `/api/whoami` reading
+    `chores_enabled` false then true either side.
+  - **8 new tests in `tests/test_chores_switch.py` (41 → 49), section 3b**,
+    every one driving the REAL agent loop with a stubbed client and reading
+    what the request actually put on the wire — the defect was a list being
+    sent, which a source-marker test cannot see. **5 are red against main's
+    behaviour and only 3 of those are red on the claim they are named
+    for**: `test_the_dispatch_gate_still_covers_a_tool_that_was_never_shown`
+    is red on its PRECONDITION (main offered the tool, so there is no
+    never-shown case to reach) and
+    `test_the_switch_is_read_once_a_turn_not_once_a_round` is red on its
+    second assertion rather than on its once-per-turn claim, which is green
+    on main and pinned by mutation instead. Both say so in their own
+    docstrings. The other 3 are guards (the catalogue is never shortened;
+    the saving is a floor) and name what pins them.
+  - **Four mutations, every one biting.** The gate a no-op, i.e. main's
+    behaviour (**5 red**); always strip chores even with the switch on
+    (**3**); the read moved inside the round loop (**1** — the once-a-turn
+    test); a copy of the thirteen names in place of `CHORES_TOOLS` (**1** —
+    the future-tool guard). **Under the first mutation, every one of the
+    53 test files that name `run_agent_turn` or `TOOL_DEFINITIONS` — 1,846
+    tests — goes 5 red, all five this file's**, which is where they had to
+    be: that mutation restores main's own behaviour for the one thing this
+    branch changes, so nothing green on main can notice it.
+  - **Numbers, read off the runs at `TZ=America/Toronto`: 7445 passed,
+    0 failed**, against a measured **7437 passed, 0 failed** on
+    `6f6a5b3` (the real merge base, exported to a directory of its own so
+    the two runs could not write to each other's tree — this log has
+    recorded that lesson twice) — +8 is this file's new tests exactly, and
+    `git diff main -- tests/` is one changed file, so no existing test was
+    deleted or weakened. (`HOME_MANAGER_URL`/`REPORT_TOKEN` are cleared by
+    conftest since 2026-09-25, so they no longer need unsetting by hand.)
+  - **Found and NOT fixed:** `SYSTEM_PROMPT` still carries the whole chores
+    walk-through for every household, paused or not — measured at 2,496
+    characters, about 624 tokens, over six wrapped lines. It is not wrong:
+    the rule at the foot of that block tells the model never to call the
+    chores tools when `chores_enabled` is false, which is exactly why the
+    gate's refusal is reachable rather than routine. But it is what a
+    paused house still pays for, and it belongs to item 2.
 
 - **2026-09-25 — A swapped-out repeat carries no note.** Emily chose "no
   note" over "in the last two weeks" and "last week / two weeks ago"
