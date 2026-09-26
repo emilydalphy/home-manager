@@ -164,12 +164,13 @@ def test_the_greyed_row_uses_the_done_ink():
 
 def _skipped(entry_id):
     return {"title": "Not planned", "meta": None, "source": "empty", "state": "planned_empty",
-            "reason": "Not planned — you left this day out.", "entry_id": entry_id, "skipped": True}
+            "reason": "Not planned — you left this day out.", "entry_id": entry_id, "skipped": True,
+            "can_fill": True}
 
 
 def _out(entry_id, **kw):
     e = {"title": "Out — nothing to cook", "meta": None, "source": "empty", "state": "planned_empty",
-         "reason": "", "entry_id": entry_id, "skipped": False}
+         "reason": "", "entry_id": entry_id, "skipped": False, "can_fill": False}
     e.update(kw)
     return e
 
@@ -323,3 +324,73 @@ def test_the_fill_day_route_plans_the_day(week, signed_in, monkeypatch):
     assert all(state == "planned" for _slot, state, _meal in _day_rows(week, D2))
     bad = signed_in.post(f"/api/week/{START}/fill-day", json={"date": "Sunday"})
     assert bad.status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# Verifier's review (2026-09-26): zero-count meals, rowless slots, partial
+# fills, a day outside the week
+# ---------------------------------------------------------------------------
+
+def test_a_meal_the_household_wants_none_of_is_never_filled_or_offered(week):
+    tools.set_household_meal_preferences(breakfasts_per_week=0, lunches_per_week=0, mark_complete=False)
+    day = next(d for d in tools.get_week_menu(week)["days"] if d["date"] == D2)
+    assert [day[s]["can_fill"] for s in ("breakfast", "lunch", "dinner")] == [False, False, True]
+    assert day["breakfast"]["skipped"] is True, "still reads as left out"
+    out = sip.fill_empty_day(week, D2, picker=_picker([]))
+    assert [f["slot"] for f in out["filled"]] == ["dinner"]
+    assert sorted(_day_rows(week, D2)) == [("breakfast", "planned_empty", None),
+                                           ("dinner", "planned", "Filled dinner"),
+                                           ("lunch", "planned_empty", None)]
+
+
+@_needs_node
+def test_no_button_when_the_only_left_out_meals_are_ones_they_want_none_of():
+    def none_wanted(i):
+        return dict(_skipped(i), can_fill=False)
+    [card] = _cards([_blank(_SAT, maker=none_wanted)])
+    assert "data-wk-build-day" not in card
+
+
+def test_a_slot_with_no_row_is_not_filled(week):
+    D3 = (TODAY + datetime.timedelta(days=3)).isoformat()
+    tools.plan_slot_empty(weekly_plan_id=week, meal_date=D3, slot="dinner",
+                          reason=tools.SKIPPED_DAY_REASON,
+                          derived_from={"constraint": tools.SKIPPED_DAY_CONSTRAINT})
+    out = sip.fill_empty_day(week, D3, picker=_picker([]))
+    assert [f["slot"] for f in out["filled"]] == ["dinner"]
+    assert _day_rows(week, D3) == [("dinner", "planned", "Filled dinner")]
+
+
+def test_a_slot_that_fails_part_way_leaves_what_filled_and_says_partial(week):
+    def flaky(context):
+        if context["slot"] == "lunch":
+            raise RuntimeError("model fell over")
+        return _dish(f"Filled {context['slot']}")
+
+    out = sip.fill_empty_day(week, D2, picker=flaky)
+    assert out["status"] == "filled" and out["partial"] is True
+    assert [f["slot"] for f in out["filled"]] == ["breakfast", "dinner"]
+    assert ("lunch", "planned_empty", None) in _day_rows(week, D2)
+    assert out["day"]["breakfast"]["title"] == "Filled breakfast"
+
+    def broken(context):
+        raise RuntimeError("model fell over")
+    D3 = (TODAY + datetime.timedelta(days=3)).isoformat()
+    _skip_day(week, D3)
+    with pytest.raises(RuntimeError):
+        sip.fill_empty_day(week, D3, picker=broken)
+
+
+def test_a_day_outside_the_week_is_refused_before_any_model_call(week):
+    seen = []
+    later = (TODAY + datetime.timedelta(days=30)).isoformat()
+    out = sip.fill_empty_day(week, later, picker=_picker(seen))
+    assert out == {"status": "refused", "message": sip.FILL_NOT_THIS_WEEK} and seen == []
+
+
+def test_the_screen_reloads_after_a_failed_fill_and_names_a_partial_one():
+    run = _extract("runBuildDay", SHELL_JS)
+    catch = run[run.index("} catch (err) {"):]
+    assert "await loadWeekMenu(panel)" in catch
+    assert "data.partial" in run and "' planned for ' + dayWord" in run
+    assert "e && e.can_fill" in _extract("wkDayCanBuild", SHELL_JS)

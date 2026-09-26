@@ -12661,7 +12661,9 @@
     var meals = WEEK_SLOTS.map(function (s) { return day[s]; });
     if (meals.some(function (e) { return e && e.need === 'away'; })) return false;
     if (reviewTileTags(day).indexOf('Away') !== -1) return false;
-    return meals.some(function (e) { return e && e.skipped; });
+    // `can_fill`: left out AND a meal the household wants at all (a skipped
+    // day's breakfast is not fillable when they asked for no breakfasts).
+    return meals.some(function (e) { return e && e.can_fill; });
   }
 
   function wkDayCardHtml(day, i, opts) {
@@ -15386,12 +15388,18 @@
       }
       spliceSwappedDay(data.day);
       renderMealsStep(panel);
-      toastSaved(savedLine(dayWord, 'planned'));
+      // Each meal is its own write, so a day can come back part-planned
+      // (`partial`): say what landed rather than claiming the whole day.
+      toastSaved(data.partial
+        ? (data.filled || []).length + ((data.filled || []).length === 1 ? ' meal' : ' meals') + ' planned for ' + dayWord
+        : savedLine(dayWord, 'planned'));
       await loadWeekMenu(panel);
     } catch (err) {
       console.warn('Build a plan failed:', err);
       showToast(SWAP_TROUBLE);
-      renderMealsStep(panel);
+      // Reload anyway: the server may have written some of the day before
+      // it failed, and the screen should show what is really there.
+      try { await loadWeekMenu(panel); } catch (e) { renderMealsStep(panel); }
     }
   }
 

@@ -207,6 +207,35 @@ NIGHT_GONE = "That night’s already gone."
 NIGHT_GONE_WHY = "that night has already gone"
 
 
+def unwanted_meal_slots(conn=None) -> set[str]:
+    """
+    The meals this household asked for NONE of — "breakfasts per week: 0"
+    on the setup screen (Emily's "None, thanks"). Read off the same
+    meal_preferences columns get_household_memory hands generation's
+    zero-count pass (agent._finish_week_slots); no row means the defaults,
+    which are never 0. "Build a plan" never fills one of these
+    (swap_in_place._fillable_slots, get_week_menu's `can_fill`): a skipped
+    day's rows for them are written before the zero-count pass and keep
+    the skipped constraint, but the household still wants none.
+    """
+    own = conn is None
+    if own:
+        conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT breakfasts_per_week, lunches_per_week, dinners_per_week "
+            "FROM meal_preferences WHERE household_id = ?",
+            (household_id(),),
+        ).fetchone()
+    finally:
+        if own:
+            conn.close()
+    if not row:
+        return set()
+    columns = {"breakfast": "breakfasts_per_week", "lunch": "lunches_per_week", "dinner": "dinners_per_week"}
+    return {slot for slot, column in columns.items() if row[column] == 0}
+
+
 def night_has_gone(meal_date: str) -> bool:
     """
     Whether `meal_date` is behind the day the HOUSEHOLD is having.
@@ -4924,6 +4953,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         "SELECT eating_style, plates_intro_shown_at FROM meal_preferences WHERE household_id = ?",
         (household_id(),),
     ).fetchone()
+    unwanted_slots = unwanted_meal_slots(conn)
     # Every freezer-to-fridge move this plan already has on the books, keyed
     # by the entry it feeds. The Meal step's "The plate" card ends with
     # either the thaw this dish needs or "Nothing to thaw", and that has to
@@ -5027,6 +5057,9 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
                 # card offers "Build a plan" only for a day of these
                 # (swap_in_place.fill_empty_day fills exactly these).
                 "skipped": skipped,
+                # …and only where the household wants that meal at all
+                # (unwanted_meal_slots) — what fill_empty_day will fill.
+                "can_fill": skipped and row["slot"] not in unwanted_slots,
             }
         if row["slot_state"] == "open":
             derived = json.loads(row["derived_from_json"] or "{}")
