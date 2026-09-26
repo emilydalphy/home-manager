@@ -558,8 +558,10 @@ why*, not duplicating the diff.
     test — keeping the outgoing dish in this pass's own avoid set is defence
     in depth, since `_repick_entry` prepends `entry["meal"]` to `tried`
     itself and any other night is covered by the cap refusal, so discarding
-    it leaves every test green. Every other mutation bites: the whole pass
-    no-opped (13 red), stage 1 off (4), stage 2 off (9), the cap not the
+    it leaves every test green. Every other mutation bites, and the three
+    headline counts were RE-MEASURED on the finished 33-test file rather than
+    carried forward from the 30-test draft, because two of them had moved:
+    the whole pass no-opped (14 red), stage 1 off (4), stage 2 off (10), the cap not the
     pick's refusal (1), every night movable (3), `theirs()` dropped (1),
     reheat/source dropped (2), unknown minutes movable (1), night tags
     ignored (2), the taste veto dropped (1), a trade offered whether it
