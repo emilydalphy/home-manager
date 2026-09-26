@@ -103,8 +103,10 @@ def test_20_the_lunch_step_names_what_was_ticked_and_nothing_else():
 
 def test_20_travels_well_still_reaches_the_person_where_it_is_used():
     """The cut clause is not the only place the fact is said: a planned
-    slot carries what it was asked for, and the menu row shows it."""
-    assert 'if (dish.days[i].entry.asked) return dish.days[i].entry.asked;' in SHELL_JS
+    slot carries what it was asked for, and its Which days row shows it.
+    (The What we're eating row said it too until 2026-09-26, when Emily
+    cut that row to title, days and time.)"""
+    assert "var asked = entry && entry.state === 'planned' && entry.asked;" in SHELL_JS
     assert '"travels well, good cold or reheated"' in _read("app", "agent.py")
 
 

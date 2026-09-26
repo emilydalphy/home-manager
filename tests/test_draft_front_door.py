@@ -249,12 +249,15 @@ def test_what_were_eating_is_one_card_per_meal_type_with_the_days_and_one_fact_a
     heads = re.findall(r'<span class="wk-menu-head">([^<]+)</span>', html)
     assert heads == ["Breakfasts", "Lunches", "Dinners", "Snacks"]
     assert html.count('class="wk-row wk-menu-row has-foot"') == 6, "each dish once: 1 breakfast, 2 lunches, 2 dinners, 1 snack"
-    # The days it covers and the one fact.
+    # The days it covers and its time — only (Emily, 2026-09-26): the
+    # asked fact and the reason stay on Which days' rows.
     assert ">3 mornings · 12 min<" in html
-    assert ">Mon, Wed · Mexican, as asked<" in html
-    assert ">Tuesday · packs cold<" in html
+    assert ">Mon, Wed · 33 min<" in html
+    assert ">Tuesday · 10 min<" in html
     assert ">Tuesday · 30 min<" in html
-    assert ">Monday · chicken" not in html and ">Monday · as asked<" in html
+    assert ">Monday · 35 min<" in html
+    for said in ("as asked", "packs cold", "chicken and potatoes", "travel well"):
+        assert said not in html, said
     # Swap on every row, through the same swap sheet, aimed at the dish's first day ahead.
     assert html.count("Swap</button>") == 6
     assert re.search(r'data-wk-day-index="0" data-wk-row="lunch".*?data-wk-meal="lunch">Chicken al pastor tacos<svg class="wk-row-chev".*?</button>.*?data-wk-swap-sheet="lunch"', html, re.S)

@@ -8137,6 +8137,12 @@ span.cook-week-name { cursor: default; }
   color: var(--ink);
 }
 .wk-card-count { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); text-align: right; }
+/* A blank day Pomona can plan (Emily, 2026-09-26): one sentence and
+   "Build a plan" in the card's body, where the rows would be. */
+.wk-card-blank { padding: 8px 0 14px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.wk-card-blank p { margin: 0; font-family: var(--font-body); font-size: 15px; line-height: 1.4; color: var(--ink-secondary); }
+.wk-card-blank .wk-build-day { min-height: 44px; }
+.wk-card-blank .wk-build-day:disabled { opacity: .6; }
 .wk-card-tags { display: flex; flex-wrap: wrap; gap: 6px 10px; padding: 0 0 6px; }
 .wk-card-tag {
   font-family: var(--font-body);
@@ -8448,6 +8454,13 @@ span.cook-week-name { cursor: default; }
 }
 .wk-menu-head + .wk-row { border-top: 0; }
 .wk-menu-row .wk-row-main { min-height: 48px; }
+/* A dish whose days are all behind us (Emily, 2026-09-26): greyed, and
+   its line says "Had Thu, Fri". --ink-done is the app's "already
+   happened" ink (4.53:1 on ground light); it is not struck through — it
+   was eaten, not cancelled — and the name stays the way into the recipe. */
+.wk-menu-row.is-past .wk-row-name,
+.wk-menu-row.is-past .wk-row-meta { color: var(--ink-done); }
+.wk-menu-row.is-past .wk-row-chev { color: var(--ink-done); }
 /* Swap on the menu wears the sand, edge-less dress the carousel's does. */
 .wk-menu .wk-mini { background: var(--sand); border-color: transparent; }
 @media (hover: hover) { .wk-menu .wk-mini:hover { background: var(--sand-deep); } }
@@ -8586,6 +8599,16 @@ span.cook-week-name { cursor: default; }
   color: var(--ink-secondary);
 }
 .wk-swap-trouble { color: var(--ink); }
+/* The Swap sheet's reassurance line (Emily, 2026-09-26): supporting copy
+   under the title (and the days line on a whole-dish swap), one step
+   larger than .wk-swap-sub so it reads as a sentence, not a caption. */
+.wk-swap-tweak-note {
+  margin: 4px 0 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+}
 /* The wait (Emily, 2026-09-21, board D5): a 16px apricot ring turning
    beside the line, and three placeholder cards below in the picks' own
    slots. The rows inside a placeholder are the real pick's two text lines

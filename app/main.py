@@ -3258,6 +3258,35 @@ def week_swap_in_place(week_start: str, req: SwapInPlaceRequest):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+class FillDayRequest(BaseModel):
+    """"Build a plan" on a blank day card: which day."""
+    date: str
+
+
+@app.post("/api/week/{week_start}/fill-day")
+def week_fill_day(week_start: str, req: FillDayRequest):
+    """
+    Plan the empty meals of one day that was left out of the week — the
+    Which days card's "Build a plan" (Emily, 2026-09-26). Nothing already
+    planned is touched; see swap_in_place.fill_empty_day. Like Swap, a 200
+    can say no (`status` 'refused', with the sentence to show).
+    """
+    try:
+        datetime.date.fromisoformat(req.date)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="date must be an ISO date (YYYY-MM-DD).")
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.fill_empty_day(plan_id, req.date)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except AssistantUnavailableError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.exception("Filling an empty day failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 class SwapOptionsRequest(BaseModel):
     """One tap on the Week 1 screen's Swap: which slot, and what this
     sitting has already turned down for it."""

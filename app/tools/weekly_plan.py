@@ -5023,6 +5023,10 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             return {
                 "title": "Not planned" if skipped else "Out — nothing to cook", "meta": None, "source": "empty",
                 "state": "planned_empty", "reason": row["reasoning"], "entry_id": row["id"],
+                # Left out on purpose, not away (2026-09-26): the Which days
+                # card offers "Build a plan" only for a day of these
+                # (swap_in_place.fill_empty_day fills exactly these).
+                "skipped": skipped,
             }
         if row["slot_state"] == "open":
             derived = json.loads(row["derived_from_json"] or "{}")

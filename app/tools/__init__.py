@@ -738,6 +738,9 @@ from .weekly_plan import (  # noqa: F401
 from .swap_in_place import (  # noqa: F401
     swap_meal_in_place,
     undo_meal_swap,
+    # "Build a plan" on a blank Which days card (2026-09-26): the day's
+    # left-out meals, one slot at a time, through the swap's own picker.
+    fill_empty_day,
 )
 # The household's allergies and must-avoids as the one `must_not_contain`
 # list every food-picking prompt is handed — the swap's, the three picks',
