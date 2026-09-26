@@ -418,11 +418,23 @@ why*, not duplicating the diff.
 
 - **2026-09-25 — The Cook screen was crashing in production, on a state key
   that was read twice and declared nowhere. Branch
-  `overnight/cook-crash-fix-only`, NOT merged at the time of writing — the
-  same one-line fix also rides on `overnight/cook-prep-cut-picks-crash`,
-  which is stacked on ~1,990 lines of unrelated error-insight work; this
-  branch is that fix ALONE, off `main`, so the live crash can be merged
-  without reviewing the rest.**
+  `overnight/cook-crash-fix-only`, NOT merged at the time of writing. The
+  same one-line fix also rides on `overnight/cook-prep-cut-picks-crash`;
+  merge EITHER, never both, or this entry lands twice.**
+  **THE REASON THIS SECOND BRANCH EXISTS WAS WRONG AND IS RETRACTED HERE
+  RATHER THAN QUIETLY DROPPED.** It was made on the claim that the original
+  branch was "stacked on ~1,990 lines of unrelated error-insight work", and
+  that claim came from `git diff` against a local `main` that was 49 commits
+  stale. Measured against the real `main`: the original branch has EXACTLY
+  ONE commit not on it — this fix — because its parent `88371c1` is already
+  there; the error-insight siblings merged on 2026-09-25. Merging it is
+  clean and brings 3 files, 222 insertions. There was no 1,990-line problem
+  to solve. (An 82-file, 11,000-deletion picture is what `git diff main
+  <branch>` shows for a branch whose BASE is old: it compares trees, which
+  is not what a merge does. A merge takes both sides and reverts nothing.)
+  What this branch is still good for is narrow and worth one line: its
+  numbers below were measured on the real `main`, where the original's
+  were not.
   `cookState.prepCutPicks` was `undefined`, so `cookState.prepCutPicks[meal
   .entry_id]` threw a `TypeError` out of `cookPrepCutHtml`, up through
   `cookRecipeHtml` into `renderCook`, uncaught — **not a missing chip, the
