@@ -74,6 +74,7 @@ import re
 from ..db import get_conn
 from ._shared import household_id
 from . import bring_over as _bring_over
+from . import freezer_portions as _freezer_portions
 from . import leftovers as _leftovers
 from . import weekly_plan as _weekly_plan
 
@@ -241,10 +242,18 @@ def theirs(derived: dict | None) -> bool:
     to bring over from last week (bring_over.KEY, Emily 2026-09-25) — a
     dish from last week is exactly what the no-repeat rule would otherwise
     swap away, and a dish they chose is never the one the count pass
-    folds. Cooked nights are protected alongside this by each caller.
+    folds — or a portion they froze on a night off that Pomona has put back
+    on a night (freezer_portions.KEY): that food is already cooked and paid
+    for, so swapping it away for a dish nobody asked for wastes it, which
+    is the same argument one step further on. Cooked nights are protected
+    alongside this by each caller.
     """
     derived = derived if isinstance(derived, dict) else {}
-    return bool(str(derived.get("freeform") or "").strip() or derived.get(_bring_over.KEY))
+    return bool(
+        str(derived.get("freeform") or "").strip()
+        or derived.get(_bring_over.KEY)
+        or derived.get(_freezer_portions.KEY)
+    )
 
 
 def _group_dishes(entries: list[dict], chains: dict) -> list[dict]:
@@ -1382,7 +1391,7 @@ _TOO_GENERIC_TO_ASK_BY = {
 # is, and the model never stamps it, since that row is not the model's.
 # Measured before it was added: a household bringing a chili they had
 # eaten eight days earlier had it swapped away for a dish nobody named.
-_THEIR_OWN_KEYS = ("freeform", "holiday_dish", "brought_over")
+_THEIR_OWN_KEYS = ("freeform", "holiday_dish", "brought_over", "freezer_portion")
 
 
 def theirs_by_hand(dish: dict) -> bool:

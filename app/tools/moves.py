@@ -275,7 +275,18 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
             made_ahead = headline.startswith("Made ahead")
             lead = "made ahead" if made_ahead else "leftovers from"
             source_date = source.get("date")
-            provenance = f"{lead} {_weekday(source_date)}" if source_date else lead
+            if source_date:
+                provenance = f"{lead} {_weekday(source_date)}"
+            elif made_ahead:
+                provenance = lead
+            else:
+                # A portion out of the freezer has no night on this week to
+                # point at — a night off froze it, possibly weeks and two
+                # plans ago (cooker._apply_leftover_chains' own pass; the
+                # chain pass always sets leftovers_from, so a dateless
+                # reheat is exactly this one). Saying where it came from
+                # instead of leaving "leftovers from" dangling.
+                provenance = "from the freezer"
             # A made-ahead portion eaten cold is not reheated (Emily,
             # 2026-09-25), so the line drops the word: "made ahead
             # Wednesday · 3:30". cooker._apply_leftover_chains decides it

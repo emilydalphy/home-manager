@@ -27,6 +27,7 @@ from .tools import meal_variety as _meal_variety
 from .tools import leftovers as _leftovers_mod
 from .tools import weekday_lunches as _weekday_lunches
 from .tools import bring_over as _bring_over
+from .tools import freezer_portions as _freezer_portions
 from .tools import voice as _voice
 
 logger = logging.getLogger("home_manager")
@@ -3380,6 +3381,11 @@ chose to have this week, each already placed on a `date` and `slot`. Those slots
 send NO entry for them (anything you put there is replaced), don't plan those dishes on any \
 other day, and don't make them a leftovers night or a batch for another day. They count \
 toward the week's dinners and lunches — plan the rest of the week around them.
+- `intake.frozen_portions`, when present, lists cooked portions the household froze on a night \
+they took off, each already placed on a `date` and `slot`. Those dinners are decided: send NO \
+entry for them (anything you put there is replaced), don't plan that dish anywhere else this \
+week, and don't make them a leftovers night or a batch for another day. They are reheats, so \
+they count as a meal but not as a cook — plan the rest of the week around them.
 - `intake.packed_lunch_days` does NOT decide whether a lunch is planned. Every lunch is \
 planned either way. Those specific days are constrained to food that travels well and is fine \
 cold or reheated — nothing that wilts or goes soggy in a bag. Say so in that slot's reasoning.
@@ -5397,6 +5403,32 @@ def _generate_weekly_plan(
         if brought_over and isinstance(context.get("intake"), dict):
             context["intake"]["brought_over"] = _bring_over.prompt_lines(brought_over)
 
+    # A cooked portion a night off put in the freezer (Emily's card,
+    # 2026-09-26: "so that it gets eaten instead of forgotten"). Placed the
+    # same way and for the same reason as the brought-over meals above —
+    # Pomona picks the night, here, before the model is asked, and
+    # _finish_week_slots writes it whatever the model sent — with one
+    # difference worth knowing: the time cap ORDERS the nights rather than
+    # ruling any out, so the portion lands on the week's busiest night. It
+    # runs AFTER bring_over and is told which slots that pass took, since a
+    # night cannot hold both. See freezer_portions.
+    frozen_portions = []
+    if household_memory.get("planning_mode") != "component_based":
+        period = tools.period_dates(content_start_date, day_count)
+        frozen_portions, _left_frozen = _freezer_portions.choose_nights(
+            _freezer_portions.portions_to_plan(period), period, intake,
+            slot_needs=context["slot_needs"],
+            holidays=tools.holidays_for_period(content_start_date, day_count),
+            zero_slots={
+                slot for slot, field in (("dinner", "dinners_per_week"), ("lunch", "lunches_per_week"))
+                if household_memory.get(field) == 0
+            },
+            cap_for=lambda d, slot: _meal_minutes_cap(d, slot, intake, effective_memory),
+            taken={(p["on"], p["slot"]) for p in brought_over},
+        )
+        if frozen_portions and isinstance(context.get("intake"), dict):
+            context["intake"]["frozen_portions"] = _freezer_portions.prompt_lines(frozen_portions)
+
     # Run the actual generation call BEFORE creating the weekly_plans row.
     # This used to be the other way around — create the plan, then generate
     # — which meant any failure or empty result from the LLM call (a
@@ -5640,6 +5672,7 @@ def _generate_weekly_plan(
                 plan_id, content_start_date, intake, effective_memory, day_count, skip_days=skip_days,
                 context=context, repick_budget=repick_budget, report=plan_report, asks=asks_text,
                 planned_count=planned_count, brought_over=brought_over,
+                frozen_portions=frozen_portions,
             )
 
         if intake:
@@ -5789,6 +5822,7 @@ def _finish_week_slots(
     context: dict | None = None, repick_budget=None, report: dict | None = None,
     asks: str | None = None, planned_count: int | None = None,
     brought_over: list[dict] | None = None,
+    frozen_portions: list[dict] | None = None,
 ) -> None:
     """
     Make the 21-slot guarantee true rather than merely asked for.
@@ -5946,6 +5980,19 @@ def _finish_week_slots(
     # otherwise swap away. Swallows its own failures.
     if brought_over:
         _bring_over.apply_to_plan(plan_id, brought_over)
+
+    # A cooked portion out of the freezer, on the night
+    # freezer_portions.choose_nights picked before generation. Right beside
+    # the brought-over meals for every reason theirs are here: after the
+    # away, out and holiday passes whose nights choose_nights already kept
+    # clear, before the dedupe, the chain repair and the audit so the slot
+    # reads as filled, and before the repick and count passes, which read
+    # its derived_from as the household's own choice (meal_variety.theirs).
+    # The fridge move is NOT written here: sync_defrost_tasks books it from
+    # the entry, right after this function returns, so a swap that takes
+    # the night away sweeps the reminder with it. Swallows its own failures.
+    if frozen_portions:
+        _freezer_portions.apply_to_plan(plan_id, frozen_portions)
 
     # Two rows claiming one slot is how a night nobody is home ends up with
     # groceries bought for it — audit_plan_slots has always computed this,

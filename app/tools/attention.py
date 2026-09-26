@@ -252,6 +252,14 @@ def get_attention_items() -> list[dict]:
     only pass real ids to resolve_attention_item), `kind`, `summary`, and
     `detail`.
     """
+    # A lazy WRITE on the way into a read, the shape retire_expired_drafts
+    # and sync_due_staples already take: a portion a night off froze and
+    # nothing has planned in four weeks is queued here, once ever, rather
+    # than by a scheduler nobody owns. Imported at call time — this module
+    # is what freezer_portions queues through. It swallows its own failures.
+    from . import freezer_portions as _freezer_portions
+
+    _freezer_portions.sweep_use_soon()
     items = []
     nudge = _coordination.get_feedback_nudge()
     if nudge.get("has_nudge"):

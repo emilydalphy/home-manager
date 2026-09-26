@@ -13,6 +13,10 @@ from ._shared import household_id, require_household_row
 from . import attendance as _attendance
 from . import batch_components as _batch_components
 from . import cook_ahead as _cook_ahead
+# Module scope is safe both ways round: freezer_portions reaches back
+# into this module (household_today) at CALL time, the package's own
+# convention for exactly this shape.
+from . import freezer_portions as _freezer_portions
 from . import grocery as _grocery
 from . import inventory as _inventory
 from . import leftovers as _leftovers
@@ -205,6 +209,11 @@ def deplete_inventory_for_meal(entry_id: int) -> dict:
     night the batch was actually cooked and depleted then; taking them out
     of inventory a second time for the reheat would empty a shelf that is
     still full (Emily, 2026-09-04). See leftovers.plan_leftover_chains.
+
+    The ONE reheat that does deplete is a night eating a cooked portion out
+    of the freezer (freezer_portions): the portion itself is the food, and
+    eating it is what takes it out. Handled first, above the recipe guard —
+    that night has no recipe at all.
     """
     conn = get_conn()
     entry = conn.execute(
@@ -214,6 +223,16 @@ def deplete_inventory_for_meal(entry_id: int) -> dict:
         (entry_id, household_id()),
     ).fetchone()
     conn.close()
+    # A night eating a cooked portion out of the freezer, above the
+    # recipe_id guard because that night has no recipe at all — it is a
+    # freeform row, and the food it takes out of the kitchen is the portion
+    # itself rather than any ingredient. Same function, same claim: this is
+    # already where "the meal was cooked, so the food is gone" lives, so a
+    # re-tick cannot take a second portion out of a freezer that only ever
+    # held one. See freezer_portions.portion_eaten.
+    portion = _freezer_portions.portion_eaten(entry_id)
+    if portion is not None:
+        return {"entry_id": entry_id, "depleted": [portion], "queued_for_review": []}
     if not entry or not entry["recipe_id"]:
         return {"entry_id": entry_id, "depleted": [], "queued_for_review": []}
     if entry["weekly_plan_id"] and entry_id in _leftovers.plan_leftover_chains(entry["weekly_plan_id"])["leftovers"]:
@@ -1196,6 +1215,34 @@ def _side_ingredients_for(card: dict, servings: int | None) -> list[dict]:
     return out
 
 
+def _frozen_portion_dish_by_entry(weekly_plan_id: int) -> dict[int, str]:
+    """
+    {entry_id: dish} for the nights of one plan that eat a portion out of the
+    freezer — {} for nearly every plan, which is the point of the LIKE: the
+    filtering happens in SQLite rather than by parsing every entry's
+    derived_from in Python on every read of the Cook view.
+
+    Read here rather than carried on get_weekly_plan's meal dicts: those are
+    the assistant's own view of a week and nine other callers read them, and
+    one screen wanting one key is not a reason to widen what all of them get.
+    """
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT id, derived_from_json FROM meal_plan_entries "
+            "WHERE weekly_plan_id = ? AND household_id = ? AND derived_from_json LIKE ?",
+            (weekly_plan_id, household_id(), f'%"{_leftovers.FROM_FREEZER_KEY}"%'),
+        ).fetchall()
+    finally:
+        conn.close()
+    out = {}
+    for r in rows:
+        dish = _leftovers.frozen_portion_on(r["derived_from_json"])
+        if dish:
+            out[r["id"]] = dish
+    return out
+
+
 def _apply_leftover_chains(weekly_plan_id: int, meals: list[dict], recipes_by_name: dict) -> None:
     """
     The day-based half of batch cooking (Emily, 2026-09-04): one night
@@ -1239,6 +1286,40 @@ def _apply_leftover_chains(weekly_plan_id: int, meals: list[dict], recipes_by_na
             {"date": card["date"], "targets": [], "freezer_servings": batch["freezer"]},
             batch["servings"],
         )
+
+    # A night eating a portion out of the freezer — this week's own cook put
+    # it by (leftovers.FROM_FREEZER_KEY, the fold's freezer night) or a night
+    # off froze it weeks ago (freezer_portions). It has no chain, because its
+    # cook feeds no night: plan_leftover_chains only ever honours a links_to
+    # pairing, so nothing here had ever marked one, and the Cook card and
+    # Today's timeline both read it as an ordinary cook — measured
+    # 2026-09-26: "Leftovers from the freezer — Monday's Bean chili · Cook
+    # this", which is the one thing a reheat must never say. The Plan tab had
+    # it right all along, off build_slot's leftovers regex; this is the same
+    # fact on the other two screens.
+    portion_dishes = _frozen_portion_dish_by_entry(weekly_plan_id)
+    for card in meals:
+        frozen = portion_dishes.get(card["entry_id"])
+        if frozen is None or card["entry_id"] in chains["leftovers"]:
+            continue
+        card["is_leftovers"] = True
+        # No `leftovers_from`: a portion's cook night is not a night on this
+        # plan (and for a night off's portion, not on any plan this screen is
+        # showing), so there is no date to point at. moves.py reads the
+        # headline for its provenance line and falls back to the bare word
+        # when there is no source date, which is the honest answer here.
+        card["leftovers_headline"] = _leftovers.frozen_portion_night_name(frozen)
+        card["reheat_note"] = _leftovers.reheat_note(recipes_by_name.get(frozen.lower()))
+        card["servings"] = _leftovers.eaters_at(card["date"], card.get("slot")) or None
+        # A reheat is not a cook — the same emptying the chain pass does
+        # below, for the same reason: no screen may render this night as a
+        # second cook of the dish by reading a field it happens to find.
+        card["ingredients"] = []
+        card["instructions"] = []
+        card["advance_prep_notes"] = ""
+        card["advance_prep_step_indices"] = []
+        card["has_full_recipe"] = False
+        card["default_servings"] = None
 
     if not chains["sources"]:
         return
