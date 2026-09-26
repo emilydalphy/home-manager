@@ -351,7 +351,10 @@ def offer_for_chat_grocery_add(item: str, category: str | None, item_id: int) ->
         if row is None or row["staple_offer_made"]:
             return None
         already_staple = _find_by_name(conn, item) is not None
-        conn.execute("UPDATE grocery_items SET staple_offer_made = 1 WHERE id = ?", (item_id,))
+        conn.execute(
+            "UPDATE grocery_items SET staple_offer_made = 1 WHERE id = ? AND household_id = ?",
+            (item_id, household_id()),
+        )
         conn.commit()
         return {"item": item, "already_staple": already_staple}
     finally:
@@ -542,8 +545,8 @@ def _relearn(conn, staple_id: int) -> None:
     next_due = _iso(anchor + timedelta(days=cadence))
     conn.execute(
         "UPDATE staples SET cadence_days = ?, cadence_source = ?, last_bought_at = ?, next_due_at = ?, "
-        "updated_at = datetime('now') WHERE id = ?",
-        (cadence, source, last_bought, next_due, staple_id),
+        "updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+        (cadence, source, last_bought, next_due, staple_id, household_id()),
     )
 
 
@@ -627,7 +630,10 @@ def add_staple(
             fields.append("next_due_at = ?")
             params.append(today)
         fields += ["paused = 0", "skip_streak = 0", "updated_at = datetime('now')"]
-        conn.execute(f"UPDATE staples SET {', '.join(fields)} WHERE id = ?", (*params, staple_id))
+        conn.execute(
+            f"UPDATE staples SET {', '.join(fields)} WHERE id = ? AND household_id = ?",
+            (*params, staple_id, household_id()),
+        )
         created = False
     else:
         cadence = _clamp(every_days) if every_days else _default_cadence(cat, name)
@@ -649,7 +655,10 @@ def add_staple(
             # they're low right now.
             _relearn(conn, staple_id)
             if running_low:
-                conn.execute("UPDATE staples SET next_due_at = ? WHERE id = ?", (today, staple_id))
+                conn.execute(
+                    "UPDATE staples SET next_due_at = ? WHERE id = ? AND household_id = ?",
+                    (today, staple_id, household_id()),
+                )
         created = True
     if running_low and section_for(name, cat) == SECTION_SPICES:
         # sync_due_staples never lists a spice on its own (see the module
@@ -760,7 +769,9 @@ def remove_staple(item: str) -> dict:
         return {"found": False, "item": item}
     conn.execute("UPDATE grocery_items SET staple_id = NULL WHERE household_id = ? AND staple_id = ?", (household_id(), r["id"]))
     conn.execute("DELETE FROM staple_events WHERE household_id = ? AND staple_id = ?", (household_id(), r["id"]))
-    conn.execute("DELETE FROM staples WHERE id = ?", (r["id"],))
+    conn.execute(
+        "DELETE FROM staples WHERE id = ? AND household_id = ?", (r["id"], household_id())
+    )
     conn.commit()
     conn.close()
     return {"found": True, "item": r["item"], "removed": True}
@@ -788,8 +799,9 @@ def _plenty(conn, staple_id: int, source: str, drop_lines: bool = True) -> dict:
     r = _row(conn, staple_id)
     next_due = _iso(_today() + timedelta(days=r["cadence_days"]))
     conn.execute(
-        "UPDATE staples SET next_due_at = ?, skip_streak = 0, updated_at = datetime('now') WHERE id = ?",
-        (next_due, staple_id),
+        "UPDATE staples SET next_due_at = ?, skip_streak = 0, updated_at = datetime('now') "
+        "WHERE id = ? AND household_id = ?",
+        (next_due, staple_id, household_id()),
     )
     _event(conn, staple_id, "plenty", source)
     removed = _drop_suggestion_lines(conn, staple_id) if drop_lines else None
@@ -804,8 +816,9 @@ def _skip(conn, staple_id: int, source: str, drop_lines: bool = True) -> dict:
     paused = 1 if streak >= SKIPS_BEFORE_PAUSE else 0
     next_due = _iso(_today() + timedelta(days=SKIP_DAYS))
     conn.execute(
-        "UPDATE staples SET next_due_at = ?, skip_streak = ?, paused = ?, updated_at = datetime('now') WHERE id = ?",
-        (next_due, streak, paused, staple_id),
+        "UPDATE staples SET next_due_at = ?, skip_streak = ?, paused = ?, "
+        "updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+        (next_due, streak, paused, staple_id, household_id()),
     )
     _event(conn, staple_id, "skipped", source)
     if paused:
@@ -921,8 +934,9 @@ def undo_staple_decision(staple_id: int) -> dict:
     ).fetchone()
     if restored:
         conn.execute(
-            "UPDATE grocery_items SET status = 'needed', removed_by = '', removed_at = NULL WHERE id = ?",
-            (restored["id"],),
+            "UPDATE grocery_items SET status = 'needed', removed_by = '', removed_at = NULL "
+            "WHERE id = ? AND household_id = ?",
+            (restored["id"], household_id()),
         )
     conn.commit()
     conn.close()
@@ -955,7 +969,10 @@ def reverse_last_answer(conn, staple_id: int) -> bool:
     ).fetchone()
     if last is None:
         return False
-    conn.execute("DELETE FROM staple_events WHERE id = ?", (last["id"],))
+    conn.execute(
+        "DELETE FROM staple_events WHERE id = ? AND household_id = ?",
+        (last["id"], household_id()),
+    )
     if last["kind"] == "skipped":
         conn.execute(
             "DELETE FROM staple_events WHERE id = (SELECT id FROM staple_events WHERE household_id = ? AND staple_id = ? "
@@ -964,8 +981,9 @@ def reverse_last_answer(conn, staple_id: int) -> bool:
         )
     streak = max(0, (r["skip_streak"] or 0) - (1 if last["kind"] == "skipped" else 0))
     conn.execute(
-        "UPDATE staples SET next_due_at = ?, skip_streak = ?, paused = 0, updated_at = datetime('now') WHERE id = ?",
-        (_iso(_today()), streak, staple_id),
+        "UPDATE staples SET next_due_at = ?, skip_streak = ?, paused = 0, "
+        "updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+        (_iso(_today()), streak, staple_id, household_id()),
     )
     return True
 
@@ -979,12 +997,18 @@ def pause_staple(staple_id: int, paused: bool = True) -> dict:
         conn.close()
         raise ValueError(f"No staple with id {staple_id}.")
     if paused:
-        conn.execute("UPDATE staples SET paused = 1, updated_at = datetime('now') WHERE id = ?", (staple_id,))
+        conn.execute(
+            "UPDATE staples SET paused = 1, updated_at = datetime('now') "
+            "WHERE id = ? AND household_id = ?",
+            (staple_id, household_id()),
+        )
         _event(conn, staple_id, "paused", "tap")
         _drop_suggestion_lines(conn, staple_id)
     else:
         conn.execute(
-            "UPDATE staples SET paused = 0, skip_streak = 0, updated_at = datetime('now') WHERE id = ?", (staple_id,)
+            "UPDATE staples SET paused = 0, skip_streak = 0, updated_at = datetime('now') "
+            "WHERE id = ? AND household_id = ?",
+            (staple_id, household_id()),
         )
         _event(conn, staple_id, "resumed", "tap")
     conn.commit()
@@ -1048,17 +1072,23 @@ def record_staple_purchase(
     if not already:
         event_id = _event(conn, r["id"], "bought", source, today, grocery_item_id=grocery_item_id)
     elif already["grocery_item_id"] is not None and already["grocery_item_id"] != grocery_item_id:
-        conn.execute("UPDATE staple_events SET grocery_item_id = NULL WHERE id = ?", (already["id"],))
+        conn.execute(
+            "UPDATE staple_events SET grocery_item_id = NULL "
+            "WHERE id = ? AND household_id = ?",
+            (already["id"], household_id()),
+        )
     conn.execute(
-        "UPDATE staples SET last_bought_at = ?, skip_streak = 0, updated_at = datetime('now') WHERE id = ?",
-        (today, r["id"]),
+        "UPDATE staples SET last_bought_at = ?, skip_streak = 0, updated_at = datetime('now') "
+        "WHERE id = ? AND household_id = ?",
+        (today, r["id"], household_id()),
     )
     _relearn(conn, r["id"])
     after_row = _row(conn, r["id"])
     if event_id is not None:
         conn.execute(
-            "UPDATE staple_events SET receipt_json = ? WHERE id = ?",
-            (json.dumps({"before": before, "after": _rhythm_snapshot(after_row)}), event_id),
+            "UPDATE staple_events SET receipt_json = ? WHERE id = ? AND household_id = ?",
+            (json.dumps({"before": before, "after": _rhythm_snapshot(after_row)}),
+             event_id, household_id()),
         )
     conn.commit()
     out = _shape(after_row)
@@ -1103,7 +1133,10 @@ def unrecord_staple_purchase(item: str, staple_id: int | None = None, grocery_it
         conn.close()
         out["unrecorded"] = False
         return out
-    conn.execute("DELETE FROM staple_events WHERE id = ?", (ev["id"],))
+    conn.execute(
+        "DELETE FROM staple_events WHERE id = ? AND household_id = ?",
+        (ev["id"], household_id()),
+    )
     try:
         receipt = json.loads(ev["receipt_json"] or "{}")
     except (TypeError, ValueError):
@@ -1112,15 +1145,19 @@ def unrecord_staple_purchase(item: str, staple_id: int | None = None, grocery_it
     if before and after and _rhythm_snapshot(r) == after:
         conn.execute(
             f"UPDATE staples SET {', '.join(f'{k} = ?' for k in _RHYTHM_FIELDS)}, updated_at = datetime('now') "
-            "WHERE id = ?",
-            (*(before[k] for k in _RHYTHM_FIELDS), r["id"]),
+            "WHERE id = ? AND household_id = ?",
+            (*(before[k] for k in _RHYTHM_FIELDS), r["id"], household_id()),
         )
     else:
         # last_bought_at was set to today by the tick; _relearn takes the
         # latest date still on record when there is one, and otherwise
         # keeps what it finds — so clear it first rather than let a date
         # that did not happen anchor next_due.
-        conn.execute("UPDATE staples SET last_bought_at = NULL, updated_at = datetime('now') WHERE id = ?", (r["id"],))
+        conn.execute(
+            "UPDATE staples SET last_bought_at = NULL, updated_at = datetime('now') "
+            "WHERE id = ? AND household_id = ?",
+            (r["id"], household_id()),
+        )
         _relearn(conn, r["id"])
     conn.commit()
     out = _shape(_row(conn, r["id"]))
@@ -1211,5 +1248,8 @@ def _put_on_list(conn, s) -> dict:
     res = _grocery.add_grocery_item(
         s["item"], quantity=s["quantity"] or "", category=s["category"], added_by=ADDED_BY_STAPLE, conn=conn
     )
-    conn.execute("UPDATE grocery_items SET staple_id = ? WHERE id = ?", (s["id"], res["item_id"]))
+    conn.execute(
+        "UPDATE grocery_items SET staple_id = ? WHERE id = ? AND household_id = ?",
+        (s["id"], res["item_id"], household_id()),
+    )
     return {"item_id": res["item_id"], "item": s["item"], "staple_id": s["id"]}
