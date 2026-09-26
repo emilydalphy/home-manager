@@ -416,6 +416,201 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-26 — A cooked portion a night off froze gets planned into a
+  later week, with a fridge move. Branch `overnight/freezer-portion-planned`,
+  NOT merged at the time of writing.** Loop Board improvement (Phase 0,
+  Beta-ready), the follow-up the 2026-09-15 `tonight-night-off` entry filed:
+  that work saved the portion (`inventory_items`, location `freezer`, item
+  `"<dish> (cooked)"`, source `night_off`) and said in its own words that
+  "nothing plans it back in automatically".
+  - **Reproduced first, on a throwaway DB, through the door a household
+    uses** — a week, a dinner ticked cooked, then "Not tonight — we're going
+    out" (the `freeze_cooked` shape), then the NEXT week drafted with the
+    model stubbed. Nothing hand-inserted.
+
+    | | main (`6f6a5b3`) | this branch |
+    |---|---|---|
+    | freezer row | `Kofte (cooked) · 3 servings` | same |
+    | next week's 7 dinners | all fresh cooks, no portion | the portion on the Wednesday |
+    | next week's `prep_tasks` | `[]` | `defrost` on the Tuesday, "Move the Kofte to the fridge — for Wednesday's dinner." |
+
+    **Root cause, both halves.** The portion reached the planner ONLY inside
+    `current_inventory` — the general "what's on hand" list whose own prompt
+    bullet says "Don't let already-stocked pantry staples influence which
+    dishes you pick either way" — so nothing deliberately planned it. And
+    `defrost._candidates_from_plan` matches a recipe's INGREDIENTS against
+    the freezer by name, and a cooked portion is nobody's ingredient, so no
+    reminder could ever fire for one.
+  - **`app/tools/freezer_portions.py`, four public functions in the order a
+    week meets them — bring_over.py's shape, deliberately**, because it is
+    the same kind of pass: a meal the household effectively chose, placed by
+    Pomona rather than the model, written after generation whatever the model
+    sent. Pomona picks the night in `_generate_weekly_plan` (before the call,
+    so the model can be told the slot is taken) and `_finish_week_slots`
+    writes it, right beside `bring_over.apply_to_plan` and for every reason
+    theirs is there. **ONE difference, and it is the card's own point: the
+    time cap ORDERS the nights rather than ruling any out** — a reheat fits
+    any cap, so the portion lands on the week's TIGHTEST-capped night rather
+    than merely the first free one, and "busy" is `time_caps`' own idea
+    rather than a second one.
+  - **The night is a FREEFORM row, and reusing that shape is what buys three
+    properties for nothing.** `leftovers.frozen_portion_night_name(dish)` →
+    "Leftovers from the freezer — Kofte": freeform never reaches the
+    shopping list, `build_slot`'s `leftovers?` regex reads it as a reheat,
+    and `_is_cook` counts it as a meal and not a cook. It is the shape
+    `meal_variety`'s in-week freezer night already takes. **It names NO
+    weekday, unlike `freezer_night_name`**, and that is the whole difference
+    between the two: that one's portion was frozen inside the plan being
+    read, so "Monday's" means the Monday on the screen; this one may have
+    been frozen three weeks and two plans ago, and "Monday's Kofte" would be
+    a true-sounding sentence about the wrong Monday.
+  - **TWO derived_from keys, not one, and the reason is worth reading before
+    anybody tidies it.** `leftovers.FROM_FREEZER_KEY` carries `{"dish"}` so
+    every reader that already knows that shape keeps working with no fourth
+    thing to learn (`meal_variety._group_dishes` files the night under the
+    dish, `_regroupable` refuses the group, `bring_over` and
+    `yesterday_check` read it as not-a-meal-they-missed). `freezer_portions.
+    KEY` carries the three things only this pass can answer: which inventory
+    row it eats, that a fridge move is owed, and that it is the household's
+    own choice. Folding the id into `FROM_FREEZER_KEY` instead would have
+    made `theirs()` protect `meal_variety`'s own fold nights too, which is a
+    change to the fold nobody asked for. No `cook` key: this portion's cook
+    is not on this plan, and `_slot_nights` reads a missing `cook` as no
+    reference, which is the truth.
+  - **The fridge move is NOT written by this module.** It is a candidate
+    `defrost._candidates_from_plan` returns, so `sync_defrost_tasks` books
+    it, keeps a TICKED one across a re-sync, and SWEEPS it when the night is
+    swapped away — three properties that would each have had to be
+    re-implemented, and one of which (the sweep) is the difference between a
+    reminder and a reminder to move food nobody is eating. Its lead is
+    `PORTION_LEAD_HOURS` (24) and deliberately not `lead_hours_for_item`:
+    that table keys on words for RAW cuts of family-pack size, and measured,
+    `lead_hours_for_item("Roast Chicken (cooked)")` is **72 hours** — a few
+    servings in a container is one night. `portion_move_description` is its
+    own sentence rather than `_describe`'s, which names the MEAL an
+    ingredient is for and here would read "…for Thursday's Leftovers from
+    the freezer — Kofte."; it keeps `_MOVE_ITEM_RE`'s opening so
+    `thawed_item` still reads the food back for
+    `weekly_plan._release_prep_rows`, which HOLDS a thawed portion when a
+    swap takes its night.
+  - **"Used up" is the row leaving, the card's own suggestion, and it lives
+    inside `cooker.deplete_inventory_for_meal`** — above that function's
+    `recipe_id` guard, because the night has no recipe and the food it takes
+    out of the kitchen is the portion itself. Put there rather than beside it
+    so the tick's existing claim/release machinery covers it for free: a
+    re-tick cannot take a second portion out of a freezer that only ever
+    held one (pinned with TWO portions of the same dish, which a by-name
+    reversal would have eaten). DELETED outright rather than subtracted from,
+    because the leniency that function refuses for an ingredient with an
+    unparseable quantity does not apply here — the row IS the portion,
+    written whole and never merged, and eating it eats all of it.
+  - **"Planned once" is the claim, and the judgment call is which claims
+    count.** A portion a live plan stands a FUTURE night on is not offered
+    again. A claim inside the period being DRAFTED is not a claim —
+    `retire_overlapping_plans` runs at the END of generation, so the outgoing
+    draft is still `draft` when `choose_nights` asks, and reading it as one
+    would lose the portion every time a household re-drafted the same week.
+    **And a claim on a night that has GONE BY is not a claim either**: eating
+    it deletes the row, so a past claim can only be a night nobody ticked,
+    and by the app's own records that portion is still frozen and still
+    unplanned. The worst that gets wrong is a portion eaten without a tick
+    being offered a second time, which costs a swap; the alternative is a
+    portion nothing ever mentions again, which is the bug. `yesterday_check`
+    does not ask about a reheat, so there is no other door the app could
+    learn through.
+  - **FOUND ON THE WAY AND FIXED WITH IT, because the new row would have been
+    born with it: an in-week `from_freezer` night already read as a COOK on
+    Today and on the Cook card.** Measured on `main`: "Leftovers from the
+    freezer — Monday's Bean chili" with the move's action label **"Cook
+    this"** and a full recipe on the card — the one thing a reheat must never
+    say (the 2026-09-21 evening-nudge entry's own rule). `plan_leftover_
+    chains` only ever honours a `links_to` pairing and such a night has none,
+    so `_apply_leftover_chains` had never marked one. The Plan tab had it
+    right all along off its own regex; `cooker._apply_leftover_chains` now
+    says the same thing on the other two screens (`is_leftovers`, the
+    headline, `servings`, and the recipe emptied the way the chain pass
+    empties it), and `moves.py`'s provenance line says "from the freezer"
+    rather than leaving "leftovers from" dangling with no night to name.
+    Narrowed by a `LIKE` in SQLite so a plan with no portion — nearly every
+    plan — costs one cheap query rather than parsing every entry's
+    derived_from on every read of the Cook view.
+  - **`sweep_use_soon` is lazy, on the queue's own reader**
+    (`attention.get_attention_items`), the shape `retire_expired_drafts` and
+    `sync_due_staples` already take, so there is no scheduler to own. Once
+    EVER per portion, checked against existing rows of that kind by
+    inventory id whatever their status — `add_attention_item`'s own dedupe
+    would re-queue the moment the household answered, and being told a third
+    time about a portion you have decided to keep frozen is how a nudge
+    stops being read. **It uses `tonight.USE_SOON_KIND`, so it lands where
+    that note already lands — Cook's fold and the morning text — and NOT, to
+    be plain about it, on a card of its own on Today.** The card says
+    "surfaces once on Today"; the app's use-soon note has never had a Today
+    card, and building one is a design decision nobody has made.
+  - **The name a portion is stored under is defined once**, `tonight.
+    FROZEN_COOKED_SUFFIX`, read by the writer (`_freeze_portion`) and by
+    `frozen_portion_dish`. **Nothing pins that**, and it is said in the
+    test's own docstring rather than claimed otherwise: the mutation that
+    hard-codes `" (cooked)"` in the reader reddens **zero** tests, because
+    today the two literals agree and the behaviour is identical. One
+    definition is a comment at the constant, not a test.
+  - **NOT re-exported from `app/tools/__init__.py`**, the way `bring_over`
+    and `weekday_lunches` are not: callers import the module. That
+    namespace already holds `apply_holiday_answers_to_plan` — an ALIAS of
+    `holidays.apply_to_plan` — precisely because three passes now have a
+    function of that name, and a bare one would silently be whichever module
+    imported last. Nothing here is a chat tool, and no function in the file
+    is called `freezer_portions` (the 2026-09-24 `unbatch.py` → `batch_undo.
+    py` trap).
+  - **ASSUMPTIONS, each one line and each named in the module:**
+    `MAX_PORTIONS_PER_WEEK = 1` (a week is the household's cooking, and a
+    second reheat night nobody asked for is the app taking the week over);
+    `USE_SOON_AFTER_DAYS = 28` — **a nudge, not food safety**, and
+    `tonight.FROZEN_COOKED_KEEPS_DAYS` (90) is still how long the portion
+    keeps and is still the row's own use-by; `PORTION_LEAD_HOURS = 24`; and
+    the three sentences a household reads (`REASON`, `USE_SOON_SUMMARY`,
+    `defrost.portion_move_description`).
+  - **CRITERION 3 IS MET IN THE SURFACE THE APP HAS, NOT THE ONE THE CARD
+    NAMES** — see the `sweep_use_soon` bullet. Criteria 1 and 2 are met as
+    written. A component plan is skipped entirely (its rows are parts, not
+    nights — the same carve-out bring_over takes) and the portion waits.
+  - `tests/test_freezer_portion_planned.py` (43). **23 red against main's
+    `app/` with the new module file present** (the only arrangement in which
+    the file can be collected at all): **16 fail on the assertion they are
+    named for**, 1 fails at an EARLIER assertion than its own claim and says
+    so, and 6 die on `tonight.frozen_portion_dish`, a name main has not got.
+    **Fifteen mutations run and fourteen bite**: the pass writing nothing
+    (17 red), the short-on-time preference ignored (15), the defrost booking
+    removed (6), the use-soon threshold at zero (2), the plan-once guard
+    removed (2), eating it never recorded (2), a raw roast's thaw lead (3),
+    the whole period read as a claim so a re-draft loses it (1), said every
+    time instead of once (1), more than one portion a week (1), a past night
+    still claiming it (1), `theirs` not reading the key (1), Cook and Today
+    reading it as a cook again (1), the portion path swallowing every meal's
+    depletion (1). The fifteenth is the suffix above, at 0.
+  - **Numbers, read off the runs at `TZ=America/Toronto`: 7480 passed, 0
+    failed**, against a measured **7437 passed, 0 failed** on `6f6a5b3`
+    (taken by stashing this branch's work and running the same tree) — +43 is
+    this one new file exactly, and `git diff HEAD -- tests/` is that one
+    added file, so no existing test was changed or weakened. **One earlier
+    measurement of this branch was thrown away rather than quoted**: a suite
+    run was in flight while a docstring was edited in the same tree, which by
+    this log's own rule (2026-09-23) is not evidence.
+  - **NOT verified in a browser** — nothing visual was written; `static/` is
+    byte-identical. What the screens show was checked through the payloads
+    they read (`get_week_menu`, `get_cooker_view`, `moves_for_day`,
+    `get_defrost_schedule`), not in pixels.
+  - **Found and left, each named so nobody reports it as new.** (1) A portion
+    planned on a night nobody ticks is offered again next week, by the rule
+    above — right when it was not eaten, an extra swap when it was, and there
+    is no third answer available because `yesterday_check` does not ask about
+    a reheat. (2) There is no chat tool for any of this: "plan the chili from
+    the freezer this week" reaches nothing, and the only door is the next
+    draft. (3) A portion's night carries no `food_groups`, so the plate rule
+    logs that it cannot speak to it — correct and noisy, one INFO line per
+    planned portion. (4) `MAX_PORTIONS_PER_WEEK = 1` means a household that
+    takes a night off most weeks never clears the freezer; the four-week
+    nudge is the only thing that says so.
+
 - **2026-09-25 — A swapped-out repeat carries no note.** Emily chose "no
   note" over "in the last two weeks" and "last week / two weeks ago"
   (mockups https://claude.ai/artifact/UKeqDuk8Pyi7owCXv7uhmf).
