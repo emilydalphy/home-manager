@@ -798,9 +798,12 @@ def test_a_household_id_in_a_join_reads_as_guarded():
     guarded even though nothing in the WHERE narrows the row to a household.
 
     Left rather than fixed. Telling a WHERE clause from an ON clause means
-    parsing SQL, and no statement in app/ has this shape today — `grep -n
-    "ON .*household_id" app/` finds only correctly-scoped joins. If one
-    appears, this test is where to start.
+    parsing SQL, and nothing in app/ relies on it today — measured, not
+    assumed: exactly four statements both JOIN and reach an owned table by a
+    row id (chores.py's _refuse_if_outsourced, skip_chore_instance,
+    move_chore_instance and hand_chore_instance), and all four name
+    ci.household_id in their WHERE rather than only in an ON. If a fifth
+    appears that does not, this test is where to start.
     """
     joined = (
         'conn.execute("SELECT 1 FROM households h JOIN members m '
