@@ -19368,14 +19368,22 @@
   //   2. It can be DISABLED for a reason that isn't "there's nothing to
   //      clear" — this week overlapping a second live plan (a mid-week
   //      re-plan over an already-approved week, or the reverse;
-  //      data.intake_shared, a date-range overlap now, not merely the
-  //      same week_start_date): week_intake and slot_attendance are both
-  //      keyed by date rather than by plan id, so clearing them would
-  //      reach into the other plan's days too. Refused outright rather
-  //      than guessed at — see tools.clear_week_answers. Holiday answers
-  //      are never part of this option (2026-09-25 review, item B): a
-  //      holiday is also answered from the Today card and in chat, and
-  //      undoing what it already did to the plan is a separate decision.
+  //      data.intake_shared, a date-range overlap, not merely the same
+  //      week_start_date): week_intake is keyed by date rather than by
+  //      plan id, so clearing it would reach into the other plan's days
+  //      too. Refused outright rather than guessed at — see
+  //      tools.clear_week_answers.
+  //
+  // Narrowed to week_intake ONLY on a third review the same day: it
+  // briefly also cleared slot_attendance (who's in, guests, trips), but
+  // the schema can't support that safely — one row per slot with a
+  // single last-writer source, no undo for an away stretch's derived
+  // 'quick'/'ready_made' edges, a hosting holiday writing into both
+  // attendance and the intake at once. See tools.clear_week_answers's
+  // docstring for the full reasoning. Holiday answers were never part of
+  // this option either way: a holiday is also answered from the Today
+  // card and in chat, and undoing what it already did to the plan is a
+  // separate decision.
   function joinWithAnd(parts) {
     if (parts.length === 0) return '';
     if (parts.length === 1) return parts[0];
@@ -19384,8 +19392,7 @@
 
   function setResetAnswersOptionState(cb, subEl, data) {
     var row = cb.closest('.reset-option');
-    var hasAnything = !!(data.intake_count || data.attendance_count);
-    var disabled = data.intake_shared || !hasAnything;
+    var disabled = data.intake_shared || !data.intake_count;
     row.classList.toggle('is-empty', disabled);
     cb.disabled = disabled;
     cb.checked = false;
@@ -19393,20 +19400,11 @@
       subEl.textContent = "These answers also belong to another plan on the same days, so I can't clear them on their own.";
       return;
     }
-    if (!hasAnything) {
+    if (!data.intake_count) {
       subEl.textContent = "You haven't answered this week's questions yet.";
       return;
     }
-    // Precisely what's on file for this week, not a blanket claim — only
-    // the categories that actually have something answered. Guests and
-    // trips told to chat are included here too (attendance.py has no
-    // separate "chat" source — a correction told to chat lands under the
-    // same guests/away_stretch sources the screen's own gesture would).
-    var parts = [];
-    if (data.intake_count) parts.push('the planning questions');
-    if (data.attendance_count) parts.push("who's in for meals, guests and trips");
-    var weekName = data.week_label ? ' (' + data.week_label + ')' : '';
-    subEl.textContent = 'Clears ' + joinWithAnd(parts) + weekName + '. Your household settings stay as they are.';
+    subEl.textContent = "Clears your answers to this week's questions. Who's home, guests and trips stay as they are.";
   }
 
   function syncResetConfirmBtn() {
@@ -19518,7 +19516,7 @@
       // "did it actually clear anything" is its own check, never a bare
       // truthiness of data.week_answers.
       var wa = data.week_answers;
-      var weekAnswersCleared = !!(wa && ((wa.intake && wa.intake.cleared) || wa.attendance_cleared));
+      var weekAnswersCleared = !!(wa && wa.intake && wa.intake.cleared);
       if (weekAnswersCleared) parts.push("this week's answers");
       // joinWithAnd(parts) can come back '' — nothing was actually cleared
       // (every count was already zero when the request went out) — and

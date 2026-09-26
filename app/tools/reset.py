@@ -5,25 +5,29 @@ from __future__ import annotations
 
 from ..db import get_conn
 from ._shared import household_id
-from . import attendance as _attendance
 from . import grocery as _grocery
 from . import weekly_plan as _weekly_plan
 from . import week_intake as _week_intake
 
-# The slot_attendance.source values a WEEK'S QUESTIONS write: 'guests' (the
-# "Hosting guests" night-tag chip on /plan-week AND chat's set_guest_count,
-# which passes this same default — see attendance.set_guest_count), 'sheet'
-# (the day-attendance sheet's Done, attendance.set_day_attendance), and
-# 'away_stretch' (the trip picker AND chat's set_away_stretch, via
-# attendance.remove_members_from_slot's own default). There is no 'chat'
-# source in this codebase — a correction told to chat lands under one of
-# these same three, same as the screen's own gesture would. So clearing
-# "This week's answers" also clears a guest count or a trip told to chat
-# THIS week, which is the honest reading of "this week's answers": the
-# household said it about this week, however it said it. NOT 'toggle' (a
-# single presence-avatar tap on a day card — a standalone gesture, never
-# one of the week's own questions).
-_WEEK_QUESTION_ATTENDANCE_SOURCES = ("guests", "sheet", "away_stretch")
+# "This week's answers" was widened to also clear slot_attendance
+# (guests/sheet/away_stretch) on 2026-09-25, then narrowed straight back on
+# a THIRD review the same day: the schema can't support it safely.
+# slot_attendance is one row per (date, slot) with a single last-writer
+# `source` — a toggle overwritten by a later sheet save loses the toggle's
+# own fact rather than layering under it, and the reverse loses the sheet's.
+# A whole-household away stretch derives 'quick'/'ready_made' EDGE needs on
+# neighbouring slots with no matching undo helper at all (see
+# slot_needs.set_away_stretch — nothing in this codebase reverses those
+# edges). And a hosting holiday writes BOTH a slot_attendance 'guests' row
+# AND an intake night-tag ("guests") through the very same call chat's own
+# guest-count gesture uses (holidays._set_hosting) — clearing attendance
+# there half-undoes a holiday answer that itself is untouched, and
+# clear_slot_attendance never calls big_meal.on_attendance_changed to keep
+# a hosted menu in step. None of that is safe to paper over, so this option
+# is narrow again: ONLY week_intake — the answers to the planning
+# questions themselves (night tags, guest_counts, packed lunch days,
+# skipped days, moods, cuisines, the freeform note) — never
+# slot_attendance, slot_needs, away_stretches, or holiday_answers.
 
 
 # "This week needs a do-over" without going through chat and without
@@ -147,33 +151,34 @@ def get_reset_preview(weekly_plan_id: int | None = None) -> dict:
     still to buy, whether a meal plan put it there or a person did.
     Anything already in a cart or bought stays, and isn't counted here.
 
-    intake_count/attendance_count are what the third "Start over" option,
-    "This week's answers", would clear: whether this week's planning
-    questions have an answer on file at all (tools.get_week_intake), and
-    how many of this week's days carry a day-attendance-sheet/guests/
-    away-stretch answer (slot_attendance.source — see
-    _WEEK_QUESTION_ATTENDANCE_SOURCES; never a standalone toggle). Holiday
-    answers are deliberately NOT part of this (2026-09-25 review, item B):
-    a holiday is also answered from the Today card and in chat, and
-    undoing what a 'hosting'/'out' answer already did to the plan is a
-    separate decision this option doesn't make. Both counts are read over
-    the plan's actual PERIOD (plan_period — content_start_date/day_count
-    aware, never the bare week_start_date column, which a shrunk or
-    shifted period can leave stale), so a shrunk plan's preview names only
-    its own days. A household with no plan on file yet has no week for
-    this option to name, so both answer 0 and the row stays disabled, same
-    as the other two counts do at zero.
+    intake_count is what the third "Start over" option, "This week's
+    answers", would clear: whether this week's planning questions have an
+    answer on file at all (tools.get_week_intake) — night tags, guest
+    counts, packed lunch days, skipped days, moods, cuisines, the freeform
+    note. Nothing else: never slot_attendance (who's in, guests, trips),
+    never holiday_answers — see clear_week_answers's docstring for why
+    (2026-09-25, third review) both are out of reach for this option.
+    Keyed on plan["week_start_date"], the SAME value get_week_menu and
+    generate_weekly_plan themselves read intake by (weekly_plan.py's
+    get_week_menu: `_week_intake.get_week_intake(plan["week_start_date"])`;
+    agent.py's generate_weekly_plan takes it as its own `week_start_date`
+    parameter, distinct from the content_start_date/skip_days-derived
+    range) — never plan_period's resolved start, which content_start_date
+    can shift away from the row intake actually lives under. A household
+    with no plan on file yet has no week for this option to name, so it
+    answers 0 and the row stays disabled, same as the other two counts do
+    at zero.
 
     intake_shared is True when this plan's PERIOD overlaps a second live
     plan's (find_overlapping_plans — date-range overlap, not equal
     week_start_date: a mid-week re-plan starts on a different day but
     still overlaps the approved week underneath it, 2026-09-25 review item
-    C). week_intake and slot_attendance are keyed by date/week_start rather
-    than by plan id, so with two plans over the same days there is no
-    telling, from the answers alone, which plan "this week's answers" is
-    supposed to mean — clearing them would reach into the OTHER plan's
-    days too. The dialog must hide or disable the option outright whenever
-    this is True, never offer it against just this plan's own counts.
+    C). week_intake is keyed by week_start rather than by plan id, so with
+    two plans over the same days there is no telling, from the answer
+    alone, which plan "this week's answers" is supposed to mean — clearing
+    it would reach into the OTHER plan's week too. The dialog must hide or
+    disable the option outright whenever this is True, never offer it
+    against just this plan's own count.
     """
     conn = get_conn()
     plan = _resolve_plan(conn, weekly_plan_id)
@@ -181,7 +186,6 @@ def get_reset_preview(weekly_plan_id: int | None = None) -> dict:
     week_label = None
     week_start_date = plan["week_start_date"] if plan else None
     intake_count = 0
-    attendance_count = 0
     intake_shared = False
     if plan:
         meal_count = conn.execute(
@@ -193,14 +197,6 @@ def get_reset_preview(weekly_plan_id: int | None = None) -> dict:
         intake_shared = bool(_weekly_plan.find_overlapping_plans(start, days, exclude_plan_id=plan["id"]))
         if not intake_shared:
             intake_count = 1 if _week_intake.get_week_intake(week_start_date) else 0
-            dates = _week_intake.period_dates(start, days)
-            marks = ",".join("?" * len(dates))
-            source_marks = ",".join("?" * len(_WEEK_QUESTION_ATTENDANCE_SOURCES))
-            attendance_count = conn.execute(
-                f"SELECT COUNT(*) AS n FROM slot_attendance WHERE household_id = ? "
-                f"AND date IN ({marks}) AND source IN ({source_marks})",
-                (household_id(), *dates, *_WEEK_QUESTION_ATTENDANCE_SOURCES),
-            ).fetchone()["n"]
     grocery_count = conn.execute(
         "SELECT COUNT(*) AS n FROM grocery_items WHERE household_id = ? AND status = 'needed'",
         (household_id(),),
@@ -214,7 +210,6 @@ def get_reset_preview(weekly_plan_id: int | None = None) -> dict:
         "meal_count": meal_count,
         "grocery_count": grocery_count,
         "intake_count": intake_count,
-        "attendance_count": attendance_count,
         "intake_shared": intake_shared,
     }
 
@@ -262,62 +257,61 @@ def check_week_answers_clearable(weekly_plan_id: int | None = None) -> None:
 
 def clear_week_answers(weekly_plan_id: int | None = None) -> dict:
     """
-    "This week's answers", the third "Start over" option: clears the
-    intake (tools.clear_week_intake) and the day-attendance-sheet/guests/
-    away-stretch attendance for this plan's actual period — everything
-    THIS WEEK'S QUESTIONS wrote, and nothing else. Never household setup
-    (Preferences: meal_preferences, members, the kitchen kit), never a
-    standalone attendance toggle, never another week's answers, never a
-    holiday answer (2026-09-25 review item B — see get_reset_preview's
-    docstring for why), and never — check_week_answers_clearable — a week
-    that overlaps a second live plan; that case is refused outright rather
-    than guessed at.
+    "This week's answers", the third "Start over" option: clears ONLY the
+    week_intake row (tools.clear_week_intake) — the answers to the
+    planning questions themselves (night tags, guest_counts, packed lunch
+    days, skipped days, moods, cuisines, the freeform note). Never
+    household setup (Preferences: meal_preferences, members, the kitchen
+    kit), never another week's answers, and never — check_week_answers_
+    clearable — a week that overlaps a second live plan; that case is
+    refused outright rather than guessed at.
 
-    Attendance is cleared through attendance.clear_slot_attendance for
-    each (date, slot) this week actually holds one of the three sources —
-    never a raw DELETE. clear_slot_attendance's own _sync_away_need then
-    runs: an 'away' need this attendance produced (whether from the
-    guests chip pulling everyone present, the day sheet, or an
-    away_stretch's derived edges — 'quick'/'ready_made' included, since
-    those are slot_needs entries keyed to the SAME slot_attendance rows)
-    is undone the same way un-toggling a presence avatar undoes it — the
-    need is restored or reopened, and a meal already converted to
-    planned_empty is handed back as an open decision. A raw DELETE skipped
-    all of that: the need stayed 'away', the meal stayed planned_empty and
-    off the list, while attendance itself said everyone was home.
+    Narrowed back to intake-only on a THIRD review the same day
+    (2026-09-25), having briefly also cleared slot_attendance. The
+    schema can't support clearing attendance safely, and no amount of
+    care in HOW it's cleared changes that:
 
-    The away_stretches rows themselves are left alone. Nothing in this
-    codebase reads that table back for display or behaviour — it exists
-    only as the trip's own descriptive record (member_ids_json, its
-    reason), stamped onto the slot_attendance rows it produced via
-    away_stretch_id — so there is no "the stretch itself" to remove
-    independent of those rows, and a stretch spanning past this week
-    keeps its OTHER week's slot_attendance rows (and needs) exactly as
-    they are; only the ones dated inside THIS week move.
+    - slot_attendance is one row per (date, slot) with a single
+      last-writer `source` (schema.sql). A toggle overwritten by a later
+      day-sheet save loses the toggle's own fact rather than layering
+      under it, and the reverse loses the sheet's — there is no "clear
+      just the sheet's part" once a second write has landed on the same
+      slot.
+    - A whole-household away stretch derives 'quick'/'ready_made' EDGE
+      needs on the slots just outside its range (slot_needs.set_away_
+      stretch's `_apply_edge`), and nothing in this codebase reverses an
+      edge — clearing the stretch's own slots would leave those edges
+      behind with no way back.
+    - A hosting holiday answer writes a slot_attendance 'guests' row AND
+      an intake night-tag ("guests")/guest_count through the exact same
+      call chat's own guest-count gesture uses (holidays.py's
+      _set_hosting → week_intake.save_week_intake) — indistinguishable,
+      in the stored data, from a guests tag the household typed
+      themselves (see this function's own note on that below). Clearing
+      attendance for that date would leave the holiday half-undone
+      (holiday_answers still says 'hosting') without calling
+      big_meal.on_attendance_changed to keep its menu in step —
+      clear_slot_attendance never does, because nothing told it a
+      holiday, not an ordinary toggle, was behind the row.
+
+    One known, disclosed gap even at this narrower scope: a hosting
+    holiday's own write into week_intake (the 'guests' tag/guest_count
+    above) is NOT distinguishable from an ordinary guests tag once it's
+    in night_tags_json — there is no provenance field on an individual
+    tag. So clearing this week's intake also removes a holiday-written
+    guests tag, while holiday_answers itself keeps saying 'hosting' —
+    the two fall out of step. Telling them apart cleanly would need a
+    schema change (tagging which night_tags entries a holiday wrote);
+    reported rather than guessed at.
     """
     check_week_answers_clearable(weekly_plan_id)
     conn = get_conn()
     plan = _resolve_plan(conn, weekly_plan_id)
-    if not plan:
-        conn.close()
-        return {"week_start": None, "intake": None, "attendance_cleared": 0}
-    week_start_date = plan["week_start_date"]
-    start, days = _weekly_plan.plan_period(plan)
-    dates = _week_intake.period_dates(start, days)
-    marks = ",".join("?" * len(dates))
-    source_marks = ",".join("?" * len(_WEEK_QUESTION_ATTENDANCE_SOURCES))
-    targets = conn.execute(
-        f"SELECT date, slot FROM slot_attendance WHERE household_id = ? "
-        f"AND date IN ({marks}) AND source IN ({source_marks})",
-        (household_id(), *dates, *_WEEK_QUESTION_ATTENDANCE_SOURCES),
-    ).fetchall()
-    targets = [(row["date"], row["slot"]) for row in targets]
     conn.close()
-    for date_str, slot in targets:
-        _attendance.clear_slot_attendance(date_str, slot)
-    intake_result = _week_intake.clear_week_intake(week_start_date)
+    if not plan:
+        return {"week_start": None, "intake": None}
+    intake_result = _week_intake.clear_week_intake(plan["week_start_date"])
     return {
-        "week_start": week_start_date,
+        "week_start": plan["week_start_date"],
         "intake": intake_result,
-        "attendance_cleared": len(targets),
     }

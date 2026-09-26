@@ -1057,9 +1057,10 @@ class ResetRequest(BaseModel):
     meal_plan: bool = False
     grocery_list: bool = False
     # "This week's answers" (the More sheet's "Start over", 2026-09-25):
-    # clears the intake for the plan's own week_start_date — the answers
-    # to that week's planning questions, and nothing under Preferences.
-    # See tools.clear_week_intake.
+    # clears ONLY the week_intake row for the plan's own week_start_date —
+    # the answers to that week's planning questions. Never slot_attendance
+    # (who's in, guests, trips), never a holiday answer, never anything
+    # under Preferences. See tools.clear_week_answers.
     week_answers: bool = False
     # The plan the Plan tab is showing — the one "clear this week's meal
     # plan" (and, now, "this week's answers") means. Sent by the dialog
@@ -4257,13 +4258,17 @@ def reset(req: ResetRequest):
     committed meal-plan/grocery-list clear, leaving a partial reset behind
     a 400. This way a refusal refuses the whole request.
 
-    week_answers clears the intake AND the day-attendance-sheet/guests/
-    away-stretch attendance for this one week (see tools.clear_week_answers)
-    — never a holiday answer, which is also answered from the Today card
-    and in chat and is left for a separate decision. Refused with a 400
-    when this week overlaps a second live plan, rather than guessed at
-    (the preview's intake_shared already told the dialog to hide the
-    option in that state; this is the belt to that braces).
+    week_answers clears ONLY the week_intake row for this one week (see
+    tools.clear_week_answers) — the answers to the planning questions
+    themselves. Never slot_attendance (who's in, guests, trips) and never
+    a holiday answer: a third review the same day found the schema can't
+    support clearing attendance safely (one row per slot with a single
+    last-writer source, no undo for an away stretch's derived edges, a
+    hosting holiday's own write into both tables at once — see
+    tools.clear_week_answers's docstring), so this stays narrow. Refused
+    with a 400 when this week overlaps a second live plan, rather than
+    guessed at (the preview's intake_shared already told the dialog to
+    hide the option in that state; this is the belt to that braces).
     """
     if not req.meal_plan and not req.grocery_list and not req.week_answers:
         raise HTTPException(status_code=400, detail="Nothing selected to reset.")
