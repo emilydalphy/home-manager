@@ -432,8 +432,8 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
                 out["skipped"].append({"date": first["date"], "why": "no prepped lunch to build the batch from"})
                 continue
             dish, groups = model_cook["meal"], _food_groups(model_cook)
-            weekday_names = [_title(d["weekday"]) for d in members]
-            note = f"Cook this {_title(_weekday(prep_date))} for {_join(weekday_names)}’s lunch{'es' if len(members) > 1 else ''}."
+            note = (f"Cook this {_title(_weekday(prep_date))} for "
+                    f"{batch_lunch_phrase([d['date'] for d in members])}.")
             cook_derived = {"constraint": CONSTRAINT, "prep_day": _weekday(prep_date), "prep_date": prep_date}
             if (len(first_rows) == 1 and first_rows[0]["meal"].strip().lower() == dish.strip().lower()
                     and first_rows[0]["id"] not in chains["leftovers"]):
@@ -504,6 +504,21 @@ def _join(names: list[str]) -> str:
     return ", ".join(names[:-1]) + " and " + names[-1]
 
 
+def batch_lunch_phrase(dates: list[str]) -> str:
+    """
+    "Monday and Tuesday’s lunches" — the days one prepped batch feeds.
+
+    One function because two sentences say it: the cook entry's own
+    reasoning ("Cook this Sunday for Monday and Tuesday’s lunches.",
+    written by apply_to_plan) and the prep session's line under the batch
+    ("For Monday and Tuesday’s lunches.", read back by
+    prep_sessions._prepped_lunch_items). Two copies of one phrase is how
+    the two screens end up naming different days.
+    """
+    names = [_title(_weekday(d)) for d in sorted(dates)]
+    return f"{_join(names)}’s lunch{'es' if len(names) > 1 else ''}"
+
+
 def _save_derived(entry_id: int, derived: dict, reasoning: str | None = None) -> None:
     conn = get_conn()
     if reasoning is None:
@@ -518,3 +533,130 @@ def _save_derived(entry_id: int, derived: dict, reasoning: str | None = None) ->
         )
     conn.commit()
     conn.close()
+
+
+# ---------- reading a prepped batch back: whose day the cook belongs to ----------
+
+def prepped_batches(plan_id: int, window: tuple[str, str] | None = None) -> list[dict]:
+    """
+    Every prepped-lunch batch the household's answer put on the plan, read
+    back off the cook entries apply_to_plan stamped (derived_from.prep_date
+    / .prep_day). Nothing new is written and nothing is inferred: this is
+    the one place that says what a prepped batch IS, so the prep session
+    and the Cook card cannot disagree about whose day the cook belongs to.
+
+    Each batch:
+        {"cook_entry_id", "cook_date", "slot", "meal", "cooked_status",
+         "prep_date", "prep_day", "lunch_dates", "weekly_plan_id"}
+
+    `lunch_dates` is every day the batch feeds, read off the plan AS IT
+    STANDS rather than off the answer: the cook's own day, the chain
+    targets that link back to it, and any day eating a portion frozen on
+    it. A day swapped away since takes itself out of the list, which is the
+    point of reading the rows rather than the intake.
+
+    `window` widens the read to OTHER LIVE PLANS whose batch preps inside
+    (first, last) — because a Sunday prep day for a Monday-start week falls
+    the day BEFORE that week, so the Cook tab standing on that Sunday is
+    showing the plan that CONTAINS the Sunday while the batch belongs to
+    the plan being prepped for. cooker.get_prep_schedule already reads
+    across plans for the same reason (a Monday holiday's make-ahead work
+    lands in the week before) and with the same two guards: only a live
+    plan counts, and a row whose entry is gone is not read at all.
+
+    Batches with no prep_date stamp — which is every batch on every week
+    with no weekday-lunches answer — produce nothing, so every reader of
+    this is inert for them.
+    """
+    conn = get_conn()
+    if window:
+        rows = conn.execute(
+            """
+            SELECT mpe.id, mpe.weekly_plan_id, mpe.date, mpe.slot, mpe.slot_state, mpe.cooked_status,
+                   mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal
+            FROM meal_plan_entries mpe
+            LEFT JOIN recipes r ON r.id = mpe.recipe_id
+            WHERE mpe.household_id = ? AND mpe.component_category IS NULL
+              AND (mpe.weekly_plan_id = ?
+                   OR mpe.weekly_plan_id IN (SELECT id FROM weekly_plans
+                                             WHERE household_id = ? AND status IN ('draft', 'approved')))
+            ORDER BY mpe.date ASC, mpe.id ASC
+            """,
+            (household_id(), plan_id, household_id()),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            """
+            SELECT mpe.id, mpe.weekly_plan_id, mpe.date, mpe.slot, mpe.slot_state, mpe.cooked_status,
+                   mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal
+            FROM meal_plan_entries mpe
+            LEFT JOIN recipes r ON r.id = mpe.recipe_id
+            WHERE mpe.household_id = ? AND mpe.weekly_plan_id = ? AND mpe.component_category IS NULL
+            ORDER BY mpe.date ASC, mpe.id ASC
+            """,
+            (household_id(), plan_id),
+        ).fetchall()
+    conn.close()
+
+    entries = []
+    for r in rows:
+        row = dict(r)
+        try:
+            row["derived"] = json.loads(row["derived_from_json"] or "{}") or {}
+        except (TypeError, ValueError):
+            row["derived"] = {}
+        if not isinstance(row["derived"], dict):
+            row["derived"] = {}
+        entries.append(row)
+
+    # Which days eat off which cook, by the cook's entry id — the two links
+    # apply_to_plan writes for a batch's later days.
+    from . import leftovers as _leftovers
+    fed: dict[int, set[str]] = {}
+    for row in entries:
+        derived = row["derived"]
+        ref = str(derived.get("links_to") or "").strip()
+        frozen = derived.get(_leftovers.FROM_FREEZER_KEY) or {}
+        if not ref and isinstance(frozen, dict):
+            ref = str(frozen.get("cook") or "").strip()
+        if not ref.startswith("entry_id:"):
+            continue
+        try:
+            cook_id = int(ref.split(":", 1)[1])
+        except (TypeError, ValueError):
+            continue
+        fed.setdefault(cook_id, set()).add(row["date"])
+
+    out: list[dict] = []
+    for row in entries:
+        prep_date = str(row["derived"].get("prep_date") or "").strip()
+        if not prep_date or row["slot_state"] != "planned" or not row["meal"]:
+            continue
+        try:
+            date.fromisoformat(prep_date)
+        except ValueError:
+            continue
+        if row["weekly_plan_id"] != plan_id:
+            # Another plan's batch only counts while it preps INTO this
+            # plan's period — see `window` above.
+            if not window or not (window[0] <= prep_date <= window[1]):
+                continue
+        out.append({
+            "weekly_plan_id": row["weekly_plan_id"],
+            "cook_entry_id": row["id"],
+            "cook_date": row["date"],
+            "slot": row["slot"],
+            "meal": row["meal"],
+            "cooked_status": row["cooked_status"],
+            "prep_date": prep_date,
+            "prep_day": str(row["derived"].get("prep_day") or _weekday(prep_date)),
+            "lunch_dates": sorted({row["date"]} | fed.get(row["id"], set())),
+        })
+    out.sort(key=lambda b: (b["prep_date"], b["cook_date"], b["cook_entry_id"]))
+    return out
+
+
+def prepped_batch_by_cook(plan_id: int) -> dict[int, dict]:
+    """prepped_batches keyed by the cook's entry id — what a card reader
+    wants (cooker._apply_prepped_lunches)."""
+    return {b["cook_entry_id"]: b for b in prepped_batches(plan_id)}

@@ -416,6 +416,162 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-26 — A prepped lunch is cooked on its PREP day, and the lunch day
+  stops claiming the cook. Branch `overnight/prepped-lunch-on-prep-day`, NOT
+  merged at the time of writing.** Loop Board improvement, the follow-up
+  Emily filed herself on 2026-09-25 ("yes to both") when the weekday-lunches
+  work merged: "Sunday's Cook tab and prep list should show what I'm
+  prepping, so that I cook it on the day I actually cook it and Monday just
+  says it's ready."
+  - **Reproduced first, twice, on throwaway databases through real
+    generation and approval.** A Sunday-start week with Mon+Tue prepped: the
+    Sunday prep session held the breakfast batch and **not** the Chili, while
+    Monday's Cook card read `servings=4`, `covers_note='Cooking for 4 —
+    enough for Monday and Tuesday.'` and a "Start by" chip — under an entry
+    whose own `reasoning` said "Cook this Sunday for Monday and Tuesday's
+    lunches." One screen, two answers. And on the COMMONER shape — a
+    Monday-start week, which is what `planning_anchor`'s `sunday_before`
+    default gives — the Sunday falls the day BEFORE the period, so
+    `prep_sessions_for_plan` returned **`[]`**: no session at all, and
+    nowhere for the batch to be.
+  - **Root cause is that nothing read a stamp that was already there.**
+    `weekday_lunches.apply_to_plan` writes the batch's cook onto the FIRST
+    prepped lunch's entry — a chain cannot hold a cook on a day the dish
+    isn't eaten, which `cook_ahead.apply_prep_day_batches` says in its own
+    docstring and which is the crux the card names — and stamps the day it
+    belongs to on `derived_from.prep_date`. That key had **one writer and
+    zero readers** (grep: `weekday_lunches.py:437`).
+  - **So the fix is READ-SIDE and writes nothing new.** No column, no
+    migration, no second writer. `weekday_lunches.prepped_batches` reads the
+    stamp back and is the ONE place that says what a prepped batch is;
+    `prep_sessions` gathers it onto the prep day (its own docstring already
+    calls a session "a GATHERING, not a generator"); `cooker.
+    _apply_prepped_lunches` stops the lunch day reading as the cook. Three
+    readers of one fact, rather than three copies of a rule.
+  - **A `prep_tasks` row was the other candidate and is refused for the
+    reason `cookSessionItemHtml` already gives**: it has its own `status`, so
+    it would be a second place "is this cooked" is recorded, and
+    `check_off_prep_step` neither depletes inventory nor bumps
+    `times_cooked`. The session item is the existing `cook_ahead` kind
+    instead — same `entry_id`, `done` read off `cooked_status` — so the tick
+    is `check_off_meal` on the one row that fact lives on. **Measured: three
+    ticks, one depletion (10 lb → 8 lbs) and `times_cooked` 1**, which is
+    `check_off_meal`'s own `inventory_depleted_at` claim (2026-09-13) doing
+    the work rather than anything new.
+  - **`prepped_batches` reads the plan AS IT STANDS, not the intake.** A day
+    swapped away since takes itself out of the batch — measured, a two-lunch
+    batch becomes one after a real `swap_meal_in_plan`. The lunch days are
+    the cook's own date plus whatever links back to it (`links_to`, and
+    `from_freezer.cook` for a portion frozen past the three-day limit).
+  - **The rhythm answer is no longer the only way to a session, and that is
+    what makes the midweek prep day work.** A prep date now also comes from a
+    batch itself, so (a) the Sunday that falls the day BEFORE a Monday-start
+    week gets a session, and (b) the second prep day this week's answer added
+    (`plan-week.html`'s `ensurePrepReach`) gets one even though
+    `rhythm.prep_days` has never heard of it — the card's fourth criterion. A
+    household that answered the lunches step and never answered the rhythm
+    question used to get `[]` on the rhythm gate; it gets its session now.
+  - **The read crosses live plans, and that was forced rather than chosen.**
+    On the Sunday, `_current_weekly_plan_row` resolves the plan that CONTAINS
+    the Sunday — last week's — while the batch belongs to the week being
+    prepped for (measured: plan 1 vs plan 2). So `prepped_batches(window=…)`
+    reads other plans' batches whose prep date falls inside this period, with
+    the same two guards `cooker.get_prep_schedule` already puts on its own
+    wider read for the same reason (a Monday holiday's make-ahead work lands
+    in the week before): only a `draft`/`approved` plan counts, and a row
+    whose entry is gone is not read. Such an item's cook is not one of this
+    plan's cards, so its box is a direct `check-meal` — one entry, one
+    `cooked_status`, the same write `kitchenTodayRowHtml` makes, not a second
+    fact — and there is no recipe to open from there.
+  - **"Not shown as a cook" is a badge, a line, a count and a dock — NOT
+    `is_leftovers`.** Making the cook card a reheat would strip its recipe
+    (`_apply_leftover_chains` empties one on purpose), and the prep session's
+    own item opens exactly that card. So the card keeps everything and only
+    the DAY's words change: badge "Prepped", line "Prepped Sunday", no
+    start-by, out of the band's cook count, and the card's note reads
+    "Prepped Sunday — ready to go." One client predicate,
+    `cookPreppedAhead`, read by all four — two copies of a date comparison is
+    this codebase's named bug generator, and there is a comment-stripped test
+    that `prepped_ahead` is read in exactly one place.
+  - **THE DOCK IS A TICK, NOT AN EMPTY DOCK, AND THAT IS THE ONE THING MOST
+    EASILY GOT WRONG HERE.** `kitchenCookingTodayHtml` does not draw the
+    card's own row under it, so returning `''` from `cookRootDockHtml` would
+    leave a meal with **nowhere to tick it** — and `cookGetReadyMoves` filters
+    sessions to `date >= today`, so once the prep day has gone by its session
+    is not reachable from the root either. "Mark it cooked", with
+    `aria-label="Mark cooked"` so `cookCheckMeal` toasts a cook being logged
+    rather than one being put back. `test_cook_journey`'s Rule-5 marker moved
+    2 → 3 `dock-primary` occurrences with a note: one per BRANCH, and exactly
+    one branch ever renders.
+  - **The later lunches' headline is re-pointed at the prep day** — "Made
+    ahead — Sunday's Chili", not "Monday's" — because Monday is now a day the
+    app says nothing is made on. `leftovers_from` still names the ENTRY it
+    reheats: a label must not make the data lie about which row that is.
+  - **A batch whose prep day IS its cook day is left completely alone** (a
+    Wednesday prep for Wednesday's own lunch really is an ordinary cook that
+    day), and it is the one case both halves had to agree about: it is
+    skipped in `_cook_ahead_items` whatever day is being asked about, so the
+    batch appears exactly once rather than twice on the day they coincide.
+  - **BYTE-IDENTICAL FOR A WEEK WITH NO ANSWER, PROVED RATHER THAN
+    ASSERTED.** Every new branch is gated on `derived_from.prep_date`, which
+    has exactly one writer. Three seeded, generated and approved weeks (a
+    plain week with a real repeated-breakfast chain, a week of repeated
+    lunches, a Sunday-start week) plus a no-prep-days household, dumped
+    across `get_cooker_view`, `prep_sessions_for_plan`, `get_prep_schedule`,
+    `moves_for_day` for every day, the chains and the grocery list: **the same
+    SHA256 (`eb49ca4c…`) in this tree and in a worktree at `origin/main`**.
+    The front end too — the root's rows, subtitle, Tonight card, dock and
+    shelf rendered under node at all four `tonightIdx` values, byte-identical
+    (13,988 bytes either side).
+  - **NOT DONE, named so nobody reports it as new, and one of them needs
+    Emily.** `app/tools/moves.py` still builds the Monday lunch as a `cook`
+    move with "Start by noon" and "Cook this", so **Now contradicts Cook
+    about the same meal** — measured. Left alone deliberately: `moves.py` is
+    also what `digest.build_morning_text` is built from, so changing the
+    words changes an outbound SMS, and what a prepped lunch should SAY on
+    Now (and whether it is tickable there) is a product decision nobody has
+    made. Characterised by name
+    (`test_nows_timeline_still_calls_the_prepped_lunch_a_cook`); invert it
+    when she decides. `cookTonightIndex` is untouched too, so at eleven in
+    the morning the tab still pins the prepped lunch as tonight's card — it
+    then reads honestly ("Prepped Sunday — ready to go." plus the tick), and
+    a test says so rather than the behaviour being changed on a guess. The
+    Plan tab is untouched; the cook entry's `reasoning` there already said
+    "Cook this Sunday".
+  - **Also: `kitchenSubtitle` now says "nothing left to cook today" on a day
+    whose only meal is a prepped lunch.** Literally true and the least-wrong
+    of the sentences that function has; worth Emily's eyes because nothing
+    was actually done today.
+  - `tests/test_prepped_lunch_on_prep_day.py` (32). **24 red against main
+    with the two new names stubbed so every test reaches its own assertion —
+    and that number is decomposed in the file's own header rather than
+    quoted: SIXTEEN fail on the claim they are named for, EIGHT are red for
+    another reason** (six on a session or item that does not exist there, one
+    on a precondition, one a source marker) and each of those names the
+    mutation that pins it instead. One test was first labelled GUARD,
+    measured red on its own claim, and is relabelled rather than quietly
+    kept. **TWENTY-FOUR mutations run and every one bites**: the reader
+    returning nothing (14 red), the session keyed on the cook date (9), the
+    rhythm gate back (9), the client ignoring the field (8), the line given a
+    phrase of its own (7), the reader going to the chains instead of the rows
+    (3), no `prepped_ahead` on the cards (2), the dock back to "Start
+    cooking" (2), the row's line dropped (2), the card's note dropped (2),
+    and one red each for: the cross-plan window, the exactly-once dedupe, the
+    household filter, the live-plan guard, `prep_date == cook_date` stamped,
+    the headline not re-pointed, `skip_prep_this_week`, the client's date
+    comparison, the cook count, the card's start times, the session line, the
+    cross-plan tick, the card's preference, and the badge.
+  - **Four existing test files were updated honestly, each with a note saying
+    what moved, and no assertion was weakened**: three node harnesses gained
+    one `cookPreppedAhead` line (they extract a fixed function list, and
+    without it a new callee is a `ReferenceError` — the hazard the
+    2026-09-25 `bring-over-uncooked` entry names), and
+    `test_cook_journey`'s Rule-5 branch count moved 2 → 3.
+  - **Not verified in a browser.** No browser tooling was reachable, so the
+    layout of the session's new sub-line is unchecked — it is
+    `.cook-week-sub`, the class `kitchenTodayRowHtml` already draws under a
+    row in the same component, and no CSS was added or changed.
+
 - **2026-09-25 — A swapped-out repeat carries no note.** Emily chose "no
   note" over "in the last two weeks" and "last week / two weeks ago"
   (mockups https://claude.ai/artifact/UKeqDuk8Pyi7owCXv7uhmf).

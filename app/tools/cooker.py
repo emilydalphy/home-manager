@@ -21,6 +21,7 @@ from . import prep_sessions as _prep_sessions
 from . import quantities as _quantities
 from . import recipes as _recipes
 from . import rhythm as _rhythm
+from . import weekday_lunches as _weekday_lunches
 from . import weekly_plan as _weekly_plan
 
 logger = logging.getLogger(__name__)
@@ -1300,6 +1301,61 @@ def _apply_leftover_chains(weekly_plan_id: int, meals: list[dict], recipes_by_na
         card["default_servings"] = None
 
 
+def _apply_prepped_lunches(weekly_plan_id: int, meals: list[dict]) -> None:
+    """
+    A prepped-lunch batch is cooked on its PREP day, and the lunch days
+    stop reading as the cook (Emily, 2026-09-25: "Sunday's Cook tab and
+    prep list should show what I'm prepping, so that I cook it on the day I
+    actually cook it and Monday just says it's ready").
+
+    The batch's cook entry sits on the first lunch, not on the prep day — a
+    chain cannot hold a cook on a day the dish isn't eaten, so
+    weekday_lunches.apply_to_plan stamps the day it belongs to on the entry
+    instead (derived_from.prep_date). prep_sessions is what puts the work on
+    that day; this is what stops the lunch day claiming it.
+
+    Every card of the batch — the cook's day and each day eating off it —
+    gets `prepped_ahead` {date, weekday, lunches}, and a target's
+    "Made ahead — Monday's Chili" becomes "Made ahead — Sunday's Chili",
+    because Monday is no longer a day anything is made on.
+
+    The cook card keeps its recipe, its ingredients and its entry_id: it is
+    still the one row `cooked_status` lives on, and the prep session's own
+    item opens exactly this card. What changes is only what the day SAYS.
+
+    Nothing happens for a batch whose prep day IS its cook day (a Wednesday
+    prep for Wednesday's own lunch — the cook really is that day), and
+    nothing at all for a week with no weekday-lunches answer, which has no
+    prep_date stamp anywhere on it.
+    """
+    batches = _weekday_lunches.prepped_batches(weekly_plan_id)
+    if not batches:
+        return
+    by_entry = {m["entry_id"]: m for m in meals}
+    for batch in batches:
+        if batch["prep_date"] >= batch["cook_date"]:
+            continue
+        prepped = {
+            "date": batch["prep_date"],
+            "weekday": date.fromisoformat(batch["prep_date"]).strftime("%A"),
+            "lunches": list(batch["lunch_dates"]),
+        }
+        cook = by_entry.get(batch["cook_entry_id"])
+        if cook is not None:
+            cook["prepped_ahead"] = dict(prepped)
+        # The days eating off it: re-point the headline at the day the food
+        # was really made, so one screen cannot give two answers to "when
+        # was this made".
+        for card in meals:
+            src = card.get("leftovers_from") or {}
+            if src.get("entry_id") != batch["cook_entry_id"]:
+                continue
+            card["prepped_ahead"] = dict(prepped)
+            card["leftovers_headline"] = _leftovers.made_ahead_headline(
+                batch["meal"], batch["prep_date"]
+            )
+
+
 def _slot_rank(slot: str | None) -> int:
     """Eating order, the Python twin of weekly_plan.slot_order_sql. An
     unknown slot sorts LAST rather than disappearing, exactly as that one
@@ -1673,6 +1729,11 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         # cook-ahead offer, because all three are recorded against a plan.
         if plan_id is not None:
             _apply_leftover_chains(plan_id, meals, recipes_by_name)
+            # A prepped-lunch batch is cooked on its prep day, so the lunch
+            # day it sits on stops reading as the cook. After the chains
+            # because it re-points the reheat cards' own headline at the
+            # prep day, which the chains have only just written.
+            _apply_prepped_lunches(plan_id, meals)
             # ...and the offer to make one: the later days each card could
             # cook its portions for now (Emily, 2026-09-07, on a plan with
             # the same breakfast every morning). Runs after the chains so

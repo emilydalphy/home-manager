@@ -646,14 +646,24 @@ def test_cook_root_has_one_apricot_and_it_is_the_docks():
     (2026-09-13) the root's one apricot is "Start cooking" in its own dock
     (cookRootDockHtml); nothing else on the root is a primary, and the
     cook step one level down keeps its own dock exactly where "Mark it
-    cooked" already lived."""
+    cooked" already lived.
+
+    Updated 2026-09-26 (prepped lunches on the prep day): the dock gained a
+    third branch, not a second primary — see the assertion's own note."""
     for name in ("renderKitchen", "cookMoreRowsHtml", "kitchenCookingTodayHtml", "cookTonightCardHtml",
                  "cookShelfTileHtml", "cookGetReadyRowsHtml"):
         body = _extract(name)
         assert "cook-hero-action" not in body, f"{name} put a primary on the root"
         assert "dock-primary" not in body, f"{name} put a second primary on the root"
     root_dock = _extract("cookRootDockHtml")
-    assert root_dock.count("dock-primary") == 2, "one per branch: Start cooking, or Mark eaten"
+    # One per BRANCH, and exactly one branch ever runs — so the rendered
+    # screen still has one apricot. Three since 2026-09-26: a lunch prepped
+    # on an earlier day has nothing to start, and its tick is the dock's
+    # (the card's own row is not drawn under it, so an empty dock would
+    # leave the meal with nowhere to tick it).
+    assert root_dock.count("dock-primary") == 3, (
+        "one per branch: Start cooking, Mark eaten, or Mark it cooked"
+    )
     assert "cookRecipeDockHtml(meal)" in _extract("cookRecipeHtml")
     assert "cookCookerDockHtml(meal)" in _extract("cookCookerHtml")
     assert "cook-dock" in _extract("cookDockHtml")

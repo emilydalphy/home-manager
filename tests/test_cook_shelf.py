@@ -86,6 +86,11 @@ _PRELUDE = (
     + _function("cookCoversLabel") + "\n"
     + _function("cookFocusPrepTasks") + "\n"
     + _function("kitchenLoosePrepTasks") + "\n"
+    # cookPreppedAhead — kitchenTodayRows and cookTonightNote ask it whether a
+    # meal was made on an earlier prep day (2026-09-26, prepped lunches on the
+    # prep day). One rule, one place; a harness without it gets a named
+    # ReferenceError rather than a quiet wrong answer.
+    + _function("cookPreppedAhead") + "\n"
     + _function("kitchenTodayLine") + "\n"
     + _function("kitchenTodayRows") + "\n"
     + _function("kitchenTodayRowHtml") + "\n"

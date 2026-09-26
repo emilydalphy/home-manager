@@ -8241,6 +8241,23 @@
   // row falls back to the plan's own facts when there is no move for it
   // (a day that is not today's, a plan the moves engine has not caught up
   // with) rather than inventing a clock.
+  // A prepped-lunch batch is cooked on its PREP day, not on the lunch day
+  // its cook entry sits on (app/tools/weekday_lunches.py — a chain cannot
+  // hold a cook on a day the dish isn't eaten, so the cook lives on the
+  // first lunch and carries the day it belongs to). The server says so with
+  // `prepped_ahead` {date, weekday, lunches} on every card of the batch
+  // (cooker._apply_prepped_lunches); this is the one place the screen asks
+  // whether a meal's cooking has already happened on an earlier day, so the
+  // row, the card, the count and the dock cannot disagree about it.
+  //
+  // Only a prep day BEFORE the meal's own day counts: a Wednesday prep for
+  // Wednesday's own lunch is an ordinary cook that day, and the server does
+  // not stamp it.
+  function cookPreppedAhead(meal) {
+    var p = meal && meal.prepped_ahead;
+    return (p && p.date && meal.date && p.date < meal.date) ? p : null;
+  }
+
   function kitchenTodayRows(meals, moves, todayIso) {
     var byEntry = {};
     (moves || []).forEach(function (m) {
@@ -8251,6 +8268,7 @@
       if (meal.date !== todayIso) return;
       var move = byEntry[meal.entry_id] || null;
       var isReheat = !!meal.is_leftovers;
+      var prepped = cookPreppedAhead(meal);
       // The plan row and the move say the same thing about "cooked" — the
       // move's `done` is read off cooked_status (app/tools/moves.py) — but
       // either one can be the fresher of the two after a tick, so a row is
@@ -8265,15 +8283,19 @@
         // by" chip and its time label, which is the same arithmetic the
         // line below is built from.
         move: move,
+        // Made on an earlier day: nothing to cook here, and nothing to
+        // start by. The dish keeps its name — it is still what is being
+        // eaten, and it is still the row that gets ticked.
+        prepped: prepped,
         title: isReheat ? (meal.leftovers_headline || 'Leftovers') : (meal.meal || 'Dinner'),
-        line: kitchenTodayLine(meal, move, isReheat, done),
+        line: kitchenTodayLine(meal, move, isReheat, done, prepped),
         // "Cook" / "Reheat" while it is still ahead of you, and the past
         // tense of whichever it was once it is done — a reheat night was
         // never cooked, it was eaten (REHEAT_ACTION_LABEL says so too).
         // Made ahead and eaten cold (served_cold, cooker.py) is "Prepped":
         // it's ready to go, nothing to warm (Emily, 2026-09-25).
         badge: done ? (isReheat ? 'eaten' : 'cooked')
-          : (isReheat ? (meal.served_cold ? 'Prepped' : 'Reheat') : 'Cook')
+          : (isReheat ? (meal.served_cold ? 'Prepped' : 'Reheat') : (prepped ? 'Prepped' : 'Cook'))
       });
     });
     return rows;
@@ -8282,8 +8304,11 @@
   // "start by 5:35 · 55 min" for a cook; "leftovers from Sunday · reheat ·
   // 6:30" for a reheat — both read off the move rather than restated here,
   // so the words match the ones Today uses for the same meal.
-  function kitchenTodayLine(meal, move, isReheat, done) {
+  function kitchenTodayLine(meal, move, isReheat, done, prepped) {
     if (isReheat) return move ? move.detail : (meal.served_cold ? '' : 'reheat');
+    // "Prepped Sunday" and nothing else: a start-by time for a cook that
+    // happened on another day is a time nobody is meant to act on.
+    if (prepped) return 'Prepped ' + prepped.weekday;
     var bits = [];
     ((move && move.chips) || []).forEach(function (chip) {
       // A cook that is already done has no start-by left to make: the
@@ -8327,7 +8352,7 @@
   }
 
   function kitchenSubtitle(rows, meals, todayIso) {
-    var cooks = rows.filter(function (r) { return !r.isReheat && !r.done; });
+    var cooks = rows.filter(function (r) { return !r.isReheat && !r.done && !r.prepped; });
     var anyDone = rows.some(function (r) { return r.done; });
     if (!cooks.length) {
       return rows.length ? 'nothing left to cook today' : '';
@@ -8574,7 +8599,12 @@
     for (var i = 0; i < rows.length; i++) {
       if (rows[i].idx === cookState.tonightIdx) return rows[i];
     }
+    // A real cook still to do beats a lunch that was prepped on an earlier
+    // day: the card is what to DO now, and there is nothing to do about
+    // food that is already made.
     var todo = rows.filter(function (r) { return !r.done; });
+    var toCook = todo.filter(function (r) { return !r.prepped; });
+    if (toCook.length) return toCook[0];
     return todo.length ? todo[0] : rows[rows.length - 1];
   }
 
@@ -8593,9 +8623,16 @@
   // meal's own screen ticks), then the recipe's own advance-prep note,
   // else the plain truth that there is nothing to do ahead.
   function cookTonightNote(data, meal) {
+    // Made ahead on the prep day: the day the food was really made, not
+    // the day the cook entry happens to sit on (cookPreppedAhead).
+    var prepped = cookPreppedAhead(meal);
     if (meal.is_leftovers) {
       var src = meal.leftovers_from || {};
-      return src.date ? 'Reheat — cooked on ' + dayName(src.date, { weekday: 'long' }) + '.' : 'Reheat.';
+      var madeOn = prepped ? prepped.date : src.date;
+      return madeOn ? 'Reheat — cooked on ' + dayName(madeOn, { weekday: 'long' }) + '.' : 'Reheat.';
+    }
+    if (prepped) {
+      return 'Prepped ' + prepped.weekday + ' — ready to go.';
     }
     var tasks = cookFocusPrepTasks(data, meal);
     var pending = function (t) { return t.status !== 'done' && t.status !== 'skipped'; };
@@ -8634,6 +8671,9 @@
   // move, or a recipe with no timing: the one honest tile left is how
   // long it takes; nothing at all when even that is unknown.
   function cookTonightTimes(row, meal) {
+    // Prepped on an earlier day: there is no start time to keep, and "Takes
+    // 40 min" about a cook already done is the same lie one step quieter.
+    if (row.prepped) return [];
     // The real start first (cook_started_at on the card, which the start
     // POST itself refreshes — the moves list may still be the morning's):
     // STARTED, and the on-the-table time that follows from it (typeof
@@ -8863,6 +8903,20 @@
   // cooked"), never from here.
   function cookRootDockHtml(row) {
     if (!row || row.done) return '';
+    // Prepped on an earlier day: "Start cooking" would be the app telling
+    // them to cook something it has already told them to cook on the prep
+    // day. What is left to do is the tick — and it has to be HERE, because
+    // the card's own row is not drawn under it (kitchenCookingTodayHtml),
+    // so an empty dock would leave a meal with nowhere to tick it. The
+    // recipe is still one tap away: the shelf tile for today opens it, and
+    // so does the dish's name in a row. Same write as every other tick
+    // (check_off_meal), and the aria-label is what tells cookCheckMeal this
+    // is a cook being logged rather than one being put back.
+    if (row.prepped) {
+      return '<button type="button" class="dock-primary" data-cook="check-meal" data-entry-id="' + row.entryId + '" ' +
+        'data-next="done" data-name="' + escapeHtml(row.title || '') + '" aria-label="Mark cooked">' +
+        'Mark it cooked</button>';
+    }
     if (row.isReheat) {
       return '<button type="button" class="dock-primary" data-cook="check-meal" data-entry-id="' + row.entryId + '" data-next="done" ' +
         'data-name="' + escapeHtml(row.title || '') + '">' +
@@ -17886,10 +17940,25 @@
     var label = isCook
       ? (isDone ? 'Cooked' : 'Cook it')
       : (isDone ? 'Mark not done' : 'Mark done');
+    // A batch whose cook entry belongs to ANOTHER plan — a Sunday prep day
+    // for a Monday-start week is the last day of the week BEFORE it, so the
+    // Cook tab standing there is showing that week's plan while the batch
+    // belongs to the one being prepped for (weekday_lunches.prepped_batches
+    // reads across live plans for exactly this). Its recipe is not on this
+    // plan's cards, so there is nothing to open — but it is still one entry
+    // and one cooked_status, so the tick is the same write kitchenTodayRowHtml
+    // makes and not a second fact.
+    var ticksEntry = isCook && !canOpen && item.entry_id != null;
     var box = canOpen
       ? '<button type="button" class="cook-box' + (isDone ? ' checked' : '') + '" ' +
           'data-cook="focus" data-idx="' + idx + '" ' +
           'aria-label="' + escapeHtml(label) + '">' + COOK_ICONS.check + '</button>'
+      : ticksEntry
+        ? '<button type="button" class="cook-box' + (isDone ? ' checked' : '') + '" ' +
+            'data-cook="check-meal" data-entry-id="' + item.entry_id + '" ' +
+            'data-next="' + (isDone ? 'pending' : 'done') + '" ' +
+            'data-name="' + escapeHtml(item.title || '') + '" ' +
+            'aria-label="' + escapeHtml(isDone ? 'Mark not cooked' : 'Mark cooked') + '">' + COOK_ICONS.check + '</button>'
       : (item.prep_task_id != null
         ? '<button type="button" class="cook-box' + (isDone ? ' checked' : '') + '" ' +
             'data-cook="check-prep" data-prep-id="' + item.prep_task_id + '" ' +
@@ -17909,6 +17978,10 @@
           ? '<span class="cook-badge">' + escapeHtml(item.feeds) + '</span>'
           : '') +
       '</div>' +
+      // "For Monday and Tuesday's lunches." — what a prepped-lunch batch is
+      // for, said by the server (prep_sessions._prepped_lunch_items) in the
+      // same words the cook entry's own reasoning carries.
+      (item.line ? '<p class="cook-week-sub">' + escapeHtml(item.line) + '</p>' : '') +
     '</div>';
   }
 
