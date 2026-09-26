@@ -944,12 +944,63 @@ def record_plan_quality(plan_id, violations) -> None:
             conn.close()
 
 
+# What makes a plan_quality_events row worth counting: a plan that is still
+# the household's. A RETIRED plan is a draft that was re-drafted or taken
+# over -- nobody cooked from it, so what it got wrong about the food is not
+# a fact about this household's food.
+#
+# An orphan row -- weekly_plan_id pointing at a plan deleted outright, which
+# plan_quality_events allows because that column carries no foreign key --
+# goes too, and it is `p.household_id = ?` rather than the INNER JOIN that
+# does it: measured 2026-09-26, softening this to a LEFT JOIN reddens
+# nothing, because a missing plan makes that comparison NULL and the row
+# fails the WHERE anyway. The JOIN is the honest spelling of the intent and
+# is not load-bearing on its own; the household predicate is.
+#
+# Both halves of this clause were missing until 2026-09-26, and they
+# compounded: record_plan_quality is a bare INSERT with no dedupe, so
+# re-drafting one week logged the same violation once per draft, and nothing
+# excluded the drafts that were thrown away. Measured on the live app that
+# morning: rush_cap_respected read 12 and was 5 distinct; the repeat rule
+# read 19 and was 5. The section Emily reads to judge the food was reading
+# two to four times worse than the week she actually cooked.
+_LIVE_QUALITY_JOIN = (
+    "FROM plan_quality_events e "
+    "JOIN weekly_plans p ON p.id = e.weekly_plan_id "
+    "WHERE e.household_id = ? AND p.household_id = ? "
+    "AND COALESCE(p.status, '') != 'retired' "
+)
+
+# The identity of a violation, for counting: the same rule about the same
+# dish on the same slot of the same day is ONE thing however many drafts
+# logged it. Deliberately read-time rather than a unique index on the write:
+# two different plans really can both get the same night wrong, the raw rows
+# are what let the report say "the same 5 things across 3 drafts", and a
+# read-time rule can be changed without a migration or a backfill.
+_QUALITY_KEY = "e.rule, e.date, e.slot, e.message"
+
+# The same key as ONE value, because SQLite's COUNT(DISTINCT ...) takes a
+# single expression and not a list. char(31) is ASCII UNIT SEPARATOR: it
+# cannot occur in a rule name, an ISO date, a slot, or a message written by
+# check_week, so no two different violations can collide into one key by
+# having a separator inside them.
+_QUALITY_KEY_EXPR = " || char(31) || ".join(
+    part.strip() for part in _QUALITY_KEY.split(",")
+)
+
+
 def get_recent_plan_quality(days: int = 7, limit: int = 50) -> dict:
     """What the last few weeks of plans got wrong about the food.
 
     Seven days by default rather than one: a week is generated about once a
     week, so a one-day window would report nothing on six mornings out of
     seven and look like good news.
+
+    Counts DISTINCT violations on LIVE plans -- see _LIVE_QUALITY_JOIN and
+    _QUALITY_KEY above for why each half is there. `total` and `by_rule` are
+    the deduped numbers, which is what the report prints; `logged` is the raw
+    row count beside them, so "5, logged 12 times" stays sayable and the
+    re-draft signal is not thrown away to make the headline honest.
     """
     days = max(1, int(days))
     limit = max(1, min(int(limit), 200))
@@ -957,28 +1008,38 @@ def get_recent_plan_quality(days: int = 7, limit: int = 50) -> dict:
     conn = get_conn()
     try:
         hid = household_id()
+        where = _LIVE_QUALITY_JOIN + f"AND e.created_at >= datetime('now', '{since}') "
         by_rule = {
             r["rule"]: r["n"]
             for r in conn.execute(
-                "SELECT rule, COUNT(*) AS n FROM plan_quality_events "
-                f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
-                "GROUP BY rule ORDER BY n DESC",
-                (hid,),
+                f"SELECT e.rule AS rule, COUNT(DISTINCT {_QUALITY_KEY_EXPR}) AS n "
+                + where + "GROUP BY e.rule ORDER BY n DESC, e.rule ASC",
+                (hid, hid),
             ).fetchall()
         }
+        logged = conn.execute(
+            "SELECT COUNT(*) AS n " + where, (hid, hid)
+        ).fetchone()["n"]
+        # MAX(e.id) per key, so the surviving row is the most recent time the
+        # same thing was said -- the newest wording of a message whose rule
+        # has since been reworded, and the one whose created_at a reader
+        # would expect. GROUP BY with a bare column is SQLite's own
+        # documented "row that matched the MAX" behaviour, which is why the
+        # id is selected as well: a reader should be able to see which row.
         recent = [
             dict(r)
             for r in conn.execute(
-                "SELECT rule, severity, date, slot, message, created_at "
-                "FROM plan_quality_events "
-                f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
-                "ORDER BY id DESC LIMIT ?",
-                (hid, limit),
+                "SELECT MAX(e.id) AS id, e.rule AS rule, e.severity AS severity, "
+                "e.date AS date, e.slot AS slot, e.message AS message, "
+                "e.created_at AS created_at "
+                + where + f"GROUP BY {_QUALITY_KEY} ORDER BY id DESC LIMIT ?",
+                (hid, hid, limit),
             ).fetchall()
         ]
         return {
             "days": days,
             "total": sum(by_rule.values()),
+            "logged": logged,
             "by_rule": by_rule,
             "recent": recent,
         }
