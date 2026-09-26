@@ -654,6 +654,13 @@ CREATE TABLE IF NOT EXISTS meal_plan_entries (
     -- out for this entry yet — including on every row that predates the
     -- column, which is not backfilled. See check_off_meal.
     inventory_depleted_at TEXT,
+    -- When the household answered "We skipped it" on Today's "Did you have
+    -- it?" card (tools/yesterday_check.py). cooked_status stays 'pending'
+    -- on a skipped meal on purpose, so nothing that asks "is it done?"
+    -- needs a third value, and bring_over still offers it next week. Its
+    -- only reader is the card: a stamped row is answered and never asked
+    -- about again. A later cooked tick clears it (check_off_meal).
+    skipped_at TEXT,
     -- Phase 6: a short "why this?" rationale, generated and persisted at
     -- plan-generation time (not computed on demand — the model already has
     -- the relevant preferences/history/constraints in context right then,

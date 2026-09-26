@@ -255,6 +255,7 @@ function refreshTonightFromPlan() { CALLS.push('tonight'); refreshTodayMoves(); 
 function refreshDishIndex() { CALLS.push('dishindex'); }
 function refreshKitchenPanel() { CALLS.push('kitchen'); }
 function refreshTodayMoves() { CALLS.push('todaymoves'); }
+function refreshYesterdayCheck() { CALLS.push('yesterday'); }
 function hrefSheetKey(h) { return h === '/memory' ? 'memory' : null; }
 function prefsInvalidate() { CALLS.push('prefs'); }
 function refreshGroceryPanel() { CALLS.push('grocery'); }

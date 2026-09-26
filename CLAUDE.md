@@ -17682,3 +17682,26 @@ that ingredient only; nothing left → `already_have`, no link, so a later
 `answers.brought_over` = ticked row keys (so leaving saves it, and
 `keepAcrossPeriods` carries it across a Days change); `samePayload` and
 `leavePayload` send it. Tests: `tests/test_bring_over.py`.
+
+**2026-09-25 — Today: "Did you have it?" the morning after (branch
+`did-you-have-it`).** New module `app/tools/yesterday_check.py`:
+`yesterday_check()` (GET `/api/today/yesterday`) lists the household's
+YESTERDAY (`cooker.household_today()` − 1, never the server's date) —
+every slot incl. snacks, on the APPROVED plan covering that day,
+`slot_state='planned'`, not done, not skipped, not a component row, not a
+reheat (bring_over's own test: leftovers chain target, `links_to`,
+`from_freezer`, freeform leftovers/takeout). `answer_yesterday(entry,
+'had'|'skipped')` (POST `/api/today/yesterday/answer`, 409 when the row
+isn't being asked about any more): **had = `check_off_meal(entry,
+'done')`**, nothing else; **skipped = new column
+`meal_plan_entries.skipped_at`** (migration in db.py), and `cooked_status`
+stays `'pending'` on purpose — no reader of cooked_status learns a third
+value, and `bring_over.last_week_uncooked` (`cooked_status = 'pending'`)
+still offers a skipped dinner/lunch. `check_off_meal(...,'done')` clears
+`skipped_at`. The stamp's only reader is the card. Shell:
+`#yesterday-check` first in `.today-body`, `renderYesterdayCheck` (tonight
+card's `.needs-you-card` + `.ny-actions` spruce/outline pair, one
+`.yesterday-row` per meal, "We had it" left), optimistic row removal,
+toast `savedLine(meal, 'marked cooked'|'marked skipped')`, no Undo (Today's
+tick has none). Chat `tab: 'kitchen'` refresh re-reads it. Tests:
+`tests/test_yesterday_check.py`.

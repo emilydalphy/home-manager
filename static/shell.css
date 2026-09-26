@@ -1008,6 +1008,18 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    the needs-you band, so a morning or an answered day leaves no gap. */
 .today-area-tonight:empty { display: none; }
 .today-area-tonight { display: flex; flex-direction: column; }
+/* ---------- Yesterday: did you have it? (Emily, 2026-09-25) ----------
+   Today's first card the morning after a day with an unticked meal
+   (renderYesterdayCheck in shell.js): the tonight card's shape — kicker,
+   the question, the spruce/outline .ny-actions pair — one row per meal,
+   each row its own question and two answers, hairline between rows. No
+   apricot (Rule 5: the dock has it). display:none while empty, like the
+   tonight slot, so a day with nothing to ask leaves no gap. */
+.today-area-yesterday:empty { display: none; }
+.today-area-yesterday { display: flex; flex-direction: column; }
+.yesterday-row { display: flex; flex-direction: column; gap: 11px; }
+.yesterday-row + .yesterday-row { border-top: 1.5px solid var(--hairline); padding-top: 13px; }
+.yesterday-card .ny-title { font-size: 17px; letter-spacing: -0.02em; }
 /* The "Something else" sheet (#tonight-sheet in shell.html): the same
    geometry as Cook's More, written out here rather than added to that
    rule's selector list so this card's CSS stays in one place. */
