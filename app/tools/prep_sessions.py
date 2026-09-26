@@ -418,6 +418,11 @@ def prep_sessions_for_plan(weekly_plan_id: int) -> list[dict]:
         return []
 
     dates = _period_dates(plan)
+    if not dates:
+        # A plan with no days at all (day_count 0 — a plan that surrendered
+        # its whole period to another one) has nothing to prep for, whatever
+        # is stamped on rows that outlived the release.
+        return []
     by_weekday: dict[str, str] = {}
     for d in dates:
         by_weekday.setdefault(_weekday_key(d), d)
@@ -430,7 +435,7 @@ def prep_sessions_for_plan(weekly_plan_id: int) -> list[dict]:
     # maps to it. Read across live plans for that second reason — see
     # weekday_lunches.prepped_batches.
     batches = _weekday_lunches.prepped_batches(
-        weekly_plan_id, window=(dates[0], dates[-1]) if dates else None
+        weekly_plan_id, window=(dates[0], dates[-1])
     )
     prep_days = _rhythm.get_household_rhythm()["prep_days"]
     if not prep_days and not batches:

@@ -887,3 +887,28 @@ class TestTheFreezerLunchStillNamesTheCookDay:
         assert frozen.get("prepped_ahead") is None
         # The days inside three days of the prep day DO read as prepped.
         assert cards[dates[1]]["prepped_ahead"]["weekday"] == "Sunday"
+
+    def test_a_plan_that_surrendered_its_whole_period_has_no_session(
+            self, two_adults, stub_model):
+        """GUARD. day_count 0 is how a plan gives its whole period up to
+        another one (weekly_plan._release_plan_days). It has no days, so it
+        has nothing to prep for, whatever is stamped on rows that outlived
+        the release — on main the empty period simply mapped no weekday to a
+        date, and a batch must not be a way back in. Pinned by the mutation
+        that drops the empty-period guard."""
+        sun = _next_weekday("sunday")
+        plan_id, dates = _plan(
+            stub_model, sun, {1: "prepped", 2: "prepped"}, ["sunday"],
+            lunches=["S0", "Chili", "Soup", "S3", "S4", "S5", "S6"],
+        )
+        assert _session(plan_id, dates[0]) is not None
+        conn = get_conn()
+        # day_count 0 with the START kept — the pair plan_period reads as a
+        # surrendered period. BOTH columns unset is the legacy sentinel and
+        # means seven days, which is the distinction that entry calls
+        # load-bearing.
+        conn.execute("UPDATE weekly_plans SET day_count = 0, content_start_date = ? WHERE id = ?",
+                     (dates[0], plan_id))
+        conn.commit()
+        conn.close()
+        assert prep_sessions.prep_sessions_for_plan(plan_id) == []

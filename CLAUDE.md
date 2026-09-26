@@ -507,6 +507,12 @@ why*, not duplicating the diff.
     ahead — Sunday's Chili", not "Monday's" — because Monday is now a day the
     app says nothing is made on. `leftovers_from` still names the ENTRY it
     reheats: a label must not make the data lie about which row that is.
+  - **A plan whose whole period was surrendered (`day_count` 0 with its start
+    kept) gets no session**, batches or not: no days, nothing to prep for.
+    Named because that pair is the one `plan_period`'s own docstring calls
+    load-bearing — BOTH columns unset is the legacy sentinel and means SEVEN
+    days, not zero — and the guard has to read the resolved period rather
+    than the column.
   - **A batch whose prep day IS its cook day is left completely alone** (a
     Wednesday prep for Wednesday's own lunch really is an ordinary cook that
     day), and it is the one case both halves had to agree about: it is
@@ -538,11 +544,18 @@ why*, not duplicating the diff.
     a test says so rather than the behaviour being changed on a guess. The
     Plan tab is untouched; the cook entry's `reasoning` there already said
     "Cook this Sunday".
+  - **The frozen-portion lunch still names the COOK day, and is not fixed
+    here.** A prepped lunch more than three days past its prep day keeps its
+    plan-time name "Leftovers from the freezer — Monday's Chili"
+    (`leftovers.freezer_night_name`, written at generation). It is a WRITE
+    rather than a read, and that function names the cook entry's date
+    everywhere in this app, so changing it only here would leave two
+    conventions for one sentence. Characterised by test; its own card.
   - **Also: `kitchenSubtitle` now says "nothing left to cook today" on a day
     whose only meal is a prepped lunch.** Literally true and the least-wrong
     of the sentences that function has; worth Emily's eyes because nothing
     was actually done today.
-  - `tests/test_prepped_lunch_on_prep_day.py` (32). **24 red against main
+  - `tests/test_prepped_lunch_on_prep_day.py` (35). **24 red against main
     with the two new names stubbed so every test reaches its own assertion —
     and that number is decomposed in the file's own header rather than
     quoted: SIXTEEN fail on the claim they are named for, EIGHT are red for
@@ -550,7 +563,7 @@ why*, not duplicating the diff.
     on a precondition, one a source marker) and each of those names the
     mutation that pins it instead. One test was first labelled GUARD,
     measured red on its own claim, and is relabelled rather than quietly
-    kept. **TWENTY-FOUR mutations run and every one bites**: the reader
+    kept. **TWENTY-FIVE mutations run and every one bites**: the reader
     returning nothing (14 red), the session keyed on the cook date (9), the
     rhythm gate back (9), the client ignoring the field (8), the line given a
     phrase of its own (7), the reader going to the chains instead of the rows
