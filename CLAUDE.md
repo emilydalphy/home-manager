@@ -574,6 +574,32 @@ why*, not duplicating the diff.
     the headline not re-pointed, `skip_prep_this_week`, the client's date
     comparison, the cook count, the card's start times, the session line, the
     cross-plan tick, the card's preference, and the badge.
+  - **Numbers, read off the runs at `TZ=America/Toronto` with
+    `HOME_MANAGER_URL`/`REPORT_TOKEN` unset, every one measured in a worktree
+    nothing else was writing to, and every main figure measured rather than
+    derived.**
+
+    | run | `origin/main` (6f6a5b3) | this branch | delta |
+    |---|---|---|---|
+    | unpinned | 7437 passed, 0 failed | **7472 passed, 0 failed** | +35 |
+    | `--today=monday` | 2 failed, 7432 passed, 3 skipped | **2 failed, 7467 passed, 3 skipped** | +35 |
+    | `--today=friday` | 7434 passed, 3 skipped, 0 failed | **7469 passed, 3 skipped, 0 failed** | +35 |
+    | `--today=saturday` | 7434 passed, 3 skipped, 0 failed | **7469 passed, 3 skipped, 0 failed** | +35 |
+    | `--today=sunday` | 7434 passed, 3 skipped, 0 failed | **7469 passed, 3 skipped, 0 failed** | +35 |
+
+    +35 is this one new file exactly at every pin, and `git diff main --
+    tests/` adds one file and changes four with a note each, so nothing was
+    deleted or weakened. **`clock (monday)` is RED on main and this branch
+    adds nothing to it**: both trees fail the same two by name,
+    `test_yesterday_check.py::test_never_asks_about_today_or_further_back_than_yesterday`
+    and `::test_only_rows_the_card_is_asking_about_can_be_answered`, which
+    are another branch's to fix.
+  - **A note on how those numbers were got, because it cost three wasted
+    runs.** Every earlier attempt was started and then invalidated by an edit
+    to the same worktree while it ran — this file's own rule ("a test run in a
+    working tree another agent can write to is not evidence") applies just as
+    much when the somebody is you. The quoted runs are all on the committed
+    tree, `git status` clean throughout.
   - **Four existing test files were updated honestly, each with a note saying
     what moved, and no assertion was weakened**: three node harnesses gained
     one `cookPreppedAhead` line (they extract a fixed function list, and
