@@ -15,8 +15,10 @@ what the first is for:
   chores chat tool declines with one plain sentence instead of
   half-working (nine at the time this file was written; skip_chore and
   move_chore joined the same gate on 2026-09-12, hand_chore on
-  2026-09-13 — see test_the_chores_tools_are_the_gated_set below). set_chores_enabled.py
-  flips it — no admin UI.
+  2026-09-13 — see test_the_chores_tools_are_the_gated_set below). Since
+  2026-09-26 their DEFINITIONS are not sent to the model either, so a
+  paused house stops paying for a schema it will only be refused
+  (section 3b). set_chores_enabled.py flips it — no admin UI.
 
   "Chores v1: Turn the 'Your chores' card on Now back on — and make it
   serve the story": today's chores next to tonight's dinner, whole
@@ -402,6 +404,170 @@ def test_the_chat_no_longer_opens_with_chores_setup_for_an_off_house():
     assert status["chores_enabled"] is True
     assert status["onboarding_complete"] is False
     assert "chores_enabled" in agent.SYSTEM_PROMPT, "the prompt has to know the field exists"
+
+
+# ==========================================================================
+# 3b. ...and while it is off their definitions are not even sent
+# ==========================================================================
+#
+# The gate above refuses the CALL; for two weeks it still SENT all thirteen
+# schemas on every turn, so the tester's house paid ~2,900 of the tool
+# block's ~25,200 tokens per turn to be shown tools it would then be
+# refused (Loop Board "Chat: slim the 37K-token briefing", item 3,
+# 2026-09-26). Both halves stay — see tools_for_request's docstring for why
+# neither is a substitute for the other.
+
+
+def _tools_sent(monkeypatch, message="what's for dinner?"):
+    """The tool definitions one real turn actually put on the wire."""
+    fake = _stub_client(monkeypatch, [
+        types.SimpleNamespace(content=[_text_block("Sure.")], stop_reason="end_turn", usage=_Usage()),
+    ])
+    agent.run_agent_turn([], message)
+    assert len(fake.requests) == 1
+    return fake.requests[0]["tools"]
+
+
+def test_no_chores_definition_is_sent_while_the_switch_is_off(monkeypatch):
+    _adult("Emily")
+    sent = {d["name"] for d in _tools_sent(monkeypatch)}
+    assert not (sent & agent.CHORES_TOOLS), sorted(sent & agent.CHORES_TOOLS)
+
+
+def test_every_chores_definition_comes_back_with_the_switch(monkeypatch):
+    """
+    The half that matters most: the flag genuinely brings them back, and
+    what an on house is sent is TOOL_DEFINITIONS itself rather than a copy
+    reassembled from it, so "on is exactly what it always was" is literal.
+    """
+    _adult("Emily")
+    tools.set_chores_enabled(True)
+    sent = _tools_sent(monkeypatch)
+    assert sent is agent.TOOL_DEFINITIONS
+    assert agent.CHORES_TOOLS <= {d["name"] for d in sent}
+
+
+def test_off_drops_the_chores_tools_and_not_one_other(monkeypatch):
+    """Every other module's tools are untouched — the difference is exactly the gated set."""
+    _adult("Emily")
+    off = [d["name"] for d in _tools_sent(monkeypatch)]
+    tools.set_chores_enabled(True)
+    on = [d["name"] for d in _tools_sent(monkeypatch)]
+    assert set(on) - set(off) == set(agent.CHORES_TOOLS)
+    assert len(on) - len(off) == len(agent.CHORES_TOOLS)
+    # Order and duplicates are the catalogue's own, minus the gaps.
+    assert off == [n for n in on if n not in agent.CHORES_TOOLS]
+
+
+def test_the_catalogue_itself_is_never_shortened(monkeypatch):
+    """
+    What changes is which definitions are SENT, never which tools exist:
+    the chores-setup routes, the tests and set_chores_enabled.py all reach
+    TOOL_FUNCTIONS directly, and TOOL_DEFINITIONS is what every schema
+    test in this repo reads.
+    """
+    _adult("Emily")
+    before = [d["name"] for d in agent.TOOL_DEFINITIONS]
+    _tools_sent(monkeypatch)
+    assert [d["name"] for d in agent.TOOL_DEFINITIONS] == before
+    assert agent.CHORES_TOOLS <= set(agent.TOOL_FUNCTIONS)
+    assert agent.CHORES_TOOLS <= set(before)
+
+
+def test_a_new_chores_tool_cannot_be_sent_to_a_paused_house(monkeypatch):
+    """
+    The guard on the maintained list. tools_for_request reads CHORES_TOOLS
+    rather than a second list of its own, so a fourteenth chores tool
+    added to that set is dropped here by the same edit that makes it
+    decline at the dispatch — the two can never disagree about which tools
+    Chores owns. A copy of the set here instead, and this is the test that
+    would go red.
+    """
+    _adult("Emily")
+    later = {"name": "rotate_chore", "description": "A chores tool added after this was written.",
+             "input_schema": {"type": "object", "properties": {}}}
+    monkeypatch.setattr(agent, "CHORES_TOOLS", agent.CHORES_TOOLS | {"rotate_chore"})
+    monkeypatch.setattr(agent, "TOOL_DEFINITIONS", agent.TOOL_DEFINITIONS + [later])
+    assert "rotate_chore" not in {d["name"] for d in _tools_sent(monkeypatch)}
+    tools.set_chores_enabled(True)
+    assert "rotate_chore" in {d["name"] for d in _tools_sent(monkeypatch)}
+
+
+def test_the_dispatch_gate_still_covers_a_tool_that_was_never_shown(monkeypatch):
+    """
+    Why both halves exist. A conversation whose history was built while
+    the switch was on, a retried request, or a model working from
+    SYSTEM_PROMPT's chores walk-through can all name a tool this request
+    did not carry — and it is still refused in one plain sentence rather
+    than half-running or coming back as "Unknown tool add_chore".
+
+    Red on main, but on its PRECONDITION rather than on its claim: there
+    the tool WAS offered, so there is no never-shown case to reach. The
+    refusal itself is main's own behaviour and is pinned by
+    test_each_chores_tool_declines_while_off above.
+    """
+    _adult("Emily")
+    ran = []
+    monkeypatch.setitem(agent.TOOL_FUNCTIONS, "add_chore", lambda **kw: ran.append(1) or {"ok": True})
+    fake = _stub_client(monkeypatch, [
+        types.SimpleNamespace(content=[_tool_block("add_chore", {"name": "Bins", "frequency": "weekly"})],
+                              stop_reason="tool_use", usage=_Usage()),
+        types.SimpleNamespace(content=[_text_block("Chores isn't switched on for your house yet.")],
+                              stop_reason="end_turn", usage=_Usage()),
+    ])
+    reply, conversation = agent.run_agent_turn([], "add bins as a weekly chore")
+    assert "add_chore" not in {d["name"] for d in fake.requests[0]["tools"]}, "precondition: it wasn't offered"
+    assert ran == []
+    handed = [m for m in conversation if m["role"] == "user" and isinstance(m["content"], list)][-1]["content"][0]
+    assert handed["is_error"] is True
+    assert json.loads(handed["content"])["message"] == tools.CHORES_OFF_MESSAGE
+    assert reply == "Chores isn't switched on for your house yet."
+
+
+def test_the_switch_is_read_once_a_turn_not_once_a_round(monkeypatch):
+    """
+    Flipped on part-way through a turn, round two carries the same tools
+    round one did: chores_enabled() opens a connection of its own, so a
+    read per round would be a SQLite connection per round for an answer
+    that cannot have moved. The dispatch gate does re-read per call, which
+    is what makes the flip take effect on the tool that is running.
+
+    Two claims here, and only one of them can be red on main: `first ==
+    second` is green there (main sends the whole catalogue on both rounds)
+    and is pinned instead by the mutation that moves the read inside the
+    round loop, where the mid-turn flip makes round two differ. The
+    assertion below it is what fails on main.
+    """
+    _adult("Emily")
+    monkeypatch.setitem(agent.TOOL_FUNCTIONS, "list_members",
+                        lambda **kw: tools.set_chores_enabled(True) or {"members": []})
+    fake = _stub_client(monkeypatch, [
+        types.SimpleNamespace(content=[_tool_block("list_members", {})], stop_reason="tool_use", usage=_Usage()),
+        types.SimpleNamespace(content=[_text_block("Just you.")], stop_reason="end_turn", usage=_Usage()),
+    ])
+    agent.run_agent_turn([], "who lives here?")
+    assert len(fake.requests) == 2
+    assert tools.chores_enabled() is True, "the tool really did flip it mid-turn"
+    first, second = ([d["name"] for d in r["tools"]] for r in fake.requests)
+    assert first == second
+    assert not (set(second) & agent.CHORES_TOOLS)
+
+
+def test_what_the_switch_saves_is_the_whole_chores_schema(monkeypatch):
+    """
+    The number this was built for, kept checkable rather than left in a
+    commit message: measured 2026-09-26 at 11,769 characters — about 2,940
+    of the tool block's ~25,130 estimated tokens, 11.71% of it, and 7.85%
+    of the ~37,470-token briefing. Asserted as a floor, since the schemas
+    are edited for their own reasons.
+    """
+    _adult("Emily")
+    off = json.dumps([d for d in agent.TOOL_DEFINITIONS if d["name"] not in agent.CHORES_TOOLS],
+                     separators=(",", ":"))
+    on = json.dumps(agent.TOOL_DEFINITIONS, separators=(",", ":"))
+    saved = len(on) - len(off)
+    assert saved > 9000, saved
+    assert saved / len(on) > 0.08, saved / len(on)
 
 
 # ==========================================================================

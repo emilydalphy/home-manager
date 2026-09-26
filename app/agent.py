@@ -7550,6 +7550,57 @@ def _chores_off_result() -> dict:
     }
 
 
+def tools_for_request() -> list[dict]:
+    """
+    The tool definitions THIS request carries — the whole catalogue, less
+    any paused module's.
+
+    TOOL_DEFINITIONS stays complete and nothing is taken out of it: what
+    changes here is which definitions are SENT on a given turn, never
+    which tools this app has. A house with Chores switched off was being
+    handed all thirteen chores schemas on every single turn and then
+    refused at the dispatch below if it reached for one — 11,769
+    characters, about 2,940 of the tool block's ~25,130 tokens, 11.7% of
+    it (measured 2026-09-26), re-sent and re-cached on nearly every turn
+    for a feature that house cannot see anywhere else in the app. The
+    whole briefing is ~37,470 tokens before a word of the conversation,
+    and cache WRITES were $1.42 of a $1.78 month, so a block that is
+    re-written rather than re-read is worth not sending at all.
+
+    Read off CHORES_TOOLS rather than a second list, deliberately. That
+    set already says "any new chores tool belongs in this set, full
+    stop", and it now decides BOTH what is sent and what is refused — so
+    a fourteenth chores tool is gated in both places by the one edit, and
+    the two halves can never drift into disagreeing about which tools
+    Chores owns.
+
+    THE DISPATCH GATE IN run_agent_turn STAYS, and neither half is a
+    substitute for the other. Not sending a definition is the cheap half
+    and it only covers what this request can see; refusing the call is
+    the correct half, and it covers what this cannot — a conversation
+    whose history was built while the switch was on, a retried request,
+    a household that flips the switch off mid-turn, and a model that
+    names a tool it was never shown (which SYSTEM_PROMPT's own chores
+    walk-through still describes at length; shortening that is a separate
+    card). Delete the gate and a stale conversation half-works instead of
+    saying one plain sentence.
+
+    Switched on, this returns TOOL_DEFINITIONS itself rather than a copy
+    of it, so "on is exactly what it always was" is literally true.
+
+    One consequence worth knowing: the tool block renders before `system`
+    in the request, so two households with different switches no longer
+    share a cache prefix. That costs nothing today — the measured problem
+    is that turns are further apart than the cache TTL, so the prefix is
+    being written rather than read anyway — but a future module gated the
+    same way multiplies the number of distinct prefixes rather than
+    lengthening any one of them.
+    """
+    if tools.chores_enabled():
+        return TOOL_DEFINITIONS
+    return [d for d in TOOL_DEFINITIONS if d["name"] not in CHORES_TOOLS]
+
+
 TOOL_FUNCTIONS = {
     "get_household_setup_status": tools.get_household_setup_status,
     "add_member": tools.add_member,
@@ -8544,7 +8595,10 @@ def run_agent_turn(
     # a single combined block would invalidate the cache once every day
     # instead of staying stable indefinitely. Tool definitions render
     # before system in the request, so this one breakpoint on the last
-    # (stable) system block also covers TOOL_DEFINITIONS.
+    # (stable) system block also covers the tool definitions. Those are no
+    # longer the same for every household — a paused module's tools are
+    # left out (tools_for_request) — so the cached prefix is per switch
+    # setting rather than one shared by the whole organisation.
     today = datetime.date.today()
     system_blocks = [
         {"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}},
@@ -8572,6 +8626,16 @@ def run_agent_turn(
     context_block = _build_chat_context_block(context)
     if context_block:
         system_blocks.append(context_block)
+
+    # Which of the tools this turn actually carries — see
+    # tools_for_request. Resolved once here rather than inside the round
+    # loop below: the switch cannot meaningfully change part-way through
+    # one turn, and chores_enabled() opens a connection of its own, so a
+    # read per round would be a SQLite connection per round for an answer
+    # that has not moved. The dispatch gate further down re-reads it per
+    # call regardless, which is what covers the switch being flipped while
+    # a turn is in flight.
+    request_tools = tools_for_request()
 
     # Safety cap on tool-calling rounds within a single turn. Without this,
     # a model that keeps calling tools (e.g. retrying a tool that keeps
@@ -8641,7 +8705,7 @@ def run_agent_turn(
                 # out if even this isn't enough for a given turn.
                 max_tokens=16000,
                 system=system_blocks,
-                tools=TOOL_DEFINITIONS,
+                tools=request_tools,
                 messages=conversation,
                 # Automatically caches the last cacheable block in `messages` —
                 # on top of the explicit breakpoint on system_blocks[0] above,
