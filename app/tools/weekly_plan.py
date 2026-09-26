@@ -3152,6 +3152,12 @@ def retire_overlapping_plans(
         "grocery_removed": [],
         "grocery_trimmed": [],
         "grocery_kept_bought": [],
+        # The slot of every real meal actually removed (flat, one entry
+        # per meal, "dinner"/"lunch"/"breakfast"/"snack") — read by
+        # /api/week/{week}/approve so it can tell a household's toast
+        # "dinners" from "meals" off what genuinely happened, not off a
+        # preview taken before the tap. See _release_plan_days.
+        "meal_slots_removed": [],
     }
     decisions = _plan_takeover(new_plan_id, period_start, day_count, drafts_only=drafts_only, conn=conn)
     if not decisions:
@@ -3416,6 +3422,7 @@ def _apply_takeover(conn, result: dict, decisions: list[dict], new_plan_id: int,
         result["grocery_removed"].extend(removal["grocery_removed"])
         result["grocery_trimmed"].extend(removal["grocery_trimmed"])
         result["grocery_kept_bought"].extend(removal["grocery_kept_bought"])
+        result["meal_slots_removed"].extend(removal["meal_slots_removed"])
         result["surrendered_dates"].extend(surrendered)
         result["orphaned_dates"].extend(orphaned)
 
@@ -3483,19 +3490,34 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
     commits it used to make along the way.
     """
     if not dates:
-        return {"meals_removed": 0, "grocery_removed": [], "grocery_trimmed": [], "grocery_kept_bought": []}
+        return {
+            "meals_removed": 0, "grocery_removed": [], "grocery_trimmed": [], "grocery_kept_bought": [],
+            "meal_slots_removed": [],
+        }
     own_conn = conn is None
     if own_conn:
         conn = get_conn()
     try:
         placeholders = ",".join("?" * len(dates))
-        entry_ids = [
-            r["id"] for r in conn.execute(
-                f"SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? "
-                f"AND (date IN ({placeholders})"
-                + (" OR component_category IS NOT NULL)" if include_components else ")"),
-                (plan_id, household_id(), *dates),
-            ).fetchall()
+        entry_rows = conn.execute(
+            f"SELECT id, slot, slot_state, component_category, recipe_id, freeform_meal "
+            f"FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? "
+            f"AND (date IN ({placeholders})"
+            + (" OR component_category IS NOT NULL)" if include_components else ")"),
+            (plan_id, household_id(), *dates),
+        ).fetchall()
+        entry_ids = [r["id"] for r in entry_rows]
+        # What a person would call "a meal" among the rows just taken —
+        # same test preview_approved_takeover uses for its own `days`/
+        # `meals`: a real dish or freeform name, on a slot that was
+        # actually planned, not a deliberately-empty or still-open one.
+        # Read now, before the DELETE below erases the row: this is the
+        # detail a toast needs to say "dinners" rather than "meals", and
+        # there is nowhere else left to read it from afterwards.
+        meal_slots_removed = [
+            r["slot"] for r in entry_rows
+            if r["component_category"] is None and r["slot_state"] == "planned"
+            and (r["recipe_id"] or (r["freeform_meal"] or "").strip())
         ]
         kept_bought = []
         if entry_ids:
@@ -3536,6 +3558,7 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
         "grocery_removed": removed_items,
         "grocery_trimmed": trimmed_items,
         "grocery_kept_bought": kept_bought,
+        "meal_slots_removed": meal_slots_removed,
     }
 
 
