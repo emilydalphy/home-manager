@@ -20,30 +20,47 @@ Behaviour changes that ride with the redesign, each checked below:
      itself; this only ever calls the existing opener.
   3. "Start over" gains a third, independent option — "This week's
      answers" — that clears the current week's planning-question intake
-     AND the day-attendance-sheet/guests-chip/away-stretch attendance and
-     the holiday answers for this week (app/tools/week_intake.py,
-     app/tools/reset.py: clear_week_intake, clear_week_answers), never
-     household setup/onboarding, never a standalone attendance toggle or
-     a chat correction, and never a week shared with a second live plan
-     (app/main.py POST /api/reset, GET /api/reset/preview).
+     AND the day-attendance-sheet/guests/away-stretch attendance for this
+     week (app/tools/week_intake.py, app/tools/reset.py: clear_week_intake,
+     clear_week_answers), routed through the app's OWN writers/undoers
+     (attendance.clear_slot_attendance, never a raw DELETE) so an 'away'
+     need and a planned_empty meal are undone the same way a presence
+     toggle undoes them. Never household setup/onboarding, never a
+     standalone attendance toggle, never a holiday answer (also answered
+     from the Today card and in chat — a separate decision), and never a
+     week whose actual PERIOD overlaps a second live plan (date-range
+     overlap, not merely the same week_start_date — app/main.py POST
+     /api/reset, GET /api/reset/preview).
   4. The checkbox behind option 3 never auto-checks (unlike the other
      two), and is disabled with a plain reason rather than offered when
-     this week's answers are shared with another live plan.
+     this week overlaps another live plan.
   5. save_week_intake's revision numbering survives a clear with no
      replacement — the bug that made every later save 500 forever
      (UNIQUE(household_id, week_start, revision) rejecting a reused
      revision 1).
   6. The reset dialog and toast never render an empty or "undefined"
      clause when nothing was actually cleared.
+  7. The overlap guard runs BEFORE the meal-plan/grocery-list clears in
+     POST /api/reset, so a refusal never leaves a partial reset.
+
+Note on scope (2026-09-25 second review): there is no 'chat' source in
+slot_attendance — a guest count or a trip told to chat this week writes
+'guests'/'away_stretch', the very sources this option already clears —
+so clearing "This week's answers" also clears guests or a trip told to
+chat this week. That is the intended, honest reading of the phrase, not
+a gap.
 
 The JS half runs shell.js's own functions under node (tests/nodeharness.py,
 the house pattern — see its own docstring for why source-marker tests miss
-real bugs here). The server half is ordinary pytest against the tools layer
-and the routes.
+real bugs here). The server half is ordinary pytest against the tools
+layer and the routes, seeding through the app's REAL writers (add_member,
+save_week_intake, set_day_attendance, set_away_stretch, set_member_attendance)
+rather than raw INSERTs, so the side effects those writers themselves
+produce (slot_needs, the away/quick/ready_made machinery) are exercised
+for real rather than assumed.
 """
 from __future__ import annotations
 
-import datetime
 import json
 import shutil
 from pathlib import Path
@@ -55,8 +72,7 @@ from test_week_seven_tiles import _extract, _extract_async, _extract_var
 
 from app import tools
 from app.db import get_conn
-from app.tools import reset as _reset
-from app.tools import week_intake as _week_intake
+from app.tools import slot_needs as _slot_needs
 
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
@@ -313,7 +329,7 @@ def test_the_answers_checkbox_never_auto_checks_when_something_is_on_file():
 var cb = makeCb();
 var sub = makeSub();
 setResetAnswersOptionState(cb, sub, {json.dumps({
-        "intake_count": 1, "attendance_count": 0, "holiday_count": 0, "intake_shared": False, "week_label": "Sep 21-27",
+        "intake_count": 1, "attendance_count": 0, "intake_shared": False, "week_label": "Sep 21-27",
     })});
 console.log(JSON.stringify({{ checked: cb.checked, disabled: cb.disabled, sub: sub.textContent }}));
 """)
@@ -325,36 +341,38 @@ console.log(JSON.stringify({{ checked: cb.checked, disabled: cb.disabled, sub: s
 @_needs_node
 def test_the_answers_checkbox_is_disabled_with_a_reason_when_shared():
     """FAILS ON MAIN: there was no intake_shared concept at all — a draft
-    over an approved week for the same week_start would silently offer
+    over an approved week overlapping the same days would silently offer
     (and, if checked, wipe) the approved week's own rush caps and away
     days along with the draft's."""
     out = _run(_cb_harness() + f"""
 var cb = makeCb();
 var sub = makeSub();
 setResetAnswersOptionState(cb, sub, {json.dumps({
-        "intake_count": 1, "attendance_count": 2, "holiday_count": 0, "intake_shared": True, "week_label": "Sep 21-27",
+        "intake_count": 1, "attendance_count": 2, "intake_shared": True, "week_label": "Sep 21-27",
     })});
 console.log(JSON.stringify({{ checked: cb.checked, disabled: cb.disabled, sub: sub.textContent, empty: cb._row.classes['is-empty'] }}));
 """)
     assert out["disabled"] is True
     assert out["checked"] is False
-    assert "approved week" in out["sub"]
+    assert "on the same days" in out["sub"] or "another plan" in out["sub"]
     assert out["empty"] is True
 
 
 @_needs_node
 def test_the_answers_checkbox_names_only_the_categories_that_have_something():
+    """No holiday_count any more (2026-09-25 second review, item B) —
+    holidays are never part of this option."""
     out = _run(_cb_harness() + f"""
 var cb = makeCb();
 var sub = makeSub();
 setResetAnswersOptionState(cb, sub, {json.dumps({
-        "intake_count": 0, "attendance_count": 3, "holiday_count": 1, "intake_shared": False, "week_label": "Sep 21-27",
+        "intake_count": 0, "attendance_count": 3, "intake_shared": False, "week_label": "Sep 21-27",
     })});
 console.log(JSON.stringify(sub.textContent));
 """)
     assert "the planning questions" not in out
-    assert "who's in for meals" in out or "who’s in for meals" in out
-    assert "the holiday you answered" in out
+    assert "holiday" not in out
+    assert "who's in for meals, guests and trips" in out or "who’s in for meals, guests and trips" in out
     assert "Your household settings stay as they are." in out
 
 
@@ -364,7 +382,7 @@ def test_the_answers_checkbox_disabled_when_nothing_is_on_file():
 var cb = makeCb();
 var sub = makeSub();
 setResetAnswersOptionState(cb, sub, {json.dumps({
-        "intake_count": 0, "attendance_count": 0, "holiday_count": 0, "intake_shared": False, "week_label": None,
+        "intake_count": 0, "attendance_count": 0, "intake_shared": False, "week_label": None,
     })});
 console.log(JSON.stringify({{ disabled: cb.disabled, sub: sub.textContent }}));
 """)
@@ -415,7 +433,7 @@ def test_runreset_toast_when_nothing_was_actually_cleared():
     present, every sub-count zero."""
     reply = {
         "meal_plan": None, "grocery_list": None,
-        "week_answers": {"week_start": "2026-09-21", "intake": None, "attendance_cleared": 0, "holidays_cleared": 0},
+        "week_answers": {"week_start": "2026-09-21", "intake": None, "attendance_cleared": 0},
     }
     out = _run(_run_reset_harness() + f"""
 function fetch(url, opts) {{ return Promise.resolve({{ ok: true, json: function () {{ return Promise.resolve({json.dumps(reply)}); }} }}); }}
@@ -434,7 +452,7 @@ def test_runreset_toast_composes_all_three_when_all_three_cleared():
         "meal_plan": {"meals_cleared": 4},
         "grocery_list": {"removed_count": 9},
         "week_answers": {"week_start": "2026-09-21", "intake": {"week_start": "2026-09-21", "cleared": True},
-                          "attendance_cleared": 2, "holidays_cleared": 1},
+                          "attendance_cleared": 2},
     }
     out = _run(_run_reset_harness() + f"""
 function fetch(url, opts) {{ return Promise.resolve({{ ok: true, json: function () {{ return Promise.resolve({json.dumps(reply)}); }} }}); }}
@@ -565,113 +583,112 @@ def test_a_clear_save_clear_save_cycle_keeps_climbing():
     assert [h["revision"] for h in history] == [1, 2, 3]
 
 
+
+
 # ---------------------------------------------------------------------------
-# Server: attendance / holiday clearing scope (review item 2)
+# Server: attendance clearing scope, through the app's own writers/undoers
+# (2026-09-25 second review, items A, B, E)
 # ---------------------------------------------------------------------------
 
 IN_WEEK_DATE = "2026-09-22"       # inside WEEK_START's 7-day period
 OUT_OF_WEEK_DATE = "2026-09-29"   # the following week — must survive
 
 
-def _insert_attendance(date_str: str, source: str, slot: str = "dinner", guest_count: int = 0) -> int:
-    # UNIQUE(household_id, date, slot): several sources on the SAME date in
-    # these tests use different slots so the seed rows don't collide.
-    conn = get_conn()
-    cur = conn.execute(
-        "INSERT INTO slot_attendance (household_id, date, slot, absent_member_ids_json, guest_count, source) "
-        "VALUES (1, ?, ?, '[]', ?, ?)",
-        (date_str, slot, guest_count, source),
+def _seed_full_week_answers() -> int:
+    """
+    One of each real attendance-writing gesture, through the app's own
+    functions — never a raw INSERT (2026-09-25 second review, item A: a
+    raw DELETE in the production code skipped attendance.py's own
+    _sync_away_need, and a raw INSERT in these tests couldn't have caught
+    that). Sources, per app/tools/reset.py's own comment:
+
+      'guests'       — the intake's guest_counts (save_week_intake calling
+                        week_intake._sync_guest_attendance), the SAME call
+                        chat's set_guest_count makes (item E: there is no
+                        separate 'chat' source).
+      'sheet'        — the day-attendance sheet's Done (set_day_attendance).
+      'away_stretch' — the trip picker, or chat's set_away_stretch (again,
+                        the same call, same source).
+      'toggle'       — a standalone presence-avatar tap. NOT one of the
+                        week's questions, and must survive the clear.
+
+    Plus one row entirely outside this week (must also survive).
+    """
+    tools.add_member("Emily")
+    plan_id = tools.create_weekly_plan(WEEK_START)["weekly_plan_id"]
+    tools.save_week_intake(
+        WEEK_START, night_tags={WEEK_START: ["guests"]},
+        guest_counts={WEEK_START: {"adults": 2, "children": 0}}, created_by="Emily",
     )
-    conn.commit()
-    row_id = cur.lastrowid
-    conn.close()
-    return row_id
+    tools.set_day_attendance(IN_WEEK_DATE, {"lunch": {"absent": ["Emily"]}})
+    tools.set_away_stretch(IN_WEEK_DATE, "breakfast", IN_WEEK_DATE, "breakfast")
+    tools.set_member_attendance(IN_WEEK_DATE, "dinner", "Emily", present=False)
+    tools.set_day_attendance(OUT_OF_WEEK_DATE, {"dinner": {"absent": ["Emily"]}})
+    return plan_id
 
 
-def _insert_holiday_answer(date_str: str, answer: str = "just_us") -> int:
+def _attendance_source(date_str: str, slot: str) -> str | None:
     conn = get_conn()
-    cur = conn.execute(
-        "INSERT INTO holiday_answers (household_id, date, holiday_name, answer) VALUES (1, ?, 'Test Day', ?)",
-        (date_str, answer),
-    )
-    conn.commit()
-    row_id = cur.lastrowid
+    row = conn.execute(
+        "SELECT source FROM slot_attendance WHERE household_id = 1 AND date = ? AND slot = ?",
+        (date_str, slot),
+    ).fetchone()
     conn.close()
-    return row_id
+    return row["source"] if row else None
 
 
-def _attendance_ids_left(*ids: int) -> set[int]:
-    conn = get_conn()
-    rows = conn.execute(
-        f"SELECT id FROM slot_attendance WHERE id IN ({','.join('?' * len(ids))})", ids
-    ).fetchall()
-    conn.close()
-    return {r["id"] for r in rows}
-
-
-def _holiday_ids_left(*ids: int) -> set[int]:
-    conn = get_conn()
-    rows = conn.execute(
-        f"SELECT id FROM holiday_answers WHERE id IN ({','.join('?' * len(ids))})", ids
-    ).fetchall()
-    conn.close()
-    return {r["id"] for r in rows}
-
-
-def test_the_preview_counts_attendance_and_holidays_for_this_week_only():
-    """FAILS ON MAIN: get_reset_preview had no idea attendance or holiday
-    answers existed — the dialog's "This week's answers" line described
-    only the intake, understating what the option was about to touch
-    once the underlying clear was widened."""
-    plan_id = _seed_intake_and_plan()
-    guests_id = _insert_attendance(WEEK_START, "guests", slot="dinner")
-    sheet_id = _insert_attendance(IN_WEEK_DATE, "sheet", slot="dinner")
-    toggle_id = _insert_attendance(IN_WEEK_DATE, "toggle", slot="lunch")  # NOT a weekly question
-    chat_id = _insert_attendance(IN_WEEK_DATE, "chat", slot="breakfast")  # a permanent correction, NOT a weekly question
-    outside_id = _insert_attendance(OUT_OF_WEEK_DATE, "sheet", slot="dinner")  # next week, NOT this week's
-    _insert_holiday_answer(WEEK_START)
+def test_the_preview_counts_this_weeks_attendance_only_never_holidays():
+    """FAILS ON MAIN: get_reset_preview had no idea attendance existed at
+    all — the dialog's "This week's answers" line described only the
+    intake, understating what the option was about to touch once the
+    underlying clear was widened. And there is no holiday_count any more
+    at all (2026-09-25 second review, item B) — a holiday is also
+    answered from the Today card and in chat, a separate decision this
+    option never makes."""
+    plan_id = _seed_full_week_answers()
 
     preview = tools.get_reset_preview(plan_id)
-    assert preview["attendance_count"] == 2  # guests + sheet only
-    assert preview["holiday_count"] == 1
+    # guests (WEEK_START dinner) + sheet (IN_WEEK_DATE lunch) +
+    # away_stretch (IN_WEEK_DATE breakfast) — three of this week's own
+    # question sources; the standalone toggle and the out-of-week row are
+    # both outside this count.
+    assert preview["attendance_count"] == 3
+    assert "holiday_count" not in preview
     assert preview["intake_shared"] is False
 
 
-def test_clear_week_answers_clears_only_this_weeks_question_sources():
-    """FAILS ON MAIN: clear_week_answers/tools.clear_week_intake alone left
-    who's-out, guest-hosting and away-stretch attendance, and holiday
-    answers, all still on file — generation, grocery scaling and the Days
-    tiles kept reading them, so "This week's answers" cleared far less
-    than it claimed to."""
-    plan_id = _seed_intake_and_plan()
-    guests_id = _insert_attendance(WEEK_START, "guests", slot="dinner")
-    sheet_id = _insert_attendance(IN_WEEK_DATE, "sheet", slot="dinner")
-    away_id = _insert_attendance(IN_WEEK_DATE, "away_stretch", slot="lunch")
-    toggle_id = _insert_attendance(IN_WEEK_DATE, "toggle", slot="breakfast")
-    chat_id = _insert_attendance(WEEK_START, "chat", slot="lunch")
-    outside_id = _insert_attendance(OUT_OF_WEEK_DATE, "sheet", slot="dinner")
-    holiday_id = _insert_holiday_answer(WEEK_START)
-    outside_holiday_id = _insert_holiday_answer(OUT_OF_WEEK_DATE)
+def test_clear_week_answers_routes_through_the_apps_own_undoer():
+    """FAILS ON MAIN: a raw DELETE FROM slot_attendance skipped
+    _sync_away_need entirely — the away_stretch's slot stayed 'away' in
+    slot_needs (and its meal stayed planned_empty, off the list) even
+    though attendance itself now said nobody was marked out, because
+    nothing told slot_needs attendance had changed. Routing through
+    attendance.clear_slot_attendance — the very function a presence
+    toggle's own undo goes through — runs that same sync for real."""
+    plan_id = _seed_full_week_answers()
+    assert _slot_needs.get_slot_need(IN_WEEK_DATE, "breakfast")["need"] == "away"
 
     result = tools.clear_week_answers(plan_id)
 
-    assert result["attendance_cleared"] == 3  # guests + sheet + away_stretch
-    assert result["holidays_cleared"] == 1
+    # guests (WEEK_START dinner) + sheet (IN_WEEK_DATE lunch) + away_stretch
+    # (IN_WEEK_DATE breakfast) — three of this week's own question sources.
+    assert result["attendance_cleared"] == 3
     assert result["intake"] == {"week_start": WEEK_START, "cleared": True}
-    # The weekly-question sources, in this week, are gone.
-    assert _attendance_ids_left(guests_id, sheet_id, away_id) == set()
-    # A standalone toggle and a chat correction are not "the week's
-    # questions" and survive — same for anything outside this week.
-    assert _attendance_ids_left(toggle_id, chat_id, outside_id) == {toggle_id, chat_id, outside_id}
-    assert _holiday_ids_left(holiday_id) == set()
-    assert _holiday_ids_left(outside_holiday_id) == {outside_holiday_id}
+    assert _attendance_source(WEEK_START, "dinner") is None
+    assert _attendance_source(IN_WEEK_DATE, "lunch") is None
+    assert _attendance_source(IN_WEEK_DATE, "breakfast") is None
+    # The away need is UNDONE, not left stranded — clear_slot_attendance's
+    # own _sync_away_need ran, same as un-toggling a presence avatar would.
+    assert _slot_needs.get_slot_need(IN_WEEK_DATE, "breakfast")["need"] == "normal"
+    # A standalone toggle survives — not one of the week's questions.
+    assert _attendance_source(IN_WEEK_DATE, "dinner") == "toggle"
+    # Outside this week entirely — survives untouched.
+    assert _attendance_source(OUT_OF_WEEK_DATE, "dinner") == "sheet"
     assert tools.get_week_intake(WEEK_START) is None
 
 
 def test_clear_week_answers_never_touches_household_setup():
-    plan_id = _seed_intake_and_plan()
-    _insert_attendance(WEEK_START, "guests")
-    _insert_holiday_answer(WEEK_START)
+    plan_id = _seed_full_week_answers()
     conn = get_conn()
     before = dict(conn.execute("SELECT * FROM meal_preferences WHERE household_id = 1").fetchone() or {})
     conn.close()
@@ -684,79 +701,155 @@ def test_clear_week_answers_never_touches_household_setup():
     assert after == before
 
 
-def test_clear_week_answers_with_no_plan_does_nothing_and_does_not_raise():
-    result = tools.clear_week_answers()
-    assert result == {"week_start": None, "intake": None, "attendance_cleared": 0, "holidays_cleared": 0}
-
-
-# ---------------------------------------------------------------------------
-# Server: a draft sharing its week with an approved plan (review item 4)
-# ---------------------------------------------------------------------------
-
-def _make_twin_approved_plan(week_start: str) -> int:
-    """A second, APPROVED plan on the very same week_start — the shape
-    tools.clear_week_answers and get_reset_preview must refuse to guess
-    between (a re-plan over an already-approved week, or the reverse)."""
+def test_clear_week_answers_never_touches_holiday_answers():
+    """FAILS ON MAIN (the first review's fix): clear_week_answers used to
+    DELETE FROM holiday_answers for this week's dates. A holiday is also
+    answered from the Today card and in chat, and undoing what a
+    'hosting'/'out' answer already did to the plan is a separate decision
+    (2026-09-25 second review, item B) — this option must never touch
+    that table at all. Seeded with a direct insert on purpose: this test
+    checks the ABSENCE of an effect on a table the option must never
+    reach, which doesn't need a real writer to demonstrate — the
+    real-writer concern (item A) is about attendance, where the app's own
+    undo path matters and a raw delete visibly skipped it."""
+    plan_id = _seed_full_week_answers()
     conn = get_conn()
-    cur = conn.execute(
-        "INSERT INTO weekly_plans (household_id, week_start_date, status) VALUES (1, ?, 'approved')",
-        (week_start,),
+    conn.execute(
+        "INSERT INTO holiday_answers (household_id, date, holiday_name, answer) VALUES (1, ?, 'Test Day', 'just_us')",
+        (WEEK_START,),
     )
     conn.commit()
-    plan_id = cur.lastrowid
     conn.close()
-    return plan_id
 
+    tools.clear_week_answers(plan_id)
 
-def test_the_preview_reports_when_this_week_is_shared_with_another_plan():
-    """FAILS ON MAIN: intake_shared did not exist — a draft re-planning a
-    week an approved plan already covers would have offered "This week's
-    answers" against the draft's own (empty) counts while a clear would
-    actually have reached the approved week's rush caps and away days
-    too, since week_intake/slot_attendance/holiday_answers are keyed by
-    week_start, never by plan id."""
-    plan_id = _seed_intake_and_plan()
-    _make_twin_approved_plan(WEEK_START)
-
-    preview = tools.get_reset_preview(plan_id)
-    assert preview["intake_shared"] is True
-    # The dialog must not show real counts as if the option were safe to
-    # offer, even though the intake genuinely exists.
-    assert preview["intake_count"] == 0
-    assert preview["attendance_count"] == 0
-    assert preview["holiday_count"] == 0
-
-
-def test_the_preview_is_not_shared_when_the_other_plan_is_retired():
-    plan_id = _seed_intake_and_plan()
-    twin = _make_twin_approved_plan(WEEK_START)
     conn = get_conn()
-    conn.execute("UPDATE weekly_plans SET status = 'retired' WHERE id = ?", (twin,))
+    row = conn.execute(
+        "SELECT * FROM holiday_answers WHERE household_id = 1 AND date = ?", (WEEK_START,)
+    ).fetchone()
+    conn.close()
+    assert row is not None
+
+
+def test_clear_week_answers_with_no_plan_does_nothing_and_does_not_raise():
+    result = tools.clear_week_answers()
+    assert result == {"week_start": None, "intake": None, "attendance_cleared": 0}
+
+
+# ---------------------------------------------------------------------------
+# Server: the shared-week guard is a date-range OVERLAP, not equal
+# week_start_date (2026-09-25 second review, items C and D)
+# ---------------------------------------------------------------------------
+
+def _make_overlapping_draft(period_start: str, day_count: int) -> int:
+    """A second, live plan whose actual PERIOD overlaps another plan's
+    days without sharing its week_start_date — exactly the shape item C
+    named: a mid-week re-plan starts on a different day but still
+    overlaps the approved week underneath it."""
+    plan = tools.create_weekly_plan(period_start, content_start_date=period_start, day_count=day_count)
+    return plan["weekly_plan_id"]
+
+
+def _approve(plan_id: int) -> None:
+    conn = get_conn()
+    conn.execute("UPDATE weekly_plans SET status = 'approved' WHERE id = ?", (plan_id,))
     conn.commit()
     conn.close()
 
-    preview = tools.get_reset_preview(plan_id)
+
+def test_the_preview_reports_overlap_even_when_week_start_dates_differ():
+    """FAILS ON MAIN (second review, item C): the FIRST fix compared
+    week_start_date for equality, which missed exactly this shape — a
+    mid-week draft (week_start_date "2026-09-24") overlapping the SAME
+    days ("2026-09-24".."2026-09-27") as an already-approved plan whose
+    week_start_date is "2026-09-21". Equal-week_start_date would have
+    called this pair unrelated and offered the option against the
+    approved week's real, on-file answers."""
+    approved_id = _seed_full_week_answers()
+    _approve(approved_id)
+    draft_id = _make_overlapping_draft("2026-09-24", 4)
+
+    # From the approved plan's own side: a real answer exists, but the
+    # overlap hides it rather than offering it as if it were safe.
+    preview = tools.get_reset_preview(approved_id)
+    assert preview["intake_shared"] is True
+    assert preview["intake_count"] == 0
+    assert preview["attendance_count"] == 0
+    assert tools.get_week_intake(WEEK_START) is not None  # the answer genuinely exists
+
+    # And from the mid-week draft's own side, the same overlap is seen.
+    preview_from_draft = tools.get_reset_preview(draft_id)
+    assert preview_from_draft["intake_shared"] is True
+
+
+def test_the_preview_is_not_shared_once_the_overlapping_plan_is_retired():
+    approved_id = _seed_full_week_answers()
+    _approve(approved_id)
+    draft_id = _make_overlapping_draft("2026-09-24", 4)
+    conn = get_conn()
+    conn.execute("UPDATE weekly_plans SET status = 'retired' WHERE id = ?", (draft_id,))
+    conn.commit()
+    conn.close()
+
+    preview = tools.get_reset_preview(approved_id)
     assert preview["intake_shared"] is False
     assert preview["intake_count"] == 1
 
 
-def test_clear_week_answers_refuses_a_shared_week():
-    plan_id = _seed_intake_and_plan()
-    _make_twin_approved_plan(WEEK_START)
+def test_clear_week_answers_refuses_an_overlapping_week():
+    approved_id = _seed_full_week_answers()
+    _approve(approved_id)
+    _make_overlapping_draft("2026-09-24", 4)
 
     with pytest.raises(ValueError):
-        tools.clear_week_answers(plan_id)
+        tools.clear_week_answers(approved_id)
     # Refused outright — nothing moved.
     assert tools.get_week_intake(WEEK_START) is not None
 
 
-def test_the_route_refuses_a_shared_week_with_a_400(signed_in):
-    plan_id = _seed_intake_and_plan()
-    _make_twin_approved_plan(WEEK_START)
+def test_the_route_refuses_an_overlapping_week_with_a_400(signed_in):
+    approved_id = _seed_full_week_answers()
+    _approve(approved_id)
+    _make_overlapping_draft("2026-09-24", 4)
 
-    res = signed_in.post("/api/reset", json={"week_answers": True, "weekly_plan_id": plan_id})
+    res = signed_in.post("/api/reset", json={"week_answers": True, "weekly_plan_id": approved_id})
     assert res.status_code == 400
     assert tools.get_week_intake(WEEK_START) is not None
+
+
+def test_the_route_refuses_the_whole_request_before_touching_anything(signed_in):
+    """FAILS ON MAIN (second review, item F): the overlap guard used to
+    run only inside clear_week_answers, called LAST in the route — so a
+    request combining all three cleared the meal plan and the grocery
+    list, committed, and only then hit the guard and 400'd on
+    week_answers, leaving a partial reset behind the very refusal that
+    was supposed to stop it. tools.check_week_answers_clearable now runs
+    first, before meal_plan or grocery_list touch anything."""
+    approved_id = _seed_full_week_answers()
+    tools.add_recipe("Boiled eggs", ingredients=[{"item": "Eggs", "qty": "4"}], default_servings=2)
+    tools.plan_meal(
+        WEEK_START, "Boiled eggs", slot="dinner", weekly_plan_id=approved_id,
+        add_ingredients_to_grocery_list=True,
+    )
+    _approve(approved_id)
+    _make_overlapping_draft("2026-09-24", 4)
+    before_meals = get_conn().execute(
+        "SELECT COUNT(*) AS n FROM meal_plan_entries WHERE weekly_plan_id = ?", (approved_id,)
+    ).fetchone()["n"]
+    before_grocery = len(tools.list_grocery_list(status="needed"))
+    assert before_meals > 0 and before_grocery > 0
+
+    res = signed_in.post(
+        "/api/reset",
+        json={"meal_plan": True, "grocery_list": True, "week_answers": True, "weekly_plan_id": approved_id},
+    )
+
+    assert res.status_code == 400
+    after_meals = get_conn().execute(
+        "SELECT COUNT(*) AS n FROM meal_plan_entries WHERE weekly_plan_id = ?", (approved_id,)
+    ).fetchone()["n"]
+    assert after_meals == before_meals
+    assert len(tools.list_grocery_list(status="needed")) == before_grocery
 
 
 # ---------------------------------------------------------------------------
@@ -765,8 +858,7 @@ def test_the_route_refuses_a_shared_week_with_a_400(signed_in):
 
 def test_the_route_clears_only_the_answers_when_thats_all_thats_asked(signed_in):
     """FAILS ON MAIN: POST /api/reset had no third option at all."""
-    plan_id = _seed_intake_and_plan()
-    _insert_attendance(WEEK_START, "guests")
+    plan_id = _seed_full_week_answers()
     before_meals = get_conn().execute(
         "SELECT COUNT(*) AS n FROM meal_plan_entries WHERE weekly_plan_id = ?", (plan_id,)
     ).fetchone()["n"]
@@ -775,11 +867,12 @@ def test_the_route_clears_only_the_answers_when_thats_all_thats_asked(signed_in)
     assert res.status_code == 200, res.text
     body = res.json()
     assert body["week_answers"]["intake"] == {"week_start": WEEK_START, "cleared": True}
-    assert body["week_answers"]["attendance_cleared"] == 1
+    assert body["week_answers"]["attendance_cleared"] == 3
+    assert "holidays_cleared" not in body["week_answers"]
     assert body["meal_plan"] is None and body["grocery_list"] is None
     assert tools.get_week_intake(WEEK_START) is None
-    # The plan itself never moved — this option touches intake/attendance/
-    # holidays alone.
+    # The plan itself never moved — this option touches intake/attendance
+    # alone.
     after_meals = get_conn().execute(
         "SELECT COUNT(*) AS n FROM meal_plan_entries WHERE weekly_plan_id = ?", (plan_id,)
     ).fetchone()["n"]

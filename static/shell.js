@@ -19366,12 +19366,16 @@
   //      different, bigger ask, and ticking it should be a deliberate
   //      second tap.
   //   2. It can be DISABLED for a reason that isn't "there's nothing to
-  //      clear" — a draft sharing this week with an approved plan
-  //      (data.intake_shared): week_intake, slot_attendance and
-  //      holiday_answers are all keyed by date/week_start rather than by
-  //      plan id, so clearing them would reach into the approved week's
-  //      answers too (its rush caps, its away days). Refused outright
-  //      rather than guessed at — see tools.clear_week_answers.
+  //      clear" — this week overlapping a second live plan (a mid-week
+  //      re-plan over an already-approved week, or the reverse;
+  //      data.intake_shared, a date-range overlap now, not merely the
+  //      same week_start_date): week_intake and slot_attendance are both
+  //      keyed by date rather than by plan id, so clearing them would
+  //      reach into the other plan's days too. Refused outright rather
+  //      than guessed at — see tools.clear_week_answers. Holiday answers
+  //      are never part of this option (2026-09-25 review, item B): a
+  //      holiday is also answered from the Today card and in chat, and
+  //      undoing what it already did to the plan is a separate decision.
   function joinWithAnd(parts) {
     if (parts.length === 0) return '';
     if (parts.length === 1) return parts[0];
@@ -19380,13 +19384,13 @@
 
   function setResetAnswersOptionState(cb, subEl, data) {
     var row = cb.closest('.reset-option');
-    var hasAnything = !!(data.intake_count || data.attendance_count || data.holiday_count);
+    var hasAnything = !!(data.intake_count || data.attendance_count);
     var disabled = data.intake_shared || !hasAnything;
     row.classList.toggle('is-empty', disabled);
     cb.disabled = disabled;
     cb.checked = false;
     if (data.intake_shared) {
-      subEl.textContent = "These answers also belong to your approved week, so I can't clear them on their own.";
+      subEl.textContent = "These answers also belong to another plan on the same days, so I can't clear them on their own.";
       return;
     }
     if (!hasAnything) {
@@ -19394,11 +19398,13 @@
       return;
     }
     // Precisely what's on file for this week, not a blanket claim — only
-    // the categories that actually have something answered.
+    // the categories that actually have something answered. Guests and
+    // trips told to chat are included here too (attendance.py has no
+    // separate "chat" source — a correction told to chat lands under the
+    // same guests/away_stretch sources the screen's own gesture would).
     var parts = [];
     if (data.intake_count) parts.push('the planning questions');
-    if (data.attendance_count) parts.push("who's in for meals");
-    if (data.holiday_count) parts.push(data.holiday_count === 1 ? 'the holiday you answered' : 'the holidays you answered');
+    if (data.attendance_count) parts.push("who's in for meals, guests and trips");
     var weekName = data.week_label ? ' (' + data.week_label + ')' : '';
     subEl.textContent = 'Clears ' + joinWithAnd(parts) + weekName + '. Your household settings stay as they are.';
   }
@@ -19512,7 +19518,7 @@
       // "did it actually clear anything" is its own check, never a bare
       // truthiness of data.week_answers.
       var wa = data.week_answers;
-      var weekAnswersCleared = !!(wa && ((wa.intake && wa.intake.cleared) || wa.attendance_cleared || wa.holidays_cleared));
+      var weekAnswersCleared = !!(wa && ((wa.intake && wa.intake.cleared) || wa.attendance_cleared));
       if (weekAnswersCleared) parts.push("this week's answers");
       // joinWithAnd(parts) can come back '' — nothing was actually cleared
       // (every count was already zero when the request went out) — and

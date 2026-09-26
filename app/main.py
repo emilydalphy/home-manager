@@ -4248,19 +4248,29 @@ def reset(req: ResetRequest):
     already reflected in what the list clear then removes — the other way
     round would reverse contributions against rows that no longer exist.
     week_answers is independent of both — it never touches meal_plan_entries
-    or grocery_items — so its order relative to them doesn't matter.
+    or grocery_items — so its order relative to them doesn't matter, EXCEPT
+    for the one thing that can refuse it: whether this week overlaps a
+    second live plan (see tools.check_week_answers_clearable). That check
+    runs FIRST, before meal_plan or grocery_list touch anything (2026-09-25
+    review, item F) — checking it only inside clear_week_answers, run
+    last, would let a refused week_answers clear follow an already-
+    committed meal-plan/grocery-list clear, leaving a partial reset behind
+    a 400. This way a refusal refuses the whole request.
 
-    week_answers clears the intake AND the day-attendance-sheet/guests-chip/
-    away-stretch attendance and the holiday answers for this one week (see
-    tools.clear_week_answers) — refused with a 400 when this week's answers
-    are shared with a second live plan on the same week_start_date, rather
-    than guessed at (the preview's intake_shared already told the dialog to
-    hide the option in that state; this is the belt to that braces).
+    week_answers clears the intake AND the day-attendance-sheet/guests/
+    away-stretch attendance for this one week (see tools.clear_week_answers)
+    — never a holiday answer, which is also answered from the Today card
+    and in chat and is left for a separate decision. Refused with a 400
+    when this week overlaps a second live plan, rather than guessed at
+    (the preview's intake_shared already told the dialog to hide the
+    option in that state; this is the belt to that braces).
     """
     if not req.meal_plan and not req.grocery_list and not req.week_answers:
         raise HTTPException(status_code=400, detail="Nothing selected to reset.")
     result = {"meal_plan": None, "grocery_list": None, "week_answers": None}
     try:
+        if req.week_answers:
+            tools.check_week_answers_clearable(req.weekly_plan_id)
         if req.meal_plan:
             result["meal_plan"] = tools.clear_weekly_plan(req.weekly_plan_id)
         if req.grocery_list:
