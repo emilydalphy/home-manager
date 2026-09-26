@@ -122,6 +122,41 @@ def freezer_night_name(dish: str, cook_date: str) -> str:
     return f"Leftovers from the freezer — {_weekday(cook_date)}’s {dish}"
 
 
+def frozen_portion_night_name(dish: str) -> str:
+    """
+    "Leftovers from the freezer — Chili", for a night eating a portion a
+    NIGHT OFF froze rather than one this week's own cook put by
+    (freezer_portions.apply_to_plan).
+
+    Names no weekday, unlike freezer_night_name above, and that is the
+    whole difference: that portion was frozen inside the plan being read,
+    so "Monday's" means the Monday on the screen. This one may have been
+    frozen three weeks and two plans ago, and "Monday's Chili" would be a
+    true-sounding sentence about the wrong Monday. The word "Leftovers" is
+    load-bearing either way — weekly_plan.build_slot's regex is what makes
+    the night read as a reheat rather than a cook.
+    """
+    return f"Leftovers from the freezer — {dish}"
+
+
+def frozen_portion_on(derived) -> str | None:
+    """
+    The dish a night is eating out of the freezer, or None — the one door
+    onto FROM_FREEZER_KEY for the readers that only want to know "is this a
+    reheat, and of what". Takes the parsed derived_from or its JSON.
+    """
+    if isinstance(derived, str) or derived is None:
+        try:
+            derived = json.loads(derived or "{}")
+        except (TypeError, ValueError):
+            return None
+    value = (derived or {}).get(FROM_FREEZER_KEY)
+    if not isinstance(value, dict):
+        return None
+    dish = (value.get("dish") or "").strip()
+    return dish or None
+
+
 def freezer_servings(derived) -> int:
     """How many portions of this entry's cook are meant for the freezer —
     0 for nearly every entry. Takes the parsed derived_from or its JSON."""

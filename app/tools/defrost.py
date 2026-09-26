@@ -225,6 +225,23 @@ def _describe(item: str, meal: str, meal_date: str) -> str:
     return f"Move the {item} to the fridge — for {_weekday_name(meal_date)}'s {meal}."
 
 
+def portion_move_description(dish: str, meal_date: str) -> str:
+    """
+    The fridge move for a cooked portion a night off froze
+    (freezer_portions): "Move the Kofte to the fridge — for Thursday's
+    dinner."
+
+    Its own sentence rather than _describe's, because _describe names the
+    MEAL the ingredient is for and the meal here is the portion itself —
+    "Move the Kofte (cooked) to the fridge — for Thursday's Leftovers from
+    the freezer — Kofte." is what that gives. It keeps _MOVE_ITEM_RE's own
+    opening, deliberately: that is how thawed_item reads the food back out
+    for weekly_plan._release_prep_rows, which holds a thawed portion when a
+    swap takes its night off the plan.
+    """
+    return f"Move the {dish} to the fridge — for {_weekday_name(meal_date)}'s dinner."
+
+
 def _batch_quantity(ing: dict, batch_factor: float) -> str:
     """
     How much of this ingredient to actually move to the fridge. 1.0 for an
@@ -270,12 +287,26 @@ def _candidates_from_plan(plan: dict, freezer_items: list[dict], dinner_window: 
     night, so "move the beef to the fridge for Thursday" was a reminder
     for a thing that never happens — and the Tuesday it really belongs to
     has to thaw enough beef for both nights, not one.
+
+    The one exception to all of that is a night eating a cooked portion a
+    night off froze: it IS a reheat, and it is the reheat whose food has to
+    come out of the freezer. See freezer_portions.defrost_candidates, which
+    matches it by the inventory id the entry carries rather than by name.
     """
+    # A night eating a cooked portion a night off froze is the one candidate
+    # that does not come from an ingredient list at all — the portion is
+    # nobody's ingredient, which is exactly why the name matching below
+    # never fired for one (measured 2026-09-26: a week with a planned
+    # portion synced zero defrost rows). Gathered first so it rides through
+    # sync_defrost_tasks with every other candidate and gets that function's
+    # status-keeping and stale-sweeping for free.
+    from . import freezer_portions as _freezer_portions
+
+    candidates = _freezer_portions.defrost_candidates(plan, dinner_window)
     if not freezer_items:
-        return []
+        return candidates
     recipes_by_name = {r["name"]: r for r in _recipes.list_recipes()}
     chains = _leftovers.plan_leftover_chains(plan["weekly_plan_id"]) if plan.get("weekly_plan_id") else {"sources": {}, "leftovers": {}}
-    candidates = []
     for m in plan.get("meals") or []:
         recipe = recipes_by_name.get(m.get("meal"))
         if not recipe:

@@ -617,11 +617,32 @@ NIGHT_OFF_UNDO_KEY = "night_off_undo"
 # the row says where it came from, and Undo can tell it is its own.
 NIGHT_OFF_FROZEN_SOURCE = "night_off"
 
+# What a frozen cooked portion's inventory row is called: the dish, then
+# this. Defined once, here, because two sides read it — _freeze_portion
+# writes the name and freezer_portions reads the dish back out of it to plan
+# the portion into a later week. A copy of the suffix in the reader is a
+# second definition of the same fact, and the two would drift the first time
+# anybody reworded one.
+FROZEN_COOKED_SUFFIX = " (cooked)"
+
 # How long a cooked dish keeps in the freezer, for the row's use-by date.
 # Set here rather than read off quantities' item table: that table keys on
 # words ("chicken" → two days), which is fresh-food shelf life, and a
 # cooked, frozen dish named "Seared Garlic Chicken Thighs" would inherit it.
 FROZEN_COOKED_KEEPS_DAYS = 90
+
+
+def frozen_portion_dish(item: str) -> str:
+    """
+    The dish a frozen portion's inventory row is about — "Kofte (cooked)" ->
+    "Kofte" — or "" for a row this app did not name. The read side of
+    FROZEN_COOKED_SUFFIX, for freezer_portions; the source column is what
+    says a row is one of ours, and this is only how its words come apart.
+    """
+    name = (item or "").strip()
+    if not name.lower().endswith(FROZEN_COOKED_SUFFIX.lower()):
+        return ""
+    return name[: -len(FROZEN_COOKED_SUFFIX)].strip()
 
 
 def _fed_label(target: dict) -> str:
@@ -743,7 +764,7 @@ def _freeze_portion(conn, dish: str, servings: int, cooked_on: str) -> dict:
     """
     from datetime import timedelta
 
-    item = f"{dish} (cooked)"
+    item = f"{dish}{FROZEN_COOKED_SUFFIX}"
     quantity = f"{servings} serving{'s' if servings != 1 else ''}" if servings > 0 else ""
     keeps = (date.fromisoformat(cooked_on) + timedelta(days=FROZEN_COOKED_KEEPS_DAYS)).isoformat()
     cur = conn.execute(
@@ -1196,7 +1217,8 @@ def _queue_use_soon(dish: str, items: list[str]) -> None:
 
 __all__ = [
     "TONIGHT_ASK_HOUR", "TONIGHT_OPTION_LIMIT", "NIGHT_OFF_CONSTRAINT",
-    "NIGHT_OFF_REASON", "USE_SOON_KIND",
+    "NIGHT_OFF_REASON", "USE_SOON_KIND", "NIGHT_OFF_FROZEN_SOURCE",
+    "FROZEN_COOKED_SUFFIX", "FROZEN_COOKED_KEEPS_DAYS", "frozen_portion_dish",
     "tonight_check", "tonight_keep", "tonight_night_off", "tonight_night_off_undo",
     "tonight_ok_key",
 ]
