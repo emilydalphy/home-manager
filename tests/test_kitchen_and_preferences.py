@@ -818,6 +818,11 @@ def test_show_me_tomorrow_falls_back_to_the_prep_it_promised():
 _SUBTITLE_JS = (
     _JS_PRELUDE
     + "function dayName(d, o){ return 'Monday'; }\n"
+    # cookPreppedAhead — kitchenTodayRows and cookTonightNote ask it whether a
+    # meal was made on an earlier prep day (2026-09-26, prepped lunches on the
+    # prep day). One rule, one place; a harness without it gets a named
+    # ReferenceError rather than a quiet wrong answer.
+    + _function("cookPreppedAhead") + "\n"
     + _function("kitchenTodayLine") + "\n"
     + _function("kitchenTodayRows") + "\n"
     + _function("kitchenSubtitle") + "\n"

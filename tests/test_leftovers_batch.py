@@ -408,6 +408,11 @@ def _render(fn: str, arg, extra_args: str = "") -> str:
         "function dayName(d){ return 'Tue'; }\n"
         "function dayNameShort(d){ return 'Tue'; }\n"
         + _extract("addDaysLocal", src) + "\n"
+        # cookPreppedAhead — kitchenTodayRows and cookTonightNote ask it whether a
+        # meal was made on an earlier prep day (2026-09-26, prepped lunches on the
+        # prep day). One rule, one place; a harness without it gets a named
+        # ReferenceError rather than a quiet wrong answer.
+        + _extract("cookPreppedAhead", src) + "\n"
         + _extract("kitchenTodayLine", src) + "\n"
         + _extract("kitchenTodayRows", src) + "\n"
         + _extract("kitchenTodayRowHtml", src) + "\n"

@@ -20,6 +20,15 @@ codebase under other names:
   3. Prep-cutting raw components — the salad ingredients for the bowls.
      Nothing produced those before, so this module adds the one new row
      type: prep_tasks with task_type='prep_cut' (see add_prep_cut).
+  4. A prepped-lunch batch — the Monday-and-Tuesday chili the household
+     said on Plan a week step 3 they make on Sunday (weekday_lunches.py).
+     Read, like (1), off what is already on the plan: the cook entry's own
+     derived_from.prep_date. It is the one kind of work whose cook entry is
+     NOT dated on the prep day — a chain cannot hold a cook on a day the
+     dish isn't eaten, so the cook lives on the first lunch and says which
+     day it belongs to. This module is what puts it on that day, and
+     cooker._apply_prepped_lunches is what stops the lunch day reading as
+     the cook. See weekday_lunches.prepped_batches.
 
 So a session is a GATHERING, not a generator: everything in it is already
 on the plan, and the session is the view that says "all of this happens
@@ -44,6 +53,7 @@ from . import leftovers as _leftovers
 from . import recipes as _recipes
 from . import rhythm as _rhythm
 from . import weekly_plan as _weekly_plan
+from . import weekday_lunches as _weekday_lunches
 
 # What one item is worth when the household never told us how long their
 # prep day runs. Deliberately crude, and only ever a fallback: a session
@@ -247,7 +257,8 @@ def _slot_word(slot: str, count: int) -> str:
     return "lunches" if one == "lunch" else one + "s"
 
 
-def _cook_ahead_items(plan_id: int, prep_date: str, entries: dict[int, dict]) -> list[dict]:
+def _cook_ahead_items(plan_id: int, prep_date: str, entries: dict[int, dict],
+                      prepped_cook_ids: set[int] | None = None) -> list[dict]:
     """
     The batch-cook half: a chain whose SOURCE night is this prep day.
     "Egg White Bites for 3 mornings" — the cook day plus every day it
@@ -261,6 +272,12 @@ def _cook_ahead_items(plan_id: int, prep_date: str, entries: dict[int, dict]) ->
     recipes_by_name = {r["name"].lower(): r for r in _recipes.list_recipes()}
     items = []
     for source in _leftovers.plan_leftover_chains(plan_id)["sources"].values():
+        # A prepped-lunch batch belongs to its PREP day's session, not to
+        # the day its cook entry happens to sit on — _prepped_lunch_items
+        # puts it there. Skipped here whatever day this is, so a prep day
+        # that is also the batch's first lunch shows it exactly once.
+        if source["entry_id"] in (prepped_cook_ids or set()):
+            continue
         if source["date"] != prep_date:
             continue
         entry = entries.get(source["entry_id"]) or {}
@@ -283,6 +300,49 @@ def _cook_ahead_items(plan_id: int, prep_date: str, entries: dict[int, dict]) ->
             "minutes": minutes or COOK_AHEAD_FALLBACK_MINUTES,
         })
     items.sort(key=lambda i: (i["title"].lower(), i["entry_id"]))
+    return items
+
+
+def _prepped_lunch_items(batches: list[dict], prep_date: str) -> list[dict]:
+    """
+    The prepped-lunch half: a batch the household said they make on THIS
+    day (weekday_lunches.prepped_batches, off the cook entry's own
+    derived_from.prep_date). The item is the cook, exactly as a chain
+    source is in _cook_ahead_items — same `kind`, same `entry_id`, same
+    `done` read off cooked_status — so it is ticked by cooking it and there
+    is still only one place that fact is written.
+
+    The title is the dish and the line says what it is for: "Chili" /
+    "For Monday and Tuesday’s lunches." The days come from the plan as it
+    stands and the phrase from weekday_lunches.batch_lunch_phrase, which is
+    the same sentence the cook entry's own reasoning carries.
+    """
+    recipes_by_name = None
+    items = []
+    for batch in batches:
+        if batch["prep_date"] != prep_date:
+            continue
+        if recipes_by_name is None:
+            recipes_by_name = {r["name"].lower(): r for r in _recipes.list_recipes()}
+        recipe = recipes_by_name.get((batch["meal"] or "").strip().lower())
+        minutes = 0
+        if recipe:
+            minutes = (recipe["prep_time_minutes"] or 0) + (recipe["cook_time_minutes"] or 0)
+        items.append({
+            "kind": "cook_ahead",
+            "prep_task_id": None,
+            "entry_id": batch["cook_entry_id"],
+            "title": batch["meal"],
+            # Not the dish again: the badge beside the title is for a thing
+            # the title does not already say (cookSessionItemHtml drops it
+            # when they match), and here the line carries the useful half.
+            "feeds": batch["meal"],
+            "line": f"For {_weekday_lunches.batch_lunch_phrase(batch['lunch_dates'])}.",
+            "done": batch["cooked_status"] == "done",
+            "covers": sorted(set(batch["lunch_dates"])),
+            "minutes": minutes or COOK_AHEAD_FALLBACK_MINUTES,
+        })
+    items.sort(key=lambda i: ((i["title"] or "").lower(), i["entry_id"]))
     return items
 
 
@@ -357,24 +417,53 @@ def prep_sessions_for_plan(weekly_plan_id: int) -> list[dict]:
     if plan is None or plan["skip_prep_this_week"]:
         return []
 
-    prep_days = _rhythm.get_household_rhythm()["prep_days"]
-    if not prep_days:
-        return []
-
     dates = _period_dates(plan)
+    if not dates:
+        # A plan with no days at all (day_count 0 — a plan that surrendered
+        # its whole period to another one) has nothing to prep for, whatever
+        # is stamped on rows that outlived the release.
+        return []
     by_weekday: dict[str, str] = {}
     for d in dates:
         by_weekday.setdefault(_weekday_key(d), d)
+
+    # A prepped-lunch batch brings its OWN prep date, which is why the
+    # rhythm answer is no longer the only way in: this week's
+    # weekday-lunches answer can name a midweek prep day the standing
+    # answer has never heard of, and a Sunday prep day for a Monday-start
+    # week falls the day BEFORE the period, so no weekday of this period
+    # maps to it. Read across live plans for that second reason — see
+    # weekday_lunches.prepped_batches.
+    batches = _weekday_lunches.prepped_batches(
+        weekly_plan_id, window=(dates[0], dates[-1])
+    )
+    prep_days = _rhythm.get_household_rhythm()["prep_days"]
+    if not prep_days and not batches:
+        return []
+
+    # One session per prep DATE. The household's standing prep days map
+    # onto this period's own dates (a weekday not in the period has no
+    # date here and no session); a batch is its date already.
+    prep_day_by_date: dict[str, dict] = {}
+    for prep_day in prep_days:
+        prep_date = by_weekday.get(prep_day.get("weekday") or "")
+        if prep_date:
+            prep_day_by_date.setdefault(prep_date, prep_day)
+    for batch in batches:
+        prep_day_by_date.setdefault(batch["prep_date"], {})
+    prepped_cook_ids = {b["cook_entry_id"] for b in batches}
 
     entries = _plan_entries(weekly_plan_id)
     tasks = _prep_task_rows(weekly_plan_id)
 
     sessions = []
-    for prep_day in prep_days:
-        prep_date = by_weekday.get(prep_day.get("weekday") or "")
-        if not prep_date:
-            continue  # that weekday isn't in this plan's period at all
-        items = _cook_ahead_items(weekly_plan_id, prep_date, entries) + _task_items(tasks, prep_date, entries)
+    for prep_date in sorted(prep_day_by_date):
+        prep_day = prep_day_by_date[prep_date]
+        items = (
+            _prepped_lunch_items(batches, prep_date)
+            + _cook_ahead_items(weekly_plan_id, prep_date, entries, prepped_cook_ids)
+            + _task_items(tasks, prep_date, entries)
+        )
         if not items:
             continue  # a prep day with nothing on it is not a session yet
         covers = sorted({d for item in items for d in item["covers"]})
