@@ -416,6 +416,169 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-26 — 107 statements across `app/` reached a household-owned row by
+  a bare id, not the 73 the card counted. First tranche: 56 scoped in eight
+  modules, one generalised sweep over the whole package. Branch
+  `overnight/household-scope-sweep`, NOT merged at the time of writing.**
+  Loop Board bug, Phase 0, **Low** — and the severity is the first thing to
+  read, because this log has had to unpick an over-claimed one before.
+  - **NOTHING IS LEAKING, and the card says so in its own words.** All the
+    sites were traced on 2026-09-24 and not one is reachable with a foreign
+    id: in every case the id has already come out of a household-filtered
+    read, or through `require_household_row`, a few lines above.
+    `grocery.remove_grocery_item` calls `require_household_row` and THEN
+    deletes by bare id; `stores.py` and `recipes.py` have no
+    `require_household_row` anywhere and are safe because both resolve their
+    ids from a `WHERE household_id = ?` read first. So this closes a hole in
+    the GUARD, not a leak in the app. What is genuinely wrong is that the
+    scoping only held because 73 — really 107 — separate call sites each
+    happened to do the right thing first, and `_shared.household_id` exists
+    precisely so a caller is never the thing that has to remember.
+  - **THE CARD'S COUNT WAS LOW, and the real number is measured rather than
+    trusted: 107 statements in 23 files** (the card: 73 in 14). The
+    difference is coverage, not disagreement — the generalised sweep judges
+    every one of the **46** tables `schema.sql` gives a `household_id`
+    column, where the card's count was over a chosen few. Per file on
+    `main`: staples 19, grocery 11, defrost 8, digest 6, inventory 6,
+    recipes 6, db 5, attention 5, cooker 5, household 5, week_intake 5,
+    tonight 4, first_open 3, plan_undo 3, spices 3, stores 3, weekly_plan 3,
+    slot_needs 2, invites 1, holidays 1, meal_variety 1, memory 1, usage 1.
+    **Four** of the card's eight per-module figures were low (staples by 11,
+    grocery and week_intake by 2, recipes by 1) and four matched exactly
+    (digest, household, stores, holidays), so its eight sum to 40 where the
+    real eight sum to 56.
+  - **THIS TRANCHE IS THE CARD'S EIGHT MODULES, 56 statements**: staples 19,
+    grocery 11, digest 6, recipes 6, household 5, week_intake 5, stores 3,
+    holidays 1 — one commit each, as the card asks for
+    ("one module per commit is easier to review"). **45 are left in 13
+    files** and are on a shrinking allowlist; **6 must never be scoped**.
+    107 = 56 + 45 + 6, checked.
+  - **`app/tools/weekly_plan.py` is NOT finished and is not in this
+    tranche**, even though the 2026-09-24 branch "did" it: that sweep was
+    scoped to `meal_plan_entries`, and three statements in the same file
+    reach `prep_tasks`, `recipes` and `weekly_plans` by bare id. A sweep is
+    only as wide as its table list.
+  - **THERE IS EXACTLY ONE SWEEP IN `tests/`, which is what the card
+    demanded.** `tests/test_household_scope_sweep.py` generalises the
+    single-module one; that file's sweep, its `ast` reader and all of its
+    shape cases **moved** rather than a second being written beside it
+    (`test_leftover_chain_household_filter.py` keeps its two
+    characterisations and its docstring is corrected in place, since it
+    still advertised "the sweep at the bottom"). The narrower claim it made
+    — no `meal_plan_entries` statement in `weekly_plan.py` unguarded — is
+    restated by name in the new file, so removing it took no coverage.
+    `_OWNED_TABLES` is derived from `schema.sql` at import, so a table added
+    tomorrow is swept without anybody editing the test.
+  - **TWO LISTS, DIFFERENT IN KIND, AND THEY MUST NOT BE MERGED.**
+    `_CROSS_HOUSEHOLD_ON_PURPOSE` is "never": six statements keyed by
+    `(file, function)` with a reason each. **`app/db.py`'s five run across
+    every household BY DESIGN** and must not be scoped —
+    `_backfill_member_colors`, `_backfill_allergy_notes_from_facts`,
+    `_migrate_chore_modes`, and the two the card did not name,
+    `_merge_duplicate_item_store_preferences` and
+    `_backfill_recipe_cook_counters_from_ticks`. `_LATER_TRANCHE` is "not
+    yet": exact SQL with counts, asserted by **EQUALITY** rather than
+    containment, so fixing one makes the sweep go red saying "take it off
+    the list" — which is what keeps the list shrinking instead of outliving
+    the work — and a NEW offender in an already-listed file is still caught.
+  - **`app/invites.redeem_invite` IS THE SAME CLASS AS THE MIGRATIONS AND
+    THE CARD DID NOT NAME IT — the most useful finding here, because putting
+    it on the later-tranche list would have handed the next builder a real
+    breakage.** It runs BEFORE any household is bound: the invite is what
+    establishes which household this is, so `household_id()` there is the
+    ContextVar's default (1) and **every invite into any other household
+    would be silently refused**. It already scopes itself the honest way —
+    the id is the invite's own primary key resolved from a hashed secret,
+    and the statements after it use `row["household_id"]`, never
+    `household_id()`. Exempted with that reason written down.
+  - **The exemption polices itself both ways**, which is the card's own
+    warning ("it will be switched off the first time it goes red for the
+    right reason"): the sweep's failure message NAMES `app/db.py` and
+    `app/invites.py` and says to put the exemption back rather than "fix"
+    the migrations; a separate test fails if any reason is under thirty
+    characters; another fails if an exemption stops covering an unguarded
+    statement, so one left behind by moved code is a red test rather than a
+    quiet hole.
+  - **ALL THREE INTERPOLATED-SET STATEMENTS ARE SEEN, checked rather than
+    assumed — and one has MOVED MODULE since the card was written.** The
+    card names `tonight.py`'s `UPDATE meal_plan_entries SET {sets} WHERE id
+    = ?` and `inventory.py`'s two. `grep "SET {" app/` puts the first in
+    **`app/tools/plan_undo.py`**: the 2026-09-24 drop-dish work lifted that
+    snapshot/restore machinery out of `tonight.py`. All three read as
+    `UPDATE ... SET {} WHERE id = ?` and are pinned by name. None is fixed
+    here — all three are in another builder's modules.
+  - **WHAT THE SWEEP CANNOT SEE is asserted, not described**, so whoever
+    teaches it more gets a red test and deletes a limitation instead of
+    discovering one: SQL assembled through a **local variable** (inherited
+    from the prior art — dataflow it does not do); a statement handed to
+    something other than `.execute`/`.executemany`/`.executescript`; a
+    table `schema.sql` does not create; WHICH household a statement names
+    (`AND household_id = 1` would pass); and — **found by writing the JOIN
+    shape case rather than by reasoning** — `household_id` appearing for
+    some OTHER reason, so a join saying `ON m.household_id = h.id` reads as
+    guarded. That last one is left because telling a WHERE from an ON means
+    parsing SQL, and nothing in `app/` relies on it — measured: exactly four
+    statements both JOIN and reach an owned table by a row id, all four in
+    `chores.py`, and all four name `ci.household_id` in their WHERE.
+  - **BEHAVIOUR IS UNCHANGED, and that is measured twice over rather than
+    argued.** Every site already had the right household in hand, so the
+    guard is a no-op in practice. Three sites driven on a real
+    two-household throwaway database — `staples.pause_staple`,
+    `grocery.update_grocery_item`, and `household.set_member_dietary_restrictions`
+    plus `digest.set_morning_text_for_member`, the last two with a member of
+    the SAME NAME in both households, which is the shape worth driving since
+    the app's only member identity is the name — and the whole dumped state
+    (every row of `staples`, `grocery_items` and `members`) is
+    **BYTE-IDENTICAL between `main`'s `app/` and this branch's**. A foreign
+    id is refused in the owning function's own words on all three ("No
+    staple with id 2.", "No grocery list item with id 2.", "I don't have
+    that person down as an adult here.") and the guarded statement, driven
+    by hand with a foreign id, changes **0 rows**.
+  - **The foreign-id half HAS to be driven by the statement text and not
+    through the function, and that is the severity note restated as a
+    test-design constraint**: every one of these functions refuses a foreign
+    id before the statement is reached, so no function can be made to pass
+    one. The refusal is the belt; this branch is the braces; the sweep is
+    what keeps them on.
+  - **ONLY ONE TEST IS RED AGAINST `main`'s `app/`, and reading that number
+    honestly matters more than the number.** The sweep. The other 40 pass on
+    both trees — they are tests of the reader, of the exemptions, and the
+    behaviour drives, and the drives passing on both trees **is** the
+    no-op proof rather than a weakness. So: **1 behaviour catch, 40 guards**,
+    and **EIGHT MUTATIONS are the real evidence, every one run and every one
+    biting**: one fixed statement reverted per module, all eight modules at
+    once (**1 red**, and the message names all eight with "this module is
+    supposed to be finished" beside each); the reader blinded (**25**);
+    `app/db.py`'s exemption removed (**2**, with the migration warning
+    printed); `_LATER_TRANCHE` emptied (**1**); the reader blind to
+    f-strings (**5**); **a fixed statement reformatted as a triple-quoted
+    block with the guard off (1)** — the PURE REFORMAT that defeated the
+    2026-09-24 sweep's first design, now caught; the same rebuilt with `+`
+    concatenation (**1**); and `_OWNED_TABLES` emptied (**26**).
+  - **Numbers, read off the runs at `TZ=America/Toronto` with
+    `HOME_MANAGER_URL`/`REPORT_TOKEN` unset** (per
+    `overnight/tests-ignore-report-env`): **7459 passed, 0 failed**, against a
+    measured **7437 passed, 0 failed** on `main`. Re-run on a clean,
+    untouched tree at the commit that ships, because the first reading
+    overlapped a docstring edit of my own and this log's own rule is that a
+    suite run in a tree somebody is still writing to is not evidence,
+    including when the somebody is you and the edit is a comment. Same
+    number both times. The new file is 41 cases, and
+    `test_leftover_chain_household_filter.py` goes 21 → 2 because 19 of its
+    tests moved OUT of it into the new one, so the net is +22.
+    **No assertion was weakened**: the moved tests are unchanged in
+    substance, and the generalised sweep that replaced its module-scoped one
+    is strictly wider — every table rather than one, every file rather than
+    one — with that file's own narrower claim restated by name so nothing
+    went uncovered.
+  - **NOT DONE, named so nobody reports it as new.** The other 13 files (45
+    statements) are the later tranches and are listed in `_LATER_TRANCHE`;
+    eight of those files were off-limits this session because another
+    builder was live in them (`tonight.py`, `defrost.py`, `leftovers.py`,
+    `cooker.py`, `inventory.py`, `attention.py`, `weekly_plan.py`,
+    `agent.py`). **Not verified in a browser** — nothing visual changed, and
+    every drive went through the tools rather than over HTTP.
+
 - **2026-09-25 — A swapped-out repeat carries no note.** Emily chose "no
   note" over "in the last two weeks" and "last week / two weeks ago"
   (mockups https://claude.ai/artifact/UKeqDuk8Pyi7owCXv7uhmf).
