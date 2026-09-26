@@ -416,6 +416,82 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-26 — The morning report's FOOD count counted discarded drafts and
+  counted one violation once per pass, so it read two to four times worse than
+  the week that was actually cooked. Branch
+  `overnight/food-count-live-plans-only`, NOT merged at the time of writing.**
+  Found by mining the LIVE app to size the rush-cap card and noticing the
+  numbers did not survive deduplication — not from a report of the report.
+  - **Measured on the live app's own 30-day window before anything was
+    touched: 28 distinct violations in a 50-row sample (1.8x, and up to 4x
+    for one violation).** `rush_cap_respected` read **12** and was **5**
+    distinct; `dinner_repeat_in_history` read **19** and was **5**. So the
+    section Emily reads each morning to judge the food was reporting weeks
+    she threw away, three times over.
+  - **TWO independent causes, and the second is the one that matters.**
+    `usage.record_plan_quality` is a bare INSERT with no dedupe of any kind;
+    and `usage.get_recent_plan_quality` never joined `weekly_plans`, so a
+    **RETIRED** draft's violations counted exactly like the approved week's.
+    Re-drafting retires the old plan and the new one gets a new id, so every
+    discarded draft stayed in the window for its full seven or thirty days.
+  - **The dedupe is load-bearing on its own, and the re-draft story is not
+    the whole of it** — which is worth knowing, because the obvious reading
+    is that the retired-plan join makes the dedupe redundant. It does not:
+    `_steps_match_ingredients`, `_ingredient_repeat` and
+    `_quantities_plausible` each run in `check_week` at generation AND in
+    `check_recipes_and_log` at approval, over the SAME live plan. One
+    approved week therefore logs those three twice with nothing re-drafted at
+    all, and `steps_match_ingredients` is the biggest number in the report
+    (80 of 127 in the month).
+  - **Deduped at the READ, not by a unique index on the write**, for three
+    reasons: two different plans really can both get the same night wrong and
+    a write-side key would lose that; the raw rows are what let the report
+    say "5, logged 12 times across re-drafts"; and a read-time rule can be
+    changed without a migration or a backfill. `logged` rides beside `total`
+    so the re-draft signal survives the headline becoming honest, and the
+    report prints the clause ONLY when the raw count is bigger.
+  - **`COUNT(DISTINCT ...)` takes ONE expression in SQLite**, so the key is
+    joined into a single value with `char(31)` (ASCII UNIT SEPARATOR) —
+    a character no rule name, ISO date, slot or `check_week` message can
+    contain, so two different violations cannot collide by carrying the
+    separator. A printable separator (`|`) reddens 4 tests.
+  - **`recent` keeps `MAX(e.id)` per key**, so the surviving line is the
+    latest time the same thing was said — the newest wording of a message
+    whose rule has since been reworded, and the `created_at` a reader would
+    expect. Keeping the oldest reddens 1.
+  - **THE JOIN IS NOT WHAT EXCLUDES AN ORPHAN ROW, and the first version of
+    this branch's own comment said it was.** `plan_quality_events.weekly_plan_id`
+    carries no foreign key, so a plan deleted outright leaves orphans — and
+    measured, softening the INNER JOIN to a LEFT JOIN reddens NOTHING,
+    because a missing plan makes `p.household_id = ?` NULL and the row fails
+    the WHERE anyway. The household predicate does that work; the JOIN is the
+    honest spelling of the intent and is not load-bearing on its own. Said at
+    the code rather than left as a claim.
+  - `tests/test_food_count_live_plans_only.py` (13). **7 red against main,
+    of which 6 are behaviour catches on the assertion they are named for**
+    (the seventh is the report's source marker, red because the clause does
+    not exist there). The 4 green are GUARDs and say so.
+    **NINE mutations run, EIGHT bite** — retired plans counted again (2 red),
+    no dedupe in the count (2), `recent` grouped by rule alone (2), `message`
+    dropped from the key (1), `slot` dropped (1), a printable separator (4),
+    the join not household-scoped (12), the oldest row kept (1). The ninth is
+    the LEFT JOIN above, documented as a no-bite with its reason.
+  - **THREE of those nine reddened nothing on the first pass and two were
+    real holes in the tests, which is the part worth carrying.** `recent`'s
+    key breadth was pinned by nothing (every other test used one rule once,
+    or two rules), and `message` was pinned by nothing — the bad-week guard's
+    own docstring CLAIMED that mutation pinned it, and its five violations
+    differ by DATE, so it never could. Both have their own test now, the
+    second one seeded the way the app really reaches it (several rules emit
+    with an empty date and slot, so two findings of one such rule differ in
+    nothing but the message), and the false claim is corrected in place
+    rather than quietly.
+  - **Isolation is pinned by mutation rather than by redness** (main already
+    scopes the events table; what is new is the join), and the seed goes
+    through `tools.use_household` with a second read proving it really
+    crossed the boundary — the trap this log records an isolation test
+    falling into before, where it passed while proving nothing.
+
 - **2026-09-25 — A swapped-out repeat carries no note.** Emily chose "no
   note" over "in the last two weeks" and "last week / two weeks ago"
   (mockups https://claude.ai/artifact/UKeqDuk8Pyi7owCXv7uhmf).

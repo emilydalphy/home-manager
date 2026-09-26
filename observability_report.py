@@ -877,7 +877,16 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
         quality = h.get("plan_quality") or {}
         if quality.get("total"):
             rules = ", ".join(f"{n} {r}" for r, n in quality["by_rule"].items())
-            print(f"  FOOD — {quality['total']} in the last {quality['days']}d: {rules}")
+            # The count is DISTINCT violations on plans that are still the
+            # household's (get_recent_plan_quality). `logged` is the raw row
+            # count, and it is said only when it is bigger — re-drafting one
+            # week logs the same violation once per draft, and "5, logged 12
+            # times" is the honest way to keep that signal without the
+            # headline reading as twelve separate problems. `.get` because a
+            # deployment older than 2026-09-26 answers without the key.
+            redrafts = quality.get("logged") or 0
+            extra = f" (logged {redrafts} times across re-drafts)" if redrafts > quality["total"] else ""
+            print(f"  FOOD — {quality['total']} in the last {quality['days']}d{extra}: {rules}")
             for row in quality["recent"][:6]:
                 print(f"      {row['severity']:5} {row['message']}")
 
