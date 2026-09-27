@@ -103,15 +103,85 @@ _OPTIONS_CACHE: dict[tuple[int, int], dict] = {}
 
 # ---------- the plate as the card shows it ----------
 
-_NON_VEGETABLE_PRODUCE = {
-    "garlic", "lemon", "lemons", "lime", "limes", "ginger", "onion", "onions",
-    "shallot", "shallots", "scallion", "scallions", "parsley", "cilantro",
-    "basil", "mint", "dill", "chive", "chives", "rosemary", "thyme", "sage",
-    "tarragon",
+# Produce that flavours a dish and is never "the veg" on its plate:
+# aromatics, chilies, fresh herbs, citrus. Matched by WORD, not by whole
+# name — Emily, 2026-09-27, her gochujang beef bowl's plate read "VEG:
+# Fresh ginger" ("Ginger isn't a 'veggie' in this case, it should be seen
+# more as an herb"), because "ginger" was on the old whole-name list and
+# "fresh ginger" was not. Singular forms; _produce_words singularises.
+_NOT_THE_VEG = {
+    # aromatics
+    "garlic", "ginger", "onion", "shallot", "scallion", "leek", "lemongrass", "galangal",
+    "green onion", "spring onion",
+    # chilies
+    "chili", "chile", "chilli", "jalapeño", "jalapeno", "serrano", "habanero",
+    "thai chili", "bird's eye chili", "chili pepper", "chile pepper", "jalapeño pepper",
+    "jalapeno pepper", "serrano pepper", "habanero pepper",
+    # herbs
+    "herb", "cilantro", "coriander", "basil", "thai basil", "parsley", "mint", "dill",
+    "chive", "thyme", "rosemary", "oregano", "sage", "tarragon", "marjoram", "bay leaf",
+    "lime leaf", "kaffir lime leaf", "makrut lime leaf", "curry leaf",
+    # citrus, squeezed or zested rather than eaten as a side
+    "lemon", "lime",
 }
+# Words that say how an ingredient is bought or cut, not what it is —
+# dropped before the match, so "fresh ginger root, grated" reads "ginger".
+_PREP_WORDS = {
+    "fresh", "dried", "chopped", "minced", "grated", "sliced", "diced", "crushed", "peeled",
+    "finely", "roughly", "thinly", "whole", "root", "clove", "bunch", "sprig", "stalk", "stem",
+    "piece", "knob", "thumb", "handful", "small", "large", "medium", "red", "yellow", "white",
+    "juice", "zest", "juiced", "zested", "of", "and", "for", "garnish", "to", "serve",
+}
+# The units a vegetable is bought in by the pound or the head, against
+# the ones an aromatic comes in: the bigger buy is the plate's veg.
+_BIG_UNITS = {"lb", "lbs", "pound", "pounds", "kg", "g", "oz", "head", "heads", "bag", "bags",
+              "package", "packages", "box", "boxes", "bunch", "bunches", "cup", "cups", "can", "cans"}
 
 
-def _in_dish_part_name(role: str, ingredients: list[dict] | None) -> str | None:
+def _produce_words(item: str) -> list[str]:
+    import re
+    name = re.sub(r"\(.*?\)", " ", (item or "").lower()).split(",")[0]
+    words = []
+    for w in re.findall(r"[a-zñé']+", name):
+        if w == "leaves":
+            w = "leaf"
+        elif w.endswith("ies") and len(w) > 4:
+            w = w[:-3] + "y" if w not in ("chilies", "chillies") else w[:-2]
+        elif w.endswith("s") and not w.endswith("ss") and len(w) > 3:
+            w = w[:-1]
+        if w not in _PREP_WORDS:
+            words.append(w)
+    return words
+
+
+def _is_not_the_veg(item: str) -> bool:
+    """True for an aromatic, a chili, a herb or citrus — whatever words
+    of prep or measure the name carries ("Fresh ginger", "Garlic cloves",
+    "Thai basil leaves", "Green onions, sliced")."""
+    words = _produce_words(item)
+    # "Thai basil leaves" is the basil; "bay leaves" and "curry leaves"
+    # are named by the leaf, so both readings are tried.
+    for ws in (words, words[:-1] if words[-1:] == ["leaf"] else []):
+        if ws and (" ".join(ws) in _NOT_THE_VEG or " ".join(ws[-2:]) in _NOT_THE_VEG
+                   or ws[-1] in _NOT_THE_VEG):
+            return True
+    return False
+
+
+def _buy_rank(qty: str) -> int:
+    """2 for a vegetable bought by weight, head, bag or cup; 1 for a bare
+    count or anything unrecognised; 0 for a clove, a piece, a spoon."""
+    import re
+    words = re.findall(r"[a-z]+", (qty or "").lower())
+    if any(w in _BIG_UNITS for w in words):
+        return 2
+    if any(w in ("clove", "cloves", "piece", "pieces", "tbsp", "tsp", "tablespoon", "tablespoons",
+                 "teaspoon", "teaspoons", "sprig", "sprigs", "inch", "knob", "thumb") for w in words):
+        return 0
+    return 1
+
+
+def _in_dish_part_name(role: str, ingredients: list[dict] | None, dish: str | None = None) -> str | None:
     """
     The plain name of the dish's own vegetable or carb, read off its
     ingredients — "Green beans", "Sweet potato" — not invented. None when
@@ -124,8 +194,14 @@ def _in_dish_part_name(role: str, ingredients: list[dict] | None) -> str | None:
     broccoli" (an added SIDE) while the recipe still had green beans —
     because the dish's own green beans, covered by food_groups with no
     name, never had a name to show in the first place. This is that name.
+
+    The vegetable is the REAL vegetable (Emily, 2026-09-27): never an
+    aromatic, a chili, a herb or citrus (_is_not_the_veg); of what's left,
+    the one the dish's name mentions (`dish`), else the biggest buy — three
+    heads of broccoli over a bunch of anything — else the first listed.
     """
-    for ing in ingredients or []:
+    candidates = []
+    for n, ing in enumerate(ingredients or []):
         if not isinstance(ing, dict):
             continue
         item = (ing.get("item") or "").strip()
@@ -138,15 +214,26 @@ def _in_dish_part_name(role: str, ingredients: list[dict] | None) -> str | None:
         if role == "vegetable":
             if (ing.get("category") or "").strip().lower() != "produce":
                 continue
-            if _plates.has_starch(item) or item.lower() in _NON_VEGETABLE_PRODUCE:
+            if _plates.has_starch(item) or _is_not_the_veg(item):
                 continue
-            return item[:1].upper() + item[1:]
-    return None
+            candidates.append((item, str(ing.get("qty") or ""), n))
+    if not candidates:
+        return None
+    title = set(_produce_words(dish or ""))
+
+    def rank(c):
+        head = _produce_words(c[0])[-1:]  # "Green beans" -> "bean"
+        in_title = bool(head) and head[0] in title
+        return (not in_title, -_buy_rank(c[1]), c[2])
+
+    item = min(candidates, key=rank)[0]
+    return item[:1].upper() + item[1:]
 
 
 def parts_of_plate(slot: str, food_groups: list[str], main_protein: str | None,
                 sides: list[dict] | None, eating_style: str | None,
-                carb_level: str | None = None, ingredients: list[dict] | None = None) -> list[dict]:
+                carb_level: str | None = None, ingredients: list[dict] | None = None,
+                dish: str | None = None) -> list[dict]:
     """
     The plate for one entry, in the order the card shows it. Pure; the
     week menu calls it with what its rows already carry.
@@ -173,7 +260,8 @@ def parts_of_plate(slot: str, food_groups: list[str], main_protein: str | None,
     freeform meal or an older recipe with none on record) — used only to
     NAME an in-dish vegetable or carb (_in_dish_part_name); nothing here
     changes without it, a dish with no ingredients on record just keeps
-    reading "In the dish" the way it always has.
+    reading "In the dish" the way it always has. `dish` is the dish's name,
+    which breaks a tie between two vegetables (the one it's named for).
     """
     if carb_level is None:
         carb_level = _plates.carb_level(eating_style)
@@ -238,7 +326,7 @@ def parts_of_plate(slot: str, food_groups: list[str], main_protein: str | None,
             # own carb is a half portion by rule — the qualifier rides
             # alongside the name rather than replacing it, so a small
             # portion is still named, not just sized.
-            name = _in_dish_part_name(role, ingredients)
+            name = _in_dish_part_name(role, ingredients, dish)
             if role == "carb" and carb_level == "low":
                 name = f"{name} · small" if name else "Small"
             parts.append({"role": role, "word": ROLE_WORDS[role], "name": name, "source": "dish", "missing": False})
@@ -370,7 +458,7 @@ def _current_part(entry: dict, recipe: dict | None, role: str, sides: list[dict]
         if role in (side.get("covers") or []):
             return (side.get("name") or "").strip(), "side"
     if role in set(entry.get("food_groups") or []):
-        name = _in_dish_part_name(role, (recipe or {}).get("ingredients")) or ""
+        name = _in_dish_part_name(role, (recipe or {}).get("ingredients"), entry.get("meal")) or ""
         return name, "dish"
     return "", None
 
