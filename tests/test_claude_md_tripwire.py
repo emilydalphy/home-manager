@@ -51,6 +51,8 @@ the merged tree's.
 
 from __future__ import annotations
 
+import ast
+import importlib.util
 import re
 from pathlib import Path
 
@@ -118,6 +120,14 @@ def test_the_decision_log_did_not_lose_entries():
 
 # Deliberately looser than ENTRY_HEADING: a bullet that opens with something
 # date-shaped is meant to be an entry, however it is punctuated.
+# Column 0 ONLY, and that is a measurement rather than an oversight. An
+# INDENTED `- **YYYY-MM-DD — ` is a legitimate shape in this file: there is
+# one today, the 2026-09-21 evening-cook-nudge note nested under the Morning
+# text bullet in Current state, and it is deliberately not a Decision log
+# entry. A review proposed `^\s*- \*\*` here to catch a reformat that indents
+# real entries; run against the real file it reddens on that sub-bullet, so
+# indentation cannot be the drift signal. The limit is real and is pinned by
+# test_an_indented_sub_bullet_is_not_an_entry_and_cannot_be_told_apart below.
 LOOSE_HEADING = re.compile(r"^- \*\*\s*(20\d\d[-/]\d\d?[-/]\d\d?)", re.M)
 
 
@@ -243,10 +253,32 @@ def test_the_existing_readers_still_read_the_file():
         )
 
 
+def _assert_sources(path):
+    """Every `assert` statement in a file, as source text.
+
+    Read with `ast` rather than grepped, because the claim is that a real
+    assertion is still there — and a COMMENTED-OUT one satisfies a substring
+    search perfectly. Measured on the first cut of this file: replacing
+    test_cook_shelf.py's assertion with
+    `pass  # assert "2026-09-13 — Cook's root is the shelf" in CLAUDE_MD`
+    left all sixteen tests green and that file green too, which is precisely
+    the weakening this test is named for. It is the repo's own
+    comment-stripping idiom, one level up: parse, don't match.
+    """
+    source = path.read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    return [
+        ast.get_source_segment(source, node) or ""
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Assert)
+    ]
+
+
 def test_the_two_older_readers_still_assert_on_what_they_read():
     """A file can read CLAUDE.md and assert nothing about it. These two are
     the repo's original anchors and their assertions are the thing worth
-    keeping."""
+    keeping — so the anchor has to appear inside a real `assert`, not merely
+    somewhere in the file."""
     for name, anchor in (
         ("test_cook_shelf.py", "2026-09-13 — Cook's root is the shelf"),
         ("test_today_shop_cook.py", "2026-09-13 — Now is one strip down the day"),
@@ -255,9 +287,11 @@ def test_the_two_older_readers_still_assert_on_what_they_read():
             "2026-09-17 — Today: Shop and Cook, tagged by part of the day",
         ),
     ):
-        source = (REPO / "tests" / name).read_text(encoding="utf-8")
-        assert anchor in source, (
-            f"tests/{name} no longer asserts {anchor!r} against CLAUDE.md"
+        asserts = _assert_sources(REPO / "tests" / name)
+        assert any(anchor in a for a in asserts), (
+            f"tests/{name} no longer ASSERTS {anchor!r} against CLAUDE.md. "
+            "The string may still be in the file — in a comment, or in a "
+            "docstring — but a commented-out assertion is not a tripwire."
         )
         assert anchor in CLAUDE_MD, (
             f"{anchor!r} is gone from CLAUDE.md — tests/{name} should be red "
@@ -323,7 +357,7 @@ def test_the_hunk_by_hunk_rule_names_this_file_too():
     conflict with --ours/--theirs inside a script that then believes it did
     something else — so the rule has to name CLAUDE.md as well, or the next
     session reads a rule that does not cover the file it is about to mangle."""
-    assert "`static/shell.js` AND in `CLAUDE.md`" in CLAUDE_MD, (
+    assert "`static/shell.js` OR in `CLAUDE.md`" in CLAUDE_MD, (
         "the hunk-by-hunk merge rule no longer names CLAUDE.md alongside "
         "static/shell.js — see the 2026-09-08 entry"
     )
@@ -383,7 +417,14 @@ def _tiny_repo(tmp_path):
     _git(repo, "init", "-q", "-b", "base")
     _git(repo, "config", "user.email", "x@y")
     _git(repo, "config", "user.name", "x")
-    log = "## Decision log\n\n- **2026-01-01 — The first thing.**\n  Its body.\n"
+    # Six body lines, not one: a branch that REWORDS existing prose is the
+    # shape that broke the line arithmetic, and it needs something to reword.
+    # One line is inside LINE_SLACK_PER_BRANCH, so the mutation that reads
+    # insertions without deletions sailed through a one-line fixture.
+    log = (
+        "## Decision log\n\n- **2026-01-01 — The first thing.**\n"
+        + "  Its body.\n" * 6
+    )
     (repo / "CLAUDE.md").write_text(log, encoding="utf-8")
     _git(repo, "add", "CLAUDE.md")
     _git(repo, "commit", "-qm", "base")
@@ -404,6 +445,23 @@ def _tiny_repo(tmp_path):
     return repo
 
 
+def _keep_both(repo) -> None:
+    """Resolve a CLAUDE.md conflict the way the rule says: keep both sides.
+
+    One implementation, used by every fixture here — two copies of the rule
+    under test is how a fixture quietly stops reproducing the thing it is
+    named after."""
+    text = (repo / "CLAUDE.md").read_text(encoding="utf-8")
+    (repo / "CLAUDE.md").write_text(
+        "\n".join(
+            line
+            for line in text.split("\n")
+            if not line.startswith(("<<<<<<< ", ">>>>>>> ")) and line != "======="
+        ),
+        encoding="utf-8",
+    )
+
+
 def _merge(repo, resolve: str) -> None:
     # On a branch of its own, never on `base` itself: a merge made ONTO the
     # base branch moves it, and then the script has nothing to compare. That
@@ -419,16 +477,7 @@ def _merge(repo, resolve: str) -> None:
         if resolve == "ours":
             _git(repo, "checkout", "--ours", "CLAUDE.md")
         else:  # keep both sides, which is the rule
-            text = (repo / "CLAUDE.md").read_text(encoding="utf-8")
-            (repo / "CLAUDE.md").write_text(
-                "\n".join(
-                    line
-                    for line in text.split("\n")
-                    if not line.startswith(("<<<<<<< ", ">>>>>>> "))
-                    and line != "======="
-                ),
-                encoding="utf-8",
-            )
+            _keep_both(repo)
         _git(repo, "add", "-A")
         _git(repo, "commit", "-qm", f"merge {name}")
 
@@ -465,8 +514,21 @@ def test_the_arithmetic_says_it_could_not_look_rather_than_all_is_well(
     somebody believes it."""
     repo = _tiny_repo(tmp_path)
     _merge(repo, "both")
-    assert _run(repo, "base", "no-such-branch").returncode == 2
-    assert _run(repo).returncode == 2
+
+    # The MESSAGE, not only the code. CPython exits 2 for "can't open file",
+    # so a test asserting the code alone passes with the script DELETED —
+    # measured on the first cut of this file: moving the script aside left
+    # this test green while the other five script tests went red. It could
+    # not tell "the guard refused because it could not look" from "the guard
+    # is not there", which is the same family as the two vacuous assertions
+    # this branch already caught in itself.
+    bad_ref = _run(repo, "base", "no-such-branch")
+    assert bad_ref.returncode == 2, bad_ref.stdout + bad_ref.stderr
+    assert "Could not look" in bad_ref.stderr, bad_ref.stderr
+
+    no_args = _run(repo)
+    assert no_args.returncode == 2, no_args.stdout + no_args.stderr
+    assert "origin/main" in no_args.stderr, no_args.stderr
 
 
 def test_the_script_and_the_tests_read_the_same_heading_format():
@@ -474,11 +536,24 @@ def test_the_script_and_the_tests_read_the_same_heading_format():
     generator. They are deliberately separate files — a test cannot know
     which branches were merged, and a merge-time script cannot run in CI —
     so the one thing they share is asserted instead."""
-    script = SCRIPT.read_text(encoding="utf-8")
-    assert r'ENTRY_HEADING = re.compile(r"^- \*\*(20\d\d-\d\d-\d\d) — ", re.M)' in script, (
-        "check_merge_kept_the_log.py no longer reads Decision log headings the "
-        "same way this file does, so the two can disagree about how many "
-        "entries a tree has"
+    # The COMPILED patterns, in both directions. Asserting that the script's
+    # source contains a literal is a one-way check: rewriting THIS file's
+    # pattern to an equivalent spelling left it green while the two files
+    # demonstrably no longer shared one — measured, and exactly the drift the
+    # test is named for, invisible to it.
+    spec = importlib.util.spec_from_file_location("_merge_check", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert module.ENTRY_HEADING.pattern == ENTRY_HEADING.pattern, (
+        "check_merge_kept_the_log.py and this file no longer read Decision "
+        "log headings the same way, so the two can disagree about which "
+        "entries a tree has.\n"
+        f"  script: {module.ENTRY_HEADING.pattern!r}\n"
+        f"  tests:  {ENTRY_HEADING.pattern!r}"
+    )
+    assert module.ENTRY_HEADING.flags == ENTRY_HEADING.flags, (
+        "same pattern, different flags — re.M is what makes ^ mean 'start of "
+        "a line', so without it the count is 0 or 1"
     )
 
 
@@ -524,3 +599,235 @@ def test_the_arithmetic_does_not_cry_wolf_when_a_branch_is_named_twice(
     bad = _tiny_repo(second)
     _merge(bad, "ours")
     assert _run(bad, "base", "one", "two", "one").returncode == 1
+
+
+# --- 8. the round an adversarial review put this script through -------------
+#
+# Every test below reproduces something that was WRONG in the first version.
+# Four of them are the same defect wearing different hats: the script compared
+# TOTALS (base's entry count plus what each branch added, against the merged
+# tree's count) rather than identities, so any entry gained from anywhere else
+# cancelled, one for one, an entry the merge had dropped.
+
+
+def _entry(date, name, body=3):
+    return f"- **{date} — {name}.**\n" + f"  Body of {name}.\n" * body
+
+
+def _prepend(repo, text):
+    p = repo / "CLAUDE.md"
+    p.write_text(
+        p.read_text(encoding="utf-8").replace(
+            "## Decision log\n\n", f"## Decision log\n\n{text}\n", 1
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_an_entry_gained_from_elsewhere_cannot_cancel_one_the_merge_dropped(
+    tmp_path,
+):
+    """THE BLOCKER, and the reason this script compares headings rather than
+    counts.
+
+    Main moving under a long overnight run is not a corner case — it is the
+    ordinary case, and it happened twice to this very branch while it was
+    being reviewed. Land two other sessions' entries on the tree, then merge a
+    branch with `--ours`: the branch's entry is definitively gone, and the old
+    arithmetic said `owed 3, got 4` and printed "Every branch's entries are in
+    the merged tree." That is the exact sentence this file exists to stop.
+
+    Reproduced on the real repo too, with all four of the night's branches
+    lost and four other-session entries standing in for them: exit 0."""
+    repo = _tiny_repo(tmp_path)
+    _git(repo, "checkout", "-q", "-B", "tree", "base")
+    _prepend(repo, _entry("2026-09-25", "Another session A"))
+    _prepend(repo, _entry("2026-09-26", "Another session B"))
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "two other sessions")
+
+    out = subprocess.run(
+        ["git", "merge", "--no-edit", "one"],
+        cwd=str(repo), capture_output=True, text=True,
+    )
+    assert out.returncode != 0, "the fixture needs a real conflict"
+    _git(repo, "checkout", "--ours", "CLAUDE.md")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "merge one --ours")
+
+    # the truth the guard has to reach
+    assert "Branch one." not in (repo / "CLAUDE.md").read_text(encoding="utf-8")
+
+    result = _run(repo, "base", "one")
+    assert result.returncode == 1, (
+        "the tree is LONGER than base and has MORE entries, and one branch's "
+        "entry is gone:\n" + result.stdout + result.stderr
+    )
+    assert "Branch one." in result.stdout, (
+        "it has to NAME what went, or the operator cannot tell this from a "
+        "deliberate removal:\n" + result.stdout
+    )
+
+
+def test_a_stacked_branch_is_not_reported_as_a_double_loss(tmp_path):
+    """This repo stacks branches routinely — the Decision log is full of "on
+    top of X", "stacked on Y". A stacked branch carries its parent's entry, so
+    counting what each branch adds relative to ITS OWN merge-base counted that
+    shared entry twice and exited 1 over a perfectly good merge. A guard that
+    cries wolf is one somebody switches off."""
+    repo = _tiny_repo(tmp_path)
+    _git(repo, "checkout", "-q", "-b", "stacked", "one")
+    _prepend(repo, _entry("2026-04-01", "Stacked on one"))
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "stacked")
+
+    _git(repo, "checkout", "-q", "-B", "tree", "base")
+    for name in ("one", "stacked"):
+        out = subprocess.run(
+            ["git", "merge", "--no-edit", name],
+            cwd=str(repo), capture_output=True, text=True,
+        )
+        if out.returncode != 0:
+            _keep_both(repo)
+            _git(repo, "add", "-A")
+            _git(repo, "commit", "-qm", f"merge {name}")
+
+    result = _run(repo, "base", "one", "stacked")
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_a_branch_that_rewords_existing_lines_is_not_reported_as_a_loss(
+    tmp_path,
+):
+    """`--numstat` insertions ALONE overstate what a branch owes, because this
+    log's stated practice is to correct an entry IN PLACE — which git reports
+    as an insertion and a deletion. A branch that rewords eight lines while
+    adding an entry looked like it owed eight lines nobody promised, and a
+    good keep-both merge then read as "some entry lost its body".
+
+    Not hypothetical: this branch itself is an insert-and-delete on
+    CLAUDE.md."""
+    repo = _tiny_repo(tmp_path)
+    _git(repo, "checkout", "-q", "-b", "reword", "base")
+    p = repo / "CLAUDE.md"
+    p.write_text(
+        p.read_text(encoding="utf-8").replace(
+            "  Its body.", "  Its CORRECTED body."
+        ),
+        encoding="utf-8",
+    )
+    _prepend(repo, _entry("2026-05-01", "Reworded", body=8))
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "reword")
+
+    _git(repo, "checkout", "-q", "-B", "tree", "base")
+    out = subprocess.run(
+        ["git", "merge", "--no-edit", "reword"],
+        cwd=str(repo), capture_output=True, text=True,
+    )
+    if out.returncode != 0:
+        _keep_both(repo)
+        _git(repo, "add", "-A")
+        _git(repo, "commit", "-qm", "merge reword")
+
+    result = _run(repo, "base", "reword")
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_a_branch_left_off_the_command_line_is_could_not_look(tmp_path):
+    """The script only knows about the branches it is given, so forgetting one
+    on a four-branch command line used to be exit 0 over a tree that had
+    dropped every entry that branch brought. Nothing else here can see it: a
+    branch nobody names is a branch whose entries nobody is owed.
+
+    Exit 2 rather than 1 — "I cannot answer the question you asked" is not the
+    same as "something was dropped"."""
+    repo = _tiny_repo(tmp_path)
+    _merge(repo, "ours")
+    result = _run(repo, "base", "one")
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert "no branch on the command line explains" in result.stderr
+
+    # ...and listing both really does reach the entries that went
+    full = _run(repo, "base", "one", "two")
+    assert full.returncode == 1, full.stdout + full.stderr
+
+
+def test_the_arithmetic_catches_a_body_that_vanished_under_its_heading(
+    tmp_path,
+):
+    """The line half of the script, which five separate mutations of used to
+    leave every test green — so `LINE_SLACK_PER_BRANCH`, the `--numstat` read
+    and the "lost its body" branch were all free to break.
+
+    A resolution can keep every heading and still eat the prose under it,
+    which is most of what a Decision log entry IS."""
+    repo = _tiny_repo(tmp_path)
+    _merge(repo, "both")
+    p = repo / "CLAUDE.md"
+    kept = [
+        line
+        for line in p.read_text(encoding="utf-8").split("\n")
+        if not line.startswith(("  Body of one.", "  Body of two."))
+    ]
+    p.write_text("\n".join(kept), encoding="utf-8")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "lose a body")
+
+    result = _run(repo, "base", "one", "two")
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "lost its body" in result.stdout, result.stdout
+    assert "Every entry heading is present" in result.stdout, result.stdout
+
+
+def test_an_indented_sub_bullet_is_not_an_entry_and_cannot_be_told_apart():
+    """A limit, pinned so nobody "fixes" it into a red suite.
+
+    A review proposed allowing leading whitespace in LOOSE_HEADING, so that a
+    markdown reformat indenting real entries would be caught. Run against the
+    real file it goes red on a legitimate SUB-bullet — the 2026-09-21 evening
+    cook nudge, nested under the Morning text item in Current state — which is
+    deliberately not a Decision log entry. Indentation therefore cannot be the
+    drift signal, and a reformat that indents real entries is a shape neither
+    the tests nor the script can see."""
+    indented = re.compile(r"^[ \t]+- \*\*(20\d\d-\d\d-\d\d) — ", re.M)
+    found = indented.findall(CLAUDE_MD)
+    assert found, (
+        "the sub-bullet this limit is documented against is gone from "
+        "CLAUDE.md. If sub-bullets in that shape are no longer written, "
+        "LOOSE_HEADING can be widened to ^[ \\t]*- \\*\\* and this test "
+        "deleted — check the whole file first."
+    )
+    assert not ENTRY_HEADING.search("  - **2026-09-21 — Nested.**"), (
+        "the strict pattern now matches an indented line, so a nested "
+        "sub-bullet is being counted as a Decision log entry"
+    )
+
+
+MAX_FLOOR_SLACK = 5000
+
+
+def test_the_floors_have_not_rotted_into_uselessness():
+    """A floor is only worth what `current - floor` is, and this file grows.
+
+    Measured from git history on 2026-09-27: CLAUDE.md went 13681 lines on
+    2026-09-20 to 19030 on 2026-09-27 — about 764 lines a day. An absolute
+    floor therefore loosens by that much every day, and the precedent this one
+    is modelled on is the proof that "raise it when you notice" does not
+    happen by itself: tests/test_frontend_restored_2026_09_08.py asserts
+    static/shell.js is over 8600 lines, that file is now about 24000, and the
+    floor has been raised once in three weeks — it would no longer notice
+    two thirds of the file being deleted.
+
+    So this fails when the slack gets wide enough to be worth nothing, and
+    says what to do. Raising the floor is the fix; deleting this test is not.
+    """
+    lines = CLAUDE_MD.count("\n") + 1
+    slack = lines - LINE_FLOOR
+    assert slack < MAX_FLOOR_SLACK, (
+        f"CLAUDE.md is {lines} lines and LINE_FLOOR is {LINE_FLOOR}, so the "
+        f"floor now only catches a loss bigger than {slack} lines — the "
+        "2026-09-26 incident lost about a thousand. Raise LINE_FLOOR (and "
+        "ENTRY_FLOOR, and NEWEST_ENTRY_ON_OR_AFTER) to just under the "
+        "current values and say in the commit why."
+    )
