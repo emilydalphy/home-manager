@@ -293,7 +293,8 @@ def _line_one(entries: list[dict], intake: dict | None, period: list[str], days:
               report: dict | None) -> str:
     asked = _honoured_items(entries, report, period)
     extras: list[str] = []
-    free = [d["date"] for d in days if (d.get("dinner") or {}).get("state") == "planned_empty"]
+    free = [d["date"] for d in days if (d.get("dinner") or {}).get("state") == "planned_empty"
+            and not (d.get("dinner") or {}).get("past")]
     if free:
         extras.append(f"{days_phrase(free, period)} left free")
     for d in days:
@@ -485,4 +486,16 @@ def build_opener(rows, intake: dict | None, period_start: str, day_count: int, d
     second = _line_two(entries, report, recent, surprise=surprise)
     skipped = {d for d in ((intake or {}).get("skipped_days") or []) if d in period}
     third = count_note(max(1, day_count - len(skipped)), memory, said=first)
-    return [line for line in (first, second, batch_line(entries), third) if line]
+    return [line for line in (first, second, moved_line(report), batch_line(entries), third) if line]
+
+
+def moved_line(report: dict | None) -> str:
+    """
+    The one plain line for a dish Pomona had to MOVE to the meal it was
+    asked for — "I moved Japanese Vegetable Curry to Sunday dinner, as you
+    asked." (typed_requests.place_day_requests, Emily 2026-09-27: the draft
+    states only the moves it had to make). Nothing when nothing moved; the
+    first move only, since a second would be a paragraph.
+    """
+    moved = [m for m in ((report or {}).get("moved") or []) if str(m.get("line") or "").strip()]
+    return str(moved[0]["line"]).strip() if moved else ""

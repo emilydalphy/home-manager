@@ -439,25 +439,43 @@ def _new_cook(night: dict, dish: dict, size: int = 1) -> dict:
             "size": size, "night": night}
 
 
-def _best_cook(cooks: list[dict], night: dict, allowed: set[str]) -> dict | None:
+def _best_cook(cooks: list[dict], night: dict, allowed: set[str], ok=None) -> dict | None:
     """The cook a freed night eats: in reach, of a kept dish; the smallest
     batch first (each recipe doubled before any is tripled), then the
-    nearest."""
-    fits = [c for c in cooks if _key(c["dish"]["name"]) in allowed and _in_reach(c, night)]
+    nearest. `ok(cook, night)` can refuse one — the two-meals-in-a-row
+    rule (leftovers.too_many_in_a_row)."""
+    fits = [c for c in cooks if _key(c["dish"]["name"]) in allowed and _in_reach(c, night)
+            and (ok is None or ok(c, night))]
     if not fits:
         return None
     return min(fits, key=lambda c: (c["size"], _gap(c["date"], night["date"])))
 
 
 def _plan_batches(nights: list[dict], kept: list[dict], caps: dict | None, slot: str,
-                  outside: list[dict], relay: bool) -> tuple[list[dict], list[dict]]:
+                  outside: list[dict], relay: bool, run_keys: dict | None = None) -> tuple[list[dict], list[dict]]:
     """
     Decide every night: ("keep" | "cook" | "link" | "freezer" | "stand").
     `outside` are cooks from another slot a night here may eat (the
     evening-before dinners, for lunches). `relay` lays the movable dishes
-    out again in even runs (see the block comment above). Returns
-    (decisions, unresolved nights).
+    out again in even runs (see the block comment above). `run_keys` is
+    leftovers.run_keys for the plan: a night is never linked to a cook
+    whose dish would then be on a third lunch-or-dinner in a row (Emily,
+    2026-09-27, decision B). Returns (decisions, unresolved nights).
     """
+    keys = dict(run_keys or {})
+
+    def ok(cook, night):
+        return run_keys is None or not _leftovers.too_many_in_a_row(
+            keys, night["date"], slot, cook["dish"]["name"])
+
+    def add(decision):
+        # Kept current as the week is decided, so a later night is judged
+        # against what the earlier ones will now hold.
+        decisions.append(decision)
+        if run_keys is not None and slot in _leftovers.RUN_SLOTS and decision["kind"] != "unresolved":
+            name = (decision.get("cook") or {}).get("dish", {}).get("name") or decision["night"]["dish"]["name"]
+            keys[(decision["night"]["date"], slot)] = _leftovers.dish_identity(name)
+
     kept_keys = {_key(d["name"]) for d in kept}
     movable = [d for d in kept if not d["protected"] and not d["chained"]] if relay else []
     movable_ids = {id(d) for d in movable}
@@ -496,14 +514,14 @@ def _plan_batches(nights: list[dict], kept: list[dict], caps: dict | None, slot:
             src = next((c for c in cooks if c["id"] == n["reheat_of"]), None)
             if src:
                 src["size"] += 1
-            decisions.append({"kind": "keep", "night": n})
+            add({"kind": "keep", "night": n})
             continue
 
         if relay and (id(dish) in movable_ids or not is_kept or n["id"] in freed_ids):
             seen_flexible += 1
-            if block and _in_reach(block, n) and block["size"] < block["cap"]:
+            if block and _in_reach(block, n) and block["size"] < block["cap"] and ok(block, n):
                 block["size"] += 1
-                decisions.append({"kind": "link", "night": n, "cook": block})
+                add({"kind": "link", "night": n, "cook": block})
                 continue
             if unused:
                 own = next((d for d in unused if d is dish and _fits(d, _cap_at(caps, n["date"], slot))), None)
@@ -514,44 +532,44 @@ def _plan_batches(nights: list[dict], kept: list[dict], caps: dict | None, slot:
                     block["cap"] = math.ceil(remaining / len(unused))
                     unused.remove(pick)
                     cooks.append(block)
-                    decisions.append({"kind": "cook", "night": n, "cook": block})
+                    add({"kind": "cook", "night": n, "cook": block})
                     continue
-            any_cook = _best_cook(cooks, n, kept_keys)
+            any_cook = _best_cook(cooks, n, kept_keys, ok=ok)
             if any_cook:
                 any_cook["size"] += 1
-                decisions.append({"kind": "link", "night": n, "cook": any_cook})
+                add({"kind": "link", "night": n, "cook": any_cook})
                 continue
             unresolved.append(n)
-            decisions.append({"kind": "unresolved", "night": n})
+            add({"kind": "unresolved", "night": n})
             continue
 
         if is_kept:
             if n["done"] or n["source"] or not cooks_of(dish):
                 c = _new_cook(n, dish)
                 cooks.append(c)
-                decisions.append({"kind": "keep", "night": n, "cook": c})
+                add({"kind": "keep", "night": n, "cook": c})
                 continue
-            own = [c for c in cooks_of(dish) if _in_reach(c, n)]
+            own = [c for c in cooks_of(dish) if _in_reach(c, n) and ok(c, n)]
             if own:
                 c = min(own, key=lambda c: _gap(c["date"], n["date"]))
                 c["size"] += 1
-                decisions.append({"kind": "link", "night": n, "cook": c})
+                add({"kind": "link", "night": n, "cook": c})
                 continue
             if not dish["protected"]:
                 # More than three days on: a second batch of its own.
                 c = _new_cook(n, dish)
                 cooks.append(c)
-                decisions.append({"kind": "keep", "night": n, "cook": c})
+                add({"kind": "keep", "night": n, "cook": c})
                 continue
             # A dish they asked for is cooked once (Emily, 2026-09-23):
             # this night is fed like a freed one.
-        c = _best_cook(cooks, n, kept_keys)
+        c = _best_cook(cooks, n, kept_keys, ok=ok)
         if c:
             c["size"] += 1
-            decisions.append({"kind": "link", "night": n, "cook": c})
+            add({"kind": "link", "night": n, "cook": c})
             continue
         unresolved.append(n)
-        decisions.append({"kind": "unresolved", "night": n})
+        add({"kind": "unresolved", "night": n})
 
     if relay and unused:
         # A kept dish that got no run would vanish from the week, and the
@@ -787,9 +805,10 @@ def enforce_distinct_count(
         kept = [d for d in dishes if _key(d["name"]) not in surplus_keys]
         nights = _slot_nights(dishes, chains)
         outside = _outside_cooks(plan_id, slot, kept, chains)
-        decisions, unresolved = _plan_batches(nights, kept, caps, slot, outside, relay=False)
+        run_keys = _leftovers.run_keys(plan_id)
+        decisions, unresolved = _plan_batches(nights, kept, caps, slot, outside, relay=False, run_keys=run_keys)
         if any(d["kind"] in ("freezer", "stand") for d in decisions):
-            relaid, missed = _plan_batches(nights, kept, caps, slot, outside, relay=True)
+            relaid, missed = _plan_batches(nights, kept, caps, slot, outside, relay=True, run_keys=run_keys)
             if not missed:
                 decisions = relaid
         written = _write_batches(plan_id, slot, decisions, target)
@@ -1613,10 +1632,11 @@ def repick_recent_repeats(plan_id: int, period_start: str | None, budget, picker
 # is judged for taste exactly as the nights the model itself put it on
 # are — no better, and no worse.
 #
-# DINNER is deliberately not in scope. A dinner genuinely is a decision,
-# the rule names only breakfast and lunch, and quietly repeating a dinner
-# nobody asked for is the opposite of what the household wants. A dinner
-# gap is still handed back as an open question.
+# DINNER is not in scope of THIS pass: a bare repeat is the wrong first
+# answer for a dinner. Since 2026-09-27 (Emily's decision A) a dinner gap
+# is not handed back either — dinner_gaps.fill_open_dinners reheats an
+# earlier cook, or picks a fresh dish to the night's cap, before it ever
+# repeats one.
 NEVER_OPEN_SLOTS = ("breakfast", "lunch")
 
 # What a filled gap records about itself, so the draft can be honest and

@@ -108,7 +108,7 @@ def _load_entries(plan_id: int) -> list[dict]:
     rows = conn.execute(
         """
         SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.cooked_status, mpe.derived_from_json,
-               COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.freeform_meal,
+               COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.freeform_meal, mpe.reasoning,
                r.dish_note, r.main_protein, r.ingredients_json
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
@@ -292,6 +292,237 @@ def plan_must_use(plan_id: int, recipe_id: int) -> list[str]:
         for m in derived.get("must_use") or []:
             if isinstance(m, str) and m and m not in out:
                 out.append(m)
+    return out
+
+
+# ---------- a dish asked for today, tonight or tomorrow ----------
+#
+# Emily, 2026-09-27: "I want to make a Japanese curry heavy on veggies
+# today … and have leftovers for it", typed at 3:53pm on the Sunday the
+# week began. The model put the curry on Sunday lunch — gone by then — and
+# left Sunday dinner open. week_intake.freeform_day_requests pins the
+# sentence to one exact meal (Sunday dinner); place_day_requests puts the
+# dish there, whatever the model did; chain_requested_leftovers makes
+# "and have leftovers" a real chain off that cook. The draft says so in one
+# line only when Pomona had to MOVE the dish (report["moved_requests"],
+# read by draft_opener) — a dish the model already put where it was asked
+# needs no sentence of its own.
+
+# Words a sentence asking for a dish carries that are not the dish.
+_DAY_REQUEST_FILLER = {
+    "want", "make", "making", "cook", "cooking", "like", "love", "have", "use", "used", "stuff", "fridge",
+    "freezer", "heavy", "light", "today", "tonight", "tomorrow", "leftover", "leftovers", "some", "something",
+    "dish", "meal", "please", "also", "need", "suggest", "really", "just", "thing", "things", "lot", "lots",
+}
+
+
+def _request_stems(words: str) -> set[str]:
+    stems = {_plan_quality._stem(w) for w in re.findall(r"[a-z]+", (words or "").lower())
+             if len(w) > 2 and w not in _DAY_REQUEST_FILLER}
+    return {s for s in stems if s not in _DAY_REQUEST_FILLER}
+
+
+def _matches_request(entry: dict, request: dict) -> int:
+    """How strongly a planned entry is the dish this sentence asked for: the
+    model's own citation (derived_from.freeform quoting the sentence), or
+    at least two of the dish's name words in the sentence. 0 when neither."""
+    from . import draft_opener as _draft_opener
+
+    try:
+        derived = json.loads(entry.get("derived_from_json") or "{}") or {}
+    except (TypeError, ValueError):
+        derived = {}
+    shared = len(_plan_quality._name_stems(entry.get("meal")) & _request_stems(request["words"]))
+    span = str(derived.get("freeform") or "").strip()
+    cited = bool(span) and _draft_opener._cited(request["words"], span)
+    if shared >= 2:
+        return shared + (1 if cited else 0)
+    return 1 if cited and shared >= 1 else 0
+
+
+def _when_words(meal_date: str, slot: str) -> str:
+    from datetime import date as _date
+
+    return f"{_date.fromisoformat(meal_date).strftime('%A')} {slot}"
+
+
+def place_day_requests(plan_id: int, requests: list[dict], report: dict | None = None) -> dict:
+    """
+    Put each dish asked for today, tonight or tomorrow on the exact meal
+    week_intake.freeform_day_requests resolved it to. The dish is found on
+    the plan by the model's own citation or its name; when it is on another
+    meal it MOVES — traded with what the target meal held when both are
+    the same kind of meal, otherwise the meal it leaves is cleared for the
+    gap passes to fill. Not found anywhere: nothing is invented here (the
+    model's report says whether the request was met). Runs FIRST in
+    _finish_week_slots, before today's past meals are emptied, so a dish
+    the model put on a meal that is already gone can still be rescued.
+
+    Every move is recorded in `report["moved_requests"]` for the draft's
+    one line. Returns {"placed": [...], "moved": [...], "missing": [...]}.
+    Never raises.
+    """
+    from . import weekly_plan as _weekly_plan
+
+    out = {"placed": [], "moved": [], "missing": []}
+    if not requests:
+        return out
+    try:
+        for request in requests:
+            target = (request["date"], request["slot"])
+            entries = [e for e in _load_entries(plan_id)
+                       if e["slot"] in ("lunch", "dinner", "breakfast") and e["slot_state"] == "planned" and e["meal"]]
+            scored = [(e, _matches_request(e, request)) for e in entries]
+            scored = [(e, s) for e, s in scored if s > 0]
+            if not scored:
+                out["missing"].append(request["words"])
+                continue
+            at_target = [e for e, _s in scored if (e["date"], e["slot"]) == target]
+            if at_target:
+                _cite(at_target[0], request)
+                out["placed"].append({"date": target[0], "slot": target[1], "meal": at_target[0]["meal"]})
+                continue
+            # The strongest match; the earliest of equals.
+            dish, _score = min(scored, key=lambda es: (-es[1], _ord(es[0])))
+            try:
+                dish_derived = json.loads(dish.get("derived_from_json") or "{}") or {}
+            except (TypeError, ValueError):
+                dish_derived = {}
+            dish_derived.pop("links_to", None)
+            dish_derived["freeform"] = str(dish_derived.get("freeform") or "").strip() or request["words"]
+            dish_derived["moved_for"] = {"said": request["said"], "from": f"{dish['date']}:{dish['slot']}"}
+            here = [e for e in _load_entries(plan_id) if (e["date"], e["slot"]) == target]
+            displaced = next((e for e in here if e["slot_state"] == "planned" and e["meal"]), None)
+            groups = _food_groups_of(dish)
+            displaced_groups = _food_groups_of(displaced) if displaced is not None else None
+            _weekly_plan._replace_slot_entries(
+                plan_id, [e["id"] for e in here], target[0], target[1], dish["meal"],
+                food_groups=groups, reasoning=dish.get("reasoning") or "", derived_from=dish_derived,
+            )
+            if displaced is not None and displaced["slot"] == dish["slot"]:
+                try:
+                    back = json.loads(displaced.get("derived_from_json") or "{}") or {}
+                except (TypeError, ValueError):
+                    back = {}
+                back.pop("links_to", None)
+                _weekly_plan._replace_slot_entries(
+                    plan_id, [dish["id"]], dish["date"], dish["slot"], displaced["meal"],
+                    food_groups=displaced_groups, reasoning=displaced.get("reasoning") or "",
+                    derived_from=back,
+                )
+            else:
+                _weekly_plan.clear_plan_slot(plan_id, dish["date"], dish["slot"])
+            line = f"I moved {dish['meal']} to {_when_words(*target)}, as you asked."
+            out["moved"].append({"words": request["words"], "from": f"{dish['date']}:{dish['slot']}",
+                                 "to": f"{target[0]}:{target[1]}", "meal": dish["meal"], "line": line})
+            if report is not None:
+                report.setdefault("moved_requests", []).append({"words": request["words"], "line": line})
+    except Exception:
+        logger.exception("Placing today/tonight/tomorrow requests failed for plan %s; the week stands", plan_id)
+    if out["moved"] or out["missing"]:
+        logger.info("Plan %s day requests: %s", plan_id, out)
+    return out
+
+
+def _ord(entry: dict) -> tuple:
+    return (entry["date"], ("breakfast", "lunch", "dinner").index(entry["slot"]))
+
+
+def _food_groups_of(entry: dict) -> list[str] | None:
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT food_groups_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (entry["id"], household_id()),
+    ).fetchone()
+    conn.close()
+    try:
+        return json.loads((row["food_groups_json"] if row else None) or "[]") or None
+    except (TypeError, ValueError):
+        return None
+
+
+def _cite(entry: dict, request: dict) -> None:
+    """The dish was already where it was asked for: make sure it carries
+    the request's words, so every repair pass treats it as theirs."""
+    try:
+        derived = json.loads(entry.get("derived_from_json") or "{}") or {}
+    except (TypeError, ValueError):
+        derived = {}
+    if str(derived.get("freeform") or "").strip():
+        return
+    derived["freeform"] = request["words"]
+    conn = get_conn()
+    conn.execute(
+        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps(derived), entry["id"], household_id()),
+    )
+    conn.commit()
+    conn.close()
+
+
+def requested_leftover_cooks(requests: list[dict]) -> list[tuple[str, str]]:
+    """The (date, slot) of every dish asked to "have leftovers" — the cooks
+    the Leftovers-night pass should reach for first
+    (dinner_gaps.apply_leftovers_nights' `prefer`)."""
+    return [(r["date"], r["slot"]) for r in requests or [] if r.get("leftovers")]
+
+
+def chain_requested_leftovers(plan_id: int, requests: list[dict], intake: dict | None = None) -> dict:
+    """
+    "…and have leftovers for it" becomes a real chain. When the requested
+    cook already feeds another meal (the Leftovers night reached for it, or
+    a weekday lunch the household said is leftovers), there is nothing to
+    do. Otherwise the next day's lunch reheats it — unless the household
+    said that lunch is cooked or prepped, it is theirs, or it would put the
+    dish on a third meal in a row. Nothing found: logged, and the cook
+    stands as a single meal. Never raises.
+    """
+    from . import weekly_plan as _weekly_plan
+    from . import weekday_lunches as _weekday_lunches
+    from datetime import date as _date, timedelta as _td
+
+    out = {"chained": [], "already": [], "left": []}
+    kinds = _weekday_lunches.kinds_by_date(intake)
+    for request in requests or []:
+        if not request.get("leftovers"):
+            continue
+        try:
+            entries = _load_entries(plan_id)
+            cook = next((e for e in entries if (e["date"], e["slot"]) == (request["date"], request["slot"])
+                         and e["slot_state"] == "planned" and e["meal"]), None)
+            if cook is None or cook["slot"] not in ("lunch", "dinner"):
+                out["left"].append(request["words"])
+                continue
+            chains = _leftovers.plan_leftover_chains(plan_id)
+            if cook["id"] in chains["sources"]:
+                out["already"].append(request["words"])
+                continue
+            lunch_date = (_date.fromisoformat(cook["date"]) + _td(days=1)).isoformat()
+            lunch = next((e for e in entries if e["date"] == lunch_date and e["slot"] == "lunch"
+                          and e["slot_state"] == "planned" and e["meal"]), None)
+            keys = _leftovers.run_keys(plan_id)
+            ok = (
+                lunch is not None
+                and kinds.get(lunch_date) not in ("cooked", "prepped")
+                and lunch["id"] not in chains["sources"] and lunch["id"] not in chains["leftovers"]
+                and not _meal_variety.theirs(json.loads(lunch.get("derived_from_json") or "{}") or {})
+                and not _leftovers.too_many_in_a_row(keys, lunch_date, "lunch", cook["meal"])
+            )
+            if not ok:
+                out["left"].append(request["words"])
+                continue
+            _weekly_plan._replace_slot_entries(
+                plan_id, [lunch["id"]], lunch_date, "lunch", cook["meal"],
+                food_groups=_food_groups_of(cook), reasoning="",
+                derived_from={"links_to": f"entry_id:{cook['id']}", "freeform": request["words"],
+                              "replaced": lunch["meal"]},
+            )
+            _meal_variety._write_cook_sides(plan_id, {cook["id"]: [f"{lunch_date}:lunch"]}, [], {"batched": []})
+            out["chained"].append({"cook": f"{cook['date']}:{cook['slot']}", "lunch": lunch_date})
+        except Exception:
+            logger.exception("Chaining requested leftovers failed for plan %s", plan_id)
+    if out["chained"] or out["left"]:
+        logger.info("Plan %s requested leftovers: %s", plan_id, out)
     return out
 
 

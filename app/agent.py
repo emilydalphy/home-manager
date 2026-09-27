@@ -29,6 +29,8 @@ from .tools import weekday_lunches as _weekday_lunches
 from .tools import bring_over as _bring_over
 from .tools import freezer_portions as _freezer_portions
 from .tools import cap_enforce as _cap_enforce
+from .tools import dinner_gaps as _dinner_gaps
+from .tools import today_meals as _today_meals
 from .tools import voice as _voice
 
 logger = logging.getLogger("home_manager")
@@ -3176,7 +3178,10 @@ back covered — all 21 of them, before snacks, whether that takes 21 entries or
 uncovered is a bug, not a plan: the household approves the WEEK, and a week with holes in \
 it isn't approvable. If you \
 genuinely cannot choose a meal without guessing, send that slot with slot_state='open' and a \
-real reason — never send nothing. (Dinners on nights the household is out, and every meal and \
+real reason — never send nothing. A DINNER the household is home for is never open: when you \
+cannot choose, reheat an earlier cook or pick something quick — only an allergy that rules out \
+everything is a reason to hand a dinner back. The meals in `past_meals_today` have already gone \
+by (it is `time_now` on `today`'s date): send nothing for them. (Dinners on nights the household is out, and every meal and \
 snack on a day in `intake.skipped_days`, are the exceptions, and they are handled outside this \
 call: `skip_dinner_dates` and `intake.skipped_days` below list them, and you must not send an \
 entry for those.) Guidelines:
@@ -3212,6 +3217,14 @@ so send one entry per night even when the dish repeats. Leave `dates` out entire
 anything that lands on one day, and never list a day in `dates` that you were told not to \
 plan (a day in `intake.skipped_days`, or a meal in `slot_needs.away_slots`) — folding is a \
 way of saying the same thing more briefly, never a way past a rule above.
+- `freeform_on_a_day`, when present, pins a request they typed with "today", "tonight" or \
+"tomorrow" to ONE exact date and meal, already worked out from the time of day ("today" at \
+3:53pm is that evening's dinner). Put that dish on exactly that meal and nowhere else; when \
+`leftovers` is true, cook it big and have a later meal (a weekday lunch, or a Leftovers night) \
+eat it, with derived_from.links_to set.
+- NO DISH ON MORE THAN TWO MEALS IN A ROW, counting lunches and dinners in the order they are \
+eaten: Thursday's dinner and Friday's lunch off it is fine; Friday's dinner is then something \
+else.
 - `today` gives today's real date and the current season (e.g. "2026-09-04 (fall)") — use it as \
 a light lean toward seasonally appropriate ingredients and dishes (soups and roasting in winter, \
 grilling and salads in summer) when nothing else already decides the choice; it never overrides \
@@ -3304,7 +3317,8 @@ you must actually deliver it, because the household was told what each one would
 that day's breakfast or lunch. The \
 alternative the household was offered is equally good and often better: scale the PREVIOUS \
 night's dinner up and make this one eat its leftovers. Either satisfies the tag; a 45-minute \
-braise does not.
+braise does not. But if that day's lunch already eats the previous dinner, this dinner would be \
+its third meal in a row — make it a different quick dinner instead.
   * `unrushed` on a date — the household has time that evening. The weeknight cap \
 (`weeknight_max_minutes`) does not apply to that dinner. This PERMITS a longer recipe; it never \
 requires one — choose what is best for the table, and if that is a 25-minute dinner, fine. It \
@@ -4988,15 +5002,19 @@ _SEASON_BY_MONTH = {
 }
 
 
-def _current_date_and_season() -> str:
+def _current_date_and_season(now: datetime.datetime | None = None) -> str:
     """
     Today's real date and the current (Northern-hemisphere) season, as one
     short string for the generation context -- e.g. "2026-09-04 (fall)".
     One string rather than two separate keys since the two are always used
     together (see the `today` bullet in the generation prompt) and nothing
     else in the app needs the season on its own.
+
+    `now` is the HOUSEHOLD's now (today_meals.household_now) when the
+    caller has it — the server runs UTC, and from 8pm Toronto its date is
+    already tomorrow (2026-09-27, "today means from now").
     """
-    today = datetime.date.today()
+    today = now.date() if now is not None else datetime.date.today()
     return f"{today.isoformat()} ({_SEASON_BY_MONTH[today.month]})"
 
 
@@ -5248,6 +5266,20 @@ def _generate_weekly_plan(
     effective_memory["carb_level"] = tools.household_carb_level(household_memory.get("eating_style"))
     effective_memory["carb_guidance"] = tools.CARB_GUIDANCE[effective_memory["carb_level"]]
 
+    # "Today" means from now (Emily, 2026-09-27: a week started at 3:53pm
+    # on its first day planned that morning's breakfast and put the curry
+    # she asked for "today" on lunch). The household's clock, read once:
+    # which of today's meals have already gone by, and where the "today" /
+    # "tonight" / "tomorrow" in their words lands. _finish_week_slots makes
+    # both true whatever the model sends. See today_meals.
+    now = _today_meals.household_now()
+    period_days = tools.period_dates(content_start_date, day_count)
+    past_meals = _today_meals.past_meals(period_days, now)
+    day_requests = tools.freeform_day_requests(
+        " ".join(t for t in (constraints_notes, (intake or {}).get("freeform") or "") if t),
+        period_days, now.date().isoformat(), _today_meals.first_meal_ahead(now), past=past_meals,
+    )
+
     context = {
         "week_start_date": content_start_date,
         "day_count": day_count,
@@ -5291,7 +5323,8 @@ def _generate_weekly_plan(
         "recent_history": tools.get_recent_meal_history(weeks=_meal_variety.VARIETY_WINDOW_WEEKS),
         # Today's real date and season -- see the `today` bullet in the
         # generation prompt below.
-        "today": _current_date_and_season(),
+        "today": _current_date_and_season(now),
+        "time_now": _today_meals.describe(now),
         # Household-level per-person taste (see the `member_taste` bullet
         # below), independent of and in addition to the subset-attendance
         # personalization already attached to `attendance` further down.
@@ -5326,6 +5359,14 @@ def _generate_weekly_plan(
     # the household's usual table. See the `personal_context` bullet in the
     # instructions above for exactly how this is meant to be used.
     _attach_personal_context_for_subset_slots(context["attendance"])
+    # Today's meals already gone by, and the exact meal a "today" /
+    # "tonight" / "tomorrow" lands on (see `now` above). Only when there is
+    # something to say: most weeks start tomorrow or later and have no
+    # past, and most typed words name no day.
+    if past_meals:
+        context["past_meals_today"] = past_meals
+    if day_requests:
+        context["freeform_on_a_day"] = day_requests
     # Loop Board "Taste UI: whose verdict?" (Emily, 2026-09-08): the same
     # per-person feedback, resolved into ONE shared verdict per table, so
     # the model is handed a decision rather than two people's opinions to
@@ -5609,6 +5650,12 @@ def _generate_weekly_plan(
                 # Recorded as a real slot carrying the constraint that caused
                 # it, never as an absence — see tools.plan_slot_open.
                 if day.get("slot_state") == "open" and (day.get("open_reason") or "").strip():
+                    if slot == "dinner" and not _dinner_gaps.keeps_its_question(day.get("derived_from") or {}):
+                        # A dinner the household is home for is never handed
+                        # back (Emily's decision A, 2026-09-27) — only one an
+                        # allergy or who's home decided. Left unwritten, so
+                        # dinner_gaps.fill_open_dinners plans it below.
+                        continue
                     tools.plan_slot_open(
                         weekly_plan_id=plan_id,
                         meal_date=meal_date,
@@ -5880,6 +5927,15 @@ def _finish_week_slots(
        are having for breakfast on the Friday after next. See
        meal_variety.fill_gaps_with_a_repeat, and the comment at its call
        site for what it does and does not reach.
+
+    Since 2026-09-27 (three cards from Emily's walk): a DINNER is not
+    handed back either unless an allergy or who's home decided it
+    (dinner_gaps.fill_open_dinners, and a `left` night is a reheat —
+    dinner_gaps.apply_leftovers_nights); today's meals already gone by are
+    planned_empty and a dish asked for "today"/"tonight"/"tomorrow" is put
+    on that exact meal (today_meals, typed_requests.place_day_requests);
+    and no dish is on more than two lunches and dinners in a row
+    (dinner_gaps.break_long_runs).
     """
     # The period's real days. `_week_dates(...)[:day_count]` capped at seven,
     # so an 8-day period's last day never got its `out` tag honoured, never
@@ -5892,6 +5948,16 @@ def _finish_week_slots(
     # the same number the model was given. See _planned_day_count.
     if planned_count is None:
         planned_count = _planned_day_count(intake, week_start_date, day_count)
+
+    # A dish they asked for "today", "tonight" or "tomorrow" goes on exactly
+    # that meal (Emily, 2026-09-27: the curry she asked to make "today" at
+    # 3:53pm came back on that day's lunch). FIRST, before the past meals
+    # are emptied below, so a dish the model put on a meal already gone is
+    # moved rather than lost. See typed_requests.place_day_requests.
+    day_requests = (context or {}).get("freeform_on_a_day") or []
+    if day_requests:
+        _typed_requests.place_day_requests(plan_id, day_requests, report)
+
     night_tags = (intake or {}).get("night_tags") or {}
     for day, tags in night_tags.items():
         if "out" not in tags or day not in dates:
@@ -5930,6 +5996,19 @@ def _finish_week_slots(
                 derived_from={"constraint": tools.SKIPPED_DAY_CONSTRAINT},
             )
         tools.clear_plan_slot(plan_id, day, "snack")
+
+    # Today's meals that had already gone by when the week was drafted
+    # ("today" means from now — Emily, 2026-09-27). Planned empty, like a
+    # day left out, and for the same reason: the audit below counts the
+    # row as present rather than asking about a meal nobody can still eat,
+    # and no fill pass touches planned_empty. See today_meals.past_meals.
+    for past in (context or {}).get("past_meals_today") or []:
+        if past["date"] not in dates or past["date"] in skipped_days:
+            continue
+        _slot_needs._settle_slot_empty(
+            plan_id, past["date"], past["slot"], _today_meals.ALREADY_PAST_REASON,
+            derived_from={"constraint": _today_meals.ALREADY_PAST_CONSTRAINT},
+        )
 
     zero_counts = {
         "breakfast": household_memory.get("breakfasts_per_week"),
@@ -6024,6 +6103,16 @@ def _finish_week_slots(
     # second time as missing. See tools.repair_leftover_chains.
     tools.repair_leftover_chains(plan_id)
 
+    # A night tagged Leftovers reheats an earlier cook — made true here
+    # rather than only asked for in the prompt (Emily's decision A,
+    # 2026-09-27: it came back as a question). AFTER repair_leftover_chains,
+    # so the model's own chains are real before this reads them; a dish
+    # they asked to "have leftovers" of is the cook it reaches for first.
+    # See dinner_gaps.apply_leftovers_nights — it swallows its own failures.
+    _dinner_gaps.apply_leftovers_nights(
+        plan_id, intake, dates, prefer=_typed_requests.requested_leftover_cooks(day_requests),
+    )
+
     # Weekday lunches as the household said (step 3, 2026-09-25): prepped
     # lunches one cook per prep day, a leftovers lunch the dinner before it
     # reheated. AFTER repair_leftover_chains, so the model's own chains are
@@ -6033,6 +6122,12 @@ def _finish_week_slots(
     lunches_answered = bool(_weekday_lunches.kinds_by_date(intake))
     if lunches_answered:
         _weekday_lunches.apply_to_plan(plan_id, intake)
+
+    # "…and have leftovers for it" is a real chain off the requested cook:
+    # when neither the Leftovers night nor a weekday lunch took it, the
+    # next day's lunch reheats it. See typed_requests.chain_requested_leftovers.
+    if day_requests:
+        _typed_requests.chain_requested_leftovers(plan_id, day_requests, intake)
 
     # Surprise me means new to you (Emily, 2026-09-21): a dinner or lunch
     # the household has had from Pomona before is re-picked quietly, with
@@ -6215,9 +6310,10 @@ def _finish_week_slots(
     # side it runs. What differs is only which night the count pass's
     # fill_up turns into the new dish.
     #
-    # DINNER is not in scope and the audit still opens one: a dinner really
-    # is a decision, and quietly repeating one nobody asked for is the
-    # opposite of what the household wants. See meal_variety.NEVER_OPEN_SLOTS.
+    # DINNER is not in scope of THIS pass (meal_variety.NEVER_OPEN_SLOTS):
+    # a dinner gets its own, dinner_gaps.fill_open_dinners, right below —
+    # a reheat or a fresh pick before any repeat (Emily's decision A,
+    # 2026-09-27, replaced "the audit still opens one").
     #
     # WHAT THIS DOES NOT COVER, named rather than left to be found. The
     # allergen sweep at the foot of this function can still open a
@@ -6253,6 +6349,27 @@ def _finish_week_slots(
         for d in period for slot in _meal_variety.COUNT_FIELDS
     }
     _meal_variety.fill_gaps_with_a_repeat(plan_id, dates, caps=fill_caps)
+
+    # And a DINNER is never open either, when the household is home for it
+    # (Emily's decision A, 2026-09-27) — this is what replaced "the audit
+    # still opens one" above. A reheat of the nearest earlier cook first
+    # (free), then a fresh pick held to the night's cap, then a repeat of
+    # one of the week's own dinners that fits. Same place and caps as the
+    # breakfast/lunch fill, for the same reasons. An allergen question and
+    # a nobody-home night are left as they are. See dinner_gaps.
+    _dinner_gaps.fill_open_dinners(
+        plan_id, dates, caps=fill_caps, budget=repick_budget or _allergen_gate.CallBudget(),
+    )
+
+    # No dish on more than two lunches and dinners in a row (Emily's
+    # decision B, 2026-09-27). Every writer above asks the rule first; this
+    # makes it true of whatever still slipped through — the rush night the
+    # model scaled up after a lunch that already ate the batch, a trade
+    # cap_enforce made. LAST of the passes that choose a dish, BEFORE the
+    # plates pass and the quality tripwire (plan_quality._no_long_runs).
+    _dinner_gaps.break_long_runs(
+        plan_id, caps=fill_caps, budget=repick_budget or _allergen_gate.CallBudget(),
+    )
 
     # "Every meal is a full plate" (Emily, 2026-09-05) — any planned meal
     # whose own food_groups fall short of the household's plate rule gets a
@@ -6314,6 +6431,14 @@ def _finish_week_slots(
         _allergen_gate.sweep_plan(plan_id, budget=repick_budget)
     except Exception:
         logger.exception("Allergen sweep failed for plan %s; the week stands as generated", plan_id)
+
+    # The sweep opens a dinner whose clashing dish it could not re-pick
+    # within its budget. The week it leaves has been swept, so a reheat or
+    # a repeat of a dinner still on it is safe — an open dinner here would
+    # be a question Pomona can answer (decision A). An allergen re-pick's
+    # own question (allergen_gate.repick_slot, "I couldn't find a dinner
+    # without …") keeps its words: dinner_gaps.keeps_its_question.
+    _dinner_gaps.fill_open_dinners(plan_id, dates, caps=fill_caps, budget=repick_budget)
 
     # LAST, deliberately. The allergy/dietary check has to describe the week
     # as it finally stands — after the out-night and zero-count passes, the

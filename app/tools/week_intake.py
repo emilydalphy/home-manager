@@ -204,6 +204,70 @@ def freeform_meal_scopes(text: str | None, dates: list[str]) -> list[dict]:
     return scopes
 
 
+# ---------- "today", "tonight", "tomorrow" ----------
+#
+# Emily, 2026-09-27, 3:53pm on the Sunday the week started: "I want to make
+# a Japanese curry heavy on veggies today … and have leftovers for it." The
+# model put the curry on Sunday LUNCH, hours gone. freeform_meal_scopes
+# leaves any sentence with a day word to the model; these three words are
+# the ones whose meaning is beyond doubt once the time of day is known, so
+# they are resolved here to one exact date and meal — "today" is the first
+# meal still ahead, "tonight" is today's dinner, "tomorrow" is the next
+# date (its dinner, unless the sentence names a meal) — and the draft is
+# made to put the dish there (typed_requests.place_day_requests).
+
+_DAY_REQUEST_RE = re.compile(
+    r"\b(today|tonight|tomorrow)(?:\s+(night|evening|morning|afternoon))?\b", re.IGNORECASE
+)
+_DAY_REQUEST_NEGATED_RE = re.compile(
+    r"\b(?:not|never|no|don't|dont|do not|skip)\s+(?:\w+\s+){0,2}(?:today|tonight|tomorrow)\b", re.IGNORECASE
+)
+_LEFTOVERS_WORD_RE = re.compile(r"\bleftovers?\b", re.IGNORECASE)
+
+
+def freeform_day_requests(text: str | None, dates: list[str], today: str, first_ahead: str | None,
+                          past: list[dict] | None = None) -> list[dict]:
+    """
+    [{"words", "date", "slot", "said", "leftovers"}] — one per sentence
+    that pins a request to today, tonight or tomorrow, resolved to an exact
+    date and meal inside `dates`. `today` is the household's date,
+    `first_ahead` the first of today's meals still to come
+    (today_meals.first_meal_ahead), `past` today's meals already gone
+    (today_meals.past_meals). A sentence that says "not tonight", names
+    two meals, or lands on a meal that has already gone by gets nothing:
+    a wrong exact slot is worse than none. `leftovers` is True when the
+    sentence asks for leftovers of the dish too.
+    """
+    gone = {(p["date"], p["slot"]) for p in (past or [])}
+    tomorrow = (date.fromisoformat(today) + timedelta(days=1)).isoformat()
+    out: list[dict] = []
+    for sentence in _REQUEST_SPLIT_RE.split(text or ""):
+        sentence = sentence.strip(" ,;")
+        match = _DAY_REQUEST_RE.search(sentence)
+        if not sentence or not match or _DAY_REQUEST_NEGATED_RE.search(sentence):
+            continue
+        said, part = match.group(1).lower(), (match.group(2) or "").lower()
+        meals = {_MEAL_OF_WORD[w.lower()] for w in _MEAL_WORD_RE.findall(sentence)} - {"snack"}
+        if len(meals) > 1:
+            continue
+        named = next(iter(meals), None)
+        if part in ("night", "evening"):
+            named = named or "dinner"
+        elif part == "morning":
+            named = named or "breakfast"
+        if said == "tonight":
+            day, slot = today, "dinner"
+        elif said == "today":
+            day, slot = today, named or first_ahead
+        else:
+            day, slot = tomorrow, named or "dinner"
+        if not slot or day not in dates or (day, slot) in gone:
+            continue
+        out.append({"words": sentence, "date": day, "slot": slot, "said": said,
+                    "leftovers": bool(_LEFTOVERS_WORD_RE.search(sentence))})
+    return out
+
+
 # ---------- a typed INGREDIENT request ----------
 #
 # "I have some corn so incorporate that into a meal" (Emily, 2026-09-21:

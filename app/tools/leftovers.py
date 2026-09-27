@@ -43,7 +43,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import date
+from datetime import date, timedelta
 
 from ..db import get_conn
 from ._shared import household_id
@@ -111,6 +111,14 @@ BATCH_KEY = "batch_leftovers"
 # regex); the cook carries the portion as FREEZER_EXTRA_KEY, so the batch
 # is bought and cooked big enough.
 FROM_FREEZER_KEY = "from_freezer"
+
+
+_SLOT_ORDER = {"breakfast": 0, "lunch": 1, "dinner": 2, "snack": 3}
+
+
+def _eaten_order(row) -> tuple[str, int]:
+    """(date, place in the day): the order meals are eaten in."""
+    return (row["date"], _SLOT_ORDER.get(row["slot"], len(_SLOT_ORDER)))
 
 
 def days_apart(earlier: str, later: str) -> int:
@@ -243,7 +251,9 @@ def plan_leftover_chains(weekly_plan_id: int, conn=None) -> dict:
             continue
         if source["slot_state"] != "planned" or not (source["recipe_id"] or source["freeform_meal"]):
             continue
-        if source["date"] >= r["date"]:
+        if _eaten_order(source) >= _eaten_order(r):
+            # In EATING order (Emily, 2026-09-27): a lunch cooked big can
+            # feed that evening's dinner; nothing feeds a meal eaten first.
             continue
         # The source has to name this night back. Without the agreement
         # check a half-written chain would still scale a batch up — see
@@ -498,3 +508,176 @@ def reheat_note(recipe: dict | None) -> str:
         if "reheat" in low or "warm through" in low or "warms up" in low or "warm up" in low:
             return sentence if sentence.endswith(("!", "?")) else sentence + "."
     return ""
+
+
+# ---------- no dish on more than two meals in a row ----------
+#
+# Emily, 2026-09-27, decision B: counting lunches and dinners in the order
+# they are eaten (date, then breakfast → lunch → dinner), no dish is on
+# more than MAX_MEALS_IN_A_ROW of them in a row. Thursday's dinner and
+# Friday's lunch off it is fine; Friday's dinner is then something else —
+# a quick one when Friday is short on time.
+#
+# ONE rule, read here, because several places can make a run: the weekday
+# lunch from the dinner before (weekday_lunches), the fold's batches
+# (meal_variety._plan_batches), the model's own chains
+# (weekly_plan.repair_leftover_chains), the Leftovers-night pass and the
+# re-pick of a gap (dinner_gaps). Each asks this module before it writes;
+# dinner_gaps.break_long_runs makes it true of whatever still slipped
+# through, and plan_quality._no_long_runs is the tripwire.
+#
+# What breaks a run: a lunch or dinner with a DIFFERENT dish, and a meal
+# with no dish on it at all (nobody home, a day left out, a question).
+# Breakfast is not counted — the rule is about lunches and dinners.
+#
+# Nothing here writes, like the rest of this module.
+
+MAX_MEALS_IN_A_ROW = 2
+RUN_SLOTS = ("lunch", "dinner")
+
+_LEADING_REHEAT = re.compile(
+    r"^(?:leftovers?\s+from\s+the\s+freezer\s*[—–-]\s*(?:\w+[’']s\s+)?"
+    r"|leftovers?\s*[—–:-]\s*(?:\w+[’']s\s+)?|leftovers?\s+(?:of\s+)?|reheated\s+)",
+    re.IGNORECASE,
+)
+_TRAILING_REHEAT = re.compile(r"\s*\(?\b(?:leftovers?|reheated)\b\)?\s*$", re.IGNORECASE)
+
+
+def dish_identity(name: str | None) -> str:
+    """The dish a meal IS, for the run rule: "Chili", "Leftover chili",
+    "Chili leftovers" and "Leftovers from the freezer — Monday’s Chili"
+    are all "chili"."""
+    text = (name or "").strip()
+    text = _LEADING_REHEAT.sub("", text)
+    text = _TRAILING_REHEAT.sub("", text)
+    return re.sub(r"\s+", " ", text).strip().lower()
+
+
+def _position(date_str: str, slot: str) -> tuple[str, int]:
+    return (date_str, RUN_SLOTS.index(slot))
+
+
+def _before(pos: tuple[str, int]) -> tuple[str, int]:
+    d, i = pos
+    if i == 1:
+        return (d, 0)
+    return ((date.fromisoformat(d) - timedelta(days=1)).isoformat(), 1)
+
+
+def _after(pos: tuple[str, int]) -> tuple[str, int]:
+    d, i = pos
+    if i == 0:
+        return (d, 1)
+    return ((date.fromisoformat(d) + timedelta(days=1)).isoformat(), 0)
+
+
+def run_keys(weekly_plan_id: int, conn=None) -> dict[tuple[str, str], str]:
+    """
+    {(date, slot): the dish it is} for every planned lunch and dinner of
+    the plan. A reheat is the dish it reheats — its links_to (confirmed or
+    not: this is read mid-generation too) or the dish on its freezer
+    portion — so "Leftovers — Monday’s Chili" and the Chili are one dish.
+    """
+    own = conn is None
+    if own:
+        conn = get_conn()
+    try:
+        rows = conn.execute(
+            """
+            SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.derived_from_json,
+                   COALESCE(r.name, mpe.freeform_meal) AS meal
+            FROM meal_plan_entries mpe
+            LEFT JOIN recipes r ON r.id = mpe.recipe_id
+            WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.component_category IS NULL
+              AND mpe.slot IN ('lunch', 'dinner')
+            ORDER BY mpe.id ASC
+            """,
+            (weekly_plan_id, household_id()),
+        ).fetchall()
+    finally:
+        if own:
+            conn.close()
+    by_date_slot: dict = {}
+    by_id: dict = {}
+    for r in rows:
+        by_date_slot.setdefault((r["date"], r["slot"]), r)
+        by_id[r["id"]] = r
+    keys: dict[tuple[str, str], str] = {}
+    for (d, slot), r in by_date_slot.items():
+        if r["slot_state"] != "planned" or not (r["meal"] or "").strip():
+            continue
+        try:
+            derived = json.loads(r["derived_from_json"] or "{}") or {}
+        except (TypeError, ValueError):
+            derived = {}
+        name = frozen_portion_on(derived) or r["meal"]
+        links_to = str(derived.get("links_to") or "").strip()
+        if links_to:
+            source = _resolve(links_to, by_date_slot, by_id)
+            if source is not None and (source["meal"] or "").strip():
+                name = source["meal"]
+        keys[(d, slot)] = dish_identity(name)
+    return keys
+
+
+def _key_at(keys: dict, pos: tuple[str, int]) -> str | None:
+    return keys.get((pos[0], RUN_SLOTS[pos[1]]))
+
+
+def run_before(keys: dict, date_str: str, slot: str, dish: str | None = None) -> int:
+    """How many lunches and dinners in a row this meal would END, holding
+    `dish` (default: what it holds now) — counting backwards only. What a
+    writer asks when the meals after this one are not its to change. 0
+    for a breakfast or snack, which the rule does not count."""
+    if slot not in RUN_SLOTS:
+        return 0
+    key = dish_identity(dish) if dish is not None else keys.get((date_str, slot))
+    if not key:
+        return 0
+    n = 1
+    pos = _before(_position(date_str, slot))
+    while _key_at(keys, pos) == key:
+        n += 1
+        pos = _before(pos)
+    return n
+
+
+def run_through(keys: dict, date_str: str, slot: str, dish: str | None = None) -> int:
+    """How many lunches and dinners in a row this meal would be part of,
+    holding `dish` (default: what it holds now) — both directions."""
+    back = run_before(keys, date_str, slot, dish)
+    if not back:
+        return 0
+    key = dish_identity(dish) if dish is not None else keys.get((date_str, slot))
+    n = back
+    pos = _after(_position(date_str, slot))
+    while _key_at(keys, pos) == key:
+        n += 1
+        pos = _after(pos)
+    return n
+
+
+def too_many_in_a_row(keys: dict, date_str: str, slot: str, dish: str | None = None) -> bool:
+    """Whether `dish` at this meal would put it on more than
+    MAX_MEALS_IN_A_ROW lunches and dinners in a row."""
+    return run_through(keys, date_str, slot, dish) > MAX_MEALS_IN_A_ROW
+
+
+def long_runs(keys: dict) -> list[list[tuple[str, str]]]:
+    """Every run longer than the rule allows, each as its meals in eating
+    order — [(date, slot), ...]. Empty for a week that keeps the rule."""
+    runs: list[list[tuple[str, str]]] = []
+    seen: set = set()
+    for (d, slot) in sorted(keys, key=lambda k: _position(*k)):
+        if (d, slot) in seen:
+            continue
+        key = keys[(d, slot)]
+        run = [(d, slot)]
+        pos = _after(_position(d, slot))
+        while _key_at(keys, pos) == key:
+            run.append((pos[0], RUN_SLOTS[pos[1]]))
+            pos = _after(pos)
+        seen.update(run)
+        if len(run) > MAX_MEALS_IN_A_ROW:
+            runs.append(run)
+    return runs

@@ -354,6 +354,11 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
     try:
         lunches, dinners = _lunch_and_dinner_rows(plan_id)
         chains = _leftovers.plan_leftover_chains(plan_id)
+        # For the two-meals-in-a-row rule (leftovers.MAX_MEALS_IN_A_ROW).
+        # The household's lunch wins over a dinner AFTER it — that dinner
+        # is dinner_gaps.break_long_runs' to change — but a lunch that
+        # would be the third of one dish counting back is left as drafted.
+        keys = _leftovers.run_keys(plan_id)
         targets: dict[int, list[str]] = {}
         frozen: list[tuple[int, str, str]] = []
 
@@ -386,6 +391,10 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
                 continue
             if len(rows) == 1 and _links_to_id(rows[0], cook["id"]):
                 continue
+            if _leftovers.run_before(keys, d["date"], "lunch", cook["meal"]) > _leftovers.MAX_MEALS_IN_A_ROW:
+                out["skipped"].append({"date": d["date"], "why": "that would be a third meal of it in a row"})
+                continue
+            keys[(d["date"], "lunch")] = _leftovers.dish_identity(cook["meal"])
             if len(rows) == 1 and rows[0]["meal"].strip().lower() == cook["meal"].strip().lower():
                 derived = dict(rows[0]["derived"])
                 derived["links_to"] = f"entry_id:{cook['id']}"
