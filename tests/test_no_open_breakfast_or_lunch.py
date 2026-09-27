@@ -50,6 +50,57 @@ from app.tools import plan_quality
 from app.db import get_conn
 
 
+def _module_code(module) -> str:
+    """A module's source with its comments and docstrings BLANKED OUT.
+
+    A source assertion a COMMENT can satisfy is not an assertion — this
+    repo's log records being bitten by that three times — and every module
+    here explains its constants in prose that quotes them.
+
+    It blanks ranges in the original text rather than rebuilding from
+    tokens: the first cut joined `tok.string` values, which drops every
+    whitespace token, so `{"constraint": "allergen"` came back as
+    `{"constraint":"allergen"` and no assertion written the way a person
+    writes it could match. Measured — the drift mutation this file is
+    named for stayed green under it.
+    """
+    import ast
+    import io
+    import pathlib
+    import tokenize
+
+    text = pathlib.Path(module.__file__).read_text(encoding="utf-8")
+    lines = text.splitlines(keepends=True)
+
+    def blank(start_row, start_col, end_row, end_col):
+        for row in range(start_row, end_row + 1):
+            line = lines[row - 1]
+            a = start_col if row == start_row else 0
+            b = end_col if row == end_row else len(line)
+            keep_nl = line.endswith("\n") and b >= len(line.rstrip("\n"))
+            lines[row - 1] = (
+                line[:a] + " " * (b - a) + line[b:] if not keep_nl
+                else line[:a] + " " * max(0, len(line.rstrip("\n")) - a) + "\n"
+            )
+
+    for tok in tokenize.generate_tokens(io.StringIO(text).readline):
+        if tok.type == tokenize.COMMENT:
+            blank(tok.start[0], tok.start[1], tok.end[0], tok.end[1])
+    for node in ast.walk(ast.parse(text)):
+        if not isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef,
+                                 ast.AsyncFunctionDef)):
+            continue
+        body = getattr(node, "body", None)
+        if not body:
+            continue
+        first = body[0]
+        if isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) \
+                and isinstance(first.value.value, str):
+            blank(first.lineno, first.col_offset,
+                  first.end_lineno, first.end_col_offset)
+    return "".join(lines)
+
+
 # ---------- the week under test ----------
 
 def _week_start() -> str:
@@ -635,10 +686,27 @@ def test_the_two_open_slots_are_told_apart_by_one_word(recipes):
     the module that writes it and the module that has to recognise it can
     never drift. Pinned by the mutation "the allergen exclusion is
     dropped", which reddens the test above.
+
+    THE SECOND ASSERTION WAS VACUOUS WHEN FIRST WRITTEN, and it is fixed
+    rather than deleted because it is the exact class this repo's log keeps
+    having to unpick. It read `agent_source()` — app/agent.py — for a
+    literal that has never lived there: the raw string lived, and on main
+    still lives, in app/tools/allergen_gate.py. Measured by the reviewer:
+    restore the raw literal there, which is the drift this test is named
+    for, and all 26 tests in this file stay green. It reads the module
+    that actually writes the word now, comment-stripped, so the drift is
+    what fails it rather than a mention of it in prose.
     """
     assert _allergen_gate.ALLERGEN_CONSTRAINT == "allergen"
-    from conftest import agent_source
-    assert 'derived_from={"constraint": "allergen"' not in agent_source()
+    gate = _module_code(_allergen_gate)
+    assert 'derived_from={"constraint": "allergen"' not in gate, (
+        "allergen_gate writes the raw word again instead of "
+        "ALLERGEN_CONSTRAINT, so meal_variety's carve-out can stop "
+        "recognising the slot it is written for without anything failing"
+    )
+    assert "ALLERGEN_CONSTRAINT" in gate, (
+        "allergen_gate no longer uses its own constant when it opens a slot"
+    )
 
 
 # ---------- where it runs ----------
@@ -667,3 +735,103 @@ def test_the_fill_runs_once_before_the_gap_audit(recipes):
 
     assert fill < audit < quality
     assert src.count("_meal_variety.fill_gaps_with_a_repeat") == 1
+
+
+# ---------- the cap the FILL is held to (found by review, 2026-09-27) ------
+
+def test_a_lunch_they_said_is_leftovers_does_not_get_an_uncapped_fresh_cook():
+    """
+    CATCH. time_caps lifts the weekday lunch cap in three cases — the
+    household answered "prepped" or "leftovers" for that weekday, the slot
+    is either end of a chain, or the day is one of their standing prep days
+    — and every lift is about a BATCH rather than about the day. The fill
+    puts a dish that will be COOKED ON THE DAY into an empty slot, so none
+    of them covers it.
+
+    Measured before the fix: `minutes_cap(..., lunch_kind="leftovers")` is
+    None, so a 90-minute braise was copied onto a Tuesday lunch the
+    household had said would be leftovers — the exact harm _fill_supply's
+    own docstring names, and a regression against main, where that slot was
+    an honest open question. The branch's first write-up claimed the
+    opposite ("inside the 20-minute cap, so honest"); it is corrected in
+    CLAUDE.md rather than quietly.
+    """
+    mem = {"weeknight_max_minutes": 30, "rhythm": {"prep_days": ["wednesday"]}}
+    tue, wed, sat = "2026-09-29", "2026-09-30", "2026-10-03"
+    said_leftovers = {"weekday_lunches": {"days": [
+        {"date": tue, "weekday": "tuesday", "kind": "leftovers"},
+    ]}}
+    # the planner's cap, which is right for the dish they PLANNED
+    assert agent._meal_minutes_cap(tue, "lunch", said_leftovers, mem) is None
+    assert agent._meal_minutes_cap(wed, "lunch", {}, mem) is None  # prep day
+    # ...and the fill's, which is right for a dish cooked on the day
+    for date, intake in ((tue, said_leftovers), (wed, {})):
+        assert agent._meal_minutes_cap(
+            date, "lunch", intake, mem, fresh_cook=True
+        ) == 20, f"the fill must hold {date}'s lunch to the weekday cap"
+    # A weekend lunch is uncapped for both, and that is not a lift being
+    # missed — there is no weekday cap on a Saturday to lift.
+    assert agent._meal_minutes_cap(sat, "lunch", {}, mem, fresh_cook=True) is None
+    # Dinner is untouched by the narrower question.
+    assert agent._meal_minutes_cap(tue, "dinner", said_leftovers, mem) == \
+        agent._meal_minutes_cap(tue, "dinner", said_leftovers, mem, fresh_cook=True)
+
+
+def test_the_call_site_asks_for_the_fresh_cook_cap():
+    """
+    SOURCE MARKER, comment-stripped. The bug was a cap read for the wrong
+    question, which no rendering test can see — what is asserted is that the
+    call site builds its own caps rather than reusing the generator's.
+    """
+    from conftest import agent_function_source
+    code = agent_function_source("_finish_week_slots")
+    assert "fresh_cook=True" in code and "fill_caps" in code, (
+        "fill_gaps_with_a_repeat is being handed the generator's caps again, "
+        "which carry time_caps' batch lifts and so cap nothing on a lunch "
+        "the household said is prepped or reheated"
+    )
+    assert "caps=fill_caps" in code
+
+
+# ---------- the morning report and the allergen carve-out ------------------
+
+def test_an_allergen_opened_breakfast_is_not_reported_as_a_defect():
+    """
+    CATCH. The card's own motivating warning is "breakfast/lunch must never
+    be open", and the carve-out deliberately leaves an allergen-opened
+    breakfast alone — so without this the report keeps printing a defect for
+    the app's own right answer, and Emily goes hunting a bug by design.
+
+    The branch's first write-up said plan_quality ran above every allergen
+    opener. Measured by review: true of sweep_plan, FALSE of repick_slot,
+    which runs inside the save loop and is the opener the carve-out is
+    written for. Corrected in CLAUDE.md rather than quietly.
+    """
+    allergen = {"constraint": _allergen_gate.ALLERGEN_CONSTRAINT}
+    entries = [{"slot_state": "open", "slot": "breakfast",
+                "date": "2026-09-29", "constraint": allergen["constraint"]}]
+    assert plan_quality._open_slot_budget(entries, {}) == []
+    # ...and an open breakfast from any other cause is still a defect.
+    entries[0]["constraint"] = "generation_gap"
+    said = plan_quality._open_slot_budget(entries, {})
+    assert len(said) == 1 and "must never be" in said[0].message
+
+
+def test_an_allergen_slot_still_counts_toward_the_weeks_open_budget():
+    """
+    GUARD on the size of that carve-out. A week handing back several
+    decisions is worth saying whatever opened them, so only the never-open
+    LINE is exempt — the at-most-one count is not. Pinned by the mutation
+    "drop allergen rows before counting", which reddens this and nothing
+    else in this file.
+    """
+    entries = [
+        {"slot_state": "open", "slot": "breakfast", "date": "2026-09-29",
+         "constraint": _allergen_gate.ALLERGEN_CONSTRAINT},
+        {"slot_state": "open", "slot": "dinner", "date": "2026-09-30",
+         "constraint": None},
+    ]
+    said = plan_quality._open_slot_budget(entries, {})
+    assert [v.message for v in said] == [
+        "2 open slots this week; the budget is at most 1."
+    ]

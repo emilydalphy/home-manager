@@ -6233,9 +6233,26 @@ def _finish_week_slots(
     # could not settle it; replacing the first with a silent repeat throws
     # information away, and tests/test_allergen_hard_block.py pins that
     # sentence as Emily's own answer. Nothing measures it either way:
-    # plan_quality.check_and_log runs ABOVE the sweep, so an allergen-opened
-    # breakfast never reaches the morning report.
-    _meal_variety.fill_gaps_with_a_repeat(plan_id, dates, caps=caps)
+    # plan_quality.check_and_log runs above allergen_gate.SWEEP_PLAN — but
+    # NOT above repick_slot, which opens inside the save loop above and is
+    # the opener this carve-out is written for. Its row is therefore on the
+    # plan when the quality pass reads it, so _open_slot_budget exempts an
+    # allergen-opened slot from the never-open line rather than printing a
+    # defect for the app's own deliberate answer. (Corrected on review,
+    # 2026-09-27: this comment used to claim the quality pass ran above
+    # every allergen opener, and the morning report proved otherwise.)
+    #
+    # ITS OWN CAPS, and this is not tidiness. `caps` above is the cap on
+    # the dish the household PLANNED, so it carries time_caps' three lunch
+    # lifts — prepped, leftovers, a standing prep day — every one of which
+    # is about a batch. Whatever this pass copies into an empty slot is a
+    # cook on the day, so it is held to the plain weekday cap instead. See
+    # _meal_minutes_cap(fresh_cook=True).
+    fill_caps = {
+        (d, slot): _meal_minutes_cap(d, slot, intake, household_memory, fresh_cook=True)
+        for d in period for slot in _meal_variety.COUNT_FIELDS
+    }
+    _meal_variety.fill_gaps_with_a_repeat(plan_id, dates, caps=fill_caps)
 
     # "Every meal is a full plate" (Emily, 2026-09-05) — any planned meal
     # whose own food_groups fall short of the household's plate rule gets a
@@ -6594,14 +6611,32 @@ _PLATE_SLOT_PRIORITY = {"dinner": 0, "lunch": 1, "breakfast": 2, "snack": 3}
 
 def _meal_minutes_cap(
     meal_date: str, slot: str, intake: dict | None, household_memory: dict, is_leftovers: bool = False,
+    fresh_cook: bool = False,
 ) -> int | None:
     """
     The real cap on how long this meal's cooking may take, or None: the
     date's night tags read off the intake, then tools.minutes_cap, the one
     rule the swap sheet uses too (Emily, 2026-09-23 — per slot, so a lunch
     is no longer held to that evening's dinner cap).
+
+    `fresh_cook=True` asks a narrower question: what may a dish COOKED ON
+    THE DAY take here. time_caps lifts the weekday lunch cap in three
+    cases — the household said that lunch is "prepped" or "leftovers", the
+    slot is either end of a chain, or the day is one of their standing prep
+    days — and every one of those lifts is about a BATCH rather than about
+    the day. A pass that puts a fresh dish into an empty slot is not
+    covered by any of them, so it asks with the lifts off: `is_leftovers`
+    False and the lunch read as "cooked", which is the one answer
+    time_caps already treats as a real cook on the day (it keeps the
+    20 minutes even on a prep day). Found by review, 2026-09-27: without
+    this, `fill_gaps_with_a_repeat` put an uncapped 90-minute dish on a
+    lunch the household had said would be leftovers.
     """
     tags = ((intake or {}).get("night_tags") or {}).get(meal_date) or []
+    if fresh_cook:
+        return tools.minutes_cap(meal_date, slot, tags, household_memory,
+                                 is_leftovers=False,
+                                 lunch_kind="cooked" if slot == "lunch" else None)
     # How the household said this weekday lunch is made (step 3, 2026-09-25):
     # "cooked" keeps the 20-minute cap even on a prep day; "prepped" and
     # "leftovers" lift it.

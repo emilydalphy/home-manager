@@ -467,9 +467,25 @@ def _novelty_floor(entries: list[dict], context: dict) -> list[Violation]:
 
 
 def _open_slot_budget(entries: list[dict], context: dict) -> list[Violation]:
+    # An allergen re-pick that has spent its budget opens the slot rather
+    # than planning a dish somebody at that table cannot eat, and that is
+    # the right answer on any slot including a breakfast. Measured
+    # 2026-09-27: allergen_gate.repick_slot runs INSIDE the save loop, i.e.
+    # before _finish_week_slots, so its row is on the plan when this rule
+    # reads it — the fill pass's own comment used to claim the quality pass
+    # ran above every allergen opener, which is true of sweep_plan and false
+    # of repick_slot, the one the carve-out is written for. Without this
+    # clause the morning report keeps printing "breakfast/lunch must never
+    # be" for a case the app now deliberately produces.
+    from . import allergen_gate as _allergen_gate
+
     open_entries = [e for e in entries if e.get("slot_state") == "open"]
     violations = []
     for entry in open_entries:
+        if entry.get("constraint") == _allergen_gate.ALLERGEN_CONSTRAINT:
+            # Still counted below: a week handing back several decisions is
+            # worth saying whatever opened them. Only the never-open line goes.
+            continue
         if entry.get("slot") in ("breakfast", "lunch"):
             violations.append(Violation(
                 rule="open_slot_budget", severity="warn",
@@ -1858,6 +1874,11 @@ def _load_plan_entries(plan_id: int) -> list[dict]:
             # A meal brought over from last week (bring_over.KEY) is in
             # last week's history by definition, and on purpose.
             "brought_over": bool(derived_from.get("brought_over")),
+            # Which pass opened this slot, for _open_slot_budget: an
+            # allergen re-pick that ran out of budget opens a breakfast on
+            # purpose (allergen_gate), and a rule that calls the app's own
+            # deliberate answer a defect sends Emily hunting a bug by design.
+            "constraint": derived_from.get("constraint"),
             # A freeform meal has no recipe row and therefore no ingredient
             # list — no data, which _ingredient_repeat treats as nothing to
             # count rather than as a clean week.

@@ -466,7 +466,13 @@ why*, not duplicating the diff.
     sentence away — and that is Emily's decision, not a gap-filling card's.
     Carved out on `allergen_gate.ALLERGEN_CONSTRAINT`, one word, named there
     rather than left as a literal so the module that writes it and the
-    module that has to recognise it cannot drift.
+    module that has to recognise it cannot drift. **That is narrower than it
+    reads, and review measured it: there are TWO allergen openers and only
+    `repick_slot` writes the constant.** `sweep_plan` opens through
+    `drop_dish_from_day`, which writes `{"constraint": "household_cut_back"}`
+    — so a slot IT opened is filled like any other gap. Inert today purely
+    by ordering (the sweep runs after the fill), and it is the reason the
+    sentence says "an allergen re-pick" rather than "an allergen slot".
   - **WHERE IT RUNS, and the claim in that comment that turned out to be
     FALSE.** After `cap_enforce` (so the caps it holds a pick to are the caps
     the week finally has), after the count pass, before the plates pass (a
@@ -482,6 +488,38 @@ why*, not duplicating the diff.
     differs is which night `fill_up` turns into the new dish. Corrected in
     place rather than quietly, because an unmeasured cost claim in a comment
     is what the next reader acts on.
+  - **THE MORNING REPORT WAS STILL GOING TO PRINT THE VERY WARNING THIS CARD
+    EXISTS TO REMOVE, and the comment at the call site said it could not.
+    Found by review, fixed here.** That comment read "plan_quality.
+    check_and_log runs ABOVE the sweep, so an allergen-opened breakfast
+    never reaches the morning report" — true of `sweep_plan` and **false of
+    `repick_slot`**, which is the opener the whole carve-out is written for
+    and which runs INSIDE `_generate_weekly_plan`'s save loop, i.e. before
+    `_finish_week_slots`. Its row is therefore on the plan when the quality
+    pass reads it. Reproduced against `tests/test_allergen_hard_block.py`'s
+    own fixtures: `Plan 1 quality [open_slot_budget/warn] … lunch is open,
+    but breakfast/lunch must never be.` So the card would have closed and
+    Emily would have gone on seeing the warning — for a case the app now
+    deliberately produces. `plan_quality._open_slot_budget` exempts an
+    allergen-opened slot from that LINE now, and deliberately NOT from the
+    at-most-one COUNT: a week handing back several decisions is worth
+    saying whatever opened them.
+  - **AND THE FILL WAS READING THE WRONG CAP — the other thing review
+    caught, and the one that could put a 90-minute dish on a household's
+    20-minute lunch.** `time_caps` lifts the weekday lunch cap in three
+    cases (the household answered "prepped" or "leftovers" for that
+    weekday; either end of a chain; one of their standing prep days) and
+    every lift is about a BATCH rather than about the day. The fill copies
+    a dish that will be COOKED ON THE DAY, so none of them covers it —
+    measured, `minutes_cap(..., lunch_kind="leftovers")` is None, and a
+    90-minute braise duly landed on a Tuesday lunch the household had said
+    would be leftovers. **The first write-up of this branch said the
+    opposite** ("Inside the 20-minute cap, so honest"), and it was a
+    regression against main, where that slot stayed an honest question. The
+    call site builds its own `fill_caps` through the new
+    `agent._meal_minutes_cap(fresh_cook=True)`, which asks with the lifts
+    off; a weekend lunch stays uncapped, because there is no weekday cap
+    there to lift, and dinner is untouched.
   - **A filled row carries a REASON, not a blank.** `REPEAT_REASON` is `""`
     for a swapped-out repeat because Emily asked for no note there, and
     `plan_quality._reasoning_is_specific` duly warns "has no reasoning at
@@ -493,7 +531,24 @@ why*, not duplicating the diff.
     a gap nothing fits is LEFT — better an honest question than a lunch the
     household already said they haven't time to cook. Same for a week with no
     breakfast anywhere: nothing to repeat, so the question stands.
-  - `tests/test_no_open_breakfast_or_lunch.py` (26). **21 red against main,
+  - **A VACUOUS ASSERTION OF MY OWN, found by review and named rather than
+    quietly fixed, because it is the class this log keeps unpicking.**
+    `test_the_two_open_slots_are_told_apart_by_one_word`'s drift guard read
+    `agent_source()` — `app/agent.py` — for a literal that has never lived
+    there: the raw string lived, and on main still lives, in
+    `app/tools/allergen_gate.py`. Measured: restore it there, which is
+    exactly the drift the test is named for, and all 26 tests stayed green.
+    It reads the writing module now, comment-stripped, and that mutation
+    reddens it. **The stripper itself was wrong on the first cut too and is
+    worth a line**: it rebuilt the source by joining token strings, which
+    drops every whitespace token, so `{"constraint": "allergen"` came back
+    as `{"constraint":"allergen"` and no assertion written the way a person
+    writes one could ever match — the mutation stayed green through the
+    "fix". It blanks comment and docstring RANGES in the original text
+    instead, and a mention of the literal in a comment is confirmed not to
+    redden it.
+  - `tests/test_no_open_breakfast_or_lunch.py` (30 after the review round;
+    26 as first written). **21 red against main,
     and the number is decomposed rather than quoted: SIX fail on the
     assertion they are named for** (three `['open'] == ['planned']`, the
     three-gap spread, `_open_slot_budget` over the finished week, and the
@@ -501,7 +556,18 @@ why*, not duplicating the diff.
     got** (`fill_gaps_with_a_repeat` ×11, `ALLERGEN_CONSTRAINT` ×2,
     `NEVER_OPEN_SLOTS` ×1) and **one is a source marker**. The 5 green on
     main are guards and each names the mutation that pins it.
-  - **FOURTEEN mutations run, thirteen bite**, and the two that say most are
+  - **EIGHTEEN mutations run, seventeen bite** (fourteen as first written,
+    thirteen biting; the review round added four and fixed the one that did
+    not). The four: the call site handed the generator's caps again, i.e.
+    main's bug (1 red); `fresh_cook` not turning the lifts off (1); the
+    allergen exemption removed from `_open_slot_budget` (2); and that
+    exemption widened to drop allergen rows from the at-most-one COUNT as
+    well (1). **One claim of mine was over-precise and is corrected:**
+    "NEVER_OPEN_SLOTS gains dinner … reddens this and nothing else" —
+    measured by review, it reddens THREE
+    (`test_a_missing_dinner_is_still_handed_back_as_a_question`,
+    `test_dinner_is_not_in_scope`,
+    `test_a_week_with_nothing_to_repeat_leaves_the_gap`). Two more that say most are
     the ones that did not bite first time: "a reheat night is offered as a
     dish to copy" reddened NOTHING until its test was re-seeded (the original
     seed was decided by the date tie-break, so a broken exclusion sailed
@@ -523,8 +589,38 @@ why*, not duplicating the diff.
     or prepped, that the model then MISSED, is filled as a fresh cook:
     `weekday_lunches.apply_to_plan` runs earlier and skips a lunch with no
     row, so by the time this pass sees the gap there is nothing left to
-    convert it. Inside the 20-minute cap, so honest — and not what they
-    said. Its own card.
+    convert it. **It IS held to the plain 20-minute weekday cap now** (see
+    the fill_caps bullet above) — so it is honest about time and still not
+    what they said. Its own card. (4) A `slot_needs` **`ready_made`**
+    breakfast or lunch the model missed is filled with a fresh cook the same
+    way: `apply_slot_needs_to_plan` writes `planned_empty` only for `away`,
+    so a missed `ready_made` slot is an ordinary gap — and the app already
+    holds a better answer for it, `recommended_batch_from_entry_id`, which
+    the fill ignores. Found by review; the same product question as (3) and
+    its own card. (`quick` is covered for lunch by the weekday cap;
+    breakfast has no cap anywhere, which is pre-existing.) (5) A FREEFORM
+    row whose text says "Leftovers from …" but which carries no `links_to`
+    can still be copied: `_fill_supply` excludes a CONFIRMED chain and
+    `FROM_FREEZER_KEY`, not a bare sentence, and the generation prompt does
+    ask for leftover nights in freeform text. Narrow and real. (6) **The
+    other warning this entry quotes as motivation — "N open slots this week;
+    the budget is at most 1" — is untouched and still fires**, correctly: a
+    week missing two dinners still hands back two questions, and dinner is
+    deliberately out of scope. The card's rule is the never-open LINE; say
+    "one of the two warnings" rather than both. (7) The fill ignores
+    `meal_variety.theirs()`, so a brought-over lunch or a dish carried on a
+    typed request can be copied onto a gap and silently become two nights of
+    it — their own dish either way, and worth Emily's eyes. (8) `_gaps`
+    opens a connection with no `try/finally` (consistent with the rest of
+    the module, and new code); `out["skipped"]` is initialised and never
+    assigned; and a mid-loop failure is not all-or-nothing — it degrades to
+    main for the remaining gaps, which is the safe direction.
+  - **One piece of copy for Emily rather than a defect.** `GAP_FILL_REASON`
+    is "Something already on your week, rather than a question." — a
+    sentence about the APP's choice between filling and asking, where every
+    sibling reason (`bring_over.REASON`, `cap_enforce.MOVE_REASON`,
+    `freezer_portions.REASON`) is about the food or the week. It only parses
+    if you know the slot could have been open. One constant to change.
 - **2026-09-25 — The Cook screen was crashing in production, on a state key
   that was read twice and declared nowhere. Branch
   `overnight/cook-crash-fix-only`, NOT merged at the time of writing. The
