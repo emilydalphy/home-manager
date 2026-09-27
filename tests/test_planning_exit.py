@@ -136,6 +136,9 @@ def _review_root_html(status: str, root: bool) -> str:
     harness = (
         "var reviewState = { dayIndex: null };\n"
         "function weekSuggestedNoteHtml(){ return ''; }\n"
+        # See test_plan_cards_2026_09_18's prelude: a new callee of
+        # reviewStepHtml needs a stub here or the harness cannot run.
+        "function weekFlagsHtml(){ return ''; }\n"
         "function reviewOpenIndex(){ return 0; }\n"
         "function wkDayMealCount(){ return 1; }\n"
         "function wkDayTabsHtml(){ return '<div class=\"wk-daytabs\"></div>'; }\n"

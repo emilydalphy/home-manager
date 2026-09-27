@@ -39,6 +39,8 @@ from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
 from .tools import feedback as _feedback
+from .tools import draft_flags as _draft_flags
+from .tools import prep_sessions as _prep_sessions
 
 
 # Nothing else in the app configures logging, and an unconfigured logger
@@ -3515,6 +3517,86 @@ def week_swap_nights_undo(week_start: str, req: SwapNightsRequest):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.exception("Undoing a night move failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+class DraftFlagFixRequest(BaseModel):
+    entry_id: int
+    # 'prep_ahead' or 'move'. The DATE is deliberately not taken from the
+    # request: see week_draft_flag_fix.
+    action: str
+
+
+@app.post("/api/week/{week_start}/flag-fix")
+def week_draft_flag_fix(week_start: str, req: DraftFlagFixRequest):
+    """
+    Take one of the two fixes the draft offered on a flag.
+
+    The night is read off the STORED flag, never off the request. The
+    screen is showing a fix Pomona itself worked out ("Prep it Tuesday
+    night", "Move it to Saturday"), and the only honest answer to a tap on
+    it is the one that was offered — so a stale screen either applies the
+    fix as it now stands or applies nothing, and no caller can name a date
+    of its own. A flag that is no longer live (its dish swapped, its night
+    moved) is a 200 saying nothing was done, not an error: the household
+    tapped something that had already stopped being true.
+
+    No model call either way. Both fixes compose a write that already
+    exists — see tools/draft_flags.py.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        # A DRAFT's control, and the store outlives the draft on purpose
+        # (reopening a week brings its flags back). get_week_menu already
+        # withholds them from an approved week, so the only way to reach
+        # this on one is a screen that was open when somebody else
+        # approved — and answering it would silently rearrange a week that
+        # has already been shopped for, in response to a button the app had
+        # stopped showing. Same 200-saying-nothing-was-done shape a stale
+        # flag gets, because that is what this is.
+        if tools.get_weekly_plan(plan_id).get("status") == "approved":
+            return {"status": "gone", "applied": False}
+        flag = next(
+            (f for f in _draft_flags.plan_flags(plan_id) if f.get("entry_id") == req.entry_id),
+            None,
+        )
+        if flag is None:
+            return {"status": "gone", "applied": False}
+        fix = next((f for f in flag.get("fixes") or [] if f.get("action") == req.action), None)
+        if fix is None or not fix.get("date"):
+            return {"status": "gone", "applied": False}
+
+        if req.action == _draft_flags.FIX_PREP_AHEAD:
+            _prep_sessions.add_prep_cut(
+                plan_id, fix["date"],
+                _draft_flags.prep_cut_description(flag.get("dish") or "", flag.get("date") or ""),
+                entry_ids=[req.entry_id],
+            )
+            _draft_flags.dismiss(plan_id, req.entry_id)
+            return {"status": "applied", "applied": True, "action": req.action, "date": fix["date"]}
+
+        if req.action == _draft_flags.FIX_MOVE:
+            result = tools.swap_dinner_nights(plan_id, flag["date"], fix["date"])
+            # A refusal is an answer, not a failure — the same 200 shape
+            # swap-nights itself gives. The flag stays: nothing moved, so
+            # it is still true.
+            if (result or {}).get("status") == "refused":
+                return {"status": "refused", "applied": False, "message": result.get("message")}
+            _draft_flags.dismiss(plan_id, req.entry_id)
+            return {"status": "applied", "applied": True, "action": req.action, "date": fix["date"]}
+
+        # Unreachable, and kept as the shape rather than the guard: an
+        # action this draft does not offer matches no derived fix, so the
+        # `fix is None` return above has already answered it with the same
+        # 200 a stale flag gets. It stands for the day a third fix is added
+        # and somebody forgets a branch here.
+        raise HTTPException(status_code=400, detail=f"{req.action!r} isn't a fix this draft offers.")
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Applying a draft flag's fix failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 

@@ -63,6 +63,12 @@ def _prelude() -> str:
         + "function countOpenSlots() { return 0; }\n"
         + "function approveWithOpenLabel() { return 'Approve anyway'; }\n"
         + "function weekSuggestedNoteHtml() { return ''; }\n"
+        # The draft's flags (weekFlagsHtml, 2026-09-27) — a new callee of
+        # reviewStepHtml, and this harness extracts a FIXED list of
+        # functions, so without a stub it is a ReferenceError rather than
+        # a failed assertion. Stubbed to nothing: these tests are about
+        # what the step draws around the views.
+        + "function weekFlagsHtml() { return ''; }\n"
         + "function weekReplacesNote() { return ''; }\n"
         + "function dayAttendanceLine() { return ''; }\n"
         + "function planEntryLabel(n, which, planned) { return (planned ? 'Re-plan ' : 'Plan ') + (which === 'current' ? 'this week' : 'next week'); }\n"

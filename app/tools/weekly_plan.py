@@ -5275,6 +5275,12 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         # make. Only for a draft: an approved week's band is about the
         # week, not the decision. Never fails the screen.
         "draft_opener": _safe_draft_opener(rows, intake, plan, days) if plan["status"] != "approved" else [],
+        # What the draft had to bend, one line each, with the fixes already
+        # worked out (the decided snag rules, Emily 2026-09-23). Draft only,
+        # for the same reason the opener is: a flag is about a decision the
+        # household has not taken yet. Stale flags are dropped on the way
+        # out — see draft_flags.plan_flags. Never fails the screen.
+        "draft_flags": _safe_draft_flags(plan) if plan["status"] != "approved" else [],
         # Told once, and only once — see PLATES_INTRO and
         # mark_plates_intro_shown. None on every week after the first one
         # where the app actually completed a plate, and None immediately if
@@ -5306,6 +5312,16 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         "next_period": next_period,
         **approval,
     }
+
+
+def _safe_draft_flags(plan) -> list[dict]:
+    from . import draft_flags as _draft_flags  # lazy, see get_week_menu
+
+    try:
+        return _draft_flags.plan_flags(plan["weekly_plan_id"])
+    except Exception:
+        logger.exception("The draft's flags could not be read")
+        return []
 
 
 def _safe_draft_opener(rows, intake, plan, days) -> list[str]:

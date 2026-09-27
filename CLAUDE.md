@@ -416,6 +416,300 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-27 — When the draft bends, it says so, and the fix is already
+  worked out. Branch `overnight/draft-snag-flags`, NOT merged at the time
+  of writing.** Loop Board "The draft follows the snag rules", Emily's
+  decided page of 2026-09-23 — scenario 3 only, which is the one whose
+  data was already sitting there.
+
+      Lasagna takes 60 minutes, and Wednesday is short on time.
+         [ Prep it Tuesday night ]   [ Move it to Saturday ]
+
+  - **THE KEEPING HALF ALREADY WORKED AND IS NOT THIS BRANCH'S DOING —
+    say that first, because it decides what the tests are evidence of.**
+    `cap_enforce` has deliberately left a night alone since 2026-09-26
+    when the household spoke for it (`meal_variety.theirs`), on the stated
+    grounds that a cap is not a reason to overrule a choice. What was
+    missing is that NOTHING SAID SO: `plan_quality` measured the breach
+    into the morning report — a file Emily reads and the household never
+    sees — and the draft showed the over-cap dinner without a word. The
+    flag is the missing half, not a new rule, and
+    `test_the_over_cap_dinner_she_asked_for_is_still_kept_exactly_where_it_was`
+    is green on main and here for exactly that reason: a branch that
+    started flagging by starting to MOVE her dinner would have got the
+    card backwards.
+  - **ITS OWN COLUMN, `weekly_plans.draft_flags_json`, deliberately NOT a
+    key inside `requests_json`** — `record_plan_requests` rewrites that
+    blob wholesale after generation, so a flag written during
+    `_finish_week_slots` would be silently clobbered by it. Additive
+    migration; a pre-column database was opened by the new code and the
+    ALTER lands (measured, not assumed).
+  - **WRITTEN FROM THE SAME READ AS THE WARN.** `enforce_minutes_caps`
+    already re-read `nights()` at the end to compute `left` (every dinner
+    still over cap, each with why it could not be touched); the flags are
+    built from that same read, so the line the draft shows and the warning
+    the morning report carries can never disagree about which nights were
+    kept. `nights()` grew `slot_state` and `cooked_status` for it —
+    `movable` collapses every reason a night is untouchable into one
+    boolean, and the flag has to tell a night they ASKED for (worth saying)
+    from one already cooked (nothing left to offer).
+  - **THE RULE IS `over` AND `theirs`, NOT `over` AND "cap_enforce could
+    not move it" — and it was the other way round until a mutation said
+    so.** With `movable` as the gate, dropping the `theirs` check reddened
+    NOTHING: every non-theirs unmovable night is already excluded by the
+    cooked or reheat/source checks, so `theirs` was unreachable as a
+    filter and the code did not say the rule it was written for. Stated
+    directly, it is load-bearing and testable — and it is also the
+    narrower, correct set: an unrequested dinner that NO repair could
+    reach is still not flagged, because nobody chose it and a line the
+    household can do nothing about is noise. It stays in the morning
+    report, which is where an app's own failure to place a dinner belongs.
+    `theirs` implies not-movable, so a flag can never contradict what
+    cap_enforce did; there is a test asserting that seam, because the two
+    are separate readings of one rule and nothing else would notice them
+    drifting apart.
+  - **THE FIRST VERSION OF THAT TEST COULD NOT MEASURE ITS OWN CLAIM, and
+    that is the lesson worth keeping.**
+    `test_a_dish_nobody_asked_for_is_fixed_rather_than_flagged` seeded a
+    90-minute braise on one rush night — which cap_enforce MOVES, so with
+    the `theirs` check deleted there was nothing over cap left to wrongly
+    flag and the mutation ran green. Found by running the mutations, not by
+    reading the test. Its sibling now seeds a night nothing can fix (every
+    night the same cap, the picker empty), which is the only state in which
+    that check does any work. **And the first cut of THAT test was wrong
+    too**: with a weeknight limit on top, Mon–Fri caps at 20 and the
+    weekend at 30, so the free trade legitimately shortens the overrun by
+    moving the braise to Saturday and the night is never stuck at all.
+    Measured, not reasoned.
+  - **THE TWO FIXES ARE EXISTING WRITES.** "Prep it Tuesday night" is
+    `prep_sessions.add_prep_cut` — the prep-cut row the Cook tab's prep
+    sessions already draw and tick; it does not move the dish, it splits
+    the work, which is what is being offered. "Move it to Saturday" is
+    `weekly_plan.swap_dinner_nights`, which cap_enforce's own re-arrange
+    stage already uses: the rows are re-dated IN PLACE (ids kept, so
+    groceries, the cooked tick and the plate's sides ride along) and the
+    shopping list is untouched.
+  - **BECAUSE THE MOVE IS A TRADE, THE NIGHT OFFERED HAS TO WORK BOTH
+    WAYS — and that is the only real arithmetic here.** `move_target`
+    requires the flagged dish to fit the night it is sent to AND that
+    night's own dish to fit the short night it comes back to. Offering a
+    night that would simply hand the same problem to another one is worse
+    than offering nothing, so a flag with no move is a flag with one
+    button, or none. Nearest by day distance, a tie to the LATER night
+    (a week reads forwards), deterministic so a test can name the answer.
+    **Pinning the second half needed a shape the first half would not
+    already catch** — an uncapped target whose own dish is too long for
+    the short night — and the mutation did not bite until that case was
+    written.
+  - **THE ROUTE READS THE NIGHT OFF THE STORED FLAG, NEVER OFF THE
+    REQUEST.** The screen is showing a fix Pomona itself worked out, so
+    the only honest answer to a tap on it is the one that was offered: a
+    stale screen applies the fix as it now stands or applies nothing, and
+    no caller can name a night of its own. `POST /api/week/{week}/flag-fix`
+    takes `{entry_id, action}` and no date at all. A flag that has stopped
+    being true is a 200 saying nothing was done, not an error — the
+    household tapped something that had already gone.
+  - **A FLAG IS DROPPED AT READ TIME WHEN IT IS ABOUT NOTHING** — its
+    entry gone, its dish changed, or its night moved. The same read-time
+    guard `cooker.get_prep_schedule` puts on a dangling prep row, and for
+    the same reason: `meal_plan_entries` rows are deleted and re-dated by
+    half a dozen paths, and a read-time rule is the one place that covers
+    every one of them, past and future. It is also what clears the flag
+    after the Move fix (the row is re-dated, so the sentence's weekday
+    stops being true); the Prep fix leaves the entry exactly where it was,
+    so that one dismisses explicitly.
+  - **The screen**: celadon-tint with a `--celadon-label` eyebrow and
+    `.wk-mini` buttons — the shape Shop's "maybe already home"
+    (`.gro-athome`) already uses for the same job. NOT `--urgent` (rule 3:
+    nothing is overdue and nothing needs a decision; the week is
+    approvable exactly as it stands) and no apricot (rule 5: the draft's
+    one primary is Approve). Drawn ONCE, above the branch that chooses
+    between What we're eating and Which days, so "one line at the top of
+    the draft" is true whichever way it is being read. Every word is the
+    server's: the renderer composes no sentence and fills in no night.
+  - **AN INDEPENDENT REVIEW OF THIS BRANCH FOUND NINE THINGS AND WAS RIGHT
+    ABOUT EVERY ONE I COULD CHECK. Four were behaviour defects where the
+    fix Pomona OFFERS makes the week worse, and they all had ONE root, so
+    they have one fix.** The offers were worked out once, at generation,
+    and read back verbatim at tap time — but `move_target`'s whole promise
+    is about a PAIR of nights, and the flag names only one of them. A
+    promise made at generation is not the promise the button makes when it
+    is tapped.
+    - **THE BLOCKER, and it needs no stale screen and no second phone:
+      taking the app's own two offers in a row could leave the week
+      worse.** Two asked-for over-cap dinners and one free Saturday get the
+      same offer, "Move it to Saturday". Take Wednesday's (Lasagna, 60) and
+      Saturday now holds a 60-minute dish; Tuesday's flag went on offering
+      it, and taking that one put the 60 onto the Tuesday that started at
+      55 — a LONGER breach than it began with, her requested Moussaka off
+      the night she named, and **no flag left saying so**. The reviewer
+      reproduced it through the buttons alone.
+    - **An ordinary chat swap onto the target night between draft and tap**
+      left the offer standing on a freshly loaded screen — not a race, a
+      genuinely stale stored answer — and tapping it put a 240-minute
+      braise on a 20-minute rush night.
+    - **Neither fix read a clock.** A draft opened mid-week offered "Prep
+      it Tuesday night" on the Wednesday; on a Saturday-start period the
+      move offered a night three days PAST, and taking it put the dinner
+      she asked for somewhere nobody can cook it.
+    - **The move walked past the taste veto `cap_enforce` refuses its own
+      trades on** — that module's own comment calls it "the one gate a move
+      can break". Pomona offered it, the route said "applied", the screen
+      toasted "Moved.", and a dish somebody has said no to landed in front
+      of them.
+    - **THE FIX IS ONE CHANGE: nothing about an offer is stored.** `record`
+      keeps the SNAG — which night, which dish, the sentence — and
+      `plan_flags` re-derives both offers from the live week through
+      `fixes_for`, the same two functions that chose them the first time.
+      A stale target is then impossible by construction rather than by
+      diligence, which is the read-time rule this module already applied to
+      the flagged entry and should always have applied to the half that
+      writes. `prep_target` and `move_target` gained the clock
+      (`weekly_plan.night_has_gone`, the app's own predicate, lazily
+      imported) and the veto (`cap_enforce.would_offend`, made PUBLIC for
+      this rather than copied — one rule, two doors), and `plan_flags` asks
+      the producer's own cooked and over-cap questions again.
+    - **Two more the review found, both fixed.** The route had no
+      plan-status guard, so a draft open on one phone while the week was
+      approved from another could silently rearrange an already-shopped
+      week — criterion 6 was true of the SCREEN only. And the reader did
+      not re-ask whether the night had been cooked, so the prep fix went
+      through on a dinner somebody had already cooked.
+  - **AND TWO CERTAIN VISUAL DEFECTS THAT ONE BROWSER LOAD WOULD HAVE
+    CAUGHT, which is exactly what this entry admitted it had not done.**
+    `.wk-flags` had NO side gutter — `.week-content` supplies none and
+    every sibling on that screen carries its own 20px, so the block
+    rendered flush to both screen edges; the rules were copied from
+    `.gro-athome`, which lives inside a store card that already had the
+    gutter. And the markup said `class="eyebrow wk-flag-eyebrow"` when
+    **there is no bare `.eyebrow` class in this app** (every one is
+    namespaced), so "Worth knowing" rendered at browser-default 16px/400
+    sentence case — LARGER than the 13px sentence under it and in the same
+    ink. It rides `.gro-eyebrow` now.
+  - **A CONTRAST NUMBER THAT WAS NEVER MEASURED, and the correction made
+    the same mistake once before being caught.** `.wk-flag-trouble` took
+    `--warn-ink`, justified by citing `.week-conflict-note` — which is
+    measured on `--ground`. On this block's `--celadon-tint` it is
+    **4.40:1 in light**, under AA for 13px/600. It is `--ink` now, **11.44:1
+    light / 10.37:1 dark**. The first version of that comment quoted
+    11.60/11.28, which is `--ink` on `--sand` — the BUTTON's background,
+    not the sentence's, i.e. the very error being fixed. Both figures were
+    recomputed from `theme.css` here rather than taken from the review.
+  - **THE TEST EVIDENCE WAS WRONG IN BOTH PLACES AND IS REPLACED BY A
+    MEASUREMENT.** This entry said "Red against main is 19"; the file's own
+    docstring said "15 red / 6 green" of 26 tests, which does not even sum.
+    Measured by the docstring's own stated method (main's `app/` and
+    `static/` over this tree, the untracked module file surviving):
+    **30 failed, 5 passed**, and the failures are **20 × `no such column:
+    draft_flags_json`** (inside the store, never reaching an assertion),
+    4 × `substring not found` inside the file's own `_extract` helper,
+    2 × a missing `would_offend`, and one each of a 404 and two KeyErrors.
+    **EXACTLY ONE test reaches a real assertion** — the source marker. So
+    there is ONE behaviour catch against main, not fifteen, and
+    red-against-main is worth almost nothing for this file. The header says
+    all of that now, and the five that really do pass on main are named.
+  - **The per-test labels were wrong too, and the convention is stated
+    rather than patched.** The review found seven labelled GUARD ("green on
+    main") that are red there and one labelled CATCH that is green. CATCH
+    in this file now means "this bites when the behaviour it names is
+    mutated away", not "red on main", because for this file the second
+    thing is unmeasurable.
+  - **THE EVIDENCE IS THE MUTATIONS, and they are re-run on the fixed
+    tree.** The originals still bite; the five written for the review round
+    each redden the tests written for it: the OLD DESIGN put back (fixes
+    stored and read back verbatim) **3 red**, no clock on either target
+    **1**, no taste veto on the move **2**, no approved-week guard on the
+    route **1**, the reader no longer re-asking cooked-and-over **2**.
+  - **COST, which this entry never recorded and this repo usually does.**
+    `plan_flags` on a plan with no flags is **1 connection**, unchanged —
+    `_stored` short-circuits before anything else is read, so the ordinary
+    draft pays nothing. A draft that HAS a flag pays **17** (it re-reads
+    the plan's dinners and the time rules through `cap_enforce.nights`,
+    plus the intake and the memory those caps are computed from), against
+    2 before. That is the price of the offers being true, and it is paid
+    once per Plan-tab payload on a flagged draft only.
+  - **Three smaller findings, all confirmed and handled.** The route's 400
+    is unreachable (an unknown action matches no derived fix, so the
+    `fix is None` return answers first) — kept as the shape for a third
+    fix, with a comment saying it is unreachable. `from . import time_caps`
+    was a dead import and is gone. And "the prep-cut row the Cook tab's
+    prep sessions already draw and tick" was true only for a household with
+    declared `rhythm.prep_days`: `cookFocusPrepTasks` deliberately excludes
+    `prep_cut`, so on the default household it lands in Cook's loose
+    get-ready rows and on Today's timeline instead. It surfaces either way,
+    which is what the fix needs; the sentence now says which.
+  - **FOUND BY THE REVIEW AND DELIBERATELY NOT FIXED, so nobody reports it
+    as new.** Taking the move fix makes the draft's own opening line read
+    "Lasagna Wednesday dinner Saturday, as you asked" —
+    `derived_from.freeform` rides along with the re-dated row, so `draft_opener` and `asked_fact`
+    both claim she asked for a night she did not. **Pre-existing in
+    `draft_opener` + `swap_dinner_nights` and reachable today by dragging a
+    Plan tile**, so it is not this branch's bug — but this branch puts a
+    one-tap button in front of it, and a fix whose whole job is to settle a
+    snag should not make the app's own headline untrue. Its own card.
+  - `tests/test_draft_snag_flags.py` (26 → 35). The nine added each
+    reproduce one reviewed defect against the real app, and each is red
+    under the mutation that restores the old behaviour.
+  - **TWO BUGS OF MY OWN, found by reading my own finished diff rather than
+    by any test, and both are instances of classes this log already
+    records.** (1) `runWeekFlagFix`'s in-flight guard was
+    `if (!weekStart || weekFlagState) return;` — it read the whole state
+    object, not the busy flag, and a FAILED fix deliberately leaves a
+    sentence behind in that object. So one failed tap killed every flag
+    button on the screen, permanently, until the panel was next rebuilt —
+    and a failure is exactly the moment somebody taps again. The guard is
+    `weekFlagState.busy` now. (2) The flag production shared a `try` with
+    the read-back that computes `left`, so a failure writing the flags
+    would have swallowed the cap WARNING — a new silence introduced into
+    the one place that was already reporting this, which is the worse half
+    of the bug by some distance. It is in a try of its own now, after the
+    loop, with a comment saying why. Neither is reddened by any test in
+    this file, and both are one line; the reason they are written down is
+    that "the tests pass" was true of both.
+  - **Numbers, read off the runs at `TZ=America/Toronto`: 7673 passed, 0
+    failed** on the commit that ships, against 7638 collected on main —
+    +35 is this one new file exactly. **The four CI weekday pins were
+    measured on the PRE-REVIEW commit** (monday, friday, saturday and
+    sunday each 7661 passed, 3 skipped, 0 failed, when the file held 26
+    tests) and are quoted as that rather than as the shipping tree's, per
+    this log's own rule against carrying a figure forward across a change.
+    The review round touched no dated seed — its nine new tests take every
+    date from `conftest.household_today()` and one deliberately seeds
+    around the household's own today — but that is reasoning, not a
+    measurement. `git diff main -- tests/` adds one file and
+    changes three with a note each (two node harnesses need a
+    `weekFlagsHtml` stub — a new callee of `reviewStepHtml`, which those
+    harnesses extract as a FIXED list, so without it a ReferenceError;
+    and six assertions in
+    `test_rush_cap_enforced.py` that pin `enforce_minutes_caps`' exact
+    return shape carry its new `flagged` key). No test was deleted or
+    weakened.
+  - **Driven end to end on a throwaway database**, through real generation
+    and the real route with only the model call stubbed: a 60-minute
+    Lasagna on a rush night capped at 20 is kept, flagged in Emily's own
+    sentence with both nights filled in; the Prep tap writes
+    `2026-09-29 'Get Lasagna ready for Wednesday' (prep_cut)` and leaves
+    Wednesday's dinner alone; the Move tap trades Wednesday and Saturday
+    and the flag goes; a second tap on the spent flag answers `gone`.
+  - **NOT BUILT, so nobody reports it as missing — this is scenario 3 of
+    ten.** Scenarios 1, 2 and 5 (where a request with no day named should
+    land, and a requested dish that fits no night going on the night with
+    the most time) are the PLACEMENT half of the card and want a pass that
+    runs before any of this. Scenario 7 (two requests on one day), 8 (a
+    request on a day out — today it is DELETED rather than moved, since
+    `_finish_week_slots` writes the out night's `planned_empty` over
+    whatever the model sent) and 9 (an allergy clash saying why) each need
+    their own producer feeding this same store, which is what the store is
+    shaped for. An over-cap CHAIN END is flagged by nobody: cap_enforce's
+    own docstring names it as its biggest open hole and Emily's call, and
+    widening into it from the flag side would be deciding it unmeasured.
+  - **Not verified in a browser** — no browser tooling was reachable from
+    this session, so the block's LAYOUT at 390px is unchecked. It is
+    `.gro-athome`'s own rules on a new class, its buttons are `.wk-mini`
+    (36px in a 44px target), and the contrast pair it uses
+    (`--celadon-label` on `--celadon-tint`, 4.87:1 light / 5.92:1 dark) is
+    one this app already measured and records.
+
 - **2026-09-25 — The Cook screen was crashing in production, on a state key
   that was read twice and declared nowhere. Branch
   `overnight/cook-crash-fix-only`, NOT merged at the time of writing. The

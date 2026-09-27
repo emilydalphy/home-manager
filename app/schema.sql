@@ -565,6 +565,11 @@ CREATE TABLE IF NOT EXISTS weekly_plans (
     -- the slots' own derived_from — never from a guess about the words.
     -- '' on a plan drafted before this existed, or by a stubbed model.
     requests_json TEXT NOT NULL DEFAULT '',
+    -- What the draft had to bend, and the fixes it worked out — the decided
+    -- snag rules (Emily, 2026-09-23). Its own column rather than a key inside
+    -- requests_json, which record_plan_requests rewrites wholesale after
+    -- generation and would clobber it. See app/tools/draft_flags.py.
+    draft_flags_json TEXT NOT NULL DEFAULT '',
     constraints_notes TEXT NOT NULL DEFAULT '', -- freeform per-week asks, e.g. "out Thu/Fri, keep it under 30 min"
     -- Snapshotted from meal_preferences.planning_mode at creation time, so a
     -- past plan stays interpretable even if the household later switches
