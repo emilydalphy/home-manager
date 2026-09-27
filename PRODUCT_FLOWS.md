@@ -503,6 +503,64 @@ exempt from the no-repeat rule, show *From last week* on the draft, and what las
 list bought for them isn't bought again. Card:
 https://app.notion.com/p/3e61f4c0523181c2b6a9ff77f5650f76
 
+**Walk 2026-09-27 — Re-plan of Sun Sep 27–Fri Oct 2 (Emily's phone, live app, screen
+recording at 3:51pm Sunday, no audio; walked from the recording frame by frame).**
+Path as it is: Plan (draft band: Re-plan · Plan next week) → Re-plan → "One moment…" →
+*This week so far* (banner *"Emily started this 22 hours ago — I've carried on from where
+they got to."*, Bring over from last week, Days **Sat 3 → Fri 9** — she changed them to
+Sun 27 → Fri 2) → Weekday lunches (4 prepped Sun + Tue, 1 leftovers, 0 cooked that day)
+→ Any days that are different (Wed leftovers; Fri first *nobody home for dinner*, then
+*short on time*) → Mood (*Something new*, *Burgers*) → Anything else (*"I have corn that
+I need to use… And I want to make a Japanese curry heavy on veggies today… and have
+leftovers for it."*) → Plan this week → *Cooking up your week…* (~50s, Got it card read
+it all back correctly) → draft → What we know (checked the rhythm) → snack Swap sheet
+(closed) → Friday leftovers page (*Mark eaten*) → Thursday recipe → Change the veg →
+Spinach → back to the draft by day.
+Intake took ~2 minutes and read back correctly. **The draft ignored most of it.**
+
+**Friction found (2026-09-27):**
+- Wednesday *leftovers* came back as an open "Your call" dinner → card "Draft: no open
+  'Your call' slots…" (3e81f4c0523181f4a201d4ea1d556fc2).
+- Curry asked for *today* at 3:53pm landed at Sunday **lunch**; Sunday dinner open with
+  *"I'd rather ask than guess: I'd pencilled in leftovers from a meal that hasn't happened
+  yet…"* → card "'today' means from now" (3e81f4c052318135a36cffcc33c50c6d) + the
+  no-open-slots card.
+- Beef bowls Thursday dinner, Friday lunch and Friday dinner → card "no dish on more than
+  two meals in a row" (3e81f4c052318192ac50c750e4c7f68e).
+- Monday a fresh 25-min lunch although 0 cooked-that-day; Sunday's prep fed nothing; 4
+  lunch dishes against rhythm Lunches 2 → card "weekday lunches follow my answers"
+  (3e81f4c0523181bfa2bbff1745795d01).
+- 6 snack dishes against "Snacks a day 2" (no distinct-snack count exists) → card
+  (3e81f4c0523181099398d9991056de16).
+- *Something new* but the same breakfast as this week → card
+  (3e81f4c0523181339d8afd0e421bd761).
+- *Burgers* picked, no burger; Greek chicken labelled *"Burgers, as asked"* → card
+  (3e81f4c0523181d69e2bc1bef7df1ef3).
+- Changing the veg reset *Cooking for* 6 → 2 and split Thursday off from Friday's
+  leftovers → card (3e81f4c0523181b787a9fe63f0896f0d).
+- Plate VEG = *Fresh ginger* (an herb, per Emily) → card (3e81f4c052318157b1bbc16de0122516).
+- Cauliflower rice **and** a side of jasmine rice → card (3e81f4c0523181039e17d16a0341e20f).
+- Reason lines (*"None-specific-but-requested, as asked"*, *"A household favorite, keeps
+  it simple"*) → card "Cut the reason line" (3e81f4c052318136a2dbe526e207a925).
+- Re-plan opened on next week's dates; banner talks about Emily as "they" → card
+  (3e81f4c0523181059b7ef1be21e9b09b).
+- Keyboard covers the Done button on Anything else (~6s pause) → card
+  (3e81f4c05231818690acd8dbabaab481).
+- Future leftovers meal on a draft offers *Mark eaten*, shows no recipe → card
+  (3e81f4c052318186950bfa208a5b3750).
+- No card: *Got it* clamps the note to two lines (deliberate, board D3); *"6 days · your
+  turn"* unclear; Bring over list didn't read as a shortcut (she typed two dishes that
+  were on it).
+
+**Decisions (Emily, 2026-09-27):** A — a draft never leaves open slots for meals the
+household answered ("A - no"). B — no dish on more than two meals in a row ("yes only two
+with that logic"). C — cut the reason line under every meal ("cut it everything").
+Root cause in one line: most intake answers were prompt-only, with no deterministic check
+after the model call. All 14 cards claimed and built the same evening on branches
+`draft-honours-days-2026-09-27`, `draft-honours-counts-2026-09-27`,
+`change-part-keeps-batch-2026-09-27`, `plan-screens-copy-2026-09-27`. Flow 2 is due a
+re-walk once they merge.
+
 - **For builders:** `static/plan-week.html` (the intake: steps 1–4, day sheet,
   `toggleAvatar`, `SKIP_LABELS`, the building screen), `app/tools/week_intake.py`
   (`_rhythm_packed_lunch_suggestions` — the lunch prefill that exists but doesn't skip
