@@ -1306,14 +1306,16 @@
       // POST /api/week/{week_start}/slot), not the dinner_decision path
       // above — that one only plans a brand-new slot; this one is
       // replacing an existing open one.
-      // No body line: the item's body is the stored open_reason, the
-      // model's why, and the title already says what's asked (Emily,
+      // The body line only when it's a question to answer (item.question —
+      // hosting's "what's the main?", a slot no safe dish could fill);
+      // the stored open_reason's explaining is not said (Emily,
       // 2026-09-27, decision C: "cut it everything").
       var hasOptions = item.options && item.options.length;
       return (
         '<div class="shell-card needs-you-card urgency-' + item.urgency + '" data-card-type="dinner_open">' +
           '<div class="ny-kicker">' + escapeHtml(item.kicker) + '</div>' +
           '<div class="ny-title">' + escapeHtml(item.title) + '</div>' +
+          (item.question ? '<div class="ny-summary">' + escapeHtml(item.question) + '</div>' : '') +
           (hasOptions
             ? '<div class="ny-options">' +
                 item.options.map(function (opt, i) {
@@ -16314,13 +16316,16 @@
   // at the bottom of the root, one per open slot and none of them beside
   // the day it was about; now it is revealed by "Pick" inside that day's
   // own card (see daySlotCardHtml). Same options, same write. The stored
-  // open_reason ("Sunday I'd rather ask than guess: …") is not said here
-  // (Emily, 2026-09-27, decision C: "cut it everything") — one plain line
-  // says what's true, and the options under it are the way on.
+  // open_reason's explaining ("Sunday I'd rather ask than guess: …") is not
+  // said here (Emily, 2026-09-27, decision C: "cut it everything") — one
+  // plain line says what's true. A real question stays: hosting's "what's
+  // the main?" and a slot no safe dish could fill (get_week_menu's
+  // open_question, weekly_plan.open_slot_question).
   function openSlotCardHtml(date, slot, entry) {
+    var line = entry.open_question || ('Nothing planned for this ' + slotWord(slot) + ' yet.');
     return (
       '<div class="shell-card week-open-card" data-open-date="' + date + '" data-open-slot="' + slot + '">' +
-        '<div class="week-open-reason">' + escapeHtml('Nothing planned for this ' + slotWord(slot) + ' yet.') + '</div>' +
+        '<div class="week-open-reason">' + escapeHtml(line) + '</div>' +
         (entry.options && entry.options.length
           ? '<div class="week-open-options">' + entry.options.map(function (opt) {
               return '<button type="button" class="week-open-option" data-choice="' + escapeHtml(opt.label) + '">' +

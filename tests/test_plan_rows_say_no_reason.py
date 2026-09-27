@@ -117,9 +117,64 @@ def test_no_renderer_prints_a_reason_an_asked_fact_or_an_open_reason():
     assert "entry.reason" not in SHELL_JS
     assert "entry.asked" not in SHELL_JS
     assert "entry.open_reason" not in SHELL_JS
-    open_card = SHELL_JS[SHELL_JS.index("function openSlotCardHtml("):]
-    open_card = open_card[:open_card.index("\n  }\n")]
-    assert "'Nothing planned for this ' + slotWord(slot) + ' yet.'" in open_card
     today_card = SHELL_JS[SHELL_JS.index("if (item.type === 'dinner_open') {"):]
-    today_card = today_card[:today_card.index("data-card-type=\"dinner_open\"") + 400]
+    today_card = today_card[:today_card.index("data-card-type=\"dinner_open\"") + 500]
     assert "item.body" not in today_card
+    assert "(item.question ? '<div class=\"ny-summary\">' + escapeHtml(item.question) + '</div>' : '')" in today_card
+
+
+# ---------- open slots: a real question stays, an explanation goes ----------
+
+HOSTING = "You’re hosting Thanksgiving for 12 — what’s the main? Tell me and I’ll build the rest around it."
+ALLERGY = "I couldn’t find a dinner without peanuts for Sam — I’d rather ask than guess."
+EXPLAINING = "Sunday I’d rather ask than guess: I’d pencilled in leftovers from a meal that hasn’t happened yet."
+
+
+def test_only_a_real_question_survives_as_the_open_slots_line():
+    from app.tools.weekly_plan import open_slot_question as q
+    assert q(HOSTING, json.dumps({"constraint": "hosting", "holiday": "Thanksgiving"})) == HOSTING
+    assert q(ALLERGY, json.dumps({"constraint": "allergen"})) == ALLERGY
+    # The allergen sweep drops through the stepper, filed as a cut-back:
+    # the sentence is what marks it.
+    assert q(ALLERGY, json.dumps({"constraint": "household_cut_back", "dish": "Satay"})) == ALLERGY
+    assert q(EXPLAINING, json.dumps({})) == ""
+    assert q("You cut Chili back, so this one is yours to fill.",
+             json.dumps({"constraint": "household_cut_back"})) == ""
+    assert q("", json.dumps({"constraint": "hosting"})) == ""
+
+
+def test_the_menu_and_today_carry_the_question_or_nothing(two_adults, seen_context):
+    from app.tools import weekly_plan
+    _seen, stub = seen_context
+    mon = _monday(0)
+    dates = tools._week_dates(mon)
+    stub(_week_of(dates, lunches=["Chili", "Soup", "Salad", "Curry", "Wrap", "Pita", "Toastie"],
+                  dinners=["Tacos", "Roast", "Pasta", "Stir-fry", "Pizza", "Burgers", "Stew"]))
+    plan_id = agent.generate_weekly_plan(mon)["weekly_plan_id"]
+    for d, reason, derived in ((dates[5], HOSTING, {"constraint": "hosting", "holiday": "Thanksgiving"}),
+                               (dates[6], EXPLAINING, {})):
+        weekly_plan.clear_plan_slot(plan_id, d, "dinner")
+        weekly_plan.plan_slot_open(weekly_plan_id=plan_id, meal_date=d, slot="dinner",
+                                   open_reason=reason, derived_from=derived)
+    days = {d["date"]: d for d in tools.get_week_menu(plan_id)["days"]}
+    assert days[dates[5]]["dinner"]["open_question"] == HOSTING
+    assert days[dates[6]]["dinner"]["open_question"] == ""
+
+
+@_needs_node
+def test_the_open_card_says_the_question_or_the_plain_line():
+    import nodeharness
+    script = (
+        _extract("escapeHtml", SHELL_JS) + "\n"
+        + "function isSnackSlot(s) { return false; }\n"
+        + _extract("slotWord", SHELL_JS) + "\n"
+        + _extract("openSlotCardHtml", SHELL_JS) + "\n"
+        + f"""console.log(JSON.stringify({{
+  hosting: openSlotCardHtml('2026-10-08', 'dinner', {{ open_reason: {json.dumps(HOSTING)}, open_question: {json.dumps(HOSTING)}, options: [] }}),
+  explaining: openSlotCardHtml('2026-10-04', 'lunch', {{ open_reason: {json.dumps(EXPLAINING)}, open_question: '', options: [] }})
+}}));"""
+    )
+    out = json.loads(nodeharness.run_node(script).stdout)
+    assert "what’s the main?" in out["hosting"] and "Nothing planned" not in out["hosting"]
+    assert '<div class="week-open-reason">Nothing planned for this lunch yet.</div>' in out["explaining"]
+    assert "rather ask" not in out["explaining"]

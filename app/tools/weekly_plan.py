@@ -516,6 +516,31 @@ def plan_slot_empty(
     return {"entry_id": entry_id, "date": meal_date, "slot": slot, "slot_state": "planned_empty", "reason": reason}
 
 
+def open_slot_question(open_reason: str | None, derived_from_json: str | None) -> str:
+    """
+    The open slot's sentence when it's a question the household has to
+    answer, else "" (Emily, 2026-09-27). Kept: hosting ("You're hosting
+    Thanksgiving for 12 — what's the main?", big_meal) and a slot no safe
+    dish could fill (allergen_gate — filed under its own constraint by the
+    re-pick, under the stepper's by the sweep, so its sentence is matched
+    too). Every other open_reason is the app explaining itself ("Sunday I'd
+    rather ask than guess: …") and the screens say one plain line instead.
+    """
+    from . import allergen_gate as _allergen_gate  # lazy: it imports this module
+
+    text = (open_reason or "").strip()
+    if not text:
+        return ""
+    try:
+        derived = json.loads(derived_from_json or "{}") or {}
+    except (TypeError, ValueError):
+        derived = {}
+    constraint = derived.get("constraint") if isinstance(derived, dict) else None
+    if constraint in ("hosting", _allergen_gate.ALLERGEN_CONSTRAINT) or _allergen_gate.is_open_reason(text):
+        return text
+    return ""
+
+
 def plan_slot_open(
     weekly_plan_id: int,
     meal_date: str,
@@ -5066,6 +5091,9 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             return {
                 "title": "I’d like your call on this one", "meta": None, "source": "open",
                 "state": "open", "open_reason": row["open_reason"],
+                # What the screens say for it (open_slot_question): the
+                # question when it is one, else "".
+                "open_question": open_slot_question(row["open_reason"], row["derived_from_json"]),
                 "options": derived.get("options") or [], "entry_id": row["id"],
             }
         title = row["meal"]
@@ -5617,6 +5645,9 @@ def get_needs_you_items() -> list[dict]:
                 "date": candidate,
                 "slot": "dinner",
                 "body": row["open_reason"] or "",
+                # The body only when it's a question to answer (Today's
+                # card shows this, never the bare body — 2026-09-27).
+                "question": open_slot_question(row["open_reason"], row["derived_from_json"]),
                 "options": derived.get("options") or [],
                 "week_start": week_start,
                 # The plan this card is about, by id: a week key alone
