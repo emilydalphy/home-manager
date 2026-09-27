@@ -3264,7 +3264,9 @@ territory they clearly want back. Check recent_history's `slot` field; a househo
 seeing last week's dinners stops trusting the draft (Emily, 2026-09-20). Breakfast and snack repeating within the \
 current week is normal and expected (see the guideline above), and so is a breakfast/snack \
 idea persisting from a previous week — recent_history's breakfast/snack entries are \
-informational only, not something to avoid repeating. Separately, avoid repeating the same \
+informational only, not something to avoid repeating — EXCEPT when intake.moods includes \
+"Something new": then breakfast joins the rule, and a breakfast in recent_history is not drafted \
+again unless they asked for it by name. Separately, avoid repeating the same \
 main_protein or cuisine too many days in a row for dinner — check recent_history's cuisine/ \
 main_protein fields, not just meal names. Where recent_history gives a `rating` for a past \
 meal, treat it as a soft signal on how forgivable a repeat would be: reaching for something \
@@ -6079,7 +6081,7 @@ def _finish_week_slots(
     _meal_variety.repick_recent_repeats(
         plan_id, week_start_date,
         repick_budget or _allergen_gate.CallBudget(),
-        asks=count_asks,
+        asks=count_asks, slots=_meal_variety.no_repeat_slots(intake),
     )
 
     # "Four dinners a week" means four dishes, and the model is only ASKED

@@ -1069,6 +1069,20 @@ def is_surprise_me(intake: dict | None) -> bool:
     return bool(intake) and SURPRISE_MOOD in (intake.get("moods") or [])
 
 
+def no_repeat_slots(intake: dict | None) -> tuple[str, ...]:
+    """
+    The slots repick_recent_repeats holds to the two-week window. Dinner
+    and lunch always; breakfast too when the week's moods include
+    "Something new" (Emily, 2026-09-27: she picked it, and last week's
+    breakfast came back — "new" read as dinners only). Without that mood a
+    breakfast repeating across weeks is the rhythm working, as ever.
+    """
+    from .week_intake import SOMETHING_NEW_MOOD
+    if intake and SOMETHING_NEW_MOOD in (intake.get("moods") or []):
+        return NO_REPEAT_SLOTS + ("breakfast",)
+    return NO_REPEAT_SLOTS
+
+
 def household_dish_history(exclude_plan_id: int | None = None, replacing: tuple[str, str] | None = None) -> list[dict]:
     """
     Every dinner and lunch dish this household has had from Pomona, oldest
@@ -1501,7 +1515,7 @@ def _replace_whole_dish(plan_id: int, dish: dict, nights: list[dict], budget, pi
 
 
 def repick_recent_repeats(plan_id: int, period_start: str | None, budget, picker=None,
-                          asks: tuple[str | None, ...] = ()) -> dict:
+                          asks: tuple[str | None, ...] = (), slots: tuple[str, ...] = NO_REPEAT_SLOTS) -> dict:
     """
     Every dinner and lunch on this draft that the household ate inside the
     variety window is replaced with one they did not — the whole dish, all
@@ -1522,6 +1536,10 @@ def repick_recent_repeats(plan_id: int, period_start: str | None, budget, picker
     Breakfast and snack are NOT checked, on purpose: the prompt asks for
     them to repeat, and a household eating the same oats every morning is
     the rhythm working rather than a rule being broken (NO_REPEAT_SLOTS).
+    The one exception is `slots`: a week whose moods include "Something
+    new" passes breakfast in too (no_repeat_slots), and last fortnight's
+    breakfast goes the same way — the whole dish, every morning it holds,
+    one picker call.
 
     Never raises: counts come back for the log and for tests, and any
     failure leaves the plan as the model wrote it.
@@ -1539,7 +1557,7 @@ def repick_recent_repeats(plan_id: int, period_start: str | None, budget, picker
         refuse = set(had)
         because = f"you had it in {variety_window_words()}"
         chains = _leftovers.plan_leftover_chains(plan_id)
-        for slot in NO_REPEAT_SLOTS:
+        for slot in slots:
             for dish in _group_dishes(_load_slot_entries(plan_id, slot), chains):
                 if repeat_key(dish["name"]) not in had:
                     continue
