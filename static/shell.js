@@ -964,7 +964,7 @@
     var slot = panel.querySelector('#today-holding');
     if (!slot) return;
     try {
-      var res = await fetch('/api/held');
+      var res = await Api.fetch('/api/held');
       if (!res.ok) throw new Error('held lookup failed');
       heldState.items = (await res.json()).held || [];
     } catch (err) {
@@ -1043,7 +1043,7 @@
   // The list read for What we know when Now hasn't been built this load.
   async function loadHeldForWwk() {
     try {
-      var res = await fetch('/api/held');
+      var res = await Api.fetch('/api/held');
       if (res.ok) heldState.items = (await res.json()).held || [];
     } catch (err) { console.warn('Held things lookup failed:', err); }
     if (wwkState.open) wwkRenderSection('holding');
@@ -1064,7 +1064,7 @@
     heldState.items = items.filter(function (h) { return h !== gone; });
     renderHeldEverywhere();
     try {
-      var res = await fetch('/api/held/' + encodeURIComponent(id) + '/done', { method: 'POST' });
+      var res = await Api.fetch('/api/held/' + encodeURIComponent(id) + '/done', { method: 'POST' });
       if (!res.ok) throw new Error('held done ' + res.status);
       toastSaved(savedLine(gone.text, 'ticked off'),
         { label: 'Undo', onClick: function () { restoreHeld(gone, index); } });
@@ -1082,7 +1082,7 @@
     heldState.items = items;
     renderHeldEverywhere();
     try {
-      var res = await fetch('/api/held/' + encodeURIComponent(item.id) + '/restore', { method: 'POST' });
+      var res = await Api.fetch('/api/held/' + encodeURIComponent(item.id) + '/restore', { method: 'POST' });
       if (!res.ok) throw new Error('held restore ' + res.status);
       // Finding 23 of the copy sweep: "Put back" was a euphemism with no
       // subject. The row is back on the list and this says which row.
@@ -1106,7 +1106,7 @@
     var wrap = panel.querySelector('#plan-week-nudge');
     if (!wrap) return;
     try {
-      var res = await fetch('/api/week/plan-nudge');
+      var res = await Api.fetch('/api/week/plan-nudge');
       if (!res.ok) throw new Error('nudge lookup failed');
       var nudge = await res.json();
       renderPlanWeekNudge(wrap, nudge);
@@ -1157,7 +1157,7 @@
       startPlanningWeek(nudge.week_start, nudge.day_count || 7);
     });
     try {
-      await fetch('/api/notifications/dismiss', {
+      await Api.fetch('/api/notifications/dismiss', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: nudge.dismiss_key })
@@ -1242,7 +1242,7 @@
   // instead, so its localStorage "Later" snooze went with the card.
   async function loadNeedsYou(panel) {
     try {
-      var res = await fetch('/api/needs-you');
+      var res = await Api.fetch('/api/needs-you');
       if (!res.ok) throw new Error('needs-you lookup failed');
       var data = await res.json();
       renderNeedsYou(panel, data.items || []);
@@ -1411,7 +1411,7 @@
   // the toast points at chat for it.
   async function answerHolidayFromNow(panel, date, answer, cardEl) {
     try {
-      var res = await fetch('/api/holidays/answer', {
+      var res = await Api.fetch('/api/holidays/answer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date: date, answer: answer })
@@ -1451,7 +1451,7 @@
     // rule (DESIGN_SYSTEM.md §8): the answer is "nothing lost," said once.
     if (addIngredients === null) { showToast('Left as it was.'); return; }
     try {
-      var res = await fetch('/api/needs-you/dinner', {
+      var res = await Api.fetch('/api/needs-you/dinner', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date: mealDate, meal: meal, add_ingredients: addIngredients })
@@ -1485,7 +1485,7 @@
       // this week (2026-09-13), and the pick belongs to the approved one.
       var body = { date: mealDate, slot: 'dinner', choice: choice };
       if (planId) body.weekly_plan_id = Number(planId);
-      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/slot', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/slot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -1731,6 +1731,12 @@
     if (toastTimer) clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { toastEl.hidden = true; }, holdMs || (action ? 6000 : 2200));
   }
+  // Api.json's failure toast (static/api.js) is this one. Nothing in this
+  // file uses Api.json yet — every call moved onto api.js went through
+  // Api.fetch and kept its own failure handling — so this changes nothing
+  // today; it is here so the next call written with Api.json toasts the
+  // same way every other failure in the app does.
+  if (typeof Api !== 'undefined' && Api.onError) Api.onError(function (said) { showToast(said); });
 
   // ---------- The moves themselves ----------
   // Shapes, ticks and actions for /api/today/moves. Everything below reads
@@ -2266,7 +2272,7 @@
 
   async function loadTonightAsk(panel) {
     try {
-      var res = await fetch('/api/today/tonight');
+      var res = await Api.fetch('/api/today/tonight');
       if (!res.ok) throw new Error('tonight lookup failed');
       renderTonightAsk(panel, await res.json());
     } catch (err) {
@@ -2330,7 +2336,7 @@
     var card = panel.querySelector('#tonight-ask .tonight-card');
     if (card) card.classList.add('pop-out');
     try {
-      var res = await fetch('/api/today/tonight/keep', {
+      var res = await Api.fetch('/api/today/tonight/keep', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date: data.date })
@@ -2366,7 +2372,7 @@
   // two cards stacked with their yes on opposite sides invites a mis-tap).
   async function loadYesterdayCheck(panel) {
     try {
-      var res = await fetch('/api/today/yesterday');
+      var res = await Api.fetch('/api/today/yesterday');
       if (!res.ok) throw new Error('yesterday lookup failed');
       renderYesterdayCheck(panel, await res.json());
     } catch (err) {
@@ -2429,7 +2435,7 @@
       meals: before.filter(function (m) { return m !== meal; })
     }));
     try {
-      var res = await fetch('/api/today/yesterday/answer', {
+      var res = await Api.fetch('/api/today/yesterday/answer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entry_id: entryId, answer: answer })
@@ -2567,7 +2573,7 @@
     var buttons = tonightSheet ? tonightSheet.querySelectorAll('.tonight-option') : [];
     buttons.forEach(function (b) { b.disabled = true; });
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start) + '/swap-nights', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start) + '/swap-nights', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date_a: tonightDate, date_b: otherDate })
@@ -2625,7 +2631,7 @@
     var buttons = tonightSheet ? tonightSheet.querySelectorAll('.tonight-option') : [];
     buttons.forEach(function (b) { b.disabled = true; });
     try {
-      var res = await fetch('/api/today/tonight/night-off', {
+      var res = await Api.fetch('/api/today/tonight/night-off', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date: data.date, confirm_cooked: confirmCooked || false })
@@ -2735,7 +2741,7 @@
   // "Put back." was a fragment with no subject).
   async function undoTonightNightOff(panel, tonightDate, dish) {
     try {
-      var res = await fetch('/api/today/tonight/night-off-undo', {
+      var res = await Api.fetch('/api/today/tonight/night-off-undo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date: tonightDate })
@@ -2760,7 +2766,7 @@
     var data = panel._tonight;
     if (!data || !data.week_start) return;
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start) + '/swap-nights-undo', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start) + '/swap-nights-undo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date_a: tonightDate, date_b: otherDate })
@@ -2827,7 +2833,7 @@
 
   async function loadTodayMoves(panel) {
     try {
-      var res = await fetch('/api/today/moves');
+      var res = await Api.fetch('/api/today/moves');
       if (!res.ok) throw new Error('today moves lookup failed');
       renderTodayMoves(panel, await res.json());
     } catch (err) {
@@ -2857,7 +2863,7 @@
     renderTodayMoves(panel, data);
     todayAnimateNodeSettle(panel, moveId, fromState);
     try {
-      var res = await fetch('/api/today/moves/' + encodeURIComponent(moveId) + '/done', {
+      var res = await Api.fetch('/api/today/moves/' + encodeURIComponent(moveId) + '/done', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ done: done })
@@ -2943,7 +2949,7 @@
     var countEl = panel.querySelector('#chores-count');
     if (!listEl || !countEl) return;
     try {
-      var res = await fetch('/api/chores/today');
+      var res = await Api.fetch('/api/chores/today');
       if (!res.ok) throw new Error('chores lookup failed');
       var data = await res.json();
       // The server's own word on the switch, for the one case the boot
@@ -3111,7 +3117,7 @@
     renderChores(panel, chores);
 
     try {
-      var res = await fetch('/api/chores/' + id + '/status', {
+      var res = await Api.fetch('/api/chores/' + id + '/status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: nextStatus })
@@ -3385,7 +3391,7 @@
     ctx.redraw();
 
     try {
-      var res = await fetch(url, {
+      var res = await Api.fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -3429,7 +3435,7 @@
   // back — it posts, re-reads, and says so if it could not.
   async function runChoreUndo(ctx, id, act, body) {
     try {
-      var res = await fetch('/api/chores/' + id + '/' + act, {
+      var res = await Api.fetch('/api/chores/' + id + '/' + act, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -3840,7 +3846,7 @@
   // only when it never did — the distinction the queue is built on. This
   // (url, body) shape is what groOffline.replay is handed.
   function groPostJson(url, body) {
-    return fetch(url, {
+    return Api.fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body || {})
@@ -3998,8 +4004,8 @@
   // status into its bucket, needs no change.
   async function groLoadAllData() {
     var results = await Promise.all([
-      fetch('/api/grocery-list/by-store?status=needed'),
-      fetch('/api/grocery-list?status=bought')
+      Api.fetch('/api/grocery-list/by-store?status=needed'),
+      Api.fetch('/api/grocery-list?status=bought')
     ]);
     if (results.some(function (r) { return r.status === 401; })) groForgetOffline();
     if (results.some(function (r) { return !r.ok; })) throw new Error('grocery load failed');
@@ -4210,7 +4216,7 @@
 
   // ---------- Requests ----------
   async function groPost(url, body) {
-    var res = await fetch(url, {
+    var res = await Api.fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body || {})
@@ -4219,7 +4225,7 @@
     return res.json().catch(function () { return {}; });
   }
   async function groPostEmpty(url) {
-    var res = await fetch(url, { method: 'POST' });
+    var res = await Api.fetch(url, { method: 'POST' });
     if (!res.ok) throw new Error('request failed');
     return res.json().catch(function () { return {}; });
   }
@@ -4336,7 +4342,7 @@
 
   async function groLoadUsualStores() {
     try {
-      var res = await fetch('/api/memory');
+      var res = await Api.fetch('/api/memory');
       if (!res.ok) return;
       var memory = await res.json();
       groceryState.usualStores = memory.usual_stores || [];
@@ -4367,7 +4373,7 @@
   }
   async function groLoadStorePrefs() {
     try {
-      var res = await fetch('/api/grocery-list/store-preferences');
+      var res = await Api.fetch('/api/grocery-list/store-preferences');
       if (!res.ok) return;
       var data = await res.json();
       groceryState.itemStorePrefs = data.preferences || {};
@@ -4396,7 +4402,7 @@
 
   async function groLoadPreShopFlags() {
     try {
-      var res = await fetch('/api/grocery-list/pre-shop-flags');
+      var res = await Api.fetch('/api/grocery-list/pre-shop-flags');
       if (!res.ok) { groceryState.preShopFlags = []; return; }
       groceryState.preShopFlags = (await res.json()).flags || [];
     } catch (err) { groceryState.preShopFlags = []; }
@@ -4406,7 +4412,7 @@
   // here means no question this time, never a broken list.
   async function groLoadCarried() {
     try {
-      var res = await fetch('/api/grocery-list/carried-over');
+      var res = await Api.fetch('/api/grocery-list/carried-over');
       if (!res.ok) { groceryState.carried = []; return; }
       groceryState.carried = (await res.json()).items || [];
     } catch (err) { groceryState.carried = []; }
@@ -4414,7 +4420,7 @@
 
   async function groLoadSpices() {
     try {
-      var res = await fetch('/api/grocery-list/spices');
+      var res = await Api.fetch('/api/grocery-list/spices');
       if (!res.ok) { groceryState.spices = { items: [], recently_bought: [] }; return; }
       var got = await res.json();
       groceryState.spices = { items: got.items || [], recently_bought: got.recently_bought || [] };
@@ -4423,7 +4429,7 @@
 
   async function groLoadStaples() {
     try {
-      var res = await fetch('/api/staples');
+      var res = await Api.fetch('/api/staples');
       if (!res.ok) { groceryState.staples = []; groceryState.stapleSections = []; return; }
       var got = await res.json();
       groceryState.staples = got.staples || [];
@@ -4437,7 +4443,7 @@
   // preShopFlags, so the counts are right the moment the list is up.
   async function groLoadAlreadyHaveSummary() {
     try {
-      var res = await fetch('/api/grocery-list/already-have-summary');
+      var res = await Api.fetch('/api/grocery-list/already-have-summary');
       if (!res.ok) { groceryState.alreadyHaveSummary = { already_have: [], elsewhere: [] }; return; }
       groceryState.alreadyHaveSummary = await res.json();
     } catch (err) { groceryState.alreadyHaveSummary = { already_have: [], elsewhere: [] }; }
@@ -6838,7 +6844,7 @@
     try {
       var form = new FormData();
       form.append('photo', file);
-      var res = await fetch('/api/grocery-list/scan', { method: 'POST', body: form });
+      var res = await Api.fetch('/api/grocery-list/scan', { method: 'POST', body: form });
       var data = await res.json().catch(function () { return {}; });
       if (!res.ok) {
         groScanRenderError(data.detail || "I couldn't read that photo — try again.");
@@ -6864,7 +6870,7 @@
     var saveBtn = document.querySelector('.gro-scan-save');
     if (saveBtn) saveBtn.disabled = true;
     try {
-      var res = await fetch('/api/grocery-list/confirm-scan', {
+      var res = await Api.fetch('/api/grocery-list/confirm-scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -7971,7 +7977,7 @@
   }
 
   async function groFetchNeededFlat() {
-    var res = await fetch('/api/grocery-list?status=needed');
+    var res = await Api.fetch('/api/grocery-list?status=needed');
     if (!res.ok) return [];
     var view = await res.json();
     var items = [];
@@ -8151,9 +8157,9 @@
     kitchenState.loading = true;
     try {
       var trio = await Promise.all([
-        fetch('/api/cooker-view'),
-        fetch('/api/attention'),
-        fetch('/api/today/moves')
+        Api.fetch('/api/cooker-view'),
+        Api.fetch('/api/attention'),
+        Api.fetch('/api/today/moves')
       ]);
       if (!trio[0].ok) throw new Error('cooker-view failed');
       cookState.data = await trio[0].json();
@@ -8204,8 +8210,8 @@
   async function loadKitchenInventory() {
     try {
       var pair = await Promise.all([
-        fetch('/api/inventory/expiring?days=4'),
-        fetch('/api/inventory')
+        Api.fetch('/api/inventory/expiring?days=4'),
+        Api.fetch('/api/inventory')
       ]);
       var expiring = pair[0].ok ? ((await pair[0].json()).items || []) : [];
       var lowCount = 0;
@@ -9387,7 +9393,7 @@
   // Preferences sheet's own (loadPrefsCalendar) — one place it is fetched.
   async function loadWhatWeKnow() {
     try {
-      var reads = await Promise.all([fetch('/api/memory'), fetch('/api/facts'), loadPrefsCalendar(), fetch('/api/held'), loadInviteAdults()]);
+      var reads = await Promise.all([Api.fetch('/api/memory'), Api.fetch('/api/facts'), loadPrefsCalendar(), Api.fetch('/api/held'), loadInviteAdults()]);
       if (reads[0].ok) prefsState.memory = await reads[0].json();
       if (reads[1].ok) wwkState.facts = ((await reads[1].json()).facts) || [];
       if (reads[3] && reads[3].ok) heldState.items = ((await reads[3].json()).held) || [];
@@ -9658,7 +9664,7 @@
   }
 
   async function wwkPost(path, body) {
-    var res = await fetch(path, {
+    var res = await Api.fetch(path, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: body === undefined ? undefined : JSON.stringify(body)
     });
@@ -9819,7 +9825,7 @@
 
   async function loadInviteAdults() {
     try {
-      var res = await fetch('/api/household/invites');
+      var res = await Api.fetch('/api/household/invites');
       if (res.ok) inviteState.adults = ((await res.json()).adults) || [];
     } catch (err) {
       console.warn('Invite lookup failed:', err);
@@ -9922,7 +9928,7 @@
     if (inviteState.busy) return;
     inviteState.busy = true;
     try {
-      var res = await fetch('/api/household/invites', {
+      var res = await Api.fetch('/api/household/invites', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
       });
       var data = null;
@@ -10485,7 +10491,7 @@
   async function wwkCalPost(path, body) {
     var res;
     try {
-      res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+      res = await Api.fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
     } catch (err) {
       throw new Error(WWK_OFFLINE_LINE);
     }
@@ -10960,7 +10966,7 @@
     if (!url) return;
     read.disabled = true;
     read.textContent = 'Reading\u2026';
-    fetch('/api/recipes/import-url', {
+    Api.fetch('/api/recipes/import-url', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url: url })
@@ -11094,7 +11100,7 @@
     }
     save.disabled = true;
     save.textContent = 'Saving\u2026';
-    fetch('/api/recipes/add', {
+    Api.fetch('/api/recipes/add', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -11298,7 +11304,7 @@
     form.append('photo', rliPhotos[0].blob, 'page-1.jpg');
     if (rliPhotos[1]) form.append('photo2', rliPhotos[1].blob, 'page-2.jpg');
     if (rliHint) form.append('hint', rliHint);
-    fetch('/api/recipes/import-photo', { method: 'POST', body: form }).then(function (res) {
+    Api.fetch('/api/recipes/import-photo', { method: 'POST', body: form }).then(function (res) {
       return res.json().catch(function () { return {}; }).then(function (data) {
         if (!res.ok) {
           var detail = data && typeof data.detail === 'string' ? data.detail : '';
@@ -11694,7 +11700,7 @@
   async function loadPlanningPeriodDefault() {
     if (planningPeriodDefault && planningPeriodFetchedOn === todayLocalStr()) return planningPeriodDefault;
     try {
-      var res = await fetch('/api/week/planning-period');
+      var res = await Api.fetch('/api/week/planning-period');
       if (!res.ok) throw new Error('planning period lookup failed');
       planningPeriodDefault = await res.json();
       planningPeriodFetchedOn = todayLocalStr();
@@ -11723,7 +11729,7 @@
         var planId = await planIdForWeek(weekState.showWeekStart);
         if (planId) url += '?weekly_plan_id=' + encodeURIComponent(planId);
       }
-      var res = await fetch(url);
+      var res = await Api.fetch(url);
       if (!res.ok) throw new Error('week-menu lookup failed');
       var data = await res.json();
       // With no plan to show, the server says which week this screen
@@ -11754,7 +11760,7 @@
 
   async function planIdForWeek(weekStart) {
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/intake');
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/intake');
       if (!res.ok) return null;
       var prefill = await res.json();
       return prefill.plan_id || null;
@@ -11894,7 +11900,7 @@
     var week = weekState.data && weekState.data.week_start_date;
     if (!week) return;
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(week) + '/slot-recommendation', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(week) + '/slot-recommendation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date: date, slot: 'dinner', confirmed: confirmed })
@@ -11919,7 +11925,7 @@
     var addIngredients = await askAboutIngredients(meal);
     if (addIngredients === null) return;
     try {
-      var res = await fetch('/api/needs-you/dinner', {
+      var res = await Api.fetch('/api/needs-you/dinner', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date: mealDate, meal: meal, add_ingredients: addIngredients })
@@ -12299,7 +12305,7 @@
     weekFlagState = { entryId: entryId, busy: true };
     renderMealsStep(panel);
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/flag-fix', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/flag-fix', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entry_id: entryId, action: action })
@@ -13321,7 +13327,7 @@
     entry.cooked = done;
     renderMealsStep(panel);
     try {
-      var res = await fetch('/api/cooker/check-meal', {
+      var res = await Api.fetch('/api/cooker/check-meal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entry_id: entry.entry_id, status: done ? 'done' : 'pending' })
@@ -13660,7 +13666,7 @@
     openSheet(swapSheetEl, swapScrimEl);
     swapSheetHold(thisOpen);
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-options', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-options', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(thisOpen.wholeDish
@@ -13728,7 +13734,7 @@
       st.pending = null;
     }
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/swap-choose', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/swap-choose', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entry_id: st.entryId, option: picked.index, whole_dish: !!st.wholeDish })
@@ -13780,7 +13786,7 @@
     var panel = st.panel, dateA = st.date, weekStart = st.weekStart;
     drawSwapSheet();
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-nights', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-nights', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date_a: dateA, date_b: otherDate })
@@ -13821,7 +13827,7 @@
 
   async function runMoveNightUndo(panel, weekStart, dateA, dateB) {
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-nights-undo', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-nights-undo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date_a: dateA, date_b: dateB })
@@ -14491,7 +14497,7 @@
       return weekState.cookView && weekState.cookView.planId === planId && weekState.cookView.seq === seq;
     };
     try {
-      var res = await fetch('/api/cooker-view?weekly_plan_id=' + encodeURIComponent(planId));
+      var res = await Api.fetch('/api/cooker-view?weekly_plan_id=' + encodeURIComponent(planId));
       if (!res.ok) throw new Error('cooker-view failed');
       var fresh = await res.json();
       if (!mine()) return;
@@ -14921,7 +14927,7 @@
     if (planChoresFetching) { planChoresWanted = true; return planChoresFetching; }
     planChoresFetching = (async function () {
       try {
-        var res = await fetch('/api/chores/pending');
+        var res = await Api.fetch('/api/chores/pending');
         if (!res.ok) throw new Error('chores list lookup failed');
         var data = await res.json();
         // The server's own word on the switch (it can be flipped under an
@@ -14968,7 +14974,7 @@
     chore.status = nextStatus;
     if (weekState.step === 'chores') renderMealsStep(panel);
     try {
-      var res = await fetch('/api/chores/' + id + '/status', {
+      var res = await Api.fetch('/api/chores/' + id + '/status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: nextStatus })
@@ -15510,7 +15516,7 @@
     swapState = { date: day.date, slot: slot, busy: true, avoid: carried };
     renderMealsStep(panel);
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-in-place', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-in-place', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entry_id: entry.entry_id, avoid: carried })
@@ -15582,7 +15588,7 @@
     btn.setAttribute('aria-busy', 'true');
     btn.textContent = BUILD_DAY_WORKING + dayWord + '…';
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/fill-day', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/fill-day', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date: day.date })
@@ -15827,7 +15833,7 @@
           // before its six-row cap — a low-carb house tapping "Add a
           // carb" must see the carbs, not one of them (Emily, 2026-09-15).
           (role && PART_COVERS[role] ? '&role=' + encodeURIComponent(PART_COVERS[role]) : '');
-      var res = await fetch(url);
+      var res = await Api.fetch(url);
       if (!res.ok) throw new Error('options failed (' + res.status + ')');
       offer = await res.json();
     } catch (err) {
@@ -15908,7 +15914,7 @@
     if (!st || st.busy) return;
     st.busy = true;
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/remove-component', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/remove-component', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entry_id: st.entryId, name: name })
@@ -15942,7 +15948,7 @@
     var panel = st.panel;
     var dayDate = st.date, slot = st.slot;
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/change-part', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/change-part', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entry_id: st.entryId, role: st.role || 'protein', choice: choice })
@@ -16005,7 +16011,7 @@
     buttons.forEach(function (b) { b.disabled = true; });
     var panel = st.panel;
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/add-component', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/add-component', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entry_id: st.entryId, key: pick.key || null, text: pick.text || null })
@@ -16023,7 +16029,7 @@
       // says so, which is recoverable from the chip.
       if (st.side && st.side.toLowerCase() !== String(out.name || '').toLowerCase()) {
         try {
-          await fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/remove-component', {
+          await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/remove-component', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ entry_id: st.entryId, name: st.side })
@@ -16069,14 +16075,14 @@
   // not a plate left short.
   async function runMealAddUndo(panel, st, name, replaced) {
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/remove-component', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/remove-component', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entry_id: st.entryId, name: name })
       });
       if (!res.ok) throw new Error('undo failed (' + res.status + ')');
       if (replaced) {
-        var back = await fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/add-component', {
+        var back = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/add-component', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ entry_id: st.entryId, key: null, text: replaced })
@@ -16101,7 +16107,7 @@
     swapState = { date: day.date, slot: slot, busy: true, avoid: [] };
     renderMealsStep(panel);
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-undo', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-undo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entry_id: entry.entry_id })
@@ -16309,7 +16315,7 @@
     var data = weekState.data;
     if (!data || !data.week_start_date) return;
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/slot', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/slot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date: date, slot: slot, choice: choice })
@@ -16523,7 +16529,7 @@
     defrostAskState.planId = data.weekly_plan_id;
     defrostAskState.items = null;
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/defrost-items');
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/defrost-items');
       if (!res.ok) throw new Error('defrost items lookup failed');
       var body = await res.json();
       if (defrostAskState.planId !== data.weekly_plan_id) return; // a newer plan loaded while this was in flight
@@ -16570,7 +16576,7 @@
     var buttons = panel.querySelectorAll('.wk-freezer-dock button, .defrost-chip');
     buttons.forEach(function (b) { b.disabled = true; });
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/defrost-confirm', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/defrost-confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items: items }),
@@ -16765,7 +16771,7 @@
       if (waitEl) { waitEl.hidden = true; waitEl.textContent = ''; }
     }
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/generate', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // "Same answers, a different week" has to mean the same DAYS too.
@@ -16795,7 +16801,7 @@
 
   async function reopenWeek(panel, data) {
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/reopen', { method: 'POST' });
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/reopen', { method: 'POST' });
       if (!res.ok) throw new Error('reopen failed');
       await res.json();
       showToast('Open again. Nothing has come off your shopping list.');
@@ -16823,7 +16829,7 @@
       : '';
     if (!(await askAboutDroppingDraft(label))) return;
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/discard', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/discard', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // The week key resolves to whatever is newest under it; this screen
@@ -17337,7 +17343,7 @@
     var pendingRecipes = data.recipes_pending || 0;
     if (btn) { btn.disabled = true; btn.textContent = pendingRecipes ? 'Writing up the recipes…' : 'Approving…'; }
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/approve', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ approved_by: approvedBy, confirm_hard_conflicts: !!confirmHardConflicts })
@@ -19140,7 +19146,7 @@
 
   async function refreshCookAttention() {
     try {
-      var res = await fetch('/api/attention');
+      var res = await Api.fetch('/api/attention');
       if (res.ok) {
         cookState.attention = (await res.json()).items || [];
         renderCook();
@@ -19208,7 +19214,7 @@
   }
 
   async function cookPost(url, body) {
-    var res = await fetch(url, {
+    var res = await Api.fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body || {})
@@ -19346,7 +19352,7 @@
   async function refreshKitchenMoves() {
     if (!kitchenIsBuilt()) return;
     try {
-      var res = await fetch('/api/today/moves');
+      var res = await Api.fetch('/api/today/moves');
       if (!res.ok) return;
       kitchenState.moves = (await res.json()).moves || [];
     } catch (err) {
@@ -19448,7 +19454,7 @@
     var countEl = wrap.querySelector('.cook-serves-count');
     if (countEl) countEl.textContent = next;
     try {
-      var res = await fetch('/api/recipes/scale?name=' +
+      var res = await Api.fetch('/api/recipes/scale?name=' +
         encodeURIComponent(wrap.getAttribute('data-recipe')) + '&servings=' + next);
       if (!res.ok) throw new Error('scale failed');
       var data = await res.json();
@@ -20111,7 +20117,7 @@
     try {
       var shown = weekState.data && weekState.data.weekly_plan_id;
       var url = '/api/reset/preview' + (shown ? '?weekly_plan_id=' + encodeURIComponent(shown) : '');
-      var res = await fetch(url);
+      var res = await Api.fetch(url);
       if (!res.ok) throw new Error('reset preview failed');
       var data = await res.json();
       resetPlanId = data.weekly_plan_id || null;
@@ -20165,7 +20171,7 @@
     resetConfirmBtn.textContent = 'Starting over…';
     syncResetConfirmBtn();
     try {
-      var res = await fetch('/api/reset', {
+      var res = await Api.fetch('/api/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -20300,7 +20306,7 @@
   // width, was never the only way to it.
   async function shareWeekPlan() {
     try {
-      var res = await fetch('/api/share-link');
+      var res = await Api.fetch('/api/share-link');
       if (!res.ok) throw new Error('Could not get link');
       var data = await res.json();
       var url = window.location.origin + '/share/' + data.token;
@@ -20464,7 +20470,7 @@
   // link it without a request of its own. That still has to happen the
   // moment the ask experience is built, independent of which chips show.
   function loadQuickActionChips() {
-    fetch('/api/week-menu')
+    Api.fetch('/api/week-menu')
       .then(function (res) { return res.ok ? res.json() : null; })
       .catch(function () { return null; })
       .then(function (weekMenu) {
@@ -20599,7 +20605,7 @@
   function refreshDishIndex() { return readDishIndex(); }
 
   function readDishIndex() {
-    return fetch('/api/week-menu')
+    return Api.fetch('/api/week-menu')
       .then(function (res) { return res.ok ? res.json() : null; })
       .catch(function () { return null; })
       .then(function (weekMenu) { if (weekMenu) setDishIndex(weekMenu); return !!weekMenu; });
@@ -21123,7 +21129,7 @@
       if (btn.disabled) return;
       btn.disabled = true;
       try {
-        var res = await fetch('/api/week/unbatch-undo', {
+        var res = await Api.fetch('/api/week/unbatch-undo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(action.undo.payload),
@@ -21365,7 +21371,7 @@
   // carrying the server's own sentence (its `detail`), which every
   // handler above shows as-is.
   function postJson(url, body) {
-    return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
+    return Api.fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
       .then(function (res) {
         return res.json().catch(function () { return null; }).then(function (data) {
           if (!res.ok) throw new Error((data && data.detail) || ('Request failed (' + res.status + ')'));
@@ -21592,7 +21598,7 @@
   // week, ~37s) is still in flight, instead of the ~2-5s a plain question
   // already took either way. See the "Make chat responses faster" ticket.
   async function streamChatMessage(payload, onProgress) {
-    var res = await fetch('/api/chat/stream', {
+    var res = await Api.fetch('/api/chat/stream', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -22054,7 +22060,7 @@
         // Dismiss button below — it shouldn't still be sitting in the feed
         // next time the bell opens. Fire-and-forget, same as Dismiss: the
         // navigation this is about to do shouldn't wait on it.
-        fetch('/api/notifications/dismiss', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: key }) }).catch(function () { /* best-effort */ });
+        Api.fetch('/api/notifications/dismiss', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: key }) }).catch(function () { /* best-effort */ });
         latestNotifications = latestNotifications.filter(function (x) { return x.key !== key; });
         notifBadge.hidden = latestNotifications.length === 0;
         if (!n) return;
@@ -22065,7 +22071,7 @@
     notifList.querySelectorAll('[data-notif-dismiss]').forEach(function (btn) {
       btn.addEventListener('click', async function () {
         var key = btn.getAttribute('data-notif-dismiss');
-        try { await fetch('/api/notifications/dismiss', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: key }) }); } catch (err) { /* best-effort */ }
+        try { await Api.fetch('/api/notifications/dismiss', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: key }) }); } catch (err) { /* best-effort */ }
         await loadNotifications();
       });
     });
@@ -22128,7 +22134,7 @@
     // fetching a feed nobody can open.
     if (!SHOW_NOTIF_BELL) return;
     try {
-      var res = await fetch('/api/notifications');
+      var res = await Api.fetch('/api/notifications');
       if (!res.ok) throw new Error('failed');
       var data = await res.json();
       latestNotifications = data.notifications || [];
@@ -22191,7 +22197,7 @@
   // before any tab content renders at all.
   (async function checkOnboarding() {
     try {
-      var res = await fetch('/api/onboarding/status');
+      var res = await Api.fetch('/api/onboarding/status');
       var data = await res.json();
       if (data.household && data.household.has_members === false) {
         window.location.href = '/onboarding';
@@ -22255,7 +22261,7 @@
 
   async function loadWhoami() {
     try {
-      var res = await fetch('/api/whoami');
+      var res = await Api.fetch('/api/whoami');
       if (!res.ok) throw new Error('whoami failed');
       var data = await res.json();
       shellWho.member = data.member || null;
@@ -22351,7 +22357,7 @@
     var errorEl = whoScreenEl.querySelector('#who-error');
     errorEl.hidden = true;
     try {
-      var res = await fetch('/api/whoami/pick', {
+      var res = await Api.fetch('/api/whoami/pick', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ member_id: memberId })
@@ -22592,7 +22598,7 @@
     var preview = null;
     if (FIRST_OPEN_STYLE === 'preview') {
       try {
-        var res = await fetch('/api/first-open');
+        var res = await Api.fetch('/api/first-open');
         if (res.ok) preview = await res.json();
       } catch (err) {
         // No preview is still a welcome: it falls back to the one line.
@@ -22622,7 +22628,7 @@
     var next = firstOpenEl.querySelector('#fo-next');
     if (next) next.disabled = true;
     try {
-      await fetch('/api/first-open/seen', { method: 'POST' });
+      await Api.fetch('/api/first-open/seen', { method: 'POST' });
     } catch (err) {
       // Not saved means they'll see it once more next time — never a
       // wall in the way of Today.
@@ -23220,7 +23226,7 @@
     loadPrefsHeld();
     if (prefsState.memory) { renderPrefsRows(); return; }
     try {
-      var res = await fetch('/api/memory');
+      var res = await Api.fetch('/api/memory');
       if (!res.ok) throw new Error('memory lookup failed');
       prefsState.memory = await res.json();
     } catch (err) {
@@ -23234,7 +23240,7 @@
   // calendar's: the list changes from chat and from Now's own card.
   async function loadPrefsHeld() {
     try {
-      var res = await fetch('/api/held');
+      var res = await Api.fetch('/api/held');
       if (res.ok) heldState.items = ((await res.json()).held) || [];
     } catch (err) {
       console.warn('Held things lookup failed:', err);
@@ -23244,7 +23250,7 @@
 
   async function loadPrefsMorningText() {
     try {
-      var res = await fetch('/api/morning-text');
+      var res = await Api.fetch('/api/morning-text');
       prefsState.morningText = res.ok ? await res.json() : null;
     } catch (err) {
       prefsState.morningText = null;
@@ -23252,7 +23258,7 @@
     // The evening nudge (2026-09-21) shares the sheet: its own read, so a
     // failed one leaves the morning rows standing and the nudge rows off.
     try {
-      var evRes = await fetch('/api/evening-nudge');
+      var evRes = await Api.fetch('/api/evening-nudge');
       prefsState.eveningNudge = evRes.ok ? await evRes.json() : null;
     } catch (err) {
       prefsState.eveningNudge = null;
@@ -23263,7 +23269,7 @@
 
   async function loadPrefsCalendar() {
     try {
-      var res = await fetch('/api/calendar');
+      var res = await Api.fetch('/api/calendar');
       prefsState.calendar = res.ok ? await res.json() : null;
     } catch (err) {
       prefsState.calendar = null;
@@ -23650,7 +23656,7 @@
         time: time
       };
       try {
-        var res = await fetch('/api/morning-text', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        var res = await Api.fetch('/api/morning-text', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         var data = await res.json();
         // Every row is tried — one refused number must not leave the next
         // person's unsaved — and the first problem is what's reported.
@@ -23664,7 +23670,7 @@
       var evToggle = row.querySelector('[data-evening-toggle]');
       if (evToggle) {
         try {
-          var evRes = await fetch('/api/evening-nudge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+          var evRes = await Api.fetch('/api/evening-nudge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
             member_id: payload.member_id,
             on: evToggle.getAttribute('aria-pressed') === 'true'
           }) });
@@ -23822,7 +23828,7 @@
   // ---------- boot ----------
 
   function loadCoachingState() {
-    fetch('/api/coaching')
+    Api.fetch('/api/coaching')
       .then(function (res) {
         if (res.status === 401) groForgetOffline();
         return res.ok ? res.json() : null;
@@ -24028,7 +24034,7 @@
     body.querySelector('#snw-done-close').addEventListener('click', closeSnwSheet);
 
     try {
-      fetch('/api/feedback', {
+      Api.fetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         keepalive: true,

@@ -93,6 +93,31 @@ def _clock_prelude() -> str:
     ) % (at_ms, at_ms)
 
 
+# ---------------------------------------------------------------------------
+# static/api.js, for the slices that call through it
+# ---------------------------------------------------------------------------
+# shell.js's server calls go through `Api.fetch(...)` (static/api.js, since
+# 2026-09-27). In the browser api.js is its own <script>, loaded before
+# shell.js; a harness only ever slices shell.js, so a slice that makes a
+# call would stop at "Api is not defined". The real file is prepended —
+# not a stand-in — so a harness exercises the same Api.fetch the browser
+# runs. api.js calls `fetch` by name at request time, and since it is in
+# the same file as the harness's own `function fetch(...)` stand-in, that
+# stand-in is the fetch it finds: every existing harness's view of the
+# requests is unchanged.
+#
+# Only when the script mentions `Api.` and does not bring its own, so a
+# harness that never touches the server runs byte-for-byte as before.
+_API_JS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "api.js")
+
+
+def _api_prelude(script: str) -> str:
+    if "Api." not in script or "var Api" in script:
+        return ""
+    with open(_API_JS, encoding="utf-8") as f:
+        return f.read() + "\n"
+
+
 # Deliberately just the one function. A run_node_json wrapper was written
 # first and had no callers: every file keeps its own returncode assertion
 # and its own json.loads, because the assertion message names that file's
@@ -118,7 +143,7 @@ def run_node(script: str, timeout: int = 30) -> subprocess.CompletedProcess:
             # the pin has to be in place before the first line of the harness.
             # Empty on an ordinary unpinned run, so nothing is prepended and
             # the byte-for-byte script every existing test runs is unchanged.
-            f.write(_clock_prelude() + script)
+            f.write(_clock_prelude() + _api_prelude(script) + script)
         return subprocess.run(
             ["node", path], capture_output=True, text=True, timeout=timeout
         )

@@ -70,6 +70,11 @@
     // and is right beyond the wrapper too: a frame inside the reporter
     // locates the reporter, never the app.
     if (loc.indexOf('error-reporter.js:') === 0) return '';
+    // api.js is the same kind of middle-man (2026-09-27): every call a
+    // screen makes goes through Api.fetch on its way to the wrapper above,
+    // so its frame sits between the reporter and the screen that asked.
+    // Dropping it keeps `source` on the screen — shell.js, not api.js.
+    if (loc.indexOf('api.js:') === 0) return '';
     return (/^[A-Za-z0-9_$.]{1,40}$/.test(fn) ? fn + '@' : '') + loc;
   }
 

@@ -233,6 +233,15 @@ names, correct the claim in the same change.
 
 ## Known architectural gotchas (don't re-discover these the hard way)
 
+- **New code talks to the server through `static/api.js`, never a raw
+  `fetch('/api…')`** (2026-09-27). `Api.json(path, opts)` for ordinary
+  calls (toast + `ApiError` on failure); `Api.fetch(path, init)` when you
+  need the raw Response (streaming, or your own failure handling). One
+  `Api.setBase` is what lets bundled App Store screens reach the live site.
+  `tests/test_api_js.py` fails if the raw-call count in `static/` goes up;
+  after migrating a screen, lower `RAW_API_FETCH_CEILING` to the new count.
+  api.js is signed-in only — a public page needs `app/security.py` first.
+
 - **`app/tools/` is a package, and `app/tools/__init__.py` is its public
   face.** Every tool function is defined in a domain module
   (`recipes.py`, `grocery.py`, `weekly_plan.py`, …) and re-exported from
