@@ -423,7 +423,13 @@ def place_day_requests(plan_id: int, requests: list[dict], report: dict | None =
             out["moved"].append({"words": request["words"], "from": f"{dish['date']}:{dish['slot']}",
                                  "to": f"{target[0]}:{target[1]}", "meal": dish["meal"], "line": line})
             if report is not None:
-                report.setdefault("moved_requests", []).append({"words": request["words"], "line": line})
+                # A LATE move says both things in the one flag line
+                # (draft_flags.late_text, "I moved X to Sunday dinner, as
+                # you asked — its usual time had already gone by."), so it
+                # is not said again by the opener. Its words still ride
+                # along, with no line, so line one does not repeat them.
+                report.setdefault("moved_requests", []).append(
+                    {"words": request["words"], "line": "" if request.get("late") else line})
     except Exception:
         logger.exception("Placing today/tonight/tomorrow requests failed for plan %s; the week stands", plan_id)
     if out["moved"] or out["missing"]:

@@ -320,9 +320,18 @@ def test_a_pre_existing_duplicate_is_deduped_before_leftover_repair_runs(recipe)
     # week's empty later dinners are filled too — dinner_gaps.
     # fill_open_dinners — and one of them may reheat this same cook, so the
     # list is no longer only Wednesday.)
-    assert src["derived_from"]["make_double_for"][0] == f"{wednesday}:dinner", (
+    targets = src["derived_from"]["make_double_for"]
+    assert targets[0] == f"{wednesday}:dinner", (
         "the source's make-double note must point at the slot that actually survived"
     )
+    # …and every target is a planned night that really reheats Tuesday.
+    chains = tools.plan_leftover_chains(plan_id)
+    tuesday_source = next(s for s in chains["sources"].values() if s["date"] == tuesday and s["slot"] == "dinner")
+    assert sorted(targets) == sorted(f"{t['date']}:{t['slot']}" for t in tuesday_source["targets"])
+    slots = _slots_for(plan_id)
+    for t in targets:
+        d, slot = t.split(":")
+        assert slots[(d, slot)]["slot_state"] == "planned", t
 
 
 def test_make_double_for_accumulates_every_leftovers_night_off_one_source(recipe, stub_model):

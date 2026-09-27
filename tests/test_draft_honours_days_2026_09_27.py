@@ -349,9 +349,9 @@ def test_today_tonight_and_tomorrow_resolve_to_one_exact_meal():
     """CATCH (name-level on main). The parser behind freeform_on_a_day."""
     past = [{"date": SUNDAY, "slot": "breakfast"}, {"date": SUNDAY, "slot": "lunch"}]
 
-    def resolve(text, first="dinner"):
+    def resolve(text):
         return [(r["date"], r["slot"], r["leftovers"], r["late"])
-                for r in tools.freeform_day_requests(text, PERIOD, SUNDAY, first, past=past)]
+                for r in tools.freeform_day_requests(text, PERIOD, SUNDAY, past=past)]
 
     assert resolve("I want to make a Japanese curry today and have leftovers for it") == [(SUNDAY, "dinner", True, False)]
     assert resolve("Tacos tonight.") == [(SUNDAY, "dinner", False, False)]
@@ -360,7 +360,6 @@ def test_today_tonight_and_tomorrow_resolve_to_one_exact_meal():
     assert resolve("Let's do the lamb tomorrow") == [(PERIOD[1], "dinner", False, False)]
     # A meal their words NAME is never dropped for being late; it is marked.
     assert resolve("Salad for lunch today") == [(SUNDAY, "lunch", False, True)]
-    assert resolve("Curry today", first=None) == [(SUNDAY, "dinner", False, False)]
     assert resolve("Not tonight, we're busy") == []
     assert resolve("I have corn that I need to use") == []
     # Being out is the day sheet's job, not a dish (review, 2026-09-27).
@@ -787,3 +786,98 @@ def test_a_gap_reheats_a_cook_that_already_feeds_rather_than_cooking_it_again():
 
     assert out["reheated"] == [{"date": d[2], "from": d[0], "dish": "Lemon Chicken"}]
     assert _reheats(plan_id, d[2]) == (d[0], "dinner")
+
+
+# =====================================================================
+# Review of bc12f8d (2026-09-27)
+# =====================================================================
+
+@pytest.mark.parametrize("hour,minute", [(7, 0), (9, 30), (11, 0), (13, 30)])
+def test_today_with_no_meal_named_is_dinner_at_any_hour(hour, minute):
+    """REVIEW 1. "Make a curry today" is the evening's, like "tomorrow" —
+    at 7am, 9:30am, 11am and 1:30pm alike. A named meal still wins."""
+    from app.tools import today_meals
+    now = datetime.datetime(2026, 9, 27, hour, minute)
+    past = today_meals.past_meals(PERIOD, now)
+
+    def resolve(text):
+        return [(r["date"], r["slot"], r["late"])
+                for r in tools.freeform_day_requests(text, PERIOD, SUNDAY, past=past)]
+
+    assert resolve("I want to make a curry today.") == [(SUNDAY, "dinner", False)]
+    assert resolve("Soup for lunch today.") == [(SUNDAY, "lunch", False)], "lunch runs to 2pm"
+
+
+@pytest.mark.real_time_of_day
+def test_a_late_move_is_one_line_not_two(frozen_today, stub_model, picker):
+    """REVIEW 2. "Beef tacos tonight" at 9pm, and the model put them on
+    Monday: Pomona moves them AND it is late — one flag line says both, and
+    the opener does not say the move again."""
+    frozen_today(household_pin(21, 0, on=datetime.date(2026, 9, 27)))
+    tools.save_week_intake(SUNDAY, day_count=6, freeform="Beef tacos tonight.")
+    days = [d for d in _week(PERIOD) if not (d["slot"] == "dinner" and d["date"] == PERIOD[1])]
+    days.append(_entry(PERIOD[1], "dinner", "Beef Tacos", 20))
+    stub_model(days)
+
+    plan_id = agent.generate_weekly_plan(SUNDAY, day_count=6, period_start=SUNDAY)["weekly_plan_id"]
+
+    assert _at(plan_id, SUNDAY, "dinner")["meal"] == "Beef Tacos"
+    menu = tools.get_week_menu(plan_id)
+    assert [f["text"] for f in menu["draft_flags"]] == [
+        "I moved Beef Tacos to Sunday dinner, as you asked — its usual time had already gone by."]
+    assert not any("tacos" in line.lower() for line in menu["draft_opener"]), menu["draft_opener"]
+
+
+def test_a_run_left_standing_is_said_in_one_line(picker):
+    """REVIEW 3. Thursday's Beef Bowls, Friday's lunch off them, Friday
+    dinner the same again — and the household asked for one dinner dish,
+    nothing else is in reach and nothing fits. The run stands, and the
+    draft says so."""
+    from app.tools import dinner_gaps
+    week = _next_monday()
+    d = tools._week_dates(week)
+    plan_id, _ = _plan_with(week, [
+        (d[3], "dinner", "Beef Bowls", None), (d[4], "lunch", "Beef Bowls", None),
+        (d[4], "dinner", "Beef Bowls", None),
+    ])
+
+    out = dinner_gaps.break_long_runs(plan_id, picker=sip._pick_replacement, targets={"dinner": 1})
+
+    assert out["changed"] == [] and len(out["left"]) == 1
+    assert picker == [], "their dish count is met: no new dish"
+    flags = tools.get_week_menu(plan_id)["draft_flags"]
+    assert [f["text"] for f in flags] == ["Friday dinner is Thursday’s Beef Bowls again — nothing else fit Friday."]
+    assert flags[0]["fixes"] == []
+
+
+@pytest.mark.real_time_of_day
+def test_a_gone_meal_named_by_the_note_is_kept_only_with_the_dish_on_it(frozen_today, stub_model, picker):
+    """REVIEW 4, the reviewer's repro. 11:30pm, "Curry today.", and the
+    model sent no curry: Sunday dinner is not kept (and bought) as Lemon
+    Chicken — it empties like any gone meal, and no late flag is said."""
+    frozen_today(household_pin(23, 30, on=datetime.date(2026, 9, 27)))
+    tools.save_week_intake(SUNDAY, day_count=6, freeform="Curry today.")
+    stub_model(_week(PERIOD))
+
+    plan_id = agent.generate_weekly_plan(SUNDAY, day_count=6, period_start=SUNDAY)["weekly_plan_id"]
+
+    sunday = _at(plan_id, SUNDAY, "dinner")
+    assert sunday["slot_state"] == "planned_empty"
+    assert _derived(sunday)["constraint"] == "already_past"
+    assert tools.get_week_menu(plan_id)["draft_flags"] == []
+
+
+@pytest.mark.real_time_of_day
+def test_the_count_line_counts_only_meals_actually_planned(frozen_today, stub_model, picker):
+    """REVIEW 5. Seven lunches a week on a six-day plan started at 3:53pm:
+    Sunday's lunch had gone, so five lunches are planned, and the line
+    says five and why."""
+    frozen_today(household_pin(15, 53, on=datetime.date(2026, 9, 27)))
+    tools.set_household_meal_preferences(dinners_per_week=3, lunches_per_week=7)
+    tools.save_week_intake(SUNDAY, day_count=6)
+    stub_model(_week(PERIOD))
+
+    plan_id = agent.generate_weekly_plan(SUNDAY, day_count=6, period_start=SUNDAY)["weekly_plan_id"]
+
+    assert "Five lunches this week, not seven — it’s a six-day plan, and today’s lunch had already gone by." \
+        in tools.get_week_menu(plan_id)["draft_opener"]

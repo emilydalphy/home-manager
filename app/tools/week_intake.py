@@ -211,10 +211,10 @@ def freeform_meal_scopes(text: str | None, dates: list[str]) -> list[dict]:
 # model put the curry on Sunday LUNCH, hours gone. freeform_meal_scopes
 # leaves any sentence with a day word to the model; these three words are
 # the ones whose meaning is beyond doubt once the time of day is known, so
-# they are resolved here to one exact date and meal — "today" is the first
-# meal still ahead, "tonight" is today's dinner, "tomorrow" is the next
-# date (its dinner, unless the sentence names a meal) — and the draft is
-# made to put the dish there (typed_requests.place_day_requests).
+# they are resolved here to one exact date and meal — "today" and "tonight"
+# are today's dinner, "tomorrow" the next date's, unless the sentence names
+# a meal ("lunch today") — and the draft is made to put the dish there
+# (typed_requests.place_day_requests).
 
 _DAY_REQUEST_RE = re.compile(
     r"\b(today|tonight|tomorrow)(?:\s+(night|evening|morning|afternoon))?\b", re.IGNORECASE
@@ -233,23 +233,22 @@ _AWAY_RE = re.compile(
 )
 
 
-def freeform_day_requests(text: str | None, dates: list[str], today: str, first_ahead: str | None,
+def freeform_day_requests(text: str | None, dates: list[str], today: str,
                           past: list[dict] | None = None) -> list[dict]:
     """
     [{"words", "date", "slot", "said", "leftovers", "late"}] — one per
     sentence that pins a request to today, tonight or tomorrow, resolved to
     an exact date and meal inside `dates`. `today` is the household's
-    date, `first_ahead` the first of today's meals not yet over
-    (today_meals.first_meal_ahead), `past` today's meals already gone
-    (today_meals.past_meals). A sentence that says "not tonight", names
-    two meals, or is about being out ("we're out tomorrow night, at my
-    mom's") gets nothing: a wrong exact slot is worse than none.
+    date, `past` today's meals already gone (today_meals.past_meals). A
+    sentence that says "not tonight", names two meals, or is about being
+    out ("we're out tomorrow night, at my mom's") gets nothing: a wrong
+    exact slot is worse than none.
 
-    A meal their words NAME is never dropped for being late (review,
-    2026-09-27): "tonight" at 10pm is still tonight, and "today" with every
-    meal gone means that evening. It comes back `late` True, the meal is
-    planned anyway, and the draft says so (draft_flags). `leftovers` is True
-    when the sentence asks for leftovers of the dish too.
+    A meal their words name is not dropped for being late: "tonight" at
+    10pm comes back `late` True, and the meal is kept only if the dish they
+    asked for is actually put on it (agent._finish_week_slots) — then the
+    draft says so (draft_flags). `leftovers` is True when the sentence asks
+    for leftovers of the dish too.
     """
     gone = {(p["date"], p["slot"]) for p in (past or [])}
     tomorrow = (date.fromisoformat(today) + timedelta(days=1)).isoformat()
@@ -271,7 +270,10 @@ def freeform_day_requests(text: str | None, dates: list[str], today: str, first_
         if said == "tonight":
             day, slot = today, "dinner"
         elif said == "today":
-            day, slot = today, named or first_ahead or "dinner"
+            # "Make a curry today" is dinner, the way "tomorrow" is (review,
+            # 2026-09-27) — a dish you plan to MAKE today is the evening's,
+            # even at 9am. Only a named meal ("lunch today") says otherwise.
+            day, slot = today, named or "dinner"
         else:
             day, slot = tomorrow, named or "dinner"
         if day not in dates:

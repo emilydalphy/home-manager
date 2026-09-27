@@ -48,6 +48,7 @@ from datetime import date
 from ..db import get_conn
 from ._shared import household_id
 from . import allergen_gate as _allergen_gate
+from . import draft_flags as _draft_flags
 from . import leftovers as _leftovers
 from . import meal_variety as _meal_variety
 from . import weekday_lunches as _weekday_lunches
@@ -424,6 +425,19 @@ def _breaks_alone(keys: dict, run: list, pos) -> bool:
     return not any(set(r) & set(run) for r in _leftovers.long_runs(trial))
 
 
+def _run_left_flag(run: list, at: dict) -> dict | None:
+    """The one line for a run this pass had to leave: on the first meal
+    past the limit, naming the dish and the day it started ("Friday dinner
+    is Thursday’s Beef Bowls again")."""
+    pos = run[_leftovers.MAX_MEALS_IN_A_ROW]
+    row, first = at.get(pos), at.get(run[0])
+    if row is None or first is None:
+        return None
+    dish = (first["meal"] or "").strip()
+    return {"kind": _draft_flags.RUN_LEFT, "entry_id": row["id"], "date": pos[0], "slot": pos[1],
+            "dish": row["meal"], "text": _draft_flags.run_left_text(pos[0], pos[1], dish, run[0][0])}
+
+
 def break_long_runs(plan_id: int, caps: dict | None = None, budget=None, picker=None,
                     reserve: int | None = None, targets: dict | None = None) -> dict:
     """
@@ -445,6 +459,7 @@ def break_long_runs(plan_id: int, caps: dict | None = None, budget=None, picker=
     out = {"changed": [], "left": []}
     budget = _Reserved(budget or _allergen_gate.CallBudget(),
                        _sweep_reserve() if reserve is None else reserve)
+    flags: list = []       # one line per run left standing
     changed: set = set()   # meals this pass has already changed
     gave_up: set = set()   # meals of a run it could not break
     try:
@@ -472,6 +487,7 @@ def break_long_runs(plan_id: int, caps: dict | None = None, budget=None, picker=
             if not candidates:
                 gave_up.update(run)
                 out["left"].append(run)
+                flags.append(_run_left_flag(run, at))
                 continue
             # One attempt per run: a run whose first changeable meal cannot
             # be changed is left and logged, rather than spending the week's
@@ -525,8 +541,15 @@ def break_long_runs(plan_id: int, caps: dict | None = None, budget=None, picker=
                 continue
             gave_up.update(run)
             out["left"].append(run)
+            flags.append(_run_left_flag(run, at))
     except Exception:
         logger.exception("Breaking long runs failed for plan %s; the week stands as it was", plan_id)
+    # A run left standing is said, never silent (review, 2026-09-27): one
+    # plain line on the meal past the limit, through the draft's own flags.
+    try:
+        _draft_flags.add(plan_id, [f for f in flags if f])
+    except Exception:
+        logger.exception("Recording the runs left on plan %s failed", plan_id)
     if out["changed"] or out["left"]:
         logger.info("Plan %s runs of one dish: %s", plan_id, out)
     return out

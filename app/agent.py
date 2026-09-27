@@ -5277,10 +5277,11 @@ def _generate_weekly_plan(
     past_meals = _today_meals.past_meals(period_days, now)
     day_requests = tools.freeform_day_requests(
         " ".join(t for t in (constraints_notes, (intake or {}).get("freeform") or "") if t),
-        period_days, now.date().isoformat(), _today_meals.first_meal_ahead(now), past=past_meals,
+        period_days, now.date().isoformat(), past=past_meals,
     )
-    # A meal their words name is never taken away for being late ("tonight"
-    # at 10pm is still tonight); it is planned and the draft says so.
+    # A meal their words name is not taken away for being late ("tonight"
+    # at 10pm is still tonight) — the model is told to put the dish there,
+    # and _finish_week_slots keeps the meal only if the dish is on it.
     named = {(r["date"], r["slot"]) for r in day_requests}
     past_meals = [p for p in past_meals if (p["date"], p["slot"]) not in named]
 
@@ -5959,8 +5960,12 @@ def _finish_week_slots(
     # are emptied below, so a dish the model put on a meal already gone is
     # moved rather than lost. See typed_requests.place_day_requests.
     day_requests = (context or {}).get("freeform_on_a_day") or []
+    placed_for_them: set = set()
     if day_requests:
-        _typed_requests.place_day_requests(plan_id, day_requests, report)
+        placed = _typed_requests.place_day_requests(plan_id, day_requests, report)
+        placed_for_them = {(p["date"], p["slot"]) for p in placed["placed"]} | {
+            tuple(m["to"].split(":", 1)) for m in placed["moved"]
+        }
 
     night_tags = (intake or {}).get("night_tags") or {}
     for day, tags in night_tags.items():
@@ -6006,7 +6011,15 @@ def _finish_week_slots(
     # day left out, and for the same reason: the audit below counts the
     # row as present rather than asking about a meal nobody can still eat,
     # and no fill pass touches planned_empty. See today_meals.past_meals.
-    for past in (context or {}).get("past_meals_today") or []:
+    # A gone meal their words named ("tonight" at 11:30pm) is kept only when
+    # the dish they asked for is actually on it (review, 2026-09-27: "Curry
+    # today." with no curry sent kept Lemon Chicken on a gone Sunday dinner
+    # and bought it) — otherwise it empties like any other gone meal.
+    late_unplaced = [
+        {"date": r["date"], "slot": r["slot"]} for r in day_requests
+        if r.get("late") and (r["date"], r["slot"]) not in placed_for_them
+    ]
+    for past in ((context or {}).get("past_meals_today") or []) + late_unplaced:
         if past["date"] not in dates or past["date"] in skipped_days:
             continue
         _slot_needs._settle_slot_empty(

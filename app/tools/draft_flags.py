@@ -91,6 +91,12 @@ OVER_CAP_REQUEST = "over_cap_request"
 # (review of the "today means from now" card, 2026-09-27). No fixes.
 LATE_REQUEST = "late_request"
 
+# A dish left on a third lunch-or-dinner in a row because nothing else could
+# go there — the household's dish count was met, nothing was in reach, or
+# nothing fit the meal's time (dinner_gaps.break_long_runs). Said, never
+# silent (review, 2026-09-27). No fixes: the row's own Swap is the way out.
+RUN_LEFT = "run_left"
+
 # What a fix does. Each is an existing write; see the module docstring.
 FIX_PREP_AHEAD = "prep_ahead"
 FIX_MOVE = "move"
@@ -113,10 +119,15 @@ def over_cap_text(dish: str, minutes: int, meal_date: str) -> str:
     return f"{dish} takes {int(minutes)} minutes, and {_weekday(meal_date)} is short on time."
 
 
-def late_text(dish: str, meal_date: str, slot: str) -> str:
+def late_text(dish: str, meal_date: str, slot: str, moved: bool = False) -> str:
     """"Japanese Curry stays on Sunday dinner, as you asked — its usual time
-    had already gone by." One plain line, like every flag."""
-    return f"{dish} stays on {_weekday(meal_date)} {slot}, as you asked — its usual time had already gone by."
+    had already gone by." One plain line, like every flag. When Pomona also
+    had to MOVE the dish there, the move is said in the same line ("I moved
+    Japanese Curry to Sunday dinner, as you asked — …") and nowhere else."""
+    when = f"{_weekday(meal_date)} {slot}"
+    if moved:
+        return f"I moved {dish} to {when}, as you asked — its usual time had already gone by."
+    return f"{dish} stays on {when}, as you asked — its usual time had already gone by."
 
 
 def prep_fix(prep_date: str) -> dict:
@@ -353,12 +364,12 @@ def plan_flags(weekly_plan_id: int, intake: dict | None = None,
     nights = _week_nights(weekly_plan_id, intake, memory)
     by_id = {n["id"]: n for n in nights}
     live = []
-    late = _late_rows(weekly_plan_id)
+    planned = _planned_rows(weekly_plan_id)
     for flag in flags:
-        if flag.get("kind") == LATE_REQUEST:
+        if flag.get("kind") in (LATE_REQUEST, RUN_LEFT):
             # Not about a cap, so not judged by one: still about something
             # while the same dish is on the same meal, and not yet cooked.
-            row = late.get(flag.get("entry_id"))
+            row = planned.get(flag.get("entry_id"))
             if row and row["date"] == flag.get("date") and (row["meal"] or "") == flag.get("dish") \
                     and (row["cooked_status"] or "") != "done":
                 live.append({**flag, "fixes": []})
@@ -378,10 +389,10 @@ def plan_flags(weekly_plan_id: int, intake: dict | None = None,
     return live
 
 
-def _late_rows(weekly_plan_id: int) -> dict[int, dict]:
-    """Every planned entry carrying the late-request mark, by id."""
+def _planned_rows(weekly_plan_id: int) -> dict[int, dict]:
+    """Every planned day-slot entry of the plan, by id — what a flag that
+    is not about a cap is checked against."""
     try:
-        from . import typed_requests as _typed_requests
         conn = get_conn()
         rows = conn.execute(
             "SELECT mpe.id, mpe.date, mpe.slot, mpe.cooked_status, mpe.derived_from_json, "
@@ -392,17 +403,52 @@ def _late_rows(weekly_plan_id: int) -> dict[int, dict]:
             (weekly_plan_id, household_id()),
         ).fetchall()
         conn.close()
-        out = {}
-        for r in rows:
-            try:
-                derived = json.loads(r["derived_from_json"] or "{}") or {}
-            except (TypeError, ValueError):
-                derived = {}
-            if derived.get(_typed_requests.LATE_KEY):
-                out[r["id"]] = dict(r)
-        return out
+        return {r["id"]: dict(r) for r in rows}
     except Exception:
-        logger.exception("Reading plan %s for late requests failed", weekly_plan_id)
+        logger.exception("Reading plan %s for its flags failed", weekly_plan_id)
+        return {}
+
+
+def _late_rows(weekly_plan_id: int) -> dict[int, dict]:
+    """Every planned entry carrying the late-request mark, by id."""
+    from . import typed_requests as _typed_requests
+    return {i: r for i, r in _planned_rows(weekly_plan_id).items()
+            if _derived_of(r).get(_typed_requests.LATE_KEY)}
+
+
+def add(weekly_plan_id: int, flags: list[dict]) -> None:
+    """
+    Add flags to what this generation has already recorded — for a pass
+    that runs AFTER cap_enforce wrote the set (dinner_gaps.break_long_runs).
+    One flag per entry and kind: a second for the same meal replaces the first.
+    """
+    cleaned = [f for f in (_clean(flag) for flag in flags or []) if f]
+    if not cleaned:
+        return
+    new_keys = {(f["entry_id"], f["kind"]) for f in cleaned}
+    kept = [f for f in _stored(weekly_plan_id) if (f.get("entry_id"), f.get("kind")) not in new_keys]
+    conn = get_conn()
+    conn.execute(
+        "UPDATE weekly_plans SET draft_flags_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps(kept + cleaned), weekly_plan_id, household_id()),
+    )
+    conn.commit()
+    conn.close()
+
+
+def run_left_text(meal_date: str, slot: str, dish: str, since_date: str) -> str:
+    """"Friday dinner is Thursday’s Beef Bowls again — nothing else fit
+    Friday." One plain line; the row's own Swap is the fix. `since_date` is
+    the day the run began."""
+    day = _weekday(meal_date)
+    whose = f"{_weekday(since_date)}’s " if since_date != meal_date else ""
+    return f"{day} {slot} is {whose}{dish} again — nothing else fit {day}."
+
+
+def _derived_of(row: dict) -> dict:
+    try:
+        return json.loads(row.get("derived_from_json") or "{}") or {}
+    except (TypeError, ValueError):
         return {}
 
 
@@ -410,7 +456,9 @@ def flags_for_late_requests(weekly_plan_id: int) -> list[dict]:
     """One flag per meal their words named that was already past when the
     week was drafted — the flag says it; there is nothing to fix."""
     return [
-        {"kind": LATE_REQUEST, "text": late_text(r["meal"], r["date"], r["slot"]), "entry_id": r["id"],
+        {"kind": LATE_REQUEST,
+         "text": late_text(r["meal"], r["date"], r["slot"], moved=bool(_derived_of(r).get("moved_for"))),
+         "entry_id": r["id"],
          "date": r["date"], "slot": r["slot"], "dish": r["meal"], "fixes": []}
         for r in _late_rows(weekly_plan_id).values() if (r["meal"] or "").strip()
     ]

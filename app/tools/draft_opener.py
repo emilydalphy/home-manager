@@ -441,7 +441,7 @@ def batch_line(entries: list[dict]) -> str:
     return f"{_cap(_join(parts))}, {each}{how}."
 
 
-def count_note(day_count: int, memory: dict | None, said: str = "") -> str:
+def count_note(day_count: int, memory: dict | None, said: str = "", gone: dict | None = None) -> str:
     """
     "Three dinners this week, not four — it's a four-day plan." Said only
     when a count on the household's "Each week I plan" screen was scaled
@@ -454,20 +454,32 @@ def count_note(day_count: int, memory: dict | None, said: str = "") -> str:
     `day_count` is the number of days PLANNED — a seven-day period with
     the weekend tapped off "Which days?" is a five-day plan here, the
     same number the counts were scaled to (agent._planned_day_count).
+
+    `gone` ({slot: n}) is how many of each meal had already gone by when
+    the week was drafted (today_meals — those rows are planned_empty): the
+    count is of meals actually planned, so they come off it (review,
+    2026-09-27), and the line says why.
     """
-    if not memory or day_count >= 7:
+    gone = gone or {}
+    if not memory or (day_count >= 7 and not (any(gone.values()) and memory.get("meal_counts_set"))):
+        # A full week says nothing — unless a meal the household COUNTED
+        # had already gone by (column defaults are not a count they chose).
         return ""
     for slot, field in _meal_variety.COUNT_FIELDS.items():
         usual = memory.get(field)
         if usual is None or int(usual) <= 0:
             continue
-        target = _meal_variety.prorate_meal_count(int(usual), day_count)
+        days = max(1, day_count - int(gone.get(slot) or 0))
+        target = _meal_variety.prorate_meal_count(int(usual), days)
         if target != int(usual):
             noun = _NOUN[slot] if target != 1 else slot
             if f"{number_word(target)} {noun}" in said.lower():
                 return ""
-            return (f"{_cap(number_word(target))} {noun} this week, not {number_word(int(usual))} — "
-                    f"it’s a {number_word(day_count)}-day plan.")
+            why = f"it’s a {number_word(day_count)}-day plan" if day_count < 7 else ""
+            if gone.get(slot):
+                late = f"today’s {slot} had already gone by"
+                why = f"{why}, and {late}" if why else late
+            return f"{_cap(number_word(target))} {noun} this week, not {number_word(int(usual))} — {why}."
     return ""
 
 
@@ -496,7 +508,11 @@ def build_opener(rows, intake: dict | None, period_start: str, day_count: int, d
         recent = recent_dish_names(period_start, plan_id)
     second = _line_two(entries, report, recent, surprise=surprise)
     skipped = {d for d in ((intake or {}).get("skipped_days") or []) if d in period}
-    third = count_note(max(1, day_count - len(skipped)), memory, said=first)
+    gone: dict[str, int] = {}
+    for e in entries:
+        if e.get("slot_state") == "planned_empty" and _derived(e).get("constraint") == "already_past":
+            gone[e["slot"]] = gone.get(e["slot"], 0) + 1
+    third = count_note(max(1, day_count - len(skipped)), memory, said=first, gone=gone)
     return [line for line in (first, second, moved_line(report), batch_line(entries), third) if line]
 
 

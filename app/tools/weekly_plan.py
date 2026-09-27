@@ -2146,7 +2146,7 @@ def record_plan_requests(weekly_plan_id: int, report: dict | None) -> None:
     # plain line, for the draft's opener.
     moved = [
         {"words": str(r.get("words") or "").strip(), "line": str(r.get("line") or "").strip()}
-        for r in (report.get("moved_requests") or []) if isinstance(r, dict) and r.get("line")
+        for r in (report.get("moved_requests") or []) if isinstance(r, dict) and (r.get("line") or r.get("words"))
     ]
     if not honoured and not unmet and not moved:
         return
