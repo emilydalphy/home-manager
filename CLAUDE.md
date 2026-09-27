@@ -594,7 +594,7 @@ why*, not duplicating the diff.
     rotted_into_uselessness` fails when the slack passes 5000 and says which
     three constants to raise. **Its sibling in `test_frontend_restored_
     2026_09_08.py` is NOT fixed here and wants its own card.**
-  - **ELEVEN mutations run and every one bites**, red counts read off the runs
+  - **TWELVE mutations run and every one bites**, red counts read off the runs
     on the shipping tree: the identity comparison reverted to counting (1),
     `owed` summed rather than max-unioned so a stacked branch double-counts
     (1), the line delta back to insertions-only (1), a stacked branch's lines
@@ -602,7 +602,7 @@ why*, not duplicating the diff.
     `LINE_SLACK_PER_BRANCH` at 100000 (1), the line delta forced to zero (1),
     the script deleted (11), an existing reader's assertion commented out
     (1), this file's heading pattern rewritten to an equivalent spelling (1),
-    and `LINE_FLOOR` dropped to 1 (1). **The four counts the first version of
+    `LINE_FLOOR` dropped to 1 (1), and the mid-conflict guard removed (1). **The four counts the first version of
     this entry quoted for the CLAUDE.md tests did not reproduce** — review
     re-ran them and found "one single day dropped → 5" is 4 for the best day,
     3 for a middle one and **0 for the newest**, and "the em dash broken on 30
@@ -612,7 +612,7 @@ why*, not duplicating the diff.
     re-quoted; the list above is the shipping tree's.
   - **Red-against-main was called meaningless and that was overstated.**
     Measured at the shipping commit against main's CLAUDE.md with the script
-    absent: **12 failed, 11 passed** — eleven die on the missing script, and
+    absent: **13 failed, 11 passed** — twelve die on the missing script, and
     **exactly one, `test_the_hunk_by_hunk_rule_names_this_file_too`, is a
     genuine behaviour catch**, because main's rule names shell.js alone.
     (The review measured 6/10 when this file held 16 tests; re-measured here
@@ -620,14 +620,15 @@ why*, not duplicating the diff.
     name-not-found count, except for the prose rule" is the honest sentence.
     The mutations are still the bulk of the evidence.
   - **Numbers, read off the runs at `TZ=America/Toronto`: SUITE_LINE**,
-    against **7638 collected on `main` (`ee741f8`)** — +23 is this one new
+    against **7638 collected on `main` (`ee741f8`)** — +24 is this one new
     test file exactly, and `git diff main -- tests/` adds one file and changes
-    none, so no existing test was deleted or weakened. The script's own
-    thirteen tests drive it end to end over throwaway git repos built in
+    none, so no existing test was deleted or weakened. **Twelve of the 24
+    drive the script** end to end over throwaway git repos built in
     `tmp_path` — a bad merge, a keep-both merge, main moving under the merge,
     a stacked branch, a reworded branch, a forgotten branch, a vanished body,
-    two could-not-look cases and the heading format the two files share — so
-    they need no network, no app and no database.
+    a merge still in progress, two could-not-look cases and the heading
+    format the two files share — so they need no network, no app and no
+    database.
   - **Tonight's four branches were then merged for real and checked**, which
     is the whole point of the script: four merges onto `ee741f8`, one
     CLAUDE.md conflict each, every one resolved keep-both — **exit 0, 223/223

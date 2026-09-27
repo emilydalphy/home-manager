@@ -831,3 +831,27 @@ def test_the_floors_have_not_rotted_into_uselessness():
         "ENTRY_FLOOR, and NEWEST_ENTRY_ON_OR_AFTER) to just under the "
         "current values and say in the commit why."
     )
+
+
+def test_running_it_mid_conflict_says_so_rather_than_blaming_the_merge(
+    tmp_path,
+):
+    """Run it with a merge still unresolved and HEAD is the PRE-merge commit,
+    so every branch looks dropped — and the message would tell you to redo a
+    resolution you have not made yet. Exit 2 with the real reason, which for
+    this script is two lines and the difference between a guard that helps
+    and one that sends you the wrong way."""
+    repo = _tiny_repo(tmp_path)
+    _git(repo, "checkout", "-q", "-B", "tree", "base")
+    _prepend(repo, _entry("2026-09-26", "Another session"))
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "other session")
+    out = subprocess.run(
+        ["git", "merge", "--no-edit", "one"],
+        cwd=str(repo), capture_output=True, text=True,
+    )
+    assert out.returncode != 0, "the fixture needs a real conflict"
+
+    result = _run(repo, "base", "one")
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert "merge in progress" in result.stderr, result.stderr
