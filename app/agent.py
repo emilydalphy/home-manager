@@ -6498,6 +6498,16 @@ def _finish_week_slots(
     # without …") keeps its words: dinner_gaps.keeps_its_question.
     _dinner_gaps.fill_open_dinners(plan_id, dates, caps=fill_caps, budget=repick_budget, reserve=0)
 
+    # A week whose lunches are last night's leftovers can end up cooking
+    # more dinner dishes than the household's number (one pot can't be every
+    # dinner and every lunch under the two-in-a-row rule): said once, plain,
+    # as the week finally stands (weekday_lunches.dinner_count_line).
+    if report is not None and any(k == "leftovers" for k in _weekday_lunches.kinds_by_date(intake).values()) \
+            and household_memory.get("meal_counts_set"):
+        line = _weekday_lunches.dinner_count_line(plan_id, household_memory.get("dinners_per_week"))
+        if line:
+            report.setdefault("said_lines", []).append(line)
+
     # A cuisine chip whose only dish went to a later pass — cap_enforce,
     # break_long_runs, the allergen sweep — gets its unmet line after all
     # (typed_requests.chips_left_unanswered). After the last dinner fill, so
