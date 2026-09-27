@@ -168,12 +168,7 @@ def test_two_dinner_types_for_five_nights_never_link_more_than_three_days_apart(
 
 def test_two_dinners_over_seven_nights_relay_the_cooks_rather_than_freeze(four_adults, stub_model):
     """Two cooks can't feed seven nights while alternating inside three
-    days, so the cooks are moved: one run of four, one of three.
-
-    UPDATED 2026-09-27 (Emily's decision B, as the review read it: three
-    dinners of one dish running is a breach). A run of four or three is
-    exactly that now, so the two dishes are laid so neither is on three
-    nights running — more than two cooks, the reheats within three days."""
+    days, so the cooks are moved: one run of four, one of three."""
     tools.set_household_meal_preferences(dinners_per_week=2)
     week = _monday()
     dates = tools._week_dates(week)
@@ -182,10 +177,9 @@ def test_two_dinners_over_seven_nights_relay_the_cooks_rather_than_freeze(four_a
 
     plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
 
-    assert {leftovers.dish_identity(r["meal"]) for r in _rows(plan_id, "dinner")} == {"chili", "tacos"}
-    assert leftovers.long_runs(leftovers.run_keys(plan_id)) == []
+    assert [(c["date"], c["meal"]) for c in _cooks(plan_id, "dinner")] == [(dates[0], "Chili"), (dates[4], "Tacos")]
     links = _links(plan_id, "dinner")
-    assert links and all(1 <= _gap(s["date"], d) <= 3 for d, s in links.items())
+    assert len(links) == 5 and all(1 <= _gap(s["date"], d) <= 3 for d, s in links.items())
 
 
 # ---------- 3. a requested dish is cooked once ----------

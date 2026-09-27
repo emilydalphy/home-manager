@@ -745,15 +745,16 @@ def test_the_single_change_is_preferred_when_the_obvious_meal_is_theirs(picker):
     assert leftovers.long_runs(leftovers.run_keys(plan_id)) == []
 
 
-def test_three_dinners_running_is_a_breach_even_with_other_lunches_between(stub_model, picker):
-    """REVIEW 7. Decision B read the way Emily said it: not the same dish
-    more than two meals in a row — three nights of one dinner count."""
+def test_a_different_lunch_between_dinners_breaks_the_run(stub_model, picker):
+    """GUARD on decision B as Emily stated it (the review's wider reading —
+    three dinners running even with other lunches between — was reverted
+    on 2026-09-27 and is her open question). Two Leftovers nights in a row
+    may reheat the same cook, because the lunches between are other dishes."""
     keys = {("2026-10-05", "dinner"): "chili", ("2026-10-06", "lunch"): "wraps",
-            ("2026-10-06", "dinner"): "chili", ("2026-10-07", "lunch"): "soup"}
-    assert not leftovers.too_many_in_a_row(keys, "2026-10-06", "dinner")
-    assert leftovers.too_many_in_a_row(keys, "2026-10-07", "dinner", "Chili")
-    keys[("2026-10-07", "dinner")] = "chili"
-    assert leftovers.long_runs(keys) == [[("2026-10-05", "dinner"), ("2026-10-06", "dinner"), ("2026-10-07", "dinner")]]
+            ("2026-10-06", "dinner"): "chili", ("2026-10-07", "lunch"): "soup",
+            ("2026-10-07", "dinner"): "chili"}
+    assert leftovers.long_runs(keys) == []
+    assert not leftovers.too_many_in_a_row(keys, "2026-10-07", "dinner")
 
     week = _next_monday()
     dates = tools._week_dates(week)
@@ -763,9 +764,8 @@ def test_three_dinners_running_is_a_breach_even_with_other_lunches_between(stub_
     plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
 
     assert _reheats(plan_id, dates[1]) == (dates[0], "dinner")
-    keys = leftovers.run_keys(plan_id)
-    assert keys[(dates[2], "dinner")] != keys[(dates[0], "dinner")], "the second Leftovers night is something else"
-    assert leftovers.long_runs(keys) == []
+    assert _reheats(plan_id, dates[2]) == (dates[0], "dinner"), "the same cook again, as before"
+    assert leftovers.long_runs(leftovers.run_keys(plan_id)) == []
 
 
 def test_a_gap_reheats_a_cook_that_already_feeds_rather_than_cooking_it_again():

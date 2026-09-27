@@ -657,52 +657,25 @@ def run_through(keys: dict, date_str: str, slot: str, dish: str | None = None) -
     return n
 
 
-def _dinner_run(keys: dict, date_str: str, key: str, step: int) -> int:
-    n = 0
-    d = date.fromisoformat(date_str)
-    while True:
-        d = d + timedelta(days=step)
-        if keys.get((d.isoformat(), "dinner")) != key:
-            return n
-        n += 1
-
-
-def dinner_run_through(keys: dict, date_str: str, dish: str | None = None, backwards_only: bool = False) -> int:
-    """How many DINNERS in a row (night after night) this one would be part
-    of, holding `dish` — the second reading of Emily's decision B: the same
-    dish three nights running is a breach even with different lunches in
-    between (review, 2026-09-27)."""
-    key = dish_identity(dish) if dish is not None else keys.get((date_str, "dinner"))
-    if not key:
-        return 0
-    n = 1 + _dinner_run(keys, date_str, key, -1)
-    if not backwards_only:
-        n += _dinner_run(keys, date_str, key, 1)
-    return n
-
-
 def too_many_in_a_row(keys: dict, date_str: str, slot: str, dish: str | None = None) -> bool:
     """Whether `dish` at this meal would put it on more than
-    MAX_MEALS_IN_A_ROW lunches and dinners in a row — or, for a dinner, on
-    more than that many dinners in a row."""
-    if run_through(keys, date_str, slot, dish) > MAX_MEALS_IN_A_ROW:
-        return True
-    return slot == "dinner" and dinner_run_through(keys, date_str, dish) > MAX_MEALS_IN_A_ROW
+    MAX_MEALS_IN_A_ROW lunches and dinners in a row. A different lunch
+    between two dinners breaks the run (decision B as Emily stated it;
+    whether three dinners of one dish with other lunches between should
+    also count is her open question, 2026-09-27)."""
+    return run_through(keys, date_str, slot, dish) > MAX_MEALS_IN_A_ROW
 
 
 def ends_too_long_a_run(keys: dict, date_str: str, slot: str, dish: str | None = None) -> bool:
     """too_many_in_a_row counting BACKWARDS only: whether this meal would be
     the third (or later) of one dish — what a writer asks when the meals
     after this one are not its to change."""
-    if run_before(keys, date_str, slot, dish) > MAX_MEALS_IN_A_ROW:
-        return True
-    return slot == "dinner" and dinner_run_through(keys, date_str, dish, backwards_only=True) > MAX_MEALS_IN_A_ROW
+    return run_before(keys, date_str, slot, dish) > MAX_MEALS_IN_A_ROW
 
 
 def long_runs(keys: dict) -> list[list[tuple[str, str]]]:
     """Every run longer than the rule allows, each as its meals in eating
-    order — [(date, slot), ...]: lunches and dinners in a row, and dinners
-    night after night. Empty for a week that keeps the rule."""
+    order — [(date, slot), ...]. Empty for a week that keeps the rule."""
     runs: list[list[tuple[str, str]]] = []
     seen: set = set()
     for (d, slot) in sorted(keys, key=lambda k: _position(*k)):
@@ -716,24 +689,5 @@ def long_runs(keys: dict) -> list[list[tuple[str, str]]]:
             pos = _after(pos)
         seen.update(run)
         if len(run) > MAX_MEALS_IN_A_ROW:
-            runs.append(run)
-    # Dinners night after night (see dinner_run_through), where they are
-    # not already inside one of the runs above.
-    in_runs = {p for run in runs for p in run}
-    dinners = sorted(d for (d, slot) in keys if slot == "dinner")
-    seen_d: set = set()
-    for d in dinners:
-        if d in seen_d:
-            continue
-        key = keys[(d, "dinner")]
-        run = [(d, "dinner")]
-        nxt = date.fromisoformat(d)
-        while True:
-            nxt = nxt + timedelta(days=1)
-            if keys.get((nxt.isoformat(), "dinner")) != key:
-                break
-            run.append((nxt.isoformat(), "dinner"))
-        seen_d.update(p[0] for p in run)
-        if len(run) > MAX_MEALS_IN_A_ROW and not set(run) <= in_runs:
             runs.append(run)
     return runs

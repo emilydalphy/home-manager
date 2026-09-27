@@ -160,21 +160,6 @@ def _cap_warnings(plan_id: int, week: str) -> list:
             if v.rule in ("rush_cap_respected", "weeknight_cap_respected")]
 
 
-@pytest.fixture(autouse=True)
-def _runs_left_alone(monkeypatch):
-    """
-    Every week in this file is one fast dish on five or six nights around
-    the one over its cap — a fixture built to leave the cap pass one thing
-    to do. Since 2026-09-27 that is also a run of one dinner three nights
-    and more, which dinner_gaps.break_long_runs rightly breaks up (Emily's
-    decision B) — and re-laying the week around the slow dish measures
-    that pass, not this file's. So it stands down here; it is tested in
-    tests/test_draft_honours_days_2026_09_27.py.
-    """
-    from app.tools import dinner_gaps
-    monkeypatch.setattr(dinner_gaps, "break_long_runs", lambda *a, **k: {"changed": [], "left": []})
-
-
 @pytest.fixture
 def capped():
     """Emily's own answer: every Monday-Friday dinner is 20 minutes."""

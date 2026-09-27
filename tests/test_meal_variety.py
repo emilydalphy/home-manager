@@ -154,15 +154,7 @@ def test_two_dishes_over_seven_nights_are_two_batches_eaten_within_three_days(re
     leftovers, none more than three days after its cook. Two cooks can't
     reach seven nights while alternating, so the cooks are re-laid:
     Chili Monday for Mon–Thu, Salmon Friday for Fri–Sun.
-
-    UPDATED 2026-09-27 (Emily's decision B, as the review read it: not the
-    same dish more than two meals in a row — three dinners of one dish
-    running count). Mon–Thu of one pot is now a breach, so the week is the
-    two dishes laid out so that neither is on three nights running: still
-    two dishes, still batch cooked where a reheat is in reach, and every
-    reheat within three days of its cook.
     """
-    from app.tools import leftovers
     tools.set_household_meal_preferences(dinners_per_week=2)
     week = _monday()
     stub_model(_week(week, DINNERS))
@@ -170,11 +162,11 @@ def test_two_dishes_over_seven_nights_are_two_batches_eaten_within_three_days(re
     plan = agent.generate_weekly_plan(week)
 
     dinners = _dinners(plan["weekly_plan_id"])
-    names = {leftovers.dish_identity(m) for _, _, m, _ in dinners}
-    assert names == {"chili", "salmon"}
-    assert leftovers.long_runs(leftovers.run_keys(plan["weekly_plan_id"])) == []
+    meals = [m for _, _, m, _ in dinners]
+    assert meals == ["Chili"] * 4 + ["Salmon"] * 3
     links = _links(plan["weekly_plan_id"])
-    assert links, "still batch cooked"
+    cooks = [d for d, *_ in dinners if d not in links]
+    assert cooks == [dinners[0][0], dinners[4][0]], "two cooks, one per dish"
     assert all(1 <= _days_apart(src, night) <= 3 for night, src in links.items())
 
 

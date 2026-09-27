@@ -298,10 +298,7 @@ def test_column_defaults_are_never_a_floor(stub_model, picker):
     stub_model(_days(dates, breakfasts=["Oats"] * 7, lunches=["Wrap"] * 7,
                      dinners=["Chili"] * 7, snacks=[["Apple"]] * 7))
     plan = agent.generate_weekly_plan(week)
-    # Only the count pass is under test. Since 2026-09-27 Chili seven
-    # nights running is broken up by dinner_gaps.break_long_runs (Emily's
-    # decision B) — that pass's picks say so in their own words.
-    assert [p for p in picker if "in a row" not in (p.get("replacing_because") or "")] == []
+    assert picker == []
     assert all(len(v) == 1 for v in _by_slot(plan["weekly_plan_id"], "snack").values())
     assert tools.get_household_memory()["meal_counts_set"] is False
 
