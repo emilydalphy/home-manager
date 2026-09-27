@@ -416,6 +416,91 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-27 — The morning report's biggest FOOD line was the app telling
+  Emily off for not buying salt. Branch `overnight/spice-rack-steps`, NOT
+  merged at the time of writing.** Loop Board bug, Phase 0. The two halves
+  of the app disagreed about whether a recipe has to list its salt:
+  `recipes.check_steps_ingredients_consistency` reported a step reaching for
+  a food word nobody bought, and the Shop tab's "Spices this week" section
+  exists precisely because the grocery list assumes a rack (2026-09-23) —
+  salt, pepper and cooking oils are standing items and are deliberately
+  never put on the list. So the rule fired every week on food the app itself
+  had decided never to sell her.
+  - **Measured on the live app through the report token, before and after,
+    which is the card's own fourth acceptance criterion.** Over the report's
+    7-day window for household 1: `steps_match_ingredients` **10 findings →
+    2**, the FOOD section as a whole **29 → 21**, and the rule stops being
+    that section's biggest line (`dinner_repeat_in_history`, 6, takes over).
+    **Every one of the eight suppressed was `salt`. Both survivors are
+    `broth`** — which is exactly the finding the card says must live, and
+    a cleaner split than anyone had a right to expect.
+  - **The card's own headline figure was 33 of 59 and is NOT what this
+    moved, said plainly rather than quietly restated.** That was measured on
+    2026-09-26, before `overnight/food-count-live-plans-only` merged, so it
+    counted one violation once per generation pass. 10 of 29 is the same
+    window counted after the dedupe — and 10 was still the biggest line in
+    it, so the card's argument survives its number changing.
+  - **It reads `spices.is_spice`, which is a COUPLING and is the point.**
+    The card asked for it in those words ("two lists would drift"), and the
+    consequence is worth knowing before extending either: a word added to
+    `spices._SPICES` stops being reportable by this rule in the same commit.
+    Measured, the overlap is **39 of the rule's 176 vocabulary words, 22.2%**
+    — and it reaches further than salt and oil: `baking powder` and `baking
+    soda` are rack items by that list, so a recipe using bicarb without
+    listing it is no longer a finding. Consistent (the Shop tab does not
+    sell those either) and worth one line of Emily's attention rather than
+    burial.
+  - **`_STEP_ONLY_WORDS` — the precedent the card cites — IS DEAD CODE, and
+    always has been.** Its two words are `water` and `ice`; the comprehension
+    iterates the keys of `COOKING_QUANTITIES_PER_4`, and NEITHER WORD IS ONE.
+    So `key not in _STEP_ONLY_WORDS` is True for every key there is, and
+    deleting the clause reddens nothing on main or here — found by running
+    that mutation rather than by reading it, after writing a test that
+    claimed to pin it. The test is a CHARACTERISATION now and says so. It
+    cuts the fix's way: `is_spice` is the only excusing this rule actually
+    does, so there is no second mechanism to drift from. Left in place, not
+    deleted — it is harmless and it wakes up the day somebody puts "water"
+    in the measurement table, which is the sentence that test exists to
+    leave behind.
+  - **The condition is asked LAST and that took the cost to nothing.**
+    `is_spice` is asked of a vocabulary word rather than of the recipe, so
+    asked first it ran 176 times a call: measured **0.52 ms on main, 1.43 ms
+    asked first, 0.51 ms behind `_item_matches`** — i.e. indistinguishable
+    from main, because it now runs only for the handful of words a step
+    really uses. Every predicate in that comprehension is pure, so the
+    reorder is behaviour-identical and free.
+  - **The import survives a real cycle, checked rather than assumed.**
+    `recipes` now imports `spices`, and `spices → grocery → weekly_plan →
+    recipes` closes a loop. The package's module-alias convention is what
+    resolves it; proved by importing each of `recipes`, `spices`, `staples`,
+    `grocery`, `weekly_plan`, `agent` and `main` FIRST in a fresh
+    subprocess — all seven fine. No lazy import needed.
+  - `tests/test_spice_rack_steps.py` (19). **Red against main is 11 and is
+    decomposed rather than quoted**: NINE are behaviour catches failing on
+    the assertion they are named for; TWO die on `recipes._spices`, a name
+    main has not got, which is the only kind of red a test of a new symbol
+    can have. **Six mutations run, five bite**: the fix reverted, i.e.
+    main's behaviour (10 red); every vocabulary word suppressed rather than
+    only the rack (9 — this is what pins the broth guards); a hard-coded
+    copy of three rack words in place of the list (5); `is_spice` asked of
+    the step text rather than the vocabulary word (9); and the rack words
+    DELETED from `COOKING_QUANTITIES_PER_4` instead of excused (**20**, and
+    it reddens `test_recipe_quantities.py` too — that table is what
+    `plausible_cooking_quantity` reads to turn "1 bottle olive oil" into "2
+    tbsp", so deleting a key there is a quantities bug wearing a
+    quality-rule hat). The sixth is `_STEP_ONLY_WORDS` above, at zero.
+  - **A first attempt at that fifth mutation was badly constructed and is
+    not counted**: it pruned the dict at import time and died on a circular
+    import, which says nothing about the tests. Re-run inside the function,
+    it bites at 20. A mutation that errors is not a mutation that missed.
+  - **Not done, deliberately:** the `unused_ingredients` half is untouched,
+    so a spice bought and never used is still reported — a different
+    question, and the card says so. And the generation prompt still asks for
+    every ingredient a step uses to be listed; the card names the opposite
+    fix (tell the model to list the salt) and rules it out, because listing
+    it would put "Salt" on the shopping list most weeks, which the
+    2026-09-23 spices work deliberately stopped doing.
+
 - **2026-09-25 — The Cook screen was crashing in production, on a state key
   that was read twice and declared nowhere. Branch
   `overnight/cook-crash-fix-only`, NOT merged at the time of writing. The
