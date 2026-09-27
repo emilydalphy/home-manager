@@ -5874,7 +5874,12 @@ def _finish_week_slots(
        actually happened. This is the honest failure mode: the household
        sees a question rather than a blank, and the reason says plainly
        that the app couldn't settle it rather than inventing a constraint
-       it didn't have.
+       it didn't have. EXCEPT for a breakfast or a lunch, which is never
+       a question: pass 5b below plans another of the week's own dishes
+       for that meal instead, because nobody wants to be asked what they
+       are having for breakfast on the Friday after next. See
+       meal_variety.fill_gaps_with_a_repeat, and the comment at its call
+       site for what it does and does not reach.
     """
     # The period's real days. `_week_dates(...)[:day_count]` capped at seven,
     # so an 8-day period's last day never got its `out` tag honoured, never
@@ -6179,6 +6184,58 @@ def _finish_week_slots(
         plan_id, intake, household_memory,
         budget=repick_budget or _allergen_gate.CallBudget(),
     )
+
+    # A breakfast or a lunch is never handed back as a question (Emily's
+    # rule, stated in plan_quality._open_slot_budget since that rule was
+    # written and until now only MEASURED there — the morning report for
+    # household 1 on 2026-09-27 carried "2026-10-02 breakfast is open, but
+    # breakfast/lunch must never be"). The thing breaking it was this
+    # function: the audit below turns ANY slot the model failed to return
+    # into an open question, and repair_leftover_chains reopens a breakfast
+    # whose chain doesn't check out. Both are answered here, by planning
+    # another of the week's own breakfasts (or lunches) on the day — free,
+    # deterministic, and a dish the household has already been given.
+    #
+    # WHERE IT RUNS. AFTER cap_enforce, so the caps it holds a pick to are
+    # the caps the week finally has; AFTER the count pass, so what this
+    # writes is what the week ends with rather than another night the
+    # count pass may re-pick; BEFORE the plates pass, so a filled meal
+    # gets a side like any other; BEFORE the audit, so the audit finds no
+    # breakfast or lunch left to open; and BEFORE plan_quality.check_and_
+    # log, which is the tripwire that says whether this worked.
+    #
+    # The count is safe either way, and that was MEASURED rather than
+    # argued — an earlier draft of this comment claimed running it before
+    # the count pass would waste a model call, and the measurement says
+    # otherwise. Household with meal_counts_set, breakfasts_per_week 3,
+    # the model returning two distinct breakfasts and missing one slot:
+    # both orders end with THREE distinct breakfasts and EXACTLY ONE
+    # picker call. Copying a dish the week already keeps adds no distinct
+    # dish, so the number the household asked for is untouched whichever
+    # side it runs. What differs is only which night the count pass's
+    # fill_up turns into the new dish.
+    #
+    # DINNER is not in scope and the audit still opens one: a dinner really
+    # is a decision, and quietly repeating one nobody asked for is the
+    # opposite of what the household wants. See meal_variety.NEVER_OPEN_SLOTS.
+    #
+    # WHAT THIS DOES NOT COVER, named rather than left to be found. The
+    # allergen sweep at the foot of this function can still open a
+    # breakfast or a lunch: with its re-pick budget spent it hands a
+    # clashing slot back rather than guessing. A second call to this pass
+    # after it was built and taken back out. Filling that slot is SAFE —
+    # the sweep has just walked the plan, so any breakfast still standing
+    # `planned` is one it passed, and an allergy is household-wide and
+    # invariant by night (coordination.check_meal_conflicts takes no date)
+    # — but it is not this card's to decide. The sweep's question says
+    # something true the household needs ("I couldn't find a lunch without
+    # pineapple for Emily"), where the gap audit's says only that the app
+    # could not settle it; replacing the first with a silent repeat throws
+    # information away, and tests/test_allergen_hard_block.py pins that
+    # sentence as Emily's own answer. Nothing measures it either way:
+    # plan_quality.check_and_log runs ABOVE the sweep, so an allergen-opened
+    # breakfast never reaches the morning report.
+    _meal_variety.fill_gaps_with_a_repeat(plan_id, dates, caps=caps)
 
     # "Every meal is a full plate" (Emily, 2026-09-05) — any planned meal
     # whose own food_groups fall short of the household's plate rule gets a

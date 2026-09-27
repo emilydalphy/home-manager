@@ -1581,3 +1581,224 @@ def repick_recent_repeats(plan_id: int, period_start: str | None, budget, picker
     except Exception:
         logger.exception("No-repeat enforcement failed for plan %s; the week stands as generated", plan_id)
     return out
+
+
+# ---------- a breakfast or a lunch is never a question ----------
+#
+# plan_quality._open_slot_budget has stated this rule for as long as it
+# has existed, and only ever MEASURED it: "breakfast/lunch must never be"
+# open. The morning report for household 1 on 2026-09-27 carried the
+# warning it exists to produce — "2026-10-02 breakfast is open, but
+# breakfast/lunch must never be" — and the thing that had broken the rule
+# was the app's own generation, not the model: _finish_week_slots's gap
+# audit turns ANY slot the model failed to return into an open question,
+# breakfasts and lunches included, and repair_leftover_chains reopens a
+# breakfast whose chain doesn't check out. An open slot is a decision
+# handed back; nobody wants to be asked what they are having for
+# breakfast on the Friday after next.
+#
+# A missing breakfast does not need a model call to fill. This app
+# already treats a repeated breakfast as normal and desirable — the
+# drafting prompt asks for one to repeat two or three times a week, and
+# the fold above turns repeats into batches — so the honest, free answer
+# is another of THIS WEEK'S OWN breakfasts: a dish the household has
+# already been given for that meal, already held to the household's hard
+# allergies on its way in (allergen_gate.split_safe refuses a clashing
+# dish before a row is written, and repick_slot re-picks through the same
+# check), and already in the shopping list's recipe group.
+#
+# TASTE is a weaker claim and is made no stronger here: a dish the MODEL
+# sent was only ever asked about taste in the prompt, not held to it
+# (pick_gate is the swap door's gate, not generation's). So a copied dish
+# is judged for taste exactly as the nights the model itself put it on
+# are — no better, and no worse.
+#
+# DINNER is deliberately not in scope. A dinner genuinely is a decision,
+# the rule names only breakfast and lunch, and quietly repeating a dinner
+# nobody asked for is the opposite of what the household wants. A dinner
+# gap is still handed back as an open question.
+NEVER_OPEN_SLOTS = ("breakfast", "lunch")
+
+# What a filled gap records about itself, so the draft can be honest and
+# a later reader can tell this row from one the model sent.
+GAP_FILL_CONSTRAINT = "repeat_fills_gap"
+
+# And the one short sentence the card carries. NOT blank, deliberately —
+# the fold above writes REPEAT_REASON ("") for a swapped-out repeat
+# because Emily asked for no note there, and plan_quality.
+# _reasoning_is_specific duly warns "has no reasoning at all" for every
+# blank row it sees. Trading an open-slot warning for a reasoning warning
+# would be no quieter a morning report and a less actionable one; the
+# same measurement made cap_enforce give a moved dinner MOVE_REASON.
+# There is no "don't announce it" argument here either way: this row
+# stands where there was nothing at all, so a blank would just be a blank.
+GAP_FILL_REASON = "Something already on your week, rather than a question."
+
+
+def _fill_supply(plan_id: int, slot: str, chains: dict) -> list[dict]:
+    """
+    The dishes this week already COOKS in `slot`, each with how many
+    nights it is on, its own minutes and its own food groups.
+
+    Cooks only. A reheat night is not a dish to copy: its name is a
+    sentence about one particular cook ("Made ahead — Monday's Egg
+    Bites"), its `links_to` points at a row this gap has no claim on, and
+    _group_dishes would file it under a dish that may not even be in this
+    slot — a lunch reheating a dinner would offer that dinner as a lunch
+    to cook fresh, with no minutes on record to judge it by, which is
+    exactly the 50-minute braise on a 20-minute weekday lunch that
+    time_caps exists to prevent.
+    """
+    supply: dict[str, dict] = {}
+    for e in _load_slot_entries(plan_id, slot):
+        if e["slot_state"] != "planned" or not e["meal"]:
+            continue
+        derived = json.loads(e["derived_from_json"] or "{}")
+        if e["id"] in chains["leftovers"] or derived.get(_leftovers.FROM_FREEZER_KEY):
+            continue
+        row = supply.setdefault(e["meal"].strip().lower(), {
+            "name": e["meal"], "first": e["date"], "nights": 0,
+            "minutes": None, "food_groups": None,
+        })
+        row["nights"] += 1
+        if row["minutes"] is None and (e.get("prep_time_minutes") or e.get("cook_time_minutes")):
+            row["minutes"] = int(e.get("prep_time_minutes") or 0) + int(e.get("cook_time_minutes") or 0)
+        if row["food_groups"] is None:
+            groups = json.loads(e["food_groups_json"] or "[]")
+            if groups:
+                row["food_groups"] = groups
+    return list(supply.values())
+
+
+def _gaps(plan_id: int, slot: str, dates: list[str]) -> list[dict]:
+    """
+    The (date, slot) pairs in `dates` that are missing a row outright, or
+    holding one that is `open`. Both are the same thing to a household —
+    a meal nobody has answered — and both are what this pass is for.
+    A planned_empty row is NOT a gap: an out day, a skipped day, an away
+    slot and a zero-count category are all answers, deliberately written.
+
+    AND NEITHER IS AN ALLERGEN SLOT. allergen_gate opens one when every
+    dish it could find for that meal clashes with something somebody in
+    the house can't have, and its question says so: "I couldn't find a
+    lunch without pineapple for Emily — I'd rather ask than guess." That
+    is a true thing the household needs to know about their own week. The
+    gap audit's question ("I couldn't settle this breakfast without
+    guessing") says only that the app failed, which is what this pass is
+    for. Filling the first would be SAFE — split_safe held every clashing
+    dish back before a row was written, so what is left on the week is
+    already clear of the same avoidances, and an allergy is
+    household-wide and invariant by night (coordination.
+    check_meal_conflicts takes no date) — and it would throw the sentence
+    away. Not this pass's decision to make.
+
+    Reproduced rather than reasoned about: filling it turned
+    tests/test_allergen_hard_block.py red, which is how this carve-out
+    came to exist.
+    """
+    from . import allergen_gate as _allergen_gate
+
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, date, slot_state, derived_from_json FROM meal_plan_entries "
+        "WHERE weekly_plan_id = ? AND household_id = ? AND slot = ? AND component_category IS NULL",
+        (plan_id, household_id(), slot),
+    ).fetchall()
+    conn.close()
+    by_date: dict[str, list] = {}
+    for r in rows:
+        by_date.setdefault(r["date"], []).append(r)
+
+    def _asked_on_purpose(r) -> bool:
+        derived = json.loads(r["derived_from_json"] or "{}")
+        return derived.get("constraint") == _allergen_gate.ALLERGEN_CONSTRAINT
+
+    gaps = []
+    for d in dates:
+        here = by_date.get(d) or []
+        if not here:
+            gaps.append({"date": d, "slot": slot, "entry_ids": []})
+        elif all(r["slot_state"] == "open" for r in here) and not any(_asked_on_purpose(r) for r in here):
+            gaps.append({"date": d, "slot": slot, "entry_ids": [r["id"] for r in here]})
+    return gaps
+
+
+def fill_gaps_with_a_repeat(plan_id: int, dates: list[str], caps: dict | None = None) -> dict:
+    """
+    Make "a breakfast or lunch is never open" true rather than measured.
+
+    Every breakfast and lunch in `dates` that has no row, or holds an
+    `open` one the app could not SETTLE, is planned as another of this
+    week's own dishes for that meal. Never dinner (see NEVER_OPEN_SLOTS),
+    and never a slot the app genuinely ASKED about (see _gaps on the
+    allergen carve-out). Never a model call: the dish comes from the week
+    itself.
+
+    WHICH dish: the one already on the FEWEST nights, so filling three
+    gaps spreads them rather than piling them onto one breakfast. Ties go
+    to the dish that appears earliest in the week, then to its name — a
+    test has to be able to predict the answer, and "whatever the database
+    handed back first" is not a rule anyone can reason about.
+
+    `caps` is the generator's {(date, slot): minutes} from
+    time_caps.minutes_cap. A dish that would breach the cap on the night
+    being filled is not offered — this pass runs after cap_enforce, which
+    is dinner-only, so nothing downstream would catch it. When nothing
+    fits, the gap is LEFT: a missing slot then reaches the gap audit and
+    becomes an open question exactly as it does today, and an open one
+    stays open. Better an honest question than a lunch the household
+    already said they haven't time to cook.
+
+    Never raises: a week that stands as generated, with an open breakfast
+    in it, is a warning in the morning report; a week that fails to save
+    is not a week.
+
+    WHAT IT DOES NOT REACH, said plainly. agent._finish_week_slots runs
+    this ONCE, before the gap audit and before plan_quality.check_and_log.
+    allergen_gate.sweep_plan runs after both and can open a breakfast of
+    its own when its re-pick budget is spent. Nothing measures that —
+    the quality pass has already run — and taking it over is the same
+    product decision the allergen carve-out above declines to make.
+    """
+    out = {"filled": [], "left": [], "skipped": None}
+    try:
+        chains = _leftovers.plan_leftover_chains(plan_id)
+        for slot in NEVER_OPEN_SLOTS:
+            gaps = _gaps(plan_id, slot, dates)
+            if not gaps:
+                continue
+            supply = _fill_supply(plan_id, slot, chains)
+            if not supply:
+                # A week with no breakfast anywhere has nothing to repeat.
+                # The question is the honest answer.
+                out["left"].extend({**g, "why": "nothing to repeat"} for g in gaps)
+                continue
+            for gap in sorted(gaps, key=lambda g: g["date"]):
+                cap = _cap_at(caps, gap["date"], slot)
+                fits = [d for d in supply if _fits(d, cap)]
+                if not fits:
+                    out["left"].append({**gap, "why": f"nothing fits {cap} minutes"})
+                    continue
+                pick = min(fits, key=lambda d: (d["nights"], d["first"], d["name"]))
+                _weekly_plan._replace_slot_entries(
+                    plan_id, gap["entry_ids"], gap["date"], slot, pick["name"],
+                    food_groups=pick["food_groups"],
+                    reasoning=GAP_FILL_REASON,
+                    derived_from={
+                        "constraint": GAP_FILL_CONSTRAINT,
+                        "repeat_of": pick["name"],
+                    },
+                )
+                pick["nights"] += 1
+                out["filled"].append({"date": gap["date"], "slot": slot, "meal": pick["name"]})
+        if out["filled"] or out["left"]:
+            logger.info(
+                "Plan %s: filled %d breakfast/lunch gap(s) with a repeat%s",
+                plan_id, len(out["filled"]),
+                ("; left " + ", ".join(f"{g['date']} {g['slot']} ({g['why']})" for g in out["left"]))
+                if out["left"] else "",
+            )
+    except Exception:
+        logger.exception(
+            "Filling breakfast/lunch gaps failed for plan %s; the week stands as generated", plan_id)
+    return out

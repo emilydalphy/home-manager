@@ -122,6 +122,15 @@ def hard_clashes(name: str, ingredients: list[dict] | None = None, sides: list[d
     return [h for h in hits if h.get("severity") == "hard"]
 
 
+# What an open slot this module wrote records about itself. Named rather
+# than left as a literal in one place, because another pass now has to
+# recognise it: meal_variety.fill_gaps_with_a_repeat fills a breakfast or
+# lunch the app could not SETTLE, and must leave alone one the app
+# genuinely ASKED about. Those are different things, and the difference
+# is this word.
+ALLERGEN_CONSTRAINT = "allergen"
+
+
 def split_safe(items: list[dict], avoidances: list[dict] | None = None) -> tuple[list[dict], list[dict]]:
     """
     The generated week, sorted into what may be written and what may not.
@@ -321,7 +330,8 @@ def repick_slot(
         _weekly_plan.plan_slot_open(
             weekly_plan_id=weekly_plan_id, meal_date=meal_date, slot=slot,
             open_reason=reason,
-            derived_from={"constraint": "allergen", "dropped": dropped, "avoided": _food_word(clashes)},
+            derived_from={"constraint": ALLERGEN_CONSTRAINT, "dropped": dropped,
+                          "avoided": _food_word(clashes)},
         )
         return {"status": "open", "date": meal_date, "slot": slot, "reason": reason}
 

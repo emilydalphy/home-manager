@@ -416,6 +416,115 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-27 — A breakfast or a lunch is never handed back as a question,
+  and the rule is held to by CODE now rather than only measured. Branch
+  `overnight/no-open-breakfast-or-lunch`, NOT merged at the time of
+  writing.** Found in the live morning report for household 1:
+  `warn 2026-10-02 breakfast is open, but breakfast/lunch must never be` and
+  `warn 3 open slots this week; the budget is at most 1`. Both come from
+  `plan_quality._open_slot_budget`, which has stated that rule for as long as
+  it has existed and only ever WARNED about it — and the thing breaking it
+  was the app's own generation, not the model.
+  - **Reproduced first, end to end on a throwaway DB with only the model
+    call stubbed**, before anything was touched: a week whose answer is
+    missing one breakfast, one lunch and one dinner comes back with THREE
+    `open` rows, all `derived_from.constraint == "generation_gap"`, and
+    `_open_slot_budget` printing Emily's own two warnings. After: the
+    breakfast reads `planned 'Eggs on Toast'` and the lunch
+    `planned 'Chicken Salad'` (both `constraint == "repeat_fills_gap"`), the
+    dinner is still `open`, and the rule says nothing.
+  - **The producer is `_finish_week_slots`' own gap audit**: it turns ANY
+    slot the model failed to return into an open question, breakfasts and
+    lunches included. `repair_leftover_chains` is the second, reopening a
+    breakfast whose chain doesn't check out, and the model itself is a
+    third (the save loop writes whatever `slot_state` it sent). All three
+    are covered by one pass.
+  - **A missing breakfast needs no model call.** The drafting prompt already
+    asks for a breakfast or snack to repeat two or three times a week and
+    `meal_variety`'s fold turns repeats into batches, so the free, honest
+    answer is another of THIS WEEK'S OWN breakfasts —
+    `meal_variety.fill_gaps_with_a_repeat`, modelled on
+    `enforce_snacks_per_day`, which already fills a short day from the
+    week's own snacks. The dish on the FEWEST nights wins, ties by earliest
+    appearance then by name, so three gaps spread rather than pile onto one
+    dish and a test can predict the answer.
+  - **DINNER IS DELIBERATELY OUT OF SCOPE** (`NEVER_OPEN_SLOTS`): a dinner
+    genuinely is a decision, the rule names only breakfast and lunch, and
+    quietly repeating a dinner nobody asked for is the opposite of what the
+    household wants. A dinner gap is still an open question, and a test says
+    so.
+  - **AND NEITHER IS A SLOT THE APP GENUINELY ASKED ABOUT — the most useful
+    thing on this branch, and it was found by a red test rather than by
+    reading.** The first cut also filled the slot `allergen_gate` opens when
+    every dish it can find for that meal clashes, and turned
+    `tests/test_allergen_hard_block.py` red. The two open slots are not the
+    same thing: the gap audit's says only that the app could not settle it,
+    while the allergen one says something TRUE the household needs to know
+    ("I couldn't find a lunch without pineapple for Emily — I'd rather ask
+    than guess"). Filling it is safe (`split_safe` held every clashing dish
+    back before a row was written) and still wrong, because it throws that
+    sentence away — and that is Emily's decision, not a gap-filling card's.
+    Carved out on `allergen_gate.ALLERGEN_CONSTRAINT`, one word, named there
+    rather than left as a literal so the module that writes it and the
+    module that has to recognise it cannot drift.
+  - **WHERE IT RUNS, and the claim in that comment that turned out to be
+    FALSE.** After `cap_enforce` (so the caps it holds a pick to are the caps
+    the week finally has), after the count pass, before the plates pass (a
+    filled meal gets a side like any other), before the gap audit, and before
+    `plan_quality.check_and_log`. The first draft of that comment said
+    running it BEFORE the count pass "would let fill_up spend a model call
+    re-picking a gap this one had just filled for nothing" — and the
+    measurement says otherwise: a household with `meal_counts_set`,
+    `breakfasts_per_week` 3, the model returning two distinct breakfasts and
+    missing one slot, gives THREE distinct breakfasts and EXACTLY ONE picker
+    call in BOTH orders. Copying a dish the week already keeps adds no
+    distinct dish, so the count is untouched whichever side it runs; all that
+    differs is which night `fill_up` turns into the new dish. Corrected in
+    place rather than quietly, because an unmeasured cost claim in a comment
+    is what the next reader acts on.
+  - **A filled row carries a REASON, not a blank.** `REPEAT_REASON` is `""`
+    for a swapped-out repeat because Emily asked for no note there, and
+    `plan_quality._reasoning_is_specific` duly warns "has no reasoning at
+    all" for every blank planned row — so a blank here would trade one
+    morning-report warning for another, the measurement that made
+    `cap_enforce` give a moved dinner `MOVE_REASON`.
+  - **The cap is a filter and the fallback is the question.** A dish that
+    would breach the night's own `time_caps.minutes_cap` is not offered, and
+    a gap nothing fits is LEFT — better an honest question than a lunch the
+    household already said they haven't time to cook. Same for a week with no
+    breakfast anywhere: nothing to repeat, so the question stands.
+  - `tests/test_no_open_breakfast_or_lunch.py` (26). **21 red against main,
+    and the number is decomposed rather than quoted: SIX fail on the
+    assertion they are named for** (three `['open'] == ['planned']`, the
+    three-gap spread, `_open_slot_budget` over the finished week, and the
+    log the morning report is built from), **14 die on a name main has not
+    got** (`fill_gaps_with_a_repeat` ×11, `ALLERGEN_CONSTRAINT` ×2,
+    `NEVER_OPEN_SLOTS` ×1) and **one is a source marker**. The 5 green on
+    main are guards and each names the mutation that pins it.
+  - **FOURTEEN mutations run, thirteen bite**, and the two that say most are
+    the ones that did not bite first time: "a reheat night is offered as a
+    dish to copy" reddened NOTHING until its test was re-seeded (the original
+    seed was decided by the date tie-break, so a broken exclusion sailed
+    through), and "the fill moved below the gap audit" reddens only the
+    source marker — moved there but still ABOVE the quality pass, the fill
+    replaces the open rows the audit has just written before the quality pass
+    reads them. Both are written into the tests rather than quietly fixed.
+    The one test NOTHING reddens says so in its own docstring: a zero-count
+    slot has no planned row anywhere, so the supply is empty and the pass
+    stands down before it reaches the question that test is about.
+  - **Found and NOT fixed, named so nobody reports it as new.** (1)
+    `allergen_gate.sweep_plan` runs after the quality pass and can open a
+    breakfast of its own; nothing measures that and taking it over is the
+    same product decision the carve-out declines. (2) `drop_dish_from_day`
+    (the Review "−") and `slot_needs._reopen_away_slot` open any slot,
+    breakfast and lunch included — both post-generation and both the
+    household's own tap, so the question there is theirs rather than the
+    app's failure. (3) A weekday lunch the household said would be leftovers
+    or prepped, that the model then MISSED, is filled as a fresh cook:
+    `weekday_lunches.apply_to_plan` runs earlier and skips a lunch with no
+    row, so by the time this pass sees the gap there is nothing left to
+    convert it. Inside the 20-minute cap, so honest — and not what they
+    said. Its own card.
 - **2026-09-25 — The Cook screen was crashing in production, on a state key
   that was read twice and declared nowhere. Branch
   `overnight/cook-crash-fix-only`, NOT merged at the time of writing. The
