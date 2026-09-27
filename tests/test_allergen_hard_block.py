@@ -195,7 +195,7 @@ def test_a_repick_that_still_clashes_is_tried_once_more_then_the_slot_is_handed_
     handed_back = _slot(plan_id, DAYS[0], "lunch")
     assert handed_back["slot_state"] == "open"
     assert handed_back["open_reason"] == (
-        "I couldn’t find a lunch without pineapple for Emily — I’d rather ask than guess."
+        "I couldn’t find a lunch without pineapple for Emily."   # the tail went 2026-09-27
     )
     assert tools.audit_plan_slots(plan_id)["complete"] is True
     assert tools.get_week_menu(plan_id)["settle"] is None

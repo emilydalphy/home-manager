@@ -520,11 +520,14 @@ def open_slot_question(open_reason: str | None, derived_from_json: str | None) -
     """
     The open slot's sentence when it's a question the household has to
     answer, else "" (Emily, 2026-09-27). Kept: hosting ("You're hosting
-    Thanksgiving for 12 — what's the main?", big_meal) and a slot no safe
-    dish could fill (allergen_gate — filed under its own constraint by the
-    re-pick, under the stepper's by the sweep, so its sentence is matched
-    too). Every other open_reason is the app explaining itself ("Sunday I'd
-    rather ask than guess: …") and the screens say one plain line instead.
+    Thanksgiving for 12 — what's the main?", big_meal), a holiday whose
+    plans changed ("Plans for Thanksgiving changed — what would you like for
+    dinner?", holidays) and a slot no safe dish could fill (allergen_gate —
+    filed under its own constraint by the re-pick, under the stepper's by
+    the sweep, so its sentence is matched too, and said without the old
+    "— I'd rather ask than guess" tail). Every other open_reason is the app
+    explaining itself ("Sunday I'd rather ask than guess: …", "You cut X
+    back…") and the screens say one plain line instead.
     """
     from . import allergen_gate as _allergen_gate  # lazy: it imports this module
 
@@ -536,8 +539,10 @@ def open_slot_question(open_reason: str | None, derived_from_json: str | None) -
     except (TypeError, ValueError):
         derived = {}
     constraint = derived.get("constraint") if isinstance(derived, dict) else None
-    if constraint in ("hosting", _allergen_gate.ALLERGEN_CONSTRAINT) or _allergen_gate.is_open_reason(text):
+    if constraint in ("hosting", "holiday_answer_changed"):
         return text
+    if constraint == _allergen_gate.ALLERGEN_CONSTRAINT or _allergen_gate.is_open_reason(text):
+        return _allergen_gate.question_of(text)
     return ""
 
 

@@ -45,7 +45,7 @@ def _screen(day: dict, status: str, cookable: bool = True) -> str:
     days = [{"date": "2026-10-01"}, {"date": "2026-10-02"}, {"date": "2026-10-03"}]
     harness = (
         _ESCAPE
-        + "function dayName(d, opts){ return ({'2026-10-01': 'Thursday', '2026-10-02': 'Friday', '2026-10-03': 'Saturday'})[d]; }\n"
+        + "function dayName(d, opts){ return ({'2026-10-01': 'Thursday', '2026-10-02': 'Friday', '2026-10-03': 'Saturday', '2026-09-24': 'Thursday'})[d]; }\n"
         + f"var weekState = {{ data: {{ status: {json.dumps(status)}, slot_times: {{}} }}, days: {json.dumps(days)}, mealBack: 'week' }};\n"
         + f"function planCookableNow() {{ return {json.dumps(cookable)}; }}\n"
         + "var swapState = null;\n"
@@ -70,7 +70,7 @@ def _screen(day: dict, status: str, cookable: bool = True) -> str:
     return json.loads(res.stdout.strip())
 
 
-_LINK = ('<button type="button" class="recipe-source-link" data-wk-source-day="0" '
+_LINK = ('<button type="button" class="recipe-source-link" data-wk-source-date="2026-10-01" '
          'data-wk-source-slot="dinner">See Thursday’s recipe</button>')
 
 
@@ -103,10 +103,46 @@ def test_today_on_an_approved_week_cook_does_not_hold_is_not_marked_eaten():
     assert "Mark eaten" not in html
 
 
+@_needs_node
+def test_the_link_reaches_a_cook_in_another_week():
+    """Review, 2026-09-27: the link is drawn whatever week the cook is in,
+    and openSourceMeal loads that week before opening the cook's step."""
+    js = (
+        "var weekState = { days: [{ date: '2026-10-05' }], showWeekStart: null };\n"
+        "var CALLS = [];\n"
+        "async function loadWeekMenu(panel) { CALLS.push(['load', weekState.showWeekStart]);"
+        " weekState.days = [{ date: '2026-09-30' }, { date: '2026-10-01' }]; }\n"
+        "function goMealsStep(step, opts) { CALLS.push([step, opts]); }\n"
+        + _extract("wkDayIndexOf") + "\n" + _extract("openSourceMeal") + "\n"
+        + "(async function () {\n"
+        "  await openSourceMeal({}, '2026-10-01', 'dinner', 'day');\n"
+        "  await openSourceMeal({}, '2026-10-01', 'dinner', 'day');\n"
+        "  await openSourceMeal({}, '2026-08-01', 'dinner', 'day');\n"
+        "  console.log(JSON.stringify(CALLS));\n"
+        "})();\n"
+    )
+    res = nodeharness.run_node(js, timeout=30)
+    assert res.returncode == 0, res.stderr
+    calls = json.loads(res.stdout.strip())
+    assert calls[0] == ["load", "2026-10-01"]
+    assert calls[1] == ["meal", {"dayIndex": 1, "slot": "dinner", "back": "week"}]
+    # Already on screen: no load, the crumb goes where it went.
+    assert calls[2] == ["meal", {"dayIndex": 1, "slot": "dinner", "back": "day"}]
+    # A date no plan covers: loaded, not found, nothing opened.
+    assert calls[3] == ["load", "2026-08-01"] and len(calls) == 4
+
+
+@_needs_node
+def test_the_link_is_drawn_when_the_cook_is_not_on_this_screen():
+    html = _screen(dict(_day("2026-10-09"), dinner=dict(_REHEAT, leftover_from=dict(
+        _REHEAT["leftover_from"], date="2026-09-24"))), "approved")
+    assert 'data-wk-source-date="2026-09-24"' in html
+
+
 def test_the_link_opens_the_cooks_meal_step():
     wire = _extract("wireMealsStep")
-    assert "steps.querySelectorAll('[data-wk-source-day]')" in wire
-    assert "dayIndex: Number(btn.getAttribute('data-wk-source-day'))," in wire
+    assert "steps.querySelectorAll('[data-wk-source-date]')" in wire
+    assert "openSourceMeal(panel, btn.getAttribute('data-wk-source-date')," in wire
     css = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
     block = css[css.index(".recipe-source-link {"):]
     block = block[:block.index("}")]

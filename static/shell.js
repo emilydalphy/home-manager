@@ -14624,19 +14624,38 @@
 
   // The way from a reheat night to the recipe it comes from — "See
   // Thursday's recipe" (Emily, 2026-09-27): the night itself has no cook
-  // in it, so its page showed a title and nothing to read. Only for a
-  // chained night whose cook is a day on this screen (get_week_menu's
-  // leftover_from, with the cook's slot).
+  // in it, so its page showed a title and nothing to read. For every
+  // chained night (get_week_menu's leftover_from, with the cook's slot),
+  // wherever the cook is — openSourceMeal reaches a cook in another week.
   function mealSourceLinkHtml(entry) {
     var from = entry && entry.source === 'leftovers' && entry.leftover_from;
     if (!from || !from.date || !from.slot) return '';
-    var days = (typeof weekState !== 'undefined' && weekState && weekState.days) || [];
-    var index = -1;
-    for (var i = 0; i < days.length; i++) if (days[i].date === from.date) { index = i; break; }
-    if (index === -1) return '';
-    return '<button type="button" class="recipe-source-link" data-wk-source-day="' + index + '" ' +
+    return '<button type="button" class="recipe-source-link" data-wk-source-date="' + escapeHtml(from.date) + '" ' +
       'data-wk-source-slot="' + escapeHtml(from.slot) + '">' +
       escapeHtml('See ' + dayName(from.date, { weekday: 'long' }) + '’s recipe') + '</button>';
+  }
+
+  function wkDayIndexOf(date) {
+    var days = weekState.days || [];
+    for (var i = 0; i < days.length; i++) if (days[i].date === date) return i;
+    return -1;
+  }
+
+  // The cook's own Meal step. A cook on another week's plan (the day is
+  // not on this screen) loads that week first — the plan covering the
+  // date, the same pin /plan-week's "drafted" hand-back uses
+  // (weekState.showWeekStart) — then opens it; its crumb goes up to that
+  // week. A date no plan covers stays where it is.
+  async function openSourceMeal(panel, date, slot, back) {
+    var index = wkDayIndexOf(date);
+    if (index === -1) {
+      weekState.showWeekStart = date;
+      await loadWeekMenu(panel);
+      index = wkDayIndexOf(date);
+      if (index === -1) return;
+      back = 'week';
+    }
+    goMealsStep('meal', { dayIndex: index, slot: slot, back: back });
   }
 
   function mealStepHtml(day, slot) {
@@ -15288,14 +15307,12 @@
       });
     });
     // "See Thursday's recipe" on a reheat night (mealSourceLinkHtml): the
-    // cook's own Meal step, its crumb going where this one's went.
-    steps.querySelectorAll('[data-wk-source-day]').forEach(function (btn) {
+    // cook's own Meal step, its crumb going where this one's went — in
+    // this week or another (openSourceMeal).
+    steps.querySelectorAll('[data-wk-source-date]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        goMealsStep('meal', {
-          dayIndex: Number(btn.getAttribute('data-wk-source-day')),
-          slot: btn.getAttribute('data-wk-source-slot'),
-          back: weekState.mealBack
-        });
+        openSourceMeal(panel, btn.getAttribute('data-wk-source-date'),
+          btn.getAttribute('data-wk-source-slot'), weekState.mealBack);
       });
     });
     // The rows' own buttons (Emily, 2026-09-18): Done, Swap (the sheet),

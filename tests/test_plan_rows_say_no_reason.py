@@ -126,17 +126,30 @@ def test_no_renderer_prints_a_reason_an_asked_fact_or_an_open_reason():
 # ---------- open slots: a real question stays, an explanation goes ----------
 
 HOSTING = "You’re hosting Thanksgiving for 12 — what’s the main? Tell me and I’ll build the rest around it."
-ALLERGY = "I couldn’t find a dinner without peanuts for Sam — I’d rather ask than guess."
+ALLERGY = "I couldn’t find a dinner without peanuts for Sam."
+ALLERGY_OLD = "I couldn’t find a dinner without peanuts for Sam — I’d rather ask than guess."
+HOLIDAY = "Plans for Thanksgiving changed — what would you like for dinner?"
 EXPLAINING = "Sunday I’d rather ask than guess: I’d pencilled in leftovers from a meal that hasn’t happened yet."
+
+
+def test_the_allergen_sentence_is_the_fact_without_the_tail():
+    from app.tools import allergen_gate
+    said = allergen_gate.open_reason("dinner", [{"food": "peanuts", "restriction": "peanuts", "member": "Sam"}])
+    assert "rather ask" not in said and said.endswith(".")
+    assert allergen_gate.is_open_reason(said)
 
 
 def test_only_a_real_question_survives_as_the_open_slots_line():
     from app.tools.weekly_plan import open_slot_question as q
     assert q(HOSTING, json.dumps({"constraint": "hosting", "holiday": "Thanksgiving"})) == HOSTING
+    assert q(HOLIDAY, json.dumps({"constraint": "holiday_answer_changed", "holiday": "Thanksgiving"})) == HOLIDAY
     assert q(ALLERGY, json.dumps({"constraint": "allergen"})) == ALLERGY
+    # A row written before the tail went is said without it.
+    assert q(ALLERGY_OLD, json.dumps({"constraint": "allergen"})) == ALLERGY
     # The allergen sweep drops through the stepper, filed as a cut-back:
     # the sentence is what marks it.
     assert q(ALLERGY, json.dumps({"constraint": "household_cut_back", "dish": "Satay"})) == ALLERGY
+    assert q(ALLERGY_OLD, json.dumps({"constraint": "household_cut_back", "dish": "Satay"})) == ALLERGY
     assert q(EXPLAINING, json.dumps({})) == ""
     assert q("You cut Chili back, so this one is yours to fill.",
              json.dumps({"constraint": "household_cut_back"})) == ""

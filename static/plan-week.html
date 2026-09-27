@@ -4302,10 +4302,14 @@
   // when the keyboard opens — the keyboard covers the button, so "Anything
   // else?" could be typed and not sent (Emily, 2026-09-27). The visual
   // viewport is what shrinks, so the gap between its bottom and the
-  // layout viewport's bottom is how far to lift. Android Chrome shrinks
-  // the layout viewport itself, so that gap is 0 there and nothing moves.
-  // Only while a text box has focus: pinch-zoom shrinks the visual
-  // viewport too, and a screen with no text box never lifts.
+  // layout viewport's bottom is how far to lift. Android Chrome (108 on)
+  // does the same by default, so the lift applies there too; a browser
+  // that shrinks the layout viewport instead has a gap of 0 and nothing
+  // moves. Only while a text box has focus — or the footer itself, once
+  // lifted: Android focuses the button on pointerdown, and dropping the
+  // footer then would move it out from under the finger before pointerup.
+  // Pinch-zoom shrinks the visual viewport too, and a screen with no text
+  // box never lifts.
   function isTextEntry(el) {
     if (!el) return false;
     if (el.tagName === 'TEXTAREA') return true;
@@ -4319,25 +4323,39 @@
     return gap > 0 ? gap : 0;
   }
 
-  function liftFooter() {
+  // Whether the footer should stay up for what has focus now: a text box,
+  // or the footer's own button while it is already lifted (see above).
+  function keepsLift(el, footer) {
+    return isTextEntry(el) || !!(el && footer.contains(el) && footer.classList.contains('is-lifted'));
+  }
+
+  // `reveal`: also scroll the box being typed in above the lifted footer —
+  // on focus and on the keyboard opening only, never on the visual
+  // viewport's own scroll, which is the person scrolling (pulling the page
+  // back under their thumb would fight them).
+  function liftFooter(reveal) {
     var footer = $('footer');
-    var lift = keyboardLift(window.innerHeight, window.visualViewport, isTextEntry(document.activeElement));
+    var el = document.activeElement;
+    var lift = keyboardLift(window.innerHeight, window.visualViewport, keepsLift(el, footer));
     footer.style.setProperty('--kb-lift', lift + 'px');
     footer.classList.toggle('is-lifted', lift > 0);
-    // The box being typed in stays in sight above the lifted footer.
-    var el = document.activeElement;
-    if (lift > 0 && isTextEntry(el) && !footer.hidden) {
+    if (reveal === true && lift > 0 && isTextEntry(el) && !footer.hidden) {
       var over = el.getBoundingClientRect().bottom - footer.getBoundingClientRect().top;
       if (over > 0) window.scrollBy(0, over + 8);
     }
   }
 
   if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', liftFooter);
-    window.visualViewport.addEventListener('scroll', liftFooter);
-    document.addEventListener('focusin', liftFooter);
-    // After focus has moved: a tap from one box to the next keeps it up.
-    document.addEventListener('focusout', function () { setTimeout(liftFooter, 0); });
+    window.visualViewport.addEventListener('resize', function () { liftFooter(true); });
+    window.visualViewport.addEventListener('scroll', function () { liftFooter(false); });
+    document.addEventListener('focusin', function () { liftFooter(true); });
+    // After focus has moved — and not at all when it moved into the footer
+    // (the tap on its button): the next resize, the keyboard closing, is
+    // what brings the footer down then.
+    document.addEventListener('focusout', function (e) {
+      if (e.relatedTarget && $('footer').contains(e.relatedTarget)) return;
+      setTimeout(function () { liftFooter(false); }, 0);
+    });
   }
 
   load();
