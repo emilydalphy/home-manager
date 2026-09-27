@@ -350,3 +350,135 @@ def test_snacks_stay_while_a_meal_of_the_day_is_ahead(monkeypatch, frozen_today,
     plan_id = agent.generate_weekly_plan(SUNDAY, day_count=6, period_start=SUNDAY)["weekly_plan_id"]
     assert [r for r in _rows(plan_id) if r["date"] == SUNDAY and r["slot"] == "snack"] == []
     assert [r for r in _rows(plan_id) if r["date"] == PERIOD[1] and r["slot"] == "snack"]
+
+
+# ---------- review of d9257c6: the integration reviewer's probes ----------
+
+def _next_monday():
+    from conftest import household_today
+    t = household_today()
+    return (t - datetime.timedelta(days=t.weekday()) + datetime.timedelta(days=7)).isoformat()
+
+
+def _probe_week(dates, lunches, dinners, lunch_extra=None, dinner_extra=None, lunch_minutes=None):
+    days = []
+    for i, d in enumerate(dates):
+        days.append(_e(d, "breakfast", "Oats", 10))
+        days.append(_e(d, "lunch", lunches[i], (lunch_minutes or {}).get(i, 20), **((lunch_extra or {}).get(i) or {})))
+        days.append(_e(d, "dinner", dinners[i], 30, **((dinner_extra or {}).get(i) or {})))
+    return days
+
+
+_PROBE_LUNCHES = ["Chicken salad", "Corn chowder", "Chicken salad", "Chicken salad", "Lentil soup", "Tuna melt", "Cobb salad"]
+_CORN = {1: {"derived_from": {"inventory": ["corn"]}}}
+
+
+def _by_slot(plan_id):
+    return {(r["date"], r["slot"]): r for r in _rows(plan_id) if r["slot"] in ("lunch", "dinner")}
+
+
+def test_a_moved_request_dish_goes_where_it_fits_the_time(monkeypatch, picker):
+    """REVIEW 2 (probe_rush_cap). A 60-minute corn chowder displaced from
+    Tuesday's prepped lunch skips Tuesday's rush dinner and lands on the
+    first dinner it fits."""
+    tools.set_household_meal_preferences(lunches_per_week=2, mark_complete=False)
+    week = _next_monday()
+    dates = tools._week_dates(week)
+    tools.save_week_intake(week, freeform="I have corn I need to use.", night_tags={dates[1]: ["rush"]},
+                           weekday_lunches={"prep_days": ["sunday"], "days": [
+                               {"date": dates[i], "kind": "prepped"} for i in range(4)]})
+    dinners = ["Lamb stew", "Miso cod", "Bibimbap", "Ratatouille", "Jerk chicken", "Pierogi", "Dal"]
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _probe_week(
+        dates, _PROBE_LUNCHES, dinners, lunch_extra=_CORN, lunch_minutes={1: 60}))
+
+    rows = _by_slot(agent.generate_weekly_plan(week)["weekly_plan_id"])
+
+    assert rows[(dates[1], "dinner")]["meal"] != "Corn chowder", "not onto the 30-minute rush night"
+    assert rows[(dates[2], "dinner")]["meal"] == "Corn chowder"
+
+
+def test_a_moved_request_dish_never_takes_a_holiday_dish_night(monkeypatch, picker):
+    """REVIEW 1 (probe_holiday_dish). The pie they're bringing on Tuesday
+    stays; the corn chowder goes to the next ordinary dinner."""
+    week = _next_monday()
+    dates = tools._week_dates(week)
+    tools.save_week_intake(week, freeform="I have corn I need to use.",
+                           weekday_lunches={"prep_days": ["sunday"], "days": [
+                               {"date": dates[i], "kind": "prepped"} for i in range(4)]})
+    dinners = ["Pumpkin pie" if i == 1 else f"Dinner {i}" for i in range(7)]
+    holiday = {1: {"derived_from": {"holiday": "Thanksgiving", "holiday_dish": True, "constraint": "bring_a_dish"}}}
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _probe_week(
+        dates, _PROBE_LUNCHES, dinners, lunch_extra=_CORN, dinner_extra=holiday))
+
+    rows = _by_slot(agent.generate_weekly_plan(week)["weekly_plan_id"])
+
+    assert rows[(dates[1], "dinner")]["meal"] == "Pumpkin pie"
+    assert rows[(dates[2], "dinner")]["meal"] == "Corn chowder"
+
+
+def test_dinners_that_feed_lunches_still_fold_to_the_count(monkeypatch, picker):
+    """REVIEW 3 (probe_leftover_lunch_sources_vs_count). Dinners = 2, every
+    weekday lunch Tue–Fri is last night's leftovers, the model sends seven
+    dinners: two dinner dishes are cooked, and every one of those lunches
+    still reheats a dinner."""
+    tools.set_household_meal_preferences(dinners_per_week=2, lunches_per_week=2, mark_complete=False)
+    week = _next_monday()
+    dates = tools._week_dates(week)
+    tools.save_week_intake(week, weekday_lunches={"days": [
+        {"date": dates[i], "kind": "leftovers"} for i in range(1, 5)]})
+    dinners = ["Lamb stew", "Miso cod", "Bibimbap", "Ratatouille", "Jerk chicken", "Pierogi", "Dal"]
+    lunches = ["Tuna melt" if i in (0, 5, 6) else dinners[i - 1] for i in range(7)]
+    links = {i: {"derived_from": {"links_to": f"{dates[i - 1]}:dinner"}} for i in range(1, 5)}
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _probe_week(dates, lunches, dinners, lunch_extra=links))
+
+    plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
+
+    chains = tools.plan_leftover_chains(plan_id)
+    rows = _by_slot(plan_id)
+    cooks = {leftovers.dish_identity(r["meal"]) for (d, s), r in rows.items() if s == "dinner"
+             and r["slot_state"] == "planned" and r["id"] not in chains["leftovers"]
+             and not leftovers.frozen_portion_on(json.loads(r["derived_from_json"] or "{}"))}
+    assert len(cooks) == 2, (cooks, week_table(plan_id))
+    for i in range(1, 5):
+        link = chains["leftovers"].get(rows[(dates[i], "lunch")]["id"])
+        assert link and link["source"]["slot"] == "dinner", week_table(plan_id)
+    assert leftovers.long_runs(leftovers.run_keys(plan_id)) == []
+
+
+def test_a_request_lunch_kept_over_a_prepped_batch_is_said():
+    """REVIEW 4. Nowhere to move the corn lunch (Monday's only dinner is
+    the holiday dish they're bringing): the lunch stays, and one plain
+    line says it isn't from Sunday's prep."""
+    from app.tools import draft_opener, weekday_lunches
+    plan_id = _bare([
+        (PERIOD[0], "dinner", "Japanese Vegetable Curry", None),
+        (PERIOD[1], "lunch", "Corn pancakes", {"inventory": ["corn"]}),
+        (PERIOD[1], "dinner", "Pumpkin pie", {"holiday": "Thanksgiving", "holiday_dish": True}),
+    ])
+    intake = {"freeform": "I have corn that I need to use.",
+              "weekday_lunches": {"prep_days": ["sunday"], "days": [{"date": PERIOD[1], "kind": "prepped"}]}}
+
+    out = weekday_lunches.apply_to_plan(plan_id, intake)
+
+    line = "Monday’s lunch stays Corn pancakes, as you asked — it isn’t from Sunday’s prep."
+    assert out["said"] == [line]
+    assert _by_slot(plan_id)[(PERIOD[1], "lunch")]["meal"] == "Corn pancakes"
+    tools.record_plan_requests(plan_id, {"said_lines": out["said"]})
+    menu = tools.get_week_menu(plan_id)
+    assert line in menu["draft_opener"]
+
+
+def test_a_leftovers_lunch_with_nothing_to_reheat_is_said():
+    """REVIEW 3's fallback: the evening before is empty, so Friday's lunch
+    can't be last night's leftovers — said in one plain line."""
+    from app.tools import weekday_lunches, weekly_plan
+    plan_id = _bare([
+        (PERIOD[5], "lunch", "Toastie", None),
+    ])
+    weekly_plan.plan_slot_empty(weekly_plan_id=plan_id, meal_date=PERIOD[4], slot="dinner",
+                                reason="You’re out.", derived_from={"constraint": "nobody_home"})
+    intake = {"weekday_lunches": {"days": [{"date": PERIOD[5], "kind": "leftovers"}]}}
+
+    out = weekday_lunches.repoint_leftover_lunches(plan_id, intake)
+
+    assert out["said"] == ["Friday’s lunch isn’t last night’s leftovers — nothing cooked before it could stretch that far."]

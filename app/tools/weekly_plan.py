@@ -2182,11 +2182,21 @@ def record_plan_requests(weekly_plan_id: int, report: dict | None) -> None:
         {"words": str(r.get("words") or "").strip(), "line": str(r.get("line") or "").strip()}
         for r in (report.get("moved_requests") or []) if isinstance(r, dict) and (r.get("line") or r.get("words"))
     ]
-    if not honoured and not unmet and not moved:
+    # Plain lines about what the planner had to leave or couldn't do with
+    # the household's own answers (weekday_lunches.kept_line, a lunch
+    # arrangement the dinner count left no cook for): said once each.
+    said = []
+    for line in report.get("said_lines") or []:
+        line = str(line or "").strip()
+        if line and line not in said:
+            said.append(line)
+    if not honoured and not unmet and not moved and not said:
         return
     stored = {"honoured": honoured, "unmet": unmet}
     if moved:
         stored["moved"] = moved
+    if said:
+        stored["said"] = said
     conn = get_conn()
     conn.execute(
         "UPDATE weekly_plans SET requests_json = ? WHERE id = ? AND household_id = ?",
@@ -2211,6 +2221,8 @@ def plan_requests(weekly_plan_id: int) -> dict:
     out = {"honoured": data.get("honoured") or [], "unmet": data.get("unmet") or []}
     if data.get("moved"):
         out["moved"] = data["moved"]
+    if data.get("said"):
+        out["said"] = data["said"]
     return out
 
 

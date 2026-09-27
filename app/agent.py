@@ -6150,7 +6150,9 @@ def _finish_week_slots(
     # tools/weekday_lunches.apply_to_plan — it swallows its own failures.
     lunches_answered = bool(_weekday_lunches.kinds_by_date(intake))
     if lunches_answered:
-        _weekday_lunches.apply_to_plan(plan_id, intake)
+        lunch_out = _weekday_lunches.apply_to_plan(plan_id, intake)
+        if report is not None:
+            report.setdefault("said_lines", []).extend(lunch_out.get("said") or [])
 
     # "…and have leftovers for it" is a real chain off the requested cook:
     # when neither the Leftovers night nor a weekday lunch took it, the
@@ -6265,6 +6267,14 @@ def _finish_week_slots(
             usual=usual, day_count=planned_count, caps=caps,
             refuse=_meal_variety.recent_refusals(intake, week_start_date, plan_id, slot),
         )
+        if slot == "dinner" and lunches_answered:
+            # The dinner fold may have taken the cook a "leftovers from
+            # dinner" lunch was eating: point each such lunch at a cook again
+            # (the lunch pass right after this ignores them), or say it
+            # couldn't be. See weekday_lunches.repoint_leftover_lunches.
+            repointed = _weekday_lunches.repoint_leftover_lunches(plan_id, intake)
+            if report is not None:
+                report.setdefault("said_lines", []).extend(repointed.get("said") or [])
     if household_memory.get("snacks_per_day_set") or household_memory.get("snacks_per_week_set"):
         # The kept days only: a dropped day's snacks were cleared above
         # and must not be filled back in.

@@ -367,7 +367,7 @@ def test_no_answer_plans_exactly_as_before(two_adults, seen_context):
     assert [r["meal"] for r in _rows(plan_id, "lunch").values()] == \
         ["Chili", "Soup", "Salad", "Curry", "Wrap", "Pita", "Toastie"]
     assert weekday_lunches.apply_to_plan(plan_id, {"weekday_lunches": {}}) == \
-        {"leftovers": [], "prepped": [], "frozen": [], "skipped": []}
+        {"leftovers": [], "prepped": [], "frozen": [], "skipped": [], "said": []}
 
 
 def test_the_prompt_says_what_each_kind_means():

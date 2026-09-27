@@ -283,14 +283,6 @@ def _group_dishes(entries: list[dict], chains: dict) -> list[dict]:
             dish["minutes"] = int(e.get("prep_time_minutes") or 0) + int(e.get("cook_time_minutes") or 0)
         if theirs(derived) or (e["cooked_status"] or "") == "done":
             dish["protected"] = True
-        # A cook feeding the OTHER meal — a dinner whose leftovers are a
-        # lunch — is the household's lunch arrangement (weekday_lunches: "leftovers
-        # from dinner"), not a dish to fold away: folding it strands that
-        # lunch as a fresh cook of a dish no longer on the week
-        # (integration review, 2026-09-27).
-        source = chains["sources"].get(e["id"])
-        if source and any(t.get("slot") != e.get("slot") for t in source["targets"]):
-            dish["protected"] = True
         if reheat or frozen or e["id"] in chains["sources"]:
             dish["chained"] = True
         if dish["food_groups"] is None and not reheat and not frozen:

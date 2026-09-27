@@ -545,7 +545,10 @@ def build_opener(rows, intake: dict | None, period_start: str, day_count: int, d
         if e.get("slot_state") == "planned_empty" and _derived(e).get("constraint") == "already_past":
             gone[e["slot"]] = gone.get(e["slot"], 0) + 1
     third = count_note(max(1, day_count - len(skipped)), memory, said=first, gone=gone)
-    return [line for line in (first, second, moved_line(report), batch_line(entries), third) if line]
+    # The planner's own plain lines about an answer it couldn't keep whole
+    # (weekly_plan.record_plan_requests' `said`), after the move line.
+    said = [str(s).strip() for s in ((report or {}).get("said") or []) if str(s).strip()]
+    return [line for line in (first, second, moved_line(report), *said, batch_line(entries), third) if line]
 
 
 def moved_line(report: dict | None) -> str:
