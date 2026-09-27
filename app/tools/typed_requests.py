@@ -471,6 +471,23 @@ def _is_plural_dish_noun(chip: str) -> bool:
     return len(last) > 3 and last.endswith("s") and not last.endswith("ss")
 
 
+# First words that are names, and keep their capital mid-sentence:
+# "No Brussels sprouts fit", "No Korean tacos fit" (every known cuisine
+# counts too — _is_cuisine_adjective).
+_PROPER_FIRST_WORDS = {"brussels", "caesar", "buffalo", "philly", "belgian", "swedish", "nashville",
+                       "texas", "cajun", "creole", "sichuan", "szechuan", "hawaiian"}
+
+
+def _sentence_case(chip: str) -> str:
+    """The chip mid-sentence: its own capitals kept, except a first letter
+    that is only there because it starts the chip ("Burgers" -> "burgers",
+    "Brussels sprouts" stays)."""
+    first = chip.split()[0]
+    if first.lower() in _PROPER_FIRST_WORDS or _is_cuisine_adjective(first):
+        return chip
+    return chip[:1].lower() + chip[1:]
+
+
 def cuisine_unmet_line(chip: str) -> str:
     """
     The opener's one plain line for a chip nothing could answer
@@ -484,22 +501,24 @@ def cuisine_unmet_line(chip: str) -> str:
     if not chip:
         return ""
     if _is_plural_dish_noun(chip):
-        return f"No {chip.lower()} fit this week."
+        return f"No {_sentence_case(chip)} fit this week."
     return f"No {chip} dish fit this week."
 
 
 def _drop_unmet_about(unmet: list, chip: str) -> None:
-    """A chip the week now answers: every unmet line about it goes — ours
-    (its `cuisine`) and the model's own ({"words": "Burgers"}), read
-    plural-insensitively — so the opener never says "I couldn't fit
-    Burgers" over a burger."""
+    """A chip the week now answers: every unmet line that IS about it goes
+    — ours (its `cuisine`) and a model line whose words are the chip itself
+    ({"words": "burger"} for Burgers, plural-insensitive) — so the opener
+    never says "I couldn't fit Burgers" over a burger. A line that merely
+    mentions it ("Turkey burgers on Friday", "Italian sausage on Tuesday")
+    is a different request and stays."""
     want = _cuisine_norm(chip)
 
     def about(u) -> bool:
         if str(u.get("cuisine") or "").lower() == chip.lower():
             return True
         said = _cuisine_norm(str(u.get("words") or ""))
-        return bool(want and said and any(True for _ in _typed(want, said)))
+        return bool(want) and said == want
 
     unmet[:] = [u for u in unmet if not about(u)]
 

@@ -286,6 +286,8 @@ def test_plurals_and_family_chips(chip, meal, cuisine, hit):
     ("Burgers", "No burgers fit this week."),
     ("Curries", "No curries fit this week."),
     ("Tacos", "No tacos fit this week."),
+    ("Brussels sprouts", "No Brussels sprouts fit this week."),
+    ("Korean tacos", "No Korean tacos fit this week."),
 ])
 def test_the_unmet_line_never_breaks_a_word(chip, line):
     assert typed_requests.cuisine_unmet_line(chip) == line
@@ -337,3 +339,27 @@ def test_a_model_unmet_line_about_the_chip_goes_once_the_week_answers_it(stub_mo
     assert "Smash burgers" in [r["title"] for r in _menu_rows(plan["weekly_plan_id"])]
     assert tools.plan_requests(plan["weekly_plan_id"])["unmet"] == []
     assert not any("urger" in line for line in tools.get_week_menu(plan["weekly_plan_id"])["draft_opener"])
+
+
+@pytest.mark.parametrize("chip, words", [
+    ("Burgers", "Turkey burgers on Friday"),
+    ("Italian", "Italian sausage on Tuesday"),
+])
+def test_a_model_unmet_line_that_only_mentions_the_chip_stays(stub_model, monkeypatch, chip, words):
+    """CATCH (reviewer, b5a2ea6): a different request that happens to
+    contain the chip's word ("Turkey burgers on Friday", and Friday is out)
+    is still unmet — the chip being answered doesn't answer it."""
+    week = _monday()
+    tools.save_week_intake(week, cuisines=[chip])
+    days = _week(week)
+
+    def fake(ctx):
+        out = agent.GeneratedDays(days)
+        out.report = {"honoured_requests": [], "unmet_requests": [{"words": words, "reason": "Friday is out"}]}
+        return out
+
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", fake)
+    _picker(monkeypatch, name="Smash burgers" if chip == "Burgers" else "Chicken parm",
+            cuisine="American" if chip == "Burgers" else "Italian")
+    plan = agent.generate_weekly_plan(week)
+    assert [u["words"] for u in tools.plan_requests(plan["weekly_plan_id"])["unmet"]] == [words]
