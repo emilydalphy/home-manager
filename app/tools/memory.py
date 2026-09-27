@@ -560,6 +560,16 @@ def edit_preference(field: str, value) -> dict:
             raise ValueError("snack_dishes_per_week must be a whole number from 1 to 7.")
         if not 1 <= dishes <= 7:
             raise ValueError(f"snack_dishes_per_week must be from 1 to 7, not {dishes}.")
+        # Never fewer different snacks than land on one day: the draft
+        # can't honour it without a day eating the same snack twice
+        # (meal_variety.enforce_snack_dishes holds it there anyway), and the
+        # screen must not say a number the plan doesn't keep.
+        per_day_now = int(get_household_memory().get("snacks_per_day") or 0)
+        if dishes < per_day_now:
+            raise ValueError(
+                f"snack_dishes_per_week can't be below snacks_per_day ({per_day_now}) — "
+                "a day would eat the same snack twice."
+            )
         value = dishes
     if field == "weeknight_max_minutes":
         try:
@@ -709,11 +719,23 @@ def edit_preference(field: str, value) -> dict:
         # Both numbers move together, exactly as onboarding writes them, so
         # correcting one on What we know can never leave the other saying
         # something the household never said.
-        return _preferences.set_household_meal_preferences(
+        saved = _preferences.set_household_meal_preferences(
             snacks_per_day=int(value),
             snacks_per_week=_preferences.snacks_per_week_from_per_day(int(value)),
             mark_complete=False,
         )
+        # More snacks a day than different snacks: the different-snacks
+        # count comes up with it (2026-09-27), so What we know never shows
+        # fewer than the draft honours.
+        conn = get_conn()
+        conn.execute(
+            "UPDATE meal_preferences SET snack_dishes_per_week = ? "
+            "WHERE household_id = ? AND snack_dishes_per_week < ?",
+            (min(7, int(value)), household_id(), min(7, int(value))),
+        )
+        conn.commit()
+        conn.close()
+        return saved
     return _preferences.set_household_meal_preferences(cooking_time_preference=value, mark_complete=False)
 
 

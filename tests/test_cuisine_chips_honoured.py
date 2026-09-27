@@ -10,7 +10,7 @@ She tapped Burgers. The draft had no burger, and a Greek chicken carried
     now makes it true after the model: a chip no lunch or dinner answers
     gets ONE fitting slot re-picked for it (allergies, taste, who's home
     and that slot's time cap all still hold), and when none can be found
-    the opener says so in one plain line ("No burger fit this week.");
+    the opener says so in one plain line ("No burgers fit this week.");
   * draft_opener.asked_fact trusted the model's derived_from.inputs, so a
     dish that wasn't a burger said it was — and junk like
     "None-specific-but-requested" could be shown. It now needs the chip
@@ -149,7 +149,7 @@ def test_a_chip_nothing_can_answer_is_said_in_one_plain_line(stub_model, monkeyp
 
     plan = agent.generate_weekly_plan(week)
     menu = tools.get_week_menu(plan["weekly_plan_id"])
-    assert "No burger fit this week." in menu["draft_opener"]
+    assert "No burgers fit this week." in menu["draft_opener"]
     assert "Lemon orzo" not in [r["title"] for r in _menu_rows(plan["weekly_plan_id"])]
 
 
@@ -176,7 +176,7 @@ def test_a_pick_too_long_for_every_open_night_is_refused(stub_model, monkeypatch
 
     plan = agent.generate_weekly_plan(week)
     assert "Smash burgers" not in [r["title"] for r in _menu_rows(plan["weekly_plan_id"])]
-    assert "No burger fit this week." in tools.get_week_menu(plan["weekly_plan_id"])["draft_opener"]
+    assert "No burgers fit this week." in tools.get_week_menu(plan["weekly_plan_id"])["draft_opener"]
 
 
 # ---------- the pieces ----------
@@ -206,6 +206,101 @@ def test_dish_is_cuisine(chip, meal, cuisine, hit):
 
 
 def test_the_unmet_line_is_plain():
-    assert typed_requests.cuisine_unmet_line("Burgers") == "No burger fit this week."
+    assert typed_requests.cuisine_unmet_line("Burgers") == "No burgers fit this week."
     assert typed_requests.cuisine_unmet_line("Mexican") == "No Mexican dish fit this week."
     assert typed_requests.cuisine_unmet_line("Middle Eastern") == "No Middle Eastern dish fit this week."
+
+
+# ---------- review round, 2026-09-27 ----------
+
+def test_a_second_chip_never_takes_the_only_dish_of_the_first(stub_model, monkeypatch):
+    """CATCH: chips Mexican + Burgers, Monday's tacos the only Mexican dish
+    and the roomiest night — the burger went there and Mexican vanished."""
+    week = _monday()
+    tools.save_week_intake(week, cuisines=["Mexican", "Burgers"])
+    stub_model(_week(week, dinner_extra={0: {"meal_name": "Chicken tinga tacos", "cuisine": "Mexican"}}))
+    _picker(monkeypatch)
+    plan = agent.generate_weekly_plan(week)
+    titles = [r["title"] for r in _menu_rows(plan["weekly_plan_id"])]
+    assert "Smash burgers" in titles and "Chicken tinga tacos" in titles, titles
+
+
+def test_a_dish_their_words_name_is_never_the_one_repicked(stub_model, monkeypatch):
+    """Monday's Greek chicken is the roomiest night, and their words name it."""
+    week = _monday()
+    tools.save_week_intake(week, cuisines=["Burgers"], freeform="greek chicken please")
+    stub_model(_week(week))
+    _picker(monkeypatch)
+    plan = agent.generate_weekly_plan(week)
+    titles = [r["title"] for r in _menu_rows(plan["weekly_plan_id"])]
+    assert "Greek chicken" in titles and "Smash burgers" in titles
+
+
+def test_a_curries_chip_is_answered_by_a_curry_without_a_call(stub_model, monkeypatch):
+    week = _monday()
+    tools.save_week_intake(week, cuisines=["Curries"])
+    stub_model(_week(week, dinner_extra={0: {"meal_name": "Chicken curry", "cuisine": "Indian"}}))
+    calls = _picker(monkeypatch, name="Beef curry", cuisine="Thai")
+    plan = agent.generate_weekly_plan(week)
+    assert calls == []
+    assert not any("curr" in line.lower() for line in tools.get_week_menu(plan["weekly_plan_id"])["draft_opener"])
+
+
+@pytest.mark.parametrize("chip, meal, cuisine, hit", [
+    ("Curries", "Chicken curry", "", True),
+    ("Sandwiches", "Steak sandwich", "", True),
+    ("Stir-fries", "Beef stir-fry", "", True),
+    ("Fries", "Beef stir-fry", "", False),
+    ("Fries", "Loaded fries", "", True),
+    ("Asian", "Pad kra pao", "Thai", True),
+    ("Asian", "Moussaka", "Greek", False),
+    ("Mediterranean", "Moussaka", "Greek", True),
+    ("Tex-Mex", "Enchiladas", "Mexican", True),
+    ("BBQ", "Barbecue ribs", "", True),
+    ("Barbecue", "BBQ chicken", "American", True),
+    ("Middle Eastern", "Kofte", "Turkish", True),
+])
+def test_plurals_and_family_chips(chip, meal, cuisine, hit):
+    assert typed_requests.dish_is_cuisine(chip, meal, cuisine) is hit
+
+
+@pytest.mark.parametrize("chip, line", [
+    ("Mexican", "No Mexican dish fit this week."),
+    ("Asian", "No Asian dish fit this week."),
+    ("Burgers", "No burgers fit this week."),
+    ("Burger", "No burgers fit this week."),
+    ("Curries", "No curries fit this week."),
+    ("Curry", "No curries fit this week."),
+    ("Sandwich", "No sandwiches fit this week."),
+    ("Comfort food", "No comfort food fit this week."),
+])
+def test_the_unmet_line_never_breaks_a_word(chip, line):
+    assert typed_requests.cuisine_unmet_line(chip) == line
+
+
+def test_a_chip_whose_only_dish_goes_later_is_still_said(stub_model, monkeypatch):
+    """CATCH: the burger lands, then the allergen sweep (stubbed to open it)
+    takes it away — the opener must still say so, with no model call."""
+    from app.db import get_conn
+    from app.tools import allergen_gate
+    week = _monday()
+    tools.save_week_intake(week, cuisines=["Burgers"])
+    stub_model(_week(week))
+    calls = _picker(monkeypatch)
+
+    def sweep(plan_id, **kw):
+        conn = get_conn()
+        row = conn.execute(
+            "SELECT mpe.date FROM meal_plan_entries mpe JOIN recipes r ON r.id = mpe.recipe_id "
+            "WHERE mpe.weekly_plan_id = ? AND r.name = 'Smash burgers'", (plan_id,)).fetchone()
+        conn.close()
+        tools.clear_plan_slot(plan_id, row["date"], "dinner")
+        tools.plan_slot_open(weekly_plan_id=plan_id, meal_date=row["date"], slot="dinner",
+                             open_reason="Couldn't keep it.")
+        return {}
+
+    monkeypatch.setattr(allergen_gate, "sweep_plan", sweep)
+    plan = agent.generate_weekly_plan(week)
+    assert len(calls) == 1
+    assert "Smash burgers" not in [r["title"] for r in _menu_rows(plan["weekly_plan_id"])]
+    assert tools.plan_requests(plan["weekly_plan_id"])["unmet"][0]["cuisine"] == "Burgers"

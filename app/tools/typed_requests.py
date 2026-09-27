@@ -305,27 +305,80 @@ def plan_must_use(plan_id: int, recipe_id: int) -> list[str]:
 # ONE fitting slot is re-picked with it on `must_be_cuisine` (the swap
 # picker's gates: allergies, taste, the table that's home, and that slot's
 # own time cap — cap_gate), else the report gets an unmet line the opener
-# says plainly ("No burger fit this week.").
+# says plainly ("No burgers fit this week.").
 
 # Why the slot was re-picked, for the row's derived_from and the picker's
 # `replacing_because`.
 CUISINE_BECAUSE = "you picked {cuisine} this week and nothing on the week was {cuisine}"
 
 
+_CUISINE_WORD_RE = re.compile(r"[a-z][a-z\-']*")
+
+
+def _singular(word: str) -> str:
+    """One word's singular, for matching only: curries -> curry,
+    sandwiches -> sandwich, stir-fries -> stir-fry, burgers -> burger.
+    Short words and -ss words are left alone (Swiss, BBQ)."""
+    if len(word) > 4 and word.endswith("ies"):
+        return word[:-3] + "y"
+    if len(word) > 4 and word.endswith(("ches", "shes", "xes", "zes", "sses")):
+        return word[:-2]
+    if len(word) > 3 and word.endswith("s") and not word.endswith("ss"):
+        return word[:-1]
+    return word
+
+
+def _cuisine_norm(text: str) -> str:
+    return " ".join(_singular(w) for w in _CUISINE_WORD_RE.findall((text or "").lower()))
+
+
+# A chip that names a family of cuisines (Emily's chips are free text; a
+# household that taps "Asian" means a Thai curry counts). Each chip, as
+# _cuisine_norm reads it, answers to itself and to every name here — the
+# recipe's `cuisine` field or the dish's name. Kept small and plain; a
+# chip not listed answers only to its own words.
+CUISINE_FAMILIES = {
+    "asian": ["thai", "chinese", "japanese", "korean", "vietnamese", "indian", "malaysian",
+              "indonesian", "filipino", "taiwanese", "szechuan", "sichuan", "cantonese", "nepalese",
+              "pakistani", "sri lankan", "singaporean", "burmese"],
+    "mediterranean": ["greek", "italian", "lebanese", "turkish", "spanish", "moroccan", "israeli",
+                      "middle eastern", "provencal", "cypriot", "tunisian"],
+    "middle eastern": ["lebanese", "turkish", "persian", "israeli", "syrian", "iraqi", "palestinian",
+                       "jordanian", "egyptian", "arab"],
+    "tex-mex": ["mexican"],
+    "bbq": ["barbecue", "barbeque", "bbq"],
+    "barbecue": ["bbq", "barbeque", "barbecue"],
+    "latin american": ["mexican", "brazilian", "peruvian", "argentinian", "cuban", "colombian"],
+    "caribbean": ["jamaican", "cuban", "trinidadian", "haitian"],
+    "east asian": ["chinese", "japanese", "korean", "taiwanese"],
+    "south asian": ["indian", "pakistani", "nepalese", "sri lankan", "bangladeshi"],
+    "southeast asian": ["thai", "vietnamese", "malaysian", "indonesian", "filipino", "singaporean"],
+}
+
+
+def _cuisine_names(chip: str) -> list[str]:
+    want = _cuisine_norm(chip)
+    if not want:
+        return []
+    return [want] + [_cuisine_norm(n) for n in CUISINE_FAMILIES.get(want, [])]
+
+
 def dish_is_cuisine(chip: str, meal: str | None, cuisine: str | None = None) -> bool:
     """
     Whether a dish answers a cuisine chip: the recipe's own cuisine field
-    names it ("Mexican" for Mexican), or the dish's name does ("Smash
-    Burgers" for Burgers). Plurals read as one word ("burger" and
-    "burgers"), and only whole words match. A chip that says nothing
+    or the dish's name says it, as whole words — "Mexican" for Mexican,
+    "Smash Burgers" for Burgers, "Chicken curry" for Curries (plurals read
+    as one word, -ies and -es included), and a family chip answers to its
+    members (Asian to a Thai dish, Tex-Mex to a Mexican one — CUISINE_
+    FAMILIES). "Fries" is not in "Stir-fry". A chip that says nothing
     matches nothing.
     """
-    want = _norm(chip)
-    if not want:
+    names = _cuisine_names(chip)
+    if not names:
         return False
     for text in (cuisine, meal):
-        said = _norm(text or "")
-        if said and any(True for _ in _typed(want, said)):
+        said = _cuisine_norm(text or "")
+        if said and any(any(True for _ in _typed(want, said)) for want in names):
             return True
     return False
 
@@ -334,15 +387,17 @@ def _pick_is_cuisine(candidate: dict, chip: str) -> str | None:
     return None if dish_is_cuisine(chip, candidate.get("meal_name"), candidate.get("cuisine")) else f"not {chip}"
 
 
-def _cuisine_slot(plan_id: int, entries: list[dict], chains: dict) -> dict | None:
+def _cuisine_slot(plan_id: int, entries: list[dict], chains: dict, keep_ids=frozenset()) -> dict | None:
     """
     The one slot to re-pick for a chip: a planned dinner (else lunch)
-    nobody asked for (meal_variety.theirs), not cooked, not either end of
-    a leftovers chain, not already re-picked for another chip or a typed
-    ingredient, and — so the distinct-dish count stays as enforced — a
-    dish on that one night when there is one. Within that, the night with
-    the most time (no cap first, then the biggest), so Burgers lands where
-    a burger fits rather than on a 20-minute Tuesday; earliest on a tie.
+    nobody asked for (meal_variety.theirs, or `keep_ids` — the only dish
+    answering another picked chip, and a dish their own words name), not
+    cooked, not either end of a leftovers chain, not already re-picked for
+    another chip or a typed ingredient, and — so the distinct-dish count
+    stays as enforced — a dish on that one night when there is one. Within
+    that, the night with the most time (no cap first, then the biggest), so
+    Burgers lands where a burger fits rather than on a 20-minute Tuesday;
+    earliest on a tie.
     """
     from . import swap_in_place as _swap
 
@@ -356,6 +411,8 @@ def _cuisine_slot(plan_id: int, entries: list[dict], chains: dict) -> dict | Non
             fits = []
             for e in entries:
                 if e["slot"] != slot or e["slot_state"] != "planned" or not e["meal"]:
+                    continue
+                if e["id"] in keep_ids:
                     continue
                 if _meal_variety._LEFTOVER_LINE.search(e["freeform_meal"] or ""):
                     continue
@@ -379,18 +436,84 @@ def _cuisine_slot(plan_id: int, entries: list[dict], chains: dict) -> dict | Non
     return None
 
 
+# Words that read as a mass noun after "No …" — "No comfort food fit",
+# not "No comfort foods fit".
+_MASS_NOUNS = {"food", "fare", "cooking", "cuisine", "seafood", "pasta", "rice", "bbq", "barbecue",
+               "sushi", "ramen", "pho", "pizza", "soul", "street", "brunch", "takeout"}
+
+
+def _plural(word: str) -> str:
+    if word in _MASS_NOUNS or word.endswith("s"):
+        return word
+    if len(word) > 2 and word.endswith("y") and word[-2] not in "aeiou":
+        return word[:-1] + "ies"
+    if word.endswith(("ch", "sh", "x", "z")):
+        return word + "es"
+    return word + "s"
+
+
+def _is_cuisine_adjective(chip: str) -> bool:
+    from . import week_intake as _week_intake
+    known = {c.lower() for c in (_week_intake.KNOWN_CUISINES + _week_intake.ONBOARDING_CUISINES)}
+    known |= {k for k in CUISINE_FAMILIES if k not in ("bbq", "barbecue")}
+    return chip.strip().lower() in known
+
+
 def cuisine_unmet_line(chip: str) -> str:
-    """"No burger fit this week." for a dish word, "No Mexican dish fit
-    this week." for a cuisine — the opener's one plain line for a chip
-    nothing could answer (draft_opener._line_two)."""
-    chip = (chip or "").strip()
-    last = chip.split()[-1].lower() if chip.split() else ""
-    if len(last) > 3 and last.endswith("s") and not last.endswith("ss"):
-        return f"No {chip[:-1].lower()} fit this week."
-    return f"No {chip} dish fit this week."
+    """
+    The opener's one plain line for a chip nothing could answer
+    (draft_opener._line_two). A cuisine: "No Mexican dish fit this week."
+    Anything else, as a plural noun in lower case: "No burgers fit this
+    week.", "No curries fit this week.", "No comfort food fit this week."
+    """
+    chip = " ".join((chip or "").split())
+    if not chip:
+        return ""
+    if _is_cuisine_adjective(chip):
+        return f"No {chip} dish fit this week."
+    words = chip.lower().split()
+    words[-1] = _plural(words[-1])
+    return f"No {' '.join(words)} fit this week."
 
 
-def use_picked_cuisines(plan_id: int, cuisines: list[str] | None, report: dict, budget=None, picker=None) -> dict:
+def chips_left_unanswered(plan_id: int, cuisines: list[str] | None, report: dict) -> list[str]:
+    """
+    After the passes that can still take a dish away — cap_enforce's
+    re-pick and the allergen sweep — a chip whose only dish went gets its
+    unmet line after all, so the opener never stays quiet about it. No
+    model call: it only reads the plan. Returns the chips it added. Never
+    raises.
+    """
+    added: list[str] = []
+    try:
+        _honoured, unmet = _report_lists(report)
+        said = {str(u.get("cuisine") or "").lower() for u in unmet}
+        planned = [e for e in _load_entries(plan_id) if e["slot"] in _REPICK_SLOTS and e["slot_state"] == "planned"
+                   and e["meal"] and not _meal_variety._LEFTOVER_LINE.search(e["freeform_meal"] or "")]
+        for chip in _unique_chips(cuisines):
+            if chip.lower() in said:
+                continue
+            if not any(dish_is_cuisine(chip, e["meal"], e.get("cuisine")) for e in planned):
+                unmet.append({"words": chip, "reason": "nothing of it fit", "cuisine": chip})
+                added.append(chip)
+        if added:
+            logger.info("Plan %s: %s lost its only dish after the chip pass", plan_id, ", ".join(added))
+    except Exception:
+        logger.exception("Cuisine-chip re-check failed for plan %s", plan_id)
+    return added
+
+
+def _unique_chips(cuisines) -> list[str]:
+    chips: list[str] = []
+    for c in cuisines or []:
+        c = str(c or "").strip()
+        if c and c.lower() not in {x.lower() for x in chips}:
+            chips.append(c)
+    return chips
+
+
+def use_picked_cuisines(plan_id: int, cuisines: list[str] | None, report: dict, budget=None, picker=None,
+                        asks: tuple[str | None, ...] = ()) -> dict:
     """
     For every cuisine chip the household picked this week (intake.cuisines),
     make sure one lunch or dinner is of that cuisine — the model's own dish
@@ -403,11 +526,7 @@ def use_picked_cuisines(plan_id: int, cuisines: list[str] | None, report: dict, 
     raises.
     """
     out = {"matched": [], "repicked": [], "unmet": []}
-    chips: list[str] = []
-    for c in cuisines or []:
-        c = str(c or "").strip()
-        if c and c.lower() not in {x.lower() for x in chips}:
-            chips.append(c)
+    chips = _unique_chips(cuisines)
     if not chips:
         return out
     budget = budget or _allergen_gate.CallBudget()
@@ -420,7 +539,18 @@ def use_picked_cuisines(plan_id: int, cuisines: list[str] | None, report: dict, 
             if any(dish_is_cuisine(chip, e["meal"], e.get("cuisine")) for e in planned):
                 out["matched"].append(chip)
                 continue
-            target = _cuisine_slot(plan_id, entries, _leftovers.plan_leftover_chains(plan_id))
+            # Never the only dish another chip has, and never one their
+            # own words name (Emily's chips Mexican + Burgers: the burger
+            # must not take the week's only Mexican dish).
+            keep = set()
+            for other in chips:
+                if other.lower() == chip.lower():
+                    continue
+                answering = [e["id"] for e in planned if dish_is_cuisine(other, e["meal"], e.get("cuisine"))]
+                if len(answering) == 1:
+                    keep.update(answering)
+            keep.update(e["id"] for e in planned if asks and _meal_variety.asked_for_by_name(e["meal"], asks))
+            target = _cuisine_slot(plan_id, entries, _leftovers.plan_leftover_chains(plan_id), keep_ids=keep)
             replaced = None
             if target is not None:
                 from . import swap_in_place as _swap

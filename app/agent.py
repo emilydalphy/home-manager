@@ -3532,8 +3532,8 @@ not everything you were shown — and send ONLY the keys that did. A key with no
 ("constraint": "", "tags": []) is not a record of anything: leave it out. An ordinary \
 untagged night's derived_from is often one key, or none at all, and that is the right answer \
 rather than a thin one.
-- household_memory's dinners_per_week / breakfasts_per_week / lunches_per_week / \
-snacks_per_week (0-7) are counts of DISTINCT meals, not counts of days to plan. Every day still \
+- household_memory's dinners_per_week / breakfasts_per_week / lunches_per_week (0-7) and \
+snack_dishes_per_week (1-7) are counts of DISTINCT meals, not counts of days to plan. Every day still \
 gets all four. "4 breakfasts" means four different breakfast ideas spread across the seven \
 mornings — it does NOT mean three mornings with nothing. Fewer recipes than meals means batch \
 cooking (Emily, 2026-09-23: "If I want 2 types of lunches, but need 4 lunches, you should \
@@ -6177,6 +6177,7 @@ def _finish_week_slots(
         # it couldn't be (typed_requests.use_picked_cuisines).
         _typed_requests.use_picked_cuisines(
             plan_id, (intake or {}).get("cuisines"), report, budget=repick_budget or _allergen_gate.CallBudget(),
+            asks=count_asks,
         )
 
     # "Short on time" is held to rather than only asked for (Emily,
@@ -6334,6 +6335,10 @@ def _finish_week_slots(
         _allergen_gate.sweep_plan(plan_id, budget=repick_budget)
     except Exception:
         logger.exception("Allergen sweep failed for plan %s; the week stands as generated", plan_id)
+    # A cuisine chip whose only dish went to cap_enforce or the sweep gets
+    # its unmet line after all (typed_requests.chips_left_unanswered).
+    if report is not None:
+        _typed_requests.chips_left_unanswered(plan_id, (intake or {}).get("cuisines"), report)
 
     # LAST, deliberately. The allergy/dietary check has to describe the week
     # as it finally stands — after the out-night and zero-count passes, the

@@ -111,10 +111,14 @@ def test_three_different_snacks_when_they_say_three(stub_model):
 
 def test_one_dish_a_week_never_makes_a_day_eat_the_same_snack_twice(stub_model):
     """With two a day, one dish would repeat on every day: the count is
-    held at the most snacks one day carries (ASSUMPTION for Emily)."""
+    held at the most snacks one day carries (ASSUMPTION for Emily). The
+    screen can no longer store this (below); an older row still could."""
     week = _monday()
     tools.set_household_meal_preferences(snacks_per_day=2, mark_complete=False)
-    tools.edit_preference("snack_dishes_per_week", 1)
+    conn = get_conn()
+    conn.execute("UPDATE meal_preferences SET snack_dishes_per_week = 1")
+    conn.commit()
+    conn.close()
     stub_model(_week(week))
     plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
 
@@ -163,3 +167,22 @@ def test_chat_can_set_both_snack_numbers():
     tools.edit_preference("snack_dishes_per_week", 4)
     mem = tools.get_household_memory()
     assert mem["snacks_per_day"] == 3 and mem["snack_dishes_per_week"] == 4
+
+
+def test_snacks_never_goes_below_snacks_a_day_and_rises_with_it():
+    """What we know never shows fewer different snacks than the draft keeps
+    (reviewer, 2026-09-27)."""
+    tools.edit_preference("snacks_per_day", 2)
+    with pytest.raises(ValueError):
+        tools.edit_preference("snack_dishes_per_week", 1)
+    tools.edit_preference("snacks_per_day", 4)
+    assert tools.get_household_memory()["snack_dishes_per_week"] == 4
+    tools.edit_preference("snack_dishes_per_week", 6)
+    tools.edit_preference("snacks_per_day", 3)
+    assert tools.get_household_memory()["snack_dishes_per_week"] == 6, "lowering a day's snacks leaves it"
+
+
+def test_the_prompt_has_one_distinct_snack_count():
+    text = prompt_literals(agent.generate_weekly_plan_llm)
+    assert "lunches_per_week (0-7) and snack_dishes_per_week (1-7) are counts of DISTINCT meals" in text
+    assert "snacks_per_week (0-7) are counts of DISTINCT" not in text

@@ -126,12 +126,25 @@ def test_snacks_is_a_different_dishes_count_and_snacks_a_day_stands_on_its_own()
     per_day = html.index('data-field="snacks_per_day"')
     assert lunches < dishes < per_day
     assert '<span class="wwk-count-label">Snacks</span>' in html
-    # Two when the household never set it, and the minus stops at one.
-    assert re.search(r'data-field="snack_dishes_per_week" data-delta="-1" data-max="7" data-min="1" '
+    # Two when the household never set it, and the minus stops at Snacks a day (2).
+    assert re.search(r'data-field="snack_dishes_per_week" data-delta="-1" data-max="7" data-min="2" '
                      r'aria-label="Fewer different snacks">&minus;</button><span class="cook-serves-count">2<', html)
     own = html[html.index('<div class="wwk-count-own">'):]
     assert own.index("Snacks a day") < own.index("</div></div>") + 20
     assert "snack_dishes_per_week" not in own
+
+
+def test_snacks_a_day_above_snacks_brings_snacks_up_on_screen():
+    out = _run(_harness("wwkSetCount") + f"""
+var saves = [];
+function wwkSavePreference(section, field, value, apply) {{ saves.push([field, value]); apply(); }}
+prefsState.memory = {json.dumps(dict(MEMORY, snack_dishes_per_week=2))};
+wwkSetCount('snacks_per_day', 1, 6, 0);    // 2 -> 3: Snacks comes up to 3
+var afterRaise = prefsState.memory.snack_dishes_per_week;
+wwkSetCount('snack_dishes_per_week', -1, 7, 3);  // at the floor: nothing
+console.log(JSON.stringify([saves, afterRaise, prefsState.memory.snack_dishes_per_week]));
+""")
+    assert out == [[["snacks_per_day", 3]], 3, 3]
 
 
 def test_the_snacks_count_saves_and_reads_back(signed_in):
