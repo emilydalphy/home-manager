@@ -366,16 +366,33 @@ def _line_two(entries: list[dict], report: dict | None, recent: set[str] | None,
         return f"{_cap(number_word(len(open_slots)))} slots I’d like your call on."
     unmet = [r for r in ((report or {}).get("unmet") or []) if str(r.get("words") or "").strip()]
     if unmet:
-        # A typed ingredient nothing could carry (typed_requests): "the
-        # corn", in the app's own words; anything else in theirs.
-        if unmet[0].get("ingredient"):
-            return f"I couldn’t fit the {unmet[0]['ingredient']} in this week."
-        # A cuisine chip nothing on the week answers (typed_requests.
-        # use_picked_cuisines): "No burger fit this week."
-        if unmet[0].get("cuisine"):
-            from . import typed_requests as _typed_requests
-            return _typed_requests.cuisine_unmet_line(unmet[0]["cuisine"])
-        return f"I couldn’t fit “{str(unmet[0]['words']).strip()}” in this week."
+        from . import typed_requests as _typed_requests
+
+        if len(unmet) == 1:
+            # A typed ingredient nothing could carry (typed_requests): "the
+            # corn", in the app's own words; anything else in theirs.
+            if unmet[0].get("ingredient"):
+                return f"I couldn’t fit the {unmet[0]['ingredient']} in this week."
+            # A cuisine chip nothing on the week answers (typed_requests.
+            # use_picked_cuisines): "No burgers fit this week."
+            if unmet[0].get("cuisine"):
+                return _typed_requests.cuisine_unmet_line(unmet[0]["cuisine"])
+            return f"I couldn’t fit “{str(unmet[0]['words']).strip()}” in this week."
+        # Every request that didn't land, in ONE line (integration review,
+        # 2026-09-27: "No burgers fit" was hidden behind the corn line):
+        # "I couldn't fit the corn or a burger in this week."
+        things = []
+        for r in unmet:
+            if r.get("ingredient"):
+                thing = f"the {r['ingredient']}"
+            elif r.get("cuisine"):
+                thing = _typed_requests.cuisine_unmet_phrase(r["cuisine"])
+            else:
+                thing = f"“{str(r['words']).strip()}”"
+            if thing and thing not in things:
+                things.append(thing)
+        joined = things[0] if len(things) == 1 else ", ".join(things[:-1]) + " or " + things[-1]
+        return f"I couldn’t fit {joined} in this week."
     # A meal brought over from last week (bring_over.KEY, Emily
     # 2026-09-25) is neither new nor a repeat the rule missed: the day row
     # says "From last week", and counting it here would report it as "back

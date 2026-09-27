@@ -359,6 +359,80 @@ def _prep_day_cook(prep_date: str, first_lunch: str, lunches: dict, dinners: dic
     return None
 
 
+def _request_words(derived: dict, intake: dict | None) -> str | None:
+    """
+    The household's own words a dish was placed for, or None — a dish
+    this pass must not silently overwrite (integration review, 2026-09-27:
+    routing Sunday's prep to Monday replaced the model's Corn pancakes, the
+    week's only corn, and the corn request then had nowhere to land). Their
+    typed words or a meal they chose (meal_variety.theirs); a dish chosen
+    to use an ingredient they typed ("I have corn"); a dish chosen for a
+    cuisine chip they picked this week.
+    """
+    from . import meal_variety as _meal_variety
+    from . import typed_requests as _typed_requests
+    from . import week_intake as _week_intake
+
+    if _meal_variety.theirs(derived):
+        return str(derived.get("freeform") or "").strip() or "theirs"
+    stock = " ".join(str(x) for x in (derived.get("inventory") or []) + (derived.get("must_use") or []))
+    if stock:
+        for req in _week_intake.freeform_ingredient_requests((intake or {}).get("freeform") or ""):
+            if _typed_requests.dish_carries(stock, req["ingredient"]):
+                return req["words"]
+    chips = {str(c).strip().lower() for c in (intake or {}).get("cuisines") or []}
+    for item in derived.get("inputs") or []:
+        item = str(item)
+        if item.lower().startswith("cuisines:") and item.split(":", 1)[1].strip().lower() in chips:
+            return item
+    return None
+
+
+def _keep_request_dish(plan_id: int, row: dict, intake: dict | None, dinners: dict, chains: dict) -> str | None:
+    """
+    Before a lunch the household asked for something on is overwritten:
+    move its dish to the first dinner, that day or after, that is an
+    ordinary cook (one planned row, nobody's request, not either end of a
+    chain, not a night tagged Leftovers), carrying their words so every
+    later pass keeps it. Returns "moved", "kept" (nowhere to move it — the
+    caller leaves the lunch alone) or None (not a request dish).
+    """
+    from . import weekly_plan as _weekly_plan
+
+    from . import leftovers as _leftovers
+
+    words = _request_words(row["derived"], intake)
+    if words is None:
+        return None
+    # Read fresh: an earlier move in this same pass may have rewritten a
+    # dinner the caller's rows still hold.
+    _lunches, dinners = _lunch_and_dinner_rows(plan_id)
+    chains = _leftovers.plan_leftover_chains(plan_id)
+    for day in sorted(d for d in dinners if d >= row["date"]):
+        planned = [r for r in dinners[day] if r["slot_state"] == "planned"]
+        if len(planned) != 1 or len(dinners[day]) != 1:
+            continue
+        night = planned[0]
+        if not _cookable(night) or night["id"] in chains["sources"] or night["id"] in chains["leftovers"]:
+            continue
+        nd = night["derived"]
+        if _request_words(nd, intake) or nd.get("links_to") or nd.get("prep_date") or "left" in (nd.get("tags") or []):
+            continue
+        derived = dict(row["derived"])
+        derived.pop("links_to", None)
+        if not str(derived.get("freeform") or "").strip() and words != "theirs" and not words.startswith("cuisines:"):
+            derived["freeform"] = words
+        derived["moved_from"] = f"{row['date']}:lunch"
+        _weekly_plan._replace_slot_entries(
+            plan_id, [night["id"]], day, "dinner", row["meal"], food_groups=_food_groups(row),
+            reasoning="", derived_from=dict(derived, replaced=night["meal"]),
+        )
+        logger.info("Plan %s: %s lunch %r moved to %s dinner so the batch doesn't overwrite it",
+                    plan_id, row["date"], row["meal"], day)
+        return "moved"
+    return "kept"
+
+
 def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
     """
     Make a freshly drafted week's weekday lunches what the household said
@@ -450,6 +524,15 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
                     out["skipped"].append({"date": d["date"], "why": "that would be a third meal of it in a row"})
                     continue
                 cook = other
+            if len(rows) == 1 and rows[0]["meal"].strip().lower() != cook["meal"].strip().lower():
+                kept = _keep_request_dish(plan_id, rows[0], intake, dinners, chains)
+                if kept == "kept":
+                    out["skipped"].append({"date": d["date"], "why": "the lunch is a dish they asked for"})
+                    continue
+                if kept == "moved":
+                    # A later day's evening-before dinner may be the one it moved to.
+                    _l, dinners = _lunch_and_dinner_rows(plan_id)
+                    keys = _leftovers.run_keys(plan_id)
             keys[(d["date"], "lunch")] = _leftovers.dish_identity(cook["meal"])
             if len(rows) == 1 and rows[0]["meal"].strip().lower() == cook["meal"].strip().lower():
                 derived = dict(rows[0]["derived"])
@@ -530,6 +613,14 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
                     continue
                 dish, groups = model_cook["meal"], _food_groups(model_cook)
                 cook_date = first["date"]
+                if first["date"] == prep_date:
+                    # The cook IS this day's lunch: the line names only the
+                    # lunches it makes besides itself (integration review,
+                    # 2026-09-27: "Cook this Tuesday for Tuesday, Wednesday
+                    # and Thursday's lunches", read on Tuesday's own lunch).
+                    later = [d["date"] for d in members[1:]]
+                    note = f"Makes {batch_lunch_phrase(later)} too." if later else ""
+                    cook_derived = dict(cook_derived, prep_note=note)
                 if (len(first_rows) == 1 and first_rows[0]["meal"].strip().lower() == dish.strip().lower()
                         and first_rows[0]["id"] not in chains["leftovers"]):
                     cook_id = first_rows[0]["id"]
@@ -555,6 +646,10 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
                     continue
                 if any(r["id"] in chains["sources"] for r in rows):
                     out["skipped"].append({"date": d["date"], "why": "the lunch already feeds another meal"})
+                    continue
+                if len(rows) == 1 and rows[0]["meal"].strip().lower() != dish.strip().lower() and \
+                        _keep_request_dish(plan_id, rows[0], intake, dinners, chains) == "kept":
+                    out["skipped"].append({"date": d["date"], "why": "the lunch is a dish they asked for"})
                     continue
                 if _leftovers.days_apart(prep_date, d["date"]) > _leftovers.MAX_LEFTOVER_DAYS:
                     # Past three days from the prep day: a portion frozen on

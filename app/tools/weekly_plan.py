@@ -5417,6 +5417,13 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         fed.update(frozen_off.get(f"entry_id:{row['id']}", []))
         if not fed:
             return ""
+        if row["slot"] == "lunch" and row["date"] == prep_date and not on_prep_day:
+            # The cook IS this lunch, on its own prep day: say only what it
+            # makes besides itself (integration review, 2026-09-27: "Cook
+            # this Tuesday for Tuesday, Wednesday and Thursday's lunches",
+            # read on Tuesday's own lunch).
+            later = sorted(fed - {row["date"]})
+            return f"Makes {_weekday_lunches.batch_lunch_phrase(later)} too." if later else ""
         return (f"Cook this {_weekday_lunches._title(_weekday_lunches._weekday(prep_date))} for "
                 f"{_weekday_lunches.batch_lunch_phrase(sorted(fed))}.")
 

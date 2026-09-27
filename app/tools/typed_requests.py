@@ -51,6 +51,12 @@ from . import plates as _plates
 
 logger = logging.getLogger("home_manager")
 
+# weekday_lunches.CONSTRAINT, spelled here rather than imported: that module
+# imports this one lazily, and a lunch the household said how to make is
+# never a re-pick's target (integration review, 2026-09-27: the burger
+# landed on a Friday lunch they had said is last night's leftovers).
+_WEEKDAY_LUNCH_CONSTRAINT = "weekday_lunches"
+
 # Which slots a typed ingredient can land in, in the order a slot is tried.
 _REPICK_SLOTS = ("dinner", "lunch")
 
@@ -161,10 +167,75 @@ def _slot_to_repick(entries: list[dict], chains: dict) -> dict | None:
                     continue
                 if e["id"] in chains["leftovers"] or e["id"] in chains["sources"]:
                     continue
+                if derived.get("constraint") == _WEEKDAY_LUNCH_CONSTRAINT or derived.get("prep_date"):
+                    continue  # a lunch they said how to make
                 if once_only and counts[e["meal"].strip().lower()] != 1:
                     continue
                 return e
+    # A week where every dinner is one end of a chain (integration review,
+    # 2026-09-27: nothing was re-pickable, and the corn never landed): a
+    # chain SOURCE may be re-picked whole — the cook and every meal eating
+    # it take the new dish together, so the chain and its batch stay.
+    for slot in _REPICK_SLOTS:
+        for e in entries:
+            if e["slot"] != slot or e["slot_state"] != "planned" or not e["meal"]:
+                continue
+            nights = _whole_chain(e, entries, chains)
+            if nights is not None:
+                return dict(e, _also=nights)
     return None
+
+
+def _whole_chain(entry: dict, entries: list[dict], chains: dict) -> list[dict] | None:
+    """
+    The meals eating `entry`, when it is a chain SOURCE the ingredient and
+    cuisine re-picks may replace whole (entry + these, one dish), else None.
+
+    Never: a cook already done or theirs (meal_variety.theirs — their own
+    words, a meal brought over, a portion they froze), a prepped-lunch
+    batch's cook (they said how those lunches are made), a cook with
+    portions for the freezer, a dish already re-picked for another request
+    or chip, a source feeding a night they TAGGED Leftovers (the tag is
+    about that pot), or one whose dish is also cooked elsewhere on the week
+    (the distinct count stays as enforced).
+    """
+    from . import weekday_lunches as _weekday_lunches
+
+    source = chains["sources"].get(entry["id"])
+    if not source or (entry.get("cooked_status") or "") == "done":
+        return None
+    if (chains.get("freezer") or {}).get(entry["id"]):
+        return None
+    derived = _parsed(entry)
+    if _meal_variety.theirs(derived) or derived.get("prep_date") or derived.get("prep_day_cook"):
+        return None
+    if derived.get("constraint") == _weekday_lunches.CONSTRAINT:
+        return None
+    if derived.get("must_use_repick") or derived.get("cuisine_repick") or derived.get("must_use"):
+        return None
+    by_id = {e["id"]: e for e in entries}
+    nights = []
+    for t in source["targets"]:
+        row = by_id.get(t["entry_id"])
+        if row is None or (row.get("cooked_status") or "") == "done":
+            return None
+        d = _parsed(row)
+        if "left" in (d.get("tags") or []) or d.get("constraint") == "leftovers_night" or _meal_variety.theirs(d):
+            return None
+        nights.append(row)
+    name = _leftovers.dish_identity(entry["meal"])
+    same = {e["id"] for e in entries
+            if e["slot_state"] == "planned" and _leftovers.dish_identity(e["meal"]) == name}
+    if not same <= {entry["id"]} | {n["id"] for n in nights}:
+        return None
+    return nights
+
+
+def _parsed(entry: dict) -> dict:
+    try:
+        return json.loads(entry.get("derived_from_json") or "{}") or {}
+    except (TypeError, ValueError):
+        return {}
 
 
 def _report_lists(report: dict) -> tuple[list[dict], list[dict]]:
@@ -223,6 +294,7 @@ def use_requested_ingredients(plan_id: int, requests: list[dict], report: dict, 
                         context_extra={"must_contain": [ingredient]},
                         reject_pick=lambda candidate, _i=ingredient: _pick_carries(candidate, _i),
                         derived_extra={"freeform": request["words"], "must_use": [ingredient]},
+                        also=target.get("_also"),
                     )
                 if replaced is None:
                     # Said, never silent: the opener reads this line.
@@ -688,6 +760,8 @@ def _cuisine_slot(plan_id: int, entries: list[dict], chains: dict, keep_ids=froz
                     continue
                 if derived.get("cuisine_repick") or derived.get("must_use_repick") or derived.get("prep_date"):
                     continue
+                if derived.get("constraint") == _WEEKDAY_LUNCH_CONSTRAINT:
+                    continue  # a lunch they said how to make
                 if e["id"] in chains["leftovers"] or e["id"] in chains["sources"]:
                     continue
                 if once_only and counts[(slot, e["meal"].strip().lower())] != 1:
@@ -697,6 +771,21 @@ def _cuisine_slot(plan_id: int, entries: list[dict], chains: dict, keep_ids=froz
                 capped = _swap.day_caps(plan_id, [dict(e, entry_id=e["id"]) for e in fits])
                 best = min(capped, key=lambda pair: (pair[1] is not None, -(pair[1] or 0), pair[0]["date"]))
                 return next(e for e in fits if e["id"] == best[0]["id"])
+    # Every dinner and lunch one end of a chain: a chain SOURCE re-picked
+    # whole, cook and reheats together (see _whole_chain), on the night
+    # with the most time as above.
+    for slot in _REPICK_SLOTS:
+        whole = []
+        for e in entries:
+            if e["slot"] != slot or e["slot_state"] != "planned" or not e["meal"] or e["id"] in keep_ids:
+                continue
+            nights = _whole_chain(e, entries, chains)
+            if nights is not None and not any(n["id"] in keep_ids for n in nights):
+                whole.append(dict(e, _also=nights))
+        if whole:
+            capped = _swap.day_caps(plan_id, [dict(e, entry_id=e["id"]) for e in whole])
+            best = min(capped, key=lambda pair: (pair[1] is not None, -(pair[1] or 0), pair[0]["date"]))
+            return next(e for e in whole if e["id"] == best[0]["id"])
     return None
 
 
@@ -734,6 +823,29 @@ def _sentence_case(chip: str) -> str:
     if first.lower() in _PROPER_FIRST_WORDS or _is_cuisine_adjective(first):
         return chip
     return chip[:1].lower() + chip[1:]
+
+
+def cuisine_unmet_phrase(chip: str) -> str:
+    """The chip as one thing in a list ("I couldn't fit the corn or a
+    burger in this week"): a plural dish noun comes back singular with its
+    article ("a burger", "a curry"), anything else as a dish of it ("a
+    Mexican dish", "an Italian dish")."""
+    chip = " ".join((chip or "").split())
+    if not chip:
+        return ""
+    if _is_plural_dish_noun(chip):
+        words = _sentence_case(chip).split()
+        last = words[-1]
+        if last.lower().endswith("ies"):
+            last = last[:-3] + "y"
+        elif last.lower().endswith(("ches", "shes", "xes", "oes")):
+            last = last[:-2]
+        else:
+            last = last[:-1]
+        thing = " ".join(words[:-1] + [last])
+    else:
+        thing = f"{chip} dish"
+    return f"{'an' if thing[:1].lower() in 'aeiou' else 'a'} {thing}"
 
 
 def cuisine_unmet_line(chip: str) -> str:
@@ -863,6 +975,7 @@ def use_picked_cuisines(plan_id: int, cuisines: list[str] | None, report: dict, 
                     context_extra={"must_be_cuisine": chip},
                     reject_pick=reject_pick,
                     derived_extra={"inputs": [f"cuisines:{chip}"]},
+                    also=target.get("_also"),
                 )
             if replaced is None:
                 # Said, never silent: the opener reads this line.

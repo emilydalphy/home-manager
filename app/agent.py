@@ -6024,6 +6024,7 @@ def _finish_week_slots(
         {"date": r["date"], "slot": r["slot"]} for r in day_requests
         if r.get("late") and (r["date"], r["slot"]) not in placed_for_them
     ]
+    gone_by_day: dict[str, set] = {}
     for past in ((context or {}).get("past_meals_today") or []) + late_unplaced:
         if past["date"] not in dates or past["date"] in skipped_days:
             continue
@@ -6031,6 +6032,12 @@ def _finish_week_slots(
             plan_id, past["date"], past["slot"], _today_meals.ALREADY_PAST_REASON,
             derived_from={"constraint": _today_meals.ALREADY_PAST_CONSTRAINT},
         )
+        gone_by_day.setdefault(past["date"], set()).add(past["slot"])
+    # Snacks have no clock of their own: a day's snacks are planned while any
+    # of its meals is still ahead, and go with the day once every one has
+    # gone by (integration review, 2026-09-27). The snack passes below skip
+    # such a day the way they skip a day left out.
+    snackless_days = _today_meals.clear_snacks_of_gone_days(plan_id, gone_by_day)
 
     zero_counts = {
         "breakfast": household_memory.get("breakfasts_per_week"),
@@ -6262,13 +6269,13 @@ def _finish_week_slots(
         # The kept days only: a dropped day's snacks were cleared above
         # and must not be filled back in.
         _meal_variety.enforce_snacks_per_day(
-            plan_id, household_memory.get("snacks_per_day"), [d for d in period if d not in skipped_days],
+            plan_id, household_memory.get("snacks_per_day"), [d for d in period if d not in skipped_days and d not in snackless_days],
             budget=count_budget, asks=count_asks,
         )
     # "Snacks" under Different dishes a week: the week's snacks fold to that
     # many dishes, each day keeping its snacks a day (meal_variety.enforce_snack_dishes).
     _meal_variety.enforce_snack_dishes(
-        plan_id, household_memory.get("snack_dishes_per_week"), [d for d in period if d not in skipped_days],
+        plan_id, household_memory.get("snack_dishes_per_week"), [d for d in period if d not in skipped_days and d not in snackless_days],
         asks=count_asks,
     )
 

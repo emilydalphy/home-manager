@@ -116,6 +116,23 @@ def first_meal_ahead(now: datetime | None = None) -> str | None:
     return next((s for s in MEALS if not has_gone(s, now)), None)
 
 
+def clear_snacks_of_gone_days(plan_id: int, gone_by_day: dict[str, set]) -> list[str]:
+    """
+    Snacks have no clock of their own, so a day's snacks are planned while
+    any of its meals is still ahead, and go only when every one of them has
+    gone by (integration review, 2026-09-27). `gone_by_day` is {date: the
+    meals written already-past}. Clears those days' snacks and returns the
+    days, for the snack passes to leave alone the way they leave a day the
+    household left out.
+    """
+    from . import weekly_plan as _weekly_plan
+
+    days = sorted(d for d, slots in gone_by_day.items() if set(slots) >= set(MEALS))
+    for day in days:
+        _weekly_plan.clear_plan_slot(plan_id, day, "snack")
+    return days
+
+
 def describe(now: datetime | None = None) -> str:
     """"15:53" — the time of day the generation context carries beside
     today's date, so the model is told the same thing this module knows."""

@@ -510,12 +510,39 @@ def break_long_runs(plan_id: int, caps: dict | None = None, budget=None, picker=
                       and _meal_variety._fits({"minutes": _minutes(s)}, cap)
                       and not _leftovers.too_many_in_a_row(keys, d, slot, s["meal"])]
             if supply:
+                # Never two fresh cooks of one dish on neighbouring days
+                # (integration review, 2026-09-27: Greek chicken cooked
+                # Monday AND Tuesday). A dish whose own cook sits one to
+                # three days LATER and can become a reheat goes first — this
+                # meal cooks it and that one eats the leftovers; a dish
+                # cooked the day before or after that can't be turned into
+                # a reheat goes last.
+                def _neighbour(s, _d=d):
+                    return abs(_leftovers.days_apart(min(s["date"], _d), max(s["date"], _d))) <= 1
+
+                def _can_follow(s, _d=d):
+                    gap = _leftovers.days_apart(_d, s["date"]) if s["date"] > _d else 0
+                    return (1 <= gap <= _leftovers.MAX_LEFTOVER_DAYS and s["id"] not in chains["sources"]
+                            and _changeable(s) and not _tagged_leftovers(s))
+
+                supply.sort(key=lambda s: (not _can_follow(s), _neighbour(s), s["date"]))
                 pick = supply[0]
-                _weekly_plan._replace_slot_entries(
+                written = _weekly_plan._replace_slot_entries(
                     plan_id, ids, d, slot, pick["meal"], food_groups=_groups(pick),
                     reasoning=_meal_variety.GAP_FILL_REASON,
                     derived_from={"constraint": NOT_THREE_IN_A_ROW, "repeat_of": pick["meal"], "replaced": row["meal"]},
                 )
+                if _can_follow(pick) and written.get("entry_id"):
+                    # …and its later cook eats this one's leftovers instead.
+                    follow = _derived(pick)
+                    follow["links_to"] = f"entry_id:{written['entry_id']}"
+                    follow["constraint"] = NOT_THREE_IN_A_ROW
+                    _weekly_plan._replace_slot_entries(
+                        plan_id, [pick["id"]], pick["date"], pick["slot"], pick["meal"],
+                        food_groups=_groups(pick), reasoning="", derived_from=follow,
+                    )
+                    _meal_variety._write_cook_sides(
+                        plan_id, {written["entry_id"]: [f"{pick['date']}:{pick['slot']}"]}, [], {"batched": []})
                 out["changed"].append({"date": d, "slot": slot, "was": row["meal"], "now": pick["meal"], "as": "repeat"})
                 continue
             week = {r["meal"].strip().lower() for r in rows if r["slot"] == slot and (r["meal"] or "").strip()}

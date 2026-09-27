@@ -162,7 +162,7 @@ def test_the_schedule_line_survives_in_data_whatever_the_row_shows(two_adults, s
     sunday = next(d for d in menu["days"] if d["date"] == dates[0])
     assert sunday["lunch"]["schedule_note"] == "Cook this Sunday for Monday’s lunch."
     tuesday = next(d for d in menu["days"] if d["date"] == dates[2])
-    assert tuesday["lunch"]["schedule_note"] == "Cook this Tuesday for Tuesday, Wednesday and Thursday’s lunches."
+    assert tuesday["lunch"]["schedule_note"] == "Makes Wednesday and Thursday’s lunches too."
 
 
 def test_the_prep_session_names_only_the_lunches_the_batch_is_for(two_adults, stub_model):
