@@ -12130,8 +12130,18 @@
       pill: true,
       lead: draft ? (data.draft_opener || []).filter(Boolean) : [],
       view: draft ? draftView(data) : null,
-      next: draft ? planNextLabel(nextPeriodFor(data, data.days)) : null
+      next: draft ? bandNextLabel(planNextLabel(nextPeriodFor(data, data.days))) : null
     };
+  }
+
+  // The draft band's button reads "Plan the week" (Emily, 2026-09-27),
+  // not "Plan next week" — the dates under it already say which week the
+  // draft is. Only the plain seven-day wording changes; "Re-plan next
+  // week" and a shorter horizon's "Plan the 3 after" keep theirs, since
+  // those say something the short label would lose. The approved dock's
+  // button is unchanged.
+  function bandNextLabel(label) {
+    return label === 'Plan next week' ? 'Plan the week' : label;
   }
 
   function weekReplanPillHtml() {
@@ -12148,7 +12158,8 @@
   // and "Plan next week" in its dock.
   function weekBandActionsHtml(nextLabel) {
     return '<div class="wk-band-actions">' + weekReplanPillHtml() +
-      '<button type="button" class="wk-band-next" id="wk-band-plan-next">' + escapeHtml(nextLabel) + '</button>' +
+      '<button type="button" class="wk-band-next" id="wk-band-plan-next"' +
+        (nextLabel === 'Plan the week' ? ' aria-label="Plan next week"' : '') + '>' + escapeHtml(nextLabel) + '</button>' +
     '</div>';
   }
 

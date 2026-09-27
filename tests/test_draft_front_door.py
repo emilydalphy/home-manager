@@ -57,6 +57,7 @@ def _band_prelude() -> str:
         + _extract_var("DRAFT_VIEWS", SHELL_JS) + "\n"
         + _extract("draftView", SHELL_JS) + "\n"
         + _extract("weekBandExtras", SHELL_JS) + "\n"
+        + _extract("bandNextLabel", SHELL_JS) + "\n"
         + _extract("weekReplanPillHtml", SHELL_JS) + "\n"
         + _extract("weekBandActionsHtml", SHELL_JS) + "\n"
         + _extract("planEntryLabel", SHELL_JS) + "\n"

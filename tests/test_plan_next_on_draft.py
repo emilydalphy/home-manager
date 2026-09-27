@@ -54,7 +54,7 @@ console.log(JSON.stringify({{
   set: weekBandExtras({json.dumps(dict(_approved(days), next_period=_NEXT))}),
   none: weekBandExtras({{}})
 }}));""")
-    assert out["draft"]["next"] == "Plan next week"
+    assert out["draft"]["next"] == "Plan the week", "Emily, 2026-09-27: the dates under it say which week"
     assert out["draft"]["pill"] is True, "Re-plan stays on the draft"
     assert out["set"]["next"] is None, "the approved week keeps it in the dock"
     assert out["none"] is None, "the nothing-planned state is unchanged"
@@ -93,8 +93,8 @@ console.log(JSON.stringify({{ tools: b.tools.html, top: b.top.html, calls: CALLS
     assert out["tools"] == "", "on a draft nothing is added beside the gear"
     row = out["top"]
     assert row.startswith('|afterend:<div class="wk-band-actions"><button type="button" class="wk-replan" id="wk-replan"')
-    assert re.search(r'<button type="button" class="wk-band-next" id="wk-band-plan-next">Plan next week</button></div>$', row)
-    assert row.index('id="wk-replan"') < row.index('id="wk-band-plan-next"'), "Re-plan first, then Plan next week"
+    assert re.search(r'<button type="button" class="wk-band-next" id="wk-band-plan-next" aria-label="Plan next week">Plan the week</button></div>$', row)
+    assert row.index('id="wk-replan"') < row.index('id="wk-band-plan-next"'), "Re-plan first, then Plan the week"
     assert out["calls"] == [["2026-09-28", 7], ["2026-09-21", 7]], "next period, then this week's own re-plan"
 
 
@@ -144,3 +144,13 @@ def test_plan_next_on_the_band_is_a_spruce_secondary_with_a_44px_target_and_neve
     # Re-plan keeps its look.
     replan = _rule(".wk-replan")
     assert "background: var(--apricot-light)" in replan and "height: 36px" in replan
+
+
+@_needs_node
+def test_only_the_plain_seven_day_wording_becomes_plan_the_week():
+    out = _run(_band_prelude() + """
+console.log(JSON.stringify([bandNextLabel('Plan next week'), bandNextLabel('Re-plan next week'),
+  bandNextLabel('Plan the 3 after'), bandNextLabel('Plan this week')]));""")
+    assert out == ["Plan the week", "Re-plan next week", "Plan the 3 after", "Plan this week"]
+    # The approved week's dock keeps "Plan next week" — it has no Re-plan beside it.
+    assert "bandNextLabel" not in _extract("weekDecideHtml", SHELL_JS)
