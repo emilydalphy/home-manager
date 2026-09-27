@@ -86,6 +86,11 @@ logger = logging.getLogger("home_manager")
 # so the screen can group or style them later without parsing the words.
 OVER_CAP_REQUEST = "over_cap_request"
 
+# A meal their own words named ("tonight", "lunch today") whose time had
+# already gone by when the week was drafted: planned anyway, and said
+# (review of the "today means from now" card, 2026-09-27). No fixes.
+LATE_REQUEST = "late_request"
+
 # What a fix does. Each is an existing write; see the module docstring.
 FIX_PREP_AHEAD = "prep_ahead"
 FIX_MOVE = "move"
@@ -106,6 +111,12 @@ def over_cap_text(dish: str, minutes: int, meal_date: str) -> str:
     takes 60 minutes, and Wednesday is short on time."
     """
     return f"{dish} takes {int(minutes)} minutes, and {_weekday(meal_date)} is short on time."
+
+
+def late_text(dish: str, meal_date: str, slot: str) -> str:
+    """"Japanese Curry stays on Sunday dinner, as you asked — its usual time
+    had already gone by." One plain line, like every flag."""
+    return f"{dish} stays on {_weekday(meal_date)} {slot}, as you asked — its usual time had already gone by."
 
 
 def prep_fix(prep_date: str) -> dict:
@@ -342,7 +353,16 @@ def plan_flags(weekly_plan_id: int, intake: dict | None = None,
     nights = _week_nights(weekly_plan_id, intake, memory)
     by_id = {n["id"]: n for n in nights}
     live = []
+    late = _late_rows(weekly_plan_id)
     for flag in flags:
+        if flag.get("kind") == LATE_REQUEST:
+            # Not about a cap, so not judged by one: still about something
+            # while the same dish is on the same meal, and not yet cooked.
+            row = late.get(flag.get("entry_id"))
+            if row and row["date"] == flag.get("date") and (row["meal"] or "") == flag.get("dish") \
+                    and (row["cooked_status"] or "") != "done":
+                live.append({**flag, "fixes": []})
+            continue
         night = by_id.get(flag.get("entry_id"))
         if night is None:
             continue
@@ -356,6 +376,44 @@ def plan_flags(weekly_plan_id: int, intake: dict | None = None,
             continue  # it fits now — somebody solved it another way
         live.append({**flag, "fixes": fixes_for(night, nights)})
     return live
+
+
+def _late_rows(weekly_plan_id: int) -> dict[int, dict]:
+    """Every planned entry carrying the late-request mark, by id."""
+    try:
+        from . import typed_requests as _typed_requests
+        conn = get_conn()
+        rows = conn.execute(
+            "SELECT mpe.id, mpe.date, mpe.slot, mpe.cooked_status, mpe.derived_from_json, "
+            "       COALESCE(r.name, mpe.freeform_meal) AS meal "
+            "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+            "WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.slot_state = 'planned' "
+            "  AND mpe.component_category IS NULL",
+            (weekly_plan_id, household_id()),
+        ).fetchall()
+        conn.close()
+        out = {}
+        for r in rows:
+            try:
+                derived = json.loads(r["derived_from_json"] or "{}") or {}
+            except (TypeError, ValueError):
+                derived = {}
+            if derived.get(_typed_requests.LATE_KEY):
+                out[r["id"]] = dict(r)
+        return out
+    except Exception:
+        logger.exception("Reading plan %s for late requests failed", weekly_plan_id)
+        return {}
+
+
+def flags_for_late_requests(weekly_plan_id: int) -> list[dict]:
+    """One flag per meal their words named that was already past when the
+    week was drafted — the flag says it; there is nothing to fix."""
+    return [
+        {"kind": LATE_REQUEST, "text": late_text(r["meal"], r["date"], r["slot"]), "entry_id": r["id"],
+         "date": r["date"], "slot": r["slot"], "dish": r["meal"], "fixes": []}
+        for r in _late_rows(weekly_plan_id).values() if (r["meal"] or "").strip()
+    ]
 
 
 def _week_nights(weekly_plan_id: int, intake: dict | None,
@@ -453,7 +511,11 @@ def flags_for_kept_over_cap(nights: list[dict]) -> list[dict]:
         derived = night.get("derived") or {}
         if not _theirs(derived):
             continue
-        if night.get("reheat") or night.get("source"):
+        if night.get("reheat") or (night.get("source") and not derived.get("moved_for")):
+            # A dish Pomona MOVED onto this night because their words said
+            # "today"/"tonight"/"tomorrow" is said even when it feeds a
+            # later meal (review, 2026-09-27): the move is Pomona's, so the
+            # snag it made is Pomona's to say.
             continue
         if (night.get("cooked_status") or "") == "done":
             continue

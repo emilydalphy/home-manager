@@ -71,6 +71,35 @@ def _gap_reason(meal_date: str, slot: str) -> str:
             "at what you’d want. What would you prefer?")
 
 
+class _Reserved:
+    """
+    The generation's shared re-pick budget, seen by a pass that must leave
+    the last `keep` calls for the allergen sweep (review, 2026-09-27): these
+    passes run BEFORE allergen_gate.sweep_plan, and a sweep with no budget
+    left opens a clashing slot rather than re-picking it. A dish that stays
+    a repeat is a far smaller cost than a clash handed back as a question.
+    """
+
+    def __init__(self, budget, keep: int):
+        self._budget = budget
+        self._keep = keep
+
+    @property
+    def left(self) -> int:
+        return max(0, self._budget.left - self._keep)
+
+    def take(self) -> bool:
+        if self._budget.left <= self._keep:
+            return False
+        return self._budget.take()
+
+
+def _sweep_reserve() -> int:
+    """What the allergen sweep needs for one dish: its own two attempts."""
+    from . import swap_in_place as _swap
+    return _swap.MAX_PICK_ATTEMPTS
+
+
 def _plan_rows(plan_id: int) -> list[dict]:
     """Every day-slot row of the plan, in eating order, with what the
     passes here read: the dish, its chain bookkeeping and its minutes."""
@@ -271,7 +300,7 @@ def _fresh_pick(plan_id: int, entry: dict, cap: int | None, keys: dict, week: se
 
 
 def fill_open_dinners(plan_id: int, dates: list[str], caps: dict | None = None, budget=None,
-                      picker=None) -> dict:
+                      picker=None, reserve: int | None = None) -> dict:
     """
     Make "a draft never leaves a dinner open that the household is home
     for" true (Emily's decision A, 2026-09-27). Every dinner in `dates`
@@ -285,13 +314,18 @@ def fill_open_dinners(plan_id: int, dates: list[str], caps: dict | None = None, 
          _repick_entry), held to the night's cap from `caps` — the
          fresh-cook caps, {(date, slot): minutes} — and never a dish the
          week already has;
-      3. a repeat of one of the week's own dinners that fits the cap.
+      3. a reheat of an earlier cook that already feeds another meal —
+         better a bigger batch than a second full cook of it next door;
+      4. a repeat of one of the week's own dinners that fits the cap.
 
-    A planned_empty row is never touched: nobody home, a day left out, a
-    meal already past are all answers. Never raises.
+    `reserve` calls of `budget` are left untouched for the allergen sweep
+    that runs after this (default: the sweep's own two attempts; 0 for the
+    call AFTER the sweep). A planned_empty row is never touched: nobody
+    home, a day left out, a meal already past are all answers. Never raises.
     """
     out = {"reheated": [], "repicked": [], "repeated": [], "left": []}
-    budget = budget or _allergen_gate.CallBudget()
+    budget = _Reserved(budget or _allergen_gate.CallBudget(),
+                       _sweep_reserve() if reserve is None else reserve)
     try:
         rows = _plan_rows(plan_id)
         gaps = _dinner_gaps(rows, dates)
@@ -332,6 +366,12 @@ def fill_open_dinners(plan_id: int, dates: list[str], caps: dict | None = None, 
             if picked is not None:
                 out["repicked"].append({"date": d, "meal": picked.get("meal")})
                 continue
+            rows = _plan_rows(plan_id)
+            again = _weekly_plan._nearest_cook(rows, keys, d, "dinner", exclude=set(ids))
+            if again is not None:
+                _reheat(plan_id, ids, d, "dinner", again, {"constraint": REHEAT_FILLS_GAP})
+                out["reheated"].append({"date": d, "from": again["date"], "dish": again["meal"]})
+                continue
             supply = [s for s in _week_dinners(rows)
                       if _meal_variety._fits({"minutes": _minutes(s)}, cap)
                       and not _leftovers.too_many_in_a_row(keys, d, "dinner", s["meal"])]
@@ -365,21 +405,46 @@ def _changeable(row: dict) -> bool:
     return derived.get("constraint") != _weekday_lunches.CONSTRAINT
 
 
-def break_long_runs(plan_id: int, caps: dict | None = None, budget=None, picker=None) -> dict:
+def _tagged_leftovers(row: dict) -> bool:
+    """A night the household tagged Leftovers — changed last, since the
+    tag is theirs (review, 2026-09-27)."""
+    derived = _derived(row)
+    return derived.get("constraint") == LEFTOVERS_NIGHT_CONSTRAINT or "left" in (derived.get("tags") or [])
+
+
+_CHANGED = "(changed)"
+
+
+def _breaks_alone(keys: dict, run: list, pos) -> bool:
+    """Whether changing the one meal at `pos` leaves nothing of `run` too
+    long — so a run of five is broken by its middle meal, one change,
+    rather than by re-picking two of its later ones (review, 2026-09-27)."""
+    trial = dict(keys)
+    trial[pos] = _CHANGED
+    return not any(set(r) & set(run) for r in _leftovers.long_runs(trial))
+
+
+def break_long_runs(plan_id: int, caps: dict | None = None, budget=None, picker=None,
+                    reserve: int | None = None, targets: dict | None = None) -> dict:
     """
     Make "no dish on more than two lunches and dinners in a row" true
     (Emily, 2026-09-27, decision B). For each run longer than
     leftovers.MAX_MEALS_IN_A_ROW, the first meal past the limit that this
     pass may change (_changeable; a cook other meals still eat from comes
     last) becomes — first that works — a reheat of a different earlier
-    cook in reach, a fresh dish held to that meal's cap (`caps`, the
-    fresh-cook caps), or a repeat of another of the week's own dishes for
-    that meal. Thursday dinner + Friday lunch stay; Friday's dinner is the
+    cook in reach, a repeat of another of the week's own dishes for that
+    meal that fits its cap (`caps`, the fresh-cook caps), or a fresh dish
+    held to that cap. The two free answers come first because they keep
+    the household's distinct-dish count as the count pass left it; a fresh
+    pick adds a dish and spends a model call — so it is not made when
+    `targets` ({slot: distinct dishes the household set}) says the slot
+    already has as many as they asked for. Thursday dinner + Friday lunch stay; Friday's dinner is the
     one that changes, and on a rush night the cap keeps it quick.
     Never raises.
     """
     out = {"changed": [], "left": []}
-    budget = budget or _allergen_gate.CallBudget()
+    budget = _Reserved(budget or _allergen_gate.CallBudget(),
+                       _sweep_reserve() if reserve is None else reserve)
     changed: set = set()   # meals this pass has already changed
     gave_up: set = set()   # meals of a run it could not break
     try:
@@ -398,7 +463,12 @@ def break_long_runs(plan_id: int, caps: dict | None = None, budget=None, picker=
             limit = _leftovers.MAX_MEALS_IN_A_ROW
             order = list(run[limit:]) + list(reversed(run[:limit]))
             candidates = [p for p in order if p in at and p not in changed and _changeable(at[p])]
-            candidates.sort(key=lambda p: at[p]["id"] in chains["sources"])
+            # The ONE change that breaks the whole run first (review,
+            # 2026-09-27); then a night they did not tag Leftovers; then
+            # anything but a cook others still eat from. Stable, so the
+            # eating order above breaks ties.
+            candidates.sort(key=lambda p: (not _breaks_alone(keys, run, p), _tagged_leftovers(at[p]),
+                                           at[p]["id"] in chains["sources"]))
             if not candidates:
                 gave_up.update(run)
                 out["left"].append(run)
@@ -418,19 +488,6 @@ def break_long_runs(plan_id: int, caps: dict | None = None, budget=None, picker=
                 out["changed"].append({"date": d, "slot": slot, "was": row["meal"], "now": cook["meal"], "as": "reheat"})
                 continue
             cap = _meal_variety._cap_at(caps, d, slot)
-            week = {r["meal"].strip().lower() for r in rows if r["slot"] == slot and (r["meal"] or "").strip()}
-            week.add(dish)
-            entry = {"id": row["id"], "date": d, "slot": slot, "meal": row["meal"], "derived_from_json": "{}"}
-            picked = None
-            if len(ids) == 1:
-                picked = _fresh_pick(
-                    plan_id, entry, cap, keys, week, budget, picker,
-                    because=f"{row['meal']} would be on a third meal in a row",
-                    derived_key="run_repick", extra={"constraint": NOT_THREE_IN_A_ROW},
-                )
-            if picked is not None:
-                out["changed"].append({"date": d, "slot": slot, "was": row["meal"], "now": picked.get("meal"), "as": "repick"})
-                continue
             supply = [s for s in rows
                       if s["slot"] == slot and _weekly_plan._is_cook_row(s)
                       and _leftovers.dish_identity(s["meal"]) != dish
@@ -444,6 +501,27 @@ def break_long_runs(plan_id: int, caps: dict | None = None, budget=None, picker=
                     derived_from={"constraint": NOT_THREE_IN_A_ROW, "repeat_of": pick["meal"], "replaced": row["meal"]},
                 )
                 out["changed"].append({"date": d, "slot": slot, "was": row["meal"], "now": pick["meal"], "as": "repeat"})
+                continue
+            week = {r["meal"].strip().lower() for r in rows if r["slot"] == slot and (r["meal"] or "").strip()}
+            week.add(dish)
+            entry = {"id": row["id"], "date": d, "slot": slot, "meal": row["meal"], "derived_from_json": "{}"}
+            picked = None
+            # A fresh dish ADDS one to the slot. When the household set how
+            # many dishes they want and the week is already there, their
+            # number wins and the run stands (logged, and the quality
+            # tripwire says so): Pomona does not add a dish they didn't ask
+            # for to keep a rule they didn't state that way.
+            target = (targets or {}).get(slot)
+            distinct = {_leftovers.dish_identity(r["meal"]) for r in rows
+                        if r["slot"] == slot and r["slot_state"] == "planned" and (r["meal"] or "").strip()}
+            if len(ids) == 1 and not (target and len(distinct) >= target):
+                picked = _fresh_pick(
+                    plan_id, entry, cap, keys, week, budget, picker,
+                    because=f"{row['meal']} would be on a third meal in a row",
+                    derived_key="run_repick", extra={"constraint": NOT_THREE_IN_A_ROW},
+                )
+            if picked is not None:
+                out["changed"].append({"date": d, "slot": slot, "was": row["meal"], "now": picked.get("meal"), "as": "repick"})
                 continue
             gave_up.update(run)
             out["left"].append(run)

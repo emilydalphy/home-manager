@@ -541,7 +541,7 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
     # were kept — but in a try of its OWN, so a failure writing the flags
     # can never swallow that warning. See tools/draft_flags.py.
     try:
-        flagged = _draft_flags.flags_for_kept_over_cap(read_back)
+        flagged = _draft_flags.flags_for_kept_over_cap(read_back) + _draft_flags.flags_for_late_requests(plan_id)
         _draft_flags.record(plan_id, flagged)
     except Exception:
         logger.exception("Plan %s: recording the draft's time-cap flags failed", plan_id)

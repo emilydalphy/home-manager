@@ -308,6 +308,11 @@ def plan_must_use(plan_id: int, recipe_id: int) -> list[str]:
 # read by draft_opener) — a dish the model already put where it was asked
 # needs no sentence of its own.
 
+# On a meal their words named whose time had already gone by when the
+# week was drafted ("tonight" at 10pm): planned anyway, and the draft says
+# so (draft_flags.flags_for_late_requests).
+LATE_KEY = "asked_late"
+
 # Words a sentence asking for a dish carries that are not the dish.
 _DAY_REQUEST_FILLER = {
     "want", "make", "making", "cook", "cooking", "like", "love", "have", "use", "used", "stuff", "fridge",
@@ -391,6 +396,8 @@ def place_day_requests(plan_id: int, requests: list[dict], report: dict | None =
             dish_derived.pop("links_to", None)
             dish_derived["freeform"] = str(dish_derived.get("freeform") or "").strip() or request["words"]
             dish_derived["moved_for"] = {"said": request["said"], "from": f"{dish['date']}:{dish['slot']}"}
+            if request.get("late"):
+                dish_derived[LATE_KEY] = True
             here = [e for e in _load_entries(plan_id) if (e["date"], e["slot"]) == target]
             displaced = next((e for e in here if e["slot_state"] == "planned" and e["meal"]), None)
             groups = _food_groups_of(dish)
@@ -448,9 +455,13 @@ def _cite(entry: dict, request: dict) -> None:
         derived = json.loads(entry.get("derived_from_json") or "{}") or {}
     except (TypeError, ValueError):
         derived = {}
-    if str(derived.get("freeform") or "").strip():
+    late = bool(request.get("late")) and not derived.get(LATE_KEY)
+    if str(derived.get("freeform") or "").strip() and not late:
         return
-    derived["freeform"] = request["words"]
+    if not str(derived.get("freeform") or "").strip():
+        derived["freeform"] = request["words"]
+    if late:
+        derived[LATE_KEY] = True
     conn = get_conn()
     conn.execute(
         "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",

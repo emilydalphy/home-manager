@@ -315,17 +315,34 @@ def _at_353pm(monkeypatch, frozen_today):
     frozen_today(household_pin(15, 53, on=datetime.date(2026, 9, 27)))
 
 
-def test_the_past_meals_of_today_are_the_ones_whose_time_has_come():
-    """CATCH (name-level on main: today_meals is new). Breakfast 8:00,
-    lunch 12:30, dinner 18:30 — the Now screen's own clock."""
+def test_a_meal_is_gone_only_when_its_window_has_closed():
+    """CATCH (name-level on main: today_meals is new). Breakfast until
+    10:00, lunch until 14:00, dinner until the end of the household's
+    dinner window — 18:30 + 2h with none answered. Planning at 6:45pm has
+    not eaten dinner yet (review, 2026-09-27)."""
     from app.tools import today_meals
     at = lambda h, m: datetime.datetime(2026, 9, 27, h, m)  # noqa: E731
     assert today_meals.past_meals(PERIOD, at(15, 53)) == [
         {"date": SUNDAY, "slot": "breakfast"}, {"date": SUNDAY, "slot": "lunch"}]
-    assert today_meals.past_meals(PERIOD, at(7, 0)) == []
+    assert today_meals.past_meals(PERIOD, at(9, 30)) == [], "breakfast runs to ten"
+    assert today_meals.past_meals(PERIOD, at(13, 0)) == [{"date": SUNDAY, "slot": "breakfast"}]
     assert today_meals.past_meals(PERIOD[1:], at(15, 53)) == [], "a plan starting tomorrow has no past"
     assert today_meals.first_meal_ahead(at(15, 53)) == "dinner"
-    assert today_meals.first_meal_ahead(at(21, 0)) is None
+    assert today_meals.first_meal_ahead(at(18, 45)) == "dinner", "6:45pm, default window"
+    assert {"date": SUNDAY, "slot": "dinner"} not in today_meals.past_meals(PERIOD, at(18, 45))
+    assert today_meals.first_meal_ahead(at(20, 45)) is None
+    assert today_meals.past_meals(PERIOD, at(15, 53), keep={(SUNDAY, "lunch")}) == [
+        {"date": SUNDAY, "slot": "breakfast"}], "a meal their words name is never taken away"
+
+
+def test_a_five_to_six_dinner_is_still_ahead_at_540pm():
+    """CATCH. The window end comes from the household's own dinner window
+    answer: "5–6ish" runs to 6:30."""
+    from app.tools import today_meals
+    tools.set_dinner_window("5_6ish")
+    at = lambda h, m: datetime.datetime(2026, 9, 27, h, m)  # noqa: E731
+    assert today_meals.first_meal_ahead(at(17, 40)) == "dinner"
+    assert today_meals.first_meal_ahead(at(18, 45)) is None
 
 
 def test_today_tonight_and_tomorrow_resolve_to_one_exact_meal():
@@ -333,18 +350,22 @@ def test_today_tonight_and_tomorrow_resolve_to_one_exact_meal():
     past = [{"date": SUNDAY, "slot": "breakfast"}, {"date": SUNDAY, "slot": "lunch"}]
 
     def resolve(text, first="dinner"):
-        return [(r["date"], r["slot"], r["leftovers"])
+        return [(r["date"], r["slot"], r["leftovers"], r["late"])
                 for r in tools.freeform_day_requests(text, PERIOD, SUNDAY, first, past=past)]
 
-    assert resolve("I want to make a Japanese curry today and have leftovers for it") == [(SUNDAY, "dinner", True)]
-    assert resolve("Tacos tonight.") == [(SUNDAY, "dinner", False)]
-    assert resolve("Pancakes tomorrow morning.") == [(PERIOD[1], "breakfast", False)]
-    assert resolve("Soup for lunch tomorrow.") == [(PERIOD[1], "lunch", False)]
-    assert resolve("Let's do the lamb tomorrow") == [(PERIOD[1], "dinner", False)]
-    assert resolve("Salad for lunch today") == [], "lunch has gone by"
+    assert resolve("I want to make a Japanese curry today and have leftovers for it") == [(SUNDAY, "dinner", True, False)]
+    assert resolve("Tacos tonight.") == [(SUNDAY, "dinner", False, False)]
+    assert resolve("Pancakes tomorrow morning.") == [(PERIOD[1], "breakfast", False, False)]
+    assert resolve("Soup for lunch tomorrow.") == [(PERIOD[1], "lunch", False, False)]
+    assert resolve("Let's do the lamb tomorrow") == [(PERIOD[1], "dinner", False, False)]
+    # A meal their words NAME is never dropped for being late; it is marked.
+    assert resolve("Salad for lunch today") == [(SUNDAY, "lunch", False, True)]
+    assert resolve("Curry today", first=None) == [(SUNDAY, "dinner", False, False)]
     assert resolve("Not tonight, we're busy") == []
     assert resolve("I have corn that I need to use") == []
-    assert resolve("Curry today", first=None) == [], "nothing left of today"
+    # Being out is the day sheet's job, not a dish (review, 2026-09-27).
+    assert resolve("We're out tomorrow night, at my mom's.") == []
+    assert resolve("We're eating out tonight") == []
 
 
 @pytest.mark.real_time_of_day
@@ -401,6 +422,8 @@ def test_emilys_sunday_at_353pm(monkeypatch, frozen_today, stub_model, picker):
     # The draft says the one move it had to make, in one plain line.
     menu = tools.get_week_menu(plan_id)
     assert "I moved Japanese Vegetable Curry to Sunday dinner, as you asked." in menu["draft_opener"]
+    # …and said ONCE: line one no longer carries the same request (review).
+    assert sum("curry" in line.lower() for line in menu["draft_opener"]) == 1, menu["draft_opener"]
     # The menu names the past meals "Not planned", not "Out".
     sunday = next(d for d in menu["days"] if d["date"] == SUNDAY)
     assert sunday["lunch"]["title"] == "Not planned"
@@ -548,3 +571,219 @@ def test_the_fold_does_not_link_a_night_into_a_third_meal_in_a_row():
     decisions, _ = meal_variety._plan_batches([night], [dish], None, "lunch", outside, relay=False,
                                                run_keys={("2026-10-08", "dinner"): "chili"})
     assert decisions[0]["kind"] == "link", "without the third meal it links as before"
+
+
+# =====================================================================
+# Review of cac5fb6 (2026-09-27): the eight fixes
+# =====================================================================
+
+def _plan_with(week, rows):
+    """A bare plan holding exactly `rows` — (date, slot, meal, derived)."""
+    plan_id = tools.create_weekly_plan(week, content_start_date=week, day_count=7)["weekly_plan_id"]
+    ids = {}
+    for date, slot, meal, derived in rows:
+        for key, value in list((derived or {}).items()):
+            if isinstance(value, str) and value.startswith("@"):
+                derived[key] = f"entry_id:{ids[value[1:]]}"
+        ids[f"{date}:{slot}"] = tools.plan_meal(date, meal, slot=slot, weekly_plan_id=plan_id,
+                                                derived_from=derived or {})["entry_id"]
+    return plan_id, ids
+
+
+@pytest.mark.real_time_of_day
+def test_tonight_asked_after_dinner_time_is_still_planned_and_the_draft_says_so(frozen_today, stub_model, picker):
+    """REVIEW 1. "Tacos tonight" typed at 9pm (the default window closes at
+    8:30pm): the meal their words name is planned, not emptied, and the
+    draft carries one line saying it was late."""
+    frozen_today(household_pin(21, 0, on=datetime.date(2026, 9, 27)))
+    tools.save_week_intake(SUNDAY, day_count=6, freeform="Beef tacos tonight.")
+    days = _week(PERIOD)
+    days = [d for d in days if not (d["date"] == SUNDAY and d["slot"] == "dinner")]
+    days.append(_entry(SUNDAY, "dinner", "Beef Tacos", 20))
+    stub_model(days)
+
+    plan_id = agent.generate_weekly_plan(SUNDAY, day_count=6, period_start=SUNDAY)["weekly_plan_id"]
+
+    assert (_at(plan_id, SUNDAY, "dinner")["slot_state"], _at(plan_id, SUNDAY, "dinner")["meal"]) == \
+        ("planned", "Beef Tacos")
+    assert _at(plan_id, SUNDAY, "lunch")["slot_state"] == "planned_empty"
+    flags = tools.get_week_menu(plan_id)["draft_flags"]
+    assert [f["text"] for f in flags] == [
+        "Beef Tacos stays on Sunday dinner, as you asked — its usual time had already gone by."]
+
+
+@pytest.mark.real_time_of_day
+def test_planning_at_645pm_still_plans_tonights_dinner(frozen_today, stub_model, picker):
+    """REVIEW 1. 6:45pm with no dinner window answered: dinner is still ahead."""
+    frozen_today(household_pin(18, 45, on=datetime.date(2026, 9, 27)))
+    tools.save_week_intake(SUNDAY, day_count=6)
+    stub_model(_week(PERIOD))
+
+    plan_id = agent.generate_weekly_plan(SUNDAY, day_count=6, period_start=SUNDAY)["weekly_plan_id"]
+
+    assert _at(plan_id, SUNDAY, "dinner")["slot_state"] == "planned"
+    assert _at(plan_id, SUNDAY, "lunch")["slot_state"] == "planned_empty"
+
+
+def test_the_leftovers_night_they_tagged_wins_the_pot_over_a_leftovers_lunch(stub_model, picker):
+    """REVIEW 2 (default flagged to Emily). Tuesday's dinner, Wednesday's
+    lunch "leftovers from dinner" and Wednesday tagged Leftovers would be
+    one pot three meals running. The tagged night keeps Tuesday's dinner;
+    the lunch reheats another cook, and nothing is re-picked."""
+    week = _next_monday()
+    dates = tools._week_dates(week)
+    tue, wed = dates[1], dates[2]
+    tools.save_week_intake(week, night_tags={wed: ["left"]},
+                           weekday_lunches={"days": [{"date": wed, "kind": "leftovers"}]})
+    stub_model(_week(dates))
+
+    plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
+
+    assert _reheats(plan_id, wed) == (tue, "dinner"), "the tagged night eats Tuesday's pot"
+    assert _reheats(plan_id, wed, "lunch") not in (None, (tue, "dinner"))
+    assert leftovers.long_runs(leftovers.run_keys(plan_id)) == []
+    assert picker == []
+
+
+def test_a_dish_moved_onto_a_short_night_says_so_with_the_fixes(monkeypatch, frozen_today, stub_model, picker):
+    """REVIEW 4. "Japanese curry tonight" and tonight is short on time: the
+    45-minute curry is moved there as asked, and the draft says so in the
+    snag line with its fixes — even though it now feeds a Leftovers night."""
+    frozen_today(household_pin(9, 0, on=datetime.date(2026, 9, 27)))
+    tools.save_week_intake(SUNDAY, day_count=6, freeform="Japanese curry tonight, and have leftovers.",
+                           night_tags={SUNDAY: ["rush"], PERIOD[2]: ["left"]})
+    days = [d for d in _week(PERIOD) if not (d["slot"] == "dinner" and d["date"] in (SUNDAY, PERIOD[1]))]
+    days.append(_entry(SUNDAY, "dinner", "Cheese Quesadillas", 15))
+    days.append(_entry(PERIOD[1], "dinner", "Japanese Vegetable Curry", 45))
+    stub_model(days)
+
+    plan_id = agent.generate_weekly_plan(SUNDAY, day_count=6, period_start=SUNDAY)["weekly_plan_id"]
+
+    assert _at(plan_id, SUNDAY, "dinner")["meal"] == "Japanese Vegetable Curry"
+    flags = tools.get_week_menu(plan_id)["draft_flags"]
+    assert [f["text"] for f in flags] == ["Japanese Vegetable Curry takes 45 minutes, and Sunday is short on time."]
+
+
+def test_a_moved_request_is_said_once_not_twice():
+    """REVIEW 3. The model's own report honours the curry ("Japanese curry
+    tonight, as you asked") AND Pomona had to move it ("I moved … as you
+    asked"). Line one drops the request the move line already says."""
+    from app.tools import draft_opener
+    words = "I want to make a Japanese curry today"
+    entries = [{"id": 1, "date": SUNDAY, "slot": "dinner", "meal": "Japanese Vegetable Curry",
+                "slot_state": "planned", "derived_from": {"freeform": words}}]
+    honoured = {"honoured": [{"words": words, "label": "Japanese curry tonight"}]}
+    moved = dict(honoured, moved=[{"words": words, "line": "I moved Japanese Vegetable Curry to Sunday dinner, as you asked."}])
+
+    assert draft_opener._honoured_items(entries, honoured, PERIOD) == [("Japanese curry tonight", "Sunday")]
+    assert draft_opener._honoured_items(entries, moved, PERIOD) == []
+    assert draft_opener._honoured_items(entries, {"moved": moved["moved"]}, PERIOD) == [], "no report: the cited span too"
+    assert draft_opener.moved_line(moved) == "I moved Japanese Vegetable Curry to Sunday dinner, as you asked."
+
+
+def test_the_new_passes_leave_the_allergen_sweep_its_calls():
+    """REVIEW 5. With two calls left in the week's budget, the dinner fill
+    spends none: they are the allergen sweep's."""
+    from app.tools import allergen_gate, dinner_gaps
+    week = _next_monday()
+    dates = tools._week_dates(week)
+    plan_id, _ = _plan_with(week, [(dates[3], "dinner", "Lemon Chicken", None)])
+    budget = allergen_gate.CallBudget()
+    budget.left = 2
+    calls = []
+
+    out = dinner_gaps.fill_open_dinners(plan_id, dates[:1], budget=budget,
+                                        picker=lambda ctx: calls.append(ctx) or {})
+    assert calls == [] and budget.left == 2
+    assert out["repeated"] == [{"date": dates[0], "meal": "Lemon Chicken"}], "it falls back to a repeat"
+    out = dinner_gaps.break_long_runs(plan_id, budget=budget, picker=lambda ctx: calls.append(ctx) or {})
+    assert calls == [] and budget.left == 2
+    # …and after the sweep, reserve=0 may use them.
+    plan_id2, _ = _plan_with(_next_monday(), [])
+    dinner_gaps.fill_open_dinners(plan_id2, dates[:1], budget=budget, reserve=0,
+                                  picker=lambda ctx: calls.append(ctx) or {})
+    assert calls, "with nothing held back the picker is asked"
+
+
+def test_one_change_breaks_a_run_of_five(picker):
+    """REVIEW 6. Chili on Mon lunch, Mon dinner, Tue lunch, Tue dinner, Wed
+    lunch: changing Tuesday's lunch leaves two and two — one pick, not two."""
+    from app.tools import dinner_gaps
+    week = _next_monday()
+    d = tools._week_dates(week)
+    plan_id, _ = _plan_with(week, [
+        (d[0], "lunch", "Chili", None), (d[0], "dinner", "Chili", None), (d[1], "lunch", "Chili", None),
+        (d[1], "dinner", "Chili", None), (d[2], "lunch", "Chili", None), (d[2], "dinner", "Tacos", None),
+    ])
+
+    out = dinner_gaps.break_long_runs(plan_id, picker=sip._pick_replacement)
+
+    assert [(c["date"], c["slot"]) for c in out["changed"]] == [(d[1], "lunch")]
+    assert len(picker) == 1
+    assert leftovers.long_runs(leftovers.run_keys(plan_id)) == []
+
+
+def test_the_single_change_is_preferred_when_the_obvious_meal_is_theirs(picker):
+    """REVIEW 6, the case the old order got wrong. Chili on Mon dinner, Tue
+    lunch, Tue dinner (THEIR words — never changed) and Wed lunch. The old
+    order took Wednesday's lunch first, which leaves three in a row and
+    needs a second pick; changing Tuesday's lunch alone breaks it."""
+    from app.tools import dinner_gaps
+    week = _next_monday()
+    d = tools._week_dates(week)
+    plan_id, _ = _plan_with(week, [
+        (d[0], "dinner", "Chili", None), (d[1], "lunch", "Chili", None),
+        (d[1], "dinner", "Chili", {"freeform": "chili on Tuesday"}), (d[2], "lunch", "Chili", None),
+        (d[2], "dinner", "Tacos", None),
+    ])
+
+    out = dinner_gaps.break_long_runs(plan_id, picker=sip._pick_replacement)
+
+    assert [(c["date"], c["slot"]) for c in out["changed"]] == [(d[1], "lunch")]
+    assert len(picker) == 1, "one pick, not two"
+    assert _at(plan_id, d[1], "dinner")["meal"] == "Chili", "their dinner stands"
+    assert leftovers.long_runs(leftovers.run_keys(plan_id)) == []
+
+
+def test_three_dinners_running_is_a_breach_even_with_other_lunches_between(stub_model, picker):
+    """REVIEW 7. Decision B read the way Emily said it: not the same dish
+    more than two meals in a row — three nights of one dinner count."""
+    keys = {("2026-10-05", "dinner"): "chili", ("2026-10-06", "lunch"): "wraps",
+            ("2026-10-06", "dinner"): "chili", ("2026-10-07", "lunch"): "soup"}
+    assert not leftovers.too_many_in_a_row(keys, "2026-10-06", "dinner")
+    assert leftovers.too_many_in_a_row(keys, "2026-10-07", "dinner", "Chili")
+    keys[("2026-10-07", "dinner")] = "chili"
+    assert leftovers.long_runs(keys) == [[("2026-10-05", "dinner"), ("2026-10-06", "dinner"), ("2026-10-07", "dinner")]]
+
+    week = _next_monday()
+    dates = tools._week_dates(week)
+    tools.save_week_intake(week, night_tags={dates[1]: ["left"], dates[2]: ["left"]})
+    stub_model(_week(dates))
+
+    plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
+
+    assert _reheats(plan_id, dates[1]) == (dates[0], "dinner")
+    keys = leftovers.run_keys(plan_id)
+    assert keys[(dates[2], "dinner")] != keys[(dates[0], "dinner")], "the second Leftovers night is something else"
+    assert leftovers.long_runs(keys) == []
+
+
+def test_a_gap_reheats_a_cook_that_already_feeds_rather_than_cooking_it_again():
+    """REVIEW 8. Nothing fresh comes back for Wednesday; Monday's chicken
+    already feeds Tuesday's lunch — Wednesday reheats it rather than a
+    second full cook of a dish on the week."""
+    from app.tools import dinner_gaps
+    week = _next_monday()
+    d = tools._week_dates(week)
+    plan_id, _ = _plan_with(week, [
+        (d[0], "dinner", "Lemon Chicken", None),
+        (d[1], "lunch", "Lemon Chicken", {"links_to": f"{d[0]}:dinner"}),
+        (d[1], "dinner", "Beef Stew", None),
+        (d[2], "lunch", "Beef Stew", {"links_to": f"{d[1]}:dinner"}),
+    ])
+    tools.repair_leftover_chains(plan_id)
+
+    out = dinner_gaps.fill_open_dinners(plan_id, [d[2]], picker=lambda ctx: {})
+
+    assert out["reheated"] == [{"date": d[2], "from": d[0], "dish": "Lemon Chicken"}]
+    assert _reheats(plan_id, d[2]) == (d[0], "dinner")

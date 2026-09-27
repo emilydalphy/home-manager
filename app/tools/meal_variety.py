@@ -805,7 +805,11 @@ def enforce_distinct_count(
         kept = [d for d in dishes if _key(d["name"]) not in surplus_keys]
         nights = _slot_nights(dishes, chains)
         outside = _outside_cooks(plan_id, slot, kept, chains)
-        run_keys = _leftovers.run_keys(plan_id)
+        # The two-meals-in-a-row rule only where the week has another dish
+        # to put in between: one dish asked for is one dish every night,
+        # and refusing its links would only turn fridge leftovers into
+        # freezer portions of the same pot.
+        run_keys = _leftovers.run_keys(plan_id) if len(kept) > 1 else None
         decisions, unresolved = _plan_batches(nights, kept, caps, slot, outside, relay=False, run_keys=run_keys)
         if any(d["kind"] in ("freezer", "stand") for d in decisions):
             relaid, missed = _plan_batches(nights, kept, caps, slot, outside, relay=True, run_keys=run_keys)

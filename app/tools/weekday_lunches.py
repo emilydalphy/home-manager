@@ -391,9 +391,26 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
                 continue
             if len(rows) == 1 and _links_to_id(rows[0], cook["id"]):
                 continue
-            if _leftovers.run_before(keys, d["date"], "lunch", cook["meal"]) > _leftovers.MAX_MEALS_IN_A_ROW:
-                out["skipped"].append({"date": d["date"], "why": "that would be a third meal of it in a row"})
-                continue
+            # The night the household TAGGED Leftovers wins over this lunch
+            # when both want the same pot (review, 2026-09-27; flagged to
+            # Emily as a default): the lunch reheats another cook instead —
+            # the lunch before, a dinner within reach — or stays as drafted.
+            # So does a lunch that would END a run of three counting back.
+            tonight = next((r for r in dinners.get(d["date"], []) if r["slot_state"] == "planned"), None)
+            tagged_tonight = bool(tonight) and (
+                "left" in (tonight["derived"].get("tags") or [])
+                or tonight["derived"].get("constraint") == "leftovers_night"
+            )
+            if _leftovers.ends_too_long_a_run(keys, d["date"], "lunch", cook["meal"]) or (
+                tagged_tonight and _leftovers.too_many_in_a_row(keys, d["date"], "lunch", cook["meal"])
+            ):
+                every_row = [r for rows_ in list(lunches.values()) + list(dinners.values()) for r in rows_]
+                other = _weekly_plan._nearest_cook(every_row, keys, d["date"], "lunch",
+                                                   exclude={cook["id"]} | set(_ids(rows)))
+                if other is None:
+                    out["skipped"].append({"date": d["date"], "why": "that would be a third meal of it in a row"})
+                    continue
+                cook = other
             keys[(d["date"], "lunch")] = _leftovers.dish_identity(cook["meal"])
             if len(rows) == 1 and rows[0]["meal"].strip().lower() == cook["meal"].strip().lower():
                 derived = dict(rows[0]["derived"])

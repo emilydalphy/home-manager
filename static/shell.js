@@ -13847,7 +13847,9 @@
   function wkAddMealFor(panel, steps, day) {
     var free = WEEK_SLOTS.filter(function (slot) {
       var e = daySlotEntry(day, slot);
-      return !e || e.state === 'open' || (e.state === 'planned_empty' && e.need !== 'away');
+      // Never a meal that had already gone by when the week was drafted
+      // (the server marks it `past`) — there is nothing left to add it to.
+      return !e || e.state === 'open' || (e.state === 'planned_empty' && e.need !== 'away' && !e.past);
     })[0];
     var when = dayName(day.date, { weekday: 'long' });
     if (!free) {
@@ -14140,7 +14142,9 @@
       '</div>' + swapLine;
     }
     if (entry && entry.state === 'planned_empty') {
-      if (entry.need === 'away' || day.isPast) return '';
+      // `past`: a meal of the first day that had already gone by when the
+      // week was drafted — nothing to swap into (2026-09-27).
+      if (entry.need === 'away' || day.isPast || entry.past) return '';
       return '<div class="wk-acts">' + swap + '</div>' + swapLine;
     }
     if (!entry && !day.isPast) {

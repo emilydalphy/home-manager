@@ -223,20 +223,33 @@ _DAY_REQUEST_NEGATED_RE = re.compile(
     r"\b(?:not|never|no|don't|dont|do not|skip)\s+(?:\w+\s+){0,2}(?:today|tonight|tomorrow)\b", re.IGNORECASE
 )
 _LEFTOVERS_WORD_RE = re.compile(r"\bleftovers?\b", re.IGNORECASE)
+# A sentence about being AWAY or busy is not a dish to place: "We're out
+# tomorrow night, at my mom's." That is the day sheet's job, not a meal.
+_AWAY_RE = re.compile(
+    r"\b(?:we're|we are|we'll be|we will be|i'm|i am|i'll be|i will be|they're|they are|he's|she's)"
+    r"\s+(?:\w+\s+)?(?:out|away|busy|gone|travell?ing|working late|not home|not here)\b"
+    r"|\beating out\b|\bnot (?:home|here)\b|\bat (?:my|our|his|her|their) \w+(?:'s|’s)",
+    re.IGNORECASE,
+)
 
 
 def freeform_day_requests(text: str | None, dates: list[str], today: str, first_ahead: str | None,
                           past: list[dict] | None = None) -> list[dict]:
     """
-    [{"words", "date", "slot", "said", "leftovers"}] — one per sentence
-    that pins a request to today, tonight or tomorrow, resolved to an exact
-    date and meal inside `dates`. `today` is the household's date,
-    `first_ahead` the first of today's meals still to come
+    [{"words", "date", "slot", "said", "leftovers", "late"}] — one per
+    sentence that pins a request to today, tonight or tomorrow, resolved to
+    an exact date and meal inside `dates`. `today` is the household's
+    date, `first_ahead` the first of today's meals not yet over
     (today_meals.first_meal_ahead), `past` today's meals already gone
     (today_meals.past_meals). A sentence that says "not tonight", names
-    two meals, or lands on a meal that has already gone by gets nothing:
-    a wrong exact slot is worse than none. `leftovers` is True when the
-    sentence asks for leftovers of the dish too.
+    two meals, or is about being out ("we're out tomorrow night, at my
+    mom's") gets nothing: a wrong exact slot is worse than none.
+
+    A meal their words NAME is never dropped for being late (review,
+    2026-09-27): "tonight" at 10pm is still tonight, and "today" with every
+    meal gone means that evening. It comes back `late` True, the meal is
+    planned anyway, and the draft says so (draft_flags). `leftovers` is True
+    when the sentence asks for leftovers of the dish too.
     """
     gone = {(p["date"], p["slot"]) for p in (past or [])}
     tomorrow = (date.fromisoformat(today) + timedelta(days=1)).isoformat()
@@ -244,7 +257,7 @@ def freeform_day_requests(text: str | None, dates: list[str], today: str, first_
     for sentence in _REQUEST_SPLIT_RE.split(text or ""):
         sentence = sentence.strip(" ,;")
         match = _DAY_REQUEST_RE.search(sentence)
-        if not sentence or not match or _DAY_REQUEST_NEGATED_RE.search(sentence):
+        if not sentence or not match or _DAY_REQUEST_NEGATED_RE.search(sentence) or _AWAY_RE.search(sentence):
             continue
         said, part = match.group(1).lower(), (match.group(2) or "").lower()
         meals = {_MEAL_OF_WORD[w.lower()] for w in _MEAL_WORD_RE.findall(sentence)} - {"snack"}
@@ -258,13 +271,14 @@ def freeform_day_requests(text: str | None, dates: list[str], today: str, first_
         if said == "tonight":
             day, slot = today, "dinner"
         elif said == "today":
-            day, slot = today, named or first_ahead
+            day, slot = today, named or first_ahead or "dinner"
         else:
             day, slot = tomorrow, named or "dinner"
-        if not slot or day not in dates or (day, slot) in gone:
+        if day not in dates:
             continue
         out.append({"words": sentence, "date": day, "slot": slot, "said": said,
-                    "leftovers": bool(_LEFTOVERS_WORD_RE.search(sentence))})
+                    "leftovers": bool(_LEFTOVERS_WORD_RE.search(sentence)),
+                    "late": (day, slot) in gone})
     return out
 
 

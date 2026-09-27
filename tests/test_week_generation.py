@@ -316,7 +316,11 @@ def test_a_pre_existing_duplicate_is_deduped_before_leftover_repair_runs(recipe)
     assert json.loads(remaining["derived_from_json"])["links_to"] == f"{tuesday}:dinner"
 
     src = _slots_for(plan_id)[(tuesday, "dinner")]
-    assert src["derived_from"]["make_double_for"] == [f"{wednesday}:dinner"], (
+    # Its FIRST target is the surviving Wednesday. (Since 2026-09-27 the
+    # week's empty later dinners are filled too — dinner_gaps.
+    # fill_open_dinners — and one of them may reheat this same cook, so the
+    # list is no longer only Wednesday.)
+    assert src["derived_from"]["make_double_for"][0] == f"{wednesday}:dinner", (
         "the source's make-double note must point at the slot that actually survived"
     )
 

@@ -2452,9 +2452,9 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
             if (source_derived.get("links_to") or "").strip():
                 issue = "another leftovers night, not an actual cook"
 
-        too_many = issue is None and _leftovers.run_before(
+        too_many = issue is None and _leftovers.ends_too_long_a_run(
             keys, r["date"], r["slot"], source["meal"],
-        ) > _leftovers.MAX_MEALS_IN_A_ROW
+        )
         if too_many:
             # The third lunch-or-dinner of one dish in a row (Emily,
             # 2026-09-27, decision B): Thursday's dinner and Friday's lunch

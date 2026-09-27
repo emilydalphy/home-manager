@@ -71,6 +71,7 @@ from conftest import household_today
 from test_rush_cap_enforced import (  # noqa: E402 — the fixtures this is about
     CAP, _dinners, _filler, _recipe, _slot, _week,
     capped, picker, run, stub_model,  # noqa: F401 — pytest fixtures
+    _runs_left_alone,  # noqa: F401 — autouse there, so autouse here too (see its docstring)
 )
 
 import nodeharness

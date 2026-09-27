@@ -5279,6 +5279,10 @@ def _generate_weekly_plan(
         " ".join(t for t in (constraints_notes, (intake or {}).get("freeform") or "") if t),
         period_days, now.date().isoformat(), _today_meals.first_meal_ahead(now), past=past_meals,
     )
+    # A meal their words name is never taken away for being late ("tonight"
+    # at 10pm is still tonight); it is planned and the draft says so.
+    named = {(r["date"], r["slot"]) for r in day_requests}
+    past_meals = [p for p in past_meals if (p["date"], p["slot"]) not in named]
 
     context = {
         "week_start_date": content_start_date,
@@ -6369,6 +6373,10 @@ def _finish_week_slots(
     # plates pass and the quality tripwire (plan_quality._no_long_runs).
     _dinner_gaps.break_long_runs(
         plan_id, caps=fill_caps, budget=repick_budget or _allergen_gate.CallBudget(),
+        targets={
+            slot: household_memory.get(field) for slot, field in _meal_variety.COUNT_FIELDS.items()
+            if household_memory.get("meal_counts_set") and household_memory.get(field)
+        },
     )
 
     # "Every meal is a full plate" (Emily, 2026-09-05) — any planned meal
@@ -6438,7 +6446,7 @@ def _finish_week_slots(
     # be a question Pomona can answer (decision A). An allergen re-pick's
     # own question (allergen_gate.repick_slot, "I couldn't find a dinner
     # without …") keeps its words: dinner_gaps.keeps_its_question.
-    _dinner_gaps.fill_open_dinners(plan_id, dates, caps=fill_caps, budget=repick_budget)
+    _dinner_gaps.fill_open_dinners(plan_id, dates, caps=fill_caps, budget=repick_budget, reserve=0)
 
     # LAST, deliberately. The allergy/dietary check has to describe the week
     # as it finally stands — after the out-night and zero-count passes, the

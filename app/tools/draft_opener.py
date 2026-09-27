@@ -259,7 +259,18 @@ def _honoured_items(entries: list[dict], report: dict | None, period: list[str])
             c = cited.setdefault(span.lower(), {"words": span, "dates": set(), "slots": set()})
             c["dates"].add(e["date"])
             c["slots"].add(e["slot"])
-    honoured = (report or {}).get("honoured") or []
+    # A request Pomona had to MOVE is said by moved_line, in its own words;
+    # saying it here too ("…, as you asked." twice) is the stammer the
+    # review of 2026-09-27 caught. So it leaves line one.
+    moved = [str(m.get("words") or "") for m in ((report or {}).get("moved") or []) if m.get("words")]
+
+    def _is_moved(words: str) -> bool:
+        return any(_cited(words, m) for m in moved)
+
+    cited = {k: c for k, c in cited.items() if not _is_moved(c["words"])}
+    honoured = [r for r in ((report or {}).get("honoured") or []) if not _is_moved(str(r.get("words") or ""))]
+    if (report or {}).get("honoured") and not honoured:
+        return []
     if honoured:
         found = []
         for r in honoured:
