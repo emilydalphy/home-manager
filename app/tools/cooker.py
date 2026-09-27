@@ -1414,7 +1414,11 @@ def _apply_prepped_lunches(weekly_plan_id: int, meals: list[dict]) -> None:
         return
     by_entry = {m["entry_id"]: m for m in meals}
     for batch in batches:
-        if batch["prep_date"] >= batch["cook_date"]:
+        # A batch cooked on the prep day's own meal (2026-09-27,
+        # weekday_lunches._prep_day_cook): the cook really is that day, so
+        # its card says nothing new — but the lunches eating off it are
+        # prepped ahead all the same.
+        if batch["prep_date"] >= batch["cook_date"] and not batch.get("prep_day_cook"):
             continue
         prepped = {
             "date": batch["prep_date"],
@@ -1422,7 +1426,7 @@ def _apply_prepped_lunches(weekly_plan_id: int, meals: list[dict]) -> None:
             "lunches": list(batch["lunch_dates"]),
         }
         cook = by_entry.get(batch["cook_entry_id"])
-        if cook is not None:
+        if cook is not None and batch["prep_date"] < batch["cook_date"]:
             cook["prepped_ahead"] = dict(prepped)
         # The days eating off it: re-point the headline at the day the food
         # was really made, so one screen cannot give two answers to "when

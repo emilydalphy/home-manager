@@ -6130,11 +6130,14 @@ def _finish_week_slots(
     # too — "seven distinct breakfasts" is not a floor anyone chose.
     for slot, field in _meal_variety.COUNT_FIELDS.items():
         if slot == "lunch" and lunches_answered:
-            # The week's own answer about its weekday lunches outranks the
-            # standing lunch count, the way a count typed into the week's
-            # own words does (asks_for_a_count): folding a "cooked that
-            # day" lunch into a reheat to hit the number would undo what
-            # the household just said.
+            # The week's own answer about its weekday lunches is kept as it
+            # is — folding a "cooked that day" lunch into a reheat would undo
+            # what the household just said — and the rest of the week's
+            # lunches fold to the count around it (Emily, 2026-09-27; see
+            # weekday_lunches.enforce_lunch_count).
+            _weekday_lunches.enforce_lunch_count(
+                plan_id, intake, household_memory.get(field), asks=count_asks, caps=caps,
+            )
             continue
         usual = usual_counts.get(field)
         tools.enforce_distinct_meal_count(

@@ -49,11 +49,22 @@ make_double_for and a frozen portion), so every reader of a chain — the
 Cook screen, the shopping list, defrost, prep sessions — already knows
 what they mean.
 
-One limit, named rather than hidden: a prepped batch is cooked on its
-FIRST lunch's entry, not on the prep day itself. A chain can't hold a cook
-on a day the dish isn't eaten (cook_ahead.apply_prep_day_batches says the
-same), so the cook entry carries the prep day on its derived_from and its
-reasoning says when to cook it.
+Where a prepped batch is cooked (Emily, 2026-09-27: "Sunday's prep feeds
+Monday"). When the prep day is inside the plan and earlier than the
+batch's lunches, the prep day's own lunch — else its dinner — is the cook,
+when it is a real one, and every lunch of the batch reheats it
+(_prep_day_cook). Otherwise — a Sunday prep for a Monday-start week, or a
+prep day with nothing cooked on it — the batch is cooked on its FIRST
+lunch's entry, since a chain can't hold a cook on a day the dish isn't
+eaten (cook_ahead.apply_prep_day_batches says the same); that cook entry
+carries the prep day on its derived_from and its reasoning says when to
+cook it. Either way the sentence is kept on derived_from.prep_note too, so
+the schedule fact survives whatever the row shows.
+
+The lunch COUNT on a week with this answer is enforce_lunch_count: the
+answered lunches and the prep-day cooks are the household's own and stay;
+a lunch that is a dinner's leftovers is not a lunch dish; the rest (a
+weekend lunch, an unanswered one) fold into the kept dishes.
 """
 from __future__ import annotations
 
@@ -320,6 +331,34 @@ def _links_to_id(row: dict, cook_id: int) -> bool:
     return (row["derived"].get("links_to") or "") == f"entry_id:{cook_id}"
 
 
+def _prep_day_cook(prep_date: str, first_lunch: str, lunches: dict, dinners: dict, chains: dict) -> dict | None:
+    """
+    The meal ON the prep day that can be a prepped batch's cook: the
+    day's lunch, else its dinner — one row, planned, a real dish, not
+    itself a reheat or a portion from the freezer. Only when the prep day
+    is inside this plan and strictly before the batch's first lunch (a
+    reheat has to come after its cook; a prep day that IS the first
+    lunch's day is the ordinary cook-on-the-first-lunch case). None
+    otherwise, and the caller cooks on the first lunch as before.
+    """
+    if prep_date >= first_lunch:
+        return None
+    for rows in (lunches.get(prep_date) or [], dinners.get(prep_date) or []):
+        planned = [r for r in rows if r["slot_state"] == "planned"]
+        if len(planned) != 1:
+            continue
+        row = planned[0]
+        if not _cookable(row) or row["id"] in chains["leftovers"]:
+            continue
+        if row["derived"].get("links_to"):
+            continue
+        from . import leftovers as _leftovers
+        if row["derived"].get(_leftovers.FROM_FREEZER_KEY):
+            continue
+        return row
+    return None
+
+
 def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
     """
     Make a freshly drafted week's weekday lunches what the household said
@@ -428,32 +467,63 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
             )
             first = members[0]
             first_rows = rows_by_date[first["date"]]
-            if model_cook is None or not first_rows:
-                out["skipped"].append({"date": first["date"], "why": "no prepped lunch to build the batch from"})
-                continue
-            dish, groups = model_cook["meal"], _food_groups(model_cook)
             note = (f"Cook this {_title(_weekday(prep_date))} for "
                     f"{batch_lunch_phrase([d['date'] for d in members])}.")
-            cook_derived = {"constraint": CONSTRAINT, "prep_day": _weekday(prep_date), "prep_date": prep_date}
-            if (len(first_rows) == 1 and first_rows[0]["meal"].strip().lower() == dish.strip().lower()
-                    and first_rows[0]["id"] not in chains["leftovers"]):
-                cook_id = first_rows[0]["id"]
-                derived = dict(first_rows[0]["derived"])
+            # `prep_note` keeps the schedule fact on the cook's own data,
+            # whatever later writes the reasoning line or hides it on the
+            # row (Emily, 2026-09-27: the Sunday line was hidden under
+            # "as asked"). get_week_menu hands it out as schedule_note.
+            cook_derived = {"constraint": CONSTRAINT, "prep_day": _weekday(prep_date), "prep_date": prep_date,
+                            "prep_note": note}
+            # The prep day inside the week, earlier than every lunch it
+            # feeds (Emily, 2026-09-27: Sunday's curry fed nothing and
+            # Monday got a fresh 25-minute pancake): that day's own lunch —
+            # else its dinner — when it is a real cook IS the batch, and
+            # every lunch of the batch reheats it. Else, as before, the
+            # batch is cooked on its first lunch's entry.
+            prep_cook = _prep_day_cook(prep_date, first["date"], lunches, dinners, chains)
+            if prep_cook is not None:
+                cook_id, cook_date = prep_cook["id"], prep_cook["date"]
+                dish, groups = prep_cook["meal"], _food_groups(prep_cook)
+                derived = dict(prep_cook["derived"])
                 derived.update(cook_derived)
-                _save_derived(cook_id, derived, reasoning=note)
+                # The prep day's own meal, not one of the batch's lunches:
+                # prepped_batches leaves its day out of the lunches it feeds.
+                derived["prep_day_cook"] = True
+                if prep_cook["slot"] == "lunch":
+                    _save_derived(cook_id, derived, reasoning=note)
+                else:
+                    # A dinner keeps its own line; its make_double_note says
+                    # what the extra is for.
+                    derived.pop("constraint", None)
+                    _save_derived(cook_id, derived)
+                rest = members
             else:
-                if any(r["id"] in chains["sources"] for r in first_rows):
-                    out["skipped"].append({"date": first["date"], "why": "the lunch already feeds another meal"})
+                if model_cook is None or not first_rows:
+                    out["skipped"].append({"date": first["date"], "why": "no prepped lunch to build the batch from"})
                     continue
-                row = _weekly_plan._replace_slot_entries(
-                    plan_id, _ids(first_rows), first["date"], "lunch", dish,
-                    food_groups=groups, reasoning=note,
-                    derived_from=dict(cook_derived, replaced=first_rows[0]["meal"]),
-                )
-                cook_id = row.get("entry_id")
-                if not cook_id:
-                    continue
-            for d in members[1:]:
+                dish, groups = model_cook["meal"], _food_groups(model_cook)
+                cook_date = first["date"]
+                if (len(first_rows) == 1 and first_rows[0]["meal"].strip().lower() == dish.strip().lower()
+                        and first_rows[0]["id"] not in chains["leftovers"]):
+                    cook_id = first_rows[0]["id"]
+                    derived = dict(first_rows[0]["derived"])
+                    derived.update(cook_derived)
+                    _save_derived(cook_id, derived, reasoning=note)
+                else:
+                    if any(r["id"] in chains["sources"] for r in first_rows):
+                        out["skipped"].append({"date": first["date"], "why": "the lunch already feeds another meal"})
+                        continue
+                    row = _weekly_plan._replace_slot_entries(
+                        plan_id, _ids(first_rows), first["date"], "lunch", dish,
+                        food_groups=groups, reasoning=note,
+                        derived_from=dict(cook_derived, replaced=first_rows[0]["meal"]),
+                    )
+                    cook_id = row.get("entry_id")
+                    if not cook_id:
+                        continue
+                rest = members[1:]
+            for d in rest:
                 rows = rows_by_date[d["date"]]
                 if not rows:
                     continue
@@ -465,7 +535,7 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
                     # the cook (the fold's freezer night, same row).
                     _weekly_plan._replace_slot_entries(
                         plan_id, _ids(rows), d["date"], "lunch",
-                        _leftovers.freezer_night_name(dish, first["date"]), reasoning="",
+                        _leftovers.freezer_night_name(dish, cook_date), reasoning="",
                         derived_from={
                             _leftovers.FROM_FREEZER_KEY: {"cook": f"entry_id:{cook_id}", "dish": dish},
                             "constraint": CONSTRAINT, "replaced": rows[0]["meal"],
@@ -495,6 +565,52 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
         logger.exception("Weekday lunches not applied to plan %s; the lunches stand as drafted", plan_id)
     if out["leftovers"] or out["prepped"] or out["frozen"]:
         logger.info("Plan %s weekday lunches: %s", plan_id, out)
+    return out
+
+
+def enforce_lunch_count(plan_id: int, intake: dict | None, target: int | None,
+                        asks: tuple[str | None, ...] = (), caps: dict | None = None) -> dict:
+    """
+    The lunch count ("Lunches" under Different dishes a week) on a week
+    whose weekday lunches were answered — after apply_to_plan, in place of
+    the ordinary count pass (Emily, 2026-09-27: Lunches = 2, and her week
+    came out with four lunch dishes).
+
+    - A lunch on an answered day, and a prepped batch's cook on its prep
+      day, is the household's own: counted, never rewritten (a "cooked
+      that day" lunch folded into a reheat would undo what they said).
+    - A lunch that is a DINNER's leftovers is not a lunch dish: not
+      counted, not touched.
+    - Everything else — a weekend lunch, a weekday lunch they didn't
+      answer — folds into the kept dishes through the ordinary fold
+      (meal_variety.enforce_distinct_count, pinned/ignored as above), so
+      it eats a kept batch within three days, else a frozen portion.
+
+    No model call, never adds a dish (a count above what the week has is
+    left there). Never raises. Returns the fold's result.
+    """
+    from . import leftovers as _leftovers
+    from . import meal_variety as _meal_variety
+
+    out: dict = {"skipped": None}
+    try:
+        answered = set(kinds_by_date(intake))
+        chains = _leftovers.plan_leftover_chains(plan_id)
+        lunches, _dinners = _lunch_and_dinner_rows(plan_id)
+        pinned, ignore = set(), set()
+        for rows in lunches.values():
+            for r in rows:
+                reheat = chains["leftovers"].get(r["id"])
+                if reheat and reheat["source"]["slot"] == "dinner":
+                    ignore.add(r["id"])
+                elif r["date"] in answered or r["derived"].get("prep_date"):
+                    pinned.add(r["id"])
+        out = _meal_variety.enforce_distinct_count(
+            plan_id, target, slot="lunch", asks=asks, fill_up=False, caps=caps,
+            pinned_ids=pinned, ignore_ids=ignore,
+        )
+    except Exception:
+        logger.exception("Lunch count not applied to plan %s; the lunches stand as they are", plan_id)
     return out
 
 
@@ -619,7 +735,10 @@ def prepped_batches(plan_id: int, window: tuple[str, str] | None = None) -> list
         frozen = derived.get(_leftovers.FROM_FREEZER_KEY) or {}
         if not ref and isinstance(frozen, dict):
             ref = str(frozen.get("cook") or "").strip()
-        if not ref.startswith("entry_id:"):
+        # Lunches only: a prep day's DINNER can be a batch's cook
+        # (_prep_day_cook), and its own day and any dinner reheating it are
+        # not lunches the batch feeds.
+        if not ref.startswith("entry_id:") or row["slot"] != "lunch":
             continue
         try:
             cook_id = int(ref.split(":", 1)[1])
@@ -650,7 +769,14 @@ def prepped_batches(plan_id: int, window: tuple[str, str] | None = None) -> list
             "cooked_status": row["cooked_status"],
             "prep_date": prep_date,
             "prep_day": str(row["derived"].get("prep_day") or _weekday(prep_date)),
-            "lunch_dates": sorted({row["date"]} | fed.get(row["id"], set())),
+            # A prep day's own meal as the cook (apply_to_plan's
+            # _prep_day_cook) is not one of the lunches the batch is FOR —
+            # the line reads "For Monday's lunch", as the cook's reasoning does.
+            "prep_day_cook": bool(row["derived"].get("prep_day_cook")),
+            "lunch_dates": sorted(
+                ({row["date"]} if row["slot"] == "lunch" and not row["derived"].get("prep_day_cook") else set())
+                | fed.get(row["id"], set())
+            ),
         })
     out.sort(key=lambda b: (b["prep_date"], b["cook_date"], b["cook_entry_id"]))
     return out

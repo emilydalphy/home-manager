@@ -450,7 +450,7 @@ def _best_cook(cooks: list[dict], night: dict, allowed: set[str]) -> dict | None
 
 
 def _plan_batches(nights: list[dict], kept: list[dict], caps: dict | None, slot: str,
-                  outside: list[dict], relay: bool) -> tuple[list[dict], list[dict]]:
+                  outside: list[dict], relay: bool, pinned=frozenset()) -> tuple[list[dict], list[dict]]:
     """
     Decide every night: ("keep" | "cook" | "link" | "freezer" | "stand").
     `outside` are cooks from another slot a night here may eat (the
@@ -478,13 +478,15 @@ def _plan_batches(nights: list[dict], kept: list[dict], caps: dict | None, slot:
                 fixed_cooks.setdefault(id(n["dish"]), []).append(n["date"])
     freed_ids = {
         n["id"] for n in nights
-        if _key(n["dish"]["name"]) in kept_keys and n["reheat_of"] is None and n["dish"]["protected"]
+        if n["id"] not in pinned
+        and _key(n["dish"]["name"]) in kept_keys and n["reheat_of"] is None and n["dish"]["protected"]
         and n["date"] not in fixed_cooks.get(id(n["dish"]), [])
         and not any(1 <= _gap(d, n["date"]) <= _leftovers.MAX_LEFTOVER_DAYS for d in fixed_cooks[id(n["dish"])])
     }
     # The nights re-laying may move, and how many remain as it walks.
-    flexible = [n for n in nights if id(n["dish"]) in movable_ids or n["id"] in freed_ids
-                or (_key(n["dish"]["name"]) not in kept_keys)]
+    flexible = [n for n in nights if n["id"] not in pinned and (
+                id(n["dish"]) in movable_ids or n["id"] in freed_ids
+                or (_key(n["dish"]["name"]) not in kept_keys))]
     unused = list(movable)
     block: dict | None = None
     seen_flexible = 0
@@ -492,6 +494,20 @@ def _plan_batches(nights: list[dict], kept: list[dict], caps: dict | None, slot:
     for n in nights:
         dish = n["dish"]
         is_kept = _key(dish["name"]) in kept_keys
+        if n["id"] in pinned:
+            # Left exactly as it is (enforce_distinct_count's pinned_ids),
+            # and a cook the folded nights may eat.
+            src = next((c for c in cooks if c["id"] == n["reheat_of"]), None) if n["reheat_of"] else None
+            if src:
+                src["size"] += 1
+                decisions.append({"kind": "keep", "night": n})
+            elif n["reheat_of"] is not None:
+                decisions.append({"kind": "keep", "night": n})
+            else:
+                c = _new_cook(n, dish)
+                cooks.append(c)
+                decisions.append({"kind": "keep", "night": n, "cook": c})
+            continue
         if is_kept and n["reheat_of"] is not None:
             src = next((c for c in cooks if c["id"] == n["reheat_of"]), None)
             if src:
@@ -718,7 +734,7 @@ def _write_cook_sides(plan_id: int, targets: dict, frozen: list, out: dict) -> N
 def enforce_distinct_count(
     plan_id: int, target: int | None, slot: str = "dinner", asks: tuple[str | None, ...] = (),
     budget=None, picker=None, fill_up: bool = True, usual: int | None = None, day_count: int = 7,
-    caps: dict | None = None,
+    caps: dict | None = None, pinned_ids=(), ignore_ids=(),
 ) -> dict:
     """
     Make one slot's distinct dishes NUMBER `target` for this plan — see
@@ -743,6 +759,13 @@ def enforce_distinct_count(
     _cap_at — and a cook is never moved onto a meal it is too long for.
     `usual` and `day_count` are no longer read (they sized the old "On
     again" line) and are accepted so the caller need not change.
+
+    `pinned_ids` are nights left exactly as they are — counted, never
+    rewritten, and a cook a folded night may eat — and `ignore_ids` are
+    nights not counted or touched at all (weekday_lunches.enforce_lunch_
+    count: the lunches the week's own answer settled, and a lunch that is
+    a dinner's leftovers). A prepped batch's cook (derived_from.prep_date,
+    weekday_lunches) is always kept, whatever the count.
     Returns {"before", "after", "replaced": [{"date", "dropped", "with",
     "as"}], "batched": [{"cook", "slot", "covers"}], "added": [...]} and
     never raises: a plan with one dish too many is a far better outcome
@@ -758,8 +781,19 @@ def enforce_distinct_count(
             result["skipped"] = "week asks for its own count"
             logger.info("Distinct %s count not enforced for plan %s: the week's own words name a count", slot, plan_id)
             return result
+        ignore = set(ignore_ids or ())
+        pinned = set(pinned_ids or ())
+
+        def slot_dishes(chain_map):
+            found = _group_dishes([e for e in _load_slot_entries(plan_id, slot) if e["id"] not in ignore], chain_map)
+            for d in found:
+                if any(n["id"] in pinned or (json.loads(n.get("derived_from_json") or "{}") or {}).get("prep_date")
+                       for n in d["nights"]):
+                    d["protected"] = True
+            return found
+
         chains = _leftovers.plan_leftover_chains(plan_id)
-        dishes = _group_dishes(_load_slot_entries(plan_id, slot), chains)
+        dishes = slot_dishes(chains)
         result["before"] = result["after"] = len(dishes)
         surplus: list[dict] = []
         if len(dishes) < target:
@@ -768,7 +802,7 @@ def enforce_distinct_count(
                 result["after"] = result["before"] + len(result["added"])
                 if result["added"]:
                     chains = _leftovers.plan_leftover_chains(plan_id)
-                    dishes = _group_dishes(_load_slot_entries(plan_id, slot), chains)
+                    dishes = slot_dishes(chains)
             else:
                 result["skipped"] = "counts are defaults, not answers"
         elif len(dishes) > target:
@@ -787,15 +821,15 @@ def enforce_distinct_count(
         kept = [d for d in dishes if _key(d["name"]) not in surplus_keys]
         nights = _slot_nights(dishes, chains)
         outside = _outside_cooks(plan_id, slot, kept, chains)
-        decisions, unresolved = _plan_batches(nights, kept, caps, slot, outside, relay=False)
+        decisions, unresolved = _plan_batches(nights, kept, caps, slot, outside, relay=False, pinned=pinned)
         if any(d["kind"] in ("freezer", "stand") for d in decisions):
-            relaid, missed = _plan_batches(nights, kept, caps, slot, outside, relay=True)
+            relaid, missed = _plan_batches(nights, kept, caps, slot, outside, relay=True, pinned=pinned)
             if not missed:
                 decisions = relaid
         written = _write_batches(plan_id, slot, decisions, target)
         result["replaced"] = written["replaced"]
         result["batched"] = written["batched"]
-        result["after"] = len(_group_dishes(_load_slot_entries(plan_id, slot), _leftovers.plan_leftover_chains(plan_id)))
+        result["after"] = len(slot_dishes(_leftovers.plan_leftover_chains(plan_id)))
         if result["replaced"] or result["batched"]:
             logger.info(
                 "Plan %s %ss: %d distinct against a target of %d; batched %s",

@@ -5188,6 +5188,12 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             except (TypeError, ValueError):
                 derived = {}
             built["brought_over"] = bool(isinstance(derived, dict) and derived.get("brought_over"))
+            # When to cook a prepped batch ("Cook this Sunday for Monday’s
+            # lunch.", weekday_lunches.apply_to_plan's derived_from.prep_note)
+            # — carried on its own key so it is never lost under the row's
+            # other line (Emily, 2026-09-27).
+            built["schedule_note"] = (str(derived.get("prep_note") or "").strip()
+                                      if isinstance(derived, dict) else "")
         return built
 
     by_date_slot = {}
