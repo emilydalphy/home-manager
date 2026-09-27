@@ -888,6 +888,9 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
         pick["meal_name"] = honest_meal_name(pick)
     _save_recipe_if_new(pick, serves)
     sides = _plates.get_sides(entry["entry_id"]) if carry_sides else []
+    # Read before the swap unlinks it: the chain this cook fed, so Undo
+    # can put it back (undo_meal_swap -> weekly_plan.restore_leftover_chain).
+    chain = None if entry["derived_from"].get("swapped_from") else _chain_record(weekly_plan_id, entry)
     result = _weekly_plan.swap_meal_in_plan(
         weekly_plan_id, entry["date"], pick["meal_name"], slot=entry["slot"],
         food_groups=[g for g in (pick.get("food_groups") or []) if g in _plates.ALL_GROUPS],
@@ -907,6 +910,8 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
         "food_groups": entry["food_groups"],
         "reasoning": entry["reasoning"],
     }
+    if chain:
+        swapped_from = dict(swapped_from, chain=chain)
     derived = dict(entry["derived_from"])
     # A day swapped on its own after its dish was swapped as a whole
     # (apply_pick_to_days) leaves that group: its Undo is its own now.
@@ -942,6 +947,38 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
     if result.get("taste_verdict"):
         out["taste_verdict"] = result["taste_verdict"]
     return out
+
+
+def _chain_record(weekly_plan_id: int, entry: dict) -> dict | None:
+    """The leftover chain `entry` cooks for, as Undo needs it — each fed
+    meal's id, slot and own link (`entry_id:` or `date:slot`, and whether
+    it was a cook-ahead pick) — or None when it feeds nothing."""
+    from . import leftovers as _leftovers
+    try:
+        source = _leftovers.plan_leftover_chains(weekly_plan_id)["sources"].get(entry["entry_id"])
+    except Exception:
+        logger.exception("Could not read the leftover chains; Undo will not re-link this cook")
+        return None
+    if not source:
+        return None
+    ids = [t["entry_id"] for t in source["targets"]]
+    marks = ",".join("?" * len(ids))
+    conn = get_conn()
+    rows = conn.execute(
+        f"SELECT id, derived_from_json FROM meal_plan_entries WHERE household_id = ? AND id IN ({marks})",
+        (household_id(), *ids),
+    ).fetchall()
+    conn.close()
+    derived = {r["id"]: json.loads(r["derived_from_json"] or "{}") or {} for r in rows}
+    return {
+        "make_double_note": entry["derived_from"].get("make_double_note") or "",
+        "targets": [
+            {"entry_id": t["entry_id"], "date": t["date"], "slot": t["slot"],
+             "links_to": (derived.get(t["entry_id"]) or {}).get("links_to") or "",
+             "cook_ahead": bool((derived.get(t["entry_id"]) or {}).get("cook_ahead"))}
+            for t in source["targets"]
+        ],
+    }
 
 
 def pick_gate(pick: dict, entry: dict) -> str | None:
@@ -995,6 +1032,10 @@ def undo_meal_swap(weekly_plan_id: int, entry_id: int) -> dict:
     derived = {k: v for k, v in (entry["derived_from"] or {}).items()
                if k not in _SWAP_NOTE_KEYS}
     _write_entry_note(result["entry_id"], previous.get("reasoning") or "", derived)
+    # A cook whose leftover meals the swap cut loose feeds them again —
+    # the ones still as the swap left them (restore_leftover_chain).
+    if previous.get("chain"):
+        _weekly_plan.restore_leftover_chain(weekly_plan_id, result["entry_id"], previous["chain"])
     return {
         "status": "restored",
         "entry_id": result["entry_id"],

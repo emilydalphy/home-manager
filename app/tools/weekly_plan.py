@@ -7217,6 +7217,108 @@ def replace_dish_on_days(weekly_plan_id: int, items: list[dict]) -> dict:
     return out
 
 
+def restore_leftover_chain(weekly_plan_id: int, cook_id: int, chain: dict) -> list[int]:
+    """
+    Put a cook's leftover chain back after a one-day swap of it is undone
+    (swap_in_place.undo_meal_swap). The swap unlinked the meals the cook
+    fed (_replace_slot_entries clears their links_to; apply_pick drops the
+    cook's own make_double_for), so the dish the Undo restores has nothing
+    to rebuild the chain from — except `chain`, which apply_pick recorded
+    in swapped_from: {make_double_note, targets: [{entry_id, date, slot,
+    links_to, cook_ahead}]}. Review, 2026-09-27: Undo put Thursday's dish
+    back cooking for one table, Friday no longer its leftovers.
+
+    A target is re-linked only if it is still that meal as the swap left
+    it — the same row, planned, not cooked, carrying no link of its own,
+    and still the restored dish; anything since changed is the household's
+    and is left alone. Its link is written in its own shape: an
+    `entry_id:` link names the restored cook's NEW id, a `date:slot` one
+    is kept, and a cook-ahead pick stays one. On an approved week the cook
+    and every re-linked meal are re-bought as a chain (the cook buys the
+    batch, a reheat buys nothing), so the list lands where it was before
+    the swap. One transaction. Returns the re-linked entry ids.
+    """
+    targets = (chain or {}).get("targets") or []
+    if not targets:
+        return []
+    conn = get_conn()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        plan_row = conn.execute(
+            "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?",
+            (weekly_plan_id, household_id()),
+        ).fetchone()
+        cook = conn.execute(
+            "SELECT mpe.id, mpe.date, mpe.slot, mpe.derived_from_json, "
+            "COALESCE(r.name, mpe.freeform_meal) AS meal FROM meal_plan_entries mpe "
+            "LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+            "WHERE mpe.id = ? AND mpe.household_id = ? AND mpe.weekly_plan_id = ?",
+            (cook_id, household_id(), weekly_plan_id),
+        ).fetchone()
+        if not plan_row or cook is None:
+            conn.rollback()
+            return []
+        dish = (cook["meal"] or "").strip().lower()
+        relinked = []
+        for target in targets:
+            row = conn.execute(
+                "SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.cooked_status, "
+                "mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal "
+                "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+                "WHERE mpe.id = ? AND mpe.household_id = ? AND mpe.weekly_plan_id = ?",
+                (target.get("entry_id"), household_id(), weekly_plan_id),
+            ).fetchone()
+            if row is None or row["slot_state"] != "planned" or (row["cooked_status"] or "") == "done":
+                continue
+            if row["date"] <= cook["date"] or (row["meal"] or "").strip().lower() != dish:
+                continue
+            derived = json.loads(row["derived_from_json"] or "{}") or {}
+            if derived.get("links_to"):
+                continue
+            link = (target.get("links_to") or "").strip()
+            if _LINKS_TO_ENTRY_ID_RE.match(link):
+                link = f"entry_id:{cook_id}"  # the restored cook is a new row
+            elif not link:
+                link = f"{cook['date']}:{cook['slot']}"
+            derived["links_to"] = link
+            if target.get("cook_ahead"):
+                derived["cook_ahead"] = True
+            conn.execute(
+                "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+                (json.dumps(derived), row["id"], household_id()),
+            )
+            relinked.append(row)
+        if not relinked:
+            conn.commit()
+            return []
+        keys = [f"{r['date']}:{r['slot']}" for r in relinked]
+        cook_derived = json.loads(cook["derived_from_json"] or "{}") or {}
+        cook_derived["make_double_for"] = keys
+        cook_derived["make_double_note"] = (
+            (chain.get("make_double_note") or "") if len(relinked) == len(targets) else ""
+        ) or _make_double_note_text(keys)
+        conn.execute(
+            "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+            (json.dumps(cook_derived), cook_id, household_id()),
+        )
+        if plan_row["status"] == "approved":
+            ids = {cook_id} | {r["id"] for r in relinked}
+            for entry_id in ids:
+                _grocery._reverse_meal_grocery_contributions(entry_id, conn=conn)
+            rows = [r for r in _plan_grocery_candidate_entries(conn, weekly_plan_id) if r["id"] in ids]
+            if rows:
+                buffer = _recipes.WeekGroceryBuffer(weekly_plan_id, conn=conn)
+                _ingest_recipe_group_and_sides(rows, weekly_plan_id, buffer)
+                buffer.flush()
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    return [r["id"] for r in relinked]
+
+
 def swap_meal_in_plan_for_chat(*args, override: bool = False, **kwargs) -> dict:
     """
     swap_meal_in_plan with the two refusals a PERSON is owed in front of
