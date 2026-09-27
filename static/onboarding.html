@@ -3549,8 +3549,13 @@ document.getElementById('ai-consent-allow').onclick = async () => {
     alert(AI_CONSENT_COPY.failed);
     return;
   }
-  setAiConsentBusy(false);
-  finishSetupAndReveal();
+  // Busy until setup has finished (or failed), so a tap on "Not now"
+  // while the answers are saving can't record a no under a yes.
+  try {
+    await finishSetupAndReveal();
+  } finally {
+    setAiConsentBusy(false);
+  }
 };
 
 // "Not now": the answers are still saved — the household is set up, just

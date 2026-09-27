@@ -259,3 +259,26 @@ def test_the_chat_agent_has_no_way_to_grant_consent():
     names = {t["name"] for t in agent.TOOL_DEFINITIONS}
     assert names, "the chat's tool catalogue should be readable here"
     assert not any("consent" in n for n in names)
+
+
+def test_a_real_bug_after_a_refusal_is_still_reported_as_a_bug():
+    """
+    GUARD (mutation: walk the whole cause chain). Only the refusal itself,
+    or the exception raised straight from it, reads as the consent line; a
+    genuine failure further down stays a 500 and is recorded as breakage.
+    """
+    mini = FastAPI()
+    mini.add_exception_handler(StarletteHTTPException, main.record_server_errors)
+
+    @mini.get("/api/wrapped-bug")
+    def wrapped_bug():
+        try:
+            try:
+                raise agent.AIConsentRequiredError(ai_consent.REFUSAL_LINE)
+            except agent.AssistantUnavailableError:
+                raise KeyError("a real bug in the fallback")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+    res = TestClient(mini).get("/api/wrapped-bug")
+    assert res.status_code == 500

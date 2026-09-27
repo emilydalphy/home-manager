@@ -121,23 +121,25 @@ def _client_safe_detail(status_code: int, detail, line: str = SERVER_TROUBLE_LIN
 
 def _refused_for_consent(exc: BaseException | None) -> bool:
     """
-    Did this failure start as a refused AI call (agent.AIConsentRequiredError)?
+    Did this failure come straight from a refused AI call
+    (agent.AIConsentRequiredError)?
 
-    Walks the exception's cause/context chain, because most routes don't
-    name the error: `except Exception as e: raise HTTPException(500, ...)`
-    leaves the refusal as the __context__ of the 500. Caught here, once, it
-    becomes the plain 503 sentence everywhere — including a route written
-    after this one — rather than "something went wrong", and it is not
-    filed as breakage in the morning report: a household that hasn't said
-    yes is the app working as intended.
+    The exception itself, or the one it was raised from/while handling —
+    one link, no further. Most routes don't name the error: `except
+    Exception as e: raise HTTPException(500, ...)` leaves the refusal as
+    the 500's __context__. Caught here, once, it becomes the plain 503
+    sentence everywhere — including a route written after this one —
+    rather than "something went wrong", and it is not filed as breakage
+    in the morning report: a household that hasn't said yes is the app
+    working as intended. Only one link, so a genuine bug raised later
+    inside some handler that had caught a refusal is still reported as
+    the bug it is (verifier's note, 2026-09-27).
     """
-    seen = 0
-    while exc is not None and seen < 20:
-        if isinstance(exc, agent.AIConsentRequiredError):
-            return True
-        exc = exc.__cause__ or exc.__context__
-        seen += 1
-    return False
+    if exc is None:
+        return False
+    if isinstance(exc, agent.AIConsentRequiredError):
+        return True
+    return isinstance(exc.__cause__ or exc.__context__, agent.AIConsentRequiredError)
 
 
 def _consent_refusal_response() -> JSONResponse:
