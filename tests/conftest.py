@@ -85,6 +85,39 @@ _TABLES = [
 @pytest.fixture(scope="session", autouse=True)
 def _database():
     init_db()
+    # Sharing with Claude (app/ai_consent.py). The app refuses every AI call
+    # for a household that hasn't said yes, and thousands of tests here were
+    # written before that question existed — each one drives a fake client
+    # as a household that, in the real app, would have answered the consent
+    # screen first. So every test household starts as having said yes: a
+    # trigger in THIS throwaway database only, because tests create
+    # households a dozen different ways (households.create_household, raw
+    # INSERTs, invites) and a trigger catches all of them. The check itself
+    # is untouched — it still reads the row — and tests that are about
+    # consent clear it with `withdraw_ai_consent` (below) and watch the
+    # refusal happen. Household 1 is set in clean_state, since it is seeded
+    # before this trigger exists and survives every wipe.
+    conn = get_conn()
+    conn.execute(
+        "CREATE TRIGGER IF NOT EXISTS test_households_consent AFTER INSERT ON households "
+        "WHEN NEW.ai_consent = '' BEGIN "
+        "UPDATE households SET ai_consent = 'granted', ai_consent_at = datetime('now'), "
+        "ai_consent_version = 'test-fixture' WHERE id = NEW.id; END"
+    )
+    conn.commit()
+    conn.close()
+
+
+def withdraw_ai_consent(household_id: int = 1, status: str = "") -> None:
+    """Put a test household back to never-asked ('') or 'declined' — for the consent tests."""
+    conn = get_conn()
+    conn.execute(
+        "UPDATE households SET ai_consent = ?, ai_consent_at = NULL, ai_consent_version = '', "
+        "ai_consent_member_id = NULL WHERE id = ?",
+        (status, household_id),
+    )
+    conn.commit()
+    conn.close()
 
 
 @pytest.fixture(autouse=True)
@@ -119,6 +152,12 @@ def clean_state():
         # Who set the household up (first-open welcome) is on the household
         # row too, and names a member the wipe above just deleted.
         conn.execute("UPDATE households SET set_up_by_member_id = NULL WHERE id = 1")
+        # Household 1 has said yes to sharing with Claude, in every test —
+        # see _database above for why, and for the tests that undo it.
+        conn.execute(
+            "UPDATE households SET ai_consent = 'granted', ai_consent_at = datetime('now'), "
+            "ai_consent_version = 'test-fixture', ai_consent_member_id = NULL WHERE id = 1"
+        )
     except Exception:
         pass
     conn.execute("PRAGMA foreign_keys = ON")

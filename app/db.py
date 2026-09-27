@@ -625,6 +625,16 @@ _MIGRATIONS = [
     # The adult who set the household up: the first adult to open the
     # shell. NULL until someone does (or the run-once backfill names one).
     ("households", "set_up_by_member_id", "INTEGER"),
+    # Permission to send the household's details to Claude (Loop Board "App
+    # Store: ask permission before household details go to the AI",
+    # 2026-09-27) — see app/ai_consent.py. '' on every existing household,
+    # Emily's included: nobody has been asked yet, so nobody is recorded as
+    # having said yes. They're asked once on their next visit; nothing else
+    # about the household changes.
+    ("households", "ai_consent", "TEXT NOT NULL DEFAULT ''"),
+    ("households", "ai_consent_at", "TEXT"),
+    ("households", "ai_consent_version", "TEXT NOT NULL DEFAULT ''"),
+    ("households", "ai_consent_member_id", "INTEGER"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

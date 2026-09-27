@@ -890,6 +890,43 @@
      .on-spruce). */
   .back-link.on-spruce { color: var(--ivory-ink-muted); }
   .back-link.on-spruce:hover { color: var(--ivory-ink); }
+
+  /* ---------- Sharing with Claude (App Store 5.1.2(i), 2026-09-27) ----------
+     The consent step, between the last question and the first week: what
+     is sent, who gets it, what for — one card of three eyebrow-and-line
+     rows, the question screens' own title and line above it. The one
+     apricot is "Allow and plan my week" in the foot; "Not now" is the
+     foot's quiet skip line. Same rows as the shell's consent screen
+     (shell.css .aic-*), restated here because this page doesn't load
+     shell.css. */
+  .aic-rows {
+    background: var(--surface);
+    border: 1.5px solid var(--hairline);
+    border-radius: var(--radius-card);
+    padding: 4px 14px;
+  }
+  .aic-row { padding: 12px 0; }
+  .aic-row + .aic-row { border-top: 1.5px solid var(--hairline); }
+  .aic-row-label {
+    font-family: var(--font-body); font-weight: 800; font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-muted); margin: 0;
+  }
+  .aic-row-body {
+    font-family: var(--font-body); font-weight: 600; font-size: 15px;
+    line-height: 1.4; color: var(--ink); margin: 4px 0 0;
+  }
+  .aic-more { font-family: var(--font-body); font-size: 15px; line-height: 1.45; color: var(--ink-secondary); }
+  .aic-more summary {
+    min-height: 44px; display: flex; align-items: center; cursor: pointer;
+    font-weight: 700; color: var(--apricot-label);
+  }
+  .aic-more summary:hover { color: var(--apricot-label-hover); }
+  .aic-more p { margin: 0 0 6px; }
+  .aic-more a {
+    display: inline-flex; align-items: center; min-height: 44px;
+    color: var(--apricot-label); font-weight: 700;
+  }
+  .aic-more a:hover { color: var(--apricot-label-hover); }
 </style>
 <script src="/static/error-reporter.js"></script>
 <script src="/static/waiting-lines.js"></script>
@@ -1205,6 +1242,33 @@
     <div class="q-pager" aria-hidden="true"></div>
     <span class="skip-link" id="kit-repeats-skip">Skip &mdash; I&rsquo;ll tell you as we go</span>
     <button class="btn-primary q-next" id="kit-repeats-next" type="button">Let&rsquo;s plan your first week</button>
+  </div>
+</div>
+
+<!-- Sharing with Claude (App Store 5.1.2(i), Loop Board 2026-09-27): asked
+     once, after the last question and before the first week — the first
+     moment anything would go to Anthropic. The words are filled from
+     AI_CONSENT_COPY in the script below, the same words as the shell's
+     consent screen (static/shell.js); tests/test_ai_consent_screen.py keeps
+     the two copies identical. A household that has already answered never
+     sees this step (stepFlow). -->
+<div id="step-ai-consent" style="display:none">
+  <button class="back-link" type="button" data-step-back="ai-consent" hidden></button>
+  <div class="q-body">
+    <h1 class="q-title" id="aic-title"></h1>
+    <p class="q-line" id="aic-lead"></p>
+    <div class="q-controls">
+      <div class="aic-rows" id="aic-rows"></div>
+      <details class="aic-more">
+        <summary id="aic-more-label"></summary>
+        <p id="aic-more"></p>
+        <a id="aic-link" target="_blank" rel="noopener"></a>
+      </details>
+    </div>
+  </div>
+  <div class="q-foot">
+    <span class="skip-link" id="ai-consent-later"></span>
+    <button class="btn-primary q-next" id="ai-consent-allow" type="button"></button>
   </div>
 </div>
 
@@ -2948,7 +3012,7 @@ const INTRO_STEPS = ['intro-hello', 'intro-help', 'intro-talk', 'intro-know'];
 // plan. rhythm-1, rhythm-2, dinners and typical-week left the flow —
 // 'meals' (which meals to plan) took their place, and the three rhythm
 // answers the planner acts on became one screen each.
-const ALL_STEPS = ['intro-hello', 'intro-help', 'intro-talk', 'intro-know', 'household', 'meals', 'restrictions', 'eating-style', 'wont-eat', 'excited-about', 'leftovers', 'prep', 'dinner-time', 'kit-repeats', 'reveal'];
+const ALL_STEPS = ['intro-hello', 'intro-help', 'intro-talk', 'intro-know', 'household', 'meals', 'restrictions', 'eating-style', 'wont-eat', 'excited-about', 'leftovers', 'prep', 'dinner-time', 'kit-repeats', 'ai-consent', 'reveal'];
 
 // What each step is called when another step points back at it. Named
 // destinations, never "Back" (Emily, 2026-09-09) — a bare arrow asks you to
@@ -2969,6 +3033,7 @@ const STEP_TITLES = {
   'prep': 'Meal prep',
   'dinner-time': 'Dinner time',
   'kit-repeats': 'Your kit',
+  'ai-consent': 'Sharing with Claude',
 };
 
 // The steps THIS household is asked, derived from the answers it has given
@@ -2981,7 +3046,12 @@ const STEP_TITLES = {
 // this repo would catch. Ask the flow instead, and a skipped step is
 // skipped in both directions for free.
 function stepFlow() {
-  return ALL_STEPS.slice();
+  // The consent step only for a household that hasn't answered it — a
+  // household that already said yes (a re-run of setup) goes straight on.
+  // (typeof: aiConsentStatus is declared further down the script, with the
+  // rest of the consent step.)
+  const consented = typeof aiConsentStatus !== 'undefined' && aiConsentStatus === 'granted';
+  return ALL_STEPS.filter(k => k !== 'ai-consent' || !consented);
 }
 // The step before `key` in that flow, or '' for the first one.
 function stepBefore(key) {
@@ -3322,11 +3392,15 @@ document.getElementById('dinner-time-skip').onclick = () => {
 // a week and the household must be able to try again. 'done' is the
 // original guard and is permanent.
 let setupRun = 'idle';   // 'idle' | 'running' | 'done'
-async function finishSetupAndReveal() {
-  if (setupRun === 'done') { showStep('reveal'); return; }
+async function finishSetupAndReveal(opts) {
+  // opts.plan === false: save the answers and stop — the household said
+  // "Not now" to sharing with Claude, so no week is asked for. Returns
+  // true when the answers were saved.
+  const plan = !(opts && opts.plan === false);
+  if (setupRun === 'done') { if (plan) showStep('reveal'); return true; }
   // A second tap while the first is still in flight is not an error and is
   // told nothing new: the controls already say what is happening.
-  if (setupRun === 'running') return;
+  if (setupRun === 'running') return false;
   // Re-validated here rather than trusted from the household step's own
   // Continue. That check is the only thing standing between an empty list
   // of names and a saved household, and a history gesture can reach this
@@ -3336,7 +3410,7 @@ async function finishSetupAndReveal() {
   if (!currentMembers().length) {
     showStep('household');
     showHouseholdEmptyNote(true);
-    return;
+    return false;
   }
   setupRun = 'running';
   setKitRepeatsBusy(true);
@@ -3346,13 +3420,16 @@ async function finishSetupAndReveal() {
     const answers = await saveOnboardingAnswers();
     await savePlanTheWeekAnswers();
     setupRun = 'done';
+    if (!plan) return true;
     showStep('reveal');
     await generateFirstPlanAndReveal(answers);
+    return true;
   } catch (err) {
     console.error('Onboarding save failed:', err);
     // Nothing was asked for, so let them try again.
     setupRun = 'idle';
     alert("Couldn't save that — try again in a moment.");
+    return false;
   } finally {
     setKitRepeatsBusy(false);
   }
@@ -3372,12 +3449,132 @@ function setKitRepeatsBusy(busy) {
   }
 }
 
-document.getElementById('kit-repeats-next').onclick = () => finishSetupAndReveal();
+// The last question hands on to the consent step, unless this household
+// has already said yes — then straight to the finish, as before.
+function afterLastQuestion() {
+  if (stepFlow().indexOf('ai-consent') !== -1) showStep('ai-consent');
+  else finishSetupAndReveal();
+}
+document.getElementById('kit-repeats-next').onclick = () => afterLastQuestion();
 document.getElementById('kit-repeats-skip').onclick = () => {
   // A skip means "don't record this" — clear anything half-tapped so a
   // partial answer isn't saved as though it were considered.
   kitchenKit = [];
-  finishSetupAndReveal();
+  afterLastQuestion();
+};
+
+// ---------- Sharing with Claude (App Store 5.1.2(i), 2026-09-27) ----------
+// The same words as the shell's consent screen (static/shell.js
+// AI_CONSENT_COPY — tests/test_ai_consent_screen.py fails if they drift).
+// Only the buttons differ: here Allow also starts the first week, so it
+// says so. The server is what holds the line (app/ai_consent.py) — no
+// week is asked for, and nothing goes to Anthropic, without the yes.
+const AI_CONSENT_COPY = {
+  askTitle: 'Can I share your household’s details with Claude?',
+  lead: 'I use Claude, an AI made by Anthropic, to plan your meals and answer you. To do that, I send it what you’ve told me.',
+  rows: [
+    { label: 'What I send', body: 'First names and ages, allergies and what everyone eats, who’s home for which meals, and what you type, say or photograph for me.' },
+    { label: 'Who gets it', body: 'Anthropic, the company that makes Claude.' },
+    { label: 'What for', body: 'Only to plan your meals and answer you. Anthropic doesn’t use it to train its AI.' }
+  ],
+  moreLabel: 'More about this',
+  more: 'You can turn this off any time in Preferences, under Sharing with Claude. While it’s off, I can’t plan meals or chat, and nothing you’ve saved is lost.',
+  linkLabel: 'Anthropic’s privacy details',
+  linkUrl: 'https://privacy.claude.com/en/articles/7996868-is-my-data-used-for-model-training',
+  allowAndPlan: 'Allow and plan my week',
+  notNow: 'Not now',
+  failed: 'That didn’t save. Try it again.'
+};
+// '' until read; 'granted' skips the step (stepFlow).
+var aiConsentStatus = '';
+(async function readAiConsent() {
+  try {
+    const res = await fetch('/api/ai-consent');
+    if (res.ok) aiConsentStatus = (await res.json()).status || '';
+  } catch (err) { /* offline: ask — the step is harmless to show twice */ }
+})();
+
+(function fillAiConsentStep() {
+  document.getElementById('aic-title').textContent = AI_CONSENT_COPY.askTitle;
+  document.getElementById('aic-lead').textContent = AI_CONSENT_COPY.lead;
+  const rows = document.getElementById('aic-rows');
+  AI_CONSENT_COPY.rows.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'aic-row';
+    const label = document.createElement('p');
+    label.className = 'aic-row-label';
+    label.textContent = r.label;
+    const body = document.createElement('p');
+    body.className = 'aic-row-body';
+    body.textContent = r.body;
+    row.appendChild(label);
+    row.appendChild(body);
+    rows.appendChild(row);
+  });
+  document.getElementById('aic-more-label').textContent = AI_CONSENT_COPY.moreLabel;
+  document.getElementById('aic-more').textContent = AI_CONSENT_COPY.more;
+  const link = document.getElementById('aic-link');
+  link.textContent = AI_CONSENT_COPY.linkLabel;
+  link.href = AI_CONSENT_COPY.linkUrl;
+  document.getElementById('ai-consent-allow').textContent = AI_CONSENT_COPY.allowAndPlan;
+  document.getElementById('ai-consent-later').textContent = AI_CONSENT_COPY.notNow;
+})();
+
+async function saveAiConsentAnswer(allow) {
+  const res = await fetch('/api/ai-consent', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ allow: !!allow }),
+  });
+  if (!res.ok) throw new Error('consent save failed');
+  aiConsentStatus = (await res.json()).status || (allow ? 'granted' : 'declined');
+}
+
+let aiConsentBusy = false;
+function setAiConsentBusy(busy) {
+  aiConsentBusy = busy;
+  const btn = document.getElementById('ai-consent-allow');
+  const later = document.getElementById('ai-consent-later');
+  if (btn) btn.disabled = busy;
+  if (later) later.classList.toggle('is-busy', busy);
+}
+
+document.getElementById('ai-consent-allow').onclick = async () => {
+  if (aiConsentBusy) return;
+  setAiConsentBusy(true);
+  try {
+    await saveAiConsentAnswer(true);
+  } catch (err) {
+    console.warn('Saving sharing with Claude failed:', err);
+    setAiConsentBusy(false);
+    alert(AI_CONSENT_COPY.failed);
+    return;
+  }
+  // Busy until setup has finished (or failed), so a tap on "Not now"
+  // while the answers are saving can't record a no under a yes.
+  try {
+    await finishSetupAndReveal();
+  } finally {
+    setAiConsentBusy(false);
+  }
+};
+
+// "Not now": the answers are still saved — the household is set up, just
+// without a first week — and they land on Plan. Preferences' "Sharing with
+// Claude" row is the way to turn it on later.
+document.getElementById('ai-consent-later').onclick = async () => {
+  if (aiConsentBusy) return;
+  setAiConsentBusy(true);
+  try {
+    await saveAiConsentAnswer(false);
+  } catch (err) {
+    console.warn('Saving sharing with Claude failed:', err);
+    setAiConsentBusy(false);
+    alert(AI_CONSENT_COPY.failed);
+    return;
+  }
+  const saved = await finishSetupAndReveal({ plan: false });
+  setAiConsentBusy(false);
+  if (saved) window.location.href = '/week';
 };
 
 document.querySelectorAll('[data-step-back]').forEach(el => {

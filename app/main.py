@@ -34,7 +34,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exception_handlers import http_exception_handler
 
-from . import agent, backup, calendar_feed, chat_themes, feedback_email, households, invites, ratelimit, recipe_import, recipe_photos, security
+from . import agent, ai_consent, backup, calendar_feed, chat_themes, feedback_email, households, invites, ratelimit, recipe_import, recipe_photos, security
 from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
@@ -119,6 +119,33 @@ def _client_safe_detail(status_code: int, detail, line: str = SERVER_TROUBLE_LIN
     return detail
 
 
+def _refused_for_consent(exc: BaseException | None) -> bool:
+    """
+    Did this failure come straight from a refused AI call
+    (agent.AIConsentRequiredError)?
+
+    The exception itself, or the one it was raised from/while handling —
+    one link, no further. Most routes don't name the error: `except
+    Exception as e: raise HTTPException(500, ...)` leaves the refusal as
+    the 500's __context__. Caught here, once, it becomes the plain 503
+    sentence everywhere — including a route written after this one —
+    rather than "something went wrong", and it is not filed as breakage
+    in the morning report: a household that hasn't said yes is the app
+    working as intended. Only one link, so a genuine bug raised later
+    inside some handler that had caught a refusal is still reported as
+    the bug it is (verifier's note, 2026-09-27).
+    """
+    if exc is None:
+        return False
+    if isinstance(exc, agent.AIConsentRequiredError):
+        return True
+    return isinstance(exc.__cause__ or exc.__context__, agent.AIConsentRequiredError)
+
+
+def _consent_refusal_response() -> JSONResponse:
+    return JSONResponse({"detail": ai_consent.REFUSAL_LINE, "ai_consent_required": True}, status_code=503)
+
+
 @app.exception_handler(StarletteHTTPException)
 async def record_server_errors(request: Request, exc: StarletteHTTPException):
     """
@@ -134,6 +161,10 @@ async def record_server_errors(request: Request, exc: StarletteHTTPException):
     bucket was hit; everything below 500 is an ordinary client answer
     (401 not signed in, 404, a rejected input) and is not breakage.
     """
+    if exc.status_code >= 500 and (
+        _refused_for_consent(exc) or (exc.status_code == 503 and exc.detail == ai_consent.REFUSAL_LINE)
+    ):
+        return _consent_refusal_response()
     if exc.status_code >= 500 and _has_bound_household(request):
         # The status code, never the message. 83 routes build their detail
         # as f"Server error: {e}", and {e} is unbounded application text —
@@ -198,6 +229,8 @@ async def record_unhandled_errors(request: Request, exc: Exception):
     and no ticket: the browser just gets a bare 500. Recorded by exception
     class name only; the traceback goes to the log as it always did.
     """
+    if _refused_for_consent(exc):
+        return _consent_refusal_response()
     # Bind the household from the cookie before recording.
     #
     # This handler runs in ServerErrorMiddleware, which sits OUTSIDE
@@ -7397,7 +7430,38 @@ def whoami(request: Request):
         # also how the household's first adult is recorded as its setter-up.
         "first_open": first_open["show"],
         "set_up_by": first_open["set_up_by"],
+        # Sharing with Claude (app/ai_consent.py): '' = never asked, so the
+        # shell shows the consent screen before anything else; 'granted' /
+        # 'declined' = answered, and the Preferences row reads it back.
+        "ai_consent": ai_consent.state(current)["status"],
     }
+
+
+# ---------- Sharing with Claude (App Store 5.1.2(i), 2026-09-27) ----------
+#
+# The household's permission to send its details to Anthropic. Written only
+# here, by a signed-in person tapping the screen — never by the chat agent
+# (app/ai_consent.py is outside app/tools/ for exactly that reason).
+
+
+class AIConsentRequest(BaseModel):
+    allow: bool
+
+
+@app.get("/api/ai-consent")
+def get_ai_consent():
+    """The household's answer, when it was given, and which wording it was given against."""
+    return {**ai_consent.state(), "current_version": ai_consent.CONSENT_VERSION}
+
+
+@app.post("/api/ai-consent")
+def set_ai_consent(req: AIConsentRequest):
+    """Allow, or stop, sharing the household's details with Claude. Stored with the date and wording version."""
+    member = tools.current_member()
+    status = ai_consent.GRANTED if req.allow else ai_consent.DECLINED
+    saved = ai_consent.record(status, member_id=member["id"] if member else None)
+    logger.info("Household %s set sharing with Claude to %s (wording %s)", tools.household_id(), status, saved["version"])
+    return {**saved, "current_version": ai_consent.CONSENT_VERSION}
 
 
 class WhoamiPickRequest(BaseModel):

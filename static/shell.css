@@ -9990,6 +9990,136 @@ span.cook-week-name { cursor: default; }
 }
 .who-error[hidden] { display: none; }
 
+/* ---------- Sharing with Claude (App Store 5.1.2(i), 2026-09-27) ----------
+   The consent screen (shell.js, "Sharing with Claude"). Full screen on the
+   ground, for the reason "Who's this?" is: a question the app waits on
+   before the tabs, not a confirm over something already showing. Three
+   plain rows on one card — what's sent, who gets it, what for — each an
+   eyebrow and a line. One apricot (Allow, rule 5); "Not now" / "Close" is
+   a quiet text link in its own 44px row (rule 6). Read back from
+   Preferences, Allow gives way to an outline "Turn off" — still no second
+   apricot. Every colour is a canonical token, so dark mode follows. */
+.aic-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--ground);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: max(56px, env(safe-area-inset-top, 0px) + 40px) 20px max(32px, env(safe-area-inset-bottom, 0px) + 20px);
+  box-sizing: border-box;
+  animation: fadeIn .18s ease;
+}
+.aic-screen[hidden] { display: none; }
+.aic-inner { max-width: 420px; margin: 0 auto; }
+.aic-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 31px;
+  letter-spacing: -0.038em;
+  line-height: 1.05;
+  color: var(--ink);
+  margin: 0;
+}
+.aic-lead {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ink);
+  margin: 12px 0 0;
+}
+.aic-rows {
+  margin-top: 20px;
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
+  border-radius: var(--radius-card);
+  padding: 4px 14px;
+}
+.aic-row { padding: 12px 0; }
+.aic-row + .aic-row { border-top: 1.5px solid var(--hairline); }
+.aic-row-label {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin: 0;
+}
+.aic-row-body {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink);
+  margin: 4px 0 0;
+}
+.aic-more {
+  margin-top: 8px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+}
+.aic-more summary {
+  min-height: 44px; /* Rule 6 */
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--apricot-label);
+}
+.aic-more summary:hover { color: var(--apricot-label-hover); }
+.aic-more p { margin: 0 0 6px; }
+.aic-more a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px; /* Rule 6: a link still gets a full row */
+  color: var(--apricot-label);
+  font-weight: 700;
+}
+.aic-more a:hover { color: var(--apricot-label-hover); }
+.aic-error {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--urgent-label);
+  margin: 12px 0 0;
+}
+.aic-error[hidden] { display: none; }
+.aic-foot { display: flex; flex-direction: column; gap: 4px; margin-top: 20px; }
+.aic-foot .aic-allow { width: 100%; min-height: 52px; box-shadow: var(--shadow-action); }
+.aic-foot [hidden] { display: none; }
+.aic-off {
+  width: 100%;
+  min-height: 52px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  background: transparent;
+  color: var(--ink-strong);
+  border: 1.5px solid var(--hairline-strong);
+  border-radius: var(--radius-action);
+  cursor: pointer;
+}
+.aic-off:hover:not(:disabled) { background: var(--sand); }
+.aic-later {
+  display: block;
+  width: 100%;
+  min-height: 44px; /* Rule 6 */
+  border: 0;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.aic-foot button:disabled { opacity: .6; cursor: default; }
+
 /* ---------- The other adult's first open (2026-09-25) ----------
    Loop Board "First open for the adult who didn't set Pomona up". One
    screen, once per adult, in the setup welcome's own look
