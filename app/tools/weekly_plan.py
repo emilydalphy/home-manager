@@ -5143,6 +5143,10 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
                     "date": src["date"],
                     "meal": src["meal"],
                     "cook_ahead": bool(leftover.get("cook_ahead")),
+                    # The cook's own slot, so the reheat night's Meal step
+                    # can open the recipe it comes from ("See Thursday's
+                    # recipe", 2026-09-27) — a lunch can reheat a dinner.
+                    "slot": src.get("slot"),
                 },
             }
         text = (row["freeform_meal"] or "").lower()
@@ -5179,7 +5183,41 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             except (TypeError, ValueError):
                 derived = {}
             built["brought_over"] = bool(isinstance(derived, dict) and derived.get("brought_over"))
+            built["schedule_note"] = schedule_note(row, derived if isinstance(derived, dict) else {})
         return built
+
+    # The one line a row still says under its dish besides the minutes
+    # (Emily, 2026-09-27, decision C: "cut it everything" — no reason line,
+    # nothing the model wrote): WHEN a prepped batch is cooked and which
+    # lunches it feeds. Built here from what the plan records — the cook's
+    # prep_date, the lunches chained to it, the lunches frozen off it — not
+    # read back out of the free `reasoning` text, so it can only ever say
+    # what the plan actually holds. Every other meal says nothing here: a
+    # reheat night's "from Monday" is the row's meta (leftover_from), and a
+    # freezer night's name already says where it comes from.
+    from . import weekday_lunches as _weekday_lunches  # lazy: it imports this module
+
+    frozen_off: dict[str, list[str]] = {}
+    for r in rows:
+        try:
+            d = json.loads(r["derived_from_json"] or "{}") or {}
+        except (TypeError, ValueError):
+            continue
+        frozen = d.get(_leftovers.FROM_FREEZER_KEY) if isinstance(d, dict) else None
+        if isinstance(frozen, dict) and str(frozen.get("cook") or "").startswith("entry_id:"):
+            frozen_off.setdefault(frozen["cook"], []).append(r["date"])
+
+    def schedule_note(row, derived: dict) -> str:
+        prep_date = derived.get("prep_date")
+        if derived.get("constraint") != _weekday_lunches.CONSTRAINT or not prep_date or row["slot"] != "lunch":
+            return ""
+        fed = {row["date"]}
+        for t in (chains["sources"].get(row["id"]) or {}).get("targets") or []:
+            if t.get("slot") == "lunch":
+                fed.add(t["date"])
+        fed.update(frozen_off.get(f"entry_id:{row['id']}", []))
+        return (f"Cook this {_weekday_lunches._title(_weekday_lunches._weekday(prep_date))} for "
+                f"{_weekday_lunches.batch_lunch_phrase(sorted(fed))}.")
 
     by_date_slot = {}
     # Snacks are a LIST per day, not one entry: two different snacks a day

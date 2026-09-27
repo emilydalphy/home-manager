@@ -1306,12 +1306,14 @@
       // POST /api/week/{week_start}/slot), not the dinner_decision path
       // above — that one only plans a brand-new slot; this one is
       // replacing an existing open one.
+      // No body line: the item's body is the stored open_reason, the
+      // model's why, and the title already says what's asked (Emily,
+      // 2026-09-27, decision C: "cut it everything").
       var hasOptions = item.options && item.options.length;
       return (
         '<div class="shell-card needs-you-card urgency-' + item.urgency + '" data-card-type="dinner_open">' +
           '<div class="ny-kicker">' + escapeHtml(item.kicker) + '</div>' +
           '<div class="ny-title">' + escapeHtml(item.title) + '</div>' +
-          (item.body ? '<div class="ny-summary">' + escapeHtml(item.body) + '</div>' : '') +
           (hasOptions
             ? '<div class="ny-options">' +
                 item.options.map(function (opt, i) {
@@ -12699,31 +12701,25 @@
     return entry.meta || '';
   }
 
-  // The meta line with the one fact the slot was asked for ("35 min ·
-  // Mexican, as asked" — get_week_menu's `asked`, read off derived_from).
+  // The meta line: the minutes (or "from Monday"), then — for a prepped
+  // lunch batch only — when it's cooked and which lunches it feeds
+  // ("35 min · Cook this Sunday for Monday and Tuesday’s lunches").
+  // Emily, 2026-09-27 (decision C, "cut it everything"): no reason line on
+  // any row — not the stored reason, not "Mexican, as asked", nothing the
+  // model wrote. get_week_menu's `schedule_note` is built from what the
+  // plan records, so it only ever says a schedule fact. It's a fragment
+  // of the line, so its full stop comes off.
   function wkRowMetaLine(entry, meta) {
-    var asked = entry && entry.state === 'planned' && entry.asked;
-    return [meta, asked].filter(Boolean).join(' · ');
+    var note = entry && entry.state === 'planned' &&
+      String(entry.schedule_note || '').trim().replace(/\.+$/, '');
+    return [meta, note].filter(Boolean).join(' · ');
   }
 
-  // The meta line, with the stored reason said after it as plain text
-  // ("30 min · Lighter than the chops") — Emily, 2026-09-25 (option 1A):
-  // the reason used to be a tap on this line that popped a note, and the
-  // dotted underline it needed read as a second link beside the dish.
-  // Nothing on this line is a button now; the reason is a fragment of the
-  // line, so a closing full stop comes off. A slot that carries what it
-  // was asked for ("Mexican, as asked") already says why — its reason
-  // mostly says the same again ("Mexican for lunch, as you asked"), so
-  // the line keeps the shorter fact and leaves the reason off. A meal
-  // brought over from last week likewise: its "From last week" label
-  // already says why, and its reason ("Brought over from last week —
-  // it was on Tuesday") would say "last week" a second time.
+  // The meta line as plain text. Nothing on it is a button (Emily,
+  // 2026-09-25, 1A: the reason used to be a tap here, and its dotted
+  // underline read as a second link beside the dish).
   function wkRowMetaHtml(entry, meta) {
-    var reason = entry && entry.state === 'planned' && !entry.asked && !entry.brought_over &&
-      String(entry.reason || '').trim().replace(/\.+$/, '');
-    var why = reason ? reason.charAt(0).toUpperCase() + reason.slice(1) : '';
-    var line = [meta, why].filter(Boolean).join(' · ');
-    return line ? '<span class="wk-row-meta">' + escapeHtml(line) + '</span>' : '';
+    return meta ? '<span class="wk-row-meta">' + escapeHtml(meta) + '</span>' : '';
   }
 
   // How many of the three real meals a day actually holds.
@@ -14614,6 +14610,33 @@
   // from (weekState.mealBack): "‹ Monday" when it was the Day step's card,
   // "‹ This week" when it was a dish name on the root's list — the same
   // words the Day step's own crumb uses for the same destination.
+  // Whether a reheat night can be marked eaten now (Emily, 2026-09-27):
+  // today, on the approved week Cook holds. On a draft, or a day still
+  // ahead, nothing has been eaten yet — "Mark eaten" there was a button
+  // for something that can't have happened. (A past day has no dock.)
+  function leftoversEatenNow(day) {
+    var data = typeof weekState !== 'undefined' && weekState ? weekState.data : null;
+    var cookable = typeof planCookableNow !== 'function' || planCookableNow();
+    return !!(day && day.isToday && data && data.status === 'approved' && cookable);
+  }
+
+  // The way from a reheat night to the recipe it comes from — "See
+  // Thursday's recipe" (Emily, 2026-09-27): the night itself has no cook
+  // in it, so its page showed a title and nothing to read. Only for a
+  // chained night whose cook is a day on this screen (get_week_menu's
+  // leftover_from, with the cook's slot).
+  function mealSourceLinkHtml(entry) {
+    var from = entry && entry.source === 'leftovers' && entry.leftover_from;
+    if (!from || !from.date || !from.slot) return '';
+    var days = (typeof weekState !== 'undefined' && weekState && weekState.days) || [];
+    var index = -1;
+    for (var i = 0; i < days.length; i++) if (days[i].date === from.date) { index = i; break; }
+    if (index === -1) return '';
+    return '<button type="button" class="recipe-source-link" data-wk-source-day="' + index + '" ' +
+      'data-wk-source-slot="' + escapeHtml(from.slot) + '">' +
+      escapeHtml('See ' + dayName(from.date, { weekday: 'long' }) + '’s recipe') + '</button>';
+  }
+
   function mealStepHtml(day, slot) {
     var entry = daySlotEntry(day, slot);
     var cookMeal = cookMealForEntry(entry.entry_id);
@@ -14632,6 +14655,7 @@
       '<div class="wk-meal-body recipe-body">' +
         '<h1 class="recipe-title">' + escapeHtml(mealDisplayName(entry)) + '</h1>' +
         (line ? '<p class="recipe-line">' + escapeHtml(line) + '</p>' : '') +
+        (typeof mealSourceLinkHtml === 'function' ? mealSourceLinkHtml(entry) : '') +
         (hasRecipe ? recipeServesHtml(cookMeal, 'wk') : '') +
         (typeof platePartsRowsHtml === 'function' ? platePartsRowsHtml(day, slot, entry) : '') +
         mealIngredientsHtml(day, slot, entry, info) +
@@ -14670,6 +14694,15 @@
     if (!entry || entry.state !== 'planned' || day.isPast) return '';
     var eaten = entry.source === 'leftovers' || (isSnackSlot(slot) && !isRealCook(entry));
     var cookable = typeof planCookableNow !== 'function' || planCookableNow();
+    // A reheat night not yet eatable (a draft, a day ahead — see
+    // leftoversEatenNow) has nothing to mark and nothing to cook: the
+    // dock is the swap, with the chat as its quiet link, and the page's
+    // "See Thursday's recipe" is the way to the food (Emily, 2026-09-27).
+    // (typeof: the tests that run this renderer alone, like planCookableNow.)
+    if (entry.source === 'leftovers' && typeof leftoversEatenNow === 'function' && !leftoversEatenNow(day)) {
+      eaten = false;
+      cookable = false;
+    }
     var cookMeal = info && info.cookMeal;
     // Nothing to step through — the card has landed and carries no steps
     // (no saved recipe, or a saved one with none yet). Cook's screen for
@@ -15250,6 +15283,17 @@
           : (weekState.step === 'week' ? 'week' : 'day');
         wkDayForTap(btn);
         goMealsStep('meal', { slot: btn.getAttribute('data-wk-meal'), back: back });
+      });
+    });
+    // "See Thursday's recipe" on a reheat night (mealSourceLinkHtml): the
+    // cook's own Meal step, its crumb going where this one's went.
+    steps.querySelectorAll('[data-wk-source-day]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        goMealsStep('meal', {
+          dayIndex: Number(btn.getAttribute('data-wk-source-day')),
+          slot: btn.getAttribute('data-wk-source-slot'),
+          back: weekState.mealBack
+        });
       });
     });
     // The rows' own buttons (Emily, 2026-09-18): Done, Swap (the sheet),
@@ -16269,13 +16313,14 @@
   // The one place an open slot is answered. It used to be a stack of cards
   // at the bottom of the root, one per open slot and none of them beside
   // the day it was about; now it is revealed by "Pick" inside that day's
-  // own card (see daySlotCardHtml). Same question, same options, same
-  // write — amber, and the reason names the CONSTRAINT that caused it, so
-  // the ask reads as diligence rather than failure.
+  // own card (see daySlotCardHtml). Same options, same write. The stored
+  // open_reason ("Sunday I'd rather ask than guess: …") is not said here
+  // (Emily, 2026-09-27, decision C: "cut it everything") — one plain line
+  // says what's true, and the options under it are the way on.
   function openSlotCardHtml(date, slot, entry) {
     return (
       '<div class="shell-card week-open-card" data-open-date="' + date + '" data-open-slot="' + slot + '">' +
-        '<div class="week-open-reason">' + escapeHtml(entry.open_reason || '') + '</div>' +
+        '<div class="week-open-reason">' + escapeHtml('Nothing planned for this ' + slotWord(slot) + ' yet.') + '</div>' +
         (entry.options && entry.options.length
           ? '<div class="week-open-options">' + entry.options.map(function (opt) {
               return '<button type="button" class="week-open-option" data-choice="' + escapeHtml(opt.label) + '">' +

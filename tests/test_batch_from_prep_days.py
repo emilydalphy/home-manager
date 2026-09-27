@@ -152,7 +152,8 @@ def test_approval_applies_the_batch_and_never_returns_an_ask(signed_in):
     menu = signed_in.get("/api/week-menu").json()
     assert menu["cook_ahead_asked_at"] is not None
     tue = [d for d in menu["days"] if d["date"] == TUE][0]
-    assert tue["breakfast"]["leftover_from"] == {"date": MON, "meal": "Egg White Bites", "cook_ahead": True}
+    assert tue["breakfast"]["leftover_from"] == {"date": MON, "meal": "Egg White Bites", "cook_ahead": True,
+                                                 "slot": "breakfast"}
     assert signed_in.get(f"/api/week/{WEEK}/cook-ahead-items").json()["items"] == []
 
 

@@ -540,6 +540,14 @@
     background: var(--ground);
     padding: 12px 20px calc(16px + env(safe-area-inset-bottom, 0px));
   }
+  /* Above the phone keyboard while a text box has it (liftFooter): iOS
+     keeps the layout viewport full height under the keyboard, so bottom: 0
+     is behind it. The keyboard covers the home indicator, so the safe-area
+     padding comes off too. */
+  .footer.is-lifted {
+    bottom: var(--kb-lift, 0px);
+    padding-bottom: 12px;
+  }
   .footer::before {
     content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: 28px;
     background: linear-gradient(to bottom, transparent, var(--ground)); pointer-events: none;
@@ -1556,11 +1564,9 @@
     // the second to arrive carries on from the first one's answers rather
     // than opening a blank set and racing them to generate the same week.
     if (data.in_flight && data.intake) {
-      var by = (data.intake.created_by || '').trim();
       $('joined').hidden = false;
-      $('joined').textContent = by
-        ? by + ' started this ' + relativeTime(data.intake.created_at) + ' — I’ve carried on from where they got to.'
-        : 'I’ve carried on from the answers already saved for this week.';
+      $('joined').textContent = joinedLine(data.intake.created_by, data.viewer || who,
+        relativeTime(data.intake.created_at));
       takeAnswers(data.intake);
     } else if (data.plan_exists) {
       // DECISIONS.md #4 — re-planning a week that already has a plan is
@@ -1694,6 +1700,21 @@
     var hours = Math.round(mins / 60);
     if (hours < 24) return hours === 1 ? 'an hour ago' : hours + ' hours ago';
     return 'yesterday';
+  }
+
+  // The in-flight line (the soft lock), said to the person reading it
+  // (Emily, 2026-09-27): "You started this yesterday." to whoever did —
+  // she was told "Emily started this… where they got to" about her own
+  // answers — and the other adult's name to anyone else. `viewer` is the
+  // prefill's (the session's adult). Pure, so it runs on its own.
+  function joinedLine(by, viewer, when) {
+    by = String(by || '').trim();
+    viewer = String(viewer || '').trim();
+    if (!by) return 'The answers saved earlier are still here.';
+    if (viewer && by.toLowerCase() === viewer.toLowerCase()) {
+      return 'You started this ' + when + '. Your answers are still here.';
+    }
+    return by + ' started this ' + when + '. Their answers are still here.';
   }
 
   // ---------- the days, as tiles ----------
@@ -3406,6 +3427,16 @@
     }).map(bringKey);
   }
 
+  // "This week so far" only for a period that has begun. A later one
+  // names its dates ("Oct 3–9 so far"): the draft band's "Plan the week"
+  // opens the period AFTER the draft on screen, and "This week so far"
+  // over Oct 3–9 read as this week's own answers (Emily, 2026-09-27).
+  function sameTitle(data, start, today) {
+    if (!(data && (data.intake || data.plan_exists))) return 'Same as last week?';
+    if (start > today && data.week_label) return data.week_label + ' so far';
+    return 'This week so far';
+  }
+
   function showSame() {
     step = 0;
     editing = 0;
@@ -3421,8 +3452,7 @@
     // Re-planning a week that already has answers (or a plan) shows that
     // week's own answers, not last week's — so the title says so (Emily,
     // 2026-09-25: "This week so far").
-    $('same-title').textContent = (data && (data.intake || data.plan_exists))
-      ? 'This week so far' : 'Same as last week?';
+    $('same-title').textContent = sameTitle(data, weekStart, todayIso());
     renderBringOver();
     var first = !sameBaseline;
     renderSame();
@@ -4265,6 +4295,50 @@
     if (!$('away-sheet').hidden) closeAwaySheet();
     else if (!$('day-sheet').hidden) discardDaySheet();
   });
+
+  // ---------- the footer above the phone keyboard ----------
+  // The Continue button is fixed to the bottom of the layout viewport, and
+  // iOS Safari (and the installed app) leaves that viewport full height
+  // when the keyboard opens — the keyboard covers the button, so "Anything
+  // else?" could be typed and not sent (Emily, 2026-09-27). The visual
+  // viewport is what shrinks, so the gap between its bottom and the
+  // layout viewport's bottom is how far to lift. Android Chrome shrinks
+  // the layout viewport itself, so that gap is 0 there and nothing moves.
+  // Only while a text box has focus: pinch-zoom shrinks the visual
+  // viewport too, and a screen with no text box never lifts.
+  function isTextEntry(el) {
+    if (!el) return false;
+    if (el.tagName === 'TEXTAREA') return true;
+    if (el.tagName !== 'INPUT') return false;
+    return ['text', 'search', 'email', 'tel', 'url', 'number', 'password', ''].indexOf((el.type || '').toLowerCase()) !== -1;
+  }
+
+  function keyboardLift(layoutHeight, vv, typing) {
+    if (!typing || !vv) return 0;
+    var gap = Math.round(layoutHeight - (vv.height + vv.offsetTop));
+    return gap > 0 ? gap : 0;
+  }
+
+  function liftFooter() {
+    var footer = $('footer');
+    var lift = keyboardLift(window.innerHeight, window.visualViewport, isTextEntry(document.activeElement));
+    footer.style.setProperty('--kb-lift', lift + 'px');
+    footer.classList.toggle('is-lifted', lift > 0);
+    // The box being typed in stays in sight above the lifted footer.
+    var el = document.activeElement;
+    if (lift > 0 && isTextEntry(el) && !footer.hidden) {
+      var over = el.getBoundingClientRect().bottom - footer.getBoundingClientRect().top;
+      if (over > 0) window.scrollBy(0, over + 8);
+    }
+  }
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', liftFooter);
+    window.visualViewport.addEventListener('scroll', liftFooter);
+    document.addEventListener('focusin', liftFooter);
+    // After focus has moved: a tap from one box to the next keeps it up.
+    document.addEventListener('focusout', function () { setTimeout(liftFooter, 0); });
+  }
 
   load();
 })();
