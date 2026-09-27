@@ -669,14 +669,14 @@ why*, not duplicating the diff.
   - **Numbers, read off the runs at `TZ=America/Toronto`: 7673 passed, 0
     failed** on the commit that ships, against 7638 collected on main —
     +35 is this one new file exactly. **The four CI weekday pins were
-    measured on the PRE-REVIEW commit** (monday, friday, saturday and
-    sunday each 7661 passed, 3 skipped, 0 failed, when the file held 26
-    tests) and are quoted as that rather than as the shipping tree's, per
-    this log's own rule against carrying a figure forward across a change.
-    The review round touched no dated seed — its nine new tests take every
-    date from `conftest.household_today()` and one deliberately seeds
-    around the household's own today — but that is reasoning, not a
-    measurement. `git diff main -- tests/` adds one file and
+    then re-run on that same commit rather than carried forward from the
+    pre-review one** (which read 7661 + 3 skipped, when the file held 26
+    tests): monday, friday, saturday and sunday each **7670 passed, 3
+    skipped, 0 failed**, and 7670 + 3 is the unpinned 7673. Re-measured
+    rather than reasoned, because one of the nine tests added in the
+    review round deliberately seeds around the household's own today and
+    "it reads no clock" is the kind of claim this log keeps having to
+    unpick. `git diff main -- tests/` adds one file and
     changes three with a note each (two node harnesses need a
     `weekFlagsHtml` stub — a new callee of `reviewStepHtml`, which those
     harnesses extract as a FIXED list, so without it a ReferenceError;
