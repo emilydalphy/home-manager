@@ -43,10 +43,11 @@ REPORTER_JS = (STATIC / "error-reporter.js").read_text(encoding="utf-8")
 # or a word character — so `Api.fetch('/api…')` and `window.fetch(` in a
 # test stub are not counted, and `fetch( '/api` with a space is.
 #
-# 151 on main when the card was un-parked (2026-09-27); 48 after shell.js
-# moved onto api.js. LOWER this when a screen migrates. Never raise it: a
+# 150 on main when the card was un-parked (2026-09-27 — the card's "151"
+# was a plain text search, which also caught one `window.fetch('/api`);
+# 47 after shell.js moved onto api.js. LOWER this when a screen migrates. Never raise it: a
 # new call is written with Api.json / Api.fetch instead (CLAUDE.md).
-RAW_API_FETCH_CEILING = 48
+RAW_API_FETCH_CEILING = 47
 
 _RAW = re.compile(r"(?<![\w.$])fetch\(\s*['\"`]/api")
 
@@ -297,6 +298,44 @@ console.log(JSON.stringify({ status: e.status }));
 
 def test_shell_js_hands_api_json_its_own_toast():
     assert "Api.onError(function (said) { showToast(said); });" in SHELL_JS
+
+
+@_needs_node
+def test_api_json_edge_cases_found_on_review():
+    """Found by the independent review of this branch (2026-09-27): a
+    Headers instance was dropped, a lower-case content-type got a second
+    one beside it, `body: null` sent "null", URLSearchParams was turned
+    into "{}", a body that dropped mid-read skipped the toast and the tag,
+    and a caller's own abort toasted."""
+    out = _run("""
+Api.onError((said) => toasts.push(said));
+await Api.json('/api/a', { method: 'POST', headers: new Headers({ 'X-One': '1' }), body: { a: 1 } });
+await Api.json('/api/b', { headers: { 'content-type': 'application/json' }, body: { b: 1 } });
+await Api.json('/api/c', { body: null });
+const qs = new URLSearchParams('x=1');
+await Api.json('/api/d', { body: qs });
+answer = () => Promise.resolve({ ok: true, status: 200, text: () => Promise.reject(new TypeError('network error')) });
+let e1; try { await Api.json('/api/week/2026-09-21/e'); } catch (e) { e1 = e; }
+const abort = new Error('aborted'); abort.name = 'AbortError';
+answer = () => Promise.reject(abort);
+let e2; try { await Api.json('/api/f'); } catch (e) { e2 = e; }
+console.log(JSON.stringify({
+  a: calls[0].init.headers,
+  b: calls[1].init.headers,
+  c: { method: calls[2].init.method, hasBody: 'body' in calls[2].init },
+  d: calls[3].init.body === qs && !('Content-Type' in calls[3].init.headers),
+  e1: { status: e1.status, route: e1.pomonaRoute },
+  e2same: e2 === abort,
+  toasts,
+}));
+""")
+    assert out["a"] == {"x-one": "1", "Content-Type": "application/json"}
+    assert out["b"] == {"content-type": "application/json"}
+    assert out["c"] == {"method": "GET", "hasBody": False}
+    assert out["d"] is True
+    assert out["e1"] == {"status": 0, "route": "/api/week/{}/e"}
+    assert out["e2same"] is True
+    assert out["toasts"] == ["Couldn’t load that — try again."], "the dropped read toasts; the abort does not"
 
 
 # ---------------------------------------------------------------------------

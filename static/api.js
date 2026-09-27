@@ -2,12 +2,12 @@
  * One place every screen talks to the server through.
  *
  * Why this exists (Loop Board, "one shared api.js", un-parked 2026-09-27):
- * the app had 151 hand-written `fetch('/api…')` calls, each assuming the
+ * the app had about 150 hand-written raw calls to /api, each assuming the
  * server is whatever site the page came from. That is true today and stops
  * being true the day the App Store app carries its own screens — they will
  * be loaded from the phone, and every call has to be pointed at the real
  * site instead. With every call going through here, that is one line
- * (Api.setBase) rather than 151.
+ * (Api.setBase) rather than 150.
  *
  * Three ways in, smallest first:
  *
@@ -147,30 +147,60 @@ var Api = (function () {
     return '/' + out.join('/');
   }
 
-  function isFormData(body) {
-    return typeof FormData !== 'undefined' && body instanceof FormData;
+  // Bodies fetch already knows how to send, passed through as they are.
+  // FormData especially: it writes its own multipart Content-Type (with the
+  // boundary), and setting one here would break the upload. Only a plain
+  // object or array is turned into JSON.
+  function isSendableAsIs(body) {
+    if (typeof body === 'string') return true;
+    var kinds = [
+      typeof FormData !== 'undefined' ? FormData : null,
+      typeof URLSearchParams !== 'undefined' ? URLSearchParams : null,
+      typeof Blob !== 'undefined' ? Blob : null,
+      typeof ArrayBuffer !== 'undefined' ? ArrayBuffer : null,
+    ];
+    for (var i = 0; i < kinds.length; i++) {
+      if (kinds[i] && body instanceof kinds[i]) return true;
+    }
+    return typeof ArrayBuffer !== 'undefined' && !!ArrayBuffer.isView && ArrayBuffer.isView(body);
+  }
+
+  // A plain object or a Headers instance, copied into a plain object.
+  function copyHeaders(given) {
+    var out = {};
+    if (!given) return out;
+    if (typeof given.forEach === 'function' && typeof given.get === 'function') {
+      given.forEach(function (value, name) { out[name] = value; });
+      return out;
+    }
+    for (var h in given) {
+      if (Object.prototype.hasOwnProperty.call(given, h)) out[h] = given[h];
+    }
+    return out;
+  }
+
+  function hasHeader(headers, name) {
+    var want = name.toLowerCase();
+    for (var h in headers) {
+      if (Object.prototype.hasOwnProperty.call(headers, h) && h.toLowerCase() === want) return true;
+    }
+    return false;
   }
 
   // opts: { method, body, headers, signal, keepalive, quiet, errorMessage }
   // Resolves to the parsed JSON ({} for an empty or non-JSON 2xx answer).
   function json(path, opts) {
     opts = opts || {};
-    var method = String(opts.method || (opts.body !== undefined ? 'POST' : 'GET')).toUpperCase();
-    var headers = {};
-    if (opts.headers) {
-      for (var h in opts.headers) {
-        if (Object.prototype.hasOwnProperty.call(opts.headers, h)) headers[h] = opts.headers[h];
-      }
-    }
+    var hasBody = opts.body !== undefined && opts.body !== null;
+    var method = String(opts.method || (hasBody ? 'POST' : 'GET')).toUpperCase();
+    var headers = copyHeaders(opts.headers);
     var init = { method: method, headers: headers };
-    if (opts.body !== undefined) {
-      if (isFormData(opts.body) || typeof opts.body === 'string') {
-        // FormData sets its own multipart Content-Type (with the boundary);
-        // setting one here would break the upload.
+    if (hasBody) {
+      if (isSendableAsIs(opts.body)) {
         init.body = opts.body;
       } else {
         init.body = JSON.stringify(opts.body);
-        if (!headers['Content-Type']) headers['Content-Type'] = 'application/json';
+        if (!hasHeader(headers, 'Content-Type')) headers['Content-Type'] = 'application/json';
       }
     }
     if (opts.signal) init.signal = opts.signal;
@@ -179,10 +209,26 @@ var Api = (function () {
     var said = opts.errorMessage || (method === 'GET' ? LOAD_FAILED : SAVE_FAILED);
 
     function fail(err) {
-      if (!opts.quiet && errorHandler) {
+      // A caller that cancelled its own request (its AbortController) asked
+      // for that; it is not a failure to tell anyone about.
+      var aborted = err && err.name === 'AbortError';
+      if (!opts.quiet && !aborted && errorHandler) {
         try { errorHandler(said, err); } catch (e) { /* a toast must never break the caller */ }
       }
       throw err;
+    }
+
+    // Never got there, or dropped mid-answer. Keep the browser's own error
+    // (its message is what error-reporter.js matches to say "network"),
+    // tagged with status 0 and the route.
+    function dropped(netErr) {
+      if (netErr && typeof netErr === 'object') {
+        try {
+          if (netErr.status === undefined) netErr.status = 0;
+          if (!netErr.pomonaRoute) netErr.pomonaRoute = routePattern(path);
+        } catch (e) { /* frozen error object: leave it */ }
+      }
+      return fail(netErr);
     }
 
     return apiFetch(path, init).then(function (res) {
@@ -196,18 +242,8 @@ var Api = (function () {
           return fail(ApiError('Request failed (' + res.status + ')', res.status, detail, data, path));
         }
         return data === null ? {} : data;
-      });
-    }, function (netErr) {
-      // Never got there. Keep the browser's own error (its message is what
-      // error-reporter.js matches to say "network"), tagged with status 0.
-      if (netErr && typeof netErr === 'object') {
-        try {
-          netErr.status = 0;
-          if (!netErr.pomonaRoute) netErr.pomonaRoute = routePattern(path);
-        } catch (e) { /* frozen error object: leave it */ }
-      }
-      return fail(netErr);
-    });
+      }, dropped);
+    }, dropped);
   }
 
   return {
