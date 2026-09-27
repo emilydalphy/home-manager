@@ -1013,6 +1013,92 @@ def enforce_snacks_per_day(plan_id: int, per_day: int | None, dates: list[str], 
     return out
 
 
+def enforce_snack_dishes(plan_id: int, target: int | None, dates: list[str],
+                         asks: tuple[str | None, ...] = ()) -> dict:
+    """
+    "Snacks" under Different dishes a week (2026-09-27): the week's snacks
+    are `target` different dishes, and every day still gets its snacks a
+    day (enforce_snacks_per_day ran first and is not undone — this only
+    ever renames a snack, never adds or removes one). A snack of a dish
+    over the count becomes one of the kept dishes that isn't already on
+    that day, the least-used first. No model call.
+
+    What stays: the dishes on the most days (then the earliest), and every
+    dish the household asked for (meal_variety.theirs) or has eaten. The
+    count is never pushed below the most snacks one day carries — two
+    snacks a day from one dish would be that day eating the same thing
+    twice, which the prompt's "one day never eats the same thing twice"
+    rule forbids — and a snack no kept dish can replace without repeating
+    that day's own food is left as it is (one extra dish beats a repeat
+    on the day). Words for the week that name a snack count stand this
+    down, as for every other count. Never raises.
+    """
+    out = {"before": 0, "after": 0, "replaced": [], "left": [], "skipped": None}
+    if not target or target <= 0 or not dates:
+        out["skipped"] = "no target"
+        return out
+    if asks_for_a_count(*asks, slot="snack"):
+        out["skipped"] = "week asks for its own count"
+        return out
+    try:
+        by_day = _load_snacks_by_day(plan_id)
+        in_scope = set(dates)
+        snacks = [e for d, rows in by_day.items() if d in in_scope for e in rows
+                  if e["slot_state"] == "planned" and e["meal"]]
+        dishes: dict[str, dict] = {}
+        for e in sorted(snacks, key=lambda e: (e["date"], e["id"])):
+            key = e["meal"].strip().lower()
+            dish = dishes.setdefault(key, {"name": e["meal"].strip(), "entries": [], "days": set(),
+                                           "protected": False, "food_groups": None})
+            dish["entries"].append(e)
+            dish["days"].add(e["date"])
+            derived = json.loads(e["derived_from_json"] or "{}") or {}
+            if theirs(derived) or (e["cooked_status"] or "") == "done":
+                dish["protected"] = True
+            if dish["food_groups"] is None:
+                dish["food_groups"] = json.loads(e["food_groups_json"] or "[]") or None
+        out["before"] = out["after"] = len(dishes)
+        per_day_most = max((sum(1 for e in snacks if e["date"] == d) for d in in_scope), default=0)
+        keep_n = max(int(target), per_day_most)
+        if len(dishes) <= keep_n:
+            return out
+        ordered = sorted(dishes.values(), key=lambda d: (not d["protected"], -len(d["days"]),
+                                                          min(d["days"])))
+        kept = ordered[:max(keep_n, sum(1 for d in ordered if d["protected"]))]
+        kept_keys = {d["name"].lower() for d in kept}
+        uses = {d["name"].lower(): len(d["entries"]) for d in kept}
+        day_food = _day_food(plan_id, sorted(in_scope))
+        for dish in ordered:
+            if dish["name"].lower() in kept_keys:
+                continue
+            for e in dish["entries"]:
+                on_day = set(day_food.get(e["date"], {}))
+                fits = [k for k in kept if k["name"].lower() not in on_day]
+                if not fits:
+                    out["left"].append({"date": e["date"], "meal": e["meal"]})
+                    continue
+                pick = min(fits, key=lambda k: (uses[k["name"].lower()], k["name"]))
+                _weekly_plan._replace_slot_entries(
+                    plan_id, [e["id"]], e["date"], "snack", pick["name"],
+                    food_groups=pick["food_groups"], reasoning="",
+                    derived_from={"constraint": f"snack_dishes_per_week:{target}", "replaced": e["meal"]},
+                )
+                uses[pick["name"].lower()] += 1
+                day_food.setdefault(e["date"], {}).pop(e["meal"].strip().lower(), None)
+                day_food[e["date"]][pick["name"].lower()] = pick["name"]
+                out["replaced"].append({"date": e["date"], "dropped": e["meal"], "with": pick["name"]})
+        after = {e["meal"].strip().lower() for d, rows in _load_snacks_by_day(plan_id).items()
+                 if d in in_scope for e in rows if e["slot_state"] == "planned" and e["meal"]}
+        out["after"] = len(after)
+        if out["replaced"]:
+            logger.info("Plan %s snacks: %d different against a count of %d; now %d%s", plan_id,
+                        out["before"], target, out["after"],
+                        f" ({len(out['left'])} left as they were)" if out["left"] else "")
+    except Exception:
+        logger.exception("Snack-dishes count failed for plan %s; the snacks stand as planned", plan_id)
+    return out
+
+
 def _pick_a_snack(plan_id: int, date: str, avoid: list[str], budget, picker=None) -> tuple[str, list | None, str]:
     """One small picker call for a snack on `date` that repeats nothing on
     that day. Returns (name, food_groups, reason), or ("", None, "") when

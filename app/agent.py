@@ -3552,16 +3552,16 @@ dishes — either way, after you answer, so anything off the number is work thro
 it reheats, not as a new one. \
 This is what the setup screen promises the household in so many words: "I'd rather plan four \
 things you cook than seven you don't," and "one breakfast a week is a perfectly good answer" — \
-one idea, eaten all week, not one morning fed and six ignored. snacks_per_week follows the \
-exact same rule (Loop Board "Onboarding / meal setup: add a Snacks & desserts count", \
-2026-09-05): that many distinct snack/dessert ideas, rotated across the week the same way a \
+one idea, eaten all week, not one morning fed and six ignored. \
+household_memory.snack_dishes_per_week follows the exact same rule (2026-09-27; snacks_per_week \
+is an older number and not the count): that many distinct snack/dessert ideas, rotated across the week the same way a \
 breakfast or lunch idea would be — with a light lean toward something dessert-like on a night \
 tagged `unrushed` or otherwise called out as special in constraints_notes/intake, rather than on \
 an ordinary weeknight. household_memory.snacks_per_day is the separate, per-DAY number: how many \
 snacks each day gets (2 by default), and it is exact — every planned day gets that many, \
 no more, no fewer (counting the days a folded entry's `dates` covers, not the entries). The \
 two counts work together — snacks_per_day says \
-how many snacks land on Tuesday, snacks_per_week how many distinct ideas the whole rotation \
+how many snacks land on Tuesday, snack_dishes_per_week how many distinct ideas the whole rotation \
 draws on — and the pool is never so small that one day has to repeat itself: give every day its \
 snacks_per_day snacks, all different from each other and from that day's other meals, even if \
 that means an idea shows up on more days than one. A count of 0 for any of the four is handled outside this call; if you \
@@ -6149,6 +6149,12 @@ def _finish_week_slots(
             plan_id, household_memory.get("snacks_per_day"), [d for d in period if d not in skipped_days],
             budget=count_budget, asks=count_asks,
         )
+    # "Snacks" under Different dishes a week: the week's snacks fold to that
+    # many dishes, each day keeping its snacks a day (meal_variety.enforce_snack_dishes).
+    _meal_variety.enforce_snack_dishes(
+        plan_id, household_memory.get("snack_dishes_per_week"), [d for d in period if d not in skipped_days],
+        asks=count_asks,
+    )
 
     # An ingredient they typed ("I have some corn") is in at least one
     # dish, or one slot is re-picked with it on must_contain, or the

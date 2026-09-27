@@ -445,6 +445,9 @@ _MIGRATIONS = [
     # inventing a per-day answer for them from a per-week number would be
     # the exact "print a default back as a fact" bug this pair prevents.
     ("meal_preferences", "snacks_per_day_set", "INTEGER NOT NULL DEFAULT 0"),
+    # Different snack dishes a week (2026-09-27) — see schema.sql. Every
+    # existing household gets the default 2, the same as a new one.
+    ("meal_preferences", "snack_dishes_per_week", "INTEGER NOT NULL DEFAULT 2"),
     # Whether the three per-week counts are answers (Emily, 2026-09-21,
     # "Each week I plan" numbers are targets, not caps) — see schema.sql
     # and _backfill_meal_counts_set below.

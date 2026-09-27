@@ -117,6 +117,31 @@ def test_the_counts_are_called_different_dishes_a_week_with_one_line_under():
     assert html.index("Different dishes a week") < html.index("Fewer means more") < html.index('data-field="dinners_per_week"')
 
 
+def test_snacks_is_a_different_dishes_count_and_snacks_a_day_stands_on_its_own():
+    """2026-09-27: "Snacks" (different snack dishes a week) sits with the
+    other counts; "Snacks a day" is its own line, not under that heading."""
+    html = _render("wwkTasteHtml", MEMORY)
+    lunches = html.index('data-field="lunches_per_week"')
+    dishes = html.index('data-field="snack_dishes_per_week"')
+    per_day = html.index('data-field="snacks_per_day"')
+    assert lunches < dishes < per_day
+    assert '<span class="wwk-count-label">Snacks</span>' in html
+    # Two when the household never set it, and the minus stops at one.
+    assert re.search(r'data-field="snack_dishes_per_week" data-delta="-1" data-max="7" data-min="1" '
+                     r'aria-label="Fewer different snacks">&minus;</button><span class="cook-serves-count">2<', html)
+    own = html[html.index('<div class="wwk-count-own">'):]
+    assert own.index("Snacks a day") < own.index("</div></div>") + 20
+    assert "snack_dishes_per_week" not in own
+
+
+def test_the_snacks_count_saves_and_reads_back(signed_in):
+    assert signed_in.get("/api/memory").json()["snack_dishes_per_week"] == 2
+    res = signed_in.post("/api/memory/edit", json={"field": "snack_dishes_per_week", "value": 3})
+    assert res.status_code == 200, res.text
+    assert signed_in.get("/api/memory").json()["snack_dishes_per_week"] == 3
+    assert signed_in.post("/api/memory/edit", json={"field": "snack_dishes_per_week", "value": 0}).status_code >= 400
+
+
 # --- 2. Cuisines you like ------------------------------------------------------
 
 def _onboarding_cuisines() -> list[str]:
