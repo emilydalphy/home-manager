@@ -911,6 +911,15 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
     # A day swapped on its own after its dish was swapped as a whole
     # (apply_pick_to_days) leaves that group: its Undo is its own now.
     derived.pop("swap_group", None)
+    # The old row's place in a leftover chain is not the new row's: the
+    # swap above unlinked it (swap_meal_in_plan's docstring — the new entry
+    # carries no make_double_for of its own). Copied forward, a
+    # "date:slot" make_double_for re-formed the chain behind the unlink,
+    # and an "entry_id:" links_to named a row that no longer exists. A
+    # dish that keeps its chain goes through apply_pick_to_days, which
+    # works these out afresh (replace_dish_on_days).
+    for key in _weekly_plan._CHAIN_KEYS:
+        derived.pop(key, None)
     derived["swapped_from"] = swapped_from
     derived["swapped_in_place_at"] = datetime.datetime.now().isoformat(timespec="seconds")
     # Undo carries the plate back the same way (undo_meal_swap).
@@ -1072,6 +1081,57 @@ def dish_days(weekly_plan_id: int, entry_id: int) -> list[dict]:
     return [entry if i == entry_id else _entry(weekly_plan_id, i) for i in ids]
 
 
+def batch_days(weekly_plan_id: int, entry_id: int) -> list[dict]:
+    """
+    dish_days, widened along the leftover chains: every meal still ahead
+    that eats out of the same cook as one of those days, whatever meal
+    type it sits in. The menu draws Thursday's dinner and the Friday lunch
+    eating its leftovers as two rows (lunch and dinner are separate
+    types), so dish_days alone leaves the lunch behind — but a change to
+    the recipe (plate_parts.change_part) is a change to the POT, and every
+    meal served out of it is the changed dish (Emily, 2026-09-27: a veg
+    change on Thursday's gochujang beef left Friday's lunch on the old
+    recipe). Same filter as dish_days: a day gone by or already cooked
+    stays as it is. In date order; the tapped entry always among them.
+    """
+    from . import leftovers as _leftovers
+
+    group = dish_days(weekly_plan_id, entry_id)
+    try:
+        chains = _leftovers.plan_leftover_chains(weekly_plan_id)
+        menu = _weekly_plan.get_week_menu(weekly_plan_id)
+    except Exception:
+        logger.exception("Could not read the leftover chains; changing the dish's own days")
+        return group
+    ahead: dict[int, tuple] = {}
+    for day in menu.get("days") or []:
+        if day.get("before_plan_start") or day.get("is_past"):
+            continue
+        slots = [day.get(s) for s in ("breakfast", "lunch", "dinner")] + list(day.get("snacks") or [])
+        for slot in slots:
+            if slot and slot.get("state") == "planned" and slot.get("entry_id") and not slot.get("cooked"):
+                ahead[slot["entry_id"]] = day.get("date") or ""
+    ids = [e["entry_id"] for e in group]
+    grew = True
+    while grew:
+        grew = False
+        for i in list(ids):
+            linked = [t["entry_id"] for t in (chains["sources"].get(i) or {}).get("targets") or []]
+            reheat = chains["leftovers"].get(i)
+            if reheat:
+                linked.append(reheat["source"]["entry_id"])
+            for j in linked:
+                if j not in ids and j in ahead:
+                    ids.append(j)
+                    grew = True
+    if len(ids) == len(group):
+        return group
+    have = {e["entry_id"]: e for e in group}
+    members = [have.get(i) or _entry(weekly_plan_id, i) for i in ids]
+    order = {s: n for n, s in enumerate(("breakfast", "lunch", "dinner", "snack"))}
+    return sorted(members, key=lambda e: (e["date"], order.get(e["slot"], 9), e["entry_id"]))
+
+
 def _intake_for(weekly_plan_id: int) -> dict | None:
     week_start = _week_start_of(weekly_plan_id)
     return _week_intake.get_week_intake(week_start) if week_start else None
@@ -1192,7 +1252,9 @@ def cap_gate(weekly_plan_id: int, pick: dict, entries: list[dict]) -> str | None
     return None
 
 
-def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict) -> dict:
+def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict,
+                       carry_sides: bool = False, correct_title: bool = True,
+                       serves: int | None = None) -> dict:
     """
     apply_pick for a dish planned on several days: the same chosen dish on
     every one of `entries` (dish_days' answer), in ONE transaction
@@ -1206,6 +1268,14 @@ def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict) -> 
     Like apply_pick, runs no gates — the caller does, for every day — and
     refuses a day that has gone by as the backstop, before anything is
     saved.
+
+    `carry_sides` and `correct_title` are apply_pick's own, for the same
+    one caller: plate_parts.change_part (a different protein/veg/carb in a
+    dish planned on several days — Emily, 2026-09-27: her gochujang beef
+    changed on Thursday only, "Cooking for 2", Friday's lunch and dinner
+    still the old dish). Each day keeps ITS OWN sides, and Undo carries
+    them back (_undo_dish_swap). `serves` is what a new recipe is saved
+    for when the pick doesn't say — the change asks for the whole batch.
     """
     for entry in entries:
         if _weekly_plan.night_has_gone(entry["date"]):
@@ -1216,8 +1286,11 @@ def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict) -> 
     if too_long:
         raise _weekly_plan.SlotRefused(f"I left it as it was — {pick.get('meal_name') or 'that'} {too_long}.")
     first = entries[0]
-    pick["meal_name"] = honest_meal_name(pick)
-    _save_recipe_if_new(pick, _table_for(first["date"], first["slot"])["serves"])
+    if correct_title:
+        pick["meal_name"] = honest_meal_name(pick)
+    _save_recipe_if_new(pick, serves or _table_for(first["date"], first["slot"])["serves"])
+    # Read before the write: the rows they hang off are about to go.
+    sides_by_entry = {e["entry_id"]: _plates.get_sides(e["entry_id"]) for e in entries} if carry_sides else {}
     token = uuid.uuid4().hex
     now = datetime.datetime.now().isoformat(timespec="seconds")
     reason = (pick.get("reason") or "").strip()
@@ -1233,11 +1306,14 @@ def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict) -> 
         }
         derived = dict(entry["derived_from"])
         derived.update({"swapped_from": swapped_from, "swapped_in_place_at": now,
-                        "carry_sides": False, "swap_group": token})
+                        "carry_sides": bool(carry_sides), "swap_group": token})
         items.append({"old_entry_id": entry["entry_id"], "date": entry["date"], "slot": entry["slot"],
                       "new_meal": pick["meal_name"], "food_groups": food_groups,
                       "reasoning": reason, "derived_from": derived})
     result = _weekly_plan.replace_dish_on_days(weekly_plan_id, items)
+    for entry, new_id in zip(entries, result["entry_ids"]):
+        if sides_by_entry.get(entry["entry_id"]):
+            _plates.carry_sides(sides_by_entry[entry["entry_id"]], new_id)
     days = _refreshed_days(weekly_plan_id, [e["date"] for e in entries])
     out = {
         "entry_id": result["entry_ids"][0],
@@ -1281,11 +1357,13 @@ def _undo_dish_swap(weekly_plan_id: int, entry: dict) -> dict:
     members = [_entry(weekly_plan_id, i) for i in ids]
     members = [m for m in members if m["entry_id"] == entry["entry_id"] or not _weekly_plan.night_has_gone(m["date"])]
     items = []
+    carried = []  # each item's sides, when the change carried them (change_part)
     for m in members:
         previous = m["derived_from"].get("swapped_from") or {}
         name = (previous.get("meal") or "").strip()
         if not name:
             continue
+        carried.append(_plates.get_sides(m["entry_id"]) if m["derived_from"].get("carry_sides") else [])
         items.append({
             "old_entry_id": m["entry_id"], "date": m["date"], "slot": m["slot"], "new_meal": name,
             "food_groups": previous.get("food_groups") or [],
@@ -1293,6 +1371,9 @@ def _undo_dish_swap(weekly_plan_id: int, entry: dict) -> dict:
             "derived_from": {k: v for k, v in m["derived_from"].items() if k not in _SWAP_NOTE_KEYS},
         })
     result = _weekly_plan.replace_dish_on_days(weekly_plan_id, items)
+    for sides, new_id in zip(carried, result["entry_ids"]):
+        if sides:
+            _plates.carry_sides(sides, new_id)
     dates = [i["date"] for i in items]
     days = _refreshed_days(weekly_plan_id, dates)
     mine = next((d for d in days if d.get("date") == entry["date"]), days[0] if days else None)

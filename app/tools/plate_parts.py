@@ -658,6 +658,11 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
     refreshed day, the new entry, the reason; or 'refused' with a plain
     message and nothing written) so the screen handles it exactly as it
     handles a swap — Undo included, through undo_meal_swap.
+
+    A dish planned on more than one day ahead (a cook and the meals eating
+    its leftovers, or the same dish cooked again) is changed on every one
+    of them at once, rewritten ONCE at the batch size (_batch_serves), with
+    `days` beside `day` — the menu row's Swap, part by part.
     """
     if role not in ROLES:
         raise ValueError(f"No such part {role!r} — protein, vegetable or carb.")
@@ -690,9 +695,24 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
             raise ValueError(
                 f"That {role} is a side you added — take it off and add a new one instead."
             )
+    # Every meal still ahead the dish is planned on — the menu row's own
+    # grouping, the one "Swap" on that row uses (swap_in_place.dish_days),
+    # plus every meal eating out of the same cook in another meal type
+    # (batch_days: the Friday LUNCH of Thursday's dinner). Emily,
+    # 2026-09-27: a veg change on Thursday's gochujang beef left Friday's
+    # lunch and dinner on the old recipe, broke the leftover chain, and
+    # cooked for 2 instead of 6.
+    group = _swap.batch_days(weekly_plan_id, entry_id)
+    if len(group) < 2:
+        group = [entry]
+    serves = _batch_serves(weekly_plan_id, group, entry)
     context = _options_context(entry, recipe, role, current)
     context[f"new_{role}"] = choice
-    context["serves"] = _swap._table_for(entry["date"], entry["slot"])["serves"]
+    context["serves"] = serves
+    context["serves_note"] = (
+        f"Write every amount for {serves} servings — the whole batch this cook makes"
+        + (", tonight and the meals eating its leftovers." if len(group) > 1 else ".")
+    )
     ask = asker or (lambda ctx: _ask_variant(ctx, role))
     pick = ask(context) or {}
     name = (pick.get("meal_name") or "").strip()
@@ -707,7 +727,14 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
         # The protein doesn't change on a veg/carb edit — keep the dish's
         # own, whatever the model did or didn't repeat back.
         pick["main_protein"] = (recipe or {}).get("main_protein") or (pick.get("main_protein") or "")
-    why = _swap.pick_gate(pick, entry)
+    # The amounts were asked for `serves`; the recipe is saved at it, so
+    # "Cooking for" reads the batch and never the model's own guess.
+    pick["default_servings"] = serves
+    # Every day's table is its own gate (swap_options._gate_all) — the
+    # Friday table can be different people from Thursday's.
+    why = next((w for w in (_swap.pick_gate(pick, e) for e in group) if w), None)
+    if not why and len(group) > 1:
+        why = _swap.cap_gate(weekly_plan_id, pick, group)
     if why:
         logger.warning("plate_part_change refused %r: %s", name, why)
         return {"status": "refused", "message": f"I left it as it was — {choice} {why}."}
@@ -719,9 +746,48 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
     # that name's base is always one the household already uses and
     # honest_recipe_title refuses a correction onto a taken name anyway —
     # but this says the intent rather than leaning on the coincidence.
-    out = _swap.apply_pick(weekly_plan_id, entry, pick, carry_sides=True, correct_title=False)
+    # Several days go in ONE write that keeps the cook + reheat shape
+    # (weekly_plan.replace_dish_on_days) — Undo on any of them puts every
+    # day back together (swap_group).
+    if len(group) > 1:
+        out = _swap.apply_pick_to_days(weekly_plan_id, group, pick, carry_sides=True,
+                                       correct_title=False, serves=serves)
+    else:
+        out = _swap.apply_pick(weekly_plan_id, entry, pick, carry_sides=True, correct_title=False)
     out["status"] = "changed"
     out["role"] = role
     out["choice"] = choice
-    forget_options(entry_id)
+    for member in group:
+        forget_options(member["entry_id"])
     return out
+
+
+def _batch_serves(weekly_plan_id: int, group: list[dict], entry: dict) -> int:
+    """
+    How many servings the changed dish is written for: the batch its cook
+    makes (leftovers.batch_for_entry — the same count the Cook card's
+    "Cooking for" reads, cooker.py) when one of `group` is a cook feeding
+    others in the group or putting portions by for the freezer; the tapped
+    meal's own table otherwise, as it always was. A reheat night the
+    change leaves behind (already cooked) is not counted — the write
+    unlinks it (replace_dish_on_days).
+    """
+    from . import leftovers as _leftovers
+    table = _swap_mod()._table_for(entry["date"], entry["slot"])["serves"]
+    try:
+        chains = _leftovers.plan_leftover_chains(weekly_plan_id)
+    except Exception:
+        logger.exception("Could not read the leftover chains; writing the change for one table")
+        return table
+    ids = {e["entry_id"] for e in group}
+    best = 0
+    for member in group:
+        source = chains["sources"].get(member["entry_id"])
+        if source:
+            source = dict(source, targets=[t for t in source["targets"] if t["entry_id"] in ids])
+            batch = _leftovers.batch_for_source(source)
+        else:
+            batch = _leftovers.batch_for_entry(member["entry_id"], chains)
+        if batch and batch["servings"] > best:
+            best = batch["servings"]
+    return best or table

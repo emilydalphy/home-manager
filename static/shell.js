@@ -15963,9 +15963,12 @@
       clearSwapUndoTimer();
       mealAddMarkRow(st);
       swapState = { date: dayDate, slot: slot, avoid: [], reason: out.reason || '', canUndo: true };
-      spliceSwappedDay(out.day);
+      // A dish on several days (a cook and its leftover meals) changes on
+      // every one of them together (out.days).
+      (out.days || [out.day]).forEach(spliceSwappedDay);
       renderMealsStep(panel);
       await loadWeekMenu(panel);
+      if (out.days && weekState.data && weekState.data.status === 'approved') refreshGrocerySurfaces();
       var day = mealsCurrentDay();
       // The part the person picked, not the whole dish: "Chicken thighs
       // was swapped in" is what they just chose, and the card's line
