@@ -22543,7 +22543,7 @@
     if (errorEl) errorEl.hidden = true;
     var was = shellWho.ai_consent;
     try {
-      var res = await fetch('/api/ai-consent', {
+      var res = await Api.fetch('/api/ai-consent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ allow: !!allow })
@@ -23604,7 +23604,7 @@
     leaveState.mode = 'delete';
     leaveState.busy = false;
     try {
-      var res = await fetch('/api/household/leave');
+      var res = await Api.fetch('/api/household/leave');
       leaveState.data = res.ok ? await res.json() : null;
     } catch (err) {
       leaveState.data = null;
@@ -23638,7 +23638,7 @@
       : {};
     var res = null;
     try {
-      res = await fetch(url, {
+      res = await Api.fetch(url, {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },

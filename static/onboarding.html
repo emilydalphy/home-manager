@@ -929,6 +929,7 @@
   .aic-more a:hover { color: var(--apricot-label-hover); }
 </style>
 <script src="/static/error-reporter.js"></script>
+<script src="/static/api.js"></script>
 <script src="/static/waiting-lines.js"></script>
 <script src="/static/help-sheet.js"></script>
 </head>
@@ -3489,7 +3490,7 @@ const AI_CONSENT_COPY = {
 var aiConsentStatus = '';
 (async function readAiConsent() {
   try {
-    const res = await fetch('/api/ai-consent');
+    const res = await Api.fetch('/api/ai-consent');
     if (res.ok) aiConsentStatus = (await res.json()).status || '';
   } catch (err) { /* offline: ask — the step is harmless to show twice */ }
 })();
@@ -3521,7 +3522,7 @@ var aiConsentStatus = '';
 })();
 
 async function saveAiConsentAnswer(allow) {
-  const res = await fetch('/api/ai-consent', {
+  const res = await Api.fetch('/api/ai-consent', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ allow: !!allow }),
   });

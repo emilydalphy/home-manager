@@ -98,7 +98,7 @@ def test_shell_js_makes_no_bare_fetch_at_all():
         if re.search(r"(?<![\w.$])fetch\(", line)
     ]
     assert bare == []
-    assert SHELL_JS.count("Api.fetch(") == 114
+    assert SHELL_JS.count("Api.fetch(") == 117  # 114 at the first slice + 3 from the 2026-09-27 consent and delete-household branches
 
 
 # ---------------------------------------------------------------------------
