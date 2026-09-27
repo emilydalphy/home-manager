@@ -201,6 +201,7 @@ def _in_dish_part_name(role: str, ingredients: list[dict] | None, dish: str | No
     heads of broccoli over a bunch of anything — else the first listed.
     """
     candidates = []
+    standin = None
     for n, ing in enumerate(ingredients or []):
         if not isinstance(ing, dict):
             continue
@@ -210,13 +211,21 @@ def _in_dish_part_name(role: str, ingredients: list[dict] | None, dish: str | No
         if role == "carb":
             if _plates.has_starch(item):
                 return item[:1].upper() + item[1:]
+            if standin is None and _plates.carb_standin(item):
+                standin = item
             continue
         if role == "vegetable":
             if (ing.get("category") or "").strip().lower() != "produce":
                 continue
-            if _plates.has_starch(item) or _is_not_the_veg(item):
+            # A low-carb base (cauliflower rice, zucchini noodles) is the
+            # plate's CARB line, not its veg (plates.carb_standin).
+            if _plates.has_starch(item) or _is_not_the_veg(item) or _plates.carb_standin(item):
                 continue
             candidates.append((item, str(ing.get("qty") or ""), n))
+    if role == "carb":
+        # No real starch: the dish's own low-carb base is its carb (Emily,
+        # 2026-09-27), so Change rewrites it in place.
+        return standin[:1].upper() + standin[1:] if standin else None
     if not candidates:
         return None
     title = set(_produce_words(dish or ""))
@@ -327,7 +336,8 @@ def parts_of_plate(slot: str, food_groups: list[str], main_protein: str | None,
             # alongside the name rather than replacing it, so a small
             # portion is still named, not just sized.
             name = _in_dish_part_name(role, ingredients, dish)
-            if role == "carb" and carb_level == "low":
+            # A low-carb base is the dish's whole base, not a half portion.
+            if role == "carb" and carb_level == "low" and not (name and _plates.carb_standin(name)):
                 name = f"{name} · small" if name else "Small"
             parts.append({"role": role, "word": ROLE_WORDS[role], "name": name, "source": "dish", "missing": False})
         elif known and role == "carb" and carb_level == "none":
@@ -457,8 +467,17 @@ def _current_part(entry: dict, recipe: dict | None, role: str, sides: list[dict]
     for side in sides or []:
         if role in (side.get("covers") or []):
             return (side.get("name") or "").strip(), "side"
-    if role in set(entry.get("food_groups") or []):
-        name = _in_dish_part_name(role, (recipe or {}).get("ingredients"), entry.get("meal")) or ""
+    groups = set(entry.get("food_groups") or [])
+    ingredients = (recipe or {}).get("ingredients")
+    # The card's own read (weekly_plan._effective_food_groups): a dish whose
+    # name or ingredients carry a carb — a real one, or its own low-carb
+    # base — covers the carb even when food_groups missed it. Without this
+    # the chip read "Cauliflower rice" and Change on it said there was no
+    # carb to change.
+    if role == "carb" and groups and "carb" not in groups and _plates.dish_has_carb(entry.get("meal"), ingredients):
+        groups.add("carb")
+    if role in groups:
+        name = _in_dish_part_name(role, ingredients, entry.get("meal")) or ""
         return name, "dish"
     return "", None
 
