@@ -332,6 +332,19 @@ only thing it never does is merge (or push without her go-ahead); those stay her
    on origin or locally, in which case it may re-claim and say so. When the branch merges,
    the CLAIMED line is replaced by the merge note. A card that was set In progress without
    a CLAIMED line by an older session counts as claimed for 24 hours from its last edit.
+   **Check the card is still current before building it (rule added 2026-09-27 after a
+   board review found 13 open cards that, built as written, would have undone a later
+   decision of Emily's — e.g. re-adding "Just this week?", "Before you start", the Shop
+   trip).** Cards are written once; Emily's decisions keep moving in walkthroughs, mockups
+   and chat. So before investigating: (a) read any `Current as of …` block at the top of
+   the card first — it overrides the body; (b) grep the CLAUDE.md Decision log and the
+   memory files for the screens, buttons, copy and functions the card names, for anything
+   dated AFTER the card was written or last edited; (c) check each named screen, button or
+   function still exists on `origin/main`. If a later decision contradicts the card, or the
+   card names something that was removed on purpose, **do not build the old version and do
+   not quietly pick one** — stop on that card, add a `Current as of <date>` block quoting
+   both sides with dates, tick **Needs Your Call**, and move on to the next card. "Now" is
+   **Today**, the Kitchen tab is **Cook**; treat older names as a sign the card is stale.
 2. **Investigate** per "Working a ticket" steps 1-2: real code, real root cause, file:line.
 3. **Verify the finding** with a fresh sub-agent before anything is built on it.
 4. **Build it — on a branch, in a worktree, never on `main`** ("Working a ticket" step 3).
@@ -404,6 +417,13 @@ check recent runs, read the exact current prompt) via `RemoteTrigger` using its 
    loop", step 1) — another session owns it. A card set In progress by someone else within
    the last 24 hours counts the same. Never push a branch for a card another branch already
    covers; check `git branch -r` for a name or last-commit match first.
+   Then run the still-current check from "Running the loop" step 1 on every card before
+   building it; a card that fails it gets its `Current as of` block and Needs Your Call,
+   not a branch.
+   **Merging (added 2026-09-27):** never merge a branch that is more than a few days behind
+   `main` as-is — an old branch is how an older version comes back. Rebuild it fresh on
+   `main` instead, and after any merge run `python check_merge_kept_the_log.py origin/main
+   <branches…>` before pushing.
 1. If any cards have "Work Tonight" checked, **that's the queue, regardless of Status**
    (except Done/Archived, which just get the checkbox cleared as an assumed mistake) —
    uncapped, ordered by Priority then oldest createdTime. The original version filtered to
