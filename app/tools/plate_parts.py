@@ -766,9 +766,8 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
     message and nothing written) so the screen handles it exactly as it
     handles a swap — Undo included, through undo_meal_swap.
 
-    A dish planned on more than one day ahead (a cook and the meals eating
-    its leftovers, or the same dish cooked again) is changed on every one
-    of them at once, rewritten ONCE at the batch size (swap_in_place.batch_serves), with
+    A cook and the meals eating its leftovers are changed together, all at
+    once (a separate fresh cook of the same dish is left alone), rewritten ONCE at the batch size (swap_in_place.batch_serves), with
     `days` beside `day` — the menu row's Swap, part by part.
     """
     if role not in ROLES:
@@ -802,14 +801,14 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
             raise ValueError(
                 f"That {role} is a side you added — take it off and add a new one instead."
             )
-    # Every meal still ahead the dish is planned on — the menu row's own
-    # grouping, the one "Swap" on that row uses (swap_in_place.dish_days),
-    # plus every meal eating out of the same cook in another meal type
-    # (batch_days: the Friday LUNCH of Thursday's dinner). Emily,
-    # 2026-09-27: a veg change on Thursday's gochujang beef left Friday's
-    # lunch and dinner on the old recipe, broke the leftover chain, and
-    # cooked for 2 instead of 6.
-    group = _swap.batch_days(weekly_plan_id, entry_id)
+    # Every meal still ahead that eats out of this meal's pot — its cook
+    # and the meals eating that cook's leftovers, in any meal type
+    # (swap_in_place.chain_days) — and not a separate fresh cook of the
+    # same dish on another day. Emily, 2026-09-27: a veg change on
+    # Thursday's gochujang beef left Friday's lunch and dinner (its
+    # leftovers) on the old recipe, broke the chain, and cooked for 2
+    # instead of 6.
+    group = _swap.chain_days(weekly_plan_id, entry_id)
     if len(group) < 2:
         group = [entry]
     serves = _swap.batch_serves(weekly_plan_id, group, entry)

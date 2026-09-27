@@ -1094,9 +1094,27 @@ def batch_days(weekly_plan_id: int, entry_id: int) -> list[dict]:
     recipe). Same filter as dish_days: a day gone by or already cooked
     stays as it is. In date order; the tapped entry always among them.
     """
+    return _along_chains(weekly_plan_id, dish_days(weekly_plan_id, entry_id))
+
+
+def chain_days(weekly_plan_id: int, entry_id: int) -> list[dict]:
+    """
+    The tapped meal and every meal still ahead that eats out of the same
+    cook — its cook, and the meals eating that cook's leftovers — and
+    nothing else: a separate fresh cook of the same dish on another day is
+    its own pot. What a CHANGE to the recipe reaches (plate_parts.
+    change_part — the card: "every meal it feeds"), where a Swap on the
+    menu row (batch_days) is whole-dish by design. Same filter as
+    dish_days; in date order.
+    """
+    return _along_chains(weekly_plan_id, [_entry(weekly_plan_id, entry_id)])
+
+
+def _along_chains(weekly_plan_id: int, group: list[dict]) -> list[dict]:
+    """`group`, widened along the plan's confirmed leftover chains to
+    every linked meal still ahead and not cooked."""
     from . import leftovers as _leftovers
 
-    group = dish_days(weekly_plan_id, entry_id)
     try:
         chains = _leftovers.plan_leftover_chains(weekly_plan_id)
         menu = _weekly_plan.get_week_menu(weekly_plan_id)

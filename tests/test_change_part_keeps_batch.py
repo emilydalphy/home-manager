@@ -174,3 +174,75 @@ def test_a_single_day_swap_does_not_carry_the_old_rows_chain_forward(batch):
                                       (out["entry_id"],)).fetchone()[0])
     conn.close()
     assert "make_double_for" not in derived and "make_double_note" not in derived
+
+
+def _derived(entry_id):
+    conn = get_conn()
+    row = conn.execute("SELECT derived_from_json FROM meal_plan_entries WHERE id = ?", (entry_id,)).fetchone()
+    conn.close()
+    return json.loads(row[0] or "{}")
+
+
+def _entry_id(plan_id, day, slot):
+    conn = get_conn()
+    row = conn.execute("SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? AND slot = ?",
+                       (plan_id, day, slot)).fetchone()
+    conn.close()
+    return row[0]
+
+
+def test_a_separate_fresh_cook_of_the_same_dish_is_left_alone(batch):
+    """The card is "every meal it FEEDS": a Change reaches the pot, not
+    every day the dish happens to be planned (review, 2026-09-27 — Fish
+    Tacos fresh on two breakfasts, both changed). Swap on the menu row is
+    whole-dish by design; Change is not."""
+    plan_id, cook = batch
+    d3 = (TODAY + datetime.timedelta(days=3)).isoformat()
+    tools.plan_meal(d3, BOWLS, slot="dinner", weekly_plan_id=plan_id)
+    out = pp.change_part(plan_id, cook, "vegetable", "Spinach", asker=_variant([]))
+    meals = _meals(plan_id)
+    assert meals[(D2, "lunch")] == meals[(D2, "dinner")] == out["meal"]
+    assert meals[(d3, "dinner")] == BOWLS, "a fresh cook on another day is its own pot"
+    # ...and changing that fresh cook changes it alone.
+    fresh = _entry_id(plan_id, d3, "dinner")
+    other = pp.change_part(plan_id, fresh, "vegetable", "Kale", asker=lambda c: dict(
+        _variant([])(c), meal_name=f"{BOWLS} with Kale"))
+    assert "days" not in other
+    assert _meals(plan_id)[(D1, "dinner")] == out["meal"]
+
+
+def test_a_leftover_meal_already_cooked_stops_naming_the_rewritten_cook(batch):
+    """batch_serves leaves a reheat the change can't reach (already
+    cooked) out of the new batch — and the write unlinks it for real: no
+    `entry_id:<old cook>` left pointing at a row that is gone."""
+    plan_id, cook = batch
+    lunch = _entry_id(plan_id, D2, "lunch")
+    conn = get_conn()
+    conn.execute("UPDATE meal_plan_entries SET cooked_status = 'done' WHERE id = ?", (lunch,))
+    conn.commit()
+    conn.close()
+    out = pp.change_part(plan_id, cook, "vegetable", "Spinach", asker=_variant([]))
+    assert sorted((d["date"]) for d in out["days"]) == [D1, D2]
+    assert "links_to" not in _derived(lunch), "the eaten lunch is an ordinary meal now"
+    _cook_id, source, cook_batch = _cook_batch(plan_id)
+    assert [t["slot"] for t in source["targets"]] == ["dinner"] and cook_batch["servings"] == 4
+
+
+def test_a_single_day_swap_unlinks_the_meals_its_cook_fed(batch):
+    plan_id, cook = batch
+    conn = get_conn()
+    conn.execute("UPDATE meal_plan_entries SET cooked_status = 'done' WHERE weekly_plan_id = ? AND date = ?",
+                 (plan_id, D2))
+    conn.commit()
+    conn.close()
+    pp.change_part(plan_id, cook, "vegetable", "Spinach", asker=_variant([]))
+    for slot in ("lunch", "dinner"):
+        assert "links_to" not in _derived(_entry_id(plan_id, D2, slot))
+
+
+def test_a_one_day_change_on_an_approved_week_refreshes_the_shop():
+    from pathlib import Path
+    shell = (Path(__file__).resolve().parent.parent / "static" / "shell.js").read_text(encoding="utf-8")
+    body = shell[shell.index("async function runMealChangePart("):shell.index("function closeMealAddSheet(")]
+    assert "if (weekState.data && weekState.data.status === 'approved') refreshGrocerySurfaces();" in body
+    assert "out.days && weekState.data" not in body

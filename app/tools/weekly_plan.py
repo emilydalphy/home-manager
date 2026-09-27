@@ -6801,6 +6801,14 @@ def _replace_slot_entries(
         # to ask whether it used to feed other nights' leftovers.
         sources = _leftovers.plan_leftover_chains(weekly_plan_id, conn=conn)["sources"]
         was_a_leftovers_source = any(old_id in sources for old_id in old_entry_ids)
+        # The nights the outgoing cook fed are ordinary nights from here on
+        # (see swap_meal_in_plan's docstring): their own links_to goes too,
+        # or a "date:slot" one would quietly name the NEW dish on that slot
+        # and an "entry_id:" one a row that no longer exists.
+        for old_id in old_entry_ids:
+            for target in (sources.get(old_id) or {}).get("targets") or []:
+                if target["entry_id"] not in old_entry_ids:
+                    _clear_leftover_link(conn, target["entry_id"])
         for old_id in old_entry_ids:
             # If the OUTGOING entry was itself a reheat night, its source's
             # make_double_for/make_double_note still names it after this
@@ -7011,6 +7019,27 @@ def swap_meal_in_plan(
     return result
 
 
+def _clear_leftover_link(conn, entry_id: int) -> None:
+    """Take a reheat night's own half of a leftover chain off it (links_to,
+    cook_ahead) — its cook is being replaced and does not feed it any more.
+    On the caller's connection and inside its transaction."""
+    row = conn.execute(
+        "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (entry_id, household_id()),
+    ).fetchone()
+    if row is None:
+        return
+    derived = json.loads(row["derived_from_json"] or "{}") or {}
+    if "links_to" not in derived and "cook_ahead" not in derived:
+        return
+    derived.pop("links_to", None)
+    derived.pop("cook_ahead", None)
+    conn.execute(
+        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps(derived), entry_id, household_id()),
+    )
+
+
 # Keys on derived_from that say where an entry sits in a leftover chain.
 # replace_dish_on_days works these out against the group it is replacing;
 # everything else on derived_from is the caller's to carry.
@@ -7127,6 +7156,10 @@ def replace_dish_on_days(weekly_plan_id: int, items: list[dict]) -> dict:
             for old_id in old_ids if old_id in chains["sources"]
             for t in chains["sources"][old_id]["targets"] if t["entry_id"] not in group
         ]
+        # ...and they stop naming the old cook: an ordinary night, not a
+        # reheat of a dish that is no longer on the plan.
+        for orphan_id in orphaned:
+            _clear_leftover_link(conn, orphan_id)
 
         for old_id in old_ids:
             reheat = chains["leftovers"].get(old_id)
