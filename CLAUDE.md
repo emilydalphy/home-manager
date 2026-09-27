@@ -416,6 +416,238 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-27 — CLAUDE.md has a tripwire now, and — because the tripwire
+  measurably does NOT catch the incident that asked for it — the arithmetic
+  that does. Branch `overnight/claude-md-tripwire`, NOT merged at the time of
+  writing. NO app or screen change: `git diff main -- app/ static/` is empty,
+  and it is one test file, one root script and one rule.** Loop Board improvement, Phase 0, filed by the
+  2026-09-26 overnight orchestrator after making the mistake itself: a merge
+  script ran `git checkout --ours CLAUDE.md` BEFORE its keep-both resolver,
+  `--ours` cleared the conflict markers, the resolver's `git diff
+  --diff-filter=U` then found nothing to do, and about a thousand lines of
+  Decision log went missing across nine merges. **Nothing failed** — that tree
+  was 7618 passed / 0 failed at the live clock, at three weekday pins and
+  under a genuine straddle. It was found by arithmetic: the ten branches added
+  +1328 lines between them and the merged tree showed +292.
+  - **WHY THE SUITE COULD NOT SEE IT, and it is a lesson about where an
+    anchor points rather than about how many there are.** Exactly two files
+    read this one, and between them they assert three strings — all anchored
+    on entries dated 13 and 17 September, near the BOTTOM of a log written
+    newest-first. Every branch appends at the TOP. Measured on the mangled
+    tree: **3/3 anchors present, suite fully green, a thousand lines gone.**
+  - **The shape is shell.js's, deliberately, not a new one.** This repo fixed
+    this class once before (merge `2d69951`, 2026-09-08) and wrote the rule
+    down; `tests/test_frontend_restored_2026_09_08.py` is that tripwire, named
+    markers plus a blunt line-count floor "because a wholesale resolution
+    always shows up as a large sudden shrink".
+    `tests/test_claude_md_tripwire.py` is the same thing one file over: a line
+    floor (18900, from 19030 on `main`), a count of the dated `- **YYYY-MM-DD
+    — ` entry headings with a floor (215, from 219), a floor on the NEWEST
+    entry's date, and six named anchors taken from the newest date rather than
+    the oldest.
+  - **THE TESTS DO NOT CATCH THE INCIDENT THAT MOTIVATED THE CARD, AND THAT
+    WAS MEASURED ON TONIGHT'S OWN FOUR BRANCHES RATHER THAN REASONED ABOUT.
+    Read this before trusting the file.** A merge that drops an entry which
+    only ever existed on the BRANCH leaves a tree LONGER than main was,
+    carrying every one of main's own entries, so every floor and every anchor
+    passes. Reproduced: resolving every CLAUDE.md conflict with
+    `git checkout --ours` across this night's four branches lost **three of
+    the four branches' entries with all ten tests green** — and the numbers
+    say why no floor can help: that tree is **19324 lines and 220 entries
+    against main's own 19030 and 219**, i.e. LONGER and with MORE entries
+    than the baseline, while three entries that only ever existed on branches
+    are gone.
+    `test_the_floors_cannot_see_the_2026_09_26_shape` asserts that by
+    construction. No higher floor helps — the merged tree is bigger than the
+    baseline by construction.
+  - **AND THE ONE TIME A TEST DID FIRE ON IT, IT WAS LUCK, which is worth
+    recording more than the catch.** Merged in a different ORDER — this
+    branch LAST — the same bad resolution reddened exactly one test,
+    `test_the_hunk_by_hunk_rule_names_this_file_too`, and only because the
+    entries it lost happened to include this branch's own prose anchor. Put
+    this branch first and the other three entries vanish in silence, all ten
+    green. A guard that depends on merge order is not a guard.
+  - **So `check_merge_kept_the_log.py` ships with the tests, and it is the
+    half that answers the card.** A root script rather than a test, because
+    only the person doing the merge knows which branches went into it: it
+    carries every Decision log heading LINE through from the base and from
+    each branch and asks which of them are not in the merged tree. Measured
+    on the two trees above: **exit 1 on the mangled one, naming all three
+    lost entries by their headings**, and **exit 0, 223/223** on a keep-both
+    one.
+  - **IT COMPARES IDENTITIES, NOT COUNTS, AND THE FIRST VERSION COMPARED
+    COUNTS — which an adversarial review broke in the one direction that
+    matters. This is the most important correction on the branch.** The
+    original summed base's entry count plus what each branch added and held
+    it against the merged tree's count, so **an entry arriving from anywhere
+    else cancelled, one for one, an entry the merge had dropped.** Main
+    moving under a long overnight run is the ordinary case, not a corner —
+    it happened twice to this very branch while it was being reviewed.
+    Reproduced on the real repo: four other sessions' entries land, the merge
+    then loses all four of the night's branch entries with `--ours`, and the
+    old script printed **"Every branch's entries are in the merged tree" and
+    exited 0**. That is the exact sentence the file's own docstring calls the
+    failure it exists to stop. Re-reproduced from scratch here in a
+    twelve-line lab before anything was changed, rather than taken on trust.
+  - **Three more defects fell out of that one, all of them a guard crying
+    wolf on a CORRECT merge, which is how a guard gets switched off.** A
+    **stacked branch** — one cut from another, which this repo does routinely
+    ("on top of", "stacked on", all over this log) — carries its parent's
+    entry, so counting each branch against its own merge base counted that
+    entry twice and exited 1 over a good tree. A branch that **rewords
+    existing lines** overstated what it owed, because the line arithmetic read
+    `--numstat` insertions without deletions, and correcting an entry IN PLACE
+    is this log's stated practice; a good keep-both merge then read as "some
+    entry lost its body". And a branch **left off the command line** was a
+    branch whose entries nobody was owed, so dropping every one of them exited
+    0. The first three are fixed by the identity comparison plus
+    `insertions − deletions` plus measuring a stacked branch's lines from its
+    deepest listed ancestor; the fourth by checking every merge commit in
+    `base..HEAD` against the list and answering **exit 2** when one is
+    unexplained.
+  - **"No two entry headings are alike" was the load-bearing justification for
+    the old design and it is FALSE of the file it guards.** `origin/main` has
+    **219 heading lines and 218 distinct** — the 2026-09-11 holidays heading
+    appears twice. So the comparison is a `Counter`, not a set, or losing one
+    of that pair would be forgiven silently.
+  - **The 7-line auto-merge figure was mis-attributed too.** Measured on the
+    keep-both tree: the gap is **1 line**, not 7 — five of the six the first
+    version counted were this branch's own DELETIONS, which the line
+    arithmetic now subtracts properly. `LINE_SLACK_PER_BRANCH` is
+    deliberately left at 3 anyway, with the reason written at the constant:
+    its only remaining job is the soft "a heading survived and its body did
+    not" check, and room to spare is the right side to err on there.
+  - **Naming a branch twice used to be a RED TEST FOR THE WRONG REASON, which
+    is how a guard gets switched off.** A typo on a four-branch command line
+    counted that branch's entries twice, and on a PERFECTLY GOOD tree that
+    read as "some entry lost its body" and exited 1 — measured, naming one
+    branch four times on the keep-both tree above. The list is de-duplicated
+    now, in the order given, and a test drives both halves: the duplicate
+    passes on a good tree AND the bad merge still fails when a name is
+    repeated, so it is a dedupe rather than a loosened threshold.
+  - **Writing its test found a trap in it that would have made it worthless,
+    and it is the same class as the bug it guards.** Merge ONTO `main` rather
+    than onto a branch and `main` moves with the merge, so owed and got are
+    read from one tree and everything passes whatever was dropped — a guard
+    quietly answering "all fine". It refuses now, with **exit 2** and the
+    argument to fix, never exit 0; `observability_report.py` makes the same
+    could-not-look distinction for the same reason.
+  - **The newest-date floor is the zero-churn half.** Dates only move forward,
+    so it can never go red for a legitimate reason; it simply decays in value,
+    which is the same trade the two existing anchors made and never had
+    refreshed. Raise it with the two floors.
+  - **The two existing readers are WRAPPED, not edited** — and the entry's
+    first wording ("added to, never replaced") read as if they had been
+    changed, which review caught. `git diff main -- tests/test_cook_shelf.py
+    tests/test_today_shop_cook.py` is empty; their claim is guarded from
+    OUTSIDE instead, by a test that fails if either stops reading the file or
+    stops asserting on it. **And that test could be neutered without anything
+    going red**: it looked for the anchor STRING in the reader's source, so
+    commenting the assertion out left it green and the reader green too.
+    It reads the reader with `ast` now and requires the anchor inside a real
+    `assert` — the repo's own comment-stripping idiom, one level up.
+  - **TWO OF MY OWN TESTS DID NOT BITE ON FIRST WRITING, and both are recorded
+    rather than quietly fixed, because each is a shape this log keeps having
+    to unpick.** (1) The reader sweep matched `^CLAUDE_MD\s*=`, so a reader
+    neutered to `CLAUDE_MD = ""` still counted as a reader — measured, that
+    mutation left the file **10 passed**. It requires the read itself now
+    (`..."CLAUDE.md".*read_text`) and the same mutation reddens 2. (2)
+    `test_every_entry_heading_parses_as_a_date` read every match back as a
+    date, which cannot fail on format drift by construction — it only ever
+    validated headings that had already matched. Breaking the em dash on 30
+    headings left it green. It is a near-miss sweep now
+    (`test_no_entry_is_written_in_a_shape_the_counter_cannot_see`), and drift
+    on **three** headings with no loss at all reddens it.
+  - **The hunk-by-hunk rule names CLAUDE.md as well as `static/shell.js`.**
+    2026-09-26 shows the accident is not specific to one file — it is specific
+    to resolving a conflict with `--ours`/`--theirs` inside a script that then
+    believes it did something else. The rule carries the limit above with it.
+  - **TWO MORE TESTS OF MINE COULD NOT FAIL, and they are the same family as
+    the two above.** (1) `test_the_arithmetic_says_it_could_not_look...`
+    asserted only an exit code of 2 — and CPython exits 2 for "can't open
+    file", so it **passed with the script deleted**, while the other five
+    script tests went red. It could not tell "the guard refused because it
+    could not look" from "the guard is not there". It asserts on the message
+    now, and the script-deleted mutation reddens it. (2)
+    `test_the_script_and_the_tests_read_the_same_heading_format` looked for a
+    literal in the script's source, which is a one-way check: rewriting THIS
+    file's pattern to an equivalent spelling left it green while the two files
+    demonstrably no longer shared one. It imports the script and compares the
+    compiled pattern and flags now.
+  - **A LIMIT THE REVIEW PROPOSED FIXING, MEASURED AND DELIBERATELY LEFT.** An
+    INDENTED `- **YYYY-MM-DD — ` is invisible to the counter, so a markdown
+    reformat could take entries out of it silently; the one-character fix is
+    to allow leading whitespace. Run against the real file it goes red — on
+    the 2026-09-21 evening-cook-nudge note nested under the Morning text
+    bullet in Current state, which is a legitimate SUB-bullet and deliberately
+    not a Decision log entry. Indentation therefore cannot be the drift
+    signal. The limit is real, is pinned by a test naming that sub-bullet, and
+    that test says what to check before widening the pattern.
+  - **A floor is only worth `current − floor`, and this file grows about 764
+    lines a day** (measured from git history, 13681 on 2026-09-20 to 19030 on
+    2026-09-27). So an absolute floor loosens by that much daily, and the
+    precedent this one is modelled on is the proof that "raise it when you
+    notice" does not happen: `test_frontend_restored_2026_09_08.py` asserts
+    `static/shell.js` is over 8600 lines, that file is now about 24000, and
+    the floor has been raised **once in three weeks** — it would no longer
+    notice two thirds of the file being deleted. `test_the_floors_have_not_
+    rotted_into_uselessness` fails when the slack passes 5000 and says which
+    three constants to raise. **Its sibling in `test_frontend_restored_
+    2026_09_08.py` is NOT fixed here and wants its own card.**
+  - **TWELVE mutations run and every one bites**, red counts read off the runs
+    on the shipping tree: the identity comparison reverted to counting (1),
+    `owed` summed rather than max-unioned so a stacked branch double-counts
+    (1), the line delta back to insertions-only (1), a stacked branch's lines
+    measured from the base again (1), the merge-parent check disabled (1),
+    `LINE_SLACK_PER_BRANCH` at 100000 (1), the line delta forced to zero (1),
+    the script deleted (11), an existing reader's assertion commented out
+    (1), this file's heading pattern rewritten to an equivalent spelling (1),
+    `LINE_FLOOR` dropped to 1 (1), and the mid-conflict guard removed (1). **The four counts the first version of
+    this entry quoted for the CLAUDE.md tests did not reproduce** — review
+    re-ran them and found "one single day dropped → 5" is 4 for the best day,
+    3 for a middle one and **0 for the newest**, and "the em dash broken on 30
+    headings → 5" is 3 unless the 30 are the newest 30. Both were measured on
+    a tree that did not yet carry this branch's own entry and carried forward,
+    which is the statistic this log keeps having to unpick. They are not
+    re-quoted; the list above is the shipping tree's.
+  - **Red-against-main was called meaningless and that was overstated.**
+    Measured at the shipping commit against main's CLAUDE.md with the script
+    absent: **13 failed, 11 passed** — twelve die on the missing script, and
+    **exactly one, `test_the_hunk_by_hunk_rule_names_this_file_too`, is a
+    genuine behaviour catch**, because main's rule names shell.js alone.
+    (The review measured 6/10 when this file held 16 tests; re-measured here
+    at 23 rather than carried forward, which is this log's own rule.) "Mostly a
+    name-not-found count, except for the prose rule" is the honest sentence.
+    The mutations are still the bulk of the evidence.
+  - **Numbers, read off the runs at `TZ=America/Toronto`: 7662 passed, 0 failed**,
+    against **7638 collected on `main` (`ee741f8`)** — +24 is this one new
+    test file exactly, and `git diff main -- tests/` adds one file and changes
+    none, so no existing test was deleted or weakened. **Twelve of the 24
+    drive the script** end to end over throwaway git repos built in
+    `tmp_path` — a bad merge, a keep-both merge, main moving under the merge,
+    a stacked branch, a reworded branch, a forgotten branch, a vanished body,
+    a merge still in progress, two could-not-look cases and the heading
+    format the two files share — so they need no network, no app and no
+    database.
+  - **Tonight's four branches were then merged for real and checked**, which
+    is the whole point of the script: four merges onto `ee741f8`, one
+    CLAUDE.md conflict each, every one resolved keep-both — **exit 0, 223/223
+    entries**, and the merged tree's full suite is **7746 passed, 0 failed**,
+    which is 7638 + 35 + 19 + 30 + 24 exactly.
+    The same four resolved with `--ours` is exit 1 naming all three lost
+    entries.
+  - **FOUND AND NOT FIXED, named so nobody reports them as new.** A branch
+    that deliberately REMOVES an entry exits 1 — correctly naming it, with a
+    message that says a deliberate removal is exactly the thing worth a second
+    look there, but it is still a red answer over an intended change. Running
+    the script mid-conflict is caught and says so. And the shell.js floor rot
+    above is somebody else's card.
+  - **The rule says "`static/shell.js` OR in `CLAUDE.md`", not AND** — the
+    conjunction shipped in the first cut and the test pinned it, so a session
+    whose merge conflicts only in CLAUDE.md could read the rule as not
+    applying to it. It is the one line of this branch a future session is
+    most likely to act on.
+
 - **2026-09-27 — A breakfast or a lunch is never handed back as a question,
   and the rule is held to by CODE now rather than only measured. Branch
   `overnight/no-open-breakfast-or-lunch`, NOT merged at the time of
@@ -17879,11 +18111,23 @@ why*, not duplicating the diff.
   `computeNextStepChip` (`tweak-sheet-see-your-week`, merged as `462d506`,
   had already re-added the pair in its plural form — the one piece of the
   loss that came back on its own). **The rule: when a merge conflicts in
-  `static/shell.js`, resolve it hunk by hunk — keep both sides — and run
-  the source-marker tests; never take one side wholesale.**
-  `tests/test_frontend_restored_2026_09_08.py` is the tripwire: one
-  assertion per restored feature plus a blunt line-count floor, because a
-  wholesale resolution always shows up as a large sudden shrink.
+  `static/shell.js` OR in `CLAUDE.md`, resolve it hunk by hunk — keep both
+  sides — and run the source-marker tests; never take one side wholesale.**
+  `tests/test_frontend_restored_2026_09_08.py` is shell.js's tripwire and
+  `tests/test_claude_md_tripwire.py` is CLAUDE.md's: named anchors plus a
+  blunt line-count floor, because a wholesale resolution always shows up as
+  a large sudden shrink. **CLAUDE.md was added to this rule on 2026-09-27,
+  after the accident happened there too** (see that day's entry): it is not
+  specific to one file, it is specific to resolving a conflict with
+  `--ours`/`--theirs` inside a script that then believes it did something
+  else. And neither tripwire can see a merge that drops an entry which only
+  ever existed on the BRANCH — every floor is anchored on main's own
+  content, which such a merge leaves intact. **That one is arithmetic, and
+  `check_merge_kept_the_log.py` is it: run it from the merged tree before
+  you push — `python check_merge_kept_the_log.py origin/main <branch>...` —
+  and merge onto a branch or a detached HEAD rather than onto `main`, or the
+  base and the merged tree are one commit and it has nothing to compare
+  (it says so and exits 2 rather than passing).**
 - **2026-09-07 — The same breakfast on five mornings meant five cooks.**
   Emily, on a plan with Egg White Bites every morning: "We don't want to
   make egg bites every morning." A day-based plan writes each morning as
