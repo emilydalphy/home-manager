@@ -12201,6 +12201,100 @@
       : '';
   }
 
+  // WHAT THE DRAFT HAD TO BEND — one line each, at the top of the draft,
+  // in BOTH of its views (Emily's decided snag rules, 2026-09-23: "it
+  // adds one line to the top of the draft. You don't get a pop-up, and
+  // you don't have to answer anything").
+  //
+  // Every word here is the server's (get_week_menu's draft_flags, built
+  // by tools/draft_flags.py from the rows it actually wrote): a flag that
+  // said something the week did not do would cost more trust than no flag
+  // at all, so this file composes no sentence of its own and fills in no
+  // night. The two fixes are the ones Pomona worked out — "Prep it
+  // Tuesday night", "Move it to Saturday" — and the tap sends only which
+  // one, never a date.
+  //
+  // Celadon-tint with a --celadon-label eyebrow and .wk-mini buttons: the
+  // shape Shop's "maybe already home" block already uses for exactly this
+  // job (a quiet thing to read with two answers beside it). No apricot —
+  // the draft's one primary is Approve (rule 5), and a flag is never
+  // urgent (rule 3): nothing is wrong, the week just bent.
+  var FLAG_EYEBROW = 'Worth knowing';
+  var FLAG_BUSY = 'Just a moment…';
+  var FLAG_TROUBLE = 'That didn’t work just now — nothing changed.';
+  // Which flag is mid-tap, and any sentence the server sent back instead
+  // of doing it. Page-view state, keyed by entry: the flags themselves
+  // live on the plan, so nothing here needs to outlive the screen.
+  var weekFlagState = null;
+
+  function weekFlagStateFor(entryId) {
+    return weekFlagState && weekFlagState.entryId === entryId ? weekFlagState : null;
+  }
+
+  function weekFlagsHtml(data) {
+    var flags = (data && data.draft_flags) || [];
+    if (!flags.length) return '';
+    return '<div class="wk-flags">' + flags.map(function (flag) {
+      var state = weekFlagStateFor(flag.entry_id) || {};
+      var fixes = (flag.fixes || []).filter(function (fix) { return fix && fix.label; });
+      var acts = state.busy
+        ? '<span class="wk-flag-working">' + escapeHtml(FLAG_BUSY) + '</span>'
+        : fixes.map(function (fix) {
+            return '<button type="button" class="wk-mini is-ghost" data-wk-flag="' +
+              escapeHtml(String(flag.entry_id)) + '" data-wk-flag-fix="' + escapeHtml(fix.action) + '">' +
+              escapeHtml(fix.label) + '</button>';
+          }).join('');
+      return '<div class="wk-flag">' +
+        '<span class="gro-eyebrow wk-flag-eyebrow">' + escapeHtml(FLAG_EYEBROW) + '</span>' +
+        '<p class="wk-flag-text">' + escapeHtml(flag.text) + '</p>' +
+        (state.message ? '<p class="wk-flag-text wk-flag-trouble">' + escapeHtml(state.message) + '</p>' : '') +
+        (acts ? '<div class="wk-flag-acts">' + acts + '</div>' : '') +
+      '</div>';
+    }).join('') + '</div>';
+  }
+
+  // One tap on one of Pomona's own fixes. Both land on the same route,
+  // which reads the NIGHT off the stored flag rather than off this
+  // request — so a screen that has gone stale applies the fix as it now
+  // stands, or applies nothing, and can never name a night of its own.
+  async function runWeekFlagFix(panel, entryId, action) {
+    var weekStart = weekStartForSwap();
+    // The guard is BUSY, not "is there any state" — a failed fix leaves a
+    // sentence behind, and reading the whole object made every button on
+    // every flag dead until the panel was next rebuilt.
+    if (!weekStart || (weekFlagState && weekFlagState.busy)) return;
+    weekFlagState = { entryId: entryId, busy: true };
+    renderMealsStep(panel);
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/flag-fix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_id: entryId, action: action })
+      });
+      if (!res.ok) throw new Error('flag fix failed');
+      var data = await res.json();
+      if (!data.applied) {
+        // A 200 that says no — the night was already taken, or the flag
+        // had stopped being true. The sentence is the server's where it
+        // sent one; a flag that has simply gone needs none, because the
+        // reload below takes it off the screen.
+        weekFlagState = data.message ? { entryId: entryId, message: data.message } : null;
+        await loadWeekMenu(panel);
+        return;
+      }
+      weekFlagState = null;
+      // The week moved: a prep-cut is on the Cook tab now, or two nights
+      // traded dinners. loadWeekMenu is the one place that keeps the
+      // band, the rows and the flags in step.
+      await loadWeekMenu(panel);
+      toastSaved(action === 'move' ? 'Moved.' : 'Added to your prep.');
+    } catch (err) {
+      console.warn('Draft flag fix failed:', err);
+      weekFlagState = { entryId: entryId, message: FLAG_TROUBLE };
+      renderMealsStep(panel);
+    }
+  }
+
   // The dot is the whole legend, on the strip's tiles now (Emily,
   // 2026-09-14, "Plan root: the week as a strip"): apricot = somebody
   // cooks, celadon = it is already made, grey = nothing to do, an outline
@@ -12964,8 +13058,13 @@
     // toggle all live there — so nothing is repeated under it, and the
     // "?" (Need a hand?) moves behind More ···. What we're eating is the
     // menu by meal type; Which days the day cards as built 2026-09-18.
+    // The flags sit at the top of the draft and above both views, so
+    // "one line at the top of the draft" is true whichever way it is
+    // being read. Only ever on a DRAFT: get_week_menu sends none for an
+    // approved week, which is what makes this one expression safe on the
+    // deeper, approved-week form of this screen too.
     var head = root
-      ? weekSuggestedNoteHtml(data)
+      ? weekSuggestedNoteHtml(data) + weekFlagsHtml(data)
       : '<button type="button" class="crumb" data-wk-back="week">‹ Plan</button>' +
         '<div class="wk-head wk-check-head">' +
           '<div class="wk-head-row">' +
@@ -15068,6 +15167,15 @@
         weekState.selectedIndex = idx;
         replaceMealsStepHistory();
         renderMealsStep(panel);
+      });
+    });
+    // The draft's flags, top of the screen: one of Pomona's own two fixes
+    // (weekFlagsHtml). Nothing else on a flag is tappable — it is a line
+    // to read, not a question to answer.
+    steps.querySelectorAll('[data-wk-flag-fix]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        runWeekFlagFix(panel, Number(btn.getAttribute('data-wk-flag')),
+          btn.getAttribute('data-wk-flag-fix'));
       });
     });
     steps.querySelectorAll('[data-wk-back]').forEach(function (btn) {

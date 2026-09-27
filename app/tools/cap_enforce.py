@@ -107,6 +107,7 @@ from . import time_caps as _time_caps
 from . import weekly_plan as _weekly_plan
 from . import meal_variety as _meal_variety
 from . import leftovers as _leftovers
+from . import draft_flags as _draft_flags
 from ._shared import household_id
 from ..db import get_conn
 
@@ -227,6 +228,13 @@ def nights(plan_id: int, intake: dict | None, memory: dict | None) -> list[dict]
             "minutes": minutes,
             "cap": cap,
             "derived": derived,
+            # Carried for draft_flags, which asks a different question of
+            # the same rows: `movable` collapses every reason a night is
+            # untouchable into one boolean, and the flag has to tell a
+            # night the household asked for (worth saying out loud) from
+            # one already cooked (nothing left to offer).
+            "slot_state": row["slot_state"],
+            "cooked_status": row["cooked_status"] or "",
             "tags": night_tags.get(row["date"]) or [],
             # Over its own cap, and known to be: an unjudgeable dish is not
             # a violation (time_caps' own readers let it through).
@@ -299,12 +307,19 @@ def _trades(assignment: dict[str, dict], caps: dict[str, int | None]) -> list[tu
     return [(a, b) for _, a, b in out]
 
 
-def _would_offend(meal: str, meal_date: str) -> str | None:
+def would_offend(meal: str, meal_date: str) -> str | None:
     """
     Why this dish must not move to this night — somebody eating that night
     has said no to it (Emily's one-veto rule, the same call pick_gate
     makes). Allergens are household-wide and so cannot change under a move;
     see the module docstring.
+
+    PUBLIC because `draft_flags.move_target` asks it too, and must. That
+    module offers the household a one-tap "Move it to Saturday"; without
+    this, the button would sail past the veto this pass refuses its own
+    trades on, and a dish somebody has said no to would land in front of
+    them on one tap with nothing said. One rule, two callers — a second
+    copy of it is the class this repo keeps getting bitten by.
     """
     verdict = _weekly_plan._taste_verdict_for_slot(meal, meal_date, "dinner")
     if verdict and verdict.get("verdict") == "avoid":
@@ -365,8 +380,8 @@ def rearrange(plan_id: int, intake: dict | None, memory: dict | None) -> list[di
             # Who is at the table is per night, so this is the one gate a
             # move can break. See the module docstring on why the allergen
             # half cannot change under a move.
-            offends = (_would_offend(movable[b]["meal"], a)
-                       or _would_offend(movable[a]["meal"], b))
+            offends = (would_offend(movable[b]["meal"], a)
+                       or would_offend(movable[a]["meal"], b))
             if offends:
                 logger.info("Plan %s: not trading %s and %s — %s", plan_id, a, b, offends)
                 continue
@@ -482,10 +497,11 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
     Re-arranges first (free), then re-picks what no night can take. Never
     raises: a dinner that is too long is worth a repair, never a lost week.
 
-    Returns {"moved": [...], "repicked": [...], "left": [...]} — `left`
-    being every dinner still over its cap after both stages, each with why
-    this pass could not touch it, which is what plan_quality then warns
-    about.
+    Returns {"moved": [...], "repicked": [...], "left": [...],
+    "flagged": [...]} — `left` being every dinner still over its cap after
+    both stages, each with why this pass could not touch it, which is what
+    plan_quality then warns about; `flagged` the subset the household is
+    told about on the draft, which is the ones they asked for by name.
     """
     moved: list[dict] = []
     repicked: list[dict] = []
@@ -498,8 +514,11 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
     except Exception:
         logger.exception("Plan %s: re-picking a dinner over its time cap failed", plan_id)
     left = []
+    flagged: list[dict] = []
+    read_back = []
     try:
-        for night in nights(plan_id, intake, memory):
+        read_back = nights(plan_id, intake, memory)
+        for night in read_back:
             if not night["over"]:
                 continue
             why = "nothing quicker came back"
@@ -514,6 +533,19 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
                          "minutes": night["minutes"], "cap": night["cap"], "why": why})
     except Exception:
         logger.exception("Plan %s: reading back the week's time caps failed", plan_id)
+    # The one night this pass deliberately leaves alone AND the household
+    # will see — a dish they asked for by name on a night that hasn't the
+    # time for it (Emily's scenario 3, 2026-09-23). Built from the SAME
+    # read-back as `left` above, so the flag the draft shows and the warn
+    # the morning report carries can never disagree about which nights
+    # were kept — but in a try of its OWN, so a failure writing the flags
+    # can never swallow that warning. See tools/draft_flags.py.
+    try:
+        flagged = _draft_flags.flags_for_kept_over_cap(read_back)
+        _draft_flags.record(plan_id, flagged)
+    except Exception:
+        logger.exception("Plan %s: recording the draft's time-cap flags failed", plan_id)
+        flagged = []
     if left:
         logger.warning(
             "Plan %s still has %d dinner(s) over their time cap after re-arranging and re-picking: %s",
@@ -521,4 +553,4 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
             "; ".join(f"{x['date']} {x['meal']!r} {x['minutes']}min > {x['cap']}min ({x['why']})"
                       for x in left),
         )
-    return {"moved": moved, "repicked": repicked, "left": left}
+    return {"moved": moved, "repicked": repicked, "left": left, "flagged": flagged}

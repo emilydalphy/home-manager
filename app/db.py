@@ -270,6 +270,9 @@ _MIGRATIONS = [
     # The model's own account of the typed requests it honoured and could
     # not (2026-09-21, "The draft says what it did"); see schema.sql.
     ("weekly_plans", "requests_json", "TEXT NOT NULL DEFAULT ''"),
+    # The draft's own account of what it had to bend, with the fixes
+    # already worked out (2026-09-27, the decided snag rules); see schema.sql.
+    ("weekly_plans", "draft_flags_json", "TEXT NOT NULL DEFAULT ''"),
     ("meal_plan_entries", "slot_state", "TEXT NOT NULL DEFAULT 'planned'"),
     ("meal_plan_entries", "open_reason", "TEXT NOT NULL DEFAULT ''"),
     ("meal_plan_entries", "derived_from_json", "TEXT NOT NULL DEFAULT '{}'"),

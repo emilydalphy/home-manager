@@ -2957,6 +2957,75 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   margin-top: 4px;
 }
 
+/* ---- What the draft had to bend, at the top of the draft ------------
+   Emily's decided snag rules (2026-09-23): "one line to the top of the
+   draft. You don't get a pop-up, and you don't have to answer anything."
+
+   Celadon-tint with a --celadon-label eyebrow and .wk-mini buttons — the
+   shape Shop's "maybe already home" block (.gro-athome) already uses for
+   the same job, a quiet thing to read with two answers beside it. NOT
+   --urgent (rule 3: nothing here is overdue and nothing needs a decision;
+   the week is approvable exactly as it stands) and no apricot fill (rule
+   5: the draft's one primary is Approve). The buttons are .wk-mini, whose
+   ::before already gives the 36px box a 44px target (rule 6).
+
+   Contrast, measured off computed styles in Chromium at 390px and
+   recorded here per rule 8: --celadon-label on --celadon-tint is 4.87:1
+   light / 5.92:1 dark for the eyebrow and the sentence; the buttons are
+   --ink on --sand, 11.60:1 light / 11.28:1 dark, the .wk-mini is-ghost
+   pair .gro-athome already cites. */
+/* The 20px side gutter is THIS block's own, because nothing above it
+   supplies one: .week-content has no horizontal padding and every sibling
+   on the screen carries its own (.wk-head, .wk-menu, .wk-daytabs,
+   .wk-carousel). The block these rules were modelled on, .gro-athome,
+   lives INSIDE a store card that already had the gutter — copying its
+   rules without its container is how the first cut of this rendered flush
+   to both screen edges. */
+.wk-flags {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 2px;
+  padding-inline: 20px;
+}
+.wk-flag {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--celadon-tint);
+  border: 1.5px solid var(--celadon-edge);
+  border-radius: var(--radius-control);
+}
+/* Rides .gro-eyebrow for the 10px/800/uppercase/.14em treatment and
+   overrides only the colour — there is no bare `.eyebrow` class in this
+   app (every one is namespaced), so the first cut's `class="eyebrow
+   wk-flag-eyebrow"` set a colour on browser-default 16px/400 text and
+   rendered the eyebrow LARGER than the sentence under it, in the same
+   ink. */
+.wk-flag-eyebrow { color: var(--celadon-label); }
+.wk-flag-text {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--celadon-label);
+}
+/* A sentence the server sent back instead of doing it. NOT --warn-ink,
+   which is the pair for .week-conflict-note and is measured against
+   --ground: on this block's --celadon-tint it is 4.40:1 in light, under
+   AA for 13px/600. --ink on --celadon-tint is 11.44:1 light / 10.37:1
+   dark — measured on the pair this sentence actually sits on, which is
+   the mistake the --warn-ink comment made. Still not --urgent, because
+   nothing broke and nothing is owed; what marks it as a refusal is that
+   it replaces the buttons, not its colour. */
+.wk-flag-trouble { color: var(--ink); }
+.wk-flag-working { font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--celadon-label); }
+.wk-flag-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.wk-flag .wk-mini.is-ghost { background: var(--sand); border-color: transparent; }
+@media (hover: hover) { .wk-flag .wk-mini.is-ghost:hover { background: var(--sand-deep); } }
+
 /* The day strip, bottom-aligned so the selected tile can be taller. */
 .day-rail {
   display: grid;

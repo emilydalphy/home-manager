@@ -52,6 +52,15 @@ for. Pinned by mutation instead.
 So the evidence that this works is those 22 behaviour failures under stub B
 plus the 24 mutations recorded in the branch's Decision-log entry - never
 the raw count against a tree the file cannot even be collected on.
+
+
+NOTE (2026-09-27, the decided snag rules): `enforce_minutes_caps` grew a
+fourth key, `flagged` — the over-cap nights the household asked for BY
+NAME, which this pass has always deliberately left alone and which the
+draft now says out loud rather than only the morning report (see
+tools/draft_flags.py). The six assertions below that pin the result's
+exact shape carry it; nothing else about them moved, and every claim they
+make about what this pass does and does not touch is unchanged.
 """
 from __future__ import annotations
 
@@ -347,7 +356,7 @@ def test_an_unrushed_night_keeps_its_long_dinner(capped, stub_model, run):
     plan_id, seen = run(week, None)
 
     assert {r["date"]: r["meal"] for r in _dinners(plan_id)}[dates[2]] == "Long Braise"
-    assert seen["result"] == {"moved": [], "repicked": [], "left": []}
+    assert seen["result"] == {"moved": [], "repicked": [], "left": [], "flagged": []}
 
 
 def test_a_night_the_household_asked_for_by_name_is_left_alone(capped, stub_model, run):
@@ -392,7 +401,7 @@ def test_a_dish_with_no_minutes_on_record_is_left_where_it_is(capped, stub_model
     plan_id, seen = run(week, None)
 
     assert {r["date"]: r["meal"] for r in _dinners(plan_id)}[dates[1]] == "Mystery Dish"
-    assert seen["result"] == {"moved": [], "repicked": [], "left": []}
+    assert seen["result"] == {"moved": [], "repicked": [], "left": [], "flagged": []}
     # Asserted on the rule directly, because the week-level outcome cannot
     # tell the mutation apart: a dish with no minutes is never a violation
     # either way, so nothing moves whether it is `movable` or not. Found by
@@ -419,7 +428,7 @@ def test_a_weekend_dinner_is_never_repicked(capped, stub_model, run):
 
     dinners = {r["date"]: r["meal"] for r in _dinners(plan_id)}
     assert dinners[dates[5]] == dinners[dates[6]] == "Long Braise"
-    assert seen["result"] == {"moved": [], "repicked": [], "left": []}
+    assert seen["result"] == {"moved": [], "repicked": [], "left": [], "flagged": []}
 
 
 def test_a_night_nobody_is_home_for_is_never_touched(capped, stub_model, run):
@@ -957,7 +966,7 @@ def test_a_week_with_no_cap_and_no_tag_is_untouched(stub_model, run):
 
     plan_id, seen = run(week, None, pick=_never)
 
-    assert seen["result"] == {"moved": [], "repicked": [], "left": []}
+    assert seen["result"] == {"moved": [], "repicked": [], "left": [], "flagged": []}
     assert [(r["date"], r["meal"], r["reasoning"], r["derived_from_json"]) for r in _dinners(plan_id)] == [
         (d, n, f"{n} because", "{}")
         for d, n in zip(dates, ["Braise", "Roast", "Lasagne", "Curry", "Paella", "Pot Roast", "Ragu"])
@@ -976,7 +985,7 @@ def test_a_capped_week_whose_dinners_all_fit_is_untouched(capped, stub_model, ru
 
     plan_id, seen = run(week, None, pick=lambda c: (_ for _ in ()).throw(AssertionError("no")))
 
-    assert seen["result"] == {"moved": [], "repicked": [], "left": []}
+    assert seen["result"] == {"moved": [], "repicked": [], "left": [], "flagged": []}
     assert {r["reasoning"] for r in _dinners(plan_id)} == {"Fast Eggs because"}
 
 
@@ -1000,7 +1009,7 @@ def test_a_failure_inside_the_pass_never_costs_the_week(capped, stub_model, run,
 
     plan_id, seen = run(week, None)
 
-    assert seen["result"] == {"moved": [], "repicked": [], "left": []}
+    assert seen["result"] == {"moved": [], "repicked": [], "left": [], "flagged": []}
     audit = tools.audit_plan_slots(plan_id)
     assert audit["complete"] is True and audit["present"] == 21
 
