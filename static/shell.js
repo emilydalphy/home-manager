@@ -23363,6 +23363,11 @@
             '<span class="snw-tile-sub">You’ll need your passphrase to get back in</span>' +
           '</span>' +
         '</button>' +
+      '</div>' +
+      // The very bottom (App Store, 2026-09-27): deleting the household,
+      // or leaving it. Quiet on purpose — see .prefs-leave-row.
+      '<div class="prefs-leave-row">' +
+        '<button type="button" class="prefs-leave-link" data-prefs="leave"><span>Delete your household</span></button>' +
       '</div>';
   }
 
@@ -23523,6 +23528,179 @@
         groForgetOffline();   // the grocery copy is this household's, not the phone's
         window.location.href = '/logout';
       }
+    }
+    if (what === 'leave') {
+      closePrefsSheet();
+      openLeaveDialog();
+    }
+  });
+
+  // ---------- Delete your household / remove yourself (2026-09-27) ----------
+  // Loop Board "App Store: delete my household (and remove myself) from
+  // inside Pomona". Apple requires in-app deletion. One centred dialog, two
+  // modes: 'delete' (the whole household, behind a typed DELETE — the
+  // server checks the word too) and 'remove' (just this adult, offered only
+  // when another adult stays). Plus two states with nothing to do: the
+  // protected household (1) and a device that hasn't said who it is.
+  // Everything it draws comes from GET /api/household/leave; on success the
+  // server has already cleared the cookie, and the page goes to /goodbye.
+  var leaveState = { data: null, mode: 'delete', busy: false };
+
+  function leaveNames(names) {
+    if (!names || !names.length) return '';
+    if (names.length === 1) return names[0];
+    return names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+  }
+
+  function renderLeaveDialog() {
+    var el = document.getElementById('leave-dialog');
+    if (!el) return;
+    var d = leaveState.data;
+    var cancel = '<button type="button" class="btn-outline-plum" data-leave="cancel">Cancel</button>';
+    var html;
+    if (!d) {
+      html = '<h2 class="reset-title" id="leave-title">Delete your household</h2>' +
+        '<p class="reset-note">That didn’t load. Close this and try again.</p>' +
+        '<div class="reset-actions">' + cancel.replace('Cancel', 'Close') + '</div>';
+    } else if (d.protected) {
+      html = '<h2 class="reset-title" id="leave-title">This household is protected</h2>' +
+        '<p class="reset-note">It can’t be deleted or left from inside Pomona, so nothing in it is lost by accident.</p>' +
+        '<div class="reset-actions">' + cancel.replace('Cancel', 'Close') + '</div>';
+    } else if (d.needs_pick) {
+      html = '<h2 class="reset-title" id="leave-title">Who’s asking?</h2>' +
+        '<p class="reset-note">Only an adult in the household can do this. Pick your name first.</p>' +
+        '<div class="reset-actions">' + cancel +
+          '<button type="button" class="btn-gold" data-leave="pick">Pick my name</button>' +
+        '</div>';
+    } else if (leaveState.mode === 'remove' && d.can_remove_self) {
+      html = '<h2 class="reset-title" id="leave-title">Remove yourself from ' + escapeHtml(d.household_name) + '?</h2>' +
+        '<p class="reset-note">' + escapeHtml(leaveNames(d.other_adults)) +
+          ' keep' + (d.other_adults.length === 1 ? 's' : '') +
+          ' the household and everything in it. Your details, ratings and notes go. It can’t be undone.</p>' +
+        '<p class="leave-error" id="leave-error" role="alert"></p>' +
+        '<div class="reset-actions">' + cancel +
+          '<button type="button" class="btn-gold" data-leave="remove">Remove me</button>' +
+        '</div>' +
+        '<button type="button" class="dialog-cancel-link" data-leave="mode-delete">Delete the whole household instead</button>';
+    } else {
+      html = '<h2 class="reset-title" id="leave-title">Delete ' + escapeHtml(d.household_name || 'your household') + '?</h2>' +
+        '<p class="reset-note">Everything goes, for everyone in it: plans, shopping lists, recipes, everyone’s details and what you’ve told me in chat. It can’t be undone.</p>' +
+        '<label class="leave-field">' +
+          '<span class="leave-field-label">Type DELETE to confirm</span>' +
+          '<input type="text" class="snw-input" id="leave-confirm-input" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="leave-error">' +
+        '</label>' +
+        '<p class="leave-error" id="leave-error" role="alert"></p>' +
+        '<div class="reset-actions">' + cancel +
+          '<button type="button" class="btn-gold" data-leave="delete" disabled>Delete</button>' +
+        '</div>' +
+        (d.can_remove_self
+          ? '<button type="button" class="dialog-cancel-link" data-leave="mode-remove">Remove just me instead</button>'
+          : '');
+    }
+    el.innerHTML = html;
+  }
+
+  async function openLeaveDialog() {
+    leaveState.mode = 'delete';
+    leaveState.busy = false;
+    try {
+      var res = await fetch('/api/household/leave');
+      leaveState.data = res.ok ? await res.json() : null;
+    } catch (err) {
+      leaveState.data = null;
+    }
+    renderLeaveDialog();
+    openSheet(document.getElementById('leave-dialog'), document.getElementById('leave-scrim'));
+    var input = document.getElementById('leave-confirm-input');
+    if (input) input.focus();
+  }
+
+  function closeLeaveDialog() {
+    closeSheet(document.getElementById('leave-dialog'), document.getElementById('leave-scrim'));
+  }
+
+  function leaveWordTyped() {
+    var input = document.getElementById('leave-confirm-input');
+    return !!input && input.value.trim().toUpperCase() === 'DELETE';
+  }
+
+  async function submitLeave(kind) {
+    if (leaveState.busy) return;
+    if (kind === 'delete' && !leaveWordTyped()) return;
+    leaveState.busy = true;
+    var btn = document.querySelector('#leave-dialog [data-leave="' + kind + '"]');
+    if (btn) btn.disabled = true;
+    var errEl = document.getElementById('leave-error');
+    if (errEl) errEl.textContent = '';
+    var url = kind === 'delete' ? '/api/household/delete' : '/api/household/remove-me';
+    var body = kind === 'delete'
+      ? { confirm: document.getElementById('leave-confirm-input').value }
+      : {};
+    var res = null;
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+    } catch (err) {
+      res = null;
+    }
+    if (res && res.ok) {
+      var out = {};
+      try { out = await res.json(); } catch (err) { /* the address below still stands */ }
+      groForgetOffline();   // the grocery copy on this phone was the household's
+      window.location.replace(out.goodbye || '/goodbye');
+      return;
+    }
+    var line = 'That didn’t go through, and nothing changed. Try again in a moment.';
+    if (res) {
+      try {
+        var detail = (await res.json()).detail;
+        if (typeof detail === 'string' && detail) line = detail;
+      } catch (err) { /* keep the general line */ }
+    }
+    leaveState.busy = false;
+    if (errEl) errEl.textContent = line;
+    if (btn) btn.disabled = kind === 'delete' ? !leaveWordTyped() : false;
+  }
+
+  document.addEventListener('click', function (e) {
+    var scrim = e.target && e.target.id === 'leave-scrim';
+    if (scrim) { if (!leaveState.busy) closeLeaveDialog(); return; }
+    var btn = e.target && e.target.closest && e.target.closest('#leave-dialog [data-leave]');
+    if (!btn) return;
+    var what = btn.getAttribute('data-leave');
+    if (what === 'cancel') { if (!leaveState.busy) closeLeaveDialog(); return; }
+    if (what === 'pick') {
+      closeLeaveDialog();
+      openWhoScreen(true).then(function (picked) { if (picked) openLeaveDialog(); });
+      return;
+    }
+    if (what === 'mode-remove' || what === 'mode-delete') {
+      leaveState.mode = what === 'mode-remove' ? 'remove' : 'delete';
+      renderLeaveDialog();
+      var input = document.getElementById('leave-confirm-input');
+      if (input) input.focus();
+      return;
+    }
+    if (what === 'delete' || what === 'remove') submitLeave(what);
+  });
+
+  document.addEventListener('input', function (e) {
+    if (!e.target || e.target.id !== 'leave-confirm-input') return;
+    var btn = document.querySelector('#leave-dialog [data-leave="delete"]');
+    if (btn && !leaveState.busy) btn.disabled = !leaveWordTyped();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    var el = document.getElementById('leave-dialog');
+    if (!el || el.hidden) return;
+    if (e.key === 'Escape' && !leaveState.busy) closeLeaveDialog();
+    if (e.key === 'Enter' && e.target && e.target.id === 'leave-confirm-input' && leaveWordTyped()) {
+      e.preventDefault();
+      submitLeave('delete');
     }
   });
 

@@ -417,6 +417,15 @@
     </div>
   </div>
 
+  <!-- "Delete your household" (Preferences, at the bottom — Loop Board
+       "App Store: delete my household (and remove myself) from inside
+       Pomona", 2026-09-27). Apple requires in-app deletion. The insides are
+       drawn by shell.js (renderLeaveDialog) from GET /api/household/leave:
+       delete the whole household behind a typed DELETE, or — when another
+       adult stays — remove just yourself. Body level, like every dialog. -->
+  <div id="leave-scrim" hidden></div>
+  <div id="leave-dialog" hidden data-motion="dialog" role="dialog" aria-modal="true" aria-labelledby="leave-title"></div>
+
   <!-- Approving the week: who is here? There is no per-person login in
        this app, so with two adults on record this one tap is the only
        honest way to put a name on the week — and it doubles as the confirm

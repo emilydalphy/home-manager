@@ -34,7 +34,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exception_handlers import http_exception_handler
 
-from . import agent, ai_consent, backup, calendar_feed, chat_themes, feedback_email, households, invites, ratelimit, recipe_import, recipe_photos, security
+from . import agent, ai_consent, backup, calendar_feed, chat_themes, feedback_email, household_deletion, households, invites, ratelimit, recipe_import, recipe_photos, security
 from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
@@ -7642,6 +7642,128 @@ def join_household(req: JoinRequest, request: Request):
         path="/",
     )
     return response
+
+
+# ---------- Delete the household, or leave it (Loop Board "App Store:
+# delete my household (and remove myself) from inside Pomona", Emily
+# 2026-09-27) ----------
+#
+# Apple requires in-app account deletion. The deleting itself is in
+# app/household_deletion.py — outside app/tools/, so the chat agent can
+# never reach it. These routes are the only way in: authenticated like any
+# other /api route (auth_middleware binds the household from the signed
+# cookie, never from the request body), and on success they clear the
+# cookie and hand the page the goodbye address.
+
+
+def _leave_state() -> dict:
+    """What Preferences' "Delete your household" dialog needs to draw itself."""
+    household = tools.household_id()
+    conn = get_conn()
+    row = conn.execute("SELECT name FROM households WHERE id = ?", (household,)).fetchone()
+    conn.close()
+    adults = tools.household_adults()
+    you = tools.current_member()
+    protected = household_deletion.is_protected(household)
+    return {
+        "household_name": row["name"] if row else "",
+        "protected": protected,
+        # Any adult may delete the household (Emily's default, 2026-09-27).
+        # A house with adults but nobody picked on this device has to say
+        # who's asking first; a house with no adults yet (setup abandoned)
+        # can still be deleted by whoever holds its passphrase.
+        "needs_pick": you is None and len(adults) > 0,
+        "can_delete": not protected and (you is not None or len(adults) == 0),
+        "can_remove_self": (
+            you is not None
+            and household_deletion.removal_check(household, you["id"]) is None
+        ),
+        "you": you["name"] if you else None,
+        "other_adults": [a["name"] for a in adults if not you or a["id"] != you["id"]],
+    }
+
+
+def _signed_out(payload: dict) -> JSONResponse:
+    response = JSONResponse(payload)
+    response.delete_cookie(security.COOKIE_NAME, path="/")
+    return response
+
+
+@app.get("/api/household/leave")
+def household_leave_state():
+    return _leave_state()
+
+
+class DeleteHouseholdRequest(BaseModel):
+    # The word typed into the confirm step. Checked here as well as on the
+    # page, so nothing that merely POSTs to this route deletes a household.
+    confirm: str = Field("", max_length=64)
+
+
+@app.post("/api/household/delete")
+def delete_my_household(req: DeleteHouseholdRequest):
+    """
+    Delete the signed-in household and everything in it, then sign out.
+
+    Immediate — no undo window (Emily's default, 2026-09-27). Refused for
+    household 1 (403), without the confirm word (400), and for a device
+    that hasn't said which adult it is in a house that has adults (400).
+    """
+    household = tools.household_id()
+    if (req.confirm or "").strip().upper() != household_deletion.CONFIRM_WORD:
+        raise HTTPException(status_code=400, detail="Type DELETE to confirm.")
+    state = _leave_state()
+    if state["protected"]:
+        raise HTTPException(status_code=403, detail="This household can't be deleted from inside Pomona.")
+    if not state["can_delete"]:
+        raise HTTPException(status_code=400, detail="Tell me who you are first, then try again.")
+    try:
+        household_deletion.delete_household(household)
+    except household_deletion.ProtectedHousehold as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except household_deletion.DeletionRefused as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Deleting household %s failed", household)
+        raise HTTPException(
+            status_code=500,
+            detail="That didn't go through, and nothing was deleted. Try again in a moment.",
+        )
+    return _signed_out({"deleted": True, "goodbye": "/goodbye"})
+
+
+@app.post("/api/household/remove-me")
+def remove_me_from_household():
+    """
+    Take the signed-in adult out of this household (it keeps its other
+    adults and everything else), then sign this device out.
+    """
+    household = tools.household_id()
+    you = tools.current_member()
+    if household_deletion.is_protected(household):
+        raise HTTPException(status_code=403, detail="This household can't be changed that way from inside Pomona.")
+    problem = household_deletion.removal_check(household, you["id"] if you else None)
+    if problem:
+        raise HTTPException(status_code=400, detail=problem)
+    try:
+        household_deletion.remove_member(household, you["id"])
+    except household_deletion.ProtectedHousehold as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except household_deletion.DeletionRefused as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Removing member from household %s failed", household)
+        raise HTTPException(
+            status_code=500,
+            detail="That didn't go through, and nothing was changed. Try again in a moment.",
+        )
+    return _signed_out({"removed": True, "goodbye": "/goodbye?left=1"})
+
+
+@app.get("/goodbye")
+def goodbye_page():
+    """After a delete or a leave — public, since the person is signed out by then."""
+    return FileResponse(os.path.join(static_dir, "goodbye.html"))
 
 
 @app.get("/healthz")

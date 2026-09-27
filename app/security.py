@@ -105,6 +105,9 @@ _PUBLIC_EXACT = frozenset({
     "/api/join",
     "/login",
     "/logout",
+    # Where a deleted household (or an adult who left one) lands — they are
+    # signed out by then. A static page that reads nothing from anyone.
+    "/goodbye",
     "/healthz",
     "/robots.txt",
     "/favicon.ico",
