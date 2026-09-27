@@ -2178,12 +2178,12 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "edit_preference",
-        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference', 'eating_style' (plain strings — eating_style is a diet/style goal like \"keto\" or \"high-protein, low-carb\", distinct from hard dietary restrictions), 'dinners_per_week'/'breakfasts_per_week'/'lunches_per_week' (integer 1-7, each independent), 'cuisine_preferences'/'dislikes'/'usual_stores' (list of strings, replaces the whole list — prefer add_food_dislikes/add_usual_stores for adding a single new item conversationally), 'protein_preferences' (dict of protein -> 1-5 like rating, e.g. {\"chicken\": 5}, merged in — see set_household_meal_preferences for the scale), 'complete_plates' (true/false — whether I may add a small side to a meal that came out short of a full plate. On by default. Set it false whenever someone says any version of \"stop adding things to my meals\" or \"I don't need you rounding out my dinners\", and say plainly that you've stopped; set it back to true if they change their mind). Use delete_preference instead to remove a single item without replacing the whole list.",
+        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference', 'eating_style' (plain strings — eating_style is a diet/style goal like \"keto\" or \"high-protein, low-carb\", distinct from hard dietary restrictions), 'dinners_per_week'/'breakfasts_per_week'/'lunches_per_week' (integer 1-7, each independent), 'snacks_per_day' (integer 0-6: how many snacks land on each day), 'snack_dishes_per_week' (integer 1-7: how many DIFFERENT snack dishes the week rotates), 'cuisine_preferences'/'dislikes'/'usual_stores' (list of strings, replaces the whole list — prefer add_food_dislikes/add_usual_stores for adding a single new item conversationally), 'protein_preferences' (dict of protein -> 1-5 like rating, e.g. {\"chicken\": 5}, merged in — see set_household_meal_preferences for the scale), 'complete_plates' (true/false — whether I may add a small side to a meal that came out short of a full plate. On by default. Set it false whenever someone says any version of \"stop adding things to my meals\" or \"I don't need you rounding out my dinners\", and say plainly that you've stopped; set it back to true if they change their mind). Use delete_preference instead to remove a single item without replacing the whole list.",
         "input_schema": {
             "type": "object",
             "properties": {
-                "field": {"type": "string", "enum": ["notes", "cooking_time_preference", "eating_style", "dinners_per_week", "breakfasts_per_week", "lunches_per_week", "cuisine_preferences", "protein_preferences", "dislikes", "usual_stores", "complete_plates"]},
-                "value": {"description": "String for notes/cooking_time_preference/eating_style, integer for dinners_per_week/breakfasts_per_week/lunches_per_week, array for cuisine_preferences/dislikes/usual_stores, object for protein_preferences, boolean for complete_plates."},
+                "field": {"type": "string", "enum": ["notes", "cooking_time_preference", "eating_style", "dinners_per_week", "breakfasts_per_week", "lunches_per_week", "snacks_per_day", "snack_dishes_per_week", "cuisine_preferences", "protein_preferences", "dislikes", "usual_stores", "complete_plates"]},
+                "value": {"description": "String for notes/cooking_time_preference/eating_style, integer for dinners_per_week/breakfasts_per_week/lunches_per_week/snacks_per_day/snack_dishes_per_week, array for cuisine_preferences/dislikes/usual_stores, object for protein_preferences, boolean for complete_plates."},
             },
             "required": ["field", "value"],
         },
@@ -3277,7 +3277,9 @@ territory they clearly want back. Check recent_history's `slot` field; a househo
 seeing last week's dinners stops trusting the draft (Emily, 2026-09-20). Breakfast and snack repeating within the \
 current week is normal and expected (see the guideline above), and so is a breakfast/snack \
 idea persisting from a previous week — recent_history's breakfast/snack entries are \
-informational only, not something to avoid repeating. Separately, avoid repeating the same \
+informational only, not something to avoid repeating — EXCEPT when intake.moods includes \
+"Something new": then breakfast joins the rule, and a breakfast in recent_history is not drafted \
+again unless they asked for it by name. Separately, avoid repeating the same \
 main_protein or cuisine too many days in a row for dinner — check recent_history's cuisine/ \
 main_protein fields, not just meal names. Where recent_history gives a `rating` for a past \
 meal, treat it as a soft signal on how forgivable a repeat would be: reaching for something \
@@ -3487,6 +3489,9 @@ cap. The night tags and `weeknight_max_minutes` are about dinner and don't apply
 `intake.mood_guidance` spells out what each of those moods asks for; follow those lines, they \
 are what the household meant by the two-word label. \
 `intake.cuisines` are what the household asked for THIS week and outrank their usual rotation. \
+Each one is at least one lunch or dinner that IS that cuisine or dish (Burgers means a burger), \
+with its `cuisine` set to it; cite `cuisines:<name>` in derived_from.inputs only on a dish that \
+is that cuisine, spelled exactly as in intake.cuisines. \
 `intake.freeform` is their own words, and a stated request in it is the week's ANCHOR, not an \
 isolated instruction to satisfy in a vacuum: put it exactly where they said — never plan over \
 it, and still include its ingredients so they aren't short on the night — and then build the \
@@ -3541,8 +3546,8 @@ not everything you were shown — and send ONLY the keys that did. A key with no
 ("constraint": "", "tags": []) is not a record of anything: leave it out. An ordinary \
 untagged night's derived_from is often one key, or none at all, and that is the right answer \
 rather than a thin one.
-- household_memory's dinners_per_week / breakfasts_per_week / lunches_per_week / \
-snacks_per_week (0-7) are counts of DISTINCT meals, not counts of days to plan. Every day still \
+- household_memory's dinners_per_week / breakfasts_per_week / lunches_per_week (0-7) and \
+snack_dishes_per_week (1-7) are counts of DISTINCT meals, not counts of days to plan. Every day still \
 gets all four. "4 breakfasts" means four different breakfast ideas spread across the seven \
 mornings — it does NOT mean three mornings with nothing. Fewer recipes than meals means batch \
 cooking (Emily, 2026-09-23: "If I want 2 types of lunches, but need 4 lunches, you should \
@@ -3561,16 +3566,16 @@ dishes — either way, after you answer, so anything off the number is work thro
 it reheats, not as a new one. \
 This is what the setup screen promises the household in so many words: "I'd rather plan four \
 things you cook than seven you don't," and "one breakfast a week is a perfectly good answer" — \
-one idea, eaten all week, not one morning fed and six ignored. snacks_per_week follows the \
-exact same rule (Loop Board "Onboarding / meal setup: add a Snacks & desserts count", \
-2026-09-05): that many distinct snack/dessert ideas, rotated across the week the same way a \
+one idea, eaten all week, not one morning fed and six ignored. \
+household_memory.snack_dishes_per_week follows the exact same rule (2026-09-27; snacks_per_week \
+is an older number and not the count): that many distinct snack/dessert ideas, rotated across the week the same way a \
 breakfast or lunch idea would be — with a light lean toward something dessert-like on a night \
 tagged `unrushed` or otherwise called out as special in constraints_notes/intake, rather than on \
 an ordinary weeknight. household_memory.snacks_per_day is the separate, per-DAY number: how many \
 snacks each day gets (2 by default), and it is exact — every planned day gets that many, \
 no more, no fewer (counting the days a folded entry's `dates` covers, not the entries). The \
 two counts work together — snacks_per_day says \
-how many snacks land on Tuesday, snacks_per_week how many distinct ideas the whole rotation \
+how many snacks land on Tuesday, snack_dishes_per_week how many distinct ideas the whole rotation \
 draws on — and the pool is never so small that one day has to repeat itself: give every day its \
 snacks_per_day snacks, all different from each other and from that day's other meals, even if \
 that means an idea shows up on more days than one. A count of 0 for any of the four is handled outside this call; if you \
@@ -6191,7 +6196,7 @@ def _finish_week_slots(
     _meal_variety.repick_recent_repeats(
         plan_id, week_start_date,
         repick_budget or _allergen_gate.CallBudget(),
-        asks=count_asks,
+        asks=count_asks, slots=_meal_variety.no_repeat_slots(intake),
     )
 
     # "Four dinners a week" means four dishes, and the model is only ASKED
@@ -6237,17 +6242,21 @@ def _finish_week_slots(
     # too — "seven distinct breakfasts" is not a floor anyone chose.
     for slot, field in _meal_variety.COUNT_FIELDS.items():
         if slot == "lunch" and lunches_answered:
-            # The week's own answer about its weekday lunches outranks the
-            # standing lunch count, the way a count typed into the week's
-            # own words does (asks_for_a_count): folding a "cooked that
-            # day" lunch into a reheat to hit the number would undo what
-            # the household just said.
+            # The week's own answer about its weekday lunches is kept as it
+            # is — folding a "cooked that day" lunch into a reheat would undo
+            # what the household just said — and the rest of the week's
+            # lunches fold to the count around it (Emily, 2026-09-27; see
+            # weekday_lunches.enforce_lunch_count).
+            _weekday_lunches.enforce_lunch_count(
+                plan_id, intake, household_memory.get(field), asks=count_asks, caps=caps,
+            )
             continue
         usual = usual_counts.get(field)
         tools.enforce_distinct_meal_count(
             plan_id, household_memory.get(field), slot=slot, asks=count_asks, budget=count_budget,
             fill_up=bool(household_memory.get("meal_counts_set")) and usual is not None and int(usual) < 7,
             usual=usual, day_count=planned_count, caps=caps,
+            refuse=_meal_variety.recent_refusals(intake, week_start_date, plan_id, slot),
         )
     if household_memory.get("snacks_per_day_set") or household_memory.get("snacks_per_week_set"):
         # The kept days only: a dropped day's snacks were cleared above
@@ -6256,6 +6265,12 @@ def _finish_week_slots(
             plan_id, household_memory.get("snacks_per_day"), [d for d in period if d not in skipped_days],
             budget=count_budget, asks=count_asks,
         )
+    # "Snacks" under Different dishes a week: the week's snacks fold to that
+    # many dishes, each day keeping its snacks a day (meal_variety.enforce_snack_dishes).
+    _meal_variety.enforce_snack_dishes(
+        plan_id, household_memory.get("snack_dishes_per_week"), [d for d in period if d not in skipped_days],
+        asks=count_asks,
+    )
 
     # An ingredient they typed ("I have some corn") is in at least one
     # dish, or one slot is re-picked with it on must_contain, or the
@@ -6269,6 +6284,12 @@ def _finish_week_slots(
         _typed_requests.use_requested_ingredients(
             plan_id, tools.freeform_ingredient_requests(asks or ""), report,
             budget=repick_budget or _allergen_gate.CallBudget(),
+        )
+        # Each cuisine chip they picked is on the week, or the opener says
+        # it couldn't be (typed_requests.use_picked_cuisines).
+        _typed_requests.use_picked_cuisines(
+            plan_id, (intake or {}).get("cuisines"), report, budget=repick_budget or _allergen_gate.CallBudget(),
+            asks=count_asks,
         )
 
     # "Short on time" is held to rather than only asked for (Emily,
@@ -6452,7 +6473,6 @@ def _finish_week_slots(
         _allergen_gate.sweep_plan(plan_id, budget=repick_budget)
     except Exception:
         logger.exception("Allergen sweep failed for plan %s; the week stands as generated", plan_id)
-
     # The sweep opens a dinner whose clashing dish it could not re-pick
     # within its budget. The week it leaves has been swept, so a reheat or
     # a repeat of a dinner still on it is safe — an open dinner here would
@@ -6460,6 +6480,13 @@ def _finish_week_slots(
     # own question (allergen_gate.repick_slot, "I couldn't find a dinner
     # without …") keeps its words: dinner_gaps.keeps_its_question.
     _dinner_gaps.fill_open_dinners(plan_id, dates, caps=fill_caps, budget=repick_budget, reserve=0)
+
+    # A cuisine chip whose only dish went to a later pass — cap_enforce,
+    # break_long_runs, the allergen sweep — gets its unmet line after all
+    # (typed_requests.chips_left_unanswered). After the last dinner fill, so
+    # it reads the week as it finally stands.
+    if report is not None:
+        _typed_requests.chips_left_unanswered(plan_id, (intake or {}).get("cuisines"), report)
 
     # LAST, deliberately. The allergy/dietary check has to describe the week
     # as it finally stands — after the out-night and zero-count passes, the

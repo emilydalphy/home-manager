@@ -144,6 +144,10 @@ def test_the_draft_never_holds_the_pineapple_dish_and_the_slot_is_repicked(emily
     picks = []
 
     def picker(context):
+        if "must_be_cuisine" in context:
+            # The Mexican chip's own pass (typed_requests.use_picked_cuisines)
+            # is not what this test counts.
+            return {}
         picks.append(context)
         return _safe()
 
@@ -184,6 +188,8 @@ def test_a_repick_that_still_clashes_is_tried_once_more_then_the_slot_is_handed_
     picks = []
 
     def stubborn(context):
+        if "must_be_cuisine" in context:
+            return {}  # the Mexican chip's own pass — not what this counts
         picks.append(context)
         return _pineapple(offered[len(picks) - 1])
 

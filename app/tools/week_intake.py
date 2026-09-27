@@ -80,6 +80,12 @@ MOOD_GUIDANCE = {
 # carrying both would be two answers to one question.
 SURPRISE_MOOD = "Surprise me"
 
+# The mood chip that asks for new dishes. With it on, breakfast joins the
+# no-repeat rule (meal_variety.no_repeat_slots): a breakfast from the last
+# two weeks is re-picked like a dinner or a lunch would be (Emily,
+# 2026-09-27: "Something new" changed dinners and left breakfast alone).
+SOMETHING_NEW_MOOD = "Something new"
+
 
 # What every meal on a day tapped off "Which days?" says for itself once
 # the week is drafted (2026-09-21, board D1). Written as the planned_empty

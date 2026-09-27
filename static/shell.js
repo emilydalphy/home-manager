@@ -9299,6 +9299,10 @@
   // Snacks are a DAY's worth of sittings (Julia, 2026-09-08), so their own
   // row and their own ceiling (memory.edit_preference's 6).
   var WWK_SNACKS = { field: 'snacks_per_day', label: 'Snacks a day', max: 6 };
+  // How many DIFFERENT snack dishes a week (2026-09-27) — a count like the
+  // three above, so it sits with them; at least one (none is "Snacks a
+  // day" at 0). meal_preferences.snack_dishes_per_week, default 2.
+  var WWK_SNACK_DISHES = { field: 'snack_dishes_per_week', label: 'Snacks', max: 7, min: 1, aria: 'different snacks' };
   // Cuisines you like (Emily, 2026-09-25): the same fifteen chips
   // onboarding's "Cuisines you like" step shows (static/onboarding.html's
   // CUISINES), so the list isn't only a "+ Add". A chip is on when the
@@ -10287,7 +10291,13 @@
     // the week is repeats and leftovers (Emily, 2026-09-25).
     html += wwkLead('Different dishes a week') + wwkNote('Fewer means more leftovers and batch cooking.');
     WWK_COUNTS.forEach(function (c) { html += wwkStepperHtml(c, mem[c.field]); });
-    html += wwkStepperHtml(WWK_SNACKS, mem.snacks_per_day);
+    // Never below Snacks a day: fewer different snacks than land on a day
+    // would be a day eating one twice, which the draft won't plan.
+    var snackFloor = Math.max(1, typeof mem.snacks_per_day === 'number' ? mem.snacks_per_day : 0);
+    html += wwkStepperHtml(Object.assign({}, WWK_SNACK_DISHES, { min: snackFloor }), wwkSnackDishes(mem));
+    // Snacks a day is how many land on each day, not a count of dishes —
+    // its own line, not under "Different dishes a week" (2026-09-27).
+    html += '<div class="wwk-count-own">' + wwkStepperHtml(WWK_SNACKS, mem.snacks_per_day) + '</div>';
     html += wwkLead('In your kitchen') + '<div class="wwk-chips">' +
       WWK_KIT.map(function (k) { return wwkChip(k.label, 'data-wwk="kit" data-value="' + k.key + '"', (mem.kitchen_kit || []).indexOf(k.key) !== -1 ? 'on' : ''); }).join('') + '</div>';
     html += wwkFactsHtml('taste');
@@ -10299,21 +10309,40 @@
   // place it is drawn.
   function wwkStepperHtml(c, value) {
     var n = typeof value === 'number' ? value : 0;
+    var noun = escapeHtml(c.aria || c.label.toLowerCase());
+    var bounds = ' data-max="' + c.max + '" data-min="' + (c.min || 0) + '"';
     return '<div class="wwk-count-row">' +
       '<span class="wwk-count-label">' + escapeHtml(c.label) + '</span>' +
       '<span class="cook-serves">' +
-        '<button type="button" class="cook-serves-btn" data-wwk="count" data-field="' + c.field + '" data-delta="-1" data-max="' + c.max + '" aria-label="Fewer ' + escapeHtml(c.label.toLowerCase()) + '">&minus;</button>' +
+        '<button type="button" class="cook-serves-btn" data-wwk="count" data-field="' + c.field + '" data-delta="-1"' + bounds + ' aria-label="Fewer ' + noun + '">&minus;</button>' +
         '<span class="cook-serves-count">' + n + '</span>' +
-        '<button type="button" class="cook-serves-btn" data-wwk="count" data-field="' + c.field + '" data-delta="1" data-max="' + c.max + '" aria-label="More ' + escapeHtml(c.label.toLowerCase()) + '">+</button>' +
+        '<button type="button" class="cook-serves-btn" data-wwk="count" data-field="' + c.field + '" data-delta="1"' + bounds + ' aria-label="More ' + noun + '">+</button>' +
       '</span>' +
     '</div>';
   }
 
-  function wwkSetCount(field, delta, max) {
-    var current = typeof wwkMem()[field] === 'number' ? wwkMem()[field] : 0;
-    var next = Math.max(0, Math.min(max, current + delta));
+  // Snacks as the screen shows it: never below Snacks a day, whatever an
+  // older row says (the server keeps them in step too —
+  // preferences.keep_snack_counts_consistent), so "−" can never jump up.
+  function wwkSnackDishes(mem) {
+    var stored = typeof mem.snack_dishes_per_week === 'number' ? mem.snack_dishes_per_week : 2;
+    var perDay = typeof mem.snacks_per_day === 'number' ? mem.snacks_per_day : 0;
+    return Math.min(WWK_SNACK_DISHES.max, Math.max(stored, perDay, 1));
+  }
+
+  function wwkSetCount(field, delta, max, min) {
+    var current = field === WWK_SNACK_DISHES.field ? wwkSnackDishes(wwkMem())
+      : (typeof wwkMem()[field] === 'number' ? wwkMem()[field] : 0);
+    var next = Math.max(min || 0, Math.min(max, current + delta));
     if (next === current) return;
-    wwkSavePreference('taste', field, next, function () { wwkMem()[field] = next; });
+    wwkSavePreference('taste', field, next, function () {
+      wwkMem()[field] = next;
+      // More snacks a day than different snacks: Snacks comes up with it
+      // (preferences.keep_snack_counts_consistent does the same on the server).
+      if (field === 'snacks_per_day' && !(wwkMem().snack_dishes_per_week >= next)) {
+        wwkMem().snack_dishes_per_week = Math.min(WWK_SNACK_DISHES.max, next);
+      }
+    });
   }
 
   // What the household has said about one protein, read tolerantly. The
@@ -10784,7 +10813,7 @@
         case 'prep-minutes': return wwkSetPrepMinutes(parseInt(value, 10));
         case 'protein': return wwkCycleProtein(value);
         case 'plates': return wwkTogglePlates();
-        case 'count': return wwkSetCount(t.getAttribute('data-field'), parseInt(t.getAttribute('data-delta'), 10), parseInt(t.getAttribute('data-max'), 10));
+        case 'count': return wwkSetCount(t.getAttribute('data-field'), parseInt(t.getAttribute('data-delta'), 10), parseInt(t.getAttribute('data-max'), 10), parseInt(t.getAttribute('data-min') || '0', 10));
         case 'kit': return wwkToggleKit(value);
         case 'fact-delete': return wwkDeleteFact(t.getAttribute('data-id'));
         case 'add': return wwkOpenAdd(t);
