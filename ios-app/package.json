@@ -1,0 +1,24 @@
+{
+  "name": "pomona-ios",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pomona's iPhone app: a Capacitor shell that opens the live Pomona site.",
+  "scripts": {
+    "prepare-www": "node scripts/prepare-www.mjs",
+    "assets": "node scripts/make-assets.mjs",
+    "sync": "node scripts/prepare-www.mjs && cap sync ios",
+    "check": "node scripts/prepare-www.mjs --check"
+  },
+  "dependencies": {
+    "@capacitor/core": "8.5.2",
+    "@capacitor/ios": "8.5.2",
+    "@capacitor/splash-screen": "8.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2",
+    "sharp": "0.35.5"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

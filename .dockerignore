@@ -15,4 +15,6 @@ design_handoff_home_manager/
 design_handoff_shell/
 tests/
 requirements-dev.txt
+# The iPhone app's shell (Capacitor/Xcode project). The server never reads it.
+ios-app/
 .github/

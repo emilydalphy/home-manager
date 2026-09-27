@@ -7005,6 +7005,11 @@ _UA_PLATFORMS = (
 _UA_BROWSERS = (
     # Also order-sensitive: Edge and Opera and Samsung all say "Chrome",
     # and every Chrome says "Safari".
+    # Pomona's own iPhone app (ios-app/, a Capacitor shell around this
+    # site) appends "PomonaApp/<version>" to the WebView's User-Agent and
+    # otherwise sends exactly what a home-screen page does -- so it is asked
+    # first, or every app error would read as "iPhone · Safari".
+    ("Pomona app", ("PomonaApp/",)),
     ("in-app browser", ("FBAN", "FBAV", "Instagram")),
     ("Edge", ("Edg/", "EdgA/", "EdgiOS/")),
     ("Opera", ("OPR/", "OPiOS/")),
