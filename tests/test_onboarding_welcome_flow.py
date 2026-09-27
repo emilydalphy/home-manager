@@ -85,7 +85,9 @@ def test_the_four_intro_screens_come_before_the_household_step():
     # The questions after them, since 2026-09-11 (Build 6, Emily's decision
     # G — setup asks only what changes the plan).
     assert steps[5:] == ["meals", "restrictions", "eating-style", "wont-eat",
-                         "excited-about", "leftovers", "prep", "dinner-time", "kit-repeats", "reveal"]
+                         "excited-about", "leftovers", "prep", "dinner-time", "kit-repeats",
+                         # Sharing with Claude, before the first week (2026-09-27).
+                         "ai-consent", "reveal"]
 
 
 def test_each_intro_screen_is_in_the_markup_in_that_order():

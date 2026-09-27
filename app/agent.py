@@ -18,7 +18,7 @@ import re
 import threading
 import time
 from anthropic import Anthropic, APIConnectionError, APIStatusError, APITimeoutError
-from . import calendar_feed, tools
+from . import ai_consent, calendar_feed, tools
 from .tools import allergen_gate as _allergen_gate
 from .tools import typed_requests as _typed_requests
 from .tools import model_shapes as _model_shapes
@@ -232,6 +232,28 @@ class AssistantUnavailableError(RuntimeError):
     """
 
 
+class AIConsentRequiredError(AssistantUnavailableError):
+    """
+    The household hasn't said yes to sharing its details with Claude
+    (app/ai_consent.py), so nothing was sent.
+
+    A subclass of AssistantUnavailableError on purpose: every route and
+    stream in main.py already turns that into a 503 carrying the message
+    as-is, and every caller that falls back when Claude can't be reached
+    (a rule-based chore list, the swap sheet's own picks) falls back here
+    too — so a refusal reads as the plain sentence it is, everywhere,
+    without each of the 20-odd call sites having to know about consent.
+    """
+
+
+def _require_ai_consent(label: str) -> None:
+    """The consent check both call points run before anything leaves the building."""
+    try:
+        ai_consent.require(label)
+    except ai_consent.ConsentRequired as e:
+        raise AIConsentRequiredError(str(e)) from None
+
+
 def _log_llm_call_timing(label: str, seconds: float, response) -> None:
     """
     Log how long one Anthropic API call actually took, next to what it
@@ -310,6 +332,10 @@ def _create_with_retry(
     component generation deliberately fails soft with the existing friendly
     message instead of a plan built by a weaker model; see CHAT_FALLBACK_MODEL.
     """
+    # Before anything is sent, and outside the retry loop: a household
+    # that hasn't allowed sharing with Claude gets nothing sent, not three
+    # attempts at nothing (App Store 5.1.2(i) — see app/ai_consent.py).
+    _require_ai_consent(label)
     delay = 0.75
     last_error: Exception | None = None
     for attempt in range(1, max_attempts + 1):
@@ -576,6 +602,9 @@ def _stream_forced_tool_call(
     fields of the tool call (the model's own account of what it did with
     the typed requests), still a plain list to every other reader.
     """
+    # The same consent check as _create_with_retry — this is the other of
+    # the two places a request to Anthropic is made (app/ai_consent.py).
+    _require_ai_consent(label)
     delay = 0.75
     last_error: Exception | None = None
     for attempt in range(1, max_attempts + 1):

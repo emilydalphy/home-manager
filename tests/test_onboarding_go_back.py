@@ -71,7 +71,11 @@ QUESTION_STEPS = [
     "household", "meals", "restrictions", "eating-style", "wont-eat",
     "excited-about", "leftovers", "prep", "dinner-time", "kit-repeats",
 ]
-STEPS_AFTER_THE_FIRST = INTRO_STEPS_AFTER_THE_FIRST + QUESTION_STEPS
+# UPDATED 2026-09-27 (App Store consent card): "Sharing with Claude" sits
+# between the last question and the reveal — the first moment anything
+# would go to Anthropic. It has a way back ("‹ Your kit") like a question.
+CONSENT_STEP = "ai-consent"
+STEPS_AFTER_THE_FIRST = INTRO_STEPS_AFTER_THE_FIRST + QUESTION_STEPS + [CONSENT_STEP]
 ALL_STEPS = [FIRST_STEP] + STEPS_AFTER_THE_FIRST + ["reveal"]
 
 
@@ -422,6 +426,7 @@ console.log(JSON.stringify(labels));
         "prep": "‹ Leftovers",
         "dinner-time": "‹ Meal prep",
         "kit-repeats": "‹ Dinner time",
+        "ai-consent": "‹ Your kit",
     }
 
 
@@ -927,7 +932,11 @@ def test_the_guard_does_not_depend_on_a_button_being_passed_in():
     before the first await rather than after the four saves.
     """
     finish = _fn("finishSetupAndReveal")
-    assert "function finishSetupAndReveal()" in finish, (
+    # UPDATED 2026-09-27: it takes `opts` now ({plan: false} — "Not now" to
+    # sharing with Claude saves the answers without asking for a week).
+    # That is a choice about what to do, not a control to disable; the
+    # check is still that no button is passed in.
+    assert re.search(r"function finishSetupAndReveal\((opts)?\)", finish), (
         "finishSetupAndReveal takes a control again — the btn.disabled idiom "
         "only ever covered the button, never the skip link"
     )
@@ -937,7 +946,10 @@ def test_the_guard_does_not_depend_on_a_button_being_passed_in():
     )
     assert "setupRun = 'idle'" in finish, "a failed save can never be retried"
     # Every caller goes through the one guard.
-    assert ONBOARDING.count("finishSetupAndReveal(") == 3  # definition + two taps
+    # UPDATED 2026-09-27: definition + the last question's hand-on
+    # (afterLastQuestion, which both of its taps go through) + the consent
+    # step's Allow and Not now.
+    assert ONBOARDING.count("finishSetupAndReveal(") == 4
 
 
 # ---------- what depends on what ----------

@@ -22208,6 +22208,11 @@
     // question is asked next time, and every write still records what it
     // recorded before this existed.
     await ensureWhoPicked();
+    // Sharing with Claude, asked once per household before anything else
+    // (the "Sharing with Claude" section below). '' means never asked; an
+    // older server that doesn't send the field reads as answered, and the
+    // server refuses any AI call without a yes either way.
+    if (shellWho.loaded && shellWho.ai_consent === '') await openAiConsentScreen();
     // The other adult's first open: the welcome goes over the shell while
     // the tabs build under it, so "Show me today" lands on a Today that's
     // already there. Not awaited — nothing below waits on it.
@@ -22249,7 +22254,7 @@
   // the "{name} approved the week" notification is no longer shown to the
   // adult who approved. Each adult having their own secret is a later
   // slice; this trusts the device.
-  var shellWho = { member: null, adults: [], chores_enabled: false, first_open: false, set_up_by: '', loaded: false };
+  var shellWho = { member: null, adults: [], chores_enabled: false, first_open: false, set_up_by: '', ai_consent: 'granted', loaded: false };
   var whoScreenEl = null;
   var whoResolve = null;
 
@@ -22267,6 +22272,8 @@
       // The other adult's first open (openFirstOpen, below).
       shellWho.first_open = !!data.first_open;
       shellWho.set_up_by = data.set_up_by || '';
+      // Sharing with Claude: '' / 'granted' / 'declined' (app/ai_consent.py).
+      shellWho.ai_consent = typeof data.ai_consent === 'string' ? data.ai_consent : 'granted';
       shellWho.loaded = true;
       return data;
     } catch (err) {
@@ -22399,6 +22406,196 @@
     openWhoScreen(true).then(function (picked) {
       if (picked && shellWho.first_open) openFirstOpen();
     });
+  });
+
+  // ---------- Sharing with Claude (App Store 5.1.2(i), 2026-09-27) ----------
+  //
+  // Loop Board "App Store: ask permission before household details go to
+  // the AI, and say who it is". One full screen, like "Who's this?": what
+  // is sent, who gets it, what for — and one Allow. Shown once per
+  // household, before the tabs, when /api/whoami says `ai_consent` is ''
+  // (never asked: every household that existed before this, on its next
+  // visit). A new household answers it inside onboarding instead
+  // (static/onboarding.html's step-ai-consent), before the first week is
+  // asked for. Preferences' "Sharing with Claude" row opens the same
+  // screen to read the choice back and change it.
+  //
+  // The server is what actually holds the line (app/ai_consent.py): an AI
+  // call for a household without a yes is refused before anything is
+  // sent, whatever this screen did or didn't show. onboarding.html carries
+  // the same words (its AI_CONSENT_COPY); tests/test_ai_consent_screen.py
+  // fails if the two drift. Changing what they SAY means bumping
+  // CONSENT_VERSION in app/ai_consent.py, so each household's stored yes
+  // names the wording it was given against.
+  var AI_CONSENT_COPY = {
+    askTitle: 'Can I share your household’s details with Claude?',
+    onTitle: 'You’re sharing your household’s details with Claude',
+    lead: 'I use Claude, an AI made by Anthropic, to plan your meals and answer you. To do that, I send it what you’ve told me.',
+    rows: [
+      { label: 'What I send', body: 'First names and ages, allergies and what everyone eats, who’s home for which meals, and what you type, say or photograph for me.' },
+      { label: 'Who gets it', body: 'Anthropic, the company that makes Claude.' },
+      { label: 'What for', body: 'Only to plan your meals and answer you. Anthropic doesn’t use it to train its AI.' }
+    ],
+    moreLabel: 'More about this',
+    more: 'You can turn this off any time in Preferences, under Sharing with Claude. While it’s off, I can’t plan meals or chat, and nothing you’ve saved is lost.',
+    linkLabel: 'Anthropic’s privacy details',
+    linkUrl: 'https://privacy.claude.com/en/articles/7996868-is-my-data-used-for-model-training',
+    allow: 'Allow',
+    notNow: 'Not now',
+    turnOff: 'Turn off',
+    close: 'Close',
+    failed: 'That didn’t save. Try it again.',
+    toastOn: 'Sharing with Claude was turned on',
+    toastOff: 'Sharing with Claude was turned off'
+  };
+
+  var aiConsentEl = null;
+  var aiConsentResolve = null;
+
+  function buildAiConsentScreen() {
+    if (aiConsentEl) return;
+    aiConsentEl = document.createElement('div');
+    aiConsentEl.id = 'ai-consent-screen';
+    aiConsentEl.className = 'aic-screen';
+    aiConsentEl.hidden = true;
+    aiConsentEl.setAttribute('role', 'dialog');
+    aiConsentEl.setAttribute('aria-modal', 'true');
+    aiConsentEl.setAttribute('aria-labelledby', 'aic-title');
+    aiConsentEl.innerHTML =
+      '<div class="aic-inner">' +
+        '<h1 class="aic-title" id="aic-title"></h1>' +
+        '<p class="aic-lead">' + escapeHtml(AI_CONSENT_COPY.lead) + '</p>' +
+        '<div class="aic-rows">' +
+          AI_CONSENT_COPY.rows.map(function (r) {
+            return '<div class="aic-row">' +
+              '<p class="aic-row-label">' + escapeHtml(r.label) + '</p>' +
+              '<p class="aic-row-body">' + escapeHtml(r.body) + '</p>' +
+            '</div>';
+          }).join('') +
+        '</div>' +
+        '<details class="aic-more">' +
+          '<summary>' + escapeHtml(AI_CONSENT_COPY.moreLabel) + '</summary>' +
+          '<p>' + escapeHtml(AI_CONSENT_COPY.more) + '</p>' +
+          '<a href="' + AI_CONSENT_COPY.linkUrl + '" target="_blank" rel="noopener">' + escapeHtml(AI_CONSENT_COPY.linkLabel) + '</a>' +
+        '</details>' +
+        '<p class="aic-error" id="aic-error" hidden></p>' +
+        '<div class="aic-foot">' +
+          '<button type="button" class="btn-primary aic-allow" data-aic="allow">' + escapeHtml(AI_CONSENT_COPY.allow) + '</button>' +
+          '<button type="button" class="aic-off" data-aic="off" hidden>' + escapeHtml(AI_CONSENT_COPY.turnOff) + '</button>' +
+          '<button type="button" class="aic-later" data-aic="later"></button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(aiConsentEl);
+    aiConsentEl.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest && e.target.closest('[data-aic]');
+      if (!btn) return;
+      var what = btn.getAttribute('data-aic');
+      if (what === 'allow') saveAiConsent(true);
+      else if (what === 'off') saveAiConsent(false);
+      else if (what === 'later') {
+        // "Not now" on the first ask is an answer (declined) — the screen
+        // isn't pushed again, and Preferences is the way back. "Close"
+        // from Preferences changes nothing.
+        if (shellWho.ai_consent === '') saveAiConsent(false, { quiet: true });
+        else closeAiConsentScreen();
+      }
+    });
+  }
+
+  // Resolves once the screen is closed, whatever was chosen.
+  function openAiConsentScreen() {
+    buildAiConsentScreen();
+    closeAskSheet();
+    closeWeekSheet();
+    var on = shellWho.ai_consent === 'granted';
+    aiConsentEl.querySelector('#aic-title').textContent = on ? AI_CONSENT_COPY.onTitle : AI_CONSENT_COPY.askTitle;
+    aiConsentEl.querySelector('.aic-allow').hidden = on;
+    aiConsentEl.querySelector('.aic-off').hidden = !on;
+    aiConsentEl.querySelector('.aic-later').textContent = on ? AI_CONSENT_COPY.close : AI_CONSENT_COPY.notNow;
+    aiConsentEl.querySelector('#aic-error').hidden = true;
+    aiConsentEl.querySelectorAll('button').forEach(function (b) { b.disabled = false; });
+    aiConsentEl.hidden = false;
+    aiConsentEl.scrollTop = 0;
+    var first = aiConsentEl.querySelector(on ? '.aic-off' : '.aic-allow');
+    if (first) first.focus();
+    return new Promise(function (resolve) { aiConsentResolve = resolve; });
+  }
+
+  function closeAiConsentScreen() {
+    if (!aiConsentEl) return;
+    aiConsentEl.hidden = true;
+    var resolve = aiConsentResolve;
+    aiConsentResolve = null;
+    if (resolve) resolve(shellWho.ai_consent);
+  }
+
+  async function saveAiConsent(allow, opts) {
+    opts = opts || {};
+    var buttons = aiConsentEl ? aiConsentEl.querySelectorAll('button') : [];
+    buttons.forEach(function (b) { b.disabled = true; });
+    var errorEl = aiConsentEl && aiConsentEl.querySelector('#aic-error');
+    if (errorEl) errorEl.hidden = true;
+    var was = shellWho.ai_consent;
+    try {
+      var res = await fetch('/api/ai-consent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ allow: !!allow })
+      });
+      if (!res.ok) throw new Error('consent save failed');
+      var data = await res.json();
+      shellWho.ai_consent = data.status || (allow ? 'granted' : 'declined');
+      closeAiConsentScreen();
+      if (prefsState.open) renderPrefsRows();
+      if (opts.quiet) return;
+      if (allow) {
+        showToast(AI_CONSENT_COPY.toastOn);
+      } else {
+        // Turning it off can be undone right here — S10: a Save, a pop-up,
+        // an Undo. Undo only when it was on before this tap.
+        showToast(AI_CONSENT_COPY.toastOff, was === 'granted' ? {
+          label: 'Undo',
+          onClick: function () { saveAiConsent(true); }
+        } : null);
+      }
+    } catch (err) {
+      console.warn('Saving sharing with Claude failed:', err);
+      if (errorEl && aiConsentEl && !aiConsentEl.hidden) {
+        errorEl.textContent = AI_CONSENT_COPY.failed;
+        errorEl.hidden = false;
+      } else {
+        showToast(AI_CONSENT_COPY.failed);
+      }
+      buttons.forEach(function (b) { b.disabled = false; });
+    }
+  }
+
+  // The Preferences row: the choice, read back, and the way to change it.
+  function aiConsentPrefsRowHtml() {
+    if (!shellWho.loaded) return '';
+    var on = shellWho.ai_consent === 'granted';
+    return '<button type="button" class="prefs-row" data-aic-prefs="open">' +
+      '<span class="prefs-row-text">' +
+        '<span class="prefs-row-title">Sharing with Claude</span>' +
+        '<span class="prefs-row-sub">' + (on ? 'On' : 'Off · I can’t plan meals or chat') + '</span>' +
+      '</span>' +
+      ICONS.arrow +
+    '</button>';
+  }
+
+  document.addEventListener('click', function (e) {
+    var target = e.target && e.target.closest && e.target.closest('[data-aic-prefs="open"]');
+    if (!target) return;
+    closePrefsSheet();
+    openAiConsentScreen();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    // Escape closes it only when it is being read back from Preferences —
+    // the first ask waits for an answer, like "Who's this?".
+    if (e.key === 'Escape' && aiConsentEl && !aiConsentEl.hidden && shellWho.ai_consent !== '') {
+      closeAiConsentScreen();
+    }
   });
 
   // ---------- The other adult's first open (2026-09-25) ----------
@@ -23142,6 +23339,9 @@
         ICONS.arrow +
       '</button>' +
       appearanceRowHtml() +
+      // Sharing with Claude — the household's answer to the consent screen,
+      // and the way to change it (aiConsentPrefsRowHtml).
+      aiConsentPrefsRowHtml() +
       // The second group: a way out of a bad moment, and the way out of the
       // app. Same quiet tile the Kitchen tab used to carry — one component,
       // one place it is defined.
