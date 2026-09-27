@@ -306,7 +306,12 @@ class TestThePlanTabReadsTheServersAnswer:
     def test_the_click_handler_no_longer_does_its_own_arithmetic(self):
         handler = SHELL_JS[SHELL_JS.index("steps.querySelector('#wk-plan-next')"):][:600]
         assert "addDaysLocal(start, dayCount)" not in handler
-        assert "startPlanningWeek(period.start_date, period.day_count)" in handler
+        # One shared tap for the approved dock and the draft's band
+        # (planNextWeek, 2026-09-27), built from nextPeriodFor.
+        assert "planNextWeek()" in handler
+        shared = SHELL_JS[SHELL_JS.index("function planNextWeek()"):][:400]
+        assert "nextPeriodFor(data, data.days)" in shared
+        assert "startPlanningWeek(period.start_date, period.day_count)" in shared
 
     def test_no_reason_line_is_left_on_the_plan_tab(self):
         # The note above the link went with the shortening (2026-09-21).

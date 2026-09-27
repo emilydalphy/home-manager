@@ -12118,6 +12118,10 @@
     return weekState.draftView === 'days' ? 'days' : 'menu';
   }
 
+  // `next` (a draft only — Emily, 2026-09-27): the label of the band's
+  // "Plan next week", the same words as the approved dock's #wk-plan-next
+  // (planNextLabel over nextPeriodFor), so a draft on screen is no longer
+  // a dead end for planning the week after it.
   function weekBandExtras(data) {
     var state = weekPlanState(data);
     if (state === 'none') return null;
@@ -12125,13 +12129,27 @@
     return {
       pill: true,
       lead: draft ? (data.draft_opener || []).filter(Boolean) : [],
-      view: draft ? draftView(data) : null
+      view: draft ? draftView(data) : null,
+      next: draft ? planNextLabel(nextPeriodFor(data, data.days)) : null
     };
   }
 
   function weekReplanPillHtml() {
     return '<button type="button" class="wk-replan" id="wk-replan" aria-label="Re-plan this week">' +
       WK_ICONS.swap + 'Re-plan</button>';
+  }
+
+  // A draft's band actions: Re-plan and "Plan next week" side by side on
+  // their own row under the brand row (Emily, 2026-09-27 — at 375px the
+  // brand, the Draft chip, two pills, the bell and the gear do not fit on
+  // one line). Re-plan keeps its look; "Plan next week" is a spruce-raised
+  // chip in ivory ink — never apricot, the dock's Approve is the screen's
+  // one (rule 5). An approved week keeps Re-plan in the tools, top right,
+  // and "Plan next week" in its dock.
+  function weekBandActionsHtml(nextLabel) {
+    return '<div class="wk-band-actions">' + weekReplanPillHtml() +
+      '<button type="button" class="wk-band-next" id="wk-band-plan-next">' + escapeHtml(nextLabel) + '</button>' +
+    '</div>';
   }
 
   function weekDraftSegHtml(view) {
@@ -12161,11 +12179,15 @@
     var band = bandSlot.querySelector('.root-band');
     if (!band) return;
     var tools = band.querySelector('.root-band-tools');
-    if (extras.pill && tools) tools.insertAdjacentHTML('afterbegin', weekReplanPillHtml());
+    var top = band.querySelector('.root-band-top');
+    if (extras.pill && extras.next && top) top.insertAdjacentHTML('afterend', weekBandActionsHtml(extras.next));
+    else if (extras.pill && tools) tools.insertAdjacentHTML('afterbegin', weekReplanPillHtml());
     var tail = weekBandTailHtml(extras);
     if (tail) band.insertAdjacentHTML('beforeend', tail);
     var pill = band.querySelector('#wk-replan');
     if (pill) pill.addEventListener('click', function () { replanWeek(); });
+    var planNext = band.querySelector('#wk-band-plan-next');
+    if (planNext) planNext.addEventListener('click', function () { planNextWeek(); });
     band.querySelectorAll('[data-wk-view]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var to = btn.getAttribute('data-wk-view') === 'days' ? 'days' : 'menu';
@@ -12421,6 +12443,22 @@
   // arithmetic fallback
   // is the pre-2026-09-13 behaviour, kept only so a stale cached payload
   // still gets a working link.
+  // The "Plan next week" button's words and its tap — one pair for the
+  // approved dock's #wk-plan-next and the draft band's #wk-band-plan-next,
+  // so both say and open the same stretch (the server's next_period).
+  // When next week already has a plan the label reads "Re-plan next week"
+  // (planEntryLabel), and the tap opens its intake like any Re-plan.
+  function planNextLabel(next) {
+    next = next || {};
+    return planEntryLabel(next.day_count || 7, next.is_current_period ? 'current' : 'next', next.is_planned);
+  }
+
+  function planNextWeek() {
+    var data = weekState.data || {};
+    var period = nextPeriodFor(data, data.days);
+    startPlanningWeek(period.start_date, period.day_count);
+  }
+
   function nextPeriodFor(data, days) {
     if (data.next_period && data.next_period.start_date) return data.next_period;
     var dayCount = data.day_count || (days || []).length ||
@@ -12492,7 +12530,7 @@
     return '<div class="dock wk-root-dock">' +
       '<div class="wk-dock-row">' +
         '<button type="button" class="wk-plan-next" id="wk-plan-next">' +
-          escapeHtml(planEntryLabel(next.day_count || 7, next.is_current_period ? 'current' : 'next', next.is_planned)) +
+          escapeHtml(planNextLabel(next)) +
         '</button>' +
         wkDockMoreHtml() +
       '</div>' +
@@ -15405,12 +15443,9 @@
       });
     });
     var next = steps.querySelector('#wk-plan-next');
-    if (next) next.addEventListener('click', function () {
-      // The same span the link's label was built from (weekStepHtml), so
-      // what it says and what it opens can't drift apart.
-      var period = nextPeriodFor(weekState.data || {}, (weekState.data || {}).days);
-      startPlanningWeek(period.start_date, period.day_count);
-    });
+    // The same span the link's label was built from (weekStepHtml), so
+    // what it says and what it opens can't drift apart (planNextWeek).
+    if (next) next.addEventListener('click', function () { planNextWeek(); });
     var more = steps.querySelector('#wk-more');
     if (more) more.addEventListener('click', function () { openMealsMoreSheet(); });
     // The draft's decision, now that it lives under the card rather than in

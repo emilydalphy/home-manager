@@ -58,6 +58,12 @@ def _band_prelude() -> str:
         + _extract("draftView", SHELL_JS) + "\n"
         + _extract("weekBandExtras", SHELL_JS) + "\n"
         + _extract("weekReplanPillHtml", SHELL_JS) + "\n"
+        + _extract("weekBandActionsHtml", SHELL_JS) + "\n"
+        + _extract("planEntryLabel", SHELL_JS) + "\n"
+        + _extract("addDaysLocal", SHELL_JS) + "\n"
+        + _extract("nextPeriodFor", SHELL_JS) + "\n"
+        + _extract("planNextLabel", SHELL_JS) + "\n"
+        + _extract("planNextWeek", SHELL_JS) + "\n"
         + _extract("weekDraftSegHtml", SHELL_JS) + "\n"
         + _extract("weekBandTailHtml", SHELL_JS) + "\n"
         + _extract("fillWeekBandExtras", SHELL_JS) + "\n"
@@ -77,13 +83,17 @@ function el(cls) {
 }
 function makeBand() {
   var tools = el('root-band-tools');
+  var top = el('root-band-top');
   var band = el('root-band');
   var pill = el('wk-replan');
+  var planNext = el('wk-band-plan-next');
   var menuBtn = el('seg'); menuBtn.attrs['data-wk-view'] = 'menu';
   var daysBtn = el('seg'); daysBtn.attrs['data-wk-view'] = 'days';
   band.querySelector = function (sel) {
     if (sel === '.root-band-tools') return tools;
+    if (sel === '.root-band-top') return top;
     if (sel === '#wk-replan') return band.html.indexOf('id="wk-replan"') !== -1 ? pill : null;
+    if (sel === '#wk-band-plan-next') return band.html.indexOf('id="wk-band-plan-next"') !== -1 ? planNext : null;
     return null;
   };
   band.querySelectorAll = function (sel) {
@@ -94,7 +104,8 @@ function makeBand() {
   slot.querySelector = function (sel) { return sel === '.root-band' ? band : null; };
   // The tools' inserts count as the band's for the pill lookup.
   tools.insertAdjacentHTML = function (where, html) { tools.html += html; band.html += '|tools:' + html; };
-  return { slot: slot, band: band, tools: tools, pill: pill, menuBtn: menuBtn, daysBtn: daysBtn };
+  top.insertAdjacentHTML = function (where, html) { top.html += '|' + where + ':' + html; band.html += '|top-' + where + ':' + html; };
+  return { slot: slot, band: band, tools: tools, top: top, pill: pill, planNext: planNext, menuBtn: menuBtn, daysBtn: daysBtn };
 }
 """
 
@@ -122,8 +133,11 @@ console.log(JSON.stringify({{
 
 @_needs_node
 def test_the_pill_goes_first_in_the_bands_tools_and_opens_the_intake_for_the_week_on_screen():
+    # On an approved week the pill sits in the tools, top right. (A draft's
+    # pill moved to the row under the brand, beside "Plan next week",
+    # 2026-09-27 — see test_plan_next_on_draft.py.)
     days = _week()
-    data = dict(_draft(days), period_start_date="2026-09-21", week_start_date="2026-09-21", day_count=5)
+    data = dict(_approved(days), period_start_date="2026-09-21", week_start_date="2026-09-21", day_count=5)
     out = _run(_band_prelude() + _BAND_DOM + f"""
 weekState.data = {json.dumps(data)};
 var b = makeBand();
@@ -140,6 +154,7 @@ def test_the_pill_is_the_one_road_and_re_plan_left_the_more_sheet():
     only caller of replanWeek."""
     fill = _extract("fillWeekBandExtras", SHELL_JS)
     assert "tools.insertAdjacentHTML('afterbegin', weekReplanPillHtml())" in fill
+    assert "top.insertAdjacentHTML('afterend', weekBandActionsHtml(extras.next))" in fill
     assert "pill.addEventListener('click', function () { replanWeek(); })" in fill
     wiring = _extract("wireMealsStep", SHELL_JS)
     assert "'#wk-plan-differently'" not in wiring and ">Plan it differently<" not in SHELL_JS
