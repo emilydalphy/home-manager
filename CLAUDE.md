@@ -619,7 +619,7 @@ why*, not duplicating the diff.
     at 23 rather than carried forward, which is this log's own rule.) "Mostly a
     name-not-found count, except for the prose rule" is the honest sentence.
     The mutations are still the bulk of the evidence.
-  - **Numbers, read off the runs at `TZ=America/Toronto`: SUITE_LINE**,
+  - **Numbers, read off the runs at `TZ=America/Toronto`: 7662 passed, 0 failed**,
     against **7638 collected on `main` (`ee741f8`)** — +24 is this one new
     test file exactly, and `git diff main -- tests/` adds one file and changes
     none, so no existing test was deleted or weakened. **Twelve of the 24
