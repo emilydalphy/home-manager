@@ -1132,6 +1132,38 @@ def batch_days(weekly_plan_id: int, entry_id: int) -> list[dict]:
     return sorted(members, key=lambda e: (e["date"], order.get(e["slot"], 9), e["entry_id"]))
 
 
+def batch_serves(weekly_plan_id: int, group: list[dict], entry: dict) -> int:
+    """
+    How many servings a dish replacing `group` is written for: the batch
+    its cook makes (leftovers.batch_for_entry — the same count the Cook card's
+    "Cooking for" reads, cooker.py) when one of `group` is a cook feeding
+    others in the group or putting portions by for the freezer; the tapped
+    meal's own table otherwise, as it always was. A reheat night the
+    change leaves behind (already cooked) is not counted — the write
+    unlinks it (replace_dish_on_days). Shared by plate_parts.change_part
+    and swap_options.choose_swap_option's whole-dish Swap.
+    """
+    from . import leftovers as _leftovers
+    table = _table_for(entry["date"], entry["slot"])["serves"]
+    try:
+        chains = _leftovers.plan_leftover_chains(weekly_plan_id)
+    except Exception:
+        logger.exception("Could not read the leftover chains; writing the dish for one table")
+        return table
+    ids = {e["entry_id"] for e in group}
+    best = 0
+    for member in group:
+        source = chains["sources"].get(member["entry_id"])
+        if source:
+            source = dict(source, targets=[t for t in source["targets"] if t["entry_id"] in ids])
+            batch = _leftovers.batch_for_source(source)
+        else:
+            batch = _leftovers.batch_for_entry(member["entry_id"], chains)
+        if batch and batch["servings"] > best:
+            best = batch["servings"]
+    return best or table
+
+
 def _intake_for(weekly_plan_id: int) -> dict | None:
     week_start = _week_start_of(weekly_plan_id)
     return _week_intake.get_week_intake(week_start) if week_start else None

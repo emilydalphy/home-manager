@@ -13509,6 +13509,16 @@
   function swapDaysLine(st) {
     var dates = (st && st.dates) || [];
     if (dates.length < 2) return '';
+    // A dinner and the lunch eating its leftovers change together
+    // (batch_days, 2026-09-27): each meal is named with its own slot.
+    var meals = (st && st.meals) || [];
+    var mixed = meals.some(function (m) { return m.slot !== meals[0].slot; });
+    if (mixed) {
+      if (meals.length > 3) return 'Swapping all ' + meals.length + ' meals.';
+      return 'Swapping ' + joinList(meals.map(function (m) {
+        return dayName(m.date, { weekday: 'long' }) + '’s ' + slotWord(m.slot);
+      })) + '.';
+    }
     var slot = slotWord(st.slot);
     if (dates.length > 3) return 'Swapping all ' + dates.length + ' ' + (SWAP_SLOT_PLURALS[slot] || slot + 's') + '.';
     var names = dates.map(function (d) { return dayName(d, { weekday: 'long' }); });
@@ -13672,6 +13682,7 @@
       else if (res.status === 404) out = { message: swapRouteMessage(await res.json().catch(function () { return null; })) };
       if (swapSheetState !== thisOpen) return;
       if (out && out.dates && out.dates.length) thisOpen.dates = out.dates;
+      if (out && out.meals && out.meals.length) thisOpen.meals = out.meals;
       if (!out || !out.options || !out.options.length) {
         // A 404 says why in its own words (a slot with no meal on it); an
         // empty list is the model finding nothing safe, or not answering.

@@ -352,6 +352,63 @@ def test_a_cook_and_its_reheats_stay_a_cook_and_its_reheats(home):
         assert slot["source"] == "leftovers" and slot["leftover_from"]["meal"] == NEW, "still a reheat, of the new dish"
 
 
+def _dinner_fed_lunch(plan_id):
+    """Shrimp cooked for dinner tomorrow, eaten again at the next day's
+    LUNCH — linked by entry id, the shape weekday_lunches writes. The menu
+    draws these as two rows (lunch and dinner are separate meal types)."""
+    cook = tools.plan_meal(D1, SHRIMP, slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    tools.plan_meal(D2, SHRIMP, slot="lunch", weekly_plan_id=plan_id,
+                    derived_from={"links_to": f"entry_id:{cook}"})
+    conn = get_conn()
+    conn.execute("UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
+                 (json.dumps({"make_double_for": [f"{D2}:lunch"]}), cook))
+    conn.commit()
+    conn.close()
+    return cook
+
+
+def test_the_lunch_eating_the_dinners_leftovers_follows_the_swap(home):
+    """Emily, 2026-09-27 (the same gap as the ingredient Change): a dinner
+    row's Swap changed the dinner and left the next day's lunch — eating
+    that dinner's leftovers — on the old dish, cut loose from its cook."""
+    _dinner_fed_lunch(home)
+    seen = []
+    entry_id = _id(home, D1, "dinner")
+    opened = tools.swap_options(home, entry_id, asker=lambda ctx: seen.append(ctx) or [_pick()], whole_dish=True)
+    assert opened["meals"] == [{"date": D1, "slot": "dinner"}, {"date": D2, "slot": "lunch"}]
+    assert "4 servings" in seen[0]["cook_for"], "the pick is asked for the batch, not one table"
+    out = tools.choose_swap_option(home, entry_id, 0, whole_dish=True)
+    assert out["status"] == "swapped"
+    assert _meals(home, "dinner") == {D1: NEW} and _meals(home, "lunch") == {D2: NEW}
+    chains = tools.plan_leftover_chains(home)
+    (cook_id, source), = chains["sources"].items()
+    assert [(t["date"], t["slot"]) for t in source["targets"]] == [(D2, "lunch")], "still its cook's leftovers"
+    assert _menu_day(home, D2)["lunch"]["leftover_from"]["meal"] == NEW
+    back = tools.undo_meal_swap(home, out["entry_id"])
+    assert back["status"] == "restored"
+    assert _meals(home, "dinner") == {D1: SHRIMP} and _meals(home, "lunch") == {D2: SHRIMP}
+
+
+def test_a_swapped_batch_with_no_servings_of_its_own_is_saved_for_the_batch(home):
+    _dinner_fed_lunch(home)
+    entry_id = _id(home, D1, "dinner")
+    pick = dict(_pick("Batch Chicken Bowls"), default_servings=None)
+    tools.swap_options(home, entry_id, asker=_asker(pick), whole_dish=True)
+    tools.choose_swap_option(home, entry_id, 0, whole_dish=True)
+    assert tools.get_recipe("Batch Chicken Bowls")["default_servings"] == 4
+
+
+@_needs_node
+def test_the_sheet_names_each_meal_when_the_swap_spans_lunch_and_dinner():
+    out = _node(_sheet_harness(
+        "var st = { date: '2026-09-24', slot: 'dinner', name: 'Shrimp', view: 'picks', options: [], trouble: '',\n"
+        "  dates: ['2026-09-24', '2026-09-25'],\n"
+        "  meals: [{date: '2026-09-24', slot: 'dinner'}, {date: '2026-09-25', slot: 'lunch'}] };\n"
+        "console.log(JSON.stringify(swapSheetBodyHtml(st)));"
+    ))
+    assert "Swapping Thursday’s dinner and Friday’s lunch." in out
+
+
 def test_an_approved_chain_buys_one_batch_of_the_new_dish(home):
     _cook_and_reheat(home)
     tools.approve_weekly_plan(home, "Alex")

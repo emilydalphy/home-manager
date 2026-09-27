@@ -333,7 +333,9 @@ def swap_options(weekly_plan_id: int, entry_id: int, avoid: list[str] | None = N
 
     `whole_dish` is the Swap on a "What we're eating" row (Emily,
     2026-09-22): the pick will land on every day still ahead that the row
-    stands for (swap_in_place.dish_days), and the answer says which, as
+    stands for (swap_in_place.dish_days), plus every meal eating out of the
+    same cook in another meal type (swap_in_place.batch_days — Friday's
+    LUNCH of Thursday's dinner, 2026-09-27), and the answer says which, as
     `dates`, so the sheet can say "Swapping Thursday and Friday's lunch."
     from the same list the write will use. The picks themselves are the
     same three, asked ONCE — but asked against the strictest of those
@@ -345,12 +347,15 @@ def swap_options(weekly_plan_id: int, entry_id: int, avoid: list[str] | None = N
     entry = _swap._entry(weekly_plan_id, entry_id)
     if entry["slot_state"] != "planned" or not entry["meal"]:
         raise ValueError("There's no meal on that slot to swap.")
-    group = _swap.dish_days(weekly_plan_id, entry_id) if whole_dish else [entry]
+    group = _swap.batch_days(weekly_plan_id, entry_id) if whole_dish else [entry]
     if len(group) < 2:
         group = [entry]
     out = _swap_options(weekly_plan_id, entry, avoid, asker, group)
     if whole_dish:
         out["dates"] = [e["date"] for e in group]
+        # The slot of each, for a group that spans meal types — a dinner
+        # and the lunch eating its leftovers (batch_days).
+        out["meals"] = [{"date": e["date"], "slot": e["slot"]} for e in group]
     return out
 
 
@@ -373,6 +378,14 @@ def _swap_options(weekly_plan_id: int, entry: dict, avoid: list[str] | None, ask
     tried = _swap._dedup([entry["meal"]] + list(avoid or []))
     if len(group) > 1:
         context = _swap.build_dish_swap_context(weekly_plan_id, group, tried)
+        # A cook feeding the group's other meals makes the whole batch
+        # (swap_in_place.batch_serves — what the Cook card's "Cooking for"
+        # reads), not one table: said so the written-out recipe is sized
+        # for it.
+        batch = _swap.batch_serves(weekly_plan_id, group, entry)
+        if batch > (context.get("table") or {}).get("serves", 0):
+            context["cook_for"] = (f"{batch} servings — one cook feeds this meal and the "
+                                   "meals eating its leftovers")
     else:
         context = _swap.build_swap_context(weekly_plan_id, entry, tried)
     ask = asker or _ask_options
@@ -443,7 +456,7 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
     day) or 'refused' with a plain sentence.
 
     `whole_dish` (a "What we're eating" row's Swap, Emily 2026-09-22):
-    the pick goes on every day swap_in_place.dish_days names, in one
+    the pick goes on every day swap_in_place.batch_days names, in one
     write (apply_pick_to_days), and answers with `days` beside `day`.
     Every one of those days is gated, not only the tapped one — a
     Thursday table and a Friday table can be different people. The group
@@ -468,7 +481,7 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
     pick = dict(cached["options"][index])
     if _weekly_plan.night_has_gone(entry["date"]):
         return {"status": "refused", "message": _weekly_plan.NIGHT_GONE}
-    group = _swap.dish_days(weekly_plan_id, entry_id) if whole_dish else [entry]
+    group = _swap.batch_days(weekly_plan_id, entry_id) if whole_dish else [entry]
     if len(group) < 2:
         group = [entry]
     # The picks on offer were asked for THESE days; if the dish's days have
@@ -507,7 +520,8 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
         if why:
             return {"status": "refused", "message": f"I left it as it was — {pick['meal_name']} {why}."}
     if len(group) > 1:
-        out = _swap.apply_pick_to_days(weekly_plan_id, group, pick)
+        out = _swap.apply_pick_to_days(weekly_plan_id, group, pick,
+                                       serves=_swap.batch_serves(weekly_plan_id, group, entry))
     else:
         out = _swap.apply_pick(weekly_plan_id, entry, pick)
     out["status"] = "swapped"

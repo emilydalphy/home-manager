@@ -768,7 +768,7 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
 
     A dish planned on more than one day ahead (a cook and the meals eating
     its leftovers, or the same dish cooked again) is changed on every one
-    of them at once, rewritten ONCE at the batch size (_batch_serves), with
+    of them at once, rewritten ONCE at the batch size (swap_in_place.batch_serves), with
     `days` beside `day` — the menu row's Swap, part by part.
     """
     if role not in ROLES:
@@ -812,7 +812,7 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
     group = _swap.batch_days(weekly_plan_id, entry_id)
     if len(group) < 2:
         group = [entry]
-    serves = _batch_serves(weekly_plan_id, group, entry)
+    serves = _swap.batch_serves(weekly_plan_id, group, entry)
     context = _options_context(entry, recipe, role, current)
     context[f"new_{role}"] = choice
     context["serves"] = serves
@@ -868,33 +868,3 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
         forget_options(member["entry_id"])
     return out
 
-
-def _batch_serves(weekly_plan_id: int, group: list[dict], entry: dict) -> int:
-    """
-    How many servings the changed dish is written for: the batch its cook
-    makes (leftovers.batch_for_entry — the same count the Cook card's
-    "Cooking for" reads, cooker.py) when one of `group` is a cook feeding
-    others in the group or putting portions by for the freezer; the tapped
-    meal's own table otherwise, as it always was. A reheat night the
-    change leaves behind (already cooked) is not counted — the write
-    unlinks it (replace_dish_on_days).
-    """
-    from . import leftovers as _leftovers
-    table = _swap_mod()._table_for(entry["date"], entry["slot"])["serves"]
-    try:
-        chains = _leftovers.plan_leftover_chains(weekly_plan_id)
-    except Exception:
-        logger.exception("Could not read the leftover chains; writing the change for one table")
-        return table
-    ids = {e["entry_id"] for e in group}
-    best = 0
-    for member in group:
-        source = chains["sources"].get(member["entry_id"])
-        if source:
-            source = dict(source, targets=[t for t in source["targets"] if t["entry_id"] in ids])
-            batch = _leftovers.batch_for_source(source)
-        else:
-            batch = _leftovers.batch_for_entry(member["entry_id"], chains)
-        if batch and batch["servings"] > best:
-            best = batch["servings"]
-    return best or table
