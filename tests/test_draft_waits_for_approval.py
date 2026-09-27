@@ -611,11 +611,13 @@ def test_the_confirm_is_a_real_dialog_and_not_just_the_insides():
     css = (pathlib.Path(__file__).resolve().parents[1] / "static" / "shell.css").read_text()
     html = (pathlib.Path(__file__).resolve().parents[1] / "static" / "shell.html").read_text()
     for anchor in (
-        "#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim, #discard-draft-scrim {\n  position: fixed;",
-        "#reset-dialog, #dinner-confirm-dialog, #approve-who-dialog, #discard-draft-dialog {\n  position: fixed;",
-        "#discard-draft-scrim[hidden], #discard-draft-dialog[hidden] { display: none; }",
-        "#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim, #discard-draft-scrim {\n  animation: none;",
-        "#discard-draft-scrim.is-open {",
+        # (#leave-scrim / #leave-dialog joined each list 2026-09-27 —
+        # the "Delete your household" dialog.)
+        "#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim, #discard-draft-scrim, #leave-scrim {\n  position: fixed;",
+        "#reset-dialog, #dinner-confirm-dialog, #approve-who-dialog, #discard-draft-dialog, #leave-dialog {\n  position: fixed;",
+        "#discard-draft-scrim[hidden], #discard-draft-dialog[hidden],",
+        "#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim, #discard-draft-scrim, #leave-scrim {\n  animation: none;",
+        "#discard-draft-scrim.is-open, #leave-scrim.is-open {",
     ):
         assert anchor in css, anchor
     # And the box's own fade/scale, which is attribute-driven.
