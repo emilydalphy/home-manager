@@ -109,7 +109,7 @@ def _load_entries(plan_id: int) -> list[dict]:
         """
         SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.cooked_status, mpe.derived_from_json,
                COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.freeform_meal,
-               r.dish_note, r.main_protein, r.ingredients_json
+               r.dish_note, r.main_protein, r.ingredients_json, r.cuisine
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.component_category IS NULL
@@ -292,6 +292,164 @@ def plan_must_use(plan_id: int, recipe_id: int) -> list[str]:
         for m in derived.get("must_use") or []:
             if isinstance(m, str) and m and m not in out:
                 out.append(m)
+    return out
+
+
+# ---------- a cuisine chip they picked is on the week ----------
+#
+# Emily, 2026-09-27: she tapped Burgers on the week's cuisine chips, the
+# draft had no burger, and a Greek chicken carried "Burgers, as asked".
+# The chips reach the prompt (intake.cuisines) and nothing checked the
+# answer. This is use_requested_ingredients' shape for a chip: each picked
+# cuisine is matched by at least one lunch or dinner of that cuisine, else
+# ONE fitting slot is re-picked with it on `must_be_cuisine` (the swap
+# picker's gates: allergies, taste, the table that's home, and that slot's
+# own time cap — cap_gate), else the report gets an unmet line the opener
+# says plainly ("No burger fit this week.").
+
+# Why the slot was re-picked, for the row's derived_from and the picker's
+# `replacing_because`.
+CUISINE_BECAUSE = "you picked {cuisine} this week and nothing on the week was {cuisine}"
+
+
+def dish_is_cuisine(chip: str, meal: str | None, cuisine: str | None = None) -> bool:
+    """
+    Whether a dish answers a cuisine chip: the recipe's own cuisine field
+    names it ("Mexican" for Mexican), or the dish's name does ("Smash
+    Burgers" for Burgers). Plurals read as one word ("burger" and
+    "burgers"), and only whole words match. A chip that says nothing
+    matches nothing.
+    """
+    want = _norm(chip)
+    if not want:
+        return False
+    for text in (cuisine, meal):
+        said = _norm(text or "")
+        if said and any(True for _ in _typed(want, said)):
+            return True
+    return False
+
+
+def _pick_is_cuisine(candidate: dict, chip: str) -> str | None:
+    return None if dish_is_cuisine(chip, candidate.get("meal_name"), candidate.get("cuisine")) else f"not {chip}"
+
+
+def _cuisine_slot(plan_id: int, entries: list[dict], chains: dict) -> dict | None:
+    """
+    The one slot to re-pick for a chip: a planned dinner (else lunch)
+    nobody asked for (meal_variety.theirs), not cooked, not either end of
+    a leftovers chain, not already re-picked for another chip or a typed
+    ingredient, and — so the distinct-dish count stays as enforced — a
+    dish on that one night when there is one. Within that, the night with
+    the most time (no cap first, then the biggest), so Burgers lands where
+    a burger fits rather than on a 20-minute Tuesday; earliest on a tie.
+    """
+    from . import swap_in_place as _swap
+
+    counts: dict[tuple, int] = {}
+    for e in entries:
+        if e["slot"] in _REPICK_SLOTS and e["slot_state"] == "planned" and e["meal"]:
+            k = (e["slot"], e["meal"].strip().lower())
+            counts[k] = counts.get(k, 0) + 1
+    for once_only in (True, False):
+        for slot in _REPICK_SLOTS:
+            fits = []
+            for e in entries:
+                if e["slot"] != slot or e["slot_state"] != "planned" or not e["meal"]:
+                    continue
+                if _meal_variety._LEFTOVER_LINE.search(e["freeform_meal"] or ""):
+                    continue
+                try:
+                    derived = json.loads(e["derived_from_json"] or "{}") or {}
+                except (TypeError, ValueError):
+                    derived = {}
+                if _meal_variety.theirs(derived) or (e["cooked_status"] or "") == "done":
+                    continue
+                if derived.get("cuisine_repick") or derived.get("must_use_repick") or derived.get("prep_date"):
+                    continue
+                if e["id"] in chains["leftovers"] or e["id"] in chains["sources"]:
+                    continue
+                if once_only and counts[(slot, e["meal"].strip().lower())] != 1:
+                    continue
+                fits.append(e)
+            if fits:
+                capped = _swap.day_caps(plan_id, [dict(e, entry_id=e["id"]) for e in fits])
+                best = min(capped, key=lambda pair: (pair[1] is not None, -(pair[1] or 0), pair[0]["date"]))
+                return next(e for e in fits if e["id"] == best[0]["id"])
+    return None
+
+
+def cuisine_unmet_line(chip: str) -> str:
+    """"No burger fit this week." for a dish word, "No Mexican dish fit
+    this week." for a cuisine — the opener's one plain line for a chip
+    nothing could answer (draft_opener._line_two)."""
+    chip = (chip or "").strip()
+    last = chip.split()[-1].lower() if chip.split() else ""
+    if len(last) > 3 and last.endswith("s") and not last.endswith("ss"):
+        return f"No {chip[:-1].lower()} fit this week."
+    return f"No {chip} dish fit this week."
+
+
+def use_picked_cuisines(plan_id: int, cuisines: list[str] | None, report: dict, budget=None, picker=None) -> dict:
+    """
+    For every cuisine chip the household picked this week (intake.cuisines),
+    make sure one lunch or dinner is of that cuisine — the model's own dish
+    when one is, else one slot re-picked for it — and when none can be,
+    say so in `report` (an unmet line carrying `cuisine`, for the opener).
+    A re-picked dish carries `cuisines:<chip>` in derived_from.inputs; the
+    row's "…, as asked" fact is still only said once draft_opener.asked_fact
+    has checked the chip is this week's and the dish is that cuisine.
+    Returns {"matched", "repicked", "unmet"} for the log and tests. Never
+    raises.
+    """
+    out = {"matched": [], "repicked": [], "unmet": []}
+    chips: list[str] = []
+    for c in cuisines or []:
+        c = str(c or "").strip()
+        if c and c.lower() not in {x.lower() for x in chips}:
+            chips.append(c)
+    if not chips:
+        return out
+    budget = budget or _allergen_gate.CallBudget()
+    try:
+        _honoured, unmet = _report_lists(report)
+        for chip in chips:
+            entries = _load_entries(plan_id)
+            planned = [e for e in entries if e["slot"] in _REPICK_SLOTS and e["slot_state"] == "planned"
+                       and e["meal"] and not _meal_variety._LEFTOVER_LINE.search(e["freeform_meal"] or "")]
+            if any(dish_is_cuisine(chip, e["meal"], e.get("cuisine")) for e in planned):
+                out["matched"].append(chip)
+                continue
+            target = _cuisine_slot(plan_id, entries, _leftovers.plan_leftover_chains(plan_id))
+            replaced = None
+            if target is not None:
+                from . import swap_in_place as _swap
+                slot_entry = {"date": target["date"], "slot": target["slot"], "entry_id": target["id"]}
+
+                def reject_pick(candidate, _chip=chip, _entry=slot_entry):
+                    return _pick_is_cuisine(candidate, _chip) or _swap.cap_gate(plan_id, candidate, [_entry])
+
+                replaced = _meal_variety._repick_entry(
+                    plan_id, target, budget,
+                    avoid=[], because=CUISINE_BECAUSE.format(cuisine=chip),
+                    reject=lambda name: False,
+                    derived_key="cuisine_repick", picker=picker,
+                    context_extra={"must_be_cuisine": chip},
+                    reject_pick=reject_pick,
+                    derived_extra={"inputs": [f"cuisines:{chip}"]},
+                )
+            if replaced is None:
+                # Said, never silent: the opener reads this line.
+                unmet[:] = [u for u in unmet if str(u.get("cuisine") or "").lower() != chip.lower()]
+                unmet.append({"words": chip, "reason": "nothing of it fit", "cuisine": chip})
+                out["unmet"].append(chip)
+                logger.info("Plan %s: no lunch or dinner was %s, and no re-pick landed one", plan_id, chip)
+                continue
+            out["repicked"].append(chip)
+            logger.info("Plan %s: %s %s re-picked as %r so the %s chip is on the week",
+                        plan_id, target["date"], target["slot"], replaced.get("meal"), chip)
+    except Exception:
+        logger.exception("Cuisine-chip pass failed for plan %s; the week stands as generated", plan_id)
     return out
 
 

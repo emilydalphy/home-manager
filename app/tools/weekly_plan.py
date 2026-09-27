@@ -2133,6 +2133,10 @@ def record_plan_requests(weekly_plan_id: int, report: dict | None) -> None:
         out = {"words": str(r.get("words") or "").strip(), field: str(r.get(field) or "").strip()}
         if r.get("ingredient"):
             out["ingredient"] = str(r["ingredient"]).strip()
+        # And `cuisine` for a cuisine chip nothing fit
+        # (typed_requests.use_picked_cuisines): "No burger fit this week."
+        if r.get("cuisine"):
+            out["cuisine"] = str(r["cuisine"]).strip()
         return out
 
     honoured = [
@@ -4940,7 +4944,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
                mpe.slot_state, mpe.open_reason, mpe.reasoning, mpe.derived_from_json,
                mpe.food_groups_json, mpe.sides_json, mpe.cooked_status,
                r.prep_time_minutes, r.cook_time_minutes,
-               r.tags_json, r.instructions_json, r.main_protein, r.ingredients_json,
+               r.tags_json, r.instructions_json, r.main_protein, r.ingredients_json, r.cuisine,
                r.source_url, r.source_book, r.source_author, r.source_page,
                (SELECT COUNT(*) FROM recipe_photos rp WHERE rp.recipe_id = r.id) AS photo_count
         FROM meal_plan_entries mpe
@@ -5166,11 +5170,16 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     # fact so the three build_slot returns above stay as they are.
     from . import draft_opener as _draft_opener  # lazy: it reads meal_variety, which reaches back here
 
+    # This week's cuisine chips: a row only says "Burgers, as asked" when
+    # Burgers is one of them and the dish is one (asked_fact).
+    picked_cuisines = (_week_intake.get_week_intake(plan["week_start_date"]) or {}).get("cuisines") or []
+
     def with_asked(built, row):
         if built and built.get("state") == "planned":
             built["asked"] = _draft_opener.asked_fact({
                 "slot_state": row["slot_state"], "derived_from": row["derived_from_json"],
-            })
+                "meal": row["meal"], "cuisine": row["cuisine"],
+            }, cuisines=picked_cuisines)
             # "From last week" on the row (Emily, 2026-09-25): a meal the
             # household brought over from last week, so the draft says why
             # it's there (tools/bring_over.py).

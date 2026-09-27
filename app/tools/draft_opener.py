@@ -134,12 +134,18 @@ def _derived(entry: dict) -> dict:
         return {}
 
 
-def asked_fact(entry: dict) -> str | None:
+def asked_fact(entry: dict, cuisines: list[str] | None = None) -> str | None:
     """
     The one short fact a planned row carries beside its days: what the
     household asked for that shaped it. From derived_from, never from the
-    dish name — "Mexican, as asked" is only said when the cuisine input or
-    their own words drove the slot.
+    dish name alone — "Mexican, as asked" is only said when the model
+    cited the cuisine input AND that cuisine is one of this week's chips
+    (`cuisines`, intake.cuisines) AND the dish is that cuisine (its name,
+    or the recipe's `cuisine` on the entry — typed_requests.dish_is_cuisine).
+    Emily, 2026-09-27: a Greek chicken read "Burgers, as asked", and the
+    model's inputs have carried junk like "None-specific-but-requested";
+    the model's say-so is not enough on its own. The chip's own spelling
+    is what's shown.
     """
     if entry.get("slot_state", "planned") != "planned":
         return None
@@ -149,12 +155,16 @@ def asked_fact(entry: dict) -> str | None:
         # The rule since 2026-09-21 (board D2): travels well, fine cold or
         # reheated — so the tag says the part that is always true.
         return "travels well"
+    from . import typed_requests as _typed_requests  # lazy: it reaches back through meal_variety
+
+    chips = {str(c).strip().lower(): str(c).strip() for c in (cuisines or []) if str(c or "").strip()}
     for item in d.get("inputs") or []:
         item = str(item)
         if item.lower().startswith("cuisines:"):
-            cuisine = item.split(":", 1)[1].strip().replace("_", " ")
-            if cuisine:
-                return f"{_cap(cuisine)}, as asked"
+            cited = item.split(":", 1)[1].strip().replace("_", " ")
+            chip = chips.get(cited.lower())
+            if chip and _typed_requests.dish_is_cuisine(chip, entry.get("meal"), entry.get("cuisine")):
+                return f"{_cap(chip)}, as asked"
     if str(d.get("freeform") or "").strip():
         return "as asked"
     return None
@@ -348,6 +358,11 @@ def _line_two(entries: list[dict], report: dict | None, recent: set[str] | None,
         # corn", in the app's own words; anything else in theirs.
         if unmet[0].get("ingredient"):
             return f"I couldn’t fit the {unmet[0]['ingredient']} in this week."
+        # A cuisine chip nothing on the week answers (typed_requests.
+        # use_picked_cuisines): "No burger fit this week."
+        if unmet[0].get("cuisine"):
+            from . import typed_requests as _typed_requests
+            return _typed_requests.cuisine_unmet_line(unmet[0]["cuisine"])
         return f"I couldn’t fit “{str(unmet[0]['words']).strip()}” in this week."
     # A meal brought over from last week (bring_over.KEY, Emily
     # 2026-09-25) is neither new nor a repeat the rule missed: the day row

@@ -3475,6 +3475,9 @@ cap. The night tags and `weeknight_max_minutes` are about dinner and don't apply
 `intake.mood_guidance` spells out what each of those moods asks for; follow those lines, they \
 are what the household meant by the two-word label. \
 `intake.cuisines` are what the household asked for THIS week and outrank their usual rotation. \
+Each one is at least one lunch or dinner that IS that cuisine or dish (Burgers means a burger), \
+with its `cuisine` set to it; cite `cuisines:<name>` in derived_from.inputs only on a dish that \
+is that cuisine, spelled exactly as in intake.cuisines. \
 `intake.freeform` is their own words, and a stated request in it is the week's ANCHOR, not an \
 isolated instruction to satisfy in a vacuum: put it exactly where they said — never plan over \
 it, and still include its ingredients so they aren't short on the night — and then build the \
@@ -6159,6 +6162,11 @@ def _finish_week_slots(
         _typed_requests.use_requested_ingredients(
             plan_id, tools.freeform_ingredient_requests(asks or ""), report,
             budget=repick_budget or _allergen_gate.CallBudget(),
+        )
+        # Each cuisine chip they picked is on the week, or the opener says
+        # it couldn't be (typed_requests.use_picked_cuisines).
+        _typed_requests.use_picked_cuisines(
+            plan_id, (intake or {}).get("cuisines"), report, budget=repick_budget or _allergen_gate.CallBudget(),
         )
 
     # "Short on time" is held to rather than only asked for (Emily,
