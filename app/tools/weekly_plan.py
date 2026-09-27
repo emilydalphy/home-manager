@@ -516,6 +516,36 @@ def plan_slot_empty(
     return {"entry_id": entry_id, "date": meal_date, "slot": slot, "slot_state": "planned_empty", "reason": reason}
 
 
+def open_slot_question(open_reason: str | None, derived_from_json: str | None) -> str:
+    """
+    The open slot's sentence when it's a question the household has to
+    answer, else "" (Emily, 2026-09-27). Kept: hosting ("You're hosting
+    Thanksgiving for 12 — what's the main?", big_meal), a holiday whose
+    plans changed ("Plans for Thanksgiving changed — what would you like for
+    dinner?", holidays) and a slot no safe dish could fill (allergen_gate —
+    filed under its own constraint by the re-pick, under the stepper's by
+    the sweep, so its sentence is matched too, and said without the old
+    "— I'd rather ask than guess" tail). Every other open_reason is the app
+    explaining itself ("Sunday I'd rather ask than guess: …", "You cut X
+    back…") and the screens say one plain line instead.
+    """
+    from . import allergen_gate as _allergen_gate  # lazy: it imports this module
+
+    text = (open_reason or "").strip()
+    if not text:
+        return ""
+    try:
+        derived = json.loads(derived_from_json or "{}") or {}
+    except (TypeError, ValueError):
+        derived = {}
+    constraint = derived.get("constraint") if isinstance(derived, dict) else None
+    if constraint in ("hosting", "holiday_answer_changed"):
+        return text
+    if constraint == _allergen_gate.ALLERGEN_CONSTRAINT or _allergen_gate.is_open_reason(text):
+        return _allergen_gate.question_of(text)
+    return ""
+
+
 def plan_slot_open(
     weekly_plan_id: int,
     meal_date: str,
@@ -5219,6 +5249,9 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             return {
                 "title": "I’d like your call on this one", "meta": None, "source": "open",
                 "state": "open", "open_reason": row["open_reason"],
+                # What the screens say for it (open_slot_question): the
+                # question when it is one, else "".
+                "open_question": open_slot_question(row["open_reason"], row["derived_from_json"]),
                 "options": derived.get("options") or [], "entry_id": row["id"],
             }
         title = row["meal"]
@@ -5297,6 +5330,10 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
                     "date": src["date"],
                     "meal": src["meal"],
                     "cook_ahead": bool(leftover.get("cook_ahead")),
+                    # The cook's own slot, so the reheat night's Meal step
+                    # can open the recipe it comes from ("See Thursday's
+                    # recipe", 2026-09-27) — a lunch can reheat a dinner.
+                    "slot": src.get("slot"),
                 },
             }
         text = (row["freeform_meal"] or "").lower()
@@ -5338,13 +5375,50 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             except (TypeError, ValueError):
                 derived = {}
             built["brought_over"] = bool(isinstance(derived, dict) and derived.get("brought_over"))
-            # When to cook a prepped batch ("Cook this Sunday for Monday’s
-            # lunch.", weekday_lunches.apply_to_plan's derived_from.prep_note)
-            # — carried on its own key so it is never lost under the row's
-            # other line (Emily, 2026-09-27).
-            built["schedule_note"] = (str(derived.get("prep_note") or "").strip()
-                                      if isinstance(derived, dict) else "")
+            built["schedule_note"] = schedule_note(row, derived if isinstance(derived, dict) else {})
         return built
+
+    # The one line a row still says under its dish besides the minutes
+    # (Emily, 2026-09-27, decision C: "cut it everything" — no reason line,
+    # nothing the model wrote): WHEN a prepped batch is cooked and which
+    # lunches it feeds. Built here from what the plan records — the cook's
+    # prep_date, the lunches chained to it, the lunches frozen off it — not
+    # read back out of the free `reasoning` text, so it can only ever say
+    # what the plan actually holds. Every other meal says nothing here: a
+    # reheat night's "from Monday" is the row's meta (leftover_from), and a
+    # freezer night's name already says where it comes from.
+    from . import weekday_lunches as _weekday_lunches  # lazy: it imports this module
+
+    frozen_off: dict[str, list[str]] = {}
+    for r in rows:
+        try:
+            d = json.loads(r["derived_from_json"] or "{}") or {}
+        except (TypeError, ValueError):
+            continue
+        frozen = d.get(_leftovers.FROM_FREEZER_KEY) if isinstance(d, dict) else None
+        if isinstance(frozen, dict) and str(frozen.get("cook") or "").startswith("entry_id:"):
+            frozen_off.setdefault(frozen["cook"], []).append(r["date"])
+
+    def schedule_note(row, derived: dict) -> str:
+        prep_date = derived.get("prep_date")
+        # A batch cooked on the prep day's own lunch or dinner
+        # (weekday_lunches._prep_day_cook, derived_from.prep_day_cook): that
+        # meal is the cook, not one of the lunches it feeds, and a dinner
+        # cook carries no weekday_lunches constraint of its own.
+        on_prep_day = bool(derived.get("prep_day_cook"))
+        if not prep_date:
+            return ""
+        if not on_prep_day and (derived.get("constraint") != _weekday_lunches.CONSTRAINT or row["slot"] != "lunch"):
+            return ""
+        fed = set() if on_prep_day else {row["date"]}
+        for t in (chains["sources"].get(row["id"]) or {}).get("targets") or []:
+            if t.get("slot") == "lunch":
+                fed.add(t["date"])
+        fed.update(frozen_off.get(f"entry_id:{row['id']}", []))
+        if not fed:
+            return ""
+        return (f"Cook this {_weekday_lunches._title(_weekday_lunches._weekday(prep_date))} for "
+                f"{_weekday_lunches.batch_lunch_phrase(sorted(fed))}.")
 
     by_date_slot = {}
     # Snacks are a LIST per day, not one entry: two different snacks a day
@@ -5744,6 +5818,9 @@ def get_needs_you_items() -> list[dict]:
                 "date": candidate,
                 "slot": "dinner",
                 "body": row["open_reason"] or "",
+                # The body only when it's a question to answer (Today's
+                # card shows this, never the bare body — 2026-09-27).
+                "question": open_slot_question(row["open_reason"], row["derived_from_json"]),
                 "options": derived.get("options") or [],
                 "week_start": week_start,
                 # The plan this card is about, by id: a week key alone

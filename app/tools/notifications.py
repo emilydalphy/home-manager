@@ -104,30 +104,22 @@ def get_active_notifications() -> list[dict]:
         if key in dismissed:
             continue
         if kind == "dinner_open":
-            # The app wrote a sentence when it opened this slot
-            # (plan_slot_open's open_reason names the constraint), and the
-            # card on Now already shows it. Saying anything else here is
-            # the bell and the band disagreeing about one night.
+            # The bell says what the Today card and the Plan card say, so
+            # the two cannot disagree about one night. The line names no
+            # control and no day, deliberately: it must not promise
+            # "options" (the label below avoids that word when there are
+            # none), and it must not say "tonight's" — this card is the
+            # SOONEST unsettled dinner, tomorrow's as often as tonight's,
+            # and its own title already says which.
             #
-            # The fallback names no control and no day, and both halves of
-            # that are deliberate. It must not promise "options": the label
-            # two lines down goes out of its way NOT to say that word when
-            # there are none, and a body promising them underneath it would
-            # be the same small lie by another route. And it must not say
-            # "tonight's" — this card is the SOONEST unsettled dinner,
-            # which is tomorrow's about as often as it is tonight's, and
-            # its own title already says which. ("Tell me what you'd like"
-            # is the card's own button for an open slot with nothing to
-            # tap.) The decision branch below still has both of those and
-            # they are pre-existing; what this branch must not do is add a
-            # second copy of them.
-            #
-            # Unreachable today rather than merely unlikely, and that was
-            # checked rather than assumed: plan_slot_open raises on a blank
-            # reason, all three INSERTs into meal_plan_entries hardcode
-            # slot_state, and nothing in app/ UPDATEs it — so no row can
-            # reach here `open` with nothing to say.
-            body = item.get("body") or "Take a look and tell me what you'd like."
+            # Since 2026-09-27 (Emily, decision C, "cut it everything"): the
+            # sentence is said only when it is a question the household has
+            # to answer (the item's `question` — weekly_plan.
+            # open_slot_question: hosting, a slot no safe dish could fill,
+            # a holiday whose plans changed). Every other open_reason is
+            # the app explaining itself, and the bell says the Plan card's
+            # plain line instead.
+            body = item.get("question") or "Nothing planned for this dinner yet."
             # "Show options" only when there are any: the commonest open
             # slot has none (drop_dish_from_day plans one with no options
             # at all) and its card offers "Tell me what you'd like

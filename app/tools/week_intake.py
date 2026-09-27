@@ -1261,6 +1261,11 @@ def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
         "known_cuisines": KNOWN_CUISINES,
         "intake": intake,
         "in_flight": in_flight,
+        # Who is looking — the session's adult ("" when nobody is picked),
+        # the same name a save would record (acting_name). The screen
+        # compares it with intake.created_by so the in-flight line says
+        # "You started this…" to the person who did (Emily, 2026-09-27).
+        "viewer": acting_name(""),
         "plan_exists": bool(plan),
         "plan_id": plan["weekly_plan_id"] if plan else None,
         "plan_status": plan["status"] if plan else None,

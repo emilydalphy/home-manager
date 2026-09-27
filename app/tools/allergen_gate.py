@@ -54,6 +54,7 @@ uses, so what counts as a clash is decided in one place.
 from __future__ import annotations
 
 import logging
+import re
 
 from . import coordination as _coordination
 from . import meal_plans as _meal_plans
@@ -188,14 +189,37 @@ def _person(clashes: list[dict]) -> str | None:
 def open_reason(slot: str, clashes: list[dict]) -> str:
     """
     The open slot's own sentence when nothing safe could be found: plain
-    about what couldn't be done, and in the app's own "rather ask than
-    guess" idiom — the constraint is named, so it reads as care rather than
-    failure (see weekly_plan.plan_slot_open on why the wording matters).
+    about what couldn't be done, naming the food and the person. The
+    "— I'd rather ask than guess" tail went on 2026-09-27 (Emily, decision
+    C: the app explaining itself is cut; the fact is what's kept).
     """
     food = _food_word(clashes)
     who = _person(clashes)
     for_whom = f" for {who}" if who else ""
-    return f"I couldn’t find a {slot} without {food}{for_whom} — I’d rather ask than guess."
+    return f"I couldn’t find a {slot} without {food}{for_whom}."
+
+
+# The tail rows written before 2026-09-27 still carry; `question_of` drops it.
+_OLD_TAIL = " — I’d rather ask than guess."
+_OPEN_REASON_RE = re.compile(r"^I couldn’t find an? [\w ]+ without [^.]+?(?: — I’d rather ask than guess)?\.$")
+
+
+def is_open_reason(text: str | None) -> bool:
+    """
+    Whether an open slot's sentence is open_reason's above (either
+    wording). The sweep's drop (weekly_plan.drop_dish_from_day) files it
+    under the stepper's "household_cut_back" constraint, so the sentence is
+    the one mark it carries. The Plan rows keep this sentence where they
+    cut every other reason (Emily, 2026-09-27): it is a question the
+    household has to answer, not the app explaining itself.
+    """
+    return bool(_OPEN_REASON_RE.match((text or "").strip()))
+
+
+def question_of(text: str | None) -> str:
+    """open_reason's sentence as the screens say it: without the old tail."""
+    text = (text or "").strip()
+    return text[: -len(_OLD_TAIL)] + "." if text.endswith(_OLD_TAIL) else text
 
 
 def _replacing_because(name: str, clashes: list[dict]) -> str:

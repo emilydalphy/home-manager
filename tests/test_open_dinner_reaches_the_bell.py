@@ -162,14 +162,28 @@ def test_a_dinner_waiting_on_the_household_reaches_the_morning_text(shape):
 
 # ---------- the wording ----------
 
-def test_the_bell_repeats_the_reason_the_app_itself_wrote():
-    """CATCH. The card carries plan_slot_open's own sentence; the bell says
-    the same words, so the two cannot disagree about one night."""
+def test_the_bell_says_the_plain_line_not_the_apps_explanation():
+    """CATCH (Emily, 2026-09-27, decision C: "cut it everything"). The
+    stepper's "You cut Bean Chili back…" explains; it is not a question.
+    The bell says the Plan card's plain line, so the two agree."""
     plan = _plan()
     _open_tonight(plan)
     bell = _dinner_bell()[0]
-    assert bell["body"] == DROPPED_REASON
+    assert bell["body"] == "Nothing planned for this dinner yet."
+    assert DROPPED_REASON not in bell["body"]
     assert bell["title"] == "Tonight’s dinner needs your call"
+
+
+def test_the_bell_says_a_real_question_as_written():
+    """A slot opened with a question the household must answer (hosting)
+    keeps it on the bell, as on the Today and Plan cards."""
+    from app.tools import weekly_plan as _wp
+    plan = _plan()
+    question = "You’re hosting Thanksgiving for 12 — what’s the main? Tell me and I’ll build the rest around it."
+    _wp.clear_plan_slot(plan, ISO_TODAY, "dinner")
+    _wp.plan_slot_open(weekly_plan_id=plan, meal_date=ISO_TODAY, slot="dinner", open_reason=question,
+                       derived_from={"holiday": "Thanksgiving", "holiday_menu": True, "constraint": "hosting"})
+    assert _dinner_bell()[0]["body"] == question
 
 
 def test_neither_channel_says_nothing_planned_about_a_night_the_app_opened():
@@ -371,7 +385,7 @@ def test_the_reasonless_fallback_names_no_control_and_no_day(monkeypatch):
         }],
     )
     bell = _dinner_bell()[0]
-    assert bell["body"] == "Take a look and tell me what you'd like."
+    assert bell["body"] == "Nothing planned for this dinner yet."
     assert "option" not in bell["body"].lower()
     assert "tonight" not in bell["body"].lower()
     assert bell["action_label"] == "Take a look"
