@@ -109,6 +109,7 @@ def _prelude() -> str:
         + _extract("reviewStepHtml", SHELL_JS) + "\n"
         + _extract("reviewDecideHtml", SHELL_JS) + "\n"
         + _extract("wkDockMoreHtml", SHELL_JS) + "\n"
+        + _extract("planNextLabel", SHELL_JS) + "\n"
         + _extract("weekDecideHtml", SHELL_JS) + "\n"
         + _extract("weekSnackTileHtml", SHELL_JS) + "\n"
         + _extract("weekSnacksHtml", SHELL_JS) + "\n"

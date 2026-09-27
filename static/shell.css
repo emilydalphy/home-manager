@@ -8410,6 +8410,36 @@ span.cook-week-name { cursor: default; }
 .wk-replan::before { content: ""; position: absolute; inset: -4px 0; }
 .wk-replan svg { width: 16px; height: 16px; flex: 0 0 auto; }
 .wk-replan:hover { background: var(--apricot); }
+/* A draft's band actions (Emily, 2026-09-27): Re-plan and "Plan next
+   week" as one row under the brand row — at 375px the two pills do not
+   fit beside the brand, the Draft chip, the bell and the gear. The top
+   margin keeps the pills' 44px ::before targets clear of the 44px row
+   above. .wk-band-next is the secondary: --ivory-ink on --spruce-raised
+   (chips on spruce only, §1), 9.86 light / 7.49 dark — never apricot,
+   the dock's Approve is the screen's one (rule 5). Same 36px box and
+   44px target as .wk-replan. */
+.wk-band-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 4px;
+}
+.wk-band-next {
+  position: relative;
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: var(--spruce-raised);
+  color: var(--ivory-ink);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.wk-band-next::before { content: ""; position: absolute; inset: -4px 0; }
+.wk-band-next:hover { background: var(--spruce-hover); }
 .wk-draft-lead {
   font-family: var(--font-body);
   font-weight: 500;
