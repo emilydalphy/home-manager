@@ -2176,12 +2176,12 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "edit_preference",
-        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference', 'eating_style' (plain strings — eating_style is a diet/style goal like \"keto\" or \"high-protein, low-carb\", distinct from hard dietary restrictions), 'dinners_per_week'/'breakfasts_per_week'/'lunches_per_week' (integer 1-7, each independent), 'cuisine_preferences'/'dislikes'/'usual_stores' (list of strings, replaces the whole list — prefer add_food_dislikes/add_usual_stores for adding a single new item conversationally), 'protein_preferences' (dict of protein -> 1-5 like rating, e.g. {\"chicken\": 5}, merged in — see set_household_meal_preferences for the scale), 'complete_plates' (true/false — whether I may add a small side to a meal that came out short of a full plate. On by default. Set it false whenever someone says any version of \"stop adding things to my meals\" or \"I don't need you rounding out my dinners\", and say plainly that you've stopped; set it back to true if they change their mind). Use delete_preference instead to remove a single item without replacing the whole list.",
+        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference', 'eating_style' (plain strings — eating_style is a diet/style goal like \"keto\" or \"high-protein, low-carb\", distinct from hard dietary restrictions), 'dinners_per_week'/'breakfasts_per_week'/'lunches_per_week' (integer 1-7, each independent), 'snacks_per_day' (integer 0-6: how many snacks land on each day), 'snack_dishes_per_week' (integer 1-7: how many DIFFERENT snack dishes the week rotates), 'cuisine_preferences'/'dislikes'/'usual_stores' (list of strings, replaces the whole list — prefer add_food_dislikes/add_usual_stores for adding a single new item conversationally), 'protein_preferences' (dict of protein -> 1-5 like rating, e.g. {\"chicken\": 5}, merged in — see set_household_meal_preferences for the scale), 'complete_plates' (true/false — whether I may add a small side to a meal that came out short of a full plate. On by default. Set it false whenever someone says any version of \"stop adding things to my meals\" or \"I don't need you rounding out my dinners\", and say plainly that you've stopped; set it back to true if they change their mind). Use delete_preference instead to remove a single item without replacing the whole list.",
         "input_schema": {
             "type": "object",
             "properties": {
-                "field": {"type": "string", "enum": ["notes", "cooking_time_preference", "eating_style", "dinners_per_week", "breakfasts_per_week", "lunches_per_week", "cuisine_preferences", "protein_preferences", "dislikes", "usual_stores", "complete_plates"]},
-                "value": {"description": "String for notes/cooking_time_preference/eating_style, integer for dinners_per_week/breakfasts_per_week/lunches_per_week, array for cuisine_preferences/dislikes/usual_stores, object for protein_preferences, boolean for complete_plates."},
+                "field": {"type": "string", "enum": ["notes", "cooking_time_preference", "eating_style", "dinners_per_week", "breakfasts_per_week", "lunches_per_week", "snacks_per_day", "snack_dishes_per_week", "cuisine_preferences", "protein_preferences", "dislikes", "usual_stores", "complete_plates"]},
+                "value": {"description": "String for notes/cooking_time_preference/eating_style, integer for dinners_per_week/breakfasts_per_week/lunches_per_week/snacks_per_day/snack_dishes_per_week, array for cuisine_preferences/dislikes/usual_stores, object for protein_preferences, boolean for complete_plates."},
             },
             "required": ["field", "value"],
         },
@@ -6144,6 +6144,7 @@ def _finish_week_slots(
             plan_id, household_memory.get(field), slot=slot, asks=count_asks, budget=count_budget,
             fill_up=bool(household_memory.get("meal_counts_set")) and usual is not None and int(usual) < 7,
             usual=usual, day_count=planned_count, caps=caps,
+            refuse=_meal_variety.recent_refusals(intake, week_start_date, plan_id, slot),
         )
     if household_memory.get("snacks_per_day_set") or household_memory.get("snacks_per_week_set"):
         # The kept days only: a dropped day's snacks were cleared above

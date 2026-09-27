@@ -734,7 +734,7 @@ def _write_cook_sides(plan_id: int, targets: dict, frozen: list, out: dict) -> N
 def enforce_distinct_count(
     plan_id: int, target: int | None, slot: str = "dinner", asks: tuple[str | None, ...] = (),
     budget=None, picker=None, fill_up: bool = True, usual: int | None = None, day_count: int = 7,
-    caps: dict | None = None, pinned_ids=(), ignore_ids=(),
+    caps: dict | None = None, pinned_ids=(), ignore_ids=(), refuse=(),
 ) -> dict:
     """
     Make one slot's distinct dishes NUMBER `target` for this plan — see
@@ -766,6 +766,11 @@ def enforce_distinct_count(
     count: the lunches the week's own answer settled, and a lunch that is
     a dinner's leftovers). A prepped batch's cook (derived_from.prep_date,
     weekday_lunches) is always kept, whatever the count.
+
+    `refuse` is dish names a fill-up pick must not be (recent_refusals: the
+    variety window, for a slot the no-repeat rule covers this week) — so
+    the count pass cannot put back what repick_recent_repeats just took
+    off.
     Returns {"before", "after", "replaced": [{"date", "dropped", "with",
     "as"}], "batched": [{"cook", "slot", "covers"}], "added": [...]} and
     never raises: a plan with one dish too many is a far better outcome
@@ -798,7 +803,7 @@ def enforce_distinct_count(
         surplus: list[dict] = []
         if len(dishes) < target:
             if fill_up:
-                result["added"] = _fill_up(plan_id, slot, dishes, target, budget, picker)
+                result["added"] = _fill_up(plan_id, slot, dishes, target, budget, picker, refuse=refuse)
                 result["after"] = result["before"] + len(result["added"])
                 if result["added"]:
                     chains = _leftovers.plan_leftover_chains(plan_id)
@@ -842,7 +847,8 @@ def enforce_distinct_count(
     return result
 
 
-def _fill_up(plan_id: int, slot: str, dishes: list[dict], target: int, budget, picker=None) -> list[dict]:
+def _fill_up(plan_id: int, slot: str, dishes: list[dict], target: int, budget, picker=None,
+             refuse=()) -> list[dict]:
     """
     Too few distinct dishes: re-pick repeated nights into new ones until
     the slot numbers `target`. The night that goes is the LAST night of
@@ -861,6 +867,7 @@ def _fill_up(plan_id: int, slot: str, dishes: list[dict], target: int, budget, p
     budget = budget or _allergen_gate.CallBudget()
     added: list[dict] = []
     have = {d["name"].strip().lower() for d in dishes}
+    refused = {repeat_key(n) for n in refuse or ()} - {""}
     # Nights that may be re-picked, most-repeated dish first, latest night
     # first within it — recomputed each round because a re-pick changes
     # the counts.
@@ -883,9 +890,9 @@ def _fill_up(plan_id: int, slot: str, dishes: list[dict], target: int, budget, p
             break
         replaced = _repick_entry(
             plan_id, entry, budget,
-            avoid=sorted(d["name"] for d in dishes),
+            avoid=sorted(d["name"] for d in dishes) + sorted(refuse),
             because=f"you asked for {_display_word(target, slot)} this period, and this night was a repeat",
-            reject=lambda name: name.strip().lower() in have,
+            reject=lambda name: name.strip().lower() in have or repeat_key(name) in refused,
             derived_key="count_repick", picker=picker,
         )
         if replaced is None:
@@ -1187,6 +1194,25 @@ def is_surprise_me(intake: dict | None) -> bool:
     """Did the household tap Surprise me for this week?"""
     from .week_intake import SURPRISE_MOOD
     return bool(intake) and SURPRISE_MOOD in (intake.get("moods") or [])
+
+
+def recent_refusals(intake: dict | None, period_start: str | None, plan_id: int, slot: str) -> list[str]:
+    """
+    The dishes a count-pass pick must not be for this slot: the variety
+    window's dishes (draft_opener.recent_dish_names, the one reading of it)
+    when the slot is one no_repeat_slots covers this week — so under
+    "Something new" the Breakfasts count cannot re-pick last fortnight's
+    breakfast back in after repick_recent_repeats took it off (2026-09-27).
+    Empty otherwise, or when there is nothing to compare against.
+    """
+    if not period_start or slot not in no_repeat_slots(intake):
+        return []
+    from . import draft_opener as _draft_opener
+    try:
+        return sorted(_draft_opener.recent_dish_names(period_start, plan_id) or ())
+    except Exception:
+        logger.exception("Could not read the variety window for plan %s", plan_id)
+        return []
 
 
 def no_repeat_slots(intake: dict | None) -> tuple[str, ...]:

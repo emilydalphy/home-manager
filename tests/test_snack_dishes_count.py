@@ -151,3 +151,15 @@ def test_the_migration_adds_the_column_with_two_for_an_existing_row():
     conn.close()
     assert "snack_dishes_per_week" in cols
     assert str(cols["snack_dishes_per_week"]["dflt_value"]) == "2"
+
+
+def test_chat_can_set_both_snack_numbers():
+    """The chat tool's allowed fields carry both snack numbers, and the
+    tool itself accepts them (memory.edit_preference)."""
+    tool = next(t for t in agent.TOOL_DEFINITIONS if t["name"] == "edit_preference")
+    fields = tool["input_schema"]["properties"]["field"]["enum"]
+    assert "snacks_per_day" in fields and "snack_dishes_per_week" in fields
+    tools.edit_preference("snacks_per_day", 3)
+    tools.edit_preference("snack_dishes_per_week", 4)
+    mem = tools.get_household_memory()
+    assert mem["snacks_per_day"] == 3 and mem["snack_dishes_per_week"] == 4

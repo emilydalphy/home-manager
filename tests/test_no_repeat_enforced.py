@@ -271,6 +271,38 @@ def test_something_new_changes_breakfast_too(last_week, stub_model, picker):
     assert set(_names(plan_id, "snack")) == {"Apple"}
 
 
+def test_something_new_holds_the_count_pass_to_the_window_too(last_week, stub_model, monkeypatch):
+    """
+    CATCH. Breakfasts = 2 with only one breakfast drafted: the count pass
+    re-picks a morning into a second dish, and the picker offers last
+    week's oats back. With Something new that pick is refused, the same as
+    the no-repeat pass refuses it.
+    """
+    week = _monday(0)
+    tools.set_household_meal_preferences(breakfasts_per_week=2, mark_complete=False)
+    tools.save_week_intake(week, moods=["Something new"])
+    stub_model(_week(week, FRESH_DINNERS, ["Chickpea salad"] * 7))
+    offered = iter(["Shakshuka", "Overnight oats", "Granola", "Congee"])
+    calls = []
+
+    def pick(context):
+        calls.append(context)
+        name = next(offered)
+        return {"meal_name": name, "reason": f"{name} because",
+                "ingredients": [{"item": f"{name} stuff", "qty": "1", "category": "pantry"}],
+                "instructions": [f"Make the {name.lower()}.", "Serve."],
+                "food_groups": ["protein", "vegetable", "carb"],
+                "prep_time_minutes": 5, "cook_time_minutes": 5}
+
+    monkeypatch.setattr(sip, "_pick_replacement", pick)
+    plan = agent.generate_weekly_plan(week)
+
+    breakfasts = set(_names(plan["weekly_plan_id"], "breakfast"))
+    assert "Overnight oats" not in breakfasts
+    assert breakfasts == {"Shakshuka", "Granola"}
+    assert all(c["slot"] == "breakfast" for c in calls)
+
+
 def test_something_new_still_keeps_a_breakfast_they_asked_for_by_name(last_week, stub_model, picker):
     """GUARD: their words beat the rule for breakfast exactly as for dinner."""
     week = _monday(0)
