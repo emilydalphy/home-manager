@@ -20,9 +20,13 @@ deletion actually does. So this is written to be stated plainly:
   adult in it. Their member row goes, and so does everything keyed to them
   alone (their ratings, notes, share link, invite links, morning-text log).
   Anything shared with the household that merely *names* them — who
-  approved a week, who a chore was assigned to, who a trip was for — keeps
-  the household's record and loses the pointer (set to NULL, or the id
-  taken out of the list).
+  approved a week, who a chore was assigned to, who else was on a trip —
+  keeps the household's record and loses the pointer (set to NULL, or the
+  id taken out of the list). A trip or a meal need that was theirs ALONE
+  is removed instead, because an empty traveller list means "everyone"
+  (see _drop_their_own_trips_and_needs). Things that name them only in
+  text (who added a grocery line, words they asked Pomona to hold) stay
+  with the household.
 
 Which tables are household-owned is not a hand-kept list. It is read from
 the database itself — every table with a `household_id` column — and
@@ -279,6 +283,60 @@ def _strip_from_json_list(conn, table: str, column: str, hid: int, value) -> Non
             )
 
 
+def _only(raw, mid: int) -> bool:
+    """Is this JSON member list exactly [mid]?"""
+    try:
+        items = json.loads(raw or "[]")
+    except (TypeError, ValueError):
+        return False
+    return isinstance(items, list) and len(items) == 1 and _same(items[0], mid)
+
+
+def _drop_their_own_trips_and_needs(conn, hid: int, mid: int, touched: dict) -> None:
+    """
+    A trip or a meal need that was the leaver's ALONE goes with them.
+
+    Stripping their id would be wrong here, not just untidy: in
+    away_stretches.member_ids_json and slot_needs.for_member_ids_json an
+    EMPTY list means "the whole household" (schema.sql). Taking the only
+    traveller out of a solo trip would leave a list that reads as everyone
+    being away — nothing planned, nothing bought, for the people still here.
+    So the row is removed instead, along with the needs the trip derived;
+    attendance rows it produced keep their own record and lose the pointer
+    (their absent list is stripped by the generic pass, and an empty
+    absent list correctly means "everyone here").
+    """
+    trips = [
+        r[0] for r in conn.execute(
+            "SELECT id, member_ids_json FROM away_stretches WHERE household_id = ?", (hid,)
+        ).fetchall()
+        if _only(r[1], mid)
+    ]
+    for trip in trips:
+        n = conn.execute(
+            "DELETE FROM slot_needs WHERE household_id = ? AND away_stretch_id = ?", (hid, trip)
+        ).rowcount
+        if n:
+            touched["slot_needs.away_stretch_id"] = touched.get("slot_needs.away_stretch_id", 0) + n
+        conn.execute(
+            "UPDATE slot_attendance SET away_stretch_id = NULL WHERE household_id = ? AND away_stretch_id = ?",
+            (hid, trip),
+        )
+        conn.execute("DELETE FROM away_stretches WHERE id = ? AND household_id = ?", (trip, hid))
+    if trips:
+        touched["away_stretches"] = len(trips)
+    needs = [
+        r[0] for r in conn.execute(
+            "SELECT id, for_member_ids_json FROM slot_needs WHERE household_id = ?", (hid,)
+        ).fetchall()
+        if _only(r[1], mid)
+    ]
+    for need in needs:
+        conn.execute("DELETE FROM slot_needs WHERE id = ? AND household_id = ?", (need, hid))
+    if needs:
+        touched["slot_needs.for_member_ids_json"] = len(needs)
+
+
 def _same(item, value) -> bool:
     if isinstance(value, int):
         try:
@@ -350,6 +408,7 @@ def remove_member(household_id: int, member_id: int) -> dict:
                     "Delete the household instead."
                 )
             name = row[0]
+            _drop_their_own_trips_and_needs(conn, hid, mid, touched)
             for table, column, not_null, is_json in _member_columns(conn):
                 where_hh = "id = ?" if table == "households" else "household_id = ?"
                 if is_json:

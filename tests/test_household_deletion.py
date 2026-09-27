@@ -496,6 +496,65 @@ def test_remove_me_takes_out_only_that_adult(client, beta_household, other_house
     assert _counts(other_household) == before_other
 
 
+def test_a_trip_that_was_only_theirs_goes_rather_than_becoming_everyones(client, beta_household):
+    """An empty traveller list means the WHOLE household is away (schema.sql),
+    so stripping the leaver out of a solo trip would cancel everyone's meals."""
+    julia, sam, _kid = _two_adult_house(client, beta_household)
+    conn = get_conn()
+    solo = conn.execute(
+        "INSERT INTO away_stretches (household_id, from_date, from_slot, to_date, to_slot, member_ids_json) "
+        "VALUES (?, '2026-10-03', 'lunch', '2026-10-04', 'dinner', ?)",
+        (beta_household, json.dumps([julia])),
+    ).lastrowid
+    shared = conn.execute(
+        "INSERT INTO away_stretches (household_id, from_date, from_slot, to_date, to_slot, member_ids_json) "
+        "VALUES (?, '2026-10-10', 'lunch', '2026-10-11', 'dinner', ?)",
+        (beta_household, json.dumps([julia, sam])),
+    ).lastrowid
+    conn.execute(
+        "INSERT INTO slot_needs (household_id, date, slot, need, away_stretch_id, for_member_ids_json) "
+        "VALUES (?, '2026-10-03', 'breakfast', 'quick', ?, ?)",
+        (beta_household, solo, json.dumps([julia])),
+    )
+    conn.execute(
+        "INSERT INTO slot_needs (household_id, date, slot, need, for_member_ids_json) "
+        "VALUES (?, '2026-10-06', 'dinner', 'ready_made', ?)",
+        (beta_household, json.dumps([julia])),
+    )
+    conn.execute(
+        "INSERT INTO slot_needs (household_id, date, slot, need, for_member_ids_json) "
+        "VALUES (?, '2026-10-07', 'dinner', 'quick', ?)",
+        (beta_household, json.dumps([julia, sam])),
+    )
+    conn.execute(
+        "INSERT INTO slot_attendance (household_id, date, slot, absent_member_ids_json, away_stretch_id) "
+        "VALUES (?, '2026-10-03', 'dinner', ?, ?)",
+        (beta_household, json.dumps([julia]), solo),
+    )
+    conn.commit()
+    conn.close()
+
+    assert client.post("/api/household/remove-me", json={}).status_code == 200
+
+    conn = get_conn()
+    try:
+        trips = {r[0]: json.loads(r[1]) for r in conn.execute(
+            "SELECT id, member_ids_json FROM away_stretches WHERE household_id = ?", (beta_household,))}
+        assert trips == {shared: [sam]}
+        needs = {r[0]: json.loads(r[1]) for r in conn.execute(
+            "SELECT date, for_member_ids_json FROM slot_needs WHERE household_id = ?", (beta_household,))}
+        assert needs == {"2026-10-07": [sam]}
+        # No list anywhere was left reading "everyone" where it meant Julia.
+        att = conn.execute(
+            "SELECT absent_member_ids_json, away_stretch_id FROM slot_attendance WHERE household_id = ?",
+            (beta_household,),
+        ).fetchone()
+        assert json.loads(att[0]) == [] and att[1] is None
+        assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
+    finally:
+        conn.close()
+
+
 def test_the_last_adult_cant_remove_themselves(client, beta_household):
     julia = _adult("Julia", beta_household)
     _adult("Kid", beta_household, age_group="child")
