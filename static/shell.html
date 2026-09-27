@@ -43,6 +43,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="Pomona" />
 <script src="/static/error-reporter.js"></script>
+<!-- Every server call goes through api.js (one base address, cookies sent). Before any page script, after the reporter whose fetch wrapper it calls through. -->
+<script src="/static/api.js"></script>
 </head>
 <body>
   <!-- The desktop/tablet shell — "the phone in the room" (Emily, 2026-09-11,
