@@ -632,7 +632,8 @@ why*, not duplicating the diff.
   - **Tonight's four branches were then merged for real and checked**, which
     is the whole point of the script: four merges onto `ee741f8`, one
     CLAUDE.md conflict each, every one resolved keep-both — **exit 0, 223/223
-    entries**, and the merged tree's full suite is **7738 passed, 0 failed**.
+    entries**, and the merged tree's full suite is **7746 passed, 0 failed**,
+    which is 7638 + 35 + 19 + 30 + 24 exactly.
     The same four resolved with `--ours` is exit 1 naming all three lost
     entries.
   - **FOUND AND NOT FIXED, named so nobody reports them as new.** A branch
