@@ -312,24 +312,39 @@ def plan_must_use(plan_id: int, recipe_id: int) -> list[str]:
 CUISINE_BECAUSE = "you picked {cuisine} this week and nothing on the week was {cuisine}"
 
 
-_CUISINE_WORD_RE = re.compile(r"[a-z][a-z\-']*")
+# Words only: a hyphen splits ("Thai-style" is Thai, "stir-fry" and
+# "stir fry" read alike).
+_CUISINE_WORD_RE = re.compile(r"[a-z][a-z']*")
+
+# Two-word dishes kept as one word after splitting, so a chip for one of
+# their halves doesn't match them ("Fries" is not a stir-fry).
+_CUISINE_COMPOUNDS = {"stir fry": "stirfry"}
 
 
 def _singular(word: str) -> str:
-    """One word's singular, for matching only: curries -> curry,
-    sandwiches -> sandwich, stir-fries -> stir-fry, burgers -> burger.
-    Short words and -ss words are left alone (Swiss, BBQ)."""
+    """One word's matching form, the same for singular and plural:
+    curries/curry, sandwiches/sandwich, smoothies/smoothie,
+    quiches/quiche, potatoes/potato, burgers/burger. Short words and -ss
+    words are left alone (Swiss, BBQ). For matching only — never shown."""
     if len(word) > 4 and word.endswith("ies"):
-        return word[:-3] + "y"
-    if len(word) > 4 and word.endswith(("ches", "shes", "xes", "zes", "sses")):
-        return word[:-2]
-    if len(word) > 3 and word.endswith("s") and not word.endswith("ss"):
-        return word[:-1]
+        word = word[:-3] + "y"
+    elif len(word) > 4 and word.endswith(("ches", "shes", "xes", "zes", "sses", "oes")):
+        word = word[:-2]
+    elif len(word) > 3 and word.endswith("s") and not word.endswith("ss"):
+        word = word[:-1]
+    # smoothie and smoothies (-> smoothy) meet; quiche and quiches (-> quich) meet.
+    if len(word) > 4 and word.endswith("ie"):
+        word = word[:-2] + "y"
+    if len(word) > 4 and word.endswith("che"):
+        word = word[:-1]
     return word
 
 
 def _cuisine_norm(text: str) -> str:
-    return " ".join(_singular(w) for w in _CUISINE_WORD_RE.findall((text or "").lower()))
+    said = " ".join(_singular(w) for w in _CUISINE_WORD_RE.findall((text or "").lower()))
+    for pair, joined in _CUISINE_COMPOUNDS.items():
+        said = re.sub(rf"\b{pair}\b", joined, said)
+    return said
 
 
 # A chip that names a family of cuisines (Emily's chips are free text; a
@@ -360,7 +375,8 @@ def _cuisine_names(chip: str) -> list[str]:
     want = _cuisine_norm(chip)
     if not want:
         return []
-    return [want] + [_cuisine_norm(n) for n in CUISINE_FAMILIES.get(want, [])]
+    families = {_cuisine_norm(k): v for k, v in CUISINE_FAMILIES.items()}
+    return [want] + [_cuisine_norm(n) for n in families.get(want, [])]
 
 
 def dish_is_cuisine(chip: str, meal: str | None, cuisine: str | None = None) -> bool:
@@ -436,22 +452,6 @@ def _cuisine_slot(plan_id: int, entries: list[dict], chains: dict, keep_ids=froz
     return None
 
 
-# Words that read as a mass noun after "No …" — "No comfort food fit",
-# not "No comfort foods fit".
-_MASS_NOUNS = {"food", "fare", "cooking", "cuisine", "seafood", "pasta", "rice", "bbq", "barbecue",
-               "sushi", "ramen", "pho", "pizza", "soul", "street", "brunch", "takeout"}
-
-
-def _plural(word: str) -> str:
-    if word in _MASS_NOUNS or word.endswith("s"):
-        return word
-    if len(word) > 2 and word.endswith("y") and word[-2] not in "aeiou":
-        return word[:-1] + "ies"
-    if word.endswith(("ch", "sh", "x", "z")):
-        return word + "es"
-    return word + "s"
-
-
 def _is_cuisine_adjective(chip: str) -> bool:
     from . import week_intake as _week_intake
     known = {c.lower() for c in (_week_intake.KNOWN_CUISINES + _week_intake.ONBOARDING_CUISINES)}
@@ -459,21 +459,49 @@ def _is_cuisine_adjective(chip: str) -> bool:
     return chip.strip().lower() in known
 
 
+# Plural dish words that end in -s without being plural dish nouns in the
+# sense this line wants ("No Swiss dish", "No Hummus dish").
+_NOT_A_PLURAL = {"hummus", "couscous", "asparagus", "swiss", "citrus", "molasses"}
+
+
+def _is_plural_dish_noun(chip: str) -> bool:
+    last = chip.split()[-1].lower() if chip.split() else ""
+    if chip.lower() in _NOT_A_PLURAL or last in _NOT_A_PLURAL or _is_cuisine_adjective(chip):
+        return False
+    return len(last) > 3 and last.endswith("s") and not last.endswith("ss")
+
+
 def cuisine_unmet_line(chip: str) -> str:
     """
     The opener's one plain line for a chip nothing could answer
-    (draft_opener._line_two). A cuisine: "No Mexican dish fit this week."
-    Anything else, as a plural noun in lower case: "No burgers fit this
-    week.", "No curries fit this week.", "No comfort food fit this week."
+    (draft_opener._line_two). The chip as the household wrote it:
+    "No Mexican dish fit this week.", "No Vegetarian dish…", "No BBQ
+    dish…", "No Mac and cheese dish…". Only a chip that is itself a
+    plural dish noun reads as one, lower-cased: "No burgers fit this
+    week.", "No curries fit this week."
     """
     chip = " ".join((chip or "").split())
     if not chip:
         return ""
-    if _is_cuisine_adjective(chip):
-        return f"No {chip} dish fit this week."
-    words = chip.lower().split()
-    words[-1] = _plural(words[-1])
-    return f"No {' '.join(words)} fit this week."
+    if _is_plural_dish_noun(chip):
+        return f"No {chip.lower()} fit this week."
+    return f"No {chip} dish fit this week."
+
+
+def _drop_unmet_about(unmet: list, chip: str) -> None:
+    """A chip the week now answers: every unmet line about it goes — ours
+    (its `cuisine`) and the model's own ({"words": "Burgers"}), read
+    plural-insensitively — so the opener never says "I couldn't fit
+    Burgers" over a burger."""
+    want = _cuisine_norm(chip)
+
+    def about(u) -> bool:
+        if str(u.get("cuisine") or "").lower() == chip.lower():
+            return True
+        said = _cuisine_norm(str(u.get("words") or ""))
+        return bool(want and said and any(True for _ in _typed(want, said)))
+
+    unmet[:] = [u for u in unmet if not about(u)]
 
 
 def chips_left_unanswered(plan_id: int, cuisines: list[str] | None, report: dict) -> list[str]:
@@ -538,6 +566,7 @@ def use_picked_cuisines(plan_id: int, cuisines: list[str] | None, report: dict, 
                        and e["meal"] and not _meal_variety._LEFTOVER_LINE.search(e["freeform_meal"] or "")]
             if any(dish_is_cuisine(chip, e["meal"], e.get("cuisine")) for e in planned):
                 out["matched"].append(chip)
+                _drop_unmet_about(unmet, chip)
                 continue
             # Never the only dish another chip has, and never one their
             # own words name (Emily's chips Mexican + Burgers: the burger
@@ -576,6 +605,7 @@ def use_picked_cuisines(plan_id: int, cuisines: list[str] | None, report: dict, 
                 logger.info("Plan %s: no lunch or dinner was %s, and no re-pick landed one", plan_id, chip)
                 continue
             out["repicked"].append(chip)
+            _drop_unmet_about(unmet, chip)
             logger.info("Plan %s: %s %s re-picked as %r so the %s chip is on the week",
                         plan_id, target["date"], target["slot"], replaced.get("meal"), chip)
     except Exception:

@@ -259,6 +259,14 @@ def test_a_curries_chip_is_answered_by_a_curry_without_a_call(stub_model, monkey
     ("BBQ", "Barbecue ribs", "", True),
     ("Barbecue", "BBQ chicken", "American", True),
     ("Middle Eastern", "Kofte", "Turkish", True),
+    # Review round two: more plurals, hyphen and space alike, hyphen splits.
+    ("Smoothies", "Berry smoothie", "", True),
+    ("Quiches", "Spinach quiche", "", True),
+    ("Potatoes", "Hasselback potato", "", True),
+    ("Stir-fries", "Chicken stir fry", "", True),
+    ("Stir fry", "Beef stir-fries", "", True),
+    ("Fries", "Chicken stir fry", "", False),
+    ("Thai", "Thai-style noodles", "", True),
 ])
 def test_plurals_and_family_chips(chip, meal, cuisine, hit):
     assert typed_requests.dish_is_cuisine(chip, meal, cuisine) is hit
@@ -267,12 +275,17 @@ def test_plurals_and_family_chips(chip, meal, cuisine, hit):
 @pytest.mark.parametrize("chip, line", [
     ("Mexican", "No Mexican dish fit this week."),
     ("Asian", "No Asian dish fit this week."),
+    ("Vegetarian", "No Vegetarian dish fit this week."),
+    ("Keto", "No Keto dish fit this week."),
+    ("BBQ", "No BBQ dish fit this week."),
+    ("Chicken", "No Chicken dish fit this week."),
+    ("Mac and cheese", "No Mac and cheese dish fit this week."),
+    ("Comfort food", "No Comfort food dish fit this week."),
+    ("Burger", "No Burger dish fit this week."),
+    ("Hummus", "No Hummus dish fit this week."),
     ("Burgers", "No burgers fit this week."),
-    ("Burger", "No burgers fit this week."),
     ("Curries", "No curries fit this week."),
-    ("Curry", "No curries fit this week."),
-    ("Sandwich", "No sandwiches fit this week."),
-    ("Comfort food", "No comfort food fit this week."),
+    ("Tacos", "No tacos fit this week."),
 ])
 def test_the_unmet_line_never_breaks_a_word(chip, line):
     assert typed_requests.cuisine_unmet_line(chip) == line
@@ -304,3 +317,23 @@ def test_a_chip_whose_only_dish_goes_later_is_still_said(stub_model, monkeypatch
     assert len(calls) == 1
     assert "Smash burgers" not in [r["title"] for r in _menu_rows(plan["weekly_plan_id"])]
     assert tools.plan_requests(plan["weekly_plan_id"])["unmet"][0]["cuisine"] == "Burgers"
+
+
+def test_a_model_unmet_line_about_the_chip_goes_once_the_week_answers_it(stub_model, monkeypatch):
+    """CATCH: the model said it couldn't fit "Burgers", the chip pass then
+    landed one — the opener must not say it couldn't."""
+    week = _monday()
+    tools.save_week_intake(week, cuisines=["Burgers"])
+    days = _week(week)
+
+    def fake(ctx):
+        out = agent.GeneratedDays(days)
+        out.report = {"honoured_requests": [], "unmet_requests": [{"words": "burger", "reason": "no room"}]}
+        return out
+
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", fake)
+    _picker(monkeypatch)
+    plan = agent.generate_weekly_plan(week)
+    assert "Smash burgers" in [r["title"] for r in _menu_rows(plan["weekly_plan_id"])]
+    assert tools.plan_requests(plan["weekly_plan_id"])["unmet"] == []
+    assert not any("urger" in line for line in tools.get_week_menu(plan["weekly_plan_id"])["draft_opener"])

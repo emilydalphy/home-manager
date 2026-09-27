@@ -10294,8 +10294,7 @@
     // Never below Snacks a day: fewer different snacks than land on a day
     // would be a day eating one twice, which the draft won't plan.
     var snackFloor = Math.max(1, typeof mem.snacks_per_day === 'number' ? mem.snacks_per_day : 0);
-    html += wwkStepperHtml(Object.assign({}, WWK_SNACK_DISHES, { min: snackFloor }),
-      typeof mem.snack_dishes_per_week === 'number' ? mem.snack_dishes_per_week : 2);
+    html += wwkStepperHtml(Object.assign({}, WWK_SNACK_DISHES, { min: snackFloor }), wwkSnackDishes(mem));
     // Snacks a day is how many land on each day, not a count of dishes —
     // its own line, not under "Different dishes a week" (2026-09-27).
     html += '<div class="wwk-count-own">' + wwkStepperHtml(WWK_SNACKS, mem.snacks_per_day) + '</div>';
@@ -10322,16 +10321,25 @@
     '</div>';
   }
 
+  // Snacks as the screen shows it: never below Snacks a day, whatever an
+  // older row says (the server keeps them in step too —
+  // preferences.keep_snack_counts_consistent), so "−" can never jump up.
+  function wwkSnackDishes(mem) {
+    var stored = typeof mem.snack_dishes_per_week === 'number' ? mem.snack_dishes_per_week : 2;
+    var perDay = typeof mem.snacks_per_day === 'number' ? mem.snacks_per_day : 0;
+    return Math.min(WWK_SNACK_DISHES.max, Math.max(stored, perDay, 1));
+  }
+
   function wwkSetCount(field, delta, max, min) {
-    var fallback = field === WWK_SNACK_DISHES.field ? 2 : 0;
-    var current = typeof wwkMem()[field] === 'number' ? wwkMem()[field] : fallback;
+    var current = field === WWK_SNACK_DISHES.field ? wwkSnackDishes(wwkMem())
+      : (typeof wwkMem()[field] === 'number' ? wwkMem()[field] : 0);
     var next = Math.max(min || 0, Math.min(max, current + delta));
     if (next === current) return;
     wwkSavePreference('taste', field, next, function () {
       wwkMem()[field] = next;
       // More snacks a day than different snacks: Snacks comes up with it
-      // (memory.edit_preference does the same on the server).
-      if (field === 'snacks_per_day' && next > (typeof wwkMem().snack_dishes_per_week === 'number' ? wwkMem().snack_dishes_per_week : 2)) {
+      // (preferences.keep_snack_counts_consistent does the same on the server).
+      if (field === 'snacks_per_day' && !(wwkMem().snack_dishes_per_week >= next)) {
         wwkMem().snack_dishes_per_week = Math.min(WWK_SNACK_DISHES.max, next);
       }
     });

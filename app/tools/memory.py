@@ -725,16 +725,9 @@ def edit_preference(field: str, value) -> dict:
             mark_complete=False,
         )
         # More snacks a day than different snacks: the different-snacks
-        # count comes up with it (2026-09-27), so What we know never shows
-        # fewer than the draft honours.
-        conn = get_conn()
-        conn.execute(
-            "UPDATE meal_preferences SET snack_dishes_per_week = ? "
-            "WHERE household_id = ? AND snack_dishes_per_week < ?",
-            (min(7, int(value)), household_id(), min(7, int(value))),
-        )
-        conn.commit()
-        conn.close()
+        # count comes up with it (2026-09-27) — done inside
+        # set_household_meal_preferences (preferences.
+        # keep_snack_counts_consistent), which every write path goes through.
         return saved
     return _preferences.set_household_meal_preferences(cooking_time_preference=value, mark_complete=False)
 
@@ -841,6 +834,7 @@ def delete_preference(field: str, item: str | None = None) -> dict:
             "updated_at = datetime('now') WHERE household_id = ?",
             (household_id(),),
         )
+        _preferences.keep_snack_counts_consistent(conn, household_id())
     elif field == "snacks_per_day":
         # The same forget, reached from the other name for the same answer.
         conn.execute(
@@ -849,6 +843,7 @@ def delete_preference(field: str, item: str | None = None) -> dict:
             "updated_at = datetime('now') WHERE household_id = ?",
             (household_id(),),
         )
+        _preferences.keep_snack_counts_consistent(conn, household_id())
     else:
         conn.close()
         raise ValueError(f"Unknown preference field '{field}'.")

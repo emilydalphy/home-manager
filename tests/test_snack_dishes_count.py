@@ -186,3 +186,25 @@ def test_the_prompt_has_one_distinct_snack_count():
     text = prompt_literals(agent.generate_weekly_plan_llm)
     assert "lunches_per_week (0-7) and snack_dishes_per_week (1-7) are counts of DISTINCT meals" in text
     assert "snacks_per_week (0-7) are counts of DISTINCT" not in text
+
+
+def test_every_write_path_keeps_snacks_at_least_snacks_a_day():
+    """Onboarding and the setup screens write through
+    set_household_meal_preferences, not edit_preference (review round 2)."""
+    tools.set_household_meal_preferences(snacks_per_day=4, mark_complete=False)
+    assert tools.get_household_memory()["snack_dishes_per_week"] == 4
+    tools.save_onboarding_answers(["Emily"], {}, "", [], [], 4, snacks_per_day=5)
+    assert tools.get_household_memory()["snack_dishes_per_week"] == 5
+
+
+def test_the_startup_backfill_raises_an_older_row():
+    from app import db
+    tools.set_household_meal_preferences(mark_complete=False)
+    conn = get_conn()
+    conn.execute("UPDATE meal_preferences SET snacks_per_day = 3, snack_dishes_per_week = 1")
+    conn.commit()
+    db._backfill_snack_dishes(conn)
+    conn.commit()
+    row = conn.execute("SELECT snack_dishes_per_week FROM meal_preferences").fetchone()
+    conn.close()
+    assert row["snack_dishes_per_week"] == 3

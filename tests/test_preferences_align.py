@@ -66,7 +66,7 @@ def _constants() -> str:
 def _harness(*extra: str) -> str:
     names = [
         "escapeHtml", "wwkChip", "wwkFactChip", "wwkAddChip", "wwkLead", "wwkNote",
-        "wwkFactsHtml", "wwkStepperHtml", "wwkProteinState", "wwkMem",
+        "wwkFactsHtml", "wwkStepperHtml", "wwkSnackDishes", "wwkProteinState", "wwkMem",
         "wwkRhythmHtml", "wwkWeeknightHtml", "wwkTasteHtml",
         "wwkCuisineStored", "wwkIsPresetCuisine", *extra,
     ]
@@ -145,6 +145,22 @@ wwkSetCount('snack_dishes_per_week', -1, 7, 3);  // at the floor: nothing
 console.log(JSON.stringify([saves, afterRaise, prefsState.memory.snack_dishes_per_week]));
 """)
     assert out == [[["snacks_per_day", 3]], 3, 3]
+
+
+def test_the_snacks_stepper_shows_a_clamped_value_so_minus_never_jumps_up():
+    """An older row with Snacks below Snacks a day shows Snacks a day, and
+    "−" at that floor does nothing (review round 2)."""
+    html = _render("wwkTasteHtml", dict(MEMORY, snacks_per_day=3, snack_dishes_per_week=1))
+    assert re.search(r'data-field="snack_dishes_per_week" data-delta="-1" data-max="7" data-min="3" '
+                     r'aria-label="Fewer different snacks">&minus;</button><span class="cook-serves-count">3<', html)
+    out = _run(_harness("wwkSetCount") + f"""
+var saves = [];
+function wwkSavePreference(section, field, value, apply) {{ saves.push([field, value]); apply(); }}
+prefsState.memory = {json.dumps(dict(MEMORY, snacks_per_day=3, snack_dishes_per_week=1))};
+wwkSetCount('snack_dishes_per_week', -1, 7, 3);
+console.log(JSON.stringify(saves));
+""")
+    assert out == []
 
 
 def test_the_snacks_count_saves_and_reads_back(signed_in):
