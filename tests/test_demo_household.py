@@ -224,3 +224,21 @@ def test_passphrase_is_not_hardcoded_in_the_script():
     # real value only ever comes from os.environ.
     assert "os.environ.get(DEMO_PASSPHRASE_ENV" in source
     assert 'DEMO_PASSPHRASE = "' not in source
+
+
+def test_demo_household_has_already_allowed_sharing_with_claude():
+    """Apple's reviewer should land in a working app, not the permission
+    question. The test database grants consent to every new household, so
+    clear it first — otherwise this would pass without the script's grant."""
+    demo.main()
+    hid = demo._find_demo_household()["id"]
+    from app import ai_consent
+    conn = get_conn()
+    try:
+        conn.execute("UPDATE households SET ai_consent = ? WHERE id = ?", (ai_consent.UNANSWERED, hid))
+        conn.commit()
+    finally:
+        conn.close()
+    assert not ai_consent.has_consent(hid)
+    demo.main()
+    assert ai_consent.has_consent(hid)

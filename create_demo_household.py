@@ -67,20 +67,11 @@ the point of idempotency is that there is no separate "first create" vs.
 banner, since after the first run nobody needs to see it again unless it
 changed.
 
-AI consent — open TODO
-------------------------
-A sibling branch (seen locally as `appstore-ai-consent`, though the
-version reachable from this branch's `git log` looks stale/out of date
-with unrelated changes — it may not be the current version of that work)
-is adding per-household AI-consent records. This script does not know
-that schema yet and is not guessing at it. If that lands first:
-    TODO(ai-consent): grant consent for the demo household here, right
-    after it's created/found, using whatever function that branch adds
-    (something like `consent.grant(household_id, ...)`) — the demo
-    household should look like a household that has already said yes to
-    the chat feature, same as a real one would before using it.
-This is also called out on the Loop Board card for this ticket so it
-isn't lost.
+AI consent
+----------
+The demo household has already said yes to sharing with Claude
+(`app/ai_consent.py`), so the reviewer lands in a working app rather than
+the permission question. Granted on every run, so a reset restores it.
 """
 from __future__ import annotations
 
@@ -96,6 +87,7 @@ from app.db import (
     init_db,
     misplaced_db_path_error,
 )
+from app import ai_consent
 from app.tools._shared import DEFAULT_HOUSEHOLD_ID, use_household
 
 # Fixed and unmistakable — this is how the script (and any human reading
@@ -293,10 +285,9 @@ def _build_demo_data(household_id: int) -> dict:
         tools.add_grocery_item("paper towels", category="other")
         tools.add_grocery_item("coffee", category="pantry")
 
-        # TODO(ai-consent): once the sibling branch's consent schema
-        # lands on main, grant AI consent for this household right here —
-        # see the module docstring above for why this isn't guessed at
-        # now.
+        # Already said yes to sharing with Claude, like a real household
+        # would have before using the app (see the docstring above).
+        ai_consent.record(ai_consent.GRANTED, hid=household_id)
 
         return {"weekly_plan_id": plan_id, "week_start": week_start.isoformat()}
 
