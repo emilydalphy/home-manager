@@ -13,6 +13,7 @@ from . import grocery as _grocery
 from . import household as _household
 from . import quantities as _quantities
 from . import bring_over as _bring_over
+from . import spices as _spices
 
 logger = logging.getLogger("home_manager")
 
@@ -1706,6 +1707,26 @@ def check_steps_ingredients_consistency(ingredients: list[dict], instructions: l
     asymmetry is deliberate: a false "you forgot to buy shallots" is worse
     than a missed one, and this only ever logs.
 
+    A SPICE-RACK ITEM IS NOT A FINDING, and that is this app's own decision
+    rather than a softening of the rule. The Shop tab's "Spices this week"
+    section exists precisely because the grocery list assumes a rack
+    (2026-09-23): salt, pepper and cooking oils are standing items, not
+    per-recipe purchases, and a recipe is not wrong to season without
+    listing them. Until 2026-09-27 the two halves of the app disagreed
+    about that, and "a step uses salt" was the single biggest line in the
+    morning report's FOOD section.
+    It reads `spices.is_spice` rather than a second hand-written list for
+    the reason `_STEP_ONLY_WORDS`' own two words are the exception and not
+    the model: the rack is a maintained list that already exists, and a
+    copy of it here would drift from the one the shopping list uses. That
+    coupling is the point — extend the rack and this rule follows — and it
+    is also the thing to know before extending it: a word added to
+    `spices._SPICES` stops being reportable here in the same commit.
+    `broth`, `butter`, `stock` and `heavy cream` are NOT rack items and
+    still fire, which is the half of the rule worth keeping: a step
+    reaching for broth nobody bought is how a household finds out
+    mid-cook.
+
     Returns {"ok", "unused_ingredients", "missing_from_list"} and never
     raises — an observation, not a gate.
     """
@@ -1731,7 +1752,16 @@ def check_steps_ingredients_consistency(ingredients: list[dict], instructions: l
     listed = " ".join(_clean_item(n) for n in names)
     matched = [
         key for key in COOKING_QUANTITIES_PER_4
-        if key not in _STEP_ONLY_WORDS and _item_matches(text, key) and not _item_matches(listed, key)
+        # `is_spice` is asked LAST because it is the dear one: it is asked
+        # of a vocabulary word rather than of the recipe, so short-circuiting
+        # behind `_item_matches` means it runs for the handful of words a
+        # step really uses and not for all 176. Measured on a three-step
+        # recipe: 0.52 ms a call on main, 1.43 ms asked first, 0.55 ms here.
+        # Every one of these is a pure predicate, so the order is free.
+        if key not in _STEP_ONLY_WORDS
+        and _item_matches(text, key)
+        and not _item_matches(listed, key)
+        and not _spices.is_spice(key)
     ]
     # Report the longest name for a thing, not every fragment of it:
     # "heavy cream", never "heavy cream" and "cream".
