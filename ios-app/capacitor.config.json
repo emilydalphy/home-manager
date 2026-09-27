@@ -19,10 +19,13 @@
     "SplashScreen": {
       "launchShowDuration": 800,
       "launchAutoHide": true,
-      "launchFadeOutDuration": 250,
       "backgroundColor": "#1B3328",
-      "showSpinner": false,
-      "iosSpinnerStyle": "small"
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "overlaysWebView": false,
+      "style": "DARK",
+      "backgroundColor": "#1B3328"
     }
   }
 }

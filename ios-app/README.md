@@ -60,7 +60,12 @@ settings and of `www/` is generated, not stored in git.
   `WKAppBoundDomains` and `limitsNavigationsToAppBoundDomains` are for), so
   once Pomona has opened with signal, the shopping list still opens in a
   store with none. The bundled offline screen only shows when there's no
-  saved copy yet.
+  saved copy yet (or, with signal, "Pomona didn't open" when the server
+  doesn't answer).
+- **Status bar:** the page starts below the iPhone's status bar, on a
+  spruce strip with light text (`StatusBar` in `capacitor.config.json`), the
+  same way the home-screen version starts below it. So the website needed
+  no changes for the notch or Dynamic Island.
 - **Links to other sites** open in Safari, not inside the app.
 - **App id** `com.pomona.app` is a placeholder until the Apple Developer
   account exists; Emily confirms it then. It's set in `capacitor.config.json`
