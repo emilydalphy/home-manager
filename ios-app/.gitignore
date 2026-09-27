@@ -1,0 +1,7 @@
+node_modules/
+.DS_Store
+# Build output (Xcode / Codemagic). ios/.gitignore covers the rest of what
+# `npx cap sync ios` regenerates (App/App/public, App/App/capacitor.config.json).
+build/
+*.ipa
+*.xcarchive

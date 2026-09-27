@@ -1,0 +1,31 @@
+{
+  "appId": "com.pomona.app",
+  "appName": "Pomona",
+  "webDir": "www",
+  "backgroundColor": "#1B3328",
+  "server": {
+    "url": "https://home-manager-production-4949.up.railway.app",
+    "errorPath": "offline.html"
+  },
+  "ios": {
+    "scheme": "App",
+    "appendUserAgent": "PomonaApp/1.0.0",
+    "limitsNavigationsToAppBoundDomains": true,
+    "contentInset": "never",
+    "preferredContentMode": "mobile",
+    "backgroundColor": "#1B3328"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 800,
+      "launchAutoHide": true,
+      "backgroundColor": "#1B3328",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "overlaysWebView": false,
+      "style": "DARK",
+      "backgroundColor": "#1B3328"
+    }
+  }
+}

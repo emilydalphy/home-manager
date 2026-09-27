@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pomona</title>
+<!--
+  The iPhone app's offline screen. It lives inside the app, not on the
+  server: capacitor.config.json's server.errorPath points here, so the app
+  shows it whenever a page load fails: no signal at launch with nothing
+  cached yet, the server not answering, or a load merely cut short by
+  another navigation (the script below retries that case once, unseen).
+  Once Pomona has opened with signal, the site's own service worker
+  usually opens the cached copy instead and this never shows.
+
+  No fonts or stylesheets from the network: there isn't one. Colors are
+  copied from static/theme.css (--spruce, --ivory-ink, --apricot,
+  --on-accent-ink); the font stacks are theme.css's own fallbacks.
+-->
+<style>
+  :root {
+    --spruce: #1B3328;
+    --ivory-ink: #F6EEE1;
+    --ivory-ink-muted: rgba(246, 238, 225, .72);
+    --apricot: #E0915C;
+    --on-accent-ink: #1B3328;
+    --font-display: "Bricolage Grotesque", "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --font-body: "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: calc(24px + env(safe-area-inset-top)) 26px calc(24px + env(safe-area-inset-bottom));
+    background-color: var(--spruce);
+    background-image: radial-gradient(132% 60% at 50% 3%,
+      rgba(224, 145, 92, 0.17) 0%,
+      rgba(224, 145, 92, 0.05) 44%,
+      rgba(27, 51, 40, 0) 74%);
+    color: var(--ivory-ink);
+    font-family: var(--font-body);
+    -webkit-text-size-adjust: 100%;
+  }
+  /* Hidden until the script has decided what to say (or to retry unseen). */
+  .wrap:not(.is-ready) { visibility: hidden; }
+  .wrap { max-width: 320px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .plaque {
+    width: 66px; height: 66px; border-radius: 22px;
+    background: rgba(246, 238, 225, 0.05);
+    border: 1.5px solid rgba(169, 196, 176, 0.34);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--apricot);
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-size: 26px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;
+    margin: 6px 0 0;
+  }
+  p { margin: 0; font-size: 17px; line-height: 1.45; color: var(--ivory-ink-muted); }
+  button {
+    margin-top: 10px;
+    min-height: 50px; min-width: 180px;
+    font-family: var(--font-display); font-weight: 700; font-size: 17px; letter-spacing: -0.02em;
+    background: var(--apricot); color: var(--on-accent-ink);
+    border: none; border-radius: 17px; padding: 15px 22px;
+    cursor: pointer;
+  }
+  button:focus-visible { outline: 2px solid var(--ivory-ink); outline-offset: 3px; }
+  button:disabled { opacity: 0.6; }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="plaque" aria-hidden="true">
+      <!-- The Pomona mark, as on the sign-in page (static/login.html). -->
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.4c-3.1 0-5.6-2.6-5.6-5.9 0-3.2 2.5-5.7 5.6-5.7s5.6 2.5 5.6 5.7c0 3.3-2.5 5.9-5.6 5.9z"></path><path d="M12 9V6.2"></path><path d="M12.5 7.1c.9-2.2 3.2-3.1 5.3-2.7.4 2.2-.7 4.3-2.8 4.7-1.4.3-2.5-.6-2.5-2z"></path><path d="M12 10.2c-1.1 1.6-1.1 6.3 0 8.2"></path></svg>
+    </div>
+    <h1 id="title">No connection right now.</h1>
+    <p id="line">Pomona opens once you’re back online.</p>
+    <button type="button" id="retry">Try again</button>
+  </main>
+<script src="app-config.js"></script>
+<script>
+(function () {
+  var url = (window.POMONA_APP && window.POMONA_APP.serverUrl) || '';
+  var button = document.getElementById('retry');
+  function retry() {
+    if (!url) return;
+    button.disabled = true;
+    try { window.sessionStorage.setItem('pomona.retriedAt', String(Date.now())); } catch (e) { /* private storage off */ }
+    // A failed load brings the app straight back to this page, which
+    // re-enables the button.
+    window.location.replace(url);
+  }
+  button.addEventListener('click', retry);
+  // Signal came back while this screen was up: open Pomona without a tap.
+  window.addEventListener('online', retry);
+
+  if (navigator.onLine !== false) {
+    // The phone has signal, so this wasn't "no connection". Capacitor shows
+    // this page for ANY failed page load -- including one merely cut short
+    // by a second navigation (a sign-in redirect mid-launch, a double tap).
+    // Try once more straight away; if that fails too, the server really
+    // didn't answer, and the page says so plainly.
+    var last = 0;
+    try { last = Number(window.sessionStorage.getItem('pomona.retriedAt')) || 0; } catch (e) { /* ignore */ }
+    if (url && Date.now() - last > 15000) {
+      retry();
+      return;
+    }
+    document.getElementById('title').textContent = 'Pomona didn’t open.';
+    document.getElementById('line').textContent = 'Nothing’s lost. Try again in a minute.';
+  }
+  document.querySelector('.wrap').classList.add('is-ready');
+})();
+</script>
+</body>
+</html>

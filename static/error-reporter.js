@@ -310,6 +310,9 @@
   // display-mode media query.
   function displayMode() {
     try {
+      // Pomona's iPhone app (ios-app/) is neither: the device bucket already
+      // says "Pomona app", so "browser tab" beside it would only mislead.
+      if (navigator && /PomonaApp\//.test(navigator.userAgent || '')) return '';
       if (navigator && navigator.standalone === true) return 'app';
       if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return 'app';
       return 'tab';

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pomona</title>
+<!--
+  Not normally seen. The app opens the live site (capacitor.config.json,
+  server.url), so this bundled page only exists because Capacitor requires
+  one. If it is ever loaded, it sends the app on to Pomona.
+-->
+<style>html, body { margin: 0; height: 100%; background: #1B3328; }</style>
+</head>
+<body>
+<script src="app-config.js"></script>
+<script>
+  if (window.POMONA_APP && window.POMONA_APP.serverUrl) {
+    window.location.replace(window.POMONA_APP.serverUrl);
+  } else {
+    window.location.replace('offline.html');
+  }
+</script>
+</body>
+</html>

@@ -46,6 +46,9 @@ IPHONE_HOME_SCREEN = (
     "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 "
     "(KHTML, like Gecko) Mobile/15E148"
 )
+# Pomona's iPhone app (ios-app/): the home-screen UA plus the suffix the
+# Capacitor shell appends (capacitor.config.json, ios.appendUserAgent).
+IPHONE_POMONA_APP = IPHONE_HOME_SCREEN + " PomonaApp/1.0.0"
 IPHONE_CHROME = (
     "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 "
     "(KHTML, like Gecko) CriOS/126.0.6478.54 Mobile/15E148 Safari/604.1"
@@ -89,6 +92,7 @@ WINDOWS_FIREFOX = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/201
 @pytest.mark.parametrize("ua, bucket", [
     (IPHONE_SAFARI, "iPhone · Safari"),
     (IPHONE_HOME_SCREEN, "iPhone · Safari"),
+    (IPHONE_POMONA_APP, "iPhone · Pomona app"),
     (IPHONE_CHROME, "iPhone · Chrome"),
     (IPAD_SAFARI, "iPad · Safari"),
     (ANDROID_CHROME, "Android · Chrome"),
@@ -308,3 +312,40 @@ console.log(JSON.stringify(sent));
     assert body["lang"] == "fr-CA"
     assert body["touch"] is True
     assert "SECRET-UA" not in res.stdout
+
+
+@_needs_node
+def test_inside_the_pomona_app_the_reporter_claims_neither_app_nor_tab():
+    """
+    The iPhone app (ios-app/) is not a home-screen page and not a tab; its
+    device bucket already says "Pomona app", so the display field is left
+    empty rather than printing "browser tab" beside it.
+    """
+    stub = """
+const listeners = {};
+const sent = [];
+global.window = {
+  addEventListener: (n, fn) => { (listeners[n] = listeners[n] || []).push(fn); },
+  matchMedia: () => ({ matches: false }),
+};
+global.location = { pathname: '/', origin: 'https://pomona.example', href: 'https://pomona.example/' };
+global.URL = URL;
+Object.defineProperty(global, 'navigator', {
+  value: {
+    userAgent: 'Mozilla/5.0 (iPhone) AppleWebKit/605.1.15 Mobile/15E148 PomonaApp/1.0.0',
+    language: 'en-CA', maxTouchPoints: 5,
+    sendBeacon: (url, blob) => { sent.push(JSON.parse(blob.body)); return true; },
+  },
+  configurable: true,
+});
+global.Blob = class { constructor(parts) { this.body = parts.join(''); } };
+"""
+    fire = """
+listeners.error[0]({ message: 'boom', filename: 'https://pomona.example/static/shell.js', lineno: 1, error: new TypeError('boom') });
+console.log(JSON.stringify(sent));
+"""
+    res = nodeharness.run_node(stub + REPORTER_JS + fire, timeout=30)
+    assert res.returncode == 0, res.stderr
+    body = json.loads(res.stdout.strip())[0]
+    assert body["display"] == ""
+    assert "PomonaApp" not in res.stdout

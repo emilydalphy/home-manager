@@ -22438,6 +22438,9 @@
 
   function runningFromHomeScreen() {
     try {
+      // Pomona's iPhone app (ios-app/) is already installed; it says so by
+      // appending "PomonaApp/<version>" to its User-Agent.
+      if (/PomonaApp\//.test(window.navigator.userAgent || '')) return true;
       if (window.navigator.standalone === true) return true;
       return !!(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
     } catch (err) { return false; }
