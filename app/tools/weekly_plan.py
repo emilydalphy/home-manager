@@ -8135,8 +8135,8 @@ def _redate_plan_rows(
         }
         prep_moved += _shift_defrost_tasks(conn, weekly_plan_id, r["id"], r["date"], new_date[r["id"]])
         for t in conn.execute(
-            "SELECT id, task_date, description, status FROM prep_tasks WHERE id IN (%s)"
-            % ",".join("?" * len(before)), tuple(before),
+            "SELECT id, task_date, description, status FROM prep_tasks WHERE household_id = ? AND id IN (%s)"
+            % ",".join("?" * len(before)), (household_id(), *before),
         ).fetchall() if before else []:
             thaw.append({"prep_task_id": t["id"], "entry_id": r["id"], "from": before[t["id"]],
                          "to": t["task_date"], "description": t["description"], "status": t["status"]})
@@ -8170,8 +8170,8 @@ def _shift_late_prep_cuts(conn, weekly_plan_id: int, entry_id: int, old_date: st
         said = (t["description"] or "").replace(f"for {old_wd}", f"for {new_wd}")
         if task_date != t["task_date"] or said != t["description"]:
             conn.execute(
-                "UPDATE prep_tasks SET task_date = ?, description = ? WHERE id = ?",
-                (task_date, said, t["id"]),
+                "UPDATE prep_tasks SET task_date = ?, description = ? WHERE id = ? AND household_id = ?",
+                (task_date, said, t["id"], household_id()),
             )
     return moved
 
