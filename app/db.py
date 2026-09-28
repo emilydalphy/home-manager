@@ -445,6 +445,9 @@ _MIGRATIONS = [
     # inventing a per-day answer for them from a per-week number would be
     # the exact "print a default back as a fact" bug this pair prevents.
     ("meal_preferences", "snacks_per_day_set", "INTEGER NOT NULL DEFAULT 0"),
+    # Different snack dishes a week (2026-09-27) — see schema.sql. Every
+    # existing household gets the default 2, the same as a new one.
+    ("meal_preferences", "snack_dishes_per_week", "INTEGER NOT NULL DEFAULT 2"),
     # Whether the three per-week counts are answers (Emily, 2026-09-21,
     # "Each week I plan" numbers are targets, not caps) — see schema.sql
     # and _backfill_meal_counts_set below.
@@ -960,6 +963,20 @@ def _backfill_snacks_per_week_set(conn):
     )
 
 
+def _backfill_snack_dishes(conn):
+    """
+    Different snack dishes a week is never below snacks a day (2026-09-27):
+    an existing household whose snacks_per_day is above the column's
+    default 2 gets snack_dishes_per_week = snacks_per_day (capped at 7).
+    Idempotent — it only raises a number that sits below — so it runs every
+    startup like the backfills above.
+    """
+    conn.execute(
+        "UPDATE meal_preferences SET snack_dishes_per_week = MAX(2, MIN(7, snacks_per_day)) "
+        "WHERE snack_dishes_per_week < MIN(7, snacks_per_day)"
+    )
+
+
 def _run_migrations(conn):
     for table, column, coltype in _MIGRATIONS:
         existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
@@ -988,6 +1005,7 @@ def _run_migrations(conn):
     _backfill_allergy_notes_from_facts(conn)
     _backfill_snacks_per_week_set(conn)
     _backfill_meal_counts_set(conn)
+    _backfill_snack_dishes(conn)
     _migrate_chore_modes(conn)
     _backfill_chore_done_on(conn)
     _run_once_data_migrations(conn)

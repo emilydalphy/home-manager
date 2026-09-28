@@ -1306,12 +1306,16 @@
       // POST /api/week/{week_start}/slot), not the dinner_decision path
       // above — that one only plans a brand-new slot; this one is
       // replacing an existing open one.
+      // The body line only when it's a question to answer (item.question —
+      // hosting's "what's the main?", a slot no safe dish could fill);
+      // the stored open_reason's explaining is not said (Emily,
+      // 2026-09-27, decision C: "cut it everything").
       var hasOptions = item.options && item.options.length;
       return (
         '<div class="shell-card needs-you-card urgency-' + item.urgency + '" data-card-type="dinner_open">' +
           '<div class="ny-kicker">' + escapeHtml(item.kicker) + '</div>' +
           '<div class="ny-title">' + escapeHtml(item.title) + '</div>' +
-          (item.body ? '<div class="ny-summary">' + escapeHtml(item.body) + '</div>' : '') +
+          (item.question ? '<div class="ny-summary">' + escapeHtml(item.question) + '</div>' : '') +
           (hasOptions
             ? '<div class="ny-options">' +
                 item.options.map(function (opt, i) {
@@ -9305,6 +9309,10 @@
   // Snacks are a DAY's worth of sittings (Julia, 2026-09-08), so their own
   // row and their own ceiling (memory.edit_preference's 6).
   var WWK_SNACKS = { field: 'snacks_per_day', label: 'Snacks a day', max: 6 };
+  // How many DIFFERENT snack dishes a week (2026-09-27) — a count like the
+  // three above, so it sits with them; at least one (none is "Snacks a
+  // day" at 0). meal_preferences.snack_dishes_per_week, default 2.
+  var WWK_SNACK_DISHES = { field: 'snack_dishes_per_week', label: 'Snacks', max: 7, min: 1, aria: 'different snacks' };
   // Cuisines you like (Emily, 2026-09-25): the same fifteen chips
   // onboarding's "Cuisines you like" step shows (static/onboarding.html's
   // CUISINES), so the list isn't only a "+ Add". A chip is on when the
@@ -10293,7 +10301,13 @@
     // the week is repeats and leftovers (Emily, 2026-09-25).
     html += wwkLead('Different dishes a week') + wwkNote('Fewer means more leftovers and batch cooking.');
     WWK_COUNTS.forEach(function (c) { html += wwkStepperHtml(c, mem[c.field]); });
-    html += wwkStepperHtml(WWK_SNACKS, mem.snacks_per_day);
+    // Never below Snacks a day: fewer different snacks than land on a day
+    // would be a day eating one twice, which the draft won't plan.
+    var snackFloor = Math.max(1, typeof mem.snacks_per_day === 'number' ? mem.snacks_per_day : 0);
+    html += wwkStepperHtml(Object.assign({}, WWK_SNACK_DISHES, { min: snackFloor }), wwkSnackDishes(mem));
+    // Snacks a day is how many land on each day, not a count of dishes —
+    // its own line, not under "Different dishes a week" (2026-09-27).
+    html += '<div class="wwk-count-own">' + wwkStepperHtml(WWK_SNACKS, mem.snacks_per_day) + '</div>';
     html += wwkLead('In your kitchen') + '<div class="wwk-chips">' +
       WWK_KIT.map(function (k) { return wwkChip(k.label, 'data-wwk="kit" data-value="' + k.key + '"', (mem.kitchen_kit || []).indexOf(k.key) !== -1 ? 'on' : ''); }).join('') + '</div>';
     html += wwkFactsHtml('taste');
@@ -10305,21 +10319,40 @@
   // place it is drawn.
   function wwkStepperHtml(c, value) {
     var n = typeof value === 'number' ? value : 0;
+    var noun = escapeHtml(c.aria || c.label.toLowerCase());
+    var bounds = ' data-max="' + c.max + '" data-min="' + (c.min || 0) + '"';
     return '<div class="wwk-count-row">' +
       '<span class="wwk-count-label">' + escapeHtml(c.label) + '</span>' +
       '<span class="cook-serves">' +
-        '<button type="button" class="cook-serves-btn" data-wwk="count" data-field="' + c.field + '" data-delta="-1" data-max="' + c.max + '" aria-label="Fewer ' + escapeHtml(c.label.toLowerCase()) + '">&minus;</button>' +
+        '<button type="button" class="cook-serves-btn" data-wwk="count" data-field="' + c.field + '" data-delta="-1"' + bounds + ' aria-label="Fewer ' + noun + '">&minus;</button>' +
         '<span class="cook-serves-count">' + n + '</span>' +
-        '<button type="button" class="cook-serves-btn" data-wwk="count" data-field="' + c.field + '" data-delta="1" data-max="' + c.max + '" aria-label="More ' + escapeHtml(c.label.toLowerCase()) + '">+</button>' +
+        '<button type="button" class="cook-serves-btn" data-wwk="count" data-field="' + c.field + '" data-delta="1"' + bounds + ' aria-label="More ' + noun + '">+</button>' +
       '</span>' +
     '</div>';
   }
 
-  function wwkSetCount(field, delta, max) {
-    var current = typeof wwkMem()[field] === 'number' ? wwkMem()[field] : 0;
-    var next = Math.max(0, Math.min(max, current + delta));
+  // Snacks as the screen shows it: never below Snacks a day, whatever an
+  // older row says (the server keeps them in step too —
+  // preferences.keep_snack_counts_consistent), so "−" can never jump up.
+  function wwkSnackDishes(mem) {
+    var stored = typeof mem.snack_dishes_per_week === 'number' ? mem.snack_dishes_per_week : 2;
+    var perDay = typeof mem.snacks_per_day === 'number' ? mem.snacks_per_day : 0;
+    return Math.min(WWK_SNACK_DISHES.max, Math.max(stored, perDay, 1));
+  }
+
+  function wwkSetCount(field, delta, max, min) {
+    var current = field === WWK_SNACK_DISHES.field ? wwkSnackDishes(wwkMem())
+      : (typeof wwkMem()[field] === 'number' ? wwkMem()[field] : 0);
+    var next = Math.max(min || 0, Math.min(max, current + delta));
     if (next === current) return;
-    wwkSavePreference('taste', field, next, function () { wwkMem()[field] = next; });
+    wwkSavePreference('taste', field, next, function () {
+      wwkMem()[field] = next;
+      // More snacks a day than different snacks: Snacks comes up with it
+      // (preferences.keep_snack_counts_consistent does the same on the server).
+      if (field === 'snacks_per_day' && !(wwkMem().snack_dishes_per_week >= next)) {
+        wwkMem().snack_dishes_per_week = Math.min(WWK_SNACK_DISHES.max, next);
+      }
+    });
   }
 
   // What the household has said about one protein, read tolerantly. The
@@ -10790,7 +10823,7 @@
         case 'prep-minutes': return wwkSetPrepMinutes(parseInt(value, 10));
         case 'protein': return wwkCycleProtein(value);
         case 'plates': return wwkTogglePlates();
-        case 'count': return wwkSetCount(t.getAttribute('data-field'), parseInt(t.getAttribute('data-delta'), 10), parseInt(t.getAttribute('data-max'), 10));
+        case 'count': return wwkSetCount(t.getAttribute('data-field'), parseInt(t.getAttribute('data-delta'), 10), parseInt(t.getAttribute('data-max'), 10), parseInt(t.getAttribute('data-min') || '0', 10));
         case 'kit': return wwkToggleKit(value);
         case 'fact-delete': return wwkDeleteFact(t.getAttribute('data-id'));
         case 'add': return wwkOpenAdd(t);
@@ -12705,31 +12738,25 @@
     return entry.meta || '';
   }
 
-  // The meta line with the one fact the slot was asked for ("35 min ·
-  // Mexican, as asked" — get_week_menu's `asked`, read off derived_from).
+  // The meta line: the minutes (or "from Monday"), then — for a prepped
+  // lunch batch only — when it's cooked and which lunches it feeds
+  // ("35 min · Cook this Sunday for Monday and Tuesday’s lunches").
+  // Emily, 2026-09-27 (decision C, "cut it everything"): no reason line on
+  // any row — not the stored reason, not "Mexican, as asked", nothing the
+  // model wrote. get_week_menu's `schedule_note` is built from what the
+  // plan records, so it only ever says a schedule fact. It's a fragment
+  // of the line, so its full stop comes off.
   function wkRowMetaLine(entry, meta) {
-    var asked = entry && entry.state === 'planned' && entry.asked;
-    return [meta, asked].filter(Boolean).join(' · ');
+    var note = entry && entry.state === 'planned' &&
+      String(entry.schedule_note || '').trim().replace(/\.+$/, '');
+    return [meta, note].filter(Boolean).join(' · ');
   }
 
-  // The meta line, with the stored reason said after it as plain text
-  // ("30 min · Lighter than the chops") — Emily, 2026-09-25 (option 1A):
-  // the reason used to be a tap on this line that popped a note, and the
-  // dotted underline it needed read as a second link beside the dish.
-  // Nothing on this line is a button now; the reason is a fragment of the
-  // line, so a closing full stop comes off. A slot that carries what it
-  // was asked for ("Mexican, as asked") already says why — its reason
-  // mostly says the same again ("Mexican for lunch, as you asked"), so
-  // the line keeps the shorter fact and leaves the reason off. A meal
-  // brought over from last week likewise: its "From last week" label
-  // already says why, and its reason ("Brought over from last week —
-  // it was on Tuesday") would say "last week" a second time.
+  // The meta line as plain text. Nothing on it is a button (Emily,
+  // 2026-09-25, 1A: the reason used to be a tap here, and its dotted
+  // underline read as a second link beside the dish).
   function wkRowMetaHtml(entry, meta) {
-    var reason = entry && entry.state === 'planned' && !entry.asked && !entry.brought_over &&
-      String(entry.reason || '').trim().replace(/\.+$/, '');
-    var why = reason ? reason.charAt(0).toUpperCase() + reason.slice(1) : '';
-    var line = [meta, why].filter(Boolean).join(' · ');
-    return line ? '<span class="wk-row-meta">' + escapeHtml(line) + '</span>' : '';
+    return meta ? '<span class="wk-row-meta">' + escapeHtml(meta) + '</span>' : '';
   }
 
   // How many of the three real meals a day actually holds.
@@ -13515,6 +13542,16 @@
   function swapDaysLine(st) {
     var dates = (st && st.dates) || [];
     if (dates.length < 2) return '';
+    // A dinner and the lunch eating its leftovers change together
+    // (batch_days, 2026-09-27): each meal is named with its own slot.
+    var meals = (st && st.meals) || [];
+    var mixed = meals.some(function (m) { return m.slot !== meals[0].slot; });
+    if (mixed) {
+      if (meals.length > 3) return 'Swapping all ' + meals.length + ' meals.';
+      return 'Swapping ' + joinList(meals.map(function (m) {
+        return dayName(m.date, { weekday: 'long' }) + '’s ' + slotWord(m.slot);
+      })) + '.';
+    }
     var slot = slotWord(st.slot);
     if (dates.length > 3) return 'Swapping all ' + dates.length + ' ' + (SWAP_SLOT_PLURALS[slot] || slot + 's') + '.';
     var names = dates.map(function (d) { return dayName(d, { weekday: 'long' }); });
@@ -13678,6 +13715,7 @@
       else if (res.status === 404) out = { message: swapRouteMessage(await res.json().catch(function () { return null; })) };
       if (swapSheetState !== thisOpen) return;
       if (out && out.dates && out.dates.length) thisOpen.dates = out.dates;
+      if (out && out.meals && out.meals.length) thisOpen.meals = out.meals;
       if (!out || !out.options || !out.options.length) {
         // A 404 says why in its own words (a slot with no meal on it); an
         // empty list is the model finding nothing safe, or not answering.
@@ -13853,7 +13891,9 @@
   function wkAddMealFor(panel, steps, day) {
     var free = WEEK_SLOTS.filter(function (slot) {
       var e = daySlotEntry(day, slot);
-      return !e || e.state === 'open' || (e.state === 'planned_empty' && e.need !== 'away');
+      // Never a meal that had already gone by when the week was drafted
+      // (the server marks it `past`) — there is nothing left to add it to.
+      return !e || e.state === 'open' || (e.state === 'planned_empty' && e.need !== 'away' && !e.past);
     })[0];
     var when = dayName(day.date, { weekday: 'long' });
     if (!free) {
@@ -14146,7 +14186,9 @@
       '</div>' + swapLine;
     }
     if (entry && entry.state === 'planned_empty') {
-      if (entry.need === 'away' || day.isPast) return '';
+      // `past`: a meal of the first day that had already gone by when the
+      // week was drafted — nothing to swap into (2026-09-27).
+      if (entry.need === 'away' || day.isPast || entry.past) return '';
       return '<div class="wk-acts">' + swap + '</div>' + swapLine;
     }
     if (!entry && !day.isPast) {
@@ -14620,6 +14662,52 @@
   // from (weekState.mealBack): "‹ Monday" when it was the Day step's card,
   // "‹ This week" when it was a dish name on the root's list — the same
   // words the Day step's own crumb uses for the same destination.
+  // Whether a reheat night can be marked eaten now (Emily, 2026-09-27):
+  // today, on the approved week Cook holds. On a draft, or a day still
+  // ahead, nothing has been eaten yet — "Mark eaten" there was a button
+  // for something that can't have happened. (A past day has no dock.)
+  function leftoversEatenNow(day) {
+    var data = typeof weekState !== 'undefined' && weekState ? weekState.data : null;
+    var cookable = typeof planCookableNow !== 'function' || planCookableNow();
+    return !!(day && day.isToday && data && data.status === 'approved' && cookable);
+  }
+
+  // The way from a reheat night to the recipe it comes from — "See
+  // Thursday's recipe" (Emily, 2026-09-27): the night itself has no cook
+  // in it, so its page showed a title and nothing to read. For every
+  // chained night (get_week_menu's leftover_from, with the cook's slot),
+  // wherever the cook is — openSourceMeal reaches a cook in another week.
+  function mealSourceLinkHtml(entry) {
+    var from = entry && entry.source === 'leftovers' && entry.leftover_from;
+    if (!from || !from.date || !from.slot) return '';
+    return '<button type="button" class="recipe-source-link" data-wk-source-date="' + escapeHtml(from.date) + '" ' +
+      'data-wk-source-slot="' + escapeHtml(from.slot) + '">' +
+      escapeHtml('See ' + dayName(from.date, { weekday: 'long' }) + '’s recipe') + '</button>';
+  }
+
+  function wkDayIndexOf(date) {
+    var days = weekState.days || [];
+    for (var i = 0; i < days.length; i++) if (days[i].date === date) return i;
+    return -1;
+  }
+
+  // The cook's own Meal step. A cook on another week's plan (the day is
+  // not on this screen) loads that week first — the plan covering the
+  // date, the same pin /plan-week's "drafted" hand-back uses
+  // (weekState.showWeekStart) — then opens it; its crumb goes up to that
+  // week. A date no plan covers stays where it is.
+  async function openSourceMeal(panel, date, slot, back) {
+    var index = wkDayIndexOf(date);
+    if (index === -1) {
+      weekState.showWeekStart = date;
+      await loadWeekMenu(panel);
+      index = wkDayIndexOf(date);
+      if (index === -1) return;
+      back = 'week';
+    }
+    goMealsStep('meal', { dayIndex: index, slot: slot, back: back });
+  }
+
   function mealStepHtml(day, slot) {
     var entry = daySlotEntry(day, slot);
     var cookMeal = cookMealForEntry(entry.entry_id);
@@ -14638,6 +14726,7 @@
       '<div class="wk-meal-body recipe-body">' +
         '<h1 class="recipe-title">' + escapeHtml(mealDisplayName(entry)) + '</h1>' +
         (line ? '<p class="recipe-line">' + escapeHtml(line) + '</p>' : '') +
+        (typeof mealSourceLinkHtml === 'function' ? mealSourceLinkHtml(entry) : '') +
         (hasRecipe ? recipeServesHtml(cookMeal, 'wk') : '') +
         (typeof platePartsRowsHtml === 'function' ? platePartsRowsHtml(day, slot, entry) : '') +
         mealIngredientsHtml(day, slot, entry, info) +
@@ -14676,6 +14765,15 @@
     if (!entry || entry.state !== 'planned' || day.isPast) return '';
     var eaten = entry.source === 'leftovers' || (isSnackSlot(slot) && !isRealCook(entry));
     var cookable = typeof planCookableNow !== 'function' || planCookableNow();
+    // A reheat night not yet eatable (a draft, a day ahead — see
+    // leftoversEatenNow) has nothing to mark and nothing to cook: the
+    // dock is the swap, with the chat as its quiet link, and the page's
+    // "See Thursday's recipe" is the way to the food (Emily, 2026-09-27).
+    // (typeof: the tests that run this renderer alone, like planCookableNow.)
+    if (entry.source === 'leftovers' && typeof leftoversEatenNow === 'function' && !leftoversEatenNow(day)) {
+      eaten = false;
+      cookable = false;
+    }
     var cookMeal = info && info.cookMeal;
     // Nothing to step through — the card has landed and carries no steps
     // (no saved recipe, or a saved one with none yet). Cook's screen for
@@ -15256,6 +15354,15 @@
           : (weekState.step === 'week' ? 'week' : 'day');
         wkDayForTap(btn);
         goMealsStep('meal', { slot: btn.getAttribute('data-wk-meal'), back: back });
+      });
+    });
+    // "See Thursday's recipe" on a reheat night (mealSourceLinkHtml): the
+    // cook's own Meal step, its crumb going where this one's went — in
+    // this week or another (openSourceMeal).
+    steps.querySelectorAll('[data-wk-source-date]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        openSourceMeal(panel, btn.getAttribute('data-wk-source-date'),
+          btn.getAttribute('data-wk-source-slot'), weekState.mealBack);
       });
     });
     // The rows' own buttons (Emily, 2026-09-18): Done, Swap (the sheet),
@@ -15969,9 +16076,13 @@
       clearSwapUndoTimer();
       mealAddMarkRow(st);
       swapState = { date: dayDate, slot: slot, avoid: [], reason: out.reason || '', canUndo: true };
-      spliceSwappedDay(out.day);
+      // A dish on several days (a cook and its leftover meals) changes on
+      // every one of them together (out.days).
+      (out.days || [out.day]).forEach(spliceSwappedDay);
       renderMealsStep(panel);
       await loadWeekMenu(panel);
+      // An approved week's list moved with the recipe, one day or several.
+      if (weekState.data && weekState.data.status === 'approved') refreshGrocerySurfaces();
       var day = mealsCurrentDay();
       // The part the person picked, not the whole dish: "Chicken thighs
       // was swapped in" is what they just chose, and the card's line
@@ -16275,13 +16386,17 @@
   // The one place an open slot is answered. It used to be a stack of cards
   // at the bottom of the root, one per open slot and none of them beside
   // the day it was about; now it is revealed by "Pick" inside that day's
-  // own card (see daySlotCardHtml). Same question, same options, same
-  // write — amber, and the reason names the CONSTRAINT that caused it, so
-  // the ask reads as diligence rather than failure.
+  // own card (see daySlotCardHtml). Same options, same write. The stored
+  // open_reason's explaining ("Sunday I'd rather ask than guess: …") is not
+  // said here (Emily, 2026-09-27, decision C: "cut it everything") — one
+  // plain line says what's true. A real question stays: hosting's "what's
+  // the main?" and a slot no safe dish could fill (get_week_menu's
+  // open_question, weekly_plan.open_slot_question).
   function openSlotCardHtml(date, slot, entry) {
+    var line = entry.open_question || ('Nothing planned for this ' + slotWord(slot) + ' yet.');
     return (
       '<div class="shell-card week-open-card" data-open-date="' + date + '" data-open-slot="' + slot + '">' +
-        '<div class="week-open-reason">' + escapeHtml(entry.open_reason || '') + '</div>' +
+        '<div class="week-open-reason">' + escapeHtml(line) + '</div>' +
         (entry.options && entry.options.length
           ? '<div class="week-open-options">' + entry.options.map(function (opt) {
               return '<button type="button" class="week-open-option" data-choice="' + escapeHtml(opt.label) + '">' +

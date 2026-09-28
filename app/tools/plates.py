@@ -538,6 +538,21 @@ def attach_sides(entry_id: int, sides: list[dict], groups_covered: list[str]) ->
     return {"entry_id": entry_id, "sides": combined, "food_groups": groups}
 
 
+def _dish_ingredient_names(entry_id: int) -> list[str]:
+    """The dish's own ingredient names (not its sides), for the side call."""
+    try:
+        conn = get_conn()
+        try:
+            row = _entry_row(conn, entry_id)
+        finally:
+            conn.close()
+        items = json.loads(row["ingredients_json"] or "[]") if row else []
+    except Exception:
+        logger.exception("Could not read entry %s's ingredients for its side call", entry_id)
+        return []
+    return [i["item"] for i in items if isinstance(i, dict) and i.get("item")][:25]
+
+
 def complete_plate(entry_id: int, context: dict, side_generator=None) -> dict:
     """
     Fill in what one short plate is missing, by attaching a side or two to
@@ -579,6 +594,13 @@ def complete_plate(entry_id: int, context: dict, side_generator=None) -> dict:
         from .. import agent as _agent
         side_generator = _agent.generate_sides_llm
 
+    if "dish_ingredients" not in context:
+        # What the dish is made of, not only its name: the side prompt's
+        # "don't propose a side that duplicates what the dish already has"
+        # can't be kept by a model that was told "Korean-Style Gochujang
+        # Beef Bowls" and nothing else (Emily, 2026-09-27 — steamed rice
+        # beside the bowl's own cauliflower rice).
+        context = dict(context, dish_ingredients=_dish_ingredient_names(entry_id))
     raw_sides = side_generator(context) or []
     cleaned = []
     for raw in raw_sides[:2]:  # one or two sides, never a second dinner
@@ -699,6 +721,36 @@ def has_starch(*texts: str | None) -> bool:
     return bool(_STARCH_WORDS_RE.search(text))
 
 
+# ---------- the dish's own base, standing in for the carb (Emily, 2026-09-27) ----------
+#
+# has_starch strips "cauliflower rice" out on purpose (it is not rice), and
+# that is right for the question it answers. But the PLATE question is
+# different: a gochujang beef bowl served over cauliflower rice already has
+# its base, and the plate-completing pass read it as short a carb and
+# bolted "Steamed rice (small)" beside it — two bases in one bowl, 2¼ cups
+# of jasmine rice on the list next to 6 cups of cauliflower rice. So a
+# dish built on one of these counts as having its carb filled
+# (dish_has_carb), and the plate's Carb line names it, so "Change" on it
+# rewrites it in place rather than adding a second one.
+_CARB_STANDIN_RE = re.compile(
+    r"\b(?:cauliflower rice|riced cauliflower|broccoli rice|riced broccoli|"
+    r"cauliflower mash|mashed cauliflower|cauliflower (?:crust|tortillas?)|"
+    r"zucchini noodles?|zoodles?|courgetti|spiralized \w+(?: \w+)?|\w+ spirals|"
+    r"(?:squash|butternut|sweet potato|carrot|cucumber|daikon|kohlrabi) noodles?|"
+    r"spaghetti squash|palmini|hearts? of palm (?:noodles|pasta|linguine|spaghetti)|"
+    r"shirataki(?: noodles| rice)?|konjac (?:noodles|rice)|"
+    r"(?:lettuce|cabbage|collard) (?:wraps?|cups?)|cloud bread)\b"
+)
+
+
+def carb_standin(*texts: str | None) -> str | None:
+    """The low-carb base one of these texts names ("cauliflower rice",
+    "zucchini noodles", "lettuce wraps"), lowercased, or None."""
+    text = " ".join(t for t in texts if t).lower()
+    m = _CARB_STANDIN_RE.search(text) if text else None
+    return m.group(0) if m else None
+
+
 def dish_has_carb(meal_name: str | None, ingredients: list[dict] | None) -> bool:
     """
     has_starch applied to a dish's own name and its ingredients' names —
@@ -709,12 +761,17 @@ def dish_has_carb(meal_name: str | None, ingredients: list[dict] | None) -> bool
     dish with no recorded food groups at all stays unknown, exactly as
     missing_groups already treats it, because this settles which group a
     RECORDED plate is missing, not whether the plate was ever read.
+
+    A dish built on its own low-carb base (carb_standin — cauliflower
+    rice, zucchini noodles, lettuce wraps) counts as carrying its carb
+    too: the plate is filled, and nothing is bolted on beside it (Emily,
+    2026-09-27).
     """
     names = [meal_name or ""]
     for ing in ingredients or []:
         if isinstance(ing, dict):
             names.append(ing.get("item") or "")
-    return has_starch(*names)
+    return has_starch(*names) or any(carb_standin(n) for n in names)
 
 
 # Every catalogue side is written for this many people. The grocery ingest
@@ -1097,7 +1154,7 @@ def suggest_additions(entry_id: int, eating_style: str | None = None, weekly_pla
         groups = json.loads(row["food_groups_json"] or "[]")
     except (TypeError, ValueError):
         groups = []
-    if groups and "carb" not in groups and has_starch(words):
+    if groups and "carb" not in groups and (has_starch(words) or carb_standin(words)):
         groups = groups + ["carb"]
     level = household_carb_level(eating_style)
     rule = plate_rule(level=level)

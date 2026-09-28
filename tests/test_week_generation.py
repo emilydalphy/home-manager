@@ -99,13 +99,47 @@ def test_slots_the_model_forgets_become_open_questions_not_holes(recipe, stub_mo
     assert "rather ask than guess" in gap["open_reason"]
 
 
-def test_an_open_slot_the_model_asked_for_keeps_its_reason_and_options(recipe, stub_model):
+def test_an_open_dinner_the_model_hands_back_is_planned_instead(recipe, stub_model, monkeypatch):
+    """
+    UPDATED 2026-09-27 (Emily's decision A: no open dinner the household is
+    home for). The model's "I'd rather ask" dinner is not written; the
+    dinner pass plans it — here through the swap's picker, since every
+    other night is Chili and a fourth Chili in a row is refused.
+    """
+    from app.tools import swap_in_place as sip
+    monkeypatch.setattr(sip, "_pick_replacement", lambda ctx: {
+        "meal_name": "Quick Frittata", "reason": "quick", "prep_time_minutes": 5, "cook_time_minutes": 10,
+        "ingredients": [{"item": "eggs", "qty": "6", "category": "dairy"}], "instructions": ["Cook."],
+    })
     week = _week_start()
     wednesday = tools._week_dates(week)[2]
     days = [d for d in _full_week(week) if not (d["date"] == wednesday and d["slot"] == "dinner")]
     days.append({
         "date": wednesday, "slot": "dinner", "meal_name": "", "is_new_recipe": False,
         "reasoning": "", "slot_state": "open",
+        "open_reason": "Wednesday I’d rather ask than guess: after Monday’s chili, everything "
+                       "I have under 20 minutes repeats something you’ve just eaten.",
+    })
+    stub_model(days)
+
+    plan = agent.generate_weekly_plan(week)
+
+    gap = _slots_for(plan["weekly_plan_id"])[(wednesday, "dinner")]
+    assert gap["slot_state"] == "planned"
+    assert "gap_repick" in gap["derived_from"]
+    assert any(m["meal"] == "Quick Frittata" and m["date"] == wednesday
+               for m in tools.get_weekly_plan(plan["weekly_plan_id"])["meals"])
+
+
+def test_an_open_slot_the_model_asked_for_keeps_its_reason_and_options(recipe, stub_model):
+    """UPDATED 2026-09-27: still true of a dinner an ALLERGY decided — the
+    one open dinner Emily's decision A keeps (dinner_gaps.keeps_its_question)."""
+    week = _week_start()
+    wednesday = tools._week_dates(week)[2]
+    days = [d for d in _full_week(week) if not (d["date"] == wednesday and d["slot"] == "dinner")]
+    days.append({
+        "date": wednesday, "slot": "dinner", "meal_name": "", "is_new_recipe": False,
+        "reasoning": "", "slot_state": "open", "derived_from": {"constraint": "allergen"},
         "open_reason": "Wednesday I’d rather ask than guess: after Monday’s chili, everything "
                        "I have under 20 minutes repeats something you’ve just eaten.",
         "open_options": [
@@ -282,9 +316,22 @@ def test_a_pre_existing_duplicate_is_deduped_before_leftover_repair_runs(recipe)
     assert json.loads(remaining["derived_from_json"])["links_to"] == f"{tuesday}:dinner"
 
     src = _slots_for(plan_id)[(tuesday, "dinner")]
-    assert src["derived_from"]["make_double_for"] == [f"{wednesday}:dinner"], (
+    # Its FIRST target is the surviving Wednesday. (Since 2026-09-27 the
+    # week's empty later dinners are filled too — dinner_gaps.
+    # fill_open_dinners — and one of them may reheat this same cook, so the
+    # list is no longer only Wednesday.)
+    targets = src["derived_from"]["make_double_for"]
+    assert targets[0] == f"{wednesday}:dinner", (
         "the source's make-double note must point at the slot that actually survived"
     )
+    # …and every target is a planned night that really reheats Tuesday.
+    chains = tools.plan_leftover_chains(plan_id)
+    tuesday_source = next(s for s in chains["sources"].values() if s["date"] == tuesday and s["slot"] == "dinner")
+    assert sorted(targets) == sorted(f"{t['date']}:{t['slot']}" for t in tuesday_source["targets"])
+    slots = _slots_for(plan_id)
+    for t in targets:
+        d, slot = t.split(":")
+        assert slots[(d, slot)]["slot_state"] == "planned", t
 
 
 def test_make_double_for_accumulates_every_leftovers_night_off_one_source(recipe, stub_model):

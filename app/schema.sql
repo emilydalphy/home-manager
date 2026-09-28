@@ -121,6 +121,17 @@ CREATE TABLE IF NOT EXISTS meal_preferences (
     -- one flag covering both would make the Preferences sheet read the
     -- wrong sentence back at whichever question was not the one asked.
     snacks_per_day_set INTEGER NOT NULL DEFAULT 0,
+    -- How many DIFFERENT snack dishes a week (Loop Board "Draft: snacks
+    -- follow a real 'different snacks a week' count", 2026-09-27) — the
+    -- "Snacks" stepper under What we know > Different dishes a week. Its
+    -- own column because snacks_per_week above cannot carry it: every
+    -- snacks-a-day answer writes 7 there (preferences.
+    -- snacks_per_week_from_per_day), so the stored number is not a count
+    -- anyone chose. Default 2 for every household, new and existing
+    -- (ASSUMPTION for Emily). The draft folds its snacks to this many
+    -- dishes (meal_variety.enforce_snack_dishes); snacks_per_day still
+    -- says how many land on each day.
+    snack_dishes_per_week INTEGER NOT NULL DEFAULT 2,
     -- Whether dinners/breakfasts/lunches_per_week are ANSWERS or column
     -- defaults (Emily, 2026-09-21: the counts are targets, not caps, and
     -- the pass that re-picks a repeat into a new dish to reach one spends

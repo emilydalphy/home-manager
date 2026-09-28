@@ -454,7 +454,13 @@ def test_generating_a_week_creates_a_defrost_task_even_with_no_advance_prep_note
 
     assert general_calls == [], "no advance_prep_notes means the LLM prep pass still correctly stays off"
     tasks = tools.get_prep_schedule(plan["weekly_plan_id"])
-    defrost_tasks = [t for t in tasks if t["task_type"] == "defrost"]
+    # Thursday's own reminder. Since 2026-09-27 the week's six other
+    # dinners the model left out are planned too (Emily's decision A: no
+    # open dinner the household is home for), and with only this dish on
+    # the week some of them are more Chicken Skewers with thaws of their
+    # own — so this counts the one for the night the model sent.
+    thursday = datetime.date.fromisoformat(tools._week_dates(week)[3]).strftime("%A")
+    defrost_tasks = [t for t in tasks if t["task_type"] == "defrost" and f"for {thursday}" in t["description"]]
     assert len(defrost_tasks) == 1
     assert "Chicken Thighs" in defrost_tasks[0]["description"]
 

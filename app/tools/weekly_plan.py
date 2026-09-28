@@ -516,6 +516,36 @@ def plan_slot_empty(
     return {"entry_id": entry_id, "date": meal_date, "slot": slot, "slot_state": "planned_empty", "reason": reason}
 
 
+def open_slot_question(open_reason: str | None, derived_from_json: str | None) -> str:
+    """
+    The open slot's sentence when it's a question the household has to
+    answer, else "" (Emily, 2026-09-27). Kept: hosting ("You're hosting
+    Thanksgiving for 12 — what's the main?", big_meal), a holiday whose
+    plans changed ("Plans for Thanksgiving changed — what would you like for
+    dinner?", holidays) and a slot no safe dish could fill (allergen_gate —
+    filed under its own constraint by the re-pick, under the stepper's by
+    the sweep, so its sentence is matched too, and said without the old
+    "— I'd rather ask than guess" tail). Every other open_reason is the app
+    explaining itself ("Sunday I'd rather ask than guess: …", "You cut X
+    back…") and the screens say one plain line instead.
+    """
+    from . import allergen_gate as _allergen_gate  # lazy: it imports this module
+
+    text = (open_reason or "").strip()
+    if not text:
+        return ""
+    try:
+        derived = json.loads(derived_from_json or "{}") or {}
+    except (TypeError, ValueError):
+        derived = {}
+    constraint = derived.get("constraint") if isinstance(derived, dict) else None
+    if constraint in ("hosting", "holiday_answer_changed"):
+        return text
+    if constraint == _allergen_gate.ALLERGEN_CONSTRAINT or _allergen_gate.is_open_reason(text):
+        return _allergen_gate.question_of(text)
+    return ""
+
+
 def plan_slot_open(
     weekly_plan_id: int,
     meal_date: str,
@@ -2133,6 +2163,10 @@ def record_plan_requests(weekly_plan_id: int, report: dict | None) -> None:
         out = {"words": str(r.get("words") or "").strip(), field: str(r.get(field) or "").strip()}
         if r.get("ingredient"):
             out["ingredient"] = str(r["ingredient"]).strip()
+        # And `cuisine` for a cuisine chip nothing fit
+        # (typed_requests.use_picked_cuisines): "No burger fit this week."
+        if r.get("cuisine"):
+            out["cuisine"] = str(r["cuisine"]).strip()
         return out
 
     honoured = [
@@ -2141,12 +2175,32 @@ def record_plan_requests(weekly_plan_id: int, report: dict | None) -> None:
     unmet = [
         _trim(r, "reason") for r in (report.get("unmet_requests") or []) if isinstance(r, dict) and r.get("words")
     ]
-    if not honoured and not unmet:
+    # A dish Pomona had to MOVE to the meal it was asked for ("today",
+    # "tonight", "tomorrow" — typed_requests.place_day_requests): its one
+    # plain line, for the draft's opener.
+    moved = [
+        {"words": str(r.get("words") or "").strip(), "line": str(r.get("line") or "").strip()}
+        for r in (report.get("moved_requests") or []) if isinstance(r, dict) and (r.get("line") or r.get("words"))
+    ]
+    # Plain lines about what the planner had to leave or couldn't do with
+    # the household's own answers (weekday_lunches.kept_line, a lunch
+    # arrangement the dinner count left no cook for): said once each.
+    said = []
+    for line in report.get("said_lines") or []:
+        line = str(line or "").strip()
+        if line and line not in said:
+            said.append(line)
+    if not honoured and not unmet and not moved and not said:
         return
+    stored = {"honoured": honoured, "unmet": unmet}
+    if moved:
+        stored["moved"] = moved
+    if said:
+        stored["said"] = said
     conn = get_conn()
     conn.execute(
         "UPDATE weekly_plans SET requests_json = ? WHERE id = ? AND household_id = ?",
-        (json.dumps({"honoured": honoured, "unmet": unmet}), weekly_plan_id, household_id()),
+        (json.dumps(stored), weekly_plan_id, household_id()),
     )
     conn.commit()
     conn.close()
@@ -2164,7 +2218,12 @@ def plan_requests(weekly_plan_id: int) -> dict:
         data = json.loads(row["requests_json"]) if row and row["requests_json"] else {}
     except (TypeError, ValueError):
         data = {}
-    return {"honoured": data.get("honoured") or [], "unmet": data.get("unmet") or []}
+    out = {"honoured": data.get("honoured") or [], "unmet": data.get("unmet") or []}
+    if data.get("moved"):
+        out["moved"] = data["moved"]
+    if data.get("said"):
+        out["said"] = data["said"]
+    return out
 
 
 def attach_intake_to_plan(weekly_plan_id: int, intake_id: int) -> dict:
@@ -2249,6 +2308,58 @@ def _resolve_leftover_source(links_to: str, by_date_slot: dict, by_id: dict):
     return None
 
 
+def _eaten_at(row) -> tuple[str, int]:
+    """(date, place in the day) — the order meals are EATEN in, so a lunch
+    comes before that day's dinner. What "earlier" means for a leftovers
+    chain (Emily, 2026-09-27)."""
+    slot = row["slot"]
+    return (row["date"], DAY_SLOTS.index(slot) if slot in DAY_SLOTS else len(DAY_SLOTS))
+
+
+def _is_cook_row(row) -> bool:
+    """A planned meal that is cooked, not reheated: no links_to, no freezer
+    portion, not a "leftovers" line the model wrote as a name."""
+    if row["slot_state"] != "planned" or not (row.get("meal") or "").strip():
+        return False
+    derived = json.loads(row["derived_from_json"] or "{}") or {}
+    if (derived.get("links_to") or "").strip() or _leftovers_mod().frozen_portion_on(derived):
+        return False
+    return not re.search(r"\bleftovers?\b|take[\s-]?out|delivery|order in", row["meal"], re.IGNORECASE)
+
+
+def _nearest_cook(rows: list, keys: dict, meal_date: str, slot: str, exclude=(), prefer=(),
+                  min_days: int = 0):
+    """
+    The cook a lunch or dinner at (meal_date, slot) can eat the leftovers
+    of, or None: the NEAREST earlier one in eating order that is in reach —
+    a dinner reheats a dinner one to three days before; a lunch reheats the
+    dinner the evening before or a lunch one to three days before — and
+    that would not put its dish on a third meal in a row
+    (leftovers.too_many_in_a_row). A cook whose id is in `prefer` wins
+    over a nearer one (a dish the household asked to have leftovers of).
+    `min_days` (1 for a Leftovers night) rules out the same day.
+    """
+    _leftovers = _leftovers_mod()
+    here = date.fromisoformat(meal_date)
+    found = []
+    for c in rows:
+        if c["id"] in exclude or c["slot"] not in ("lunch", "dinner") or not _is_cook_row(c):
+            continue
+        gap = (here - date.fromisoformat(c["date"])).days
+        if gap < max(1, min_days) or gap > _leftovers.MAX_LEFTOVER_DAYS:
+            continue
+        if slot == "dinner" and c["slot"] != "dinner":
+            continue
+        if slot == "lunch" and c["slot"] == "dinner" and gap != 1:
+            continue
+        if _leftovers.too_many_in_a_row(keys, meal_date, slot, c["meal"]):
+            continue
+        found.append(c)
+    if not found:
+        return None
+    return max(found, key=lambda c: (c["id"] in prefer, _eaten_at(c)))
+
+
 def repair_leftover_chains(weekly_plan_id: int) -> dict:
     """
     Enforce that every leftovers entry actually eats a real, earlier cook —
@@ -2273,7 +2384,9 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
 
     A chain is valid only if ALL of:
     - links_to parses (see _resolve_leftover_source);
-    - the source date is strictly EARLIER than this entry's date;
+    - the source is EATEN EARLIER than this entry — by date, then
+      breakfast → lunch → dinner, so a lunch cooked big can feed that
+      evening's dinner (Emily, 2026-09-27; it used to be the date alone);
     - the source is a `planned` entry with a real meal, in THIS plan;
     - the source slot is lunch or dinner — a dinner claiming a breakfast's
       leftovers is a type mismatch as backwards as the bug this exists to
@@ -2289,7 +2402,16 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
       the food-safety default). See below for what happens to one that
       isn't: it is NOT reopened.
 
-    On failure, the week is never reordered — reordering a night the
+    On failure a lunch or dinner is first RE-POINTED at the nearest earlier
+    cook in reach (_nearest_cook; Emily's decision A, 2026-09-27: a draft
+    never hands back a meal the household is home for), and a chain that
+    would put its dish on a third lunch-or-dinner in a row is re-pointed
+    the same way when another cook can feed it (decision B). Only with no
+    cook to reach for does the old answer below apply — and a dinner it
+    opens is re-picked by dinner_gaps.fill_open_dinners, a lunch filled by
+    meal_variety.fill_gaps_with_a_repeat, before the week is shown.
+
+    The week is never reordered — reordering a night the
     household already saw a reasoning for is its own kind of surprise.
     Instead the slot is reopened: cleared and handed back as a real
     question, the same shape as any other open slot, with the failure kept
@@ -2319,18 +2441,31 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
     targets, accumulated rather than overwritten — never assume it holds
     exactly one.
     """
+    _leftovers = _leftovers_mod()
     conn = get_conn()
     rows = conn.execute(
-        "SELECT id, date, slot, slot_state, recipe_id, freeform_meal, derived_from_json "
-        "FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? AND component_category IS NULL",
+        "SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.recipe_id, mpe.freeform_meal, "
+        "       mpe.derived_from_json, mpe.food_groups_json, COALESCE(r.name, mpe.freeform_meal) AS meal "
+        "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+        "WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.component_category IS NULL "
+        f"ORDER BY mpe.date ASC, {slot_order_sql('mpe.slot')} ASC, mpe.id ASC",
         (weekly_plan_id, household_id()),
     ).fetchall()
     conn.close()
+    rows = [dict(r) for r in rows]
 
-    by_date_slot = {(r["date"], r["slot"]): r for r in rows}
+    by_date_slot = {}
+    for r in rows:
+        by_date_slot.setdefault((r["date"], r["slot"]), r)
     by_id = {r["id"]: r for r in rows}
+    # The dish on every lunch and dinner, for the two-meals-in-a-row rule
+    # (leftovers.MAX_MEALS_IN_A_ROW) — kept current as this walks the week
+    # in eating order, so each chain is judged against the ones before it
+    # as they now stand.
+    keys = _leftovers.run_keys(weekly_plan_id)
 
     repaired = []
+    repointed = []
     confirmed = []
     frozen = []
     for r in rows:
@@ -2345,7 +2480,10 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
         issue = None
         if source is None:
             issue = "a meal I can’t find anymore"
-        elif source["date"] >= r["date"]:
+        elif _eaten_at(source) >= _eaten_at(r):
+            # In EATING order, not by date alone (Emily, 2026-09-27): a
+            # lunch cooked big and its leftovers that evening is a real
+            # chain; the evening's dinner feeding that day's lunch is not.
             issue = "a meal that hasn’t happened yet"
         elif source["slot_state"] != "planned" or not (source["recipe_id"] or source["freeform_meal"]):
             issue = "a night nothing was actually cooked"
@@ -2360,14 +2498,58 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
             if (source_derived.get("links_to") or "").strip():
                 issue = "another leftovers night, not an actual cook"
 
+        too_many = issue is None and _leftovers.ends_too_long_a_run(
+            keys, r["date"], r["slot"], source["meal"],
+        )
+        if too_many:
+            # The third lunch-or-dinner of one dish in a row (Emily,
+            # 2026-09-27, decision B): Thursday's dinner and Friday's lunch
+            # off it is fine, Friday's dinner is something else — a reheat
+            # of another cook when one is in reach. When none is, the chain
+            # stands here (it is a real chain) and dinner_gaps.
+            # break_long_runs re-picks the meal instead of this opening it.
+            other = _nearest_cook(rows, keys, r["date"], r["slot"], exclude={r["id"]})
+            if other is not None:
+                issue = "the same dish three meals running"
+
         if issue is None and (
             date.fromisoformat(r["date"]) - date.fromisoformat(source["date"])
-        ).days > _leftovers_mod().MAX_LEFTOVER_DAYS:
+        ).days > _leftovers.MAX_LEFTOVER_DAYS:
             _freeze_instead(r, source, derived, links_to)
             frozen.append({"date": r["date"], "slot": r["slot"], "source_entry_id": source["id"]})
             continue
 
+        if issue and r["slot"] in _leftovers.RUN_SLOTS:
+            # A broken chain is RE-POINTED at the nearest earlier cook that
+            # can feed it (Emily's decision A, 2026-09-27: a draft never
+            # hands back a meal the household is home for). Only when there
+            # is none does it open — and a dinner opened here is then
+            # re-picked fresh by dinner_gaps.fill_open_dinners, a lunch
+            # filled by meal_variety.fill_gaps_with_a_repeat.
+            cook = _nearest_cook(rows, keys, r["date"], r["slot"], exclude={r["id"]})
+            if cook is not None:
+                new_derived = {k: v for k, v in derived.items() if k != "links_to"}
+                new_derived["links_to"] = f"entry_id:{cook['id']}"
+                new_derived["repointed"] = {"was": links_to, "why": issue}
+                written = _replace_slot_entries(
+                    weekly_plan_id, [r["id"]], r["date"], r["slot"], cook["meal"],
+                    food_groups=json.loads(cook.get("food_groups_json") or "[]") or None,
+                    reasoning="", derived_from=new_derived,
+                )
+                new_row = dict(r, id=written.get("entry_id"), derived_from_json=json.dumps(new_derived),
+                               recipe_id=cook["recipe_id"], freeform_meal=cook["freeform_meal"],
+                               meal=cook["meal"])
+                by_date_slot[(r["date"], r["slot"])] = new_row
+                by_id.pop(r["id"], None)
+                by_id[new_row["id"]] = new_row
+                rows[rows.index(r)] = new_row
+                keys[(r["date"], r["slot"])] = _leftovers.dish_identity(cook["meal"])
+                repointed.append({"date": r["date"], "slot": r["slot"], "original_links_to": links_to,
+                                  "issue": issue, "now": cook["meal"]})
+                r, source, links_to, issue = new_row, cook, new_derived["links_to"], None
+
         if issue:
+            keys.pop((r["date"], r["slot"]), None)
             day_name = date.fromisoformat(r["date"]).strftime("%A")
             clear_plan_slot(weekly_plan_id, r["date"], r["slot"])
             repaired_derived = {k: v for k, v in derived.items() if k != "links_to"}
@@ -2446,7 +2628,13 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
             weekly_plan_id, len(frozen), _leftovers_mod().MAX_LEFTOVER_DAYS,
             ", ".join(f"{x['date']} {x['slot']}" for x in frozen),
         )
-    return {"repaired": repaired, "confirmed": confirmed, "frozen": frozen}
+    if repointed:
+        logger.info(
+            "Week plan %s: %d leftovers chain(s) re-pointed at an earlier cook: %s",
+            weekly_plan_id, len(repointed),
+            ", ".join(f"{x['date']} {x['slot']} -> {x['now']} ({x['issue']})" for x in repointed),
+        )
+    return {"repaired": repaired, "confirmed": confirmed, "frozen": frozen, "repointed": repointed}
 
 
 def _leftovers_mod():
@@ -4940,7 +5128,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
                mpe.slot_state, mpe.open_reason, mpe.reasoning, mpe.derived_from_json,
                mpe.food_groups_json, mpe.sides_json, mpe.cooked_status,
                r.prep_time_minutes, r.cook_time_minutes,
-               r.tags_json, r.instructions_json, r.main_protein, r.ingredients_json,
+               r.tags_json, r.instructions_json, r.main_protein, r.ingredients_json, r.cuisine,
                r.source_url, r.source_book, r.source_author, r.source_page,
                (SELECT COUNT(*) FROM recipe_photos rp WHERE rp.recipe_id = r.id) AS photo_count
         FROM meal_plan_entries mpe
@@ -5050,8 +5238,12 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             # where _finish_week_slots wrote it.
             derived = json.loads(row["derived_from_json"] or "{}")
             skipped = derived.get("constraint") == _week_intake.SKIPPED_DAY_CONSTRAINT
-            return {
-                "title": "Not planned" if skipped else "Out — nothing to cook", "meta": None, "source": "empty",
+            # A meal of the first day that had already gone by when the
+            # week was drafted (today_meals, 2026-09-27) — not an out night.
+            past = derived.get("constraint") == "already_past"
+            empty = {
+                "title": "Not planned" if skipped or past else "Out — nothing to cook", "meta": None,
+                "source": "empty",
                 "state": "planned_empty", "reason": row["reasoning"], "entry_id": row["id"],
                 # Left out on purpose, not away (2026-09-26): the Which days
                 # card offers "Build a plan" only for a day of these
@@ -5061,11 +5253,17 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
                 # (unwanted_meal_slots) — what fill_empty_day will fill.
                 "can_fill": skipped and row["slot"] not in unwanted_slots,
             }
+            if past:
+                empty["past"] = True
+            return empty
         if row["slot_state"] == "open":
             derived = json.loads(row["derived_from_json"] or "{}")
             return {
                 "title": "I’d like your call on this one", "meta": None, "source": "open",
                 "state": "open", "open_reason": row["open_reason"],
+                # What the screens say for it (open_slot_question): the
+                # question when it is one, else "".
+                "open_question": open_slot_question(row["open_reason"], row["derived_from_json"]),
                 "options": derived.get("options") or [], "entry_id": row["id"],
             }
         title = row["meal"]
@@ -5094,6 +5292,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
                 row["main_protein"], sides, prefs["eating_style"] if prefs else "",
                 carb_level=carb_level,
                 ingredients=json.loads(row["ingredients_json"] or "[]") if row["ingredients_json"] else None,
+                dish=title,
             ),
             "defrost": defrost_by_entry.get(row["id"]),
             # Where the dish's recipe came from, said the one way every
@@ -5143,6 +5342,10 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
                     "date": src["date"],
                     "meal": src["meal"],
                     "cook_ahead": bool(leftover.get("cook_ahead")),
+                    # The cook's own slot, so the reheat night's Meal step
+                    # can open the recipe it comes from ("See Thursday's
+                    # recipe", 2026-09-27) — a lunch can reheat a dinner.
+                    "slot": src.get("slot"),
                 },
             }
         text = (row["freeform_meal"] or "").lower()
@@ -5166,11 +5369,16 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     # fact so the three build_slot returns above stay as they are.
     from . import draft_opener as _draft_opener  # lazy: it reads meal_variety, which reaches back here
 
+    # This week's cuisine chips: a row only says "Burgers, as asked" when
+    # Burgers is one of them and the dish is one (asked_fact).
+    picked_cuisines = (_week_intake.get_week_intake(plan["week_start_date"]) or {}).get("cuisines") or []
+
     def with_asked(built, row):
         if built and built.get("state") == "planned":
             built["asked"] = _draft_opener.asked_fact({
                 "slot_state": row["slot_state"], "derived_from": row["derived_from_json"],
-            })
+                "meal": row["meal"], "cuisine": row["cuisine"],
+            }, cuisines=picked_cuisines)
             # "From last week" on the row (Emily, 2026-09-25): a meal the
             # household brought over from last week, so the draft says why
             # it's there (tools/bring_over.py).
@@ -5179,7 +5387,57 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             except (TypeError, ValueError):
                 derived = {}
             built["brought_over"] = bool(isinstance(derived, dict) and derived.get("brought_over"))
+            built["schedule_note"] = schedule_note(row, derived if isinstance(derived, dict) else {})
         return built
+
+    # The one line a row still says under its dish besides the minutes
+    # (Emily, 2026-09-27, decision C: "cut it everything" — no reason line,
+    # nothing the model wrote): WHEN a prepped batch is cooked and which
+    # lunches it feeds. Built here from what the plan records — the cook's
+    # prep_date, the lunches chained to it, the lunches frozen off it — not
+    # read back out of the free `reasoning` text, so it can only ever say
+    # what the plan actually holds. Every other meal says nothing here: a
+    # reheat night's "from Monday" is the row's meta (leftover_from), and a
+    # freezer night's name already says where it comes from.
+    from . import weekday_lunches as _weekday_lunches  # lazy: it imports this module
+
+    frozen_off: dict[str, list[str]] = {}
+    for r in rows:
+        try:
+            d = json.loads(r["derived_from_json"] or "{}") or {}
+        except (TypeError, ValueError):
+            continue
+        frozen = d.get(_leftovers.FROM_FREEZER_KEY) if isinstance(d, dict) else None
+        if isinstance(frozen, dict) and str(frozen.get("cook") or "").startswith("entry_id:"):
+            frozen_off.setdefault(frozen["cook"], []).append(r["date"])
+
+    def schedule_note(row, derived: dict) -> str:
+        prep_date = derived.get("prep_date")
+        # A batch cooked on the prep day's own lunch or dinner
+        # (weekday_lunches._prep_day_cook, derived_from.prep_day_cook): that
+        # meal is the cook, not one of the lunches it feeds, and a dinner
+        # cook carries no weekday_lunches constraint of its own.
+        on_prep_day = bool(derived.get("prep_day_cook"))
+        if not prep_date:
+            return ""
+        if not on_prep_day and (derived.get("constraint") != _weekday_lunches.CONSTRAINT or row["slot"] != "lunch"):
+            return ""
+        fed = set() if on_prep_day else {row["date"]}
+        for t in (chains["sources"].get(row["id"]) or {}).get("targets") or []:
+            if t.get("slot") == "lunch":
+                fed.add(t["date"])
+        fed.update(frozen_off.get(f"entry_id:{row['id']}", []))
+        if not fed:
+            return ""
+        if row["slot"] == "lunch" and row["date"] == prep_date and not on_prep_day:
+            # The cook IS this lunch, on its own prep day: say only what it
+            # makes besides itself (integration review, 2026-09-27: "Cook
+            # this Tuesday for Tuesday, Wednesday and Thursday's lunches",
+            # read on Tuesday's own lunch).
+            later = sorted(fed - {row["date"]})
+            return f"Makes {_weekday_lunches.batch_lunch_phrase(later)} too." if later else ""
+        return (f"Cook this {_weekday_lunches._title(_weekday_lunches._weekday(prep_date))} for "
+                f"{_weekday_lunches.batch_lunch_phrase(sorted(fed))}.")
 
     by_date_slot = {}
     # Snacks are a LIST per day, not one entry: two different snacks a day
@@ -5579,6 +5837,9 @@ def get_needs_you_items() -> list[dict]:
                 "date": candidate,
                 "slot": "dinner",
                 "body": row["open_reason"] or "",
+                # The body only when it's a question to answer (Today's
+                # card shows this, never the bare body — 2026-09-27).
+                "question": open_slot_question(row["open_reason"], row["derived_from_json"]),
                 "options": derived.get("options") or [],
                 "week_start": week_start,
                 # The plan this card is about, by id: a week key alone
@@ -6800,6 +7061,14 @@ def _replace_slot_entries(
         # to ask whether it used to feed other nights' leftovers.
         sources = _leftovers.plan_leftover_chains(weekly_plan_id, conn=conn)["sources"]
         was_a_leftovers_source = any(old_id in sources for old_id in old_entry_ids)
+        # The nights the outgoing cook fed are ordinary nights from here on
+        # (see swap_meal_in_plan's docstring): their own links_to goes too,
+        # or a "date:slot" one would quietly name the NEW dish on that slot
+        # and an "entry_id:" one a row that no longer exists.
+        for old_id in old_entry_ids:
+            for target in (sources.get(old_id) or {}).get("targets") or []:
+                if target["entry_id"] not in old_entry_ids:
+                    _clear_leftover_link(conn, target["entry_id"])
         for old_id in old_entry_ids:
             # If the OUTGOING entry was itself a reheat night, its source's
             # make_double_for/make_double_note still names it after this
@@ -7010,6 +7279,27 @@ def swap_meal_in_plan(
     return result
 
 
+def _clear_leftover_link(conn, entry_id: int) -> None:
+    """Take a reheat night's own half of a leftover chain off it (links_to,
+    cook_ahead) — its cook is being replaced and does not feed it any more.
+    On the caller's connection and inside its transaction."""
+    row = conn.execute(
+        "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (entry_id, household_id()),
+    ).fetchone()
+    if row is None:
+        return
+    derived = json.loads(row["derived_from_json"] or "{}") or {}
+    if "links_to" not in derived and "cook_ahead" not in derived:
+        return
+    derived.pop("links_to", None)
+    derived.pop("cook_ahead", None)
+    conn.execute(
+        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps(derived), entry_id, household_id()),
+    )
+
+
 # Keys on derived_from that say where an entry sits in a leftover chain.
 # replace_dish_on_days works these out against the group it is replacing;
 # everything else on derived_from is the caller's to carry.
@@ -7126,6 +7416,10 @@ def replace_dish_on_days(weekly_plan_id: int, items: list[dict]) -> dict:
             for old_id in old_ids if old_id in chains["sources"]
             for t in chains["sources"][old_id]["targets"] if t["entry_id"] not in group
         ]
+        # ...and they stop naming the old cook: an ordinary night, not a
+        # reheat of a dish that is no longer on the plan.
+        for orphan_id in orphaned:
+            _clear_leftover_link(conn, orphan_id)
 
         for old_id in old_ids:
             reheat = chains["leftovers"].get(old_id)
@@ -7181,6 +7475,108 @@ def replace_dish_on_days(weekly_plan_id: int, items: list[dict]) -> dict:
     if held_thawed:
         out["held_thawed"] = held_thawed
     return out
+
+
+def restore_leftover_chain(weekly_plan_id: int, cook_id: int, chain: dict) -> list[int]:
+    """
+    Put a cook's leftover chain back after a one-day swap of it is undone
+    (swap_in_place.undo_meal_swap). The swap unlinked the meals the cook
+    fed (_replace_slot_entries clears their links_to; apply_pick drops the
+    cook's own make_double_for), so the dish the Undo restores has nothing
+    to rebuild the chain from — except `chain`, which apply_pick recorded
+    in swapped_from: {make_double_note, targets: [{entry_id, date, slot,
+    links_to, cook_ahead}]}. Review, 2026-09-27: Undo put Thursday's dish
+    back cooking for one table, Friday no longer its leftovers.
+
+    A target is re-linked only if it is still that meal as the swap left
+    it — the same row, planned, not cooked, carrying no link of its own,
+    and still the restored dish; anything since changed is the household's
+    and is left alone. Its link is written in its own shape: an
+    `entry_id:` link names the restored cook's NEW id, a `date:slot` one
+    is kept, and a cook-ahead pick stays one. On an approved week the cook
+    and every re-linked meal are re-bought as a chain (the cook buys the
+    batch, a reheat buys nothing), so the list lands where it was before
+    the swap. One transaction. Returns the re-linked entry ids.
+    """
+    targets = (chain or {}).get("targets") or []
+    if not targets:
+        return []
+    conn = get_conn()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        plan_row = conn.execute(
+            "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?",
+            (weekly_plan_id, household_id()),
+        ).fetchone()
+        cook = conn.execute(
+            "SELECT mpe.id, mpe.date, mpe.slot, mpe.derived_from_json, "
+            "COALESCE(r.name, mpe.freeform_meal) AS meal FROM meal_plan_entries mpe "
+            "LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+            "WHERE mpe.id = ? AND mpe.household_id = ? AND mpe.weekly_plan_id = ?",
+            (cook_id, household_id(), weekly_plan_id),
+        ).fetchone()
+        if not plan_row or cook is None:
+            conn.rollback()
+            return []
+        dish = (cook["meal"] or "").strip().lower()
+        relinked = []
+        for target in targets:
+            row = conn.execute(
+                "SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.cooked_status, "
+                "mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal "
+                "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+                "WHERE mpe.id = ? AND mpe.household_id = ? AND mpe.weekly_plan_id = ?",
+                (target.get("entry_id"), household_id(), weekly_plan_id),
+            ).fetchone()
+            if row is None or row["slot_state"] != "planned" or (row["cooked_status"] or "") == "done":
+                continue
+            if row["date"] <= cook["date"] or (row["meal"] or "").strip().lower() != dish:
+                continue
+            derived = json.loads(row["derived_from_json"] or "{}") or {}
+            if derived.get("links_to"):
+                continue
+            link = (target.get("links_to") or "").strip()
+            if _LINKS_TO_ENTRY_ID_RE.match(link):
+                link = f"entry_id:{cook_id}"  # the restored cook is a new row
+            elif not link:
+                link = f"{cook['date']}:{cook['slot']}"
+            derived["links_to"] = link
+            if target.get("cook_ahead"):
+                derived["cook_ahead"] = True
+            conn.execute(
+                "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+                (json.dumps(derived), row["id"], household_id()),
+            )
+            relinked.append(row)
+        if not relinked:
+            conn.commit()
+            return []
+        keys = [f"{r['date']}:{r['slot']}" for r in relinked]
+        cook_derived = json.loads(cook["derived_from_json"] or "{}") or {}
+        cook_derived["make_double_for"] = keys
+        cook_derived["make_double_note"] = (
+            (chain.get("make_double_note") or "") if len(relinked) == len(targets) else ""
+        ) or _make_double_note_text(keys)
+        conn.execute(
+            "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+            (json.dumps(cook_derived), cook_id, household_id()),
+        )
+        if plan_row["status"] == "approved":
+            ids = {cook_id} | {r["id"] for r in relinked}
+            for entry_id in ids:
+                _grocery._reverse_meal_grocery_contributions(entry_id, conn=conn)
+            rows = [r for r in _plan_grocery_candidate_entries(conn, weekly_plan_id) if r["id"] in ids]
+            if rows:
+                buffer = _recipes.WeekGroceryBuffer(weekly_plan_id, conn=conn)
+                _ingest_recipe_group_and_sides(rows, weekly_plan_id, buffer)
+                buffer.flush()
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    return [r["id"] for r in relinked]
 
 
 def swap_meal_in_plan_for_chat(*args, override: bool = False, **kwargs) -> dict:
@@ -7760,7 +8156,7 @@ def _apply_dinner_nights_swap(
             source = _resolve_leftover_source(links_to, by_date_slot, by_id)
             if source is None or source["id"] == e["id"]:
                 continue
-            if source["date"] >= e["date"]:
+            if _eaten_at(source) >= _eaten_at(e):
                 # Named by where things ARE, not where the move would have
                 # put them — the household is looking at the week as it
                 # stands, and nothing has moved.

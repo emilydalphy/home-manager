@@ -472,6 +472,7 @@ def set_household_meal_preferences(
             1 if mark_complete else (existing["onboarding_complete"] if existing else 0),
         ),
     )
+    keep_snack_counts_consistent(conn, household_id())
     conn.commit()
     conn.close()
     return {
@@ -501,6 +502,29 @@ def set_household_meal_preferences(
 # conversion is capped at a week's worth: one or more snacks a day means the
 # week wants a distinct snack every day, and none means none. The precise
 # answer lives in snacks_per_day, which is the column the planner reads.
+def keep_snack_counts_consistent(conn, household: int | None = None) -> None:
+    """
+    Never fewer different snacks a week than snacks land on one day
+    (2026-09-27): snack_dishes_per_week is raised to snacks_per_day
+    (capped at 7) wherever it sits below. Called on every write of
+    either number — set_household_meal_preferences (onboarding, the
+    rhythm and setup screens, chat), delete_preference's reset — and by
+    db's startup backfill for every household (household=None). The
+    caller commits.
+    """
+    if household is None:
+        conn.execute(
+            "UPDATE meal_preferences SET snack_dishes_per_week = MIN(7, snacks_per_day) "
+            "WHERE snack_dishes_per_week < MIN(7, snacks_per_day)"
+        )
+        return
+    conn.execute(
+        "UPDATE meal_preferences SET snack_dishes_per_week = MIN(7, snacks_per_day) "
+        "WHERE household_id = ? AND snack_dishes_per_week < MIN(7, snacks_per_day)",
+        (household,),
+    )
+
+
 def snacks_per_week_from_per_day(snacks_per_day: int | None) -> int:
     per_day = int(snacks_per_day or 0)
     return 0 if per_day <= 0 else min(7, per_day * 7)

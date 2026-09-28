@@ -144,6 +144,10 @@ def test_the_draft_never_holds_the_pineapple_dish_and_the_slot_is_repicked(emily
     picks = []
 
     def picker(context):
+        if "must_be_cuisine" in context:
+            # The Mexican chip's own pass (typed_requests.use_picked_cuisines)
+            # is not what this test counts.
+            return {}
         picks.append(context)
         return _safe()
 
@@ -160,6 +164,10 @@ def test_the_draft_never_holds_the_pineapple_dish_and_the_slot_is_repicked(emily
     assert repicked["slot_state"] == "planned"
     # The re-pick was told what it was replacing and why, with the clashing
     # dish on avoid and the allergy as a hard exclusion.
+    # Only the allergen slot's picks: since 2026-09-27 the all-Chili week
+    # this fixture drafts also has its runs of one dish broken through the
+    # same picker (dinner_gaps.break_long_runs, Emily's decision B).
+    picks = [p for p in picks if (p["date"], p["slot"]) == (DAYS[0], "lunch")]
     assert len(picks) == 1
     ctx = picks[0]
     assert ctx["slot"] == "lunch" and ctx["date"] == DAYS[0]
@@ -180,6 +188,8 @@ def test_a_repick_that_still_clashes_is_tried_once_more_then_the_slot_is_handed_
     picks = []
 
     def stubborn(context):
+        if "must_be_cuisine" in context:
+            return {}  # the Mexican chip's own pass — not what this counts
         picks.append(context)
         return _pineapple(offered[len(picks) - 1])
 
@@ -188,14 +198,15 @@ def test_a_repick_that_still_clashes_is_tried_once_more_then_the_slot_is_handed_
     plan = agent.generate_weekly_plan(WEEK_START)
     plan_id = plan["weekly_plan_id"]
 
-    assert len(picks) == sip.MAX_PICK_ATTEMPTS
+    # The allergen slot's own attempts (see the test above on the others).
+    assert len([p for p in picks if (p["date"], p["slot"]) == (DAYS[0], "lunch")]) == sip.MAX_PICK_ATTEMPTS
     assert "Pineapple Salsa Bowls" in picks[1]["avoid"], "the failed attempt joins avoid"
     names = _names(plan_id)
     assert not any("Pineapple" in n or "Al Pastor" in n for n in names)
     handed_back = _slot(plan_id, DAYS[0], "lunch")
     assert handed_back["slot_state"] == "open"
     assert handed_back["open_reason"] == (
-        "I couldn’t find a lunch without pineapple for Emily — I’d rather ask than guess."
+        "I couldn’t find a lunch without pineapple for Emily."   # the tail went 2026-09-27
     )
     assert tools.audit_plan_slots(plan_id)["complete"] is True
     assert tools.get_week_menu(plan_id)["settle"] is None

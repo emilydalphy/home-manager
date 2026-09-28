@@ -500,17 +500,62 @@ def _open_slot_budget(entries: list[dict], context: dict) -> list[Violation]:
     return violations
 
 
+_SLOT_ORDER = {"breakfast": 0, "lunch": 1, "dinner": 2}
+
+
+def _no_long_runs(entries: list[dict], context: dict) -> list[Violation]:
+    """
+    No dish on more than two lunches and dinners in a row (Emily,
+    2026-09-27, decision B) — the tripwire for leftovers.long_runs, which
+    dinner_gaps.break_long_runs exists to keep empty. A reheat counts as
+    the dish it reheats.
+    """
+    from . import leftovers as _leftovers
+
+    by_date_slot = {(e["date"], e.get("slot")): e for e in entries}
+    by_id = {e.get("entry_id"): e for e in entries if e.get("entry_id") is not None}
+    keys: dict = {}
+    for e in entries:
+        if e.get("slot") not in _leftovers.RUN_SLOTS or not _is_planned(e) or not e.get("meal_name"):
+            continue
+        name = e["meal_name"]
+        links_to = str(e.get("links_to") or "")
+        source = None
+        if ":" in links_to:
+            head, _, tail = links_to.partition(":")
+            source = by_id.get(int(tail)) if head == "entry_id" and tail.isdigit() else by_date_slot.get((head, tail))
+        if source and source.get("meal_name"):
+            name = source["meal_name"]
+        keys.setdefault((e["date"], e["slot"]), _leftovers.dish_identity(name))
+    violations = []
+    for run in _leftovers.long_runs(keys):
+        first, last = run[0], run[-1]
+        violations.append(Violation(
+            rule="no_long_runs", severity="warn", date=last[0], slot=last[1],
+            message=(
+                f"'{by_date_slot[first]['meal_name']}' is on {len(run)} meals in a row "
+                f"({first[0]} {first[1]} to {last[0]} {last[1]}); the most is "
+                f"{_leftovers.MAX_MEALS_IN_A_ROW}."
+            ),
+        ))
+    return violations
+
+
 def _leftover_direction(entries: list[dict], context: dict) -> list[Violation]:
     violations = []
     for entry in entries:
         links_to = entry.get("links_to")
         if not links_to or not _is_planned(entry):
             continue
-        linked_date = links_to.split(":", 1)[0]
+        linked_date, _, linked_slot = links_to.partition(":")
         try:
-            ok = datetime.date.fromisoformat(linked_date) < datetime.date.fromisoformat(entry["date"])
+            linked_day = datetime.date.fromisoformat(linked_date)
+            day = datetime.date.fromisoformat(entry["date"])
         except ValueError:
             continue  # unparseable links_to isn't this rule's concern
+        # In EATING order, not by date alone (Emily, 2026-09-27): a lunch
+        # cooked big and its leftovers that evening is a real chain.
+        ok = (linked_day, _SLOT_ORDER.get(linked_slot, 0)) < (day, _SLOT_ORDER.get(entry.get("slot"), 0))
         if not ok:
             violations.append(Violation(
                 rule="leftover_direction", severity="warn",
@@ -1791,6 +1836,7 @@ def check_week(plan_entries: list[dict], context: dict) -> list[Violation]:
     violations += _novelty_floor(plan_entries, context)
     violations += _open_slot_budget(plan_entries, context)
     violations += _leftover_direction(plan_entries, context)
+    violations += _no_long_runs(plan_entries, context)
     violations += _full_plate(plan_entries, context)
     violations += _ingredient_repeat(plan_entries, context)
     violations += _steps_match_ingredients(plan_entries, context)

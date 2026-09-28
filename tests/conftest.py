@@ -252,6 +252,11 @@ def pytest_configure(config):
         "live_clock(why): run this test on the real clock even under --today. "
         "For a test measuring against a clock we do not pin — say which.",
     )
+    config.addinivalue_line(
+        "markers",
+        "real_time_of_day: draft on the household's real time of day rather than just "
+        "after midnight (see _drafting_at_the_start_of_the_day).",
+    )
     raw = config.getoption("--today") or os.environ.get("POMONA_TEST_TODAY")
     if not raw:
         return
@@ -672,6 +677,36 @@ def frozen_today():
             return stack.enter_context(_pin(when))
 
         yield _freeze
+
+
+@pytest.fixture(autouse=True)
+def _drafting_at_the_start_of_the_day(request, monkeypatch):
+    """
+    A week drafted in a test is drafted at the START of the household's day
+    unless the test says otherwise.
+
+    Since 2026-09-27 ("today means from now") generation leaves out the
+    meals of today that have already gone by on the household's clock
+    (app/tools/today_meals.py). Dozens of files draft a week that starts
+    today, and without this their breakfast and lunch would be planned or
+    not depending on what time the suite happened to run — the kind of
+    test that is green all morning. Only the TIME OF DAY is moved: the
+    date is the household's own (so --today / @pytest.mark.today /
+    frozen_today still decide which day it is). A test ABOUT the time of
+    day monkeypatches today_meals.household_now itself, or opts out with
+    @pytest.mark.real_time_of_day.
+    """
+    if request.node.get_closest_marker("real_time_of_day") is not None:
+        yield
+        return
+    from app.tools import today_meals as _today_meals
+
+    real = _today_meals.household_now
+    monkeypatch.setattr(
+        _today_meals, "household_now",
+        lambda: _dt.datetime.combine(real().date(), _dt.time(0, 1)),
+    )
+    yield
 
 
 # ---------------------------------------------------------------------------

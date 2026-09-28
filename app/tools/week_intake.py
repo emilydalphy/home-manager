@@ -80,6 +80,12 @@ MOOD_GUIDANCE = {
 # carrying both would be two answers to one question.
 SURPRISE_MOOD = "Surprise me"
 
+# The mood chip that asks for new dishes. With it on, breakfast joins the
+# no-repeat rule (meal_variety.no_repeat_slots): a breakfast from the last
+# two weeks is re-picked like a dinner or a lunch would be (Emily,
+# 2026-09-27: "Something new" changed dinners and left breakfast alone).
+SOMETHING_NEW_MOOD = "Something new"
+
 
 # What every meal on a day tapped off "Which days?" says for itself once
 # the week is drafted (2026-09-21, board D1). Written as the planned_empty
@@ -202,6 +208,86 @@ def freeform_meal_scopes(text: str | None, dates: list[str]) -> list[dict]:
         for clause, meal in _clauses_by_meal(request):
             scopes.append({"words": clause, "meal": meal, "applies_to": "every", "dates": list(dates)})
     return scopes
+
+
+# ---------- "today", "tonight", "tomorrow" ----------
+#
+# Emily, 2026-09-27, 3:53pm on the Sunday the week started: "I want to make
+# a Japanese curry heavy on veggies today … and have leftovers for it." The
+# model put the curry on Sunday LUNCH, hours gone. freeform_meal_scopes
+# leaves any sentence with a day word to the model; these three words are
+# the ones whose meaning is beyond doubt once the time of day is known, so
+# they are resolved here to one exact date and meal — "today" and "tonight"
+# are today's dinner, "tomorrow" the next date's, unless the sentence names
+# a meal ("lunch today") — and the draft is made to put the dish there
+# (typed_requests.place_day_requests).
+
+_DAY_REQUEST_RE = re.compile(
+    r"\b(today|tonight|tomorrow)(?:\s+(night|evening|morning|afternoon))?\b", re.IGNORECASE
+)
+_DAY_REQUEST_NEGATED_RE = re.compile(
+    r"\b(?:not|never|no|don't|dont|do not|skip)\s+(?:\w+\s+){0,2}(?:today|tonight|tomorrow)\b", re.IGNORECASE
+)
+_LEFTOVERS_WORD_RE = re.compile(r"\bleftovers?\b", re.IGNORECASE)
+# A sentence about being AWAY or busy is not a dish to place: "We're out
+# tomorrow night, at my mom's." That is the day sheet's job, not a meal.
+_AWAY_RE = re.compile(
+    r"\b(?:we're|we are|we'll be|we will be|i'm|i am|i'll be|i will be|they're|they are|he's|she's)"
+    r"\s+(?:\w+\s+)?(?:out|away|busy|gone|travell?ing|working late|not home|not here)\b"
+    r"|\beating out\b|\bnot (?:home|here)\b|\bat (?:my|our|his|her|their) \w+(?:'s|’s)",
+    re.IGNORECASE,
+)
+
+
+def freeform_day_requests(text: str | None, dates: list[str], today: str,
+                          past: list[dict] | None = None) -> list[dict]:
+    """
+    [{"words", "date", "slot", "said", "leftovers", "late"}] — one per
+    sentence that pins a request to today, tonight or tomorrow, resolved to
+    an exact date and meal inside `dates`. `today` is the household's
+    date, `past` today's meals already gone (today_meals.past_meals). A
+    sentence that says "not tonight", names two meals, or is about being
+    out ("we're out tomorrow night, at my mom's") gets nothing: a wrong
+    exact slot is worse than none.
+
+    A meal their words name is not dropped for being late: "tonight" at
+    10pm comes back `late` True, and the meal is kept only if the dish they
+    asked for is actually put on it (agent._finish_week_slots) — then the
+    draft says so (draft_flags). `leftovers` is True when the sentence asks
+    for leftovers of the dish too.
+    """
+    gone = {(p["date"], p["slot"]) for p in (past or [])}
+    tomorrow = (date.fromisoformat(today) + timedelta(days=1)).isoformat()
+    out: list[dict] = []
+    for sentence in _REQUEST_SPLIT_RE.split(text or ""):
+        sentence = sentence.strip(" ,;")
+        match = _DAY_REQUEST_RE.search(sentence)
+        if not sentence or not match or _DAY_REQUEST_NEGATED_RE.search(sentence) or _AWAY_RE.search(sentence):
+            continue
+        said, part = match.group(1).lower(), (match.group(2) or "").lower()
+        meals = {_MEAL_OF_WORD[w.lower()] for w in _MEAL_WORD_RE.findall(sentence)} - {"snack"}
+        if len(meals) > 1:
+            continue
+        named = next(iter(meals), None)
+        if part in ("night", "evening"):
+            named = named or "dinner"
+        elif part == "morning":
+            named = named or "breakfast"
+        if said == "tonight":
+            day, slot = today, "dinner"
+        elif said == "today":
+            # "Make a curry today" is dinner, the way "tomorrow" is (review,
+            # 2026-09-27) — a dish you plan to MAKE today is the evening's,
+            # even at 9am. Only a named meal ("lunch today") says otherwise.
+            day, slot = today, named or "dinner"
+        else:
+            day, slot = tomorrow, named or "dinner"
+        if day not in dates:
+            continue
+        out.append({"words": sentence, "date": day, "slot": slot, "said": said,
+                    "leftovers": bool(_LEFTOVERS_WORD_RE.search(sentence)),
+                    "late": (day, slot) in gone})
+    return out
 
 
 # ---------- a typed INGREDIENT request ----------
@@ -1175,6 +1261,11 @@ def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
         "known_cuisines": KNOWN_CUISINES,
         "intake": intake,
         "in_flight": in_flight,
+        # Who is looking — the session's adult ("" when nobody is picked),
+        # the same name a save would record (acting_name). The screen
+        # compares it with intake.created_by so the in-flight line says
+        # "You started this…" to the person who did (Emily, 2026-09-27).
+        "viewer": acting_name(""),
         "plan_exists": bool(plan),
         "plan_id": plan["weekly_plan_id"] if plan else None,
         "plan_status": plan["status"] if plan else None,

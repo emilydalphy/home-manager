@@ -145,7 +145,7 @@ def test_a_made_ahead_night_names_its_source_apart_from_the_headline():
 
     assert breakfast["source"] == "leftovers"
     assert breakfast["leftover_from"] == {
-        "date": ISO_YESTERDAY, "meal": "Egg White Bites", "cook_ahead": True,
+        "date": ISO_YESTERDAY, "meal": "Egg White Bites", "cook_ahead": True, "slot": "breakfast",
     }
     # The headline is still what it was — this adds a second reading of the
     # same fact, it does not replace the first.

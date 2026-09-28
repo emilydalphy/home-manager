@@ -319,10 +319,14 @@ def test_the_week_is_planned_as_the_household_said(two_adults, seen_context):
     assert chains["leftovers"][lunch[dates[2]]["id"]]["source"]["entry_id"] == dinner[dates[1]]["id"]
     assert f"{dates[2]}:lunch" in dinner[dates[1]]["derived"]["make_double_for"]
 
-    # Prepped Wednesday: Thursday is its own batch.
-    assert lunch[dates[3]]["meal"] == "Curry"
-    assert lunch[dates[3]]["derived"]["prep_day"] == "wednesday"
-    assert lunch[dates[3]]["id"] not in chains["leftovers"]
+    # Prepped Wednesday, and Wednesday is inside the week (2026-09-27): its
+    # own lunch is a reheat, so its DINNER is the batch and Thursday eats it.
+    assert lunch[dates[3]]["meal"] == "Pasta"
+    assert chains["leftovers"][lunch[dates[3]]["id"]]["source"]["entry_id"] == dinner[dates[2]]["id"]
+    assert lunch[dates[3]]["derived"].get("cook_ahead") is True
+    assert dinner[dates[2]]["derived"]["prep_day"] == "wednesday"
+    assert dinner[dates[2]]["reasoning"] == "Pasta because", "a dinner keeps its own line"
+    assert dinner[dates[2]]["derived"]["prep_note"] == "Cook this Wednesday for Thursday’s lunch."
 
     # Cooked that day: Friday is left a fresh cook — the count didn't fold it.
     assert lunch[dates[4]]["meal"] == "Sandwich"
@@ -363,7 +367,7 @@ def test_no_answer_plans_exactly_as_before(two_adults, seen_context):
     assert [r["meal"] for r in _rows(plan_id, "lunch").values()] == \
         ["Chili", "Soup", "Salad", "Curry", "Wrap", "Pita", "Toastie"]
     assert weekday_lunches.apply_to_plan(plan_id, {"weekday_lunches": {}}) == \
-        {"leftovers": [], "prepped": [], "frozen": [], "skipped": []}
+        {"leftovers": [], "prepped": [], "frozen": [], "skipped": [], "said": []}
 
 
 def test_the_prompt_says_what_each_kind_means():

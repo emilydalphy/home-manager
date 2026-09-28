@@ -134,12 +134,18 @@ def _derived(entry: dict) -> dict:
         return {}
 
 
-def asked_fact(entry: dict) -> str | None:
+def asked_fact(entry: dict, cuisines: list[str] | None = None) -> str | None:
     """
     The one short fact a planned row carries beside its days: what the
     household asked for that shaped it. From derived_from, never from the
-    dish name — "Mexican, as asked" is only said when the cuisine input or
-    their own words drove the slot.
+    dish name alone — "Mexican, as asked" is only said when the model
+    cited the cuisine input AND that cuisine is one of this week's chips
+    (`cuisines`, intake.cuisines) AND the dish is that cuisine (its name,
+    or the recipe's `cuisine` on the entry — typed_requests.dish_is_cuisine).
+    Emily, 2026-09-27: a Greek chicken read "Burgers, as asked", and the
+    model's inputs have carried junk like "None-specific-but-requested";
+    the model's say-so is not enough on its own. The chip's own spelling
+    is what's shown.
     """
     if entry.get("slot_state", "planned") != "planned":
         return None
@@ -149,12 +155,16 @@ def asked_fact(entry: dict) -> str | None:
         # The rule since 2026-09-21 (board D2): travels well, fine cold or
         # reheated — so the tag says the part that is always true.
         return "travels well"
+    from . import typed_requests as _typed_requests  # lazy: it reaches back through meal_variety
+
+    chips = {str(c).strip().lower(): str(c).strip() for c in (cuisines or []) if str(c or "").strip()}
     for item in d.get("inputs") or []:
         item = str(item)
         if item.lower().startswith("cuisines:"):
-            cuisine = item.split(":", 1)[1].strip().replace("_", " ")
-            if cuisine:
-                return f"{_cap(cuisine)}, as asked"
+            cited = item.split(":", 1)[1].strip().replace("_", " ")
+            chip = chips.get(cited.lower())
+            if chip and _typed_requests.dish_is_cuisine(chip, entry.get("meal"), entry.get("cuisine")):
+                return f"{_cap(chip)}, as asked"
     if str(d.get("freeform") or "").strip():
         return "as asked"
     return None
@@ -259,7 +269,18 @@ def _honoured_items(entries: list[dict], report: dict | None, period: list[str])
             c = cited.setdefault(span.lower(), {"words": span, "dates": set(), "slots": set()})
             c["dates"].add(e["date"])
             c["slots"].add(e["slot"])
-    honoured = (report or {}).get("honoured") or []
+    # A request Pomona had to MOVE is said by moved_line, in its own words;
+    # saying it here too ("…, as you asked." twice) is the stammer the
+    # review of 2026-09-27 caught. So it leaves line one.
+    moved = [str(m.get("words") or "") for m in ((report or {}).get("moved") or []) if m.get("words")]
+
+    def _is_moved(words: str) -> bool:
+        return any(_cited(words, m) for m in moved)
+
+    cited = {k: c for k, c in cited.items() if not _is_moved(c["words"])}
+    honoured = [r for r in ((report or {}).get("honoured") or []) if not _is_moved(str(r.get("words") or ""))]
+    if (report or {}).get("honoured") and not honoured:
+        return []
     if honoured:
         found = []
         for r in honoured:
@@ -293,7 +314,8 @@ def _line_one(entries: list[dict], intake: dict | None, period: list[str], days:
               report: dict | None) -> str:
     asked = _honoured_items(entries, report, period)
     extras: list[str] = []
-    free = [d["date"] for d in days if (d.get("dinner") or {}).get("state") == "planned_empty"]
+    free = [d["date"] for d in days if (d.get("dinner") or {}).get("state") == "planned_empty"
+            and not (d.get("dinner") or {}).get("past")]
     if free:
         extras.append(f"{days_phrase(free, period)} left free")
     for d in days:
@@ -344,11 +366,33 @@ def _line_two(entries: list[dict], report: dict | None, recent: set[str] | None,
         return f"{_cap(number_word(len(open_slots)))} slots I’d like your call on."
     unmet = [r for r in ((report or {}).get("unmet") or []) if str(r.get("words") or "").strip()]
     if unmet:
-        # A typed ingredient nothing could carry (typed_requests): "the
-        # corn", in the app's own words; anything else in theirs.
-        if unmet[0].get("ingredient"):
-            return f"I couldn’t fit the {unmet[0]['ingredient']} in this week."
-        return f"I couldn’t fit “{str(unmet[0]['words']).strip()}” in this week."
+        from . import typed_requests as _typed_requests
+
+        if len(unmet) == 1:
+            # A typed ingredient nothing could carry (typed_requests): "the
+            # corn", in the app's own words; anything else in theirs.
+            if unmet[0].get("ingredient"):
+                return f"I couldn’t fit the {unmet[0]['ingredient']} in this week."
+            # A cuisine chip nothing on the week answers (typed_requests.
+            # use_picked_cuisines): "No burgers fit this week."
+            if unmet[0].get("cuisine"):
+                return _typed_requests.cuisine_unmet_line(unmet[0]["cuisine"])
+            return f"I couldn’t fit “{str(unmet[0]['words']).strip()}” in this week."
+        # Every request that didn't land, in ONE line (integration review,
+        # 2026-09-27: "No burgers fit" was hidden behind the corn line):
+        # "I couldn't fit the corn or a burger in this week."
+        things = []
+        for r in unmet:
+            if r.get("ingredient"):
+                thing = f"the {r['ingredient']}"
+            elif r.get("cuisine"):
+                thing = _typed_requests.cuisine_unmet_phrase(r["cuisine"])
+            else:
+                thing = f"“{str(r['words']).strip()}”"
+            if thing and thing not in things:
+                things.append(thing)
+        joined = things[0] if len(things) == 1 else ", ".join(things[:-1]) + " or " + things[-1]
+        return f"I couldn’t fit {joined} in this week."
     # A meal brought over from last week (bring_over.KEY, Emily
     # 2026-09-25) is neither new nor a repeat the rule missed: the day row
     # says "From last week", and counting it here would report it as "back
@@ -429,7 +473,7 @@ def batch_line(entries: list[dict]) -> str:
     return f"{_cap(_join(parts))}, {each}{how}."
 
 
-def count_note(day_count: int, memory: dict | None, said: str = "") -> str:
+def count_note(day_count: int, memory: dict | None, said: str = "", gone: dict | None = None) -> str:
     """
     "Three dinners this week, not four — it's a four-day plan." Said only
     when a count on the household's "Each week I plan" screen was scaled
@@ -442,20 +486,32 @@ def count_note(day_count: int, memory: dict | None, said: str = "") -> str:
     `day_count` is the number of days PLANNED — a seven-day period with
     the weekend tapped off "Which days?" is a five-day plan here, the
     same number the counts were scaled to (agent._planned_day_count).
+
+    `gone` ({slot: n}) is how many of each meal had already gone by when
+    the week was drafted (today_meals — those rows are planned_empty): the
+    count is of meals actually planned, so they come off it (review,
+    2026-09-27), and the line says why.
     """
-    if not memory or day_count >= 7:
+    gone = gone or {}
+    if not memory or (day_count >= 7 and not (any(gone.values()) and memory.get("meal_counts_set"))):
+        # A full week says nothing — unless a meal the household COUNTED
+        # had already gone by (column defaults are not a count they chose).
         return ""
     for slot, field in _meal_variety.COUNT_FIELDS.items():
         usual = memory.get(field)
         if usual is None or int(usual) <= 0:
             continue
-        target = _meal_variety.prorate_meal_count(int(usual), day_count)
+        days = max(1, day_count - int(gone.get(slot) or 0))
+        target = _meal_variety.prorate_meal_count(int(usual), days)
         if target != int(usual):
             noun = _NOUN[slot] if target != 1 else slot
             if f"{number_word(target)} {noun}" in said.lower():
                 return ""
-            return (f"{_cap(number_word(target))} {noun} this week, not {number_word(int(usual))} — "
-                    f"it’s a {number_word(day_count)}-day plan.")
+            why = f"it’s a {number_word(day_count)}-day plan" if day_count < 7 else ""
+            if gone.get(slot):
+                late = f"today’s {slot} had already gone by"
+                why = f"{why}, and {late}" if why else late
+            return f"{_cap(number_word(target))} {noun} this week, not {number_word(int(usual))} — {why}."
     return ""
 
 
@@ -484,5 +540,24 @@ def build_opener(rows, intake: dict | None, period_start: str, day_count: int, d
         recent = recent_dish_names(period_start, plan_id)
     second = _line_two(entries, report, recent, surprise=surprise)
     skipped = {d for d in ((intake or {}).get("skipped_days") or []) if d in period}
-    third = count_note(max(1, day_count - len(skipped)), memory, said=first)
-    return [line for line in (first, second, batch_line(entries), third) if line]
+    gone: dict[str, int] = {}
+    for e in entries:
+        if e.get("slot_state") == "planned_empty" and _derived(e).get("constraint") == "already_past":
+            gone[e["slot"]] = gone.get(e["slot"], 0) + 1
+    third = count_note(max(1, day_count - len(skipped)), memory, said=first, gone=gone)
+    # The planner's own plain lines about an answer it couldn't keep whole
+    # (weekly_plan.record_plan_requests' `said`), after the move line.
+    said = [str(s).strip() for s in ((report or {}).get("said") or []) if str(s).strip()]
+    return [line for line in (first, second, moved_line(report), *said, batch_line(entries), third) if line]
+
+
+def moved_line(report: dict | None) -> str:
+    """
+    The one plain line for a dish Pomona had to MOVE to the meal it was
+    asked for — "I moved Japanese Vegetable Curry to Sunday dinner, as you
+    asked." (typed_requests.place_day_requests, Emily 2026-09-27: the draft
+    states only the moves it had to make). Nothing when nothing moved; the
+    first move only, since a second would be a paragraph.
+    """
+    moved = [m for m in ((report or {}).get("moved") or []) if str(m.get("line") or "").strip()]
+    return str(moved[0]["line"]).strip() if moved else ""

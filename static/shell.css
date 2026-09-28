@@ -5985,6 +5985,10 @@ textarea.wwk-text { resize: vertical; }
 /* ---- steppers (the cook screen's .cook-serves-btn, reused) ---- */
 .wwk-count-row { display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
 .wwk-count-label { font-family: var(--font-body); font-size: 15px; font-weight: 600; color: var(--ink); }
+/* Snacks a day is not a count of dishes, so it stands clear of the
+   "Different dishes a week" group above it — a lead's worth of space
+   and a hairline, nothing louder (2026-09-27). */
+.wwk-count-own { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--hairline); }
 
 /* ---- buttons ----
    Spruce, never apricot (Rule 5) — a save is not the screen's one action.
@@ -6600,6 +6604,26 @@ button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); 
   color: var(--ink-secondary);
 }
 .recipe-body .cook-made-ahead { color: var(--ink-secondary); }
+/* "See Thursday's recipe" on a reheat night's page (Emily, 2026-09-27):
+   a text link in --apricot-label (the token for links), 44px tall (rule 6). */
+.recipe-source-link {
+  appearance: none;
+  -webkit-appearance: none;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: -8px 0 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--apricot-label);
+  text-align: left;
+  cursor: pointer;
+}
 /* "Cooking for · − · 4 · +" on one line. The buttons are 36px of box on a
    44px target (the ::after inset .cook-serves-btn already carries). */
 .recipe-serves { gap: 10px; }

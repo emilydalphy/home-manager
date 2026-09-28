@@ -296,8 +296,8 @@ def test_which_days_is_the_carousel_as_built_with_the_same_dock_under_it():
     assert "wk-menu" not in html
     assert 'id="week-approve-btn">Approve · Open grocery list</button>' in html
     assert "Plan it differently" not in html and 'id="wk-more"' in html
-    # A row's fact rides beside its minutes here too.
-    assert ">33 min · Mexican, as asked<" in html
+    # The row says its minutes and no reason (Emily, 2026-09-27, decision C).
+    assert ">33 min<" in html and "as asked" not in html
 
 
 @_needs_node
@@ -331,21 +331,20 @@ def test_the_toggle_and_the_dock_more_follow_the_system():
 # ---------------------------------------------------------------------------
 
 @_needs_node
-def test_the_reason_is_plain_text_after_the_time_and_nothing_shows_without_one():
-    """Emily, 2026-09-25 (option 1A): the reason used to be a tap on the
-    meta line that popped a note; it is said on the line now, as text."""
+def test_the_meta_line_is_plain_text_and_says_no_reason():
+    """Emily, 2026-09-25 (option 1A): the line is plain text, no tap.
+    Emily, 2026-09-27 (decision C, "cut it everything"): the stored reason
+    and the "as asked" fact are gone from it; only the time is said."""
     out = _run(_prelude() + """
 console.log(JSON.stringify({
-  withReason: wkRowMetaHtml({ state: 'planned', reason: 'you said you love salmon.' }, '35 min'),
-  noReason: wkRowMetaHtml({ state: 'planned', reason: null }, '35 min'),
-  noMeta: wkRowMetaHtml({ state: 'planned', reason: 'a quick one' }, ''),
-  asked: wkRowMetaHtml({ state: 'planned', asked: 'Mexican, as asked', reason: 'Mexican, as you asked' }, '35 min · Mexican, as asked'),
+  withReason: wkRowMetaHtml({ state: 'planned', reason: 'you said you love salmon.' }, wkRowMetaLine({ state: 'planned', reason: 'you said you love salmon.' }, '35 min')),
+  noMeta: wkRowMetaHtml({ state: 'planned', reason: 'a quick one' }, wkRowMetaLine({ state: 'planned', reason: 'a quick one' }, '')),
+  asked: wkRowMetaLine({ state: 'planned', asked: 'Mexican, as asked', reason: 'Mexican, as you asked' }, '35 min'),
   nothing: wkRowMetaHtml({ state: 'planned' }, '')
 }));""")
-    assert out["withReason"] == '<span class="wk-row-meta">35 min · You said you love salmon</span>'
-    assert out["noReason"] == '<span class="wk-row-meta">35 min</span>'
-    assert out["noMeta"] == '<span class="wk-row-meta">A quick one</span>'
-    assert out["asked"] == '<span class="wk-row-meta">35 min · Mexican, as asked</span>', "the asked fact already says why"
+    assert out["withReason"] == '<span class="wk-row-meta">35 min</span>'
+    assert out["noMeta"] == ""
+    assert out["asked"] == "35 min"
     assert out["nothing"] == ""
 
 

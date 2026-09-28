@@ -586,6 +586,7 @@ def test_a_brought_over_row_says_last_week_once():
     the row's foot since the 1A rows (2026-09-25) said it twice."""
     from pathlib import Path
     js = (Path(__file__).resolve().parent.parent / "static" / "shell.js").read_text(encoding="utf-8")
+    # Since 2026-09-27 (decision C) no row prints the stored reason at all.
     start = js.index("function wkRowMetaHtml(")
     body = js[start:js.index("\n  }\n", start)]
-    assert "!entry.brought_over" in body
+    assert "entry.reason" not in body

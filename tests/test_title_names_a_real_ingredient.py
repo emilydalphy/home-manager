@@ -323,6 +323,12 @@ def test_the_repair_costs_no_model_call(stub_week, monkeypatch):
     full of over-promising titles must not buy a single round trip."""
     calls = []
     monkeypatch.setattr(agent, "_create_with_retry", lambda *a, **k: calls.append(a))
+    # This fixture's week is Chili at every lunch and dinner, which since
+    # 2026-09-27 is a run of one dish that dinner_gaps.break_long_runs
+    # rightly spends a pick on (Emily's decision B). That call is not the
+    # title repair's, so the run pass is stood down for this one guard.
+    from app.tools import dinner_gaps
+    monkeypatch.setattr(dinner_gaps, "break_long_runs", lambda *a, **k: {"changed": [], "left": []})
     week = _week_start()
     monday = tools._week_dates(week)[0]
     stub_week(_full_week(week, {(monday, "lunch"): {

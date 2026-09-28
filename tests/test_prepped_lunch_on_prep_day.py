@@ -164,7 +164,7 @@ class TestTheBatchIsOnItsPrepDay:
         sun = _next_weekday("sunday")
         plan_id, dates = _plan(
             stub_model, sun, {1: "prepped", 2: "prepped"}, ["sunday"],
-            lunches=["S0", "Chili", "Soup", "S3", "S4", "S5", "S6"],
+            lunches=["Chili", "Chili", "Soup", "S3", "S4", "S5", "S6"],
         )
         session = _session(plan_id, dates[0])
         assert session is not None, "the Sunday prep day has no session at all"
@@ -205,7 +205,7 @@ class TestTheBatchIsOnItsPrepDay:
         plan_id, dates = _plan(
             stub_model, sun, {1: "prepped", 4: "prepped", 5: "prepped"},
             ["sunday", "wednesday"],
-            lunches=["S0", "Chili", "S2", "S3", "Curry", "Soup", "S6"],
+            lunches=["Chili", "Chili", "S2", "Curry", "Curry", "Soup", "S6"],
         )
         wednesday = dates[3]
         session = _session(plan_id, wednesday)
@@ -244,7 +244,7 @@ class TestTheBatchIsOnItsPrepDay:
         sun = _next_weekday("sunday")
         plan_id, dates = _plan(
             stub_model, sun, {1: "prepped"}, ["sunday"],
-            lunches=["S0", "Chili", "S2", "S3", "S4", "S5", "S6"],
+            lunches=["Chili", "Chili", "S2", "S3", "S4", "S5", "S6"],
         )
         item = next(i for i in _session(plan_id, dates[0])["items"] if i["title"] == "Chili")
         assert item["line"] == "For Monday’s lunch."
@@ -258,7 +258,7 @@ class TestTheBatchIsOnItsPrepDay:
         sun = _next_weekday("sunday")
         plan_id, dates = _plan(
             stub_model, sun, {1: "prepped", 2: "prepped"}, ["sunday"],
-            lunches=["S0", "Chili", "Soup", "S3", "S4", "S5", "S6"],
+            lunches=["Chili", "Chili", "Soup", "S3", "S4", "S5", "S6"],
         )
         item = next(i for i in _session(plan_id, dates[0])["items"] if i["title"] == "Chili")
         conn = get_conn()
@@ -340,7 +340,7 @@ class TestTickingItCountsOnce:
         sun = _next_weekday("sunday")
         plan_id, dates = _plan(
             stub_model, sun, {1: "prepped", 2: "prepped"}, ["sunday"],
-            lunches=["S0", "Chili", "Soup", "S3", "S4", "S5", "S6"],
+            lunches=["Chili", "Chili", "Soup", "S3", "S4", "S5", "S6"],
         )
         tools.update_inventory("Chili bits", "add", quantity="10 lb", location="pantry")
         item = next(i for i in _session(plan_id, dates[0])["items"] if i["title"] == "Chili")
@@ -407,7 +407,7 @@ class TestNothingChangesForAWeekThatNeverAnswered:
         sun = _next_weekday("sunday")
         plan_id, dates = _plan(
             stub_model, sun, {1: "prepped", 2: "prepped"}, ["sunday"],
-            lunches=["S0", "Chili", "Soup", "S3", "S4", "S5", "S6"],
+            lunches=["Chili", "Chili", "Soup", "S3", "S4", "S5", "S6"],
         )
         session = _session(plan_id, dates[0])
         assert session is not None
@@ -421,7 +421,7 @@ class TestNothingChangesForAWeekThatNeverAnswered:
         sun = _next_weekday("sunday")
         plan_id, dates = _plan(
             stub_model, sun, {1: "prepped", 2: "prepped"}, ["sunday"],
-            lunches=["S0", "Chili", "Soup", "S3", "S4", "S5", "S6"],
+            lunches=["Chili", "Chili", "Soup", "S3", "S4", "S5", "S6"],
         )
         assert _session(plan_id, dates[0]) is not None
         tools.set_skip_prep_this_week(True, plan_id)
@@ -441,7 +441,7 @@ class TestTheReader:
         sun = _next_weekday("sunday")
         plan_id, dates = _plan(
             stub_model, sun, {1: "prepped", 2: "prepped"}, ["sunday"],
-            lunches=["S0", "Chili", "Soup", "S3", "S4", "S5", "S6"],
+            lunches=["Chili", "Chili", "Soup", "S3", "S4", "S5", "S6"],
         )
         [batch] = weekday_lunches.prepped_batches(plan_id)
         assert batch["lunch_dates"] == [dates[1], dates[2]]
@@ -456,7 +456,7 @@ class TestTheReader:
         sun = _next_weekday("sunday")
         plan_id, dates = _plan(
             stub_model, sun, {1: "prepped", 2: "prepped"}, ["sunday"],
-            lunches=["S0", "Chili", "Soup", "S3", "S4", "S5", "S6"],
+            lunches=["Chili", "Chili", "Soup", "S3", "S4", "S5", "S6"],
         )
         assert len(weekday_lunches.prepped_batches(plan_id)) == 1
         with tools.use_household(2):
@@ -838,7 +838,7 @@ class TestWhatItCosts:
         sun = _next_weekday("sunday")
         one, _ = _plan(
             stub_model, sun, {1: "prepped", 2: "prepped"}, ["sunday"],
-            lunches=["S0", "Chili", "Soup", "S3", "S4", "S5", "S6"],
+            lunches=["Chili", "Chili", "Soup", "S3", "S4", "S5", "S6"],
         )
         period = [sun.isoformat(), (sun + datetime.timedelta(days=6)).isoformat()]
         assert _count(lambda: weekday_lunches.prepped_batches(one)) == 1
@@ -874,16 +874,22 @@ class TestTheFreezerLunchStillNamesTheCookDay:
         conventions for one sentence. Its own card; invert this when it moves.
 
         It also carries no `prepped_ahead`: it is not a chain target, so
-        nothing links it back to the cook."""
+        nothing links it back to the cook.
+
+        2026-09-27: on a Sunday-start week the batch is now cooked ON the
+        Sunday — the prep day's own lunch is the cook
+        (weekday_lunches._prep_day_cook) — so the name reads the prep day
+        here because the cook entry is on it. The convention above is
+        unchanged: a Monday-start week's Sunday prep still names Monday."""
         sun = _next_weekday("sunday")
         # Sunday prep; Thursday's lunch is four days out.
         plan_id, dates = _plan(
             stub_model, sun, {1: "prepped", 2: "prepped", 3: "prepped", 4: "prepped"},
-            ["sunday"], lunches=["S0", "Chili", "A", "B", "C", "S5", "S6"],
+            ["sunday"], lunches=["Chili", "Chili", "A", "B", "C", "S5", "S6"],
         )
         cards = _lunch_cards(plan_id)
         frozen = cards[dates[4]]
-        assert frozen["meal"].startswith("Leftovers from the freezer — Monday’s"), frozen["meal"]
+        assert frozen["meal"].startswith("Leftovers from the freezer — Sunday’s Chili"), frozen["meal"]
         assert frozen.get("prepped_ahead") is None
         # The days inside three days of the prep day DO read as prepped.
         assert cards[dates[1]]["prepped_ahead"]["weekday"] == "Sunday"
@@ -899,7 +905,7 @@ class TestTheFreezerLunchStillNamesTheCookDay:
         sun = _next_weekday("sunday")
         plan_id, dates = _plan(
             stub_model, sun, {1: "prepped", 2: "prepped"}, ["sunday"],
-            lunches=["S0", "Chili", "Soup", "S3", "S4", "S5", "S6"],
+            lunches=["Chili", "Chili", "Soup", "S3", "S4", "S5", "S6"],
         )
         assert _session(plan_id, dates[0]) is not None
         conn = get_conn()
