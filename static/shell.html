@@ -417,6 +417,22 @@
     </div>
   </div>
 
+  <!-- Notifications on the iPhone app (Loop Board "App Store: push
+       notifications on the iPhone app", 2026-09-27). Asked once per phone,
+       only inside the app (static/push.js), and never on first launch: it
+       comes up after a week is approved — the first time there's a morning
+       note and a dinner nudge to send. "Turn on" leads to iOS's own
+       prompt; "Not now" leaves the Preferences row as the way back. -->
+  <div id="push-ask-scrim" hidden></div>
+  <div id="push-ask-dialog" hidden data-motion="dialog" role="dialog" aria-modal="true" aria-labelledby="push-ask-title">
+    <h2 class="reset-title" id="push-ask-title">Want notifications from me?</h2>
+    <p class="reset-note">A note each morning with what today needs, and a nudge when it&rsquo;s time to start dinner.</p>
+    <div class="reset-actions">
+      <button type="button" class="btn-outline-plum" id="push-ask-later">Not now</button>
+      <button type="button" class="btn-gold" id="push-ask-on">Turn on</button>
+    </div>
+  </div>
+
   <!-- "Delete your household" (Preferences, at the bottom — Loop Board
        "App Store: delete my household (and remove myself) from inside
        Pomona", 2026-09-27). Apple requires in-app deletion. The insides are

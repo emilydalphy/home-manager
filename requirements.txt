@@ -11,3 +11,12 @@ pydantic==2.13.4
 python-multipart==0.0.32
 starlette==1.6.0
 uvicorn[standard]==0.52.4
+# Push notifications on the iPhone app (app/push.py, 2026-09-27). Apple's
+# push service (APNs) only speaks HTTP/2 and only accepts a token signed
+# with ES256, and nothing already pinned does either: httpx (same version as
+# requirements-dev.txt, where the tests already use it) needs h2 for HTTP/2,
+# and the stdlib can't sign ES256, so cryptography reads the .p8 key and
+# signs. If any of the three is missing, push is off and text carries on.
+httpx==0.28.1
+h2==4.4.1
+cryptography==50.0.1

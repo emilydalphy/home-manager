@@ -34,7 +34,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exception_handlers import http_exception_handler
 
-from . import agent, ai_consent, backup, calendar_feed, chat_themes, feedback_email, household_deletion, households, invites, ratelimit, recipe_import, recipe_photos, security
+from . import agent, ai_consent, backup, calendar_feed, chat_themes, feedback_email, household_deletion, households, invites, push, ratelimit, recipe_import, recipe_photos, security
 from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
@@ -1178,12 +1178,17 @@ async def start_morning_text_loop():
     if os.environ.get("DISABLE_MORNING_TEXT") == "1":
         logger.info("Morning texts are disabled for this process (DISABLE_MORNING_TEXT=1)")
         return
-    if not tools.twilio_configured():
+    # Push on the iPhone app (2026-09-27) is the other way the same two
+    # passes deliver, so either set of keys starts the loop. With neither,
+    # it stays off and says so once, exactly as before push existed.
+    if not tools.twilio_configured() and not push.configured():
         logger.info(
             "Morning texts are off: set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and "
             "TWILIO_FROM_NUMBER to turn them on"
         )
         return
+    if not push.configured():
+        logger.info("Push notifications are off: set APNS_KEY_ID, APNS_TEAM_ID, APNS_KEY_P8 and APNS_TOPIC to turn them on")
 
     async def _loop():
         while True:
@@ -2020,6 +2025,65 @@ def evening_nudge_save(req: EveningNudgeRequest):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {**result, "settings": tools.get_evening_nudge_settings()}
+
+
+# ---------- Push notifications on the iPhone app (2026-09-27) ----------
+#
+# static/push.js (loaded only inside the iPhone app) registers the phone's
+# token here once notifications are allowed, and the Preferences row reads
+# and flips the adult's own switch. Signed-in only, like every /api route;
+# the adult is the session's (tools.current_member), never one named in
+# the request. app/push.py has the model.
+
+
+class PushDeviceRequest(BaseModel):
+    token: str = Field(..., max_length=256)
+    platform: str = Field("ios", max_length=16)
+
+
+class PushPreferenceRequest(BaseModel):
+    on: bool
+
+
+def _push_member_or_400() -> dict:
+    member = tools.current_member()
+    if member is None:
+        raise HTTPException(status_code=400, detail="Tell me who you are first, then try again.")
+    return member
+
+
+@app.get("/api/push")
+def push_settings():
+    """This adult's notification switch, how many phones they have
+    registered, and whether the permission ask is due yet."""
+    return push.settings_for(tools.current_member())
+
+
+@app.post("/api/push/devices")
+def push_register_device(req: PushDeviceRequest, request: Request):
+    member = _push_member_or_400()
+    try:
+        device_key = push.register_device(member["id"], req.token, req.platform or "ios")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    response = JSONResponse(push.settings_for(member))
+    response.set_cookie(
+        push.DEVICE_COOKIE,
+        device_key,
+        max_age=push.DEVICE_COOKIE_MAX_AGE,
+        httponly=True,
+        samesite="lax",
+        secure=_is_https(request),
+        path="/",
+    )
+    return response
+
+
+@app.post("/api/push/preferences")
+def push_set_preference(req: PushPreferenceRequest):
+    member = _push_member_or_400()
+    push.set_member_push_on(member["id"], req.on)
+    return push.settings_for(member)
 
 
 @app.post("/api/calendar/check")
@@ -6616,10 +6680,28 @@ def login_submit(request: Request, password: str = Form(""), next: str = Form("/
 
 
 @app.get("/logout")
-def logout():
+def logout(request: Request):
     response = RedirectResponse(url="/login", status_code=303)
     response.delete_cookie(security.COOKIE_NAME, path="/")
+    _forget_this_phone(request, response)
     return response
+
+
+def _forget_this_phone(request: Request, response) -> None:
+    """
+    Signing out on the iPhone app stops its notifications: the phone's
+    push_devices row (found by the cookie it was given at registration —
+    app/push.py) goes, and so does the cookie. A browser that never
+    registered has no cookie and nothing happens. Never fails the sign-out.
+    """
+    key = request.cookies.get(push.DEVICE_COOKIE)
+    if not key:
+        return
+    try:
+        push.forget_device(key)
+    except Exception:
+        logger.exception("Forgetting this phone's notifications on sign-out failed")
+    response.delete_cookie(push.DEVICE_COOKIE, path="/")
 
 
 # A share URL carries a live credential in its path. The reporter sends
@@ -7690,9 +7772,14 @@ def _leave_state() -> dict:
     }
 
 
-def _signed_out(payload: dict) -> JSONResponse:
+def _signed_out(payload: dict, request: Request | None = None) -> JSONResponse:
     response = JSONResponse(payload)
     response.delete_cookie(security.COOKIE_NAME, path="/")
+    # The phone's notification row is already gone with the household or
+    # the member (both delete push_devices rows); this clears the cookie
+    # and, belt and braces, anything left under it.
+    if request is not None:
+        _forget_this_phone(request, response)
     return response
 
 
@@ -7708,7 +7795,7 @@ class DeleteHouseholdRequest(BaseModel):
 
 
 @app.post("/api/household/delete")
-def delete_my_household(req: DeleteHouseholdRequest):
+def delete_my_household(req: DeleteHouseholdRequest, request: Request):
     """
     Delete the signed-in household and everything in it, then sign out.
 
@@ -7736,11 +7823,11 @@ def delete_my_household(req: DeleteHouseholdRequest):
             status_code=500,
             detail="That didn't go through, and nothing was deleted. Try again in a moment.",
         )
-    return _signed_out({"deleted": True, "goodbye": "/goodbye"})
+    return _signed_out({"deleted": True, "goodbye": "/goodbye"}, request)
 
 
 @app.post("/api/household/remove-me")
-def remove_me_from_household():
+def remove_me_from_household(request: Request):
     """
     Take the signed-in adult out of this household (it keeps its other
     adults and everything else), then sign this device out.
@@ -7764,7 +7851,7 @@ def remove_me_from_household():
             status_code=500,
             detail="That didn't go through, and nothing was changed. Try again in a moment.",
         )
-    return _signed_out({"removed": True, "goodbye": "/goodbye?left=1"})
+    return _signed_out({"removed": True, "goodbye": "/goodbye?left=1"}, request)
 
 
 @app.get("/goodbye")
