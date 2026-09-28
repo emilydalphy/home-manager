@@ -45,13 +45,19 @@ def _slot(date, slot, name, **extra):
     return d
 
 
-def _week(week: str, dinners: list[str], lunches: list[str] | None = None) -> list[dict]:
+def _week(week: str, dinners: list[str], lunches: list[str] | None = None,
+          snacks: list[str] | None = None) -> list[dict]:
     out = []
     dates = tools._week_dates(week)
     lunches = lunches or ["Chickpea salad"] * 7
-    for date, dinner, lunch in zip(dates, dinners, lunches):
+    # Snack now joins the no-repeat window too (2026-09-28); a fixed
+    # default of "Apple" every week only matters for the one test here
+    # that approves `past_week` (making its snack count in the window) —
+    # see that test's own explicit `snacks=` for the fix.
+    snacks = snacks or ["Apple"] * 7
+    for date, dinner, lunch, snack in zip(dates, dinners, lunches, snacks):
         out.append(_slot(date, "breakfast", "Overnight oats"))
-        out.append(_slot(date, "snack", "Apple"))
+        out.append(_slot(date, "snack", snack))
         out.append(_slot(date, "lunch", lunch))
         out.append(_slot(date, "dinner", dinner))
     return out
@@ -281,7 +287,11 @@ def test_without_surprise_me_a_repeat_from_the_window_is_repicked_too(past_week,
     tools.save_week_intake(week, moods=["Something warm"])
     dinners = list(NEW_DINNERS)
     dinners[1] = "Chili"
-    stub_model(_week(week, dinners))
+    # This week's own snack, distinct from past_week's "Apple" (about to
+    # be approved below) — this test is about the DINNER repeat, not
+    # snack, so it must not also collide on snack now that snack is in
+    # the window too.
+    stub_model(_week(week, dinners, snacks=["Trail mix"] * 7))
     picks = []
     monkeypatch.setattr(sip, "_pick_replacement", lambda ctx: (picks.append(ctx), _pick("Moussaka"))[1])
     # Last week has to be approved for the window to count it.

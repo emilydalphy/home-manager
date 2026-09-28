@@ -142,9 +142,17 @@ def _approve_in_place(plan_id: int) -> None:
 def last_week(stub_model):
     """Last week, approved: chili on Monday, beef tacos on Tuesday, and
     Greek salad every lunch. Its Monday is seven days before this week's,
-    so its dinners are between one and seven days old."""
+    so its dinners are between one and seven days old.
+
+    Its snack is "Fig bars" — deliberately NOT `_week()`'s own default
+    ("Apple") — so a test that stubs THIS week with `_week()`'s plain
+    default (no `snacks=` passed) gets a snack that does not collide with
+    last week's, now that snack is in the no-repeat window on every week
+    (2026-09-28). tests/test_snack_no_repeat.py, which is actually testing
+    that collision, passes `snacks=["Fig bars"] * 7` for this week on
+    purpose to line the two up."""
     week = _monday(-1)
-    stub_model(_week(week, LAST_WEEK_DINNERS, ["Greek salad"] * 7))
+    stub_model(_week(week, LAST_WEEK_DINNERS, ["Greek salad"] * 7, snacks=["Fig bars"] * 7))
     plan = agent.generate_weekly_plan(week)
     _approve_in_place(plan["weekly_plan_id"])
     return plan
@@ -235,9 +243,13 @@ def test_a_breakfast_or_snack_repeat_is_left_exactly_as_it_is(last_week, stub_mo
     Pinned instead by the mutation that widens
     meal_variety.NO_REPEAT_SLOTS to every slot, which reddens it.
 
-    Breakfasts and snacks are meant to repeat across weeks: the prompt
-    asks for a breakfast two or three times a week, and the same oats
-    every morning is the rhythm working.
+    Breakfasts are meant to repeat across weeks: the prompt asks for a
+    breakfast two or three times a week, and the same oats every morning
+    is the rhythm working. Snack IS now checked on every week (2026-09-28
+    — see tests/test_snack_no_repeat.py for the CATCH), but `last_week`'s
+    snack ("Fig bars") deliberately does not collide with this week's
+    default ("Apple"), so this test still shows the pass leaving a
+    non-repeat alone rather than proving snack is exempt.
     """
     week = _monday(0)
     stub_model(_week(week, FRESH_DINNERS, ["Chickpea salad"] * 7))
@@ -255,7 +267,10 @@ def test_something_new_changes_breakfast_too(last_week, stub_model, picker):
     breakfast came back). With that mood on, breakfast joins the rule:
     last week's oats go, every morning together, for ONE picker call —
     and a Breakfasts = 1 count folds nothing back, because the new dish is
-    still one dish. Snacks are still left alone.
+    still one dish. Snack is checked on every week regardless of mood
+    (2026-09-28), but `last_week`'s snack ("Fig bars") does not collide
+    with this week's default ("Apple"), so it stays put here — the
+    snack-repeat CATCH lives in tests/test_snack_no_repeat.py.
     """
     week = _monday(0)
     tools.set_household_meal_preferences(breakfasts_per_week=1, mark_complete=False)

@@ -1707,13 +1707,21 @@ def repick_recent_repeats(plan_id: int, period_start: str | None, budget, picker
     calls for the whole week, which is what bounds a week the model filled
     entirely with last fortnight's dinners.
 
-    Breakfast and snack are NOT checked, on purpose: the prompt asks for
-    them to repeat, and a household eating the same oats every morning is
+    Breakfast is NOT checked by default, on purpose: the prompt asks for
+    it to repeat, and a household eating the same oats every morning is
     the rhythm working rather than a rule being broken (NO_REPEAT_SLOTS).
     The one exception is `slots`: a week whose moods include "Something
     new" passes breakfast in too (no_repeat_slots), and last fortnight's
     breakfast goes the same way — the whole dish, every morning it holds,
     one picker call.
+
+    Snack is different: the caller (_finish_week_slots) always adds it to
+    `slots`, on every week regardless of mood (Emily, 2026-09-28: "It keeps
+    giving me the same snack suggestions as previous weeks"). Unlike
+    breakfast, nothing anywhere ever asked for a snack to repeat across
+    weeks on purpose — it was simply never checked, the exact gap dinner
+    and lunch had before this pass existed. A day's TWO snacks are read
+    and replaced independently, same as any other slot's whole-dish group.
 
     Never raises: counts come back for the log and for tests, and any
     failure leaves the plan as the model wrote it.
