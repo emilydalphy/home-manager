@@ -642,3 +642,78 @@ def test_the_new_dependencies_are_pinned():
     req = (REPO / "requirements.txt").read_text()
     for pin in ("httpx==", "h2==", "cryptography=="):
         assert pin in req
+
+
+# ---------- found on review (2026-09-27) ----------
+
+def test_a_phone_not_seen_for_a_session_lifetime_stops_getting_notifications(apns):
+    _adults("Emily")
+    _seed_day()
+    _register("Emily")
+    conn = get_conn()
+    conn.execute("UPDATE push_devices SET last_seen_at = datetime('now', '-31 days')")
+    conn.commit()
+    conn.close()
+
+    assert tools.run_morning_texts_once(now_utc=_local(7, 3), send=_Sender()) == []
+    assert apns.calls == [] and _devices() == []
+
+
+def test_registering_again_keeps_the_phone_fresh(apns):
+    _adults("Emily")
+    _register("Emily")
+    conn = get_conn()
+    conn.execute("UPDATE push_devices SET last_seen_at = datetime('now', '-31 days')")
+    conn.commit()
+    conn.close()
+    _register("Emily")
+    assert push.member_tokens(_member_id("Emily")) == [TOKEN_A]
+
+
+def test_a_bad_device_token_is_kept_because_it_is_usually_a_setup_mistake(apns):
+    """A development token sent to the production gateway answers
+    BadDeviceToken; deleting on it would wipe every phone on a config slip."""
+    _adults("Emily")
+    _seed_day()
+    tools.set_morning_text(phone="416-555-0100", on=True, name="Emily")
+    _register("Emily")
+    apns.answers[TOKEN_A] = (400, "BadDeviceToken")
+    sender = _Sender()
+
+    tools.run_morning_texts_once(now_utc=_local(7, 3), send=sender)
+
+    assert len(_devices()) == 1
+    assert len(sender.calls) == 1
+    assert "BadDeviceToken" in _rows()[0]["detail"] or _rows()[0]["detail"].startswith("twilio")
+
+
+def test_a_phone_that_changes_hands_gets_a_new_device_key():
+    _adults()
+    first = _register("Emily")
+    assert _register("Emily") == first, "the same owner keeps the key"
+    second = _register("Vineeth")
+    assert second != first
+    assert push.forget_device(first) == 0, "the old owner's cookie no longer reaches the row"
+    assert len(_devices()) == 1
+
+
+def test_a_key_that_cannot_be_read_falls_back_to_text(apns, monkeypatch):
+    monkeypatch.setenv("APNS_KEY_P8", "not a key")
+    push._forget_provider_token()
+    _adults("Emily")
+    _seed_day()
+    tools.set_morning_text(phone="416-555-0100", on=True, name="Emily")
+    _register("Emily")
+    sender = _Sender()
+
+    results = tools.run_morning_texts_once(now_utc=_local(7, 3), send=sender)
+
+    assert [r["status"] for r in results] == ["ok"]
+    assert apns.calls == [] and len(sender.calls) == 1
+
+
+def test_picking_who_this_is_saves_the_phone_again():
+    pick = SHELL_JS[SHELL_JS.index("async function pickWho"):]
+    pick = pick[: pick.index("\n  }\n")]
+    assert "pushModule().resave()" in pick
+    assert "resave:" in PUSH_JS

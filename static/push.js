@@ -38,6 +38,7 @@
 
   var P = plugin();
   var registered = null;  // the promise of the one registration per page load
+  var lastToken = '';     // kept so a later "Who's this?" pick can save it
 
   function openPath(path) {
     var p = typeof path === 'string' ? path : '';
@@ -52,7 +53,10 @@
 
   function listen() {
     if (!P || typeof P.addListener !== 'function') return;
-    P.addListener('registration', function (t) { saveToken(t && t.value); });
+    P.addListener('registration', function (t) {
+      lastToken = (t && t.value) || '';
+      saveToken(lastToken);
+    });
     P.addListener('registrationError', function (err) {
       console.warn('Notification registration failed:', err && err.error);
     });
@@ -108,6 +112,9 @@
     permission: permission,
     turnOn: turnOn,
     setOn: setOn,
-    openPath: openPath
+    openPath: openPath,
+    // Save the phone's token again (after "Who's this?" is answered in a
+    // house of several adults: the first save had nobody to go against).
+    resave: function () { return lastToken ? saveToken(lastToken) : Promise.resolve(); }
   };
 })();

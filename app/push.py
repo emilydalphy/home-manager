@@ -82,8 +82,19 @@ _TOKEN_RE = re.compile(r"^[0-9a-fA-F]{32,200}$")
 # way to send the app somewhere else.
 ALLOWED_PATHS = frozenset({"/", "/week", "/grocery", "/kitchen"})
 
-# Reasons APNs gives for a token that will never work again.
-_DEAD_TOKEN_REASONS = frozenset({"BadDeviceToken", "Unregistered", "DeviceTokenNotForTopic"})
+# Reasons APNs gives for a token that will never work again. Deliberately
+# NOT BadDeviceToken or DeviceTokenNotForTopic: those are also what a
+# development (Xcode) token sent to the production gateway, or a bundle id
+# mismatch, look like — a configuration mistake, which must not quietly
+# delete every phone. They are recorded in the row's detail instead.
+_DEAD_TOKEN_REASONS = frozenset({"Unregistered"})
+
+# A phone that hasn't re-registered for this long is treated as gone. The
+# app re-saves its token on every launch while its session is valid, so
+# this is the session's own lifetime: a phone whose sign-in expired, or
+# that was handed on without signing out, stops getting the household's
+# notifications when its session would have ended.
+STALE_AFTER_SECONDS = 30 * 24 * 60 * 60
 
 
 # ---------- configuration ----------
@@ -214,14 +225,19 @@ def register_device(member_id: int, token: str, platform: str = "ios") -> str:
     hid = household_id()
     conn = get_conn()
     try:
-        row = conn.execute("SELECT device_key FROM push_devices WHERE token = ?", (token,)).fetchone()
-        device_key = row["device_key"] if row else secrets.token_urlsafe(24)
+        row = conn.execute(
+            "SELECT device_key, household_id, member_id FROM push_devices WHERE token = ?", (token,)
+        ).fetchone()
+        same_owner = row is not None and row["household_id"] == hid and row["member_id"] == int(member_id)
+        # A new owner gets a new key: the old owner's cookie must not keep
+        # a handle on the phone's row after it moved.
+        device_key = row["device_key"] if same_owner else secrets.token_urlsafe(24)
         conn.execute(
             "INSERT INTO push_devices (household_id, member_id, token, platform, device_key) "
             "VALUES (?, ?, ?, ?, ?) "
             "ON CONFLICT(token) DO UPDATE SET household_id = excluded.household_id, "
             "member_id = excluded.member_id, platform = excluded.platform, "
-            "last_seen_at = datetime('now')",
+            "device_key = excluded.device_key, last_seen_at = datetime('now')",
             (hid, int(member_id), token, (platform or "ios")[:16], device_key),
         )
         conn.commit()
@@ -253,8 +269,15 @@ def _forget_token(token: str) -> None:
 
 
 def member_tokens(member_id: int) -> list[str]:
+    """This adult's phones — dropping any not seen for STALE_AFTER_SECONDS."""
     conn = get_conn()
     try:
+        conn.execute(
+            "DELETE FROM push_devices WHERE household_id = ? AND member_id = ? "
+            "AND last_seen_at < datetime('now', ?)",
+            (household_id(), int(member_id), f"-{int(STALE_AFTER_SECONDS)} seconds"),
+        )
+        conn.commit()
         rows = conn.execute(
             "SELECT token FROM push_devices WHERE household_id = ? AND member_id = ? ORDER BY id",
             (household_id(), int(member_id)),
@@ -333,6 +356,13 @@ def send_to_member(member_id: int, body: str, path: str = "/", title: str = "", 
         if not tokens:
             return {"status": "skipped-no-device", "detail": "no phone registered", "delivered": 0}
         payload = _payload(body, path, title)
+        try:
+            provider_token()
+        except Exception as e:
+            # A bad APNS_KEY_P8 / key id. Said once in the log, by type only
+            # (the message could quote the key), and the caller texts.
+            logger.warning("Push is configured but the APNs key couldn't be used (%s)", type(e).__name__)
+            return {"status": "failed", "detail": f"push key {type(e).__name__}"[:160], "delivered": 0}
         delivered, reasons = 0, []
         for token in tokens:
             try:

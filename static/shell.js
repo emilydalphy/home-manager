@@ -22652,6 +22652,10 @@
       // row names them, if the sheet is open.
       loadNotifications();
       if (prefsState.open) renderPrefsRows();
+      // Notifications (iPhone app): the phone's token couldn't be saved
+      // while nobody was picked — save it now against whoever this is,
+      // and offer the ask if it was waiting on exactly this.
+      if (pushModule()) { pushModule().resave(); pushAfterLoad(); }
     } catch (err) {
       console.warn('Picking who this is failed:', err);
       errorEl.textContent = 'That didn’t save. Try tapping your name again.';
