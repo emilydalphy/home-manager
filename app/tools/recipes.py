@@ -91,6 +91,15 @@ def add_recipe(
     # with a stray space was invisible to it and the reported bug came
     # straight back through the other door — found by review, measured.
     name = (name or "").strip()
+    # The planner's items can carry an explicit null for any of these
+    # (2026-09-28: `"cuisine": null` hit recipes.cuisine NOT NULL and failed
+    # the whole week's draft). The columns are NOT NULL DEFAULT '' — a
+    # missing value is the empty string, never None.
+    notes = notes or ""
+    cuisine = cuisine or ""
+    main_protein = main_protein or ""
+    advance_prep_notes = advance_prep_notes or ""
+    default_servings = default_servings or 4
     ingredients = settle_cooking_quantities(ingredients or [], default_servings)
 
     # The check and the INSERT share one transaction, opened with BEGIN
@@ -114,21 +123,30 @@ def add_recipe(
         conn.rollback()
         conn.close()
         raise
-    cur = conn.execute(
-        "INSERT INTO recipes (household_id, name, notes, ingredients_json, tags_json, food_groups_json, cuisine, main_protein, "
-        "instructions_json, default_servings, prep_time_minutes, cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json, "
-        "source_url, source_book, source_author, source_page, details_pending, dish_note) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (
-            household_id(), name, notes, json.dumps(ingredients), json.dumps(tags or []),
-            json.dumps(food_groups or []), cuisine, main_protein,
-            json.dumps(instructions or []), default_servings, prep_time_minutes, cook_time_minutes,
-            advance_prep_notes, json.dumps(advance_prep_step_indices or []), source_url or "",
-            (source_book or "").strip(), (source_author or "").strip(), (source_page or "").strip(),
-            1 if details_pending else 0, (dish_note or "").strip(),
-        ),
-    )
-    conn.commit()
+    # A failed INSERT must give the write lock back. It sat outside the try
+    # above, so on 2026-09-28 one IntegrityError left BEGIN IMMEDIATE's lock
+    # held and every later write in the app failed "database is locked"
+    # until the server restarted.
+    try:
+        cur = conn.execute(
+            "INSERT INTO recipes (household_id, name, notes, ingredients_json, tags_json, food_groups_json, cuisine, main_protein, "
+            "instructions_json, default_servings, prep_time_minutes, cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json, "
+            "source_url, source_book, source_author, source_page, details_pending, dish_note) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                household_id(), name, notes, json.dumps(ingredients), json.dumps(tags or []),
+                json.dumps(food_groups or []), cuisine, main_protein,
+                json.dumps(instructions or []), default_servings, prep_time_minutes, cook_time_minutes,
+                advance_prep_notes, json.dumps(advance_prep_step_indices or []), source_url or "",
+                (source_book or "").strip(), (source_author or "").strip(), (source_page or "").strip(),
+                1 if details_pending else 0, (dish_note or "").strip(),
+            ),
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        conn.close()
+        raise
     recipe_id = cur.lastrowid
     conn.close()
     citation = recipe_citation(source_url, source_book, source_author, source_page)
