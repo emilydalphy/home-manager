@@ -292,6 +292,65 @@ def _group_dishes(entries: list[dict], chains: dict) -> list[dict]:
     return list(dishes.values())
 
 
+# ---------- what "different dishes" counts (Emily, 2026-09-28) ----------
+#
+# "My dinner settings is 3 but it gave me 4 meal types. And lunch is 2 and
+# I have 3 types suggested. Why does this keep happening." The number under
+# "Different dishes a week" is the number of dishes COOKED for that meal.
+# A reheat is filed under the dish it reheats; and a lunch that is a
+# dinner's leftovers is the DINNER, not a lunch dish — it is neither counted
+# under lunches nor folded by the lunch pass. One definition, read by every
+# pass that enforces a count, by the final guard in agent._finish_week_
+# slots and by plan_quality's tripwire, so they cannot drift apart again.
+# (Until 2026-09-28 the answered-lunches path ignored those lunches and the
+# ordinary path counted them under the dinner's name.)
+
+
+def _dinner_fed_lunch_ids(plan_id: int, chains: dict) -> set[int]:
+    """Lunch rows eating a DINNER cook — from the fridge (a chain whose
+    source is a dinner) or from the freezer (a portion frozen on a dinner)."""
+    out: set[int] = set()
+    for e in _load_slot_entries(plan_id, "lunch"):
+        reheat = chains["leftovers"].get(e["id"])
+        if reheat and reheat["source"]["slot"] == "dinner":
+            out.add(e["id"])
+            continue
+        derived = json.loads(e["derived_from_json"] or "{}") or {}
+        frozen = derived.get(_leftovers.FROM_FREEZER_KEY) if isinstance(derived, dict) else None
+        cook_id = _ref_id(frozen.get("cook")) if isinstance(frozen, dict) else None
+        if cook_id is not None:
+            conn = get_conn()
+            row = conn.execute("SELECT slot FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+                               (cook_id, household_id())).fetchone()
+            conn.close()
+            if row is not None and row["slot"] == "dinner":
+                out.add(e["id"])
+    return out
+
+
+def distinct_dishes(plan_id: int, slot: str) -> list[str]:
+    """The different dishes cooked for `slot` on this plan, as the count
+    under "Different dishes a week" reads them (see the block above)."""
+    chains = _leftovers.plan_leftover_chains(plan_id)
+    ignore = _dinner_fed_lunch_ids(plan_id, chains) if slot == "lunch" else set()
+    return [d["name"] for d in _group_dishes(
+        [e for e in _load_slot_entries(plan_id, slot) if e["id"] not in ignore], chains)]
+
+
+def asked_for_ids(plan_id: int, slot: str) -> list[int]:
+    """Nights holding a dish re-picked to answer a cuisine chip the
+    household picked (typed_requests.use_picked_cuisines) — left standing by
+    the final count guard, so the chip they asked for is not folded away.
+    (A dish re-picked for an ingredient they typed carries their words and
+    is protected by `theirs` already.)"""
+    out = []
+    for e in _load_slot_entries(plan_id, slot):
+        derived = json.loads(e["derived_from_json"] or "{}") or {}
+        if isinstance(derived, dict) and derived.get("cuisine_repick"):
+            out.append(e["id"])
+    return out
+
+
 def _cap_at(caps: dict | None, date: str, slot: str) -> int | None:
     """
     The time cap on one meal, read the one way this module reads `caps`.
@@ -423,6 +482,7 @@ def _slot_nights(dishes: list[dict], chains: dict) -> list[dict]:
                 "reheat_of": reheat["source"]["entry_id"] if reheat else (
                     _ref_id(frozen.get("cook")) if frozen else None),
                 "source": e["id"] in chains["sources"],
+                "targets": list((chains["sources"].get(e["id"]) or {}).get("targets") or []),
                 "done": (e.get("cooked_status") or "") == "done",
             })
     out.sort(key=lambda n: (n["date"], n["id"]))
@@ -449,6 +509,21 @@ def _best_cook(cooks: list[dict], night: dict, allowed: set[str], ok=None) -> di
     if not fits:
         return None
     return min(fits, key=lambda c: (c["size"], _gap(c["date"], night["date"])))
+
+
+def _absorbing_cook(own: list[dict], night: dict, ok) -> dict | None:
+    """The earlier cook of this night's own dish that can feed the night
+    and every meal the night was feeding (a chain source), all within
+    leftovers.MAX_LEFTOVER_DAYS of it and allowed by the run rule; the
+    nearest such cook, or None."""
+    fits = []
+    for c in own:
+        if c["slot"] != night["slot"] or not _in_reach(c, night) or not ok(c, night):
+            continue
+        if all(t["date"] > c["date"] and _gap(c["date"], t["date"]) <= _leftovers.MAX_LEFTOVER_DAYS
+               for t in night["targets"]):
+            fits.append(c)
+    return min(fits, key=lambda c: _gap(c["date"], night["date"])) if fits else None
 
 
 def _plan_batches(nights: list[dict], kept: list[dict], caps: dict | None, slot: str,
@@ -561,6 +636,22 @@ def _plan_batches(nights: list[dict], kept: list[dict], caps: dict | None, slot:
             continue
 
         if is_kept:
+            # Not a night carrying portions for the freezer: those are
+            # cooked on it, and a reheat cooks nothing (review, 2026-09-28).
+            absorb = (_absorbing_cook(cooks_of(dish), n, ok)
+                      if n["source"] and not n["done"] and not _leftovers.freezer_servings(n["derived"])
+                      else None)
+            if absorb is not None:
+                # Cook once, eat it all (Emily, 2026-09-28: "it doesn't do a
+                # great job of using the leftover concept"): a repeat night
+                # that another meal eats from (Thursday's dinner feeding
+                # Friday's leftovers lunch) is not cooked again the day after
+                # the same dish was cooked — the earlier cook is made big
+                # enough for this night AND the meals it was feeding, when
+                # all of them are within three days of it.
+                absorb["size"] += 1 + len(n["targets"])
+                add({"kind": "link", "night": n, "cook": absorb, "retarget": n["targets"]})
+                continue
             if n["done"] or n["source"] or not cooks_of(dish):
                 c = _new_cook(n, dish)
                 cooks.append(c)
@@ -679,6 +770,38 @@ def _write_batches(plan_id: int, slot: str, decisions: list[dict], target: int) 
                     )
                     cook["id"] = row.get("entry_id")
                     out["replaced"].append({"date": n["date"], "dropped": n["meal"], "with": cook["dish"]["name"], "as": "cook"})
+                continue
+            if kind == "link" and d.get("retarget") is not None:
+                # A chain source folded into an earlier cook of its own dish:
+                # it and every meal it fed now eat that cook.
+                derived = _link_derived(n, cook["id"], slot)
+                derived.pop("make_double_for", None)
+                derived.pop("make_double_note", None)
+                conn = get_conn()
+                try:
+                    conn.execute(
+                        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+                        (json.dumps(derived), n["id"], household_id()),
+                    )
+                    for t in d["retarget"]:
+                        row = conn.execute(
+                            "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+                            (t["entry_id"], household_id()),
+                        ).fetchone()
+                        if row is None:
+                            continue
+                        td = json.loads(row["derived_from_json"] or "{}") or {}
+                        td["links_to"] = f"entry_id:{cook['id']}"
+                        conn.execute(
+                            "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+                            (json.dumps(td), t["entry_id"], household_id()),
+                        )
+                        targets.setdefault(cook["id"], []).append(f"{t['date']}:{t['slot']}")
+                    conn.commit()
+                finally:
+                    conn.close()
+                targets.setdefault(cook["id"], []).append(f"{n['date']}:{slot}")
+                out["replaced"].append({"date": n["date"], "dropped": n["meal"], "with": cook["dish"]["name"], "as": "leftovers"})
                 continue
             if kind == "link":
                 if _key(n["meal"]) == _key(cook["dish"]["name"]) and not n["source"]:
@@ -812,6 +935,10 @@ def enforce_distinct_count(
             logger.info("Distinct %s count not enforced for plan %s: the week's own words name a count", slot, plan_id)
             return result
         ignore = set(ignore_ids or ())
+        if slot == "lunch":
+            # A lunch eating a dinner is the dinner, not a lunch dish (see
+            # distinct_dishes): not counted here, and never folded.
+            ignore |= _dinner_fed_lunch_ids(plan_id, _leftovers.plan_leftover_chains(plan_id))
         pinned = set(pinned_ids or ())
 
         def slot_dishes(chain_map):

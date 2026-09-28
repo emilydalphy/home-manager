@@ -2258,6 +2258,36 @@ def check_recipes_and_log(plan_id: int, recipe_names: list[str]) -> list[Violati
         return []
 
 
+def dish_counts_respected(plan_id: int, memory: dict, asks: tuple = ()) -> list[Violation]:
+    """
+    The tripwire for "Different dishes a week" (Emily, 2026-09-28, the
+    third report: "Why does this keep happening"). Generation holds every
+    count true (agent._finish_week_slots' last count guard); this says so in
+    the morning report on the day it isn't, rather than waiting for her to
+    find it on her phone. Counts dishes the way the guard does
+    (meal_variety.distinct_dishes). Only a number the household set
+    (meal_counts_set), and never a slot whose count they named in their own
+    words for this week.
+    """
+    from . import meal_variety as _mv
+
+    out: list[Violation] = []
+    if not (memory or {}).get("meal_counts_set"):
+        return out
+    for slot, field in _mv.COUNT_FIELDS.items():
+        target = memory.get(field)
+        if not target or _mv.asks_for_a_count(*asks, slot=slot):
+            continue
+        dishes = _mv.distinct_dishes(plan_id, slot)
+        if len(dishes) > int(target):
+            out.append(Violation(
+                rule="dish_count_respected", severity="warn", date=None, slot=slot,
+                message=f"{len(dishes)} different {slot} dishes against the household's {target}: "
+                        + ", ".join(dishes),
+            ))
+    return out
+
+
 def check_and_log(plan_id: int, generation_context: dict) -> list[Violation]:
     """
     Read plan `plan_id` back from the database, run check_week against it,
@@ -2317,6 +2347,8 @@ def check_and_log(plan_id: int, generation_context: dict) -> list[Violation]:
             ],
         }
         violations = check_week(entries, quality_context)
+        violations += dish_counts_respected(plan_id, memory, (
+            intake_ctx.get("freeform"), generation_context.get("constraints_notes")))
         for v in violations:
             logger.warning(
                 "Plan %s quality [%s/%s]%s%s: %s",
