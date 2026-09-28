@@ -577,7 +577,10 @@ class TestThePage:
         assert SHELL.count('<span class="wk-from-last-line"><span class="wk-from-last">From last week</span></span>') == 2
         assert "d.entry && d.entry.brought_over" in SHELL
         css = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
-        assert ".wk-changed,\n.wk-from-last {" in css
+        # Shares the same quiet-badge declaration as "Changed" (and, since
+        # 2026-09-28, the menu's "Leftovers"/"Made ahead" tag) — this only
+        # checks .wk-changed and .wk-from-last are still in that one list.
+        assert ".wk-changed,\n.wk-from-last," in css or ".wk-changed,\n.wk-from-last {" in css
 
 
 def test_a_brought_over_row_says_last_week_once():

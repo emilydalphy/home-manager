@@ -2203,7 +2203,8 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .ask-change-reason { font-size: 13px; font-weight: 500; color: var(--ink-secondary); }
 .ask-change-kept,
 .wk-changed,
-.wk-from-last {
+.wk-from-last,
+.wk-leftover-tag {
   flex: 0 0 auto;
   height: 18px;
   padding: 0 7px;
@@ -2225,6 +2226,7 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    caps, the height from its own line rather than a fixed 18px. */
 .wk-changed { height: auto; padding: 3px 8px; line-height: 1.2; }
 .wk-from-last { height: auto; padding: 3px 8px; line-height: 1.2; }
+.wk-leftover-tag { height: auto; padding: 3px 8px; line-height: 1.2; }
 /* Rule 6: a 44px target for a small word, without a 44px row. */
 .ask-change-another {
   flex: 0 0 auto;
@@ -8300,6 +8302,8 @@ span.cook-week-name { cursor: default; }
    under the dish name, on a day row and a What we're eating row alike. */
 .wk-from-last-line { display: block; margin-top: 4px; }
 .wk-from-last-line .wk-from-last { margin-top: 0; }
+.wk-leftover-tag-line { display: block; margin-top: 4px; }
+.wk-leftover-tag-line .wk-leftover-tag { margin-top: 0; }
 .wk-row-name {
   font-family: var(--font-body);
   font-size: 15px;
