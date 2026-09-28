@@ -612,13 +612,16 @@ def test_the_confirm_is_a_real_dialog_and_not_just_the_insides():
     html = (pathlib.Path(__file__).resolve().parents[1] / "static" / "shell.html").read_text()
     for anchor in (
         # (#leave-scrim / #leave-dialog joined each list 2026-09-27 —
-        # the "Delete your household" dialog.)
-        "#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim, #discard-draft-scrim, #leave-scrim {\n  position: fixed;",
-        "#reset-dialog, #dinner-confirm-dialog, #approve-who-dialog, #discard-draft-dialog, #leave-dialog {\n  position: fixed;",
+        # the "Delete your household" dialog; #push-ask-* the same day —
+        # the iPhone app's notifications ask.)
+        "#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim, #discard-draft-scrim, #leave-scrim, #push-ask-scrim {\n  position: fixed;",
+        "#reset-dialog, #dinner-confirm-dialog, #approve-who-dialog, #discard-draft-dialog, #leave-dialog, #push-ask-dialog {\n  position: fixed;",
         "#discard-draft-scrim[hidden], #discard-draft-dialog[hidden],",
-        "#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim, #discard-draft-scrim, #leave-scrim {\n  animation: none;",
-        "#discard-draft-scrim.is-open, #leave-scrim.is-open {",
+        "#push-ask-scrim[hidden], #push-ask-dialog[hidden]",
+        "#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim, #discard-draft-scrim, #leave-scrim, #push-ask-scrim {\n  animation: none;",
+        "#discard-draft-scrim.is-open, #leave-scrim.is-open, #push-ask-scrim.is-open {",
     ):
         assert anchor in css, anchor
+    assert 'id="push-ask-dialog" hidden data-motion="dialog"' in html
     # And the box's own fade/scale, which is attribute-driven.
     assert 'id="discard-draft-dialog" hidden data-motion="dialog"' in html

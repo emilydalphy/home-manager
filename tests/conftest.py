@@ -36,6 +36,11 @@ os.environ["DISABLE_MORNING_TEXT"] = "1"
 # inheriting.
 for _report_var in ("HOME_MANAGER_URL", "REPORT_TOKEN", "HOME_MANAGER_PASSPHRASES"):
     os.environ.pop(_report_var, None)
+# The APNs key (app/push.py). With these unset, push is off and nothing in
+# the suite can reach Apple; the push tests set fake values themselves and
+# replace the transport, so no test ever sends a real notification.
+for _apns_var in ("APNS_KEY_ID", "APNS_TEAM_ID", "APNS_KEY_P8", "APNS_TOPIC", "APNS_SANDBOX"):
+    os.environ.pop(_apns_var, None)
 
 import ast as _ast  # noqa: E402  (agent_function_source, below)
 import contextlib  # noqa: E402
@@ -75,6 +80,8 @@ _TABLES = [
     "chore_instances", "chores", "chores_profile", "attention_items",
     "member_notes", "member_share_links", "share_links", "household_invites", "facts",
     "preference_events", "notification_dismissals", "item_store_preferences",
+    # push_devices references members, so it goes before them.
+    "push_devices",
     "shopping_trips", "stores", "meal_preferences", "pets", "members",
     "chat_turns", "api_calls", "error_events", "plan_quality_events", "feedback_reports",
     "calendar_feeds", "staple_events", "staples", "morning_text_sends",
