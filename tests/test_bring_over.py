@@ -66,15 +66,21 @@ def _slot(date: str, slot: str, name: str, **extra) -> dict:
     return d
 
 
-def _week(week: str, dinners, lunches=None) -> list[dict]:
+def _week(week: str, dinners, lunches=None, snacks=None) -> list[dict]:
     dates = tools._week_dates(week)
     # A different lunch every day AND every week, so no lunch is a repeat
     # the no-repeat pass would replace — last week's are "Lunch bowl N".
     lunches = lunches or [f"Lunch bowl {i}" if week < _monday(0) else f"Grain salad {i}" for i in range(7)]
+    # Snack now joins the no-repeat window too (2026-09-28), so a default
+    # of "Apple" every week would make every test below collide with
+    # `last_week`'s own snack. `last_week` uses a distinct value
+    # ("Fig bars") so this default stays "Apple" for everything else,
+    # exactly as it was written.
+    snacks = snacks or ["Apple"] * 7
     out = []
     for i, date in enumerate(dates):
         out.append(_slot(date, "breakfast", "Overnight oats"))
-        out.append(_slot(date, "snack", "Apple"))
+        out.append(_slot(date, "snack", snacks[i]))
         out.append(_slot(date, "lunch", lunches[i]))
         out.append(_slot(date, "dinner", dinners[i]))
     return out
@@ -140,10 +146,15 @@ def _ids(plan_id: int, meal: str) -> list[int]:
 def last_week(stub_model):
     """Last week, answered and approved through the real doors — its list
     built by approval — and nothing ticked cooked yet. This week is the
-    week after, so every one of last week's nights has gone by."""
+    week after, so every one of last week's nights has gone by.
+
+    Its snack is "Fig bars", not `_week()`'s own default ("Apple") — snack
+    joined the no-repeat window on every week (2026-09-28), and every test
+    in this file stubs "this week" with the plain default unless it is
+    itself testing the collision."""
     week = _monday(-1)
     tools.save_week_intake(week, moods=["Comfort food"])
-    stub_model(_week(week, LAST_DINNERS))
+    stub_model(_week(week, LAST_DINNERS, snacks=["Fig bars"] * 7))
     plan = agent.generate_weekly_plan(week)
     tools.approve_weekly_plan(plan["weekly_plan_id"])
     return plan
