@@ -5909,7 +5909,21 @@ button.cook-ready-row { cursor: pointer; }
   gap: 6px;
   text-align: left;
 }
-.wwk-chip:hover { background: var(--sand); }
+/* Gated to real hover (mouse), not touch — same fix as .defrost-chip,
+   .wk-mini and friends elsewhere in this file. Without it, a tap on a
+   touch screen leaves the chip in a "sticky hover" the browser doesn't
+   clear until something else is tapped — and because this hover background
+   is the SAME sand token as .is-off below, a protein chip that a third tap
+   just cleared back to unrated (no class, state really is '' — see
+   wwkCycleProtein) LOOKS like it is still in "skip it" (sand, just without
+   the strikethrough) even though the saved value is gone. Loop Board,
+   2026-09-28, Emily: "the third time... it makes it the tone down beige
+   colour" instead of white. (hover: hover) means this browser has a real
+   pointer that can hover without a persistent touch; iOS/Android tap-only
+   browsers don't match it. */
+@media (hover: hover) {
+  .wwk-chip:hover { background: var(--sand); }
+}
 .wwk-chip.is-on {
   background: var(--celadon-tint);
   border-color: var(--celadon-edge);
